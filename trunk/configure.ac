@@ -30,6 +30,7 @@ dnl check for programs
 
 AC_PROG_CC
 AC_PROG_CC_C_O
+AC_PROG_CC_C99
 AC_C_INLINE
 
 if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
