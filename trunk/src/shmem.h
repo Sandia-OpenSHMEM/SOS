@@ -1,8 +1,10 @@
-/*
- * -*- C -*-
+/* -*- C -*-
  *
  * Copyright (c) 2011 Sandia National Laboratories. All rights reserved.
  */
+
+#ifndef PORTALS_SHMEM_H
+#define PORTALS_SHMEM_H
 
 #include <stddef.h>
 #include <complex.h>
@@ -24,14 +26,14 @@ void shmem_int_p(int *addr, int value, int pe);
 void shmem_long_p(long *addr, long value, int pe);
 void shmem_longlong_p(long long *addr, long long value, int pe);
 
-void shmem_float_g(float *addr, int pe);
-void shmem_double_g(double *addr, int pe);
-void shmem_longdouble_g(long double *addr, int pe);
-void shmem_char_g(char *addr, int pe);
-void shmem_short_g(short *addr, int pe);
-void shmem_int_g(int *addr, int pe);
-void shmem_long_g(long *addr, int pe);
-void shmem_longlong_g(long long *addr, int pe);
+float shmem_float_g(float *addr, int pe);
+double shmem_double_g(double *addr, int pe);
+long double shmem_longdouble_g(long double *addr, int pe);
+char shmem_char_g(char *addr, int pe);
+short shmem_short_g(short *addr, int pe);
+int shmem_int_g(int *addr, int pe);
+long shmem_long_g(long *addr, int pe);
+long long shmem_longlong_g(long long *addr, int pe);
 
 /* Block data routines */
 void shmem_float_put(float *target, const float *source, size_t len, int pe);
@@ -81,6 +83,14 @@ void shmem_iget32(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst
 void shmem_iget64(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
 void shmem_iget128(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
 
+/* barrier synchronization routines */
+void shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync);
+void shmem_barrier_all(void);
+
+/* synchronization routines */
+void shmem_quiet(void);
+void shmem_fence(void);
+
 /* point-to-point synchronization routines */
 void shmem_short_wait(short *var, short value);
 void shmem_short_wait_until(short *var, int cond, short value);
@@ -92,14 +102,6 @@ void shmem_longlong_wait(long long *var, long long value);
 void shmem_longlong_wait_until(long long *var, int cond, long long value);
 void shmem_wait(long *ivar, long cmp_value);
 void shmem_wait_until(long *ivar, int cmp, long value);
-
-/* barrier synchronization routines */
-void shmem_barrier_all(void);
-void shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync);
-
-/* synchronization routines */
-void shmem_quiet(void);
-void shmem_fence(void);
 
 /* Atomic memory swap routines */
 float shmem_float_swap(float *target, float value, int pe);
@@ -289,14 +291,6 @@ void shmem_broadcast64(void *target, const void *source, size_t nlong,
                        int PE_root, int PE_start, int logPE_stride, int PE_size,
                        long *pSync);
 
-/* Cache management routines */
-void shmem_clear_cache_inv(void);
-void shmem_set_cache_inv(void);
-void shmem_clear_cache_line_inv(void *target);
-void shmem_set_cache_line_inv(void *target);
-void shmem_udcflush(void);
-void shmem_udcflush_line(void *target);
-
 /* collect routines */
 void shmem_collect32(void *target, const void *source, size_t nlong,
                      int PE_start, int logPE_stride, int PE_size, long *pSync);
@@ -306,6 +300,14 @@ void shmem_fcollect32(void *target, const void *source, size_t nlong,
                       int PE_start, int logPE_stride, int PE_size, long *pSync);
 void shmem_fcollect64(void *target, const void *source, size_t nlong,
                       int PE_start, int logPE_stride, int PE_size, long *pSync);
+
+/* Cache management routines */
+void shmem_clear_cache_inv(void);
+void shmem_set_cache_inv(void);
+void shmem_clear_cache_line_inv(void *target);
+void shmem_set_cache_line_inv(void *target);
+void shmem_udcflush(void);
+void shmem_udcflush_line(void *target);
 
 /* remote memory pointer function */
 void *shmem_ptr(void *target, int pe);
@@ -320,3 +322,5 @@ void shfree(void *ptr);
 void *shrealloc(void *ptr, size_t size);
 void *shmemalign(size_t alignment, size_t size);
 extern long malloc_error;
+
+#endif /* PORTALS_SHMEM_H */
