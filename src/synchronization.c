@@ -5,13 +5,12 @@
 
 #include "config.h"
 
-#include "shmem.h"
-#include "shmem_internal.h"
-
 #include <portals4.h>
 #include <portals4_runtime.h>
 #include <stdlib.h>
-#include <unistd.h>
+
+#include "mpp/shmem.h"
+#include "shmem_internal.h"
 
 
 void
@@ -24,21 +23,28 @@ shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 void
 shmem_barrier_all(void)
 {
-
+    shmem_quiet();
+    runtime_barrier();
 }
 
 
 void
 shmem_quiet(void)
 {
+    int ret;
+    ptl_ct_event_t ct;
 
+    /* wait for remote completion (acks) of all pending events */
+    ret = PtlCTWait(source_ct_h, pending_counter, &ct);
+    if (PTL_OK != ret) { abort(); }
+    if (ct.failure != 0) { abort(); }
 }
 
 
 void
 shmem_fence(void)
 {
-
+    /* intentionally a no-op */
 }
 
 void

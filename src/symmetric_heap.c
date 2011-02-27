@@ -4,7 +4,10 @@
  */
 
 #include "config.h"
-#include "shmem.h"
+
+#include <portals4.h>
+
+#include "mpp/shmem.h"
 #include "shmem_internal.h"
 
 long malloc_error = 0;

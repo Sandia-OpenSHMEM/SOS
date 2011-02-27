@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS = -I config
 
-lib_LTLIBRARIES = libshmem-portals.la
+lib_LTLIBRARIES = libshmem_portals.la
 libshmem_portals_la_SOURCES = \
 	src/data.c \
 	src/runtime.c \
@@ -10,4 +10,14 @@ libshmem_portals_la_SOURCES = \
 	src/synchronization.c
 
 mppdir = $(includedir)/mpp
-mpp_HEADERS = src/shmem.h
+mpp_HEADERS = mpp/shmem.h
+
+TESTS = \
+	test/put1
+
+check_PROGRAMS = $(TESTS)
+PROCS ?= 2
+TESTS_ENVIRONMENT = yod -c $(PROCS)
+
+test_put1_SOURCES = test/put1.c
+test_put1_LDADD = libshmem_portals.la
