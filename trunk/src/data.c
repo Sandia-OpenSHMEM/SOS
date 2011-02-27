@@ -5,19 +5,50 @@
 
 #include "config.h"
 
-#include "shmem.h"
-#include "shmem_internal.h"
-
 #include <portals4.h>
-#include <portals4_runtime.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+
+#include "mpp/shmem.h"
+#include "shmem_internal.h"
 
 static inline
 void
 int_shmem_put(void *target, const void *source, size_t len, int pe)
 {
+    size_t sent = 0;
+    int ret;
+    ptl_process_t peer;
+    peer.rank = pe;
 
+    for (sent = 0 ; sent < len ; sent += max_ordered_size) {
+        size_t bufsize = (len - sent < max_ordered_size) ? len - sent : max_ordered_size;
+        ret = PtlPut(md_h,
+                     (ptl_size_t) ((char*) source + sent),
+                     bufsize,
+                     PTL_CT_ACK_REQ,
+                     peer,
+                     pt_entry,
+                     0,
+                     (ptl_size_t) ((char*) target + sent),
+                     NULL,
+                     0);
+        if (PTL_OK != ret) { abort(); }
+        pending_counter++;
+    }
+
+    /* wait for completions */
+    for (sent = 0 ; sent < len ; sent += max_ordered_size) {
+        ptl_event_t ev;
+        ret = PtlEQWait(source_eq_h, &ev);
+        if (PTL_OK != ret) { abort(); }
+
+        if (ev.type != PTL_EVENT_SEND) {
+            printf("received event of type %d\n", ev.type);
+            abort();
+        }
+    }
 }
 
 
@@ -25,7 +56,28 @@ static inline
 void
 int_shmem_get(void *target, const void *source, size_t len, int pe)
 {
+    int ret;
+    ptl_event_t ev;
+    ptl_process_t peer;
+    peer.rank = pe;
 
+    ret = PtlGet(md_h,
+                 (ptl_size_t) source,
+                 len,
+                 peer,
+                 pt_entry,
+                 0,
+                 (ptl_size_t) target,
+                 0);
+    if (PTL_OK != ret) { abort(); }
+
+    ret = PtlEQWait(source_eq_h, &ev);
+    if (PTL_OK != ret) { abort(); }
+
+    if (ev.type != PTL_EVENT_REPLY) {
+        printf("received event of type %d\n", ev.type);
+        abort();
+    }
 }
 
 
