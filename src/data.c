@@ -13,6 +13,7 @@
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
 
+
 static inline
 void
 int_shmem_put(void *target, const void *source, size_t len, int pe)

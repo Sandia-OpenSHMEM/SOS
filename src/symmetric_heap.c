@@ -15,12 +15,14 @@ long malloc_error = 0;
 int
 symmetric_init(void)
 {
+    /* BWB: Unimplemented */
     return 0;
 }
 
 void *
 shmalloc(size_t size)
 {
+    /* BWB: Unimplemented */
     return NULL;
 }
 
@@ -28,12 +30,14 @@ shmalloc(size_t size)
 void
 shfree(void *ptr)
 {
+    /* BWB: Unimplemented */
 }
 
 
 void *
 shrealloc(void *ptr, size_t size)
 {
+    /* BWB: Unimplemented */
     return NULL;
 }
 
@@ -41,5 +45,6 @@ shrealloc(void *ptr, size_t size)
 void *
 shmemalign(size_t alignment, size_t size)
 {
+    /* BWB: Unimplemented */
     return NULL;
 }
