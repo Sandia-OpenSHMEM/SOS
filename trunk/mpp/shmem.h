@@ -17,6 +17,12 @@
 #define SHMEM_CMP_LE 6
 
 #define _SHMEM_BARRIER_SYNC_SIZE 1
+#define _SHMEM_BCAST_SYNC_SIZE 1
+#define _SHMEM_COLLECT_SYNC_SIZE 1
+#define _SHMEM_REDUCE_SYNC_SIZE 1
+#define _SHMEM_REDUCE_MIN_WRKDATA_SIZE 1
+
+#define _SHMEM_SYNC_VALUE 0
 
 /* run-time */
 void start_pes(int npes);
