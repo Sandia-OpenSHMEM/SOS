@@ -2,7 +2,10 @@ ACLOCAL_AMFLAGS = -I config
 
 lib_LTLIBRARIES = libshmem_portals.la
 libshmem_portals_la_SOURCES = \
+	src/atomic.c \
+	src/collectives.c \
 	src/data.c \
+	src/memory.c \
 	src/runtime.c \
 	src/shmem.h \
 	src/shmem_internal.h \

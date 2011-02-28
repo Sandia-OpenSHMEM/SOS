@@ -9,6 +9,15 @@
 #include <stddef.h>
 #include <complex.h>
 
+#define SHMEM_CMP_EQ 1
+#define SHMEM_CMP_NE 2
+#define SHMEM_CMP_GT 3
+#define SHMEM_CMP_GE 4
+#define SHMEM_CMP_LT 5
+#define SHMEM_CMP_LE 6
+
+#define _SHMEM_BARRIER_SYNC_SIZE 1
+
 /* run-time */
 void start_pes(int npes);
 int shmem_my_pe(void);
@@ -114,7 +123,7 @@ long shmem_swap(long *target, long value, int pe);
 /* Atomic memory conditional swap routines */
 int shmem_int_cswap(int *target, int cond, int value, int pe);
 long shmem_long_cswap(long *target, long cond, long value, int pe);
-long shmem_longlong_cswap(long long * target, long long cond, 
+long long shmem_longlong_cswap(long long * target, long long cond, 
                           long long value, int pe);
 
 /* Atomic memory increment routines */

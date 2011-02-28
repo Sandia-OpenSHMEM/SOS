@@ -31,7 +31,7 @@ start_pes(int npes)
     ptl_process_t *mapping;
     ptl_md_t md;
     ptl_le_t le;
-    ptl_jid_t jid;
+    ptl_jid_t jid = PTL_JID_ANY;
     ptl_ni_limits_t ni_limits;
 
     /* Fix me: PTL_INVALID_HANDLE isn't constant in the current
@@ -85,11 +85,7 @@ start_pes(int npes)
     le.start = 0;
     le.length = SIZE_MAX;
     le.ct_handle = target_ct_h;
-#if 0 /* BWB: FIX ME */
     le.ac_id.jid = jid;
-#else
-    le.ac_id.jid = PTL_JID_ANY;
-#endif
     le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
         PTL_LE_EVENT_SUCCESS_DISABLE | 
         PTL_LE_EVENT_CT_COMM;
@@ -178,4 +174,23 @@ int
 _num_pes(void)
 {
     return shmem_n_pes();
+}
+
+
+int 
+shmem_pe_accessible(int pe)
+{
+    if (pe > 0 && pe < shmem_n_pes()) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+
+int
+shmem_addr_accessible(void *addr, int pe)
+{
+    /* BWB: This could probably be implemented better */
+    return 1;
 }
