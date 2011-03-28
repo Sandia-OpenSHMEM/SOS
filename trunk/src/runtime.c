@@ -180,7 +180,7 @@ _num_pes(void)
 int 
 shmem_pe_accessible(int pe)
 {
-    if (pe > 0 && pe < shmem_n_pes()) {
+    if (pe >= 0 && pe < shmem_n_pes()) {
         return 1;
     } else {
         return 0;
