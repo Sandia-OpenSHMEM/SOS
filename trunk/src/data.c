@@ -18,7 +18,7 @@ static inline
 void
 int_shmem_put(void *target, const void *source, size_t len, int pe)
 {
-    size_t sent = 0;
+    size_t sent;
     int ret;
     ptl_process_t peer;
     peer.rank = pe;
@@ -55,6 +55,57 @@ int_shmem_put(void *target, const void *source, size_t len, int pe)
 
 static inline
 void
+int_shmem_wait_nb(int event_cnt, ptl_event_kind_t etype)
+{
+    int ret;
+
+    /* wait for 'n' completions */
+    for(; event_cnt > 0; event_cnt-- ) {
+        ptl_event_t ev;
+        ret = PtlEQWait(source_eq_h, &ev);
+        if (PTL_OK != ret) { abort(); }
+
+        if (ev.type != etype) {
+            printf("received event of type %d\n", ev.type);
+            abort();
+        }
+    }
+}
+
+
+static inline
+int
+int_shmem_put_nb(void *target, const void *source, size_t len, int pe)
+{
+    size_t sent;
+    int ret, pending_events=0;
+    ptl_process_t peer;
+
+    peer.rank = pe;
+
+    for (sent = 0 ; sent < len ; sent += max_ordered_size) {
+        size_t bufsize = (len - sent < max_ordered_size)
+				? len - sent : max_ordered_size;
+        ret = PtlPut(md_h,
+                     (ptl_size_t) ((char*) source + sent),
+                     bufsize,
+                     PTL_CT_ACK_REQ,
+                     peer,
+                     pt_entry,
+                     0,
+                     (ptl_size_t) ((char*) target + sent),
+                     NULL,
+                     0);
+        if (PTL_OK != ret) { abort(); }
+        pending_counter++;
+        pending_events++;
+    }
+    return pending_events;
+}
+
+
+static inline
+void
 int_shmem_get(void *target, const void *source, size_t len, int pe)
 {
     int ret;
@@ -79,6 +130,28 @@ int_shmem_get(void *target, const void *source, size_t len, int pe)
         printf("received event of type %d\n", ev.type);
         abort();
     }
+}
+
+
+static inline
+int
+int_shmem_get_nb(void *target, const void *source, size_t len, int pe)
+{
+    int ret;
+    ptl_process_t peer;
+    peer.rank = pe;
+
+    ret = PtlGet(md_h,
+                 (ptl_size_t) source,
+                 len,
+                 peer,
+                 pt_entry,
+                 0,
+                 (ptl_size_t) target,
+                 0);
+    if (PTL_OK != ret) { abort(); }
+
+    return 1;
 }
 
 
@@ -363,28 +436,282 @@ shmem_getmem(void *target, const void *source, size_t len, int pe)
 }
 
 
+void
+shmem_float_iput(float *target, const float *source, ptrdiff_t tst, ptrdiff_t sst,
+                 size_t len, int pe)
+{
+    int event_cnt;
+
+    for (event_cnt=0; len > 0; --len) {
+        event_cnt += int_shmem_put_nb(target, source, sizeof(float), pe);
+	target += tst;
+	source += sst;
+    }
+    int_shmem_wait_nb(event_cnt, PTL_EVENT_SEND);
+}
+
+
+void
+shmem_double_iput(double *target, const double *source, ptrdiff_t tst,
+                  ptrdiff_t sst, size_t len, int pe)
+{
+    int event_cnt;
+
+    for (event_cnt=0; len > 0; --len) {
+        event_cnt += int_shmem_put_nb(target, source, sizeof(double), pe);
+	target += tst;
+	source += sst;
+    }
+    int_shmem_wait_nb(event_cnt, PTL_EVENT_SEND);
+}
+
+
+void
+shmem_longdouble_iput(long double *target, const long double *source,
+                      ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe)
+{
+    int event_cnt;
+
+    for (event_cnt=0; len > 0; --len) {
+        event_cnt += int_shmem_put_nb(target, source, sizeof(long double), pe);
+	target += tst;
+	source += sst;
+    }
+    int_shmem_wait_nb(event_cnt, PTL_EVENT_SEND);
+}
+
+
+void
+shmem_short_iput(short *target, const short *source, ptrdiff_t tst, ptrdiff_t sst,
+                 size_t len, int pe)
+{
+    int event_cnt;
+
+    for (event_cnt=0; len > 0; --len) {
+        event_cnt += int_shmem_put_nb(target, source, sizeof(short), pe);
+	target += tst;
+	source += sst;
+    }
+    int_shmem_wait_nb(event_cnt, PTL_EVENT_SEND);
+}
+
+
+void
+shmem_int_iput(int *target, const int *source, ptrdiff_t tst, ptrdiff_t sst,
+               size_t len, int pe)
+{
+    int event_cnt;
+
+    for (event_cnt=0; len > 0; --len) {
+        event_cnt += int_shmem_put_nb(target, source, sizeof(int), pe);
+	target += tst;
+	source += sst;
+    }
+    int_shmem_wait_nb(event_cnt, PTL_EVENT_SEND);
+}
+
+
+void
+shmem_long_iput(long *target, const long *source, ptrdiff_t tst,
+                ptrdiff_t sst, size_t len, int pe)
+{
+    int event_cnt;
+
+    for (event_cnt=0; len > 0; --len) {
+        event_cnt += int_shmem_put_nb(target, source, sizeof(long), pe);
+	target += tst;
+	source += sst;
+    }
+    int_shmem_wait_nb(event_cnt, PTL_EVENT_SEND);
+}
+
+
+void
+shmem_longlong_iput(long long *target, const long long *source, ptrdiff_t tst,
+                    ptrdiff_t sst, size_t len, int pe)
+{
+    int event_cnt;
+
+    for (event_cnt=0; len > 0; --len) {
+        event_cnt += int_shmem_put_nb(target, source, sizeof(long long), pe);
+	target += tst;
+	source += sst;
+    }
+    int_shmem_wait_nb(event_cnt, PTL_EVENT_SEND);
+}
+
+
+void
+shmem_iput32(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst,
+             size_t len, int pe)
+{
+    int event_cnt;
+
+    for (event_cnt=0; len > 0; --len) {
+        event_cnt += int_shmem_put_nb(target, source, sizeof(uint32_t), pe);
+	target = (uint32_t*)target + tst;
+	source = (uint32_t*)source + sst;
+    }
+    int_shmem_wait_nb(event_cnt, PTL_EVENT_SEND);
+}
+
+
+void
+shmem_iput64(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst,
+             size_t len, int pe)
+{
+    int event_cnt;
+
+    for (event_cnt=0; len > 0; --len) {
+        event_cnt += int_shmem_put_nb(target, source, sizeof(uint64_t), pe);
+	target = (uint64_t*)target + tst;
+	source = (uint64_t*)source + sst;
+    }
+    int_shmem_wait_nb(event_cnt, PTL_EVENT_SEND);
+}
+
+
+void
+shmem_iput128(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe)
+{
+    int event_cnt;
+
+    tst *= 16;
+    sst *= 16;
+    for (event_cnt=0; len > 0; --len) {
+        event_cnt += int_shmem_put_nb(target, source, 16, pe);
+	target = (uint8_t*)target + tst;
+	source = (uint8_t*)source + sst;
+    }
+    int_shmem_wait_nb(event_cnt, PTL_EVENT_SEND);
+}
+
+
+void
+shmem_float_iget(float *target, const float *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe)
+{
+    for (; len > 0; --len ) {
+        int_shmem_get(target, source, sizeof(float), pe);
+	target += tst;
+	source += sst;
+    }
+}
+
+
+void
+shmem_double_iget(double *target, const double *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe)
+{
+    for (; len > 0; --len ) {
+        int_shmem_get(target, source, sizeof(double), pe);
+	target += tst;
+	source += sst;
+    }
+}
+
+
+void
+shmem_longdouble_iget(long double *target, const long double *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe)
+{
+    for (; len > 0; --len ) {
+        int_shmem_get(target, source, sizeof(long double), pe);
+	target += tst;
+	source += sst;
+    }
+}
+
+
 #if 0
+void
+shmem_short_iget(short *target, const short *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe)
+{
+    int event_cnt;
 
-void shmem_float_iput(float *target, const float *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_double_iput(double *target, const double *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_longdouble_iput(long double *target, const long double *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_short_iput(short *target, const short *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_int_iput(int *target, const int *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_long_iput(long *target, const long *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_longlong_iput(long long *target, const long long *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_iput32(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_iput64(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_iput128(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
+    for (event_cnt=0; len > 0; --len ) {
+        event_cnt += int_shmem_get_nb(target, source, sizeof(short), pe);
+	target += tst;
+	source += sst;
+	event_cnt++;
+    }
+    int_shmem_wait_nb(event_cnt,  PTL_EVENT_REPLY);
+}
 
-void shmem_float_iget(float *target, const float *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_double_iget(double *target, const double *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_longdouble_iget(long double *target, const long double *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_short_iget(short *target, const short *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_int_iget(int *target, const int *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_long_iget(long *target, const long *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_longlong_iget(long long *target, const long long *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_iget32(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_iget64(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_iget128(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-
+#else
+void
+shmem_short_iget(short *target, const short *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe)
+{
+    for (; len > 0; --len ) {
+        int_shmem_get(target, source, sizeof(short), pe);
+	target += tst;
+	source += sst;
+    }
+}
 #endif
+
+
+void
+shmem_int_iget(int *target, const int *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe)
+{
+    for (; len > 0; --len ) {
+        int_shmem_get(target, source, sizeof(int), pe);
+	target += tst;
+	source += sst;
+    }
+}
+
+
+void
+shmem_long_iget(long *target, const long *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe)
+{
+    for (; len > 0; --len ) {
+        int_shmem_get(target, source, sizeof(long), pe);
+	target += tst;
+	source += sst;
+    }
+}
+
+
+void
+shmem_longlong_iget(long long *target, const long long *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe)
+{
+    for (; len > 0; --len ) {
+        int_shmem_get(target, source, sizeof(long long), pe);
+	target += tst;
+	source += sst;
+    }
+}
+
+
+void
+shmem_iget32(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe)
+{
+    for (; len > 0; --len ) {
+        int_shmem_get(target, source, sizeof(uint32_t), pe);
+	target = (uint32_t*)target + tst;
+	source = (uint32_t*)source + sst;
+    }
+}
+
+
+void
+shmem_iget64(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe)
+{
+    for (; len > 0; --len ) {
+        int_shmem_get(target, source, sizeof(uint64_t), pe);
+	target = (uint64_t*)target + tst;
+	source = (uint64_t*)source + sst;
+    }
+}
+
+
+void
+shmem_iget128(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe)
+{
+    tst *= 16;
+    sst *= 16;
+    for (; len > 0; --len ) {
+        int_shmem_get(target, source, 16, pe);
+	target = (uint8_t*)target + tst;
+	source = (uint8_t*)source + sst;
+    }
+}
+
