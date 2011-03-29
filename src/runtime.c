@@ -14,15 +14,27 @@
 #include "shmem_internal.h"
 
 ptl_handle_ni_t ni_h;
-ptl_pt_index_t pt_entry = PTL_PT_ANY;
+ptl_pt_index_t data_pt = PTL_PT_ANY;
+ptl_pt_index_t heap_pt = PTL_PT_ANY;
 ptl_handle_md_t md_h;
-ptl_handle_le_t le_h;
+ptl_handle_le_t data_le_h;
+ptl_handle_le_t heap_le_h;
 ptl_handle_ct_t target_ct_h;
 ptl_handle_ct_t source_ct_h;
 ptl_handle_ct_t source_eq_h;
 ptl_handle_eq_t err_eq_h;
 ptl_size_t max_ordered_size = 0;
 ptl_size_t pending_counter = 0;
+
+void *shmem_data_base = NULL;
+long shmem_data_length = 0;
+
+
+#ifdef __APPLE__
+#include <mach-o/getsect.h>
+#else
+extern char end;
+#endif
 
 void
 start_pes(int npes)
@@ -38,7 +50,8 @@ start_pes(int npes)
        implementation.  Needs to be, but work around for now */
     ni_h = PTL_INVALID_HANDLE;
     md_h = PTL_INVALID_HANDLE;
-    le_h = PTL_INVALID_HANDLE;
+    data_le_h = PTL_INVALID_HANDLE;
+    heap_le_h = PTL_INVALID_HANDLE;
     target_ct_h = PTL_INVALID_HANDLE;
     source_ct_h = PTL_INVALID_HANDLE;
     source_eq_h = PTL_INVALID_HANDLE;
@@ -74,27 +87,54 @@ start_pes(int npes)
     ret = PtlPTAlloc(ni_h,
                      0,
                      err_eq_h,
-                     SHMEM_IDX,
-                     &pt_entry);
+                     DATA_IDX,
+                     &data_pt);
+    if (PTL_OK != ret) goto cleanup;
+    ret = PtlPTAlloc(ni_h,
+                     0,
+                     err_eq_h,
+                     HEAP_IDX,
+                     &heap_pt);
     if (PTL_OK != ret) goto cleanup;
 
-    /* Open LE to all memory */
+    /* target ct */
     ret = PtlCTAlloc(ni_h, &target_ct_h);
     if (PTL_OK != ret) goto cleanup;
 
+    /* Open LE to data section */
     le.start = 0;
-    le.length = SIZE_MAX;
+#ifdef __APPLE__
+    le.length = shmem_data_length = get_end();
+#else
+    le.length = shmem_data_length = (unsigned long) &end;
+#endif
     le.ct_handle = target_ct_h;
     le.ac_id.jid = jid;
     le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
         PTL_LE_EVENT_SUCCESS_DISABLE | 
         PTL_LE_EVENT_CT_COMM;
     ret = PtlLEAppend(ni_h,
-                      pt_entry,
+                      data_pt,
                       &le,
                       PTL_PRIORITY_LIST,
                       NULL,
-                      &le_h);
+                      &data_le_h);
+    if (PTL_OK != ret) goto cleanup;
+
+    /* Open LE to heap section */
+    le.start = shmem_heap_base;
+    le.length = shmem_heap_length;
+    le.ct_handle = target_ct_h;
+    le.ac_id.jid = jid;
+    le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
+        PTL_LE_EVENT_SUCCESS_DISABLE | 
+        PTL_LE_EVENT_CT_COMM;
+    ret = PtlLEAppend(ni_h,
+                      heap_pt,
+                      &le,
+                      PTL_PRIORITY_LIST,
+                      NULL,
+                      &heap_le_h);
     if (PTL_OK != ret) goto cleanup;
 
     /* Open MD to all memory */
@@ -128,14 +168,20 @@ start_pes(int npes)
     if (!PtlHandleIsEqual(source_eq_h, PTL_INVALID_HANDLE)) {
         PtlEQFree(source_eq_h);
     }
-    if (!PtlHandleIsEqual(le_h, PTL_INVALID_HANDLE)) {
-        PtlLEUnlink(le_h);
+    if (!PtlHandleIsEqual(heap_le_h, PTL_INVALID_HANDLE)) {
+        PtlLEUnlink(heap_le_h);
+    }
+    if (!PtlHandleIsEqual(data_le_h, PTL_INVALID_HANDLE)) {
+        PtlLEUnlink(data_le_h);
     }
     if (!PtlHandleIsEqual(target_ct_h, PTL_INVALID_HANDLE)) {
         PtlCTFree(target_ct_h);
     }
-    if (PTL_PT_ANY != pt_entry) {
-        PtlPTFree(ni_h, pt_entry);
+    if (PTL_PT_ANY != heap_pt) {
+        PtlPTFree(ni_h, heap_pt);
+    }
+    if (PTL_PT_ANY != data_pt) {
+        PtlPTFree(ni_h, data_pt);
     }
     if (PtlHandleIsEqual(err_eq_h, PTL_INVALID_HANDLE)) {
         PtlEQFree(err_eq_h);

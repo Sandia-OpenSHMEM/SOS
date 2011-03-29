@@ -15,9 +15,12 @@
 #define SHMEM_SWAP(target, source, cond, pe, op, datatype)      \
     do {                                                        \
         int ret;                                                \
+        ptl_pt_index_t pt;                                      \
+        long offset;                                            \
         ptl_process_t peer;                                     \
         ptl_event_t ev;                                         \
         peer.rank = pe;                                         \
+        GET_REMOTE_ACCESS(target, pt, offset);                  \
                                                                 \
         ret = PtlSwap(md_h,                                     \
                       (ptl_size_t) source,                      \
@@ -25,9 +28,9 @@
                       (ptl_size_t) source,                      \
                       sizeof(*source),                          \
                       peer,                                     \
-                      pt_entry,                                 \
+                      pt,                                       \
                       0,                                        \
-                      (ptl_size_t) target,                      \
+                      offset,                                   \
                       NULL,                                     \
                       0,                                        \
                       cond,                                     \
@@ -44,18 +47,21 @@
 #define SHMEM_ADD(target, incr, pe, datatype)                   \
     do {                                                        \
         int ret;                                                \
+        ptl_pt_index_t pt;                                      \
+        long offset;                                            \
         ptl_event_t ev;                                         \
         ptl_process_t peer;                                     \
         peer.rank = pe;                                         \
+        GET_REMOTE_ACCESS(target, pt, offset);                  \
                                                                 \
         ret = PtlAtomic(md_h,                                   \
                         (ptl_size_t) incr,                      \
                         sizeof(*incr),                          \
                         PTL_CT_ACK_REQ,                         \
                         peer,                                   \
-                        pt_entry,                               \
+                        pt,                                     \
                         0,                                      \
-                        (ptl_size_t) target,                    \
+                        offset,                                 \
                         NULL,                                   \
                         0,                                      \
                         PTL_SUM,                                \
@@ -74,9 +80,12 @@
 #define SHMEM_FADD(target, source, pe, datatype)                \
     do {                                                        \
         int ret;                                                \
+        ptl_pt_index_t pt;                                      \
+        long offset;                                            \
         ptl_event_t ev;                                         \
         ptl_process_t peer;                                     \
         peer.rank = pe;                                         \
+        GET_REMOTE_ACCESS(target, pt, offset);                  \
                                                                 \
         ret = PtlFetchAtomic(md_h,                              \
                              (ptl_size_t) source,               \
@@ -84,9 +93,9 @@
                              (ptl_size_t) source,               \
                              sizeof(*source),                   \
                              peer,                              \
-                             pt_entry,                          \
+                             pt,                                \
                              0,                                 \
-                             (ptl_size_t) target,               \
+                             offset,                            \
                              NULL,                              \
                              0,                                 \
                              PTL_SUM,                           \
@@ -277,6 +286,7 @@ shmem_longlong_fadd(long long *target, long long value,
 }
 
 
+/* BWB: FIX ME: this isn't quite correct; the standard requires ordering */
 void
 shmem_clear_lock(long *lock)
 {
@@ -285,16 +295,19 @@ shmem_clear_lock(long *lock)
     int ret;
     ptl_event_t ev;
     ptl_process_t peer;
+    ptl_pt_index_t pt;
+    long offset;
     peer.rank = 0;
+    GET_REMOTE_ACCESS(lock, pt, offset);
     
     ret = PtlPut(md_h,
                  (ptl_size_t) &new,
                  sizeof(long),
                  PTL_ACK_REQ,
                  peer,
-                 pt_entry,
+                 pt,
                  0,
-                 (ptl_size_t) lock,
+                 offset,
                  NULL,
                  0);
     if (PTL_OK != ret) { abort(); }
