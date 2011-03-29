@@ -190,7 +190,6 @@ start_pes(int npes)
         PtlNIFini(ni_h);
     }
     PtlFini();
-    /* BWB: FIX ME: should probably be a bit more subtle here */
     abort();
 }
 
@@ -228,15 +227,17 @@ shmem_pe_accessible(int pe)
 {
     if (pe >= 0 && pe < shmem_n_pes()) {
         return 1;
-    } else {
-        return 0;
     }
+    return 0;
 }
 
 
 int
 shmem_addr_accessible(void *addr, int pe)
 {
-    /* BWB: This could probably be implemented better */
-    return 1;
+    if (target > shmem_heap_base &&
+        (char*) target < (char*) shmem_heap_base + shmem_heap_length) {
+        return 1;
+    }
+    return 0;
 }
