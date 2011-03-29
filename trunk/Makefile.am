@@ -29,7 +29,10 @@ TESTS = \
 	test/iput_float \
 	test/iput_long \
 	test/iput_longdouble \
-	test/iput_longlong
+	test/iput_longlong \
+	test/sping \
+	test/pingpong-short \
+	test/iput-iget
 
 check_PROGRAMS = $(TESTS)
 PROCS ?= 2
@@ -76,4 +79,13 @@ test_iput_longdouble_LDADD = libshmem_portals.la
 
 test_iput_longlong_SOURCES = test/iput_longlong.c
 test_iput_longlong_LDADD = libshmem_portals.la
+
+test_sping_SOURCES = test/sping.c
+test_sping_LDADD = libshmem_portals.la
+
+test_pingpong_short_SOURCES = test/pingpong-short.c
+test_pingpong_short_LDADD = libshmem_portals.la
+
+test_iput_iget_SOURCES = test/iput-iget.c
+test_iput_iget_LDADD = libshmem_portals.la
 
