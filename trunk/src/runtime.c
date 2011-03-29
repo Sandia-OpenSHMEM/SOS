@@ -9,6 +9,7 @@
 #include <portals4_runtime.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
@@ -219,6 +220,18 @@ int
 _num_pes(void)
 {
     return shmem_n_pes();
+}
+
+
+double
+shmem_wtime(void)
+{
+    double wtime;
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    wtime = tv.tv_sec;
+    wtime += (double)tv.tv_usec / 1000000.0;
+    return wtime;
 }
 
 

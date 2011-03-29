@@ -33,7 +33,8 @@ TESTS = \
 	test/iput_longlong \
 	test/sping \
 	test/pingpong-short \
-	test/iput-iget
+	test/iput-iget \
+	test/shmemlatency
 
 check_PROGRAMS = $(TESTS)
 PROCS ?= 2
@@ -89,4 +90,7 @@ test_pingpong_short_LDADD = libshmem_portals.la
 
 test_iput_iget_SOURCES = test/iput-iget.c
 test_iput_iget_LDADD = libshmem_portals.la
+
+test_shmemlatency_SOURCES = test/shmemlatency.c
+test_shmemlatency_LDADD = libshmem_portals.la
 

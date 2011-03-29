@@ -41,8 +41,12 @@ int main(int argc, char **argv)
 		{
 			printf("ERR: target on PE %d is %ld %ld %ld %ld %ld\n"
 				"  Expected 1,3,5,7,9?\n",
-				me, target[0], target[1], target[2],
-				target[3], target[4] );
+                               me, 
+                               (long int) target[0], 
+                               (long int) target[1], 
+                               (long int) target[2],
+                               (long int) target[3], 
+                               (long int) target[4] );
 			rc = 1;
 		}
 	}
