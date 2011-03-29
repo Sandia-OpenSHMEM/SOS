@@ -21,7 +21,10 @@ int_shmem_put(void *target, const void *source, size_t len, int pe)
     size_t sent;
     int ret;
     ptl_process_t peer;
+    ptl_pt_index_t pt;
+    long offset;
     peer.rank = pe;
+    GET_REMOTE_ACCESS(target, pt, offset);
 
     for (sent = 0 ; sent < len ; sent += max_ordered_size) {
         size_t bufsize = (len - sent < max_ordered_size) ? len - sent : max_ordered_size;
@@ -30,9 +33,9 @@ int_shmem_put(void *target, const void *source, size_t len, int pe)
                      bufsize,
                      PTL_CT_ACK_REQ,
                      peer,
-                     pt_entry,
+                     pt,
                      0,
-                     (ptl_size_t) ((char*) target + sent),
+                     offset + sent,
                      NULL,
                      0);
         if (PTL_OK != ret) { abort(); }
@@ -80,8 +83,10 @@ int_shmem_put_nb(void *target, const void *source, size_t len, int pe)
     size_t sent;
     int ret, pending_events=0;
     ptl_process_t peer;
-
+    ptl_pt_index_t pt;
+    long offset;
     peer.rank = pe;
+    GET_REMOTE_ACCESS(target, pt, offset);
 
     for (sent = 0 ; sent < len ; sent += max_ordered_size) {
         size_t bufsize = (len - sent < max_ordered_size)
@@ -91,9 +96,9 @@ int_shmem_put_nb(void *target, const void *source, size_t len, int pe)
                      bufsize,
                      PTL_CT_ACK_REQ,
                      peer,
-                     pt_entry,
+                     pt,
                      0,
-                     (ptl_size_t) ((char*) target + sent),
+                     offset + sent,
                      NULL,
                      0);
         if (PTL_OK != ret) { abort(); }
@@ -111,15 +116,18 @@ int_shmem_get(void *target, const void *source, size_t len, int pe)
     int ret;
     ptl_event_t ev;
     ptl_process_t peer;
+    ptl_pt_index_t pt;
+    long offset;
     peer.rank = pe;
+    GET_REMOTE_ACCESS(target, pt, offset);
 
     ret = PtlGet(md_h,
                  (ptl_size_t) source,
                  len,
                  peer,
-                 pt_entry,
+                 pt,
                  0,
-                 (ptl_size_t) target,
+                 offset,
                  0);
     if (PTL_OK != ret) { abort(); }
 
@@ -139,15 +147,18 @@ int_shmem_get_nb(void *target, const void *source, size_t len, int pe)
 {
     int ret;
     ptl_process_t peer;
+    ptl_pt_index_t pt;
+    long offset;
     peer.rank = pe;
+    GET_REMOTE_ACCESS(target, pt, offset);
 
     ret = PtlGet(md_h,
                  (ptl_size_t) source,
                  len,
                  peer,
-                 pt_entry,
+                 pt,
                  0,
-                 (ptl_size_t) target,
+                 offset,
                  0);
     if (PTL_OK != ret) { abort(); }
 

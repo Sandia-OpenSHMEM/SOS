@@ -8,6 +8,7 @@
 #include <portals4.h>
 #include <portals4_runtime.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
