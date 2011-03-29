@@ -119,10 +119,10 @@ int_shmem_get(void *target, const void *source, size_t len, int pe)
     ptl_pt_index_t pt;
     long offset;
     peer.rank = pe;
-    GET_REMOTE_ACCESS(target, pt, offset);
+    GET_REMOTE_ACCESS(source, pt, offset);
 
     ret = PtlGet(md_h,
-                 (ptl_size_t) source,
+                 (ptl_size_t) target,
                  len,
                  peer,
                  pt,
@@ -150,10 +150,10 @@ int_shmem_get_nb(void *target, const void *source, size_t len, int pe)
     ptl_pt_index_t pt;
     long offset;
     peer.rank = pe;
-    GET_REMOTE_ACCESS(target, pt, offset);
+    GET_REMOTE_ACCESS(source, pt, offset);
 
     ret = PtlGet(md_h,
-                 (ptl_size_t) source,
+                 (ptl_size_t) target,
                  len,
                  peer,
                  pt,
@@ -451,9 +451,9 @@ void
 shmem_float_iput(float *target, const float *source, ptrdiff_t tst, ptrdiff_t sst,
                  size_t len, int pe)
 {
-    int event_cnt;
+    int event_cnt = 0;
 
-    for (event_cnt=0; len > 0; --len) {
+    for ( ; len > 0 ; --len) {
         event_cnt += int_shmem_put_nb(target, source, sizeof(float), pe);
 	target += tst;
 	source += sst;
