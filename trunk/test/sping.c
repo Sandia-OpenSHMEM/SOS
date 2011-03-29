@@ -225,9 +225,6 @@ dprint("[%d] after wait @ line %d\n",proc,__LINE__-1); // XXX
 		printStats (proc, peer, doprint, nwords, t);
 	}
 
-	printf ("%d(%d) Pre-barrier\n", proc, nproc);
 	shmem_barrier_all();
-
-	printf ("%d(%d) Exit.\n", proc, nproc);
 	return 0;
 }
