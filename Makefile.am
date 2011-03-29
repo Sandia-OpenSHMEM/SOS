@@ -5,6 +5,7 @@ libshmem_portals_la_SOURCES = \
 	src/atomic.c \
 	src/collectives.c \
 	src/data.c \
+	src/malloc.c \
 	src/memory.c \
 	src/runtime.c \
 	src/shmem.h \

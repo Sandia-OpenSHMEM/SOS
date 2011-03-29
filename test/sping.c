@@ -152,14 +152,14 @@ int main (int argc, char *argv[])
 	else if ((incWords = getSize (argv[optind++])) < 0)
 		usage (progName);
 
-	if (!(rbuf = (long *)malloc(maxWords * sizeof(long))))
+	if (!(rbuf = (long *)shmalloc(maxWords * sizeof(long))))
 	{
 		perror ("Failed memory allocation");
 		exit (1);
 	}
 	memset (rbuf, 0, maxWords * sizeof (long));
 
-	if (!(tbuf = (long *)malloc(maxWords * sizeof(long))))
+	if (!(tbuf = (long *)shmalloc(maxWords * sizeof(long))))
 	{
 		perror ("Failed memory allocation");
 		exit (1);
