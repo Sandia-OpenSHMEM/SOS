@@ -30,6 +30,7 @@ int shmem_my_pe(void);
 int _my_pe(void);
 int shmem_n_pes(void);
 int _num_pes(void);
+double shmem_wtime(void);
 
 /* Elemental data routines */
 void shmem_float_p(float *addr, float value, int pe);

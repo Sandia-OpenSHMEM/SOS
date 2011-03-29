@@ -489,6 +489,7 @@ extern void* shmem_get_next(int incr);
 #define MORECORE_CANNOT_TRIM 1
 #define HAVE_MMAP 0
 #define HAVE_MREMAP 0
+#include <time.h>
 /* END SHMEM CHANGES */
 
 /* Version identifier to allow people to support multiple versions */
@@ -4141,12 +4142,14 @@ static int sys_trim(mstate m, size_t pad) {
           if (HAVE_MMAP &&
               sp->size >= extra &&
               !has_segment_link(m, sp)) { /* can't shrink if pinned */
+#if HAVE_MREMAP || HAVE_MMAP
             size_t newsize = sp->size - extra;
             /* Prefer mremap, fall back to munmap */
             if ((CALL_MREMAP(sp->base, sp->size, newsize, 0) != MFAIL) ||
                 (CALL_MUNMAP(sp->base + newsize, extra) == 0)) {
               released = extra;
             }
+#endif
           }
         }
         else if (HAVE_MORECORE) {
