@@ -235,8 +235,8 @@ shmem_pe_accessible(int pe)
 int
 shmem_addr_accessible(void *addr, int pe)
 {
-    if (target > shmem_heap_base &&
-        (char*) target < (char*) shmem_heap_base + shmem_heap_length) {
+    if (addr > shmem_heap_base &&
+        (char*) addr < (char*) shmem_heap_base + shmem_heap_length) {
         return 1;
     }
     return 0;
