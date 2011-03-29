@@ -193,28 +193,20 @@ int main (int argc, char *argv[])
 			if (proc & 1)
 			{
 				r--;
-dprint("[%d] wait @ line %d\n",proc,__LINE__); // XXX
 				shmem_wait(&rbuf[nwords-1], 0);
-dprint("[%d] after wait @ line %d\n",proc,__LINE__); // XXX
 				rbuf[nwords-1] = 0;
 			}
 
 			while (r-- > 0)
 			{
-                            dprint("[%d] put to %d @ line %d (%ld)\n",proc,peer,__LINE__+1, tbuf); // XXX
 				shmem_long_put(rbuf, tbuf, nwords, peer);
-dprint("[%d] wait @ line %d\n",proc,__LINE__+1); // XXX
 				shmem_wait(&rbuf[nwords-1], 0);
-dprint("[%d] after wait @ line %d\n",proc,__LINE__-1); // XXX
 				rbuf[nwords-1] = 0;
 			}
 
 			if (proc & 1)
 			{
-				dprint("[%d] (proc & 1) put(rbuf,tbuf, nwords %d peer %d)\n",
-						proc,nwords,peer); // XXX
 				shmem_long_put(rbuf, tbuf, nwords, peer);
-				dprint("[%d] after put @ line %d\n",proc,__LINE__-1); // XXX
 			}
 		}
 		tv[1] = gettime();
@@ -224,6 +216,9 @@ dprint("[%d] after wait @ line %d\n",proc,__LINE__-1); // XXX
 
 		printStats (proc, peer, doprint, nwords, t);
 	}
+
+    shfree(rbuf);
+    shfree(tbuf);
 
 	shmem_barrier_all();
 	return 0;
