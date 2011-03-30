@@ -481,7 +481,9 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 */
 
 /* BEGIN SHMEM CHANGES */
+#include <time.h>
 extern void* shmem_get_next(int incr);
+extern long malloc_error;
 #define USE_DL_PREFIX 1
 #define HAVE_MORECORE 1
 #define MORECORE shmem_get_next
@@ -489,7 +491,7 @@ extern void* shmem_get_next(int incr);
 #define MORECORE_CANNOT_TRIM 1
 #define HAVE_MMAP 0
 #define HAVE_MREMAP 0
-#include <time.h>
+#define MALLOC_FAILURE_ACTION malloc_error = ENOMEM;
 /* END SHMEM CHANGES */
 
 /* Version identifier to allow people to support multiple versions */

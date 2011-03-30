@@ -61,6 +61,11 @@ dnl check for library functions
 
 dnl final output
 
+if test -n "$with_portals4" ; then
+  DISTCHECK_CONFIGURE_FLAGS="--with-portals4=${with_portals4}"
+fi
+AC_SUBST(DISTCHECK_CONFIGURE_FLAGS)
+
 dnl Cause Automake to delete emacs turds
 CLEANFILES="*~"
 AC_SUBST(CLEANFILES)
