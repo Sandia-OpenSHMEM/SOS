@@ -122,12 +122,14 @@ void shmem_wait_until(long *ivar, int cmp, long value);
 /* Atomic memory swap routines */
 float shmem_float_swap(float *target, float value, int pe);
 double shmem_double_swap(double *target, double value, int pe);
+short shmem_short_swap(short *target, short value, int pe);
 int shmem_int_swap(int *target, int value, int pe);
 long shmem_long_swap(long *target, long value, int pe);
 long long shmem_longlong_swap(long long *target, long long value, int pe);
 long shmem_swap(long *target, long value, int pe);
 
 /* Atomic memory conditional swap routines */
+short shmem_short_cswap(short *target, short cond, short value, int pe);
 int shmem_int_cswap(int *target, int cond, int value, int pe);
 long shmem_long_cswap(long *target, long cond, long value, int pe);
 long long shmem_longlong_cswap(long long * target, long long cond, 

@@ -50,7 +50,7 @@ shmem_quiet(void)
     ptl_ct_event_t ct;
 
     /* wait for remote completion (acks) of all pending events */
-    ret = PtlCTWait(source_ct_h, pending_counter, &ct);
+    ret = PtlCTWait(put_ct_h, pending_put_counter, &ct);
     if (PTL_OK != ret) { abort(); }
     if (ct.failure != 0) { abort(); }
 }

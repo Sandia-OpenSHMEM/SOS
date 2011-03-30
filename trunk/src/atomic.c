@@ -12,19 +12,32 @@
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
 
+#ifdef ENABLE_EVENT_COMPLETION
+#define SEND_WAIT()                                     \
+    do {                                                \
+        ptl_event_t ev;                                 \
+        int ret;                                        \
+        ret = PtlEQWait(put_eq_h, &ev);                 \
+        if (PTL_OK != ret) { abort(); }                 \
+        if (ev.ni_fail_type != PTL_OK) { abort(); }  \
+    } while (0)
+#else
+#define SEND_WAIT()
+#endif
+
 #define SHMEM_SWAP(target, source, cond, pe, op, datatype)      \
     do {                                                        \
         int ret;                                                \
         ptl_pt_index_t pt;                                      \
         long offset;                                            \
         ptl_process_t peer;                                     \
-        ptl_event_t ev;                                         \
+        ptl_ct_event_t ct;                                      \
         peer.rank = pe;                                         \
         GET_REMOTE_ACCESS(target, pt, offset);                  \
                                                                 \
-        ret = PtlSwap(md_h,                                     \
+        ret = PtlSwap(get_md_h,                                 \
                       (ptl_size_t) source,                      \
-                      md_h,                                     \
+                      put_md_h,                                 \
                       (ptl_size_t) source,                      \
                       sizeof(*source),                          \
                       peer,                                     \
@@ -37,11 +50,13 @@
                       op,                                       \
                       datatype);                                \
         if (PTL_OK != ret) { abort(); }                         \
+        pending_put_counter++;                                  \
+        pending_get_counter++;                                  \
                                                                 \
-        do {                                                    \
-            ret = PtlEQWait(source_eq_h, &ev);                  \
-            if (PTL_OK != ret) { abort(); }                     \
-        } while (ev.type != PTL_EVENT_REPLY);                   \
+        SEND_WAIT();                                            \
+        ret = PtlCTWait(get_ct_h, pending_get_counter, &ct);    \
+        if (PTL_OK != ret) { abort(); }                         \
+        if (ct.failure != 0) { abort(); }                       \
     } while(0)
 
 #define SHMEM_ADD(target, incr, pe, datatype)                   \
@@ -49,12 +64,11 @@
         int ret;                                                \
         ptl_pt_index_t pt;                                      \
         long offset;                                            \
-        ptl_event_t ev;                                         \
         ptl_process_t peer;                                     \
         peer.rank = pe;                                         \
         GET_REMOTE_ACCESS(target, pt, offset);                  \
                                                                 \
-        ret = PtlAtomic(md_h,                                   \
+        ret = PtlAtomic(put_md_h,                               \
                         (ptl_size_t) incr,                      \
                         sizeof(*incr),                          \
                         PTL_CT_ACK_REQ,                         \
@@ -67,14 +81,8 @@
                         PTL_SUM,                                \
                         datatype);                              \
         if (PTL_OK != ret) { abort(); }                         \
-                                                                \
-        ret = PtlEQWait(source_eq_h, &ev);                      \
-        if (PTL_OK != ret) { abort(); }                         \
-                                                                \
-        if (ev.type != PTL_EVENT_SEND) {                        \
-            printf("received event of type %d\n", ev.type);     \
-            abort();                                            \
-        }                                                       \
+        pending_put_counter++;                                  \
+        SEND_WAIT();                                            \
     } while(0)
 
 #define SHMEM_FADD(target, source, pe, datatype)                \
@@ -82,14 +90,14 @@
         int ret;                                                \
         ptl_pt_index_t pt;                                      \
         long offset;                                            \
-        ptl_event_t ev;                                         \
         ptl_process_t peer;                                     \
+        ptl_ct_event_t ct;                                      \
         peer.rank = pe;                                         \
         GET_REMOTE_ACCESS(target, pt, offset);                  \
                                                                 \
-        ret = PtlFetchAtomic(md_h,                              \
+        ret = PtlFetchAtomic(get_md_h,                          \
                              (ptl_size_t) source,               \
-                             md_h,                              \
+                             put_md_h,                          \
                              (ptl_size_t) source,               \
                              sizeof(*source),                   \
                              peer,                              \
@@ -101,11 +109,13 @@
                              PTL_SUM,                           \
                              datatype);                         \
         if (PTL_OK != ret) { abort(); }                         \
+        pending_put_counter++;                                  \
+        pending_get_counter++;                                  \
                                                                 \
-        do {                                                    \
-            ret = PtlEQWait(source_eq_h, &ev);                  \
-            if (PTL_OK != ret) { abort(); }                     \
-        } while (ev.type != PTL_EVENT_REPLY);                   \
+        SEND_WAIT();                                            \
+        ret = PtlCTWait(get_ct_h, pending_get_counter, &ct);    \
+        if (PTL_OK != ret) { abort(); }                         \
+        if (ct.failure != 0) { abort(); }                       \
     } while(0)
 
 
@@ -123,6 +133,15 @@ shmem_double_swap(double *target, double value, int pe)
 {
     double tmp = value;
     SHMEM_SWAP(target, &tmp, NULL, pe, PTL_SWAP, PTL_DOUBLE);
+    return tmp;
+}
+
+
+short
+shmem_short_swap(short *target, short value, int pe)
+{
+    short tmp = value;
+    SHMEM_SWAP(target, &tmp, NULL, pe, PTL_SWAP, PTL_SHORT);
     return tmp;
 }
 
@@ -159,6 +178,15 @@ shmem_swap(long *target, long value, int pe)
 {
     long tmp = value;
     SHMEM_SWAP(target, &tmp, NULL, pe, PTL_SWAP, PTL_LONG);
+    return tmp;
+}
+
+
+short
+shmem_short_cswap(short *target, short cond, short value, int pe)
+{
+    short tmp = value;
+    SHMEM_SWAP(target, &tmp, &cond, pe, PTL_CSWAP, PTL_SHORT);
     return tmp;
 }
 
@@ -290,25 +318,61 @@ shmem_longlong_fadd(long long *target, long long value,
     return source;
 }
 
+/*
+ * Use basic MCS distributed lock algorithm for lock
+ */
+struct lock_t {
+    short last; /* only has meaning on PE 0 */
+    short next;
+    short signal;
+    short pad;
+};
+typedef struct lock_t lock_t;
 
-/* BWB: FIX ME: this isn't quite correct; the standard requires ordering */
 void
-shmem_clear_lock(long *lock)
+shmem_clear_lock(long *lockp)
 {
+    lock_t *lock = (lock_t*) lockp;
+    short curr;
+
     shmem_quiet();
-    shmem_long_swap(lock, 0, 0);
+    curr = shmem_short_cswap(&(lock->last), shmem_my_pe() + 1, 0, 0);
+    if (curr != shmem_my_pe() + 1) {
+        shmem_short_wait(&(lock->next), 0);
+        shmem_short_p(&(lock->signal), 1, lock->next - 1);
+    }
 }
 
 
 void
-shmem_set_lock(long *lock)
+shmem_set_lock(long *lockp)
 {
-    while (1 == shmem_test_lock(lock));
+    lock_t *lock = (lock_t*) lockp;
+    short curr;
+
+    shmem_short_p(&(lock->next), 0, shmem_my_pe());
+    shmem_short_p(&(lock->signal), 0, shmem_my_pe());
+    shmem_quiet();
+    curr = shmem_short_swap(&(lock->last), shmem_my_pe() + 1, 0);
+    if (0 != curr) {
+        shmem_short_p(&(lock->next), shmem_my_pe() + 1, curr - 1);
+        shmem_short_wait(&(lock->signal), 0);
+    }
 }
 
 
 int
-shmem_test_lock(long *lock)
+shmem_test_lock(long *lockp)
 {
-    return shmem_long_cswap(lock, 0, 1, 0);
+    lock_t *lock = (lock_t*) lockp;
+    short curr;
+
+    shmem_short_p(&(lock->next), 0, shmem_my_pe());
+    shmem_short_p(&(lock->signal), 0, shmem_my_pe());
+    shmem_quiet();
+    curr = shmem_short_cswap(&(lock->last), 0, shmem_my_pe() + 1, 0);
+    if (0 == curr) {
+        return 0;
+    }
+    return 1;
 }
