@@ -148,8 +148,9 @@ shmem_long_swap(long *target, long value, int pe)
 long long
 shmem_longlong_swap(long long *target, long long value, int pe)
 {
-    /* BWB: Unimplemented */
-    return 0;
+    long long tmp = value;
+    SHMEM_SWAP(target, &tmp, NULL, pe, PTL_SWAP, PTL_LONG);
+    return tmp;
 }
 
 
@@ -184,8 +185,9 @@ long long
 shmem_longlong_cswap(long long * target, long long cond, 
                      long long value, int pe)
 {
-    /* BWB: Unimplemented */
-    return 0;
+    long long tmp = value;
+    SHMEM_SWAP(target, &tmp, &cond, pe, PTL_SWAP, PTL_LONG);
+    return tmp;
 }
 
 
@@ -208,7 +210,8 @@ shmem_long_inc(long *target, int pe)
 void
 shmem_longlong_inc(long long *target, int pe)
 {
-    /* BWB: Unimplemented */
+    long long tmp = 1;
+    SHMEM_ADD(target, &tmp, pe, PTL_LONG);
 }
 
 
@@ -233,8 +236,9 @@ shmem_long_finc(long *target, int pe)
 long long
 shmem_longlong_finc(long long *target, int pe)
 {
-    /* BWB: Unimplemented */
-    return 0;
+    long long source = 1;
+    SHMEM_FADD(target, &source, pe, PTL_LONG);
+    return source;
 }
 
 
@@ -255,7 +259,7 @@ shmem_long_add(long *target, long value, int pe)
 void
 shmem_longlong_add(long long *target, long long value, int pe)
 {
-    /* BWB: Unimplemented */
+    SHMEM_ADD(target, &value, pe, PTL_LONG);
 }
 
 
@@ -281,8 +285,9 @@ long long
 shmem_longlong_fadd(long long *target, long long value,
                     int pe)
 {
-    /* BWB: Unimplemented */
-    return 0;
+    long long source = value;
+    SHMEM_FADD(target, &source, pe, PTL_LONG);
+    return source;
 }
 
 
@@ -291,31 +296,7 @@ void
 shmem_clear_lock(long *lock)
 {
     shmem_quiet();
-    long new = 0;
-    int ret;
-    ptl_event_t ev;
-    ptl_process_t peer;
-    ptl_pt_index_t pt;
-    long offset;
-    peer.rank = 0;
-    GET_REMOTE_ACCESS(lock, pt, offset);
-    
-    ret = PtlPut(md_h,
-                 (ptl_size_t) &new,
-                 sizeof(long),
-                 PTL_ACK_REQ,
-                 peer,
-                 pt,
-                 0,
-                 offset,
-                 NULL,
-                 0);
-    if (PTL_OK != ret) { abort(); }
-        
-    do {
-        ret = PtlEQWait(source_eq_h, &ev);
-        if (PTL_OK != ret) { abort(); }
-    } while (ev.type != PTL_EVENT_ACK);
+    shmem_long_swap(lock, 0, 0);
 }
 
 

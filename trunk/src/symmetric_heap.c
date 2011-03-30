@@ -53,6 +53,7 @@ symmetric_init(void)
 void *
 shmalloc(size_t size)
 {
+    malloc_error = 0;
     return dlmalloc(size);
 }
 
@@ -60,6 +61,7 @@ shmalloc(size_t size)
 void
 shfree(void *ptr)
 {
+    malloc_error = 0;
     dlfree(ptr);
 }
 
@@ -67,6 +69,7 @@ shfree(void *ptr)
 void *
 shrealloc(void *ptr, size_t size)
 {
+    malloc_error = 0;
     return dlrealloc(ptr, size);
 }
 
@@ -74,5 +77,6 @@ shrealloc(void *ptr, size_t size)
 void *
 shmemalign(size_t alignment, size_t size)
 {
+    malloc_error = 0;
     return dlmemalign(alignment, size);
 }

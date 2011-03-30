@@ -1,14 +1,16 @@
 ACLOCAL_AMFLAGS = -I config
 
+EXTRA_DIST = README
+
 lib_LTLIBRARIES = libshmem_portals.la
 libshmem_portals_la_SOURCES = \
+	mpp/shmem.h \
 	src/atomic.c \
 	src/collectives.c \
 	src/data.c \
 	src/malloc.c \
 	src/memory.c \
 	src/runtime.c \
-	src/shmem.h \
 	src/shmem_internal.h \
 	src/symmetric_heap.c \
 	src/synchronization.c
