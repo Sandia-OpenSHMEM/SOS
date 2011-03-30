@@ -109,7 +109,6 @@
                              PTL_SUM,                           \
                              datatype);                         \
         if (PTL_OK != ret) { abort(); }                         \
-        pending_put_counter++;                                  \
         pending_get_counter++;                                  \
                                                                 \
         SEND_WAIT();                                            \
@@ -336,8 +335,8 @@ shmem_clear_lock(long *lockp)
     short curr;
 
     shmem_quiet();
-    curr = shmem_short_cswap(&(lock->last), shmem_my_pe() + 1, 0, 0);
-    if (curr != shmem_my_pe() + 1) {
+    curr = shmem_short_cswap(&(lock->last), shmem_int_my_pe + 1, 0, 0);
+    if (curr != shmem_int_my_pe + 1) {
         shmem_short_wait(&(lock->next), 0);
         shmem_short_p(&(lock->signal), 1, lock->next - 1);
     }
@@ -350,12 +349,12 @@ shmem_set_lock(long *lockp)
     lock_t *lock = (lock_t*) lockp;
     short curr;
 
-    shmem_short_p(&(lock->next), 0, shmem_my_pe());
-    shmem_short_p(&(lock->signal), 0, shmem_my_pe());
+    shmem_short_p(&(lock->next), 0, shmem_int_my_pe);
+    shmem_short_p(&(lock->signal), 0, shmem_int_my_pe);
     shmem_quiet();
-    curr = shmem_short_swap(&(lock->last), shmem_my_pe() + 1, 0);
+    curr = shmem_short_swap(&(lock->last), shmem_int_my_pe + 1, 0);
     if (0 != curr) {
-        shmem_short_p(&(lock->next), shmem_my_pe() + 1, curr - 1);
+        shmem_short_p(&(lock->next), shmem_int_my_pe + 1, curr - 1);
         shmem_short_wait(&(lock->signal), 0);
     }
 }
@@ -367,10 +366,10 @@ shmem_test_lock(long *lockp)
     lock_t *lock = (lock_t*) lockp;
     short curr;
 
-    shmem_short_p(&(lock->next), 0, shmem_my_pe());
-    shmem_short_p(&(lock->signal), 0, shmem_my_pe());
+    shmem_short_p(&(lock->next), 0, shmem_int_my_pe);
+    shmem_short_p(&(lock->signal), 0, shmem_int_my_pe);
     shmem_quiet();
-    curr = shmem_short_cswap(&(lock->last), 0, shmem_my_pe() + 1, 0);
+    curr = shmem_short_cswap(&(lock->last), 0, shmem_int_my_pe + 1, 0);
     if (0 == curr) {
         return 0;
     }

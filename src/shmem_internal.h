@@ -46,7 +46,12 @@ extern long shmem_heap_length;
 extern void *shmem_data_base;
 extern long shmem_data_length;
 
-/* Symmetric heap routines */
+extern int shmem_int_my_pe;
+extern int shmem_int_num_pes;
+
+
+/* initialization routines */
 int symmetric_init(void);
+int shmem_barrier_init(void);
 
 #endif

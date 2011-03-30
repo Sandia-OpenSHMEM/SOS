@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <stdio.h>
 
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
@@ -35,6 +36,8 @@ ptl_size_t pending_get_counter = 0;
 void *shmem_data_base = NULL;
 long shmem_data_length = 0;
 
+int shmem_int_my_pe = -1;
+int shmem_int_num_pes = -1;
 
 #ifdef __APPLE__
 #include <mach-o/getsect.h>
@@ -67,17 +70,21 @@ start_pes(int npes)
     put_eq_h = PTL_INVALID_HANDLE;
 #endif
     err_eq_h = PTL_INVALID_HANDLE;
-    
+
     /* Initialize Portals */
     ret = PtlInit();
     if (PTL_OK != ret) goto cleanup;
-    mapping  = malloc(sizeof(ptl_process_t) * runtime_get_size());
+
+    shmem_int_my_pe = runtime_get_rank();
+    shmem_int_num_pes = runtime_get_size();
+
+    mapping  = malloc(sizeof(ptl_process_t) * shmem_int_num_pes);
     ret = PtlNIInit(PTL_IFACE_DEFAULT,
                     PTL_NI_NO_MATCHING | PTL_NI_LOGICAL,
                     PTL_PID_ANY,
                     NULL,
                     &ni_limits,
-                    runtime_get_size(),
+                    shmem_int_num_pes,
                     NULL,
                     mapping,
                     &ni_h);
@@ -162,6 +169,7 @@ start_pes(int npes)
     md.start = 0;
     md.length = SIZE_MAX;
     md.options = PTL_MD_EVENT_CT_ACK | 
+        PTL_MD_EVENT_CT_REPLY | /* BWB: THis needs to be fixed */
 #if ! defined(ENABLE_EVENT_COMPLETION)
         PTL_MD_EVENT_SUCCESS_DISABLE |
 #endif
@@ -188,6 +196,10 @@ start_pes(int npes)
                     &md,
                     &get_md_h);
     if (PTL_OK != ret) goto cleanup;
+
+    /* setup space for barrier */
+    ret = shmem_barrier_init();
+    if (ret != 0) goto cleanup;
 
     /* finish up */
     runtime_barrier();
@@ -240,28 +252,28 @@ start_pes(int npes)
 int
 shmem_my_pe(void)
 {
-    return runtime_get_rank();
+    return shmem_int_my_pe;
 }
 
 
 int
 _my_pe(void)
 {
-    return shmem_my_pe();
+    return shmem_int_my_pe;
 }
 
 
 int
 shmem_n_pes(void)
 {
-    return runtime_get_size();
+    return shmem_int_num_pes;
 }
 
 
 int
 _num_pes(void)
 {
-    return shmem_n_pes();
+    return shmem_int_num_pes;
 }
 
 
@@ -280,10 +292,7 @@ shmem_wtime(void)
 int 
 shmem_pe_accessible(int pe)
 {
-    if (pe >= 0 && pe < shmem_n_pes()) {
-        return 1;
-    }
-    return 0;
+    return (pe >= 0 && pe < shmem_int_num_pes) ? 1 : 0;
 }
 
 

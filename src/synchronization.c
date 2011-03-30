@@ -9,28 +9,41 @@
 #include <portals4_runtime.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <strings.h>
 
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
+
+static long *barrier_work_array;
+
+int
+shmem_barrier_init(void)
+{
+    barrier_work_array = shmalloc(sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
+    if (NULL == barrier_work_array) return -1;
+    bzero(barrier_work_array, sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
+    return 0;
+}
 
 
 void
 shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
-    int my_pe = shmem_my_pe();
-    if (PE_start == my_pe) {
+    int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
+    if (PE_start == shmem_int_my_pe) {
         int pe, i;
         shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size - 1);
-        for (pe = PE_start + (2 << logPE_stride), i = 1 ; 
+        pSync[0] = 0;
+        for (pe = PE_start + stride, i = 1 ; 
              i < PE_size ;  
-             i++, pe += (2 << logPE_stride)) {
+             i++, pe += stride) {
             shmem_long_p(pSync, 1, pe);
         }
     } else {
-        shmem_long_finc(pSync, PE_start);
+        shmem_long_inc(pSync, PE_start);
         shmem_long_wait(pSync, 0);
+        pSync[0] = 0;
     }
-    pSync[0] = 0;
 }
 
 
@@ -38,8 +51,7 @@ void
 shmem_barrier_all(void)
 {
     shmem_quiet();
-    /* BWB: seriously?  Make this suck less */
-    runtime_barrier();
+    shmem_barrier(0, 0, shmem_int_num_pes, barrier_work_array);
 }
 
 
