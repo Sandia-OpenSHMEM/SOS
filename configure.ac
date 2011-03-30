@@ -13,10 +13,15 @@ AC_CONFIG_MACRO_DIR([config])
 AM_INIT_AUTOMAKE([1.9.6 foreign dist-bzip2 subdir-objects no-define tar-ustar -Wall -Werror])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
-LT_INIT
-
 dnl information on the package
 AC_CONFIG_HEADERS([src/config.h])
+
+AC_ARG_ENABLE([event-completion],
+	[AC_HELP_STRING([--enable-event-completion],
+		[Enable use of events for put completion.  Default is to use buffered puts.])])
+if test "$enable_event_completion" = "yes" ; then
+   AC_DEFINE([ENABLE_EVENT_COMPLETION], [1], [Use event completion])
+fi
 
 AC_ARG_ENABLE(picky, 
     AC_HELP_STRING([--enable-picky],
@@ -60,6 +65,8 @@ dnl check for compiler characteristics
 dnl check for library functions
 
 dnl final output
+
+LT_INIT
 
 if test -n "$with_portals4" ; then
   DISTCHECK_CONFIGURE_FLAGS="--with-portals4=${with_portals4}"

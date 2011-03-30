@@ -17,15 +17,20 @@
 ptl_handle_ni_t ni_h;
 ptl_pt_index_t data_pt = PTL_PT_ANY;
 ptl_pt_index_t heap_pt = PTL_PT_ANY;
-ptl_handle_md_t md_h;
+ptl_handle_md_t put_md_h;
+ptl_handle_md_t get_md_h;
 ptl_handle_le_t data_le_h;
 ptl_handle_le_t heap_le_h;
 ptl_handle_ct_t target_ct_h;
-ptl_handle_ct_t source_ct_h;
-ptl_handle_ct_t source_eq_h;
+ptl_handle_ct_t put_ct_h;
+ptl_handle_ct_t get_ct_h;
+#ifdef ENABLE_EVENT_COMPLETION
+ptl_handle_eq_t put_eq_h;
+#endif
 ptl_handle_eq_t err_eq_h;
 ptl_size_t max_ordered_size = 0;
-ptl_size_t pending_counter = 0;
+ptl_size_t pending_put_counter = 0;
+ptl_size_t pending_get_counter = 0;
 
 void *shmem_data_base = NULL;
 long shmem_data_length = 0;
@@ -51,12 +56,16 @@ start_pes(int npes)
     /* Fix me: PTL_INVALID_HANDLE isn't constant in the current
        implementation.  Needs to be, but work around for now */
     ni_h = PTL_INVALID_HANDLE;
-    md_h = PTL_INVALID_HANDLE;
+    put_md_h = PTL_INVALID_HANDLE;
+    get_md_h = PTL_INVALID_HANDLE;
     data_le_h = PTL_INVALID_HANDLE;
     heap_le_h = PTL_INVALID_HANDLE;
     target_ct_h = PTL_INVALID_HANDLE;
-    source_ct_h = PTL_INVALID_HANDLE;
-    source_eq_h = PTL_INVALID_HANDLE;
+    put_ct_h = PTL_INVALID_HANDLE;
+    get_ct_h = PTL_INVALID_HANDLE;
+#ifdef ENABLE_EVENT_COMPLETION
+    put_eq_h = PTL_INVALID_HANDLE;
+#endif
     err_eq_h = PTL_INVALID_HANDLE;
     
     /* Initialize Portals */
@@ -141,20 +150,43 @@ start_pes(int npes)
     if (PTL_OK != ret) goto cleanup;
 
     /* Open MD to all memory */
-    ret = PtlCTAlloc(ni_h, &source_ct_h);
+    ret = PtlCTAlloc(ni_h, &put_ct_h);
     if (PTL_OK != ret) goto cleanup;
-    ret = PtlEQAlloc(ni_h, 64, &source_eq_h);
+    ret = PtlCTAlloc(ni_h, &get_ct_h);
     if (PTL_OK != ret) goto cleanup;
+#ifdef ENABLE_EVENT_COMPLETION
+    ret = PtlEQAlloc(ni_h, 64, &put_eq_h);
+    if (PTL_OK != ret) goto cleanup;
+#endif
 
     md.start = 0;
     md.length = SIZE_MAX;
     md.options = PTL_MD_EVENT_CT_ACK | 
+#if ! defined(ENABLE_EVENT_COMPLETION)
+        PTL_MD_EVENT_SUCCESS_DISABLE |
+#endif
         PTL_MD_REMOTE_FAILURE_DISABLE;
-    md.eq_handle = source_eq_h;
-    md.ct_handle = source_ct_h;
+#ifdef ENABLE_EVENT_COMPLETION
+    md.eq_handle = put_eq_h;
+#else
+    md.eq_handle = err_eq_h;
+#endif
+    md.ct_handle = put_ct_h;
     ret = PtlMDBind(ni_h,
                     &md,
-                    &md_h);
+                    &put_md_h);
+    if (PTL_OK != ret) goto cleanup;
+
+    md.start = 0;
+    md.length = SIZE_MAX;
+    md.options = PTL_MD_EVENT_CT_REPLY | 
+        PTL_MD_REMOTE_FAILURE_DISABLE |
+        PTL_MD_EVENT_SUCCESS_DISABLE;
+    md.eq_handle = err_eq_h;
+    md.ct_handle = get_ct_h;
+    ret = PtlMDBind(ni_h,
+                    &md,
+                    &get_md_h);
     if (PTL_OK != ret) goto cleanup;
 
     /* finish up */
@@ -162,14 +194,22 @@ start_pes(int npes)
     return;
 
  cleanup:
-    if (!PtlHandleIsEqual(md_h, PTL_INVALID_HANDLE)) {
-        PtlMDRelease(md_h);
+    if (!PtlHandleIsEqual(get_md_h, PTL_INVALID_HANDLE)) {
+        PtlMDRelease(get_md_h);
     }
-    if (!PtlHandleIsEqual(source_ct_h, PTL_INVALID_HANDLE)) {
-        PtlCTFree(source_ct_h);
+    if (!PtlHandleIsEqual(put_md_h, PTL_INVALID_HANDLE)) {
+        PtlMDRelease(put_md_h);
     }
-    if (!PtlHandleIsEqual(source_eq_h, PTL_INVALID_HANDLE)) {
-        PtlEQFree(source_eq_h);
+#ifdef ENABLE_EVENT_COMPLETION
+    if (!PtlHandleIsEqual(put_eq_h, PTL_INVALID_HANDLE)) {
+        PtlEQFree(put_eq_h);
+    }
+#endif
+    if (!PtlHandleIsEqual(get_ct_h, PTL_INVALID_HANDLE)) {
+        PtlCTFree(get_ct_h);
+    }
+    if (!PtlHandleIsEqual(put_ct_h, PTL_INVALID_HANDLE)) {
+        PtlCTFree(put_ct_h);
     }
     if (!PtlHandleIsEqual(heap_le_h, PTL_INVALID_HANDLE)) {
         PtlLEUnlink(heap_le_h);
