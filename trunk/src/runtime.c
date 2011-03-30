@@ -34,6 +34,7 @@ long shmem_data_length = 0;
 #ifdef __APPLE__
 #include <mach-o/getsect.h>
 #else
+extern char etext;
 extern char end;
 #endif
 
@@ -103,11 +104,12 @@ start_pes(int npes)
     if (PTL_OK != ret) goto cleanup;
 
     /* Open LE to data section */
-    le.start = 0;
 #ifdef __APPLE__
-    le.length = shmem_data_length = get_end();
+    le.start = shmem_data_base = (void*) get_etext();
+    le.length = shmem_data_length = get_end() - get_etext();
 #else
-    le.length = shmem_data_length = (unsigned long) &end;
+    le.start = shmem_data_base = &etext;
+    le.length = shmem_data_length = (unsigned long) &end  - (unsigned long) &etext;
 #endif
     le.ct_handle = target_ct_h;
     le.ac_id.jid = jid;
