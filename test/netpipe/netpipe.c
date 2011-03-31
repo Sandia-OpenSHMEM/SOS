@@ -33,12 +33,10 @@ int main(int argc, char **argv)
 {
     FILE        *out;           /* Output data file                          */
     char        s[255],s2[255],delim[255],*pstr; /* Generic strings          */
-    int         *memcache;      /* used to flush cache                       */
+    int         *memcache = NULL; /* used to flush cache                       */
 
-    int         len_buf_align,  /* meaningful when args.cache is 0. buflen   */
+    int         len_buf_align = 0;  /* meaningful when args.cache is 0. buflen   */
                                 /* rounded up to be divisible by 8           */
-                num_buf_align;  /* meaningful when args.cache is 0. number   */
-                                /* of aligned buffers in memtmp              */
 
     int         c,              /* option index                              */
                 i, j, n, nq,    /* Loop indices                              */
@@ -54,14 +52,12 @@ int main(int argc, char **argv)
                 start= 1,       /* Starting value for signature curve        */
                 end=32,     /* Ending value for signature curve          */
                 streamopt=0,    /* Streaming mode flag                       */
-                reset_connection,/* Reset the connection between trials      */
 		debug_wait=0;	/* spin and wait for a debugger		     */
    
     ArgStruct   args;           /* Arguments for all the calls               */
 
-    double      t, t0, t1, t2,  /* Time variables                            */
-                tlast,          /* Time for the last transmission            */
-                latency;        /* Network message latency                   */
+    double      t, t0,   /* Time variables                            */
+        tlast;          /* Time for the last transmission            */
 
     Data        bwdata[NSAMP];  /* Bandwidth curve data                      */
 

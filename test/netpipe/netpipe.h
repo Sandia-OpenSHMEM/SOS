@@ -332,7 +332,7 @@ struct data
     int    repeat;
 };
 
-double When();
+double When(void);
 
 void Init(ArgStruct *p, int* argc, char*** argv);
 
@@ -384,7 +384,7 @@ void SaveRecvPtr(ArgStruct* p);
 
 void ResetRecvPtr(ArgStruct* p);
 
-void PrintUsage();
+void PrintUsage(void);
 
 int getopt( int argc, char * const argv[], const char *optstring);
 
