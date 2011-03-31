@@ -126,7 +126,7 @@ main(int argc, char* argv[])
 		}
 	}
 
-	Rprintf("%s: %d loops of %d shorts per put/get cycle\n",
+	if (Verbose) Rprintf("%s: %d loops of %d shorts per put/get cycle\n",
 		prog_name,loops,nWords);
 
 	for(j=0; j < nWords; j++)

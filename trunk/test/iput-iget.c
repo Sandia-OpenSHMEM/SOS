@@ -50,8 +50,6 @@ main(int argc, char **argv)
         return rc;
 
     if (me == 0) {
-        printf("[0] iget(targets...)\n");
-
         // Pull data from PE1
         // iget() Procs target[0...4] --> results[Proc*5 ...Proc*5+5]
         // short_iget() == short_get() in the following case.
@@ -74,9 +72,6 @@ main(int argc, char **argv)
                 }
         }
     }  else {
-        printf("[%d] target is %hd %hd %hd %hd %hd\n",
-               me, target[0], target[1], target[2],
-               target[3], target[4] );
         shmem_barrier_all();
     }
 

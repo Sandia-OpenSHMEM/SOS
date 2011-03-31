@@ -5,6 +5,9 @@
 
 #include  "netpipe.h"
 
+/* BWB: FIX ME */
+extern int sched_yield(void);
+
 double *pTime;
 int    *pNrepeat;
 
@@ -61,8 +64,6 @@ void SendData(ArgStruct *p)
 
 void RecvData(ArgStruct *p)
 {
-   int i=0;
-
    while(p->r_ptr[p->bufflen-1] != 'a' + (p->cache ? 1 - p->tr : 1) ) {
      sched_yield();
   }
@@ -75,13 +76,11 @@ void SendTime(ArgStruct *p, double *t)
    *pTime=*t;
 
    shmem_double_put(pTime,pTime,1,p->prot.nbor);
-   shmem_int_put(p->prot.flag,p->prot.flag,1,p->prot.nbor);
+   shmem_int_put((int*) p->prot.flag, (int*) p->prot.flag,1,p->prot.nbor);
 }
 
 void RecvTime(ArgStruct *p, double *t)
 {
-   int i=0;
-
    while(*p->prot.flag!=p->prot.ipe)
    {
      sched_yield();
@@ -95,13 +94,11 @@ void SendRepeat(ArgStruct *p, int rpt)
    *pNrepeat= rpt;
 
    shmem_int_put(pNrepeat,pNrepeat,1,p->prot.nbor);
-   shmem_int_put(p->prot.flag,p->prot.flag,1,p->prot.nbor);
+   shmem_int_put((int*) p->prot.flag,(int*) p->prot.flag,1,p->prot.nbor);
 }
 
 void RecvRepeat(ArgStruct *p, int *rpt)
 {
-   int i=0;
-
    while(*p->prot.flag!=p->prot.ipe)
    {
      sched_yield();
