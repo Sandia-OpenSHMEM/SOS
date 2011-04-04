@@ -19,6 +19,12 @@ mppdir = $(includedir)/mpp
 mpp_HEADERS = mpp/shmem.h
 
 TESTS = \
+	test/hello \
+	test/circular_shift \
+	test/shmalloc \
+	test/accessible_ping \
+	test/max_reduction \
+	test/strided_put \
 	test/barrier \
 	test/put1 \
 	test/get1 \
@@ -37,24 +43,45 @@ TESTS = \
 	test/iput_longlong \
 	test/sping \
 	test/pingpong-short \
-	test/iput-iget \
+	test/iput-iget
+
+XFAIL_TESTS = test/max_reduction
+
+check_PROGRAMS = \
+	$(TESTS) \
 	test/ipgm \
 	test/shmemlatency \
 	test/msgrate \
 	test/NPshmem
-
-check_PROGRAMS = $(TESTS)
 PROCS ?= 2
 TESTS_ENVIRONMENT = yod -c $(PROCS)
+
+test_hello_SOURCES = test/hello.c
+test_hello_LDADD = libsma.la
+
+test_circular_shift_SOURCES = test/circular_shift.c
+test_circular_shift_LDADD = libsma.la
+
+test_shmalloc_SOURCES = test/shmalloc.c
+test_shmalloc_LDADD = libsma.la
+
+test_accessible_ping_SOURCES = test/accessible_ping.c
+test_accessible_ping_LDADD = libsma.la
+
+test_max_reduction_SOURCES = test/max_reduction.c
+test_max_reduction_LDADD = libsma.la
+
+test_strided_put_SOURCES = test/strided_put.c
+test_strided_put_LDADD = libsma.la
+
+test_barrier_SOURCES = test/barrier.c
+test_barrier_LDADD = libsma.la
 
 test_put1_SOURCES = test/put1.c
 test_put1_LDADD = libsma.la
 
 test_get1_SOURCES = test/get1.c
 test_get1_LDADD = libsma.la
-
-test_barrier_SOURCES = test/barrier.c
-test_barrier_LDADD = libsma.la
 
 test_ping_SOURCES = test/ping.c
 test_ping_LDADD = libsma.la
