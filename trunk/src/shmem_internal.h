@@ -21,9 +21,21 @@ extern ptl_handle_ct_t get_ct_h;
 extern ptl_handle_eq_t put_eq_h;
 #endif
 extern ptl_handle_eq_t err_eq_h;
-extern ptl_size_t max_ordered_size;
+extern ptl_size_t max_put_size;
+extern ptl_size_t max_atomic_size;
+extern ptl_size_t max_fetch_atomic_size;
+
 extern ptl_size_t pending_put_counter;
 extern ptl_size_t pending_get_counter;
+
+extern void *shmem_heap_base;
+extern long shmem_heap_length;
+extern void *shmem_data_base;
+extern long shmem_data_length;
+
+extern int shmem_int_my_pe;
+extern int shmem_int_num_pes;
+
 
 #define GET_REMOTE_ACCESS(target, pt, offset)                           \
     do {                                                                \
@@ -40,14 +52,6 @@ extern ptl_size_t pending_get_counter;
         abort();                                                        \
     }                                                                   \
     } while (0)
-
-extern void *shmem_heap_base;
-extern long shmem_heap_length;
-extern void *shmem_data_base;
-extern long shmem_data_length;
-
-extern int shmem_int_my_pe;
-extern int shmem_int_num_pes;
 
 
 /* initialization routines */

@@ -29,7 +29,9 @@ ptl_handle_ct_t get_ct_h;
 ptl_handle_eq_t put_eq_h;
 #endif
 ptl_handle_eq_t err_eq_h;
-ptl_size_t max_ordered_size = 0;
+ptl_size_t max_put_size = 0;
+ptl_size_t max_atomic_size = 0;
+ptl_size_t max_fetch_atomic_size = 0;
 ptl_size_t pending_put_counter = 0;
 ptl_size_t pending_get_counter = 0;
 
@@ -89,7 +91,32 @@ start_pes(int npes)
                     mapping,
                     &ni_h);
     if (PTL_OK != ret) goto cleanup;
-    max_ordered_size = ni_limits.max_ordered_size;
+#if 0 /* BWB: FIX ME: when kyle adds these features, uncomment */
+    max_put_size = (ni_limits.max_waw_ordered_size > ni_limits.max_volatile_size) ?  
+        ni_limits.max_waw_ordered_size : ni_limits.max_volatile_size;
+    max_atomic_size = (ni_limits.max_waw_ordered_size > ni_limits.max_atomic_size) ?
+        ni_limits.max_waw_ordered_size : ni_limits.max_atomic_size;
+    max_fetch_atomic_size = (ni_limits.max_waw_ordered_size > ni_limits.max_atomic_size) ?
+        ni_limits.max_waw_ordered_size : ni_limits.max_fetch_atomic_size;
+#else
+    max_put_size = ni_limits.max_ordered_size;
+    max_atomic_size = ni_limits.max_atomic_size;
+    max_fetch_atomic_size = ni_limits.max_fetch_atomic_size;
+#endif
+
+    if (max_put_size < sizeof(long double complex)) {
+        printf("Max put size found to be %lu, too small to continue\n", (unsigned long) max_put_size);
+        abort();
+    }
+    if (max_atomic_size < sizeof(long double complex)) {
+        printf("Max atomic size found to be %lu, too small to continue\n", (unsigned long) max_put_size);
+        abort();
+    }
+    if (max_fetch_atomic_size < sizeof(long double complex)) {
+        printf("Max fetch atomic size found to be %lu, too small to continue\n",  (unsigned long) max_put_size);
+        abort();
+    }
+
 
 #if 0
     PtlGetJid(ni_h, &jid);

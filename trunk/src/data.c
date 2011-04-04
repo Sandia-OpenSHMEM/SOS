@@ -27,8 +27,8 @@ int_shmem_put(void *target, const void *source, size_t len, int pe)
     peer.rank = pe;
     GET_REMOTE_ACCESS(target, pt, offset);
 
-    for (sent = 0 ; sent < len ; sent += max_ordered_size) {
-        size_t bufsize = (len - sent < max_ordered_size) ? len - sent : max_ordered_size;
+    for (sent = 0 ; sent < len ; sent += max_put_size) {
+        size_t bufsize = (len - sent < max_put_size) ? len - sent : max_put_size;
         ret = PtlPut(put_md_h,
                      (ptl_size_t) ((char*) source + sent),
                      bufsize,

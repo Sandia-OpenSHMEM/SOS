@@ -21,7 +21,6 @@ mpp_HEADERS = mpp/shmem.h
 TESTS = \
 	test/hello \
 	test/circular_shift \
-	test/shmalloc \
 	test/accessible_ping \
 	test/max_reduction \
 	test/strided_put \
@@ -61,9 +60,6 @@ test_hello_LDADD = libsma.la
 
 test_circular_shift_SOURCES = test/circular_shift.c
 test_circular_shift_LDADD = libsma.la
-
-test_shmalloc_SOURCES = test/shmalloc.c
-test_shmalloc_LDADD = libsma.la
 
 test_accessible_ping_SOURCES = test/accessible_ping.c
 test_accessible_ping_LDADD = libsma.la
