@@ -24,6 +24,8 @@ TESTS = \
 	test/get1 \
 	test/ping \
 	test/pingpong \
+	test/shmalloc \
+	test/shrealloc \
 	test/iput32 \
 	test/iput64 \
 	test/iput128 \
@@ -36,6 +38,7 @@ TESTS = \
 	test/sping \
 	test/pingpong-short \
 	test/iput-iget \
+	test/ipgm \
 	test/shmemlatency \
 	test/msgrate \
 	test/NPshmem
@@ -94,6 +97,15 @@ test_pingpong_short_LDADD = libsma.la
 
 test_iput_iget_SOURCES = test/iput-iget.c
 test_iput_iget_LDADD = libsma.la
+
+test_ipgm_SOURCES = test/ipgm.c
+test_ipgm_LDADD = libsma.la
+
+test_shmalloc_SOURCES = test/shmalloc.c
+test_shmalloc_LDADD = libsma.la
+
+test_shrealloc_SOURCES = test/shrealloc.c
+test_shrealloc_LDADD = libsma.la
 
 test_shmemlatency_SOURCES = test/shmemlatency.c
 test_shmemlatency_LDADD = libsma.la
