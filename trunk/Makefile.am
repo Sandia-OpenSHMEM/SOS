@@ -31,6 +31,7 @@ TESTS = \
 	test/pingpong \
 	test/shmalloc \
 	test/shrealloc \
+	test/shmemalign \
 	test/iput32 \
 	test/iput64 \
 	test/iput128 \
@@ -129,6 +130,9 @@ test_shmalloc_LDADD = libsma.la
 
 test_shrealloc_SOURCES = test/shrealloc.c
 test_shrealloc_LDADD = libsma.la
+
+test_shmemalign_SOURCES = test/shmemalign.c
+test_shmemalign_LDADD = libsma.la
 
 test_shmemlatency_SOURCES = test/shmemlatency.c
 test_shmemlatency_LDADD = libsma.la
