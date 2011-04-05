@@ -6,6 +6,8 @@
 #ifndef PORTALS_SHMEM_INTERNAL_H
 #define PORTALS_SHMEM_INTERNAL_H
 
+#include <assert.h>
+
 #define DATA_IDX 10
 #define HEAP_IDX 11
 
@@ -59,7 +61,6 @@ static inline
 int
 shmem_internal_put(void *target, const void *source, size_t len, int pe)
 {
-    size_t sent;
     int ret;
     ptl_process_t peer;
     ptl_pt_index_t pt;
@@ -68,23 +69,39 @@ shmem_internal_put(void *target, const void *source, size_t len, int pe)
     peer.rank = pe;
     GET_REMOTE_ACCESS(target, pt, offset);
 
-    for (sent = 0 ; sent < len ; sent += max_put_size) {
-        size_t bufsize = (len - sent < max_put_size) ? len - sent : max_put_size;
+    if (len <= sizeof(long double complex)) {
         ret = PtlPut(put_md_h,
-                     (ptl_size_t) ((char*) source + sent),
-                     bufsize,
+                     (ptl_size_t) source,
+                     len,
                      PTL_CT_ACK_REQ,
                      peer,
                      pt,
                      0,
-                     offset + sent,
+                     offset,
                      NULL,
                      0);
         if (PTL_OK != ret) { abort(); }
         tmp++;
+    } else {
+        size_t sent;
+        for (sent = 0 ; sent < len ; sent += max_put_size) {
+            size_t bufsize = (len - sent < max_put_size) ? len - sent : max_put_size;
+            ret = PtlPut(put_md_h,
+                         (ptl_size_t) ((char*) source + sent),
+                         bufsize,
+                         PTL_CT_ACK_REQ,
+                         peer,
+                         pt,
+                         0,
+                         offset + sent,
+                         NULL,
+                         0);
+            if (PTL_OK != ret) { abort(); }
+            tmp++;
+        }
     }
-    pending_put_counter += tmp;
 
+    pending_put_counter += tmp;
     return tmp;
 }
 
@@ -143,6 +160,165 @@ shmem_internal_get_wait(void)
 }
 
 
+static inline
+int
+shmem_internal_swap(void *target, void *source, void *dest, size_t len, 
+                    int pe, ptl_datatype_t datatype)
+{
+    int ret;
+    ptl_process_t peer;
+    ptl_pt_index_t pt;
+    long offset;
+    peer.rank = pe;
+    GET_REMOTE_ACCESS(source, pt, offset);
+
+    assert(len <= sizeof(long double complex));
+
+    ret = PtlSwap(get_md_h,
+                  (ptl_size_t) dest,
+                  put_md_h,
+                  (ptl_size_t) source,
+                  len,
+                  peer,
+                  pt,
+                  0,
+                  offset,
+                  NULL,
+                  0,
+                  NULL,
+                  PTL_SWAP,
+                  datatype);
+    if (PTL_OK != ret) { abort(); }
+    pending_put_counter++;
+    pending_get_counter++;
+
+    return 1;
+}
+
+
+static inline
+int
+shmem_internal_cswap(void *target, void *source, void *dest, void *operand, size_t len, 
+                     int pe, ptl_datatype_t datatype)
+{
+    int ret;
+    ptl_process_t peer;
+    ptl_pt_index_t pt;
+    long offset;
+    peer.rank = pe;
+    GET_REMOTE_ACCESS(source, pt, offset);
+
+    assert(len <= sizeof(long double complex));
+
+    ret = PtlSwap(get_md_h,
+                  (ptl_size_t) dest,
+                  put_md_h,
+                  (ptl_size_t) source,
+                  len,
+                  peer,
+                  pt,
+                  0,
+                  offset,
+                  NULL,
+                  0,
+                  operand,
+                  PTL_CSWAP,
+                  datatype);
+    if (PTL_OK != ret) { abort(); }
+    pending_put_counter++;
+    pending_get_counter++;
+
+    return 1;
+}
+
+
+static inline
+int
+shmem_internal_atomic(void *target, void *source, size_t len,
+                      int pe, ptl_op_t op, ptl_datatype_t datatype)
+{
+    int ret;
+    ptl_pt_index_t pt;
+    long offset;
+    ptl_process_t peer;
+    int tmp = 0;
+    peer.rank = pe;
+    GET_REMOTE_ACCESS(target, pt, offset);
+
+    if (len <= sizeof(long double complex)) {
+        ret = PtlAtomic(put_md_h,
+                        (ptl_size_t) source,
+                        len,
+                        PTL_CT_ACK_REQ,
+                        peer,
+                        pt,
+                        0,
+                        offset,
+                        NULL,
+                        0,
+                        op,
+                        datatype);
+        if (PTL_OK != ret) { abort(); }
+        tmp++;
+    } else {
+        size_t sent;
+        for (sent = 0 ; sent < len ; sent += max_put_size) {
+            size_t bufsize = (len - sent < max_atomic_size) ? len - sent : max_atomic_size;
+            ret = PtlAtomic(put_md_h,
+                            (ptl_size_t) ((char*) source + sent),
+                            bufsize,
+                            PTL_CT_ACK_REQ,
+                            peer,
+                            pt,
+                            0,
+                            offset + sent,
+                            NULL,
+                            0,
+                            op,
+                            datatype);
+            if (PTL_OK != ret) { abort(); }
+            tmp++;
+        }
+    }
+
+    pending_put_counter += tmp;
+    return tmp;
+}
+
+
+static inline
+int
+shmem_internal_fetch_atomic(void *target, void *source, void *dest, size_t len,
+                            int pe, ptl_op_t op, ptl_datatype_t datatype)
+{
+    int ret;
+    ptl_pt_index_t pt;
+    long offset;
+    ptl_process_t peer;
+    peer.rank = pe;
+    GET_REMOTE_ACCESS(target, pt, offset);
+
+    assert(len <= sizeof(long double complex));
+
+    ret = PtlFetchAtomic(get_md_h,
+                         (ptl_size_t) dest,
+                         put_md_h,
+                         (ptl_size_t) source,
+                         len,
+                         peer,
+                         pt,
+                         0,
+                         offset,
+                         NULL,
+                         0,
+                         op,
+                         datatype);
+    if (PTL_OK != ret) { abort(); }
+    pending_put_counter++;
+    pending_get_counter++;
+
+    return 1;
+}
 
 /* initialization routines */
 int symmetric_init(void);
