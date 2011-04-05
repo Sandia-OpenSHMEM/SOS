@@ -6,12 +6,17 @@ SHMEM-Portals 0.1a
 * About
 
 SHMEM-Portals is an implementation of the OpenSHMEM 1.0 standard over
-Portals 4.0.  The implementation is not complete, a number of
-functions are still unimplemented or non-conforming
+Portals 4.0.  The implementation is complete, although performance
+tuning is still a work in progress.
 
-  - All data movement collectives are unimplemented
-  - shmem_set_lock / shmem_test_lock do not guarantee first-come,
-    first-serve ordering
+* Deviations from the OpenSHMEM 1.0 draft
+
+Where the OpenSHMEM draft and existing SHMEM implementations differ,
+we general followed the OpenSHMEM draft.  In some cases, the draft
+appeared to be in error, so we followed existing implementations:
+
+  - shmem_*_g() functions return the remote data element as the return
+    from the function, rather than storing it in addr.
 
 * Building
 
