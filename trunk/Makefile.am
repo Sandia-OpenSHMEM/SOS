@@ -43,11 +43,11 @@ TESTS = \
 	test/iput_longlong \
 	test/sping \
 	test/pingpong-short \
+	test/ipgm \
 	test/iput-iget
 
 check_PROGRAMS = \
 	$(TESTS) \
-	test/ipgm \
 	test/shmemlatency \
 	test/msgrate \
 	test/NPshmem
