@@ -4,9 +4,7 @@
  */
 
 #include  "netpipe.h"
-
-/* BWB: FIX ME */
-extern int sched_yield(void);
+#include <sched.h>
 
 double *pTime;
 int    *pNrepeat;
