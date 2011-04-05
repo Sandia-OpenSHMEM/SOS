@@ -32,7 +32,7 @@ TESTS = \
 	test/shmalloc \
 	test/shrealloc \
 	test/shmemalign \
-	test/get_c \
+	test/get_g \
 	test/iput32 \
 	test/iput64 \
 	test/iput128 \
@@ -136,8 +136,8 @@ test_shmemalign_LDADD = libsma.la
 test_shmemlatency_SOURCES = test/shmemlatency.c
 test_shmemlatency_LDADD = libsma.la
 
-test_get_c_SOURCES = test/get_c.c
-test_get_c_LDADD = libsma.la
+test_get_g_SOURCES = test/get_g.c
+test_get_g_LDADD = libsma.la
 
 test_msgrate_SOURCES = test/msgrate.c
 test_msgrate_LDADD = libsma.la
