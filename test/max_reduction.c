@@ -4,9 +4,10 @@
 *
 */
 
+#include <mpp/shmem.h>
 #include <stdio.h>
 #include <string.h>
-#include <mpp/shmem.h>
+#include <stdlib.h>
 
 long pSync[_SHMEM_BCAST_SYNC_SIZE];
 
@@ -34,11 +35,13 @@ main(int argc, char* argv[])
 
     shmem_long_max_to_all(dst, src, N, 0, 0, _num_pes(), pWrk, pSync);
 
-    printf("%d/%d	dst =", _my_pe(), _num_pes() );
-    for (i = 0; i < N; i+= 1) {
-        printf(" %ld", dst[i]);
+    if (NULL == getenv("MAKELEVEL")) {
+        printf("%d/%d	dst =", _my_pe(), _num_pes() );
+        for (i = 0; i < N; i+= 1) {
+            printf(" %ld", dst[i]);
+        }
+        printf("\n");
     }
-    printf("\n");
 
     for (i = 0; i < N; i+= 1) {
         if (dst[i] != _num_pes() - 1 + i) return 1;
