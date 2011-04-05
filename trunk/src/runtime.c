@@ -91,18 +91,12 @@ start_pes(int npes)
                     mapping,
                     &ni_h);
     if (PTL_OK != ret) goto cleanup;
-#if 0 /* BWB: FIX ME: when kyle adds these features, uncomment */
     max_put_size = (ni_limits.max_waw_ordered_size > ni_limits.max_volatile_size) ?  
         ni_limits.max_waw_ordered_size : ni_limits.max_volatile_size;
     max_atomic_size = (ni_limits.max_waw_ordered_size > ni_limits.max_atomic_size) ?
         ni_limits.max_waw_ordered_size : ni_limits.max_atomic_size;
     max_fetch_atomic_size = (ni_limits.max_waw_ordered_size > ni_limits.max_atomic_size) ?
         ni_limits.max_waw_ordered_size : ni_limits.max_fetch_atomic_size;
-#else
-    max_put_size = ni_limits.max_ordered_size;
-    max_atomic_size = ni_limits.max_atomic_size;
-    max_fetch_atomic_size = ni_limits.max_fetch_atomic_size;
-#endif
 
     if (max_put_size < sizeof(long double complex)) {
         printf("Max put size found to be %lu, too small to continue\n", (unsigned long) max_put_size);
@@ -201,12 +195,13 @@ start_pes(int npes)
        REPLY on get MD, so this doesn't cause too many problems.  For
        now, just have the put MD ask for REPLY counts as well as ACK
        counts. */
-    md.options = PTL_MD_EVENT_CT_ACK | 
-        PTL_MD_EVENT_CT_REPLY |
+    md.options = 
 #if ! defined(ENABLE_EVENT_COMPLETION)
+        PTL_MD_VOLATILE |
         PTL_MD_EVENT_SUCCESS_DISABLE |
 #endif
-        PTL_MD_REMOTE_FAILURE_DISABLE;
+        PTL_MD_EVENT_CT_REPLY |
+        PTL_MD_EVENT_CT_ACK;
 #ifdef ENABLE_EVENT_COMPLETION
     md.eq_handle = put_eq_h;
 #else
@@ -221,7 +216,6 @@ start_pes(int npes)
     md.start = 0;
     md.length = SIZE_MAX;
     md.options = PTL_MD_EVENT_CT_REPLY | 
-        PTL_MD_REMOTE_FAILURE_DISABLE |
         PTL_MD_EVENT_SUCCESS_DISABLE;
     md.eq_handle = err_eq_h;
     md.ct_handle = get_ct_h;
@@ -233,6 +227,12 @@ start_pes(int npes)
     /* setup space for barrier */
     ret = shmem_barrier_init();
     if (ret != 0) goto cleanup;
+
+    if (NULL != getenv("SHMEM_ATTACH")) {
+        printf("[%02d] waiting for attach, pid=%d\n", shmem_int_my_pe, getpid());
+        volatile int foobar = 0;
+        while (foobar == 0) { }
+    }
 
     /* finish up */
     runtime_barrier();

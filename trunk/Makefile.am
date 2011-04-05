@@ -45,8 +45,6 @@ TESTS = \
 	test/pingpong-short \
 	test/iput-iget
 
-XFAIL_TESTS = test/max_reduction
-
 check_PROGRAMS = \
 	$(TESTS) \
 	test/ipgm \
