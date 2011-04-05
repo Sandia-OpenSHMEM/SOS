@@ -160,7 +160,7 @@ main(int argc, char **argv)
         loops = DFLT_PLOOPS;
     }
 
-    if (me == 0) {
+    if (Verbose && me == 0) {
         if (power2) {
             printf("%s: nWords(1) << 1 per loop(%d).\n", pgm, DFLT_PLOOPS);
         }
