@@ -128,7 +128,7 @@ shmem_internal_collect(void *target, const void *source, size_t len,
     long tmp[2] = {0, 1};
     int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
     int pe;
-    int bcast_len;
+    int bcast_len = 0;
 
     if (PE_size == 1) {
         if (target != source) memcpy(target, source, len);
