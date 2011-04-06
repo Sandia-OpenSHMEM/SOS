@@ -30,9 +30,9 @@ main(int argc, char* argv[])
     }
 
     if (bad) {
-        fprintf(stderr, "[%02d] error: ");
+        fprintf(stderr, "[%02d] error: ", _my_pe());
         for (i = 0 ; i < 10 ; ++i) {
-            fprintf(stderr, "%ld ", (_my_pe == 0) ? source[i] : target[i]);
+            fprintf(stderr, "%ld ", (_my_pe() == 0) ? source[i] : target[i]);
         }
         fprintf(stderr, "\n");
     }
