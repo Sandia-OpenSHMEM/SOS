@@ -99,7 +99,7 @@ display_result(const char *test, const double result)
 static void
 test_one_way(void)
 {
-    int i, k, nreqs;
+    int i, k;
     int pe_size  = world_size;
 
     tmp = 0;
@@ -119,7 +119,6 @@ test_one_way(void)
                 shmem_barrier(0, 0, pe_size, barrier_pSync);
 
                 tmp = timer();
-                nreqs = 0;
                 for (k = 0 ; k < nmsgs ; ++k) {
                     shmem_putmem(recv_buf + (nbytes * k), 
                                  send_buf + (nbytes * k), 
@@ -135,10 +134,7 @@ test_one_way(void)
                 shmem_barrier(0, 0, pe_size, barrier_pSync);
 
                 tmp = timer();
-                nreqs = 0;
-                for (k = 0 ; k < nmsgs ; ++k) {
-                    shmem_short_wait((short*) (recv_buf + (nbytes * k)), 0);
-                }
+                shmem_short_wait((short*) (recv_buf + (nbytes * (nmsgs - 1))), 0);
                 total += (timer() - tmp);
                 memset(recv_buf, 0, npeers * nmsgs * nbytes);
             }
@@ -162,7 +158,7 @@ test_same_direction(void)
 static void
 test_prepost(void)
 {
-    int i, j, k, nreqs = 0;
+    int i, j, k;
 
     tmp = 0;
     total = 0;
@@ -183,12 +179,7 @@ test_prepost(void)
             }
         }
         shmem_quiet();
-        nreqs = 0;
-        for (j = 0 ; j < npeers ; ++j) {
-            for (k = 0 ; k < nmsgs ; ++k) {
-                shmem_short_wait((short*) (recv_buf + (nbytes * (k + j * nmsgs))), 0);
-            }
-        }
+        shmem_short_wait((short*) (recv_buf + (nbytes * ((nmsgs - 1) + (npeers - 1) * nmsgs))), 0);
         total += (timer() - tmp);
         memset(recv_buf, 0, npeers * nmsgs * nbytes);
     }
