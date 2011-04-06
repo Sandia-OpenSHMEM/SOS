@@ -50,10 +50,3 @@ shmem_udcflush_line(void *target)
 {
     /* Intentionally a no-op */
 }
-
-
-void *
-shmem_ptr(void *target, int pe)
-{
-    return NULL;
-}
