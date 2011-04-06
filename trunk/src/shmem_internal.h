@@ -47,12 +47,12 @@ extern int shmem_int_num_pes;
             offset = (char*) target - (char*) shmem_data_base;          \
         } else if (((void*) target > shmem_heap_base) &&                \
                    ((char*) target < (char*) shmem_heap_base + shmem_heap_length)) { \
-        pt = heap_pt;                                                   \
-        offset = (char*) target - (char*) shmem_heap_base;              \
-    } else {                                                            \
-        printf("target outside of symmetric areas\n");                  \
-        abort();                                                        \
-    }                                                                   \
+            pt = heap_pt;                                               \
+            offset = (char*) target - (char*) shmem_heap_base;          \
+        } else {                                                        \
+            printf("target outside of symmetric areas\n");              \
+            abort();                                                    \
+        }                                                               \
     } while (0)
 
 
