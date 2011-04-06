@@ -13,7 +13,7 @@ main(int argc, char* argv[])
 
     if (_my_pe() == 0) {
         for (i = 0 ; i < 10 ; ++i) {
-            source[i] = shmem_long_swap(target, source[i], 1);
+            source[i] = shmem_long_swap(target + i, source[i], 1);
         }
     }
 
