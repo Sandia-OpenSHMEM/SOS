@@ -5,12 +5,12 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([shmem-portals], [0.1a], [bwbarre@sandia.gov])
+AC_INIT([shmem-portals], [1.0a1], [bwbarre@sandia.gov])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
 
-AM_INIT_AUTOMAKE([1.9.6 foreign dist-bzip2 subdir-objects no-define tar-ustar -Wall -Werror])
+AM_INIT_AUTOMAKE([1.9.6 foreign dist-bzip2 no-define tar-ustar -Wall -Werror])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 dnl information on the package
@@ -77,5 +77,7 @@ dnl Cause Automake to delete emacs turds
 CLEANFILES="*~"
 AC_SUBST(CLEANFILES)
 
-AC_CONFIG_FILES([Makefile])
+CPPFLAGS="$CPPFLAGS"' -I$(top_srcdir)'
+
+AC_CONFIG_FILES([Makefile mpp/Makefile src/Makefile test/Makefile])
 AC_OUTPUT
