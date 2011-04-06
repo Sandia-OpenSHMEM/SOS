@@ -189,7 +189,6 @@ shmem_internal_swap(void *target, void *source, void *dest, size_t len,
                   PTL_SWAP,
                   datatype);
     if (PTL_OK != ret) { abort(); }
-    pending_put_counter++;
     pending_get_counter++;
 
     return 1;
@@ -225,7 +224,6 @@ shmem_internal_cswap(void *target, void *source, void *dest, void *operand, size
                   PTL_CSWAP,
                   datatype);
     if (PTL_OK != ret) { abort(); }
-    pending_put_counter++;
     pending_get_counter++;
 
     return 1;
@@ -314,7 +312,6 @@ shmem_internal_fetch_atomic(void *target, void *source, void *dest, size_t len,
                          op,
                          datatype);
     if (PTL_OK != ret) { abort(); }
-    pending_put_counter++;
     pending_get_counter++;
 
     return 1;
