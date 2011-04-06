@@ -31,7 +31,9 @@ TESTS = \
 	sping \
 	pingpong-short \
 	ipgm \
-	iput-iget
+	iput-iget \
+	swapm \
+	cswap
 
 check_PROGRAMS = \
 	$(TESTS) \
@@ -127,6 +129,12 @@ shmemlatency_LDADD = $(top_builddir)/src/libsma.la
 
 get_g_SOURCES = get_g.c
 get_g_LDADD = $(top_builddir)/src/libsma.la
+
+swapm_SOURCES = swapm.c
+swapm_LDADD = $(top_builddir)/src/libsma.la
+
+cswap_SOURCES = cswap.c
+cswap_LDADD = $(top_builddir)/src/libsma.la
 
 msgrate_SOURCES = msgrate.c
 msgrate_LDADD = $(top_builddir)/src/libsma.la
