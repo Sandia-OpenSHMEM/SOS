@@ -3,8 +3,5 @@
 # Copyright (c) 2011 Sandia National Laboratories. All rights reserved.
 #
 
-ACLOCAL_AMFLAGS = -I config
-
-EXTRA_DIST = README
-
-SUBDIRS = mpp src test
+mppdir = $(includedir)/mpp
+mpp_HEADERS = shmem.h
