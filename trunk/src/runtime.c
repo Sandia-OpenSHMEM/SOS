@@ -297,6 +297,13 @@ _my_pe(void)
 
 
 int
+my_pe(void)
+{
+    return shmem_int_my_pe;
+}
+
+
+int
 shmem_n_pes(void)
 {
     return shmem_int_num_pes;
@@ -305,6 +312,13 @@ shmem_n_pes(void)
 
 int
 _num_pes(void)
+{
+    return shmem_int_num_pes;
+}
+
+
+int
+num_pes(void)
 {
     return shmem_int_num_pes;
 }

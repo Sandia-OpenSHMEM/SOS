@@ -9,15 +9,6 @@ SHMEM-Portals is an implementation of the OpenSHMEM 1.0 standard over
 Portals 4.0.  The implementation is complete, although performance
 tuning is still a work in progress.
 
-* Deviations from the OpenSHMEM 1.0 draft
-
-Where the OpenSHMEM draft and existing SHMEM implementations differ,
-we general followed the OpenSHMEM draft.  In some cases, the draft
-appeared to be in error, so we followed existing implementations:
-
-  - shmem_*_g() functions return the remote data element as the return
-    from the function, rather than storing it in addr.
-
 * Building
 
 This OpenSHMEM implementation utilizes the Autoconf/Automake/Libtool

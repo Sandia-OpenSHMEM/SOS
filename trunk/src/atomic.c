@@ -36,18 +36,6 @@ shmem_double_swap(double *target, double value, int pe)
 }
 
 
-short
-shmem_short_swap(short *target, short value, int pe)
-{
-    int ret;
-    short newval;
-    ret = shmem_internal_swap(target, &value, &newval, sizeof(short), pe, PTL_SHORT);
-    shmem_internal_put_wait(ret);
-    shmem_internal_get_wait();
-    return newval;
-}
-
-
 int
 shmem_int_swap(int *target, int value, int pe)
 {
@@ -97,24 +85,12 @@ shmem_swap(long *target, long value, int pe)
 }
 
 
-short
-shmem_short_cswap(short *target, short cond, short value, int pe)
-{
-    int ret;
-    short newval;
-    ret = shmem_internal_cswap(target, &value, &newval, &cond, sizeof(short), pe, PTL_SHORT);
-    shmem_internal_put_wait(ret);
-    shmem_internal_get_wait();
-    return newval;
-}
-
-
 int
 shmem_int_cswap(int *target, int cond, int value, int pe)
 {
     int ret;
     int newval;
-    ret = shmem_internal_cswap(target, &value, &newval, &cond, sizeof(int), pe, PTL_SHORT);
+    ret = shmem_internal_cswap(target, &value, &newval, &cond, sizeof(int), pe, PTL_INT);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     return newval;
@@ -126,7 +102,7 @@ shmem_long_cswap(long *target, long cond, long value, int pe)
 {
     int ret;
     long newval;
-    ret = shmem_internal_cswap(target, &value, &newval, &cond, sizeof(long), pe, PTL_SHORT);
+    ret = shmem_internal_cswap(target, &value, &newval, &cond, sizeof(long), pe, PTL_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     return newval;
@@ -140,7 +116,7 @@ shmem_longlong_cswap(long long * target, long long cond,
     int ret;
     long long newval;
     /* BWB: FIX ME: need better type for long long */
-    ret = shmem_internal_cswap(target, &value, &newval, &cond, sizeof(long long), pe, PTL_SHORT);
+    ret = shmem_internal_cswap(target, &value, &newval, &cond, sizeof(long long), pe, PTL_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     return newval;
@@ -296,10 +272,16 @@ void
 shmem_clear_lock(long *lockp)
 {
     lock_t *lock = (lock_t*) lockp;
-    short curr;
+    short curr, value, cond;
+    int ret;
 
     shmem_quiet();
-    curr = shmem_short_cswap(&(lock->last), shmem_int_my_pe + 1, 0, 0);
+
+    cond = shmem_int_my_pe + 1;
+    value = 0;
+    ret = shmem_internal_cswap(&(lock->last), &value, &curr, &cond, sizeof(short), 0, PTL_SHORT);
+    shmem_internal_put_wait(ret);
+    shmem_internal_get_wait();
     if (curr != shmem_int_my_pe + 1) {
         shmem_short_wait(&(lock->next), 0);
         shmem_short_p(&(lock->signal), 1, lock->next - 1);
@@ -311,12 +293,17 @@ void
 shmem_set_lock(long *lockp)
 {
     lock_t *lock = (lock_t*) lockp;
-    short curr;
+    short curr, value;
+    int ret;
 
     shmem_short_p(&(lock->next), 0, shmem_int_my_pe);
     shmem_short_p(&(lock->signal), 0, shmem_int_my_pe);
     shmem_quiet();
-    curr = shmem_short_swap(&(lock->last), shmem_int_my_pe + 1, 0);
+
+    value = shmem_int_my_pe + 1;
+    ret = shmem_internal_swap(&(lock->last), &value, &curr, sizeof(short), 0, PTL_SHORT);
+    shmem_internal_put_wait(ret);
+    shmem_internal_get_wait();
     if (0 != curr) {
         shmem_short_p(&(lock->next), shmem_int_my_pe + 1, curr - 1);
         shmem_short_wait(&(lock->signal), 0);
@@ -328,12 +315,17 @@ int
 shmem_test_lock(long *lockp)
 {
     lock_t *lock = (lock_t*) lockp;
-    short curr;
+    short curr, value, cond;
+    int ret;
 
     shmem_short_p(&(lock->next), 0, shmem_int_my_pe);
     shmem_short_p(&(lock->signal), 0, shmem_int_my_pe);
     shmem_quiet();
-    curr = shmem_short_cswap(&(lock->last), 0, shmem_int_my_pe + 1, 0);
+    cond = 0;
+    value = shmem_int_my_pe + 1;
+    ret = shmem_internal_cswap(&(lock->last), &value, &curr, &cond, sizeof(short), 0, PTL_SHORT);
+    shmem_internal_put_wait(ret);
+    shmem_internal_get_wait();
     if (0 == curr) {
         return 0;
     }
