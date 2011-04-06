@@ -170,7 +170,7 @@ shmem_internal_swap(void *target, void *source, void *dest, size_t len,
     ptl_pt_index_t pt;
     long offset;
     peer.rank = pe;
-    GET_REMOTE_ACCESS(source, pt, offset);
+    GET_REMOTE_ACCESS(target, pt, offset);
 
     assert(len <= sizeof(long double complex));
 
@@ -206,7 +206,7 @@ shmem_internal_cswap(void *target, void *source, void *dest, void *operand, size
     ptl_pt_index_t pt;
     long offset;
     peer.rank = pe;
-    GET_REMOTE_ACCESS(source, pt, offset);
+    GET_REMOTE_ACCESS(target, pt, offset);
 
     assert(len <= sizeof(long double complex));
 

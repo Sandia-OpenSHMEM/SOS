@@ -27,6 +27,7 @@ TESTS = \
 	test/barrier \
 	test/put1 \
 	test/get1 \
+	test/swap1 \
 	test/ping \
 	test/pingpong \
 	test/shmalloc \
@@ -78,6 +79,9 @@ test_put1_LDADD = libsma.la
 
 test_get1_SOURCES = test/get1.c
 test_get1_LDADD = libsma.la
+
+test_swap1_SOURCES = test/swap1.c
+test_swap1_LDADD = libsma.la
 
 test_ping_SOURCES = test/ping.c
 test_ping_LDADD = libsma.la
