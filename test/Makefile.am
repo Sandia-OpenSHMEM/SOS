@@ -13,7 +13,6 @@ TESTS = \
 	barrier \
 	put1 \
 	get1 \
-	swap \
 	swap1 \
 	ping \
 	pingpong \
@@ -74,9 +73,6 @@ get1_LDADD = $(top_builddir)/src/libsma.la
 
 swap1_SOURCES = swap1.c
 swap1_LDADD = $(top_builddir)/src/libsma.la
-
-swap_SOURCES = swap.c
-swap_LDADD = $(top_builddir)/src/libsma.la
 
 ping_SOURCES = ping.c
 ping_LDADD = $(top_builddir)/src/libsma.la
