@@ -5,6 +5,6 @@
 
 ACLOCAL_AMFLAGS = -I config
 
-EXTRA_DIST = README
+EXTRA_DIST = README NEWS
 
 SUBDIRS = mpp src test

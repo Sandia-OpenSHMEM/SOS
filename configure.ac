@@ -10,7 +10,7 @@ AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
 
-AM_INIT_AUTOMAKE([1.9.6 foreign dist-bzip2 no-define tar-ustar -Wall -Werror])
+AM_INIT_AUTOMAKE([foreign check-news color-tests dist-bzip2 no-define subdir-objects tar-ustar 1.9.6 -Wall -Werror])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 dnl information on the package
