@@ -1,5 +1,8 @@
 /*
- *  exercise shmem_*_cswap()
+ *  exercise:
+ *     shmem_*_cswap()
+ *     shmem_*_fadd()
+ *     shmem_*_finc()
  */
 #include <mpp/shmem.h>
 
@@ -17,12 +20,12 @@ static int dst_int, itmp;
 static long dst_long, ltmp;
 static long long dst_llong, lltmp;
 
-static int loops = 10;
+static int loops = 5;
 
 int
 main(int argc, char* argv[])
 {
-    int me, num_pes, l;
+    int me, num_pes, l, pe;
     int Verbose = 0;
 
     start_pes(0);
@@ -199,9 +202,6 @@ main(int argc, char* argv[])
             }
         }
         else {
-#if 0
-            shmem_short_wait_until(src_short,SHMEM_CMP_EQ,0);
-#elif 1
             if (!shmem_addr_accessible(src_int,0)) {
                 printf("PE-%d local src_int %p not accessible from PE-%d?\n",
                         me, (void*)src_int, 0);
@@ -217,7 +217,61 @@ main(int argc, char* argv[])
                         me, (void*)src_llong, 0);
                 exit(1);
             }
-#endif
+        }
+        shmem_barrier_all();
+
+        /* shmem_*fadd() exercise */
+
+        if (me == 0) {
+            itmp = 0;
+            ltmp = 0;
+            lltmp = 0;
+            *src_int = 0;
+            *src_long = 0;
+            *src_llong = 0;
+        }
+        shmem_barrier_all();
+
+        (void)shmem_int_fadd( &itmp, me+1, 0 );
+        (void)shmem_long_fadd( &ltmp, me+1, 0 );
+        (void)shmem_longlong_fadd( &lltmp, me+1, 0 );
+
+        shmem_barrier_all();
+
+        if (me == 0) {
+            int tot;
+
+            for(pe=0,tot=0; pe < num_pes; pe++)
+                tot += pe+1;
+
+            if ( itmp != tot )
+                printf("fadd() total %d != expected %d?\n",itmp,tot);
+
+            if ( ltmp != (long)tot )
+                printf("fadd() total %ld != expected %d?\n",ltmp,tot);
+
+            if ( lltmp != (long long)tot )
+                printf("fadd() total %lld != expected %d?\n",lltmp,tot);
+        }
+        shmem_barrier_all();
+
+        (void)shmem_int_finc(src_int,0);
+        (void)shmem_long_finc(src_long,0);
+        (void)shmem_longlong_finc(src_llong,0);
+
+        shmem_barrier_all();
+
+        if (me == 0) {
+            int tot = num_pes;
+
+            if ( *src_int != tot )
+                printf("finc() total %d != expected %d?\n",*src_int,tot);
+
+            if ( *src_long != (long)tot )
+                printf("finc() total %ld != expected %d?\n",*src_long,tot);
+
+            if ( *src_llong != (long long)tot )
+                printf("finc() total %lld != expected %d?\n",*src_llong,tot);
         }
         shmem_barrier_all();
 
