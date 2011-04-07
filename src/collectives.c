@@ -37,70 +37,38 @@ shmem_barrier_all(void)
 }
 
 
+/* Simple fan-in/fan-out algorithm. Should be safe to reuse pSync
+   array immediately after return */
 void
 shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
-    /* BWB: make tree-based */
+    int ret = 0;
+    long zero = 0, one = 1;
+
     int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
     if (PE_start == shmem_int_my_pe) {
         int pe, i;
+        /* wait for N - 1 callins up the tree */
         shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size - 1);
-        pSync[0] = 0;
+        /* Clear pSync; have to do local assignment to clear out NIC atomic cache */
+        ret += shmem_internal_put(pSync, &zero, sizeof(zero), shmem_int_my_pe);
+        shmem_internal_put_wait(ret);
+        ret = 0;
+        /* Send acks down psync tree */
         for (pe = PE_start + stride, i = 1 ; 
              i < PE_size ;  
              i++, pe += stride) {
-            shmem_long_p(pSync, 1, pe);
+            ret += shmem_internal_put(pSync, &one, sizeof(one), pe);
         }
+        shmem_internal_put_wait(ret);
     } else {
-        shmem_long_inc(pSync, PE_start);
+        /* send message up psync tree */
+        ret += shmem_internal_atomic(pSync, &one, sizeof(one), PE_start, PTL_SUM, PTL_LONG);
+        shmem_internal_put_wait(ret);
+        /* wait for ack down psync tree */
         shmem_long_wait(pSync, 0);
+        /* Clear pSync; never atomically incremented, ok to direct assign */
         pSync[0] = 0;
-    }
-}
-
-
-static inline
-void
-shmem_internal_op_to_all(void *target, void *source, int count, int type_size,
-                    int PE_start, int logPE_stride, int PE_size,
-                    void *pWrk, long *pSync, 
-                    ptl_op_t op, ptl_datatype_t datatype)
-{
-    int sent;
-    int work_unit = MAX(_SHMEM_REDUCE_MIN_WRKDATA_SIZE, count / 2 + 1);
-    int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
-    int ret = 0;
-    long tmp = 1;
-
-    /* BWB: make tree-based */
-    for (sent = 0 ; sent < count ; sent += work_unit) {
-        int iter_count = MIN(work_unit, count - sent);
-        int len = iter_count * type_size;
-        int offset = sent * type_size;
-
-        if (PE_start == shmem_int_my_pe) {
-            int pe, i;
-            ret = shmem_internal_atomic(pWrk, (char*) source + offset, len, PE_start, op, datatype);
-            shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size - 1);
-            shmem_internal_put_wait(ret);
-            ret = 0;
-            pSync[0] = 0;
-            memcpy((char*) target + offset, pWrk, len);
-            memset(pWrk, 0, len);
-            for (pe = PE_start + stride, i = 1 ; 
-                 i < PE_size ;  
-                 i++, pe += stride) {
-                ret += shmem_internal_put((char*) target + offset, (char*) target + offset, len, pe);
-                ret += shmem_internal_put(pSync, &tmp, sizeof(long), pe);
-            }
-            shmem_internal_put_wait(ret);
-        } else {
-            ret += shmem_internal_atomic(pWrk, (char*) source + offset, len, PE_start, op, datatype);
-            ret += shmem_internal_put(pSync, &tmp, sizeof(long), PE_start);
-            shmem_internal_put_wait(ret);
-            shmem_long_wait(pSync, 0);
-            pSync[0] = 0;
-        }
     }
 }
 
@@ -111,31 +79,91 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
                 int PE_root, int PE_start, int logPE_stride, int PE_size,
                 long *pSync)
 { 
-    /* BWB: make tree-based */
     int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
     int i, ret = 0;
-    long tmp = 1;
+    long one = 1;
 
     if (PE_root == shmem_int_my_pe) {
         for (i = PE_start ; i < PE_size ; i += stride) {
             if (i == shmem_int_my_pe && source == target) continue;
             ret += shmem_internal_put(target, source, len, i);
-            if (i != shmem_int_my_pe) ret += shmem_internal_put(pSync, &tmp, sizeof(long), i);
+            if (i != shmem_int_my_pe) ret += shmem_internal_put(pSync, &one, sizeof(long), i);
         }
         shmem_internal_put_wait(ret);
     } else {
         shmem_long_wait(pSync, 0);
+        /* Clear pSync ; never atomically incremented, ok to direct assign */
         pSync[0] = 0;
     }
 }
 
 
+/* Simple fan-in with atomics with a twist.  PE_start must initialize
+   its target before allowing any other rank to do the atomic
+   operation.  PE_start does a put from source to target, waits for
+   completion, then sends a ping to each peer's pSync.  At that point,
+   the peers atomic into PE_start's target and send an atomic incr
+   into PE_start's pSync and complete.  PE_start completes when it has
+   PE_size - 1 counters in its pSync. */
+static inline
+void
+shmem_internal_op_to_all(void *target, void *source, int count, int type_size,
+                    int PE_start, int logPE_stride, int PE_size,
+                    void *pWrk, long *pSync, 
+                    ptl_op_t op, ptl_datatype_t datatype)
+{
+    int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
+    int ret = 0;
+    long zero = 0, one = 1;
+
+    if (PE_start == shmem_int_my_pe) {
+        int pe, i;
+        /* update our target buffer with our contribution */
+        ret = shmem_internal_put(target, source, count * type_size, shmem_int_my_pe);
+        shmem_internal_put_wait(ret);
+        ret = 0;
+        /* let everyone know that it's safe to send to us */
+        for (pe = PE_start + stride, i = 1 ; 
+             i < PE_size ;  
+             i++, pe += stride) {
+            ret += shmem_internal_put(pSync, &one, sizeof(one), pe);
+        }
+        shmem_internal_put_wait(ret);
+        ret = 0;
+        /* Wait for others to acknowledge sending data */
+        shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size - 1);
+        /* reset pSync; atomics used, so have to use Portals op */
+        ret += shmem_internal_put(pSync, &zero, sizeof(zero), shmem_int_my_pe);
+        shmem_internal_put_wait(ret);
+    } else {
+        /* wait for clear to send */
+        shmem_long_wait(pSync, 0);
+        /* send data, ack, and wait for completion */
+        ret += shmem_internal_atomic(target, source, count * type_size, PE_start, op, datatype);
+        ret += shmem_internal_atomic(pSync, &one, sizeof(one), PE_start, PTL_SUM, PTL_LONG);
+        shmem_internal_put_wait(ret);
+        /* reset pSync */
+        pSync[0] = 0;
+    }
+
+    /* broadcast out */
+    shmem_internal_bcast(target, target, count * type_size, PE_start, PE_start, logPE_stride, PE_size, pSync);
+}
+
+
+/* len can be different on each node, so this is semi-linear.
+   PE_Start starts a copy of his data into target, and increments a
+   length counter, sending that counter to the next PE.  That PE
+   starts the transfer to counter offset, increments the counter, and
+   send the counter to the next PE.  The sends are non-blocking to
+   different peers (PE_start and next), so some overlap is likely.
+   Finally, the last peer sends the counter back to PE_start so that
+   the size of the data to broadcast is known. */
 static inline
 void
 shmem_internal_collect(void *target, const void *source, size_t len,
                   int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
-    /* BWB: make tree-based */
     int ret = 0;
     long tmp[2] = {0, 1};
     int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
@@ -177,12 +205,14 @@ shmem_internal_collect(void *target, const void *source, size_t len,
 }
 
 
+/* Since offsets can be directly computed, each rank puts directly
+   into their offset in PE_Start's target, then increments a counter
+   in pSync.  PE_start then broadcasts to everyone. */
 static inline
 void
 shmem_internal_fcollect(void *target, const void *source, size_t len,
                    int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
-    /* BWB: make tree-based */
     int ret = 0;
     long tmp = 1;
     int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
@@ -192,8 +222,9 @@ shmem_internal_fcollect(void *target, const void *source, size_t len,
             ret += shmem_internal_put(target, source, len, PE_start);
         }
         shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size - 1);
+        tmp = 0;
+        ret += shmem_internal_put(target, &tmp, sizeof(tmp), PE_start);
         shmem_internal_put_wait(ret);
-        pSync[0] = 0;
     } else {
         size_t offset = (shmem_int_my_pe - PE_start) / stride;
         ret += shmem_internal_put((char*) target + offset, source, len, PE_start);

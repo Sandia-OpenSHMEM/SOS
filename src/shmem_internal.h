@@ -232,6 +232,41 @@ shmem_internal_cswap(void *target, void *source, void *dest, void *operand, size
 
 static inline
 int
+shmem_internal_mswap(void *target, void *source, void *dest, void *mask, size_t len, 
+                     int pe, ptl_datatype_t datatype)
+{
+    int ret;
+    ptl_process_t peer;
+    ptl_pt_index_t pt;
+    long offset;
+    peer.rank = pe;
+    GET_REMOTE_ACCESS(target, pt, offset);
+
+    assert(len <= sizeof(long double complex));
+
+    ret = PtlSwap(get_md_h,
+                  (ptl_size_t) dest,
+                  put_md_h,
+                  (ptl_size_t) source,
+                  len,
+                  peer,
+                  pt,
+                  0,
+                  offset,
+                  NULL,
+                  0,
+                  mask,
+                  PTL_MSWAP,
+                  datatype);
+    if (PTL_OK != ret) { abort(); }
+    pending_get_counter++;
+
+    return 1;
+}
+
+
+static inline
+int
 shmem_internal_atomic(void *target, void *source, size_t len,
                       int pe, ptl_op_t op, ptl_datatype_t datatype)
 {
