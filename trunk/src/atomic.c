@@ -261,30 +261,40 @@ shmem_longlong_fadd(long long *target, long long value,
  * Use basic MCS distributed lock algorithm for lock
  */
 struct lock_t {
-    short last; /* only has meaning on PE 0 */
-    short next;
-    short signal;
-    short pad;
+    int last; /* has meaning only on PE 0 */
+    int data; /* has meaning on all PEs */
 };
 typedef struct lock_t lock_t;
+
+#define NEXT_MASK   0x7FFFFFFFU
+#define SIGNAL_MASK 0x80000000U
+#define NEXT(A)   (A & NEXT_MASK)
+#define SIGNAL(A) (A & SIGNAL_MASK)
+
 
 void
 shmem_clear_lock(long *lockp)
 {
     lock_t *lock = (lock_t*) lockp;
-    short curr, value, cond;
-    int ret;
+    int ret, curr, cond, zero = 0, sig = SIGNAL_MASK;
 
     shmem_quiet();
 
+    /* release the lock if I'm the last to try to obtain it */
     cond = shmem_int_my_pe + 1;
-    value = 0;
-    ret = shmem_internal_cswap(&(lock->last), &value, &curr, &cond, sizeof(short), 0, PTL_SHORT);
+    ret = shmem_internal_cswap(&(lock->last), &zero, &curr, &cond, sizeof(int), 0, PTL_INT);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
+    /* if local PE was not the last to hold the lock, have to look for the next in line */
     if (curr != shmem_int_my_pe + 1) {
-        shmem_short_wait(&(lock->next), 0);
-        shmem_short_p(&(lock->signal), 1, lock->next - 1);
+        /* wait for next part of the data block to be non-zero */
+        while (NEXT(lock->data) == 0) {
+            shmem_int_wait(&(lock->data), SIGNAL(lock->data));
+        }
+        /* set the signal bit on new lock holder */
+        ret = shmem_internal_mswap(&(lock->data), &sig, &curr, &sig, sizeof(int), NEXT(lock->data) - 1, PTL_INT);
+        shmem_internal_put_wait(ret);
+        shmem_internal_get_wait();
     }
 }
 
@@ -293,20 +303,26 @@ void
 shmem_set_lock(long *lockp)
 {
     lock_t *lock = (lock_t*) lockp;
-    short curr, value;
-    int ret;
+    int ret, curr, zero = 0, me = shmem_int_my_pe + 1, next_mask = NEXT_MASK;
 
-    shmem_short_p(&(lock->next), 0, shmem_int_my_pe);
-    shmem_short_p(&(lock->signal), 0, shmem_int_my_pe);
+    /* initialize my elements to zero */
+    ret = shmem_internal_put(&(lock->data), &zero, sizeof(zero), shmem_int_my_pe);
+    shmem_internal_put_wait(ret);
     shmem_quiet();
 
-    value = shmem_int_my_pe + 1;
-    ret = shmem_internal_swap(&(lock->last), &value, &curr, sizeof(short), 0, PTL_SHORT);
+    /* update last with my value to add me to the queue */
+    ret = shmem_internal_swap(&(lock->last), &me, &curr, sizeof(int), 0, PTL_INT);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
+    /* If I wasn't the first, need to add myself to the previous last's next */
     if (0 != curr) {
-        shmem_short_p(&(lock->next), shmem_int_my_pe + 1, curr - 1);
-        shmem_short_wait(&(lock->signal), 0);
+        ret = shmem_internal_mswap(&(lock->data), &me, &curr, &next_mask, sizeof(int), curr - 1, PTL_INT);
+        shmem_internal_put_wait(ret);
+        shmem_internal_get_wait();
+        /* now wait for the signal part of data to be non-zero */
+        while (SIGNAL(lock->data) == 0) {
+            shmem_int_wait(&(lock->data), NEXT(lock->data));
+        }
     }
 }
 
@@ -315,15 +331,15 @@ int
 shmem_test_lock(long *lockp)
 {
     lock_t *lock = (lock_t*) lockp;
-    short curr, value, cond;
-    int ret;
+    int ret, curr, me = shmem_int_my_pe + 1, zero = 0;
 
-    shmem_short_p(&(lock->next), 0, shmem_int_my_pe);
-    shmem_short_p(&(lock->signal), 0, shmem_int_my_pe);
+    /* initialize my elements to zero */
+    ret = shmem_internal_put(&(lock->data), &zero, sizeof(zero), shmem_int_my_pe);
+    shmem_internal_put_wait(ret);
     shmem_quiet();
-    cond = 0;
-    value = shmem_int_my_pe + 1;
-    ret = shmem_internal_cswap(&(lock->last), &value, &curr, &cond, sizeof(short), 0, PTL_SHORT);
+
+    /* add self to last if and only if the lock is zero (ie, no one has the lock) */
+    ret = shmem_internal_cswap(&(lock->last), &me, &curr, &zero, sizeof(int), 0, PTL_INT);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     if (0 == curr) {

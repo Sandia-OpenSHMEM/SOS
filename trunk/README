@@ -31,3 +31,11 @@ Options to configure include:
 
 Currently, only the shared memory reference implementation of Portals
 4.0 is supported.  This list will expand over time.
+
+* ToDo List
+
+  - Modify collectives to use algorithms better than the current
+    linear implementations
+  - Fix shmem_{set, test, clear}_lock to not assume sizeof(long) is 8
+  - Fix use of PTL_LONG to send long long types
+  - Rational error messages in abort situations
