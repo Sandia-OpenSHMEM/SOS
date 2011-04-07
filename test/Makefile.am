@@ -34,7 +34,8 @@ TESTS = \
 	ipgm \
 	iput-iget \
 	swapm \
-	cswap
+	cswap \
+	waituntil
 
 check_PROGRAMS = \
 	$(TESTS) \
@@ -139,6 +140,9 @@ swapm_LDADD = $(top_builddir)/src/libsma.la
 
 cswap_SOURCES = cswap.c
 cswap_LDADD = $(top_builddir)/src/libsma.la
+
+waituntil_SOURCES = waituntil.c
+waituntil_LDADD = $(top_builddir)/src/libsma.la
 
 msgrate_SOURCES = msgrate.c
 msgrate_LDADD = $(top_builddir)/src/libsma.la
