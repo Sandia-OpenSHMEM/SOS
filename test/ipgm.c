@@ -131,7 +131,7 @@ int
 main(int argc, char **argv)
 {
     int me, nProcs, workers, rc=0, l, j, c, Malloc=1;
-    int nWords, nWords_start, prev_nWords=0, ridx, loops, incWords;
+    int nWords, nWords_start, prev_sz=0, ridx, loops, incWords;
 
     pgm = strrchr(argv[0],'/');
     if ( pgm )
@@ -203,12 +203,12 @@ main(int argc, char **argv)
     }
 
     if (Debug && me == 0)
-        printf("%s: nWords(%d) loops(%d) nWords-incr-per-loop(%d)\n",
-            pgm, nWords, loops, incWords);
+        printf("%s: workers(%d) nWords(%d) loops(%d) nWords-incr-per-loop(%d)\n",
+            pgm, workers, nWords, loops, incWords);
 
     for(l=0,ridx=0; l < loops; l++) {
         // reserve space
-        rc =  ((workers * nWords) + prev_nWords) * sizeof(DataType);
+        rc =  ((workers * nWords) * sizeof(DataType)) + prev_sz;
         if (Debug > 2)
             printf("alloc: results[%ld]\n",(rc/sizeof(DataType)));
         results = (DataType *)shrealloc(results,rc);
@@ -217,9 +217,20 @@ main(int argc, char **argv)
             perror ("Failed results memory allocation");
             exit (1);
         }
-        // XXX memset(&results[prev_nwords], 0, 
+        prev_sz = rc;
 
-        rc = 2 * nWords * sizeof(DataType);
+        if (me==0 && Debug > 2) {
+            int idx = ridx;
+            printf("alloc: results[%ld] ridx %d psz %ld\n",
+            (rc/sizeof(DataType)),ridx,(prev_sz/sizeof(DataType)));
+            for(j=1; j < nProcs; j++) {
+                printf("  PE[%d] results[%d...%d]\n",
+                            j,idx,(idx+(nWords-1))); 
+                idx += nWords;
+            }
+        }
+
+        rc = (2 * nWords) * sizeof(DataType);
         if (Debug > 2)
             printf("source %ld words\n",rc/sizeof(DataType));
         if (Malloc)
@@ -231,9 +242,10 @@ main(int argc, char **argv)
             perror ("Failed source memory allocation");
             exit (1);
         }
-        if (Debug > 2)
+        if (Debug > 3)
             printf("shmalloc() source %p (%d bytes)\n",(void*)source,rc);
-        /* init source data on PE0 */
+
+        /* init source data */
         for(j=0; j < nWords*2; j++)
             source[j] = j+1;
 
@@ -250,7 +262,7 @@ main(int argc, char **argv)
             exit (1);
         }
         memset(target, 0, rc);
-        if (Debug > 2)
+        if (Debug > 3)
             printf("shmalloc() target %p (%d bytes)\n",(void*)target,rc);
 
         shmem_barrier_all(); 
@@ -281,10 +293,10 @@ main(int argc, char **argv)
             //      results[0 ... nWords] == loop-0 PE1 results
             //      results[loop*PE1*nWords ... PE*nWords] == loop-0 PE1 results
 
-            if (Debug >1)
-                printf("PE[0] iget(%d words) results[%d...%d]\n",
-                        nWords,ridx,(ridx+(nWords-1))); 
             for(j=1; j < nProcs; j++) {
+                if (Debug > 1)
+                    printf("PE[0] iget(%d words PE[%d]) results[%d...%d]\n",
+                                    nWords,j,ridx,(ridx+(nWords-1))); 
                 IGET(&results[ridx], target, 1, 1, nWords, j);
                 rc = target_data_good( &results[ridx], nWords, j, __LINE__);
                 if (rc)
@@ -300,7 +312,6 @@ main(int argc, char **argv)
             shfree(target);
         }
 
-        prev_nWords += nWords;
         nWords += incWords;
 
         if (Debug && me == 0 && loops > 1)
@@ -311,7 +322,6 @@ main(int argc, char **argv)
 
     if (me == 0) {
         nWords = nWords_start;
-        prev_nWords = 0;
         for(l=0,ridx=0; l < loops; l++) {
             for(j=1; j < nProcs; j++) {
                 if (Debug > 1)
