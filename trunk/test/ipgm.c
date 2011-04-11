@@ -29,8 +29,8 @@
 #define MAX_PE 10
 
 #define DFLT_NWORDS 16
-#define DFLT_LOOPS 1
-#define DFLT_INCR 4
+#define DFLT_LOOPS 16
+#define DFLT_INCR 16
 
 #define DataType long
 #define IPUT shmem_long_iput
@@ -41,9 +41,10 @@ static DataType *target;
 static DataType *results;
 
 static char *pgm;
-static int Debug;
+static int Debug; /* ==1 std dbg, 2==more, 3==max */
 
 #define Dprintf if (Debug && me==0) printf
+#define Zprintf if (me==0) printf
 
 void usage (void);
 int getSize (char *);
@@ -104,8 +105,8 @@ target_data_good( DataType *data, int elements, int id, int lineno )
 
     for(j=0,k=1; j < elements; j++,k+=2) {
         if ( data[j] != ((DataType)k + id) ) {
-            printf("ERR @ line#%d PE[%d] data[%d] wanted %d != %ld\n",
-                lineno, _my_pe(), j, k+id, data[j] );
+            printf("PE[%d] ERR @ line#%d data[%d] wanted %d != %ld\n",
+                _my_pe(), lineno, j, k+id, data[j] );
 
             for(rc=0,k=1; rc < elements; rc++,k++) {
 #if 0
@@ -114,20 +115,23 @@ target_data_good( DataType *data, int elements, int id, int lineno )
 #endif
                 printf("%ld ",data[rc]);
             }
-            printf("\n");
-            fflush(stdout);
             rc = 1;
             break;
         }
+        else
+            if (Debug > 2) printf("%ld ",data[j]);
     }
+    if (Debug > 2 || rc)
+        printf("\n");
+    fflush(stdout);
     return rc;
 }
 
 int
 main(int argc, char **argv)
 {
-    int me, nProcs, workers, rc=0, l, j, k, c, Malloc=1;
-    int nWords, nWords_start, prev_nWords=0, ridx=0, loops, incWords;
+    int me, nProcs, workers, rc=0, l, j, c, Malloc=1;
+    int nWords, nWords_start, prev_nWords=0, ridx, loops, incWords;
 
     pgm = strrchr(argv[0],'/');
     if ( pgm )
@@ -145,7 +149,7 @@ main(int argc, char **argv)
     }
     workers = nProcs - 1;
 
-    while ((c = getopt (argc, argv, "hmrvd")) != -1)
+    while ((c = getopt (argc, argv, "hmrvdD")) != -1)
         switch (c)
         {
         case 'm':
@@ -158,6 +162,9 @@ main(int argc, char **argv)
         case 'd':
             Debug++;
             break;
+        case 'D':
+            Debug=2;
+            break;
         case 'h':
         default:
             usage();
@@ -169,6 +176,7 @@ main(int argc, char **argv)
         nWords = DFLT_NWORDS;
     else if ((nWords = getSize (argv[optind++])) <= 0)
         usage ();
+
     if (nWords % 2 != 0) {
         if (me == 0)
             fprintf(stderr," nWords(%d) not even?\n",nWords);
@@ -187,31 +195,51 @@ main(int argc, char **argv)
         usage ();
 
     if (loops > 1 ) {
-        if (incWords > 0 && (incWords % 2 != 0)) {
+        if (incWords > 0 && ((incWords % 2) != 0)) {
             if (me == 0)
                 fprintf(stderr," incWords(%d) not even?\n",incWords);
                 exit(1);
         }
     }
 
-    if (me == 0)
+    if (Debug && me == 0)
         printf("%s: nWords(%d) loops(%d) nWords-incr-per-loop(%d)\n",
             pgm, nWords, loops, incWords);
 
-    for(l=0; l < loops; l++) {
+    for(l=0,ridx=0; l < loops; l++) {
         // reserve space
-        rc =  workers * (nWords * sizeof(DataType)) +
-              workers * (prev_nWords * sizeof(DataType));
-    Dprintf("results %ld words\n",rc/sizeof(DataType));
+        rc =  ((workers * nWords) + prev_nWords) * sizeof(DataType);
+        if (Debug > 2)
+            printf("alloc: results[%ld]\n",(rc/sizeof(DataType)));
         results = (DataType *)shrealloc(results,rc);
-        if (! results)
+        if (!results)
         {
             perror ("Failed results memory allocation");
             exit (1);
         }
+        // XXX memset(&results[prev_nwords], 0, 
+
+        rc = 2 * nWords * sizeof(DataType);
+        if (Debug > 2)
+            printf("source %ld words\n",rc/sizeof(DataType));
+        if (Malloc)
+            source = (DataType *)shmalloc(rc);
+        else
+            source = (DataType *)shrealloc(source,rc);
+
+        if (! source) {
+            perror ("Failed source memory allocation");
+            exit (1);
+        }
+        if (Debug > 2)
+            printf("shmalloc() source %p (%d bytes)\n",(void*)source,rc);
+        /* init source data on PE0 */
+        for(j=0; j < nWords*2; j++)
+            source[j] = j+1;
 
         rc = nWords * sizeof(DataType);
-    Dprintf("target %ld words\n",rc/sizeof(DataType));
+        if (Debug > 2)
+            printf("target %ld words\n",rc/sizeof(DataType));
         if (Malloc)
             target = (DataType *)shmalloc(rc);
         else
@@ -222,29 +250,12 @@ main(int argc, char **argv)
             exit (1);
         }
         memset(target, 0, rc);
+        if (Debug > 2)
+            printf("shmalloc() target %p (%d bytes)\n",(void*)target,rc);
 
-        rc = 2 * nWords * sizeof(DataType);
-    Dprintf("source %ld words\n",rc/sizeof(DataType));
-        if (Malloc)
-            source = (DataType *)shmalloc(rc);
-        else
-            source = (DataType *)shrealloc(source,rc);
-
-        if (! source) {
-            perror ("Failed source memory allocation");
-            exit (1);
-        }
-        memset(source, 0, rc);
-#if 0
-        printf("[%d] source %p target %p results %p\n",
-            me, (void*)source,(void*)target,(void*)results);
         shmem_barrier_all(); 
-#endif
-        if (me == 0) {
-            /* init source data on PE0 */
-            for(j=0; j < nWords*2; j++)
-                source[j] = j+1;
 
+        if (me == 0) {
             /* put nWords of DataType into target on PE's [1 to (nProcs-1)] */
             for(j=1; j < nProcs; j++)
                 IPUT(target, source, 1, 2, nWords, j);
@@ -252,7 +263,6 @@ main(int argc, char **argv)
 
         shmem_barrier_all();
 
-        rc = 0;
         if (me != 0) {
             // Verify iput target data 
             rc = target_data_good(target, nWords, 0, __LINE__);
@@ -271,9 +281,9 @@ main(int argc, char **argv)
             //      results[0 ... nWords] == loop-0 PE1 results
             //      results[loop*PE1*nWords ... PE*nWords] == loop-0 PE1 results
 
-            k = (prev_nWords * workers);
-            if (Debug)
-                printf("iget(%d words) start @ &results[%d]\n",nWords,k); 
+            if (Debug >1)
+                printf("PE[0] iget(%d words) results[%d...%d]\n",
+                        nWords,ridx,(ridx+(nWords-1))); 
             for(j=1; j < nProcs; j++) {
                 IGET(&results[ridx], target, 1, 1, nWords, j);
                 rc = target_data_good( &results[ridx], nWords, j, __LINE__);
@@ -290,22 +300,23 @@ main(int argc, char **argv)
             shfree(target);
         }
 
-        if (loops > 1) {
-            if (me == 0) printf("End loop %d nWords(%d)\n",(l+1),nWords);
-        }
-        prev_nWords = nWords;
+        prev_nWords += nWords;
         nWords += incWords;
+
+        if (Debug && me == 0 && loops > 1)
+            printf("End loop %d: nWords %d\n", (l+1), nWords);
+
         shmem_barrier_all();
     }
 
-#if 1
-    if (me == 0 && /*loops >*/ 1) {
+    if (me == 0) {
         nWords = nWords_start;
         prev_nWords = 0;
         for(l=0,ridx=0; l < loops; l++) {
             for(j=1; j < nProcs; j++) {
-                if (Debug)
-                    printf("  Validate: loop %d PE-%d ridx %d\n",l,j,ridx);
+                if (Debug > 1)
+                    printf("  Validate: loop %d PE-%d ridx %d nWords %d\n",
+                            l,j,ridx,nWords);
                 rc = target_data_good( &results[ridx], nWords, j, __LINE__);
                 if (rc)
                     exit(1);
@@ -314,11 +325,11 @@ main(int argc, char **argv)
             nWords += incWords;
         }
     }
-#endif
-
-    shmem_barrier_all(); /* sync before exiting */
 
     if (Debug)
         printf("PE-%d exit(0)\n",me);
+
+    shmem_barrier_all(); /* sync before exiting */
+
     return 0;
 }
