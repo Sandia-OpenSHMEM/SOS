@@ -12,7 +12,7 @@
 
 #include <mpp/shmem.h>
 
-#define MAX_PE 10
+#define MAX_PE 32
 
 #define DFLT_NWORDS 257
 #define DFLT_INCR 31
@@ -124,8 +124,13 @@ main(int argc, char **argv)
     else if ((incWords = getSize (argv[optind++])) < 0)
         usage ();
 
+    if (Verbose && me == 0)
+        fprintf (stderr, "nWords(%d) loops(%d) incWords(%d)]\n",
+                 nWords, loops, incWords);
+
     for(l=0; l < loops; l++)
     {
+        /* align 2**2 ... 2**23; 24 exceeds symetric heap max */
         for(j=0,c=2; j < 23; j++,c<<=1)
         {
             target_sz = nWords * sizeof(DataType);
@@ -140,15 +145,16 @@ main(int argc, char **argv)
                     fprintf(stdout,"align[%#09x]target %p\n",
                                         c, (void*)target);
                     exit(1);
-                }
-            else if (Verbose && me == 0)
+            }
+            else if (Verbose > 1 && me == 0)
                     fprintf(stdout,"align[%#09x]target %p\n",
                                         c, (void*)target);
-
             shmem_barrier_all();
             shfree(target);
         }
         nWords += incWords;
+        if (Verbose && me == 0)
+            fprintf(stdout,"Fini loop %d\n",(l+1));
     }
 
     shmem_barrier_all();
