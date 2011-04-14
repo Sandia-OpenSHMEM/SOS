@@ -45,9 +45,9 @@ int *recv_peers;
 int *cache_buf;
 char *send_buf;
 char *recv_buf;
-long bcast_pSync[_SHMEM_BCAST_SYNC_SIZE];
-long barrier_pSync[_SHMEM_BARRIER_SYNC_SIZE];
-long reduce_pSync[_SHMEM_REDUCE_SYNC_SIZE];
+long bcast_pSync[_SHMEM_BCAST_SYNC_SIZE] = { 0 };
+long barrier_pSync[_SHMEM_BARRIER_SYNC_SIZE] = { 0 };
+long reduce_pSync[_SHMEM_REDUCE_SYNC_SIZE] = {0 };
 double reduce_pWrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
 int start_err = 0;
 double tmp = 0;
@@ -282,16 +282,24 @@ main(int argc, char *argv[])
     shmem_barrier_all();
 
     /* broadcast results */
+    printf("%d: psync: 0x%lu\n", rank, (unsigned long) bcast_pSync);
     shmem_broadcast32(&start_err, &start_err, 1, 0, 0, 0, world_size, bcast_pSync);
     if (0 != start_err) {
         exit(1);
     }
+    shmem_barrier_all();
     shmem_broadcast32(&npeers, &npeers, 1, 0, 0, 0, world_size, bcast_pSync);
+    shmem_barrier_all();
     shmem_broadcast32(&niters, &niters, 1, 0, 0, 0, world_size, bcast_pSync);
+    shmem_barrier_all();
     shmem_broadcast32(&nmsgs, &nmsgs, 1, 0, 0, 0, world_size, bcast_pSync);
+    shmem_barrier_all();
     shmem_broadcast32(&nbytes, &nbytes, 1, 0, 0, 0, world_size, bcast_pSync);
+    shmem_barrier_all();
     shmem_broadcast32(&cache_size, &cache_size, 1, 0, 0, 0, world_size, bcast_pSync);
+    shmem_barrier_all();
     shmem_broadcast32(&ppn, &ppn, 1, 0, 0, 0, world_size, bcast_pSync);
+    shmem_barrier_all();
     if (0 == rank) {
         if (!machine_output) {
             printf("job size:   %d\n", world_size);
