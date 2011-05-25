@@ -1,12 +1,18 @@
 /* -*- C -*-
  *
- * Copyright (c) 2011 Sandia National Laboratories. All rights reserved.
+ * Copyright 2011 Sandia Corporation. Under the terms of Contract
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
+ * retains certain rights in this software.
+ * 
+ * This file is part of the Portals SHMEM software package. For license
+ * information, see the LICENSE file in the top level directory of the
+ * distribution.
+ *
  */
 
 #include "config.h"
 
 #include <portals4.h>
-#include <portals4_runtime.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -14,21 +20,22 @@
 
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
+#include "runtime.h"
 
-ptl_handle_ni_t ni_h;
+ptl_handle_ni_t ni_h = PTL_INVALID_HANDLE;
 ptl_pt_index_t data_pt = PTL_PT_ANY;
 ptl_pt_index_t heap_pt = PTL_PT_ANY;
-ptl_handle_md_t put_md_h;
-ptl_handle_md_t get_md_h;
-ptl_handle_le_t data_le_h;
-ptl_handle_le_t heap_le_h;
-ptl_handle_ct_t target_ct_h;
-ptl_handle_ct_t put_ct_h;
-ptl_handle_ct_t get_ct_h;
+ptl_handle_md_t put_md_h = PTL_INVALID_HANDLE;
+ptl_handle_md_t get_md_h = PTL_INVALID_HANDLE;
+ptl_handle_le_t data_le_h = PTL_INVALID_HANDLE;
+ptl_handle_le_t heap_le_h = PTL_INVALID_HANDLE;
+ptl_handle_ct_t target_ct_h = PTL_INVALID_HANDLE;
+ptl_handle_ct_t put_ct_h = PTL_INVALID_HANDLE;
+ptl_handle_ct_t get_ct_h = PTL_INVALID_HANDLE;
 #ifdef ENABLE_EVENT_COMPLETION
-ptl_handle_eq_t put_eq_h;
+ptl_handle_eq_t put_eq_h = PTL_INVALID_HANDLE;
 #endif
-ptl_handle_eq_t err_eq_h;
+ptl_handle_eq_t err_eq_h = PTL_INVALID_HANDLE;
 ptl_size_t max_put_size = 0;
 ptl_size_t max_atomic_size = 0;
 ptl_size_t max_fetch_atomic_size = 0;
@@ -52,34 +59,26 @@ void
 start_pes(int npes)
 {
     int ret;
-    ptl_process_t *mapping;
+    ptl_process_t *desired = NULL, *mapping = NULL;
     ptl_md_t md;
     ptl_le_t le;
-    ptl_jid_t jid = PTL_JID_ANY;
+    ptl_uid_t uid = PTL_UID_ANY;
     ptl_ni_limits_t ni_limits;
-
-    /* Fix me: PTL_INVALID_HANDLE isn't constant in the current
-       implementation.  Needs to be, but work around for now */
-    ni_h = PTL_INVALID_HANDLE;
-    put_md_h = PTL_INVALID_HANDLE;
-    get_md_h = PTL_INVALID_HANDLE;
-    data_le_h = PTL_INVALID_HANDLE;
-    heap_le_h = PTL_INVALID_HANDLE;
-    target_ct_h = PTL_INVALID_HANDLE;
-    put_ct_h = PTL_INVALID_HANDLE;
-    get_ct_h = PTL_INVALID_HANDLE;
-#ifdef ENABLE_EVENT_COMPLETION
-    put_eq_h = PTL_INVALID_HANDLE;
-#endif
-    err_eq_h = PTL_INVALID_HANDLE;
 
     /* Initialize Portals */
     ret = PtlInit();
     if (PTL_OK != ret) goto cleanup;
 
-    shmem_int_my_pe = runtime_get_rank();
-    shmem_int_num_pes = runtime_get_size();
+    shmem_internal_runtime_init();
 
+    shmem_int_my_pe = shmem_internal_get_rank();
+    shmem_int_num_pes = shmem_internal_get_size();
+
+    desired = shmem_internal_get_mapping();
+    if (NULL == desired) goto cleanup;
+
+    /* BWB: FIX ME: for now, assume that we actually get the desired
+       mapping, critical part is that my id doesn't change */
     mapping  = malloc(sizeof(ptl_process_t) * shmem_int_num_pes);
     ret = PtlNIInit(PTL_IFACE_DEFAULT,
                     PTL_NI_NO_MATCHING | PTL_NI_LOGICAL,
@@ -87,17 +86,21 @@ start_pes(int npes)
                     NULL,
                     &ni_limits,
                     shmem_int_num_pes,
-                    NULL,
+                    desired,
                     mapping,
                     &ni_h);
+    free(desired);
     if (PTL_OK != ret) goto cleanup;
+
+    PtlGetUid(ni_h, &uid);
+
+    /* Check message size limits to make sure rational */
     max_put_size = (ni_limits.max_waw_ordered_size > ni_limits.max_volatile_size) ?  
         ni_limits.max_waw_ordered_size : ni_limits.max_volatile_size;
     max_atomic_size = (ni_limits.max_waw_ordered_size > ni_limits.max_atomic_size) ?
         ni_limits.max_waw_ordered_size : ni_limits.max_atomic_size;
     max_fetch_atomic_size = (ni_limits.max_waw_ordered_size > ni_limits.max_atomic_size) ?
         ni_limits.max_waw_ordered_size : ni_limits.max_fetch_atomic_size;
-
     if (max_put_size < sizeof(long double complex)) {
         printf("Max put size found to be %lu, too small to continue\n", (unsigned long) max_put_size);
         abort();
@@ -111,10 +114,6 @@ start_pes(int npes)
         abort();
     }
 
-
-#if 0
-    PtlGetJid(ni_h, &jid);
-#endif
 
     /* create symmetric allocation */
     ret = symmetric_init();
@@ -149,7 +148,7 @@ start_pes(int npes)
     le.length = shmem_data_length = (unsigned long) &end  - (unsigned long) &etext;
 #endif
     le.ct_handle = target_ct_h;
-    le.ac_id.jid = jid;
+    le.ac_id.uid = uid;
     le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
         PTL_LE_EVENT_SUCCESS_DISABLE | 
         PTL_LE_EVENT_CT_COMM;
@@ -165,7 +164,7 @@ start_pes(int npes)
     le.start = shmem_heap_base;
     le.length = shmem_heap_length;
     le.ct_handle = target_ct_h;
-    le.ac_id.jid = jid;
+    le.ac_id.uid = uid;
     le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
         PTL_LE_EVENT_SUCCESS_DISABLE | 
         PTL_LE_EVENT_CT_COMM;
@@ -228,14 +227,15 @@ start_pes(int npes)
     ret = shmem_barrier_init();
     if (ret != 0) goto cleanup;
 
-    if (NULL != getenv("SHMEM_ATTACH")) {
+    /* Give point for debuggers to get a chance to attach if requested by user */
+    if (NULL != getenv("SHMEM_DEBUGGER_ATTACH")) {
         printf("[%02d] waiting for attach, pid=%d\n", shmem_int_my_pe, getpid());
         volatile int foobar = 0;
         while (foobar == 0) { }
     }
 
     /* finish up */
-    runtime_barrier();
+    shmem_internal_barrier();
     return;
 
  cleanup:
