@@ -1,11 +1,17 @@
 # -*- autoconf -*-
 #
-# Copyright (c) 2011 Sandia National Laboratories. All rights reserved.
+# Copyright 2011 Sandia Corporation. Under the terms of Contract
+# DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
+# retains certain rights in this software.
+# 
+# This file is part of the Portals SHMEM software package. For license
+# information, see the LICENSE file in the top level directory of the
+# distribution.
 #
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Portals SHMEM], [1.0a1], [bwbarre@sandia.gov])
+AC_INIT([Portals SHMEM], [1.0a2], [bwbarre@sandia.gov])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -53,6 +59,18 @@ OMPI_CHECK_PORTALS4([portals4], [], [AC_ERROR([Could not find Portals 4 library]
 CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS"
 LDFLAGS="$LDFLAGS $portals4_LDFLAGS"
 LIBS="$LIBS $portals4_LIBS"
+
+AC_ARG_WITH(runtime,
+	AC_HELP_STRING([--with-runtime@<:@=OPTION@:>@],
+		[Use OPTION as runtime support, current options are shmemrt and mpi @<:@default=shmemrt@:>@]))
+if test "$with_runtime" = ""; then with_runtime=shmemrt ; fi
+case "$with_runtime" in
+     shmemrt)  ;;
+     mpi)   ;;
+     *) AC_MSG_ERROR([bad value ${with_runtime} for --with-runtime]) ;;
+esac
+AM_CONDITIONAL([WANT_PORTALS_SHMEM_RUNTIME], [test "$with_runtime" = "shmemrt"])
+AM_CONDITIONAL([WANT_MPI_RUNTIME], [test "$with_runtime" = "mpi"])
 
 dnl check for header files
 
