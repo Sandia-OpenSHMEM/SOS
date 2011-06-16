@@ -16,6 +16,7 @@
 #include "config.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <mpi.h>
 #include <portals4.h>
 
@@ -31,7 +32,8 @@ shmem_internal_runtime_init(void)
     int ret;
     ptl_handle_ni_t phys_ni_h;
 
-    if (!MPI_Initialized()) {
+    MPI_Initialized(&ret);
+    if (!ret) {
         MPI_Init(NULL, NULL);
     }
 
@@ -39,10 +41,11 @@ shmem_internal_runtime_init(void)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     ret = PtlNIInit(PTL_IFACE_DEFAULT,
-                    PTL_NI_NO_MATCHING | PTL_NI_LOGICAL,
+                    PTL_NI_NO_MATCHING | PTL_NI_PHYSICAL,
                     PTL_PID_ANY,
                     NULL,
                     NULL,
+                    0,
                     NULL,
                     NULL,
                     &phys_ni_h);
@@ -61,12 +64,13 @@ ptl_process_t*
 shmem_internal_get_mapping(void)
 {
     ptl_process_t *ret;
+    int count;
 
     ret = malloc(sizeof(ptl_process_t) * size);
-    if (NULL != ret) return 0;
+    if (NULL == ret) return 0;
 
     MPI_Allgather(&my_id, sizeof(my_id), MPI_BYTE,
-                  ret, size * sizeof(my_id), MPI_BYTE,
+                  ret, sizeof(my_id), MPI_BYTE,
                   MPI_COMM_WORLD);
 
     return ret;
