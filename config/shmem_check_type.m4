@@ -14,7 +14,6 @@
 # SHMEM_FIND_TYPE(type)
 # --------------------------------------------------------
 AC_DEFUN([SHMEM_FIND_INT_TYPE],[
-        type=NULL
         AC_CHECK_SIZEOF([$1])
         case "$AS_TR_SH([ac_cv_sizeof_$1])" in
             1)
@@ -29,6 +28,8 @@ AC_DEFUN([SHMEM_FIND_INT_TYPE],[
             8)
                 type=PTL_INT64_T
                 ;;
+            *)
+                AC_MSG_ERROR([Can not find matching Portals type for $1])
         esac
         AC_DEFINE_UNQUOTED(AS_TR_CPP([DTYPE_$1]), [$type], [Portals datatype corresponding to $1])
 ])
