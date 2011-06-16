@@ -75,6 +75,10 @@ AM_CONDITIONAL([WANT_MPI_RUNTIME], [test "$with_runtime" = "mpi"])
 dnl check for header files
 
 dnl check for types
+SHMEM_FIND_INT_TYPE(short)
+SHMEM_FIND_INT_TYPE(int)
+SHMEM_FIND_INT_TYPE(long)
+SHMEM_FIND_INT_TYPE(long long)
 
 dnl check for structures
 
