@@ -48,7 +48,7 @@ shmem_int_swap(int *target, int value, int pe)
 {
     int ret;
     int newval;
-    ret = shmem_internal_swap(target, &value, &newval, sizeof(int), pe, PTL_INT);
+    ret = shmem_internal_swap(target, &value, &newval, sizeof(int), pe, DTYPE_INT);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     return newval;
@@ -60,7 +60,7 @@ shmem_long_swap(long *target, long value, int pe)
 {
     int ret;
     long newval;
-    ret = shmem_internal_swap(target, &value, &newval, sizeof(long), pe, PTL_LONG);
+    ret = shmem_internal_swap(target, &value, &newval, sizeof(long), pe, DTYPE_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     return newval;
@@ -72,8 +72,7 @@ shmem_longlong_swap(long long *target, long long value, int pe)
 {
     int ret;
     long long newval;
-    /* BWB: FIX ME: need better type for long long */
-    ret = shmem_internal_swap(target, &value, &newval, sizeof(long long), pe, PTL_LONG);
+    ret = shmem_internal_swap(target, &value, &newval, sizeof(long long), pe, DTYPE_LONG_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     return newval;
@@ -85,7 +84,7 @@ shmem_swap(long *target, long value, int pe)
 {
     int ret;
     long newval;
-    ret = shmem_internal_swap(target, &value, &newval, sizeof(long), pe, PTL_LONG);
+    ret = shmem_internal_swap(target, &value, &newval, sizeof(long), pe, DTYPE_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     return newval;
@@ -97,7 +96,7 @@ shmem_int_cswap(int *target, int cond, int value, int pe)
 {
     int ret;
     int newval;
-    ret = shmem_internal_cswap(target, &value, &newval, &cond, sizeof(int), pe, PTL_INT);
+    ret = shmem_internal_cswap(target, &value, &newval, &cond, sizeof(int), pe, DTYPE_INT);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     return newval;
@@ -109,7 +108,7 @@ shmem_long_cswap(long *target, long cond, long value, int pe)
 {
     int ret;
     long newval;
-    ret = shmem_internal_cswap(target, &value, &newval, &cond, sizeof(long), pe, PTL_LONG);
+    ret = shmem_internal_cswap(target, &value, &newval, &cond, sizeof(long), pe, DTYPE_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     return newval;
@@ -122,8 +121,7 @@ shmem_longlong_cswap(long long * target, long long cond,
 {
     int ret;
     long long newval;
-    /* BWB: FIX ME: need better type for long long */
-    ret = shmem_internal_cswap(target, &value, &newval, &cond, sizeof(long long), pe, PTL_LONG);
+    ret = shmem_internal_cswap(target, &value, &newval, &cond, sizeof(long long), pe, DTYPE_LONG_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     return newval;
@@ -135,7 +133,7 @@ shmem_int_inc(int *target, int pe)
 {
     int ret;
     int tmp = 1;
-    ret = shmem_internal_atomic(target, &tmp, sizeof(int), pe, PTL_SUM, PTL_INT);
+    ret = shmem_internal_atomic(target, &tmp, sizeof(int), pe, PTL_SUM, DTYPE_INT);
     shmem_internal_put_wait(ret);
 }
 
@@ -145,7 +143,7 @@ shmem_long_inc(long *target, int pe)
 {
     int ret;
     long tmp = 1;
-    ret = shmem_internal_atomic(target, &tmp, sizeof(long), pe, PTL_SUM, PTL_LONG);
+    ret = shmem_internal_atomic(target, &tmp, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
     shmem_internal_put_wait(ret);
 }
 
@@ -155,8 +153,7 @@ shmem_longlong_inc(long long *target, int pe)
 {
     int ret;
     long long tmp = 1;
-    /* BWB: FIX ME: need better type for long long */
-    ret = shmem_internal_atomic(target, &tmp, sizeof(long long), pe, PTL_SUM, PTL_LONG);
+    ret = shmem_internal_atomic(target, &tmp, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
     shmem_internal_put_wait(ret);
 }
 
@@ -166,7 +163,7 @@ shmem_int_finc(int *target, int pe)
 {
     int ret;
     int oldval, tmp = 1;
-    ret = shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(int), pe, PTL_SUM, PTL_INT);
+    ret = shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(int), pe, PTL_SUM, DTYPE_INT);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     return oldval;
@@ -178,7 +175,7 @@ shmem_long_finc(long *target, int pe)
 {
     int ret;
     long oldval, tmp = 1;
-    ret = shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(long), pe, PTL_SUM, PTL_LONG);
+    ret = shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     return oldval;
@@ -190,8 +187,7 @@ shmem_longlong_finc(long long *target, int pe)
 {
     int ret;
     long long oldval, tmp = 1;
-    /* BWB: FIX ME: need better type for long long */
-    ret = shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(long long), pe, PTL_SUM, PTL_LONG);
+    ret = shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     return oldval;
@@ -202,7 +198,7 @@ void
 shmem_int_add(int *target, int value, int pe)
 {
     int ret;
-    ret = shmem_internal_atomic(target, &value, sizeof(int), pe, PTL_SUM, PTL_INT);
+    ret = shmem_internal_atomic(target, &value, sizeof(int), pe, PTL_SUM, DTYPE_INT);
     shmem_internal_put_wait(ret);
 }
 
@@ -211,7 +207,7 @@ void
 shmem_long_add(long *target, long value, int pe)
 {
     int ret;
-    ret = shmem_internal_atomic(target, &value, sizeof(long), pe, PTL_SUM, PTL_LONG);
+    ret = shmem_internal_atomic(target, &value, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
     shmem_internal_put_wait(ret);
 }
 
@@ -220,8 +216,7 @@ void
 shmem_longlong_add(long long *target, long long value, int pe)
 {
     int ret;
-    /* BWB: FIX ME: need better type for long long */
-    ret = shmem_internal_atomic(target, &value, sizeof(long long), pe, PTL_SUM, PTL_LONG);
+    ret = shmem_internal_atomic(target, &value, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
     shmem_internal_put_wait(ret);
 }
 
@@ -231,7 +226,7 @@ shmem_int_fadd(int *target, int value, int pe)
 {
     int ret;
     int oldval;
-    ret = shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(int), pe, PTL_SUM, PTL_INT);
+    ret = shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(int), pe, PTL_SUM, DTYPE_INT);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     return oldval;
@@ -243,7 +238,7 @@ shmem_long_fadd(long *target, long value, int pe)
 {
     int ret;
     long oldval;
-    ret = shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(long), pe, PTL_SUM, PTL_LONG);
+    ret = shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     return oldval;
@@ -256,8 +251,7 @@ shmem_longlong_fadd(long long *target, long long value,
 {
     int ret;
     long long oldval;
-    /* BWB: FIX ME: need better type for long long */
-    ret = shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(long long), pe, PTL_SUM, PTL_LONG);
+    ret = shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     return oldval;
@@ -289,7 +283,7 @@ shmem_clear_lock(long *lockp)
 
     /* release the lock if I'm the last to try to obtain it */
     cond = shmem_int_my_pe + 1;
-    ret = shmem_internal_cswap(&(lock->last), &zero, &curr, &cond, sizeof(int), 0, PTL_INT);
+    ret = shmem_internal_cswap(&(lock->last), &zero, &curr, &cond, sizeof(int), 0, DTYPE_INT);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     /* if local PE was not the last to hold the lock, have to look for the next in line */
@@ -299,7 +293,7 @@ shmem_clear_lock(long *lockp)
             shmem_int_wait(&(lock->data), SIGNAL(lock->data));
         }
         /* set the signal bit on new lock holder */
-        ret = shmem_internal_mswap(&(lock->data), &sig, &curr, &sig, sizeof(int), NEXT(lock->data) - 1, PTL_INT);
+        ret = shmem_internal_mswap(&(lock->data), &sig, &curr, &sig, sizeof(int), NEXT(lock->data) - 1, DTYPE_INT);
         shmem_internal_put_wait(ret);
         shmem_internal_get_wait();
     }
@@ -318,12 +312,12 @@ shmem_set_lock(long *lockp)
     shmem_quiet();
 
     /* update last with my value to add me to the queue */
-    ret = shmem_internal_swap(&(lock->last), &me, &curr, sizeof(int), 0, PTL_INT);
+    ret = shmem_internal_swap(&(lock->last), &me, &curr, sizeof(int), 0, DTYPE_INT);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     /* If I wasn't the first, need to add myself to the previous last's next */
     if (0 != curr) {
-        ret = shmem_internal_mswap(&(lock->data), &me, &curr, &next_mask, sizeof(int), curr - 1, PTL_INT);
+        ret = shmem_internal_mswap(&(lock->data), &me, &curr, &next_mask, sizeof(int), curr - 1, DTYPE_INT);
         shmem_internal_put_wait(ret);
         shmem_internal_get_wait();
         /* now wait for the signal part of data to be non-zero */
@@ -346,7 +340,7 @@ shmem_test_lock(long *lockp)
     shmem_quiet();
 
     /* add self to last if and only if the lock is zero (ie, no one has the lock) */
-    ret = shmem_internal_cswap(&(lock->last), &me, &curr, &zero, sizeof(int), 0, PTL_INT);
+    ret = shmem_internal_cswap(&(lock->last), &me, &curr, &zero, sizeof(int), 0, DTYPE_INT);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     if (0 == curr) {

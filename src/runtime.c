@@ -188,18 +188,11 @@ start_pes(int npes)
 
     md.start = 0;
     md.length = SIZE_MAX;
-    /* BWB: There's currently a bug in PtlAtomic such that it creates
-       a REPLY event instead of an ACK event on the source MD.
-       PtlFetchAtomic does not ACK (which it shouldn't) and sets the
-       REPLY on get MD, so this doesn't cause too many problems.  For
-       now, just have the put MD ask for REPLY counts as well as ACK
-       counts. */
     md.options = 
 #if ! defined(ENABLE_EVENT_COMPLETION)
         PTL_MD_VOLATILE |
         PTL_MD_EVENT_SUCCESS_DISABLE |
 #endif
-        PTL_MD_EVENT_CT_REPLY |
         PTL_MD_EVENT_CT_ACK;
 #ifdef ENABLE_EVENT_COMPLETION
     md.eq_handle = put_eq_h;
