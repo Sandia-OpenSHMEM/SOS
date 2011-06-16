@@ -56,9 +56,6 @@ AC_CACHE_SAVE
 dnl check for libraries
 
 OMPI_CHECK_PORTALS4([portals4], [], [AC_ERROR([Could not find Portals 4 library])])
-CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS"
-LDFLAGS="$LDFLAGS $portals4_LDFLAGS"
-LIBS="$LIBS $portals4_LIBS"
 
 AC_ARG_WITH(runtime,
 	AC_HELP_STRING([--with-runtime@<:@=OPTION@:>@],
@@ -99,6 +96,11 @@ dnl Cause Automake to delete emacs turds
 CLEANFILES="*~"
 AC_SUBST(CLEANFILES)
 
+# last minute updates of the flags so that tests don't fail oddly if
+# portals libdir isn't in LD_LIBRARY_PATH...
+CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS"
+LDFLAGS="$LDFLAGS $portals4_LDFLAGS"
+LIBS="$LIBS $portals4_LIBS"
 CPPFLAGS="$CPPFLAGS"' -I$(top_srcdir)'
 
 AC_CONFIG_FILES([Makefile mpp/Makefile src/Makefile test/Makefile])
