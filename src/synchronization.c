@@ -28,8 +28,8 @@ shmem_quiet(void)
 
     /* wait for remote completion (acks) of all pending events */
     ret = PtlCTWait(put_ct_h, pending_put_counter, &ct);
-    if (PTL_OK != ret) { abort(); }
-    if (ct.failure != 0) { abort(); }
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+    if (ct.failure != 0) { RAISE_ERROR(ct.failure); }
 }
 
 
@@ -63,7 +63,7 @@ shmem_fence(void)
             if (a <= b) ret = 1;                         \
             break;                                       \
         default:                                         \
-            abort();                                     \
+            RAISE_ERROR(-1);                             \
         }                                                \
     } while(0)
 
@@ -75,12 +75,12 @@ shmem_fence(void)
                                                          \
         while (*var == value) {                          \
             ret = PtlCTGet(target_ct_h, &ct);            \
-            if (PTL_OK != ret) { abort(); }              \
+            if (PTL_OK != ret) { RAISE_ERROR(ret); }     \
             if (*var != value) return;                   \
             ret = PtlCTWait(target_ct_h,                 \
                             ct.success + ct.failure + 1, \
                             &ct);                        \
-            if (PTL_OK != ret) { abort(); }              \
+            if (PTL_OK != ret) { RAISE_ERROR(ret); }     \
         }                                                \
     } while(0)
 
@@ -94,13 +94,13 @@ shmem_fence(void)
         COMP(cond, *var, value, cmpval);                 \
         while (!cmpval) {                                \
             ret = PtlCTGet(target_ct_h, &ct);            \
-            if (PTL_OK != ret) { abort(); }              \
+            if (PTL_OK != ret) { RAISE_ERROR(ret); }     \
             COMP(cond, *var, value, cmpval);             \
             if (cmpval) return;                          \
             ret = PtlCTWait(target_ct_h,                 \
                             ct.success + ct.failure + 1, \
                             &ct);                        \
-            if (PTL_OK != ret) { abort(); }              \
+            if (PTL_OK != ret) { RAISE_ERROR(ret); }     \
             COMP(cond, *var, value, cmpval);             \
         }                                                \
     } while(0)

@@ -4,6 +4,7 @@ Portals SHMEM NEWS -- history of user-visible changes.
 -----
 - Added ability to use either MPI or the Portals over Shared Memory
   run-time to start parallel applications.
+- Print (useful?) error message before aborting on error
 
 1.0a1
 -----

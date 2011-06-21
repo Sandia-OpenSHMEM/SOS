@@ -57,13 +57,21 @@ extern int shmem_int_num_pes;
             pt = heap_pt;                                               \
             offset = (char*) target - (char*) shmem_heap_base;          \
         } else {                                                        \
-            printf("target outside of symmetric areas\n");              \
+            printf("[%03d] ERROR: target (0x%lx) outside of symmetric areas\n", \
+                   shmem_int_my_pe, (unsigned long) target);            \
+            fflush(NULL);                                               \
             abort();                                                    \
         }                                                               \
     } while (0)
 
-
-
+#define RAISE_ERROR(ret)                                                \
+    do {                                                                \
+        printf("[%03d] ERROR: %s:%d return code %d\n",                  \
+               shmem_int_my_pe, __FILE__, __LINE__, (int) ret);         \
+        fflush(NULL);                                                   \
+        abort();                                                        \
+    } while (0)
+        
 static inline
 int
 shmem_internal_put(void *target, const void *source, size_t len, int pe)
@@ -87,7 +95,7 @@ shmem_internal_put(void *target, const void *source, size_t len, int pe)
                      offset,
                      NULL,
                      0);
-        if (PTL_OK != ret) { abort(); }
+        if (PTL_OK != ret) { RAISE_ERROR(ret); }
         tmp++;
     } else {
         size_t sent;
@@ -103,7 +111,7 @@ shmem_internal_put(void *target, const void *source, size_t len, int pe)
                          offset + sent,
                          NULL,
                          0);
-            if (PTL_OK != ret) { abort(); }
+            if (PTL_OK != ret) { RAISE_ERROR(ret); }
             tmp++;
         }
     }
@@ -123,8 +131,8 @@ shmem_internal_put_wait(int count)
 
     for ( ; count > 0 ; --count) {
         ret = PtlEQWait(put_eq_h, &ev);
-        if (PTL_OK != ret) { abort(); }
-        if (ev.ni_fail_type != PTL_OK) { abort(); }
+        if (PTL_OK != ret) { RAISE_ERROR(ret); }
+        if (ev.ni_fail_type != PTL_OK) { RAISE_ERROR(ev.ni_fail_type); }
     }
 #endif
 }
@@ -149,7 +157,7 @@ shmem_internal_get(void *target, const void *source, size_t len, int pe)
                  0,
                  offset,
                  0);
-    if (PTL_OK != ret) { abort(); }
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
     pending_get_counter++;
 }
 
@@ -162,8 +170,8 @@ shmem_internal_get_wait(void)
     ptl_ct_event_t ct;
 
     ret = PtlCTWait(get_ct_h, pending_get_counter, &ct);
-    if (PTL_OK != ret) { abort(); }
-    if (ct.failure != 0) { abort(); }
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+    if (ct.failure != 0) { RAISE_ERROR(ct.failure); }
 }
 
 
@@ -195,7 +203,7 @@ shmem_internal_swap(void *target, void *source, void *dest, size_t len,
                   NULL,
                   PTL_SWAP,
                   datatype);
-    if (PTL_OK != ret) { abort(); }
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
     pending_get_counter++;
 
     return 1;
@@ -230,7 +238,7 @@ shmem_internal_cswap(void *target, void *source, void *dest, void *operand, size
                   operand,
                   PTL_CSWAP,
                   datatype);
-    if (PTL_OK != ret) { abort(); }
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
     pending_get_counter++;
 
     return 1;
@@ -265,7 +273,7 @@ shmem_internal_mswap(void *target, void *source, void *dest, void *mask, size_t 
                   mask,
                   PTL_MSWAP,
                   datatype);
-    if (PTL_OK != ret) { abort(); }
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
     pending_get_counter++;
 
     return 1;
@@ -298,7 +306,7 @@ shmem_internal_atomic(void *target, void *source, size_t len,
                         0,
                         op,
                         datatype);
-        if (PTL_OK != ret) { abort(); }
+        if (PTL_OK != ret) { RAISE_ERROR(ret); }
         tmp++;
     } else {
         size_t sent;
@@ -316,7 +324,7 @@ shmem_internal_atomic(void *target, void *source, size_t len,
                             0,
                             op,
                             datatype);
-            if (PTL_OK != ret) { abort(); }
+            if (PTL_OK != ret) { RAISE_ERROR(ret); }
             tmp++;
         }
     }
@@ -353,7 +361,7 @@ shmem_internal_fetch_atomic(void *target, void *source, void *dest, size_t len,
                          0,
                          op,
                          datatype);
-    if (PTL_OK != ret) { abort(); }
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
     pending_get_counter++;
 
     return 1;
