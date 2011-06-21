@@ -40,6 +40,5 @@ of the Portals 4.0 specification:
   - Modify collectives to use algorithms better than the current
     linear implementations
   - Fix shmem_{set, test, clear}_lock to not assume sizeof(long) is 8
-  - Rational error messages in abort situations
-  - Better error handling in dlmalloc code (don't raise sigabort)
+  - Fix error handling during shmem_init
   - Add long message optimization documented in report

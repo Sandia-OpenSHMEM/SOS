@@ -492,6 +492,19 @@ extern long malloc_error;
 #define HAVE_MMAP 0
 #define HAVE_MREMAP 0
 #define MALLOC_FAILURE_ACTION malloc_error = ENOMEM;
+#define USAGE_ERROR_ACTION(m, p)                                        \
+    do {                                                                \
+        printf("ERROR: symmetric heap usage error detected, possibly at 0x%lx", \
+               (unsigned long) p);                                      \
+        ABORT;                                                          \
+    } while (0)
+
+#define CORRUPTION_ERROR_ACTION(m)                                      \
+    do {                                                                \
+        printf("ERROR: symmetric heap data structure corruption found.\n"); \
+        ABORT;                                                          \
+    } while (0)
+
 /* END SHMEM CHANGES */
 
 /* Version identifier to allow people to support multiple versions */
