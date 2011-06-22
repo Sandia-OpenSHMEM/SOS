@@ -494,7 +494,7 @@ extern long malloc_error;
 #define MALLOC_FAILURE_ACTION malloc_error = ENOMEM;
 #define USAGE_ERROR_ACTION(m, p)                                        \
     do {                                                                \
-        printf("ERROR: symmetric heap usage error detected, possibly at 0x%lx", \
+        printf("ERROR: symmetric heap usage error detected, possibly at 0x%lx\n", \
                (unsigned long) p);                                      \
         ABORT;                                                          \
     } while (0)
