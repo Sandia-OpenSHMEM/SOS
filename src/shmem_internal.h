@@ -66,8 +66,8 @@ extern int shmem_int_num_pes;
 
 #define RAISE_ERROR(ret)                                                \
     do {                                                                \
-        printf("[%03d] ERROR: %s:%d return code %d\n",                  \
-               shmem_int_my_pe, __FILE__, __LINE__, (int) ret);         \
+        fprintf(stderr, "[%03d] ERROR: %s:%d return code %d\n",         \
+                shmem_int_my_pe, __FILE__, __LINE__, (int) ret);        \
         fflush(NULL);                                                   \
         abort();                                                        \
     } while (0)
