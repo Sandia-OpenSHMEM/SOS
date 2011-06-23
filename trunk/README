@@ -25,6 +25,7 @@ Options to configure include:
 
   --prefix=<DIR>        Install implementation in <DIR>
   --with-portals4=<DIR> Find the Portals4 library in <DIR>
+  --with-runtime=mpi    OpenMPI SHMEM job launch; build application with CC=mpicc
 
 
 * Portals 4 Implementation Support
