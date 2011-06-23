@@ -481,9 +481,11 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 */
 
 /* BEGIN SHMEM CHANGES */
+#include <stdio.h>
 #include <time.h>
 extern void* shmem_get_next(int incr);
 extern long malloc_error;
+extern int shmem_int_my_pe;
 #define USE_DL_PREFIX 1
 #define HAVE_MORECORE 1
 #define MORECORE shmem_get_next
@@ -494,14 +496,19 @@ extern long malloc_error;
 #define MALLOC_FAILURE_ACTION malloc_error = ENOMEM;
 #define USAGE_ERROR_ACTION(m, p)                                        \
     do {                                                                \
-        printf("ERROR: symmetric heap usage error detected, possibly at 0x%lx\n", \
-               (unsigned long) p);                                      \
+        fprintf(stderr,                                                 \
+                "[%03d] ERROR: symmetric heap usage error detected, possibly at 0x%lx.\n", \
+                shmem_int_my_pe, (unsigned long) p);                    \
+         fflush(NULL);                                                  \
         ABORT;                                                          \
     } while (0)
 
 #define CORRUPTION_ERROR_ACTION(m)                                      \
     do {                                                                \
-        printf("ERROR: symmetric heap data structure corruption found.\n"); \
+        fprintf(stderr,                                                 \
+                "[%03d] ERROR: symmetric heap data structure corruption found.\n", \
+                shmem_int_my_pe);                                       \
+         fflush(NULL);                                                  \
         ABORT;                                                          \
     } while (0)
 
