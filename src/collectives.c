@@ -39,6 +39,13 @@ shmem_barrier_init(void)
 void
 shmem_barrier_all(void)
 {
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_quiet();
     shmem_barrier(0, 0, shmem_int_num_pes, barrier_work_array);
 }
@@ -51,8 +58,14 @@ shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
     int ret = 0;
     long zero = 0, one = 1;
-
     int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     if (PE_start == shmem_int_my_pe) {
         int pe, i;
         /* wait for N - 1 callins up the tree */
@@ -248,6 +261,12 @@ shmem_short_and_to_all(short *target, short *source, int nreduce,
                        int PE_start, int logPE_stride, int PE_size,
                        short *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(short),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_LAND, DTYPE_SHORT);
@@ -259,6 +278,12 @@ shmem_int_and_to_all(int *target, int *source, int nreduce,
                      int PE_start, int logPE_stride, int PE_size,
                      int *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(int),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_LAND, DTYPE_INT);
@@ -270,6 +295,12 @@ shmem_long_and_to_all(long *target, long *source, int nreduce,
                       int PE_start, int logPE_stride, int PE_size,
                       long *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_LAND, DTYPE_LONG);
@@ -281,6 +312,12 @@ shmem_longlong_and_to_all(long long *target, long long *source, int nreduce,
                           int PE_start, int logPE_stride, int PE_size,
                           long long *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long long),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_LAND, DTYPE_LONG);
@@ -292,6 +329,12 @@ shmem_short_or_to_all(short *target, short *source, int nreduce,
                       int PE_start, int logPE_stride, int PE_size, 
                       short *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(short),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_LOR, DTYPE_SHORT);
@@ -303,6 +346,12 @@ shmem_int_or_to_all(int *target, int *source, int nreduce,
                     int PE_start, int logPE_stride, int PE_size, 
                     int *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(int),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_LOR, DTYPE_INT);
@@ -314,6 +363,12 @@ shmem_long_or_to_all(long *target, long *source, int nreduce,
                      int PE_start, int logPE_stride, int PE_size, 
                      long *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_LOR, DTYPE_LONG);
@@ -325,6 +380,12 @@ shmem_longlong_or_to_all(long long *target, long long *source, int nreduce,
                          int PE_start, int logPE_stride, int PE_size, 
                          long long *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long long),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_LOR, DTYPE_LONG);
@@ -336,6 +397,12 @@ shmem_short_xor_to_all(short *target, short *source, int nreduce,
                        int PE_start, int logPE_stride, int PE_size, 
                        short *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(short),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_LXOR, DTYPE_SHORT);
@@ -346,6 +413,12 @@ shmem_int_xor_to_all(int *target, int *source, int nreduce,
                      int PE_start, int logPE_stride, int PE_size, 
                      int *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(int),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_LXOR, DTYPE_INT);
@@ -357,6 +430,12 @@ shmem_long_xor_to_all(long *target, long *source, int nreduce,
                       int PE_start, int logPE_stride, int PE_size, 
                       long *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_LXOR, DTYPE_LONG);
@@ -368,6 +447,12 @@ shmem_longlong_xor_to_all(long long *target, long long *source, int nreduce,
                           int PE_start, int logPE_stride, int PE_size, 
                           long long *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long long),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_LXOR, DTYPE_LONG);
@@ -379,6 +464,12 @@ shmem_float_min_to_all(float *target, float *source, int nreduce,
                        int PE_start, int logPE_stride, int PE_size, 
                        float *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(float),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_MIN, PTL_FLOAT);
@@ -390,6 +481,12 @@ shmem_double_min_to_all(double *target, double *source, int nreduce,
                         int PE_start, int logPE_stride, int PE_size, 
                         double *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(double),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_MIN, PTL_DOUBLE);
@@ -401,6 +498,12 @@ shmem_longdouble_min_to_all(long double *target, long double *source, int nreduc
                             int PE_start, int logPE_stride, int PE_size,
                             long double *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long double),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_MIN, PTL_LONG_DOUBLE);
@@ -412,6 +515,12 @@ shmem_short_min_to_all(short *target, short *source, int nreduce,
                        int PE_start, int logPE_stride, int PE_size, 
                        short *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(short),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_MIN, DTYPE_SHORT);
@@ -423,6 +532,12 @@ shmem_int_min_to_all(int *target, int *source, int nreduce,
                      int PE_start, int logPE_stride, int PE_size, 
                      int *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(int),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_MIN, DTYPE_INT);
@@ -434,6 +549,12 @@ shmem_long_min_to_all(long *target, long *source, int nreduce,
                       int PE_start, int logPE_stride, int PE_size, 
                       long *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_MIN, DTYPE_LONG);
@@ -445,6 +566,12 @@ shmem_longlong_min_to_all(long long *target, long long *source, int nreduce,
                           int PE_start, int logPE_stride, int PE_size,
                           long long *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long long),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_MIN, DTYPE_LONG);
@@ -456,6 +583,12 @@ shmem_float_max_to_all(float *target, float *source, int nreduce,
                        int PE_start, int logPE_stride, int PE_size,
                        float *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(float),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_MAX, PTL_FLOAT);
@@ -467,6 +600,12 @@ shmem_double_max_to_all(double *target, double *source, int nreduce,
                         int PE_start, int logPE_stride, int PE_size,
                         double *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(double),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_MAX, PTL_DOUBLE);
@@ -478,6 +617,12 @@ shmem_longdouble_max_to_all(long double *target, long double *source, int nreduc
                             int PE_start, int logPE_stride, int PE_size,
                             long double *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long double),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_MAX, PTL_LONG_DOUBLE);
@@ -489,6 +634,12 @@ shmem_short_max_to_all(short *target, short *source, int nreduce,
                        int PE_start, int logPE_stride, int PE_size,
                        short *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(short),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_MAX, DTYPE_SHORT);
@@ -500,6 +651,12 @@ shmem_int_max_to_all(int *target, int *source, int nreduce,
                      int PE_start, int logPE_stride, int PE_size,
                      int *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(int),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_MAX, DTYPE_INT);
@@ -511,6 +668,12 @@ shmem_long_max_to_all(long *target, long *source, int nreduce,
                       int PE_start, int logPE_stride, int PE_size,
                       long *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_MAX, DTYPE_LONG);
@@ -522,6 +685,12 @@ shmem_longlong_max_to_all(long long *target, long long *source, int nreduce,
                           int PE_start, int logPE_stride, int PE_size,
                           long long *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long long),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_MAX, DTYPE_LONG);
@@ -533,6 +702,12 @@ shmem_float_sum_to_all(float *target, float *source, int nreduce,
                        int PE_start, int logPE_stride, int PE_size, 
                        float *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(float),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_SUM, PTL_FLOAT);
@@ -544,6 +719,12 @@ shmem_double_sum_to_all(double *target, double *source, int nreduce,
                         int PE_start, int logPE_stride, int PE_size, 
                         double *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(double),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_SUM, PTL_DOUBLE);
@@ -555,6 +736,12 @@ shmem_longdouble_sum_to_all(long double *target, long double *source, int nreduc
                             int PE_start, int logPE_stride, int PE_size,
                             long double *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long double),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_SUM, PTL_LONG_DOUBLE);
@@ -566,6 +753,12 @@ shmem_complexf_sum_to_all(float complex *target, float complex *source, int nred
                           int PE_start, int logPE_stride, int PE_size,
                           float complex *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(float complex),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_SUM, PTL_FLOAT_COMPLEX);
@@ -577,6 +770,12 @@ shmem_complexd_sum_to_all(double complex *target, double complex *source, int nr
                           int PE_start, int logPE_stride, int PE_size, 
                           double complex *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(double complex),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_SUM, PTL_DOUBLE_COMPLEX);
@@ -588,6 +787,12 @@ shmem_short_sum_to_all(short *target, short *source, int nreduce,
                        int PE_start, int logPE_stride, int PE_size, 
                        short *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(short),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_SUM, DTYPE_SHORT);
@@ -599,6 +804,12 @@ shmem_int_sum_to_all(int *target, int *source, int nreduce,
                      int PE_start, int logPE_stride, int PE_size, 
                      int *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(int),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_SUM, DTYPE_INT);
@@ -610,6 +821,12 @@ shmem_long_sum_to_all(long *target, long *source, int nreduce,
                       int PE_start, int logPE_stride, int PE_size, 
                       long *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_SUM, DTYPE_LONG);
@@ -621,6 +838,12 @@ shmem_longlong_sum_to_all(long long *target, long long *source, int nreduce,
                           int PE_start, int logPE_stride, int PE_size, 
                           long long *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long long),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_SUM, DTYPE_LONG);
@@ -632,6 +855,12 @@ shmem_float_prod_to_all(float *target, float *source, int nreduce,
                         int PE_start, int logPE_stride, int PE_size, 
                         float *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(float),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_PROD, PTL_FLOAT);
@@ -643,6 +872,12 @@ shmem_double_prod_to_all(double *target, double *source, int nreduce,
                          int PE_start, int logPE_stride, int PE_size,
                          double *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(double),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_PROD, PTL_DOUBLE);
@@ -654,6 +889,12 @@ shmem_longdouble_prod_to_all(long double *target, long double *source, int nredu
                              int PE_start, int logPE_stride, int PE_size,
                              long double *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long double),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_PROD, PTL_LONG_DOUBLE);
@@ -665,6 +906,12 @@ shmem_complexf_prod_to_all(float complex *target, float complex *source, int nre
                            int PE_start, int logPE_stride, int PE_size,
                            float complex *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(float complex),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_PROD, PTL_FLOAT_COMPLEX);
@@ -676,6 +923,12 @@ shmem_complexd_prod_to_all(double complex *target, double complex *source, int n
                            int PE_start, int logPE_stride, int PE_size, 
                            double complex *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(double complex),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_PROD, PTL_DOUBLE_COMPLEX);
@@ -687,6 +940,12 @@ shmem_short_prod_to_all(short *target, short *source, int nreduce,
                         int PE_start, int logPE_stride, int PE_size, 
                         short *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(short),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_PROD, DTYPE_SHORT);
@@ -698,6 +957,12 @@ shmem_int_prod_to_all(int *target, int *source, int nreduce,
                       int PE_start, int logPE_stride, int PE_size, 
                       int *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(int),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_PROD, DTYPE_INT);
@@ -709,6 +974,12 @@ shmem_long_prod_to_all(long *target, long *source, int nreduce,
                        int PE_start, int logPE_stride, int PE_size, 
                        long *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_PROD, DTYPE_LONG);
@@ -720,6 +991,12 @@ shmem_longlong_prod_to_all(long long *target, long long *source, int nreduce,
                            int PE_start, int logPE_stride, int PE_size,
                            long long *pWrk, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long long),
                     PE_start, logPE_stride, PE_size,
                     pWrk, pSync, PTL_PROD, DTYPE_LONG);
@@ -731,6 +1008,12 @@ shmem_broadcast32(void *target, const void *source, size_t nlong,
                   int PE_root, int PE_start, int logPE_stride, int PE_size,
                   long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_bcast(target, source, nlong * 4,
                     PE_root, PE_start, logPE_stride, PE_size,
                     pSync);
@@ -742,6 +1025,12 @@ shmem_broadcast64(void *target, const void *source, size_t nlong,
                   int PE_root, int PE_start, int logPE_stride, int PE_size,
                   long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_bcast(target, source, nlong * 8,
                     PE_root, PE_start, logPE_stride, PE_size,
                     pSync);
@@ -752,6 +1041,12 @@ void
 shmem_collect32(void *target, const void *source, size_t nlong,
                 int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_collect(target, source, nlong * 4,
                       PE_start, logPE_stride, PE_size, pSync);
 }
@@ -761,6 +1056,12 @@ void
 shmem_collect64(void *target, const void *source, size_t nlong,
                 int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_collect(target, source, nlong * 8,
                       PE_start, logPE_stride, PE_size, pSync);
 }
@@ -770,6 +1071,12 @@ void
 shmem_fcollect32(void *target, const void *source, size_t nlong,
                  int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_fcollect(target, source, nlong * 4,
                        PE_start, logPE_stride, PE_size, pSync);
 }
@@ -779,6 +1086,12 @@ void
 shmem_fcollect64(void *target, const void *source, size_t nlong,
                  int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_fcollect(target, source, nlong * 8,
                        PE_start, logPE_stride, PE_size, pSync);
 }

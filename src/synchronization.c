@@ -26,6 +26,12 @@ shmem_quiet(void)
     int ret;
     ptl_ct_event_t ct;
 
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     /* wait for remote completion (acks) of all pending events */
     ret = PtlCTWait(put_ct_h, pending_put_counter, &ct);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
@@ -36,6 +42,12 @@ shmem_quiet(void)
 void
 shmem_fence(void)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     /* intentionally a no-op */
 }
 
@@ -109,6 +121,12 @@ shmem_fence(void)
 void
 shmem_short_wait(short *var, short value)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     SHMEM_WAIT(var, value);
 }
 
@@ -116,6 +134,12 @@ shmem_short_wait(short *var, short value)
 void
 shmem_short_wait_until(short *var, int cond, short value)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     SHMEM_WAIT_UNTIL(var, cond, value);
 }
 
@@ -123,6 +147,12 @@ shmem_short_wait_until(short *var, int cond, short value)
 void
 shmem_int_wait(int *var, int value)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     SHMEM_WAIT(var, value);
 }
 
@@ -130,6 +160,12 @@ shmem_int_wait(int *var, int value)
 void
 shmem_int_wait_until(int *var, int cond, int value)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     SHMEM_WAIT_UNTIL(var, cond, value);
 }
 
@@ -137,6 +173,12 @@ shmem_int_wait_until(int *var, int cond, int value)
 void
 shmem_long_wait(long *var, long value)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     SHMEM_WAIT(var, value);
 }
 
@@ -144,6 +186,12 @@ shmem_long_wait(long *var, long value)
 void
 shmem_long_wait_until(long *var, int cond, long value)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     SHMEM_WAIT_UNTIL(var, cond, value);
 }
 
@@ -151,6 +199,12 @@ shmem_long_wait_until(long *var, int cond, long value)
 void
 shmem_longlong_wait(long long *var, long long value)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     SHMEM_WAIT(var, value);
 }
 
@@ -158,6 +212,12 @@ shmem_longlong_wait(long long *var, long long value)
 void
 shmem_longlong_wait_until(long long *var, int cond, long long value)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     SHMEM_WAIT_UNTIL(var, cond, value);
 }
 
@@ -165,6 +225,12 @@ shmem_longlong_wait_until(long long *var, int cond, long long value)
 void
 shmem_wait(long *ivar, long cmp_value)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     SHMEM_WAIT(ivar, cmp_value);
 }
 
@@ -172,5 +238,11 @@ shmem_wait(long *ivar, long cmp_value)
 void
 shmem_wait_until(long *ivar, int cmp, long value)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     SHMEM_WAIT_UNTIL(ivar, cmp, value);
 }

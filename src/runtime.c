@@ -47,6 +47,7 @@ long shmem_data_length = 0;
 
 int shmem_int_my_pe = -1;
 int shmem_int_num_pes = -1;
+int shmem_int_initialized = 0;
 
 #ifdef __APPLE__
 #include <mach-o/getsect.h>
@@ -65,21 +66,39 @@ start_pes(int npes)
     ptl_uid_t uid = PTL_UID_ANY;
     ptl_ni_limits_t ni_limits;
 
+    if (shmem_int_initialized) {
+        RAISE_ERROR_STR("attempt to reinitialize library");
+    }
+
     /* Initialize Portals */
     ret = PtlInit();
-    if (PTL_OK != ret) goto cleanup;
+    if (PTL_OK != ret) {
+        fprintf(stderr, "ERROR: PtlInit failed: %d\n", ret);
+        goto cleanup;
+    }
 
-    shmem_internal_runtime_init();
+    ret = shmem_internal_runtime_init();
+    if (0 != ret) {
+        fprintf(stderr, "ERROR: runtime init failed: %d\n", ret);
+        goto cleanup;
+    }
 
     shmem_int_my_pe = shmem_internal_get_rank();
     shmem_int_num_pes = shmem_internal_get_size();
 
     desired = shmem_internal_get_mapping();
-    if (NULL == desired) goto cleanup;
+    if (NULL == desired) {
+        fprintf(stderr, "[%03d] ERROR: runtime mapping failed.\n", 
+                shmem_int_my_pe);
+        goto cleanup;
+    }
 
-    /* BWB: FIX ME: for now, assume that we actually get the desired
-       mapping, critical part is that my id doesn't change */
     mapping  = malloc(sizeof(ptl_process_t) * shmem_int_num_pes);
+    if (NULL == mapping) {
+        fprintf(stderr, "[%03d] ERROR: malloc of mapping failed.\n", 
+                shmem_int_my_pe);
+        goto cleanup;
+    }
     ret = PtlNIInit(PTL_IFACE_DEFAULT,
                     PTL_NI_NO_MATCHING | PTL_NI_LOGICAL,
                     PTL_PID_ANY,
@@ -90,9 +109,18 @@ start_pes(int npes)
                     mapping,
                     &ni_h);
     free(desired);
-    if (PTL_OK != ret) goto cleanup;
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlNIInit failed: %d\n",
+                shmem_int_my_pe, ret);
+        goto cleanup;
+    }
 
-    PtlGetUid(ni_h, &uid);
+    ret = PtlGetUid(ni_h, &uid);
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlGetUid failed: %d\n",
+                shmem_int_my_pe, ret);
+        goto cleanup;
+    }
 
     /* Check message size limits to make sure rational */
     max_put_size = (ni_limits.max_waw_ordered_size > ni_limits.max_volatile_size) ?  
@@ -102,42 +130,65 @@ start_pes(int npes)
     max_fetch_atomic_size = (ni_limits.max_waw_ordered_size > ni_limits.max_atomic_size) ?
         ni_limits.max_waw_ordered_size : ni_limits.max_fetch_atomic_size;
     if (max_put_size < sizeof(long double complex)) {
-        printf("Max put size found to be %lu, too small to continue\n", (unsigned long) max_put_size);
-        abort();
+        fprintf(stderr, "Max put size found to be %lu, too small to continue\n",
+                (unsigned long) max_put_size);
+        goto cleanup;
     }
     if (max_atomic_size < sizeof(long double complex)) {
-        printf("Max atomic size found to be %lu, too small to continue\n", (unsigned long) max_put_size);
-        abort();
+        fprintf(stderr, "Max atomic size found to be %lu, too small to continue\n",
+                (unsigned long) max_put_size);
+        goto cleanup;
     }
     if (max_fetch_atomic_size < sizeof(long double complex)) {
-        printf("Max fetch atomic size found to be %lu, too small to continue\n",  (unsigned long) max_put_size);
-        abort();
+        fprintf(stderr, "Max fetch atomic size found to be %lu, too small to continue\n",
+                (unsigned long) max_put_size);
+        goto cleanup;
     }
 
 
     /* create symmetric allocation */
     ret = symmetric_init();
-    if (0 != ret) goto cleanup;
+    if (0 != ret) {
+        fprintf(stderr, "[%03d] ERROR: symmetric heap initialization failed: %d\n",
+                shmem_int_my_pe, ret);
+        goto cleanup;
+    }
 
     /* create portal table entry */
     ret = PtlEQAlloc(ni_h, 64, &err_eq_h);
-    if (PTL_OK != ret) goto cleanup;
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlEQAlloc failed: %d\n",
+                shmem_int_my_pe, ret);
+        goto cleanup;
+    }
     ret = PtlPTAlloc(ni_h,
                      0,
                      err_eq_h,
                      DATA_IDX,
                      &data_pt);
-    if (PTL_OK != ret) goto cleanup;
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlPTAlloc of data table failed: %d\n",
+                shmem_int_my_pe, ret);
+        goto cleanup;
+    }
     ret = PtlPTAlloc(ni_h,
                      0,
                      err_eq_h,
                      HEAP_IDX,
                      &heap_pt);
-    if (PTL_OK != ret) goto cleanup;
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlPTAlloc of heap table failed: %d\n",
+                shmem_int_my_pe, ret);
+        goto cleanup;
+    }
 
     /* target ct */
     ret = PtlCTAlloc(ni_h, &target_ct_h);
-    if (PTL_OK != ret) goto cleanup;
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlCTAlloc of target ct failed: %d\n",
+                shmem_int_my_pe, ret);
+        goto cleanup;
+    }
 
     /* Open LE to data section */
 #ifdef __APPLE__
@@ -158,7 +209,11 @@ start_pes(int npes)
                       PTL_PRIORITY_LIST,
                       NULL,
                       &data_le_h);
-    if (PTL_OK != ret) goto cleanup;
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlLEAppend of data section failed: %d\n",
+                shmem_int_my_pe, ret);
+        goto cleanup;
+    }
 
     /* Open LE to heap section */
     le.start = shmem_heap_base;
@@ -174,16 +229,32 @@ start_pes(int npes)
                       PTL_PRIORITY_LIST,
                       NULL,
                       &heap_le_h);
-    if (PTL_OK != ret) goto cleanup;
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlLEAppend of heap section failed: %d\n",
+                shmem_int_my_pe, ret);
+        goto cleanup;
+    }
 
     /* Open MD to all memory */
     ret = PtlCTAlloc(ni_h, &put_ct_h);
-    if (PTL_OK != ret) goto cleanup;
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlCTAlloc of put ct failed: %d\n",
+                shmem_int_my_pe, ret);
+        goto cleanup;
+    }
     ret = PtlCTAlloc(ni_h, &get_ct_h);
-    if (PTL_OK != ret) goto cleanup;
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlCTAlloc of get ct failed: %d\n",
+                shmem_int_my_pe, ret);
+        goto cleanup;
+    }
 #ifdef ENABLE_EVENT_COMPLETION
     ret = PtlEQAlloc(ni_h, 64, &put_eq_h);
-    if (PTL_OK != ret) goto cleanup;
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlEQAlloc of put eq failed: %d\n",
+                shmem_int_my_pe, ret);
+        goto cleanup;
+    }
 #endif
 
     md.start = 0;
@@ -203,7 +274,11 @@ start_pes(int npes)
     ret = PtlMDBind(ni_h,
                     &md,
                     &put_md_h);
-    if (PTL_OK != ret) goto cleanup;
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlMDBind of put MD failed: %d\n",
+                shmem_int_my_pe, ret);
+        goto cleanup;
+    }
 
     md.start = 0;
     md.length = SIZE_MAX;
@@ -214,11 +289,19 @@ start_pes(int npes)
     ret = PtlMDBind(ni_h,
                     &md,
                     &get_md_h);
-    if (PTL_OK != ret) goto cleanup;
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlMDBind of get MD failed: %d\n",
+                shmem_int_my_pe, ret);
+        goto cleanup;
+    }
 
     /* setup space for barrier */
     ret = shmem_barrier_init();
-    if (ret != 0) goto cleanup;
+    if (ret != 0) {
+        fprintf(stderr, "[%03d] ERROR: initialization of barrier space failed: %d\n",
+                shmem_int_my_pe, ret);
+        goto cleanup;
+    }
 
     /* Give point for debuggers to get a chance to attach if requested by user */
     if (NULL != getenv("SHMEM_DEBUGGER_ATTACH")) {
@@ -278,6 +361,12 @@ start_pes(int npes)
 int
 shmem_my_pe(void)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     return shmem_int_my_pe;
 }
 
@@ -285,6 +374,12 @@ shmem_my_pe(void)
 int
 _my_pe(void)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     return shmem_int_my_pe;
 }
 
@@ -292,6 +387,12 @@ _my_pe(void)
 int
 my_pe(void)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     return shmem_int_my_pe;
 }
 
@@ -299,6 +400,12 @@ my_pe(void)
 int
 shmem_n_pes(void)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     return shmem_int_num_pes;
 }
 
@@ -306,6 +413,12 @@ shmem_n_pes(void)
 int
 _num_pes(void)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     return shmem_int_num_pes;
 }
 
@@ -313,6 +426,12 @@ _num_pes(void)
 int
 num_pes(void)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     return shmem_int_num_pes;
 }
 
@@ -322,6 +441,13 @@ shmem_wtime(void)
 {
     double wtime;
     struct timeval tv;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     gettimeofday(&tv, NULL);
     wtime = tv.tv_sec;
     wtime += (double)tv.tv_usec / 1000000.0;
@@ -332,6 +458,12 @@ shmem_wtime(void)
 int 
 shmem_pe_accessible(int pe)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     return (pe >= 0 && pe < shmem_int_num_pes) ? 1 : 0;
 }
 
@@ -339,6 +471,12 @@ shmem_pe_accessible(int pe)
 int
 shmem_addr_accessible(void *addr, int pe)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     if (addr > shmem_heap_base &&
         (char*) addr < (char*) shmem_heap_base + shmem_heap_length) {
         return 1;
