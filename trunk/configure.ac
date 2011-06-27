@@ -25,17 +25,20 @@ AC_CONFIG_HEADERS([src/config.h])
 AC_ARG_ENABLE([event-completion],
 	[AC_HELP_STRING([--enable-event-completion],
 		[Enable use of events for put completion.  Default is to use buffered puts.])])
-if test "$enable_event_completion" = "yes" ; then
-   AC_DEFINE([ENABLE_EVENT_COMPLETION], [1], [Use event completion])
-fi
+AS_IF([test "$enable_event_completion" = "yes"], [AC_DEFINE([ENABLE_EVENT_COMPLETION], [1], [Use event completion])])
 
-AC_ARG_ENABLE(picky, 
-    AC_HELP_STRING([--enable-picky],
-                   [enable developer-level compiler pickyness when building (default: disabled)]))
+AC_ARG_ENABLE([picky], 
+    [AC_HELP_STRING([--enable-picky],
+                    [Enable developer-level compiler pickyness when building (default: disabled)])])
 if test -z "$enable_picky" && test -d .svn -o -d .hg ; then
     echo "--> developer override: enable picky compiler by default"
     enable_picky=yes
 fi
+
+AC_ARG_ENABLE([error-checking],
+    [AC_HELP_STRING([--enable-error-checking],
+                    [Enable error checking for SHMEM calls (default:disabled)])])
+AS_IF([test "$enable_error_checking" = "yes"], [AC_DEFINE([ENABLE_ERROR_CHECKING], [1], [Enable argument checking])])
 
 dnl check for programs
 

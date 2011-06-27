@@ -13,6 +13,8 @@
 #ifndef PORTALS_SHMEM_INTERNAL_H
 #define PORTALS_SHMEM_INTERNAL_H
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 
 #define DATA_IDX 10
@@ -45,6 +47,7 @@ extern long shmem_data_length;
 extern int shmem_int_my_pe;
 extern int shmem_int_num_pes;
 
+extern int shmem_int_initialized;
 
 #define GET_REMOTE_ACCESS(target, pt, offset)                           \
     do {                                                                \
@@ -59,7 +62,6 @@ extern int shmem_int_num_pes;
         } else {                                                        \
             printf("[%03d] ERROR: target (0x%lx) outside of symmetric areas\n", \
                    shmem_int_my_pe, (unsigned long) target);            \
-            fflush(NULL);                                               \
             abort();                                                    \
         }                                                               \
     } while (0)
@@ -68,9 +70,18 @@ extern int shmem_int_num_pes;
     do {                                                                \
         fprintf(stderr, "[%03d] ERROR: %s:%d return code %d\n",         \
                 shmem_int_my_pe, __FILE__, __LINE__, (int) ret);        \
-        fflush(NULL);                                                   \
         abort();                                                        \
     } while (0)
+
+#define RAISE_ERROR_STR(str)                                            \
+    do {                                                                \
+        fprintf(stderr, "[%03d] ERROR: %s:%d: %s\n",                    \
+                shmem_int_my_pe, __FILE__, __LINE__, str);              \
+        abort();                                                        \
+    } while (0)
+
+
+
         
 static inline
 int

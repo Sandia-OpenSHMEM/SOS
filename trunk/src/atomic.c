@@ -24,6 +24,13 @@ shmem_float_swap(float *target, float value, int pe)
 {
     int ret;
     float newval;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_swap(target, &value, &newval, sizeof(float), pe, PTL_FLOAT);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
@@ -36,6 +43,13 @@ shmem_double_swap(double *target, double value, int pe)
 {
     int ret;
     double newval;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_swap(target, &value, &newval, sizeof(double), pe, PTL_DOUBLE);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
@@ -48,6 +62,13 @@ shmem_int_swap(int *target, int value, int pe)
 {
     int ret;
     int newval;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_swap(target, &value, &newval, sizeof(int), pe, DTYPE_INT);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
@@ -60,6 +81,13 @@ shmem_long_swap(long *target, long value, int pe)
 {
     int ret;
     long newval;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_swap(target, &value, &newval, sizeof(long), pe, DTYPE_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
@@ -72,6 +100,13 @@ shmem_longlong_swap(long long *target, long long value, int pe)
 {
     int ret;
     long long newval;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_swap(target, &value, &newval, sizeof(long long), pe, DTYPE_LONG_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
@@ -84,6 +119,13 @@ shmem_swap(long *target, long value, int pe)
 {
     int ret;
     long newval;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_swap(target, &value, &newval, sizeof(long), pe, DTYPE_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
@@ -96,6 +138,13 @@ shmem_int_cswap(int *target, int cond, int value, int pe)
 {
     int ret;
     int newval;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_cswap(target, &value, &newval, &cond, sizeof(int), pe, DTYPE_INT);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
@@ -108,6 +157,13 @@ shmem_long_cswap(long *target, long cond, long value, int pe)
 {
     int ret;
     long newval;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_cswap(target, &value, &newval, &cond, sizeof(long), pe, DTYPE_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
@@ -121,6 +177,13 @@ shmem_longlong_cswap(long long * target, long long cond,
 {
     int ret;
     long long newval;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_cswap(target, &value, &newval, &cond, sizeof(long long), pe, DTYPE_LONG_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
@@ -133,6 +196,13 @@ shmem_int_inc(int *target, int pe)
 {
     int ret;
     int tmp = 1;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_atomic(target, &tmp, sizeof(int), pe, PTL_SUM, DTYPE_INT);
     shmem_internal_put_wait(ret);
 }
@@ -143,6 +213,13 @@ shmem_long_inc(long *target, int pe)
 {
     int ret;
     long tmp = 1;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_atomic(target, &tmp, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
     shmem_internal_put_wait(ret);
 }
@@ -153,6 +230,13 @@ shmem_longlong_inc(long long *target, int pe)
 {
     int ret;
     long long tmp = 1;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_atomic(target, &tmp, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
     shmem_internal_put_wait(ret);
 }
@@ -163,6 +247,13 @@ shmem_int_finc(int *target, int pe)
 {
     int ret;
     int oldval, tmp = 1;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(int), pe, PTL_SUM, DTYPE_INT);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
@@ -175,6 +266,13 @@ shmem_long_finc(long *target, int pe)
 {
     int ret;
     long oldval, tmp = 1;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
@@ -187,6 +285,13 @@ shmem_longlong_finc(long long *target, int pe)
 {
     int ret;
     long long oldval, tmp = 1;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
@@ -198,6 +303,13 @@ void
 shmem_int_add(int *target, int value, int pe)
 {
     int ret;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_atomic(target, &value, sizeof(int), pe, PTL_SUM, DTYPE_INT);
     shmem_internal_put_wait(ret);
 }
@@ -207,6 +319,13 @@ void
 shmem_long_add(long *target, long value, int pe)
 {
     int ret;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_atomic(target, &value, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
     shmem_internal_put_wait(ret);
 }
@@ -216,6 +335,13 @@ void
 shmem_longlong_add(long long *target, long long value, int pe)
 {
     int ret;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_atomic(target, &value, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
     shmem_internal_put_wait(ret);
 }
@@ -226,6 +352,13 @@ shmem_int_fadd(int *target, int value, int pe)
 {
     int ret;
     int oldval;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(int), pe, PTL_SUM, DTYPE_INT);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
@@ -238,6 +371,13 @@ shmem_long_fadd(long *target, long value, int pe)
 {
     int ret;
     long oldval;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
@@ -251,6 +391,13 @@ shmem_longlong_fadd(long long *target, long long value,
 {
     int ret;
     long long oldval;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     ret = shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
@@ -279,6 +426,12 @@ shmem_clear_lock(long *lockp)
     lock_t *lock = (lock_t*) lockp;
     int ret, curr, cond, zero = 0, sig = SIGNAL_MASK;
 
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_quiet();
 
     /* release the lock if I'm the last to try to obtain it */
@@ -305,6 +458,12 @@ shmem_set_lock(long *lockp)
 {
     lock_t *lock = (lock_t*) lockp;
     int ret, curr, zero = 0, me = shmem_int_my_pe + 1, next_mask = NEXT_MASK;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
 
     /* initialize my elements to zero */
     ret = shmem_internal_put(&(lock->data), &zero, sizeof(zero), shmem_int_my_pe);
@@ -333,6 +492,12 @@ shmem_test_lock(long *lockp)
 {
     lock_t *lock = (lock_t*) lockp;
     int ret, curr, me = shmem_int_my_pe + 1, zero = 0;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
 
     /* initialize my elements to zero */
     ret = shmem_internal_put(&(lock->data), &zero, sizeof(zero), shmem_int_my_pe);
