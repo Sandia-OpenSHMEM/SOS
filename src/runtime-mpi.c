@@ -60,11 +60,23 @@ shmem_internal_runtime_init(void)
 }
 
 
+int
+shmem_internal_runtime_fini(void)
+{
+    int ret;
+    MPI_Finalized(&ret);
+    if (!ret) {
+        MPI_Finalize();
+    }
+
+    return 0;
+}
+
+
 ptl_process_t*
 shmem_internal_get_mapping(void)
 {
     ptl_process_t *ret;
-    int count;
 
     ret = malloc(sizeof(ptl_process_t) * size);
     if (NULL == ret) return 0;

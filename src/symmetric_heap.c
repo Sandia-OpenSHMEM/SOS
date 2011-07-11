@@ -44,7 +44,7 @@ shmem_get_next(int incr)
 }
 
 int
-symmetric_init(void)
+shmem_internal_symmetric_init(void)
 {
     long req_len = 64 * 1024 * 1024;
     char *env = getenv("SHMEM_SYMMETRIC_HEAP_SIZE");
@@ -53,6 +53,18 @@ symmetric_init(void)
     shmem_heap_length = req_len;
     shmem_heap_base = shmem_heap_curr = malloc(shmem_heap_length);
     if (NULL == shmem_heap_base)  return -1;
+
+    return 0;
+}
+
+int
+shmem_internal_symmetric_fini(void)
+{
+    if (NULL != shmem_heap_base) {
+        shmem_heap_length = 0;
+        free(shmem_heap_base);
+        shmem_heap_base = shmem_heap_curr = NULL;
+    }
 
     return 0;
 }
