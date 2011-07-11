@@ -27,7 +27,7 @@
 static long *barrier_work_array;
 
 int
-shmem_barrier_init(void)
+shmem_internal_barrier_init(void)
 {
     barrier_work_array = shmalloc(sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
     if (NULL == barrier_work_array) return -1;

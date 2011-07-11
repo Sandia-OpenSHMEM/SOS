@@ -48,6 +48,7 @@ extern int shmem_int_my_pe;
 extern int shmem_int_num_pes;
 
 extern int shmem_int_initialized;
+extern int shmem_internal_total_data_ordering;
 
 #define GET_REMOTE_ACCESS(target, pt, offset)                           \
     do {                                                                \
@@ -379,7 +380,8 @@ shmem_internal_fetch_atomic(void *target, void *source, void *dest, size_t len,
 }
 
 /* initialization routines */
-int symmetric_init(void);
-int shmem_barrier_init(void);
+int shmem_internal_symmetric_init(void);
+int shmem_internal_symmetric_fini(void);
+int shmem_internal_barrier_init(void);
 
 #endif

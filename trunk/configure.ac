@@ -11,7 +11,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Portals SHMEM], [1.0a2], [bwbarre@sandia.gov])
+AC_INIT([Portals SHMEM], [1.0a3], [bwbarre@sandia.gov])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])

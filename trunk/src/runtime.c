@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <stdio.h>
+#include <limits.h>
 
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
@@ -48,13 +49,70 @@ long shmem_data_length = 0;
 int shmem_int_my_pe = -1;
 int shmem_int_num_pes = -1;
 int shmem_int_initialized = 0;
+int shmem_int_finalized = 0;
+int shmem_internal_total_data_ordering = 0;
 
 #ifdef __APPLE__
 #include <mach-o/getsect.h>
 #else
-extern char etext;
+extern char data_start;
 extern char end;
 #endif
+
+static void
+shmem_internal_shutdown(void)
+{
+    if (!shmem_int_initialized ||
+        shmem_int_finalized) {
+        return;
+    }
+
+    shmem_int_finalized = 1;
+
+    if (!PtlHandleIsEqual(get_md_h, PTL_INVALID_HANDLE)) {
+        PtlMDRelease(get_md_h);
+    }
+    if (!PtlHandleIsEqual(put_md_h, PTL_INVALID_HANDLE)) {
+        PtlMDRelease(put_md_h);
+    }
+#ifdef ENABLE_EVENT_COMPLETION
+    if (!PtlHandleIsEqual(put_eq_h, PTL_INVALID_HANDLE)) {
+        PtlEQFree(put_eq_h);
+    }
+#endif
+    if (!PtlHandleIsEqual(get_ct_h, PTL_INVALID_HANDLE)) {
+        PtlCTFree(get_ct_h);
+    }
+    if (!PtlHandleIsEqual(put_ct_h, PTL_INVALID_HANDLE)) {
+        PtlCTFree(put_ct_h);
+    }
+    if (!PtlHandleIsEqual(heap_le_h, PTL_INVALID_HANDLE)) {
+        PtlLEUnlink(heap_le_h);
+    }
+    if (!PtlHandleIsEqual(data_le_h, PTL_INVALID_HANDLE)) {
+        PtlLEUnlink(data_le_h);
+    }
+    if (!PtlHandleIsEqual(target_ct_h, PTL_INVALID_HANDLE)) {
+        PtlCTFree(target_ct_h);
+    }
+    if (PTL_PT_ANY != heap_pt) {
+        PtlPTFree(ni_h, heap_pt);
+    }
+    if (PTL_PT_ANY != data_pt) {
+        PtlPTFree(ni_h, data_pt);
+    }
+    if (PtlHandleIsEqual(err_eq_h, PTL_INVALID_HANDLE)) {
+        PtlEQFree(err_eq_h);
+    }
+    if (PtlHandleIsEqual(ni_h, PTL_INVALID_HANDLE)) {
+        PtlNIFini(ni_h);
+    }
+    if (NULL != shmem_data_base) {
+        shmem_internal_symmetric_fini();
+    }
+    shmem_internal_runtime_fini();
+    PtlFini();
+}
 
 void
 start_pes(int npes)
@@ -64,7 +122,7 @@ start_pes(int npes)
     ptl_md_t md;
     ptl_le_t le;
     ptl_uid_t uid = PTL_UID_ANY;
-    ptl_ni_limits_t ni_limits;
+    ptl_ni_limits_t ni_limits, ni_req_limits;
 
     if (shmem_int_initialized) {
         RAISE_ERROR_STR("attempt to reinitialize library");
@@ -74,7 +132,7 @@ start_pes(int npes)
     ret = PtlInit();
     if (PTL_OK != ret) {
         fprintf(stderr, "ERROR: PtlInit failed: %d\n", ret);
-        goto cleanup;
+        abort();
     }
 
     ret = shmem_internal_runtime_init();
@@ -82,7 +140,6 @@ start_pes(int npes)
         fprintf(stderr, "ERROR: runtime init failed: %d\n", ret);
         goto cleanup;
     }
-
     shmem_int_my_pe = shmem_internal_get_rank();
     shmem_int_num_pes = shmem_internal_get_size();
 
@@ -99,16 +156,40 @@ start_pes(int npes)
                 shmem_int_my_pe);
         goto cleanup;
     }
+
+    ni_req_limits.max_entries = 1024;
+    ni_req_limits.max_unexpected_headers = 1024;
+    ni_req_limits.max_mds = 1024;
+    ni_req_limits.max_eqs = 1024;
+    ni_req_limits.max_cts = 1024;
+    ni_req_limits.max_pt_index = 64;
+    ni_req_limits.max_iovecs = 1024;
+    ni_req_limits.max_list_size = 1024;
+    ni_req_limits.max_triggered_ops = 1024;
+    ni_req_limits.max_msg_size = LONG_MAX;
+    ni_req_limits.max_atomic_size = 512;
+    ni_req_limits.max_fetch_atomic_size = 512;
+    ni_req_limits.max_waw_ordered_size = 512;
+    ni_req_limits.max_war_ordered_size = 512;
+    ni_req_limits.max_volatile_size = 512;
+#ifdef PTL_TOTAL_DATA_ORDERING
+    ni_req_limits.features = PTL_TOTAL_DATA_ORDERING;
+#else
+    ni_req_limits.features = 0;
+#endif
+
     ret = PtlNIInit(PTL_IFACE_DEFAULT,
                     PTL_NI_NO_MATCHING | PTL_NI_LOGICAL,
                     PTL_PID_ANY,
-                    NULL,
+                    &ni_req_limits,
                     &ni_limits,
                     shmem_int_num_pes,
                     desired,
                     mapping,
                     &ni_h);
     free(desired);
+    /* BWB: FIX ME: probably should do something with mapping... */
+    free(mapping);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlNIInit failed: %d\n",
                 shmem_int_my_pe, ret);
@@ -144,10 +225,14 @@ start_pes(int npes)
                 (unsigned long) max_put_size);
         goto cleanup;
     }
-
+#ifdef PTL_TOTAL_DATA_ORDERING
+    if (PTL_TOTAL_DATA_ORDERING & ni_limits.features != 0) {
+        shmem_internal_total_data_ordering = 1;        
+    }
+#endif
 
     /* create symmetric allocation */
-    ret = symmetric_init();
+    ret = shmem_internal_symmetric_init();
     if (0 != ret) {
         fprintf(stderr, "[%03d] ERROR: symmetric heap initialization failed: %d\n",
                 shmem_int_my_pe, ret);
@@ -190,31 +275,6 @@ start_pes(int npes)
         goto cleanup;
     }
 
-    /* Open LE to data section */
-#ifdef __APPLE__
-    le.start = shmem_data_base = (void*) get_etext();
-    le.length = shmem_data_length = get_end() - get_etext();
-#else
-    le.start = shmem_data_base = &etext;
-    le.length = shmem_data_length = (unsigned long) &end  - (unsigned long) &etext;
-#endif
-    le.ct_handle = target_ct_h;
-    le.ac_id.uid = uid;
-    le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
-        PTL_LE_EVENT_SUCCESS_DISABLE | 
-        PTL_LE_EVENT_CT_COMM;
-    ret = PtlLEAppend(ni_h,
-                      data_pt,
-                      &le,
-                      PTL_PRIORITY_LIST,
-                      NULL,
-                      &data_le_h);
-    if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlLEAppend of data section failed: %d\n",
-                shmem_int_my_pe, ret);
-        goto cleanup;
-    }
-
     /* Open LE to heap section */
     le.start = shmem_heap_base;
     le.length = shmem_heap_length;
@@ -231,6 +291,32 @@ start_pes(int npes)
                       &heap_le_h);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlLEAppend of heap section failed: %d\n",
+                shmem_int_my_pe, ret);
+        goto cleanup;
+    }
+
+    /* Open LE to data section */
+#ifdef __APPLE__
+    le.start = shmem_data_base = (void*) get_etext();
+    le.length = shmem_data_length = get_end() - get_etext() - 1;
+#else
+    le.start = shmem_data_base = &data_start;
+    le.length = shmem_data_length = (unsigned long) &end  - (unsigned long) &data_start - 1;
+#endif
+
+    le.ct_handle = target_ct_h;
+    le.ac_id.uid = uid;
+    le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
+        PTL_LE_EVENT_SUCCESS_DISABLE | 
+        PTL_LE_EVENT_CT_COMM;
+    ret = PtlLEAppend(ni_h,
+                      data_pt,
+                      &le,
+                      PTL_PRIORITY_LIST,
+                      NULL,
+                      &data_le_h);
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlLEAppend of data section failed: %d\n",
                 shmem_int_my_pe, ret);
         goto cleanup;
     }
@@ -296,12 +382,15 @@ start_pes(int npes)
     }
 
     /* setup space for barrier */
-    ret = shmem_barrier_init();
+    ret = shmem_internal_barrier_init();
     if (ret != 0) {
         fprintf(stderr, "[%03d] ERROR: initialization of barrier space failed: %d\n",
                 shmem_int_my_pe, ret);
         goto cleanup;
     }
+
+    shmem_int_initialized = 1;
+    atexit(shmem_internal_shutdown);
 
     /* Give point for debuggers to get a chance to attach if requested by user */
     if (NULL != getenv("SHMEM_DEBUGGER_ATTACH")) {
@@ -353,6 +442,10 @@ start_pes(int npes)
     if (PtlHandleIsEqual(ni_h, PTL_INVALID_HANDLE)) {
         PtlNIFini(ni_h);
     }
+    if (NULL != shmem_data_base) {
+        shmem_internal_symmetric_fini();
+    }
+    shmem_internal_runtime_fini();
     PtlFini();
     abort();
 }

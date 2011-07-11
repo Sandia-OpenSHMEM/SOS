@@ -28,6 +28,11 @@ shmem_internal_runtime_init(void)
     return 0;
 }
 
+int
+shmem_internal_runtime_fini(void)
+{
+    return 0;
+}
 
 ptl_process_t*
 shmem_internal_get_mapping(void)
