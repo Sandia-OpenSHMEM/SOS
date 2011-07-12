@@ -20,68 +20,70 @@
 #define DATA_IDX 10
 #define HEAP_IDX 11
 
-extern ptl_handle_ni_t ni_h;
-extern ptl_pt_index_t data_pt;
-extern ptl_pt_index_t heap_pt;
-extern ptl_handle_md_t put_md_h;
-extern ptl_handle_md_t get_md_h;
-extern ptl_handle_ct_t target_ct_h;
-extern ptl_handle_ct_t put_ct_h;
-extern ptl_handle_ct_t get_ct_h;
+extern ptl_handle_ni_t shmem_internal_ni_h;
+extern ptl_pt_index_t shmem_internal_data_pt;
+extern ptl_pt_index_t shmem_internal_heap_pt;
+extern ptl_handle_md_t shmem_internal_put_md_h;
+extern ptl_handle_md_t shmem_internal_get_md_h;
+extern ptl_handle_ct_t shmem_internal_target_ct_h;
+extern ptl_handle_ct_t shmem_internal_put_ct_h;
+extern ptl_handle_ct_t shmem_internal_get_ct_h;
 #ifdef ENABLE_EVENT_COMPLETION
-extern ptl_handle_eq_t put_eq_h;
+extern ptl_handle_eq_t shmem_internal_put_eq_h;
 #endif
-extern ptl_handle_eq_t err_eq_h;
-extern ptl_size_t max_put_size;
-extern ptl_size_t max_atomic_size;
-extern ptl_size_t max_fetch_atomic_size;
+extern ptl_handle_eq_t shmem_internal_err_eq_h;
+extern ptl_size_t shmem_internal_max_put_size;
+extern ptl_size_t shmem_internal_max_atomic_size;
+extern ptl_size_t shmem_internal_max_fetch_atomic_size;
 
-extern ptl_size_t pending_put_counter;
-extern ptl_size_t pending_get_counter;
+extern ptl_size_t shmem_internal_pending_put_counter;
+extern ptl_size_t shmem_internal_pending_get_counter;
 
-extern void *shmem_heap_base;
-extern long shmem_heap_length;
-extern void *shmem_data_base;
-extern long shmem_data_length;
+extern void *shmem_internal_heap_base;
+extern long shmem_internal_heap_length;
+extern void *shmem_internal_data_base;
+extern long shmem_internal_data_length;
 
-extern int shmem_int_my_pe;
-extern int shmem_int_num_pes;
+extern int shmem_internal_my_pe;
+extern int shmem_internal_num_pes;
 
-extern int shmem_int_initialized;
+extern int shmem_internal_initialized;
+extern int shmem_internal_finalized;
 extern int shmem_internal_total_data_ordering;
+
 
 #define GET_REMOTE_ACCESS(target, pt, offset)                           \
     do {                                                                \
-        if (((void*) target > shmem_data_base) &&                       \
-            ((char*) target < (char*) shmem_data_base + shmem_data_length)) { \
-            pt = data_pt;                                               \
-            offset = (char*) target - (char*) shmem_data_base;          \
-        } else if (((void*) target > shmem_heap_base) &&                \
-                   ((char*) target < (char*) shmem_heap_base + shmem_heap_length)) { \
-            pt = heap_pt;                                               \
-            offset = (char*) target - (char*) shmem_heap_base;          \
+        if (((void*) target > shmem_internal_data_base) &&              \
+            ((char*) target < (char*) shmem_internal_data_base + shmem_internal_data_length)) { \
+            pt = shmem_internal_data_pt;                                \
+            offset = (char*) target - (char*) shmem_internal_data_base; \
+        } else if (((void*) target > shmem_internal_heap_base) &&       \
+                   ((char*) target < (char*) shmem_internal_heap_base + shmem_internal_heap_length)) { \
+            pt = shmem_internal_heap_pt;                                \
+            offset = (char*) target - (char*) shmem_internal_heap_base; \
         } else {                                                        \
             printf("[%03d] ERROR: target (0x%lx) outside of symmetric areas\n", \
-                   shmem_int_my_pe, (unsigned long) target);            \
+                   shmem_internal_my_pe, (unsigned long) target);       \
             abort();                                                    \
         }                                                               \
     } while (0)
 
+
 #define RAISE_ERROR(ret)                                                \
     do {                                                                \
         fprintf(stderr, "[%03d] ERROR: %s:%d return code %d\n",         \
-                shmem_int_my_pe, __FILE__, __LINE__, (int) ret);        \
+                shmem_internal_my_pe, __FILE__, __LINE__, (int) ret);   \
         abort();                                                        \
     } while (0)
+
 
 #define RAISE_ERROR_STR(str)                                            \
     do {                                                                \
         fprintf(stderr, "[%03d] ERROR: %s:%d: %s\n",                    \
-                shmem_int_my_pe, __FILE__, __LINE__, str);              \
+                shmem_internal_my_pe, __FILE__, __LINE__, str);         \
         abort();                                                        \
     } while (0)
-
-
 
         
 static inline
@@ -97,7 +99,7 @@ shmem_internal_put(void *target, const void *source, size_t len, int pe)
     GET_REMOTE_ACCESS(target, pt, offset);
 
     if (len <= sizeof(long double complex)) {
-        ret = PtlPut(put_md_h,
+        ret = PtlPut(shmem_internal_put_md_h,
                      (ptl_size_t) source,
                      len,
                      PTL_CT_ACK_REQ,
@@ -111,9 +113,10 @@ shmem_internal_put(void *target, const void *source, size_t len, int pe)
         tmp++;
     } else {
         size_t sent;
-        for (sent = 0 ; sent < len ; sent += max_put_size) {
-            size_t bufsize = (len - sent < max_put_size) ? len - sent : max_put_size;
-            ret = PtlPut(put_md_h,
+        for (sent = 0 ; sent < len ; sent += shmem_internal_max_put_size) {
+            size_t bufsize = (len - sent < shmem_internal_max_put_size) ? 
+                len - sent : shmem_internal_max_put_size;
+            ret = PtlPut(shmem_internal_put_md_h,
                          (ptl_size_t) ((char*) source + sent),
                          bufsize,
                          PTL_CT_ACK_REQ,
@@ -128,7 +131,7 @@ shmem_internal_put(void *target, const void *source, size_t len, int pe)
         }
     }
 
-    pending_put_counter += tmp;
+    shmem_internal_pending_put_counter += tmp;
     return tmp;
 }
 
@@ -142,7 +145,7 @@ shmem_internal_put_wait(int count)
     ptl_event_t ev;
 
     for ( ; count > 0 ; --count) {
-        ret = PtlEQWait(put_eq_h, &ev);
+        ret = PtlEQWait(shmem_internal_put_eq_h, &ev);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
         if (ev.ni_fail_type != PTL_OK) { RAISE_ERROR(ev.ni_fail_type); }
     }
@@ -161,7 +164,7 @@ shmem_internal_get(void *target, const void *source, size_t len, int pe)
     peer.rank = pe;
     GET_REMOTE_ACCESS(source, pt, offset);
 
-    ret = PtlGet(get_md_h,
+    ret = PtlGet(shmem_internal_get_md_h,
                  (ptl_size_t) target,
                  len,
                  peer,
@@ -170,7 +173,7 @@ shmem_internal_get(void *target, const void *source, size_t len, int pe)
                  offset,
                  0);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    pending_get_counter++;
+    shmem_internal_pending_get_counter++;
 }
 
 
@@ -181,7 +184,9 @@ shmem_internal_get_wait(void)
     int ret;
     ptl_ct_event_t ct;
 
-    ret = PtlCTWait(get_ct_h, pending_get_counter, &ct);
+    ret = PtlCTWait(shmem_internal_get_ct_h, 
+                    shmem_internal_pending_get_counter,
+                    &ct);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
     if (ct.failure != 0) { RAISE_ERROR(ct.failure); }
 }
@@ -201,9 +206,9 @@ shmem_internal_swap(void *target, void *source, void *dest, size_t len,
 
     assert(len <= sizeof(long double complex));
 
-    ret = PtlSwap(get_md_h,
+    ret = PtlSwap(shmem_internal_get_md_h,
                   (ptl_size_t) dest,
-                  put_md_h,
+                  shmem_internal_put_md_h,
                   (ptl_size_t) source,
                   len,
                   peer,
@@ -216,7 +221,7 @@ shmem_internal_swap(void *target, void *source, void *dest, size_t len,
                   PTL_SWAP,
                   datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    pending_get_counter++;
+    shmem_internal_pending_get_counter++;
 
     return 1;
 }
@@ -236,9 +241,9 @@ shmem_internal_cswap(void *target, void *source, void *dest, void *operand, size
 
     assert(len <= sizeof(long double complex));
 
-    ret = PtlSwap(get_md_h,
+    ret = PtlSwap(shmem_internal_get_md_h,
                   (ptl_size_t) dest,
-                  put_md_h,
+                  shmem_internal_put_md_h,
                   (ptl_size_t) source,
                   len,
                   peer,
@@ -251,7 +256,7 @@ shmem_internal_cswap(void *target, void *source, void *dest, void *operand, size
                   PTL_CSWAP,
                   datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    pending_get_counter++;
+    shmem_internal_pending_get_counter++;
 
     return 1;
 }
@@ -271,9 +276,9 @@ shmem_internal_mswap(void *target, void *source, void *dest, void *mask, size_t 
 
     assert(len <= sizeof(long double complex));
 
-    ret = PtlSwap(get_md_h,
+    ret = PtlSwap(shmem_internal_get_md_h,
                   (ptl_size_t) dest,
-                  put_md_h,
+                  shmem_internal_put_md_h,
                   (ptl_size_t) source,
                   len,
                   peer,
@@ -286,7 +291,7 @@ shmem_internal_mswap(void *target, void *source, void *dest, void *mask, size_t 
                   PTL_MSWAP,
                   datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    pending_get_counter++;
+    shmem_internal_pending_get_counter++;
 
     return 1;
 }
@@ -306,7 +311,7 @@ shmem_internal_atomic(void *target, void *source, size_t len,
     GET_REMOTE_ACCESS(target, pt, offset);
 
     if (len <= sizeof(long double complex)) {
-        ret = PtlAtomic(put_md_h,
+        ret = PtlAtomic(shmem_internal_put_md_h,
                         (ptl_size_t) source,
                         len,
                         PTL_CT_ACK_REQ,
@@ -322,9 +327,10 @@ shmem_internal_atomic(void *target, void *source, size_t len,
         tmp++;
     } else {
         size_t sent;
-        for (sent = 0 ; sent < len ; sent += max_put_size) {
-            size_t bufsize = (len - sent < max_atomic_size) ? len - sent : max_atomic_size;
-            ret = PtlAtomic(put_md_h,
+        for (sent = 0 ; sent < len ; sent += shmem_internal_max_put_size) {
+            size_t bufsize = (len - sent < shmem_internal_max_atomic_size) ? 
+                len - sent : shmem_internal_max_atomic_size;
+            ret = PtlAtomic(shmem_internal_put_md_h,
                             (ptl_size_t) ((char*) source + sent),
                             bufsize,
                             PTL_CT_ACK_REQ,
@@ -341,7 +347,7 @@ shmem_internal_atomic(void *target, void *source, size_t len,
         }
     }
 
-    pending_put_counter += tmp;
+    shmem_internal_pending_put_counter += tmp;
     return tmp;
 }
 
@@ -360,9 +366,9 @@ shmem_internal_fetch_atomic(void *target, void *source, void *dest, size_t len,
 
     assert(len <= sizeof(long double complex));
 
-    ret = PtlFetchAtomic(get_md_h,
+    ret = PtlFetchAtomic(shmem_internal_get_md_h,
                          (ptl_size_t) dest,
-                         put_md_h,
+                         shmem_internal_put_md_h,
                          (ptl_size_t) source,
                          len,
                          peer,
@@ -374,7 +380,7 @@ shmem_internal_fetch_atomic(void *target, void *source, void *dest, size_t len,
                          op,
                          datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    pending_get_counter++;
+    shmem_internal_pending_get_counter++;
 
     return 1;
 }
@@ -383,5 +389,6 @@ shmem_internal_fetch_atomic(void *target, void *source, void *dest, size_t len,
 int shmem_internal_symmetric_init(void);
 int shmem_internal_symmetric_fini(void);
 int shmem_internal_barrier_init(void);
+int shmem_internal_barrier_fini(void);
 
 #endif

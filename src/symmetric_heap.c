@@ -21,22 +21,22 @@
 
 long malloc_error = 0;
 
-void *shmem_heap_base = NULL;
-long shmem_heap_length = 0;
-char *shmem_heap_curr = NULL;
+void *shmem_internal_heap_base = NULL;
+long shmem_internal_heap_length = 0;
+static char *shmem_internal_heap_curr = NULL;
 
-void* shmem_get_next(int incr);
+void* shmem_internal_get_next(int incr);
 void* dlmalloc(size_t);
 void  dlfree(void*);
 void* dlrealloc(void*, size_t);
 void* dlmemalign(size_t, size_t);
 
 void*
-shmem_get_next(int incr)
+shmem_internal_get_next(int incr)
 {
-    char *orig = shmem_heap_curr;
-    shmem_heap_curr += (incr > 0) ? incr : 0;
-    if (shmem_heap_curr - (char*) shmem_heap_base > shmem_heap_length) {
+    char *orig = shmem_internal_heap_curr;
+    shmem_internal_heap_curr += (incr > 0) ? incr : 0;
+    if (shmem_internal_heap_curr - (char*) shmem_internal_heap_base > shmem_internal_heap_length) {
         printf("WARNING: top of symmetric heap found\n");
         return (void*) -1;
     }
@@ -50,9 +50,9 @@ shmem_internal_symmetric_init(void)
     char *env = getenv("SHMEM_SYMMETRIC_HEAP_SIZE");
     if (NULL != env) req_len = atoi(env);
 
-    shmem_heap_length = req_len;
-    shmem_heap_base = shmem_heap_curr = malloc(shmem_heap_length);
-    if (NULL == shmem_heap_base)  return -1;
+    shmem_internal_heap_length = req_len;
+    shmem_internal_heap_base = shmem_internal_heap_curr = malloc(shmem_internal_heap_length);
+    if (NULL == shmem_internal_heap_base)  return -1;
 
     return 0;
 }
@@ -60,10 +60,10 @@ shmem_internal_symmetric_init(void)
 int
 shmem_internal_symmetric_fini(void)
 {
-    if (NULL != shmem_heap_base) {
-        shmem_heap_length = 0;
-        free(shmem_heap_base);
-        shmem_heap_base = shmem_heap_curr = NULL;
+    if (NULL != shmem_internal_heap_base) {
+        shmem_internal_heap_length = 0;
+        free(shmem_internal_heap_base);
+        shmem_internal_heap_base = shmem_internal_heap_curr = NULL;
     }
 
     return 0;

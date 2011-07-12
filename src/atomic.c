@@ -26,7 +26,7 @@ shmem_float_swap(float *target, float value, int pe)
     float newval;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -45,7 +45,7 @@ shmem_double_swap(double *target, double value, int pe)
     double newval;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -64,7 +64,7 @@ shmem_int_swap(int *target, int value, int pe)
     int newval;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -83,7 +83,7 @@ shmem_long_swap(long *target, long value, int pe)
     long newval;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -102,7 +102,7 @@ shmem_longlong_swap(long long *target, long long value, int pe)
     long long newval;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -121,7 +121,7 @@ shmem_swap(long *target, long value, int pe)
     long newval;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -140,7 +140,7 @@ shmem_int_cswap(int *target, int cond, int value, int pe)
     int newval;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -159,7 +159,7 @@ shmem_long_cswap(long *target, long cond, long value, int pe)
     long newval;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -179,7 +179,7 @@ shmem_longlong_cswap(long long * target, long long cond,
     long long newval;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -198,7 +198,7 @@ shmem_int_inc(int *target, int pe)
     int tmp = 1;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -215,7 +215,7 @@ shmem_long_inc(long *target, int pe)
     long tmp = 1;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -232,7 +232,7 @@ shmem_longlong_inc(long long *target, int pe)
     long long tmp = 1;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -249,7 +249,7 @@ shmem_int_finc(int *target, int pe)
     int oldval, tmp = 1;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -268,7 +268,7 @@ shmem_long_finc(long *target, int pe)
     long oldval, tmp = 1;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -287,7 +287,7 @@ shmem_longlong_finc(long long *target, int pe)
     long long oldval, tmp = 1;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -305,7 +305,7 @@ shmem_int_add(int *target, int value, int pe)
     int ret;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -321,7 +321,7 @@ shmem_long_add(long *target, long value, int pe)
     int ret;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -337,7 +337,7 @@ shmem_longlong_add(long long *target, long long value, int pe)
     int ret;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -354,7 +354,7 @@ shmem_int_fadd(int *target, int value, int pe)
     int oldval;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -373,7 +373,7 @@ shmem_long_fadd(long *target, long value, int pe)
     long oldval;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -393,7 +393,7 @@ shmem_longlong_fadd(long long *target, long long value,
     long long oldval;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -427,7 +427,7 @@ shmem_clear_lock(long *lockp)
     int ret, curr, cond, zero = 0, sig = SIGNAL_MASK;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -435,12 +435,12 @@ shmem_clear_lock(long *lockp)
     shmem_quiet();
 
     /* release the lock if I'm the last to try to obtain it */
-    cond = shmem_int_my_pe + 1;
+    cond = shmem_internal_my_pe + 1;
     ret = shmem_internal_cswap(&(lock->last), &zero, &curr, &cond, sizeof(int), 0, DTYPE_INT);
     shmem_internal_put_wait(ret);
     shmem_internal_get_wait();
     /* if local PE was not the last to hold the lock, have to look for the next in line */
-    if (curr != shmem_int_my_pe + 1) {
+    if (curr != shmem_internal_my_pe + 1) {
         /* wait for next part of the data block to be non-zero */
         while (NEXT(lock->data) == 0) {
             shmem_int_wait(&(lock->data), SIGNAL(lock->data));
@@ -457,16 +457,16 @@ void
 shmem_set_lock(long *lockp)
 {
     lock_t *lock = (lock_t*) lockp;
-    int ret, curr, zero = 0, me = shmem_int_my_pe + 1, next_mask = NEXT_MASK;
+    int ret, curr, zero = 0, me = shmem_internal_my_pe + 1, next_mask = NEXT_MASK;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
     /* initialize my elements to zero */
-    ret = shmem_internal_put(&(lock->data), &zero, sizeof(zero), shmem_int_my_pe);
+    ret = shmem_internal_put(&(lock->data), &zero, sizeof(zero), shmem_internal_my_pe);
     shmem_internal_put_wait(ret);
     shmem_quiet();
 
@@ -491,16 +491,16 @@ int
 shmem_test_lock(long *lockp)
 {
     lock_t *lock = (lock_t*) lockp;
-    int ret, curr, me = shmem_int_my_pe + 1, zero = 0;
+    int ret, curr, me = shmem_internal_my_pe + 1, zero = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
     /* initialize my elements to zero */
-    ret = shmem_internal_put(&(lock->data), &zero, sizeof(zero), shmem_int_my_pe);
+    ret = shmem_internal_put(&(lock->data), &zero, sizeof(zero), shmem_internal_my_pe);
     shmem_internal_put_wait(ret);
     shmem_quiet();
 

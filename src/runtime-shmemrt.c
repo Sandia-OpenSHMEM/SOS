@@ -35,7 +35,7 @@ shmem_internal_runtime_fini(void)
 }
 
 ptl_process_t*
-shmem_internal_get_mapping(void)
+shmem_internal_runtime_get_mapping(void)
 {
     int size, i;
     ptl_process_t *ret;
@@ -57,21 +57,21 @@ shmem_internal_get_mapping(void)
 
 
 int
-shmem_internal_get_rank(void)
+shmem_internal_runtime_get_rank(void)
 {
     return runtime_get_rank();
 }
 
 
 int
-shmem_internal_get_size(void)
+shmem_internal_runtime_get_size(void)
 {
     return runtime_get_size();
 }
 
 
 void
-shmem_internal_barrier(void)
+shmem_internal_runtime_barrier(void)
 {
     runtime_barrier();
 }

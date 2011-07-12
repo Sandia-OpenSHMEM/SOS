@@ -41,13 +41,13 @@ shmem_barrier_all(void)
 {
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
     shmem_quiet();
-    shmem_barrier(0, 0, shmem_int_num_pes, barrier_work_array);
+    shmem_barrier(0, 0, shmem_internal_num_pes, barrier_work_array);
 }
 
 
@@ -61,18 +61,21 @@ shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
     int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
-    if (PE_start == shmem_int_my_pe) {
+    if (PE_start == shmem_internal_my_pe) {
         int pe, i;
         /* wait for N - 1 callins up the tree */
         shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size - 1);
+
         /* Clear pSync; have to do local assignment to clear out NIC atomic cache */
-        ret += shmem_internal_put(pSync, &zero, sizeof(zero), shmem_int_my_pe);
+        ret += shmem_internal_put(pSync, &zero, sizeof(zero), shmem_internal_my_pe);
         shmem_internal_put_wait(ret);
+        shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
+
         ret = 0;
         /* Send acks down psync tree */
         for (pe = PE_start + stride, i = 1 ; 
@@ -96,25 +99,36 @@ shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 static inline
 void
 shmem_internal_bcast(void *target, const void *source, size_t len,
-                int PE_root, int PE_start, int logPE_stride, int PE_size,
-                long *pSync)
+                     int PE_root, int PE_start, int logPE_stride, int PE_size,
+                     long *pSync)
 { 
     int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
     int i, ret = 0;
     long one = 1;
+    int real_root = PE_start + PE_root * stride;
 
-    if (PE_root == shmem_int_my_pe) {
+    if (real_root == shmem_internal_my_pe) {
+        /* send data to all peers */
         for (i = PE_start ; i < PE_size ; i += stride) {
-            if (i == shmem_int_my_pe && source == target) continue;
+            if (i == shmem_internal_my_pe && source == target) continue;
             ret += shmem_internal_put(target, source, len, i);
-            if (i != shmem_int_my_pe) ret += shmem_internal_put(pSync, &one, sizeof(long), i);
         }
         shmem_internal_put_wait(ret);
-    } else {
-        shmem_long_wait(pSync, 0);
-        /* Clear pSync ; never atomically incremented, ok to direct assign */
-        pSync[0] = 0;
+        ret = 0;
+
+        shmem_fence();
+
+        /* send completion ack to all peers */
+        for (i = PE_start ; i < PE_size ; i += stride) {
+            ret += shmem_internal_put(pSync, &one, sizeof(long), i);
+        }
+        shmem_internal_put_wait(ret);
     }
+
+    /* wait for data arrival message */
+    shmem_long_wait(pSync, 0);
+    /* Clear pSync ; never atomically incremented, ok to direct assign */
+    pSync[0] = 0;
 }
 
 
@@ -136,38 +150,53 @@ shmem_internal_op_to_all(void *target, void *source, int count, int type_size,
     int ret = 0;
     long zero = 0, one = 1;
 
-    if (PE_start == shmem_int_my_pe) {
+    if (PE_start == shmem_internal_my_pe) {
         int pe, i;
         /* update our target buffer with our contribution */
-        ret = shmem_internal_put(target, source, count * type_size, shmem_int_my_pe);
+        ret = shmem_internal_put(target, source, count * type_size, shmem_internal_my_pe);
         shmem_internal_put_wait(ret);
-        ret = 0;
+        shmem_fence();
+        ret = shmem_internal_put(pSync, &one, sizeof(one), shmem_internal_my_pe);
+        shmem_internal_put_wait(ret);
+        shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 1);
+
         /* let everyone know that it's safe to send to us */
+        ret = 0;
         for (pe = PE_start + stride, i = 1 ; 
              i < PE_size ;  
              i++, pe += stride) {
             ret += shmem_internal_put(pSync, &one, sizeof(one), pe);
         }
         shmem_internal_put_wait(ret);
-        ret = 0;
+
         /* Wait for others to acknowledge sending data */
-        shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size - 1);
+        shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size);
+
         /* reset pSync; atomics used, so have to use Portals op */
-        ret += shmem_internal_put(pSync, &zero, sizeof(zero), shmem_int_my_pe);
+        ret = 0;
+        ret += shmem_internal_put(pSync, &zero, sizeof(zero), shmem_internal_my_pe);
         shmem_internal_put_wait(ret);
+        shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
+
     } else {
         /* wait for clear to send */
         shmem_long_wait(pSync, 0);
-        /* send data, ack, and wait for completion */
-        ret += shmem_internal_atomic(target, source, count * type_size, PE_start, op, datatype);
-        ret += shmem_internal_atomic(pSync, &one, sizeof(one), PE_start, PTL_SUM, DTYPE_LONG);
-        shmem_internal_put_wait(ret);
+
         /* reset pSync */
         pSync[0] = 0;
+
+        /* send data, ack, and wait for completion */
+        ret = shmem_internal_atomic(target, source, count * type_size, PE_start, op, datatype);
+        shmem_internal_put_wait(ret);
+
+        shmem_fence();
+
+        ret = shmem_internal_atomic(pSync, &one, sizeof(one), PE_start, PTL_SUM, DTYPE_LONG);
+        shmem_internal_put_wait(ret);
     }
 
     /* broadcast out */
-    shmem_internal_bcast(target, target, count * type_size, PE_start, PE_start, logPE_stride, PE_size, pSync);
+    shmem_internal_bcast(target, target, count * type_size, 0, PE_start, logPE_stride, PE_size, pSync);
 }
 
 
@@ -196,32 +225,45 @@ shmem_internal_collect(void *target, const void *source, size_t len,
     }
 
     /* collect in PE_start */
-    if (PE_start == shmem_int_my_pe) {
+    if (PE_start == shmem_internal_my_pe) {
         if (target != source) {
             ret += shmem_internal_put(target, source, len, PE_start);
         }
         tmp[0] = len;
         ret += shmem_internal_put(pSync, tmp, 2 * sizeof(long), PE_start + stride);
-        shmem_long_wait(&pSync[1], 0);
         shmem_internal_put_wait(ret);
+        shmem_long_wait(&pSync[1], 0);
         bcast_len = pSync[0];
         pSync[0] = pSync[1] = 0;
+
+        /* make sure put to ourselves is completed before broadcast */
+        shmem_quiet();
+
     } else {
+        /* wait for send data */
         shmem_long_wait(&pSync[1], 0);
-        ret += shmem_internal_put((char*) target + pSync[0], source, len, PE_start);
-        if (shmem_int_my_pe == PE_start + stride * (PE_size - 1)) {
+
+        /* send data to root */
+        ret = shmem_internal_put((char*) target + pSync[0], source, len, PE_start);
+        if (shmem_internal_my_pe == PE_start + stride * (PE_size - 1)) {
             pe = PE_start;
+
+            /* need to fence if sending completion to root to keep ordering */
+            shmem_internal_put_wait(ret);
+            ret = 0;
+            shmem_fence();
+
         } else {
-            pe = shmem_int_my_pe + stride;
+            pe = shmem_internal_my_pe + stride;
         }
         tmp[0] = pSync[0] + len;
         pSync[0] = pSync[1] = 0;
-        ret += shmem_internal_put(pSync, tmp, 2 * sizeof(long), PE_start);
+        ret += shmem_internal_put(pSync, tmp, 2 * sizeof(long), pe);
         shmem_internal_put_wait(ret);
     }
 
     /* broadcast out */
-    shmem_internal_bcast(target, target, bcast_len, PE_start, PE_start, logPE_stride, PE_size, pSync);
+    shmem_internal_bcast(target, target, bcast_len, 0, PE_start, logPE_stride, PE_size, pSync);
 }
 
 
@@ -237,22 +279,28 @@ shmem_internal_fcollect(void *target, const void *source, size_t len,
     long tmp = 1;
     int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
 
-    if (PE_start == shmem_int_my_pe) {
+    if (PE_start == shmem_internal_my_pe) {
         if (source != target) {
-            ret += shmem_internal_put(target, source, len, PE_start);
+            ret = shmem_internal_put(target, source, len, PE_start);
+            shmem_internal_put_wait(ret);
+            shmem_fence();
+            ret = shmem_internal_atomic(pSync, &tmp, sizeof(long), PE_start, PTL_SUM, DTYPE_LONG);
         }
-        shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size - 1);
+        shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size);
         tmp = 0;
         ret += shmem_internal_put(target, &tmp, sizeof(tmp), PE_start);
         shmem_internal_put_wait(ret);
+        shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
     } else {
-        size_t offset = (shmem_int_my_pe - PE_start) / stride;
-        ret += shmem_internal_put((char*) target + offset, source, len, PE_start);
-        ret += shmem_internal_atomic(pSync, &tmp, sizeof(long), PE_start, PTL_SUM, DTYPE_LONG);
+        size_t offset = (shmem_internal_my_pe - PE_start) / stride;
+        ret = shmem_internal_put((char*) target + offset, source, len, PE_start);
+        shmem_internal_put_wait(ret);
+        shmem_fence();
+        ret = shmem_internal_atomic(pSync, &tmp, sizeof(long), PE_start, PTL_SUM, DTYPE_LONG);
         shmem_internal_put_wait(ret);
     }
     
-    shmem_internal_bcast(target, target, len * PE_size, PE_start, PE_start, logPE_stride, PE_size, pSync);
+    shmem_internal_bcast(target, target, len * PE_size, 0, PE_start, logPE_stride, PE_size, pSync);
 }
 
 
@@ -262,7 +310,7 @@ shmem_short_and_to_all(short *target, short *source, int nreduce,
                        short *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -279,7 +327,7 @@ shmem_int_and_to_all(int *target, int *source, int nreduce,
                      int *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -296,7 +344,7 @@ shmem_long_and_to_all(long *target, long *source, int nreduce,
                       long *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -313,7 +361,7 @@ shmem_longlong_and_to_all(long long *target, long long *source, int nreduce,
                           long long *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -330,7 +378,7 @@ shmem_short_or_to_all(short *target, short *source, int nreduce,
                       short *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -347,7 +395,7 @@ shmem_int_or_to_all(int *target, int *source, int nreduce,
                     int *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -364,7 +412,7 @@ shmem_long_or_to_all(long *target, long *source, int nreduce,
                      long *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -381,7 +429,7 @@ shmem_longlong_or_to_all(long long *target, long long *source, int nreduce,
                          long long *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -398,7 +446,7 @@ shmem_short_xor_to_all(short *target, short *source, int nreduce,
                        short *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -414,7 +462,7 @@ shmem_int_xor_to_all(int *target, int *source, int nreduce,
                      int *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -431,7 +479,7 @@ shmem_long_xor_to_all(long *target, long *source, int nreduce,
                       long *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -448,7 +496,7 @@ shmem_longlong_xor_to_all(long long *target, long long *source, int nreduce,
                           long long *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -465,7 +513,7 @@ shmem_float_min_to_all(float *target, float *source, int nreduce,
                        float *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -482,7 +530,7 @@ shmem_double_min_to_all(double *target, double *source, int nreduce,
                         double *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -499,7 +547,7 @@ shmem_longdouble_min_to_all(long double *target, long double *source, int nreduc
                             long double *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -516,7 +564,7 @@ shmem_short_min_to_all(short *target, short *source, int nreduce,
                        short *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -533,7 +581,7 @@ shmem_int_min_to_all(int *target, int *source, int nreduce,
                      int *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -550,7 +598,7 @@ shmem_long_min_to_all(long *target, long *source, int nreduce,
                       long *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -567,7 +615,7 @@ shmem_longlong_min_to_all(long long *target, long long *source, int nreduce,
                           long long *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -584,7 +632,7 @@ shmem_float_max_to_all(float *target, float *source, int nreduce,
                        float *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -601,7 +649,7 @@ shmem_double_max_to_all(double *target, double *source, int nreduce,
                         double *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -618,7 +666,7 @@ shmem_longdouble_max_to_all(long double *target, long double *source, int nreduc
                             long double *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -635,7 +683,7 @@ shmem_short_max_to_all(short *target, short *source, int nreduce,
                        short *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -652,7 +700,7 @@ shmem_int_max_to_all(int *target, int *source, int nreduce,
                      int *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -669,7 +717,7 @@ shmem_long_max_to_all(long *target, long *source, int nreduce,
                       long *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -686,7 +734,7 @@ shmem_longlong_max_to_all(long long *target, long long *source, int nreduce,
                           long long *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -703,7 +751,7 @@ shmem_float_sum_to_all(float *target, float *source, int nreduce,
                        float *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -720,7 +768,7 @@ shmem_double_sum_to_all(double *target, double *source, int nreduce,
                         double *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -737,7 +785,7 @@ shmem_longdouble_sum_to_all(long double *target, long double *source, int nreduc
                             long double *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -754,7 +802,7 @@ shmem_complexf_sum_to_all(float complex *target, float complex *source, int nred
                           float complex *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -771,7 +819,7 @@ shmem_complexd_sum_to_all(double complex *target, double complex *source, int nr
                           double complex *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -788,7 +836,7 @@ shmem_short_sum_to_all(short *target, short *source, int nreduce,
                        short *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -805,7 +853,7 @@ shmem_int_sum_to_all(int *target, int *source, int nreduce,
                      int *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -822,7 +870,7 @@ shmem_long_sum_to_all(long *target, long *source, int nreduce,
                       long *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -839,7 +887,7 @@ shmem_longlong_sum_to_all(long long *target, long long *source, int nreduce,
                           long long *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -856,7 +904,7 @@ shmem_float_prod_to_all(float *target, float *source, int nreduce,
                         float *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -873,7 +921,7 @@ shmem_double_prod_to_all(double *target, double *source, int nreduce,
                          double *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -890,7 +938,7 @@ shmem_longdouble_prod_to_all(long double *target, long double *source, int nredu
                              long double *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -907,7 +955,7 @@ shmem_complexf_prod_to_all(float complex *target, float complex *source, int nre
                            float complex *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -924,7 +972,7 @@ shmem_complexd_prod_to_all(double complex *target, double complex *source, int n
                            double complex *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -941,7 +989,7 @@ shmem_short_prod_to_all(short *target, short *source, int nreduce,
                         short *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -958,7 +1006,7 @@ shmem_int_prod_to_all(int *target, int *source, int nreduce,
                       int *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -975,7 +1023,7 @@ shmem_long_prod_to_all(long *target, long *source, int nreduce,
                        long *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -992,7 +1040,7 @@ shmem_longlong_prod_to_all(long long *target, long long *source, int nreduce,
                            long long *pWrk, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -1009,7 +1057,7 @@ shmem_broadcast32(void *target, const void *source, size_t nlong,
                   long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -1026,7 +1074,7 @@ shmem_broadcast64(void *target, const void *source, size_t nlong,
                   long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -1042,7 +1090,7 @@ shmem_collect32(void *target, const void *source, size_t nlong,
                 int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -1057,7 +1105,7 @@ shmem_collect64(void *target, const void *source, size_t nlong,
                 int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -1072,7 +1120,7 @@ shmem_fcollect32(void *target, const void *source, size_t nlong,
                  int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -1087,7 +1135,7 @@ shmem_fcollect64(void *target, const void *source, size_t nlong,
                  int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif

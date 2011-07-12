@@ -11,7 +11,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Portals SHMEM], [1.0a3], [bwbarre@sandia.gov])
+AC_INIT([Portals SHMEM], [1.0a4], [bwbarre@sandia.gov])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -27,7 +27,7 @@ AC_ARG_ENABLE([event-completion],
 		[Enable use of events for put completion.  Default is to use buffered puts.])])
 AS_IF([test "$enable_event_completion" = "yes"], [AC_DEFINE([ENABLE_EVENT_COMPLETION], [1], [Use event completion])])
 
-AC_ARG_ENABLE([picky], 
+AC_ARG_ENABLE([picky],
     [AC_HELP_STRING([--enable-picky],
                     [Enable developer-level compiler pickyness when building (default: disabled)])])
 if test -z "$enable_picky" && test -d .svn -o -d .hg ; then
@@ -39,6 +39,11 @@ AC_ARG_ENABLE([error-checking],
     [AC_HELP_STRING([--enable-error-checking],
                     [Enable error checking for SHMEM calls (default:disabled)])])
 AS_IF([test "$enable_error_checking" = "yes"], [AC_DEFINE([ENABLE_ERROR_CHECKING], [1], [Enable argument checking])])
+
+AC_ARG_ENABLE([hard-polling],
+    [AC_HELP_STRING([--enable-hard-polling],
+                    [Enable hard polling of wait calls (default:disabled)])])
+AS_IF([test "$enable_hard_polling" = "yes"], [AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])])
 
 dnl check for programs
 
