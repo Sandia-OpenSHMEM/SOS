@@ -309,9 +309,6 @@ start_pes(int npes)
     le.length = shmem_internal_data_length = (unsigned long) &end  - (unsigned long) &data_start;
 #endif
 
-    printf("data segment: 0x%lx, %ld\n",
-           shmem_internal_data_base, shmem_internal_data_length);
-
     le.ct_handle = shmem_internal_target_ct_h;
     le.ac_id.uid = uid;
     le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
