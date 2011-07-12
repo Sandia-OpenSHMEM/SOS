@@ -48,8 +48,16 @@ check_PROGRAMS = \
 	shmemlatency \
 	msgrate \
 	NPshmem
+
 PROCS ?= 2
+HOSTFILE ?= $(top_srcdir)/test/hostfile
+
+if WANT_PORTALS_SHMEM_RUNTIME
 TESTS_ENVIRONMENT = yod -c $(PROCS)
+endif
+if WANT_MPI_RUNTIME
+TESTS_ENVIRONMENT = mpirun -hostfile $(HOSTFILE) -np $(PROCS)
+endif
 
 hello_SOURCES = hello.c
 hello_LDADD = $(top_builddir)/src/libsma.la
