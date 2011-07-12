@@ -303,11 +303,14 @@ start_pes(int npes)
     /* Open LE to data section */
 #ifdef __APPLE__
     le.start = shmem_internal_data_base = (void*) get_etext();
-    le.length = shmem_internal_data_length = get_end() - get_etext() - 1;
+    le.length = shmem_internal_data_length = get_end() - get_etext();
 #else
     le.start = shmem_internal_data_base = &data_start;
-    le.length = shmem_internal_data_length = (unsigned long) &end  - (unsigned long) &data_start - 1;
+    le.length = shmem_internal_data_length = (unsigned long) &end  - (unsigned long) &data_start;
 #endif
+
+    printf("data segment: 0x%lx, %ld\n",
+           shmem_internal_data_base, shmem_internal_data_length);
 
     le.ct_handle = shmem_internal_target_ct_h;
     le.ac_id.uid = uid;
