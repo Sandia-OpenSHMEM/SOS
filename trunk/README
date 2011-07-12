@@ -23,9 +23,13 @@ The "make check" step is not strictly necessary, but is a good idea.
 
 Options to configure include:
 
-  --prefix=<DIR>        Install implementation in <DIR>
-  --with-portals4=<DIR> Find the Portals4 library in <DIR>
-  --with-runtime=mpi    OpenMPI SHMEM job launch; build application with CC=mpicc
+  --prefix=<DIR>          Install implementation in <DIR>
+  --with-portals4=<DIR>   Find the Portals4 library in <DIR>
+  --with-runtime=mpi      OpenMPI SHMEM job launch; build application with CC=mpicc
+  --enable-error-checking Enable argument and usage error checking, at
+                          a performance cost.
+  --enable-hard-polling   Enable hard polling in wait calls, rather
+                          than blocking in the Portals library.
 
 
 * Portals 4 Implementation Support
@@ -34,6 +38,7 @@ Portals SHMEM has only been tested with the following implementations
 of the Portals 4.0 specification:
 
   - Shared memory reference implementation
+  - InfiniBand reference implementation
 
 
 * ToDo List
@@ -41,5 +46,4 @@ of the Portals 4.0 specification:
   - Modify collectives to use algorithms better than the current
     linear implementations
   - Fix shmem_{set, test, clear}_lock to not assume sizeof(long) is 8
-  - Fix error handling during shmem_init
   - Add long message optimization documented in report

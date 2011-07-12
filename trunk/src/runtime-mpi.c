@@ -74,7 +74,7 @@ shmem_internal_runtime_fini(void)
 
 
 ptl_process_t*
-shmem_internal_get_mapping(void)
+shmem_internal_runtime_get_mapping(void)
 {
     ptl_process_t *ret;
 
@@ -90,21 +90,21 @@ shmem_internal_get_mapping(void)
 
 
 int
-shmem_internal_get_rank(void)
+shmem_internal_runtime_get_rank(void)
 {
     return rank;
 }
 
 
 int
-shmem_internal_get_size(void)
+shmem_internal_runtime_get_size(void)
 {
     return size;
 }
 
 
 void
-shmem_internal_barrier(void)
+shmem_internal_runtime_barrier(void)
 {
     MPI_Barrier(MPI_COMM_WORLD);
 }
