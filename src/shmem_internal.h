@@ -50,6 +50,8 @@ extern int shmem_internal_num_pes;
 extern int shmem_internal_initialized;
 extern int shmem_internal_finalized;
 extern int shmem_internal_total_data_ordering;
+extern int shmem_tree_radix;
+extern int shmem_tree_threshold;
 
 
 #define GET_REMOTE_ACCESS(target, pt, offset)                           \

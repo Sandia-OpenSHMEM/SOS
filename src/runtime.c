@@ -123,6 +123,7 @@ void
 start_pes(int npes)
 {
     int ret;
+    char *s;
     ptl_process_t *desired = NULL, *mapping = NULL;
     ptl_md_t md;
     ptl_le_t le;
@@ -396,6 +397,39 @@ start_pes(int npes)
 
     atexit(shmem_internal_shutdown);
     shmem_internal_initialized = 1;
+
+    /* collective op overrides? */
+    s = getenv("SHMEM_TREE_RADIX");
+    if ( s != NULL && *s != '\0' ) {
+        int new;
+        ret = sscanf(s,"%d",&new);
+        if ( ret == 1 && new > 0)
+            shmem_tree_radix = new;
+        else
+            fprintf(stderr, "[%03d] ERROR: Ignoring invalid "
+                    "SHMEM_TREE_RADIX '%s', default %d\n",
+                    shmem_internal_my_pe, s, shmem_tree_radix);
+    }
+    else {
+        if ( shmem_internal_num_pes > 32 && shmem_internal_num_pes <= 64 )
+            shmem_tree_radix = 5;
+        else if ( shmem_internal_num_pes > 64 && shmem_internal_num_pes < 256 )
+            shmem_tree_radix = 8;
+        else if ( shmem_internal_num_pes >= 256 )
+            shmem_tree_radix = 16;
+    }
+
+    s = getenv("SHMEM_TREE_THRESHOLD");
+    if ( s != NULL && *s != '\0' ) {
+        int new;
+        ret = sscanf(s,"%d",&new);
+        if ( ret == 1 && new > 0 )
+            shmem_tree_threshold = new;
+        else
+            fprintf(stderr, "[%03d] ERROR: Ignoring invalid "
+                    "SHMEM_TREE_THRESHOLD '%s', default %d\n",
+                    shmem_internal_my_pe, s, shmem_tree_threshold);
+    }
 
     /* Give point for debuggers to get a chance to attach if requested by user */
     if (NULL != getenv("SHMEM_DEBUGGER_ATTACH")) {
