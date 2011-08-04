@@ -96,39 +96,186 @@ shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 }
 
 
+/* Logically map an N-ary (N==radix arg) tree on to the PE active set, always
+ * assume start_PE == root_PE.
+ * 'active set' is defined as [start_pe ... start_pe+PE_size by stride].
+ * The 'root_PE' # is within the active set and is where the broadcast message
+ * cascade originates from.
+ * If the 'root_PE' were not the start_pe, then the pe numbering sequence would
+ * contain a hole where root_PE should have been as the root PE has been switched
+ * to be the first PE (aka root of the tree). Computing the children of a specific PE
+ * becomes overly complex in having to account for the root_PE hole in the PE
+ * numbering sequence.
+ * In order to simplify the computation (aka make the child nodes computation
+ * faster) the tree_root is ALWAYS the start_pe with root_PE in it's expected
+ * position in the n_ary tree; as if root_PE == start_PE.
+ * For those cases where start_PE != root_PE then prior to returning, switch 
+ * root_PE value for start_PE and vice-a-versa.
+ *
+ * Return:
+ *   0 == Success, else error code.
+ *
+ * Output argument 'children' is an int vector of radix elements; each element
+ * is initialized to (-1) which represents no child PE (leaf).
+ * children elements which are not euqal to -1 represent the children PEs #.
+ */
+
+static int
+find_my_children( int target_pe, int start_pe, int num_pe, int pe_stride,
+                  int radix, int root_PE, int *children )
+{
+    int j, i, find_pe, level, pe, pe_cnt, pe_end, lvl_cnt, lvl_offset;
+    int nxl_offset, nxl_pe, nxl_pe_cnt, nxl_pe_end, child_start, child, tmp;
+
+    for(j=0; j < radix; j++)
+        children[j] = -1;   // (-1) implies Leaf node.
+
+    /* if real_root != start_pe then logically swap the root_PE & start_pe.
+     * Such that if target_pe = root_PE, then compute for 'start_pe' value.
+     * If target_pe == start_pe, then compute for root_PE value.
+     */
+    find_pe = target_pe;
+    if (root_PE != start_pe) {
+        if (target_pe == root_PE)
+            find_pe = start_pe;
+        else if (target_pe == start_pe)
+            find_pe = root_PE;
+    }
+
+    pe_cnt = num_pe;
+    pe = start_pe;
+
+    for(i=0,level=0,lvl_cnt=1; i < num_pe; level++,i++ ) {
+        pe_end = pe + ((lvl_cnt - 1) * pe_stride); // pow(radix,level)
+        if ( pe <= find_pe && find_pe <= pe_end ) {
+            lvl_offset = find_pe - pe;
+            if ( lvl_offset >= pe_stride && pe_stride > 1 )
+                lvl_offset /= pe_stride;
+            pe_cnt -= lvl_cnt; // account for nodes @ current level.
+            if ( pe_cnt <= 0 )
+                return 0; // LEAF node.
+            nxl_pe_cnt = lvl_cnt * radix;// nxt tree level: num pes
+            nxl_pe = pe_end + pe_stride;
+            nxl_pe_end = nxl_pe + ((nxl_pe_cnt-1) * pe_stride);
+
+            nxl_offset = lvl_offset * radix;
+            child_start = nxl_pe + (nxl_offset * pe_stride);
+            tmp = pe_cnt - nxl_offset;
+            if ( tmp <= 0 || (tmp >= radix && child_start >= nxl_pe_end) )
+                return 0; // LEAF node.
+            tmp = (tmp > radix ? radix : tmp);
+            /* record child pe #'s for caller */
+            for( j=0; j < tmp; j++ ) {
+                child = child_start;
+                if (root_PE != start_pe) {
+                    if (child == root_PE)
+                        child = start_pe;
+                    else if (child == start_pe)
+                            child = root_PE;
+                }
+                children[j] = child;
+                child_start += pe_stride;
+            }
+            return 0;
+        }
+        /* advance to next tree level */
+        pe_cnt -= lvl_cnt;
+        pe = pe_end + pe_stride;
+        lvl_cnt *= radix;   // # of pes at next tree level
+    }
+    return -1;  /* unable to find PE ? */
+}
+
+int shmem_tree_threshold=8; // env 'SHMEM_TREE_THRESHOLD' runtime.c
+int shmem_tree_radix=3; // env 'SHMEM_TREE_RADIX'
+
 static inline
 void
 shmem_internal_bcast(void *target, const void *source, size_t len,
                      int PE_root, int PE_start, int logPE_stride, int PE_size,
                      long *pSync)
-{ 
+{
     int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
-    int i, ret = 0;
+    int i, pe, ret = 0;
     long one = 1;
     int real_root = PE_start + PE_root * stride;
+    int *kids;
 
-    if (real_root == shmem_internal_my_pe) {
-        /* send data to all peers */
-        for (i = PE_start ; i < PE_size ; i += stride) {
-            if (i == shmem_internal_my_pe && source == target) continue;
-            ret += shmem_internal_put(target, source, len, i);
+    if ( PE_size < shmem_tree_threshold ) {
+        if (real_root == shmem_internal_my_pe) {
+            /* send data to all peers */
+            for (pe = PE_start,i=0; i < PE_size; pe += stride, i++) {
+                if (pe == shmem_internal_my_pe && source == target) continue;
+                ret += shmem_internal_put(target, source, len, pe);
+            }
+            shmem_internal_put_wait(ret);
+            ret = 0;
+    
+            shmem_fence();
+    
+            /* send completion ack to all peers */
+            for (pe = PE_start,i=0; i < PE_size; pe += stride, i++) {
+                ret += shmem_internal_put(pSync, &one, sizeof(long), pe);
+            }
+            shmem_internal_put_wait(ret);
         }
-        shmem_internal_put_wait(ret);
-        ret = 0;
 
-        shmem_fence();
-
-        /* send completion ack to all peers */
-        for (i = PE_start ; i < PE_size ; i += stride) {
-            ret += shmem_internal_put(pSync, &one, sizeof(long), i);
-        }
-        shmem_internal_put_wait(ret);
+        /* wait for data arrival message */
+        shmem_long_wait(pSync, 0);
+        /* Clear pSync ; never atomically incremented, ok to direct assign */
+        pSync[0] = 0;
+        return;
     }
 
-    /* wait for data arrival message */
-    shmem_long_wait(pSync, 0);
+    /* Cascade broadcast */
+    kids = alloca( shmem_tree_radix * sizeof(int) );
+    if ( !kids )
+        RAISE_ERROR_STR("alloca() failed?");
+
+    ret = find_my_children( shmem_internal_my_pe, PE_start, PE_size, stride,
+                            shmem_tree_radix, real_root, kids );
+    if ( ret )
+        RAISE_ERROR_STR("Unable to find broadcast children?");
+
+    if (real_root == shmem_internal_my_pe) {
+
+        /* real_root starts the data cascade: Tx BC data to it's children */
+        for (i = 0,ret = 0; i < shmem_tree_radix && kids[i] != -1; i++)
+            ret += shmem_internal_put(target, source, len, kids[i]);
+
+        shmem_internal_put_wait(ret);
+        shmem_fence();
+
+        /* send completion ack to my children */
+        for (i = 0,ret = 0; i < shmem_tree_radix && kids[i] != -1; i++)
+            ret += shmem_internal_put(pSync, &one, sizeof(long), kids[i]);
+
+        shmem_internal_put_wait(ret);
+
+        if ( target != source )
+            memcpy(target, source, len);
+    }
+    else {
+        /* non root_PE - wait for data arrival message */
+        shmem_long_wait(pSync, 0);
+
+        /* cascade broadcast data to my children */
+        for (i = 0,ret = 0; i < shmem_tree_radix && kids[i] != -1; i++)
+            ret += shmem_internal_put(target, target, len, kids[i]);
+
+        if ( ret ) {
+            shmem_internal_put_wait(ret);
+            shmem_fence();
+
+            /* send completion ack to my children */
+            for (i = 0,ret = 0; i < shmem_tree_radix && kids[i] != -1; i++)
+                ret += shmem_internal_put(pSync, &one, sizeof(long), kids[i]);
+
+            shmem_internal_put_wait(ret); 
+        }
+    }
     /* Clear pSync ; never atomically incremented, ok to direct assign */
-    pSync[0] = 0;
+    pSync[0] = _SHMEM_SYNC_VALUE;
 }
 
 
