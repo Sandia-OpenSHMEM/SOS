@@ -124,7 +124,7 @@ start_pes(int npes)
 {
     int ret;
     char *s;
-    ptl_process_t *desired = NULL, *mapping = NULL;
+    ptl_process_t *desired = NULL;
     ptl_md_t md;
     ptl_le_t le;
     ptl_uid_t uid = PTL_UID_ANY;
@@ -156,13 +156,6 @@ start_pes(int npes)
         goto cleanup;
     }
 
-    mapping  = malloc(sizeof(ptl_process_t) * shmem_internal_num_pes);
-    if (NULL == mapping) {
-        fprintf(stderr, "[%03d] ERROR: malloc of mapping failed.\n", 
-                shmem_internal_my_pe);
-        goto cleanup;
-    }
-
     ni_req_limits.max_entries = 1024;
     ni_req_limits.max_unexpected_headers = 1024;
     ni_req_limits.max_mds = 1024;
@@ -189,15 +182,18 @@ start_pes(int npes)
                     PTL_PID_ANY,
                     &ni_req_limits,
                     &ni_limits,
-                    shmem_internal_num_pes,
-                    desired,
-                    mapping,
                     &shmem_internal_ni_h);
-    free(desired);
-    /* BWB: FIX ME: probably should do something with mapping... */
-    free(mapping);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlNIInit failed: %d\n",
+                shmem_internal_my_pe, ret);
+        goto cleanup;
+    }
+
+    ret = PtlSetMap(shmem_internal_ni_h,
+                    shmem_internal_num_pes,                    
+                    desired);
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlSetMap failed: %d\n",
                 shmem_internal_my_pe, ret);
         goto cleanup;
     }
