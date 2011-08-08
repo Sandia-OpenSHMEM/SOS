@@ -192,7 +192,7 @@ start_pes(int npes)
     ret = PtlSetMap(shmem_internal_ni_h,
                     shmem_internal_num_pes,                    
                     desired);
-    if (PTL_OK != ret) {
+    if (PTL_OK != ret && PTL_IGNORED != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlSetMap failed: %d\n",
                 shmem_internal_my_pe, ret);
         goto cleanup;
