@@ -104,7 +104,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 The SHMEM version of the NetPIPE application is included in this
 software as a test code.  Note that it is not included in the
 installed product (shmem.h and libsm), but only included as a
-stand-alone text.  It is distributed under the following license
+stand-alone test.  It is distributed under the following license
 terms:
 
 "NetPIPE" -- Network Protocol Independent Performance Evaluator.
