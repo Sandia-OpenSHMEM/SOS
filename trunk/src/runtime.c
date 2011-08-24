@@ -177,6 +177,7 @@ start_pes(int npes)
     ni_req_limits.features = 0;
 #endif
 
+#ifdef HAVE_PTLSETMAP
     ret = PtlNIInit(PTL_IFACE_DEFAULT,
                     PTL_NI_NO_MATCHING | PTL_NI_LOGICAL,
                     PTL_PID_ANY,
@@ -197,6 +198,22 @@ start_pes(int npes)
                 shmem_internal_my_pe, ret);
         goto cleanup;
     }
+#else
+    ret = PtlNIInit(PTL_IFACE_DEFAULT,
+                    PTL_NI_NO_MATCHING | PTL_NI_LOGICAL,
+                    PTL_PID_ANY,
+                    &ni_req_limits,
+                    &ni_limits,
+                    shmem_internal_num_pes,
+                    desired,
+                    NULL,
+                    &shmem_internal_ni_h);
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlNIInit failed: %d\n",
+                shmem_internal_my_pe, ret);
+        goto cleanup;
+    }
+#endif
 
     ret = PtlGetUid(shmem_internal_ni_h, &uid);
     if (PTL_OK != ret) {
