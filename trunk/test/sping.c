@@ -17,7 +17,7 @@ void printStats (int, int, int, int, double);
 
 #define dprint if (Verbose) printf
 #define DFLT_MIN_WORDS 128
-#define DFLT_REPS 10000;
+#define DFLT_REPS 1000;
 
 int Verbose=0;
 
