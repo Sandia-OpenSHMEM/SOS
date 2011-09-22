@@ -298,7 +298,7 @@ start_pes(int npes)
     le.start = shmem_internal_heap_base;
     le.length = shmem_internal_heap_length;
     le.ct_handle = shmem_internal_target_ct_h;
-    le.ac_id.uid = uid;
+    le.uid = uid;
     le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
         PTL_LE_EVENT_SUCCESS_DISABLE | 
         PTL_LE_EVENT_CT_COMM;
@@ -324,7 +324,7 @@ start_pes(int npes)
 #endif
 
     le.ct_handle = shmem_internal_target_ct_h;
-    le.ac_id.uid = uid;
+    le.uid = uid;
     le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
         PTL_LE_EVENT_SUCCESS_DISABLE | 
         PTL_LE_EVENT_CT_COMM;
