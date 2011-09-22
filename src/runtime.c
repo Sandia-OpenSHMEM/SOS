@@ -245,7 +245,7 @@ start_pes(int npes)
         goto cleanup;
     }
 #ifdef PTL_TOTAL_DATA_ORDERING
-    if (PTL_TOTAL_DATA_ORDERING & ni_limits.features != 0) {
+    if ((PTL_TOTAL_DATA_ORDERING & ni_limits.features) != 0) {
         shmem_internal_total_data_ordering = 1;        
     }
 #endif
