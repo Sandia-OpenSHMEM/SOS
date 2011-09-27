@@ -215,6 +215,9 @@ start_pes(int npes)
     }
 #endif
 
+    free(desired);
+    desired = NULL;
+
     ret = PtlGetUid(shmem_internal_ni_h, &uid);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlGetUid failed: %d\n",
@@ -456,6 +459,8 @@ start_pes(int npes)
     return;
 
  cleanup:
+    if (desired)
+        free(desired);
     cleanup_handles();
     if (NULL != shmem_internal_data_base) {
         shmem_internal_symmetric_fini();
