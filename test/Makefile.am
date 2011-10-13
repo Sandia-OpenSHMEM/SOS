@@ -42,6 +42,7 @@ TESTS = \
 	swapm \
 	cswap \
 	waituntil \
+	atomic_inc \
 	set_lock \
 	test_lock
 
@@ -159,6 +160,9 @@ cswap_LDADD = $(top_builddir)/src/libsma.la
 
 waituntil_SOURCES = waituntil.c
 waituntil_LDADD = $(top_builddir)/src/libsma.la
+
+atomic_inc_SOURCES = atomic_inc.c
+atomic_inc_LDADD = $(top_builddir)/src/libsma.la
 
 set_lock_SOURCES = set_lock.c
 set_lock_LDADD = $(top_builddir)/src/libsma.la
