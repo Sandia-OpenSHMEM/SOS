@@ -8,13 +8,14 @@
  *     -d/v == enable debug.
  *
  * start-loop
- *   shmalloc() or shrealloc()
- *   PE0 puts nWords to PE1 ... PE*
+ *   shmalloc() or shrealloc() src and target arrays.
+ *   PE0 puts nWords to PE1 ... PE(num_pes-1)
  *   PE* validates received data
  *   PE* adds _my_pe() to each received data element.
  *   PE0 pulls/iget()s data from PE* into loop/PE specific results range.
  *   PE0 validates received for each PE.
  *   if shmalloc() then shfree()
+ *   nWords += incWords
  * end-loop
  */
 
@@ -26,7 +27,7 @@
 
 #include <mpp/shmem.h>
 
-#define MAX_PE 10
+#define MAX_PE 64
 
 #define DFLT_NWORDS 16
 #define DFLT_LOOPS 16
@@ -171,7 +172,6 @@ main(int argc, char **argv)
             break;
         }
 
-
     if (optind == argc)
         nWords = DFLT_NWORDS;
     else if ((nWords = getSize (argv[optind++])) <= 0)
@@ -207,7 +207,7 @@ main(int argc, char **argv)
             pgm, workers, nWords, loops, incWords);
 
     for(l=0,ridx=0; l < loops; l++) {
-        // reserve space
+        // reserve space for worker PEs to deposit data
         rc =  ((workers * nWords) * sizeof(DataType)) + prev_sz;
         if (Debug > 2)
             printf("alloc: results[%ld]\n",(rc/sizeof(DataType)));
@@ -222,7 +222,7 @@ main(int argc, char **argv)
         if (me==0 && Debug > 2) {
             int idx = ridx;
             printf("alloc: results[%ld] ridx %d psz %ld\n",
-            (rc/sizeof(DataType)),ridx,(prev_sz/sizeof(DataType)));
+                (rc/sizeof(DataType)),ridx,(prev_sz/sizeof(DataType)));
             for(j=1; j < nProcs; j++) {
                 printf("  PE[%d] results[%d...%d]\n",
                             j,idx,(idx+(nWords-1))); 
