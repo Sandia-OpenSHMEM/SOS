@@ -29,3 +29,7 @@ endif
 if WANT_MPI_RUNTIME
 libsma_la_SOURCES += runtime-mpi.c
 endif
+
+if WANT_PMI_RUNTIME
+libsma_la_SOURCES += runtime-pmi.c
+endif

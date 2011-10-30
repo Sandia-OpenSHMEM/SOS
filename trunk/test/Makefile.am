@@ -61,6 +61,9 @@ endif
 if WANT_MPI_RUNTIME
 TESTS_ENVIRONMENT = mpirun -hostfile $(HOSTFILE) -np $(PROCS)
 endif
+if WANT_PMI_RUNTIME
+TESTS_ENVIRONMENT = srun -n $(PROCS)
+endif
 
 hello_SOURCES = hello.c
 hello_LDADD = $(top_builddir)/src/libsma.la

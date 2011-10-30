@@ -22,23 +22,30 @@
 
 #include "runtime.h"
 
-static int rank = 0;
+static int rank = -1;
 static int size = 0;
 static ptl_process_t my_id;
+static ptl_process_t *mapping = NULL;
+static ptl_handle_ni_t phys_ni_h;
 
 int
 shmem_internal_runtime_init(void)
 {
     int ret;
-    ptl_handle_ni_t phys_ni_h;
 
     MPI_Initialized(&ret);
     if (!ret) {
-        MPI_Init(NULL, NULL);
+        if (MPI_SUCCESS != MPI_Init(NULL, NULL)) {
+            return 1;
+        }
     }
 
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (MPI_SUCCESS != MPI_Comm_size(MPI_COMM_WORLD, &size)) {
+        return 1;
+    }
+    if (MPI_SUCCESS != MPI_Comm_rank(MPI_COMM_WORLD, &rank)) {
+        return 1;
+    }
 
     ret = PtlNIInit(PTL_IFACE_DEFAULT,
                     PTL_NI_NO_MATCHING | PTL_NI_PHYSICAL,
@@ -51,7 +58,14 @@ shmem_internal_runtime_init(void)
     ret = PtlGetId(phys_ni_h, &my_id);
     if (PTL_OK != ret) return 1;
 
-    PtlNIFini(phys_ni_h);
+    mapping = malloc(sizeof(ptl_process_t) * size);
+    if (NULL == mapping) return 1;
+
+    if (MPI_SUCCESS != MPI_Allgather(&my_id, sizeof(my_id), MPI_BYTE,
+                                     mapping, sizeof(my_id), MPI_BYTE,
+                                     MPI_COMM_WORLD)) {
+        return 1;
+    }
 
     return 0;
 }
@@ -61,10 +75,15 @@ int
 shmem_internal_runtime_fini(void)
 {
     int ret;
+
+    if (NULL != mapping) free(mapping);
+
     MPI_Finalized(&ret);
     if (!ret) {
         MPI_Finalize();
     }
+
+    PtlNIFini(phys_ni_h);
 
     return 0;
 }
@@ -73,16 +92,7 @@ shmem_internal_runtime_fini(void)
 ptl_process_t*
 shmem_internal_runtime_get_mapping(void)
 {
-    ptl_process_t *ret;
-
-    ret = malloc(sizeof(ptl_process_t) * size);
-    if (NULL == ret) return 0;
-
-    MPI_Allgather(&my_id, sizeof(my_id), MPI_BYTE,
-                  ret, sizeof(my_id), MPI_BYTE,
-                  MPI_COMM_WORLD);
-
-    return ret;
+    return mapping;
 }
 
 
