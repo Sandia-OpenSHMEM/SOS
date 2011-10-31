@@ -21,38 +21,41 @@
 
 #include "runtime.h"
 
+static int rank = -1;
+static int size = 0;
+static ptl_process_t *mapping = NULL;
 
 int
 shmem_internal_runtime_init(void)
 {
+    int size, i;
+    struct runtime_proc_t *procs;
+
+    size = runtime_get_size();
+    mapping = malloc(sizeof(ptl_process_t) * size);
+    if (NULL == mapping) return 0;
+
+    runtime_get_nidpid_map(&procs);
+
+    for (i = 0 ; i < size ; ++i) {
+        mapping[i].phys.nid = procs[i].nid;
+        mapping[i].phys.pid = procs[i].pid;
+    }
+
     return 0;
 }
 
 int
 shmem_internal_runtime_fini(void)
 {
+    if (NULL != mapping) free(mapping);
     return 0;
 }
 
 ptl_process_t*
 shmem_internal_runtime_get_mapping(void)
 {
-    int size, i;
-    ptl_process_t *ret;
-    struct runtime_proc_t *procs;
-
-    size = runtime_get_size();
-    ret = malloc(sizeof(ptl_process_t) * size);
-    if (NULL == ret) return NULL;
-
-    runtime_get_nidpid_map(&procs);
-
-    for (i = 0 ; i < size ; ++i) {
-        ret[i].phys.nid = procs[i].nid;
-        ret[i].phys.pid = procs[i].pid;
-    }
-
-    return ret;    
+    return mapping;
 }
 
 

@@ -23,8 +23,7 @@
 #include "runtime.h"
 
 static int rank = -1;
-static int size = 0;
-static ptl_process_t my_id;
+static int size = -1;
 static ptl_process_t *mapping = NULL;
 static ptl_handle_ni_t phys_ni_h;
 
@@ -32,6 +31,7 @@ int
 shmem_internal_runtime_init(void)
 {
     int ret;
+    ptl_process_t my_id;
 
     MPI_Initialized(&ret);
     if (!ret) {
