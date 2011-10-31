@@ -15,9 +15,6 @@
 
 #include "config.h"
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -32,7 +29,6 @@
 
 static int rank = -1;
 static int size = 0;
-static ptl_process_t my_id;
 static ptl_process_t *mapping = NULL;
 static ptl_handle_ni_t phys_ni_h;
 
@@ -95,6 +91,7 @@ shmem_internal_runtime_init(void)
     PMI_BOOL initialized;
     int i, ret, max_name_len, max_key_len, max_val_len;
     char *name, *key, *val;
+    ptl_process_t my_id;
 
     if (PMI_SUCCESS != PMI_Initialized(&initialized)) {
         return 1;
