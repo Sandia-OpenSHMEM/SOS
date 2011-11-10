@@ -43,12 +43,33 @@ shmem_internal_get_next(int incr)
     return orig;
 }
 
+/* atoi() + optional scaled suffix recognition: 1K, 2M, 3G */
+static int
+atoi_scaled(char *s)
+{
+    long val;
+    char *e;
+
+    val = strtol(s,&e,0);
+    if (e == NULL || *e =='\0')
+        return (int) val;
+
+    if (*e == 'k' || *e == 'K')
+        val *= 1024;
+    else if (*e == 'm' || *e == 'M')
+        val *= 1024*1024;
+    else if (*e == 'g' || *e == 'G')
+        val *= 1024*1024*1024;
+
+    return (int) val;
+}
+
 int
 shmem_internal_symmetric_init(void)
 {
     long req_len = 64 * 1024 * 1024;
     char *env = getenv("SHMEM_SYMMETRIC_HEAP_SIZE");
-    if (NULL != env) req_len = atoi(env);
+    if (NULL != env) req_len = atoi_scaled(env);
 
     /* add library overhead such that the max can be shmalloc()'ed */
     shmem_internal_heap_length = req_len + (1024*1024);
