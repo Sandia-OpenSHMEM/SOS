@@ -50,7 +50,8 @@ shmem_internal_symmetric_init(void)
     char *env = getenv("SHMEM_SYMMETRIC_HEAP_SIZE");
     if (NULL != env) req_len = atoi(env);
 
-    shmem_internal_heap_length = req_len;
+    /* add library overhead such that the max can be shmalloc()'ed */
+    shmem_internal_heap_length = req_len + (1024*1024);
     shmem_internal_heap_base = shmem_internal_heap_curr = malloc(shmem_internal_heap_length);
     if (NULL == shmem_internal_heap_base)  return -1;
 
