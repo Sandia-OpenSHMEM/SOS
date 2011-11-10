@@ -21,8 +21,6 @@
 
 #include "runtime.h"
 
-static int rank = -1;
-static int size = 0;
 static ptl_process_t *mapping = NULL;
 
 int
