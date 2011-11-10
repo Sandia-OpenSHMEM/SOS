@@ -43,6 +43,39 @@ shmem_internal_get_next(int incr)
     return orig;
 }
 
+#define USE_MMAP 1
+
+#if USE_MMAP
+
+static void *mmap_alloc(long bytes);
+
+#include <sys/mman.h>
+
+#define AGIG (1024UL*1024UL*1024UL)
+
+/* alloc VM space starting @ '_end' + 1GB */
+static void *mmap_alloc(long bytes)
+{
+    ulong base;
+    void *symHeap;
+    extern char * _end;
+
+    base = (((ulong)&_end) + 2*AGIG) & ~(AGIG -1);  // round to next GB boundary.
+    symHeap = mmap( (void*) base,
+                    (size_t) bytes,
+                    PROT_READ|PROT_WRITE,
+                    MAP_ANONYMOUS | MAP_PRIVATE | MAP_POPULATE,
+                    -1,
+                    0 );
+    if (symHeap == MAP_FAILED) {
+        perror("mmap()");
+        symHeap = NULL;
+    }
+    return symHeap;
+}
+#endif
+
+
 /* atoi() + optional scaled suffix recognition: 1K, 2M, 3G */
 static int
 atoi_scaled(char *s)
@@ -73,7 +106,12 @@ shmem_internal_symmetric_init(void)
 
     /* add library overhead such that the max can be shmalloc()'ed */
     shmem_internal_heap_length = req_len + (1024*1024);
+#if USE_MMAP
+    shmem_internal_heap_base =
+    shmem_internal_heap_curr = mmap_alloc(shmem_internal_heap_length);
+#else
     shmem_internal_heap_base = shmem_internal_heap_curr = malloc(shmem_internal_heap_length);
+#endif
     if (NULL == shmem_internal_heap_base)  return -1;
 
     return 0;
@@ -83,8 +121,12 @@ int
 shmem_internal_symmetric_fini(void)
 {
     if (NULL != shmem_internal_heap_base) {
-        shmem_internal_heap_length = 0;
+#if USE_MMAP
+        munmap( (void*)shmem_internal_heap_base, (size_t)shmem_internal_heap_length );
+#else
         free(shmem_internal_heap_base);
+#endif
+        shmem_internal_heap_length = 0;
         shmem_internal_heap_base = shmem_internal_heap_curr = NULL;
     }
 
