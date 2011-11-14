@@ -113,6 +113,7 @@ shmem_internal_shutdown(void)
     }
     shmem_internal_finalized = 1;
 
+    cleanup_handles();
     shmem_internal_symmetric_fini();
     shmem_internal_runtime_fini();
     PtlFini();
