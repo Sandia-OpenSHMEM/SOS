@@ -12,7 +12,7 @@
 
 #include <mpp/shmem.h>
 
-#define MAX_PE 32
+#define MAX_PE 64
 
 #define DFLT_NWORDS 257
 #define DFLT_INCR 31
