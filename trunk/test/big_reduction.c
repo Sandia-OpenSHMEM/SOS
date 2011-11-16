@@ -1,9 +1,7 @@
 /*
-* reduce [0,1,2] + _my_pe() across 4 PEs with MAX()
-*
-* usage: big_reduce {-q|h}
-*
-* If run from a Makefile environment, be quiet, otherwise be verbose; -q forces quiet.
+ * reduce across PEs with shmem_max_to_all()
+ *
+ * usage: big_reduction {-v|h}
 */
 
 #include <mpp/shmem.h>
@@ -24,13 +22,19 @@ long pWrk[WRK_SIZE];
 int
 main(int argc, char* argv[])
 {
-    int i, Verbose=1;
+    int i, Verbose=0;
+    char *pgm;
+
+    if ((pgm=strrchr(argv[0],'/')))
+        pgm++;
+    else
+        pgm = argv[0];
 
 	if (argc > 1) {
-        if (strncmp(argv[1],"-q",3) == 0)
-            Verbose=0;
+        if (strncmp(argv[1],"-v",3) == 0)
+            Verbose=1;
         else if (strncmp(argv[1],"-h",3) == 0) {
-            fprintf(stderr,"usage: %s {-q(quiet)|h(help)}\n",argv[0]);
+            fprintf(stderr,"usage: %s {-v(verbose)|h(help)}\n",pgm);
             exit(1);
         }
     }
@@ -48,7 +52,7 @@ main(int argc, char* argv[])
 
     shmem_long_max_to_all(dst, src, N, 0, 0, _num_pes(), pWrk, pSync);
 
-    if (NULL == getenv("MAKELEVEL") &&  Verbose) {
+    if (Verbose) {
         printf("%d/%d	dst =", _my_pe(), _num_pes() );
         for (i = 0; i < N; i+= 1) {
             printf(" %ld", dst[i]);

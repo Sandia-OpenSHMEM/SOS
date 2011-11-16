@@ -22,7 +22,22 @@ int
 main(int argc, char* argv[])
 {
     int me, num_pes, pe, l;
-    int Verbose = (NULL == getenv("MAKELEVEL")) ? 1 : 0;
+    int Verbose = 0;
+    char *pgm;
+
+    if ((pgm=strrchr(argv[0],'/')))
+        pgm++;
+    else
+        pgm = argv[0];
+
+	if (argc > 1) {
+        if (strncmp(argv[1],"-v",3) == 0)
+            Verbose=1;
+        else if (strncmp(argv[1],"-h",3) == 0) {
+            fprintf(stderr,"usage: %s {-v(verbose)|h(help)}\n",pgm);
+            exit(1);
+        }
+    }
 
     start_pes(0);
     me = _my_pe();
