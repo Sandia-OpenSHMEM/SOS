@@ -23,7 +23,7 @@ The "make check" step is not strictly necessary, but is a good idea.
 
 Options to configure include:
 
-  --prefix=<DIR>          Install implementation in <DIR>
+  --prefix=<DIR>          Install implementation in <DIR>, default: /usr/local
   --with-portals4=<DIR>   Find the Portals4 library in <DIR>
   --with-runtime=mpi      OpenMPI SHMEM job launch; build application 
                           with CC=mpicc
@@ -43,6 +43,35 @@ of the Portals 4.0 specification:
   - Shared memory reference implementation
   - InfiniBand reference implementation
 
+* SHMEM Runtime Support
+
+  Environment variables:
+
+    SHMEM_SYMMETRIC_HEAP_SIZE=64M
+        The allocated size of the symmetric heap which shmalloc() and shfree()
+        operates on. The size value can be scaled with a suffix of
+            'K' for kilobytes(*1024),
+            'M' for Megabytes(*1024*1024)
+            'G' for Gigabytes(*1024*1024*1024)
+            'T' for Terabytes(*1024*1024*1024*1024)
+
+    SHMEM_DEBUGGER_ATTACH
+        If defined, SHMEM startup 'start_pes()' will loop waiting for the
+        variable 'foobar' to be set non-zero. Designed to facilate gdb attach. 
+
+    SHMEM_TREE_RADIX
+        Controls the width of the n-ary fanout tree, such that each node will
+        fanout-send to a max of SHMEM_TREE_RADIX.
+        defaults:
+            num_pes   radix
+            ---------------------
+            1...32,     3
+            33...64,    5
+            65...255,   8
+            > 255       16
+
+    SHMEM_TREE_THRESHOLD=8
+        For num_pes < SHMEM_TREE_THRESHOLD, fanout sends are serial.
 
 * ToDo List
 
