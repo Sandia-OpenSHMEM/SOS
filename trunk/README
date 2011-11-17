@@ -55,10 +55,6 @@ of the Portals 4.0 specification:
             'G' for Gigabytes(*1024*1024*1024)
             'T' for Terabytes(*1024*1024*1024*1024)
 
-    SHMEM_DEBUGGER_ATTACH
-        If defined, SHMEM startup 'start_pes()' will loop waiting for the
-        variable 'foobar' to be set non-zero. Designed to facilate gdb attach. 
-
     SHMEM_TREE_RADIX
         Controls the width of the n-ary fanout tree, such that each node will
         fanout-send to a max of SHMEM_TREE_RADIX.
