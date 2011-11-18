@@ -19,6 +19,7 @@ TESTS = \
     sum_to_all \
 	strided_put \
 	barrier \
+	bcast \
 	put1 \
 	get1 \
 	swap1 \
@@ -93,6 +94,9 @@ strided_put_LDADD = $(top_builddir)/src/libsma.la
 
 barrier_SOURCES = barrier.c
 barrier_LDADD = $(top_builddir)/src/libsma.la
+
+bcast_SOURCES = bcast.c
+bcast_LDADD = $(top_builddir)/src/libsma.la
 
 put1_SOURCES = put1.c
 put1_LDADD = $(top_builddir)/src/libsma.la
