@@ -435,11 +435,11 @@ shmem_internal_fcollect(void *target, const void *source, size_t len,
         }
         shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size);
         tmp = 0;
-        ret += shmem_internal_put(target, &tmp, sizeof(tmp), PE_start);
+        ret += shmem_internal_put(pSync, &tmp, sizeof(tmp), PE_start);
         shmem_internal_put_wait(ret);
         shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
     } else {
-        size_t offset = (shmem_internal_my_pe - PE_start) / stride;
+        size_t offset = ((shmem_internal_my_pe - PE_start) / stride) * len;
         ret = shmem_internal_put((char*) target + offset, source, len, PE_start);
         shmem_internal_put_wait(ret);
         shmem_fence();
