@@ -2,6 +2,8 @@
  * broadcast [0...num_pes]
  *
  * usage: bcast {-v|h}
+ *
+ * Loop - shmem_broadcast_all() with increasing data amount.
  */
 
 #include <mpp/shmem.h>
@@ -10,19 +12,20 @@
 #include <string.h>
 #include <stdlib.h>
 
-long pSync[_SHMEM_REDUCE_SYNC_SIZE];
+long pSync[_SHMEM_BCAST_SYNC_SIZE];
 
-#define N 128
-
-long src[N];
+#define START_BCAST_SIZE 16
+#define BCAST_INCR 1024
 
 int
 main(int argc, char* argv[])
 {
     int i, Verbose=0;
-    char *pgm;
     int mpe, num_pes, loops=10, cloop;
-    long *dst;
+    char *pgm;
+    long *dst, *src;
+    int nBytes = START_BCAST_SIZE;
+    int nLongs=0;
 
     start_pes(0);
     mpe = _my_pe();
@@ -45,25 +48,28 @@ main(int argc, char* argv[])
     for (i = 0; i < _SHMEM_BCAST_SYNC_SIZE; i += 1)
         pSync[i] = _SHMEM_SYNC_VALUE;
 
-    for (i = 1; i < N; i++)
-        src[i] = i+1;
-
     if ( mpe == 0 && Verbose )
-        fprintf(stderr,"%d loops",loops);
+        fprintf(stderr,"%d loops\n",loops);
 
     for(cloop=1; cloop <= loops; cloop++) {
-        dst = (long *)shmalloc(sizeof(src));
+
+        nLongs = nBytes / sizeof(long);
+        dst = (long *)shmalloc(nBytes*2);
         if ( !dst ) {
-            fprintf(stderr,"[%d] shmalloc(%ld) failed %s\n",
-                            mpe,sizeof(src),strerror(errno));
+            fprintf(stderr,"[%d] shmalloc(%d) failed %s\n",
+                            mpe,nBytes,strerror(errno));
             return 0;
         }
-        memset( (void*)dst, 0, sizeof(src) );
+        memset( (void*)dst, 0, nBytes );
+        src = &dst[nLongs];
+        for (i = 1; i < nLongs; i++)
+            src[i] = i+1;
+
         shmem_barrier_all();
 
-        shmem_broadcast64(dst, src, N, 1, 0, 0, num_pes, pSync);
+        shmem_broadcast64(dst, src, nLongs, 1, 0, 0, num_pes, pSync);
 
-        for(i=0; i < N; i++) {
+        for(i=0; i < nLongs; i++) {
             if ( dst[i] != src[i] ) {
                 fprintf(stderr,"[%d] dst[%d] %ld != expected %ld\n",
                         mpe, i, dst[i],src[i]);
@@ -72,12 +78,11 @@ main(int argc, char* argv[])
         }
         shmem_barrier_all();
 
-        if ( mpe == 0 && Verbose && cloop <= loops )
-            fprintf(stderr,".");
         shfree (dst);
+        if (Verbose && mpe ==0)
+            fprintf(stderr,"loop %2d Bcast %d, Done.\n",cloop,nBytes);
+        nBytes += BCAST_INCR;
     }
-    if ( mpe == 0 && Verbose )
-        fprintf(stderr,"\n");
 
     return 0;
 }
