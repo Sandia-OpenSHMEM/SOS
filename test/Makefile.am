@@ -47,7 +47,8 @@ TESTS = \
 	waituntil \
 	atomic_inc \
 	set_lock \
-	test_lock
+	test_lock \
+	fcollect64
 
 check_PROGRAMS = \
 	$(TESTS) \
@@ -184,6 +185,9 @@ set_lock_LDADD = $(top_builddir)/src/libsma.la
 
 test_lock_SOURCES = test_lock.c
 test_lock_LDADD = $(top_builddir)/src/libsma.la
+
+fcollect64_SOURCES = fcollect64.c
+fcollect64_LDADD = $(top_builddir)/src/libsma.la
 
 msgrate_SOURCES = msgrate.c
 msgrate_LDADD = $(top_builddir)/src/libsma.la
