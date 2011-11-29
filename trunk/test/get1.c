@@ -14,7 +14,7 @@ main(int argc, char* argv[])
     start_pes(0);
 
     if (_my_pe() == 0) {
-	memset(target, 0, sizeof(target));
+        memset(target, 0, sizeof(target));
         /* put 10 elements into target on PE 1 */
         shmem_long_get(target, source, 10, 1);
     }
