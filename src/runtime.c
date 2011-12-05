@@ -107,11 +107,17 @@ cleanup_handles(void)
 static void
 shmem_internal_shutdown(void)
 {
+    ptl_ct_event_t ct;
+
     if (!shmem_internal_initialized ||
         shmem_internal_finalized) {
         return;
     }
     shmem_internal_finalized = 1;
+
+    /* wait for remote completion (acks) of all pending events */
+    PtlCTWait(shmem_internal_put_ct_h, 
+              shmem_internal_pending_put_counter, &ct);
 
     cleanup_handles();
     shmem_internal_symmetric_fini();
