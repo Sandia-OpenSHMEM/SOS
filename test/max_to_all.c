@@ -1,7 +1,7 @@
 /*
 * max_to_all [0...num_pes] 
 *
-* usage: max_or_to_all {-v|-vv|h}
+* usage: max_to_all {-v|-vv|h}
 */
 
 #include <mpp/shmem.h>
