@@ -339,6 +339,7 @@ void shmem_udcflush_line(void *target);
 /* accessibility query routines */
 int shmem_pe_accessible(int pe);
 int shmem_addr_accessible(void *addr, int pe);
+void *shmem_ptr(void *target, int pe);
 
 /* Symmetric heap routines */
 void *shmalloc(size_t size);
