@@ -18,6 +18,7 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include <limits.h>
+#include <string.h>
 
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
@@ -434,6 +435,11 @@ start_pes(int npes)
                     shmem_internal_my_pe, s, shmem_tree_threshold);
     }
 
+    s = getenv("SHMEM_BROADCAST_ALOGORTHM");
+    /* naive or tree, default is 'tree' */
+    if (s && strcmp(s,"naive") == 0 )
+        shmem_tree_threshold = (7<<28);  /* force serial broadcast sends  */
+
     /* Give point for debuggers to get a chance to attach if requested by user */
     if (NULL != getenv("SHMEM_DEBUGGER_ATTACH")) {
         printf("[%02d] waiting for attach, pid=%d\n", shmem_internal_my_pe, getpid());
@@ -588,3 +594,4 @@ shmem_addr_accessible(void *addr, int pe)
 
     return 0;
 }
+
