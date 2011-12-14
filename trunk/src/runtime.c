@@ -595,3 +595,12 @@ shmem_addr_accessible(void *addr, int pe)
     return 0;
 }
 
+
+void *
+shmem_ptr (void *target, int pe)
+{
+    return (void*) 0;
+    // Only if regular load/stores are used to implement put/get:
+    //return (shmem_accessible( target, pe ) == 1 ? target : (void*)0);
+}
+
