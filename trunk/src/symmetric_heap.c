@@ -104,6 +104,10 @@ shmem_internal_symmetric_init(void)
 {
     long req_len = 64 * 1024 * 1024;
     char *env = getenv("SHMEM_SYMMETRIC_HEAP_SIZE");
+
+    if ( !env )
+        env = getenv("SMA_SYMMETRIC_SIZE");
+
     if (NULL != env) req_len = atol_scaled(env);
 
     /* add library overhead such that the max can be shmalloc()'ed */
