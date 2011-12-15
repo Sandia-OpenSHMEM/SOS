@@ -51,7 +51,9 @@ TESTS = \
 	atomic_inc \
 	set_lock \
 	test_lock \
-	fcollect64
+	fcollect64 \
+	bigput \
+	bigget
 
 check_PROGRAMS = \
 	$(TESTS) \
@@ -200,6 +202,12 @@ test_lock_LDADD = $(top_builddir)/src/libsma.la
 
 fcollect64_SOURCES = fcollect64.c
 fcollect64_LDADD = $(top_builddir)/src/libsma.la
+
+bigput_SOURCES = bigput.c
+bigput_LDADD = $(top_builddir)/src/libsma.la
+
+bigget_SOURCES = bigget.c
+bigget_LDADD = $(top_builddir)/src/libsma.la
 
 msgrate_SOURCES = msgrate.c
 msgrate_LDADD = $(top_builddir)/src/libsma.la
