@@ -8,7 +8,7 @@
 
 #include <mpp/shmem.h>
 
-#define MAX_PE 21
+#define MAX_PE 256
 #define WRDS 5
 
 short source[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
