@@ -27,8 +27,6 @@
 
 #include <mpp/shmem.h>
 
-#define MAX_PE 10
-
 #define DFLT_NWORDS 32
 #define DFLT_INCR 1025
 #define DFLT_LOOPS 50
@@ -113,11 +111,6 @@ main(int argc, char **argv)
     start_pes(0);
     me = _my_pe();
     nProcs = _num_pes();
-    if (nProcs > MAX_PE) {
-        if (me == 0)
-            printf("ERR: Too many PE, Max @ %d\n",MAX_PE);
-        return(1);
-    }
 
     while ((c = getopt (argc, argv, "hpv")) != -1)
         switch (c)
