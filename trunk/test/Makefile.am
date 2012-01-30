@@ -53,7 +53,8 @@ TESTS = \
 	test_lock \
 	fcollect64 \
 	bigput \
-	bigget
+	bigget \
+	to_all
 
 check_PROGRAMS = \
 	$(TESTS) \
@@ -208,6 +209,9 @@ bigput_LDADD = $(top_builddir)/src/libsma.la
 
 bigget_SOURCES = bigget.c
 bigget_LDADD = $(top_builddir)/src/libsma.la
+
+to_all_SOURCES = to_all.c
+to_all_LDADD = $(top_builddir)/src/libsma.la
 
 msgrate_SOURCES = msgrate.c
 msgrate_LDADD = $(top_builddir)/src/libsma.la
