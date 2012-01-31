@@ -157,13 +157,6 @@ start_pes(int npes)
     shmem_internal_my_pe = shmem_internal_runtime_get_rank();
     shmem_internal_num_pes = shmem_internal_runtime_get_size();
 
-    desired = shmem_internal_runtime_get_mapping();
-    if (NULL == desired) {
-        fprintf(stderr, "[%03d] ERROR: runtime mapping failed.\n", 
-                shmem_internal_my_pe);
-        goto cleanup;
-    }
-
     ni_req_limits.max_entries = 1024;
     ni_req_limits.max_unexpected_headers = 1024;
     ni_req_limits.max_mds = 1024;
@@ -194,6 +187,13 @@ start_pes(int npes)
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlNIInit failed: %d\n",
                 shmem_internal_my_pe, ret);
+        goto cleanup;
+    }
+
+    desired = shmem_internal_runtime_get_mapping(shmem_internal_ni_h);
+    if (NULL == desired) {
+        fprintf(stderr, "[%03d] ERROR: runtime mapping failed.\n", 
+                shmem_internal_my_pe);
         goto cleanup;
     }
 
