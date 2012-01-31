@@ -13,7 +13,7 @@
 
 #define NUM_ELEMENTS 25600  // 1 MB as longs
 //#define DFLT_LOOPS 10000  // reset when Portals4 can achieve this.
-#define DFLT_LOOPS 2000
+#define DFLT_LOOPS 100
 
 int Verbose;
 int Sync;
