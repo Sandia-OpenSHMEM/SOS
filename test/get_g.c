@@ -79,7 +79,7 @@ main(int argc, char* argv[])
     	for (pe=0 ; pe < num_pes; ++pe) {
 			if (!shmem_addr_accessible(src_short,pe)) {
 				printf("PE-%d local addr %p not accessible from PE-%d?\n",
-						me, (void*)&dst_short, pe);
+						me, (void*)src_short, pe);
 				exit(1);
 			}
 			dst_short = 0;
