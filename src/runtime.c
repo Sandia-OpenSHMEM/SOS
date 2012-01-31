@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
+#include <errno.h>
 
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
@@ -52,6 +53,8 @@ int shmem_internal_num_pes = -1;
 int shmem_internal_initialized = 0;
 int shmem_internal_finalized = 0;
 int shmem_internal_total_data_ordering = 0;
+
+static char shmem_internal_my_hostname[HOST_NAME_MAX];
 
 #ifdef __APPLE__
 #include <mach-o/getsect.h>
@@ -447,6 +450,11 @@ start_pes(int npes)
         while (foobar == 0) { }
     }
 
+    if ( gethostname(shmem_internal_my_hostname, HOST_NAME_MAX) ) {
+        sprintf(shmem_internal_my_hostname, "ERR: gethostname '%s'?",
+                strerror(errno));
+    }
+
     /* finish up */
     shmem_internal_runtime_barrier();
     return;
@@ -604,3 +612,8 @@ shmem_ptr (void *target, int pe)
     //return (shmem_accessible( target, pe ) == 1 ? target : (void*)0);
 }
 
+char *
+shmem_nodename(void)
+{
+    return shmem_internal_my_hostname;
+}
