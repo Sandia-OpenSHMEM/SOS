@@ -45,6 +45,7 @@ int Min, And, Sum, Prod, Or, Xor;
 int Passed;
 
 long pSync[_SHMEM_REDUCE_SYNC_SIZE];
+long pSync1[_SHMEM_REDUCE_SYNC_SIZE];
 
 #define N 3
 
@@ -86,11 +87,11 @@ max_to_all(int me, int npes)
     shmem_barrier_all();
 
     shmem_short_max_to_all(     dst0, src0, N, 0, 0, npes, pWrk0, pSync);
-    shmem_int_max_to_all(       dst1, src1, N, 0, 0, npes, pWrk1, pSync);
+    shmem_int_max_to_all(       dst1, src1, N, 0, 0, npes, pWrk1, pSync1);
     shmem_long_max_to_all(      dst2, src2, N, 0, 0, npes, pWrk2, pSync);
-    shmem_float_max_to_all(     dst3, src3, N, 0, 0, npes, pWrk3, pSync);
+    shmem_float_max_to_all(     dst3, src3, N, 0, 0, npes, pWrk3, pSync1);
     shmem_double_max_to_all(    dst4, src4, N, 0, 0, npes, pWrk4, pSync);
-    shmem_longdouble_max_to_all(dst5, src5, N, 0, 0, npes, pWrk5, pSync);
+    shmem_longdouble_max_to_all(dst5, src5, N, 0, 0, npes, pWrk5, pSync1);
     shmem_longlong_max_to_all(  dst6, src6, N, 0, 0, npes, pWrk6, pSync);
   
     if (me == 0) {
@@ -182,11 +183,11 @@ min_to_all(int me, int npes)
     shmem_barrier_all();
   
     shmem_short_min_to_all(dst0, src0, N, 0, 0, npes, pWrk0, pSync);
-    shmem_int_min_to_all(dst1, src1, N, 0, 0, npes, pWrk1, pSync);
+    shmem_int_min_to_all(dst1, src1, N, 0, 0, npes, pWrk1, pSync1);
     shmem_long_min_to_all(dst2, src2, N, 0, 0, npes, pWrk2, pSync);
-    shmem_float_min_to_all(dst3, src3, N, 0, 0, npes, pWrk3, pSync);
+    shmem_float_min_to_all(dst3, src3, N, 0, 0, npes, pWrk3, pSync1);
     shmem_double_min_to_all(dst4, src4, N, 0, 0, npes, pWrk4, pSync);
-    shmem_longdouble_min_to_all(dst5, src5, N, 0, 0, npes, pWrk5, pSync);
+    shmem_longdouble_min_to_all(dst5, src5, N, 0, 0, npes, pWrk5, pSync1);
     shmem_longlong_min_to_all(dst6, src6, N, 0, 0, npes, pWrk6, pSync);
   
     if(me == 0) {
@@ -277,11 +278,11 @@ sum_to_all(int me, int npes)
   shmem_barrier_all();
 
   shmem_short_sum_to_all(dst0, src0, N, 0, 0, npes, pWrk0, pSync);
-  shmem_int_sum_to_all(dst1, src1, N, 0, 0, npes, pWrk1, pSync);
+  shmem_int_sum_to_all(dst1, src1, N, 0, 0, npes, pWrk1, pSync1);
   shmem_long_sum_to_all(dst2, src2, N, 0, 0, npes, pWrk2, pSync);
-  shmem_float_sum_to_all(dst3, src3, N, 0, 0, npes, pWrk3, pSync);
+  shmem_float_sum_to_all(dst3, src3, N, 0, 0, npes, pWrk3, pSync1);
   shmem_double_sum_to_all(dst4, src4, N, 0, 0, npes, pWrk4, pSync);
-  shmem_longdouble_sum_to_all(dst5, src5, N, 0, 0, npes, pWrk5, pSync);
+  shmem_longdouble_sum_to_all(dst5, src5, N, 0, 0, npes, pWrk5, pSync1);
   shmem_longlong_sum_to_all(dst6, src6, N, 0, 0, npes, pWrk6, pSync);
 
   if(me == 0) {
@@ -366,9 +367,9 @@ and_to_all(int me, int num_pes)
     shmem_barrier_all();
 
     shmem_short_and_to_all(dst0, src0, N, 0, 0, num_pes, pWrk0, pSync);
-    shmem_int_and_to_all(dst1, src1, N, 0, 0, num_pes, pWrk1, pSync);
+    shmem_int_and_to_all(dst1, src1, N, 0, 0, num_pes, pWrk1, pSync1);
     shmem_long_and_to_all(dst2, src2, N, 0, 0, num_pes, pWrk2, pSync);
-    shmem_longlong_and_to_all(dst6, src6, N, 0, 0, num_pes, pWrk6, pSync);
+    shmem_longlong_and_to_all(dst6, src6, N, 0, 0, num_pes, pWrk6, pSync1);
   
     if (me==0) {
       for (i = 0; i < N; i++) {
@@ -449,11 +450,11 @@ prod_to_all(int me, int npes)
     shmem_barrier_all();
  
     shmem_short_prod_to_all(dst0, src0, N, 0, 0, npes, pWrk0, pSync);
-    shmem_int_prod_to_all(dst1, src1, N, 0, 0, npes, pWrk1, pSync);
+    shmem_int_prod_to_all(dst1, src1, N, 0, 0, npes, pWrk1, pSync1);
     shmem_long_prod_to_all(dst2, src2, N, 0, 0, npes, pWrk2, pSync);
-    shmem_float_prod_to_all(dst3, src3, N, 0, 0, npes, pWrk3, pSync);
+    shmem_float_prod_to_all(dst3, src3, N, 0, 0, npes, pWrk3, pSync1);
     shmem_double_prod_to_all(dst4, src4, N, 0, 0, npes, pWrk4, pSync);
-    shmem_longdouble_prod_to_all(dst5, src5, N, 0, 0, npes, pWrk5, pSync);
+    shmem_longdouble_prod_to_all(dst5, src5, N, 0, 0, npes, pWrk5, pSync1);
     shmem_longlong_prod_to_all(dst6, src6, N, 0, 0, npes, pWrk6, pSync);
  
     if(me == 0) {
@@ -542,9 +543,9 @@ or_to_all(int me, int npes)
     shmem_barrier_all();
   
     shmem_short_or_to_all(dst0, src0, N, 0, 0, npes, pWrk0, pSync);
-    shmem_int_or_to_all(dst1, src1, N, 0, 0, npes, pWrk1, pSync);
+    shmem_int_or_to_all(dst1, src1, N, 0, 0, npes, pWrk1, pSync1);
     shmem_long_or_to_all(dst2, src2, N, 0, 0, npes, pWrk2, pSync);
-    shmem_longlong_or_to_all(dst6, src6, N, 0, 0, npes, pWrk6, pSync);
+    shmem_longlong_or_to_all(dst6, src6, N, 0, 0, npes, pWrk6, pSync1);
   
     if (me==0) {
         for (i = 0; i < N; i++) {
@@ -608,9 +609,9 @@ xor_to_all(int me, int npes)
 	shmem_barrier_all();
 	
 	shmem_short_xor_to_all(dst0, src0, N, 0, 0, npes, pWrk0, pSync);
-	shmem_int_xor_to_all(dst1, src1, N, 0, 0, npes, pWrk1, pSync);
+	shmem_int_xor_to_all(dst1, src1, N, 0, 0, npes, pWrk1, pSync1);
 	shmem_long_xor_to_all(dst2, src2, N, 0, 0, npes, pWrk2, pSync);
-	shmem_longlong_xor_to_all(dst6, src6, N, 0, 0, npes, pWrk6, pSync);
+	shmem_longlong_xor_to_all(dst6, src6, N, 0, 0, npes, pWrk6, pSync1);
 	
 	if (me==0) {
 	  for (i = 0; i < N; i++) {
@@ -704,8 +705,10 @@ main(int argc, char* argv[])
 		}
 	}
 
-    for (i = 0; i < _SHMEM_REDUCE_SYNC_SIZE; i++)
+    for (i = 0; i < _SHMEM_REDUCE_SYNC_SIZE; i++) {
         pSync[i] = _SHMEM_SYNC_VALUE;
+        pSync1[i] = _SHMEM_SYNC_VALUE;
+    }
 
     tests = passed = 0;
 
