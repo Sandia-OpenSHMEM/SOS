@@ -85,7 +85,6 @@ main(int argc, char* argv[])
 
     SHMEM_MAX(dst, src, N, 0, 0, num_pes, pWrk, pSync);
 
-    shmem_barrier_all();
     SHMEM_MAX2(dst2, src2, N, 0, 0, num_pes, pWrk1, pSync1);
 
     if (Verbose > 1) {
