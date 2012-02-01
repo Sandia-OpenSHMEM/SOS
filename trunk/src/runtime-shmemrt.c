@@ -51,7 +51,7 @@ shmem_internal_runtime_fini(void)
 }
 
 ptl_process_t*
-shmem_internal_runtime_get_mapping(void)
+shmem_internal_runtime_get_mapping(ptl_handle_ni_t ni_h)
 {
     return mapping;
 }
