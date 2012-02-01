@@ -30,7 +30,6 @@ int
 shmem_internal_runtime_init(void)
 {
     int ret;
-    ptl_process_t my_id;
 
     MPI_Initialized(&ret);
     if (!ret) {
