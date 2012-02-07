@@ -21,17 +21,89 @@
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
 
-#define MAX(A, B) ((A > B) ? A : B)
-#define MIN(A, B) ((A < B) ? A : B)
 
-static long *barrier_work_array;
+static long *barrier_all_psync;
+
+static int *full_tree_children;
+static int full_tree_num_children;
+static int full_tree_parent;
+
+static int tree_crossover = 8; // env 'SHMEM_TREE_THRESHOLD' runtime.c
+static int tree_radix = 3;     // env 'SHMEM_TREE_RADIX'
+
+
+static int
+build_kary_tree(int PE_start, int stride, int PE_size, int *parent, 
+                int *num_children, int *children)
+{
+    int i;
+    /* my_id is the index in a theoretical 0...N-1 array of
+       participating tasks */
+    int my_id = (shmem_internal_my_pe - PE_start) / stride;
+
+    *parent = PE_start + ((my_id - 1) / tree_radix) * stride;
+
+    *num_children = 0;
+    for (i = 1 ; i <= tree_radix ; ++i) {
+        int tmp = tree_radix * my_id + i;
+        if (tmp < PE_size) {
+            children[(*num_children)++] = PE_start + tmp * stride;
+        }
+    }
+
+    return 0;
+}
+
 
 int
-shmem_internal_barrier_init(void)
+shmem_internal_collectives_init(int requested_crossover,
+                                int requested_radix)
 {
-    barrier_work_array = shmalloc(sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
-    if (NULL == barrier_work_array) return -1;
-    bzero(barrier_work_array, sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
+    int i, j, k;
+    int tmp_radix;
+    int my_root = 0;
+
+    /* set default cross-over points */
+    if (requested_crossover > 0) tree_crossover = requested_crossover;
+    if (requested_radix > 0) tree_radix = requested_radix;
+
+    /* initialize barrier_all psync array */
+    barrier_all_psync = shmalloc(sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
+    if (NULL == barrier_all_psync) return -1;
+    bzero(barrier_all_psync, sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
+
+    /* initialize the binomial tree for collective operations over
+       entire tree */
+    full_tree_num_children = 0;
+    for (i = 1 ; i <= shmem_internal_num_pes ; i *= tree_radix) {
+        tmp_radix = (shmem_internal_num_pes / i < tree_radix) ? 
+            (shmem_internal_num_pes / i) + 1 : tree_radix;
+        my_root = (shmem_internal_my_pe / (tmp_radix * i)) * (tmp_radix * i);
+        if (my_root != shmem_internal_my_pe) break;
+        for (j = 1 ; j < tmp_radix ; ++j) {
+            if (shmem_internal_my_pe + i * j < shmem_internal_num_pes) {
+                full_tree_num_children++;
+            }
+        }
+    }
+
+    full_tree_children = malloc(sizeof(int) * full_tree_num_children);
+    if (NULL == full_tree_children) return -1;
+
+    k = full_tree_num_children - 1;
+    for (i = 1 ; i <= shmem_internal_num_pes ; i *= tree_radix) {
+        tmp_radix = (shmem_internal_num_pes / i < tree_radix) ? 
+            (shmem_internal_num_pes / i) + 1 : tree_radix;
+        my_root = (shmem_internal_my_pe / (tmp_radix * i)) * (tmp_radix * i);
+        if (my_root != shmem_internal_my_pe) break;
+        for (j = 1 ; j < tmp_radix ; ++j) {
+            if (shmem_internal_my_pe + i * j < shmem_internal_num_pes) {
+                full_tree_children[k--] = shmem_internal_my_pe + i * j;
+            }
+        }
+    }
+    full_tree_parent = my_root;
+
     return 0;
 }
 
@@ -46,8 +118,7 @@ shmem_barrier_all(void)
     }
 #endif
 
-    shmem_quiet();
-    shmem_barrier(0, 0, shmem_internal_num_pes, barrier_work_array);
+    shmem_barrier(0, 0, shmem_internal_num_pes, barrier_all_psync);
 }
 
 
@@ -66,143 +137,146 @@ shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
     }
 #endif
 
-    if (PE_start == shmem_internal_my_pe) {
-        int pe, i;
-        /* wait for N - 1 callins up the tree */
-        shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size - 1);
+    if (PE_size <= tree_crossover) {
+        if (PE_start == shmem_internal_my_pe) {
+            int pe, i;
+            /* wait for N - 1 callins up the tree */
+            shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size - 1);
 
-        /* Clear pSync; have to do local assignment to clear out NIC atomic cache */
-        ret += shmem_internal_put(pSync, &zero, sizeof(zero), shmem_internal_my_pe);
-        shmem_internal_put_wait(ret);
-        shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
+            /* Clear pSync */
+            ret += shmem_internal_put(pSync, &zero, sizeof(zero), 
+                                      shmem_internal_my_pe);
+            shmem_internal_put_wait(ret);
+            shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
 
-        ret = 0;
-        /* Send acks down psync tree */
-        for (pe = PE_start + stride, i = 1 ; 
-             i < PE_size ;  
-             i++, pe += stride) {
-            ret += shmem_internal_put(pSync, &one, sizeof(one), pe);
-        }
-        shmem_internal_put_wait(ret);
-    } else {
-        /* send message up psync tree */
-        ret += shmem_internal_atomic(pSync, &one, sizeof(one), PE_start, PTL_SUM, DTYPE_LONG);
-        shmem_internal_put_wait(ret);
-        /* wait for ack down psync tree */
-        shmem_long_wait(pSync, 0);
-        /* Clear pSync; never atomically incremented, ok to direct assign */
-        pSync[0] = 0;
-    }
-}
-
-
-/* Logically map an N-ary (N==radix arg) tree on to the PE active set, always
- * assume start_PE == root_PE.
- * 'active set' is defined as [start_pe ... start_pe+PE_size by stride].
- * The 'root_PE' # is within the active set and is where the broadcast message
- * cascade originates from.
- * If the 'root_PE' were not the start_pe, then the pe numbering sequence would
- * contain a hole where root_PE should have been as the root PE has been switched
- * to be the first PE (aka root of the tree). Computing the children of a specific PE
- * becomes overly complex in having to account for the root_PE hole in the PE
- * numbering sequence.
- * In order to simplify the computation (aka make the child nodes computation
- * faster) the tree_root is ALWAYS the start_pe with root_PE in it's expected
- * position in the n_ary tree; as if root_PE == start_PE.
- * For those cases where start_PE != root_PE then prior to returning, switch 
- * root_PE value for start_PE and vice-a-versa.
- *
- * Return:
- *   0 == Success, else error code.
- *
- * Output argument 'children' is an int vector of radix elements; each element
- * is initialized to (-1) which represents no child PE (leaf).
- * children elements which are not euqal to -1 represent the children PEs #.
- */
-
-static int
-find_my_children( int target_pe, int start_pe, int num_pe, int pe_stride,
-                  int radix, int root_PE, int *children )
-{
-    int j, i, find_pe, level, pe, pe_cnt, pe_end, lvl_cnt, lvl_offset;
-    int nxl_offset, nxl_pe, nxl_pe_cnt, nxl_pe_end, child_start, child, tmp;
-
-    for(j=0; j < radix; j++)
-        children[j] = -1;   // (-1) implies Leaf node.
-
-    /* if real_root != start_pe then logically swap the root_PE & start_pe.
-     * Such that if target_pe = root_PE, then compute for 'start_pe' value.
-     * If target_pe == start_pe, then compute for root_PE value.
-     */
-    find_pe = target_pe;
-    if (root_PE != start_pe) {
-        if (target_pe == root_PE)
-            find_pe = start_pe;
-        else if (target_pe == start_pe)
-            find_pe = root_PE;
-    }
-
-    pe_cnt = num_pe;
-    pe = start_pe;
-
-    for(i=0,level=0,lvl_cnt=1; i < num_pe; level++,i++ ) {
-        pe_end = pe + ((lvl_cnt - 1) * pe_stride); // pow(radix,level)
-        if ( pe <= find_pe && find_pe <= pe_end ) {
-            lvl_offset = find_pe - pe;
-            if ( lvl_offset >= pe_stride && pe_stride > 1 )
-                lvl_offset /= pe_stride;
-            pe_cnt -= lvl_cnt; // account for nodes @ current level.
-            if ( pe_cnt <= 0 )
-                return 0; // LEAF node.
-            nxl_pe_cnt = lvl_cnt * radix;// nxt tree level: num pes
-            nxl_pe = pe_end + pe_stride;
-            nxl_pe_end = nxl_pe + ((nxl_pe_cnt-1) * pe_stride);
-
-            nxl_offset = lvl_offset * radix;
-            child_start = nxl_pe + (nxl_offset * pe_stride);
-            tmp = pe_cnt - nxl_offset;
-            if ( tmp <= 0 || (tmp >= radix && child_start >= nxl_pe_end) )
-                return 0; // LEAF node.
-            tmp = (tmp > radix ? radix : tmp);
-            /* record child pe #'s for caller */
-            for( j=0; j < tmp; j++ ) {
-                child = child_start;
-                if (root_PE != start_pe) {
-                    if (child == root_PE)
-                        child = start_pe;
-                    else if (child == start_pe)
-                            child = root_PE;
-                }
-                children[j] = child;
-                child_start += pe_stride;
+            ret = 0;
+            /* Send acks down psync tree */
+            for (pe = PE_start + stride, i = 1 ; 
+                 i < PE_size ;  
+                 i++, pe += stride) {
+                ret += shmem_internal_put(pSync, &one, sizeof(one), pe);
             }
-            return 0;
+            shmem_internal_put_wait(ret);
+
+        } else {
+            /* send message to root */
+            ret += shmem_internal_atomic(pSync, &one, sizeof(one), PE_start, 
+                                         PTL_SUM, DTYPE_LONG);
+            shmem_internal_put_wait(ret);
+            /* wait for ack down psync tree */
+            shmem_long_wait(pSync, 0);
+
+            /* Clear pSync */
+            ret += shmem_internal_put(pSync, &zero, sizeof(zero), 
+                                      shmem_internal_my_pe);
+            shmem_internal_put_wait(ret);
+            shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
         }
-        /* advance to next tree level */
-        pe_cnt -= lvl_cnt;
-        pe = pe_end + pe_stride;
-        lvl_cnt *= radix;   // # of pes at next tree level
+
+    } else {
+        int parent, num_children, *children;
+
+        if (PE_size == shmem_n_pes()) {
+            /* we're the full tree, use the binomial tree */
+            parent = full_tree_parent;
+            num_children = full_tree_num_children;
+            children = full_tree_children;
+        } else {
+            children = alloca(sizeof(int) * tree_radix);
+            build_kary_tree(PE_start, stride, PE_size, &parent, 
+                            &num_children, children);
+        }
+
+        if (num_children != 0) {
+            /* Not a pure leaf node */
+
+            int i;
+            /* wait for num_children callins up the tree */
+            shmem_long_wait_until(pSync, SHMEM_CMP_EQ, num_children);
+
+            if (parent == shmem_internal_my_pe) {
+                /* The root of the tree */
+
+                /* Clear pSync */
+                ret += shmem_internal_put(pSync, &zero, sizeof(zero), 
+                                          shmem_internal_my_pe);
+                shmem_internal_put_wait(ret);
+                shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
+
+                /* Send acks down to children */
+                ret = 0;
+                for (i = 0 ; i < num_children ; ++i) {
+                    ret += shmem_internal_atomic(pSync, &one, sizeof(one), 
+                                                 children[i], 
+                                                 PTL_SUM, DTYPE_LONG);
+                }
+                shmem_internal_put_wait(ret);
+
+            } else {
+                /* Middle of the tree */
+
+                /* send ack to parent */
+                ret = shmem_internal_atomic(pSync, &one, sizeof(one), 
+                                            parent, PTL_SUM, DTYPE_LONG);
+                shmem_internal_put_wait(ret);
+
+                /* wait for ack from parent */
+                shmem_long_wait_until(pSync, SHMEM_CMP_EQ, num_children  + 1);
+
+                /* Clear pSync */
+                ret += shmem_internal_put(pSync, &zero, sizeof(zero), 
+                                          shmem_internal_my_pe);
+                shmem_internal_put_wait(ret);
+                shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
+
+                /* Send acks down to children */
+                ret = 0;
+                for (i = 0 ; i < num_children ; ++i) {
+                    ret += shmem_internal_atomic(pSync, &one, sizeof(one),
+                                                 children[i], 
+                                                 PTL_SUM, DTYPE_LONG);
+                }
+                shmem_internal_put_wait(ret);
+            }
+
+        } else {
+            /* Leaf node */
+
+            /* send message up psync tree */
+            ret += shmem_internal_atomic(pSync, &one, sizeof(one), parent, 
+                                         PTL_SUM, DTYPE_LONG);
+            shmem_internal_put_wait(ret);
+
+            /* wait for ack down psync tree */
+            shmem_long_wait(pSync, 0);
+
+            /* Clear pSync */
+            ret += shmem_internal_put(pSync, &zero, sizeof(zero), 
+                                      shmem_internal_my_pe);
+            shmem_internal_put_wait(ret);
+            shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
+        }
     }
-    return -1;  /* unable to find PE ? */
+
+    shmem_quiet();
 }
 
-int shmem_tree_threshold=8; // env 'SHMEM_TREE_THRESHOLD' runtime.c
-int shmem_tree_radix=3; // env 'SHMEM_TREE_RADIX'
 
 static inline
 void
 shmem_internal_bcast(void *target, const void *source, size_t len,
                      int PE_root, int PE_start, int logPE_stride, int PE_size,
-                     long *pSync)
+                     long *pSync, int complete)
 {
+    int ret = 0;
+    long zero = 0, one = 1;
     int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
-    int i, pe, ret = 0;
-    long one = 1;
     int real_root = PE_start + PE_root * stride;
-    int *kids;
 
-    if ( PE_size < shmem_tree_threshold ) {
+    if (PE_size < tree_crossover) {
         if (real_root == shmem_internal_my_pe) {
+            int i, pe;
+
             /* send data to all peers */
             for (pe = PE_start,i=0; i < PE_size; pe += stride, i++) {
                 if (pe == shmem_internal_my_pe && source == target) continue;
@@ -215,67 +289,147 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
     
             /* send completion ack to all peers */
             for (pe = PE_start,i=0; i < PE_size; pe += stride, i++) {
+                if (pe == shmem_internal_my_pe) continue;
                 ret += shmem_internal_put(pSync, &one, sizeof(long), pe);
             }
             shmem_internal_put_wait(ret);
-        }
 
-        /* wait for data arrival message */
-        shmem_long_wait(pSync, 0);
-        /* Clear pSync ; never atomically incremented, ok to direct assign */
-        pSync[0] = 0;
-        return;
-    }
+            if (1 == complete) {
+                /* wait for acks from everyone */
+                shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size - 1);
 
-    /* Cascade broadcast */
-    kids = alloca( shmem_tree_radix * sizeof(int) );
-    if ( !kids )
-        RAISE_ERROR_STR("alloca() failed?");
+                /* Clear pSync */
+                ret += shmem_internal_put(pSync, &zero, sizeof(zero), 
+                                          shmem_internal_my_pe);
+                shmem_internal_put_wait(ret);
+                shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
+            }
 
-    ret = find_my_children( shmem_internal_my_pe, PE_start, PE_size, stride,
-                            shmem_tree_radix, real_root, kids );
-    if ( ret )
-        RAISE_ERROR_STR("Unable to find broadcast children?");
+        } else {
+            /* wait for data arrival message */
+            shmem_long_wait(pSync, 0);
 
-    if (real_root == shmem_internal_my_pe) {
-
-        /* real_root starts the data cascade: Tx BC data to it's children */
-        for (i = 0,ret = 0; i < shmem_tree_radix && kids[i] != -1; i++)
-            ret += shmem_internal_put(target, source, len, kids[i]);
-
-        shmem_internal_put_wait(ret);
-        shmem_fence();
-
-        /* send completion ack to my children */
-        for (i = 0,ret = 0; i < shmem_tree_radix && kids[i] != -1; i++)
-            ret += shmem_internal_put(pSync, &one, sizeof(long), kids[i]);
-
-        shmem_internal_put_wait(ret);
-
-        if ( target != source )
-            memcpy(target, source, len);
-    }
-    else {
-        /* non root_PE - wait for data arrival message */
-        shmem_long_wait(pSync, 0);
-
-        /* cascade broadcast data to my children */
-        for (i = 0,ret = 0; i < shmem_tree_radix && kids[i] != -1; i++)
-            ret += shmem_internal_put(target, target, len, kids[i]);
-
-        if ( ret ) {
+            /* Clear pSync */
+            ret += shmem_internal_put(pSync, &zero, sizeof(zero), 
+                                      shmem_internal_my_pe);
             shmem_internal_put_wait(ret);
+            shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
+            
+            if (1 == complete) {
+                /* send ack back to root */
+                ret += shmem_internal_atomic(pSync, &one, sizeof(one), 
+                                             real_root, 
+                                             PTL_SUM, DTYPE_LONG);
+                shmem_internal_put_wait(ret);
+            }
+        }
+
+    } else {
+        int parent, num_children, *children;
+        const void *send_buf = source;
+
+        if (PE_size == shmem_n_pes()) {
+            /* we're the full tree, use the binomial tree */
+            parent = full_tree_parent;
+            num_children = full_tree_num_children;
+            children = full_tree_children;
+        } else {
+            children = alloca(sizeof(int) * tree_radix);
+            build_kary_tree(PE_start, stride, PE_size, &parent, 
+                            &num_children, children);
+        }
+
+        if (PE_root != PE_start) {
+            if (shmem_internal_my_pe == PE_start) {
+                /* wait for data arrival message */
+                shmem_long_wait(pSync, 0);
+
+                /* Clear pSync */
+                ret += shmem_internal_put(pSync, &zero, sizeof(zero), 
+                                          shmem_internal_my_pe);
+                shmem_internal_put_wait(ret);
+                shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
+                
+                /* send buf is now in the target buffer */
+                send_buf = target;
+                
+            } else if (shmem_internal_my_pe == real_root) {
+                /* send data to 0th entry */
+                ret = shmem_internal_put(target, source, len, PE_start);
+                shmem_fence();
+                ret += shmem_internal_put(pSync, &one, sizeof(long), PE_start);
+                shmem_internal_put_wait(ret);
+            }
+
+        } else if (real_root == shmem_internal_my_pe && source != target) {
+            memcpy(target, source, len);
+        }
+
+        if (0 != num_children) {
+            int i;
+
+            if (real_root != shmem_internal_my_pe) {
+                /* wait for data arrival message if not the root */
+                shmem_long_wait(pSync, 0);
+
+                /* if complete, send ack */
+                if (1 == complete) {
+                    ret += shmem_internal_atomic(pSync, &one, sizeof(one),
+                                                 parent,
+                                                 PTL_SUM, DTYPE_LONG);
+                    shmem_internal_put_wait(ret);
+                }
+            }
+
+            /* send data to all leaves */
+            for (i = 0 ; i < num_children ; ++i) {
+                ret += shmem_internal_put(target, send_buf, len, children[i]);
+            }
+            shmem_internal_put_wait(ret);
+            ret = 0;
+    
             shmem_fence();
+    
+            /* send completion ack to all peers */
+            for (i = 0 ; i < num_children ; ++i) {
+                ret += shmem_internal_put(pSync, &one, sizeof(long), 
+                                          children[i]);
+            }
+            shmem_internal_put_wait(ret);
 
-            /* send completion ack to my children */
-            for (i = 0,ret = 0; i < shmem_tree_radix && kids[i] != -1; i++)
-                ret += shmem_internal_put(pSync, &one, sizeof(long), kids[i]);
+            if (1 == complete) {
+                /* wait for acks from everyone */
+                shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 
+                                      num_children  + 
+                                      ((real_root == shmem_internal_my_pe) ?
+                                       0 : 1));
 
-            shmem_internal_put_wait(ret); 
+                /* Clear pSync */
+                ret += shmem_internal_put(pSync, &zero, sizeof(zero), 
+                                          shmem_internal_my_pe);
+                shmem_internal_put_wait(ret);
+                shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
+            }
+
+        } else {
+            /* wait for data arrival message */
+            shmem_long_wait(pSync, 0);
+
+            /* if complete, send ack */
+            if (1 == complete) {
+                ret += shmem_internal_atomic(pSync, &one, sizeof(one),
+                                             parent,
+                                             PTL_SUM, DTYPE_LONG);
+                shmem_internal_put_wait(ret);
+            }
+            
+            /* Clear pSync */
+            ret += shmem_internal_put(pSync, &zero, sizeof(zero), 
+                                      shmem_internal_my_pe);
+            shmem_internal_put_wait(ret);
+            shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
         }
     }
-    /* Clear pSync ; never atomically incremented, ok to direct assign */
-    pSync[0] = _SHMEM_SYNC_VALUE;
 }
 
 
@@ -343,7 +497,7 @@ shmem_internal_op_to_all(void *target, void *source, int count, int type_size,
     }
 
     /* broadcast out */
-    shmem_internal_bcast(target, target, count * type_size, 0, PE_start, logPE_stride, PE_size, pSync);
+    shmem_internal_bcast(target, target, count * type_size, 0, PE_start, logPE_stride, PE_size, pSync, 0);
 }
 
 
@@ -410,7 +564,7 @@ shmem_internal_collect(void *target, const void *source, size_t len,
     }
 
     /* broadcast out */
-    shmem_internal_bcast(target, target, bcast_len, 0, PE_start, logPE_stride, PE_size, pSync);
+    shmem_internal_bcast(target, target, bcast_len, 0, PE_start, logPE_stride, PE_size, pSync, 0);
 }
 
 
@@ -447,7 +601,7 @@ shmem_internal_fcollect(void *target, const void *source, size_t len,
         shmem_internal_put_wait(ret);
     }
     
-    shmem_internal_bcast(target, target, len * PE_size, 0, PE_start, logPE_stride, PE_size, pSync);
+    shmem_internal_bcast(target, target, len * PE_size, 0, PE_start, logPE_stride, PE_size, pSync, 0);
 }
 
 
@@ -1210,8 +1364,8 @@ shmem_broadcast32(void *target, const void *source, size_t nlong,
 #endif
 
     shmem_internal_bcast(target, source, nlong * 4,
-                    PE_root, PE_start, logPE_stride, PE_size,
-                    pSync);
+                         PE_root, PE_start, logPE_stride, PE_size,
+                         pSync, 1);
 }
 
 
@@ -1227,8 +1381,8 @@ shmem_broadcast64(void *target, const void *source, size_t nlong,
 #endif
 
     shmem_internal_bcast(target, source, nlong * 8,
-                    PE_root, PE_start, logPE_stride, PE_size,
-                    pSync);
+                         PE_root, PE_start, logPE_stride, PE_size,
+                         pSync, 1);
 }
 
 

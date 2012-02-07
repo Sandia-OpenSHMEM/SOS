@@ -50,8 +50,6 @@ extern int shmem_internal_num_pes;
 extern int shmem_internal_initialized;
 extern int shmem_internal_finalized;
 extern int shmem_internal_total_data_ordering;
-extern int shmem_tree_radix;
-extern int shmem_tree_threshold;
 
 
 #define GET_REMOTE_ACCESS(target, pt, offset)                           \
@@ -390,7 +388,7 @@ shmem_internal_fetch_atomic(void *target, void *source, void *dest, size_t len,
 /* initialization routines */
 int shmem_internal_symmetric_init(void);
 int shmem_internal_symmetric_fini(void);
-int shmem_internal_barrier_init(void);
-int shmem_internal_barrier_fini(void);
+int shmem_internal_collectives_init(int requested_crossover, 
+                                    int requested_radix);
 
 #endif

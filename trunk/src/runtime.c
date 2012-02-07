@@ -140,6 +140,7 @@ start_pes(int npes)
     ptl_le_t le;
     ptl_uid_t uid = PTL_UID_ANY;
     ptl_ni_limits_t ni_limits, ni_req_limits;
+    int radix = -1, crossover = -1;
 
     if (shmem_internal_initialized) {
         RAISE_ERROR_STR("attempt to reinitialize library");
@@ -394,10 +395,23 @@ start_pes(int npes)
         goto cleanup;
     }
 
-    /* setup space for barrier */
-    ret = shmem_internal_barrier_init();
+    /* setup collectives */
+    s = getenv("SHMEM_TREE_RADIX");
+    if ( s != NULL && *s != '\0' ) {
+        radix = atoi(s);
+        if (radix < 2) radix = 2;
+    }
+
+    s = getenv("SHMEM_TREE_THRESHOLD");
+    if ( s != NULL && *s != '\0' ) {
+        crossover = atoi(s);
+        if (crossover < 4) crossover = 4;
+    }
+
+    ret = shmem_internal_collectives_init(crossover, radix);
     if (ret != 0) {
-        fprintf(stderr, "[%03d] ERROR: initialization of barrier space failed: %d\n",
+        fprintf(stderr,
+                "[%03d] ERROR: initialization of collectives failed: %d\n",
                 shmem_internal_my_pe, ret);
         goto cleanup;
     }
@@ -405,52 +419,7 @@ start_pes(int npes)
     atexit(shmem_internal_shutdown);
     shmem_internal_initialized = 1;
 
-    /* collective op overrides? */
-    s = getenv("SHMEM_TREE_RADIX");
-    if ( s != NULL && *s != '\0' ) {
-        int new;
-        ret = sscanf(s,"%d",&new);
-        if ( ret == 1 && new > 0)
-            shmem_tree_radix = new;
-        else
-            fprintf(stderr, "[%03d] ERROR: Ignoring invalid "
-                    "SHMEM_TREE_RADIX '%s', default %d\n",
-                    shmem_internal_my_pe, s, shmem_tree_radix);
-    }
-    else {
-        if ( shmem_internal_num_pes > 32 && shmem_internal_num_pes <= 64 )
-            shmem_tree_radix = 5;
-        else if ( shmem_internal_num_pes > 64 && shmem_internal_num_pes < 256 )
-            shmem_tree_radix = 8;
-        else if ( shmem_internal_num_pes >= 256 )
-            shmem_tree_radix = 16;
-    }
-
-    s = getenv("SHMEM_TREE_THRESHOLD");
-    if ( s != NULL && *s != '\0' ) {
-        int new;
-        ret = sscanf(s,"%d",&new);
-        if ( ret == 1 && new > 0 )
-            shmem_tree_threshold = new;
-        else
-            fprintf(stderr, "[%03d] ERROR: Ignoring invalid "
-                    "SHMEM_TREE_THRESHOLD '%s', default %d\n",
-                    shmem_internal_my_pe, s, shmem_tree_threshold);
-    }
-
-    s = getenv("SHMEM_BROADCAST_ALOGORTHM");
-    /* naive or tree, default is 'tree' */
-    if (s && strcmp(s,"naive") == 0 )
-        shmem_tree_threshold = (7<<28);  /* force serial broadcast sends  */
-
-    /* Give point for debuggers to get a chance to attach if requested by user */
-    if (NULL != getenv("SHMEM_DEBUGGER_ATTACH")) {
-        printf("[%02d] waiting for attach, pid=%d\n", shmem_internal_my_pe, getpid());
-        volatile int foobar = 0;
-        while (foobar == 0) { }
-    }
-
-    if ( gethostname(shmem_internal_my_hostname, HOST_NAME_MAX) ) {
+    if (gethostname(shmem_internal_my_hostname, HOST_NAME_MAX)) {
         sprintf(shmem_internal_my_hostname, "ERR: gethostname '%s'?",
                 strerror(errno));
     }
