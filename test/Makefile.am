@@ -55,7 +55,8 @@ TESTS = \
 	bigput \
 	bigget \
 	to_all \
-	ns
+	ns \
+    bcast_flood
 
 check_PROGRAMS = \
 	$(TESTS) \
@@ -216,6 +217,9 @@ to_all_LDADD = $(top_builddir)/src/libsma.la
 
 ns_SOURCES = ns.c
 ns_LDADD = $(top_builddir)/src/libsma.la
+
+bcast_flood_SOURCES = bcast_flood.c
+bcast_flood_LDADD = $(top_builddir)/src/libsma.la
 
 msgrate_SOURCES = msgrate.c
 msgrate_LDADD = $(top_builddir)/src/libsma.la
