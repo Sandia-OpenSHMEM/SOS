@@ -14,12 +14,13 @@
 
 #include <portals4.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <sys/time.h>
+#include <sys/param.h>
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
@@ -54,7 +55,11 @@ int shmem_internal_initialized = 0;
 int shmem_internal_finalized = 0;
 int shmem_internal_total_data_ordering = 0;
 
+#ifdef MAXHOSTNAMELEN
+static char shmem_internal_my_hostname[MAXHOSTNAMELEN];
+#else
 static char shmem_internal_my_hostname[HOST_NAME_MAX];
+#endif
 
 #ifdef __APPLE__
 #include <mach-o/getsect.h>
@@ -419,7 +424,8 @@ start_pes(int npes)
     atexit(shmem_internal_shutdown);
     shmem_internal_initialized = 1;
 
-    if (gethostname(shmem_internal_my_hostname, HOST_NAME_MAX)) {
+    if (gethostname(shmem_internal_my_hostname,
+                    sizeof(shmem_internal_my_hostname))) {
         sprintf(shmem_internal_my_hostname, "ERR: gethostname '%s'?",
                 strerror(errno));
     }

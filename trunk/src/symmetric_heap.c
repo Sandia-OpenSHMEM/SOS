@@ -50,21 +50,29 @@ shmem_internal_get_next(int incr)
 static void *mmap_alloc(long bytes);
 
 #include <sys/mman.h>
+#ifdef __APPLE__
+#include <mach-o/getsect.h>
+#endif
 
 #define AGIG (1024UL*1024UL*1024UL)
 
 /* alloc VM space starting @ '_end' + 1GB */
 static void *mmap_alloc(long bytes)
 {
-    ulong base;
+    unsigned long base;
     void *symHeap;
+#ifdef __APPLE__
+    char *init_end = (char*) get_end();
+#else
     extern char * _end;
+    char *init_end = _end;
+#endif
 
-    base = (((ulong)&_end) + 2*AGIG) & ~(AGIG -1);  // round to next GB boundary.
+    base = (((unsigned long)&init_end) + 2*AGIG) & ~(AGIG -1);  // round to next GB boundary.
     symHeap = mmap( (void*) base,
                     (size_t) bytes,
                     PROT_READ|PROT_WRITE,
-                    MAP_ANONYMOUS | MAP_PRIVATE | MAP_POPULATE,
+                    MAP_ANON | MAP_PRIVATE,
                     -1,
                     0 );
     if (symHeap == MAP_FAILED) {
