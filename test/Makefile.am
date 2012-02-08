@@ -15,11 +15,7 @@ TESTS = \
 	accessible_ping \
 	max_reduction \
 	big_reduction \
-    min_to_all \
-    max_to_all \
-    sum_to_all \
-    or_to_all \
-    pa_to_all \
+	to_all \
 	strided_put \
 	barrier \
 	bcast \
@@ -54,7 +50,6 @@ TESTS = \
 	fcollect64 \
 	bigput \
 	bigget \
-	to_all \
 	ns \
     bcast_flood
 
@@ -91,21 +86,6 @@ max_reduction_LDADD = $(top_builddir)/src/libsma.la
 
 big_reduction_SOURCES = big_reduction.c
 big_reduction_LDADD = $(top_builddir)/src/libsma.la
-
-min_to_all_SOURCES = min_to_all.c
-min_to_all_LDADD = $(top_builddir)/src/libsma.la
-
-max_to_all_SOURCES = max_to_all.c
-max_to_all_LDADD = $(top_builddir)/src/libsma.la
-
-sum_to_all_SOURCES = sum_to_all.c
-sum_to_all_LDADD = $(top_builddir)/src/libsma.la
-
-or_to_all_SOURCES = or_to_all.c
-or_to_all_LDADD = $(top_builddir)/src/libsma.la
-
-pa_to_all_SOURCES = pa_to_all.c
-pa_to_all_LDADD = $(top_builddir)/src/libsma.la
 
 strided_put_SOURCES = strided_put.c
 strided_put_LDADD = $(top_builddir)/src/libsma.la
