@@ -31,7 +31,6 @@ main(int argc, char* argv[])
     int c, cloop, loops;
     int my_rank, num_ranks;
     int Announce = (NULL == getenv("MAKELEVEL")) ? 1 : 0;
-    char host[HOST_NAME_MAX];
 
     start_pes(0);
     my_rank = _my_pe();
@@ -41,11 +40,6 @@ main(int argc, char* argv[])
         return 1;
     }
  
-    if ( (c=gethostname(host, HOST_NAME_MAX)) ) {
-        fprintf(stderr, "[%d] ERR - gethostname '%s'?\n", my_rank, strerror(errno));
-        return 1;
-    }
-
     while((c=getopt(argc,argv,"vq")) != -1) {
         switch(c) {
           case 'v':
@@ -79,15 +73,15 @@ main(int argc, char* argv[])
         for(c=0; c < num_ranks; c++)
             shmem_int_inc( &lock_cnt, c );
 
-        Vprintf("[%d-%s] locked: lock_cnt(%d)\n", my_rank, host, lock_cnt);
+        Vprintf("[%d] locked: lock_cnt(%d)\n", my_rank, lock_cnt);
 
         shmem_int_wait_until( &lock_cnt, SHMEM_CMP_GE, num_ranks );
 
         shmem_barrier_all();  /* sync all ranks */
 
         if (lock_cnt != num_ranks)
-            printf ("[%d-%s] loop %d: bad lock_cnt %d, expected %d?\n",
-                    my_rank, host, cloop, lock_cnt, num_ranks);
+            printf ("[%d] loop %d: bad lock_cnt %d, expected %d?\n",
+                    my_rank, cloop, lock_cnt, num_ranks);
 
         if ( (cloop % 10) == 0 ) {
             if (my_rank == 0 && Announce)
@@ -95,7 +89,7 @@ main(int argc, char* argv[])
         }
     }
 
-    Vprintf ("[%d-%s] of %d, Exit: lock_cnt %d\n",
-                my_rank, host, num_ranks, lock_cnt);
+    Vprintf ("[%d] of %d, Exit: lock_cnt %d\n",
+                my_rank, num_ranks, lock_cnt);
     return 0;
 }
