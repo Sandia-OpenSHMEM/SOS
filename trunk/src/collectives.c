@@ -28,7 +28,7 @@ static int *full_tree_children;
 static int full_tree_num_children;
 static int full_tree_parent;
 
-static int tree_crossover = 8; // env 'SHMEM_TREE_THRESHOLD' runtime.c
+static int tree_crossover = 256; // env 'SHMEM_TREE_THRESHOLD' runtime.c
 static int tree_radix = 3;     // env 'SHMEM_TREE_RADIX'
 
 
