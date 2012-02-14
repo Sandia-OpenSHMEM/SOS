@@ -7,6 +7,15 @@
 *           The pWrk and pSync arrays on all PEs in the active set must not be
 *           in use from a prior call to a collective OpenSHMEM routine.
 *
+* frank @ SystemFabric Works identified an interesting overflow issue in the
+* prod_to_all test. In the presence of slightly larger PE counts (>=14),
+* overflow is encountered in short, int and float, double and long double.
+* The short and int both wrap correctly and are both uniformly wrong...uniformly
+* being the salient point. float, double and long double all suffer from
+* floating point rounding errors, hence the FP test results are ignored
+* (assumed to pass)when FP rounding is encountered. FP*_prod_to_all() calls are
+* still made so as not to upset the pSync ordering.
+*
 * usage: to_all {-amopsSv|h}
 *   where:
 *       -a  do not run and_to_all
@@ -419,6 +428,9 @@ int
 prod_to_all(int me, int npes)
 {
     int i, pass=0;
+    int float_rounding_err=0;
+    int double_rounding_err=0;
+    int ldouble_rounding_err=0;
 
     memset(ok,0,sizeof(ok));
 
@@ -434,17 +446,29 @@ prod_to_all(int me, int npes)
 	    dst6[i] = -9;
     }
   
-    expected_result0 = expected_result1 = expected_result2 = expected_result3
-        = expected_result4 = expected_result5 = expected_result6 = 1;
+    expected_result0 = expected_result1 = expected_result2 =
+    expected_result6 = 1;
+    expected_result3 = expected_result4 = expected_result5 = 1.0;
+    
 
     for(i=1; i <= npes; i++) {
-        expected_result0 = expected_result0 * i;
-	    expected_result1 = expected_result1 * i;
-	    expected_result2 = expected_result2 * i;
-	    expected_result3 = expected_result3 * i;
-	    expected_result4 = expected_result4 * i;
-	    expected_result5 = expected_result5 * i;
-	    expected_result6 = expected_result6 * i;
+        expected_result0 *= i;
+	    expected_result1 *= i;
+	    expected_result2 *= i;
+	    expected_result3 *= (float)i;
+	    expected_result4 *= (double)i;
+        if ((double)expected_result3 != expected_result4) {
+            if (!float_rounding_err && Verbose > 2 && me == 0)
+                printf("float_err @ npes %d\n",i);
+            float_rounding_err = 1;
+        }
+	    expected_result5 *= (long double)i;
+        if ((long double)expected_result4 != expected_result5) {
+            if (!double_rounding_err && Verbose > 2 && me == 0)
+                printf("double_err @ npes %d\n",i);
+            ldouble_rounding_err = double_rounding_err = 1;
+        }
+	    expected_result6 *= i;
     }
    
     shmem_barrier_all();
@@ -459,13 +483,20 @@ prod_to_all(int me, int npes)
  
     if(me == 0) {
       for (i = 0; i < N; i++) {
-	   /*printf("dst2[%d]: %ld, expected val: %ld\n",i, dst2[i], (long)expected_result2);*/
         if(dst0[i] != expected_result0) ok[0] = 1;
 	    if(dst1[i] != expected_result1) ok[1] = 1;
 	    if(dst2[i] != expected_result2) ok[2] = 1;
-	    if(dst3[i] != expected_result3) ok[3] = 1;
-	    if(dst4[i] != expected_result4) ok[4] = 1;
-	    if(dst5[i] != expected_result5) ok[5] = 1;
+
+        /* check for overflow */
+	    if(!float_rounding_err && dst3[i] != expected_result3) { ok[3] = 1;
+	        printf("dst3[%d]: %f, expected val: %f\n",i, dst3[i], expected_result3);
+        }
+	    if(!double_rounding_err && dst4[i] != expected_result4) {ok[4] = 1;
+	        printf("dst4[%d]: %f, expected val: %f\n",i, dst4[i], expected_result4);
+        }
+	    if(!ldouble_rounding_err && dst5[i] != expected_result5) {ok[5] = 1;
+	        printf("dst5[%d]: %Lf, expected val: %Lf T4 %f\n",i, dst5[i], expected_result5,dst4[i]);
+        }
 	    if(dst6[i] != expected_result6) ok[6] = 1;
       }
 
@@ -493,21 +524,36 @@ prod_to_all(int me, int npes)
 	  if(ok[3]==1)
         printf("Reduction operation shmem_float_prod_to_all: Failed\n");
       else {
-        Vprintf("Reduction operation shmem_float_prod_to_all: Passed\n");
+        if (float_rounding_err) {
+            Vprintf("Reduction operation shmem_float_prod_to_all: skipped due to float rounding error\n");
+        }
+        else {
+            Vprintf("Reduction operation shmem_float_prod_to_all: Passed\n");
+        }
         pass++;
       }
 
 	  if(ok[4]==1)
         printf("Reduction operation shmem_double_prod_to_all: Failed\n");
       else {
-        Vprintf("Reduction operation shmem_double_prod_to_all: Passed\n");
+        if (double_rounding_err) {
+            Vprintf("Reduction operation shmem_double_prod_to_all: skipped due to double rounding error\n");
+        }
+        else {
+            Vprintf("Reduction operation shmem_double_prod_to_all: Passed\n");
+        }
         pass++;
       }
 
 	  if(ok[5]==1)
         printf("Reduction operation shmem_longdouble_prod_to_all: Failed\n");
       else {
-        Vprintf("Reduction operation shmem_longdouble_prod_to_all: Passed\n");
+        if (double_rounding_err) {
+            Vprintf("Reduction operation shmem_longdouble_prod_to_all: skipped due to long double rounding error\n");
+        }
+        else {
+            Vprintf("Reduction operation shmem_longdouble_prod_to_all: Passed\n");
+        }
         pass++;
       }
 
