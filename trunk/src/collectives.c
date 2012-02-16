@@ -339,7 +339,7 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
                             &num_children, children);
         }
 
-        if (PE_root != PE_start) {
+        if (real_root != PE_start) {
             if (shmem_internal_my_pe == PE_start) {
                 /* wait for data arrival message */
                 shmem_long_wait(pSync, 0);
