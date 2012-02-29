@@ -124,6 +124,8 @@ shmem_internal_shutdown(void)
     }
     shmem_internal_finalized = 1;
 
+    shmem_internal_runtime_barrier();
+
     /* wait for remote completion (acks) of all pending events */
     PtlCTWait(shmem_internal_put_ct_h, 
               shmem_internal_pending_put_counter, &ct);
