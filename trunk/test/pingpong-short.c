@@ -1,5 +1,5 @@
 /*
- * pingpong test  pingpong-short {-V} {numShorts-2-put(128)} {loop-cnt(10)}
+ * pingpong test  pingpong-short {-v} {numShorts-2-put(128)} {loop-cnt(10)}
  *
  * For yod -c X
  * Proc0 puts nShorts to Proc1 ... Proc(X-1)
@@ -17,6 +17,8 @@
 #include <string.h>
 #include <assert.h>
 
+static int atoi_scaled(char *s);
+
 #define Rfprintf if (_my_pe() == 0) fprintf
 #define Rprintf if (_my_pe() == 0)  printf
 
@@ -28,31 +30,41 @@
 int output_mod = OUTPUT_MOD;
 int Verbose;
 int Slow;
+long pSync0[_SHMEM_BARRIER_SYNC_SIZE],
+    pSync1[_SHMEM_BARRIER_SYNC_SIZE],
+    pSync2[_SHMEM_BARRIER_SYNC_SIZE],
+    pSync3[_SHMEM_BARRIER_SYNC_SIZE],
+    pSync4[_SHMEM_BARRIER_SYNC_SIZE];
 
 #define DFLT_NWORDS 128
 #define DFLT_LOOPS 100
 
-#define TARGET_SZ 8192
 #define VAL 0xCafe
 
 #define DataType short
 
-DataType Target[TARGET_SZ];
-DataType src[TARGET_SZ];
-DataType work[TARGET_SZ];
+DataType *Target;
+DataType *src;
+DataType *work;
 
 int
 main(int argc, char* argv[])
 {
 	int c, j, loops, k, l;
-	int proc, nProcs, nWorkers;
+	int my_pe, nProcs, nWorkers;
 	int  nWords=1;
 	int  failures=0;
 	char *prog_name;
 	DataType *wp;
+	long work_sz;
+
+    for(j=0; j < _SHMEM_BARRIER_SYNC_SIZE; j++) {
+        pSync0[j] = pSync1[j] = pSync2[j] = pSync3[j] =
+            pSync4[j] = _SHMEM_SYNC_VALUE;
+    }
 
 	start_pes(0);
-	proc = _my_pe();
+	my_pe = _my_pe();
 	nProcs = _num_pes();
 	nWorkers = nProcs - 1;
 
@@ -66,7 +78,7 @@ main(int argc, char* argv[])
 		if ( shmem_pe_accessible(j) != 1 ) {
 			fprintf(stderr,
 				"ERR - pe %d not accessible from pe %d\n",
-				j, proc);
+				j, my_pe);
 		}
 
 	prog_name = strrchr(argv[0],'/');
@@ -75,12 +87,12 @@ main(int argc, char* argv[])
 	else
 		prog_name = argv[0];
 
-	while((c=getopt(argc,argv,"hVM:s")) != -1) {
+	while((c=getopt(argc,argv,"hvM:s")) != -1) {
 		switch(c) {
 		  case 's':
 			Slow++;
 			break;
-		  case 'V':
+		  case 'v':
 			Verbose++;
 			break;
 		  case 'M':
@@ -95,8 +107,8 @@ main(int argc, char* argv[])
 			break;
 		  case 'h':
 			Rfprintf(stderr,
-				"usage: %s {nWords-2-put} {Loop-count}\n",
-				prog_name);
+				"usage: %s {nWords-2-put(%d)K/M} {Loop-count(%d)K/M}\n",
+				prog_name, DFLT_NWORDS, DFLT_LOOPS);
 			return 1;
 		  default:
 			return 1;
@@ -106,11 +118,9 @@ main(int argc, char* argv[])
 	if (optind == argc)
 		nWords = DFLT_NWORDS;
 	else {
-		nWords = atoi(argv[optind++]);
-		if (nWords <= 0 || nWords > TARGET_SZ) {
-    			Rfprintf(stderr,
-				"ERR - nWords arg out of bounds '%d' [1..%d?\n",
-				 nWords, TARGET_SZ);
+		nWords = atoi_scaled(argv[optind++]);
+		if (nWords <= 0) {
+    			Rfprintf(stderr, "ERR - Bad nWords '%d'?\n", nWords);
 			return 1;
 		}
 	}
@@ -118,13 +128,28 @@ main(int argc, char* argv[])
 	if (optind == argc)
 		loops = DFLT_LOOPS;
 	else {
-		loops = atoi(argv[optind++]);
+		loops = atoi_scaled(argv[optind++]);
 		if (loops <= 0 || loops > 1000000) {
     			Rfprintf(stderr,
 				"ERR - loops arg out of bounds '%d'?\n", loops);
 			return 1;
 		}
 	}
+
+    work_sz = (nProcs*nWords) * sizeof(DataType);
+    work = shmalloc( work_sz );
+    if ( !work ) {
+        fprintf(stderr,"[%d] ERR - work = shmalloc(%ld) ?\n",my_pe,work_sz);
+        return 1;
+    }
+
+    Target = shmalloc( 2 * nWords * sizeof(DataType) ); // Target & src
+    if ( !Target ) {
+        fprintf(stderr,"[%d] ERR - Target = shmalloc(%ld) ?\n",
+                my_pe, (nWords * sizeof(DataType)));
+        return 1;
+    }
+    src = &Target[nWords];
 
 	if (Verbose) Rprintf("%s: %d loops of %d shorts per put/get cycle\n",
 		prog_name,loops,nWords);
@@ -134,12 +159,12 @@ main(int argc, char* argv[])
 
 	for(j=0; j < loops; j++) {
 
-		shmem_barrier_all();
 #if _DEBUG
 		if ( Verbose && (j==0 || (j % output_mod) == 0) )
     			fprintf(stderr,"[%d] +(%d)\n", _my_pe(),j);
 #endif
-		if ( proc == 0 ) {
+	    shmem_barrier(0, 0, nProcs, pSync0);
+		if ( my_pe == 0 ) {
 			int p;
 			for(p=1; p < nProcs; p++)
 				shmem_short_put(Target, src, nWords, p);
@@ -148,52 +173,52 @@ main(int argc, char* argv[])
 			if (Slow) {
 				/* wait for each put to complete */
 				for(k=0; k < nWords; k++)
-					shmem_short_wait(&Target[k],proc);
+					shmem_short_wait(&Target[k],my_pe);
 			} else {
 				/* wait for last word to be written */
-				shmem_short_wait(&Target[nWords-1],proc);
+				shmem_short_wait(&Target[nWords-1],my_pe);
 			}
 		}
 #if _DEBUG
 		if ( Verbose && (j==0 || (j % output_mod) == 0) )
-    			fprintf(stderr,"[%d] -(%d)\n", _my_pe(),j);
+    			fprintf(stderr,"[%d] -(%d)\n", my_pe,j);
 #endif
-		shmem_barrier_all();
+	    shmem_barrier(0, 0, nProcs, pSync1);
 
-		RDprintf("Workers[1 ... %d] verify Target data put by proc0\n",
+		RDprintf("Workers[1 ... %d] verify Target data put by my_pe 0\n",
 			nWorkers);
 
 		/* workers verify put data is expected */
-		if ( proc != 0 ) {
+		if ( my_pe != 0 ) {
 			for(k=0; k < nWords; k++) {
 				if (Target[k] != (DataType)VAL) {
 					fprintf(stderr, "[%d] Target[%d] %#hx "
 							"!= %#hx?\n",
-							proc,k,Target[k],VAL);
+							my_pe,k,Target[k],VAL);
 					failures++;
 				}
 				assert(Target[k] == (DataType)VAL);
-				Target[k] = proc;
+				Target[k] = my_pe;
 			}
 		}
 		else	/* clear results buffer, workers will put here */
-			memset(work, 0, sizeof(work));
+			memset(work, 0, work_sz);
 
-		shmem_barrier_all();
+	    shmem_barrier(0, 0, nProcs, pSync2);
 
-		RDprintf("Workers[1 ... %d] put Target data to proc0 work "
+		RDprintf("Workers[1 ... %d] put Target data to PE0 work "
 			"vector\n",nWorkers);
 
-		if ( proc != 0 ) {
-			/* push nWords of val my_proc_num back to proc zero */
-			shmem_short_put(&work[proc*nWords], Target, nWords, 0);
+		if ( my_pe != 0 ) {
+			/* push nWords of val my_pe back to PE zero */
+			shmem_short_put(&work[my_pe*nWords], Target, nWords, 0);
 		}
 		else {
 			/* wait for procs 1 ... nProcs to complete put()s */
 			for(l=1; l < nProcs; l++) {
 				wp = &work[ l*nWords ]; // procs nWords chunk
 #if 1
-				/* wait for last DataType to be written */
+				/* wait for last DataType to be written from each PE */
 				shmem_short_wait(&wp[nWords-1],0);
 #else
 				for(k=0; k < nWords; k++)
@@ -201,16 +226,17 @@ main(int argc, char* argv[])
 #endif
 			}
 		}
-		shmem_barrier_all();
 
-		if ( proc == 0 ) {
-			RDprintf("Loop(%d) proc0 verifing work data.\n",j);
+	    shmem_barrier(0, 0, nProcs, pSync3);
+
+		if ( my_pe == 0 ) {
+			RDprintf("Loop(%d) PE0 verifing work data.\n",j);
 			for(l=1; l < nProcs; l++) {
 				wp = &work[ l*nWords ]; // procs nWords chunk
 				for(k=0; k < nWords; k++) {
 					if (wp[k] != l) {
 						fprintf(stderr,
-						"[0] proc(%d)_work[%d] %hd "
+						"[0] PE(%d)_work[%d] %hd "
 							"!= %hd?\n",
 							l,k,work[k],l);
 						failures++;
@@ -222,15 +248,41 @@ main(int argc, char* argv[])
 					break;
 			}
 		}
-		shmem_barrier_all();
+	    shmem_barrier(0, 0, nProcs, pSync4);
+
 		if (loops > 1) {
 			RDfprintf(stderr,".");
 			RDprintf("Loop(%d) Pass.\n",j);
 		}
 	}
 	RDfprintf(stderr,"\n");fflush(stderr);
+
+    shfree( work );
+    shfree( Target );
+
 	shmem_barrier_all();
-	RDprintf("%d(%d) Exit(%d)\n", proc, nProcs, failures);
+
+	RDprintf("%d(%d) Exit(%d)\n", my_pe, nProcs, failures);
 
 	return failures;
+}
+
+static int
+atoi_scaled(char *s)
+{
+    long val;
+    char *e; 
+
+    val = strtol(s,&e,0);
+    if (e == NULL || *e =='\0')
+        return (int)val; 
+
+    if (*e == 'k' || *e == 'K')
+        val *= 1024;
+    else if (*e == 'm' || *e == 'M')
+        val *= 1024*1024;
+    else if (*e == 'g' || *e == 'G')
+        val *= 1024*1024*1024;
+
+    return (int)val;
 }
