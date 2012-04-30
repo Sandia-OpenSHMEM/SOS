@@ -176,11 +176,11 @@ start_pes(int npes)
     ni_req_limits.max_list_size = 1024;
     ni_req_limits.max_triggered_ops = 1024;
     ni_req_limits.max_msg_size = LONG_MAX;
-    ni_req_limits.max_atomic_size = 512;
-    ni_req_limits.max_fetch_atomic_size = 512;
-    ni_req_limits.max_waw_ordered_size = 512;
-    ni_req_limits.max_war_ordered_size = 512;
-    ni_req_limits.max_volatile_size = 512;
+    ni_req_limits.max_atomic_size = LONG_MAX;
+    ni_req_limits.max_fetch_atomic_size = LONG_MAX;
+    ni_req_limits.max_waw_ordered_size = LONG_MAX;
+    ni_req_limits.max_war_ordered_size = LONG_MAX;
+    ni_req_limits.max_volatile_size = LONG_MAX;
 #ifdef PTL_TOTAL_DATA_ORDERING
     ni_req_limits.features = PTL_TOTAL_DATA_ORDERING;
 #else
