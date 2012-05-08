@@ -33,10 +33,6 @@ extern char data_start;
 extern char end;
 #endif
 
-#ifndef MIN
-#define MIN(a,b) (((a)<(b))?(a):(b))
-#endif
-
 ptl_handle_ni_t shmem_internal_ni_h = PTL_INVALID_HANDLE;
 ptl_pt_index_t shmem_internal_data_pt = PTL_PT_ANY;
 ptl_pt_index_t shmem_internal_heap_pt = PTL_PT_ANY;
@@ -185,12 +181,8 @@ start_pes(int npes)
     ni_req_limits.max_fetch_atomic_size = LONG_MAX;
     ni_req_limits.max_waw_ordered_size = LONG_MAX;
     ni_req_limits.max_war_ordered_size = LONG_MAX;
-    ni_req_limits.max_volatile_size = LONG_MAX;
-#ifdef PTL_TOTAL_DATA_ORDERING
+    ni_req_limits.max_volatile_size = 512; /* BWB: FIX ME, SEE PORTALS ISSUE 2 */
     ni_req_limits.features = PTL_TOTAL_DATA_ORDERING;
-#else
-    ni_req_limits.features = 0;
-#endif
 
     ret = PtlNIInit(PTL_IFACE_DEFAULT,
                     PTL_NI_NO_MATCHING | PTL_NI_LOGICAL,
@@ -307,6 +299,7 @@ start_pes(int npes)
     le.ct_handle = shmem_internal_target_ct_h;
     le.uid = uid;
     le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
+        PTL_LE_EVENT_LINK_DISABLE |
         PTL_LE_EVENT_SUCCESS_DISABLE | 
         PTL_LE_EVENT_CT_COMM;
     ret = PtlLEAppend(shmem_internal_ni_h,
@@ -333,6 +326,7 @@ start_pes(int npes)
     le.ct_handle = shmem_internal_target_ct_h;
     le.uid = uid;
     le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
+        PTL_LE_EVENT_LINK_DISABLE |
         PTL_LE_EVENT_SUCCESS_DISABLE | 
         PTL_LE_EVENT_CT_COMM;
     ret = PtlLEAppend(shmem_internal_ni_h,
@@ -371,12 +365,14 @@ start_pes(int npes)
 
     md.start = 0;
     md.length = SIZE_MAX;
-    md.options = 
+    md.options = PTL_MD_EVENT_CT_ACK;
 #if ! defined(ENABLE_EVENT_COMPLETION)
-        PTL_MD_VOLATILE |
-        PTL_MD_EVENT_SUCCESS_DISABLE |
+    md.options |= PTL_MD_EVENT_SUCCESS_DISABLE;
+    if ((PTL_TOTAL_DATA_ORDERING & ni_limits.features) != 0) {
+        md.options |= PTL_MD_VOLATILE;
+    }
 #endif
-        PTL_MD_EVENT_CT_ACK;
+
 #ifdef ENABLE_EVENT_COMPLETION
     md.eq_handle = shmem_internal_put_eq_h;
 #else

@@ -16,6 +16,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <sys/param.h>
+
+#ifndef MIN
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#endif
 
 #define DATA_IDX 10
 #define HEAP_IDX 11
@@ -112,10 +117,10 @@ shmem_internal_put(void *target, const void *source, size_t len, int pe)
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
         tmp++;
     } else {
-        size_t sent;
-        for (sent = 0 ; sent < len ; sent += shmem_internal_max_put_size) {
-            size_t bufsize = (len - sent < shmem_internal_max_put_size) ? 
-                len - sent : shmem_internal_max_put_size;
+        size_t sent = 0;
+
+        while (sent < len) {
+            size_t bufsize = MIN(len - sent, shmem_internal_max_put_size);
             ret = PtlPut(shmem_internal_put_md_h,
                          (ptl_size_t) ((char*) source + sent),
                          bufsize,
@@ -128,6 +133,7 @@ shmem_internal_put(void *target, const void *source, size_t len, int pe)
                          0);
             if (PTL_OK != ret) { RAISE_ERROR(ret); }
             tmp++;
+            sent += bufsize;
         }
     }
 
@@ -326,10 +332,10 @@ shmem_internal_atomic(void *target, void *source, size_t len,
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
         tmp++;
     } else {
-        size_t sent;
-        for (sent = 0 ; sent < len ; sent += shmem_internal_max_atomic_size) {
-            size_t bufsize = (len - sent < shmem_internal_max_atomic_size) ? 
-                len - sent : shmem_internal_max_atomic_size;
+        size_t sent = 0;
+
+        while (sent < len) {
+            size_t bufsize = MIN(len - sent, shmem_internal_max_atomic_size);
             ret = PtlAtomic(shmem_internal_put_md_h,
                             (ptl_size_t) ((char*) source + sent),
                             bufsize,
@@ -344,6 +350,7 @@ shmem_internal_atomic(void *target, void *source, size_t len,
                             datatype);
             if (PTL_OK != ret) { RAISE_ERROR(ret); }
             tmp++;
+            sent += bufsize;
         }
     }
 
