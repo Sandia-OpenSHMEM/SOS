@@ -68,7 +68,7 @@ static void *mmap_alloc(long bytes)
     char *init_end = _end;
 #endif
 
-    base = (((unsigned long)&init_end) + 2*AGIG) & ~(AGIG -1);  // round to next GB boundary.
+    base = (((unsigned long)init_end) + 2*AGIG) & ~(AGIG -1);  // round to next GB boundary.
     symHeap = mmap( (void*) base,
                     (size_t) bytes,
                     PROT_READ|PROT_WRITE,
