@@ -327,7 +327,7 @@ shmem_internal_atomic(void *target, void *source, size_t len,
         tmp++;
     } else {
         size_t sent;
-        for (sent = 0 ; sent < len ; sent += shmem_internal_max_put_size) {
+        for (sent = 0 ; sent < len ; sent += shmem_internal_max_atomic_size) {
             size_t bufsize = (len - sent < shmem_internal_max_atomic_size) ? 
                 len - sent : shmem_internal_max_atomic_size;
             ret = PtlAtomic(shmem_internal_put_md_h,
