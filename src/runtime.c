@@ -26,6 +26,17 @@
 #include "shmem_internal.h"
 #include "runtime.h"
 
+#ifdef __APPLE__
+#include <mach-o/getsect.h>
+#else
+extern char data_start;
+extern char end;
+#endif
+
+#ifndef MIN
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#endif
+
 ptl_handle_ni_t shmem_internal_ni_h = PTL_INVALID_HANDLE;
 ptl_pt_index_t shmem_internal_data_pt = PTL_PT_ANY;
 ptl_pt_index_t shmem_internal_heap_pt = PTL_PT_ANY;
@@ -59,13 +70,6 @@ int shmem_internal_total_data_ordering = 0;
 static char shmem_internal_my_hostname[MAXHOSTNAMELEN];
 #else
 static char shmem_internal_my_hostname[HOST_NAME_MAX];
-#endif
-
-#ifdef __APPLE__
-#include <mach-o/getsect.h>
-#else
-extern char data_start;
-extern char end;
 #endif
 
 
@@ -146,6 +150,7 @@ start_pes(int npes)
     ptl_uid_t uid = PTL_UID_ANY;
     ptl_ni_limits_t ni_limits, ni_req_limits;
     int radix = -1, crossover = -1;
+    long waw_size;
 
     if (shmem_internal_initialized) {
         RAISE_ERROR_STR("attempt to reinitialize library");
@@ -223,12 +228,19 @@ start_pes(int npes)
     }
 
     /* Check message size limits to make sure rational */
-    shmem_internal_max_put_size = (ni_limits.max_waw_ordered_size > ni_limits.max_volatile_size) ?  
-        ni_limits.max_waw_ordered_size : ni_limits.max_volatile_size;
-    shmem_internal_max_atomic_size = (ni_limits.max_waw_ordered_size > ni_limits.max_atomic_size) ?
-        ni_limits.max_waw_ordered_size : ni_limits.max_atomic_size;
-    shmem_internal_max_fetch_atomic_size = (ni_limits.max_waw_ordered_size > ni_limits.max_atomic_size) ?
-        ni_limits.max_waw_ordered_size : ni_limits.max_fetch_atomic_size;
+    if ((PTL_TOTAL_DATA_ORDERING & ni_limits.features) != 0) {
+        shmem_internal_total_data_ordering = 1;        
+        waw_size = ni_limits.max_waw_ordered_size;
+    } else {
+        /* waw ordering doesn't matter for message size if no total
+           ordering.  Therefore, make it big, so it's not the limiter
+           in the following tests. */
+        waw_size = LONG_MAX;
+    }
+    shmem_internal_max_put_size = MIN(waw_size, ni_limits.max_volatile_size);
+    shmem_internal_max_atomic_size = MIN(MIN(waw_size, ni_limits.max_volatile_size),
+                                         ni_limits.max_atomic_size);
+    shmem_internal_max_fetch_atomic_size = MIN(waw_size, ni_limits.max_atomic_size);
     if (shmem_internal_max_put_size < sizeof(long double complex)) {
         fprintf(stderr, "[%03d] ERROR: Max put size found to be %lu, too small to continue\n",
                 shmem_internal_my_pe, (unsigned long) shmem_internal_max_put_size);
@@ -244,11 +256,6 @@ start_pes(int npes)
                 shmem_internal_my_pe, (unsigned long) shmem_internal_max_put_size);
         goto cleanup;
     }
-#ifdef PTL_TOTAL_DATA_ORDERING
-    if ((PTL_TOTAL_DATA_ORDERING & ni_limits.features) != 0) {
-        shmem_internal_total_data_ordering = 1;        
-    }
-#endif
 
     /* create symmetric allocation */
     ret = shmem_internal_symmetric_init();
@@ -565,6 +572,10 @@ shmem_addr_accessible(void *addr, int pe)
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
+
+    if (pe < 0 || pe >= shmem_internal_num_pes) {
+        return 0;
+    }
 
     if ((char*) addr > (char*) shmem_internal_heap_base &&
         (char*) addr < (char*) shmem_internal_heap_base + shmem_internal_heap_length) {
