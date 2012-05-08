@@ -9,6 +9,8 @@
 # distribution.
 #
 
+all: $(check_PROGRAMS)
+
 TESTS = \
 	hello \
 	circular_shift \
