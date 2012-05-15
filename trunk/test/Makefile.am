@@ -53,7 +53,8 @@ TESTS = \
 	bigput \
 	bigget \
 	ns \
-    bcast_flood
+    bcast_flood \
+    lfinc
 
 check_PROGRAMS = \
 	$(TESTS) \
@@ -202,6 +203,9 @@ ns_LDADD = $(top_builddir)/src/libsma.la
 
 bcast_flood_SOURCES = bcast_flood.c
 bcast_flood_LDADD = $(top_builddir)/src/libsma.la
+
+lfinc_SOURCES = lfinc.c
+lfinc_LDADD = $(top_builddir)/src/libsma.la
 
 msgrate_SOURCES = msgrate.c
 msgrate_LDADD = $(top_builddir)/src/libsma.la
