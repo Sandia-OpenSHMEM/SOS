@@ -65,21 +65,7 @@ dnl check for libraries
 
 OMPI_CHECK_PORTALS4([portals4], [], [AC_ERROR([Could not find Portals 4 library])])
 
-AC_ARG_WITH(runtime,
-	AC_HELP_STRING([--with-runtime@<:@=OPTION@:>@],
-		[Use OPTION as runtime support, current options are shmemrt and mpi @<:@default=shmemrt@:>@]))
-if test "$with_runtime" = ""; then with_runtime=mpi ; fi
-case "$with_runtime" in
-     shmemrt)  ;;
-     mpi)   ;;
-     pmi) 
-       ORTE_CHECK_PMI([pmi], [], [AC_MSG_ERROR([PMI runtime requested, PMI not found])])
-       ;;
-     *) AC_MSG_ERROR([bad value ${with_runtime} for --with-runtime]) ;;
-esac
-AM_CONDITIONAL([WANT_PORTALS_SHMEM_RUNTIME], [test "$with_runtime" = "shmemrt"])
-AM_CONDITIONAL([WANT_MPI_RUNTIME], [test "$with_runtime" = "mpi"])
-AM_CONDITIONAL([WANT_PMI_RUNTIME], [test "$with_runtime" = "pmi"])
+ORTE_CHECK_PMI([pmi], [], [])
 
 dnl check for header files
 
