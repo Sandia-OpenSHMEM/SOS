@@ -35,34 +35,46 @@ AC_DEFUN([ORTE_CHECK_PMI],[
     orte_check_pmi_$1_save_LDFLAGS="$LDFLAGS"
     orte_check_pmi_$1_save_LIBS="$LIBS"
 
-    AS_IF([test "$with_pmi" != "no"],
-          [AS_IF([test ! -z "$with_pmi" -a "$with_pmi" != "yes"],
-                 [ompi_check_pmi_dir="$with_pmi"])
-           AS_IF([test ! -z "$with_pmi_libdir" -a "$with_pmi_libdir" != "yes"],
-                 [ompi_check_pmi_libdir="$with_pmi_libdir"])
+    AS_IF([test ! -z "$with_pmi" -a "$with_pmi" != "yes"],
+        [ompi_check_pmi_dir="$with_pmi"])
+    AS_IF([test ! -z "$with_pmi_libdir" -a "$with_pmi_libdir" != "yes"],
+        [ompi_check_pmi_libdir="$with_pmi_libdir"])
 
-           OMPI_CHECK_PACKAGE([$1],
-                              [pmi.h],
-                              [pmi],
-                              [PMI_Init],
-                              [],
-                              [$ompi_check_pmi_dir],
-                              [$ompi_check_pmi_libdir],
-                              [ompi_check_pmi_happy="yes"],
-                              [ompi_check_pmi_happy="no"])
-           AS_IF([test "$ompi_check_pmi_happy" = "no"], 
-             [OMPI_CHECK_PACKAGE([$1],
-                                [slurm/pmi.h],
-                                [pmi],
-                                [PMI_Init],
-                                [],
-                                [$ompi_check_pmi_dir],
-                                [$ompi_check_pmi_libdir],
-                                [AC_DEFINE([PMI_SLURM], [1],
-                                   [Defined to 1 if PMI implementation is SLURM.])
-                                 ompi_check_pmi_happy="yes"],
-                                [ompi_check_pmi_happy="no"])])],
-          [ompi_check_pmi_happy="no"])
+    OMPI_CHECK_PACKAGE([$1],
+        [pmi.h],
+        [pmi],
+        [PMI_Init],
+        [],
+        [$ompi_check_pmi_dir],
+        [$ompi_check_pmi_libdir],
+        [ompi_check_pmi_happy="yes"],
+        [ompi_check_pmi_happy="no"])
+    AS_IF([test "$ompi_check_pmi_happy" = "no"], 
+        [OMPI_CHECK_PACKAGE([$1],
+                [slurm/pmi.h],
+                [pmi],
+                [PMI_Init],
+                [],
+                [$ompi_check_pmi_dir],
+                [$ompi_check_pmi_libdir],
+                [AC_DEFINE([PMI_SLURM], [1],
+                        [Defined to 1 if PMI implementation is SLURM.])
+                    ompi_check_pmi_happy="yes"],
+                [ompi_check_pmi_happy="no"])])
+    AS_IF([test "$ompi_check_pmi_happy" = "no"], 
+        [AS_IF([test -z "$with_pmi" -o "$with_pmi" = "yes"],
+                [ompi_check_pmi_dir="$with_portals4"])
+         OMPI_CHECK_PACKAGE([$1],
+                [portals4/pmi.h],
+                [portals_runtime],
+                [PMI_Init],
+                [],
+                [$ompi_check_pmi_dir],
+                [$ompi_check_pmi_libdir],
+                [AC_DEFINE([PMI_PORTALS4], [1],
+                        [Defined to 1 if PMI implementation is Portals4.])
+                    ompi_check_pmi_happy="yes"],
+                [ompi_check_pmi_happy="no"])])
 
     CPPFLAGS="$orte_check_pmi_$1_save_CPPFLAGS"
     LDFLAGS="$orte_check_pmi_$1_save_LDFLAGS"

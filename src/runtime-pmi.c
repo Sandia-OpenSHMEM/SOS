@@ -19,8 +19,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <portals4.h>
-#ifdef PMI_SLURM
+#if defined(PMI_SLURM)
 #include <slurm/pmi.h>
+#elif defined(PMI_PORTALS4)
+#include <portals4/pmi.h>
 #else
 #include <pmi.h>
 #endif
@@ -88,7 +90,7 @@ decode(const char *inval, void *outval, int outvallen)
 int
 shmem_internal_runtime_init(void)
 {
-    PMI_BOOL initialized;
+    int initialized;
     int i, ret, max_name_len, max_key_len, max_val_len;
     char *name, *key, *val;
     ptl_process_t my_id;
@@ -97,7 +99,7 @@ shmem_internal_runtime_init(void)
         return 1;
     }
 
-    if (PMI_TRUE != initialized) {
+    if (!initialized) {
         if (PMI_SUCCESS != PMI_Init(&initialized)) {
             return 2;
         }

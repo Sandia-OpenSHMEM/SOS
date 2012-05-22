@@ -20,16 +20,5 @@ libsma_la_SOURCES = \
 	runtime.h \
 	shmem_internal.h \
 	symmetric_heap.c \
-	synchronization.c
-
-if WANT_PORTALS_SHMEM_RUNTIME
-libsma_la_SOURCES += runtime-shmemrt.c
-endif
-
-if WANT_MPI_RUNTIME
-libsma_la_SOURCES += runtime-mpi.c
-endif
-
-if WANT_PMI_RUNTIME
-libsma_la_SOURCES += runtime-pmi.c
-endif
+	synchronization.c \
+	runtime-pmi.c
