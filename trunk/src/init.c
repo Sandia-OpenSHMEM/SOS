@@ -433,6 +433,13 @@ start_pes(int npes)
                 strerror(errno));
     }
 
+    if (0 == shmem_internal_my_pe) {
+        if (NULL != getenv("SMA_VERSION")) {
+            printf(PACKAGE_STRING "\n");
+            fflush(NULL);
+        }
+    }
+
     /* finish up */
     shmem_internal_runtime_barrier();
     return;
