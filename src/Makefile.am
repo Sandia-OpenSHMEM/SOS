@@ -11,14 +11,18 @@
 
 lib_LTLIBRARIES = libsma.la
 libsma_la_SOURCES = \
-	atomic.c \
-	collectives.c \
-	data.c \
-	malloc.c \
-	memory.c \
-	runtime.c \
 	runtime.h \
 	shmem_internal.h \
+	runtime-pmi.c \
+	init.c \
+	query.c \
+	accessibility.c \
+	malloc.c \
 	symmetric_heap.c \
+	remote_pointer.c \
+	data.c \
+	atomic.c \
 	synchronization.c \
-	runtime-pmi.c
+	collectives.c \
+	lock.c \
+	cache_management.c

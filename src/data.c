@@ -333,6 +333,22 @@ shmem_longdouble_put(long double *target, const long double *source, size_t len,
 
 
 void
+shmem_char_put(char *target, const char *source, size_t len, int pe)
+{
+    int ret;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    ret = shmem_internal_put(target, source, sizeof(char) * len, pe);
+    shmem_internal_put_wait(ret);
+}
+
+
+void
 shmem_short_put(short *target, const short *source, size_t len, int pe)
 {
     int ret;
@@ -498,6 +514,20 @@ shmem_longdouble_get(long double *target, const long double *source, size_t len,
 #endif
 
     shmem_internal_get(target, source, sizeof(long double) * len, pe);
+    shmem_internal_get_wait();
+}
+
+
+void
+shmem_char_get(char *target, const char *source, size_t len, int pe)
+{
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    shmem_internal_get(target, source, sizeof(char) * len, pe);
     shmem_internal_get_wait();
 }
 
