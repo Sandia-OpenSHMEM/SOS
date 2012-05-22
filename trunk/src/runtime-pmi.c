@@ -31,8 +31,8 @@
 
 static int rank = -1;
 static int size = 0;
-static ptl_process_t *mapping = NULL;
-static ptl_handle_ni_t phys_ni_h;
+static char *kvs_name, *kvs_key, *kvs_value;
+int max_name_len, max_key_len, max_val_len;
 
 static int
 encode(const void *inval, int invallen, char *outval, int outvallen)
@@ -86,14 +86,10 @@ decode(const char *inval, void *outval, int outvallen)
 }
 
 
-
 int
 shmem_internal_runtime_init(void)
 {
     int initialized;
-    int i, ret, max_name_len, max_key_len, max_val_len;
-    char *name, *key, *val;
-    ptl_process_t my_id;
 
     if (PMI_SUCCESS != PMI_Initialized(&initialized)) {
         return 1;
@@ -106,66 +102,58 @@ shmem_internal_runtime_init(void)
     }
 
     if (PMI_SUCCESS != PMI_KVS_Get_name_length_max(&max_name_len)) {
-        return 6;
-    }
-    name = (char*) malloc(max_name_len);
-    if (NULL == name) return 7;
-
-    if (PMI_SUCCESS != PMI_KVS_Get_key_length_max(&max_key_len)) {
-        return 1;
-    }
-    key = (char*) malloc(max_key_len);
-    if (NULL == key) return 1;
-
-    if (PMI_SUCCESS != PMI_KVS_Get_value_length_max(&max_val_len)) {
-        return 1;
-    }
-    val = (char*) malloc(max_val_len);
-    if (NULL == val) return 1;
-
-    if (PMI_SUCCESS != PMI_Get_rank(&rank)) {
         return 3;
     }
+    kvs_name = (char*) malloc(max_name_len);
+    if (NULL == kvs_name) return 4;
 
-    if (PMI_SUCCESS != PMI_Get_size(&size)) {
-        return 4;
+    if (PMI_SUCCESS != PMI_KVS_Get_key_length_max(&max_key_len)) {
+        return 5;
     }
+    kvs_key = (char*) malloc(max_key_len);
+    if (NULL == kvs_key) return 6;
 
-    ret = PtlNIInit(PTL_IFACE_DEFAULT,
-                    PTL_NI_NO_MATCHING | PTL_NI_PHYSICAL,
-                    PTL_PID_ANY,
-                    NULL,
-                    NULL,
-                    &phys_ni_h);
-    if (PTL_OK != ret) return 1;
+    if (PMI_SUCCESS != PMI_KVS_Get_value_length_max(&max_val_len)) {
+        return 7;
+    }
+    kvs_value = (char*) malloc(max_val_len);
+    if (NULL == kvs_value) return 8;
 
-    ret = PtlGetId(phys_ni_h, &my_id);
-    if (PTL_OK != ret) return 1;
-
-    if (PMI_SUCCESS != PMI_KVS_Get_my_name(name, max_name_len)) {
+    if (PMI_SUCCESS != PMI_KVS_Get_my_name(kvs_name, max_name_len)) {
         return 7;
     }
 
-    /* put my information */
-    snprintf(key, max_key_len, "shmem-%lu-nid", (long unsigned) rank);
-    if (0 != encode(&my_id.phys.nid, sizeof(my_id.phys.nid), val, 
-                    max_val_len)) {
-        return 1;
-    }
-    if (PMI_SUCCESS != PMI_KVS_Put(name, key, val)) {
-        return 8;
+    if (PMI_SUCCESS != PMI_Get_rank(&rank)) {
+        return 9;
     }
 
-    snprintf(key, max_key_len, "shmem-%lu-pid", (long unsigned) rank);
-    if (0 != encode(&my_id.phys.pid, sizeof(my_id.phys.pid), val, 
-                    max_val_len)) {
-        return 1;
-    }
-    if (PMI_SUCCESS != PMI_KVS_Put(name, key, val)) {
-        return 8;
+    if (PMI_SUCCESS != PMI_Get_size(&size)) {
+        return 10;
     }
 
-    if (PMI_SUCCESS != PMI_KVS_Commit(name)) {
+    return 0;
+}
+
+
+int
+shmem_runtime_put(char *key, void *value, size_t valuelen) 
+{
+    snprintf(kvs_key, max_key_len, "shmem-%lu-%s", (long unsigned) rank, key);
+    if (0 != encode(value, valuelen, kvs_value, max_val_len)) {
+        return 1;
+    }
+    if (PMI_SUCCESS != PMI_KVS_Put(kvs_name, kvs_key, kvs_value)) {
+        return 2;
+    }
+
+    return 0;
+}
+
+
+int
+shmem_runtime_exchange(void)
+{
+    if (PMI_SUCCESS != PMI_KVS_Commit(kvs_name)) {
         return 5;
     }
 
@@ -173,49 +161,31 @@ shmem_internal_runtime_init(void)
         return 5;
     }
 
-    /* get everyone's information */
-    mapping = malloc(sizeof(ptl_process_t) * size);
-    if (NULL == mapping) return 9;
+    return 0;
+}
 
-    for (i = 0 ; i < size ; ++i) {
-        snprintf(key, max_key_len, "shmem-%lu-nid", (long unsigned) i);
-        if (PMI_SUCCESS != PMI_KVS_Get(name, key, val, max_val_len)) {
-            return 1;
-        }
-        if (0 != decode(val, &mapping[i].phys.nid, 
-                        sizeof(mapping[i].phys.nid))) {
-            return 1;
-        }
 
-        snprintf(key, max_key_len, "shmem-%lu-pid", (long unsigned) i);
-        if (PMI_SUCCESS != PMI_KVS_Get(name, key, val, max_val_len)) {
-            return 1;
-        }
-        if (0 != decode(val, &mapping[i].phys.pid,
-                        sizeof(mapping[i].phys.pid))) {
-            return 1;
-        }
+int
+shmem_runtime_get(int pe, char *key, void *value, size_t valuelen)
+{
+    snprintf(kvs_key, max_key_len, "shmem-%lu-%s", (long unsigned) pe, key);
+    if (PMI_SUCCESS != PMI_KVS_Get(kvs_name, kvs_key, kvs_value, max_val_len)) {
+        return 1;
+    }
+    if (0 != decode(kvs_value, value, valuelen)) {
+        return 2;
     }
 
     return 0;
 }
 
+
 int
 shmem_internal_runtime_fini(void)
 {
-    if (NULL != mapping) free(mapping);
-
-    PtlNIFini(phys_ni_h);
-
     PMI_Finalize();
 
     return 0;
-}
-
-ptl_process_t*
-shmem_internal_runtime_get_mapping(ptl_handle_ni_t ni_h)
-{
-    return mapping;
 }
 
 

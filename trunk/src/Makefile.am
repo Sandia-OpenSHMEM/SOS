@@ -12,8 +12,8 @@
 lib_LTLIBRARIES = libsma.la
 libsma_la_SOURCES = \
 	runtime.h \
-	shmem_internal.h \
 	runtime-pmi.c \
+	shmem_internal.h \
 	init.c \
 	query.c \
 	accessibility.c \
@@ -26,3 +26,9 @@ libsma_la_SOURCES = \
 	collectives.c \
 	lock.c \
 	cache_management.c
+
+if USE_PORTALS4
+libsma_la_SOURCES += \
+	transport_portals4.h \
+	transport_portals4.c
+endif

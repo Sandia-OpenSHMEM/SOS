@@ -13,10 +13,16 @@
 #ifndef PORTALS_SHMEM_INTERNAL_H
 #define PORTALS_SHMEM_INTERNAL_H
 
+#include <portals4.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <sys/param.h>
+
+
+#ifdef USE_PORTALS4
+#include "transport_portals4.h"
+#endif
 
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -24,25 +30,6 @@
 
 #define DATA_IDX 10
 #define HEAP_IDX 11
-
-extern ptl_handle_ni_t shmem_internal_ni_h;
-extern ptl_pt_index_t shmem_internal_data_pt;
-extern ptl_pt_index_t shmem_internal_heap_pt;
-extern ptl_handle_md_t shmem_internal_put_md_h;
-extern ptl_handle_md_t shmem_internal_get_md_h;
-extern ptl_handle_ct_t shmem_internal_target_ct_h;
-extern ptl_handle_ct_t shmem_internal_put_ct_h;
-extern ptl_handle_ct_t shmem_internal_get_ct_h;
-#ifdef ENABLE_EVENT_COMPLETION
-extern ptl_handle_eq_t shmem_internal_put_eq_h;
-#endif
-extern ptl_handle_eq_t shmem_internal_err_eq_h;
-extern ptl_size_t shmem_internal_max_put_size;
-extern ptl_size_t shmem_internal_max_atomic_size;
-extern ptl_size_t shmem_internal_max_fetch_atomic_size;
-
-extern ptl_size_t shmem_internal_pending_put_counter;
-extern ptl_size_t shmem_internal_pending_get_counter;
 
 extern void *shmem_internal_heap_base;
 extern long shmem_internal_heap_length;

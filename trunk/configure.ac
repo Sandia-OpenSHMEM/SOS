@@ -63,9 +63,17 @@ AC_CACHE_SAVE
 
 dnl check for libraries
 
-OMPI_CHECK_PORTALS4([portals4], [], [AC_ERROR([Could not find Portals 4 library])])
-
-ORTE_CHECK_PMI([pmi], [], [])
+OMPI_CHECK_PORTALS4([portals4],
+    [AC_DEFINE([USE_PORTALS4], [1], [Define if Portals 4 transport active])
+     transport_portals4="yes"],
+    [transport_portals4="no"])
+AM_CONDITIONAL([USE_PORTALS4], [test "$transport_portals4" = "yes"])
+SANDIA_CHECK_XPMEM([],
+    [AC_DEFINE([USE_XPMEM], [1], [Define if XPMEM transport is active])
+     transport_xpmem="yes"],
+    [transport_xpmem="no"])
+AM_CONDITIONAL([USE_XPMEM], [test "$transport_xpmem" = "yes"])
+ORTE_CHECK_PMI([pmi])
 
 dnl check for header files
 
@@ -88,6 +96,9 @@ LT_INIT
 if test -n "$with_portals4" ; then
   DISTCHECK_CONFIGURE_FLAGS="--with-portals4=${with_portals4}"
 fi
+if test -n "$with_xpmem" ; then
+  DISTCHECK_CONFIGURE_FLAGS="--with-xpmem=${with_xpmem}"
+fi
 AC_SUBST(DISTCHECK_CONFIGURE_FLAGS)
 
 dnl Cause Automake to delete emacs turds
@@ -103,3 +114,9 @@ CPPFLAGS="$CPPFLAGS"' -I$(top_srcdir)'
 
 AC_CONFIG_FILES([Makefile mpp/Makefile src/Makefile test/Makefile])
 AC_OUTPUT
+
+echo ""
+echo "Transports:"
+echo "  Portals 4:      $transport_portals4"
+echo "  XPMEM:          $transport_xpmem"
+echo ""

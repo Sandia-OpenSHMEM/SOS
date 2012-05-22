@@ -15,7 +15,9 @@
 
 int shmem_internal_runtime_init(void);
 int shmem_internal_runtime_fini(void);
-ptl_process_t* shmem_internal_runtime_get_mapping(ptl_handle_ni_t ni_h);
+int shmem_runtime_exchange(void);
+int shmem_runtime_put(char *key, void *value, size_t valuelen);
+int shmem_runtime_get(int pe, char *key, void *value, size_t valuelen);
 int shmem_internal_runtime_get_rank(void);
 int shmem_internal_runtime_get_size(void);
 void shmem_internal_runtime_barrier(void);
