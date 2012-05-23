@@ -19,8 +19,6 @@
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
 
-long malloc_error = 0;
-
 void *shmem_internal_heap_base = NULL;
 long shmem_internal_heap_length = 0;
 static char *shmem_internal_heap_curr = NULL;
@@ -156,7 +154,6 @@ shmalloc(size_t size)
     }
 #endif
 
-    malloc_error = 0;
     return dlmalloc(size);
 }
 
@@ -170,7 +167,6 @@ shfree(void *ptr)
     }
 #endif
 
-    malloc_error = 0;
     dlfree(ptr);
 }
 
@@ -184,7 +180,6 @@ shrealloc(void *ptr, size_t size)
     }
 #endif
 
-    malloc_error = 0;
     return dlrealloc(ptr, size);
 }
 
@@ -198,6 +193,5 @@ shmemalign(size_t alignment, size_t size)
     }
 #endif
 
-    malloc_error = 0;
     return dlmemalign(alignment, size);
 }

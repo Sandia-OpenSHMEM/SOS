@@ -484,7 +484,6 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 #include <stdio.h>
 #include <time.h>
 extern void* shmem_internal_get_next(int incr);
-extern long malloc_error;
 extern int shmem_internal_my_pe;
 #define USE_DL_PREFIX 1
 #define HAVE_MORECORE 1
@@ -493,7 +492,6 @@ extern int shmem_internal_my_pe;
 #define MORECORE_CANNOT_TRIM 1
 #define HAVE_MMAP 0
 #define HAVE_MREMAP 0
-#define MALLOC_FAILURE_ACTION malloc_error = ENOMEM;
 #define USAGE_ERROR_ACTION(m, p)                                        \
     do {                                                                \
         fprintf(stderr,                                                 \
