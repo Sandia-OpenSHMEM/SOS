@@ -45,7 +45,7 @@ ptl_size_t shmem_internal_max_atomic_size = 0;
 ptl_size_t shmem_internal_max_fetch_atomic_size = 0;
 ptl_size_t shmem_internal_pending_put_counter = 0;
 ptl_size_t shmem_internal_pending_get_counter = 0;
-ptl_ni_limits_t ni_limits;
+static ptl_ni_limits_t ni_limits;
 
 static void
 cleanup_handles(void)
@@ -102,7 +102,7 @@ shmem_transport_portals4_init(void)
     ret = PtlInit();
     if (PTL_OK != ret) {
         fprintf(stderr, "ERROR: PtlInit failed: %d\n", ret);
-        abort();
+        return 1;
     }
 
     /* Initialize network */
@@ -144,7 +144,7 @@ shmem_transport_portals4_init(void)
 
     /* Share information */
     ret = shmem_runtime_put("portals4-procid", &my_id, sizeof(my_id));
-    if (PTL_OK != ret) {
+    if (0 != ret) {
         fprintf(stderr, "[%03d] ERROR: runtime_put failed: %d\n",
                 shmem_internal_my_pe, ret);
         return ret;
@@ -155,8 +155,7 @@ shmem_transport_portals4_init(void)
 
 
 int
-shmem_transport_portals4_startup(void *data_start, size_t data_len,
-                                 void *heap_start, size_t heap_len)
+shmem_transport_portals4_startup(void)
 {
     int ret, i;
     ptl_process_t *desired = NULL;
@@ -166,10 +165,14 @@ shmem_transport_portals4_startup(void *data_start, size_t data_len,
     long waw_size;
 
     desired = malloc(sizeof(ptl_process_t) * shmem_internal_num_pes);
-    if (NULL == desired) goto cleanup;
+    if (NULL == desired) {
+        ret = 1;
+        goto cleanup;
+    }
 
     for (i = 0 ; i < shmem_internal_num_pes; ++i) {
-        ret = shmem_runtime_get(i, "portals4-procid", &desired[i], sizeof(ptl_process_t));
+        ret = shmem_runtime_get(i, "portals4-procid",
+                                &desired[i], sizeof(ptl_process_t));
         if (0 != ret) {
             fprintf(stderr, "[%03d] ERROR: runtime_get failed: %d\n",
                     shmem_internal_my_pe, ret);
@@ -195,7 +198,7 @@ shmem_transport_portals4_startup(void *data_start, size_t data_len,
 
     /* Check message size limits to make sure rational */
     if ((PTL_TOTAL_DATA_ORDERING & ni_limits.features) != 0) {
-        shmem_internal_total_data_ordering = 1;        
+        shmem_internal_fence_is_quiet = 0;        
         waw_size = ni_limits.max_waw_ordered_size;
     } else {
         /* waw ordering doesn't matter for message size if no total
@@ -259,9 +262,8 @@ shmem_transport_portals4_startup(void *data_start, size_t data_len,
         goto cleanup;
     }
 
-    /* Open LE to heap section */
-    le.start = heap_start;
-    le.length = heap_len;
+    le.start = shmem_internal_heap_base;
+    le.length = shmem_internal_heap_length;
     le.ct_handle = shmem_internal_target_ct_h;
     le.uid = uid;
     le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
@@ -281,8 +283,8 @@ shmem_transport_portals4_startup(void *data_start, size_t data_len,
     }
 
     /* Open LE to data section */
-    le.start = data_start;
-    le.length = data_len;
+    le.start = shmem_internal_data_base;
+    le.length = shmem_internal_data_length;
     le.ct_handle = shmem_internal_target_ct_h;
     le.uid = uid;
     le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
@@ -363,19 +365,11 @@ shmem_transport_portals4_startup(void *data_start, size_t data_len,
         goto cleanup;
     }
 
-    return 0;
+    ret = 0;
 
  cleanup:
-    if (desired)
-        free(desired);
-    cleanup_handles();
-    if (NULL != shmem_internal_data_base) {
-        shmem_internal_symmetric_fini();
-    }
-    shmem_internal_runtime_fini();
-    PtlFini();
-    abort();
-
+    if (NULL != desired) free(desired);
+    return ret;
 }
 
 

@@ -19,9 +19,12 @@
 #include <assert.h>
 #include <sys/param.h>
 
-
 #ifdef USE_PORTALS4
 #include "transport_portals4.h"
+#endif
+
+#ifdef USE_XPMEM
+#include "transport_xpmem.h"
 #endif
 
 #ifndef MIN
@@ -41,7 +44,7 @@ extern int shmem_internal_num_pes;
 
 extern int shmem_internal_initialized;
 extern int shmem_internal_finalized;
-extern int shmem_internal_total_data_ordering;
+extern int shmem_internal_fence_is_quiet;
 
 
 #define GET_REMOTE_ACCESS(target, pt, offset)                           \

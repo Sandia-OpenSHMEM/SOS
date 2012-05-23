@@ -36,8 +36,9 @@ extern ptl_size_t shmem_internal_pending_get_counter;
 
 
 int shmem_transport_portals4_init(void);
-int shmem_transport_portals4_startup(void *data_start, size_t data_len,
-                                     void *heap_start, size_t heap_len);
+
+int shmem_transport_portals4_startup(void);
+
 int shmem_transport_portals4_fini(void);
 
 #endif

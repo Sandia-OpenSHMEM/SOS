@@ -32,6 +32,8 @@ extern char data_start;
 extern char end;
 #endif
 
+void *shmem_internal_heap_base = NULL;
+long shmem_internal_heap_length = 0;
 void *shmem_internal_data_base = NULL;
 long shmem_internal_data_length = 0;
 
@@ -39,15 +41,13 @@ int shmem_internal_my_pe = -1;
 int shmem_internal_num_pes = -1;
 int shmem_internal_initialized = 0;
 int shmem_internal_finalized = 0;
-int shmem_internal_total_data_ordering = 0;
+int shmem_internal_fence_is_quiet = 1;
 
 #ifdef MAXHOSTNAMELEN
 static char shmem_internal_my_hostname[MAXHOSTNAMELEN];
 #else
 static char shmem_internal_my_hostname[HOST_NAME_MAX];
 #endif
-
-
 
 static void
 shmem_internal_shutdown(void)
@@ -61,9 +61,12 @@ shmem_internal_shutdown(void)
 #ifdef USE_PORTALS4
     shmem_transport_portals4_fini();
 #endif
+#ifdef USE_XPMEM
+    shmem_transport_xpmem_fini();
+#endif
 
     shmem_internal_symmetric_fini();
-    shmem_internal_runtime_fini();
+    shmem_runtime_fini();
     PtlFini();
 }
 
@@ -79,13 +82,13 @@ start_pes(int npes)
         RAISE_ERROR_STR("attempt to reinitialize library");
     }
 
-    ret = shmem_internal_runtime_init();
+    ret = shmem_runtime_init();
     if (0 != ret) {
         fprintf(stderr, "ERROR: runtime init failed: %d\n", ret);
         goto cleanup;
     }
-    shmem_internal_my_pe = shmem_internal_runtime_get_rank();
-    shmem_internal_num_pes = shmem_internal_runtime_get_size();
+    shmem_internal_my_pe = shmem_runtime_get_rank();
+    shmem_internal_num_pes = shmem_runtime_get_size();
 
     /* Find symmetric data */
 #ifdef __APPLE__
@@ -95,10 +98,12 @@ start_pes(int npes)
     shmem_internal_data_base = &data_start;
     shmem_internal_data_length = (unsigned long) &end  - (unsigned long) &data_start;
 #endif
+
     /* create symmetric heap */
     ret = shmem_internal_symmetric_init();
     if (0 != ret) {
-        fprintf(stderr, "[%03d] ERROR: symmetric heap initialization failed: %d\n",
+        fprintf(stderr,
+                "[%03d] ERROR: symmetric heap initialization failed: %d\n",
                 shmem_internal_my_pe, ret);
         goto cleanup;
     }
@@ -107,7 +112,17 @@ start_pes(int npes)
 #ifdef USE_PORTALS4
     ret = shmem_transport_portals4_init();
     if (0 != ret) {
-        fprintf(stderr, "[%03d] ERROR: Portals 4 init failed\n", shmem_internal_my_pe);
+        fprintf(stderr,
+                "[%03d] ERROR: Portals 4 init failed\n",
+                shmem_internal_my_pe);
+    }
+#endif
+#ifdef USE_XPMEM
+    ret = shmem_transport_xpmem_init();
+    if (0 != ret) {
+        fprintf(stderr,
+                "[%03d] ERROR: XPMEM init failed\n",
+                shmem_internal_my_pe);
     }
 #endif
 
@@ -120,12 +135,19 @@ start_pes(int npes)
 
     /* finish transport initialization after information sharing */
 #ifdef USE_PORTALS4
-    ret = shmem_transport_portals4_startup(shmem_internal_data_base,
-                                           shmem_internal_data_length,
-                                           shmem_internal_heap_base,
-                                           shmem_internal_heap_length);
+    ret = shmem_transport_portals4_startup();
     if (0 != ret) {
-        fprintf(stderr, "[%03d] ERROR: Portals 4 startup failed\n", shmem_internal_my_pe);
+        fprintf(stderr,
+                "[%03d] ERROR: Portals 4 startup failed\n",
+                shmem_internal_my_pe);
+    }
+#endif
+#ifdef USE_XPMEM
+    ret = shmem_transport_xpmem_startup();
+    if (0 != ret) {
+        fprintf(stderr,
+                "[%03d] ERROR: XPMEM startup failed\n",
+                shmem_internal_my_pe);
     }
 #endif
 
@@ -169,17 +191,20 @@ start_pes(int npes)
     }
 
     /* finish up */
-    shmem_internal_runtime_barrier();
+    shmem_runtime_barrier();
     return;
 
  cleanup:
 #ifdef USE_PORTALS4
     shmem_transport_portals4_fini();
 #endif
+#ifdef USE_XPMEM
+    shmem_transport_xpmem_fini();
+#endif
     if (NULL != shmem_internal_data_base) {
         shmem_internal_symmetric_fini();
     }
-    shmem_internal_runtime_fini();
+    shmem_runtime_fini();
     abort();
 }
 

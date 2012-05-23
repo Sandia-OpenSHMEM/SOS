@@ -49,7 +49,7 @@ shmem_fence(void)
     }
 #endif
 
-    if (shmem_internal_total_data_ordering == 0) {
+    if (shmem_internal_fence_is_quiet == 1) {
         shmem_quiet();
     }
 }
