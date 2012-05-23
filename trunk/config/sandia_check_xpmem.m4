@@ -10,7 +10,7 @@ AC_DEFUN([SANDIA_CHECK_XPMEM], [
     [AS_HELP_STRING([--with-xpmem=[path]],
        [Location of XPMEM library])])
 
-  AS_IF([test "$with_xpmem" = "no"], [happy=no], [happy=yes])
+  AS_IF([test "$with_xpmem" = "no" -o "$with_xpmem" = ""], [happy=no], [happy=yes])
 
   XPMEM_CPPFLAGS=
   XPMEM_LDFLAGS=
