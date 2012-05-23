@@ -21,9 +21,7 @@ AC_DEFUN([SANDIA_CHECK_XPMEM], [
   saved_LIBS="$LIBS"
   AS_IF([test ! -z "$with_xpmem" -a "$with_xpmem" != "yes"],
     [CPPFLAGS="$CPPFLAGS -I$with_xpmem/include"
-     LDFLAGS="$LDFLAGS -L$with_xpmem/lib"
-     XPMEM_CPPFLAGS="-I$with_xpmem/include"
-     XPMEM_LDFLAGS="-L$with_xpmem/lib"])
+     LDFLAGS="$LDFLAGS -L$with_xpmem/lib"])
 
   AS_IF([test "$happy" = "yes"], 
     [AC_CHECK_HEADERS([xpmem.h], [], [happy=no])])
@@ -33,6 +31,11 @@ AC_DEFUN([SANDIA_CHECK_XPMEM], [
   CPPFLAGS="$saved_CPPFLAGS"
   LDFLAGS="$saved_LDFLAGS"
   LIBS="$saved_LIBS"
+
+  AS_IF([test "$happy" = "no"],
+        [XPMEM_CPPFLAGS=
+	 XPMEM_LDFLAGS=
+	 XPMEM_LIBS=])
 
   AC_SUBST(XPMEM_CPPFLAGS)
   AC_SUBST(XPMEM_LDFLAGS)
