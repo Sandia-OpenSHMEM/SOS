@@ -57,7 +57,6 @@ AC_DEFUN([OMPI_CHECK_PORTALS4],[
 
     LDFLAGS="$LDFLAGS $portals4_LDFLAGS"
     LIBS="$LIBS $portals4_LIBS"
-    AC_CHECK_FUNCS([PtlSetMap])
 
     CPPFLAGS="$ompi_check_portals4_$1_save_CPPFLAGS"
     LDFLAGS="$ompi_check_portals4_$1_save_LDFLAGS"
