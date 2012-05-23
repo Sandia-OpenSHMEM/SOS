@@ -32,3 +32,9 @@ libsma_la_SOURCES += \
 	transport_portals4.h \
 	transport_portals4.c
 endif
+
+if USE_XPMEM
+libsma_la_SOURCES += \
+	transport_xpmem.h \
+	transport_xpmem.c
+endif

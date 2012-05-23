@@ -107,9 +107,9 @@ AC_SUBST(CLEANFILES)
 
 # last minute updates of the flags so that tests don't fail oddly if
 # portals libdir isn't in LD_LIBRARY_PATH...
-CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS $pmi_CPPFLAGS"
-LDFLAGS="$LDFLAGS $portals4_LDFLAGS $pmi_LDFLAGS"
-LIBS="$LIBS $portals4_LIBS $pmi_LIBS"
+CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS $XPMEM_CPPFLAGS $pmi_CPPFLAGS"
+LDFLAGS="$LDFLAGS $portals4_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS"
+LIBS="$LIBS $portals4_LIBS $XPMEM_LIBS $pmi_LIBS"
 CPPFLAGS="$CPPFLAGS"' -I$(top_srcdir)'
 
 AC_CONFIG_FILES([Makefile mpp/Makefile src/Makefile test/Makefile])
