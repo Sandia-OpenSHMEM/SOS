@@ -19,20 +19,12 @@
 #include <assert.h>
 #include <sys/param.h>
 
-#ifdef USE_PORTALS4
-#include "transport_portals4.h"
-#endif
-
-#ifdef USE_XPMEM
-#include "transport_xpmem.h"
-#endif
+#define DATA_IDX 10
+#define HEAP_IDX 11
 
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #endif
-
-#define DATA_IDX 10
-#define HEAP_IDX 11
 
 extern void *shmem_internal_heap_base;
 extern long shmem_internal_heap_length;
@@ -45,24 +37,6 @@ extern int shmem_internal_num_pes;
 extern int shmem_internal_initialized;
 extern int shmem_internal_finalized;
 extern int shmem_internal_fence_is_quiet;
-
-
-#define GET_REMOTE_ACCESS(target, pt, offset)                           \
-    do {                                                                \
-        if (((void*) target > shmem_internal_data_base) &&              \
-            ((char*) target < (char*) shmem_internal_data_base + shmem_internal_data_length)) { \
-            pt = shmem_internal_data_pt;                                \
-            offset = (char*) target - (char*) shmem_internal_data_base; \
-        } else if (((void*) target > shmem_internal_heap_base) &&       \
-                   ((char*) target < (char*) shmem_internal_heap_base + shmem_internal_heap_length)) { \
-            pt = shmem_internal_heap_pt;                                \
-            offset = (char*) target - (char*) shmem_internal_heap_base; \
-        } else {                                                        \
-            printf("[%03d] ERROR: target (0x%lx) outside of symmetric areas\n", \
-                   shmem_internal_my_pe, (unsigned long) target);       \
-            abort();                                                    \
-        }                                                               \
-    } while (0)
 
 
 #define RAISE_ERROR(ret)                                                \
@@ -91,55 +65,37 @@ extern char *shmem_internal_location_array;
 #else
 #define SHMEM_GET_RANK_SAME_NODE(pe) (-1)
 #endif
+
+
+#ifdef USE_PORTALS4
+#include "transport_portals4.h"
+#endif
+
+#ifdef USE_XPMEM
+#include "transport_xpmem.h"
+#endif
+
         
 static inline
 int
 shmem_internal_put(void *target, const void *source, size_t len, int pe)
 {
-    int ret;
-    ptl_process_t peer;
-    ptl_pt_index_t pt;
-    long offset;
-    int tmp = 0;
-    peer.rank = pe;
-    GET_REMOTE_ACCESS(target, pt, offset);
+    int node_rank;
 
-    if (len <= sizeof(long double complex)) {
-        ret = PtlPut(shmem_internal_put_md_h,
-                     (ptl_size_t) source,
-                     len,
-                     PTL_CT_ACK_REQ,
-                     peer,
-                     pt,
-                     0,
-                     offset,
-                     NULL,
-                     0);
-        if (PTL_OK != ret) { RAISE_ERROR(ret); }
-        tmp++;
+    if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
+#if USE_XPMEM
+        shmem_transport_xpmem_put(target, source, len, pe, node_rank);
+        return 0;
+#else
+        RAISE_ERROR_STR("No path to peer");
+#endif
     } else {
-        size_t sent = 0;
-
-        while (sent < len) {
-            size_t bufsize = MIN(len - sent, shmem_internal_max_put_size);
-            ret = PtlPut(shmem_internal_put_md_h,
-                         (ptl_size_t) ((char*) source + sent),
-                         bufsize,
-                         PTL_CT_ACK_REQ,
-                         peer,
-                         pt,
-                         0,
-                         offset + sent,
-                         NULL,
-                         0);
-            if (PTL_OK != ret) { RAISE_ERROR(ret); }
-            tmp++;
-            sent += bufsize;
-        }
+#if USE_PORTALS4
+        return shmem_transport_portals4_put(target, source, len, pe);
+#else
+        RAISE_ERROR_STR("No path to peer");
+#endif
     }
-
-    shmem_internal_pending_put_counter += tmp;
-    return tmp;
 }
 
 
@@ -147,16 +103,10 @@ static inline
 void
 shmem_internal_put_wait(int count)
 {
-#if ENABLE_EVENT_COMPLETION
-    int ret;
-    ptl_event_t ev;
-
-    for ( ; count > 0 ; --count) {
-        ret = PtlEQWait(shmem_internal_put_eq_h, &ev);
-        if (PTL_OK != ret) { RAISE_ERROR(ret); }
-        if (ev.ni_fail_type != PTL_OK) { RAISE_ERROR(ev.ni_fail_type); }
-    }
+#if USE_PORTALS4
+    shmem_transport_portals4_put_wait(count);
 #endif
+    /* on-node is always blocking, so this is a no-op for them */
 }
 
 
@@ -164,23 +114,21 @@ static inline
 void
 shmem_internal_get(void *target, const void *source, size_t len, int pe)
 {
-    int ret;
-    ptl_process_t peer;
-    ptl_pt_index_t pt;
-    long offset;
-    peer.rank = pe;
-    GET_REMOTE_ACCESS(source, pt, offset);
+    int node_rank;
 
-    ret = PtlGet(shmem_internal_get_md_h,
-                 (ptl_size_t) target,
-                 len,
-                 peer,
-                 pt,
-                 0,
-                 offset,
-                 0);
-    if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    shmem_internal_pending_get_counter++;
+    if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
+#if USE_XPMEM
+        shmem_transport_xpmem_get(target, source, len, pe, node_rank);
+#else
+        RAISE_ERROR_STR("No path to peer");
+#endif
+    } else {
+#if USE_PORTALS4
+        shmem_transport_portals4_get(target, source, len, pe);
+#else
+        RAISE_ERROR_STR("No path to peer");
+#endif
+    }
 }
 
 
@@ -188,14 +136,10 @@ static inline
 void
 shmem_internal_get_wait(void)
 {
-    int ret;
-    ptl_ct_event_t ct;
-
-    ret = PtlCTWait(shmem_internal_get_ct_h, 
-                    shmem_internal_pending_get_counter,
-                    &ct);
-    if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    if (ct.failure != 0) { RAISE_ERROR(ct.failure); }
+#if USE_PORTALS4
+    shmem_transport_portals4_get_wait();
+#endif
+    /* on-node is always blocking, so this is a no-op for them */
 }
 
 
@@ -204,33 +148,7 @@ int
 shmem_internal_swap(void *target, void *source, void *dest, size_t len, 
                     int pe, ptl_datatype_t datatype)
 {
-    int ret;
-    ptl_process_t peer;
-    ptl_pt_index_t pt;
-    long offset;
-    peer.rank = pe;
-    GET_REMOTE_ACCESS(target, pt, offset);
-
-    assert(len <= sizeof(long double complex));
-
-    ret = PtlSwap(shmem_internal_get_md_h,
-                  (ptl_size_t) dest,
-                  shmem_internal_put_md_h,
-                  (ptl_size_t) source,
-                  len,
-                  peer,
-                  pt,
-                  0,
-                  offset,
-                  NULL,
-                  0,
-                  NULL,
-                  PTL_SWAP,
-                  datatype);
-    if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    shmem_internal_pending_get_counter++;
-
-    return 1;
+    return shmem_transport_portals4_swap(target, source, dest, len, pe, datatype);
 }
 
 
@@ -239,33 +157,7 @@ int
 shmem_internal_cswap(void *target, void *source, void *dest, void *operand, size_t len, 
                      int pe, ptl_datatype_t datatype)
 {
-    int ret;
-    ptl_process_t peer;
-    ptl_pt_index_t pt;
-    long offset;
-    peer.rank = pe;
-    GET_REMOTE_ACCESS(target, pt, offset);
-
-    assert(len <= sizeof(long double complex));
-
-    ret = PtlSwap(shmem_internal_get_md_h,
-                  (ptl_size_t) dest,
-                  shmem_internal_put_md_h,
-                  (ptl_size_t) source,
-                  len,
-                  peer,
-                  pt,
-                  0,
-                  offset,
-                  NULL,
-                  0,
-                  operand,
-                  PTL_CSWAP,
-                  datatype);
-    if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    shmem_internal_pending_get_counter++;
-
-    return 1;
+    return shmem_transport_portals4_cswap(target, source, dest, operand, len, pe, datatype);
 }
 
 
@@ -274,33 +166,7 @@ int
 shmem_internal_mswap(void *target, void *source, void *dest, void *mask, size_t len, 
                      int pe, ptl_datatype_t datatype)
 {
-    int ret;
-    ptl_process_t peer;
-    ptl_pt_index_t pt;
-    long offset;
-    peer.rank = pe;
-    GET_REMOTE_ACCESS(target, pt, offset);
-
-    assert(len <= sizeof(long double complex));
-
-    ret = PtlSwap(shmem_internal_get_md_h,
-                  (ptl_size_t) dest,
-                  shmem_internal_put_md_h,
-                  (ptl_size_t) source,
-                  len,
-                  peer,
-                  pt,
-                  0,
-                  offset,
-                  NULL,
-                  0,
-                  mask,
-                  PTL_MSWAP,
-                  datatype);
-    if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    shmem_internal_pending_get_counter++;
-
-    return 1;
+    return shmem_transport_portals4_mswap(target, source, dest, mask, len, pe, datatype);
 }
 
 
@@ -309,54 +175,7 @@ int
 shmem_internal_atomic(void *target, void *source, size_t len,
                       int pe, ptl_op_t op, ptl_datatype_t datatype)
 {
-    int ret;
-    ptl_pt_index_t pt;
-    long offset;
-    ptl_process_t peer;
-    int tmp = 0;
-    peer.rank = pe;
-    GET_REMOTE_ACCESS(target, pt, offset);
-
-    if (len <= sizeof(long double complex)) {
-        ret = PtlAtomic(shmem_internal_put_md_h,
-                        (ptl_size_t) source,
-                        len,
-                        PTL_CT_ACK_REQ,
-                        peer,
-                        pt,
-                        0,
-                        offset,
-                        NULL,
-                        0,
-                        op,
-                        datatype);
-        if (PTL_OK != ret) { RAISE_ERROR(ret); }
-        tmp++;
-    } else {
-        size_t sent = 0;
-
-        while (sent < len) {
-            size_t bufsize = MIN(len - sent, shmem_internal_max_atomic_size);
-            ret = PtlAtomic(shmem_internal_put_md_h,
-                            (ptl_size_t) ((char*) source + sent),
-                            bufsize,
-                            PTL_CT_ACK_REQ,
-                            peer,
-                            pt,
-                            0,
-                            offset + sent,
-                            NULL,
-                            0,
-                            op,
-                            datatype);
-            if (PTL_OK != ret) { RAISE_ERROR(ret); }
-            tmp++;
-            sent += bufsize;
-        }
-    }
-
-    shmem_internal_pending_put_counter += tmp;
-    return tmp;
+    return shmem_transport_portals4_atomic(target, source, len, pe, op, datatype);
 }
 
 
@@ -365,38 +184,16 @@ int
 shmem_internal_fetch_atomic(void *target, void *source, void *dest, size_t len,
                             int pe, ptl_op_t op, ptl_datatype_t datatype)
 {
-    int ret;
-    ptl_pt_index_t pt;
-    long offset;
-    ptl_process_t peer;
-    peer.rank = pe;
-    GET_REMOTE_ACCESS(target, pt, offset);
-
-    assert(len <= sizeof(long double complex));
-
-    ret = PtlFetchAtomic(shmem_internal_get_md_h,
-                         (ptl_size_t) dest,
-                         shmem_internal_put_md_h,
-                         (ptl_size_t) source,
-                         len,
-                         peer,
-                         pt,
-                         0,
-                         offset,
-                         NULL,
-                         0,
-                         op,
-                         datatype);
-    if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    shmem_internal_pending_get_counter++;
-
-    return 1;
+    return shmem_transport_portals4_fetch_atomic(target, source, dest, len, pe, op, datatype);
 }
+
 
 /* initialization routines */
 int shmem_internal_symmetric_init(void);
 int shmem_internal_symmetric_fini(void);
 int shmem_internal_collectives_init(int requested_crossover, 
                                     int requested_radix);
+
+
 
 #endif

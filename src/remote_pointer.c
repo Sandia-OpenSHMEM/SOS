@@ -20,9 +20,18 @@
 #include "shmem_internal.h"
 
 void *
-shmem_ptr (void *target, int pe)
+shmem_ptr(void *target, int pe)
 {
-    return (void*) 0;
-    // Only if regular load/stores are used to implement put/get:
-    //return (shmem_accessible( target, pe ) == 1 ? target : (void*)0);
+    int node_rank;
+
+    // Only if regular load/stores are used to implement put/get!
+    if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
+#if USE_XPMEM
+        return shmem_transport_xpmem_ptr(target, pe, node_rank);
+#else
+        return NULL;
+#endif
+    } else {
+        return NULL;
+    }
 }

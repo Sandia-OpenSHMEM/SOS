@@ -26,67 +26,67 @@
 #include "shmem_internal.h"
 #include "runtime.h"
 
-ptl_handle_ni_t shmem_internal_ni_h = PTL_INVALID_HANDLE;
-ptl_pt_index_t shmem_internal_data_pt = PTL_PT_ANY;
-ptl_pt_index_t shmem_internal_heap_pt = PTL_PT_ANY;
-ptl_handle_md_t shmem_internal_put_md_h = PTL_INVALID_HANDLE;
-ptl_handle_md_t shmem_internal_get_md_h = PTL_INVALID_HANDLE;
-ptl_handle_le_t shmem_internal_data_le_h = PTL_INVALID_HANDLE;
-ptl_handle_le_t shmem_internal_heap_le_h = PTL_INVALID_HANDLE;
-ptl_handle_ct_t shmem_internal_target_ct_h = PTL_INVALID_HANDLE;
-ptl_handle_ct_t shmem_internal_put_ct_h = PTL_INVALID_HANDLE;
-ptl_handle_ct_t shmem_internal_get_ct_h = PTL_INVALID_HANDLE;
+ptl_handle_ni_t shmem_transport_portals4_ni_h = PTL_INVALID_HANDLE;
+ptl_pt_index_t shmem_transport_portals4_data_pt = PTL_PT_ANY;
+ptl_pt_index_t shmem_transport_portals4_heap_pt = PTL_PT_ANY;
+ptl_handle_md_t shmem_transport_portals4_put_md_h = PTL_INVALID_HANDLE;
+ptl_handle_md_t shmem_transport_portals4_get_md_h = PTL_INVALID_HANDLE;
+ptl_handle_le_t shmem_transport_portals4_data_le_h = PTL_INVALID_HANDLE;
+ptl_handle_le_t shmem_transport_portals4_heap_le_h = PTL_INVALID_HANDLE;
+ptl_handle_ct_t shmem_transport_portals4_target_ct_h = PTL_INVALID_HANDLE;
+ptl_handle_ct_t shmem_transport_portals4_put_ct_h = PTL_INVALID_HANDLE;
+ptl_handle_ct_t shmem_transport_portals4_get_ct_h = PTL_INVALID_HANDLE;
 #ifdef ENABLE_EVENT_COMPLETION
-ptl_handle_eq_t shmem_internal_put_eq_h = PTL_INVALID_HANDLE;
+ptl_handle_eq_t shmem_transport_portals4_put_eq_h = PTL_INVALID_HANDLE;
 #endif
-ptl_handle_eq_t shmem_internal_err_eq_h = PTL_INVALID_HANDLE;
-ptl_size_t shmem_internal_max_put_size = 0;
-ptl_size_t shmem_internal_max_atomic_size = 0;
-ptl_size_t shmem_internal_max_fetch_atomic_size = 0;
-ptl_size_t shmem_internal_pending_put_counter = 0;
-ptl_size_t shmem_internal_pending_get_counter = 0;
+ptl_handle_eq_t shmem_transport_portals4_err_eq_h = PTL_INVALID_HANDLE;
+ptl_size_t shmem_transport_portals4_max_put_size = 0;
+ptl_size_t shmem_transport_portals4_max_atomic_size = 0;
+ptl_size_t shmem_transport_portals4_max_fetch_atomic_size = 0;
+ptl_size_t shmem_transport_portals4_pending_put_counter = 0;
+ptl_size_t shmem_transport_portals4_pending_get_counter = 0;
 static ptl_ni_limits_t ni_limits;
 
 static void
 cleanup_handles(void)
 {
-    if (PTL_OK != PtlHandleIsEqual(shmem_internal_get_md_h, PTL_INVALID_HANDLE)) {
-        PtlMDRelease(shmem_internal_get_md_h);
+    if (PTL_OK != PtlHandleIsEqual(shmem_transport_portals4_get_md_h, PTL_INVALID_HANDLE)) {
+        PtlMDRelease(shmem_transport_portals4_get_md_h);
     }
-    if (PTL_OK != PtlHandleIsEqual(shmem_internal_put_md_h, PTL_INVALID_HANDLE)) {
-        PtlMDRelease(shmem_internal_put_md_h);
+    if (PTL_OK != PtlHandleIsEqual(shmem_transport_portals4_put_md_h, PTL_INVALID_HANDLE)) {
+        PtlMDRelease(shmem_transport_portals4_put_md_h);
     }
 #ifdef ENABLE_EVENT_COMPLETION
-    if (PTL_OK != PtlHandleIsEqual(shmem_internal_put_eq_h, PTL_INVALID_HANDLE)) {
-        PtlEQFree(shmem_internal_put_eq_h);
+    if (PTL_OK != PtlHandleIsEqual(shmem_transport_portals4_put_eq_h, PTL_INVALID_HANDLE)) {
+        PtlEQFree(shmem_transport_portals4_put_eq_h);
     }
 #endif
-    if (PTL_OK != PtlHandleIsEqual(shmem_internal_get_ct_h, PTL_INVALID_HANDLE)) {
-        PtlCTFree(shmem_internal_get_ct_h);
+    if (PTL_OK != PtlHandleIsEqual(shmem_transport_portals4_get_ct_h, PTL_INVALID_HANDLE)) {
+        PtlCTFree(shmem_transport_portals4_get_ct_h);
     }
-    if (PTL_OK != PtlHandleIsEqual(shmem_internal_put_ct_h, PTL_INVALID_HANDLE)) {
-        PtlCTFree(shmem_internal_put_ct_h);
+    if (PTL_OK != PtlHandleIsEqual(shmem_transport_portals4_put_ct_h, PTL_INVALID_HANDLE)) {
+        PtlCTFree(shmem_transport_portals4_put_ct_h);
     }
-    if (PTL_OK != PtlHandleIsEqual(shmem_internal_heap_le_h, PTL_INVALID_HANDLE)) {
-        PtlLEUnlink(shmem_internal_heap_le_h);
+    if (PTL_OK != PtlHandleIsEqual(shmem_transport_portals4_heap_le_h, PTL_INVALID_HANDLE)) {
+        PtlLEUnlink(shmem_transport_portals4_heap_le_h);
     }
-    if (PTL_OK != PtlHandleIsEqual(shmem_internal_data_le_h, PTL_INVALID_HANDLE)) {
-        PtlLEUnlink(shmem_internal_data_le_h);
+    if (PTL_OK != PtlHandleIsEqual(shmem_transport_portals4_data_le_h, PTL_INVALID_HANDLE)) {
+        PtlLEUnlink(shmem_transport_portals4_data_le_h);
     }
-    if (PTL_OK != PtlHandleIsEqual(shmem_internal_target_ct_h, PTL_INVALID_HANDLE)) {
-        PtlCTFree(shmem_internal_target_ct_h);
+    if (PTL_OK != PtlHandleIsEqual(shmem_transport_portals4_target_ct_h, PTL_INVALID_HANDLE)) {
+        PtlCTFree(shmem_transport_portals4_target_ct_h);
     }
-    if (PTL_PT_ANY != shmem_internal_heap_pt) {
-        PtlPTFree(shmem_internal_ni_h, shmem_internal_heap_pt);
+    if (PTL_PT_ANY != shmem_transport_portals4_heap_pt) {
+        PtlPTFree(shmem_transport_portals4_ni_h, shmem_transport_portals4_heap_pt);
     }
-    if (PTL_PT_ANY != shmem_internal_data_pt) {
-        PtlPTFree(shmem_internal_ni_h, shmem_internal_data_pt);
+    if (PTL_PT_ANY != shmem_transport_portals4_data_pt) {
+        PtlPTFree(shmem_transport_portals4_ni_h, shmem_transport_portals4_data_pt);
     }
-    if (PTL_OK != PtlHandleIsEqual(shmem_internal_err_eq_h, PTL_INVALID_HANDLE)) {
-        PtlEQFree(shmem_internal_err_eq_h);
+    if (PTL_OK != PtlHandleIsEqual(shmem_transport_portals4_err_eq_h, PTL_INVALID_HANDLE)) {
+        PtlEQFree(shmem_transport_portals4_err_eq_h);
     }
-    if (PTL_OK != PtlHandleIsEqual(shmem_internal_ni_h, PTL_INVALID_HANDLE)) {
-        PtlNIFini(shmem_internal_ni_h);
+    if (PTL_OK != PtlHandleIsEqual(shmem_transport_portals4_ni_h, PTL_INVALID_HANDLE)) {
+        PtlNIFini(shmem_transport_portals4_ni_h);
     }
 }
 
@@ -128,14 +128,14 @@ shmem_transport_portals4_init(void)
                     PTL_PID_ANY,
                     &ni_req_limits,
                     &ni_limits,
-                    &shmem_internal_ni_h);
+                    &shmem_transport_portals4_ni_h);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlNIInit failed: %d\n",
                 shmem_internal_my_pe, ret);
         return ret;
     }
 
-    ret = PtlGetPhysId(shmem_internal_ni_h, &my_id);
+    ret = PtlGetPhysId(shmem_transport_portals4_ni_h, &my_id);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlGetPhysId failed: %d\n",
                 shmem_internal_my_pe, ret);
@@ -174,7 +174,7 @@ shmem_transport_portals4_startup(void)
         goto cleanup;
     }
 
-    ret = PtlGetPhysId(shmem_internal_ni_h, &my_id);
+    ret = PtlGetPhysId(shmem_transport_portals4_ni_h, &my_id);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlGetPhysId failed: %d\n",
                 shmem_internal_my_pe, ret);
@@ -203,7 +203,7 @@ shmem_transport_portals4_startup(void)
 #endif
     }
 
-    ret = PtlSetMap(shmem_internal_ni_h,
+    ret = PtlSetMap(shmem_transport_portals4_ni_h,
                     shmem_internal_num_pes,                    
                     desired);
     if (PTL_OK != ret && PTL_IGNORED != ret) {
@@ -212,7 +212,7 @@ shmem_transport_portals4_startup(void)
         goto cleanup;
     }
 
-    ret = PtlGetUid(shmem_internal_ni_h, &uid);
+    ret = PtlGetUid(shmem_transport_portals4_ni_h, &uid);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlGetUid failed: %d\n",
                 shmem_internal_my_pe, ret);
@@ -229,48 +229,48 @@ shmem_transport_portals4_startup(void)
            in the following tests. */
         waw_size = LONG_MAX;
     }
-    shmem_internal_max_put_size = MIN(waw_size, ni_limits.max_volatile_size);
-    shmem_internal_max_atomic_size = MIN(MIN(waw_size, ni_limits.max_volatile_size),
+    shmem_transport_portals4_max_put_size = MIN(waw_size, ni_limits.max_volatile_size);
+    shmem_transport_portals4_max_atomic_size = MIN(MIN(waw_size, ni_limits.max_volatile_size),
                                          ni_limits.max_atomic_size);
-    shmem_internal_max_fetch_atomic_size = MIN(waw_size, ni_limits.max_atomic_size);
-    if (shmem_internal_max_put_size < sizeof(long double complex)) {
+    shmem_transport_portals4_max_fetch_atomic_size = MIN(waw_size, ni_limits.max_atomic_size);
+    if (shmem_transport_portals4_max_put_size < sizeof(long double complex)) {
         fprintf(stderr, "[%03d] ERROR: Max put size found to be %lu, too small to continue\n",
-                shmem_internal_my_pe, (unsigned long) shmem_internal_max_put_size);
+                shmem_internal_my_pe, (unsigned long) shmem_transport_portals4_max_put_size);
         goto cleanup;
     }
-    if (shmem_internal_max_atomic_size < sizeof(long double complex)) {
+    if (shmem_transport_portals4_max_atomic_size < sizeof(long double complex)) {
         fprintf(stderr, "[%03d] ERROR: Max atomic size found to be %lu, too small to continue\n",
-                shmem_internal_my_pe, (unsigned long) shmem_internal_max_put_size);
+                shmem_internal_my_pe, (unsigned long) shmem_transport_portals4_max_put_size);
         goto cleanup;
     }
-    if (shmem_internal_max_fetch_atomic_size < sizeof(long double complex)) {
+    if (shmem_transport_portals4_max_fetch_atomic_size < sizeof(long double complex)) {
         fprintf(stderr, "[%03d] ERROR: Max fetch atomic size found to be %lu, too small to continue\n",
-                shmem_internal_my_pe, (unsigned long) shmem_internal_max_put_size);
+                shmem_internal_my_pe, (unsigned long) shmem_transport_portals4_max_put_size);
         goto cleanup;
     }
 
     /* create portal table entry */
-    ret = PtlEQAlloc(shmem_internal_ni_h, 64, &shmem_internal_err_eq_h);
+    ret = PtlEQAlloc(shmem_transport_portals4_ni_h, 64, &shmem_transport_portals4_err_eq_h);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlEQAlloc failed: %d\n",
                 shmem_internal_my_pe, ret);
         goto cleanup;
     }
-    ret = PtlPTAlloc(shmem_internal_ni_h,
+    ret = PtlPTAlloc(shmem_transport_portals4_ni_h,
                      0,
-                     shmem_internal_err_eq_h,
+                     shmem_transport_portals4_err_eq_h,
                      DATA_IDX,
-                     &shmem_internal_data_pt);
+                     &shmem_transport_portals4_data_pt);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlPTAlloc of data table failed: %d\n",
                 shmem_internal_my_pe, ret);
         goto cleanup;
     }
-    ret = PtlPTAlloc(shmem_internal_ni_h,
+    ret = PtlPTAlloc(shmem_transport_portals4_ni_h,
                      0,
-                     shmem_internal_err_eq_h,
+                     shmem_transport_portals4_err_eq_h,
                      HEAP_IDX,
-                     &shmem_internal_heap_pt);
+                     &shmem_transport_portals4_heap_pt);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlPTAlloc of heap table failed: %d\n",
                 shmem_internal_my_pe, ret);
@@ -278,7 +278,7 @@ shmem_transport_portals4_startup(void)
     }
 
     /* target ct */
-    ret = PtlCTAlloc(shmem_internal_ni_h, &shmem_internal_target_ct_h);
+    ret = PtlCTAlloc(shmem_transport_portals4_ni_h, &shmem_transport_portals4_target_ct_h);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlCTAlloc of target ct failed: %d\n",
                 shmem_internal_my_pe, ret);
@@ -287,18 +287,18 @@ shmem_transport_portals4_startup(void)
 
     le.start = shmem_internal_heap_base;
     le.length = shmem_internal_heap_length;
-    le.ct_handle = shmem_internal_target_ct_h;
+    le.ct_handle = shmem_transport_portals4_target_ct_h;
     le.uid = uid;
     le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
         PTL_LE_EVENT_LINK_DISABLE |
         PTL_LE_EVENT_SUCCESS_DISABLE | 
         PTL_LE_EVENT_CT_COMM;
-    ret = PtlLEAppend(shmem_internal_ni_h,
-                      shmem_internal_heap_pt,
+    ret = PtlLEAppend(shmem_transport_portals4_ni_h,
+                      shmem_transport_portals4_heap_pt,
                       &le,
                       PTL_PRIORITY_LIST,
                       NULL,
-                      &shmem_internal_heap_le_h);
+                      &shmem_transport_portals4_heap_le_h);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlLEAppend of heap section failed: %d\n",
                 shmem_internal_my_pe, ret);
@@ -308,18 +308,18 @@ shmem_transport_portals4_startup(void)
     /* Open LE to data section */
     le.start = shmem_internal_data_base;
     le.length = shmem_internal_data_length;
-    le.ct_handle = shmem_internal_target_ct_h;
+    le.ct_handle = shmem_transport_portals4_target_ct_h;
     le.uid = uid;
     le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
         PTL_LE_EVENT_LINK_DISABLE |
         PTL_LE_EVENT_SUCCESS_DISABLE | 
         PTL_LE_EVENT_CT_COMM;
-    ret = PtlLEAppend(shmem_internal_ni_h,
-                      shmem_internal_data_pt,
+    ret = PtlLEAppend(shmem_transport_portals4_ni_h,
+                      shmem_transport_portals4_data_pt,
                       &le,
                       PTL_PRIORITY_LIST,
                       NULL,
-                      &shmem_internal_data_le_h);
+                      &shmem_transport_portals4_data_le_h);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlLEAppend of data section failed: %d\n",
                 shmem_internal_my_pe, ret);
@@ -327,20 +327,20 @@ shmem_transport_portals4_startup(void)
     }
 
     /* Open MD to all memory */
-    ret = PtlCTAlloc(shmem_internal_ni_h, &shmem_internal_put_ct_h);
+    ret = PtlCTAlloc(shmem_transport_portals4_ni_h, &shmem_transport_portals4_put_ct_h);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlCTAlloc of put ct failed: %d\n",
                 shmem_internal_my_pe, ret);
         goto cleanup;
     }
-    ret = PtlCTAlloc(shmem_internal_ni_h, &shmem_internal_get_ct_h);
+    ret = PtlCTAlloc(shmem_transport_portals4_ni_h, &shmem_transport_portals4_get_ct_h);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlCTAlloc of get ct failed: %d\n",
                 shmem_internal_my_pe, ret);
         goto cleanup;
     }
 #ifdef ENABLE_EVENT_COMPLETION
-    ret = PtlEQAlloc(shmem_internal_ni_h, 64, &shmem_internal_put_eq_h);
+    ret = PtlEQAlloc(shmem_transport_portals4_ni_h, 64, &shmem_transport_portals4_put_eq_h);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlEQAlloc of put eq failed: %d\n",
                 shmem_internal_my_pe, ret);
@@ -359,14 +359,14 @@ shmem_transport_portals4_startup(void)
 #endif
 
 #ifdef ENABLE_EVENT_COMPLETION
-    md.eq_handle = shmem_internal_put_eq_h;
+    md.eq_handle = shmem_transport_portals4_put_eq_h;
 #else
-    md.eq_handle = shmem_internal_err_eq_h;
+    md.eq_handle = shmem_transport_portals4_err_eq_h;
 #endif
-    md.ct_handle = shmem_internal_put_ct_h;
-    ret = PtlMDBind(shmem_internal_ni_h,
+    md.ct_handle = shmem_transport_portals4_put_ct_h;
+    ret = PtlMDBind(shmem_transport_portals4_ni_h,
                     &md,
-                    &shmem_internal_put_md_h);
+                    &shmem_transport_portals4_put_md_h);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlMDBind of put MD failed: %d\n",
                 shmem_internal_my_pe, ret);
@@ -377,11 +377,11 @@ shmem_transport_portals4_startup(void)
     md.length = SIZE_MAX;
     md.options = PTL_MD_EVENT_CT_REPLY | 
         PTL_MD_EVENT_SUCCESS_DISABLE;
-    md.eq_handle = shmem_internal_err_eq_h;
-    md.ct_handle = shmem_internal_get_ct_h;
-    ret = PtlMDBind(shmem_internal_ni_h,
+    md.eq_handle = shmem_transport_portals4_err_eq_h;
+    md.ct_handle = shmem_transport_portals4_get_ct_h;
+    ret = PtlMDBind(shmem_transport_portals4_ni_h,
                     &md,
-                    &shmem_internal_get_md_h);
+                    &shmem_transport_portals4_get_md_h);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlMDBind of get MD failed: %d\n",
                 shmem_internal_my_pe, ret);
@@ -402,8 +402,8 @@ shmem_transport_portals4_fini(void)
     ptl_ct_event_t ct;
 
     /* wait for remote completion (acks) of all pending events */
-    PtlCTWait(shmem_internal_put_ct_h, 
-              shmem_internal_pending_put_counter, &ct);
+    PtlCTWait(shmem_transport_portals4_put_ct_h, 
+              shmem_transport_portals4_pending_put_counter, &ct);
 
     cleanup_handles();
     PtlFini();

@@ -71,7 +71,6 @@ shmem_internal_shutdown(void)
 
     shmem_internal_symmetric_fini();
     shmem_runtime_fini();
-    PtlFini();
 }
 
 
