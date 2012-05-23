@@ -80,6 +80,17 @@ extern int shmem_internal_fence_is_quiet;
         abort();                                                        \
     } while (0)
 
+#ifdef USE_ON_NODE_COMMS
+extern char *shmem_internal_location_array;
+#define SHMEM_SET_RANK_SAME_NODE(pe, node_rank)         \
+    do {                                                \
+        shmem_internal_location_array[pe] = node_rank;  \
+    } while (0)
+
+#define SHMEM_GET_RANK_SAME_NODE(pe) (shmem_internal_location_array[pe])
+#else
+#define SHMEM_GET_RANK_SAME_NODE(pe) (-1)
+#endif
         
 static inline
 int

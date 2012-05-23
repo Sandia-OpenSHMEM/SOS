@@ -43,6 +43,10 @@ int shmem_internal_initialized = 0;
 int shmem_internal_finalized = 0;
 int shmem_internal_fence_is_quiet = 1;
 
+#ifdef USE_ON_NODE_COMMS
+char *shmem_internal_location_array = NULL;
+#endif
+
 #ifdef MAXHOSTNAMELEN
 static char shmem_internal_my_hostname[MAXHOSTNAMELEN];
 #else
@@ -99,6 +103,13 @@ start_pes(int npes)
     shmem_internal_data_length = (unsigned long) &end  - (unsigned long) &data_start;
 #endif
 
+#ifdef USE_ON_NODE_COMMS
+    shmem_internal_location_array = malloc(sizeof(char) * shmem_internal_num_pes);
+    if (NULL == shmem_internal_location_array) goto cleanup;
+
+    memset(shmem_internal_location_array, -1, shmem_internal_num_pes);
+#endif
+
     /* create symmetric heap */
     ret = shmem_internal_symmetric_init();
     if (0 != ret) {
@@ -115,6 +126,7 @@ start_pes(int npes)
         fprintf(stderr,
                 "[%03d] ERROR: Portals 4 init failed\n",
                 shmem_internal_my_pe);
+        goto cleanup;
     }
 #endif
 #ifdef USE_XPMEM
@@ -123,6 +135,7 @@ start_pes(int npes)
         fprintf(stderr,
                 "[%03d] ERROR: XPMEM init failed\n",
                 shmem_internal_my_pe);
+        goto cleanup;
     }
 #endif
 
@@ -131,16 +144,20 @@ start_pes(int npes)
     if (0 != ret) {
         fprintf(stderr, "[%03d] ERROR: runtime exchange failed: %d\n", 
                 shmem_internal_my_pe, ret);
+        goto cleanup;
     }
 
-    /* finish transport initialization after information sharing */
+    /* finish transport initialization after information sharing. */
 #ifdef USE_PORTALS4
     ret = shmem_transport_portals4_startup();
     if (0 != ret) {
         fprintf(stderr,
                 "[%03d] ERROR: Portals 4 startup failed\n",
                 shmem_internal_my_pe);
+        goto cleanup;
     }
+#else
+#error "Need connectivity information, no portals support"
 #endif
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_startup();
@@ -148,6 +165,7 @@ start_pes(int npes)
         fprintf(stderr,
                 "[%03d] ERROR: XPMEM startup failed\n",
                 shmem_internal_my_pe);
+        goto cleanup;
     }
 #endif
 

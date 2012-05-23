@@ -163,11 +163,22 @@ shmem_transport_portals4_startup(void)
     ptl_le_t le;
     ptl_uid_t uid = PTL_UID_ANY;
     long waw_size;
+    ptl_process_t my_id;
+#ifdef USE_ON_NODE_COMMS
+    int num_on_node = 0;
+#endif
 
     desired = malloc(sizeof(ptl_process_t) * shmem_internal_num_pes);
     if (NULL == desired) {
         ret = 1;
         goto cleanup;
+    }
+
+    ret = PtlGetPhysId(shmem_internal_ni_h, &my_id);
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlGetPhysId failed: %d\n",
+                shmem_internal_my_pe, ret);
+        return ret;
     }
 
     for (i = 0 ; i < shmem_internal_num_pes; ++i) {
@@ -178,6 +189,18 @@ shmem_transport_portals4_startup(void)
                     shmem_internal_my_pe, ret);
             goto cleanup;
         }
+
+#ifdef USE_ON_NODE_COMMS
+        /* update the connectivity map... */
+        if (desired[i].phys.nid == my_id.phys.nid) {
+            SHMEM_SET_RANK_SAME_NODE(i, num_on_node++);
+            if (num_on_node > 255) {
+                fprintf(stderr, "[%03d] ERROR: Too many local ranks.\n",
+                        shmem_internal_my_pe);
+                goto cleanup;
+            }
+        }
+#endif
     }
 
     ret = PtlSetMap(shmem_internal_ni_h,
