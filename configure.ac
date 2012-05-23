@@ -68,11 +68,15 @@ OMPI_CHECK_PORTALS4([portals4],
      transport_portals4="yes"],
     [transport_portals4="no"])
 AM_CONDITIONAL([USE_PORTALS4], [test "$transport_portals4" = "yes"])
+
 SANDIA_CHECK_XPMEM(
     [AC_DEFINE([USE_XPMEM], [1], [Define if XPMEM transport is active])
      transport_xpmem="yes"],
     [transport_xpmem="no"])
 AM_CONDITIONAL([USE_XPMEM], [test "$transport_xpmem" = "yes"])
+AS_IF([test "$transport_xpmem" = "yes"],
+      [AC_DEFINE([USE_ON_NODE_COMMS], [1], [Define if any on-node comm transport is available])])
+
 ORTE_CHECK_PMI([pmi])
 
 dnl check for header files

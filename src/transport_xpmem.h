@@ -15,6 +15,17 @@
 
 #include <xpmem.h>
 
+
+struct shmem_transport_xpmem_peer_info_t {
+    xpmem_apid_t data_apid;
+    xpmem_apid_t heap_apid;
+    void *data_ptr;
+    void *heap_ptr;
+};
+
+extern struct shmem_transport_xpmem_peer_info_t *shmem_transport_xpmem_peers;
+
+
 int shmem_transport_xpmem_init(void);
 
 int shmem_transport_xpmem_startup(void);

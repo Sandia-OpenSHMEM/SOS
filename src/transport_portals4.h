@@ -37,6 +37,8 @@ extern ptl_size_t shmem_internal_pending_get_counter;
 
 int shmem_transport_portals4_init(void);
 
+int shmem_transport_portals4_connectivity(void);
+
 int shmem_transport_portals4_startup(void);
 
 int shmem_transport_portals4_fini(void);
