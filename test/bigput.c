@@ -164,10 +164,9 @@ main(int argc, char **argv)
     bytes = loops * sizeof(int) * elements;
 
     if (Verbose && me==0) {
-      extern long shmem_internal_max_put_size;
       fprintf(stderr,
-        "%s: INFO - %d loops, put %d (int) elements to PE+1 Max put %ld\n",
-              pgm, loops, elements,shmem_internal_max_put_size);
+        "%s: INFO - %d loops, put %d (int) elements to PE+1 Max put ??\n",
+              pgm, loops, elements);
     }
     shmem_barrier_all();
 
