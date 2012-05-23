@@ -32,7 +32,7 @@
 static int rank = -1;
 static int size = 0;
 static char *kvs_name, *kvs_key, *kvs_value;
-int max_name_len, max_key_len, max_val_len;
+static int max_name_len, max_key_len, max_val_len;
 
 static int
 encode(const void *inval, int invallen, char *outval, int outvallen)
@@ -87,7 +87,7 @@ decode(const char *inval, void *outval, int outvallen)
 
 
 int
-shmem_internal_runtime_init(void)
+shmem_runtime_init(void)
 {
     int initialized;
 
@@ -136,17 +136,25 @@ shmem_internal_runtime_init(void)
 
 
 int
-shmem_runtime_put(char *key, void *value, size_t valuelen) 
+shmem_runtime_fini(void)
 {
-    snprintf(kvs_key, max_key_len, "shmem-%lu-%s", (long unsigned) rank, key);
-    if (0 != encode(value, valuelen, kvs_value, max_val_len)) {
-        return 1;
-    }
-    if (PMI_SUCCESS != PMI_KVS_Put(kvs_name, kvs_key, kvs_value)) {
-        return 2;
-    }
+    PMI_Finalize();
 
     return 0;
+}
+
+
+int
+shmem_runtime_get_rank(void)
+{
+    return rank;
+}
+
+
+int
+shmem_runtime_get_size(void)
+{
+    return size;
 }
 
 
@@ -159,6 +167,21 @@ shmem_runtime_exchange(void)
 
     if (PMI_SUCCESS != PMI_Barrier()) {
         return 5;
+    }
+
+    return 0;
+}
+
+
+int
+shmem_runtime_put(char *key, void *value, size_t valuelen) 
+{
+    snprintf(kvs_key, max_key_len, "shmem-%lu-%s", (long unsigned) rank, key);
+    if (0 != encode(value, valuelen, kvs_value, max_val_len)) {
+        return 1;
+    }
+    if (PMI_SUCCESS != PMI_KVS_Put(kvs_name, kvs_key, kvs_value)) {
+        return 2;
     }
 
     return 0;
@@ -180,31 +203,8 @@ shmem_runtime_get(int pe, char *key, void *value, size_t valuelen)
 }
 
 
-int
-shmem_internal_runtime_fini(void)
-{
-    PMI_Finalize();
-
-    return 0;
-}
-
-
-int
-shmem_internal_runtime_get_rank(void)
-{
-    return rank;
-}
-
-
-int
-shmem_internal_runtime_get_size(void)
-{
-    return size;
-}
-
-
 void
-shmem_internal_runtime_barrier(void)
+shmem_runtime_barrier(void)
 {
     PMI_Barrier();
 }

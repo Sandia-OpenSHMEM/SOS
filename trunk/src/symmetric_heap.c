@@ -19,8 +19,6 @@
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
 
-void *shmem_internal_heap_base = NULL;
-long shmem_internal_heap_length = 0;
 static char *shmem_internal_heap_curr = NULL;
 
 void* shmem_internal_get_next(int incr);
