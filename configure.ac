@@ -51,6 +51,7 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CC_C99
 AC_C_INLINE
+AM_PROG_AR
 
 if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
   CFLAGS="$CFLAGS -Wall -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wcomment -pedantic"
