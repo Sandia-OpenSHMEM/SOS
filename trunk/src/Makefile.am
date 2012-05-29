@@ -11,6 +11,9 @@
 
 lib_LTLIBRARIES = libsma.la
 libsma_la_SOURCES = \
+	shmem_free_list.h \
+	shmem_free_list.c \
+	shmem_atomic.h \
 	runtime.h \
 	runtime-pmi.c \
 	shmem_internal.h \
