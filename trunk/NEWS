@@ -5,6 +5,8 @@ Portals SHMEM NEWS -- history of user-visible changes.
 1.0a6
 -----
 - Added support for using a PMI infrastructure for run-time support.
+- Implemented support for XPMEM put/get operations on shared memory
+  nodes.
 
 1.0a5
 -----
