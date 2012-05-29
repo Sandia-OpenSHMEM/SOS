@@ -28,8 +28,8 @@ static int *full_tree_children;
 static int full_tree_num_children;
 static int full_tree_parent;
 
-static int tree_crossover = 256; // env 'SHMEM_TREE_THRESHOLD' runtime.c
-static int tree_radix = 3;     // env 'SHMEM_TREE_RADIX'
+static int tree_crossover = -1;
+static int tree_radix = -1;
 
 
 static int
@@ -63,9 +63,8 @@ shmem_internal_collectives_init(int requested_crossover,
     int tmp_radix;
     int my_root = 0;
 
-    /* set default cross-over points */
-    if (requested_crossover > 0) tree_crossover = requested_crossover;
-    if (requested_radix > 0) tree_radix = requested_radix;
+    tree_radix = requested_radix;
+    tree_crossover = requested_crossover;
 
     /* initialize barrier_all psync array */
     barrier_all_psync = shmalloc(sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
@@ -144,8 +143,8 @@ shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
             shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size - 1);
 
             /* Clear pSync */
-            ret += shmem_internal_put(pSync, &zero, sizeof(zero), 
-                                      shmem_internal_my_pe);
+            ret = shmem_internal_put(pSync, &zero, sizeof(zero), 
+                                     shmem_internal_my_pe);
             shmem_internal_put_wait(ret);
             shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
 
@@ -160,15 +159,15 @@ shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 
         } else {
             /* send message to root */
-            ret += shmem_internal_atomic(pSync, &one, sizeof(one), PE_start, 
-                                         PTL_SUM, DTYPE_LONG);
+            ret = shmem_internal_atomic(pSync, &one, sizeof(one), PE_start, 
+                                        PTL_SUM, DTYPE_LONG);
             shmem_internal_put_wait(ret);
             /* wait for ack down psync tree */
             shmem_long_wait(pSync, 0);
 
             /* Clear pSync */
-            ret += shmem_internal_put(pSync, &zero, sizeof(zero), 
-                                      shmem_internal_my_pe);
+            ret = shmem_internal_put(pSync, &zero, sizeof(zero), 
+                                     shmem_internal_my_pe);
             shmem_internal_put_wait(ret);
             shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
         }
