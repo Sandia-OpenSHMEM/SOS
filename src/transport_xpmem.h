@@ -43,7 +43,7 @@ extern struct shmem_transport_xpmem_peer_info_t *shmem_transport_xpmem_peers;
         }                                                               \
     } while (0)
 
-int shmem_transport_xpmem_init(void);
+int shmem_transport_xpmem_init(long eager_size);
 
 int shmem_transport_xpmem_startup(void);
 
@@ -62,6 +62,13 @@ shmem_transport_xpmem_ptr(void *target, int pe, int noderank)
 static inline
 int
 shmem_transport_xpmem_quiet(void)
+{
+    return 0;
+}
+
+static inline
+int
+shmem_transport_xpmem_fence(void)
 {
     return 0;
 }

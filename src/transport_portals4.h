@@ -53,7 +53,7 @@ extern ptl_size_t shmem_transport_portals4_pending_get_counter;
     } while (0)
 
 
-int shmem_transport_portals4_init(void);
+int shmem_transport_portals4_init(long eager_size);
 
 int shmem_transport_portals4_startup(void);
 
@@ -62,6 +62,23 @@ int shmem_transport_portals4_fini(void);
 static inline
 int
 shmem_transport_portals4_quiet(void)
+{
+    int ret;
+    ptl_ct_event_t ct;
+
+    /* wait for remote completion (acks) of all pending events */
+    ret = PtlCTWait(shmem_transport_portals4_put_ct_h, 
+                    shmem_transport_portals4_pending_put_counter, &ct);
+    if (PTL_OK != ret) { return ret; }
+    if (ct.failure != 0) { return -1; }
+
+    return 0;
+}
+
+
+static inline
+int
+shmem_transport_portals4_fence(void)
 {
     int ret;
     ptl_ct_event_t ct;

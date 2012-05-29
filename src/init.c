@@ -41,7 +41,6 @@ int shmem_internal_my_pe = -1;
 int shmem_internal_num_pes = -1;
 int shmem_internal_initialized = 0;
 int shmem_internal_finalized = 0;
-int shmem_internal_fence_is_quiet = 1;
 
 #ifdef USE_ON_NODE_COMMS
 char *shmem_internal_location_array = NULL;
@@ -52,6 +51,62 @@ static char shmem_internal_my_hostname[MAXHOSTNAMELEN];
 #else
 static char shmem_internal_my_hostname[HOST_NAME_MAX];
 #endif
+
+ 
+/* atol() + optional scaled suffix recognition: 1K, 2M, 3G, 1T */
+static long
+atol_scaled(char *s)
+{
+    long val;
+    char *e;
+
+    val = strtol(s,&e,0);
+    if (e == NULL || *e =='\0')
+        return val;
+
+    if (*e == 'K')
+        val *= 1024L;
+    else if (*e == 'M')
+        val *= 1024L*1024L;
+    else if (*e == 'G')
+        val *= 1024L*1024L*1024L;
+    else if (*e == 'T')
+        val *= 1024L*1024L*1024L*1024L;
+
+    return val;
+}
+
+
+static long
+get_env_long(const char* name, int is_sized, long default_value)
+{
+    char *env_name, *env_value;
+
+    asprintf(&env_name, "SMA_%s", name);
+    env_value = getenv(env_name);
+    free(env_name);
+    if (env_value != NULL) {
+        if (is_sized) {
+            return atol_scaled(env_value);
+        } else {
+            return atol(env_value);
+        }
+    }
+
+    asprintf(&env_name, "SHMEM_%s", name);
+    env_value = getenv(env_name);
+    free(env_name);
+    if (env_value != NULL) {
+        if (is_sized) {
+            return atol_scaled(env_value);
+        } else {
+            return atol(env_value);
+        }
+    }
+
+    return default_value;
+}
+
 
 static void
 shmem_internal_shutdown(void)
@@ -78,8 +133,8 @@ void
 start_pes(int npes)
 {
     int ret;
-    char *s;
     int radix = -1, crossover = -1;
+    long heap_size, eager_size;
 
     if (shmem_internal_initialized) {
         RAISE_ERROR_STR("attempt to reinitialize library");
@@ -92,6 +147,12 @@ start_pes(int npes)
     }
     shmem_internal_my_pe = shmem_runtime_get_rank();
     shmem_internal_num_pes = shmem_runtime_get_size();
+
+    /* Process environment variables */
+    radix = get_env_long("COLL_RADIX", 0, 3);
+    crossover = get_env_long("COLL_CROSSOVER", 0, 256);
+    heap_size = get_env_long("SYMMETRIC_SIZE", 1, 64 * 1024 * 1024);
+    eager_size = get_env_long("BOUNCE_SIZE", 1, 2048);
 
     /* Find symmetric data */
 #ifdef __APPLE__
@@ -110,7 +171,7 @@ start_pes(int npes)
 #endif
 
     /* create symmetric heap */
-    ret = shmem_internal_symmetric_init();
+    ret = shmem_internal_symmetric_init(heap_size);
     if (0 != ret) {
         fprintf(stderr,
                 "[%03d] ERROR: symmetric heap initialization failed: %d\n",
@@ -120,7 +181,7 @@ start_pes(int npes)
 
     /* Initialize transport devices */
 #ifdef USE_PORTALS4
-    ret = shmem_transport_portals4_init();
+    ret = shmem_transport_portals4_init(eager_size);
     if (0 != ret) {
         fprintf(stderr,
                 "[%03d] ERROR: Portals 4 init failed\n",
@@ -129,7 +190,7 @@ start_pes(int npes)
     }
 #endif
 #ifdef USE_XPMEM
-    ret = shmem_transport_xpmem_init();
+    ret = shmem_transport_xpmem_init(eager_size);
     if (0 != ret) {
         fprintf(stderr,
                 "[%03d] ERROR: XPMEM init failed\n",
@@ -168,19 +229,6 @@ start_pes(int npes)
     }
 #endif
 
-    /* setup collectives */
-    s = getenv("SHMEM_TREE_RADIX");
-    if ( s != NULL && *s != '\0' ) {
-        radix = atoi(s);
-        if (radix < 2) radix = 2;
-    }
-
-    s = getenv("SHMEM_TREE_THRESHOLD");
-    if ( s != NULL && *s != '\0' ) {
-        crossover = atoi(s);
-        if (crossover < 4) crossover = 4;
-    }
-
     ret = shmem_internal_collectives_init(crossover, radix);
     if (ret != 0) {
         fprintf(stderr,
@@ -203,6 +251,25 @@ start_pes(int npes)
     if (0 == shmem_internal_my_pe) {
         if (NULL != getenv("SMA_VERSION")) {
             printf(PACKAGE_STRING "\n");
+            fflush(NULL);
+        }
+
+        if (NULL != getenv("SMA_INFO")) {
+            printf(PACKAGE_STRING "\n\n");
+            printf("SMA_VERSION             %s\n", 
+                   (NULL != getenv("SMA_VERSION")) ? "Set" : "Not set");
+            printf("\tIf set, print library version at startup\n");
+            printf("SMA_INFO                %s\n", 
+                   (NULL != getenv("SMA_VERSION")) ? "Set" : "Not set");
+            printf("\tIf set, print this help message at startup\n");
+            printf("SMA_SYMMETRIC_SIZE      %ld\n", heap_size);
+            printf("\tSymmentric heap size\n");
+            printf("SMA_COLL_CROSSOVER      %d\n", crossover);
+            printf("\tCross-over between linear and tree collectives\n");
+            printf("SMA_COLL_RADIX          %d\n", radix);
+            printf("\tRadix for tree-based collectives\n");
+            printf("SMA_COLL_BOUNCE_SIZE    %ld\n", eager_size);
+            printf("\tMaximum message size to bounce buffer\n");
             fflush(NULL);
         }
     }

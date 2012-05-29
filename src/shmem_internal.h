@@ -36,7 +36,6 @@ extern int shmem_internal_num_pes;
 
 extern int shmem_internal_initialized;
 extern int shmem_internal_finalized;
-extern int shmem_internal_fence_is_quiet;
 
 
 #define RAISE_ERROR(ret)                                                \
@@ -189,7 +188,7 @@ shmem_internal_fetch_atomic(void *target, void *source, void *dest, size_t len,
 
 
 /* initialization routines */
-int shmem_internal_symmetric_init(void);
+int shmem_internal_symmetric_init(long req_len);
 int shmem_internal_symmetric_fini(void);
 int shmem_internal_collectives_init(int requested_crossover, 
                                     int requested_radix);
