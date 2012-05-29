@@ -18,7 +18,7 @@
 
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
-
+#include "shmem_atomic.h"
 
 void
 shmem_quiet(void)
@@ -93,13 +93,6 @@ shmem_fence(void)
 
 
 #if defined(ENABLE_HARD_POLLING) || defined(USE_ON_NODE_COMMS)
-
-#if defined(__i386__) || defined(__x86_64__)
-# define SPINLOCK_BODY() do { __asm__ __volatile__ ("pause" ::: "memory"); } while (0)
-#else
-# define SPINLOCK_BODY() do { __asm__ __volatile__ (::: "memory"); } while (0)
-#endif
-
 
 #define SHMEM_WAIT(var, value)                           \
     do {                                                 \
