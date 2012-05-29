@@ -45,15 +45,22 @@ shmem_quiet(void)
 void
 shmem_fence(void)
 {
+    int ret;
+
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
-    if (shmem_internal_fence_is_quiet == 1) {
-        shmem_quiet();
-    }
+#ifdef USE_PORTALS4
+    ret = shmem_transport_portals4_fence();
+    if (0 != ret) { RAISE_ERROR(ret); }
+#endif
+#ifdef USE_XPMEM
+    ret = shmem_transport_xpmem_fence();
+    if (0 != ret) { RAISE_ERROR(ret); }
+#endif
 }
 
 

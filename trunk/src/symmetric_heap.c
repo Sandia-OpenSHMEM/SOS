@@ -80,40 +80,9 @@ static void *mmap_alloc(long bytes)
 #endif
 
 
-/* atol() + optional scaled suffix recognition: 1K, 2M, 3G, 1T */
-static long
-atol_scaled(char *s)
-{
-    long val;
-    char *e;
-
-    val = strtol(s,&e,0);
-    if (e == NULL || *e =='\0')
-        return val;
-
-    if (*e == 'K')
-        val *= 1024L;
-    else if (*e == 'M')
-        val *= 1024L*1024L;
-    else if (*e == 'G')
-        val *= 1024L*1024L*1024L;
-    else if (*e == 'T')
-        val *= 1024L*1024L*1024L*1024L;
-
-    return val;
-}
-
 int
-shmem_internal_symmetric_init(void)
+shmem_internal_symmetric_init(long req_len)
 {
-    long req_len = 64 * 1024 * 1024;
-    char *env = getenv("SHMEM_SYMMETRIC_HEAP_SIZE");
-
-    if ( !env )
-        env = getenv("SMA_SYMMETRIC_SIZE");
-
-    if (NULL != env) req_len = atol_scaled(env);
-
     /* add library overhead such that the max can be shmalloc()'ed */
     shmem_internal_heap_length = req_len + (1024*1024);
 #if USE_MMAP

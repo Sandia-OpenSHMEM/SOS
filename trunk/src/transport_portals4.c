@@ -92,7 +92,7 @@ cleanup_handles(void)
 
 
 int
-shmem_transport_portals4_init(void)
+shmem_transport_portals4_init(long eager_size)
 {
     ptl_process_t my_id;
     int ret;
@@ -221,7 +221,6 @@ shmem_transport_portals4_startup(void)
 
     /* Check message size limits to make sure rational */
     if ((PTL_TOTAL_DATA_ORDERING & ni_limits.features) != 0) {
-        shmem_internal_fence_is_quiet = 0;        
         waw_size = ni_limits.max_waw_ordered_size;
     } else {
         /* waw ordering doesn't matter for message size if no total
