@@ -22,11 +22,6 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 dnl information on the package
 AC_CONFIG_HEADERS([src/config.h])
 
-AC_ARG_ENABLE([event-completion],
-	[AC_HELP_STRING([--enable-event-completion],
-		[Enable use of events for put completion.  Default is to use buffered puts.])])
-AS_IF([test "$enable_event_completion" = "yes"], [AC_DEFINE([ENABLE_EVENT_COMPLETION], [1], [Use event completion])])
-
 AC_ARG_ENABLE([picky],
     [AC_HELP_STRING([--enable-picky],
                     [Enable developer-level compiler pickyness when building (default: disabled)])])
@@ -44,6 +39,18 @@ AC_ARG_ENABLE([hard-polling],
     [AC_HELP_STRING([--enable-hard-polling],
                     [Enable hard polling of wait calls (default:disabled)])])
 AS_IF([test "$enable_hard_polling" = "yes"], [AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])])
+
+AC_ARG_WITH([total-data-ordering],
+    [AC_HELP_STRING([--with-total-data-ordering],
+       [Configure handling of total data ordering option.  "no" or "never" to build with the assumption total data ordering will never be available.  "yes" or "always" to build with the assumption total data ordering will always be available (if not, applications will abort in start_pes()).  "check" to build with no assumptions, which may lead to a very slight performance decrease on high performance networks.  Default: check.])])
+AS_CASE([x$with_total_data_ordering],
+  [xyes|xalways], [ordering=1; msg="assume always available"],
+  [xno|xnever], [ordering=0; msg="assume never available"],
+  [xcheck|x], [ordering=2; msg="runtime check"],
+  [AC_MSG_ERROR([Unknown ordering requirement $with_total_data_ordering])])
+AC_DEFINE_UNQUOTED([WANT_TOTAL_DATA_ORDERING_CHECK], [$ordering], [0 if never check for total data ordering, 1 if always assume total data ordering, 2 to check])
+AC_MSG_CHECKING([For total data ordering behavior])
+AC_MSG_RESULT([$msg])
 
 dnl check for programs
 
