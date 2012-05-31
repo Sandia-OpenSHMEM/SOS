@@ -231,9 +231,11 @@ shmem_transport_portals4_startup(void)
            in the following tests. */
         waw_size = LONG_MAX;
     }
-    shmem_transport_portals4_max_atomic_size = MIN(MIN(waw_size, ni_limits.max_volatile_size),
-                                         ni_limits.max_atomic_size);
-    shmem_transport_portals4_max_fetch_atomic_size = MIN(waw_size, ni_limits.max_atomic_size);
+
+    shmem_transport_portals4_max_volatile_size = ni_limits.max_volatile_size;
+    shmem_transport_portals4_max_atomic_size = ni_limits.max_atomic_size;
+    shmem_transport_portals4_max_fetch_atomic_size = ni_limits.max_fetch_atomic_size;
+
     if (shmem_transport_portals4_max_atomic_size < sizeof(long double complex)) {
         fprintf(stderr, "[%03d] ERROR: Max atomic size found to be %lu, too small to continue\n",
                 shmem_internal_my_pe, (unsigned long) shmem_transport_portals4_max_atomic_size);
