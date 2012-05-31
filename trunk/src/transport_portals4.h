@@ -311,8 +311,8 @@ shmem_transport_portals4_atomic(void *target, void *source, size_t len,
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
-    if (len <= sizeof(long double complex)) {
-        ret = PtlAtomic(shmem_transport_portals4_put_event_md_h,
+    if (len <= shmem_transport_portals4_max_volatile_size) {
+        ret = PtlAtomic(shmem_transport_portals4_put_volatile_md_h,
                         (ptl_size_t) source,
                         len,
                         PTL_CT_ACK_REQ,
@@ -325,7 +325,8 @@ shmem_transport_portals4_atomic(void *target, void *source, size_t len,
                         op,
                         datatype);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
-        tmp++;
+        shmem_transport_portals4_pending_put_counter += 1;
+        tmp = 0;
     } else {
         size_t sent = 0;
 
@@ -347,9 +348,9 @@ shmem_transport_portals4_atomic(void *target, void *source, size_t len,
             tmp++;
             sent += bufsize;
         }
+        shmem_transport_portals4_pending_put_counter += tmp;
     }
 
-    shmem_transport_portals4_pending_put_counter += tmp;
     return tmp;
 }
 
@@ -366,11 +367,11 @@ shmem_transport_portals4_fetch_atomic(void *target, void *source, void *dest, si
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
-    assert(len <= sizeof(long double complex));
+    assert(len <= shmem_transport_portals4_max_fetch_atomic_size);
 
     ret = PtlFetchAtomic(shmem_transport_portals4_get_md_h,
                          (ptl_size_t) dest,
-                         shmem_transport_portals4_put_event_md_h,
+                         shmem_transport_portals4_put_volatile_md_h,
                          (ptl_size_t) source,
                          len,
                          peer,
@@ -384,7 +385,7 @@ shmem_transport_portals4_fetch_atomic(void *target, void *source, void *dest, si
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
     shmem_transport_portals4_pending_get_counter++;
 
-    return 1;
+    return 0;
 }
 
 #endif
