@@ -18,16 +18,13 @@
 extern ptl_handle_ni_t shmem_transport_portals4_ni_h;
 extern ptl_pt_index_t shmem_transport_portals4_data_pt;
 extern ptl_pt_index_t shmem_transport_portals4_heap_pt;
-extern ptl_handle_md_t shmem_transport_portals4_put_md_h;
+extern ptl_handle_md_t shmem_transport_portals4_put_event_md_h;
 extern ptl_handle_md_t shmem_transport_portals4_get_md_h;
 extern ptl_handle_ct_t shmem_transport_portals4_target_ct_h;
 extern ptl_handle_ct_t shmem_transport_portals4_put_ct_h;
 extern ptl_handle_ct_t shmem_transport_portals4_get_ct_h;
-#ifdef ENABLE_EVENT_COMPLETION
 extern ptl_handle_eq_t shmem_transport_portals4_put_eq_h;
-#endif
 extern ptl_handle_eq_t shmem_transport_portals4_err_eq_h;
-extern ptl_size_t shmem_transport_portals4_max_put_size;
 extern ptl_size_t shmem_transport_portals4_max_atomic_size;
 extern ptl_size_t shmem_transport_portals4_max_fetch_atomic_size;
 
@@ -107,7 +104,7 @@ shmem_transport_portals4_put(void *target, const void *source, size_t len, int p
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
     if (len <= sizeof(long double complex)) {
-        ret = PtlPut(shmem_transport_portals4_put_md_h,
+        ret = PtlPut(shmem_transport_portals4_put_event_md_h,
                      (ptl_size_t) source,
                      len,
                      PTL_CT_ACK_REQ,
@@ -120,24 +117,18 @@ shmem_transport_portals4_put(void *target, const void *source, size_t len, int p
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
         tmp++;
     } else {
-        size_t sent = 0;
-
-        while (sent < len) {
-            size_t bufsize = MIN(len - sent, shmem_transport_portals4_max_put_size);
-            ret = PtlPut(shmem_transport_portals4_put_md_h,
-                         (ptl_size_t) ((char*) source + sent),
-                         bufsize,
-                         PTL_CT_ACK_REQ,
-                         peer,
-                         pt,
-                         0,
-                         offset + sent,
-                         NULL,
-                         0);
-            if (PTL_OK != ret) { RAISE_ERROR(ret); }
-            tmp++;
-            sent += bufsize;
-        }
+        ret = PtlPut(shmem_transport_portals4_put_event_md_h,
+                     (ptl_size_t) source,
+                     len,
+                     PTL_CT_ACK_REQ,
+                     peer,
+                     pt,
+                     0,
+                     offset,
+                     NULL,
+                     0);
+        if (PTL_OK != ret) { RAISE_ERROR(ret); }
+        tmp++;
     }
 
     shmem_transport_portals4_pending_put_counter += tmp;
@@ -149,7 +140,6 @@ static inline
 void
 shmem_transport_portals4_put_wait(int count)
 {
-#if ENABLE_EVENT_COMPLETION
     int ret;
     ptl_event_t ev;
 
@@ -158,7 +148,6 @@ shmem_transport_portals4_put_wait(int count)
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
         if (ev.ni_fail_type != PTL_OK) { RAISE_ERROR(ev.ni_fail_type); }
     }
-#endif
 }
 
 
@@ -217,7 +206,7 @@ shmem_transport_portals4_swap(void *target, void *source, void *dest, size_t len
 
     ret = PtlSwap(shmem_transport_portals4_get_md_h,
                   (ptl_size_t) dest,
-                  shmem_transport_portals4_put_md_h,
+                  shmem_transport_portals4_put_event_md_h,
                   (ptl_size_t) source,
                   len,
                   peer,
@@ -252,7 +241,7 @@ shmem_transport_portals4_cswap(void *target, void *source, void *dest, void *ope
 
     ret = PtlSwap(shmem_transport_portals4_get_md_h,
                   (ptl_size_t) dest,
-                  shmem_transport_portals4_put_md_h,
+                  shmem_transport_portals4_put_event_md_h,
                   (ptl_size_t) source,
                   len,
                   peer,
@@ -287,7 +276,7 @@ shmem_transport_portals4_mswap(void *target, void *source, void *dest, void *mas
 
     ret = PtlSwap(shmem_transport_portals4_get_md_h,
                   (ptl_size_t) dest,
-                  shmem_transport_portals4_put_md_h,
+                  shmem_transport_portals4_put_event_md_h,
                   (ptl_size_t) source,
                   len,
                   peer,
@@ -320,7 +309,7 @@ shmem_transport_portals4_atomic(void *target, void *source, size_t len,
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
     if (len <= sizeof(long double complex)) {
-        ret = PtlAtomic(shmem_transport_portals4_put_md_h,
+        ret = PtlAtomic(shmem_transport_portals4_put_event_md_h,
                         (ptl_size_t) source,
                         len,
                         PTL_CT_ACK_REQ,
@@ -339,7 +328,7 @@ shmem_transport_portals4_atomic(void *target, void *source, size_t len,
 
         while (sent < len) {
             size_t bufsize = MIN(len - sent, shmem_transport_portals4_max_atomic_size);
-            ret = PtlAtomic(shmem_transport_portals4_put_md_h,
+            ret = PtlAtomic(shmem_transport_portals4_put_event_md_h,
                             (ptl_size_t) ((char*) source + sent),
                             bufsize,
                             PTL_CT_ACK_REQ,
@@ -378,7 +367,7 @@ shmem_transport_portals4_fetch_atomic(void *target, void *source, void *dest, si
 
     ret = PtlFetchAtomic(shmem_transport_portals4_get_md_h,
                          (ptl_size_t) dest,
-                         shmem_transport_portals4_put_md_h,
+                         shmem_transport_portals4_put_event_md_h,
                          (ptl_size_t) source,
                          len,
                          peer,
