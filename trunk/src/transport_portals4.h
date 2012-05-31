@@ -15,6 +15,9 @@
 
 #include <portals4.h>
 
+#define DATA_IDX 10
+#define HEAP_IDX 11
+
 extern ptl_handle_ni_t shmem_transport_portals4_ni_h;
 extern ptl_pt_index_t shmem_transport_portals4_data_pt;
 extern ptl_pt_index_t shmem_transport_portals4_heap_pt;

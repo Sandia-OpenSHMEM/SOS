@@ -18,6 +18,8 @@
 
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
+#include "shmem_comm.h"
+
 
 float
 shmem_float_swap(float *target, float value, int pe)
