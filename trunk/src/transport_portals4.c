@@ -29,6 +29,7 @@
 ptl_handle_ni_t shmem_transport_portals4_ni_h = PTL_INVALID_HANDLE;
 ptl_pt_index_t shmem_transport_portals4_data_pt = PTL_PT_ANY;
 ptl_pt_index_t shmem_transport_portals4_heap_pt = PTL_PT_ANY;
+ptl_handle_md_t shmem_transport_portals4_put_volatile_md_h = PTL_INVALID_HANDLE;
 ptl_handle_md_t shmem_transport_portals4_put_event_md_h = PTL_INVALID_HANDLE;
 ptl_handle_md_t shmem_transport_portals4_get_md_h = PTL_INVALID_HANDLE;
 ptl_handle_le_t shmem_transport_portals4_data_le_h = PTL_INVALID_HANDLE;
@@ -38,10 +39,14 @@ ptl_handle_ct_t shmem_transport_portals4_put_ct_h = PTL_INVALID_HANDLE;
 ptl_handle_ct_t shmem_transport_portals4_get_ct_h = PTL_INVALID_HANDLE;
 ptl_handle_eq_t shmem_transport_portals4_put_eq_h = PTL_INVALID_HANDLE;
 ptl_handle_eq_t shmem_transport_portals4_err_eq_h = PTL_INVALID_HANDLE;
+
+ptl_size_t shmem_transport_portals4_max_volatile_size = 0;
 ptl_size_t shmem_transport_portals4_max_atomic_size = 0;
 ptl_size_t shmem_transport_portals4_max_fetch_atomic_size = 0;
+
 ptl_size_t shmem_transport_portals4_pending_put_counter = 0;
 ptl_size_t shmem_transport_portals4_pending_get_counter = 0;
+
 static ptl_ni_limits_t ni_limits;
 
 static void
@@ -52,6 +57,9 @@ cleanup_handles(void)
     }
     if (PTL_OK != PtlHandleIsEqual(shmem_transport_portals4_put_event_md_h, PTL_INVALID_HANDLE)) {
         PtlMDRelease(shmem_transport_portals4_put_event_md_h);
+    }
+    if (PTL_OK != PtlHandleIsEqual(shmem_transport_portals4_put_volatile_md_h, PTL_INVALID_HANDLE)) {
+        PtlMDRelease(shmem_transport_portals4_put_volatile_md_h);
     }
     if (PTL_OK != PtlHandleIsEqual(shmem_transport_portals4_put_eq_h, PTL_INVALID_HANDLE)) {
         PtlEQFree(shmem_transport_portals4_put_eq_h);
@@ -342,6 +350,23 @@ shmem_transport_portals4_startup(void)
     ret = PtlMDBind(shmem_transport_portals4_ni_h,
                     &md,
                     &shmem_transport_portals4_put_event_md_h);
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlMDBind of put MD failed: %d\n",
+                shmem_internal_my_pe, ret);
+        goto cleanup;
+    }
+
+
+    md.start = 0;
+    md.length = SIZE_MAX;
+    md.options = PTL_MD_EVENT_CT_ACK |
+        PTL_MD_EVENT_SUCCESS_DISABLE |
+        PTL_MD_VOLATILE;
+    md.eq_handle = shmem_transport_portals4_err_eq_h;
+    md.ct_handle = shmem_transport_portals4_put_ct_h;
+    ret = PtlMDBind(shmem_transport_portals4_ni_h,
+                    &md,
+                    &shmem_transport_portals4_put_volatile_md_h);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlMDBind of put MD failed: %d\n",
                 shmem_internal_my_pe, ret);

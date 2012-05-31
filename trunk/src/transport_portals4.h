@@ -18,6 +18,7 @@
 extern ptl_handle_ni_t shmem_transport_portals4_ni_h;
 extern ptl_pt_index_t shmem_transport_portals4_data_pt;
 extern ptl_pt_index_t shmem_transport_portals4_heap_pt;
+extern ptl_handle_md_t shmem_transport_portals4_put_volatile_md_h;
 extern ptl_handle_md_t shmem_transport_portals4_put_event_md_h;
 extern ptl_handle_md_t shmem_transport_portals4_get_md_h;
 extern ptl_handle_ct_t shmem_transport_portals4_target_ct_h;
@@ -25,6 +26,8 @@ extern ptl_handle_ct_t shmem_transport_portals4_put_ct_h;
 extern ptl_handle_ct_t shmem_transport_portals4_get_ct_h;
 extern ptl_handle_eq_t shmem_transport_portals4_put_eq_h;
 extern ptl_handle_eq_t shmem_transport_portals4_err_eq_h;
+
+extern ptl_size_t shmem_transport_portals4_max_volatile_size;
 extern ptl_size_t shmem_transport_portals4_max_atomic_size;
 extern ptl_size_t shmem_transport_portals4_max_fetch_atomic_size;
 
@@ -99,12 +102,12 @@ shmem_transport_portals4_put(void *target, const void *source, size_t len, int p
     ptl_process_t peer;
     ptl_pt_index_t pt;
     long offset;
-    int tmp = 0;
+    int tmp;
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
-    if (len <= sizeof(long double complex)) {
-        ret = PtlPut(shmem_transport_portals4_put_event_md_h,
+    if (len <= shmem_transport_portals4_max_volatile_size) {
+        ret = PtlPut(shmem_transport_portals4_put_volatile_md_h,
                      (ptl_size_t) source,
                      len,
                      PTL_CT_ACK_REQ,
@@ -115,7 +118,7 @@ shmem_transport_portals4_put(void *target, const void *source, size_t len, int p
                      NULL,
                      0);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
-        tmp++;
+        tmp = 0;
     } else {
         ret = PtlPut(shmem_transport_portals4_put_event_md_h,
                      (ptl_size_t) source,
@@ -127,11 +130,11 @@ shmem_transport_portals4_put(void *target, const void *source, size_t len, int p
                      offset,
                      NULL,
                      0);
-        if (PTL_OK != ret) { RAISE_ERROR(ret); }
-        tmp++;
+        if (PTL_OK != ret) { RAISE_ERROR(ret); } 
+        tmp = 1;
     }
-
-    shmem_transport_portals4_pending_put_counter += tmp;
+    shmem_transport_portals4_pending_put_counter += 1;
+    
     return tmp;
 }
 
