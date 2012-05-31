@@ -19,6 +19,7 @@
 
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
+#include "shmem_comm.h"
 
 
 void

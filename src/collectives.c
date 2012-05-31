@@ -20,6 +20,7 @@
 
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
+#include "shmem_comm.h"
 
 
 static long *barrier_all_psync;

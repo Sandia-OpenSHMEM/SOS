@@ -18,6 +18,7 @@
 
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
+#include "shmem_comm.h"
 
 static char *shmem_internal_heap_curr = NULL;
 

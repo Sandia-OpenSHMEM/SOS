@@ -24,6 +24,7 @@
 
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
+#include "shmem_comm.h"
 #include "runtime.h"
 
 ptl_handle_ni_t shmem_transport_portals4_ni_h = PTL_INVALID_HANDLE;

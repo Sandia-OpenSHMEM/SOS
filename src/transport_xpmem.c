@@ -20,6 +20,7 @@
 
 #include "mpp/shmem.h"
 #include "shmem_internal.h"
+#include "shmem_comm.h"
 #include "runtime.h"
 
 struct share_info_t {
