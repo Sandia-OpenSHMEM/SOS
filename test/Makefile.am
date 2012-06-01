@@ -53,8 +53,8 @@ TESTS = \
 	bigput \
 	bigget \
 	ns \
-    bcast_flood \
-    lfinc
+	bcast_flood \
+	lfinc
 
 check_PROGRAMS = \
 	$(TESTS) \
@@ -63,9 +63,10 @@ check_PROGRAMS = \
 	NPshmem
 
 PROCS ?= 2
-HOSTFILE ?= $(top_srcdir)/test/hostfile
 
 TESTS_ENVIRONMENT = yod -np $(PROCS)
+
+AM_CPPFLAGS = -I$(top_srcdir)/mpp
 
 hello_SOURCES = hello.c
 hello_LDADD = $(top_builddir)/src/libsma.la
@@ -203,5 +204,5 @@ msgrate_SOURCES = msgrate.c
 msgrate_LDADD = $(top_builddir)/src/libsma.la
 
 NPshmem_SOURCES = netpipe/netpipe.c netpipe/netpipe.h netpipe/shmem.c
-NPshmem_CPPFLAGS = -DSHMEM
+NPshmem_CPPFLAGS = -DSHMEM -I$(top_srcdir)/mpp
 NPshmem_LDADD = $(top_builddir)/src/libsma.la

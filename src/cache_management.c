@@ -14,7 +14,7 @@
 
 #include <portals4.h>
 
-#include "mpp/shmem.h"
+#include "shmem.h"
 #include "shmem_internal.h"
 
 

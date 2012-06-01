@@ -11,7 +11,7 @@
  *   which is the exit condition. 
  *   On a failed lock attempt, increment local lock_tries counter and repeat. 
  */
-#include <mpp/shmem.h>
+#include <shmem.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

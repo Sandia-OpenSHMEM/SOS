@@ -4,7 +4,7 @@
  *     shmem_*_fadd()
  *     shmem_*_finc()
  */
-#include <mpp/shmem.h>
+#include <shmem.h>
 
 #include <string.h>
 #include <stdlib.h>

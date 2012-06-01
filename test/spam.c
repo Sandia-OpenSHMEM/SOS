@@ -18,7 +18,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include <mpp/shmem.h>
+#include <shmem.h>
 
 void one2many_put(int *dst, int *src, int Elems, int me, int npe, int laps);
 void many2one_get(int *dst, int *src, int Elems, int me, int npe, int laps);

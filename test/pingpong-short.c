@@ -8,7 +8,7 @@
  *     work[proc_ID*nLongs] ... work[proc_ID*(nLongs-1)]
  *   Proc 0 verifes data
  */
-#include <mpp/shmem.h>
+#include <shmem.h>
 
 #include <stdio.h>
 #include <stdint.h>

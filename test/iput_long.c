@@ -3,7 +3,7 @@
  */
 
 #include <stdio.h>
-#include <mpp/shmem.h>
+#include <shmem.h>
 #define _IPUT(a) shmem_##a##_iput
 
 #define IPUT _IPUT(long)

@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "mpp/shmem.h"
+#include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"
 

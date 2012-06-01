@@ -4,8 +4,9 @@ Portals SHMEM
 * About
 
 Portals SHMEM is an implementation of the OpenSHMEM 1.0 standard over
-Portals 4.0.  The implementation is complete, although performance
-tuning is still a work in progress.
+Portals 4.0 and/or XPMEM.  The implementation is complete, although
+performance tuning is still a work in progress.  A Fortran interface
+is not currently provided.
 
 
 * Building
@@ -25,57 +26,36 @@ Options to configure include:
 
   --prefix=<DIR>          Install implementation in <DIR>, default: /usr/local
   --with-portals4=<DIR>   Find the Portals4 library in <DIR>
-  --with-runtime=mpi      OpenMPI SHMEM job launch; build application 
-                          with CC=mpicc
-  --with-runtime=pmi      Use PMI interface for run-time and job launch
-  --with-pmi=DIR          Location of PMI installation
-  --enable-error-checking Enable argument and usage error checking, at
-                          a performance cost.
-  --enable-hard-polling   Enable hard polling in wait calls, rather
-                          than blocking in the Portals library.
+  --with-xpmem=<DIR>      Find the XPMEM library in <DIR>
+  --with-pmi=DIR          Location of PMI installation.  Configure will 
+                          automatically look for the PMI runtime provided by
+                          Portals4.
 
-
-* Portals 4 Implementation Support
-
-Portals SHMEM has only been tested with the following implementations
-of the Portals 4.0 specification:
-
-  - Shared memory reference implementation
-  - InfiniBand reference implementation
+There are many other options to configure to influence performance and
+behavior.  See 'configure --help' for documentation on available
+options.
 
 * SHMEM Runtime Support
 
   Environment variables:
 
-    SHMEM_SYMMETRIC_HEAP_SIZE=(default 64M)
+    SMA_SYMMETRIC_SIZE (default 64 MiB)
         The allocated size of the symmetric heap which shmalloc() and shfree()
         operates on. The size value can be scaled with a suffix of
-            'K' for kilobytes(*1024),
-            'M' for Megabytes(*1024*1024)
-            'G' for Gigabytes
-            'T' for Terabytes
+            'K' for kilobytes (B * 1024),
+            'M' for Megabytes (KiB * 1024)
+            'G' for Gigabytes (MiB * 1024)
 
-    SHMEM_TREE_RADIX
-        Controls the width of the n-ary fanout broadcast tree, such that each
-        node will fanout-send to a max of SHMEM_TREE_RADIX.
-        defaults:
-            num_pes   default radix
-            -----------------------
-            1...32,         3
-            33...64,        5
-            65...255,       8
-            > 255          16
+    SMA_BOUNCE_SIZE (default 2 KiB)
+        The maximum size of a bounce buffer for put messages.
+        Messages greater than the immediate send value for the
+        underlying network but greater than this threshold will be
+        copied into a bounce buffer and then sent.
 
-    SHMEM_TREE_THRESHOLD=(default 8)
-        For num_pes < SHMEM_TREE_THRESHOLD, broadcast sends are serial.
+    SHMEM_COLL_THRESHOLD (default 8)
+        For num_pes < SHMEM_TREE_THRESHOLD, collective algorithms are
+        serial instead of tree based.
 
-    SHMEM_BROADCAST_ALOGORTHM=(default tree) | naive
-        naive == serial broadcast
-        tree == n-ary tree based broadcast, see above.
-        
-* ToDo List
-
-  - Modify collectives to use algorithms better than the current
-    linear implementations
-  - Fix shmem_{set, test, clear}_lock to not assume sizeof(long) is 8
-  - Add long message optimization documented in report
+    SMA_COLL_RADIX (default 3)
+        Controls the width of the n-ary tree for collectives, such that each
+        node will fanout-send to a max of SMA_COLL_RADIX

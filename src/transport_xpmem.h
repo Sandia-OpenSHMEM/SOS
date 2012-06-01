@@ -27,7 +27,7 @@ struct shmem_transport_xpmem_peer_info_t {
 
 extern struct shmem_transport_xpmem_peer_info_t *shmem_transport_xpmem_peers;
 
-
+#ifdef ENABLE_ERROR_CHECKING
 #define XPMEM_GET_REMOTE_ACCESS(target, rank, ptr)                      \
     do {                                                                \
         if (((void*) target > shmem_internal_data_base) &&              \
@@ -42,12 +42,25 @@ extern struct shmem_transport_xpmem_peer_info_t *shmem_transport_xpmem_peers;
             ptr = NULL;                                                 \
         }                                                               \
     } while (0)
+#else
+#define XPMEM_GET_REMOTE_ACCESS(target, rank, ptr)                      \
+    do {                                                                \
+        if ((void*) target < shmem_internal_heap_base) {                \
+            ptr = (char*) target - (char*) shmem_internal_data_base +   \
+                (char*) shmem_transport_xpmem_peers[rank].data_ptr;     \
+        } else {                                                        \
+            ptr = (char*) target - (char*) shmem_internal_heap_base +   \
+                (char*) shmem_transport_xpmem_peers[rank].heap_ptr;     \
+        }                                                               \
+    } while (0)
+#endif
 
 int shmem_transport_xpmem_init(long eager_size);
 
 int shmem_transport_xpmem_startup(void);
 
 int shmem_transport_xpmem_fini(void);
+
 
 static inline
 void *
@@ -59,32 +72,38 @@ shmem_transport_xpmem_ptr(void *target, int pe, int noderank)
     return remote_ptr;
 }
 
+
 static inline
 int
 shmem_transport_xpmem_quiet(void)
 {
-    return 0;
+    __sync_synchronize();
 }
+
 
 static inline
 int
 shmem_transport_xpmem_fence(void)
 {
-    return 0;
+    __sync_synchronize();
 }
+
 
 static inline
 void
-shmem_transport_xpmem_put(void *target, const void *source, size_t len, int pe, int noderank)
+shmem_transport_xpmem_put(void *target, const void *source, size_t len, 
+                          int pe, int noderank)
 {
     char *remote_ptr;
 
     XPMEM_GET_REMOTE_ACCESS(target, noderank, remote_ptr);
+#ifdef ENABLE_ERROR_CHECKING
     if (NULL == remote_ptr) {
         fprintf(stderr, "[%03d] ERROR: target (0x%lx) outside of symmetric areas\n",
                 shmem_internal_my_pe, (unsigned long) target);      
         abort();
     }
+#endif
 
     memcpy(remote_ptr, source, len);
     __sync_synchronize();
@@ -93,16 +112,19 @@ shmem_transport_xpmem_put(void *target, const void *source, size_t len, int pe, 
 
 static inline
 void
-shmem_transport_xpmem_get(void *target, const void *source, size_t len, int pe, int noderank)
+shmem_transport_xpmem_get(void *target, const void *source, size_t len, 
+                          int pe, int noderank)
 {
     char *remote_ptr;
 
     XPMEM_GET_REMOTE_ACCESS(source, noderank, remote_ptr);
+#ifdef ENABLE_ERROR_CHECKING
     if (NULL == remote_ptr) {
         fprintf(stderr, "[%03d] ERROR: target (0x%lx) outside of symmetric areas\n",
                 shmem_internal_my_pe, (unsigned long) target);      
         abort();
     }
+#endif
 
     __sync_synchronize();
     memcpy(target, remote_ptr, len);

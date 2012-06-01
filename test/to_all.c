@@ -34,7 +34,7 @@
 #include <getopt.h>
 #include <complex.h>
 
-#include <mpp/shmem.h>
+#include <shmem.h>
 
 #define Rprintf if (_my_pe() == 0) printf
 #define Rfprintf if (_my_pe() == 0) fprintf

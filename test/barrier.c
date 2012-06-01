@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include <mpp/shmem.h>
+#include <shmem.h>
 
 #define Rfprintf if (_my_pe() == 0) fprintf
 #define Rprintf if (_my_pe() == 0)  printf

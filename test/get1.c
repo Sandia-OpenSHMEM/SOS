@@ -1,4 +1,4 @@
-#include <mpp/shmem.h>
+#include <shmem.h>
 
 #include <string.h>
 #include <stdio.h>

@@ -9,7 +9,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-#include <mpp/shmem.h>
+#include <shmem.h>
 
 #define NUM_ELEMENTS 25600  // 1 MB as longs
 //#define DFLT_LOOPS 10000  // reset when Portals4 can achieve this.

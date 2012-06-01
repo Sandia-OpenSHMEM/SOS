@@ -4,7 +4,7 @@
  * usage: big_reduction {-v|h}
 */
 
-#include <mpp/shmem.h>
+#include <shmem.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

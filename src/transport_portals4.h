@@ -14,6 +14,9 @@
 #define TRANSPORT_PORTALS_H
 
 #include <portals4.h>
+#include <string.h>
+
+#include "shmem_free_list.h"
 
 #define DATA_IDX 10
 #define HEAP_IDX 11
@@ -27,9 +30,12 @@ extern ptl_handle_md_t shmem_transport_portals4_get_md_h;
 extern ptl_handle_ct_t shmem_transport_portals4_target_ct_h;
 extern ptl_handle_ct_t shmem_transport_portals4_put_ct_h;
 extern ptl_handle_ct_t shmem_transport_portals4_get_ct_h;
-extern ptl_handle_eq_t shmem_transport_portals4_put_eq_h;
-extern ptl_handle_eq_t shmem_transport_portals4_err_eq_h;
+extern ptl_handle_eq_t shmem_transport_portals4_eq_h;
 
+extern shmem_free_list_t *shmem_transport_portals4_bounce_buffers;
+extern shmem_free_list_t *shmem_transport_portals4_long_frags;
+
+extern ptl_size_t shmem_transport_portals4_bounce_buffer_size;
 extern ptl_size_t shmem_transport_portals4_max_volatile_size;
 extern ptl_size_t shmem_transport_portals4_max_atomic_size;
 extern ptl_size_t shmem_transport_portals4_max_fetch_atomic_size;
@@ -37,7 +43,28 @@ extern ptl_size_t shmem_transport_portals4_max_fetch_atomic_size;
 extern ptl_size_t shmem_transport_portals4_pending_put_counter;
 extern ptl_size_t shmem_transport_portals4_pending_get_counter;
 
+#define SHMEM_TRANSPORT_PORTALS4_TYPE_BOUNCE  0x01
+#define SHMEM_TRANSPORT_PORTALS4_TYPE_LONG    0x02
 
+struct shmem_transport_portals4_frag_t {
+    shmem_free_list_item_t item;
+    char type;
+};
+typedef struct shmem_transport_portals4_frag_t shmem_transport_portals4_frag_t;
+
+struct shmem_transport_portals4_bounce_buffer_t {
+    shmem_transport_portals4_frag_t frag;
+    char data[];
+};
+typedef struct shmem_transport_portals4_bounce_buffer_t shmem_transport_portals4_bounce_buffer_t;
+
+struct shmem_transport_portals4_long_frag_t {
+    shmem_transport_portals4_frag_t frag;
+    char complete;
+};
+typedef struct shmem_transport_portals4_bounce_buffer_t shmem_transport_portals4_bounce_buffer_t;
+
+#ifdef ENABLE_ERROR_CHECKING
 #define PORTALS4_GET_REMOTE_ACCESS(target, pt, offset)                  \
     do {                                                                \
         if (((void*) target > shmem_internal_data_base) &&              \
@@ -54,7 +81,18 @@ extern ptl_size_t shmem_transport_portals4_pending_get_counter;
             abort();                                                    \
         }                                                               \
     } while (0)
-
+#else 
+#define PORTALS4_GET_REMOTE_ACCESS(target, pt, offset)                  \
+    do {                                                                \
+        if ((void*) target < shmem_internal_heap_base) {                \
+            pt = shmem_transport_portals4_data_pt;                      \
+            offset = (char*) target - (char*) shmem_internal_data_base; \
+        } else {                                                        \
+            pt = shmem_transport_portals4_heap_pt;                      \
+            offset = (char*) target - (char*) shmem_internal_heap_base; \
+        }                                                               \
+    } while (0)
+#endif
 
 int shmem_transport_portals4_init(long eager_size);
 
@@ -95,7 +133,6 @@ shmem_transport_portals4_fence(void)
     return 0;
 }
 
-
         
 static inline
 int
@@ -122,6 +159,27 @@ shmem_transport_portals4_put(void *target, const void *source, size_t len, int p
                      0);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
         tmp = 0;
+
+    } else if (len <= shmem_transport_portals4_bounce_buffer_size) {
+        shmem_transport_portals4_bounce_buffer_t *buff =
+            (shmem_transport_portals4_bounce_buffer_t*)
+            shmem_free_list_alloc(shmem_transport_portals4_bounce_buffers);
+        if (NULL == buff) RAISE_ERROR(-1);
+
+        memcpy(buff->data, source, len);
+        ret = PtlPut(shmem_transport_portals4_put_event_md_h,
+                     (ptl_size_t) buff->data,
+                     len,
+                     PTL_CT_ACK_REQ,
+                     peer,
+                     pt,
+                     0,
+                     offset,
+                     buff,
+                     0);
+        if (PTL_OK != ret) { RAISE_ERROR(ret); }
+        tmp = 0;
+
     } else {
         ret = PtlPut(shmem_transport_portals4_put_event_md_h,
                      (ptl_size_t) source,
@@ -149,10 +207,19 @@ shmem_transport_portals4_put_wait(int count)
     int ret;
     ptl_event_t ev;
 
-    for ( ; count > 0 ; --count) {
-        ret = PtlEQWait(shmem_transport_portals4_put_eq_h, &ev);
+    while (count > 0) {
+        ret = PtlEQWait(shmem_transport_portals4_eq_h, &ev);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
         if (ev.ni_fail_type != PTL_OK) { RAISE_ERROR(ev.ni_fail_type); }
+
+        if (NULL == ev.user_ptr) {
+            /* it's one of the long messages we're waiting for */
+            count--;
+        } else {
+            /* it's a short send completing */
+            shmem_free_list_free(shmem_transport_portals4_bounce_buffers,
+                                 ev.user_ptr);
+        }
     }
 }
 
@@ -330,6 +397,31 @@ shmem_transport_portals4_atomic(void *target, void *source, size_t len,
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
         shmem_transport_portals4_pending_put_counter += 1;
         tmp = 0;
+
+    } else if (len <= MIN(shmem_transport_portals4_bounce_buffer_size,
+                          shmem_transport_portals4_max_atomic_size)) {
+        shmem_transport_portals4_bounce_buffer_t *buff =
+            (shmem_transport_portals4_bounce_buffer_t*)
+            shmem_free_list_alloc(shmem_transport_portals4_bounce_buffers);
+        if (NULL == buff) RAISE_ERROR(-1);
+
+        memcpy(buff->data, source, len);
+        ret = PtlAtomic(shmem_transport_portals4_put_event_md_h,
+                        (ptl_size_t) buff->data,
+                        len,
+                        PTL_CT_ACK_REQ,
+                        peer,
+                        pt,
+                        0,
+                        offset,
+                        buff,
+                        0,
+                        op,
+                        datatype);
+        if (PTL_OK != ret) { RAISE_ERROR(ret); }
+        shmem_transport_portals4_pending_put_counter += 1;
+        tmp = 0;
+
     } else {
         size_t sent = 0;
 

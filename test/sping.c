@@ -21,7 +21,7 @@ void printStats (int, int, int, int, double);
 
 int Verbose=0;
 
-#include <mpp/shmem.h>
+#include <shmem.h>
 
 int getSize (char *str)
 {
