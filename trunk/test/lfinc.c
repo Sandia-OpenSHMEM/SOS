@@ -7,7 +7,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include <mpp/shmem.h>
+#include <shmem.h>
 
 #define LOOPS 250000
 

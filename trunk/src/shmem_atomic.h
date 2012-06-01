@@ -23,7 +23,7 @@
 # define SPINLOCK_BODY() do { __asm__ __volatile__ (::: "memory"); } while (0)
 #endif
 
-# define COMPILER_FENCE() do { __asm__ __volatile__ ("" ::: "memory"); } while (0)
+#define COMPILER_FENCE() do { __asm__ __volatile__ ("" ::: "memory"); } while (0)
 
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
@@ -50,7 +50,7 @@ static inline
 void
 shmem_spinlock_lock(shmem_spinlock_t *lock)
 {
-    long val = __sync_add_and_fetch(&lock->enter, 1);
+    long val = __sync_fetch_and_add(&lock->enter, 1);
     while (val != (lock->exit)) {
         SPINLOCK_BODY();
     }

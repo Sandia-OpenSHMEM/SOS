@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <mpp/shmem.h>
+#include <shmem.h>
 
 #define MAX_PE 256
 #define WRDS 5

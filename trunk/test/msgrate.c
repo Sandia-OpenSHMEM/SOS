@@ -24,7 +24,7 @@
  * Adapted to Cray SHMEM by Brian Barrett
  */
 
-#include <mpp/shmem.h>
+#include <shmem.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

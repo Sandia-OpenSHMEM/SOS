@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <mpp/shmem.h>
+#include <shmem.h>
 
 #define _IPUT(a) shmem_##a##_iput
 

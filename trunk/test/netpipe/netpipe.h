@@ -222,7 +222,7 @@ enum communication_types {
   #if defined(GPSHMEM)
     #include "gpshmem.h"
   #else
-    #include <mpp/shmem.h>
+    #include <shmem.h>
   #endif
   typedef struct protocolstruct ProtocolStruct;
   struct protocolstruct

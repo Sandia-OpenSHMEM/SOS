@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <mpp/shmem.h>
+#include <shmem.h>
 
 #define DataType long
 

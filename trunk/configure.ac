@@ -59,6 +59,9 @@ AM_PROG_CC_C_O
 AC_PROG_CC_C99
 AC_C_INLINE
 AM_PROG_AR
+AC_PATH_PROG([PERL],[perl])
+AC_PROG_CXX
+AC_PROG_FC
 
 if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
   CFLAGS="$CFLAGS -Wall -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wcomment -pedantic"
@@ -105,11 +108,16 @@ dnl final output
 
 LT_INIT
 
+OPAL_CASE_SENSITIVE_FS_SETUP
+
 if test -n "$with_portals4" ; then
   DISTCHECK_CONFIGURE_FLAGS="--with-portals4=${with_portals4}"
 fi
 if test -n "$with_xpmem" ; then
   DISTCHECK_CONFIGURE_FLAGS="--with-xpmem=${with_xpmem}"
+fi
+if test -n "$with_pmi" ; then
+  DISTCHECK_CONFIGURE_FLAGS="--with-pmi=${with_pmi}"
 fi
 AC_SUBST(DISTCHECK_CONFIGURE_FLAGS)
 
@@ -123,6 +131,12 @@ CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS $XPMEM_CPPFLAGS $pmi_CPPFLAGS"
 LDFLAGS="$LDFLAGS $portals4_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS"
 LIBS="$LIBS $portals4_LIBS $XPMEM_LIBS $pmi_LIBS"
 CPPFLAGS="$CPPFLAGS"' -I$(top_srcdir)'
+
+# wrapper compiler gorp
+WRAPPER_COMPILER_EXTRA_LDFLAGS="$portlas4_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS"
+WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS $XPMEM_LIBS $pmi_LIBS"
+AC_SUBST(WRAPPER_COMPILER_EXTRA_LDFLAGS)
+AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
 
 AC_CONFIG_FILES([Makefile mpp/Makefile src/Makefile test/Makefile])
 AC_OUTPUT

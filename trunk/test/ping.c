@@ -4,7 +4,7 @@
  * For yod -c X ./ping
  * Proc0 puts nWords to Proc1 ... Proc(X-1)
  */
-#include <mpp/shmem.h>
+#include <shmem.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

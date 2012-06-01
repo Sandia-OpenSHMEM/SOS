@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
-#include "mpp/shmem.h"
+#include "shmem.h"
 #include "shmem_internal.h"
 #include "runtime.h"
 

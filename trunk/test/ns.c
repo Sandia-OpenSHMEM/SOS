@@ -9,7 +9,7 @@
 #include <string.h>
 #include <getopt.h>
 
-#include <mpp/shmem.h>
+#include <shmem.h>
 
 static int atoi_scaled(char *s);
 static void usage(char *pgm);

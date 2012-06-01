@@ -22,7 +22,7 @@
 #include <errno.h>
 #include <unistd.h>
 
-#include "mpp/shmem.h"
+#include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"
 #include "runtime.h"
@@ -38,9 +38,12 @@ ptl_handle_le_t shmem_transport_portals4_heap_le_h = PTL_INVALID_HANDLE;
 ptl_handle_ct_t shmem_transport_portals4_target_ct_h = PTL_INVALID_HANDLE;
 ptl_handle_ct_t shmem_transport_portals4_put_ct_h = PTL_INVALID_HANDLE;
 ptl_handle_ct_t shmem_transport_portals4_get_ct_h = PTL_INVALID_HANDLE;
-ptl_handle_eq_t shmem_transport_portals4_put_eq_h = PTL_INVALID_HANDLE;
-ptl_handle_eq_t shmem_transport_portals4_err_eq_h = PTL_INVALID_HANDLE;
+ptl_handle_eq_t shmem_transport_portals4_eq_h = PTL_INVALID_HANDLE;
 
+shmem_free_list_t *shmem_transport_portals4_bounce_buffers = NULL;
+shmem_free_list_t *shmem_transport_portals4_long_frags = NULL;
+
+ptl_size_t shmem_transport_portals4_bounce_buffer_size = 0;
 ptl_size_t shmem_transport_portals4_max_volatile_size = 0;
 ptl_size_t shmem_transport_portals4_max_atomic_size = 0;
 ptl_size_t shmem_transport_portals4_max_fetch_atomic_size = 0;
@@ -49,6 +52,26 @@ ptl_size_t shmem_transport_portals4_pending_put_counter = 0;
 ptl_size_t shmem_transport_portals4_pending_get_counter = 0;
 
 static ptl_ni_limits_t ni_limits;
+
+
+static
+void
+init_bounce_buffer(shmem_free_list_item_t *item)
+{
+    shmem_transport_portals4_frag_t *frag =
+        (shmem_transport_portals4_frag_t*) item;
+    frag->type = SHMEM_TRANSPORT_PORTALS4_TYPE_BOUNCE;
+}
+
+static
+void
+init_long_frag(shmem_free_list_item_t *item)
+{
+    shmem_transport_portals4_frag_t *frag =
+        (shmem_transport_portals4_frag_t*) item;
+    frag->type = SHMEM_TRANSPORT_PORTALS4_TYPE_LONG;
+}
+
 
 static void
 cleanup_handles(void)
@@ -61,9 +84,6 @@ cleanup_handles(void)
     }
     if (PTL_OK != PtlHandleIsEqual(shmem_transport_portals4_put_volatile_md_h, PTL_INVALID_HANDLE)) {
         PtlMDRelease(shmem_transport_portals4_put_volatile_md_h);
-    }
-    if (PTL_OK != PtlHandleIsEqual(shmem_transport_portals4_put_eq_h, PTL_INVALID_HANDLE)) {
-        PtlEQFree(shmem_transport_portals4_put_eq_h);
     }
     if (PTL_OK != PtlHandleIsEqual(shmem_transport_portals4_get_ct_h, PTL_INVALID_HANDLE)) {
         PtlCTFree(shmem_transport_portals4_get_ct_h);
@@ -86,11 +106,17 @@ cleanup_handles(void)
     if (PTL_PT_ANY != shmem_transport_portals4_data_pt) {
         PtlPTFree(shmem_transport_portals4_ni_h, shmem_transport_portals4_data_pt);
     }
-    if (PTL_OK != PtlHandleIsEqual(shmem_transport_portals4_err_eq_h, PTL_INVALID_HANDLE)) {
-        PtlEQFree(shmem_transport_portals4_err_eq_h);
+    if (PTL_OK != PtlHandleIsEqual(shmem_transport_portals4_eq_h, PTL_INVALID_HANDLE)) {
+        PtlEQFree(shmem_transport_portals4_eq_h);
     }
     if (PTL_OK != PtlHandleIsEqual(shmem_transport_portals4_ni_h, PTL_INVALID_HANDLE)) {
         PtlNIFini(shmem_transport_portals4_ni_h);
+    }
+    if (NULL != shmem_transport_portals4_bounce_buffers) {
+        shmem_free_list_destroy(shmem_transport_portals4_bounce_buffers);
+    }
+    if (NULL != shmem_transport_portals4_long_frags) {
+        shmem_free_list_destroy(shmem_transport_portals4_long_frags);
     }
 }
 
@@ -109,6 +135,15 @@ shmem_transport_portals4_init(long eager_size)
         return 1;
     }
 
+    shmem_transport_portals4_bounce_buffer_size = eager_size;
+    shmem_transport_portals4_bounce_buffers = 
+        shmem_free_list_init(sizeof(shmem_transport_portals4_bounce_buffer_t) + eager_size,
+                             init_bounce_buffer);
+
+    shmem_transport_portals4_long_frags =
+        shmem_free_list_init(sizeof(shmem_transport_portals4_long_frag_t),
+                             init_long_frag);
+
     /* Initialize network */
     ni_req_limits.max_entries = 1024;
     ni_req_limits.max_unexpected_headers = 1024;
@@ -124,7 +159,7 @@ shmem_transport_portals4_init(long eager_size)
     ni_req_limits.max_fetch_atomic_size = LONG_MAX;
     ni_req_limits.max_waw_ordered_size = LONG_MAX;
     ni_req_limits.max_war_ordered_size = LONG_MAX;
-    ni_req_limits.max_volatile_size = 512; /* BWB: FIX ME, SEE PORTALS ISSUE 2 */
+    ni_req_limits.max_volatile_size = LONG_MAX;
     ni_req_limits.features = PTL_TOTAL_DATA_ORDERING;
 
     ret = PtlNIInit(PTL_IFACE_DEFAULT,
@@ -237,6 +272,11 @@ shmem_transport_portals4_startup(void)
     shmem_transport_portals4_max_atomic_size = ni_limits.max_atomic_size;
     shmem_transport_portals4_max_fetch_atomic_size = ni_limits.max_fetch_atomic_size;
 
+    if (shmem_transport_portals4_max_volatile_size < sizeof(long double complex)) {
+        fprintf(stderr, "[%03d] ERROR: Max volatile size found to be %lu, too small to continue\n",
+                shmem_internal_my_pe, (unsigned long) shmem_transport_portals4_max_volatile_size);
+        goto cleanup;
+    }
     if (shmem_transport_portals4_max_atomic_size < sizeof(long double complex)) {
         fprintf(stderr, "[%03d] ERROR: Max atomic size found to be %lu, too small to continue\n",
                 shmem_internal_my_pe, (unsigned long) shmem_transport_portals4_max_atomic_size);
@@ -249,7 +289,7 @@ shmem_transport_portals4_startup(void)
     }
 
     /* create portal table entry */
-    ret = PtlEQAlloc(shmem_transport_portals4_ni_h, 64, &shmem_transport_portals4_err_eq_h);
+    ret = PtlEQAlloc(shmem_transport_portals4_ni_h, 64, &shmem_transport_portals4_eq_h);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlEQAlloc failed: %d\n",
                 shmem_internal_my_pe, ret);
@@ -257,7 +297,7 @@ shmem_transport_portals4_startup(void)
     }
     ret = PtlPTAlloc(shmem_transport_portals4_ni_h,
                      0,
-                     shmem_transport_portals4_err_eq_h,
+                     shmem_transport_portals4_eq_h,
                      DATA_IDX,
                      &shmem_transport_portals4_data_pt);
     if (PTL_OK != ret) {
@@ -267,7 +307,7 @@ shmem_transport_portals4_startup(void)
     }
     ret = PtlPTAlloc(shmem_transport_portals4_ni_h,
                      0,
-                     shmem_transport_portals4_err_eq_h,
+                     shmem_transport_portals4_eq_h,
                      HEAP_IDX,
                      &shmem_transport_portals4_heap_pt);
     if (PTL_OK != ret) {
@@ -338,17 +378,11 @@ shmem_transport_portals4_startup(void)
                 shmem_internal_my_pe, ret);
         goto cleanup;
     }
-    ret = PtlEQAlloc(shmem_transport_portals4_ni_h, 64, &shmem_transport_portals4_put_eq_h);
-    if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlEQAlloc of put eq failed: %d\n",
-                shmem_internal_my_pe, ret);
-        goto cleanup;
-    }
 
     md.start = 0;
     md.length = SIZE_MAX;
     md.options = PTL_MD_EVENT_CT_ACK;
-    md.eq_handle = shmem_transport_portals4_put_eq_h;
+    md.eq_handle = shmem_transport_portals4_eq_h;
     md.ct_handle = shmem_transport_portals4_put_ct_h;
     ret = PtlMDBind(shmem_transport_portals4_ni_h,
                     &md,
@@ -365,7 +399,7 @@ shmem_transport_portals4_startup(void)
     md.options = PTL_MD_EVENT_CT_ACK |
         PTL_MD_EVENT_SUCCESS_DISABLE |
         PTL_MD_VOLATILE;
-    md.eq_handle = shmem_transport_portals4_err_eq_h;
+    md.eq_handle = shmem_transport_portals4_eq_h;
     md.ct_handle = shmem_transport_portals4_put_ct_h;
     ret = PtlMDBind(shmem_transport_portals4_ni_h,
                     &md,
@@ -380,7 +414,7 @@ shmem_transport_portals4_startup(void)
     md.length = SIZE_MAX;
     md.options = PTL_MD_EVENT_CT_REPLY | 
         PTL_MD_EVENT_SUCCESS_DISABLE;
-    md.eq_handle = shmem_transport_portals4_err_eq_h;
+    md.eq_handle = shmem_transport_portals4_eq_h;
     md.ct_handle = shmem_transport_portals4_get_ct_h;
     ret = PtlMDBind(shmem_transport_portals4_ni_h,
                     &md,

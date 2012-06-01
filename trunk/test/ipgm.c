@@ -25,7 +25,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include <mpp/shmem.h>
+#include <shmem.h>
 
 #define DFLT_NWORDS 16
 #define DFLT_LOOPS 16

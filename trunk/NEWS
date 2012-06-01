@@ -7,6 +7,9 @@ Portals SHMEM NEWS -- history of user-visible changes.
 - Added support for using a PMI infrastructure for run-time support.
 - Implemented support for XPMEM put/get operations on shared memory
   nodes.
+- Add oshcc, oshCC, and oshc++ wrapper compilers
+- Install shmem.h into both $includedir/mpp/shmem.h and
+  $includedir/shmem.h
 
 1.0a5
 -----

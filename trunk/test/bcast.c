@@ -6,7 +6,7 @@
  * Loop - shmem_broadcast_all() with increasing data amount.
  */
 
-#include <mpp/shmem.h>
+#include <shmem.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>

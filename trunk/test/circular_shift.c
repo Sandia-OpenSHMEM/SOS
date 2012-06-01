@@ -1,6 +1,6 @@
 /* circular shift bbb into aaa */
 
-#include <mpp/shmem.h>
+#include <shmem.h>
 
 int aaa, bbb;
 
