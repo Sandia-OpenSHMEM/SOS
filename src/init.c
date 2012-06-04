@@ -12,6 +12,7 @@
 
 #include "config.h"
 
+#define _GNU_SOURCE /* for asprintf */
 #include <stdlib.h>
 #include <sys/time.h>
 #include <sys/param.h>

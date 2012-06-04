@@ -62,7 +62,7 @@ struct shmem_transport_portals4_long_frag_t {
     shmem_transport_portals4_frag_t frag;
     char complete;
 };
-typedef struct shmem_transport_portals4_bounce_buffer_t shmem_transport_portals4_bounce_buffer_t;
+typedef struct shmem_transport_portals4_long_frag_t shmem_transport_portals4_long_frag_t;
 
 #ifdef ENABLE_ERROR_CHECKING
 #define PORTALS4_GET_REMOTE_ACCESS(target, pt, offset)                  \
