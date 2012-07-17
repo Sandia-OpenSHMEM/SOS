@@ -1,15 +1,15 @@
 /* spam - shmem performance amalgamation
  *
- * one2many -     timed loops of [PE-0 put 512 bytes to 1..(npes-1) PEs
- * many2one -     timed loops of [PE-0 get 512 bytes to 1..(npes-1) PEs
- * all2all_get -  timed loops of get 512 bytes all-2-all.
- * all2all_put -  timed loops of put 512 bytes all-2-all.
- * neighbor_put - timed loops of put 512 bytes to next neighbor.
- * neighbor_get - timed loops of get 512 bytes to next neighbor.
- * bcast -        timed loops of broadcast 512 bytes to all.
- * collect -      timed loops of collect 512 bytes from all PEs to 0.
- * fcollect -     timed loops of fcollect 512 bytes from all PEs to 0.
-*/
+ * one2many -     timed loops of [PE-0 put 2048 bytes to 1..(npes-1) PEs
+ * many2one -     timed loops of [PE-0 get 2048 bytes to 1..(npes-1) PEs
+ * all2all_get -  timed loops of get 2048 bytes all-2-all.
+ * all2all_put -  timed loops of put 2048 bytes all-2-all.
+ * neighbor_put - timed loops of put 2048 bytes to next neighbor.
+ * neighbor_get - timed loops of get 2048 bytes to next neighbor.
+ * bcast -        timed loops of broadcast 2048 bytes to all.
+ * collect -      timed loops of collect 2048 bytes from all PEs to 0.
+ * fcollect -     timed loops of fcollect 2048 bytes from all PEs to 0.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,7 +18,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include <shmem.h>
+#include <mpp/shmem.h>
 
 void one2many_put(int *dst, int *src, int Elems, int me, int npe, int laps);
 void many2one_get(int *dst, int *src, int Elems, int me, int npe, int laps);
@@ -34,15 +34,15 @@ static int atoi_scaled(char *s);
 static void usage(char *pgm);
 
 int Verbose=1;
-int All2=1;
-int Bcast=1;
-int Collect=1;
-int Many=1;
-int Neighbor=1;
+int All2=0;
+int Bcast=0;
+int Collect=0;
+int Many=0;
+int Neighbor=0;
 
 #define DFLT_LOOPS 20000
 
-#define N_ELEMENTS 128    /* 512 bytes as ints */
+#define N_ELEMENTS 512    /* # ints */
 
 int
 main(int argc, char **argv)
@@ -62,29 +62,10 @@ main(int argc, char **argv)
     else
         pgm = argv[0];
 
-    /* captialized switches exclude all test except for one.
-     * lower-case switch enable specific test.
-     * -A == only the All2All tests.
-     * -b == enable broadcast test.
-     */
-    while ((i = getopt (argc, argv, "hve:l:ABCMNabcmn")) != EOF) {
+    /* lower-case switch enable only a specific test; otherwise run all tests */
+    while ((i = getopt (argc, argv, "hvqe:l:abcmn")) != EOF) {
         switch (i)
         {
-          case 'A': // only All2all Tx/Rx tests
-              Bcast = Collect = Many = Neighbor = 0;
-              break;
-          case 'B': // only braodcast
-              All2 = Collect = Many = Neighbor = 0;
-              break;
-          case 'C': // only collect/fcollect
-              All2 = Bcast = Many = Neighbor = 0;
-              break;
-          case 'M': // only Many2one + one2Many
-              All2 = Bcast = Collect = Neighbor = 0;
-              break;
-          case 'N': // only Neighbor Tx/Rx tests
-              All2 = Bcast = Collect = Many = 0;
-              break;
           case 'a':
               All2++;
               break;
@@ -99,6 +80,9 @@ main(int argc, char **argv)
               break;
           case 'n':
               Neighbor++;
+              break;
+          case 'q':
+              Verbose=0;
               break;
           case 'v':
               Verbose++;
@@ -128,8 +112,10 @@ main(int argc, char **argv)
         }
     }
 
-	source = (int *) shmalloc( elements * sizeof(*source) );
+    if (All2==0 && Bcast==0 && Collect==0 && Many==0 && Neighbor==0)
+        All2 = Bcast = Collect = Many = Neighbor = 1;
 
+	source = (int *) shmalloc( elements * sizeof(*source) );
 	target = (int *) shmalloc( elements * sizeof(*target) );
 
 	for (i = 0; i < elements; i += 1) {
@@ -347,7 +333,7 @@ neighbor_get(int *target, int *src, int elements, int me, int npes, int loops)
     long total_bytes = loops * elements * sizeof(*src);
 
     if (me==0 && Verbose) {
-        fprintf(stdout, "%s: %d loops of get(%ld bytes) to neighbor, %d PEs: ",
+        fprintf(stdout, "%s: %d loops of get(%ld bytes) from neighbor, %d PEs: ",
                 __FUNCTION__, loops, (elements*sizeof(*src)), npes);
         fflush(stdout);
     }
@@ -530,18 +516,14 @@ usage(char *pgm)
         "usage: %s -{lhv}\n"
         "  where:\n"
         "    -l loops (%d)  loop count.\n"
-        "    -e ints  (%d)  # of integers to operate on\n"
-        "    -A             only the all-2-all tests\n"
-        "    -B             only the broadcast tests\n"
-        "    -C             only the collect/fcollect tests\n"
-        "    -M             only the Many-2-one + one-2-Many tests\n"
-        "    -N             only the put/get to/from neighbor PE tests\n"
+        "    -e ints  (%d)  # of integers to Tx\n"
         "    -a             enable all-2-all tests\n"
         "    -b             enable broadcast tests\n"
         "    -c             enable collective tests\n"
         "    -m             enable Many-2-one, one-2-many tests\n"
         "    -n             enable put/get to neighbor PEtests\n"
         "    -v             be verbose, multiple 'v' more verbose\n"
+        "    -q             be silent\n"
         "    -h             this text.\n",
         pgm,DFLT_LOOPS, N_ELEMENTS);
 }
