@@ -39,6 +39,8 @@ options.
 
   Environment variables:
 
+    SMA_INFO: if defined, print (stdout) SHMEM environment variables.
+
     SMA_SYMMETRIC_SIZE (default 64 MiB)
         The allocated size of the symmetric heap which shmalloc() and shfree()
         operates on. The size value can be scaled with a suffix of
