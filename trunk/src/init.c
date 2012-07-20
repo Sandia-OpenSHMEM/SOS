@@ -270,7 +270,7 @@ start_pes(int npes)
             printf("\tCross-over between linear and tree collectives\n");
             printf("SMA_COLL_RADIX          %d\n", radix);
             printf("\tRadix for tree-based collectives\n");
-            printf("SMA_COLL_BOUNCE_SIZE    %ld\n", eager_size);
+            printf("SMA_BOUNCE_SIZE    %ld\n", eager_size);
             printf("\tMaximum message size to bounce buffer\n");
             fflush(NULL);
         }
