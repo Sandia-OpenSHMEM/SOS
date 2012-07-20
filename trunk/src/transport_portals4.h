@@ -178,7 +178,7 @@ shmem_transport_portals4_put(void *target, const void *source, size_t len, int p
                      buff,
                      0);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
-        tmp = 0;
+        tmp = 1;
 
     } else {
         ret = PtlPut(shmem_transport_portals4_put_event_md_h,
@@ -211,15 +211,13 @@ shmem_transport_portals4_put_wait(int count)
         ret = PtlEQWait(shmem_transport_portals4_eq_h, &ev);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
         if (ev.ni_fail_type != PTL_OK) { RAISE_ERROR(ev.ni_fail_type); }
-
-        if (NULL == ev.user_ptr) {
-            /* it's one of the long messages we're waiting for */
-            count--;
-        } else {
+        count--;
+        if (ev.user_ptr) {
             /* it's a short send completing */
             shmem_free_list_free(shmem_transport_portals4_bounce_buffers,
                                  ev.user_ptr);
         }
+        /* else !ev.user_ptr it's one of the long messages we're waiting for */
     }
 }
 
