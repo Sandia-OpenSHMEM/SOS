@@ -137,7 +137,7 @@ shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
     }
 #endif
 
-    if (PE_size <= tree_crossover) {
+    if (PE_size < tree_crossover) {
         if (PE_start == shmem_internal_my_pe) {
             int pe, i;
             /* wait for N - 1 callins up the tree */
