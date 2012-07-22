@@ -261,6 +261,9 @@ start_pes(int npes)
             printf("SMA_VERSION             %s\n", 
                    (NULL != getenv("SMA_VERSION")) ? "Set" : "Not set");
             printf("\tIf set, print library version at startup\n");
+            printf("SMA_INFO                %s\n", 
+                   (NULL != getenv("SMA_VERSION")) ? "Set" : "Not set");
+            printf("\tIf set, print this help message at startup\n");
             printf("SMA_SYMMETRIC_SIZE      %ld\n", heap_size);
             printf("\tSymmentric heap size\n");
             printf("SMA_COLL_CROSSOVER      %d\n", crossover);
