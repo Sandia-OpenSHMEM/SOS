@@ -154,7 +154,7 @@ start_pes(int npes)
     radix = get_env_long("COLL_RADIX", 0, 3);
     crossover = get_env_long("COLL_CROSSOVER", 0, 256);
     heap_size = get_env_long("SYMMETRIC_SIZE", 1, 64 * 1024 * 1024);
-    eager_size = get_env_long("BOUNCE_SIZE", 1, 2048);
+    eager_size = get_env_long("BOUNCE_SIZE", 1, 0);
 
     /* Find symmetric data */
 #ifdef __APPLE__
