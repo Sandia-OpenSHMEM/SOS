@@ -14,11 +14,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/time.h>
 #include <getopt.h>
 #include <string.h>
 #include <assert.h>
 
+#ifndef PORTALS_SHMEM_H
+#include <shmem.h>
+#else
 #include <mpp/shmem.h>
+#endif
 
 void one2many_put(int *dst, int *src, int Elems, int me, int npe, int laps);
 void many2one_get(int *dst, int *src, int Elems, int me, int npe, int laps);
@@ -32,6 +37,10 @@ void fcollect(int *dst, int *src, int Elems, int me, int npes, int laps);
 
 static int atoi_scaled(char *s);
 static void usage(char *pgm);
+
+#ifndef PORTALS_SHMEM_H
+static double shmem_wtime(void);
+#endif
 
 int Verbose=1;
 int All2=0;
@@ -159,7 +168,7 @@ void
 one2many_put(int *target, int *src, int elements, int me, int npes, int loops)
 {
     int i, pe;
-	double start_time, time_taken=0.0;
+	double start_time, elapsed_time;
     long total_bytes = loops * elements * sizeof(*src) * (npes - 1);
 
 	if (me == 0) {
@@ -170,20 +179,19 @@ one2many_put(int *target, int *src, int elements, int me, int npes, int loops)
 	shmem_barrier_all();
 
 	if (me == 0) {
+	    start_time = shmem_wtime();
 	    for(i = 0; i < loops; i++) {
-	        for(pe = 1; pe < npes; pe++) {
-	            start_time = shmem_wtime();
+	        for(pe = 1; pe < npes; pe++)
 	            shmem_int_put(target, src, elements, pe);
-	            time_taken += (shmem_wtime() - start_time);
-            }
 	    }
+	    elapsed_time = shmem_wtime() - start_time;
 
 	    if (Verbose) {
-            printf("%7.3f secs\n", time_taken);
+            printf("%7.3f secs\n", elapsed_time);
             printf("  %7.5f usecs / put(), %ld Kbytes @ %7.4f MB/sec\n\n",
-                (time_taken/((double)loops*(npes-1)))*1000000.0,
+                (elapsed_time/((double)loops*(npes-1)))*1000000.0,
                 (total_bytes/1024),
-                ((double)total_bytes/(1024.0*1024.0)) / time_taken );
+                ((double)total_bytes/(1024.0*1024.0)) / elapsed_time );
         }
     }
 	shmem_barrier_all();
@@ -193,7 +201,7 @@ void
 many2one_get(int *target, int *src, int elements, int me, int npes, int loops)
 {
     int i, pe;
-	double start_time, time_taken=0.0;
+	double start_time, elapsed_time;
     long total_bytes = loops * elements * sizeof(*src) * (npes - 1);
 
 	if (me == 0) {
@@ -205,20 +213,19 @@ many2one_get(int *target, int *src, int elements, int me, int npes, int loops)
 	shmem_barrier_all();
 
 	if (me == 0) {
+	    start_time = shmem_wtime();
 	    for(i = 0; i < loops; i++) {
-	        for(pe = 1; pe < npes; pe++) {
-	            start_time = shmem_wtime();
+	        for(pe = 1; pe < npes; pe++)
 	            shmem_int_get(target, src, elements, pe);
-	            time_taken += (shmem_wtime() - start_time);
-            }
 	    }
+	    elapsed_time = shmem_wtime() - start_time;
 
 	    if (Verbose) {
-            printf("%7.3f secs\n", time_taken);
+            printf("%7.3f secs\n", elapsed_time);
             printf("  %7.5f usecs / get(), %ld Kbytes @ %7.4f MB/sec\n\n",
-                (time_taken/((double)loops*(npes-1)))*1000000.0,
+                (elapsed_time/((double)loops*(npes-1)))*1000000.0,
                 (total_bytes/1024),
-                ((double)total_bytes/(1024.0*1024.0)) / time_taken );
+                ((double)total_bytes/(1024.0*1024.0)) / elapsed_time );
         }
     }
 	shmem_barrier_all();
@@ -228,7 +235,7 @@ void
 all2all_get(int *target, int *src, int elements, int me, int npes, int loops)
 {
     int i, pe;
-	double start_time, time_taken=0.0;
+	double start_time, elapsed_time;
     long total_bytes = loops * elements * sizeof(*src) * npes;
 
     if (me==0 && Verbose) {
@@ -238,20 +245,19 @@ all2all_get(int *target, int *src, int elements, int me, int npes, int loops)
     }
 	shmem_barrier_all();
 
+    start_time = shmem_wtime();
     for(i = 0; i < loops; i++) {
-        for(pe = 0; pe < npes; pe++) {
-            start_time = shmem_wtime();
+        for(pe = 0; pe < npes; pe++)
             shmem_int_get(target, src, elements, pe);
-            time_taken += (shmem_wtime() - start_time);
-           }
     }
+    elapsed_time = shmem_wtime() - start_time;
 
     if (me==0 && Verbose) {
-        printf("%7.3f secs\n", time_taken);
+        printf("%7.3f secs\n", elapsed_time);
         printf("  %7.5f usecs / get(), %ld Kbytes @ %7.4f MB/sec\n\n",
-                (time_taken/((double)loops*npes))*1000000.0,
+                (elapsed_time/((double)loops*npes))*1000000.0,
                 (total_bytes/1024),
-                ((double)total_bytes/(1024.0*1024.0)) / time_taken );
+                ((double)total_bytes/(1024.0*1024.0)) / elapsed_time );
     }
 
 	shmem_barrier_all();
@@ -262,7 +268,7 @@ void
 all2all_put(int *target, int *src, int elements, int me, int npes, int loops)
 {
     int i, pe;
-	double start_time, time_taken=0.0;
+	double start_time, elapsed_time;
     long total_bytes = loops * elements * sizeof(*src) * npes;
 
     if (me==0 && Verbose) {
@@ -273,20 +279,19 @@ all2all_put(int *target, int *src, int elements, int me, int npes, int loops)
 
 	shmem_barrier_all();
 
+    start_time = shmem_wtime();
     for(i = 0; i < loops; i++) {
-        for(pe = 0; pe < npes; pe++) {
-            start_time = shmem_wtime();
+        for(pe = 0; pe < npes; pe++)
             shmem_int_put(target, src, elements, pe);
-            time_taken += (shmem_wtime() - start_time);
-           }
     }
+    elapsed_time = shmem_wtime() - start_time;
 
     if (me==0 && Verbose) {
-        printf("%7.3f secs\n", time_taken);
+        printf("%7.3f secs\n", elapsed_time);
         printf("  %7.5f usecs / put(), %ld Kbytes @ %7.4f MB/sec\n\n",
-                (time_taken/((double)loops*npes))*1000000.0,
+                (elapsed_time/((double)loops*npes))*1000000.0,
                 (total_bytes/1024),
-                ((double)total_bytes/(1024.0*1024.0)) / time_taken );
+                ((double)total_bytes/(1024.0*1024.0)) / elapsed_time );
     }
 
 	shmem_barrier_all();
@@ -296,7 +301,7 @@ void
 neighbor_put(int *target, int *src, int elements, int me, int npes, int loops)
 {
     int i, neighbor_pe;
-	double start_time, time_taken=0.0;
+	double start_time, elapsed_time;
     long total_bytes = loops * elements * sizeof(*src);
 
     if (me==0 && Verbose) {
@@ -309,18 +314,17 @@ neighbor_put(int *target, int *src, int elements, int me, int npes, int loops)
 
     neighbor_pe = (me + 1) % npes;
 
-    for(i = 0; i < loops; i++) {
-        start_time = shmem_wtime();
+    start_time = shmem_wtime();
+    for(i = 0; i < loops; i++)
         shmem_int_put(target, src, elements, neighbor_pe);
-        time_taken += (shmem_wtime() - start_time);
-    }
+    elapsed_time = shmem_wtime() - start_time;
 
     if (me==0 && Verbose) {
-        printf("%7.3f secs\n", time_taken);
+        printf("%7.3f secs\n", elapsed_time);
         printf("  %7.5f usecs / put(), %ld Kbytes @ %7.4f MB/sec\n\n",
-                (time_taken/((double)loops*npes))*1000000.0,
+                (elapsed_time/((double)loops*npes))*1000000.0,
                 (total_bytes/1024),
-                ((double)total_bytes/(1024.0*1024.0)) / time_taken );
+                ((double)total_bytes/(1024.0*1024.0)) / elapsed_time );
     }
 	shmem_barrier_all();
 }
@@ -329,7 +333,7 @@ void
 neighbor_get(int *target, int *src, int elements, int me, int npes, int loops)
 {
     int i, neighbor_pe;
-	double start_time, time_taken=0.0;
+	double start_time, elapsed_time;
     long total_bytes = loops * elements * sizeof(*src);
 
     if (me==0 && Verbose) {
@@ -342,18 +346,17 @@ neighbor_get(int *target, int *src, int elements, int me, int npes, int loops)
 
     neighbor_pe = (me + 1) % npes;
 
-    for(i = 0; i < loops; i++) {
-        start_time = shmem_wtime();
+    start_time = shmem_wtime();
+    for(i = 0; i < loops; i++)
         shmem_int_get(target, src, elements, neighbor_pe);
-        time_taken += (shmem_wtime() - start_time);
-    }
+    elapsed_time = shmem_wtime() - start_time;
 
     if (me==0 && Verbose) {
-        printf("%7.3f secs\n", time_taken);
+        printf("%7.3f secs\n", elapsed_time);
         printf("  %7.5f usecs / get(), %ld Kbytes @ %7.4f MB/sec\n\n",
-                (time_taken/((double)loops*npes))*1000000.0,
+                (elapsed_time/((double)loops*npes))*1000000.0,
                 (total_bytes/1024),
-                ((double)total_bytes/(1024.0*1024.0)) / time_taken );
+                ((double)total_bytes/(1024.0*1024.0)) / elapsed_time );
     }
 	shmem_barrier_all();
 }
@@ -363,7 +366,7 @@ void
 bcast(int *target, int *src, int elements, int me, int npes, int loops)
 {
     int i;
-	double start_time, time_taken=0.0;
+	double start_time, elapsed_time;
     long *ps, *pSync, *pSync1;
     long total_bytes = loops * elements * sizeof(*src);
 
@@ -381,19 +384,19 @@ bcast(int *target, int *src, int elements, int me, int npes, int loops)
 
 	shmem_barrier_all();
 
+    start_time = shmem_wtime();
     for(i = 0; i < loops; i++) {
         ps = (i & 1) ? pSync1 : pSync;
-        start_time = shmem_wtime();
         shmem_broadcast32( target, src, elements, 0, 0, 0, npes, ps );
-        time_taken += (shmem_wtime() - start_time);
     }
+    elapsed_time = shmem_wtime() - start_time;
 
     if (me==0 && Verbose) {
-        printf("%7.3f secs\n", time_taken);
+        printf("%7.3f secs\n", elapsed_time);
         printf("  %7.5f usecs / broadcast32(), %ld Kbytes @ %7.4f MB/sec\n\n",
-                (time_taken/((double)loops*npes))*1000000.0,
+                (elapsed_time/((double)loops*npes))*1000000.0,
                 (total_bytes/1024),
-                ((double)total_bytes/(1024.0*1024.0)) / time_taken );
+                ((double)total_bytes/(1024.0*1024.0)) / elapsed_time );
     }
 	shmem_barrier_all();
     shfree( pSync );
@@ -404,7 +407,7 @@ void
 collect(int *target, int *src, int elements, int me, int npes, int loops)
 {
     int i;
-	double start_time, time_taken=0.0;
+	double start_time, elapsed_time;
     long total_bytes = loops * elements * sizeof(*src);
     long *ps, *pSync, *pSync1;
 
@@ -423,19 +426,19 @@ collect(int *target, int *src, int elements, int me, int npes, int loops)
 
 	shmem_barrier_all();
 
+    start_time = shmem_wtime();
     for(i = 0; i < loops; i++) {
         ps = (i & 1) ? pSync1 : pSync;
-        start_time = shmem_wtime();
         shmem_collect32( target, src, elements, 0, 0, npes, ps );
-        time_taken += (shmem_wtime() - start_time);
     }
+    elapsed_time = shmem_wtime() - start_time;
 
     if (me==0 && Verbose) {
-        printf("%7.3f secs\n", time_taken);
+        printf("%7.3f secs\n", elapsed_time);
         printf("  %7.5f usecs / collect32(), %ld Kbytes @ %7.4f MB/sec\n\n",
-                (time_taken/((double)loops*npes))*1000000.0,
+                (elapsed_time/((double)loops*npes))*1000000.0,
                 (total_bytes/1024),
-                ((double)total_bytes/(1024.0*1024.0)) / time_taken );
+                ((double)total_bytes/(1024.0*1024.0)) / elapsed_time );
     }
 	shmem_barrier_all();
 	shfree(target);
@@ -449,7 +452,7 @@ void
 fcollect(int *target, int *src, int elements, int me, int npes, int loops)
 {
     int i;
-	double start_time, time_taken=0.0;
+	double start_time, elapsed_time;
     long total_bytes = loops * elements * sizeof(*src);
     long *ps, *pSync, *pSync1;
 
@@ -468,19 +471,19 @@ fcollect(int *target, int *src, int elements, int me, int npes, int loops)
 
 	shmem_barrier_all();
 
+    start_time = shmem_wtime();
     for(i = 0; i < loops; i++) {
         ps = &pSync[(i&1)];
-        start_time = shmem_wtime();
         shmem_fcollect32( target, src, elements, 0, 0, npes, ps );
-        time_taken += (shmem_wtime() - start_time);
     }
+    elapsed_time = shmem_wtime() - start_time;
 
     if (me==0 && Verbose) {
-        printf("%7.3f secs\n", time_taken);
+        printf("%7.3f secs\n", elapsed_time);
         printf("  %7.5f usecs / fcollect32(), %ld Kbytes @ %7.4f MB/sec\n\n",
-                (time_taken/((double)loops*npes))*1000000.0,
+                (elapsed_time/((double)loops*npes))*1000000.0,
                 (total_bytes/1024),
-                ((double)total_bytes/(1024.0*1024.0)) / time_taken );
+                ((double)total_bytes/(1024.0*1024.0)) / elapsed_time );
     }
 	shmem_barrier_all();
 	shfree(target);
@@ -523,8 +526,23 @@ usage(char *pgm)
         "    -m             enable Many-2-one, one-2-many tests\n"
         "    -n             enable put/get to neighbor PEtests\n"
         "    -v             be verbose, multiple 'v' more verbose\n"
-        "    -q             be silent\n"
+        "    -q             be quite\n"
         "    -h             this text.\n",
         pgm,DFLT_LOOPS, N_ELEMENTS);
 }
 
+
+#ifndef PORTALS_SHMEM_H
+
+double
+shmem_wtime(void)
+{
+    double wtime;
+    struct timeval tv;
+
+    gettimeofday(&tv, NULL);
+    wtime = tv.tv_sec;
+    wtime += (double)tv.tv_usec / 1000000.0;
+    return wtime;
+}
+#endif
