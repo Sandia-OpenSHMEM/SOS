@@ -106,16 +106,29 @@ shmem_internal_symmetric_fini(void)
 }
 
 
+void*
+shmalloc_init(size_t size)
+{
+    return dlmalloc(size);
+}
+
+
 void *
 shmalloc(size_t size)
 {
+    void *ret;
+
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
-    return dlmalloc(size);
+    ret = dlmalloc(size);
+
+    shmem_barrier_all();
+
+    return ret;
 }
 
 
@@ -129,30 +142,44 @@ shfree(void *ptr)
 #endif
 
     dlfree(ptr);
+
+    shmem_barrier_all();
 }
 
 
 void *
 shrealloc(void *ptr, size_t size)
 {
+    void *ret;
+
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
-    return dlrealloc(ptr, size);
+    ret = dlrealloc(ptr, size);
+
+    shmem_barrier_all();
+
+    return ret;
 }
 
 
 void *
 shmemalign(size_t alignment, size_t size)
 {
+    void *ret;
+
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
-    return dlmemalign(alignment, size);
+    ret = dlmemalign(alignment, size);
+
+    shmem_barrier_all();
+
+    return ret;
 }
