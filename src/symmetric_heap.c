@@ -12,15 +12,16 @@
 
 #include "config.h"
 
-#include <portals4.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/mman.h>
 
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"
 
 static char *shmem_internal_heap_curr = NULL;
+static int shmem_internal_use_malloc = 0;
 
 void* shmem_internal_get_next(int incr);
 void* dlmalloc(size_t);
@@ -28,6 +29,9 @@ void  dlfree(void*);
 void* dlrealloc(void*, size_t);
 void* dlmemalign(size_t, size_t);
 
+/* shmalloc and friends are defined to not be thread safe, so this is
+   fine.  If they change that definition, this is no longer fine and
+   needs to be made thread safe. */
 void*
 shmem_internal_get_next(int incr)
 {
@@ -40,78 +44,67 @@ shmem_internal_get_next(int incr)
     return orig;
 }
 
-#define USE_MMAP 1
-
-#if USE_MMAP
-
-static void *mmap_alloc(long bytes);
-
-#include <sys/mman.h>
-#ifdef __APPLE__
-#include <mach-o/getsect.h>
-#endif
-
-#define AGIG (1024UL*1024UL*1024UL)
 
 /* alloc VM space starting @ '_end' + 1GB */
-static void *mmap_alloc(long bytes)
+#define ONEGIG (1024UL*1024UL*1024UL)
+static void *mmap_alloc(size_t bytes)
 {
-    unsigned long base;
-    void *symHeap;
-#ifdef __APPLE__
-    char *init_end = (char*) get_end();
-#else
-    extern char * _end;
-    char *init_end = _end;
-#endif
+    void *requested_base = 
+        (void*) (((unsigned long) shmem_internal_data_base + 
+                  shmem_internal_data_length + 2 * ONEGIG) & ~(ONEGIG - 1));
+    void *ret;
 
-    base = (((unsigned long)init_end) + 2*AGIG) & ~(AGIG -1);  // round to next GB boundary.
-    symHeap = mmap( (void*) base,
-                    (size_t) bytes,
-                    PROT_READ|PROT_WRITE,
-                    MAP_ANON | MAP_PRIVATE,
-                    -1,
-                    0 );
-    if (symHeap == MAP_FAILED) {
+    ret = mmap(requested_base,
+               bytes,
+               PROT_READ | PROT_WRITE,
+               MAP_ANON | MAP_PRIVATE,
+               0,
+               0);
+    if (ret == MAP_FAILED) {
         perror("mmap()");
-        symHeap = NULL;
     }
-    return symHeap;
+    return ret;
 }
-#endif
 
 
 int
-shmem_internal_symmetric_init(long req_len)
+shmem_internal_symmetric_init(size_t requested_length, int use_malloc)
 {
-    /* add library overhead such that the max can be shmalloc()'ed */
-    shmem_internal_heap_length = req_len + (1024*1024);
-#if USE_MMAP
-    shmem_internal_heap_base =
-    shmem_internal_heap_curr = mmap_alloc(shmem_internal_heap_length);
-#else
-    shmem_internal_heap_base = shmem_internal_heap_curr = malloc(shmem_internal_heap_length);
-#endif
-    if (NULL == shmem_internal_heap_base)  return -1;
+    shmem_internal_use_malloc = use_malloc;
 
-    return 0;
+    /* add library overhead such that the max can be shmalloc()'ed */
+    shmem_internal_heap_length = requested_length + (1024*1024);
+
+    if (0 == shmem_internal_use_malloc) {
+        shmem_internal_heap_base =
+            shmem_internal_heap_curr = 
+            mmap_alloc(shmem_internal_heap_length);
+    } else {
+        shmem_internal_heap_base = 
+            shmem_internal_heap_curr = 
+            malloc(shmem_internal_heap_length);
+    }
+
+    return (NULL == shmem_internal_heap_base) ? -1 : 0;
 }
+
 
 int
 shmem_internal_symmetric_fini(void)
 {
     if (NULL != shmem_internal_heap_base) {
-#if USE_MMAP
-        munmap( (void*)shmem_internal_heap_base, (size_t)shmem_internal_heap_length );
-#else
-        free(shmem_internal_heap_base);
-#endif
+        if (0 == shmem_internal_use_malloc) {
+            munmap( (void*)shmem_internal_heap_base, (size_t)shmem_internal_heap_length );
+        } else {
+            free(shmem_internal_heap_base);
+        }
         shmem_internal_heap_length = 0;
         shmem_internal_heap_base = shmem_internal_heap_curr = NULL;
     }
 
     return 0;
 }
+
 
 void *
 shmalloc(size_t size)

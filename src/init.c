@@ -137,6 +137,7 @@ start_pes(int npes)
     int ret;
     int radix = -1, crossover = -1;
     long heap_size, eager_size;
+    int heap_use_malloc = 0;
 
     if (shmem_internal_initialized) {
         RAISE_ERROR_STR("attempt to reinitialize library");
@@ -155,6 +156,7 @@ start_pes(int npes)
     crossover = get_env_long("COLL_CROSSOVER", 0, 256);
     heap_size = get_env_long("SYMMETRIC_SIZE", 1, 64 * 1024 * 1024);
     eager_size = get_env_long("BOUNCE_SIZE", 1, 0);
+    heap_use_malloc = get_env_long("SYMMETRIC_HEAP_USE_MALLOC", 0, 0);
 
     /* Find symmetric data */
 #ifdef __APPLE__
@@ -173,7 +175,7 @@ start_pes(int npes)
 #endif
 
     /* create symmetric heap */
-    ret = shmem_internal_symmetric_init(heap_size);
+    ret = shmem_internal_symmetric_init(heap_size, heap_use_malloc);
     if (0 != ret) {
         fprintf(stderr,
                 "[%03d] ERROR: symmetric heap initialization failed: %d\n",
