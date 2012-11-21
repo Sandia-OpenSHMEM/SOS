@@ -68,7 +68,7 @@ shmem_internal_collectives_init(int requested_crossover,
     tree_crossover = requested_crossover;
 
     /* initialize barrier_all psync array */
-    barrier_all_psync = shmalloc(sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
+    barrier_all_psync = shmalloc_init(sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
     if (NULL == barrier_all_psync) return -1;
     bzero(barrier_all_psync, sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
 
