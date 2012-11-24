@@ -13,6 +13,7 @@ all: $(check_PROGRAMS)
 
 TESTS = \
 	hello \
+     hello_f \
 	circular_shift \
 	accessible_ping \
 	max_reduction \
@@ -67,9 +68,13 @@ PROCS ?= 2
 TESTS_ENVIRONMENT = yod -np $(PROCS)
 
 AM_CPPFLAGS = -I$(top_srcdir)/mpp
+AM_FCFLAGS = -I$(top_srcdir)/mpp
 
 hello_SOURCES = hello.c
 hello_LDADD = $(top_builddir)/src/libsma.la
+
+hello_f_SOURCES = hello_f.f90
+hello_f_LDADD = $(top_builddir)/src/libsma.la
 
 circular_shift_SOURCES = circular_shift.c
 circular_shift_LDADD = $(top_builddir)/src/libsma.la
