@@ -20,10 +20,10 @@ libsma_la_SOURCES = \
 	runtime-pmi.c \
 	shmem_internal.h \
 	shmem_comm.h \
+	malloc.c \
 	init.c \
 	query.c \
 	accessibility.c \
-	malloc.c \
 	symmetric_heap.c \
 	remote_pointer.c \
 	data.c \
@@ -31,7 +31,10 @@ libsma_la_SOURCES = \
 	synchronization.c \
 	collectives.c \
 	lock.c \
-	cache_management.c
+	cache_management.c \
+	init_f.c \
+     query_f.c \
+	accessibility_f.c
 
 if USE_PORTALS4
 libsma_la_SOURCES += \
@@ -45,9 +48,8 @@ libsma_la_SOURCES += \
 	transport_xpmem.c
 endif
 
-# add oshfort to bin_SCRIPTS and CLEANFILES once we have a fortran interface...
-bin_SCRIPTS = oshcc oshc++
-CLEANFILES += oshcc oshc++
+bin_SCRIPTS = oshcc oshc++ oshfort
+CLEANFILES += oshcc oshc++ oshfort
 if CASE_SENSITIVE_FS
 bin_SCRIPTS += oshCC
 CLEANFILES += oshCC
@@ -76,10 +78,10 @@ oshc++: shmem_compiler_script.in Makefile
 	@chmod +x oshc++
 
 oshCC: shmem_compiler_script.in Makefile
-	$(AM_V_SED)@$(do_subst) -e 's|[@]LANG[@]|C++|g' < $(srcdir)/shmem_compiler_script.in > oshCC
+	$(AM_V_SED)$(do_subst) -e 's|[@]LANG[@]|C++|g' < $(srcdir)/shmem_compiler_script.in > oshCC
 	@chmod +x oshCC
 
 oshfort: shmem_compiler_script.in Makefile
-	$(AM_V_SED)@$(do_subst) -e 's|[@]LANG[@]|C++|g' < $(srcdir)/shmem_compiler_script.in > oshfort
+	$(AM_V_SED)$(do_subst) -e 's|[@]LANG[@]|Fortran|g' < $(srcdir)/shmem_compiler_script.in > oshfort
 	@chmod +x oshfort
 

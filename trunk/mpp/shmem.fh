@@ -1,0 +1,41 @@
+! -*- Fortran -*-
+!
+! Copyright 2011 Sandia Corporation. Under the terms of Contract
+! DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
+! retains certain rights in this software.
+!
+! This file is part of the Portals SHMEM software package. For license
+! information, see the LICENSE file in the top level directory of the
+! distribution.
+
+      integer SHMEM_CMP_EQ
+      parameter (SHMEM_CMP_EQ=1)
+      integer SHMEM_CMP_NE
+      parameter (SHMEM_CMP_NE=2)
+      integer SHMEM_CMP_GT
+      parameter (SHMEM_CMP_GT=3)
+      integer SHMEM_CMP_GE
+      parameter (SHMEM_CMP_GE=4)
+      integer SHMEM_CMP_LT
+      parameter (SHMEM_CMP_LT=5)
+      integer SHMEM_CMP_LE
+      parameter (SHMEM_CMP_LE=6)
+
+      integer SHMEM_BCAST_SYNC_SIZE
+      parameter (SHMEM_BCAST_SYNC_SIZE=1)
+      integer SHMEM_REDUCE_SYNC_SIZE
+      parameter (SHMEM_REDUCE_SYNC_SIZE=1)
+      integer SHMEM_BARRIER_SYNC_SIZE
+      parameter (SHMEM_BARRIER_SYNC_SIZE=1)
+      integer SHMEM_COLLECT_SYNC_SIZE
+      parameter (SHMEM_COLLECT_SYNC_SIZE=2)
+      integer SHMEM_REDUCE_MIN_WRKDATA_SIZE
+      parameter (SHMEM_REDUCE_MIN_WRKDATA_SIZE=8)
+
+      integer SHMEM_SYNC_VALUE
+      parameter (SHMEM_SYNC_VALUE=0)
+      
+      logical shmem_pe_accessible
+      logical shmem_addr_accessible
+
+      integer*8 shmem_ptr
