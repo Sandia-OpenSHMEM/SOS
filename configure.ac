@@ -22,6 +22,8 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 dnl information on the package
 AC_CONFIG_HEADERS([src/config.h])
 
+AC_CANONICAL_HOST
+
 AC_ARG_ENABLE([picky],
     [AC_HELP_STRING([--enable-picky],
                     [Enable developer-level compiler pickyness when building (default: disabled)])])
@@ -102,6 +104,15 @@ dnl check for structures
 
 dnl check for compiler characteristics
 
+# disable aslr, if possible at link time
+aslr_LDFLAGS=
+case $host_os in
+darwin*)
+    aslr_LDFLAGS="-Wl,-no_pie"
+    ;;
+esac
+AC_SUBST(aslr_LDFLAGS)
+
 dnl check for library functions
 
 dnl final output
@@ -128,12 +139,12 @@ AC_SUBST(CLEANFILES)
 # last minute updates of the flags so that tests don't fail oddly if
 # portals libdir isn't in LD_LIBRARY_PATH...
 CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS $XPMEM_CPPFLAGS $pmi_CPPFLAGS"
-LDFLAGS="$LDFLAGS $portals4_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS"
+LDFLAGS="$LDFLAGS $portals4_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
 LIBS="$LIBS $portals4_LIBS $XPMEM_LIBS $pmi_LIBS"
 CPPFLAGS="$CPPFLAGS"' -I$(top_srcdir)'
 
 # wrapper compiler gorp
-WRAPPER_COMPILER_EXTRA_LDFLAGS="$portlas4_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS"
+WRAPPER_COMPILER_EXTRA_LDFLAGS="$portlas4_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
 WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS $XPMEM_LIBS $pmi_LIBS"
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LDFLAGS)
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)

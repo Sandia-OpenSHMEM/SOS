@@ -54,32 +54,32 @@ CLEANFILES += oshCC
 endif
 EXTRA_DIST = shmem_compiler_script.in
 
-do_subst = sed -e 's,[@]PERL[@],$(PERL),g' \
-               -e 's,[@]CC[@],$(CC),g' \
-               -e 's,[@]CXX[@],$(CXX),g' \
-               -e 's,[@]FC[@],$(FC),g' \
-               -e 's,[@]WRAPPER_COMPILER_INCLUDEDIR[@],$(includedir),g' \
-               -e 's,[@]WRAPPER_COMPILER_LIBDIR[@],$(libdir),g' \
-               -e 's,[@]WRAPPER_COMPILER_EXTRA_LDFLAGS[@],$(WRAPPER_COMPILER_EXTRA_LDFLAGS),g' \
-               -e 's,[@]WRAPPER_COMPILER_EXTRA_LIBS[@],$(WRAPPER_COMPILER_EXTRA_LIBS),g'
+do_subst = sed -e 's|[@]PERL[@]|$(PERL)|g' \
+               -e 's|[@]CC[@]|$(CC)|g' \
+               -e 's|[@]CXX[@]|$(CXX)|g' \
+               -e 's|[@]FC[@]|$(FC)|g' \
+               -e 's|[@]WRAPPER_COMPILER_INCLUDEDIR[@]|$(includedir)|g' \
+               -e 's|[@]WRAPPER_COMPILER_LIBDIR[@]|$(libdir)|g' \
+               -e 's|[@]WRAPPER_COMPILER_EXTRA_LDFLAGS[@]|$(WRAPPER_COMPILER_EXTRA_LDFLAGS)|g' \
+               -e 's|[@]WRAPPER_COMPILER_EXTRA_LIBS[@]|$(WRAPPER_COMPILER_EXTRA_LIBS)|g'
 
 AM_V_SED = $(am__v_SED_@AM_V@)
 am__v_SED_ = $(am__v_SED_@AM_DEFAULT_V@)
 am__v_SED_0 = @echo "  SED     " $@;
 
 oshcc: shmem_compiler_script.in Makefile
-	$(AM_V_SED)$(do_subst) -e 's,[@]LANG[@],C,g' < $(srcdir)/shmem_compiler_script.in > oshcc
+	$(AM_V_SED)$(do_subst) -e 's|[@]LANG[@]|C|g' < $(srcdir)/shmem_compiler_script.in > oshcc
 	@chmod +x oshcc
 
 oshc++: shmem_compiler_script.in Makefile
-	$(AM_V_SED)$(do_subst) -e 's,[@]LANG[@],C++,g' < $(srcdir)/shmem_compiler_script.in > oshc++
+	$(AM_V_SED)$(do_subst) -e 's|[@]LANG[@]|C++|g' < $(srcdir)/shmem_compiler_script.in > oshc++
 	@chmod +x oshc++
 
 oshCC: shmem_compiler_script.in Makefile
-	$(AM_V_SED)@$(do_subst) -e 's,[@]LANG[@],C++,g' < $(srcdir)/shmem_compiler_script.in > oshCC
+	$(AM_V_SED)@$(do_subst) -e 's|[@]LANG[@]|C++|g' < $(srcdir)/shmem_compiler_script.in > oshCC
 	@chmod +x oshCC
 
 oshfort: shmem_compiler_script.in Makefile
-	$(AM_V_SED)@$(do_subst) -e 's,[@]LANG[@],C++,g' < $(srcdir)/shmem_compiler_script.in > oshfort
+	$(AM_V_SED)@$(do_subst) -e 's|[@]LANG[@]|C++|g' < $(srcdir)/shmem_compiler_script.in > oshfort
 	@chmod +x oshfort
 
