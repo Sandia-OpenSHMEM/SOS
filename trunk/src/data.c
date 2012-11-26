@@ -33,7 +33,7 @@ shmem_float_p(float *addr, float value, int pe)
     }
 #endif
 
-    ret = shmem_internal_put(addr, &value, sizeof(value), pe);
+    ret = shmem_internal_put_single(addr, &value, sizeof(value), pe);
     shmem_internal_put_wait(ret);
 }
 
@@ -49,7 +49,7 @@ shmem_double_p(double *addr, double value, int pe)
     }
 #endif
 
-    ret = shmem_internal_put(addr, &value, sizeof(value), pe);
+    ret = shmem_internal_put_single(addr, &value, sizeof(value), pe);
     shmem_internal_put_wait(ret);
 }
 
@@ -65,7 +65,7 @@ shmem_longdouble_p(long double *addr, long double value, int pe)
     }
 #endif
 
-    ret = shmem_internal_put(addr, &value, sizeof(value), pe);
+    ret = shmem_internal_put_single(addr, &value, sizeof(value), pe);
     shmem_internal_put_wait(ret);
 }
 
@@ -81,7 +81,7 @@ shmem_char_p(char *addr, char value, int pe)
     }
 #endif
 
-    ret = shmem_internal_put(addr, &value, sizeof(value), pe);
+    ret = shmem_internal_put_single(addr, &value, sizeof(value), pe);
     shmem_internal_put_wait(ret);
 }
 
@@ -97,7 +97,7 @@ shmem_short_p(short *addr, short value, int pe)
     }
 #endif
 
-    ret = shmem_internal_put(addr, &value, sizeof(value), pe);
+    ret = shmem_internal_put_single(addr, &value, sizeof(value), pe);
     shmem_internal_put_wait(ret);
 }
 
@@ -113,7 +113,7 @@ shmem_int_p(int *addr, int value, int pe)
     }
 #endif
 
-    ret = shmem_internal_put(addr, &value, sizeof(value), pe);    
+    ret = shmem_internal_put_single(addr, &value, sizeof(value), pe);    
     shmem_internal_put_wait(ret);
 }
 
@@ -129,7 +129,7 @@ shmem_long_p(long *addr, long value, int pe)
     }
 #endif
 
-    ret = shmem_internal_put(addr, &value, sizeof(value), pe);
+    ret = shmem_internal_put_single(addr, &value, sizeof(value), pe);
     shmem_internal_put_wait(ret);
 }
 
@@ -145,7 +145,7 @@ shmem_longlong_p(long long *addr, long long value, int pe)
     }
 #endif
 
-    ret = shmem_internal_put(addr, &value, sizeof(value), pe);
+    ret = shmem_internal_put_single(addr, &value, sizeof(value), pe);
     shmem_internal_put_wait(ret);
 }
 

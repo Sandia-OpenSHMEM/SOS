@@ -44,6 +44,28 @@ extern char *shmem_internal_location_array;
 #include "transport_xpmem.h"
 #endif
 
+static inline
+int
+shmem_internal_put_single(void *target, const void *source, size_t len, int pe)
+{
+    int node_rank;
+
+    if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
+#if USE_XPMEM
+        shmem_transport_xpmem_put(target, source, len, pe, node_rank);
+        return 0;
+#else
+        RAISE_ERROR_STR("No path to peer");
+#endif
+    } else {
+#if USE_PORTALS4
+        return shmem_transport_portals4_put_single(target, source, len, pe);
+#else
+        RAISE_ERROR_STR("No path to peer");
+#endif
+    }
+}
+
         
 static inline
 int
