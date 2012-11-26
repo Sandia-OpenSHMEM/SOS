@@ -133,7 +133,34 @@ shmem_transport_portals4_fence(void)
     return 0;
 }
 
-        
+
+static inline
+int
+shmem_transport_portals4_put_single(void *target, const void *source, size_t len, int pe)
+{
+    int ret;
+    ptl_process_t peer;
+    ptl_pt_index_t pt;
+    long offset;
+    peer.rank = pe;
+    PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
+
+    ret = PtlPut(shmem_transport_portals4_put_volatile_md_h,
+                 (ptl_size_t) source,
+                 len,
+                 PTL_CT_ACK_REQ,
+                 peer,
+                 pt,
+                 0,
+                 offset,
+                 NULL,
+                 0);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+
+    return 0;
+}
+
+
 static inline
 int
 shmem_transport_portals4_put(void *target, const void *source, size_t len, int pe)
