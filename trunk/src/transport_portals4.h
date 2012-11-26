@@ -135,7 +135,7 @@ shmem_transport_portals4_fence(void)
 
 
 static inline
-int
+void
 shmem_transport_portals4_put_single(void *target, const void *source, size_t len, int pe)
 {
     int ret;
@@ -144,6 +144,8 @@ shmem_transport_portals4_put_single(void *target, const void *source, size_t len
     long offset;
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
+
+    assert(len <= shmem_transport_portals4_max_volatile_size);
 
     ret = PtlPut(shmem_transport_portals4_put_volatile_md_h,
                  (ptl_size_t) source,
@@ -156,8 +158,7 @@ shmem_transport_portals4_put_single(void *target, const void *source, size_t len
                  NULL,
                  0);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-
-    return 0;
+    shmem_transport_portals4_pending_put_counter += 1;
 }
 
 
@@ -291,7 +292,7 @@ shmem_transport_portals4_get_wait(void)
 
 
 static inline
-int
+void
 shmem_transport_portals4_swap(void *target, void *source, void *dest, size_t len, 
                     int pe, ptl_datatype_t datatype)
 {
@@ -303,10 +304,14 @@ shmem_transport_portals4_swap(void *target, void *source, void *dest, size_t len
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
     assert(len <= sizeof(long double complex));
+    assert(len <= shmem_transport_portals4_max_volatile_size);
 
+    /* note: No ack is generated on the ct associated with the
+       volatile md because the reply comes back on the get md.  So no
+       need to increment the put counter */
     ret = PtlSwap(shmem_transport_portals4_get_md_h,
                   (ptl_size_t) dest,
-                  shmem_transport_portals4_put_event_md_h,
+                  shmem_transport_portals4_put_volatile_md_h,
                   (ptl_size_t) source,
                   len,
                   peer,
@@ -320,13 +325,11 @@ shmem_transport_portals4_swap(void *target, void *source, void *dest, size_t len
                   datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
     shmem_transport_portals4_pending_get_counter++;
-
-    return 1;
 }
 
 
 static inline
-int
+void
 shmem_transport_portals4_cswap(void *target, void *source, void *dest, void *operand, size_t len, 
                      int pe, ptl_datatype_t datatype)
 {
@@ -338,10 +341,14 @@ shmem_transport_portals4_cswap(void *target, void *source, void *dest, void *ope
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
     assert(len <= sizeof(long double complex));
+    assert(len <= shmem_transport_portals4_max_volatile_size);
 
+    /* note: No ack is generated on the ct associated with the
+       volatile md because the reply comes back on the get md.  So no
+       need to increment the put counter */
     ret = PtlSwap(shmem_transport_portals4_get_md_h,
                   (ptl_size_t) dest,
-                  shmem_transport_portals4_put_event_md_h,
+                  shmem_transport_portals4_put_volatile_md_h,
                   (ptl_size_t) source,
                   len,
                   peer,
@@ -355,13 +362,11 @@ shmem_transport_portals4_cswap(void *target, void *source, void *dest, void *ope
                   datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
     shmem_transport_portals4_pending_get_counter++;
-
-    return 1;
 }
 
 
 static inline
-int
+void
 shmem_transport_portals4_mswap(void *target, void *source, void *dest, void *mask, size_t len, 
                      int pe, ptl_datatype_t datatype)
 {
@@ -373,10 +378,14 @@ shmem_transport_portals4_mswap(void *target, void *source, void *dest, void *mas
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
     assert(len <= sizeof(long double complex));
+    assert(len <= shmem_transport_portals4_max_volatile_size);
 
+    /* note: No ack is generated on the ct associated with the
+       volatile md because the reply comes back on the get md.  So no
+       need to increment the put counter */
     ret = PtlSwap(shmem_transport_portals4_get_md_h,
                   (ptl_size_t) dest,
-                  shmem_transport_portals4_put_event_md_h,
+                  shmem_transport_portals4_put_volatile_md_h,
                   (ptl_size_t) source,
                   len,
                   peer,
@@ -390,8 +399,37 @@ shmem_transport_portals4_mswap(void *target, void *source, void *dest, void *mas
                   datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
     shmem_transport_portals4_pending_get_counter++;
+}
 
-    return 1;
+
+static inline
+void
+shmem_transport_portals4_atomic_single(void *target, void *source, size_t len,
+                                       int pe, ptl_op_t op, ptl_datatype_t datatype)
+{
+    int ret;
+    ptl_pt_index_t pt;
+    long offset;
+    ptl_process_t peer;
+    peer.rank = pe;
+    PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
+
+    assert(len <= shmem_transport_portals4_max_volatile_size);
+
+    ret = PtlAtomic(shmem_transport_portals4_put_volatile_md_h,
+                    (ptl_size_t) source,
+                    len,
+                    PTL_CT_ACK_REQ,
+                    peer,
+                    pt,
+                    0,
+                    offset,
+                    NULL,
+                    0,
+                    op,
+                    datatype);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+    shmem_transport_portals4_pending_put_counter += 1;
 }
 
 
@@ -478,7 +516,7 @@ shmem_transport_portals4_atomic(void *target, void *source, size_t len,
 
 
 static inline
-int
+void
 shmem_transport_portals4_fetch_atomic(void *target, void *source, void *dest, size_t len,
                             int pe, ptl_op_t op, ptl_datatype_t datatype)
 {
@@ -490,7 +528,11 @@ shmem_transport_portals4_fetch_atomic(void *target, void *source, void *dest, si
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
     assert(len <= shmem_transport_portals4_max_fetch_atomic_size);
+    assert(len <= shmem_transport_portals4_max_volatile_size);
 
+    /* note: No ack is generated on the ct associated with the
+       volatile md because the reply comes back on the get md.  So no
+       need to increment the put counter */
     ret = PtlFetchAtomic(shmem_transport_portals4_get_md_h,
                          (ptl_size_t) dest,
                          shmem_transport_portals4_put_volatile_md_h,
@@ -506,8 +548,6 @@ shmem_transport_portals4_fetch_atomic(void *target, void *source, void *dest, si
                          datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
     shmem_transport_portals4_pending_get_counter++;
-
-    return 0;
 }
 
 #endif

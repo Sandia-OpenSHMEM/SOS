@@ -25,128 +25,104 @@
 void
 shmem_float_p(float *addr, float value, int pe)
 {
-    int ret;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
-    ret = shmem_internal_put_single(addr, &value, sizeof(value), pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_single(addr, &value, sizeof(value), pe);
 }
 
 
 void
 shmem_double_p(double *addr, double value, int pe)
 {
-    int ret;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
-    ret = shmem_internal_put_single(addr, &value, sizeof(value), pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_single(addr, &value, sizeof(value), pe);
 }
 
 
 void
 shmem_longdouble_p(long double *addr, long double value, int pe)
 {
-    int ret;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
-    ret = shmem_internal_put_single(addr, &value, sizeof(value), pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_single(addr, &value, sizeof(value), pe);
 }
 
 
 void
 shmem_char_p(char *addr, char value, int pe)
 {
-    int ret;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
-    ret = shmem_internal_put_single(addr, &value, sizeof(value), pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_single(addr, &value, sizeof(value), pe);
 }
 
 
 void
 shmem_short_p(short *addr, short value, int pe)
 {
-    int ret;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
-    ret = shmem_internal_put_single(addr, &value, sizeof(value), pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_single(addr, &value, sizeof(value), pe);
 }
 
 
 void
 shmem_int_p(int *addr, int value, int pe)
 {
-    int ret;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
-    ret = shmem_internal_put_single(addr, &value, sizeof(value), pe);    
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_single(addr, &value, sizeof(value), pe);    
 }
 
 
 void
 shmem_long_p(long *addr, long value, int pe)
 {
-    int ret;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
-    ret = shmem_internal_put_single(addr, &value, sizeof(value), pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_single(addr, &value, sizeof(value), pe);
 }
 
 
 void
 shmem_longlong_p(long long *addr, long long value, int pe)
 {
-    int ret;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
-    ret = shmem_internal_put_single(addr, &value, sizeof(value), pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_single(addr, &value, sizeof(value), pe);
 }
 
 

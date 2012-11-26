@@ -24,7 +24,6 @@
 float
 shmem_float_swap(float *target, float value, int pe)
 {
-    int ret;
     float newval;
 
 #ifdef ENABLE_ERROR_CHECKING
@@ -33,8 +32,7 @@ shmem_float_swap(float *target, float value, int pe)
     }
 #endif
 
-    ret = shmem_internal_swap(target, &value, &newval, sizeof(float), pe, PTL_FLOAT);
-    shmem_internal_put_wait(ret);
+    shmem_internal_swap(target, &value, &newval, sizeof(float), pe, PTL_FLOAT);
     shmem_internal_get_wait();
     return newval;
 }
@@ -43,7 +41,6 @@ shmem_float_swap(float *target, float value, int pe)
 double
 shmem_double_swap(double *target, double value, int pe)
 {
-    int ret;
     double newval;
 
 #ifdef ENABLE_ERROR_CHECKING
@@ -52,8 +49,7 @@ shmem_double_swap(double *target, double value, int pe)
     }
 #endif
 
-    ret = shmem_internal_swap(target, &value, &newval, sizeof(double), pe, PTL_DOUBLE);
-    shmem_internal_put_wait(ret);
+    shmem_internal_swap(target, &value, &newval, sizeof(double), pe, PTL_DOUBLE);
     shmem_internal_get_wait();
     return newval;
 }
@@ -62,7 +58,6 @@ shmem_double_swap(double *target, double value, int pe)
 int
 shmem_int_swap(int *target, int value, int pe)
 {
-    int ret;
     int newval;
 
 #ifdef ENABLE_ERROR_CHECKING
@@ -71,8 +66,7 @@ shmem_int_swap(int *target, int value, int pe)
     }
 #endif
 
-    ret = shmem_internal_swap(target, &value, &newval, sizeof(int), pe, DTYPE_INT);
-    shmem_internal_put_wait(ret);
+    shmem_internal_swap(target, &value, &newval, sizeof(int), pe, DTYPE_INT);
     shmem_internal_get_wait();
     return newval;
 }
@@ -81,7 +75,6 @@ shmem_int_swap(int *target, int value, int pe)
 long
 shmem_long_swap(long *target, long value, int pe)
 {
-    int ret;
     long newval;
 
 #ifdef ENABLE_ERROR_CHECKING
@@ -90,8 +83,7 @@ shmem_long_swap(long *target, long value, int pe)
     }
 #endif
 
-    ret = shmem_internal_swap(target, &value, &newval, sizeof(long), pe, DTYPE_LONG);
-    shmem_internal_put_wait(ret);
+    shmem_internal_swap(target, &value, &newval, sizeof(long), pe, DTYPE_LONG);
     shmem_internal_get_wait();
     return newval;
 }
@@ -100,7 +92,6 @@ shmem_long_swap(long *target, long value, int pe)
 long long
 shmem_longlong_swap(long long *target, long long value, int pe)
 {
-    int ret;
     long long newval;
 
 #ifdef ENABLE_ERROR_CHECKING
@@ -109,8 +100,7 @@ shmem_longlong_swap(long long *target, long long value, int pe)
     }
 #endif
 
-    ret = shmem_internal_swap(target, &value, &newval, sizeof(long long), pe, DTYPE_LONG_LONG);
-    shmem_internal_put_wait(ret);
+    shmem_internal_swap(target, &value, &newval, sizeof(long long), pe, DTYPE_LONG_LONG);
     shmem_internal_get_wait();
     return newval;
 }
@@ -119,7 +109,6 @@ shmem_longlong_swap(long long *target, long long value, int pe)
 long
 shmem_swap(long *target, long value, int pe)
 {
-    int ret;
     long newval;
 
 #ifdef ENABLE_ERROR_CHECKING
@@ -128,8 +117,7 @@ shmem_swap(long *target, long value, int pe)
     }
 #endif
 
-    ret = shmem_internal_swap(target, &value, &newval, sizeof(long), pe, DTYPE_LONG);
-    shmem_internal_put_wait(ret);
+    shmem_internal_swap(target, &value, &newval, sizeof(long), pe, DTYPE_LONG);
     shmem_internal_get_wait();
     return newval;
 }
@@ -138,7 +126,6 @@ shmem_swap(long *target, long value, int pe)
 int
 shmem_int_cswap(int *target, int cond, int value, int pe)
 {
-    int ret;
     int newval;
 
 #ifdef ENABLE_ERROR_CHECKING
@@ -147,8 +134,7 @@ shmem_int_cswap(int *target, int cond, int value, int pe)
     }
 #endif
 
-    ret = shmem_internal_cswap(target, &value, &newval, &cond, sizeof(int), pe, DTYPE_INT);
-    shmem_internal_put_wait(ret);
+    shmem_internal_cswap(target, &value, &newval, &cond, sizeof(int), pe, DTYPE_INT);
     shmem_internal_get_wait();
     return newval;
 }
@@ -157,7 +143,6 @@ shmem_int_cswap(int *target, int cond, int value, int pe)
 long
 shmem_long_cswap(long *target, long cond, long value, int pe)
 {
-    int ret;
     long newval;
 
 #ifdef ENABLE_ERROR_CHECKING
@@ -166,8 +151,7 @@ shmem_long_cswap(long *target, long cond, long value, int pe)
     }
 #endif
 
-    ret = shmem_internal_cswap(target, &value, &newval, &cond, sizeof(long), pe, DTYPE_LONG);
-    shmem_internal_put_wait(ret);
+    shmem_internal_cswap(target, &value, &newval, &cond, sizeof(long), pe, DTYPE_LONG);
     shmem_internal_get_wait();
     return newval;
 }
@@ -177,7 +161,6 @@ long long
 shmem_longlong_cswap(long long * target, long long cond, 
                      long long value, int pe)
 {
-    int ret;
     long long newval;
 
 #ifdef ENABLE_ERROR_CHECKING
@@ -186,8 +169,7 @@ shmem_longlong_cswap(long long * target, long long cond,
     }
 #endif
 
-    ret = shmem_internal_cswap(target, &value, &newval, &cond, sizeof(long long), pe, DTYPE_LONG_LONG);
-    shmem_internal_put_wait(ret);
+    shmem_internal_cswap(target, &value, &newval, &cond, sizeof(long long), pe, DTYPE_LONG_LONG);
     shmem_internal_get_wait();
     return newval;
 }
@@ -196,7 +178,6 @@ shmem_longlong_cswap(long long * target, long long cond,
 void
 shmem_int_inc(int *target, int pe)
 {
-    int ret;
     int tmp = 1;
 
 #ifdef ENABLE_ERROR_CHECKING
@@ -205,15 +186,13 @@ shmem_int_inc(int *target, int pe)
     }
 #endif
 
-    ret = shmem_internal_atomic(target, &tmp, sizeof(int), pe, PTL_SUM, DTYPE_INT);
-    shmem_internal_put_wait(ret);
+    shmem_internal_atomic_single(target, &tmp, sizeof(int), pe, PTL_SUM, DTYPE_INT);
 }
 
 
 void
 shmem_long_inc(long *target, int pe)
 {
-    int ret;
     long tmp = 1;
 
 #ifdef ENABLE_ERROR_CHECKING
@@ -222,15 +201,13 @@ shmem_long_inc(long *target, int pe)
     }
 #endif
 
-    ret = shmem_internal_atomic(target, &tmp, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
-    shmem_internal_put_wait(ret);
+    shmem_internal_atomic_single(target, &tmp, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
 }
 
 
 void
 shmem_longlong_inc(long long *target, int pe)
 {
-    int ret;
     long long tmp = 1;
 
 #ifdef ENABLE_ERROR_CHECKING
@@ -239,15 +216,13 @@ shmem_longlong_inc(long long *target, int pe)
     }
 #endif
 
-    ret = shmem_internal_atomic(target, &tmp, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
-    shmem_internal_put_wait(ret);
+    shmem_internal_atomic_single(target, &tmp, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
 }
 
 
 int
 shmem_int_finc(int *target, int pe)
 {
-    int ret;
     int oldval, tmp = 1;
 
 #ifdef ENABLE_ERROR_CHECKING
@@ -256,8 +231,7 @@ shmem_int_finc(int *target, int pe)
     }
 #endif
 
-    ret = shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(int), pe, PTL_SUM, DTYPE_INT);
-    shmem_internal_put_wait(ret);
+    shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(int), pe, PTL_SUM, DTYPE_INT);
     shmem_internal_get_wait();
     return oldval;
 }
@@ -266,7 +240,6 @@ shmem_int_finc(int *target, int pe)
 long
 shmem_long_finc(long *target, int pe)
 {
-    int ret;
     long oldval, tmp = 1;
 
 #ifdef ENABLE_ERROR_CHECKING
@@ -275,8 +248,7 @@ shmem_long_finc(long *target, int pe)
     }
 #endif
 
-    ret = shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
-    shmem_internal_put_wait(ret);
+    shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
     shmem_internal_get_wait();
     return oldval;
 }
@@ -285,7 +257,6 @@ shmem_long_finc(long *target, int pe)
 long long
 shmem_longlong_finc(long long *target, int pe)
 {
-    int ret;
     long long oldval, tmp = 1;
 
 #ifdef ENABLE_ERROR_CHECKING
@@ -294,8 +265,7 @@ shmem_longlong_finc(long long *target, int pe)
     }
 #endif
 
-    ret = shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
-    shmem_internal_put_wait(ret);
+    shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
     shmem_internal_get_wait();
     return oldval;
 }
@@ -304,55 +274,45 @@ shmem_longlong_finc(long long *target, int pe)
 void
 shmem_int_add(int *target, int value, int pe)
 {
-    int ret;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
-    ret = shmem_internal_atomic(target, &value, sizeof(int), pe, PTL_SUM, DTYPE_INT);
-    shmem_internal_put_wait(ret);
+    shmem_internal_atomic_single(target, &value, sizeof(int), pe, PTL_SUM, DTYPE_INT);
 }
 
 
 void
 shmem_long_add(long *target, long value, int pe)
 {
-    int ret;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
-    ret = shmem_internal_atomic(target, &value, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
-    shmem_internal_put_wait(ret);
+    shmem_internal_atomic(target, &value, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
 }
 
 
 void
 shmem_longlong_add(long long *target, long long value, int pe)
 {
-    int ret;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
-    ret = shmem_internal_atomic(target, &value, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
-    shmem_internal_put_wait(ret);
+    shmem_internal_atomic(target, &value, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
 }
 
 
 int
 shmem_int_fadd(int *target, int value, int pe)
 {
-    int ret;
     int oldval;
 
 #ifdef ENABLE_ERROR_CHECKING
@@ -361,8 +321,7 @@ shmem_int_fadd(int *target, int value, int pe)
     }
 #endif
 
-    ret = shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(int), pe, PTL_SUM, DTYPE_INT);
-    shmem_internal_put_wait(ret);
+    shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(int), pe, PTL_SUM, DTYPE_INT);
     shmem_internal_get_wait();
     return oldval;
 }
@@ -371,7 +330,6 @@ shmem_int_fadd(int *target, int value, int pe)
 long
 shmem_long_fadd(long *target, long value, int pe)
 {
-    int ret;
     long oldval;
 
 #ifdef ENABLE_ERROR_CHECKING
@@ -380,8 +338,7 @@ shmem_long_fadd(long *target, long value, int pe)
     }
 #endif
 
-    ret = shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
-    shmem_internal_put_wait(ret);
+    shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
     shmem_internal_get_wait();
     return oldval;
 }
@@ -391,7 +348,6 @@ long long
 shmem_longlong_fadd(long long *target, long long value,
                     int pe)
 {
-    int ret;
     long long oldval;
 
 #ifdef ENABLE_ERROR_CHECKING
@@ -400,8 +356,7 @@ shmem_longlong_fadd(long long *target, long long value,
     }
 #endif
 
-    ret = shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
-    shmem_internal_put_wait(ret);
+    shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
     shmem_internal_get_wait();
     return oldval;
 }
