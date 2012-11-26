@@ -33,8 +33,11 @@ libsma_la_SOURCES = \
 	lock.c \
 	cache_management.c \
 	init_f.c \
-     query_f.c \
-	accessibility_f.c
+	query_f.c \
+	accessibility_f.c \
+	symmetric_heap_f.c \
+	remote_pointer_f.c \
+	data_f.c
 
 if USE_PORTALS4
 libsma_la_SOURCES += \
