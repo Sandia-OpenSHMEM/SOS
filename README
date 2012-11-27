@@ -39,6 +39,8 @@ options.
 
   Environment variables:
 
+    SMA_VERSION: if defined, print SHMEM version during start_pes().
+
     SMA_INFO: if defined, print (stdout) SHMEM environment variables.
 
     SMA_SYMMETRIC_SIZE (default 64 MiB)
@@ -54,7 +56,7 @@ options.
         underlying network but greater than this threshold will be
         copied into a bounce buffer and then sent.
 
-    SHMEM_COLL_THRESHOLD (default 8)
+    SHMEM_COLL_CROSSOVER (default 256)
         For num_pes < SHMEM_TREE_THRESHOLD, collective algorithms are
         serial instead of tree based.
 
