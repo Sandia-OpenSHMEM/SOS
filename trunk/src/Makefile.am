@@ -37,7 +37,8 @@ libsma_la_SOURCES = \
 	accessibility_f.c \
 	symmetric_heap_f.c \
 	remote_pointer_f.c \
-	data_f.c
+	data_f.c \
+	atomic_f.c
 
 if USE_PORTALS4
 libsma_la_SOURCES += \

@@ -27,7 +27,7 @@ AC_DEFUN([OMPI_FIND_TYPE],[
 
     AC_CACHE_CHECK([for C type corresponding to $1], type_var,
         [ # Loop over all the types handed to us
-         oft_target_size=$size_var
+         oft_target_size=AS_VAR_GET(size_var)
          oft_real_type=
          AS_IF([test "$oft_target_size" != ""],
              [m4_foreach(oft_type, [$2], 
@@ -45,7 +45,7 @@ AC_DEFUN([OMPI_FIND_TYPE],[
           [AC_MSG_WARN([*** Did not find corresponding C type])])
 
     AC_DEFINE_UNQUOTED([fortran_]m4_translit(m4_bpatsubst(m4_bpatsubst([$1], [*], []), [[^a-zA-Z0-9_]], [_]), [A-Z], [a-z])[_t],
-                       [$type_var], 
+                       [AS_VAR_GET(type_var)], 
                        [C type corresponding to Fortran $1])
 
     unset oft_real_type
