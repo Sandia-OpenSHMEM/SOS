@@ -17,18 +17,18 @@
 
 
 #define FC_SHMEM_PE_ACCESSIBLE FC_FUNC_(shmem_pe_accessible, SHMEM_PE_ACCESSIBLE)
-int FC_SHMEM_PE_ACCESSIBLE(int *pe);
-int
-FC_SHMEM_PE_ACCESSIBLE(int *pe)
+fortran_integer_t FC_SHMEM_PE_ACCESSIBLE(fortran_integer_t *pe);
+fortran_integer_t
+FC_SHMEM_PE_ACCESSIBLE(fortran_integer_t *pe)
 {
      return shmem_pe_accessible(*pe);
 }
 
 
 #define FC_SHMEM_ADDR_ACCESSIBLE FC_FUNC_(shmem_addr_accessible, SHMEM_ADDR_ACCESSIBLE)
-int FC_SHMEM_ADDR_ACCESSIBLE(void *addr, int *pe);
-int
-FC_SHMEM_ADDR_ACCESSIBLE(void *addr, int *pe)
+fortran_integer_t FC_SHMEM_ADDR_ACCESSIBLE(void *addr, fortran_integer_t *pe);
+fortran_integer_t
+FC_SHMEM_ADDR_ACCESSIBLE(void *addr, fortran_integer_t *pe)
 {
      return shmem_addr_accessible(addr, *pe);
 }

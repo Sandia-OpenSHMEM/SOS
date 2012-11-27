@@ -69,9 +69,6 @@ AC_FC_WRAPPERS
 if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
   CFLAGS="$CFLAGS -Wall -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wcomment -pedantic"
 fi
-if test "$enable_picky" = "yes" -a "$GXX" = "yes" ; then
-  CXXFLAGS="$CXXFLAGS -Wall -Wno-long-long"
-fi
 
 AC_CACHE_SAVE
 
@@ -96,10 +93,26 @@ ORTE_CHECK_PMI([pmi])
 dnl check for header files
 
 dnl check for types
-SHMEM_FIND_INT_TYPE(short)
-SHMEM_FIND_INT_TYPE(int)
-SHMEM_FIND_INT_TYPE(long)
-SHMEM_FIND_INT_TYPE(long long)
+
+AC_CHECK_SIZEOF([float])
+AC_CHECK_SIZEOF([double])
+AC_CHECK_SIZEOF([long double])
+
+SHMEM_FIND_INT_TYPE([char])
+SHMEM_FIND_INT_TYPE([short])
+SHMEM_FIND_INT_TYPE([int])
+SHMEM_FIND_INT_TYPE([long])
+SHMEM_FIND_INT_TYPE([long long])
+
+OMPI_FORTRAN_GET_SIZEOF([], [CHARACTER])
+OMPI_FORTRAN_GET_SIZEOF([], [COMPLEX])
+OMPI_FORTRAN_GET_SIZEOF([], [DOUBLE PRECISION])
+OMPI_FORTRAN_GET_SIZEOF([], [INTEGER])
+OMPI_FORTRAN_GET_SIZEOF([], [LOGICAL])
+OMPI_FORTRAN_GET_SIZEOF([], [REAL])
+
+OMPI_FIND_TYPE([INTEGER], [char, short, int, long, long long])
+OMPI_FIND_TYPE([DOUBLE PRECISION], [float, double, long double])
 
 dnl check for structures
 
@@ -142,7 +155,6 @@ AC_SUBST(CLEANFILES)
 CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS $XPMEM_CPPFLAGS $pmi_CPPFLAGS"
 LDFLAGS="$LDFLAGS $portals4_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
 LIBS="$LIBS $portals4_LIBS $XPMEM_LIBS $pmi_LIBS"
-CPPFLAGS="$CPPFLAGS"' -I$(top_srcdir)'
 
 # wrapper compiler gorp
 WRAPPER_COMPILER_EXTRA_LDFLAGS="$portlas4_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
