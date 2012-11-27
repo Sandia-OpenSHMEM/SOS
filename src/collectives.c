@@ -351,7 +351,7 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
         if (0 != num_children) {
             int i;
 
-            if (real_root != shmem_internal_my_pe) {
+            if (parent != shmem_internal_my_pe) {
                 /* wait for data arrival message if not the root */
                 shmem_long_wait(pSync, 0);
 
@@ -368,7 +368,7 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
                 ret += shmem_internal_put(target, send_buf, len, children[i]);
             }
             shmem_internal_put_wait(ret);
-    
+
             shmem_fence();
     
             /* send completion ack to all peers */
@@ -381,14 +381,14 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
                 /* wait for acks from everyone */
                 shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 
                                       num_children  + 
-                                      ((real_root == shmem_internal_my_pe) ?
+                                      ((parent == shmem_internal_my_pe) ?
                                        0 : 1));
-
-                /* Clear pSync */
-                shmem_internal_put_single(pSync, &zero, sizeof(zero), 
-                                          shmem_internal_my_pe);
-                shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
             }
+
+            /* Clear pSync */
+            shmem_internal_put_single(pSync, &zero, sizeof(zero), 
+                                      shmem_internal_my_pe);
+            shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
 
         } else {
             /* wait for data arrival message */
