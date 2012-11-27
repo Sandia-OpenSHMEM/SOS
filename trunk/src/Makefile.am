@@ -20,6 +20,7 @@ libsma_la_SOURCES = \
 	runtime-pmi.c \
 	shmem_internal.h \
 	shmem_comm.h \
+	shmem_synchronization.h \
 	malloc.c \
 	init.c \
 	query.c \
@@ -38,7 +39,10 @@ libsma_la_SOURCES = \
 	symmetric_heap_f.c \
 	remote_pointer_f.c \
 	data_f.c \
-	atomic_f.c
+	atomic_f.c \
+	synchronization_f.c \
+	collectives_f.c \
+	lock_f.c
 
 if USE_PORTALS4
 libsma_la_SOURCES += \
