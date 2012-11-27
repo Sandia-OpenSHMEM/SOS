@@ -29,7 +29,6 @@ main(int argc, char *argv[])
 {
 
     extern char *optarg;
-    extern int optind;
     int ch, error;
 	
     int len, start_len, end_len, increment, inc, trials, i;

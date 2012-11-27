@@ -194,7 +194,7 @@ main(int argc, char* argv[])
 				if (Target[k] != (DataType)VAL) {
 					fprintf(stderr, "[%d] Target[%d] %#hx "
 							"!= %#hx?\n",
-							my_pe,k,Target[k],VAL);
+							my_pe,k,Target[k],(DataType)VAL);
 					failures++;
 				}
 				assert(Target[k] == (DataType)VAL);
@@ -238,7 +238,7 @@ main(int argc, char* argv[])
 						fprintf(stderr,
 						"[0] PE(%d)_work[%d] %hd "
 							"!= %hd?\n",
-							l,k,work[k],l);
+							l,k,work[k],(DataType)l);
 						failures++;
 					}
 					assert(wp[k] == l);

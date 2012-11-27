@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 		    target[3] != 7 ||
 		    target[4] != 9)
 		{
-			printf("ERR: target on PE %hd is %hd %hd %hd %hd %hd\n"
+			printf("ERR: target on PE %d is %hd %hd %hd %hd %hd\n"
 				"  Expected 1,3,5,7,9?\n",
 				me, target[0], target[1], target[2],
 				target[3], target[4] );
