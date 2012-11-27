@@ -16,9 +16,9 @@
 
 
 #define FC_START_PES FC_FUNC_(start_pes, START_PES)
-void FC_START_PES(int *npes);
+void FC_START_PES(fortran_integer_t *npes);
 void
-FC_START_PES(int *npes)
+FC_START_PES(fortran_integer_t *npes)
 {
     start_pes(*npes);
 }

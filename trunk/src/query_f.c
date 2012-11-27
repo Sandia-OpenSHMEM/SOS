@@ -19,8 +19,8 @@
 
 
 #define FC_NUM_PES FC_FUNC_(num_pes, NUM_PES)
-int FC_NUM_PES(void);
-int
+fortran_integer_t FC_NUM_PES(void);
+fortran_integer_t
 FC_NUM_PES(void)
 {
      return shmem_internal_num_pes;
@@ -28,8 +28,8 @@ FC_NUM_PES(void)
 
 
 #define FC_SHMEM_N_PES FC_FUNC_(shmem_n_pes, SHMEM_N_PES)
-int FC_SHMEM_N_PES(void);
-int
+fortran_integer_t FC_SHMEM_N_PES(void);
+fortran_integer_t
 FC_SHMEM_N_PES(void)
 {
      return shmem_internal_num_pes;
@@ -37,8 +37,8 @@ FC_SHMEM_N_PES(void)
 
 
 #define FC_MY_PE FC_FUNC_(my_pe, MY_PE)
-int FC_MY_PE(void);
-int
+fortran_integer_t FC_MY_PE(void);
+fortran_integer_t
 FC_MY_PE(void)
 {
      return shmem_internal_my_pe;
@@ -46,16 +46,16 @@ FC_MY_PE(void)
 
 
 #define FC_SHMEM_MY_PE FC_FUNC_(shmem_my_pe, SHMEM_MY_PE)
-int FC_SHMEM_MY_PE(void);
-int
+fortran_integer_t FC_SHMEM_MY_PE(void);
+fortran_integer_t
 FC_SHMEM_MY_PE(void)
 {
      return shmem_internal_my_pe;
 }
 
 #define FC_SHMEM_WTIME FC_FUNC_(shmem_wtime, SHMEM_WTIME)
-double FC_SHMEM_WTIME(void);
-double
+fortran_double_precision_t FC_SHMEM_WTIME(void);
+fortran_double_precision_t
 FC_SHMEM_WTIME(void)
 {
      double wtime;
