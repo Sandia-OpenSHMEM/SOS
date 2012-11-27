@@ -672,5 +672,338 @@ FC_SHMEM_GET128(void *target, void *source, fortran_integer_t *len, fortran_inte
 }
 
 
+#define FC_SHMEM_GETMEM FC_FUNC_(shmem_getmem, SHMEM_GETMEM)
+void FC_SHMEM_GETMEM(void *target, void *source, fortran_integer_t *len, fortran_integer_t *pe);
+void
+FC_SHMEM_GETMEM(void *target, void *source, fortran_integer_t *len, fortran_integer_t *pe)
+{
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    shmem_internal_get(target, source, *len, *pe);
+    shmem_internal_get_wait();
+}
+
+
+#define FC_SHMEM_LOGICAL_GET FC_FUNC_(shmem_logical_get, SHMEM_LOGICAL_GET)
+void FC_SHMEM_LOGICAL_GET(void *target, void *source, fortran_integer_t *len, fortran_integer_t *pe);
+void
+FC_SHMEM_LOGICAL_GET(void *target, void *source, fortran_integer_t *len, fortran_integer_t *pe)
+{
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    shmem_internal_get(target, source, SIZEOF_FORTRAN_LOGICAL * *len, *pe);
+    shmem_internal_get_wait();
+}
+
+
+#define FC_SHMEM_REAL_GET FC_FUNC_(shmem_real_get, SHMEM_REAL_GET)
+void FC_SHMEM_REAL_GET(void *target, void *source, fortran_integer_t *len, fortran_integer_t *pe);
+void
+FC_SHMEM_REAL_GET(void *target, void *source, fortran_integer_t *len, fortran_integer_t *pe)
+{
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    shmem_internal_get(target, source, SIZEOF_FORTRAN_REAL * *len, *pe);
+    shmem_internal_get_wait();
+}
+
+
+#define FC_SHMEM_IGET4 FC_FUNC_(shmem_iget4, SHMEM_IGET4)
+void FC_SHMEM_IGET4(void *targetp, void *sourcep, 
+		    fortran_integer_t *tst, fortran_integer_t *sst,
+		    fortran_integer_t *lenp, fortran_integer_t *pe);
+void
+FC_SHMEM_IGET4(void *targetp, void *sourcep, 
+	       fortran_integer_t *tst, fortran_integer_t *sst,
+	       fortran_integer_t *lenp, fortran_integer_t *pe)
+{
+    fortran_integer_t len = *lenp;
+    char *target = (char*) targetp;
+    char *source = (char*) sourcep;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    for ( ; len > 0 ; --len ) {
+        shmem_internal_get(target, source, 4, *pe);
+	target += (*tst * 4);
+	source += (*sst * 4);
+    }
+    shmem_internal_get_wait();
+}
+
+
+#define FC_SHMEM_IGET8 FC_FUNC_(shmem_iget8, SHMEM_IGET8)
+void FC_SHMEM_IGET8(void *targetp, void *sourcep, 
+		    fortran_integer_t *tst, fortran_integer_t *sst,
+		    fortran_integer_t *lenp, fortran_integer_t *pe);
+void
+FC_SHMEM_IGET8(void *targetp, void *sourcep, 
+	       fortran_integer_t *tst, fortran_integer_t *sst,
+	       fortran_integer_t *lenp, fortran_integer_t *pe)
+{
+    fortran_integer_t len = *lenp;
+    char *target = (char*) targetp;
+    char *source = (char*) sourcep;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    for ( ; len > 0 ; --len ) {
+        shmem_internal_get(target, source, 8, *pe);
+	target += (*tst * 8);
+	source += (*sst * 8);
+    }
+    shmem_internal_get_wait();
+}
+
+
+#define FC_SHMEM_IGET32 FC_FUNC_(shmem_iget32, SHMEM_IGET32)
+void FC_SHMEM_IGET32(void *targetp, void *sourcep, 
+		    fortran_integer_t *tst, fortran_integer_t *sst,
+		    fortran_integer_t *lenp, fortran_integer_t *pe);
+void
+FC_SHMEM_IGET32(void *targetp, void *sourcep, 
+	       fortran_integer_t *tst, fortran_integer_t *sst,
+	       fortran_integer_t *lenp, fortran_integer_t *pe)
+{
+    fortran_integer_t len = *lenp;
+    char *target = (char*) targetp;
+    char *source = (char*) sourcep;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    for ( ; len > 0 ; --len ) {
+        shmem_internal_get(target, source, 4, *pe);
+	target += (*tst * 4);
+	source += (*sst * 4);
+    }
+    shmem_internal_get_wait();
+}
+
+
+#define FC_SHMEM_IGET64 FC_FUNC_(shmem_iget64, SHMEM_IGET64)
+void FC_SHMEM_IGET64(void *targetp, void *sourcep, 
+		    fortran_integer_t *tst, fortran_integer_t *sst,
+		    fortran_integer_t *lenp, fortran_integer_t *pe);
+void
+FC_SHMEM_IGET64(void *targetp, void *sourcep, 
+	       fortran_integer_t *tst, fortran_integer_t *sst,
+	       fortran_integer_t *lenp, fortran_integer_t *pe)
+{
+    fortran_integer_t len = *lenp;
+    char *target = (char*) targetp;
+    char *source = (char*) sourcep;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    for ( ; len > 0 ; --len ) {
+        shmem_internal_get(target, source, 8, *pe);
+	target += (*tst * 8);
+	source += (*sst * 8);
+    }
+    shmem_internal_get_wait();
+}
+
+
+#define FC_SHMEM_IGET128 FC_FUNC_(shmem_iget128, SHMEM_IGET128)
+void FC_SHMEM_IGET128(void *targetp, void *sourcep, 
+		    fortran_integer_t *tst, fortran_integer_t *sst,
+		    fortran_integer_t *lenp, fortran_integer_t *pe);
+void
+FC_SHMEM_IGET128(void *targetp, void *sourcep, 
+	       fortran_integer_t *tst, fortran_integer_t *sst,
+	       fortran_integer_t *lenp, fortran_integer_t *pe)
+{
+    fortran_integer_t len = *lenp;
+    char *target = (char*) targetp;
+    char *source = (char*) sourcep;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    for ( ; len > 0 ; --len ) {
+        shmem_internal_get(target, source, 16, *pe);
+	target += (*tst * 16);
+	source += (*sst * 16);
+    }
+    shmem_internal_get_wait();
+}
+
+
+#define FC_SHMEM_COMPLEX_IGET FC_FUNC_(shmem_complex_iget, SHMEM_COMPLEX_IGET)
+void FC_SHMEM_COMPLEX_IGET(void *targetp, void *sourcep, 
+		    fortran_integer_t *tst, fortran_integer_t *sst,
+		    fortran_integer_t *lenp, fortran_integer_t *pe);
+void
+FC_SHMEM_COMPLEX_IGET(void *targetp, void *sourcep, 
+	       fortran_integer_t *tst, fortran_integer_t *sst,
+	       fortran_integer_t *lenp, fortran_integer_t *pe)
+{
+    fortran_integer_t len = *lenp;
+    char *target = (char*) targetp;
+    char *source = (char*) sourcep;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    for ( ; len > 0 ; --len ) {
+        shmem_internal_get(target, source, SIZEOF_FORTRAN_COMPLEX, *pe);
+	target += (*tst * SIZEOF_FORTRAN_COMPLEX);
+	source += (*sst * SIZEOF_FORTRAN_COMPLEX);
+    }
+    shmem_internal_get_wait();
+}
+
+
+#define FC_SHMEM_DOUBLE_IGET FC_FUNC_(shmem_double_iget, SHMEM_DOUBLE_IGET)
+void FC_SHMEM_DOUBLE_IGET(void *targetp, void *sourcep, 
+		    fortran_integer_t *tst, fortran_integer_t *sst,
+		    fortran_integer_t *lenp, fortran_integer_t *pe);
+void
+FC_SHMEM_DOUBLE_IGET(void *targetp, void *sourcep, 
+	       fortran_integer_t *tst, fortran_integer_t *sst,
+	       fortran_integer_t *lenp, fortran_integer_t *pe)
+{
+    fortran_integer_t len = *lenp;
+    char *target = (char*) targetp;
+    char *source = (char*) sourcep;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    for ( ; len > 0 ; --len ) {
+        shmem_internal_get(target, source, SIZEOF_FORTRAN_DOUBLE_PRECISION, *pe);
+	target += (*tst * SIZEOF_FORTRAN_DOUBLE_PRECISION);
+	source += (*sst * SIZEOF_FORTRAN_DOUBLE_PRECISION);
+    }
+    shmem_internal_get_wait();
+}
+
+
+#define FC_SHMEM_INTEGER_IGET FC_FUNC_(shmem_integer_iget, SHMEM_INTEGER_IGET)
+void FC_SHMEM_INTEGER_IGET(void *targetp, void *sourcep, 
+		    fortran_integer_t *tst, fortran_integer_t *sst,
+		    fortran_integer_t *lenp, fortran_integer_t *pe);
+void
+FC_SHMEM_INTEGER_IGET(void *targetp, void *sourcep, 
+	       fortran_integer_t *tst, fortran_integer_t *sst,
+	       fortran_integer_t *lenp, fortran_integer_t *pe)
+{
+    fortran_integer_t len = *lenp;
+    char *target = (char*) targetp;
+    char *source = (char*) sourcep;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    for ( ; len > 0 ; --len ) {
+        shmem_internal_get(target, source, SIZEOF_FORTRAN_INTEGER, *pe);
+	target += (*tst * SIZEOF_FORTRAN_INTEGER);
+	source += (*sst * SIZEOF_FORTRAN_INTEGER);
+    }
+    shmem_internal_get_wait();
+}
+
+
+#define FC_SHMEM_LOGICAL_IGET FC_FUNC_(shmem_logical_iget, SHMEM_LOGICAL_IGET)
+void FC_SHMEM_LOGICAL_IGET(void *targetp, void *sourcep, 
+		    fortran_integer_t *tst, fortran_integer_t *sst,
+		    fortran_integer_t *lenp, fortran_integer_t *pe);
+void
+FC_SHMEM_LOGICAL_IGET(void *targetp, void *sourcep, 
+	       fortran_integer_t *tst, fortran_integer_t *sst,
+	       fortran_integer_t *lenp, fortran_integer_t *pe)
+{
+    fortran_integer_t len = *lenp;
+    char *target = (char*) targetp;
+    char *source = (char*) sourcep;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    for ( ; len > 0 ; --len ) {
+        shmem_internal_get(target, source, SIZEOF_FORTRAN_LOGICAL, *pe);
+	target += (*tst * SIZEOF_FORTRAN_LOGICAL);
+	source += (*sst * SIZEOF_FORTRAN_LOGICAL);
+    }
+    shmem_internal_get_wait();
+}
+
+
+#define FC_SHMEM_REAL_IGET FC_FUNC_(shmem_real_iget, SHMEM_REAL_IGET)
+void FC_SHMEM_REAL_IGET(void *targetp, void *sourcep, 
+		    fortran_integer_t *tst, fortran_integer_t *sst,
+		    fortran_integer_t *lenp, fortran_integer_t *pe);
+void
+FC_SHMEM_REAL_IGET(void *targetp, void *sourcep, 
+	       fortran_integer_t *tst, fortran_integer_t *sst,
+	       fortran_integer_t *lenp, fortran_integer_t *pe)
+{
+    fortran_integer_t len = *lenp;
+    char *target = (char*) targetp;
+    char *source = (char*) sourcep;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_int_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    for ( ; len > 0 ; --len ) {
+        shmem_internal_get(target, source, SIZEOF_FORTRAN_REAL, *pe);
+	target += (*tst * SIZEOF_FORTRAN_REAL);
+	source += (*sst * SIZEOF_FORTRAN_REAL);
+    }
+    shmem_internal_get_wait();
+}
+
+
+
+
+
+
+
 
 

@@ -86,7 +86,7 @@ EOF
         rm -rf conftest*])
 
     AC_DEFINE_UNQUOTED([SIZEOF_FORTRAN_]m4_translit(m4_bpatsubst(m4_bpatsubst([$2], [*], []), [[^a-zA-Z0-9_]], [_]), [a-z], [A-Z]),
-                       [$type_var], 
+                       [AS_VAR_GET(type_var)], 
                        [Size of Fortran $2])
 
     AS_VAR_POPDEF([type_var])dnl
