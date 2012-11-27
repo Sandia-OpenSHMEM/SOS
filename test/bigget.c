@@ -182,7 +182,7 @@ main(int argc, char **argv)
 
         // average time
         for(i=0,secs=0.0; i < npes; i++)
-            secs =+ total_time[i];
+            secs += total_time[i];
         secs /= (double)npes;
         rate = ((double)bytes/(1024.0*1024.0)) / secs;
         printf("%s: ave %5.3f MB/sec (bytes %ld secs %5.3f)\n",
