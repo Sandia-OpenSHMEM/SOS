@@ -2,49 +2,7 @@
 
 Portals SHMEM NEWS -- history of user-visible changes.
 
+
 1.0a6
 -----
-- Added support for using a PMI infrastructure for run-time support.
-- Implemented support for XPMEM put/get operations on shared memory
-  nodes.
-- Add oshcc, oshCC, and oshc++ wrapper compilers
-- Install shmem.h into both $includedir/mpp/shmem.h and
-  $includedir/shmem.h
-
-1.0a5
------
-- Allow "make distcheck" to work properly with the InfiniBand port.
-- Update to match changes in Portals API (namely addition of SetMap
-  and removal of jobid in permissions).
-
-1.0a4
------
-- Fixed shutdown cleanup problems identified by SFW.
-- Fixed shmem_addr_accessible() to include the symmetric heap and the
-  symmetric data section.
-- Added configure option to remove counting event usage from wait and
-  wait_until calls.
-- Fixed a number of unprefixed global symbols.
-- Fixed completion race condition in collective operations.
-
-1.0a3
------
-- Only map data section (using data_start) instead of everything after
-  the text section for the symmetric data region.
-- Add ability to finalize library at exit.
-- Added support for implementations without total data ordering,
-  at the cost of shmem_fence() and shmem_quiet() being
-  equivalent for those implementations.
-
-1.0a2
------
-- Added --enable-error-checking option to configure to enable
-  basic argument and usage checking inside the SHMEM library.  Off by
-  default, as it negatively impacts performance.
-- Added ability to use either MPI or the Portals over Shared Memory
-  run-time to start parallel applications.
-- Print (useful?) error message before aborting on error.
-
-1.0a1
------
-- Intial public release.
+- Initial public release
