@@ -56,10 +56,14 @@ options.
         underlying network but greater than this threshold will be
         copied into a bounce buffer and then sent.
 
-    SHMEM_COLL_CROSSOVER (default 256)
+    SHMEM_COLL_CROSSOVER (default 4)
         For num_pes < SHMEM_TREE_THRESHOLD, collective algorithms are
         serial instead of tree based.
 
-    SMA_COLL_RADIX (default 3)
+    SMA_COLL_RADIX (default 4)
         Controls the width of the n-ary tree for collectives, such that each
-        node will fanout-send to a max of SMA_COLL_RADIX
+        node will fanout-send to a max of approximately SMA_COLL_RADIX
+
+    SMA_SYMMETRIC_HEAP_USE_MALLOC (default 0)
+        If set to a non-zero integer, will use malloc() instead of
+        mmap() to allocate the symmetric heap.
