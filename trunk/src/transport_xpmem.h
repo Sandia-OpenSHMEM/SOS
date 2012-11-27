@@ -78,6 +78,7 @@ int
 shmem_transport_xpmem_quiet(void)
 {
     __sync_synchronize();
+    return 0;
 }
 
 
@@ -86,6 +87,7 @@ int
 shmem_transport_xpmem_fence(void)
 {
     __sync_synchronize();
+    return 0;
 }
 
 
