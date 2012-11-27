@@ -107,26 +107,36 @@ AC_CHECK_SIZEOF([long double])
 OMPI_FORTRAN_GET_SIZEOF([], [LOGICAL])
 OMPI_FORTRAN_GET_SIZEOF([], [CHARACTER])
 OMPI_FORTRAN_GET_SIZEOF([], [INTEGER])
-OMPI_FORTRAN_GET_SIZEOF([], [INTEGER(KIND=4)])
-OMPI_FORTRAN_GET_SIZEOF([], [INTEGER(KIND=8)])
 OMPI_FORTRAN_GET_SIZEOF([], [REAL])
-OMPI_FORTRAN_GET_SIZEOF([], [REAL(KIND=4)])
-OMPI_FORTRAN_GET_SIZEOF([], [REAL(KIND=8)])
 OMPI_FORTRAN_GET_SIZEOF([], [DOUBLE PRECISION])
 OMPI_FORTRAN_GET_SIZEOF([], [COMPLEX])
 
 SHMEM_FIND_FORTRAN_INT_TYPE([INTEGER])
-SHMEM_FIND_FORTRAN_INT_TYPE([INTEGER(KIND=4)])
-SHMEM_FIND_FORTRAN_INT_TYPE([INTEGER(KIND=8)])
-SHMEM_FIND_FORTRAN_FLOAT_TYPE([REAL(KIND=4)])
-SHMEM_FIND_FORTRAN_FLOAT_TYPE([REAL(KIND=8)])
 
 OMPI_FIND_TYPE([INTEGER], [char, short, int, long, long long])
-OMPI_FIND_TYPE([INTEGER(KIND=4)], [char, short, int, long, long long])
-OMPI_FIND_TYPE([INTEGER(KIND=8)], [char, short, int, long, long long])
 OMPI_FIND_TYPE([DOUBLE PRECISION], [float, double, long double])
-OMPI_FIND_TYPE([REAL(KIND=4)], [float, double, long double])
-OMPI_FIND_TYPE([REAL(KIND=8)], [float, double, long double])
+
+echo "$ompi_cv_fortran_sizeof_INTEGER"
+echo "$ac_cv_sizeof_long" 
+
+if test "$ompi_cv_fortran_sizeof_INTEGER" -lt "$ac_cv_sizeof_long" ; then
+   echo "alpha"
+    FORTRAN_BCAST_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / p" | dc`
+    FORTRAN_REDUCE_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / p" | dc`
+    FORTRAN_BARRIER_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / p" | dc`
+    FORTRAN_COLLECT_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / 2 * p" | dc`
+else
+   echo "beta"
+    FORTRAN_BCAST_SYNC_SIZE=1
+    FORTRAN_REDUCE_SYNC_SIZE=1
+    FORTRAN_BARRIER_SYNC_SIZE=1
+    FORTRAN_COLLECT_SYNC_SIZE=2
+fi
+AC_SUBST(FORTRAN_BCAST_SYNC_SIZE)
+AC_SUBST(FORTRAN_REDUCE_SYNC_SIZE)
+AC_SUBST(FORTRAN_BARRIER_SYNC_SIZE)
+AC_SUBST(FORTRAN_COLLECT_SYNC_SIZE)
+
 
 dnl check for structures
 
@@ -176,7 +186,7 @@ WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS $XPMEM_LIBS $pmi_LIBS"
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LDFLAGS)
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
 
-AC_CONFIG_FILES([Makefile mpp/Makefile src/Makefile test/Makefile])
+AC_CONFIG_FILES([Makefile mpp/Makefile mpp/shmem.fh src/Makefile test/Makefile])
 AC_OUTPUT
 
 echo ""

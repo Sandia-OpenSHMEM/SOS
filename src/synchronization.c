@@ -20,6 +20,7 @@
 #include "shmem_internal.h"
 #include "shmem_comm.h"
 #include "shmem_atomic.h"
+#include "shmem_synchronization.h"
 
 void
 shmem_quiet(void)
@@ -64,92 +65,6 @@ shmem_fence(void)
 #endif
 }
 
-
-#define COMP(type, a, b, ret)                            \
-    do {                                                 \
-        ret = 0;                                         \
-        switch (type) {                                  \
-        case SHMEM_CMP_EQ:                               \
-            if (a == b) ret = 1;                         \
-            break;                                       \
-        case SHMEM_CMP_NE:                               \
-            if (a != b) ret = 1;                         \
-            break;                                       \
-        case SHMEM_CMP_GT:                               \
-            if (a > b) ret = 1;                          \
-            break;                                       \
-        case SHMEM_CMP_GE:                               \
-            if (a >= b) ret = 1;                         \
-            break;                                       \
-        case SHMEM_CMP_LT:                               \
-            if (a < b) ret = 1;                          \
-            break;                                       \
-        case SHMEM_CMP_LE:                               \
-            if (a <= b) ret = 1;                         \
-            break;                                       \
-        default:                                         \
-            RAISE_ERROR(-1);                             \
-        }                                                \
-    } while(0)
-
-
-#if defined(ENABLE_HARD_POLLING) || defined(USE_ON_NODE_COMMS)
-
-#define SHMEM_WAIT(var, value)                           \
-    do {                                                 \
-        while (*var == value) { SPINLOCK_BODY(); }       \
-    } while(0)
-
-#define SHMEM_WAIT_UNTIL(var, cond, value)               \
-    do {                                                 \
-        int cmpret;                                      \
-                                                         \
-        COMP(cond, *var, value, cmpret);                 \
-        while (!cmpret) {                                \
-            SPINLOCK_BODY();                             \
-            COMP(cond, *var, value, cmpret);             \
-        }                                                \
-    } while(0)
-
-#elif defined(USE_PORTALS4)
-
-#define SHMEM_WAIT(var, value)                                          \
-    do {                                                                \
-        int ret;                                                        \
-        ptl_ct_event_t ct;                                              \
-                                                                        \
-        while (*var == value) {                                         \
-            ret = PtlCTGet(shmem_transport_portals4_target_ct_h, &ct);  \
-            if (PTL_OK != ret) { RAISE_ERROR(ret); }                    \
-            if (*var != value) return;                                  \
-            ret = PtlCTWait(shmem_transport_portals4_target_ct_h,       \
-                            ct.success + ct.failure + 1,                \
-                            &ct);                                       \
-            if (PTL_OK != ret) { RAISE_ERROR(ret); }                    \
-        }                                                               \
-    } while(0)
-
-#define SHMEM_WAIT_UNTIL(var, cond, value)                              \
-    do {                                                                \
-        int ret, cmpret;                                                \
-        ptl_ct_event_t ct;                                              \
-                                                                        \
-        COMP(cond, *var, value, cmpret);                                \
-        while (!cmpret) {                                               \
-            ret = PtlCTGet(shmem_transport_portals4_target_ct_h, &ct);  \
-            if (PTL_OK != ret) { RAISE_ERROR(ret); }                    \
-            COMP(cond, *var, value, cmpret);                            \
-            if (cmpret) return;                                         \
-            ret = PtlCTWait(shmem_transport_portals4_target_ct_h,       \
-                            ct.success + ct.failure + 1,                \
-                            &ct);                                       \
-            if (PTL_OK != ret) { RAISE_ERROR(ret); }                    \
-            COMP(cond, *var, value, cmpret);                            \
-        }                                                               \
-    } while(0)
-#else
-#error "SHMEM_WAIT and SHMEM_WAIT_UNTIL not defined!"
-#endif
 
 void
 shmem_short_wait(volatile short *var, short value)

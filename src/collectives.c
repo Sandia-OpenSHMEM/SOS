@@ -21,19 +21,19 @@
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"
+#include "shmem_collectives.h"
+
+long *barrier_all_psync;
+
+int *full_tree_children;
+int full_tree_num_children;
+int full_tree_parent;
+
+int tree_crossover = -1;
+int tree_radix = -1;
 
 
-static long *barrier_all_psync;
-
-static int *full_tree_children;
-static int full_tree_num_children;
-static int full_tree_parent;
-
-static int tree_crossover = -1;
-static int tree_radix = -1;
-
-
-static int
+int
 build_kary_tree(int PE_start, int stride, int PE_size, int *parent, 
                 int *num_children, int *children)
 {
@@ -111,464 +111,28 @@ shmem_internal_collectives_init(int requested_crossover,
 void
 shmem_barrier_all(void)
 {
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
+
     shmem_quiet();
     shmem_barrier(0, 0, shmem_internal_num_pes, barrier_all_psync);
 }
 
 
-/* Simple fan-in/fan-out algorithm. Should be safe to reuse pSync
-   array immediately after return */
 void
 shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
-    int ret = 0;
-    long zero = 0, one = 1;
-    int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
-    if (PE_size < tree_crossover) {
-        if (PE_start == shmem_internal_my_pe) {
-            int pe, i;
-            /* wait for N - 1 callins up the tree */
-            shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size - 1);
-
-            /* Clear pSync */
-            shmem_internal_put_single(pSync, &zero, sizeof(zero), 
-                                     shmem_internal_my_pe);
-            shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
-
-            ret = 0;
-            /* Send acks down psync tree */
-            for (pe = PE_start + stride, i = 1 ; 
-                 i < PE_size ;  
-                 i++, pe += stride) {
-                shmem_internal_put_single(pSync, &one, sizeof(one), pe);
-            }
-
-        } else {
-            /* send message to root */
-            shmem_internal_atomic_single(pSync, &one, sizeof(one), PE_start, 
-                                         PTL_SUM, DTYPE_LONG);
-            /* wait for ack down psync tree */
-            shmem_long_wait(pSync, 0);
-
-            /* Clear pSync */
-            shmem_internal_put_single(pSync, &zero, sizeof(zero), 
-                                      shmem_internal_my_pe);
-            shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
-        }
-
-    } else {
-        int parent, num_children, *children;
-
-        if (PE_size == shmem_n_pes()) {
-            /* we're the full tree, use the binomial tree */
-            parent = full_tree_parent;
-            num_children = full_tree_num_children;
-            children = full_tree_children;
-        } else {
-            children = alloca(sizeof(int) * tree_radix);
-            build_kary_tree(PE_start, stride, PE_size, &parent, 
-                            &num_children, children);
-        }
-
-        if (num_children != 0) {
-            /* Not a pure leaf node */
-
-            int i;
-            /* wait for num_children callins up the tree */
-            shmem_long_wait_until(pSync, SHMEM_CMP_EQ, num_children);
-
-            if (parent == shmem_internal_my_pe) {
-                /* The root of the tree */
-
-                /* Clear pSync */
-                shmem_internal_put_single(pSync, &zero, sizeof(zero), 
-                                          shmem_internal_my_pe);
-                shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
-
-                /* Send acks down to children */
-                ret = 0;
-                for (i = 0 ; i < num_children ; ++i) {
-                    shmem_internal_atomic_single(pSync, &one, sizeof(one), 
-                                                 children[i], 
-                                                 PTL_SUM, DTYPE_LONG);
-                }
-
-            } else {
-                /* Middle of the tree */
-
-                /* send ack to parent */
-                shmem_internal_atomic_single(pSync, &one, sizeof(one), 
-                                             parent, PTL_SUM, DTYPE_LONG);
-
-                /* wait for ack from parent */
-                shmem_long_wait_until(pSync, SHMEM_CMP_EQ, num_children  + 1);
-
-                /* Clear pSync */
-                shmem_internal_put_single(pSync, &zero, sizeof(zero), 
-                                          shmem_internal_my_pe);
-                shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
-
-                /* Send acks down to children */
-                ret = 0;
-                for (i = 0 ; i < num_children ; ++i) {
-                    shmem_internal_atomic_single(pSync, &one, sizeof(one),
-                                                 children[i], 
-                                                 PTL_SUM, DTYPE_LONG);
-                }
-            }
-
-        } else {
-            /* Leaf node */
-
-            /* send message up psync tree */
-            shmem_internal_atomic_single(pSync, &one, sizeof(one), parent, 
-                                         PTL_SUM, DTYPE_LONG);
-
-            /* wait for ack down psync tree */
-            shmem_long_wait(pSync, 0);
-
-            /* Clear pSync */
-            shmem_internal_put_single(pSync, &zero, sizeof(zero), 
-                                      shmem_internal_my_pe);
-            shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
-        }
-    }
-
     shmem_quiet();
-}
-
-
-static inline
-void
-shmem_internal_bcast(void *target, const void *source, size_t len,
-                     int PE_root, int PE_start, int logPE_stride, int PE_size,
-                     long *pSync, int complete)
-{
-    int ret = 0;
-    long zero = 0, one = 1;
-    int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
-    int real_root = PE_start + PE_root * stride;
-
-    if (PE_size < tree_crossover) {
-        if (real_root == shmem_internal_my_pe) {
-            int i, pe;
-
-            /* send data to all peers */
-            for (pe = PE_start,i=0; i < PE_size; pe += stride, i++) {
-                if (pe == shmem_internal_my_pe && source == target) continue;
-                ret += shmem_internal_put(target, source, len, pe);
-            }
-            shmem_internal_put_wait(ret);
-    
-            shmem_fence();
-    
-            /* send completion ack to all peers */
-            for (pe = PE_start,i=0; i < PE_size; pe += stride, i++) {
-                if (pe == shmem_internal_my_pe) continue;
-                shmem_internal_put_single(pSync, &one, sizeof(long), pe);
-            }
-
-            if (1 == complete) {
-                /* wait for acks from everyone */
-                shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size - 1);
-
-                /* Clear pSync */
-                shmem_internal_put_single(pSync, &zero, sizeof(zero), 
-                                          shmem_internal_my_pe);
-                shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
-            }
-
-        } else {
-            /* wait for data arrival message */
-            shmem_long_wait(pSync, 0);
-
-            /* Clear pSync */
-            shmem_internal_put_single(pSync, &zero, sizeof(zero), 
-                                      shmem_internal_my_pe);
-            shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
-            
-            if (1 == complete) {
-                /* send ack back to root */
-                shmem_internal_atomic_single(pSync, &one, sizeof(one), 
-                                             real_root, 
-                                             PTL_SUM, DTYPE_LONG);
-            }
-        }
-
-    } else {
-        int parent, num_children, *children;
-        const void *send_buf = source;
-
-        if (PE_size == shmem_n_pes()) {
-            /* we're the full tree, use the binomial tree */
-            parent = full_tree_parent;
-            num_children = full_tree_num_children;
-            children = full_tree_children;
-        } else {
-            children = alloca(sizeof(int) * tree_radix);
-            build_kary_tree(PE_start, stride, PE_size, &parent, 
-                            &num_children, children);
-        }
-
-        if (real_root != PE_start) {
-            if (shmem_internal_my_pe == PE_start) {
-                /* wait for data arrival message */
-                shmem_long_wait(pSync, 0);
-
-                /* Clear pSync */
-                shmem_internal_put_single(pSync, &zero, sizeof(zero), 
-                                          shmem_internal_my_pe);
-                shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
-                
-                /* send buf is now in the target buffer */
-                send_buf = target;
-                
-            } else if (shmem_internal_my_pe == real_root) {
-                /* send data to 0th entry */
-                ret = shmem_internal_put(target, source, len, PE_start);
-                shmem_fence();
-                shmem_internal_put_single(pSync, &one, sizeof(long), PE_start);
-                shmem_internal_put_wait(ret);
-            }
-
-        } else if (real_root == shmem_internal_my_pe && source != target) {
-            memcpy(target, source, len);
-        }
-
-        if (0 != num_children) {
-            int i;
-
-            if (parent != shmem_internal_my_pe) {
-                /* wait for data arrival message if not the root */
-                shmem_long_wait(pSync, 0);
-
-                /* if complete, send ack */
-                if (1 == complete) {
-                    shmem_internal_atomic_single(pSync, &one, sizeof(one),
-                                                 parent,
-                                                 PTL_SUM, DTYPE_LONG);
-                }
-            }
-
-            /* send data to all leaves */
-            for (i = 0 ; i < num_children ; ++i) {
-                ret += shmem_internal_put(target, send_buf, len, children[i]);
-            }
-            shmem_internal_put_wait(ret);
-
-            shmem_fence();
-    
-            /* send completion ack to all peers */
-            for (i = 0 ; i < num_children ; ++i) {
-                shmem_internal_put_single(pSync, &one, sizeof(long), 
-                                          children[i]);
-            }
-
-            if (1 == complete) {
-                /* wait for acks from everyone */
-                shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 
-                                      num_children  + 
-                                      ((parent == shmem_internal_my_pe) ?
-                                       0 : 1));
-            }
-
-            /* Clear pSync */
-            shmem_internal_put_single(pSync, &zero, sizeof(zero), 
-                                      shmem_internal_my_pe);
-            shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
-
-        } else {
-            /* wait for data arrival message */
-            shmem_long_wait(pSync, 0);
-
-            /* if complete, send ack */
-            if (1 == complete) {
-                shmem_internal_atomic_single(pSync, &one, sizeof(one),
-                                             parent,
-                                             PTL_SUM, DTYPE_LONG);
-            }
-            
-            /* Clear pSync */
-            shmem_internal_put_single(pSync, &zero, sizeof(zero), 
-                                      shmem_internal_my_pe);
-            shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
-        }
-    }
-}
-
-
-/* Simple fan-in with atomics with a twist.  PE_start must initialize
-   its target before allowing any other rank to do the atomic
-   operation.  PE_start does a put from source to target, waits for
-   completion, then sends a ping to each peer's pSync.  At that point,
-   the peers atomic into PE_start's target and send an atomic incr
-   into PE_start's pSync and complete.  PE_start completes when it has
-   PE_size - 1 counters in its pSync. */
-static inline
-void
-shmem_internal_op_to_all(void *target, void *source, int count, int type_size,
-                    int PE_start, int logPE_stride, int PE_size,
-                    void *pWrk, long *pSync, 
-                    ptl_op_t op, ptl_datatype_t datatype)
-{
-    int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
-    int ret = 0;
-    long zero = 0, one = 1;
-
-    if (PE_start == shmem_internal_my_pe) {
-        int pe, i;
-        /* update our target buffer with our contribution */
-        ret = shmem_internal_put(target, source, count * type_size, shmem_internal_my_pe);
-        shmem_fence();
-        shmem_internal_put_wait(ret);
-
-        shmem_internal_put_single(pSync, &one, sizeof(one), shmem_internal_my_pe);
-        shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 1);
-
-        /* let everyone know that it's safe to send to us */
-        for (pe = PE_start + stride, i = 1 ; 
-             i < PE_size ;  
-             i++, pe += stride) {
-            shmem_internal_put_single(pSync, &one, sizeof(one), pe);
-        }
-
-        /* Wait for others to acknowledge sending data */
-        shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size);
-
-        /* reset pSync; atomics used, so have to use Portals op */
-        shmem_internal_put_single(pSync, &zero, sizeof(zero), shmem_internal_my_pe);
-        shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
-
-    } else {
-        /* wait for clear to send */
-        shmem_long_wait(pSync, 0);
-
-        /* reset pSync */
-        pSync[0] = 0;
-
-        /* send data, ack, and wait for completion */
-        ret = shmem_internal_atomic(target, source, count * type_size, PE_start, op, datatype);
-        shmem_fence();
-        shmem_internal_put_wait(ret);
-
-        shmem_internal_atomic_single(pSync, &one, sizeof(one), PE_start, PTL_SUM, DTYPE_LONG);
-    }
-
-    /* broadcast out */
-    shmem_internal_bcast(target, target, count * type_size, 0, PE_start, logPE_stride, PE_size, pSync, 0);
-}
-
-
-/* len can be different on each node, so this is semi-linear.
-   PE_Start starts a copy of his data into target, and increments a
-   length counter, sending that counter to the next PE.  That PE
-   starts the transfer to counter offset, increments the counter, and
-   send the counter to the next PE.  The sends are non-blocking to
-   different peers (PE_start and next), so some overlap is likely.
-   Finally, the last peer sends the counter back to PE_start so that
-   the size of the data to broadcast is known. */
-static inline
-void
-shmem_internal_collect(void *target, const void *source, size_t len,
-                  int PE_start, int logPE_stride, int PE_size, long *pSync)
-{
-    int ret = 0;
-    long tmp[2] = {0, 1};
-    int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
-    int pe;
-    int bcast_len = 0;
-
-    if (PE_size == 1) {
-        if (target != source) memcpy(target, source, len);
-        return;
-    }
-
-    /* collect in PE_start */
-    if (PE_start == shmem_internal_my_pe) {
-        if (target != source) {
-            ret += shmem_internal_put(target, source, len, PE_start);
-        }
-        tmp[0] = len;
-        shmem_internal_put_single(pSync, tmp, 2 * sizeof(long), PE_start + stride);
-        shmem_long_wait(&pSync[1], 0);
-        bcast_len = pSync[0];
-        pSync[0] = pSync[1] = 0;
-
-        /* make sure put to ourselves is completed before broadcast */
-        shmem_quiet();
-
-    } else {
-        /* wait for send data */
-        shmem_long_wait(&pSync[1], 0);
-
-        /* send data to root */
-        ret = shmem_internal_put((char*) target + pSync[0], source, len, PE_start);
-        if (shmem_internal_my_pe == PE_start + stride * (PE_size - 1)) {
-            pe = PE_start;
-
-            /* need to fence if sending completion to root to keep ordering */
-            shmem_internal_put_wait(ret);
-            ret = 0;
-            shmem_fence();
-
-        } else {
-            pe = shmem_internal_my_pe + stride;
-        }
-        tmp[0] = pSync[0] + len;
-        pSync[0] = pSync[1] = 0;
-        shmem_internal_put_single(pSync, tmp, 2 * sizeof(long), pe);
-    }
-
-    /* broadcast out */
-    shmem_internal_bcast(target, target, bcast_len, 0, PE_start, logPE_stride, PE_size, pSync, 0);
-}
-
-
-/* Since offsets can be directly computed, each rank puts directly
-   into their offset in PE_Start's target, then increments a counter
-   in pSync.  PE_start then broadcasts to everyone. */
-static inline
-void
-shmem_internal_fcollect(void *target, const void *source, size_t len,
-                   int PE_start, int logPE_stride, int PE_size, long *pSync)
-{
-    int ret = 0;
-    long tmp = 1;
-    int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
-
-    if (PE_start == shmem_internal_my_pe) {
-        if (source != target) {
-            ret = shmem_internal_put(target, source, len, PE_start);
-            shmem_fence();
-            shmem_internal_put_wait(ret);
-            shmem_internal_atomic_single(pSync, &tmp, sizeof(long), PE_start, PTL_SUM, DTYPE_LONG);
-        }
-        shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size);
-        tmp = 0;
-        shmem_internal_put_single(pSync, &tmp, sizeof(tmp), PE_start);
-        shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
-    } else {
-        size_t offset = ((shmem_internal_my_pe - PE_start) / stride) * len;
-        ret = shmem_internal_put((char*) target + offset, source, len, PE_start);
-        shmem_internal_put_wait(ret);
-        shmem_fence();
-        shmem_internal_atomic_single(pSync, &tmp, sizeof(long), PE_start, PTL_SUM, DTYPE_LONG);
-    }
-    
-    shmem_internal_bcast(target, target, len * PE_size, 0, PE_start, logPE_stride, PE_size, pSync, 0);
+    shmem_internal_barrier(PE_start, logPE_stride, PE_size, pSync);
 }
 
 
@@ -585,7 +149,7 @@ shmem_short_and_to_all(short *target, short *source, int nreduce,
 
     shmem_internal_op_to_all(target, source, nreduce, sizeof(short),
                     PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, PTL_LAND, DTYPE_SHORT);
+                    pWrk, pSync, PTL_BAND, DTYPE_SHORT);
 }
 
 
@@ -602,7 +166,7 @@ shmem_int_and_to_all(int *target, int *source, int nreduce,
 
     shmem_internal_op_to_all(target, source, nreduce, sizeof(int),
                     PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, PTL_LAND, DTYPE_INT);
+                    pWrk, pSync, PTL_BAND, DTYPE_INT);
 }
 
 
@@ -619,7 +183,7 @@ shmem_long_and_to_all(long *target, long *source, int nreduce,
 
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long),
                     PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, PTL_LAND, DTYPE_LONG);
+                    pWrk, pSync, PTL_BAND, DTYPE_LONG);
 }
 
 
@@ -636,7 +200,7 @@ shmem_longlong_and_to_all(long long *target, long long *source, int nreduce,
 
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long long),
                     PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, PTL_LAND, DTYPE_LONG);
+                    pWrk, pSync, PTL_BAND, DTYPE_LONG);
 }
 
 
