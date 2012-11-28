@@ -13,12 +13,12 @@
 #ifndef SHMEM_COLLECTIVES_H
 #define SHMEM_COLLECTIVES_H
 
-long *barrier_all_psync;
-int *full_tree_children;
-int full_tree_num_children;
-int full_tree_parent;
-int tree_crossover;
-int tree_radix;
+extern long *barrier_all_psync;
+extern int *full_tree_children;
+extern int full_tree_num_children;
+extern int full_tree_parent;
+extern int tree_crossover;
+extern int tree_radix;
 
 
 int build_kary_tree(int PE_start, int stride, int PE_size, int *parent, 
