@@ -20,6 +20,7 @@ libsma_la_SOURCES = \
 	runtime-pmi.c \
 	shmem_internal.h \
 	shmem_comm.h \
+	shmem_collectives.h \
 	shmem_synchronization.h \
 	malloc.c \
 	init.c \
@@ -32,7 +33,10 @@ libsma_la_SOURCES = \
 	synchronization.c \
 	collectives.c \
 	lock.c \
-	cache_management.c \
+	cache_management.c
+
+if HAVE_FORTRAN
+libsma_la_SOURCES += \
 	init_f.c \
 	query_f.c \
 	accessibility_f.c \
@@ -43,6 +47,7 @@ libsma_la_SOURCES = \
 	synchronization_f.c \
 	collectives_f.c \
 	lock_f.c
+endif
 
 if USE_PORTALS4
 libsma_la_SOURCES += \

@@ -11,5 +11,11 @@
 
 # shmem.h should appear in BOTH $(includedir)/shmem.h and $(includedir)/mpp/shmem.h!
 mppdir = $(includedir)/mpp
-mpp_HEADERS = shmem.h shmem.fh
-include_HEADERS = shmem.h shmem.fh
+
+mpp_HEADERS = shmem.h 
+include_HEADERS = shmem.h 
+
+if HAVE_FORTRAN
+mpp_HEADERS += shmem.fh
+include_HEADERS += shmem.fh
+endif
