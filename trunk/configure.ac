@@ -116,17 +116,12 @@ SHMEM_FIND_FORTRAN_INT_TYPE([INTEGER])
 OMPI_FIND_TYPE([INTEGER], [char, short, int, long, long long])
 OMPI_FIND_TYPE([DOUBLE PRECISION], [float, double, long double])
 
-echo "$ompi_cv_fortran_sizeof_INTEGER"
-echo "$ac_cv_sizeof_long" 
-
 if test "$ompi_cv_fortran_sizeof_INTEGER" -lt "$ac_cv_sizeof_long" ; then
-   echo "alpha"
     FORTRAN_BCAST_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / p" | dc`
     FORTRAN_REDUCE_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / p" | dc`
     FORTRAN_BARRIER_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / p" | dc`
     FORTRAN_COLLECT_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / 2 * p" | dc`
 else
-   echo "beta"
     FORTRAN_BCAST_SYNC_SIZE=1
     FORTRAN_REDUCE_SYNC_SIZE=1
     FORTRAN_BARRIER_SYNC_SIZE=1
