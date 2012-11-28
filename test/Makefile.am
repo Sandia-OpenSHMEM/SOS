@@ -13,7 +13,6 @@ all: $(check_PROGRAMS)
 
 TESTS = \
 	hello \
-     hello_f \
 	circular_shift \
 	accessible_ping \
 	max_reduction \
@@ -56,6 +55,11 @@ TESTS = \
 	ns \
 	bcast_flood \
 	lfinc
+
+if HAVE_FORTRAN
+TESTS += \
+     hello_f
+endif
 
 check_PROGRAMS = \
 	$(TESTS) \

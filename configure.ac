@@ -64,7 +64,9 @@ m4_ifdef([AM_PROG_AR],[AM_PROG_AR])
 AC_PATH_PROG([PERL],[perl])
 AC_PROG_CXX
 AC_PROG_FC
-AC_FC_WRAPPERS
+if test "$FC" != "" ; then
+  AC_FC_WRAPPERS
+fi
 
 if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
   CFLAGS="$CFLAGS -Wall -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wcomment -pedantic"
@@ -104,34 +106,42 @@ AC_CHECK_SIZEOF([float])
 AC_CHECK_SIZEOF([double])
 AC_CHECK_SIZEOF([long double])
 
-OMPI_FORTRAN_GET_SIZEOF([], [LOGICAL])
-OMPI_FORTRAN_GET_SIZEOF([], [CHARACTER])
-OMPI_FORTRAN_GET_SIZEOF([], [INTEGER])
-OMPI_FORTRAN_GET_SIZEOF([], [REAL])
-OMPI_FORTRAN_GET_SIZEOF([], [DOUBLE PRECISION])
-OMPI_FORTRAN_GET_SIZEOF([], [COMPLEX])
+if test "$FC" != "" ; then
+  OMPI_FORTRAN_GET_SIZEOF([], [LOGICAL])
+  OMPI_FORTRAN_GET_SIZEOF([], [CHARACTER])
+  OMPI_FORTRAN_GET_SIZEOF([], [INTEGER])
+  OMPI_FORTRAN_GET_SIZEOF([], [REAL])
+  OMPI_FORTRAN_GET_SIZEOF([], [DOUBLE PRECISION])
+  OMPI_FORTRAN_GET_SIZEOF([], [COMPLEX])
 
-SHMEM_FIND_FORTRAN_INT_TYPE([INTEGER])
+  SHMEM_FIND_FORTRAN_INT_TYPE([INTEGER])
 
-OMPI_FIND_TYPE([INTEGER], [char, short, int, long, long long])
-OMPI_FIND_TYPE([DOUBLE PRECISION], [float, double, long double])
+  OMPI_FIND_TYPE([INTEGER], [char, short, int, long, long long])
+  OMPI_FIND_TYPE([DOUBLE PRECISION], [float, double, long double])
 
-if test "$ompi_cv_fortran_sizeof_INTEGER" -lt "$ac_cv_sizeof_long" ; then
+  if test "$ompi_cv_fortran_sizeof_INTEGER" -lt "$ac_cv_sizeof_long" ; then
     FORTRAN_BCAST_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / p" | dc`
     FORTRAN_REDUCE_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / p" | dc`
     FORTRAN_BARRIER_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / p" | dc`
     FORTRAN_COLLECT_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / 2 * p" | dc`
-else
+  else
     FORTRAN_BCAST_SYNC_SIZE=1
     FORTRAN_REDUCE_SYNC_SIZE=1
     FORTRAN_BARRIER_SYNC_SIZE=1
     FORTRAN_COLLECT_SYNC_SIZE=2
+  fi
+else
+  FORTRAN_BCAST_SYNC_SIZE=0
+  FORTRAN_REDUCE_SYNC_SIZE=0
+  FORTRAN_BARRIER_SYNC_SIZE=0
+  FORTRAN_COLLECT_SYNC_SIZE=0
 fi
 AC_SUBST(FORTRAN_BCAST_SYNC_SIZE)
 AC_SUBST(FORTRAN_REDUCE_SYNC_SIZE)
 AC_SUBST(FORTRAN_BARRIER_SYNC_SIZE)
 AC_SUBST(FORTRAN_COLLECT_SYNC_SIZE)
 
+AM_CONDITIONAL([HAVE_FORTRAN], [test "$FC" != ""])
 
 dnl check for structures
 
@@ -184,6 +194,15 @@ AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
 AC_CONFIG_FILES([Makefile mpp/Makefile mpp/shmem.fh src/Makefile test/Makefile])
 AC_OUTPUT
 
+FORT="$FC"
+if test "$FORT" = "" ; then
+  FORT="none"
+fi
+
+echo ""
+echo "Compilers:"
+echo "  C:              $CC"
+echo "  Fortran:        $FORT"
 echo ""
 echo "Transports:"
 echo "  Portals 4:      $transport_portals4"
