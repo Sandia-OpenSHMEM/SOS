@@ -1054,6 +1054,70 @@ FC_SHMEM_COLLECT8(void *target,
 }
 
 
+#define FC_SHMEM_COLLECT32 FC_FUNC_(shmem_collect32, SHMEM_COLLECT32)
+void FC_SHMEM_COLLECT32(void *target, 
+                       void *source,
+                       fortran_integer_t *nelems,
+                       fortran_integer_t *PE_start,
+                       fortran_integer_t *logPE_stride,
+                       fortran_integer_t *PE_size,
+                       fortran_integer_t *pSync);
+void
+FC_SHMEM_COLLECT32(void *target, 
+                  void *source,
+                  fortran_integer_t *nelems,
+                  fortran_integer_t *PE_start,
+                  fortran_integer_t *logPE_stride,
+                  fortran_integer_t *PE_size,
+                  fortran_integer_t *pSync)
+{
+    long *pSync_c;
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
+    pSync_c = (long*) pSync;
+
+    shmem_internal_collect(target, source, *nelems * 4,
+                           *PE_start, *logPE_stride, *PE_size, pSync_c);
+}
+
+
+#define FC_SHMEM_COLLECT64 FC_FUNC_(shmem_collect64, SHMEM_COLLECT64)
+void FC_SHMEM_COLLECT64(void *target, 
+                       void *source,
+                       fortran_integer_t *nelems,
+                       fortran_integer_t *PE_start,
+                       fortran_integer_t *logPE_stride,
+                       fortran_integer_t *PE_size,
+                       fortran_integer_t *pSync);
+void
+FC_SHMEM_COLLECT64(void *target, 
+                  void *source,
+                  fortran_integer_t *nelems,
+                  fortran_integer_t *PE_start,
+                  fortran_integer_t *logPE_stride,
+                  fortran_integer_t *PE_size,
+                  fortran_integer_t *pSync)
+{
+    long *pSync_c;
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
+    pSync_c = (long*) pSync;
+
+    shmem_internal_collect(target, source, *nelems * 8,
+                           *PE_start, *logPE_stride, *PE_size, pSync_c);
+}
+
+
 #define FC_SHMEM_FCOLLECT4 FC_FUNC_(shmem_fcollect4, SHMEM_FCOLLECT4)
 void FC_SHMEM_FCOLLECT4(void *target, 
                        void *source,
@@ -1102,6 +1166,70 @@ FC_SHMEM_FCOLLECT8(void *target,
                   fortran_integer_t *logPE_stride,
                   fortran_integer_t *PE_size,
                   fortran_integer_t *pSync)
+{
+    long *pSync_c;
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
+    pSync_c = (long*) pSync;
+
+    shmem_internal_fcollect(target, source, *nelems * 8,
+                           *PE_start, *logPE_stride, *PE_size, pSync_c);
+}
+
+
+#define FC_SHMEM_FCOLLECT32 FC_FUNC_(shmem_fcollect32, SHMEM_FCOLLECT32)
+void FC_SHMEM_FCOLLECT32(void *target, 
+			 void *source,
+			 fortran_integer_t *nelems,
+			 fortran_integer_t *PE_start,
+			 fortran_integer_t *logPE_stride,
+			 fortran_integer_t *PE_size,
+			 fortran_integer_t *pSync);
+void
+FC_SHMEM_FCOLLECT32(void *target, 
+		    void *source,
+		    fortran_integer_t *nelems,
+		    fortran_integer_t *PE_start,
+		    fortran_integer_t *logPE_stride,
+		    fortran_integer_t *PE_size,
+		    fortran_integer_t *pSync)
+{
+    long *pSync_c;
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
+    pSync_c = (long*) pSync;
+
+    shmem_internal_fcollect(target, source, *nelems * 4,
+                           *PE_start, *logPE_stride, *PE_size, pSync_c);
+}
+
+
+#define FC_SHMEM_FCOLLECT64 FC_FUNC_(shmem_fcollect64, SHMEM_FCOLLECT64)
+void FC_SHMEM_FCOLLECT64(void *target, 
+			 void *source,
+			 fortran_integer_t *nelems,
+			 fortran_integer_t *PE_start,
+			 fortran_integer_t *logPE_stride,
+			 fortran_integer_t *PE_size,
+			 fortran_integer_t *pSync);
+void
+FC_SHMEM_FCOLLECT64(void *target, 
+		    void *source,
+		    fortran_integer_t *nelems,
+		    fortran_integer_t *PE_start,
+		    fortran_integer_t *logPE_stride,
+		    fortran_integer_t *PE_size,
+		    fortran_integer_t *pSync)
 {
     long *pSync_c;
 #ifdef ENABLE_ERROR_CHECKING
