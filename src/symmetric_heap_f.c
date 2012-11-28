@@ -65,7 +65,7 @@ FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, 
 }
 
 
-#define FC_SHPDEALLOC FC_FUNC_(shpdealloc, SHPDEALLOC)
+#define FC_SHPDEALLOC FC_FUNC_(shpdeallc, SHPDEALLOC)
 void FC_SHPDEALLOC(void **addr, fortran_integer_t *errcode, fortran_integer_t *want_abort);
 void
 FC_SHPDEALLOC(void **addr, fortran_integer_t *errcode, fortran_integer_t *want_abort)
