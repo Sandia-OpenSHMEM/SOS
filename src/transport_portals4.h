@@ -58,7 +58,7 @@ typedef struct shmem_transport_portals4_bounce_buffer_t shmem_transport_portals4
 
 struct shmem_transport_portals4_long_frag_t {
     shmem_transport_portals4_frag_t frag;
-    char complete;
+    long *completion;
 };
 typedef struct shmem_transport_portals4_long_frag_t shmem_transport_portals4_long_frag_t;
 
@@ -191,6 +191,8 @@ shmem_transport_portals4_put_nb(void *target, const void *source, size_t len,
             shmem_free_list_alloc(shmem_transport_portals4_bounce_buffers);
         if (NULL == buff) RAISE_ERROR(-1);
 
+        assert(buff->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_BOUNCE);
+
         memcpy(buff->data, source, len);
         ret = PtlPut(shmem_transport_portals4_put_event_md_h,
                      (ptl_size_t) buff->data,
@@ -205,6 +207,14 @@ shmem_transport_portals4_put_nb(void *target, const void *source, size_t len,
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
 
     } else {
+        shmem_transport_portals4_long_frag_t *long_frag =
+            (shmem_transport_portals4_long_frag_t*)
+            shmem_free_list_alloc(shmem_transport_portals4_long_frags);
+        if (NULL == long_frag) RAISE_ERROR(-1);
+
+        assert(long_frag->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_LONG);
+        long_frag->completion = completion;
+
         ret = PtlPut(shmem_transport_portals4_put_event_md_h,
                      (ptl_size_t) source,
                      len,
@@ -213,7 +223,7 @@ shmem_transport_portals4_put_nb(void *target, const void *source, size_t len,
                      pt,
                      0,
                      offset,
-                     NULL,
+                     long_frag,
                      0);
         if (PTL_OK != ret) { RAISE_ERROR(ret); } 
         (*completion)++;
@@ -234,13 +244,34 @@ shmem_transport_portals4_put_wait(long *completion)
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
         if (ev.ni_fail_type != PTL_OK) { RAISE_ERROR(ev.ni_fail_type); }
 
-        if (NULL == ev.user_ptr) {
-            /* it's one of the long messages we're waiting for */
-            (*completion)--;
-        } else {
+        if (ev.type != PTL_EVENT_SEND) {
+            fprintf(stderr, "unexpected event type!\n");
+        }
+
+        shmem_transport_portals4_frag_t *frag = 
+            (shmem_transport_portals4_frag_t*) ev.user_ptr;
+
+        if (SHMEM_TRANSPORT_PORTALS4_TYPE_BOUNCE == frag->type) {
             /* it's a short send completing */
             shmem_free_list_free(shmem_transport_portals4_bounce_buffers,
-                                 ev.user_ptr);
+                                 frag);
+        } else if (SHMEM_TRANSPORT_PORTALS4_TYPE_LONG == frag->type) {
+            /* it's one of the long messages we're waiting for */
+            shmem_transport_portals4_long_frag_t *long_frag = 
+                (shmem_transport_portals4_long_frag_t*) frag;
+
+            if (completion != long_frag->completion) {
+                fprintf(stderr, "completion disaster! %p %p\n",
+                        (void*) completion, (void*) long_frag->completion);
+                abort();
+            }
+
+            (*completion)--;
+            shmem_free_list_free(shmem_transport_portals4_long_frags,
+                                 frag);
+        } else {
+            fprintf(stderr, "unkonwn frag type %d\n", frag->type);
+            abort();
         }
     }
 }
@@ -463,6 +494,8 @@ shmem_transport_portals4_atomic_nb(void *target, void *source, size_t len,
             shmem_free_list_alloc(shmem_transport_portals4_bounce_buffers);
         if (NULL == buff) RAISE_ERROR(-1);
 
+        assert(buff->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_BOUNCE);
+
         memcpy(buff->data, source, len);
         ret = PtlAtomic(shmem_transport_portals4_put_event_md_h,
                         (ptl_size_t) buff->data,
@@ -483,6 +516,14 @@ shmem_transport_portals4_atomic_nb(void *target, void *source, size_t len,
         size_t sent = 0;
 
         while (sent < len) {
+            shmem_transport_portals4_long_frag_t *long_frag =
+                (shmem_transport_portals4_long_frag_t*)
+                shmem_free_list_alloc(shmem_transport_portals4_long_frags);
+            if (NULL == long_frag) RAISE_ERROR(-1);
+
+            assert(long_frag->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_LONG);
+            long_frag->completion = completion;
+
             size_t bufsize = MIN(len - sent, shmem_transport_portals4_max_atomic_size);
             ret = PtlAtomic(shmem_transport_portals4_put_event_md_h,
                             (ptl_size_t) ((char*) source + sent),
@@ -492,7 +533,7 @@ shmem_transport_portals4_atomic_nb(void *target, void *source, size_t len,
                             pt,
                             0,
                             offset + sent,
-                            NULL,
+                            long_frag,
                             0,
                             op,
                             datatype);
