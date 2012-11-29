@@ -302,7 +302,7 @@ FC_SHMEM_INT4_ADD(int32_t *target,
     }
 #endif
 
-    shmem_internal_atomic_single(target, value, 4, 
+    shmem_internal_atomic_small(target, value, 4, 
                                  *pe, PTL_SUM, PTL_INT32_T);
 }
 
@@ -322,7 +322,7 @@ FC_SHMEM_INT8_ADD(int64_t *target,
     }
 #endif
 
-    shmem_internal_atomic_single(target, value, 8, 
+    shmem_internal_atomic_small(target, value, 8, 
                                  *pe, PTL_SUM, PTL_INT64_T);
 }
 
@@ -342,7 +342,7 @@ FC_SHMEM_INT4_INC(int32_t *target,
     }
 #endif
 
-    shmem_internal_atomic_single(target, &tmp, 4, 
+    shmem_internal_atomic_small(target, &tmp, 4, 
                                  *pe, PTL_SUM, PTL_INT32_T);
 }
 
@@ -362,6 +362,6 @@ FC_SHMEM_INT8_INC(int64_t *target,
     }
 #endif
 
-    shmem_internal_atomic_single(target, &tmp, 8, 
+    shmem_internal_atomic_small(target, &tmp, 8, 
                                  *pe, PTL_SUM, PTL_INT64_T);
 }

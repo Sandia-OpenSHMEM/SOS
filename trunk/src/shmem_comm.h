@@ -46,7 +46,7 @@ extern char *shmem_internal_location_array;
 
 static inline
 void
-shmem_internal_put_single(void *target, const void *source, size_t len, int pe)
+shmem_internal_put_small(void *target, const void *source, size_t len, int pe)
 {
     int node_rank;
 
@@ -58,7 +58,7 @@ shmem_internal_put_single(void *target, const void *source, size_t len, int pe)
 #endif
     } else {
 #if USE_PORTALS4
-        shmem_transport_portals4_put_single(target, source, len, pe);
+        shmem_transport_portals4_put_small(target, source, len, pe);
 #else
         RAISE_ERROR_STR("No path to peer");
 #endif
@@ -162,10 +162,10 @@ shmem_internal_mswap(void *target, void *source, void *dest, void *mask, size_t 
 
 static inline
 void
-shmem_internal_atomic_single(void *target, void *source, size_t len,
+shmem_internal_atomic_small(void *target, void *source, size_t len,
                              int pe, ptl_op_t op, ptl_datatype_t datatype)
 {
-    shmem_transport_portals4_atomic_single(target, source, len, pe, op, datatype);
+    shmem_transport_portals4_atomic_small(target, source, len, pe, op, datatype);
 }
 
 

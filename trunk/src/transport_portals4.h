@@ -136,7 +136,7 @@ shmem_transport_portals4_fence(void)
 
 static inline
 void
-shmem_transport_portals4_put_single(void *target, const void *source, size_t len, int pe)
+shmem_transport_portals4_put_small(void *target, const void *source, size_t len, int pe)
 {
     int ret;
     ptl_process_t peer;
@@ -404,7 +404,7 @@ shmem_transport_portals4_mswap(void *target, void *source, void *dest, void *mas
 
 static inline
 void
-shmem_transport_portals4_atomic_single(void *target, void *source, size_t len,
+shmem_transport_portals4_atomic_small(void *target, void *source, size_t len,
                                        int pe, ptl_op_t op, ptl_datatype_t datatype)
 {
     int ret;

@@ -186,7 +186,7 @@ shmem_int_inc(int *target, int pe)
     }
 #endif
 
-    shmem_internal_atomic_single(target, &tmp, sizeof(int), pe, PTL_SUM, DTYPE_INT);
+    shmem_internal_atomic_small(target, &tmp, sizeof(int), pe, PTL_SUM, DTYPE_INT);
 }
 
 
@@ -201,7 +201,7 @@ shmem_long_inc(long *target, int pe)
     }
 #endif
 
-    shmem_internal_atomic_single(target, &tmp, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
+    shmem_internal_atomic_small(target, &tmp, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
 }
 
 
@@ -216,7 +216,7 @@ shmem_longlong_inc(long long *target, int pe)
     }
 #endif
 
-    shmem_internal_atomic_single(target, &tmp, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
+    shmem_internal_atomic_small(target, &tmp, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
 }
 
 
@@ -280,7 +280,7 @@ shmem_int_add(int *target, int value, int pe)
     }
 #endif
 
-    shmem_internal_atomic_single(target, &value, sizeof(int), pe, PTL_SUM, DTYPE_INT);
+    shmem_internal_atomic_small(target, &value, sizeof(int), pe, PTL_SUM, DTYPE_INT);
 }
 
 
