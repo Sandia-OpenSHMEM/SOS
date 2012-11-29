@@ -28,8 +28,6 @@
 #include "runtime.h"
 
 ptl_handle_ni_t shmem_transport_portals4_ni_h = PTL_INVALID_HANDLE;
-ptl_pt_index_t shmem_transport_portals4_data_pt = PTL_PT_ANY;
-ptl_pt_index_t shmem_transport_portals4_heap_pt = PTL_PT_ANY;
 ptl_handle_md_t shmem_transport_portals4_put_volatile_md_h = PTL_INVALID_HANDLE;
 ptl_handle_md_t shmem_transport_portals4_put_event_md_h = PTL_INVALID_HANDLE;
 ptl_handle_md_t shmem_transport_portals4_get_md_h = PTL_INVALID_HANDLE;
@@ -52,7 +50,8 @@ ptl_size_t shmem_transport_portals4_pending_put_counter = 0;
 ptl_size_t shmem_transport_portals4_pending_get_counter = 0;
 
 static ptl_ni_limits_t ni_limits;
-
+static ptl_pt_index_t data_pt = PTL_PT_ANY;
+static ptl_pt_index_t heap_pt = PTL_PT_ANY;
 
 static
 void
@@ -100,11 +99,11 @@ cleanup_handles(void)
     if (!PtlHandleIsEqual(shmem_transport_portals4_target_ct_h, PTL_INVALID_HANDLE)) {
         PtlCTFree(shmem_transport_portals4_target_ct_h);
     }
-    if (PTL_PT_ANY != shmem_transport_portals4_heap_pt) {
-        PtlPTFree(shmem_transport_portals4_ni_h, shmem_transport_portals4_heap_pt);
+    if (PTL_PT_ANY != heap_pt) {
+        PtlPTFree(shmem_transport_portals4_ni_h, heap_pt);
     }
-    if (PTL_PT_ANY != shmem_transport_portals4_data_pt) {
-        PtlPTFree(shmem_transport_portals4_ni_h, shmem_transport_portals4_data_pt);
+    if (PTL_PT_ANY != data_pt) {
+        PtlPTFree(shmem_transport_portals4_ni_h, data_pt);
     }
     if (!PtlHandleIsEqual(shmem_transport_portals4_eq_h, PTL_INVALID_HANDLE)) {
         PtlEQFree(shmem_transport_portals4_eq_h);
@@ -298,21 +297,32 @@ shmem_transport_portals4_startup(void)
     ret = PtlPTAlloc(shmem_transport_portals4_ni_h,
                      0,
                      shmem_transport_portals4_eq_h,
-                     DATA_IDX,
-                     &shmem_transport_portals4_data_pt);
+                     shmem_transport_portals4_data_pt,
+                     &data_pt);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlPTAlloc of data table failed: %d\n",
                 shmem_internal_my_pe, ret);
         goto cleanup;
     }
+    if (data_pt != shmem_transport_portals4_data_pt) {
+        fprintf(stderr, "[%03d] ERROR: data portal table index mis-match: %d\n",
+                shmem_internal_my_pe, heap_pt);
+        goto cleanup;
+    }
+
     ret = PtlPTAlloc(shmem_transport_portals4_ni_h,
                      0,
                      shmem_transport_portals4_eq_h,
-                     HEAP_IDX,
-                     &shmem_transport_portals4_heap_pt);
+                     shmem_transport_portals4_heap_pt,
+                     &heap_pt);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlPTAlloc of heap table failed: %d\n",
                 shmem_internal_my_pe, ret);
+        goto cleanup;
+    }
+    if (heap_pt != shmem_transport_portals4_heap_pt) {
+        fprintf(stderr, "[%03d] ERROR: heap portal table index mis-match: %d\n",
+                shmem_internal_my_pe, heap_pt);
         goto cleanup;
     }
 
