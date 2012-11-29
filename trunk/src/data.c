@@ -264,7 +264,7 @@ shmem_longlong_g(long long *addr, int pe)
 void
 shmem_float_put(float *target, const float *source, size_t len, int pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -272,15 +272,15 @@ shmem_float_put(float *target, const float *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, sizeof(float) * len, pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, sizeof(float) * len, pe, &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
 void
 shmem_double_put(double *target, const double *source, size_t len, int pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -288,15 +288,15 @@ shmem_double_put(double *target, const double *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, sizeof(double) * len, pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, sizeof(double) * len, pe, &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
 void
 shmem_longdouble_put(long double *target, const long double *source, size_t len, int pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -304,15 +304,16 @@ shmem_longdouble_put(long double *target, const long double *source, size_t len,
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, sizeof(long double) * len, pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, sizeof(long double) * len, pe,
+                          &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
 void
 shmem_char_put(char *target, const char *source, size_t len, int pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -320,15 +321,15 @@ shmem_char_put(char *target, const char *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, sizeof(char) * len, pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, sizeof(char) * len, pe, &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
 void
 shmem_short_put(short *target, const short *source, size_t len, int pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -336,15 +337,15 @@ shmem_short_put(short *target, const short *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, sizeof(short) * len, pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, sizeof(short) * len, pe, &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
 void
 shmem_int_put(int *target, const int *source, size_t len, int pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -352,15 +353,15 @@ shmem_int_put(int *target, const int *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, sizeof(int) * len, pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, sizeof(int) * len, pe, &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
 void
 shmem_long_put(long *target, const long *source, size_t len, int pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -368,15 +369,15 @@ shmem_long_put(long *target, const long *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, sizeof(long) * len, pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, sizeof(long) * len, pe, &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
 void
 shmem_longlong_put(long long *target, const long long *source, size_t len, int pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -384,15 +385,16 @@ shmem_longlong_put(long long *target, const long long *source, size_t len, int p
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, sizeof(long long) * len, pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, sizeof(long long) * len, pe,
+                          &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
 void
 shmem_put32(void *target, const void *source, size_t len, int pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -400,15 +402,15 @@ shmem_put32(void *target, const void *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, 4 * len, pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, 4 * len, pe, &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
 void
 shmem_put64(void *target, const void *source, size_t len, int pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -416,15 +418,15 @@ shmem_put64(void *target, const void *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, 8 * len, pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, 8 * len, pe, &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
 void
 shmem_put128(void *target, const void *source, size_t len, int pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -432,15 +434,15 @@ shmem_put128(void *target, const void *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, 16 * len, pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, 16 * len, pe, &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
 void
 shmem_putmem(void *target, const void *source, size_t len, int pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -448,8 +450,8 @@ shmem_putmem(void *target, const void *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, len, pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, len, pe, &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
