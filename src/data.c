@@ -272,7 +272,7 @@ shmem_float_put(float *target, const float *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put(target, source, sizeof(float) * len, pe);
+    ret = shmem_internal_put_nb(target, source, sizeof(float) * len, pe);
     shmem_internal_put_wait(ret);
 }
 
@@ -288,7 +288,7 @@ shmem_double_put(double *target, const double *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put(target, source, sizeof(double) * len, pe);
+    ret = shmem_internal_put_nb(target, source, sizeof(double) * len, pe);
     shmem_internal_put_wait(ret);
 }
 
@@ -304,7 +304,7 @@ shmem_longdouble_put(long double *target, const long double *source, size_t len,
     }
 #endif
 
-    ret = shmem_internal_put(target, source, sizeof(long double) * len, pe);
+    ret = shmem_internal_put_nb(target, source, sizeof(long double) * len, pe);
     shmem_internal_put_wait(ret);
 }
 
@@ -320,7 +320,7 @@ shmem_char_put(char *target, const char *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put(target, source, sizeof(char) * len, pe);
+    ret = shmem_internal_put_nb(target, source, sizeof(char) * len, pe);
     shmem_internal_put_wait(ret);
 }
 
@@ -336,7 +336,7 @@ shmem_short_put(short *target, const short *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put(target, source, sizeof(short) * len, pe);
+    ret = shmem_internal_put_nb(target, source, sizeof(short) * len, pe);
     shmem_internal_put_wait(ret);
 }
 
@@ -352,7 +352,7 @@ shmem_int_put(int *target, const int *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put(target, source, sizeof(int) * len, pe);
+    ret = shmem_internal_put_nb(target, source, sizeof(int) * len, pe);
     shmem_internal_put_wait(ret);
 }
 
@@ -368,7 +368,7 @@ shmem_long_put(long *target, const long *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put(target, source, sizeof(long) * len, pe);
+    ret = shmem_internal_put_nb(target, source, sizeof(long) * len, pe);
     shmem_internal_put_wait(ret);
 }
 
@@ -384,7 +384,7 @@ shmem_longlong_put(long long *target, const long long *source, size_t len, int p
     }
 #endif
 
-    ret = shmem_internal_put(target, source, sizeof(long long) * len, pe);
+    ret = shmem_internal_put_nb(target, source, sizeof(long long) * len, pe);
     shmem_internal_put_wait(ret);
 }
 
@@ -400,7 +400,7 @@ shmem_put32(void *target, const void *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put(target, source, 4 * len, pe);
+    ret = shmem_internal_put_nb(target, source, 4 * len, pe);
     shmem_internal_put_wait(ret);
 }
 
@@ -416,7 +416,7 @@ shmem_put64(void *target, const void *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put(target, source, 8 * len, pe);
+    ret = shmem_internal_put_nb(target, source, 8 * len, pe);
     shmem_internal_put_wait(ret);
 }
 
@@ -432,7 +432,7 @@ shmem_put128(void *target, const void *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put(target, source, 16 * len, pe);
+    ret = shmem_internal_put_nb(target, source, 16 * len, pe);
     shmem_internal_put_wait(ret);
 }
 
@@ -448,7 +448,7 @@ shmem_putmem(void *target, const void *source, size_t len, int pe)
     }
 #endif
 
-    ret = shmem_internal_put(target, source, len, pe);
+    ret = shmem_internal_put_nb(target, source, len, pe);
     shmem_internal_put_wait(ret);
 }
 
@@ -634,7 +634,7 @@ shmem_float_iput(float *target, const float *source, ptrdiff_t tst, ptrdiff_t ss
 #endif
 
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put(target, source, sizeof(float), pe);
+        ret = shmem_internal_put_nb(target, source, sizeof(float), pe);
 	target += tst;
 	source += sst;
     }
@@ -655,7 +655,7 @@ shmem_double_iput(double *target, const double *source, ptrdiff_t tst,
 #endif
 
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put(target, source, sizeof(double), pe);
+        ret = shmem_internal_put_nb(target, source, sizeof(double), pe);
 	target += tst;
 	source += sst;
     }
@@ -676,7 +676,7 @@ shmem_longdouble_iput(long double *target, const long double *source,
 #endif
 
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put(target, source, sizeof(long double), pe);
+        ret = shmem_internal_put_nb(target, source, sizeof(long double), pe);
 	target += tst;
 	source += sst;
     }
@@ -697,7 +697,7 @@ shmem_short_iput(short *target, const short *source, ptrdiff_t tst, ptrdiff_t ss
 #endif
 
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put(target, source, sizeof(short), pe);
+        ret = shmem_internal_put_nb(target, source, sizeof(short), pe);
 	target += tst;
 	source += sst;
     }
@@ -718,7 +718,7 @@ shmem_int_iput(int *target, const int *source, ptrdiff_t tst, ptrdiff_t sst,
 #endif
 
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put(target, source, sizeof(int), pe);
+        ret = shmem_internal_put_nb(target, source, sizeof(int), pe);
 	target += tst;
 	source += sst;
     }
@@ -739,7 +739,7 @@ shmem_long_iput(long *target, const long *source, ptrdiff_t tst,
 #endif
 
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put(target, source, sizeof(long), pe);
+        ret = shmem_internal_put_nb(target, source, sizeof(long), pe);
 	target += tst;
 	source += sst;
     }
@@ -760,7 +760,7 @@ shmem_longlong_iput(long long *target, const long long *source, ptrdiff_t tst,
 #endif
 
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put(target, source, sizeof(long long), pe);
+        ret = shmem_internal_put_nb(target, source, sizeof(long long), pe);
 	target += tst;
 	source += sst;
     }
@@ -781,7 +781,7 @@ shmem_iput32(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst,
 #endif
 
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put(target, source, sizeof(uint32_t), pe);
+        ret = shmem_internal_put_nb(target, source, sizeof(uint32_t), pe);
 	target = (uint32_t*)target + tst;
 	source = (uint32_t*)source + sst;
     }
@@ -802,7 +802,7 @@ shmem_iput64(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst,
 #endif
 
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put(target, source, sizeof(uint64_t), pe);
+        ret = shmem_internal_put_nb(target, source, sizeof(uint64_t), pe);
 	target = (uint64_t*)target + tst;
 	source = (uint64_t*)source + sst;
     }
@@ -824,7 +824,7 @@ shmem_iput128(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst, si
     tst *= 16;
     sst *= 16;
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put(target, source, 16, pe);
+        ret = shmem_internal_put_nb(target, source, 16, pe);
 	target = (uint8_t*)target + tst;
 	source = (uint8_t*)source + sst;
     }
