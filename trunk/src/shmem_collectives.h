@@ -417,6 +417,7 @@ shmem_internal_collect(void *target, const void *source, size_t len,
             pe = PE_start;
 	    shmem_fence();
         } else {
+            /* Not the last guy, so send offset up the chain */
             pe = shmem_internal_my_pe + stride;
         }
 

@@ -625,8 +625,6 @@ void
 shmem_float_iput(float *target, const float *source, ptrdiff_t tst, ptrdiff_t sst,
                  size_t len, int pe)
 {
-    int ret = 0;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
@@ -634,11 +632,10 @@ shmem_float_iput(float *target, const float *source, ptrdiff_t tst, ptrdiff_t ss
 #endif
 
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put_nb(target, source, sizeof(float), pe);
+        shmem_internal_put_small(target, source, sizeof(float), pe);
 	target += tst;
 	source += sst;
     }
-    shmem_internal_put_wait(ret);
 }
 
 
@@ -646,8 +643,6 @@ void
 shmem_double_iput(double *target, const double *source, ptrdiff_t tst,
                   ptrdiff_t sst, size_t len, int pe)
 {
-    int ret = 0;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
@@ -655,11 +650,10 @@ shmem_double_iput(double *target, const double *source, ptrdiff_t tst,
 #endif
 
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put_nb(target, source, sizeof(double), pe);
+        shmem_internal_put_small(target, source, sizeof(double), pe);
 	target += tst;
 	source += sst;
     }
-    shmem_internal_put_wait(ret);
 }
 
 
@@ -667,8 +661,6 @@ void
 shmem_longdouble_iput(long double *target, const long double *source,
                       ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe)
 {
-    int ret = 0;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
@@ -676,11 +668,10 @@ shmem_longdouble_iput(long double *target, const long double *source,
 #endif
 
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put_nb(target, source, sizeof(long double), pe);
+        shmem_internal_put_small(target, source, sizeof(long double), pe);
 	target += tst;
 	source += sst;
     }
-    shmem_internal_put_wait(ret);
 }
 
 
@@ -688,8 +679,6 @@ void
 shmem_short_iput(short *target, const short *source, ptrdiff_t tst, ptrdiff_t sst,
                  size_t len, int pe)
 {
-    int ret = 0;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
@@ -697,11 +686,10 @@ shmem_short_iput(short *target, const short *source, ptrdiff_t tst, ptrdiff_t ss
 #endif
 
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put_nb(target, source, sizeof(short), pe);
+        shmem_internal_put_small(target, source, sizeof(short), pe);
 	target += tst;
 	source += sst;
     }
-    shmem_internal_put_wait(ret);
 }
 
 
@@ -709,8 +697,6 @@ void
 shmem_int_iput(int *target, const int *source, ptrdiff_t tst, ptrdiff_t sst,
                size_t len, int pe)
 {
-    int ret = 0;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
@@ -718,11 +704,10 @@ shmem_int_iput(int *target, const int *source, ptrdiff_t tst, ptrdiff_t sst,
 #endif
 
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put_nb(target, source, sizeof(int), pe);
+        shmem_internal_put_small(target, source, sizeof(int), pe);
 	target += tst;
 	source += sst;
     }
-    shmem_internal_put_wait(ret);
 }
 
 
@@ -730,8 +715,6 @@ void
 shmem_long_iput(long *target, const long *source, ptrdiff_t tst,
                 ptrdiff_t sst, size_t len, int pe)
 {
-    int ret = 0;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
@@ -739,11 +722,10 @@ shmem_long_iput(long *target, const long *source, ptrdiff_t tst,
 #endif
 
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put_nb(target, source, sizeof(long), pe);
+        shmem_internal_put_small(target, source, sizeof(long), pe);
 	target += tst;
 	source += sst;
     }
-    shmem_internal_put_wait(ret);
 }
 
 
@@ -751,8 +733,6 @@ void
 shmem_longlong_iput(long long *target, const long long *source, ptrdiff_t tst,
                     ptrdiff_t sst, size_t len, int pe)
 {
-    int ret = 0;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
@@ -760,11 +740,10 @@ shmem_longlong_iput(long long *target, const long long *source, ptrdiff_t tst,
 #endif
 
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put_nb(target, source, sizeof(long long), pe);
+        shmem_internal_put_small(target, source, sizeof(long long), pe);
 	target += tst;
 	source += sst;
     }
-    shmem_internal_put_wait(ret);
 }
 
 
@@ -772,8 +751,6 @@ void
 shmem_iput32(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst,
              size_t len, int pe)
 {
-    int ret = 0;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
@@ -781,11 +758,10 @@ shmem_iput32(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst,
 #endif
 
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put_nb(target, source, sizeof(uint32_t), pe);
+        shmem_internal_put_small(target, source, sizeof(uint32_t), pe);
 	target = (uint32_t*)target + tst;
 	source = (uint32_t*)source + sst;
     }
-    shmem_internal_put_wait(ret);
 }
 
 
@@ -793,8 +769,6 @@ void
 shmem_iput64(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst,
              size_t len, int pe)
 {
-    int ret = 0;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
@@ -802,19 +776,16 @@ shmem_iput64(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst,
 #endif
 
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put_nb(target, source, sizeof(uint64_t), pe);
+        shmem_internal_put_small(target, source, sizeof(uint64_t), pe);
 	target = (uint64_t*)target + tst;
 	source = (uint64_t*)source + sst;
     }
-    shmem_internal_put_wait(ret);
 }
 
 
 void
 shmem_iput128(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe)
 {
-    int ret = 0;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
         RAISE_ERROR_STR("library not initialized");
@@ -824,11 +795,10 @@ shmem_iput128(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst, si
     tst *= 16;
     sst *= 16;
     for ( ; len > 0 ; --len) {
-        ret = shmem_internal_put_nb(target, source, 16, pe);
+        shmem_internal_put_small(target, source, 16, pe);
 	target = (uint8_t*)target + tst;
 	source = (uint8_t*)source + sst;
     }
-    shmem_internal_put_wait(ret);
 }
 
 
