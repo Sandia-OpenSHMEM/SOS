@@ -18,12 +18,10 @@
 
 #include "shmem_free_list.h"
 
-#define DATA_IDX 10
-#define HEAP_IDX 11
+#define shmem_transport_portals4_data_pt 10
+#define shmem_transport_portals4_heap_pt 11
 
 extern ptl_handle_ni_t shmem_transport_portals4_ni_h;
-extern ptl_pt_index_t shmem_transport_portals4_data_pt;
-extern ptl_pt_index_t shmem_transport_portals4_heap_pt;
 extern ptl_handle_md_t shmem_transport_portals4_put_volatile_md_h;
 extern ptl_handle_md_t shmem_transport_portals4_put_event_md_h;
 extern ptl_handle_md_t shmem_transport_portals4_get_md_h;
