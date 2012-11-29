@@ -68,7 +68,7 @@ shmem_internal_put_small(void *target, const void *source, size_t len, int pe)
         
 static inline
 int
-shmem_internal_put(void *target, const void *source, size_t len, int pe)
+shmem_internal_put_nb(void *target, const void *source, size_t len, int pe)
 {
     int node_rank;
 
@@ -171,7 +171,7 @@ shmem_internal_atomic_small(void *target, void *source, size_t len,
 
 static inline
 int
-shmem_internal_atomic(void *target, void *source, size_t len,
+shmem_internal_atomic_nb(void *target, void *source, size_t len,
                       int pe, ptl_op_t op, ptl_datatype_t datatype)
 {
     return shmem_transport_portals4_atomic(target, source, len, pe, op, datatype);

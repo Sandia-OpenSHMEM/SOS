@@ -293,7 +293,7 @@ shmem_long_add(long *target, long value, int pe)
     }
 #endif
 
-    shmem_internal_atomic(target, &value, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
+    shmem_internal_atomic_nb(target, &value, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
 }
 
 
@@ -306,7 +306,7 @@ shmem_longlong_add(long long *target, long long value, int pe)
     }
 #endif
 
-    shmem_internal_atomic(target, &value, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
+    shmem_internal_atomic_nb(target, &value, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
 }
 
 

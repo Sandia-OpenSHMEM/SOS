@@ -165,7 +165,7 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
             /* send data to all peers */
             for (pe = PE_start,i=0; i < PE_size; pe += stride, i++) {
                 if (pe == shmem_internal_my_pe && source == target) continue;
-                ret += shmem_internal_put(target, source, len, pe);
+                ret += shmem_internal_put_nb(target, source, len, pe);
             }
             shmem_internal_put_wait(ret);
     
@@ -234,7 +234,7 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
                 
             } else if (shmem_internal_my_pe == real_root) {
                 /* send data to 0th entry */
-                ret = shmem_internal_put(target, source, len, PE_start);
+                ret = shmem_internal_put_nb(target, source, len, PE_start);
                 shmem_fence();
                 shmem_internal_put_small(pSync, &one, sizeof(long), PE_start);
                 shmem_internal_put_wait(ret);
@@ -261,7 +261,7 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
 
             /* send data to all leaves */
             for (i = 0 ; i < num_children ; ++i) {
-                ret += shmem_internal_put(target, send_buf, len, children[i]);
+                ret += shmem_internal_put_nb(target, send_buf, len, children[i]);
             }
             shmem_internal_put_wait(ret);
 
@@ -327,7 +327,7 @@ shmem_internal_op_to_all(void *target, void *source, int count, int type_size,
     if (PE_start == shmem_internal_my_pe) {
         int pe, i;
         /* update our target buffer with our contribution */
-        ret = shmem_internal_put(target, source, count * type_size, shmem_internal_my_pe);
+        ret = shmem_internal_put_nb(target, source, count * type_size, shmem_internal_my_pe);
         shmem_fence();
         shmem_internal_put_wait(ret);
 
@@ -356,7 +356,7 @@ shmem_internal_op_to_all(void *target, void *source, int count, int type_size,
         pSync[0] = 0;
 
         /* send data, ack, and wait for completion */
-        ret = shmem_internal_atomic(target, source, count * type_size, PE_start, op, datatype);
+        ret = shmem_internal_atomic_nb(target, source, count * type_size, PE_start, op, datatype);
         shmem_fence();
         shmem_internal_put_wait(ret);
 
@@ -395,7 +395,7 @@ shmem_internal_collect(void *target, const void *source, size_t len,
     /* collect in PE_start */
     if (PE_start == shmem_internal_my_pe) {
         if (target != source) {
-            ret += shmem_internal_put(target, source, len, PE_start);
+            ret += shmem_internal_put_nb(target, source, len, PE_start);
         }
         tmp[0] = len;
         shmem_internal_put_small(pSync, tmp, 2 * sizeof(long), PE_start + stride);
@@ -411,7 +411,7 @@ shmem_internal_collect(void *target, const void *source, size_t len,
         shmem_long_wait(&pSync[1], 0);
 
         /* send data to root */
-        ret = shmem_internal_put((char*) target + pSync[0], source, len, PE_start);
+        ret = shmem_internal_put_nb((char*) target + pSync[0], source, len, PE_start);
         if (shmem_internal_my_pe == PE_start + stride * (PE_size - 1)) {
             pe = PE_start;
 
@@ -447,7 +447,7 @@ shmem_internal_fcollect(void *target, const void *source, size_t len,
 
     if (PE_start == shmem_internal_my_pe) {
         if (source != target) {
-            ret = shmem_internal_put(target, source, len, PE_start);
+            ret = shmem_internal_put_nb(target, source, len, PE_start);
             shmem_fence();
             shmem_internal_put_wait(ret);
             shmem_internal_atomic_small(pSync, &tmp, sizeof(long), PE_start, PTL_SUM, DTYPE_LONG);
@@ -458,7 +458,7 @@ shmem_internal_fcollect(void *target, const void *source, size_t len,
         shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
     } else {
         size_t offset = ((shmem_internal_my_pe - PE_start) / stride) * len;
-        ret = shmem_internal_put((char*) target + offset, source, len, PE_start);
+        ret = shmem_internal_put_nb((char*) target + offset, source, len, PE_start);
         shmem_internal_put_wait(ret);
         shmem_fence();
         shmem_internal_atomic_small(pSync, &tmp, sizeof(long), PE_start, PTL_SUM, DTYPE_LONG);
