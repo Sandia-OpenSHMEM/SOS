@@ -56,28 +56,31 @@ shmem_free_list_destroy(shmem_free_list_t *fl)
 int
 shmem_free_list_more(shmem_free_list_t *fl)
 {
-    int real_element_size = fl->element_size + sizeof(shmem_free_list_item_t);
     int page_size = 4096 - sizeof(shmem_free_list_alloc_t);
-    int num_elements = (real_element_size < page_size) ? page_size / real_element_size : 1;
-    shmem_free_list_item_t *item, *first, *last = NULL;
+    int num_elements = (fl->element_size < page_size) ? page_size / fl->element_size : 1;
+    shmem_free_list_item_t *item, *first, *next, *last = NULL;
     shmem_free_list_alloc_t *header;
     char *buf;
     int i;
 
+    num_elements = 2;
+
     buf = malloc(sizeof(shmem_free_list_alloc_t) + 
-                 num_elements * real_element_size);
+                 num_elements * fl->element_size);
     if (NULL == buf) return 1;
 
     header = (shmem_free_list_alloc_t*) buf;
     first = item = (shmem_free_list_item_t*) (header + 1);
-    for (i = 0 ; i < num_elements ; ++i, item++) {
+    for (i = 0 ; i < num_elements ; ++i) {
         fl->init_fn(item);
+        next = (shmem_free_list_item_t*)((char*)item + fl->element_size);
         if (i == num_elements - 1) {
             item->next = NULL;
             last = item;
         } else {
-            item->next = (item + 1);
+            item->next = next;
         }
+        item = next;
     }
 
     header->next = fl->allocs;
