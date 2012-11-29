@@ -67,21 +67,21 @@ shmem_internal_put_small(void *target, const void *source, size_t len, int pe)
 
         
 static inline
-int
-shmem_internal_put_nb(void *target, const void *source, size_t len, int pe)
+void
+shmem_internal_put_nb(void *target, const void *source, size_t len, int pe,
+                      long *completion)
 {
     int node_rank;
 
     if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
 #if USE_XPMEM
         shmem_transport_xpmem_put(target, source, len, pe, node_rank);
-        return 0;
 #else
         RAISE_ERROR_STR("No path to peer");
 #endif
     } else {
 #if USE_PORTALS4
-        return shmem_transport_portals4_put(target, source, len, pe);
+        shmem_transport_portals4_put_nb(target, source, len, pe, completion);
 #else
         RAISE_ERROR_STR("No path to peer");
 #endif
@@ -91,10 +91,10 @@ shmem_internal_put_nb(void *target, const void *source, size_t len, int pe)
 
 static inline
 void
-shmem_internal_put_wait(int count)
+shmem_internal_put_wait(long *completion)
 {
 #if USE_PORTALS4
-    shmem_transport_portals4_put_wait(count);
+    shmem_transport_portals4_put_wait(completion);
 #endif
     /* on-node is always blocking, so this is a no-op for them */
 }
@@ -170,11 +170,13 @@ shmem_internal_atomic_small(void *target, void *source, size_t len,
 
 
 static inline
-int
+void
 shmem_internal_atomic_nb(void *target, void *source, size_t len,
-                      int pe, ptl_op_t op, ptl_datatype_t datatype)
+                      int pe, ptl_op_t op, ptl_datatype_t datatype,
+                      long *completion)
 {
-    return shmem_transport_portals4_atomic(target, source, len, pe, op, datatype);
+    shmem_transport_portals4_atomic_nb(target, source, len, pe, op, datatype,
+                                       completion);
 }
 
 

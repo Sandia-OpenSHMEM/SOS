@@ -27,7 +27,7 @@ void FC_SHMEM_CHARACTER_PUT(void *target, void *source, fortran_integer_t *len, 
 void
 FC_SHMEM_CHARACTER_PUT(void *target, void *source, fortran_integer_t *len, fortran_integer_t *pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -35,8 +35,9 @@ FC_SHMEM_CHARACTER_PUT(void *target, void *source, fortran_integer_t *len, fortr
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, SIZEOF_FORTRAN_CHARACTER * *len, *pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, SIZEOF_FORTRAN_CHARACTER * *len, *pe,
+                          &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
@@ -45,7 +46,7 @@ void FC_SHMEM_COMPLEX_PUT(void *target, void *source, fortran_integer_t *len, fo
 void
 FC_SHMEM_COMPLEX_PUT(void *target, void *source, fortran_integer_t *len, fortran_integer_t *pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -53,8 +54,9 @@ FC_SHMEM_COMPLEX_PUT(void *target, void *source, fortran_integer_t *len, fortran
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, SIZEOF_FORTRAN_COMPLEX * *len, *pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, SIZEOF_FORTRAN_COMPLEX * *len, *pe,
+                          &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
@@ -63,7 +65,7 @@ void FC_SHMEM_DOUBLE_PUT(void *target, void *source, fortran_integer_t *len, for
 void
 FC_SHMEM_DOUBLE_PUT(void *target, void *source, fortran_integer_t *len, fortran_integer_t *pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -71,8 +73,9 @@ FC_SHMEM_DOUBLE_PUT(void *target, void *source, fortran_integer_t *len, fortran_
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, SIZEOF_FORTRAN_DOUBLE_PRECISION * *len, *pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, SIZEOF_FORTRAN_DOUBLE_PRECISION *
+                          *len, *pe, &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
@@ -81,7 +84,7 @@ void FC_SHMEM_INTEGER_PUT(void *target, void *source, fortran_integer_t *len, fo
 void
 FC_SHMEM_INTEGER_PUT(void *target, void *source, fortran_integer_t *len, fortran_integer_t *pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -89,8 +92,9 @@ FC_SHMEM_INTEGER_PUT(void *target, void *source, fortran_integer_t *len, fortran
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, SIZEOF_FORTRAN_INTEGER * *len, *pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, SIZEOF_FORTRAN_INTEGER * *len, *pe,
+                          &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
@@ -99,7 +103,7 @@ void FC_SHMEM_LOGICAL_PUT(void *target, void *source, fortran_integer_t *len, fo
 void
 FC_SHMEM_LOGICAL_PUT(void *target, void *source, fortran_integer_t *len, fortran_integer_t *pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -107,8 +111,9 @@ FC_SHMEM_LOGICAL_PUT(void *target, void *source, fortran_integer_t *len, fortran
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, SIZEOF_FORTRAN_LOGICAL * *len, *pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, SIZEOF_FORTRAN_LOGICAL * *len, *pe,
+                          &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
@@ -117,7 +122,7 @@ void FC_SHMEM_REAL_PUT(void *target, void *source, fortran_integer_t *len, fortr
 void
 FC_SHMEM_REAL_PUT(void *target, void *source, fortran_integer_t *len, fortran_integer_t *pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -125,8 +130,9 @@ FC_SHMEM_REAL_PUT(void *target, void *source, fortran_integer_t *len, fortran_in
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, SIZEOF_FORTRAN_REAL * *len, *pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, SIZEOF_FORTRAN_REAL * *len, *pe,
+                          &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
@@ -135,7 +141,7 @@ void FC_SHMEM_PUT(void *target, void *source, fortran_integer_t *len, fortran_in
 void
 FC_SHMEM_PUT(void *target, void *source, fortran_integer_t *len, fortran_integer_t *pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -143,8 +149,8 @@ FC_SHMEM_PUT(void *target, void *source, fortran_integer_t *len, fortran_integer
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, *len, *pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, *len, *pe, &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
@@ -153,7 +159,7 @@ void FC_SHMEM_PUT4(void *target, void *source, fortran_integer_t *len, fortran_i
 void
 FC_SHMEM_PUT4(void *target, void *source, fortran_integer_t *len, fortran_integer_t *pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -161,8 +167,8 @@ FC_SHMEM_PUT4(void *target, void *source, fortran_integer_t *len, fortran_intege
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, 4 * *len, *pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, 4 * *len, *pe, &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
@@ -171,7 +177,7 @@ void FC_SHMEM_PUT8(void *target, void *source, fortran_integer_t *len, fortran_i
 void
 FC_SHMEM_PUT8(void *target, void *source, fortran_integer_t *len, fortran_integer_t *pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -179,8 +185,8 @@ FC_SHMEM_PUT8(void *target, void *source, fortran_integer_t *len, fortran_intege
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, 8 * *len, *pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, 8 * *len, *pe, &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
@@ -189,7 +195,7 @@ void FC_SHMEM_PUT32(void *target, void *source, fortran_integer_t *len, fortran_
 void
 FC_SHMEM_PUT32(void *target, void *source, fortran_integer_t *len, fortran_integer_t *pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -197,8 +203,8 @@ FC_SHMEM_PUT32(void *target, void *source, fortran_integer_t *len, fortran_integ
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, 4 * *len, *pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, 4 * *len, *pe, &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
@@ -207,7 +213,7 @@ void FC_SHMEM_PUT64(void *target, void *source, fortran_integer_t *len, fortran_
 void
 FC_SHMEM_PUT64(void *target, void *source, fortran_integer_t *len, fortran_integer_t *pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -215,8 +221,8 @@ FC_SHMEM_PUT64(void *target, void *source, fortran_integer_t *len, fortran_integ
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, 8 * *len, *pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, 8 * *len, *pe, &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
@@ -225,7 +231,7 @@ void FC_SHMEM_PUT128(void *target, void *source, fortran_integer_t *len, fortran
 void
 FC_SHMEM_PUT128(void *target, void *source, fortran_integer_t *len, fortran_integer_t *pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -233,8 +239,8 @@ FC_SHMEM_PUT128(void *target, void *source, fortran_integer_t *len, fortran_inte
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, 16 * *len, *pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, 16 * *len, *pe, &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 
@@ -243,7 +249,7 @@ void FC_SHMEM_PUTMEM(void *target, void *source, fortran_integer_t *len, fortran
 void
 FC_SHMEM_PUTMEM(void *target, void *source, fortran_integer_t *len, fortran_integer_t *pe)
 {
-    int ret;
+    long completion = 0;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_int_initialized) {
@@ -251,8 +257,8 @@ FC_SHMEM_PUTMEM(void *target, void *source, fortran_integer_t *len, fortran_inte
     }
 #endif
 
-    ret = shmem_internal_put_nb(target, source, *len, *pe);
-    shmem_internal_put_wait(ret);
+    shmem_internal_put_nb(target, source, *len, *pe, &completion);
+    shmem_internal_put_wait(&completion);
 }
 
 

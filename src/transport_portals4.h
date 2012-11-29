@@ -163,14 +163,14 @@ shmem_transport_portals4_put_small(void *target, const void *source, size_t len,
 
 
 static inline
-int
-shmem_transport_portals4_put(void *target, const void *source, size_t len, int pe)
+void
+shmem_transport_portals4_put_nb(void *target, const void *source, size_t len,
+                                int pe, long *completion)
 {
     int ret;
     ptl_process_t peer;
     ptl_pt_index_t pt;
     long offset;
-    int tmp;
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
@@ -186,7 +186,6 @@ shmem_transport_portals4_put(void *target, const void *source, size_t len, int p
                      NULL,
                      0);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
-        tmp = 0;
 
     } else if (len <= shmem_transport_portals4_bounce_buffer_size) {
         shmem_transport_portals4_bounce_buffer_t *buff =
@@ -206,7 +205,6 @@ shmem_transport_portals4_put(void *target, const void *source, size_t len, int p
                      buff,
                      0);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
-        tmp = 0;
 
     } else {
         ret = PtlPut(shmem_transport_portals4_put_event_md_h,
@@ -220,29 +218,27 @@ shmem_transport_portals4_put(void *target, const void *source, size_t len, int p
                      NULL,
                      0);
         if (PTL_OK != ret) { RAISE_ERROR(ret); } 
-        tmp = 1;
+        (*completion)++;
     }
     shmem_transport_portals4_pending_put_counter += 1;
-    
-    return tmp;
 }
 
 
 static inline
 void
-shmem_transport_portals4_put_wait(int count)
+shmem_transport_portals4_put_wait(long *completion)
 {
     int ret;
     ptl_event_t ev;
 
-    while (count > 0) {
+    while (*completion > 0) {
         ret = PtlEQWait(shmem_transport_portals4_eq_h, &ev);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
         if (ev.ni_fail_type != PTL_OK) { RAISE_ERROR(ev.ni_fail_type); }
 
         if (NULL == ev.user_ptr) {
             /* it's one of the long messages we're waiting for */
-            count--;
+            (*completion)--;
         } else {
             /* it's a short send completing */
             shmem_free_list_free(shmem_transport_portals4_bounce_buffers,
@@ -434,15 +430,15 @@ shmem_transport_portals4_atomic_small(void *target, void *source, size_t len,
 
 
 static inline
-int
-shmem_transport_portals4_atomic(void *target, void *source, size_t len,
-                      int pe, ptl_op_t op, ptl_datatype_t datatype)
+void
+shmem_transport_portals4_atomic_nb(void *target, void *source, size_t len,
+                      int pe, ptl_op_t op, ptl_datatype_t datatype,
+                      long *completion)
 {
     int ret;
     ptl_pt_index_t pt;
     long offset;
     ptl_process_t peer;
-    int tmp = 0;
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
@@ -461,7 +457,6 @@ shmem_transport_portals4_atomic(void *target, void *source, size_t len,
                         datatype);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
         shmem_transport_portals4_pending_put_counter += 1;
-        tmp = 0;
 
     } else if (len <= MIN(shmem_transport_portals4_bounce_buffer_size,
                           shmem_transport_portals4_max_atomic_size)) {
@@ -485,7 +480,6 @@ shmem_transport_portals4_atomic(void *target, void *source, size_t len,
                         datatype);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
         shmem_transport_portals4_pending_put_counter += 1;
-        tmp = 0;
 
     } else {
         size_t sent = 0;
@@ -505,13 +499,11 @@ shmem_transport_portals4_atomic(void *target, void *source, size_t len,
                             op,
                             datatype);
             if (PTL_OK != ret) { RAISE_ERROR(ret); }
-            tmp++;
+            (*completion)++;
+            shmem_transport_portals4_pending_put_counter++;
             sent += bufsize;
         }
-        shmem_transport_portals4_pending_put_counter += tmp;
     }
-
-    return tmp;
 }
 
 
