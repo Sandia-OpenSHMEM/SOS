@@ -80,7 +80,7 @@ shmem_set_lock(long *lockp)
 #endif
 
     /* initialize my elements to zero */
-    shmem_internal_put_single(&(lock->data), &zero, sizeof(zero), shmem_internal_my_pe);
+    shmem_internal_put_small(&(lock->data), &zero, sizeof(zero), shmem_internal_my_pe);
     shmem_quiet();
 
     /* update last with my value to add me to the queue */
@@ -111,7 +111,7 @@ shmem_test_lock(long *lockp)
 #endif
 
     /* initialize my elements to zero */
-    shmem_internal_put_single(&(lock->data), &zero, sizeof(zero), shmem_internal_my_pe);
+    shmem_internal_put_small(&(lock->data), &zero, sizeof(zero), shmem_internal_my_pe);
     shmem_quiet();
 
     /* add self to last if and only if the lock is zero (ie, no one has the lock) */

@@ -276,7 +276,7 @@ FC_SHMEM_COMPLEX_IPUT(void *targetp, void *sourcep,
 #endif
 
     for ( ; len > 0 ; --len) {
-        shmem_internal_put_single(target, source, SIZEOF_FORTRAN_COMPLEX, *pe);
+        shmem_internal_put_small(target, source, SIZEOF_FORTRAN_COMPLEX, *pe);
 	target += (*tst * SIZEOF_FORTRAN_COMPLEX);
 	source += (*sst * SIZEOF_FORTRAN_COMPLEX);
     }
@@ -303,7 +303,7 @@ FC_SHMEM_DOUBLE_IPUT(void *targetp, void *sourcep,
 #endif
 
     for ( ; len > 0 ; --len) {
-        shmem_internal_put_single(target, source, SIZEOF_FORTRAN_DOUBLE_PRECISION, *pe);
+        shmem_internal_put_small(target, source, SIZEOF_FORTRAN_DOUBLE_PRECISION, *pe);
 	target += (*tst * SIZEOF_FORTRAN_DOUBLE_PRECISION);
 	source += (*sst * SIZEOF_FORTRAN_DOUBLE_PRECISION);
     }
@@ -331,7 +331,7 @@ FC_SHMEM_INTEGER_IPUT(void *targetp, void *sourcep,
 #endif
 
     for ( ; len > 0 ; --len) {
-        shmem_internal_put_single(target, source, SIZEOF_FORTRAN_INTEGER, *pe);
+        shmem_internal_put_small(target, source, SIZEOF_FORTRAN_INTEGER, *pe);
 	target += (*tst * SIZEOF_FORTRAN_INTEGER);
 	source += (*sst * SIZEOF_FORTRAN_INTEGER);
     }
@@ -358,7 +358,7 @@ FC_SHMEM_LOGICAL_IPUT(void *targetp, void *sourcep,
 #endif
 
     for ( ; len > 0 ; --len) {
-        shmem_internal_put_single(target, source, SIZEOF_FORTRAN_LOGICAL, *pe);
+        shmem_internal_put_small(target, source, SIZEOF_FORTRAN_LOGICAL, *pe);
 	target += (*tst * SIZEOF_FORTRAN_LOGICAL);
 	source += (*sst * SIZEOF_FORTRAN_LOGICAL);
     }
@@ -385,7 +385,7 @@ FC_SHMEM_REAL_IPUT(void *targetp, void *sourcep,
 #endif
 
     for ( ; len > 0 ; --len) {
-        shmem_internal_put_single(target, source, SIZEOF_FORTRAN_REAL, *pe);
+        shmem_internal_put_small(target, source, SIZEOF_FORTRAN_REAL, *pe);
 	target += (*tst * SIZEOF_FORTRAN_REAL);
 	source += (*sst * SIZEOF_FORTRAN_REAL);
     }
@@ -412,7 +412,7 @@ FC_SHMEM_IPUT4(void *targetp, void *sourcep,
 #endif
 
     for ( ; len > 0 ; --len) {
-        shmem_internal_put_single(target, source, 4, *pe);
+        shmem_internal_put_small(target, source, 4, *pe);
 	target += (*tst * 4);
 	source += (*sst * 4);
     }
@@ -439,7 +439,7 @@ FC_SHMEM_IPUT8(void *targetp, void *sourcep,
 #endif
 
     for ( ; len > 0 ; --len) {
-        shmem_internal_put_single(target, source, 8, *pe);
+        shmem_internal_put_small(target, source, 8, *pe);
 	target += (*tst * 8);
 	source += (*sst * 8);
     }
@@ -467,7 +467,7 @@ FC_SHMEM_IPUT32(void *targetp, void *sourcep,
 #endif
 
     for ( ; len > 0 ; --len) {
-        shmem_internal_put_single(target, source, 4, *pe);
+        shmem_internal_put_small(target, source, 4, *pe);
 	target += (*tst * 4);
 	source += (*sst * 4);
     }
@@ -494,7 +494,7 @@ FC_SHMEM_IPUT64(void *targetp, void *sourcep,
 #endif
 
     for ( ; len > 0 ; --len) {
-        shmem_internal_put_single(target, source, 8, *pe);
+        shmem_internal_put_small(target, source, 8, *pe);
 	target += (*tst * 8);
 	source += (*sst * 8);
     }
@@ -521,7 +521,7 @@ FC_SHMEM_IPUT128(void *targetp, void *sourcep,
 #endif
 
     for ( ; len > 0 ; --len) {
-        shmem_internal_put_single(target, source, 16, *pe);
+        shmem_internal_put_small(target, source, 16, *pe);
 	target += (*tst * 16);
 	source += (*sst * 16);
     }
