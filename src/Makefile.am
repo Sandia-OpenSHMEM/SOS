@@ -61,12 +61,17 @@ libsma_la_SOURCES += \
 	transport_xpmem.c
 endif
 
-bin_SCRIPTS = oshcc oshc++ oshfort
-CLEANFILES += oshcc oshc++ oshfort
+bin_SCRIPTS = oshcc oshc++
+CLEANFILES += oshcc oshc++
 if CASE_SENSITIVE_FS
 bin_SCRIPTS += oshCC
 CLEANFILES += oshCC
 endif
+if HAVE_FORTRAN
+bin_SCRIPTS += oshfort
+CLEANFILES += oshfort
+endif
+
 EXTRA_DIST = shmem_compiler_script.in
 
 do_subst = sed -e 's|[@]PERL[@]|$(PERL)|g' \
