@@ -381,11 +381,11 @@ void
 shmem_internal_collect(void *target, const void *source, size_t len,
                   int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
-    int ret = 0;
-    long tmp[2] = {0, 1};
+    long tmp[2];
     int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
     int pe;
     int bcast_len = 0;
+    int ret;
 
     if (PE_size == 1) {
         if (target != source) memcpy(target, source, len);
@@ -394,18 +394,18 @@ shmem_internal_collect(void *target, const void *source, size_t len,
 
     /* collect in PE_start */
     if (PE_start == shmem_internal_my_pe) {
-        if (target != source) {
-            ret += shmem_internal_put_nb(target, source, len, PE_start);
-        }
+        if (target != source) memcpy(target, source, len);
+
+	/* send next peer where to put data */
         tmp[0] = len;
+	tmp[1] = 1;
         shmem_internal_put_small(pSync, tmp, 2 * sizeof(long), PE_start + stride);
+
+	/* wait for last guy to tell us we're done */
         shmem_long_wait(&pSync[1], 0);
+
+	/* find out how long total data was */
         bcast_len = pSync[0];
-        pSync[0] = pSync[1] = 0;
-
-        /* make sure put to ourselves is completed before broadcast */
-        shmem_quiet();
-
     } else {
         /* wait for send data */
         shmem_long_wait(&pSync[1], 0);
@@ -413,20 +413,26 @@ shmem_internal_collect(void *target, const void *source, size_t len,
         /* send data to root */
         ret = shmem_internal_put_nb((char*) target + pSync[0], source, len, PE_start);
         if (shmem_internal_my_pe == PE_start + stride * (PE_size - 1)) {
+            /* If I'm the last guy, shmem_fence before sending completion bit. */
             pe = PE_start;
-
-            /* need to fence if sending completion to root to keep ordering */
-            shmem_internal_put_wait(ret);
-            ret = 0;
-            shmem_fence();
-
+	    shmem_fence();
         } else {
             pe = shmem_internal_my_pe + stride;
         }
+
+	/* send along the next put data point */
         tmp[0] = pSync[0] + len;
-        pSync[0] = pSync[1] = 0;
+	tmp[1] = 1;
         shmem_internal_put_small(pSync, tmp, 2 * sizeof(long), pe);
+
+	/* wait for big data transfer */
+	shmem_internal_put_wait(ret);
     }
+
+    /* clear pSync */
+    tmp[0] = tmp[1] = 0;
+    shmem_internal_put_small(pSync, tmp, 2 * sizeof(long), shmem_internal_my_pe);
+    shmem_long_wait_until(&pSync[1], SHMEM_CMP_EQ, 0);
 
     /* broadcast out */
     shmem_internal_bcast(target, target, bcast_len, 0, PE_start, logPE_stride, PE_size, pSync, 0);
@@ -446,21 +452,29 @@ shmem_internal_fcollect(void *target, const void *source, size_t len,
     int stride = (logPE_stride == 0) ? 1 : 1 << logPE_stride;
 
     if (PE_start == shmem_internal_my_pe) {
-        if (source != target) {
-            ret = shmem_internal_put_nb(target, source, len, PE_start);
-            shmem_fence();
-            shmem_internal_put_wait(ret);
-            shmem_internal_atomic_small(pSync, &tmp, sizeof(long), PE_start, PTL_SUM, DTYPE_LONG);
-        }
+        /* Copy data into the target */
+        if (source != target) memcpy(target, source, len);
+
+	/* send completion update */
+        shmem_internal_atomic_small(pSync, &tmp, sizeof(long), PE_start, PTL_SUM, DTYPE_LONG);
+
+	/* wait for N updates */
         shmem_long_wait_until(pSync, SHMEM_CMP_EQ, PE_size);
+
+	/* Clear pSync */
         tmp = 0;
         shmem_internal_put_small(pSync, &tmp, sizeof(tmp), PE_start);
         shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
     } else {
+        /* Push data into the target */
         size_t offset = ((shmem_internal_my_pe - PE_start) / stride) * len;
         ret = shmem_internal_put_nb((char*) target + offset, source, len, PE_start);
         shmem_internal_put_wait(ret);
+
+	/* ensure ordering */
         shmem_fence();
+
+	/* send completion update */
         shmem_internal_atomic_small(pSync, &tmp, sizeof(long), PE_start, PTL_SUM, DTYPE_LONG);
     }
     
