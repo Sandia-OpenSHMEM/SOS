@@ -49,6 +49,8 @@ ptl_size_t shmem_transport_portals4_max_fetch_atomic_size = 0;
 ptl_size_t shmem_transport_portals4_pending_put_counter = 0;
 ptl_size_t shmem_transport_portals4_pending_get_counter = 0;
 
+int32_t shmem_transport_portals4_event_slots = 2048;
+
 static ptl_ni_limits_t ni_limits;
 static ptl_pt_index_t data_pt = PTL_PT_ANY;
 static ptl_pt_index_t heap_pt = PTL_PT_ANY;
@@ -289,7 +291,9 @@ shmem_transport_portals4_startup(void)
     }
 
     /* create portal table entry */
-    ret = PtlEQAlloc(shmem_transport_portals4_ni_h, 64, &shmem_transport_portals4_eq_h);
+    ret = PtlEQAlloc(shmem_transport_portals4_ni_h, 
+                     shmem_transport_portals4_event_slots,
+                     &shmem_transport_portals4_eq_h);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlEQAlloc failed: %d\n",
                 shmem_internal_my_pe, ret);

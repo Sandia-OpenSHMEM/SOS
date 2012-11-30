@@ -155,7 +155,7 @@ start_pes(int npes)
     radix = get_env_long("COLL_RADIX", 0, 4);
     crossover = get_env_long("COLL_CROSSOVER", 0, 4);
     heap_size = get_env_long("SYMMETRIC_SIZE", 1, 64 * 1024 * 1024);
-    eager_size = get_env_long("BOUNCE_SIZE", 1, 0);
+    eager_size = get_env_long("BOUNCE_SIZE", 1, 2048);
     heap_use_malloc = get_env_long("SYMMETRIC_HEAP_USE_MALLOC", 0, 0);
 
     /* Find symmetric data */
