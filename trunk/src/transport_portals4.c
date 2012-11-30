@@ -66,9 +66,10 @@ static
 void
 init_long_frag(shmem_free_list_item_t *item)
 {
-    shmem_transport_portals4_frag_t *frag =
-        (shmem_transport_portals4_frag_t*) item;
-    frag->type = SHMEM_TRANSPORT_PORTALS4_TYPE_LONG;
+    shmem_transport_portals4_long_frag_t *frag =
+        (shmem_transport_portals4_long_frag_t*) item;
+    frag->frag.type = SHMEM_TRANSPORT_PORTALS4_TYPE_LONG;
+    frag->reference = 0;
 }
 
 
