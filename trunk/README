@@ -4,15 +4,14 @@ Portals SHMEM
 * About
 
 Portals SHMEM is an implementation of the OpenSHMEM 1.0 standard over
-Portals 4.0 and/or XPMEM.  The implementation is complete, although
-performance tuning is still a work in progress.  A Fortran interface
-is not currently provided.
+Portals 4.0 and XPMEM.  The implementation is complete, although
+performance tuning is still a work in progress.
 
 
 * Building
 
 Portals SHMEM implementation utilizes the Autoconf/Automake/Libtool
-build system.  The standard GNU configure script ane make system is
+build system.  The standard GNU configure script ane makd system is
 used to build OpenSHMEM Over Portals 4.  To build:
 
   % ./configure <options>
@@ -57,7 +56,7 @@ options.
         copied into a bounce buffer and then sent.
 
     SHMEM_COLL_CROSSOVER (default 4)
-        For num_pes < SHMEM_TREE_THRESHOLD, collective algorithms are
+        For num_pes < SHMEM_COLL_THRESHOLD, collective algorithms are
         serial instead of tree based.
 
     SMA_COLL_RADIX (default 4)
