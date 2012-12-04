@@ -35,7 +35,52 @@
       integer SHMEM_SYNC_VALUE
       parameter (SHMEM_SYNC_VALUE=0)
       
-      logical shmem_pe_accessible
-      logical shmem_addr_accessible
+      ! 8.2 Query Routines
+      external NUM_PES
+      INTEGER NUM_PES
+      external SHMEM_N_PES
+      INTEGER SHMEM_N_PES
 
-      integer*8 shmem_ptr
+      external MY_PE
+      INTEGER MY_PE
+      external SHMEM_MY_PE
+      INTEGER SHMEM_MY_PE
+
+      ! 8.3 Accessibility Query Routines
+      external SHMEM_PE_ACCESSIBLE
+      LOGICAL SHMEM_PE_ACCESSIBLE
+
+      external SHMEM_ADDR_ACCESSIBLE
+      LOGICAL SHMEM_ADDR_ACCESSIBLE
+      
+      ! 8.5 Remote Pointer Operations
+      !external SHMEM_PTR
+      !POINTER(PTR, POINTEE) SHMEM_PTR
+
+      ! 8.12 Atomic Memory fetch-and-operate Routines
+      external SHMEM_SWAP
+      INTEGER SHMEM_SWAP
+      external SHMEM_INT4_SWAP
+      INTEGER(KIND=@FORTRAN_INT4_KIND@) SHMEM_INT4_SWAP
+      external SHMEM_INT8_SWAP
+      INTEGER(KIND=@FORTRAN_INT8_KIND@) SHMEM_INT8_SWAP
+      external SHMEM_REAL4_SWAP
+      INTEGER(KIND=@FORTRAN_REAL4_KIND@) SHMEM_REAL4_SWAP
+      external SHMEM_REAL8_SWAP
+      INTEGER(KIND=@FORTRAN_REAL8_KIND@) SHMEM_REAL8_SWAP
+
+      external SHMEM_INT4_CSWAP
+      INTEGER(KIND=@FORTRAN_INT4_KIND@) SHMEM_INT4_CSWAP
+      external SHMEM_INT8_CSWAP
+      INTEGER(KIND=@FORTRAN_INT8_KIND@) SHMEM_INT8_CSWAP
+
+      external SHMEM_INT4_FADD
+      INTEGER(KIND=@FORTRAN_INT4_KIND@) SHMEM_INT4_FADD
+      external SHMEM_INT8_FADD
+      INTEGER(KIND=@FORTRAN_INT8_KIND@) SHMEM_INT8_FADD
+
+      external SHMEM_INT4_FINC
+      INTEGER(KIND=@FORTRAN_INT4_KIND@) SHMEM_INT4_FINC
+      external SHMEM_INT8_FINC
+      INTEGER(KIND=@FORTRAN_INT8_KIND@) SHMEM_INT8_FINC
+      

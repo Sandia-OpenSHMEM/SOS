@@ -107,6 +107,7 @@ AC_CHECK_SIZEOF([double])
 AC_CHECK_SIZEOF([long double])
 
 if test "$FC" != "" ; then
+  # Get size of Fortran types
   OMPI_FORTRAN_GET_SIZEOF([], [LOGICAL])
   OMPI_FORTRAN_GET_SIZEOF([], [CHARACTER])
   OMPI_FORTRAN_GET_SIZEOF([], [INTEGER])
@@ -114,11 +115,23 @@ if test "$FC" != "" ; then
   OMPI_FORTRAN_GET_SIZEOF([], [DOUBLE PRECISION])
   OMPI_FORTRAN_GET_SIZEOF([], [COMPLEX])
 
+  # find Portals integer type corresponding to INTEGER
   SHMEM_FIND_FORTRAN_INT_TYPE([INTEGER])
 
+  # find C type corresponding to given Fortran types
   OMPI_FIND_TYPE([INTEGER], [char, short, int, long, long long])
   OMPI_FIND_TYPE([DOUBLE PRECISION], [float, double, long double])
 
+  # Find kind values for 4 & 8 byte integer types in Fortran (used in
+  # shmem.fh)
+  OMPI_FORTRAN_GET_KIND_VALUE([C_INT32_T], [FORTRAN_INT4_KIND])
+  OMPI_FORTRAN_GET_KIND_VALUE([C_INT64_T], [FORTRAN_INT8_KIND])
+  OMPI_FORTRAN_GET_KIND_VALUE([C_FLOAT], [FORTRAN_REAL4_KIND])
+  OMPI_FORTRAN_GET_KIND_VALUE([C_DOUBLE], [FORTRAN_REAL8_KIND])
+
+  # The collectives are all implemented in C and require the psync to
+  # hold one or two long integers.  Find how many INTEGERs it takes to
+  # create a memory region as big as the required C region.
   if test "$ompi_cv_fortran_sizeof_INTEGER" -lt "$ac_cv_sizeof_long" ; then
     FORTRAN_BCAST_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / p" | dc`
     FORTRAN_REDUCE_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / p" | dc`
@@ -135,11 +148,19 @@ else
   FORTRAN_REDUCE_SYNC_SIZE=0
   FORTRAN_BARRIER_SYNC_SIZE=0
   FORTRAN_COLLECT_SYNC_SIZE=0
+  FORTRAN_INT4_KIND=0
+  FORTRAN_INT8_KIND=0
+  FORTRAN_REAL4_KIND=0
+  FORTRAN_REAL8_KIND=0
 fi
 AC_SUBST(FORTRAN_BCAST_SYNC_SIZE)
 AC_SUBST(FORTRAN_REDUCE_SYNC_SIZE)
 AC_SUBST(FORTRAN_BARRIER_SYNC_SIZE)
 AC_SUBST(FORTRAN_COLLECT_SYNC_SIZE)
+AC_SUBST(FORTRAN_INT4_KIND)
+AC_SUBST(FORTRAN_INT8_KIND)
+AC_SUBST(FORTRAN_REAL4_KIND)
+AC_SUBST(FORTRAN_REAL8_KIND)
 
 AM_CONDITIONAL([HAVE_FORTRAN], [test "$FC" != ""])
 
