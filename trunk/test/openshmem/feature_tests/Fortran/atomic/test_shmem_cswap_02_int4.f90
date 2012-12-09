@@ -50,9 +50,6 @@ program test_shmem_atomics
   integer                   :: errcode, abort
   integer                   :: me, npes
 
-  ! Function definitions
-  integer                   :: my_pe, num_pes
-  integer*4                  :: shmem_int4_cswap
 
   common /globalvars/ target
 

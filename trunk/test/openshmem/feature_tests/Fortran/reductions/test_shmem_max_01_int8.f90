@@ -54,8 +54,6 @@ program test_shmem_reduction
 
   character*(*), parameter :: TEST_NAME = 'shmem_max'
 
-  ! Function definitions
-  integer                   :: my_pe, num_pes
 
   success = .TRUE.
 

@@ -52,8 +52,6 @@ program test_shmem_get
 
   integer          :: errcode, abort
 
-! Function definitions
-  integer                   :: my_pe, num_pes
 
   common /globalvars/ src
 

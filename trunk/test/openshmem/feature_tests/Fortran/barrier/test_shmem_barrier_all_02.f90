@@ -45,8 +45,6 @@ program test_shmem_barrier
 
   integer              :: me, npes, i
 
-! Function definitions
-  integer              :: my_pe, num_pes
   integer              :: errcode, abort
 
   call start_pes(0);

@@ -43,8 +43,6 @@ program test_shmem_barrier
   integer, save :: flag
   integer       :: me, npes, i
 
-! Function definitions
-  integer                   :: my_pe, num_pes
 
   flag = 10101
   

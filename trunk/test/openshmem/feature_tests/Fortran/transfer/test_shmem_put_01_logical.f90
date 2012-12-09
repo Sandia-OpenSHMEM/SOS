@@ -52,8 +52,6 @@ program test_shmem_put
 
   integer                 :: errcode, abort
 
-! Function definitions
-  integer                 :: my_pe, num_pes  
 
   call start_pes(0)
   me   = my_pe()
