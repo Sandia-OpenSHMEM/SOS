@@ -184,9 +184,6 @@ main (int argc, char **argv)
 
   if (ROOT == my_rank && argc < 2)
     {
-      printf
-	("Usage: oshrun -np <np> %s -h <nrows> -w <ncolumns> -m <method>\n",
-	 argv[0]);
       printf ("Using defaults: -h 20 -w 20 -m 2\n");
     }
 

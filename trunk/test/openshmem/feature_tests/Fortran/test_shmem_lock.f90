@@ -47,10 +47,6 @@ program test_shmem_lock
   integer         :: ret_val;
   integer         :: new_val;
 
-  ! Function definitions
-  integer                   :: my_pe, num_pes
-  integer                   :: shmem_test_lock
-
   call start_pes(0)
   me   = my_pe()
   npes = num_pes()

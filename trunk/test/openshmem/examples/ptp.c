@@ -73,7 +73,7 @@ main(int argc, char **argv)
      if (npes < 4) {
           if (me==0)
                fprintf(stderr,"ERR: test requires 4 or more PEs\n");
-          return 1;
+          return 77;
      }
      shmem_barrier_all();
 
