@@ -55,7 +55,7 @@
 
       ! 8.5 Remote Pointer Operations
       EXTERNAL SHMEM_PTR
-      INTEGER(KIND=@FORTRAN_PTR_KIND) SHMEM_PTR
+      INTEGER(KIND=@FORTRAN_PTR_KIND@) SHMEM_PTR
 
       ! 8.12 Atomic Memory fetch-and-operate Routines
       EXTERNAL SHMEM_SWAP
