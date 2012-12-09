@@ -9,6 +9,8 @@
 # distribution.
 #
 
+SUBDIRS = openshmem
+
 all: $(check_PROGRAMS)
 
 TESTS = \
