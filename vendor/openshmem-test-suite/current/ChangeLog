@@ -1,0 +1,12 @@
+New in release 1.0d
+
+* Added checks for strided collectives in
+    o test_shmem_broadcast.c
+    o test_shmem_collects.c
+    o test_shmem_reduction.c
+
+* Corrections to test_shmem_get_shmalloc and test_shmem_get_global
+
+* Corrections to the Fortan feature tests:
+    o All broadcasts are now called collectively
+    o Size parameters match datatype
