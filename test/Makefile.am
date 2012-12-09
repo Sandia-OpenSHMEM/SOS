@@ -9,9 +9,11 @@
 # distribution.
 #
 
-SUBDIRS = openshmem
+SUBDIRS = . openshmem
 
 all: $(check_PROGRAMS)
+
+check_PROGRAMS = $(TESTS)
 
 TESTS = \
 	hello \
@@ -63,11 +65,17 @@ TESTS += \
      hello_f
 endif
 
-check_PROGRAMS = \
-	$(TESTS) \
+if ENABLE_LENGTHY_TESTS
+TESTS += \
 	shmemlatency \
 	msgrate \
 	NPshmem
+else
+check_PROGRAMS += \
+	shmemlatency \
+	msgrate \
+	NPshmem
+endif
 
 PROCS ?= 2
 

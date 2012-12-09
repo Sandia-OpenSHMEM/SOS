@@ -9,4 +9,4 @@
 # distribution.
 #
 
-SUBDIRS = examples feature_tests performance_tests
+SUBDIRS = micro_benchmarks

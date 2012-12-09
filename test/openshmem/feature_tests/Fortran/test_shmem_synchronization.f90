@@ -44,9 +44,6 @@ program test_shmem_synchronization
   integer*8       :: src
   integer         :: i
 
-! Function definitions
-  integer    :: my_pe, num_pes
-
   src = 9
 
   call start_pes(0)

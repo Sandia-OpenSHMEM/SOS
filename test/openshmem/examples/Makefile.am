@@ -11,8 +11,10 @@
 
 all: $(check_PROGRAMS)
 
+check_PROGRAMS = $(TESTS) \
+	adjacent_32bit_amo
+
 TESTS = \
-	adjacent_32bit_amo \
 	cpi \
 	hello \
 	ptp \
@@ -21,9 +23,6 @@ TESTS = \
 	shmem_heat_image \
 	shmem_matrix \
 	sping
-
-check_PROGRAMS = \
-	$(TESTS)
 
 PROCS ?= 2
 

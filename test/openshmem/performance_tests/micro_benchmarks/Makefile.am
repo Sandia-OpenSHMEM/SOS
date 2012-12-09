@@ -11,16 +11,26 @@
 
 all: $(check_PROGRAMS)
 
-TESTS = \
+TESTS =
+check_PROGRAMS = $(TESTS)
+
+if ENABLE_LENGTHY_TESTS
+TESTS += \
 	put_performance \
 	get_performance \
 	barrier_performance \
 	broadcast32_performance \
 	collect32_performance \
 	fcollect32_performance
-
-check_PROGRAMS = \
-	$(TESTS)
+else
+check_PROGRAMS += \
+	put_performance \
+	get_performance \
+	barrier_performance \
+	broadcast32_performance \
+	collect32_performance \
+	fcollect32_performance
+endif
 
 PROCS ?= 2
 

@@ -46,6 +46,9 @@ test_shmem_barrier_LDADD = $(top_builddir)/src/libsma.la
 test_shmem_broadcast_SOURCES = test_shmem_broadcast.c
 test_shmem_broadcast_LDADD = $(top_builddir)/src/libsma.la
 
+test_shmem_collects_SOURCES = test_shmem_collects.c
+test_shmem_collects_LDADD = $(top_builddir)/src/libsma.la
+
 test_shmem_get_globals_SOURCES = test_shmem_get_globals.c
 test_shmem_get_globals_LDADD = $(top_builddir)/src/libsma.la
 

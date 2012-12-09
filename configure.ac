@@ -54,6 +54,11 @@ AC_DEFINE_UNQUOTED([WANT_TOTAL_DATA_ORDERING_CHECK], [$ordering], [0 if never ch
 AC_MSG_CHECKING([For total data ordering behavior])
 AC_MSG_RESULT([$msg])
 
+AC_ARG_ENABLE([lengthy-tests],
+    [AC_HELP_STRING([--enable-lengthy-tests],
+                    [Enable long running tests in the test suite])])
+AM_CONDITIONAL([ENABLE_LENGTHY_TESTS], [test "$enable_lengthy_tests" = "yes"])
+
 dnl check for programs
 
 AC_PROG_CC
@@ -226,7 +231,11 @@ AC_CONFIG_FILES([Makefile
   test/Makefile
   test/openshmem/Makefile
   test/openshmem/examples/Makefile
-  test/openshmem/feature_tests/c/Makefile
+  test/openshmem/feature_tests/Makefile
+  test/openshmem/feature_tests/C/Makefile
+  test/openshmem/feature_tests/Fortran/Makefile
+  test/openshmem/feature_tests/Fortran/accessibility/Makefile
+  test/openshmem/performance_tests/Makefile
   test/openshmem/performance_tests/micro_benchmarks/Makefile])
 AC_OUTPUT
 
