@@ -9,4 +9,4 @@
 # distribution.
 #
 
-SUBDIRS = examples performance_tests/micro_benchmarks
+SUBDIRS = examples feature_tests/C performance_tests/micro_benchmarks

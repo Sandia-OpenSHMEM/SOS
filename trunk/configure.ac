@@ -219,7 +219,15 @@ WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS $XPMEM_LIBS $pmi_LIBS"
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LDFLAGS)
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
 
-AC_CONFIG_FILES([Makefile mpp/Makefile mpp/shmem.fh src/Makefile test/Makefile])
+AC_CONFIG_FILES([Makefile
+  mpp/Makefile
+  mpp/shmem.fh
+  src/Makefile
+  test/Makefile
+  test/openshmem/Makefile
+  test/openshmem/examples/Makefile
+  test/openshmem/feature_tests/c/Makefile
+  test/openshmem/performance_tests/micro_benchmarks/Makefile])
 AC_OUTPUT
 
 FORT="$FC"
