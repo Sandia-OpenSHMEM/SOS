@@ -42,8 +42,6 @@ program test_shmem_accessible
   integer                   :: me, npes
   logical                   :: rc
  
- ! SHMEM function definitions
-  integer                   :: my_pe, num_pes
   
   call start_pes(0)
   

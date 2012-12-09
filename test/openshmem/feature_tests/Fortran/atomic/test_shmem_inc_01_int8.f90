@@ -50,8 +50,6 @@ program test_shmem_atomics
   integer                   :: errcode, abort
   integer                   :: me, npes
 
-  ! Function definitions
-  integer                   :: my_pe, num_pes
 
   call start_pes(0)
   me = my_pe()

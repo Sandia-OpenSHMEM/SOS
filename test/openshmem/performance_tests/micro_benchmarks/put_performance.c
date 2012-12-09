@@ -42,6 +42,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <shmem.h>
+#include <sys/time.h>
 
 long double time_taken;
 
@@ -66,7 +67,7 @@ main(void)
   me = _my_pe();
   npes = _num_pes();
 
-  for (i = 0; i < SHMEM_BCAST_SYNC_SIZE; i += 1)
+  for (i = 0; i < _SHMEM_BCAST_SYNC_SIZE; i += 1)
   {
     pSync[i] = _SHMEM_SYNC_VALUE;
   }
@@ -109,9 +110,11 @@ main(void)
     if(me == 0){
       time_taken = time_taken/(npes*10000); /*Average time across all PEs for one put*/
       if (i*sizeof(i) < 1048576)
-        printf("%ld \t\t\t\t %ld\t\t\t\t %ld\n",i*sizeof(i),time_taken,(i*sizeof(i))/(time_taken*1000000.0));
+        printf("%ld \t\t\t\t %lf\t\t\t\t %lf\n",i*sizeof(i),
+               (double)time_taken,(double)((i*sizeof(i))/(time_taken*1000000.0)));
       else
-        printf("%ld \t\t\t %ld\t\t\t\t %ld\n",i*sizeof(i),time_taken,(i*sizeof(i))/(time_taken*1000000.0));
+        printf("%ld \t\t\t %lf\t\t\t\t %lf\n",i*sizeof(i),
+               (double)time_taken,(double)((i*sizeof(i))/(time_taken*1000000.0)));
 
     }
 

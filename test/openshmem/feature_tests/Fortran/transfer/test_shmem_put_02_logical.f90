@@ -52,8 +52,6 @@ program test_shmem_put
 
   integer                 :: errcode, abort
 
-! Function definitions
-  integer                 :: my_pe, num_pes  
   
   common /globalvars/ dest
 

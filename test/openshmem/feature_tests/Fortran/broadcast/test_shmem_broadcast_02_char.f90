@@ -52,8 +52,6 @@ program test_shmem_broadcast
 
   integer            :: me, npes
 
-! Function definitions
-  integer            :: my_pe, num_pes
 
   common /globalvars/ target, src
 

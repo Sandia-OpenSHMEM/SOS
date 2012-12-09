@@ -62,8 +62,6 @@ program test_shmem_collects
   integer              :: collect_nelems
   integer              :: errcode, abort
 
-! Function definitions
-  integer              :: my_pe, num_pes
   
 
   call start_pes(0)

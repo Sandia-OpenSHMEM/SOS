@@ -50,9 +50,6 @@ program test_shmem_atomics
   integer                   :: errcode, abort
   integer                   :: me, npes
 
-  ! Function definitions
-  integer                   :: my_pe, num_pes
-  integer*8                  :: shmem_int8_finc
 
   common /globalvars/ target
 

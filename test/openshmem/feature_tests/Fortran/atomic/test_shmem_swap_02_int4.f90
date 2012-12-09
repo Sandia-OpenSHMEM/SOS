@@ -51,9 +51,6 @@ program test_shmem_atomics
   integer                   :: errcode, abort, length
   integer                   :: me, npes
 
-  ! Function definitions
-  integer                   :: my_pe, num_pes
-  integer*4                  :: shmem_int4_swap
 
   common /globalvars/ success2, target
 

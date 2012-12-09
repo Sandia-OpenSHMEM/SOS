@@ -50,6 +50,8 @@
 #include <stdio.h>
 #include <shmem.h>
 #include <sys/time.h>
+#include <stdlib.h>
+#include <unistd.h>
 int
 main(void)
 {

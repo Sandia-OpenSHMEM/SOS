@@ -56,9 +56,6 @@ program test_shmem_atomics
   integer                   :: errcode, abort, length
   integer                   :: me, npes
 
-  ! Function definitions
-  integer                   :: my_pe, num_pes
-  integer*8                  :: shmem_int8_swap
 
   call start_pes(0)
   me = my_pe()

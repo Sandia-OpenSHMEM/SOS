@@ -57,8 +57,6 @@ program test_shmem_collects
   integer              :: collect_nelems
   integer              :: errcode, abort
 
-! Function definitions
-  integer              :: my_pe, num_pes
   
 
   common /globalvars/ src, target

@@ -69,7 +69,7 @@ main(int argc, char **argv)
     shmem_int_get(&new_val,&x,1,0);
     new_val++;
     shmem_int_put(&x,&new_val,1,0);  /* increment x on PE 0 */
-    shmem_quiet; 
+    shmem_quiet(); 
 
     shmem_clear_lock(&L);
 
@@ -91,7 +91,7 @@ main(int argc, char **argv)
     shmem_int_get(&new_val,&x,1,0);
     new_val++;
     shmem_int_put(&x,&new_val,1,0);  /* increment x on PE 0 */
-    shmem_quiet; 
+    shmem_quiet(); 
 
     shmem_clear_lock(&L);
 

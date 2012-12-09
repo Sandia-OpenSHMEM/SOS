@@ -38,6 +38,7 @@
 
 #include <stdio.h>
 #include <shmem.h>
+#include <sys/time.h>
 
 #define NPES 4
 
