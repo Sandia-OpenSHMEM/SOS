@@ -354,7 +354,7 @@ void
 FC_SHMEM_INT8_INC(int64_t *target,
                   fortran_integer_t *pe)
 {
-    int32_t tmp = 1;
+    int64_t tmp = 1;
 
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_internal_initialized) {
