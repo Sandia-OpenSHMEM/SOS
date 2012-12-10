@@ -88,9 +88,9 @@ program test_shmem_get
       end do 
 
       if (success1 .eqv. .TRUE.) then
-        write(*,*) "Test shmem_integer_get: Failed" 
+        write(*,*) "Test shmem_integer_get: Passed" 
       else
-        write(*,*) "Test shmem_integer_get: Passed"
+        write(*,*) "Test shmem_integer_get: Failed"
       end if
     end if 
 
