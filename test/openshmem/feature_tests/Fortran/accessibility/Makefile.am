@@ -53,8 +53,8 @@ TESTS = \
 	test_shmem_acc_mem_05_real8
 
 PROCS ?= 2
-
-TESTS_ENVIRONMENT = yod -np $(PROCS)
+RUNCMD ?= yod -np $(PROCS)
+TESTS_ENVIRONMENT ?= ${top_srcdir}/test/openshmem/feature_tests/Fortran/test_wrapper.sh $(RUNCMD)
 
 AM_FCFLAGS = -I$(top_srcdir)/mpp
 

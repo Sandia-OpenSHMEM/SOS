@@ -36,6 +36,7 @@ AC_ARG_ENABLE([error-checking],
     [AC_HELP_STRING([--enable-error-checking],
                     [Enable error checking for SHMEM calls (default:disabled)])])
 AS_IF([test "$enable_error_checking" = "yes"], [AC_DEFINE([ENABLE_ERROR_CHECKING], [1], [Enable argument checking])])
+AM_CONDITIONAL([ENABLE_ERROR_CHECKING], [test "$enable_error_checking" = "yes"])
 
 AC_ARG_ENABLE([hard-polling],
     [AC_HELP_STRING([--enable-hard-polling],
@@ -235,6 +236,13 @@ AC_CONFIG_FILES([Makefile
   test/openshmem/feature_tests/C/Makefile
   test/openshmem/feature_tests/Fortran/Makefile
   test/openshmem/feature_tests/Fortran/accessibility/Makefile
+  test/openshmem/feature_tests/Fortran/alloc/Makefile
+  test/openshmem/feature_tests/Fortran/atomic/Makefile
+  test/openshmem/feature_tests/Fortran/barrier/Makefile
+  test/openshmem/feature_tests/Fortran/broadcast/Makefile
+  test/openshmem/feature_tests/Fortran/collect/Makefile
+  test/openshmem/feature_tests/Fortran/reductions/Makefile
+  test/openshmem/feature_tests/Fortran/transfer/Makefile
   test/openshmem/performance_tests/Makefile
   test/openshmem/performance_tests/micro_benchmarks/Makefile])
 AC_OUTPUT

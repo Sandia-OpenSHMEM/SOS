@@ -9,7 +9,7 @@
 # distribution.
 #
 
-DIST_SUBDIRS = accessibility
+DIST_SUBDIRS = accessibility alloc atomic barrier broadcast collect reductions transfer
 SUBDIRS = .
 
 all: $(check_PROGRAMS)
@@ -18,7 +18,7 @@ check_PROGRAMS = $(TESTS)
 
 if HAVE_FORTRAN
 
-SUBDIRS += accessibility
+SUBDIRS += accessibility alloc atomic barrier broadcast collect reductions transfer
 
 TESTS = \
 	test_shmem_lock \
@@ -26,8 +26,8 @@ TESTS = \
 endif
 
 PROCS ?= 2
-
-TESTS_ENVIRONMENT = yod -np $(PROCS)
+RUNCMD ?= yod -np $(PROCS)
+TESTS_ENVIRONMENT ?= ${top_srcdir}/test/openshmem/feature_tests/Fortran/test_wrapper.sh $(RUNCMD)
 
 AM_CPPFLAGS = -I$(top_srcdir)/mpp
 AM_FCFLAGS = -I$(top_srcdir)/mpp
