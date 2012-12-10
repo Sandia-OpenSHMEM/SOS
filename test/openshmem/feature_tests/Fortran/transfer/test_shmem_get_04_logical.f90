@@ -76,7 +76,7 @@ program test_shmem_get
 
     call shmem_barrier_all()
 
-    call shmem_logical_get(dest, src, N, nextpe)
+    call shmem_logical_get(dest, src, 0, nextpe)
 
     call shmem_barrier_all()
 
@@ -88,9 +88,9 @@ program test_shmem_get
       end do 
 
       if (success1 .eqv. .TRUE.) then
-        write(*,*) "Test shmem_integer_get: Failed" 
+        write(*,*) "Test shmem_integer_get: Passed" 
       else
-        write(*,*) "Test shmem_integer_get: Passed"
+        write(*,*) "Test shmem_integer_get: Failed"
       end if
     end if 
 
