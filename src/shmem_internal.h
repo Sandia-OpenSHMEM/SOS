@@ -12,6 +12,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #ifndef PORTALS_SHMEM_INTERNAL_H
 #define PORTALS_SHMEM_INTERNAL_H
