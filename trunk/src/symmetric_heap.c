@@ -32,15 +32,22 @@ void* dlmemalign(size_t, size_t);
 /* shmalloc and friends are defined to not be thread safe, so this is
    fine.  If they change that definition, this is no longer fine and
    needs to be made thread safe. */
+#define MAX_SIZE_T           (~(size_t)0)
 void*
 shmem_internal_get_next(int incr)
 {
     char *orig = shmem_internal_heap_curr;
+
+    if (incr < 0) {
+        return (void*) MAX_SIZE_T;
+    }
+
     shmem_internal_heap_curr += (incr > 0) ? incr : 0;
     if (shmem_internal_heap_curr - (char*) shmem_internal_heap_base > shmem_internal_heap_length) {
         printf("WARNING: top of symmetric heap found\n");
-        return (void*) -1;
+        return (void*) MAX_SIZE_T;
     }
+
     return orig;
 }
 
@@ -119,7 +126,7 @@ shmalloc(size_t size)
     void *ret;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -136,7 +143,7 @@ void
 shfree(void *ptr)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -153,7 +160,7 @@ shrealloc(void *ptr, size_t size)
     void *ret;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -172,7 +179,7 @@ shmemalign(size_t alignment, size_t size)
     void *ret;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif

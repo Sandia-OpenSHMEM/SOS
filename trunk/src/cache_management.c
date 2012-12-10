@@ -22,7 +22,7 @@ void
 shmem_clear_cache_inv(void)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -35,7 +35,7 @@ void
 shmem_set_cache_inv(void)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -48,7 +48,7 @@ void
 shmem_clear_cache_line_inv(void *target)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -61,7 +61,7 @@ void
 shmem_set_cache_line_inv(void *target)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -74,7 +74,7 @@ void
 shmem_udcflush(void)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -87,7 +87,7 @@ void
 shmem_udcflush_line(void *target)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif

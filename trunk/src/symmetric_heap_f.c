@@ -30,14 +30,17 @@ void FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errc
 void
 FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, fortran_integer_t *want_abort)
 {
+    size_t len;
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
+    len = ((size_t) *length) * 4;
+
     *errcode = 0;
-    if (*length < 0) {
+    if (len == 0) {
         if (0 == *want_abort) {
             *errcode = -1;
             return;
@@ -48,7 +51,7 @@ FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, 
         }
     }
 
-    *addr = dlmalloc(*length * 4); /* length is number of 32 bit words */
+    *addr = dlmalloc(len); /* length is number of 32 bit words */
 
     if (*addr == NULL) {
         if (0 == *want_abort) {
@@ -71,7 +74,7 @@ void
 FC_SHPDEALLOC(void **addr, fortran_integer_t *errcode, fortran_integer_t *want_abort)
 {
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
@@ -91,7 +94,7 @@ FC_SHPCLMOVE(void **addr, fortran_integer_t *length, fortran_integer_t *errcode,
     void *ret;
 
 #ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_int_initialized) {
+    if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
