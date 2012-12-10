@@ -64,7 +64,7 @@ program test_shmem_shpalloc
   if(npes .ge. min_npes) then
 
     ! allocate remotely accessible block
-    call shpalloc(array_addr, nelems, errcode, abort)
+    call shpalloc(array_addr, nelems * 2, errcode, abort)
 
     do i = 1, nelems 
       array(i) = DBLE(54321.67) 

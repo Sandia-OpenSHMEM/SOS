@@ -64,7 +64,7 @@ program test_shmem_shpalloc
   if(npes .ge. min_npes) then
 
     ! allocate remotely accessible block
-    call shpalloc(array_addr, nelems, errcode, abort)
+    call shpalloc(array_addr, nelems  * 2, errcode, abort)
 
     do i = 1, nelems 
       array(i) = REAL(54321.67, KIND=8) 
@@ -80,7 +80,7 @@ program test_shmem_shpalloc
         end do
 
         ! Get data on PE 'pe'
-        call shmem_real_get(buffer, array, nelems, pe) 
+        call shmem_double_get(buffer, array, nelems, pe) 
 
         ! Check that values are correct
         do i = 1, nelems, 1
