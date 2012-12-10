@@ -167,7 +167,7 @@ FC_SHMEM_INT4_OR_TO_ALL(int32_t *target,
 
     shmem_internal_op_to_all(target, source, *nreduce, 4,
                              *PE_start, *logPE_stride, *PE_size,
-                             pWrk, pSync_c, PTL_LOR, PTL_INT32_T);
+                             pWrk, pSync_c, PTL_BOR, PTL_INT32_T);
 }
 
 
@@ -202,7 +202,7 @@ FC_SHMEM_INT8_OR_TO_ALL(int64_t *target,
 
     shmem_internal_op_to_all(target, source, *nreduce, 8,
                              *PE_start, *logPE_stride, *PE_size,
-                             pWrk, pSync_c, PTL_LOR, PTL_INT64_T);
+                             pWrk, pSync_c, PTL_BOR, PTL_INT64_T);
 }
 
 
