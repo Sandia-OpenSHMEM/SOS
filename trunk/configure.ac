@@ -60,6 +60,11 @@ AC_ARG_ENABLE([lengthy-tests],
                     [Enable long running tests in the test suite])])
 AM_CONDITIONAL([ENABLE_LENGTHY_TESTS], [test "$enable_lengthy_tests" = "yes"])
 
+AC_ARG_ENABLE([fortran],
+    [AC_HELP_STRING([--disable-fortran],
+                    [Disable building the Fortran bindings])])
+
+
 dnl check for programs
 
 AC_PROG_CC
@@ -69,7 +74,11 @@ AC_C_INLINE
 m4_ifdef([AM_PROG_AR],[AM_PROG_AR])
 AC_PATH_PROG([PERL],[perl])
 AC_PROG_CXX
-AC_PROG_FC
+if test "$enable_fortran" != "no" ; then
+  AC_PROG_FC
+else
+  FC=
+fi
 if test "$FC" != "" ; then
   AC_FC_WRAPPERS
 fi
