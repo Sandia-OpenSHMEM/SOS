@@ -18,8 +18,8 @@
 
 #include "shmem_free_list.h"
 
-#define shmem_transport_portals4_data_pt 10
-#define shmem_transport_portals4_heap_pt 11
+#define shmem_transport_portals4_data_pt 8
+#define shmem_transport_portals4_heap_pt 9
 
 extern ptl_handle_ni_t shmem_transport_portals4_ni_h;
 extern ptl_handle_md_t shmem_transport_portals4_put_volatile_md_h;
