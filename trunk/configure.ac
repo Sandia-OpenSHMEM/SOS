@@ -123,6 +123,19 @@ AC_CHECK_SIZEOF([long double])
 AC_CHECK_SIZEOF([void*])
 
 if test "$FC" != "" ; then
+  # make sure Fortran supports ISO_C_BINDING (Fortran 2003)
+  AC_CACHE_CHECK([if Fortran compiler supports ISO_C_BINDING],
+    [shmem_cv_fortran_iso_c_binding],
+    [AC_LANG_PUSH([Fortran])
+     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(, [[
+        use, intrinsic :: ISO_C_BINDING
+	integer(c_int) :: i
+	i = 5
+]])], [shmem_cv_fortran_iso_c_binding="yes"],
+      [shmem_cv_fortran_iso_c_binding="no"])])
+  AS_IF([test "$shmem_cv_fortran_iso_c_binding" = "no"]
+    [AC_MSG_ERROR([Fortran compiler does not support ISO_C_BINDING, which is required for Portals SHMEM.])])
+
   # Get size of Fortran types
   OMPI_FORTRAN_GET_SIZEOF([], [LOGICAL])
   OMPI_FORTRAN_GET_SIZEOF([], [CHARACTER])
