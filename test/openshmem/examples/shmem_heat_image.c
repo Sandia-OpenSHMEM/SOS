@@ -145,7 +145,7 @@ main (int argc, char **argv)
     {
       if (!my_number)
 	fprintf (stderr, "Cannot distribute rows, too many processors\n");
-      return (-1);
+      return (77);
     }
 
   if (my_number == (n_of_nodes - 1))
