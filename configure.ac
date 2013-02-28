@@ -133,7 +133,7 @@ if test "$FC" != "" ; then
 	i = 5
 ]])], [shmem_cv_fortran_iso_c_binding="yes"],
       [shmem_cv_fortran_iso_c_binding="no"])])
-  AS_IF([test "$shmem_cv_fortran_iso_c_binding" = "no"]
+  AS_IF([test "$shmem_cv_fortran_iso_c_binding" = "no"],
     [AC_MSG_ERROR([Fortran compiler does not support ISO_C_BINDING, which is required for Portals SHMEM.])])
 
   # Get size of Fortran types
