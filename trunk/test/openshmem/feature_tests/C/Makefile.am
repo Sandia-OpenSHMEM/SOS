@@ -33,6 +33,7 @@ PROCS ?= 2
 TESTS_ENVIRONMENT = yod -np $(PROCS)
 
 AM_CPPFLAGS = -I$(top_srcdir)/mpp
+AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
 
 test_shmem_accessible_SOURCES = test_shmem_accessible.c
 test_shmem_accessible_LDADD = $(top_builddir)/src/libsma.la

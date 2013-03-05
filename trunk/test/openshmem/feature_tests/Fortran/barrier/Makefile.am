@@ -26,6 +26,7 @@ RUNCMD ?= yod -np $(PROCS)
 TESTS_ENVIRONMENT ?= ${top_srcdir}/test/openshmem/feature_tests/Fortran/test_wrapper.sh $(RUNCMD)
 
 AM_FCFLAGS = -I$(top_srcdir)/mpp
+AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
 
 test_shmem_barrier_01_SOURCES = test_shmem_barrier_01.f90
 test_shmem_barrier_01_LDADD = ${top_builddir}/src/libsma.la
