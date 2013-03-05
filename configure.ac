@@ -64,6 +64,12 @@ AC_ARG_ENABLE([fortran],
     [AC_HELP_STRING([--disable-fortran],
                     [Disable building the Fortran bindings])])
 
+AC_ARG_ENABLE([libtool-wrapper],
+  [AS_HELP_STRING([--disable-libtool-wrapper],
+    [Disable use of libtool executable wrappers for tests])])
+AS_IF([test "$enable_libtool_wrapper" = "no"], [LIBTOOL_WRAPPER_LDFLAGS="-no-install"], [LIBTOOL_WRAPPER_LDFLAGS=])
+AC_SUBST([LIBTOOL_WRAPPER_LDFLAGS])
+
 
 dnl check for programs
 
@@ -252,6 +258,8 @@ AC_CONFIG_FILES([Makefile
   mpp/shmem.fh
   src/Makefile
   test/Makefile
+  test/unit/Makefile
+  test/netpipe/Makefile
   test/openshmem/Makefile
   test/openshmem/examples/Makefile
   test/openshmem/feature_tests/Makefile
