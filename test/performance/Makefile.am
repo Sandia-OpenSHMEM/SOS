@@ -17,10 +17,14 @@ TESTS =
 
 if ENABLE_LENGTHY_TESTS
 TESTS += \
-	NPshmem
+	NPshmem \
+	shmemlatency \
+	msgrate
 else
 check_PROGRAMS += \
-	NPshmem
+	NPshmem \
+	shmemlatency \
+	msgrate
 endif
 
 PROCS ?= 2
@@ -28,8 +32,13 @@ PROCS ?= 2
 TESTS_ENVIRONMENT = yod -np $(PROCS)
 
 AM_CPPFLAGS = -I$(top_srcdir)/mpp
+AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
+LDADD = $(top_builddir)/src/libsma.la
 
 NPshmem_SOURCES = netpipe.c netpipe.h shmem.c
-NPshmem_CPPFLAGS = -DSHMEM -I$(top_srcdir)/mpp
-NPshmem_LDADD = $(top_builddir)/src/libsma.la
-NPshmem_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
+NPshmem_CPPFLAGS = $(AM_CPPFLAGS) -DSHMEM
+
+shmemlatency_SOURCES = shmemlatency.c
+
+msgrate_SOURCES = msgrate.c
+
