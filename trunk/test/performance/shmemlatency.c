@@ -46,7 +46,7 @@ main(int argc, char *argv[])
         if (my_node == 0)   {
             fprintf(stderr, "Need to run on at least two nodes\n");
         }
-        exit(-1);
+        exit(77);
     }
 
     /* Set the defaults */

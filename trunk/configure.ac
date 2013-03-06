@@ -111,6 +111,9 @@ AM_CONDITIONAL([USE_XPMEM], [test "$transport_xpmem" = "yes"])
 AS_IF([test "$transport_xpmem" = "yes"],
       [AC_DEFINE([USE_ON_NODE_COMMS], [1], [Define if any on-node comm transport is available])])
 
+AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes"],
+      [AC_MSG_ERROR([No transport found])])
+
 ORTE_CHECK_PMI([pmi])
 
 dnl check for header files
@@ -259,7 +262,7 @@ AC_CONFIG_FILES([Makefile
   src/Makefile
   test/Makefile
   test/unit/Makefile
-  test/netpipe/Makefile
+  test/performance/Makefile
   test/openshmem/Makefile
   test/openshmem/examples/Makefile
   test/openshmem/feature_tests/Makefile

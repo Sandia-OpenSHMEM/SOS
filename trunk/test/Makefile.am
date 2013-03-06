@@ -9,4 +9,4 @@
 # distribution.
 #
 
-SUBDIRS = unit netpipe openshmem
+SUBDIRS = unit performance openshmem

@@ -268,13 +268,13 @@ main(int argc, char *argv[])
                 if (world_size <= npeers) {
                 fprintf(stderr, "Error: job size (%d) <= number of peers (%d)\n",
                         world_size, npeers);
-                start_err = 1;
+                start_err = 77;
             } else if (ppn < 1) {
                 fprintf(stderr, "Error: must specify process per node (-n #)\n");
-                start_err = 1;
+                start_err = 77;
             } else if (world_size / ppn <= npeers) {
                 fprintf(stderr, "Error: node count <= number of peers\n");
-                start_err = 1;
+                start_err = 77;
             }
         }
     }
@@ -285,7 +285,7 @@ main(int argc, char *argv[])
     printf("%d: psync: 0x%lu\n", rank, (unsigned long) bcast_pSync);
     shmem_broadcast32(&start_err, &start_err, 1, 0, 0, 0, world_size, bcast_pSync);
     if (0 != start_err) {
-        exit(1);
+        exit(start_err);
     }
     shmem_barrier_all();
     shmem_broadcast32(&npeers, &npeers, 1, 0, 0, 0, world_size, bcast_pSync);

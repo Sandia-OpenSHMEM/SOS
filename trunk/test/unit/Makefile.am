@@ -63,16 +63,6 @@ TESTS += \
      hello_f
 endif
 
-if ENABLE_LENGTHY_TESTS
-TESTS += \
-	shmemlatency \
-	msgrate
-else
-check_PROGRAMS += \
-	shmemlatency \
-	msgrate
-endif
-
 PROCS ?= 2
 
 TESTS_ENVIRONMENT = yod -np $(PROCS)
@@ -171,9 +161,6 @@ shrealloc_LDADD = $(top_builddir)/src/libsma.la
 shmemalign_SOURCES = shmemalign.c
 shmemalign_LDADD = $(top_builddir)/src/libsma.la
 
-shmemlatency_SOURCES = shmemlatency.c
-shmemlatency_LDADD = $(top_builddir)/src/libsma.la
-
 get_g_SOURCES = get_g.c
 get_g_LDADD = $(top_builddir)/src/libsma.la
 
@@ -215,6 +202,3 @@ bcast_flood_LDADD = $(top_builddir)/src/libsma.la
 
 lfinc_SOURCES = lfinc.c
 lfinc_LDADD = $(top_builddir)/src/libsma.la
-
-msgrate_SOURCES = msgrate.c
-msgrate_LDADD = $(top_builddir)/src/libsma.la
