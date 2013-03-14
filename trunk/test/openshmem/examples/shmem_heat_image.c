@@ -69,7 +69,11 @@ dt (double *tv1, double *tv2)
 #define DIM6( basetype, name, w1, w2, w3, w4, w5 ) basetype (*name)[w1][w2][w3][w4][w5]
 #define DIM7( basetype, name, w1, w2, w3, w4, w5, w6 ) basetype (*name)[w1][w2][w3][w4][w5][w6]
 // file name of output image 
+#ifdef PORTALS_SHMEM_H
+#define FILENAME "/dev/null"
+#else
 #define FILENAME "tmp.image"
+#endif
 // Change here the number of steps, the cell geometry, etc
 #define NITER 5000
 #define STEPITER 1000
@@ -236,7 +240,9 @@ main (int argc, char **argv)
 	tv[1] = gettime ();
 	t = dt (&tv[1], &tv[0]);
 	printf ("Elapsed time: %4.2f sec\n", t / 1000000.0);
+#ifndef PORTALS_SHMEM_H
 	printf ("Output image file in current directory\n");
+#endif
 	fp = fopen (FILENAME, "w");
 	fclose (fp);
       }
