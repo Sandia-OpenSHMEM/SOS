@@ -42,8 +42,8 @@
 #include <time.h>
 #include <shmem.h>
 #include <sys/time.h>
-long pSyncA[_SHMEM_BCAST_SYNC_SIZE];
-long pSyncB[_SHMEM_BCAST_SYNC_SIZE];
+long pSyncA[_SHMEM_COLLECT_SYNC_SIZE];
+long pSyncB[_SHMEM_COLLECT_SYNC_SIZE];
 
 #define N_ELEMENTS 4
   int
