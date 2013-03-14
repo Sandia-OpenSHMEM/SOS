@@ -422,6 +422,9 @@ jacobi (float **current_ptr, float **next_ptr)
 	  enforce_bc_par (next_ptr, my_rank, i, j);
 	}
     }
+    shfree(U_Send_Buffer);
+    shfree(U_Curr_Below);
+    shfree(U_Curr_Above);
 }
 
  /* implements parallel g-s method */
@@ -573,6 +576,9 @@ gauss_seidel (float **current_ptr, float **next_ptr)
 	    }
 	}
     }
+    shfree(U_Send_Buffer);
+    shfree(U_Curr_Below);
+    shfree(U_Curr_Above);
 }
 
 
@@ -725,6 +731,9 @@ sor (float **current_ptr, float **next_ptr)
 	    }
 	}
     }
+    shfree(U_Send_Buffer);
+    shfree(U_Curr_Below);
+    shfree(U_Curr_Above);
 }
 
  /* enforces bcs in in serial and parallel */
