@@ -24,11 +24,11 @@ The "make check" step is not strictly necessary, but is a good idea.
 Options to configure include:
 
   --prefix=<DIR>          Install implementation in <DIR>, default: /usr/local
-  --with-portals4=<DIR>   Find the Portals4 library in <DIR>
+  --with-portals4=<DIR>   Find the Portals 4 library in <DIR>
   --with-xpmem=<DIR>      Find the XPMEM library in <DIR>
   --with-pmi=DIR          Location of PMI installation.  Configure will 
                           automatically look for the PMI runtime provided by
-                          Portals4.
+                          the Portals 4 reference implementation
 
 There are many other options to configure to influence performance and
 behavior.  See 'configure --help' for documentation on available
