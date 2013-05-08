@@ -46,15 +46,15 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-double
-gettime ()
+static double
+gettime (void)
 {
   struct timeval tv;
   gettimeofday (&tv, 0);
   return (tv.tv_sec * 1000000 + tv.tv_usec);
 }
 
-double
+static double
 dt (double *tv1, double *tv2)
 {
   return (*tv1 - *tv2);
@@ -81,7 +81,7 @@ dt (double *tv1, double *tv2)
 #define dely 0.25
 // end change here.
 
-void
+static void
 itstep (int mx, int my, void *pf, void *pnewf, void *pr, double rdx2,
 	double rdy2, double beta)
 {
@@ -106,7 +106,7 @@ itstep (int mx, int my, void *pf, void *pnewf, void *pr, double rdx2,
 int
 main (int argc, char **argv)
 {
-  int i, j, n, mx1, mx2, my1, my_number, n_of_nodes, totalmx, partmx, leftmx,
+  int i, j, n, mx1, my1, my_number, n_of_nodes, totalmx, partmx, leftmx,
     mx, my;
   FILE *fp;
   double t, tv[2];
@@ -117,8 +117,7 @@ main (int argc, char **argv)
   n_of_nodes = _num_pes ();
 
   if (1 == argc) {
-      totalmx = mx = 10;
-      my = 10;
+      my = totalmx = mx = (10 > (n_of_nodes * 2) ) ? 10 : n_of_nodes * 2;
   } else if (argc != 3)
     {
       if (!my_number)
