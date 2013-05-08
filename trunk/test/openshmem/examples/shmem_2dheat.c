@@ -129,6 +129,11 @@ main (int argc, char **argv)
   p = _num_pes ();
   my_rank = _my_pe ();
 
+  if (p > 8) {
+      fprintf(stderr, "Ignoring test when run with more than 8 pes\n");
+      return 77;
+  }
+
   /* argument processing done by everyone */
   int c, errflg;
   extern char *optarg;
