@@ -11,10 +11,10 @@
 
 all: $(check_PROGRAMS)
 
-check_PROGRAMS = $(TESTS) \
-	adjacent_32bit_amo
+check_PROGRAMS = $(TESTS)
 
 TESTS = \
+	adjacent_32bit_amo \
 	cpi \
 	hello \
 	ptp \
