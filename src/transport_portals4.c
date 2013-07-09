@@ -28,9 +28,15 @@
 #include "runtime.h"
 
 ptl_handle_ni_t shmem_transport_portals4_ni_h = PTL_INVALID_HANDLE;
-ptl_handle_md_t shmem_transport_portals4_put_volatile_md_h = PTL_INVALID_HANDLE;
-ptl_handle_md_t shmem_transport_portals4_put_event_md_h = PTL_INVALID_HANDLE;
-ptl_handle_md_t shmem_transport_portals4_get_md_h = PTL_INVALID_HANDLE;
+#if PORTALS4_MAX_MD_SIZE < PORTALS4_MAX_VA_SIZE
+ptl_handle_md_t *shmem_transport_portals4_put_volatile_md_h = NULL;
+ptl_handle_md_t *shmem_transport_portals4_put_event_md_h = NULL;
+ptl_handle_md_t *shmem_transport_portals4_get_md_h = NULL;
+#else
+ptl_handle_md_t shmem_transport_portals4_put_volatile_md_h[1] = { PTL_INVALID_HANDLE };
+ptl_handle_md_t shmem_transport_portals4_put_event_md_h[1] = { PTL_INVALID_HANDLE };
+ptl_handle_md_t shmem_transport_portals4_get_md_h[1] = { PTL_INVALID_HANDLE };
+#endif
 ptl_handle_le_t shmem_transport_portals4_data_le_h = PTL_INVALID_HANDLE;
 ptl_handle_le_t shmem_transport_portals4_heap_le_h = PTL_INVALID_HANDLE;
 ptl_handle_ct_t shmem_transport_portals4_target_ct_h = PTL_INVALID_HANDLE;
@@ -78,15 +84,44 @@ init_long_frag(shmem_free_list_item_t *item)
 static void
 cleanup_handles(void)
 {
-    if (!PtlHandleIsEqual(shmem_transport_portals4_get_md_h, PTL_INVALID_HANDLE)) {
-        PtlMDRelease(shmem_transport_portals4_get_md_h);
+#if PORTALS4_MAX_MD_SIZE < PORTALS4_MAX_VA_SIZE
+    int i;
+
+    if (NULL != shmem_transport_portals4_get_md_h) {
+        for (i = 0 ; i < shmem_transport_portals4_get_num_mds() ; ++i) {
+            if (!PtlHandleIsEqual(shmem_transport_portals4_get_md_h[i], PTL_INVALID_HANDLE)) {
+                PtlMDRelease(shmem_transport_portals4_get_md_h[i]);
+            }
+        }
+        free(shmem_transport_portals4_get_md_h);
     }
-    if (!PtlHandleIsEqual(shmem_transport_portals4_put_event_md_h, PTL_INVALID_HANDLE)) {
-        PtlMDRelease(shmem_transport_portals4_put_event_md_h);
+    if (NULL != shmem_transport_portals4_put_event_md_h) {
+        for (i = 0 ; i < shmem_transport_portals4_get_num_mds() ; ++i) {
+            if (!PtlHandleIsEqual(shmem_transport_portals4_put_event_md_h[i], PTL_INVALID_HANDLE)) {
+                PtlMDRelease(shmem_transport_portals4_put_event_md_h[i]);
+            }
+        }
+        free(shmem_transport_portals4_put_event_md_h);
     }
-    if (!PtlHandleIsEqual(shmem_transport_portals4_put_volatile_md_h, PTL_INVALID_HANDLE)) {
-        PtlMDRelease(shmem_transport_portals4_put_volatile_md_h);
+    if (NULL != shmem_transport_portals4_put_volatile_md_h) {
+        for (i = 0 ; i < shmem_transport_portals4_get_num_mds() ; ++i) {
+            if (!PtlHandleIsEqual(shmem_transport_portals4_put_volatile_md_h[i], PTL_INVALID_HANDLE)) {
+                PtlMDRelease(shmem_transport_portals4_put_volatile_md_h[i]);
+            }
+        }
+        free(shmem_transport_portals4_put_volatile_md_h);
     }
+#else
+    if (!PtlHandleIsEqual(shmem_transport_portals4_get_md_h[1], PTL_INVALID_HANDLE)) {
+        PtlMDRelease(shmem_transport_portals4_get_md_h[1]);
+    }
+    if (!PtlHandleIsEqual(shmem_transport_portals4_put_event_md_h[1], PTL_INVALID_HANDLE)) {
+        PtlMDRelease(shmem_transport_portals4_put_event_md_h[1]);
+    }
+    if (!PtlHandleIsEqual(shmem_transport_portals4_put_volatile_md_h[0], PTL_INVALID_HANDLE)) {
+        PtlMDRelease(shmem_transport_portals4_put_volatile_md_h[0]);
+    }
+#endif
     if (!PtlHandleIsEqual(shmem_transport_portals4_get_ct_h, PTL_INVALID_HANDLE)) {
         PtlCTFree(shmem_transport_portals4_get_ct_h);
     }
@@ -394,23 +429,106 @@ shmem_transport_portals4_startup(void)
         goto cleanup;
     }
 
+#if PORTALS4_MAX_MD_SIZE < PORTALS4_MAX_VA_SIZE
+    shmem_transport_portals4_put_volatile_md_h = 
+        malloc(sizeof(ptl_handle_md_t) * shmem_transport_portals4_get_num_mds());
+    if (NULL == shmem_transport_portals4_put_volatile_md_h) {
+        fprintf(stderr, "[%03d] ERROR: malloc() of MD array failed\n",
+                shmem_internal_my_pe);
+        ret = -1;
+        goto cleanup;
+    }
+    for (i = 0 ; i < shmem_transport_portals4_get_num_mds() ; ++i) {
+        shmem_transport_portals4_put_volatile_md_h[i] = PTL_INVALID_HANDLE;
+    }
+
+    shmem_transport_portals4_put_event_md_h = 
+        malloc(sizeof(ptl_handle_md_t) * shmem_transport_portals4_get_num_mds());
+    if (NULL == shmem_transport_portals4_put_event_md_h) {
+        fprintf(stderr, "[%03d] ERROR: malloc() of MD array failed\n",
+                shmem_internal_my_pe);
+        ret = -1;
+        goto cleanup;
+    }
+    for (i = 0 ; i < shmem_transport_portals4_get_num_mds() ; ++i) {
+        shmem_transport_portals4_put_event_md_h[i] = PTL_INVALID_HANDLE;
+    }
+
+    shmem_transport_portals4_get_md_h = 
+        malloc(sizeof(ptl_handle_md_t) * shmem_transport_portals4_get_num_mds());
+    if (NULL == shmem_transport_portals4_get_md_h) {
+        fprintf(stderr, "[%03d] ERROR: malloc() of MD array failed\n",
+                shmem_internal_my_pe);
+        ret = -1;
+        goto cleanup;
+    }
+    for (i = 0 ; i < shmem_transport_portals4_get_num_mds() ; ++i) {
+        shmem_transport_portals4_get_md_h[i] = PTL_INVALID_HANDLE;
+    }
+
+    for (i = 0 ; i < shmem_transport_portals4_get_num_mds() ; ++i) {
+        ptl_size_t size = 1ULL << PORTALS4_MAX_MD_SIZE;
+        ptl_size_t offset_unit = (1ULL << PORTALS4_MAX_MD_SIZE) / 2;
+
+        md.start = (char*) (offset_unit * i);
+        md.length = (i - 1 == shmem_transport_portals4_get_num_mds()) ? size / 2 : size;
+
+        md.options = PTL_MD_EVENT_CT_ACK;
+        md.eq_handle = shmem_transport_portals4_eq_h;
+        md.ct_handle = shmem_transport_portals4_put_ct_h;
+        ret = PtlMDBind(shmem_transport_portals4_ni_h,
+                    &md,
+                    &shmem_transport_portals4_put_event_md_h[i]);
+        if (PTL_OK != ret) {
+            fprintf(stderr, "[%03d] ERROR: PtlMDBind of put MD failed: %d\n",
+                    shmem_internal_my_pe, ret);
+            goto cleanup;
+        }
+
+        md.options = PTL_MD_EVENT_CT_ACK |
+            PTL_MD_EVENT_SUCCESS_DISABLE |
+            PTL_MD_VOLATILE;
+        md.eq_handle = shmem_transport_portals4_eq_h;
+        md.ct_handle = shmem_transport_portals4_put_ct_h;
+        ret = PtlMDBind(shmem_transport_portals4_ni_h,
+                        &md,
+                        &shmem_transport_portals4_put_volatile_md_h[i]);
+        if (PTL_OK != ret) {
+            fprintf(stderr, "[%03d] ERROR: PtlMDBind of put MD failed: %d\n",
+                    shmem_internal_my_pe, ret);
+            goto cleanup;
+        }
+
+        md.options = PTL_MD_EVENT_CT_REPLY | 
+            PTL_MD_EVENT_SUCCESS_DISABLE;
+        md.eq_handle = shmem_transport_portals4_eq_h;
+        md.ct_handle = shmem_transport_portals4_get_ct_h;
+        ret = PtlMDBind(shmem_transport_portals4_ni_h,
+                        &md,
+                        &shmem_transport_portals4_get_md_h[i]);
+        if (PTL_OK != ret) {
+            fprintf(stderr, "[%03d] ERROR: PtlMDBind of get MD failed: %d\n",
+                    shmem_internal_my_pe, ret);
+            goto cleanup;
+        }
+    }
+#else
     md.start = 0;
-    md.length = SIZE_MAX;
+    md.length = PTL_SIZE_MAX;
     md.options = PTL_MD_EVENT_CT_ACK;
     md.eq_handle = shmem_transport_portals4_eq_h;
     md.ct_handle = shmem_transport_portals4_put_ct_h;
     ret = PtlMDBind(shmem_transport_portals4_ni_h,
                     &md,
-                    &shmem_transport_portals4_put_event_md_h);
+                    &shmem_transport_portals4_put_event_md_h[0]);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlMDBind of put MD failed: %d\n",
                 shmem_internal_my_pe, ret);
         goto cleanup;
     }
 
-
     md.start = 0;
-    md.length = SIZE_MAX;
+    md.length = PTL_SIZE_MAX;
     md.options = PTL_MD_EVENT_CT_ACK |
         PTL_MD_EVENT_SUCCESS_DISABLE |
         PTL_MD_VOLATILE;
@@ -418,7 +536,7 @@ shmem_transport_portals4_startup(void)
     md.ct_handle = shmem_transport_portals4_put_ct_h;
     ret = PtlMDBind(shmem_transport_portals4_ni_h,
                     &md,
-                    &shmem_transport_portals4_put_volatile_md_h);
+                    &shmem_transport_portals4_put_volatile_md_h[0]);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlMDBind of put MD failed: %d\n",
                 shmem_internal_my_pe, ret);
@@ -426,19 +544,20 @@ shmem_transport_portals4_startup(void)
     }
 
     md.start = 0;
-    md.length = SIZE_MAX;
+    md.length = PTL_SIZE_MAX;
     md.options = PTL_MD_EVENT_CT_REPLY | 
         PTL_MD_EVENT_SUCCESS_DISABLE;
     md.eq_handle = shmem_transport_portals4_eq_h;
     md.ct_handle = shmem_transport_portals4_get_ct_h;
     ret = PtlMDBind(shmem_transport_portals4_ni_h,
                     &md,
-                    &shmem_transport_portals4_get_md_h);
+                    &shmem_transport_portals4_get_md_h[0]);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlMDBind of get MD failed: %d\n",
                 shmem_internal_my_pe, ret);
         goto cleanup;
     }
+#endif
 
     ret = 0;
 
