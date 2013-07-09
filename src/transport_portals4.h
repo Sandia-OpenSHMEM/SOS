@@ -89,7 +89,7 @@ typedef struct shmem_transport_portals4_long_frag_t shmem_transport_portals4_lon
  * scheme allows for a maximum message size of 1/2 the size of the MD
  * without ever crossing an MD boundary.  Also, because MD sizes are
  * always on a power of 2 in this scheme, computing the offsets and MD
- * selection are quick, using only bit shift and mask.q
+ * selection are quick, using only bit shift and mask.
  *
  * shmem_transport_portals4_get_md() relies heavily on compiler
  * constant folding.  "mask" can be constant folded into a constant.
