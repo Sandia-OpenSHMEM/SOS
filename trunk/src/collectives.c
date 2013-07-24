@@ -118,7 +118,7 @@ shmem_barrier_all(void)
 #endif
 
     shmem_quiet();
-    shmem_barrier(0, 0, shmem_internal_num_pes, barrier_all_psync);
+    shmem_internal_barrier(0, 0, shmem_internal_num_pes, barrier_all_psync);
 }
 
 
