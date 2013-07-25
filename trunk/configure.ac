@@ -11,7 +11,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Portals SHMEM], [1.0a7], [bwbarre@sandia.gov])
+AC_INIT([Portals SHMEM], [1.0a8], [bwbarre@sandia.gov])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -241,14 +241,18 @@ LT_INIT
 
 OPAL_CASE_SENSITIVE_FS_SETUP
 
+DISTCHECK_CONFIGURE_FLAGS=
 if test -n "$with_portals4" ; then
-  DISTCHECK_CONFIGURE_FLAGS="--with-portals4=${with_portals4}"
+  DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-portals4=${with_portals4}"
 fi
 if test -n "$with_xpmem" ; then
-  DISTCHECK_CONFIGURE_FLAGS="--with-xpmem=${with_xpmem}"
+  DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-xpmem=${with_xpmem}"
 fi
 if test -n "$with_pmi" ; then
-  DISTCHECK_CONFIGURE_FLAGS="--with-pmi=${with_pmi}"
+  DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-pmi=${with_pmi}"
+fi
+if test -n "$FCFLAGS" ; then 
+  DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS FCFLAGS=\"$FCFLAGS\""
 fi
 AC_SUBST(DISTCHECK_CONFIGURE_FLAGS)
 
