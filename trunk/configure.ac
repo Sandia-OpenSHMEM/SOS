@@ -12,15 +12,24 @@
 dnl Init Autoconf/Automake/Libtool
 
 AC_INIT([Portals SHMEM], [1.0a7], [bwbarre@sandia.gov])
-AC_PREREQ([2.59])
+AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
 
-AM_INIT_AUTOMAKE([foreign check-news color-tests dist-bzip2 no-define subdir-objects tar-ustar 1.9.6 -Wall -Werror])
-m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+AM_INIT_AUTOMAKE([foreign check-news color-tests dist-bzip2 no-define subdir-objects tar-ustar 1.11 -Wall -Werror])
+
 m4_ifndef([AS_VAR_COPY], 
     [m4_define([AS_VAR_COPY], 
        [AS_LITERAL_IF([$1[]$2], [$1=$$2], [eval $1=\$$2])])])
+
+dnl Work around change in how the rules were implemented between
+dnl 1.11.2 and 1.11.3.
+AM_SILENT_RULES([yes])
+AS_IF([test -z "$AM_V"], 
+  [AM_V='$(V)'
+   AM_DEFAULT_V='$(AM_DEFAULT_VERBOSITY)'
+   AC_SUBST([AM_V])
+   AC_SUBST([AM_DEFAULT_V])])
 
 dnl information on the package
 AC_CONFIG_HEADERS([src/config.h])
