@@ -18,6 +18,9 @@ AC_CONFIG_MACRO_DIR([config])
 
 AM_INIT_AUTOMAKE([foreign check-news color-tests dist-bzip2 no-define subdir-objects tar-ustar 1.9.6 -Wall -Werror])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+m4_ifndef([AS_VAR_COPY], 
+    [m4_define([AS_VAR_COPY], 
+       [AS_LITERAL_IF([$1[]$2], [$1=$$2], [eval $1=\$$2])])])
 
 dnl information on the package
 AC_CONFIG_HEADERS([src/config.h])
