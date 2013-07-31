@@ -12,6 +12,7 @@
 
 #include "config.h"
 
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/mman.h>
@@ -23,7 +24,7 @@
 static char *shmem_internal_heap_curr = NULL;
 static int shmem_internal_use_malloc = 0;
 
-void* shmem_internal_get_next(int incr);
+void* shmem_internal_get_next(size_t incr);
 void* dlmalloc(size_t);
 void  dlfree(void*);
 void* dlrealloc(void*, size_t);
@@ -34,7 +35,7 @@ void* dlmemalign(size_t, size_t);
    needs to be made thread safe. */
 #define MAX_SIZE_T           (~(size_t)0)
 void*
-shmem_internal_get_next(int incr)
+shmem_internal_get_next(size_t incr)
 {
     char *orig = shmem_internal_heap_curr;
 
