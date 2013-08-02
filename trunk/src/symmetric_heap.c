@@ -12,7 +12,7 @@
 
 #include "config.h"
 
-#include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/mman.h>
@@ -24,7 +24,7 @@
 static char *shmem_internal_heap_curr = NULL;
 static int shmem_internal_use_malloc = 0;
 
-void* shmem_internal_get_next(size_t incr);
+void* shmem_internal_get_next(intptr_t incr);
 void* dlmalloc(size_t);
 void  dlfree(void*);
 void* dlrealloc(void*, size_t);
@@ -33,20 +33,22 @@ void* dlmemalign(size_t, size_t);
 /* shmalloc and friends are defined to not be thread safe, so this is
    fine.  If they change that definition, this is no longer fine and
    needs to be made thread safe. */
-#define MAX_SIZE_T           (~(size_t)0)
 void*
-shmem_internal_get_next(size_t incr)
+shmem_internal_get_next(intptr_t incr)
 {
     char *orig = shmem_internal_heap_curr;
 
-    if (incr < 0) {
-        return (void*) MAX_SIZE_T;
-    }
-
-    shmem_internal_heap_curr += (incr > 0) ? incr : 0;
-    if (shmem_internal_heap_curr - (char*) shmem_internal_heap_base > shmem_internal_heap_length) {
-        printf("WARNING: top of symmetric heap found\n");
-        return (void*) MAX_SIZE_T;
+    shmem_internal_heap_curr += incr;
+    if (shmem_internal_heap_curr < (char*) shmem_internal_heap_base) {
+        fprintf(stderr, "[%03d] WARNING: symmetric heap pointer pushed below start\n",
+                shmem_internal_my_pe);
+        shmem_internal_heap_curr = (char*) shmem_internal_heap_base;
+    } else if (shmem_internal_heap_curr - (char*) shmem_internal_heap_base >
+               shmem_internal_heap_length) {
+        fprintf(stderr, "[%03d] WARNING: top of symmetric heap found\n",
+                shmem_internal_my_pe);
+        shmem_internal_heap_curr = orig;
+        orig = (void*) -1;
     }
 
     return orig;

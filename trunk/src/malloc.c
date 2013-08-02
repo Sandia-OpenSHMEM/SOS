@@ -483,14 +483,13 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 /* BEGIN SHMEM CHANGES */
 #include <stdio.h>
 #include <time.h>
-#include <stddef.h>
-extern void* shmem_internal_get_next(size_t incr);
+#include <stdint.h>
+extern void* shmem_internal_get_next(intptr_t incr);
 extern int shmem_internal_my_pe;
 #define USE_DL_PREFIX 1
 #define HAVE_MORECORE 1
 #define MORECORE shmem_internal_get_next
 #define MORECORE_CONTIGUOUS 1
-#define MORECORE_CANNOT_TRIM 1
 #define HAVE_MMAP 0
 #define HAVE_MREMAP 0
 #define USAGE_ERROR_ACTION(m, p)                                        \
