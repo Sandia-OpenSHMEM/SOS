@@ -467,7 +467,7 @@ shmem_transport_portals4_startup(void)
     }
 
     for (i = 0 ; i < shmem_transport_portals4_get_num_mds() ; ++i) {
-        ptl_size_t size = 1ULL << PORTALS4_MAX_MD_SIZE;
+        ptl_size_t size = (1ULL << PORTALS4_MAX_MD_SIZE) - 1;
         ptl_size_t offset_unit = (1ULL << PORTALS4_MAX_MD_SIZE) / 2;
 
         md.start = (char*) (offset_unit * i);
