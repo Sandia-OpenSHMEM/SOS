@@ -985,3 +985,66 @@ shmem_iget128(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst, si
     shmem_internal_get_wait();
 }
 
+
+void shmem_complexf_get(float complex * target,
+                        const float complex * source, size_t nelems, int pe)
+{
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    shmem_internal_get(target, source, sizeof(float complex) * nelems, pe);
+    shmem_internal_get_wait();
+}
+
+
+void shmem_complexd_get(double complex * target,
+                        const double complex * source, size_t nelems, int pe)
+{
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    shmem_internal_get(target, source, sizeof(complex double) * nelems, pe);
+    shmem_internal_get_wait();
+}
+
+
+void shmem_complexf_put(float complex * target,
+                        const float complex * source, size_t nelems, int pe)
+{
+    long completion = 0;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    shmem_internal_put_nb(target, source, sizeof(complex float) * nelems,
+                          pe, &completion);
+    shmem_internal_put_wait(&completion);
+}
+
+
+void shmem_complexd_put(double complex * target,
+                        const double complex * source, size_t nelems, int pe)
+{
+    long completion = 0;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    shmem_internal_put_nb(target, source, sizeof(double complex) * nelems,
+                          pe, &completion);
+    shmem_internal_put_wait(&completion);
+}
+
+

@@ -79,6 +79,10 @@ void shmem_put32(void *target, const void *source, size_t len, int pe);
 void shmem_put64(void *target, const void *source, size_t len, int pe);
 void shmem_put128(void *target, const void *source, size_t len, int pe);
 void shmem_putmem(void *target, const void *source, size_t len, int pe);
+void shmem_complexf_put(float complex * target,
+                        const float complex * source, size_t nelems, int pe);
+void shmem_complexd_put(double complex * target,
+                        const double complex * source, size_t nelems, int pe);
 
 /* 8.8: Strided Put Routines */
 void shmem_float_iput(float *target, const float *source, ptrdiff_t tst,
@@ -128,6 +132,10 @@ void shmem_get32(void *target, const void *source, size_t len, int pe);
 void shmem_get64(void *target, const void *source, size_t len, int pe);
 void shmem_get128(void *target, const void *source, size_t len, int pe);
 void shmem_getmem(void *target, const void *source, size_t len, int pe);
+void shmem_complexf_get(float complex * target,
+                        const float complex * source, size_t nelems, int pe);
+void shmem_complexd_get(double complex * target,
+                        const double complex * source, size_t nelems, int pe);
 
 /* 8.11: Strided Get Routines */
 void shmem_float_iget(float *target, const float *source, ptrdiff_t tst,
