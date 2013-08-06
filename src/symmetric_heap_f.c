@@ -18,7 +18,6 @@
 #include "shmem_internal.h"
 
 
-void* shmem_internal_get_next(int incr);
 void* dlmalloc(size_t);
 void  dlfree(void*);
 void* dlrealloc(void*, size_t);

@@ -12,7 +12,6 @@
 
 #include "config.h"
 
-#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/mman.h>
@@ -24,7 +23,6 @@
 static char *shmem_internal_heap_curr = NULL;
 static int shmem_internal_use_malloc = 0;
 
-void* shmem_internal_get_next(intptr_t incr);
 void* dlmalloc(size_t);
 void  dlfree(void*);
 void* dlrealloc(void*, size_t);
