@@ -53,5 +53,7 @@ int shmem_internal_collectives_init(int requested_crossover,
 
 /* internal allocation, without a barrier */
 void *shmalloc_init(size_t size);
+void* shmem_internal_get_next(intptr_t incr);
+
 
 #endif

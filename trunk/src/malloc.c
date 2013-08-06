@@ -484,8 +484,8 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 #include <stdio.h>
 #include <time.h>
 #include <stdint.h>
-extern void* shmem_internal_get_next(intptr_t incr);
-extern int shmem_internal_my_pe;
+#include "shmem_internal.h"
+
 #define USE_DL_PREFIX 1
 #define HAVE_MORECORE 1
 #define MORECORE shmem_internal_get_next
