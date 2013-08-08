@@ -20,6 +20,22 @@
 #include "shmem_internal.h"
 #include "shmem_comm.h"
 
+#ifdef ENABLE_PROFILING
+
+#pragma weak shmalloc = pshmalloc
+#define shmalloc pshmalloc
+
+#pragma weak shmemalign = pshmemalign
+#define shmemalign pshmemalign
+
+#pragma weak shrealloc = pshrealloc
+#define shrealloc pshrealloc
+
+#pragma weak shfree = pshfree
+#define shfree pshfree
+
+#endif /* ENABLE_PROFILING */
+
 static char *shmem_internal_heap_curr = NULL;
 static int shmem_internal_use_malloc = 0;
 

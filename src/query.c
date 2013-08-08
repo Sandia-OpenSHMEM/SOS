@@ -21,6 +21,25 @@
 #include "shmem_internal.h"
 #include "runtime.h"
 
+#ifdef ENABLE_PROFILING
+
+#pragma weak _num_pes = p_num_pes
+#define _num_pes p_num_pes
+
+#pragma weak shmem_n_pes = pshmem_n_pes
+#define shmem_n_pes pshmem_n_pes
+
+#pragma weak _my_pe = p_my_pe
+#define _my_pe p_my_pe
+
+#pragma weak shmem_my_pe = pshmem_my_pe
+#define shmem_my_pe pshmem_my_pe
+
+#pragma weak shmem_wtime = pshmem_wtime
+#define shmem_wtime pshmem_wtime
+
+#endif /* ENABLE_PROFILING */
+
 
 int
 _num_pes(void)

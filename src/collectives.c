@@ -23,6 +23,166 @@
 #include "shmem_comm.h"
 #include "shmem_collectives.h"
 
+#ifdef ENABLE_PROFILING
+
+#pragma weak shmem_barrier_all = pshmem_barrier_all
+#define shmem_barrier_all pshmem_barrier_all
+
+#pragma weak shmem_barrier = pshmem_barrier
+#define shmem_barrier pshmem_barrier
+
+#pragma weak shmem_int_and_to_all = pshmem_int_and_to_all
+#define shmem_int_and_to_all pshmem_int_and_to_all
+
+#pragma weak shmem_long_and_to_all = pshmem_long_and_to_all
+#define shmem_long_and_to_all pshmem_long_and_to_all
+
+#pragma weak shmem_longlong_and_to_all = pshmem_longlong_and_to_all
+#define shmem_longlong_and_to_all pshmem_longlong_and_to_all
+
+#pragma weak shmem_short_and_to_all = pshmem_short_and_to_all
+#define shmem_short_and_to_all pshmem_short_and_to_all
+
+#pragma weak shmem_int_or_to_all = pshmem_int_or_to_all
+#define shmem_int_or_to_all pshmem_int_or_to_all
+
+#pragma weak shmem_long_or_to_all = pshmem_long_or_to_all
+#define shmem_long_or_to_all pshmem_long_or_to_all
+
+#pragma weak shmem_longlong_or_to_all = pshmem_longlong_or_to_all
+#define shmem_longlong_or_to_all pshmem_longlong_or_to_all
+
+#pragma weak shmem_short_or_to_all = pshmem_short_or_to_all
+#define shmem_short_or_to_all pshmem_short_or_to_all
+
+#pragma weak shmem_int_xor_to_all = pshmem_int_xor_to_all
+#define shmem_int_xor_to_all pshmem_int_xor_to_all
+
+#pragma weak shmem_long_xor_to_all = pshmem_long_xor_to_all
+#define shmem_long_xor_to_all pshmem_long_xor_to_all
+
+#pragma weak shmem_longlong_xor_to_all = pshmem_longlong_xor_to_all
+#define shmem_longlong_xor_to_all pshmem_longlong_xor_to_all
+
+#pragma weak shmem_short_xor_to_all = pshmem_short_xor_to_all
+#define shmem_short_xor_to_all pshmem_short_xor_to_all
+
+#pragma weak shmem_int_min_to_all = pshmem_int_min_to_all
+#define shmem_int_min_to_all pshmem_int_min_to_all
+
+#pragma weak shmem_long_min_to_all = pshmem_long_min_to_all
+#define shmem_long_min_to_all pshmem_long_min_to_all
+
+#pragma weak shmem_longlong_min_to_all = pshmem_longlong_min_to_all
+#define shmem_longlong_min_to_all pshmem_longlong_min_to_all
+
+#pragma weak shmem_short_min_to_all = pshmem_short_min_to_all
+#define shmem_short_min_to_all pshmem_short_min_to_all
+
+#pragma weak shmem_longdouble_min_to_all = pshmem_longdouble_min_to_all
+#define shmem_longdouble_min_to_all pshmem_longdouble_min_to_all
+
+#pragma weak shmem_float_min_to_all = pshmem_float_min_to_all
+#define shmem_float_min_to_all pshmem_float_min_to_all
+
+#pragma weak shmem_double_min_to_all = pshmem_double_min_to_all
+#define shmem_double_min_to_all pshmem_double_min_to_all
+
+#pragma weak shmem_int_max_to_all = pshmem_int_max_to_all
+#define shmem_int_max_to_all pshmem_int_max_to_all
+
+#pragma weak shmem_long_max_to_all = pshmem_long_max_to_all
+#define shmem_long_max_to_all pshmem_long_max_to_all
+
+#pragma weak shmem_longlong_max_to_all = pshmem_longlong_max_to_all
+#define shmem_longlong_max_to_all pshmem_longlong_max_to_all
+
+#pragma weak shmem_short_max_to_all = pshmem_short_max_to_all
+#define shmem_short_max_to_all pshmem_short_max_to_all
+
+#pragma weak shmem_longdouble_max_to_all = pshmem_longdouble_max_to_all
+#define shmem_longdouble_max_to_all pshmem_longdouble_max_to_all
+
+#pragma weak shmem_float_max_to_all = pshmem_float_max_to_all
+#define shmem_float_max_to_all pshmem_float_max_to_all
+
+#pragma weak shmem_double_max_to_all = pshmem_double_max_to_all
+#define shmem_double_max_to_all pshmem_double_max_to_all
+
+#pragma weak shmem_complexd_sum_to_all = pshmem_complexd_sum_to_all
+#define shmem_complexd_sum_to_all pshmem_complexd_sum_to_all
+
+#pragma weak shmem_complexf_sum_to_all = pshmem_complexf_sum_to_all
+#define shmem_complexf_sum_to_all pshmem_complexf_sum_to_all
+
+#pragma weak shmem_double_sum_to_all = pshmem_double_sum_to_all
+#define shmem_double_sum_to_all pshmem_double_sum_to_all
+
+#pragma weak shmem_float_sum_to_all = pshmem_float_sum_to_all
+#define shmem_float_sum_to_all pshmem_float_sum_to_all
+
+#pragma weak shmem_int_sum_to_all = pshmem_int_sum_to_all
+#define shmem_int_sum_to_all pshmem_int_sum_to_all
+
+#pragma weak shmem_long_sum_to_all = pshmem_long_sum_to_all
+#define shmem_long_sum_to_all pshmem_long_sum_to_all
+
+#pragma weak shmem_longdouble_sum_to_all = pshmem_longdouble_sum_to_all
+#define shmem_longdouble_sum_to_all pshmem_longdouble_sum_to_all
+
+#pragma weak shmem_longlong_sum_to_all = pshmem_longlong_sum_to_all
+#define shmem_longlong_sum_to_all pshmem_longlong_sum_to_all
+
+#pragma weak shmem_short_sum_to_all = pshmem_short_sum_to_all
+#define shmem_short_sum_to_all pshmem_short_sum_to_all
+
+#pragma weak shmem_complexd_prod_to_all = pshmem_complexd_prod_to_all
+#define shmem_complexd_prod_to_all pshmem_complexd_prod_to_all
+
+#pragma weak shmem_complexf_prod_to_all = pshmem_complexf_prod_to_all
+#define shmem_complexf_prod_to_all pshmem_complexf_prod_to_all
+
+#pragma weak shmem_double_prod_to_all = pshmem_double_prod_to_all
+#define shmem_double_prod_to_all pshmem_double_prod_to_all
+
+#pragma weak shmem_float_prod_to_all = pshmem_float_prod_to_all
+#define shmem_float_prod_to_all pshmem_float_prod_to_all
+
+#pragma weak shmem_int_prod_to_all = pshmem_int_prod_to_all
+#define shmem_int_prod_to_all pshmem_int_prod_to_all
+
+#pragma weak shmem_long_prod_to_all = pshmem_long_prod_to_all
+#define shmem_long_prod_to_all pshmem_long_prod_to_all
+
+#pragma weak shmem_longdouble_prod_to_all = pshmem_longdouble_prod_to_all
+#define shmem_longdouble_prod_to_all pshmem_longdouble_prod_to_all
+
+#pragma weak shmem_longlong_prod_to_all = pshmem_longlong_prod_to_all
+#define shmem_longlong_prod_to_all pshmem_longlong_prod_to_all
+
+#pragma weak shmem_short_prod_to_all = pshmem_short_prod_to_all
+#define shmem_short_prod_to_all pshmem_short_prod_to_all
+
+#pragma weak shmem_broadcast32 = pshmem_broadcast32
+#define shmem_broadcast32 pshmem_broadcast32
+
+#pragma weak shmem_broadcast64 = pshmem_broadcast64
+#define shmem_broadcast64 pshmem_broadcast64
+
+#pragma weak shmem_collect32 = pshmem_collect32
+#define shmem_collect32 pshmem_collect32
+
+#pragma weak shmem_collect64 = pshmem_collect64
+#define shmem_collect64 pshmem_collect64
+
+#pragma weak shmem_fcollect32 = pshmem_fcollect32
+#define shmem_fcollect32 pshmem_fcollect32
+
+#pragma weak shmem_fcollect64 = pshmem_fcollect64
+#define shmem_fcollect64 pshmem_fcollect64
+
+#endif /* ENABLE_PROFILING */
+
 long *barrier_all_psync;
 
 int *full_tree_children;
