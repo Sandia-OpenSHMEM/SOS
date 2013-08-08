@@ -83,6 +83,12 @@ AS_IF([test "$enable_libtool_wrapper" = "no"], [LIBTOOL_WRAPPER_LDFLAGS="-no-ins
 AC_SUBST([LIBTOOL_WRAPPER_LDFLAGS])
 
 
+AC_ARG_ENABLE([profiling],
+    [AC_HELP_STRING([--enable-profiling],
+                    [Enable shmem call profiling (default:disabled)])])
+AS_IF([test "$enable_profiling" = "yes"], [AC_DEFINE([ENABLE_PROFILING], [1], [Enable shmem call profiling])])
+
+
 dnl check for programs
 
 AC_PROG_CC

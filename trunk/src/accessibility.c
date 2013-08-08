@@ -20,6 +20,15 @@
 #include "shmem_internal.h"
 #include "shmem_comm.h"
 
+#ifdef ENABLE_PROFILING
+
+#pragma weak shmem_pe_accessible = pshmem_pe_accessible
+#define shmem_pe_accessible pshmem_pe_accessible
+
+#pragma weak shmem_addr_accessible = pshmem_addr_accessible
+#define shmem_addr_accessible pshmem_addr_accessible
+
+#endif /* ENABLE_PROFILING */
 
 int 
 shmem_pe_accessible(int pe)

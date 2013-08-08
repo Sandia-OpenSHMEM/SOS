@@ -20,6 +20,19 @@
 #include "shmem_internal.h"
 #include "shmem_comm.h"
 
+#ifdef ENABLE_PROFILING
+
+#pragma weak shmem_clear_lock = pshmem_clear_lock
+#define shmem_clear_lock pshmem_clear_lock
+
+#pragma weak shmem_set_lock = pshmem_set_lock
+#define shmem_set_lock pshmem_set_lock
+
+#pragma weak shmem_test_lock = pshmem_test_lock
+#define shmem_test_lock pshmem_test_lock
+
+#endif /* ENABLE_PROFILING */
+
 
 /*
  * Use basic MCS distributed lock algorithm for lock

@@ -27,6 +27,16 @@
 #include "shmem_comm.h"
 #include "runtime.h"
 
+#ifdef ENABLE_PROFILING
+
+#pragma weak start_pes = pstart_pes
+#define start_pes pstart_pes
+
+#pragma weak shmem_nodename = pshmem_nodename
+#define shmem_nodename pshmem_nodename
+
+#endif /* ENABLE_PROFILING */
+
 #ifdef __APPLE__
 #include <mach-o/getsect.h>
 #else

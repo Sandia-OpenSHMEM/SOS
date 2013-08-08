@@ -20,6 +20,14 @@
 #include "shmem_internal.h"
 #include "shmem_comm.h"
 
+#ifdef ENABLE_PROFILING
+
+#pragma weak shmem_ptr = pshmem_ptr
+#define shmem_ptr pshmem_ptr
+
+#endif /* ENABLE_PROFILING */
+
+
 void *
 shmem_ptr(void *target, int pe)
 {
