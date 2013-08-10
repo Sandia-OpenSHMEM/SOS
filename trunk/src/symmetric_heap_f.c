@@ -44,9 +44,9 @@ FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, 
             *errcode = -1;
             return;
         } else {
-            fprintf(stderr, "[%03d] shpalloc failure (invalid length)\n",
+            fprintf(stderr, "[%03d] ERROR: shpalloc failure (invalid length).  Aborting job.\n",
                     shmem_internal_my_pe);
-            abort();
+            exit(1);
         }
     }
 
@@ -57,9 +57,9 @@ FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, 
             *errcode = -2;
             return;
         } else {
-            fprintf(stderr, "[%03d] shpalloc failure\n",
+            fprintf(stderr, "[%03d] ERROR: shpalloc failure.  Aborting job.\n",
                     shmem_internal_my_pe);
-            abort();
+            exit(1);
         }
     }
 
