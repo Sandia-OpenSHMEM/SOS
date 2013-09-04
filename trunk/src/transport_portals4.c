@@ -37,8 +37,12 @@ ptl_handle_md_t shmem_transport_portals4_put_volatile_md_h[1] = { PTL_INVALID_HA
 ptl_handle_md_t shmem_transport_portals4_put_event_md_h[1] = { PTL_INVALID_HANDLE };
 ptl_handle_md_t shmem_transport_portals4_get_md_h[1] = { PTL_INVALID_HANDLE };
 #endif
+#if ENABLE_REMOTE_VIRTUAL_ADDRESSING
+ptl_handle_le_t shmem_transport_portals4_le_h = PTL_INVALID_HANDLE;
+#else
 ptl_handle_le_t shmem_transport_portals4_data_le_h = PTL_INVALID_HANDLE;
 ptl_handle_le_t shmem_transport_portals4_heap_le_h = PTL_INVALID_HANDLE;
+#endif
 ptl_handle_ct_t shmem_transport_portals4_target_ct_h = PTL_INVALID_HANDLE;
 ptl_handle_ct_t shmem_transport_portals4_put_ct_h = PTL_INVALID_HANDLE;
 ptl_handle_ct_t shmem_transport_portals4_get_ct_h = PTL_INVALID_HANDLE;
@@ -58,8 +62,12 @@ ptl_size_t shmem_transport_portals4_pending_get_counter = 0;
 int32_t shmem_transport_portals4_event_slots = 2048;
 
 static ptl_ni_limits_t ni_limits;
+#if ENABLE_REMOTE_VIRTUAL_ADDRESSING
+static ptl_pt_index_t all_pt = PTL_PT_ANY;
+#else
 static ptl_pt_index_t data_pt = PTL_PT_ANY;
 static ptl_pt_index_t heap_pt = PTL_PT_ANY;
+#endif
 
 static
 void
@@ -128,21 +136,33 @@ cleanup_handles(void)
     if (!PtlHandleIsEqual(shmem_transport_portals4_put_ct_h, PTL_INVALID_HANDLE)) {
         PtlCTFree(shmem_transport_portals4_put_ct_h);
     }
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    if (!PtlHandleIsEqual(shmem_transport_portals4_le_h, PTL_INVALID_HANDLE)) {
+        PtlLEUnlink(shmem_transport_portals4_le_h);
+    }
+#else
     if (!PtlHandleIsEqual(shmem_transport_portals4_heap_le_h, PTL_INVALID_HANDLE)) {
         PtlLEUnlink(shmem_transport_portals4_heap_le_h);
     }
     if (!PtlHandleIsEqual(shmem_transport_portals4_data_le_h, PTL_INVALID_HANDLE)) {
         PtlLEUnlink(shmem_transport_portals4_data_le_h);
     }
+#endif
     if (!PtlHandleIsEqual(shmem_transport_portals4_target_ct_h, PTL_INVALID_HANDLE)) {
         PtlCTFree(shmem_transport_portals4_target_ct_h);
     }
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    if (PTL_PT_ANY != all_pt) {
+        PtlPTFree(shmem_transport_portals4_ni_h, all_pt);
+    }
+#else
     if (PTL_PT_ANY != heap_pt) {
         PtlPTFree(shmem_transport_portals4_ni_h, heap_pt);
     }
     if (PTL_PT_ANY != data_pt) {
         PtlPTFree(shmem_transport_portals4_ni_h, data_pt);
     }
+#endif
     if (!PtlHandleIsEqual(shmem_transport_portals4_eq_h, PTL_INVALID_HANDLE)) {
         PtlEQFree(shmem_transport_portals4_eq_h);
     }
@@ -197,7 +217,10 @@ shmem_transport_portals4_init(long eager_size)
     ni_req_limits.max_waw_ordered_size = LONG_MAX;
     ni_req_limits.max_war_ordered_size = LONG_MAX;
     ni_req_limits.max_volatile_size = LONG_MAX;
-    ni_req_limits.features = PTL_TOTAL_DATA_ORDERING;
+    ni_req_limits.features = 0;
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    ni_req_limits.features |= PTL_TARGET_BIND_INACCESSIBLE;
+#endif
 
     ret = PtlNIInit(PTL_IFACE_DEFAULT,
                     PTL_NI_NO_MATCHING | PTL_NI_LOGICAL,
@@ -210,6 +233,15 @@ shmem_transport_portals4_init(long eager_size)
                 shmem_internal_my_pe, ret);
         return ret;
     }
+
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    if ((PTL_TARGET_BIND_INACCESSIBLE & ni_limits.features) == 0) {
+        fprintf(stderr,
+                "[%03d] ERROR: Remote virtual addressing feature enabled, but Portals\n"
+                "doesn't support PTL_TARGET_BIND_INACCESSIBLE.  Aborting.\n",
+                shmem_internal_my_pe);
+    }
+#endif
 
     ret = PtlGetPhysId(shmem_transport_portals4_ni_h, &my_id);
     if (PTL_OK != ret) {
@@ -238,7 +270,6 @@ shmem_transport_portals4_startup(void)
     ptl_md_t md;
     ptl_le_t le;
     ptl_uid_t uid = PTL_UID_ANY;
-    long waw_size;
     ptl_process_t my_id;
 #ifdef USE_ON_NODE_COMMS
     int num_on_node = 0;
@@ -295,16 +326,6 @@ shmem_transport_portals4_startup(void)
         goto cleanup;
     }
 
-    /* Check message size limits to make sure rational */
-    if ((PTL_TOTAL_DATA_ORDERING & ni_limits.features) != 0) {
-        waw_size = ni_limits.max_waw_ordered_size;
-    } else {
-        /* waw ordering doesn't matter for message size if no total
-           ordering.  Therefore, make it big, so it's not the limiter
-           in the following tests. */
-        waw_size = LONG_MAX;
-    }
-
     shmem_transport_portals4_max_volatile_size = ni_limits.max_volatile_size;
     shmem_transport_portals4_max_atomic_size = ni_limits.max_atomic_size;
     shmem_transport_portals4_max_fetch_atomic_size = ni_limits.max_fetch_atomic_size;
@@ -325,7 +346,7 @@ shmem_transport_portals4_startup(void)
         goto cleanup;
     }
 
-    /* create portal table entry */
+    /* create portal table entries */
     ret = PtlEQAlloc(shmem_transport_portals4_ni_h, 
                      shmem_transport_portals4_event_slots,
                      &shmem_transport_portals4_eq_h);
@@ -334,6 +355,19 @@ shmem_transport_portals4_startup(void)
                 shmem_internal_my_pe, ret);
         goto cleanup;
     }
+
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    ret = PtlPTAlloc(shmem_transport_portals4_ni_h,
+                     0,
+                     shmem_transport_portals4_eq_h,
+                     shmem_transport_portals4_pt,
+                     &all_pt);
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlPTAlloc of table entry failed: %d\n",
+                shmem_internal_my_pe, ret);
+        goto cleanup;
+    }
+#else
     ret = PtlPTAlloc(shmem_transport_portals4_ni_h,
                      0,
                      shmem_transport_portals4_eq_h,
@@ -344,12 +378,6 @@ shmem_transport_portals4_startup(void)
                 shmem_internal_my_pe, ret);
         goto cleanup;
     }
-    if (data_pt != shmem_transport_portals4_data_pt) {
-        fprintf(stderr, "[%03d] ERROR: data portal table index mis-match: %d\n",
-                shmem_internal_my_pe, heap_pt);
-        goto cleanup;
-    }
-
     ret = PtlPTAlloc(shmem_transport_portals4_ni_h,
                      0,
                      shmem_transport_portals4_eq_h,
@@ -360,11 +388,7 @@ shmem_transport_portals4_startup(void)
                 shmem_internal_my_pe, ret);
         goto cleanup;
     }
-    if (heap_pt != shmem_transport_portals4_heap_pt) {
-        fprintf(stderr, "[%03d] ERROR: heap portal table index mis-match: %d\n",
-                shmem_internal_my_pe, heap_pt);
-        goto cleanup;
-    }
+#endif
 
     /* target ct */
     ret = PtlCTAlloc(shmem_transport_portals4_ni_h, &shmem_transport_portals4_target_ct_h);
@@ -374,6 +398,28 @@ shmem_transport_portals4_startup(void)
         goto cleanup;
     }
 
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    le.start = NULL;
+    le.length = PTL_SIZE_MAX;
+    le.ct_handle = shmem_transport_portals4_target_ct_h;
+    le.uid = uid;
+    le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
+        PTL_LE_EVENT_LINK_DISABLE |
+        PTL_LE_EVENT_SUCCESS_DISABLE | 
+        PTL_LE_EVENT_CT_COMM;
+    ret = PtlLEAppend(shmem_transport_portals4_ni_h,
+                      shmem_transport_portals4_pt,
+                      &le,
+                      PTL_PRIORITY_LIST,
+                      NULL,
+                      &shmem_transport_portals4_le_h);
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlLEAppend of all memory failed: %d\n",
+                shmem_internal_my_pe, ret);
+        goto cleanup;
+    }
+#else
+    /* Open LE to heap section */
     le.start = shmem_internal_heap_base;
     le.length = shmem_internal_heap_length;
     le.ct_handle = shmem_transport_portals4_target_ct_h;
@@ -414,6 +460,7 @@ shmem_transport_portals4_startup(void)
                 shmem_internal_my_pe, ret);
         goto cleanup;
     }
+#endif
 
     /* Open MD to all memory */
     ret = PtlCTAlloc(shmem_transport_portals4_ni_h, &shmem_transport_portals4_put_ct_h);

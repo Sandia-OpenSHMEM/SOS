@@ -18,8 +18,12 @@
 
 #include "shmem_free_list.h"
 
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+#define shmem_transport_portals4_pt      8
+#else
 #define shmem_transport_portals4_data_pt 8
 #define shmem_transport_portals4_heap_pt 9
+#endif
 
 extern ptl_handle_ni_t shmem_transport_portals4_ni_h;
 #if PORTALS4_MAX_MD_SIZE < PORTALS4_MAX_VA_SIZE
@@ -98,10 +102,11 @@ typedef struct shmem_transport_portals4_long_frag_t shmem_transport_portals4_lon
  * unfortunately, not constant).
  *
  * In the case where an MD can cover all of memory,
- * shmem_transport_mtl_portals4_get_md() will be compiled into two
+ * shmem_transport_portals4_get_md() will be compiled into two
  * assignments.  Assuming the function inlines (and it certainly
  * should be), the two assignments should be optimized into register
- * assignments for the Portals call relatively easily.
+ * assignments for the Portals call relatively easily.  Looking at
+ * assembly code from this header appeared to show this was the case.
  */
 static inline void
 shmem_transport_portals4_get_md(const void *ptr, const ptl_handle_md_t *md_array,
@@ -129,7 +134,34 @@ shmem_transport_portals4_get_num_mds(void)
 #endif
 }
 
+
+/*
+ * PORTALS4_GET_REMOTE_ACCESS is used to get the correct PT and offset
+ * from the base of the list entry on that PT for a given target
+ * virtual address.  In the common case, there are two list entries
+ * (on different PTs), one for the data region and one for the
+ * symmetric heap.  On platforms where we can reliably assume the
+ * symmetric heap is actually symmetric relative to virtual addresses
+ * and the implementation supports BIND_INACCESSIBLE, we can use only
+ * one LE and use the virtual address ass the offset.
+*/
 #ifdef ENABLE_ERROR_CHECKING
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+#define PORTALS4_GET_REMOTE_ACCESS(target, pt, offset)                  \
+    do {                                                                \
+        if (((void*) target > shmem_internal_data_base) &&              \
+            ((char*) target < (char*) shmem_internal_data_base + shmem_internal_data_length)) { \
+        } else if (((void*) target > shmem_internal_heap_base) &&       \
+                   ((char*) target < (char*) shmem_internal_heap_base + shmem_internal_heap_length)) { \
+        } else {                                                        \
+            printf("[%03d] ERROR: target (0x%lx) outside of symmetric areas\n", \
+                   shmem_internal_my_pe, (unsigned long) target);       \
+            abort();                                                    \
+        }                                                               \
+        pt = shmem_transport_portals4_pt;                               \
+        offset = target;                                                     \
+    } while (0)
+#else
 #define PORTALS4_GET_REMOTE_ACCESS(target, pt, offset)                  \
     do {                                                                \
         if (((void*) target > shmem_internal_data_base) &&              \
@@ -146,7 +178,15 @@ shmem_transport_portals4_get_num_mds(void)
             abort();                                                    \
         }                                                               \
     } while (0)
+#endif
 #else 
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+#define PORTALS4_GET_REMOTE_ACCESS(target, pt, offset)                  \
+    do {                                                                \
+        pt = shmem_transport_portals4_pt;                               \
+        offset = 0;                                                     \
+    } while (0)
+#else
 #define PORTALS4_GET_REMOTE_ACCESS(target, pt, offset)                  \
     do {                                                                \
         if ((void*) target < shmem_internal_heap_base) {                \
@@ -157,6 +197,7 @@ shmem_transport_portals4_get_num_mds(void)
             offset = (char*) target - (char*) shmem_internal_heap_base; \
         }                                                               \
     } while (0)
+#endif
 #endif
 
 int shmem_transport_portals4_init(long eager_size);
