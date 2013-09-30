@@ -27,6 +27,41 @@
 #include "shmem_comm.h"
 #include "runtime.h"
 
+int8_t shmem_transport_portals4_pt_state[SHMEM_TRANSPORT_PORTALS4_NUM_PTS] = {
+    /*  0 */ PT_FREE,
+    /*  1 */ PT_FREE,
+    /*  2 */ PT_FREE,
+    /*  3 */ PT_FREE,
+    /*  4 */ PT_FREE,
+    /*  5 */ PT_FREE,
+    /*  6 */ PT_RESERVED,
+    /*  7 */ PT_FREE,
+    /*  8 */ PT_RESERVED,
+    /*  9 */ PT_RESERVED,
+    /* 10 */ PT_FREE,
+    /* 11 */ PT_FREE,
+    /* 12 */ PT_FREE,
+    /* 13 */ PT_FREE,
+    /* 14 */ PT_FREE,
+    /* 15 */ PT_FREE,
+    /* 16 */ PT_RESERVED,
+    /* 17 */ PT_RESERVED,
+    /* 18 */ PT_RESERVED,
+    /* 19 */ PT_RESERVED,
+    /* 20 */ PT_RESERVED,
+    /* 21 */ PT_RESERVED,
+    /* 22 */ PT_FREE,
+    /* 23 */ PT_FREE,
+    /* 24 */ PT_FREE,
+    /* 25 */ PT_FREE,
+    /* 26 */ PT_FREE,
+    /* 27 */ PT_FREE,
+    /* 28 */ PT_FREE,
+    /* 29 */ PT_FREE,
+    /* 30 */ PT_FREE,
+    /* 31 */ PT_FREE,
+};
+
 ptl_handle_ni_t shmem_transport_portals4_ni_h = PTL_INVALID_HANDLE;
 #if PORTALS4_MAX_MD_SIZE < PORTALS4_MAX_VA_SIZE
 ptl_handle_md_t *shmem_transport_portals4_put_volatile_md_h = NULL;

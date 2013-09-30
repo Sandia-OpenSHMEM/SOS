@@ -19,12 +19,18 @@
 
 #include "shmem_free_list.h"
 
+#define SHMEM_TRANSPORT_PORTALS4_NUM_PTS 32
+
+/* NOTE: If these values change, the shmem_transport_portals4_pt_state[]
+ * initialization in transport_portals4.c must also be updated. */
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
 #define shmem_transport_portals4_pt      8
 #else
 #define shmem_transport_portals4_data_pt 8
 #define shmem_transport_portals4_heap_pt 9
 #endif
+
+extern int8_t shmem_transport_portals4_pt_state[SHMEM_TRANSPORT_PORTALS4_NUM_PTS];
 
 extern ptl_handle_ni_t shmem_transport_portals4_ni_h;
 #if PORTALS4_MAX_MD_SIZE < PORTALS4_MAX_VA_SIZE
@@ -56,6 +62,10 @@ extern int32_t shmem_transport_portals4_event_slots;
 
 #define SHMEM_TRANSPORT_PORTALS4_TYPE_BOUNCE  0x01
 #define SHMEM_TRANSPORT_PORTALS4_TYPE_LONG    0x02
+
+enum shmem_transport_portals4_pt_states_t {
+    PT_FREE = 0, PT_ALLOCATED = 1, PT_RESERVED = 2
+};
 
 struct shmem_transport_portals4_frag_t {
     shmem_free_list_item_t item;
@@ -837,7 +847,7 @@ shmem_transport_portals4_fetch_atomic(void *target, void *source, void *dest, si
 static inline
 void shmem_transport_portals4_ct_create(shmem_transport_portals4_ct_t **ct_ptr)
 {
-    int ret;
+    int ret, des_data_pt, des_heap_pt;
     ptl_le_t le;
     shmem_transport_portals4_ct_t *ct;
 
@@ -847,28 +857,58 @@ void shmem_transport_portals4_ct_create(shmem_transport_portals4_ct_t **ct_ptr)
     }
     *ct_ptr = ct;
 
+    /* Find the next two free PT indices.  These are allocated collectively by
+     * all PEs, so the state array should stay in sync on all PEs. */
+    for (des_data_pt = 0; des_data_pt < SHMEM_TRANSPORT_PORTALS4_NUM_PTS &&
+         shmem_transport_portals4_pt_state[des_data_pt] != PT_FREE; des_data_pt++)
+        ;
+
+    for (des_heap_pt = des_data_pt+1; des_heap_pt < SHMEM_TRANSPORT_PORTALS4_NUM_PTS &&
+         shmem_transport_portals4_pt_state[des_heap_pt] != PT_FREE; des_heap_pt++)
+        ;
+
+    if (des_data_pt >= SHMEM_TRANSPORT_PORTALS4_NUM_PTS ||
+        des_heap_pt >= SHMEM_TRANSPORT_PORTALS4_NUM_PTS) {
+        RAISE_ERROR_STR("Out of PT entries allocating CT object");
+    }
+
+    shmem_transport_portals4_pt_state[des_data_pt] = PT_ALLOCATED;
+    shmem_transport_portals4_pt_state[des_heap_pt] = PT_ALLOCATED;
+
     /* Counters are distinguished using distinct portal table entries.
      * Allocate PT entries for the data and heap segments */
     ret = PtlPTAlloc(shmem_transport_portals4_ni_h,
                      0,
                      shmem_transport_portals4_eq_h,
-                     PTL_PT_ANY,
+                     des_data_pt,
                      &ct->data_pt);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlPTAlloc of data table failed: %d\n",
                 shmem_internal_my_pe, ret);
         RAISE_ERROR(ret);
     }
+    if (ct->data_pt != des_data_pt) {
+        fprintf(stderr, "[%03d] ERROR: data portal table index mis-match: "
+                "desired = %d, actual = %d\n",
+                shmem_internal_my_pe, des_data_pt, ct->data_pt);
+        RAISE_ERROR(-1);
+    }
 
     ret = PtlPTAlloc(shmem_transport_portals4_ni_h,
                      0,
                      shmem_transport_portals4_eq_h,
-                     PTL_PT_ANY,
+                     des_heap_pt,
                      &ct->heap_pt);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlPTAlloc of heap table failed: %d\n",
                 shmem_internal_my_pe, ret);
         RAISE_ERROR(ret);
+    }
+    if (ct->heap_pt != des_heap_pt) {
+        fprintf(stderr, "[%03d] ERROR: heap portal table index mis-match: "
+                "desired = %d, actual = %d\n",
+                shmem_internal_my_pe, des_heap_pt, ct->heap_pt);
+        RAISE_ERROR(-1);
     }
 
     /* Allocate the counting event */
@@ -937,6 +977,9 @@ void shmem_transport_portals4_ct_free(shmem_transport_portals4_ct_t **ct_ptr)
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
     ret = PtlPTFree(shmem_transport_portals4_ni_h, ct->heap_pt);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
+
+    shmem_transport_portals4_pt_state[ct->data_pt] = PT_FREE;
+    shmem_transport_portals4_pt_state[ct->heap_pt] = PT_FREE;
 
     free(ct);
     *ct_ptr = NULL;
