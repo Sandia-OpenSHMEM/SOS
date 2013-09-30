@@ -87,8 +87,13 @@ struct shmem_transport_portals4_long_frag_t {
 typedef struct shmem_transport_portals4_long_frag_t shmem_transport_portals4_long_frag_t;
 
 struct shmem_transport_portals4_ct_t {
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    ptl_pt_index_t shr_pt;
+    ptl_handle_le_t shr_le;
+#else
     ptl_pt_index_t data_pt, heap_pt;
     ptl_handle_le_t data_le, heap_le;
+#endif
     ptl_handle_ct_t ct;
 };
 typedef struct shmem_transport_portals4_ct_t shmem_transport_portals4_ct_t;
@@ -165,7 +170,7 @@ shmem_transport_portals4_get_num_mds(void)
 */
 #ifdef ENABLE_ERROR_CHECKING
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-#define PORTALS4_GET_REMOTE_ACCESS(target, pt, offset)                  \
+#define PORTALS4_GET_REMOTE_ACCESS_ONEPT(target, pt, offset, shr_pt)    \
     do {                                                                \
         if (((void*) target > shmem_internal_data_base) &&              \
             ((char*) target < (char*) shmem_internal_data_base + shmem_internal_data_length)) { \
@@ -176,11 +181,11 @@ shmem_transport_portals4_get_num_mds(void)
                    shmem_internal_my_pe, (unsigned long) target);       \
             abort();                                                    \
         }                                                               \
-        pt = shmem_transport_portals4_pt;                               \
+        pt = shr_pt;                                                    \
         offset = target;                                                     \
     } while (0)
 #else
-#define PORTALS4_GET_REMOTE_ACCESS_PT(target, pt, offset, data_pt, heap_pt) \
+#define PORTALS4_GET_REMOTE_ACCESS_TWOPT(target, pt, offset, data_pt, heap_pt) \
     do {                                                                \
         if (((void*) target > shmem_internal_data_base) &&              \
             ((char*) target < (char*) shmem_internal_data_base + shmem_internal_data_length)) { \
@@ -199,13 +204,13 @@ shmem_transport_portals4_get_num_mds(void)
 #endif
 #else 
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-#define PORTALS4_GET_REMOTE_ACCESS(target, pt, offset)                  \
+#define PORTALS4_GET_REMOTE_ACCESS_ONEPT(target, pt, offset, shr_pt)    \
     do {                                                                \
-        pt = shmem_transport_portals4_pt;                               \
+        pt = (shr_pt);                                                  \
         offset = 0;                                                     \
     } while (0)
 #else
-#define PORTALS4_GET_REMOTE_ACCESS_PT(target, pt, offset, data_pt, heap_pt) \
+#define PORTALS4_GET_REMOTE_ACCESS_TWOPT(target, pt, offset, data_pt, heap_pt) \
     do {                                                                \
         if ((void*) target < shmem_internal_heap_base) {                \
             pt = (data_pt);                                             \
@@ -218,9 +223,13 @@ shmem_transport_portals4_get_num_mds(void)
 #endif
 #endif
 
-#ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
 #define PORTALS4_GET_REMOTE_ACCESS(target, pt, offset)                  \
-        PORTALS4_GET_REMOTE_ACCESS_PT(target, pt, offset,               \
+        PORTALS4_GET_REMOTE_ACCESS_ONEPT(target, pt, offset,            \
+                                         shmem_transport_portals4_pt)
+#else
+#define PORTALS4_GET_REMOTE_ACCESS(target, pt, offset)                  \
+        PORTALS4_GET_REMOTE_ACCESS_TWOPT(target, pt, offset,            \
                                     shmem_transport_portals4_data_pt,   \
                                     shmem_transport_portals4_heap_pt)
 #endif
@@ -342,7 +351,11 @@ shmem_transport_portals4_put_nb_internal(void *target, const void *source, size_
     void *base;
 
     peer.rank = pe;
-    PORTALS4_GET_REMOTE_ACCESS_PT(target, pt, offset, data_pt, heap_pt);
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    PORTALS4_GET_REMOTE_ACCESS_ONEPT(target, pt, offset, data_pt);
+#else
+    PORTALS4_GET_REMOTE_ACCESS_TWOPT(target, pt, offset, data_pt, heap_pt);
+#endif
 
     if (len <= shmem_transport_portals4_max_volatile_size) {
         shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_volatile_md_h,
@@ -433,10 +446,17 @@ void
 shmem_transport_portals4_put_nb(void *target, const void *source, size_t len,
                                 int pe, long *completion)
 {
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    shmem_transport_portals4_put_nb_internal(target, source, len, pe,
+                                             completion,
+                                             shmem_transport_portals4_pt,
+                                             -1);
+#else
     shmem_transport_portals4_put_nb_internal(target, source, len, pe,
                                              completion,
                                              shmem_transport_portals4_data_pt,
                                              shmem_transport_portals4_heap_pt);
+#endif
 }
 
 
@@ -445,8 +465,13 @@ void
 shmem_transport_portals4_put_ct_nb(shmem_transport_portals4_ct_t *ct, void *target, const void
                                    *source, size_t len, int pe, long *completion)
 {
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    shmem_transport_portals4_put_nb_internal(target, source, len, pe,
+                                             completion, ct->shr_pt, -1);
+#else
     shmem_transport_portals4_put_nb_internal(target, source, len, pe,
                                              completion, ct->data_pt, ct->heap_pt);
+#endif
 }
 
 
@@ -844,11 +869,74 @@ shmem_transport_portals4_fetch_atomic(void *target, void *source, void *dest, si
     shmem_transport_portals4_pending_get_counter++;
 }
 
+
+static inline
+void shmem_transport_portals4_ct_attach(ptl_handle_ct_t ptl_ct, void *seg_base,
+                                        ptl_size_t seg_length, ptl_pt_index_t *seg_pt,
+                                        ptl_handle_le_t *seg_le)
+{
+    int ret, des_pt;
+    ptl_le_t le;
+
+
+    /* Find the next free PT index.  These are allocated collectively by
+     * all PEs, so the state array should stay in sync on all PEs. */
+    for (des_pt = 0; des_pt < SHMEM_TRANSPORT_PORTALS4_NUM_PTS &&
+         shmem_transport_portals4_pt_state[des_pt] != PT_FREE; des_pt++)
+        ;
+
+    if (des_pt >= SHMEM_TRANSPORT_PORTALS4_NUM_PTS) {
+        RAISE_ERROR_STR("Out of PT entries allocating CT object");
+    }
+
+    shmem_transport_portals4_pt_state[des_pt] = PT_ALLOCATED;
+
+    /* Counters are distinguished using distinct portal table entries.
+     * Allocate PT entry for the given segment */
+    ret = PtlPTAlloc(shmem_transport_portals4_ni_h,
+                     0,
+                     shmem_transport_portals4_eq_h,
+                     des_pt,
+                     seg_pt);
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlPTAlloc of data table failed: %d\n",
+                shmem_internal_my_pe, ret);
+        RAISE_ERROR(ret);
+    }
+    if (*seg_pt != des_pt) {
+        fprintf(stderr, "[%03d] ERROR: data portal table index mis-match: "
+                "desired = %d, actual = %d\n",
+                shmem_internal_my_pe, des_pt, *seg_pt);
+        RAISE_ERROR(-1);
+    }
+
+    /* Open LE to data segment */
+    le.start = seg_base;
+    le.length = seg_length;
+    le.ct_handle = ptl_ct;
+    le.uid = PTL_UID_ANY;
+    le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET |
+        PTL_LE_EVENT_LINK_DISABLE |
+        PTL_LE_EVENT_SUCCESS_DISABLE |
+        PTL_LE_EVENT_CT_COMM;
+    ret = PtlLEAppend(shmem_transport_portals4_ni_h,
+                      *seg_pt,
+                      &le,
+                      PTL_PRIORITY_LIST,
+                      NULL,
+                      seg_le);
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlLEAppend of data section failed: %d\n",
+                shmem_internal_my_pe, ret);
+        RAISE_ERROR(ret);
+    }
+}
+
+
 static inline
 void shmem_transport_portals4_ct_create(shmem_transport_portals4_ct_t **ct_ptr)
 {
-    int ret, des_data_pt, des_heap_pt;
-    ptl_le_t le;
+    int ret;
     shmem_transport_portals4_ct_t *ct;
 
     ct = malloc(sizeof(shmem_transport_portals4_ct_t));
@@ -857,105 +945,20 @@ void shmem_transport_portals4_ct_create(shmem_transport_portals4_ct_t **ct_ptr)
     }
     *ct_ptr = ct;
 
-    /* Find the next two free PT indices.  These are allocated collectively by
-     * all PEs, so the state array should stay in sync on all PEs. */
-    for (des_data_pt = 0; des_data_pt < SHMEM_TRANSPORT_PORTALS4_NUM_PTS &&
-         shmem_transport_portals4_pt_state[des_data_pt] != PT_FREE; des_data_pt++)
-        ;
-
-    for (des_heap_pt = des_data_pt+1; des_heap_pt < SHMEM_TRANSPORT_PORTALS4_NUM_PTS &&
-         shmem_transport_portals4_pt_state[des_heap_pt] != PT_FREE; des_heap_pt++)
-        ;
-
-    if (des_data_pt >= SHMEM_TRANSPORT_PORTALS4_NUM_PTS ||
-        des_heap_pt >= SHMEM_TRANSPORT_PORTALS4_NUM_PTS) {
-        RAISE_ERROR_STR("Out of PT entries allocating CT object");
-    }
-
-    shmem_transport_portals4_pt_state[des_data_pt] = PT_ALLOCATED;
-    shmem_transport_portals4_pt_state[des_heap_pt] = PT_ALLOCATED;
-
-    /* Counters are distinguished using distinct portal table entries.
-     * Allocate PT entries for the data and heap segments */
-    ret = PtlPTAlloc(shmem_transport_portals4_ni_h,
-                     0,
-                     shmem_transport_portals4_eq_h,
-                     des_data_pt,
-                     &ct->data_pt);
-    if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlPTAlloc of data table failed: %d\n",
-                shmem_internal_my_pe, ret);
-        RAISE_ERROR(ret);
-    }
-    if (ct->data_pt != des_data_pt) {
-        fprintf(stderr, "[%03d] ERROR: data portal table index mis-match: "
-                "desired = %d, actual = %d\n",
-                shmem_internal_my_pe, des_data_pt, ct->data_pt);
-        RAISE_ERROR(-1);
-    }
-
-    ret = PtlPTAlloc(shmem_transport_portals4_ni_h,
-                     0,
-                     shmem_transport_portals4_eq_h,
-                     des_heap_pt,
-                     &ct->heap_pt);
-    if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlPTAlloc of heap table failed: %d\n",
-                shmem_internal_my_pe, ret);
-        RAISE_ERROR(ret);
-    }
-    if (ct->heap_pt != des_heap_pt) {
-        fprintf(stderr, "[%03d] ERROR: heap portal table index mis-match: "
-                "desired = %d, actual = %d\n",
-                shmem_internal_my_pe, des_heap_pt, ct->heap_pt);
-        RAISE_ERROR(-1);
-    }
-
     /* Allocate the counting event */
     ret = PtlCTAlloc(shmem_transport_portals4_ni_h, &ct->ct);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 
-    /* Open LE to data segment */
-    le.start = shmem_internal_data_base;
-    le.length = shmem_internal_data_length;
-    le.ct_handle = ct->ct;
-    le.uid = PTL_UID_ANY;
-    le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET |
-        PTL_LE_EVENT_LINK_DISABLE |
-        PTL_LE_EVENT_SUCCESS_DISABLE |
-        PTL_LE_EVENT_CT_COMM;
-    ret = PtlLEAppend(shmem_transport_portals4_ni_h,
-                      ct->data_pt,
-                      &le,
-                      PTL_PRIORITY_LIST,
-                      NULL,
-                      &ct->data_le);
-    if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlLEAppend of data section failed: %d\n",
-                shmem_internal_my_pe, ret);
-        RAISE_ERROR(ret);
-    }
-
-    /* Open LE to heap segment */
-    le.start = shmem_internal_heap_base;
-    le.length = shmem_internal_heap_length;
-    le.ct_handle = ct->ct;
-    le.uid = PTL_UID_ANY;
-    le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET |
-        PTL_LE_EVENT_LINK_DISABLE |
-        PTL_LE_EVENT_SUCCESS_DISABLE |
-        PTL_LE_EVENT_CT_COMM;
-    ret = PtlLEAppend(shmem_transport_portals4_ni_h,
-                      ct->heap_pt,
-                      &le,
-                      PTL_PRIORITY_LIST,
-                      NULL,
-                      &ct->heap_le);
-    if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlLEAppend of heap section failed: %d\n",
-                shmem_internal_my_pe, ret);
-        RAISE_ERROR(ret);
-    }
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    ptl_pt_index_t shr_pt;
+    ptl_handle_le_t shr_le;
+    shmem_transport_portals4_ct_attach(ct->ct, NULL, PTL_SIZE_MAX, &ct->shr_pt, &ct->shr_le);
+#else
+    shmem_transport_portals4_ct_attach(ct->ct, shmem_internal_data_base, shmem_internal_data_length,
+                                       &ct->data_pt, &ct->data_le);
+    shmem_transport_portals4_ct_attach(ct->ct, shmem_internal_heap_base, shmem_internal_heap_length,
+                                       &ct->heap_pt, &ct->heap_le);
+#endif
 }
 
 
@@ -965,12 +968,21 @@ void shmem_transport_portals4_ct_free(shmem_transport_portals4_ct_t **ct_ptr)
     int ret;
     shmem_transport_portals4_ct_t *ct = *ct_ptr;
 
+    ret = PtlCTFree(ct->ct);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    ret = PtlLEUnlink(ct->shr_le);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+
+    ret = PtlPTFree(shmem_transport_portals4_ni_h, ct->shr_pt);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+
+    shmem_transport_portals4_pt_state[ct->shr_pt] = PT_FREE;
+#else
     ret = PtlLEUnlink(ct->data_le);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
     ret = PtlLEUnlink(ct->heap_le);
-    if (PTL_OK != ret) { RAISE_ERROR(ret); }
-
-    ret = PtlCTFree(ct->ct);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 
     ret = PtlPTFree(shmem_transport_portals4_ni_h, ct->data_pt);
@@ -980,6 +992,7 @@ void shmem_transport_portals4_ct_free(shmem_transport_portals4_ct_t **ct_ptr)
 
     shmem_transport_portals4_pt_state[ct->data_pt] = PT_FREE;
     shmem_transport_portals4_pt_state[ct->heap_pt] = PT_FREE;
+#endif
 
     free(ct);
     *ct_ptr = NULL;

@@ -37,7 +37,11 @@ int8_t shmem_transport_portals4_pt_state[SHMEM_TRANSPORT_PORTALS4_NUM_PTS] = {
     /*  6 */ PT_RESERVED,
     /*  7 */ PT_FREE,
     /*  8 */ PT_RESERVED,
+#ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    /*  9 */ PT_FREE,
+#else
     /*  9 */ PT_RESERVED,
+#endif
     /* 10 */ PT_FREE,
     /* 11 */ PT_FREE,
     /* 12 */ PT_FREE,
