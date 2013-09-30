@@ -162,15 +162,15 @@ shmem_transport_portals4_get_num_mds(void)
         offset = target;                                                     \
     } while (0)
 #else
-#define PORTALS4_GET_REMOTE_ACCESS(target, pt, offset)                  \
+#define PORTALS4_GET_REMOTE_ACCESS_PT(target, pt, offset, data_pt, heap_pt) \
     do {                                                                \
         if (((void*) target > shmem_internal_data_base) &&              \
             ((char*) target < (char*) shmem_internal_data_base + shmem_internal_data_length)) { \
-            pt = shmem_transport_portals4_data_pt;                      \
+            pt = (data_pt);                                             \
             offset = (char*) target - (char*) shmem_internal_data_base; \
         } else if (((void*) target > shmem_internal_heap_base) &&       \
                    ((char*) target < (char*) shmem_internal_heap_base + shmem_internal_heap_length)) { \
-            pt = shmem_transport_portals4_heap_pt;                      \
+            pt = (heap_pt);                                             \
             offset = (char*) target - (char*) shmem_internal_heap_base; \
         } else {                                                        \
             printf("[%03d] ERROR: target (0x%lx) outside of symmetric areas\n", \
@@ -187,17 +187,24 @@ shmem_transport_portals4_get_num_mds(void)
         offset = 0;                                                     \
     } while (0)
 #else
-#define PORTALS4_GET_REMOTE_ACCESS(target, pt, offset)                  \
+#define PORTALS4_GET_REMOTE_ACCESS_PT(target, pt, offset, data_pt, heap_pt) \
     do {                                                                \
         if ((void*) target < shmem_internal_heap_base) {                \
-            pt = shmem_transport_portals4_data_pt;                      \
+            pt = (data_pt);                                             \
             offset = (char*) target - (char*) shmem_internal_data_base; \
         } else {                                                        \
-            pt = shmem_transport_portals4_heap_pt;                      \
+            pt = (heap_pt);                                             \
             offset = (char*) target - (char*) shmem_internal_heap_base; \
         }                                                               \
     } while (0)
 #endif
+#endif
+
+#ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+#define PORTALS4_GET_REMOTE_ACCESS(target, pt, offset)                  \
+        PORTALS4_GET_REMOTE_ACCESS_PT(target, pt, offset,               \
+                                    shmem_transport_portals4_data_pt,   \
+                                    shmem_transport_portals4_heap_pt)
 #endif
 
 int shmem_transport_portals4_init(long eager_size);
