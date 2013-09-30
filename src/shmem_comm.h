@@ -91,6 +91,35 @@ shmem_internal_put_nb(void *target, const void *source, size_t len, int pe,
 
 static inline
 void
+shmem_internal_put_ct_nb(shmem_ct_t *ct, void *target, const void *source, size_t len, int pe,
+                      long *completion)
+{
+    int node_rank;
+
+    if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
+        /* TODO: Not implemented for ON_NODE_COMMS */
+        /*
+#if USE_XPMEM
+        shmem_transport_xpmem_put(target, source, len, pe, node_rank);
+#else
+        RAISE_ERROR_STR("No path to peer");
+#endif
+        */
+        RAISE_ERROR_STR("No path to peer");
+    } else {
+#if USE_PORTALS4
+        shmem_transport_portals4_put_ct_nb((shmem_transport_portals4_ct_t *)
+                                           ct, target, source, len, pe,
+                                           completion);
+#else
+        RAISE_ERROR_STR("No path to peer");
+#endif
+    }
+}
+
+
+static inline
+void
 shmem_internal_put_wait(long *completion)
 {
 #if USE_PORTALS4
@@ -188,5 +217,61 @@ shmem_internal_fetch_atomic(void *target, void *source, void *dest, size_t len,
 {
     shmem_transport_portals4_fetch_atomic(target, source, dest, len, pe, op, datatype);
 }
+
+
+static inline
+void shmem_internal_ct_create(shmem_ct_t *ct)
+{
+#if USE_PORTALS4
+    shmem_transport_portals4_ct_create((shmem_transport_portals4_ct_t **) ct);
+#else
+    RAISE_ERROR_STR("No path to peer");
+#endif
+}
+
+
+static inline
+void shmem_internal_ct_free(shmem_ct_t *ct)
+{
+#if USE_PORTALS4
+    shmem_transport_portals4_ct_free((shmem_transport_portals4_ct_t **) ct);
+#else
+    RAISE_ERROR_STR("No path to peer");
+#endif
+}
+
+
+static inline
+long shmem_internal_ct_get(shmem_ct_t ct)
+{
+#if USE_PORTALS4
+    return shmem_transport_portals4_ct_get((shmem_transport_portals4_ct_t *) ct);
+#else
+    RAISE_ERROR_STR("No path to peer");
+#endif
+}
+
+
+static inline
+void shmem_internal_ct_set(shmem_ct_t ct, long value)
+{
+#if USE_PORTALS4
+    shmem_transport_portals4_ct_set((shmem_transport_portals4_ct_t *) ct, value);
+#else
+    RAISE_ERROR_STR("No path to peer");
+#endif
+}
+
+
+static inline
+void shmem_internal_ct_wait(shmem_ct_t ct, long wait_for)
+{
+#if USE_PORTALS4
+    shmem_transport_portals4_ct_wait((shmem_transport_portals4_ct_t *) ct, wait_for);
+#else
+    RAISE_ERROR_STR("No path to peer");
+#endif
+}
+
 
 #endif

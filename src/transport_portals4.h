@@ -13,6 +13,7 @@
 #ifndef TRANSPORT_PORTALS_H
 #define TRANSPORT_PORTALS_H
 
+#include <stdlib.h>
 #include <portals4.h>
 #include <string.h>
 
@@ -74,6 +75,13 @@ struct shmem_transport_portals4_long_frag_t {
     long *completion;
 };
 typedef struct shmem_transport_portals4_long_frag_t shmem_transport_portals4_long_frag_t;
+
+struct shmem_transport_portals4_ct_t {
+    ptl_pt_index_t data_pt, heap_pt;
+    ptl_handle_le_t data_le, heap_le;
+    ptl_handle_ct_t ct;
+};
+typedef struct shmem_transport_portals4_ct_t shmem_transport_portals4_ct_t;
 
 /*
  * Not all implementations of Portals 4 support binding a memory
@@ -422,6 +430,18 @@ shmem_transport_portals4_put_nb(void *target, const void *source, size_t len,
 }
 
 
+static inline
+void
+shmem_transport_portals4_put_ct_nb(shmem_transport_portals4_ct_t *ct, void *target, const void
+                                   *source, size_t len, int pe, long *completion)
+{
+    shmem_transport_portals4_put_nb_internal(target, source, len, pe,
+                                             completion, ct->data_pt, ct->heap_pt);
+}
+
+
+static inline
+void
 shmem_transport_portals4_put_wait(long *completion)
 {
     while (*completion > 0) {
@@ -813,5 +833,160 @@ shmem_transport_portals4_fetch_atomic(void *target, void *source, void *dest, si
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
     shmem_transport_portals4_pending_get_counter++;
 }
+
+static inline
+void shmem_transport_portals4_ct_create(shmem_transport_portals4_ct_t **ct_ptr)
+{
+    int ret;
+    ptl_le_t le;
+    shmem_transport_portals4_ct_t *ct;
+
+    ct = malloc(sizeof(shmem_transport_portals4_ct_t));
+    if (NULL == ct) {
+        RAISE_ERROR_STR("Out of memory allocating CT object");
+    }
+    *ct_ptr = ct;
+
+    /* Counters are distinguished using distinct portal table entries.
+     * Allocate PT entries for the data and heap segments */
+    ret = PtlPTAlloc(shmem_transport_portals4_ni_h,
+                     0,
+                     shmem_transport_portals4_eq_h,
+                     PTL_PT_ANY,
+                     &ct->data_pt);
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlPTAlloc of data table failed: %d\n",
+                shmem_internal_my_pe, ret);
+        RAISE_ERROR(ret);
+    }
+
+    ret = PtlPTAlloc(shmem_transport_portals4_ni_h,
+                     0,
+                     shmem_transport_portals4_eq_h,
+                     PTL_PT_ANY,
+                     &ct->heap_pt);
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlPTAlloc of heap table failed: %d\n",
+                shmem_internal_my_pe, ret);
+        RAISE_ERROR(ret);
+    }
+
+    /* Allocate the counting event */
+    ret = PtlCTAlloc(shmem_transport_portals4_ni_h, &ct->ct);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+
+    /* Open LE to data segment */
+    le.start = shmem_internal_data_base;
+    le.length = shmem_internal_data_length;
+    le.ct_handle = ct->ct;
+    le.uid = PTL_UID_ANY;
+    le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET |
+        PTL_LE_EVENT_LINK_DISABLE |
+        PTL_LE_EVENT_SUCCESS_DISABLE |
+        PTL_LE_EVENT_CT_COMM;
+    ret = PtlLEAppend(shmem_transport_portals4_ni_h,
+                      ct->data_pt,
+                      &le,
+                      PTL_PRIORITY_LIST,
+                      NULL,
+                      &ct->data_le);
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlLEAppend of data section failed: %d\n",
+                shmem_internal_my_pe, ret);
+        RAISE_ERROR(ret);
+    }
+
+    /* Open LE to heap segment */
+    le.start = shmem_internal_heap_base;
+    le.length = shmem_internal_heap_length;
+    le.ct_handle = ct->ct;
+    le.uid = PTL_UID_ANY;
+    le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET |
+        PTL_LE_EVENT_LINK_DISABLE |
+        PTL_LE_EVENT_SUCCESS_DISABLE |
+        PTL_LE_EVENT_CT_COMM;
+    ret = PtlLEAppend(shmem_transport_portals4_ni_h,
+                      ct->heap_pt,
+                      &le,
+                      PTL_PRIORITY_LIST,
+                      NULL,
+                      &ct->heap_le);
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlLEAppend of heap section failed: %d\n",
+                shmem_internal_my_pe, ret);
+        RAISE_ERROR(ret);
+    }
+}
+
+
+static inline
+void shmem_transport_portals4_ct_free(shmem_transport_portals4_ct_t **ct_ptr)
+{
+    int ret;
+    shmem_transport_portals4_ct_t *ct = *ct_ptr;
+
+    ret = PtlLEUnlink(ct->data_le);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+    ret = PtlLEUnlink(ct->heap_le);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+
+    ret = PtlCTFree(ct->ct);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+
+    ret = PtlPTFree(shmem_transport_portals4_ni_h, ct->data_pt);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+    ret = PtlPTFree(shmem_transport_portals4_ni_h, ct->heap_pt);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+
+    free(ct);
+    *ct_ptr = NULL;
+}
+
+
+static inline
+long shmem_transport_portals4_ct_get(shmem_transport_portals4_ct_t *ct)
+{
+    int ret;
+    ptl_ct_event_t ev;
+
+    ret = PtlCTGet(ct->ct, &ev);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+
+    /* FIXME: Not sure if this error check is correct */
+    if (ev.failure != 0) { RAISE_ERROR(ret); }
+
+    return ev.success;
+}
+
+
+static inline
+void shmem_transport_portals4_ct_set(shmem_transport_portals4_ct_t *ct, long value)
+{
+    int ret;
+    ptl_ct_event_t ev;
+
+    ev.success = (ptl_size_t) value;
+    ev.failure = (ptl_size_t) 0;
+
+    ret = PtlCTSet(ct->ct, ev);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+}
+
+
+static inline
+void shmem_transport_portals4_ct_wait(shmem_transport_portals4_ct_t *ct, long wait_for)
+{
+    int ret;
+    ptl_ct_event_t ev;
+
+    ret = PtlCTWait(ct->ct, (ptl_size_t) wait_for, &ev);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+
+    /* FIXME: Not sure if this error check is correct */
+    if (ev.failure != (ptl_size_t) 0 || ev.success < (ptl_size_t) wait_for) {
+        RAISE_ERROR(ret);
+    }
+}
+
 
 #endif
