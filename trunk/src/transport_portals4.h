@@ -995,7 +995,7 @@ long shmem_transport_portals4_ct_get(shmem_transport_portals4_ct_t *ct)
     ret = PtlCTGet(ct->ct, &ev);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 
-    /* FIXME: Not sure if this error check is correct */
+    /* TODO: Handle failures gracefully, instead of aborting */
     if (ev.failure != 0) { RAISE_ERROR(ret); }
 
     return ev.success;
@@ -1025,7 +1025,7 @@ void shmem_transport_portals4_ct_wait(shmem_transport_portals4_ct_t *ct, long wa
     ret = PtlCTWait(ct->ct, (ptl_size_t) wait_for, &ev);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 
-    /* FIXME: Not sure if this error check is correct */
+    /* TODO: Handle failures gracefully, instead of aborting */
     if (ev.failure != (ptl_size_t) 0 || ev.success < (ptl_size_t) wait_for) {
         RAISE_ERROR(ret);
     }
