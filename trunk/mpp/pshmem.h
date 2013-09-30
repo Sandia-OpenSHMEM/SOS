@@ -365,4 +365,12 @@ void pshmem_set_lock(long *lock);
 void pshmem_clear_lock(long *lock);
 int pshmem_test_lock(long *lock);
 
+/* Signalling puts */
+void pshmem_putmem_ct(shmem_ct_t ct, void *target, const void *source, size_t len, int pe);
+void pshmem_ct_create(shmem_ct_t *ct);
+void pshmem_ct_free(shmem_ct_t *ct);
+long pshmem_ct_get(shmem_ct_t ct);
+void pshmem_ct_set(shmem_ct_t ct, long value);
+void pshmem_ct_wait(shmem_ct_t ct, long wait_for);
+
 #endif /* PORTALS_PSHMEM_H */
