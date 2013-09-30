@@ -56,7 +56,8 @@ TESTS = \
 	bigget \
 	ns \
 	bcast_flood \
-	lfinc
+	lfinc \
+	shmem_ct
 
 if HAVE_FORTRAN
 TESTS += \
@@ -202,3 +203,6 @@ bcast_flood_LDADD = $(top_builddir)/src/libsma.la
 
 lfinc_SOURCES = lfinc.c
 lfinc_LDADD = $(top_builddir)/src/libsma.la
+
+shmem_ct_SOURCES = shmem_ct.c
+shmem_ct_LDADD = $(top_builddir)/src/libsma.la
