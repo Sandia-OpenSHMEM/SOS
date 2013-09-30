@@ -212,6 +212,24 @@
 #pragma weak shmem_complexd_get = pshmem_complexd_get
 #define shmem_complexd_get pshmem_complexd_get
 
+#pragma weak shmem_putmem_ct = pshmem_putmem_ct
+#define shmem_putmem_ct pshmem_putmem_ct
+
+#pragma weak shmem_ct_create = pshmem_ct_create
+#define shmem_ct_create pshmem_ct_create
+
+#pragma weak shmem_ct_free = pshmem_ct_free
+#define shmem_ct_free pshmem_ct_free
+
+#pragma weak shmem_ct_get = pshmem_ct_get
+#define shmem_ct_get pshmem_ct_get
+
+#pragma weak shmem_ct_set = pshmem_ct_set
+#define shmem_ct_set pshmem_ct_set
+
+#pragma weak shmem_ct_wait = pshmem_ct_wait
+#define shmem_ct_wait pshmem_ct_wait
+
 #endif /* ENABLE_PROFILING */
 
 
@@ -1241,3 +1259,77 @@ void shmem_complexd_put(double complex * target,
 }
 
 
+void shmem_putmem_ct(shmem_ct_t ct, void *target, const void *source,
+                     size_t len, int pe)
+{
+    long completion = 0;
+
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    shmem_internal_put_ct_nb(ct, target, source, len, pe, &completion);
+    shmem_internal_put_wait(&completion);
+}
+
+
+void shmem_ct_create(shmem_ct_t *ct)
+{
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    shmem_internal_ct_create(ct);
+}
+
+
+void shmem_ct_free(shmem_ct_t *ct)
+{
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    shmem_internal_ct_free(ct);
+}
+
+
+long shmem_ct_get(shmem_ct_t ct)
+{
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    return shmem_internal_ct_get(ct);
+}
+
+
+void shmem_ct_set(shmem_ct_t ct, long value)
+{
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    shmem_internal_ct_set(ct, value);
+}
+
+
+void shmem_ct_wait(shmem_ct_t ct, long wait_for)
+{
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    shmem_internal_ct_wait(ct, wait_for);
+}
