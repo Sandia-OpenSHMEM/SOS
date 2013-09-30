@@ -394,7 +394,7 @@ double shmem_wtime(void);
 char* shmem_nodename(void);
 
 /* Signalling puts */
-typedef void * shmem_ct_t;
+typedef char * shmem_ct_t;
 
 void shmem_putmem_ct(shmem_ct_t ct, void *target, const void *source, size_t len, int pe);
 void shmem_ct_create(shmem_ct_t *ct);
