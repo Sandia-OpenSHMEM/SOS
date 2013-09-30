@@ -312,8 +312,9 @@ shmem_transport_portals4_put_small(void *target, const void *source, size_t len,
 
 static inline
 void
-shmem_transport_portals4_put_nb(void *target, const void *source, size_t len,
-                                int pe, long *completion)
+shmem_transport_portals4_put_nb_internal(void *target, const void *source, size_t len,
+                                int pe, long *completion, ptl_pt_index_t data_pt,
+                                ptl_pt_index_t heap_pt)
 {
     int ret;
     ptl_process_t peer;
@@ -323,7 +324,7 @@ shmem_transport_portals4_put_nb(void *target, const void *source, size_t len,
     void *base;
 
     peer.rank = pe;
-    PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
+    PORTALS4_GET_REMOTE_ACCESS_PT(target, pt, offset, data_pt, heap_pt);
 
     if (len <= shmem_transport_portals4_max_volatile_size) {
         shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_volatile_md_h,
@@ -411,6 +412,16 @@ shmem_transport_portals4_put_nb(void *target, const void *source, size_t len,
 
 static inline
 void
+shmem_transport_portals4_put_nb(void *target, const void *source, size_t len,
+                                int pe, long *completion)
+{
+    shmem_transport_portals4_put_nb_internal(target, source, len, pe,
+                                             completion,
+                                             shmem_transport_portals4_data_pt,
+                                             shmem_transport_portals4_heap_pt);
+}
+
+
 shmem_transport_portals4_put_wait(long *completion)
 {
     while (*completion > 0) {
