@@ -91,7 +91,7 @@ shmem_internal_put_nb(void *target, const void *source, size_t len, int pe,
 
 static inline
 void
-shmem_internal_put_ct_nb(shmem_ct_t *ct, void *target, const void *source, size_t len, int pe,
+shmem_internal_put_ct_nb(shmem_ct_t ct, void *target, const void *source, size_t len, int pe,
                       long *completion)
 {
     int node_rank;
