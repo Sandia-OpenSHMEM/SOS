@@ -23,17 +23,17 @@ libsma_la_SOURCES = \
 	shmem_collectives.h \
 	shmem_synchronization.h \
 	malloc.c \
-	init.c \
-	query.c \
-	accessibility.c \
-	symmetric_heap.c \
-	remote_pointer.c \
-	data.c \
-	atomic.c \
-	synchronization.c \
-	collectives.c \
-	lock.c \
-	cache_management.c
+	init_c.c \
+	query_c.c \
+	accessibility_c.c \
+	symmetric_heap_c.c \
+	remote_pointer_c.c \
+	data_c.c \
+	atomic_c.c \
+	synchronization_c.c \
+	collectives_c.c \
+	lock_c.c \
+	cache_management_c.c
 
 if HAVE_FORTRAN
 libsma_la_SOURCES += \
