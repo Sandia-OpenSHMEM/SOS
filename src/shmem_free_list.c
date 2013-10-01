@@ -15,7 +15,6 @@
 #include <stdlib.h>
 
 #include "shmem.h"
-#include "shmem_internal.h"
 #include "shmem_free_list.h"
 
 
