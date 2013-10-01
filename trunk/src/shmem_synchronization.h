@@ -11,7 +11,42 @@
  */
 
 #ifndef SHMEM_SYNCHRONIZATION_H
-#define SHMEM_SYNCHRONIZATION_h
+#define SHMEM_SYNCHRONIZATION_H
+
+#include "shmem_comm.h"
+
+
+static inline void
+shmem_internal_quiet(void)
+{
+    int ret;
+ 
+#ifdef USE_PORTALS4
+    ret = shmem_transport_portals4_quiet();
+    if (0 != ret) { RAISE_ERROR(ret); }
+#endif
+#ifdef USE_XPMEM
+    ret = shmem_transport_xpmem_quiet();
+    if (0 != ret) { RAISE_ERROR(ret); }
+#endif
+}
+ 
+ 
+static inline void
+shmem_internal_fence(void)
+{
+    int ret;
+ 
+#ifdef USE_PORTALS4
+    ret = shmem_transport_portals4_fence();
+    if (0 != ret) { RAISE_ERROR(ret); }
+#endif
+#ifdef USE_XPMEM
+    ret = shmem_transport_xpmem_fence();
+    if (0 != ret) { RAISE_ERROR(ret); }
+#endif
+}
+
 
 #define COMP(type, a, b, ret)                            \
     do {                                                 \

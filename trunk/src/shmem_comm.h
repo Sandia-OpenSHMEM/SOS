@@ -18,6 +18,8 @@
 #include <assert.h>
 #include <sys/param.h>
 
+#include "shmem.h" /* shmem_ct_t */
+
 extern void *shmem_internal_heap_base;
 extern long shmem_internal_heap_length;
 extern void *shmem_internal_data_base;

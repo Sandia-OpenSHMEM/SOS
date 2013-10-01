@@ -13,11 +13,16 @@
 #ifndef TRANSPORT_PORTALS_H
 #define TRANSPORT_PORTALS_H
 
-#include <stdlib.h>
+#include <complex.h>
 #include <portals4.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "shmem_free_list.h"
+
+#ifndef MIN
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#endif
 
 #define SHMEM_TRANSPORT_PORTALS4_NUM_PTS 32
 

@@ -277,8 +277,7 @@ shmem_barrier_all(void)
     }
 #endif
 
-    shmem_quiet();
-    shmem_internal_barrier(0, 0, shmem_internal_num_pes, barrier_all_psync);
+    shmem_internal_barrier_all();
 }
 
 
@@ -291,7 +290,6 @@ shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
     }
 #endif
 
-    shmem_quiet();
     shmem_internal_barrier(PE_start, logPE_stride, PE_size, pSync);
 }
 

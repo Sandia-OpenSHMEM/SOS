@@ -22,6 +22,7 @@
 #include "shmem_internal.h"
 #include "shmem_comm.h"
 #include "shmem_collectives.h"
+#include "shmem_synchronization.h"
 
 
 #define FC_SHMEM_BARRIER_ALL FC_FUNC_(shmem_barrier_all, SHMEM_BARRIER_ALL)
@@ -35,8 +36,8 @@ FC_SHMEM_BARRIER_ALL(void)
     }
 #endif
 
-    shmem_quiet();
-    shmem_barrier(0, 0, shmem_internal_num_pes, barrier_all_psync);
+    shmem_internal_quiet();
+    shmem_internal_barrier(0, 0, shmem_internal_num_pes, barrier_all_psync);
 }
 
 
@@ -61,8 +62,8 @@ FC_SHMEM_BARRIER(fortran_integer_t *PE_start,
     /* SHMEM_BARRIER_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
 
-    shmem_quiet();
-    shmem_barrier(*PE_start, *logPE_stride, *PE_size, pSync_c);
+    shmem_internal_quiet();
+    shmem_internal_barrier(*PE_start, *logPE_stride, *PE_size, pSync_c);
 }
 
 

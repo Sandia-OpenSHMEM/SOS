@@ -14,6 +14,7 @@
 
 #include "shmem.h"
 #include "shmem_internal.h"
+#include "shmem_remote_pointer.h"
 
 
 #define FC_SHMEM_PTR FC_FUNC_(shmem_ptr, SHMEM_PTR)
@@ -21,5 +22,5 @@ void* FC_SHMEM_PTR(void **target, fortran_integer_t *pe);
 void*
 FC_SHMEM_PTR(void **target, fortran_integer_t *pe)
 {
-    return shmem_ptr(*target, *pe);
+    return shmem_internal_ptr(*target, *pe);
 }

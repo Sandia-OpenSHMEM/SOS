@@ -28,23 +28,13 @@ void FC_SHMEM_QUIET(void);
 void
 FC_SHMEM_QUIET(void)
 {
-    int ret;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
-
-#ifdef USE_PORTALS4
-    ret = shmem_transport_portals4_quiet();
-    if (0 != ret) { RAISE_ERROR(ret); }
-#endif
-#ifdef USE_XPMEM
-    ret = shmem_transport_xpmem_quiet();
-    if (0 != ret) { RAISE_ERROR(ret); }
-#endif
+    shmem_internal_quiet();
 }
 
 
@@ -53,23 +43,13 @@ void FC_SHMEM_FENCE(void);
 void
 FC_SHMEM_FENCE(void)
 {
-    int ret;
-
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_internal_initialized) {
         RAISE_ERROR_STR("library not initialized");
     }
 #endif
 
-
-#ifdef USE_PORTALS4
-    ret = shmem_transport_portals4_fence();
-    if (0 != ret) { RAISE_ERROR(ret); }
-#endif
-#ifdef USE_XPMEM
-    ret = shmem_transport_xpmem_fence();
-    if (0 != ret) { RAISE_ERROR(ret); }
-#endif
+    shmem_internal_fence();
 }
 
 
