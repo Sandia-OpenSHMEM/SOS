@@ -18,7 +18,7 @@
 
 #include "shmem.h"
 #include "shmem_internal.h"
-#include "shmem_comm.h"
+#include "shmem_accessibility.h"
 
 #ifdef ENABLE_PROFILING
 
@@ -39,7 +39,7 @@ shmem_pe_accessible(int pe)
     }
 #endif
 
-    return (pe >= 0 && pe < shmem_internal_num_pes) ? 1 : 0;
+    return shmem_internal_pe_accessible(pe);
 }
 
 
@@ -52,18 +52,5 @@ shmem_addr_accessible(void *addr, int pe)
     }
 #endif
 
-    if (pe < 0 || pe >= shmem_internal_num_pes) {
-        return 0;
-    }
-
-    if ((char*) addr > (char*) shmem_internal_heap_base &&
-        (char*) addr < (char*) shmem_internal_heap_base + shmem_internal_heap_length) {
-        return 1;
-    }
-    if ((char*) addr > (char*) shmem_internal_data_base &&
-        (char*) addr < (char*) shmem_internal_data_base + shmem_internal_data_length) {
-        return 1;
-    }
-
-    return 0;
+    return shmem_internal_addr_accessible(addr, pe);
 }

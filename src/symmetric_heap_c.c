@@ -19,6 +19,7 @@
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"
+#include "shmem_collectives.h"
 
 #ifdef ENABLE_PROFILING
 
@@ -150,7 +151,7 @@ shmalloc(size_t size)
 
     ret = dlmalloc(size);
 
-    shmem_barrier_all();
+    shmem_internal_barrier_all();
 
     return ret;
 }
@@ -167,7 +168,7 @@ shfree(void *ptr)
 
     dlfree(ptr);
 
-    shmem_barrier_all();
+    shmem_internal_barrier_all();
 }
 
 
@@ -184,7 +185,7 @@ shrealloc(void *ptr, size_t size)
 
     ret = dlrealloc(ptr, size);
 
-    shmem_barrier_all();
+    shmem_internal_barrier_all();
 
     return ret;
 }
@@ -203,7 +204,7 @@ shmemalign(size_t alignment, size_t size)
 
     ret = dlmemalign(alignment, size);
 
-    shmem_barrier_all();
+    shmem_internal_barrier_all();
 
     return ret;
 }

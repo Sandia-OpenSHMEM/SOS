@@ -12,7 +12,7 @@
 
 #include "config.h"
 
-#include "shmem.h"
+#include "shmem_internal.h"
 
 
 #define FC_START_PES FC_FUNC_(start_pes, START_PES)
@@ -20,5 +20,5 @@ void FC_START_PES(fortran_integer_t *npes);
 void
 FC_START_PES(fortran_integer_t *npes)
 {
-    start_pes(*npes);
+    shmem_internal_init();
 }

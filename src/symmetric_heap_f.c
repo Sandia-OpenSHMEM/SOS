@@ -16,6 +16,8 @@
 
 #include "shmem.h"
 #include "shmem_internal.h"
+#include "shmem_collectives.h"
+#include "shmem_synchronization.h"
 
 
 void* dlmalloc(size_t);
@@ -63,7 +65,7 @@ FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, 
         }
     }
 
-    shmem_barrier_all();
+    shmem_internal_barrier_all();
 }
 
 
@@ -81,7 +83,7 @@ FC_SHPDEALLOC(void **addr, fortran_integer_t *errcode, fortran_integer_t *want_a
     dlfree(*addr);
     *errcode = 0;
 
-    shmem_barrier_all();
+    shmem_internal_barrier_all();
 }
 
 
@@ -129,7 +131,7 @@ FC_SHPCLMOVE(void **addr, fortran_integer_t *length, fortran_integer_t *errcode,
         }
     }
 
-    shmem_barrier_all();
+    shmem_internal_barrier_all();
 }
 
 

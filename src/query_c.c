@@ -19,7 +19,6 @@
 
 #include "shmem.h"
 #include "shmem_internal.h"
-#include "runtime.h"
 
 #ifdef ENABLE_PROFILING
 

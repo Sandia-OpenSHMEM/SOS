@@ -12,8 +12,8 @@
 
 #include "config.h"
 
-#include "shmem.h"
 #include "shmem_internal.h"
+#include "shmem_accessibility.h"
 
 
 #define FC_SHMEM_PE_ACCESSIBLE FC_FUNC_(shmem_pe_accessible, SHMEM_PE_ACCESSIBLE)
@@ -21,7 +21,13 @@ fortran_integer_t FC_SHMEM_PE_ACCESSIBLE(fortran_integer_t *pe);
 fortran_integer_t
 FC_SHMEM_PE_ACCESSIBLE(fortran_integer_t *pe)
 {
-     return shmem_pe_accessible(*pe);
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+     return shmem_internal_pe_accessible(*pe);
 }
 
 
@@ -30,5 +36,11 @@ fortran_integer_t FC_SHMEM_ADDR_ACCESSIBLE(void *addr, fortran_integer_t *pe);
 fortran_integer_t
 FC_SHMEM_ADDR_ACCESSIBLE(void *addr, fortran_integer_t *pe)
 {
-     return shmem_addr_accessible(addr, *pe);
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+     return shmem_internal_addr_accessible(addr, *pe);
 }

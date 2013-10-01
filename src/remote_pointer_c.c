@@ -18,7 +18,8 @@
 
 #include "shmem.h"
 #include "shmem_internal.h"
-#include "shmem_comm.h"
+#include "shmem_remote_pointer.h"
+
 
 #ifdef ENABLE_PROFILING
 
@@ -31,16 +32,5 @@
 void *
 shmem_ptr(void *target, int pe)
 {
-    int node_rank;
-
-    // Only if regular load/stores are used to implement put/get!
-    if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
-#if USE_XPMEM
-        return shmem_transport_xpmem_ptr(target, pe, node_rank);
-#else
-        return NULL;
-#endif
-    } else {
-        return NULL;
-    }
+    return shmem_internal_ptr(target, pe);
 }

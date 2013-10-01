@@ -22,7 +22,11 @@ libsma_la_SOURCES = \
 	shmem_comm.h \
 	shmem_collectives.h \
 	shmem_synchronization.h \
+	shmem_accessibility.h \
+	shmem_remote_pointer.h \
+	shmem_lock.h \
 	malloc.c \
+	init.c \
 	init_c.c \
 	query_c.c \
 	accessibility_c.c \
@@ -46,7 +50,8 @@ libsma_la_SOURCES += \
 	atomic_f.c \
 	synchronization_f.c \
 	collectives_f.c \
-	lock_f.c
+	lock_f.c \
+	cache_management_f.c
 endif
 
 if USE_PORTALS4

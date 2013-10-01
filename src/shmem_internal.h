@@ -10,16 +10,12 @@
  *
  */
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-
 #ifndef PORTALS_SHMEM_INTERNAL_H
 #define PORTALS_SHMEM_INTERNAL_H
 
-#ifndef MIN
-#define MIN(a,b) (((a)<(b))?(a):(b))
-#endif
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 extern int shmem_internal_my_pe;
 extern int shmem_internal_num_pes;
@@ -45,7 +41,9 @@ extern int shmem_internal_finalized;
 
         
 
-/* initialization routines */
+void shmem_internal_init(void);
+char *shmem_internal_nodename(void);
+
 int shmem_internal_symmetric_init(size_t requested_length, int use_malloc);
 int shmem_internal_symmetric_fini(void);
 int shmem_internal_collectives_init(int requested_crossover, 
