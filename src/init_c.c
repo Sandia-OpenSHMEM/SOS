@@ -15,6 +15,17 @@
 #include "shmem.h"
 #include "shmem_internal.h"
 
+#ifdef ENABLE_PROFILING
+
+#pragma weak start_pes = pstart_pes
+#define start_pes pstart_pes
+
+#pragma weak shmem_nodename = pshmem_nodename
+#define shmem_nodename pshmem_nodename
+
+#endif /* ENABLE_PROFILING */
+
+
 void
 start_pes(int npes)
 {
