@@ -26,6 +26,9 @@
 #pragma weak shmem_float_p = pshmem_float_p
 #define shmem_float_p pshmem_float_p
 
+#pragma weak shmem_double_p = pshmem_double_p
+#define shmem_double_p pshmem_double_p
+
 #pragma weak shmem_longdouble_p = pshmem_longdouble_p
 #define shmem_longdouble_p pshmem_longdouble_p
 
