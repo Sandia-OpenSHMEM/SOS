@@ -159,11 +159,11 @@ cleanup_handles(void)
         free(shmem_transport_portals4_put_volatile_md_h);
     }
 #else
-    if (!PtlHandleIsEqual(shmem_transport_portals4_get_md_h[1], PTL_INVALID_HANDLE)) {
-        PtlMDRelease(shmem_transport_portals4_get_md_h[1]);
+    if (!PtlHandleIsEqual(shmem_transport_portals4_get_md_h[0], PTL_INVALID_HANDLE)) {
+        PtlMDRelease(shmem_transport_portals4_get_md_h[0]);
     }
-    if (!PtlHandleIsEqual(shmem_transport_portals4_put_event_md_h[1], PTL_INVALID_HANDLE)) {
-        PtlMDRelease(shmem_transport_portals4_put_event_md_h[1]);
+    if (!PtlHandleIsEqual(shmem_transport_portals4_put_event_md_h[0], PTL_INVALID_HANDLE)) {
+        PtlMDRelease(shmem_transport_portals4_put_event_md_h[0]);
     }
     if (!PtlHandleIsEqual(shmem_transport_portals4_put_volatile_md_h[0], PTL_INVALID_HANDLE)) {
         PtlMDRelease(shmem_transport_portals4_put_volatile_md_h[0]);
