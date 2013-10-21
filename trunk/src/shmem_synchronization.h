@@ -104,6 +104,7 @@ shmem_internal_fence(void)
         while (*var == value) {                                         \
             ret = PtlCTGet(shmem_transport_portals4_target_ct_h, &ct);  \
             if (PTL_OK != ret) { RAISE_ERROR(ret); }                    \
+            COMPILER_FENCE();                                           \
             if (*var != value) return;                                  \
             ret = PtlCTWait(shmem_transport_portals4_target_ct_h,       \
                             ct.success + ct.failure + 1,                \
@@ -121,6 +122,7 @@ shmem_internal_fence(void)
         while (!cmpret) {                                               \
             ret = PtlCTGet(shmem_transport_portals4_target_ct_h, &ct);  \
             if (PTL_OK != ret) { RAISE_ERROR(ret); }                    \
+            COMPILER_FENCE();                                           \
             COMP(cond, *var, value, cmpret);                            \
             if (cmpret) return;                                         \
             ret = PtlCTWait(shmem_transport_portals4_target_ct_h,       \
