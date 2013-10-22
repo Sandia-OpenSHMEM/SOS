@@ -154,6 +154,8 @@ AC_CHECK_SIZEOF([float])
 AC_CHECK_SIZEOF([double])
 AC_CHECK_SIZEOF([long double])
 AC_CHECK_SIZEOF([void*])
+SHMEM_SIZEOF_LONG=$ac_cv_sizeof_long
+AC_SUBST([SHMEM_SIZEOF_LONG])
 
 if test "$FC" != "" ; then
   # make sure Fortran supports ISO_C_BINDING (Fortran 2003)
@@ -287,6 +289,7 @@ AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
 AC_CONFIG_FILES([Makefile
   mpp/Makefile
   mpp/shmem.fh
+  mpp/shmem.h
   src/Makefile
   test/Makefile
   test/unit/Makefile
