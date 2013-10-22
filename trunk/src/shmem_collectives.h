@@ -23,7 +23,7 @@ extern int full_tree_parent;
 extern int tree_crossover;
 extern int tree_radix;
 
-int build_kary_tree(int PE_start, int stride, int PE_size, int *parent, 
+int build_kary_tree(int PE_start, int stride, int PE_size, int PE_root, int *parent, 
                     int *num_children, int *children);
 
 
@@ -81,7 +81,7 @@ shmem_internal_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
             children = full_tree_children;
         } else {
             children = alloca(sizeof(int) * tree_radix);
-            build_kary_tree(PE_start, stride, PE_size, &parent, 
+            build_kary_tree(PE_start, stride, PE_size, 0, &parent, 
                             &num_children, children);
         }
 
@@ -174,7 +174,7 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
 
             /* send data to all peers */
             for (pe = PE_start,i=0; i < PE_size; pe += stride, i++) {
-                if (pe == shmem_internal_my_pe && source == target) continue;
+                if (pe == shmem_internal_my_pe) continue;
                 shmem_internal_put_nb(target, source, len, pe, &completion);
             }
             shmem_internal_put_wait(&completion);
@@ -218,40 +218,15 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
         int parent, num_children, *children;
         const void *send_buf = source;
 
-        if (PE_size == shmem_internal_num_pes) {
+        if (PE_size == shmem_internal_num_pes && 0 == PE_root) {
             /* we're the full tree, use the binomial tree */
             parent = full_tree_parent;
             num_children = full_tree_num_children;
             children = full_tree_children;
         } else {
             children = alloca(sizeof(int) * tree_radix);
-            build_kary_tree(PE_start, stride, PE_size, &parent, 
+            build_kary_tree(PE_start, stride, PE_size, PE_root, &parent, 
                             &num_children, children);
-        }
-
-        if (real_root != PE_start) {
-            if (shmem_internal_my_pe == PE_start) {
-                /* wait for data arrival message */
-                shmem_long_wait(pSync, 0);
-
-                /* Clear pSync */
-                shmem_internal_put_small(pSync, &zero, sizeof(zero), 
-                                          shmem_internal_my_pe);
-                shmem_long_wait_until(pSync, SHMEM_CMP_EQ, 0);
-                
-                /* send buf is now in the target buffer */
-                send_buf = target;
-                
-            } else if (shmem_internal_my_pe == real_root) {
-                /* send data to 0th entry */
-                shmem_internal_put_nb(target, source, len, PE_start, &completion);
-                shmem_internal_fence();
-                shmem_internal_put_small(pSync, &one, sizeof(long), PE_start);
-                shmem_internal_put_wait(&completion);
-            }
-
-        } else if (real_root == shmem_internal_my_pe && source != target) {
-            memcpy(target, source, len);
         }
 
         if (0 != num_children) {
@@ -379,7 +354,7 @@ shmem_internal_op_to_all(void *target, void *source, int count, int type_size,
             children = full_tree_children;
         } else {
             children = alloca(sizeof(int) * tree_radix);
-            build_kary_tree(PE_start, stride, PE_size, &parent, 
+            build_kary_tree(PE_start, stride, PE_size, 0, &parent, 
                             &num_children, children);
         }
 
@@ -416,7 +391,8 @@ shmem_internal_op_to_all(void *target, void *source, int count, int type_size,
             shmem_long_wait_until(pSync + 1, SHMEM_CMP_EQ, 0);
 
             /* send data, ack, and wait for completion */
-            shmem_internal_atomic_nb(target, source, count * type_size, parent,
+            shmem_internal_atomic_nb(target, (num_children == 0) ? source : target,
+                                     count * type_size, parent,
                                      op, datatype, &completion);
             shmem_internal_put_wait(&completion);
             shmem_internal_fence();
