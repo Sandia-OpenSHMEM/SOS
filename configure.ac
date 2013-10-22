@@ -154,8 +154,17 @@ AC_CHECK_SIZEOF([float])
 AC_CHECK_SIZEOF([double])
 AC_CHECK_SIZEOF([long double])
 AC_CHECK_SIZEOF([void*])
-SHMEM_SIZEOF_LONG=$ac_cv_sizeof_long
-AC_SUBST([SHMEM_SIZEOF_LONG])
+
+C_BCAST_SYNC_SIZE=1
+C_REDUCE_SYNC_SIZE=`echo "$C_BCAST_SYNC_SIZE 2 + p" | dc`
+C_BARRIER_SYNC_SIZE=1
+C_COLLECT_SYNC_SIZE=`echo "$C_BCAST_SYNC_SIZE 2 + p" | dc`
+C_REDUCE_MIN_WRKDATA_SIZE=1
+AC_SUBST(C_BCAST_SYNC_SIZE)
+AC_SUBST(C_REDUCE_SYNC_SIZE)
+AC_SUBST(C_BARRIER_SYNC_SIZE)
+AC_SUBST(C_COLLECT_SYNC_SIZE)
+AC_SUBST(C_REDUCE_MIN_WRKDATA_SIZE)
 
 if test "$FC" != "" ; then
   # make sure Fortran supports ISO_C_BINDING (Fortran 2003)
@@ -183,7 +192,7 @@ if test "$FC" != "" ; then
   SHMEM_FIND_FORTRAN_INT_TYPE([INTEGER])
 
   # find C type corresponding to given Fortran types
-  OMPI_FIND_TYPE([INTEGER], [char, short, int, long, long long])
+  OMPI_FIND_TYPE([INTEGER], [char,     short, int, long, long long])
   OMPI_FIND_TYPE([DOUBLE PRECISION], [float, double, long double])
 
   # Find kind values for 4 & 8 byte integer types in Fortran (used in
@@ -194,24 +203,19 @@ if test "$FC" != "" ; then
   OMPI_FORTRAN_GET_KIND_VALUE([C_DOUBLE], [FORTRAN_REAL8_KIND])
 
   # The collectives are all implemented in C and require the psync to
-  # hold one or two long integers.  Find how many INTEGERs it takes to
+  # hold a variable number of C longs.  Find how many INTEGERs it takes to
   # create a memory region as big as the required C region.
-  if test "$ompi_cv_fortran_sizeof_INTEGER" -lt "$ac_cv_sizeof_long" ; then
-    FORTRAN_BCAST_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / p" | dc`
-    FORTRAN_REDUCE_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / p" | dc`
-    FORTRAN_BARRIER_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / p" | dc`
-    FORTRAN_COLLECT_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / 2 * p" | dc`
-  else
-    FORTRAN_BCAST_SYNC_SIZE=1
-    FORTRAN_REDUCE_SYNC_SIZE=1
-    FORTRAN_BARRIER_SYNC_SIZE=1
-    FORTRAN_COLLECT_SYNC_SIZE=2
-  fi
+  FORTRAN_BCAST_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / $C_BCAST_SYNC_SIZE * p" | dc`
+  FORTRAN_REDUCE_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / $C_REDUCE_SYNC_SIZE * p" | dc`
+  FORTRAN_BARRIER_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / $C_BARRIER_SYNC_SIZE * p" | dc`
+  FORTRAN_COLLECT_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / $C_COLLECT_SYNC_SIZE * p" | dc`
+  FORTRAN_REDUCE_MIN_WRKDATA_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / $C_REDUCE_MIN_WORKDATA_SIZE * p" | dc`
 else
   FORTRAN_BCAST_SYNC_SIZE=0
   FORTRAN_REDUCE_SYNC_SIZE=0
   FORTRAN_BARRIER_SYNC_SIZE=0
   FORTRAN_COLLECT_SYNC_SIZE=0
+  FORTRAN_REDUCE_MIN_WRKDATA_SIZE=0
   FORTRAN_INT4_KIND=0
   FORTRAN_INT8_KIND=0
   FORTRAN_REAL4_KIND=0
@@ -226,6 +230,7 @@ AC_SUBST(FORTRAN_BCAST_SYNC_SIZE)
 AC_SUBST(FORTRAN_REDUCE_SYNC_SIZE)
 AC_SUBST(FORTRAN_BARRIER_SYNC_SIZE)
 AC_SUBST(FORTRAN_COLLECT_SYNC_SIZE)
+AC_SUBST(FORTRAN_REDUCE_MIN_WRKDATA_SIZE)
 AC_SUBST(FORTRAN_INT4_KIND)
 AC_SUBST(FORTRAN_INT8_KIND)
 AC_SUBST(FORTRAN_REAL4_KIND)
