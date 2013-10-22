@@ -70,9 +70,14 @@ main(int argc, char* argv[])
         shmem_broadcast64(dst, src, nLongs, 1, 0, 0, num_pes, pSync);
 
         for(i=0; i < nLongs; i++) {
-            if ( dst[i] != src[i] ) {
+            /* the root node shouldn't have the result into dst (cf specification).*/
+            if (1 != mpe && dst[i] != src[i]) {
                 fprintf(stderr,"[%d] dst[%d] %ld != expected %ld\n",
                         mpe, i, dst[i],src[i]);
+                return 1;
+            } else if (1 == mpe && dst[i] != 0) { 
+                fprintf(stderr,"[%d] dst[%d] %ld != expected 0\n",
+                        mpe, i, dst[i]);
                 return 1;
             }
         }

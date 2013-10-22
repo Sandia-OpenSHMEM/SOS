@@ -194,21 +194,21 @@ int tree_radix = -1;
 
 
 int
-build_kary_tree(int PE_start, int stride, int PE_size, int *parent, 
+build_kary_tree(int PE_start, int stride, int PE_size, int PE_root, int *parent, 
                 int *num_children, int *children)
 {
     int i;
     /* my_id is the index in a theoretical 0...N-1 array of
-       participating tasks */
-    int my_id = (shmem_internal_my_pe - PE_start) / stride;
+       participating tasks. where the 0th entry is the root */
+    int my_id = (((shmem_internal_my_pe - PE_start) / stride) + PE_size - PE_root) % PE_size;
 
-    *parent = PE_start + ((my_id - 1) / tree_radix) * stride;
+    *parent = PE_start + ((my_id - 1) / tree_radix + PE_root) * stride;
 
     *num_children = 0;
     for (i = 1 ; i <= tree_radix ; ++i) {
         int tmp = tree_radix * my_id + i;
         if (tmp < PE_size) {
-            children[(*num_children)++] = PE_start + tmp * stride;
+            children[(*num_children)++] = (PE_start + ((tmp + PE_root) * stride)) % (PE_size * stride);
         }
     }
 
