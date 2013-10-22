@@ -16,6 +16,8 @@
 #include <stddef.h>
 #include <complex.h>
 
+#define SHMEM_SIZEOF_LONG @SHMEM_SIZEOF_LONG@
+
 #define SHMEM_CMP_EQ 1
 #define SHMEM_CMP_NE 2
 #define SHMEM_CMP_GT 3
