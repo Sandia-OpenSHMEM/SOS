@@ -297,6 +297,23 @@ shmem_transport_portals4_init(long eager_size)
         return ret;
     }
 
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    /* Make sure the heap and data bases are actually symmetric */
+    {
+        uint64_t bases[2];
+
+        bases[0] = (uintptr_t) shmem_internal_heap_base;
+        bases[1] = (uintptr_t) shmem_internal_data_base;
+        
+        ret = shmem_runtime_put("portals4-bases", bases, sizeof(uint64_t) * 2);
+        if (0 != ret) {
+            fprintf(stderr, "[%03d] ERROR: runtime_put failed: %d\n",
+                    shmem_internal_my_pe, ret);
+            return ret;
+        }
+    }
+#endif
+
     return 0;
 }
 
@@ -312,6 +329,34 @@ shmem_transport_portals4_startup(void)
     ptl_process_t my_id;
 #ifdef USE_ON_NODE_COMMS
     int num_on_node = 0;
+#endif
+
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    /* Make sure the heap and data bases are actually symmetric */
+    {
+        int peer;
+        uint64_t bases[2];
+
+        peer = (shmem_internal_my_pe + 1) % shmem_internal_num_pes;
+
+        ret = shmem_runtime_get(peer, "portals4-bases", bases, sizeof(uint64_t) * 2);
+        if (0 != ret) {
+            fprintf(stderr, "[%03d] ERROR: runtime_put failed: %d\n",
+                    shmem_internal_my_pe, ret);
+            return ret;
+        }
+
+        if ((uintptr_t) shmem_internal_heap_base != bases[0]) {
+            fprintf(stderr, "[%03d] ERROR: heap base address does not match with rank %03d and virtual addressing is enabled\n",
+                    shmem_internal_my_pe, peer);
+            return -1;
+        }
+        if ((uintptr_t) shmem_internal_data_base != bases[1]) {
+            fprintf(stderr, "[%03d] ERROR: data base address does not match with rank %03d and virtual addressing is enabled\n",
+                    shmem_internal_my_pe, peer);
+            return -1;
+        }
+    }
 #endif
 
     desired = malloc(sizeof(ptl_process_t) * shmem_internal_num_pes);
