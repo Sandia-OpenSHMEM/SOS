@@ -406,23 +406,15 @@ shmem_internal_op_to_all(void *target, void *source, int count, int type_size,
 }
 
 
-/* len can be different on each node, so this is semi-linear.
-   PE_Start starts a copy of his data into target, and increments a
-   length counter, sending that counter to the next PE.  That PE
-   starts the transfer to counter offset, increments the counter, and
-   send the counter to the next PE.  The sends are non-blocking to
-   different peers (PE_start and next), so some overlap is likely.
-   Finally, the last peer sends the counter back to PE_start so that
-   the size of the data to broadcast is known. */
 static inline
 void
 shmem_internal_collect(void *target, const void *source, size_t len,
                   int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
-    long tmp[2];
+    long tmp[3];
     int stride = 1 << logPE_stride;
     int pe;
-    int bcast_len = 0;
+    int bcast_len = 0, my_offset;
     long completion = 0;
 
     if (PE_size == 1) {
@@ -430,51 +422,58 @@ shmem_internal_collect(void *target, const void *source, size_t len,
         return;
     }
 
-    /* collect in PE_start */
+    /* send the update lengths to everyone */
     if (PE_start == shmem_internal_my_pe) {
-        if (target != source) memcpy(target, source, len);
-
-	/* send next peer where to put data */
         tmp[0] = len;
         tmp[1] = 1;
         shmem_internal_put_small(pSync, tmp, 2 * sizeof(long), PE_start + stride);
 
 	/* wait for last guy to tell us we're done */
-        shmem_long_wait(&pSync[1], 0);
+        shmem_long_wait_until(&pSync[1], SHMEM_CMP_EQ, 1);
 
 	/* find out how long total data was */
         bcast_len = pSync[0];
     } else {
         /* wait for send data */
-        shmem_long_wait(&pSync[1], 0);
+        shmem_long_wait_until(&pSync[1], SHMEM_CMP_EQ, 1);
 
-        /* send data to root */
-        shmem_internal_put_nb((char*) target + pSync[0], source, len, PE_start,
-                              &completion);
         if (shmem_internal_my_pe == PE_start + stride * (PE_size - 1)) {
-            /* If I'm the last guy, shmem_internal_fence before sending completion bit. */
+            /* last guy, send the offset to PE_start so he can know
+               the bcast len */
             pe = PE_start;
-	    shmem_internal_fence();
         } else {
             /* Not the last guy, so send offset up the chain */
             pe = shmem_internal_my_pe + stride;
         }
 
-        /* send along the next put data point */
-        tmp[0] = pSync[0] + len;
+        my_offset = pSync[0];
+        tmp[0] = my_offset + len;
         tmp[1] = 1;
         shmem_internal_put_small(pSync, tmp, 2 * sizeof(long), pe);
+    }
 
-        /* wait for big data transfer */
-        shmem_internal_put_wait(&completion);
+    /* everyone sends to PE_start.  This can be made better, I think */
+    shmem_internal_put_nb((char*) target + my_offset, source, len, PE_start,
+                          &completion);
+    shmem_internal_fence();
+    shmem_internal_put_wait(&completion);
+
+    /* Let PE_start know we're done.  This can definitely be a tree. */
+    tmp[0] = 1;
+    shmem_internal_atomic_small(pSync + 2, &tmp[0], sizeof(tmp[0]), PE_start,
+                                PTL_SUM, DTYPE_LONG);
+
+    /* root waits for completion */
+    if (PE_start == shmem_internal_my_pe) {
+        shmem_long_wait_until(&pSync[2], SHMEM_CMP_EQ, 1);
     }
 
     /* clear pSync */
-    tmp[0] = tmp[1] = 0;
-    shmem_internal_put_small(pSync, tmp, 2 * sizeof(long), shmem_internal_my_pe);
+    tmp[0] = tmp[1] = tmp[2] = 0;
+    shmem_internal_put_small(pSync, tmp, 3 * sizeof(long), shmem_internal_my_pe);
 
     /* broadcast out */
-    shmem_internal_bcast(target, target, bcast_len, 0, PE_start, logPE_stride, PE_size, pSync + 2, 0);
+    shmem_internal_bcast(target, target, bcast_len, 0, PE_start, logPE_stride, PE_size, pSync + 3, 0);
 
     /* make sure our pSync is clean before we leave... */
     shmem_long_wait_until(&pSync[1], SHMEM_CMP_EQ, 0);
