@@ -187,7 +187,7 @@ shmem_transport_portals4_get_num_mds(void)
             abort();                                                    \
         }                                                               \
         pt = shr_pt;                                                    \
-        offset = target;                                                     \
+        offset = (uintptr_t) target;                                    \
     } while (0)
 #else
 #define PORTALS4_GET_REMOTE_ACCESS_TWOPT(target, pt, offset, data_pt, heap_pt) \
@@ -212,7 +212,7 @@ shmem_transport_portals4_get_num_mds(void)
 #define PORTALS4_GET_REMOTE_ACCESS_ONEPT(target, pt, offset, shr_pt)    \
     do {                                                                \
         pt = (shr_pt);                                                  \
-        offset = 0;                                                     \
+        offset = (uintptr_t) target;                                    \
     } while (0)
 #else
 #define PORTALS4_GET_REMOTE_ACCESS_TWOPT(target, pt, offset, data_pt, heap_pt) \
@@ -955,8 +955,6 @@ void shmem_transport_portals4_ct_create(shmem_transport_portals4_ct_t **ct_ptr)
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-    ptl_pt_index_t shr_pt;
-    ptl_handle_le_t shr_le;
     shmem_transport_portals4_ct_attach(ct->ct, NULL, PTL_SIZE_MAX, &ct->shr_pt, &ct->shr_le);
 #else
     shmem_transport_portals4_ct_attach(ct->ct, shmem_internal_data_base, shmem_internal_data_length,
