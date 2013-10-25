@@ -717,3 +717,58 @@ shmem_internal_fcollect_linear(void *target, const void *source, size_t len,
     shmem_internal_bcast(target, target, len * PE_size, 0, PE_start, logPE_stride, 
                          PE_size, pSync + 1, 0);
 }
+
+
+/* Ring algorithm, in which every process sends only to its next
+ * highest neighbor, each time sending the data it received in the
+ * previous iteration.  This algorithm works regardless of process
+ * count and is efficient at larger message sizes.
+ * 
+ *   (p - 1) alpha + ((p - 1)/p)n beta
+ *
+ */
+void
+shmem_internal_fcollect_ring(void *target, const void *source, size_t len,
+                             int PE_start, int logPE_stride, int PE_size, long *pSync)
+{
+    int stride = 1 << logPE_stride;
+    int i;
+    /* my_id is the index in a theoretical 0...N-1 array of
+       participating tasks */
+    int my_id = ((shmem_internal_my_pe - PE_start) / stride);
+    int next_proc = PE_start + ((my_id + 1) % PE_size) * stride;
+    long completion = 0;
+    long zero = 0, one = 1;
+
+    /* need 1 slot */
+    assert(_SHMEM_COLLECT_SYNC_SIZE >= 1);
+
+    /* copy my portion to the right place */
+    memcpy((char*) target + (my_id * len), source, len); 
+
+    /* send n - 1 messages to the next highest proc.  Each message
+       contains what we received the previous step (including our own
+       data for step 1). */
+    for (i = 1 ; i < PE_size ; ++i) {
+        size_t iter_offset = ((my_id + 1 - i + PE_size) % PE_size) * len;
+
+        /* send data to me + 1 */
+        shmem_internal_put_nb((char*) target + iter_offset, (char*) target + iter_offset,
+                             len, next_proc, &completion);
+        shmem_internal_put_wait(&completion);
+        shmem_internal_fence();
+        
+        /* send completion for this round to next proc.  Note that we
+           only ever sent to next_proc and there's a shmem_fence
+           between successive calls to the put above.  So a rolling
+           counter is safe here. */
+        shmem_internal_atomic_small(pSync, &one, sizeof(long), next_proc, PTL_SUM, DTYPE_LONG);
+
+        /* wait for completion for this round */
+        SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_GE, i);
+    }
+
+    /* zero out psync */
+    shmem_internal_put_small(pSync, &zero, sizeof(long), shmem_internal_my_pe);
+    SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, 0);
+}
