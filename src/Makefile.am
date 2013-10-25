@@ -27,6 +27,7 @@ libsma_la_SOURCES = \
 	shmem_lock.h \
 	malloc.c \
 	init.c \
+	collectives.c \
 	init_c.c \
 	query_c.c \
 	accessibility_c.c \
