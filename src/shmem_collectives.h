@@ -117,14 +117,16 @@ shmem_internal_collect(void *target, const void *source, size_t len,
 
 void shmem_internal_fcollect_linear(void *target, const void *source, size_t len,
                                     int PE_start, int logPE_stride, int PE_size, long *pSync);
+void shmem_internal_fcollect_ring(void *target, const void *source, size_t len,
+                                  int PE_start, int logPE_stride, int PE_size, long *pSync);
 
 static inline
 void
 shmem_internal_fcollect(void *target, const void *source, size_t len,
                    int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
-    shmem_internal_fcollect_linear(target, source, len, PE_start, logPE_stride,
-                                   PE_size, pSync);
+    shmem_internal_fcollect_ring(target, source, len, PE_start, logPE_stride,
+                                 PE_size, pSync);
 }
 
 
