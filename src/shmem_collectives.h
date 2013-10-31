@@ -25,12 +25,8 @@ enum coll_type_t {
 };
 typedef enum coll_type_t coll_type_t;
 
-extern long *barrier_all_psync;
-extern int *full_tree_children;
-extern int full_tree_num_children;
-extern int full_tree_parent;
-extern int tree_crossover;
-extern int tree_radix;
+extern long *shmem_internal_barrier_all_psync;
+extern int shmem_internal_tree_crossover;
 
 extern coll_type_t shmem_internal_barrier_type;
 extern coll_type_t shmem_internal_bcast_type;
@@ -38,8 +34,8 @@ extern coll_type_t shmem_internal_reduce_type;
 extern coll_type_t shmem_internal_collect_type;
 extern coll_type_t shmem_internal_fcollect_type;
 
-int build_kary_tree(int PE_start, int stride, int PE_size, int PE_root, int *parent, 
-                    int *num_children, int *children);
+int shmem_internal_build_kary_tree(int PE_start, int stride, int PE_size, int PE_root, 
+                                   int *parent, int *num_children, int *children);
 
 
 void shmem_internal_barrier_linear(int PE_start, int logPE_stride, int PE_size, long *pSync);
@@ -52,7 +48,7 @@ shmem_internal_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
     switch (shmem_internal_barrier_type) {
     case AUTO:
-        if (PE_size < tree_crossover) {
+        if (PE_size < shmem_internal_tree_crossover) {
             shmem_internal_barrier_linear(PE_start, logPE_stride, PE_size, pSync);
         } else {
             shmem_internal_barrier_tree(PE_start, logPE_stride, PE_size, pSync);
@@ -78,7 +74,7 @@ static inline
 void
 shmem_internal_barrier_all(void)
 {
-    shmem_internal_barrier(0, 0, shmem_internal_num_pes, barrier_all_psync);
+    shmem_internal_barrier(0, 0, shmem_internal_num_pes, shmem_internal_barrier_all_psync);
 }
 
 
@@ -97,7 +93,7 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
 {
     switch (shmem_internal_bcast_type) {
     case AUTO:
-        if (PE_size < tree_crossover) {
+        if (PE_size < shmem_internal_tree_crossover) {
             shmem_internal_bcast_linear(target, source, len, PE_root, PE_start,
                                         logPE_stride, PE_size, pSync, complete);
         } else {
@@ -138,7 +134,7 @@ shmem_internal_op_to_all(void *target, void *source, int count, int type_size,
 {
     switch (shmem_internal_reduce_type) {
     case AUTO:
-        if (PE_size < tree_crossover) {
+        if (PE_size < shmem_internal_tree_crossover) {
             shmem_internal_op_to_all_linear(target, source, count, type_size,
                                             PE_start, logPE_stride, PE_size,
                                             pWrk, pSync, op, datatype);

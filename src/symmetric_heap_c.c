@@ -132,7 +132,7 @@ shmem_internal_symmetric_fini(void)
 
 
 void*
-shmalloc_init(size_t size)
+shmem_internal_shmalloc(size_t size)
 {
     return dlmalloc(size);
 }
