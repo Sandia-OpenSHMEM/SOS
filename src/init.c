@@ -260,7 +260,7 @@ shmem_internal_init()
                    (NULL != getenv("SMA_VERSION")) ? "Set" : "Not set");
             printf("\tIf set, print library version at startup\n");
             printf("SMA_INFO                %s\n", 
-                   (NULL != getenv("SMA_VERSION")) ? "Set" : "Not set");
+                   (NULL != getenv("SMA_INFO")) ? "Set" : "Not set");
             printf("\tIf set, print this help message at startup\n");
             printf("SMA_SYMMETRIC_SIZE      %ld\n", heap_size);
             printf("\tSymmentric heap size\n");
@@ -268,8 +268,28 @@ shmem_internal_init()
             printf("\tCross-over between linear and tree collectives\n");
             printf("SMA_COLL_RADIX          %d\n", radix);
             printf("\tRadix for tree-based collectives\n");
-            printf("SMA_BOUNCE_SIZE    %ld\n", eager_size);
+            printf("SMA_BOUNCE_SIZE         %ld\n", eager_size);
             printf("\tMaximum message size to bounce buffer\n");
+            printf("SMA_BARRIER_ALGORITHM   %s\n",
+                   (NULL == getenv("SMA_BARRIER_ALGORITHM") ? "auto" : 
+                    getenv("SMA_BARRIER_ALGORITHM")));
+            printf("\tAlgorithm for barrier.  Options are auto, linear, tree, dissem\n");
+            printf("SMA_BCAST_ALGORITHM     %s\n",
+                   (NULL == getenv("SMA_BCAST_ALGORITHM") ? "auto" : 
+                    getenv("SMA_BCAST_ALGORITHM")));
+            printf("\tAlgorithm for broadcast.  Options are auto, linear, tree\n");
+            printf("SMA_REDUCE_ALGORITHM    %s\n",
+                   (NULL == getenv("SMA_REDUCE_ALGORITHM") ? "auto" : 
+                    getenv("SMA_REDUCE_ALGORITHM")));
+            printf("\tAlgorithm for reductions.  Options are auto, linear, tree\n");
+            printf("SMA_COLLECT_ALGORITHM   %s\n",
+                   (NULL == getenv("SMA_COLLECT_ALGORITHM") ? "auto" : 
+                    getenv("SMA_COLLECT_ALGORITHM")));
+            printf("\tAlgorithm for collect.  Options are auto, linear\n");
+            printf("SMA_FCOLLECT_ALGORITHM  %s\n",
+                   (NULL == getenv("SMA_FCOLLECT_ALGORITHM") ? "auto" : 
+                    getenv("SMA_FCOLLECT_ALGORITHM")));
+            printf("\tAlgorithm for fcollect.  Options are auto, linear, ring, recdbl\n");
             fflush(NULL);
         }
     }

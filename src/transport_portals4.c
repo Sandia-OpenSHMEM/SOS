@@ -707,6 +707,12 @@ shmem_transport_portals4_fini(void)
     PtlCTWait(shmem_transport_portals4_put_ct_h, 
               shmem_transport_portals4_pending_put_counter, &ct);
 
+    if (shmem_transport_portals4_pending_put_counter != ct.success + ct.failure) {
+        fprintf(stderr, "[%03d] WARNING: count mismatch: %ld, %ld\n",
+                shmem_internal_my_pe, (long) shmem_transport_portals4_pending_put_counter,
+                (long) (ct.success + ct.failure));
+    }
+
     cleanup_handles();
     PtlFini();
 
