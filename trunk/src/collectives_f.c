@@ -36,8 +36,7 @@ FC_SHMEM_BARRIER_ALL(void)
     }
 #endif
 
-    shmem_internal_quiet();
-    shmem_internal_barrier(0, 0, shmem_internal_num_pes, barrier_all_psync);
+    shmem_internal_barrier_all();
 }
 
 
@@ -62,7 +61,6 @@ FC_SHMEM_BARRIER(fortran_integer_t *PE_start,
     /* SHMEM_BARRIER_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
 
-    shmem_internal_quiet();
     shmem_internal_barrier(*PE_start, *logPE_stride, *PE_size, pSync_c);
 }
 

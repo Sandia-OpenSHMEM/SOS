@@ -21,19 +21,19 @@ coll_type_t shmem_internal_bcast_type = AUTO;
 coll_type_t shmem_internal_reduce_type = AUTO;
 coll_type_t shmem_internal_collect_type = AUTO;
 coll_type_t shmem_internal_fcollect_type = AUTO;
+long *shmem_internal_barrier_all_psync;
+int shmem_internal_tree_crossover = -1;
 
-long *barrier_all_psync;
-int *full_tree_children;
-int full_tree_num_children;
-int full_tree_parent;
-int tree_crossover = -1;
-int tree_radix = -1;
+static int *full_tree_children;
+static int full_tree_num_children;
+static int full_tree_parent;
+static int tree_radix = -1;
 
 #define COLL_DEBUG
 
 int
-build_kary_tree(int PE_start, int stride, int PE_size, int PE_root, int *parent, 
-                int *num_children, int *children)
+shmem_internal_build_kary_tree(int PE_start, int stride, int PE_size, int PE_root, int *parent, 
+                               int *num_children, int *children)
 {
     int i;
     /* my_id is the index in a theoretical 0...N-1 array of
@@ -64,12 +64,13 @@ shmem_internal_collectives_init(int requested_crossover,
     char *type;
 
     tree_radix = requested_radix;
-    tree_crossover = requested_crossover;
+    shmem_internal_tree_crossover = requested_crossover;
 
     /* initialize barrier_all psync array */
-    barrier_all_psync = shmalloc_init(sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
-    if (NULL == barrier_all_psync) return -1;
-    bzero(barrier_all_psync, sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
+    shmem_internal_barrier_all_psync = 
+        shmem_internal_shmalloc(sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
+    if (NULL == shmem_internal_barrier_all_psync) return -1;
+    bzero(shmem_internal_barrier_all_psync, sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
 
     /* initialize the binomial tree for collective operations over
        entire tree */
@@ -241,8 +242,8 @@ shmem_internal_barrier_tree(int PE_start, int logPE_stride, int PE_size, long *p
         children = full_tree_children;
     } else {
         children = alloca(sizeof(int) * tree_radix);
-        build_kary_tree(PE_start, stride, PE_size, 0, &parent, 
-                        &num_children, children);
+        shmem_internal_build_kary_tree(PE_start, stride, PE_size, 0, &parent, 
+                                       &num_children, children);
     }
 
     if (num_children != 0) {
@@ -432,8 +433,8 @@ shmem_internal_bcast_tree(void *target, const void *source, size_t len,
         children = full_tree_children;
     } else {
         children = alloca(sizeof(int) * tree_radix);
-        build_kary_tree(PE_start, stride, PE_size, PE_root, &parent, 
-                        &num_children, children);
+        shmem_internal_build_kary_tree(PE_start, stride, PE_size, PE_root, &parent, 
+                                       &num_children, children);
     }
 
     if (0 != num_children) {
@@ -584,8 +585,8 @@ shmem_internal_op_to_all_tree(void *target, void *source, int count, int type_si
         children = full_tree_children;
     } else {
         children = alloca(sizeof(int) * tree_radix);
-        build_kary_tree(PE_start, stride, PE_size, 0, &parent, 
-                        &num_children, children);
+        shmem_internal_build_kary_tree(PE_start, stride, PE_size, 0, &parent, 
+                                       &num_children, children);
     }
 
     if (0 != num_children) {
