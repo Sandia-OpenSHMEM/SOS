@@ -157,8 +157,11 @@ AC_CHECK_SIZEOF([void*])
 
 C_BCAST_SYNC_SIZE=1
 C_REDUCE_SYNC_SIZE=`echo "$C_BCAST_SYNC_SIZE 2 + p" | dc`
-C_BARRIER_SYNC_SIZE=1
-C_COLLECT_SYNC_SIZE=`echo "$C_BCAST_SYNC_SIZE 3 + p" | dc`
+C_BARRIER_SYNC_SIZE=`echo "$ac_cv_sizeof_int 8 * $ac_cv_sizeof_long / p" | dc`
+tree_sync_size=`echo "$C_BCAST_SYNC_SIZE 3 + p" | dc`
+recdbl_sync_size=`echo "$ac_cv_sizeof_int 8 * $ac_cv_sizeof_long / p" | dc`
+AS_IF([test $tree_sync_size -lt $recdbl_sync_size], 
+      [C_COLLECT_SYNC_SIZE=$recdbl_sync_size], [C_COLLECT_SYNC_SIZE=$tree_sync_size])
 C_REDUCE_MIN_WRKDATA_SIZE=1
 AC_SUBST(C_BCAST_SYNC_SIZE)
 AC_SUBST(C_REDUCE_SYNC_SIZE)

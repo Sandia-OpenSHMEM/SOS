@@ -16,6 +16,12 @@
 #include "shmem_collectives.h"
 
 
+coll_type_t shmem_internal_barrier_type = AUTO;
+coll_type_t shmem_internal_bcast_type = AUTO;
+coll_type_t shmem_internal_reduce_type = AUTO;
+coll_type_t shmem_internal_collect_type = AUTO;
+coll_type_t shmem_internal_fcollect_type = AUTO;
+
 long *barrier_all_psync;
 int *full_tree_children;
 int full_tree_num_children;
@@ -23,7 +29,7 @@ int full_tree_parent;
 int tree_crossover = -1;
 int tree_radix = -1;
 
-/* #define COLL_DEBUG */
+#define COLL_DEBUG
 
 int
 build_kary_tree(int PE_start, int stride, int PE_size, int PE_root, int *parent, 
@@ -55,6 +61,7 @@ shmem_internal_collectives_init(int requested_crossover,
     int i, j, k;
     int tmp_radix;
     int my_root = 0;
+    char *type;
 
     tree_radix = requested_radix;
     tree_crossover = requested_crossover;
@@ -95,6 +102,71 @@ shmem_internal_collectives_init(int requested_crossover,
         }
     }
     full_tree_parent = my_root;
+
+    if (NULL != (type = getenv("SMA_BARRIER_ALGORITHM"))) {
+        if (0 == strcmp(type, "auto")) {
+            shmem_internal_barrier_type = AUTO;
+        } else if (0 == strcmp(type, "linear")) {
+            shmem_internal_barrier_type = LINEAR;
+        } else if (0 == strcmp(type, "tree")) {
+            shmem_internal_barrier_type = TREE;
+        } else if (0 == strcmp(type, "dissem")) {
+            shmem_internal_barrier_type = DISSEM;
+        } else {
+            fprintf(stderr, "[%03d] Bad barrier algorithm %s\n",
+                    shmem_internal_my_pe, type);
+        }
+    }
+    if (NULL != (type = getenv("SMA_BCAST_ALGORITHM"))) {
+        if (0 == strcmp(type, "auto")) {
+            shmem_internal_bcast_type = AUTO;
+        } else if (0 == strcmp(type, "linear")) {
+            shmem_internal_bcast_type = LINEAR;
+        } else if (0 == strcmp(type, "tree")) {
+            shmem_internal_bcast_type = TREE;
+        } else {
+            fprintf(stderr, "[%03d] Bad broadcast algorithm %s\n",
+                    shmem_internal_my_pe, type);
+        }
+    }
+    if (NULL != (type = getenv("SMA_REDUCE_ALGORITHM"))) {
+        if (0 == strcmp(type, "auto")) {
+            shmem_internal_reduce_type = AUTO;
+        } else if (0 == strcmp(type, "linear")) {
+            shmem_internal_reduce_type = LINEAR;
+        } else if (0 == strcmp(type, "tree")) {
+            shmem_internal_reduce_type = TREE;
+        } else {
+            fprintf(stderr, "[%03d] Bad reduction algorithm %s\n",
+                    shmem_internal_my_pe, type);
+        }
+    }
+    if (NULL != (type = getenv("SMA_COLLECT_ALGORITHM"))) {
+        if (0 == strcmp(type, "auto")) {
+            shmem_internal_collect_type = AUTO;
+        } else if (0 == strcmp(type, "linear")) {
+            shmem_internal_collect_type = LINEAR;
+        } else {
+            fprintf(stderr, "[%03d] Bad collect algorithm %s\n",
+                    shmem_internal_my_pe, type);
+        }
+    }
+    if (NULL != (type = getenv("SMA_FCOLLECT_ALGORITHM"))) {
+        if (0 == strcmp(type, "auto")) {
+            shmem_internal_fcollect_type = AUTO;
+        } else if (0 == strcmp(type, "linear")) {
+            shmem_internal_fcollect_type = LINEAR;
+        } else if (0 == strcmp(type, "tree")) {
+            shmem_internal_fcollect_type = TREE;
+        } else if (0 == strcmp(type, "ring")) {
+            shmem_internal_fcollect_type = RING;
+        } else if (0 == strcmp(type, "recdbl")) {
+            shmem_internal_fcollect_type = RECDBL;
+        } else {
+            fprintf(stderr, "[%03d] Bad fcollect algorithm %s\n",
+                    shmem_internal_my_pe, type);
+        }
+    }
 
     return 0;
 }
@@ -244,9 +316,6 @@ shmem_internal_barrier_dissem(int PE_start, int logPE_stride, int PE_size, long 
     int distance, to, i;
     int coll_rank = (shmem_internal_my_pe - PE_start) / stride;
     int8_t *pSync_bytes = (int8_t*) pSync;
-#ifdef COLL_DEBUG
-    static int iter = 0;
-#endif
 
     /* need log2(num_procs) int8_t slots.  max_num_procs is
        2^(sizeof(int)*8-1)-1, so make the math a bit easier and assume
@@ -254,48 +323,26 @@ shmem_internal_barrier_dissem(int PE_start, int logPE_stride, int PE_size, long 
        than sizeof(int) * 8. */
     assert(_SHMEM_BARRIER_SYNC_SIZE >= (sizeof(int) * 8) / sizeof(long));
 
-    shmem_internal_quiet();
-
-#ifdef COLL_DEBUG
-    fprintf(stderr, "%d [%03d] start barrier\n", iter, shmem_internal_my_pe);
-#endif
-
     for (i = 0, distance = 1 ; distance < PE_size ; ++i, distance <<= 1) {
         to = ((coll_rank + distance) % PE_size);
         to = PE_start + (to * stride);
-#ifdef COLL_DEBUG
-        fprintf(stderr, "%d [%03d] barrier (iter %02d) send to %03d\n", 
-                iter, shmem_internal_my_pe, i, to);
-#endif
 
         shmem_internal_atomic_small(&pSync_bytes[i], &one, sizeof(int8_t),
                                     to,
                                     PTL_SUM, PTL_INT8_T);
 
-#ifdef COLL_DEBUG
-        fprintf(stderr, "%d [%03d] barrier (iter %02d) wait on %d\n", 
-                iter, shmem_internal_my_pe, i, (int) pSync_bytes[i]);
-#endif
-
-        SHMEM_WAIT_UNTIL(&pSync_bytes[i], SHMEM_CMP_EQ, 1);
-
-#ifdef COLL_DEBUG
-        fprintf(stderr, "%d [%03d] barrier (iter %02d) done waiting on %d\n", 
-                iter, shmem_internal_my_pe, i, (int) pSync_bytes[i]);
-#endif
+        SHMEM_WAIT_UNTIL(&pSync_bytes[i], SHMEM_CMP_NE, 0);
+        /* There's a path where the next update from a peer can get
+           here before the update below, but there's no path for two
+           updates to arrive before the decrement */
+        assert(pSync_bytes[i] < 3);
 
         /* this slot is no longer used, so subtract off results now */
         shmem_internal_atomic_small(&pSync_bytes[i], &neg_one, sizeof(int8_t),
                                     shmem_internal_my_pe,
                                     PTL_SUM, PTL_INT8_T);
     }
-
     shmem_internal_quiet();
-
-#ifdef COLL_DEBUG
-    fprintf(stderr, "%d [%03d] end barrier\n", iter, shmem_internal_my_pe);
-    iter++;
-#endif
 }
 
 
@@ -725,7 +772,6 @@ shmem_internal_fcollect_linear(void *target, const void *source, size_t len,
  * count and is efficient at larger message sizes.
  * 
  *   (p - 1) alpha + ((p - 1)/p)n beta
- *
  */
 void
 shmem_internal_fcollect_ring(void *target, const void *source, size_t len,
@@ -771,4 +817,66 @@ shmem_internal_fcollect_ring(void *target, const void *source, size_t len,
     /* zero out psync */
     shmem_internal_put_small(pSync, &zero, sizeof(long), shmem_internal_my_pe);
     SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, 0);
+}
+
+
+/* recursive doubling algorithm.  Pairs of doubling distance send
+ * doubling amounts of data at each step.  This implementation only
+ * supports power of two processes and is less efficient than the ring
+ * algorithm at large messages.
+ * 
+ *   log(p) alpha + (p-1)/p n beta
+ */
+void
+shmem_internal_fcollect_recdbl(void *target, const void *source, size_t len,
+                               int PE_start, int logPE_stride, int PE_size, long *pSync)
+{
+    int stride = 1 << logPE_stride;
+    int my_id = ((shmem_internal_my_pe - PE_start) / stride);
+    int i;
+    long completion = 0;
+    size_t curr_offset;
+    int8_t *pSync_bytes = (int8_t*) pSync;
+    int8_t one = 1, neg_one = -1;
+    int distance;
+
+    /* need log2(num_procs) int8_t slots.  max_num_procs is
+       2^(sizeof(int)*8-1)-1, so make the math a bit easier and assume
+       2^(sizeof(int) * 8), which means log2(num_procs) is always less
+       than sizeof(int) * 8. */
+    assert(_SHMEM_COLLECT_SYNC_SIZE >= (sizeof(int) * 8) / sizeof(long));
+    assert(0 == (PE_size & (PE_size - 1)));
+
+    /* copy my portion to the right place */
+    curr_offset = my_id * len;
+    memcpy((char*) target + curr_offset, source, len); 
+
+    for (i = 0, distance = 0x1 ; distance < PE_size ; i++, distance <<= 1) {
+        int peer = my_id ^ distance;
+        int real_peer = PE_start + (peer * stride);
+
+        /* send data to peer */
+        shmem_internal_put_nb((char*) target + curr_offset, (char*) target + curr_offset,
+                              distance * len, real_peer, &completion);
+        shmem_internal_put_wait(&completion);
+        shmem_internal_fence();
+
+        /* mark completion for this round */
+        shmem_internal_atomic_small(&pSync_bytes[i], &one, sizeof(int8_t),
+                                    real_peer,
+                                    PTL_SUM, PTL_INT8_T);
+
+        SHMEM_WAIT_UNTIL(&pSync_bytes[i], SHMEM_CMP_NE, 0);
+
+        /* this slot is no longer used, so subtract off results now */
+        shmem_internal_atomic_small(&pSync_bytes[i], &neg_one, sizeof(int8_t),
+                                    shmem_internal_my_pe,
+                                    PTL_SUM, PTL_INT8_T);
+
+        if (my_id > peer) {
+            curr_offset -= (distance * len);
+        }
+    }
+
+    shmem_internal_quiet();
 }
