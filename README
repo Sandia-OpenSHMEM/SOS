@@ -42,27 +42,55 @@ options.
 
     SMA_INFO: if defined, print (stdout) SHMEM environment variables.
 
-    SMA_SYMMETRIC_SIZE (default 64 MiB)
+    SMA_SYMMETRIC_SIZE (default: 64 MiB)
         The allocated size of the symmetric heap which shmalloc() and shfree()
         operates on. The size value can be scaled with a suffix of
             'K' for kilobytes (B * 1024),
             'M' for Megabytes (KiB * 1024)
             'G' for Gigabytes (MiB * 1024)
 
-    SMA_BOUNCE_SIZE (default 2 KiB)
+    SMA_BOUNCE_SIZE (default: 2 KiB)
         The maximum size of a bounce buffer for put messages.
         Messages greater than the immediate send value for the
         underlying network but greater than this threshold will be
         copied into a bounce buffer and then sent.
 
-    SHMEM_COLL_CROSSOVER (default 4)
+    SHMEM_COLL_CROSSOVER (default: 4)
         For num_pes < SHMEM_COLL_THRESHOLD, collective algorithms are
         serial instead of tree based.
 
-    SMA_COLL_RADIX (default 4)
+    SMA_COLL_RADIX (default: 4)
         Controls the width of the n-ary tree for collectives, such that each
         node will fanout-send to a max of approximately SMA_COLL_RADIX
 
-    SMA_SYMMETRIC_HEAP_USE_MALLOC (default 0)
+    SMA_SYMMETRIC_HEAP_USE_MALLOC (default: 0)
         If set to a non-zero integer, will use malloc() instead of
         mmap() to allocate the symmetric heap.
+
+    SMA_BARRIER_ALGORITHM (default: auto)
+        Algorithm to use for barriers.  Default is to auto-select (which
+        may result in different algorithms being used for different 
+        PE sets).  Options are: auto, linear, tree, dissem.
+
+    SMA_BCAST_ALGORITHM (default: auto)
+        Algorithm to use for broadcasts.  Default is to auto-select (which
+        may result in different algorithms being used for different 
+        PE sets).  Options are: auto, linear, tree.
+
+    SMA_REDUCE_ALGORITHM (default: auto)
+        Algorithm to use for reductions.  Default is to auto-select (which
+        may result in different algorithms being used for different 
+        PE sets).  Options are: auto, linear, tree.
+
+    SMA_COLLECT_ALGORITHM (default: auto)
+        Algorithm to use for allgathers.  Default is to auto-select (which
+        may result in different algorithms being used for different 
+        PE sets).  Options are: auto, linear.
+
+    SMA_FCOLLECT_ALGORITHM (default: auto)
+        Algorithm to use for allgathers with fixed contribution amounts.
+        Default is to auto-select (which may result in different 
+        algorithms being used for different PE sets).  
+        Options are: auto, linear, ring, recdbl.  Note that recursive
+        doubling (recdbl) will fall back to ring if the PE set is not a
+        power of two in size.
