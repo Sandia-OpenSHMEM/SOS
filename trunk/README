@@ -55,8 +55,8 @@ options.
         underlying network but greater than this threshold will be
         copied into a bounce buffer and then sent.
 
-    SHMEM_COLL_CROSSOVER (default: 4)
-        For num_pes < SHMEM_COLL_THRESHOLD, collective algorithms are
+    SMA_COLL_CROSSOVER (default: 4)
+        For num_pes < SMA_COLL_CROSSOVER, collective algorithms are
         serial instead of tree based.
 
     SMA_COLL_RADIX (default: 4)
