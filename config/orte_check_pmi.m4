@@ -47,7 +47,8 @@ AC_DEFUN([ORTE_CHECK_PMI],[
         [],
         [$ompi_check_pmi_dir],
         [$ompi_check_pmi_libdir],
-        [ompi_check_pmi_happy="yes"],
+        [TEST_RUNNER=''
+         ompi_check_pmi_happy="yes"],
         [ompi_check_pmi_happy="no"])
     AS_IF([test "$ompi_check_pmi_happy" = "no"], 
         [OMPI_CHECK_PACKAGE([$1],
@@ -59,7 +60,8 @@ AC_DEFUN([ORTE_CHECK_PMI],[
                 [$ompi_check_pmi_libdir],
                 [AC_DEFINE([PMI_SLURM], [1],
                         [Defined to 1 if PMI implementation is SLURM.])
-                    ompi_check_pmi_happy="yes"],
+                 TEST_RUNNER='srun -n $(NPROCS)'
+                 ompi_check_pmi_happy="yes"],
                 [ompi_check_pmi_happy="no"])])
     AS_IF([test "$ompi_check_pmi_happy" = "no"], 
         [AS_IF([test -z "$with_pmi" -o "$with_pmi" = "yes"],
@@ -73,7 +75,8 @@ AC_DEFUN([ORTE_CHECK_PMI],[
                 [$ompi_check_pmi_libdir],
                 [AC_DEFINE([PMI_PORTALS4], [1],
                         [Defined to 1 if PMI implementation is Portals4.])
-                    ompi_check_pmi_happy="yes"],
+                 TEST_RUNNER='yod -np $(NPROCS)'
+                 ompi_check_pmi_happy="yes"],
                 [ompi_check_pmi_happy="no"])])
 
     CPPFLAGS="$orte_check_pmi_$1_save_CPPFLAGS"
@@ -86,4 +89,5 @@ AC_DEFUN([ORTE_CHECK_PMI],[
                  [AC_MSG_ERROR([PMI support requested but not found.  Abort
 ing])])
            $3])
+    AC_SUBST(TEST_RUNNER)
 ])
