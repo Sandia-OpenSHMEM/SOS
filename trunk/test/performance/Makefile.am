@@ -27,9 +27,8 @@ check_PROGRAMS += \
 	msgrate
 endif
 
-PROCS ?= 2
-
-TESTS_ENVIRONMENT = yod -np $(PROCS)
+NPROCS ?= 2
+LOG_COMPILER = $(TEST_RUNNER)
 
 AM_CPPFLAGS = -I$(top_srcdir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)

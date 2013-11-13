@@ -25,9 +25,8 @@ TESTS = \
 	test_shmem_synchronization
 endif
 
-PROCS ?= 2
-RUNCMD ?= yod -np $(PROCS)
-TESTS_ENVIRONMENT ?= ${top_srcdir}/test/openshmem/feature_tests/Fortran/test_wrapper.sh $(RUNCMD)
+NPROCS ?= 2
+LOG_COMPILER = ${top_srcdir}/test/openshmem/feature_tests/Fortran/test_wrapper.sh $(TEST_RUNNER)
 
 AM_CPPFLAGS = -I$(top_srcdir)/mpp
 AM_FCFLAGS = -I$(top_srcdir)/mpp

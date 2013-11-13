@@ -52,9 +52,8 @@ TESTS = \
 	test_shmem_acc_mem_05_real4 \
 	test_shmem_acc_mem_05_real8
 
-PROCS ?= 2
-RUNCMD ?= yod -np $(PROCS)
-TESTS_ENVIRONMENT ?= ${top_srcdir}/test/openshmem/feature_tests/Fortran/test_wrapper.sh $(RUNCMD)
+NPROCS ?= 2
+LOG_COMPILER = ${top_srcdir}/test/openshmem/feature_tests/Fortran/test_wrapper.sh $(TEST_RUNNER)
 
 AM_FCFLAGS = -I$(top_srcdir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
