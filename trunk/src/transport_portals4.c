@@ -482,15 +482,17 @@ shmem_transport_portals4_startup(void)
         goto cleanup;
     }
 
-#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-    le.start = NULL;
-    le.length = PTL_SIZE_MAX;
     le.ct_handle = shmem_transport_portals4_target_ct_h;
     le.uid = uid;
     le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
         PTL_LE_EVENT_LINK_DISABLE |
-        PTL_LE_EVENT_SUCCESS_DISABLE | 
-        PTL_LE_EVENT_CT_COMM;
+        PTL_LE_EVENT_SUCCESS_DISABLE;
+#if !defined(ENABLE_HARD_POLLING)
+    le.options |= PTL_LE_EVENT_CT_COMM;
+#endif
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    le.start = NULL;
+    le.length = PTL_SIZE_MAX;
     ret = PtlLEAppend(shmem_transport_portals4_ni_h,
                       shmem_transport_portals4_pt,
                       &le,
@@ -506,12 +508,6 @@ shmem_transport_portals4_startup(void)
     /* Open LE to heap section */
     le.start = shmem_internal_heap_base;
     le.length = shmem_internal_heap_length;
-    le.ct_handle = shmem_transport_portals4_target_ct_h;
-    le.uid = uid;
-    le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
-        PTL_LE_EVENT_LINK_DISABLE |
-        PTL_LE_EVENT_SUCCESS_DISABLE | 
-        PTL_LE_EVENT_CT_COMM;
     ret = PtlLEAppend(shmem_transport_portals4_ni_h,
                       shmem_transport_portals4_heap_pt,
                       &le,
@@ -527,12 +523,6 @@ shmem_transport_portals4_startup(void)
     /* Open LE to data section */
     le.start = shmem_internal_data_base;
     le.length = shmem_internal_data_length;
-    le.ct_handle = shmem_transport_portals4_target_ct_h;
-    le.uid = uid;
-    le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
-        PTL_LE_EVENT_LINK_DISABLE |
-        PTL_LE_EVENT_SUCCESS_DISABLE | 
-        PTL_LE_EVENT_CT_COMM;
     ret = PtlLEAppend(shmem_transport_portals4_ni_h,
                       shmem_transport_portals4_data_pt,
                       &le,
