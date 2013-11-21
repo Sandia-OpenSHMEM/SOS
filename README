@@ -29,6 +29,27 @@ Options to configure include:
   --with-pmi=DIR          Location of PMI installation.  Configure will 
                           automatically look for the PMI runtime provided by
                           the Portals 4 reference implementation
+  --enable-error-checking Enable error checking in SHMEM calls.  This will
+                          increase the overhead of communication operations.
+  --enable-hard-polling   When using only the Portals 4 transport, the
+                          implementation will use counting events to
+                          block the implementation when waiting for 
+                          local memory changes.  On some Portals
+                          implementations, enabling hard polling may 
+                          increase target side message rate
+  --enable-remote-virtual-addressing
+                          Enable optimizations assuming the symmetric heap is
+                          always symmetric with regards to virtual address.
+                          This may cause applications to abort during
+                          start_pes() if such a symmetric heap can not be
+                          created, but will reduce the instruction count for
+                          some operations. This optimization also requires
+                          that the Portals 4 implementation support
+                          BIND_INACCESSIBLE on LEs.  This optimization will
+                          reduce the overhead of communication calls.
+  --disable-fortran       Disable the Fortran bindings.  This may be useful
+                          if the machine has a Fortran compiler which does
+                          not support ISO_C_BINDING.
 
 There are many other options to configure to influence performance and
 behavior.  See 'configure --help' for documentation on available
