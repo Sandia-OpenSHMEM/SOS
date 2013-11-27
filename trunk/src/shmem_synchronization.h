@@ -106,7 +106,7 @@ shmem_internal_fence(void)
             if (PTL_OK != ret) { RAISE_ERROR(ret); }                    \
             if (0 != ct.failure) { RAISE_ERROR_STR("Target CT failure"); } \
             COMPILER_FENCE();                                           \
-            if (*var != value) return;                                  \
+            if (*var != value) break;                                   \
             ret = PtlCTWait(shmem_transport_portals4_target_ct_h,       \
                             ct.success + 1,                             \
                             &ct);                                       \
@@ -127,7 +127,7 @@ shmem_internal_fence(void)
             if (PTL_OK != ret) { RAISE_ERROR(ret); }                    \
             COMPILER_FENCE();                                           \
             COMP(cond, *var, value, cmpret);                            \
-            if (cmpret) return;                                         \
+            if (cmpret) break;                                          \
             ret = PtlCTWait(shmem_transport_portals4_target_ct_h,       \
                             ct.success + 1,                             \
                             &ct);                                       \
