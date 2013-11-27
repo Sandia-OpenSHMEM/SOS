@@ -691,10 +691,12 @@ shmem_internal_collect_linear(void *target, const void *source, size_t len,
     }
 
     /* everyone sends data to PE_start */
-    shmem_internal_put_nb((char*) target + my_offset, source, len, PE_start,
-                          &completion);
-    shmem_internal_fence();
-    shmem_internal_put_wait(&completion);
+    if (! (PE_start == shmem_internal_my_pe && source == target)) {
+        shmem_internal_put_nb((char*) target + my_offset, source, len, PE_start,
+                              &completion);
+        shmem_internal_fence();
+        shmem_internal_put_wait(&completion);
+    }
 
     /* Let PE_start know we're done.  This can definitely be a tree. */
     tmp[0] = 1;
@@ -703,7 +705,7 @@ shmem_internal_collect_linear(void *target, const void *source, size_t len,
 
     /* root waits for completion */
     if (PE_start == shmem_internal_my_pe) {
-        SHMEM_WAIT_UNTIL(&pSync[2], SHMEM_CMP_EQ, 1);
+        SHMEM_WAIT_UNTIL(&pSync[2], SHMEM_CMP_EQ, PE_size);
     }
 
     /* clear pSync */
