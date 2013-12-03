@@ -80,17 +80,17 @@ shmem_internal_fence(void)
 
 #define SHMEM_WAIT(var, value)                           \
     do {                                                 \
-        while (*var == value) { SPINLOCK_BODY(); }       \
+        while (*(var) == value) { SPINLOCK_BODY(); }     \
     } while(0)
 
 #define SHMEM_WAIT_UNTIL(var, cond, value)               \
     do {                                                 \
         int cmpret;                                      \
                                                          \
-        COMP(cond, *var, value, cmpret);                 \
+        COMP(cond, *(var), value, cmpret);               \
         while (!cmpret) {                                \
             SPINLOCK_BODY();                             \
-            COMP(cond, *var, value, cmpret);             \
+            COMP(cond, *(var), value, cmpret);           \
         }                                                \
     } while(0)
 
@@ -101,12 +101,12 @@ shmem_internal_fence(void)
         int ret;                                                        \
         ptl_ct_event_t ct;                                              \
                                                                         \
-        while (*var == value) {                                         \
+        while (*(var) == value) {                                       \
             ret = PtlCTGet(shmem_transport_portals4_target_ct_h, &ct);  \
             if (PTL_OK != ret) { RAISE_ERROR(ret); }                    \
             if (0 != ct.failure) { RAISE_ERROR_STR("Target CT failure"); } \
             COMPILER_FENCE();                                           \
-            if (*var != value) break;                                   \
+            if (*(var) != value) break;                                 \
             ret = PtlCTWait(shmem_transport_portals4_target_ct_h,       \
                             ct.success + 1,                             \
                             &ct);                                       \
@@ -120,20 +120,20 @@ shmem_internal_fence(void)
         int ret, cmpret;                                                \
         ptl_ct_event_t ct;                                              \
                                                                         \
-        COMP(cond, *var, value, cmpret);                                \
+        COMP(cond, *(var), value, cmpret);                              \
         while (!cmpret) {                                               \
             ret = PtlCTGet(shmem_transport_portals4_target_ct_h, &ct);  \
             if (0 != ct.failure) { RAISE_ERROR_STR("Target CT failure"); } \
             if (PTL_OK != ret) { RAISE_ERROR(ret); }                    \
             COMPILER_FENCE();                                           \
-            COMP(cond, *var, value, cmpret);                            \
+            COMP(cond, *(var), value, cmpret);                          \
             if (cmpret) break;                                          \
             ret = PtlCTWait(shmem_transport_portals4_target_ct_h,       \
                             ct.success + 1,                             \
                             &ct);                                       \
             if (PTL_OK != ret) { RAISE_ERROR(ret); }                    \
             if (0 != ct.failure) { RAISE_ERROR_STR("Target CT failure"); } \
-            COMP(cond, *var, value, cmpret);                            \
+            COMP(cond, *(var), value, cmpret);                          \
         }                                                               \
     } while(0)
 #else
