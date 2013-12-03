@@ -132,10 +132,17 @@ SANDIA_CHECK_XPMEM(
      transport_xpmem="yes"],
     [transport_xpmem="no"])
 AM_CONDITIONAL([USE_XPMEM], [test "$transport_xpmem" = "yes"])
-AS_IF([test "$transport_xpmem" = "yes"],
+
+CHECK_CMA(
+   [AC_DEFINE([USE_CMA], [1], [Define if Cross Memory Attach transport is active])
+    transport_cma="yes"],
+   [transport_cma="no"])
+AM_CONDITIONAL([USE_CMA], [test "$transport_cma" = "yes"])
+
+AS_IF([test "transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
       [AC_DEFINE([USE_ON_NODE_COMMS], [1], [Define if any on-node comm transport is available])])
 
-AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes"],
+AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes"],
       [AC_MSG_ERROR([No transport found])])
 
 ORTE_CHECK_PMI([pmi])
@@ -332,4 +339,5 @@ echo ""
 echo "Transports:"
 echo "  Portals 4:      $transport_portals4"
 echo "  XPMEM:          $transport_xpmem"
+echo "  CMA:            $transport_cma"
 echo ""

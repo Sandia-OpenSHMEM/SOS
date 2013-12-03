@@ -46,6 +46,10 @@ extern char *shmem_internal_location_array;
 #include "transport_xpmem.h"
 #endif
 
+#ifdef USE_CMA
+#include "transport_cma.h"
+#endif
+
 static inline
 void
 shmem_internal_put_small(void *target, const void *source, size_t len, int pe)
@@ -55,6 +59,8 @@ shmem_internal_put_small(void *target, const void *source, size_t len, int pe)
     if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
 #if USE_XPMEM
         shmem_transport_xpmem_put(target, source, len, pe, node_rank);
+#elif USE_CMA
+        shmem_transport_cma_put(target, source, len, pe, node_rank);
 #else
         RAISE_ERROR_STR("No path to peer");
 #endif
@@ -78,6 +84,8 @@ shmem_internal_put_nb(void *target, const void *source, size_t len, int pe,
     if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
 #if USE_XPMEM
         shmem_transport_xpmem_put(target, source, len, pe, node_rank);
+#elif USE_CMA
+        shmem_transport_cma_put(target, source, len, pe, node_rank);
 #else
         RAISE_ERROR_STR("No path to peer");
 #endif
@@ -96,27 +104,14 @@ void
 shmem_internal_put_ct_nb(shmem_ct_t ct, void *target, const void *source, size_t len, int pe,
                       long *completion)
 {
-    int node_rank;
-
-    if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
-        /* TODO: Not implemented for ON_NODE_COMMS */
-        /*
-#if USE_XPMEM
-        shmem_transport_xpmem_put(target, source, len, pe, node_rank);
-#else
-        RAISE_ERROR_STR("No path to peer");
-#endif
-        */
-        RAISE_ERROR_STR("No path to peer");
-    } else {
+    /* TODO: add shortcut for on-node-comms */
 #if USE_PORTALS4
-        shmem_transport_portals4_put_ct_nb((shmem_transport_portals4_ct_t *)
-                                           ct, target, source, len, pe,
-                                           completion);
+    shmem_transport_portals4_put_ct_nb((shmem_transport_portals4_ct_t *)
+                                       ct, target, source, len, pe,
+                                       completion);
 #else
-        RAISE_ERROR_STR("No path to peer");
+    RAISE_ERROR_STR("No path to peer");
 #endif
-    }
 }
 
 
@@ -140,6 +135,8 @@ shmem_internal_get(void *target, const void *source, size_t len, int pe)
     if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
 #if USE_XPMEM
         shmem_transport_xpmem_get(target, source, len, pe, node_rank);
+#elif USE_CMA
+        shmem_transport_cma_get(target, source, len, pe, node_rank);
 #else
         RAISE_ERROR_STR("No path to peer");
 #endif
