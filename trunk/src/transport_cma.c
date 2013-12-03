@@ -45,8 +45,6 @@ shmem_transport_cma_init(long eager_size)
 
     shmem_transport_cma_my_pid = cma_data.lpid = getpid();
 
-    printf("[%03d] my pid: %d\n", shmem_internal_my_pe, shmem_transport_cma_my_pid);
-
     /* Share information */
     ret = shmem_runtime_put("cma-procid", &cma_data, sizeof(pmi_cma_data_t));
     if (0 != ret) {

@@ -84,9 +84,6 @@ shmem_transport_cma_put(void *target, const void *source, size_t len,
         struct iovec tgt, src;
         pid_t target_pid = shmem_transport_cma_peers[noderank];
 
-        printf("[%03d] CMA put to %03d,%d,%d\n",
-                shmem_internal_my_pe, pe, noderank, (int) target_pid);
-
         CHK_ACCESS(target,"cma_put target");
 
         if ( target_pid == shmem_transport_cma_my_pid ) {
