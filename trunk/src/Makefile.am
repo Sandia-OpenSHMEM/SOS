@@ -67,6 +67,12 @@ libsma_la_SOURCES += \
 	transport_xpmem.c
 endif
 
+if USE_CMA
+libsma_la_SOURCES += \
+	transport_cma.h \
+	transport_cma.c
+endif
+
 bin_SCRIPTS = oshcc oshc++
 CLEANFILES += oshcc oshc++
 if CASE_SENSITIVE_FS

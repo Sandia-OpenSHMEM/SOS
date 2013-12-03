@@ -125,6 +125,9 @@ shmem_internal_shutdown(void)
 #ifdef USE_XPMEM
     shmem_transport_xpmem_fini();
 #endif
+#ifdef USE_CMA
+    shmem_transport_cma_fini();
+#endif
 
     shmem_internal_symmetric_fini();
     shmem_runtime_fini();
@@ -198,6 +201,18 @@ shmem_internal_init()
         goto cleanup;
     }
 #endif
+#ifdef USE_CMA
+    shmem_internal_cma_put_max = get_env_long("CMA_PUT_MAX", 1, 8*1024);
+    shmem_internal_cma_get_max = get_env_long("CMA_GET_MAX", 1, 16*1024);
+
+    ret = shmem_transport_cma_init(eager_size);
+    if (0 != ret) {
+        fprintf(stderr,
+                "[%03d] ERROR: CMA init failed\n",
+                shmem_internal_my_pe);
+        goto cleanup;
+    }
+#endif
 
     /* exchange information */
     ret = shmem_runtime_exchange();
@@ -224,6 +239,15 @@ shmem_internal_init()
     if (0 != ret) {
         fprintf(stderr,
                 "[%03d] ERROR: XPMEM startup failed\n",
+                shmem_internal_my_pe);
+        goto cleanup;
+    }
+#endif
+#ifdef USE_CMA
+    ret = shmem_transport_cma_startup();
+    if (0 != ret) {
+        fprintf(stderr,
+                "[%03d] ERROR: CMA startup failed\n",
                 shmem_internal_my_pe);
         goto cleanup;
     }
@@ -304,6 +328,9 @@ shmem_internal_init()
 #endif
 #ifdef USE_XPMEM
     shmem_transport_xpmem_fini();
+#endif
+#ifdef USE_CMA
+    shmem_transport_cma_fini();
 #endif
     if (NULL != shmem_internal_data_base) {
         shmem_internal_symmetric_fini();
