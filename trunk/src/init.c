@@ -202,8 +202,8 @@ shmem_internal_init()
     }
 #endif
 #ifdef USE_CMA
-    shmem_internal_cma_put_max = get_env_long("CMA_PUT_MAX", 1, 8*1024);
-    shmem_internal_cma_get_max = get_env_long("CMA_GET_MAX", 1, 16*1024);
+    shmem_transport_cma_put_max = get_env_long("CMA_PUT_MAX", 1, 8*1024);
+    shmem_transport_cma_get_max = get_env_long("CMA_GET_MAX", 1, 16*1024);
 
     ret = shmem_transport_cma_init(eager_size);
     if (0 != ret) {
