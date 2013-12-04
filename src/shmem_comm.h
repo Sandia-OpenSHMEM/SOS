@@ -85,7 +85,11 @@ shmem_internal_put_nb(void *target, const void *source, size_t len, int pe,
 #if USE_XPMEM
         shmem_transport_xpmem_put(target, source, len, pe, node_rank);
 #elif USE_CMA
-        shmem_transport_cma_put(target, source, len, pe, node_rank);
+        if (len > shmem_transport_cma_put_max) {
+            shmem_transport_cma_put(target, source, len, pe, node_rank);
+        } else {
+            shmem_transport_portals4_put_nb(target, source, len, pe, completion);
+        }
 #else
         RAISE_ERROR_STR("No path to peer");
 #endif
@@ -136,7 +140,11 @@ shmem_internal_get(void *target, const void *source, size_t len, int pe)
 #if USE_XPMEM
         shmem_transport_xpmem_get(target, source, len, pe, node_rank);
 #elif USE_CMA
-        shmem_transport_cma_get(target, source, len, pe, node_rank);
+        if (len > shmem_transport_cma_get_max) {
+            shmem_transport_cma_get(target, source, len, pe, node_rank);
+        } else {
+            shmem_transport_portals4_get(target, source, len, pe);
+        }
 #else
         RAISE_ERROR_STR("No path to peer");
 #endif
