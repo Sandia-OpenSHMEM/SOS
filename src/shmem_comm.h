@@ -141,9 +141,9 @@ shmem_internal_get(void *target, const void *source, size_t len, int pe)
         shmem_transport_xpmem_get(target, source, len, pe, node_rank);
 #elif USE_CMA
         if (len > shmem_transport_cma_get_max) {
-            shmem_transport_cma_get(target, source, len, pe, node_rank);
-        } else {
             shmem_transport_portals4_get(target, source, len, pe);
+        } else {
+            shmem_transport_cma_get(target, source, len, pe, node_rank);
         }
 #else
         RAISE_ERROR_STR("No path to peer");
