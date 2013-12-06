@@ -100,6 +100,15 @@ ptl_size_t shmem_transport_portals4_pending_get_counter = 0;
 
 int32_t shmem_transport_portals4_event_slots = 2048;
 
+#if WANT_TOTAL_DATA_ORDERING != 0
+int shmem_transport_portals4_total_data_ordering = 0;
+int shmem_transport_portals4_long_pending = 0;
+#endif
+
+#ifdef ENABLE_NONBLOCKING_FENCE
+int shmem_transport_portals4_fence_pending = 0;
+#endif
+
 static ptl_ni_limits_t ni_limits;
 #if ENABLE_REMOTE_VIRTUAL_ADDRESSING
 static ptl_pt_index_t all_pt = PTL_PT_ANY;
@@ -260,6 +269,9 @@ shmem_transport_portals4_init(long eager_size)
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
     ni_req_limits.features |= PTL_TARGET_BIND_INACCESSIBLE;
 #endif
+#if WANT_TOTAL_DATA_ORDERING != 0
+    ni_req_limits.features |= PTL_TOTAL_DATA_ORDERING;
+#endif
 
     ret = PtlNIInit(PTL_IFACE_DEFAULT,
                     PTL_NI_NO_MATCHING | PTL_NI_LOGICAL,
@@ -281,6 +293,22 @@ shmem_transport_portals4_init(long eager_size)
                 shmem_internal_my_pe);
     }
 #endif
+
+#if WANT_TOTAL_DATA_ORDERING != 0
+    if ((PTL_TOTAL_DATA_ORDERING & ni_limits.features) == 0) {
+        if (1 == WANT_TOTAL_DATA_ORDERING) {
+            fprintf(stderr,
+                    "[%03d] ERROR: Total data ordering feature enabled, but Portals\n"
+                    "doesn't support PTL_TOTAL_DATA_ORDERING.  Aborting.\n",
+                    shmem_internal_my_pe);
+        } else {
+            shmem_transport_portals4_total_data_ordering = 1;
+        }
+    }
+#endif
+    /* Note that after this point, one should compare the macro
+       PORTALS4_TOTAL_DATA_ORDERING to 0 /1 to determine if total data
+       ordering is not / is enabled */
 
     ret = PtlGetPhysId(shmem_transport_portals4_ni_h, &my_id);
     if (PTL_OK != ret) {
@@ -595,6 +623,9 @@ shmem_transport_portals4_startup(void)
         md.length = (i - 1 == shmem_transport_portals4_get_num_mds()) ? size / 2 : size;
 
         md.options = PTL_MD_EVENT_CT_ACK;
+        if (1 == PORTALS4_TOTAL_DATA_ORDERING) {
+            md.options |= PTL_MD_UNORDERED;
+        }
         md.eq_handle = shmem_transport_portals4_eq_h;
         md.ct_handle = shmem_transport_portals4_put_ct_h;
         ret = PtlMDBind(shmem_transport_portals4_ni_h,
@@ -609,6 +640,9 @@ shmem_transport_portals4_startup(void)
         md.options = PTL_MD_EVENT_CT_ACK |
             PTL_MD_EVENT_SUCCESS_DISABLE |
             PTL_MD_VOLATILE;
+        if (1 == PORTALS4_TOTAL_DATA_ORDERING) {
+            md.options |= PTL_MD_UNORDERED;
+        }
         md.eq_handle = shmem_transport_portals4_eq_h;
         md.ct_handle = shmem_transport_portals4_put_ct_h;
         ret = PtlMDBind(shmem_transport_portals4_ni_h,
@@ -622,6 +656,9 @@ shmem_transport_portals4_startup(void)
 
         md.options = PTL_MD_EVENT_CT_REPLY | 
             PTL_MD_EVENT_SUCCESS_DISABLE;
+        if (1 == PORTALS4_TOTAL_DATA_ORDERING) {
+            md.options |= PTL_MD_UNORDERED;
+        }
         md.eq_handle = shmem_transport_portals4_eq_h;
         md.ct_handle = shmem_transport_portals4_get_ct_h;
         ret = PtlMDBind(shmem_transport_portals4_ni_h,
@@ -637,6 +674,9 @@ shmem_transport_portals4_startup(void)
     md.start = 0;
     md.length = PTL_SIZE_MAX;
     md.options = PTL_MD_EVENT_CT_ACK;
+    if (1 == PORTALS4_TOTAL_DATA_ORDERING) {
+        md.options |= PTL_MD_UNORDERED;
+    }
     md.eq_handle = shmem_transport_portals4_eq_h;
     md.ct_handle = shmem_transport_portals4_put_ct_h;
     ret = PtlMDBind(shmem_transport_portals4_ni_h,
@@ -653,6 +693,9 @@ shmem_transport_portals4_startup(void)
     md.options = PTL_MD_EVENT_CT_ACK |
         PTL_MD_EVENT_SUCCESS_DISABLE |
         PTL_MD_VOLATILE;
+    if (1 == PORTALS4_TOTAL_DATA_ORDERING) {
+        md.options |= PTL_MD_UNORDERED;
+    }
     md.eq_handle = shmem_transport_portals4_eq_h;
     md.ct_handle = shmem_transport_portals4_put_ct_h;
     ret = PtlMDBind(shmem_transport_portals4_ni_h,
@@ -668,6 +711,9 @@ shmem_transport_portals4_startup(void)
     md.length = PTL_SIZE_MAX;
     md.options = PTL_MD_EVENT_CT_REPLY | 
         PTL_MD_EVENT_SUCCESS_DISABLE;
+    if (1 == PORTALS4_TOTAL_DATA_ORDERING) {
+        md.options |= PTL_MD_UNORDERED;
+    }
     md.eq_handle = shmem_transport_portals4_eq_h;
     md.ct_handle = shmem_transport_portals4_get_ct_h;
     ret = PtlMDBind(shmem_transport_portals4_ni_h,
@@ -696,10 +742,17 @@ shmem_transport_portals4_fini(void)
     /* wait for remote completion (acks) of all pending events */
     PtlCTWait(shmem_transport_portals4_put_ct_h, 
               shmem_transport_portals4_pending_put_counter, &ct);
-
     if (shmem_transport_portals4_pending_put_counter != ct.success + ct.failure) {
-        fprintf(stderr, "[%03d] WARNING: count mismatch: %ld, %ld\n",
+        fprintf(stderr, "[%03d] WARNING: put count mismatch: %ld, %ld\n",
                 shmem_internal_my_pe, (long) shmem_transport_portals4_pending_put_counter,
+                (long) (ct.success + ct.failure));
+    }
+
+    PtlCTWait(shmem_transport_portals4_get_ct_h, 
+              shmem_transport_portals4_pending_get_counter, &ct);
+    if (shmem_transport_portals4_pending_get_counter != ct.success + ct.failure) {
+        fprintf(stderr, "[%03d] WARNING: get count mismatch: %ld, %ld\n",
+                shmem_internal_my_pe, (long) shmem_transport_portals4_pending_get_counter,
                 (long) (ct.success + ct.failure));
     }
 

@@ -59,11 +59,21 @@ extern ptl_size_t shmem_transport_portals4_bounce_buffer_size;
 extern ptl_size_t shmem_transport_portals4_max_volatile_size;
 extern ptl_size_t shmem_transport_portals4_max_atomic_size;
 extern ptl_size_t shmem_transport_portals4_max_fetch_atomic_size;
+extern ptl_size_t shmem_transport_portals4_max_fence_size;
 
 extern ptl_size_t shmem_transport_portals4_pending_put_counter;
 extern ptl_size_t shmem_transport_portals4_pending_get_counter;
 
 extern int32_t shmem_transport_portals4_event_slots;
+
+#if WANT_TOTAL_DATA_ORDERING != 0
+extern int shmem_transport_portals4_total_data_ordering;
+extern int shmem_transport_portals4_long_pending;
+#endif
+
+#ifdef ENABLE_NONBLOCKING_FENCE
+extern int shmem_transport_portals4_fence_pending;
+#endif
 
 #define SHMEM_TRANSPORT_PORTALS4_TYPE_BOUNCE  0x01
 #define SHMEM_TRANSPORT_PORTALS4_TYPE_LONG    0x02
@@ -239,6 +249,14 @@ shmem_transport_portals4_get_num_mds(void)
                                     shmem_transport_portals4_heap_pt)
 #endif
 
+#if WANT_TOTAL_DATA_ORDERING == 0
+#define PORTALS4_TOTAL_DATA_ORDERING 0
+#elif WANT_TOTAL_DATA_ORDERING == 1
+#define PORTALS4_TOTAL_DATA_ORDERING 1
+#else
+#define PORTALS4_TOTAL_DATA_ORDERING shmem_transport_portals4_total_data_ordering
+#endif
+
 int shmem_transport_portals4_init(long eager_size);
 
 int shmem_transport_portals4_startup(void);
@@ -269,7 +287,48 @@ static inline
 int
 shmem_transport_portals4_fence(void)
 {
-    return shmem_transport_portals4_quiet();
+    int ret = 0;
+
+    if (0 == PORTALS4_TOTAL_DATA_ORDERING) {
+#ifdef ENABLE_NONBLOCKING_FENCE
+        /* non-blocking fence.  Always mark and return */
+        shmem_transport_portals4_fence_pending = 1;
+#else
+        ret = shmem_transport_portals4_quiet();
+#endif
+    }
+#if WANT_TOTAL_DATA_ORDERING != 0
+    else if (0 != shmem_transport_portals4_long_pending) {
+#ifdef ENABLE_NONBLOCKING_FENCE
+        /* non-blocking fence.  Always mark and return */
+        shmem_transport_portals4_fence_pending = 1;
+#else
+        ret = shmem_transport_portals4_quiet();
+#endif
+        shmem_transport_portals4_long_pending = 0;
+    }
+#endif
+
+    return ret;
+}
+
+
+/* internal call: call at the start of all communication calls to deal with delayed fence */
+static inline
+int
+shmem_transport_portals4_fence_complete(void)
+{
+    int ret = 0;
+
+#ifdef ENABLE_NONBLOCKING_FENCE
+    /* If a fence is pending, complete */
+    if (0 != shmem_transport_portals4_fence_pending) {
+        ret = shmem_transport_portals4_quiet();
+        shmem_transport_portals4_fence_pending = 0;
+    }
+#endif
+
+    return ret;
 }
 
 
@@ -330,6 +389,8 @@ shmem_transport_portals4_put_small(void *target, const void *source, size_t len,
     shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_volatile_md_h,
                                     &md_h, &base);
 
+    shmem_transport_portals4_fence_complete();
+
     ret = PtlPut(md_h,
                  (ptl_size_t) ((char*) source - (char*) base),
                  len,
@@ -364,6 +425,8 @@ shmem_transport_portals4_put_nb_internal(void *target, const void *source, size_
 #else
     PORTALS4_GET_REMOTE_ACCESS_TWOPT(target, pt, offset, data_pt, heap_pt);
 #endif
+
+    shmem_transport_portals4_fence_complete();
 
     if (len <= shmem_transport_portals4_max_volatile_size) {
         shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_volatile_md_h,
@@ -412,6 +475,9 @@ shmem_transport_portals4_put_nb_internal(void *target, const void *source, size_
                      0);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
 
+#if WANT_TOTAL_DATA_ORDERING != 0
+        shmem_transport_portals4_long_pending = 1;
+#endif
     } else {
         shmem_transport_portals4_long_frag_t *long_frag;  
 
@@ -444,6 +510,10 @@ shmem_transport_portals4_put_nb_internal(void *target, const void *source, size_
         if (PTL_OK != ret) { RAISE_ERROR(ret); } 
         (*(long_frag->completion))++;
         long_frag->reference++;
+
+#if WANT_TOTAL_DATA_ORDERING != 0
+        shmem_transport_portals4_long_pending = 1;
+#endif
     }
     shmem_transport_portals4_pending_put_counter++;
 }
@@ -563,6 +633,8 @@ shmem_transport_portals4_swap(void *target, void *source, void *dest, size_t len
     shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_volatile_md_h,
                                     &put_md_h, &put_base);
 
+    shmem_transport_portals4_fence_complete();
+
     /* note: No ack is generated on the ct associated with the
        volatile md because the reply comes back on the get md.  So no
        need to increment the put counter */
@@ -609,6 +681,8 @@ shmem_transport_portals4_cswap(void *target, void *source, void *dest, void *ope
                                     &get_md_h, &get_base);
     shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_volatile_md_h,
                                     &put_md_h, &put_base);
+
+    shmem_transport_portals4_fence_complete();
 
     /* note: No ack is generated on the ct associated with the
        volatile md because the reply comes back on the get md.  So no
@@ -657,6 +731,8 @@ shmem_transport_portals4_mswap(void *target, void *source, void *dest, void *mas
     shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_volatile_md_h,
                                     &put_md_h, &put_base);
 
+    shmem_transport_portals4_fence_complete();
+
     /* note: No ack is generated on the ct associated with the
        volatile md because the reply comes back on the get md.  So no
        need to increment the put counter */
@@ -691,6 +767,8 @@ shmem_transport_portals4_atomic_small(void *target, void *source, size_t len,
     ptl_handle_md_t md_h;
     void *base;
 
+    shmem_transport_portals4_fence_complete();
+
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
@@ -698,6 +776,8 @@ shmem_transport_portals4_atomic_small(void *target, void *source, size_t len,
 
     shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_volatile_md_h,
                                     &md_h, &base);
+
+    shmem_transport_portals4_fence_complete();
 
     ret = PtlAtomic(md_h,
                     (ptl_size_t) ((char*) source - (char*) base),
@@ -729,8 +809,12 @@ shmem_transport_portals4_atomic_nb(void *target, void *source, size_t len,
     ptl_handle_md_t md_h;
     void *base;
 
+    shmem_transport_portals4_fence_complete();
+
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
+
+    shmem_transport_portals4_fence_complete();
 
     if (len <= shmem_transport_portals4_max_volatile_size) {
         shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_volatile_md_h,
@@ -785,7 +869,9 @@ shmem_transport_portals4_atomic_nb(void *target, void *source, size_t len,
                         datatype);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
         shmem_transport_portals4_pending_put_counter += 1;
-
+#if WANT_TOTAL_DATA_ORDERING != 0
+        shmem_transport_portals4_long_pending = 1;
+#endif
     } else {
         size_t sent = 0;
         ptl_size_t base_offset;
@@ -828,6 +914,9 @@ shmem_transport_portals4_atomic_nb(void *target, void *source, size_t len,
             shmem_transport_portals4_pending_put_counter++;
             sent += bufsize;
         }
+#if WANT_TOTAL_DATA_ORDERING != 0
+        shmem_transport_portals4_long_pending = 1;
+#endif
     }
 }
 
@@ -856,6 +945,8 @@ shmem_transport_portals4_fetch_atomic(void *target, void *source, void *dest, si
                                     &get_md_h, &get_base);
     shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_volatile_md_h,
                                     &put_md_h, &put_base);
+
+    shmem_transport_portals4_fence_complete();
 
     /* note: No ack is generated on the ct associated with the
        volatile md because the reply comes back on the get md.  So no
