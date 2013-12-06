@@ -50,6 +50,32 @@ Options to configure include:
   --disable-fortran       Disable the Fortran bindings.  This may be useful
                           if the machine has a Fortran compiler which does
                           not support ISO_C_BINDING.
+  --enable-nonblocking-fence
+                          By default, shmem_fence() is equivalent to
+                          shmem_quiet(), which can be a lengthy
+                          operation.  Enabling this feature results in
+                          the ordering point being moved from the
+                          shmem_fence() to the next put-like call,
+                          which can help improve overlap in some
+                          cases.
+  --with-total-data-ordering=<yes|no|check>
+                          If a network supports total data ordering
+                          (that is, ordering guarantees to two
+                          different addresses on the same target
+                          node), this option can remove the
+                          shmem_quiet() from shmem_fence() calls when
+                          sending short messages.  The option does,
+                          however, force ordering requirements on the
+                          network, so experimentation may be necessary
+                          to determine the best configuration.  Yes
+                          means always assume total data ordering is
+                          available and abort a job if that's not the
+                          case.  No means never use total data
+                          ordering optimizations.  Check will result
+                          in slightly higher overhead than "yes", but
+                          will provide a fallback if the network
+                          doesn't provide total data ordering.
+
 
 There are many other options to configure to influence performance and
 behavior.  See 'configure --help' for documentation on available

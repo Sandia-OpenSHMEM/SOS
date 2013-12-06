@@ -55,36 +55,42 @@ AC_ARG_ENABLE([hard-polling],
                     [Enable hard polling of wait calls (default:disabled)])])
 AS_IF([test "$enable_hard_polling" = "yes"], [AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])])
 
-dnl AC_ARG_WITH([total-data-ordering],
-dnl     [AC_HELP_STRING([--with-total-data-ordering],
-dnl        [Configure handling of total data ordering option.  "no" or "never" to build with the assumption total data ordering will never be available.  "yes" or "always" to build with the assumption total data ordering will always be available (if not, applications will abort in start_pes()).  "check" to build with no assumptions, which may lead to a very slight performance decrease on high performance networks.  Default: check.])])
-dnl AS_CASE([x$with_total_data_ordering],
-dnl   [xyes|xalways], [ordering=1; msg="assume always available"],
-dnl   [xno|xnever], [ordering=0; msg="assume never available"],
-dnl   [xcheck|x], [ordering=2; msg="runtime check"],
-dnl   [AC_MSG_ERROR([Unknown ordering requirement $with_total_data_ordering])])
-dnl AC_DEFINE_UNQUOTED([WANT_TOTAL_DATA_ORDERING_CHECK], [$ordering], [0 if never check for total data ordering, 1 if always assume total data ordering, 2 to check])
-dnl AC_MSG_CHECKING([For total data ordering behavior])
-dnl AC_MSG_RESULT([$msg])
+AC_ARG_ENABLE([nonblocking-fence],
+    [AC_HELP_STRING([--enable-nonblocking-fence],
+                    [When total data ordering is not available, make shmem_fence a non-blocking operation.  shmem_fence will return immediately, but the next communication call will block until all previous communications finish. (default:disabled)])])
+AS_IF([test "$enable_nb_fence" = "yes"], [AC_DEFINE([ENABLE_NONBLOCKING_FENCE], [1], [Enable non-blocking fence])])
+
+
+AC_ARG_WITH([total-data-ordering],
+    [AC_HELP_STRING([--with-total-data-ordering],
+       [Configure handling of total data ordering option.  "no" or "never" to build with the assumption total data ordering will never be available.  "yes" or "always" to build with the assumption total data ordering will always be available (if not, applications will abort in start_pes()).  "check" to build with no assumptions, which may lead to a slight performance decrease on high performance networks.  (default: disabled)])])
+AS_CASE([x$with_total_data_ordering],
+  [xyes|xalways], [ordering=1; msg="assume always available"],
+  [xno|xnever|x], [ordering=0; msg="assume never available"],
+  [xcheck], [ordering=2; msg="runtime check"],
+  [AC_MSG_ERROR([Unknown ordering requirement $with_total_data_ordering])])
+AC_DEFINE_UNQUOTED([WANT_TOTAL_DATA_ORDERING], [$ordering], [0 if never check for total data ordering, 1 if always assume total data ordering, 2 to check])
+AC_MSG_CHECKING([For total data ordering behavior])
+AC_MSG_RESULT([$msg])
 
 AC_ARG_ENABLE([remote-virtual-addressing],
     [AC_HELP_STRING([--enable-remote-virtual-addressing],
-                    [Enable optimizations assuming the symmetric heap is always symmetric with regards to virtual address.  This may cause applications to abort during start_pes() if such a symmetric heap can not be created, but will reduce the instruction count for some operations.  This optimization also requires that the Portals 4 implementation support BIND_INACCESSIBLE on LEs.])])
+                    [Enable optimizations assuming the symmetric heap is always symmetric with regards to virtual address.  This may cause applications to abort during start_pes() if such a symmetric heap can not be created, but will reduce the instruction count for some operations.  This optimization also requires that the Portals 4 implementation support BIND_INACCESSIBLE on LEs. (default: disabled)])])
 AS_IF([test "$enable_remote_virtual_addressing" = "yes"],
       [AC_DEFINE([ENABLE_REMOTE_VIRTUAL_ADDRESSING], [1], [If defined, the implementation will use one LE/PT to cover all of the symmetric data and heap, setup so that no offset transformation is needed on the target virtual address.])])
 
 AC_ARG_ENABLE([lengthy-tests],
     [AC_HELP_STRING([--enable-lengthy-tests],
-                    [Enable long running tests in the test suite])])
+                    [Enable long running tests in the test suite (default: disabled)])])
 AM_CONDITIONAL([ENABLE_LENGTHY_TESTS], [test "$enable_lengthy_tests" = "yes"])
 
 AC_ARG_ENABLE([fortran],
     [AC_HELP_STRING([--disable-fortran],
-                    [Disable building the Fortran bindings])])
+                    [Disable building the Fortran bindings (default: enabled)])])
 
 AC_ARG_ENABLE([libtool-wrapper],
   [AS_HELP_STRING([--disable-libtool-wrapper],
-    [Disable use of libtool executable wrappers for tests])])
+    [Disable use of libtool executable wrappers for tests (default: enabled)])])
 AS_IF([test "$enable_libtool_wrapper" = "no"], [LIBTOOL_WRAPPER_LDFLAGS="-no-install"], [LIBTOOL_WRAPPER_LDFLAGS=])
 AC_SUBST([LIBTOOL_WRAPPER_LDFLAGS])
 
@@ -219,7 +225,7 @@ if test "$FC" != "" ; then
   FORTRAN_REDUCE_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / $C_REDUCE_SYNC_SIZE * p" | dc`
   FORTRAN_BARRIER_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / $C_BARRIER_SYNC_SIZE * p" | dc`
   FORTRAN_COLLECT_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / $C_COLLECT_SYNC_SIZE * p" | dc`
-  FORTRAN_REDUCE_MIN_WRKDATA_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / $C_REDUCE_MIN_WORKDATA_SIZE * p" | dc`
+  FORTRAN_REDUCE_MIN_WRKDATA_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / $C_REDUCE_MIN_WRKDATA_SIZE * p" | dc`
 else
   FORTRAN_BCAST_SYNC_SIZE=0
   FORTRAN_REDUCE_SYNC_SIZE=0
