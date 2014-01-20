@@ -13,7 +13,6 @@
 #ifndef SHMEM_FREE_QUEUE_H
 #define SHMEM_FREE_QUEUE_H
 
-#include <pthread.h>
 #include <stdint.h>
 
 #include "shmem_atomic.h"
