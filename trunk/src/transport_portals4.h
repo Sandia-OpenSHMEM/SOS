@@ -291,6 +291,9 @@ shmem_transport_portals4_fence(void)
 
     if (0 == PORTALS4_TOTAL_DATA_ORDERING) {
 #ifdef ENABLE_NONBLOCKING_FENCE
+        /* synchronize the atomic cache, if there is one */
+        PtlAtomicSync();
+
         /* non-blocking fence.  Always mark and return */
         shmem_transport_portals4_fence_pending = 1;
 #else
