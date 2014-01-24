@@ -52,7 +52,9 @@ FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, 
         }
     }
 
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     *addr = dlmalloc(len); /* length is number of 32 bit words */
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
 
     if (*addr == NULL) {
         if (0 == *want_abort) {
@@ -80,7 +82,9 @@ FC_SHPDEALLOC(void **addr, fortran_integer_t *errcode, fortran_integer_t *want_a
     }
 #endif
 
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     dlfree(*addr);
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
     *errcode = 0;
 
     shmem_internal_barrier_all();
@@ -111,7 +115,9 @@ FC_SHPCLMOVE(void **addr, fortran_integer_t *length, fortran_integer_t *errcode,
         }
     }
 
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     ret = dlrealloc(*addr, *length * 4); /* length is number of 32 bit words */
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
 
     if (*addr != NULL) {
         if (*addr == ret) {

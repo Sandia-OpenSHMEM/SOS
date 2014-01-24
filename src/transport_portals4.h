@@ -75,6 +75,13 @@ extern int shmem_transport_portals4_long_pending;
 extern int shmem_transport_portals4_fence_pending;
 #endif
 
+#ifdef ENABLE_THREADS
+extern shmem_internal_mutex_t shmem_internal_mutex_ptl4_pt_state;
+extern shmem_internal_mutex_t shmem_internal_mutex_ptl4_frag;
+extern shmem_internal_mutex_t shmem_internal_mutex_ptl4_event_slots;
+extern shmem_internal_mutex_t shmem_internal_mutex_ptl4_nb_fence;
+#endif
+
 #define SHMEM_TRANSPORT_PORTALS4_TYPE_BOUNCE  0x01
 #define SHMEM_TRANSPORT_PORTALS4_TYPE_LONG    0x02
 
@@ -295,7 +302,9 @@ shmem_transport_portals4_fence(void)
         PtlAtomicSync();
 
         /* non-blocking fence.  Always mark and return */
+        SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_nb_fence);
         shmem_transport_portals4_fence_pending = 1;
+        SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_nb_fence);
 #else
         ret = shmem_transport_portals4_quiet();
 #endif
@@ -304,7 +313,9 @@ shmem_transport_portals4_fence(void)
     else if (0 != shmem_transport_portals4_long_pending) {
 #ifdef ENABLE_NONBLOCKING_FENCE
         /* non-blocking fence.  Always mark and return */
+        SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_nb_fence);
         shmem_transport_portals4_fence_pending = 1;
+        SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_nb_fence);
 #else
         ret = shmem_transport_portals4_quiet();
 #endif
@@ -325,10 +336,12 @@ shmem_transport_portals4_fence_complete(void)
 
 #ifdef ENABLE_NONBLOCKING_FENCE
     /* If a fence is pending, complete */
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_nb_fence);
     if (0 != shmem_transport_portals4_fence_pending) {
         ret = shmem_transport_portals4_quiet();
         shmem_transport_portals4_fence_pending = 0;
     }
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_nb_fence);
 #endif
 
     return ret;
@@ -342,9 +355,13 @@ shmem_transport_portals4_drain_eq(void)
     int ret;
     ptl_event_t ev;
 
+    /* NOTE-MT: Assume that ptl4_event_slots mutex is already held.  Release the
+     * mutex before blocking on the EQ, then reqacuire before proceeding. */
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
     ret = PtlEQWait(shmem_transport_portals4_eq_h, &ev);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
     if (ev.ni_fail_type != PTL_OK) { RAISE_ERROR(ev.ni_fail_type); }
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_event_slots);
 
     /* The only event type we should see on a success is a send event */
     assert(ev.type == PTL_EVENT_SEND);
@@ -354,8 +371,13 @@ shmem_transport_portals4_drain_eq(void)
     shmem_transport_portals4_frag_t *frag = 
          (shmem_transport_portals4_frag_t*) ev.user_ptr;
 
+    /* NOTE-MT: A different thread may have created this frag, so we need a
+     * memory barrier here before accessing any of the SHMEM-related fields in
+     * the frag.  Right now that comes from the mutex. */
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_frag);
     if (SHMEM_TRANSPORT_PORTALS4_TYPE_BOUNCE == frag->type) {
          /* it's a short send completing */
+         SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_frag);
          shmem_free_list_free(shmem_transport_portals4_bounce_buffers,
                               frag);
     } else {
@@ -366,8 +388,11 @@ shmem_transport_portals4_drain_eq(void)
          (*(long_frag->completion))--;
          if (0 >= --long_frag->reference) {
               long_frag->reference = 0;
+              SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_frag);
               shmem_free_list_free(shmem_transport_portals4_long_frags,
                                    frag);
+         } else {
+              SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_frag);
          }
     }
 }
@@ -450,10 +475,12 @@ shmem_transport_portals4_put_nb_internal(void *target, const void *source, size_
     } else if (len <= shmem_transport_portals4_bounce_buffer_size) {
         shmem_transport_portals4_bounce_buffer_t *buff;
 
+        SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_event_slots);
         while (0 >= --shmem_transport_portals4_event_slots) {
             shmem_transport_portals4_event_slots++;
             shmem_transport_portals4_drain_eq();
         }
+        SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
 
         buff = (shmem_transport_portals4_bounce_buffer_t*)
             shmem_free_list_alloc(shmem_transport_portals4_bounce_buffers);
@@ -484,14 +511,16 @@ shmem_transport_portals4_put_nb_internal(void *target, const void *source, size_
     } else {
         shmem_transport_portals4_long_frag_t *long_frag;  
 
+        SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_event_slots);
         while (0 >= --shmem_transport_portals4_event_slots) {
             shmem_transport_portals4_event_slots++;
             shmem_transport_portals4_drain_eq();
         }
+        SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
 
         long_frag = (shmem_transport_portals4_long_frag_t*)
             shmem_free_list_alloc(shmem_transport_portals4_long_frags);
-        if (NULL == long_frag) RAISE_ERROR(-1);
+        if (NULL == long_frag) { RAISE_ERROR(-1); }
 
         assert(long_frag->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_LONG);
         assert(long_frag->reference == 0);
@@ -499,6 +528,11 @@ shmem_transport_portals4_put_nb_internal(void *target, const void *source, size_
 
         shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_event_md_h,
                                         &md_h, &base);
+
+        /* NOTE-MT: Frag mutex is not needed here because the frag doesn't get
+         * exposed to other threads until the PtlPut. */
+        (*(long_frag->completion))++;
+        long_frag->reference++;
 
         ret = PtlPut(md_h,
                      (ptl_size_t) ((char*) source - (char*) base),
@@ -510,9 +544,7 @@ shmem_transport_portals4_put_nb_internal(void *target, const void *source, size_
                      offset,
                      long_frag,
                      0);
-        if (PTL_OK != ret) { RAISE_ERROR(ret); } 
-        (*(long_frag->completion))++;
-        long_frag->reference++;
+        if (PTL_OK != ret) { RAISE_ERROR(ret); }
 
 #if WANT_TOTAL_DATA_ORDERING != 0
         shmem_transport_portals4_long_pending = 1;
@@ -842,10 +874,12 @@ shmem_transport_portals4_atomic_nb(void *target, void *source, size_t len,
                           shmem_transport_portals4_max_atomic_size)) {
         shmem_transport_portals4_bounce_buffer_t *buff;
 
+        SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_event_slots);
         while (0 >= --shmem_transport_portals4_event_slots) {
             shmem_transport_portals4_event_slots++;
             shmem_transport_portals4_drain_eq();
         }
+        SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
 
         buff = (shmem_transport_portals4_bounce_buffer_t*)
             shmem_free_list_alloc(shmem_transport_portals4_bounce_buffers);
@@ -878,10 +912,11 @@ shmem_transport_portals4_atomic_nb(void *target, void *source, size_t len,
     } else {
         size_t sent = 0;
         ptl_size_t base_offset;
-        shmem_transport_portals4_long_frag_t *long_frag =
-            (shmem_transport_portals4_long_frag_t*)
+        shmem_transport_portals4_long_frag_t *long_frag;
+
+        long_frag = (shmem_transport_portals4_long_frag_t*)
              shmem_free_list_alloc(shmem_transport_portals4_long_frags);
-        if (NULL == long_frag) RAISE_ERROR(-1);
+        if (NULL == long_frag) { RAISE_ERROR(-1); }
 
         assert(long_frag->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_LONG);
         assert(long_frag->reference == 0);
@@ -892,11 +927,16 @@ shmem_transport_portals4_atomic_nb(void *target, void *source, size_t len,
                                         &md_h, &base);
         base_offset = (ptl_size_t) ((char*) source - (char*) base);
 
+        /* NOTE-MT: Must hold the frag mutex for the whole loop to prevent another
+         * thread from seeing the incomplete frag, completing and freeing it. */
+        SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_frag);
         while (sent < len) {
+             SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_event_slots);
              while (0 >= --shmem_transport_portals4_event_slots) {
                   shmem_transport_portals4_event_slots++;
                   shmem_transport_portals4_drain_eq();
              }
+             SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
 
             size_t bufsize = MIN(len - sent, shmem_transport_portals4_max_atomic_size);
             ret = PtlAtomic(shmem_transport_portals4_put_event_md_h[0],
@@ -917,6 +957,7 @@ shmem_transport_portals4_atomic_nb(void *target, void *source, size_t len,
             shmem_transport_portals4_pending_put_counter++;
             sent += bufsize;
         }
+        SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_frag);
 #if WANT_TOTAL_DATA_ORDERING != 0
         shmem_transport_portals4_long_pending = 1;
 #endif
@@ -980,9 +1021,14 @@ void shmem_transport_portals4_ct_attach(ptl_handle_ct_t ptl_ct, void *seg_base,
     int ret, des_pt;
     ptl_le_t le;
 
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_pt_state);
 
     /* Find the next free PT index.  These are allocated collectively by
      * all PEs, so the state array should stay in sync on all PEs. */
+
+    /* NOTE-MT: The above assertion only hold for multithreaded SHMEM,
+     * as long as we restrict collectives to be free from thread-level
+     * concurrency at all PEs. */
     for (des_pt = 0; des_pt < SHMEM_TRANSPORT_PORTALS4_NUM_PTS &&
          shmem_transport_portals4_pt_state[des_pt] != PT_FREE; des_pt++)
         ;
@@ -992,6 +1038,8 @@ void shmem_transport_portals4_ct_attach(ptl_handle_ct_t ptl_ct, void *seg_base,
     }
 
     shmem_transport_portals4_pt_state[des_pt] = PT_ALLOCATED;
+
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_pt_state);
 
     /* Counters are distinguished using distinct portal table entries.
      * Allocate PT entry for the given segment */
@@ -1078,7 +1126,9 @@ void shmem_transport_portals4_ct_free(shmem_transport_portals4_ct_t **ct_ptr)
     ret = PtlPTFree(shmem_transport_portals4_ni_h, ct->shr_pt);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_pt_state);
     shmem_transport_portals4_pt_state[ct->shr_pt] = PT_FREE;
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_pt_state);
 #else
     ret = PtlLEUnlink(ct->data_le);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
@@ -1090,8 +1140,10 @@ void shmem_transport_portals4_ct_free(shmem_transport_portals4_ct_t **ct_ptr)
     ret = PtlPTFree(shmem_transport_portals4_ni_h, ct->heap_pt);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_pt_state);
     shmem_transport_portals4_pt_state[ct->data_pt] = PT_FREE;
     shmem_transport_portals4_pt_state[ct->heap_pt] = PT_FREE;
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_pt_state);
 #endif
 
     free(ct);

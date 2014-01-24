@@ -23,6 +23,11 @@
 #define SHMEM_CMP_LT 5
 #define SHMEM_CMP_LE 6
 
+#define SHMEM_THREAD_SINGLE     0
+#define SHMEM_THREAD_FUNNELED   1
+#define SHMEM_THREAD_SERIALIZED 2
+#define SHMEM_THREAD_MULTIPLE   3
+
 #define _SHMEM_BCAST_SYNC_SIZE @C_BCAST_SYNC_SIZE@
 #define _SHMEM_REDUCE_SYNC_SIZE @C_REDUCE_SYNC_SIZE@
 #define _SHMEM_BARRIER_SYNC_SIZE @C_BARRIER_SYNC_SIZE@
@@ -33,6 +38,8 @@
 
 /* 8.1: Initialization Routines */
 void start_pes(int npes);
+void shmem_init(int tl_requested, int *tl_provided);
+void shmem_finalize(void);
 
 /* 8.2: Query Routines */
 int _num_pes(void);
