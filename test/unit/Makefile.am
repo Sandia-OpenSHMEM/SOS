@@ -57,7 +57,8 @@ TESTS = \
 	ns \
 	bcast_flood \
 	lfinc \
-	shmem_ct
+	shmem_ct \
+	mt_a2a
 
 if HAVE_FORTRAN
 TESTS += \
@@ -205,3 +206,6 @@ lfinc_LDADD = $(top_builddir)/src/libsma.la
 
 shmem_ct_SOURCES = shmem_ct.c
 shmem_ct_LDADD = $(top_builddir)/src/libsma.la
+
+mt_a2a_SOURCES = mt_a2a.c
+mt_a2a_LDADD = $(top_builddir)/src/libsma.la
