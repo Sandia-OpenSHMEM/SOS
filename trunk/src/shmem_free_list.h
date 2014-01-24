@@ -14,8 +14,9 @@
 #define SHMEM_FREE_QUEUE_H
 
 #include <stdint.h>
+#include <assert.h>
 
-#include "shmem_atomic.h"
+#include "shmem_internal.h"
 
 struct shmem_free_list_item_t {
     struct shmem_free_list_item_t *next;
@@ -35,7 +36,9 @@ struct shmem_free_list_t {
     shmem_free_list_item_init_fn_t init_fn;
     shmem_free_list_alloc_t *allocs;
     shmem_free_list_item_t* head;
-    shmem_spinlock_t lock;
+#ifdef ENABLE_THREADS
+    shmem_internal_mutex_t lock;
+#endif
 };
 typedef struct shmem_free_list_t shmem_free_list_t;
 
@@ -52,7 +55,7 @@ shmem_free_list_alloc(shmem_free_list_t *fl)
     shmem_free_list_item_t *item = NULL;
     int ret;
 
-    shmem_spinlock_lock(&fl->lock);
+    SHMEM_MUTEX_LOCK(fl->lock);
     if (NULL == fl->head) {
         ret = shmem_free_list_more(fl);
         if (0 != ret) goto done;
@@ -63,7 +66,7 @@ shmem_free_list_alloc(shmem_free_list_t *fl)
     fl->head = item->next;
 
  done:
-    shmem_spinlock_unlock(&fl->lock);
+    SHMEM_MUTEX_UNLOCK(fl->lock);
 
     return item;
 }
@@ -75,10 +78,10 @@ shmem_free_list_free(shmem_free_list_t *fl, void *data)
 {
     shmem_free_list_item_t *item = (shmem_free_list_item_t*) data;
     
-    shmem_spinlock_lock(&fl->lock);
+    SHMEM_MUTEX_LOCK(fl->lock);
     item->next = fl->head;
     fl->head = item;
-    shmem_spinlock_unlock(&fl->lock);
+    SHMEM_MUTEX_UNLOCK(fl->lock);
 }
 
 #endif
