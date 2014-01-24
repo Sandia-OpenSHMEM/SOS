@@ -13,6 +13,7 @@
 #ifndef SHMEM_SYNCHRONIZATION_H
 #define SHMEM_SYNCHRONIZATION_H
 
+#include "shmem_atomic.h"
 #include "shmem_comm.h"
 
 

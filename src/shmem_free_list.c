@@ -28,7 +28,7 @@ shmem_free_list_init(unsigned int element_size,
 
     fl->element_size = element_size;
     fl->init_fn = init_fn;
-    shmem_spinlock_init(&fl->lock);
+    SHMEM_MUTEX_INIT(fl->lock);
     ret = shmem_free_list_more(fl);
     if (0 != ret) return NULL;
 
@@ -48,7 +48,7 @@ shmem_free_list_destroy(shmem_free_list_t *fl)
         alloc = next;
     }
 
-    shmem_spinlock_fini(&fl->lock);
+    SHMEM_MUTEX_DESTROY(fl->lock);
 }
 
 
