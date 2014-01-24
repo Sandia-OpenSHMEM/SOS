@@ -134,7 +134,13 @@ shmem_internal_symmetric_fini(void)
 void*
 shmem_internal_shmalloc(size_t size)
 {
-    return dlmalloc(size);
+    void *ret;
+
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
+    ret = dlmalloc(size);
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
+
+    return ret;
 }
 
 
@@ -149,7 +155,9 @@ shmalloc(size_t size)
     }
 #endif
 
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     ret = dlmalloc(size);
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
 
     shmem_internal_barrier_all();
 
@@ -166,7 +174,9 @@ shfree(void *ptr)
     }
 #endif
 
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     dlfree(ptr);
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
 
     shmem_internal_barrier_all();
 }
@@ -183,7 +193,9 @@ shrealloc(void *ptr, size_t size)
     }
 #endif
 
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     ret = dlrealloc(ptr, size);
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
 
     shmem_internal_barrier_all();
 
@@ -202,7 +214,9 @@ shmemalign(size_t alignment, size_t size)
     }
 #endif
 
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     ret = dlmemalign(alignment, size);
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
 
     shmem_internal_barrier_all();
 

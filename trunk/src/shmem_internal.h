@@ -22,7 +22,7 @@ extern int shmem_internal_num_pes;
 
 extern int shmem_internal_initialized;
 extern int shmem_internal_finalized;
-
+extern int shmem_internal_thread_level;
 
 #define RAISE_ERROR(ret)                                                \
     do {                                                                \
@@ -39,9 +39,73 @@ extern int shmem_internal_finalized;
         abort();                                                        \
     } while (0)
 
-        
 
-void shmem_internal_init(void);
+#ifdef ENABLE_THREADS
+
+#   ifdef ENABLE_PTHREAD_MUTEX
+#include <pthread.h>
+typedef pthread_mutex_t shmem_internal_mutex_t;
+
+#   define SHMEM_MUTEX_INIT(_mutex)                                     \
+    do {                                                                \
+        if (shmem_internal_thread_level > SHMEM_THREAD_SINGLE)          \
+            pthread_mutex_init(&_mutex, NULL); \
+    } while (0)
+#   define SHMEM_MUTEX_DESTROY(_mutex)                                  \
+    do {                                                                \
+        if (shmem_internal_thread_level > SHMEM_THREAD_SINGLE)          \
+            pthread_mutex_destroy(&_mutex);                             \
+    } while (0)
+#   define SHMEM_MUTEX_LOCK(_mutex)                                     \
+    do {                                                                \
+        if (shmem_internal_thread_level > SHMEM_THREAD_SINGLE)          \
+            pthread_mutex_lock(&_mutex);                                \
+    } while (0)
+#   define SHMEM_MUTEX_UNLOCK(_mutex)                                   \
+    do {                                                                \
+        if (shmem_internal_thread_level > SHMEM_THREAD_SINGLE)          \
+            pthread_mutex_unlock(&_mutex);                              \
+    } while (0)
+
+#   else  /* !ENABLE_PTHREAD_MUTEX */
+#include <shmem_atomic.h>
+typedef shmem_spinlock_t shmem_internal_mutex_t;
+
+#   define SHMEM_MUTEX_INIT(_mutex)                                     \
+    do {                                                                \
+        if (shmem_internal_thread_level > SHMEM_THREAD_SINGLE)          \
+            shmem_spinlock_init(&_mutex);                               \
+    } while (0)
+#   define SHMEM_MUTEX_DESTROY(_mutex)                                  \
+    do {                                                                \
+        if (shmem_internal_thread_level > SHMEM_THREAD_SINGLE)          \
+            shmem_spinlock_fini(&_mutex);                               \
+    } while (0)
+#   define SHMEM_MUTEX_LOCK(_mutex)                                     \
+    do {                                                                \
+        if (shmem_internal_thread_level > SHMEM_THREAD_SINGLE)          \
+            shmem_spinlock_lock(&_mutex);                               \
+    } while (0)
+#   define SHMEM_MUTEX_UNLOCK(_mutex)                                   \
+    do {                                                                \
+        if (shmem_internal_thread_level > SHMEM_THREAD_SINGLE)          \
+            shmem_spinlock_unlock(&_mutex);                             \
+    } while (0)
+
+#   endif /* ENABLE_PTHREAD_MUTEX */
+
+extern shmem_internal_mutex_t shmem_internal_mutex_alloc;
+
+#else
+#   define SHMEM_MUTEX_INIT(_mutex)
+#   define SHMEM_MUTEX_DESTROY(_mutex)
+#   define SHMEM_MUTEX_LOCK(_mutex)
+#   define SHMEM_MUTEX_UNLOCK(_mutex)
+
+#endif /* ENABLE_THREADS */
+
+void shmem_internal_init(int tl_requested, int *tl_provided);
+void shmem_internal_finalize(void);
 char *shmem_internal_nodename(void);
 
 int shmem_internal_symmetric_init(size_t requested_length, int use_malloc);

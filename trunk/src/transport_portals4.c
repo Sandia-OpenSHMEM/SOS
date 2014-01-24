@@ -117,6 +117,13 @@ static ptl_pt_index_t data_pt = PTL_PT_ANY;
 static ptl_pt_index_t heap_pt = PTL_PT_ANY;
 #endif
 
+#ifdef ENABLE_THREADS
+shmem_internal_mutex_t shmem_internal_mutex_ptl4_pt_state;
+shmem_internal_mutex_t shmem_internal_mutex_ptl4_frag;
+shmem_internal_mutex_t shmem_internal_mutex_ptl4_event_slots;
+shmem_internal_mutex_t shmem_internal_mutex_ptl4_nb_fence;
+#endif
+
 static
 void
 init_bounce_buffer(shmem_free_list_item_t *item)
@@ -239,6 +246,12 @@ shmem_transport_portals4_init(long eager_size)
         fprintf(stderr, "ERROR: PtlInit failed: %d\n", ret);
         return 1;
     }
+
+    /* Initialize Mutexes */
+    SHMEM_MUTEX_INIT(shmem_internal_mutex_ptl4_pt_state);
+    SHMEM_MUTEX_INIT(shmem_internal_mutex_ptl4_frag);
+    SHMEM_MUTEX_INIT(shmem_internal_mutex_ptl4_event_slots);
+    SHMEM_MUTEX_INIT(shmem_internal_mutex_ptl4_nb_fence);
 
     shmem_transport_portals4_bounce_buffer_size = eager_size;
     shmem_transport_portals4_bounce_buffers = 
@@ -761,6 +774,11 @@ shmem_transport_portals4_fini(void)
 
     cleanup_handles();
     PtlFini();
+
+    SHMEM_MUTEX_DESTROY(shmem_internal_mutex_ptl4_pt_state);
+    SHMEM_MUTEX_DESTROY(shmem_internal_mutex_ptl4_frag);
+    SHMEM_MUTEX_DESTROY(shmem_internal_mutex_ptl4_event_slots);
+    SHMEM_MUTEX_DESTROY(shmem_internal_mutex_ptl4_nb_fence);
 
     return 0;
 }

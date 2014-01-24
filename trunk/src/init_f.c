@@ -12,6 +12,7 @@
 
 #include "config.h"
 
+#include "shmem.h"
 #include "shmem_internal.h"
 
 
@@ -20,5 +21,11 @@ void FC_START_PES(fortran_integer_t *npes);
 void
 FC_START_PES(fortran_integer_t *npes)
 {
-    shmem_internal_init();
+    int tl_provided;
+
+    if (shmem_internal_initialized) {
+        RAISE_ERROR_STR("attempt to reinitialize library");
+    }
+
+    shmem_internal_init(SHMEM_THREAD_SINGLE, &tl_provided);
 }

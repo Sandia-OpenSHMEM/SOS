@@ -44,6 +44,12 @@ int shmem_internal_num_pes = -1;
 int shmem_internal_initialized = 0;
 int shmem_internal_finalized = 0;
 
+int shmem_internal_thread_level;
+
+#ifdef ENABLE_THREADS
+shmem_internal_mutex_t shmem_internal_mutex_alloc;
+#endif
+
 #ifdef USE_ON_NODE_COMMS
 char *shmem_internal_location_array = NULL;
 #endif
@@ -135,7 +141,7 @@ shmem_internal_shutdown(void)
 
 
 void
-shmem_internal_init()
+shmem_internal_init(int tl_requested, int *tl_provided)
 {
     int ret;
     int radix = -1, crossover = -1;
@@ -264,6 +270,16 @@ shmem_internal_init()
     atexit(shmem_internal_shutdown);
     shmem_internal_initialized = 1;
 
+    /* set up threading */
+    SHMEM_MUTEX_INIT(shmem_internal_mutex_alloc);
+#ifdef ENABLE_THREADS
+    shmem_internal_thread_level = tl_requested;
+    *tl_provided = tl_requested;
+#else
+    shmem_internal_thread_level = SHMEM_THREAD_SINGLE;
+    *tl_provided = SHMEM_THREAD_SINGLE;
+#endif
+
     /* get hostname for shmem_getnodename */
     if (gethostname(shmem_internal_my_hostname,
                     sizeof(shmem_internal_my_hostname))) {
@@ -344,4 +360,10 @@ char *
 shmem_internal_nodename(void)
 {
     return shmem_internal_my_hostname;
+}
+
+
+void shmem_internal_finalize(void)
+{
+    SHMEM_MUTEX_DESTROY(shmem_internal_mutex_alloc);
 }
