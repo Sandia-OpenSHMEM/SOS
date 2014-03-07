@@ -600,7 +600,8 @@ shmem_transport_portals4_put_wait(long *completion)
 
 static inline
 void
-shmem_transport_portals4_get(void *target, const void *source, size_t len, int pe)
+shmem_transport_portals4_get_internal(void *target, const void *source, size_t len, int pe,
+                             ptl_pt_index_t data_pt, ptl_pt_index_t heap_pt)
 {
     int ret;
     ptl_process_t peer;
@@ -610,7 +611,11 @@ shmem_transport_portals4_get(void *target, const void *source, size_t len, int p
     void *base;
 
     peer.rank = pe;
-    PORTALS4_GET_REMOTE_ACCESS(source, pt, offset);
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    PORTALS4_GET_REMOTE_ACCESS_ONEPT(source, pt, offset, data_pt);
+#else
+    PORTALS4_GET_REMOTE_ACCESS_TWOPT(source, pt, offset, data_pt, heap_pt);
+#endif
 
     shmem_transport_portals4_get_md(target, shmem_transport_portals4_get_md_h,
                                     &md_h, &base);
@@ -625,6 +630,33 @@ shmem_transport_portals4_get(void *target, const void *source, size_t len, int p
                  0);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
     shmem_transport_portals4_pending_get_counter++;
+}
+
+
+static inline
+void shmem_transport_portals4_get(void *target, const void *source, size_t len, int pe)
+{
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    shmem_transport_portals4_get_internal(target, source, len, pe,
+                                          shmem_transport_portals4_pt, -1);
+#else
+    shmem_transport_portals4_get_internal(target, source, len, pe,
+                                          shmem_transport_portals4_data_pt,
+                                          shmem_transport_portals4_heap_pt);
+#endif
+}
+
+
+static inline
+void shmem_transport_portals4_get_ct(shmem_transport_portals4_ct_t *ct, void
+                                     *target, const void *source, size_t len, int pe)
+{
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    shmem_transport_portals4_get_internal(target, source, len, pe, ct->shr_pt, -1);
+#else
+    shmem_transport_portals4_get_internal(target, source, len, pe,
+                                          ct->data_pt, ct->heap_pt);
+#endif
 }
 
 

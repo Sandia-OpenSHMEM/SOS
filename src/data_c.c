@@ -143,6 +143,9 @@
 #pragma weak shmem_getmem = pshmem_getmem
 #define shmem_getmem pshmem_getmem
 
+#pragma weak shmem_getmem_ct = pshmem_getmem_ct
+#define shmem_getmem_ct pshmem_getmem_ct
+
 #pragma weak shmem_float_iput = pshmem_float_iput
 #define shmem_float_iput pshmem_float_iput
 
@@ -833,6 +836,20 @@ shmem_getmem(void *target, const void *source, size_t len, int pe)
 #endif
 
     shmem_internal_get(target, source, len, pe);
+    shmem_internal_get_wait();
+}
+
+
+void
+shmem_getmem_ct(shmem_ct_t ct, void *target, const void *source, size_t len, int pe)
+{
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    shmem_internal_get_ct(ct, target, source, len, pe);
     shmem_internal_get_wait();
 }
 
