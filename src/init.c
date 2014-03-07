@@ -276,8 +276,8 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     shmem_internal_thread_level = tl_requested;
     *tl_provided = tl_requested;
 #else
-    shmem_internal_thread_level = SHMEM_THREAD_SINGLE;
-    *tl_provided = SHMEM_THREAD_SINGLE;
+    shmem_internal_thread_level = SHMEMX_THREAD_SINGLE;
+    *tl_provided = SHMEMX_THREAD_SINGLE;
 #endif
 
     /* get hostname for shmem_getnodename */

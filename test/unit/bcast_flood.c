@@ -102,13 +102,13 @@ main(int argc, char **argv)
 
 	for(time_taken = 0.0, ps = i = 0; i < loops; i++) {
 
-	    start_time = shmem_wtime();
+	    start_time = shmemx_wtime();
 
 	    shmem_broadcast32(target, source, elements, 0, 0, 0, npes, &pSync[ps]);
 
         if (Serialize) shmem_barrier_all();
 
-	    time_taken += (shmem_wtime() - start_time);
+	    time_taken += (shmemx_wtime() - start_time);
 
         if (ps_cnt > 1 ) {
 	        ps += _SHMEM_BCAST_SYNC_SIZE;

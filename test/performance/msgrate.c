@@ -79,7 +79,7 @@ cache_invalidate(void)
 static inline double
 timer(void)
 {
-    return shmem_wtime();
+    return shmemx_wtime();
 }
 
 
