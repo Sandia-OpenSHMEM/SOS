@@ -42,11 +42,11 @@ int main( int argc, char *argv[])
     shmem_barrier_all();
 
     neighbor = (my_pe + 1) % npes;
-    start_time = shmem_wtime();
+    start_time = shmemx_wtime();
     for(j=0,elapsed=0.0; j < loops; j++) {
-        start_time = shmem_wtime();
+        start_time = shmemx_wtime();
         lval = shmem_long_finc( (void*)&data[1], neighbor );
-        elapsed += shmem_wtime() - start_time;
+        elapsed += shmemx_wtime() - start_time;
         if (lval != (long) j) {
             fprintf(stderr,"[%d] Test: FAIL previous val %ld != %d Exit.\n",
                     my_pe, lval, j);

@@ -143,8 +143,8 @@
 #pragma weak shmem_getmem = pshmem_getmem
 #define shmem_getmem pshmem_getmem
 
-#pragma weak shmem_getmem_ct = pshmem_getmem_ct
-#define shmem_getmem_ct pshmem_getmem_ct
+#pragma weak shmemx_getmem_ct = pshmemx_getmem_ct
+#define shmemx_getmem_ct pshmemx_getmem_ct
 
 #pragma weak shmem_float_iput = pshmem_float_iput
 #define shmem_float_iput pshmem_float_iput
@@ -218,23 +218,23 @@
 #pragma weak shmem_complexd_get = pshmem_complexd_get
 #define shmem_complexd_get pshmem_complexd_get
 
-#pragma weak shmem_putmem_ct = pshmem_putmem_ct
-#define shmem_putmem_ct pshmem_putmem_ct
+#pragma weak shmemx_putmem_ct = pshmemx_putmem_ct
+#define shmemx_putmem_ct pshmemx_putmem_ct
 
-#pragma weak shmem_ct_create = pshmem_ct_create
-#define shmem_ct_create pshmem_ct_create
+#pragma weak shmemx_ct_create = pshmem_ct_create
+#define shmemx_ct_create pshmem_ct_create
 
-#pragma weak shmem_ct_free = pshmem_ct_free
-#define shmem_ct_free pshmem_ct_free
+#pragma weak shmemx_ct_free = pshmem_ct_free
+#define shmemx_ct_free pshmem_ct_free
 
-#pragma weak shmem_ct_get = pshmem_ct_get
-#define shmem_ct_get pshmem_ct_get
+#pragma weak shmemx_ct_get = pshmem_ct_get
+#define shmemx_ct_get pshmem_ct_get
 
-#pragma weak shmem_ct_set = pshmem_ct_set
-#define shmem_ct_set pshmem_ct_set
+#pragma weak shmemx_ct_set = pshmem_ct_set
+#define shmemx_ct_set pshmem_ct_set
 
-#pragma weak shmem_ct_wait = pshmem_ct_wait
-#define shmem_ct_wait pshmem_ct_wait
+#pragma weak shmemx_ct_wait = pshmem_ct_wait
+#define shmemx_ct_wait pshmem_ct_wait
 
 #endif /* ENABLE_PROFILING */
 
@@ -841,7 +841,7 @@ shmem_getmem(void *target, const void *source, size_t len, int pe)
 
 
 void
-shmem_getmem_ct(shmem_ct_t ct, void *target, const void *source, size_t len, int pe)
+shmemx_getmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe)
 {
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_internal_initialized) {
@@ -1279,7 +1279,7 @@ void shmem_complexd_put(double complex * target,
 }
 
 
-void shmem_putmem_ct(shmem_ct_t ct, void *target, const void *source,
+void shmemx_putmem_ct(shmemx_ct_t ct, void *target, const void *source,
                      size_t len, int pe)
 {
     long completion = 0;
@@ -1295,7 +1295,7 @@ void shmem_putmem_ct(shmem_ct_t ct, void *target, const void *source,
 }
 
 
-void shmem_ct_create(shmem_ct_t *ct)
+void shmemx_ct_create(shmemx_ct_t *ct)
 {
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_internal_initialized) {
@@ -1307,7 +1307,7 @@ void shmem_ct_create(shmem_ct_t *ct)
 }
 
 
-void shmem_ct_free(shmem_ct_t *ct)
+void shmemx_ct_free(shmemx_ct_t *ct)
 {
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_internal_initialized) {
@@ -1319,7 +1319,7 @@ void shmem_ct_free(shmem_ct_t *ct)
 }
 
 
-long shmem_ct_get(shmem_ct_t ct)
+long shmemx_ct_get(shmemx_ct_t ct)
 {
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_internal_initialized) {
@@ -1331,7 +1331,7 @@ long shmem_ct_get(shmem_ct_t ct)
 }
 
 
-void shmem_ct_set(shmem_ct_t ct, long value)
+void shmemx_ct_set(shmemx_ct_t ct, long value)
 {
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_internal_initialized) {
@@ -1343,7 +1343,7 @@ void shmem_ct_set(shmem_ct_t ct, long value)
 }
 
 
-void shmem_ct_wait(shmem_ct_t ct, long wait_for)
+void shmemx_ct_wait(shmemx_ct_t ct, long wait_for)
 {
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_internal_initialized) {

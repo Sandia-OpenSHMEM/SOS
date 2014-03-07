@@ -34,8 +34,8 @@
 #pragma weak shmem_my_pe = pshmem_my_pe
 #define shmem_my_pe pshmem_my_pe
 
-#pragma weak shmem_wtime = pshmem_wtime
-#define shmem_wtime pshmem_wtime
+#pragma weak shmemx_wtime = pshmemx_wtime
+#define shmemx_wtime pshmemx_wtime
 
 #endif /* ENABLE_PROFILING */
 
@@ -93,7 +93,7 @@ shmem_my_pe(void)
 
 
 double
-shmem_wtime(void)
+shmemx_wtime(void)
 {
     double wtime;
     struct timeval tv;

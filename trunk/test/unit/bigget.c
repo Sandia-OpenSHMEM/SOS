@@ -155,11 +155,11 @@ main(int argc, char **argv)
 
     for(i=0; i < loops; i++) {
 
-		start_time = shmem_wtime();
+		start_time = shmemx_wtime();
 
 		shmem_int_get( Target, Source, elements, target_pe );
 
-		time_taken += shmem_wtime() - start_time;
+		time_taken += shmemx_wtime() - start_time;
 
 		if (me==0) {
 		  if ( Track && i > 0 && ((i % 200) == 0))

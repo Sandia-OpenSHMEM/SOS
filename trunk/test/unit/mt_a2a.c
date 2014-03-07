@@ -88,12 +88,12 @@ int main(int argc, char **argv) {
     pthread_t threads[T];
     int       t_arg[T];
 
-    shmem_init(SHMEM_THREAD_MULTIPLE, &tl);
+    shmemx_init(SHMEMX_THREAD_MULTIPLE, &tl);
 
     /* If OpenSHMEM doesn't support multithreading, exit gracefully */
-    if (SHMEM_THREAD_MULTIPLE != tl) {
+    if (SHMEMX_THREAD_MULTIPLE != tl) {
         printf("Warning: Exiting because threading is disabled, tested nothing\n");
-        shmem_finalize();
+        shmemx_finalize();
         return 0;
     }
 
@@ -124,6 +124,6 @@ int main(int argc, char **argv) {
         else printf("Success\n");
     }
 
-    shmem_finalize();
+    shmemx_finalize();
     return (errors == 0) ? 0 : 1;
 }

@@ -23,10 +23,10 @@
 #define SHMEM_CMP_LT 5
 #define SHMEM_CMP_LE 6
 
-#define SHMEM_THREAD_SINGLE     0
-#define SHMEM_THREAD_FUNNELED   1
-#define SHMEM_THREAD_SERIALIZED 2
-#define SHMEM_THREAD_MULTIPLE   3
+#define SHMEMX_THREAD_SINGLE     0
+#define SHMEMX_THREAD_FUNNELED   1
+#define SHMEMX_THREAD_SERIALIZED 2
+#define SHMEMX_THREAD_MULTIPLE   3
 
 #define _SHMEM_BCAST_SYNC_SIZE @C_BCAST_SYNC_SIZE@
 #define _SHMEM_REDUCE_SYNC_SIZE @C_REDUCE_SYNC_SIZE@
@@ -38,8 +38,8 @@
 
 /* 8.1: Initialization Routines */
 void start_pes(int npes);
-void shmem_init(int tl_requested, int *tl_provided);
-void shmem_finalize(void);
+void shmemx_init(int tl_requested, int *tl_provided);
+void shmemx_finalize(void);
 
 /* 8.2: Query Routines */
 int _num_pes(void);
@@ -397,18 +397,18 @@ void shmem_udcflush(void) __attribute__ ((deprecated));
 void shmem_udcflush_line(void *target) __attribute__ ((deprecated));
 
  /* Portals extensions */
-double shmem_wtime(void);
-char* shmem_nodename(void);
+double shmemx_wtime(void);
+char* shmemx_nodename(void);
 
 /* Signalling puts */
-typedef char * shmem_ct_t;
+typedef char * shmemx_ct_t;
 
-void shmem_getmem_ct(shmem_ct_t ct, void *target, const void *source, size_t len, int pe);
-void shmem_putmem_ct(shmem_ct_t ct, void *target, const void *source, size_t len, int pe);
-void shmem_ct_create(shmem_ct_t *ct);
-void shmem_ct_free(shmem_ct_t *ct);
-long shmem_ct_get(shmem_ct_t ct);
-void shmem_ct_set(shmem_ct_t ct, long value);
-void shmem_ct_wait(shmem_ct_t ct, long wait_for);
+void shmemx_getmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe);
+void shmemx_putmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe);
+void shmemx_ct_create(shmemx_ct_t *ct);
+void shmemx_ct_free(shmemx_ct_t *ct);
+long shmemx_ct_get(shmemx_ct_t ct);
+void shmemx_ct_set(shmemx_ct_t ct, long value);
+void shmemx_ct_wait(shmemx_ct_t ct, long wait_for);
 
 #endif /* PORTALS_SHMEM_H */

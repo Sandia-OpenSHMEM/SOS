@@ -171,13 +171,13 @@ doit(int len, double *latency, double *bandwidth)
 
     if (my_node == 0)   {
 
-        start = shmem_wtime();
+        start = shmemx_wtime();
 
         shmem_putmem( buf, buf, len, 1 );
 
         shmem_wait( (long *)&buf[len-1], (long)0 );
 
-        end = shmem_wtime();
+        end = shmemx_wtime();
 
         *latency= (end - start) * 1000000.0 / 2.0;
 

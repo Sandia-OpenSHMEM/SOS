@@ -27,5 +27,5 @@ FC_START_PES(fortran_integer_t *npes)
         RAISE_ERROR_STR("attempt to reinitialize library");
     }
 
-    shmem_internal_init(SHMEM_THREAD_SINGLE, &tl_provided);
+    shmem_internal_init(SHMEMX_THREAD_SINGLE, &tl_provided);
 }

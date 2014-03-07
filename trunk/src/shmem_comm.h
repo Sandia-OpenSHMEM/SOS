@@ -18,7 +18,7 @@
 #include <assert.h>
 #include <sys/param.h>
 
-#include "shmem.h" /* shmem_ct_t */
+#include "shmem.h" /* shmemx_ct_t */
 
 extern void *shmem_internal_heap_base;
 extern long shmem_internal_heap_length;
@@ -105,7 +105,7 @@ shmem_internal_put_nb(void *target, const void *source, size_t len, int pe,
 
 static inline
 void
-shmem_internal_put_ct_nb(shmem_ct_t ct, void *target, const void *source, size_t len, int pe,
+shmem_internal_put_ct_nb(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe,
                       long *completion)
 {
     /* TODO: add shortcut for on-node-comms */
@@ -160,7 +160,7 @@ shmem_internal_get(void *target, const void *source, size_t len, int pe)
 
 static inline
 void
-shmem_internal_get_ct(shmem_ct_t ct, void *target, const void *source, size_t len, int pe)
+shmem_internal_get_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe)
 {
     /* TODO: add shortcut for on-node-comms */
 #if USE_PORTALS4
@@ -241,7 +241,7 @@ shmem_internal_fetch_atomic(void *target, void *source, void *dest, size_t len,
 
 
 static inline
-void shmem_internal_ct_create(shmem_ct_t *ct)
+void shmem_internal_ct_create(shmemx_ct_t *ct)
 {
 #if USE_PORTALS4
     shmem_transport_portals4_ct_create((shmem_transport_portals4_ct_t **) ct);
@@ -252,7 +252,7 @@ void shmem_internal_ct_create(shmem_ct_t *ct)
 
 
 static inline
-void shmem_internal_ct_free(shmem_ct_t *ct)
+void shmem_internal_ct_free(shmemx_ct_t *ct)
 {
 #if USE_PORTALS4
     shmem_transport_portals4_ct_free((shmem_transport_portals4_ct_t **) ct);
@@ -263,7 +263,7 @@ void shmem_internal_ct_free(shmem_ct_t *ct)
 
 
 static inline
-long shmem_internal_ct_get(shmem_ct_t ct)
+long shmem_internal_ct_get(shmemx_ct_t ct)
 {
 #if USE_PORTALS4
     return shmem_transport_portals4_ct_get((shmem_transport_portals4_ct_t *) ct);
@@ -274,7 +274,7 @@ long shmem_internal_ct_get(shmem_ct_t ct)
 
 
 static inline
-void shmem_internal_ct_set(shmem_ct_t ct, long value)
+void shmem_internal_ct_set(shmemx_ct_t ct, long value)
 {
 #if USE_PORTALS4
     shmem_transport_portals4_ct_set((shmem_transport_portals4_ct_t *) ct, value);
@@ -285,7 +285,7 @@ void shmem_internal_ct_set(shmem_ct_t ct, long value)
 
 
 static inline
-void shmem_internal_ct_wait(shmem_ct_t ct, long wait_for)
+void shmem_internal_ct_wait(shmemx_ct_t ct, long wait_for)
 {
 #if USE_PORTALS4
     shmem_transport_portals4_ct_wait((shmem_transport_portals4_ct_t *) ct, wait_for);
