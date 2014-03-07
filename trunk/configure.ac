@@ -73,12 +73,12 @@ AC_DEFINE_UNQUOTED([WANT_TOTAL_DATA_ORDERING], [$ordering], [0 if never check fo
 AC_MSG_CHECKING([For total data ordering behavior])
 AC_MSG_RESULT([$msg])
 
-AC_ARG_ENABLE([enable-threads],
+AC_ARG_ENABLE([threads],
     [AC_HELP_STRING([--enable-threads],
                     [Enable threading support (default:disabled)])])
 AS_IF([test "$enable_threads" = "yes"], [AC_DEFINE([ENABLE_THREADS], [1], [Enable threads])])
 
-AC_ARG_ENABLE([enable-pthread-mutexes],
+AC_ARG_ENABLE([pthread-mutexes],
     [AC_HELP_STRING([--enable-pthread-mutexes],
                     [Use pthread mutexes to support threading (used in conjunction with --enable-threads) (default:disabled)])])
 AS_IF([test "$enable_pthread_mutexes" = "yes"], [AC_DEFINE([ENABLE_PTHREAD_MUTEX], [1], [Enable pthread mutexes])])
