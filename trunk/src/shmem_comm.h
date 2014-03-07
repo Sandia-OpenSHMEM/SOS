@@ -160,6 +160,20 @@ shmem_internal_get(void *target, const void *source, size_t len, int pe)
 
 static inline
 void
+shmem_internal_get_ct(shmem_ct_t ct, void *target, const void *source, size_t len, int pe)
+{
+    /* TODO: add shortcut for on-node-comms */
+#if USE_PORTALS4
+    shmem_transport_portals4_get_ct((shmem_transport_portals4_ct_t *) ct,
+                                    target, source, len, pe);
+#else
+    RAISE_ERROR_STR("No path to peer");
+#endif
+}
+
+
+static inline
+void
 shmem_internal_get_wait(void)
 {
 #if USE_PORTALS4

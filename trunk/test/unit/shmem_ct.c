@@ -39,15 +39,15 @@
 #include <stdlib.h>
 #include <shmem.h>
 
-int dest;
+int data;
 
 int main(int argc, char **argv) {
     int me, npes, i;
-    int src, ct_val;
+    int mine, ct_val;
     shmem_ct_t ct;
 
     start_pes(0);
-    me = src = _my_pe();
+    me = mine = _my_pe();
     npes = _num_pes();
 
     shmem_ct_create(&ct);
@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
 
     /* TEST 1: Everyone puts to rank 0 */
     shmem_barrier_all();
-    shmem_putmem_ct(ct, &dest, &src, sizeof(int), 0);
+    shmem_putmem_ct(ct, &data, &mine, sizeof(int), 0);
 
     if (me == 0) {
         shmem_ct_wait(ct, npes);
@@ -75,11 +75,34 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    /* TEST 1.5: Everyone gets from rank 0 */
+    data = -1;
+    shmem_barrier_all();
+    shmem_getmem_ct(ct, &mine, &data, sizeof(int), 0);
+
+    if (me == 0) {
+        shmem_ct_wait(ct, npes);
+    }
+    shmem_barrier_all();
+
+    if (mine != -1) {
+        printf("[%3d] Error: Getmem_ct value read was incorrect (%d)\n", me, mine);
+        return 1;
+    }
+
+    /* Reset the counter */
+    shmem_ct_set(ct, 0);
+    ct_val = shmem_ct_get(ct);
+    if (ct_val != 0) {
+        printf("[%3d] Error: Reset value of ct was nonzero (%d)\n", me, ct_val);
+        return 1;
+    }
+
     /* TEST 2: Everyone puts to every other rank, but not themselves */
     shmem_barrier_all();
 
     for (i = 1; i < npes; i++)
-        shmem_putmem_ct(ct, &dest, &src, sizeof(int), (me + i) % npes);
+        shmem_putmem_ct(ct, &data, &mine, sizeof(int), (me + i) % npes);
 
     shmem_ct_wait(ct, npes-1);
 
