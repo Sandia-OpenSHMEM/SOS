@@ -296,13 +296,13 @@ sum_to_all(int me, int npes)
 
   if(me == 0) {
     for (i = 0; i < N; i++) {
-	  if(dst0[i] != (npes * (npes-1)/2)) ok[0] = 1;
-	  if(dst1[i] != (npes * (npes-1)/2)) ok[1] = 1;
-	  if(dst2[i] != (npes * (npes-1)/2)) ok[2] = 1;
-	  if(dst3[i] != (npes * (npes-1)/2)) ok[3] = 1;
-	  if(dst4[i] != (npes * (npes-1)/2)) ok[4] = 1;
-	  if(dst5[i] != (npes * (npes-1)/2)) ok[5] = 1;
-	  if(dst6[i] != (npes * (npes-1)/2)) ok[6] = 1;
+	  if(dst0[i] != (short) (npes * (npes-1)/2)) ok[0] = 1;
+	  if(dst1[i] != (int) (npes * (npes-1)/2)) ok[1] = 1;
+	  if(dst2[i] != (long) (npes * (npes-1)/2)) ok[2] = 1;
+	  if(dst3[i] != (float) (npes * (npes-1)/2)) ok[3] = 1;
+	  if(dst4[i] != (double) (npes * (npes-1)/2)) ok[4] = 1;
+	  if(dst5[i] != (long double) (npes * (npes-1)/2)) ok[5] = 1;
+	  if(dst6[i] != (long long) (npes * (npes-1)/2)) ok[6] = 1;
     }
     if(ok[0]==1){
       printf("Reduction operation shmem_short_sum_to_all: Failed\n");
