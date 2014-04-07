@@ -1,19 +1,19 @@
 /*
  * adaptation of example from SGI man page for shmem_iput.
- * Enhanced to support 2..21 PEs.
+ * Enhanced to not limit PE count.
  */
 
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include <shmem.h>
 
-#define MAX_PE 256
 #define WRDS 5
 
 short source[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 static short target[10];
-static short results[MAX_PE*WRDS];
+static short *results;
 
 int
 main(int argc, char **argv)
@@ -23,17 +23,16 @@ main(int argc, char **argv)
     start_pes(0);
     me = _my_pe();
     nProcs = _num_pes();
-    if (nProcs > MAX_PE) {
-        if (me == 0)
-            printf("%s ERR: Too many PE, Max @ %d\n",argv[0], MAX_PE);
-        return(1);
-    }
 
     if (me == 0) {
-        /* put 5 words into target on PE's [1 to (nProcs-1)] */
+        /* put words into target on PE's [1 to (nProcs-1)] */
         for(j=1; j < nProcs; j++)
             shmem_short_iput(target, source, 1, 2, WRDS, j);
     }
+
+    results = (short*)shmalloc(nProcs * WRDS * sizeof(short));
+    assert(results);
+    memset((void*)results, 0, (nProcs * WRDS * sizeof(short)));
 
     shmem_barrier_all(); /* sync sender and receiver */
 
@@ -89,6 +88,7 @@ main(int argc, char **argv)
 #endif
 
     shmem_barrier_all(); /* sync before exiting */
+    shfree(results);
 
     return rc;
 }
