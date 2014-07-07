@@ -96,5 +96,7 @@ main()
     printf("Number of PEs must be > 1 to test barrier, test skipped\n");
 
   }  
+
+  shmemx_finalize();
   return 0;
 }
