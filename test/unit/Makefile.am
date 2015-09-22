@@ -3,7 +3,7 @@
 # Copyright 2011 Sandia Corporation. Under the terms of Contract
 # DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
 # retains certain rights in this software.
-# 
+#
 # This file is part of the Portals SHMEM software package. For license
 # information, see the LICENSE file in the top level directory of the
 # distribution.
@@ -15,6 +15,7 @@ check_PROGRAMS = $(TESTS)
 
 TESTS = \
 	hello \
+	micro_unit_shmem \
 	circular_shift \
 	accessible_ping \
 	max_reduction \
@@ -77,6 +78,9 @@ hello_LDADD = $(top_builddir)/src/libsma.la
 
 hello_f_SOURCES = hello_f.f90
 hello_f_LDADD = $(top_builddir)/src/libsma.la
+
+micro_unit_shmem_SOURCES = micro_unit_shmem.c
+micro_unit_shmem_LDADD = $(top_builddir)/src/libsma.la
 
 circular_shift_SOURCES = circular_shift.c
 circular_shift_LDADD = $(top_builddir)/src/libsma.la
