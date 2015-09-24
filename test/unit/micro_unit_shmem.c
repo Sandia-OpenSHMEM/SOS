@@ -25,6 +25,10 @@
  * SOFTWARE.
  */
 
+/*
+ *for back to back operation testing: independent buffers for each operation
+ *as well as alternating PE waiting
+ * */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,14 +40,14 @@
 #include <ctype.h>
 
 typedef enum {
-	NUM_WRITE = 5,
-	NUM_READ =  8,
+	NUM_WRITE = 8,
+	NUM_READ =  5,
 	NUM_SYNC = 3
 } max_ops;
 
 int target[NUM_WRITE];
 int source[NUM_READ];
-int psync[NUM_SYNC];
+int sync_pes[NUM_SYNC];
 
 int verbose;
 int debug;
@@ -90,14 +94,14 @@ static inline void putfence(int me, int iterations, int T)
 	int i;
 
 	if (me == 1)
-		pre_op_check("int_p", target[T], iterations, 1);
+		pre_op_check(__func__, target[T], iterations, 1);
 
 	if (me == 0) {
 		for (i = 1; i < iterations; i++) {
 			shmem_int_p(&target[T], i, 1);
 			shmem_fence();
+		}
 
-	}
 		shmem_int_p(&target[T], i, 1);
 
 	} else
@@ -105,7 +109,7 @@ static inline void putfence(int me, int iterations, int T)
 
 	if (verbose)
 		if (me == 0)
-			printf("SHMEM int_p finished\n");
+			printf("SHMEM %s finished\n", __func__);
 
 }
 
@@ -115,29 +119,25 @@ static inline void gettest(int me, int iterations, int T, int S, int P)
 
 	int i;
 
-	if (me == 0)
-		source[S] = iterations;
-	else
-		source[S] = 0;
-
-	target[T] = -1;
-
 	if (me == 1) {
-		pre_op_check("int_get", target[T], iterations, 1);
+		pre_op_check(__func__, target[T], iterations, 1);
+
+		shmem_int_p(&source[S], iterations, 0);
+		shmem_fence();
 
 		for (i = 0; i < iterations; i++)
 			target[T] = shmem_int_g(&source[S], 0);
 
-		shmem_int_p(&psync[P], i, 0);
+		shmem_int_p(&sync_pes[P], iterations, 0);
 
 		post_op_check("get", target[T], iterations, 1);
 
 	} else
-		wait(&psync[P], iterations, 0);
+		wait(&sync_pes[P], iterations, 0);
 
 	if (verbose) {
 		if (me == 0)
-			printf("SHMEM int_get finished\n");
+			printf("SHMEM %s finished\n", __func__);
 	}
 }
 
@@ -147,7 +147,7 @@ static inline void atomic_inc(int me, int iterations, int T)
 	int i;
 
 	if (me == 1)
-		pre_op_check("int_inc", target[T], iterations, 1);
+		pre_op_check(__func__, target[T], iterations, 1);
 
 	if (me == 0) {
 		for (i = 0; i < iterations; i++) {
@@ -164,7 +164,7 @@ static inline void atomic_inc(int me, int iterations, int T)
 
 	if (verbose) {
 		if (me == 1)
-			printf("SHMEM int_inc finished\n");
+			printf("SHMEM %s finished\n", __func__);
 	}
 }
 
@@ -174,7 +174,7 @@ static inline void atomic_add(int me, int iterations, int T)
 	int i;
 
 	if (me == 0)
-		pre_op_check("int_add", target[T], iterations, 0);
+		pre_op_check(__func__, target[T], iterations, 0);
 
 	if (me == 1) {
 		for (i = 0; i < iterations; i++) {
@@ -191,7 +191,7 @@ static inline void atomic_add(int me, int iterations, int T)
 
 	if (verbose) {
 		if (me == 1)
-			printf("SHMEM int_add finished\n");
+			printf("SHMEM %s finished\n", __func__);
 	}
 }
 
@@ -200,25 +200,25 @@ static inline void swaptest(int me, int iterations, int T, int S, int P)
 {
 
 	int i;
-	const int tswap = 5, sswap = 2, odd = 1, even = 0, is_even = 2;
+	const int tswap = 5, sswap = 2;
 	target[T] = tswap;
 	source[S] = sswap;
 
 	if (me == 0)
-		pre_op_check("int_swap", source[S], iterations, 0);
+		pre_op_check(__func__, source[S], iterations, 0);
 
 	if (me == 0) {
 		for (i = 0; i < iterations; i++)
 			source[S] = shmem_int_swap(&target[T], source[S], 1);
 
-		shmem_int_p(&psync[P], i, 1);
+		shmem_int_p(&sync_pes[P], i, 1);
 
 		if (debug)
 			printf("AFTER flag PE 0 value of source is %d"
 					" = 5?\n", source[S]);
 
-		if (((iterations % is_even == odd) && (source[S] != tswap)) ||
-			((iterations % is_even == even) &&
+		if (((iterations % 2 == 1) && (source[S] != tswap)) ||
+			((iterations % 2 == 0) &&
 			 (source[S] != sswap))) {
 			fprintf(stderr, "swap ERR: PE 0 source = %d\n",
 					source[S]);
@@ -226,10 +226,10 @@ static inline void swaptest(int me, int iterations, int T, int S, int P)
 		}
 
 	} else {
-		wait(&psync[P], iterations, 1);
+		wait(&sync_pes[P], iterations, 1);
 
-		if (((iterations % is_even == odd) && (target[T] != sswap)) ||
-			((iterations % is_even == even) &&
+		if (((iterations % 2 == 1) && (target[T] != sswap)) ||
+			((iterations % 2 == 0) &&
 			 (target[T] != tswap))) {
 			fprintf(stderr, "swap ERR: PE 0 target = %d \\n",
 					target[T]);
@@ -240,7 +240,7 @@ static inline void swaptest(int me, int iterations, int T, int S, int P)
 
 	if (verbose) {
 		if (me == 0)
-			printf("SHMEM int_swap finished\n");
+			printf("SHMEM %s finished\n", __func__);
 	}
 }
 
@@ -251,17 +251,17 @@ static inline void cswaptest(int me, int iterations, int T, int S, int P)
 	source[S] = -100;
 
 	if (me == 1) {
-		pre_op_check("int_cswap", source[S], iterations, 1);
+		pre_op_check(__func__, source[S], iterations, 1);
 
 		for (i = 0; i < iterations; i++)
 			source[S] = shmem_int_cswap(&(target[T]), i, (i+1), 0);
 
-		shmem_int_p(&psync[P], i, 0);
+		shmem_int_p(&sync_pes[P], i, 0);
 
 		post_op_check("cswap", source[S], (iterations-1), 1);
 
 	} else {
-		wait(&psync[P], iterations, 0);
+		wait(&sync_pes[P], iterations, 0);
 
 		if (target[T] != iterations) {
 			fprintf(stderr, "cswap ERR: PE 1 target = %d != %d\n",
@@ -272,7 +272,7 @@ static inline void cswaptest(int me, int iterations, int T, int S, int P)
 
 	if (verbose) {
 		if (me == 1)
-			printf("SHMEM int_cswap finished\n");
+			printf("SHMEM %s finished\n", __func__);
 	}
 }
 
@@ -282,7 +282,7 @@ static inline void fetchatomic_add(int me, int iterations, int T, int S)
 	int i;
 
 	if (me == 1)
-		pre_op_check("int_fadd", target[T], iterations, 1);
+		pre_op_check(__func__, target[T], iterations, 1);
 
 	if (me == 0) {
 		if (debug) {
@@ -303,7 +303,7 @@ static inline void fetchatomic_add(int me, int iterations, int T, int S)
 
 	if (verbose) {
 		if (me == 0)
-			printf("SHMEM int_fadd finished\n");
+			printf("SHMEM %s finished\n", __func__);
 	}
 }
 
@@ -313,7 +313,7 @@ static inline void fetchatomic_inc(int me, int iterations, int T, int S)
 	int i;
 
 	if (me == 0)
-		pre_op_check("int_finc", target[T], iterations, 0);
+		pre_op_check(__func__, target[T], iterations, 0);
 
 	if (me == 1) {
 		if (debug) {
@@ -340,6 +340,7 @@ static inline void fetchatomic_inc(int me, int iterations, int T, int S)
 int main(int argc, char **argv)
 {
 	int        me, nproc;
+	int	   c, all_ops = 1;
 	int        T = 0, S = 0, P = 0;
 	const int  DEFAULT_ITR = 7;
 	int	   iterations = DEFAULT_ITR;
@@ -349,35 +350,9 @@ int main(int argc, char **argv)
 	me = _my_pe();
 	nproc = _num_pes();
 
-	if (argc == 2) {
-		if (strncmp(argv[1], "v", 1) == 0) {
-			verbose = 1;
-		} else if ((strncmp(argv[1], "h", 1) == 0) ||
-				(strncmp(argv[1], "-h", 2) == 0)) {
-			if (me == 0) {
-				fprintf(stderr, "input options:\n 1) single"
-					" argument options: < v (verbose) | "
-					"number of interations >\n");
-				fprintf(stderr, " 2) two argument options:"
-					" must provide  <iterations> and "
-					"test choice <pf|gt|aa|ai|st|cs|fa|fi"
-				" + (v (for verbose) | vd (verbose debug))>\n");
-			}
-				return 0;
-
-		} else {
-			if (!isdigit(argv[1][0])) {
-				if (me == 0) {
-					fprintf(stderr, "single argument "
-						"error: options: < v (verbose) | "
-						"number of interations >\n");
-				}
-				return 0;
-			}
-			iterations = atoi(argv[1]);
-			assert(iterations > 0);
-		}
-	}
+	memset(target, -1, NUM_WRITE);
+	memset(source, -1, NUM_READ);
+	memset(sync_pes, -1, NUM_SYNC);
 
 	if (nproc != 2) {
 		if (me == 0) {
@@ -388,39 +363,61 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	if (argc == 3) {
-		if (strncmp(&argv[2][2], "v", 1) == 0)
+	while ((c = getopt(argc, argv, "i:vdpgaAscfFh")) != -1) {
+		switch (c) {
+		case 'i':
+			iterations = atoi(optarg);
+			assert(iterations > 0);
+			all_ops += 2;
+			break;
+		case 'v':
 			verbose = 1;
-
-		if (strncmp(&argv[2][3], "d", 1) == 0)
+			all_ops++;
+			break;
+		case 'd':
 			debug = 1;
-
-		if (strncmp(argv[2], "pf", 2) == 0) {
+			break;
+		case 'p':
 			putfence(me, iterations, T++);
-		}  else if (strncmp(argv[2], "gt", 2) == 0) {
+			break;
+		case 'g':
 			gettest(me, iterations, T++, S++, P++);
-		}  else if (strncmp(argv[2], "aa", 2) == 0) {
+			break;
+		case 'a':
 			atomic_add(me, iterations, T++);
-		}  else if (strncmp(argv[2], "ai", 2) == 0) {
+			break;
+		case 'A':
 			atomic_inc(me, iterations, T++);
-		}  else if (strncmp(argv[2], "st", 2) == 0) {
+			break;
+		case 's':
 			swaptest(me, iterations, T++, S++, P++);
-		}  else if (strncmp(argv[2], "cs", 2) == 0) {
+			break;
+		case 'c':
 			cswaptest(me, iterations, T++, S++, P++);
-		}  else if (strncmp(argv[2], "fa", 2) == 0) {
+			break;
+		case 'f':
 			fetchatomic_add(me, iterations, T++, S++);
-		}  else if (strncmp(argv[2], "fi", 2) == 0) {
+			break;
+		case 'F':
 			fetchatomic_inc(me, iterations, T++, S++);
-		} else {
+			break;
+		case 'h':
+		default:
 			if (me == 0) {
-				fprintf(stderr, "two argument input error:"
-				" must provide <iterations> and test choice"
-				" <pf|gt|aa|ai|st|cs|fa|fi + (v (for verbose)"
-				" | vd (verbose debug))>\n");
+				fprintf(stderr, "input options:\n 1) single"
+				" argument option will run all tests by default"
+				"and additionally request:  -v (verbose) | "
+				"-i <number of interations>\n");
+				fprintf(stderr, " 2) two argument options "
+				"choose any combination of the following "
+				"to run individual tests:  -i <iterations>, -v"
+				", -d, -p, -g, -a, -A, -s, -c, -f, -F, -h\n");
 			}
-			return 0;
+			return 1;
 		}
-	} else {
+	}
+
+	if (argc == all_ops || argc == 1) {
 		putfence(me, iterations,  T++);
 		gettest(me, iterations, T++, S++, P++);
 		atomic_add(me, iterations, T++);
