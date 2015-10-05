@@ -4,6 +4,9 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  * 
+ * Copyright (c) 2015 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
  * This file is part of the Portals SHMEM software package. For license
  * information, see the LICENSE file in the top level directory of the
  * distribution.
@@ -128,6 +131,9 @@ shmem_internal_shutdown(void)
 #ifdef USE_PORTALS4
     shmem_transport_portals4_fini();
 #endif
+#ifdef USE_OFI
+    shmem_transport_ofi_fini();
+#endif
 #ifdef USE_XPMEM
     shmem_transport_xpmem_fini();
 #endif
@@ -198,6 +204,15 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         goto cleanup;
     }
 #endif
+#ifdef USE_OFI
+    ret = shmem_transport_ofi_init(eager_size);
+    if (0 != ret) {
+        fprintf(stderr,
+                "[%03d] ERROR: OFI init failed\n",
+                shmem_internal_my_pe);
+        goto cleanup;
+    }
+#endif
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_init(eager_size);
     if (0 != ret) {
@@ -234,6 +249,14 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     if (0 != ret) {
         fprintf(stderr,
                 "[%03d] ERROR: Portals 4 startup failed\n",
+                shmem_internal_my_pe);
+        goto cleanup;
+    }
+#elif defined USE_OFI
+    ret = shmem_transport_ofi_startup();
+    if (0 != ret) {
+        fprintf(stderr,
+                "[%03d] ERROR: OFI startup failed\n",
                 shmem_internal_my_pe);
         goto cleanup;
     }
@@ -341,6 +364,9 @@ shmem_internal_init(int tl_requested, int *tl_provided)
  cleanup:
 #ifdef USE_PORTALS4
     shmem_transport_portals4_fini();
+#endif
+#ifdef USE_OFI
+    shmem_transport_ofi_fini();
 #endif
 #ifdef USE_XPMEM
     shmem_transport_xpmem_fini();

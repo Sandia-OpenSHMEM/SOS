@@ -12,7 +12,8 @@
 #                         All rights reserved.
 # Copyright (c) 2006      QLogic Corp. All rights reserved.
 # Copyright (c) 2009      Cisco Systems, Inc.  All rights reserved.
-# Copyright (c) 2013      Intel Corp.  All rights reserved.
+# Copyright (c) 2015      Intel Corp.  All rights reserved.
+#
 # $COPYRIGHT$
 #
 # Additional copyrights may follow
@@ -39,7 +40,6 @@ AC_DEFUN([OMPI_CHECK_OFI],[
     ompi_check_ofi_$1_save_LDFLAGS="$LDFLAGS"
     ompi_check_ofi_$1_save_LIBS="$LIBS"
 
-
     AS_IF([test "$with_ofi" != "no"],
           [AS_IF([test ! -z "$with_ofi" -a "$with_ofi" != "yes"],
                  [ompi_check_ofi_dir="$with_ofi"])
@@ -64,9 +64,10 @@ AC_DEFUN([OMPI_CHECK_OFI],[
     LDFLAGS="$ompi_check_ofi_$1_save_LDFLAGS"
     LIBS="$ompi_check_ofi_$1_save_LIBS"
 
-    AS_IF([test "$enable_remote_virtual_addressing" = "yes"],
-	  [ompi_check_ofi_happy="yes"], [ompi_check_ofi_happy="no"],
-	  [AC_MSG_ERROR([OFI support requires remote virtual addressing enabled])])
+    AS_IF([test "$ompi_check_ofi_happy" = "yes"],
+	  [AS_IF([test "$enable_remote_virtual_addressing" = "yes"],
+		[ompi_check_ofi_happy = "yes" ],
+		[AC_MSG_ERROR([OFI transport requires remote VA enabled. Please use --enable-remote-virtual-addressing. Aborting])])])
 
     AS_IF([test "$ompi_check_ofi_happy" = "yes"],
           [$2],
