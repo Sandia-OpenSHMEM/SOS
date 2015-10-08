@@ -40,7 +40,7 @@ uint64_t			shmem_transport_ofi_pending_cq_count;
 uint64_t			shmem_transport_ofi_max_poll;
 size_t           		shmem_transport_ofi_max_buffered_send;
 size_t    	 		shmem_transport_ofi_max_atomic_size;
-size_t    			shmem_transport_ofi_queue_slots;
+size_t    			shmem_transport_ofi_bounce_buffer_size;
 fi_addr_t			*addr_table;
 
 int SHMEM_Dtsize[FI_DATATYPE_LAST];
@@ -89,7 +89,7 @@ shmem_free_list_t *shmem_transport_ofi_bounce_buffers = NULL;
 shmem_free_list_t *shmem_transport_ofi_frag_buffers = NULL;
 
 //size of CQ
-size_t  shmem_transport_ofi_queue_slots = 32768;//default CQ Depth....
+const size_t shmem_transport_ofi_queue_slots = 32768;//default CQ Depth....
 size_t   shmem_transport_ofi_max_atomic_size = 0;
 uint64_t shmem_transport_ofi_max_poll = (1ULL<<20);
 
@@ -507,13 +507,14 @@ static inline struct fi_info * query_for_fabric(char *provname)
     else
     	    shmem_transport_ofi_max_buffered_send = p_info->tx_attr->inject_size;
 
-
     return p_info;
 }
 
 int shmem_transport_ofi_init(long eager_size)
 {
     const int npes = init_pmi();
+
+    shmem_transport_ofi_bounce_buffer_size = eager_size;
 
     //init LL for NB buffers
     shmem_transport_ofi_bounce_buffers =

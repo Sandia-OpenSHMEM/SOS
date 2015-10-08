@@ -3,7 +3,7 @@
  * Copyright 2011 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
- * 
+ *
  * Copyright (c) 2015 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
@@ -82,7 +82,7 @@ shmem_internal_put_small(void *target, const void *source, size_t len, int pe)
     }
 }
 
-        
+
 static inline
 void
 shmem_internal_put_nb(void *target, const void *source, size_t len, int pe,
@@ -241,21 +241,6 @@ typedef enum fi_op       shm_internal_op_t;
 #define SHM_INTERNAL_SUM             FI_SUM
 #define SHM_INTERNAL_PROD            FI_PROD
 
-#undef DTYPE_INT
-#define DTYPE_INT                    FI_INT32
-
-#undef DTYPE_FORTRAN_INTEGER
-#define DTYPE_FORTRAN_INTEGER        FI_INT32
-
-#undef DTYPE_LONG_LONG
-#define DTYPE_LONG_LONG              FI_INT64
-
-#undef DTYPE_LONG
-#define DTYPE_LONG                   FI_INT64
-
-#undef DTYPE_SHORT
-#define DTYPE_SHORT                  FI_INT16
-
 #else
 #error "Fatal:  No Transport defined"
 #endif
@@ -263,7 +248,7 @@ typedef enum fi_op       shm_internal_op_t;
 
 static inline
 void
-shmem_internal_swap(void *target, void *source, void *dest, size_t len, 
+shmem_internal_swap(void *target, void *source, void *dest, size_t len,
                     int pe, shm_internal_datatype_t datatype)
 {
 #if USE_PORTALS4
@@ -276,7 +261,7 @@ shmem_internal_swap(void *target, void *source, void *dest, size_t len,
 
 static inline
 void
-shmem_internal_cswap(void *target, void *source, void *dest, void *operand, size_t len, 
+shmem_internal_cswap(void *target, void *source, void *dest, void *operand, size_t len,
                     int pe, shm_internal_datatype_t datatype)
 {
 #if USE_PORTALS4
@@ -289,7 +274,7 @@ shmem_internal_cswap(void *target, void *source, void *dest, void *operand, size
 
 static inline
 void
-shmem_internal_mswap(void *target, void *source, void *dest, void *mask, size_t len, 
+shmem_internal_mswap(void *target, void *source, void *dest, void *mask, size_t len,
                     int pe, shm_internal_datatype_t datatype)
 {
 #if USE_PORTALS4

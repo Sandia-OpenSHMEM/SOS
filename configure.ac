@@ -3,7 +3,7 @@
 # Copyright 2011 Sandia Corporation. Under the terms of Contract
 # DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
 # retains certain rights in this software.
-# 
+#
 # Copyright (c) 2015 Intel Corporation. All rights reserved.
 # This software is available to you under the BSD license.
 #
@@ -21,14 +21,14 @@ AC_CONFIG_MACRO_DIR([config])
 
 AM_INIT_AUTOMAKE([foreign check-news color-tests parallel-tests dist-bzip2 no-define subdir-objects tar-ustar 1.11 -Wall -Werror])
 
-m4_ifndef([AS_VAR_COPY], 
-    [m4_define([AS_VAR_COPY], 
+m4_ifndef([AS_VAR_COPY],
+    [m4_define([AS_VAR_COPY],
        [AS_LITERAL_IF([$1[]$2], [$1=$$2], [eval $1=\$$2])])])
 
 dnl Work around change in how the rules were implemented between
 dnl 1.11.2 and 1.11.3.
 AM_SILENT_RULES([yes])
-AS_IF([test -z "$AM_V"], 
+AS_IF([test -z "$AM_V"],
   [AM_V='$(V)'
    AM_DEFAULT_V='$(AM_DEFAULT_VERBOSITY)'
    AC_SUBST([AM_V])
@@ -142,12 +142,14 @@ dnl check for libraries
 
 OMPI_CHECK_PORTALS4([portals4],
     [AC_DEFINE([USE_PORTALS4], [1], [Define if Portals 4 transport active])
+     transport="portals4"
      transport_portals4="yes"],
     [transport_portals4="no"])
 AM_CONDITIONAL([USE_PORTALS4], [test "$transport_portals4" = "yes"])
 
 OMPI_CHECK_OFI([ofi],
     [AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
+     transport="ofi"
      transport_ofi="yes"],
     [transport_ofi="no"])
 AM_CONDITIONAL([USE_OFI], [test "$transport_ofi" = "yes"])
@@ -176,11 +178,11 @@ dnl check for header files
 
 dnl check for types
 
-SHMEM_FIND_INT_TYPE([char])
-SHMEM_FIND_INT_TYPE([short])
-SHMEM_FIND_INT_TYPE([int])
-SHMEM_FIND_INT_TYPE([long])
-SHMEM_FIND_INT_TYPE([long long])
+SHMEM_FIND_INT_TYPE([char], [$transport])
+SHMEM_FIND_INT_TYPE([short], [$transport])
+SHMEM_FIND_INT_TYPE([int], [$transport])
+SHMEM_FIND_INT_TYPE([long], [$transport])
+SHMEM_FIND_INT_TYPE([long long], [$transport])
 
 AC_CHECK_SIZEOF([float])
 AC_CHECK_SIZEOF([double])
@@ -192,7 +194,7 @@ C_REDUCE_SYNC_SIZE=`echo "$C_BCAST_SYNC_SIZE 2 + p" | dc`
 C_BARRIER_SYNC_SIZE=`echo "$ac_cv_sizeof_int 8 * $ac_cv_sizeof_long / p" | dc`
 tree_sync_size=`echo "$C_BCAST_SYNC_SIZE 3 + p" | dc`
 recdbl_sync_size=`echo "$ac_cv_sizeof_int 8 * $ac_cv_sizeof_long / p" | dc`
-AS_IF([test $tree_sync_size -lt $recdbl_sync_size], 
+AS_IF([test $tree_sync_size -lt $recdbl_sync_size],
       [C_COLLECT_SYNC_SIZE=$recdbl_sync_size], [C_COLLECT_SYNC_SIZE=$tree_sync_size])
 C_REDUCE_MIN_WRKDATA_SIZE=1
 AC_SUBST(C_BCAST_SYNC_SIZE)
@@ -224,7 +226,7 @@ if test "$FC" != "" ; then
   OMPI_FORTRAN_GET_SIZEOF([], [COMPLEX])
 
   # find Portals integer type corresponding to INTEGER
-  SHMEM_FIND_FORTRAN_INT_TYPE([INTEGER])
+  SHMEM_FIND_FORTRAN_INT_TYPE([INTEGER], [$transport])
 
   # find C type corresponding to given Fortran types
   OMPI_FIND_TYPE([INTEGER], [char,     short, int, long, long long])
@@ -308,7 +310,7 @@ fi
 if test -n "$with_pmi" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-pmi=${with_pmi}"
 fi
-if test -n "$FCFLAGS" ; then 
+if test -n "$FCFLAGS" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS FCFLAGS=\"$FCFLAGS\""
 fi
 AC_SUBST(DISTCHECK_CONFIGURE_FLAGS)
