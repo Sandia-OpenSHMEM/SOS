@@ -4,6 +4,9 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  * 
+ * Copyright (c) 2015 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
  * This file is part of the Portals SHMEM software package. For license
  * information, see the LICENSE file in the top level directory of the
  * distribution.
@@ -14,6 +17,7 @@
 #define SHMEM_COLLECTIVES_H
 
 #include "shmem_synchronization.h"
+
 
 enum coll_type_t {
     AUTO,
@@ -119,18 +123,18 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
 void shmem_internal_op_to_all_linear(void *target, void *source, int count, int type_size,
                                      int PE_start, int logPE_stride, int PE_size,
                                      void *pWrk, long *pSync, 
-                                     ptl_op_t op, ptl_datatype_t datatype);
+                                     shm_internal_op_t op, shm_internal_datatype_t datatype);
 void shmem_internal_op_to_all_tree(void *target, void *source, int count, int type_size,
                                    int PE_start, int logPE_stride, int PE_size,
                                    void *pWrk, long *pSync, 
-                                   ptl_op_t op, ptl_datatype_t datatype);
+                                   shm_internal_op_t op, shm_internal_datatype_t datatype);
 
 static inline
 void
 shmem_internal_op_to_all(void *target, void *source, int count, int type_size,
                     int PE_start, int logPE_stride, int PE_size,
                     void *pWrk, long *pSync, 
-                    ptl_op_t op, ptl_datatype_t datatype)
+                    shm_internal_op_t op, shm_internal_datatype_t datatype)
 {
     switch (shmem_internal_reduce_type) {
     case AUTO:
@@ -224,6 +228,5 @@ shmem_internal_fcollect(void *target, const void *source, size_t len,
                 shmem_internal_my_pe, shmem_internal_fcollect_type);
     }
 }
-
 
 #endif

@@ -4,6 +4,9 @@
 # DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
 # retains certain rights in this software.
 # 
+# Copyright (c) 2015 Intel Corporation. All rights reserved.
+# This software is available to you under the BSD license.
+#
 # This file is part of the Portals SHMEM software package. For license
 # information, see the LICENSE file in the top level directory of the
 # distribution.
@@ -59,6 +62,12 @@ if USE_PORTALS4
 libsma_la_SOURCES += \
 	transport_portals4.h \
 	transport_portals4.c
+endif
+
+if USE_OFI
+libsma_la_SOURCES += \
+	transport_ofi.h \
+	transport_ofi.c
 endif
 
 if USE_XPMEM

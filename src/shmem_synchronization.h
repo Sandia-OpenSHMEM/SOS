@@ -4,6 +4,9 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  * 
+ * Copyright (c) 2015 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
  * This file is part of the Portals SHMEM software package. For license
  * information, see the LICENSE file in the top level directory of the
  * distribution.
@@ -30,6 +33,10 @@ shmem_internal_quiet(void)
     ret = shmem_transport_xpmem_quiet();
     if (0 != ret) { RAISE_ERROR(ret); }
 #endif
+#ifdef USE_OFI
+    ret = shmem_transport_ofi_quiet();
+    if (0 != ret) { RAISE_ERROR(ret); }
+#endif
 }
  
  
@@ -44,6 +51,10 @@ shmem_internal_fence(void)
 #endif
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_fence();
+    if (0 != ret) { RAISE_ERROR(ret); }
+#endif
+#ifdef USE_OFI
+    ret = shmem_transport_ofi_fence();
     if (0 != ret) { RAISE_ERROR(ret); }
 #endif
 }
@@ -135,6 +146,39 @@ shmem_internal_fence(void)
             if (PTL_OK != ret) { RAISE_ERROR(ret); }                    \
             if (0 != ct.failure) { RAISE_ERROR_STR("Target CT failure"); } \
             COMP(cond, *(var), value, cmpret);                          \
+        }                                                               \
+    } while(0)
+#elif defined(USE_OFI)
+
+#define SHMEM_WAIT(var, value)                                          \
+    do {                                                                \
+        int ret;                                                        \
+        uint64_t count;                                                 \
+                                                                        \
+        while (*(var) == value) {                                       \
+            count = fi_cntr_read(shmem_transport_ofi_target_cntrfd);      \
+            COMPILER_FENCE();                                           \
+            if (*(var) != value) break;                                \
+            ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd,         \
+                               (count + 1),-1);                            \
+            if (ret) { RAISE_ERROR(ret); }                              \
+        }                                                               \
+    } while(0)
+
+#define SHMEM_WAIT_UNTIL(var, cond, value)                              \
+    do {                                                                \
+        int ret, cmpret;                                                \
+        uint64_t count;                                                 \
+        COMP(cond, *(var), value, cmpret);                              \
+        while(!cmpret) {                                                \
+           count =  fi_cntr_read(shmem_transport_ofi_target_cntrfd);            \
+           COMPILER_FENCE();                                            \
+           COMP(cond, *(var), value, cmpret);                           \
+           if (cmpret) break;                                           \
+           ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd,                \
+                              (count+1),-1);                                    \
+           if (ret) { RAISE_ERROR(ret); }                               \
+           COMP(cond, *(var), value, cmpret);                           \
         }                                                               \
     } while(0)
 #else
