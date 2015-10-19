@@ -53,7 +53,6 @@ void pshmem_double_put(double *target, const double *source, size_t len,
                        int pe);
 void pshmem_longdouble_put(long double *target, const long double *source,
                            size_t len, int pe);
-void pshmem_char_put(char *target, const char *source, size_t nelems, int pe);
 void pshmem_short_put(short *target, const short *source, size_t len, int pe);
 void pshmem_int_put(int *target, const int *source, size_t len, int pe);
 void pshmem_long_put(long *target, const long *source, size_t len, int pe);
@@ -63,10 +62,6 @@ void pshmem_put32(void *target, const void *source, size_t len, int pe);
 void pshmem_put64(void *target, const void *source, size_t len, int pe);
 void pshmem_put128(void *target, const void *source, size_t len, int pe);
 void pshmem_putmem(void *target, const void *source, size_t len, int pe);
-void pshmem_complexf_put(float complex * target,
-                         const float complex * source, size_t nelems, int pe);
-void pshmem_complexd_put(double complex * target,
-                         const double complex * source, size_t nelems, int pe);
 
 /* 8.8: Strided Put Routines */
 void pshmem_float_iput(float *target, const float *source, ptrdiff_t tst,
@@ -106,7 +101,6 @@ void pshmem_double_get(double *target, const double *source, size_t len,
                        int pe);
 void pshmem_longdouble_get(long double *target, const long double *source,
                            size_t len, int pe);
-void pshmem_char_get(char *target, const char *source, size_t len, int pe);
 void pshmem_short_get(short *target, const short *source, size_t len, int pe);
 void pshmem_int_get(int *target, const int *source, size_t len, int pe);
 void pshmem_long_get(long *target, const long *source, size_t len, int pe);
@@ -116,10 +110,6 @@ void pshmem_get32(void *target, const void *source, size_t len, int pe);
 void pshmem_get64(void *target, const void *source, size_t len, int pe);
 void pshmem_get128(void *target, const void *source, size_t len, int pe);
 void pshmem_getmem(void *target, const void *source, size_t len, int pe);
-void pshmem_complexf_get(float complex * target,
-                         const float complex * source, size_t nelems, int pe);
-void pshmem_complexd_get(double complex * target,
-                         const double complex * source, size_t nelems, int pe);
 
 /* 8.11: Strided Get Routines */
 void pshmem_float_iget(float *target, const float *source, ptrdiff_t tst,

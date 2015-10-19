@@ -44,7 +44,6 @@
  * shmem_iput8, shmem_iput32, shmem_iput64, shmem_iput128
  * shmem_double_iput, shmem_float_iput, shmem_int_iput, shmem_long_iput, shmem_short_iput
  * shmem_double_p, shmem_float_p, shmem_int_p, shmem_long_p, shmem_short_p
- * TODO: shmem_complexf_put, shmem_complexd_put
  * All PEs put an array to right neighbor
  */
 

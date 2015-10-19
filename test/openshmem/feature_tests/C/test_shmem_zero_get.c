@@ -40,7 +40,6 @@
  * Calls tested
  * shmem_short_get, shmem_int_get, shmem_long_get, shmem_longdouble_get,
  * shmem_longlong_get, shmem_double_get, shmem_float_get,
- * TODO: shmem_complexf_get, shmem_complexd_get
  * shmem_getmem, shmem_get32, shmem_get64, shmem_get128
  * shmem_double_p, shmem_float_p, shmem_int_p, shmem_long_p, shmem_short_p
  *

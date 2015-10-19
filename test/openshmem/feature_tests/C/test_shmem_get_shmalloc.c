@@ -45,7 +45,6 @@
  * shmem_getmem, shmem_get32, shmem_get64, shmem_get128
  * shmem_iput8, shmem_iput32, shmem_iput64, shmem_iput128
  * shmem_double_iput, shmem_float_iput, shmem_int_iput, shmem_long_iput, shmem_short_iput
- * TODO:shmem_complexf_get, shmem_complexd_get
  *
  *
  * All PEs get an array from right neighbor

@@ -80,9 +80,6 @@
 #pragma weak shmem_longdouble_put = pshmem_longdouble_put
 #define shmem_longdouble_put pshmem_longdouble_put
 
-#pragma weak shmem_char_put = pshmem_char_put
-#define shmem_char_put pshmem_char_put
-
 #pragma weak shmem_short_put = pshmem_short_put
 #define shmem_short_put pshmem_short_put
 
@@ -115,9 +112,6 @@
 
 #pragma weak shmem_longdouble_get = pshmem_longdouble_get
 #define shmem_longdouble_get pshmem_longdouble_get
-
-#pragma weak shmem_char_get = pshmem_char_get
-#define shmem_char_get pshmem_char_get
 
 #pragma weak shmem_short_get = pshmem_short_get
 #define shmem_short_get pshmem_short_get
@@ -205,18 +199,6 @@
 
 #pragma weak shmem_iget128 = pshmem_iget128
 #define shmem_iget128 pshmem_iget128
-
-#pragma weak shmem_complexf_put = pshmem_complexf_put
-#define shmem_complexf_put pshmem_complexf_put
-
-#pragma weak shmem_complexd_put = pshmem_complexd_put
-#define shmem_complexd_put pshmem_complexd_put
-
-#pragma weak shmem_complexf_get = pshmem_complexf_get
-#define shmem_complexf_get pshmem_complexf_get
-
-#pragma weak shmem_complexd_get = pshmem_complexd_get
-#define shmem_complexd_get pshmem_complexd_get
 
 #pragma weak shmemx_putmem_ct = pshmemx_putmem_ct
 #define shmemx_putmem_ct pshmemx_putmem_ct
@@ -528,22 +510,6 @@ shmem_longdouble_put(long double *target, const long double *source, size_t len,
 
 
 void
-shmem_char_put(char *target, const char *source, size_t len, int pe)
-{
-    long completion = 0;
-
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
-
-    shmem_internal_put_nb(target, source, sizeof(char) * len, pe, &completion);
-    shmem_internal_put_wait(&completion);
-}
-
-
-void
 shmem_short_put(short *target, const short *source, size_t len, int pe)
 {
     long completion = 0;
@@ -710,20 +676,6 @@ shmem_longdouble_get(long double *target, const long double *source, size_t len,
 #endif
 
     shmem_internal_get(target, source, sizeof(long double) * len, pe);
-    shmem_internal_get_wait();
-}
-
-
-void
-shmem_char_get(char *target, const char *source, size_t len, int pe)
-{
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
-
-    shmem_internal_get(target, source, sizeof(char) * len, pe);
     shmem_internal_get_wait();
 }
 
@@ -1214,68 +1166,6 @@ shmem_iget128(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst, si
 	source = (uint8_t*)source + sst;
     }
     shmem_internal_get_wait();
-}
-
-
-void shmem_complexf_get(float complex * target,
-                        const float complex * source, size_t nelems, int pe)
-{
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
-
-    shmem_internal_get(target, source, sizeof(float complex) * nelems, pe);
-    shmem_internal_get_wait();
-}
-
-
-void shmem_complexd_get(double complex * target,
-                        const double complex * source, size_t nelems, int pe)
-{
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
-
-    shmem_internal_get(target, source, sizeof(complex double) * nelems, pe);
-    shmem_internal_get_wait();
-}
-
-
-void shmem_complexf_put(float complex * target,
-                        const float complex * source, size_t nelems, int pe)
-{
-    long completion = 0;
-
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
-
-    shmem_internal_put_nb(target, source, sizeof(complex float) * nelems,
-                          pe, &completion);
-    shmem_internal_put_wait(&completion);
-}
-
-
-void shmem_complexd_put(double complex * target,
-                        const double complex * source, size_t nelems, int pe)
-{
-    long completion = 0;
-
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
-
-    shmem_internal_put_nb(target, source, sizeof(double complex) * nelems,
-                          pe, &completion);
-    shmem_internal_put_wait(&completion);
 }
 
 
