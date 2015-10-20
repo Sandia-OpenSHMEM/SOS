@@ -23,6 +23,18 @@
 
 #ifdef ENABLE_PROFILING
 
+#pragma weak shmem_malloc = pshmem_malloc
+#define shmem_malloc pshmem_malloc
+
+#pragma weak shmem_align = pshmem_align
+#define shmem_align pshmem_align
+
+#pragma weak shmem_realloc = pshmem_realloc
+#define shmem_realloc pshmem_realloc
+
+#pragma weak shmem_free = pshmem_free
+#define shmem_free pshmem_free
+
 #pragma weak shmalloc = pshmalloc
 #define shmalloc pshmalloc
 
@@ -145,7 +157,7 @@ shmem_internal_shmalloc(size_t size)
 
 
 void *
-shmalloc(size_t size)
+shmem_malloc(size_t size)
 {
     void *ret;
 
@@ -166,7 +178,7 @@ shmalloc(size_t size)
 
 
 void
-shfree(void *ptr)
+shmem_free(void *ptr)
 {
 #ifdef ENABLE_ERROR_CHECKING
     if (!shmem_internal_initialized) {
@@ -183,7 +195,7 @@ shfree(void *ptr)
 
 
 void *
-shrealloc(void *ptr, size_t size)
+shmem_realloc(void *ptr, size_t size)
 {
     void *ret;
 
@@ -204,7 +216,7 @@ shrealloc(void *ptr, size_t size)
 
 
 void *
-shmemalign(size_t alignment, size_t size)
+shmem_align(size_t alignment, size_t size)
 {
     void *ret;
 
@@ -221,4 +233,34 @@ shmemalign(size_t alignment, size_t size)
     shmem_internal_barrier_all();
 
     return ret;
+}
+
+
+/* The following functions were renamed in OpenSHMEM 1.2 and the old names were
+ * deprecated.  Note that if PROFILING_ENABLED, the profiling macros will cause
+ * these functions to directly call the corresponding pshmem_* routine which
+ * should make the up-call invsible to a profiling tool.
+ */
+
+void * shmalloc(size_t size)
+{
+    return shmem_malloc(size);
+}
+
+
+void shfree(void *ptr)
+{
+    shmem_free(ptr);
+}
+
+
+void * shrealloc(void *ptr, size_t size)
+{
+    return shmem_realloc(ptr, size);
+}
+
+
+void * shmemalign(size_t alignment, size_t size)
+{
+    return shmem_align(alignment, size);
 }
