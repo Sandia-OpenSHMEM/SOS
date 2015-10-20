@@ -15,6 +15,7 @@
 
 int shmem_runtime_init(void);
 int shmem_runtime_fini(void);
+void shmem_runtime_abort(int exit_code, const char msg[]);
 
 int shmem_runtime_get_rank(void);
 int shmem_runtime_get_size(void);

@@ -144,6 +144,16 @@ shmem_runtime_fini(void)
 }
 
 
+void
+shmem_runtime_abort(int exit_code, const char msg[])
+{
+    PMI_Abort(exit_code, msg);
+
+    /* PMI_Abort should not return */
+    abort();
+}
+
+
 int
 shmem_runtime_get_rank(void)
 {

@@ -14,6 +14,7 @@
 
 #include "shmem.h"
 #include "shmem_internal.h"
+#include "runtime.h"
 
 #ifdef ENABLE_PROFILING
 
@@ -76,6 +77,16 @@ shmemx_init_thread(int tl_requested, int *tl_provided)
     }
 
     shmem_internal_init(tl_requested, tl_provided);
+}
+
+
+void
+shmem_global_exit(int status)
+{
+    char str[256];
+
+    snprintf(str, 256, "PE %d called shmem_global_exit with status %d", shmem_internal_my_pe, status);
+    shmem_runtime_abort(status, str);
 }
 
 
