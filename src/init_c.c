@@ -20,20 +20,36 @@
 #pragma weak start_pes = pstart_pes
 #define start_pes pstart_pes
 
+#pragma weak shmem_init = pshmem_init
+#define shmem_init pshmem_init
+
 #pragma weak shmemx_nodename = pshmemx_nodename
 #define shmemx_nodename pshmemx_nodename
 
-#pragma weak shmemx_init = pshmemx_init
-#define shmemx_init pshmemx_init
+#pragma weak shmemx_init_thread = pshmemx_init_thread
+#define shmemx_init_thread pshmemx_init_thread
 
-#pragma weak shmemx_finalize = pshmemx_finalize
-#define shmemx_finalize pshmemx_finalize
+#pragma weak shmem_finalize = pshmem_finalize
+#define shmem_finalize pshmem_finalize
 
 #endif /* ENABLE_PROFILING */
 
 
 void
 start_pes(int npes)
+{
+    int tl_provided;
+
+    if (shmem_internal_initialized) {
+        RAISE_ERROR_STR("attempt to reinitialize library");
+    }
+
+    shmem_internal_init(SHMEMX_THREAD_SINGLE, &tl_provided);
+}
+
+
+void
+shmem_init(void)
 {
     int tl_provided;
 
@@ -52,7 +68,8 @@ shmemx_nodename(void)
 }
 
 
-void shmemx_init(int tl_requested, int *tl_provided)
+void
+shmemx_init_thread(int tl_requested, int *tl_provided)
 {
     if (shmem_internal_initialized) {
         RAISE_ERROR_STR("attempt to reinitialize library");
@@ -62,7 +79,14 @@ void shmemx_init(int tl_requested, int *tl_provided)
 }
 
 
-void shmemx_finalize(void)
+void
+shmem_finalize(void)
 {
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
     shmem_internal_finalize();
 }
