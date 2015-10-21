@@ -10,6 +10,7 @@
  *
  */
 
+#include <string.h>
 #include "config.h"
 
 #include "shmem.h"
@@ -33,8 +34,13 @@
 #pragma weak shmem_finalize = pshmem_finalize
 #define shmem_finalize pshmem_finalize
 
-#endif /* ENABLE_PROFILING */
+#pragma weak shmem_info_get_version = pshmem_info_get_version
+#define shmem_info_get_version pshmem_info_get_version
 
+#pragma weak shmem_info_get_name = pshmem_info_get_name
+#define shmem_info_get_name pshmem_info_get_name
+
+#endif /* ENABLE_PROFILING */
 
 void
 start_pes(int npes)
@@ -100,4 +106,32 @@ shmem_finalize(void)
 #endif
 
     shmem_internal_finalize();
+}
+
+
+void
+shmem_info_get_version(int *major, int *minor)
+{
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    *major = SHMEM_MAJOR_VERSION;
+    *minor = SHMEM_MINOR_VERSION;
+}
+
+
+void
+shmem_info_get_name(char *name)
+{
+#ifdef ENABLE_ERROR_CHECKING
+    if (!shmem_internal_initialized) {
+        RAISE_ERROR_STR("library not initialized");
+    }
+#endif
+
+    strncpy(name, SHMEM_VENDOR_STRING, SHMEM_MAX_NAME_LEN);
+    name[SHMEM_MAX_NAME_LEN-1] = '\0'; /* Ensure string is null terminated */
 }
