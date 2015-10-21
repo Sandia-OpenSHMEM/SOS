@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "runtime.h"
 #include "config.h"
 
 extern int shmem_internal_my_pe;
@@ -30,7 +31,7 @@ extern int shmem_internal_thread_level;
     do {                                                                \
         fprintf(stderr, "[%03d] ERROR: %s:%d return code %d\n",         \
                 shmem_internal_my_pe, __FILE__, __LINE__, (int) ret);   \
-        abort();                                                        \
+        shmem_runtime_abort(1, "OpenSHMEM exited in error");            \
     } while (0)
 
 
@@ -38,7 +39,7 @@ extern int shmem_internal_thread_level;
     do {                                                                \
         fprintf(stderr, "[%03d] ERROR: %s:%d: %s\n",                    \
                 shmem_internal_my_pe, __FILE__, __LINE__, str);         \
-        abort();                                                        \
+        shmem_runtime_abort(1, "OpenSHMEM exited in error");            \
     } while (0)
 
 
