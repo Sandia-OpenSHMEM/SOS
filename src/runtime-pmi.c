@@ -18,7 +18,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <portals4.h>
 #if defined(PMI_SLURM)
 #include <slurm/pmi.h>
 #elif defined(PMI_PORTALS4)

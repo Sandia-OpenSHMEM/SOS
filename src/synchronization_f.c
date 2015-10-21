@@ -12,7 +12,6 @@
 
 #include "config.h"
 
-#include <portals4.h>
 #include <stdlib.h>
 #include <stdio.h>
 

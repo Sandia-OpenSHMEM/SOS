@@ -15,9 +15,6 @@
 
 #include "config.h"
 
-#ifdef USE_PORTALS4
-#include <portals4.h>
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>

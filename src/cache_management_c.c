@@ -12,8 +12,6 @@
 
 #include "config.h"
 
-#include <portals4.h>
-
 #include "shmem.h"
 #include "shmem_internal.h"
 
