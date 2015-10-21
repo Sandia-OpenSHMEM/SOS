@@ -43,11 +43,7 @@
 int
 _num_pes(void)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     return shmem_internal_num_pes;
 }
@@ -56,11 +52,7 @@ _num_pes(void)
 int
 shmem_n_pes(void)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     return shmem_internal_num_pes;
 }
@@ -69,11 +61,7 @@ shmem_n_pes(void)
 int
 _my_pe(void)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     return shmem_internal_my_pe;
 }
@@ -82,11 +70,7 @@ _my_pe(void)
 int
 shmem_my_pe(void)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     return shmem_internal_my_pe;
 }
@@ -98,11 +82,7 @@ shmemx_wtime(void)
     double wtime;
     struct timeval tv;
 
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     gettimeofday(&tv, NULL);
     wtime = tv.tv_sec;

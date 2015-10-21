@@ -17,6 +17,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "config.h"
+
 extern int shmem_internal_my_pe;
 extern int shmem_internal_num_pes;
 
@@ -38,6 +40,22 @@ extern int shmem_internal_thread_level;
                 shmem_internal_my_pe, __FILE__, __LINE__, str);         \
         abort();                                                        \
     } while (0)
+
+
+#ifdef ENABLE_ERROR_CHECKING
+#define SHMEM_ERR_CHECK_INITIALIZED()                                   \
+    do {                                                                \
+        if (!shmem_internal_initialized) {                              \
+            fprintf(stderr, "ERROR: %s(): OpenSHMEM library not initialized\n", \
+                    __func__);                                          \
+            abort();                                                    \
+        }                                                               \
+    } while (0)
+
+#else
+#define SHMEM_ERR_CHECK_INITIALIZED()
+
+#endif /* ENABLE_ERROR_CHECKING */
 
 
 #ifdef ENABLE_THREADS

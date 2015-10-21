@@ -99,11 +99,7 @@ shmem_global_exit(int status)
 void
 shmem_finalize(void)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_finalize();
 }
@@ -112,11 +108,7 @@ shmem_finalize(void)
 void
 shmem_info_get_version(int *major, int *minor)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     *major = SHMEM_MAJOR_VERSION;
     *minor = SHMEM_MINOR_VERSION;
@@ -126,11 +118,7 @@ shmem_info_get_version(int *major, int *minor)
 void
 shmem_info_get_name(char *name)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     strncpy(name, SHMEM_VENDOR_STRING, SHMEM_MAX_NAME_LEN);
     name[SHMEM_MAX_NAME_LEN-1] = '\0'; /* Ensure string is null terminated */

@@ -161,11 +161,7 @@ shmem_malloc(size_t size)
 {
     void *ret;
 
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     ret = dlmalloc(size);
@@ -180,11 +176,7 @@ shmem_malloc(size_t size)
 void
 shmem_free(void *ptr)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     dlfree(ptr);
@@ -199,11 +191,7 @@ shmem_realloc(void *ptr, size_t size)
 {
     void *ret;
 
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     ret = dlrealloc(ptr, size);
@@ -220,11 +208,7 @@ shmem_align(size_t alignment, size_t size)
 {
     void *ret;
 
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     ret = dlmemalign(alignment, size);

@@ -37,11 +37,7 @@
 void
 shmem_clear_lock(long *lockp)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_clear_lock(lockp);
 }
@@ -50,11 +46,7 @@ shmem_clear_lock(long *lockp)
 void
 shmem_set_lock(long *lockp)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_set_lock(lockp);
 }
@@ -63,11 +55,7 @@ shmem_set_lock(long *lockp)
 int
 shmem_test_lock(long *lockp)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     return shmem_internal_test_lock(lockp);
 }

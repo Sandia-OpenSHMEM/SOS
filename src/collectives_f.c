@@ -30,11 +30,7 @@ void FC_SHMEM_BARRIER_ALL(void);
 void
 FC_SHMEM_BARRIER_ALL(void)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_barrier_all();
 }
@@ -52,11 +48,7 @@ FC_SHMEM_BARRIER(fortran_integer_t *PE_start,
                  fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_BARRIER_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -85,11 +77,7 @@ FC_SHMEM_INT4_AND_TO_ALL(int32_t *target,
                          fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -120,11 +108,7 @@ FC_SHMEM_INT8_AND_TO_ALL(int64_t *target,
                          fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -155,11 +139,7 @@ FC_SHMEM_INT4_OR_TO_ALL(int32_t *target,
                          fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -190,11 +170,7 @@ FC_SHMEM_INT8_OR_TO_ALL(int64_t *target,
                          fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -225,11 +201,7 @@ FC_SHMEM_INT4_XOR_TO_ALL(int32_t *target,
                          fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -260,11 +232,7 @@ FC_SHMEM_INT8_XOR_TO_ALL(int64_t *target,
                          fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -301,11 +269,7 @@ FC_SHMEM_INT4_MAX_TO_ALL(int32_t *target,
                          fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -336,11 +300,7 @@ FC_SHMEM_INT8_MAX_TO_ALL(int64_t *target,
                          fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -371,11 +331,7 @@ FC_SHMEM_REAL4_MAX_TO_ALL(float *target,
                           fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -406,11 +362,7 @@ FC_SHMEM_REAL8_MAX_TO_ALL(double *target,
                           fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -442,11 +394,7 @@ FC_SHMEM_REAL16_MAX_TO_ALL(long double *target,
                            fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -478,11 +426,7 @@ FC_SHMEM_INT4_MIN_TO_ALL(int32_t *target,
                          fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -513,11 +457,7 @@ FC_SHMEM_INT8_MIN_TO_ALL(int64_t *target,
                          fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -548,11 +488,7 @@ FC_SHMEM_REAL4_MIN_TO_ALL(float *target,
                           fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -583,11 +519,7 @@ FC_SHMEM_REAL8_MIN_TO_ALL(double *target,
                           fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -619,11 +551,7 @@ FC_SHMEM_REAL16_MIN_TO_ALL(long double *target,
                            fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -655,11 +583,7 @@ FC_SHMEM_INT4_SUM_TO_ALL(int32_t *target,
                          fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -690,11 +614,7 @@ FC_SHMEM_INT8_SUM_TO_ALL(int64_t *target,
                          fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -725,11 +645,7 @@ FC_SHMEM_REAL4_SUM_TO_ALL(float *target,
                           fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -760,11 +676,7 @@ FC_SHMEM_REAL8_SUM_TO_ALL(double *target,
                           fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -796,11 +708,7 @@ FC_SHMEM_REAL16_SUM_TO_ALL(long double *target,
                            fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -832,11 +740,7 @@ FC_SHMEM_INT4_PROD_TO_ALL(int32_t *target,
                          fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -867,11 +771,7 @@ FC_SHMEM_INT8_PROD_TO_ALL(int64_t *target,
                          fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -902,11 +802,7 @@ FC_SHMEM_REAL4_PROD_TO_ALL(float *target,
                           fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -937,11 +833,7 @@ FC_SHMEM_REAL8_PROD_TO_ALL(double *target,
                           fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -973,11 +865,7 @@ FC_SHMEM_REAL16_PROD_TO_ALL(long double *target,
                            fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1007,11 +895,7 @@ FC_SHMEM_COLLECT4(void *target,
                   fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1039,11 +923,7 @@ FC_SHMEM_COLLECT8(void *target,
                   fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1071,11 +951,7 @@ FC_SHMEM_COLLECT32(void *target,
                   fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1103,11 +979,7 @@ FC_SHMEM_COLLECT64(void *target,
                   fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1135,11 +1007,7 @@ FC_SHMEM_FCOLLECT4(void *target,
                   fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1167,11 +1035,7 @@ FC_SHMEM_FCOLLECT8(void *target,
                   fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1199,11 +1063,7 @@ FC_SHMEM_FCOLLECT32(void *target,
 		    fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1231,11 +1091,7 @@ FC_SHMEM_FCOLLECT64(void *target,
 		    fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1265,11 +1121,7 @@ FC_SHMEM_BROADCAST4(void *target,
                     fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1300,11 +1152,7 @@ FC_SHMEM_BROADCAST8(void *target,
                     fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1335,11 +1183,7 @@ FC_SHMEM_BROADCAST32(void *target,
                     fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1370,11 +1214,7 @@ FC_SHMEM_BROADCAST64(void *target,
                     fortran_integer_t *pSync)
 {
     long *pSync_c;
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;

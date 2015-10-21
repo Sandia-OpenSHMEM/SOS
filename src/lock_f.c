@@ -31,11 +31,7 @@ void FC_SHMEM_CLEAR_LOCK(long *lockp);
 void
 FC_SHMEM_CLEAR_LOCK(long *lockp)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_clear_lock(lockp);
 }
@@ -46,11 +42,7 @@ void FC_SHMEM_SET_LOCK(long *lockp);
 void
 FC_SHMEM_SET_LOCK(long *lockp)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_set_lock(lockp);
 }
@@ -61,11 +53,7 @@ fortran_integer_t FC_SHMEM_TEST_LOCK(long *lockp);
 fortran_integer_t
 FC_SHMEM_TEST_LOCK(long *lockp)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     return shmem_internal_test_lock(lockp);
 }

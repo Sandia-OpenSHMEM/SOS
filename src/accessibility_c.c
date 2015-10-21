@@ -33,11 +33,7 @@
 int 
 shmem_pe_accessible(int pe)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     return shmem_internal_pe_accessible(pe);
 }
@@ -46,11 +42,7 @@ shmem_pe_accessible(int pe)
 int
 shmem_addr_accessible(void *addr, int pe)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     return shmem_internal_addr_accessible(addr, pe);
 }
