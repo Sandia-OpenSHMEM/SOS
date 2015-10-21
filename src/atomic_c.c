@@ -94,7 +94,7 @@ shmem_float_swap(float *target, float value, int pe)
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_swap(target, &value, &newval, sizeof(float), pe, PTL_FLOAT);
+    shmem_internal_swap(target, &value, &newval, sizeof(float), pe, SHM_INTERNAL_FLOAT);
     shmem_internal_get_wait();
     return newval;
 }
@@ -107,7 +107,7 @@ shmem_double_swap(double *target, double value, int pe)
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_swap(target, &value, &newval, sizeof(double), pe, PTL_DOUBLE);
+    shmem_internal_swap(target, &value, &newval, sizeof(double), pe, SHM_INTERNAL_DOUBLE);
     shmem_internal_get_wait();
     return newval;
 }
@@ -212,7 +212,7 @@ shmem_int_inc(int *target, int pe)
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_atomic_small(target, &tmp, sizeof(int), pe, PTL_SUM, DTYPE_INT);
+    shmem_internal_atomic_small(target, &tmp, sizeof(int), pe, SHM_INTERNAL_SUM, DTYPE_INT);
 }
 
 
@@ -223,7 +223,7 @@ shmem_long_inc(long *target, int pe)
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_atomic_small(target, &tmp, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
+    shmem_internal_atomic_small(target, &tmp, sizeof(long), pe, SHM_INTERNAL_SUM, DTYPE_LONG);
 }
 
 
@@ -234,7 +234,7 @@ shmem_longlong_inc(long long *target, int pe)
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_atomic_small(target, &tmp, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
+    shmem_internal_atomic_small(target, &tmp, sizeof(long long), pe, SHM_INTERNAL_SUM, DTYPE_LONG_LONG);
 }
 
 
@@ -245,7 +245,7 @@ shmem_int_finc(int *target, int pe)
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(int), pe, PTL_SUM, DTYPE_INT);
+    shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(int), pe, SHM_INTERNAL_SUM, DTYPE_INT);
     shmem_internal_get_wait();
     return oldval;
 }
@@ -258,7 +258,7 @@ shmem_long_finc(long *target, int pe)
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
+    shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(long), pe, SHM_INTERNAL_SUM, DTYPE_LONG);
     shmem_internal_get_wait();
     return oldval;
 }
@@ -271,7 +271,7 @@ shmem_longlong_finc(long long *target, int pe)
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
+    shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(long long), pe, SHM_INTERNAL_SUM, DTYPE_LONG_LONG);
     shmem_internal_get_wait();
     return oldval;
 }
@@ -282,7 +282,7 @@ shmem_int_add(int *target, int value, int pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_atomic_small(target, &value, sizeof(int), pe, PTL_SUM, DTYPE_INT);
+    shmem_internal_atomic_small(target, &value, sizeof(int), pe, SHM_INTERNAL_SUM, DTYPE_INT);
 }
 
 
@@ -291,7 +291,7 @@ shmem_long_add(long *target, long value, int pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_atomic_small(target, &value, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
+    shmem_internal_atomic_small(target, &value, sizeof(long), pe, SHM_INTERNAL_SUM, DTYPE_LONG);
 }
 
 
@@ -300,7 +300,7 @@ shmem_longlong_add(long long *target, long long value, int pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_atomic_small(target, &value, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
+    shmem_internal_atomic_small(target, &value, sizeof(long long), pe, SHM_INTERNAL_SUM, DTYPE_LONG_LONG);
 }
 
 
@@ -311,7 +311,7 @@ shmem_int_fadd(int *target, int value, int pe)
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(int), pe, PTL_SUM, DTYPE_INT);
+    shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(int), pe, SHM_INTERNAL_SUM, DTYPE_INT);
     shmem_internal_get_wait();
     return oldval;
 }
@@ -324,7 +324,7 @@ shmem_long_fadd(long *target, long value, int pe)
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(long), pe, PTL_SUM, DTYPE_LONG);
+    shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(long), pe, SHM_INTERNAL_SUM, DTYPE_LONG);
     shmem_internal_get_wait();
     return oldval;
 }
@@ -338,7 +338,7 @@ shmem_longlong_fadd(long long *target, long long value,
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(long long), pe, PTL_SUM, DTYPE_LONG_LONG);
+    shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(long long), pe, SHM_INTERNAL_SUM, DTYPE_LONG_LONG);
     shmem_internal_get_wait();
     return oldval;
 }
