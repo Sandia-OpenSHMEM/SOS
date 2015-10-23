@@ -162,6 +162,14 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     shmem_internal_my_pe = shmem_runtime_get_rank();
     shmem_internal_num_pes = shmem_runtime_get_size();
 
+    /* Ensure that the vendor string will not cause an overflow in user code */
+    if (sizeof(SHMEM_VENDOR_STRING) > SHMEM_MAX_NAME_LEN) {
+        fprintf(stderr,
+                "[%03d] ERROR: SHMEM_VENDOR_STRING length (%zu) exceeds SHMEM_MAX_NAME_LEN (%d)\n",
+                shmem_internal_my_pe, sizeof(SHMEM_VENDOR_STRING), SHMEM_MAX_NAME_LEN);
+        goto cleanup;
+    }
+
     /* Process environment variables */
     radix = get_env_long("COLL_RADIX", 0, 4);
     crossover = get_env_long("COLL_CROSSOVER", 0, 4);

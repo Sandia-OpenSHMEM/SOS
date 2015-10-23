@@ -12,7 +12,6 @@
 
 #include "config.h"
 
-#include <portals4.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -32,11 +31,7 @@ FC_SHMEM_SWAP(fortran_integer_t *target,
 {
     fortran_integer_t newval;
 
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_swap(target, value, &newval, SIZEOF_FORTRAN_INTEGER, 
 			*pe, DTYPE_FORTRAN_INTEGER);
@@ -56,14 +51,10 @@ FC_SHMEM_INT4_SWAP(int32_t *target,
 {
     int32_t newval;
 
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_swap(target, value, &newval, 4, 
-			*pe, PTL_INT32_T);
+			*pe, SHM_INTERNAL_INT32);
     shmem_internal_get_wait();
     return newval;
 }
@@ -80,14 +71,10 @@ FC_SHMEM_INT8_SWAP(int64_t *target,
 {
     int64_t newval;
 
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_swap(target, value, &newval, 8, 
-			*pe, PTL_INT64_T);
+			*pe, SHM_INTERNAL_INT64);
     shmem_internal_get_wait();
     return newval;
 }
@@ -104,14 +91,10 @@ FC_SHMEM_REAL4_SWAP(float *target,
 {
     float newval;
 
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_swap(target, value, &newval, 4,
-			*pe, PTL_FLOAT);
+			*pe, SHM_INTERNAL_FLOAT);
     shmem_internal_get_wait();
     return newval;
 }
@@ -128,14 +111,10 @@ FC_SHMEM_REAL8_SWAP(double *target,
 {
     double newval;
 
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_swap(target, value, &newval, 8,
-			*pe, PTL_DOUBLE);
+			*pe, SHM_INTERNAL_DOUBLE);
     shmem_internal_get_wait();
     return newval;
 }
@@ -154,15 +133,11 @@ FC_SHMEM_INT4_CSWAP(int32_t *target,
 {
     int32_t newval;
 
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_cswap(target, value, &newval, cond, 
                          4, 
-                         *pe, PTL_INT32_T);
+                         *pe, SHM_INTERNAL_INT32);
     shmem_internal_get_wait();
     return newval;
 }
@@ -181,15 +156,11 @@ FC_SHMEM_INT8_CSWAP(int64_t *target,
 {
     int64_t newval;
 
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_cswap(target, value, &newval, cond,
                          8, 
-                         *pe, PTL_INT64_T);
+                         *pe, SHM_INTERNAL_INT64);
     shmem_internal_get_wait();
     return newval;
 }
@@ -206,14 +177,10 @@ FC_SHMEM_INT4_FADD(int32_t *target,
 {
     int32_t oldval;
 
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_fetch_atomic(target, value, &oldval, 4, 
-                                *pe, PTL_SUM, PTL_INT32_T);
+                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32);
     shmem_internal_get_wait();
     return oldval;
 }
@@ -230,14 +197,10 @@ FC_SHMEM_INT8_FADD(int64_t *target,
 {
     int64_t oldval;
 
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_fetch_atomic(target, value, &oldval, 8, 
-                                *pe, PTL_SUM, PTL_INT64_T);
+                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64);
     shmem_internal_get_wait();
     return oldval;
 }
@@ -252,14 +215,10 @@ FC_SHMEM_INT4_FINC(int32_t *target,
 {
     int32_t oldval, tmp = 1;
 
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_fetch_atomic(target, &tmp, &oldval, 4, 
-                                *pe, PTL_SUM, PTL_INT32_T);
+                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32);
     shmem_internal_get_wait();
     return oldval;
 }
@@ -274,14 +233,10 @@ FC_SHMEM_INT8_FINC(int64_t *target,
 {
     int64_t oldval, tmp = 1;
 
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_fetch_atomic(target, &tmp, &oldval, 8, 
-                                *pe, PTL_SUM, PTL_INT64_T);
+                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64);
     shmem_internal_get_wait();
     return oldval;
 }
@@ -296,14 +251,10 @@ FC_SHMEM_INT4_ADD(int32_t *target,
                   int32_t *value, 
                   fortran_integer_t *pe)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_atomic_small(target, value, 4, 
-                                 *pe, PTL_SUM, PTL_INT32_T);
+                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32);
 }
 
 
@@ -316,14 +267,10 @@ FC_SHMEM_INT8_ADD(int64_t *target,
                   int64_t *value, 
                   fortran_integer_t *pe)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_atomic_small(target, value, 8, 
-                                 *pe, PTL_SUM, PTL_INT64_T);
+                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64);
 }
 
 
@@ -336,14 +283,10 @@ FC_SHMEM_INT4_INC(int32_t *target,
 {
     int32_t tmp = 1;
 
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_atomic_small(target, &tmp, 4, 
-                                 *pe, PTL_SUM, PTL_INT32_T);
+                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32);
 }
 
 
@@ -356,12 +299,8 @@ FC_SHMEM_INT8_INC(int64_t *target,
 {
     int64_t tmp = 1;
 
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_atomic_small(target, &tmp, 8, 
-                                 *pe, PTL_SUM, PTL_INT64_T);
+                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64);
 }

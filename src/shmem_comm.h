@@ -97,6 +97,7 @@ shmem_internal_put_nb(void *target, const void *source, size_t len, int pe,
         if (len > shmem_transport_cma_put_max) {
             shmem_transport_cma_put(target, source, len, pe, node_rank);
         } else {
+            /* FIXME: Portals 4 call not guarded by USE_PORTALS4 */
             shmem_transport_portals4_put_nb(target, source, len, pe, completion);
         }
 #else
@@ -208,16 +209,20 @@ typedef ptl_op_t shm_internal_op_t;
 #define SHM_INTERNAL_FLOAT PTL_FLOAT
 #define SHM_INTERNAL_DOUBLE PTL_DOUBLE
 #define SHM_INTERNAL_LONG_DOUBLE PTL_LONG_DOUBLE
+#define SHM_INTERNAL_FLOAT_COMPLEX PTL_FLOAT_COMPLEX
+#define SHM_INTERNAL_DOUBLE_COMPLEX PTL_DOUBLE_COMPLEX
+
 #define SHM_INTERNAL_SHORT PTL_SHORT
 #define SHM_INTERNAL_SIGNED_BYTE PTL_INT8_T
+#define SHM_INTERNAL_INT32 PTL_INT32_T
+#define SHM_INTERNAL_INT64 PTL_INT64_T
+
 #define SHM_INTERNAL_BAND PTL_BAND
 #define SHM_INTERNAL_BOR PTL_BOR
 #define SHM_INTERNAL_BXOR PTL_BXOR
 #define SHM_INTERNAL_MIN PTL_MIN
 #define SHM_INTERNAL_MAX PTL_MAX
 #define SHM_INTERNAL_SUM PTL_SUM
-#define SHM_INTERNAL_FLOAT_COMPLEX PTL_FLOAT_COMPLEX
-#define SHM_INTERNAL_DOUBLE_COMPLEX PTL_DOUBLE_COMPLEX
 #define SHM_INTERNAL_PROD PTL_PROD
 
 #elif defined ( USE_OFI )
@@ -231,6 +236,8 @@ typedef enum fi_op       shm_internal_op_t;
 #define SHM_INTERNAL_FLOAT_COMPLEX   FI_FLOAT_COMPLEX
 #define SHM_INTERNAL_DOUBLE_COMPLEX  FI_DOUBLE_COMPLEX
 #define SHM_INTERNAL_SIGNED_BYTE     FI_INT8
+#define SHM_INTERNAL_INT32           FI_INT32
+#define SHM_INTERNAL_INT64           FI_INT64
 
  // Operations
 #define SHM_INTERNAL_BAND            FI_BAND

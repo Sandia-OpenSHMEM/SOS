@@ -59,7 +59,9 @@ TESTS = \
 	bcast_flood \
 	lfinc \
 	shmem_ct \
-	mt_a2a
+	mt_a2a \
+	global_exit \
+	shmem_info
 
 if HAVE_FORTRAN
 TESTS += \
@@ -213,3 +215,9 @@ shmem_ct_LDADD = $(top_builddir)/src/libsma.la
 
 mt_a2a_SOURCES = mt_a2a.c
 mt_a2a_LDADD = $(top_builddir)/src/libsma.la
+
+global_exit_SOURCES = global_exit.c
+global_exit_LDADD = $(top_builddir)/src/libsma.la
+
+shmem_info_SOURCES = shmem_info.c
+shmem_info_LDADD = $(top_builddir)/src/libsma.la

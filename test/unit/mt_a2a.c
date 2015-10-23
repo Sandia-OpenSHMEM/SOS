@@ -1,3 +1,30 @@
+/*
+ *  Copyright (c) 2015 Intel Corporation. All rights reserved.
+ *  This software is available to you under the BSD license below:
+ *
+ *      Redistribution and use in source and binary forms, with or
+ *      without modification, are permitted provided that the following
+ *      conditions are met:
+ *
+ *      - Redistributions of source code must retain the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer.
+ *
+ *      - Redistributions in binary form must reproduce the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer in the documentation and/or other materials
+ *        provided with the distribution.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 /* Multithreaded All-to-All Test
  * James Dinan <james.dinan@intel.com>
  * January, 2014
@@ -88,12 +115,12 @@ int main(int argc, char **argv) {
     pthread_t threads[T];
     int       t_arg[T];
 
-    shmemx_init(SHMEMX_THREAD_MULTIPLE, &tl);
+    shmemx_init_thread(SHMEMX_THREAD_MULTIPLE, &tl);
 
     /* If OpenSHMEM doesn't support multithreading, exit gracefully */
     if (SHMEMX_THREAD_MULTIPLE != tl) {
         printf("Warning: Exiting because threading is disabled, tested nothing\n");
-        shmemx_finalize();
+        shmem_finalize();
         return 0;
     }
 
@@ -124,6 +151,6 @@ int main(int argc, char **argv) {
         else printf("Success\n");
     }
 
-    shmemx_finalize();
+    shmem_finalize();
     return (errors == 0) ? 0 : 1;
 }

@@ -117,11 +117,10 @@ main (int argc, char **argv)
   float **U_Next;
   /* helper variables */
   /* available iterator  */
-  int i, j, k, m, n;
-  int per_proc, remainder, my_start_row, my_end_row, my_num_rows;
+  int i, j, k;
+  int my_start_row, my_end_row, my_num_rows;
   int verbose = 0;
   int show_time = 0;
-  double time;
   double t, tv[2];
 
   /*OpenSHMEM initilization*/
@@ -135,7 +134,7 @@ main (int argc, char **argv)
   }
 
   /* argument processing done by everyone */
-  int c, errflg;
+  int c, errflg = 0;
   extern char *optarg;
   extern int optind, optopt;
 
@@ -192,8 +191,8 @@ main (int argc, char **argv)
       printf ("Using defaults: -h 20 -w 20 -m 2\n");
     }
 
-//  if (0 < errflg) 
-//      exit(EXIT_FAILURE);
+  if (0 < errflg)
+      exit(EXIT_FAILURE);
 
 
   /* wait for user to input runtime params */

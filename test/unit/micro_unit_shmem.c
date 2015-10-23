@@ -53,7 +53,7 @@ int verbose;
 int debug;
 
 
-static inline void wait(int *wait_var, int iterations, int pe)
+static inline void wait_until(int *wait_var, int iterations, int pe)
 {
 
 	if (debug)
@@ -105,7 +105,7 @@ static inline void putfence(int me, int iterations, int T)
 		shmem_int_p(&target[T], i, 1);
 
 	} else
-		wait(&target[T], iterations, 1);
+		wait_until(&target[T], iterations, 1);
 
 	if (verbose)
 		if (me == 0)
@@ -133,7 +133,7 @@ static inline void gettest(int me, int iterations, int T, int S, int P)
 		post_op_check("get", target[T], iterations, 1);
 
 	} else
-		wait(&sync_pes[P], iterations, 0);
+		wait_until(&sync_pes[P], iterations, 0);
 
 	if (verbose) {
 		if (me == 0)
@@ -160,7 +160,7 @@ static inline void atomic_inc(int me, int iterations, int T)
 			printf("PE 0 done with operation\n");
 
 	} else
-		wait(&target[T], (iterations+1), 1);
+		wait_until(&target[T], (iterations+1), 1);
 
 	if (verbose) {
 		if (me == 1)
@@ -187,7 +187,7 @@ static inline void atomic_add(int me, int iterations, int T)
 			printf("PE 1 done with operation\n");
 
 	} else
-		wait(&target[T], (iterations+1), 0);
+		wait_until(&target[T], (iterations+1), 0);
 
 	if (verbose) {
 		if (me == 1)
@@ -226,7 +226,7 @@ static inline void swaptest(int me, int iterations, int T, int S, int P)
 		}
 
 	} else {
-		wait(&sync_pes[P], iterations, 1);
+		wait_until(&sync_pes[P], iterations, 1);
 
 		if (((iterations % 2 == 1) && (target[T] != sswap)) ||
 			((iterations % 2 == 0) &&
@@ -261,7 +261,7 @@ static inline void cswaptest(int me, int iterations, int T, int S, int P)
 		post_op_check("cswap", source[S], (iterations-1), 1);
 
 	} else {
-		wait(&sync_pes[P], iterations, 0);
+		wait_until(&sync_pes[P], iterations, 0);
 
 		if (target[T] != iterations) {
 			fprintf(stderr, "cswap ERR: PE 1 target = %d != %d\n",
@@ -299,7 +299,7 @@ static inline void fetchatomic_add(int me, int iterations, int T, int S)
 		post_op_check("fadd", source[S], iterations, 0);
 
 	} else
-		wait(&target[T], (iterations+1), 1);
+		wait_until(&target[T], (iterations+1), 1);
 
 	if (verbose) {
 		if (me == 0)
@@ -328,7 +328,7 @@ static inline void fetchatomic_inc(int me, int iterations, int T, int S)
 
 		post_op_check("finc", source[S], (iterations-1), 1);
 	} else
-		wait(&target[T], iterations, 0);
+		wait_until(&target[T], iterations, 0);
 
 	if (verbose) {
 		if (me == 1)

@@ -1050,7 +1050,8 @@ void shmem_transport_portals4_ct_attach(ptl_handle_ct_t ptl_ct, void *seg_base,
                                         ptl_size_t seg_length, ptl_pt_index_t *seg_pt,
                                         ptl_handle_le_t *seg_le)
 {
-    int ret, des_pt;
+    int ret;
+    ptl_pt_index_t des_pt;
     ptl_le_t le;
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_pt_state);

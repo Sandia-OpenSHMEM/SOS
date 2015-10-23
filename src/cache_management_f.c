@@ -12,8 +12,6 @@
 
 #include "config.h"
 
-#include <portals4.h>
-
 #include "shmem.h"
 #include "shmem_internal.h"
 
@@ -22,11 +20,7 @@ void FC_SHMEM_CLEAR_CACHE_INV(void);
 void
 FC_SHMEM_CLEAR_CACHE_INV(void)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* Intentionally a no-op */
 }
@@ -37,11 +31,7 @@ void FC_SHMEM_SET_CACHE_INV(void);
 void
 FC_SHMEM_SET_CACHE_INV(void)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* Intentionally a no-op */
 }
@@ -52,11 +42,7 @@ void FC_SHMEM_CLEAR_CACHE_LINE_INV(void *target);
 void
 FC_SHMEM_CLEAR_CACHE_LINE_INV(void *target)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* Intentionally a no-op */
 }
@@ -67,11 +53,7 @@ void FC_SHMEM_SET_CACHE_LINE_INV(void *target);
 void
 FC_SHMEM_SET_CACHE_LINE_INV(void *target)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* Intentionally a no-op */
 }
@@ -82,11 +64,7 @@ void FC_SHMEM_UDCFLUSH(void);
 void
 FC_SHMEM_UDCFLUSH(void)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* Intentionally a no-op */
 }
@@ -97,11 +75,7 @@ void FC_SHMEM_UDCFLUSH_LINE(void *target);
 void
 FC_SHMEM_UDCFLUSH_LINE(void *target)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     /* Intentionally a no-op */
 }

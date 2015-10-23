@@ -21,11 +21,7 @@ fortran_integer_t FC_SHMEM_PE_ACCESSIBLE(fortran_integer_t *pe);
 fortran_integer_t
 FC_SHMEM_PE_ACCESSIBLE(fortran_integer_t *pe)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
      return shmem_internal_pe_accessible(*pe);
 }
@@ -36,11 +32,7 @@ fortran_integer_t FC_SHMEM_ADDR_ACCESSIBLE(void *addr, fortran_integer_t *pe);
 fortran_integer_t
 FC_SHMEM_ADDR_ACCESSIBLE(void *addr, fortran_integer_t *pe)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
      return shmem_internal_addr_accessible(addr, *pe);
 }

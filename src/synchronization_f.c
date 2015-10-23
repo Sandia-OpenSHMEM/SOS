@@ -12,7 +12,6 @@
 
 #include "config.h"
 
-#include <portals4.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -28,11 +27,7 @@ void FC_SHMEM_QUIET(void);
 void
 FC_SHMEM_QUIET(void)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_quiet();
 }
@@ -43,11 +38,7 @@ void FC_SHMEM_FENCE(void);
 void
 FC_SHMEM_FENCE(void)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_fence();
 }
@@ -60,11 +51,7 @@ void
 FC_SHMEM_INT4_WAIT(volatile int32_t *var,
                    int32_t *value)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     SHMEM_WAIT(var, *value);
 }
@@ -77,11 +64,7 @@ void
 FC_SHMEM_INT8_WAIT(volatile int64_t *var,
                    int64_t *value)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     SHMEM_WAIT(var, *value);
 }
@@ -94,11 +77,7 @@ void
 FC_SHMEM_WAIT(volatile fortran_integer_t *var,
               fortran_integer_t *value)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     SHMEM_WAIT(var, *value);
 }
@@ -113,11 +92,7 @@ FC_SHMEM_INT4_WAIT_UNTIL(volatile int32_t *var,
                          fortran_integer_t *cond,
                          int32_t *value)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     SHMEM_WAIT_UNTIL(var, *cond, *value);
 }
@@ -132,11 +107,7 @@ FC_SHMEM_INT8_WAIT_UNTIL(volatile int64_t *var,
                          fortran_integer_t *cond,
                          int64_t *value)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     SHMEM_WAIT_UNTIL(var, *cond, *value);
 }
@@ -151,11 +122,7 @@ FC_SHMEM_WAIT_UNTIL(volatile fortran_integer_t *var,
                     fortran_integer_t *cond,
                     fortran_integer_t *value)
 {
-#ifdef ENABLE_ERROR_CHECKING
-    if (!shmem_internal_initialized) {
-        RAISE_ERROR_STR("library not initialized");
-    }
-#endif
+    SHMEM_ERR_CHECK_INITIALIZED();
 
     SHMEM_WAIT_UNTIL(var, *cond, *value);
 }

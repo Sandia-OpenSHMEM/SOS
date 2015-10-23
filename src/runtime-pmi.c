@@ -18,7 +18,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <portals4.h>
 #if defined(PMI_SLURM)
 #include <slurm/pmi.h>
 #elif defined(PMI_PORTALS4)
@@ -141,6 +140,16 @@ shmem_runtime_fini(void)
     PMI_Finalize();
 
     return 0;
+}
+
+
+void
+shmem_runtime_abort(int exit_code, const char msg[])
+{
+    PMI_Abort(exit_code, msg);
+
+    /* PMI_Abort should not return */
+    abort();
 }
 
 
