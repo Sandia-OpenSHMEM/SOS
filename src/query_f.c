@@ -52,10 +52,10 @@ FC_SHMEM_MY_PE(void)
      return shmem_internal_my_pe;
 }
 
-#define FC_SHMEM_WTIME FC_FUNC_(shmem_wtime, SHMEM_WTIME)
-fortran_double_precision_t FC_SHMEM_WTIME(void);
+#define FC_SHMEMX_WTIME FC_FUNC_(shmemx_wtime, SHMEMX_WTIME)
+fortran_double_precision_t FC_SHMEMX_WTIME(void);
 fortran_double_precision_t
-FC_SHMEM_WTIME(void)
+FC_SHMEMX_WTIME(void)
 {
      double wtime;
      struct timeval tv;

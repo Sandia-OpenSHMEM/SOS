@@ -87,3 +87,7 @@
       ! 8.19 Lock routines
       EXTERNAL SHMEM_TEST_LOCK
       INTEGER SHMEM_TEST_LOCK
+
+      ! EXT: OpenSHMEM extensions
+      EXTERNAL SHMEMX_WTIME
+      DOUBLE PRECISION SHMEMX_WTIME
