@@ -97,8 +97,14 @@ shmem_internal_put_nb(void *target, const void *source, size_t len, int pe,
         if (len > shmem_transport_cma_put_max) {
             shmem_transport_cma_put(target, source, len, pe, node_rank);
         } else {
-            /* FIXME: Portals 4 call not guarded by USE_PORTALS4 */
+#  if USE_PORTALS4
             shmem_transport_portals4_put_nb(target, source, len, pe, completion);
+#  elif USE_OFI
+            shmem_transport_ofi_put_nb(target, source, len, pe, completion);
+#  else
+        RAISE_ERROR_STR("No path to peer");
+#  endif /* USE_PORTALS4 */
+
         }
 #else
         RAISE_ERROR_STR("No path to peer");
