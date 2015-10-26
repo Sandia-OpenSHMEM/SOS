@@ -21,7 +21,6 @@
 #include <rdma/fi_cm.h>
 #include <rdma/fi_atomic.h>
 #include <netdb.h>
-#include <pmi.h>
 #if USE_PORTALS4
 #include <portals4.h>
 #endif
@@ -29,7 +28,6 @@
 #include <string.h>
 #include "shmem_internal.h"
 #include <unistd.h>
-#include "runtime.h"
 #include <stddef.h>
 
 extern struct fid_fabric*       	shmem_transport_ofi_fabfd;
