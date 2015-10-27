@@ -65,7 +65,8 @@ TESTS = \
 
 if HAVE_FORTRAN
 TESTS += \
-     hello_f
+     hello_f \
+     shmem_info_f
 endif
 
 NPROCS ?= 2
@@ -221,3 +222,6 @@ global_exit_LDADD = $(top_builddir)/src/libsma.la
 
 shmem_info_SOURCES = shmem_info.c
 shmem_info_LDADD = $(top_builddir)/src/libsma.la
+
+shmem_info_f_SOURCES = shmem_info_f.f90
+shmem_info_f_LDADD = $(top_builddir)/src/libsma.la
