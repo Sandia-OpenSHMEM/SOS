@@ -20,7 +20,8 @@
 #include "shmem_internal.h"
 #include "shmem_comm.h"
 #include "transport_ofi.h"
-#include "unistd.h"
+#include <unistd.h>
+#include "runtime.h"
 
 
 struct fid_fabric*          	shmem_transport_ofi_fabfd;
@@ -344,31 +345,13 @@ static inline void atomic_limitations_check(void)
 
 }
 
-static inline int init_pmi(void)
-{
-
-    int ret, npes = 0;
-
-    ret = PMI_Get_size(&npes);
-    if(ret!=0){
-	    RAISE_ERROR(ret);
-    }
-
-
-    return npes;
-
-}
-
-static inline void pmi_exchange_and_av_insert(const int npes)
+static inline void exchange_and_av_insert(const int npes)
 {
     int                 i, rank = 0, ret = 0;
     char   epname[128], *alladdrs = NULL;
     size_t epnamelen = sizeof(epname);
 
-    ret = PMI_Get_rank(&rank);
-    if(ret!=0){
-	    RAISE_ERROR(ret);
-    }
+    rank = shmem_runtime_get_rank();
 
     ret = fi_getname((fid_t)shmem_transport_ofi_epfd, epname, &epnamelen);
     if(ret!=0 || (epnamelen > sizeof(epname))){
@@ -382,7 +365,7 @@ static inline void pmi_exchange_and_av_insert(const int npes)
 
     ret = shmem_runtime_put("OFI", epname, epnamelen);
     shmem_runtime_exchange();
-    PMI_Barrier();
+    shmem_runtime_barrier();
 
     for(i=0; i<npes; i++)
     {
@@ -512,7 +495,7 @@ static inline struct fi_info * query_for_fabric(char *provname)
 
 int shmem_transport_ofi_init(long eager_size)
 {
-    const int npes = init_pmi();
+    const int npes = shmem_runtime_get_size();
 
     shmem_transport_ofi_bounce_buffer_size = eager_size;
 
@@ -542,7 +525,7 @@ int shmem_transport_ofi_init(long eager_size)
 
     atomic_limitations_check();
 
-    pmi_exchange_and_av_insert(npes);
+    exchange_and_av_insert(npes);
 
     fi_freeinfo(p_info);
 
