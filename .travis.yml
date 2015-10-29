@@ -16,15 +16,22 @@ before_install:
         - make -j2
         - make install
         - cd ..
+#       We need OFI build commands here
 install:
         - git clone https://github.com/regrant/sandia-shmem.git
         - autoreconf -i
         - ./configure --with-portals4=$HOME/portals4/
-        - make 
+        - make
+#        this is where the configure for the OFI version should go
+#        - make distclean
+#        - autoreconf -i
+#        - ./configure  
 
 notifications:
   email:
     recipients:
       - regrant@sandia.gov
+      - james.dinan@intel.com
+      - kayla.seager@intel.com
     on_success: [change]
     on_failure: [always] 
