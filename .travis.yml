@@ -1,0 +1,30 @@
+sudo: true
+language: c
+compiler:
+    - gcc
+os:
+    - linux
+before_install:
+        - wget http://dist.schmorp.de/libev/Attic/libev-4.15.tar.gz
+        - tar -xzvf libev-4.15.tar.gz
+        - cd libev-4.15 && ./configure --prefix=/usr/ && make && sudo make install
+        - cd ..
+        - git clone https://github.com/regrant/portals4.git portals4-code
+        - cd portals4-code
+        - ./autogen.sh
+        - ./configure --prefix=$HOME/portals4/ --with-libev=/usr/lib/ --enable-zero-mrs --enable-reliable-udp --enable-transport-shmem
+        - make -j2
+        - make install
+        - cd ..
+install:
+        - git clone https://github.com/regrant/sandia-shmem.git
+        - autoreconf -i
+        - ./configure --with-portals4=./portals4/
+        - make 
+
+notifications:
+  email:
+    recipients:
+      - regrant@sandia.gov
+    on_success: [change]
+    on_failure: [always] 
