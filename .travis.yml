@@ -12,14 +12,14 @@ before_install:
         - git clone https://github.com/regrant/portals4.git portals4-code
         - cd portals4-code
         - ./autogen.sh
-        - ./configure --prefix=../portals4/ --with-libev=/usr/lib/ --enable-zero-mrs --enable-reliable-udp --enable-transport-shmem
+        - ./configure --prefix=$HOME/portals4/ --with-libev=/usr/lib/ --enable-zero-mrs --enable-reliable-udp --enable-transport-shmem
         - make -j2
         - make install
         - cd ..
 install:
         - git clone https://github.com/regrant/sandia-shmem.git
         - autoreconf -i
-        - ./configure --with-portals4=./portals4/
+        - ./configure --with-portals4=$HOME/portals4/
         - make 
 
 notifications:
