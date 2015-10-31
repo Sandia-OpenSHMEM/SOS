@@ -10,8 +10,8 @@
  *
  */
 
-#ifndef PORTALS_SHMEM_H
-#define PORTALS_SHMEM_H
+#ifndef SHMEM_H
+#define SHMEM_H
 
 #include <stddef.h>
 #include <complex.h>
@@ -423,4 +423,4 @@ long shmemx_ct_get(shmemx_ct_t ct);
 void shmemx_ct_set(shmemx_ct_t ct, long value);
 void shmemx_ct_wait(shmemx_ct_t ct, long wait_for);
 
-#endif /* PORTALS_SHMEM_H */
+#endif /* SHMEM_H */
