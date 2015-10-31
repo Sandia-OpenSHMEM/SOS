@@ -8,6 +8,7 @@
 #include <assert.h>
 
 #include <shmem.h>
+#include <shmemx.h>
 
 static int atoi_scaled(char *s);
 static void usage(char *pgm);

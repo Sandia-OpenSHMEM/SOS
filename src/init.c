@@ -26,6 +26,7 @@
 #include <unistd.h>
 
 #include "shmem.h"
+#include "shmemx.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"
 #include "runtime.h"

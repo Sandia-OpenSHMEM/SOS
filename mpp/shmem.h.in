@@ -23,11 +23,6 @@
 #define SHMEM_CMP_LT 5
 #define SHMEM_CMP_LE 6
 
-#define SHMEMX_THREAD_SINGLE     0
-#define SHMEMX_THREAD_FUNNELED   1
-#define SHMEMX_THREAD_SERIALIZED 2
-#define SHMEMX_THREAD_MULTIPLE   3
-
 #define _SHMEM_BCAST_SYNC_SIZE @C_BCAST_SYNC_SIZE@
 #define  SHMEM_BCAST_SYNC_SIZE @C_BCAST_SYNC_SIZE@
 #define _SHMEM_REDUCE_SYNC_SIZE @C_REDUCE_SYNC_SIZE@
@@ -406,21 +401,5 @@ void *shmemalign(size_t alignment, size_t size) __attribute__ ((deprecated));
 void *shrealloc(void *ptr, size_t size) __attribute__ ((deprecated));
 void shfree(void *ptr) __attribute__ ((deprecated));
 void start_pes(int npes) __attribute__ ((deprecated));
-
-/* EXT: Experimental SHMEM Extensions */
-void shmemx_init_thread(int tl_requested, int *tl_provided);
-double shmemx_wtime(void);
-char* shmemx_nodename(void);
-
-/* EXT: Signalling puts */
-typedef char * shmemx_ct_t;
-
-void shmemx_getmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe);
-void shmemx_putmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe);
-void shmemx_ct_create(shmemx_ct_t *ct);
-void shmemx_ct_free(shmemx_ct_t *ct);
-long shmemx_ct_get(shmemx_ct_t ct);
-void shmemx_ct_set(shmemx_ct_t ct, long value);
-void shmemx_ct_wait(shmemx_ct_t ct, long wait_for);
 
 #endif /* SHMEM_H */

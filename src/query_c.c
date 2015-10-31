@@ -17,6 +17,7 @@
 #include <sys/time.h>
 
 #include "shmem.h"
+#include "shmemx.h"
 #include "shmem_internal.h"
 
 #ifdef ENABLE_PROFILING
