@@ -14,6 +14,7 @@
 
 #include <sys/time.h>
 
+#include "shmemx.h"
 #include "shmem_internal.h"
 
 

@@ -9,7 +9,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "shmem.h"
+#include <shmem.h>
+#include <shmemx.h>
 
 #define SIZE		(10000000)
 

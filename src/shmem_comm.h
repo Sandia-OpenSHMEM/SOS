@@ -22,6 +22,7 @@
 #include <sys/param.h>
 
 #include "shmem.h" /* shmemx_ct_t */
+#include "shmemx.h"
 
 extern void *shmem_internal_heap_base;
 extern long shmem_internal_heap_length;

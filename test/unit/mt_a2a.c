@@ -36,6 +36,7 @@
 #include <pthread.h>
 #include <pthread_barrier.h>
 #include <shmem.h>
+#include <shmemx.h>
 
 #define T 8
 
