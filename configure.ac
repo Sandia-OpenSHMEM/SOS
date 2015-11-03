@@ -113,7 +113,6 @@ AC_ARG_ENABLE([profiling],
                     [Enable shmem call profiling (default:disabled)])])
 AS_IF([test "$enable_profiling" = "yes"], [AC_DEFINE([ENABLE_PROFILING], [1], [Enable shmem call profiling])])
 
-
 dnl check for programs
 
 AC_PROG_CC
@@ -368,7 +367,7 @@ echo "  Fortran:        $FORT"
 echo ""
 echo "Transports:"
 echo "  Portals 4:      $transport_portals4"
-echo "  OFI:      	$transport_ofi"
+echo "  OFI:            $transport_ofi"
 echo "  XPMEM:          $transport_xpmem"
 echo "  CMA:            $transport_cma"
 echo ""
