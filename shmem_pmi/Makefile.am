@@ -10,5 +10,4 @@ libshmem_pmi_la_SOURCES = \
 
 install-exec-hook:
 	$(MKDIR_P) ../install/lib
-	$(LN_S) $(DESTDIR)$(libdir)/libshmem_pmi.so ../install/lib/libshmem_pmi.so
-	$(LN_S) $(DESTDIR)$(libdir)/libshmem_pmi.so.0 ../install/lib/libshmem_pmi.so.0
+	$(LN_S) -f $(DESTDIR)$(libdir)/libshmem_pmi${shrext_cmds} ../install/lib/libshmem_pmi${shrext_cmds}
