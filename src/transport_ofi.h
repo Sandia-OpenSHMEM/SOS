@@ -54,6 +54,28 @@ extern size_t    			shmem_transport_ofi_bounce_buffer_size;
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #endif
 
+typedef enum fi_datatype shm_internal_datatype_t;
+typedef enum fi_op       shm_internal_op_t;
+
+// Datatypes
+#define SHM_INTERNAL_FLOAT           FI_FLOAT
+#define SHM_INTERNAL_DOUBLE          FI_DOUBLE
+#define SHM_INTERNAL_LONG_DOUBLE     FI_LONG_DOUBLE
+#define SHM_INTERNAL_FLOAT_COMPLEX   FI_FLOAT_COMPLEX
+#define SHM_INTERNAL_DOUBLE_COMPLEX  FI_DOUBLE_COMPLEX
+#define SHM_INTERNAL_SIGNED_BYTE     FI_INT8
+#define SHM_INTERNAL_INT32           FI_INT32
+#define SHM_INTERNAL_INT64           FI_INT64
+
+ // Operations
+#define SHM_INTERNAL_BAND            FI_BAND
+#define SHM_INTERNAL_BOR             FI_BOR
+#define SHM_INTERNAL_BXOR            FI_BXOR
+#define SHM_INTERNAL_MIN             FI_MIN
+#define SHM_INTERNAL_MAX             FI_MAX
+#define SHM_INTERNAL_SUM             FI_SUM
+#define SHM_INTERNAL_PROD            FI_PROD
+
 #define SHMEM_TRANSPORT_OFI_TYPE_BOUNCE 0x01
 #define SHMEM_TRANSPORT_OFI_TYPE_LONG   0x02
 
@@ -90,7 +112,7 @@ struct shmem_transport_ofi_long_frag_t {
 };
 typedef struct shmem_transport_ofi_long_frag_t shmem_transport_ofi_long_frag_t;
 
-typedef int shmem_transport_ofi_ct_t;
+typedef int shmem_transport_ct_t;
 
 extern shmem_free_list_t *shmem_transport_ofi_bounce_buffers;
 
@@ -101,9 +123,9 @@ extern shmem_free_list_t *shmem_transport_ofi_frag_buffers;
 
 #define OFI_RET_CHECK(ret) do { if (ret) { RAISE_ERROR(ret); } } while (0)
 
-int shmem_transport_ofi_init(long eager_size);
-int shmem_transport_ofi_startup(void);
-int shmem_transport_ofi_fini(void);
+int shmem_transport_init(long eager_size);
+int shmem_transport_startup(void);
+int shmem_transport_fini(void);
 
 extern int SHMEM_Dtsize[FI_DATATYPE_LAST];
 
@@ -209,7 +231,7 @@ static inline shmem_transport_ofi_long_frag_t * create_long_frag(long *completio
 	return long_frag;
 }
 
-static inline int shmem_transport_ofi_quiet(void)
+static inline int shmem_transport_quiet(void)
 {
 	int ret = 0;
 
@@ -229,11 +251,11 @@ static inline int shmem_transport_ofi_quiet(void)
 
 static inline
 int
-shmem_transport_ofi_fence(void)
+shmem_transport_fence(void)
 {
 #if WANT_TOTAL_DATA_ORDERING == 0
 	/*unordered network model*/
-  return shmem_transport_ofi_quiet();
+  return shmem_transport_quiet();
 #else
   return 0;
 #endif
@@ -258,7 +280,7 @@ static inline int try_again(const int ret, uint64_t *polled) {
 
 static inline
 void
-shmem_transport_ofi_put_small(void *target, const void *source, size_t len, int pe)
+shmem_transport_put_small(void *target, const void *source, size_t len, int pe)
 {
 
 	int ret = 0;
@@ -283,8 +305,8 @@ shmem_transport_ofi_put_small(void *target, const void *source, size_t len, int 
 
 static inline
 void
-shmem_transport_ofi_put_nb(void *target, const void *source, size_t len,
-                           int pe, long *completion)
+shmem_transport_put_nb(void *target, const void *source, size_t len,
+                       int pe, long *completion)
 {
 	int ret = 0;
 	uint64_t dst = (uint64_t) pe;
@@ -340,7 +362,7 @@ shmem_transport_ofi_put_nb(void *target, const void *source, size_t len,
 
 static inline
 void
-shmem_transport_ofi_put_wait(long *completion)
+shmem_transport_put_wait(long *completion)
 {
 	while (*completion > 0) {
 		shmem_transport_ofi_drain_cq();
@@ -349,7 +371,7 @@ shmem_transport_ofi_put_wait(long *completion)
 
 static inline
 void
-shmem_transport_ofi_get(void *target, const void *source, size_t len, int pe)
+shmem_transport_get(void *target, const void *source, size_t len, int pe)
 {
 	int ret = 0;
         uint64_t dst = (uint64_t) pe;
@@ -372,7 +394,7 @@ shmem_transport_ofi_get(void *target, const void *source, size_t len, int pe)
 
 static inline
 void
-shmem_transport_ofi_get_wait(void)
+shmem_transport_get_wait(void)
 {
 	int ret = 0;
 
@@ -385,7 +407,7 @@ shmem_transport_ofi_get_wait(void)
 
 static inline
 void
-shmem_transport_ofi_swap(void *target, void *source, void *dest, size_t len,
+shmem_transport_swap(void *target, void *source, void *dest, size_t len,
                               int pe, int datatype)
 {
 	int ret = 0;
@@ -415,7 +437,7 @@ shmem_transport_ofi_swap(void *target, void *source, void *dest, size_t len,
 
 static inline
 void
-shmem_transport_ofi_cswap(void *target, void *source, void *dest, void *operand, size_t len,
+shmem_transport_cswap(void *target, void *source, void *dest, void *operand, size_t len,
                                int pe, int datatype)
 {
 
@@ -448,7 +470,7 @@ shmem_transport_ofi_cswap(void *target, void *source, void *dest, void *operand,
 
 static inline
 void
-shmem_transport_ofi_mswap(void *target, void *source, void *dest, void *mask, size_t len,
+shmem_transport_mswap(void *target, void *source, void *dest, void *mask, size_t len,
                                int pe, int datatype)
 {
 
@@ -481,7 +503,7 @@ shmem_transport_ofi_mswap(void *target, void *source, void *dest, void *mask, si
 
 static inline
 void
-shmem_transport_ofi_atomic_small(void *target, void *source, size_t len,
+shmem_transport_atomic_small(void *target, void *source, size_t len,
                                        int pe, int op, int datatype)
 {
 
@@ -506,7 +528,7 @@ shmem_transport_ofi_atomic_small(void *target, void *source, size_t len,
 
 static inline
 void
-shmem_transport_ofi_atomic_nb(void *target, void *source, size_t full_len,
+shmem_transport_atomic_nb(void *target, void *source, size_t full_len,
                                    int pe, int op, int datatype,
                                    long *completion)
 {
@@ -596,7 +618,7 @@ shmem_transport_ofi_atomic_nb(void *target, void *source, size_t full_len,
 
 static inline
 void
-shmem_transport_ofi_fetch_atomic(void *target, void *source, void *dest, size_t len,
+shmem_transport_fetch_atomic(void *target, void *source, void *dest, size_t len,
                                       int pe, int op, int datatype)
 {
         int ret = 0;
@@ -626,46 +648,46 @@ shmem_transport_ofi_fetch_atomic(void *target, void *source, void *dest, size_t 
 
 static inline
 void
-shmem_transport_ofi_put_ct_nb(shmem_transport_ofi_ct_t *ct, void *target,
+shmem_transport_put_ct_nb(shmem_transport_ct_t *ct, void *target,
                               const void *source, size_t len, int pe, long *completion)
 {
     RAISE_ERROR_STR("OFI transport does not currently support CT operations");
 }
 
 static inline
-void shmem_transport_ofi_get_ct(shmem_transport_ofi_ct_t *ct, void *target,
+void shmem_transport_get_ct(shmem_transport_ct_t *ct, void *target,
                                 const void *source, size_t len, int pe)
 {
     RAISE_ERROR_STR("OFI transport does not currently support CT operations");
 }
 
 static inline
-void shmem_transport_ofi_ct_create(shmem_transport_ofi_ct_t **ct_ptr)
+void shmem_transport_ct_create(shmem_transport_ct_t **ct_ptr)
 {
     RAISE_ERROR_STR("OFI transport does not currently support CT operations");
 }
 
 static inline
-void shmem_transport_ofi_ct_free(shmem_transport_ofi_ct_t **ct_ptr)
+void shmem_transport_ct_free(shmem_transport_ct_t **ct_ptr)
 {
     RAISE_ERROR_STR("OFI transport does not currently support CT operations");
 }
 
 static inline
-long shmem_transport_ofi_ct_get(shmem_transport_ofi_ct_t *ct)
+long shmem_transport_ct_get(shmem_transport_ct_t *ct)
 {
     RAISE_ERROR_STR("OFI transport does not currently support CT operations");
     return -1;
 }
 
 static inline
-void shmem_transport_ofi_ct_set(shmem_transport_ofi_ct_t *ct, long value)
+void shmem_transport_ct_set(shmem_transport_ct_t *ct, long value)
 {
     RAISE_ERROR_STR("OFI transport does not currently support CT operations");
 }
 
 static inline
-void shmem_transport_ofi_ct_wait(shmem_transport_ofi_ct_t *ct, long wait_for)
+void shmem_transport_ct_wait(shmem_transport_ct_t *ct, long wait_for)
 {
     RAISE_ERROR_STR("OFI transport does not currently support CT operations");
 }
