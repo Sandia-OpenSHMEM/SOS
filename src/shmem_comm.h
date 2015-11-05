@@ -190,8 +190,8 @@ shmem_internal_get_ct(shmemx_ct_t ct, void *target, const void *source, size_t l
     shmem_transport_portals4_get_ct((shmem_transport_portals4_ct_t *) ct,
                                     target, source, len, pe);
 #elif USE_OFI
-        fprintf(stderr,"NOT IMPLEMENTED\n");
-        exit(0);
+    shmem_transport_ofi_get_ct((shmem_transport_ofi_ct_t *) ct,
+                               target, source, len, pe);
 #else
     RAISE_ERROR_STR("No path to peer");
 #endif
@@ -348,8 +348,7 @@ void shmem_internal_ct_create(shmemx_ct_t *ct)
 #if USE_PORTALS4
     shmem_transport_portals4_ct_create((shmem_transport_portals4_ct_t **) ct);
 #elif USE_OFI
-        fprintf(stderr,"NOT IMPLEMENTED\n");
-        exit(0);
+    shmem_transport_ofi_ct_create((shmem_transport_ofi_ct_t **) ct);
 #else
     RAISE_ERROR_STR("No path to peer");
 #endif
@@ -362,8 +361,7 @@ void shmem_internal_ct_free(shmemx_ct_t *ct)
 #if USE_PORTALS4
     shmem_transport_portals4_ct_free((shmem_transport_portals4_ct_t **) ct);
 #elif USE_OFI
-        fprintf(stderr,"NOT IMPLEMENTED\n");
-        exit(0);
+    shmem_transport_ofi_ct_free((shmem_transport_ofi_ct_t **) ct);
 #else
     RAISE_ERROR_STR("No path to peer");
 #endif
@@ -376,8 +374,7 @@ long shmem_internal_ct_get(shmemx_ct_t ct)
 #if USE_PORTALS4
     return shmem_transport_portals4_ct_get((shmem_transport_portals4_ct_t *) ct);
 #elif USE_OFI
-        fprintf(stderr,"NOT IMPLEMENTED\n");
-        exit(0);
+    return shmem_transport_ofi_ct_get((shmem_transport_ofi_ct_t *) ct);
 #else
     RAISE_ERROR_STR("No path to peer");
 #endif
@@ -390,8 +387,7 @@ void shmem_internal_ct_set(shmemx_ct_t ct, long value)
 #if USE_PORTALS4
     shmem_transport_portals4_ct_set((shmem_transport_portals4_ct_t *) ct, value);
 #elif USE_OFI
-        fprintf(stderr,"NOT IMPLEMENTED\n");
-        exit(0);
+    shmem_transport_ofi_ct_set((shmem_transport_ofi_ct_t *) ct, value);
 #else
     RAISE_ERROR_STR("No path to peer");
 #endif
@@ -404,8 +400,7 @@ void shmem_internal_ct_wait(shmemx_ct_t ct, long wait_for)
 #if USE_PORTALS4
     shmem_transport_portals4_ct_wait((shmem_transport_portals4_ct_t *) ct, wait_for);
 #elif USE_OFI
-        fprintf(stderr,"NOT IMPLEMENTED\n");
-        exit(0);
+    shmem_transport_ofi_ct_wait((shmem_transport_ofi_ct_t *) ct, wait_for);
 #else
     RAISE_ERROR_STR("No path to peer");
 #endif
