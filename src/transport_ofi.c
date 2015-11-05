@@ -493,7 +493,7 @@ static inline struct fi_info * query_for_fabric(char *provname)
     return p_info;
 }
 
-int shmem_transport_ofi_init(long eager_size)
+int shmem_transport_init(long eager_size)
 {
     const int npes = shmem_runtime_get_size();
 
@@ -535,12 +535,12 @@ int shmem_transport_ofi_init(long eager_size)
     return 0;
 }
 
-int shmem_transport_ofi_startup(void)
+int shmem_transport_startup(void)
 {
     return 0;
 }
 
-int shmem_transport_ofi_fini(void)
+int shmem_transport_fini(void)
 {
 
     if (fi_close(&shmem_transport_ofi_epfd->fid)) {
