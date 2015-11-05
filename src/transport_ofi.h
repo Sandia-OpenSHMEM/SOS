@@ -90,7 +90,7 @@ struct shmem_transport_ofi_long_frag_t {
 };
 typedef struct shmem_transport_ofi_long_frag_t shmem_transport_ofi_long_frag_t;
 
-
+typedef int shmem_transport_ofi_ct_t;
 
 extern shmem_free_list_t *shmem_transport_ofi_bounce_buffers;
 
@@ -621,6 +621,53 @@ shmem_transport_ofi_fetch_atomic(void *target, void *source, void *dest, size_t 
 	} while(try_again(ret,&polled));
 
 	shmem_transport_ofi_pending_get_counter++;
+}
+
+
+static inline
+void
+shmem_transport_ofi_put_ct_nb(shmem_transport_ofi_ct_t *ct, void *target,
+                              const void *source, size_t len, int pe, long *completion)
+{
+    RAISE_ERROR_STR("OFI transport does not currently support CT operations");
+}
+
+static inline
+void shmem_transport_ofi_get_ct(shmem_transport_ofi_ct_t *ct, void *target,
+                                const void *source, size_t len, int pe)
+{
+    RAISE_ERROR_STR("OFI transport does not currently support CT operations");
+}
+
+static inline
+void shmem_transport_ofi_ct_create(shmem_transport_ofi_ct_t **ct_ptr)
+{
+    RAISE_ERROR_STR("OFI transport does not currently support CT operations");
+}
+
+static inline
+void shmem_transport_ofi_ct_free(shmem_transport_ofi_ct_t **ct_ptr)
+{
+    RAISE_ERROR_STR("OFI transport does not currently support CT operations");
+}
+
+static inline
+long shmem_transport_ofi_ct_get(shmem_transport_ofi_ct_t *ct)
+{
+    RAISE_ERROR_STR("OFI transport does not currently support CT operations");
+    return -1;
+}
+
+static inline
+void shmem_transport_ofi_ct_set(shmem_transport_ofi_ct_t *ct, long value)
+{
+    RAISE_ERROR_STR("OFI transport does not currently support CT operations");
+}
+
+static inline
+void shmem_transport_ofi_ct_wait(shmem_transport_ofi_ct_t *ct, long wait_for)
+{
+    RAISE_ERROR_STR("OFI transport does not currently support CT operations");
 }
 
 #endif /* TRANSPORT_OFI_H */

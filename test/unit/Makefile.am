@@ -58,10 +58,14 @@ TESTS = \
 	ns \
 	bcast_flood \
 	lfinc \
-	shmem_ct \
 	mt_a2a \
 	global_exit \
 	shmem_info
+
+if USE_PORTALS4
+TESTS += \
+	 shmem_ct
+endif
 
 if HAVE_FORTRAN
 TESTS += \
