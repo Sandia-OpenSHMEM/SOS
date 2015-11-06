@@ -83,9 +83,9 @@ shmem_internal_put_nb(void *target, const void *source, size_t len, int pe,
         shmem_transport_xpmem_put(target, source, len, pe, node_rank);
 #elif USE_CMA
         if (len > shmem_transport_cma_put_max) {
-            shmem_transport_cma_put(target, source, len, pe, node_rank);
-        } else {
             shmem_transport_put_nb(target, source, len, pe, completion);
+        } else {
+            shmem_transport_cma_put(target, source, len, pe, node_rank);
         }
 #else
         RAISE_ERROR_STR("No path to peer");
