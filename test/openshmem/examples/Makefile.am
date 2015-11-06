@@ -43,7 +43,7 @@ ptp_SOURCES = ptp.c
 ptp_LDADD = $(top_builddir)/src/libsma.la
 
 shmem_2dheat_SOURCES = shmem_2dheat.c
-shmem_2dheat_LDADD = $(top_builddir)/src/libsma.la
+shmem_2dheat_LDADD = $(top_builddir)/src/libsma.la -lm
 
 shmem_daxpy_SOURCES = shmem_daxpy.c
 shmem_daxpy_LDADD = $(top_builddir)/src/libsma.la
