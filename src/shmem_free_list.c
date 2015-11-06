@@ -12,6 +12,7 @@
 
 #include "config.h"
 
+#include <stddef.h>
 #include <stdlib.h>
 
 #include "shmem.h"
@@ -55,7 +56,7 @@ shmem_free_list_destroy(shmem_free_list_t *fl)
 int
 shmem_free_list_more(shmem_free_list_t *fl)
 {
-    int page_size = 4096 - sizeof(shmem_free_list_alloc_t);
+    size_t page_size = 4096 - sizeof(shmem_free_list_alloc_t);
     int num_elements = (fl->element_size < page_size) ? page_size / fl->element_size : 1;
     shmem_free_list_item_t *item, *first, *next, *last = NULL;
     shmem_free_list_alloc_t *header;
