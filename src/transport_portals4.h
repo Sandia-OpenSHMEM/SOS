@@ -38,15 +38,9 @@
 extern int8_t shmem_transport_portals4_pt_state[SHMEM_TRANSPORT_PORTALS4_NUM_PTS];
 
 extern ptl_handle_ni_t shmem_transport_portals4_ni_h;
-#if PORTALS4_MAX_MD_SIZE < PORTALS4_MAX_VA_SIZE
-extern ptl_handle_md_t *shmem_transport_portals4_put_volatile_md_h;
-extern ptl_handle_md_t *shmem_transport_portals4_put_event_md_h;
-extern ptl_handle_md_t *shmem_transport_portals4_get_md_h;
-#else
-extern ptl_handle_md_t shmem_transport_portals4_put_volatile_md_h[1];
-extern ptl_handle_md_t shmem_transport_portals4_put_event_md_h[1];
-extern ptl_handle_md_t shmem_transport_portals4_get_md_h[1];
-#endif
+extern ptl_handle_md_t shmem_transport_portals4_put_volatile_md_h;
+extern ptl_handle_md_t shmem_transport_portals4_put_event_md_h;
+extern ptl_handle_md_t shmem_transport_portals4_get_md_h;
 extern ptl_handle_ct_t shmem_transport_portals4_target_ct_h;
 extern ptl_handle_ct_t shmem_transport_portals4_put_ct_h;
 extern ptl_handle_ct_t shmem_transport_portals4_get_ct_h;
@@ -119,66 +113,6 @@ struct shmem_transport_portals4_ct_t {
     ptl_handle_ct_t ct;
 };
 typedef struct shmem_transport_portals4_ct_t shmem_transport_portals4_ct_t;
-
-/*
- * Not all implementations of Portals 4 support binding a memory
- * descriptor which covers all of memory, but all support covering a
- * large fraction of memory.  Therefore, rather than working around
- * the issue by pinning per message, we use a number of memory
- * descriptors to cover all of memory.  As long as the maximum memory
- * descriptor is a large fraction of the user virtual address space
- * (like 46 bit MDs on a platform with 47 bits of user virtual address
- * space), this works fine.
- *
- * Our scheme is to create N memory descriptors which contiguously
- * cover the entire user address space, then another N-1 contiguous
- * memory descriptors offset by 1/2 the size of the MD, then a final
- * memory descriptor of 1/2 the size of the other MDs covering the top
- * of the memory space, to avoid if statements in the critical path.  This
- * scheme allows for a maximum message size of 1/2 the size of the MD
- * without ever crossing an MD boundary.  Also, because MD sizes are
- * always on a power of 2 in this scheme, computing the offsets and MD
- * selection are quick, using only bit shift and mask.
- *
- * shmem_transport_portals4_get_md() relies heavily on compiler
- * constant folding.  "mask" can be constant folded into a constant.
- * "which" compiler folds into a bit shift of a register a constant
- * number of times, then masked by a constant (the input is,
- * unfortunately, not constant).
- *
- * In the case where an MD can cover all of memory,
- * shmem_transport_portals4_get_md() will be compiled into two
- * assignments.  Assuming the function inlines (and it certainly
- * should be), the two assignments should be optimized into register
- * assignments for the Portals call relatively easily.  Looking at
- * assembly code from this header appeared to show this was the case.
- */
-static inline void
-shmem_transport_portals4_get_md(const void *ptr, const ptl_handle_md_t *md_array,
-                                ptl_handle_md_t *md_h, void **base_ptr)
-{
-#if PORTALS4_MAX_MD_SIZE < PORTALS4_MAX_VA_SIZE
-    int mask = (1ULL << (PORTALS4_MAX_VA_SIZE - PORTALS4_MAX_MD_SIZE + 1)) - 1;
-    int which = (((uintptr_t) ptr) >> (PORTALS4_MAX_MD_SIZE - 1)) & mask;
-    *md_h = md_array[which];
-    *base_ptr = (void*) (which * (1ULL << (PORTALS4_MAX_MD_SIZE - 1)));
-#else
-    *md_h = md_array[0];
-    *base_ptr = 0;
-#endif
-}
-
-
-static inline int
-shmem_transport_portals4_get_num_mds(void)
-{
-#if PORTALS4_MAX_MD_SIZE < PORTALS4_MAX_VA_SIZE
-    return (1 << (PORTALS4_MAX_VA_SIZE - PORTALS4_MAX_MD_SIZE + 1));
-#else
-    return 1;
-#endif
-}
-
 
 /*
  * PORTALS4_GET_REMOTE_ACCESS is used to get the correct PT and offset
@@ -406,21 +340,16 @@ shmem_transport_portals4_put_small(void *target, const void *source, size_t len,
     ptl_process_t peer;
     ptl_pt_index_t pt;
     long offset;
-    ptl_handle_md_t md_h;
-    void *base;
 
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
     assert(len <= shmem_transport_portals4_max_volatile_size);
 
-    shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_volatile_md_h,
-                                    &md_h, &base);
-
     shmem_transport_portals4_fence_complete();
 
-    ret = PtlPut(md_h,
-                 (ptl_size_t) ((char*) source - (char*) base),
+    ret = PtlPut(shmem_transport_portals4_put_volatile_md_h,
+                 (ptl_size_t) source,
                  len,
                  PTL_CT_ACK_REQ,
                  peer,
@@ -444,8 +373,6 @@ shmem_transport_portals4_put_nb_internal(void *target, const void *source, size_
     ptl_process_t peer;
     ptl_pt_index_t pt;
     long offset;
-    ptl_handle_md_t md_h;
-    void *base;
 
     peer.rank = pe;
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
@@ -457,11 +384,8 @@ shmem_transport_portals4_put_nb_internal(void *target, const void *source, size_
     shmem_transport_portals4_fence_complete();
 
     if (len <= shmem_transport_portals4_max_volatile_size) {
-        shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_volatile_md_h,
-                                        &md_h, &base);
-
-        ret = PtlPut(md_h,
-                     (ptl_size_t) ((char*) source - (char*) base),
+        ret = PtlPut(shmem_transport_portals4_put_volatile_md_h,
+                     (ptl_size_t) source,
                      len,
                      PTL_CT_ACK_REQ,
                      peer,
@@ -490,11 +414,8 @@ shmem_transport_portals4_put_nb_internal(void *target, const void *source, size_
 
         memcpy(buff->data, source, len);
 
-        shmem_transport_portals4_get_md(buff->data, shmem_transport_portals4_put_event_md_h,
-                                        &md_h, &base);
-
-        ret = PtlPut(md_h,
-                     (ptl_size_t) ((char*) buff->data - (char*) base),
+        ret = PtlPut(shmem_transport_portals4_put_event_md_h,
+                     (ptl_size_t) buff->data,
                      len,
                      PTL_CT_ACK_REQ,
                      peer,
@@ -526,16 +447,13 @@ shmem_transport_portals4_put_nb_internal(void *target, const void *source, size_
         assert(long_frag->reference == 0);
         long_frag->completion = completion;
 
-        shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_event_md_h,
-                                        &md_h, &base);
-
         /* NOTE-MT: Frag mutex is not needed here because the frag doesn't get
          * exposed to other threads until the PtlPut. */
         (*(long_frag->completion))++;
         long_frag->reference++;
 
-        ret = PtlPut(md_h,
-                     (ptl_size_t) ((char*) source - (char*) base),
+        ret = PtlPut(shmem_transport_portals4_put_event_md_h,
+                     (ptl_size_t) source,
                      len,
                      PTL_CT_ACK_REQ,
                      peer,
@@ -607,8 +525,6 @@ shmem_transport_portals4_get_internal(void *target, const void *source, size_t l
     ptl_process_t peer;
     ptl_pt_index_t pt;
     long offset;
-    ptl_handle_md_t md_h;
-    void *base;
 
     peer.rank = pe;
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
@@ -617,11 +533,8 @@ shmem_transport_portals4_get_internal(void *target, const void *source, size_t l
     PORTALS4_GET_REMOTE_ACCESS_TWOPT(source, pt, offset, data_pt, heap_pt);
 #endif
 
-    shmem_transport_portals4_get_md(target, shmem_transport_portals4_get_md_h,
-                                    &md_h, &base);
-
-    ret = PtlGet(md_h,
-                 (ptl_size_t) ((char*) target - (char*) base),
+    ret = PtlGet(shmem_transport_portals4_get_md_h,
+                 (ptl_size_t) target,
                  len,
                  peer,
                  pt,
@@ -684,10 +597,6 @@ shmem_transport_portals4_swap(void *target, void *source, void *dest, size_t len
     ptl_process_t peer;
     ptl_pt_index_t pt;
     long offset;
-    ptl_handle_md_t get_md_h;
-    void *get_base;
-    ptl_handle_md_t put_md_h;
-    void *put_base;
 
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
@@ -695,20 +604,15 @@ shmem_transport_portals4_swap(void *target, void *source, void *dest, size_t len
     assert(len <= sizeof(long double complex));
     assert(len <= shmem_transport_portals4_max_volatile_size);
 
-    shmem_transport_portals4_get_md(dest, shmem_transport_portals4_get_md_h,
-                                    &get_md_h, &get_base);
-    shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_volatile_md_h,
-                                    &put_md_h, &put_base);
-
     shmem_transport_portals4_fence_complete();
 
     /* note: No ack is generated on the ct associated with the
        volatile md because the reply comes back on the get md.  So no
        need to increment the put counter */
-    ret = PtlSwap(get_md_h,
-                  (ptl_size_t) ((char*) dest - (char*) get_base),
-                  put_md_h,
-                  (ptl_size_t) ((char*) source - (char*) put_base),
+    ret = PtlSwap(shmem_transport_portals4_get_md_h,
+                  (ptl_size_t) dest,
+                  shmem_transport_portals4_put_volatile_md_h,
+                  (ptl_size_t) source,
                   len,
                   peer,
                   pt,
@@ -733,10 +637,6 @@ shmem_transport_portals4_cswap(void *target, void *source, void *dest, void *ope
     ptl_process_t peer;
     ptl_pt_index_t pt;
     long offset;
-    ptl_handle_md_t get_md_h;
-    void *get_base;
-    ptl_handle_md_t put_md_h;
-    void *put_base;
 
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
@@ -744,20 +644,15 @@ shmem_transport_portals4_cswap(void *target, void *source, void *dest, void *ope
     assert(len <= sizeof(long double complex));
     assert(len <= shmem_transport_portals4_max_volatile_size);
 
-    shmem_transport_portals4_get_md(dest, shmem_transport_portals4_get_md_h,
-                                    &get_md_h, &get_base);
-    shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_volatile_md_h,
-                                    &put_md_h, &put_base);
-
     shmem_transport_portals4_fence_complete();
 
     /* note: No ack is generated on the ct associated with the
        volatile md because the reply comes back on the get md.  So no
        need to increment the put counter */
-    ret = PtlSwap(get_md_h,
-                  (ptl_size_t) ((char*) dest - (char*) get_base),
-                  put_md_h,
-                  (ptl_size_t) ((char*) source - (char*) put_base),
+    ret = PtlSwap(shmem_transport_portals4_get_md_h,
+                  (ptl_size_t) dest,
+                  shmem_transport_portals4_put_volatile_md_h,
+                  (ptl_size_t) source,
                   len,
                   peer,
                   pt,
@@ -782,10 +677,6 @@ shmem_transport_portals4_mswap(void *target, void *source, void *dest, void *mas
     ptl_process_t peer;
     ptl_pt_index_t pt;
     long offset;
-    ptl_handle_md_t get_md_h;
-    void *get_base;
-    ptl_handle_md_t put_md_h;
-    void *put_base;
 
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
@@ -793,20 +684,15 @@ shmem_transport_portals4_mswap(void *target, void *source, void *dest, void *mas
     assert(len <= sizeof(long double complex));
     assert(len <= shmem_transport_portals4_max_volatile_size);
 
-    shmem_transport_portals4_get_md(dest, shmem_transport_portals4_get_md_h,
-                                    &get_md_h, &get_base);
-    shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_volatile_md_h,
-                                    &put_md_h, &put_base);
-
     shmem_transport_portals4_fence_complete();
 
     /* note: No ack is generated on the ct associated with the
        volatile md because the reply comes back on the get md.  So no
        need to increment the put counter */
-    ret = PtlSwap(get_md_h,
-                  (ptl_size_t) ((char*) dest - (char*) get_base),
-                  put_md_h,
-                  (ptl_size_t) ((char*) source - (char*) put_base),
+    ret = PtlSwap(shmem_transport_portals4_get_md_h,
+                  (ptl_size_t) dest,
+                  shmem_transport_portals4_put_volatile_md_h,
+                  (ptl_size_t) source,
                   len,
                   peer,
                   pt,
@@ -831,8 +717,6 @@ shmem_transport_portals4_atomic_small(void *target, void *source, size_t len,
     ptl_pt_index_t pt;
     long offset;
     ptl_process_t peer;
-    ptl_handle_md_t md_h;
-    void *base;
 
     shmem_transport_portals4_fence_complete();
 
@@ -841,13 +725,10 @@ shmem_transport_portals4_atomic_small(void *target, void *source, size_t len,
 
     assert(len <= shmem_transport_portals4_max_volatile_size);
 
-    shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_volatile_md_h,
-                                    &md_h, &base);
-
     shmem_transport_portals4_fence_complete();
 
-    ret = PtlAtomic(md_h,
-                    (ptl_size_t) ((char*) source - (char*) base),
+    ret = PtlAtomic(shmem_transport_portals4_put_volatile_md_h,
+                    (ptl_size_t) source,
                     len,
                     PTL_CT_ACK_REQ,
                     peer,
@@ -873,8 +754,6 @@ shmem_transport_portals4_atomic_nb(void *target, void *source, size_t len,
     ptl_pt_index_t pt;
     long offset;
     ptl_process_t peer;
-    ptl_handle_md_t md_h;
-    void *base;
 
     shmem_transport_portals4_fence_complete();
 
@@ -884,11 +763,8 @@ shmem_transport_portals4_atomic_nb(void *target, void *source, size_t len,
     shmem_transport_portals4_fence_complete();
 
     if (len <= shmem_transport_portals4_max_volatile_size) {
-        shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_volatile_md_h,
-                                        &md_h, &base);
-
-        ret = PtlAtomic(md_h,
-                        (ptl_size_t) ((char*) source - (char*) base),
+        ret = PtlAtomic(shmem_transport_portals4_put_volatile_md_h,
+                        (ptl_size_t) source,
                         len,
                         PTL_CT_ACK_REQ,
                         peer,
@@ -921,11 +797,8 @@ shmem_transport_portals4_atomic_nb(void *target, void *source, size_t len,
 
         memcpy(buff->data, source, len);
 
-        shmem_transport_portals4_get_md(buff->data, shmem_transport_portals4_put_event_md_h,
-                                        &md_h, &base);
-
-        ret = PtlAtomic(md_h,
-                        (ptl_size_t) ((char*) buff->data - (char*) base),
+        ret = PtlAtomic(shmem_transport_portals4_put_event_md_h,
+                        (ptl_size_t) buff->data,
                         len,
                         PTL_CT_ACK_REQ,
                         peer,
@@ -955,9 +828,7 @@ shmem_transport_portals4_atomic_nb(void *target, void *source, size_t len,
 
         long_frag->completion = completion;
 
-        shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_event_md_h,
-                                        &md_h, &base);
-        base_offset = (ptl_size_t) ((char*) source - (char*) base);
+        base_offset = (ptl_size_t) source;
 
         /* NOTE-MT: Must hold the frag mutex for the whole loop to prevent another
          * thread from seeing the incomplete frag, completing and freeing it. */
@@ -971,7 +842,7 @@ shmem_transport_portals4_atomic_nb(void *target, void *source, size_t len,
              SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
 
             size_t bufsize = MIN(len - sent, shmem_transport_portals4_max_atomic_size);
-            ret = PtlAtomic(shmem_transport_portals4_put_event_md_h[0],
+            ret = PtlAtomic(shmem_transport_portals4_put_event_md_h,
                             base_offset + sent,
                             bufsize,
                             PTL_CT_ACK_REQ,
@@ -1006,10 +877,6 @@ shmem_transport_portals4_fetch_atomic(void *target, void *source, void *dest, si
     ptl_pt_index_t pt;
     long offset;
     ptl_process_t peer;
-    ptl_handle_md_t get_md_h;
-    void *get_base;
-    ptl_handle_md_t put_md_h;
-    void *put_base;
 
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
@@ -1017,20 +884,15 @@ shmem_transport_portals4_fetch_atomic(void *target, void *source, void *dest, si
     assert(len <= shmem_transport_portals4_max_fetch_atomic_size);
     assert(len <= shmem_transport_portals4_max_volatile_size);
 
-    shmem_transport_portals4_get_md(source, shmem_transport_portals4_get_md_h,
-                                    &get_md_h, &get_base);
-    shmem_transport_portals4_get_md(source, shmem_transport_portals4_put_volatile_md_h,
-                                    &put_md_h, &put_base);
-
     shmem_transport_portals4_fence_complete();
 
     /* note: No ack is generated on the ct associated with the
        volatile md because the reply comes back on the get md.  So no
        need to increment the put counter */
-    ret = PtlFetchAtomic(get_md_h,
-                         (ptl_size_t) ((char*) dest - (char*) get_base),
-                         put_md_h,
-                         (ptl_size_t) ((char*) source - (char*) put_base),
+    ret = PtlFetchAtomic(shmem_transport_portals4_get_md_h,
+                         (ptl_size_t) dest,
+                         shmem_transport_portals4_put_volatile_md_h,
+                         (ptl_size_t) source,
                          len,
                          peer,
                          pt,
