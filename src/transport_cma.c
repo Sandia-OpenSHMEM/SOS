@@ -12,7 +12,6 @@
 
 #include "config.h"
 
-#include <portals4.h> /* FIXME: CMA should not have a dependence on Portals */
 #include <stdlib.h>
 #include <sys/time.h>
 #include <sys/param.h>

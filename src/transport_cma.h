@@ -100,7 +100,7 @@ shmem_transport_cma_put(void *target, const void *source, size_t len,
                         (const struct iovec *)&tgt, 1, 0);
 
         if ( bytes != len) {
-            RAISE_ERROR_STR("shmem_internal_put_small: vm_writev() failed");
+            RAISE_ERROR_STR("process_vm_writev() failed");
         }
 }
 
