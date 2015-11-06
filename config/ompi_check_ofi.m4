@@ -66,7 +66,7 @@ AC_DEFUN([OMPI_CHECK_OFI],[
 
     AS_IF([test "$ompi_check_ofi_happy" = "yes"],
 	  [AS_IF([test "$enable_remote_virtual_addressing" = "yes"],
-		[ompi_check_ofi_happy = "yes" ],
+		[ompi_check_ofi_happy="yes"],
 		[AC_MSG_ERROR([OFI transport requires remote VA enabled. Please use --enable-remote-virtual-addressing. Aborting])])])
 
     AS_IF([test "$ompi_check_ofi_happy" = "yes"],
