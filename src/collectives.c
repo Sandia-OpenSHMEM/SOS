@@ -17,7 +17,7 @@
 
 #include "shmem_internal.h"
 #include "shmem_collectives.h"
-
+#include "shmem.h"
 
 coll_type_t shmem_internal_barrier_type = AUTO;
 coll_type_t shmem_internal_bcast_type = AUTO;
@@ -73,7 +73,7 @@ shmem_internal_collectives_init(int requested_crossover,
     shmem_internal_barrier_all_psync = 
         shmem_internal_shmalloc(sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
     if (NULL == shmem_internal_barrier_all_psync) return -1;
-    bzero(shmem_internal_barrier_all_psync, sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
+    memset(shmem_internal_barrier_all_psync, 0, sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
 
     /* initialize the binomial tree for collective operations over
        entire tree */
