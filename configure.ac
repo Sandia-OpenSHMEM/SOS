@@ -334,6 +334,7 @@ AC_CONFIG_FILES([Makefile
   mpp/Makefile
   mpp/shmem.fh
   mpp/shmem.h
+  mpp/shmemx.h
   src/Makefile
   test/Makefile
   test/unit/Makefile

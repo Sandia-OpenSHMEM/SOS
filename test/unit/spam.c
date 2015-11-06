@@ -19,11 +19,9 @@
 #include <string.h>
 #include <assert.h>
 
-#ifndef PORTALS_SHMEM_H
 #include <shmem.h>
-#else
-#include <mpp/shmem.h>
-#endif
+#include <shmemx.h>
+#define HAVE_SHMEMX_WTIME
 
 void one2many_put(int *dst, int *src, int Elems, int me, int npe, int laps);
 void many2one_get(int *dst, int *src, int Elems, int me, int npe, int laps);
@@ -38,7 +36,7 @@ void fcollect(int *dst, int *src, int Elems, int me, int npes, int laps);
 static int atoi_scaled(char *s);
 static void usage(char *pgm);
 
-#ifndef PORTALS_SHMEM_H
+#ifndef HAVE_SHMEMX_WTIME
 static double shmemx_wtime(void);
 #endif
 
@@ -532,7 +530,7 @@ usage(char *pgm)
 }
 
 
-#ifndef PORTALS_SHMEM_H
+#ifndef HAVE_SHMEMX_WTIME
 
 double
 shmemx_wtime(void)
@@ -545,4 +543,5 @@ shmemx_wtime(void)
     wtime += (double)tv.tv_usec / 1000000.0;
     return wtime;
 }
-#endif
+
+#endif /* HAVE_SHMEMX_WTIME */

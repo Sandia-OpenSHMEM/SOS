@@ -8,6 +8,7 @@
 #include <assert.h>
 
 #include <shmem.h>
+#include <shmemx.h>
 
 #define LOOPS 250000
 
