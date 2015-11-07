@@ -5,6 +5,8 @@ compiler:
 os:
     - linux
 before_install:
+        - sudo apt-get update -qq
+        - sudo apt-get install -y dc
         - wget http://dist.schmorp.de/libev/Attic/libev-4.15.tar.gz
         - tar -xzvf libev-4.15.tar.gz
         - cd libev-4.15 && ./configure --prefix=/usr/ && make && sudo make install
