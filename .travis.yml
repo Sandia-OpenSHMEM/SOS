@@ -18,6 +18,7 @@ before_install:
         - make -j2
         - make install
         - export PTL_IFACE_NAME=venet0
+        - export PATH=$PATH:$HOME/portals4/bin
         - cd ..
 #       We need OFI build commands here
 install:
