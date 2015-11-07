@@ -17,6 +17,7 @@ before_install:
         - ./configure --prefix=$HOME/portals4/ --with-libev=/usr/lib/ --enable-zero-mrs --enable-reliable-udp --enable-transport-shmem
         - make -j2
         - make install
+        - export PTL_IFACE_NAME=venet0
         - cd ..
 #       We need OFI build commands here
 install:
