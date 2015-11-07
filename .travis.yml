@@ -25,9 +25,9 @@ install:
         - git clone https://github.com/regrant/sandia-shmem.git
         - autoreconf -i
         - ./configure --with-portals4=$HOME/portals4/
-        - make
+#        - make
 script:
-        - make check
+        - make
 #        this is where the configure for the OFI version should go
 #        - make distclean
 #        - autoreconf -i
