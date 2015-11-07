@@ -25,7 +25,7 @@ install:
         - ./configure --with-portals4=$HOME/portals4/
         - make
 script:
-        - make test
+        - make check
 #        this is where the configure for the OFI version should go
 #        - make distclean
 #        - autoreconf -i
