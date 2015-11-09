@@ -18,6 +18,7 @@
 
 #include "shmem_atomic.h"
 #include "shmem_comm.h"
+#include "transport.h"
 
 
 static inline void
@@ -25,16 +26,11 @@ shmem_internal_quiet(void)
 {
     int ret;
  
-#ifdef USE_PORTALS4
-    ret = shmem_transport_portals4_quiet();
+    ret = shmem_transport_quiet();
     if (0 != ret) { RAISE_ERROR(ret); }
-#endif
+
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_quiet();
-    if (0 != ret) { RAISE_ERROR(ret); }
-#endif
-#ifdef USE_OFI
-    ret = shmem_transport_ofi_quiet();
     if (0 != ret) { RAISE_ERROR(ret); }
 #endif
 }
@@ -45,16 +41,11 @@ shmem_internal_fence(void)
 {
     int ret;
  
-#ifdef USE_PORTALS4
-    ret = shmem_transport_portals4_fence();
+    ret = shmem_transport_fence();
     if (0 != ret) { RAISE_ERROR(ret); }
-#endif
+
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_fence();
-    if (0 != ret) { RAISE_ERROR(ret); }
-#endif
-#ifdef USE_OFI
-    ret = shmem_transport_ofi_fence();
     if (0 != ret) { RAISE_ERROR(ret); }
 #endif
 }

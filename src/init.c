@@ -130,12 +130,8 @@ shmem_internal_shutdown(void)
     }
     shmem_internal_finalized = 1;
 
-#ifdef USE_PORTALS4
-    shmem_transport_portals4_fini();
-#endif
-#ifdef USE_OFI
-    shmem_transport_ofi_fini();
-#endif
+    shmem_transport_fini();
+
 #ifdef USE_XPMEM
     shmem_transport_xpmem_fini();
 #endif
@@ -205,24 +201,13 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     }
 
     /* Initialize transport devices */
-#ifdef USE_PORTALS4
-    ret = shmem_transport_portals4_init(eager_size);
+    ret = shmem_transport_init(eager_size);
     if (0 != ret) {
         fprintf(stderr,
-                "[%03d] ERROR: Portals 4 init failed\n",
+                "[%03d] ERROR: Transport init failed\n",
                 shmem_internal_my_pe);
         goto cleanup;
     }
-#endif
-#ifdef USE_OFI
-    ret = shmem_transport_ofi_init(eager_size);
-    if (0 != ret) {
-        fprintf(stderr,
-                "[%03d] ERROR: OFI init failed\n",
-                shmem_internal_my_pe);
-        goto cleanup;
-    }
-#endif
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_init(eager_size);
     if (0 != ret) {
@@ -254,25 +239,14 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     }
 
     /* finish transport initialization after information sharing. */
-#ifdef USE_PORTALS4
-    ret = shmem_transport_portals4_startup();
+    ret = shmem_transport_startup();
     if (0 != ret) {
         fprintf(stderr,
-                "[%03d] ERROR: Portals 4 startup failed\n",
+                "[%03d] ERROR: Transport startup failed\n",
                 shmem_internal_my_pe);
         goto cleanup;
     }
-#elif defined USE_OFI
-    ret = shmem_transport_ofi_startup();
-    if (0 != ret) {
-        fprintf(stderr,
-                "[%03d] ERROR: OFI startup failed\n",
-                shmem_internal_my_pe);
-        goto cleanup;
-    }
-#else
-#error "Need connectivity information, no portals support"
-#endif
+
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_startup();
     if (0 != ret) {
@@ -372,12 +346,8 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     return;
 
  cleanup:
-#ifdef USE_PORTALS4
-    shmem_transport_portals4_fini();
-#endif
-#ifdef USE_OFI
-    shmem_transport_ofi_fini();
-#endif
+    shmem_transport_fini();
+
 #ifdef USE_XPMEM
     shmem_transport_xpmem_fini();
 #endif

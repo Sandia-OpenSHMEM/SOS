@@ -199,7 +199,7 @@ cleanup_handles(void)
 
 
 int
-shmem_transport_portals4_init(long eager_size)
+shmem_transport_init(long eager_size)
 {
     ptl_process_t my_id;
     int ret;
@@ -325,7 +325,7 @@ shmem_transport_portals4_init(long eager_size)
 
 
 int
-shmem_transport_portals4_startup(void)
+shmem_transport_startup(void)
 {
     int ret, i;
     ptl_process_t *desired = NULL;
@@ -619,7 +619,7 @@ shmem_transport_portals4_startup(void)
 
 
 int
-shmem_transport_portals4_fini(void)
+shmem_transport_fini(void)
 {
     ptl_ct_event_t ct;
 
