@@ -61,34 +61,33 @@ main(int argc, char **argv)
   int me, npes;
   int success1,success2,success3, success4, success5, success6, success7, success8;
 
-  short src1[N];
-  int src2[N];
-  long src3[N];
-  long double src4[N];
-  long long src5[N];
-  double src6[N];
-  float src7[N];
-  char *src8;
-  short src9;
-  int src10;
-  long src11;
-  double src12;
-  float src13;
-
-  short *dest1;
-  int *dest2;
-  long *dest3;
-  long double *dest4;
-  long long *dest5;
-  double *dest6;
-  float *dest7;
+  short dest1[N];
+  int dest2[N];
+  long dest3[N];
+  long double dest4[N];
+  long long dest5[N];
+  double dest6[N];
+  float dest7[N];
   char *dest8;
-  short *dest9;
-  int *dest10;
-  long *dest11;
-  double *dest12;
-  float *dest13;
+  short dest9;
+  int dest10;
+  long dest11;
+  double dest12;
+  float dest13;
 
+  short *src1;
+  int *src2;
+  long *src3;
+  long double *src4;
+  long long *src5;
+  double *src6;
+  float *src7;
+  char *src8;
+  short *src9;
+  int *src10;
+  long *src11;
+  double *src12;
+  float *src13;
 
   start_pes(0);
   me = _my_pe();
@@ -104,38 +103,7 @@ main(int argc, char **argv)
     success6 =0;
     success7 =0;
     success8 =0;
-    src8 = (char *)malloc(N*sizeof(char));
-
-    for (i = 0; i < N; i += 1) {
-      src1[i] = (short)me;
-      src2[i] = me;
-      src3[i] = (long)me;
-      src4[i] = (long double)me;
-      src5[i] = (long long)me;
-      src6[i] = (double)me;
-      src7[i] = (float)me;
-      src8[i] = (char)me;
-    }
-    src9 = (short)me;
-    src10 = me;
-    src11 =(long)me;
-    src12 = (double)me;
-    src13 = (float)me;
-
-
-    dest1 = (short *)shmalloc( N * sizeof(*dest1) );
-    dest2 = (int *)shmalloc( N * sizeof(*dest2) );
-    dest3 = (long *)shmalloc( N * sizeof(*dest3) );
-    dest4 = (long double *)shmalloc( N * sizeof(*dest4) );
-    dest5 = (long long*)shmalloc( N * sizeof(*dest5) );
-    dest6 = (double *)shmalloc( N * sizeof(*dest6) );
-    dest7 = (float *)shmalloc( N * sizeof(*dest7) );
-    dest8 = (char *)shmalloc( 4 * sizeof(*dest8) );
-    dest9 = (short *)shmalloc( sizeof(*dest9) );
-    dest10 = (int *)shmalloc( sizeof(*dest10) );
-    dest11 = (long *)shmalloc( sizeof(*dest11) );
-    dest12 = (double *)shmalloc( sizeof(*dest12) );
-    dest13 = (float *)shmalloc( sizeof(*dest13) );
+    dest8 = (char *)malloc(N*sizeof(char));
 
     for (i = 0; i < N; i += 1) {
       dest1[i] = -9;
@@ -147,11 +115,41 @@ main(int argc, char **argv)
       dest7[i] = -9.0;
       dest8[i] = -9;
     }
-    *dest9 = -9;
-    *dest10 = -9;
-    *dest11 = -9;
-    *dest12 = -9;
-    *dest13 = -9.0;
+    dest9 = -9;
+    dest10 = -9;
+    dest11 = -9;
+    dest12 = -9;
+    dest13 = -9;
+
+    src1 = (short *)shmalloc( N * sizeof(*src1) );
+    src2 = (int *)shmalloc( N * sizeof(*src2) );
+    src3 = (long *)shmalloc( N * sizeof(*src3) );
+    src4 = (long double *)shmalloc( N * sizeof(*src4) );
+    src5 = (long long*)shmalloc( N * sizeof(*src5) );
+    src6 = (double *)shmalloc( N * sizeof(*src6) );
+    src7 = (float *)shmalloc( N * sizeof(*src7) );
+    src8 = (char *)shmalloc( 4 * sizeof(*src8) );
+    src9 = (short *)shmalloc( sizeof(*src9) );
+    src10 = (int *)shmalloc( sizeof(*src10) );
+    src11 = (long *)shmalloc( sizeof(*src11) );
+    src12 = (double *)shmalloc( sizeof(*src12) );
+    src13 = (float *)shmalloc( sizeof(*src13) );
+
+    for (i = 0; i < N; i += 1) {
+      src1[i] = (short)me;
+      src2[i] = me;
+      src3[i] = (long)me;
+      src4[i] = (long double)me;
+      src5[i] = (long long)me;
+      src6[i] = (double)me;
+      src7[i] = (float)me;
+      src8[i] = (char)me;
+    }
+    *src9 = (short)me;
+    *src10 = me;
+    *src11 = (long)me;
+    *src12 = (double)me;
+    *src13 = (float)me;
 
     nextpe = (me + 1) % npes;
 
@@ -330,20 +328,19 @@ main(int argc, char **argv)
 
     shmem_barrier_all();
 
-    shfree(dest1);
-    shfree(dest2);
-    shfree(dest3);
-    shfree(dest4);
-    shfree(dest5);
-    shfree(dest6);
-    shfree(dest7);
-    shfree(dest8);
-    shfree(dest9);
-    shfree(dest10);
-    shfree(dest11);
-    shfree(dest12);
-    shfree(dest13);
-
+    shfree(src1);
+    shfree(src2);
+    shfree(src3);
+    shfree(src4);
+    shfree(src5);
+    shfree(src6);
+    shfree(src7);
+    shfree(src8);
+    shfree(src9);
+    shfree(src10);
+    shfree(src11);
+    shfree(src12);
+    shfree(src13);
   }
   else{
     printf("Number of PEs must be > 1 to test shmem get of zero length, test skipped\n");
