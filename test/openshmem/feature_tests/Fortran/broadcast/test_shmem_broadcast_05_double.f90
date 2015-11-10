@@ -72,7 +72,9 @@ program test_shmem_broadcast
 
     call shmem_barrier_all()
 
-    call shmem_broadcast8(target, src, nelems, 0, 0, 0, npes, pSync)
+    if(me .ne. 0) then
+        call shmem_broadcast8(target, src, nelems, 0, 0, 0, npes, pSync)
+    end if
 
     call shmem_barrier_all()
 

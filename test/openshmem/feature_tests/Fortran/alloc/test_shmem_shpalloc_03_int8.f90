@@ -39,7 +39,7 @@ program test_shmem_shpalloc
   implicit none
   include 'shmem.fh'
 
-  integer, parameter :: nelems = 67108864
+  integer, parameter :: nelems = 1024000000
 
   integer*8          :: array_addr
   integer*8           :: array(1)    

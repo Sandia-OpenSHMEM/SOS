@@ -40,7 +40,7 @@ program test_shmem_broadcast
   include 'shmem.fh'
   
   integer, parameter :: min_npes = 3
-  integer, parameter  :: nelems = 10
+  integer, parameter  :: nelems = 16
   integer*8, save    :: pSync(SHMEM_BCAST_SYNC_SIZE)
    
   integer            :: i
@@ -74,7 +74,7 @@ program test_shmem_broadcast
 
     call shmem_barrier_all()
 
-    call shmem_broadcast4(target, src, nelems, 0, 0, 0, npes, pSync)
+    call shmem_broadcast4(target, src, nelems / 4, 0, 0, 0, npes, pSync)
 
     call shmem_barrier_all()
 

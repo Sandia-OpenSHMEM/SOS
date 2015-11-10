@@ -80,7 +80,7 @@ program test_shmem_shpalloc
         end do
 
         ! Get data on PE 'pe'
-        call shmem_get8(buffer, array, nelems, pe) 
+        call shmem_integer_get(buffer, array, nelems * 2, pe)
 
         ! Check that values are correct
         do i = 1, nelems, 1

@@ -62,6 +62,8 @@ program test_shmem_barrier
     call shpalloc(pSync_ptr, SHMEM_BARRIER_SYNC_SIZE, errcode, abort)
     call shpalloc (flag_ptr, 1, errcode, abort)
 
+    flag(1) = 0
+
     do i = 1, SHMEM_BARRIER_SYNC_SIZE
       pSync(i) = SHMEM_SYNC_VALUE 
     end do
