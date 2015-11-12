@@ -2,6 +2,7 @@
 !
 ! Copyright (c) 2011, 2012
 !   University of Houston System and Oak Ridge National Laboratory.
+! Copyright (c) 2015 Intel Corporation. All rights reserved.
 ! 
 ! All rights reserved.
 ! 
@@ -39,7 +40,7 @@ program test_shmem_shpalloc
   implicit none
   include 'shmem.fh'
 
-  integer, parameter :: nelems = 1024000000
+  integer, parameter :: nelems = 67108864
 
   integer*8          :: array_addr
   character           :: array(1)    

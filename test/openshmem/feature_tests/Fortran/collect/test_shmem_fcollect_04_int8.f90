@@ -2,6 +2,7 @@
 !
 ! Copyright (c) 2011, 2012
 !   University of Houston System and Oak Ridge National Laboratory.
+! Copyright (c) 2015 Intel Corporation. All rights reserved.
 ! 
 ! All rights reserved.
 ! 
@@ -77,8 +78,9 @@ program test_shmem_collects
     success = .TRUE.
     flag = 0
 
-    call shpalloc (target_addr, target_nelems, errcode, abort)
-    call shpalloc(src_addr, nelems, errcode, abort)
+    !one word is 32bit for shpalloc
+    call shpalloc (target_addr, target_nelems*2, errcode, abort)
+    call shpalloc(src_addr, nelems*2, errcode, abort)
 
     collect_nelems = nelems / npes
 
@@ -101,12 +103,9 @@ program test_shmem_collects
     
     call shmem_barrier_all()
 
-! Force that some of the PEs are left out of the operation (for this test)
-    if(me .ne. 0) then 
       call shmem_fcollect64(target, src, collect_nelems, &
         0, 0, npes, &
         pSync)
-    end if
 
     do i = 1, collect_nelems * npes, 1
       if(target(i) .ne. target_expected(i)) then
