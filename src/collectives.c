@@ -522,7 +522,7 @@ shmem_internal_bcast_tree(void *target, const void *source, size_t len,
  *
  *****************************************/
 void
-shmem_internal_op_to_all_linear(void *target, void *source, int count, int type_size,
+shmem_internal_op_to_all_linear(void *target, const void *source, int count, int type_size,
                                 int PE_start, int logPE_stride, int PE_size,
                                 void *pWrk, long *pSync, 
                                 shm_internal_op_t op, shm_internal_datatype_t datatype)
@@ -582,7 +582,7 @@ shmem_internal_op_to_all_linear(void *target, void *source, int count, int type_
 
 
 void
-shmem_internal_op_to_all_tree(void *target, void *source, int count, int type_size,
+shmem_internal_op_to_all_tree(void *target, const void *source, int count, int type_size,
                               int PE_start, int logPE_stride, int PE_size,
                               void *pWrk, long *pSync, 
                               shm_internal_op_t op, shm_internal_datatype_t datatype)
@@ -656,7 +656,7 @@ shmem_internal_op_to_all_tree(void *target, void *source, int count, int type_si
 
 
 void
-shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int type_size,
+shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, int count, int type_size,
                                 int PE_start, int logPE_stride, int PE_size,
                                 void *pWrk, long *pSync,
                                 shm_internal_op_t op, shm_internal_datatype_t datatype)

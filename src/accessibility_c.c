@@ -40,7 +40,7 @@ shmem_pe_accessible(int pe)
 
 
 int
-shmem_addr_accessible(void *addr, int pe)
+shmem_addr_accessible(const void *addr, int pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 

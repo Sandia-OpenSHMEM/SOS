@@ -30,7 +30,7 @@
 
 
 void *
-shmem_ptr(void *target, int pe)
+shmem_ptr(const void *target, int pe)
 {
     return shmem_internal_ptr(target, pe);
 }
