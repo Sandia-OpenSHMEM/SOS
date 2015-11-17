@@ -1,7 +1,12 @@
 !
 !
-! Copyright (c) 2011, 2012
-!   University of Houston System and Oak Ridge National Laboratory.
+! Copyright (c) 2011 - 2015
+!   University of Houston System and UT-Battelle, LLC.
+! Copyright (c) 2009 - 2015
+!   Silicon Graphics International Corp.  SHMEM is copyrighted
+!   by Silicon Graphics International Corp. (SGI) The OpenSHMEM API
+!   (shmem) is released by Open Source Software Solutions, Inc., under an
+!   agreement with Silicon Graphics International Corp. (SGI).
 ! 
 ! All rights reserved.
 ! 
@@ -16,10 +21,10 @@
 !   notice, this list of conditions and the following disclaimer in the
 !   documentation and/or other materials provided with the distribution.
 ! 
-! o Neither the name of the University of Houston System, Oak Ridge
-!   National Laboratory nor the names of its contributors may be used to
-!   endorse or promote products derived from this software without specific
-!   prior written permission.
+! o Neither the name of the University of Houston System, UT-Battelle, LLC
+!   nor the names of its contributors may be used to endorse or promote
+!   products derived from this software without specific prior written
+!   permission.
 ! 
 ! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ! "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -43,21 +48,21 @@ program test_shmem_shpalloc
   integer, parameter :: nelems = 50
 
   real*4           :: array(1)    
-  integer*8          :: array_addr
   pointer            (array_addr, array)
 
   real*4           :: buffer(nelems)
   
-  integer            :: errcode, abort, me, npes, pe, i
+  integer            :: errcode, me, npes, pe, i
+  integer, parameter  :: abort = 0
   logical            :: success
 
   character*(*), parameter  :: TEST_NAME='shpalloc'
 
 
-  call start_pes(0)
+  call shmem_init()
 
-  me = my_pe()
-  npes = num_pes()
+  me = shmem_my_pe()
+  npes = shmem_n_pes()
 
   success = .TRUE.
 
@@ -67,7 +72,7 @@ program test_shmem_shpalloc
     call shpalloc(array_addr, nelems, errcode, abort)
 
     do i = 1, nelems 
-      array(i) = REAL(54321.67, KIND=4) 
+      array(i) = 54321.67
     end do
 
     call shmem_barrier_all();
@@ -84,7 +89,7 @@ program test_shmem_shpalloc
 
         ! Check that values are correct
         do i = 1, nelems, 1
-          if(buffer(i) .ne. REAL(54321.67, KIND=4)) then
+          if(buffer(i) .ne. 54321.67) then
             success = .FALSE.
           end if
         end do
@@ -108,4 +113,6 @@ program test_shmem_shpalloc
    end if
   end if
   
+  call shmem_finalize()
+
 end program
