@@ -82,6 +82,14 @@ libsma_la_SOURCES += \
 	transport_cma.c
 endif
 
+if USE_SHMEM_PMI
+AM_CPPFLAGS += -I$(top_srcdir)/shmem_pmi
+
+libsma_la_LIBADD = \
+	../shmem_pmi/simple_pmi.lo \
+	../shmem_pmi/simple_pmiutil.lo
+endif
+
 bin_SCRIPTS = oshcc oshc++
 CLEANFILES += oshcc oshc++
 if CASE_SENSITIVE_FS
