@@ -90,7 +90,7 @@ shmem_free_list_t *shmem_transport_ofi_bounce_buffers = NULL;
 shmem_free_list_t *shmem_transport_ofi_frag_buffers = NULL;
 
 //size of CQ
-const size_t shmem_transport_ofi_queue_slots = 32768;//default CQ Depth....
+const static size_t shmem_transport_ofi_queue_slots = 32768;//default CQ Depth....
 size_t   shmem_transport_ofi_max_atomic_size = 0;
 uint64_t shmem_transport_ofi_max_poll = (1ULL<<20);
 
@@ -140,6 +140,9 @@ static inline void allocate_endpoints(struct fi_info * p_info)
     p_info->caps	= FI_RMA | FI_WRITE | FI_READ | /*SEND ONLY */
 	    		FI_ATOMICS; /* request atomics capability */
     p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE | FI_INJECT_COMPLETE;
+    p_info->mode = 0;
+    p_info->tx_attr->mode = 0;
+    p_info->rx_attr->mode = 0;
     ret = fi_endpoint(shmem_transport_ofi_domainfd,
 		    p_info, &shmem_transport_ofi_cntr_epfd, NULL);
     if(ret!=0){
@@ -460,6 +463,7 @@ static inline struct fi_info * query_for_fabric(char *provname)
     hints.addr_format         = FI_FORMAT_UNSPEC;
     hints.mode		      = FI_CONTEXT;
     domain_attr.data_progress = FI_PROGRESS_AUTO;
+    domain_attr.resource_mgmt = FI_RM_ENABLED;
     domain_attr.mr_mode       = FI_MR_SCALABLE;/* VA space-doesn't have to be pre-allocated */
     domain_attr.threading     = FI_THREAD_ENDPOINT; /* we promise to serialize access
 						       to endpoints. we have only one
@@ -497,6 +501,12 @@ int shmem_transport_init(long eager_size)
 {
     const int npes = shmem_runtime_get_size();
 
+    char *provname = getenv("SHMEM_OFI_USE_PROVIDER");
+
+    struct fi_info * const p_info = query_for_fabric(provname);
+
+    assert(eager_size > p_info->tx_attr->inject_size);
+
     shmem_transport_ofi_bounce_buffer_size = eager_size;
 
     //init LL for NB buffers
@@ -507,11 +517,6 @@ int shmem_transport_init(long eager_size)
     shmem_transport_ofi_frag_buffers =
     shmem_free_list_init(sizeof(shmem_transport_ofi_long_frag_t),
                              init_long_frag);
-
-
-    char *provname = getenv("SHMEM_OFI_USE_PROVIDER");
-
-    struct fi_info * const p_info = query_for_fabric(provname);
 
     allocate_fabric_resources(p_info, npes);
 
