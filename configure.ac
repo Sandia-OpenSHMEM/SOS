@@ -350,6 +350,7 @@ AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
 AC_CONFIG_FILES([Makefile
   mpp/Makefile
   mpp/shmem.fh
+  mpp/shmemx.fh
   mpp/shmem.h
   mpp/shmemx.h
   src/Makefile

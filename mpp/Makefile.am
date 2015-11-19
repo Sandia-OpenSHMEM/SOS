@@ -16,6 +16,6 @@ mpp_HEADERS = shmem.h shmemx.h pshmem.h
 include_HEADERS = shmem.h shmemx.h pshmem.h
 
 if HAVE_FORTRAN
-mpp_HEADERS += shmem.fh
-include_HEADERS += shmem.fh
+mpp_HEADERS += shmem.fh shmemx.fh
+include_HEADERS += shmem.fh shmemx.fh
 endif
