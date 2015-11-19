@@ -13,4 +13,4 @@ ACLOCAL_AMFLAGS = -I config
 
 EXTRA_DIST = README NEWS LICENSE
 
-SUBDIRS = mpp src test
+SUBDIRS = mpp $(SHMEM_PMI) src test

@@ -29,9 +29,7 @@ AC_DEFUN([ORTE_CHECK_PMI],[
     AC_ARG_WITH([pmi-libdir],
         [AC_HELP_STRING([--with-pmi-libdir=DIR],
              [Search for PMI libraries in DIR])])
-    AS_IF([test "$with_pmi_libdir" = "shmem_pmi"],
-        [OMPI_CHECK_WITHDIR([pmi-libdir], [install/lib], [libshmem_pmi.*])],
-        [OMPI_CHECK_WITHDIR([pmi-libdir], [$with_pmi_libdir], [libpmi.*])])
+    OMPI_CHECK_WITHDIR([pmi-libdir], [$with_pmi_libdir], [libpmi.*])
 
     orte_check_pmi_$1_save_CPPFLAGS="$CPPFLAGS"
     orte_check_pmi_$1_save_LDFLAGS="$LDFLAGS"
@@ -42,20 +40,7 @@ AC_DEFUN([ORTE_CHECK_PMI],[
     AS_IF([test ! -z "$with_pmi_libdir" -a "$with_pmi_libdir" != "yes"],
         [ompi_check_pmi_libdir="$with_pmi_libdir"])
 
-    AS_IF([test "$with_pmi_libdir" = "shmem_pmi"],
-        [OMPI_CHECK_PACKAGE([$1],
-                [${ompi_check_pmi_dir}/shmem_pmi/pmi.h],
-                [shmem_pmi],
-                [PMI_Init],
-                [],
-                [${ompi_check_pmi_dir}/shmem_pmi],
-                [${ompi_check_pmi_dir}/install/lib],
-                [AC_DEFINE([SHMEM_PMI], [1],
-                         [Using SHMEM PMI])
-                 TEST_RUNNER='mpiexec.hydra -n $(NPROCS)'
-                 ompi_check_pmi_happy="yes"],
-                 [ompi_check_pmi_happy="no"])],
-	[OMPI_CHECK_PACKAGE([$1],
+    OMPI_CHECK_PACKAGE([$1],
         [pmi.h],
         [pmi],
         [PMI_Init],
@@ -64,7 +49,7 @@ AC_DEFUN([ORTE_CHECK_PMI],[
         [$ompi_check_pmi_libdir],
         [TEST_RUNNER=''
          ompi_check_pmi_happy="yes"],
-		[ompi_check_pmi_happy="no"])])
+        [ompi_check_pmi_happy="no"])
     AS_IF([test "$ompi_check_pmi_happy" = "no"], 
         [OMPI_CHECK_PACKAGE([$1],
                 [slurm/pmi.h],

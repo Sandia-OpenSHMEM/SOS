@@ -7,7 +7,3 @@ libshmem_pmi_la_SOURCES = \
 	simple_pmiutil.c \
 	simple_pmiutil.h \
 	pmi.h
-
-install-exec-hook:
-	$(MKDIR_P) ../install/lib
-	$(LN_S) -f $(DESTDIR)$(libdir)/libshmem_pmi${shrext_cmds} ../install/lib/libshmem_pmi${shrext_cmds}

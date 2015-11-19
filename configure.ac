@@ -171,7 +171,12 @@ AS_IF([test "transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
 AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
       [AC_MSG_ERROR([No transport found])])
 
-ORTE_CHECK_PMI([pmi])
+AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
+			[build and run shmem-pmi support])])
+AS_IF([test "$enable_pmi_simple" = "yes"],
+     [TEST_RUNNER='mpiexec.hydra -n $(NPROCS)' SHMEM_PMI="shmem_pmi"], [ORTE_CHECK_PMI([pmi]) SHMEM_PMI=""])
+AC_SUBST([SHMEM_PMI])
+AM_CONDITIONAL([USE_SHMEM_PMI], [test "$enable_pmi_simple" = "yes"])
 
 dnl check for header files
 
@@ -360,6 +365,8 @@ AC_CONFIG_FILES([Makefile
   test/openshmem/feature_tests/Fortran/transfer/Makefile
   test/openshmem/performance_tests/Makefile
   test/openshmem/performance_tests/micro_benchmarks/Makefile])
+AS_IF([test "$enable_pmi_simple" = "yes"],
+	[AC_CONFIG_SUBDIRS([shmem_pmi])])
 AC_OUTPUT
 
 FORT="$FC"
