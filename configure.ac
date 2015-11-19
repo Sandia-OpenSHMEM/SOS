@@ -202,6 +202,12 @@ AC_SUBST(C_BARRIER_SYNC_SIZE)
 AC_SUBST(C_COLLECT_SYNC_SIZE)
 AC_SUBST(C_REDUCE_MIN_WRKDATA_SIZE)
 
+AC_MSG_CHECKING([if long can hold lock_t])
+AC_TRY_RUN([struct lock_s { int a; int b; }; main() { if (sizeof(long) == sizeof(struct lock_s)) return 0; else return 1; }],
+               [AC_MSG_RESULT([yes])], [
+                AC_MSG_RESULT([no])
+                AC_MSG_ERROR([Lock API requires long can hold 'struct { int a; int b; }']) ])
+
 if test "$FC" != "" ; then
   # make sure Fortran supports ISO_C_BINDING (Fortran 2003)
   AC_CACHE_CHECK([if Fortran compiler supports ISO_C_BINDING],
@@ -325,7 +331,7 @@ LDFLAGS="$LDFLAGS $portals4_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $as
 LIBS="$LIBS $portals4_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
 
 # wrapper compiler gorp
-WRAPPER_COMPILER_EXTRA_LDFLAGS="$portlas4_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
+WRAPPER_COMPILER_EXTRA_LDFLAGS="$portals4_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
 WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LDFLAGS)
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
