@@ -113,6 +113,12 @@ AC_ARG_ENABLE([profiling],
                     [Enable shmem call profiling (default:disabled)])])
 AS_IF([test "$enable_profiling" = "yes"], [AC_DEFINE([ENABLE_PROFILING], [1], [Enable shmem call profiling])])
 
+AC_ARG_ENABLE([long-fortran-header],
+    [AC_HELP_STRING([--disable-long-fortran-header],
+                    [Disable long Fortran header to omit function declarations (default:enabled)])])
+AS_IF([test "$enable_long_fortran_header" = "no"], [FORTRAN_LONG_HEADER="!"], [FORTRAN_LONG_HEADER=" "])
+AC_SUBST([FORTRAN_LONG_HEADER])
+
 dnl check for programs
 
 AC_PROG_CC
