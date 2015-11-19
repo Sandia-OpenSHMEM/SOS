@@ -47,7 +47,6 @@ extern uint64_t				shmem_transport_ofi_pending_cq_count;
 extern uint64_t				shmem_transport_ofi_max_poll;
 extern size_t          		 	shmem_transport_ofi_max_buffered_send;
 extern size_t    		 	shmem_transport_ofi_max_atomic_size;
-extern size_t const    			shmem_transport_ofi_queue_slots;
 extern size_t    			shmem_transport_ofi_bounce_buffer_size;
 
 #ifndef MIN
@@ -130,69 +129,67 @@ int shmem_transport_fini(void);
 extern int SHMEM_Dtsize[FI_DATATYPE_LAST];
 
 static inline
-int
-shmem_transport_ofi_drain_cq(void)
+void shmem_transport_ofi_drain_cq(void)
 {
 
 	ssize_t ret = 0;
 	struct fi_cq_entry buf;
 
 	if (!shmem_transport_ofi_pending_cq_count) {
-		return 0;
+		return;
 	}
 
-	do
-	{
+	do {
 		ret = fi_cq_read(shmem_transport_ofi_put_nb_cqfd,
 				(void *)&buf, 1);
-		//error cases
+		/*error cases*/
 		if (ret < 0 && ret != -FI_EAGAIN ) {
 			if(ret == -FI_EAVAIL) {
-				struct fi_cq_err_entry e;
+				struct fi_cq_err_entry e = {0};
              	 		fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd,
 				              (void *)&e, 0);
 				RAISE_ERROR(e.err);
-			}
-			else
+			} else {
 				RAISE_ERROR(ret);
 		}
+		}
 
-	} while(ret == -FI_EAGAIN);
-
+		if(ret == 1) {
 	shmem_transport_ofi_frag_t *frag =
-        container_of(buf.op_context, struct shmem_transport_ofi_frag_t,
+			container_of(buf.op_context,
+			struct shmem_transport_ofi_frag_t,
 		     context);
 
 	if(SHMEM_TRANSPORT_OFI_TYPE_BOUNCE == frag->mytype) {
-		shmem_free_list_free(shmem_transport_ofi_bounce_buffers,
+				shmem_free_list_free(
+					shmem_transport_ofi_bounce_buffers,
 					frag);
-		shmem_transport_ofi_pending_cq_count--;
 	} else {
 		shmem_transport_ofi_long_frag_t *long_frag =
 		(shmem_transport_ofi_long_frag_t*) frag;
 
-		assert(long_frag->frag.mytype == SHMEM_TRANSPORT_OFI_TYPE_LONG);
+				assert(long_frag->frag.mytype ==
+					SHMEM_TRANSPORT_OFI_TYPE_LONG);
 	 	(*(long_frag->completion))--;
 		if (0 >= --long_frag->reference) {
 			long_frag->reference = 0;
 			shmem_free_list_free(shmem_transport_ofi_frag_buffers,
 			frag);
 		}
+			}
+
 		shmem_transport_ofi_pending_cq_count--;
+
 	}
 
-	return 0;
+
+	} while(ret > 0);
 
 }
 
 static inline shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(const void *source, const size_t len)
 {
 	shmem_transport_ofi_bounce_buffer_t *buff;
-
-	while(shmem_transport_ofi_pending_cq_count >=
-			(shmem_transport_ofi_queue_slots-2)) {
-		shmem_transport_ofi_drain_cq();
-        }
 
 	buff = (shmem_transport_ofi_bounce_buffer_t*)
 	shmem_free_list_alloc(shmem_transport_ofi_bounce_buffers);
@@ -213,11 +210,6 @@ static inline shmem_transport_ofi_long_frag_t * create_long_frag(long *completio
 {
 	shmem_transport_ofi_long_frag_t *long_frag;
 
-	while(shmem_transport_ofi_pending_cq_count >=
-			(shmem_transport_ofi_queue_slots-2)) {
-		shmem_transport_ofi_drain_cq();
-        }
-
 	long_frag = (shmem_transport_ofi_long_frag_t*)
 	shmem_free_list_alloc(shmem_transport_ofi_frag_buffers);
 
@@ -235,9 +227,9 @@ static inline int shmem_transport_quiet(void)
 {
 	int ret = 0;
 
+	/* wait until all outstanding queue operations have completed */
 	while(shmem_transport_ofi_pending_cq_count) {
-		ret = shmem_transport_ofi_drain_cq();
-		OFI_RET_CHECK(ret);
+		shmem_transport_ofi_drain_cq();
 	}
 
 	/* wait for put counter to meet outstanding count value    */
@@ -262,6 +254,7 @@ shmem_transport_fence(void)
 
 }
 
+/*RM requires polling until space is available*/
 static inline int try_again(const int ret, uint64_t *polled) {
 
 	if (ret) {
@@ -582,11 +575,6 @@ shmem_transport_atomic_nb(void *target, void *source, size_t full_len,
 		shmem_transport_ofi_long_frag_t *long_frag = create_long_frag(completion);
 
 		while (sent < len) {
-
-			while(shmem_transport_ofi_pending_cq_count >=
-					(shmem_transport_ofi_queue_slots-2)) {
-				shmem_transport_ofi_drain_cq();
-			}
 
 			size_t chunksize = MIN((len-sent),
 				(shmem_transport_ofi_max_atomic_size/SHMEM_Dtsize[datatype]));
