@@ -22,6 +22,8 @@
 #include <string.h>
 #include <errno.h>
 
+#include "shmem_internal.h"
+
 extern pid_t shmem_transport_cma_my_pid;
 extern pid_t *shmem_transport_cma_peers;
 extern size_t shmem_transport_cma_put_max;
@@ -44,7 +46,7 @@ int shmem_transport_cma_fini(void);
         } else {                                                        \
             printf("[%03d] ERROR: %s (0x%lx) outside of symmetric areas\n", \
                    shmem_internal_my_pe, name, (unsigned long) target);     \
-            abort();                                                    \
+            RAISE_ERROR(1);                                             \
         }                                                               \
     } while (0)
 #else   // ! ENABLE_ERROR_CHECKING
