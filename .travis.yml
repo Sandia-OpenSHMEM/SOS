@@ -23,7 +23,7 @@ before_install:
 #       We need OFI build commands here
 install:
         - git clone https://github.com/regrant/sandia-shmem.git
-        - autoreconf -i
+        - ./autogen.sh
         - ./configure --with-portals4=$HOME/portals4/
 #        - make
 script:
