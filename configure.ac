@@ -118,7 +118,6 @@ AC_ARG_ENABLE([long-fortran-header],
                     [Disable long Fortran header to omit function declarations (default:enabled)])])
 AS_IF([test "$enable_long_fortran_header" = "no"], [FORTRAN_LONG_HEADER="!"], [FORTRAN_LONG_HEADER=" "])
 AC_SUBST([FORTRAN_LONG_HEADER])
-AM_CONDITIONAL([ENABLE_EXTERNAL_TESTS], [test "$enable_long_fortran_header" != "no"])
 
 dnl check for programs
 
