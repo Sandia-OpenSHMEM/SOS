@@ -60,7 +60,7 @@ AC_DEFUN([ORTE_CHECK_PMI],[
                 [$ompi_check_pmi_libdir],
                 [AC_DEFINE([PMI_SLURM], [1],
                         [Defined to 1 if PMI implementation is SLURM.])
-                 TEST_RUNNER='srun -n $(NPROCS)'
+                 TEST_RUNNER='$(abs_top_builddir)/src/oshrun -n $(NPROCS)'
                  ompi_check_pmi_happy="yes"],
                 [ompi_check_pmi_happy="no"])])
     AS_IF([test "$ompi_check_pmi_happy" = "no"], 
@@ -75,7 +75,7 @@ AC_DEFUN([ORTE_CHECK_PMI],[
                 [$ompi_check_pmi_libdir],
                 [AC_DEFINE([PMI_PORTALS4], [1],
                         [Defined to 1 if PMI implementation is Portals4.])
-                 TEST_RUNNER='yod -np $(NPROCS)'
+                 TEST_RUNNER='$(abs_top_builddir)/src/oshrun -np $(NPROCS)'
                  ompi_check_pmi_happy="yes"],
                 [ompi_check_pmi_happy="no"])])
 

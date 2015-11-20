@@ -90,8 +90,8 @@ libsma_la_LIBADD = \
 	../shmem_pmi/simple_pmiutil.lo
 endif
 
-bin_SCRIPTS = oshcc oshc++
-CLEANFILES += oshcc oshc++
+bin_SCRIPTS = oshcc oshc++ oshrun
+CLEANFILES += oshcc oshc++ oshrun
 if CASE_SENSITIVE_FS
 bin_SCRIPTS += oshCC
 CLEANFILES += oshCC
@@ -101,7 +101,8 @@ bin_SCRIPTS += oshfort
 CLEANFILES += oshfort
 endif
 
-EXTRA_DIST = shmem_compiler_script.in
+EXTRA_DIST = shmem_compiler_script.in \
+             shmem_launcher_script.in
 
 do_subst = sed -e 's|[@]PERL[@]|$(PERL)|g' \
                -e 's|[@]CC[@]|$(CC)|g' \
@@ -132,3 +133,6 @@ oshfort: shmem_compiler_script.in Makefile
 	$(AM_V_SED)$(do_subst) -e 's|[@]LANG[@]|Fortran|g' < $(srcdir)/shmem_compiler_script.in > oshfort
 	@chmod +x oshfort
 
+oshrun: shmem_launcher_script.in Makefile
+	cp $(srcdir)/shmem_launcher_script.in oshrun
+	@chmod +x oshrun
