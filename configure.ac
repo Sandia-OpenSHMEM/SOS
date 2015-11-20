@@ -356,22 +356,7 @@ AC_CONFIG_FILES([Makefile
   src/Makefile
   test/Makefile
   test/unit/Makefile
-  test/performance/Makefile
-  test/openshmem/Makefile
-  test/openshmem/examples/Makefile
-  test/openshmem/feature_tests/Makefile
-  test/openshmem/feature_tests/C/Makefile
-  test/openshmem/feature_tests/Fortran/Makefile
-  test/openshmem/feature_tests/Fortran/accessibility/Makefile
-  test/openshmem/feature_tests/Fortran/alloc/Makefile
-  test/openshmem/feature_tests/Fortran/atomic/Makefile
-  test/openshmem/feature_tests/Fortran/barrier/Makefile
-  test/openshmem/feature_tests/Fortran/broadcast/Makefile
-  test/openshmem/feature_tests/Fortran/collect/Makefile
-  test/openshmem/feature_tests/Fortran/reductions/Makefile
-  test/openshmem/feature_tests/Fortran/transfer/Makefile
-  test/openshmem/performance_tests/Makefile
-  test/openshmem/performance_tests/micro_benchmarks/Makefile])
+  test/performance/Makefile])
 AS_IF([test "$enable_pmi_simple" = "yes"],
 	[AC_CONFIG_SUBDIRS([shmem_pmi])])
 AC_OUTPUT
