@@ -129,6 +129,11 @@ void shmem_internal_op_to_all_tree(void *target, void *source, int count, int ty
                                    void *pWrk, long *pSync, 
                                    shm_internal_op_t op, shm_internal_datatype_t datatype);
 
+void shmem_internal_op_to_all_recdbl(void *target, void *source, int count, int type_size,
+                                   int PE_start, int logPE_stride, int PE_size,
+                                   void *pWrk, long *pSync,
+                                   shm_internal_op_t op, shm_internal_datatype_t datatype);
+
 static inline
 void
 shmem_internal_op_to_all(void *target, void *source, int count, int type_size,
@@ -158,6 +163,11 @@ shmem_internal_op_to_all(void *target, void *source, int count, int type_size,
                                       PE_start, logPE_stride, PE_size,
                                       pWrk, pSync, op, datatype);
         break;
+    case RECDBL:
+        shmem_internal_op_to_all_recdbl(target, source, count, type_size,
+                                      PE_start, logPE_stride, PE_size,
+                                      pWrk, pSync, op, datatype);
+	break;
     default:
         fprintf(stderr, "[%03d] Illegal reduction type %d\n", 
                 shmem_internal_my_pe, shmem_internal_reduce_type);
