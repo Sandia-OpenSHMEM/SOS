@@ -56,6 +56,10 @@ program test_shmem_barrier
   if (npes .gt. 1) then
     call shpalloc(flag_ptr, 1, errcode, abort)
 
+    flag = 0
+
+    call shmem_barrier_all()
+
     if(me .ne. 0) then
       call shmem_int4_inc(flag, 0)
     end if 

@@ -2,6 +2,7 @@
 !
 ! Copyright (c) 2011, 2012
 !   University of Houston System and Oak Ridge National Laboratory.
+! Copyright (c) 2015 Intel Corporation. All rights reserved.
 ! 
 ! All rights reserved.
 ! 
@@ -90,7 +91,7 @@ program test_shmem_get
       end do 
 
       if (success1 .eqv. .TRUE.) then
-        write(*,*) "Test shmem_integer_get: Passed" 
+        write(*,*) "Test shmem_integer_get: Passed"
       else
         write(*,*) "Test shmem_integer_get: Failed"
       end if

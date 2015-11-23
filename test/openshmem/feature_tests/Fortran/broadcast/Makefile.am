@@ -47,16 +47,16 @@ TESTS = \
 	test_shmem_broadcast_05_real4 \
 	test_shmem_broadcast_05_real8
 
-XFAIL_TESTS = \
-	test_shmem_broadcast_04_double \
-	test_shmem_broadcast_04_int4 \
-	test_shmem_broadcast_04_int8 \
-	test_shmem_broadcast_04_logical \
-	test_shmem_broadcast_04_real4 \
-	test_shmem_broadcast_04_real8
+#XFAIL_TESTS = \
+#	test_shmem_broadcast_04_double \
+#	test_shmem_broadcast_04_int4 \
+#	test_shmem_broadcast_04_int8 \
+#	test_shmem_broadcast_04_logical \
+#	test_shmem_broadcast_04_real4 \
+#	test_shmem_broadcast_04_real8
 
 NPROCS ?= 2
-LOG_COMPILER = ${top_srcdir}/test/openshmem/feature_tests/Fortran/test_wrapper.sh $(TEST_RUNNER)
+LOG_COMPILER = $(TEST_RUNNER)
 
 AM_FCFLAGS = -I$(top_srcdir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)

@@ -2,6 +2,7 @@
  *
  * Copyright (c) 2011, 2012
  *   University of Houston System and Oak Ridge National Laboratory.
+ * Copyright (c) 2015 Intel Corporation. All rights reserved.
  * 
  * All rights reserved.
  * 
@@ -211,6 +212,7 @@ main(void)
   }
   else{
     printf("Number of PEs must be > 3 to test broadcast, test skipped\n");
-    return 0;
   }
+  
+  return 0;
 }

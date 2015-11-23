@@ -123,15 +123,7 @@ XFAIL_TESTS = \
 	test_shmem_iput_05_double \
 	test_shmem_iput_05_int4 \
 	test_shmem_iput_05_logical \
-	test_shmem_iput_05_real4 \
-	test_shmem_iget_04_double \
-	test_shmem_iget_04_int4 \
-	test_shmem_iget_04_logical \
-	test_shmem_iget_04_real4 \
-	test_shmem_iget_05_double \
-	test_shmem_iget_05_int4 \
-	test_shmem_iget_05_logical \
-	test_shmem_iget_05_real4
+	test_shmem_iput_05_real4 
 
 NPROCS ?= 2
 LOG_COMPILER = ${top_srcdir}/test/openshmem/feature_tests/Fortran/test_wrapper.sh $(TEST_RUNNER)

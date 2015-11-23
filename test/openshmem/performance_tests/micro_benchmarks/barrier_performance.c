@@ -2,6 +2,7 @@
  *
  * Copyright (c) 2011, 2012
  *   University of Houston System and Oak Ridge National Laboratory.
+ * Copyright (c) 2015 Intel Corporation. All rights reserved.
  * 
  * All rights reserved.
  * 
@@ -42,7 +43,7 @@
 
 #define NPES 4
 
-long pSync[_SHMEM_BCAST_SYNC_SIZE];
+long pSync[_SHMEM_BARRIER_SYNC_SIZE];
 int x = 10101;
 
 int

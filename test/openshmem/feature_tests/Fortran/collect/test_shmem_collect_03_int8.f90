@@ -2,6 +2,7 @@
 !
 ! Copyright (c) 2011, 2012
 !   University of Houston System and Oak Ridge National Laboratory.
+! Copyright (c) 2015 Intel Corporation. All rights reserved.
 ! 
 ! All rights reserved.
 ! 
@@ -62,7 +63,6 @@ program test_shmem_collects
   integer              :: collect_nelems
   integer              :: errcode, abort
 
-  
 
   call start_pes(0)
 
@@ -76,8 +76,8 @@ program test_shmem_collects
     success = .TRUE.
     flag = 0
 
-    call shpalloc (target_addr, target_nelems, errcode, abort)
-    call shpalloc(src_addr, nelems, errcode, abort)
+    call shpalloc (target_addr, target_nelems * 2, errcode, abort)
+    call shpalloc(src_addr, nelems * 2, errcode, abort)
 
 ! The number of elements to collect from each PE
     collect_nelems = nelems / npes
@@ -98,13 +98,13 @@ program test_shmem_collects
      else
        tmp = collect_nelems
      end if
-      do i = 1, collect_nelems, 1
+      do i = 1, tmp, 1
         target_expected(k) = i * 100 + pe  
         k = k + 1
       end do
     end do
    
-     if(mod(pe, 2) == 0) then
+     if(mod(me, 2) == 0) then
        collect_nelems = collect_nelems + 1
      end if
  
