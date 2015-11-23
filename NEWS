@@ -1,7 +1,14 @@
 -*- text -*-
 
-Portals SHMEM NEWS -- history of user-visible changes.
+Sandia SHMEM NEWS -- history of user-visible changes.
 
+1.2.0
+-----
+- Support for OpenSHMEM 1.2 specification
+- Support for libfabric
+- Add simple-pmi support to enable use of an external PMI-1 compliant launcher
+- Add 'oshrun' launcher wrapper to normalize runs across build configurations
+- Multiple bug fixes and improvements to overall stability and performance
 
 1.0a8
 -----
