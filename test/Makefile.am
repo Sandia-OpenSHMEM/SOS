@@ -10,7 +10,3 @@
 #
 
 SUBDIRS = unit performance
-
-if ENABLE_EXTERNAL_TESTS
-SUBDIRS += openshmem
-endif
