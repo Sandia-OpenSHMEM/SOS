@@ -148,6 +148,15 @@ shmem_internal_shutdown(void)
 
 
 void
+shmem_internal_start_pes(int npes)
+{
+    int tl_provided;
+
+    shmem_internal_init(SHMEMX_THREAD_SINGLE, &tl_provided);
+}
+
+
+void
 shmem_internal_init(int tl_requested, int *tl_provided)
 {
     int ret;
