@@ -7,7 +7,7 @@
 # Copyright (c) 2015 Intel Corporation. All rights reserved.
 # This software is available to you under the BSD license.
 #
-# This file is part of the Portals SHMEM software package. For license
+# This file is part of the Sandia OpenSHMEM software package. For license
 # information, see the LICENSE file in the top level directory of the
 # distribution.
 #
@@ -231,7 +231,7 @@ if test "$FC" != "" ; then
 ]])], [shmem_cv_fortran_iso_c_binding="yes"],
       [shmem_cv_fortran_iso_c_binding="no"])])
   AS_IF([test "$shmem_cv_fortran_iso_c_binding" = "no"],
-    [AC_MSG_ERROR([Fortran compiler does not support ISO_C_BINDING, which is required for Portals SHMEM.])])
+    [AC_MSG_ERROR([Fortran compiler does not support ISO_C_BINDING, which is required for Sandia OpenSHMEM.])])
 
   # Get size of Fortran types
   OMPI_FORTRAN_GET_SIZEOF([], [LOGICAL])

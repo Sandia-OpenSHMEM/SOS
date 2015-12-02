@@ -20,7 +20,7 @@ comments, complaints, performance data, etc to dl@cs.oswego.edu
 
 ======================================================================
 
-Some autoconf macros used in building Portals SHMEM, residing in
+Some autoconf macros used in building Sandia OpenSHMEM, residing in
 config/, are included from the Open MPI project under the following
 license terms:
 
