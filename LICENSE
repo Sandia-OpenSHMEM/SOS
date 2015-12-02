@@ -3,9 +3,7 @@ DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
 retains certain rights in this software.
 
 Copyright (c) 2015 Intel Corporation. All rights reserved.
-This software is available to you under the BSD license. For
-license information, see the LICENSE file in the top level directory.
-
+This software is available to you under the BSD license.
 
 ======================================================================
 
@@ -20,7 +18,7 @@ comments, complaints, performance data, etc to dl@cs.oswego.edu
 
 ======================================================================
 
-Some autoconf macros used in building Portals SHMEM, residing in
+Some autoconf macros used in building Sandia OpenSHMEM, residing in
 config/, are included from the Open MPI project under the following
 license terms:
 

@@ -1,42 +1,54 @@
-Portals SHMEM
--------------
+Sandia OpenSHMEM
+----------------
 
 * About
 
-Portals SHMEM is an implementation of the OpenSHMEM 1.0 standard over
-Portals 4.0 and XPMEM.  The implementation is complete, although
-performance tuning is still a work in progress.
+Sandia OpenSHMEM is an implementation of the OpenSHMEM specification over
+Portals 4.0, the Open Fabrics Interface (OFI), and XPMEM.  The implementation
+is complete, although performance tuning is still a work in progress.
 
 
 * Building
 
-Portals SHMEM implementation utilizes the Autoconf/Automake/Libtool
-build system.  The standard GNU configure script ane makd system is
-used to build OpenSHMEM Over Portals 4.  To build:
+The Sandia OpenSHMEM implementation utilizes the Autoconf/Automake/Libtool
+build system.  The standard GNU configure script and make system is used, as
+follows:
 
   % ./configure <options>
   % make
   % make check
   % make install
 
-The "make check" step is not strictly necessary, but is a good idea.
+The "make check" step is not strictly necessary, but is a good idea.  Make
+check utilizes the TEST_RUNNER and NPROCS make variables, which can be used to
+override defaults, e.g. "make check NPROCS=4" or "make check
+TEST_RUNNER='mpiexec -n 2 -ppn 1 -hosts compute1,compute2'".
+
+Sandia SHMEM must be configures to use either the Portals 4 or OFI network
+transport, but not both.  It can optionally be configured to use XPMEM or CMA
+to optimize communication between PEs within the same shared memory domain.
 
 Options to configure include:
 
   --prefix=<DIR>          Install implementation in <DIR>, default: /usr/local
   --with-portals4=<DIR>   Find the Portals 4 library in <DIR>
+  --with-ofi=<DIR>        Find the libfabric library in <DIR>
   --with-xpmem=<DIR>      Find the XPMEM library in <DIR>
+  --with-cma              Use cross-memory attach for on-node communication
   --with-pmi=DIR          Location of PMI installation.  Configure will 
                           automatically look for the PMI runtime provided by
                           the Portals 4 reference implementation
+  --enable-pmi-simple     Include support for interfacing with a PMI 1.0
+                          launcher.  The launcher must be provided by a
+                          separate package, such as MPI or SLURM.
   --enable-error-checking Enable error checking in SHMEM calls.  This will
                           increase the overhead of communication operations.
-  --enable-hard-polling   When using only the Portals 4 transport, the
+  --enable-hard-polling   When using only the network transport, the
                           implementation will use counting events to
                           block the implementation when waiting for 
-                          local memory changes.  On some Portals
-                          implementations, enabling hard polling may 
-                          increase target side message rate
+                          local memory changes.  On some implementations,
+                          enabling hard polling may increase target side
+                          message rate
   --enable-remote-virtual-addressing
                           Enable optimizations assuming the symmetric heap is
                           always symmetric with regards to virtual address.
@@ -142,10 +154,10 @@ options.
         doubling (recdbl) will fall back to ring if the PE set is not a
         power of two in size.
 
-	CMA_PUT_MAX (default: 8192)
-		'--with-cma', shmem put lengths <= CMA_PUT_MAX use process_vm_writev();
-		otherwise use Portals4 transport put.
+    CMA_PUT_MAX (default: 8192)
+        '--with-cma', shmem put lengths <= CMA_PUT_MAX use process_vm_writev();
+        otherwise use Portals4 transport put.
 
-	CMA_GET_MAX (default: 16384)
-		'--with-cma', shmem get lengths <= CMA_GET_MAX use process_vm_readv();
-		otherwise use Portals4 transport get.
+    CMA_GET_MAX (default: 16384)
+        '--with-cma', shmem get lengths <= CMA_GET_MAX use process_vm_readv();
+        otherwise use Portals4 transport get.
