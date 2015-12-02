@@ -231,7 +231,7 @@ static inline void swaptest(int me, int iterations, int T, int S, int P)
 		if (((iterations % 2 == 1) && (target[T] != sswap)) ||
 			((iterations % 2 == 0) &&
 			 (target[T] != tswap))) {
-			fprintf(stderr, "swap ERR: PE 0 target = %d \\n",
+			fprintf(stderr, "swap ERR: PE 0 target = %d \n",
 					target[T]);
 			exit(EXIT_FAILURE);
 		}
