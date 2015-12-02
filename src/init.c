@@ -28,6 +28,7 @@
 #include "shmem.h"
 #include "shmemx.h"
 #include "shmem_internal.h"
+#include "shmem_collectives.h"
 #include "shmem_comm.h"
 #include "runtime.h"
 
@@ -138,6 +139,8 @@ shmem_internal_shutdown(void)
 #ifdef USE_CMA
     shmem_transport_cma_fini();
 #endif
+
+    SHMEM_MUTEX_DESTROY(shmem_internal_mutex_alloc);
 
     shmem_internal_symmetric_fini();
     shmem_runtime_fini();
@@ -371,5 +374,6 @@ shmem_internal_nodename(void)
 
 void shmem_internal_finalize(void)
 {
-    SHMEM_MUTEX_DESTROY(shmem_internal_mutex_alloc);
+    shmem_internal_barrier_all();
+    shmem_internal_shutdown();
 }
