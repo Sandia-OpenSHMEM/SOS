@@ -16,9 +16,9 @@ int main(int argc, char **argv)
 {
 	int me, nProcs, rc=0;
 
-	start_pes(0);
-	me = _my_pe();
-	nProcs = _num_pes();
+	shmem_init();
+	me = shmem_my_pe();
+	nProcs = shmem_n_pes();
 
 	if (me == 0) {
 		int j;
@@ -43,7 +43,8 @@ int main(int argc, char **argv)
 			rc = 1;
 		}
 	}
-	shmem_barrier_all(); /* sync before exiting */
+
+	shmem_finalize();
 
 	return rc;
 }

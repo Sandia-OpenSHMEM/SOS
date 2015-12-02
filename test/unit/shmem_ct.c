@@ -37,9 +37,9 @@ int main(int argc, char **argv) {
     int mine, ct_val;
     shmemx_ct_t ct;
 
-    start_pes(0);
-    me = mine = _my_pe();
-    npes = _num_pes();
+    shmem_init();
+    me = mine = shmem_my_pe();
+    npes = shmem_n_pes();
 
     shmemx_ct_create(&ct);
     ct_val = shmemx_ct_get(ct);
@@ -99,6 +99,8 @@ int main(int argc, char **argv) {
 
     shmem_barrier_all();
     shmemx_ct_free(&ct);
+
+    shmem_finalize();
 
     return 0;
 }

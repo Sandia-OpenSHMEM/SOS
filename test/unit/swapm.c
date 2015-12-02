@@ -30,9 +30,9 @@ main(int argc, char* argv[])
     int me, num_procs, l, j;
     int Verbose = 0;
 
-    start_pes(0);
-    me = _my_pe();
-    num_procs = _num_pes();
+    shmem_init();
+    me = shmem_my_pe();
+    num_procs = shmem_n_pes();
     if ( num_procs < 2 ) {
         if (me ==0)
             printf("PE[0] requires 2 or more PEs?\n");
@@ -41,8 +41,8 @@ main(int argc, char* argv[])
 
     for (l = 0 ; l < loops ; ++l) {
 
-        if ((src_int = shmalloc(2*num_procs*sizeof(int))) == NULL) {
-            printf("PE-%d int shmalloc() failed?\n", me);
+        if ((src_int = shmem_malloc(2*num_procs*sizeof(int))) == NULL) {
+            printf("PE-%d int shmem_malloc() failed?\n", me);
             exit(1);
         }
         dst_int = &src_int[num_procs];
@@ -51,8 +51,8 @@ main(int argc, char* argv[])
             dst_int[j] = 0;
         }
 
-        if ((src_float = shmalloc(2*num_procs*sizeof(float))) == NULL) {
-            printf("PE-%d float shmalloc() failed?\n", me);
+        if ((src_float = shmem_malloc(2*num_procs*sizeof(float))) == NULL) {
+            printf("PE-%d float shmem_malloc() failed?\n", me);
             exit(1);
         }
         dst_float = &src_float[num_procs];
@@ -61,8 +61,8 @@ main(int argc, char* argv[])
             dst_float[j] = 0.0;
         }
 
-        if ((src_double = shmalloc(2*num_procs*sizeof(double))) == NULL) {
-            printf("PE-%d double shmalloc() failed?\n", me);
+        if ((src_double = shmem_malloc(2*num_procs*sizeof(double))) == NULL) {
+            printf("PE-%d double shmem_malloc() failed?\n", me);
             exit(1);
         }
         dst_double = &src_double[num_procs];
@@ -71,8 +71,8 @@ main(int argc, char* argv[])
             dst_double[j] = 0.0;
         }
 
-        if ((src_long = shmalloc(2*num_procs*sizeof(long))) == NULL) {
-            printf("PE-%d long shmalloc() failed?\n", me);
+        if ((src_long = shmem_malloc(2*num_procs*sizeof(long))) == NULL) {
+            printf("PE-%d long shmem_malloc() failed?\n", me);
             exit(1);
         }
         dst_long = &src_long[num_procs];
@@ -81,8 +81,8 @@ main(int argc, char* argv[])
             dst_long[j] = 0;
         }
 
-        if ((src_llong = shmalloc(2*num_procs*sizeof(long long))) == NULL) {
-            printf("PE-%d long shmalloc() failed?\n", me);
+        if ((src_llong = shmem_malloc(2*num_procs*sizeof(long long))) == NULL) {
+            printf("PE-%d long shmem_malloc() failed?\n", me);
             exit(1);
         }
         dst_llong = &src_llong[num_procs];
@@ -277,15 +277,17 @@ main(int argc, char* argv[])
 
         shmem_barrier_all();
 
-        shfree(src_int);
-        shfree(src_float);
-        shfree(src_double);
-        shfree(src_long);
-        shfree(src_llong);
+        shmem_free(src_int);
+        shmem_free(src_float);
+        shmem_free(src_double);
+        shmem_free(src_long);
+        shmem_free(src_llong);
     }
 
     if (Verbose)
-        fprintf(stderr,"[%d] exit\n",_my_pe());
+        fprintf(stderr,"[%d] exit\n",shmem_my_pe());
+
+    shmem_finalize();
 
     return 0;
 }

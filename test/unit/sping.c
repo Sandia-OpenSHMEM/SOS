@@ -74,7 +74,7 @@ void usage (char *name)
 
 void help (char *name)
 {
-	if (_my_pe() == 0) {
+	if (shmem_my_pe() == 0) {
 		printf ("Usage: %s [flags] nwords [maxWords] [incWords]\n\n", name);
 		printf (" Flags may be any of\n");
 		printf (" -n number repititions\n");
@@ -105,9 +105,9 @@ int main (int argc, char *argv[])
 	long *rbuf;	/* remote buffer - sink */
 	long *tbuf;	/* transmit buffer - src */
 
-	start_pes(0);
-	proc = _my_pe();
-	nproc = _num_pes();
+	shmem_init();
+	proc = shmem_my_pe();
+	nproc = shmem_n_pes();
 	if (nproc == 1) {
 		fprintf(stderr, "ERR - Requires > 1 Processing Elements\n");
 		return 1;
@@ -152,14 +152,14 @@ int main (int argc, char *argv[])
 	else if ((incWords = getSize (argv[optind++])) < 0)
 		usage (progName);
 
-	if (!(rbuf = (long *)shmalloc(maxWords * sizeof(long))))
+	if (!(rbuf = (long *)shmem_malloc(maxWords * sizeof(long))))
 	{
 		perror ("Failed memory allocation");
 		exit (1);
 	}
 	memset (rbuf, 0, maxWords * sizeof (long));
 
-	if (!(tbuf = (long *)shmalloc(maxWords * sizeof(long))))
+	if (!(tbuf = (long *)shmem_malloc(maxWords * sizeof(long))))
 	{
 		perror ("Failed memory allocation");
 		exit (1);
@@ -217,9 +217,10 @@ int main (int argc, char *argv[])
 		printStats (proc, peer, doprint, nwords, t);
 	}
 
-    shfree(rbuf);
-    shfree(tbuf);
+    shmem_free(rbuf);
+    shmem_free(tbuf);
 
-	shmem_barrier_all();
+	shmem_finalize();
+
 	return 0;
 }

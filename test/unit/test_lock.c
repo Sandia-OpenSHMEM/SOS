@@ -17,8 +17,8 @@
 #include <unistd.h>
 #include <string.h>
 
-#define Rfprintf if (_my_pe() == 0) fprintf
-#define Rprintf  if (_my_pe() == 0)  printf
+#define Rfprintf if (shmem_my_pe() == 0) fprintf
+#define Rprintf  if (shmem_my_pe() == 0)  printf
 #define Vfprintf if (Verbose) fprintf
 #define Vprintf  if (Verbose) printf
 
@@ -43,9 +43,9 @@ main(int argc, char* argv[])
     int my_rank, num_ranks;
     int Announce = (NULL == getenv("MAKELEVEL")) ? 1 : 0;
 
-    start_pes(0);
-    my_rank = _my_pe();
-    num_ranks = _num_pes();
+    shmem_init();
+    my_rank = shmem_my_pe();
+    num_ranks = shmem_n_pes();
     if (num_ranks == 1) {
         fprintf(stderr, "ERR - Requires > 1 PEs (yod -c X, where X > 1\n");
         return 1;
@@ -85,9 +85,9 @@ main(int argc, char* argv[])
 
     if (Stats) {
         lock_stats_sz = sizeof(lock_stat_t) * num_ranks; // lock stats
-        lock_stats = shmalloc(lock_stats_sz);
+        lock_stats = shmem_malloc(lock_stats_sz);
         if ( !lock_stats ) {
-            fprintf(stderr,"[%d] ERR: shmalloc(%d)\n",my_rank,lock_stats_sz);
+            fprintf(stderr,"[%d] ERR: shmem_malloc(%d)\n",my_rank,lock_stats_sz);
             return 1;
         }
         memset( lock_stats, 0, lock_stats_sz );
@@ -145,9 +145,11 @@ main(int argc, char* argv[])
     shmem_barrier_all();  /* sync all ranks */
 
     if (Stats)
-        shfree(lock_stats);
+        shmem_free(lock_stats);
 
     Vprintf ("[%d] of %d, Exit\n", my_rank, num_ranks);
+
+    shmem_finalize();
 
     return 0;
 }

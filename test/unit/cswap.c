@@ -28,28 +28,28 @@ main(int argc, char* argv[])
     int me, num_pes, l, pe;
     int Verbose = 0;
 
-    start_pes(0);
-    me = _my_pe();
-    num_pes = _num_pes();
+    shmem_init();
+    me = shmem_my_pe();
+    num_pes = shmem_n_pes();
 
     for (l = 0 ; l < loops ; ++l) {
 
-        if ((src_int = shmalloc(sizeof(int))) == NULL) {
-            printf("PE-%d int shmalloc() failed?\n", me);
+        if ((src_int = shmem_malloc(sizeof(int))) == NULL) {
+            printf("PE-%d int shmem_malloc() failed?\n", me);
             exit(1);
         }
         *src_int = 4;
         dst_int = itmp = 0;
 
-        if ((src_long = shmalloc(sizeof(long))) == NULL) {
-            printf("PE-%d long shmalloc() failed?\n", me);
+        if ((src_long = shmem_malloc(sizeof(long))) == NULL) {
+            printf("PE-%d long shmem_malloc() failed?\n", me);
             exit(1);
         }
         *src_long = 8;
         dst_long = ltmp = 0;
 
-        if ((src_llong = shmalloc(sizeof(long long))) == NULL) {
-            printf("PE-%d long long shmalloc() failed?\n", me);
+        if ((src_llong = shmem_malloc(sizeof(long long))) == NULL) {
+            printf("PE-%d long long shmem_malloc() failed?\n", me);
             exit(1);
         }
         *src_llong = 16;
@@ -275,13 +275,15 @@ main(int argc, char* argv[])
         }
         shmem_barrier_all();
 
-        shfree(src_int);
-        shfree(src_long);
-        shfree(src_llong);
+        shmem_free(src_int);
+        shmem_free(src_long);
+        shmem_free(src_llong);
     }
 
     if (Verbose)
-        fprintf(stderr,"[%d] exit\n",_my_pe());
+        fprintf(stderr,"[%d] exit\n",shmem_my_pe());
+
+    shmem_finalize();
 
     return 0;
 }

@@ -43,17 +43,17 @@ main(int argc, char* argv[])
         pSync[i] = _SHMEM_SYNC_VALUE;
     }
 
-    start_pes(0);
+    shmem_init();
 
     for (i = 0; i < N; i += 1) {
-        src[i] = _my_pe() + i;
+        src[i] = shmem_my_pe() + i;
     }
     shmem_barrier_all();
 
-    shmem_long_max_to_all(dst, src, N, 0, 0, _num_pes(), pWrk, pSync);
+    shmem_long_max_to_all(dst, src, N, 0, 0, shmem_n_pes(), pWrk, pSync);
 
     if (Verbose) {
-        printf("%d/%d	dst =", _my_pe(), _num_pes() );
+        printf("%d/%d	dst =", shmem_my_pe(), shmem_n_pes() );
         for (i = 0; i < N; i+= 1) {
             printf(" %ld", dst[i]);
         }
@@ -61,8 +61,10 @@ main(int argc, char* argv[])
     }
 
     for (i = 0; i < N; i+= 1) {
-        if (dst[i] != _num_pes() - 1 + i) return 1;
+        if (dst[i] != shmem_n_pes() - 1 + i) return 1;
     }
+
+    shmem_finalize();
 
     return 0;
 }

@@ -39,41 +39,41 @@ main(int argc, char* argv[])
         }
     }
 
-    start_pes(0);
-    me = _my_pe();
-    num_pes = _num_pes();
+    shmem_init();
+    me = shmem_my_pe();
+    num_pes = shmem_n_pes();
 
     // be a bit sane with total number of gets issued
     loops = loops / num_pes;
     if (loops < 5) loops = 5;
 
     for (l = 0 ; l < loops ; ++l) {
-        if ((src_short = shmalloc(sizeof(short))) == NULL) {
-            printf("PE-%d short shmalloc() failed?\n", me);
+        if ((src_short = shmem_malloc(sizeof(short))) == NULL) {
+            printf("PE-%d short shmem_malloc() failed?\n", me);
             exit(1);
         }
         *src_short = 2;
 
-        if ((src_int = shmalloc(sizeof(int))) == NULL) {
-            printf("PE-%d int shmalloc() failed?\n", me);
+        if ((src_int = shmem_malloc(sizeof(int))) == NULL) {
+            printf("PE-%d int shmem_malloc() failed?\n", me);
             exit(1);
         }
         *src_int = 4;
 
-        if ((src_float = shmalloc(sizeof(float))) == NULL) {
-            printf("PE-%d float shmalloc() failed?\n", me);
+        if ((src_float = shmem_malloc(sizeof(float))) == NULL) {
+            printf("PE-%d float shmem_malloc() failed?\n", me);
             exit(1);
         }
         *src_float = 4.0;
 
-        if ((src_double = shmalloc(sizeof(double))) == NULL) {
-            printf("PE-%d double shmalloc() failed?\n", me);
+        if ((src_double = shmem_malloc(sizeof(double))) == NULL) {
+            printf("PE-%d double shmem_malloc() failed?\n", me);
             exit(1);
         }
         *src_double = 8.0;
 
-        if ((src_long = shmalloc(sizeof(long))) == NULL) {
-            printf("PE-%d long shmalloc() failed?\n", me);
+        if ((src_long = shmem_malloc(sizeof(long))) == NULL) {
+            printf("PE-%d long shmem_malloc() failed?\n", me);
             exit(1);
         }
         *src_long = 8;
@@ -120,15 +120,17 @@ main(int argc, char* argv[])
 
     	shmem_barrier_all();
 
-        shfree(src_short);
-        shfree(src_int);
-        shfree(src_float);
-        shfree(src_double);
-        shfree(src_long);
+        shmem_free(src_short);
+        shmem_free(src_int);
+        shmem_free(src_float);
+        shmem_free(src_double);
+        shmem_free(src_long);
     }
 
     if (Verbose)
-		fprintf(stderr,"[%d] exit\n",_my_pe());
+		fprintf(stderr,"[%d] exit\n",shmem_my_pe());
+
+    shmem_finalize();
 
     return 0;
 }

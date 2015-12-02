@@ -30,13 +30,13 @@ int getSize (char *);
 void
 usage (void)
 {
-    if (_my_pe() == 0 ) {
+    if (shmem_my_pe() == 0 ) {
         fprintf (stderr,
             "Usage: %s [-p]  [nWords(%d)] [loops(%d)] [incWords(%d)]\n",
             pgm, DFLT_NWORDS, DFLT_LOOPS, DFLT_INCR);
         fprintf (stderr,
             "  -v == Verbose output\n"
-            "  [nWords] # of longs to shmalloc()\n"
+            "  [nWords] # of longs to shmem_malloc()\n"
             "  [loops]  # of loops\n"
             "  [incWords] nWords += incWords per loop\n");
     }
@@ -86,9 +86,9 @@ main(int argc, char **argv)
     else
         pgm = argv[0];
 
-    start_pes(0);
-    me = _my_pe();
-    nProcs = _num_pes();
+    shmem_init();
+    me = shmem_my_pe();
+    nProcs = shmem_n_pes();
 
     while ((c = getopt (argc, argv, "hpv")) != -1)
         switch (c)
@@ -127,7 +127,7 @@ main(int argc, char **argv)
         for(j=0,c=2; j < 23; j++,c<<=1)
         {
             target_sz = nWords * sizeof(DataType);
-            if (!(target = (DataType *)shmemalign(c,target_sz))) {
+            if (!(target = (DataType *)shmem_align(c,target_sz))) {
                 perror ("Failed target memory allocation");
                 exit (1);
             }
@@ -143,14 +143,14 @@ main(int argc, char **argv)
                     fprintf(stdout,"align[%#09x]target %p\n",
                                         c, (void*)target);
             shmem_barrier_all();
-            shfree(target);
+            shmem_free(target);
         }
         nWords += incWords;
         if (Verbose && me == 0)
             fprintf(stdout,"Fini loop %d\n",(l+1));
     }
 
-    shmem_barrier_all();
+    shmem_finalize();
 
     return 0;
 }

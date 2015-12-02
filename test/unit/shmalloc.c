@@ -2,20 +2,20 @@
 /*
  *  usage: shmalloc [-p] [nWords] [loops] [incWords-per-loop]
  *    where: -p == power-of-two allocation bump per loop
- *      [nWords] # of longs to shmalloc()\n"
+ *      [nWords] # of longs to shmem_malloc()\n"
  *      [loops(1)]  # of loops\n"
  *      [incWords(2)] nWords += incWords per loop\n");
  * Loop:
- *  PE* shmalloc(nWords)
+ *  PE* shmem_malloc(nWords)
  *   set *DataType = 1
- *  PE* shmalloc(nWords)
+ *  PE* shmem_malloc(nWords)
  *   set *DataType = 2
- *  PE* shmalloc(nWords)
+ *  PE* shmem_malloc(nWords)
  *   set *DataType = 3
  *
  *  for(1...3) allocated ranges
  *    verify
- *    shfree()
+ *    shmem_free()
  * end-loop
  */
 
@@ -49,14 +49,14 @@ int getSize (char *);
 void
 usage (void)
 {
-    if (_my_pe() == 0 ) {
+    if (shmem_my_pe() == 0 ) {
         fprintf (stderr,
             "Usage: %s [-p]  [nWords(%d)] [loops(%d)] [incWords(%d)]\n",
             pgm, DFLT_NWORDS, DFLT_LOOPS, DFLT_INCR);
         fprintf (stderr,
-            "  -p  == (2**0 ... 2**22) shmalloc(), other args ignored\n"
+            "  -p  == (2**0 ... 2**22) shmem_malloc(), other args ignored\n"
             "  -v == Verbose output\n"
-            "  [nWords] # of longs to shmalloc()\n"
+            "  [nWords] # of longs to shmem_malloc()\n"
             "  [loops]  # of loops\n"
             "  [incWords] nWords += incWords per loop\n");
     }
@@ -108,9 +108,9 @@ main(int argc, char **argv)
     else
         pgm = argv[0];
 
-    start_pes(0);
-    me = _my_pe();
-    nProcs = _num_pes();
+    shmem_init();
+    me = shmem_my_pe();
+    nProcs = shmem_n_pes();
 
     while ((c = getopt (argc, argv, "hpv")) != -1)
         switch (c)
@@ -160,7 +160,7 @@ main(int argc, char **argv)
     for(l=0; l < loops; l++) {
 
         result_sz = (nProcs-1) * (nWords * sizeof(DataType));
-        result = (DataType *)shmalloc(result_sz);
+        result = (DataType *)shmem_malloc(result_sz);
         if (! result)
         {
             perror ("Failed result memory allocation");
@@ -171,7 +171,7 @@ main(int argc, char **argv)
 
 
         target_sz = nWords * sizeof(DataType);
-        if (!(target = (DataType *)shmalloc(target_sz)))
+        if (!(target = (DataType *)shmem_malloc(target_sz)))
         {
             perror ("Failed target memory allocation");
             exit (1);
@@ -180,7 +180,7 @@ main(int argc, char **argv)
             *dp++ = 2;
 
         source_sz = 2 * nWords * sizeof(DataType);
-        if (!(source = (DataType *)shmalloc(source_sz)))
+        if (!(source = (DataType *)shmem_malloc(source_sz)))
         {
             perror ("Failed source memory allocation");
             exit (1);
@@ -200,21 +200,21 @@ main(int argc, char **argv)
                 printf("source not consistent @ 3?\n");
                 break;
             }
-        shfree(source);
+        shmem_free(source);
 
         for(dp=target; dp < &target[(target_sz / sizeof(DataType))]; dp++)
             if (*dp != 2 ) {
                 printf("target not consistent @ 2?\n");
                 break;
             }
-        shfree(target);
+        shmem_free(target);
 
         for(dp=result; dp < &result[(result_sz / sizeof(DataType))]; dp++)
             if (*dp != 1 ) {
                 printf("result not consistent @ 1?\n");
                 break;
             }
-        shfree(result);
+        shmem_free(result);
 
         if (loops > 1) {
             if (Verbose && me == 0) {
@@ -228,7 +228,7 @@ main(int argc, char **argv)
         }
     }
 
-    shmem_barrier_all(); /* sync before exiting */
+    shmem_finalize();
 
     return 0;
 }

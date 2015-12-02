@@ -345,10 +345,10 @@ int main(int argc, char **argv)
 	const int  DEFAULT_ITR = 7;
 	int	   iterations = DEFAULT_ITR;
 
-	start_pes(0);
+	shmem_init();
 
-	me = _my_pe();
-	nproc = _num_pes();
+	me = shmem_my_pe();
+	nproc = shmem_n_pes();
 
 	memset(target, -1, NUM_WRITE);
 	memset(source, -1, NUM_READ);
@@ -434,6 +434,8 @@ int main(int argc, char **argv)
 		else
 			printf("PE 0 Successful exit\n");
 	}
+
+	shmem_finalize();
 
 	return 0;
 }

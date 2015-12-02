@@ -28,9 +28,9 @@ main(int argc, char *argv[])
 	int me, npes;
 	long swapped_val, new_val;
 
-	start_pes(0);
-	me = _my_pe();
-	npes = _num_pes();
+	shmem_init();
+	me = shmem_my_pe();
+	npes = shmem_n_pes();
 
     if ((pgm=strrchr(argv[0],'/')))
         pgm++;
@@ -63,9 +63,9 @@ main(int argc, char *argv[])
 
     for(l=0; l < laps; l++) {
 
-    	target = (long *) shmalloc(sizeof (*target));
+    	target = (long *) shmem_malloc(sizeof (*target));
         if (!target) {
-            fprintf(stderr,"[%d] shmalloc() failed?\n",me);
+            fprintf(stderr,"[%d] shmem_malloc() failed?\n",me);
             return 1;
         }
 
@@ -81,10 +81,12 @@ main(int argc, char *argv[])
                         me, *target, swapped_val);
 	    }
 	    shmem_barrier_all();
-	    shfree (target);
+	    shmem_free (target);
 	    if (Verbose == 1 && me == 0)  fprintf(stderr,".");
     }
 	if (Verbose && me == 0)  fprintf(stderr,"\n");
+
+	shmem_finalize();
 
 	return 0;
 }

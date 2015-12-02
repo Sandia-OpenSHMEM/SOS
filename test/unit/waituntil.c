@@ -34,13 +34,13 @@ main(int argc, char* argv[])
         Verbose++;
     }
 
-    start_pes(0);
-    me = _my_pe();
-    num_pes = _num_pes();
+    shmem_init();
+    me = shmem_my_pe();
+    num_pes = shmem_n_pes();
 
-    t2 = shmalloc(10*sizeof(DataType));
+    t2 = shmem_malloc(10*sizeof(DataType));
     if (!t2) {
-        if (me==0) printf("shmalloc() failed?\n");
+        if (me==0) printf("shmem_malloc() failed?\n");
         exit(1);
     }
     t2[9] = target[9] = 0xFF;
@@ -93,12 +93,11 @@ main(int argc, char* argv[])
             return 1;
         }
     }
-    shfree(t2);
+    shmem_free(t2);
 
     if (Verbose)
-        fprintf(stderr,"[%d] exit\n",_my_pe());
+        fprintf(stderr,"[%d] exit\n",shmem_my_pe());
 
-    shmem_barrier_all();
-
+    shmem_finalize();
     return 0;
 }

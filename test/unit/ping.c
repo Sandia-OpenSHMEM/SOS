@@ -11,11 +11,11 @@
 #include <string.h>
 #include <assert.h>
 
-#define Rfprintf if (_my_pe() == 0) fprintf
-#define Rprintf if (_my_pe() == 0)  printf
+#define Rfprintf if (shmem_my_pe() == 0) fprintf
+#define Rprintf if (shmem_my_pe() == 0)  printf
 
-#define RDprintf if (Verbose && _my_pe() == 0)  printf
-#define RDfprintf if (Verbose && _my_pe() == 0) fprintf
+#define RDprintf if (Verbose && shmem_my_pe() == 0)  printf
+#define RDfprintf if (Verbose && shmem_my_pe() == 0) fprintf
 
 /* option flags */
 #define OUTPUT_MOD 1	// output debug every X loops
@@ -39,9 +39,9 @@ main(int argc, char* argv[])
 	int  failures=0;
 	char *prog_name;
 
-	start_pes(0);
-	proc = _my_pe();
-	num_procs = _num_pes();
+	shmem_init();
+	proc = shmem_my_pe();
+	num_procs = shmem_n_pes();
 
 	if (num_procs == 1) {
    		Rfprintf(stderr,
@@ -116,7 +116,7 @@ main(int argc, char* argv[])
 		shmem_barrier_all();
 
 		if ( Verbose && (j==0 || (j % output_mod) == 0) )
-    			fprintf(stderr,"[%d] +(%d)\n", _my_pe(),j);
+    			fprintf(stderr,"[%d] +(%d)\n", shmem_my_pe(),j);
 
 		if ( proc == 0 ) {
 			int p;
@@ -135,7 +135,7 @@ main(int argc, char* argv[])
 		}
 
 		if ( Verbose && (j==0 || (j % output_mod) == 0) )
-    			fprintf(stderr,"[%d] -(%d)\n", _my_pe(),j);
+    			fprintf(stderr,"[%d] -(%d)\n", shmem_my_pe(),j);
 
 		shmem_barrier_all();
 
@@ -159,6 +159,8 @@ main(int argc, char* argv[])
 
 	if (failures || Verbose)
 		Rprintf ("%d(%d) Exit(%d)\n", proc, num_procs, failures);
+
+	shmem_finalize();
 
 	return failures;
 }

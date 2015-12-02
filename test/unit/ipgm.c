@@ -2,19 +2,19 @@
  * ipgm / shmem iput/iget multiple
  *  usage: ipgm [-rmhd] [nWords] [loops] [incWords-per-loop]
  *   where:
- *     -r   == use shrealloc() per loop
- *     -n   == use shmalloc() + shfree() per loop
+ *     -r   == use shmem_realloc() per loop
+ *     -n   == use shmem_malloc() + shmem_free() per loop
  *     -h   == help text.
  *     -d/v == enable debug.
  *
  * start-loop
- *   shmalloc() or shrealloc() src and target arrays.
+ *   shmem_malloc() or shmem_realloc() src and target arrays.
  *   PE0 puts nWords to PE1 ... PE(num_pes-1)
  *   PE* validates received data
- *   PE* adds _my_pe() to each received data element.
+ *   PE* adds shmem_my_pe() to each received data element.
  *   PE0 pulls/iget()s data from PE* into loop/PE specific results range.
  *   PE0 validates received for each PE.
- *   if shmalloc() then shfree()
+ *   if shmem_malloc() then shmem_free()
  *   nWords += incWords
  * end-loop
  */
@@ -52,14 +52,14 @@ int target_data_good(DataType *, int, int, int);
 void
 usage (void)
 {
-    if (_my_pe() == 0) {
+    if (shmem_my_pe() == 0) {
         fprintf (stderr,
             "Usage: %s {-rmhv}  [nWords(%d)] [loops(%d)] [incWords(%d)]\n",
             pgm,DFLT_NWORDS,DFLT_LOOPS,DFLT_INCR);
         fprintf (stderr,
             "  where:\n"
-            "    -r == use shrealloc() instead of shmalloc()\n"
-            "    -m == use shmalloc() instead of shrealloc()\n"
+            "    -r == use shmem_realloc() instead of shmem_malloc()\n"
+            "    -m == use shmem_malloc() instead of shmem_realloc()\n"
             "    -v == Verbose output\n"
             "    -h == help.\n");
     }
@@ -105,7 +105,7 @@ target_data_good( DataType *data, int elements, int id, int lineno )
     for(j=0,k=1; j < elements; j++,k+=2) {
         if ( data[j] != ((DataType)k + id) ) {
             printf("PE[%d] ERR @ line#%d data[%d] wanted %d != %ld\n",
-                _my_pe(), lineno, j, k+id, data[j] );
+                shmem_my_pe(), lineno, j, k+id, data[j] );
 
             for(rc=0,k=1; rc < elements; rc++,k++) {
 #if 0
@@ -138,9 +138,9 @@ main(int argc, char **argv)
     else
         pgm = argv[0];
 
-    start_pes(0);
-    me = _my_pe();
-    nProcs = _num_pes();
+    shmem_init();
+    me = shmem_my_pe();
+    nProcs = shmem_n_pes();
     workers = nProcs - 1;
 
     while ((c = getopt (argc, argv, "hmrvdD")) != -1)
@@ -204,7 +204,7 @@ main(int argc, char **argv)
         rc =  ((workers * nWords) * sizeof(DataType)) + prev_sz;
         if (Debug > 2)
             printf("alloc: results[%ld]\n",(rc/sizeof(DataType)));
-        results = (DataType *)shrealloc(results,rc);
+        results = (DataType *)shmem_realloc(results,rc);
         if (!results)
         {
             perror ("Failed results memory allocation");
@@ -227,16 +227,16 @@ main(int argc, char **argv)
         if (Debug > 2)
             printf("source %ld words\n",rc/sizeof(DataType));
         if (Malloc)
-            source = (DataType *)shmalloc(rc);
+            source = (DataType *)shmem_malloc(rc);
         else
-            source = (DataType *)shrealloc(source,rc);
+            source = (DataType *)shmem_realloc(source,rc);
 
         if (! source) {
             perror ("Failed source memory allocation");
             exit (1);
         }
         if (Debug > 3)
-            printf("shmalloc() source %p (%d bytes)\n",(void*)source,rc);
+            printf("shmem_malloc() source %p (%d bytes)\n",(void*)source,rc);
 
         /* init source data */
         for(j=0; j < nWords*2; j++)
@@ -246,9 +246,9 @@ main(int argc, char **argv)
         if (Debug > 2)
             printf("target %ld words\n",rc/sizeof(DataType));
         if (Malloc)
-            target = (DataType *)shmalloc(rc);
+            target = (DataType *)shmem_malloc(rc);
         else
-            target = (DataType *)shrealloc(target,rc);
+            target = (DataType *)shmem_realloc(target,rc);
 
         if ( ! target ) {
             perror ("Failed target memory allocation");
@@ -256,7 +256,7 @@ main(int argc, char **argv)
         }
         memset(target, 0, rc);
         if (Debug > 3)
-            printf("shmalloc() target %p (%d bytes)\n",(void*)target,rc);
+            printf("shmem_malloc() target %p (%d bytes)\n",(void*)target,rc);
 
         shmem_barrier_all(); 
 
@@ -301,8 +301,8 @@ main(int argc, char **argv)
         shmem_barrier_all();
 
         if (Malloc) {
-            shfree(source);
-            shfree(target);
+            shmem_free(source);
+            shmem_free(target);
         }
 
         nWords += incWords;
@@ -332,7 +332,7 @@ main(int argc, char **argv)
     if (Debug)
         printf("PE-%d exit(0)\n",me);
 
-    shmem_barrier_all(); /* sync before exiting */
+    shmem_finalize();
 
     return 0;
 }

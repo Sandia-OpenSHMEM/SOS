@@ -80,9 +80,9 @@ main(int argc, char **argv)
     long bytes;
     double start_time, *total_time;
 
-    start_pes(0);
-    me = _my_pe();
-    npes = _num_pes();
+    shmem_init();
+    me = shmem_my_pe();
+    npes = shmem_n_pes();
 
     if ((pgm=strrchr(argv[0],'/')))
         pgm++;
@@ -131,29 +131,29 @@ main(int argc, char **argv)
 
     target_PE = (me+1) % npes;
 
-    total_time = (double *) shmalloc( npes * sizeof(double) );
+    total_time = (double *) shmem_malloc( npes * sizeof(double) );
     if (!total_time) {
-      fprintf(stderr,"ERR: bad total_time shmalloc(%ld)\n",
+      fprintf(stderr,"ERR: bad total_time shmem_malloc(%ld)\n",
               (elements * sizeof(double)));
       return 1;
     }
     for(i=0; i < npes; i++)
         total_time[i] = -1.0;
 
-    Source = (int *) shmalloc( elements * sizeof(*Source) );
+    Source = (int *) shmem_malloc( elements * sizeof(*Source) );
     if (!Source) {
-      fprintf(stderr,"ERR: bad Source shmalloc(%ld)\n",
+      fprintf(stderr,"ERR: bad Source shmem_malloc(%ld)\n",
               (elements * sizeof(*Target)));
-      shfree(total_time);
+      shmem_free(total_time);
       return 1;
     }
 
-    Target = (int *) shmalloc( elements * sizeof(*Target) );
+    Target = (int *) shmem_malloc( elements * sizeof(*Target) );
     if (!Target) {
-      fprintf(stderr,"ERR: bad Target shmalloc(%ld)\n",
+      fprintf(stderr,"ERR: bad Target shmem_malloc(%ld)\n",
               (elements * sizeof(*Target)));
-      shfree(Source);
-      shfree(total_time);
+      shmem_free(Source);
+      shmem_free(total_time);
       return 1;
     }
 
@@ -217,9 +217,11 @@ main(int argc, char **argv)
                 pgm, rate, bytes, sum_time);
     }
 
-    shfree(total_time);
-    shfree(Target);
-    shfree(Source);
+    shmem_free(total_time);
+    shmem_free(Target);
+    shmem_free(Source);
+
+    shmem_finalize();
 
     return 0;
 }

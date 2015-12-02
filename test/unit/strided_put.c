@@ -15,8 +15,8 @@ main(int argc, char* argv[])
     int me;
     int ret = 0;
 
-    start_pes(0);
-    me = _my_pe();
+    shmem_init();
+    me = shmem_my_pe();
 
     if (me == 0) {
         /* put 10 words into target on PE 1 */
@@ -37,7 +37,8 @@ main(int argc, char* argv[])
             ret = 1;
         }
     }
-    shmem_barrier_all();	/* sync before exiting */
+
+    shmem_finalize();
 
     return ret;
 }

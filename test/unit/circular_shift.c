@@ -10,9 +10,9 @@ main(int argc, char* argv[])
     int me, neighbor;
     int ret = 0;
 
-    start_pes(0);
-    bbb = me = _my_pe();
-    neighbor = (me + 1) % _num_pes();
+    shmem_init();
+    bbb = me = shmem_my_pe();
+    neighbor = (me + 1) % shmem_n_pes();
 
     shmem_barrier_all();
 
@@ -21,6 +21,8 @@ main(int argc, char* argv[])
     shmem_barrier_all();
 
     if (aaa != neighbor ) ret = 1;
+
+    shmem_finalize();
 
     return ret;
 }
