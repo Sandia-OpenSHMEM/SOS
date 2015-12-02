@@ -27,6 +27,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/wait.h>
 #include <shmem.h>
 
 int
@@ -34,9 +35,15 @@ main(int argc, char* argv[])
 {
     shmem_init();
 
-    if (shmem_my_pe() == 0)
+    if (shmem_my_pe() == 0) {
         shmem_global_exit(0);
+        abort();
+    }
+
+    /* All other PEs wait in this barrier */
+    shmem_barrier_all();
 
     shmem_finalize();
+
     return 0;
 }
