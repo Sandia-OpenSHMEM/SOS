@@ -48,6 +48,8 @@ int shmem_internal_my_pe = -1;
 int shmem_internal_num_pes = -1;
 int shmem_internal_initialized = 0;
 int shmem_internal_finalized = 0;
+int shmem_internal_initialized_with_start_pes = 0;
+int shmem_internal_global_exit_called = 0;
 
 int shmem_internal_thread_level;
 
@@ -147,11 +149,25 @@ shmem_internal_shutdown(void)
 }
 
 
+static void
+shmem_internal_shutdown_atexit(void)
+{
+    if ( shmem_internal_initialized && !shmem_internal_finalized &&
+         !shmem_internal_initialized_with_start_pes && !shmem_internal_global_exit_called &&
+         shmem_internal_my_pe == 0) {
+        fprintf(stderr, "Warning: shutting down without a call to shmem_finalize()\n");
+    }
+
+    shmem_internal_shutdown();
+}
+
+
 void
 shmem_internal_start_pes(int npes)
 {
     int tl_provided;
 
+    shmem_internal_initialized_with_start_pes = 1;
     shmem_internal_init(SHMEMX_THREAD_SINGLE, &tl_provided);
 }
 
@@ -286,7 +302,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         goto cleanup;
     }
 
-    atexit(shmem_internal_shutdown);
+    atexit(shmem_internal_shutdown_atexit);
     shmem_internal_initialized = 1;
 
     /* set up threading */
@@ -395,5 +411,6 @@ shmem_internal_global_exit(int status)
 
     snprintf(str, 256, "PE %d called shmem_global_exit with status %d", shmem_internal_my_pe, status);
 
+    shmem_internal_global_exit_called = 1;
     shmem_runtime_abort(status, str);
 }
