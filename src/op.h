@@ -17,41 +17,35 @@
  *
  */
 
-#define FUNC_OP_CREATE(name, type_name, type, calc)  \
-    void shmem_op_##name##_##type_name##_func(void *in, void *out, int count); \
-    void shmem_op_##name##_##type_name##_func(void *in, void *out, int count) \
+#define FUNC_OP_CREATE(name, calc)  \
+    void static shmem_op_##name##_func(long double *in, long double *out, int count); \
+    void static shmem_op_##name##_func(long double *in, long double *out, int count) \
     {                                                                       \
         int i;                                                              \
-        type *a = (type *) in;                                              \
-        type *b = (type *) out;                                             \
         for (i = 0; i < count; ++i) {                                       \
-            *(b) = calc(*(b), *(a));                                        \
-            ++b;                                                            \
-            ++a;                                                            \
+            *(out) = calc(*(out), *(in));                                   \
+            ++out;                                                          \
+            ++in;                                                           \
         }                                                                   \
     }
 
 
- #define FUNC_CALL(op_name, type_name, in, out, count) \
-	shmem_op_##op_name##_##type_name##_func(in, out, count); \
-
-
-
 /* MAX */
-#define __max_op(a, b) ((a) > (b) ? (a) : (b))
-FUNC_OP_CREATE(max, longdouble, long double, __max_op)
+#define shmem_internal_max_op(a, b) ((a) > (b) ? (a) : (b))
+FUNC_OP_CREATE(max, shmem_internal_max_op)
 
 /* MIN */
-#define __min_op(a, b) ((a) < (b) ? (a) : (b))
-FUNC_OP_CREATE(min, longdouble, long double, __min_op)
+#define shmem_internal_min_op(a, b) ((a) < (b) ? (a) : (b))
+FUNC_OP_CREATE(min, shmem_internal_min_op)
 
 /* SUM */
-#define __sum_op(a, b) ((a) + (b))
-FUNC_OP_CREATE(sum, longdouble, long double, __sum_op)
+#define shmem_internal_sum_op(a, b) ((a) + (b))
+FUNC_OP_CREATE(sum, shmem_internal_sum_op)
 
 /* PROD */
-#define __prod_op(a, b) ((a) * (b))
-FUNC_OP_CREATE(prod, longdouble, long double, __prod_op)
+#define shmem_internal_prod_op(a, b) ((a) * (b))
+FUNC_OP_CREATE(prod, shmem_internal_prod_op)
+
 
 /*simple implementation: DT_CMPxOPS, DT_INTxBOPS */
 void static inline shmem_op_tls(shm_internal_op_t op, shm_internal_datatype_t datatype,
@@ -59,19 +53,19 @@ void static inline shmem_op_tls(shm_internal_op_t op, shm_internal_datatype_t da
 
 	switch(op) {
 	case SHM_INTERNAL_MIN:
-		FUNC_CALL(min, longdouble, (long double *) target, (long double *) current_target, count);
+		shmem_op_min_func((long double *) target, (long double *) current_target, count);
 		break;
 	case SHM_INTERNAL_MAX:
-		FUNC_CALL(max, longdouble, (long double *) target, (long double *) current_target, count);
+		shmem_op_max_func((long double *) target, (long double *) current_target, count);
 		break;
 	case SHM_INTERNAL_SUM:
-		FUNC_CALL(sum, longdouble, (long double *) target, (long double *) current_target, count);
+		shmem_op_sum_func((long double *) target, (long double *) current_target, count);
 		break;
 	case SHM_INTERNAL_PROD:
-		FUNC_CALL(prod, longdouble, (long double *) target, (long double *) current_target, count);
+		shmem_op_prod_func((long double *) target, (long double *) current_target, count);
 		break;
 	default:
 		fprintf(stderr,"op type not supported =( \n");
-		exit(1);
+		RAISE_ERROR(1);
 	}
 }

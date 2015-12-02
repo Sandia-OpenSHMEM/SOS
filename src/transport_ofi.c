@@ -334,7 +334,7 @@ static inline void atomic_limitations_check(void)
     }
 
     /* OTHER OPS check */
-    for(i=0; i<6; i++) {//DT
+    for(i=0; i<5; i++) {//DT
       for(j=0; j<4; j++) { //OPS
         ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_DT_CMP[i], SHM_OPS[j],
                         &atomic_size);
