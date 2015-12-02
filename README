@@ -19,7 +19,10 @@ follows:
   % make check
   % make install
 
-The "make check" step is not strictly necessary, but is a good idea.
+The "make check" step is not strictly necessary, but is a good idea.  Make
+check utilizes the TEST_RUNNER and NPROCS make variables, which can be used to
+override defaults, e.g. "make check NPROCS=4" or "make check
+TEST_RUNNER='mpiexec -n 2 -ppn 1 -hosts compute1,compute2'".
 
 Sandia SHMEM must be configures to use either the Portals 4 or OFI network
 transport, but not both.  It can optionally be configured to use XPMEM or CMA
