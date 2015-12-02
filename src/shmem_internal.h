@@ -127,6 +127,7 @@ extern shmem_internal_mutex_t shmem_internal_mutex_alloc;
 void shmem_internal_start_pes(int npes);
 void shmem_internal_init(int tl_requested, int *tl_provided);
 void shmem_internal_finalize(void);
+void shmem_internal_global_exit(int status);
 char *shmem_internal_nodename(void);
 
 int shmem_internal_symmetric_init(size_t requested_length, int use_malloc);

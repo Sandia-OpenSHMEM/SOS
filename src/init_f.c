@@ -50,12 +50,9 @@ void FC_SHMEM_GLOBAL_EXIT(fortran_integer_t *status);
 void
 FC_SHMEM_GLOBAL_EXIT(fortran_integer_t *status)
 {
-    char str[256];
-
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    snprintf(str, 256, "PE %d called shmem_global_exit with status %d", shmem_internal_my_pe, *status);
-    shmem_runtime_abort(*status, str);
+    shmem_internal_global_exit(*status);
 }
 
 
