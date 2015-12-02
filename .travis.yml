@@ -1,37 +1,110 @@
 sudo: true
 language: c
 compiler:
+    #- clang
     - gcc
 os:
     - linux
+
 before_install:
-        - sudo apt-get update -qq
-        - sudo apt-get install -y dc
-        - wget http://dist.schmorp.de/libev/Attic/libev-4.15.tar.gz
-        - tar -xzvf libev-4.15.tar.gz
-        - cd libev-4.15 && ./configure --prefix=/usr/ && make && sudo make install
-        - cd ..
-        - git clone https://github.com/regrant/portals4.git portals4-code
-        - cd portals4-code
-        - ./autogen.sh
-        - ./configure --prefix=$HOME/portals4/ --with-libev=/usr/lib/ --enable-zero-mrs --enable-reliable-udp --enable-transport-shmem
-        - make -j2
-        - make install
-        - export PTL_IFACE_NAME=venet0
-        - export PATH=$PATH:$HOME/portals4/bin
-        - cd ..
-#       We need OFI build commands here
+    - sudo apt-get update -qq
+    - sudo apt-get install -y dc gfortran
+    ## Build libev
+    # JSD: Schmorp.de went down, so I posted a copy on Google drive...
+    #- wget http://dist.schmorp.de/libev/Attic/libev-4.15.tar.gz
+    #- tar -xzvf libev-4.15.tar.gz
+    #- cd libev-4.15 && ./configure --prefix=/usr/ && make && sudo make install
+    #- cd ..
+    - curl -L -o libev-4.20.tar.gz 'https://docs.google.com/uc?authuser=0&id=0BxdTWEtawABaT2loSTM4X0k5bEU&export=download'
+    - tar -xzvf libev-4.20.tar.gz
+    - cd libev-4.20 && ./configure --prefix=/usr/ && make && sudo make install
+    - cd ..
+    ## Build Portals 4
+    - git clone https://github.com/regrant/portals4.git portals4
+    - cd portals4
+    - ./autogen.sh
+    - ./configure --prefix=$HOME/opt/portals4/ --with-libev=/usr/lib/ --enable-zero-mrs --enable-reliable-udp --disable-pmi-from-portals
+    # JSD: --enable-transport-shmem removed; it was causing tests to hang
+    - make -j 4
+    - make install
+    - export PTL_IFACE_NAME=venet0
+    - cd ..
+    ## Build libfabric
+    - git clone https://github.com/ofiwg/libfabric.git libfabric
+    - cd libfabric
+    - ./autogen.sh
+    - ./configure --prefix=$HOME/opt/libfabric
+    - make -j 4
+    - make install
+    - export FI_LOG_LEVEL=error
+    - cd ..
+    ## Build Hydra
+    - wget http://www.mpich.org/static/downloads/3.2/hydra-3.2.tar.gz
+    - tar xvzf hydra-3.2.tar.gz
+    - cd hydra-3.2/
+    - ./configure --prefix=$HOME/opt/hydra
+    - make -j 4
+    - make install
+    - cd ..
+    ## Fetch UH Tests
+    - git clone --branch uh-tests-fixes https://github.com/jdinan/tests-uh.git tests-uh
+
 install:
-        - git clone https://github.com/regrant/sandia-shmem.git
-        - ./autogen.sh
-        - ./configure --with-portals4=$HOME/portals4/
-#        - make
+    - git clone https://github.com/regrant/sandia-shmem.git
+    - ./autogen.sh
+
 script:
-        - make
-#        this is where the configure for the OFI version should go
-#        - make distclean
-#        - autoreconf -i
-#        - ./configure  
+    - export BASE_PATH=$PATH
+    - export BASE_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+    ###
+    ### Build and check Portals
+    ###
+    - export PATH=$HOME/opt/hydra/bin:$HOME/opt/portals4/bin:$BASE_PATH
+    - ./configure --with-portals4=$HOME/opt/portals4/ --disable-long-fortran-header --prefix=$HOME/opt/sandia-shmem-portals4 --enable-error-checking --enable-remote-virtual-addressing --enable-picky --enable-pmi-simple FCFLAGS="-fcray-pointer"
+    - make -j 4
+    #- make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2 timeout 10" check
+    - make install
+    - make clean
+    ###
+    ### Build and check OFI
+    ###
+    - export PATH=$HOME/opt/hydra/bin:$BASE_PATH
+    - ./configure --with-ofi=$HOME/opt/libfabric/ --disable-long-fortran-header --prefix=$HOME/opt/sandia-shmem-ofi --enable-error-checking --enable-remote-virtual-addressing --enable-picky --enable-pmi-simple FCFLAGS="-fcray-pointer"
+    - make -j 4
+    - make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2" check
+    - make install
+    ###
+    ### Run the UH test suite (Portals)
+    ###
+    - export PATH=$HOME/opt/portals4/bin:$HOME/opt/sandia-shmem-portals4/bin:$HOME/opt/hydra/bin:$BASE_PATH
+    - export LD_LIBRARY_PATH=$HOME/opt/sandia-shmem-portals4/lib:$BASE_LD_LIBRARY_PATH
+    - export OSHRUN_LAUNCHER="mpiexec.hydra"
+    - cd tests-uh
+    - make -j 4 C_feature_tests F_feature_tests
+    #- make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
+    # Check for failures in the C tests
+    #- if grep -qi Fail uh-tests-c-feature-tests.log; then false; else true; fi
+    #- make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log
+    # Check for failures in the Fortran tests
+    #- if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi
+    - make clean
+    - cd ..
+    ###
+    ### Run the UH test suite (OFI)
+    ###
+    - export PATH=$HOME/opt/sandia-shmem-ofi/bin:$HOME/opt/hydra/bin:$BASE_PATH
+    - export LD_LIBRARY_PATH=$HOME/opt/sandia-shmem-ofi/lib:$BASE_LD_LIBRARY_PATH
+    - export OSHRUN_LAUNCHER="mpiexec.hydra"
+    - cd tests-uh
+    - make -j 4 C_feature_tests F_feature_tests
+    - make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
+    # Check for failures in the C tests
+    - if grep -qi Fail uh-tests-c-feature-tests.log; then false; else true; fi
+    - make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log
+    # Check for failures in the Fortran tests
+    - if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi
+    - make clean
+    - cd ..
 
 notifications:
   email:
