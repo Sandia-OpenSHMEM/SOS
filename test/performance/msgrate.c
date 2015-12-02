@@ -218,7 +218,7 @@ main(int argc, char *argv[])
 {
     int i;
 
-    start_pes(0);
+    shmem_init();
 
     rank = shmem_my_pe();
     world_size = shmem_n_pes();
@@ -328,7 +328,7 @@ main(int argc, char *argv[])
     if (NULL == send_buf) abort_app("malloc");
     memset(send_buf, 1, npeers * nmsgs * nbytes);
 
-    recv_buf = shmalloc(npeers * nmsgs * nbytes);
+    recv_buf = shmem_malloc(npeers * nmsgs * nbytes);
     if (NULL == recv_buf) abort_app("malloc");
     memset(recv_buf, 0, npeers * nmsgs * nbytes);
 
@@ -374,5 +374,6 @@ main(int argc, char *argv[])
     if (rank == 0 && machine_output) printf("\n");
 
     /* done */
+    shmem_finalize();
     return 0;
 }
