@@ -71,6 +71,8 @@ TESTS += \
      shmem_info_f
 endif
 
+XFAIL_TESTS = global_exit
+
 NPROCS ?= 2
 LOG_COMPILER = $(TEST_RUNNER)
 
