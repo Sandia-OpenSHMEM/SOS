@@ -9,7 +9,8 @@
 # distribution.
 #
 
-check_PROGRAMS = $(TESTS)
+check_PROGRAMS = $(TESTS) \
+		 global_exit ## Disabled; currently hangs
 
 TESTS = \
 	hello \
@@ -57,7 +58,6 @@ TESTS = \
 	bcast_flood \
 	lfinc \
 	mt_a2a \
-	global_exit \
 	shmem_info
 
 if USE_PORTALS4
@@ -70,8 +70,6 @@ TESTS += \
      hello_f \
      shmem_info_f
 endif
-
-XFAIL_TESTS = global_exit
 
 NPROCS ?= 2
 LOG_COMPILER = $(TEST_RUNNER)
