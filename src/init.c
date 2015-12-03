@@ -180,11 +180,21 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     long heap_size, eager_size;
     int heap_use_malloc = 0;
 
+    int runtime_initialized   = 0;
+    int transport_initialized = 0;
+#ifdef USE_XPMEM
+    int xpmem_initialized     = 0;
+#endif
+#ifdef USE_CMA
+    int cma_initialized       = 0;
+#endif
+
     ret = shmem_runtime_init();
     if (0 != ret) {
         fprintf(stderr, "ERROR: runtime init failed: %d\n", ret);
         goto cleanup;
     }
+    runtime_initialized = 1;
     shmem_internal_my_pe = shmem_runtime_get_rank();
     shmem_internal_num_pes = shmem_runtime_get_size();
 
@@ -236,6 +246,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
                 shmem_internal_my_pe);
         goto cleanup;
     }
+    transport_initialized = 1;
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_init(eager_size);
     if (0 != ret) {
@@ -244,6 +255,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
                 shmem_internal_my_pe);
         goto cleanup;
     }
+    xpmem_initialized = 1;
 #endif
 #ifdef USE_CMA
     shmem_transport_cma_put_max = get_env_long("CMA_PUT_MAX", 1, 8*1024);
@@ -256,6 +268,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
                 shmem_internal_my_pe);
         goto cleanup;
     }
+    cma_initialized = 1;
 #endif
 
     /* exchange information */
@@ -374,18 +387,26 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     return;
 
  cleanup:
-    shmem_transport_fini();
+    if (transport_initialized) {
+        shmem_transport_fini();
+    }
 
 #ifdef USE_XPMEM
-    shmem_transport_xpmem_fini();
+    if (xpmem_initialized) {
+        shmem_transport_xpmem_fini();
+    }
 #endif
 #ifdef USE_CMA
-    shmem_transport_cma_fini();
+    if (cma_initialized) {
+        shmem_transport_cma_fini();
+    }
 #endif
     if (NULL != shmem_internal_data_base) {
         shmem_internal_symmetric_fini();
     }
-    shmem_runtime_fini();
+    if (runtime_initialized) {
+        shmem_runtime_fini();
+    }
     abort();
 }
 
