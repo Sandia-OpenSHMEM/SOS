@@ -60,9 +60,9 @@ main(int argc, char **argv)
 	int me, npes, elements=N_ELEMENTS, loops=DFLT_LOOPS;
     char *pgm;
 
-	start_pes(0);
-	me = _my_pe();
-	npes = _num_pes();
+	shmem_init();
+	me = shmem_my_pe();
+	npes = shmem_n_pes();
 
     if ((pgm=strrchr(argv[0],'/')))
         pgm++;
@@ -122,8 +122,8 @@ main(int argc, char **argv)
     if (All2==0 && Bcast==0 && Collect==0 && Many==0 && Neighbor==0)
         All2 = Bcast = Collect = Many = Neighbor = 1;
 
-	source = (int *) shmalloc( elements * sizeof(*source) );
-	target = (int *) shmalloc( elements * sizeof(*target) );
+	source = (int *) shmem_malloc( elements * sizeof(*source) );
+	target = (int *) shmem_malloc( elements * sizeof(*target) );
 
 	for (i = 0; i < elements; i += 1) {
 	    source[i] = i + 1;
@@ -156,8 +156,10 @@ main(int argc, char **argv)
 
 	shmem_barrier_all();
 
-	shfree(target);
-	shfree(source);
+	shmem_free(target);
+	shmem_free(source);
+
+	shmem_finalize();
 
 	return 0;
 }
@@ -368,7 +370,7 @@ bcast(int *target, int *src, int elements, int me, int npes, int loops)
     long *ps, *pSync, *pSync1;
     long total_bytes = loops * elements * sizeof(*src);
 
-	pSync = (long*)shmalloc( 2 * sizeof(long) * _SHMEM_BCAST_SYNC_SIZE );
+	pSync = (long*)shmem_malloc( 2 * sizeof(long) * _SHMEM_BCAST_SYNC_SIZE );
 	pSync1 = &pSync[_SHMEM_BCAST_SYNC_SIZE];
     for (i = 0; i < _SHMEM_BCAST_SYNC_SIZE; i++) {
         pSync[i] = pSync1[i] = _SHMEM_SYNC_VALUE;
@@ -397,7 +399,7 @@ bcast(int *target, int *src, int elements, int me, int npes, int loops)
                 ((double)total_bytes/(1024.0*1024.0)) / elapsed_time );
     }
 	shmem_barrier_all();
-    shfree( pSync );
+    shmem_free( pSync );
 }
 
 
@@ -409,12 +411,12 @@ collect(int *target, int *src, int elements, int me, int npes, int loops)
     long total_bytes = loops * elements * sizeof(*src);
     long *ps, *pSync, *pSync1;
 
-	pSync = (long*) shmalloc( 2 * sizeof(long) * _SHMEM_COLLECT_SYNC_SIZE );
+	pSync = (long*) shmem_malloc( 2 * sizeof(long) * _SHMEM_COLLECT_SYNC_SIZE );
 	pSync1 = &pSync[_SHMEM_COLLECT_SYNC_SIZE];
     for (i = 0; i < _SHMEM_COLLECT_SYNC_SIZE; i++) {
         pSync[i] = pSync1[i] = _SHMEM_SYNC_VALUE;
     }
-	target = (int *) shmalloc( elements * sizeof(*target) * npes );
+	target = (int *) shmem_malloc( elements * sizeof(*target) * npes );
 
     if (me==0 && Verbose) {
         fprintf(stdout,"%s: %d loops of collect32(%ld bytes) over %d PEs: ",
@@ -439,8 +441,8 @@ collect(int *target, int *src, int elements, int me, int npes, int loops)
                 ((double)total_bytes/(1024.0*1024.0)) / elapsed_time );
     }
 	shmem_barrier_all();
-	shfree(target);
-    shfree( pSync );
+	shmem_free(target);
+    shmem_free( pSync );
 	shmem_barrier_all();
 }
 
@@ -454,12 +456,12 @@ fcollect(int *target, int *src, int elements, int me, int npes, int loops)
     long total_bytes = loops * elements * sizeof(*src);
     long *ps, *pSync, *pSync1;
 
-	pSync = (long*) shmalloc( 2 * sizeof(long) * _SHMEM_COLLECT_SYNC_SIZE );
+	pSync = (long*) shmem_malloc( 2 * sizeof(long) * _SHMEM_COLLECT_SYNC_SIZE );
 	pSync1 = &pSync[_SHMEM_COLLECT_SYNC_SIZE];
     for (i = 0; i < _SHMEM_COLLECT_SYNC_SIZE; i++) {
         pSync[i] = pSync1[i] = _SHMEM_SYNC_VALUE;
     }
-	target = (int *) shmalloc( elements * sizeof(*target) * npes );
+	target = (int *) shmem_malloc( elements * sizeof(*target) * npes );
 
     if (me==0 && Verbose) {
         fprintf(stdout,"%s: %d loops of fcollect32(%ld bytes) over %d PEs: ",
@@ -484,8 +486,8 @@ fcollect(int *target, int *src, int elements, int me, int npes, int loops)
                 ((double)total_bytes/(1024.0*1024.0)) / elapsed_time );
     }
 	shmem_barrier_all();
-	shfree(target);
-    shfree( pSync );
+	shmem_free(target);
+    shmem_free( pSync );
 	shmem_barrier_all();
 }
 

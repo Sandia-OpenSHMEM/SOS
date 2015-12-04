@@ -27,9 +27,9 @@ main(int argc, char* argv[])
     int nBytes = START_BCAST_SIZE;
     int nLongs=0;
 
-    start_pes(0);
-    mpe = _my_pe();
-    num_pes = _num_pes();
+    shmem_init();
+    mpe = shmem_my_pe();
+    num_pes = shmem_n_pes();
 
     if ((pgm=strrchr(argv[0],'/')))
         pgm++;
@@ -54,9 +54,9 @@ main(int argc, char* argv[])
     for(cloop=1; cloop <= loops; cloop++) {
 
         nLongs = nBytes / sizeof(long);
-        dst = (long *)shmalloc(nBytes*2);
+        dst = (long *)shmem_malloc(nBytes*2);
         if ( !dst ) {
-            fprintf(stderr,"[%d] shmalloc(%d) failed %s\n",
+            fprintf(stderr,"[%d] shmem_malloc(%d) failed %s\n",
                             mpe,nBytes,strerror(errno));
             return 0;
         }
@@ -83,11 +83,13 @@ main(int argc, char* argv[])
         }
         shmem_barrier_all();
 
-        shfree (dst);
+        shmem_free (dst);
         if (Verbose && mpe ==0)
             fprintf(stderr,"loop %2d Bcast %d, Done.\n",cloop,nBytes);
         nBytes += BCAST_INCR;
     }
+
+    shmem_finalize();
 
     return 0;
 }

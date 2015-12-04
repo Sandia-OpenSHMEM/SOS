@@ -49,7 +49,7 @@ pthread_barrier_t fencebar;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
-void * thread_main(void *arg) {
+static void * thread_main(void *arg) {
     int tid = * (int *) arg;
     int i, val, expected;
 

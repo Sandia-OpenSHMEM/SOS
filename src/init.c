@@ -28,6 +28,7 @@
 #include "shmem.h"
 #include "shmemx.h"
 #include "shmem_internal.h"
+#include "shmem_collectives.h"
 #include "shmem_comm.h"
 #include "runtime.h"
 
@@ -47,6 +48,8 @@ int shmem_internal_my_pe = -1;
 int shmem_internal_num_pes = -1;
 int shmem_internal_initialized = 0;
 int shmem_internal_finalized = 0;
+int shmem_internal_initialized_with_start_pes = 0;
+int shmem_internal_global_exit_called = 0;
 
 int shmem_internal_thread_level;
 
@@ -139,8 +142,33 @@ shmem_internal_shutdown(void)
     shmem_transport_cma_fini();
 #endif
 
+    SHMEM_MUTEX_DESTROY(shmem_internal_mutex_alloc);
+
     shmem_internal_symmetric_fini();
     shmem_runtime_fini();
+}
+
+
+static void
+shmem_internal_shutdown_atexit(void)
+{
+    if ( shmem_internal_initialized && !shmem_internal_finalized &&
+         !shmem_internal_initialized_with_start_pes && !shmem_internal_global_exit_called &&
+         shmem_internal_my_pe == 0) {
+        fprintf(stderr, "Warning: shutting down without a call to shmem_finalize()\n");
+    }
+
+    shmem_internal_shutdown();
+}
+
+
+void
+shmem_internal_start_pes(int npes)
+{
+    int tl_provided;
+
+    shmem_internal_initialized_with_start_pes = 1;
+    shmem_internal_init(SHMEMX_THREAD_SINGLE, &tl_provided);
 }
 
 
@@ -152,11 +180,21 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     long heap_size, eager_size;
     int heap_use_malloc = 0;
 
+    int runtime_initialized   = 0;
+    int transport_initialized = 0;
+#ifdef USE_XPMEM
+    int xpmem_initialized     = 0;
+#endif
+#ifdef USE_CMA
+    int cma_initialized       = 0;
+#endif
+
     ret = shmem_runtime_init();
     if (0 != ret) {
         fprintf(stderr, "ERROR: runtime init failed: %d\n", ret);
         goto cleanup;
     }
+    runtime_initialized = 1;
     shmem_internal_my_pe = shmem_runtime_get_rank();
     shmem_internal_num_pes = shmem_runtime_get_size();
 
@@ -208,6 +246,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
                 shmem_internal_my_pe);
         goto cleanup;
     }
+    transport_initialized = 1;
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_init(eager_size);
     if (0 != ret) {
@@ -216,6 +255,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
                 shmem_internal_my_pe);
         goto cleanup;
     }
+    xpmem_initialized = 1;
 #endif
 #ifdef USE_CMA
     shmem_transport_cma_put_max = get_env_long("CMA_PUT_MAX", 1, 8*1024);
@@ -228,6 +268,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
                 shmem_internal_my_pe);
         goto cleanup;
     }
+    cma_initialized = 1;
 #endif
 
     /* exchange information */
@@ -274,7 +315,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         goto cleanup;
     }
 
-    atexit(shmem_internal_shutdown);
+    atexit(shmem_internal_shutdown_atexit);
     shmem_internal_initialized = 1;
 
     /* set up threading */
@@ -346,18 +387,26 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     return;
 
  cleanup:
-    shmem_transport_fini();
+    if (transport_initialized) {
+        shmem_transport_fini();
+    }
 
 #ifdef USE_XPMEM
-    shmem_transport_xpmem_fini();
+    if (xpmem_initialized) {
+        shmem_transport_xpmem_fini();
+    }
 #endif
 #ifdef USE_CMA
-    shmem_transport_cma_fini();
+    if (cma_initialized) {
+        shmem_transport_cma_fini();
+    }
 #endif
     if (NULL != shmem_internal_data_base) {
         shmem_internal_symmetric_fini();
     }
-    shmem_runtime_fini();
+    if (runtime_initialized) {
+        shmem_runtime_fini();
+    }
     abort();
 }
 
@@ -371,5 +420,18 @@ shmem_internal_nodename(void)
 
 void shmem_internal_finalize(void)
 {
-    SHMEM_MUTEX_DESTROY(shmem_internal_mutex_alloc);
+    shmem_internal_barrier_all();
+    shmem_internal_shutdown();
+}
+
+
+void
+shmem_internal_global_exit(int status)
+{
+    char str[256];
+
+    snprintf(str, 256, "PE %d called shmem_global_exit with status %d", shmem_internal_my_pe, status);
+
+    shmem_internal_global_exit_called = 1;
+    shmem_runtime_abort(status, str);
 }

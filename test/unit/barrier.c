@@ -8,10 +8,10 @@
 
 #include <shmem.h>
 
-#define Rfprintf if (_my_pe() == 0) fprintf
-#define Rprintf if (_my_pe() == 0)  printf
-#define RDfprintf if (Verbose && _my_pe() == 0) fprintf
-#define RDprintf if (Verbose && _my_pe() == 0)  printf
+#define Rfprintf if (shmem_my_pe() == 0) fprintf
+#define Rprintf if (shmem_my_pe() == 0)  printf
+#define RDfprintf if (Verbose && shmem_my_pe() == 0) fprintf
+#define RDprintf if (Verbose && shmem_my_pe() == 0)  printf
 
 int Verbose;
 
@@ -22,9 +22,9 @@ main(int argc, char* argv[])
 	int rank, num_ranks;
 	char *prog_name;
 
-	start_pes(0);
-	rank = _my_pe();
-	num_ranks = _num_pes();
+	shmem_init();
+	rank = shmem_my_pe();
+	num_ranks = shmem_n_pes();
 	if (num_ranks == 1) {
    		Rfprintf(stderr,
 			"ERR - Requires > 1 PEs (yod -c X, where X > 1\n");
@@ -69,6 +69,8 @@ main(int argc, char* argv[])
 	}
 
         RDprintf ("%d(%d) Exit\n", rank, num_ranks);
+
+        shmem_finalize();
 
 	return 0;
 }

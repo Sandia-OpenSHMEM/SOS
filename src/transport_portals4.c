@@ -208,7 +208,7 @@ shmem_transport_init(long eager_size)
     /* Initialize Portals */
     ret = PtlInit();
     if (PTL_OK != ret) {
-        fprintf(stderr, "ERROR: PtlInit failed: %d\n", ret);
+        fprintf(stderr, "ERROR: PtlInit failed (%d), try setting PTL_IFACE_NAME\n", ret);
         return 1;
     }
 

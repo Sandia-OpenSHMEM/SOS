@@ -20,9 +20,9 @@ main(int argc, char **argv)
 {
     int me, nProcs, rc=0, j, k;
 
-    start_pes(0);
-    me = _my_pe();
-    nProcs = _num_pes();
+    shmem_init();
+    me = shmem_my_pe();
+    nProcs = shmem_n_pes();
 
     if (me == 0) {
         /* put words into target on PE's [1 to (nProcs-1)] */
@@ -30,7 +30,7 @@ main(int argc, char **argv)
             shmem_short_iput(target, source, 1, 2, WRDS, j);
     }
 
-    results = (short*)shmalloc(nProcs * WRDS * sizeof(short));
+    results = (short*)shmem_malloc(nProcs * WRDS * sizeof(short));
     assert(results);
     memset((void*)results, 0, (nProcs * WRDS * sizeof(short)));
 
@@ -88,7 +88,9 @@ main(int argc, char **argv)
 #endif
 
     shmem_barrier_all(); /* sync before exiting */
-    shfree(results);
+    shmem_free(results);
+
+    shmem_finalize();
 
     return rc;
 }

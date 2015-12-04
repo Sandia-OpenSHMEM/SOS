@@ -9,8 +9,6 @@
 # distribution.
 #
 
-all: $(check_PROGRAMS)
-
 check_PROGRAMS = $(TESTS)
 
 TESTS =

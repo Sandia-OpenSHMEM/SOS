@@ -11,14 +11,12 @@ int    *pNrepeat;
 
 void Init(ArgStruct *p, int* pargc, char*** pargv)
 {
-
+   shmem_init();
 }
 
 void Setup(ArgStruct *p)
 {
    int npes;
-
-   start_pes(2);
 
    if((npes=shmem_n_pes())!=2) {
 
@@ -26,13 +24,13 @@ void Setup(ArgStruct *p)
       exit(1);
    }
 
-   p->prot.flag=(int *) shmalloc(sizeof(int));
-   pTime = (double *) shmalloc(sizeof(double));
-   pNrepeat = (int *) shmalloc(sizeof(int));
+   p->prot.flag=(int *) shmem_malloc(sizeof(int));
+   pTime = (double *) shmem_malloc(sizeof(double));
+   pNrepeat = (int *) shmem_malloc(sizeof(int));
 
    p->tr = p->rcv = 0;
 
-   if((p->prot.ipe=_my_pe()) == 0) {
+   if((p->prot.ipe=shmem_my_pe()) == 0) {
       p->tr=1;
       p->prot.nbor=1;
       *p->prot.flag=1;
@@ -108,6 +106,7 @@ void RecvRepeat(ArgStruct *p, int *rpt)
 
 void  CleanUp(ArgStruct *p)
 {
+    shmem_finalize();
 }
 
 
@@ -126,7 +125,7 @@ void MyMalloc(ArgStruct *p, int bufflen, int soffset, int roffset)
    void* buff1;
    void* buff2;
 
-   if((buff1=(char *)shmalloc(bufflen+MAX(soffset,roffset)))==(char *)NULL)
+   if((buff1=(char *)shmem_malloc(bufflen+MAX(soffset,roffset)))==(char *)NULL)
    {
       fprintf(stderr,"couldn't allocate memory\n");
       exit(-1);
@@ -134,7 +133,7 @@ void MyMalloc(ArgStruct *p, int bufflen, int soffset, int roffset)
 
    if(!p->cache)
 
-     if((buff2=(char *)shmalloc(bufflen+soffset))==(char *)NULL)
+     if((buff2=(char *)shmem_malloc(bufflen+soffset))==(char *)NULL)
        {
          fprintf(stderr,"Couldn't allocate memory\n");
          exit(-1);
@@ -151,8 +150,8 @@ void MyMalloc(ArgStruct *p, int bufflen, int soffset, int roffset)
 void FreeBuff(char *buff1, char* buff2)
 {
   if(buff1 != NULL)
-    shfree(buff1);
+    shmem_free(buff1);
 
   if(buff2 != NULL)
-    shfree(buff2);
+    shmem_free(buff2);
 }

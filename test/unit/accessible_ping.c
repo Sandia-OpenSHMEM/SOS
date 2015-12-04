@@ -12,9 +12,9 @@ main(int argc, char* argv[])
 {
     int me, npes;
     setbuf(stdout, NULL);
-    start_pes(0);
-    me = _my_pe();
-    npes = _num_pes();
+    shmem_init();
+    me = shmem_my_pe();
+    npes = shmem_n_pes();
     if (me == 0) {
         int i;
         int verbose = (NULL == getenv("MAKELEVEL")) ? 1 : 0;
@@ -27,6 +27,8 @@ main(int argc, char* argv[])
             if (! shmem_pe_accessible(i)) return 1;
         }
     }
- 
+
+    shmem_finalize();
+
     return 0;
 }

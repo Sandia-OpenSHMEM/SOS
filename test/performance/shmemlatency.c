@@ -39,7 +39,7 @@ main(int argc, char *argv[])
     double max_latency, max_bandwidth;
     double min_latency, min_bandwidth;
 
-    start_pes(0);
+    shmem_init();
 
     my_node   = shmem_my_pe();
 
@@ -161,6 +161,8 @@ main(int argc, char *argv[])
         }
     }
 
+    shmem_finalize();
+    return 0;
 }  /* end of main() */
 
 

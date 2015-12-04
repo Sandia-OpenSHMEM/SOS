@@ -27,14 +27,14 @@ int main( int argc, char *argv[])
     if (argc > 1)
         loops = atoi(argv[1]);
 
-    start_pes(0);
+    shmem_init();
 
-    my_pe = _my_pe();
-    npes = _num_pes();
+    my_pe = shmem_my_pe();
+    npes = shmem_n_pes();
 
-    data = shmalloc(data_sz);
+    data = shmem_malloc(data_sz);
     if (!data) {
-        fprintf(stderr,"[%d] shmalloc(%ld) failure? %d\n",
+        fprintf(stderr,"[%d] shmem_malloc(%ld) failure? %d\n",
                 my_pe,data_sz,errno);
         exit(1);
     }
@@ -74,7 +74,9 @@ int main( int argc, char *argv[])
                 "  %2.6f usecs per shmem_long_finc()\n",
                     my_pe,loops,elapsed,((elapsed*100000.0)/(double)loops));
     }
-    shfree(data);
+    shmem_free(data);
+
+    shmem_finalize();
 
     return rc;
 }

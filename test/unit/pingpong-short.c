@@ -19,11 +19,11 @@
 
 static int atoi_scaled(char *s);
 
-#define Rfprintf if (_my_pe() == 0) fprintf
-#define Rprintf if (_my_pe() == 0)  printf
+#define Rfprintf if (shmem_my_pe() == 0) fprintf
+#define Rprintf if (shmem_my_pe() == 0)  printf
 
-#define RDprintf if (Verbose && _my_pe() == 0)  printf
-#define RDfprintf if (Verbose && _my_pe() == 0) fprintf
+#define RDprintf if (Verbose && shmem_my_pe() == 0)  printf
+#define RDfprintf if (Verbose && shmem_my_pe() == 0) fprintf
 
 /* option flags */
 #define OUTPUT_MOD 1	// output debug every X loops on -V
@@ -63,9 +63,9 @@ main(int argc, char* argv[])
             pSync4[j] = _SHMEM_SYNC_VALUE;
     }
 
-	start_pes(0);
-	my_pe = _my_pe();
-	nProcs = _num_pes();
+	shmem_init();
+	my_pe = shmem_my_pe();
+	nProcs = shmem_n_pes();
 	nWorkers = nProcs - 1;
 
 	if (nProcs == 1) {
@@ -137,15 +137,15 @@ main(int argc, char* argv[])
 	}
 
     work_sz = (nProcs*nWords) * sizeof(DataType);
-    work = shmalloc( work_sz );
+    work = shmem_malloc( work_sz );
     if ( !work ) {
-        fprintf(stderr,"[%d] ERR - work = shmalloc(%ld) ?\n",my_pe,work_sz);
+        fprintf(stderr,"[%d] ERR - work = shmem_malloc(%ld) ?\n",my_pe,work_sz);
         return 1;
     }
 
-    Target = shmalloc( 2 * nWords * sizeof(DataType) ); // Target & src
+    Target = shmem_malloc( 2 * nWords * sizeof(DataType) ); // Target & src
     if ( !Target ) {
-        fprintf(stderr,"[%d] ERR - Target = shmalloc(%ld) ?\n",
+        fprintf(stderr,"[%d] ERR - Target = shmem_malloc(%ld) ?\n",
                 my_pe, (nWords * sizeof(DataType)));
         return 1;
     }
@@ -161,7 +161,7 @@ main(int argc, char* argv[])
 
 #if _DEBUG
 		if ( Verbose && (j==0 || (j % output_mod) == 0) )
-    			fprintf(stderr,"[%d] +(%d)\n", _my_pe(),j);
+    			fprintf(stderr,"[%d] +(%d)\n", shmem_my_pe(),j);
 #endif
 	    shmem_barrier(0, 0, nProcs, pSync0);
 		if ( my_pe == 0 ) {
@@ -257,12 +257,14 @@ main(int argc, char* argv[])
 	}
 	RDfprintf(stderr,"\n");fflush(stderr);
 
-    shfree( work );
-    shfree( Target );
+    shmem_free( work );
+    shmem_free( Target );
 
 	shmem_barrier_all();
 
 	RDprintf("%d(%d) Exit(%d)\n", my_pe, nProcs, failures);
+
+	shmem_finalize();
 
 	return failures;
 }

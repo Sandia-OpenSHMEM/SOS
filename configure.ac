@@ -141,6 +141,11 @@ if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
   CFLAGS="$CFLAGS -Wall -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wcomment -pedantic"
 fi
 
+AC_CHECK_PROG(DC_CHECK,dc,yes)
+if test x"$DC_CHECK" != x"yes" ; then
+    AC_MSG_ERROR([Please install GNU dc before trying to build.])
+fi
+
 AC_CACHE_SAVE
 
 dnl check for libraries

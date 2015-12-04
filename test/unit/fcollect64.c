@@ -19,15 +19,15 @@
 #define FALSE (0)
 #endif
 
-#define Rfprintf if (_my_pe() == 0) fprintf
-#define Rprintf if (_my_pe() == 0)  printf
-#define RVfprintf if (Verbose && _my_pe() == 0) fprintf
-#define RVprintf if (Verbose && _my_pe() == 0)  printf
+#define Rfprintf if (shmem_my_pe() == 0) fprintf
+#define Rprintf if (shmem_my_pe() == 0)  printf
+#define RVfprintf if (Verbose && shmem_my_pe() == 0) fprintf
+#define RVprintf if (Verbose && shmem_my_pe() == 0)  printf
 #define Vprintf if (Verbose)  printf
 #define Vfprintf if (Verbose)  fprintf
 
-#define RDprintf if (Verbose && _my_pe() == 0)  printf
-#define RDfprintf if (Verbose && _my_pe() == 0) fprintf
+#define RDprintf if (Verbose && shmem_my_pe() == 0)  printf
+#define RDfprintf if (Verbose && shmem_my_pe() == 0) fprintf
 
 /* option flags */
 int Verbose;
@@ -72,9 +72,9 @@ main(int argc, char* argv[])
 	int failures=0;
 	char *pgm;
 
-	start_pes(0);
-	mpe = _my_pe();
-	num_pes = _num_pes();
+	shmem_init();
+	mpe = shmem_my_pe();
+	num_pes = shmem_n_pes();
 
 	if (num_pes == 1) {
    		Rfprintf(stderr,
@@ -144,9 +144,9 @@ main(int argc, char* argv[])
         c = (sizeof(long)*nWords) * (num_pes + 1); // src + dst allocation.
         //nWords /= sizeof(long); // convert input of bytes --> longs.
 
-        src = (long*)shmalloc(c);
+        src = (long*)shmem_malloc(c);
         if ( !src ) {
-	        Rprintf("[%d] %s: shmalloc(%d) failed?\n", mpe, pgm,c);
+	        Rprintf("[%d] %s: shmem_malloc(%d) failed?\n", mpe, pgm,c);
             return 0;
         }
         dst = &src[nWords];
@@ -177,10 +177,12 @@ main(int argc, char* argv[])
     if (Verbose && mpe == 0) {
 	    fprintf(stderr,"\n");fflush(stderr);
     }
-    shfree( (void*)src );
+    shmem_free( (void*)src );
 	shmem_barrier_all();
 	if (Verbose)
         printf("%d(%d) Exit(%d)\n", mpe, num_pes, failures);
+
+	shmem_finalize();
 
 	return failures;
 }

@@ -32,9 +32,9 @@ main(int argc, char **argv)
     char *pgm;
 	double start_time, time_taken;
 
-	start_pes(0);
-	me = _my_pe();
-	npes = _num_pes();
+	shmem_init();
+	me = shmem_my_pe();
+	npes = shmem_n_pes();
 
     if ((pgm=strrchr(argv[0],'/')))
         pgm++;
@@ -82,14 +82,14 @@ main(int argc, char **argv)
     }
 
 	ps_cnt *= _SHMEM_BCAST_SYNC_SIZE;
-	pSync = shmalloc( ps_cnt * sizeof(long) );
+	pSync = shmem_malloc( ps_cnt * sizeof(long) );
 
 	for (i = 0; i < ps_cnt; i++)
 	  pSync[i] = _SHMEM_SYNC_VALUE;
 
-	source = (int *) shmalloc( elements * sizeof(*source) );
+	source = (int *) shmem_malloc( elements * sizeof(*source) );
 
-	target = (int *) shmalloc( elements * sizeof(*target) );
+	target = (int *) shmem_malloc( elements * sizeof(*target) );
 	for (i = 0; i < elements; i += 1) {
 	    source[i] = i + 1;
 	    target[i] = -90;
@@ -131,9 +131,11 @@ main(int argc, char **argv)
 
     if (Verbose > 1)  fprintf(stderr,"[%d] post B1\n",me);
 
-	shfree(pSync);
-	shfree(target);
-	shfree(source);
+	shmem_free(pSync);
+	shmem_free(target);
+	shmem_free(source);
+
+	shmem_finalize();
 
 	return 0;
 }

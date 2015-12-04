@@ -2,21 +2,21 @@
 /*
  *  usage: shrealloc [-p] [nWords] [loops] [incWords-per-loop]
  *    where: -p == power-of-two allocation size bump per loop
- *      [nWords] # of longs to shrealloc()\n"
+ *      [nWords] # of longs to shmem_realloc()\n"
  *      [loops(1)]  # of loops\n"
  *      [incWords(2)] nWords += incWords per loop\n");
  * Loop:
- *  PE* shrealloc(nWords)
+ *  PE* shmem_realloc(nWords)
  *   set *DataType = 1
- *  PE* shrealloc(nWords)
+ *  PE* shmem_realloc(nWords)
  *   set *DataType = 2
- *  PE* shrealloc(nWords)
+ *  PE* shmem_realloc(nWords)
  *   set *DataType = 3
  *
  *  for(1...3) allocated ranges
  *    verify
  * end-loop
- * shfree(3 allocations)
+ * shmem_free(3 allocations)
  */
 
 #include <stdio.h>
@@ -30,7 +30,7 @@
 #define DFLT_NWORDS 32
 #define DFLT_INCR 1025
 #define DFLT_LOOPS 50
-#define DFLT_PLOOPS 21  // reduced to stay under shmalloc() stack limit.
+#define DFLT_PLOOPS 21  // reduced to stay under shmem_malloc() stack limit.
 
 #define DataType int
 
@@ -54,14 +54,14 @@ int getSize (char *);
 void
 usage (void)
 {
-    if (_my_pe() == 0 ) {
+    if (shmem_my_pe() == 0 ) {
         fprintf (stderr,
             "Usage: %s [-p]  [nWords(%d)] [loops(%d)] [incWords(%d)]\n",
             pgm, DFLT_NWORDS, DFLT_LOOPS, DFLT_INCR);
         fprintf (stderr,
-            "  -p  == (2**0 ... 2**22) shrealloc(), other args ignored\n"
+            "  -p  == (2**0 ... 2**22) shmem_realloc(), other args ignored\n"
             "  -v == verbose output\n"
-            "  [nWords] # of longs to shrealloc()\n"
+            "  [nWords] # of longs to shmem_realloc()\n"
             "  [loops]  # of loops\n"
             "  [incWords] nWords += incWords per loop\n");
     }
@@ -113,9 +113,9 @@ main(int argc, char **argv)
     else
         pgm = argv[0];
 
-    start_pes(0);
-    me = _my_pe();
-    nProcs = _num_pes();
+    shmem_init();
+    me = shmem_my_pe();
+    nProcs = shmem_n_pes();
 
     while ((c = getopt (argc, argv, "hpv")) != -1)
         switch (c)
@@ -165,7 +165,7 @@ main(int argc, char **argv)
     for(l=0; l < loops; l++)
     {
         result_sz = (nProcs-1) * (nWords * sizeof(DataType));
-        result = (DataType *)shrealloc(result,result_sz);
+        result = (DataType *)shmem_realloc(result,result_sz);
         if (! result)
         {
             perror ("Failed result memory allocation");
@@ -180,7 +180,7 @@ main(int argc, char **argv)
         prev_result_idx = result_sz / sizeof(DataType);
 
         target_sz = nWords * sizeof(DataType);
-        if (!(target = (DataType *)shrealloc(target,target_sz)))
+        if (!(target = (DataType *)shmem_realloc(target,target_sz)))
         {
             perror ("Failed target memory allocation");
             exit (1);
@@ -194,7 +194,7 @@ main(int argc, char **argv)
         prev_target_idx = target_sz / sizeof(DataType);
 
         source_sz = 2 * nWords * sizeof(DataType);
-        if (!(source = (DataType *)shrealloc(source,source_sz)))
+        if (!(source = (DataType *)shmem_realloc(source,source_sz)))
         {
             perror ("Failed source memory allocation");
             exit (1);
@@ -243,11 +243,11 @@ main(int argc, char **argv)
         }
     }
 
-    shfree(source);
-    shfree(target);
-    shfree(result);
+    shmem_free(source);
+    shmem_free(target);
+    shmem_free(result);
 
-    shmem_barrier_all(); /* sync before exiting */
+    shmem_finalize();
 
     return 0;
 }

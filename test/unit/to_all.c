@@ -36,8 +36,8 @@
 
 #include <shmem.h>
 
-#define Rprintf if (_my_pe() == 0) printf
-#define Rfprintf if (_my_pe() == 0) fprintf
+#define Rprintf if (shmem_my_pe() == 0) printf
+#define Rfprintf if (shmem_my_pe() == 0) fprintf
 #define Vprintf if (Verbose > 1) printf
 
 int sum_to_all(int me, int npes);
@@ -709,9 +709,9 @@ main(int argc, char* argv[])
     int c, i, mype, num_pes, tests, passed;
     char *pgm;
 
-    start_pes(0);
-    mype = _my_pe();
-    num_pes = _num_pes();
+    shmem_init();
+    mype = shmem_my_pe();
+    num_pes = shmem_n_pes();
 
     if ((pgm=strrchr(argv[0],'/')))
         pgm++;
@@ -800,5 +800,8 @@ main(int argc, char* argv[])
                     mype,passed,tests);
         c = (tests == passed ? 0 : 1);
     }
+
+    shmem_finalize();
+
     return c;
 }
