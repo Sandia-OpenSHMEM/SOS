@@ -204,6 +204,8 @@ static inline void swaptest(int me, int iterations, int T, int S, int P)
 	target[T] = tswap;
 	source[S] = sswap;
 
+	shmem_barrier_all(); /* Ensure target/source initialization completed */
+
 	if (me == 0)
 		pre_op_check(__func__, source[S], iterations, 0);
 
