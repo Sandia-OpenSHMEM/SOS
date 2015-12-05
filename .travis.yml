@@ -62,7 +62,8 @@ script:
     - export PATH=$HOME/opt/hydra/bin:$HOME/opt/portals4/bin:$BASE_PATH
     - ./configure --with-portals4=$HOME/opt/portals4/ --disable-long-fortran-header --prefix=$HOME/opt/sandia-shmem-portals4 --enable-error-checking --enable-remote-virtual-addressing --enable-picky --enable-pmi-simple FCFLAGS="-fcray-pointer"
     - make -j 4
-    #- make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2 timeout 10" check
+    - make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2 timeout 30s" check
+    # Note: exit code 124 indicates that timeout killed the test
     - make install
     - make clean
     ###
@@ -81,12 +82,12 @@ script:
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd tests-uh
     - make -j 4 C_feature_tests F_feature_tests
-    #- make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
+    - make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
     # Check for failures in the C tests
-    #- if grep -qi Fail uh-tests-c-feature-tests.log; then false; else true; fi
-    #- make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log
+    - if grep -qi Fail uh-tests-c-feature-tests.log; then false; else true; fi
+    - make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log
     # Check for failures in the Fortran tests
-    #- if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi
+    - if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi
     - make clean
     - cd ..
     ###
