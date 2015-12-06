@@ -547,6 +547,8 @@ int shmem_transport_startup(void)
 
 int shmem_transport_fini(void)
 {
+    /* Wait for acks before shutdown */
+    shmem_transport_quiet();
 
     if (fi_close(&shmem_transport_ofi_epfd->fid)) {
         OFI_ABORT("Endpoint close failed (%s)", fi_strerror(errno));
