@@ -70,7 +70,7 @@ main(int argc, char* argv[])
 
 	if (nProcs == 1) {
    		Rfprintf(stderr,
-			"ERR - Requires > 1 PEs (yod -c X, where X > 1\n");
+			"ERR - Requires > 1 PEs\n");
 		shmem_finalize();
 		return 0;
 	}
