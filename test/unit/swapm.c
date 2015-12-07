@@ -36,7 +36,8 @@ main(int argc, char* argv[])
     if ( num_procs < 2 ) {
         if (me ==0)
             printf("PE[0] requires 2 or more PEs?\n");
-        return 1;
+        shmem_finalize();
+        return 0;
     }
 
     for (l = 0 ; l < loops ; ++l) {

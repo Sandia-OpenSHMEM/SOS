@@ -32,6 +32,12 @@ main(int argc, char* argv[])
     me = shmem_my_pe();
     num_pes = shmem_n_pes();
 
+    if (num_pes == 1) { 
+        printf("%s: Requires number of PEs > 1\n", argv[0]);
+        shmem_finalize();
+        return 0;
+    }
+
     for (l = 0 ; l < loops ; ++l) {
 
         if ((src_int = shmem_malloc(sizeof(int))) == NULL) {

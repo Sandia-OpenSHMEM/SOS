@@ -36,7 +36,8 @@ main(int argc, char* argv[])
     num_ranks = shmem_n_pes();
     if (num_ranks == 1) {
         fprintf(stderr, "ERR - Requires > 1 PEs (yod -c X, where X > 1\n");
-        return 1;
+        shmem_finalize();
+        return 0;
     }
 
     while((c=getopt(argc,argv,"vq")) != -1) {

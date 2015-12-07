@@ -10,6 +10,12 @@ main(int argc, char* argv[])
 
     shmem_init();
 
+    if (shmem_n_pes() == 1) {
+        printf("%s: Requires number of PEs > 1\n", argv[0]);
+        shmem_finalize();
+        return 0;
+    }
+
     if (shmem_my_pe() == 0) {
         /* put 10 elements into target on PE 1 */
         shmem_long_put(target, source, 10, 1);

@@ -79,7 +79,8 @@ main(int argc, char* argv[])
 	if (num_pes == 1) {
    		Rfprintf(stderr,
 			"ERR - Requires > 1 PEs\n");
-		return 1;
+		shmem_finalize();
+		return 0;
 	}
 	pgm = strrchr(argv[0],'/');
 	if ( pgm )

@@ -46,7 +46,8 @@ main(int argc, char* argv[])
 	if (num_procs == 1) {
    		Rfprintf(stderr,
 			"ERR - Requires > 1 PEs (yod -c X, where X > 1\n");
-		return 1;
+		shmem_finalize();
+		return 0;
 	}
 
 	prog_name = strrchr(argv[0],'/');
