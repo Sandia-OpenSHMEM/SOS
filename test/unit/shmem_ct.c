@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
 
     if (ct_val != 0) {
         printf("[%3d] Error: Initial value of ct was nonzero (%d)\n", me, ct_val);
-        return 1;
+        shmem_global_exit(1);
     }
 
     /* TEST 1: Everyone puts to rank 0 */
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
     ct_val = shmemx_ct_get(ct);
     if (ct_val != 0) {
         printf("[%3d] Error: Reset value of ct was nonzero (%d)\n", me, ct_val);
-        return 1;
+        shmem_global_exit(1);
     }
 
     /* TEST 1.5: Everyone gets from rank 0 */
@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
 
     if (mine != -1) {
         printf("[%3d] Error: Getmem_ct value read was incorrect (%d)\n", me, mine);
-        return 1;
+        shmem_global_exit(1);
     }
 
     /* Reset the counter */
@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
     ct_val = shmemx_ct_get(ct);
     if (ct_val != 0) {
         printf("[%3d] Error: Reset value of ct was nonzero (%d)\n", me, ct_val);
-        return 1;
+        shmem_global_exit(1);
     }
 
     /* TEST 2: Everyone puts to every other rank, but not themselves */

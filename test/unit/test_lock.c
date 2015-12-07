@@ -65,6 +65,7 @@ main(int argc, char* argv[])
             break;
           default:
             Rfprintf(stderr,"ERR - unknown -%c ?\n",c);
+            shmem_finalize();
             return 1;
         }
     }
@@ -76,6 +77,7 @@ main(int argc, char* argv[])
         if (loops <= 0 || loops > 1000000) {
                 Rfprintf(stderr,
                 "ERR - loops arg out of bounds '%d'?\n", loops);
+            shmem_finalize();
             return 1;
         }
     }
@@ -89,7 +91,7 @@ main(int argc, char* argv[])
         lock_stats = shmem_malloc(lock_stats_sz);
         if ( !lock_stats ) {
             fprintf(stderr,"[%d] ERR: shmem_malloc(%d)\n",my_rank,lock_stats_sz);
-            return 1;
+            shmem_global_exit(1);
         }
         memset( lock_stats, 0, lock_stats_sz );
     }

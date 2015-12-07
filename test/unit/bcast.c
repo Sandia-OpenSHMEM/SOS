@@ -47,6 +47,7 @@ main(int argc, char* argv[])
             Verbose=1;
         else if (strncmp(argv[1],"-h",3) == 0) {
             fprintf(stderr,"usage: %s {-v(verbose)|h(help)}\n",pgm);
+            shmem_finalize();
             exit(1);
         }
     }
@@ -80,11 +81,11 @@ main(int argc, char* argv[])
             if (1 != mpe && dst[i] != src[i]) {
                 fprintf(stderr,"[%d] dst[%d] %ld != expected %ld\n",
                         mpe, i, dst[i],src[i]);
-                return 1;
+                shmem_global_exit(1);
             } else if (1 == mpe && dst[i] != 0) { 
                 fprintf(stderr,"[%d] dst[%d] %ld != expected 0\n",
                         mpe, i, dst[i]);
-                return 1;
+                shmem_global_exit(1);
             }
         }
         shmem_barrier_all();

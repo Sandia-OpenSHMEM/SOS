@@ -173,6 +173,7 @@ main(int argc, char **argv)
     if (nWords % 2 != 0) {
         if (me == 0)
             fprintf(stderr," nWords(%d) not even?\n",nWords);
+        shmem_finalize();
         exit(1);
     }
     nWords_start = nWords;
@@ -191,7 +192,8 @@ main(int argc, char **argv)
         if (incWords > 0 && ((incWords % 2) != 0)) {
             if (me == 0)
                 fprintf(stderr," incWords(%d) not even?\n",incWords);
-                exit(1);
+            shmem_finalize();
+            exit(1);
         }
     }
 
@@ -272,7 +274,7 @@ main(int argc, char **argv)
             // Verify iput target data 
             rc = target_data_good(target, nWords, 0, __LINE__);
             if (rc)
-                exit(1);
+                shmem_global_exit(1);
             // add my PE to target data so PE0 will know I have seen the data.
             for(j=0; j < nWords; j++)
                 target[j] += me;
@@ -293,7 +295,7 @@ main(int argc, char **argv)
                 IGET(&results[ridx], target, 1, 1, nWords, j);
                 rc = target_data_good( &results[ridx], nWords, j, __LINE__);
                 if (rc)
-                    exit(1);
+                    shmem_global_exit(1);
                 ridx += nWords;
             }
         }
@@ -322,7 +324,7 @@ main(int argc, char **argv)
                             l,j,ridx,nWords);
                 rc = target_data_good( &results[ridx], nWords, j, __LINE__);
                 if (rc)
-                    exit(1);
+                    shmem_global_exit(1);
                 ridx += nWords;
             }
             nWords += incWords;

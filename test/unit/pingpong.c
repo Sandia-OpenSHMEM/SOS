@@ -98,6 +98,7 @@ main(int argc, char* argv[])
 			if (output_mod <= 0) {
     				Rfprintf(stderr, "ERR - output modulo arg out of "
 						"bounds '%d'?\n", output_mod);
+				shmem_finalize();
 				return 1;
 			}
    			Rfprintf(stderr,"%s: output modulo %d\n",
@@ -107,8 +108,10 @@ main(int argc, char* argv[])
 			Rfprintf(stderr,
 				"usage: %s {nWords-2-put(%d)K/M} {Loop-count(%d)K/M}\n",
 				prog_name, DFLT_NWORDS, DFLT_LOOPS);
+			shmem_finalize();
 			return 1;
 		  default:
+			shmem_finalize();
 			return 1;
 		}
 	}
@@ -119,6 +122,7 @@ main(int argc, char* argv[])
 		nWords = atoi_scaled(argv[optind++]);
 		if (nWords <= 0) {
     			Rfprintf(stderr, "ERR - Bad nWords arg '%d'?\n", nWords);
+			shmem_finalize();
 			return 1;
 		}
 	}
@@ -130,6 +134,7 @@ main(int argc, char* argv[])
 		if (loops <= 0 || loops > 1000000) {
     			Rfprintf(stderr,
 				"ERR - loops arg out of bounds '%d'?\n", loops);
+			shmem_finalize();
 			return 1;
 		}
 	}
@@ -138,14 +143,14 @@ main(int argc, char* argv[])
 	work = shmem_malloc( work_sz );
 	if ( !work ) {
    		fprintf(stderr,"[%d] ERR - work = shmem_malloc(%ld) ?\n",my_pe,work_sz);
-		return 1;
+		shmem_global_exit(1);
 	}
 
 	Target = shmem_malloc( 2 * nWords * sizeof(long) );
 	if ( !Target ) {
    		fprintf(stderr,"[%d] ERR - Target = shmem_malloc(%ld) ?\n",
                 my_pe, (nWords * sizeof(long)));
-		return 1;
+		shmem_global_exit(1);
 	}
     src = &Target[nWords];
 

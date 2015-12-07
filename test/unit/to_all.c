@@ -749,6 +749,7 @@ main(int argc, char* argv[])
 		  case 'h':
 		  default:
                 Rfprintf(stderr,"usage: %s {-v(verbose)|h(help)}\n",pgm);
+			shmem_finalize();
 			return 1;
 		}
 	}

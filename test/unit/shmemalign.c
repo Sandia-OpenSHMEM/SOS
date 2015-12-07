@@ -137,7 +137,7 @@ main(int argc, char **argv)
                     fflush(stdout);
                     fprintf(stdout,"align[%#09x]target %p\n",
                                         c, (void*)target);
-                    exit(1);
+                    shmem_global_exit(1);
             }
             else if (Verbose > 1 && me == 0)
                     fprintf(stdout,"align[%#09x]target %p\n",

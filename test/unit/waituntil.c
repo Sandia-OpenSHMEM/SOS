@@ -47,7 +47,7 @@ main(int argc, char* argv[])
     t2 = shmem_malloc(10*sizeof(DataType));
     if (!t2) {
         if (me==0) printf("shmem_malloc() failed?\n");
-        exit(1);
+        shmem_global_exit(1);
     }
     t2[9] = target[9] = 0xFF;
 
@@ -96,7 +96,7 @@ main(int argc, char* argv[])
                 printf(PF","PF" ", source[i], target[i]);
             }
             printf("\n");
-            return 1;
+            shmem_global_exit(1);
         }
     }
     shmem_free(t2);

@@ -101,8 +101,10 @@ main(int argc, char* argv[])
 			Rfprintf(stderr,
                 "usage: %s {-l loopcnt(%d)} {numLongs(%d)} {loopIncr(%d)}\n",
                     pgm,DFLT_LOOPS,DFLT_NWORDS,DFLT_INCR);
+			shmem_finalize();
 			return 1;
 		  default:
+			shmem_finalize();
 			return 1;
 		}
 	}
@@ -113,6 +115,7 @@ main(int argc, char* argv[])
 		nWords = atoi_scaled(argv[optind++]);
 		if (nWords <= 0) {
     			Rfprintf(stderr, "ERR - Bad nBytes arg?\n");
+			shmem_finalize();
 			return 1;
 		}
 	}
@@ -123,6 +126,7 @@ main(int argc, char* argv[])
 		loops = atoi(argv[optind++]);
 		if (nIncr <= 0 ) {
    		    Rfprintf(stderr, "ERR - incLongs arg out of bounds '%d'?\n", nIncr);
+			shmem_finalize();
 			return 1;
 		}
 	}
@@ -130,7 +134,8 @@ main(int argc, char* argv[])
     if ( nWords % 8 ) { // integral multiple of longs
 	    Rprintf("%s: nWords(%d) not a multiple of %ld?\n",
             pgm,nWords,sizeof(long));
-        return 1;
+		shmem_finalize();
+		return 1;
     }
 
     for (c = 0; c < _SHMEM_COLLECT_SYNC_SIZE;c++)
@@ -148,7 +153,7 @@ main(int argc, char* argv[])
         src = (long*)shmem_malloc(c);
         if ( !src ) {
 	        Rprintf("[%d] %s: shmem_malloc(%d) failed?\n", mpe, pgm,c);
-            return 0;
+            shmem_global_exit(1);
         }
         dst = &src[nWords];
 
@@ -164,7 +169,7 @@ main(int argc, char* argv[])
             if ( dst[j] != (long) j ) {
                 fprintf(stderr,
                     "[%d] dst[%d] %ld != expected %d\n",mpe,j,dst[j],j);
-                return 1;
+                shmem_global_exit(1);
             }
         }
 		shmem_barrier_all();

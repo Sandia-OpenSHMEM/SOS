@@ -36,7 +36,7 @@ int main( int argc, char *argv[])
     if (!data) {
         fprintf(stderr,"[%d] shmem_malloc(%ld) failure? %d\n",
                 my_pe,data_sz,errno);
-        exit(1);
+        shmem_global_exit(1);
     }
     memset((void*)data,0,data_sz);
 
@@ -51,7 +51,7 @@ int main( int argc, char *argv[])
         if (lval != (long) j) {
             fprintf(stderr,"[%d] Test: FAIL previous val %ld != %d Exit.\n",
                     my_pe, lval, j);
-            exit(1);
+            shmem_global_exit(1);
         }
     }
     shmem_barrier_all();

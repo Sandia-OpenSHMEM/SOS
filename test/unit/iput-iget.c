@@ -55,7 +55,7 @@ main(int argc, char **argv)
     shmem_barrier_all();
 
     if (rc != 0)
-        return rc;
+        shmem_global_exit(rc);
 
     if (me == 0) {
         // Pull data from PE1...(nProcs-1)

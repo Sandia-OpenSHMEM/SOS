@@ -50,6 +50,7 @@ main(int argc, char* argv[])
             break;
           default:
             Rfprintf(stderr,"ERR - unknown -%c ?\n",c);
+            shmem_finalize();
             return 1;
         }
     }
@@ -61,6 +62,7 @@ main(int argc, char* argv[])
         if (loops <= 0 || loops > 1000000) {
                 Rfprintf(stderr,
                 "ERR - loops arg out of bounds '%d'?\n", loops);
+            shmem_finalize();
             return 1;
         }
     }

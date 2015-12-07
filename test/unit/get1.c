@@ -34,7 +34,7 @@ main(int argc, char* argv[])
                 printf("%ld,%ld ", source[i], target[i]);
             }
             printf("\n");
-            return 1;
+            shmem_global_exit(1);
         }
     }
 

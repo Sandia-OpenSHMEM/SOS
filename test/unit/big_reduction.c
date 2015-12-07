@@ -35,6 +35,7 @@ main(int argc, char* argv[])
             Verbose=1;
         else if (strncmp(argv[1],"-h",3) == 0) {
             fprintf(stderr,"usage: %s {-v(verbose)|h(help)}\n",pgm);
+            shmem_finalize();
             exit(1);
         }
     }
@@ -61,7 +62,8 @@ main(int argc, char* argv[])
     }
 
     for (i = 0; i < N; i+= 1) {
-        if (dst[i] != shmem_n_pes() - 1 + i) return 1;
+        if (dst[i] != shmem_n_pes() - 1 + i)
+            shmem_global_exit(1);
     }
 
     shmem_finalize();

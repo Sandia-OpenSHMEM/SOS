@@ -35,6 +35,7 @@ main(int argc, char* argv[])
             Verbose=1;
         else if (strncmp(argv[1],"-h",3) == 0) {
             fprintf(stderr,"usage: %s {-v(verbose)|h(help)}\n",pgm);
+            shmem_finalize();
             exit(1);
         }
     }
@@ -50,31 +51,31 @@ main(int argc, char* argv[])
     for (l = 0 ; l < loops ; ++l) {
         if ((src_short = shmem_malloc(sizeof(short))) == NULL) {
             printf("PE-%d short shmem_malloc() failed?\n", me);
-            exit(1);
+            shmem_global_exit(1);
         }
         *src_short = 2;
 
         if ((src_int = shmem_malloc(sizeof(int))) == NULL) {
             printf("PE-%d int shmem_malloc() failed?\n", me);
-            exit(1);
+            shmem_global_exit(1);
         }
         *src_int = 4;
 
         if ((src_float = shmem_malloc(sizeof(float))) == NULL) {
             printf("PE-%d float shmem_malloc() failed?\n", me);
-            exit(1);
+            shmem_global_exit(1);
         }
         *src_float = 4.0;
 
         if ((src_double = shmem_malloc(sizeof(double))) == NULL) {
             printf("PE-%d double shmem_malloc() failed?\n", me);
-            exit(1);
+            shmem_global_exit(1);
         }
         *src_double = 8.0;
 
         if ((src_long = shmem_malloc(sizeof(long))) == NULL) {
             printf("PE-%d long shmem_malloc() failed?\n", me);
-            exit(1);
+            shmem_global_exit(1);
         }
         *src_long = 8;
 
@@ -84,37 +85,37 @@ main(int argc, char* argv[])
             if (!shmem_addr_accessible(src_short,pe)) {
                 printf("PE-%d local addr %p not accessible from PE-%d?\n",
                        me, (void*)src_short, pe);
-                exit(1);
+                shmem_global_exit(1);
             }
             dst_short = 0;
             dst_short = shmem_short_g(src_short,pe);
             if (dst_short != 2) {
                 printf("PE-%d dst_short %hd != 2?\n",me,dst_short);
-                exit(1);
+                shmem_global_exit(1);
             }
             dst_int = 0;
             dst_int = shmem_int_g(src_int,pe);
             if (dst_int != 4) {
                 printf("PE-%d dst_int %d != 4?\n",me,dst_int);
-                exit(1);
+                shmem_global_exit(1);
             }
             dst_float = 0.0;
             dst_float = shmem_float_g(src_float,pe);
             if (dst_float != 4.0) {
                 printf("PE-%d dst_float %f != 4.0?\n",me,dst_float);
-                exit(1);
+                shmem_global_exit(1);
             }
             dst_double = 0.0;
             dst_double = shmem_double_g(src_double,pe);
             if (dst_double != 8.0) {
                 printf("PE-%d dst_double %f != 8.0?\n",me,dst_double);
-                exit(1);
+                shmem_global_exit(1);
             }
             dst_long = 0;
             dst_long = shmem_long_g(src_long,pe);
             if (dst_long != 8.0) {
                 printf("PE-%d dst_long %ld != 8?\n",me,dst_long);
-                exit(1);
+                shmem_global_exit(1);
             }
     	}
 

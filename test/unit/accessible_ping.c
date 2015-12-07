@@ -24,7 +24,8 @@ main(int argc, char* argv[])
                 printf("%s", shmem_pe_accessible(i) ? "" : "NOT ");
                 printf("accessible\n");
             }
-            if (! shmem_pe_accessible(i)) return 1;
+            if (! shmem_pe_accessible(i))
+                shmem_global_exit(1);
         }
     }
 

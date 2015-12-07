@@ -69,6 +69,7 @@ main(int argc, char* argv[])
 			if (output_mod <= 0) {
     				Rfprintf(stderr, "ERR - output modulo arg out of "
 						"bounds '%d'?]\n", output_mod);
+				shmem_finalize();
 				return 1;
 			}
    			Rfprintf(stderr,"%s: output modulo %d\n",
@@ -78,8 +79,10 @@ main(int argc, char* argv[])
 			Rfprintf(stderr,
 				"usage: %s {nWords-2-put} {Loop-count}\n",
 				prog_name);
+			shmem_finalize();
 			return 1;
 		  default:
+			shmem_finalize();
 			return 1;
 		}
 	}
@@ -92,6 +95,7 @@ main(int argc, char* argv[])
     			Rfprintf(stderr,
 				"ERR - nWords arg out of bounds '%d' [1..%d]?\n",
 				 nWords, TARGET_SZ);
+			shmem_finalize();
 			return 1;
 		}
 	}
@@ -103,6 +107,7 @@ main(int argc, char* argv[])
 		if (loops <= 0 || loops > 1000000) {
     			Rfprintf(stderr,
 				"ERR - loops arg out of bounds '%d'?\n", loops);
+			shmem_finalize();
 			return 1;
 		}
 	}

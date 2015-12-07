@@ -50,18 +50,21 @@ main(int argc, char **argv)
           case 'e':
               if ((elements = atoi_scaled(optarg)) <= 0) {
                   fprintf(stderr,"ERR: Bad elements count %d\n",elements);
+                  shmem_finalize();
                   return 1;
               }
               break;
           case 'l':
               if ((loops = atoi_scaled(optarg)) <= 0) {
                   fprintf(stderr,"ERR: Bad loop count %d\n",loops);
+                  shmem_finalize();
                   return 1;
               }
               break;
           case 'p':
               if ((ps_cnt = atoi_scaled(optarg)) <= 0) {
                   fprintf(stderr,"ERR: Bad pSync[] elements %d\n",loops);
+                  shmem_finalize();
                   return 1;
               }
               break;
@@ -77,6 +80,7 @@ main(int argc, char **argv)
                   fprintf(stderr,"%s: unknown switch '-%c'?\n",pgm,i);
                   usage(pgm);
               }
+              shmem_finalize();
               return 1;
         }
     }
