@@ -10,7 +10,7 @@
 #include <shmem.h>
 #include <shmemx.h>
 
-#define LOOPS 250000
+#define LOOPS 25000
 
 int Verbose;
 double elapsed;
