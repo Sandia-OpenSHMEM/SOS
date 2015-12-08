@@ -9,8 +9,7 @@
 # distribution.
 #
 
-check_PROGRAMS = $(TESTS) \
-		 global_exit ## Disabled; currently hangs
+check_PROGRAMS = $(TESTS)
 
 TESTS = \
 	hello \
@@ -58,7 +57,8 @@ TESTS = \
 	bcast_flood \
 	lfinc \
 	mt_a2a \
-	shmem_info
+	shmem_info \
+	global_exit
 
 if USE_PORTALS4
 TESTS += \
