@@ -11,6 +11,12 @@ main(int argc, char* argv[])
 
     shmem_init();
 
+    if (shmem_n_pes() == 1) {
+        printf("%s: Requires number of PEs > 1\n", argv[0]);
+        shmem_finalize();
+        return 0;
+    }
+
     if (shmem_my_pe() == 0) {
         for (i = 0 ; i < 10 ; ++i) {
             source[i] = shmem_long_swap(target + i, source[i], 1);

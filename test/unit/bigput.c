@@ -98,12 +98,14 @@ main(int argc, char **argv)
           case 'e':
               if ((elements = atoi_scaled(optarg)) <= 0) {
                   fprintf(stderr,"ERR: Bad elements count %d\n",elements);
+                  shmem_finalize();
                   return 1;
               }
               break;
           case 'l':
               if ((loops = atoi_scaled(optarg)) <= 0) {
                   fprintf(stderr,"ERR: Bad loop count %d\n",loops);
+                  shmem_finalize();
                   return 1;
               }
               break;
@@ -122,6 +124,7 @@ main(int argc, char **argv)
                   fprintf(stderr,"%s: unknown switch '-%c'?\n",pgm,i);
                   usage(pgm);
               }
+              shmem_finalize();
               return 1;
         }
     }
@@ -135,7 +138,7 @@ main(int argc, char **argv)
     if (!total_time) {
       fprintf(stderr,"ERR: bad total_time shmem_malloc(%ld)\n",
               (elements * sizeof(double)));
-      return 1;
+      shmem_global_exit(1);
     }
     for(i=0; i < npes; i++)
         total_time[i] = -1.0;
@@ -145,7 +148,7 @@ main(int argc, char **argv)
       fprintf(stderr,"ERR: bad Source shmem_malloc(%ld)\n",
               (elements * sizeof(*Target)));
       shmem_free(total_time);
-      return 1;
+      shmem_global_exit(1);
     }
 
     Target = (int *) shmem_malloc( elements * sizeof(*Target) );
@@ -154,7 +157,7 @@ main(int argc, char **argv)
               (elements * sizeof(*Target)));
       shmem_free(Source);
       shmem_free(total_time);
-      return 1;
+      shmem_global_exit(1);
     }
 
     for (i = 0; i < elements; i++) {

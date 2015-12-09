@@ -110,7 +110,8 @@ int main (int argc, char *argv[])
 	nproc = shmem_n_pes();
 	if (nproc == 1) {
 		fprintf(stderr, "ERR - Requires > 1 Processing Elements\n");
-		return 1;
+		shmem_finalize();
+		return 0;
 	}
 
 	for (progName = argv[0] + strlen(argv[0]);

@@ -35,8 +35,9 @@ main(int argc, char* argv[])
     my_rank = shmem_my_pe();
     num_ranks = shmem_n_pes();
     if (num_ranks == 1) {
-        fprintf(stderr, "ERR - Requires > 1 PEs (yod -c X, where X > 1\n");
-        return 1;
+        fprintf(stderr, "ERR - Requires > 1 PEs\n");
+        shmem_finalize();
+        return 0;
     }
 
     while((c=getopt(argc,argv,"vq")) != -1) {
@@ -49,6 +50,7 @@ main(int argc, char* argv[])
             break;
           default:
             Rfprintf(stderr,"ERR - unknown -%c ?\n",c);
+            shmem_finalize();
             return 1;
         }
     }
@@ -60,6 +62,7 @@ main(int argc, char* argv[])
         if (loops <= 0 || loops > 1000000) {
                 Rfprintf(stderr,
                 "ERR - loops arg out of bounds '%d'?\n", loops);
+            shmem_finalize();
             return 1;
         }
     }

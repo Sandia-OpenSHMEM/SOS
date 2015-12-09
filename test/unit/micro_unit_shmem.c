@@ -85,7 +85,7 @@ static inline void post_op_check(const char *op,
 	if (check_var != iterations) {
 		fprintf(stderr, "%s ERR: PE %d source = %d != %d\n",
 				op, pe, check_var, iterations);
-		exit(EXIT_FAILURE);
+		shmem_global_exit(EXIT_FAILURE);
 	}
 }
 
@@ -224,7 +224,7 @@ static inline void swaptest(int me, int iterations, int T, int S, int P)
 			 (source[S] != sswap))) {
 			fprintf(stderr, "swap ERR: PE 0 source = %d\n",
 					source[S]);
-			exit(EXIT_FAILURE);
+			shmem_global_exit(EXIT_FAILURE);
 		}
 
 	} else {
@@ -235,7 +235,7 @@ static inline void swaptest(int me, int iterations, int T, int S, int P)
 			 (target[T] != tswap))) {
 			fprintf(stderr, "swap ERR: PE 0 target = %d \n",
 					target[T]);
-			exit(EXIT_FAILURE);
+			shmem_global_exit(EXIT_FAILURE);
 		}
 
 	}
@@ -268,7 +268,7 @@ static inline void cswaptest(int me, int iterations, int T, int S, int P)
 		if (target[T] != iterations) {
 			fprintf(stderr, "cswap ERR: PE 1 target = %d != %d\n",
 					target[T], iterations);
-			exit(EXIT_FAILURE);
+			shmem_global_exit(EXIT_FAILURE);
 		}
 	}
 
@@ -362,6 +362,7 @@ int main(int argc, char **argv)
 				"intended to run on exactly two processes you"
 				" are using %d\n", nproc);
 		}
+		shmem_finalize();
 		return 0;
 	}
 
@@ -415,6 +416,7 @@ int main(int argc, char **argv)
 				"to run individual tests:  -i <iterations>, -v"
 				", -d, -p, -g, -a, -A, -s, -c, -f, -F, -h\n");
 			}
+			shmem_finalize();
 			return 1;
 		}
 	}

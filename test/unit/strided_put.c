@@ -12,11 +12,18 @@ main(int argc, char* argv[])
 {
     short source[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
     static short target[10];
-    int me;
+    int me, num_pes;
     int ret = 0;
 
     shmem_init();
     me = shmem_my_pe();
+    num_pes = shmem_n_pes();
+
+    if (num_pes != 2) {
+        printf("%s: Requires 2 PEs\n", argv[0]);
+        shmem_finalize();
+        return 0;
+    }
 
     if (me == 0) {
         /* put 10 words into target on PE 1 */

@@ -47,7 +47,7 @@ before_install:
     - make install
     - cd ..
     ## Fetch UH Tests
-    - git clone --branch uh-tests-fixes https://github.com/jdinan/tests-uh.git tests-uh
+    - git clone https://github.com/openshmem-org/tests-uh.git tests-uh
 
 install:
     - git clone https://github.com/regrant/sandia-shmem.git

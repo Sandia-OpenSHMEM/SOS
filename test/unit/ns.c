@@ -43,6 +43,7 @@ main(int argc, char *argv[])
           case 'l':
               if ((laps = atoi_scaled(optarg)) <= 0) {
                   fprintf(stderr,"ERR: Bad loop count %d\n",laps);
+                  shmem_finalize();
                   return 1;
               }
               break;
@@ -51,12 +52,14 @@ main(int argc, char *argv[])
               break;
           case 'h':
               usage(pgm);
+              shmem_finalize();
               return 0;
           default:
               if (me == 0) {
                   fprintf(stderr,"%s: unknown switch '-%c'?\n",pgm,l);
                   usage(pgm);
               }
+              shmem_finalize();
               return 1;
         }
     }
@@ -66,7 +69,7 @@ main(int argc, char *argv[])
     	target = (long *) shmem_malloc(sizeof (*target));
         if (!target) {
             fprintf(stderr,"[%d] shmem_malloc() failed?\n",me);
-            return 1;
+            shmem_global_exit(1);
         }
 
 	    *target = me;

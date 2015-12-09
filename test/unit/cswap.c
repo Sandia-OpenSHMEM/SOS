@@ -32,25 +32,31 @@ main(int argc, char* argv[])
     me = shmem_my_pe();
     num_pes = shmem_n_pes();
 
+    if (num_pes == 1) { 
+        printf("%s: Requires number of PEs > 1\n", argv[0]);
+        shmem_finalize();
+        return 0;
+    }
+
     for (l = 0 ; l < loops ; ++l) {
 
         if ((src_int = shmem_malloc(sizeof(int))) == NULL) {
             printf("PE-%d int shmem_malloc() failed?\n", me);
-            exit(1);
+            shmem_global_exit(1);
         }
         *src_int = 4;
         dst_int = itmp = 0;
 
         if ((src_long = shmem_malloc(sizeof(long))) == NULL) {
             printf("PE-%d long shmem_malloc() failed?\n", me);
-            exit(1);
+            shmem_global_exit(1);
         }
         *src_long = 8;
         dst_long = ltmp = 0;
 
         if ((src_llong = shmem_malloc(sizeof(long long))) == NULL) {
             printf("PE-%d long long shmem_malloc() failed?\n", me);
-            exit(1);
+            shmem_global_exit(1);
         }
         *src_llong = 16;
         dst_llong = lltmp = 0;
@@ -67,26 +73,26 @@ main(int argc, char* argv[])
             dst_int = shmem_int_cswap(src_int,*src_int,0,1);
             if (dst_int != 4) {
                 printf("PE-%d dst_int %d != 4?\n",me,dst_int);
-                exit(1);
+                shmem_global_exit(1);
             }
             /* verify remote data */
             itmp = shmem_int_g(src_int,1);
             if (itmp != 0) {
                 printf("PE-%d rem %d != 0?\n",me,itmp);
-                exit(1);
+                shmem_global_exit(1);
             }
             Vprintf("PE-0 1st int_cswap done: local %d rem(%d)\n",dst_int,itmp);
 
             dst_int = shmem_int_cswap(src_int,0,dst_int,1);
             if (dst_int != 0) {
                 printf("PE-%d dst_int %d != 0?\n",me,dst_int);
-                exit(1);
+                shmem_global_exit(1);
             }
             /* verify remote data */
             itmp = shmem_int_g(src_int,1);
             if (itmp != 4) {
                 printf("PE-%d rem %d != 4?\n",me,itmp);
-                exit(1);
+                shmem_global_exit(1);
             }
             Vprintf("PE-0 2nd int_swap done: local %d rem(%d)\n",dst_int,itmp);
 
@@ -95,14 +101,14 @@ main(int argc, char* argv[])
             if (dst_int != 4) {
                 printf("PE-%d int no-swap returned dst_int %d != 4?\n",
                         me,dst_int);
-                exit(1);
+                shmem_global_exit(1);
             }
             /* verify previous cswap() did not swap */
             itmp = shmem_int_g(src_int,1);
             if (itmp != 4) {
                 printf("PE-%d failed cond int_cswap() swapped? rem(%d) != 4?\n",
                         me,itmp);
-                exit(1);
+                shmem_global_exit(1);
             }
 
             /* long swap */
@@ -113,13 +119,13 @@ main(int argc, char* argv[])
             dst_long = shmem_long_cswap(src_long,*src_long,0,1);
             if (dst_long != 8) {
                 printf("PE-%d dst_long %ld != 8?\n",me,dst_long);
-                exit(1);
+                shmem_global_exit(1);
             }
             /* verify remote data */
             ltmp = shmem_long_g(src_long,1);
             if (ltmp != 0) {
                 printf("PE-%d long rem(%ld) != 0?\n",me,ltmp);
-                exit(1);
+                shmem_global_exit(1);
             }
             Vprintf("PE-0 1st long_cswap done: local %ld rem(%ld)\n",
                     dst_long,ltmp);
@@ -127,13 +133,13 @@ main(int argc, char* argv[])
             dst_long = shmem_long_cswap(src_long,0,dst_long,1);
             if (dst_long != 0) {
                 printf("PE-%d dst_long %ld != 0?\n",me,dst_long);
-                exit(1);
+                shmem_global_exit(1);
             }
             /* verify remote data */
             ltmp = shmem_long_g(src_long,1);
             if (ltmp != 8) {
                 printf("PE-%d long rem(%ld) != 8?\n",me,ltmp);
-                exit(1);
+                shmem_global_exit(1);
             }
             Vprintf("PE-0 2nd long_swap done: local %ld rem(%ld)\n",
                     dst_long,ltmp);
@@ -143,14 +149,14 @@ main(int argc, char* argv[])
             if (dst_long != 8) {
                 printf("PE-%d long no-swap returned dst_long %ld != 8?\n",
                         me,dst_long);
-                exit(1);
+                shmem_global_exit(1);
             }
             /* verify previous cswap() did not swap */
             ltmp = shmem_long_g(src_long,1);
             if (ltmp != 8) {
                 printf("PE-%d failed cond long_cswap() swapped? rem(%ld) != 8?\n",
                         me,ltmp);
-                exit(1);
+                shmem_global_exit(1);
             }
 
             /* long long swap */
@@ -161,13 +167,13 @@ main(int argc, char* argv[])
             dst_llong = shmem_longlong_cswap(src_llong,*src_llong,0,1);
             if (dst_llong != 16) {
                 printf("PE-%d dst_llong %lld != 16?\n",me,dst_llong);
-                exit(1);
+                shmem_global_exit(1);
             }
             /* verify remote data */
             lltmp = shmem_longlong_g(src_llong,1);
             if (lltmp != 0) {
                 printf("PE-%d longlong rem(%lld) != 0?\n",me,lltmp);
-                exit(1);
+                shmem_global_exit(1);
             }
             Vprintf("PE-0 1st longlong_cswap done: local %lld rem(%lld)\n",
                     dst_llong, lltmp);
@@ -175,13 +181,13 @@ main(int argc, char* argv[])
             dst_llong = shmem_longlong_cswap(src_llong,0,dst_llong,1);
             if (dst_llong != 0) {
                 printf("PE-%d dst_llong %lld != 0?\n",me,dst_llong);
-                exit(1);
+                shmem_global_exit(1);
             }
             /* verify remote data */
             lltmp = shmem_longlong_g(src_llong,1);
             if (lltmp != 16) {
                 printf("PE-%d long long rem(%lld) != 16?\n",me,lltmp);
-                exit(1);
+                shmem_global_exit(1);
             }
             Vprintf("PE-0 2nd longlong_swap done: local %lld rem(%lld)\n",
                     dst_llong,lltmp);
@@ -191,31 +197,31 @@ main(int argc, char* argv[])
             if (dst_llong != 16) {
                 printf("PE-%d longlong no-swap returned dst_llong %lld != 16?\n",
                         me,dst_llong);
-                exit(1);
+                shmem_global_exit(1);
             }
             /* verify previous cswap() did not swap */
             lltmp = shmem_longlong_g(src_llong,1);
             if (lltmp != 16) {
                 printf("PE-0 failed cond longlong_cswap() swapped? rem(%lld) != 16?\n",
                         lltmp);
-                exit(1);
+                shmem_global_exit(1);
             }
         }
         else {
             if (!shmem_addr_accessible(src_int,0)) {
                 printf("PE-%d local src_int %p not accessible from PE-%d?\n",
                         me, (void*)src_int, 0);
-                exit(1);
+                shmem_global_exit(1);
             }
             if (!shmem_addr_accessible(src_long,0)) {
                 printf("PE-%d local src_long %p not accessible from PE-%d?\n",
                         me, (void*)src_long, 0);
-                exit(1);
+                shmem_global_exit(1);
             }
             if (!shmem_addr_accessible(src_llong,0)) {
                 printf("PE-%d local src_llong %p not accessible from PE-%d?\n",
                         me, (void*)src_llong, 0);
-                exit(1);
+                shmem_global_exit(1);
             }
         }
         shmem_barrier_all();

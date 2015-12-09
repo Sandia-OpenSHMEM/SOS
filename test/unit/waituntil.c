@@ -38,10 +38,16 @@ main(int argc, char* argv[])
     me = shmem_my_pe();
     num_pes = shmem_n_pes();
 
+    if (num_pes == 1) {
+        printf("%s: Requires number of PEs > 1\n", argv[0]);
+        shmem_finalize();
+        return 0;
+    }
+
     t2 = shmem_malloc(10*sizeof(DataType));
     if (!t2) {
         if (me==0) printf("shmem_malloc() failed?\n");
-        exit(1);
+        shmem_global_exit(1);
     }
     t2[9] = target[9] = 0xFF;
 
@@ -90,7 +96,7 @@ main(int argc, char* argv[])
                 printf(PF","PF" ", source[i], target[i]);
             }
             printf("\n");
-            return 1;
+            shmem_global_exit(1);
         }
     }
     shmem_free(t2);

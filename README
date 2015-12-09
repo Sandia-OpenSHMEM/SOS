@@ -40,7 +40,7 @@ Options to configure include:
                           the Portals 4 reference implementation
   --enable-pmi-simple     Include support for interfacing with a PMI 1.0
                           launcher.  The launcher must be provided by a
-                          separate package, such as MPI or SLURM.
+                          separate package, such as MPICH, Hydra, or SLURM.
   --enable-error-checking Enable error checking in SHMEM calls.  This will
                           increase the overhead of communication operations.
   --enable-hard-polling   When using only the network transport, the

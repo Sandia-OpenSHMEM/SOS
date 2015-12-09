@@ -595,10 +595,12 @@ or_to_all(int me, int npes)
   
     if (me==0) {
         for (i = 0; i < N; i++) {
-            if(dst0[i] != 3) ok[0] = 1;
-	        if(dst1[i] != 3) ok[1] = 1;
-	        if(dst2[i] != 3) ok[2] = 1;
-	        if(dst6[i] != 3) ok[6] = 1;
+            int expected = (npes == 1) ? 1 : 3;
+
+            if(dst0[i] != expected) ok[0] = 1;
+            if(dst1[i] != expected) ok[1] = 1;
+            if(dst2[i] != expected) ok[2] = 1;
+            if(dst6[i] != expected) ok[6] = 1;
         }
 
         if(ok[0]==1)
@@ -747,6 +749,7 @@ main(int argc, char* argv[])
 		  case 'h':
 		  default:
                 Rfprintf(stderr,"usage: %s {-v(verbose)|h(help)}\n",pgm);
+			shmem_finalize();
 			return 1;
 		}
 	}
