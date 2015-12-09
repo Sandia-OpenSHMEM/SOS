@@ -120,7 +120,9 @@ extern shmem_free_list_t *shmem_transport_ofi_frag_buffers;
 #define OFI_ABORT(...) { fprintf(stderr, __FILE__ ":%d: \n", __LINE__); \
                             fprintf(stderr, __VA_ARGS__);  }
 
-#define OFI_RET_CHECK(ret) do { if (ret) { RAISE_ERROR(ret); } } while (0)
+#define OFI_RET_CHECK(ret) do { if (ret) { \
+	fprintf(stderr,"OFI error #%d: %s \n", (int)ret, fi_strerror(ret)); \
+	RAISE_ERROR(ret); } } while (0)
 
 int shmem_transport_init(long eager_size);
 int shmem_transport_startup(void);
@@ -150,37 +152,37 @@ void shmem_transport_ofi_drain_cq(void)
 				              (void *)&e, 0);
 				RAISE_ERROR(e.err);
 			} else {
-				RAISE_ERROR(ret);
-		}
+				OFI_RET_CHECK(ret);
+			}
 		}
 
 		if(ret == 1) {
-	shmem_transport_ofi_frag_t *frag =
-			container_of(buf.op_context,
-			struct shmem_transport_ofi_frag_t,
-		     context);
+			shmem_transport_ofi_frag_t *frag =
+				container_of(buf.op_context,
+				struct shmem_transport_ofi_frag_t,
+				context);
 
-	if(SHMEM_TRANSPORT_OFI_TYPE_BOUNCE == frag->mytype) {
+			if(SHMEM_TRANSPORT_OFI_TYPE_BOUNCE == frag->mytype) {
 				shmem_free_list_free(
 					shmem_transport_ofi_bounce_buffers,
 					frag);
-	} else {
-		shmem_transport_ofi_long_frag_t *long_frag =
-		(shmem_transport_ofi_long_frag_t*) frag;
+			} else {
+				shmem_transport_ofi_long_frag_t *long_frag =
+				(shmem_transport_ofi_long_frag_t*) frag;
 
 				assert(long_frag->frag.mytype ==
 					SHMEM_TRANSPORT_OFI_TYPE_LONG);
-	 	(*(long_frag->completion))--;
-		if (0 >= --long_frag->reference) {
-			long_frag->reference = 0;
-			shmem_free_list_free(shmem_transport_ofi_frag_buffers,
-			frag);
-		}
+				(*(long_frag->completion))--;
+				if (0 >= --long_frag->reference) {
+					long_frag->reference = 0;
+					shmem_free_list_free(shmem_transport_ofi_frag_buffers,
+					frag);
+				}
 			}
 
-		shmem_transport_ofi_pending_cq_count--;
+			shmem_transport_ofi_pending_cq_count--;
 
-	}
+		}
 
 
 	} while(ret > 0);
