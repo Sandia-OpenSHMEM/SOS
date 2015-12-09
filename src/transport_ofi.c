@@ -72,7 +72,7 @@ static int SHM_DT_INT[]=
 static int SHM_DT_CMP[]=
 {
   DTYPE_SHORT, DTYPE_INT, DTYPE_LONG,
-  SHM_INTERNAL_FLOAT, SHM_INTERNAL_DOUBLE, SHM_INTERNAL_LONG_DOUBLE,
+  SHM_INTERNAL_FLOAT, SHM_INTERNAL_DOUBLE
 };
 
 static int SHM_BOPS[]=
@@ -334,7 +334,7 @@ static inline void atomic_limitations_check(void)
     }
 
     /* OTHER OPS check */
-    for(i=0; i<6; i++) {//DT
+    for(i=0; i<5; i++) {//DT
       for(j=0; j<4; j++) { //OPS
         ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_DT_CMP[i], SHM_OPS[j],
                         &atomic_size);
@@ -345,6 +345,14 @@ static inline void atomic_limitations_check(void)
       }
     }
 
+    /* LONG DOUBLE limitation is common */
+    for(j=0; j<4; j++) { //OPS
+        ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_INTERNAL_LONG_DOUBLE, SHM_OPS[j], &atomic_size);
+        if(ret!=0 || atomic_size == 0) {
+		shmem_long_dub_supported = 0;
+		break;
+	}
+    }
 
 }
 

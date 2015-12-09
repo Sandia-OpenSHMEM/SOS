@@ -18,6 +18,7 @@
 #include "shmem_internal.h"
 #include "shmem_collectives.h"
 #include "shmem.h"
+#include "op.h"
 
 coll_type_t shmem_internal_barrier_type = AUTO;
 coll_type_t shmem_internal_bcast_type = AUTO;
@@ -65,6 +66,7 @@ shmem_internal_collectives_init(int requested_crossover,
     int tmp_radix;
     int my_root = 0;
     char *type;
+    int log2_proc = 1;
 
     tree_radix = requested_radix;
     shmem_internal_tree_crossover = requested_crossover;
@@ -73,7 +75,14 @@ shmem_internal_collectives_init(int requested_crossover,
     shmem_internal_barrier_all_psync = 
         shmem_internal_shmalloc(sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
     if (NULL == shmem_internal_barrier_all_psync) return -1;
-    memset(shmem_internal_barrier_all_psync, 0, sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
+    memset(shmem_internal_barrier_all_psync, SHMEM_SYNC_VALUE,  sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
+
+    i = shmem_internal_num_pes;
+    i >>= 1; /* base case: if 2 log2_proc is correct*/
+    while (i != 1) {
+        i >>= 1;
+        log2_proc++;
+    }
 
     /* initialize the binomial tree for collective operations over
        entire tree */
@@ -638,6 +647,147 @@ shmem_internal_op_to_all_tree(void *target, void *source, int count, int type_si
     /* broadcast out */
     shmem_internal_bcast(target, target, count * type_size, 0, PE_start, 
                          logPE_stride, PE_size, pSync + 2, 0);
+}
+
+
+
+void
+shmem_internal_op_to_all_recdbl(void *target, void *source, int count, int type_size,
+                                int PE_start, int logPE_stride, int PE_size,
+                                void *pWrk, long *pSync,
+                                shm_internal_op_t op, shm_internal_datatype_t datatype)
+{
+	int stride = 1 << logPE_stride;
+	int my_id = ((shmem_internal_my_pe - PE_start) / stride);
+	long one = 1, neg_one = -1, buff = 0;
+	int log2_proc = 1, pow2_proc = 1;
+	int i = PE_size;
+	int wrk_size = type_size*count;
+	void * const current_target = malloc(wrk_size);
+	int peer = 0;
+	long completion = 0;
+	long * pSync_tail1 = pSync + _SHMEM_REDUCE_SYNC_SIZE - 1;
+	long * pSync_tail2 = pSync + _SHMEM_REDUCE_SYNC_SIZE - 2;
+
+ /***********************************
+ *
+ *	INPUT CHECKS AND VAR INIT
+ *
+ * **************************************/
+
+	i >>= 1; /* base case: if 2 pow2_proc is correct*/
+	pow2_proc <<= 1;
+
+	while (i != 1) {
+		i >>= 1;
+		pow2_proc <<= 1;
+		log2_proc++;
+	}
+
+	 /*max 32*/
+	assert(log2_proc < (_SHMEM_REDUCE_SYNC_SIZE - 1));
+
+	if (current_target)
+		memcpy(current_target, (void *) source, wrk_size);
+	else
+		RAISE_ERROR(1);
+
+ /***********************************
+ *
+ *	-target is used as "temp" buffer -- current_target tracks latest result
+ *	give partner current_result,
+ *
+ * **************************************/
+
+	for (i = 0; i < PE_size; i++) {
+		peer = PE_start + i*stride;
+		shmem_internal_atomic_small(pSync_tail1, &one, sizeof(long), peer,
+				SHM_INTERNAL_SUM, DTYPE_LONG);
+	}
+	shmem_internal_fence();
+	SHMEM_WAIT_UNTIL(pSync_tail1, SHMEM_CMP_EQ, PE_size);
+
+	/*extra peer exchange*/
+	if (my_id >= pow2_proc) {
+		peer = (my_id - pow2_proc) * stride + PE_start;
+		shmem_internal_put_nb(target, current_target, wrk_size, peer,
+					&completion);
+		shmem_internal_put_wait(&completion);
+		shmem_internal_fence();
+
+		buff = neg_one;
+		shmem_internal_put_small(pSync_tail2, &buff, sizeof(long),
+				peer);
+		shmem_internal_fence();
+		buff = neg_one;
+		SHMEM_WAIT_UNTIL(pSync_tail2, SHMEM_CMP_EQ, buff);
+
+	} else {
+		if ((PE_size - pow2_proc) > my_id) {
+			peer = (my_id + pow2_proc) * stride + PE_start;
+			buff = neg_one;
+			SHMEM_WAIT_UNTIL(pSync_tail2, SHMEM_CMP_EQ, buff);
+
+			shmem_op_tls(op, datatype, count, target, current_target);
+		}
+
+		/* Pairwise exchange */
+
+		long *step_psync;
+
+		for (i = 0; i < log2_proc; i++) {
+
+			peer = (my_id ^ (1 << i)) * stride + PE_start;
+			step_psync = &pSync[i];
+
+			if (my_id < peer) {
+				shmem_internal_put_small(step_psync, &one,
+						sizeof(int), peer);
+				SHMEM_WAIT(step_psync, 0);
+				shmem_internal_put_nb(target, current_target,
+						wrk_size, peer, &completion);
+				shmem_internal_put_wait(&completion);
+				shmem_internal_fence();
+				shmem_internal_atomic_small(step_psync, &one,
+						sizeof(int), peer,
+						SHM_INTERNAL_SUM, DTYPE_INT);
+			} else {
+				SHMEM_WAIT(step_psync, 0);
+				shmem_internal_put_nb(target, current_target,
+						wrk_size, peer, &completion);
+				shmem_internal_put_wait(&completion);
+				shmem_internal_fence();
+				shmem_internal_put_small(step_psync,
+					&one, sizeof(int), peer);
+				SHMEM_WAIT(step_psync, 1);
+			}
+
+			/* perform op */
+			shmem_op_tls(op, datatype, count, target, current_target);
+
+		}
+
+		shmem_internal_quiet();
+
+		/*extra peer update*/
+		if ((PE_size - pow2_proc) > my_id) {
+			peer = (my_id + pow2_proc) * stride + PE_start;
+
+			shmem_internal_put_nb(target, current_target, wrk_size,
+					peer, &completion);
+			shmem_internal_put_wait(&completion);
+			shmem_internal_fence();
+
+			buff = neg_one;
+			shmem_internal_put_small(pSync_tail2, &buff,
+					sizeof(long), peer);
+			shmem_internal_fence();
+		}
+	}
+
+	memcpy(target, current_target, wrk_size);
+	free(current_target);
+
 }
 
 
