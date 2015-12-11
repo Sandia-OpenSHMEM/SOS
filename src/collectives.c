@@ -18,7 +18,7 @@
 #include "shmem_internal.h"
 #include "shmem_collectives.h"
 #include "shmem.h"
-#include "op.h"
+#include "shmem_internal_op.h"
 
 coll_type_t shmem_internal_barrier_type = AUTO;
 coll_type_t shmem_internal_bcast_type = AUTO;
@@ -652,7 +652,7 @@ shmem_internal_op_to_all_tree(void *target, void *source, int count, int type_si
 
 
 void
-shmem_internal_op_to_all_recdbl(void *target, void *source, int count, int type_size,
+shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int type_size,
                                 int PE_start, int logPE_stride, int PE_size,
                                 void *pWrk, long *pSync,
                                 shm_internal_op_t op, shm_internal_datatype_t datatype)
@@ -685,7 +685,7 @@ shmem_internal_op_to_all_recdbl(void *target, void *source, int count, int type_
 	}
 
 	 /*max 32*/
-	assert(log2_proc < (_SHMEM_REDUCE_SYNC_SIZE - 1));
+	assert(log2_proc < (_SHMEM_REDUCE_SYNC_SIZE - 1)); /* FIXME: Should this be -2? */
 
 	if (current_target)
 		memcpy(current_target, (void *) source, wrk_size);
@@ -699,6 +699,7 @@ shmem_internal_op_to_all_recdbl(void *target, void *source, int count, int type_
  *
  * **************************************/
 
+        /* FIXME: This looks like a barrier.  Why is it needed? */
 	for (i = 0; i < PE_size; i++) {
 		peer = PE_start + i*stride;
 		shmem_internal_atomic_small(pSync_tail1, &one, sizeof(long), peer,
@@ -728,7 +729,7 @@ shmem_internal_op_to_all_recdbl(void *target, void *source, int count, int type_
 			buff = neg_one;
 			SHMEM_WAIT_UNTIL(pSync_tail2, SHMEM_CMP_EQ, buff);
 
-			shmem_op_tls(op, datatype, count, target, current_target);
+			shmem_internal_reduce_local(op, datatype, count, target, current_target);
 		}
 
 		/* Pairwise exchange */
@@ -763,7 +764,8 @@ shmem_internal_op_to_all_recdbl(void *target, void *source, int count, int type_
 			}
 
 			/* perform op */
-			shmem_op_tls(op, datatype, count, target, current_target);
+                        shmem_internal_reduce_local(op, datatype, count,
+                                                    target, current_target);
 
 		}
 

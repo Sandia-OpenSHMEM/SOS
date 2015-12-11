@@ -113,6 +113,8 @@ typedef struct shmem_transport_ofi_long_frag_t shmem_transport_ofi_long_frag_t;
 
 typedef int shmem_transport_ct_t;
 
+extern int shmem_transport_have_long_double;
+
 extern shmem_free_list_t *shmem_transport_ofi_bounce_buffers;
 
 extern shmem_free_list_t *shmem_transport_ofi_frag_buffers;
@@ -633,6 +635,14 @@ shmem_transport_fetch_atomic(void *target, void *source, void *dest, size_t len,
 	} while(try_again(ret,&polled));
 
 	shmem_transport_ofi_pending_get_counter++;
+}
+
+
+static inline
+int shmem_transport_atomic_supported(shm_internal_op_t op,
+                                     shm_internal_datatype_t datatype)
+{
+    return datatype != SHM_INTERNAL_LONG_DOUBLE || shmem_transport_have_long_double;
 }
 
 

@@ -928,6 +928,13 @@ shmem_transport_fetch_atomic(void *target, void *source, void *dest, size_t len,
 
 
 static inline
+int shmem_transport_atomic_supported(ptl_op_t op, ptl_datatype_t datatype)
+{
+    return 1;
+}
+
+
+static inline
 void shmem_transport_portals4_ct_attach(ptl_handle_ct_t ptl_ct, void *seg_base,
                                         ptl_size_t seg_length, ptl_pt_index_t *seg_pt,
                                         ptl_handle_le_t *seg_le)

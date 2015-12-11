@@ -392,14 +392,9 @@ shmem_longdouble_min_to_all(long double *target, long double *source, int nreduc
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    if(!shmem_long_dub_supported) {
-	shmem_internal_op_to_all_recdbl(target, source, nreduce, sizeof(long double),
-			    PE_start, logPE_stride, PE_size, pWrk, pSync, SHM_INTERNAL_MIN, SHM_INTERNAL_LONG_DOUBLE);
-    } else {
-	shmem_internal_op_to_all(target, source, nreduce, sizeof(long double),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_MIN, SHM_INTERNAL_LONG_DOUBLE);
-    }
+    shmem_internal_op_to_all(target, source, nreduce, sizeof(long double),
+                             PE_start, logPE_stride, PE_size,
+                             pWrk, pSync, SHM_INTERNAL_MIN, SHM_INTERNAL_LONG_DOUBLE);
 }
 
 
@@ -488,14 +483,9 @@ shmem_longdouble_max_to_all(long double *target, long double *source, int nreduc
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    if(!shmem_long_dub_supported) {
-        shmem_internal_op_to_all_recdbl(target, source, nreduce, sizeof(long double),
-			    PE_start, logPE_stride, PE_size, pWrk, pSync, SHM_INTERNAL_MAX, SHM_INTERNAL_LONG_DOUBLE);
-    } else {
-	shmem_internal_op_to_all(target, source, nreduce, sizeof(long double),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_MAX, SHM_INTERNAL_LONG_DOUBLE);
-    }
+    shmem_internal_op_to_all(target, source, nreduce, sizeof(long double),
+                             PE_start, logPE_stride, PE_size,
+                             pWrk, pSync, SHM_INTERNAL_MAX, SHM_INTERNAL_LONG_DOUBLE);
 }
 
 
@@ -585,14 +575,9 @@ shmem_longdouble_sum_to_all(long double *target, long double *source, int nreduc
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    if(!shmem_long_dub_supported) {
-	shmem_internal_op_to_all_recdbl(target, source, nreduce, sizeof(long double),
-			    PE_start, logPE_stride, PE_size, pWrk, pSync, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG_DOUBLE);
-    } else {
-	shmem_internal_op_to_all(target, source, nreduce, sizeof(long double),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG_DOUBLE);
-    }
+    shmem_internal_op_to_all(target, source, nreduce, sizeof(long double),
+                             PE_start, logPE_stride, PE_size,
+                             pWrk, pSync, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG_DOUBLE);
 }
 
 
@@ -707,14 +692,9 @@ shmem_longdouble_prod_to_all(long double *target, long double *source, int nredu
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    if(!shmem_long_dub_supported) {
-	shmem_internal_op_to_all_recdbl(target, source, nreduce, sizeof(long double),
-			    PE_start, logPE_stride, PE_size, pWrk, pSync, SHM_INTERNAL_PROD, SHM_INTERNAL_LONG_DOUBLE);
-    } else {
-	shmem_internal_op_to_all(target, source, nreduce, sizeof(long double),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_PROD, SHM_INTERNAL_LONG_DOUBLE);
-    }
+    shmem_internal_op_to_all(target, source, nreduce, sizeof(long double),
+                             PE_start, logPE_stride, PE_size,
+                             pWrk, pSync, SHM_INTERNAL_PROD, SHM_INTERNAL_LONG_DOUBLE);
 }
 
 

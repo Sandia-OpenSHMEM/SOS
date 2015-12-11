@@ -86,6 +86,8 @@ static int SHM_OPS[]=
   SHM_INTERNAL_PROD,
 };
 
+int shmem_transport_have_long_double = 1;
+
 shmem_free_list_t *shmem_transport_ofi_bounce_buffers = NULL;
 shmem_free_list_t *shmem_transport_ofi_frag_buffers = NULL;
 
@@ -374,7 +376,7 @@ static inline int atomic_limitations_check(void)
     for(j=0; j<4; j++) { //OPS
         ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_INTERNAL_LONG_DOUBLE, SHM_OPS[j], &atomic_size);
         if(ret!=0 || atomic_size == 0) {
-		shmem_long_dub_supported = 0;
+		shmem_transport_have_long_double = 0;
 		break;
 	}
     }

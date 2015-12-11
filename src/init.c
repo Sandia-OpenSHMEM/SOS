@@ -51,8 +51,6 @@ int shmem_internal_finalized = 0;
 int shmem_internal_initialized_with_start_pes = 0;
 int shmem_internal_global_exit_called = 0;
 
-int shmem_long_dub_supported = 1;
-
 int shmem_internal_thread_level;
 
 #ifdef ENABLE_THREADS

@@ -28,8 +28,6 @@ extern int shmem_internal_initialized;
 extern int shmem_internal_finalized;
 extern int shmem_internal_thread_level;
 
-extern int shmem_long_dub_supported;
-
 #define RAISE_ERROR(ret)                                                \
     do {                                                                \
         fprintf(stderr, "[%03d] ERROR: %s:%d return code %d\n",         \
