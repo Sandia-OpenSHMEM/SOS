@@ -9,14 +9,16 @@
 #include <string.h>
 #include <stdlib.h>
 
-long pSync[_SHMEM_REDUCE_SYNC_SIZE];
+long pSync[SHMEM_REDUCE_SYNC_SIZE];
 
 #define N 128
 
 long src[N];
 long dst[N];
 
-#define WRK_SIZE (N/2 + 1)	/* must be >= _SHMEM_REDUCE_MIN_WRKDATA_SIZE */
+#define MAX(a, b) ((a) > (b)) ? (a) : (b)
+#define WRK_SIZE MAX(N/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE)
+
 long pWrk[WRK_SIZE];
 
 int
@@ -45,15 +47,6 @@ main(int argc, char* argv[])
     }
 
     shmem_init();
-
-    if (shmem_n_pes() > N) {
-        if (shmem_my_pe() == 0) {
-            printf("Error: %s can be run on at most %d PEs unless N is increased\n",
-                   argv[0], N);
-        }
-        shmem_finalize();
-        return 0;
-    }
 
     for (i = 0; i < N; i += 1) {
         src[i] = shmem_my_pe() + i;
