@@ -671,6 +671,11 @@ shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int ty
  *
  * **************************************/
 
+        if (PE_size == 1) {
+            memcpy(target, source, type_size*count);
+            return;
+        }
+
 	i >>= 1; /* base case: if 2 pow2_proc is correct*/
 	pow2_proc <<= 1;
 
