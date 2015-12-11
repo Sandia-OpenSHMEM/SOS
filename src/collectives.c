@@ -74,7 +74,9 @@ shmem_internal_collectives_init(int requested_crossover,
     shmem_internal_barrier_all_psync = 
         shmem_internal_shmalloc(sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
     if (NULL == shmem_internal_barrier_all_psync) return -1;
-    memset(shmem_internal_barrier_all_psync, SHMEM_SYNC_VALUE,  sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
+
+    for (i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
+        shmem_internal_barrier_all_psync[i] = SHMEM_SYNC_VALUE;
 
     /* initialize the binomial tree for collective operations over
        entire tree */
