@@ -7,15 +7,15 @@
 #include <string.h>
 #include <stdlib.h>
 
-long pSync[_SHMEM_REDUCE_SYNC_SIZE];
+long pSync[SHMEM_REDUCE_SYNC_SIZE];
 
-#define N 3
+#define N 128
 
 long src[N];
 long dst[N];
 
-// max((N/2+1),_SHMEM_REDUCE_MIN_WRKDATA_SIZE)
-#define WRK_SIZE _SHMEM_REDUCE_MIN_WRKDATA_SIZE
+// max((N/2+1),SHMEM_REDUCE_MIN_WRKDATA_SIZE)
+#define WRK_SIZE SHMEM_REDUCE_MIN_WRKDATA_SIZE
 
 long pWrk[WRK_SIZE];
 
@@ -40,11 +40,20 @@ main(int argc, char* argv[])
         }
     }
 
-    for (i = 0; i < _SHMEM_REDUCE_SYNC_SIZE; i += 1) {
-        pSync[i] = _SHMEM_SYNC_VALUE;
+    for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i += 1) {
+        pSync[i] = SHMEM_SYNC_VALUE;
     }
 
     shmem_init();
+
+    if (shmem_n_pes() > N) {
+        if (shmem_my_pe() == 0) {
+            printf("Error: %s can be run on at most %d PEs unless N is increased\n",
+                   argv[0], N);
+        }
+        shmem_finalize();
+        return 0;
+    }
 
     for (i = 0; i < N; i += 1) {
         src[i] = shmem_my_pe() + i;
@@ -62,8 +71,11 @@ main(int argc, char* argv[])
     }
 
     for (i = 0; i < N; i+= 1) {
-        if (dst[i] != shmem_n_pes() - 1 + i)
+        if (dst[i] != shmem_n_pes() - 1 + i) {
+            printf("[%3d] Error: dst[%d] == %ld, expected %ld\n",
+                   shmem_my_pe(), i, dst[i], shmem_n_pes() - 1 + (long) i);
             shmem_global_exit(1);
+        }
     }
 
     shmem_finalize();

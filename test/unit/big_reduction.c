@@ -46,6 +46,15 @@ main(int argc, char* argv[])
 
     shmem_init();
 
+    if (shmem_n_pes() > N) {
+        if (shmem_my_pe() == 0) {
+            printf("Error: %s can be run on at most %d PEs unless N is increased\n",
+                   argv[0], N);
+        }
+        shmem_finalize();
+        return 0;
+    }
+
     for (i = 0; i < N; i += 1) {
         src[i] = shmem_my_pe() + i;
     }
@@ -62,8 +71,11 @@ main(int argc, char* argv[])
     }
 
     for (i = 0; i < N; i+= 1) {
-        if (dst[i] != shmem_n_pes() - 1 + i)
+        if (dst[i] != shmem_n_pes() - 1 + i) {
+            printf("[%3d] Error: dst[%d] == %ld, expected %ld\n",
+                   shmem_my_pe(), i, dst[i], shmem_n_pes() - 1 + (long) i);
             shmem_global_exit(1);
+        }
     }
 
     shmem_finalize();
