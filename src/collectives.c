@@ -72,7 +72,7 @@ shmem_internal_collectives_init(int requested_crossover,
 
     /* initialize barrier_all psync array */
     shmem_internal_barrier_all_psync = 
-        shmem_internal_shmalloc(sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
+        shmem_internal_shmalloc(sizeof(long) * SHMEM_BARRIER_SYNC_SIZE);
     if (NULL == shmem_internal_barrier_all_psync) return -1;
 
     for (i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
@@ -191,7 +191,7 @@ shmem_internal_barrier_linear(int PE_start, int logPE_stride, int PE_size, long 
     int stride = 1 << logPE_stride;
 
     /* need 1 slot */
-    assert(_SHMEM_BARRIER_SYNC_SIZE >= 1);
+    assert(SHMEM_BARRIER_SYNC_SIZE >= 1);
 
     shmem_internal_quiet();
 
@@ -238,7 +238,7 @@ shmem_internal_barrier_tree(int PE_start, int logPE_stride, int PE_size, long *p
     int parent, num_children, *children;
 
     /* need 1 slot */
-    assert(_SHMEM_BARRIER_SYNC_SIZE >= 1);
+    assert(SHMEM_BARRIER_SYNC_SIZE >= 1);
 
     shmem_internal_quiet();
 
@@ -329,7 +329,7 @@ shmem_internal_barrier_dissem(int PE_start, int logPE_stride, int PE_size, long 
        2^(sizeof(int)*8-1)-1, so make the math a bit easier and assume
        2^(sizeof(int) * 8), which means log2(num_procs) is always less
        than sizeof(int) * 8. */
-    assert(_SHMEM_BARRIER_SYNC_SIZE >= (sizeof(int) * 8) / sizeof(long));
+    assert(SHMEM_BARRIER_SYNC_SIZE >= (sizeof(int) * 8) / sizeof(long));
 
     for (i = 0, distance = 1 ; distance < PE_size ; ++i, distance <<= 1) {
         to = ((coll_rank + distance) % PE_size);
@@ -370,7 +370,7 @@ shmem_internal_bcast_linear(void *target, const void *source, size_t len,
     long completion = 0;
 
     /* need 1 slot */
-    assert(_SHMEM_BCAST_SYNC_SIZE >= 1);
+    assert(SHMEM_BCAST_SYNC_SIZE >= 1);
 
     if (real_root == shmem_internal_my_pe) {
         int i, pe;
@@ -431,7 +431,7 @@ shmem_internal_bcast_tree(void *target, const void *source, size_t len,
     const void *send_buf = source;
 
     /* need 1 slot */
-    assert(_SHMEM_BCAST_SYNC_SIZE >= 1);
+    assert(SHMEM_BCAST_SYNC_SIZE >= 1);
 
     if (PE_size == shmem_internal_num_pes && 0 == PE_root) {
         /* we're the full tree, use the binomial tree */
@@ -522,7 +522,7 @@ shmem_internal_op_to_all_linear(void *target, void *source, int count, int type_
     long completion = 0;
 
     /* need 2 slots, plus bcast */
-    assert(_SHMEM_REDUCE_SYNC_SIZE >= 2 + _SHMEM_BCAST_SYNC_SIZE);
+    assert(SHMEM_REDUCE_SYNC_SIZE >= 2 + SHMEM_BCAST_SYNC_SIZE);
 
     if (PE_start == shmem_internal_my_pe) {
         int pe, i;
@@ -583,7 +583,7 @@ shmem_internal_op_to_all_tree(void *target, void *source, int count, int type_si
     int parent, num_children, *children;
 
     /* need 2 slots, plus bcast */
-    assert(_SHMEM_REDUCE_SYNC_SIZE >= 2 + _SHMEM_BCAST_SYNC_SIZE);
+    assert(SHMEM_REDUCE_SYNC_SIZE >= 2 + SHMEM_BCAST_SYNC_SIZE);
 
     if (PE_size == shmem_internal_num_pes) {
         /* we're the full tree, use the binomial tree */
@@ -660,8 +660,8 @@ shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int ty
 	void * const current_target = malloc(wrk_size);
 	int peer = 0;
 	long completion = 0;
-	long * pSync_tail1 = pSync + _SHMEM_REDUCE_SYNC_SIZE - 1;
-	long * pSync_tail2 = pSync + _SHMEM_REDUCE_SYNC_SIZE - 2;
+	long * pSync_tail1 = pSync + SHMEM_REDUCE_SYNC_SIZE - 1;
+	long * pSync_tail2 = pSync + SHMEM_REDUCE_SYNC_SIZE - 2;
 
  /***********************************
  *
@@ -679,7 +679,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int ty
 	}
 
 	 /*max 32*/
-	assert(log2_proc < (_SHMEM_REDUCE_SYNC_SIZE - 1)); /* FIXME: Should this be -2? */
+	assert(log2_proc < (SHMEM_REDUCE_SYNC_SIZE - 1));
 
 	if (current_target)
 		memcpy(current_target, (void *) source, wrk_size);
@@ -805,7 +805,7 @@ shmem_internal_collect_linear(void *target, const void *source, size_t len,
     long completion = 0;
 
     /* need 3 slots, plus bcast */
-    assert(_SHMEM_COLLECT_SYNC_SIZE >= 3 + _SHMEM_BCAST_SYNC_SIZE);
+    assert(SHMEM_COLLECT_SYNC_SIZE >= 3 + SHMEM_BCAST_SYNC_SIZE);
 
     if (PE_size == 1) {
         if (target != source) memcpy(target, source, len);
@@ -886,7 +886,7 @@ shmem_internal_fcollect_linear(void *target, const void *source, size_t len,
     long completion = 0;
 
     /* need 1 slot, plus bcast */
-    assert(_SHMEM_COLLECT_SYNC_SIZE >= 1 + _SHMEM_BCAST_SYNC_SIZE);
+    assert(SHMEM_COLLECT_SYNC_SIZE >= 1 + SHMEM_BCAST_SYNC_SIZE);
 
     if (PE_start == shmem_internal_my_pe) {
         /* Copy data into the target */
@@ -942,7 +942,7 @@ shmem_internal_fcollect_ring(void *target, const void *source, size_t len,
     long zero = 0, one = 1;
 
     /* need 1 slot */
-    assert(_SHMEM_COLLECT_SYNC_SIZE >= 1);
+    assert(SHMEM_COLLECT_SYNC_SIZE >= 1);
 
     /* copy my portion to the right place */
     memcpy((char*) target + (my_id * len), source, len); 
@@ -999,7 +999,7 @@ shmem_internal_fcollect_recdbl(void *target, const void *source, size_t len,
        2^(sizeof(int)*8-1)-1, so make the math a bit easier and assume
        2^(sizeof(int) * 8), which means log2(num_procs) is always less
        than sizeof(int) * 8. */
-    assert(_SHMEM_COLLECT_SYNC_SIZE >= (sizeof(int) * 8) / sizeof(long));
+    assert(SHMEM_COLLECT_SYNC_SIZE >= (sizeof(int) * 8) / sizeof(long));
     assert(0 == (PE_size & (PE_size - 1)));
 
     /* copy my portion to the right place */
