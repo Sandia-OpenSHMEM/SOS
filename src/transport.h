@@ -123,7 +123,7 @@ shmem_transport_get_wait(void)
 static inline
 void
 shmem_transport_swap(void *target, void *source, void *dest, size_t len, 
-                     int pe, ptl_datatype_t datatype)
+                     int pe, shm_internal_datatype_t datatype)
 {
     RAISE_ERROR_STR("No path to peer");
 }
@@ -131,7 +131,7 @@ shmem_transport_swap(void *target, void *source, void *dest, size_t len,
 static inline
 void
 shmem_transport_cswap(void *target, void *source, void *dest, void *operand, size_t len, 
-                      int pe, ptl_datatype_t datatype)
+                      int pe, shm_internal_datatype_t datatype)
 {
     RAISE_ERROR_STR("No path to peer");
 }
@@ -139,7 +139,7 @@ shmem_transport_cswap(void *target, void *source, void *dest, void *operand, siz
 static inline
 void
 shmem_transport_mswap(void *target, void *source, void *dest, void *mask, size_t len, 
-                      int pe, ptl_datatype_t datatype)
+                      int pe, shm_internal_datatype_t datatype)
 {
     RAISE_ERROR_STR("No path to peer");
 }
@@ -147,7 +147,7 @@ shmem_transport_mswap(void *target, void *source, void *dest, void *mask, size_t
 static inline
 void
 shmem_transport_atomic_small(void *target, void *source, size_t len,
-                             int pe, ptl_op_t op, ptl_datatype_t datatype)
+                             int pe, shm_internal_op_t op, shm_internal_datatype_t datatype)
 {
     RAISE_ERROR_STR("No path to peer");
 }
@@ -155,7 +155,7 @@ shmem_transport_atomic_small(void *target, void *source, size_t len,
 static inline
 void
 shmem_transport_atomic_nb(void *target, void *source, size_t len,
-                          int pe, ptl_op_t op, ptl_datatype_t datatype,
+                          int pe, shm_internal_op_t op, shm_internal_datatype_t datatype,
                           long *completion)
 {
     RAISE_ERROR_STR("No path to peer");
@@ -164,7 +164,7 @@ shmem_transport_atomic_nb(void *target, void *source, size_t len,
 static inline
 void
 shmem_transport_fetch_atomic(void *target, void *source, void *dest, size_t len,
-                             int pe, ptl_op_t op, ptl_datatype_t datatype)
+                             int pe, shm_internal_op_t op, shm_internal_datatype_t datatype)
 {
     RAISE_ERROR_STR("No path to peer");
 }
