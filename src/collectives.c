@@ -66,7 +66,6 @@ shmem_internal_collectives_init(int requested_crossover,
     int tmp_radix;
     int my_root = 0;
     char *type;
-    int log2_proc = 1;
 
     tree_radix = requested_radix;
     shmem_internal_tree_crossover = requested_crossover;
@@ -76,13 +75,6 @@ shmem_internal_collectives_init(int requested_crossover,
         shmem_internal_shmalloc(sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
     if (NULL == shmem_internal_barrier_all_psync) return -1;
     memset(shmem_internal_barrier_all_psync, SHMEM_SYNC_VALUE,  sizeof(long) * _SHMEM_BARRIER_SYNC_SIZE);
-
-    i = shmem_internal_num_pes;
-    i >>= 1; /* base case: if 2 log2_proc is correct*/
-    while (i != 1) {
-        i >>= 1;
-        log2_proc++;
-    }
 
     /* initialize the binomial tree for collective operations over
        entire tree */
