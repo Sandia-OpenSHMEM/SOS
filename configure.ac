@@ -204,8 +204,9 @@ AC_CHECK_SIZEOF([double])
 AC_CHECK_SIZEOF([long double])
 AC_CHECK_SIZEOF([void*])
 
+C_LOG_MAXPES=32
 C_BCAST_SYNC_SIZE=1
-C_REDUCE_SYNC_SIZE=34
+C_REDUCE_SYNC_SIZE=`echo "$C_BCAST_SYNC_SIZE 2 + $C_LOG_MAXPES + p" | dc`
 C_BARRIER_SYNC_SIZE=`echo "$ac_cv_sizeof_int 8 * $ac_cv_sizeof_long / p" | dc`
 tree_sync_size=`echo "$C_BCAST_SYNC_SIZE 3 + p" | dc`
 recdbl_sync_size=`echo "$ac_cv_sizeof_int 8 * $ac_cv_sizeof_long / p" | dc`
