@@ -782,6 +782,8 @@ shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int ty
 	memcpy(target, current_target, wrk_size);
 	free(current_target);
 
+        for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++)
+            pSync[i] = SHMEM_SYNC_VALUE;
 }
 
 
