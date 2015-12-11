@@ -117,11 +117,11 @@ extern shmem_free_list_t *shmem_transport_ofi_bounce_buffers;
 
 extern shmem_free_list_t *shmem_transport_ofi_frag_buffers;
 
-#define OFI_ABORT(...) { fprintf(stderr, __FILE__ ":%d: \n", __LINE__); \
+#define OFI_ERRMSG(...) { fprintf(stderr, __FILE__ ":%d: \n", __LINE__); \
                             fprintf(stderr, __VA_ARGS__);  }
 
 #define OFI_RET_CHECK(ret) do { if (ret) { \
-	fprintf(stderr,"OFI error #%d: %s \n", (int)ret, fi_strerror(ret)); \
+	fprintf(stderr,"OFI error #%d: %s \n", ret, fi_strerror(ret)); \
 	RAISE_ERROR(ret); } } while (0)
 
 int shmem_transport_init(long eager_size);
@@ -152,7 +152,7 @@ void shmem_transport_ofi_drain_cq(void)
 				              (void *)&e, 0);
 				RAISE_ERROR(e.err);
 			} else {
-				OFI_RET_CHECK(ret);
+				RAISE_ERROR(ret);
 			}
 		}
 
