@@ -143,6 +143,8 @@ shmem_internal_collectives_init(int requested_crossover,
             shmem_internal_reduce_type = LINEAR;
         } else if (0 == strcmp(type, "tree")) {
             shmem_internal_reduce_type = TREE;
+        } else if (0 == strcmp(type, "recdbl")) {
+            shmem_internal_reduce_type = RECDBL;
         } else {
             fprintf(stderr, "[%03d] Bad reduction algorithm %s\n",
                     shmem_internal_my_pe, type);

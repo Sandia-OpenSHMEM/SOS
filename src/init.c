@@ -369,7 +369,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
             printf("SMA_REDUCE_ALGORITHM    %s\n",
                    (NULL == getenv("SMA_REDUCE_ALGORITHM") ? "auto" : 
                     getenv("SMA_REDUCE_ALGORITHM")));
-            printf("\tAlgorithm for reductions.  Options are auto, linear, tree\n");
+            printf("\tAlgorithm for reductions.  Options are auto, linear, tree, recdbl\n");
             printf("SMA_COLLECT_ALGORITHM   %s\n",
                    (NULL == getenv("SMA_COLLECT_ALGORITHM") ? "auto" : 
                     getenv("SMA_COLLECT_ALGORITHM")));
