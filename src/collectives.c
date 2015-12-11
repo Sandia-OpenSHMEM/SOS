@@ -676,6 +676,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int ty
             return;
         }
 
+        /* FIXME: I would prefer to see initialization done here, e.g. i = PE_size >> 1; */
 	i >>= 1; /* base case: if 2 pow2_proc is correct*/
 	pow2_proc <<= 1;
 
@@ -685,8 +686,11 @@ shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int ty
 		log2_proc++;
 	}
 
-	 /*max 32*/
-	assert(log2_proc < (SHMEM_REDUCE_SYNC_SIZE - 1));
+         /*max 32*/ /* FIXME: This comment needs to be improved.
+                       SHMEM_REDUCE_SYNC_SIZE is a parameter that can be
+                       changed; we should not assume that there's always space
+                       for 2^32 PEs. */
+        assert(log2_proc <= (SHMEM_REDUCE_SYNC_SIZE - 2));
 
 	if (current_target)
 		memcpy(current_target, (void *) source, wrk_size);
@@ -706,7 +710,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int ty
 		shmem_internal_atomic_small(pSync_tail1, &one, sizeof(long), peer,
 				SHM_INTERNAL_SUM, DTYPE_LONG);
 	}
-	shmem_internal_fence();
+	shmem_internal_fence(); /* FIXME: Why is this a fence and not quiet? */
 	SHMEM_WAIT_UNTIL(pSync_tail1, SHMEM_CMP_EQ, PE_size);
 
 	/*extra peer exchange*/
