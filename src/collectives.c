@@ -662,8 +662,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int ty
 	void * const current_target = malloc(wrk_size);
 	int peer = 0;
 	long completion = 0;
-	long * pSync_tail1 = pSync + SHMEM_REDUCE_SYNC_SIZE - 1;
-	long * pSync_tail2 = pSync + SHMEM_REDUCE_SYNC_SIZE - 2;
+	long * pSync_extra_peer = pSync + SHMEM_REDUCE_SYNC_SIZE - 2;
 
  /***********************************
  *
@@ -712,17 +711,17 @@ shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int ty
 		shmem_internal_fence();
 
 		buff = neg_one;
-		shmem_internal_put_small(pSync_tail2, &buff, sizeof(long),
+		shmem_internal_put_small(pSync_extra_peer, &buff, sizeof(long),
 				peer);
 		shmem_internal_fence();
 		buff = neg_one;
-		SHMEM_WAIT_UNTIL(pSync_tail2, SHMEM_CMP_EQ, buff);
+		SHMEM_WAIT_UNTIL(pSync_extra_peer, SHMEM_CMP_EQ, buff);
 
 	} else {
 		if ((PE_size - pow2_proc) > my_id) {
 			peer = (my_id + pow2_proc) * stride + PE_start;
 			buff = neg_one;
-			SHMEM_WAIT_UNTIL(pSync_tail2, SHMEM_CMP_EQ, buff);
+			SHMEM_WAIT_UNTIL(pSync_extra_peer, SHMEM_CMP_EQ, buff);
 
 			shmem_internal_reduce_local(op, datatype, count, target, current_target);
 		}
@@ -777,7 +776,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int ty
 			shmem_internal_fence();
 
 			buff = neg_one;
-			shmem_internal_put_small(pSync_tail2, &buff,
+			shmem_internal_put_small(pSync_extra_peer, &buff,
 					sizeof(long), peer);
 			shmem_internal_fence();
 		}
