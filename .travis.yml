@@ -48,6 +48,8 @@ before_install:
     - cd ..
     ## Fetch UH Tests
     - git clone https://github.com/openshmem-org/tests-uh.git tests-uh
+    ## Fetch ISx
+    - git clone https://github.com/ParRes/ISx.git ISx
 
 install:
     - git clone https://github.com/regrant/sandia-shmem.git
@@ -105,6 +107,29 @@ script:
     - if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi
     - make clean
     - cd ..
+    ###
+    ### Run ISx (Portals)
+    ###
+    - export PATH=$HOME/opt/portals4/bin:$HOME/opt/sandia-shmem-portals4/bin:$HOME/opt/hydra/bin:$BASE_PATH
+    - export LD_LIBRARY_PATH=$HOME/opt/sandia-shmem-portals4/lib:$BASE_LD_LIBRARY_PATH
+    - export OSHRUN_LAUNCHER="mpiexec.hydra"
+    - cd ISx/SHMEM
+    - make CC=oshcc LDLIBS=-lm
+    - make clean
+    - cd ../..
+    ###
+    ### Run ISx (OFI)
+    ###
+    - export PATH=$HOME/opt/sandia-shmem-ofi/bin:$HOME/opt/hydra/bin:$BASE_PATH
+    - export LD_LIBRARY_PATH=$HOME/opt/sandia-shmem-ofi/lib:$BASE_LD_LIBRARY_PATH
+    - export OSHRUN_LAUNCHER="mpiexec.hydra"
+    - cd ISx/SHMEM
+    - make CC=oshcc LDLIBS=-lm
+    - mpiexec.hydra -np 4 ./bin/isx.strong 4 134217728 output_strong
+    - mpiexec.hydra -np 4 ./bin/isx.weak 4 33554432 output_weak
+    - mpiexec.hydra -np 4 ./bin/isx.weak_iso 4 33554432 output_weak_iso
+    - make clean
+    - cd ../..
 
 notifications:
   email:
