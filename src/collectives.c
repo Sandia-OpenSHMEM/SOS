@@ -653,141 +653,141 @@ shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int ty
                                 void *pWrk, long *pSync,
                                 shm_internal_op_t op, shm_internal_datatype_t datatype)
 {
-	int stride = 1 << logPE_stride;
-	int my_id = ((shmem_internal_my_pe - PE_start) / stride);
-	long one = 1, neg_one = -1, buff = 0;
-	int log2_proc = 1, pow2_proc = 2;
-	int i = PE_size >> 1;
-	int wrk_size = type_size*count;
-	void * const current_target = malloc(wrk_size);
-	int peer = 0;
-	long completion = 0;
-	long * pSync_extra_peer = pSync + SHMEM_REDUCE_SYNC_SIZE - 2;
+   int stride = 1 << logPE_stride;
+   int my_id = ((shmem_internal_my_pe - PE_start) / stride);
+   long one = 1, neg_one = -1, buff = 0;
+   int log2_proc = 1, pow2_proc = 2;
+   int i = PE_size >> 1;
+   int wrk_size = type_size*count;
+   void * const current_target = malloc(wrk_size);
+   int peer = 0;
+   long completion = 0;
+   long * pSync_extra_peer = pSync + SHMEM_REDUCE_SYNC_SIZE - 2;
 
  /***********************************
  *
- *	INPUT CHECKS AND VAR INIT
+ *       input checks and var init
  *
  * **************************************/
 
-        if (PE_size == 1) {
-            memcpy(target, source, type_size*count);
-            return;
-        }
+   if (PE_size == 1) {
+      memcpy(target, source, type_size*count);
+      return;
+   }
 
-	while (i != 1) {
-		i >>= 1;
-		pow2_proc <<= 1;
-		log2_proc++;
-	}
+   while (i != 1) {
+      i >>= 1;
+     pow2_proc <<= 1;
+     log2_proc++;
+   }
 
          /*Currently SHMEM_REDUCE_SYNC_SIZE assumes space for 2^32 PEs; this
-		parameter may be changed if need-be */
-        assert(log2_proc <= (SHMEM_REDUCE_SYNC_SIZE - 2));
+            parameter may be changed if need-be */
+   assert(log2_proc <= (SHMEM_REDUCE_SYNC_SIZE - 2));
 
-	if (current_target)
-		memcpy(current_target, (void *) source, wrk_size);
-	else
-		RAISE_ERROR(1);
+   if (current_target)
+      memcpy(current_target, (void *) source, wrk_size);
+   else
+      RAISE_ERROR(1);
 
  /***********************************
  *
- * 	alg: reduce N number of PE's into a power of two recursive doubling algorithm
- * 	-have extra_peers do the operation with one of the power of two PE's so the information
- * 	is in the power of two algorithm, at the end, update extra_peers with answer found
- * 	by power of two team
+ *   alg: reduce N number of PE's into a power of two recursive doubling algorithm
+ *   have extra_peers do the operation with one of the power of two PE's so the information
+ *   is in the power of two algorithm, at the end, update extra_peers with answer found
+ *   by power of two team
  *
- *	-target is used as "temp" buffer -- current_target tracks latest result
- *	give partner current_result,
+ *   -target is used as "temp" buffer -- current_target tracks latest result
+ *   give partner current_result,
  *
  * **************************************/
 
-	/*extra peer exchange: grab information from extra_peer so its part of pairwise exchange*/
-	if (my_id >= pow2_proc) {
-		peer = (my_id - pow2_proc) * stride + PE_start;
-		shmem_internal_put_nb(target, current_target, wrk_size, peer,
-					&completion);
-		shmem_internal_put_wait(&completion);
-		shmem_internal_fence();
+   /*extra peer exchange: grab information from extra_peer so its part of pairwise exchange*/
+   if (my_id >= pow2_proc) {
+      peer = (my_id - pow2_proc) * stride + PE_start;
+      shmem_internal_put_nb(target, current_target, wrk_size, peer,
+                            &completion);
+      shmem_internal_put_wait(&completion);
+      shmem_internal_fence();
 
-		buff = neg_one;
-		shmem_internal_put_small(pSync_extra_peer, &buff, sizeof(long),
-				peer);
-		shmem_internal_fence();
-		buff = neg_one;
-		SHMEM_WAIT_UNTIL(pSync_extra_peer, SHMEM_CMP_EQ, buff);
+      buff = neg_one;
+      shmem_internal_put_small(pSync_extra_peer, &buff, sizeof(long),
+                               peer);
+      shmem_internal_fence();
+      buff = neg_one;
+      SHMEM_WAIT_UNTIL(pSync_extra_peer, SHMEM_CMP_EQ, buff);
 
-	} else {
-		if ((PE_size - pow2_proc) > my_id) {
-			peer = (my_id + pow2_proc) * stride + PE_start;
-			buff = neg_one;
-			SHMEM_WAIT_UNTIL(pSync_extra_peer, SHMEM_CMP_EQ, buff);
+   } else {
+      if ((PE_size - pow2_proc) > my_id) {
+         peer = (my_id + pow2_proc) * stride + PE_start;
+         buff = neg_one;
+         SHMEM_WAIT_UNTIL(pSync_extra_peer, SHMEM_CMP_EQ, buff);
 
-			shmem_internal_reduce_local(op, datatype, count, target, current_target);
-		}
+         shmem_internal_reduce_local(op, datatype, count, target, current_target);
+      }
 
-		/* Pairwise exchange: (only for PE's that are within the power of 2 set) with every iteration,
-		the information from each previous exchange is passed forward in the new interation */
+   /* Pairwise exchange: (only for PE's that are within the power of 2 set) with every iteration,
+      the information from each previous exchange is passed forward in the new interation */
 
-		long *step_psync;
+      long *step_psync;
 
-		for (i = 0; i < log2_proc; i++) {
+      for (i = 0; i < log2_proc; i++) {
 
-			peer = (my_id ^ (1 << i)) * stride + PE_start;
-			step_psync = &pSync[i];
+         peer = (my_id ^ (1 << i)) * stride + PE_start;
+         step_psync = &pSync[i];
 
-			if (my_id < peer) {
-				shmem_internal_put_small(step_psync, &one,
-						sizeof(int), peer);
-				SHMEM_WAIT(step_psync, 0);
-				shmem_internal_put_nb(target, current_target,
-						wrk_size, peer, &completion);
-				shmem_internal_put_wait(&completion);
-				shmem_internal_fence();
-				shmem_internal_atomic_small(step_psync, &one,
-						sizeof(int), peer,
-						SHM_INTERNAL_SUM, DTYPE_INT);
-			} else {
-				SHMEM_WAIT(step_psync, 0);
-				shmem_internal_put_nb(target, current_target,
-						wrk_size, peer, &completion);
-				shmem_internal_put_wait(&completion);
-				shmem_internal_fence();
-				shmem_internal_put_small(step_psync,
-					&one, sizeof(int), peer);
-				SHMEM_WAIT(step_psync, 1);
-			}
+         if (my_id < peer) {
+            shmem_internal_put_small(step_psync, &one,
+                                     sizeof(int), peer);
+            SHMEM_WAIT(step_psync, 0);
+            shmem_internal_put_nb(target, current_target,
+                                  wrk_size, peer, &completion);
+            shmem_internal_put_wait(&completion);
+            shmem_internal_fence();
+            shmem_internal_atomic_small(step_psync, &one,
+                                        sizeof(int), peer,
+            SHM_INTERNAL_SUM, DTYPE_INT);
+         } else {
+            SHMEM_WAIT(step_psync, 0);
+            shmem_internal_put_nb(target, current_target,
+                                  wrk_size, peer, &completion);
+            shmem_internal_put_wait(&completion);
+            shmem_internal_fence();
+            shmem_internal_put_small(step_psync,
+                                     &one, sizeof(int), peer);
+            SHMEM_WAIT(step_psync, 1);
+         }
 
-			/* perform op */
-                        shmem_internal_reduce_local(op, datatype, count,
-                                                    target, current_target);
+         /* perform op */
+         shmem_internal_reduce_local(op, datatype, count,
+                                     target, current_target);
 
-		}
+      }
 
-		shmem_internal_quiet();
+      shmem_internal_quiet();
 
-		/*update extra peer with the final result from the pairwise exchange */
-		if ((PE_size - pow2_proc) > my_id) {
-			peer = (my_id + pow2_proc) * stride + PE_start;
+   /*update extra peer with the final result from the pairwise exchange */
+      if ((PE_size - pow2_proc) > my_id) {
+         peer = (my_id + pow2_proc) * stride + PE_start;
 
-			shmem_internal_put_nb(target, current_target, wrk_size,
-					peer, &completion);
-			shmem_internal_put_wait(&completion);
-			shmem_internal_fence();
+         shmem_internal_put_nb(target, current_target, wrk_size,
+                               peer, &completion);
+         shmem_internal_put_wait(&completion);
+         shmem_internal_fence();
 
-			buff = neg_one;
-			shmem_internal_put_small(pSync_extra_peer, &buff,
-					sizeof(long), peer);
-			shmem_internal_fence();
-		}
-	
-		memcpy(target, current_target, wrk_size);
-	}
+         buff = neg_one;
+         shmem_internal_put_small(pSync_extra_peer, &buff,
+                                  sizeof(long), peer);
+         shmem_internal_fence();
+      }
 
-	free(current_target);
+      memcpy(target, current_target, wrk_size);
+   }
 
-        for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++)
-            pSync[i] = SHMEM_SYNC_VALUE;
+   free(current_target);
+
+   for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++)
+      pSync[i] = SHMEM_SYNC_VALUE;
 }
 
 
