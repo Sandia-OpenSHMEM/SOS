@@ -656,8 +656,8 @@ shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int ty
 	int stride = 1 << logPE_stride;
 	int my_id = ((shmem_internal_my_pe - PE_start) / stride);
 	long one = 1, neg_one = -1, buff = 0;
-	int log2_proc = 1, pow2_proc = 1;
-	int i = PE_size;
+	int log2_proc = 1, pow2_proc = 2;
+	int i = PE_size >> 1;
 	int wrk_size = type_size*count;
 	void * const current_target = malloc(wrk_size);
 	int peer = 0;
@@ -676,20 +676,14 @@ shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int ty
             return;
         }
 
-        /* FIXME: I would prefer to see initialization done here, e.g. i = PE_size >> 1; */
-	i >>= 1; /* base case: if 2 pow2_proc is correct*/
-	pow2_proc <<= 1;
-
 	while (i != 1) {
 		i >>= 1;
 		pow2_proc <<= 1;
 		log2_proc++;
 	}
 
-         /*max 32*/ /* FIXME: This comment needs to be improved.
-                       SHMEM_REDUCE_SYNC_SIZE is a parameter that can be
-                       changed; we should not assume that there's always space
-                       for 2^32 PEs. */
+         /*Currently SHMEM_REDUCE_SYNC_SIZE assumes space for 2^32 PEs; this
+		parameter may be changed if need-be */
         assert(log2_proc <= (SHMEM_REDUCE_SYNC_SIZE - 2));
 
 	if (current_target)
@@ -699,21 +693,17 @@ shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int ty
 
  /***********************************
  *
+ * 	alg: reduce N number of PE's into a power of two recursive doubling algorithm
+ * 	-have extra_peers do the operation with one of the power of two PE's so the information
+ * 	is in the power of two algorithm, at the end, update extra_peers with answer found
+ * 	by power of two team
+ *
  *	-target is used as "temp" buffer -- current_target tracks latest result
  *	give partner current_result,
  *
  * **************************************/
 
-        /* FIXME: This looks like a barrier.  Why is it needed? */
-	for (i = 0; i < PE_size; i++) {
-		peer = PE_start + i*stride;
-		shmem_internal_atomic_small(pSync_tail1, &one, sizeof(long), peer,
-				SHM_INTERNAL_SUM, DTYPE_LONG);
-	}
-	shmem_internal_fence(); /* FIXME: Why is this a fence and not quiet? */
-	SHMEM_WAIT_UNTIL(pSync_tail1, SHMEM_CMP_EQ, PE_size);
-
-	/*extra peer exchange*/
+	/*extra peer exchange: grab information from extra_peer so its part of pairwise exchange*/
 	if (my_id >= pow2_proc) {
 		peer = (my_id - pow2_proc) * stride + PE_start;
 		shmem_internal_put_nb(target, current_target, wrk_size, peer,
@@ -737,7 +727,8 @@ shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int ty
 			shmem_internal_reduce_local(op, datatype, count, target, current_target);
 		}
 
-		/* Pairwise exchange */
+		/* Pairwise exchange: (only for PE's that are within the power of 2 set) with every iteration,
+		the information from each previous exchange is passed forward in the new interation */
 
 		long *step_psync;
 
@@ -776,7 +767,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int ty
 
 		shmem_internal_quiet();
 
-		/*extra peer update*/
+		/*update extra peer with the final result from the pairwise exchange */
 		if ((PE_size - pow2_proc) > my_id) {
 			peer = (my_id + pow2_proc) * stride + PE_start;
 
