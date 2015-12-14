@@ -116,7 +116,7 @@ init_long_frag(shmem_free_list_item_t *item)
     frag->reference = 0;
 }
 
-static inline void allocate_endpoints(struct fi_info * p_info)
+static inline int allocate_endpoints(struct fi_info * p_info)
 {
 
   int ret = 0;
@@ -132,7 +132,8 @@ static inline void allocate_endpoints(struct fi_info * p_info)
     ret = fi_endpoint(shmem_transport_ofi_domainfd,
 		    p_info, &shmem_transport_ofi_epfd, NULL);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("epfd creation failed\n");
+	return ret;
     }
 
     /* this endpoint is used only to get read and write
@@ -146,13 +147,15 @@ static inline void allocate_endpoints(struct fi_info * p_info)
     ret = fi_endpoint(shmem_transport_ofi_domainfd,
 		    p_info, &shmem_transport_ofi_cntr_epfd, NULL);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("cntr_epfd creation failed\n");
+	return ret;
     }
 
+    return ret;
 
 }
 
-static inline void bind_resources_to_and_enable_ep(void)
+static inline int bind_resources_to_and_enable_ep(void)
 {
 
     /*   must bind resources created to EP then enable EP for communication (resources can now be used) */
@@ -163,58 +166,69 @@ static inline void bind_resources_to_and_enable_ep(void)
     ret = fi_ep_bind(shmem_transport_ofi_epfd,
 		    &shmem_transport_ofi_stx->fid, 0);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("ep_bind epfd2stx failed\n");
+	return ret;
     }
 
     ret = fi_ep_bind(shmem_transport_ofi_cntr_epfd,
 		    &shmem_transport_ofi_stx->fid, 0);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("ep_bind cntr_epfd2stx failed\n");
+	return ret;
     }
 
     /* attaching to endpoint enables counting "writes" for calls used with this endpoint*/
     ret = fi_ep_bind(shmem_transport_ofi_cntr_epfd,
 		    &shmem_transport_ofi_put_cntrfd->fid, FI_WRITE);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("ep_bind cntr_epfd2put_cntr failed\n");
+	return ret;
     }
 
     /* attach to endpoint */
     ret = fi_ep_bind(shmem_transport_ofi_cntr_epfd,
 		    &shmem_transport_ofi_get_cntrfd->fid, FI_READ);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("ep_bind cntr_epfd2get_cntr failed\n");
+	return ret;
     }
 
     /* attach CQ for obtaining completions for large puts (NB puts) */
     ret = fi_ep_bind(shmem_transport_ofi_epfd,
 		    &shmem_transport_ofi_put_nb_cqfd->fid, FI_SEND);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("ep_bind ep2cq_nb failed\n");
+	return ret;
     }
 
     ret = fi_ep_bind(shmem_transport_ofi_epfd, &shmem_transport_ofi_avfd->fid, 0);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("ep_bind ep2av failed\n");
+	return ret;
     }
 
     ret = fi_ep_bind(shmem_transport_ofi_cntr_epfd, &shmem_transport_ofi_avfd->fid, 0);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("ep_bind cntr_ep2av failed\n");
+	return ret;
     }
 
     /*enable active endpoint state: can now perform data transfers*/
     ret = fi_enable(shmem_transport_ofi_epfd);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("enable_epfd failed\n");
+	return ret;
     }
     ret = fi_enable(shmem_transport_ofi_cntr_epfd);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("enable_cntr_epfd failed\n");
+	return ret;
     }
+
+    return ret;
 }
 
-static inline void allocate_cntr_and_cq(void)
+static inline int allocate_cntr_and_cq(void)
 {
 
     int ret = 0;
@@ -231,7 +245,8 @@ static inline void allocate_cntr_and_cq(void)
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
 		  &shmem_transport_ofi_put_cntrfd, NULL);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("put cntr_open failed\n");
+	return ret;
     }
 
     // Create counter for counting completions of outbound reads
@@ -239,7 +254,8 @@ static inline void allocate_cntr_and_cq(void)
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
 		  &shmem_transport_ofi_get_cntrfd, NULL);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("get cntr_open failed\n");
+	return ret;
     }
 
     /* Create CQ to be used for NB puts */
@@ -249,13 +265,15 @@ static inline void allocate_cntr_and_cq(void)
     ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr,
 		    &shmem_transport_ofi_put_nb_cqfd, NULL);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("cq_open failed\n");
+	return ret;
     }
 
+    return ret;
 
 }
 
-static inline void allocate_recv_cntr_mr(void)
+static inline int allocate_recv_cntr_mr(void)
 {
 
     int ret = 0;
@@ -270,7 +288,8 @@ static inline void allocate_recv_cntr_mr(void)
 		    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, 0,
 		    &shmem_transport_ofi_target_mrfd, NULL);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("mr_reg failed\n");
+	return ret;
     }
 
     // Create counter for incoming writes
@@ -280,7 +299,8 @@ static inline void allocate_recv_cntr_mr(void)
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
 		  &shmem_transport_ofi_target_cntrfd, NULL);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("target cntr_open failed\n");
+	return ret;
     }
 
     // Bind counter with target memory region for incoming messages
@@ -288,7 +308,8 @@ static inline void allocate_recv_cntr_mr(void)
 		    &shmem_transport_ofi_target_cntrfd->fid,
 		    FI_REMOTE_WRITE | FI_REMOTE_READ);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("mr_bind failed\n");
+	return ret;
     }
 
     //bind to endpoint, incoming communication associated with endpoint now has defined resources
@@ -296,11 +317,14 @@ static inline void allocate_recv_cntr_mr(void)
 		    &shmem_transport_ofi_target_mrfd->fid,
 		    FI_REMOTE_READ | FI_REMOTE_WRITE);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("ep_bind mr2epfd failed\n");
+	return ret;
     }
+
+    return ret;
 }
 
-static inline void atomic_limitations_check(void)
+static inline int atomic_limitations_check(void)
 {
 
     /* ----------------------------------------*/
@@ -316,7 +340,8 @@ static inline void atomic_limitations_check(void)
     ret = fi_atomicvalid(shmem_transport_ofi_epfd, FI_INT64, FI_MAX,
 			&atomic_size);
     if(ret!=0 || (atomic_size == 0)){ //not supported
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("atomicvalid failed\n");
+	return ret;
     }
     shmem_transport_ofi_max_atomic_size = atomic_size * (sizeof(long));
 
@@ -327,8 +352,8 @@ static inline void atomic_limitations_check(void)
         ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_DT_INT[i], SHM_BOPS[j],
                         &atomic_size);
         if(ret!=0 || atomic_size == 0) {
-           fprintf(stderr, "ret=%d atomic_size=%d %d %d\n", ret, (int)atomic_size, i, j);
-	   RAISE_ERROR(ret);
+           OFI_ERRMSG("ret=%d atomic_size=%d %d %d\n", ret, (int)atomic_size, i, j);
+	   return ret;
         }
       }
     }
@@ -339,16 +364,17 @@ static inline void atomic_limitations_check(void)
         ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_DT_CMP[i], SHM_OPS[j],
                         &atomic_size);
         if(ret!=0 || atomic_size == 0) {
-           fprintf(stderr, "ret=%d atomic_size=%d %d %d\n", ret, (int)atomic_size, i, j);
-	   RAISE_ERROR(ret);
+           OFI_ERRMSG("ret=%d atomic_size=%d %d %d\n", ret, (int)atomic_size, i, j);
+	   return ret;
         }
       }
     }
 
+    return ret;
 
 }
 
-static inline void exchange_and_av_insert(const int npes)
+static inline int exchange_and_av_insert(const int npes)
 {
     int                 i, rank = 0, ret = 0;
     char   epname[128], *alladdrs = NULL;
@@ -358,12 +384,14 @@ static inline void exchange_and_av_insert(const int npes)
 
     ret = fi_getname((fid_t)shmem_transport_ofi_epfd, epname, &epnamelen);
     if(ret!=0 || (epnamelen > sizeof(epname))){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("PMI get rank failed\n");
+	return ret;
     }
 
     alladdrs = malloc(npes * epnamelen);
     if(alladdrs==NULL){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("alladdrs is NULL\n");
+	return ret;
     }
 
     ret = shmem_runtime_put("OFI", epname, epnamelen);
@@ -387,13 +415,16 @@ static inline void exchange_and_av_insert(const int npes)
             0,
 	    NULL);
     if(ret!=npes){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("av insert failed\n");
+	return ret;
     }
 
     free(alladdrs);
+
+    return 0;
 }
 
-static inline void allocate_fabric_resources(struct fi_info * p_info,
+static inline int allocate_fabric_resources(struct fi_info * p_info,
 		const int npes)
 {
     int ret = 0;
@@ -403,14 +434,16 @@ static inline void allocate_fabric_resources(struct fi_info * p_info,
     /* fabric domain: define domain of resources physical and logical*/
     ret = fi_fabric(p_info->fabric_attr, &shmem_transport_ofi_fabfd, NULL);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("fabric initialization failed\n");
+	return ret;
     }
 
     /*access domain: define communication resource limits/boundary within fabric domain */
     ret = fi_domain(shmem_transport_ofi_fabfd, p_info,
 		    &shmem_transport_ofi_domainfd,NULL);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("domain initialization failed\n");
+	return ret;
     }
 
     /*transmit context: allocate one transmit context for this SHMEM PE
@@ -420,7 +453,8 @@ static inline void allocate_fabric_resources(struct fi_info * p_info,
     ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL, /* TODO: fill tx_attr */
 		    &shmem_transport_ofi_stx, NULL);
     if(ret!=0) {
-	    RAISE_ERROR(ret);
+	OFI_ERRMSG("stx context initialization failed\n");
+	return ret;
     }
 
     /*AV table set-up for PE mapping*/
@@ -439,16 +473,17 @@ static inline void allocate_fabric_resources(struct fi_info * p_info,
 		    &shmem_transport_ofi_avfd,
 		    NULL);
     if(ret!=0){
-	    RAISE_ERROR(ret);
+	OFI_ERRMSG("av open failed\n");
+	return ret;
     }
 
+    return ret;
 }
 
-static inline struct fi_info * query_for_fabric(char *provname)
+static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
 {
     int                 ret = 0;
     struct fi_info      hints = {0};
-    struct fi_info * p_info = NULL;
     struct fi_tx_attr   tx_attr = {0};
     struct fi_domain_attr domain_attr = {0};
     struct fi_fabric_attr fabric_attr = {0};
@@ -472,38 +507,39 @@ static inline struct fi_info * query_for_fabric(char *provname)
     ep_attr.type              = FI_EP_RDM; /* reliable connectionless */
     hints.fabric_attr	      = &fabric_attr;
     tx_attr.op_flags          = FI_DELIVERY_COMPLETE;
-    tx_attr.inject_size       = 0;
+    tx_attr.inject_size       = sizeof(long double);
     hints.tx_attr	      = &tx_attr; /* TODO: fill tx_attr */
     hints.rx_attr	      = NULL;
     hints.ep_attr             = &ep_attr;
 
     /* find fabric provider to use that is able to support RMA and ATOMICS */
     ret = fi_getinfo( FI_VERSION(OFI_MAJOR_VERSION, OFI_MINOR_VERSION),
-		      NULL, NULL, 0, &hints, &p_info);
+		      NULL, NULL, 0, &hints, p_info);
     if(ret!=0){
-	RAISE_ERROR(ret);
+	OFI_ERRMSG("getinfo didn't find any providers\n");
+	return ret;
     }
 
-    if (!p_info) {
-	    OFI_ABORT("fi_getinfo didn't find any providers\n");
+    if(!*p_info) {
+	OFI_ERRMSG("pinfo is null\n");
+	return ret;
     }
 
-    if(p_info->tx_attr->inject_size < sizeof(long double)) {
-	    OFI_ABORT("inject size returned is too small\n");
-    }
-    else
-    	    shmem_transport_ofi_max_buffered_send = p_info->tx_attr->inject_size;
+    return ret;
 
-    return p_info;
 }
 
 int shmem_transport_init(long eager_size)
 {
+    int ret = 0;
     const int npes = shmem_runtime_get_size();
+    struct fi_info * p_info = NULL;
 
     char *provname = getenv("SHMEM_OFI_USE_PROVIDER");
 
-    struct fi_info * const p_info = query_for_fabric(provname);
+    ret = query_for_fabric(&p_info, provname);
+    if(ret!=0)
+	return ret;
 
     assert(eager_size > p_info->tx_attr->inject_size);
 
@@ -518,19 +554,33 @@ int shmem_transport_init(long eager_size)
     shmem_free_list_init(sizeof(shmem_transport_ofi_long_frag_t),
                              init_long_frag);
 
-    allocate_fabric_resources(p_info, npes);
+    ret = allocate_fabric_resources(p_info, npes);
+    if(ret!=0)
+	return ret;
 
-    allocate_endpoints(p_info);
+    ret = allocate_endpoints(p_info);
+    if(ret!=0)
+	return ret;
 
-    allocate_cntr_and_cq();
+    ret = allocate_cntr_and_cq();
+    if(ret!=0)
+	return ret;
 
-    bind_resources_to_and_enable_ep();
+    ret = bind_resources_to_and_enable_ep();
+    if(ret!=0)
+	return ret;
 
-    allocate_recv_cntr_mr();
+    ret = allocate_recv_cntr_mr();
+    if(ret!=0)
+	return ret;
 
-    atomic_limitations_check();
+    ret = atomic_limitations_check();
+    if(ret!=0)
+	return ret;
 
-    exchange_and_av_insert(npes);
+    ret = exchange_and_av_insert(npes);
+    if(ret!=0)
+	return ret;
 
     fi_freeinfo(p_info);
 
@@ -550,48 +600,59 @@ int shmem_transport_fini(void)
     /* Wait for acks before shutdown */
     shmem_transport_quiet();
 
-    if (fi_close(&shmem_transport_ofi_epfd->fid)) {
-        OFI_ABORT("Endpoint close failed (%s)", fi_strerror(errno));
+    if (shmem_transport_ofi_epfd &&
+		    fi_close(&shmem_transport_ofi_epfd->fid)) {
+        OFI_ERRMSG("Endpoint close failed (%s)", fi_strerror(errno));
     }
 
-    if (fi_close(&shmem_transport_ofi_cntr_epfd->fid)) {
-        OFI_ABORT("Endpoint close failed (%s)", fi_strerror(errno));
+    if (shmem_transport_ofi_cntr_epfd &&
+		    fi_close(&shmem_transport_ofi_cntr_epfd->fid)) {
+        OFI_ERRMSG("Endpoint close failed (%s)", fi_strerror(errno));
     }
 
-    if (fi_close(&shmem_transport_ofi_stx->fid)) {
-        OFI_ABORT("Shared context close failed (%s)", fi_strerror(errno));
+    if (shmem_transport_ofi_stx &&
+		    fi_close(&shmem_transport_ofi_stx->fid)) {
+        OFI_ERRMSG("Shared context close failed (%s)", fi_strerror(errno));
     }
 
-    if (fi_close(&shmem_transport_ofi_target_mrfd->fid)) {
-	OFI_ABORT("Target MR close failed (%s)", fi_strerror(errno));
+    if (shmem_transport_ofi_target_mrfd &&
+		    fi_close(&shmem_transport_ofi_target_mrfd->fid)) {
+	OFI_ERRMSG("Target MR close failed (%s)", fi_strerror(errno));
     }
 
-    if (fi_close(&shmem_transport_ofi_put_nb_cqfd->fid)) {
-        OFI_ABORT("Write CQ close failed (%s)", fi_strerror(errno));
+    if (shmem_transport_ofi_put_nb_cqfd &&
+		    fi_close(&shmem_transport_ofi_put_nb_cqfd->fid)) {
+        OFI_ERRMSG("Write CQ close failed (%s)", fi_strerror(errno));
     }
 
-    if(fi_close(&shmem_transport_ofi_put_cntrfd->fid)){
-        OFI_ABORT("INJECT PUT CT close failed (%s)", fi_strerror(errno));
+    if(shmem_transport_ofi_put_cntrfd &&
+		    fi_close(&shmem_transport_ofi_put_cntrfd->fid)){
+        OFI_ERRMSG("INJECT PUT CT close failed (%s)", fi_strerror(errno));
     }
 
-    if(fi_close(&shmem_transport_ofi_get_cntrfd->fid)){
-        OFI_ABORT("GET CT close failed (%s)", fi_strerror(errno));
+    if(shmem_transport_ofi_get_cntrfd &&
+		    fi_close(&shmem_transport_ofi_get_cntrfd->fid)){
+        OFI_ERRMSG("GET CT close failed (%s)", fi_strerror(errno));
     }
 
-    if(fi_close(&shmem_transport_ofi_target_cntrfd->fid)){
-        OFI_ABORT("Target CT close failed (%s)", fi_strerror(errno));
+    if(shmem_transport_ofi_target_cntrfd &&
+		    fi_close(&shmem_transport_ofi_target_cntrfd->fid)){
+        OFI_ERRMSG("Target CT close failed (%s)", fi_strerror(errno));
     }
 
-    if (fi_close(&shmem_transport_ofi_avfd->fid)) {
-        OFI_ABORT("AV close failed (%s)", fi_strerror(errno));
+    if (shmem_transport_ofi_avfd &&
+		    fi_close(&shmem_transport_ofi_avfd->fid)) {
+        OFI_ERRMSG("AV close failed (%s)", fi_strerror(errno));
     }
 
-    if (fi_close(&shmem_transport_ofi_domainfd->fid)) {
-        OFI_ABORT("Domain close failed (%s)", fi_strerror(errno));
+    if (shmem_transport_ofi_domainfd &&
+		    fi_close(&shmem_transport_ofi_domainfd->fid)) {
+        OFI_ERRMSG("Domain close failed (%s)", fi_strerror(errno));
     }
 
-    if (fi_close(&shmem_transport_ofi_fabfd->fid)) {
-        OFI_ABORT("Fabric close failed (%s)", fi_strerror(errno));
+    if (shmem_transport_ofi_fabfd &&
+		    fi_close(&shmem_transport_ofi_fabfd->fid)) {
+        OFI_ERRMSG("Fabric close failed (%s)", fi_strerror(errno));
     }
 
 #ifdef USE_AV_MAP
