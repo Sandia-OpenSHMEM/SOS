@@ -72,7 +72,7 @@ static int SHM_DT_INT[]=
 static int SHM_DT_CMP[]=
 {
   DTYPE_SHORT, DTYPE_INT, DTYPE_LONG,
-  SHM_INTERNAL_FLOAT, SHM_INTERNAL_DOUBLE, SHM_INTERNAL_LONG_DOUBLE,
+  SHM_INTERNAL_FLOAT, SHM_INTERNAL_DOUBLE
 };
 
 static int SHM_BOPS[]=
@@ -85,6 +85,8 @@ static int SHM_OPS[]=
   SHM_INTERNAL_MIN,  SHM_INTERNAL_MAX, SHM_INTERNAL_SUM,
   SHM_INTERNAL_PROD,
 };
+
+int shmem_transport_have_long_double = 1;
 
 shmem_free_list_t *shmem_transport_ofi_bounce_buffers = NULL;
 shmem_free_list_t *shmem_transport_ofi_frag_buffers = NULL;
@@ -359,7 +361,7 @@ static inline int atomic_limitations_check(void)
     }
 
     /* OTHER OPS check */
-    for(i=0; i<6; i++) {//DT
+    for(i=0; i<5; i++) {//DT
       for(j=0; j<4; j++) { //OPS
         ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_DT_CMP[i], SHM_OPS[j],
                         &atomic_size);
@@ -370,8 +372,16 @@ static inline int atomic_limitations_check(void)
       }
     }
 
-    return ret;
+    /* LONG DOUBLE limitation is common */
+    for(j=0; j<4; j++) { //OPS
+        ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_INTERNAL_LONG_DOUBLE, SHM_OPS[j], &atomic_size);
+        if(ret!=0 || atomic_size == 0) {
+		shmem_transport_have_long_double = 0;
+		break;
+	}
+    }
 
+    return 0;
 }
 
 static inline int exchange_and_av_insert(const int npes)

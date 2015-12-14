@@ -9,14 +9,16 @@
 #include <string.h>
 #include <stdlib.h>
 
-long pSync[_SHMEM_REDUCE_SYNC_SIZE];
+long pSync[SHMEM_REDUCE_SYNC_SIZE];
 
 #define N 128
 
 long src[N];
 long dst[N];
 
-#define WRK_SIZE (N/2 + 1)	/* must be >= _SHMEM_REDUCE_MIN_WRKDATA_SIZE */
+#define MAX(a, b) ((a) > (b)) ? (a) : (b)
+#define WRK_SIZE MAX(N/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE)
+
 long pWrk[WRK_SIZE];
 
 int
@@ -62,8 +64,11 @@ main(int argc, char* argv[])
     }
 
     for (i = 0; i < N; i+= 1) {
-        if (dst[i] != shmem_n_pes() - 1 + i)
+        if (dst[i] != shmem_n_pes() - 1 + i) {
+            printf("[%3d] Error: dst[%d] == %ld, expected %ld\n",
+                   shmem_my_pe(), i, dst[i], shmem_n_pes() - 1 + (long) i);
             shmem_global_exit(1);
+        }
     }
 
     shmem_finalize();

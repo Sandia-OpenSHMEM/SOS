@@ -41,7 +41,8 @@ libsma_la_SOURCES = \
 	synchronization_c.c \
 	collectives_c.c \
 	lock_c.c \
-	cache_management_c.c
+	cache_management_c.c \
+	op.h
 
 if HAVE_FORTRAN
 libsma_la_SOURCES += \

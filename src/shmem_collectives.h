@@ -129,6 +129,11 @@ void shmem_internal_op_to_all_tree(void *target, void *source, int count, int ty
                                    void *pWrk, long *pSync, 
                                    shm_internal_op_t op, shm_internal_datatype_t datatype);
 
+void shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int type_size,
+                                   int PE_start, int logPE_stride, int PE_size,
+                                   void *pWrk, long *pSync,
+                                   shm_internal_op_t op, shm_internal_datatype_t datatype);
+
 static inline
 void
 shmem_internal_op_to_all(void *target, void *source, int count, int type_size,
@@ -137,27 +142,51 @@ shmem_internal_op_to_all(void *target, void *source, int count, int type_size,
                     shm_internal_op_t op, shm_internal_datatype_t datatype)
 {
     switch (shmem_internal_reduce_type) {
-    case AUTO:
-        if (PE_size < shmem_internal_tree_crossover) {
-            shmem_internal_op_to_all_linear(target, source, count, type_size,
-                                            PE_start, logPE_stride, PE_size,
-                                            pWrk, pSync, op, datatype);
-        } else {
-            shmem_internal_op_to_all_tree(target, source, count, type_size,
-                                          PE_start, logPE_stride, PE_size,
-                                          pWrk, pSync, op, datatype);
-        }
-        break;
-    case LINEAR:
-        shmem_internal_op_to_all_linear(target, source, count, type_size,
-                                        PE_start, logPE_stride, PE_size,
-                                        pWrk, pSync, op, datatype);
-        break;
-    case TREE:
-        shmem_internal_op_to_all_tree(target, source, count, type_size,
-                                      PE_start, logPE_stride, PE_size,
-                                      pWrk, pSync, op, datatype);
-        break;
+        case AUTO:
+            if (shmem_transport_atomic_supported(op, datatype)) {
+                if (PE_size < shmem_internal_tree_crossover) {
+                    shmem_internal_op_to_all_linear(target, source, count, type_size,
+                                                    PE_start, logPE_stride, PE_size,
+                                                    pWrk, pSync, op, datatype);
+                } else {
+                    shmem_internal_op_to_all_tree(target, source, count, type_size,
+                                                  PE_start, logPE_stride, PE_size,
+                                                  pWrk, pSync, op, datatype);
+                }
+            } else {
+                shmem_internal_op_to_all_recdbl_sw(target, source, count, type_size,
+                                                   PE_start, logPE_stride, PE_size,
+                                                   pWrk, pSync, op, datatype);
+            }
+
+            break;
+        case LINEAR:
+            if (shmem_transport_atomic_supported(op, datatype)) {
+                shmem_internal_op_to_all_linear(target, source, count, type_size,
+                                                PE_start, logPE_stride, PE_size,
+                                                pWrk, pSync, op, datatype);
+            } else {
+                shmem_internal_op_to_all_recdbl_sw(target, source, count, type_size,
+                                                   PE_start, logPE_stride, PE_size,
+                                                   pWrk, pSync, op, datatype);
+            }
+            break;
+        case TREE:
+            if (shmem_transport_atomic_supported(op, datatype)) {
+                shmem_internal_op_to_all_tree(target, source, count, type_size,
+                                              PE_start, logPE_stride, PE_size,
+                                              pWrk, pSync, op, datatype);
+            } else {
+                shmem_internal_op_to_all_recdbl_sw(target, source, count, type_size,
+                                                   PE_start, logPE_stride, PE_size,
+                                                   pWrk, pSync, op, datatype);
+            }
+            break;
+        case RECDBL:
+            shmem_internal_op_to_all_recdbl_sw(target, source, count, type_size,
+                                               PE_start, logPE_stride, PE_size,
+                                               pWrk, pSync, op, datatype);
+            break;
     default:
         fprintf(stderr, "[%03d] Illegal reduction type %d\n", 
                 shmem_internal_my_pe, shmem_internal_reduce_type);
