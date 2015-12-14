@@ -381,6 +381,7 @@ static inline int atomic_limitations_check(void)
 	}
     }
 
+    return 0;
 }
 
 static inline int exchange_and_av_insert(const int npes)
