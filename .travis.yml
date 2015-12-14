@@ -47,7 +47,8 @@ before_install:
     - make install
     - cd ..
     ## Fetch UH Tests
-    - git clone https://github.com/openshmem-org/tests-uh.git tests-uh
+    #- git clone https://github.com/openshmem-org/tests-uh.git tests-uh
+    - git clone -b ci-master https://github.com/jdinan/tests-uh.git tests-uh
     ## Fetch ISx
     - git clone https://github.com/ParRes/ISx.git ISx
 
