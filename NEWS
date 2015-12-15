@@ -1,17 +1,19 @@
 -*- text -*-
 
-Sandia SHMEM NEWS -- history of user-visible changes.
+Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
 1.2.0
 -----
 - Support for OpenSHMEM 1.2 specification
 - Support for libfabric
-- Add simple-pmi support to enable use of an external PMI-1 compliant launcher
-- Add 'oshrun' launcher wrapper to normalize runs across build configurations
+- Integrated support for PMI-1 compliant launcher (e.g. MPICH Hydra)
+- Build now generates 'oshrun' launcher script for launching OpenSHMEM applications
+- Multiple bug fixes and improvements to stability and performance
+- Add shmemx.h and shmemx.fh header files for Sandia OpenSHMEM extensions
 - Add support for short, SGI-style Fortran header (configure option
   --disable-long-fortran-header) required by UH test suite
-- Multiple bug fixes and improvements to stability and performance
-- Remove UH tests, upstreamed changes, and moved to external testing model
+- Removed stale copies of UH tests, upstreamed changes, and moved to external
+  testing model.  Extensive bug fixes and improvements to remaining test suite.
 
 1.0a8
 -----
