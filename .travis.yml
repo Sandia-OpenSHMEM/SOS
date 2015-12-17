@@ -7,53 +7,69 @@ os:
     - linux
 
 before_install:
+    ## Set up the environment
+    - mkdir $HOME/travis
+    - mkdir $HOME/travis/src
+    - mkdir $HOME/travis/install
+    - export TRAVIS_SRC=$HOME/travis/src
+    - export TRAVIS_INSTALL=$HOME/travis/install
+    - export TRAVIS_PAR_MAKE="-j 4"
+    ## Fetch packages
     - sudo apt-get update -qq
     - sudo apt-get install -y dc gfortran
     ## Build libev
     # JSD: Schmorp.de went down, so I posted a copy on Google drive...
+    #- cd $TRAVIS_SRC
     #- wget http://dist.schmorp.de/libev/Attic/libev-4.15.tar.gz
     #- tar -xzvf libev-4.15.tar.gz
     #- cd libev-4.15 && ./configure --prefix=/usr/ && make && sudo make install
-    #- cd ..
+    - cd $TRAVIS_SRC
     - curl -L -o libev-4.20.tar.gz 'https://docs.google.com/uc?authuser=0&id=0BxdTWEtawABaT2loSTM4X0k5bEU&export=download'
     - tar -xzvf libev-4.20.tar.gz
     - cd libev-4.20 && ./configure --prefix=/usr/ && make && sudo make install
-    - cd ..
     ## Build Portals 4
-    - git clone https://github.com/regrant/portals4.git portals4
+    - cd $TRAVIS_SRC
+    - git clone --depth 10 https://github.com/regrant/portals4.git portals4
     - cd portals4
     - ./autogen.sh
-    - ./configure --prefix=$HOME/opt/portals4/ --with-libev=/usr/lib/ --enable-zero-mrs --enable-reliable-udp --disable-pmi-from-portals
+    - ./configure --prefix=$TRAVIS_INSTALL/portals4/ --with-libev=/usr/lib/ --enable-zero-mrs --enable-reliable-udp --disable-pmi-from-portals
     # JSD: --enable-transport-shmem removed; it was causing tests to hang
-    - make -j 4
+    - make $TRAVIS_PAR_MAKE
     - make install
     - export PTL_IFACE_NAME=venet0
-    - cd ..
     ## Build libfabric
-    - git clone https://github.com/ofiwg/libfabric.git libfabric
+    - cd $TRAVIS_SRC
+    - git clone --depth 10 https://github.com/ofiwg/libfabric.git libfabric
     - cd libfabric
     - ./autogen.sh
-    - ./configure --prefix=$HOME/opt/libfabric
-    - make -j 4
+    - ./configure --prefix=$TRAVIS_INSTALL/libfabric
+    - make $TRAVIS_PAR_MAKE
     - make install
     - export FI_LOG_LEVEL=error
-    - cd ..
     ## Build Hydra
+    - cd $TRAVIS_SRC
     - wget http://www.mpich.org/static/downloads/3.2/hydra-3.2.tar.gz
     - tar xvzf hydra-3.2.tar.gz
     - cd hydra-3.2/
-    - ./configure --prefix=$HOME/opt/hydra
-    - make -j 4
+    - ./configure --prefix=$TRAVIS_INSTALL/hydra
+    - make $TRAVIS_PAR_MAKE
     - make install
-    - cd ..
     ## Fetch UH Tests
-    #- git clone https://github.com/openshmem-org/tests-uh.git tests-uh
-    - git clone -b ci-master https://github.com/jdinan/tests-uh.git tests-uh
+    - cd $TRAVIS_SRC
+    #- git clone --depth 10 https://github.com/openshmem-org/tests-uh.git tests-uh
+    - git clone --depth 10 -b ci-master https://github.com/jdinan/tests-uh.git tests-uh
     ## Fetch ISx
-    - git clone https://github.com/ParRes/ISx.git ISx
+    - cd $TRAVIS_SRC
+    - git clone --depth 10 https://github.com/ParRes/ISx.git ISx
+    ## Fetch PRK
+    - cd $TRAVIS_SRC
+    - git clone --depth 10 https://github.com/ParRes/Kernels.git PRK
+    - echo -e "SHMEMCC=oshcc\nSHMEMTOP=$$TRAVIS_INSTALL\n" > PRK/common/make.defs
 
 install:
-    - git clone https://github.com/regrant/sandia-shmem.git
+    - cd $TRAVIS_SRC
+    - git clone --depth 10 https://github.com/regrant/sandia-shmem.git sandia-shmem
+    - cd sandia-shmem
     - ./autogen.sh
 
 script:
@@ -62,28 +78,30 @@ script:
     ###
     ### Build and check Portals
     ###
-    - export PATH=$HOME/opt/hydra/bin:$HOME/opt/portals4/bin:$BASE_PATH
-    - ./configure --with-portals4=$HOME/opt/portals4/ --disable-long-fortran-header --prefix=$HOME/opt/sandia-shmem-portals4 --enable-error-checking --enable-remote-virtual-addressing --enable-picky --enable-pmi-simple FCFLAGS="-fcray-pointer"
-    - make -j 4
+    - cd $TRAVIS_SRC/sandia-shmem
+    - export PATH=$TRAVIS_INSTALL/hydra/bin:$TRAVIS_INSTALL/portals4/bin:$BASE_PATH
+    - ./configure --with-portals4=$TRAVIS_INSTALL/portals4/ --disable-long-fortran-header --prefix=$TRAVIS_INSTALL/sandia-shmem-portals4 --enable-error-checking --enable-remote-virtual-addressing --enable-picky --enable-pmi-simple FCFLAGS="-fcray-pointer"
+    - make $TRAVIS_PAR_MAKE
     #- make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2 timeout 10" check
     - make install
     - make clean
     ###
     ### Build and check OFI
     ###
-    - export PATH=$HOME/opt/hydra/bin:$BASE_PATH
-    - ./configure --with-ofi=$HOME/opt/libfabric/ --disable-long-fortran-header --prefix=$HOME/opt/sandia-shmem-ofi --enable-error-checking --enable-remote-virtual-addressing --enable-picky --enable-pmi-simple FCFLAGS="-fcray-pointer"
-    - make -j 4
+    - cd $TRAVIS_SRC/sandia-shmem
+    - export PATH=$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - ./configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --disable-long-fortran-header --prefix=$TRAVIS_INSTALL/sandia-shmem-ofi --enable-error-checking --enable-remote-virtual-addressing --enable-picky --enable-pmi-simple FCFLAGS="-fcray-pointer"
+    - make $TRAVIS_PAR_MAKE
     - make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2" check
     - make install
     ###
     ### Run the UH test suite (Portals)
     ###
-    - export PATH=$HOME/opt/portals4/bin:$HOME/opt/sandia-shmem-portals4/bin:$HOME/opt/hydra/bin:$BASE_PATH
-    - export LD_LIBRARY_PATH=$HOME/opt/sandia-shmem-portals4/lib:$BASE_LD_LIBRARY_PATH
+    - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export LD_LIBRARY_PATH=$TRAVIS_INSTALL/sandia-shmem-portals4/lib:$BASE_LD_LIBRARY_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
-    - cd tests-uh
-    - make -j 4 C_feature_tests F_feature_tests
+    - cd $TRAVIS_SRC/tests-uh
+    - make $TRAVIS_PAR_MAKE C_feature_tests F_feature_tests
     #- make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
     # Check for failures in the C tests
     #- if grep -qi Fail uh-tests-c-feature-tests.log; then false; else true; fi
@@ -91,15 +109,14 @@ script:
     # Check for failures in the Fortran tests
     #- if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi
     - make clean
-    - cd ..
     ###
     ### Run the UH test suite (OFI)
     ###
-    - export PATH=$HOME/opt/sandia-shmem-ofi/bin:$HOME/opt/hydra/bin:$BASE_PATH
-    - export LD_LIBRARY_PATH=$HOME/opt/sandia-shmem-ofi/lib:$BASE_LD_LIBRARY_PATH
+    - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export LD_LIBRARY_PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/lib:$BASE_LD_LIBRARY_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
-    - cd tests-uh
-    - make -j 4 C_feature_tests F_feature_tests
+    - cd $TRAVIS_SRC/tests-uh
+    - make $TRAVIS_PAR_MAKE C_feature_tests F_feature_tests
     - make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
     # Check for failures in the C tests
     - if grep -qi Fail uh-tests-c-feature-tests.log; then false; else true; fi
@@ -107,30 +124,53 @@ script:
     # Check for failures in the Fortran tests
     - if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi
     - make clean
-    - cd ..
     ###
     ### Run ISx (Portals)
     ###
-    - export PATH=$HOME/opt/portals4/bin:$HOME/opt/sandia-shmem-portals4/bin:$HOME/opt/hydra/bin:$BASE_PATH
-    - export LD_LIBRARY_PATH=$HOME/opt/sandia-shmem-portals4/lib:$BASE_LD_LIBRARY_PATH
+    - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export LD_LIBRARY_PATH=$TRAVIS_INSTALL/sandia-shmem-portals4/lib:$BASE_LD_LIBRARY_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
-    - cd ISx/SHMEM
+    - cd $TRAVIS_SRC/ISx/SHMEM
     - make CC=oshcc LDLIBS=-lm
     - make clean
-    - cd ../..
     ###
     ### Run ISx (OFI)
     ###
-    - export PATH=$HOME/opt/sandia-shmem-ofi/bin:$HOME/opt/hydra/bin:$BASE_PATH
-    - export LD_LIBRARY_PATH=$HOME/opt/sandia-shmem-ofi/lib:$BASE_LD_LIBRARY_PATH
+    - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export LD_LIBRARY_PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/lib:$BASE_LD_LIBRARY_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
-    - cd ISx/SHMEM
+    - cd $TRAVIS_SRC/ISx/SHMEM
     - make CC=oshcc LDLIBS=-lm
     - mpiexec.hydra -np 4 ./bin/isx.strong 4 134217728 output_strong
     - mpiexec.hydra -np 4 ./bin/isx.weak 4 33554432 output_weak
     - mpiexec.hydra -np 4 ./bin/isx.weak_iso 4 33554432 output_weak_iso
     - make clean
-    - cd ../..
+    ###
+    ### Run PRK (Portals)
+    ###
+    - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export LD_LIBRARY_PATH=$TRAVIS_INSTALL/sandia-shmem-portals4/lib:$BASE_LD_LIBRARY_PATH
+    - export OSHRUN_LAUNCHER="mpiexec.hydra"
+    - cd $TRAVIS_SRC/PRK
+    - make LIBS="-lm" allshmem
+    - make clean
+    ###
+    ### Run PRK (OFI)
+    ###
+    - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export LD_LIBRARY_PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/lib:$BASE_LD_LIBRARY_PATH
+    - export OSHRUN_LAUNCHER="mpiexec.hydra"
+    - cd $TRAVIS_SRC/PRK
+    - make LIBS="-lm" allshmem
+    ## Stencil is currently broken
+    #- mpiexec.hydra -np 4 ./SHMEM/Stencil/stencil 100 1000 2>&1 | tee stencil.log
+    #- grep -qi "Solution validates" stencil.log
+    - mpiexec.hydra -np 4 ./SHMEM/Synch_p2p/p2p 10 1000 1000 2>&1 | tee p2p.log
+    - grep -qi "Solution validates" p2p.log
+    ## Transpose is currently broken
+    #- mpiexec.hydra -np 4 ./SHMEM/Transpose/transpose 10 1000 2>&1 | tee transpose.log
+    #- grep -qi "Solution validates" transpose.log
+    - make clean
 
 notifications:
   email:
