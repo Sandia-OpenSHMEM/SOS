@@ -26,13 +26,13 @@ before_install:
     - cd $TRAVIS_SRC
     - curl -L -o libev-4.20.tar.gz 'https://docs.google.com/uc?authuser=0&id=0BxdTWEtawABaT2loSTM4X0k5bEU&export=download'
     - tar -xzvf libev-4.20.tar.gz
-    - cd libev-4.20 && ./configure --prefix=/usr/ && make && sudo make install
+    - cd libev-4.20 && ./configure --prefix=$TRAVIS_INSTALL/libev && make && sudo make install
     ## Build Portals 4
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/regrant/portals4.git portals4
     - cd portals4
     - ./autogen.sh
-    - ./configure --prefix=$TRAVIS_INSTALL/portals4/ --with-libev=/usr/lib/ --enable-zero-mrs --enable-reliable-udp --disable-pmi-from-portals
+    - ./configure --prefix=$TRAVIS_INSTALL/portals4/ --with-ev=$TRAVIS_INSTALL/libev --enable-zero-mrs --enable-reliable-udp --disable-pmi-from-portals
     # JSD: --enable-transport-shmem removed; it was causing tests to hang
     - make $TRAVIS_PAR_MAKE
     - make install
