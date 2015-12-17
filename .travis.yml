@@ -82,6 +82,7 @@ script:
     - export PATH=$TRAVIS_INSTALL/hydra/bin:$TRAVIS_INSTALL/portals4/bin:$BASE_PATH
     - ./configure --with-portals4=$TRAVIS_INSTALL/portals4/ --disable-long-fortran-header --prefix=$TRAVIS_INSTALL/sandia-shmem-portals4 --enable-error-checking --enable-remote-virtual-addressing --enable-picky --enable-pmi-simple FCFLAGS="-fcray-pointer"
     - make $TRAVIS_PAR_MAKE
+    - make $TRAVIS_PAR_MAKE check TESTS=
     #- make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2 timeout 10" check
     - make install
     - make clean
@@ -92,6 +93,7 @@ script:
     - export PATH=$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
     - ./configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --disable-long-fortran-header --prefix=$TRAVIS_INSTALL/sandia-shmem-ofi --enable-error-checking --enable-remote-virtual-addressing --enable-picky --enable-pmi-simple FCFLAGS="-fcray-pointer"
     - make $TRAVIS_PAR_MAKE
+    - make $TRAVIS_PAR_MAKE check TESTS=
     - make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2" check
     - make install
     ###
