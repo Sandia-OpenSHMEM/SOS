@@ -3,6 +3,25 @@ language: c
 compiler:
     #- clang
     - gcc
+env:
+    - SMA_BOUNCE_SIZE=0
+    - SMA_BARRIER_ALGORITHM=auto
+    - SMA_BARRIER_ALGORITHM=linear
+    - SMA_BARRIER_ALGORITHM=tree
+    - SMA_BARRIER_ALGORITHM=dissem
+    - SMA_BCAST_ALGORITHM=auto
+    - SMA_BCAST_ALGORITHM=linear
+    - SMA_BCAST_ALGORITHM=tree
+    - SMA_REDUCE_ALGORITHM=auto
+    - SMA_REDUCE_ALGORITHM=recdbl
+    - SMA_REDUCE_ALGORITHM=linear
+    - SMA_REDUCE_ALGORITHM=tree
+    - SMA_COLLECT_ALGORITHM=auto
+    - SMA_COLLECT_ALGORITHM=linear
+    - SMA_FCOLLECT_ALGORITHM=auto
+    - SMA_FCOLLECT_ALGORITHM=linear
+    - SMA_FCOLLECT_ALGORITHM=ring
+    - SMA_FCOLLECT_ALGORITHM=recdbl
 os:
     - linux
 
