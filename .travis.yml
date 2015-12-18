@@ -11,6 +11,7 @@ before_install:
     - mkdir $HOME/travis
     - mkdir $HOME/travis/src
     - mkdir $HOME/travis/install
+    - export SOS_SRC=$PWD
     - export TRAVIS_SRC=$HOME/travis/src
     - export TRAVIS_INSTALL=$HOME/travis/install
     - export TRAVIS_PAR_MAKE="-j 4"
@@ -67,9 +68,7 @@ before_install:
     - echo -e "SHMEMCC=oshcc\nSHMEMTOP=$$TRAVIS_INSTALL\n" > PRK/common/make.defs
 
 install:
-    - cd $TRAVIS_SRC
-    - git clone --depth 10 https://github.com/regrant/sandia-shmem.git sandia-shmem
-    - cd sandia-shmem
+    - cd $SOS_SRC
     - ./autogen.sh
 
 script:
@@ -78,7 +77,7 @@ script:
     ###
     ### Build and check Portals
     ###
-    - cd $TRAVIS_SRC/sandia-shmem
+    - cd $SOS_SRC
     - export PATH=$TRAVIS_INSTALL/hydra/bin:$TRAVIS_INSTALL/portals4/bin:$BASE_PATH
     - ./configure --with-portals4=$TRAVIS_INSTALL/portals4/ --disable-long-fortran-header --prefix=$TRAVIS_INSTALL/sandia-shmem-portals4 --enable-error-checking --enable-remote-virtual-addressing --enable-picky --enable-pmi-simple FCFLAGS="-fcray-pointer"
     - make $TRAVIS_PAR_MAKE
@@ -89,7 +88,7 @@ script:
     ###
     ### Build and check OFI
     ###
-    - cd $TRAVIS_SRC/sandia-shmem
+    - cd $SOS_SRC
     - export PATH=$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
     - ./configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --disable-long-fortran-header --prefix=$TRAVIS_INSTALL/sandia-shmem-ofi --enable-error-checking --enable-remote-virtual-addressing --enable-picky --enable-pmi-simple FCFLAGS="-fcray-pointer"
     - make $TRAVIS_PAR_MAKE
