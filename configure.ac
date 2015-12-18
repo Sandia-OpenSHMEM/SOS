@@ -349,6 +349,7 @@ AC_SUBST(WRAPPER_COMPILER_EXTRA_LDFLAGS)
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
 
 AC_CONFIG_FILES([Makefile
+  sandia-openshmem.spec
   mpp/Makefile
   mpp/shmem.fh
   mpp/shmemx.fh
