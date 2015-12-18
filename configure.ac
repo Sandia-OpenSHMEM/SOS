@@ -141,11 +141,6 @@ if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
   CFLAGS="$CFLAGS -Wall -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wcomment -pedantic"
 fi
 
-AC_CHECK_PROG(DC_CHECK,dc,yes)
-if test x"$DC_CHECK" != x"yes" ; then
-    AC_MSG_ERROR([Please install GNU dc before trying to build.])
-fi
-
 AC_CACHE_SAVE
 
 dnl check for libraries
@@ -206,10 +201,10 @@ AC_CHECK_SIZEOF([void*])
 
 C_LOG_MAXPES=32
 C_BCAST_SYNC_SIZE=1
-C_REDUCE_SYNC_SIZE=`echo "$C_BCAST_SYNC_SIZE 2 + $C_LOG_MAXPES + p" | dc`
-C_BARRIER_SYNC_SIZE=`echo "$ac_cv_sizeof_int 8 * $ac_cv_sizeof_long / p" | dc`
-tree_sync_size=`echo "$C_BCAST_SYNC_SIZE 3 + p" | dc`
-recdbl_sync_size=`echo "$ac_cv_sizeof_int 8 * $ac_cv_sizeof_long / p" | dc`
+C_REDUCE_SYNC_SIZE=`$PERL -e "print $C_BCAST_SYNC_SIZE + 2 + $C_LOG_MAXPES"`
+C_BARRIER_SYNC_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_int * 8 / $ac_cv_sizeof_long)"`
+tree_sync_size=`$PERL -e "print $C_BCAST_SYNC_SIZE + 3"`
+recdbl_sync_size=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_int * 8 / $ac_cv_sizeof_long)"`
 AS_IF([test $tree_sync_size -lt $recdbl_sync_size],
       [C_COLLECT_SYNC_SIZE=$recdbl_sync_size], [C_COLLECT_SYNC_SIZE=$tree_sync_size])
 C_REDUCE_MIN_WRKDATA_SIZE=1
@@ -264,11 +259,11 @@ if test "$FC" != "" ; then
   # The collectives are all implemented in C and require the psync to
   # hold a variable number of C longs.  Find how many INTEGERs it takes to
   # create a memory region as big as the required C region.
-  FORTRAN_BCAST_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / $C_BCAST_SYNC_SIZE * p" | dc`
-  FORTRAN_REDUCE_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / $C_REDUCE_SYNC_SIZE * p" | dc`
-  FORTRAN_BARRIER_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / $C_BARRIER_SYNC_SIZE * p" | dc`
-  FORTRAN_COLLECT_SYNC_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / $C_COLLECT_SYNC_SIZE * p" | dc`
-  FORTRAN_REDUCE_MIN_WRKDATA_SIZE=`echo "$ac_cv_sizeof_long $ompi_cv_fortran_sizeof_INTEGER / $C_REDUCE_MIN_WRKDATA_SIZE * p" | dc`
+  FORTRAN_BCAST_SYNC_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_long / $ompi_cv_fortran_sizeof_INTEGER * $C_BCAST_SYNC_SIZE)"`
+  FORTRAN_REDUCE_SYNC_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_long / $ompi_cv_fortran_sizeof_INTEGER * $C_REDUCE_SYNC_SIZE)"`
+  FORTRAN_BARRIER_SYNC_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_long / $ompi_cv_fortran_sizeof_INTEGER * $C_BARRIER_SYNC_SIZE)"`
+  FORTRAN_COLLECT_SYNC_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_long / $ompi_cv_fortran_sizeof_INTEGER * $C_COLLECT_SYNC_SIZE)"`
+  FORTRAN_REDUCE_MIN_WRKDATA_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_long / $ompi_cv_fortran_sizeof_INTEGER * $C_REDUCE_MIN_WRKDATA_SIZE)"`
 else
   FORTRAN_BCAST_SYNC_SIZE=0
   FORTRAN_REDUCE_SYNC_SIZE=0
