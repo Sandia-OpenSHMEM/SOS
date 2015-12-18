@@ -22,6 +22,7 @@ libsma_la_SOURCES = \
 	runtime.h \
 	runtime-pmi.c \
 	shmem_internal.h \
+	shmem_internal_op.h \
 	shmem_comm.h \
 	shmem_collectives.h \
 	shmem_synchronization.h \
@@ -42,7 +43,7 @@ libsma_la_SOURCES = \
 	collectives_c.c \
 	lock_c.c \
 	cache_management_c.c \
-	op.h
+	transport.h
 
 if HAVE_FORTRAN
 libsma_la_SOURCES += \
