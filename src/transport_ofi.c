@@ -551,8 +551,6 @@ int shmem_transport_init(long eager_size)
     if(ret!=0)
 	return ret;
 
-    assert(eager_size > p_info->tx_attr->inject_size);
-
     shmem_transport_ofi_bounce_buffer_size = eager_size;
 
     //init LL for NB buffers
