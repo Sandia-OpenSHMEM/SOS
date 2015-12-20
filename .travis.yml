@@ -5,6 +5,7 @@ compiler:
     - gcc
 env:
     - SMA_BOUNCE_SIZE=0
+    - SMA_BOUNCE_SIZE=8
     - SMA_BARRIER_ALGORITHM=auto
     - SMA_BARRIER_ALGORITHM=linear
     - SMA_BARRIER_ALGORITHM=tree
