@@ -34,7 +34,14 @@ struct fid_cq*              	shmem_transport_ofi_put_nb_cqfd;
 struct fid_cntr*            	shmem_transport_ofi_target_cntrfd;
 struct fid_cntr*            	shmem_transport_ofi_put_cntrfd;
 struct fid_cntr*            	shmem_transport_ofi_get_cntrfd;
+#ifdef ENABLE_MR_SCALABLE
 struct fid_mr*              	shmem_transport_ofi_target_mrfd;
+#else
+struct fid_mr*                  shmem_transport_ofi_target_heap_mrfd;
+struct fid_mr*                  shmem_transport_ofi_target_data_mrfd;
+uint64_t*                       shmem_transport_ofi_target_heap_key;
+uint64_t*                       shmem_transport_ofi_target_data_key;
+#endif
 uint64_t	          	shmem_transport_ofi_pending_put_counter;
 uint64_t        	 	shmem_transport_ofi_pending_get_counter;
 uint64_t			shmem_transport_ofi_pending_cq_count;
@@ -286,22 +293,24 @@ static inline int allocate_recv_cntr_mr(void)
     /* ------------------------------------*/
     /* since this is AFTER enable and RMA you must create memory regions for incoming reads/writes
      * and outgoing non-blocking Puts, specifying entire VA range */
-    ret = fi_mr_reg(shmem_transport_ofi_domainfd, 0, UINT64_MAX,
-		    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, 0,
-		    &shmem_transport_ofi_target_mrfd, NULL);
-    if(ret!=0){
-	OFI_ERRMSG("mr_reg failed\n");
-	return ret;
-    }
 
     // Create counter for incoming writes
     cntr_attr.events   = FI_CNTR_EVENTS_COMP;
     cntr_attr.flags    = 0;
 
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
-		  &shmem_transport_ofi_target_cntrfd, NULL);
+                       &shmem_transport_ofi_target_cntrfd, NULL);
     if(ret!=0){
-	OFI_ERRMSG("target cntr_open failed\n");
+        OFI_ERRMSG("target cntr_open failed\n");
+        return ret;
+    }
+
+#ifdef ENABLE_MR_SCALABLE
+    ret = fi_mr_reg(shmem_transport_ofi_domainfd, 0, UINT64_MAX,
+		    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, 0,
+		    &shmem_transport_ofi_target_mrfd, NULL);
+    if(ret!=0){
+	OFI_ERRMSG("mr_reg failed\n");
 	return ret;
     }
 
@@ -323,8 +332,118 @@ static inline int allocate_recv_cntr_mr(void)
 	return ret;
     }
 
+#else
+    /* Using MR_BASIC; register separate heap and data segments */
+    ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_heap_base,
+                    shmem_internal_heap_length,
+                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, 0,
+                    &shmem_transport_ofi_target_heap_mrfd, NULL);
+    if (ret != 0) {
+        OFI_ERRMSG("mr_reg heap failed\n");
+        return ret;
+    }
+    ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_data_base,
+                    shmem_internal_data_length,
+                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, 0,
+                    &shmem_transport_ofi_target_data_mrfd, NULL);
+    if (ret != 0) {
+        OFI_ERRMSG("mr_reg data segment failed\n");
+        return ret;
+    }
+
+    /* Bind counter with target memory region for incoming messages */
+    ret = fi_mr_bind(shmem_transport_ofi_target_heap_mrfd,
+                     &shmem_transport_ofi_target_cntrfd->fid,
+                     FI_REMOTE_WRITE | FI_REMOTE_READ);
+    if (ret != 0) {
+        OFI_ERRMSG("mr_bind heap failed\n");
+        return ret;
+    }
+    ret = fi_mr_bind(shmem_transport_ofi_target_data_mrfd,
+                     &shmem_transport_ofi_target_cntrfd->fid,
+                     FI_REMOTE_WRITE | FI_REMOTE_READ);
+    if (ret != 0) {
+        OFI_ERRMSG("mr_bind data segment failed\n");
+        return ret;
+    }
+
+    /* Bind to endpoint, incoming communication associated with endpoint now
+     * has defined resources */
+    ret = fi_ep_bind(shmem_transport_ofi_epfd,
+                     &shmem_transport_ofi_target_heap_mrfd->fid,
+                     FI_REMOTE_READ | FI_REMOTE_WRITE);
+    if (ret != 0) {
+        OFI_ERRMSG("ep_bind mr2epfd heap failed\n");
+        return ret;
+    }
+    ret = fi_ep_bind(shmem_transport_ofi_epfd,
+                     &shmem_transport_ofi_target_data_mrfd->fid,
+                     FI_REMOTE_READ | FI_REMOTE_WRITE);
+    if (ret != 0) {
+        OFI_ERRMSG("ep_bind mr2epfd data failed\n");
+        return ret;
+    }
+#endif
+
     return ret;
 }
+
+#ifndef ENABLE_MR_SCALABLE
+static int populate_mr_tables(void)
+{
+    int i, err;
+    uint64_t heap_key, data_key;
+
+    shmem_transport_ofi_target_heap_key = malloc(sizeof(uint64_t) * shmem_internal_num_pes);
+    if (NULL == shmem_transport_ofi_target_heap_key) {
+        OFI_ERRMSG("Out of memory allocating heap keytable\n");
+        return 1;
+    }
+
+    shmem_transport_ofi_target_data_key = malloc(sizeof(uint64_t) * shmem_internal_num_pes);
+    if (NULL == shmem_transport_ofi_target_data_key) {
+        OFI_ERRMSG("Out of memory allocating heap keytable\n");
+        return 1;
+    }
+
+    heap_key = fi_mr_key(shmem_transport_ofi_target_heap_mrfd);
+    data_key = fi_mr_key(shmem_transport_ofi_target_data_mrfd);
+
+    err = shmem_runtime_put("fi_heap_key", &heap_key, sizeof(uint64_t));
+    if (err) {
+        OFI_ERRMSG("Error putting heap key to runtime KVS\n");
+        return 1;
+    }
+
+    err = shmem_runtime_put("fi_data_key", &data_key, sizeof(uint64_t));
+    if (err) {
+        OFI_ERRMSG("Error putting data segment key to runtime KVS\n");
+        return 1;
+    }
+
+    shmem_runtime_exchange();
+
+    for (i = 0; i < shmem_internal_num_pes; i++) {
+        err = shmem_runtime_get(i, "fi_heap_key",
+                          &shmem_transport_ofi_target_heap_key[i],
+                          sizeof(uint64_t));
+        if (err) {
+            OFI_ERRMSG("Error getting heap key from runtime KVS\n");
+            return 1;
+        }
+        err = shmem_runtime_get(i, "fi_data_key",
+                          &shmem_transport_ofi_target_data_key[i],
+                          sizeof(uint64_t));
+        if (err) {
+            OFI_ERRMSG("Error getting data segment key from runtime KVS\n");
+            return 1;
+        }
+    }
+
+    /* FIXME: Still require remote virtual addressing */
+    return 0;
+}
+#endif /* ENABLE_MR_SCALABLE */
 
 static inline int atomic_limitations_check(void)
 {
@@ -509,7 +628,11 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
     hints.mode		      = FI_CONTEXT;
     domain_attr.data_progress = FI_PROGRESS_AUTO;
     domain_attr.resource_mgmt = FI_RM_ENABLED;
-    domain_attr.mr_mode       = FI_MR_SCALABLE;/* VA space-doesn't have to be pre-allocated */
+#ifdef ENABLE_MR_SCALABLE
+    domain_attr.mr_mode       = FI_MR_SCALABLE; /* VA space-doesn't have to be pre-allocated */
+#else
+    domain_attr.mr_mode       = FI_MR_BASIC; /* VA space is pre-allocated */
+#endif
     domain_attr.threading     = FI_THREAD_ENDPOINT; /* we promise to serialize access
 						       to endpoints. we have only one
 						       thread active at a time */
@@ -582,6 +705,12 @@ int shmem_transport_init(long eager_size)
     if(ret!=0)
 	return ret;
 
+#ifndef ENABLE_MR_SCALABLE
+    ret = populate_mr_tables();
+    if (ret != 0)
+        return ret;
+#endif
+
     ret = atomic_limitations_check();
     if(ret!=0)
 	return ret;
@@ -623,10 +752,22 @@ int shmem_transport_fini(void)
         OFI_ERRMSG("Shared context close failed (%s)", fi_strerror(errno));
     }
 
+#ifdef ENABLE_MR_SCALABLE
     if (shmem_transport_ofi_target_mrfd &&
 		    fi_close(&shmem_transport_ofi_target_mrfd->fid)) {
 	OFI_ERRMSG("Target MR close failed (%s)", fi_strerror(errno));
     }
+#else
+    if (shmem_transport_ofi_target_heap_mrfd &&
+        fi_close(&shmem_transport_ofi_target_heap_mrfd->fid)) {
+        OFI_ERRMSG("Target heap MR close failed (%s)", fi_strerror(errno));
+    }
+
+    if (shmem_transport_ofi_target_data_mrfd &&
+        fi_close(&shmem_transport_ofi_target_data_mrfd->fid)) {
+        OFI_ERRMSG("Target data MR close failed (%s)", fi_strerror(errno));
+    }
+#endif
 
     if (shmem_transport_ofi_put_nb_cqfd &&
 		    fi_close(&shmem_transport_ofi_put_nb_cqfd->fid)) {
