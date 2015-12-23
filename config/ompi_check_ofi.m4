@@ -65,9 +65,12 @@ AC_DEFUN([OMPI_CHECK_OFI],[
     LIBS="$ompi_check_ofi_$1_save_LIBS"
 
     AS_IF([test "$ompi_check_ofi_happy" = "yes"],
-	  [AS_IF([test "$enable_remote_virtual_addressing" = "yes"],
+	  [AS_IF([test "$enable_remote_virtual_addressing" = "yes" -o "$enable_mr_scalable" == "no"],
 		[ompi_check_ofi_happy="yes"],
-		[AC_MSG_ERROR([OFI transport requires remote VA enabled. Please use --enable-remote-virtual-addressing. Aborting])])])
+		[AC_MSG_ERROR([The OFI transport requires remote virtual addressing when
+  scalable memory registration is enabled.  Please enable with
+  --enable-remote-virtual-addressing or disable scalable memory registration
+  with --disable-mr-scalable.  Aborting.])])])
 
     AS_IF([test "$ompi_check_ofi_happy" = "yes"],
           [$2],
