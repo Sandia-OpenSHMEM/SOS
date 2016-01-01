@@ -41,11 +41,11 @@ struct fid_mr*                  shmem_transport_ofi_target_heap_mrfd;
 struct fid_mr*                  shmem_transport_ofi_target_data_mrfd;
 uint64_t*                       shmem_transport_ofi_target_heap_keys;
 uint64_t*                       shmem_transport_ofi_target_data_keys;
+#endif /* ENABLE_MR_SCALABLE */
 #ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
 uint8_t**                       shmem_transport_ofi_target_heap_addrs;
 uint8_t**                       shmem_transport_ofi_target_data_addrs;
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
-#endif /* ENABLE_MR_SCALABLE */
 uint64_t	          	shmem_transport_ofi_pending_put_counter;
 uint64_t        	 	shmem_transport_ofi_pending_get_counter;
 uint64_t			shmem_transport_ofi_pending_cq_count;
@@ -392,12 +392,14 @@ static inline int allocate_recv_cntr_mr(void)
     return ret;
 }
 
-#ifndef ENABLE_MR_SCALABLE
 static int publish_mr_info(void)
 {
-    int i, err;
+    int err;
+#ifndef ENABLE_MR_SCALABLE
     uint64_t heap_key, data_key;
+#endif
 
+#ifndef ENABLE_MR_SCALABLE
     heap_key = fi_mr_key(shmem_transport_ofi_target_heap_mrfd);
     data_key = fi_mr_key(shmem_transport_ofi_target_data_mrfd);
 
@@ -412,6 +414,7 @@ static int publish_mr_info(void)
         OFI_ERRMSG("Error putting data segment key to runtime KVS\n");
         return 1;
     }
+#endif /* ENABLE_MR_SCALABLE */
 
 #ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
     err = shmem_runtime_put("fi_heap_addr", &shmem_internal_heap_base, sizeof(uint8_t*));
@@ -425,7 +428,7 @@ static int publish_mr_info(void)
         OFI_ERRMSG("Error putting data segment address to runtime KVS\n");
         return 1;
     }
-#endif
+#endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 
     return 0;
 }
@@ -433,6 +436,7 @@ static int publish_mr_info(void)
 int populate_mr_tables(void) {
     int i, err;
 
+#ifndef ENABLE_MR_SCALABLE
     shmem_transport_ofi_target_heap_keys = malloc(sizeof(uint64_t) * shmem_internal_num_pes);
     if (NULL == shmem_transport_ofi_target_heap_keys) {
         OFI_ERRMSG("Out of memory allocating heap keytable\n");
@@ -444,20 +448,6 @@ int populate_mr_tables(void) {
         OFI_ERRMSG("Out of memory allocating heap keytable\n");
         return 1;
     }
-
-#ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-    shmem_transport_ofi_target_heap_addrs = malloc(sizeof(uint8_t*) * shmem_internal_num_pes);
-    if (NULL == shmem_transport_ofi_target_heap_addrs) {
-        OFI_ERRMSG("Out of memory allocating heap addrtable\n");
-        return 1;
-    }
-
-    shmem_transport_ofi_target_data_addrs = malloc(sizeof(uint8_t*) * shmem_internal_num_pes);
-    if (NULL == shmem_transport_ofi_target_data_addrs) {
-        OFI_ERRMSG("Out of memory allocating data addrtable\n");
-        return 1;
-    }
-#endif
 
     /* Called after the upper layer performs the runtime exchange */
     for (i = 0; i < shmem_internal_num_pes; i++) {
@@ -475,7 +465,24 @@ int populate_mr_tables(void) {
             OFI_ERRMSG("Error getting data segment key from runtime KVS\n");
             return 1;
         }
+    }
+#endif /* ENABLE_MR_SCALABLE */
+
 #ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    shmem_transport_ofi_target_heap_addrs = malloc(sizeof(uint8_t*) * shmem_internal_num_pes);
+    if (NULL == shmem_transport_ofi_target_heap_addrs) {
+        OFI_ERRMSG("Out of memory allocating heap addrtable\n");
+        return 1;
+    }
+
+    shmem_transport_ofi_target_data_addrs = malloc(sizeof(uint8_t*) * shmem_internal_num_pes);
+    if (NULL == shmem_transport_ofi_target_data_addrs) {
+        OFI_ERRMSG("Out of memory allocating data addrtable\n");
+        return 1;
+    }
+
+    /* Called after the upper layer performs the runtime exchange */
+    for (i = 0; i < shmem_internal_num_pes; i++) {
         err = shmem_runtime_get(i, "fi_heap_addr",
                           &shmem_transport_ofi_target_heap_addrs[i],
                           sizeof(uint8_t*));
@@ -490,12 +497,11 @@ int populate_mr_tables(void) {
             OFI_ERRMSG("Error getting data segment addr from runtime KVS\n");
             return 1;
         }
-#endif
     }
+#endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 
     return 0;
 }
-#endif /* ENABLE_MR_SCALABLE */
 
 static inline int atomic_limitations_check(void)
 {
@@ -757,11 +763,9 @@ int shmem_transport_init(long eager_size)
     if(ret!=0)
 	return ret;
 
-#ifndef ENABLE_MR_SCALABLE
     ret = publish_mr_info();
     if (ret != 0)
         return ret;
-#endif
 
     ret = atomic_limitations_check();
     if(ret!=0)
@@ -781,13 +785,11 @@ int shmem_transport_init(long eager_size)
 
 int shmem_transport_startup(void)
 {
-#ifndef ENABLE_MR_SCALABLE
     int ret;
 
     ret = populate_mr_tables();
     if (ret != 0)
         return ret;
-#endif
 
     return 0;
 }

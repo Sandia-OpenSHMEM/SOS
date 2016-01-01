@@ -47,11 +47,11 @@ extern struct fid_mr*                   shmem_transport_ofi_target_heap_mrfd;
 extern struct fid_mr*                   shmem_transport_ofi_target_data_mrfd;
 extern uint64_t*                        shmem_transport_ofi_target_heap_keys;
 extern uint64_t*                        shmem_transport_ofi_target_data_keys;
+#endif /* ENABLE_MR_SCALABLE */
 #ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
 extern uint8_t**                       shmem_transport_ofi_target_heap_addrs;
 extern uint8_t**                       shmem_transport_ofi_target_data_addrs;
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
-#endif /* ENABLE_MR_SCALABLE */
 extern uint64_t          		shmem_transport_ofi_pending_put_counter;
 extern uint64_t 	       	 	shmem_transport_ofi_pending_get_counter;
 extern uint64_t				shmem_transport_ofi_pending_cq_count;
@@ -66,9 +66,26 @@ extern size_t    			shmem_transport_ofi_bounce_buffer_size;
 
 #ifdef ENABLE_MR_SCALABLE
 static inline void fi_get_mr(const void *addr, int dest_pe, uint8_t **mr_addr, uint64_t *key) {
-    *mr_addr = (uint8_t*) addr;
     *key = 0;
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    *mr_addr = (uint8_t*) addr;
+#else
+    if ((void*) addr >= shmem_internal_data_base &&
+        (uint8_t*) addr < (uint8_t*) shmem_internal_data_base + shmem_internal_data_length) {
+
+        *mr_addr = shmem_transport_ofi_target_data_addrs[dest_pe] +
+            ((uint8_t *) addr - (uint8_t *) shmem_internal_data_base);
+
+    } else if ((void*) addr >= shmem_internal_heap_base &&
+              (uint8_t*) addr < (uint8_t*) shmem_internal_heap_base + shmem_internal_heap_length) {
+
+        *mr_addr = shmem_transport_ofi_target_heap_addrs[dest_pe] +
+            ((uint8_t *) addr - (uint8_t *) shmem_internal_heap_base);
+    }
+#endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
+
 }
+
 #else
 static inline void fi_get_mr(const void *addr, int dest_pe, uint8_t **mr_addr, uint64_t *key) {
     if ((void*) addr >= shmem_internal_data_base &&
