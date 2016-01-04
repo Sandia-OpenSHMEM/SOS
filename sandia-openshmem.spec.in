@@ -1,0 +1,76 @@
+%{!?configargs: %global configargs %{nil}}
+%{!?testdir: %global testdir %{buildroot}%{_datadir}/%{name}-%{version}/tests}
+
+Name: sandia-openshmem
+Version: @VERSION@
+Release: 1%{?dist}
+Summary: Sandia OpenSHMEM.
+
+Group: OpenSHMEM
+License: BSD
+URL: http://github.com/regrant/sandia-shmem
+Source0: %{name}-%{version}.tar.gz
+
+%description
+Sandia OpenSHMEM.
+
+%package devel
+Summary: Development files for Sandia OpenSHMEM
+Group: System Environment/Libraries
+Requires: %{name} = %{version}
+
+%description devel
+Development files for Sandia OpenSHMEM.
+
+%package tests
+Summary: Tests programs for Sandia OpenSHMEM
+Group: System Environment/Libraries
+Requires: %{name} = %{version}
+
+%description tests
+Tests programs for Sandia OpenSHMEM
+
+%prep
+%setup -q -n %{name}-%{version}
+
+%build
+%configure %{configargs}
+make %{?_smp_mflags}
+# Build tests
+make check TESTS=
+
+%install
+rm -rf %{buildroot}
+%makeinstall
+# remove unpackaged files from the buildroot
+rm -f %{buildroot}%{_libdir}/*.la
+# Prepare tests
+install -d %{testdir}/unit
+install test/unit/.libs/* %{testdir}/unit
+install -d %{testdir}/performance
+install test/performance/.libs/* %{testdir}/performance
+
+%clean
+rm -rf %{buildroot}
+
+%post -p /sbin/ldconfig
+%postun -p /sbin/ldconfig
+
+%files
+%defattr(-,root,root,-)
+%{_libdir}/lib*.so.*
+%doc LICENSE README NEWS
+
+%files devel
+%defattr(-,root,root)
+%{_bindir}/*
+%{_libdir}/lib*.so
+%{_libdir}/*.a
+%{_includedir}/*
+
+%files tests
+%defattr(-,root,root)
+%{_datadir}/%{name}-%{version}/tests
+
+
+%changelog
