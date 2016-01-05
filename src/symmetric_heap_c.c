@@ -99,6 +99,7 @@ static void *mmap_alloc(size_t bytes)
                0);
     if (ret == MAP_FAILED) {
         perror("mmap()");
+        return NULL;
     }
     return ret;
 }
