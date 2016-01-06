@@ -58,7 +58,8 @@ TESTS = \
 	lfinc \
 	mt_a2a \
 	shmem_info \
-	global_exit
+	global_exit \
+	asym_alloc
 
 if USE_PORTALS4
 TESTS += \
@@ -228,3 +229,6 @@ shmem_info_LDADD = $(top_builddir)/src/libsma.la
 
 shmem_info_f_SOURCES = shmem_info_f.f90
 shmem_info_f_LDADD = $(top_builddir)/src/libsma.la
+
+asym_alloc_SOURCES = asym_alloc.c
+asym_alloc_LDADD = $(top_builddir)/src/libsma.la
