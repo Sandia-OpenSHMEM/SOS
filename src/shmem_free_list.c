@@ -31,7 +31,10 @@ shmem_free_list_init(unsigned int element_size,
     fl->init_fn = init_fn;
     SHMEM_MUTEX_INIT(fl->lock);
     ret = shmem_free_list_more(fl);
-    if (0 != ret) return NULL;
+    if (0 != ret) {
+        free(fl);
+        return NULL;
+    }
 
     return fl;
 }

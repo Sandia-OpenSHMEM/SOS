@@ -663,6 +663,14 @@ int shmem_transport_fini(void)
         OFI_ERRMSG("Fabric close failed (%s)", fi_strerror(errno));
     }
 
+    if (NULL != shmem_transport_ofi_bounce_buffers) {
+        shmem_free_list_destroy(shmem_transport_ofi_bounce_buffers);
+    }
+
+    if (NULL != shmem_transport_ofi_frag_buffers) {
+        shmem_free_list_destroy(shmem_transport_ofi_frag_buffers);
+    }
+
 #ifdef USE_AV_MAP
   free(addr_table);
 #endif
