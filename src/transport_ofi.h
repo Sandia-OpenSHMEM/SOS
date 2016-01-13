@@ -47,6 +47,7 @@ extern uint64_t				shmem_transport_ofi_pending_cq_count;
 extern uint64_t				shmem_transport_ofi_max_poll;
 extern size_t          		 	shmem_transport_ofi_max_buffered_send;
 extern size_t    		 	shmem_transport_ofi_max_atomic_size;
+extern size_t    			shmem_transport_ofi_max_msg_size;
 extern size_t    			shmem_transport_ofi_bounce_buffer_size;
 
 #ifndef MIN
@@ -340,7 +341,9 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
 		shmem_transport_ofi_pending_cq_count++;
 
 	} else {
-		shmem_transport_ofi_long_frag_t *long_frag = create_long_frag(completion);
+		assert( len <= shmem_transport_ofi_max_msg_size);
+
+                shmem_transport_ofi_long_frag_t *long_frag = create_long_frag(completion);
 
 		polled = 0;
 
@@ -576,6 +579,9 @@ shmem_transport_atomic_nb(void *target, void *source, size_t full_len,
 
         } else {
 		size_t sent = 0;
+		assert((shmem_transport_ofi_max_atomic_size/SHMEM_Dtsize[datatype])
+			 <= shmem_transport_ofi_max_msg_size);
+
 		shmem_transport_ofi_long_frag_t *long_frag = create_long_frag(completion);
 
 		while (sent < len) {

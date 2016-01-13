@@ -41,6 +41,7 @@ uint64_t			shmem_transport_ofi_pending_cq_count;
 uint64_t			shmem_transport_ofi_max_poll;
 size_t           		shmem_transport_ofi_max_buffered_send;
 size_t    	 		shmem_transport_ofi_max_atomic_size;
+size_t    			shmem_transport_ofi_max_msg_size;
 size_t    			shmem_transport_ofi_bounce_buffer_size;
 fi_addr_t			*addr_table;
 
@@ -534,6 +535,9 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
 	OFI_ERRMSG("pinfo is null\n");
 	return ret;
     }
+
+    assert((*p_info)->ep_attr->max_msg_size);
+    shmem_transport_ofi_max_msg_size = (*p_info)->ep_attr->max_msg_size;
 
     return ret;
 
