@@ -44,12 +44,19 @@ shmem_internal_clear_lock(long *lockp)
     cond = shmem_internal_my_pe + 1;
     shmem_internal_cswap(&(lock->last), &zero, &curr, &cond, sizeof(int), 0, DTYPE_INT);
     shmem_internal_get_wait();
+
     /* if local PE was not the last to hold the lock, have to look for the next in line */
     if (curr != shmem_internal_my_pe + 1) {
         /* wait for next part of the data block to be non-zero */
-        while (NEXT(lock->data) == 0) {
-            shmem_int_wait(&(lock->data), SIGNAL(lock->data));
+        for (;;) {
+            lock_t lock_cur = *lock;
+
+            if (NEXT(lock_cur.data) != 0)
+                break;
+
+            shmem_int_wait(&(lock->data), lock_cur.data);
         }
+
         /* set the signal bit on new lock holder */
         shmem_internal_mswap(&(lock->data), &sig, &curr, &sig, sizeof(int), NEXT(lock->data) - 1, DTYPE_INT);
         shmem_internal_get_wait();
