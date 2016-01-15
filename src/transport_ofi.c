@@ -500,6 +500,8 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
     struct fi_fabric_attr fabric_attr = {0};
     struct fi_ep_attr   ep_attr = {0};
 
+    shmem_transport_ofi_max_buffered_send = sizeof(long double);
+
     fabric_attr.prov_name = provname;
 
     hints.caps	  = FI_RMA |     /* request rma capability
@@ -518,7 +520,7 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
     ep_attr.type              = FI_EP_RDM; /* reliable connectionless */
     hints.fabric_attr	      = &fabric_attr;
     tx_attr.op_flags          = FI_DELIVERY_COMPLETE;
-    tx_attr.inject_size       = sizeof(long double);
+    tx_attr.inject_size       = shmem_transport_ofi_max_buffered_send;
     hints.tx_attr	      = &tx_attr; /* TODO: fill tx_attr */
     hints.rx_attr	      = NULL;
     hints.ep_attr             = &ep_attr;
@@ -536,8 +538,12 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
 	return ret;
     }
 
-    assert((*p_info)->ep_attr->max_msg_size);
-    shmem_transport_ofi_max_msg_size = (*p_info)->ep_attr->max_msg_size;
+    if((*p_info)->ep_attr->max_msg_size) {
+	shmem_transport_ofi_max_msg_size = (*p_info)->ep_attr->max_msg_size;
+    } else {
+	OFI_ERRMSG("provider hasn't set max_msg_size\n");
+	return 1;
+    }
 
     return ret;
 

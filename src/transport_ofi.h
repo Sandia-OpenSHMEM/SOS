@@ -343,7 +343,7 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
 	} else {
 		assert( len <= shmem_transport_ofi_max_msg_size);
 
-                shmem_transport_ofi_long_frag_t *long_frag = create_long_frag(completion);
+		shmem_transport_ofi_long_frag_t *long_frag = create_long_frag(completion);
 
 		polled = 0;
 
@@ -374,8 +374,10 @@ void
 shmem_transport_get(void *target, const void *source, size_t len, int pe)
 {
 	int ret = 0;
-        uint64_t dst = (uint64_t) pe;
+	uint64_t dst = (uint64_t) pe;
 	uint64_t polled = 0;
+
+	assert( len <= shmem_transport_ofi_max_msg_size);
 
 	do {
  		ret = fi_read(shmem_transport_ofi_cntr_epfd,
@@ -579,7 +581,7 @@ shmem_transport_atomic_nb(void *target, void *source, size_t full_len,
 
         } else {
 		size_t sent = 0;
-		assert((shmem_transport_ofi_max_atomic_size/SHMEM_Dtsize[datatype])
+		assert(shmem_transport_ofi_max_atomic_size
 			 <= shmem_transport_ofi_max_msg_size);
 
 		shmem_transport_ofi_long_frag_t *long_frag = create_long_frag(completion);
