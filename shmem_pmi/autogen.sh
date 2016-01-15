@@ -3,7 +3,10 @@
 set -x
 test -d ./config || mkdir ./config
 aclocal -I config
-libtoolize --force --copy
+case `uname` in
+    Darwin*) glibtoolize --force --copy ;;
+    *)        libtoolize --force --copy ;;
+esac
 autoheader
 automake --foreign --add-missing --copy
 autoconf
