@@ -107,6 +107,11 @@ AC_ARG_ENABLE([libtool-wrapper],
 AS_IF([test "$enable_libtool_wrapper" = "no"], [LIBTOOL_WRAPPER_LDFLAGS="-no-install"], [LIBTOOL_WRAPPER_LDFLAGS=])
 AC_SUBST([LIBTOOL_WRAPPER_LDFLAGS])
 
+AC_ARG_ENABLE([rpath],
+  [AS_HELP_STRING([--disable-rpath],
+    [Disable use of rpath in compiler wrappers and building tests (default: enabled)])])
+AS_IF([test "$enable_rpath" = "no"], [RPATH_LDFLAGS=], [RPATH_LDFLAGS="-Wl,-rpath -Wl,$libdir"])
+
 
 AC_ARG_ENABLE([profiling],
     [AC_HELP_STRING([--enable-profiling],
@@ -339,11 +344,11 @@ AC_SUBST(CLEANFILES)
 # last minute updates of the flags so that tests don't fail oddly if
 # portals libdir isn't in LD_LIBRARY_PATH...
 CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS $ofi_CPPFLAGS $XPMEM_CPPFLAGS $pmi_CPPFLAGS"
-LDFLAGS="$LDFLAGS $portals4_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
+LDFLAGS="$LDFLAGS $portals4_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS $RPATH_LDFLAGS"
 LIBS="$LIBS $portals4_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
 
 # wrapper compiler gorp
-WRAPPER_COMPILER_EXTRA_LDFLAGS="$portals4_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
+WRAPPER_COMPILER_EXTRA_LDFLAGS="$portals4_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS $RPATH_LDFLAGS"
 WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LDFLAGS)
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
