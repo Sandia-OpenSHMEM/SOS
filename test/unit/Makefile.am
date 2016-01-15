@@ -50,6 +50,7 @@ TESTS = \
 	atomic_inc \
 	set_lock \
 	test_lock \
+	test_lock_cswap \
 	fcollect64 \
 	bigput \
 	bigget \
@@ -192,6 +193,9 @@ set_lock_LDADD = $(top_builddir)/src/libsma.la
 
 test_lock_SOURCES = test_lock.c
 test_lock_LDADD = $(top_builddir)/src/libsma.la
+
+test_lock_cswap_SOURCES = test_lock_cswap.c
+test_lock_cswap_LDADD = $(top_builddir)/src/libsma.la
 
 fcollect64_SOURCES = fcollect64.c
 fcollect64_LDADD = $(top_builddir)/src/libsma.la
