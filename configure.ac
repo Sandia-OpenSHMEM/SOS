@@ -124,6 +124,12 @@ AC_ARG_ENABLE([long-fortran-header],
 AS_IF([test "$enable_long_fortran_header" = "no"], [FORTRAN_LONG_HEADER="!"], [FORTRAN_LONG_HEADER=" "])
 AC_SUBST([FORTRAN_LONG_HEADER])
 
+AC_ARG_ENABLE([mr-scalable],
+    [AC_HELP_STRING([--disable-mr-scalable],
+                    [Disable the use of scalable memory regions in the OFI transport.  Required by some providers. (default: enabled)])])
+AS_IF([test "$enable_mr_scalable" != "no"],
+      [AC_DEFINE([ENABLE_MR_SCALABLE], [1], [If defined, the OFI transport will use FI_MR_SCALABLE.  Otherwise, FI_MR_BASIC is used.])])
+
 dnl check for programs
 
 AC_PROG_CC
