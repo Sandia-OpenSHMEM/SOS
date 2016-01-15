@@ -107,11 +107,10 @@ AC_ARG_ENABLE([libtool-wrapper],
 AS_IF([test "$enable_libtool_wrapper" = "no"], [LIBTOOL_WRAPPER_LDFLAGS="-no-install"], [LIBTOOL_WRAPPER_LDFLAGS=])
 AC_SUBST([LIBTOOL_WRAPPER_LDFLAGS])
 
-AC_ARG_ENABLE([wrapper-rpath],
-  [AS_HELP_STRING([--enable-wrapper-rpath],
-    [Enable use of libtool executable wrappers for tests (default: disabled)])])
-AS_IF([test "$enable_wrapper_rpath" = "yes"], [RPATH_LDFLAGS="-Wl,-rpath -Wl,$libdir"], [RPATH_LDFLAGS=])
-AC_SUBST([ENABLE_WRAPPER_RPATH])
+AC_ARG_ENABLE([rpath],
+  [AS_HELP_STRING([--disable-rpath],
+    [Disable use of rpath in compiler wrappers and building tests (default: enabled)])])
+AS_IF([test "$enable_rpath" = "no"], [RPATH_LDFLAGS=], [RPATH_LDFLAGS="-Wl,-rpath -Wl,$libdir"])
 
 
 AC_ARG_ENABLE([profiling],
