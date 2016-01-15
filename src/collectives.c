@@ -672,6 +672,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int ty
 
    if (PE_size == 1) {
       memcpy(target, source, type_size*count);
+      free(current_target);
       return;
    }
 

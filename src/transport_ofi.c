@@ -41,6 +41,7 @@ uint64_t			shmem_transport_ofi_pending_cq_count;
 uint64_t			shmem_transport_ofi_max_poll;
 size_t           		shmem_transport_ofi_max_buffered_send;
 size_t    	 		shmem_transport_ofi_max_atomic_size;
+size_t    			shmem_transport_ofi_max_msg_size;
 size_t    			shmem_transport_ofi_bounce_buffer_size;
 fi_addr_t			*addr_table;
 
@@ -499,6 +500,8 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
     struct fi_fabric_attr fabric_attr = {0};
     struct fi_ep_attr   ep_attr = {0};
 
+    shmem_transport_ofi_max_buffered_send = sizeof(long double);
+
     fabric_attr.prov_name = provname;
 
     hints.caps	  = FI_RMA |     /* request rma capability
@@ -517,7 +520,7 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
     ep_attr.type              = FI_EP_RDM; /* reliable connectionless */
     hints.fabric_attr	      = &fabric_attr;
     tx_attr.op_flags          = FI_DELIVERY_COMPLETE;
-    tx_attr.inject_size       = sizeof(long double);
+    tx_attr.inject_size       = shmem_transport_ofi_max_buffered_send;
     hints.tx_attr	      = &tx_attr; /* TODO: fill tx_attr */
     hints.rx_attr	      = NULL;
     hints.ep_attr             = &ep_attr;
@@ -533,6 +536,13 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
     if(!*p_info) {
 	OFI_ERRMSG("pinfo is null\n");
 	return ret;
+    }
+
+    if((*p_info)->ep_attr->max_msg_size) {
+	shmem_transport_ofi_max_msg_size = (*p_info)->ep_attr->max_msg_size;
+    } else {
+	OFI_ERRMSG("provider hasn't set max_msg_size\n");
+	return 1;
     }
 
     return ret;
@@ -661,6 +671,14 @@ int shmem_transport_fini(void)
     if (shmem_transport_ofi_fabfd &&
 		    fi_close(&shmem_transport_ofi_fabfd->fid)) {
         OFI_ERRMSG("Fabric close failed (%s)", fi_strerror(errno));
+    }
+
+    if (NULL != shmem_transport_ofi_bounce_buffers) {
+        shmem_free_list_destroy(shmem_transport_ofi_bounce_buffers);
+    }
+
+    if (NULL != shmem_transport_ofi_frag_buffers) {
+        shmem_free_list_destroy(shmem_transport_ofi_frag_buffers);
     }
 
 #ifdef USE_AV_MAP

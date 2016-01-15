@@ -67,6 +67,21 @@ static char shmem_internal_my_hostname[MAXHOSTNAMELEN];
 static char shmem_internal_my_hostname[HOST_NAME_MAX];
 #endif
 
+
+static inline long errchk_atol(char *s)
+{
+    long val;
+    char *e;
+    errno = 0;
+
+    val = strtol(s,&e,0);
+    if(errno != 0) {
+        perror("env var conversion");
+        exit(1);
+    }
+
+    return val;
+}
  
 /* atol() + optional scaled suffix recognition: 1K, 2M, 3G, 1T */
 static long
@@ -74,8 +89,12 @@ atol_scaled(char *s)
 {
     long val;
     char *e;
+    errno = 0;
 
     val = strtol(s,&e,0);
+    if(errno != 0 || e == s) {
+        shmem_runtime_abort(1, "env var conversion");
+    }
     if (e == NULL || *e =='\0')
         return val;
 
@@ -105,7 +124,7 @@ get_env_long(const char* name, int is_sized, long default_value)
         if (is_sized) {
             return atol_scaled(env_value);
         } else {
-            return atol(env_value);
+            return errchk_atol(env_value);
         }
     }
 
@@ -116,7 +135,7 @@ get_env_long(const char* name, int is_sized, long default_value)
         if (is_sized) {
             return atol_scaled(env_value);
         } else {
-            return atol(env_value);
+            return errchk_atol(env_value);
         }
     }
 
@@ -331,8 +350,9 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     /* get hostname for shmem_getnodename */
     if (gethostname(shmem_internal_my_hostname,
                     sizeof(shmem_internal_my_hostname))) {
-        sprintf(shmem_internal_my_hostname, "ERR: gethostname '%s'?",
-                strerror(errno));
+        snprintf(shmem_internal_my_hostname,
+                    sizeof(shmem_internal_my_hostname),
+                    "ERR: gethostname '%s'?", strerror(errno));
     }
 
     /* last minute printing of information */
