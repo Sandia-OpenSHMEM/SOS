@@ -93,7 +93,6 @@ install:
 
 script:
     - export BASE_PATH=$PATH
-    - export BASE_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
     ###
     ### Build and check Portals
     ###
@@ -119,7 +118,6 @@ script:
     ### Run the UH test suite (Portals)
     ###
     - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - export LD_LIBRARY_PATH=$TRAVIS_INSTALL/sandia-shmem-portals4/lib:$BASE_LD_LIBRARY_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/tests-uh
     - make $TRAVIS_PAR_MAKE C_feature_tests F_feature_tests
@@ -134,7 +132,6 @@ script:
     ### Run the UH test suite (OFI)
     ###
     - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - export LD_LIBRARY_PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/lib:$BASE_LD_LIBRARY_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/tests-uh
     - make $TRAVIS_PAR_MAKE C_feature_tests F_feature_tests
@@ -149,7 +146,6 @@ script:
     ### Run ISx (Portals)
     ###
     - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - export LD_LIBRARY_PATH=$TRAVIS_INSTALL/sandia-shmem-portals4/lib:$BASE_LD_LIBRARY_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/ISx/SHMEM
     - make CC=oshcc LDLIBS=-lm
@@ -158,7 +154,6 @@ script:
     ### Run ISx (OFI)
     ###
     - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - export LD_LIBRARY_PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/lib:$BASE_LD_LIBRARY_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/ISx/SHMEM
     - make CC=oshcc LDLIBS=-lm
@@ -170,7 +165,6 @@ script:
     ### Run PRK (Portals)
     ###
     - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - export LD_LIBRARY_PATH=$TRAVIS_INSTALL/sandia-shmem-portals4/lib:$BASE_LD_LIBRARY_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/PRK
     - make LIBS="-lm" allshmem
@@ -179,7 +173,6 @@ script:
     ### Run PRK (OFI)
     ###
     - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - export LD_LIBRARY_PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/lib:$BASE_LD_LIBRARY_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/PRK
     - make LIBS="-lm" allshmem
