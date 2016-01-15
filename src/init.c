@@ -92,9 +92,8 @@ atol_scaled(char *s)
     errno = 0;
 
     val = strtol(s,&e,0);
-    if(errno != 0) {
-        perror("env var conversion");
-        exit(1);
+    if(errno != 0 || e == s) {
+        shmem_runtime_abort(1, "env var conversion");
     }
     if (e == NULL || *e =='\0')
         return val;

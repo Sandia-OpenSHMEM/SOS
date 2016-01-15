@@ -120,6 +120,10 @@ extern shmem_free_list_t *shmem_transport_ofi_bounce_buffers;
 
 extern shmem_free_list_t *shmem_transport_ofi_frag_buffers;
 
+static const char max_msg_error[] = "Error: Message exceeds provider's " \
+				"maximum message size. This limitation will "\
+				"be corrected in a future release.";
+
 #define OFI_ERRMSG(...) { fprintf(stderr, __FILE__ ":%d: \n", __LINE__); \
                             fprintf(stderr, __VA_ARGS__);  }
 
@@ -341,7 +345,10 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
 		shmem_transport_ofi_pending_cq_count++;
 
 	} else {
-		assert( len <= shmem_transport_ofi_max_msg_size);
+		if(len > shmem_transport_ofi_max_msg_size) {
+			OFI_ERRMSG(max_msg_error);
+			RAISE_ERROR(-1);
+                }
 
 		shmem_transport_ofi_long_frag_t *long_frag = create_long_frag(completion);
 
@@ -377,7 +384,10 @@ shmem_transport_get(void *target, const void *source, size_t len, int pe)
 	uint64_t dst = (uint64_t) pe;
 	uint64_t polled = 0;
 
-	assert( len <= shmem_transport_ofi_max_msg_size);
+	if(len > shmem_transport_ofi_max_msg_size) {
+		OFI_ERRMSG(max_msg_error);
+		RAISE_ERROR(-1);
+	}
 
 	do {
  		ret = fi_read(shmem_transport_ofi_cntr_epfd,
@@ -581,8 +591,11 @@ shmem_transport_atomic_nb(void *target, void *source, size_t full_len,
 
         } else {
 		size_t sent = 0;
-		assert(shmem_transport_ofi_max_atomic_size
-			 <= shmem_transport_ofi_max_msg_size);
+		if(shmem_transport_ofi_max_atomic_size
+			 > shmem_transport_ofi_max_msg_size) {
+			OFI_ERRMSG(max_msg_error);
+			RAISE_ERROR(-1);
+		}
 
 		shmem_transport_ofi_long_frag_t *long_frag = create_long_frag(completion);
 
