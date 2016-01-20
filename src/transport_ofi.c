@@ -58,6 +58,10 @@ fi_addr_t			*addr_table;
 
 int SHMEM_Dtsize[FI_DATATYPE_LAST];
 
+const char max_msg_error[] = "Error: Message exceeds provider's " \
+                             "maximum message size. This limitation will " \
+                             "be corrected in a future release.\n";
+
 static inline void init_dt_size(void)
 {
   SHMEM_Dtsize[FI_INT8]                = sizeof(int8_t);

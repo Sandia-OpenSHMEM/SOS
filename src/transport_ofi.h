@@ -185,9 +185,7 @@ extern shmem_free_list_t *shmem_transport_ofi_bounce_buffers;
 
 extern shmem_free_list_t *shmem_transport_ofi_frag_buffers;
 
-static const char max_msg_error[] = "Error: Message exceeds provider's " \
-				"maximum message size. This limitation will "\
-				"be corrected in a future release.";
+extern const char max_msg_error[];
 
 #define OFI_ERRMSG(...) { fprintf(stderr, __FILE__ ":%d: \n", __LINE__); \
                             fprintf(stderr, __VA_ARGS__);  }
