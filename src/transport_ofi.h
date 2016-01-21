@@ -415,26 +415,42 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
 
 		shmem_transport_ofi_pending_cq_count++;
 
-	} else {
-		if(len > shmem_transport_ofi_max_msg_size) {
-			OFI_ERRMSG(max_msg_error);
-			RAISE_ERROR(-1);
-                }
+	} else if (len <= shmem_transport_ofi_max_msg_size) {
+            polled = 0;
+
+            do {
+                ret = fi_write(shmem_transport_ofi_cntr_epfd,
+                               source, len, NULL,
+                               GET_DEST(dst), (uint64_t) addr,
+                               key, NULL);
+            } while (try_again(ret,&polled));
+
+            shmem_transport_ofi_pending_put_counter++;
+        } else {
+                uint8_t *frag_source = (uint8_t *) source;
+                uint64_t frag_target = (uint64_t) addr;
+                size_t frag_len = len;
 
 		shmem_transport_ofi_long_frag_t *long_frag = create_long_frag(completion);
 
-		polled = 0;
+                while (frag_source < ((uint8_t *) source) + len) {
+                    frag_len = MIN(shmem_transport_ofi_max_msg_size, (size_t) (((uint8_t *) source) + len - frag_source));
+                    polled = 0;
 
-		do {
-			ret = fi_write(shmem_transport_ofi_epfd,
-					source, len, NULL,
-					GET_DEST(dst), (uint64_t) addr,
-					key, &long_frag->frag.context);
-		} while(try_again(ret,&polled));
+                    do {
+                        ret = fi_write(shmem_transport_ofi_epfd,
+                                       frag_source, frag_len, NULL,
+                                       GET_DEST(dst), frag_target,
+                                       key, &long_frag->frag.context);
+                    } while (try_again(ret,&polled));
 
-		(*(long_frag->completion))++;
-		long_frag->reference++;
-		shmem_transport_ofi_pending_cq_count++;
+                    (*(long_frag->completion))++;
+                    long_frag->reference++;
+                    shmem_transport_ofi_pending_cq_count++;
+
+                    frag_source += frag_len;
+                    frag_target += frag_len;
+                }
 	}
 }
 
