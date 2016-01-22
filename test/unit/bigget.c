@@ -178,6 +178,14 @@ main(int argc, char **argv)
 
     shmem_barrier_all();
 
+    for (i = 0; i < elements; i++) {
+      if (Target[i] != i + 1) {
+          printf("%d: Error Target[%d] = %d, expected %d\n",
+                 me, i, Target[i], i + 1);
+          shmem_global_exit(1);
+      }
+    }
+
     if ( Track && me == 0 )
 		fprintf(stderr,"\n");
 
