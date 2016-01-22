@@ -196,6 +196,24 @@ shmem_internal_atomic_small(void *target, const void *source, size_t len,
 
 static inline
 void
+shmem_internal_atomic_fetch(void *target, const void *source, size_t len,
+                            int pe, shm_internal_datatype_t datatype)
+{
+    shmem_transport_atomic_fetch(target, source, len, pe, datatype);
+}
+
+
+static inline
+void
+shmem_internal_atomic_set(void *target, const void *source, size_t len,
+                          int pe, shm_internal_datatype_t datatype)
+{
+    shmem_transport_atomic_set(target, source, len, pe, datatype);
+}
+
+
+static inline
+void
 shmem_internal_atomic_nb(void *target, const void *source, size_t len,
 	              int pe, shm_internal_op_t op, shm_internal_datatype_t datatype,
                       long *completion)

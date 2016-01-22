@@ -931,6 +931,28 @@ shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
 
 
 static inline
+void
+shmem_transport_atomic_set(void *target, const void *source, size_t len,
+                           int pe, int datatype)
+{
+    assert(len <= shmem_transport_portals4_max_atomic_size);
+
+    shmem_transport_put_small(target, source, len, pe);
+}
+
+
+static inline
+void
+shmem_transport_atomic_fetch(void *target, const void *source, size_t len,
+                             int pe, int datatype)
+{
+    assert(len <= shmem_transport_portals4_max_fetch_atomic_size);
+
+    shmem_transport_get(target, source, len, pe);
+}
+
+
+static inline
 int shmem_transport_atomic_supported(ptl_op_t op, ptl_datatype_t datatype)
 {
     return 1;

@@ -659,6 +659,72 @@ shmem_transport_atomic_small(void *target, const void *source, size_t len,
 
 static inline
 void
+shmem_transport_atomic_set(void *target, const void *source, size_t len,
+                           int pe, int datatype)
+{
+
+    int ret = 0;
+    uint64_t dst = (uint64_t) pe;
+    uint64_t polled = 0;
+    uint64_t key;
+    uint8_t *addr;
+
+    fi_get_mr(target, pe, &addr, &key);
+
+    assert(SHMEM_Dtsize[datatype] <= shmem_transport_ofi_max_atomic_size);
+
+    do {
+        ret = fi_inject_atomic(shmem_transport_ofi_cntr_epfd,
+                               source,
+                               1,
+                               GET_DEST(dst),
+                               (uint64_t) addr,
+                               key,
+                               datatype,
+                               FI_ATOMIC_WRITE);
+    } while (try_again(ret, &polled));
+
+    shmem_transport_ofi_pending_put_counter++;
+}
+
+
+static inline
+void
+shmem_transport_atomic_fetch(void *target, const void *source, size_t len,
+                            int pe, int datatype)
+{
+
+    int ret = 0;
+    uint64_t dst = (uint64_t) pe;
+    uint64_t polled = 0;
+    uint64_t key;
+    uint8_t *addr;
+
+    fi_get_mr(source, pe, &addr, &key);
+
+    assert(SHMEM_Dtsize[datatype] <= shmem_transport_ofi_max_atomic_size);
+
+    do {
+        ret = fi_fetch_atomic(shmem_transport_ofi_cntr_epfd,
+                              NULL,
+                              1,
+                              NULL,
+                              (void *) target,
+                              NULL,
+                              GET_DEST(dst),
+                              (uint64_t) addr,
+                              key,
+                              datatype,
+                              FI_ATOMIC_READ,
+                              NULL);
+    } while (try_again(ret, &polled));
+
+    shmem_transport_ofi_pending_get_counter++;
+}
+
+
+static inline
+void
 shmem_transport_atomic_nb(void *target, const void *source, size_t full_len,
                                    int pe, int op, int datatype,
                                    long *completion)

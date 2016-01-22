@@ -85,6 +85,36 @@
 #pragma weak shmem_longlong_fadd = pshmem_longlong_fadd
 #define shmem_longlong_fadd pshmem_longlong_fadd
 
+#pragma weak shmem_int_fetch = pshmem_int_fetch
+#define shmem_int_fetch pshmem_int_fetch
+
+#pragma weak shmem_long_fetch = pshmem_long_fetch
+#define shmem_long_fetch pshmem_long_fetch
+
+#pragma weak shmem_longlong_fetch = pshmem_longlong_fetch
+#define shmem_longlong_fetch pshmem_longlong_fetch
+
+#pragma weak shmem_float_fetch = pshmem_float_fetch
+#define shmem_float_fetch pshmem_float_fetch
+
+#pragma weak shmem_double_fetch = pshmem_double_fetch
+#define shmem_double_fetch pshmem_double_fetch
+
+#pragma weak shmem_int_set = pshmem_int_set
+#define shmem_int_set pshmem_int_set
+
+#pragma weak shmem_long_set = pshmem_long_set
+#define shmem_long_set pshmem_long_set
+
+#pragma weak shmem_longlong_set = pshmem_longlong_set
+#define shmem_longlong_set pshmem_longlong_set
+
+#pragma weak shmem_float_set = pshmem_float_set
+#define shmem_float_set pshmem_float_set
+
+#pragma weak shmem_double_set = pshmem_double_set
+#define shmem_double_set pshmem_double_set
+
 #endif /* ENABLE_PROFILING */
 
 
@@ -343,3 +373,50 @@ shmem_longlong_fadd(long long *target, long long value,
     shmem_internal_get_wait();
     return oldval;
 }
+
+
+/** Generate atomic fetch C bindings */
+#define SHMEM_CAPI_ATOMIC_FETCH(type_name, c_type, dtype)                       \
+c_type                                                                          \
+shmem_##type_name##_fetch(const c_type *source, int pe)                         \
+{                                                                               \
+    c_type val;                                                                 \
+                                                                                \
+    SHMEM_ERR_CHECK_INITIALIZED();                                              \
+                                                                                \
+    shmem_internal_atomic_fetch(&val, (void *) source, sizeof(c_type), pe,      \
+                                dtype);                                         \
+    shmem_internal_get_wait();                                                  \
+    return val;                                                                 \
+}
+
+SHMEM_CAPI_ATOMIC_FETCH(int, int, DTYPE_INT)
+SHMEM_CAPI_ATOMIC_FETCH(long, long, DTYPE_LONG)
+SHMEM_CAPI_ATOMIC_FETCH(longlong, long long, DTYPE_LONG_LONG)
+SHMEM_CAPI_ATOMIC_FETCH(float, float, SHM_INTERNAL_FLOAT)
+SHMEM_CAPI_ATOMIC_FETCH(double, double, SHM_INTERNAL_DOUBLE)
+
+#undef SHMEM_CAPI_ATOMIC_FETCH
+
+
+/* Generate atomic set C bindings
+ *
+ * Note: value is passed to the transport from the stack.  Transport must be
+ * finished with value argument when shmem_internal_atomic_set returns.
+ */
+#define SHMEM_CAPI_ATOMIC_SET(type_name, c_type, dtype)                         \
+void                                                                            \
+shmem_##type_name##_set(const c_type *dest, c_type value, int pe)               \
+{                                                                               \
+    SHMEM_ERR_CHECK_INITIALIZED();                                              \
+                                                                                \
+    shmem_internal_atomic_set((void *) dest, &value, sizeof(c_type), pe, dtype);\
+}
+
+SHMEM_CAPI_ATOMIC_SET(int, int, DTYPE_INT)
+SHMEM_CAPI_ATOMIC_SET(long, long, DTYPE_LONG)
+SHMEM_CAPI_ATOMIC_SET(longlong, long long, DTYPE_LONG_LONG)
+SHMEM_CAPI_ATOMIC_SET(float, float, SHM_INTERNAL_FLOAT)
+SHMEM_CAPI_ATOMIC_SET(double, double, SHM_INTERNAL_DOUBLE)
+
+#undef SHMEM_CAPI_ATOMIC_SET
