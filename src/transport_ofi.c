@@ -58,10 +58,6 @@ fi_addr_t			*addr_table;
 
 int SHMEM_Dtsize[FI_DATATYPE_LAST];
 
-const char max_msg_error[] = "Error: Message exceeds provider's " \
-                             "maximum message size. This limitation will " \
-                             "be corrected in a future release.\n";
-
 static inline void init_dt_size(void)
 {
   SHMEM_Dtsize[FI_INT8]                = sizeof(int8_t);
@@ -539,6 +535,11 @@ static inline int atomic_limitations_check(void)
 	return ret;
     }
     shmem_transport_ofi_max_atomic_size = atomic_size * (sizeof(long));
+
+    if(shmem_transport_ofi_max_atomic_size > shmem_transport_ofi_max_msg_size) {
+        OFI_ERRMSG("Error: OFI provider max atomic size is larger than max message size\n");
+        RAISE_ERROR(-1);
+    }
 
     int j;
     /* Binary OPS check */
