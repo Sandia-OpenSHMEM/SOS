@@ -200,7 +200,7 @@ int shmem_transport_init(long eager_size);
 int shmem_transport_startup(void);
 int shmem_transport_fini(void);
 
-extern int SHMEM_Dtsize[FI_DATATYPE_LAST];
+extern size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 
 static inline
 void shmem_transport_ofi_drain_cq(void)
