@@ -12,7 +12,7 @@
 #include <shmem.h>
 #include <shmemx.h>
 
-#define NUM_ELEMENTS 25600  // 1 MB by longs
+#define NUM_ELEMENTS 4194304 // 32 MB by longs
 //#define DFLT_LOOPS 10000
 #define DFLT_LOOPS 1000
 
