@@ -143,7 +143,6 @@ typedef enum fi_op       shm_internal_op_t;
 
 #define SHMEM_TRANSPORT_OFI_TYPE_BOUNCE 0x01
 #define SHMEM_TRANSPORT_OFI_TYPE_LONG   0x02
-#define SHMEM_TRANSPORT_OFI_TYPE_LONG_GET 0x03
 
 
 extern fi_addr_t *addr_table;
@@ -185,7 +184,6 @@ extern int shmem_transport_have_long_double;
 extern shmem_free_list_t *shmem_transport_ofi_bounce_buffers;
 
 extern shmem_free_list_t *shmem_transport_ofi_frag_buffers;
-extern shmem_free_list_t *shmem_transport_ofi_frag_get_buffers;
 
 #define OFI_ERRMSG(...) { fprintf(stderr, __FILE__ ":%d: \n", __LINE__); \
                             fprintf(stderr, __VA_ARGS__);  }
@@ -236,17 +234,6 @@ void shmem_transport_ofi_drain_cq(void)
 				shmem_free_list_free(
 					shmem_transport_ofi_bounce_buffers,
 					frag);
-                        }
-                        else if (SHMEM_TRANSPORT_OFI_TYPE_LONG_GET == frag->mytype) {
-                            shmem_transport_ofi_long_frag_t *long_frag =
-                                (shmem_transport_ofi_long_frag_t*) frag;
-
-                            /* Note: completion field is not populated for fragmented gets */
-                            if (0 >= --long_frag->reference) {
-                                long_frag->reference = 0;
-                                shmem_free_list_free(shmem_transport_ofi_frag_get_buffers,
-                                                     frag);
-                            }
                         }
                         else if (SHMEM_TRANSPORT_OFI_TYPE_LONG == frag->mytype) {
 				shmem_transport_ofi_long_frag_t *long_frag =
@@ -306,24 +293,6 @@ static inline shmem_transport_ofi_long_frag_t * create_long_frag(long *completio
 	long_frag->completion = completion;
 
 	return long_frag;
-}
-
-
-static inline shmem_transport_ofi_long_frag_t * create_long_get_frag(void)
-{
-    shmem_transport_ofi_long_frag_t *long_get_frag;
-
-    long_get_frag = (shmem_transport_ofi_long_frag_t*)
-        shmem_free_list_alloc(shmem_transport_ofi_frag_get_buffers);
-
-    if (NULL == long_get_frag)
-        RAISE_ERROR(-1);
-
-    assert(long_get_frag->frag.mytype == SHMEM_TRANSPORT_OFI_TYPE_LONG_GET);
-    assert(long_get_frag->reference == 0);
-    long_get_frag->completion = NULL;
-
-    return long_get_frag;
 }
 
 
@@ -526,21 +495,18 @@ shmem_transport_get(void *target, const void *source, size_t len, int pe)
             uint64_t frag_source = (uint64_t) addr;
             size_t frag_len = len;
 
-            shmem_transport_ofi_long_frag_t *long_frag = create_long_get_frag();
-
             while (frag_target < ((uint8_t *) target) + len) {
                 frag_len = MIN(shmem_transport_ofi_max_msg_size, (size_t) (((uint8_t *) target) + len - frag_target));
                 polled = 0;
 
                 do {
-                    ret = fi_read(shmem_transport_ofi_epfd,
+                    ret = fi_read(shmem_transport_ofi_cntr_epfd,
                                   frag_target, frag_len, NULL,
                                   GET_DEST(dst), frag_source,
-                                  key, &long_frag->frag.context);
+                                  key, NULL);
                 } while (try_again(ret,&polled));
 
-                long_frag->reference++;
-                shmem_transport_ofi_pending_cq_count++;
+                shmem_transport_ofi_pending_get_counter++;
 
                 frag_source += frag_len;
                 frag_target += frag_len;
@@ -559,9 +525,6 @@ shmem_transport_get_wait(void)
 	ret = fi_cntr_wait(shmem_transport_ofi_get_cntrfd,
 			shmem_transport_ofi_pending_get_counter,-1);
 	OFI_RET_CHECK(ret);
-
-        /* Complete fragmented gets */
-        shmem_transport_ofi_drain_cq();
 }
 
 

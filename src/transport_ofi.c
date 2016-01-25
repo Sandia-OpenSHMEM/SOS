@@ -102,7 +102,6 @@ int shmem_transport_have_long_double = 1;
 
 shmem_free_list_t *shmem_transport_ofi_bounce_buffers = NULL;
 shmem_free_list_t *shmem_transport_ofi_frag_buffers = NULL;
-shmem_free_list_t *shmem_transport_ofi_frag_get_buffers = NULL;
 
 //size of CQ
 const static size_t shmem_transport_ofi_queue_slots = 32768;//default CQ Depth....
@@ -128,16 +127,6 @@ init_long_frag(shmem_free_list_item_t *item)
     shmem_transport_ofi_long_frag_t *frag =
         (shmem_transport_ofi_long_frag_t*) item;
     frag->frag.mytype = SHMEM_TRANSPORT_OFI_TYPE_LONG;
-    frag->reference = 0;
-}
-
-static
-void
-init_long_get_frag(shmem_free_list_item_t *item)
-{
-    shmem_transport_ofi_long_frag_t *frag =
-        (shmem_transport_ofi_long_frag_t*) item;
-    frag->frag.mytype = SHMEM_TRANSPORT_OFI_TYPE_LONG_GET;
     frag->reference = 0;
 }
 
@@ -769,10 +758,6 @@ int shmem_transport_init(long eager_size)
     shmem_free_list_init(sizeof(shmem_transport_ofi_long_frag_t),
                              init_long_frag);
 
-    shmem_transport_ofi_frag_get_buffers =
-    shmem_free_list_init(sizeof(shmem_transport_ofi_long_frag_t),
-                             init_long_get_frag);
-
     ret = allocate_fabric_resources(p_info, npes);
     if(ret!=0)
 	return ret;
@@ -902,10 +887,6 @@ int shmem_transport_fini(void)
 
     if (NULL != shmem_transport_ofi_frag_buffers) {
         shmem_free_list_destroy(shmem_transport_ofi_frag_buffers);
-    }
-
-    if (NULL != shmem_transport_ofi_frag_get_buffers) {
-        shmem_free_list_destroy(shmem_transport_ofi_frag_get_buffers);
     }
 
 #ifdef USE_AV_MAP
