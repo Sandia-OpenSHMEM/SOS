@@ -56,7 +56,7 @@ size_t    			shmem_transport_ofi_max_msg_size;
 size_t    			shmem_transport_ofi_bounce_buffer_size;
 fi_addr_t			*addr_table;
 
-int SHMEM_Dtsize[FI_DATATYPE_LAST];
+size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 
 static inline void init_dt_size(void)
 {
