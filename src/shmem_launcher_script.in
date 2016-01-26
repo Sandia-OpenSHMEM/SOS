@@ -11,7 +11,7 @@
 # information, see the LICENSE file in the top level directory of the
 # distribution.
 
-SEARCH_LAUNCHERS="yod mpiexec mpirun srun"
+SEARCH_LAUNCHERS="yod mpirun mpiexec srun"
 LAUNCHER=""
 
 # Users can set the OSHRUN_LAUNCHER environment variable to specify the command
