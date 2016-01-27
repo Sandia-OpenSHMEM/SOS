@@ -416,17 +416,6 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
 
 		shmem_transport_ofi_pending_cq_count++;
 
-	} else if (len <= shmem_transport_ofi_max_msg_size) {
-            polled = 0;
-
-            do {
-                ret = fi_write(shmem_transport_ofi_cntr_epfd,
-                               source, len, NULL,
-                               GET_DEST(dst), (uint64_t) addr,
-                               key, NULL);
-            } while (try_again(ret,&polled));
-
-            shmem_transport_ofi_pending_put_counter++;
         } else {
                 uint8_t *frag_source = (uint8_t *) source;
                 uint64_t frag_target = (uint64_t) addr;
