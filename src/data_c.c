@@ -81,6 +81,9 @@
 #pragma weak shmem_longdouble_put = pshmem_longdouble_put
 #define shmem_longdouble_put pshmem_longdouble_put
 
+#pragma weak shmem_char_put = pshmem_char_put
+#define shmem_char_put pshmem_char_put
+
 #pragma weak shmem_short_put = pshmem_short_put
 #define shmem_short_put pshmem_short_put
 
@@ -92,6 +95,12 @@
 
 #pragma weak shmem_longlong_put = pshmem_longlong_put
 #define shmem_longlong_put pshmem_longlong_put
+
+#pragma weak shmem_put8 = pshmem_put8
+#define shmem_put8 pshmem_put8
+
+#pragma weak shmem_put16 = pshmem_put16
+#define shmem_put16 pshmem_put16
 
 #pragma weak shmem_put32 = pshmem_put32
 #define shmem_put32 pshmem_put32
@@ -114,6 +123,9 @@
 #pragma weak shmem_longdouble_get = pshmem_longdouble_get
 #define shmem_longdouble_get pshmem_longdouble_get
 
+#pragma weak shmem_char_get = pshmem_char_get
+#define shmem_char_get = pshmem_char_get
+
 #pragma weak shmem_short_get = pshmem_short_get
 #define shmem_short_get pshmem_short_get
 
@@ -125,6 +137,12 @@
 
 #pragma weak shmem_longlong_get = pshmem_longlong_get
 #define shmem_longlong_get pshmem_longlong_get
+
+#pragma weak shmem_get8 = pshmem_get8
+#define shmem_get8 pshmem_get8
+
+#pragma weak shmem_get16 = pshmem_get16
+#define shemm_get16 pshmem_get16
 
 #pragma weak shmem_get32 = pshmem_get32
 #define shmem_get32 pshmem_get32
@@ -435,6 +453,18 @@ shmem_longdouble_put(long double *target, const long double *source, size_t len,
 
 
 void
+shmem_char_put(char *dest, const char *source, size_t nelems, int pe)
+{
+  long completion = 0;
+
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_put_nb(dest, source, sizeof(char)*nelems, pe, &completion);
+  shmem_internal_put_wait(&completion);
+}
+
+
+void
 shmem_short_put(short *target, const short *source, size_t len, int pe)
 {
     long completion = 0;
@@ -480,6 +510,30 @@ shmem_longlong_put(long long *target, const long long *source, size_t len, int p
     shmem_internal_put_nb(target, source, sizeof(long long) * len, pe,
                           &completion);
     shmem_internal_put_wait(&completion);
+}
+
+
+void
+shmem_put8(void *dest, const void *source, size_t nelems, int pe)
+{
+  long completion = 0;
+
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_put_nb(dest, source, nelems, pe, &completion);
+  shmem_internal_put_wait(&completion);
+}
+
+
+void
+shmem_put16(void *dest, const void *source, size_t nelems, int pe)
+{
+  long completion = 0;
+
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_put_nb(dest, source, 2 * nelems, pe, &completion);
+  shmem_internal_put_wait(&completion);
 }
 
 
@@ -598,6 +652,26 @@ shmem_longlong_get(long long *target, const long long *source, size_t len, int p
 
     shmem_internal_get(target, source, sizeof(long long) * len, pe);
     shmem_internal_get_wait();
+}
+
+
+void
+shmem_get8(void *dest, const void *source, size_t nelems, int pe)
+{
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_get(dest, source, nelems, pe);
+  shmem_internal_get_wait();
+}
+
+
+void
+shmem_get16(void *dest, const void *source, size_t nelems, int pe)
+{
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_get(dest, source, 2 * nelems, pe);
+  shmem_internal_get_wait();
 }
 
 
