@@ -12,7 +12,7 @@
 #include <shmem.h>
 #include <shmemx.h>
 
-#define NUM_ELEMENTS 25600  // 1 MB by longs
+#define NUM_ELEMENTS 4194304 // 32 MB by longs
 //#define DFLT_LOOPS 10000
 #define DFLT_LOOPS 1000
 
@@ -177,6 +177,14 @@ main(int argc, char **argv)
     shmem_double_put( &total_time[me], &time_taken, 1, 0 );
 
     shmem_barrier_all();
+
+    for (i = 0; i < elements; i++) {
+      if (Target[i] != i + 1) {
+          printf("%d: Error Target[%d] = %d, expected %d\n",
+                 me, i, Target[i], i + 1);
+          shmem_global_exit(1);
+      }
+    }
 
     if ( Track && me == 0 )
 		fprintf(stderr,"\n");

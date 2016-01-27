@@ -12,7 +12,7 @@
 #include <shmem.h>
 #include <shmemx.h>
 
-#define NUM_ELEMENTS 25600  // 1 MB as longs
+#define NUM_ELEMENTS 4194304 // 32 MB by longs
 //#define DFLT_LOOPS 10000  // reset when Portals4 can achieve this.
 #define DFLT_LOOPS 100
 
@@ -195,6 +195,14 @@ main(int argc, char **argv)
     shmem_double_sum_to_all(&sum_time, &time_taken, 1, 0, 0, npes, pWrk, pSync);
 
     shmem_barrier_all();
+
+    for (i = 0; i < elements; i++) {
+      if (Target[i] != i + 1) {
+          printf("%d: Error Target[%d] = %d, expected %d\n",
+                 me, i, Target[i], i + 1);
+          shmem_global_exit(1);
+      }
+    }
 
     if ( Track && me == 0 ) fprintf(stderr,"\n");
 

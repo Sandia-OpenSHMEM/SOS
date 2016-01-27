@@ -185,10 +185,6 @@ extern shmem_free_list_t *shmem_transport_ofi_bounce_buffers;
 
 extern shmem_free_list_t *shmem_transport_ofi_frag_buffers;
 
-static const char max_msg_error[] = "Error: Message exceeds provider's " \
-				"maximum message size. This limitation will "\
-				"be corrected in a future release.";
-
 #define OFI_ERRMSG(...) { fprintf(stderr, __FILE__ ":%d: \n", __LINE__); \
                             fprintf(stderr, __VA_ARGS__);  }
 
@@ -238,18 +234,20 @@ void shmem_transport_ofi_drain_cq(void)
 				shmem_free_list_free(
 					shmem_transport_ofi_bounce_buffers,
 					frag);
-			} else {
+                        }
+                        else if (SHMEM_TRANSPORT_OFI_TYPE_LONG == frag->mytype) {
 				shmem_transport_ofi_long_frag_t *long_frag =
 				(shmem_transport_ofi_long_frag_t*) frag;
 
-				assert(long_frag->frag.mytype ==
-					SHMEM_TRANSPORT_OFI_TYPE_LONG);
 				(*(long_frag->completion))--;
 				if (0 >= --long_frag->reference) {
 					long_frag->reference = 0;
 					shmem_free_list_free(shmem_transport_ofi_frag_buffers,
 					frag);
 				}
+                        }
+                        else {
+                            RAISE_ERROR_STR("Unrecognized completion object");
 			}
 
 			shmem_transport_ofi_pending_cq_count--;
@@ -296,6 +294,7 @@ static inline shmem_transport_ofi_long_frag_t * create_long_frag(long *completio
 
 	return long_frag;
 }
+
 
 static inline int shmem_transport_quiet(void)
 {
@@ -417,26 +416,31 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
 
 		shmem_transport_ofi_pending_cq_count++;
 
-	} else {
-		if(len > shmem_transport_ofi_max_msg_size) {
-			OFI_ERRMSG(max_msg_error);
-			RAISE_ERROR(-1);
-                }
+        } else {
+                uint8_t *frag_source = (uint8_t *) source;
+                uint64_t frag_target = (uint64_t) addr;
+                size_t frag_len = len;
 
 		shmem_transport_ofi_long_frag_t *long_frag = create_long_frag(completion);
 
-		polled = 0;
+                while (frag_source < ((uint8_t *) source) + len) {
+                    frag_len = MIN(shmem_transport_ofi_max_msg_size, (size_t) (((uint8_t *) source) + len - frag_source));
+                    polled = 0;
 
-		do {
-			ret = fi_write(shmem_transport_ofi_epfd,
-					source, len, NULL,
-					GET_DEST(dst), (uint64_t) addr,
-					key, &long_frag->frag.context);
-		} while(try_again(ret,&polled));
+                    do {
+                        ret = fi_write(shmem_transport_ofi_epfd,
+                                       frag_source, frag_len, NULL,
+                                       GET_DEST(dst), frag_target,
+                                       key, &long_frag->frag.context);
+                    } while (try_again(ret,&polled));
 
-		(*(long_frag->completion))++;
-		long_frag->reference++;
-		shmem_transport_ofi_pending_cq_count++;
+                    (*(long_frag->completion))++;
+                    long_frag->reference++;
+                    shmem_transport_ofi_pending_cq_count++;
+
+                    frag_source += frag_len;
+                    frag_target += frag_len;
+                }
 	}
 }
 
@@ -461,23 +465,42 @@ shmem_transport_get(void *target, const void *source, size_t len, int pe)
 
         fi_get_mr(source, pe, &addr, &key);
 
-	if(len > shmem_transport_ofi_max_msg_size) {
-		OFI_ERRMSG(max_msg_error);
-		RAISE_ERROR(-1);
-	}
+        if (len <= shmem_transport_ofi_max_msg_size) {
+            do {
+                ret = fi_read(shmem_transport_ofi_cntr_epfd,
+                              target,
+                              len,
+                              NULL,
+                              GET_DEST(dst),
+                              (uint64_t) addr,
+                              key,
+                              NULL);
+            } while (try_again(ret,&polled));
 
-	do {
- 		ret = fi_read(shmem_transport_ofi_cntr_epfd,
-				target,
-				len,
-				NULL,
-				GET_DEST(dst),
-				(uint64_t) addr,
-				key,
-				NULL);
-	} while(try_again(ret,&polled));
+            shmem_transport_ofi_pending_get_counter++;
+        }
+        else {
+            uint8_t *frag_target = (uint8_t *) target;
+            uint64_t frag_source = (uint64_t) addr;
+            size_t frag_len = len;
 
-	shmem_transport_ofi_pending_get_counter++;
+            while (frag_target < ((uint8_t *) target) + len) {
+                frag_len = MIN(shmem_transport_ofi_max_msg_size, (size_t) (((uint8_t *) target) + len - frag_target));
+                polled = 0;
+
+                do {
+                    ret = fi_read(shmem_transport_ofi_cntr_epfd,
+                                  frag_target, frag_len, NULL,
+                                  GET_DEST(dst), frag_source,
+                                  key, NULL);
+                } while (try_again(ret,&polled));
+
+                shmem_transport_ofi_pending_get_counter++;
+
+                frag_source += frag_len;
+                frag_target += frag_len;
+            }
+        }
 }
 
 
@@ -688,11 +711,6 @@ shmem_transport_atomic_nb(void *target, void *source, size_t full_len,
 
         } else {
 		size_t sent = 0;
-		if(shmem_transport_ofi_max_atomic_size
-			 > shmem_transport_ofi_max_msg_size) {
-			OFI_ERRMSG(max_msg_error);
-			RAISE_ERROR(-1);
-		}
 
 		shmem_transport_ofi_long_frag_t *long_frag = create_long_frag(completion);
 

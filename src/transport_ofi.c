@@ -106,7 +106,7 @@ shmem_free_list_t *shmem_transport_ofi_frag_buffers = NULL;
 //size of CQ
 const static size_t shmem_transport_ofi_queue_slots = 32768;//default CQ Depth....
 size_t   shmem_transport_ofi_max_atomic_size = 0;
-uint64_t shmem_transport_ofi_max_poll = (1ULL<<20);
+uint64_t shmem_transport_ofi_max_poll = (1ULL<<30);
 
 #define OFI_MAJOR_VERSION 1
 #define OFI_MINOR_VERSION 0
@@ -524,6 +524,11 @@ static inline int atomic_limitations_check(void)
 	return ret;
     }
     shmem_transport_ofi_max_atomic_size = atomic_size * (sizeof(long));
+
+    if(shmem_transport_ofi_max_atomic_size > shmem_transport_ofi_max_msg_size) {
+        OFI_ERRMSG("Error: OFI provider max atomic size is larger than max message size\n");
+        RAISE_ERROR(-1);
+    }
 
     int j;
     /* Binary OPS check */
