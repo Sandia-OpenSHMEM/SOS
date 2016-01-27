@@ -74,6 +74,13 @@ TESTS += \
      shmem_info_f
 endif
 
+if HAVE_FORTRAN
+if HAVE_SHORT_FORTRAN_HEADER
+TESTS += \
+     set_fetch_f
+endif
+endif
+
 NPROCS ?= 2
 LOG_COMPILER = $(TEST_RUNNER)
 
@@ -240,3 +247,6 @@ asym_alloc_LDADD = $(top_builddir)/src/libsma.la
 
 set_fetch_SOURCES = set_fetch.c
 set_fetch_LDADD = $(top_builddir)/src/libsma.la
+
+set_fetch_f_SOURCES = set_fetch_f.f90
+set_fetch_f_LDADD = $(top_builddir)/src/libsma.la

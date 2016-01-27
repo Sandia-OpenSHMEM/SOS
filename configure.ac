@@ -123,6 +123,7 @@ AC_ARG_ENABLE([long-fortran-header],
                     [Disable long Fortran header to omit function declarations (default:enabled)])])
 AS_IF([test "$enable_long_fortran_header" = "no"], [FORTRAN_LONG_HEADER="!"], [FORTRAN_LONG_HEADER=" "])
 AC_SUBST([FORTRAN_LONG_HEADER])
+AM_CONDITIONAL([HAVE_SHORT_FORTRAN_HEADER], [test "$enable_long_fortran_header" = "no"])
 
 AC_ARG_ENABLE([mr-scalable],
     [AC_HELP_STRING([--disable-mr-scalable],
