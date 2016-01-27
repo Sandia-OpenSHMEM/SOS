@@ -225,6 +225,8 @@ int shmem_transport_startup(void);
 
 int shmem_transport_fini(void);
 
+static inline void shmem_transport_get_wait(void);
+
 static inline
 int
 shmem_transport_quiet(void)
@@ -235,7 +237,10 @@ shmem_transport_quiet(void)
     /* synchronize the atomic cache, if there is one */
     PtlAtomicSync();
 
-    /* wait for remote completion (acks) of all pending events */
+    /* wait for completion of all pending NB get events */
+    shmem_transport_get_wait();
+
+    /* wait for remote completion (acks) of all pending put events */
     ret = PtlCTWait(shmem_transport_portals4_put_ct_h, 
                     shmem_transport_portals4_pending_put_counter, &ct);
     if (PTL_OK != ret) { return ret; }

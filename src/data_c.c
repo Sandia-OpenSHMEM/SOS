@@ -216,6 +216,90 @@
 #pragma weak shmem_iget128 = pshmem_iget128
 #define shmem_iget128 pshmem_iget128
 
+#pragma weak shmem_float_put_nbi = pshmem_float_put_nbi
+#define shmem_float_put_nbi pshmem_float_put_nbi
+
+#pragma weak shmem_double_put_nbi = pshmem_double_put_nbi
+#define shmem_double_put_nbi pshmem_double_put_nbi
+
+#pragma weak shmem_longdouble_put_nbi = pshmem_longdouble_put_nbi
+#define shmem_longdouble_put_nbi pshmem_longdouble_put_nbi
+
+#pragma weak shmem_char_put_nbi = pshmem_char_put_nbi
+#define shmem_char_put_nbi pshmem_char_put_nbi
+
+#pragma weak shmem_putmem_nbi = pshmem_putmem_nbi
+#define shmem_putmem_nbi pshmem_putmem_nbi
+
+#pragma weak shmem_short_put_nbi = pshmem_short_put_nbi
+#define shmem_short_put_nbi pshmem_short_put_nbi
+
+#pragma weak shmem_int_put_nbi = pshmem_int_put_nbi
+#define shmem_int_put_nbi pshmem_int_put_nbi
+
+#pragma weak shmem_long_put_nbi = pshmem_long_put_nbi
+#define shmem_long_put_nbi pshmem_long_put_nbi
+
+#pragma weak shmem_longlong_put_nbi = pshmem_longlong_put_nbi
+#define shmem_longlong_put_nbi pshmem_longlong_put_nbi
+
+#pragma weak shmem_put8_nbi = pshmem_put8_nbi
+#define shmem_put8_nbi pshmem_put8_nbi
+
+#pragma weak shmem_put16_nbi = pshmem_put16_nbi
+#define shmem_put16_nbi pshmem_put16_nbi
+
+#pragma weak shmem_put32_nbi = pshmem_put32_nbi
+#define shmem_put32_nbi pshmem_put32_nbi
+
+#pragma weak shmem_put64_nbi =- pshmem_put64_nbi
+#define shmem_put64_nbi pshmem_put64_nbi
+
+#pragma weak shmem_put128_nbi = pshmem_put128_nbi
+#define shmem_put128_nbi pshmem_put128_nbi
+
+#pragma weak shmem_float_get_nbi = pshmem_float_get_nbi
+#define shmem_float_get_nbi pshmem_float_get_nbi
+
+#pragma weak shmem_double_get_nbi = pshmem_double_get_nbi
+#define shmem_double_get_nbi pshmem_double_get_nbi
+
+#pragma weak shmem_longdouble_get_nbi = pshmem_longdouble_get_nbi
+#define shmem_longdouble_get_nbi pshmem_longdouble_get_nbi
+
+#pragma weak shmem_char_get_nbi = pshmem_char_get_nbi
+#define shmem_char_get_nbi pshmem_char_get_nbi
+
+#pragma weak shmem_getmem_nbi = pshmem_getmem_nbi
+#define shmem_getmem_nbi pshmem_getmem_nbi
+
+#pragma weak shmem_short_get_nbi = pshmem_short_get_nbi
+#define shmem_short_get_nbi pshmem_short_get_nbi
+
+#pragma weak shmem_int_get_nbi = pshmem_int_get_nbi
+#define shmem_int_get_nbi pshmem_int_get_nbi
+
+#pragma weak shmem_long_get_nbi = pshmem_long_get_nbi
+#define shmem_long_get_nbi pshmem_long_get_nbi
+
+#pragma weak shmem_longlong_get_nbi = pshmem_longlong_get_nbi
+#define shmem_longlong_get_nbi pshmem_longlong_get_nbi
+
+#pragma weak shmem_get8_nbi = pshmem_get8_nbi
+#define shmem_get8_nbi pshmem_get8_nbi
+
+#pragma weak shmem_get16_nbi = pshmem_get16_nbi
+#define shmem_get16_nbi pshmem_get16_nbi
+
+#pragma weak shmem_get32_nbi = pshmem_get32_nbi
+#define shmem_get32_nbi pshmem_get32_nbi
+
+#pragma weak shmem_get64_nbi = pshmem_get64_nbi
+#define shmem_get64_nbi pshmem_get64_nbi
+
+#pragma weak shmem_get128_nbi = pshmem_get128_nbi
+#define shmem_get128_nbi pshmem_get128_nbi
+
 #pragma weak shmemx_putmem_ct = pshmemx_putmem_ct
 #define shmemx_putmem_ct pshmemx_putmem_ct
 
@@ -586,6 +670,160 @@ shmem_putmem(void *target, const void *source, size_t len, int pe)
 
 
 void
+shmem_float_put_nbi(float *dest, const float *source, size_t nelems, int pe)
+{
+  long completion = 0;
+
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_put_nb(dest, source, sizeof(float)*nelems, pe, &completion);
+}
+
+
+void
+shmem_double_put_nbi(double *dest, const double *source, size_t nelems, int pe)
+{
+  long completion = 0;
+
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_put_nb(dest, source, sizeof(double)*nelems, pe, &completion);
+}
+
+
+void
+shmem_longdouble_put_nbi(long double *dest, const long double *source, size_t nelems, int pe)
+{
+  long completion = 0;
+
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_put_nb(dest, source, sizeof(long double)*nelems, pe, &completion);
+}
+
+
+void
+shmem_char_put_nbi(char *dest, const char *source, size_t nelems, int pe)
+{
+  long completion = 0;
+
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_put_nb(dest, source, sizeof(char)*nelems, pe, &completion);
+}
+
+
+void
+shmem_putmem_nbi(void *dest, const void *source, size_t nelems, int pe)
+{
+  long completion = 0;
+
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_put_nb(dest, source, nelems, pe, &completion);
+}
+
+
+void
+shmem_short_put_nbi(short *dest, const short *source, size_t nelems, int pe)
+{
+  long completion = 0;
+
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_put_nb(dest, source, sizeof(short)*nelems, pe, &completion);
+}
+
+
+void
+shmem_int_put_nbi(int *dest, const int *source, size_t nelems, int pe)
+{
+  long completion = 0;
+
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_put_nb(dest, source, sizeof(int)*nelems, pe, &completion);
+}
+
+
+void
+shmem_long_put_nbi(long *dest, const long *source, size_t nelems, int pe)
+{
+  long completion = 0;
+
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_put_nb(dest, source, sizeof(long)*nelems, pe, &completion);
+}
+
+
+void
+shmem_longlong_put_nbi(long long *dest, const long long *source, size_t nelems, int pe)
+{
+  long completion = 0;
+
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_put_nb(dest, source, sizeof(long long)*nelems, pe, &completion);
+}
+
+
+void
+shmem_put8_nbi(void *dest, const void *source, size_t nelems, int pe)
+{
+  long completion = 0;
+
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_put_nb(dest, source, nelems, pe, &completion);
+}
+
+
+void
+shmem_put16_nbi(void *dest, const void *source, size_t nelems, int pe)
+{
+  long completion = 0;
+
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_put_nb(dest, source, 2 * nelems, pe, &completion);
+}
+
+
+void
+shmem_put32_nbi(void *dest, const void *source, size_t nelems, int pe)
+{
+  long completion = 0;
+
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_put_nb(dest, source, 4*nelems, pe, &completion);
+}
+
+
+void
+shmem_put64_nbi(void *dest, const void *source, size_t nelems, int pe)
+{
+  long completion = 0;
+
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_put_nb(dest, source, 8*nelems, pe, &completion);
+}
+
+
+void
+shmem_put128_nbi(void *dest, const void *source, size_t nelems, int pe)
+{
+  long completion = 0;
+
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_put_nb(dest, source, 16*nelems, pe, &completion);
+}
+
+
+void
 shmem_float_get(float *target, const float *source, size_t len, int pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -712,6 +950,132 @@ shmem_getmem(void *target, const void *source, size_t len, int pe)
 
     shmem_internal_get(target, source, len, pe);
     shmem_internal_get_wait();
+}
+
+
+void
+shmem_float_get_nbi(float *dest, const float *source, size_t nelems, int pe)
+{
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_get(dest, source, sizeof(float)*nelems, pe);
+}
+
+
+void
+shmem_double_get_nbi(double *dest, const double *source, size_t nelems, int pe)
+{
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_get(dest, source, sizeof(double)*nelems, pe);
+}
+
+
+void
+shmem_longdouble_get_nbi(long double *dest, const long double *source, size_t nelems, int pe)
+{
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_get(dest, source, sizeof(long double)*nelems, pe);
+}
+
+
+void
+shmem_char_get_nbi(char *dest, const char *source, size_t nelems, int pe)
+{
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_get(dest, source, sizeof(char)*nelems, pe);
+}
+
+
+void
+shmem_getmem_nbi(void *dest, const void *source, size_t nelems, int pe)
+{
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_get(dest, source, nelems, pe);
+}
+
+
+void
+shmem_short_get_nbi(short *dest, const short *source, size_t nelems, int pe)
+{
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_get(dest, source, sizeof(short)*nelems, pe);
+}
+
+
+void
+shmem_int_get_nbi(int *dest, const int *source, size_t nelems, int pe)
+{
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_get(dest, source, sizeof(int)*nelems, pe);
+}
+
+
+void
+shmem_long_get_nbi(long *dest, const long *source, size_t nelems, int pe)
+{
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_get(dest, source, sizeof(long)*nelems, pe);
+}
+
+
+void
+shmem_longlong_get_nbi(long long *dest, const long long *source, size_t nelems, int pe)
+{
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_get(dest, source, sizeof(long long)*nelems, pe);
+}
+
+
+void
+shmem_get8_nbi(void *dest, const void *source, size_t nelems, int pe)
+{
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_get(dest, source, nelems, pe);
+}
+
+
+void
+shmem_get16_nbi(void *dest, const void *source, size_t nelems, int pe)
+{
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_get(dest, source, 2 * nelems, pe);
+}
+
+
+void
+shmem_get32_nbi(void *dest, const void *source, size_t nelems, int pe)
+{
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_get(dest, source, 4*nelems, pe);
+}
+
+
+void
+shmem_get64_nbi(void *dest, const void *source, size_t nelems, int pe)
+{
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_get(dest, source, 8*nelems, pe);
+}
+
+
+void
+shmem_get128_nbi(void *dest, const void *source, size_t nelems, int pe)
+{
+  SHMEM_ERR_CHECK_INITIALIZED();
+
+  shmem_internal_get(dest, source, 16*nelems, pe);
 }
 
 

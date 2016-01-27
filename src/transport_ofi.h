@@ -199,6 +199,8 @@ int shmem_transport_fini(void);
 
 extern size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 
+static inline void shmem_transport_get_wait(void);
+
 static inline
 void shmem_transport_ofi_drain_cq(void)
 {
@@ -305,6 +307,8 @@ static inline int shmem_transport_quiet(void)
 	while(shmem_transport_ofi_pending_cq_count) {
 		shmem_transport_ofi_drain_cq();
 	}
+
+	shmem_transport_get_wait();
 
 	/* wait for put counter to meet outstanding count value    */
 	ret = fi_cntr_wait(shmem_transport_ofi_put_cntrfd,
