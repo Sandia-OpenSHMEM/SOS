@@ -1049,27 +1049,49 @@ shmem_internal_fcollect_recdbl(void *target, const void *source, size_t len,
 }
 
 
+/* Circulator iterator for PE active sets */
+static inline int
+shmem_internal_circular_iter_next(int curr, int PE_start, int logPE_stride, int PE_size)
+{
+    const int stride = 1 << logPE_stride;
+    const int last = PE_start + (stride * (PE_size - 1));
+    int next;
+
+    next = curr + stride;
+    if (next > last)
+        next = PE_start;
+
+    return next;
+}
+
+
 void
 shmem_internal_alltoall(void *dest, const void *source, size_t len,
                         int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
     const long one = 1;
-    const int stride = 1 << logPE_stride;
-    const int max_pe = PE_start + stride*PE_size;
     const void *dest_ptr = (uint8_t *) dest + shmem_internal_my_pe * len;
     int peer;
 
-    for (peer = PE_start; peer < max_pe; peer += stride) {
+    /* Send data round-robin, starting with my PE */
+    peer = shmem_internal_my_pe;
+    do {
         shmem_internal_put_nb((void *) dest_ptr, (uint8_t *) source + peer * len,
                               len, peer, NULL);
-    }
+        peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
+                                                 PE_size);
+    } while (peer != shmem_internal_my_pe);
 
     shmem_internal_fence();
 
-    for (peer = PE_start; peer < max_pe; peer += stride) {
+    /* Send flags round-robin, starting with my PE */
+    peer = shmem_internal_my_pe;
+    do {
         shmem_internal_atomic_small(pSync, &one, sizeof(long), peer,
                                     SHM_INTERNAL_SUM, DTYPE_LONG);
-    }
+        peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
+                                                 PE_size);
+    } while (peer != shmem_internal_my_pe);
 
     SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, PE_size);
     *pSync = 0;
