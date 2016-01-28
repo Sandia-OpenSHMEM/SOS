@@ -60,6 +60,7 @@ extern int8_t shmem_transport_portals4_pt_state[SHMEM_TRANSPORT_PORTALS4_NUM_PTS
 
 extern ptl_handle_ni_t shmem_transport_portals4_ni_h;
 extern ptl_handle_md_t shmem_transport_portals4_put_volatile_md_h;
+extern ptl_handle_md_t shmem_transport_portals4_put_cntr_md_h;
 extern ptl_handle_md_t shmem_transport_portals4_put_event_md_h;
 extern ptl_handle_md_t shmem_transport_portals4_get_md_h;
 extern ptl_handle_ct_t shmem_transport_portals4_target_ct_h;
@@ -456,29 +457,40 @@ shmem_transport_portals4_put_nb_internal(void *target, const void *source, size_
         shmem_transport_portals4_long_pending = 1;
 #endif
     } else {
-        shmem_transport_portals4_long_frag_t *long_frag;  
+        shmem_transport_portals4_long_frag_t *long_frag;
+        ptl_handle_md_t md;
 
-        SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_event_slots);
-        while (0 >= --shmem_transport_portals4_event_slots) {
-            shmem_transport_portals4_event_slots++;
-            shmem_transport_portals4_drain_eq();
+        /* If user requested completion notification, create a frag object and
+         * append the completion pointer */
+        if (NULL != completion) {
+            md = shmem_transport_portals4_put_event_md_h;
+
+            SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_event_slots);
+            while (0 >= --shmem_transport_portals4_event_slots) {
+                shmem_transport_portals4_event_slots++;
+                shmem_transport_portals4_drain_eq();
+            }
+            SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
+
+            long_frag = (shmem_transport_portals4_long_frag_t*)
+                shmem_free_list_alloc(shmem_transport_portals4_long_frags);
+            if (NULL == long_frag) { RAISE_ERROR(-1); }
+
+            assert(long_frag->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_LONG);
+            assert(long_frag->reference == 0);
+            long_frag->completion = completion;
+
+            /* NOTE-MT: Frag mutex is not needed here because the frag doesn't get
+             * exposed to other threads until the PtlPut. */
+            (*(long_frag->completion))++;
+            long_frag->reference++;
+
+        } else {
+            md = shmem_transport_portals4_put_cntr_md_h;
+            long_frag = NULL;
         }
-        SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
 
-        long_frag = (shmem_transport_portals4_long_frag_t*)
-            shmem_free_list_alloc(shmem_transport_portals4_long_frags);
-        if (NULL == long_frag) { RAISE_ERROR(-1); }
-
-        assert(long_frag->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_LONG);
-        assert(long_frag->reference == 0);
-        long_frag->completion = completion;
-
-        /* NOTE-MT: Frag mutex is not needed here because the frag doesn't get
-         * exposed to other threads until the PtlPut. */
-        (*(long_frag->completion))++;
-        long_frag->reference++;
-
-        ret = PtlPut(shmem_transport_portals4_put_event_md_h,
+        ret = PtlPut(md,
                      (ptl_size_t) source,
                      len,
                      PTL_CT_ACK_REQ,

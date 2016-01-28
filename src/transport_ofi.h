@@ -423,11 +423,14 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
 
 		shmem_transport_ofi_pending_cq_count++;
 
-        } else {
+        } else if (completion != NULL) {
                 uint8_t *frag_source = (uint8_t *) source;
                 uint64_t frag_target = (uint64_t) addr;
                 size_t frag_len = len;
 
+                /* Upper layer has requested a completion notification;
+                 * operation generates full events and updates the user's
+                 * completion flag. */
 		shmem_transport_ofi_long_frag_t *long_frag = create_long_frag(completion);
 
                 while (frag_source < ((uint8_t *) source) + len) {
@@ -448,7 +451,32 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
                     frag_source += frag_len;
                     frag_target += frag_len;
                 }
-	}
+
+        } else {
+                uint8_t *frag_source = (uint8_t *) source;
+                uint64_t frag_target = (uint64_t) addr;
+                size_t frag_len = len;
+
+                /* Upper layer has not requested a completion notification;
+                 * operation generates counting events and must be completed by
+                 * quiet. */
+                while (frag_source < ((uint8_t *) source) + len) {
+                    frag_len = MIN(shmem_transport_ofi_max_msg_size, (size_t) (((uint8_t *) source) + len - frag_source));
+                    polled = 0;
+
+                    do {
+                        ret = fi_write(shmem_transport_ofi_cntr_epfd,
+                                       frag_source, frag_len, NULL,
+                                       GET_DEST(dst), frag_target,
+                                       key, NULL);
+                    } while (try_again(ret,&polled));
+
+                    shmem_transport_ofi_pending_put_counter++;
+
+                    frag_source += frag_len;
+                    frag_target += frag_len;
+                }
+        }
 }
 
 static inline

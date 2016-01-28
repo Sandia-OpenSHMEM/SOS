@@ -68,6 +68,7 @@ int8_t shmem_transport_portals4_pt_state[SHMEM_TRANSPORT_PORTALS4_NUM_PTS] = {
 
 ptl_handle_ni_t shmem_transport_portals4_ni_h = PTL_INVALID_HANDLE;
 ptl_handle_md_t shmem_transport_portals4_put_volatile_md_h = PTL_INVALID_HANDLE;
+ptl_handle_md_t shmem_transport_portals4_put_cntr_md_h = PTL_INVALID_HANDLE;
 ptl_handle_md_t shmem_transport_portals4_put_event_md_h = PTL_INVALID_HANDLE;
 ptl_handle_md_t shmem_transport_portals4_get_md_h = PTL_INVALID_HANDLE;
 #if ENABLE_REMOTE_VIRTUAL_ADDRESSING
@@ -149,6 +150,9 @@ cleanup_handles(void)
     }
     if (!PtlHandleIsEqual(shmem_transport_portals4_put_volatile_md_h, PTL_INVALID_HANDLE)) {
         PtlMDRelease(shmem_transport_portals4_put_volatile_md_h);
+    }
+    if (!PtlHandleIsEqual(shmem_transport_portals4_put_cntr_md_h, PTL_INVALID_HANDLE)) {
+        PtlMDRelease(shmem_transport_portals4_put_cntr_md_h);
     }
     if (!PtlHandleIsEqual(shmem_transport_portals4_get_ct_h, PTL_INVALID_HANDLE)) {
         PtlCTFree(shmem_transport_portals4_get_ct_h);
@@ -588,6 +592,24 @@ shmem_transport_startup(void)
                     &shmem_transport_portals4_put_volatile_md_h);
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlMDBind of put MD failed: %d\n",
+                shmem_internal_my_pe, ret);
+        goto cleanup;
+    }
+
+    md.start = 0;
+    md.length = PTL_SIZE_MAX;
+    md.options = PTL_MD_EVENT_CT_ACK |
+        PTL_MD_EVENT_SUCCESS_DISABLE;
+    if (1 == PORTALS4_TOTAL_DATA_ORDERING) {
+        md.options |= PTL_MD_UNORDERED;
+    }
+    md.eq_handle = shmem_transport_portals4_eq_h;
+    md.ct_handle = shmem_transport_portals4_put_ct_h;
+    ret = PtlMDBind(shmem_transport_portals4_ni_h,
+                    &md,
+                    &shmem_transport_portals4_put_cntr_md_h);
+    if (PTL_OK != ret) {
+        fprintf(stderr, "[%03d] ERROR: PtlMDBind of put cntr MD failed: %d\n",
                 shmem_internal_my_pe, ret);
         goto cleanup;
     }
