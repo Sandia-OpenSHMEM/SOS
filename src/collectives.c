@@ -1047,3 +1047,28 @@ shmem_internal_fcollect_recdbl(void *target, const void *source, size_t len,
 
     shmem_internal_quiet();
 }
+
+
+void
+shmem_internal_alltoall(void *dest, const void *source, size_t len,
+                        int PE_start, int logPE_stride, int PE_size, long *pSync)
+{
+    const long one = 1;
+    const int stride = 1 << logPE_stride;
+    const int max_pe = PE_start + stride*PE_size;
+    const void *dest_ptr = (uint8_t *) dest + shmem_internal_my_pe * len;
+    int peer;
+
+    for (peer = PE_start; peer < max_pe; peer += stride) {
+        long completion = 0;
+
+        shmem_internal_put_nb((void *) dest_ptr, (uint8_t *) source + peer * len,
+                              len, peer, &completion);
+        shmem_internal_put_wait(&completion);
+        shmem_internal_atomic_small(pSync, &one, sizeof(long), peer,
+                                    SHM_INTERNAL_SUM, DTYPE_LONG);
+    }
+
+    SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, PE_size);
+    *pSync = 0;
+}

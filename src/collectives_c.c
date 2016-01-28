@@ -184,6 +184,12 @@
 #pragma weak shmem_fcollect64 = pshmem_fcollect64
 #define shmem_fcollect64 pshmem_fcollect64
 
+#pragma weak shmem_alltoall32 = pshmem_alltoall32
+#define shmem_alltoall32 pshmem_alltoall32
+
+#pragma weak shmem_alltoall64 = pshmem_alltoall64
+#define shmem_alltoall64 pshmem_alltoall64
+
 #endif /* ENABLE_PROFILING */
 
 
@@ -846,3 +852,24 @@ shmem_fcollect64(void *target, const void *source, size_t nlong,
                        PE_start, logPE_stride, PE_size, pSync);
 }
 
+
+void
+shmem_alltoall32(void *dest, const void *source, size_t nelems, int PE_start,
+                 int logPE_stride, int PE_size, long *pSync)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_alltoall(dest, source, nelems * 4,
+                            PE_start, logPE_stride, PE_size, pSync);
+}
+
+
+void
+shmem_alltoall64(void *dest, const void *source, size_t nelems, int PE_start,
+                 int logPE_stride, int PE_size, long *pSync)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_alltoall(dest, source, nelems * 8,
+                            PE_start, logPE_stride, PE_size, pSync);
+}
