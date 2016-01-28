@@ -1060,11 +1060,13 @@ shmem_internal_alltoall(void *dest, const void *source, size_t len,
     int peer;
 
     for (peer = PE_start; peer < max_pe; peer += stride) {
-        long completion = 0;
-
         shmem_internal_put_nb((void *) dest_ptr, (uint8_t *) source + peer * len,
-                              len, peer, &completion);
-        shmem_internal_put_wait(&completion);
+                              len, peer, NULL);
+    }
+
+    shmem_internal_fence();
+
+    for (peer = PE_start; peer < max_pe; peer += stride) {
         shmem_internal_atomic_small(pSync, &one, sizeof(long), peer,
                                     SHM_INTERNAL_SUM, DTYPE_LONG);
     }
