@@ -89,6 +89,7 @@ ptl_size_t shmem_transport_portals4_bounce_buffer_size = 0;
 ptl_size_t shmem_transport_portals4_max_volatile_size = 0;
 ptl_size_t shmem_transport_portals4_max_atomic_size = 0;
 ptl_size_t shmem_transport_portals4_max_fetch_atomic_size = 0;
+ptl_size_t shmem_transport_portals4_max_msg_size = 0;
 
 ptl_size_t shmem_transport_portals4_pending_put_counter = 0;
 ptl_size_t shmem_transport_portals4_pending_get_counter = 0;
@@ -423,6 +424,7 @@ shmem_transport_startup(void)
     shmem_transport_portals4_max_volatile_size = ni_limits.max_volatile_size;
     shmem_transport_portals4_max_atomic_size = ni_limits.max_atomic_size;
     shmem_transport_portals4_max_fetch_atomic_size = ni_limits.max_fetch_atomic_size;
+    shmem_transport_portals4_max_msg_size = ni_limits.max_msg_size;
 
     if (shmem_transport_portals4_max_volatile_size < sizeof(long double complex)) {
         fprintf(stderr, "[%03d] ERROR: Max volatile size found to be %lu, too small to continue\n",

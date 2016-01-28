@@ -76,6 +76,7 @@ extern ptl_size_t shmem_transport_portals4_max_volatile_size;
 extern ptl_size_t shmem_transport_portals4_max_atomic_size;
 extern ptl_size_t shmem_transport_portals4_max_fetch_atomic_size;
 extern ptl_size_t shmem_transport_portals4_max_fence_size;
+extern ptl_size_t shmem_transport_portals4_max_msg_size;
 
 extern ptl_size_t shmem_transport_portals4_pending_put_counter;
 extern ptl_size_t shmem_transport_portals4_pending_get_counter;
@@ -460,6 +461,8 @@ shmem_transport_portals4_put_nb_internal(void *target, const void *source, size_
         shmem_transport_portals4_long_frag_t *long_frag;
         ptl_handle_md_t md;
 
+        assert(len <= shmem_transport_portals4_max_msg_size);
+
         /* If user requested completion notification, create a frag object and
          * append the completion pointer */
         if (NULL != completion) {
@@ -570,6 +573,8 @@ shmem_transport_portals4_get_internal(void *target, const void *source, size_t l
 #else
     PORTALS4_GET_REMOTE_ACCESS_TWOPT(source, pt, offset, data_pt, heap_pt);
 #endif
+
+    assert(len <= shmem_transport_portals4_max_msg_size);
 
     ret = PtlGet(shmem_transport_portals4_get_md_h,
                  (ptl_size_t) target,
