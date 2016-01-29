@@ -15,13 +15,11 @@ TESTS =
 
 if ENABLE_LENGTHY_TESTS
 TESTS += \
-	NPshmem \
-	shmemlatency \
+        shmemlatency \
 	msgrate
 else
 check_PROGRAMS += \
-	NPshmem \
-	shmemlatency \
+        shmemlatency \
 	msgrate
 endif
 
@@ -31,9 +29,6 @@ LOG_COMPILER = $(TEST_RUNNER)
 AM_CPPFLAGS = -I$(top_srcdir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
 LDADD = $(top_builddir)/src/libsma.la
-
-NPshmem_SOURCES = netpipe.c netpipe.h shmem.c
-NPshmem_CPPFLAGS = $(AM_CPPFLAGS) -DSHMEM
 
 shmemlatency_SOURCES = shmemlatency.c
 

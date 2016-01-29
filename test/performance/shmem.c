@@ -3,7 +3,6 @@
  * machine I tested on (helix).  sched_yield() seemed to fix this issue. 
  */
 
-#include  "netpipe.h"
 #include <sched.h>
 
 double *pTime;

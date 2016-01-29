@@ -103,23 +103,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ======================================================================
 
-The SHMEM version of the NetPIPE application is included in this
-software as a test code.  Note that it is not included in the
-installed product (shmem.h and libsm), but only included as a
-stand-alone test.  It is distributed under the following license
-terms:
-
-"NetPIPE" -- Network Protocol Independent Performance Evaluator.
-Copyright 1997, 1998 Iowa State University Research Foundation, Inc.
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation.  You should have received a copy of the
-GNU General Public License along with this program; if not, write to the
-Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-
-======================================================================
-
 	SHMEM-PMI implementation is derived from MPICH
 
 
