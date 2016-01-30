@@ -1278,3 +1278,67 @@ FC_SHMEM_ALLTOALL64(void *target,
     shmem_internal_alltoall(target, source, *nelems * 8, *PE_start,
                             *logPE_stride, *PE_size, pSync_c);
 }
+
+
+#define FC_SHMEM_ALLTOALLS32 FC_FUNC_(shmem_alltoalls32, SHMEM_ALLTOALLS32)
+void FC_SHMEM_ALLTOALLS32(void *dest,
+                          void *source,
+                          fortran_integer_t *dst,
+                          fortran_integer_t *sst,
+                          fortran_integer_t *nelems,
+                          fortran_integer_t *PE_start,
+                          fortran_integer_t *logPE_stride,
+                          fortran_integer_t *PE_size,
+                          fortran_integer_t *pSync);
+void
+FC_SHMEM_ALLTOALLS32(void *target,
+                     void *source,
+                     fortran_integer_t *dst,
+                     fortran_integer_t *sst,
+                     fortran_integer_t *nelems,
+                     fortran_integer_t *PE_start,
+                     fortran_integer_t *logPE_stride,
+                     fortran_integer_t *PE_size,
+                     fortran_integer_t *pSync)
+{
+    long *pSync_c;
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    /* SHMEM_ALLTOALL_SYNC_SIZE is defined to allow this cast */
+    pSync_c = (long*) pSync;
+
+    shmem_internal_alltoalls(target, source, *dst, *sst, 4, *nelems,
+                             *PE_start, *logPE_stride, *PE_size, pSync_c);
+}
+
+
+#define FC_SHMEM_ALLTOALLS64 FC_FUNC_(shmem_alltoalls64, SHMEM_ALLTOALLS64)
+void FC_SHMEM_ALLTOALLS64(void *dest,
+                          void *source,
+                          fortran_integer_t *dst,
+                          fortran_integer_t *sst,
+                          fortran_integer_t *nelems,
+                          fortran_integer_t *PE_start,
+                          fortran_integer_t *logPE_stride,
+                          fortran_integer_t *PE_size,
+                          fortran_integer_t *pSync);
+void
+FC_SHMEM_ALLTOALLS64(void *target,
+                     void *source,
+                     fortran_integer_t *dst,
+                     fortran_integer_t *sst,
+                     fortran_integer_t *nelems,
+                     fortran_integer_t *PE_start,
+                     fortran_integer_t *logPE_stride,
+                     fortran_integer_t *PE_size,
+                     fortran_integer_t *pSync)
+{
+    long *pSync_c;
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    /* SHMEM_ALLTOALL_SYNC_SIZE is defined to allow this cast */
+    pSync_c = (long*) pSync;
+
+    shmem_internal_alltoalls(target, source, *dst, *sst, 8, *nelems,
+                             *PE_start, *logPE_stride, *PE_size, pSync_c);
+}

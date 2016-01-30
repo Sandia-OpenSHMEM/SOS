@@ -265,4 +265,7 @@ shmem_internal_fcollect(void *target, const void *source, size_t len,
 void shmem_internal_alltoall(void *dest, const void *source, size_t len,
                              int PE_start, int logPE_stride, int PE_size, long *pSync);
 
+void shmem_internal_alltoalls(void *dest, const void *source, ptrdiff_t dst,
+                              ptrdiff_t sst, size_t elem_size, size_t nelems,
+                              int PE_start, int logPE_stride, int PE_size, long *pSync);
 #endif

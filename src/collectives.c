@@ -1099,3 +1099,57 @@ shmem_internal_alltoall(void *dest, const void *source, size_t len,
     SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, PE_size);
     *pSync = 0;
 }
+
+
+void
+shmem_internal_alltoalls(void *dest, const void *source, ptrdiff_t dst,
+                         ptrdiff_t sst, size_t elem_size, size_t nelems,
+                         int PE_start, int logPE_stride, int PE_size, long *pSync)
+{
+    const long one = 1;
+    const void *dest_base = (uint8_t *) dest + shmem_internal_my_pe * nelems * dst * elem_size;
+    int peer;
+
+    if (0 == nelems)
+        return;
+
+    /* Implementation note: Neither OFI nor Portals presently has support for
+     * noncontiguous data at the target of a one-sided operation.  I'm not sure
+     * of the best communication schedule for the resulting doubly-nested
+     * all-to-all.  It may be preferable in some scenarios to exchange the
+     * loops below to spread out the communication and decrease the exposure to
+     * incast.
+     */
+
+    /* Send data round-robin, starting with my PE */
+    peer = shmem_internal_my_pe;
+    do {
+        size_t i;
+        uint8_t *dest_ptr   = (uint8_t *) dest_base;
+        uint8_t *source_ptr = (uint8_t *) source + peer * nelems * sst * elem_size;
+
+        for (i = nelems ; i > 0; i--) {
+            shmem_internal_put_small((void *) dest_ptr, (uint8_t *) source_ptr,
+                                     elem_size, peer);
+
+            source_ptr += sst * elem_size;
+            dest_ptr   += dst * elem_size;
+        }
+        peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
+                                                 PE_size);
+    } while (peer != shmem_internal_my_pe);
+
+    shmem_internal_fence();
+
+    /* Send flags round-robin, starting with my PE */
+    peer = shmem_internal_my_pe;
+    do {
+        shmem_internal_atomic_small(pSync, &one, sizeof(long), peer,
+                                    SHM_INTERNAL_SUM, DTYPE_LONG);
+        peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
+                                                 PE_size);
+    } while (peer != shmem_internal_my_pe);
+
+    SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, PE_size);
+    *pSync = 0;
+}
