@@ -1303,6 +1303,9 @@ FC_SHMEM_ALLTOALLS32(void *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ARG_POSITIVE(*sst);
+    SHMEM_ERR_CHECK_ARG_POSITIVE(*dst);
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_ALLTOALL_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1335,6 +1338,9 @@ FC_SHMEM_ALLTOALLS64(void *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ARG_POSITIVE(*sst);
+    SHMEM_ERR_CHECK_ARG_POSITIVE(*dst);
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_ALLTOALL_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
