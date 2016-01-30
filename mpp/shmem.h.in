@@ -227,12 +227,12 @@ double shmem_double_swap(double *target, double value, int pe);
 int shmem_int_swap(int *target, int value, int pe);
 long shmem_long_swap(long *target, long value, int pe);
 long long shmem_longlong_swap(long long *target, long long value, int pe);
-long shmem_swap(long *target, long value, int pe); /* FIXME C11 */
+long shmem_swap(long *target, long value, int pe);
 
 /* 8.4: Atomic Memory fetch-and-operate Routines -- Cswap */
 int shmem_int_cswap(int *target, int cond, int value, int pe);
 long shmem_long_cswap(long *target, long cond, long value, int pe);
-long long shmem_longlong_cswap(long long * target, long long cond, 
+long long shmem_longlong_cswap(long long * target, long long cond,
                           long long value, int pe);
 
 /* 8.4: Atomic Memory fetch-and-operate Routines -- Fetch and Add */
@@ -427,7 +427,7 @@ void shmem_fcollect64(void *target, const void *source, size_t nlong,
                       long *pSync);
 
 /* 8.5: Broadcast Routines */
-void shmem_broadcast32(void *target, const void *source, size_t nlong, 
+void shmem_broadcast32(void *target, const void *source, size_t nlong,
                        int PE_root, int PE_start, int logPE_stride,
                        int PE_size, long *pSync);
 void shmem_broadcast64(void *target, const void *source, size_t nlong,
