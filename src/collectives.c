@@ -1073,6 +1073,9 @@ shmem_internal_alltoall(void *dest, const void *source, size_t len,
     const void *dest_ptr = (uint8_t *) dest + shmem_internal_my_pe * len;
     int peer;
 
+    if (0 == len)
+        return;
+
     /* Send data round-robin, starting with my PE */
     peer = shmem_internal_my_pe;
     do {
