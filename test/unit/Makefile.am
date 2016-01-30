@@ -62,7 +62,8 @@ TESTS = \
 	global_exit \
 	asym_alloc \
 	set_fetch \
-	alltoall
+	alltoall \
+	alltoalls
 
 if USE_PORTALS4
 TESTS += \
@@ -254,3 +255,6 @@ set_fetch_f_LDADD = $(top_builddir)/src/libsma.la
 
 alltoall_SOURCES = alltoall.c
 alltoall_LDADD = $(top_builddir)/src/libsma.la
+
+alltoalls_SOURCES = alltoalls.c
+alltoalls_LDADD = $(top_builddir)/src/libsma.la
