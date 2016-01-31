@@ -22,10 +22,17 @@ program set_fetch
     me = shmem_my_pe()
     npes = shmem_n_pes()
 
+    var_i4 = 0
+    var_i8 = 0
+    var_r4 = 0.0
+    var_r8 = 0.0
+
     val_i4 = me + 1
     val_i8 = me + 1
     val_r4 = me + 1.0
     val_r8 = me + 1.0
+
+    call shmem_barrier_all()
 
     call shmem_int4_set(var_i4, val_i4, MOD(me+1, npes))
     call shmem_int8_set(var_i8, val_i8, MOD(me+1, npes))
