@@ -4,13 +4,13 @@
 
 long pSync[SHMEM_ALLTOALL_SYNC_SIZE];
 
-int is_active(int pe, int pe_start, int pe_stride, int pe_size) {
+static int is_active(int pe, int pe_start, int pe_stride, int pe_size) {
     int stride = 1 << pe_stride;
 
     return pe >= pe_start && pe < pe_start + pe_size * stride && (pe - pe_start) % stride == 0;
 }
 
-void alltoall_test(int32_t *out, int32_t *in, int pe_start, int pe_stride,
+static void alltoall_test(int32_t *out, int32_t *in, int pe_start, int pe_stride,
                    int pe_size)
 {
     int me, npes, i;
@@ -47,12 +47,11 @@ void alltoall_test(int32_t *out, int32_t *in, int pe_start, int pe_stride,
 
 
 int main(int argc, char **argv) {
-    int me, npes, i;
+    int npes, i;
     int32_t *in, *out;
 
     shmem_init();
 
-    me = shmem_my_pe();
     npes = shmem_n_pes();
 
     for (i = 0; i < SHMEM_ALLTOALL_SYNC_SIZE; i++)
