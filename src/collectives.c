@@ -333,6 +333,8 @@ shmem_internal_barrier_dissem(int PE_start, int logPE_stride, int PE_size, long 
        than sizeof(int) * 8. */
     assert(SHMEM_BARRIER_SYNC_SIZE >= (sizeof(int) * 8) / sizeof(long));
 
+    shmem_internal_quiet();
+
     for (i = 0, distance = 1 ; distance < PE_size ; ++i, distance <<= 1) {
         to = ((coll_rank + distance) % PE_size);
         to = PE_start + (to * stride);
@@ -352,7 +354,6 @@ shmem_internal_barrier_dissem(int PE_start, int logPE_stride, int PE_size, long 
                                     shmem_internal_my_pe,
                                     SHM_INTERNAL_SUM, SHM_INTERNAL_SIGNED_BYTE);
     }
-    shmem_internal_quiet();
 }
 
 
