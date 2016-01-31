@@ -356,6 +356,8 @@ int main(int argc, char **argv)
 	memset(source, -1, NUM_READ);
 	memset(sync_pes, -1, NUM_SYNC);
 
+	shmem_barrier_all();
+
 	if (nproc != 2) {
 		if (me == 0) {
 			fprintf(stderr, "This is a micro test and is only "
