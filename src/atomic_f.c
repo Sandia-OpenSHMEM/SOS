@@ -343,13 +343,13 @@ FC_SHMEM_INT8_FETCH(int64_t *source,
 
 
 #define FC_SHMEM_REAL4_FETCH FC_FUNC_(shmem_real4_fetch, SHMEM_REAL4_FETCH)
-int32_t FC_SHMEM_REAL4_FETCH(int32_t *source,
-                             fortran_integer_t *pe);
-int32_t
-FC_SHMEM_REAL4_FETCH(int32_t *source,
+float FC_SHMEM_REAL4_FETCH(float *source,
+                           fortran_integer_t *pe);
+float
+FC_SHMEM_REAL4_FETCH(float *source,
                      fortran_integer_t *pe)
 {
-    int32_t val;
+    float val;
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
@@ -361,13 +361,13 @@ FC_SHMEM_REAL4_FETCH(int32_t *source,
 
 
 #define FC_SHMEM_REAL8_FETCH FC_FUNC_(shmem_real8_fetch, SHMEM_REAL8_FETCH)
-int64_t FC_SHMEM_REAL8_FETCH(int64_t *source,
-                             fortran_integer_t *pe);
-int64_t
-FC_SHMEM_REAL8_FETCH(int64_t *source,
+double FC_SHMEM_REAL8_FETCH(double *source,
+                            fortran_integer_t *pe);
+double
+FC_SHMEM_REAL8_FETCH(double *source,
                      fortran_integer_t *pe)
 {
-    int64_t val;
+    double val;
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
@@ -411,12 +411,12 @@ FC_SHMEM_INT8_SET(int64_t *dest,
 
 
 #define FC_SHMEM_REAL4_SET FC_FUNC_(shmem_real4_set, SHMEM_REAL4_SET)
-void FC_SHMEM_REAL4_SET(int32_t *dest,
-                        int32_t *value,
+void FC_SHMEM_REAL4_SET(float *dest,
+                        float *value,
                         fortran_integer_t *pe);
 void
-FC_SHMEM_REAL4_SET(int32_t *dest,
-                   int32_t *value,
+FC_SHMEM_REAL4_SET(float *dest,
+                   float *value,
                    fortran_integer_t *pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -427,12 +427,12 @@ FC_SHMEM_REAL4_SET(int32_t *dest,
 
 
 #define FC_SHMEM_REAL8_SET FC_FUNC_(shmem_real8_set, SHMEM_REAL8_SET)
-void FC_SHMEM_REAL8_SET(int64_t *dest,
-                        int64_t *value,
+void FC_SHMEM_REAL8_SET(double *dest,
+                        double *value,
                         fortran_integer_t *pe);
 void
-FC_SHMEM_REAL8_SET(int64_t *dest,
-                   int64_t *value,
+FC_SHMEM_REAL8_SET(double *dest,
+                   double *value,
                    fortran_integer_t *pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
