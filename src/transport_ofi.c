@@ -743,7 +743,7 @@ int shmem_transport_init(long eager_size)
     const int npes = shmem_runtime_get_size();
     struct fi_info * p_info = NULL;
 
-    char *provname = getenv("SHMEM_OFI_USE_PROVIDER");
+    char *provname = shmem_util_getenv_str("OFI_USE_PROVIDER");
 
     ret = query_for_fabric(&p_info, provname);
     if(ret!=0)
