@@ -124,7 +124,7 @@
 #define shmem_longdouble_get pshmem_longdouble_get
 
 #pragma weak shmem_char_get = pshmem_char_get
-#define shmem_char_get = pshmem_char_get
+#define shmem_char_get pshmem_char_get
 
 #pragma weak shmem_short_get = pshmem_short_get
 #define shmem_short_get pshmem_short_get
@@ -142,7 +142,7 @@
 #define shmem_get8 pshmem_get8
 
 #pragma weak shmem_get16 = pshmem_get16
-#define shemm_get16 pshmem_get16
+#define shmem_get16 pshmem_get16
 
 #pragma weak shmem_get32 = pshmem_get32
 #define shmem_get32 pshmem_get32
@@ -823,6 +823,18 @@ shmem_longdouble_get(long double *target, const long double *source, size_t len,
     shmem_internal_get(target, source, sizeof(long double) * len, pe);
     shmem_internal_get_wait();
 }
+
+
+
+void
+shmem_char_get(char *target, const char *source, size_t len, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_get(target, source, sizeof(char) * len, pe);
+    shmem_internal_get_wait();
+}
+
 
 
 void
