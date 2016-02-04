@@ -99,3 +99,26 @@ shmem_util_getenv_long(const char* name, int is_sized, long default_value)
 
     return default_value;
 }
+
+
+char *
+shmem_util_getenv_str(const char* name)
+{
+    char *env_name, *env_value;
+
+    asprintf(&env_name, "SMA_%s", name);
+    env_value = getenv(env_name);
+    free(env_name);
+    if (env_value != NULL) {
+        return env_value;
+    }
+
+    asprintf(&env_name, "SHMEM_%s", name);
+    env_value = getenv(env_name);
+    free(env_name);
+    if (env_value != NULL) {
+        return env_value;
+    }
+
+    return NULL;
+}

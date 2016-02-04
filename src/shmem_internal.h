@@ -141,5 +141,6 @@ void* shmem_internal_get_next(intptr_t incr);
 
 /* Utility functions */
 long shmem_util_getenv_long(const char* name, int is_sized, long default_value);
+char *shmem_util_getenv_str(const char* name);
 
 #endif
