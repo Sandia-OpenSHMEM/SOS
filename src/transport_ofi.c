@@ -682,6 +682,8 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
     struct fi_fabric_attr fabric_attr = {0};
     struct fi_ep_attr   ep_attr = {0};
 
+    char *svc_name = shmem_util_getenv_str("OFI_SERVICE");
+
     shmem_transport_ofi_max_buffered_send = sizeof(long double);
 
     fabric_attr.prov_name = provname;
@@ -713,7 +715,7 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
 
     /* find fabric provider to use that is able to support RMA and ATOMICS */
     ret = fi_getinfo( FI_VERSION(OFI_MAJOR_VERSION, OFI_MINOR_VERSION),
-		      NULL, NULL, 0, &hints, p_info);
+                      NULL, svc_name, 0, &hints, p_info);
     if(ret!=0){
 	OFI_ERRMSG("getinfo didn't find any providers\n");
 	return ret;

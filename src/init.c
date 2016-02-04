@@ -15,7 +15,6 @@
 
 #include "config.h"
 
-#define _GNU_SOURCE /* for asprintf */
 #include <stdlib.h>
 #include <sys/time.h>
 #include <sys/param.h>
@@ -66,80 +65,6 @@ static char shmem_internal_my_hostname[MAXHOSTNAMELEN];
 #else
 static char shmem_internal_my_hostname[HOST_NAME_MAX];
 #endif
-
-
-static inline long errchk_atol(char *s)
-{
-    long val;
-    char *e;
-    errno = 0;
-
-    val = strtol(s,&e,0);
-    if(errno != 0) {
-        perror("env var conversion");
-        exit(1);
-    }
-
-    return val;
-}
- 
-/* atol() + optional scaled suffix recognition: 1K, 2M, 3G, 1T */
-static long
-atol_scaled(char *s)
-{
-    long val;
-    char *e;
-    errno = 0;
-
-    val = strtol(s,&e,0);
-    if(errno != 0 || e == s) {
-        shmem_runtime_abort(1, "env var conversion");
-    }
-    if (e == NULL || *e =='\0')
-        return val;
-
-    if (*e == 'K')
-        val *= 1024L;
-    else if (*e == 'M')
-        val *= 1024L*1024L;
-    else if (*e == 'G')
-        val *= 1024L*1024L*1024L;
-    else if (*e == 'T')
-        val *= 1024L*1024L*1024L*1024L;
-
-    return val;
-}
-
-
-static long
-get_env_long(const char* name, int is_sized, long default_value)
-{
-    char *env_name, *env_value;
-
-    asprintf(&env_name, "SMA_%s", name);
-    env_value = getenv(env_name);
-    free(env_name);
-    if (env_value != NULL) {
-        if (is_sized) {
-            return atol_scaled(env_value);
-        } else {
-            return errchk_atol(env_value);
-        }
-    }
-
-    asprintf(&env_name, "SHMEM_%s", name);
-    env_value = getenv(env_name);
-    free(env_name);
-    if (env_value != NULL) {
-        if (is_sized) {
-            return atol_scaled(env_value);
-        } else {
-            return errchk_atol(env_value);
-        }
-    }
-
-    return default_value;
-}
 
 
 static void
@@ -225,11 +150,11 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     }
 
     /* Process environment variables */
-    radix = get_env_long("COLL_RADIX", 0, 4);
-    crossover = get_env_long("COLL_CROSSOVER", 0, 4);
-    heap_size = get_env_long("SYMMETRIC_SIZE", 1, 512 * 1024 * 1024);
-    eager_size = get_env_long("BOUNCE_SIZE", 1, 2048);
-    heap_use_malloc = get_env_long("SYMMETRIC_HEAP_USE_MALLOC", 0, 0);
+    radix = shmem_util_getenv_long("COLL_RADIX", 0, 4);
+    crossover = shmem_util_getenv_long("COLL_CROSSOVER", 0, 4);
+    heap_size = shmem_util_getenv_long("SYMMETRIC_SIZE", 1, 512 * 1024 * 1024);
+    eager_size = shmem_util_getenv_long("BOUNCE_SIZE", 1, 2048);
+    heap_use_malloc = shmem_util_getenv_long("SYMMETRIC_HEAP_USE_MALLOC", 0, 0);
 
     /* Find symmetric data */
 #ifdef __APPLE__
@@ -276,8 +201,8 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     xpmem_initialized = 1;
 #endif
 #ifdef USE_CMA
-    shmem_transport_cma_put_max = get_env_long("CMA_PUT_MAX", 1, 8*1024);
-    shmem_transport_cma_get_max = get_env_long("CMA_GET_MAX", 1, 16*1024);
+    shmem_transport_cma_put_max = shmem_util_getenv_long("CMA_PUT_MAX", 1, 8*1024);
+    shmem_transport_cma_get_max = shmem_util_getenv_long("CMA_GET_MAX", 1, 16*1024);
 
     ret = shmem_transport_cma_init(eager_size);
     if (0 != ret) {

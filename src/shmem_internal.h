@@ -139,5 +139,7 @@ int shmem_internal_collectives_init(int requested_crossover,
 void *shmem_internal_shmalloc(size_t size);
 void* shmem_internal_get_next(intptr_t incr);
 
+/* Utility functions */
+long shmem_util_getenv_long(const char* name, int is_sized, long default_value);
 
 #endif
