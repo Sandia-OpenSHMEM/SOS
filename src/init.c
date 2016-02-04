@@ -115,9 +115,8 @@ static long
 get_env_long(const char* name, int is_sized, long default_value)
 {
     char *env_name, *env_value;
-    int num_bytes;
 
-    num_bytes = asprintf(&env_name, "SMA_%s", name);
+    asprintf(&env_name, "SMA_%s", name);
     env_value = getenv(env_name);
     free(env_name);
     if (env_value != NULL) {
@@ -128,7 +127,7 @@ get_env_long(const char* name, int is_sized, long default_value)
         }
     }
 
-    num_bytes = asprintf(&env_name, "SHMEM_%s", name);
+    asprintf(&env_name, "SHMEM_%s", name);
     env_value = getenv(env_name);
     free(env_name);
     if (env_value != NULL) {
