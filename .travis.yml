@@ -4,25 +4,23 @@ compiler:
     #- clang
     - gcc
 env:
-    - SMA_BOUNCE_SIZE=0
-    - SMA_BOUNCE_SIZE=8
-    - SMA_BARRIER_ALGORITHM=auto
-    - SMA_BARRIER_ALGORITHM=linear
-    - SMA_BARRIER_ALGORITHM=tree
-    - SMA_BARRIER_ALGORITHM=dissem
-    - SMA_BCAST_ALGORITHM=auto
-    - SMA_BCAST_ALGORITHM=linear
-    - SMA_BCAST_ALGORITHM=tree
-    - SMA_REDUCE_ALGORITHM=auto
-    - SMA_REDUCE_ALGORITHM=recdbl
-    - SMA_REDUCE_ALGORITHM=linear
-    - SMA_REDUCE_ALGORITHM=tree
-    - SMA_COLLECT_ALGORITHM=auto
-    - SMA_COLLECT_ALGORITHM=linear
-    - SMA_FCOLLECT_ALGORITHM=auto
-    - SMA_FCOLLECT_ALGORITHM=linear
-    - SMA_FCOLLECT_ALGORITHM=ring
-    - SMA_FCOLLECT_ALGORITHM=recdbl
+    global:
+        - TRAVIS_PAR_MAKE="-j 4"
+        - SOS_GLOBAL_BUILD_OPTS="--disable-long-fortran-header --enable-picky --enable-pmi-simple FCFLAGS=-fcray-pointer"
+        - PTL_IFACE_NAME=venet0
+        - FI_LOG_LEVEL=error
+        - SHMEM_OFI_USE_PROVIDER=sockets
+        - SMA_INFO=1
+    matrix:
+        - # Defaults
+        - SOS_BUILD_OPTS="--disable-mr-scalable"
+        - SOS_BUILD_OPTS="--enable-cma --enable-error-checking --enable-profiling --enable-remote-virtual-addressing"
+        - SMA_BOUNCE_SIZE=0 SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+        - SMA_BARRIER_ALGORITHM=auto   SMA_BCAST_ALGORITHM=auto   SMA_REDUCE_ALGORITHM=auto    SMA_COLLECT_ALGORITHM=auto    SMA_FCOLLECT_ALGORITHM=auto SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+        - SMA_BARRIER_ALGORITHM=linear SMA_BCAST_ALGORITHM=linear SMA_REDUCE_ALGORITHM=linear  SMA_COLLECT_ALGORITHM=linear  SMA_FCOLLECT_ALGORITHM=linear SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+        - SMA_BARRIER_ALGORITHM=tree   SMA_BCAST_ALGORITHM=tree   SMA_REDUCE_ALGORITHM=tree SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+        - SMA_BARRIER_ALGORITHM=dissem SMA_REDUCE_ALGORITHM=recdbl  SMA_FCOLLECT_ALGORITHM=recdbl SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+        - SMA_FCOLLECT_ALGORITHM=ring SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
 os:
     - linux
 
@@ -34,20 +32,14 @@ before_install:
     - export SOS_SRC=$PWD
     - export TRAVIS_SRC=$HOME/travis/src
     - export TRAVIS_INSTALL=$HOME/travis/install
-    - export TRAVIS_PAR_MAKE="-j 4"
     ## Fetch packages
     - sudo apt-get update -qq
     - sudo apt-get install -y gfortran
     ## Build libev
-    # JSD: Schmorp.de went down, so I posted a copy on Google drive...
-    #- cd $TRAVIS_SRC
-    #- wget http://dist.schmorp.de/libev/Attic/libev-4.15.tar.gz
-    #- tar -xzvf libev-4.15.tar.gz
-    #- cd libev-4.15 && ./configure --prefix=/usr/ && make && sudo make install
     - cd $TRAVIS_SRC
-    - curl -L -o libev-4.20.tar.gz 'https://docs.google.com/uc?authuser=0&id=0BxdTWEtawABaT2loSTM4X0k5bEU&export=download'
-    - tar -xzvf libev-4.20.tar.gz
-    - cd libev-4.20 && ./configure --prefix=$TRAVIS_INSTALL/libev && make && sudo make install
+    - wget http://dist.schmorp.de/libev/Attic/libev-4.22.tar.gz
+    - tar -xzvf libev-4.22.tar.gz
+    - cd libev-4.22 && ./configure --prefix=$TRAVIS_INSTALL/libev && make && sudo make install
     ## Build Portals 4
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/regrant/portals4.git portals4
@@ -57,7 +49,6 @@ before_install:
     # JSD: --enable-transport-shmem removed; it was causing tests to hang
     - make $TRAVIS_PAR_MAKE
     - make install
-    - export PTL_IFACE_NAME=venet0
     ## Build libfabric
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ofiwg/libfabric.git libfabric
@@ -66,7 +57,6 @@ before_install:
     - ./configure --prefix=$TRAVIS_INSTALL/libfabric
     - make $TRAVIS_PAR_MAKE
     - make install
-    - export FI_LOG_LEVEL=error
     ## Build Hydra
     - cd $TRAVIS_SRC
     - wget http://www.mpich.org/static/downloads/3.2/hydra-3.2.tar.gz
@@ -98,7 +88,7 @@ script:
     ###
     - cd $SOS_SRC
     - export PATH=$TRAVIS_INSTALL/hydra/bin:$TRAVIS_INSTALL/portals4/bin:$BASE_PATH
-    - ./configure --with-portals4=$TRAVIS_INSTALL/portals4/ --disable-long-fortran-header --prefix=$TRAVIS_INSTALL/sandia-shmem-portals4 --enable-error-checking --enable-remote-virtual-addressing --enable-picky --enable-pmi-simple FCFLAGS="-fcray-pointer"
+    - ./configure --with-portals4=$TRAVIS_INSTALL/portals4/ --prefix=$TRAVIS_INSTALL/sandia-shmem-portals4 $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
     #- make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2 timeout 10" check
@@ -109,7 +99,7 @@ script:
     ###
     - cd $SOS_SRC
     - export PATH=$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - ./configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --disable-long-fortran-header --prefix=$TRAVIS_INSTALL/sandia-shmem-ofi --enable-error-checking --enable-remote-virtual-addressing --enable-picky --enable-pmi-simple FCFLAGS="-fcray-pointer"
+    - ./configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --prefix=$TRAVIS_INSTALL/sandia-shmem-ofi $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
     - make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2" check
