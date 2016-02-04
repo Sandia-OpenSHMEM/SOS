@@ -91,6 +91,38 @@ extern int shmem_internal_thread_level;
 #endif /* ENABLE_ERROR_CHECKING */
 
 
+/*
+ * Internal Assertions
+ *
+ * Assertions are not compiled unless ENABLE_ERROR_CHECKING is defined.  The
+ * "persistent" assertion, shmem_internal_assertp is always compiled.
+ */
+#define shmem_internal_assert_fail(file_, line_, cond_)                 \
+    do {                                                                \
+        fprintf(stderr, "[%03d] Assertion Failed: %s:%d: %s\n",         \
+                shmem_internal_my_pe, file_, line_, cond_);             \
+        shmem_runtime_abort(1, "OpenSHMEM exited in error");            \
+    } while (0)
+
+#define shmem_internal_assertp(cond)                                    \
+    do {                                                                \
+        if (!(cond)) {                                                  \
+            shmem_internal_assert_fail(__FILE__, __LINE__, #cond);      \
+        }                                                               \
+    } while (0)
+
+#ifdef ENABLE_ERROR_CHECKING
+#define shmem_internal_assert(cond)                                     \
+    do {                                                                \
+        if (!(cond)) {                                                  \
+            shmem_internal_assert_fail(__FILE__, __LINE__, #cond);      \
+        }                                                               \
+    } while (0)
+#else
+#define shmem_internal_assert(cond)
+#endif
+
+
 #ifdef ENABLE_THREADS
 
 #   ifdef ENABLE_PTHREAD_MUTEX
