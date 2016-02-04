@@ -85,7 +85,6 @@ extern int shmem_internal_thread_level;
 #else
 #define SHMEM_ERR_CHECK_INITIALIZED()
 #define SHMEM_ERR_CHECK_ARG_POSITIVE(arg)
-#define SHMEM_ERR_CHECK_ACTIVE_SET(arg)
 #define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size)
 
 #endif /* ENABLE_ERROR_CHECKING */
