@@ -112,6 +112,7 @@ static inline void fi_get_mr(const void *addr, int dest_pe, uint8_t **mr_addr, u
     }
 
     else {
+        *mr_addr = NULL;
         printf("[%03d] ERROR in fi_get_key: address (0x%p) outside of symmetric areas\n",
                shmem_internal_my_pe, addr);
         RAISE_ERROR(1);
