@@ -20,7 +20,7 @@
 
 
 enum coll_type_t {
-    AUTO,
+    AUTO = 0,
     LINEAR,
     TREE,
     DISSEM,
@@ -28,6 +28,8 @@ enum coll_type_t {
     RECDBL
 };
 typedef enum coll_type_t coll_type_t;
+
+extern char *coll_type_str[];
 
 extern long *shmem_internal_barrier_all_psync;
 extern int shmem_internal_tree_crossover;

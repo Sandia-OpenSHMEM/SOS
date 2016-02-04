@@ -281,18 +281,18 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
     /* last minute printing of information */
     if (0 == shmem_internal_my_pe) {
-        if (NULL != getenv("SMA_VERSION")) {
+        if (NULL != shmem_util_getenv_str("VERSION")) {
             printf(PACKAGE_STRING "\n");
             fflush(NULL);
         }
 
-        if (NULL != getenv("SMA_INFO")) {
+        if (NULL != shmem_util_getenv_str("INFO")) {
             printf(PACKAGE_STRING "\n\n");
-            printf("SMA_VERSION             %s\n", 
-                   (NULL != getenv("SMA_VERSION")) ? "Set" : "Not set");
+            printf("SMA_VERSION             %s\n",
+                   (NULL != shmem_util_getenv_str("VERSION")) ? "Set" : "Not set");
             printf("\tIf set, print library version at startup\n");
-            printf("SMA_INFO                %s\n", 
-                   (NULL != getenv("SMA_INFO")) ? "Set" : "Not set");
+            printf("SMA_INFO                %s\n",
+                   (NULL != shmem_util_getenv_str("INFO")) ? "Set" : "Not set");
             printf("\tIf set, print this help message at startup\n");
             printf("SMA_SYMMETRIC_SIZE      %ld\n", heap_size);
             printf("\tSymmentric heap size\n");
@@ -302,25 +302,15 @@ shmem_internal_init(int tl_requested, int *tl_provided)
             printf("\tRadix for tree-based collectives\n");
             printf("SMA_BOUNCE_SIZE         %ld\n", eager_size);
             printf("\tMaximum message size to bounce buffer\n");
-            printf("SMA_BARRIER_ALGORITHM   %s\n",
-                   (NULL == getenv("SMA_BARRIER_ALGORITHM") ? "auto" : 
-                    getenv("SMA_BARRIER_ALGORITHM")));
+            printf("SMA_BARRIER_ALGORITHM   %s\n", coll_type_str[shmem_internal_barrier_type]);
             printf("\tAlgorithm for barrier.  Options are auto, linear, tree, dissem\n");
-            printf("SMA_BCAST_ALGORITHM     %s\n",
-                   (NULL == getenv("SMA_BCAST_ALGORITHM") ? "auto" : 
-                    getenv("SMA_BCAST_ALGORITHM")));
+            printf("SMA_BCAST_ALGORITHM     %s\n", coll_type_str[shmem_internal_bcast_type]);
             printf("\tAlgorithm for broadcast.  Options are auto, linear, tree\n");
-            printf("SMA_REDUCE_ALGORITHM    %s\n",
-                   (NULL == getenv("SMA_REDUCE_ALGORITHM") ? "auto" : 
-                    getenv("SMA_REDUCE_ALGORITHM")));
+            printf("SMA_REDUCE_ALGORITHM    %s\n", coll_type_str[shmem_internal_reduce_type]);
             printf("\tAlgorithm for reductions.  Options are auto, linear, tree, recdbl\n");
-            printf("SMA_COLLECT_ALGORITHM   %s\n",
-                   (NULL == getenv("SMA_COLLECT_ALGORITHM") ? "auto" : 
-                    getenv("SMA_COLLECT_ALGORITHM")));
+            printf("SMA_COLLECT_ALGORITHM   %s\n", coll_type_str[shmem_internal_collect_type]);
             printf("\tAlgorithm for collect.  Options are auto, linear\n");
-            printf("SMA_FCOLLECT_ALGORITHM  %s\n",
-                   (NULL == getenv("SMA_FCOLLECT_ALGORITHM") ? "auto" : 
-                    getenv("SMA_FCOLLECT_ALGORITHM")));
+            printf("SMA_FCOLLECT_ALGORITHM  %s\n", coll_type_str[shmem_internal_fcollect_type]);
             printf("\tAlgorithm for fcollect.  Options are auto, linear, ring, recdbl\n");
             fflush(NULL);
         }
