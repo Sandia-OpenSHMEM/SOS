@@ -395,108 +395,118 @@ static inline int allocate_recv_cntr_mr(void)
 
 static int publish_mr_info(void)
 {
-    int err;
 #ifndef ENABLE_MR_SCALABLE
-    uint64_t heap_key, data_key;
-#endif
+    {
+        int err;
+        uint64_t heap_key, data_key;
 
-#ifndef ENABLE_MR_SCALABLE
-    heap_key = fi_mr_key(shmem_transport_ofi_target_heap_mrfd);
-    data_key = fi_mr_key(shmem_transport_ofi_target_data_mrfd);
+        heap_key = fi_mr_key(shmem_transport_ofi_target_heap_mrfd);
+        data_key = fi_mr_key(shmem_transport_ofi_target_data_mrfd);
 
-    err = shmem_runtime_put("fi_heap_key", &heap_key, sizeof(uint64_t));
-    if (err) {
-        OFI_ERRMSG("Error putting heap key to runtime KVS\n");
-        return 1;
-    }
+        err = shmem_runtime_put("fi_heap_key", &heap_key, sizeof(uint64_t));
+        if (err) {
+            OFI_ERRMSG("Error putting heap key to runtime KVS\n");
+            return 1;
+        }
 
-    err = shmem_runtime_put("fi_data_key", &data_key, sizeof(uint64_t));
-    if (err) {
-        OFI_ERRMSG("Error putting data segment key to runtime KVS\n");
-        return 1;
+        err = shmem_runtime_put("fi_data_key", &data_key, sizeof(uint64_t));
+        if (err) {
+            OFI_ERRMSG("Error putting data segment key to runtime KVS\n");
+            return 1;
+        }
     }
 #endif /* ENABLE_MR_SCALABLE */
 
 #ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-    err = shmem_runtime_put("fi_heap_addr", &shmem_internal_heap_base, sizeof(uint8_t*));
-    if (err) {
-        OFI_ERRMSG("Error putting heap address to runtime KVS\n");
-        return 1;
-    }
+    {
+        int err;
+        err = shmem_runtime_put("fi_heap_addr", &shmem_internal_heap_base, sizeof(uint8_t*));
+        if (err) {
+            OFI_ERRMSG("Error putting heap address to runtime KVS\n");
+            return 1;
+        }
 
-    err = shmem_runtime_put("fi_data_addr", &shmem_internal_data_base, sizeof(uint8_t*));
-    if (err) {
-        OFI_ERRMSG("Error putting data segment address to runtime KVS\n");
-        return 1;
+        err = shmem_runtime_put("fi_data_addr", &shmem_internal_data_base, sizeof(uint8_t*));
+        if (err) {
+            OFI_ERRMSG("Error putting data segment address to runtime KVS\n");
+            return 1;
+        }
     }
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 
     return 0;
 }
 
-int populate_mr_tables(void) {
-    int i, err;
-
+static int populate_mr_tables(void)
+{
 #ifndef ENABLE_MR_SCALABLE
-    shmem_transport_ofi_target_heap_keys = malloc(sizeof(uint64_t) * shmem_internal_num_pes);
-    if (NULL == shmem_transport_ofi_target_heap_keys) {
-        OFI_ERRMSG("Out of memory allocating heap keytable\n");
-        return 1;
-    }
+    {
+        int i, err;
 
-    shmem_transport_ofi_target_data_keys = malloc(sizeof(uint64_t) * shmem_internal_num_pes);
-    if (NULL == shmem_transport_ofi_target_data_keys) {
-        OFI_ERRMSG("Out of memory allocating heap keytable\n");
-        return 1;
-    }
-
-    /* Called after the upper layer performs the runtime exchange */
-    for (i = 0; i < shmem_internal_num_pes; i++) {
-        err = shmem_runtime_get(i, "fi_heap_key",
-                          &shmem_transport_ofi_target_heap_keys[i],
-                          sizeof(uint64_t));
-        if (err) {
-            OFI_ERRMSG("Error getting heap key from runtime KVS\n");
+        shmem_transport_ofi_target_heap_keys = malloc(sizeof(uint64_t) * shmem_internal_num_pes);
+        if (NULL == shmem_transport_ofi_target_heap_keys) {
+            OFI_ERRMSG("Out of memory allocating heap keytable\n");
             return 1;
         }
-        err = shmem_runtime_get(i, "fi_data_key",
-                          &shmem_transport_ofi_target_data_keys[i],
-                          sizeof(uint64_t));
-        if (err) {
-            OFI_ERRMSG("Error getting data segment key from runtime KVS\n");
+
+        shmem_transport_ofi_target_data_keys = malloc(sizeof(uint64_t) * shmem_internal_num_pes);
+        if (NULL == shmem_transport_ofi_target_data_keys) {
+            OFI_ERRMSG("Out of memory allocating heap keytable\n");
             return 1;
+        }
+
+        /* Called after the upper layer performs the runtime exchange */
+        for (i = 0; i < shmem_internal_num_pes; i++) {
+            err = shmem_runtime_get(i, "fi_heap_key",
+                                    &shmem_transport_ofi_target_heap_keys[i],
+                                    sizeof(uint64_t));
+            if (err) {
+                OFI_ERRMSG("Error getting heap key from runtime KVS\n");
+                return 1;
+            }
+            err = shmem_runtime_get(i, "fi_data_key",
+                                    &shmem_transport_ofi_target_data_keys[i],
+                                    sizeof(uint64_t));
+            if (err) {
+                OFI_ERRMSG("Error getting data segment key from runtime KVS\n");
+                return 1;
+            }
         }
     }
 #endif /* ENABLE_MR_SCALABLE */
 
 #ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-    shmem_transport_ofi_target_heap_addrs = malloc(sizeof(uint8_t*) * shmem_internal_num_pes);
-    if (NULL == shmem_transport_ofi_target_heap_addrs) {
-        OFI_ERRMSG("Out of memory allocating heap addrtable\n");
-        return 1;
-    }
+    {
+        int i, err;
 
-    shmem_transport_ofi_target_data_addrs = malloc(sizeof(uint8_t*) * shmem_internal_num_pes);
-    if (NULL == shmem_transport_ofi_target_data_addrs) {
-        OFI_ERRMSG("Out of memory allocating data addrtable\n");
-        return 1;
-    }
-
-    /* Called after the upper layer performs the runtime exchange */
-    for (i = 0; i < shmem_internal_num_pes; i++) {
-        err = shmem_runtime_get(i, "fi_heap_addr",
-                          &shmem_transport_ofi_target_heap_addrs[i],
-                          sizeof(uint8_t*));
-        if (err) {
-            OFI_ERRMSG("Error getting heap addr from runtime KVS\n");
+        shmem_transport_ofi_target_heap_addrs = malloc(sizeof(uint8_t*) * shmem_internal_num_pes);
+        if (NULL == shmem_transport_ofi_target_heap_addrs) {
+            OFI_ERRMSG("Out of memory allocating heap addrtable\n");
             return 1;
         }
-        err = shmem_runtime_get(i, "fi_data_addr",
-                          &shmem_transport_ofi_target_data_addrs[i],
-                          sizeof(uint8_t*));
-        if (err) {
-            OFI_ERRMSG("Error getting data segment addr from runtime KVS\n");
+
+        shmem_transport_ofi_target_data_addrs = malloc(sizeof(uint8_t*) * shmem_internal_num_pes);
+        if (NULL == shmem_transport_ofi_target_data_addrs) {
+            OFI_ERRMSG("Out of memory allocating data addrtable\n");
             return 1;
+        }
+
+        /* Called after the upper layer performs the runtime exchange */
+        for (i = 0; i < shmem_internal_num_pes; i++) {
+            err = shmem_runtime_get(i, "fi_heap_addr",
+                                    &shmem_transport_ofi_target_heap_addrs[i],
+                                    sizeof(uint8_t*));
+            if (err) {
+                OFI_ERRMSG("Error getting heap addr from runtime KVS\n");
+                return 1;
+            }
+            err = shmem_runtime_get(i, "fi_data_addr",
+                                    &shmem_transport_ofi_target_data_addrs[i],
+                                    sizeof(uint8_t*));
+            if (err) {
+                OFI_ERRMSG("Error getting data segment addr from runtime KVS\n");
+                return 1;
+            }
         }
     }
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
@@ -682,6 +692,8 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
     struct fi_fabric_attr fabric_attr = {0};
     struct fi_ep_attr   ep_attr = {0};
 
+    char *svc_name = shmem_util_getenv_str("OFI_SERVICE");
+
     shmem_transport_ofi_max_buffered_send = sizeof(long double);
 
     fabric_attr.prov_name = provname;
@@ -713,7 +725,7 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
 
     /* find fabric provider to use that is able to support RMA and ATOMICS */
     ret = fi_getinfo( FI_VERSION(OFI_MAJOR_VERSION, OFI_MINOR_VERSION),
-		      NULL, NULL, 0, &hints, p_info);
+                      NULL, svc_name, 0, &hints, p_info);
     if(ret!=0){
 	OFI_ERRMSG("getinfo didn't find any providers\n");
 	return ret;
@@ -741,7 +753,7 @@ int shmem_transport_init(long eager_size)
     const int npes = shmem_runtime_get_size();
     struct fi_info * p_info = NULL;
 
-    char *provname = getenv("SHMEM_OFI_USE_PROVIDER");
+    char *provname = shmem_util_getenv_str("OFI_USE_PROVIDER");
 
     ret = query_for_fabric(&p_info, provname);
     if(ret!=0)

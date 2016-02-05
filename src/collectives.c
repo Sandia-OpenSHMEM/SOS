@@ -28,6 +28,13 @@ coll_type_t shmem_internal_fcollect_type = AUTO;
 long *shmem_internal_barrier_all_psync;
 int shmem_internal_tree_crossover = -1;
 
+char *coll_type_str[] = { "AUTO",
+                          "LINEAR",
+                          "TREE",
+                          "DISSEM",
+                          "RING",
+                          "RECDBL" };
+
 static int *full_tree_children;
 static int full_tree_num_children;
 static int full_tree_parent;
@@ -110,7 +117,7 @@ shmem_internal_collectives_init(int requested_crossover,
     }
     full_tree_parent = my_root;
 
-    if (NULL != (type = getenv("SMA_BARRIER_ALGORITHM"))) {
+    if (NULL != (type = shmem_util_getenv_str("BARRIER_ALGORITHM"))) {
         if (0 == strcmp(type, "auto")) {
             shmem_internal_barrier_type = AUTO;
         } else if (0 == strcmp(type, "linear")) {
@@ -124,7 +131,7 @@ shmem_internal_collectives_init(int requested_crossover,
                     shmem_internal_my_pe, type);
         }
     }
-    if (NULL != (type = getenv("SMA_BCAST_ALGORITHM"))) {
+    if (NULL != (type = shmem_util_getenv_str("BCAST_ALGORITHM"))) {
         if (0 == strcmp(type, "auto")) {
             shmem_internal_bcast_type = AUTO;
         } else if (0 == strcmp(type, "linear")) {
@@ -136,7 +143,7 @@ shmem_internal_collectives_init(int requested_crossover,
                     shmem_internal_my_pe, type);
         }
     }
-    if (NULL != (type = getenv("SMA_REDUCE_ALGORITHM"))) {
+    if (NULL != (type = shmem_util_getenv_str("REDUCE_ALGORITHM"))) {
         if (0 == strcmp(type, "auto")) {
             shmem_internal_reduce_type = AUTO;
         } else if (0 == strcmp(type, "linear")) {
@@ -150,7 +157,7 @@ shmem_internal_collectives_init(int requested_crossover,
                     shmem_internal_my_pe, type);
         }
     }
-    if (NULL != (type = getenv("SMA_COLLECT_ALGORITHM"))) {
+    if (NULL != (type = shmem_util_getenv_str("COLLECT_ALGORITHM"))) {
         if (0 == strcmp(type, "auto")) {
             shmem_internal_collect_type = AUTO;
         } else if (0 == strcmp(type, "linear")) {
@@ -160,7 +167,7 @@ shmem_internal_collectives_init(int requested_crossover,
                     shmem_internal_my_pe, type);
         }
     }
-    if (NULL != (type = getenv("SMA_FCOLLECT_ALGORITHM"))) {
+    if (NULL != (type = shmem_util_getenv_str("FCOLLECT_ALGORITHM"))) {
         if (0 == strcmp(type, "auto")) {
             shmem_internal_fcollect_type = AUTO;
         } else if (0 == strcmp(type, "linear")) {

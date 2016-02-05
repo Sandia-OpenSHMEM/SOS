@@ -43,7 +43,8 @@ libsma_la_SOURCES = \
 	collectives_c.c \
 	lock_c.c \
 	cache_management_c.c \
-	transport.h
+	transport.h \
+	util.c
 
 if HAVE_FORTRAN
 libsma_la_SOURCES += \
