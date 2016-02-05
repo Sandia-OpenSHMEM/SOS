@@ -718,7 +718,7 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
     ep_attr.type              = FI_EP_RDM; /* reliable connectionless */
     hints.fabric_attr	      = &fabric_attr;
     tx_attr.op_flags          = FI_DELIVERY_COMPLETE;
-    tx_attr.inject_size       = shmem_transport_ofi_max_buffered_send;
+    tx_attr.inject_size       = shmem_transport_ofi_max_buffered_send; /*require provider to support this as a min*/
     hints.tx_attr	      = &tx_attr; /* TODO: fill tx_attr */
     hints.rx_attr	      = NULL;
     hints.ep_attr             = &ep_attr;
@@ -742,6 +742,9 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
 	OFI_ERRMSG("provider hasn't set max_msg_size\n");
 	return 1;
     }
+
+    if((*p_info)->tx_attr->inject_size > shmem_transport_ofi_max_buffered_send)
+	shmem_transport_ofi_max_buffered_send = (*p_info)->tx_attr->inject_size;
 
     return ret;
 

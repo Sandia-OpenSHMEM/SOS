@@ -356,6 +356,8 @@ shmem_transport_put_small(void *target, const void *source, size_t len, int pe)
         uint64_t key;
         uint8_t *addr;
 
+        assert(len <= shmem_transport_ofi_max_buffered_send);
+
         fi_get_mr(target, pe, &addr, &key);
 
 	do {
