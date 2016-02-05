@@ -395,12 +395,11 @@ static inline int allocate_recv_cntr_mr(void)
 
 static int publish_mr_info(void)
 {
-    int err;
 #ifndef ENABLE_MR_SCALABLE
-    uint64_t heap_key, data_key;
-#endif
+    {
+        int err;
+        uint64_t heap_key, data_key;
 
-#ifndef ENABLE_MR_SCALABLE
     heap_key = fi_mr_key(shmem_transport_ofi_target_heap_mrfd);
     data_key = fi_mr_key(shmem_transport_ofi_target_data_mrfd);
 
@@ -415,9 +414,12 @@ static int publish_mr_info(void)
         OFI_ERRMSG("Error putting data segment key to runtime KVS\n");
         return 1;
     }
+    }
 #endif /* ENABLE_MR_SCALABLE */
 
 #ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    {
+        int err;
     err = shmem_runtime_put("fi_heap_addr", &shmem_internal_heap_base, sizeof(uint8_t*));
     if (err) {
         OFI_ERRMSG("Error putting heap address to runtime KVS\n");
@@ -429,15 +431,18 @@ static int publish_mr_info(void)
         OFI_ERRMSG("Error putting data segment address to runtime KVS\n");
         return 1;
     }
+    }
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 
     return 0;
 }
 
-int populate_mr_tables(void) {
-    int i, err;
-
+static int populate_mr_tables(void)
+{
 #ifndef ENABLE_MR_SCALABLE
+    {
+        int i, err;
+
     shmem_transport_ofi_target_heap_keys = malloc(sizeof(uint64_t) * shmem_internal_num_pes);
     if (NULL == shmem_transport_ofi_target_heap_keys) {
         OFI_ERRMSG("Out of memory allocating heap keytable\n");
@@ -467,9 +472,13 @@ int populate_mr_tables(void) {
             return 1;
         }
     }
+    }
 #endif /* ENABLE_MR_SCALABLE */
 
 #ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    {
+        int i, err;
+
     shmem_transport_ofi_target_heap_addrs = malloc(sizeof(uint8_t*) * shmem_internal_num_pes);
     if (NULL == shmem_transport_ofi_target_heap_addrs) {
         OFI_ERRMSG("Out of memory allocating heap addrtable\n");
@@ -498,6 +507,7 @@ int populate_mr_tables(void) {
             OFI_ERRMSG("Error getting data segment addr from runtime KVS\n");
             return 1;
         }
+    }
     }
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 
