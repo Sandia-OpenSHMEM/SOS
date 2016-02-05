@@ -186,8 +186,8 @@ void shmem_double_put_nbi(double *dest, const double *source, size_t nelems,
                           int pe);
 void shmem_longdouble_put_nbi(long double *dest, const long double *source,
                               size_t nelems, int pe);
-void shmem_char_put_nbi(char *dest, const char *source, size_t nelems, int pe);
 void shmem_putmem_nbi(void *dest, const void *source, size_t nelems, int pe);
+void shmem_char_put_nbi(char *dest, const char *source, size_t nelems, int pe);
 void shmem_short_put_nbi(short *dest, const short *source, size_t nelems,
                          int pe);
 void shmem_int_put_nbi(int *dest, const int *source, size_t nelems, int pe);
@@ -207,8 +207,8 @@ void shmem_double_get_nbi(double *dest, const double *source, size_t nelems,
                           int pe);
 void shmem_longdouble_get_nbi(long double *dest, const long double *source,
                               size_t nelems, int pe);
-void shmem_char_get_nbi(char *dest, const char *source, size_t nelems, int pe);
 void shmem_getmem_nbi(void *dest, const void *source, size_t nelems, int pe);
+void shmem_char_get_nbi(char *dest, const char *source, size_t nelems, int pe);
 void shmem_short_get_nbi(short *dest, const short *source, size_t nelems,
                          int pe);
 void shmem_int_get_nbi(int *dest, const int *source, size_t nelems, int pe);
