@@ -15,12 +15,14 @@ TESTS =
 
 if ENABLE_LENGTHY_TESTS
 TESTS += \
-        shmemlatency \
-	msgrate
+	shmemlatency \
+	msgrate \
+	shmem_put_perf
 else
 check_PROGRAMS += \
         shmemlatency \
-	msgrate
+	msgrate \
+	shmem_put_perf
 endif
 
 NPROCS ?= 2
@@ -33,4 +35,6 @@ LDADD = $(top_builddir)/src/libsma.la
 shmemlatency_SOURCES = shmemlatency.c
 
 msgrate_SOURCES = msgrate.c
+
+shmem_put_perf_SOURCES = shmem_put_perf.c
 
