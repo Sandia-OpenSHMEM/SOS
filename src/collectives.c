@@ -871,9 +871,10 @@ shmem_internal_collect_linear(void *target, const void *source, size_t len,
         SHMEM_WAIT_UNTIL(&pSync[2], SHMEM_CMP_EQ, PE_size);
     }
 
-    /* clear pSync */
+    /* clear pSync, split to stay within size limits of put_small */
     tmp[0] = tmp[1] = tmp[2] = 0;
-    shmem_internal_put_small(pSync, tmp, 3 * sizeof(long), shmem_internal_my_pe);
+    shmem_internal_put_small(pSync, tmp, 2 * sizeof(long), shmem_internal_my_pe);
+    shmem_internal_put_small(&pSync[2], &tmp[2], sizeof(long), shmem_internal_my_pe);
 
     /* broadcast out */
     shmem_internal_bcast(target, target, bcast_len, 0, PE_start, logPE_stride, PE_size, pSync + 3, 0);
