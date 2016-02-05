@@ -18,6 +18,7 @@
 #include "shmem_internal.h"
 
 #ifdef ENABLE_PROFILING
+#include "pshmem.h"
 
 #pragma weak start_pes = pstart_pes
 #define start_pes pstart_pes

@@ -22,6 +22,7 @@
 #include "shmem_comm.h"
 
 #ifdef ENABLE_PROFILING
+#include "pshmem.h"
 
 #pragma weak shmem_float_p = pshmem_float_p
 #define shmem_float_p pshmem_float_p

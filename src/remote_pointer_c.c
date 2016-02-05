@@ -21,6 +21,7 @@
 
 
 #ifdef ENABLE_PROFILING
+#include "pshmem.h"
 
 #pragma weak shmem_ptr = pshmem_ptr
 #define shmem_ptr pshmem_ptr

@@ -15,6 +15,28 @@
 #include "shmem.h"
 #include "shmem_internal.h"
 
+#ifdef ENABLE_PROFILING
+#include "pshmem.h"
+
+#pragma weak shmem_clear_cache_inv = pshmem_clear_cache_inv
+#define shmem_clear_cache_inv pshmem_clear_cache_inv
+
+#pragma weak shmem_clear_cache_line_inv = pshmem_clear_cache_line_inv
+#define shmem_clear_cache_line_inv pshmem_clear_cache_line_inv
+
+#pragma weak shmem_set_cache_inv = pshmem_set_cache_inv
+#define shmem_set_cache_inv pshmem_set_cache_inv
+
+#pragma weak shmem_set_cache_line_inv = pshmem_set_cache_line_inv
+#define shmem_set_cache_line_inv pshmem_set_cache_line_inv
+
+#pragma weak shmem_udcflush = pshmem_udcflush
+#define shmem_udcflush pshmem_udcflush
+
+#pragma weak shmem_udcflush_line = pshmem_udcflush_line
+#define shmem_udcflush_line pshmem_udcflush_line
+
+#endif /* ENABLE_PROFILING */
 
 void
 shmem_clear_cache_inv(void)

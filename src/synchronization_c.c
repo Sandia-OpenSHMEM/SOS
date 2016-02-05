@@ -21,6 +21,7 @@
 #include "shmem_synchronization.h"
 
 #ifdef ENABLE_PROFILING
+#include "pshmem.h"
 
 #pragma weak shmem_quiet = pshmem_quiet
 #define shmem_quiet pshmem_quiet
