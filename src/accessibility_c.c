@@ -20,6 +20,7 @@
 #include "shmem_accessibility.h"
 
 #ifdef ENABLE_PROFILING
+#include "pshmem.h"
 
 #pragma weak shmem_pe_accessible = pshmem_pe_accessible
 #define shmem_pe_accessible pshmem_pe_accessible

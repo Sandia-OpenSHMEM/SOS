@@ -22,6 +22,7 @@
 #include "shmem_collectives.h"
 
 #ifdef ENABLE_PROFILING
+#include "pshmem.h"
 
 #pragma weak shmem_malloc = pshmem_malloc
 #define shmem_malloc pshmem_malloc

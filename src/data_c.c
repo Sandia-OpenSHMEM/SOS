@@ -22,6 +22,7 @@
 #include "shmem_comm.h"
 
 #ifdef ENABLE_PROFILING
+#include "pshmem.h"
 
 #pragma weak shmem_float_p = pshmem_float_p
 #define shmem_float_p pshmem_float_p
@@ -137,9 +138,6 @@
 #pragma weak shmem_getmem = pshmem_getmem
 #define shmem_getmem pshmem_getmem
 
-#pragma weak shmemx_getmem_ct = pshmemx_getmem_ct
-#define shmemx_getmem_ct pshmemx_getmem_ct
-
 #pragma weak shmem_float_iput = pshmem_float_iput
 #define shmem_float_iput pshmem_float_iput
 
@@ -203,20 +201,23 @@
 #pragma weak shmemx_putmem_ct = pshmemx_putmem_ct
 #define shmemx_putmem_ct pshmemx_putmem_ct
 
-#pragma weak shmemx_ct_create = pshmem_ct_create
-#define shmemx_ct_create pshmem_ct_create
+#pragma weak shmemx_getmem_ct = pshmemx_getmem_ct
+#define shmemx_getmem_ct pshmemx_getmem_ct
 
-#pragma weak shmemx_ct_free = pshmem_ct_free
-#define shmemx_ct_free pshmem_ct_free
+#pragma weak shmemx_ct_create = pshmemx_ct_create
+#define shmemx_ct_create pshmemx_ct_create
 
-#pragma weak shmemx_ct_get = pshmem_ct_get
-#define shmemx_ct_get pshmem_ct_get
+#pragma weak shmemx_ct_free = pshmemx_ct_free
+#define shmemx_ct_free pshmemx_ct_free
 
-#pragma weak shmemx_ct_set = pshmem_ct_set
-#define shmemx_ct_set pshmem_ct_set
+#pragma weak shmemx_ct_get = pshmemx_ct_get
+#define shmemx_ct_get pshmemx_ct_get
 
-#pragma weak shmemx_ct_wait = pshmem_ct_wait
-#define shmemx_ct_wait pshmem_ct_wait
+#pragma weak shmemx_ct_set = pshmemx_ct_set
+#define shmemx_ct_set pshmemx_ct_set
+
+#pragma weak shmemx_ct_wait = pshmemx_ct_wait
+#define shmemx_ct_wait pshmemx_ct_wait
 
 #endif /* ENABLE_PROFILING */
 

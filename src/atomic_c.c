@@ -20,6 +20,7 @@
 #include "shmem_comm.h"
 
 #ifdef ENABLE_PROFILING
+#include "pshmem.h"
 
 #pragma weak shmem_float_swap = pshmem_float_swap
 #define shmem_float_swap pshmem_float_swap

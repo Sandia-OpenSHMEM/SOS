@@ -21,6 +21,7 @@
 #include "shmem_internal.h"
 
 #ifdef ENABLE_PROFILING
+#include "pshmem.h"
 
 #pragma weak _num_pes = p_num_pes
 #define _num_pes p_num_pes

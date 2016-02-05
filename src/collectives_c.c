@@ -26,6 +26,7 @@
 #include "shmem_collectives.h"
 
 #ifdef ENABLE_PROFILING
+#include "pshmem.h"
 
 #pragma weak shmem_barrier_all = pshmem_barrier_all
 #define shmem_barrier_all pshmem_barrier_all

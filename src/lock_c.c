@@ -20,6 +20,7 @@
 #include "shmem_lock.h"
 
 #ifdef ENABLE_PROFILING
+#include "pshmem.h"
 
 #pragma weak shmem_clear_lock = pshmem_clear_lock
 #define shmem_clear_lock pshmem_clear_lock
