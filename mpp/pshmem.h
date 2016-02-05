@@ -54,11 +54,14 @@ void pshmem_double_put(double *target, const double *source, size_t len,
                       int pe);
 void pshmem_longdouble_put(long double *target, const long double *source,
                           size_t len, int pe);
+void pshmem_char_put(char *dest, const char *source, size_t nelems, int pe);
 void pshmem_short_put(short *target, const short *source, size_t len, int pe);
 void pshmem_int_put(int *target, const int *source, size_t len, int pe);
 void pshmem_long_put(long *target, const long *source, size_t len, int pe);
 void pshmem_longlong_put(long long *target, const long long *source,
                         size_t len, int pe);
+void pshmem_put8(void *dest, const void *source, size_t nelems, int pe);
+void pshmem_put16(void *dest, const void *source, size_t nelems, int pe);
 void pshmem_put32(void *target, const void *source, size_t len, int pe);
 void pshmem_put64(void *target, const void *source, size_t len, int pe);
 void pshmem_put128(void *target, const void *source, size_t len, int pe);
@@ -102,11 +105,14 @@ void pshmem_double_get(double *target, const double *source, size_t len,
                       int pe);
 void pshmem_longdouble_get(long double *target, const long double *source,
                           size_t len, int pe);
+void pshmem_char_get(char *dest, const char *source, size_t nelems, int pe);
 void pshmem_short_get(short *target, const short *source, size_t len, int pe);
 void pshmem_int_get(int *target, const int *source, size_t len, int pe);
 void pshmem_long_get(long *target, const long *source, size_t len, int pe);
 void pshmem_longlong_get(long long *target, const long long *source,
                         size_t len, int pe);
+void pshmem_get8(void *dest, const void *source, size_t nelems, int pe);
+void pshmem_get16(void *dest, const void *source, size_t nelems, int pe);
 void pshmem_get32(void *target, const void *source, size_t len, int pe);
 void pshmem_get64(void *target, const void *source, size_t len, int pe);
 void pshmem_get128(void *target, const void *source, size_t len, int pe);
@@ -141,14 +147,16 @@ void pshmem_double_put_nbi(double *dest, const double *source, size_t nelems,
                           int pe);
 void pshmem_longdouble_put_nbi(long double *dest, const long double *source,
                               size_t nelems, int pe);
-
 void pshmem_putmem_nbi(void *dest, const void *source, size_t nelems, int pe);
+void pshmem_char_put_nbi(char *dest, const char *source, size_t nelems, int pe);
 void pshmem_short_put_nbi(short *dest, const short *source, size_t nelems,
                          int pe);
 void pshmem_int_put_nbi(int *dest, const int *source, size_t nelems, int pe);
 void pshmem_long_put_nbi(long *dest, const long *source, size_t nelems, int pe);
 void pshmem_longlong_put_nbi(long long *dest, const long long *source,
                             size_t nelems, int pe);
+void pshmem_put8_nbi(void *dest, const void *source, size_t nelems, int pe);
+void pshmem_put16_nbi(void *dest, const void *source, size_t nelems, int pe);
 void pshmem_put32_nbi(void *dest, const void *source, size_t nelems, int pe);
 void pshmem_put64_nbi(void *dest, const void *source, size_t nelems, int pe);
 void pshmem_put128_nbi(void *dest, const void *source, size_t nelems, int pe);
@@ -160,14 +168,16 @@ void pshmem_double_get_nbi(double *dest, const double *source, size_t nelems,
                           int pe);
 void pshmem_longdouble_get_nbi(long double *dest, const long double *source,
                               size_t nelems, int pe);
-
 void pshmem_getmem_nbi(void *dest, const void *source, size_t nelems, int pe);
+void pshmem_char_get_nbi(char *dest, const char *source, size_t nelems, int pe);
 void pshmem_short_get_nbi(short *dest, const short *source, size_t nelems,
                          int pe);
 void pshmem_int_get_nbi(int *dest, const int *source, size_t nelems, int pe);
 void pshmem_long_get_nbi(long *dest, const long *source, size_t nelems, int pe);
 void pshmem_longlong_get_nbi(long long *dest, const long long *source,
                             size_t nelems, int pe);
+void pshmem_get8_nbi(void *dest, const void *source, size_t nelems, int pe);
+void pshmem_get16_nbi(void *dest, const void *source, size_t nelems, int pe);
 void pshmem_get32_nbi(void *dest, const void *source, size_t nelems, int pe);
 void pshmem_get64_nbi(void *dest, const void *source, size_t nelems, int pe);
 void pshmem_get128_nbi(void *dest, const void *source, size_t nelems, int pe);
@@ -205,6 +215,20 @@ void pshmem_longlong_add(long long *target, long long value, int pe);
 void pshmem_int_inc(int *target, int pe);
 void pshmem_long_inc(long *target, int pe);
 void pshmem_longlong_inc(long long *target, int pe);
+
+/* 8.4: Atomic fetch */
+int pshmem_int_fetch(const int *source, int pe);
+long pshmem_long_fetch(const long *source, int pe);
+long long pshmem_longlong_fetch(const long long *source, int pe);
+float pshmem_float_fetch(const float *source, int pe);
+double pshmem_double_fetch(const double *source, int pe);
+
+/* 8.4: Atomic set */
+void pshmem_int_set(const int *dest, int value, int pe);
+void pshmem_long_set(const long *dest, long value, int pe);
+void pshmem_longlong_set(const long long *dest, long long value, int pe);
+void pshmem_float_set(const float *dest, float value, int pe);
+void pshmem_double_set(const double *dest, double value, int pe);
 
 /* 8.5: Barrier Synchronization Routines */
 void pshmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync);
