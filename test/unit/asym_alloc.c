@@ -36,8 +36,6 @@
 #include <stdlib.h>
 #include <shmem.h>
 
-long ps[SHMEM_REDUCE_SYNC_SIZE];
-long pw[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
 long bufsize, maxbufsize;
 
 int main(int argc, char **argv) {
