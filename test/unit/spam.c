@@ -374,10 +374,10 @@ bcast(int *target, int *src, int elements, int me, int npes, int loops)
     long *ps, *pSync, *pSync1;
     long total_bytes = loops * elements * sizeof(*src);
 
-	pSync = (long*)shmem_malloc( 2 * sizeof(long) * _SHMEM_BCAST_SYNC_SIZE );
-	pSync1 = &pSync[_SHMEM_BCAST_SYNC_SIZE];
-    for (i = 0; i < _SHMEM_BCAST_SYNC_SIZE; i++) {
-        pSync[i] = pSync1[i] = _SHMEM_SYNC_VALUE;
+	pSync = (long*)shmem_malloc( 2 * sizeof(long) * SHMEM_BCAST_SYNC_SIZE );
+	pSync1 = &pSync[SHMEM_BCAST_SYNC_SIZE];
+    for (i = 0; i < SHMEM_BCAST_SYNC_SIZE; i++) {
+        pSync[i] = pSync1[i] = SHMEM_SYNC_VALUE;
     }
 
     if (me==0 && Verbose) {
@@ -415,10 +415,10 @@ collect(int *target, int *src, int elements, int me, int npes, int loops)
     long total_bytes = loops * elements * sizeof(*src);
     long *ps, *pSync, *pSync1;
 
-	pSync = (long*) shmem_malloc( 2 * sizeof(long) * _SHMEM_COLLECT_SYNC_SIZE );
-	pSync1 = &pSync[_SHMEM_COLLECT_SYNC_SIZE];
-    for (i = 0; i < _SHMEM_COLLECT_SYNC_SIZE; i++) {
-        pSync[i] = pSync1[i] = _SHMEM_SYNC_VALUE;
+	pSync = (long*) shmem_malloc( 2 * sizeof(long) * SHMEM_COLLECT_SYNC_SIZE );
+	pSync1 = &pSync[SHMEM_COLLECT_SYNC_SIZE];
+    for (i = 0; i < SHMEM_COLLECT_SYNC_SIZE; i++) {
+        pSync[i] = pSync1[i] = SHMEM_SYNC_VALUE;
     }
 	target = (int *) shmem_malloc( elements * sizeof(*target) * npes );
 
@@ -460,10 +460,10 @@ fcollect(int *target, int *src, int elements, int me, int npes, int loops)
     long total_bytes = loops * elements * sizeof(*src);
     long *ps, *pSync, *pSync1;
 
-	pSync = (long*) shmem_malloc( 2 * sizeof(long) * _SHMEM_COLLECT_SYNC_SIZE );
-	pSync1 = &pSync[_SHMEM_COLLECT_SYNC_SIZE];
-    for (i = 0; i < _SHMEM_COLLECT_SYNC_SIZE; i++) {
-        pSync[i] = pSync1[i] = _SHMEM_SYNC_VALUE;
+	pSync = (long*) shmem_malloc( 2 * sizeof(long) * SHMEM_COLLECT_SYNC_SIZE );
+	pSync1 = &pSync[SHMEM_COLLECT_SYNC_SIZE];
+    for (i = 0; i < SHMEM_COLLECT_SYNC_SIZE; i++) {
+        pSync[i] = pSync1[i] = SHMEM_SYNC_VALUE;
     }
 	target = (int *) shmem_malloc( elements * sizeof(*target) * npes );
 

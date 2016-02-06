@@ -22,8 +22,8 @@ int Track;
 int elements = NUM_ELEMENTS;
 double sum_time, time_taken;
 
-double pWrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
-long pSync[_SHMEM_REDUCE_SYNC_SIZE];
+double pWrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
+long pSync[SHMEM_REDUCE_SYNC_SIZE];
 
 static int
 atoi_scaled(char *s)
@@ -129,8 +129,8 @@ main(int argc, char **argv)
         }
     }
 
-    for(i=0; i < _SHMEM_REDUCE_SYNC_SIZE; i++)
-        pSync[i] = _SHMEM_SYNC_VALUE;
+    for(i=0; i < SHMEM_REDUCE_SYNC_SIZE; i++)
+        pSync[i] = SHMEM_SYNC_VALUE;
 
     target_PE = (me+1) % npes;
 

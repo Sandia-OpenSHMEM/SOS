@@ -53,16 +53,13 @@ int Serialize;
 int Min, And, Sum, Prod, Or, Xor;
 int Passed;
 
-long pSync[_SHMEM_REDUCE_SYNC_SIZE];
-long pSync1[_SHMEM_REDUCE_SYNC_SIZE];
+long pSync[SHMEM_REDUCE_SYNC_SIZE];
+long pSync1[SHMEM_REDUCE_SYNC_SIZE];
 
 #define N 128
 
-#if N < _SHMEM_REDUCE_MIN_WRKDATA_SIZE
-#define WRK_SIZE _SHMEM_REDUCE_MIN_WRKDATA_SIZE
-#else
-#define WRK_SIZE (N/2 + 1)	/* must be >= _SHMEM_REDUCE_MIN_WRKDATA_SIZE(8) */
-#endif
+#define MAX(a, b) ((a) > (b)) ? (a) : (b)
+#define WRK_SIZE MAX(N/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE)
 
 short src0[N], dst0[N], pWrk0[WRK_SIZE];
 int src1[N], dst1[N], pWrk1[WRK_SIZE];
@@ -715,12 +712,6 @@ main(int argc, char* argv[])
     mype = shmem_my_pe();
     num_pes = shmem_n_pes();
 
-    if (num_pes > N) {
-        printf("Error: pWrk too small, increase N.  Maximum PEs %d, requested %d.\n", N, num_pes);
-        shmem_finalize();
-        return 0;
-    }
-
     if ((pgm=strrchr(argv[0],'/')))
         pgm++;
     else
@@ -760,9 +751,9 @@ main(int argc, char* argv[])
 		}
 	}
 
-    for (i = 0; i < _SHMEM_REDUCE_SYNC_SIZE; i++) {
-        pSync[i] = _SHMEM_SYNC_VALUE;
-        pSync1[i] = _SHMEM_SYNC_VALUE;
+    for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++) {
+        pSync[i] = SHMEM_SYNC_VALUE;
+        pSync1[i] = SHMEM_SYNC_VALUE;
     }
 
     tests = passed = 0;

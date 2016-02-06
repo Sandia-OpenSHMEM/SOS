@@ -85,11 +85,11 @@ main(int argc, char **argv)
         }
     }
 
-	ps_cnt *= _SHMEM_BCAST_SYNC_SIZE;
+	ps_cnt *= SHMEM_BCAST_SYNC_SIZE;
 	pSync = shmem_malloc( ps_cnt * sizeof(long) );
 
 	for (i = 0; i < ps_cnt; i++)
-	  pSync[i] = _SHMEM_SYNC_VALUE;
+	  pSync[i] = SHMEM_SYNC_VALUE;
 
 	source = (int *) shmem_malloc( elements * sizeof(*source) );
 
@@ -116,7 +116,7 @@ main(int argc, char **argv)
 	    time_taken += (shmemx_wtime() - start_time);
 
         if (ps_cnt > 1 ) {
-	        ps += _SHMEM_BCAST_SYNC_SIZE;
+	        ps += SHMEM_BCAST_SYNC_SIZE;
 	        if ( ps >= ps_cnt ) ps = 0;
         }
 	}

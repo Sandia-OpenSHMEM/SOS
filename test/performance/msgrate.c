@@ -46,10 +46,10 @@ int *recv_peers;
 int *cache_buf;
 char *send_buf;
 char *recv_buf;
-long bcast_pSync[_SHMEM_BCAST_SYNC_SIZE] = { 0 };
-long barrier_pSync[_SHMEM_BARRIER_SYNC_SIZE] = { 0 };
-long reduce_pSync[_SHMEM_REDUCE_SYNC_SIZE] = {0 };
-double reduce_pWrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
+long bcast_pSync[SHMEM_BCAST_SYNC_SIZE];
+long barrier_pSync[SHMEM_BARRIER_SYNC_SIZE];
+long reduce_pSync[SHMEM_REDUCE_SYNC_SIZE];
+double reduce_pWrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
 int start_err = 0;
 double tmp = 0;
 double total = 0;
@@ -279,6 +279,15 @@ main(int argc, char *argv[])
             }
         }
     }
+
+    for (i = 0; i < SHMEM_BCAST_SYNC_SIZE; i++)
+        bcast_pSync[i] = SHMEM_SYNC_VALUE;
+    for (i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
+        barrier_pSync[i] = SHMEM_SYNC_VALUE;
+    for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++)
+        reduce_pSync[i] = SHMEM_SYNC_VALUE;
+    for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++)
+        reduce_pWrk[i] = SHMEM_SYNC_VALUE;
 
     shmem_barrier_all();
 

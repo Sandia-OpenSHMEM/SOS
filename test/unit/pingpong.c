@@ -30,11 +30,11 @@ int output_mod = OUTPUT_MOD;
 int Verbose;
 int Slow;
 
-long pSync0[_SHMEM_BARRIER_SYNC_SIZE],
-    pSync1[_SHMEM_BARRIER_SYNC_SIZE],
-    pSync2[_SHMEM_BARRIER_SYNC_SIZE],
-    pSync3[_SHMEM_BARRIER_SYNC_SIZE],
-    pSync4[_SHMEM_BARRIER_SYNC_SIZE];
+long pSync0[SHMEM_BARRIER_SYNC_SIZE],
+    pSync1[SHMEM_BARRIER_SYNC_SIZE],
+    pSync2[SHMEM_BARRIER_SYNC_SIZE],
+    pSync3[SHMEM_BARRIER_SYNC_SIZE],
+    pSync4[SHMEM_BARRIER_SYNC_SIZE];
 
 #define DFLT_NWORDS 128
 #define DFLT_LOOPS 10
@@ -55,9 +55,9 @@ main(int argc, char* argv[])
 	char *prog_name;
 	long *wp,work_sz;
 
-    for(j=0; j < _SHMEM_BARRIER_SYNC_SIZE; j++) {
+    for(j=0; j < SHMEM_BARRIER_SYNC_SIZE; j++) {
         pSync0[j] = pSync1[j] = pSync2[j] = pSync3[j] =
-            pSync4[j] = _SHMEM_SYNC_VALUE;
+            pSync4[j] = SHMEM_SYNC_VALUE;
     }
 
 	shmem_init();
