@@ -58,11 +58,8 @@ long pSync1[SHMEM_REDUCE_SYNC_SIZE];
 
 #define N 128
 
-#if N < SHMEM_REDUCE_MIN_WRKDATA_SIZE
-#define WRK_SIZE SHMEM_REDUCE_MIN_WRKDATA_SIZE
-#else
-#define WRK_SIZE (N/2 + 1)	/* must be >= SHMEM_REDUCE_MIN_WRKDATA_SIZE(8) */
-#endif
+#define MAX(a, b) ((a) > (b)) ? (a) : (b)
+#define WRK_SIZE MAX(N/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE)
 
 short src0[N], dst0[N], pWrk0[WRK_SIZE];
 int src1[N], dst1[N], pWrk1[WRK_SIZE];
@@ -714,12 +711,6 @@ main(int argc, char* argv[])
     shmem_init();
     mype = shmem_my_pe();
     num_pes = shmem_n_pes();
-
-    if (num_pes > N) {
-        printf("Error: pWrk too small, increase N.  Maximum PEs %d, requested %d.\n", N, num_pes);
-        shmem_finalize();
-        return 0;
-    }
 
     if ((pgm=strrchr(argv[0],'/')))
         pgm++;
