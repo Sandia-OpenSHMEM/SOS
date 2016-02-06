@@ -40,7 +40,7 @@ int Verbose;
 
 long *dst;
 long *src;
-long pSync[_SHMEM_COLLECT_SYNC_SIZE];
+long pSync[SHMEM_COLLECT_SYNC_SIZE];
 
 static int
 atoi_scaled(char *s)
@@ -138,8 +138,8 @@ main(int argc, char* argv[])
 		return 1;
     }
 
-    for (c = 0; c < _SHMEM_COLLECT_SYNC_SIZE;c++)
-        pSync[c] = _SHMEM_SYNC_VALUE;
+    for (c = 0; c < SHMEM_COLLECT_SYNC_SIZE;c++)
+        pSync[c] = SHMEM_SYNC_VALUE;
 
     if (Verbose && mpe == 0)
 	    fprintf(stderr,"loops(%d) nWords(%d) incr-per-loop(%d)\n",

@@ -53,15 +53,15 @@ int Serialize;
 int Min, And, Sum, Prod, Or, Xor;
 int Passed;
 
-long pSync[_SHMEM_REDUCE_SYNC_SIZE];
-long pSync1[_SHMEM_REDUCE_SYNC_SIZE];
+long pSync[SHMEM_REDUCE_SYNC_SIZE];
+long pSync1[SHMEM_REDUCE_SYNC_SIZE];
 
 #define N 128
 
-#if N < _SHMEM_REDUCE_MIN_WRKDATA_SIZE
-#define WRK_SIZE _SHMEM_REDUCE_MIN_WRKDATA_SIZE
+#if N < SHMEM_REDUCE_MIN_WRKDATA_SIZE
+#define WRK_SIZE SHMEM_REDUCE_MIN_WRKDATA_SIZE
 #else
-#define WRK_SIZE (N/2 + 1)	/* must be >= _SHMEM_REDUCE_MIN_WRKDATA_SIZE(8) */
+#define WRK_SIZE (N/2 + 1)	/* must be >= SHMEM_REDUCE_MIN_WRKDATA_SIZE(8) */
 #endif
 
 short src0[N], dst0[N], pWrk0[WRK_SIZE];
@@ -760,9 +760,9 @@ main(int argc, char* argv[])
 		}
 	}
 
-    for (i = 0; i < _SHMEM_REDUCE_SYNC_SIZE; i++) {
-        pSync[i] = _SHMEM_SYNC_VALUE;
-        pSync1[i] = _SHMEM_SYNC_VALUE;
+    for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++) {
+        pSync[i] = SHMEM_SYNC_VALUE;
+        pSync1[i] = SHMEM_SYNC_VALUE;
     }
 
     tests = passed = 0;

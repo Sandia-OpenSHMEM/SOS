@@ -12,7 +12,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-long pSync[_SHMEM_BCAST_SYNC_SIZE];
+long pSync[SHMEM_BCAST_SYNC_SIZE];
 
 #define START_BCAST_SIZE 16
 #define BCAST_INCR 1024
@@ -52,8 +52,8 @@ main(int argc, char* argv[])
         }
     }
 
-    for (i = 0; i < _SHMEM_BCAST_SYNC_SIZE; i += 1)
-        pSync[i] = _SHMEM_SYNC_VALUE;
+    for (i = 0; i < SHMEM_BCAST_SYNC_SIZE; i += 1)
+        pSync[i] = SHMEM_SYNC_VALUE;
 
     if ( mpe == 0 && Verbose )
         fprintf(stderr,"%d loops\n",loops);
