@@ -63,7 +63,15 @@ TESTS = \
 	asym_alloc \
 	set_fetch \
 	alltoall \
-	alltoalls
+	alltoalls \
+	c11_test_shmem_add \
+	c11_test_shmem_fetch \
+	c11_test_shmem_g \
+	c11_test_shmem_get \
+	c11_test_shmem_inc \
+	c11_test_shmem_p \
+	c11_test_shmem_put \
+	c11_test_shmem_set
 
 if USE_PORTALS4
 TESTS += \
@@ -258,3 +266,27 @@ alltoall_LDADD = $(top_builddir)/src/libsma.la
 
 alltoalls_SOURCES = alltoalls.c
 alltoalls_LDADD = $(top_builddir)/src/libsma.la
+
+c11_test_shmem_add_SOURCES = c11_test_shmem_add.c
+c11_test_shmem_add_LDADD = $(top_builddir)/src/libsma.la
+
+c11_test_shmem_g_SOURCES = c11_test_shmem_g.c
+c11_test_shmem_g_LDADD = $(top_builddir)/src/libsma.la
+
+c11_test_shmem_get_SOURCES = c11_test_shmem_get.c
+c11_test_shmem_get_LDADD = $(top_builddir)/src/libsma.la
+
+c11_test_shmem_inc_SOURCES = c11_test_shmem_inc.c
+c11_test_shmem_inc_LDADD = $(top_builddir)/src/libsma.la
+
+c11_test_shmem_p_SOURCES = c11_test_shmem_p.c
+c11_test_shmem_p_LDADD = $(top_builddir)/src/libsma.la
+
+c11_test_shmem_put_SOURCES = c11_test_shmem_put.c
+c11_test_shmem_put_LDADD = $(top_builddir)/src/libsma.la
+
+c11_test_shmem_fetch_SOURCES = c11_test_shmem_fetch.c
+c11_test_shmem_fetch_LDADD = $(top_builddir)/src/libsma.la
+
+c11_test_shmem_set_SOURCES = c11_test_shmem_set.c
+c11_test_shmem_set_LDADD = $(top_builddir)/src/libsma.la
