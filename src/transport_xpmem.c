@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <xpmem.h>
 
+#define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"

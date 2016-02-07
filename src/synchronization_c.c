@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_atomic.h"

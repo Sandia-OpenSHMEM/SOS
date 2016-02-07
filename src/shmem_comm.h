@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <sys/param.h>
 
+#define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
 #include "shmemx.h"
 

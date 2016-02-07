@@ -15,9 +15,10 @@
 
 #include "config.h"
 
+#define SHMEM_INTERNAL_INCLUDE
+#include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_collectives.h"
-#include "shmem.h"
 #include "shmem_internal_op.h"
 
 coll_type_t shmem_internal_barrier_type = AUTO;
