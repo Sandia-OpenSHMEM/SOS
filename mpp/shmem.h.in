@@ -493,7 +493,7 @@ void start_pes(int npes) __attribute__ ((deprecated));
 
 /* Blocking block, scalar, and block-strided put */
 #define shmem_put(dest, source, nelems, pe)                     \
-    _Generic(&(dest)[0],                                        \
+    _Generic(&*(dest),                                          \
              float*:            shmem_float_put,                \
              double*:           shmem_double_put,               \
              long double*:      shmem_longdouble_put,           \
@@ -505,7 +505,7 @@ void start_pes(int npes) __attribute__ ((deprecated));
             )(dest, source, nelems, pe)
 
 #define shmem_p(dest, source, pe)                               \
-    _Generic(&(dest)[0],                                        \
+    _Generic(&*(dest),                                          \
              float*:            shmem_float_p,                  \
              double*:           shmem_double_p,                 \
              long double*:      shmem_longdouble_p,             \
@@ -517,7 +517,7 @@ void start_pes(int npes) __attribute__ ((deprecated));
             )(dest, source, pe)
 
 #define shmem_iput(dest, source, dst, sst, nelems, pe)          \
-    _Generic(&(dest)[0],                                        \
+    _Generic(&*(dest),                                          \
              float*:            shmem_float_iput,               \
              double*:           shmem_double_iput,              \
              long double*:      shmem_longdouble_iput,          \
@@ -530,7 +530,7 @@ void start_pes(int npes) __attribute__ ((deprecated));
 
 /* Blocking block, scalar, and block-strided get */
 #define shmem_get(dest, source, nelems, pe)                     \
-    _Generic(&(dest)[0],                                        \
+    _Generic(&*(dest),                                          \
              float*:            shmem_float_get,                \
              double*:           shmem_double_get,               \
              long double*:      shmem_longdouble_get,           \
@@ -542,7 +542,7 @@ void start_pes(int npes) __attribute__ ((deprecated));
             )(dest, source, nelems, pe)
 
 #define shmem_g(dest, pe)                                       \
-    _Generic(&(dest)[0],                                        \
+    _Generic(&*(dest),                                          \
              float*:            shmem_float_g,                  \
              double*:           shmem_double_g,                 \
              long double*:      shmem_longdouble_g,             \
@@ -554,7 +554,7 @@ void start_pes(int npes) __attribute__ ((deprecated));
             )(dest, pe)
 
 #define shmem_iget(dest, source, dst, sst, nelems, pe)          \
-    _Generic(&(dest)[0],                                        \
+    _Generic(&*(dest),                                          \
              float*:            shmem_float_iget,               \
              double*:           shmem_double_iget,              \
              long double*:      shmem_longdouble_iget,          \
@@ -567,7 +567,7 @@ void start_pes(int npes) __attribute__ ((deprecated));
 
 /* Nonblocking block put/get */
 #define shmem_put_nbi(dest, source, nelems, pe)                 \
-    _Generic(&(dest)[0],                                        \
+    _Generic(&*(dest),                                          \
              float*:            shmem_float_put_nbi,            \
              double*:           shmem_double_put_nbi,           \
              long double*:      shmem_longdouble_put_nbi,       \
@@ -579,7 +579,7 @@ void start_pes(int npes) __attribute__ ((deprecated));
             )(dest, source, nelems, pe)
 
 #define shmem_get_nbi(dest, source, nelems, pe)                 \
-    _Generic(&(dest)[0],                                        \
+    _Generic(&*(dest),                                          \
              float*:            shmem_float_get_nbi,            \
              double*:           shmem_double_get_nbi,           \
              long double*:      shmem_longdouble_get_nbi,       \
@@ -592,35 +592,35 @@ void start_pes(int npes) __attribute__ ((deprecated));
 
 /* Atomics with standard AMO types */
 #define shmem_add(dest, value, pe)                              \
-    _Generic(&(dest)[0],                                        \
+    _Generic(&*(dest),                                          \
              int*:              shmem_int_add,                  \
              long*:             shmem_long_add,                 \
              long long*:        shmem_longlong_add              \
             )(dest, value, pe)
 
 #define shmem_cswap(dest, cond, value, pe)                      \
-    _Generic(&(dest)[0],                                        \
+    _Generic(&*(dest),                                          \
              int*:              shmem_int_cswap,                \
              long*:             shmem_long_cswap,               \
              long long*:        shmem_longlong_cswap            \
             )(dest, cond, value, pe)
 
 #define shmem_finc(dest, pe)                                    \
-    _Generic(&(dest)[0],                                        \
+    _Generic(&*(dest),                                          \
              int*:              shmem_int_finc,                 \
              long*:             shmem_long_finc,                \
              long long*:        shmem_longlong_finc             \
             )(dest, pe)
 
 #define shmem_inc(dest, pe)                                     \
-    _Generic(&(dest)[0],                                        \
+    _Generic(&*(dest),                                          \
              int*:              shmem_int_inc,                  \
              long*:             shmem_long_inc,                 \
              long long*:        shmem_longlong_inc              \
             )(dest, pe)
 
 #define shmem_fadd(dest, value, pe)                             \
-    _Generic(&(dest)[0],                                        \
+    _Generic(&*(dest),                                          \
              int*:              shmem_int_fadd,                 \
              long*:             shmem_long_fadd,                \
              long long*:        shmem_longlong_fadd             \
@@ -628,7 +628,7 @@ void start_pes(int npes) __attribute__ ((deprecated));
 
 /* Atomics with extended AMO types */
 #define shmem_swap(dest, value, pe)                             \
-    _Generic(&(dest)[0],                                        \
+    _Generic(&*(dest),                                          \
              float*:            shmem_float_swap,               \
              double*:           shmem_double_swap,              \
              int*:              shmem_int_swap,                 \
@@ -637,7 +637,7 @@ void start_pes(int npes) __attribute__ ((deprecated));
             )(dest, value, pe)
 
 #define shmem_fetch(source, pe)                                 \
-    _Generic(&(source)[0],                                      \
+    _Generic(&*(source),                                        \
              float*:            shmem_float_fetch,              \
              double*:           shmem_double_fetch,             \
              int*:              shmem_int_fetch,                \
@@ -646,7 +646,7 @@ void start_pes(int npes) __attribute__ ((deprecated));
             )(source, pe)
 
 #define shmem_set(dest, value, pe)                              \
-    _Generic(&(dest)[0],                                        \
+    _Generic(&*(dest),                                          \
              float*:            shmem_float_set,                \
              double*:           shmem_double_set,               \
              int*:              shmem_int_set,                  \
