@@ -407,7 +407,7 @@ SHMEM_CAPI_ATOMIC_FETCH(double, double, SHM_INTERNAL_DOUBLE)
  */
 #define SHMEM_CAPI_ATOMIC_SET(type_name, c_type, dtype)                         \
 void                                                                            \
-shmem_##type_name##_set(const c_type *dest, c_type value, int pe)               \
+shmem_##type_name##_set(c_type *dest, c_type value, int pe)                     \
 {                                                                               \
     SHMEM_ERR_CHECK_INITIALIZED();                                              \
                                                                                 \

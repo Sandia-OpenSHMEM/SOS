@@ -262,11 +262,11 @@ float shmem_float_fetch(const float *source, int pe);
 double shmem_double_fetch(const double *source, int pe);
 
 /* 8.4: Atomic set */
-void shmem_int_set(const int *dest, int value, int pe);
-void shmem_long_set(const long *dest, long value, int pe);
-void shmem_longlong_set(const long long *dest, long long value, int pe);
-void shmem_float_set(const float *dest, float value, int pe);
-void shmem_double_set(const double *dest, double value, int pe);
+void shmem_int_set(int *dest, int value, int pe);
+void shmem_long_set(long *dest, long value, int pe);
+void shmem_longlong_set(long long *dest, long long value, int pe);
+void shmem_float_set(float *dest, float value, int pe);
+void shmem_double_set(double *dest, double value, int pe);
 
 /* 8.5: Barrier Synchronization Routines */
 void shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync);
