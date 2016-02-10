@@ -48,8 +48,17 @@
 #define FALSE (0)
 #define INIT_VALUE -1
 
-void pingpong_p(double *latency, double *bandwidth, int my_node, int npes);
-void ping_put(int len, double *latency, double *bandwidth, int my_node);
+#define MAX_MSG_SIZE        (1<<22)
+#define START_LEN           1
+
+#define INC 2
+#define TRIALS 100
+#define WARMUP 10
+
+void pingpong_p(int *pingpong_ball, double *latency, double *bandwidth,
+                int my_node, int npes);
+void ping_put(char *buf, int len, double *latency, double *bandwidth,
+              int my_node);
 
 typedef struct perf_metrics {
     double latency, bandwidth;
@@ -57,11 +66,6 @@ typedef struct perf_metrics {
     double max_latency, max_bandwidth;
     double min_latency, min_bandwidth;
 } perf_metrics_t;
-
-void data_flush(perf_metrics_t * data);
-void calc_metric_data(perf_metrics_t * data);
-void print_data_results(perf_metrics_t data, int len, int trials, int mega);
-void print_results_header(int mega);
 
 void data_flush(perf_metrics_t * data) {
    data->latency= data->tot_latency = 0.0;
@@ -89,93 +93,92 @@ void calc_metric_data(perf_metrics_t * data) {
    }
 }
 
-void print_data_results(perf_metrics_t data, int len, int trials, int mega) {
+typedef struct metric_attrs {
+   int start_len, max_len;
+   int inc, trials;
+   int mega, warmup;
+} metric_attrs_t;
+
+void metric_attrs_init(metric_attrs_t * data) {
+   data->start_len = START_LEN;
+   data->max_len = MAX_MSG_SIZE;
+   data->inc = INC;
+   data->trials = TRIALS;
+   data->mega = TRUE;
+   data->warmup = WARMUP; /*number of initial iterations to skip*/
+}
+
+void print_data_results(perf_metrics_t data, int len, metric_attrs_t attrs) {
    printf("%9d  %8.2f    %8.2f    %8.2f    ",
-          len, data.min_latency, data.tot_latency / trials, data.max_latency);
-   if (mega) {
+          len, data.min_latency, data.tot_latency / attrs.trials,
+          data.max_latency);
+   if (attrs.mega) {
       printf("%8.2f    %8.2f    %8.2f\n",
             data.min_bandwidth / (1024 * 1024),
-            (data.tot_bandwidth / trials) / (1024 * 1024),
+            (data.tot_bandwidth / attrs.trials) / (1024 * 1024),
             data.max_bandwidth / (1024 * 1024));
       } else {
          printf("%8.2f    %8.2f    %8.2f\n",
                 data.min_bandwidth / 1000000.0,
-                (data.tot_bandwidth / trials) / 1000000.0,
+                (data.tot_bandwidth / attrs.trials) / 1000000.0,
                 data.max_bandwidth / 1000000.0);
       }
 }
 
 void print_results_header(int mega) {
-   printf("\nLength                  Latency                             Bandwidth\n");
+   printf("\nLength                  Latency                            "\
+          "Bandwidth\n");
    printf("in bytes            in micro seconds                ");
    if (mega) {
       printf("in mega bytes per second\n");
    } else {
       printf("in million bytes per second\n");
    }
-   printf("            minimum     average     maximum     minimum     average     maximum\n");
+   printf("            minimum     average     maximum     minimum     "\
+          "average     maximum\n");
 
 }
 
-/* symmetric data for communication */
-double aligned_buf[SIZE/sizeof(double)];
-char *buf;
-int pingpong_ball;
+char * buffer_alloc_and_init(int len) {
+    unsigned long page_align;
+    char *buf;
+    int i;
 
-int main(int argc, char *argv[])
-{
+    page_align = getpagesize();
+    buf = shmem_malloc(len + page_align);
+    buf = (char *) (((unsigned long) buf + (page_align - 1)) /
+                    page_align * page_align);
 
+    for(i = 0; i < len; i++)
+       buf[i] = 'z';
+
+    return buf;
+}
+
+void command_line_arg_check(int argc, char *argv[],
+                            metric_attrs_t *metric_info, int my_node) {
+    int ch, error = FALSE;
     extern char *optarg;
-    int ch, error;
-
-    int len, start_len, end_len, increment, inc, trials, i;
-    int mega, my_node, num_pes, warmup;
-    pingpong_ball = INIT_VALUE;
-    perf_metrics_t data;
-    data_flush(&data);
-    buf = (char *)aligned_buf;
-    int array_size = SIZE/sizeof(double);
-    memset(buf, '\0', array_size);
-
-    shmem_init();
-    my_node = shmem_my_pe();
-    num_pes = shmem_n_pes();
-
-    if (num_pes != 2) {
-        if (my_node == 0) {
-            fprintf(stderr, "Currently only 2-node test\n");
-        }
-        exit(77);
-    }
-
-    /* Set the defaults */
-    error = FALSE;
-    start_len = 1;
-    end_len = 1024;
-    increment = 16;
-    trials = 1000;
-    warmup = 10;
-    mega = TRUE;
 
     /* check command line args */
     while ((ch = getopt(argc, argv, "i:e:s:n:m")) != EOF) {
         switch (ch) {
         case 'i':
-            increment = strtol(optarg, (char **)NULL, 0);
+            metric_info->inc = strtol(optarg, (char **)NULL, 0);
             break;
         case 'e':
-            end_len = strtol(optarg, (char **)NULL, 0);
+            metric_info->max_len = strtol(optarg, (char **)NULL, 0);
             break;
         case 's':
-            start_len = strtol(optarg, (char **)NULL, 0);
-            if ( start_len < 1 ) start_len = 1;
+            metric_info->start_len = strtol(optarg, (char **)NULL, 0);
+            if ( metric_info->start_len < 1 ) metric_info->start_len = 1;
             break;
         case 'n':
-            trials = strtol(optarg, (char **)NULL, 0);
-            if(trials <= (warmup*2)) error = TRUE;
+            metric_info->trials = strtol(optarg, (char **)NULL, 0);
+            if(metric_info->trials <= (metric_info->warmup*2)) error = TRUE;
             break;
         case 'm':
-            mega = FALSE;
+            metric_info->mega = FALSE;
             break;
         default:
             error = TRUE;
@@ -185,13 +188,52 @@ int main(int argc, char *argv[])
 
     if (error) {
         if (my_node == 0) {
-            fprintf(stderr, "Usage: %s [-s start_length] [-e end_length] [-i inc] [-n trials (must be greater than 20)] [-m (millions)]\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-s start_length] [-e end_length] "\
+                    ": lengths must be a power of two \n " \
+                    "[-i inc] [-n trials (must be greater than 20)] "\
+                    "[-m (millions)]\n", argv[0]);
         }
+        shmem_finalize();
         exit (-1);
     }
+}
 
-   if(my_node == 0)
-      printf("\nResults for %d trials each of length %d through %d in increments of %d\n", trials, start_len, end_len, increment);
+/* symmetric data for communication */
+int pingpong_ball;
+
+int main(int argc, char *argv[])
+{
+    int len, i;
+    int my_node, num_pes;
+    int *pingpong_ball;
+    char * buf = NULL;
+    perf_metrics_t data;
+    metric_attrs_t attrs;
+    data_flush(&data);
+
+    shmem_init();
+    my_node = shmem_my_pe();
+    num_pes = shmem_n_pes();
+
+    if (num_pes != 2) {
+        if (my_node == 0) {
+            fprintf(stderr, "Currently only 2-node test\n");
+        }
+        shmem_finalize();
+        exit(77);
+    }
+
+    /* init data */
+    metric_attrs_init(&attrs);
+    command_line_arg_check(argc, argv, &attrs, my_node);
+    buf = buffer_alloc_and_init(attrs.max_len);
+    pingpong_ball = shmem_malloc(sizeof(int));
+    *pingpong_ball = INIT_VALUE;
+
+    if(my_node == 0)
+       printf("\nResults for %d trials each of length %d through %d in"\
+              " increments of %d\n", attrs.trials, attrs.start_len,
+              attrs.max_len, attrs.inc);
 
 
 /**************************************************************/
@@ -200,20 +242,21 @@ int main(int argc, char *argv[])
 
    if (my_node == 0) {
        printf("\nPing-Pong shmem_int_p results:\n");
-       print_results_header(mega);
+       print_results_header(attrs.mega);
    }
-        for (i= 0; i < trials + warmup; i++) {
+        for (i= 0; i < attrs.trials + attrs.warmup; i++) {
 
-            pingpong_ball = INIT_VALUE;
+            *pingpong_ball = INIT_VALUE;
 
-            pingpong_p(&data.latency, &data.bandwidth, my_node, num_pes);
+            pingpong_p(pingpong_ball, &data.latency, &data.bandwidth,
+                       my_node, num_pes);
 
-            if(my_node == 0 && i >= warmup)
+            if(my_node == 0 && i >= attrs.warmup)
                calc_metric_data(&data);
         }
 
         if (my_node == 0)
-           print_data_results(data, sizeof(int), trials, mega);
+           print_data_results(data, sizeof(int), attrs);
 
 
 /**************************************************************/
@@ -223,33 +266,27 @@ int main(int argc, char *argv[])
 
     if (my_node == 0) {
        printf("\nPing shmem_putmem results:\n");
-       print_results_header(mega);
+       print_results_header(attrs.mega);
     }
 
-    for (len= start_len; len <= end_len; len += inc) {
+    for (len = attrs.start_len; len <= attrs.max_len; len *= attrs.inc) {
 
         data_flush(&data);
 
         shmem_barrier_all();
 
-        for (i= 0; i < trials + warmup; i++) {
+        for (i = 0; i < attrs.trials + attrs.warmup; i++) {
 
-            ping_put(len, &data.latency, &data.bandwidth, my_node);
+            ping_put(buf, len, &data.latency, &data.bandwidth, my_node);
 
-            if(my_node == 0 && i >= warmup)
+            if(my_node == 0 && i >= attrs.warmup)
                calc_metric_data(&data);
         }
 
         shmem_barrier_all();
 
         if (my_node == 0)
-           print_data_results(data, len, trials, mega);
-
-        if (len == 1) {
-            inc = increment - 1;
-        } else {
-            inc = increment;
-        }
+           print_data_results(data, len, attrs);
     }
 
     shmem_barrier_all();
@@ -260,7 +297,8 @@ int main(int argc, char *argv[])
 
 
 void
-pingpong_p(double *latency, double *bandwidth, int my_node, int npes)
+pingpong_p(int * pingpong_ball, double *latency, double *bandwidth,
+           int my_node, int npes)
 {
 
     double start, end;
@@ -272,9 +310,9 @@ pingpong_p(double *latency, double *bandwidth, int my_node, int npes)
 
         start = shmemx_wtime();
 
-        shmem_int_p(&pingpong_ball, dest, dest);
+        shmem_int_p(pingpong_ball, dest, dest);
 
-        shmem_int_wait(&pingpong_ball, INIT_VALUE);
+        shmem_int_wait(pingpong_ball, INIT_VALUE);
 
         end = shmemx_wtime();
 
@@ -288,16 +326,16 @@ pingpong_p(double *latency, double *bandwidth, int my_node, int npes)
 
    } else {
 
-        shmem_int_wait(&pingpong_ball, INIT_VALUE);
+        shmem_int_wait(pingpong_ball, INIT_VALUE);
 
-        shmem_int_p(&pingpong_ball, dest, dest);
+        shmem_int_p(pingpong_ball, dest, dest);
    }
 
 } /*gauge small put pathway round trip latency*/
 
 
 void
-ping_put(int len, double *latency, double *bandwidth, int my_node)
+ping_put(char * buf, int len, double *latency, double *bandwidth, int my_node)
 {
     double start, end;
 
