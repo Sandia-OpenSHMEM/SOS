@@ -17,12 +17,14 @@ if ENABLE_LENGTHY_TESTS
 TESTS += \
 	shmemlatency \
 	msgrate \
-	shmem_put_perf
+	shmem_put_perf \
+	shmem_bw_put_perf
 else
 check_PROGRAMS += \
         shmemlatency \
 	msgrate \
-	shmem_put_perf
+	shmem_put_perf \
+	shmem_bw_put_perf
 endif
 
 NPROCS ?= 2
