@@ -53,7 +53,7 @@ main(int argc, char* argv[])
 
     num_pes=shmem_n_pes();
 
-    memset(target, 0, sizeof(target));
+    memset(target, 0, sizeof(*target)*10);
 
     shmem_barrier_all();
 
