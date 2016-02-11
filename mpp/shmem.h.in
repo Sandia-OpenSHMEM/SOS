@@ -642,7 +642,12 @@ void start_pes(int npes) __attribute__ ((deprecated));
              double*:           shmem_double_fetch,             \
              int*:              shmem_int_fetch,                \
              long*:             shmem_long_fetch,               \
-             long long*:        shmem_longlong_fetch            \
+             long long*:        shmem_longlong_fetch,           \
+             const float*:      shmem_float_fetch,              \
+             const double*:     shmem_double_fetch,             \
+             const int*:        shmem_int_fetch,                \
+             const long*:       shmem_long_fetch,               \
+             const long long*:  shmem_longlong_fetch            \
             )(source, pe)
 
 #define shmem_set(dest, value, pe)                              \
