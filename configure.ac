@@ -14,7 +14,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.2], [https://github.com/regrant/sandia-shmem])
+AC_INIT([Sandia OpenSHMEM], [1.3], [https://github.com/regrant/sandia-shmem])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
