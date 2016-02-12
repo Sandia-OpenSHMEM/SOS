@@ -39,6 +39,13 @@ static int is_active(int pe, int pe_start, int pe_stride, int pe_size) {
     return pe >= pe_start && pe < pe_start + pe_size * stride && (pe - pe_start) % stride == 0;
 }
 
+/* Tranlate a group PE index to a global PE rank. */
+static int pe_group_to_world(int group_pe, int pe_start, int pe_stride, int pe_size) {
+    int stride = 1 << pe_stride;
+
+    return group_pe >= pe_size ? -1 : pe_start + group_pe * stride;
+}
+
 static void alltoalls_test(int32_t *out, int32_t *in, int dst, int sst, int nelem,
                     int pe_start, int pe_stride, int pe_size)
 {
@@ -70,7 +77,7 @@ static void alltoalls_test(int32_t *out, int32_t *in, int dst, int sst, int nele
             for (k = 0; k < dst; k++) {
                 int idx = i*dst*nelem + j*dst + k;
                 if (is_active(me, pe_start, pe_stride, pe_size))
-                    expected = (k == 0 && is_active(i, pe_start, pe_stride, pe_size)) ? i : -1;
+                    expected = (k % dst == 0) ? pe_group_to_world(i, pe_start, pe_stride, pe_size) : -1;
                 else
                     expected = -1;
 
