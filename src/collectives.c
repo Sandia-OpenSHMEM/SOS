@@ -1071,7 +1071,9 @@ shmem_internal_alltoall(void *dest, const void *source, size_t len,
                         int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
     const long one = 1;
-    const void *dest_ptr = (uint8_t *) dest + shmem_internal_my_pe * len;
+    const int stride = 1 << logPE_stride;
+    const int my_as_rank = (shmem_internal_my_pe - PE_start) / stride;
+    const void *dest_ptr = (uint8_t *) dest + my_as_rank * len;
     int peer;
 
     if (0 == len)
@@ -1080,7 +1082,9 @@ shmem_internal_alltoall(void *dest, const void *source, size_t len,
     /* Send data round-robin, starting with my PE */
     peer = shmem_internal_my_pe;
     do {
-        shmem_internal_put_nb((void *) dest_ptr, (uint8_t *) source + peer * len,
+        int peer_as_rank = (peer - PE_start) / stride; /* Peer's index in active set */
+
+        shmem_internal_put_nb((void *) dest_ptr, (uint8_t *) source + peer_as_rank * len,
                               len, peer, NULL);
         peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
                                                  PE_size);
@@ -1108,7 +1112,9 @@ shmem_internal_alltoalls(void *dest, const void *source, ptrdiff_t dst,
                          int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
     const long one = 1;
-    const void *dest_base = (uint8_t *) dest + shmem_internal_my_pe * nelems * dst * elem_size;
+    const int stride = 1 << logPE_stride;
+    const int my_as_rank = (shmem_internal_my_pe - PE_start) / stride;
+    const void *dest_base = (uint8_t *) dest + my_as_rank * nelems * dst * elem_size;
     int peer;
 
     if (0 == nelems)
@@ -1126,8 +1132,9 @@ shmem_internal_alltoalls(void *dest, const void *source, ptrdiff_t dst,
     peer = shmem_internal_my_pe;
     do {
         size_t i;
+        int peer_as_rank    = (peer - PE_start) / stride; /* Peer's index in active set */
         uint8_t *dest_ptr   = (uint8_t *) dest_base;
-        uint8_t *source_ptr = (uint8_t *) source + peer * nelems * sst * elem_size;
+        uint8_t *source_ptr = (uint8_t *) source + peer_as_rank * nelems * sst * elem_size;
 
         for (i = nelems ; i > 0; i--) {
             shmem_internal_put_small((void *) dest_ptr, (uint8_t *) source_ptr,
