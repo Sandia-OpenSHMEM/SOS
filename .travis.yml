@@ -67,8 +67,7 @@ before_install:
     - make install
     ## Fetch UH Tests
     - cd $TRAVIS_SRC
-    #- git clone --depth 10 https://github.com/openshmem-org/tests-uh.git tests-uh
-    - git clone --depth 10 -b ci-master https://github.com/jdinan/tests-uh.git tests-uh
+    - git clone --depth 10 https://github.com/openshmem-org/tests-uh.git tests-uh
     ## Fetch ISx
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ParRes/ISx.git ISx
