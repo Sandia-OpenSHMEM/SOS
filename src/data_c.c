@@ -253,7 +253,7 @@
 #pragma weak shmem_put32_nbi = pshmem_put32_nbi
 #define shmem_put32_nbi pshmem_put32_nbi
 
-#pragma weak shmem_put64_nbi =- pshmem_put64_nbi
+#pragma weak shmem_put64_nbi = pshmem_put64_nbi
 #define shmem_put64_nbi pshmem_put64_nbi
 
 #pragma weak shmem_put128_nbi = pshmem_put128_nbi
