@@ -14,7 +14,6 @@
 #define SHMEM_FREE_QUEUE_H
 
 #include <stdint.h>
-#include <assert.h>
 
 #include "shmem_internal.h"
 
@@ -60,7 +59,7 @@ shmem_free_list_alloc(shmem_free_list_t *fl)
         ret = shmem_free_list_more(fl);
         if (0 != ret) goto done;
     }
-    assert(NULL != fl->head);
+    shmem_internal_assert(NULL != fl->head);
 
     item = fl->head;
     fl->head = item->next;

@@ -13,8 +13,6 @@
 #ifndef SHMEM_ATOMIC_H
 #define SHMEM_ATOMIC_H
 
-#include <assert.h>
-
 /* Compiler Barriers and stuff */
 
 #if defined(__i386__) || defined(__x86_64__)
@@ -70,7 +68,7 @@ static inline
 void
 shmem_spinlock_fini(shmem_spinlock_t *lock)
 {
-    assert(lock->enter == lock->exit);
+    shmem_internal_assertp(lock->enter == lock->exit);
 }
 
 #endif

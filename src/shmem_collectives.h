@@ -122,26 +122,27 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
 }
 
 
-void shmem_internal_op_to_all_linear(void *target, void *source, int count, int type_size,
+void shmem_internal_op_to_all_linear(void *target, const void *source, int count, int type_size,
                                      int PE_start, int logPE_stride, int PE_size,
                                      void *pWrk, long *pSync, 
                                      shm_internal_op_t op, shm_internal_datatype_t datatype);
-void shmem_internal_op_to_all_tree(void *target, void *source, int count, int type_size,
+void shmem_internal_op_to_all_tree(void *target, const void *source, int count, int type_size,
                                    int PE_start, int logPE_stride, int PE_size,
                                    void *pWrk, long *pSync, 
                                    shm_internal_op_t op, shm_internal_datatype_t datatype);
 
-void shmem_internal_op_to_all_recdbl_sw(void *target, void *source, int count, int type_size,
+void shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, int count, int type_size,
                                    int PE_start, int logPE_stride, int PE_size,
                                    void *pWrk, long *pSync,
                                    shm_internal_op_t op, shm_internal_datatype_t datatype);
 
 static inline
 void
-shmem_internal_op_to_all(void *target, void *source, int count, int type_size,
-                    int PE_start, int logPE_stride, int PE_size,
-                    void *pWrk, long *pSync, 
-                    shm_internal_op_t op, shm_internal_datatype_t datatype)
+shmem_internal_op_to_all(void *target, const void *source, int count,
+                         int type_size, int PE_start, int logPE_stride,
+                         int PE_size, void *pWrk, long *pSync,
+                         shm_internal_op_t op,
+                         shm_internal_datatype_t datatype)
 {
     switch (shmem_internal_reduce_type) {
         case AUTO:
@@ -260,4 +261,11 @@ shmem_internal_fcollect(void *target, const void *source, size_t len,
     }
 }
 
+
+void shmem_internal_alltoall(void *dest, const void *source, size_t len,
+                             int PE_start, int logPE_stride, int PE_size, long *pSync);
+
+void shmem_internal_alltoalls(void *dest, const void *source, ptrdiff_t dst,
+                              ptrdiff_t sst, size_t elem_size, size_t nelems,
+                              int PE_start, int logPE_stride, int PE_size, long *pSync);
 #endif

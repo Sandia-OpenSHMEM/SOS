@@ -17,7 +17,7 @@
 
 
 static inline void *
-shmem_internal_ptr(void *target, int pe)
+shmem_internal_ptr(const void *target, int pe)
 {
     int node_rank;
 

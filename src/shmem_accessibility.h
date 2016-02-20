@@ -23,7 +23,7 @@ shmem_internal_pe_accessible(int pe)
 
 
 static inline int
-shmem_internal_addr_accessible(void *addr, int pe)
+shmem_internal_addr_accessible(const void *addr, int pe)
 {
     if (pe < 0 || pe >= shmem_internal_num_pes) {
         return 0;

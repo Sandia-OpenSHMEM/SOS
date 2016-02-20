@@ -64,7 +64,7 @@ int shmem_transport_xpmem_fini(void);
 
 static inline
 void *
-shmem_transport_xpmem_ptr(void *target, int pe, int noderank)
+shmem_transport_xpmem_ptr(const void *target, int pe, int noderank)
 {
     char *remote_ptr;
 
