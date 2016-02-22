@@ -83,6 +83,11 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
 
         *mr_addr = shmem_transport_ofi_target_heap_addrs[dest_pe] +
             ((uint8_t *) addr - (uint8_t *) shmem_internal_heap_base);
+    } else {
+        *mr_addr = NULL;
+        printf("[%03d] ERROR in %s: address (0x%p) outside of symmetric areas\n",
+               shmem_internal_my_pe, __func__, addr);
+        RAISE_ERROR(1);
     }
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 
@@ -116,8 +121,8 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
 
     else {
         *mr_addr = NULL;
-        printf("[%03d] ERROR in fi_get_key: address (0x%p) outside of symmetric areas\n",
-               shmem_internal_my_pe, addr);
+        printf("[%03d] ERROR in %s: address (0x%p) outside of symmetric areas\n",
+               shmem_internal_my_pe, __func__, addr);
         RAISE_ERROR(1);
     }
 }
