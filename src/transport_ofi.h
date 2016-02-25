@@ -82,7 +82,7 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
     } else {
         *key = 0;
         *mr_addr = NULL;
-        printf("[%03d] ERROR in %s: address (0x%p) outside of symmetric areas\n",
+        OFI_ERRMSG("[%03d] ERROR in %s: address (0x%p) outside of symmetric areas\n",
                shmem_internal_my_pe, __func__, addr);
         RAISE_ERROR(1);
     }
@@ -118,7 +118,7 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
 
     else {
         *mr_addr = NULL;
-        printf("[%03d] ERROR in %s: address (0x%p) outside of symmetric areas\n",
+        OFI_ERRMSG("[%03d] ERROR in %s: address (0x%p) outside of symmetric areas\n",
                shmem_internal_my_pe, __func__, addr);
         RAISE_ERROR(1);
     }
