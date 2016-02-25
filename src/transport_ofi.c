@@ -37,17 +37,22 @@ struct fid_cntr*            	shmem_transport_ofi_target_cntrfd;
 struct fid_cntr*            	shmem_transport_ofi_put_cntrfd;
 struct fid_cntr*            	shmem_transport_ofi_get_cntrfd;
 #ifdef ENABLE_MR_SCALABLE
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
 struct fid_mr*              	shmem_transport_ofi_target_mrfd;
-#else
+#else  /* !ENABLE_REMOTE_VIRTUAL_ADDRESSING */
+struct fid_mr*                  shmem_transport_ofi_target_heap_mrfd;
+struct fid_mr*                  shmem_transport_ofi_target_data_mrfd;
+#endif
+#else  /* !ENABLE_MR_SCALABLE */
 struct fid_mr*                  shmem_transport_ofi_target_heap_mrfd;
 struct fid_mr*                  shmem_transport_ofi_target_data_mrfd;
 uint64_t*                       shmem_transport_ofi_target_heap_keys;
 uint64_t*                       shmem_transport_ofi_target_data_keys;
-#endif /* ENABLE_MR_SCALABLE */
 #ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
 uint8_t**                       shmem_transport_ofi_target_heap_addrs;
 uint8_t**                       shmem_transport_ofi_target_data_addrs;
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
+#endif /* ENABLE_MR_SCALABLE */
 uint64_t	          	shmem_transport_ofi_pending_put_counter;
 uint64_t        	 	shmem_transport_ofi_pending_get_counter;
 uint64_t			shmem_transport_ofi_pending_cq_count;
@@ -312,7 +317,7 @@ static inline int allocate_recv_cntr_mr(void)
         return ret;
     }
 
-#ifdef ENABLE_MR_SCALABLE
+#if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, 0, UINT64_MAX,
 		    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, 0,
 		    &shmem_transport_ofi_target_mrfd, NULL);
@@ -340,10 +345,12 @@ static inline int allocate_recv_cntr_mr(void)
     }
 
 #else
-    /* Using MR_BASIC; register separate heap and data segments */
+    /* Register separate data and heap segments using keys 0 and 1,
+     * respectively.  In MR_BASIC_MODE, the keys are ignored and selected by
+     * the provider. */
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_heap_base,
                     shmem_internal_heap_length,
-                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, 0,
+                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 1ULL, 0,
                     &shmem_transport_ofi_target_heap_mrfd, NULL);
     if (ret != 0) {
         OFI_ERRMSG("mr_reg heap failed\n");
@@ -475,7 +482,6 @@ static int populate_mr_tables(void)
             }
         }
     }
-#endif /* ENABLE_MR_SCALABLE */
 
 #ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
     {
@@ -512,6 +518,7 @@ static int populate_mr_tables(void)
         }
     }
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
+#endif /* ENABLE_MR_SCALABLE */
 
     return 0;
 }
@@ -846,7 +853,7 @@ int shmem_transport_fini(void)
         OFI_ERRMSG("Shared context close failed (%s)", fi_strerror(errno));
     }
 
-#ifdef ENABLE_MR_SCALABLE
+#if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     if (shmem_transport_ofi_target_mrfd &&
 		    fi_close(&shmem_transport_ofi_target_mrfd->fid)) {
 	OFI_ERRMSG("Target MR close failed (%s)", fi_strerror(errno));
