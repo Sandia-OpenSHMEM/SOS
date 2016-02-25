@@ -41,7 +41,7 @@ before_install:
     - cd $TRAVIS_SRC
     - wget http://dist.schmorp.de/libev/Attic/libev-4.22.tar.gz
     - tar -xzvf libev-4.22.tar.gz
-    - cd libev-4.22 && ./configure --prefix=$TRAVIS_INSTALL/libev && make && sudo make install
+    - cd libev-4.22 && ./configure --prefix=$TRAVIS_INSTALL/libev && make && make install
     ## Build Portals 4
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/regrant/portals4.git portals4
