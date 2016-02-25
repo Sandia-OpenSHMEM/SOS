@@ -60,6 +60,20 @@ extern size_t    			shmem_transport_ofi_bounce_buffer_size;
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #endif
 
+#define OFI_ERRMSG(...)                                                         \
+    do {                                                                        \
+        fprintf(stderr, __FILE__ ":%d: \n", __LINE__);                          \
+        fprintf(stderr, __VA_ARGS__);                                           \
+    } while (0)
+
+#define OFI_RET_CHECK(ret)                                                      \
+    do {                                                                        \
+        if (ret) {                                                              \
+            fprintf(stderr, "OFI error #%d: %s \n", ret, fi_strerror(ret));     \
+            RAISE_ERROR(ret);                                                   \
+        }                                                                       \
+    } while (0)
+
 #ifdef ENABLE_MR_SCALABLE
 static inline
 void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
@@ -190,13 +204,6 @@ extern int shmem_transport_have_long_double;
 extern shmem_free_list_t *shmem_transport_ofi_bounce_buffers;
 
 extern shmem_free_list_t *shmem_transport_ofi_frag_buffers;
-
-#define OFI_ERRMSG(...) { fprintf(stderr, __FILE__ ":%d: \n", __LINE__); \
-                            fprintf(stderr, __VA_ARGS__);  }
-
-#define OFI_RET_CHECK(ret) do { if (ret) { \
-	fprintf(stderr,"OFI error #%d: %s \n", ret, fi_strerror(ret)); \
-	RAISE_ERROR(ret); } } while (0)
 
 int shmem_transport_init(long eager_size);
 int shmem_transport_startup(void);
