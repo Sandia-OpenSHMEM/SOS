@@ -1,0 +1,74 @@
+===============================================================================
+
+            User Manual: Latency and Bandwidth Performance Test Suite
+
+===============================================================================
+includes:
+    shmem_bw_put_perf
+    shmem_bibw_put_perf
+    shmem_latency_put_perf
+    shmem_bw_get_perf
+    shmem_bibw_get_perf
+    shmem_latency_get_perf
+
+Notes for Users:
+
+    Bandwidth tests: only even set of PEs can run the tests, assumed 2-node model with
+                multiple processors per node: half of PE's comes from one node and
+                other half from partner node
+
+    calculation parameters: runs for x numbers of iterations, over varying input
+        specified data size, for 64 back to back operations (window size = 64)
+
+        bw tests: uni-direction bw tests
+                (half of PE set does put/get to other half)
+        bibw tests: bi-direction bw test
+                (PE pairs put to each other simultaneously but to different buffers)
+
+    Latency tests: two-nodes only
+        1) runs a single long element (shmem_long_p/g) round-trip communication
+                scheme for x number of iterations
+        2) for x numbers of iterations, over varying input specified data size
+                range, latency calculation
+
+    Input Parameters:
+        -e : end length (power of two) DEFAULT: 8MB
+        -s : start length (power of two) DEFAULT: 1B
+        -n : number of trials (must be greater than 20 (warmup size)) DEFAULT: 100
+        -v : validate input stream used for performance data (off by default)
+        BW only:
+            -K : output in KB
+            -B : output in B
+
+Notes for performance tests developers:
+    overall model:
+            development assumed that the initialization of data, calculating and printing of
+            output, as well as input from user is constant and reusable between put/get
+            performance tests. Thus header files define resuable items amongst .c
+            performance files. The scope of reuse (i.e. between latency or bw files) is
+            specified by header name, common.h being used amongst all the files. The
+            unique aspect to the performance files, gathering the actual timing data
+            from a communication pattern is implemented in each individual .c performance
+            file (thus they implement the header extern bw/latency function call that
+            plugs into the rest of the framework).
+
+    NOTE: data is automatically initialized for latency/bw functions that are implemented
+            in the .c files, they are initialized with the following assumptions
+            assumed that the uni direction test only needs a single symmetric buffer of
+            max length to use for uni_dir_bw implementation, bi-direction, assumes
+            two unique symmetric buffers, latency one element assumes single long symmetric
+            element data needed, streaming latency assumes single symmetric buffer
+        -all buffers are initialized with my_pe, and are validating by checking that they
+            contain partners PE number, expect the latency one element function
+            must be initialized per latency implementation (in .c file)
+
+    common.h: functions used in both latency/bw tests
+    latency_common.h: the init path is assumed to be reusable and static amongst tests
+        only the latency calculation is assumed to be unique between tests and thus
+        is implemented in each shmem_latency....c file
+    latency_common.h: the init path is assumed to be reusable and static amongst tests
+        only the latency timing is assumed to be unique between tests and thus
+        is implemented in each shmem_latency....c file
+    bw_common.h: the init path is assumed to be reusable and static amongst tests
+        only the bw timing is assumed to be unique between tests and thus
+        is implemented in each shmem_bw....c file

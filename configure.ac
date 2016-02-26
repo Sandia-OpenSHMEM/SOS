@@ -369,7 +369,9 @@ AC_CONFIG_FILES([Makefile
   src/Makefile
   test/Makefile
   test/unit/Makefile
-  test/performance/Makefile])
+  test/performance/Makefile
+  test/performance/shmem_perf_suite/Makefile
+  test/performance/tests/Makefile])
 AS_IF([test "$enable_pmi_simple" = "yes"],
 	[AC_CONFIG_SUBDIRS([shmem_pmi])])
 AC_OUTPUT
