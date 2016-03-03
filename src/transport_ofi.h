@@ -354,6 +354,42 @@ shmem_transport_put_small(void *target, const void *source, size_t len, int pe)
 
 static inline
 void
+shmem_transport_put_large(void *target, const void *source, size_t len, int pe)
+{
+	int ret = 0;
+	uint64_t dst = (uint64_t) pe;
+	uint64_t polled = 0;
+    uint64_t key;
+    uint8_t *addr;
+
+    shmem_transport_ofi_get_mr(target, pe, &addr, &key);
+
+    uint8_t *frag_source = (uint8_t *) source;
+    uint64_t frag_target = (uint64_t) addr;
+    size_t frag_len = len;
+
+     /* operation generates counting events and must be completed by
+      * quiet. */
+     while (frag_source < ((uint8_t *) source) + len) {
+        frag_len = MIN(shmem_transport_ofi_max_msg_size, (size_t) (((uint8_t *) source) + len - frag_source));
+        polled = 0;
+
+        do {
+            ret = fi_write(shmem_transport_ofi_cntr_epfd,
+                           frag_source, frag_len, NULL,
+                           GET_DEST(dst), frag_target,
+                           key, NULL);
+        } while (try_again(ret,&polled));
+
+        shmem_transport_ofi_pending_put_counter++;
+
+        frag_source += frag_len;
+        frag_target += frag_len;
+    }
+}
+
+static inline
+void
 shmem_transport_put_nb(void *target, const void *source, size_t len,
                        int pe, long *completion)
 {
@@ -363,25 +399,14 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
         uint64_t key;
         uint8_t *addr;
 
-        shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
 	if (len <= shmem_transport_ofi_max_buffered_send) {
 
-		polled = 0;
-
-		do {
-			ret = fi_inject_write(shmem_transport_ofi_cntr_epfd,
-						source,
-						len,
-						GET_DEST(dst),
-						(uint64_t) addr,
-						key);
-
-		} while(try_again(ret,&polled));
-
-		shmem_transport_ofi_pending_put_counter++;
+        shmem_transport_put_small(target, source, len, pe);
 
 	} else if (len <= shmem_transport_ofi_bounce_buffer_size) {
+
+        shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
 		shmem_transport_ofi_bounce_buffer_t *buff = create_bounce_buffer(source, len);
 		polled = 0;
@@ -395,30 +420,9 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
 
 		shmem_transport_ofi_pending_cq_count++;
 
-        } else {
-                uint8_t *frag_source = (uint8_t *) source;
-                uint64_t frag_target = (uint64_t) addr;
-                size_t frag_len = len;
-
-                /* operation generates counting events and must be completed by
-                 * quiet. */
-                while (frag_source < ((uint8_t *) source) + len) {
-                    frag_len = MIN(shmem_transport_ofi_max_msg_size, (size_t) (((uint8_t *) source) + len - frag_source));
-                    polled = 0;
-
-                    do {
-                        ret = fi_write(shmem_transport_ofi_cntr_epfd,
-                                       frag_source, frag_len, NULL,
-                                       GET_DEST(dst), frag_target,
-                                       key, NULL);
-                    } while (try_again(ret,&polled));
-
-                    shmem_transport_ofi_pending_put_counter++;
-
-                    frag_source += frag_len;
-                    frag_target += frag_len;
-                }
-        }
+    } else {
+        shmem_transport_put_large(target, source,len, pe);
+    }
 }
 
 /*compatibility with Portals transport*/
@@ -428,6 +432,22 @@ shmem_transport_put_wait(long *completion) {
 
     shmem_transport_quiet();
 }
+
+static inline
+void
+shmem_transport_put_nbi(void *target, const void *source, size_t len,
+                       int pe, long *completion)
+{
+	if (len <= shmem_transport_ofi_max_buffered_send) {
+
+        shmem_transport_put_small(target, source, len, pe);
+
+    } else {
+
+        shmem_transport_put_large(target, source, len, pe);
+    }
+}
+
 
 static inline
 void

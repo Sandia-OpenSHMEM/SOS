@@ -556,6 +556,13 @@ shmem_transport_put_wait(long *completion)
     }
 }
 
+static inline
+void
+shmem_transport_put_nbi(void *target, const void *source, size_t len,
+                       int pe, long *completion)
+{
+    shmem_transport_put_nb(target, source, len, pe, completion);
+}
 
 static inline
 void
