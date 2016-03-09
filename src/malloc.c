@@ -592,7 +592,7 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 #define FOOTERS 0
 #endif  /* FOOTERS */
 #ifndef ABORT
-#define ABORT  shmem_runtime_abort(1, "OpenSHMEM exited in error")
+#define ABORT  shmem_runtime_abort(1, PACKAGE_NAME " symmetric memory allocator exited in error")
 #endif  /* ABORT */
 #ifndef ABORT_ON_ASSERT_FAILURE
 #define ABORT_ON_ASSERT_FAILURE 1
