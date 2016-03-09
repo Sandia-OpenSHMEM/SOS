@@ -343,6 +343,8 @@ FC_SHMEM_REAL4_MAX_TO_ALL(float *target,
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
+    shmem_internal_assert(sizeof(float) == 4);
+
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
 
@@ -374,6 +376,8 @@ FC_SHMEM_REAL8_MAX_TO_ALL(double *target,
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+
+    shmem_internal_assert(sizeof(double) == 8);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -505,6 +509,8 @@ FC_SHMEM_REAL4_MIN_TO_ALL(float *target,
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
+    shmem_internal_assert(sizeof(float) == 4);
+
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
 
@@ -536,6 +542,8 @@ FC_SHMEM_REAL8_MIN_TO_ALL(double *target,
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+
+    shmem_internal_assert(sizeof(double) == 8);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -667,6 +675,8 @@ FC_SHMEM_REAL4_SUM_TO_ALL(float *target,
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
+    shmem_internal_assert(sizeof(float) == 4);
+
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
 
@@ -698,6 +708,8 @@ FC_SHMEM_REAL8_SUM_TO_ALL(double *target,
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+
+    shmem_internal_assert(sizeof(double) == 8);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -829,6 +841,8 @@ FC_SHMEM_REAL4_PROD_TO_ALL(float *target,
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
+    shmem_internal_assert(sizeof(float) == 4);
+
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
 
@@ -860,6 +874,8 @@ FC_SHMEM_REAL8_PROD_TO_ALL(double *target,
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+
+    shmem_internal_assert(sizeof(double) == 8);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;

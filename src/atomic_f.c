@@ -94,6 +94,8 @@ FC_SHMEM_REAL4_SWAP(float *target,
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
+    shmem_internal_assert(sizeof(float) == 4);
+
     shmem_internal_swap(target, value, &newval, 4,
 			*pe, SHM_INTERNAL_FLOAT);
     shmem_internal_get_wait();
@@ -113,6 +115,8 @@ FC_SHMEM_REAL8_SWAP(double *target,
     double newval;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_assert(sizeof(double) == 8);
 
     shmem_internal_swap(target, value, &newval, 8,
 			*pe, SHM_INTERNAL_DOUBLE);
@@ -354,6 +358,8 @@ FC_SHMEM_REAL4_FETCH(float *source,
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
+    shmem_internal_assert(sizeof(float) == 4);
+
     shmem_internal_atomic_fetch(&val, (void *) source, 4, *pe, SHM_INTERNAL_INT32);
     shmem_internal_get_wait();
 
@@ -371,6 +377,8 @@ FC_SHMEM_REAL8_FETCH(double *source,
     double val;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_assert(sizeof(double) == 8);
 
     shmem_internal_atomic_fetch(&val, (void *) source, 8, *pe, SHM_INTERNAL_INT64);
     shmem_internal_get_wait();
@@ -422,6 +430,8 @@ FC_SHMEM_REAL4_SET(float *dest,
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
+    shmem_internal_assert(sizeof(float) == 4);
+
     shmem_internal_atomic_set((void *) dest, (const void *) value, 4, *pe,
                               SHM_INTERNAL_INT32);
 }
@@ -437,6 +447,8 @@ FC_SHMEM_REAL8_SET(double *dest,
                    fortran_integer_t *pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_assert(sizeof(double) == 8);
 
     shmem_internal_atomic_set((void *) dest, (const void *) value, 8, *pe,
                               SHM_INTERNAL_INT64);
