@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_remote_pointer.h"
@@ -30,7 +31,7 @@
 
 
 void *
-shmem_ptr(void *target, int pe)
+shmem_ptr(const void *target, int pe)
 {
     return shmem_internal_ptr(target, pe);
 }

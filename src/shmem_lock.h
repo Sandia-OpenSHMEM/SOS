@@ -33,7 +33,7 @@ typedef struct lock_t lock_t;
 
 
 static inline void
-shmem_internal_clear_lock(long *lockp)
+shmem_internal_clear_lock(volatile long *lockp)
 {
     lock_t *lock = (lock_t*) lockp;
     int curr, cond, zero = 0, sig = SIGNAL_MASK;
@@ -65,7 +65,7 @@ shmem_internal_clear_lock(long *lockp)
 
 
 static inline void
-shmem_internal_set_lock(long *lockp)
+shmem_internal_set_lock(volatile long *lockp)
 {
     lock_t *lock = (lock_t*) lockp;
     int curr, zero = 0, me = shmem_internal_my_pe + 1, next_mask = NEXT_MASK;
@@ -95,7 +95,7 @@ shmem_internal_set_lock(long *lockp)
 
 
 static inline int
-shmem_internal_test_lock(long *lockp)
+shmem_internal_test_lock(volatile long *lockp)
 {
     lock_t *lock = (lock_t*) lockp;
     int curr, me = shmem_internal_my_pe + 1, zero = 0;

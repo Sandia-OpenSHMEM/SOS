@@ -1,4 +1,4 @@
-sudo: true
+sudo: false
 language: c
 compiler:
     #- clang
@@ -14,7 +14,7 @@ env:
     matrix:
         - # Defaults
         - SOS_BUILD_OPTS="--disable-mr-scalable"
-        - SOS_BUILD_OPTS="--enable-cma --enable-error-checking --enable-profiling --enable-remote-virtual-addressing"
+        - SOS_BUILD_OPTS="--enable-cma --enable-error-checking --enable-profiling --disable-mr-scalable --enable-remote-virtual-addressing"
         - SMA_BOUNCE_SIZE=0 SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
         - SMA_BARRIER_ALGORITHM=auto   SMA_BCAST_ALGORITHM=auto   SMA_REDUCE_ALGORITHM=auto    SMA_COLLECT_ALGORITHM=auto    SMA_FCOLLECT_ALGORITHM=auto SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
         - SMA_BARRIER_ALGORITHM=linear SMA_BCAST_ALGORITHM=linear SMA_REDUCE_ALGORITHM=linear  SMA_COLLECT_ALGORITHM=linear  SMA_FCOLLECT_ALGORITHM=linear SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
@@ -24,6 +24,11 @@ env:
 os:
     - linux
 
+addons:
+    apt:
+        packages:
+            - gfortran
+
 before_install:
     ## Set up the environment
     - mkdir $HOME/travis
@@ -32,14 +37,11 @@ before_install:
     - export SOS_SRC=$PWD
     - export TRAVIS_SRC=$HOME/travis/src
     - export TRAVIS_INSTALL=$HOME/travis/install
-    ## Fetch packages
-    - sudo apt-get update -qq
-    - sudo apt-get install -y gfortran
     ## Build libev
     - cd $TRAVIS_SRC
     - wget http://dist.schmorp.de/libev/Attic/libev-4.22.tar.gz
     - tar -xzvf libev-4.22.tar.gz
-    - cd libev-4.22 && ./configure --prefix=$TRAVIS_INSTALL/libev && make && sudo make install
+    - cd libev-4.22 && ./configure --prefix=$TRAVIS_INSTALL/libev && make && make install
     ## Build Portals 4
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/regrant/portals4.git portals4

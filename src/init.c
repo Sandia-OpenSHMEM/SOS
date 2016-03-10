@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <unistd.h>
 
+#define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
 #include "shmemx.h"
 #include "shmem_internal.h"
@@ -68,13 +69,16 @@ static char shmem_internal_my_hostname[HOST_NAME_MAX];
 
 
 static void
-shmem_internal_shutdown(void)
+shmem_internal_shutdown(int barrier_requested)
 {
     if (!shmem_internal_initialized ||
         shmem_internal_finalized) {
         return;
     }
     shmem_internal_finalized = 1;
+
+    if (barrier_requested)
+        shmem_internal_barrier_all();
 
     shmem_transport_fini();
 
@@ -101,7 +105,7 @@ shmem_internal_shutdown_atexit(void)
         fprintf(stderr, "Warning: shutting down without a call to shmem_finalize()\n");
     }
 
-    shmem_internal_shutdown();
+    shmem_internal_shutdown(0);
 }
 
 
@@ -354,8 +358,7 @@ shmem_internal_nodename(void)
 
 void shmem_internal_finalize(void)
 {
-    shmem_internal_barrier_all();
-    shmem_internal_shutdown();
+    shmem_internal_shutdown(1);
 }
 
 

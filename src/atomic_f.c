@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"
@@ -93,6 +94,8 @@ FC_SHMEM_REAL4_SWAP(float *target,
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
+    shmem_internal_assert(sizeof(float) == 4);
+
     shmem_internal_swap(target, value, &newval, 4,
 			*pe, SHM_INTERNAL_FLOAT);
     shmem_internal_get_wait();
@@ -112,6 +115,8 @@ FC_SHMEM_REAL8_SWAP(double *target,
     double newval;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_assert(sizeof(double) == 8);
 
     shmem_internal_swap(target, value, &newval, 8,
 			*pe, SHM_INTERNAL_DOUBLE);
@@ -303,4 +308,148 @@ FC_SHMEM_INT8_INC(int64_t *target,
 
     shmem_internal_atomic_small(target, &tmp, 8, 
                                  *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64);
+}
+
+
+#define FC_SHMEM_INT4_FETCH FC_FUNC_(shmem_int4_fetch, SHMEM_INT4_FETCH)
+int32_t FC_SHMEM_INT4_FETCH(int32_t *source,
+                            fortran_integer_t *pe);
+int32_t
+FC_SHMEM_INT4_FETCH(int32_t *source,
+                    fortran_integer_t *pe)
+{
+    int32_t val;
+
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_atomic_fetch(&val, (void *) source, 4, *pe, SHM_INTERNAL_INT32);
+    shmem_internal_get_wait();
+
+    return val;
+}
+
+
+#define FC_SHMEM_INT8_FETCH FC_FUNC_(shmem_int8_fetch, SHMEM_INT8_FETCH)
+int64_t FC_SHMEM_INT8_FETCH(int64_t *source,
+                            fortran_integer_t *pe);
+int64_t
+FC_SHMEM_INT8_FETCH(int64_t *source,
+                    fortran_integer_t *pe)
+{
+    int64_t val;
+
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_atomic_fetch(&val, (void *) source, 8, *pe, SHM_INTERNAL_INT64);
+    shmem_internal_get_wait();
+
+    return val;
+}
+
+
+#define FC_SHMEM_REAL4_FETCH FC_FUNC_(shmem_real4_fetch, SHMEM_REAL4_FETCH)
+float FC_SHMEM_REAL4_FETCH(float *source,
+                           fortran_integer_t *pe);
+float
+FC_SHMEM_REAL4_FETCH(float *source,
+                     fortran_integer_t *pe)
+{
+    float val;
+
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_assert(sizeof(float) == 4);
+
+    shmem_internal_atomic_fetch(&val, (void *) source, 4, *pe, SHM_INTERNAL_INT32);
+    shmem_internal_get_wait();
+
+    return val;
+}
+
+
+#define FC_SHMEM_REAL8_FETCH FC_FUNC_(shmem_real8_fetch, SHMEM_REAL8_FETCH)
+double FC_SHMEM_REAL8_FETCH(double *source,
+                            fortran_integer_t *pe);
+double
+FC_SHMEM_REAL8_FETCH(double *source,
+                     fortran_integer_t *pe)
+{
+    double val;
+
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_assert(sizeof(double) == 8);
+
+    shmem_internal_atomic_fetch(&val, (void *) source, 8, *pe, SHM_INTERNAL_INT64);
+    shmem_internal_get_wait();
+
+    return val;
+}
+
+
+#define FC_SHMEM_INT4_SET FC_FUNC_(shmem_int4_set, SHMEM_INT4_SET)
+void FC_SHMEM_INT4_SET(int32_t *dest,
+                       int32_t *value,
+                       fortran_integer_t *pe);
+void
+FC_SHMEM_INT4_SET(int32_t *dest,
+                   int32_t *value,
+                   fortran_integer_t *pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_atomic_set((void *) dest, (const void *) value, 4, *pe,
+                              SHM_INTERNAL_INT32);
+}
+
+
+#define FC_SHMEM_INT8_SET FC_FUNC_(shmem_int8_set, SHMEM_INT8_SET)
+void FC_SHMEM_INT8_SET(int64_t *dest,
+                       int64_t *value,
+                       fortran_integer_t *pe);
+void
+FC_SHMEM_INT8_SET(int64_t *dest,
+                   int64_t *value,
+                   fortran_integer_t *pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_atomic_set((void *) dest, (const void *) value, 8, *pe,
+                              SHM_INTERNAL_INT64);
+}
+
+
+#define FC_SHMEM_REAL4_SET FC_FUNC_(shmem_real4_set, SHMEM_REAL4_SET)
+void FC_SHMEM_REAL4_SET(float *dest,
+                        float *value,
+                        fortran_integer_t *pe);
+void
+FC_SHMEM_REAL4_SET(float *dest,
+                   float *value,
+                   fortran_integer_t *pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_assert(sizeof(float) == 4);
+
+    shmem_internal_atomic_set((void *) dest, (const void *) value, 4, *pe,
+                              SHM_INTERNAL_INT32);
+}
+
+
+#define FC_SHMEM_REAL8_SET FC_FUNC_(shmem_real8_set, SHMEM_REAL8_SET)
+void FC_SHMEM_REAL8_SET(double *dest,
+                        double *value,
+                        fortran_integer_t *pe);
+void
+FC_SHMEM_REAL8_SET(double *dest,
+                   double *value,
+                   fortran_integer_t *pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_assert(sizeof(double) == 8);
+
+    shmem_internal_atomic_set((void *) dest, (const void *) value, 8, *pe,
+                              SHM_INTERNAL_INT64);
 }

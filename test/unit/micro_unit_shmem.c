@@ -149,6 +149,9 @@ static inline void atomic_inc(int me, int iterations, int T)
 	if (me == 1)
 		pre_op_check(__func__, target[T], iterations, 1);
 
+        target[T] = 0;
+        shmem_barrier_all();
+
 	if (me == 0) {
 		for (i = 0; i < iterations; i++) {
 			shmem_int_inc(&target[T], 1);
@@ -175,6 +178,9 @@ static inline void atomic_add(int me, int iterations, int T)
 
 	if (me == 0)
 		pre_op_check(__func__, target[T], iterations, 0);
+
+        target[T] = 0;
+        shmem_barrier_all();
 
 	if (me == 1) {
 		for (i = 0; i < iterations; i++) {
@@ -252,6 +258,9 @@ static inline void cswaptest(int me, int iterations, int T, int S, int P)
 	int i;
 	source[S] = -100;
 
+        target[T] = 0;
+        shmem_barrier_all();
+
 	if (me == 1) {
 		pre_op_check(__func__, source[S], iterations, 1);
 
@@ -286,6 +295,9 @@ static inline void fetchatomic_add(int me, int iterations, int T, int S)
 	if (me == 1)
 		pre_op_check(__func__, target[T], iterations, 1);
 
+        target[T] = 0;
+        shmem_barrier_all();
+
 	if (me == 0) {
 		if (debug) {
 			printf("BEFORE flag PE 0 value of source is"
@@ -316,6 +328,9 @@ static inline void fetchatomic_inc(int me, int iterations, int T, int S)
 
 	if (me == 0)
 		pre_op_check(__func__, target[T], iterations, 0);
+
+        target[T] = 0;
+        shmem_barrier_all();
 
 	if (me == 1) {
 		if (debug) {
@@ -352,9 +367,9 @@ int main(int argc, char **argv)
 	me = shmem_my_pe();
 	nproc = shmem_n_pes();
 
-	memset(target, -1, NUM_WRITE);
-	memset(source, -1, NUM_READ);
-	memset(sync_pes, -1, NUM_SYNC);
+	memset(target, -1, NUM_WRITE * sizeof(int));
+	memset(source, -1, NUM_READ * sizeof(int));
+	memset(sync_pes, -1, NUM_SYNC * sizeof(int));
 
 	shmem_barrier_all();
 

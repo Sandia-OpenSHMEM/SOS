@@ -60,6 +60,7 @@ extern int8_t shmem_transport_portals4_pt_state[SHMEM_TRANSPORT_PORTALS4_NUM_PTS
 
 extern ptl_handle_ni_t shmem_transport_portals4_ni_h;
 extern ptl_handle_md_t shmem_transport_portals4_put_volatile_md_h;
+extern ptl_handle_md_t shmem_transport_portals4_put_cntr_md_h;
 extern ptl_handle_md_t shmem_transport_portals4_put_event_md_h;
 extern ptl_handle_md_t shmem_transport_portals4_get_md_h;
 extern ptl_handle_ct_t shmem_transport_portals4_target_ct_h;
@@ -75,6 +76,7 @@ extern ptl_size_t shmem_transport_portals4_max_volatile_size;
 extern ptl_size_t shmem_transport_portals4_max_atomic_size;
 extern ptl_size_t shmem_transport_portals4_max_fetch_atomic_size;
 extern ptl_size_t shmem_transport_portals4_max_fence_size;
+extern ptl_size_t shmem_transport_portals4_max_msg_size;
 
 extern ptl_size_t shmem_transport_portals4_pending_put_counter;
 extern ptl_size_t shmem_transport_portals4_pending_get_counter;
@@ -225,6 +227,8 @@ int shmem_transport_startup(void);
 
 int shmem_transport_fini(void);
 
+static inline void shmem_transport_get_wait(void);
+
 static inline
 int
 shmem_transport_quiet(void)
@@ -235,7 +239,10 @@ shmem_transport_quiet(void)
     /* synchronize the atomic cache, if there is one */
     PtlAtomicSync();
 
-    /* wait for remote completion (acks) of all pending events */
+    /* wait for completion of all pending NB get events */
+    shmem_transport_get_wait();
+
+    /* wait for remote completion (acks) of all pending put events */
     ret = PtlCTWait(shmem_transport_portals4_put_ct_h, 
                     shmem_transport_portals4_pending_put_counter, &ct);
     if (PTL_OK != ret) { return ret; }
@@ -319,7 +326,7 @@ shmem_transport_portals4_drain_eq(void)
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_event_slots);
 
     /* The only event type we should see on a success is a send event */
-    assert(ev.type == PTL_EVENT_SEND);
+    shmem_internal_assert(ev.type == PTL_EVENT_SEND);
 
     shmem_transport_portals4_event_slots++;
 
@@ -365,7 +372,7 @@ shmem_transport_put_small(void *target, const void *source, size_t len, int pe)
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
-    assert(len <= shmem_transport_portals4_max_volatile_size);
+    shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
 
@@ -431,7 +438,7 @@ shmem_transport_portals4_put_nb_internal(void *target, const void *source, size_
             shmem_free_list_alloc(shmem_transport_portals4_bounce_buffers);
         if (NULL == buff) RAISE_ERROR(-1);
 
-        assert(buff->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_BOUNCE);
+        shmem_internal_assert(buff->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_BOUNCE);
 
         memcpy(buff->data, source, len);
 
@@ -451,29 +458,42 @@ shmem_transport_portals4_put_nb_internal(void *target, const void *source, size_
         shmem_transport_portals4_long_pending = 1;
 #endif
     } else {
-        shmem_transport_portals4_long_frag_t *long_frag;  
+        shmem_transport_portals4_long_frag_t *long_frag;
+        ptl_handle_md_t md;
 
-        SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_event_slots);
-        while (0 >= --shmem_transport_portals4_event_slots) {
-            shmem_transport_portals4_event_slots++;
-            shmem_transport_portals4_drain_eq();
+        shmem_internal_assert(len <= shmem_transport_portals4_max_msg_size);
+
+        /* If user requested completion notification, create a frag object and
+         * append the completion pointer */
+        if (NULL != completion) {
+            md = shmem_transport_portals4_put_event_md_h;
+
+            SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_event_slots);
+            while (0 >= --shmem_transport_portals4_event_slots) {
+                shmem_transport_portals4_event_slots++;
+                shmem_transport_portals4_drain_eq();
+            }
+            SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
+
+            long_frag = (shmem_transport_portals4_long_frag_t*)
+                shmem_free_list_alloc(shmem_transport_portals4_long_frags);
+            if (NULL == long_frag) { RAISE_ERROR(-1); }
+
+            shmem_internal_assert(long_frag->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_LONG);
+            shmem_internal_assert(long_frag->reference == 0);
+            long_frag->completion = completion;
+
+            /* NOTE-MT: Frag mutex is not needed here because the frag doesn't get
+             * exposed to other threads until the PtlPut. */
+            (*(long_frag->completion))++;
+            long_frag->reference++;
+
+        } else {
+            md = shmem_transport_portals4_put_cntr_md_h;
+            long_frag = NULL;
         }
-        SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
 
-        long_frag = (shmem_transport_portals4_long_frag_t*)
-            shmem_free_list_alloc(shmem_transport_portals4_long_frags);
-        if (NULL == long_frag) { RAISE_ERROR(-1); }
-
-        assert(long_frag->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_LONG);
-        assert(long_frag->reference == 0);
-        long_frag->completion = completion;
-
-        /* NOTE-MT: Frag mutex is not needed here because the frag doesn't get
-         * exposed to other threads until the PtlPut. */
-        (*(long_frag->completion))++;
-        long_frag->reference++;
-
-        ret = PtlPut(shmem_transport_portals4_put_event_md_h,
+        ret = PtlPut(md,
                      (ptl_size_t) source,
                      len,
                      PTL_CT_ACK_REQ,
@@ -554,6 +574,8 @@ shmem_transport_portals4_get_internal(void *target, const void *source, size_t l
     PORTALS4_GET_REMOTE_ACCESS_TWOPT(source, pt, offset, data_pt, heap_pt);
 #endif
 
+    shmem_internal_assert(len <= shmem_transport_portals4_max_msg_size);
+
     ret = PtlGet(shmem_transport_portals4_get_md_h,
                  (ptl_size_t) target,
                  len,
@@ -611,7 +633,7 @@ shmem_transport_get_wait(void)
 
 static inline
 void
-shmem_transport_swap(void *target, void *source, void *dest, size_t len, 
+shmem_transport_swap(void *target, const void *source, void *dest, size_t len,
                      int pe, ptl_datatype_t datatype)
 {
     int ret;
@@ -622,8 +644,8 @@ shmem_transport_swap(void *target, void *source, void *dest, size_t len,
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
-    assert(len <= sizeof(long double complex));
-    assert(len <= shmem_transport_portals4_max_volatile_size);
+    shmem_internal_assert(len <= sizeof(long double complex));
+    shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
 
@@ -651,8 +673,9 @@ shmem_transport_swap(void *target, void *source, void *dest, size_t len,
 
 static inline
 void
-shmem_transport_cswap(void *target, void *source, void *dest, void *operand, size_t len, 
-                      int pe, ptl_datatype_t datatype)
+shmem_transport_cswap(void *target, const void *source, void *dest,
+                      const void *operand, size_t len, int pe,
+                      ptl_datatype_t datatype)
 {
     int ret;
     ptl_process_t peer;
@@ -662,8 +685,8 @@ shmem_transport_cswap(void *target, void *source, void *dest, void *operand, siz
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
-    assert(len <= sizeof(long double complex));
-    assert(len <= shmem_transport_portals4_max_volatile_size);
+    shmem_internal_assert(len <= sizeof(long double complex));
+    shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
 
@@ -691,8 +714,9 @@ shmem_transport_cswap(void *target, void *source, void *dest, void *operand, siz
 
 static inline
 void
-shmem_transport_mswap(void *target, void *source, void *dest, void *mask, size_t len, 
-                      int pe, ptl_datatype_t datatype)
+shmem_transport_mswap(void *target, const void *source, void *dest,
+                      const void *mask, size_t len, int pe,
+                      ptl_datatype_t datatype)
 {
     int ret;
     ptl_process_t peer;
@@ -702,8 +726,8 @@ shmem_transport_mswap(void *target, void *source, void *dest, void *mask, size_t
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
-    assert(len <= sizeof(long double complex));
-    assert(len <= shmem_transport_portals4_max_volatile_size);
+    shmem_internal_assert(len <= sizeof(long double complex));
+    shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
 
@@ -731,7 +755,7 @@ shmem_transport_mswap(void *target, void *source, void *dest, void *mask, size_t
 
 static inline
 void
-shmem_transport_atomic_small(void *target, void *source, size_t len,
+shmem_transport_atomic_small(void *target, const void *source, size_t len,
                              int pe, ptl_op_t op, ptl_datatype_t datatype)
 {
     int ret;
@@ -744,7 +768,7 @@ shmem_transport_atomic_small(void *target, void *source, size_t len,
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
-    assert(len <= shmem_transport_portals4_max_volatile_size);
+    shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
 
@@ -767,7 +791,7 @@ shmem_transport_atomic_small(void *target, void *source, size_t len,
 
 static inline
 void
-shmem_transport_atomic_nb(void *target, void *source, size_t len, int pe,
+shmem_transport_atomic_nb(void *target, const void *source, size_t len, int pe,
                           ptl_op_t op, ptl_datatype_t datatype, long *completion)
 {
     int ret;
@@ -813,7 +837,7 @@ shmem_transport_atomic_nb(void *target, void *source, size_t len, int pe,
             shmem_free_list_alloc(shmem_transport_portals4_bounce_buffers);
         if (NULL == buff) RAISE_ERROR(-1);
 
-        assert(buff->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_BOUNCE);
+        shmem_internal_assert(buff->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_BOUNCE);
 
         memcpy(buff->data, source, len);
 
@@ -843,8 +867,8 @@ shmem_transport_atomic_nb(void *target, void *source, size_t len, int pe,
              shmem_free_list_alloc(shmem_transport_portals4_long_frags);
         if (NULL == long_frag) { RAISE_ERROR(-1); }
 
-        assert(long_frag->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_LONG);
-        assert(long_frag->reference == 0);
+        shmem_internal_assert(long_frag->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_LONG);
+        shmem_internal_assert(long_frag->reference == 0);
 
         long_frag->completion = completion;
 
@@ -890,8 +914,9 @@ shmem_transport_atomic_nb(void *target, void *source, size_t len, int pe,
 
 static inline
 void
-shmem_transport_fetch_atomic(void *target, void *source, void *dest, size_t len,
-                             int pe, ptl_op_t op, ptl_datatype_t datatype)
+shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
+                             size_t len, int pe, ptl_op_t op,
+                             ptl_datatype_t datatype)
 {
     int ret;
     ptl_pt_index_t pt;
@@ -901,8 +926,8 @@ shmem_transport_fetch_atomic(void *target, void *source, void *dest, size_t len,
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
-    assert(len <= shmem_transport_portals4_max_fetch_atomic_size);
-    assert(len <= shmem_transport_portals4_max_volatile_size);
+    shmem_internal_assert(len <= shmem_transport_portals4_max_fetch_atomic_size);
+    shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
 
@@ -924,6 +949,28 @@ shmem_transport_fetch_atomic(void *target, void *source, void *dest, size_t len,
                          datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
     shmem_transport_portals4_pending_get_counter++;
+}
+
+
+static inline
+void
+shmem_transport_atomic_set(void *target, const void *source, size_t len,
+                           int pe, int datatype)
+{
+    shmem_internal_assert(len <= shmem_transport_portals4_max_atomic_size);
+
+    shmem_transport_put_small(target, source, len, pe);
+}
+
+
+static inline
+void
+shmem_transport_atomic_fetch(void *target, const void *source, size_t len,
+                             int pe, int datatype)
+{
+    shmem_internal_assert(len <= shmem_transport_portals4_max_fetch_atomic_size);
+
+    shmem_transport_get(target, source, len, pe);
 }
 
 

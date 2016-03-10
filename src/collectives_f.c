@@ -17,6 +17,7 @@
 #include <strings.h>
 #include <string.h>
 
+#define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"
@@ -48,6 +49,7 @@ FC_SHMEM_BARRIER(fortran_integer_t *PE_start,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_BARRIER_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -77,6 +79,7 @@ FC_SHMEM_INT4_AND_TO_ALL(int32_t *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -108,6 +111,7 @@ FC_SHMEM_INT8_AND_TO_ALL(int64_t *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -139,6 +143,7 @@ FC_SHMEM_INT4_OR_TO_ALL(int32_t *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -170,6 +175,7 @@ FC_SHMEM_INT8_OR_TO_ALL(int64_t *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -201,6 +207,7 @@ FC_SHMEM_INT4_XOR_TO_ALL(int32_t *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -232,6 +239,7 @@ FC_SHMEM_INT8_XOR_TO_ALL(int64_t *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -269,6 +277,7 @@ FC_SHMEM_INT4_MAX_TO_ALL(int32_t *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -300,6 +309,7 @@ FC_SHMEM_INT8_MAX_TO_ALL(int64_t *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -331,6 +341,9 @@ FC_SHMEM_REAL4_MAX_TO_ALL(float *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+
+    shmem_internal_assert(sizeof(float) == 4);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -362,6 +375,9 @@ FC_SHMEM_REAL8_MAX_TO_ALL(double *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+
+    shmem_internal_assert(sizeof(double) == 8);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -394,6 +410,7 @@ FC_SHMEM_REAL16_MAX_TO_ALL(long double *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -426,6 +443,7 @@ FC_SHMEM_INT4_MIN_TO_ALL(int32_t *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -457,6 +475,7 @@ FC_SHMEM_INT8_MIN_TO_ALL(int64_t *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -488,6 +507,9 @@ FC_SHMEM_REAL4_MIN_TO_ALL(float *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+
+    shmem_internal_assert(sizeof(float) == 4);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -519,6 +541,9 @@ FC_SHMEM_REAL8_MIN_TO_ALL(double *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+
+    shmem_internal_assert(sizeof(double) == 8);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -551,6 +576,7 @@ FC_SHMEM_REAL16_MIN_TO_ALL(long double *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -583,6 +609,7 @@ FC_SHMEM_INT4_SUM_TO_ALL(int32_t *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -614,6 +641,7 @@ FC_SHMEM_INT8_SUM_TO_ALL(int64_t *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -645,6 +673,9 @@ FC_SHMEM_REAL4_SUM_TO_ALL(float *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+
+    shmem_internal_assert(sizeof(float) == 4);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -676,6 +707,9 @@ FC_SHMEM_REAL8_SUM_TO_ALL(double *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+
+    shmem_internal_assert(sizeof(double) == 8);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -708,6 +742,7 @@ FC_SHMEM_REAL16_SUM_TO_ALL(long double *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -740,6 +775,7 @@ FC_SHMEM_INT4_PROD_TO_ALL(int32_t *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -771,6 +807,7 @@ FC_SHMEM_INT8_PROD_TO_ALL(int64_t *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -802,6 +839,9 @@ FC_SHMEM_REAL4_PROD_TO_ALL(float *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+
+    shmem_internal_assert(sizeof(float) == 4);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -833,6 +873,9 @@ FC_SHMEM_REAL8_PROD_TO_ALL(double *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+
+    shmem_internal_assert(sizeof(double) == 8);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -865,6 +908,7 @@ FC_SHMEM_REAL16_PROD_TO_ALL(long double *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -895,6 +939,7 @@ FC_SHMEM_COLLECT4(void *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -923,6 +968,7 @@ FC_SHMEM_COLLECT8(void *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -951,6 +997,7 @@ FC_SHMEM_COLLECT32(void *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -979,6 +1026,7 @@ FC_SHMEM_COLLECT64(void *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1007,6 +1055,7 @@ FC_SHMEM_FCOLLECT4(void *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1035,6 +1084,7 @@ FC_SHMEM_FCOLLECT8(void *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1063,6 +1113,7 @@ FC_SHMEM_FCOLLECT32(void *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1091,6 +1142,7 @@ FC_SHMEM_FCOLLECT64(void *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1121,6 +1173,7 @@ FC_SHMEM_BROADCAST4(void *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1152,6 +1205,7 @@ FC_SHMEM_BROADCAST8(void *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1183,6 +1237,7 @@ FC_SHMEM_BROADCAST32(void *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1214,6 +1269,7 @@ FC_SHMEM_BROADCAST64(void *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1221,4 +1277,132 @@ FC_SHMEM_BROADCAST64(void *target,
     shmem_internal_bcast(target, source, *nelems * 8,
                          *PE_root, *PE_start, *logPE_stride, *PE_size,
                          pSync_c, 1);
+}
+
+
+#define FC_SHMEM_ALLTOALL32 FC_FUNC_(shmem_alltoall32, SHMEM_ALLTOALL32)
+void FC_SHMEM_ALLTOALL32(void *dest,
+                          void *source,
+                          fortran_integer_t *nelems,
+                          fortran_integer_t *PE_start,
+                          fortran_integer_t *logPE_stride,
+                          fortran_integer_t *PE_size,
+                          fortran_integer_t *pSync);
+void
+FC_SHMEM_ALLTOALL32(void *target,
+                    void *source,
+                    fortran_integer_t *nelems,
+                    fortran_integer_t *PE_start,
+                    fortran_integer_t *logPE_stride,
+                    fortran_integer_t *PE_size,
+                    fortran_integer_t *pSync)
+{
+    long *pSync_c;
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+
+    /* SHMEM_ALLTOALL_SYNC_SIZE is defined to allow this cast */
+    pSync_c = (long*) pSync;
+
+    shmem_internal_alltoall(target, source, *nelems * 4, *PE_start,
+                            *logPE_stride, *PE_size, pSync_c);
+}
+
+
+#define FC_SHMEM_ALLTOALL64 FC_FUNC_(shmem_alltoall64, SHMEM_ALLTOALL64)
+void FC_SHMEM_ALLTOALL64(void *dest,
+                          void *source,
+                          fortran_integer_t *nelems,
+                          fortran_integer_t *PE_start,
+                          fortran_integer_t *logPE_stride,
+                          fortran_integer_t *PE_size,
+                          fortran_integer_t *pSync);
+void
+FC_SHMEM_ALLTOALL64(void *target,
+                    void *source,
+                    fortran_integer_t *nelems,
+                    fortran_integer_t *PE_start,
+                    fortran_integer_t *logPE_stride,
+                    fortran_integer_t *PE_size,
+                    fortran_integer_t *pSync)
+{
+    long *pSync_c;
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+
+    /* SHMEM_ALLTOALL_SYNC_SIZE is defined to allow this cast */
+    pSync_c = (long*) pSync;
+
+    shmem_internal_alltoall(target, source, *nelems * 8, *PE_start,
+                            *logPE_stride, *PE_size, pSync_c);
+}
+
+
+#define FC_SHMEM_ALLTOALLS32 FC_FUNC_(shmem_alltoalls32, SHMEM_ALLTOALLS32)
+void FC_SHMEM_ALLTOALLS32(void *dest,
+                          void *source,
+                          fortran_integer_t *dst,
+                          fortran_integer_t *sst,
+                          fortran_integer_t *nelems,
+                          fortran_integer_t *PE_start,
+                          fortran_integer_t *logPE_stride,
+                          fortran_integer_t *PE_size,
+                          fortran_integer_t *pSync);
+void
+FC_SHMEM_ALLTOALLS32(void *target,
+                     void *source,
+                     fortran_integer_t *dst,
+                     fortran_integer_t *sst,
+                     fortran_integer_t *nelems,
+                     fortran_integer_t *PE_start,
+                     fortran_integer_t *logPE_stride,
+                     fortran_integer_t *PE_size,
+                     fortran_integer_t *pSync)
+{
+    long *pSync_c;
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ARG_POSITIVE(*sst);
+    SHMEM_ERR_CHECK_ARG_POSITIVE(*dst);
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+
+    /* SHMEM_ALLTOALL_SYNC_SIZE is defined to allow this cast */
+    pSync_c = (long*) pSync;
+
+    shmem_internal_alltoalls(target, source, *dst, *sst, 4, *nelems,
+                             *PE_start, *logPE_stride, *PE_size, pSync_c);
+}
+
+
+#define FC_SHMEM_ALLTOALLS64 FC_FUNC_(shmem_alltoalls64, SHMEM_ALLTOALLS64)
+void FC_SHMEM_ALLTOALLS64(void *dest,
+                          void *source,
+                          fortran_integer_t *dst,
+                          fortran_integer_t *sst,
+                          fortran_integer_t *nelems,
+                          fortran_integer_t *PE_start,
+                          fortran_integer_t *logPE_stride,
+                          fortran_integer_t *PE_size,
+                          fortran_integer_t *pSync);
+void
+FC_SHMEM_ALLTOALLS64(void *target,
+                     void *source,
+                     fortran_integer_t *dst,
+                     fortran_integer_t *sst,
+                     fortran_integer_t *nelems,
+                     fortran_integer_t *PE_start,
+                     fortran_integer_t *logPE_stride,
+                     fortran_integer_t *PE_size,
+                     fortran_integer_t *pSync)
+{
+    long *pSync_c;
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ARG_POSITIVE(*sst);
+    SHMEM_ERR_CHECK_ARG_POSITIVE(*dst);
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+
+    /* SHMEM_ALLTOALL_SYNC_SIZE is defined to allow this cast */
+    pSync_c = (long*) pSync;
+
+    shmem_internal_alltoalls(target, source, *dst, *sst, 8, *nelems,
+                             *PE_start, *logPE_stride, *PE_size, pSync_c);
 }

@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_lock.h"
@@ -35,7 +36,7 @@
 
 
 void
-shmem_clear_lock(long *lockp)
+shmem_clear_lock(volatile long *lockp)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
@@ -44,7 +45,7 @@ shmem_clear_lock(long *lockp)
 
 
 void
-shmem_set_lock(long *lockp)
+shmem_set_lock(volatile long *lockp)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
@@ -53,7 +54,7 @@ shmem_set_lock(long *lockp)
 
 
 int
-shmem_test_lock(long *lockp)
+shmem_test_lock(volatile long *lockp)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 

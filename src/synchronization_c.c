@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_atomic.h"
@@ -80,7 +81,7 @@ shmem_fence(void)
 
 
 void
-shmem_short_wait(short *var, short value)
+shmem_short_wait(volatile short *var, short value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
@@ -89,7 +90,7 @@ shmem_short_wait(short *var, short value)
 
 
 void
-shmem_short_wait_until(short *var, int cond, short value)
+shmem_short_wait_until(volatile short *var, int cond, short value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
@@ -98,7 +99,7 @@ shmem_short_wait_until(short *var, int cond, short value)
 
 
 void
-shmem_int_wait(int *var, int value)
+shmem_int_wait(volatile int *var, int value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
@@ -107,7 +108,7 @@ shmem_int_wait(int *var, int value)
 
 
 void
-shmem_int_wait_until(int *var, int cond, int value)
+shmem_int_wait_until(volatile int *var, int cond, int value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
@@ -116,7 +117,7 @@ shmem_int_wait_until(int *var, int cond, int value)
 
 
 void
-shmem_long_wait(long *var, long value)
+shmem_long_wait(volatile long *var, long value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
@@ -125,7 +126,7 @@ shmem_long_wait(long *var, long value)
 
 
 void
-shmem_long_wait_until(long *var, int cond, long value)
+shmem_long_wait_until(volatile long *var, int cond, long value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
@@ -134,7 +135,7 @@ shmem_long_wait_until(long *var, int cond, long value)
 
 
 void
-shmem_longlong_wait(long long *var, long long value)
+shmem_longlong_wait(volatile long long *var, long long value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
@@ -143,7 +144,7 @@ shmem_longlong_wait(long long *var, long long value)
 
 
 void
-shmem_longlong_wait_until(long long *var, int cond, long long value)
+shmem_longlong_wait_until(volatile long long *var, int cond, long long value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
@@ -152,7 +153,7 @@ shmem_longlong_wait_until(long long *var, int cond, long long value)
 
 
 void
-shmem_wait(long *ivar, long cmp_value)
+shmem_wait(volatile long *ivar, long cmp_value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
@@ -161,7 +162,7 @@ shmem_wait(long *ivar, long cmp_value)
 
 
 void
-shmem_wait_until(long *ivar, int cmp, long value)
+shmem_wait_until(volatile long *ivar, int cmp, long value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 

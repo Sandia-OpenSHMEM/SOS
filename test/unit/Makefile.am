@@ -60,7 +60,20 @@ TESTS = \
 	mt_a2a \
 	shmem_info \
 	global_exit \
-	asym_alloc
+	asym_alloc \
+	set_fetch \
+	alltoall \
+	alltoalls \
+	c11_test_shmem_add \
+	c11_test_shmem_fetch \
+	c11_test_shmem_g \
+	c11_test_shmem_get \
+	c11_test_shmem_inc \
+	c11_test_shmem_p \
+	c11_test_shmem_put \
+	c11_test_shmem_set \
+	get_nbi \
+	put_nbi
 
 if USE_PORTALS4
 TESTS += \
@@ -71,6 +84,13 @@ if HAVE_FORTRAN
 TESTS += \
      hello_f \
      shmem_info_f
+endif
+
+if HAVE_FORTRAN
+if HAVE_SHORT_FORTRAN_HEADER
+TESTS += \
+     set_fetch_f
+endif
 endif
 
 NPROCS ?= 2
@@ -236,3 +256,45 @@ shmem_info_f_LDADD = $(top_builddir)/src/libsma.la
 
 asym_alloc_SOURCES = asym_alloc.c
 asym_alloc_LDADD = $(top_builddir)/src/libsma.la
+
+set_fetch_SOURCES = set_fetch.c
+set_fetch_LDADD = $(top_builddir)/src/libsma.la
+
+set_fetch_f_SOURCES = set_fetch_f.f90
+set_fetch_f_LDADD = $(top_builddir)/src/libsma.la
+
+alltoall_SOURCES = alltoall.c
+alltoall_LDADD = $(top_builddir)/src/libsma.la
+
+alltoalls_SOURCES = alltoalls.c
+alltoalls_LDADD = $(top_builddir)/src/libsma.la
+
+c11_test_shmem_add_SOURCES = c11_test_shmem_add.c
+c11_test_shmem_add_LDADD = $(top_builddir)/src/libsma.la
+
+c11_test_shmem_g_SOURCES = c11_test_shmem_g.c
+c11_test_shmem_g_LDADD = $(top_builddir)/src/libsma.la
+
+c11_test_shmem_get_SOURCES = c11_test_shmem_get.c
+c11_test_shmem_get_LDADD = $(top_builddir)/src/libsma.la
+
+c11_test_shmem_inc_SOURCES = c11_test_shmem_inc.c
+c11_test_shmem_inc_LDADD = $(top_builddir)/src/libsma.la
+
+c11_test_shmem_p_SOURCES = c11_test_shmem_p.c
+c11_test_shmem_p_LDADD = $(top_builddir)/src/libsma.la
+
+c11_test_shmem_put_SOURCES = c11_test_shmem_put.c
+c11_test_shmem_put_LDADD = $(top_builddir)/src/libsma.la
+
+c11_test_shmem_fetch_SOURCES = c11_test_shmem_fetch.c
+c11_test_shmem_fetch_LDADD = $(top_builddir)/src/libsma.la
+
+c11_test_shmem_set_SOURCES = c11_test_shmem_set.c
+c11_test_shmem_set_LDADD = $(top_builddir)/src/libsma.la
+
+get_nbi_SOURCES = get_nbi.c
+get_nbi_LDADD = $(top_builddir)/src/libsma.la
+
+put_nbi_SOURCES = put_nbi.c
+put_nbi_LDADD = $(top_builddir)/src/libsma.la

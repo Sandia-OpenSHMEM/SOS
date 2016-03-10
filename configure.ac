@@ -14,7 +14,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.2], [https://github.com/regrant/sandia-shmem])
+AC_INIT([Sandia OpenSHMEM], [1.3], [https://github.com/regrant/sandia-shmem])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -123,6 +123,7 @@ AC_ARG_ENABLE([long-fortran-header],
                     [Disable long Fortran header to omit function declarations (default:enabled)])])
 AS_IF([test "$enable_long_fortran_header" = "no"], [FORTRAN_LONG_HEADER="!"], [FORTRAN_LONG_HEADER=" "])
 AC_SUBST([FORTRAN_LONG_HEADER])
+AM_CONDITIONAL([HAVE_SHORT_FORTRAN_HEADER], [test "$enable_long_fortran_header" = "no"])
 
 AC_ARG_ENABLE([mr-scalable],
     [AC_HELP_STRING([--disable-mr-scalable],
@@ -218,11 +219,13 @@ tree_sync_size=`$PERL -e "print $C_BCAST_SYNC_SIZE + 3"`
 recdbl_sync_size=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_int * 8 / $ac_cv_sizeof_long)"`
 AS_IF([test $tree_sync_size -lt $recdbl_sync_size],
       [C_COLLECT_SYNC_SIZE=$recdbl_sync_size], [C_COLLECT_SYNC_SIZE=$tree_sync_size])
+C_ALLTOALL_SYNC_SIZE=1
 C_REDUCE_MIN_WRKDATA_SIZE=1
 AC_SUBST(C_BCAST_SYNC_SIZE)
 AC_SUBST(C_REDUCE_SYNC_SIZE)
 AC_SUBST(C_BARRIER_SYNC_SIZE)
 AC_SUBST(C_COLLECT_SYNC_SIZE)
+AC_SUBST(C_ALLTOALL_SYNC_SIZE)
 AC_SUBST(C_REDUCE_MIN_WRKDATA_SIZE)
 
 AC_MSG_CHECKING([if long can hold lock_t])
@@ -274,12 +277,14 @@ if test "$FC" != "" ; then
   FORTRAN_REDUCE_SYNC_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_long / $ompi_cv_fortran_sizeof_INTEGER * $C_REDUCE_SYNC_SIZE)"`
   FORTRAN_BARRIER_SYNC_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_long / $ompi_cv_fortran_sizeof_INTEGER * $C_BARRIER_SYNC_SIZE)"`
   FORTRAN_COLLECT_SYNC_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_long / $ompi_cv_fortran_sizeof_INTEGER * $C_COLLECT_SYNC_SIZE)"`
+  FORTRAN_ALLTOALL_SYNC_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_long / $ompi_cv_fortran_sizeof_INTEGER * $C_ALLTOALL_SYNC_SIZE)"`
   FORTRAN_REDUCE_MIN_WRKDATA_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_long / $ompi_cv_fortran_sizeof_INTEGER * $C_REDUCE_MIN_WRKDATA_SIZE)"`
 else
   FORTRAN_BCAST_SYNC_SIZE=0
   FORTRAN_REDUCE_SYNC_SIZE=0
   FORTRAN_BARRIER_SYNC_SIZE=0
   FORTRAN_COLLECT_SYNC_SIZE=0
+  FORTRAN_ALLTOALL_SYNC_SIZE=0
   FORTRAN_REDUCE_MIN_WRKDATA_SIZE=0
   FORTRAN_INT4_KIND=0
   FORTRAN_INT8_KIND=0
@@ -295,6 +300,7 @@ AC_SUBST(FORTRAN_BCAST_SYNC_SIZE)
 AC_SUBST(FORTRAN_REDUCE_SYNC_SIZE)
 AC_SUBST(FORTRAN_BARRIER_SYNC_SIZE)
 AC_SUBST(FORTRAN_COLLECT_SYNC_SIZE)
+AC_SUBST(FORTRAN_ALLTOALL_SYNC_SIZE)
 AC_SUBST(FORTRAN_REDUCE_MIN_WRKDATA_SIZE)
 AC_SUBST(FORTRAN_INT4_KIND)
 AC_SUBST(FORTRAN_INT8_KIND)
