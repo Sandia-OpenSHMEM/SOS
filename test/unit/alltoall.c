@@ -48,6 +48,7 @@ static void alltoall_test(int32_t *out, int32_t *in, int pe_start, int pe_stride
                    int pe_size)
 {
     int me, npes, i;
+    int failed = 0;
 
     me = shmem_my_pe();
     npes = shmem_n_pes();
@@ -74,9 +75,14 @@ static void alltoall_test(int32_t *out, int32_t *in, int pe_start, int pe_stride
         else
             expected = -1;
 
-        if (out[i] != expected)
+        if (out[i] != expected) {
             printf("[%d] out[%d] = %d, expected %d\n", me, i, out[i], expected);
+            failed = 1;
+        }
     }
+
+    if (failed)
+        shmem_global_exit(1);
 }
 
 
