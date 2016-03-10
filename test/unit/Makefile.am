@@ -71,7 +71,9 @@ TESTS = \
 	c11_test_shmem_inc \
 	c11_test_shmem_p \
 	c11_test_shmem_put \
-	c11_test_shmem_set
+	c11_test_shmem_set \
+	get_nbi \
+	put_nbi
 
 if USE_PORTALS4
 TESTS += \
@@ -290,3 +292,9 @@ c11_test_shmem_fetch_LDADD = $(top_builddir)/src/libsma.la
 
 c11_test_shmem_set_SOURCES = c11_test_shmem_set.c
 c11_test_shmem_set_LDADD = $(top_builddir)/src/libsma.la
+
+get_nbi_SOURCES = get_nbi.c
+get_nbi_LDADD = $(top_builddir)/src/libsma.la
+
+put_nbi_SOURCES = put_nbi.c
+put_nbi_LDADD = $(top_builddir)/src/libsma.la
