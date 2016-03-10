@@ -44,27 +44,29 @@ static long target[10];
 int
 main(int argc, char* argv[])
 {
-    int i, j, num_pes;;
+    int i, j, num_pes;
+    int failed = 0;
 
     shmem_init();
 
     if (shmem_my_pe() == 0) {
         num_pes=shmem_n_pes();
 
-        for(j = 0;j < num_pes; j++) {
-            memset(target, 0, sizeof(target));
-            /* get 10 elements from source on remote PEs */
+        for(j = 0; j < num_pes; j++) {
+            memset(target, 0, sizeof(long) * 10);
             shmem_long_get_nbi(target, source, 10, j);
             shmem_quiet();
 
-            if (0 != memcmp(source, target, sizeof(long) * 10)) {
-                fprintf(stderr,"[%d] Src & Target mismatch?\n",shmem_my_pe());
-                for (i = 0 ; i < 10 ; ++i) {
-                    printf("%ld,%ld ", source[i], target[i]);
+            for (i = 0; i < 10; i++) {
+                if (source[i] != target[i]) {
+                    fprintf(stderr,"[%d] get_nbi from PE %d: target[%d] = %ld, expected %ld\n",
+                            shmem_my_pe(), j, i, target[i], source[i]);
+                    failed = 1;
                 }
-                printf("\n");
-                shmem_global_exit(1);
             }
+
+            if (failed)
+                shmem_global_exit(1);
         }
     }
 
