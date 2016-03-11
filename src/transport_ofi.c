@@ -6,8 +6,9 @@
  *
  */
 
-#include <errno.h>
 #include "config.h"
+
+#include <errno.h>
 #include <stdlib.h>
 #include <sys/time.h>
 #include <sys/param.h>
@@ -22,9 +23,7 @@
 #include "shmem_internal.h"
 #include "shmem_comm.h"
 #include "transport_ofi.h"
-#include <unistd.h>
 #include "runtime.h"
-
 
 struct fid_fabric*          	shmem_transport_ofi_fabfd;
 struct fid_domain*          	shmem_transport_ofi_domainfd;
@@ -692,84 +691,100 @@ static inline int allocate_fabric_resources(struct fi_info * p_info,
     return ret;
 }
 
-static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
-{
-    int                 ret = 0;
-    struct fi_info      hints = {0};
-    struct fi_tx_attr   tx_attr = {0};
-    struct fi_domain_attr domain_attr = {0};
-    struct fi_fabric_attr fabric_attr = {0};
-    struct fi_ep_attr   ep_attr = {0};
-
-    char *svc_name = shmem_util_getenv_str("OFI_SERVICE");
-
-    shmem_transport_ofi_max_buffered_send = sizeof(long double);
-
-    fabric_attr.prov_name = provname;
-
-    hints.caps	  = FI_RMA |     /* request rma capability
-                                    implies FI_READ/WRITE FI_REMOTE_READ/WRITE */
-                   FI_ATOMICS |  /* request atomics capability */
-                   FI_RMA_EVENT; /* want to use remote counters */
-    hints.addr_format         = FI_FORMAT_UNSPEC;
-    hints.mode		      = FI_CONTEXT;
-    domain_attr.data_progress = FI_PROGRESS_AUTO;
-    domain_attr.resource_mgmt = FI_RM_ENABLED;
-#ifdef ENABLE_MR_SCALABLE
-    domain_attr.mr_mode       = FI_MR_SCALABLE; /* VA space-doesn't have to be pre-allocated */
-#else
-    domain_attr.mr_mode       = FI_MR_BASIC; /* VA space is pre-allocated */
-#endif
-    domain_attr.threading     = FI_THREAD_ENDPOINT; /* we promise to serialize access
-						       to endpoints. we have only one
-						       thread active at a time */
-    hints.domain_attr         = &domain_attr;
-    ep_attr.type              = FI_EP_RDM; /* reliable connectionless */
-    hints.fabric_attr	      = &fabric_attr;
-    tx_attr.op_flags          = FI_DELIVERY_COMPLETE;
-    tx_attr.inject_size       = shmem_transport_ofi_max_buffered_send; /*require provider to support this as a min*/
-    hints.tx_attr	      = &tx_attr; /* TODO: fill tx_attr */
-    hints.rx_attr	      = NULL;
-    hints.ep_attr             = &ep_attr;
-
-    /* find fabric provider to use that is able to support RMA and ATOMICS */
-    ret = fi_getinfo( FI_VERSION(OFI_MAJOR_VERSION, OFI_MINOR_VERSION),
-                      NULL, svc_name, 0, &hints, p_info);
-    if(ret!=0){
-	OFI_ERRMSG("getinfo didn't find any providers\n");
-	return ret;
-    }
-
-    if(!*p_info) {
-	OFI_ERRMSG("pinfo is null\n");
-	return ret;
-    }
-
-    if((*p_info)->ep_attr->max_msg_size) {
-	shmem_transport_ofi_max_msg_size = (*p_info)->ep_attr->max_msg_size;
-    } else {
-	OFI_ERRMSG("provider hasn't set max_msg_size\n");
-	return 1;
-    }
-
-    if((*p_info)->tx_attr->inject_size > shmem_transport_ofi_max_buffered_send)
-	shmem_transport_ofi_max_buffered_send = (*p_info)->tx_attr->inject_size;
-
-    return ret;
-
-}
 
 int shmem_transport_init(long eager_size)
 {
     int ret = 0;
     const int npes = shmem_runtime_get_size();
-    struct fi_info * p_info = NULL;
 
-    char *provname = shmem_util_getenv_str("OFI_USE_PROVIDER");
+    struct fi_info        hints         = {0};
+    struct fi_tx_attr     tx_attr       = {0};
+    struct fi_domain_attr domain_attr   = {0};
+    struct fi_fabric_attr fabric_attr   = {0};
+    struct fi_ep_attr     ep_attr       = {0};
+    struct fi_info       *fabrics       = NULL;
 
-    ret = query_for_fabric(&p_info, provname);
-    if(ret!=0)
-	return ret;
+    struct fi_info       *p_info        = NULL;
+
+    const char *svc_name = shmem_util_getenv_str("OFI_SERVICE");
+    const char *iface_name = shmem_util_getenv_str("OFI_IFACE");
+    const char *prov_name = shmem_util_getenv_str("OFI_USE_PROVIDER");
+
+    shmem_transport_ofi_max_buffered_send = sizeof(long double);
+
+    fabric_attr.prov_name = (char *) prov_name;
+
+    hints.caps                = FI_RMA |        /* request rma capability implies
+                                                   FI_READ/WRITE FI_REMOTE_READ/WRITE */
+                                FI_ATOMICS |    /* request atomics capability */
+                                FI_RMA_EVENT;   /* want to use remote counters */
+    hints.addr_format         = FI_FORMAT_UNSPEC;
+    hints.mode                = FI_CONTEXT;
+    domain_attr.data_progress = FI_PROGRESS_AUTO;
+    domain_attr.resource_mgmt = FI_RM_ENABLED;
+#ifdef ENABLE_MR_SCALABLE
+    domain_attr.mr_mode       = FI_MR_SCALABLE; /* VA space-doesn't have to be pre-allocated */
+#else
+    domain_attr.mr_mode       = FI_MR_BASIC;    /* VA space is pre-allocated */
+#endif
+    domain_attr.threading     = FI_THREAD_ENDPOINT; /* we promise to serialize access
+                                                       to endpoints. we have only one
+                                                       thread active at a time */
+    hints.domain_attr         = &domain_attr;
+    ep_attr.type              = FI_EP_RDM;      /* reliable connectionless */
+    hints.fabric_attr         = &fabric_attr;
+    tx_attr.op_flags          = FI_DELIVERY_COMPLETE;
+    tx_attr.inject_size       = shmem_transport_ofi_max_buffered_send;
+                                                /* require provider to support this as a min */
+    hints.tx_attr             = &tx_attr;       /* TODO: fill tx_attr */
+    hints.rx_attr             = NULL;
+    hints.ep_attr             = &ep_attr;
+
+    /* Find fabric provider to use that is able to support RMA and ATOMICS */
+    ret = fi_getinfo(FI_VERSION(OFI_MAJOR_VERSION, OFI_MINOR_VERSION),
+                     NULL, svc_name, 0, &hints, &fabrics);
+    if (ret != 0) {
+        OFI_ERRMSG("OFI transport did not find any valid providers\n");
+        return ret;
+    }
+
+    /* If the user supplied an interface name, lookup the address and use it to
+     * query for fabric.  Otherwise, select the first fabric in the list. */
+    if (iface_name != NULL) {
+        struct fi_info *cur_fabric;
+
+        p_info = NULL;
+
+        for (cur_fabric = fabrics; cur_fabric; cur_fabric = cur_fabric->next) {
+            if (strcmp(iface_name, cur_fabric->fabric_attr->name) == 0) {
+                p_info = cur_fabric;
+                break;
+            }
+        }
+
+        if (p_info == NULL) {
+            OFI_ERRMSG("OFI transport did not find user-specified fabric \"%s\"\n", iface_name);
+            return 1;
+        }
+    }
+    else {
+        p_info = fabrics;
+    }
+
+    if (NULL == p_info) {
+        OFI_ERRMSG("OFI transport did not find any valid fabrics\n");
+        return ret;
+    }
+
+    if (p_info->ep_attr->max_msg_size) {
+        shmem_transport_ofi_max_msg_size = p_info->ep_attr->max_msg_size;
+    } else {
+        OFI_ERRMSG("OFI provider did not set max_msg_size\n");
+        return 1;
+    }
+
+    if (p_info->tx_attr->inject_size > shmem_transport_ofi_max_buffered_send)
+        shmem_transport_ofi_max_buffered_send = p_info->tx_attr->inject_size;
 
     shmem_transport_ofi_bounce_buffer_size = eager_size;
 
@@ -814,7 +829,7 @@ int shmem_transport_init(long eager_size)
     if(ret!=0)
 	return ret;
 
-    fi_freeinfo(p_info);
+    fi_freeinfo(fabrics);
 
     return 0;
 }
