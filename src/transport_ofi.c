@@ -6,8 +6,9 @@
  *
  */
 
-#include <errno.h>
 #include "config.h"
+
+#include <errno.h>
 #include <stdlib.h>
 #include <sys/time.h>
 #include <sys/param.h>
@@ -16,15 +17,17 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <ifaddrs.h>
+#include <arpa/inet.h>
 
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"
 #include "transport_ofi.h"
-#include <unistd.h>
 #include "runtime.h"
-
 
 struct fid_fabric*          	shmem_transport_ofi_fabfd;
 struct fid_domain*          	shmem_transport_ofi_domainfd;
@@ -702,6 +705,8 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
     struct fi_ep_attr   ep_attr = {0};
 
     char *svc_name = shmem_util_getenv_str("OFI_SERVICE");
+    char *iface_name = shmem_util_getenv_str("OFI_IFACE");
+    char *iface_addr = NULL;
 
     shmem_transport_ofi_max_buffered_send = sizeof(long double);
 
@@ -732,9 +737,37 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
     hints.rx_attr	      = NULL;
     hints.ep_attr             = &ep_attr;
 
+    /* If the user supplied an interface name, lookup the address and use it to
+     * query for fabric. */
+    if (iface_name != NULL) {
+        struct ifaddrs *addrs, *cur_addr;
+
+        getifaddrs(&addrs);
+
+        for (cur_addr = addrs; cur_addr; cur_addr = cur_addr->ifa_next) {
+            if (cur_addr->ifa_addr && cur_addr->ifa_addr->sa_family == PF_INET) {
+                if (strcmp(iface_name, cur_addr->ifa_name) == 0) {
+                    iface_addr = inet_ntoa(((struct sockaddr_in *) cur_addr->ifa_addr)->sin_addr);
+                    break;
+                }
+            }
+        }
+
+        freeifaddrs(addrs);
+
+        if (iface_addr == NULL) {
+            OFI_ERRMSG("unable to find user-specified network interface\n");
+        }
+    }
+    else {
+        /* If we're using Hydra, it automatically propoagates the hostname in
+         * the following environment variable. */
+        iface_addr = getenv("MPIR_CVAR_CH3_INTERFACE_HOSTNAME");
+    }
+
     /* find fabric provider to use that is able to support RMA and ATOMICS */
     ret = fi_getinfo( FI_VERSION(OFI_MAJOR_VERSION, OFI_MINOR_VERSION),
-                      NULL, svc_name, 0, &hints, p_info);
+                      iface_addr, svc_name, 0, &hints, p_info);
     if(ret!=0){
 	OFI_ERRMSG("getinfo didn't find any providers\n");
 	return ret;
