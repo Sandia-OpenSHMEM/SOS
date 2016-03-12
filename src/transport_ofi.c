@@ -704,8 +704,8 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
     struct fi_fabric_attr fabric_attr = {0};
     struct fi_ep_attr   ep_attr = {0};
 
-    char *svc_name = shmem_util_getenv_str("OFI_SERVICE");
-    char *iface_name = shmem_util_getenv_str("OFI_IFACE");
+    const char *svc_name = shmem_util_getenv_str("OFI_SERVICE");
+    const char *iface_name = shmem_util_getenv_str("OFI_IFACE");
     char *iface_addr = NULL;
 
     shmem_transport_ofi_max_buffered_send = sizeof(long double);
