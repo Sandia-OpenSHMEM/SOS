@@ -90,7 +90,7 @@ streaming_latency(int len, perf_metrics_t *data)
             if(i == data->warmup)
                 start = shmemx_wtime();
 
-            shmem_getmem(data->buf, data->buf, len, 1);
+            shmem_getmem(data->dest, data->src, len, 1);
         }
         end = shmemx_wtime();
 

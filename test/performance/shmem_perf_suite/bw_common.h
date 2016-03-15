@@ -40,7 +40,7 @@ typedef struct perf_metrics {
     int validate;
     int my_node, num_pes;
     bw_units unit;
-    char *buf, *buf2;
+    char *src, *dest;
     const char *bw_type;
 } perf_metrics_t;
 
@@ -58,8 +58,8 @@ void data_init(perf_metrics_t * data) {
     data->validate = false;
     data->my_node = shmem_my_pe();
     data->num_pes = shmem_n_pes();
-    data->buf = NULL;
-    data->buf2 = NULL;
+    data->src = NULL;
+    data->dest = NULL;
 }
 
 void bi_dir_data_init(perf_metrics_t * data) {
@@ -215,7 +215,7 @@ void static inline large_message_metric_chg(perf_metrics_t *metric_info, int len
 /*                   Bi-Directional BW                        */
 /**************************************************************/
 
-/*have two symmetric char array metric_info->buf/buf2 of max_len to
+/*have two symmetric char array metric_info->src/dest of max_len to
  * use for calculation initalized with my_node number
  * NOTE: post function validation assumptions, data isn't flushed pre/post */
 extern void bi_dir_bw(int len, perf_metrics_t *metric_info);
@@ -236,9 +236,9 @@ void static inline bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
 
     if(metric_info.validate) {
         if(metric_info.my_node % 2 == 0)
-            validate_recv(metric_info.buf2, metric_info.max_len, partner_pe);
+            validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
         else
-            validate_recv(metric_info.buf, metric_info.max_len, partner_pe);
+            validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
     }
 }
 
@@ -266,7 +266,7 @@ void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
     }
 
     if((metric_info.my_node % 2 == 0) && metric_info.validate)
-        validate_recv(metric_info.buf, metric_info.max_len, partner_pe);
+        validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
 
 }
 
@@ -274,7 +274,8 @@ void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
 /*                   INIT and teardown of resources           */
 /**************************************************************/
 
-void static inline bw_init_single_buff_data_stream(perf_metrics_t *metric_info,
+/*create and init (with my_PE_num) two symmetric arrays on the heap */
+void static inline bw_init_data_stream(perf_metrics_t *metric_info,
                                             int argc, char *argv[]) {
 
     int i = 0;
@@ -291,40 +292,34 @@ void static inline bw_init_single_buff_data_stream(perf_metrics_t *metric_info,
 
     command_line_arg_check(argc, argv, metric_info);
 
-    metric_info->buf = aligned_buffer_alloc(metric_info->max_len);
-    init_array(metric_info->buf, metric_info->max_len, metric_info->my_node);
+    metric_info->src = aligned_buffer_alloc(metric_info->max_len);
+    init_array(metric_info->src, metric_info->max_len, metric_info->my_node);
+
+    metric_info->dest = aligned_buffer_alloc(metric_info->max_len);
+    init_array(metric_info->dest, metric_info->max_len, metric_info->my_node);
 }
 
 
 void static inline bi_dir_init(perf_metrics_t *metric_info, int argc,
                                 char *argv[]) {
-    bw_init_single_buff_data_stream(metric_info, argc, argv);
+    bw_init_data_stream(metric_info, argc, argv);
 
     bi_dir_data_init(metric_info);
 
-    metric_info->buf2 = aligned_buffer_alloc(metric_info->max_len);
-    init_array(metric_info->buf2, metric_info->max_len, metric_info->my_node);
 }
 
 void static inline uni_dir_init(perf_metrics_t *metric_info, int argc,
                                 char *argv[]) {
-    bw_init_single_buff_data_stream(metric_info, argc, argv);
+    bw_init_data_stream(metric_info, argc, argv);
 
     uni_dir_data_init(metric_info);
 }
 
-void static inline bi_dir_bw_data_free(perf_metrics_t *metric_info) {
+void static inline bw_data_free(perf_metrics_t *metric_info) {
     shmem_barrier_all();
 
-    shmem_free(metric_info->buf);
-    shmem_free(metric_info->buf2);
-    shmem_finalize();
-}
-
-void static inline uni_dir_bw_data_free(perf_metrics_t *metric_info) {
-    shmem_barrier_all();
-
-    shmem_free(metric_info->buf);
+    shmem_free(metric_info->src);
+    shmem_free(metric_info->dest);
     shmem_finalize();
 }
 
@@ -336,7 +331,7 @@ void static inline bi_dir_bw_main(int argc, char *argv[]) {
 
     bi_dir_bw_test_and_output(metric_info);
 
-    bi_dir_bw_data_free(&metric_info);
+    bw_data_free(&metric_info);
 
 } /*main() */
 
@@ -348,6 +343,6 @@ void static inline uni_dir_bw_main(int argc, char *argv[]) {
 
     uni_dir_bw_test_and_output(metric_info);
 
-    uni_dir_bw_data_free(&metric_info);
+    bw_data_free(&metric_info);
 
 } /*main() */

@@ -59,7 +59,7 @@ uni_dir_bw(int len, perf_metrics_t *metric_info)
                 start = shmemx_wtime();
 
             for(j = 0; j < metric_info->window_size; j++)
-                shmem_putmem(metric_info->buf, metric_info->buf, len, dest);
+                shmem_putmem(metric_info->dest, metric_info->src, len, dest);
 
             shmem_quiet();
 

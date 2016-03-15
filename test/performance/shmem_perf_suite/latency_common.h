@@ -24,7 +24,7 @@ typedef struct perf_metrics {
    int validate;
    int my_node, npes;
    long * target;
-   char * buf;
+   char * src, *dest;
 } perf_metrics_t;
 
 void data_init(perf_metrics_t * data) {
@@ -37,7 +37,8 @@ void data_init(perf_metrics_t * data) {
    data->my_node = shmem_my_pe();
    data->npes = shmem_n_pes();
    data->target = NULL;
-   data->buf = NULL;
+   data->src = NULL;
+   data->dest = NULL;
 }
 
 void static inline print_results_header() {
@@ -115,7 +116,7 @@ void static inline only_two_PEs_check(int my_node, int num_pes) {
  *  that needs to be initialized in function*/
 extern void long_element_round_trip_latency(perf_metrics_t data);
 
-/*have symmetric buffer "buf" from perf_metrics_t
+/*have symmetric buffers src/dest from perf_metrics_t
  *  that has been initialized to my_node number */
 extern void streaming_latency(int len, perf_metrics_t *data);
 
@@ -150,7 +151,7 @@ void static inline  multi_size_latency(perf_metrics_t data, char *argv[]) {
     shmem_barrier_all();
 
     if((data.my_node == 0) && data.validate)
-        validate_recv(data.buf, data.max_len, partner_pe);
+        validate_recv(data.dest, data.max_len, partner_pe);
 }
 
 
@@ -168,8 +169,13 @@ void static inline latency_init_resources(int argc, char *argv[],
     only_two_PEs_check(data->my_node, data->npes);
 
     command_line_arg_check(argc, argv, data);
-    data->buf = aligned_buffer_alloc(data->max_len);
-    init_array(data->buf, data->max_len, data->my_node);
+
+    data->src = aligned_buffer_alloc(data->max_len);
+    init_array(data->src, data->max_len, data->my_node);
+
+    data->dest = aligned_buffer_alloc(data->max_len);
+    init_array(data->dest, data->max_len, data->my_node);
+
     data->target = shmem_malloc(sizeof(long));
 }
 
@@ -177,7 +183,8 @@ void static inline latency_free_resources(perf_metrics_t *data) {
     shmem_barrier_all();
 
     shmem_free(data->target);
-    shmem_free(data->buf);
+    shmem_free(data->src);
+    shmem_free(data->dest);
     shmem_finalize();
 }
 

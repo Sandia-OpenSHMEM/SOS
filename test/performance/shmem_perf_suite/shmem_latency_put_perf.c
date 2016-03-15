@@ -69,6 +69,7 @@ long_element_round_trip_latency(perf_metrics_t data)
         }
         end = shmemx_wtime();
 
+        data.trials = data.trials*2; /*output half to get single round trip time*/
         calc_and_print_results(start, end, sizeof(long), data);
 
    } else {
@@ -95,7 +96,7 @@ streaming_latency(int len, perf_metrics_t *data)
             if(i == data->warmup)
                 start = shmemx_wtime();
 
-            shmem_putmem(data->buf, data->buf, len, 0);
+            shmem_putmem(data->dest, data->src, len, 0);
             shmem_quiet();
 
         }
