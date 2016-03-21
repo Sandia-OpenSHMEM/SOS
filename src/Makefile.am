@@ -20,7 +20,6 @@ libsma_la_SOURCES = \
 	shmem_free_list.c \
 	shmem_atomic.h \
 	runtime.h \
-	runtime-pmi.c \
 	shmem_internal.h \
 	shmem_internal_op.h \
 	shmem_comm.h \
@@ -92,6 +91,15 @@ libsma_la_LIBADD = \
 	../shmem_pmi/simple_pmi.lo \
 	../shmem_pmi/simple_pmiutil.lo
 endif
+
+if USE_PMI2
+libsma_la_SOURCES += \
+	runtime-pmi2.c
+else
+libsma_la_SOURCES += \
+	runtime-pmi.c
+endif
+
 
 bin_SCRIPTS = oshcc oshc++ oshrun
 CLEANFILES += oshcc oshc++ oshrun

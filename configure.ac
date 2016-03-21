@@ -192,9 +192,11 @@ AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$t
 AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
 			[build and run shmem-pmi support])])
 AS_IF([test "$enable_pmi_simple" = "yes"],
-     [TEST_RUNNER='$(abs_top_builddir)/src/oshrun -n $(NPROCS)' SHMEM_PMI="shmem_pmi"], [ORTE_CHECK_PMI([pmi]) SHMEM_PMI=""])
+     [TEST_RUNNER='$(abs_top_builddir)/src/oshrun -n $(NPROCS)' SHMEM_PMI="shmem_pmi"],
+     [OPAL_CHECK_PMI(pmi_type) SHMEM_PMI=""])
 AC_SUBST([SHMEM_PMI])
 AM_CONDITIONAL([USE_SHMEM_PMI], [test "$enable_pmi_simple" = "yes"])
+AM_CONDITIONAL([USE_PMI2], [test "$pmi_type" = "pmi2"])
 
 dnl check for header files
 
