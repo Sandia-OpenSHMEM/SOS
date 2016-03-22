@@ -123,19 +123,11 @@ extern void streaming_latency(int len, perf_metrics_t *data);
 void static inline  multi_size_latency(perf_metrics_t data, char *argv[]) {
     int len;
     int partner_pe = partner_node(data.my_node);
-    char type[4];
-
-    /*assumes the exec name is standardized, hacky way to get type from exec name*/
-    type [3] = '\0';
-    strncpy(type, &argv[0][94], 3); /*put and get are both 3 letters*/
-    /*you'll likely need to modify this code if this assert isn't true */
-    assert((0 == strncmp(type, "put", 3)) || (0 == strncmp(type, "get", 3)));
 
     if (data.my_node == 0) {
-       printf("\nResults for %d trials each of length %d through %d in"\
+       printf("\nStreaming results for %d trials each of length %d through %d in"\
               " powers of %d\n", data.trials, data.start_len,
               data.max_len, data.inc);
-       printf("\nshmem_%smem results:\n", type);
        print_results_header();
     }
 
