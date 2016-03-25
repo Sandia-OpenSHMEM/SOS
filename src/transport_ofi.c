@@ -708,9 +708,9 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
     fabric_attr.prov_name = provname;
 
     hints.caps	  = FI_RMA |     /* request rma capability
-
-					    implies FI_READ/WRITE FI_REMOTE_READ/WRITE */
-	    FI_ATOMICS; /* request atomics capability */
+                                    implies FI_READ/WRITE FI_REMOTE_READ/WRITE */
+                   FI_ATOMICS |  /* request atomics capability */
+                   FI_RMA_EVENT; /* want to use remote counters */
     hints.addr_format         = FI_FORMAT_UNSPEC;
     hints.mode		      = FI_CONTEXT;
     domain_attr.data_progress = FI_PROGRESS_AUTO;
