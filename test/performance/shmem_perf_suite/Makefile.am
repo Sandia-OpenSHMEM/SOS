@@ -35,15 +35,15 @@ AM_CPPFLAGS = -I$(top_srcdir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
 LDADD = $(top_builddir)/src/libsma.la
 
-shmem_latency_put_perf_SOURCES = shmem_latency_put_perf.c
+shmem_latency_put_perf_SOURCES = shmem_latency_put_perf.c latency_common.h common.h
 
-shmem_latency_get_perf_SOURCES = shmem_latency_get_perf.c
+shmem_latency_get_perf_SOURCES = shmem_latency_get_perf.c latency_common.h common.h
 
-shmem_bw_put_perf_SOURCES = shmem_bw_put_perf.c
+shmem_bw_put_perf_SOURCES = shmem_bw_put_perf.c bw_common.h common.h
 
-shmem_bibw_put_perf_SOURCES = shmem_bibw_put_perf.c
+shmem_bibw_put_perf_SOURCES = shmem_bibw_put_perf.c bw_common.h common.h
 
-shmem_bw_get_perf_SOURCES = shmem_bw_get_perf.c
+shmem_bw_get_perf_SOURCES = shmem_bw_get_perf.c bw_common.h common.h
 
-shmem_bibw_get_perf_SOURCES = shmem_bibw_get_perf.c
+shmem_bibw_get_perf_SOURCES = shmem_bibw_get_perf.c bw_common.h common.h
 
