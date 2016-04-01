@@ -8,7 +8,7 @@ Summary: Sandia OpenSHMEM.
 
 Group: OpenSHMEM
 License: BSD
-URL: http://github.com/regrant/sandia-shmem
+URL: https://github.com/Sandia-OpenSHMEM/SOS
 Source0: %{name}-%{version}.tar.gz
 
 %description
