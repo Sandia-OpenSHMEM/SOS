@@ -15,7 +15,7 @@
 #include <assert.h>
 #include <stdbool.h>
 
-char * aligned_buffer_alloc(int len) {
+static char * aligned_buffer_alloc(int len) {
     unsigned long page_align;
     char *buf;
 
@@ -37,9 +37,6 @@ int static inline is_divisible_by_4(int num)
 /*to be a power of 2 must only have 1 set bit*/
 int static inline is_pow_of_2(unsigned int num)
 {
-    int i = 0;
-    unsigned int count = 0;
-
     /*move first set bit all the way to right*/
     while(num && !((num >>=1 ) & 1));
 
@@ -47,7 +44,7 @@ int static inline is_pow_of_2(unsigned int num)
     return ((num == 1 || num == 0)? true : false);
 }
 
-void init_array(char * const buf, int len, int my_pe_num)
+void static init_array(char * const buf, int len, int my_pe_num)
 {
     int i = 0;
     int array_size = len / sizeof(int);
