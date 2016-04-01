@@ -27,7 +27,7 @@ typedef struct perf_metrics {
    char * src, *dest;
 } perf_metrics_t;
 
-void data_init(perf_metrics_t * data) {
+void static data_init(perf_metrics_t * data) {
    data->start_len = START_LEN;
    data->max_len = MAX_MSG_SIZE;
    data->inc = INC;

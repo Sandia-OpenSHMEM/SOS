@@ -47,7 +47,7 @@ typedef struct perf_metrics {
 long red_psync[_SHMEM_REDUCE_SYNC_SIZE];
 
 /*default settings if no input is provided */
-void data_init(perf_metrics_t * data) {
+void static data_init(perf_metrics_t * data) {
     data->start_len = START_LEN;
     data->max_len = MAX_MSG_SIZE;
     data->size_inc = INC;
@@ -62,19 +62,19 @@ void data_init(perf_metrics_t * data) {
     data->dest = NULL;
 }
 
-void bi_dir_data_init(perf_metrics_t * data) {
+void static bi_dir_data_init(perf_metrics_t * data) {
     data->bw_type = "Bi-directional Bandwidth";
 }
 
-void uni_dir_data_init(perf_metrics_t * data) {
+void static uni_dir_data_init(perf_metrics_t * data) {
     data->bw_type = "Uni-directional Bandwidth";
 }
 /**************************************************************/
 /*                   Input Checking                           */
 /**************************************************************/
 
-void command_line_arg_check(int argc, char *argv[],
-                            perf_metrics_t *metric_info) {
+void static command_line_arg_check(int argc, char *argv[],
+                                   perf_metrics_t *metric_info) {
     int ch, error = false;
     extern char *optarg;
 
@@ -137,7 +137,7 @@ void static inline only_even_PEs_check(int my_node, int num_pes) {
 /*                   Result Printing and Calc                 */
 /**************************************************************/
 
-void print_data_results(double bw, double mr, perf_metrics_t data, int len) {
+void static print_data_results(double bw, double mr, perf_metrics_t data, int len) {
     printf("%9d       ", len);
 
     if(data.unit == KB) {
@@ -149,7 +149,7 @@ void print_data_results(double bw, double mr, perf_metrics_t data, int len) {
     printf("%10.2f                          %10.2f\n", bw, mr);
 }
 
-void print_results_header(perf_metrics_t metric_info) {
+void static print_results_header(perf_metrics_t metric_info) {
         printf("\nResults for %d PEs %d trials with window size %d "\
             "max message size %d with multiple of %d increments\n",
             metric_info.num_pes, metric_info.trials, metric_info.window_size,
