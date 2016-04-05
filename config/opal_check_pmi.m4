@@ -153,6 +153,29 @@ AC_DEFUN([OPAL_CHECK_PMI],[
     default_pmi_libloc=
     slurm_pmi_found=
 
+    # enable Portals4 PMI if using Portals4 provider else slurm PMI check
+    AS_IF([ test ! -z "$with_portals4"],[
+        AS_IF([test ! -z "$with_pmi" -a "$with_pmi" != "yes"],
+                [ompi_check_pmi_dir="$with_pmi"])
+        AS_IF([test ! -z "$with_pmi_libdir" -a "$with_pmi_libdir" != "yes"],
+                [ompi_check_pmi_libdir="$with_pmi_libdir"])
+
+        AS_IF([test -z "$with_pmi" -o "$with_pmi" = "yes"],
+                [ompi_check_pmi_dir="$with_portals4"])
+        OMPI_CHECK_PACKAGE([],
+                [portals4/pmi.h],
+                [portals_runtime],
+                [PMI_Init],
+                [],
+                [$ompi_check_pmi_dir],
+                [$ompi_check_pmi_libdir],
+                [AC_DEFINE([PMI_PORTALS4], [1],
+                        [Defined to 1 if PMI implementation is Portals4.])
+                 ompi_check_pmi_happy="yes"],
+                [ompi_check_pmi_happy="no"])], [
+
+      #else slurm PMI check
+
     AC_MSG_CHECKING([if user requested PMI support])
     AS_IF([test "$with_pmi" = "no"],
           [AC_MSG_RESULT([no])],
@@ -203,8 +226,7 @@ dnl check to see if we have crazy cray PMI (no pmi2 but PMI2_init works)
                                      [slurm_pmi_found=yes],
                                      [opal_enable_pmi2=yes
                                       opal_pmi2_LIBS="-lpmi"],
-                                     [opal_enable_pmi2=no])],[])],
-                [opal_enable_pmi2=no])
+                                     [opal_enable_pmi2=no])],[])])
 
            # since support was explicitly requested, then we should error out
            # if we didn't find the required support
@@ -229,6 +251,8 @@ dnl check to see if we have crazy cray PMI (no pmi2 but PMI2_init works)
 
            AS_IF([test "$opal_enable_pmi2" = "yes"],
                  [$1="pmi2"],[])
-
+    ])
+    TEST_RUNNER='$(abs_top_builddir)/src/oshrun -np $(NPROCS)'
+    AC_SUBST(TEST_RUNNER)
     OPAL_VAR_SCOPE_POP
 ])
