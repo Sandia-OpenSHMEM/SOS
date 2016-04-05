@@ -142,6 +142,11 @@ AC_DEFUN([OPAL_CHECK_PMI],[
                 [AC_HELP_STRING([--with-pmi-libdir(=DIR)],
                                 [Look for libpmi or libpmi2 in the given directory, DIR/lib or DIR/lib64])])
 
+    AC_ARG_ENABLE([pmi1],
+                [AS_HELP_STRING([--enable-pmi1],
+                                [If slurm has both PMI1 and PMI2, PMI2 will be used by default, override this for PMI1 if need-be (default: disabled)])],
+                                [], enable_pmi1=no)
+
     check_pmi_install_dir=
     check_pmi_lib_dir=
     default_pmi_loc=
@@ -179,8 +184,9 @@ AC_DEFUN([OPAL_CHECK_PMI],[
                               [opal_enable_pmi1=no])
 
            # check for pmi2 lib */
+           AS_IF([test "$enable_pmi1" = "no"],
            slurm_pmi_found=no
-           OPAL_CHECK_PMI_LIB([$check_pmi_install_dir],
+                [OPAL_CHECK_PMI_LIB([$check_pmi_install_dir],
                               [$check_pmi_lib_dir],
                               [pmi2], [PMI2_Init],
                               [slurm_pmi_found=yes],
@@ -197,7 +203,8 @@ dnl check to see if we have crazy cray PMI (no pmi2 but PMI2_init works)
                                      [slurm_pmi_found=yes],
                                      [opal_enable_pmi2=yes
                                       opal_pmi2_LIBS="-lpmi"],
-                                     [opal_enable_pmi2=no])],[])
+                                     [opal_enable_pmi2=no])],[])],
+                [opal_enable_pmi2=no])
 
            # since support was explicitly requested, then we should error out
            # if we didn't find the required support
