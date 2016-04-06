@@ -19,9 +19,14 @@
 #include <stdio.h>
 #include <string.h>
 #if defined(PMI_PORTALS4)
-#include <portals4/pmi.h>
+#error "PMI_PORTALS4 doesn't support PMI2"
 #else
-#include <pmi.h>
+#include <pmi2.h>
+#endif
+
+/* crazy cray pmi defined PMI2 functions but uses PMI_SUCCESS (0) */
+#ifndef PMI2_SUCCESS
+#define PMI2_SUCCESS 0
 #endif
 
 #include "runtime.h"
@@ -86,46 +91,33 @@ decode(const char *inval, void *outval, int outvallen)
 int
 shmem_runtime_init(void)
 {
+    int spawned, appnum, my_node;
     int initialized;
 
-    if (PMI_SUCCESS != PMI_Initialized(&initialized)) {
+    if (PMI2_SUCCESS != PMI2_Initialized()) {
         return 1;
     }
 
     if (!initialized) {
-        if (PMI_SUCCESS != PMI_Init(&initialized)) {
+        if (PMI2_SUCCESS != PMI2_Init(&spawned, &size, &rank, &appnum)) {
             return 2;
         }
     }
 
-    if (PMI_SUCCESS != PMI_KVS_Get_name_length_max(&max_name_len)) {
-        return 3;
-    }
+    max_name_len = PMI2_MAX_VALLEN;
     kvs_name = (char*) malloc(max_name_len);
     if (NULL == kvs_name) return 4;
 
-    if (PMI_SUCCESS != PMI_KVS_Get_key_length_max(&max_key_len)) {
-        return 5;
-    }
+    max_key_len = PMI2_MAX_KEYLEN;
     kvs_key = (char*) malloc(max_key_len);
     if (NULL == kvs_key) return 6;
 
-    if (PMI_SUCCESS != PMI_KVS_Get_value_length_max(&max_val_len)) {
-        return 7;
-    }
+    max_val_len = PMI2_MAX_VALLEN;
     kvs_value = (char*) malloc(max_val_len);
     if (NULL == kvs_value) return 8;
 
-    if (PMI_SUCCESS != PMI_KVS_Get_my_name(kvs_name, max_name_len)) {
+    if (PMI2_SUCCESS != PMI2_Job_GetId(kvs_name, max_name_len)) {
         return 7;
-    }
-
-    if (PMI_SUCCESS != PMI_Get_rank(&rank)) {
-        return 9;
-    }
-
-    if (PMI_SUCCESS != PMI_Get_size(&size)) {
-        return 10;
     }
 
     return 0;
@@ -135,8 +127,7 @@ shmem_runtime_init(void)
 int
 shmem_runtime_fini(void)
 {
-    PMI_Finalize();
-
+    PMI2_Finalize();
     return 0;
 }
 
@@ -144,7 +135,7 @@ shmem_runtime_fini(void)
 void
 shmem_runtime_abort(int exit_code, const char msg[])
 {
-    PMI_Abort(exit_code, msg);
+    PMI2_Abort(exit_code, msg);
 
     /* PMI_Abort should not return */
     abort();
@@ -168,14 +159,9 @@ shmem_runtime_get_size(void)
 int
 shmem_runtime_exchange(void)
 {
-    if (PMI_SUCCESS != PMI_KVS_Commit(kvs_name)) {
+    if (PMI2_SUCCESS != PMI2_KVS_Fence()) {
         return 5;
     }
-
-    if (PMI_SUCCESS != PMI_Barrier()) {
-        return 5;
-    }
-
     return 0;
 }
 
@@ -187,19 +173,21 @@ shmem_runtime_put(char *key, void *value, size_t valuelen)
     if (0 != encode(value, valuelen, kvs_value, max_val_len)) {
         return 1;
     }
-    if (PMI_SUCCESS != PMI_KVS_Put(kvs_name, kvs_key, kvs_value)) {
+    if (PMI2_SUCCESS != PMI2_KVS_Put(kvs_key, kvs_value)) {
         return 2;
     }
 
     return 0;
 }
 
-
 int
 shmem_runtime_get(int pe, char *key, void *value, size_t valuelen)
 {
+    int len;
+
     snprintf(kvs_key, max_key_len, "shmem-%lu-%s", (long unsigned) pe, key);
-    if (PMI_SUCCESS != PMI_KVS_Get(kvs_name, kvs_key, kvs_value, max_val_len)) {
+    if (PMI2_SUCCESS != PMI2_KVS_Get(kvs_name, PMI2_ID_NULL,
+                                     kvs_key, kvs_value, max_val_len, &len)) {
         return 1;
     }
     if (0 != decode(kvs_value, value, valuelen)) {
@@ -210,8 +198,11 @@ shmem_runtime_get(int pe, char *key, void *value, size_t valuelen)
 }
 
 
+/*
+ * Note this isn't exactly a barrier in PMI2
+ */
 void
 shmem_runtime_barrier(void)
 {
-    PMI_Barrier();
+    PMI2_KVS_Fence();
 }
