@@ -816,9 +816,6 @@ int shmem_transport_init(long eager_size)
 
     fi_freeinfo(p_info);
 
-    if(provname)
-      p_info->fabric_attr->prov_name = NULL;
-
     return 0;
 }
 
