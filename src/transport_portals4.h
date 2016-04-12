@@ -534,6 +534,80 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
 
 static inline
 void
+shmem_transport_portals4_put_nbi_internal(void *target, const void *source, size_t len,
+                                int pe, ptl_pt_index_t data_pt, ptl_pt_index_t heap_pt)
+{
+    int ret;
+    ptl_process_t peer;
+    ptl_pt_index_t pt;
+    long offset;
+
+    peer.rank = pe;
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    PORTALS4_GET_REMOTE_ACCESS_ONEPT(target, pt, offset, data_pt);
+#else
+    PORTALS4_GET_REMOTE_ACCESS_TWOPT(target, pt, offset, data_pt, heap_pt);
+#endif
+
+    shmem_transport_portals4_fence_complete();
+
+    if (len <= shmem_transport_portals4_max_volatile_size) {
+        ret = PtlPut(shmem_transport_portals4_put_volatile_md_h,
+                     (ptl_size_t) source,
+                     len,
+                     PTL_CT_ACK_REQ,
+                     peer,
+                     pt,
+                     0,
+                     offset,
+                     NULL,
+                     0);
+        if (PTL_OK != ret) { RAISE_ERROR(ret); }
+
+    } else {
+        shmem_transport_portals4_long_frag_t *long_frag;
+        ptl_handle_md_t md;
+
+        shmem_internal_assert(len <= shmem_transport_portals4_max_msg_size);
+
+        ret = PtlPut(shmem_transport_portals4_put_cntr_md_h,
+                     (ptl_size_t) source,
+                     len,
+                     PTL_CT_ACK_REQ,
+                     peer,
+                     pt,
+                     0,
+                     offset,
+                     NULL,
+                     0);
+        if (PTL_OK != ret) { RAISE_ERROR(ret); }
+
+#if WANT_TOTAL_DATA_ORDERING != 0
+        shmem_transport_portals4_long_pending = 1;
+#endif
+    }
+    shmem_transport_portals4_pending_put_counter++;
+}
+
+
+static inline
+void
+shmem_transport_put_nbi(void *target, const void *source, size_t len,
+                                int pe, long *completion)
+{
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    shmem_transport_portals4_put_nbi_internal(target, source, len, pe,
+                                             shmem_transport_portals4_pt,
+                                             -1);
+#else
+    shmem_transport_portals4_put_nbi_internal(target, source, len, pe,
+                                             shmem_transport_portals4_data_pt,
+                                             shmem_transport_portals4_heap_pt);
+#endif
+}
+
+static inline
+void
 shmem_transport_put_ct_nb(shmem_transport_ct_t *ct, void *target, const void *source,
                           size_t len, int pe, long *completion)
 {
@@ -554,14 +628,6 @@ shmem_transport_put_wait(long *completion)
     while (*completion > 0) {
         shmem_transport_portals4_drain_eq();
     }
-}
-
-static inline
-void
-shmem_transport_put_nbi(void *target, const void *source, size_t len,
-                       int pe, long *completion)
-{
-    shmem_transport_put_nb(target, source, len, pe, completion);
 }
 
 static inline
