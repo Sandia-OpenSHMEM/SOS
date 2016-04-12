@@ -354,7 +354,7 @@ shmem_transport_put_small(void *target, const void *source, size_t len, int pe)
 
 static inline
 void
-shmem_transport_put_large(void *target, const void *source, size_t len, int pe)
+shmem_transport_ofi_put_large(void *target, const void *source, size_t len, int pe)
 {
 	int ret = 0;
 	uint64_t dst = (uint64_t) pe;
@@ -421,7 +421,7 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
 		shmem_transport_ofi_pending_cq_count++;
 
     } else {
-        shmem_transport_put_large(target, source,len, pe);
+        shmem_transport_ofi_put_large(target, source,len, pe);
     }
 }
 
@@ -444,7 +444,7 @@ shmem_transport_put_nbi(void *target, const void *source, size_t len,
 
     } else {
 
-        shmem_transport_put_large(target, source, len, pe);
+        shmem_transport_ofi_put_large(target, source, len, pe);
     }
 }
 
