@@ -107,7 +107,7 @@ shmem_transport_put_wait(long *completion)
 static inline
 void
 shmem_transport_put_nbi(void *target, const void *source, size_t len,
-                       int pe, long *completion)
+                       int pe)
 {
     RAISE_ERROR_STR("No path to peer");
 }

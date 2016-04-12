@@ -592,8 +592,7 @@ shmem_transport_portals4_put_nbi_internal(void *target, const void *source, size
 
 static inline
 void
-shmem_transport_put_nbi(void *target, const void *source, size_t len,
-                                int pe, long *completion)
+shmem_transport_put_nbi(void *target, const void *source, size_t len, int pe)
 {
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
     shmem_transport_portals4_put_nbi_internal(target, source, len, pe,
