@@ -8,7 +8,7 @@ Summary: Sandia OpenSHMEM.
 
 Group: OpenSHMEM
 License: BSD
-URL: http://github.com/regrant/sandia-shmem
+URL: https://github.com/Sandia-OpenSHMEM/SOS
 Source0: %{name}-%{version}.tar.gz
 
 %description
@@ -47,8 +47,10 @@ rm -f %{buildroot}%{_libdir}/*.la
 # Prepare tests
 install -d %{testdir}/unit
 install test/unit/.libs/* %{testdir}/unit
-install -d %{testdir}/performance
-install test/performance/.libs/* %{testdir}/performance
+install -d %{testdir}/performance/shmem_perf_suite
+install test/performance/shmem_perf_suite/.libs/* %{testdir}/performance/shmem_perf_suite
+install -d %{testdir}/performance/tests
+install test/performance/tests/.libs/* %{testdir}/performance/tests
 
 %clean
 rm -rf %{buildroot}

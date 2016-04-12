@@ -14,7 +14,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.3], [https://github.com/regrant/sandia-shmem])
+AC_INIT([Sandia OpenSHMEM], [1.3.0], [https://github.com/Sandia-OpenSHMEM/SOS])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -192,9 +192,11 @@ AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$t
 AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
 			[build and run shmem-pmi support])])
 AS_IF([test "$enable_pmi_simple" = "yes"],
-     [TEST_RUNNER='$(abs_top_builddir)/src/oshrun -n $(NPROCS)' SHMEM_PMI="shmem_pmi"], [ORTE_CHECK_PMI([pmi]) SHMEM_PMI=""])
+     [TEST_RUNNER='$(abs_top_builddir)/src/oshrun -n $(NPROCS)' SHMEM_PMI="shmem_pmi"],
+     [OPAL_CHECK_PMI(pmi_type) SHMEM_PMI=""])
 AC_SUBST([SHMEM_PMI])
 AM_CONDITIONAL([USE_SHMEM_PMI], [test "$enable_pmi_simple" = "yes"])
+AM_CONDITIONAL([USE_PMI2], [test "$pmi_type" = "pmi2"])
 
 dnl check for header files
 
@@ -375,7 +377,9 @@ AC_CONFIG_FILES([Makefile
   src/Makefile
   test/Makefile
   test/unit/Makefile
-  test/performance/Makefile])
+  test/performance/Makefile
+  test/performance/shmem_perf_suite/Makefile
+  test/performance/tests/Makefile])
 AS_IF([test "$enable_pmi_simple" = "yes"],
 	[AC_CONFIG_SUBDIRS([shmem_pmi])])
 AC_OUTPUT

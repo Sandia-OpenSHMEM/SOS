@@ -108,7 +108,6 @@ static int SHM_OPS[]=
 int shmem_transport_have_long_double = 1;
 
 shmem_free_list_t *shmem_transport_ofi_bounce_buffers = NULL;
-shmem_free_list_t *shmem_transport_ofi_frag_buffers = NULL;
 
 //size of CQ
 const static size_t shmem_transport_ofi_queue_slots = 32768;//default CQ Depth....
@@ -125,16 +124,6 @@ init_bounce_buffer(shmem_free_list_item_t *item)
     shmem_transport_ofi_frag_t *frag =
         (shmem_transport_ofi_frag_t*) item;
     frag->mytype = SHMEM_TRANSPORT_OFI_TYPE_BOUNCE;
-}
-
-static
-void
-init_long_frag(shmem_free_list_item_t *item)
-{
-    shmem_transport_ofi_long_frag_t *frag =
-        (shmem_transport_ofi_long_frag_t*) item;
-    frag->frag.mytype = SHMEM_TRANSPORT_OFI_TYPE_LONG;
-    frag->reference = 0;
 }
 
 static inline int allocate_endpoints(struct fi_info * p_info)
@@ -708,9 +697,9 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
     fabric_attr.prov_name = provname;
 
     hints.caps	  = FI_RMA |     /* request rma capability
-
-					    implies FI_READ/WRITE FI_REMOTE_READ/WRITE */
-	    FI_ATOMICS; /* request atomics capability */
+                                    implies FI_READ/WRITE FI_REMOTE_READ/WRITE */
+                   FI_ATOMICS |  /* request atomics capability */
+                   FI_RMA_EVENT; /* want to use remote counters */
     hints.addr_format         = FI_FORMAT_UNSPEC;
     hints.mode		      = FI_CONTEXT;
     domain_attr.data_progress = FI_PROGRESS_AUTO;
@@ -777,10 +766,6 @@ int shmem_transport_init(long eager_size)
     shmem_transport_ofi_bounce_buffers =
        shmem_free_list_init(sizeof(shmem_transport_ofi_bounce_buffer_t)
 				+ eager_size, init_bounce_buffer);
-
-    shmem_transport_ofi_frag_buffers =
-    shmem_free_list_init(sizeof(shmem_transport_ofi_long_frag_t),
-                             init_long_frag);
 
     ret = allocate_fabric_resources(p_info, npes);
     if(ret!=0)
@@ -907,10 +892,6 @@ int shmem_transport_fini(void)
 
     if (NULL != shmem_transport_ofi_bounce_buffers) {
         shmem_free_list_destroy(shmem_transport_ofi_bounce_buffers);
-    }
-
-    if (NULL != shmem_transport_ofi_frag_buffers) {
-        shmem_free_list_destroy(shmem_transport_ofi_frag_buffers);
     }
 
 #ifdef USE_AV_MAP

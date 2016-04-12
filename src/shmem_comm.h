@@ -95,6 +95,29 @@ shmem_internal_put_nb(void *target, const void *source, size_t len, int pe,
     }
 }
 
+static inline
+void
+shmem_internal_put_nbi(void *target, const void *source, size_t len, int pe)
+{
+    int node_rank;
+
+    if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
+#if USE_XPMEM
+        shmem_transport_xpmem_put(target, source, len, pe, node_rank);
+#elif USE_CMA
+        if (len > shmem_transport_cma_put_max) {
+            shmem_transport_put_nbi(target, source, len, pe);
+        } else {
+            shmem_transport_cma_put(target, source, len, pe, node_rank);
+        }
+#else
+        RAISE_ERROR_STR("No path to peer");
+#endif
+    } else {
+        shmem_transport_put_nbi(target, source, len, pe);
+    }
+}
+
 
 static inline
 void
