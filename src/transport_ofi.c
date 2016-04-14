@@ -733,24 +733,26 @@ static inline int query_for_fabric(struct fabric_info *info)
     info->p_info = info->fabrics;
 
     if(ret!=0){
-	OFI_ERRMSG("getinfo didn't find any providers\n");
+        OFI_ERRMSG("OFI transport did not find any valid fabric services (prov=%s, svc=%s)\n",
+                   info->prov_name != NULL ? info->prov_name : "<auto>",
+                   info->svc_name != NULL ? info->svc_name : "<auto>");
 	return ret;
     }
 
     if(NULL == info->p_info) {
-	OFI_ERRMSG("pinfo is null\n");
+        OFI_ERRMSG("OFI transport did not find any valid fabrics\n");
 	return ret;
     }
 
-    if(info->p_info->ep_attr->max_msg_size) {
-	shmem_transport_ofi_max_msg_size = info->p_info->ep_attr->max_msg_size;
+    if(info->p_info->ep_attr->max_msg_size > 0) {
+        shmem_transport_ofi_max_msg_size = info->p_info->ep_attr->max_msg_size;
     } else {
-	OFI_ERRMSG("provider hasn't set max_msg_size\n");
+        OFI_ERRMSG("OFI provider did not set max_msg_size\n");
 	return 1;
     }
 
-    if(info->p_info->tx_attr->inject_size > shmem_transport_ofi_max_buffered_send)
-	shmem_transport_ofi_max_buffered_send = info->p_info->tx_attr->inject_size;
+    shmem_internal_assertp(info->p_info->tx_attr->inject_size >= shmem_transport_ofi_max_buffered_send);
+    shmem_transport_ofi_max_buffered_send = info->p_info->tx_attr->inject_size;
 
     return ret;
 
