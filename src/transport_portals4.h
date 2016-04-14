@@ -565,9 +565,6 @@ shmem_transport_portals4_put_nbi_internal(void *target, const void *source, size
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
 
     } else {
-        shmem_transport_portals4_long_frag_t *long_frag;
-        ptl_handle_md_t md;
-
         shmem_internal_assert(len <= shmem_transport_portals4_max_msg_size);
 
         ret = PtlPut(shmem_transport_portals4_put_cntr_md_h,
