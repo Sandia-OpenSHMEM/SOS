@@ -190,20 +190,11 @@ struct shmem_transport_ofi_bounce_buffer_t {
 
 typedef struct shmem_transport_ofi_bounce_buffer_t shmem_transport_ofi_bounce_buffer_t;
 
-struct shmem_transport_ofi_long_frag_t {
-    shmem_transport_ofi_frag_t frag;
-    int reference;
-    long *completion;
-};
-typedef struct shmem_transport_ofi_long_frag_t shmem_transport_ofi_long_frag_t;
-
 typedef int shmem_transport_ct_t;
 
 extern int shmem_transport_have_long_double;
 
 extern shmem_free_list_t *shmem_transport_ofi_bounce_buffers;
-
-extern shmem_free_list_t *shmem_transport_ofi_frag_buffers;
 
 int shmem_transport_init(long eager_size);
 int shmem_transport_startup(void);
@@ -247,19 +238,7 @@ void shmem_transport_ofi_drain_cq(void)
 
 			if(SHMEM_TRANSPORT_OFI_TYPE_BOUNCE == frag->mytype) {
 				shmem_free_list_free(
-					shmem_transport_ofi_bounce_buffers,
-					frag);
-                        }
-                        else if (SHMEM_TRANSPORT_OFI_TYPE_LONG == frag->mytype) {
-				shmem_transport_ofi_long_frag_t *long_frag =
-				(shmem_transport_ofi_long_frag_t*) frag;
-
-				(*(long_frag->completion))--;
-				if (0 >= --long_frag->reference) {
-					long_frag->reference = 0;
-					shmem_free_list_free(shmem_transport_ofi_frag_buffers,
-					frag);
-				}
+					shmem_transport_ofi_bounce_buffers, frag);
                         }
                         else {
                             RAISE_ERROR_STR("Unrecognized completion object");
@@ -291,25 +270,6 @@ static inline shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(const v
 
 	return buff;
 }
-
-
-static inline shmem_transport_ofi_long_frag_t * create_long_frag(long *completion)
-{
-	shmem_transport_ofi_long_frag_t *long_frag;
-
-	long_frag = (shmem_transport_ofi_long_frag_t*)
-	shmem_free_list_alloc(shmem_transport_ofi_frag_buffers);
-
-	if (NULL == long_frag)
-		RAISE_ERROR(-1);
-
-        shmem_internal_assert(long_frag->frag.mytype == SHMEM_TRANSPORT_OFI_TYPE_LONG);
-        shmem_internal_assert(long_frag->reference == 0);
-	long_frag->completion = completion;
-
-	return long_frag;
-}
-
 
 static inline int shmem_transport_quiet(void)
 {
@@ -394,6 +354,42 @@ shmem_transport_put_small(void *target, const void *source, size_t len, int pe)
 
 static inline
 void
+shmem_transport_ofi_put_large(void *target, const void *source, size_t len, int pe)
+{
+	int ret = 0;
+	uint64_t dst = (uint64_t) pe;
+	uint64_t polled = 0;
+    uint64_t key;
+    uint8_t *addr;
+
+    shmem_transport_ofi_get_mr(target, pe, &addr, &key);
+
+    uint8_t *frag_source = (uint8_t *) source;
+    uint64_t frag_target = (uint64_t) addr;
+    size_t frag_len = len;
+
+     /* operation generates counting events and must be completed by
+      * quiet. */
+     while (frag_source < ((uint8_t *) source) + len) {
+        frag_len = MIN(shmem_transport_ofi_max_msg_size, (size_t) (((uint8_t *) source) + len - frag_source));
+        polled = 0;
+
+        do {
+            ret = fi_write(shmem_transport_ofi_cntr_epfd,
+                           frag_source, frag_len, NULL,
+                           GET_DEST(dst), frag_target,
+                           key, NULL);
+        } while (try_again(ret,&polled));
+
+        shmem_transport_ofi_pending_put_counter++;
+
+        frag_source += frag_len;
+        frag_target += frag_len;
+    }
+}
+
+static inline
+void
 shmem_transport_put_nb(void *target, const void *source, size_t len,
                        int pe, long *completion)
 {
@@ -403,25 +399,14 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
         uint64_t key;
         uint8_t *addr;
 
-        shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
 	if (len <= shmem_transport_ofi_max_buffered_send) {
 
-		polled = 0;
-
-		do {
-			ret = fi_inject_write(shmem_transport_ofi_cntr_epfd,
-						source,
-						len,
-						GET_DEST(dst),
-						(uint64_t) addr,
-						key);
-
-		} while(try_again(ret,&polled));
-
-		shmem_transport_ofi_pending_put_counter++;
+        shmem_transport_put_small(target, source, len, pe);
 
 	} else if (len <= shmem_transport_ofi_bounce_buffer_size) {
+
+        shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
 		shmem_transport_ofi_bounce_buffer_t *buff = create_bounce_buffer(source, len);
 		polled = 0;
@@ -435,70 +420,33 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
 
 		shmem_transport_ofi_pending_cq_count++;
 
-        } else if (completion != NULL) {
-                uint8_t *frag_source = (uint8_t *) source;
-                uint64_t frag_target = (uint64_t) addr;
-                size_t frag_len = len;
+    } else {
+        shmem_transport_ofi_put_large(target, source,len, pe);
+    }
+}
 
-                /* Upper layer has requested a completion notification;
-                 * operation generates full events and updates the user's
-                 * completion flag. */
-		shmem_transport_ofi_long_frag_t *long_frag = create_long_frag(completion);
+/*compatibility with Portals transport*/
+static inline
+void
+shmem_transport_put_wait(long *completion) {
 
-                while (frag_source < ((uint8_t *) source) + len) {
-                    frag_len = MIN(shmem_transport_ofi_max_msg_size, (size_t) (((uint8_t *) source) + len - frag_source));
-                    polled = 0;
-
-                    do {
-                        ret = fi_write(shmem_transport_ofi_epfd,
-                                       frag_source, frag_len, NULL,
-                                       GET_DEST(dst), frag_target,
-                                       key, &long_frag->frag.context);
-                    } while (try_again(ret,&polled));
-
-                    (*(long_frag->completion))++;
-                    long_frag->reference++;
-                    shmem_transport_ofi_pending_cq_count++;
-
-                    frag_source += frag_len;
-                    frag_target += frag_len;
-                }
-
-        } else {
-                uint8_t *frag_source = (uint8_t *) source;
-                uint64_t frag_target = (uint64_t) addr;
-                size_t frag_len = len;
-
-                /* Upper layer has not requested a completion notification;
-                 * operation generates counting events and must be completed by
-                 * quiet. */
-                while (frag_source < ((uint8_t *) source) + len) {
-                    frag_len = MIN(shmem_transport_ofi_max_msg_size, (size_t) (((uint8_t *) source) + len - frag_source));
-                    polled = 0;
-
-                    do {
-                        ret = fi_write(shmem_transport_ofi_cntr_epfd,
-                                       frag_source, frag_len, NULL,
-                                       GET_DEST(dst), frag_target,
-                                       key, NULL);
-                    } while (try_again(ret,&polled));
-
-                    shmem_transport_ofi_pending_put_counter++;
-
-                    frag_source += frag_len;
-                    frag_target += frag_len;
-                }
-        }
+    shmem_transport_quiet();
 }
 
 static inline
 void
-shmem_transport_put_wait(long *completion)
+shmem_transport_put_nbi(void *target, const void *source, size_t len, int pe)
 {
-	while (*completion > 0) {
-		shmem_transport_ofi_drain_cq();
-	}
+	if (len <= shmem_transport_ofi_max_buffered_send) {
+
+        shmem_transport_put_small(target, source, len, pe);
+
+    } else {
+
+        shmem_transport_ofi_put_large(target, source, len, pe);
+    }
 }
+
 
 static inline
 void
@@ -835,8 +783,6 @@ shmem_transport_atomic_nb(void *target, const void *source, size_t full_len,
         } else {
 		size_t sent = 0;
 
-		shmem_transport_ofi_long_frag_t *long_frag = create_long_frag(completion);
-
 		while (sent < len) {
 
 			size_t chunksize = MIN((len-sent),
@@ -844,7 +790,7 @@ shmem_transport_atomic_nb(void *target, const void *source, size_t full_len,
 
 			polled = 0;
 		do {
-			ret = fi_atomic(shmem_transport_ofi_epfd,
+			ret = fi_atomic(shmem_transport_ofi_cntr_epfd,
 				(void *)((char *)source +
 					(sent*SHMEM_Dtsize[datatype])),
 				chunksize,
@@ -855,12 +801,10 @@ shmem_transport_atomic_nb(void *target, const void *source, size_t full_len,
 				key,
 				datatype,
 				op,
-				&long_frag->frag.context);
+				NULL);
 		} while(try_again(ret,&polled));
 
-			(*(long_frag->completion))++;
-			long_frag->reference++;
-			shmem_transport_ofi_pending_cq_count++;
+			shmem_transport_ofi_pending_put_counter++;
 			sent += chunksize;
 		}
         }
