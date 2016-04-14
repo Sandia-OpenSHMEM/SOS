@@ -30,6 +30,7 @@ struct fabric_info {
     struct fi_info *p_info;
     char *prov_name;
     char *svc_name;
+    char *fabric_name;
     int npes;
 };
 
@@ -729,9 +730,6 @@ static inline int query_for_fabric(struct fabric_info *info)
     ret = fi_getinfo( FI_VERSION(OFI_MAJOR_VERSION, OFI_MINOR_VERSION),
                       NULL, info->svc_name, 0, &hints, &(info->fabrics));
 
-    /* Select the first fabric in the list */
-    info->p_info = info->fabrics;
-
     if(ret!=0){
         OFI_ERRMSG("OFI transport did not find any valid fabric services (prov=%s, svc=%s)\n",
                    info->prov_name != NULL ? info->prov_name : "<auto>",
@@ -739,8 +737,29 @@ static inline int query_for_fabric(struct fabric_info *info)
 	return ret;
     }
 
+    /* If the user supplied a fabric name, lookup the address and use it to
+     * query for fabric.  Otherwise, select the first fabric in the list. */
+    if (info->fabric_name != NULL) {
+        struct fi_info *cur_fabric;
+
+        info->p_info = NULL;
+
+        for (cur_fabric = info->fabrics; cur_fabric; cur_fabric = cur_fabric->next) {
+            if (strcmp(info->fabric_name, cur_fabric->fabric_attr->name) == 0) {
+                info->p_info = cur_fabric;
+                break;
+            }
+        }
+    }
+    else {
+        info->p_info = info->fabrics;
+    }
+
     if(NULL == info->p_info) {
-        OFI_ERRMSG("OFI transport did not find any valid fabrics\n");
+        OFI_ERRMSG("OFI transport did not find a valid fabric service (prov=%s, svc=%s, fabric=%s)\n",
+                   info->prov_name != NULL ? info->prov_name : "<auto>",
+                   info->svc_name != NULL ? info->svc_name : "<auto>",
+                   info->fabric_name != NULL ? info->fabric_name : "<auto>");
 	return ret;
     }
 
@@ -766,6 +785,7 @@ int shmem_transport_init(long eager_size)
     info.npes      = shmem_runtime_get_size();
     info.prov_name = shmem_util_getenv_str("OFI_USE_PROVIDER");
     info.svc_name  = shmem_util_getenv_str("OFI_SERVICE");
+    info.fabric_name = shmem_util_getenv_str("OFI_FABRIC");
 
     ret = query_for_fabric(&info);
     if(ret!=0)
