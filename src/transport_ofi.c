@@ -35,7 +35,6 @@ struct fabric_info {
     struct fi_info *fabrics;
     struct fi_info *p_info;
     char *prov_name;
-    char *svc_name;
     char *fabric_name;
     int npes;
 };
@@ -734,12 +733,11 @@ static inline int query_for_fabric(struct fabric_info *info)
 
     /* find fabric provider to use that is able to support RMA and ATOMICS */
     ret = fi_getinfo( FI_VERSION(OFI_MAJOR_VERSION, OFI_MINOR_VERSION),
-                      NULL, info->svc_name, 0, &hints, &(info->fabrics));
+                      NULL, NULL, 0, &hints, &(info->fabrics));
 
     if(ret!=0){
-        OFI_ERRMSG("OFI transport did not find any valid fabric services (prov=%s, svc=%s)\n",
-                   info->prov_name != NULL ? info->prov_name : "<auto>",
-                   info->svc_name != NULL ? info->svc_name : "<auto>");
+        OFI_ERRMSG("OFI transport did not find any valid fabric services (provider=%s)\n",
+                   info->prov_name != NULL ? info->prov_name : "<auto>");
 	return ret;
     }
 
@@ -762,9 +760,8 @@ static inline int query_for_fabric(struct fabric_info *info)
     }
 
     if(NULL == info->p_info) {
-        OFI_ERRMSG("OFI transport did not find a valid fabric service (prov=%s, svc=%s, fabric=%s)\n",
+        OFI_ERRMSG("OFI transport did not find a valid fabric service (prov=%s, fabric=%s)\n",
                    info->prov_name != NULL ? info->prov_name : "<auto>",
-                   info->svc_name != NULL ? info->svc_name : "<auto>",
                    info->fabric_name != NULL ? info->fabric_name : "<auto>");
 	return ret;
     }
@@ -790,7 +787,6 @@ int shmem_transport_init(long eager_size)
 
     info.npes      = shmem_runtime_get_size();
     info.prov_name = shmem_util_getenv_str("OFI_USE_PROVIDER");
-    info.svc_name  = shmem_util_getenv_str("OFI_SERVICE");
     info.fabric_name = shmem_util_getenv_str("OFI_FABRIC");
 
     ret = query_for_fabric(&info);
