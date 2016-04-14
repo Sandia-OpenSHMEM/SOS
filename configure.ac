@@ -199,6 +199,7 @@ AM_CONDITIONAL([USE_SHMEM_PMI], [test "$enable_pmi_simple" = "yes"])
 AM_CONDITIONAL([USE_PMI2], [test "$pmi_type" = "pmi2"])
 
 dnl check for header files
+AC_CHECK_HEADERS([fnmatch.h])
 
 dnl check for types
 

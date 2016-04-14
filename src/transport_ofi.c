@@ -17,6 +17,12 @@
 #include <unistd.h>
 #include <stdint.h>
 
+#if HAVE_FNMATCH_H
+#include <fnmatch.h>
+#else
+#define fnmatch(P, S, F) strcmp(P, S)
+#endif
+
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
 #include "shmem_internal.h"
@@ -745,7 +751,7 @@ static inline int query_for_fabric(struct fabric_info *info)
         info->p_info = NULL;
 
         for (cur_fabric = info->fabrics; cur_fabric; cur_fabric = cur_fabric->next) {
-            if (strcmp(info->fabric_name, cur_fabric->fabric_attr->name) == 0) {
+            if (fnmatch(info->fabric_name, cur_fabric->fabric_attr->name, 0) == 0) {
                 info->p_info = cur_fabric;
                 break;
             }
