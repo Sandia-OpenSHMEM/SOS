@@ -25,6 +25,13 @@
 #include <unistd.h>
 #include "runtime.h"
 
+struct fabric_info {
+    struct fi_info *fabrics;
+    struct fi_info *p_info;
+    char *prov_name;
+    char *svc_name;
+    int npes;
+};
 
 struct fid_fabric*          	shmem_transport_ofi_fabfd;
 struct fid_domain*          	shmem_transport_ofi_domainfd;
@@ -126,7 +133,7 @@ init_bounce_buffer(shmem_free_list_item_t *item)
     frag->mytype = SHMEM_TRANSPORT_OFI_TYPE_BOUNCE;
 }
 
-static inline int allocate_endpoints(struct fi_info * p_info)
+static inline int allocate_endpoints(struct fabric_info *info)
 {
 
   int ret = 0;
@@ -137,10 +144,10 @@ static inline int allocate_endpoints(struct fi_info * p_info)
 
     /* this endpoint is used to get completion events and
      * used to expose memory to incoming reads/writes */
-    p_info->ep_attr->tx_ctx_cnt = FI_SHARED_CONTEXT;
-    p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
+    info->p_info->ep_attr->tx_ctx_cnt = FI_SHARED_CONTEXT;
+    info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
     ret = fi_endpoint(shmem_transport_ofi_domainfd,
-		    p_info, &shmem_transport_ofi_epfd, NULL);
+                      info->p_info, &shmem_transport_ofi_epfd, NULL);
     if(ret!=0){
 	OFI_ERRMSG("epfd creation failed\n");
 	return ret;
@@ -148,14 +155,14 @@ static inline int allocate_endpoints(struct fi_info * p_info)
 
     /* this endpoint is used only to get read and write
      * counter updates */
-    p_info->caps	= FI_RMA | FI_WRITE | FI_READ | /*SEND ONLY */
-	    		FI_ATOMICS; /* request atomics capability */
-    p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE | FI_INJECT_COMPLETE;
-    p_info->mode = 0;
-    p_info->tx_attr->mode = 0;
-    p_info->rx_attr->mode = 0;
+    info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | /*SEND ONLY */
+                         FI_ATOMICS; /* request atomics capability */
+    info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE | FI_INJECT_COMPLETE;
+    info->p_info->mode = 0;
+    info->p_info->tx_attr->mode = 0;
+    info->p_info->rx_attr->mode = 0;
     ret = fi_endpoint(shmem_transport_ofi_domainfd,
-		    p_info, &shmem_transport_ofi_cntr_epfd, NULL);
+                      info->p_info, &shmem_transport_ofi_cntr_epfd, NULL);
     if(ret!=0){
 	OFI_ERRMSG("cntr_epfd creation failed\n");
 	return ret;
@@ -575,7 +582,7 @@ static inline int atomic_limitations_check(void)
     return 0;
 }
 
-static inline int exchange_and_av_insert(const int npes)
+static inline int exchange_and_av_insert(struct fabric_info *info)
 {
     int                 i, rank = 0, ret = 0;
     char   epname[128], *alladdrs = NULL;
@@ -589,7 +596,7 @@ static inline int exchange_and_av_insert(const int npes)
 	return ret;
     }
 
-    alladdrs = malloc(npes * epnamelen);
+    alladdrs = malloc(info->npes * epnamelen);
     if(alladdrs==NULL){
 	OFI_ERRMSG("alladdrs is NULL\n");
 	return ret;
@@ -599,7 +606,7 @@ static inline int exchange_and_av_insert(const int npes)
     shmem_runtime_exchange();
     shmem_runtime_barrier();
 
-    for(i=0; i<npes; i++)
+    for(i=0; i<info->npes; i++)
     {
 	    void *tgt = alladdrs + i*epnamelen;
 	    if (i == rank) {
@@ -611,11 +618,11 @@ static inline int exchange_and_av_insert(const int npes)
 
     ret = fi_av_insert(shmem_transport_ofi_avfd,
             alladdrs,
-            npes,
+            info->npes,
             addr_table,
             0,
 	    NULL);
-    if(ret!=npes){
+    if(ret!=info->npes){
 	OFI_ERRMSG("av insert failed\n");
 	return ret;
     }
@@ -625,22 +632,21 @@ static inline int exchange_and_av_insert(const int npes)
     return 0;
 }
 
-static inline int allocate_fabric_resources(struct fi_info * p_info,
-		const int npes)
+static inline int allocate_fabric_resources(struct fabric_info *info)
 {
     int ret = 0;
     struct fi_av_attr   av_attr = {0};
 
 
     /* fabric domain: define domain of resources physical and logical*/
-    ret = fi_fabric(p_info->fabric_attr, &shmem_transport_ofi_fabfd, NULL);
+    ret = fi_fabric(info->p_info->fabric_attr, &shmem_transport_ofi_fabfd, NULL);
     if(ret!=0){
 	OFI_ERRMSG("fabric initialization failed\n");
 	return ret;
     }
 
     /*access domain: define communication resource limits/boundary within fabric domain */
-    ret = fi_domain(shmem_transport_ofi_fabfd, p_info,
+    ret = fi_domain(shmem_transport_ofi_fabfd, info->p_info,
 		    &shmem_transport_ofi_domainfd,NULL);
     if(ret!=0){
 	OFI_ERRMSG("domain initialization failed\n");
@@ -662,7 +668,7 @@ static inline int allocate_fabric_resources(struct fi_info * p_info,
 
 #ifdef USE_AV_MAP
     av_attr.type = FI_AV_MAP;
-    addr_table   = (fi_addr_t*) malloc(npes * sizeof(fi_addr_t));
+    addr_table   = (fi_addr_t*) malloc(info->npes * sizeof(fi_addr_t));
 #else
     /* open Address Vector and bind the AV to the domain */
     av_attr.type = FI_AV_TABLE;
@@ -681,7 +687,7 @@ static inline int allocate_fabric_resources(struct fi_info * p_info,
     return ret;
 }
 
-static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
+static inline int query_for_fabric(struct fabric_info *info)
 {
     int                 ret = 0;
     struct fi_info      hints = {0};
@@ -690,11 +696,9 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
     struct fi_fabric_attr fabric_attr = {0};
     struct fi_ep_attr   ep_attr = {0};
 
-    char *svc_name = shmem_util_getenv_str("OFI_SERVICE");
-
     shmem_transport_ofi_max_buffered_send = sizeof(long double);
 
-    fabric_attr.prov_name = provname;
+    fabric_attr.prov_name = info->prov_name;
 
     hints.caps	  = FI_RMA |     /* request rma capability
                                     implies FI_READ/WRITE FI_REMOTE_READ/WRITE */
@@ -723,26 +727,30 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
 
     /* find fabric provider to use that is able to support RMA and ATOMICS */
     ret = fi_getinfo( FI_VERSION(OFI_MAJOR_VERSION, OFI_MINOR_VERSION),
-                      NULL, svc_name, 0, &hints, p_info);
+                      NULL, info->svc_name, 0, &hints, &(info->fabrics));
+
+    /* Select the first fabric in the list */
+    info->p_info = info->fabrics;
+
     if(ret!=0){
 	OFI_ERRMSG("getinfo didn't find any providers\n");
 	return ret;
     }
 
-    if(!*p_info) {
+    if(NULL == info->p_info) {
 	OFI_ERRMSG("pinfo is null\n");
 	return ret;
     }
 
-    if((*p_info)->ep_attr->max_msg_size) {
-	shmem_transport_ofi_max_msg_size = (*p_info)->ep_attr->max_msg_size;
+    if(info->p_info->ep_attr->max_msg_size) {
+	shmem_transport_ofi_max_msg_size = info->p_info->ep_attr->max_msg_size;
     } else {
 	OFI_ERRMSG("provider hasn't set max_msg_size\n");
 	return 1;
     }
 
-    if((*p_info)->tx_attr->inject_size > shmem_transport_ofi_max_buffered_send)
-	shmem_transport_ofi_max_buffered_send = (*p_info)->tx_attr->inject_size;
+    if(info->p_info->tx_attr->inject_size > shmem_transport_ofi_max_buffered_send)
+	shmem_transport_ofi_max_buffered_send = info->p_info->tx_attr->inject_size;
 
     return ret;
 
@@ -751,12 +759,13 @@ static inline int query_for_fabric(struct fi_info ** p_info, char *provname)
 int shmem_transport_init(long eager_size)
 {
     int ret = 0;
-    const int npes = shmem_runtime_get_size();
-    struct fi_info * p_info = NULL;
+    struct fabric_info info = {0};
 
-    char *provname = shmem_util_getenv_str("OFI_USE_PROVIDER");
+    info.npes      = shmem_runtime_get_size();
+    info.prov_name = shmem_util_getenv_str("OFI_USE_PROVIDER");
+    info.svc_name  = shmem_util_getenv_str("OFI_SERVICE");
 
-    ret = query_for_fabric(&p_info, provname);
+    ret = query_for_fabric(&info);
     if(ret!=0)
 	return ret;
 
@@ -767,11 +776,12 @@ int shmem_transport_init(long eager_size)
        shmem_free_list_init(sizeof(shmem_transport_ofi_bounce_buffer_t)
 				+ eager_size, init_bounce_buffer);
 
-    ret = allocate_fabric_resources(p_info, npes);
+    ret = allocate_fabric_resources(&info);
+
     if(ret!=0)
 	return ret;
 
-    ret = allocate_endpoints(p_info);
+    ret = allocate_endpoints(&info);
     if(ret!=0)
 	return ret;
 
@@ -795,11 +805,11 @@ int shmem_transport_init(long eager_size)
     if(ret!=0)
 	return ret;
 
-    ret = exchange_and_av_insert(npes);
+    ret = exchange_and_av_insert(&info);
     if(ret!=0)
 	return ret;
 
-    fi_freeinfo(p_info);
+    fi_freeinfo(info.fabrics);
 
     return 0;
 }
