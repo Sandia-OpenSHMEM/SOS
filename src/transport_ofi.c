@@ -792,7 +792,11 @@ int shmem_transport_init(long eager_size)
     struct fabric_info info = {0};
 
     info.npes      = shmem_runtime_get_size();
+
     info.prov_name = shmem_util_getenv_str("OFI_PROVIDER");
+    if (NULL == info.prov_name)
+        info.prov_name = shmem_util_getenv_str("OFI_USE_PROVIDER");
+
     info.fabric_name = shmem_util_getenv_str("OFI_FABRIC");
     info.domain_name = shmem_util_getenv_str("OFI_DOMAIN");
 
