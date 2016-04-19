@@ -154,10 +154,10 @@ options.
         doubling (recdbl) will fall back to ring if the PE set is not a
         power of two in size.
 
-    CMA_PUT_MAX (default: 8192)
+    SMA_CMA_PUT_MAX (default: 8192)
         '--with-cma', shmem put lengths <= CMA_PUT_MAX use process_vm_writev();
         otherwise use Portals4 transport put.
 
-    CMA_GET_MAX (default: 16384)
+    SMA_CMA_GET_MAX (default: 16384)
         '--with-cma', shmem get lengths <= CMA_GET_MAX use process_vm_readv();
         otherwise use Portals4 transport get.
