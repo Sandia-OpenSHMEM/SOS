@@ -36,6 +36,7 @@ struct fabric_info {
     struct fi_info *p_info;
     char *prov_name;
     char *fabric_name;
+    char *domain_name;
     int npes;
 };
 
@@ -741,17 +742,21 @@ static inline int query_for_fabric(struct fabric_info *info)
 	return ret;
     }
 
-    /* If the user supplied a fabric name, lookup the address and use it to
-     * query for fabric.  Otherwise, select the first fabric in the list. */
-    if (info->fabric_name != NULL) {
+    /* If the user supplied a fabric or domain name, use it to select the
+     * fabric.  Otherwise, select the first fabric in the list. */
+    if (info->fabric_name != NULL || info->domain_name != NULL) {
         struct fi_info *cur_fabric;
 
         info->p_info = NULL;
 
         for (cur_fabric = info->fabrics; cur_fabric; cur_fabric = cur_fabric->next) {
-            if (fnmatch(info->fabric_name, cur_fabric->fabric_attr->name, 0) == 0) {
-                info->p_info = cur_fabric;
-                break;
+            if (info->fabric_name == NULL ||
+                fnmatch(info->fabric_name, cur_fabric->fabric_attr->name, 0) == 0) {
+                if (info->domain_name == NULL ||
+                    fnmatch(info->domain_name, cur_fabric->domain_attr->name, 0) == 0) {
+                    info->p_info = cur_fabric;
+                    break;
+                }
             }
         }
     }
@@ -760,9 +765,10 @@ static inline int query_for_fabric(struct fabric_info *info)
     }
 
     if(NULL == info->p_info) {
-        OFI_ERRMSG("OFI transport did not find a valid fabric service (prov=%s, fabric=%s)\n",
+        OFI_ERRMSG("OFI transport, no valid fabric (prov=%s, fabric=%s, domain=%s)\n",
                    info->prov_name != NULL ? info->prov_name : "<auto>",
-                   info->fabric_name != NULL ? info->fabric_name : "<auto>");
+                   info->fabric_name != NULL ? info->fabric_name : "<auto>",
+                   info->domain_name != NULL ? info->domain_name : "<auto>");
 	return ret;
     }
 
@@ -788,6 +794,7 @@ int shmem_transport_init(long eager_size)
     info.npes      = shmem_runtime_get_size();
     info.prov_name = shmem_util_getenv_str("OFI_PROVIDER");
     info.fabric_name = shmem_util_getenv_str("OFI_FABRIC");
+    info.domain_name = shmem_util_getenv_str("OFI_DOMAIN");
 
     ret = query_for_fabric(&info);
     if(ret!=0)

@@ -172,3 +172,9 @@ options.
         Shell-style wildcards, including * and ?, are allowed.  The fi_info
         utility included with libfabric can be used for assistance with
         identifying the desired fabric.
+
+    SMA_OFI_DOMAIN (default: auto)
+        The name of the fabric domain that should be used by the OFI transport.
+        Shell-style wildcards, including * and ?, are allowed.  The fi_info
+        utility included with libfabric can be used for assistance with
+        identifying the desired fabric domain.
