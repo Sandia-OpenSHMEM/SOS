@@ -161,3 +161,14 @@ options.
     SMA_CMA_GET_MAX (default: 16384)
         '--with-cma', shmem get lengths <= CMA_GET_MAX use process_vm_readv();
         otherwise use Portals4 transport get.
+
+  OFI Transport Environment variables:
+
+    SMA_OFI_PROVIDER (default: auto)
+        The name of the provider that should be used by the OFI transport.
+
+    SMA_OFI_FABRIC (default: auto)
+        The name of the fabric that should be used by the OFI transport.
+        Shell-style wildcards, including * and ?, are allowed.  The fi_info
+        utility included with libfabric can be used for assistance with
+        identifying the desired fabric.
