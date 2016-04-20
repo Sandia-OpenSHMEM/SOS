@@ -154,10 +154,27 @@ options.
         doubling (recdbl) will fall back to ring if the PE set is not a
         power of two in size.
 
-    CMA_PUT_MAX (default: 8192)
+    SMA_CMA_PUT_MAX (default: 8192)
         '--with-cma', shmem put lengths <= CMA_PUT_MAX use process_vm_writev();
         otherwise use Portals4 transport put.
 
-    CMA_GET_MAX (default: 16384)
+    SMA_CMA_GET_MAX (default: 16384)
         '--with-cma', shmem get lengths <= CMA_GET_MAX use process_vm_readv();
         otherwise use Portals4 transport get.
+
+  OFI Transport Environment variables:
+
+    SMA_OFI_PROVIDER (default: auto)
+        The name of the provider that should be used by the OFI transport.
+
+    SMA_OFI_FABRIC (default: auto)
+        The name of the fabric that should be used by the OFI transport.
+        Shell-style wildcards, including * and ?, are allowed.  The fi_info
+        utility included with libfabric can be used for assistance with
+        identifying the desired fabric.
+
+    SMA_OFI_DOMAIN (default: auto)
+        The name of the fabric domain that should be used by the OFI transport.
+        Shell-style wildcards, including * and ?, are allowed.  The fi_info
+        utility included with libfabric can be used for assistance with
+        identifying the desired fabric domain.
