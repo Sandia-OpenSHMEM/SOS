@@ -131,6 +131,12 @@ AC_ARG_ENABLE([mr-scalable],
 AS_IF([test "$enable_mr_scalable" != "no"],
       [AC_DEFINE([ENABLE_MR_SCALABLE], [1], [If defined, the OFI transport will use FI_MR_SCALABLE.  Otherwise, FI_MR_BASIC is used.])])
 
+AC_ARG_ENABLE([av-map],
+    [AC_HELP_STRING([--enable-av-map],
+                    [enable av-map instead of av-table in the OFI transport. (default: disabled)])])
+AS_IF([test "$enable_av_map" = "yes"],
+      [AC_DEFINE([USE_AV_MAP], [1], [If defined, the OFI transport will use FI_AV_MAP.  Otherwise, FI_AV_TABLE is used.])])
+
 dnl check for programs
 
 AC_PROG_CC
