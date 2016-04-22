@@ -190,7 +190,9 @@ CHECK_CMA(
 AM_CONDITIONAL([USE_CMA], [test "$transport_cma" = "yes"])
 
 AS_IF([test "transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
-      [AC_DEFINE([USE_ON_NODE_COMMS], [1], [Define if any on-node comm transport is available])])
+      [AC_DEFINE([USE_ON_NODE_COMMS], [1], [Define if any on-node comm transport is available])
+       AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
+      ])
 
 AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
       [AC_MSG_ERROR([No transport found])])
