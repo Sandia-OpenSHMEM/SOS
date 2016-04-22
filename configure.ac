@@ -223,9 +223,9 @@ AC_CHECK_SIZEOF([void*])
 C_LOG_MAXPES=32
 C_BCAST_SYNC_SIZE=1
 C_REDUCE_SYNC_SIZE=`$PERL -e "print $C_BCAST_SYNC_SIZE + 2 + $C_LOG_MAXPES"`
-C_BARRIER_SYNC_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_int * 8 / $ac_cv_sizeof_long)"`
+C_BARRIER_SYNC_SIZE=`$PERL -e "use POSIX; print $ac_cv_sizeof_int * 8 * ($ac_cv_sizeof_int / $ac_cv_sizeof_long)"`
 tree_sync_size=`$PERL -e "print $C_BCAST_SYNC_SIZE + 3"`
-recdbl_sync_size=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_int * 8 / $ac_cv_sizeof_long)"`
+recdbl_sync_size=`$PERL -e "use POSIX; print $ac_cv_sizeof_int * 8 * ($ac_cv_sizeof_int / $ac_cv_sizeof_long)"`
 AS_IF([test $tree_sync_size -lt $recdbl_sync_size],
       [C_COLLECT_SYNC_SIZE=$recdbl_sync_size], [C_COLLECT_SYNC_SIZE=$tree_sync_size])
 C_ALLTOALL_SYNC_SIZE=1

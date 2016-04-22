@@ -329,17 +329,20 @@ shmem_internal_barrier_tree(int PE_start, int logPE_stride, int PE_size, long *p
 void
 shmem_internal_barrier_dissem(int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
-    int8_t one = 1, neg_one = -1;
+    int one = 1, neg_one = -1;
     int stride = 1 << logPE_stride;
     int distance, to, i;
     int coll_rank = (shmem_internal_my_pe - PE_start) / stride;
-    int8_t *pSync_bytes = (int8_t*) pSync;
+    int *pSync_ints = (int*) pSync;
 
-    /* need log2(num_procs) int8_t slots.  max_num_procs is
+    /* need log2(num_procs) int slots.  max_num_procs is
        2^(sizeof(int)*8-1)-1, so make the math a bit easier and assume
        2^(sizeof(int) * 8), which means log2(num_procs) is always less
        than sizeof(int) * 8. */
-    shmem_internal_assert(SHMEM_BARRIER_SYNC_SIZE >= (sizeof(int) * 8) / sizeof(long));
+    /* Note: pSync can be treated as a byte array rather than an int array to
+     * get better cache locality.  We chose int here for portability, since SUM
+     * on INT is required by the SHMEM atomics API. */
+    shmem_internal_assert(SHMEM_BARRIER_SYNC_SIZE >= (sizeof(int) * 8) * (sizeof(int) / sizeof(long)));
 
     shmem_internal_quiet();
 
@@ -347,20 +350,20 @@ shmem_internal_barrier_dissem(int PE_start, int logPE_stride, int PE_size, long 
         to = ((coll_rank + distance) % PE_size);
         to = PE_start + (to * stride);
 
-        shmem_internal_atomic_small(&pSync_bytes[i], &one, sizeof(int8_t),
+        shmem_internal_atomic_small(&pSync_ints[i], &one, sizeof(int),
                                     to,
-                                    SHM_INTERNAL_SUM, SHM_INTERNAL_SIGNED_BYTE);
+                                    SHM_INTERNAL_SUM, DTYPE_INT);
 
-        SHMEM_WAIT_UNTIL(&pSync_bytes[i], SHMEM_CMP_NE, 0);
+        SHMEM_WAIT_UNTIL(&pSync_ints[i], SHMEM_CMP_NE, 0);
         /* There's a path where the next update from a peer can get
            here before the update below, but there's no path for two
            updates to arrive before the decrement */
-        shmem_internal_assert(pSync_bytes[i] < 3);
+        shmem_internal_assert(pSync_ints[i] < 3);
 
         /* this slot is no longer used, so subtract off results now */
-        shmem_internal_atomic_small(&pSync_bytes[i], &neg_one, sizeof(int8_t),
+        shmem_internal_atomic_small(&pSync_ints[i], &neg_one, sizeof(int),
                                     shmem_internal_my_pe,
-                                    SHM_INTERNAL_SUM, SHM_INTERNAL_SIGNED_BYTE);
+                                    SHM_INTERNAL_SUM, DTYPE_INT);
     }
 }
 
@@ -1004,15 +1007,18 @@ shmem_internal_fcollect_recdbl(void *target, const void *source, size_t len,
     int i;
     long completion = 0;
     size_t curr_offset;
-    int8_t *pSync_bytes = (int8_t*) pSync;
-    int8_t one = 1, neg_one = -1;
+    int *pSync_ints = (int*) pSync;
+    int one = 1, neg_one = -1;
     int distance;
 
-    /* need log2(num_procs) int8_t slots.  max_num_procs is
+    /* need log2(num_procs) int slots.  max_num_procs is
        2^(sizeof(int)*8-1)-1, so make the math a bit easier and assume
        2^(sizeof(int) * 8), which means log2(num_procs) is always less
        than sizeof(int) * 8. */
-    shmem_internal_assert(SHMEM_COLLECT_SYNC_SIZE >= (sizeof(int) * 8) / sizeof(long));
+    /* Note: pSync can be treated as a byte array rather than an int array to
+     * get better cache locality.  We chose int here for portability, since SUM
+     * on INT is required by the SHMEM atomics API. */
+    shmem_internal_assert(SHMEM_COLLECT_SYNC_SIZE >= (sizeof(int) * 8) * (sizeof(int) / sizeof(long)));
     shmem_internal_assert(0 == (PE_size & (PE_size - 1)));
 
     /* copy my portion to the right place */
@@ -1030,16 +1036,16 @@ shmem_internal_fcollect_recdbl(void *target, const void *source, size_t len,
         shmem_internal_fence();
 
         /* mark completion for this round */
-        shmem_internal_atomic_small(&pSync_bytes[i], &one, sizeof(int8_t),
+        shmem_internal_atomic_small(&pSync_ints[i], &one, sizeof(int),
                                     real_peer,
-                                    SHM_INTERNAL_SUM, SHM_INTERNAL_SIGNED_BYTE);
+                                    SHM_INTERNAL_SUM, DTYPE_INT);
 
-        SHMEM_WAIT_UNTIL(&pSync_bytes[i], SHMEM_CMP_NE, 0);
+        SHMEM_WAIT_UNTIL(&pSync_ints[i], SHMEM_CMP_NE, 0);
 
         /* this slot is no longer used, so subtract off results now */
-        shmem_internal_atomic_small(&pSync_bytes[i], &neg_one, sizeof(int8_t),
+        shmem_internal_atomic_small(&pSync_ints[i], &neg_one, sizeof(int),
                                     shmem_internal_my_pe,
-                                    SHM_INTERNAL_SUM, SHM_INTERNAL_SIGNED_BYTE);
+                                    SHM_INTERNAL_SUM, DTYPE_INT);
 
         if (my_id > peer) {
             curr_offset -= (distance * len);
