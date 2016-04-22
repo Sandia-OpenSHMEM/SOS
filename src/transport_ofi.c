@@ -115,10 +115,20 @@ static int SHM_BOPS[]=
   SHM_INTERNAL_BAND, SHM_INTERNAL_BOR, SHM_INTERNAL_BXOR,
 };
 
+static char * SHM_NAMED_BOPS[]=
+{
+  "Bitwise AND", "Bitwise OR", "Bitwise XOR",
+};
+
 static int SHM_OPS[]=
 {
   SHM_INTERNAL_MIN,  SHM_INTERNAL_MAX, SHM_INTERNAL_SUM,
   SHM_INTERNAL_PROD,
+};
+
+static char * SHM_NAMED_OPS[]=
+{
+  "MIN", "MAX", "SUM", "PROD",
 };
 
 int shmem_transport_have_long_double = 1;
@@ -544,15 +554,18 @@ static inline int atomic_limitations_check(void)
     /* ----------------------------------------*/
 
     int i, j, ret = 0;
+    long atomicwarn = 0;
+
+    atomicwarn = shmem_util_getenv_long("OFI_ATOMIC_CHECKS_WARN", 0, 0);
 
     init_dt_size();
 
     /*RETRIEVE atomic max size for ATOMIC_NB case */
     size_t atomic_size;
-    ret = fi_atomicvalid(shmem_transport_ofi_epfd, FI_INT64, FI_MAX,
+    ret = fi_atomicvalid(shmem_transport_ofi_epfd, FI_INT64, FI_SUM,
 			&atomic_size);
     if(ret!=0 || (atomic_size == 0)){ //not supported
-	OFI_ERRMSG("atomicvalid failed\n");
+	    OFI_ERRMSG("atomicvalid failed: cannot determine max atomic size for transport\n");
 	return ret;
     }
     shmem_transport_ofi_max_atomic_size = atomic_size * (sizeof(long));
@@ -568,8 +581,16 @@ static inline int atomic_limitations_check(void)
         ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_DT_INT[i], SHM_BOPS[j],
                         &atomic_size);
         if(ret!=0 || atomic_size == 0) {
-           OFI_ERRMSG("ret=%d atomic_size=%d %d %d\n", ret, (int)atomic_size, i, j);
-	   return ret;
+            fprintf(stderr, "Atomic Support: data size %d not "\
+                    "supported with %s ", SHMEM_Dtsize[SHM_DT_INT[i]],
+                    SHM_NAMED_BOPS[j]);
+            if(atomicwarn) {
+                fprintf(stderr, "WARNING\n");
+            } else {
+                OFI_ERRMSG("Error: atomicvalid ret=%d atomic_size=%d \n",
+                            ret, (int)atomic_size);
+	            return ret;
+            }
         }
       }
     }
@@ -580,8 +601,16 @@ static inline int atomic_limitations_check(void)
         ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_DT_CMP[i], SHM_OPS[j],
                         &atomic_size);
         if(ret!=0 || atomic_size == 0) {
-           OFI_ERRMSG("ret=%d atomic_size=%d %d %d\n", ret, (int)atomic_size, i, j);
-	   return ret;
+            fprintf(stderr, "Atomic Support: data size %d not "\
+                    "supported with %s \n", SHMEM_Dtsize[SHM_DT_CMP[i]],
+                    SHM_NAMED_OPS[j]);
+            if(atomicwarn) {
+                fprintf(stderr, "WARNING\n");
+            } else {
+                OFI_ERRMSG("Error: atomicvalid ret=%d atomic_size=%d \n",
+                            ret, (int)atomic_size);
+	            return ret;
+            }
         }
       }
     }
