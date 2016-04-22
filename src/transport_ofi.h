@@ -151,6 +151,11 @@ typedef enum fi_op       shm_internal_op_t;
 #define SHM_INTERNAL_SIGNED_BYTE     FI_INT8
 #define SHM_INTERNAL_INT32           FI_INT32
 #define SHM_INTERNAL_INT64           FI_INT64
+#define SHM_INTERNAL_SHORT           DTYPE_SHORT
+#define SHM_INTERNAL_INT             DTYPE_INT
+#define SHM_INTERNAL_LONG            DTYPE_LONG
+#define SHM_INTERNAL_LONG_LONG       DTYPE_LONG_LONG
+#define SHM_INTERNAL_FORTRAN_INTEGER DTYPE_FORTRAN_INTEGER
 
  // Operations
 #define SHM_INTERNAL_BAND            FI_BAND

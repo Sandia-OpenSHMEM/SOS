@@ -35,7 +35,7 @@ FC_SHMEM_SWAP(fortran_integer_t *target,
     SHMEM_ERR_CHECK_INITIALIZED();
 
     shmem_internal_swap(target, value, &newval, SIZEOF_FORTRAN_INTEGER, 
-			*pe, DTYPE_FORTRAN_INTEGER);
+			*pe, SHM_INTERNAL_FORTRAN_INTEGER);
     shmem_internal_get_wait();
     return newval;
 }
