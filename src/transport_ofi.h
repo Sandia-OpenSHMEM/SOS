@@ -900,4 +900,20 @@ void shmem_transport_ct_wait(shmem_transport_ct_t *ct, long wait_for)
     RAISE_ERROR_STR("OFI transport does not currently support CT operations");
 }
 
+static inline
+uint64_t shmem_transport_received_cntr_get(void)
+{
+    return fi_cntr_read(shmem_transport_ofi_target_cntrfd);
+}
+
+static inline
+void shmem_transport_received_cntr_wait(uint64_t ge_val)
+{
+    int ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd, ge_val, -1);
+
+    if (ret) {
+        RAISE_ERROR(ret);
+    }
+}
+
 #endif /* TRANSPORT_OFI_H */

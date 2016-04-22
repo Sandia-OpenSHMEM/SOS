@@ -97,83 +97,36 @@ shmem_internal_fence(void)
         }                                                \
     } while(0)
 
-#elif defined(USE_PORTALS4)
+#else
 
 #define SHMEM_WAIT(var, value)                                          \
     do {                                                                \
-        int ret;                                                        \
-        ptl_ct_event_t ct;                                              \
+        uint64_t target_cntr;                                           \
                                                                         \
         while (*(var) == value) {                                       \
-            ret = PtlCTGet(shmem_transport_portals4_target_ct_h, &ct);  \
-            if (PTL_OK != ret) { RAISE_ERROR(ret); }                    \
-            if (0 != ct.failure) { RAISE_ERROR_STR("Target CT failure"); } \
+            target_cntr = shmem_transport_received_cntr_get();          \
             COMPILER_FENCE();                                           \
             if (*(var) != value) break;                                 \
-            ret = PtlCTWait(shmem_transport_portals4_target_ct_h,       \
-                            ct.success + 1,                             \
-                            &ct);                                       \
-            if (PTL_OK != ret) { RAISE_ERROR(ret); }                    \
-            if (0 != ct.failure) { RAISE_ERROR_STR("Target CT failure"); } \
+            shmem_transport_received_cntr_wait(target_cntr + 1);        \
         }                                                               \
     } while(0)
 
 #define SHMEM_WAIT_UNTIL(var, cond, value)                              \
     do {                                                                \
-        int ret, cmpret;                                                \
-        ptl_ct_event_t ct;                                              \
+        uint64_t target_cntr;                                           \
+        int cmpret;                                                     \
                                                                         \
         COMP(cond, *(var), value, cmpret);                              \
         while (!cmpret) {                                               \
-            ret = PtlCTGet(shmem_transport_portals4_target_ct_h, &ct);  \
-            if (0 != ct.failure) { RAISE_ERROR_STR("Target CT failure"); } \
-            if (PTL_OK != ret) { RAISE_ERROR(ret); }                    \
+            target_cntr = shmem_transport_received_cntr_get();          \
             COMPILER_FENCE();                                           \
             COMP(cond, *(var), value, cmpret);                          \
             if (cmpret) break;                                          \
-            ret = PtlCTWait(shmem_transport_portals4_target_ct_h,       \
-                            ct.success + 1,                             \
-                            &ct);                                       \
-            if (PTL_OK != ret) { RAISE_ERROR(ret); }                    \
-            if (0 != ct.failure) { RAISE_ERROR_STR("Target CT failure"); } \
+            shmem_transport_received_cntr_wait(target_cntr + 1);        \
             COMP(cond, *(var), value, cmpret);                          \
         }                                                               \
     } while(0)
-#elif defined(USE_OFI)
 
-#define SHMEM_WAIT(var, value)                                          \
-    do {                                                                \
-        int ret;                                                        \
-        uint64_t count;                                                 \
-                                                                        \
-        while (*(var) == value) {                                       \
-            count = fi_cntr_read(shmem_transport_ofi_target_cntrfd);      \
-            COMPILER_FENCE();                                           \
-            if (*(var) != value) break;                                \
-            ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd,         \
-                               (count + 1),-1);                            \
-            if (ret) { RAISE_ERROR(ret); }                              \
-        }                                                               \
-    } while(0)
-
-#define SHMEM_WAIT_UNTIL(var, cond, value)                              \
-    do {                                                                \
-        int ret, cmpret;                                                \
-        uint64_t count;                                                 \
-        COMP(cond, *(var), value, cmpret);                              \
-        while(!cmpret) {                                                \
-           count =  fi_cntr_read(shmem_transport_ofi_target_cntrfd);            \
-           COMPILER_FENCE();                                            \
-           COMP(cond, *(var), value, cmpret);                           \
-           if (cmpret) break;                                           \
-           ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd,                \
-                              (count+1),-1);                                    \
-           if (ret) { RAISE_ERROR(ret); }                               \
-           COMP(cond, *(var), value, cmpret);                           \
-        }                                                               \
-    } while(0)
-#else
-#error "SHMEM_WAIT and SHMEM_WAIT_UNTIL not defined!"
 #endif
 
 #endif

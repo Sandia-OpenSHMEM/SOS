@@ -1235,4 +1235,42 @@ void shmem_transport_ct_wait(shmem_transport_ct_t *ct, long wait_for)
 }
 
 
+static inline
+uint64_t shmem_transport_received_cntr_get(void)
+{
+    int ret;
+    ptl_ct_event_t ct;
+
+    ret = PtlCTGet(shmem_transport_portals4_target_ct_h, &ct);
+
+    if (0 != ct.failure) {
+        RAISE_ERROR_STR("Target CT failure");
+    }
+
+    if (PTL_OK != ret) {
+        RAISE_ERROR(ret);
+    }
+
+    return (uint64_t) ct.success;
+}
+
+
+static inline
+void shmem_transport_received_cntr_wait(uint64_t ge_val)
+{
+    int ret;
+    ptl_ct_event_t ct;
+
+    ret = PtlCTWait(shmem_transport_portals4_target_ct_h,
+                    ge_val, &ct);
+
+    if (PTL_OK != ret) {
+        RAISE_ERROR(ret);
+    }
+
+    if (0 != ct.failure) {
+        RAISE_ERROR_STR("Target CT failure");
+    }
+}
+
 #endif
