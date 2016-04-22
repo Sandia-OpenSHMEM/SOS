@@ -79,7 +79,7 @@ shmem_internal_fence(void)
     } while(0)
 
 
-#if defined(ENABLE_HARD_POLLING) || defined(USE_ON_NODE_COMMS)
+#if defined(ENABLE_HARD_POLLING)
 
 #define SHMEM_WAIT(var, value)                           \
     do {                                                 \
