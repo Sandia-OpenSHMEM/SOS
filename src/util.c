@@ -122,3 +122,28 @@ shmem_util_getenv_str(const char* name)
 
     return NULL;
 }
+
+
+int
+shmem_util_getenv_bool(const char* name, int default_value)
+{
+    char *env_name, *env_value;
+
+    asprintf(&env_name, "SMA_%s", name);
+    env_value = getenv(env_name);
+    free(env_name);
+
+    if (NULL == env_value) {
+        asprintf(&env_name, "SHMEM_%s", name);
+        env_value = getenv(env_name);
+        free(env_name);
+    }
+
+    if (env_value != NULL) {
+        return env_value[0] == '1' ||
+               env_value[0] == 'y' || env_value[0] == 'Y' ||
+               env_value[0] == 't' || env_value[0] == 'T';
+    }
+
+    return default_value;
+ }
