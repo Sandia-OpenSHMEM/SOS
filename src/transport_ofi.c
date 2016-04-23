@@ -47,7 +47,9 @@ struct fid_ep*			shmem_transport_ofi_cntr_epfd;
 struct fid_stx*  		shmem_transport_ofi_stx;
 struct fid_av*             	shmem_transport_ofi_avfd;
 struct fid_cq*              	shmem_transport_ofi_put_nb_cqfd;
+#ifndef ENABLE_HARD_POLLING
 struct fid_cntr*            	shmem_transport_ofi_target_cntrfd;
+#endif
 struct fid_cntr*            	shmem_transport_ofi_put_cntrfd;
 struct fid_cntr*            	shmem_transport_ofi_get_cntrfd;
 #ifdef ENABLE_MR_SCALABLE
@@ -313,12 +315,14 @@ static inline int allocate_recv_cntr_mr(void)
     cntr_attr.events   = FI_CNTR_EVENTS_COMP;
     cntr_attr.flags    = 0;
 
+#ifndef ENABLE_HARD_POLLING
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
                        &shmem_transport_ofi_target_cntrfd, NULL);
     if(ret!=0){
         OFI_ERRMSG("target cntr_open failed\n");
         return ret;
     }
+#endif
 
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, 0, UINT64_MAX,
@@ -330,6 +334,7 @@ static inline int allocate_recv_cntr_mr(void)
     }
 
     // Bind counter with target memory region for incoming messages
+#ifndef ENABLE_HARD_POLLING
     ret = fi_mr_bind(shmem_transport_ofi_target_mrfd,
 		    &shmem_transport_ofi_target_cntrfd->fid,
 		    FI_REMOTE_WRITE | FI_REMOTE_READ);
@@ -346,6 +351,7 @@ static inline int allocate_recv_cntr_mr(void)
 	OFI_ERRMSG("ep_bind mr2epfd failed\n");
 	return ret;
     }
+#endif /* ndef ENABLE_HARD_POLLING */
 
 #else
     /* Register separate data and heap segments using keys 0 and 1,
@@ -369,6 +375,7 @@ static inline int allocate_recv_cntr_mr(void)
     }
 
     /* Bind counter with target memory region for incoming messages */
+#ifndef ENABLE_HARD_POLLING
     ret = fi_mr_bind(shmem_transport_ofi_target_heap_mrfd,
                      &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_WRITE | FI_REMOTE_READ);
@@ -400,6 +407,7 @@ static inline int allocate_recv_cntr_mr(void)
         OFI_ERRMSG("ep_bind mr2epfd data failed\n");
         return ret;
     }
+#endif /* ndef ENABLE_HARD_POLLING */
 #endif
 
     return ret;
@@ -711,6 +719,9 @@ static inline int query_for_fabric(struct fabric_info *info)
                                     implies FI_READ/WRITE FI_REMOTE_READ/WRITE */
                    FI_ATOMICS |  /* request atomics capability */
                    FI_RMA_EVENT; /* want to use remote counters */
+#ifndef ENABLE_HARD_POLLING
+    hints.caps |= FI_RMA_EVENT;
+#endif /* ndef ENABLE_HARD_POLLING */
     hints.addr_format         = FI_FORMAT_UNSPEC;
     hints.mode		      = FI_CONTEXT;
     domain_attr.data_progress = FI_PROGRESS_AUTO;
@@ -912,10 +923,12 @@ int shmem_transport_fini(void)
         OFI_ERRMSG("GET CT close failed (%s)", fi_strerror(errno));
     }
 
+#ifndef ENABLE_HARD_POLLING
     if(shmem_transport_ofi_target_cntrfd &&
 		    fi_close(&shmem_transport_ofi_target_cntrfd->fid)){
         OFI_ERRMSG("Target CT close failed (%s)", fi_strerror(errno));
     }
+#endif
 
     if (shmem_transport_ofi_avfd &&
 		    fi_close(&shmem_transport_ofi_avfd->fid)) {
