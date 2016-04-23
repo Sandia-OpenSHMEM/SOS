@@ -166,6 +166,7 @@ static inline int allocate_endpoints(struct fabric_info *info)
      * counter updates */
     info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | /*SEND ONLY */
                          FI_ATOMICS; /* request atomics capability */
+    info->p_info->caps |= FI_REMOTE_WRITE | FI_REMOTE_READ;
     info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE | FI_INJECT_COMPLETE;
     info->p_info->mode = 0;
     info->p_info->tx_attr->mode = 0;
