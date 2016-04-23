@@ -336,20 +336,20 @@ static inline int allocate_recv_cntr_mr(void)
     // Bind counter with target memory region for incoming messages
 #ifndef ENABLE_HARD_POLLING
     ret = fi_mr_bind(shmem_transport_ofi_target_mrfd,
-		    &shmem_transport_ofi_target_cntrfd->fid,
-		    FI_REMOTE_WRITE | FI_REMOTE_READ);
+                     &shmem_transport_ofi_target_cntrfd->fid,
+                     FI_REMOTE_WRITE | FI_REMOTE_READ);
     if(ret!=0){
-	OFI_ERRMSG("mr_bind failed\n");
-	return ret;
+        OFI_ERRMSG("mr_bind failed\n");
+        return ret;
     }
 
     //bind to endpoint, incoming communication associated with endpoint now has defined resources
     ret = fi_ep_bind(shmem_transport_ofi_epfd,
-		    &shmem_transport_ofi_target_mrfd->fid,
-		    FI_REMOTE_READ | FI_REMOTE_WRITE);
+                     &shmem_transport_ofi_target_mrfd->fid,
+                     FI_REMOTE_READ | FI_REMOTE_WRITE);
     if(ret!=0){
-	OFI_ERRMSG("ep_bind mr2epfd failed\n");
-	return ret;
+        OFI_ERRMSG("ep_bind mr2epfd failed\n");
+        return ret;
     }
 #endif /* ndef ENABLE_HARD_POLLING */
 
@@ -400,6 +400,7 @@ static inline int allocate_recv_cntr_mr(void)
         OFI_ERRMSG("ep_bind mr2epfd heap failed\n");
         return ret;
     }
+
     ret = fi_ep_bind(shmem_transport_ofi_epfd,
                      &shmem_transport_ofi_target_data_mrfd->fid,
                      FI_REMOTE_READ | FI_REMOTE_WRITE);
@@ -541,7 +542,7 @@ static inline int atomic_limitations_check(void)
     /* Retrieve messaging limitations from OFI */
     /* ----------------------------------------*/
 
-    int i, ret = 0;
+    int i, j, ret = 0;
 
     init_dt_size();
 
@@ -560,7 +561,6 @@ static inline int atomic_limitations_check(void)
         RAISE_ERROR(-1);
     }
 
-    int j;
     /* Binary OPS check */
     for(i=0; i<3; i++) {//DT
       for(j=0; j<3; j++) { //OPS
@@ -607,17 +607,22 @@ static inline int exchange_and_av_insert(struct fabric_info *info)
 
     ret = fi_getname((fid_t)shmem_transport_ofi_epfd, epname, &epnamelen);
     if(ret!=0 || (epnamelen > sizeof(epname))){
-	OFI_ERRMSG("PMI get rank failed\n");
-	return ret;
+        OFI_ERRMSG("fi_getname failed\n");
+        return ret;
     }
 
     alladdrs = malloc(info->npes * epnamelen);
     if(alladdrs==NULL){
-	OFI_ERRMSG("alladdrs is NULL\n");
-	return ret;
+        OFI_ERRMSG("alladdrs is NULL\n");
+        return ret;
     }
 
     ret = shmem_runtime_put("OFI", epname, epnamelen);
+    if (ret!=0) {
+        OFI_ERRMSG("shmem_runtime_put failed\n");
+        return ret;
+    }
+
     shmem_runtime_exchange();
     shmem_runtime_barrier();
 
@@ -715,7 +720,7 @@ static inline int query_for_fabric(struct fabric_info *info)
 
     fabric_attr.prov_name = info->prov_name;
 
-    hints.caps	  = FI_RMA |     /* request rma capability
+    hints.caps   = FI_RMA |     /* request rma capability
                                     implies FI_READ/WRITE FI_REMOTE_READ/WRITE */
                    FI_ATOMICS |  /* request atomics capability */
                    FI_RMA_EVENT; /* want to use remote counters */
@@ -813,7 +818,7 @@ int shmem_transport_init(long eager_size)
 
     ret = query_for_fabric(&info);
     if(ret!=0)
-	return ret;
+        return ret;
 
     shmem_transport_ofi_bounce_buffer_size = eager_size;
 
@@ -841,7 +846,7 @@ int shmem_transport_init(long eager_size)
 
     ret = allocate_recv_cntr_mr();
     if(ret!=0)
-	return ret;
+        return ret;
 
     ret = publish_mr_info();
     if (ret != 0)
@@ -849,11 +854,11 @@ int shmem_transport_init(long eager_size)
 
     ret = atomic_limitations_check();
     if(ret!=0)
-	return ret;
+        return ret;
 
     ret = exchange_and_av_insert(&info);
     if(ret!=0)
-	return ret;
+        return ret;
 
     fi_freeinfo(info.fabrics);
 
