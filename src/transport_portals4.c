@@ -78,7 +78,9 @@ ptl_handle_le_t shmem_transport_portals4_le_h = PTL_INVALID_HANDLE;
 ptl_handle_le_t shmem_transport_portals4_data_le_h = PTL_INVALID_HANDLE;
 ptl_handle_le_t shmem_transport_portals4_heap_le_h = PTL_INVALID_HANDLE;
 #endif
+#ifndef ENABLE_HARD_POLLING
 ptl_handle_ct_t shmem_transport_portals4_target_ct_h = PTL_INVALID_HANDLE;
+#endif
 ptl_handle_ct_t shmem_transport_portals4_put_ct_h = PTL_INVALID_HANDLE;
 ptl_handle_ct_t shmem_transport_portals4_get_ct_h = PTL_INVALID_HANDLE;
 ptl_handle_eq_t shmem_transport_portals4_eq_h = PTL_INVALID_HANDLE;
@@ -174,9 +176,11 @@ cleanup_handles(void)
         PtlLEUnlink(shmem_transport_portals4_data_le_h);
     }
 #endif
+#ifndef ENABLE_HARD_POLLING
     if (!PtlHandleIsEqual(shmem_transport_portals4_target_ct_h, PTL_INVALID_HANDLE)) {
         PtlCTFree(shmem_transport_portals4_target_ct_h);
     }
+#endif
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
     if (PTL_PT_ANY != all_pt) {
         PtlPTFree(shmem_transport_portals4_ni_h, all_pt);
@@ -487,6 +491,7 @@ shmem_transport_startup(void)
     }
 #endif
 
+#ifndef ENABLE_HARD_POLLING
     /* target ct */
     ret = PtlCTAlloc(shmem_transport_portals4_ni_h, &shmem_transport_portals4_target_ct_h);
     if (PTL_OK != ret) {
@@ -496,6 +501,7 @@ shmem_transport_startup(void)
     }
 
     le.ct_handle = shmem_transport_portals4_target_ct_h;
+#endif
     le.uid = uid;
     le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
         PTL_LE_EVENT_LINK_DISABLE |
