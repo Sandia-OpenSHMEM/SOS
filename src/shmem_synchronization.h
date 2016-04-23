@@ -141,17 +141,37 @@ shmem_internal_fence(void)
     } while(0)
 #elif defined(USE_OFI)
 
+#if defined(ENABLE_HARD_POLLING) || defined(USE_ON_NODE_COMMS)
+
+#define SHMEM_WAIT(var, value)                                          \
+    do {                                                                \
+        while (*(var) == value) {                                       \
+            COMPILER_FENCE();                                           \
+            if (*(var) != value) break;                                 \
+        }                                                               \
+    }   while(0)
+
+#define SHMEM_WAIT_UNTIL(var, cond, value)                              \
+    do {                                                                \
+        int cmpret;                                                     \
+        do {                                                            \
+            COMP(cond, *(var), value, cmpret);                          \
+        } while (!cmpret);                                              \
+    } while(0)
+
+#else
+
 #define SHMEM_WAIT(var, value)                                          \
     do {                                                                \
         int ret;                                                        \
         uint64_t count;                                                 \
                                                                         \
         while (*(var) == value) {                                       \
-            count = fi_cntr_read(shmem_transport_ofi_target_cntrfd);      \
+            count = fi_cntr_read(shmem_transport_ofi_target_cntrfd);    \
             COMPILER_FENCE();                                           \
-            if (*(var) != value) break;                                \
-            ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd,         \
-                               (count + 1),-1);                            \
+            if (*(var) != value) break;                                 \
+            ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd,       \
+                               (count + 1),-1);                         \
             if (ret) { RAISE_ERROR(ret); }                              \
         }                                                               \
     } while(0)
@@ -162,16 +182,20 @@ shmem_internal_fence(void)
         uint64_t count;                                                 \
         COMP(cond, *(var), value, cmpret);                              \
         while(!cmpret) {                                                \
-           count =  fi_cntr_read(shmem_transport_ofi_target_cntrfd);            \
+           count =  fi_cntr_read(shmem_transport_ofi_target_cntrfd);    \
            COMPILER_FENCE();                                            \
            COMP(cond, *(var), value, cmpret);                           \
            if (cmpret) break;                                           \
-           ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd,                \
-                              (count+1),-1);                                    \
+           ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd,        \
+                              (count+1),-1);                            \
            if (ret) { RAISE_ERROR(ret); }                               \
            COMP(cond, *(var), value, cmpret);                           \
         }                                                               \
     } while(0)
+
+
+#endif /* if defined(ENABLE_HARD_POLLING) || defined(USE_ON_NODE_COMMS) */
+
 #else
 #error "SHMEM_WAIT and SHMEM_WAIT_UNTIL not defined!"
 #endif
