@@ -169,7 +169,7 @@ void static inline shmem_internal_reduce_local(shm_internal_op_t op,
         REDUCE_LOCAL_DTYPE_CASE_CPLX(SHM_INTERNAL_FLOAT_COMPLEX, float_complex, float complex);
         REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_INT64, int64, int64_t);
         REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_INT32, int32, int32_t);
-        REDUCE_LOCAL_DTYPE_CASE_INT(DTYPE_SHORT, short, short);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_SHORT, short, short);
         REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_SIGNED_BYTE, int8, int8_t);
 
         default:

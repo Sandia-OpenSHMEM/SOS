@@ -42,7 +42,7 @@ shmem_internal_clear_lock(volatile long *lockp)
 
     /* release the lock if I'm the last to try to obtain it */
     cond = shmem_internal_my_pe + 1;
-    shmem_internal_cswap(&(lock->last), &zero, &curr, &cond, sizeof(int), 0, DTYPE_INT);
+    shmem_internal_cswap(&(lock->last), &zero, &curr, &cond, sizeof(int), 0, SHM_INTERNAL_INT);
     shmem_internal_get_wait();
 
     /* if local PE was not the last to hold the lock, have to look for the next in line */
@@ -58,7 +58,7 @@ shmem_internal_clear_lock(volatile long *lockp)
         }
 
         /* set the signal bit on new lock holder */
-        shmem_internal_mswap(&(lock->data), &sig, &curr, &sig, sizeof(int), NEXT(lock->data) - 1, DTYPE_INT);
+        shmem_internal_mswap(&(lock->data), &sig, &curr, &sig, sizeof(int), NEXT(lock->data) - 1, SHM_INTERNAL_INT);
         shmem_internal_get_wait();
     }
 }
@@ -75,11 +75,11 @@ shmem_internal_set_lock(volatile long *lockp)
     shmem_internal_quiet();
 
     /* update last with my value to add me to the queue */
-    shmem_internal_swap(&(lock->last), &me, &curr, sizeof(int), 0, DTYPE_INT);
+    shmem_internal_swap(&(lock->last), &me, &curr, sizeof(int), 0, SHM_INTERNAL_INT);
     shmem_internal_get_wait();
     /* If I wasn't the first, need to add myself to the previous last's next */
     if (0 != curr) {
-        shmem_internal_mswap(&(lock->data), &me, &curr, &next_mask, sizeof(int), curr - 1, DTYPE_INT);
+        shmem_internal_mswap(&(lock->data), &me, &curr, &next_mask, sizeof(int), curr - 1, SHM_INTERNAL_INT);
         shmem_internal_get_wait();
         /* now wait for the signal part of data to be non-zero */
         for (;;) {
@@ -105,7 +105,7 @@ shmem_internal_test_lock(volatile long *lockp)
     shmem_internal_quiet();
 
     /* add self to last if and only if the lock is zero (ie, no one has the lock) */
-    shmem_internal_cswap(&(lock->last), &me, &curr, &zero, sizeof(int), 0, DTYPE_INT);
+    shmem_internal_cswap(&(lock->last), &me, &curr, &zero, sizeof(int), 0, SHM_INTERNAL_INT);
     shmem_internal_get_wait();
     if (0 == curr) {
         return 0;

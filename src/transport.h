@@ -33,6 +33,11 @@
 #define SHM_INTERNAL_SIGNED_BYTE     -1
 #define SHM_INTERNAL_INT32           -1
 #define SHM_INTERNAL_INT64           -1
+#define SHM_INTERNAL_SHORT           -1
+#define SHM_INTERNAL_INT             -1
+#define SHM_INTERNAL_LONG            -1
+#define SHM_INTERNAL_LONG_LONG       -1
+#define SHM_INTERNAL_FORTRAN_INTEGER -1
 
  // Operations
 #define SHM_INTERNAL_BAND            -1
