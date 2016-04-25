@@ -180,5 +180,5 @@ options.
         identifying the desired fabric domain.
 
     SMA_OFI_ATOMIC_CHECKS_WARN (default: off)
-        OFI will not abort if fabric provider doesn't support every data type x op
-        combination, instead it will print a warning.
+        If defined, OFI will not abort if fabric provider doesn't support every data
+        type x op combination, instead it will print a warning.

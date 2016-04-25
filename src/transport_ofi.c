@@ -104,10 +104,20 @@ static int SHM_DT_INT[]=
   SHM_INTERNAL_SHORT, SHM_INTERNAL_INT, SHM_INTERNAL_LONG,
 };
 
+static char * SHM_NAMED_DT_INT[]=
+{
+  "Short", "Int", "Long",
+};
+
 static int SHM_DT_CMP[]=
 {
   SHM_INTERNAL_SHORT, SHM_INTERNAL_INT, SHM_INTERNAL_LONG,
   SHM_INTERNAL_FLOAT, SHM_INTERNAL_DOUBLE
+};
+
+static char * SHM_NAMED_DT_CMP[]=
+{
+  "Short", "Int", "Long", "Float", "Double",
 };
 
 static int SHM_BOPS[]=
@@ -556,7 +566,8 @@ static inline int atomic_limitations_check(void)
     int i, j, ret = 0;
     long atomicwarn = 0;
 
-    atomicwarn = shmem_util_getenv_long("OFI_ATOMIC_CHECKS_WARN", 0, 0);
+    if(NULL != shmem_util_getenv_str("OFI_ATOMIC_CHECKS_WARN"))
+        atomicwarn = 1;
 
     init_dt_size();
 
@@ -581,12 +592,10 @@ static inline int atomic_limitations_check(void)
         ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_DT_INT[i], SHM_BOPS[j],
                         &atomic_size);
         if(ret!=0 || atomic_size == 0) {
-            fprintf(stderr, "Atomic Support: data size %d not "\
-                    "supported with %s ", SHMEM_Dtsize[SHM_DT_INT[i]],
-                    SHM_NAMED_BOPS[j]);
-            if(atomicwarn) {
-                fprintf(stderr, "WARNING\n");
-            } else {
+            fprintf(stderr, "%s OFI detected no support for atomic '%s'"
+                    "on type '%s'\n", (atomicwarn ? "Warning" : "Error"),
+                    SHM_NAMED_BOPS[j], SHM_NAMED_DT_INT[i]);
+            if(!atomicwarn) {
                 OFI_ERRMSG("Error: atomicvalid ret=%d atomic_size=%d \n",
                             ret, (int)atomic_size);
 	            return ret;
@@ -601,12 +610,10 @@ static inline int atomic_limitations_check(void)
         ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_DT_CMP[i], SHM_OPS[j],
                         &atomic_size);
         if(ret!=0 || atomic_size == 0) {
-            fprintf(stderr, "Atomic Support: data size %d not "\
-                    "supported with %s \n", SHMEM_Dtsize[SHM_DT_CMP[i]],
-                    SHM_NAMED_OPS[j]);
-            if(atomicwarn) {
-                fprintf(stderr, "WARNING\n");
-            } else {
+            fprintf(stderr, "%s OFI detected no support for atomic '%s'"
+                    "on type '%s'\n", (atomicwarn ? "Warning" : "Error"),
+                    SHM_NAMED_OPS[j], SHM_NAMED_DT_CMP[i]);
+            if(!atomicwarn) {
                 OFI_ERRMSG("Error: atomicvalid ret=%d atomic_size=%d \n",
                             ret, (int)atomic_size);
 	            return ret;
