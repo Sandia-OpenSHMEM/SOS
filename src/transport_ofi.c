@@ -101,44 +101,46 @@ static inline void init_dt_size(void)
 
 static int SHM_DT_INT[]=
 {
-  SHM_INTERNAL_SHORT, SHM_INTERNAL_INT, SHM_INTERNAL_LONG,
+  SHM_INTERNAL_INT, SHM_INTERNAL_LONG, SHM_INTERNAL_LONG_LONG, SHM_INTERNAL_SHORT
 };
 
 static char * SHM_NAMED_DT_INT[]=
 {
-  "Short", "Int", "Long",
+  "Int", "Long", "Long Long", "Short"
 };
 
 static int SHM_DT_CMP[]=
 {
-  SHM_INTERNAL_SHORT, SHM_INTERNAL_INT, SHM_INTERNAL_LONG,
-  SHM_INTERNAL_FLOAT, SHM_INTERNAL_DOUBLE
+  SHM_INTERNAL_INT, SHM_INTERNAL_LONG, SHM_INTERNAL_FLOAT,
+  SHM_INTERNAL_DOUBLE, SHM_INTERNAL_LONG_LONG, SHM_INTERNAL_SHORT
 };
 
 static char * SHM_NAMED_DT_CMP[]=
 {
-  "Short", "Int", "Long", "Float", "Double",
+  "Int", "Long", "Float", "Double", "Long Long", "Short"
 };
 
 static int SHM_BOPS[]=
 {
-  SHM_INTERNAL_BAND, SHM_INTERNAL_BOR, SHM_INTERNAL_BXOR,
+  SHM_INTERNAL_BAND, SHM_INTERNAL_BOR, SHM_INTERNAL_BXOR
 };
 
 static char * SHM_NAMED_BOPS[]=
 {
-  "Bitwise AND", "Bitwise OR", "Bitwise XOR",
+  "Bitwise AND", "Bitwise OR", "Bitwise XOR"
 };
 
 static int SHM_OPS[]=
 {
-  SHM_INTERNAL_MIN,  SHM_INTERNAL_MAX, SHM_INTERNAL_SUM,
-  SHM_INTERNAL_PROD,
+  SHM_INTERNAL_MIN,  SHM_INTERNAL_MAX, SHM_INTERNAL_PROD,
+  SHM_INTERNAL_SUM, FI_ATOMIC_WRITE, FI_ATOMIC_READ, FI_CSWAP,
+  FI_MSWAP
 };
 
 static char * SHM_NAMED_OPS[]=
 {
-  "MIN", "MAX", "SUM", "PROD",
+  "MIN", "MAX", "PROD", "SUM", "SUM", "WRITE", "READ", "CSWAP",
+  "MSWAP"
 };
 
 int shmem_transport_have_long_double = 1;
@@ -556,6 +558,24 @@ static int populate_mr_tables(void)
     return 0;
 }
 
+static inline int atomicvalid_rtncheck(int ret, int atomic_size, long atomicwarn,
+                                    char strOP[], char strDT[]) {
+
+    if(ret != 0 || atomic_size == 0) {
+        fprintf(stderr, "%s OFI detected no support for atomic '%s'"
+               "on type '%s'\n", (atomicwarn ? "Warning" : "Error"),
+                strOP, strDT);
+        if(!atomicwarn) {
+            OFI_ERRMSG("Error: atomicvalid ret=%d atomic_size=%d \n",
+                       ret, atomic_size);
+	        return ret;
+        }
+    }
+
+    return ret;
+}
+
+
 static inline int atomic_limitations_check(void)
 {
 
@@ -577,7 +597,7 @@ static inline int atomic_limitations_check(void)
 			&atomic_size);
     if(ret!=0 || (atomic_size == 0)){ //not supported
 	    OFI_ERRMSG("atomicvalid failed: cannot determine max atomic size for transport\n");
-	return ret;
+	    return ret;
     }
     shmem_transport_ofi_max_atomic_size = atomic_size * (sizeof(long));
 
@@ -587,48 +607,65 @@ static inline int atomic_limitations_check(void)
     }
 
     /* Binary OPS check */
-    for(i=0; i<3; i++) {//DT
+    for(i=0; i<4; i++) {//DT
       for(j=0; j<3; j++) { //OPS
         ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_DT_INT[i], SHM_BOPS[j],
                         &atomic_size);
-        if(ret!=0 || atomic_size == 0) {
-            fprintf(stderr, "%s OFI detected no support for atomic '%s'"
-                    "on type '%s'\n", (atomicwarn ? "Warning" : "Error"),
-                    SHM_NAMED_BOPS[j], SHM_NAMED_DT_INT[i]);
-            if(!atomicwarn) {
-                OFI_ERRMSG("Error: atomicvalid ret=%d atomic_size=%d \n",
-                            ret, (int)atomic_size);
-	            return ret;
-            }
-        }
+         if(atomicvalid_rtncheck(ret, atomic_size, atomicwarn,
+                            SHM_NAMED_BOPS[j], SHM_NAMED_DT_INT[i]))
+           return ret;
       }
     }
 
     /* OTHER OPS check */
-    for(i=0; i<5; i++) {//DT
+    for(i=0; i<6; i++) {//DT
       for(j=0; j<4; j++) { //OPS
         ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_DT_CMP[i], SHM_OPS[j],
                         &atomic_size);
-        if(ret!=0 || atomic_size == 0) {
-            fprintf(stderr, "%s OFI detected no support for atomic '%s'"
-                    "on type '%s'\n", (atomicwarn ? "Warning" : "Error"),
-                    SHM_NAMED_OPS[j], SHM_NAMED_DT_CMP[i]);
-            if(!atomicwarn) {
-                OFI_ERRMSG("Error: atomicvalid ret=%d atomic_size=%d \n",
-                            ret, (int)atomic_size);
-	            return ret;
-            }
-        }
+         if(atomicvalid_rtncheck(ret, atomic_size, atomicwarn,
+                            SHM_NAMED_OPS[j], SHM_NAMED_DT_CMP[i]))
+           return ret;
+      }
+    }
+
+    for(i=0; i<3; i++) {//DT does not include short
+      ret = fi_compare_atomicvalid(shmem_transport_ofi_epfd, SHM_DT_INT[i], FI_CSWAP,
+                        &atomic_size);
+      if(atomicvalid_rtncheck(ret, atomic_size, atomicwarn,
+                        "FI_CSWAP", SHM_NAMED_DT_INT[i]))
+        return ret;
+
+      ret = fi_fetch_atomicvalid(shmem_transport_ofi_epfd, SHM_DT_INT[i], FI_SUM,
+                        &atomic_size);
+      if(atomicvalid_rtncheck(ret, atomic_size, atomicwarn,
+                        "FI_SUM", SHM_NAMED_DT_INT[i]))
+        return ret;
+    }
+
+    ret = fi_compare_atomicvalid(shmem_transport_ofi_epfd, SHM_INTERNAL_INT, FI_MSWAP,
+                        &atomic_size);
+     if(atomicvalid_rtncheck(ret, atomic_size, atomicwarn,
+                        "FI_MSWAP", "Int"))
+       return ret;
+
+    for(i=0; i<5; i++) {//DT
+      for(j=4; j<6; j++) { //OPS
+        ret = fi_fetch_atomicvalid(shmem_transport_ofi_epfd, SHM_DT_CMP[i], SHM_OPS[j],
+                        &atomic_size);
+        if(atomicvalid_rtncheck(ret, atomic_size, atomicwarn,
+                            SHM_NAMED_OPS[j], SHM_NAMED_DT_CMP[i]))
+          return ret;
       }
     }
 
     /* LONG DOUBLE limitation is common */
     for(j=0; j<4; j++) { //OPS
-        ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_INTERNAL_LONG_DOUBLE, SHM_OPS[j], &atomic_size);
-        if(ret!=0 || atomic_size == 0) {
-		shmem_transport_have_long_double = 0;
+      ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_INTERNAL_LONG_DOUBLE, SHM_OPS[j],
+                &atomic_size);
+      if(ret!=0 || atomic_size == 0) {
+	    shmem_transport_have_long_double = 0;
 		break;
-	}
+	  }
     }
 
     return 0;

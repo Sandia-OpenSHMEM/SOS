@@ -480,7 +480,7 @@ shmem_longlong_min_to_all(long long *target, const long long *source,
 
     shmem_internal_op_to_all(target, source, nreduce, sizeof(long long),
                     PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_MIN, SHM_INTERNAL_LONG);
+                    pWrk, pSync, SHM_INTERNAL_MIN, SHM_INTERNAL_LONG_LONG);
 }
 
 
