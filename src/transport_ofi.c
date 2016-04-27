@@ -598,13 +598,11 @@ static inline int atomic_limitations_check(void)
     return 0;
 }
 
-static inline int exchange_and_av_insert(struct fabric_info *info)
+static inline int publish_av_info(struct fabric_info *info)
 {
-    int                 i, rank = 0, ret = 0;
-    char   epname[128], *alladdrs = NULL;
+    int    ret = 0;
+    char   epname[128];
     size_t epnamelen = sizeof(epname);
-
-    rank = shmem_runtime_get_rank();
 
     ret = fi_getname((fid_t)shmem_transport_ofi_epfd, epname, &epnamelen);
     if(ret!=0 || (epnamelen > sizeof(epname))){
@@ -612,38 +610,47 @@ static inline int exchange_and_av_insert(struct fabric_info *info)
         return ret;
     }
 
-    alladdrs = malloc(info->npes * epnamelen);
-    if(alladdrs==NULL){
-        OFI_ERRMSG("alladdrs is NULL\n");
+    ret = shmem_runtime_put("fi_epname", epname, epnamelen);
+    if (ret != 0) {
+        OFI_ERRMSG("shmem_runtime_put failed\n");
         return ret;
     }
 
-    ret = shmem_runtime_put("OFI", epname, epnamelen);
+    ret = shmem_runtime_put("fi_epnamelen", &epnamelen, sizeof(size_t));
     if (ret!=0) {
         OFI_ERRMSG("shmem_runtime_put failed\n");
         return ret;
     }
 
-    shmem_runtime_exchange();
-    shmem_runtime_barrier();
+    return ret;
+}
 
-    for(i=0; i<info->npes; i++)
-    {
-	    void *tgt = alladdrs + i*epnamelen;
-	    if (i == rank) {
-		    memcpy(tgt, epname, epnamelen);
-	    } else {
-		    shmem_runtime_get(i,"OFI", tgt, epnamelen);
-	    }
+static inline int populate_av()
+{
+    int    i, ret = 0;
+    char   *alladdrs = NULL, *addr_ptr;
+    size_t max_epnamelen = 128;
+
+    alladdrs = malloc(shmem_internal_num_pes * max_epnamelen);
+    if (alladdrs == NULL) {
+        OFI_ERRMSG("Out of memory allocating 'alladdrs'\n");
+        return ret;
+    }
+
+    for (i = 0, addr_ptr = alladdrs; i < shmem_internal_num_pes; i++) {
+            size_t epnamelen;
+            shmem_runtime_get(i, "fi_epnamelen", &epnamelen, sizeof(size_t));
+            shmem_runtime_get(i, "fi_epname", addr_ptr, epnamelen);
+            addr_ptr += epnamelen;
     }
 
     ret = fi_av_insert(shmem_transport_ofi_avfd,
             alladdrs,
-            info->npes,
+            shmem_internal_num_pes,
             addr_table,
             0,
 	    NULL);
-    if(ret!=info->npes){
+    if (ret != shmem_internal_num_pes) {
 	OFI_ERRMSG("av insert failed\n");
 	return ret;
     }
@@ -857,7 +864,7 @@ int shmem_transport_init(long eager_size)
     if(ret!=0)
         return ret;
 
-    ret = exchange_and_av_insert(&info);
+    ret = publish_av_info(&info);
     if(ret!=0)
         return ret;
 
@@ -872,6 +879,10 @@ int shmem_transport_startup(void)
 
     ret = populate_mr_tables();
     if (ret != 0)
+        return ret;
+
+    ret = populate_av();
+    if(ret!=0)
         return ret;
 
     return 0;
