@@ -645,14 +645,14 @@ static inline int populate_av()
     }
 
     ret = fi_av_insert(shmem_transport_ofi_avfd,
-            alladdrs,
-            shmem_internal_num_pes,
-            addr_table,
-            0,
-	    NULL);
+                       alladdrs,
+                       shmem_internal_num_pes,
+                       addr_table,
+                       0,
+                       NULL);
     if (ret != shmem_internal_num_pes) {
-	OFI_ERRMSG("av insert failed\n");
-	return ret;
+        OFI_ERRMSG("av insert failed\n");
+        return ret;
     }
 
     free(alladdrs);
