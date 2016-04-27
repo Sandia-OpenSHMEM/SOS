@@ -250,6 +250,28 @@ void shmem_transport_get_ct(shmem_transport_ct_t *ct, void
     RAISE_ERROR_STR("No path to peer");
 }
 
+/**
+ * Query the value of the transport's received messages counter.
+ */
+static inline
+uint64_t shmem_transport_received_cntr_get(void)
+{
+    RAISE_ERROR_STR("No remote peers");
+    return 0;
+}
+
+/**
+ * Wait for the transport's received messages counter to be greater than or
+ * equal to the given value.
+ *
+ * @param ge_val Function returns when received messages >= ge_val
+ */
+static inline
+void shmem_transport_received_cntr_wait(uint64_t ge_val)
+{
+    RAISE_ERROR_STR("No remote peers");
+}
+
 #endif /* Transport selection */
 
 #endif /* TRANSPORT_H */

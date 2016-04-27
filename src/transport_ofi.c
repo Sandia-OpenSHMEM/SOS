@@ -47,7 +47,9 @@ struct fid_ep*			shmem_transport_ofi_cntr_epfd;
 struct fid_stx*  		shmem_transport_ofi_stx;
 struct fid_av*             	shmem_transport_ofi_avfd;
 struct fid_cq*              	shmem_transport_ofi_put_nb_cqfd;
+#ifndef ENABLE_HARD_POLLING
 struct fid_cntr*            	shmem_transport_ofi_target_cntrfd;
+#endif
 struct fid_cntr*            	shmem_transport_ofi_put_cntrfd;
 struct fid_cntr*            	shmem_transport_ofi_get_cntrfd;
 #ifdef ENABLE_MR_SCALABLE
@@ -164,6 +166,7 @@ static inline int allocate_endpoints(struct fabric_info *info)
      * counter updates */
     info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | /*SEND ONLY */
                          FI_ATOMICS; /* request atomics capability */
+    info->p_info->caps |= FI_REMOTE_WRITE | FI_REMOTE_READ;
     info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE | FI_INJECT_COMPLETE;
     info->p_info->mode = 0;
     info->p_info->tx_attr->mode = 0;
@@ -313,12 +316,14 @@ static inline int allocate_recv_cntr_mr(void)
     cntr_attr.events   = FI_CNTR_EVENTS_COMP;
     cntr_attr.flags    = 0;
 
+#ifndef ENABLE_HARD_POLLING
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
                        &shmem_transport_ofi_target_cntrfd, NULL);
     if(ret!=0){
         OFI_ERRMSG("target cntr_open failed\n");
         return ret;
     }
+#endif
 
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, 0, UINT64_MAX,
@@ -330,22 +335,24 @@ static inline int allocate_recv_cntr_mr(void)
     }
 
     // Bind counter with target memory region for incoming messages
+#ifndef ENABLE_HARD_POLLING
     ret = fi_mr_bind(shmem_transport_ofi_target_mrfd,
-		    &shmem_transport_ofi_target_cntrfd->fid,
-		    FI_REMOTE_WRITE | FI_REMOTE_READ);
+                     &shmem_transport_ofi_target_cntrfd->fid,
+                     FI_REMOTE_WRITE | FI_REMOTE_READ);
     if(ret!=0){
-	OFI_ERRMSG("mr_bind failed\n");
-	return ret;
+        OFI_ERRMSG("mr_bind failed\n");
+        return ret;
     }
 
     //bind to endpoint, incoming communication associated with endpoint now has defined resources
     ret = fi_ep_bind(shmem_transport_ofi_epfd,
-		    &shmem_transport_ofi_target_mrfd->fid,
-		    FI_REMOTE_READ | FI_REMOTE_WRITE);
+                     &shmem_transport_ofi_target_mrfd->fid,
+                     FI_REMOTE_READ | FI_REMOTE_WRITE);
     if(ret!=0){
-	OFI_ERRMSG("ep_bind mr2epfd failed\n");
-	return ret;
+        OFI_ERRMSG("ep_bind mr2epfd failed\n");
+        return ret;
     }
+#endif /* ndef ENABLE_HARD_POLLING */
 
 #else
     /* Register separate data and heap segments using keys 0 and 1,
@@ -369,6 +376,7 @@ static inline int allocate_recv_cntr_mr(void)
     }
 
     /* Bind counter with target memory region for incoming messages */
+#ifndef ENABLE_HARD_POLLING
     ret = fi_mr_bind(shmem_transport_ofi_target_heap_mrfd,
                      &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_WRITE | FI_REMOTE_READ);
@@ -393,6 +401,7 @@ static inline int allocate_recv_cntr_mr(void)
         OFI_ERRMSG("ep_bind mr2epfd heap failed\n");
         return ret;
     }
+
     ret = fi_ep_bind(shmem_transport_ofi_epfd,
                      &shmem_transport_ofi_target_data_mrfd->fid,
                      FI_REMOTE_READ | FI_REMOTE_WRITE);
@@ -400,6 +409,7 @@ static inline int allocate_recv_cntr_mr(void)
         OFI_ERRMSG("ep_bind mr2epfd data failed\n");
         return ret;
     }
+#endif /* ndef ENABLE_HARD_POLLING */
 #endif
 
     return ret;
@@ -533,7 +543,7 @@ static inline int atomic_limitations_check(void)
     /* Retrieve messaging limitations from OFI */
     /* ----------------------------------------*/
 
-    int i, ret = 0;
+    int i, j, ret = 0;
 
     init_dt_size();
 
@@ -552,7 +562,6 @@ static inline int atomic_limitations_check(void)
         RAISE_ERROR(-1);
     }
 
-    int j;
     /* Binary OPS check */
     for(i=0; i<3; i++) {//DT
       for(j=0; j<3; j++) { //OPS
@@ -599,17 +608,22 @@ static inline int exchange_and_av_insert(struct fabric_info *info)
 
     ret = fi_getname((fid_t)shmem_transport_ofi_epfd, epname, &epnamelen);
     if(ret!=0 || (epnamelen > sizeof(epname))){
-	OFI_ERRMSG("PMI get rank failed\n");
-	return ret;
+        OFI_ERRMSG("fi_getname failed\n");
+        return ret;
     }
 
     alladdrs = malloc(info->npes * epnamelen);
     if(alladdrs==NULL){
-	OFI_ERRMSG("alladdrs is NULL\n");
-	return ret;
+        OFI_ERRMSG("alladdrs is NULL\n");
+        return ret;
     }
 
     ret = shmem_runtime_put("OFI", epname, epnamelen);
+    if (ret!=0) {
+        OFI_ERRMSG("shmem_runtime_put failed\n");
+        return ret;
+    }
+
     shmem_runtime_exchange();
     shmem_runtime_barrier();
 
@@ -707,10 +721,13 @@ static inline int query_for_fabric(struct fabric_info *info)
 
     fabric_attr.prov_name = info->prov_name;
 
-    hints.caps	  = FI_RMA |     /* request rma capability
+    hints.caps   = FI_RMA |     /* request rma capability
                                     implies FI_READ/WRITE FI_REMOTE_READ/WRITE */
                    FI_ATOMICS |  /* request atomics capability */
                    FI_RMA_EVENT; /* want to use remote counters */
+#ifndef ENABLE_HARD_POLLING
+    hints.caps |= FI_RMA_EVENT;
+#endif /* ndef ENABLE_HARD_POLLING */
     hints.addr_format         = FI_FORMAT_UNSPEC;
     hints.mode		      = FI_CONTEXT;
     domain_attr.data_progress = FI_PROGRESS_AUTO;
@@ -802,7 +819,7 @@ int shmem_transport_init(long eager_size)
 
     ret = query_for_fabric(&info);
     if(ret!=0)
-	return ret;
+        return ret;
 
     shmem_transport_ofi_bounce_buffer_size = eager_size;
 
@@ -830,7 +847,7 @@ int shmem_transport_init(long eager_size)
 
     ret = allocate_recv_cntr_mr();
     if(ret!=0)
-	return ret;
+        return ret;
 
     ret = publish_mr_info();
     if (ret != 0)
@@ -838,11 +855,11 @@ int shmem_transport_init(long eager_size)
 
     ret = atomic_limitations_check();
     if(ret!=0)
-	return ret;
+        return ret;
 
     ret = exchange_and_av_insert(&info);
     if(ret!=0)
-	return ret;
+        return ret;
 
     fi_freeinfo(info.fabrics);
 
@@ -912,10 +929,12 @@ int shmem_transport_fini(void)
         OFI_ERRMSG("GET CT close failed (%s)", fi_strerror(errno));
     }
 
+#ifndef ENABLE_HARD_POLLING
     if(shmem_transport_ofi_target_cntrfd &&
 		    fi_close(&shmem_transport_ofi_target_cntrfd->fid)){
         OFI_ERRMSG("Target CT close failed (%s)", fi_strerror(errno));
     }
+#endif
 
     if (shmem_transport_ofi_avfd &&
 		    fi_close(&shmem_transport_ofi_avfd->fid)) {

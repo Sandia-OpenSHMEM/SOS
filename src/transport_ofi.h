@@ -36,7 +36,9 @@ extern struct fid_ep*			shmem_transport_ofi_cntr_epfd;
 extern struct fid_stx*  		shmem_transport_ofi_stx;
 extern struct fid_av*             	shmem_transport_ofi_avfd;
 extern struct fid_cq*              	shmem_transport_ofi_put_nb_cqfd;
+#ifndef ENABLE_HARD_POLLING
 extern struct fid_cntr*            	shmem_transport_ofi_target_cntrfd;
+#endif
 extern struct fid_cntr*            	shmem_transport_ofi_put_cntrfd;
 extern struct fid_cntr*            	shmem_transport_ofi_get_cntrfd;
 #ifndef ENABLE_MR_SCALABLE
@@ -903,6 +905,31 @@ static inline
 void shmem_transport_ct_wait(shmem_transport_ct_t *ct, long wait_for)
 {
     RAISE_ERROR_STR("OFI transport does not currently support CT operations");
+}
+
+static inline
+uint64_t shmem_transport_received_cntr_get(void)
+{
+#ifndef ENABLE_HARD_POLLING
+    return fi_cntr_read(shmem_transport_ofi_target_cntrfd);
+#else
+    RAISE_ERROR_STR("OFI transport configured for hard polling");
+    return 0;
+#endif
+}
+
+static inline
+void shmem_transport_received_cntr_wait(uint64_t ge_val)
+{
+#ifndef ENABLE_HARD_POLLING
+    int ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd, ge_val, -1);
+
+    if (ret) {
+        RAISE_ERROR(ret);
+    }
+#else
+    RAISE_ERROR_STR("OFI transport configured for hard polling");
+#endif
 }
 
 #endif /* TRANSPORT_OFI_H */

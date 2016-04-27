@@ -67,7 +67,9 @@ extern ptl_handle_md_t shmem_transport_portals4_put_volatile_md_h;
 extern ptl_handle_md_t shmem_transport_portals4_put_cntr_md_h;
 extern ptl_handle_md_t shmem_transport_portals4_put_event_md_h;
 extern ptl_handle_md_t shmem_transport_portals4_get_md_h;
+#ifndef ENABLE_HARD_POLLING
 extern ptl_handle_ct_t shmem_transport_portals4_target_ct_h;
+#endif
 extern ptl_handle_ct_t shmem_transport_portals4_put_ct_h;
 extern ptl_handle_ct_t shmem_transport_portals4_get_ct_h;
 extern ptl_handle_eq_t shmem_transport_portals4_eq_h;
@@ -1238,5 +1240,52 @@ void shmem_transport_ct_wait(shmem_transport_ct_t *ct, long wait_for)
     }
 }
 
+
+static inline
+uint64_t shmem_transport_received_cntr_get(void)
+{
+#ifndef ENABLE_HARD_POLLING
+    int ret;
+    ptl_ct_event_t ct;
+
+    ret = PtlCTGet(shmem_transport_portals4_target_ct_h, &ct);
+
+    if (0 != ct.failure) {
+        RAISE_ERROR_STR("Target CT failure");
+    }
+
+    if (PTL_OK != ret) {
+        RAISE_ERROR(ret);
+    }
+
+    return (uint64_t) ct.success;
+#else
+    RAISE_ERROR_STR("Portals transport configured for hard polling");
+    return 0;
+#endif
+}
+
+
+static inline
+void shmem_transport_received_cntr_wait(uint64_t ge_val)
+{
+#ifndef ENABLE_HARD_POLLING
+    int ret;
+    ptl_ct_event_t ct;
+
+    ret = PtlCTWait(shmem_transport_portals4_target_ct_h,
+                    ge_val, &ct);
+
+    if (PTL_OK != ret) {
+        RAISE_ERROR(ret);
+    }
+
+    if (0 != ct.failure) {
+        RAISE_ERROR_STR("Target CT failure");
+    }
+#else
+    RAISE_ERROR_STR("Portals transport configured for hard polling");
+#endif
+}
 
 #endif
