@@ -591,9 +591,16 @@ static inline int atomic_limitations_check(void)
 
 static inline int exchange_and_av_insert(struct fabric_info *info)
 {
-    int                 i, rank = 0, ret = 0;
-    char   epname[128], *alladdrs = NULL;
-    size_t epnamelen = sizeof(epname);
+    int    i, rank = 0, ret = 0;
+    size_t epnamelen = 128, full_ep_len = epnamelen + HOST_NAME_MAX, adrlen = 0;
+    char   epname[full_ep_len], *alladdrs = NULL, *epnamebuff = NULL;
+#ifdef USE_ON_NODE_COMMS
+    int num_on_node = 0
+    size_t pidlen = HOST_NAME_MAX;
+    full_ep_len = pidlen;
+#else
+    full_ep_len = 0; /* full_ep_len = epnamelen */
+#endif
 
     rank = shmem_runtime_get_rank();
 
@@ -603,24 +610,44 @@ static inline int exchange_and_av_insert(struct fabric_info *info)
 	return ret;
     }
 
+    full_ep_len = full_ep_len + epnamelen;
+    epnamebuff = malloc(full_ep_len);
+
     alladdrs = malloc(info->npes * epnamelen);
     if(alladdrs==NULL){
 	OFI_ERRMSG("alladdrs is NULL\n");
 	return ret;
     }
 
-    ret = shmem_runtime_put("OFI", epname, epnamelen);
+#ifdef USE_ON_NODE_COMMS
+    gethostname(&epname[epnamelen], pidlen);
+#endif
+
+    ret = shmem_runtime_put("OFI", epname, full_ep_len);
     shmem_runtime_exchange();
     shmem_runtime_barrier();
 
     for(i=0; i<info->npes; i++)
     {
-	    void *tgt = alladdrs + i*epnamelen;
+	    adrlen = i*epnamelen;
+
 	    if (i == rank) {
-		    memcpy(tgt, epname, epnamelen);
+		    memcpy(epnamebuff, epname, full_ep_len);
 	    } else {
-		    shmem_runtime_get(i,"OFI", tgt, epnamelen);
-	    }
+		    shmem_runtime_get(i,"OFI", epnamebuff, full_ep_len);
+        }
+
+		memcpy(&alladdrs[adrlen], epnamebuff, epnamelen);
+
+#ifdef USE_ON_NODE_COMMS
+        if(strncmp(&epname[epnamelen], &epnamebuff[epnamelen], pidlen) == 0) {
+            SHMEM_SET_RANK_SAME_NODE(i, num_on_node++);
+            if (num_on_node > 255) {
+	            OFI_ERRMSG("[%03d] ERROR: Too many local ranks\n", rank);
+                return 1;
+            }
+        }
+#endif
     }
 
     ret = fi_av_insert(shmem_transport_ofi_avfd,
@@ -635,6 +662,7 @@ static inline int exchange_and_av_insert(struct fabric_info *info)
     }
 
     free(alladdrs);
+    free(epnamebuff);
 
     return 0;
 }
