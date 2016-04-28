@@ -99,6 +99,8 @@ static inline void init_dt_size(void)
   SHMEM_Dtsize[FI_LONG_DOUBLE_COMPLEX] = sizeof(long double complex);
 }
 
+#define SIZEOF_DT_INT 4
+
 static int SHM_DT_INT[]=
 {
   SHM_INTERNAL_INT, SHM_INTERNAL_LONG, SHM_INTERNAL_LONG_LONG, SHM_INTERNAL_SHORT
@@ -108,6 +110,8 @@ static char * SHM_NAMED_DT_INT[]=
 {
   "Int", "Long", "Long Long", "Short"
 };
+
+#define SIZEOF_DT_CMP 6
 
 static int SHM_DT_CMP[]=
 {
@@ -120,6 +124,8 @@ static char * SHM_NAMED_DT_CMP[]=
   "Int", "Long", "Float", "Double", "Long Long", "Short"
 };
 
+#define SIZEOF_BOPS 3
+
 static int SHM_BOPS[]=
 {
   SHM_INTERNAL_BAND, SHM_INTERNAL_BOR, SHM_INTERNAL_BXOR
@@ -130,6 +136,8 @@ static char * SHM_NAMED_BOPS[]=
   "Bitwise AND", "Bitwise OR", "Bitwise XOR"
 };
 
+#define SIZEOF_OPS 8
+
 static int SHM_OPS[]=
 {
   SHM_INTERNAL_MIN,  SHM_INTERNAL_MAX, SHM_INTERNAL_PROD,
@@ -139,7 +147,7 @@ static int SHM_OPS[]=
 
 static char * SHM_NAMED_OPS[]=
 {
-  "MIN", "MAX", "PROD", "SUM", "SUM", "WRITE", "READ", "CSWAP",
+  "MIN", "MAX", "PROD", "SUM", "WRITE", "READ", "CSWAP",
   "MSWAP"
 };
 
@@ -572,7 +580,7 @@ static inline int atomicvalid_rtncheck(int ret, int atomic_size, long atomicwarn
         }
     }
 
-    return ret;
+    return 0;
 }
 
 
@@ -607,8 +615,8 @@ static inline int atomic_limitations_check(void)
     }
 
     /* Binary OPS check */
-    for(i=0; i<4; i++) {//DT
-      for(j=0; j<3; j++) { //OPS
+    for(i=0; i<SIZEOF_DT_INT; i++) {//DT
+      for(j=0; j<SIZEOF_BOPS; j++) { //OPS
         ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_DT_INT[i], SHM_BOPS[j],
                         &atomic_size);
          if(atomicvalid_rtncheck(ret, atomic_size, atomicwarn,
@@ -618,7 +626,7 @@ static inline int atomic_limitations_check(void)
     }
 
     /* OTHER OPS check */
-    for(i=0; i<6; i++) {//DT
+    for(i=0; i<SIZEOF_DT_CMP; i++) {//DT
       for(j=0; j<4; j++) { //OPS
         ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_DT_CMP[i], SHM_OPS[j],
                         &atomic_size);
@@ -665,7 +673,13 @@ static inline int atomic_limitations_check(void)
       if(ret!=0 || atomic_size == 0) {
 	    shmem_transport_have_long_double = 0;
 		break;
-	  }
+	  } else if((atomic_size*sizeof(long double)) !=
+                                    shmem_transport_ofi_max_atomic_size) {
+        fprintf(stderr, "Error OFI detected no support for atomic '%d'"
+               "on type %d\n", SHM_OPS[j], SHM_INTERNAL_LONG_DOUBLE);
+            OFI_ERRMSG("Error: atomicvalid ret=%d atomic_size=%d \n",
+                       ret, atomic_size);
+      }
     }
 
     return 0;

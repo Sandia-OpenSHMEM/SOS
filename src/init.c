@@ -298,9 +298,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
             printf("SMA_INFO                %s\n",
                    (NULL != shmem_util_getenv_str("INFO")) ? "Set" : "Not set");
             printf("\tIf set, print this help message at startup\n");
-            printf("SMA_OFI_ATOMIC_CHECKS_WARN  %s\n",
-                   (NULL != shmem_util_getenv_str("OFI_ATOMIC_CHECKS_WARN")) ? "Set" : "Not set");
-            printf("\tIf set, change aborting atomic checks to warnings\n");
             printf("SMA_SYMMETRIC_SIZE      %ld\n", heap_size);
             printf("\tSymmentric heap size\n");
             printf("SMA_COLL_CROSSOVER      %d\n", crossover);
