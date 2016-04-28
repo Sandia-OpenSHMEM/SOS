@@ -629,9 +629,8 @@ static inline int populate_av()
 {
     int    i, ret = 0;
     char   *alladdrs = NULL;
-    size_t max_epnamelen = 128;
 
-    alladdrs = malloc(shmem_internal_num_pes * max_epnamelen);
+    alladdrs = malloc(shmem_internal_num_pes * shmem_transport_ofi_addrlen);
     if (alladdrs == NULL) {
         OFI_ERRMSG("Out of memory allocating 'alladdrs'\n");
         return ret;
