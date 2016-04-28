@@ -77,6 +77,7 @@ size_t           		shmem_transport_ofi_max_buffered_send;
 size_t    	 		shmem_transport_ofi_max_atomic_size;
 size_t    			shmem_transport_ofi_max_msg_size;
 size_t    			shmem_transport_ofi_bounce_buffer_size;
+size_t    			shmem_transport_ofi_addrlen;
 fi_addr_t			*addr_table;
 
 size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
@@ -616,11 +617,10 @@ static inline int publish_av_info(struct fabric_info *info)
         return ret;
     }
 
-    ret = shmem_runtime_put("fi_epnamelen", &epnamelen, sizeof(size_t));
-    if (ret!=0) {
-        OFI_ERRMSG("shmem_runtime_put failed\n");
-        return ret;
-    }
+    /* Note: we assume that the length of an address is the same for all
+     * endpoints.  This is safe for most HPC systems, but could be incorrect in
+     * a heterogeneous context. */
+    shmem_transport_ofi_addrlen = epnamelen;
 
     return ret;
 }
@@ -628,7 +628,7 @@ static inline int publish_av_info(struct fabric_info *info)
 static inline int populate_av()
 {
     int    i, ret = 0;
-    char   *alladdrs = NULL, *addr_ptr;
+    char   *alladdrs = NULL;
     size_t max_epnamelen = 128;
 
     alladdrs = malloc(shmem_internal_num_pes * max_epnamelen);
@@ -637,11 +637,9 @@ static inline int populate_av()
         return ret;
     }
 
-    for (i = 0, addr_ptr = alladdrs; i < shmem_internal_num_pes; i++) {
-            size_t epnamelen;
-            shmem_runtime_get(i, "fi_epnamelen", &epnamelen, sizeof(size_t));
-            shmem_runtime_get(i, "fi_epname", addr_ptr, epnamelen);
-            addr_ptr += epnamelen;
+    for (i = 0; i < shmem_internal_num_pes; i++) {
+        char *addr_ptr = alladdrs + i * shmem_transport_ofi_addrlen;
+        shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen);
     }
 
     ret = fi_av_insert(shmem_transport_ofi_avfd,
