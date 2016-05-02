@@ -151,12 +151,12 @@ static int AMO_STANDARD_OPS[]=
 {
   SHM_INTERNAL_SUM
 };
-#define SIZEOF_AMO_FOPS 2
+#define SIZEOF_AMO_FOPS 1
 static int FETCH_AMO_STANDARD_OPS[]=
 {
   SHM_INTERNAL_SUM
 };
-#define SIZEOF_AMO_COPS 2
+#define SIZEOF_AMO_COPS 1
 static int COMPARE_AMO_STANDARD_OPS[]=
 {
   FI_CSWAP
@@ -345,6 +345,14 @@ static inline int bind_resources_to_and_enable_ep(void)
 		    &shmem_transport_ofi_put_nb_cqfd->fid, FI_SEND);
     if(ret!=0){
 	OFI_ERRMSG("ep_bind ep2cq_nb failed\n");
+	return ret;
+    }
+
+    /* attach CQ for error handling on cntr EP */
+    ret = fi_ep_bind(shmem_transport_ofi_cntr_epfd,
+		    &shmem_transport_ofi_put_nb_cqfd->fid, FI_SELECTIVE_COMPLETION | FI_TRANSMIT);
+    if(ret!=0){
+	OFI_ERRMSG("ep_bind cntrep2cq_nb failed\n");
 	return ret;
     }
 
