@@ -82,7 +82,10 @@ fi_addr_t			*addr_table;
 
 size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 
-static inline void init_dt_size(void)
+static char * SHMEM_DtName[FI_DATATYPE_LAST];
+static char * SHMEM_OpName[FI_ATOMIC_OP_LAST];
+
+static inline void init_ofi_tables(void)
 {
   SHMEM_Dtsize[FI_INT8]                = sizeof(int8_t);
   SHMEM_Dtsize[FI_UINT8]               = sizeof(uint8_t);
@@ -98,22 +101,42 @@ static inline void init_dt_size(void)
   SHMEM_Dtsize[FI_DOUBLE_COMPLEX]      = sizeof(double complex);
   SHMEM_Dtsize[FI_LONG_DOUBLE]         = sizeof(long double);
   SHMEM_Dtsize[FI_LONG_DOUBLE_COMPLEX] = sizeof(long double complex);
+
+  SHMEM_DtName[FI_INT8]                = "int8";
+  SHMEM_DtName[FI_UINT8]               = "uint8";
+  SHMEM_DtName[FI_INT16]               = "int16";
+  SHMEM_DtName[FI_UINT16]              = "uint16";
+  SHMEM_DtName[FI_INT32]               = "int32";
+  SHMEM_DtName[FI_UINT32]              = "uint32";
+  SHMEM_DtName[FI_INT64]               = "int64";
+  SHMEM_DtName[FI_UINT64]              = "uint64";
+  SHMEM_DtName[FI_FLOAT]               = "float";
+  SHMEM_DtName[FI_DOUBLE]              = "double";
+  SHMEM_DtName[FI_FLOAT_COMPLEX]       = "float complex";
+  SHMEM_DtName[FI_DOUBLE_COMPLEX]      = "double complex";
+  SHMEM_DtName[FI_LONG_DOUBLE]         = "long double";
+  SHMEM_DtName[FI_LONG_DOUBLE_COMPLEX] = "long double complex";
+
+  SHMEM_OpName[FI_MIN]                 = "MIN";
+  SHMEM_OpName[FI_MAX]                 = "MAX";
+  SHMEM_OpName[FI_SUM]                 = "SUM";
+  SHMEM_OpName[FI_PROD]                = "PROD";
+  SHMEM_OpName[FI_LOR]                 = "LOR";
+  SHMEM_OpName[FI_LAND]                = "LAND";
+  SHMEM_OpName[FI_BOR]                 = "BOR";
+  SHMEM_OpName[FI_BAND]                = "BAND";
+  SHMEM_OpName[FI_LXOR]                = "LXOR";
+  SHMEM_OpName[FI_BXOR]                = "BXOR";
+  SHMEM_OpName[FI_ATOMIC_READ]         = "ATOMIC_WRITE";
+  SHMEM_OpName[FI_ATOMIC_WRITE]        = "ATOMIC_READ";
+  SHMEM_OpName[FI_CSWAP]               = "CSWAP";
+  SHMEM_OpName[FI_CSWAP_NE]            = "CSWAP_NE";
+  SHMEM_OpName[FI_CSWAP_LE]            = "CSWAP_LE";
+  SHMEM_OpName[FI_CSWAP_LT]            = "CSWAP_LT";
+  SHMEM_OpName[FI_CSWAP_GE]            = "CSWAP_GE";
+  SHMEM_OpName[FI_CSWAP_GT]            = "CSWAP_GT";
+  SHMEM_OpName[FI_MSWAP]               = "MSWAP";
 }
-
-static char * SHMEM_DtName[FI_DATATYPE_LAST]=
-{
-  "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"
-  "float", "double", "float complex", "double complex", "long double",
-  "long double complex"
-};
-
-static char * SHMEM_OpName[FI_ATOMIC_OP_LAST]=
-{
-  "MIN", "MAX", "SUM", "PROD", "LOR", "LAND", "BOR", "BAND", "LXOR",
-  "BXOR", "ATOMIC WRITE", "ATOMIC READ", "CSWAP", "CSWAP_NE", "CSWAP_LE",
-  "CSWAP_LT", "CSWAP_GE", "CSWAP_GT", "MSWAP"
-};
-
 
 /* Cover OpenSHMEM atomics API */
 
@@ -637,7 +660,7 @@ static inline int atomicvalid_rtncheck(int ret, int atomic_size, long atomicwarn
                                     char strOP[], char strDT[])
 {
     if(ret != 0 || atomic_size == 0) {
-        fprintf(stderr, "%s OFI detected no support for atomic '%s'"
+        fprintf(stderr, "%s OFI detected no support for atomic '%s' "
                "on type '%s'\n", (atomicwarn ? "Warning" : "Error"),
                 strOP, strDT);
         if(!atomicwarn) {
@@ -723,7 +746,7 @@ static inline int atomic_limitations_check(void)
     if(NULL != shmem_util_getenv_str("OFI_ATOMIC_CHECKS_WARN"))
         atomicwarn = 1;
 
-    init_dt_size();
+    init_ofi_tables();
 
     /*Retrieve atomic max size */
     ret = fi_atomicvalid(shmem_transport_ofi_epfd, FI_INT64, FI_SUM,
@@ -797,7 +820,7 @@ static inline int atomic_limitations_check(void)
 		break;
 	  } else if((atomic_size*sizeof(long double)) !=
                                     shmem_transport_ofi_max_atomic_size) {
-        fprintf(stderr, "Error OFI detected no support for atomic '%s'"
+        fprintf(stderr, "Error OFI detected no support for atomic '%s' "
                "on type %d\n", SHMEM_OpName[REDUCE_COMPARE_OPS[j]],
                 SHM_INTERNAL_LONG_DOUBLE);
             OFI_ERRMSG("Error: atomicvalid ret=%d atomic_size=%d \n",
@@ -813,7 +836,7 @@ static inline int atomic_limitations_check(void)
 		break;
 	  } else if((atomic_size*sizeof(long double)) !=
                                     shmem_transport_ofi_max_atomic_size) {
-        fprintf(stderr, "Error OFI detected no support for atomic '%s'"
+        fprintf(stderr, "Error OFI detected no support for atomic '%s' "
                "on type %d\n", SHMEM_OpName[REDUCE_ARITH_OPS[j]],
                 SHM_INTERNAL_LONG_DOUBLE);
             OFI_ERRMSG("Error: atomicvalid ret=%d atomic_size=%d \n",
