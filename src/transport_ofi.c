@@ -727,10 +727,9 @@ static inline int query_for_fabric(struct fabric_info *info)
 
     hints.caps   = FI_RMA |     /* request rma capability
                                     implies FI_READ/WRITE FI_REMOTE_READ/WRITE */
-                   FI_ATOMICS |  /* request atomics capability */
-                   FI_RMA_EVENT; /* want to use remote counters */
+                   FI_ATOMICS;  /* request atomics capability */
 #ifndef ENABLE_HARD_POLLING
-    hints.caps |= FI_RMA_EVENT;
+    hints.caps |= FI_RMA_EVENT; /* want to use remote counters */
 #endif /* ndef ENABLE_HARD_POLLING */
     hints.addr_format         = FI_FORMAT_UNSPEC;
     hints.mode		      = FI_CONTEXT;
