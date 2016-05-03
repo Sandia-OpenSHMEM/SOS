@@ -55,7 +55,7 @@ AC_DEFUN([SHMEM_FIND_INT_TYPE],[
                 ;;
 	esac
 
-        AC_DEFINE_UNQUOTED(AS_TR_CPP([DTYPE_$1]), [$type], [Portals datatype corresponding to $1])
+        AC_DEFINE_UNQUOTED(AS_TR_CPP([DTYPE_$1]), [$type], [Transport layer datatype corresponding to $1])
 ])
 
 
@@ -104,7 +104,7 @@ AC_DEFUN([SHMEM_FIND_FORTRAN_INT_TYPE],[
 
 	AC_DEFINE_UNQUOTED([DTYPE_FORTRAN_]m4_translit(m4_bpatsubst(m4_bpatsubst([$1], [*], []), [[^a-zA-Z0-9_]], [_]), [a-z], [A-Z]),
                        [$type],
-		       [Portals datatype corresponding to $1])
+		       [Transport layer datatype corresponding to $1])
 	AS_VAR_POPDEF([size_var])
 ])
 
@@ -125,7 +125,7 @@ AC_DEFUN([SHMEM_FIND_FORTRAN_FLOAT_TYPE],[
         esac
 	AC_DEFINE_UNQUOTED([DTYPE_FORTRAN_]m4_translit(m4_bpatsubst(m4_bpatsubst([$1], [*], []), [[^a-zA-Z0-9_]], [_]), [a-z], [A-Z]),
                        [$type],
-		       [Portals datatype corresponding to $1])
+		       [Transport layer datatype corresponding to $1])
 	AS_VAR_POPDEF([size_var])
 ])
 
