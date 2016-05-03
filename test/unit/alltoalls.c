@@ -31,7 +31,7 @@
 
 #define NELEM 16
 
-long pSync[SHMEM_ALLTOALL_SYNC_SIZE];
+long pSync[SHMEM_ALLTOALLS_SYNC_SIZE];
 
 static int is_active(int pe, int pe_start, int pe_stride, int pe_size) {
     int stride = 1 << pe_stride;
@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
 
     npes = shmem_n_pes();
 
-    for (i = 0; i < SHMEM_ALLTOALL_SYNC_SIZE; i++)
+    for (i = 0; i < SHMEM_ALLTOALLS_SYNC_SIZE; i++)
         pSync[i] = SHMEM_SYNC_VALUE;
 
     in = shmem_malloc(4 * NELEM * npes);
