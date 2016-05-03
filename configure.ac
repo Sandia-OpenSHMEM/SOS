@@ -301,6 +301,7 @@ else
   FORTRAN_INT8_KIND=0
   FORTRAN_REAL4_KIND=0
   FORTRAN_REAL8_KIND=0
+  AC_DEFINE([DTYPE_FORTRAN_INTEGER],[-1],[Fortran integer C type (disabled)])
 fi
 if test "$ac_cv_sizeof_voidp" = "4" ; then
   FORTRAN_PTR_KIND=$FORTRAN_INT4_KIND
