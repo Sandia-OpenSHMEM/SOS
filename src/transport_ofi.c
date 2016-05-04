@@ -79,6 +79,10 @@ size_t    			shmem_transport_ofi_max_msg_size;
 size_t    			shmem_transport_ofi_bounce_buffer_size;
 size_t    			shmem_transport_ofi_addrlen;
 fi_addr_t			*addr_table;
+#ifdef USE_ON_NODE_COMMS
+#define EPHOSTNAMELEN  _POSIX_HOST_NAME_MAX + 1
+static char         myephostname[EPHOSTNAMELEN];
+#endif
 
 size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 
@@ -853,6 +857,19 @@ static inline int publish_av_info(struct fabric_info *info)
     char   epname[128];
     size_t epnamelen = sizeof(epname);
 
+#ifdef USE_ON_NODE_COMMS
+    if(gethostname(myephostname, (EPHOSTNAMELEN - 1)) != 0)
+        OFI_ERRMSG("gethostname error: %s \n", strerror(errno));
+
+    myephostname[EPHOSTNAMELEN] = '\0';
+
+    ret = shmem_runtime_put("fi_ephostname", myephostname, EPHOSTNAMELEN);
+    if (ret != 0) {
+        OFI_ERRMSG("shmem_runtime_put ephostname failed\n");
+        return ret;
+    }
+#endif
+
     ret = fi_getname((fid_t)shmem_transport_ofi_epfd, epname, &epnamelen);
     if(ret!=0 || (epnamelen > sizeof(epname))){
         OFI_ERRMSG("fi_getname failed\n");
@@ -861,7 +878,7 @@ static inline int publish_av_info(struct fabric_info *info)
 
     ret = shmem_runtime_put("fi_epname", epname, epnamelen);
     if (ret != 0) {
-        OFI_ERRMSG("shmem_runtime_put failed\n");
+        OFI_ERRMSG("shmem_runtime_put epname failed\n");
         return ret;
     }
 
@@ -877,6 +894,10 @@ static inline int populate_av()
 {
     int    i, ret = 0;
     char   *alladdrs = NULL;
+#ifdef USE_ON_NODE_COMMS
+    int    num_on_node = 0;
+    char   ephostname[EPHOSTNAMELEN];
+#endif
 
     alladdrs = malloc(shmem_internal_num_pes * shmem_transport_ofi_addrlen);
     if (alladdrs == NULL) {
@@ -887,6 +908,17 @@ static inline int populate_av()
     for (i = 0; i < shmem_internal_num_pes; i++) {
         char *addr_ptr = alladdrs + i * shmem_transport_ofi_addrlen;
         shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen);
+
+#ifdef USE_ON_NODE_COMMS
+        shmem_runtime_get(i, "fi_ephostname", ephostname, EPHOSTNAMELEN);
+        if(strncmp(myephostname, ephostname, EPHOSTNAMELEN) == 0) {
+            SHMEM_SET_RANK_SAME_NODE(i, num_on_node++);
+            if (num_on_node > 255) {
+	            OFI_ERRMSG("ERROR: Too many local ranks\n");
+                return 1;
+            }
+        }
+#endif
     }
 
     ret = fi_av_insert(shmem_transport_ofi_avfd,
