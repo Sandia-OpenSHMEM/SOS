@@ -292,7 +292,12 @@ static inline int shmem_transport_quiet(void)
 	/* wait for put counter to meet outstanding count value    */
 	ret = fi_cntr_wait(shmem_transport_ofi_put_cntrfd,
 			shmem_transport_ofi_pending_put_counter,-1);
-	OFI_RET_CHECK(ret);
+    if(ret) {
+	    struct fi_cq_err_entry e = {0};
+        fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd,
+		           (void *)&e, 0);
+		RAISE_ERROR(e.err);
+    }
 
 	return ret;
 }
@@ -515,7 +520,12 @@ shmem_transport_get_wait(void)
 	/* wait for get counter to meet outstanding count value    */
 	ret = fi_cntr_wait(shmem_transport_ofi_get_cntrfd,
 			shmem_transport_ofi_pending_get_counter,-1);
-	OFI_RET_CHECK(ret);
+    if(ret) {
+	    struct fi_cq_err_entry e = {0};
+        fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd,
+		           (void *)&e, 0);
+		RAISE_ERROR(e.err);
+    }
 }
 
 
