@@ -166,8 +166,12 @@ static int COMPARE_AMO_STANDARD_OPS[]=
   FI_CSWAP
 };
 
-
+/* Note: Fortran-specific types should be last so they can be disabled here */
+#ifdef ENABLE_FORTRAN
 #define SIZEOF_AMO_EX_DT 8
+#else
+#define SIZEOF_AMO_EX_DT 7
+#endif
 static int DT_AMO_EXTENDED[]=
 {
   SHM_INTERNAL_FLOAT, SHM_INTERNAL_DOUBLE, SHM_INTERNAL_INT, SHM_INTERNAL_LONG,
