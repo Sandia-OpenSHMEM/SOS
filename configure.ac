@@ -248,6 +248,7 @@ AC_TRY_RUN([struct lock_s { int a; int b; }; main() { if (sizeof(long) == sizeof
                 AC_MSG_ERROR([Lock API requires long can hold 'struct { int a; int b; }']) ])
 
 if test "$FC" != "" ; then
+  AC_DEFINE([ENABLE_FORTRAN],[1],[Fortran support enabled])
   # make sure Fortran supports ISO_C_BINDING (Fortran 2003)
   AC_CACHE_CHECK([if Fortran compiler supports ISO_C_BINDING],
     [shmem_cv_fortran_iso_c_binding],
