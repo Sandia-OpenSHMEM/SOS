@@ -41,7 +41,7 @@ void static data_init(perf_metrics_t * data) {
    data->dest = NULL;
 }
 
-void static inline print_results_header() {
+void static inline print_results_header(void) {
    printf("\nLength                  Latency                       \n");
    printf("in bytes            in micro seconds              \n");
 }

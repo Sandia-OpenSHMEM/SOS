@@ -898,7 +898,7 @@ static inline int publish_av_info(struct fabric_info *info)
     return ret;
 }
 
-static inline int populate_av()
+static inline int populate_av(void)
 {
     int    i, ret = 0;
     char   *alladdrs = NULL;
