@@ -16,7 +16,13 @@ TESTS += \
 	shmem_bw_put_perf \
 	shmem_bibw_put_perf \
 	shmem_bw_get_perf \
-	shmem_bibw_get_perf
+	shmem_bibw_get_perf \
+	shmem_latency_nb_put_perf \
+	shmem_latency_nb_get_perf \
+	shmem_bw_nb_put_perf \
+	shmem_bibw_nb_put_perf \
+	shmem_bw_nb_get_perf \
+	shmem_bibw_nb_get_perf
 else
 check_PROGRAMS += \
 	shmem_latency_put_perf \
@@ -24,7 +30,13 @@ check_PROGRAMS += \
 	shmem_bw_put_perf \
 	shmem_bibw_put_perf \
 	shmem_bw_get_perf \
-	shmem_bibw_get_perf
+	shmem_bibw_get_perf \
+	shmem_latency_nb_put_perf \
+	shmem_latency_nb_get_perf \
+	shmem_bw_nb_put_perf \
+	shmem_bibw_nb_put_perf \
+	shmem_bw_nb_get_perf \
+	shmem_bibw_nb_get_perf
  
 endif
 
