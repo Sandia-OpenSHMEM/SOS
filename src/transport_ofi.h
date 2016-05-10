@@ -278,7 +278,7 @@ static inline shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(const v
 	return buff;
 }
 
-static inline int shmem_transport_quiet(void)
+static inline void shmem_transport_put_quiet(void)
 {
 	int ret = 0;
 
@@ -286,8 +286,6 @@ static inline int shmem_transport_quiet(void)
 	while(shmem_transport_ofi_pending_cq_count) {
 		shmem_transport_ofi_drain_cq();
 	}
-
-	shmem_transport_get_wait();
 
 	/* wait for put counter to meet outstanding count value    */
 	ret = fi_cntr_wait(shmem_transport_ofi_put_cntrfd,
@@ -298,8 +296,16 @@ static inline int shmem_transport_quiet(void)
 		           (void *)&e, 0);
 		RAISE_ERROR(e.err);
     }
+}
 
-	return ret;
+static inline int shmem_transport_quiet(void)
+{
+
+	shmem_transport_put_quiet();
+
+	shmem_transport_get_wait();
+
+	return 0;
 }
 
 
@@ -434,6 +440,7 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
 
     } else {
         shmem_transport_ofi_put_large(target, source,len, pe);
+        (*completion)++;
     }
 }
 
@@ -442,7 +449,8 @@ static inline
 void
 shmem_transport_put_wait(long *completion) {
 
-    shmem_transport_quiet();
+    if((*completion)-- > 0)
+        shmem_transport_put_quiet();
 }
 
 static inline
