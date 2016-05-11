@@ -23,6 +23,8 @@
 #define SHMEMX_THREAD_SERIALIZED 2
 #define SHMEMX_THREAD_MULTIPLE   3
 
+#define HAVE_SHMEMX_WTIME
+
 void shmemx_init_thread(int tl_requested, int *tl_provided);
 double shmemx_wtime(void);
 char* shmemx_nodename(void);

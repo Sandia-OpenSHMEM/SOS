@@ -14,6 +14,21 @@
 #include <string.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <sys/time.h>
+
+#ifndef HAVE_SHMEMX_WTIME
+double
+shmemx_wtime(void)
+{
+    double wtime;
+    struct timeval tv;
+
+    gettimeofday(&tv, NULL);
+    wtime = tv.tv_sec;
+    wtime += (double)tv.tv_usec / 1000000.0;
+    return wtime;
+}
+#endif
 
 static char * aligned_buffer_alloc(int len) {
     unsigned long page_align;
