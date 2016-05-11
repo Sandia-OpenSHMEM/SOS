@@ -9,6 +9,8 @@ Sandia OpenSHMEM NEWS -- history of user-visible changes.
   of const/volatile to C API.
 - Improvements to error checking of OpenSHMEM calls and internal debugging
   enabled through --enable-error-checking option.
+- Support for fabric and domain selection in the OFI transport
+- Multiple bug fixes and improvements to stability and performance
 
 1.2.0
 -----
