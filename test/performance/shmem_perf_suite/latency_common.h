@@ -175,8 +175,8 @@ void static inline latency_free_resources(perf_metrics_t *data) {
     shmem_barrier_all();
 
     shmem_free(data->target);
-    shmem_free(data->src);
-    shmem_free(data->dest);
+    aligned_buffer_free(data->src);
+    aligned_buffer_free(data->dest);
     shmem_finalize();
 }
 

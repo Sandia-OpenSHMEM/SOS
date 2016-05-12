@@ -318,8 +318,9 @@ void static inline uni_dir_init(perf_metrics_t *metric_info, int argc,
 void static inline bw_data_free(perf_metrics_t *metric_info) {
     shmem_barrier_all();
 
-    shmem_free(metric_info->src);
-    shmem_free(metric_info->dest);
+    aligned_buffer_free(metric_info->src);
+    aligned_buffer_free(metric_info->dest);
+
     shmem_finalize();
 }
 

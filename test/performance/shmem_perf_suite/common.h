@@ -15,6 +15,8 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <sys/time.h>
+#include <stdint.h>
+
 
 #ifndef HAVE_SHMEMX_WTIME
 double
@@ -30,16 +32,46 @@ shmemx_wtime(void)
 }
 #endif
 
-static char * aligned_buffer_alloc(int len) {
-    unsigned long page_align;
-    char *buf;
+static char * aligned_buffer_alloc(int len)
+{
+    unsigned long alignment = 0;
+    char *ptr1 = NULL, *ptr_aligned = NULL;
+    size_t ptr_size = sizeof(uintptr_t);
+    uintptr_t save_ptr1 = 0;
 
-    page_align = getpagesize();
-    buf = shmem_malloc(len + page_align);
-    buf = (char *) (((unsigned long) buf + (page_align - 1)) /
-            page_align * page_align);
+    alignment = getpagesize();
 
-    return buf;
+    ptr1 = shmem_malloc(ptr_size + alignment + len);
+    assert(ptr1 != NULL);
+
+    save_ptr1 = (uintptr_t)ptr1;
+
+    /* reserve at least ptr_size before alignment chunk */
+    ptr1 = (char *) (ptr1 + ptr_size);
+
+    /* only offset ptr by alignment to ensure len is preserved */
+    /* clear bottom bits to ensure alignment */
+    ptr_aligned = (char *) ( ((uintptr_t) ((char *) (ptr1 + alignment)))
+                                                & ~(alignment-1));
+
+    /* embed org ptr address in reserved ptr_size space */
+    memcpy((ptr_aligned - ptr_size), &save_ptr1, ptr_size);
+
+    return ptr_aligned;
+}
+
+static void aligned_buffer_free(char * ptr_aligned)
+{
+
+    char * ptr_org;
+    uintptr_t temp_p;
+    size_t ptr_size = sizeof(uintptr_t);
+
+    /* grab ptr */
+    memcpy(&temp_p, (ptr_aligned - ptr_size), ptr_size);
+    ptr_org = (char *) temp_p;
+
+    shmem_free(ptr_org);
 }
 
 int static inline is_divisible_by_4(int num)
