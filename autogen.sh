@@ -1,15 +1,6 @@
 #! /bin/sh
 
-set -x
 test -d ./config || mkdir ./config
-aclocal -I config
-case `uname` in
-    Darwin*) glibtoolize --force --copy ;;
-    *)        libtoolize --force --copy ;;
-esac
-autoheader
-automake --foreign --add-missing --copy
-autoconf
+test -d ./shmem_pmi/config || mkdir ./shmem_pmi/config
 
-cd shmem_pmi
-./autogen.sh
+autoreconf -vif
