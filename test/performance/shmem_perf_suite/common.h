@@ -22,12 +22,19 @@
 double
 shmemx_wtime(void)
 {
-    double wtime;
-    struct timeval tv;
+    double wtime = 0.0;
 
+#ifdef CLOCK_MONOTONIC
+    struct timespec tv;
+    clock_gettime(CLOCK_MONOTONIC, &tv);
+    wtime = tv.tv_second;
+    wtime += (double)tv.tv_nsec / 1000000000.0;
+#else
+    struct timeval tv;
     gettimeofday(&tv, NULL);
     wtime = tv.tv_sec;
     wtime += (double)tv.tv_usec / 1000000.0;
+#endif
     return wtime;
 }
 #endif
