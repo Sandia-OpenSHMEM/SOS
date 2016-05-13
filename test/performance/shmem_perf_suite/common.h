@@ -39,6 +39,11 @@ shmemx_wtime(void)
 }
 #endif
 
+#ifdef CRAY_SHMEM
+#define shmem_putmem_nbi(dest, source, nelems, pe) shmem_putmem_nb(dest, source, nelems, pe, NULL)
+#define shmem_getmem_nbi(dest, source, nelems, pe) shmem_getmem_nb(dest, source, nelems, pe, NULL)
+#endif
+
 static char * aligned_buffer_alloc(int len)
 {
     unsigned long alignment = 0;
