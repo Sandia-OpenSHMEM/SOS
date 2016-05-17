@@ -185,19 +185,20 @@ void static inline calc_and_print_results(double total_t, int len,
 
     if (total_t > 0 ) {
         bw = (len / 1e6 * metric_info.window_size * metric_info.trials) /
-                (total_t);
+                (total_t / 1e6);
     }
 
     /* base case: will be overwritten by collective if num_pes > 2 */
     pe_bw_sum = bw;
 
-    if(metric_info.num_pes >= 2)
+    if(metric_info.num_pes > 2)
         shmem_double_sum_to_all(&pe_bw_sum, &bw, nred_elements, start_pe,
                                 stride_every_other_pe, half_of_nPEs, pwrk,
                                 red_psync);
 
+    /* aggregate bw since bw op pairs are communicating simultaneously */
     if(metric_info.my_node == start_pe) {
-        pe_bw_avg = pe_bw_sum / metric_info.num_pes;
+        pe_bw_avg = pe_bw_sum;
         pe_mr_avg = pe_bw_avg / (len / 1e6);
         print_data_results(pe_bw_avg, pe_mr_avg, metric_info, len);
     }

@@ -52,7 +52,7 @@ void static inline calc_and_print_results(double start, double end, int len,
     double latency = 0.0;
     latency = (end - start) / data.trials;
 
-    printf("%9d           %8.2f             \n", len, latency * 1000000.0);
+    printf("%9d           %8.2f             \n", len, latency);
 }
 
 void static inline command_line_arg_check(int argc, char *argv[],

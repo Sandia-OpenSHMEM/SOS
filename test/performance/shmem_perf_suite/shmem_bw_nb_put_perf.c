@@ -56,7 +56,7 @@ uni_dir_bw(int len, perf_metrics_t *metric_info)
     if (metric_info->my_node % 2 != 0) {
         for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
             if(i == metric_info->warmup)
-                start = shmemx_wtime();
+                start = perf_shmemx_wtime();
 
             for(j = 0; j < metric_info->window_size; j++)
                 shmem_putmem_nbi(metric_info->dest, metric_info->src, len, dest);
@@ -64,7 +64,7 @@ uni_dir_bw(int len, perf_metrics_t *metric_info)
             shmem_quiet();
 
         }
-        end = shmemx_wtime();
+        end = perf_shmemx_wtime();
 
         calc_and_print_results((end - start), len, *metric_info, ODD_SET);
     }

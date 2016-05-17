@@ -61,11 +61,11 @@ long_element_round_trip_latency(perf_metrics_t data)
     if (data.my_node == 0) {
         for (i = 0; i < data.trials + data.warmup; i++) {
             if(i == data.warmup)
-                start = shmemx_wtime();
+                start = perf_shmemx_wtime();
 
             *data.target = shmem_long_g(data.target, dest);
         }
-        end = shmemx_wtime();
+        end = perf_shmemx_wtime();
 
         calc_and_print_results(start, end, sizeof(long), data);
 
@@ -88,11 +88,11 @@ streaming_latency(int len, perf_metrics_t *data)
 
         for (i = 0; i < data->trials + data->warmup; i++) {
             if(i == data->warmup)
-                start = shmemx_wtime();
+                start = perf_shmemx_wtime();
 
             shmem_getmem(data->dest, data->src, len, 1);
         }
-        end = shmemx_wtime();
+        end = perf_shmemx_wtime();
 
         calc_and_print_results(start, end, len, *data);
     }
