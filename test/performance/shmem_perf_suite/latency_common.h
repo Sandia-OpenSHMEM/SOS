@@ -55,6 +55,11 @@ void static inline calc_and_print_results(double start, double end, int len,
     printf("%9d           %8.2f             \n", len, latency);
 }
 
+int static inline partner_node(int my_node)
+{
+    return ((my_node % 2 == 0) ? (my_node + 1) : (my_node - 1));
+}
+
 void static inline command_line_arg_check(int argc, char *argv[],
                             perf_metrics_t *metric_info) {
     int ch, error = false;

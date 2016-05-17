@@ -130,8 +130,3 @@ void static inline validate_recv(char * buf, int len, int partner_pe)
                     partner_pe);
     }
 }
-
-int static inline partner_node(int my_node)
-{
-    return ((my_node % 2 == 0) ? (my_node + 1) : (my_node - 1));
-}

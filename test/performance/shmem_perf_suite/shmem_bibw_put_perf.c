@@ -43,8 +43,6 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-/*even PE's put to their odd counterpart (my_node + 1), which does a put back to them
- * at the same time*/
 void
 bi_dir_bw(int len, perf_metrics_t *metric_info)
 {
@@ -54,7 +52,7 @@ bi_dir_bw(int len, perf_metrics_t *metric_info)
 
     shmem_barrier_all();
 
-    if (metric_info->my_node % 2 == 0) {
+    if (streaming_node(*metric_info)) {
         for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
             if(i == metric_info->warmup)
                 start = perf_shmemx_wtime();
@@ -66,7 +64,7 @@ bi_dir_bw(int len, perf_metrics_t *metric_info)
         }
         end = perf_shmemx_wtime();
 
-        calc_and_print_results((end - start), len, *metric_info, EVEN_SET);
+        calc_and_print_results((end - start), len, *metric_info);
 
     } else {
         for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {

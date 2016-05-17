@@ -21,11 +21,10 @@
 #define WARMUP_LARGE  10
 #define LARGE_MESSAGE_SIZE  8192
 
-/*if PE set starts at zero will use only even set, else odd set*/
 typedef enum {
-    EVEN_SET = 0,
-    ODD_SET = 1
-} red_PE_start;
+    EVEN_SET,
+    ODD_SET
+} red_PE_set;
 
 typedef enum {
     B,
@@ -69,6 +68,26 @@ void static bi_dir_data_init(perf_metrics_t * data) {
 void static uni_dir_data_init(perf_metrics_t * data) {
     data->bw_type = "Uni-directional Bandwidth";
 }
+
+
+int static inline partner_node(int my_node)
+{
+    return ((my_node % 2 == 0) ? (my_node + 1) : (my_node - 1));
+}
+
+int static inline streaming_node(perf_metrics_t my_info)
+{
+    return (my_info.my_node % 2 == 0);
+
+}
+
+/* put/get bw use opposite streaming/validate nodes */
+red_PE_set static inline validation_set(perf_metrics_t my_info)
+{
+    return (streaming_node(my_info) ? EVEN_SET : ODD_SET);
+
+}
+
 /**************************************************************/
 /*                   Input Checking                           */
 /**************************************************************/
@@ -170,18 +189,35 @@ void static print_results_header(perf_metrics_t metric_info) {
     printf("         in messages/seconds\n");
 }
 
-/* reduction to collect performance results from even PE set
-    then start_pe will print results --- assumes num_pes is even -start_pe
-    determines if it uses even or odd set */
+/* reduction to collect performance results from PE set
+    then start_pe will print results --- assumes num_pes is even */
+void static inline PE_set_used_adjustments(int *stride, int *start_pe, perf_metrics_t my_info)
+{
+    red_PE_set PE_set = validation_set(my_info);
+
+    if(PE_set == EVEN_SET) {
+        *start_pe = 0;
+    }
+    else {
+        assert(PE_set == ODD_SET);
+        *start_pe = 1;
+    }
+
+    *stride = 1; /* every other PE */
+}
+
+
 void static inline calc_and_print_results(double total_t, int len,
-                            perf_metrics_t metric_info, red_PE_start start_pe)
+                            perf_metrics_t metric_info)
 {
     int half_of_nPEs = metric_info.num_pes/2;
-    int stride_every_other_pe = 1;
+    int stride = 0, start_pe = 0;
     static double pe_bw_sum, bw = 0.0; /*must be symmetric for reduction*/
     double pe_bw_avg = 0.0, pe_mr_avg = 0.0;
     int nred_elements = 1;
     static double pwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
+
+    PE_set_used_adjustments(&stride, &start_pe, metric_info);
 
     if (total_t > 0 ) {
         bw = (len / 1e6 * metric_info.window_size * metric_info.trials) /
@@ -193,7 +229,7 @@ void static inline calc_and_print_results(double total_t, int len,
 
     if(metric_info.num_pes > 2)
         shmem_double_sum_to_all(&pe_bw_sum, &bw, nred_elements, start_pe,
-                                stride_every_other_pe, half_of_nPEs, pwrk,
+                                stride, half_of_nPEs, pwrk,
                                 red_psync);
 
     /* aggregate bw since bw op pairs are communicating simultaneously */
@@ -235,10 +271,9 @@ void static inline bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
         bi_dir_bw(len, &metric_info);
     }
 
+    shmem_barrier_all();
+
     if(metric_info.validate) {
-        if(metric_info.my_node % 2 == 0)
-            validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
-        else
             validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
     }
 }
@@ -266,7 +301,9 @@ void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
         uni_dir_bw(len, &metric_info);
     }
 
-    if((metric_info.my_node % 2 == 0) && metric_info.validate)
+    shmem_barrier_all();
+
+    if(streaming_node(metric_info) && metric_info.validate)
         validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
 
 }
