@@ -34,7 +34,7 @@
 */
 
 #include <bw_common.h>
-
+#include <bi_dir.h>
 
 int main(int argc, char *argv[])
 {
@@ -46,32 +46,5 @@ int main(int argc, char *argv[])
 void
 bi_dir_bw(int len, perf_metrics_t *metric_info)
 {
-    double start = 0.0, end = 0.0;
-    int dest = partner_node(metric_info->my_node);
-    int i = 0, j = 0;
-
-    shmem_barrier_all();
-
-    if (streaming_node(*metric_info)) {
-        for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
-            if(i == metric_info->warmup)
-                start = perf_shmemx_wtime();
-
-            for(j = 0; j < metric_info->window_size; j++)
-                shmem_putmem(metric_info->dest, metric_info->src, len, dest);
-
-            shmem_quiet();
-        }
-        end = perf_shmemx_wtime();
-
-        calc_and_print_results((end - start), len, *metric_info);
-
-    } else {
-        for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
-            for(j = 0; j < metric_info->window_size; j++)
-                shmem_putmem(metric_info->dest, metric_info->src, len, dest);
-
-            shmem_quiet();
-        }
-    }
+    bi_bw(len, metric_info);
 }

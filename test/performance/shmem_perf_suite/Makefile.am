@@ -51,11 +51,22 @@ shmem_latency_put_perf_SOURCES = shmem_latency_put_perf.c latency_common.h commo
 
 shmem_latency_get_perf_SOURCES = shmem_latency_get_perf.c latency_common.h common.h
 
-shmem_bw_put_perf_SOURCES = shmem_bw_put_perf.c bw_common.h common.h
+shmem_bw_put_perf_SOURCES = shmem_bw_put_perf.c bw_common.h common.h uni_dir.h
 
-shmem_bibw_put_perf_SOURCES = shmem_bibw_put_perf.c bw_common.h common.h
+shmem_bibw_put_perf_SOURCES = shmem_bibw_put_perf.c bw_common.h common.h bi_dir.h
 
-shmem_bw_get_perf_SOURCES = shmem_bw_get_perf.c bw_common.h common.h
+shmem_bw_get_perf_SOURCES = shmem_bw_get_perf.c bw_common.h common.h uni_dir.h
 
-shmem_bibw_get_perf_SOURCES = shmem_bibw_get_perf.c bw_common.h common.h
+shmem_bibw_get_perf_SOURCES = shmem_bibw_get_perf.c bw_common.h common.h bi_dir.h
 
+shmem_latency_nb_put_perf_SOURCES = shmem_latency_nb_put_perf.c latency_common.h common.h
+
+shmem_latency_nb_get_perf_SOURCES = shmem_latency_nb_get_perf.c latency_common.h common.h
+
+shmem_bw_nb_put_perf_SOURCES = shmem_bw_nb_put_perf.c bw_common.h common.h uni_dir.h
+
+shmem_bibw_nb_put_perf_SOURCES = shmem_bibw_nb_put_perf.c bw_common.h common.h bi_dir.h
+
+shmem_bw_nb_get_perf_SOURCES = shmem_bw_nb_get_perf.c bw_common.h common.h uni_dir.h
+
+shmem_bibw_nb_get_perf_SOURCES = shmem_bibw_nb_get_perf.c bw_common.h common.h bi_dir.h

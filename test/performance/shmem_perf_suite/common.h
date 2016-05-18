@@ -20,8 +20,9 @@
 
 
 /* return microseconds */
-double
-perf_shmemx_wtime(void)
+double perf_shmemx_wtime(void);
+
+double perf_shmemx_wtime(void)
 {
     double wtime = 0.0;
 

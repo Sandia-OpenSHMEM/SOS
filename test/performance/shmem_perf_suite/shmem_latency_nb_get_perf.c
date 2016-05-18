@@ -91,6 +91,7 @@ streaming_latency(int len, perf_metrics_t *data)
                 start = perf_shmemx_wtime();
 
             shmem_getmem_nbi(data->dest, data->src, len, 1);
+            shmem_quiet();
         }
         end = perf_shmemx_wtime();
 

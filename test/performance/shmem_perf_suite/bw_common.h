@@ -22,8 +22,13 @@
 #define LARGE_MESSAGE_SIZE  8192
 
 typedef enum {
-    EVEN_SET,
-    ODD_SET
+    UNI_DIR,
+    BI_DIR
+} bw_type;
+
+typedef enum {
+    FIRST_HALF,
+    SECOND_HALF
 } red_PE_set;
 
 typedef enum {
@@ -41,6 +46,7 @@ typedef struct perf_metrics {
     bw_units unit;
     char *src, *dest;
     const char *bw_type;
+    bw_type type;
 } perf_metrics_t;
 
 long red_psync[_SHMEM_REDUCE_SYNC_SIZE];
@@ -63,28 +69,33 @@ void static data_init(perf_metrics_t * data) {
 
 void static bi_dir_data_init(perf_metrics_t * data) {
     data->bw_type = "Bi-directional Bandwidth";
+    data->type = BI_DIR;
 }
 
 void static uni_dir_data_init(perf_metrics_t * data) {
     data->bw_type = "Uni-directional Bandwidth";
+    data->type = UNI_DIR;
 }
 
 
-int static inline partner_node(int my_node)
+int static inline partner_node(perf_metrics_t my_info)
 {
-    return ((my_node % 2 == 0) ? (my_node + 1) : (my_node - 1));
+    int pairs = my_info.num_pes / 2;
+
+    return (my_info.my_node < pairs ? my_info.my_node + pairs :
+                    my_info.my_node - pairs);
 }
 
 int static inline streaming_node(perf_metrics_t my_info)
 {
-    return (my_info.my_node % 2 == 0);
+    return (my_info.my_node < (my_info.num_pes / 2));
 
 }
 
 /* put/get bw use opposite streaming/validate nodes */
 red_PE_set static inline validation_set(perf_metrics_t my_info)
 {
-    return (streaming_node(my_info) ? EVEN_SET : ODD_SET);
+    return (streaming_node(my_info) ? FIRST_HALF : SECOND_HALF);
 
 }
 
@@ -195,15 +206,15 @@ void static inline PE_set_used_adjustments(int *stride, int *start_pe, perf_metr
 {
     red_PE_set PE_set = validation_set(my_info);
 
-    if(PE_set == EVEN_SET) {
+    if(PE_set == FIRST_HALF) {
         *start_pe = 0;
     }
     else {
-        assert(PE_set == ODD_SET);
-        *start_pe = 1;
+        assert(PE_set == SECOND_HALF);
+        *start_pe = my_info.num_pes / 2;
     }
 
-    *stride = 1; /* every other PE */
+    *stride = 0; /* back to back PEs */
 }
 
 
@@ -223,6 +234,10 @@ void static inline calc_and_print_results(double total_t, int len,
         bw = (len / 1e6 * metric_info.window_size * metric_info.trials) /
                 (total_t / 1e6);
     }
+
+    /* 2x as many messages/bytes at once for bi-directional */
+    if(metric_info.type == BI_DIR)
+        bw *= 2;
 
     /* base case: will be overwritten by collective if num_pes > 2 */
     pe_bw_sum = bw;
@@ -258,7 +273,7 @@ void static inline large_message_metric_chg(perf_metrics_t *metric_info, int len
 extern void bi_dir_bw(int len, perf_metrics_t *metric_info);
 
 void static inline bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
-    int len = 0, partner_pe = partner_node(metric_info.my_node);
+    int len = 0, partner_pe = partner_node(metric_info);
 
     if (metric_info.my_node == 0)
         print_results_header(metric_info);
@@ -288,7 +303,7 @@ void static inline bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
 extern void uni_dir_bw(int len, perf_metrics_t *metric_info);
 
 void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
-    int len = 0, partner_pe = partner_node(metric_info.my_node);
+    int len = 0, partner_pe = partner_node(metric_info);
 
     if (metric_info.my_node == 0)
         print_results_header(metric_info);
