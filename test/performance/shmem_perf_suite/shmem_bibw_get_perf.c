@@ -35,6 +35,14 @@
 
 #include <bw_common.h>
 
+#define shmem_putmem(dest, source, nelems, pe) \
+        shmem_getmem(dest, source, nelems, pe)
+
+/* NO-OP */
+#define shmem_quiet();
+
+#include <bi_dir.h>
+
 int main(int argc, char *argv[])
 {
     bi_dir_bw_main(argc,argv);
@@ -42,33 +50,8 @@ int main(int argc, char *argv[])
     return 0;
 }  /* end of main() */
 
-/*even PE's get to their odd counterpart (my_node + 1), which does a get
- * back to them at the same time*/
 void
 bi_dir_bw(int len, perf_metrics_t *metric_info)
 {
-    double start = 0.0, end = 0.0;
-    int dest = partner_node(metric_info->my_node);
-    int i = 0, j = 0;
-
-    shmem_barrier_all();
-
-    if (metric_info->my_node % 2 == 0) {
-        for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
-            if(i == metric_info->warmup)
-                start = shmemx_wtime();
-
-            for(j = 0; j < metric_info->window_size; j++)
-                shmem_getmem(metric_info->dest, metric_info->src, len, dest);
-        }
-        end = shmemx_wtime();
-
-        calc_and_print_results((end - start), len, *metric_info, EVEN_SET);
-
-    } else {
-        for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
-            for(j = 0; j < metric_info->window_size; j++)
-                shmem_getmem(metric_info->dest, metric_info->src, len, dest);
-        }
-    }
+    bi_bw(len, metric_info);
 }

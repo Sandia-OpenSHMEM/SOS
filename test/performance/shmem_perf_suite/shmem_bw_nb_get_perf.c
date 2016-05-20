@@ -36,10 +36,7 @@
 #include <bw_common.h>
 
 #define shmem_putmem(dest, source, nelems, pe) \
-        shmem_getmem(dest, source, nelems, pe)
-
-/* NO-OP */
-#define shmem_quiet();
+        shmem_getmem_nbi(dest, source, nelems, pe)
 
 #include <uni_dir.h>
 

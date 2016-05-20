@@ -21,11 +21,15 @@
 #define WARMUP_LARGE  10
 #define LARGE_MESSAGE_SIZE  8192
 
-/*if PE set starts at zero will use only even set, else odd set*/
 typedef enum {
-    EVEN_SET = 0,
-    ODD_SET = 1
-} red_PE_start;
+    UNI_DIR,
+    BI_DIR
+} bw_type;
+
+typedef enum {
+    FIRST_HALF,
+    SECOND_HALF
+} red_PE_set;
 
 typedef enum {
     B,
@@ -42,6 +46,7 @@ typedef struct perf_metrics {
     bw_units unit;
     char *src, *dest;
     const char *bw_type;
+    bw_type type;
 } perf_metrics_t;
 
 long red_psync[_SHMEM_REDUCE_SYNC_SIZE];
@@ -64,11 +69,36 @@ void static data_init(perf_metrics_t * data) {
 
 void static bi_dir_data_init(perf_metrics_t * data) {
     data->bw_type = "Bi-directional Bandwidth";
+    data->type = BI_DIR;
 }
 
 void static uni_dir_data_init(perf_metrics_t * data) {
     data->bw_type = "Uni-directional Bandwidth";
+    data->type = UNI_DIR;
 }
+
+
+int static inline partner_node(perf_metrics_t my_info)
+{
+    int pairs = my_info.num_pes / 2;
+
+    return (my_info.my_node < pairs ? my_info.my_node + pairs :
+                    my_info.my_node - pairs);
+}
+
+int static inline streaming_node(perf_metrics_t my_info)
+{
+    return (my_info.my_node < (my_info.num_pes / 2));
+
+}
+
+/* put/get bw use opposite streaming/validate nodes */
+red_PE_set static inline validation_set(perf_metrics_t my_info)
+{
+    return (streaming_node(my_info) ? FIRST_HALF : SECOND_HALF);
+
+}
+
 /**************************************************************/
 /*                   Input Checking                           */
 /**************************************************************/
@@ -170,34 +200,56 @@ void static print_results_header(perf_metrics_t metric_info) {
     printf("         in messages/seconds\n");
 }
 
-/* reduction to collect performance results from even PE set
-    then start_pe will print results --- assumes num_pes is even -start_pe
-    determines if it uses even or odd set */
+/* reduction to collect performance results from PE set
+    then start_pe will print results --- assumes num_pes is even */
+void static inline PE_set_used_adjustments(int *stride, int *start_pe, perf_metrics_t my_info)
+{
+    red_PE_set PE_set = validation_set(my_info);
+
+    if(PE_set == FIRST_HALF) {
+        *start_pe = 0;
+    }
+    else {
+        assert(PE_set == SECOND_HALF);
+        *start_pe = my_info.num_pes / 2;
+    }
+
+    *stride = 0; /* back to back PEs */
+}
+
+
 void static inline calc_and_print_results(double total_t, int len,
-                            perf_metrics_t metric_info, red_PE_start start_pe)
+                            perf_metrics_t metric_info)
 {
     int half_of_nPEs = metric_info.num_pes/2;
-    int stride_every_other_pe = 1;
+    int stride = 0, start_pe = 0;
     static double pe_bw_sum, bw = 0.0; /*must be symmetric for reduction*/
     double pe_bw_avg = 0.0, pe_mr_avg = 0.0;
     int nred_elements = 1;
     static double pwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
 
+    PE_set_used_adjustments(&stride, &start_pe, metric_info);
+
     if (total_t > 0 ) {
         bw = (len / 1e6 * metric_info.window_size * metric_info.trials) /
-                (total_t);
+                (total_t / 1e6);
     }
+
+    /* 2x as many messages/bytes at once for bi-directional */
+    if(metric_info.type == BI_DIR)
+        bw *= 2;
 
     /* base case: will be overwritten by collective if num_pes > 2 */
     pe_bw_sum = bw;
 
-    if(metric_info.num_pes >= 2)
+    if(metric_info.num_pes > 2)
         shmem_double_sum_to_all(&pe_bw_sum, &bw, nred_elements, start_pe,
-                                stride_every_other_pe, half_of_nPEs, pwrk,
+                                stride, half_of_nPEs, pwrk,
                                 red_psync);
 
+    /* aggregate bw since bw op pairs are communicating simultaneously */
     if(metric_info.my_node == start_pe) {
-        pe_bw_avg = pe_bw_sum / metric_info.num_pes;
+        pe_bw_avg = pe_bw_sum;
         pe_mr_avg = pe_bw_avg / (len / 1e6);
         print_data_results(pe_bw_avg, pe_mr_avg, metric_info, len);
     }
@@ -221,7 +273,7 @@ void static inline large_message_metric_chg(perf_metrics_t *metric_info, int len
 extern void bi_dir_bw(int len, perf_metrics_t *metric_info);
 
 void static inline bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
-    int len = 0, partner_pe = partner_node(metric_info.my_node);
+    int len = 0, partner_pe = partner_node(metric_info);
 
     if (metric_info.my_node == 0)
         print_results_header(metric_info);
@@ -234,10 +286,9 @@ void static inline bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
         bi_dir_bw(len, &metric_info);
     }
 
+    shmem_barrier_all();
+
     if(metric_info.validate) {
-        if(metric_info.my_node % 2 == 0)
-            validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
-        else
             validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
     }
 }
@@ -252,7 +303,7 @@ void static inline bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
 extern void uni_dir_bw(int len, perf_metrics_t *metric_info);
 
 void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
-    int len = 0, partner_pe = partner_node(metric_info.my_node);
+    int len = 0, partner_pe = partner_node(metric_info);
 
     if (metric_info.my_node == 0)
         print_results_header(metric_info);
@@ -265,7 +316,9 @@ void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
         uni_dir_bw(len, &metric_info);
     }
 
-    if((metric_info.my_node % 2 == 0) && metric_info.validate)
+    shmem_barrier_all();
+
+    if(streaming_node(metric_info) && metric_info.validate)
         validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
 
 }
@@ -318,8 +371,9 @@ void static inline uni_dir_init(perf_metrics_t *metric_info, int argc,
 void static inline bw_data_free(perf_metrics_t *metric_info) {
     shmem_barrier_all();
 
-    shmem_free(metric_info->src);
-    shmem_free(metric_info->dest);
+    aligned_buffer_free(metric_info->src);
+    aligned_buffer_free(metric_info->dest);
+
     shmem_finalize();
 }
 

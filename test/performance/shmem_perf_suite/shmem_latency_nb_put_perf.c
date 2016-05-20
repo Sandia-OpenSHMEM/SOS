@@ -27,8 +27,9 @@
 **  Notice: micro benchmark ~ two nodes only
 **
 **  Features of Test:
-**  1) small get latency test
-**  2) getmem latency test to calculate latency of various sizes
+**  1) small put pingpong latency test
+**  2) one sided latency test to calculate latency of various sizes
+**    to the network stack
 **
 */
 
@@ -36,7 +37,6 @@
 
 int main(int argc, char *argv[])
 {
-
     latency_main(argc, argv);
 
     return 0;
@@ -47,12 +47,12 @@ void
 long_element_round_trip_latency(perf_metrics_t data)
 {
     double start, end;
-    int dest = 1, i = 0;
-    int partner_pe = partner_node(data.my_node);
-    *data.target = data.my_node;
+    long tmp;
+    int dest = (data.my_node + 1) % data.npes, i = 0;
+    tmp = *data.target = INIT_VALUE;
 
     if (data.my_node == 0) {
-        printf("\nshmem_long_g results:\n");
+        printf("\nPing-Pong shmem_long_p results:\n");
         print_results_header();
     }
 
@@ -63,18 +63,23 @@ long_element_round_trip_latency(perf_metrics_t data)
             if(i == data.warmup)
                 start = perf_shmemx_wtime();
 
-            *data.target = shmem_long_g(data.target, dest);
+            shmem_long_p(data.target, ++tmp, dest);
+
+            shmem_long_wait_until(data.target, SHMEM_CMP_EQ, tmp);
         }
         end = perf_shmemx_wtime();
 
+        data.trials = data.trials*2; /*output half to get single round trip time*/
         calc_and_print_results(start, end, sizeof(long), data);
 
-        if(data.validate) {
-            if(*data.target != partner_pe)
-                printf("validation error shmem_long_g target = %ld != %d\n",
-                        *data.target, partner_pe);
+   } else {
+        for (i = 0; i < data.trials + data.warmup; i++) {
+            shmem_long_wait_until(data.target, SHMEM_CMP_EQ, ++tmp);
+
+            shmem_long_p(data.target, tmp, dest);
         }
-    }
+   }
+
 } /*gauge small put pathway round trip latency*/
 
 
@@ -84,13 +89,16 @@ streaming_latency(int len, perf_metrics_t *data)
     double start, end;
     int i = 0;
 
-    if (data->my_node == 0) {
+    /*puts to zero to match gets validation scheme*/
+    if (data->my_node == 1) {
 
         for (i = 0; i < data->trials + data->warmup; i++) {
             if(i == data->warmup)
                 start = perf_shmemx_wtime();
 
-            shmem_getmem(data->dest, data->src, len, 1);
+            shmem_putmem_nbi(data->dest, data->src, len, 0);
+            shmem_quiet();
+
         }
         end = perf_shmemx_wtime();
 

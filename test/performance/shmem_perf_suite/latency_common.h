@@ -52,7 +52,12 @@ void static inline calc_and_print_results(double start, double end, int len,
     double latency = 0.0;
     latency = (end - start) / data.trials;
 
-    printf("%9d           %8.2f             \n", len, latency * 1000000.0);
+    printf("%9d           %8.2f             \n", len, latency);
+}
+
+int static inline partner_node(int my_node)
+{
+    return ((my_node % 2 == 0) ? (my_node + 1) : (my_node - 1));
 }
 
 void static inline command_line_arg_check(int argc, char *argv[],
@@ -175,8 +180,8 @@ void static inline latency_free_resources(perf_metrics_t *data) {
     shmem_barrier_all();
 
     shmem_free(data->target);
-    shmem_free(data->src);
-    shmem_free(data->dest);
+    aligned_buffer_free(data->src);
+    aligned_buffer_free(data->dest);
     shmem_finalize();
 }
 

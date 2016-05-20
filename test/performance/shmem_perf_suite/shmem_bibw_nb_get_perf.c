@@ -26,7 +26,7 @@
 **
 **  This is a bandwidth centric test for get: back-to-back message rate
 **
-**  Features of Test: uni-directional bandwidth
+**  Features of Test: bi-direction bandwidth
 **
 **  -by default megabytes/second results
 **
@@ -36,22 +36,19 @@
 #include <bw_common.h>
 
 #define shmem_putmem(dest, source, nelems, pe) \
-        shmem_getmem(dest, source, nelems, pe)
+        shmem_getmem_nbi(dest, source, nelems, pe)
 
-/* NO-OP */
-#define shmem_quiet();
-
-#include <uni_dir.h>
+#include <bi_dir.h>
 
 int main(int argc, char *argv[])
 {
-    uni_dir_bw_main(argc,argv);
+    bi_dir_bw_main(argc,argv);
 
     return 0;
 }  /* end of main() */
 
 void
-uni_dir_bw(int len, perf_metrics_t *metric_info)
+bi_dir_bw(int len, perf_metrics_t *metric_info)
 {
-    uni_bw(len, metric_info, streaming_node(*metric_info));
+    bi_bw(len, metric_info);
 }

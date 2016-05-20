@@ -21,7 +21,6 @@
 
 #include <shmem.h>
 #include <shmemx.h>
-#define HAVE_SHMEMX_WTIME
 
 void one2many_put(int *dst, int *src, int Elems, int me, int npe, int laps);
 void many2one_get(int *dst, int *src, int Elems, int me, int npe, int laps);
