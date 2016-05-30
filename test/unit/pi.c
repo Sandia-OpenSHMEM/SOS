@@ -69,18 +69,22 @@ main(int argc, char* argv[], char *envp[])
 
     shmem_barrier_all();
 
+    int errors = 0;
+
     if(me == 0) {
         for(int i = 1; i < myshmem_n_pes; ++i) {
             unsigned long long remoteInside,remoteTotal;
-            shmem_longlong_get(&remoteInside,&inside,1,1);
-            shmem_longlong_get(&remoteTotal,&total,1,1);
+            shmem_longlong_get(&remoteInside,&inside,1,i);
+            shmem_longlong_get(&remoteTotal,&total,1,i);
             total += remoteTotal;
             inside += remoteInside;
         }
 
         double approx_pi = 4.0*inside/(double)total;
 
-        assert(fabs(M_PI-approx_pi) < 0.1);
+        if(fabs(M_PI-approx_pi) > 0.1) {
+            ++errors;
+        }
 
         if (NULL == getenv("MAKELEVEL")) {
             printf("Pi from %llu points on %d PEs: %lf\n",total,myshmem_n_pes,approx_pi);
@@ -89,6 +93,6 @@ main(int argc, char* argv[], char *envp[])
 
     shmem_finalize();
 
-    return 0;
+    return errors;
 }
 
