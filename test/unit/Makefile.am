@@ -89,7 +89,7 @@ TESTS += \
     cxx_test_shmem_inc \
     cxx_test_shmem_p \
     cxx_test_shmem_put \
-    cxx_test_shmem_set \
+    cxx_test_shmem_set
 endif
 
 if HAVE_FORTRAN
