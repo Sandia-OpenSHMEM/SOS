@@ -18,6 +18,10 @@
 
 #include <stddef.h>
 #include <complex.h>
+#ifdef __cplusplus
+#define complex _Complex
+extern "C" {
+#endif
 
 #define SHMEM_CMP_EQ 1
 #define SHMEM_CMP_NE 2
@@ -662,5 +666,10 @@ void start_pes(int npes) __attribute__ ((deprecated));
 #else
 long shmem_swap(long *target, long value, int pe);
 #endif /* C11 */
+
+#ifdef __cplusplus
+}
+#undef complex
+#endif
 
 #endif /* SHMEM_H */
