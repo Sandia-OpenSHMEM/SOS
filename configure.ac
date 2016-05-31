@@ -101,6 +101,10 @@ AC_ARG_ENABLE([fortran],
     [AC_HELP_STRING([--disable-fortran],
                     [Disable building the Fortran bindings (default: enabled)])])
 
+AC_ARG_ENABLE([cxx],
+    [AC_HELP_STRING([--disable-cxx],
+                    [Disable building the C++ bindings (default: enabled)])])
+
 AC_ARG_ENABLE([libtool-wrapper],
   [AS_HELP_STRING([--disable-libtool-wrapper],
     [Disable use of libtool executable wrappers for tests (default: enabled)])])
@@ -145,11 +149,15 @@ AC_PROG_CC_C99
 AC_C_INLINE
 m4_ifdef([AM_PROG_AR],[AM_PROG_AR])
 AC_PATH_PROG([PERL],[perl])
-AC_PROG_CXX
 if test "$enable_fortran" != "no" ; then
   AC_PROG_FC
 else
   FC=
+fi
+if test "$enable_cxx" != "no" ; then
+  AC_PROG_CXX
+else
+  CXX=
 fi
 if test "$FC" != "" ; then
   AC_FC_WRAPPERS
@@ -328,6 +336,45 @@ AC_SUBST(FORTRAN_PTR_KIND)
 
 AM_CONDITIONAL([HAVE_FORTRAN], [test "$FC" != ""])
 
+if test "$FC" != "" ; then
+  AC_DEFINE([ENABLE_FORTRAN],[1],[Fortran support enabled])
+  # make sure Fortran supports ISO_C_BINDING (Fortran 2003)
+  AC_CACHE_CHECK([if Fortran compiler supports ISO_C_BINDING],
+    [shmem_cv_fortran_iso_c_binding],
+    [AC_LANG_PUSH([Fortran])
+     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(, [[
+        use, intrinsic :: ISO_C_BINDING
+	integer(c_int) :: i
+	i = 5
+]])], [shmem_cv_fortran_iso_c_binding="yes"],
+      [shmem_cv_fortran_iso_c_binding="no"])])
+  AS_IF([test "$shmem_cv_fortran_iso_c_binding" = "no"],
+    [AC_MSG_ERROR([Fortran compiler does not support ISO_C_BINDING, which is required for Sandia OpenSHMEM.])])
+
+  # Get size of Fortran types
+  OMPI_FORTRAN_GET_SIZEOF([], [LOGICAL])
+  OMPI_FORTRAN_GET_SIZEOF([], [CHARACTER])
+  OMPI_FORTRAN_GET_SIZEOF([], [INTEGER])
+  OMPI_FORTRAN_GET_SIZEOF([], [REAL])
+  OMPI_FORTRAN_GET_SIZEOF([], [DOUBLE PRECISION])
+  OMPI_FORTRAN_GET_SIZEOF([], [COMPLEX])
+
+  # find Portals integer type corresponding to INTEGER
+  SHMEM_FIND_FORTRAN_INT_TYPE([INTEGER], [$transport])
+
+  # find C type corresponding to given Fortran types
+  OMPI_FIND_TYPE([INTEGER], [char,     short, int, long, long long])
+  OMPI_FIND_TYPE([DOUBLE PRECISION], [float, double, long double])
+
+  # Find kind values for 4 & 8 byte integer types in Fortran (used in
+  # shmem.fh)
+  OMPI_FORTRAN_GET_KIND_VALUE([C_INT32_T], [FORTRAN_INT4_KIND])
+  OMPI_FORTRAN_GET_KIND_VALUE([C_INT64_T], [FORTRAN_INT8_KIND])
+  OMPI_FORTRAN_GET_KIND_VALUE([C_FLOAT], [FORTRAN_REAL4_KIND])
+  OMPI_FORTRAN_GET_KIND_VALUE([C_DOUBLE], [FORTRAN_REAL8_KIND])
+fi
+AM_CONDITIONAL([HAVE_CXX], [test "$CXX" != ""])
+
 dnl check for structures
 
 dnl check for compiler characteristics
@@ -408,6 +455,7 @@ fi
 echo ""
 echo "Compilers:"
 echo "  C:              $CC"
+echo "  C++:            $CXX"
 echo "  Fortran:        $FORT"
 echo ""
 echo "Transports:"
