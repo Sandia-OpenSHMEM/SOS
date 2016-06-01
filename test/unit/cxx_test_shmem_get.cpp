@@ -36,8 +36,6 @@
 #include <stdio.h>
 #include <shmem.h>
 
-#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
-
 #define TEST_SHMEM_GET(TYPE)                                    \
   do {                                                          \
     static TYPE remote[10];                                     \
@@ -56,11 +54,6 @@
         rc = EXIT_FAILURE;                                      \
       }                                                         \
   } while (false)
-
-#else
-#define TEST_SHMEM_GET(TYPE)
-
-#endif
 
 int main(int argc, char* argv[]) {
   shmem_init();

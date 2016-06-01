@@ -147,17 +147,13 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CC_C99
 AC_C_INLINE
+AC_PROG_CXX
 m4_ifdef([AM_PROG_AR],[AM_PROG_AR])
 AC_PATH_PROG([PERL],[perl])
 if test "$enable_fortran" != "no" ; then
   AC_PROG_FC
 else
   FC=
-fi
-if test "$enable_cxx" != "no" ; then
-  AC_PROG_CXX
-else
-  CXX=
 fi
 if test "$FC" != "" ; then
   AC_FC_WRAPPERS
@@ -373,7 +369,7 @@ if test "$FC" != "" ; then
   OMPI_FORTRAN_GET_KIND_VALUE([C_FLOAT], [FORTRAN_REAL4_KIND])
   OMPI_FORTRAN_GET_KIND_VALUE([C_DOUBLE], [FORTRAN_REAL8_KIND])
 fi
-AM_CONDITIONAL([HAVE_CXX], [test "$CXX" != ""])
+AM_CONDITIONAL([HAVE_CXX], [test "$enable_cxx" != "no" ])
 
 dnl check for structures
 
@@ -450,6 +446,10 @@ AC_OUTPUT
 FORT="$FC"
 if test "$FORT" = "" ; then
   FORT="none"
+fi
+
+if test "$enable_cxx" == "no"; then
+  CXX="none"
 fi
 
 echo ""
