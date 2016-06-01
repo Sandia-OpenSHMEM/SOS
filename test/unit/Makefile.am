@@ -13,6 +13,7 @@ check_PROGRAMS = $(TESTS)
 
 TESTS = \
 	hello \
+	pi \
 	micro_unit_shmem \
 	circular_shift \
 	accessible_ping \
@@ -111,6 +112,9 @@ LOG_COMPILER = $(TEST_RUNNER)
 AM_CPPFLAGS = -I$(top_srcdir)/mpp
 AM_FCFLAGS = -I$(top_srcdir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
+
+pi_SOURCES = pi.c
+pi_LDADD = $(top_builddir)/src/libsma.la
 
 hello_SOURCES = hello.c
 hello_LDADD = $(top_builddir)/src/libsma.la
