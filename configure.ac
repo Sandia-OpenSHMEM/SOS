@@ -147,7 +147,7 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CC_C99
 AC_C_INLINE
-AC_PROG_CXX
+AC_PROG_CXX dnl required even with --disable-cxx due to automake conditionals
 m4_ifdef([AM_PROG_AR],[AM_PROG_AR])
 AC_PATH_PROG([PERL],[perl])
 if test "$enable_fortran" != "no" ; then
