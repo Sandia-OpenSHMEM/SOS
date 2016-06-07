@@ -40,30 +40,30 @@ static long target[N_THREADS*N_ELEMS];
 pthread_barrier_t fencebar;
 
 void* roundrobin(void* tparam) {
-    int tid = (int)tparam;
+    ptrdiff_t tid = (ptrdiff_t)tparam;
     int offset = tid*N_ELEMS;
-    fprintf(stderr,"Starting thread %d with offset %d\n",tid,offset);
+    fprintf(stderr,"Starting thread %lu with offset %d\n",tid,offset);
 
     int nextpe = (shmem_my_pe()+1)%shmem_n_pes();
     int prevpe = (shmem_my_pe()-1 + shmem_n_pes())%shmem_n_pes();
     shmem_long_put(target+offset, source+offset, N_ELEMS, nextpe);
 
-    fprintf(stderr,"Thread %d done first put\n",tid);
+    fprintf(stderr,"Thread %lu done first put\n",tid);
     pthread_barrier_wait(&fencebar);
     pthread_barrier_wait(&fencebar);
 
     shmem_long_get(source+offset, target+offset, N_ELEMS, prevpe);
 
-    fprintf(stderr,"Thread %d done first get\n",tid);
+    fprintf(stderr,"Thread %lu done first get\n",tid);
     pthread_barrier_wait(&fencebar);
     pthread_barrier_wait(&fencebar);
 
     shmem_long_get(target+offset, source+offset, N_ELEMS, nextpe);
 
-    fprintf(stderr,"Thread %d done second get\n",tid);
+    fprintf(stderr,"Thread %lu done second get\n",tid);
     pthread_barrier_wait(&fencebar);
     pthread_barrier_wait(&fencebar);
-    fprintf(stderr,"Done thread %d\n",tid);
+    fprintf(stderr,"Done thread %lu\n",tid);
 
     return 0;
 }
@@ -86,8 +86,13 @@ main(int argc, char* argv[])
 
     pthread_t threads[N_THREADS];
 
+    pthread_barrier_init(&fencebar,NULL,N_THREADS+1);
+
+    fprintf(stderr,"Starting threads\n");
     for(i = 0; i < N_THREADS; ++i) {
-        pthread_create(&threads[i],NULL,&roundrobin,(void*)i);
+        fprintf(stderr,"Starting thread %d\n",i);
+        ptrdiff_t tid = i;
+        pthread_create(&threads[i],NULL,&roundrobin,(void*)tid);
     }
 
     pthread_barrier_wait(&fencebar);
@@ -103,6 +108,7 @@ main(int argc, char* argv[])
     for(i = 0; i < N_THREADS; ++i) {
         pthread_join(threads[i],NULL);
     }
+    pthread_barrier_destroy(&fencebar);
 
     if (0 != memcmp(source, target, sizeof(long) * N_THREADS*N_ELEMS)) {
         fprintf(stderr,"[%d] Src & Target mismatch?\n",shmem_my_pe());
