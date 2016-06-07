@@ -55,6 +55,7 @@ TESTS = \
 	fcollect64 \
 	bigput \
 	bigget \
+	threading \
 	ns \
 	bcast_flood \
 	lfinc \
@@ -76,6 +77,8 @@ TESTS = \
 	get_nbi \
 	put_nbi \
 	rma_coverage
+
+XFAIL_TESTS = threading
 
 if USE_PORTALS4
 TESTS += \
@@ -114,6 +117,10 @@ LOG_COMPILER = $(TEST_RUNNER)
 AM_CPPFLAGS = -I$(top_srcdir)/mpp
 AM_FCFLAGS = -I$(top_srcdir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
+
+threading_SOURCES = threading.c
+threading_LDADD = $(top_builddir)/src/libsma.la
+threading_LDFLAGS = -lpthread
 
 pi_SOURCES = pi.c
 pi_LDADD = $(top_builddir)/src/libsma.la
