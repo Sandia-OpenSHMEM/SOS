@@ -37,6 +37,7 @@
 
 static long source[N_THREADS*N_ELEMS];
 static long target[N_THREADS*N_ELEMS];
+pthread_barrier_t fencebar;
 
 void* roundrobin(void* tparam) {
     int tid = (int)tparam;
@@ -48,17 +49,20 @@ void* roundrobin(void* tparam) {
     shmem_long_put(target+offset, source+offset, N_ELEMS, nextpe);
 
     fprintf(stderr,"Thread %d done first put\n",tid);
-    shmem_barrier_all();  /* sync sender and receiver */
+    pthread_barrier_wait(&fencebar);
+    pthread_barrier_wait(&fencebar);
 
     shmem_long_get(source+offset, target+offset, N_ELEMS, prevpe);
 
     fprintf(stderr,"Thread %d done first get\n",tid);
-    shmem_barrier_all();  /* sync sender and receiver */
+    pthread_barrier_wait(&fencebar);
+    pthread_barrier_wait(&fencebar);
 
     shmem_long_get(target+offset, source+offset, N_ELEMS, nextpe);
 
     fprintf(stderr,"Thread %d done second get\n",tid);
-    shmem_barrier_all();  /* sync sender and receiver */
+    pthread_barrier_wait(&fencebar);
+    pthread_barrier_wait(&fencebar);
     fprintf(stderr,"Done thread %d\n",tid);
 
     return 0;
@@ -86,9 +90,15 @@ main(int argc, char* argv[])
         pthread_create(&threads[i],NULL,&roundrobin,(void*)i);
     }
 
+    pthread_barrier_wait(&fencebar);
     shmem_barrier_all(); /* put 1 */
+    pthread_barrier_wait(&fencebar);
+    pthread_barrier_wait(&fencebar);
     shmem_barrier_all(); /* get 1 */
+    pthread_barrier_wait(&fencebar);
+    pthread_barrier_wait(&fencebar);
     shmem_barrier_all(); /* get 2, threads end */
+    pthread_barrier_wait(&fencebar);
 
     for(i = 0; i < N_THREADS; ++i) {
         pthread_join(threads[i],NULL);
