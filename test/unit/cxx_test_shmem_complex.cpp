@@ -53,29 +53,28 @@
 
 long syncArr[SHMEM_REDUCE_SYNC_SIZE];
 
-#define TEST_COMPLEX(TYPE,LETTER) \
-  {                                                                   \
-    TYPE##_workData = TYPE##_alloc_data();                            \
-                                                                      \
-    memset(TYPE##_src,0,sizeof(TYPE##_src));                          \
-                                                                      \
-    shmem_complex##LETTER##_sum_to_all(TYPE##_dest,TYPE##_src,10,0,0, \
-                                       shmem_n_pes(), TYPE##_workData,\
-                                       syncArr);                      \
-                                                                      \
-    shmem_barrier_all();                                              \
-                                                                      \
-    if(shmem_my_pe() == 0) {                                          \
-      int i;                                                          \
-      for(i = 1; i < shmem_n_pes(); ++i) {                            \
-        shmem_getmem(TYPE##_src,TYPE##_dest,sizeof(TYPE##_dest),i);   \
-        if(0 != memcmp(TYPE##_src,TYPE##_dest,sizeof(TYPE##_src))) {  \
-          ++rc;                                                       \
-        }                                                             \
-      }                                                               \
-    }                                                                 \
-                                                                      \
-    shmem_barrier_all();                                              \
+#define TEST_COMPLEX(TYPE,LETTER,OP) \
+  {                                                                  \
+    TYPE##_workData = TYPE##_alloc_data();                           \
+                                                                     \
+    memset(TYPE##_src,0,sizeof(TYPE##_src));                         \
+                                                                     \
+    shmem_complex##LETTER##_##OP##_to_all(TYPE##_dest,TYPE##_src,10, \
+      0,0, shmem_n_pes(), TYPE##_workData, syncArr);                 \
+                                                                     \
+    shmem_barrier_all();                                             \
+                                                                     \
+    if(shmem_my_pe() == 0) {                                         \
+      int i;                                                         \
+      for(i = 1; i < shmem_n_pes(); ++i) {                           \
+        shmem_getmem(TYPE##_src,TYPE##_dest,sizeof(TYPE##_dest),i);  \
+        if(0 != memcmp(TYPE##_src,TYPE##_dest,sizeof(TYPE##_src))) { \
+          ++rc;                                                      \
+        }                                                            \
+      }                                                              \
+    }                                                                \
+                                                                     \
+    shmem_barrier_all();                                             \
   }
 
 DECLARE_FOR(float);
@@ -86,8 +85,10 @@ int main(int argc, char* argv[]) {
 
   int rc = 0;
 
-  TEST_COMPLEX(float,f);
-  TEST_COMPLEX(double,d);
+  TEST_COMPLEX(float,f,sum);
+  TEST_COMPLEX(float,f,prod);
+  TEST_COMPLEX(double,d,sum);
+  TEST_COMPLEX(double,d,prod);
 
   return rc;
 }
