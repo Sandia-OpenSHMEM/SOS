@@ -90,7 +90,8 @@ TESTS += \
     cxx_test_shmem_inc \
     cxx_test_shmem_p \
     cxx_test_shmem_put \
-    cxx_test_shmem_set
+    cxx_test_shmem_set \
+    cxx_test_shmem_complex
 endif
 
 if HAVE_FORTRAN
@@ -332,6 +333,9 @@ cxx_test_shmem_fetch_LDADD = $(top_builddir)/src/libsma.la
 
 cxx_test_shmem_set_SOURCES = cxx_test_shmem_set.cpp
 cxx_test_shmem_set_LDADD = $(top_builddir)/src/libsma.la
+
+cxx_test_shmem_complex_SOURCES = cxx_test_shmem_complex.cpp
+cxx_test_shmem_complex_LDADD = $(top_builddir)/src/libsma.la
 
 get_nbi_SOURCES = get_nbi.c
 get_nbi_LDADD = $(top_builddir)/src/libsma.la
