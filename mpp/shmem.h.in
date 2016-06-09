@@ -495,7 +495,9 @@ void start_pes(int npes) __attribute__ ((deprecated));
 /* C++ overloaded declarations */
 #ifdef __cplusplus
 } /* extern "C" */
+#ifdef complex
 #undef complex
+#endif
 
 using std::ptrdiff_t;
 using std::size_t;
