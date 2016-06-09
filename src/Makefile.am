@@ -101,11 +101,15 @@ libsma_la_SOURCES += \
 endif
 
 
-bin_SCRIPTS = oshcc oshc++ oshrun
-CLEANFILES += oshcc oshc++ oshrun
+bin_SCRIPTS = oshcc oshrun
+CLEANFILES += oshcc oshrun
 if CASE_SENSITIVE_FS
 bin_SCRIPTS += oshCC
 CLEANFILES += oshCC
+endif
+if HAVE_CXX
+bin_SCRIPTS += oshc++
+CLEANFILES += oshc++
 endif
 if HAVE_FORTRAN
 bin_SCRIPTS += oshfort

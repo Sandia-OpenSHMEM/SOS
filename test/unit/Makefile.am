@@ -81,6 +81,19 @@ TESTS += \
 	 shmem_ct
 endif
 
+if HAVE_CXX
+TESTS += \
+    cxx_test_shmem_add \
+    cxx_test_shmem_fetch \
+    cxx_test_shmem_g \
+    cxx_test_shmem_get \
+    cxx_test_shmem_inc \
+    cxx_test_shmem_p \
+    cxx_test_shmem_put \
+    cxx_test_shmem_set \
+    cxx_test_shmem_complex
+endif
+
 if HAVE_FORTRAN
 TESTS += \
      hello_f \
@@ -296,6 +309,33 @@ c11_test_shmem_fetch_LDADD = $(top_builddir)/src/libsma.la
 
 c11_test_shmem_set_SOURCES = c11_test_shmem_set.c
 c11_test_shmem_set_LDADD = $(top_builddir)/src/libsma.la
+
+cxx_test_shmem_add_SOURCES = cxx_test_shmem_add.cpp
+cxx_test_shmem_add_LDADD = $(top_builddir)/src/libsma.la
+
+cxx_test_shmem_g_SOURCES = cxx_test_shmem_g.cpp
+cxx_test_shmem_g_LDADD = $(top_builddir)/src/libsma.la
+
+cxx_test_shmem_get_SOURCES = cxx_test_shmem_get.cpp
+cxx_test_shmem_get_LDADD = $(top_builddir)/src/libsma.la
+
+cxx_test_shmem_inc_SOURCES = cxx_test_shmem_inc.cpp
+cxx_test_shmem_inc_LDADD = $(top_builddir)/src/libsma.la
+
+cxx_test_shmem_p_SOURCES = cxx_test_shmem_p.cpp
+cxx_test_shmem_p_LDADD = $(top_builddir)/src/libsma.la
+
+cxx_test_shmem_put_SOURCES = cxx_test_shmem_put.cpp
+cxx_test_shmem_put_LDADD = $(top_builddir)/src/libsma.la
+
+cxx_test_shmem_fetch_SOURCES = cxx_test_shmem_fetch.cpp
+cxx_test_shmem_fetch_LDADD = $(top_builddir)/src/libsma.la
+
+cxx_test_shmem_set_SOURCES = cxx_test_shmem_set.cpp
+cxx_test_shmem_set_LDADD = $(top_builddir)/src/libsma.la
+
+cxx_test_shmem_complex_SOURCES = cxx_test_shmem_complex.cpp
+cxx_test_shmem_complex_LDADD = $(top_builddir)/src/libsma.la
 
 get_nbi_SOURCES = get_nbi.c
 get_nbi_LDADD = $(top_builddir)/src/libsma.la

@@ -101,6 +101,10 @@ AC_ARG_ENABLE([fortran],
     [AC_HELP_STRING([--disable-fortran],
                     [Disable building the Fortran bindings (default: enabled)])])
 
+AC_ARG_ENABLE([cxx],
+    [AC_HELP_STRING([--disable-cxx],
+                    [Disable building the C++ bindings (default: enabled)])])
+
 AC_ARG_ENABLE([libtool-wrapper],
   [AS_HELP_STRING([--disable-libtool-wrapper],
     [Disable use of libtool executable wrappers for tests (default: enabled)])])
@@ -143,9 +147,9 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CC_C99
 AC_C_INLINE
+AC_PROG_CXX dnl required even with --disable-cxx due to automake conditionals
 m4_ifdef([AM_PROG_AR],[AM_PROG_AR])
 AC_PATH_PROG([PERL],[perl])
-AC_PROG_CXX
 if test "$enable_fortran" != "no" ; then
   AC_PROG_FC
 else
@@ -328,6 +332,8 @@ AC_SUBST(FORTRAN_PTR_KIND)
 
 AM_CONDITIONAL([HAVE_FORTRAN], [test "$FC" != ""])
 
+AM_CONDITIONAL([HAVE_CXX], [test "$enable_cxx" != "no" ])
+
 dnl check for structures
 
 dnl check for compiler characteristics
@@ -405,9 +411,14 @@ if test "$FORT" = "" ; then
   FORT="none"
 fi
 
+if test "$enable_cxx" == "no"; then
+  CXX="none"
+fi
+
 echo ""
 echo "Compilers:"
 echo "  C:              $CC"
+echo "  C++:            $CXX"
 echo "  Fortran:        $FORT"
 echo ""
 echo "Transports:"
