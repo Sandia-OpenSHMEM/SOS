@@ -1,47 +1,7 @@
-/* -*- C -*-
- *
- * Copyright 2011 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
- * retains certain rights in this software.
- *
- * Copyright (c) 2015 Intel Corporation. All rights reserved.
- * This software is available to you under the BSD license.
- *
- * This file is part of the Sandia OpenSHMEM software package. For license
- * information, see the LICENSE file in the top level directory of the
- * distribution.
- *
- */
-
-#ifndef SHMEMX_H
-#define SHMEMX_H
+#ifndef CONTEXT_H_INCL
+#define CONTEXT_H_INCL
 
 #include <stddef.h>
-
-#define SHMEMX_THREAD_SINGLE     0
-#define SHMEMX_THREAD_FUNNELED   1
-#define SHMEMX_THREAD_SERIALIZED 2
-#define SHMEMX_THREAD_MULTIPLE   3
-
-#define HAVE_SHMEMX_WTIME
-
-void shmemx_init_thread(int tl_requested, int *tl_provided);
-double shmemx_wtime(void);
-char* shmemx_nodename(void);
-
-/* Counting puts */
-typedef char * shmemx_ct_t;
-
-void shmemx_getmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe);
-void shmemx_putmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe);
-void shmemx_ct_create(shmemx_ct_t *ct);
-void shmemx_ct_free(shmemx_ct_t *ct);
-long shmemx_ct_get(shmemx_ct_t ct);
-void shmemx_ct_set(shmemx_ct_t ct, long value);
-void shmemx_ct_wait(shmemx_ct_t ct, long wait_for);
-
-
-/* Contexts */
 
 #define SHMEMX_CTX_DEFAULT 0
 #define SHMEMX_DOMAIN_DEFAULT 0
@@ -131,10 +91,4 @@ SHMEMX_SWAP_OP_DECLARE(double, double)
 
 long shmemx_ctx_swap(long *dest, long value, int pe, shmemx_ctx_t ctx);
 
-#undef SHMEMX_PUTGET_ALIGN_OPS_DECLARE
-#undef SHMEMX_PG_OPS_DECLARE
-#undef SHMEMX_PUTGET_OPS_DECLARE
-#undef SHMEMX_ATOMIC_OPS_DECLARE
-#undef SHMEMX_SWAP_OP_DECLARE
-
-#endif /* SHMEMX_H */
+#endif /* CONTEXT_H_INCL */
