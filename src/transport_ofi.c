@@ -1176,6 +1176,32 @@ int shmem_transport_startup(void)
     return 0;
 }
 
+void shmem_transport_print_info(void)
+{
+    char *ofi_provider;
+
+    if (NULL == (ofi_provider = shmem_util_getenv_str("OFI_PROVIDER")))
+        if (NULL == (ofi_provider = shmem_util_getenv_str("OFI_USE_PROVIDER")))
+            ofi_provider = "AUTO";
+
+    printf("\n");
+    printf("Network transport:      OFI\n");
+    printf("SMA_OFI_PROVIDER        %s\n", ofi_provider);
+    printf("\tProvider that should be used by the OFI transport\n");
+    printf("SMA_OFI_FABRIC          %s\n",
+           (shmem_util_getenv_str("OFI_FABRIC") != NULL) ?
+           shmem_util_getenv_str("OFI_FABRIC") : "AUTO");
+    printf("\tFabric that should be used by the OFI transport\n");
+    printf("SMA_OFI_DOMAIN          %s\n",
+           (shmem_util_getenv_str("OFI_DOMAIN") != NULL) ?
+           shmem_util_getenv_str("OFI_DOMAIN") : "AUTO");
+    printf("\tFabric domain that should be used by the OFI transport\n");
+    printf("SMA_OFI_ATOMIC_CHECKS_WARN %s\n",
+           (NULL != shmem_util_getenv_str("OFI_ATOMIC_CHECKS_WARN")) ?
+           "Set" : "Not set");
+    printf("\tDisplay warnings about unsupported atomic operatios\n");
+}
+
 int shmem_transport_fini(void)
 {
     /* Wait for acks before shutdown */
