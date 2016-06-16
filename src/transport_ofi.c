@@ -246,7 +246,11 @@ static int INTERNAL_REQ_OPS[]=
   FI_MSWAP
 };
 
-
+typedef enum{
+    NONE,
+    LIMITATION_WARNING,
+    SOFT_SUPPORT,
+}atomic_support_lv;
 
 
 int shmem_transport_have_long_double = 1;
@@ -672,17 +676,23 @@ static int populate_mr_tables(void)
     return 0;
 }
 
-static inline int atomicvalid_rtncheck(int ret, int atomic_size, long atomicwarn,
+/*SOFT_SUPPORT will not produce warning or error */
+static inline int atomicvalid_rtncheck(int ret, int atomic_size,
+                                    atomic_support_lv atomic_sup,
                                     char strOP[], char strDT[])
 {
-    if(ret != 0 || atomic_size == 0) {
-        fprintf(stderr, "%s OFI detected no support for atomic '%s' "
-               "on type '%s'\n", (atomicwarn ? "Warning" : "Error"),
-                strOP, strDT);
-        if(!atomicwarn) {
+    if((ret != 0 || atomic_size == 0) && atomic_sup != SOFT_SUPPORT) {
+        if(atomic_sup == LIMITATION_WARNING) {
+            fprintf(stderr, "Warning OFI detected no support for atomic '%s' "
+               "on type '%s'\n", strOP, strDT);
+        }
+        else if(atomic_sup == NONE) {
             OFI_ERRMSG("Error: atomicvalid ret=%d atomic_size=%d \n",
                        ret, atomic_size);
 	        return ret;
+        } else {
+            OFI_ERRMSG("Error: invalid software atomic support request\n");
+            RAISE_ERROR(-1);
         }
     }
 
@@ -690,7 +700,7 @@ static inline int atomicvalid_rtncheck(int ret, int atomic_size, long atomicwarn
 }
 
 static inline int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
-                                    int OPS[], long atomicwarn)
+                                    int OPS[], atomic_support_lv atomic_sup)
 {
     int i, j, ret = 0;
     size_t atomic_size;
@@ -699,7 +709,7 @@ static inline int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
       for(j=0; j<OPS_MAX; j++) {
         ret = fi_atomicvalid(shmem_transport_ofi_epfd, DT[i],
                         OPS[j], &atomic_size);
-         if(atomicvalid_rtncheck(ret, atomic_size, atomicwarn,
+         if(atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                             SHMEM_OpName[OPS[j]],
                             SHMEM_DtName[DT[i]]))
            return ret;
@@ -710,7 +720,7 @@ static inline int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
 }
 
 static inline int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
-                                    int OPS[], long atomicwarn)
+                                    int OPS[], atomic_support_lv atomic_sup)
 {
     int i, j, ret = 0;
     size_t atomic_size;
@@ -719,7 +729,7 @@ static inline int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
       for(j=0; j<OPS_MAX; j++) {
         ret = fi_compare_atomicvalid(shmem_transport_ofi_epfd, DT[i],
                         OPS[j], &atomic_size);
-         if(atomicvalid_rtncheck(ret, atomic_size, atomicwarn,
+         if(atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                             SHMEM_OpName[OPS[j]],
                             SHMEM_DtName[DT[i]]))
            return ret;
@@ -730,7 +740,7 @@ static inline int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
 }
 
 static inline int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
-                                    int OPS[], long atomicwarn)
+                                    int OPS[], atomic_support_lv atomic_sup)
 {
     int i, j, ret = 0;
     size_t atomic_size;
@@ -739,7 +749,7 @@ static inline int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
       for(j=0; j<OPS_MAX; j++) {
         ret = fi_fetch_atomicvalid(shmem_transport_ofi_epfd, DT[i],
                         OPS[j], &atomic_size);
-         if(atomicvalid_rtncheck(ret, atomic_size, atomicwarn,
+         if(atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                             SHMEM_OpName[OPS[j]],
                             SHMEM_DtName[DT[i]]))
            return ret;
@@ -753,14 +763,20 @@ static inline int atomic_limitations_check(void)
 
     /* ----------------------------------------*/
     /* Retrieve messaging limitations from OFI */
+    /*          NOTE:                          */
+    /*   currently only have reduction software*/
+    /*   atomic support, user can optionally   */
+    /*   request for warnings if other atomic  */
+    /*   limitations are detected              */
     /* ----------------------------------------*/
 
     int j = 0, ret = 0;
-    long atomicwarn = 0;
+    atomic_support_lv general_atomic_sup = NONE;
+    atomic_support_lv reduction_sup = SOFT_SUPPORT;
     size_t atomic_size;
 
     if(NULL != shmem_util_getenv_str("OFI_ATOMIC_CHECKS_WARN"))
-        atomicwarn = 1;
+        general_atomic_sup = LIMITATION_WARNING;
 
     init_ofi_tables();
 
@@ -780,50 +796,53 @@ static inline int atomic_limitations_check(void)
 
     /* Standard OPS check */
     ret = atomicvalid_DTxOP(SIZEOF_AMO_DT, SIZEOF_AMO_OPS, DT_AMO_STANDARD,
-                      AMO_STANDARD_OPS, atomicwarn);
+                      AMO_STANDARD_OPS, general_atomic_sup);
     if(ret)
         return ret;
 
     ret = fetch_atomicvalid_DTxOP(SIZEOF_AMO_DT, SIZEOF_AMO_FOPS,
-                    DT_AMO_STANDARD, FETCH_AMO_STANDARD_OPS, atomicwarn);
+                    DT_AMO_STANDARD, FETCH_AMO_STANDARD_OPS,
+                    general_atomic_sup);
     if(ret)
         return ret;
 
     ret = compare_atomicvalid_DTxOP(SIZEOF_AMO_DT, SIZEOF_AMO_COPS,
-                    DT_AMO_STANDARD, COMPARE_AMO_STANDARD_OPS, atomicwarn);
+                    DT_AMO_STANDARD, COMPARE_AMO_STANDARD_OPS,
+                    general_atomic_sup);
     if(ret)
         return ret;
 
     /* Extended OPS check */
     ret = atomicvalid_DTxOP(SIZEOF_AMO_EX_DT, SIZEOF_AMO_EX_OPS, DT_AMO_EXTENDED,
-                      AMO_EXTENDED_OPS, atomicwarn);
+                      AMO_EXTENDED_OPS, general_atomic_sup);
     if(ret)
         return ret;
 
     ret = fetch_atomicvalid_DTxOP(SIZEOF_AMO_EX_DT, SIZEOF_AMO_EX_FOPS,
-                    DT_AMO_EXTENDED, FETCH_AMO_EXTENDED_OPS, atomicwarn);
+                    DT_AMO_EXTENDED, FETCH_AMO_EXTENDED_OPS,
+                    general_atomic_sup);
     if(ret)
         return ret;
 
     /* Reduction OPS check */
     ret = atomicvalid_DTxOP(SIZEOF_RED_DT, SIZEOF_RED_OPS, DT_REDUCE_BITWISE,
-                      REDUCE_BITWISE_OPS, atomicwarn);
+                      REDUCE_BITWISE_OPS, reduction_sup);
     if(ret)
         return ret;
 
     ret = atomicvalid_DTxOP(SIZEOF_REDC_DT, SIZEOF_REDC_OPS, DT_REDUCE_COMPARE,
-                      REDUCE_COMPARE_OPS, atomicwarn);
+                      REDUCE_COMPARE_OPS, reduction_sup);
     if(ret)
         return ret;
 
     ret = atomicvalid_DTxOP(SIZEOF_REDA_DT, SIZEOF_REDA_OPS, DT_REDUCE_ARITH,
-                      REDUCE_ARITH_OPS, atomicwarn);
+                      REDUCE_ARITH_OPS, reduction_sup);
     if(ret)
         return ret;
 
     /* Internal atomic requirement */
     ret = compare_atomicvalid_DTxOP(SIZEOF_INTERNAL_REQ_DT, SIZEOF_INTERNAL_REQ_OPS,
-                    DT_INTERNAL_REQ, INTERNAL_REQ_OPS, atomicwarn);
+                    DT_INTERNAL_REQ, INTERNAL_REQ_OPS, general_atomic_sup);
     if(ret)
         return ret;
 
