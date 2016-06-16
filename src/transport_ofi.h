@@ -199,8 +199,6 @@ typedef struct shmem_transport_ofi_bounce_buffer_t shmem_transport_ofi_bounce_bu
 
 typedef int shmem_transport_ct_t;
 
-extern int shmem_transport_have_long_double;
-
 extern shmem_free_list_t *shmem_transport_ofi_bounce_buffers;
 
 int shmem_transport_init(long eager_size);
