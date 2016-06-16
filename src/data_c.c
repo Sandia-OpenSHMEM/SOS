@@ -477,6 +477,7 @@ SHMEM_DECLARE_FOR_SIZES(SHMEM_DEF_IPUT_N);
       target += tst;                                          \
       source += sst;                                          \
     }                                                         \
+    shmem_internal_get_wait();                                \
   }
 
 SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_IGET);
