@@ -94,7 +94,7 @@
       return ret;                                                      \
   }
 
-SHMEM_DECLARE_FOR_RMA(DECLARE_TEST);
+SHMEM_DECLARE_FOR_RMA(DECLARE_TEST,)
 
 int main(int argc, char* argv[]) {
     int verbose = 0;
@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
         errors += (TYPENAME##_rmaTest(nextpe,verbose)); \
     } while(0)
 
-    SHMEM_DECLARE_FOR_RMA(RUN_TEST);
+    SHMEM_DECLARE_FOR_RMA(RUN_TEST,;);
 
     shmem_finalize();
 

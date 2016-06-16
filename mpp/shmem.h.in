@@ -82,169 +82,169 @@ void *shmem_align(size_t alignment, size_t size);
 void *shmem_realloc(void *ptr, size_t size);
 void shmem_free(void *ptr);
 
-#define SHMEM_DECLARE_FOR_RMA(decl) \
-  decl(float,      float);          \
-  decl(double,     double);         \
-  decl(longdouble, long double);    \
-  decl(char,       char);           \
-  decl(short,      short);          \
-  decl(int,        int);            \
-  decl(long,       long);           \
+#define SHMEM_DECLARE_FOR_RMA(decl,END) \
+  decl(float,      float) END           \
+  decl(double,     double) END          \
+  decl(longdouble, long double) END     \
+  decl(char,       char) END            \
+  decl(short,      short) END           \
+  decl(int,        int) END             \
+  decl(long,       long) END            \
   decl(longlong,   long long)
 
-#define SHMEM_DECLARE_FOR_AMO(decl) \
-  decl(int,        int);            \
-  decl(long,       long);           \
+#define SHMEM_DECLARE_FOR_AMO(decl,END) \
+  decl(int,        int) END             \
+  decl(long,       long) END            \
   decl(longlong,   long long)
 
-#define SHMEM_DECLARE_FOR_EXTENDED_AMO(decl) \
-  SHMEM_DECLARE_FOR_AMO(decl);               \
-  decl(float,  float);                       \
+#define SHMEM_DECLARE_FOR_EXTENDED_AMO(decl,END) \
+  SHMEM_DECLARE_FOR_AMO(decl,END) END            \
+  decl(float,  float) END                        \
   decl(double, double)
 
-#define SHMEM_DECLARE_FOR_INTS(decl) \
-  decl(short,    short);                \
-  decl(int,      int);                  \
-  decl(long,     long);                 \
+#define SHMEM_DECLARE_FOR_INTS(decl,END) \
+  decl(short,    short) END              \
+  decl(int,      int) END                \
+  decl(long,     long) END               \
   decl(longlong, long long)
 
-#define SHMEM_DECLARE_FOR_FLOATS(decl) \
-  decl(float,     float);              \
-  decl(double,     double);            \
+#define SHMEM_DECLARE_FOR_FLOATS(decl,END) \
+  decl(float,     float) END               \
+  decl(double,     double) END             \
   decl(longdouble, long double)
 
-#define SHMEM_DECLARE_FOR_CMPLX(decl) \
-  decl(complexf, float complex);      \
+#define SHMEM_DECLARE_FOR_CMPLX(decl,END) \
+  decl(complexf, float complex) END       \
   decl(complexd, double complex)
 
-#define SHMEM_DECLARE_FOR_SIZES(decl) \
-  decl(mem,  1); \
-  decl(8,    1*sizeof(uint8_t));   \
-  decl(16,   2*sizeof(uint8_t));  \
-  decl(32,   4*sizeof(uint8_t));  \
-  decl(64,   8*sizeof(uint8_t));  \
+#define SHMEM_DECLARE_FOR_SIZES(decl,END) \
+  decl(mem,  1) END                       \
+  decl(8,    1*sizeof(uint8_t)) END       \
+  decl(16,   2*sizeof(uint8_t)) END       \
+  decl(32,   4*sizeof(uint8_t)) END       \
+  decl(64,   8*sizeof(uint8_t)) END       \
   decl(128, 16*sizeof(uint8_t))
 
 /* 8.3: Elemental Data Put Routines */
 #define SHMEM_P(TYPENAME,TYPE) \
     void shmem_##TYPENAME##_p(TYPE *addr, TYPE value, int pe)
-SHMEM_DECLARE_FOR_RMA(SHMEM_P);
+SHMEM_DECLARE_FOR_RMA(SHMEM_P,;);
 
 /* 8.3: Block Data Put Routines */
 #define SHMEM_PUT(TYPENAME,TYPE) \
     void shmem_##TYPENAME##_put(TYPE *target, const TYPE *source, \
                                 size_t nelems, int pe)
-SHMEM_DECLARE_FOR_RMA(SHMEM_PUT);
+SHMEM_DECLARE_FOR_RMA(SHMEM_PUT,;);
 
 #define SHMEM_PUT_N(SIZE,NBYTES) \
     void shmem_put##SIZE(void* target, const void *source, \
                          size_t nelems, int pe)
-SHMEM_DECLARE_FOR_SIZES(SHMEM_PUT_N);
+SHMEM_DECLARE_FOR_SIZES(SHMEM_PUT_N,;);
 
 /* 8.3: Strided Put Routines */
 #define SHMEM_IPUT(TYPENAME,TYPE) \
   void shmem_##TYPENAME##_iput(TYPE *target, const TYPE *source,  \
                                ptrdiff_t tst, ptrdiff_t sst,      \
                                size_t len, int pe)
-SHMEM_DECLARE_FOR_RMA(SHMEM_IPUT);
+SHMEM_DECLARE_FOR_RMA(SHMEM_IPUT,;);
 
 #define SHMEM_IPUT_N(SIZE,NBYTES) \
   void shmem_iput##SIZE(void *target, const void *source,         \
                         ptrdiff_t tst, ptrdiff_t sst, size_t len, \
                         int pe)
-SHMEM_DECLARE_FOR_SIZES(SHMEM_IPUT_N);
+SHMEM_DECLARE_FOR_SIZES(SHMEM_IPUT_N,;);
 
 /* 8.3: Elemental Data Get Routines */
 #define SHMEM_G(TYPENAME,TYPE) \
     TYPE shmem_##TYPENAME##_g(const TYPE *addr, int pe)
-SHMEM_DECLARE_FOR_RMA(SHMEM_G);
+SHMEM_DECLARE_FOR_RMA(SHMEM_G,;);
 
 /* 8.3: Block Data Get Routines */
 #define SHMEM_GET(TYPENAME,TYPE) \
     void shmem_##TYPENAME##_get(TYPE *target, const TYPE *source, \
                                 size_t nelems,int pe)
-SHMEM_DECLARE_FOR_RMA(SHMEM_GET);
+SHMEM_DECLARE_FOR_RMA(SHMEM_GET,;);
 
 #define SHMEM_GET_N(SIZE,NBYTES) \
     void shmem_get##SIZE(void* target, const void *source, \
                          size_t nelems, int pe)
-SHMEM_DECLARE_FOR_SIZES(SHMEM_GET_N);
+SHMEM_DECLARE_FOR_SIZES(SHMEM_GET_N,;);
 
 /* 8.3: Strided Get Routines */
 #define SHMEM_IGET(TYPENAME,TYPE) \
     void shmem_##TYPENAME##_iget(TYPE *target, const TYPE *source, \
                                  ptrdiff_t tst, ptrdiff_t sst,     \
                                  size_t nelems, int pe)
-SHMEM_DECLARE_FOR_RMA(SHMEM_IGET);
+SHMEM_DECLARE_FOR_RMA(SHMEM_IGET,;);
 
 #define SHMEM_IGET_N(SIZE,NBYTES) \
     void shmem_iget##SIZE(void* target, const void *source, \
                           ptrdiff_t tst, ptrdiff_t sst,     \
                           size_t nelems, int pe)
-SHMEM_DECLARE_FOR_SIZES(SHMEM_IGET_N);
+SHMEM_DECLARE_FOR_SIZES(SHMEM_IGET_N,;);
 
 /* 8.4: Nonblocking remote memory access routines -- Put */
 #define SHMEM_PUT_NBI(TYPENAME,TYPE) \
     void shmem_##TYPENAME##_put_nbi(TYPE *target, const TYPE *source,\
                                     size_t nelems, int pe)
-SHMEM_DECLARE_FOR_RMA(SHMEM_PUT_NBI);
+SHMEM_DECLARE_FOR_RMA(SHMEM_PUT_NBI,;);
 
 #define SHMEM_PUT_N_NBI(SIZE,NBYTES) \
     void shmem_put##SIZE##_nbi(void* target, const void *source, \
                                size_t nelems, int pe)
-SHMEM_DECLARE_FOR_SIZES(SHMEM_PUT_N_NBI);
+SHMEM_DECLARE_FOR_SIZES(SHMEM_PUT_N_NBI,;);
 
 /* 8.4: Nonblocking remote memory access routines -- Get */
 #define SHMEM_GET_NBI(TYPENAME,TYPE) \
     void shmem_##TYPENAME##_get_nbi(TYPE *target, const TYPE *source,\
                                     size_t nelems, int pe)
-SHMEM_DECLARE_FOR_RMA(SHMEM_GET_NBI);
+SHMEM_DECLARE_FOR_RMA(SHMEM_GET_NBI,;);
 
 #define SHMEM_GET_N_NBI(SIZE,NBYTES) \
     void shmem_get##SIZE##_nbi(void* target, const void *source, \
                                size_t nelems, int pe)
-SHMEM_DECLARE_FOR_SIZES(SHMEM_GET_N_NBI);
+SHMEM_DECLARE_FOR_SIZES(SHMEM_GET_N_NBI,;);
 
 /* 8.4: Atomic Memory fetch-and-operate Routines -- Swap */
 #define SHMEM_SWAP(TYPENAME,TYPE) \
   TYPE shmem_##TYPENAME##_swap(TYPE *target, TYPE value, int pe)
-SHMEM_DECLARE_FOR_EXTENDED_AMO(SHMEM_SWAP);
+SHMEM_DECLARE_FOR_EXTENDED_AMO(SHMEM_SWAP,;);
 
 /* 8.4: Atomic Memory fetch-and-operate Routines -- Cswap */
 #define SHMEM_CSWAP(TYPENAME,TYPE) \
   TYPE shmem_##TYPENAME##_cswap(TYPE *target, TYPE cond, TYPE value, \
                                 int pe)
-SHMEM_DECLARE_FOR_AMO(SHMEM_CSWAP);
+SHMEM_DECLARE_FOR_AMO(SHMEM_CSWAP,;);
 
 /* 8.4: Atomic Memory fetch-and-operate Routines -- Fetch and Add */
 #define SHMEM_FADD(TYPENAME,TYPE) \
   TYPE shmem_##TYPENAME##_fadd(TYPE *target, TYPE value, int pe)
-SHMEM_DECLARE_FOR_AMO(SHMEM_FADD);
+SHMEM_DECLARE_FOR_AMO(SHMEM_FADD,;);
 
 /* 8.4: Atomic Memory fetch-and-operate Routines -- Fetch and Increment */
 #define SHMEM_FINC(TYPENAME,TYPE) \
   TYPE shmem_##TYPENAME##_finc(TYPE *target, int pe)
-SHMEM_DECLARE_FOR_AMO(SHMEM_FINC);
+SHMEM_DECLARE_FOR_AMO(SHMEM_FINC,;);
 
 /* 8.4: Atomic Memory Operation Routines -- Add */
 #define SHMEM_ADD(TYPENAME,TYPE) \
   void shmem_##TYPENAME##_add(TYPE *target, TYPE value, int pe)
-SHMEM_DECLARE_FOR_AMO(SHMEM_ADD);
+SHMEM_DECLARE_FOR_AMO(SHMEM_ADD,;);
 
 /* 8.4: Atomic Memory Operation Routines -- Increment */
 #define SHMEM_INC(TYPENAME,TYPE) \
   void shmem_##TYPENAME##_inc(TYPE *target, int pe)
-SHMEM_DECLARE_FOR_AMO(SHMEM_INC);
+SHMEM_DECLARE_FOR_AMO(SHMEM_INC,;);
 
 /* 8.4: Atomic fetch */
 #define SHMEM_FETCH(TYPENAME,TYPE) \
   TYPE shmem_##TYPENAME##_fetch(const TYPE *target, int pe)
-SHMEM_DECLARE_FOR_EXTENDED_AMO(SHMEM_FETCH);
+SHMEM_DECLARE_FOR_EXTENDED_AMO(SHMEM_FETCH,;);
 
 /* 8.4: Atomic set */
 #define SHMEM_SET(TYPENAME,TYPE) \
   void shmem_##TYPENAME##_set(TYPE *target, TYPE value, int pe)
-SHMEM_DECLARE_FOR_EXTENDED_AMO(SHMEM_SET);
+SHMEM_DECLARE_FOR_EXTENDED_AMO(SHMEM_SET,;);
 
 /* 8.5: Barrier Synchronization Routines */
 void shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync);
@@ -257,7 +257,7 @@ void shmem_barrier_all(void);
                                      int PE_start, int logPE_stride, \
                                      int PE_size, TYPE *pWrk, \
                                      long *pSync)
-SHMEM_DECLARE_FOR_INTS(SHMEM_AND_TO_ALL);
+SHMEM_DECLARE_FOR_INTS(SHMEM_AND_TO_ALL,;);
 
 #define SHMEM_OR_TO_ALL(TYPENAME,TYPE) \
   void shmem_##TYPENAME##_or_to_all(TYPE *target, \
@@ -265,7 +265,7 @@ SHMEM_DECLARE_FOR_INTS(SHMEM_AND_TO_ALL);
                                     int PE_start, int logPE_stride, \
                                     int PE_size, TYPE *pWrk, \
                                     long *pSync)
-SHMEM_DECLARE_FOR_INTS(SHMEM_OR_TO_ALL);
+SHMEM_DECLARE_FOR_INTS(SHMEM_OR_TO_ALL,;);
 
 #define SHMEM_XOR_TO_ALL(TYPENAME,TYPE) \
   void shmem_##TYPENAME##_xor_to_all(TYPE *target, \
@@ -273,7 +273,7 @@ SHMEM_DECLARE_FOR_INTS(SHMEM_OR_TO_ALL);
                                      int PE_start, int logPE_stride, \
                                      int PE_size, TYPE *pWrk, \
                                      long *pSync)
-SHMEM_DECLARE_FOR_INTS(SHMEM_XOR_TO_ALL);
+SHMEM_DECLARE_FOR_INTS(SHMEM_XOR_TO_ALL,;);
 
 #define SHMEM_MIN_TO_ALL(TYPENAME,TYPE) \
   void shmem_##TYPENAME##_min_to_all(TYPE *target, \
@@ -281,8 +281,8 @@ SHMEM_DECLARE_FOR_INTS(SHMEM_XOR_TO_ALL);
                                      int PE_start, int logPE_stride, \
                                      int PE_size, TYPE *pWrk, \
                                      long *pSync)
-SHMEM_DECLARE_FOR_INTS(SHMEM_MIN_TO_ALL);
-SHMEM_DECLARE_FOR_FLOATS(SHMEM_MIN_TO_ALL);
+SHMEM_DECLARE_FOR_INTS(SHMEM_MIN_TO_ALL,;);
+SHMEM_DECLARE_FOR_FLOATS(SHMEM_MIN_TO_ALL,;);
 
 #define SHMEM_MAX_TO_ALL(TYPENAME,TYPE) \
   void shmem_##TYPENAME##_max_to_all(TYPE *target, \
@@ -290,8 +290,8 @@ SHMEM_DECLARE_FOR_FLOATS(SHMEM_MIN_TO_ALL);
                                      int PE_start, int logPE_stride, \
                                      int PE_size, TYPE *pWrk, \
                                      long *pSync)
-SHMEM_DECLARE_FOR_INTS(SHMEM_MAX_TO_ALL);
-SHMEM_DECLARE_FOR_FLOATS(SHMEM_MAX_TO_ALL);
+SHMEM_DECLARE_FOR_INTS(SHMEM_MAX_TO_ALL,;);
+SHMEM_DECLARE_FOR_FLOATS(SHMEM_MAX_TO_ALL,;);
 
 #define SHMEM_SUM_TO_ALL(TYPENAME,TYPE) \
   void shmem_##TYPENAME##_sum_to_all(TYPE *target, \
@@ -299,9 +299,9 @@ SHMEM_DECLARE_FOR_FLOATS(SHMEM_MAX_TO_ALL);
                                      int PE_start, int logPE_stride, \
                                      int PE_size, TYPE *pWrk, \
                                      long *pSync)
-SHMEM_DECLARE_FOR_INTS(SHMEM_SUM_TO_ALL);
-SHMEM_DECLARE_FOR_FLOATS(SHMEM_SUM_TO_ALL);
-SHMEM_DECLARE_FOR_CMPLX(SHMEM_SUM_TO_ALL);
+SHMEM_DECLARE_FOR_INTS(SHMEM_SUM_TO_ALL,;);
+SHMEM_DECLARE_FOR_FLOATS(SHMEM_SUM_TO_ALL,;);
+SHMEM_DECLARE_FOR_CMPLX(SHMEM_SUM_TO_ALL,;);
 
 #define SHMEM_PROD_TO_ALL(TYPENAME,TYPE) \
   void shmem_##TYPENAME##_prod_to_all(TYPE *target, \
@@ -309,9 +309,9 @@ SHMEM_DECLARE_FOR_CMPLX(SHMEM_SUM_TO_ALL);
                                       int PE_start, int logPE_stride, \
                                       int PE_size, TYPE *pWrk, \
                                       long *pSync)
-SHMEM_DECLARE_FOR_INTS(SHMEM_PROD_TO_ALL);
-SHMEM_DECLARE_FOR_FLOATS(SHMEM_PROD_TO_ALL);
-SHMEM_DECLARE_FOR_CMPLX(SHMEM_PROD_TO_ALL);
+SHMEM_DECLARE_FOR_INTS(SHMEM_PROD_TO_ALL,;);
+SHMEM_DECLARE_FOR_FLOATS(SHMEM_PROD_TO_ALL,;);
+SHMEM_DECLARE_FOR_CMPLX(SHMEM_PROD_TO_ALL,;);
 
 /* 8.5: Collect Routines */
 void shmem_collect32(void *target, const void *source, size_t nlong,

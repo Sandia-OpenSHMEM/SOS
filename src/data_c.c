@@ -331,7 +331,7 @@
     shmem_internal_put_small(addr, &value, sizeof(value), pe); \
   }
 
-SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_P);
+SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_P,)
 
 #define SHMEM_DEF_G(STYPE,TYPE) \
   TYPE shmem_##STYPE##_g(const TYPE *addr, int pe)   \
@@ -343,7 +343,7 @@ SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_P);
     return tmp;                                      \
   }
 
-SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_G);
+SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_G,)
 
 #define SHMEM_DEF_PUT(STYPE,TYPE) \
   void shmem_##STYPE##_put(TYPE *target, const TYPE *source,     \
@@ -356,7 +356,7 @@ SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_G);
     shmem_internal_put_wait(&completion);                        \
   }
 
-SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_PUT);
+SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_PUT,)
 
 #define SHMEM_DEF_PUT_N(NAME,SIZE) \
   void shmem_put##NAME(void *target, const void *source,       \
@@ -369,7 +369,7 @@ SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_PUT);
     shmem_internal_put_wait(&completion);                      \
   }
 
-SHMEM_DECLARE_FOR_SIZES(SHMEM_DEF_PUT_N);
+SHMEM_DECLARE_FOR_SIZES(SHMEM_DEF_PUT_N,)
 
 #define SHMEM_DEF_PUT_NBI(STYPE,TYPE) \
   void shmem_##STYPE##_put_nbi(TYPE *target, const TYPE *source, \
@@ -380,7 +380,7 @@ SHMEM_DECLARE_FOR_SIZES(SHMEM_DEF_PUT_N);
         pe);                                                     \
   }
 
-SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_PUT_NBI);
+SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_PUT_NBI,)
 
 #define SHMEM_DEF_PUT_N_NBI(NAME,SIZE) \
   void shmem_put##NAME##_nbi(void *target, const void *source, \
@@ -390,7 +390,7 @@ SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_PUT_NBI);
     shmem_internal_put_nbi(target, source, (SIZE)*nelems, pe); \
   }
 
-SHMEM_DECLARE_FOR_SIZES(SHMEM_DEF_PUT_N_NBI);
+SHMEM_DECLARE_FOR_SIZES(SHMEM_DEF_PUT_N_NBI,)
 
 #define SHMEM_DEF_GET(STYPE,TYPE) \
   void shmem_##STYPE##_get(TYPE *target,const TYPE *source,   \
@@ -402,7 +402,7 @@ SHMEM_DECLARE_FOR_SIZES(SHMEM_DEF_PUT_N_NBI);
     shmem_internal_get_wait();                                \
   }
 
-SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_GET);
+SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_GET,)
 
 #define SHMEM_DEF_GET_N(NAME,SIZE) \
   void shmem_get##NAME(void *target, const void *source,   \
@@ -413,7 +413,7 @@ SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_GET);
     shmem_internal_get_wait();                             \
   }
 
-SHMEM_DECLARE_FOR_SIZES(SHMEM_DEF_GET_N);
+SHMEM_DECLARE_FOR_SIZES(SHMEM_DEF_GET_N,)
 
 #define SHMEM_DEF_GET_NBI(STYPE,TYPE) \
   void shmem_##STYPE##_get_nbi(TYPE *target, const TYPE *source, \
@@ -423,7 +423,7 @@ SHMEM_DECLARE_FOR_SIZES(SHMEM_DEF_GET_N);
     shmem_internal_get(target, source, sizeof(TYPE)*nelems, pe); \
   }
 
-SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_GET_NBI);
+SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_GET_NBI,)
 
 #define SHMEM_DEF_GET_N_NBI(NAME,SIZE) \
   void shmem_get##NAME##_nbi(void *target, const void *source, \
@@ -433,7 +433,7 @@ SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_GET_NBI);
     shmem_internal_get(target, source, (SIZE)*nelems, pe);     \
   }
 
-SHMEM_DECLARE_FOR_SIZES(SHMEM_DEF_GET_N_NBI);
+SHMEM_DECLARE_FOR_SIZES(SHMEM_DEF_GET_N_NBI,)
 
 #define SHMEM_DEF_IPUT(STYPE,TYPE) \
   void shmem_##STYPE##_iput(TYPE *target, const TYPE *source, \
@@ -449,7 +449,7 @@ SHMEM_DECLARE_FOR_SIZES(SHMEM_DEF_GET_N_NBI);
     }                                                         \
   }
 
-SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_IPUT);
+SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_IPUT,)
 
 #define SHMEM_DEF_IPUT_N(NAME,SIZE) \
   void shmem_iput##NAME(void *target, const void *source,    \
@@ -464,7 +464,7 @@ SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_IPUT);
     }                                                        \
   }
 
-SHMEM_DECLARE_FOR_SIZES(SHMEM_DEF_IPUT_N);
+SHMEM_DECLARE_FOR_SIZES(SHMEM_DEF_IPUT_N,)
 
 #define SHMEM_DEF_IGET(STYPE,TYPE) \
   void shmem_##STYPE##_iget(TYPE *target, const TYPE *source, \
@@ -480,7 +480,7 @@ SHMEM_DECLARE_FOR_SIZES(SHMEM_DEF_IPUT_N);
     shmem_internal_get_wait();                                \
   }
 
-SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_IGET);
+SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_IGET,)
 
 #define SHMEM_DEF_IGET_N(NAME,SIZE) \
   void shmem_iget##NAME(void *target, const void *source, \
@@ -496,7 +496,7 @@ SHMEM_DECLARE_FOR_RMA(SHMEM_DEF_IGET);
     shmem_internal_get_wait();                            \
   }
 
-SHMEM_DECLARE_FOR_SIZES(SHMEM_DEF_IGET_N);
+SHMEM_DECLARE_FOR_SIZES(SHMEM_DEF_IGET_N,)
 
 void
 shmemx_getmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t nelems, int pe)
