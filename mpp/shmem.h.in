@@ -475,7 +475,7 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_CXX_GET)
 
 #define SHMEM_CXX_G(TYPENAME,TYPE) \
   static inline TYPE shmem_g(const TYPE* src, int pe) { \
-    shmem_##TYPENAME##_g(src, pe);                      \
+    return shmem_##TYPENAME##_g(src, pe);               \
   }
 SHMEM_DEFINE_FOR_RMA(SHMEM_CXX_G)
 
