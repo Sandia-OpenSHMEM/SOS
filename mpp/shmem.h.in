@@ -433,13 +433,13 @@ using std::size_t;
                                size_t nelems, int pe) {        \
     shmem_##TYPENAME##_put(dest, source, nelems, pe);          \
   }
-SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_PUT);
+SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_PUT,)
 
 #define SHMEM_CXX_P(TYPENAME,TYPE) \
   static inline void shmem_p(TYPE* dest, TYPE value, int pe) { \
     shmem_##TYPENAME##_p(dest, value, pe);                     \
   }
-SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_P);
+SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_P,)
 
 #define SHMEM_CXX_IPUT(TYPENAME,TYPE) \
   static inline void shmem_iput(TYPE *target, const TYPE *source, \
@@ -447,7 +447,7 @@ SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_P);
                                 size_t len, int pe) {             \
     shmem_##TYPENAME##_iput(target, source, tst, sst, len, pe);   \
   }
-SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_IPUT);
+SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_IPUT,)
 
 /* Blocking block, scalar, and block-strided get */
 #define SHMEM_CXX_GET(TYPENAME,TYPE) \
@@ -455,13 +455,13 @@ SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_IPUT);
                                size_t nelems, int pe) {        \
     shmem_##TYPENAME##_get(dest, source, nelems, pe);          \
   }
-SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_GET);
+SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_GET,)
 
 #define SHMEM_CXX_G(TYPENAME,TYPE) \
   static inline TYPE shmem_p(const TYPE* src, int pe) { \
     shmem_##TYPENAME##_g(src, pe);                      \
   }
-SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_G);
+SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_G,)
 
 #define SHMEM_CXX_IGET(TYPENAME,TYPE) \
   static inline void shmem_iget(TYPE *target, const TYPE *source, \
@@ -469,7 +469,7 @@ SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_G);
                                 size_t len, int pe) {             \
     shmem_##TYPENAME##_iget(target, source, tst, sst, len, pe);   \
   }
-SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_IGET);
+SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_IGET,)
 
 /* Nonblocking block put/get */
 #define SHMEM_CXX_PUT_NBI(TYPENAME,TYPE) \
@@ -477,14 +477,14 @@ SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_IGET);
                                    size_t nelems, int pe) {        \
     shmem_##TYPENAME##_put_nbi(dest, source, nelems, pe);          \
   }
-SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_PUT_NBI);
+SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_PUT_NBI,)
 
 #define SHMEM_CXX_GET_NBI(TYPENAME,TYPE) \
   static inline void shmem_get_nbi(TYPE* dest, const TYPE* source, \
                                    size_t nelems, int pe) {        \
     shmem_##TYPENAME##_get_nbi(dest, source, nelems, pe);          \
   }
-SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_GET_NBI);
+SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_GET_NBI,)
 
 
 /* Atomics with standard AMO types */
@@ -492,51 +492,51 @@ SHMEM_DECLARE_FOR_RMA(SHMEM_CXX_GET_NBI);
   static inline void shmem_add(TYPE *target, TYPE value, int pe) { \
     shmem_##TYPENAME##_add(target, value, pe);                     \
   }
-SHMEM_DECLARE_FOR_AMO(SHMEM_CXX_ADD);
+SHMEM_DECLARE_FOR_AMO(SHMEM_CXX_ADD,)
 
 #define SHMEM_CXX_CSWAP(TYPENAME,TYPE) \
   static inline TYPE shmem_cswap(TYPE *target, TYPE cond, TYPE value,\
                                  int pe) {                           \
     return shmem_##TYPENAME##_cswap(target, cond, value, pe);        \
   }
-SHMEM_DECLARE_FOR_AMO(SHMEM_CXX_CSWAP);
+SHMEM_DECLARE_FOR_AMO(SHMEM_CXX_CSWAP,)
 
 #define SHMEM_CXX_FINC(TYPENAME,TYPE) \
   static inline TYPE shmem_finc(TYPE *target, int pe) { \
     return shmem_##TYPENAME##_finc(target, pe);                     \
   }
-SHMEM_DECLARE_FOR_AMO(SHMEM_CXX_FINC);
+SHMEM_DECLARE_FOR_AMO(SHMEM_CXX_FINC,)
 
 #define SHMEM_CXX_INC(TYPENAME,TYPE) \
   static inline void shmem_inc(TYPE *target, int pe) { \
     shmem_##TYPENAME##_inc(target, pe);                            \
   }
-SHMEM_DECLARE_FOR_AMO(SHMEM_CXX_INC);
+SHMEM_DECLARE_FOR_AMO(SHMEM_CXX_INC,)
 
 #define SHMEM_CXX_FADD(TYPENAME,TYPE) \
   static inline TYPE shmem_fadd(TYPE *target, TYPE value, int pe) { \
     return shmem_##TYPENAME##_fadd(target, value, pe);              \
   }
-SHMEM_DECLARE_FOR_AMO(SHMEM_CXX_FADD);
+SHMEM_DECLARE_FOR_AMO(SHMEM_CXX_FADD,)
 
 /* Atomics with extended AMO types */
 #define SHMEM_CXX_SWAP(TYPENAME,TYPE) \
   static inline TYPE shmem_swap(TYPE *target, TYPE value, int pe) { \
     return shmem_##TYPENAME##_swap(target, value, pe);              \
   }
-SHMEM_DECLARE_FOR_EXTENDED_AMO(SHMEM_CXX_SWAP);
+SHMEM_DECLARE_FOR_EXTENDED_AMO(SHMEM_CXX_SWAP,)
 
 #define SHMEM_CXX_FETCH(TYPENAME,TYPE) \
   static inline TYPE shmem_fetch(const TYPE *target, int pe) { \
     return shmem_##TYPENAME##_fetch(target, pe);              \
   }
-SHMEM_DECLARE_FOR_EXTENDED_AMO(SHMEM_CXX_FETCH);
+SHMEM_DECLARE_FOR_EXTENDED_AMO(SHMEM_CXX_FETCH,)
 
 #define SHMEM_CXX_SET(TYPENAME,TYPE) \
   static inline void shmem_set(TYPE *target, TYPE value, int pe) { \
     shmem_##TYPENAME##_set(target, value, pe);                     \
   }
-SHMEM_DECLARE_FOR_AMO(SHMEM_CXX_SET);
+SHMEM_DECLARE_FOR_AMO(SHMEM_CXX_SET,)
 
 #undef SHMEM_CXX_PUT
 #undef SHMEM_CXX_P
