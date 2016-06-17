@@ -1189,17 +1189,17 @@ void shmem_transport_print_info(void)
     printf("SMA_OFI_PROVIDER        %s\n", ofi_provider);
     printf("\tProvider that should be used by the OFI transport\n");
     printf("SMA_OFI_FABRIC          %s\n",
-           (shmem_util_getenv_str("OFI_FABRIC") != NULL) ?
+           (NULL != shmem_util_getenv_str("OFI_FABRIC")) ?
            shmem_util_getenv_str("OFI_FABRIC") : "AUTO");
     printf("\tFabric that should be used by the OFI transport\n");
     printf("SMA_OFI_DOMAIN          %s\n",
-           (shmem_util_getenv_str("OFI_DOMAIN") != NULL) ?
+           (NULL != shmem_util_getenv_str("OFI_DOMAIN")) ?
            shmem_util_getenv_str("OFI_DOMAIN") : "AUTO");
     printf("\tFabric domain that should be used by the OFI transport\n");
     printf("SMA_OFI_ATOMIC_CHECKS_WARN %s\n",
            (NULL != shmem_util_getenv_str("OFI_ATOMIC_CHECKS_WARN")) ?
            "Set" : "Not set");
-    printf("\tDisplay warnings about unsupported atomic operatios\n");
+    printf("\tDisplay warnings about unsupported atomic operations\n");
 }
 
 int shmem_transport_fini(void)
