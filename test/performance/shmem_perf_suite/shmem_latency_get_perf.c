@@ -34,6 +34,7 @@
 
 #include <latency_common.h>
 #include <round_t_latency.h>
+#include <stream_int_latency.h>
 
 int main(int argc, char *argv[])
 {
@@ -48,6 +49,12 @@ void
 long_element_round_trip_latency(perf_metrics_t data)
 {
     long_element_round_trip_latency_get(data);
+}
+
+void
+streaming_int_latency(perf_metrics_t data)
+{
+    streaming_int_g_latency(data);
 }
 
 void
