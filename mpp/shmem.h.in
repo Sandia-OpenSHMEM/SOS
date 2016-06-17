@@ -112,6 +112,8 @@ void shmem_put128(void *target, const void *source, size_t len, int pe);
 void shmem_putmem(void *target, const void *source, size_t len, int pe);
 
 /* 8.3: Strided Put Routines */
+void shmem_char_iput(char *target, const char *source, ptrdiff_t tst,
+                     ptrdiff_t sst, size_t len, int pe);
 void shmem_float_iput(float *target, const float *source, ptrdiff_t tst,
                       ptrdiff_t sst, size_t len, int pe);
 void shmem_double_iput(double *target, const double *source, ptrdiff_t tst,
@@ -163,6 +165,8 @@ void shmem_get128(void *target, const void *source, size_t len, int pe);
 void shmem_getmem(void *target, const void *source, size_t len, int pe);
 
 /* 8.3: Strided Get Routines */
+void shmem_char_iget(char *target, const char *source, ptrdiff_t tst,
+                     ptrdiff_t sst, size_t len, int pe);
 void shmem_float_iget(float *target, const float *source, ptrdiff_t tst,
                       ptrdiff_t sst, size_t len, int pe);
 void shmem_double_iget(double *target, const double *source, ptrdiff_t tst,

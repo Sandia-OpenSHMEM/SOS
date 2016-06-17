@@ -74,7 +74,8 @@ TESTS = \
 	c11_test_shmem_put \
 	c11_test_shmem_set \
 	get_nbi \
-	put_nbi
+	put_nbi \
+	rma_coverage
 
 if USE_PORTALS4
 TESTS += \
@@ -342,3 +343,7 @@ get_nbi_LDADD = $(top_builddir)/src/libsma.la
 
 put_nbi_SOURCES = put_nbi.c
 put_nbi_LDADD = $(top_builddir)/src/libsma.la
+
+rma_coverage_SOURCES = rma_coverage.c
+rma_coverage_LDADD = $(top_builddir)/src/libsma.la
+
