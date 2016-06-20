@@ -1,6 +1,6 @@
 
 void static inline
-streaming_int_p_latency(perf_metrics_t data)
+int_p_latency(perf_metrics_t data)
 {
     double start, end;
     int i = 0;
@@ -34,7 +34,7 @@ streaming_int_p_latency(perf_metrics_t data)
 } /* latency/bw for one-way trip */
 
 void static inline
-streaming_int_g_latency(perf_metrics_t data)
+int_g_latency(perf_metrics_t data)
 {
     double start, end;
     int i = 0;

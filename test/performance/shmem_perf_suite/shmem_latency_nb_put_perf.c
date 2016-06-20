@@ -34,8 +34,6 @@
 */
 
 #include <latency_common.h>
-#include <round_t_latency.h>
-#include <stream_int_latency.h>
 
 int main(int argc, char *argv[])
 {
@@ -45,17 +43,12 @@ int main(int argc, char *argv[])
 }  /* end of main() */
 
 
+/* NO-OP for non-blocking */
 void
-long_element_round_trip_latency(perf_metrics_t data)
-{
-    long_element_round_trip_latency_put(data);
-}
+long_element_round_trip_latency(perf_metrics_t data) {}
 
 void
-streaming_int_latency(perf_metrics_t data)
-{
-    streaming_int_p_latency(data);
-}
+int_element_latency(perf_metrics_t data) {}
 
 void
 streaming_latency(int len, perf_metrics_t *data)

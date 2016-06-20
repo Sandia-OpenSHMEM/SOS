@@ -121,7 +121,7 @@ void static inline only_two_PEs_check(int my_node, int num_pes) {
  *  that needs to be initialized in function*/
 extern void long_element_round_trip_latency(perf_metrics_t data);
 
-extern void streaming_int_latency(perf_metrics_t data);
+extern void int_element_latency(perf_metrics_t data);
 
 /*have symmetric buffers src/dest from perf_metrics_t
  *  that has been initialized to my_node number */
@@ -194,7 +194,7 @@ void static inline latency_main(int argc, char *argv[]) {
 
     long_element_round_trip_latency(data);
 
-    streaming_int_latency(data);
+    int_element_latency(data);
 
     multi_size_latency(data, argv);
 
