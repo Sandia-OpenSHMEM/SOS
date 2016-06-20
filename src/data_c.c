@@ -325,175 +325,254 @@
 #endif /* ENABLE_PROFILING */
 
 #define SHMEM_DEF_P(STYPE,TYPE) \
-  void shmem_##STYPE##_p(TYPE *addr, TYPE value, int pe)       \
-  {                                                            \
-    SHMEM_ERR_CHECK_INITIALIZED();                             \
-    shmem_internal_put_small(addr, &value, sizeof(value), pe); \
+  void shmem_##STYPE##_p(TYPE *addr, TYPE value, int pe)         \
+  {                                                              \
+    shmemx_ctx_##STYPE##_p(addr, value, pe, SHMEMX_CTX_DEFAULT); \
+  }                                                              \
+  void shmemx_ctx_##STYPE##_p(TYPE *addr, TYPE value, int pe,    \
+        shmemx_ctx_t ctx)                                        \
+  {                                                              \
+    SHMEM_ERR_CHECK_INITIALIZED();                               \
+    shmem_internal_put_small(addr, &value, sizeof(value), pe);   \
   }
 
 SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_P)
 
 #define SHMEM_DEF_G(STYPE,TYPE) \
-  TYPE shmem_##STYPE##_g(const TYPE *addr, int pe)   \
-  {                                                  \
-    TYPE tmp;                                        \
-    SHMEM_ERR_CHECK_INITIALIZED();                   \
-    shmem_internal_get(&tmp, addr, sizeof(tmp), pe); \
-    shmem_internal_get_wait();                       \
-    return tmp;                                      \
+  TYPE shmem_##STYPE##_g(const TYPE *addr, int pe)               \
+  {                                                              \
+    return shmemx_ctx_##STYPE##_g(addr, pe, SHMEMX_CTX_DEFAULT); \
+  }                                                              \
+  TYPE shmemx_ctx_##STYPE##_g(const TYPE *addr, int pe,          \
+        shmemx_ctx_t ctx)                                        \
+  {                                                              \
+    TYPE tmp;                                                    \
+    SHMEM_ERR_CHECK_INITIALIZED();                               \
+    shmem_internal_get(&tmp, addr, sizeof(tmp), pe);             \
+    shmem_internal_get_wait();                                   \
+    return tmp;                                                  \
   }
 
 SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_G)
 
 #define SHMEM_DEF_PUT(STYPE,TYPE) \
-  void shmem_##STYPE##_put(TYPE *target, const TYPE *source,     \
-                           size_t nelems, int pe)                \
-  {                                                              \
-    long completion = 0;                                         \
-    SHMEM_ERR_CHECK_INITIALIZED();                               \
-    shmem_internal_put_nb(target, source, sizeof(TYPE) * nelems, \
-                          pe, &completion);                      \
-    shmem_internal_put_wait(&completion);                        \
+  void shmem_##STYPE##_put(TYPE *target, const TYPE *source,         \
+        size_t nelems, int pe)                                       \
+  {                                                                  \
+    shmemx_ctx_##STYPE##_put(target, source, nelems, pe,             \
+        SHMEMX_CTX_DEFAULT);                                         \
+  }                                                                  \
+  void shmemx_ctx_##STYPE##_put(TYPE *target, const TYPE *source,    \
+        size_t nelems, int pe, shmemx_ctx_t ctx)                     \
+  {                                                                  \
+    long completion = 0;                                             \
+    SHMEM_ERR_CHECK_INITIALIZED();                                   \
+    shmem_internal_put_nb(target, source, sizeof(TYPE) * nelems, pe, \
+            &completion);                                            \
+    shmem_internal_put_wait(&completion);                            \
   }
 
 SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_PUT)
 
 #define SHMEM_DEF_PUT_N(NAME,SIZE) \
   void shmem_put##NAME(void *target, const void *source,       \
-                       size_t nelems, int pe)                  \
+        size_t nelems, int pe)                                 \
+  {                                                            \
+    shmemx_ctx_put##NAME(target, source, nelems, pe,           \
+        SHMEMX_CTX_DEFAULT);                                   \
+  }                                                            \
+  void shmemx_ctx_put##NAME(void *target, const void *source,  \
+          size_t nelems, int pe, shmemx_ctx_t ctx)             \
   {                                                            \
     long completion = 0;                                       \
     SHMEM_ERR_CHECK_INITIALIZED();                             \
     shmem_internal_put_nb(target, source, (SIZE) * nelems, pe, \
-                          &completion);                        \
+            &completion);                                      \
     shmem_internal_put_wait(&completion);                      \
   }
 
 SHMEM_DEFINE_FOR_SIZES(SHMEM_DEF_PUT_N)
 
 #define SHMEM_DEF_PUT_NBI(STYPE,TYPE) \
-  void shmem_##STYPE##_put_nbi(TYPE *target, const TYPE *source, \
-                               size_t nelems, int pe)            \
-  {                                                              \
-    SHMEM_ERR_CHECK_INITIALIZED();                               \
-    shmem_internal_put_nbi(target, source, sizeof(TYPE)*nelems,  \
-        pe);                                                     \
+  void shmem_##STYPE##_put_nbi(TYPE *target, const TYPE *source,     \
+          size_t nelems, int pe)                                     \
+  {                                                                  \
+    shmemx_ctx_##STYPE##_put_nbi(target, source, nelems, pe,         \
+          SHMEMX_CTX_DEFAULT);                                       \
+  }                                                                  \
+  void shmemx_ctx_##STYPE##_put_nbi(TYPE *target, const TYPE *source,\
+          size_t nelems, int pe, shmemx_ctx_t ctx)                   \
+  {                                                                  \
+    SHMEM_ERR_CHECK_INITIALIZED();                                   \
+    shmem_internal_put_nbi(target, source, sizeof(TYPE)*nelems, pe); \
   }
 
 SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_PUT_NBI)
 
 #define SHMEM_DEF_PUT_N_NBI(NAME,SIZE) \
-  void shmem_put##NAME##_nbi(void *target, const void *source, \
-                             size_t nelems, int pe)            \
-  {                                                            \
-    SHMEM_ERR_CHECK_INITIALIZED();                             \
-    shmem_internal_put_nbi(target, source, (SIZE)*nelems, pe); \
+  void shmem_put##NAME##_nbi(void *target, const void *source,      \
+          size_t nelems, int pe)                                    \
+  {                                                                 \
+    shmemx_ctx_put##NAME##_nbi(target, source, nelems, pe,          \
+            SHMEMX_CTX_DEFAULT);                                    \
+  }                                                                 \
+  void shmemx_ctx_put##NAME##_nbi(void *target, const void *source, \
+          size_t nelems, int pe, shmemx_ctx_t ctx)                  \
+  {                                                                 \
+    SHMEM_ERR_CHECK_INITIALIZED();                                  \
+    shmem_internal_put_nbi(target, source, (SIZE)*nelems, pe);      \
   }
 
 SHMEM_DEFINE_FOR_SIZES(SHMEM_DEF_PUT_N_NBI)
 
 #define SHMEM_DEF_GET(STYPE,TYPE) \
-  void shmem_##STYPE##_get(TYPE *target,const TYPE *source,   \
-                           size_t nelems, int pe)             \
-  {                                                           \
-    SHMEM_ERR_CHECK_INITIALIZED();                            \
-    shmem_internal_get(target, source, sizeof(TYPE) * nelems, \
-        pe);                                                  \
-    shmem_internal_get_wait();                                \
+  void shmem_##STYPE##_get(TYPE *target,const TYPE *source,        \
+          size_t nelems, int pe)                                   \
+  {                                                                \
+    shmemx_ctx_##STYPE##_get(target, source, nelems, pe,           \
+            SHMEMX_CTX_DEFAULT);                                   \
+  }                                                                \
+  void shmemx_ctx_##STYPE##_get(TYPE *target,const TYPE *source,   \
+          size_t nelems, int pe, shmemx_ctx_t ctx)                 \
+  {                                                                \
+    SHMEM_ERR_CHECK_INITIALIZED();                                 \
+    shmem_internal_get(target, source, sizeof(TYPE) * nelems, pe); \
+    shmem_internal_get_wait();                                     \
   }
 
 SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_GET)
 
 #define SHMEM_DEF_GET_N(NAME,SIZE) \
-  void shmem_get##NAME(void *target, const void *source,   \
-                       size_t nelems, int pe)              \
-  {                                                        \
-    SHMEM_ERR_CHECK_INITIALIZED();                         \
-    shmem_internal_get(target, source, (SIZE)*nelems, pe); \
-    shmem_internal_get_wait();                             \
+  void shmem_get##NAME(void *target, const void *source,      \
+          size_t nelems, int pe)                              \
+  {                                                           \
+    shmemx_ctx_get##NAME(target, source, nelems, pe,          \
+            SHMEMX_CTX_DEFAULT);                              \
+  }                                                           \
+  void shmemx_ctx_get##NAME(void *target, const void *source, \
+          size_t nelems, int pe, shmemx_ctx_t ctx)            \
+  {                                                           \
+    SHMEM_ERR_CHECK_INITIALIZED();                            \
+    shmem_internal_get(target, source, (SIZE)*nelems, pe);    \
+    shmem_internal_get_wait();                                \
   }
 
 SHMEM_DEFINE_FOR_SIZES(SHMEM_DEF_GET_N)
 
 #define SHMEM_DEF_GET_NBI(STYPE,TYPE) \
-  void shmem_##STYPE##_get_nbi(TYPE *target, const TYPE *source, \
-                              size_t nelems, int pe)             \
-  {                                                              \
-    SHMEM_ERR_CHECK_INITIALIZED();                               \
-    shmem_internal_get(target, source, sizeof(TYPE)*nelems, pe); \
+  void shmem_##STYPE##_get_nbi(TYPE *target, const TYPE *source,     \
+          size_t nelems, int pe)                                     \
+  {                                                                  \
+    shmemx_ctx_##STYPE##_get_nbi(target, source, nelems, pe,         \
+            SHMEMX_CTX_DEFAULT);                                     \
+  }                                                                  \
+  void shmemx_ctx_##STYPE##_get_nbi(TYPE *target, const TYPE *source,\
+          size_t nelems, int pe, shmemx_ctx_t ctx)                   \
+  {                                                                  \
+    SHMEM_ERR_CHECK_INITIALIZED();                                   \
+    shmem_internal_get(target, source, sizeof(TYPE)*nelems, pe);     \
   }
 
 SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_GET_NBI)
 
 #define SHMEM_DEF_GET_N_NBI(NAME,SIZE) \
-  void shmem_get##NAME##_nbi(void *target, const void *source, \
-                             size_t nelems, int pe)            \
-  {                                                            \
-    SHMEM_ERR_CHECK_INITIALIZED();                             \
-    shmem_internal_get(target, source, (SIZE)*nelems, pe);     \
+  void shmem_get##NAME##_nbi(void *target, const void *source,      \
+          size_t nelems, int pe)                                    \
+  {                                                                 \
+    shmemx_ctx_get##NAME##_nbi(target, source, nelems, pe,          \
+            SHMEMX_CTX_DEFAULT);                                    \
+  }                                                                 \
+  void shmemx_ctx_get##NAME##_nbi(void *target, const void *source, \
+          size_t nelems, int pe, shmemx_ctx_t ctx)                  \
+  {                                                                 \
+    SHMEM_ERR_CHECK_INITIALIZED();                                  \
+    shmem_internal_get(target, source, (SIZE)*nelems, pe);          \
   }
 
 SHMEM_DEFINE_FOR_SIZES(SHMEM_DEF_GET_N_NBI)
 
 #define SHMEM_DEF_IPUT(STYPE,TYPE) \
-  void shmem_##STYPE##_iput(TYPE *target, const TYPE *source, \
-                            ptrdiff_t tst, ptrdiff_t sst,     \
-                            size_t nelems, int pe)            \
-  {                                                           \
-    SHMEM_ERR_CHECK_INITIALIZED();                            \
-    for ( ; nelems > 0 ; --nelems) {                          \
-      shmem_internal_put_small(target, source, sizeof(TYPE),  \
-          pe);                                                \
-      target += tst;                                          \
-      source += sst;                                          \
-    }                                                         \
+  void shmem_##STYPE##_iput(TYPE *target, const TYPE *source,       \
+          ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe)      \
+  {                                                                 \
+    shmemx_ctx_##STYPE##_iput(target, source, tst, sst, nelems, pe, \
+            SHMEMX_CTX_DEFAULT);                                    \
+  }                                                                 \
+  void shmemx_ctx_##STYPE##_iput(TYPE *target, const TYPE *source,  \
+          ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe,      \
+          shmemx_ctx_t ctx)                                         \
+  {                                                                 \
+    SHMEM_ERR_CHECK_INITIALIZED();                                  \
+    for ( ; nelems > 0 ; --nelems) {                                \
+      shmem_internal_put_small(target, source, sizeof(TYPE), pe);   \
+      target += tst;                                                \
+      source += sst;                                                \
+    }                                                               \
   }
 
 SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_IPUT)
 
 #define SHMEM_DEF_IPUT_N(NAME,SIZE) \
-  void shmem_iput##NAME(void *target, const void *source,    \
-                        ptrdiff_t tst, ptrdiff_t sst,        \
-                        size_t nelems, int pe)               \
-  {                                                          \
-    SHMEM_ERR_CHECK_INITIALIZED();                           \
-    for ( ; nelems > 0 ; --nelems) {                         \
-      shmem_internal_put_small(target, source, (SIZE), pe);  \
-      target = (uint8_t*)target + tst*(SIZE);                \
-      source = (uint8_t*)source + sst*(SIZE);                \
-    }                                                        \
+  void shmem_iput##NAME(void *target, const void *source,       \
+          ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe)  \
+  {                                                             \
+    shmemx_ctx_iput##NAME(target, source, tst, sst, nelems, pe, \
+            SHMEMX_CTX_DEFAULT);                                \
+  }                                                             \
+  void shmemx_ctx_iput##NAME(void *target, const void *source,  \
+          ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe,  \
+          shmemx_ctx_t ctx)                                     \
+  {                                                             \
+    SHMEM_ERR_CHECK_INITIALIZED();                              \
+    for ( ; nelems > 0 ; --nelems) {                            \
+      shmem_internal_put_small(target, source, (SIZE), pe);     \
+      target = (uint8_t*)target + tst*(SIZE);                   \
+      source = (uint8_t*)source + sst*(SIZE);                   \
+    }                                                           \
   }
 
 SHMEM_DEFINE_FOR_SIZES(SHMEM_DEF_IPUT_N)
 
 #define SHMEM_DEF_IGET(STYPE,TYPE) \
-  void shmem_##STYPE##_iget(TYPE *target, const TYPE *source, \
-                            ptrdiff_t tst, ptrdiff_t sst,     \
-                            size_t nelems, int pe)            \
-  {                                                           \
-    SHMEM_ERR_CHECK_INITIALIZED();                            \
-    for ( ; nelems > 0 ; --nelems) {                          \
-      shmem_internal_get(target, source, sizeof(TYPE), pe);   \
-      target += tst;                                          \
-      source += sst;                                          \
-    }                                                         \
-    shmem_internal_get_wait();                                \
+  void shmem_##STYPE##_iget(TYPE *target, const TYPE *source,       \
+          ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe)      \
+  {                                                                 \
+    shmemx_ctx_##STYPE##_iget(target, source, tst, sst, nelems, pe, \
+            SHMEMX_CTX_DEFAULT);                                    \
+  }                                                                 \
+  void shmemx_ctx_##STYPE##_iget(TYPE *target, const TYPE *source,  \
+          ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe,      \
+          shmemx_ctx_t ctx)                                         \
+  {                                                                 \
+    SHMEM_ERR_CHECK_INITIALIZED();                                  \
+    for ( ; nelems > 0 ; --nelems) {                                \
+      shmem_internal_get(target, source, sizeof(TYPE), pe);         \
+      target += tst;                                                \
+      source += sst;                                                \
+    }                                                               \
+    shmem_internal_get_wait();                                      \
   }
 
 SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_IGET)
 
 #define SHMEM_DEF_IGET_N(NAME,SIZE) \
-  void shmem_iget##NAME(void *target, const void *source, \
-                        ptrdiff_t tst, ptrdiff_t sst,     \
-                        size_t nelems, int pe)            \
-  {                                                       \
-    SHMEM_ERR_CHECK_INITIALIZED();                        \
-    for ( ; nelems > 0 ; --nelems) {                      \
-      shmem_internal_get(target, source, (SIZE), pe);     \
-      target = (uint8_t*)target + tst*(SIZE);             \
-      source = (uint8_t*)source + sst*(SIZE);             \
-    }                                                     \
-    shmem_internal_get_wait();                            \
+  void shmem_iget##NAME(void *target, const void *source,       \
+          ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe)  \
+  {                                                             \
+    shmemx_ctx_iget##NAME(target, source, tst, sst, nelems, pe, \
+            SHMEMX_CTX_DEFAULT);                                \
+  }                                                             \
+  void shmemx_ctx_iget##NAME(void *target, const void *source,  \
+          ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe,  \
+          shmemx_ctx_t ctx)                                     \
+  {                                                             \
+    SHMEM_ERR_CHECK_INITIALIZED();                              \
+    for ( ; nelems > 0 ; --nelems) {                            \
+      shmem_internal_get(target, source, (SIZE), pe);           \
+      target = (uint8_t*)target + tst*(SIZE);                   \
+      source = (uint8_t*)source + sst*(SIZE);                   \
+    }                                                           \
+    shmem_internal_get_wait();                                  \
   }
 
 SHMEM_DEFINE_FOR_SIZES(SHMEM_DEF_IGET_N)

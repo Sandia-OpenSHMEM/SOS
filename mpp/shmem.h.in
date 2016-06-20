@@ -82,64 +82,78 @@ void *shmem_align(size_t alignment, size_t size);
 void *shmem_realloc(void *ptr, size_t size);
 void shmem_free(void *ptr);
 
-#define SHMEM_EVAL_MACRO_FOR_RMA(decl,END) \
-  decl(float,      float) END           \
-  decl(double,     double) END          \
-  decl(longdouble, long double) END     \
-  decl(char,       char) END            \
-  decl(short,      short) END           \
-  decl(int,        int) END             \
-  decl(long,       long) END            \
-  decl(longlong,   long long)
+/*
+ * TODO: Find a way to avoid replicating this in both shmem.h and
+ * shmemx.h -- The simplest way to do that would to have shmemx.h
+ * include shmem.h, but this breaks malloc.c for some reason.
+ *  - Joe Doyle 20-Jun-2016
+ */
+#ifndef SHMEM_UTIL_MACROS
 
-#define SHMEM_EVAL_MACRO_FOR_AMO(decl,END) \
-  decl(int,        int) END             \
-  decl(long,       long) END            \
-  decl(longlong,   long long)
+#define SHMEM_UTIL_MACROS
 
-#define SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO(decl,END) \
-  SHMEM_EVAL_MACRO_FOR_AMO(decl,END) END            \
-  decl(float,  float) END                        \
-  decl(double, double)
+#define SHMEM_EVAL_MACRO_FOR_RMA(DECL,EOL) \
+  DECL(float,      float) EOL           \
+  DECL(double,     double) EOL          \
+  DECL(longdouble, long double) EOL     \
+  DECL(char,       char) EOL            \
+  DECL(short,      short) EOL           \
+  DECL(int,        int) EOL             \
+  DECL(long,       long) EOL            \
+  DECL(longlong,   long long)
 
-#define SHMEM_EVAL_MACRO_FOR_INTS(decl,END) \
-  decl(short,    short) END              \
-  decl(int,      int) END                \
-  decl(long,     long) END               \
-  decl(longlong, long long)
+#define SHMEM_EVAL_MACRO_FOR_AMO(DECL,EOL) \
+  DECL(int,        int) EOL             \
+  DECL(long,       long) EOL            \
+  DECL(longlong,   long long)
 
-#define SHMEM_EVAL_MACRO_FOR_FLOATS(decl,END) \
-  decl(float,     float) END               \
-  decl(double,     double) END             \
-  decl(longdouble, long double)
+#define SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO(DECL,EOL) \
+  SHMEM_EVAL_MACRO_FOR_AMO(DECL,EOL) EOL            \
+  DECL(float,  float) EOL                        \
+  DECL(double, double)
 
-#define SHMEM_EVAL_MACRO_FOR_CMPLX(decl,END) \
-  decl(complexf, float complex) END       \
-  decl(complexd, double complex)
+#define SHMEM_EVAL_MACRO_FOR_INTS(DECL,EOL) \
+  DECL(short,    short) EOL              \
+  DECL(int,      int) EOL                \
+  DECL(long,     long) EOL               \
+  DECL(longlong, long long)
 
-#define SHMEM_EVAL_MACRO_FOR_SIZES(decl,END) \
-  decl(mem,  1) END                       \
-  decl(8,    1*sizeof(uint8_t)) END       \
-  decl(16,   2*sizeof(uint8_t)) END       \
-  decl(32,   4*sizeof(uint8_t)) END       \
-  decl(64,   8*sizeof(uint8_t)) END       \
-  decl(128, 16*sizeof(uint8_t))
+#define SHMEM_EVAL_MACRO_FOR_FLOATS(DECL,EOL) \
+  DECL(float,     float) EOL               \
+  DECL(double,     double) EOL             \
+  DECL(longdouble, long double)
 
-#define SHMEM_DECLARE_FOR_RMA(decl) SHMEM_EVAL_MACRO_FOR_RMA(decl,;)
-#define SHMEM_DECLARE_FOR_AMO(decl) SHMEM_EVAL_MACRO_FOR_AMO(decl,;)
-#define SHMEM_DECLARE_FOR_EXTENDED_AMO(decl) SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO(decl,;)
-#define SHMEM_DECLARE_FOR_INTS(decl) SHMEM_EVAL_MACRO_FOR_INTS(decl,;)
-#define SHMEM_DECLARE_FOR_FLOATS(decl) SHMEM_EVAL_MACRO_FOR_FLOATS(decl,;)
-#define SHMEM_DECLARE_FOR_CMPLX(decl) SHMEM_EVAL_MACRO_FOR_CMPLX(decl,;)
-#define SHMEM_DECLARE_FOR_SIZES(decl) SHMEM_EVAL_MACRO_FOR_SIZES(decl,;)
+#define SHMEM_EVAL_MACRO_FOR_CMPLX(DECL,EOL) \
+  DECL(complexf, float complex) EOL       \
+  DECL(complexd, double complex)
 
-#define SHMEM_DEFINE_FOR_RMA(decl) SHMEM_EVAL_MACRO_FOR_RMA(decl,)
-#define SHMEM_DEFINE_FOR_AMO(decl) SHMEM_EVAL_MACRO_FOR_AMO(decl,)
-#define SHMEM_DEFINE_FOR_EXTENDED_AMO(decl) SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO(decl,)
-#define SHMEM_DEFINE_FOR_INTS(decl) SHMEM_EVAL_MACRO_FOR_INTS(decl,)
-#define SHMEM_DEFINE_FOR_FLOATS(decl) SHMEM_EVAL_MACRO_FOR_FLOATS(decl,)
-#define SHMEM_DEFINE_FOR_CMPLX(decl) SHMEM_EVAL_MACRO_FOR_CMPLX(decl,)
-#define SHMEM_DEFINE_FOR_SIZES(decl) SHMEM_EVAL_MACRO_FOR_SIZES(decl,)
+#define SHMEM_EVAL_MACRO_FOR_SIZES(DECL,EOL) \
+  DECL(mem,  1) EOL                       \
+  DECL(8,    1*sizeof(uint8_t)) EOL       \
+  DECL(16,   2*sizeof(uint8_t)) EOL       \
+  DECL(32,   4*sizeof(uint8_t)) EOL       \
+  DECL(64,   8*sizeof(uint8_t)) EOL       \
+  DECL(128, 16*sizeof(uint8_t))
+
+#define SHMEM_DECLARE_FOR_RMA(DECL) SHMEM_EVAL_MACRO_FOR_RMA(DECL,;)
+#define SHMEM_DECLARE_FOR_AMO(DECL) SHMEM_EVAL_MACRO_FOR_AMO(DECL,;)
+#define SHMEM_DECLARE_FOR_EXTENDED_AMO(DECL) SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO(DECL,;)
+#define SHMEM_DECLARE_FOR_INTS(DECL) SHMEM_EVAL_MACRO_FOR_INTS(DECL,;)
+#define SHMEM_DECLARE_FOR_FLOATS(DECL) SHMEM_EVAL_MACRO_FOR_FLOATS(DECL,;)
+#define SHMEM_DECLARE_FOR_CMPLX(DECL) SHMEM_EVAL_MACRO_FOR_CMPLX(DECL,;)
+#define SHMEM_DECLARE_FOR_SIZES(DECL) SHMEM_EVAL_MACRO_FOR_SIZES(DECL,;)
+
+#define SHMEM_DEFINE_FOR_RMA(DECL) SHMEM_EVAL_MACRO_FOR_RMA(DECL,)
+#define SHMEM_DEFINE_FOR_AMO(DECL) SHMEM_EVAL_MACRO_FOR_AMO(DECL,)
+#define SHMEM_DEFINE_FOR_EXTENDED_AMO(DECL) SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO(DECL,)
+#define SHMEM_DEFINE_FOR_INTS(DECL) SHMEM_EVAL_MACRO_FOR_INTS(DECL,)
+#define SHMEM_DEFINE_FOR_FLOATS(DECL) SHMEM_EVAL_MACRO_FOR_FLOATS(DECL,)
+#define SHMEM_DEFINE_FOR_CMPLX(DECL) SHMEM_EVAL_MACRO_FOR_CMPLX(DECL,)
+#define SHMEM_DEFINE_FOR_SIZES(DECL) SHMEM_EVAL_MACRO_FOR_SIZES(DECL,)
+
+#endif /* SHMEM_UTIL_MACROS */
+
+/* End duplicated util macros */
 
 /* 8.3: Elemental Data Put Routines */
 #define SHMEM_P(TYPENAME,TYPE) \
@@ -748,6 +762,8 @@ long shmem_swap(long *target, long value, int pe);
 
 #ifndef SHMEM_INTERNAL_INCLUDE
 
+#undef SHMEM_UTIL_MACROS
+
 #undef SHMEM_EVAL_MACRO_FOR_RMA
 #undef SHMEM_EVAL_MACRO_FOR_AMO
 #undef SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO
@@ -772,7 +788,7 @@ long shmem_swap(long *target, long value, int pe);
 #undef SHMEM_DEFINE_FOR_CMPLX
 #undef SHMEM_DEFINE_FOR_SIZES
 
-#endif
+#endif /* SHMEM_INTERNAL_INCLUDE */
 
 #endif /* SHMEM_H */
 
