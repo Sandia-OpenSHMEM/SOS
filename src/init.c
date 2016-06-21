@@ -300,6 +300,9 @@ shmem_internal_init(int tl_requested, int *tl_provided)
             printf("\tIf set, print this help message at startup\n");
             printf("SMA_SYMMETRIC_SIZE      %ld\n", heap_size);
             printf("\tSymmentric heap size\n");
+            printf("SMA_SYMMETRIC_HEAP_USE_MALLOC %s\n",
+                   (0 != heap_use_malloc) ? "Set" : "Not set");
+            printf("\tIf set, allocate the symmetric heap using malloc\n");
             printf("SMA_COLL_CROSSOVER      %d\n", crossover);
             printf("\tCross-over between linear and tree collectives\n");
             printf("SMA_COLL_RADIX          %d\n", radix);
@@ -316,6 +319,13 @@ shmem_internal_init(int tl_requested, int *tl_provided)
             printf("\tAlgorithm for collect.  Options are auto, linear\n");
             printf("SMA_FCOLLECT_ALGORITHM  %s\n", coll_type_str[shmem_internal_fcollect_type]);
             printf("\tAlgorithm for fcollect.  Options are auto, linear, ring, recdbl\n");
+#ifdef USE_CMA
+            printf("SMA_CMA_PUT_MAX         %s\n", shmem_transport_cma_put_max);
+            printf("SMA_CMA_GET_MAX         %s\n", shmem_transport_cma_get_max);
+#endif /* USE_CMA */
+
+            shmem_transport_print_info();
+            printf("\n");
             fflush(NULL);
         }
     }
