@@ -1075,6 +1075,19 @@ shmemx_getmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, i
 
 
 void
+shmem_char_iput(char *target, const char *source, ptrdiff_t tst, ptrdiff_t sst,
+                 size_t len, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    for ( ; len > 0 ; --len) {
+        shmem_internal_put_small(target, source, sizeof(char), pe);
+	target += tst;
+	source += sst;
+    }
+}
+
+void
 shmem_float_iput(float *target, const float *source, ptrdiff_t tst, ptrdiff_t sst,
                  size_t len, int pe)
 {
@@ -1214,6 +1227,19 @@ shmem_iput128(void *target, const void *source, ptrdiff_t tst, ptrdiff_t sst, si
     }
 }
 
+
+void
+shmem_char_iget(char *target, const char *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    for ( ; len > 0 ; --len ) {
+        shmem_internal_get(target, source, sizeof(char), pe);
+	target += tst;
+	source += sst;
+    }
+    shmem_internal_get_wait();
+}
 
 void
 shmem_float_iget(float *target, const float *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe)
