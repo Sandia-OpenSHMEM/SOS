@@ -41,54 +41,9 @@
   decl(long,       long) END            \
   decl(longlong,   long long)
 
-#define SHMEM_EVAL_MACRO_FOR_AMO(decl,END) \
-  decl(int,        int) END             \
-  decl(long,       long) END            \
-  decl(longlong,   long long)
-
-#define SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO(decl,END) \
-  SHMEM_EVAL_MACRO_FOR_AMO(decl,END) END            \
-  decl(float,  float) END                        \
-  decl(double, double)
-
-#define SHMEM_EVAL_MACRO_FOR_INTS(decl,END) \
-  decl(short,    short) END              \
-  decl(int,      int) END                \
-  decl(long,     long) END               \
-  decl(longlong, long long)
-
-#define SHMEM_EVAL_MACRO_FOR_FLOATS(decl,END) \
-  decl(float,     float) END               \
-  decl(double,     double) END             \
-  decl(longdouble, long double)
-
-#define SHMEM_EVAL_MACRO_FOR_CMPLX(decl,END) \
-  decl(complexf, float complex) END       \
-  decl(complexd, double complex)
-
-#define SHMEM_EVAL_MACRO_FOR_SIZES(decl,END) \
-  decl(mem,  1) END                       \
-  decl(8,    1*sizeof(uint8_t)) END       \
-  decl(16,   2*sizeof(uint8_t)) END       \
-  decl(32,   4*sizeof(uint8_t)) END       \
-  decl(64,   8*sizeof(uint8_t)) END       \
-  decl(128, 16*sizeof(uint8_t))
-
 #define SHMEM_DECLARE_FOR_RMA(decl) SHMEM_EVAL_MACRO_FOR_RMA(decl,;)
-#define SHMEM_DECLARE_FOR_AMO(decl) SHMEM_EVAL_MACRO_FOR_AMO(decl,;)
-#define SHMEM_DECLARE_FOR_EXTENDED_AMO(decl) SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO(decl,;)
-#define SHMEM_DECLARE_FOR_INTS(decl) SHMEM_EVAL_MACRO_FOR_INTS(decl,;)
-#define SHMEM_DECLARE_FOR_FLOATS(decl) SHMEM_EVAL_MACRO_FOR_FLOATS(decl,;)
-#define SHMEM_DECLARE_FOR_CMPLX(decl) SHMEM_EVAL_MACRO_FOR_CMPLX(decl,;)
-#define SHMEM_DECLARE_FOR_SIZES(decl) SHMEM_EVAL_MACRO_FOR_SIZES(decl,;)
 
 #define SHMEM_DEFINE_FOR_RMA(decl) SHMEM_EVAL_MACRO_FOR_RMA(decl,)
-#define SHMEM_DEFINE_FOR_AMO(decl) SHMEM_EVAL_MACRO_FOR_AMO(decl,)
-#define SHMEM_DEFINE_FOR_EXTENDED_AMO(decl) SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO(decl,)
-#define SHMEM_DEFINE_FOR_INTS(decl) SHMEM_EVAL_MACRO_FOR_INTS(decl,)
-#define SHMEM_DEFINE_FOR_FLOATS(decl) SHMEM_EVAL_MACRO_FOR_FLOATS(decl,)
-#define SHMEM_DEFINE_FOR_CMPLX(decl) SHMEM_EVAL_MACRO_FOR_CMPLX(decl,)
-#define SHMEM_DEFINE_FOR_SIZES(decl) SHMEM_EVAL_MACRO_FOR_SIZES(decl,)
 
 
 #define CHUNK_SIZE 10
