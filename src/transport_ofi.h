@@ -199,8 +199,6 @@ typedef struct shmem_transport_ofi_bounce_buffer_t shmem_transport_ofi_bounce_bu
 
 typedef int shmem_transport_ct_t;
 
-extern int shmem_transport_have_long_double;
-
 extern shmem_free_list_t *shmem_transport_ofi_bounce_buffers;
 
 int shmem_transport_init(long eager_size);
@@ -872,11 +870,15 @@ shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
 }
 
 
+/* detect atomic limitation on the fly and provide software reduction support
+    if needed */
 static inline
 int shmem_transport_atomic_supported(shm_internal_op_t op,
                                      shm_internal_datatype_t datatype)
 {
-    return datatype != SHM_INTERNAL_LONG_DOUBLE || shmem_transport_have_long_double;
+   size_t size = 0;
+   int ret = fi_atomicvalid(shmem_transport_ofi_epfd, datatype, op, &size);
+   return !(ret != 0 || size == 0);
 }
 
 
