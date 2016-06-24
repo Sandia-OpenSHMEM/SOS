@@ -81,6 +81,43 @@ typedef struct shmem_transport_ofi_bounce_buffer_t shmem_transport_ofi_bounce_bu
 
 typedef int shmem_transport_ct_t;
 
+typedef struct shmem_transport_cntr_ep_t {
+    struct fid_cntr* counter;
+    struct fid_ep* ep;
+} shmem_transport_cntr_ep_t;
+
+typedef struct shmem_transport_dom_t {
+    struct fid_stx* stx;
+    shmem_internal_mutex_t lock;
+    int use_lock;
+    /* Each endpoint is dedicated to 1 or more contexts. Sharing a
+     * counter leads to performance degradation
+     */
+    shmem_transport_cntr_ep_t* endpoints;
+    size_t num_endpoints;
+    size_t max_num_endpoints;
+    /* Completion queue for (non-blocking puts and) error reports.
+     * Perhaps there should be one per endpoint?
+     */
+    struct fid_cq* cq;
+    size_t num_active_contexts;
+    /* Has shmem_domain_destroy been called on this? */
+    int freed;
+} shmem_transport_dom_t;
+
+typedef struct shmem_transport_ctx_t {
+    shmem_transport_dom_t* domain;
+    shmem_transport_cntr_ep_t endpoint;
+} shmem_transport_ctx_t;
+
+extern shmem_transport_dom_t** shmem_transport_ofi_domains;
+extern shmem_transport_ctx_t** shmem_transport_ofi_contexts;
+
+extern size_t shmem_transport_num_contexts;
+extern size_t shmem_transport_num_domains;
+
+extern size_t shmem_transport_available_contexts;
+extern size_t shmem_transport_available_domains;
 
 extern struct fid_fabric*       	shmem_transport_ofi_fabfd;
 extern struct fid_domain*          	shmem_transport_ofi_domainfd;

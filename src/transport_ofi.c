@@ -31,6 +31,21 @@
 #include <unistd.h>
 #include "runtime.h"
 
+#define IF_OFI_ERR_RETURN(ret,msg) do {                     \
+    if(ret) {                                               \
+        OFI_ERRMSG(msg " (" #__FILE__ ":" #__LINE__ ")\n"); \
+        return ret;                                         \
+    }                                                       \
+  } while(0)
+
+#define IF_OFI_ERR_RETURN(ret,msg) do {                \
+    if(ret) {                                          \
+        fprintf(stderr,"SHMEM Error %d (%s:%s): %s",   \
+                (ret),#__FILE__,#__LINE__,(msg "\n")); \
+        return ret;                                    \
+    }                                                  \
+  } while(0)
+
 struct fabric_info {
     struct fi_info *fabrics;
     struct fi_info *p_info;
@@ -260,6 +275,148 @@ uint64_t shmem_transport_ofi_max_poll = (1ULL<<30);
 
 #define OFI_MAJOR_VERSION 1
 #define OFI_MINOR_VERSION 0
+
+struct fabric_info shmem_ofi_info = {0};
+
+int shmemx_domain_create(int thread_level, int num_domains,
+        shmemx_domain_t domains[]) {
+  int ret = 0;
+  size_t newSize = shmem_transport_num_domains + num_domains;
+  if(newSize > shmem_transport_available_domains) {
+    size_t nBytes = newSize*sizeof(shem_transport_dom_t*);
+    shmem_transport_dom_t** newBlock = malloc(nBytes);
+    memcpy(newBlock,shmem_transport_ofi_domains,nBytes);
+
+    /* FIXME: Probably need to do an atomic swap here, but idk the
+     * right way to do that in C off the top of my head
+     *
+     * If this function is called while another thread is creating
+     * contexts, you could get a use-after-free.
+     */
+    shmem_transport_dom_t** oldBlock = shmem_transport_ofi_domains;
+    shmem_transport_ofi_domains = newBlock;
+    free(oldBlock);
+    shmem_transport_available_domains = newSize;
+  }
+
+  shmem_transport_dom_t* domArray = shmem_transport_ofi_domains;
+
+  /* TODO: maybe block allocate here instead of mallocing each one.
+   * That requires more bookkeeping though.
+   */
+  int i;
+  for(i = 0; i < num_domains; ++i) {
+    size_t ix = shmem_transport_num_domains++;
+    domains[i] = ix;
+    shmem_transport_dom_t* dom;
+    domArray[ix] = dom = malloc(sizeof(shmem_transport_dom_t));
+
+    dom->freed = 0;
+    dom->num_active_contexts = 0;
+    dom->num_endpoints = 0;
+    dom->max_num_endpoints = 0;
+    int lock = (thread_level != SHMEMX_THREAD_SINGLE);
+    dom->use_lock = lock;
+
+    if(lock) {
+      /* Interesting semantic choice -- this macro is
+       * pass-by-reference
+       */
+      SHMEM_MUTEX_INIT(dom->lock);
+    }
+
+    /* TODO: fill tx_attr */
+    ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL,
+        &dom->stx, NULL);
+    IF_OFI_ERR_RETURN(ret,"stx context initialization failed");
+
+    struct fi_cq_attr   cq_attr = {0};
+    /* event type for CQ,only context stored/reported */
+    cq_attr.format = FI_CQ_FORMAT_CONTEXT;
+    cq_attr.size   = shmem_transport_ofi_queue_slots;
+
+    ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr,
+        &dom->cq, NULL);
+    IF_OFI_ERR_RETURN(ret,"cq_open failed");
+  }
+
+  return ret;
+}
+
+void shmemx_domain_destroy(int num_domains, shmemx_domain_t domains[])
+{
+  int i;
+
+  for(i = 0; i < num_domains; ++i) {
+    shmemx_domain_t ix = domains[i];
+    shem_transport_dom_t* dom = shmem_transport_ofi_domains[ix];
+    if(!dom->num_active_contexts) {
+      shmem_transport_domain_destroy(dom);
+    } else {
+      dom->freed = 1;
+    }
+  }
+}
+
+int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
+{
+  /* FIXME: This does not do resource cleanup (or unlock the mutex on
+   * `domain`) on error, it just returns. This is consistent with how
+   * initialization worked before, but is worse since context creation
+   * is not necessarily do-or-die.
+   */
+  int ret = 0;
+  shem_transport_dom_t* dom = shmem_transport_ofi_domains[domain];
+
+  if(dom->use_lock) {
+    SHMEM_MUTEX_LOCK(dom->lock);
+  }
+
+  if(!dom->max_num_endpoints) {
+    dom->num_endpoints = 0;
+    dom->max_num_endpoints = 8;
+    dom->endpoints = malloc(8*sizeof(shmem_transport_cntr_ep_t*))
+
+    IF_ERR_RETURN(dom->endpoints ? 0 : -1, "malloc failed");
+  } else if(dom->endpoints == dom->max_num_endpoints) {
+    size_t newsize = (dom->max_num_endpoints *= 2);
+    dom->endpoints = realloc(dom->endpoints,newSize);
+
+    IF_ERR_RETURN(dom->endpoints ? 0 : -1, "realloc failed");
+  }
+
+  shmem_transport_cntr_ep_t* ep = dom->endpoints[dom->num_endpoints++];
+
+  struct fi_cntr_attr cntr_attr = {0};
+  cntr_attr.events   = FI_CNTR_EVENTS_COMP;
+  ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
+      &ep->counter, NULL);
+  IF_OFI_ERR_RETURN(ret,"context cntr_open failed");
+
+  info->p_info->ep_attr->tx_ctx_cnt = FI_SHARED_CONTEXT;
+  info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | /*SEND ONLY */
+                        FI_ATOMICS; /* request atomics capability */
+  info->p_info->caps |= FI_REMOTE_WRITE | FI_REMOTE_READ;
+  info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE | FI_INJECT_COMPLETE;
+  info->p_info->mode = 0;
+  info->p_info->tx_attr->mode = 0;
+  info->p_info->rx_attr->mode = 0;
+
+  ret = fi_endpoint(shmem_transport_ofi_domainfd,
+      info->p_info, &ep->ep, NULL);
+  IF_OFI_ERR_RETURN(ret,"epfd creation failed");
+
+  ret = fi_ep_bind(ep->ep, &dom->stx->fid, 0);
+  IF_OFI_ERR_RETURN(ret,"context ep_bind ep -> stx failed");
+}
+
+void shmemx_ctx_destroy(shmemx_ctx_t ctx);
+void shmemx_ctx_fence(shmemx_ctx_t ctx);
+void shmemx_ctx_quiet(shmemx_ctx_t ctx);
+
+void shmemx_sync(int PE_start, int logPE_stride, int PE_size, long *pSync);
+void shmemx_sync_all(void);
+
 
 static
 void
@@ -977,7 +1134,7 @@ static inline int allocate_fabric_resources(struct fabric_info *info)
     ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL, /* TODO: fill tx_attr */
 		    &shmem_transport_ofi_stx, NULL);
     if(ret!=0) {
-	OFI_ERRMSG("stx context initialization failed\n");
+	OFI_ERRMSG();
 	return ret;
     }
 
@@ -1101,7 +1258,6 @@ static inline int query_for_fabric(struct fabric_info *info)
 int shmem_transport_init(long eager_size)
 {
     int ret = 0;
-    struct fabric_info info = {0};
 
     info.npes      = shmem_runtime_get_size();
 
