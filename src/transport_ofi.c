@@ -482,13 +482,11 @@ static inline int allocate_recv_cntr_mr(void)
         return ret;
     }
 
-    //bind to endpoint, incoming communication associated with endpoint now has defined resources
-    ret = fi_ep_bind(shmem_transport_ofi_epfd,
-                     &shmem_transport_ofi_target_mrfd->fid,
-                     FI_REMOTE_READ | FI_REMOTE_WRITE);
+    ret = fi_ep_bind(shmem_transport_ofi_cntr_epfd,
+		    &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE | FI_REMOTE_READ);
     if(ret!=0){
-        OFI_ERRMSG("ep_bind mr2epfd failed\n");
-        return ret;
+	OFI_ERRMSG("ep_bind cntr_epfd2put_cntr failed\n");
+	return ret;
     }
 #endif /* ndef ENABLE_HARD_POLLING */
 
@@ -530,22 +528,11 @@ static inline int allocate_recv_cntr_mr(void)
         return ret;
     }
 
-    /* Bind to endpoint, incoming communication associated with endpoint now
-     * has defined resources */
-    ret = fi_ep_bind(shmem_transport_ofi_epfd,
-                     &shmem_transport_ofi_target_heap_mrfd->fid,
-                     FI_REMOTE_READ | FI_REMOTE_WRITE);
-    if (ret != 0) {
-        OFI_ERRMSG("ep_bind mr2epfd heap failed\n");
-        return ret;
-    }
-
-    ret = fi_ep_bind(shmem_transport_ofi_epfd,
-                     &shmem_transport_ofi_target_data_mrfd->fid,
-                     FI_REMOTE_READ | FI_REMOTE_WRITE);
-    if (ret != 0) {
-        OFI_ERRMSG("ep_bind mr2epfd data failed\n");
-        return ret;
+    ret = fi_ep_bind(shmem_transport_ofi_cntr_epfd,
+		    &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE | FI_REMOTE_READ);
+    if(ret!=0){
+	OFI_ERRMSG("ep_bind cntr_epfd2put_cntr failed\n");
+	return ret;
     }
 #endif /* ndef ENABLE_HARD_POLLING */
 #endif
