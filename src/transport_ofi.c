@@ -247,9 +247,9 @@ static int INTERNAL_REQ_OPS[]=
 };
 
 typedef enum{
-    NONE,
-    LIMITATION_WARNING,
-    SOFT_SUPPORT,
+    ATOMIC_NO_SUPPORT,
+    ATOMIC_WARNINGS,
+    ATOMIC_SOFT_SUPPORT,
 }atomic_support_lv;
 
 
@@ -666,12 +666,12 @@ static inline int atomicvalid_rtncheck(int ret, int atomic_size,
                                     atomic_support_lv atomic_sup,
                                     char strOP[], char strDT[])
 {
-    if((ret != 0 || atomic_size == 0) && atomic_sup != SOFT_SUPPORT) {
-        if(atomic_sup == LIMITATION_WARNING) {
+    if((ret != 0 || atomic_size == 0) && atomic_sup != ATOMIC_SOFT_SUPPORT) {
+        if(atomic_sup == ATOMIC_WARNINGS) {
             fprintf(stderr, "Warning OFI detected no support for atomic '%s' "
                "on type '%s'\n", strOP, strDT);
         }
-        else if(atomic_sup == NONE) {
+        else if(atomic_sup == ATOMIC_NO_SUPPORT) {
             OFI_ERRMSG("Error: atomicvalid ret=%d atomic_size=%d \n",
                        ret, atomic_size);
 	        return ret;
@@ -756,12 +756,12 @@ static inline int atomic_limitations_check(void)
     /* ----------------------------------------*/
 
     int ret = 0;
-    atomic_support_lv general_atomic_sup = NONE;
-    atomic_support_lv reduction_sup = SOFT_SUPPORT;
+    atomic_support_lv general_atomic_sup = ATOMIC_NO_SUPPORT;
+    atomic_support_lv reduction_sup = ATOMIC_SOFT_SUPPORT;
     size_t atomic_size;
 
     if(NULL != shmem_util_getenv_str("OFI_ATOMIC_CHECKS_WARN"))
-        general_atomic_sup = LIMITATION_WARNING;
+        general_atomic_sup = ATOMIC_WARNINGS;
 
     init_ofi_tables();
 
