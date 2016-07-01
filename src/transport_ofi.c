@@ -24,6 +24,7 @@
 #endif
 
 #define SHMEM_INTERNAL_INCLUDE
+
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"
@@ -31,19 +32,19 @@
 #include <unistd.h>
 #include "runtime.h"
 
-#define IF_OFI_ERR_RETURN(ret,msg) do {                     \
-    if(ret) {                                               \
-        OFI_ERRMSG(msg " (" #__FILE__ ":" #__LINE__ ")\n"); \
-        return ret;                                         \
-    }                                                       \
+#define IF_ERR_RETURN(ret,msg) do {                 \
+    if(ret) {                                           \
+        OFI_ERRMSG(msg " (%s:%d)\n",__FILE__,__LINE__); \
+        return ret;                                     \
+    }                                                   \
   } while(0)
 
-#define IF_OFI_ERR_RETURN(ret,msg) do {                \
-    if(ret) {                                          \
-        fprintf(stderr,"SHMEM Error %d (%s:%s): %s",   \
-                (ret),#__FILE__,#__LINE__,(msg "\n")); \
-        return ret;                                    \
-    }                                                  \
+#define IF_OFI_ERR_RETURN(RET,MSG) do {              \
+    if(RET) {                                        \
+        fprintf(stderr,"SHMEM Error %d (%s:%d): %s", \
+                (RET),__FILE__,__LINE__,(MSG "\n")); \
+        return RET;                                  \
+    }                                                \
   } while(0)
 
 struct fabric_info {
@@ -270,6 +271,12 @@ struct fabric_info shmem_ofi_cntr_info = {0};
 int shmemx_domain_create(int thread_level, int num_domains,
         shmemx_domain_t domains[])
 {
+  if(thread_level > shmem_internal_thread_level) {
+    fprintf(stderr,"Cannot create domain with thread level %d when "
+        "global thread level is %d\n",thread_level,
+        shmem_internal_thread_level);
+    return -1;
+  }
   int ret = 0;
   size_t newSize = shmem_transport_num_domains + num_domains;
   if(newSize > shmem_transport_available_domains) {
@@ -289,7 +296,7 @@ int shmemx_domain_create(int thread_level, int num_domains,
     shmem_transport_available_domains = newSize;
   }
 
-  shmem_transport_dom_t* domArray = shmem_transport_ofi_domains;
+  shmem_transport_dom_t** domArray = shmem_transport_ofi_domains;
 
   /* TODO: maybe block allocate here instead of mallocing each one.
    * That requires more bookkeeping though.
@@ -355,8 +362,13 @@ void shmem_transport_domain_destroy(shmem_transport_dom_t* dom)
 
   size_t i;
   for(i = 0; i < dom->num_endpoints; ++i) {
-    if(fi_close(&dom->endpoints[i]->fid)) {
-      OFI_ERRMSG("Domain endpoint close failed (%s)", fi_strerror(errno));
+    if(fi_close(&dom->endpoints[i]->ep->fid)) {
+      OFI_ERRMSG("Domain endpoint close failed (%s)",
+          fi_strerror(errno));
+    }
+    if(fi_close(&dom->endpoints[i]->counter->fid)) {
+      OFI_ERRMSG("Domain counter close failed (%s)",
+          fi_strerror(errno));
     }
   }
   free(dom->endpoints);
@@ -420,11 +432,11 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
   if(!dom->max_num_endpoints) {
     dom->num_endpoints = 0;
     dom->max_num_endpoints = 8;
-    dom->endpoints = malloc(8*sizeof(shmem_transport_cntr_ep_t*))
+    dom->endpoints = malloc(8*sizeof(shmem_transport_cntr_ep_t*));
 
     IF_ERR_RETURN(dom->endpoints ? 0 : -1, "malloc failed");
-  } else if(dom->endpoints == dom->max_num_endpoints) {
-    size_t newsize = (dom->max_num_endpoints *= 2);
+  } else if(dom->num_endpoints == dom->max_num_endpoints) {
+    size_t newSize = (dom->max_num_endpoints *= 2);
     dom->endpoints = realloc(dom->endpoints,newSize);
 
     IF_ERR_RETURN(dom->endpoints ? 0 : -1, "realloc failed");
@@ -475,7 +487,7 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
     size_t newAlloc = 2*newSize;
     shmem_transport_available_contexts = newAlloc;
     shmem_transport_ctx_t** ctxArr = shmem_transport_ofi_contexts;
-    ctxArr = realloc(ctxArr,newalloc);
+    ctxArr = realloc(ctxArr,newAlloc);
     shmem_transport_ofi_contexts = ctxArr;
   }
 
@@ -494,6 +506,8 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
 }
 
 void shmemx_ctx_destroy(shmemx_ctx_t ctxid) {
+  shmemx_ctx_quiet(ctxid);
+
   shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[ctxid];
 
   shmem_transport_dom_t* dom = ctx->domain;
@@ -528,17 +542,6 @@ void shmemx_ctx_quiet(shmemx_ctx_t c)
   }
 }
 
-
-void shmemx_sync(int PE_start, int logPE_stride, int PE_size,
-    long *pSync)
-{
-  shmem_internal_sync(PE_start,logPE_stride,PE_size,pSync);
-}
-void shmemx_sync_all(void)
-{
-  shmemx_sync(0,0,shmem_internal_num_pes,
-      shmem_internal_barrier_all_psync);
-}
 
 static inline int allocate_recv_cntr_mr(void)
 {
@@ -801,8 +804,9 @@ static inline int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
 
     for(i=0; i<DT_MAX; i++) {
       for(j=0; j<OPS_MAX; j++) {
-        ret = fi_atomicvalid(shmem_transport_ofi_epfd, DT[i],
-                        OPS[j], &atomic_size);
+        ret = fi_atomicvalid(
+            shmem_transport_ctx->endpoint->ep, DT[i],
+            OPS[j], &atomic_size);
          if(atomicvalid_rtncheck(ret, atomic_size, atomicwarn,
                             SHMEM_OpName[OPS[j]],
                             SHMEM_DtName[DT[i]]))
@@ -821,7 +825,7 @@ static inline int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
 
     for(i=0; i<DT_MAX; i++) {
       for(j=0; j<OPS_MAX; j++) {
-        ret = fi_compare_atomicvalid(shmem_transport_ofi_epfd, DT[i],
+        ret = fi_compare_atomicvalid(shmem_transport_ctx->endpoint->ep, DT[i],
                         OPS[j], &atomic_size);
          if(atomicvalid_rtncheck(ret, atomic_size, atomicwarn,
                             SHMEM_OpName[OPS[j]],
@@ -841,7 +845,7 @@ static inline int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
 
     for(i=0; i<DT_MAX; i++) {
       for(j=0; j<OPS_MAX; j++) {
-        ret = fi_fetch_atomicvalid(shmem_transport_ofi_epfd, DT[i],
+        ret = fi_fetch_atomicvalid(shmem_transport_ctx->endpoint->ep, DT[i],
                         OPS[j], &atomic_size);
          if(atomicvalid_rtncheck(ret, atomic_size, atomicwarn,
                             SHMEM_OpName[OPS[j]],
@@ -869,7 +873,7 @@ static inline int atomic_limitations_check(void)
     init_ofi_tables();
 
     /*Retrieve atomic max size */
-    ret = fi_atomicvalid(shmem_transport_ofi_epfd, FI_INT64, FI_SUM,
+    ret = fi_atomicvalid(shmem_transport_ctx->endpoint->ep, FI_INT64, FI_SUM,
 			&atomic_size);
     if(ret!=0 || (atomic_size == 0)){ //not supported
 	    OFI_ERRMSG("atomicvalid failed: cannot determine max atomic size for transport\n");
@@ -933,7 +937,7 @@ static inline int atomic_limitations_check(void)
 
     /* LONG DOUBLE limitation is common */
     for(j=0; j<SIZEOF_REDC_OPS; j++) { //OPS
-      ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_INTERNAL_LONG_DOUBLE,
+      ret = fi_atomicvalid(shmem_transport_ctx->endpoint->ep, SHM_INTERNAL_LONG_DOUBLE,
                 REDUCE_COMPARE_OPS[j], &atomic_size);
       if(ret!=0 || atomic_size == 0) {
 	    shmem_transport_have_long_double = 0;
@@ -949,7 +953,7 @@ static inline int atomic_limitations_check(void)
     }
 
     for(j=0; j<SIZEOF_REDA_OPS; j++) { //OPS
-      ret = fi_atomicvalid(shmem_transport_ofi_epfd, SHM_INTERNAL_LONG_DOUBLE,
+      ret = fi_atomicvalid(shmem_transport_ctx->endpoint->ep, SHM_INTERNAL_LONG_DOUBLE,
                 REDUCE_ARITH_OPS[j], &atomic_size);
       if(ret!=0 || atomic_size == 0) {
 	    shmem_transport_have_long_double = 0;
@@ -1075,17 +1079,6 @@ static inline int allocate_fabric_resources(struct fabric_info *info)
 	return ret;
     }
 
-    /*transmit context: allocate one transmit context for this SHMEM PE
-     * and share it across different multiple endpoints. Since we have only
-     * one thread per PE, a single context is sufficient and allows more
-     * more PEs/node (i.e. doesn't exhaust contexts)  */
-    ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL, /* TODO: fill tx_attr */
-		    &shmem_transport_ofi_stx, NULL);
-    if(ret!=0) {
-	OFI_ERRMSG();
-	return ret;
-    }
-
     /*AV table set-up for PE mapping*/
 
 #ifdef USE_AV_MAP
@@ -1203,12 +1196,12 @@ static inline int query_for_fabric(struct fabric_info *info)
 
 }
 
-int shmem_transport_init(long eager_size)
+int shmem_transport_init(int thread_level, long eager_size)
 {
   int ret = 0;
 
   {
-    struct fabric_info info = {0}
+    struct fabric_info info = {0};
 
     info.npes      = shmem_runtime_get_size();
 
@@ -1236,7 +1229,7 @@ int shmem_transport_init(long eager_size)
   if(ret!=0)
     return ret;
 
-  ret = shmemx_domain_create(,1,&shmem_transport_default_dom);
+  ret = shmemx_domain_create(thread_level,1,&shmem_transport_default_dom);
   if(ret!=0)
     return ret;
 
@@ -1288,22 +1281,21 @@ int shmem_transport_startup(void)
 int shmem_transport_fini(void)
 {
     /* Wait for acks before shutdown */
-    shmem_transport_quiet();
-
-    if (shmem_transport_ofi_epfd &&
-		    fi_close(&shmem_transport_ofi_epfd->fid)) {
-        OFI_ERRMSG("Endpoint close failed (%s)", fi_strerror(errno));
+    size_t i;
+    for(i = 0; i < shmem_transport_num_contexts; ++i) {
+      shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[i];
+      if(ctx) {
+        shmemx_ctx_destroy(i);
+      }
     }
-
-    if (shmem_transport_ofi_cntr_epfd &&
-		    fi_close(&shmem_transport_ofi_cntr_epfd->fid)) {
-        OFI_ERRMSG("Endpoint close failed (%s)", fi_strerror(errno));
+    for(i = 0; i < shmem_transport_num_domains; ++i) {
+      shmem_transport_dom_t* dom = shmem_transport_ofi_domains[i];
+      if(dom) {
+        shmem_transport_domain_destroy(dom);
+      }
     }
-
-    if (shmem_transport_ofi_stx &&
-		    fi_close(&shmem_transport_ofi_stx->fid)) {
-        OFI_ERRMSG("Shared context close failed (%s)", fi_strerror(errno));
-    }
+    free(shmem_transport_ofi_domains);
+    free(shmem_transport_ofi_contexts);
 
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     if (shmem_transport_ofi_target_mrfd &&

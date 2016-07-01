@@ -67,7 +67,7 @@ shmem_quiet(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_quiet();
+    shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
 }
 
 
@@ -76,7 +76,7 @@ shmem_fence(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_fence();
+    shmemx_ctx_fence(SHMEMX_CTX_DEFAULT);
 }
 
 

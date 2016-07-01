@@ -224,8 +224,14 @@ void shmemx_sync_all(void);
     CTYPE shmemx_ctx_##STYPE##_fadd(CTYPE *dest, CTYPE value,        \
             int pe, shmemx_ctx_t ctx)
 
-#define SHMEMX_CTX_SWAP_OPS(STYPE, CTYPE) \
+#define SHMEMX_CTX_EXT_OPS(STYPE, CTYPE) \
     CTYPE shmemx_ctx_##STYPE##_swap(CTYPE *dest, CTYPE value, \
+            int pe, shmemx_ctx_t ctx);                        \
+                                                              \
+    CTYPE shmemx_ctx_##STYPE##_fetch(const CTYPE *src, int pe,\
+        shmemx_ctx_t ctx);                                    \
+                                                              \
+    void shmemx_ctx_##STYPE##_set(CTYPE *dest, CTYPE value,   \
             int pe, shmemx_ctx_t ctx)
 
 SHMEM_DECLARE_FOR_SIZES(SHMEMX_CTX_PUTGET_ALIGN_OPS);
@@ -236,7 +242,7 @@ SHMEM_DECLARE_FOR_RMA(SHMEMX_CTX_PUTGET_OPS);
 
 SHMEM_DECLARE_FOR_AMO(SHMEMX_CTX_ATOMIC_OPS);
 
-SHMEM_DECLARE_FOR_EXTENDED_AMO(SHMEMX_CTX_SWAP_OPS);
+SHMEM_DECLARE_FOR_EXTENDED_AMO(SHMEMX_CTX_EXT_OPS);
 
 long shmemx_ctx_swap(long *dest, long value, int pe, shmemx_ctx_t ctx);
 
@@ -247,6 +253,8 @@ long shmemx_ctx_swap(long *dest, long value, int pe, shmemx_ctx_t ctx);
 #undef SHMEMX_CTX_SWAP_OPS
 
 #ifndef SHMEM_INTERNAL_INCLUDE
+
+#define SHMEM_UTIL_MACROS
 
 #undef SHMEM_EVAL_MACRO_FOR_RMA
 #undef SHMEM_EVAL_MACRO_FOR_AMO

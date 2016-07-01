@@ -185,8 +185,19 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         goto cleanup;
     }
 
+    /* set up threading */
+    SHMEM_MUTEX_INIT(shmem_internal_mutex_alloc);
+#ifdef ENABLE_THREADS
+    shmem_internal_thread_level = tl_requested;
+    *tl_provided = tl_requested;
+#else
+    shmem_internal_thread_level = SHMEMX_THREAD_SINGLE;
+    *tl_provided = SHMEMX_THREAD_SINGLE;
+#endif
+
     /* Initialize transport devices */
-    ret = shmem_transport_init(eager_size);
+    ret = shmem_transport_init(shmem_internal_thread_level,
+        eager_size);
     if (0 != ret) {
         fprintf(stderr,
                 "[%03d] ERROR: Transport init failed\n",
@@ -264,16 +275,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
     atexit(shmem_internal_shutdown_atexit);
     shmem_internal_initialized = 1;
-
-    /* set up threading */
-    SHMEM_MUTEX_INIT(shmem_internal_mutex_alloc);
-#ifdef ENABLE_THREADS
-    shmem_internal_thread_level = tl_requested;
-    *tl_provided = tl_requested;
-#else
-    shmem_internal_thread_level = SHMEMX_THREAD_SINGLE;
-    *tl_provided = SHMEMX_THREAD_SINGLE;
-#endif
 
     /* get hostname for shmem_getnodename */
     if (gethostname(shmem_internal_my_hostname,

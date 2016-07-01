@@ -22,10 +22,10 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #endif
 
-#define OFI_ERRMSG(...)                                                         \
+#define OFI_ERRMSG(...)                                                    \
     do {                                                                        \
-        fprintf(stderr, __FILE__ ":%d: \n", __LINE__);                          \
-        fprintf(stderr, __VA_ARGS__);                                           \
+        fprintf(stderr, "%s:%d: \n", __FILE__, __LINE__);                       \
+        fprintf(stderr, __VA_ARGS__);                                      \
     } while (0)
 
 #define OFI_RET_CHECK(ret)                                                      \

@@ -43,6 +43,17 @@ static int tree_radix = -1;
 
 #define COLL_DEBUG
 
+void shmemx_sync(int PE_start, int logPE_stride, int PE_size,
+    long *pSync)
+{
+  shmem_internal_sync(PE_start,logPE_stride,PE_size,pSync);
+}
+void shmemx_sync_all(void)
+{
+  shmemx_sync(0,0,shmem_internal_num_pes,
+      shmem_internal_barrier_all_psync);
+}
+
 int
 shmem_internal_build_kary_tree(int PE_start, int stride, int PE_size, int PE_root, int *parent,
                                int *num_children, int *children)

@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define SHMEM_INTERNAL_INCLUDE
 #include "shmemx.h"
 #include "runtime.h"
 #include "config.h"

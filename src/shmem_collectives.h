@@ -85,6 +85,7 @@ shmem_internal_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 }
 
 
+
 static inline
 void
 shmem_internal_barrier_all(void)

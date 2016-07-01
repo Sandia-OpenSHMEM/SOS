@@ -146,7 +146,7 @@ extern int shmem_transport_have_long_double;
 
 extern size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 
-int shmem_transport_init(long eager_size);
+int shmem_transport_init(int thread_level,long eager_size);
 int shmem_transport_startup(void);
 int shmem_transport_fini(void);
 
