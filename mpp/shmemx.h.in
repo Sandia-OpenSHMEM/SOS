@@ -122,7 +122,7 @@ void shmemx_ct_wait(shmemx_ct_t ct, long wait_for);
 typedef int shmemx_ctx_t;
 typedef int shmemx_domain_t;
 
-void shmemx_domain_create(int thread_level, int num_domains, shmemx_domain_t domains[]);
+int shmemx_domain_create(int thread_level, int num_domains, shmemx_domain_t domains[]);
 
 void shmemx_domain_destroy(int num_domains, shmemx_domain_t domains[]);
 int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx);

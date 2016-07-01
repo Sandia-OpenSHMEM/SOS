@@ -118,306 +118,169 @@
 
 #endif /* ENABLE_PROFILING */
 
-
-float
-shmem_float_swap(float *target, float value, int pe)
-{
-    float newval;
-
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_swap(target, &value, &newval, sizeof(float), pe, SHM_INTERNAL_FLOAT);
-    shmem_internal_get_wait();
-    return newval;
-}
-
-
-double
-shmem_double_swap(double *target, double value, int pe)
-{
-    double newval;
-
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_swap(target, &value, &newval, sizeof(double), pe, SHM_INTERNAL_DOUBLE);
-    shmem_internal_get_wait();
-    return newval;
-}
-
-
-int
-shmem_int_swap(int *target, int value, int pe)
-{
-    int newval;
-
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_swap(target, &value, &newval, sizeof(int), pe, SHM_INTERNAL_INT);
-    shmem_internal_get_wait();
-    return newval;
-}
-
-
-long
-shmem_long_swap(long *target, long value, int pe)
-{
-    long newval;
-
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_swap(target, &value, &newval, sizeof(long), pe, SHM_INTERNAL_LONG);
-    shmem_internal_get_wait();
-    return newval;
-}
-
-
-long long
-shmem_longlong_swap(long long *target, long long value, int pe)
-{
-    long long newval;
-
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_swap(target, &value, &newval, sizeof(long long), pe, SHM_INTERNAL_LONG_LONG);
-    shmem_internal_get_wait();
-    return newval;
-}
-
-
-long
-shmem_swap(long *target, long value, int pe)
-{
-    long newval;
-
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_swap(target, &value, &newval, sizeof(long), pe, SHM_INTERNAL_LONG);
-    shmem_internal_get_wait();
-    return newval;
-}
-
-
-int
-shmem_int_cswap(int *target, int cond, int value, int pe)
-{
-    int newval;
-
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_cswap(target, &value, &newval, &cond, sizeof(int), pe, SHM_INTERNAL_INT);
-    shmem_internal_get_wait();
-    return newval;
-}
-
-
-long
-shmem_long_cswap(long *target, long cond, long value, int pe)
-{
-    long newval;
-
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_cswap(target, &value, &newval, &cond, sizeof(long), pe, SHM_INTERNAL_LONG);
-    shmem_internal_get_wait();
-    return newval;
-}
-
-
-long long
-shmem_longlong_cswap(long long * target, long long cond, 
-                     long long value, int pe)
-{
-    long long newval;
-
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_cswap(target, &value, &newval, &cond, sizeof(long long), pe, SHM_INTERNAL_LONG_LONG);
-    shmem_internal_get_wait();
-    return newval;
-}
-
-
-void
-shmem_int_inc(int *target, int pe)
-{
-    int tmp = 1;
-
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_atomic_small(target, &tmp, sizeof(int), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT);
-}
-
-
-void
-shmem_long_inc(long *target, int pe)
-{
-    long tmp = 1;
-
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_atomic_small(target, &tmp, sizeof(long), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
-}
-
-
-void
-shmem_longlong_inc(long long *target, int pe)
-{
-    long long tmp = 1;
-
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_atomic_small(target, &tmp, sizeof(long long), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG_LONG);
-}
-
-
-int
-shmem_int_finc(int *target, int pe)
-{
-    int oldval, tmp = 1;
-
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(int), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT);
-    shmem_internal_get_wait();
-    return oldval;
-}
-
-
-long
-shmem_long_finc(long *target, int pe)
-{
-    long oldval, tmp = 1;
-
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(long), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
-    shmem_internal_get_wait();
-    return oldval;
-}
-
-
-long long
-shmem_longlong_finc(long long *target, int pe)
-{
-    long long oldval, tmp = 1;
-
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(long long), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG_LONG);
-    shmem_internal_get_wait();
-    return oldval;
-}
-
-
-void
-shmem_int_add(int *target, int value, int pe)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_atomic_small(target, &value, sizeof(int), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT);
-}
-
-
-void
-shmem_long_add(long *target, long value, int pe)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_atomic_small(target, &value, sizeof(long), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
-}
-
-
-void
-shmem_longlong_add(long long *target, long long value, int pe)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_atomic_small(target, &value, sizeof(long long), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG_LONG);
-}
-
-
-int
-shmem_int_fadd(int *target, int value, int pe)
-{
-    int oldval;
-
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(int), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT);
-    shmem_internal_get_wait();
-    return oldval;
-}
-
-
-long
-shmem_long_fadd(long *target, long value, int pe)
-{
-    long oldval;
-
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(long), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
-    shmem_internal_get_wait();
-    return oldval;
-}
-
-
-long long
-shmem_longlong_fadd(long long *target, long long value,
-                    int pe)
-{
-    long long oldval;
-
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(long long), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG_LONG);
-    shmem_internal_get_wait();
-    return oldval;
-}
-
+#define CAT(x,y) x ## y
+#define SHM_INTERNAL_T(STYPE) CAT(SHM_INTERNAL_T_,STYPE)
+#define SHM_INTERNAL_T_float      SHM_INTERNAL_FLOAT
+#define SHM_INTERNAL_T_double     SHM_INTERNAL_DOUBLE
+#define SHM_INTERNAL_T_longdouble SHM_INTERNAL_LONG_DOUBLE
+#define SHM_INTERNAL_T_complexf   SHM_INTERNAL_FLOAT_COMPLEX
+#define SHM_INTERNAL_T_complexd   SHM_INTERNAL_DOUBLE_COMPLEX
+
+#define SHMEM_DEF_SWAP(STYPE,TYPE) \
+  TYPE shmem_##STYPE##_swap(TYPE *addr, TYPE value, int pe)          \
+  {                                                                  \
+    shmemx_ctx_##STYPE##_swap(addr, value, pe, SHMEMX_CTX_DEFAULT);  \
+  }                                                                  \
+  TYPE shmemx_ctx_##STYPE##_swap(TYPE *addr, TYPE value, int pe,     \
+        shmemx_ctx_t c)                                              \
+  {                                                                  \
+    TYPE newval;                                                     \
+    SHMEM_ERR_CHECK_INITIALIZED();                                   \
+    shmem_internal_swap(target, &value, &newval, sizeof(TYPE), pe,   \
+        SHM_INTERNAL_T(STYPE), c);                                   \
+    shmemx_ctx_quiet(c);                                             \
+    return newval;                                                   \
+  }
+
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_SWAP);
+
+
+#define SHMEM_DEF_CSWAP(STYPE,TYPE) \
+  TYPE shmem_##STYPE##_cswap(TYPE *addr, TYPE cond, TYPE value,      \
+      int pe)                                                        \
+  {                                                                  \
+    shmemx_ctx_##STYPE##_cswap(addr, cond, value, pe,                \
+        SHMEMX_CTX_DEFAULT);                                         \
+  }                                                                  \
+  TYPE shmemx_ctx_##STYPE##_cswap(TYPE *addr, TYPE cond, TYPE value, \
+      int pe, shmemx_ctx_t c)                                        \
+  {                                                                  \
+    TYPE newval;                                                     \
+    SHMEM_ERR_CHECK_INITIALIZED();                                   \
+    shmem_internal_cswap(target, &value, &newval, sizeof(TYPE), pe,  \
+        SHM_INTERNAL_T(STYPE), c);                                   \
+    shmemx_ctx_quiet(c);                                             \
+    return newval;                                                   \
+  }
+
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_CSWAP);
+
+#define SHMEM_DEF_INC(STYPE,TYPE) \
+  void shmem_##STYPE##_inc(TYPE *addr, int pe)                       \
+  {                                                                  \
+    shmemx_ctx_##STYPE##_inc(addr, pe, SHMEMX_CTX_DEFAULT);          \
+  }                                                                  \
+  void shmemx_ctx_##STYPE##_inc(TYPE *addr, int pe, shmemx_ctx_t c)  \
+  {                                                                  \
+    TYPE tmp = 1;                                                    \
+    SHMEM_ERR_CHECK_INITIALIZED();                                   \
+    shmem_internal_atomic_small(target, &tmp, sizeof(TYPE), pe,      \
+        SHM_INTERNAL_SUM, SHM_INTERNAL_T(STYPE), c);                 \
+  }
+
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_INC);
+
+
+#define SHMEM_DEF_FINC(STYPE,TYPE) \
+  TYPE shmem_##STYPE##_finc(TYPE *addr, int pe)                      \
+  {                                                                  \
+    shmemx_ctx_##STYPE##_finc(addr, pe, SHMEMX_CTX_DEFAULT);         \
+  }                                                                  \
+  TYPE shmemx_ctx_##STYPE##_finc(TYPE *addr, int pe, shmemx_ctx_t c) \
+  {                                                                  \
+    TYPE oldval, tmp = 1;                                            \
+                                                                     \
+    SHMEM_ERR_CHECK_INITIALIZED();                                   \
+                                                                     \
+    shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(TYPE), \
+        pe, SHM_INTERNAL_SUM, SHM_INTERNAL_T(STYPE), c);             \
+    shmemx_ctx_quiet(c);                                             \
+    return oldval;                                                   \
+  }
+
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_FINC);
+
+
+#define SHMEM_DEF_ADD(STYPE,TYPE) \
+  void shmem_##STYPE##_add(TYPE *addr, TYPE value, int pe)         \
+  {                                                                \
+    shmemx_ctx_##STYPE##_add(addr, value, pe, SHMEMX_CTX_DEFAULT); \
+  }                                                                \
+  void shmemx_ctx_##STYPE##_add(TYPE *addr, TYPE value, int pe,    \
+      shmemx_ctx_t c)                                              \
+  {                                                                \
+    SHMEM_ERR_CHECK_INITIALIZED();                                 \
+    shmem_internal_atomic_small(target, &value, sizeof(TYPE), pe,  \
+        SHM_INTERNAL_SUM, SHM_INTERNAL_T(STYPE), c);               \
+  }
+
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_ADD);
+
+
+#define SHMEM_DEF_FINC(STYPE,TYPE) \
+  TYPE shmem_##STYPE##_finc(TYPE *addr, TYPE value, int pe)          \
+  {                                                                  \
+    shmemx_ctx_##STYPE##_finc(addr, value, pe, SHMEMX_CTX_DEFAULT);  \
+  }                                                                  \
+  TYPE shmemx_ctx_##STYPE##_finc(TYPE *addr, TYPE value, int pe,     \
+      shmemx_ctx_t c)                                                \
+  {                                                                  \
+    TYPE oldval;                                                     \
+                                                                     \
+    SHMEM_ERR_CHECK_INITIALIZED();                                   \
+                                                                     \
+    shmem_internal_fetch_atomic(target, &value, &oldval,             \
+        sizeof(TYPE), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_T(STYPE),   \
+        c);                                                          \
+    shmemx_ctx_quiet(c);                                             \
+    return oldval;                                                   \
+  }
+
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_FINC);
 
 /** Generate atomic fetch C bindings */
-#define SHMEM_CAPI_ATOMIC_FETCH(type_name, c_type, dtype)                       \
-c_type                                                                          \
-shmem_##type_name##_fetch(const c_type *source, int pe)                         \
-{                                                                               \
-    c_type val;                                                                 \
-                                                                                \
-    SHMEM_ERR_CHECK_INITIALIZED();                                              \
-                                                                                \
-    shmem_internal_atomic_fetch(&val, (void *) source, sizeof(c_type), pe,      \
-                                dtype);                                         \
-    shmem_internal_get_wait();                                                  \
-    return val;                                                                 \
+#define SHMEM_CAPI_ATOMIC_FETCH(STYPE, TYPE) \
+TYPE                                                                 \
+shmem_##STYPE##_fetch(const TYPE *source, int pe)    \
+{                                                                    \
+  shmemx_ctx_##STYPE##_fetch(source, pe, SHMEMX_CTX_DEFAULT);        \
+}                                                                    \
+TYPE                                                                 \
+shmemx_ctx_##STYPE##_fetch(const TYPE *source, int pe,               \
+    shmemx_ctx_t c)                                                  \
+{                                                                    \
+    TYPE val;                                                        \
+                                                                     \
+    SHMEM_ERR_CHECK_INITIALIZED();                                   \
+                                                                     \
+    shmem_internal_atomic_fetch(&val, (void *) source,               \
+        sizeof(TYPE), pe, SHM_INTERNAL_T(STYPE), c);                 \
+    shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);                            \
+    return val;                                                      \
 }
 
-SHMEM_CAPI_ATOMIC_FETCH(int, int, SHM_INTERNAL_INT)
-SHMEM_CAPI_ATOMIC_FETCH(long, long, SHM_INTERNAL_LONG)
-SHMEM_CAPI_ATOMIC_FETCH(longlong, long long, SHM_INTERNAL_LONG_LONG)
-SHMEM_CAPI_ATOMIC_FETCH(float, float, SHM_INTERNAL_FLOAT)
-SHMEM_CAPI_ATOMIC_FETCH(double, double, SHM_INTERNAL_DOUBLE)
-
-#undef SHMEM_CAPI_ATOMIC_FETCH
-
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_CAPI_ATOMIC_FETCH);
 
 /* Generate atomic set C bindings
  *
  * Note: value is passed to the transport from the stack.  Transport must be
  * finished with value argument when shmem_internal_atomic_set returns.
  */
-#define SHMEM_CAPI_ATOMIC_SET(type_name, c_type, dtype)                         \
-void                                                                            \
-shmem_##type_name##_set(c_type *dest, c_type value, int pe)                     \
-{                                                                               \
-    SHMEM_ERR_CHECK_INITIALIZED();                                              \
-                                                                                \
-    shmem_internal_atomic_set((void *) dest, &value, sizeof(c_type), pe, dtype);\
+#define SHMEM_CAPI_ATOMIC_SET(STYPE, TYPE) \
+void                                                                 \
+shmem_##STYPE##_set(const TYPE *dest, TYPE value, int pe)            \
+{                                                                    \
+  shmemx_ctx_##STYPE##_set(dest, value, pe, SHMEMX_CTX_DEFAULT);     \
+}                                                                    \
+void                                                                 \
+shmemx_ctx_##STYPE##_set(const TYPE *dest, TYPE value, int pe,       \
+    shmemx_ctx_t c)                                                  \
+{                                                                    \
+    SHMEM_ERR_CHECK_INITIALIZED();                                   \
+                                                                     \
+    shmem_internal_atomic_set((void *) dest, &value,                 \
+        sizeof(TYPE), pe, SHM_INTERNAL_T(STYPE), c);                 \
 }
 
-SHMEM_CAPI_ATOMIC_SET(int, int, SHM_INTERNAL_INT)
-SHMEM_CAPI_ATOMIC_SET(long, long, SHM_INTERNAL_LONG)
-SHMEM_CAPI_ATOMIC_SET(longlong, long long, SHM_INTERNAL_LONG_LONG)
-SHMEM_CAPI_ATOMIC_SET(float, float, SHM_INTERNAL_FLOAT)
-SHMEM_CAPI_ATOMIC_SET(double, double, SHM_INTERNAL_DOUBLE)
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_CAPI_ATOMIC_SET);
 
-#undef SHMEM_CAPI_ATOMIC_SET

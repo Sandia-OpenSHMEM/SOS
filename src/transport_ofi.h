@@ -26,6 +26,7 @@
 #include "shmem_free_list.h"
 #include <string.h>
 #include "shmem_internal.h"
+#include "shmemx.h"
 #include <unistd.h>
 #include <rdma/fabric.h>
 #include <rdma/fi_domain.h>
@@ -149,101 +150,112 @@ int shmem_transport_init(long eager_size);
 int shmem_transport_startup(void);
 int shmem_transport_fini(void);
 
-static inline void shmem_transport_get_wait(void);
-
 
 static inline
-void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
-                                uint8_t **mr_addr, uint64_t *key);
-static inline
-void shmem_transport_ofi_drain_cq(void);
+void shmem_transport_received_cntr_wait(uint64_t ge_val);
 
 static inline
-void shmem_transport_put_quiet(void);
-static inline
-int shmem_transport_quiet(void);
-static inline
-int shmem_transport_fence(void);
-static inline
-int try_again(const int ret, uint64_t *polled);
+uint64_t shmem_transport_received_cntr_get(void);
 
 static inline
-void shmem_transport_put_small(void *target, const void *source,
-                               size_t len, int pe);
-static inline
-void shmem_transport_ofi_put_large(void *target, const void *source,
-                                   size_t len, int pe);
-static inline
-void shmem_transport_put_nb(void *target, const void *source,
-                            size_t len, int pe, long *completion);
-static inline
-void shmem_transport_put_wait(long *completion);
-static inline
-void shmem_transport_put_nbi(void *target, const void *source,
-                             size_t len, int pe);
+void shmem_transport_ct_wait(shmem_transport_ct_t *ct, long wait_for);
 
 static inline
-void shmem_transport_get(void *target, const void *source, size_t len,
-                         int pe);
-static inline
-void shmem_transport_get_wait(void);
+void shmem_transport_ct_set(shmem_transport_ct_t *ct, long value);
 
 static inline
-void shmem_transport_swap(void *target, const void *source,
-                          void *dest, size_t len, int pe,
-                          int datatype);
-static inline
-void shmem_transport_cswap(void *target, const void *source,
-                           void *dest, const void *operand,
-                           size_t len, int pe, int datatype);
-static inline
-void shmem_transport_mswap(void *target, const void *source,
-                           void *dest, const void *mask, size_t len,
-                           int pe, int datatype);
+long shmem_transport_ct_get(shmem_transport_ct_t *ct);
 
 static inline
-void shmem_transport_atomic_small(void *target, const void *source,
-                                  size_t len, int pe, int op,
-                                  int datatype);
+void shmem_transport_ct_free(shmem_transport_ct_t **ct_ptr);
+
 static inline
-void shmem_transport_atomic_set(void *target, const void *source,
-                                size_t len, int pe, int datatype);
+void shmem_transport_ct_create(shmem_transport_ct_t **ct_ptr);
+
 static inline
-void shmem_transport_atomic_fetch(void *target, const void *source,
-                                  size_t len, int pe, int datatype);
+void shmem_transport_get_ct(shmem_transport_ct_t *ct, void *target,
+                                const void *source, size_t len, int pe);
+
 static inline
-void shmem_transport_atomic_nb(void *target, const void *source,
-                               size_t full_len, int pe, int op,
-                               int datatype, long *completion);
-static inline
-void shmem_transport_fetch_atomic(void *target, const void *source,
-                                  void *dest, size_t len, int pe,
-                                  int op, int datatype);
+void
+shmem_transport_put_ct_nb(shmem_transport_ct_t *ct, void *target,
+                              const void *source, size_t len, int pe, long *completion);
+
 static inline
 int shmem_transport_atomic_supported(shm_internal_op_t op,
                                      shm_internal_datatype_t datatype);
 
 static inline
-void shmem_transport_put_ct_nb(shmem_transport_ct_t *ct, void *target,
-                               const void *source, size_t len, int pe,
-                               long *completion);
+void
+shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
+    size_t len, int pe, int op, int datatype, shmemx_ctx_t c);
+
 static inline
-void shmem_transport_get_ct(shmem_transport_ct_t *ct, void *target,
-                            const void *source, size_t len, int pe);
+void
+shmem_transport_atomic_nb(void *target, const void *source,
+    size_t full_len, int pe, int op, int datatype, shmemx_ctx_t c);
+
 static inline
-void shmem_transport_ct_create(shmem_transport_ct_t **ct_ptr);
+void
+shmem_transport_atomic_fetch(void *target, const void *source,
+    size_t len, int pe, int datatype, shmemx_ctx_t c);
+
 static inline
-void shmem_transport_ct_free(shmem_transport_ct_t **ct_ptr);
+void
+shmem_transport_atomic_set(void *target, const void *source,
+    size_t len, int pe, int datatype, shmemx_ctx_t c);
+
 static inline
-long shmem_transport_ct_get(shmem_transport_ct_t *ct);
+void
+shmem_transport_atomic_small(void *target, const void *source,
+    size_t len, int pe, int op, int datatype, shmemx_ctx_t c);
+
 static inline
-void shmem_transport_ct_set(shmem_transport_ct_t *ct, long value);
+void
+shmem_transport_mswap(void *target, const void *source, void *dest,
+                      const void *mask, size_t len, int pe,
+                      int datatype, shmemx_ctx_t c);
+
 static inline
-void shmem_transport_ct_wait(shmem_transport_ct_t *ct, long wait_for);
+void
+shmem_transport_cswap(void *target, const void *source, void *dest,
+                      const void *operand, size_t len, int pe,
+                      int datatype, shmemx_ctx_t c);
+
 static inline
-uint64_t shmem_transport_received_cntr_get(void);
+void
+shmem_transport_swap(void *target, const void *source, void *dest,
+    size_t len, int pe, int datatype, shmemx_ctx_t c);
+
 static inline
-void shmem_transport_received_cntr_wait(uint64_t ge_val);
+void
+shmem_transport_get(void *target, const void *source, size_t len,
+    int pe, shmemx_ctx_t c);
+
+static inline
+void
+shmem_transport_put_nbi(void *target, const void *source, size_t len,
+    int pe, shmemx_ctx_t c);
+
+static inline
+void
+shmem_transport_put(void *target, const void *source, size_t len,
+                       int pe, shmemx_ctx_t c);
+
+static inline
+void
+shmem_transport_ofi_put_large(void *target, const void *source,
+    size_t len, int pe, shmemx_ctx_t c);
+
+static inline
+void
+shmem_transport_put_small(void *target, const void *source,
+    size_t len, int pe, shmemx_ctx_t c);
+
+static inline
+int shmem_transport_ctx_fence(shmem_transport_ctx_t* ctx);
+
+static inline int shmem_transport_ctx_quiet(shmem_transport_ctx_t* ctx);
 
 #include "transport_ofi.impl.h"
 

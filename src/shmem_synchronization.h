@@ -20,37 +20,6 @@
 #include "shmem_comm.h"
 #include "transport.h"
 
-
-static inline void
-shmem_internal_quiet(void)
-{
-    int ret;
- 
-    ret = shmem_transport_quiet();
-    if (0 != ret) { RAISE_ERROR(ret); }
-
-#ifdef USE_XPMEM
-    ret = shmem_transport_xpmem_quiet();
-    if (0 != ret) { RAISE_ERROR(ret); }
-#endif
-}
- 
- 
-static inline void
-shmem_internal_fence(void)
-{
-    int ret;
- 
-    ret = shmem_transport_fence();
-    if (0 != ret) { RAISE_ERROR(ret); }
-
-#ifdef USE_XPMEM
-    ret = shmem_transport_xpmem_fence();
-    if (0 != ret) { RAISE_ERROR(ret); }
-#endif
-}
-
-
 #define COMP(type, a, b, ret)                            \
     do {                                                 \
         ret = 0;                                         \

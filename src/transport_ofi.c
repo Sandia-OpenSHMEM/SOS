@@ -273,7 +273,7 @@ int shmemx_domain_create(int thread_level, int num_domains,
   int ret = 0;
   size_t newSize = shmem_transport_num_domains + num_domains;
   if(newSize > shmem_transport_available_domains) {
-    size_t nBytes = newSize*sizeof(shem_transport_dom_t*);
+    size_t nBytes = newSize*sizeof(shmem_transport_dom_t*);
     shmem_transport_dom_t** newBlock = malloc(nBytes);
     memcpy(newBlock,shmem_transport_ofi_domains,nBytes);
 
@@ -388,7 +388,7 @@ void shmemx_domain_destroy(int num_domains, shmemx_domain_t domains[])
 
   for(i = 0; i < num_domains; ++i) {
     shmemx_domain_t ix = domains[i];
-    shem_transport_dom_t* dom = shmem_transport_ofi_domains[ix];
+    shmem_transport_dom_t* dom = shmem_transport_ofi_domains[ix];
     if(dom->use_lock) {
       SHMEM_MUTEX_LOCK(dom->lock);
     }
@@ -411,7 +411,7 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
    * is not necessarily do-or-die.
    */
   int ret = 0;
-  shem_transport_dom_t* dom = shmem_transport_ofi_domains[domain];
+  shmem_transport_dom_t* dom = shmem_transport_ofi_domains[domain];
 
   if(dom->use_lock) {
     SHMEM_MUTEX_LOCK(dom->lock);
@@ -496,7 +496,7 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
 void shmemx_ctx_destroy(shmemx_ctx_t ctxid) {
   shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[ctxid];
 
-  shem_transport_dom_t* dom = ctx->domain;
+  shmem_transport_dom_t* dom = ctx->domain;
 
   if(dom->use_lock) {
     SHMEM_MUTEX_LOCK(dom->lock);
@@ -512,39 +512,22 @@ void shmemx_ctx_destroy(shmemx_ctx_t ctxid) {
   shmem_transport_ofi_contexts[ctxid] = NULL;
 }
 
-void shmemx_ctx_fence(shmemx_ctx_t ctx)
+void shmemx_ctx_quiet(shmemx_ctx_t c)
 {
-#if WANT_TOTAL_DATA_ORDERING == 0
-  /*unordered network model*/
-  return shmem_ctx_quiet(ctx);
-#else
-  return 0;
-#endif
-}
-
-
-void shmemx_ctx_quiet(shmemx_ctx_t ctxid)
-{
-  shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[ctxid];
-  shem_transport_dom_t* dom = ctx->domain;
+  shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
+  shmem_transport_dom_t* dom = ctx->domain;
 
   if(dom->use_lock) {
     SHMEM_MUTEX_LOCK(dom->lock);
   }
 
-  ret = fi_cntr_wait(ctx->endpoint->pending_count,
-      ctx->endpoint->counter,-1);
-
-  if(ret) {
-    struct fi_cq_err_entry e = {0};
-    fi_cq_readerr(ctx->domain->cq, (void *)&e, 0);
-    RAISE_ERROR(e.err);
-  }
+  shmem_transport_ctx_quiet(ctx);
 
   if(dom->use_lock) {
     SHMEM_MUTEX_UNLOCK(dom->lock);
   }
 }
+
 
 void shmemx_sync(int PE_start, int logPE_stride, int PE_size,
     long *pSync)
