@@ -56,6 +56,20 @@ struct fabric_info {
     int npes;
 };
 
+shmemx_domain_t shmem_transport_default_dom;
+shmemx_ctx_t shmem_transport_default_ctx;
+shmem_transport_dom_t* shmem_transport_dom;
+shmem_transport_ctx_t* shmem_transport_ctx;
+
+shmem_transport_dom_t** shmem_transport_ofi_domains;
+shmem_transport_ctx_t** shmem_transport_ofi_contexts;
+
+size_t shmem_transport_num_contexts;
+size_t shmem_transport_num_domains;
+
+size_t shmem_transport_available_contexts;
+size_t shmem_transport_available_domains;
+
 struct fid_fabric*          	shmem_transport_ofi_fabfd;
 struct fid_domain*          	shmem_transport_ofi_domainfd;
 struct fid_av*             	shmem_transport_ofi_avfd;
@@ -540,6 +554,13 @@ void shmemx_ctx_quiet(shmemx_ctx_t c)
   if(dom->use_lock) {
     SHMEM_MUTEX_UNLOCK(dom->lock);
   }
+}
+
+void shmemx_ctx_fence(shmemx_ctx_t c) {
+#if WANT_TOTAL_DATA_ORDERING == 0
+  /*unordered network model*/
+  shmemx_ctx_quiet(c);
+#endif
 }
 
 
