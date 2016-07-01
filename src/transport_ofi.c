@@ -326,7 +326,10 @@ int shmemx_domain_create(int thread_level, int num_domains,
     dom->freed = 0;
     dom->num_active_contexts = 0;
     dom->num_endpoints = 0;
-    dom->max_num_endpoints = 0;
+    dom->max_num_endpoints = 8;
+    dom->endpoints = malloc(8*sizeof(shmem_transport_cntr_ep_t*));
+    IF_ERR_RETURN(dom->endpoints ? 0 : -1, "malloc failed");
+
     int lock = (thread_level != SHMEMX_THREAD_SINGLE);
     dom->use_lock = lock;
 
@@ -363,6 +366,9 @@ int shmemx_domain_create(int thread_level, int num_domains,
     IF_OFI_ERR_RETURN(ret,"domain ep_bind ep -> cq failed");
     ret = fi_ep_bind(dom->cq_ep, &shmem_transport_ofi_avfd->fid, 0);
     IF_OFI_ERR_RETURN(ret,"domain ep_bind ep -> av failed");
+
+    ret = fi_enable(dom->cq_ep);
+    IF_OFI_ERR_RETURN(ret,"context enable endpoint");
   }
 
   return ret;
@@ -384,8 +390,11 @@ void shmem_transport_domain_destroy(shmem_transport_dom_t* dom)
       OFI_ERRMSG("Domain counter close failed (%s)",
           fi_strerror(errno));
     }
+    free(dom->endpoints[i]);
   }
-  free(dom->endpoints);
+  if(dom->max_num_endpoints) {
+    free(dom->endpoints);
+  }
 
   if(fi_close(&dom->cq->fid)) {
     OFI_ERRMSG("Domain CQ close failed (%s)", fi_strerror(errno));
@@ -443,20 +452,17 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
     SHMEM_MUTEX_LOCK(dom->lock);
   }
 
-  if(!dom->max_num_endpoints) {
-    dom->num_endpoints = 0;
-    dom->max_num_endpoints = 8;
-    dom->endpoints = malloc(8*sizeof(shmem_transport_cntr_ep_t*));
-
-    IF_ERR_RETURN(dom->endpoints ? 0 : -1, "malloc failed");
-  } else if(dom->num_endpoints == dom->max_num_endpoints) {
+  if(dom->num_endpoints == dom->max_num_endpoints) {
     size_t newSize = (dom->max_num_endpoints *= 2);
     dom->endpoints = realloc(dom->endpoints,newSize);
 
     IF_ERR_RETURN(dom->endpoints ? 0 : -1, "realloc failed");
   }
 
-  shmem_transport_cntr_ep_t* ep = dom->endpoints[dom->num_endpoints++];
+  size_t ix = dom->num_endpoints++;
+  dom->endpoints[ix] = malloc(sizeof(shmem_transport_cntr_ep_t));
+
+  shmem_transport_cntr_ep_t* ep = dom->endpoints[ix];
   ep->pending_count = 0;
 
   struct fi_cntr_attr cntr_attr = {0};
@@ -484,6 +490,12 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
 
   ret = fi_ep_bind(ep->ep, &shmem_transport_ofi_avfd->fid, 0);
   IF_OFI_ERR_RETURN(ret,"ep_bind cntr_ep2av failed");
+
+  ret = fi_ep_bind(ep->ep, &ep->counter->fid, FI_READ | FI_WRITE);
+  IF_OFI_ERR_RETURN(ret,"ep_bind cntr_ep2cntr failed");
+
+  ret = fi_enable(ep->ep);
+  IF_OFI_ERR_RETURN(ret,"context enable endpoint");
 
   *ctx = shmem_transport_num_contexts++;
   size_t newSize = shmem_transport_num_contexts;
@@ -1257,6 +1269,7 @@ int shmem_transport_init(int thread_level, long eager_size)
   shmem_transport_ofi_contexts = malloc(
     shmem_transport_available_contexts
     *sizeof(shmem_transport_ctx_t*));
+
   ret = shmemx_domain_create(thread_level,1,&shmem_transport_default_dom);
   if(ret!=0)
     return ret;
@@ -1316,12 +1329,17 @@ int shmem_transport_fini(void)
         shmemx_ctx_destroy(i);
       }
     }
+
     for(i = 0; i < shmem_transport_num_domains; ++i) {
       shmem_transport_dom_t* dom = shmem_transport_ofi_domains[i];
       if(dom) {
+        if(dom->use_lock) {
+          SHMEM_MUTEX_LOCK(dom->lock);
+        }
         shmem_transport_domain_destroy(dom);
       }
     }
+
     free(shmem_transport_ofi_domains);
     free(shmem_transport_ofi_contexts);
 
