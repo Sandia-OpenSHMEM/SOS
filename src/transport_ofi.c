@@ -64,11 +64,11 @@ shmem_transport_ctx_t* shmem_transport_ctx;
 shmem_transport_dom_t** shmem_transport_ofi_domains;
 shmem_transport_ctx_t** shmem_transport_ofi_contexts;
 
-size_t shmem_transport_num_contexts;
-size_t shmem_transport_num_domains;
+size_t shmem_transport_num_contexts = 0;
+size_t shmem_transport_num_domains = 0;
 
-size_t shmem_transport_available_contexts;
-size_t shmem_transport_available_domains;
+size_t shmem_transport_available_contexts = 0;
+size_t shmem_transport_available_domains = 0;
 
 struct fid_fabric*          	shmem_transport_ofi_fabfd;
 struct fid_domain*          	shmem_transport_ofi_domainfd;
@@ -1250,6 +1250,13 @@ int shmem_transport_init(int thread_level, long eager_size)
   if(ret!=0)
     return ret;
 
+  shmem_transport_available_contexts = 8;
+  shmem_transport_available_domains = 8;
+  shmem_transport_ofi_domains = malloc(
+    shmem_transport_available_domains*sizeof(shmem_transport_dom_t*));
+  shmem_transport_ofi_contexts = malloc(
+    shmem_transport_available_contexts
+    *sizeof(shmem_transport_ctx_t*));
   ret = shmemx_domain_create(thread_level,1,&shmem_transport_default_dom);
   if(ret!=0)
     return ret;

@@ -78,7 +78,7 @@ TESTS = \
 	put_nbi \
 	rma_coverage
 
-XFAIL_TESTS = threading
+# XFAIL_TESTS = threading
 
 if USE_PORTALS4
 TESTS += \
