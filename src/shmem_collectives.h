@@ -50,29 +50,38 @@ void shmem_internal_barrier_dissem(int PE_start, int logPE_stride, int PE_size, 
 
 static inline
 void
+shmem_internal_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)
+{
+  switch (shmem_internal_barrier_type) {
+    case AUTO:
+      if (PE_size < shmem_internal_tree_crossover) {
+        shmem_internal_barrier_linear(PE_start, logPE_stride, PE_size, pSync);
+      } else {
+        shmem_internal_barrier_tree(PE_start, logPE_stride, PE_size, pSync);
+      }
+      break;
+    case LINEAR:
+      shmem_internal_barrier_linear(PE_start, logPE_stride, PE_size, pSync);
+      break;
+    case TREE:
+      shmem_internal_barrier_tree(PE_start, logPE_stride, PE_size, pSync);
+      break;
+    case DISSEM:
+      shmem_internal_barrier_dissem(PE_start, logPE_stride, PE_size, pSync);
+      break;
+    default:
+      fprintf(stderr, "[%03d] Illegal barrier type %d\n", 
+            shmem_internal_my_pe, shmem_internal_barrier_type);
+  }
+}
+
+static inline
+void
 shmem_internal_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
-    switch (shmem_internal_barrier_type) {
-    case AUTO:
-        if (PE_size < shmem_internal_tree_crossover) {
-            shmem_internal_barrier_linear(PE_start, logPE_stride, PE_size, pSync);
-        } else {
-            shmem_internal_barrier_tree(PE_start, logPE_stride, PE_size, pSync);
-        }
-        break;
-    case LINEAR:
-        shmem_internal_barrier_linear(PE_start, logPE_stride, PE_size, pSync);
-        break;
-    case TREE:
-        shmem_internal_barrier_tree(PE_start, logPE_stride, PE_size, pSync);
-        break;
-    case DISSEM:
-        shmem_internal_barrier_dissem(PE_start, logPE_stride, PE_size, pSync);
-        break;
-    default:
-        fprintf(stderr, "[%03d] Illegal barrier type %d\n", 
-                shmem_internal_my_pe, shmem_internal_barrier_type);
-    }
+  shmem_internal_quiet();
+
+  shmem_internal_sync(PE_start,logPE_stride,PE_size,pSync);
 }
 
 

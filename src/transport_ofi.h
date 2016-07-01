@@ -72,43 +72,44 @@ struct shmem_transport_ofi_frag_t {
 
 typedef struct shmem_transport_ofi_frag_t shmem_transport_ofi_frag_t;
 
-struct shmem_transport_ofi_bounce_buffer_t {
-    shmem_transport_ofi_frag_t frag;
-    uint8_t data[];
-};
-
-typedef struct shmem_transport_ofi_bounce_buffer_t shmem_transport_ofi_bounce_buffer_t;
-
 typedef int shmem_transport_ct_t;
 
 typedef struct shmem_transport_cntr_ep_t {
-    struct fid_cntr* counter;
-    struct fid_ep* ep;
+  struct fid_cntr* counter;
+  struct fid_ep* ep;
+  uint64_t pending_count;
 } shmem_transport_cntr_ep_t;
 
 typedef struct shmem_transport_dom_t {
-    struct fid_stx* stx;
-    shmem_internal_mutex_t lock;
-    int use_lock;
-    /* Each endpoint is dedicated to 1 or more contexts. Sharing a
-     * counter leads to performance degradation
-     */
-    shmem_transport_cntr_ep_t* endpoints;
-    size_t num_endpoints;
-    size_t max_num_endpoints;
-    /* Completion queue for (non-blocking puts and) error reports.
-     * Perhaps there should be one per endpoint?
-     */
-    struct fid_cq* cq;
-    size_t num_active_contexts;
-    /* Has shmem_domain_destroy been called on this? */
-    int freed;
+  int id;
+  struct fid_stx* stx;
+  shmem_internal_mutex_t lock;
+  int use_lock;
+  /* Each endpoint is dedicated to 1 or more contexts. Sharing a
+   * counter leads to performance degradation
+   */
+  shmem_transport_cntr_ep_t** endpoints;
+  size_t num_endpoints;
+  size_t max_num_endpoints;
+  /* Completion queue for (non-blocking puts and) error reports.
+   * Perhaps there should be one per endpoint?
+   */
+  struct fid_cq* cq;
+  struct fid_ep* cq_ep;
+  size_t num_active_contexts;
+  /* Has shmem_domain_destroy been called on this? */
+  int freed;
 } shmem_transport_dom_t;
 
 typedef struct shmem_transport_ctx_t {
-    shmem_transport_dom_t* domain;
-    shmem_transport_cntr_ep_t endpoint;
+  shmem_transport_dom_t* domain;
+  shmem_transport_cntr_ep_t* endpoint;
 } shmem_transport_ctx_t;
+
+extern shmemx_domain_t shmem_transport_default_dom;
+extern shmemx_ctx_t shmem_transport_default_ctx;
+extern shmem_transport_dom_t* shmem_transport_dom;
+extern shmem_transport_ctx_t* shmem_transport_ctx;
 
 extern shmem_transport_dom_t** shmem_transport_ofi_domains;
 extern shmem_transport_ctx_t** shmem_transport_ofi_contexts;
@@ -121,16 +122,10 @@ extern size_t shmem_transport_available_domains;
 
 extern struct fid_fabric*       	shmem_transport_ofi_fabfd;
 extern struct fid_domain*          	shmem_transport_ofi_domainfd;
-extern struct fid_ep*			shmem_transport_ofi_epfd;
-extern struct fid_ep*			shmem_transport_ofi_cntr_epfd;
-extern struct fid_stx*  		shmem_transport_ofi_stx;
 extern struct fid_av*             	shmem_transport_ofi_avfd;
-extern struct fid_cq*              	shmem_transport_ofi_put_nb_cqfd;
 #ifndef ENABLE_HARD_POLLING
 extern struct fid_cntr*            	shmem_transport_ofi_target_cntrfd;
 #endif
-extern struct fid_cntr*            	shmem_transport_ofi_put_cntrfd;
-extern struct fid_cntr*            	shmem_transport_ofi_get_cntrfd;
 #ifndef ENABLE_MR_SCALABLE
 extern uint64_t*                        shmem_transport_ofi_target_heap_keys;
 extern uint64_t*                        shmem_transport_ofi_target_data_keys;
@@ -139,20 +134,14 @@ extern uint8_t**                       shmem_transport_ofi_target_heap_addrs;
 extern uint8_t**                       shmem_transport_ofi_target_data_addrs;
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 #endif /* ENABLE_MR_SCALABLE */
-extern uint64_t          		shmem_transport_ofi_pending_put_counter;
-extern uint64_t 	       	 	shmem_transport_ofi_pending_get_counter;
-extern uint64_t				shmem_transport_ofi_pending_cq_count;
 extern uint64_t				shmem_transport_ofi_max_poll;
 extern size_t          		 	shmem_transport_ofi_max_buffered_send;
 extern size_t    		 	shmem_transport_ofi_max_atomic_size;
 extern size_t    			shmem_transport_ofi_max_msg_size;
-extern size_t    			shmem_transport_ofi_bounce_buffer_size;
 
 extern fi_addr_t *addr_table;
 
 extern int shmem_transport_have_long_double;
-
-extern shmem_free_list_t *shmem_transport_ofi_bounce_buffers;
 
 extern size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 
@@ -168,9 +157,6 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
                                 uint8_t **mr_addr, uint64_t *key);
 static inline
 void shmem_transport_ofi_drain_cq(void);
-static inline
-shmem_transport_ofi_bounce_buffer_t*
-    create_bounce_buffer(const void *source, const size_t len);
 
 static inline
 void shmem_transport_put_quiet(void);

@@ -18,6 +18,8 @@
 
 #include <stddef.h>
 
+#define ENABLE_THREADS
+
 /*
  * TODO: Find a way to avoid replicating this in both shmem.h and
  * shmemx.h -- The simplest way to do that would to have shmemx.h

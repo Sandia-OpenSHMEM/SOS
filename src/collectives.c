@@ -203,8 +203,6 @@ shmem_internal_barrier_linear(int PE_start, int logPE_stride, int PE_size, long 
     /* need 1 slot */
     shmem_internal_assert(SHMEM_BARRIER_SYNC_SIZE >= 1);
 
-    shmem_internal_quiet();
-
     if (PE_start == shmem_internal_my_pe) {
         int pe, i;
 
@@ -249,8 +247,6 @@ shmem_internal_barrier_tree(int PE_start, int logPE_stride, int PE_size, long *p
 
     /* need 1 slot */
     shmem_internal_assert(SHMEM_BARRIER_SYNC_SIZE >= 1);
-
-    shmem_internal_quiet();
 
     if (PE_size == shmem_internal_num_pes) {
         /* we're the full tree, use the binomial tree */
@@ -343,8 +339,6 @@ shmem_internal_barrier_dissem(int PE_start, int logPE_stride, int PE_size, long 
      * get better cache locality.  We chose int here for portability, since SUM
      * on INT is required by the SHMEM atomics API. */
     shmem_internal_assert(SHMEM_BARRIER_SYNC_SIZE >= (sizeof(int) * 8) * (sizeof(int) / sizeof(long)));
-
-    shmem_internal_quiet();
 
     for (i = 0, distance = 1 ; distance < PE_size ; ++i, distance <<= 1) {
         to = ((coll_rank + distance) % PE_size);
