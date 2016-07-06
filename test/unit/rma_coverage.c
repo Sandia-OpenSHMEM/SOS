@@ -140,5 +140,5 @@ int main(int argc, char* argv[]) {
       return ret;                                                      \
   }
 
-SHMEM_DEFINE_FOR_RMA(DEFINE_TEST);
+SHMEM_DEFINE_FOR_RMA(DEFINE_TEST)
 
