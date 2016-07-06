@@ -797,10 +797,20 @@ static inline
 uint64_t shmem_transport_received_cntr_get(void)
 {
 #ifndef ENABLE_HARD_POLLING
-    return fi_cntr_read(shmem_transport_ofi_target_cntrfd);
+  if(shmem_transport_dom->use_lock) {
+    SHMEM_MUTEX_LOCK(shmem_transport_dom->lock);
+  }
+
+  int ret =  fi_cntr_read(shmem_transport_ofi_target_cntrfd);
+
+  if(shmem_transport_dom->use_lock) {
+    SHMEM_MUTEX_UNLOCK(shmem_transport_dom->lock);
+  }
+
+  return ret;
 #else
-    RAISE_ERROR_STR("OFI transport configured for hard polling");
-    return 0;
+  RAISE_ERROR_STR("OFI transport configured for hard polling");
+  return 0;
 #endif
 }
 
@@ -808,13 +818,21 @@ static inline
 void shmem_transport_received_cntr_wait(uint64_t ge_val)
 {
 #ifndef ENABLE_HARD_POLLING
-    int ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd, ge_val, -1);
+  if(shmem_transport_dom->use_lock) {
+    SHMEM_MUTEX_LOCK(shmem_transport_dom->lock);
+  }
 
-    if (ret) {
-        RAISE_ERROR(ret);
-    }
+  int ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd, ge_val, -1);
+
+  if(shmem_transport_dom->use_lock) {
+    SHMEM_MUTEX_UNLOCK(shmem_transport_dom->lock);
+  }
+
+  if (ret) {
+    RAISE_ERROR(ret);
+  }
 #else
-    RAISE_ERROR_STR("OFI transport configured for hard polling");
+  RAISE_ERROR_STR("OFI transport configured for hard polling");
 #endif
 }
 

@@ -628,6 +628,14 @@ static inline int allocate_recv_cntr_mr(void)
         OFI_ERRMSG("ep_bind mr2epfd failed\n");
         return ret;
     }
+
+    ret = fi_ep_bind(shmem_transport_dom->cq_ep,
+		    &shmem_transport_ofi_target_cntrfd->fid,
+                    FI_REMOTE_WRITE | FI_REMOTE_READ);
+    if(ret!=0){
+	OFI_ERRMSG("ep_bind cntr_epfd2put_cntr failed\n");
+	return ret;
+    }
 #endif /* ndef ENABLE_HARD_POLLING */
 
 #else

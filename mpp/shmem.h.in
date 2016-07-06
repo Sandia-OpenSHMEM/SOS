@@ -454,9 +454,6 @@ void start_pes(int npes) __attribute__ ((deprecated));
 #undef complex
 #endif
 
-using std::ptrdiff_t;
-using std::size_t;
-
 /* Blocking block, scalar, and block-strided put */
 #define SHMEM_CXX_PUT(TYPENAME,TYPE) \
   static inline void shmem_put(TYPE* dest, const TYPE* source, \
