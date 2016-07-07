@@ -35,7 +35,7 @@
 #define NUM_POINTS 10000
 
 
-unsigned long long inside = 0, total = 0;
+long long inside = 0, total = 0;
 
 int
 main(int argc, char* argv[], char *envp[])
@@ -73,7 +73,7 @@ main(int argc, char* argv[], char *envp[])
 
     if(me == 0) {
         for(int i = 1; i < myshmem_n_pes; ++i) {
-            unsigned long long remoteInside,remoteTotal;
+            long long remoteInside,remoteTotal;
             shmem_longlong_get(&remoteInside,&inside,1,i);
             shmem_longlong_get(&remoteTotal,&total,1,i);
             total += remoteTotal;

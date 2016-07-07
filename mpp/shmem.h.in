@@ -503,9 +503,6 @@ void start_pes(int npes) __attribute__ ((deprecated));
 #undef complex
 #endif
 
-using std::ptrdiff_t;
-using std::size_t;
-
 /* Blocking block, scalar, and block-strided put */
 static inline void shmem_put(float* dest, const float* source, size_t nelems, int pe) {
     shmem_float_put(dest, source, nelems, pe);
