@@ -13,6 +13,10 @@ Sandia OpenSHMEM NEWS -- history of user-visible changes.
   bindings in C++.
 - Support for fabric and domain selection in the OFI transport, see
   SMA_OFI_DOMAIN/FABRIC environment variables in the README file for details.
+- Enabled XPMEM support in combination with the OFI transport.
+- The OFI transport automatically falls back to software reductions when the
+  provider does not support the particular combination of atomic operation and
+  datatype for a given OpenSHMEM reduction.
 - Added multiple communication performance benchmarks to the test suite.
 - Multiple bug fixes and improvements to stability and performance.
 
