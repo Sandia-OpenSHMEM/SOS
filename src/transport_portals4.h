@@ -233,6 +233,8 @@ int shmem_transport_startup(void);
 
 int shmem_transport_fini(void);
 
+void shmem_transport_print_info(void);
+
 static inline void shmem_transport_get_wait(void);
 
 static inline
