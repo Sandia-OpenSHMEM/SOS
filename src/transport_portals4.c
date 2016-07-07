@@ -651,8 +651,6 @@ shmem_transport_startup(void)
 
 void shmem_transport_print_info(void)
 {
-    char *ofi_provider;
-
     printf("\n");
     printf("Network transport:      Portals\n");
 }
