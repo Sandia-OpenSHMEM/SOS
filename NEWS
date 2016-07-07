@@ -8,9 +8,13 @@ Sandia OpenSHMEM NEWS -- history of user-visible changes.
   fetch/set atomics, all-to-all collectives, C11 generic bindings, and addition
   of const/volatile to C API.
 - Improvements to error checking of OpenSHMEM calls and internal debugging
-  enabled through --enable-error-checking option.
-- Support for fabric and domain selection in the OFI transport
-- Multiple bug fixes and improvements to stability and performance
+  enabled through --enable-error-checking configure option.
+- Improvements to C++ compatibility, including support for type-generic
+  bindings in C++.
+- Support for fabric and domain selection in the OFI transport, see
+  SMA_OFI_DOMAIN/FABRIC environment variables in the README file for details.
+- Added multiple communication performance benchmarks to the test suite.
+- Multiple bug fixes and improvements to stability and performance.
 
 1.2.0
 -----
