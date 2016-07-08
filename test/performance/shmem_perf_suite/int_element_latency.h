@@ -2,7 +2,8 @@
 void static inline
 int_p_latency(perf_metrics_t data)
 {
-    double start, end;
+    double start = 0.0;
+    double end = 0.0;
     int i = 0;
 
     if (data.my_node == 1) {
@@ -17,7 +18,7 @@ int_p_latency(perf_metrics_t data)
             if(i == data.warmup)
                 start = perf_shmemx_wtime();
 
-            shmem_int_p(data.dest, data.my_node, 0);
+            shmem_int_p((int*) data.dest, data.my_node, 0);
             shmem_quiet();
 
         }
@@ -36,7 +37,8 @@ int_p_latency(perf_metrics_t data)
 void static inline
 int_g_latency(perf_metrics_t data)
 {
-    double start, end;
+    double start = 0.0;
+    double end = 0.0;
     int i = 0;
     int rtnd = -1;
 
@@ -51,7 +53,7 @@ int_g_latency(perf_metrics_t data)
             if(i == data.warmup)
                 start = perf_shmemx_wtime();
 
-            rtnd = shmem_int_g(data.src, 1);
+            rtnd = shmem_int_g((int*) data.src, 1);
         }
         end = perf_shmemx_wtime();
 
@@ -61,5 +63,5 @@ int_g_latency(perf_metrics_t data)
     shmem_barrier_all();
 
     if((data.my_node == 0) && data.validate)
-        validate_recv(&rtnd, sizeof(int), partner_node(data.my_node));
+        validate_recv((char*) &rtnd, sizeof(int), partner_node(data.my_node));
 }

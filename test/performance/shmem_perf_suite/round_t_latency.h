@@ -2,7 +2,8 @@
 void static inline
 long_element_round_trip_latency_get(perf_metrics_t data)
 {
-    double start, end;
+    double start = 0.0;
+    double end = 0.0;
     int dest = 1, i = 0;
     int partner_pe = partner_node(data.my_node);
     *data.target = data.my_node;
@@ -36,7 +37,8 @@ long_element_round_trip_latency_get(perf_metrics_t data)
 void static inline
 long_element_round_trip_latency_put(perf_metrics_t data)
 {
-    double start, end;
+    double start = 0.0;
+    double end = 0.0;
     long tmp;
     int dest = (data.my_node + 1) % data.npes, i = 0;
     tmp = *data.target = INIT_VALUE;
