@@ -52,7 +52,8 @@ int_element_latency(perf_metrics_t data) {}
 void
 streaming_latency(int len, perf_metrics_t *data)
 {
-    double start, end;
+    double start = 0.0;
+    double end = 0.0;
     int i = 0;
 
     if (data->my_node == 0) {
