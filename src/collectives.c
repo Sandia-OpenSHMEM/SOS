@@ -342,7 +342,7 @@ shmem_internal_barrier_dissem(int PE_start, int logPE_stride, int PE_size, long 
     /* Note: pSync can be treated as a byte array rather than an int array to
      * get better cache locality.  We chose int here for portability, since SUM
      * on INT is required by the SHMEM atomics API. */
-    shmem_internal_assert(SHMEM_BARRIER_SYNC_SIZE >= (sizeof(int) * 8) * (sizeof(int) / sizeof(long)));
+    shmem_internal_assert(SHMEM_BARRIER_SYNC_SIZE >= (sizeof(int) * 8) / (sizeof(long) / sizeof(int)));
 
     shmem_internal_quiet();
 
@@ -1018,7 +1018,7 @@ shmem_internal_fcollect_recdbl(void *target, const void *source, size_t len,
     /* Note: pSync can be treated as a byte array rather than an int array to
      * get better cache locality.  We chose int here for portability, since SUM
      * on INT is required by the SHMEM atomics API. */
-    shmem_internal_assert(SHMEM_COLLECT_SYNC_SIZE >= (sizeof(int) * 8) * (sizeof(int) / sizeof(long)));
+    shmem_internal_assert(SHMEM_COLLECT_SYNC_SIZE >= (sizeof(int) * 8) / (sizeof(long) / sizeof(int)));
     shmem_internal_assert(0 == (PE_size & (PE_size - 1)));
 
     /* copy my portion to the right place */
