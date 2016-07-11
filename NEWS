@@ -13,7 +13,9 @@ Sandia OpenSHMEM NEWS -- history of user-visible changes.
   bindings in C++.
 - Support for fabric and domain selection in the OFI transport, see
   SMA_OFI_DOMAIN/FABRIC environment variables in the README file for details.
+- Support for systems using the Aries network via the OFI GNI provider.
 - Enabled XPMEM support in combination with the OFI transport.
+- Support for PMI2-compliant process managers.
 - The OFI transport automatically falls back to software reductions when the
   provider does not support the particular combination of atomic operation and
   datatype for a given OpenSHMEM reduction.
