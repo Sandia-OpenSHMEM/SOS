@@ -36,7 +36,7 @@
 #define ARR_SIZE (4*(CHUNK_SIZE))
 
 #define DECLARE_TEST(TYPENAME,TYPE) \
-  int TYPENAME##_rmaTest(int target_pe, int verbose);
+  int TYPENAME##_rmaTest(int target_pe, int verbose)
 SHMEM_DECLARE_FOR_RMA(DECLARE_TEST);
 
 int main(int argc, char* argv[]) {
@@ -126,5 +126,5 @@ int main(int argc, char* argv[]) {
       return ret;                                                      \
   }
 
-SHMEM_DEFINE_FOR_RMA(DECLARE_TEST);
+SHMEM_DEFINE_FOR_RMA(DEFINE_TEST)
 

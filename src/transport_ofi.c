@@ -367,6 +367,10 @@ int shmemx_domain_create(int thread_level, int num_domains,
     ret = fi_ep_bind(dom->cq_ep, &shmem_transport_ofi_avfd->fid, 0);
     IF_OFI_ERR_RETURN(ret,"domain ep_bind ep -> av failed");
 
+    ret = fi_ep_bind(dom->cq_ep, &dom->stx->fid, 0);
+    IF_OFI_ERR_RETURN(ret,"domain ep_bind ep -> stx failed");
+
+
     ret = fi_enable(dom->cq_ep);
     IF_OFI_ERR_RETURN(ret,"context enable endpoint");
   }
@@ -396,10 +400,8 @@ void shmem_transport_domain_destroy(shmem_transport_dom_t* dom)
     free(dom->endpoints);
   }
 
-  if(fi_close(&dom->cq->fid)) {
-    OFI_ERRMSG("Domain CQ close failed (%s)", fi_strerror(errno));
-  }
-
+  // The attached CQ is implicitly closed (as I discovered while
+  // memory-checking with Valgrind). -jpdoyle
   if(fi_close(&dom->cq_ep->fid)) {
     OFI_ERRMSG("Domain CQ Endpoint close failed (%s)",
         fi_strerror(errno));
@@ -1171,7 +1173,7 @@ static inline int query_for_fabric(struct fabric_info *info)
 #else
     domain_attr.mr_mode       = FI_MR_BASIC; /* VA space is pre-allocated */
 #endif
-    domain_attr.threading     = FI_THREAD_ENDPOINT; /* we promise to serialize access
+    domain_attr.threading     = FI_THREAD_SAFE; /* we promise to serialize access
 						       to endpoints. we have only one
 						       thread active at a time */
     hints.domain_attr         = &domain_attr;
@@ -1380,10 +1382,14 @@ int shmem_transport_fini(void)
         OFI_ERRMSG("AV close failed (%s)", fi_strerror(errno));
     }
 
-    if (shmem_transport_ofi_domainfd &&
-		    fi_close(&shmem_transport_ofi_domainfd->fid)) {
-        OFI_ERRMSG("Domain close failed (%s)", fi_strerror(errno));
-    }
+    /* This seems to be closed by closing some of the other resources
+     * (uncommenting gives a "file not found error" OFI error)
+     * -jpdoyle
+     */
+    /* if (shmem_transport_ofi_domainfd && */
+		    /* fi_close(&shmem_transport_ofi_domainfd->fid)) { */
+    /*     OFI_ERRMSG("Domain close failed (%s)", fi_strerror(errno)); */
+    /* } */
 
     if (shmem_transport_ofi_fabfd &&
 		    fi_close(&shmem_transport_ofi_fabfd->fid)) {

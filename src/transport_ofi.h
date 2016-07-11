@@ -253,9 +253,9 @@ shmem_transport_put_small(void *target, const void *source,
     size_t len, int pe, shmemx_ctx_t c);
 
 static inline
-int shmem_transport_ctx_fence(shmem_transport_ctx_t* ctx);
+void shmem_transport_ctx_fence(shmem_transport_ctx_t* ctx);
 
-static inline int shmem_transport_ctx_quiet(shmem_transport_ctx_t* ctx);
+static inline void shmem_transport_ctx_quiet(shmem_transport_ctx_t* ctx);
 
 #include "transport_ofi.impl.h"
 

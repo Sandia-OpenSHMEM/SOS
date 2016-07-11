@@ -38,7 +38,7 @@
 #include <shmem.h>
 #include <shmemx.h>
 
-#define T 8
+#define T 7
 
 int dest[T] = { 0 };
 int flag[T] = { 0 };

@@ -133,7 +133,7 @@
 #define SHMEM_DEF_SWAP(STYPE,TYPE) \
   TYPE shmem_##STYPE##_swap(TYPE *target, TYPE value, int pe)          \
   {                                                                  \
-    shmemx_ctx_##STYPE##_swap(target, value, pe, SHMEMX_CTX_DEFAULT);  \
+    return shmemx_ctx_##STYPE##_swap(target, value, pe, SHMEMX_CTX_DEFAULT);  \
   }                                                                  \
   TYPE shmemx_ctx_##STYPE##_swap(TYPE *target, TYPE value, int pe,     \
         shmemx_ctx_t c)                                              \
@@ -146,14 +146,14 @@
     return newval;                                                   \
   }
 
-SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_SWAP);
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_SWAP)
 
 
 #define SHMEM_DEF_CSWAP(STYPE,TYPE) \
   TYPE shmem_##STYPE##_cswap(TYPE *target, TYPE cond, TYPE value,    \
       int pe)                                                        \
   {                                                                  \
-    shmemx_ctx_##STYPE##_cswap(target, cond, value, pe,              \
+    return shmemx_ctx_##STYPE##_cswap(target, cond, value, pe,              \
         SHMEMX_CTX_DEFAULT);                                         \
   }                                                                  \
   TYPE shmemx_ctx_##STYPE##_cswap(TYPE *target, TYPE cond,           \
@@ -167,7 +167,7 @@ SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_SWAP);
     return newval;                                                   \
   }
 
-SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_CSWAP);
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_CSWAP)
 
 #define SHMEM_DEF_INC(STYPE,TYPE) \
   void shmem_##STYPE##_inc(TYPE *target, int pe)                       \
@@ -182,13 +182,13 @@ SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_CSWAP);
         SHM_INTERNAL_SUM, SHM_INTERNAL_T(STYPE), c);                 \
   }
 
-SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_INC);
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_INC)
 
 
 #define SHMEM_DEF_FINC(STYPE,TYPE) \
   TYPE shmem_##STYPE##_finc(TYPE *target, int pe)                      \
   {                                                                  \
-    shmemx_ctx_##STYPE##_finc(target, pe, SHMEMX_CTX_DEFAULT);         \
+    return shmemx_ctx_##STYPE##_finc(target, pe, SHMEMX_CTX_DEFAULT);         \
   }                                                                  \
   TYPE shmemx_ctx_##STYPE##_finc(TYPE *target, int pe, shmemx_ctx_t c) \
   {                                                                  \
@@ -202,7 +202,7 @@ SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_INC);
     return oldval;                                                   \
   }
 
-SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_FINC);
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_FINC)
 
 
 #define SHMEM_DEF_ADD(STYPE,TYPE) \
@@ -218,13 +218,13 @@ SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_FINC);
         SHM_INTERNAL_SUM, SHM_INTERNAL_T(STYPE), c);               \
   }
 
-SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_ADD);
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_ADD)
 
 
 #define SHMEM_DEF_FADD(STYPE,TYPE) \
   TYPE shmem_##STYPE##_fadd(TYPE *target, TYPE value, int pe)          \
   {                                                                  \
-    shmemx_ctx_##STYPE##_fadd(target, value, pe, SHMEMX_CTX_DEFAULT);  \
+    return shmemx_ctx_##STYPE##_fadd(target, value, pe, SHMEMX_CTX_DEFAULT);  \
   }                                                                  \
   TYPE shmemx_ctx_##STYPE##_fadd(TYPE *target, TYPE value, int pe,     \
       shmemx_ctx_t c)                                                \
@@ -240,14 +240,14 @@ SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_ADD);
     return oldval;                                                   \
   }
 
-SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_FADD);
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_FADD)
 
 /** Generate atomic fetch C bindings */
 #define SHMEM_CAPI_ATOMIC_FETCH(STYPE, TYPE) \
 TYPE                                                                 \
 shmem_##STYPE##_fetch(const TYPE *source, int pe)    \
 {                                                                    \
-  shmemx_ctx_##STYPE##_fetch(source, pe, SHMEMX_CTX_DEFAULT);        \
+  return shmemx_ctx_##STYPE##_fetch(source, pe, SHMEMX_CTX_DEFAULT); \
 }                                                                    \
 TYPE                                                                 \
 shmemx_ctx_##STYPE##_fetch(const TYPE *source, int pe,               \
@@ -263,7 +263,7 @@ shmemx_ctx_##STYPE##_fetch(const TYPE *source, int pe,               \
     return val;                                                      \
 }
 
-SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_CAPI_ATOMIC_FETCH);
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_CAPI_ATOMIC_FETCH)
 
 /* Generate atomic set C bindings
  *
@@ -286,5 +286,5 @@ shmemx_ctx_##STYPE##_set(TYPE *dest, TYPE value, int pe,             \
         sizeof(TYPE), pe, SHM_INTERNAL_T(STYPE), c);                 \
 }
 
-SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_CAPI_ATOMIC_SET);
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_CAPI_ATOMIC_SET)
 

@@ -16,10 +16,17 @@
         0;                                              \
     })
 #define MPIU_Exit     exit
-#define MPIU_Strnapp(...)                   \
-    ({ strncat(__VA_ARGS__);                \
-        0;                                  \
+#define MPIU_Strnapp(dst,src,n) \
+    ({ size_t currlen = strlen(dst);                    \
+      if(currlen+1 < n) {                               \
+        snprintf(dst+currlen,n-currlen,"%s%s",dst,src); \
+      }                                                 \
+      0;                                                \
     })
+/* #define MPIU_Strnapp(...)                   \ */
+/*     ({ strncat(__VA_ARGS__);                \ */
+/*         0;                                  \ */
+/*     }) */
 #define ATTRIBUTE __attribute__
 #define MPI_MAX_PORT_NAME      256
 #define MAXHOSTNAME 256

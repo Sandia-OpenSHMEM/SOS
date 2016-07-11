@@ -79,7 +79,8 @@ AC_MSG_RESULT([$msg])
 AC_ARG_ENABLE([threads],
     [AC_HELP_STRING([--enable-threads],
                     [Enable threading support (default:disabled)])])
-AS_IF([test "$enable_threads" = "yes"], [AC_DEFINE([ENABLE_THREADS], [1], [Enable threads])])
+# AS_IF([test "$enable_threads" = "yes"], [AC_DEFINE([ENABLE_THREADS], [1], [Enable threads])])
+AC_DEFINE([ENABLE_THREADS], [1], [Enable threads])
 
 AC_ARG_ENABLE([pthread-mutexes],
     [AC_HELP_STRING([--enable-pthread-mutexes],

@@ -387,7 +387,6 @@ shmem_internal_bcast_linear(void *target, const void *source, size_t len,
     long zero = 0, one = 1;
     int stride = 1 << logPE_stride;
     int real_root = PE_start + PE_root * stride;
-    long completion = 0;
 
     /* need 1 slot */
     shmem_internal_assert(SHMEM_BCAST_SYNC_SIZE >= 1);
@@ -445,7 +444,6 @@ shmem_internal_bcast_tree(void *target, const void *source, size_t len,
 {
     long zero = 0, one = 1;
     int stride = 1 << logPE_stride;
-    long completion = 0;
     int parent, num_children, *children;
     const void *send_buf = source;
 
@@ -537,7 +535,6 @@ shmem_internal_op_to_all_linear(void *target, const void *source, int count, int
 {
     int stride = 1 << logPE_stride;
     long zero = 0, one = 1;
-    long completion = 0;
 
     /* need 2 slots, plus bcast */
     shmem_internal_assert(SHMEM_REDUCE_SYNC_SIZE >= 2 + SHMEM_BCAST_SYNC_SIZE);
@@ -595,7 +592,6 @@ shmem_internal_op_to_all_tree(void *target, const void *source, int count, int t
 {
     int stride = 1 << logPE_stride;
     long zero = 0, one = 1;
-    long completion = 0;
     int parent, num_children, *children;
 
     /* need 2 slots, plus bcast */
@@ -674,7 +670,6 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, int count, 
    int wrk_size = type_size*count;
    void * const current_target = malloc(wrk_size);
    int peer = 0;
-   long completion = 0;
    long * pSync_extra_peer = pSync + SHMEM_REDUCE_SYNC_SIZE - 2;
 
  /***********************************
@@ -814,7 +809,6 @@ shmem_internal_collect_linear(void *target, const void *source, size_t len,
     int stride = 1 << logPE_stride;
     int pe;
     int bcast_len = 0, my_offset = 0;
-    long completion = 0;
 
     /* need 3 slots, plus bcast */
     shmem_internal_assert(SHMEM_COLLECT_SYNC_SIZE >= 3 + SHMEM_BCAST_SYNC_SIZE);
@@ -895,7 +889,6 @@ shmem_internal_fcollect_linear(void *target, const void *source, size_t len,
 {
     long tmp = 1;
     int stride = 1 << logPE_stride;
-    long completion = 0;
 
     /* need 1 slot, plus bcast */
     shmem_internal_assert(SHMEM_COLLECT_SYNC_SIZE >= 1 + SHMEM_BCAST_SYNC_SIZE);
@@ -949,7 +942,6 @@ shmem_internal_fcollect_ring(void *target, const void *source, size_t len,
        participating tasks */
     int my_id = ((shmem_internal_my_pe - PE_start) / stride);
     int next_proc = PE_start + ((my_id + 1) % PE_size) * stride;
-    long completion = 0;
     long zero = 0, one = 1;
 
     /* need 1 slot */
@@ -999,7 +991,6 @@ shmem_internal_fcollect_recdbl(void *target, const void *source, size_t len,
     int stride = 1 << logPE_stride;
     int my_id = ((shmem_internal_my_pe - PE_start) / stride);
     int i;
-    long completion = 0;
     size_t curr_offset;
     int *pSync_ints = (int*) pSync;
     int one = 1, neg_one = -1;

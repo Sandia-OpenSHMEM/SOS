@@ -108,8 +108,8 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
 #endif
 
 
-// assumes the associated domain is already locked if necessary
-static inline int shmem_transport_ctx_quiet(shmem_transport_ctx_t* ctx)
+/* assumes the associated domain is already locked if necessary */
+static inline void shmem_transport_ctx_quiet(shmem_transport_ctx_t* ctx)
 {
   int ret = 0;
 
@@ -124,13 +124,13 @@ static inline int shmem_transport_ctx_quiet(shmem_transport_ctx_t* ctx)
 }
 
 static inline
-int shmem_transport_ctx_fence(shmem_transport_ctx_t* ctx)
+void shmem_transport_ctx_fence(shmem_transport_ctx_t* ctx)
 {
 #if WANT_TOTAL_DATA_ORDERING == 0
   /*unordered network model*/
-  return shmem_transport_ctx_quiet(ctx);
-#else
-  return 0;
+  shmem_transport_ctx_quiet(ctx);
+/* #else */
+/*   return 0; */
 #endif
 }
 
