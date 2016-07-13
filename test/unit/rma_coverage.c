@@ -38,7 +38,7 @@
 #define DECLARE_TEST(TYPENAME,TYPE) \
   TYPE TYPENAME##_shared[ARR_SIZE];                                    \
                                                                        \
-  int TYPENAME##_rmaTest(int target_pe, int verbose) {                 \
+  static int TYPENAME##_rmaTest(int target_pe, int verbose) {          \
       TYPE* shared = TYPENAME##_shared;                                \
       TYPE myvals[ARR_SIZE];                                           \
       TYPE result[ARR_SIZE];                                           \
