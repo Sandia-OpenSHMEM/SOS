@@ -82,345 +82,252 @@ void *shmem_align(size_t alignment, size_t size);
 void *shmem_realloc(void *ptr, size_t size);
 void shmem_free(void *ptr);
 
+#define SHMEM_EVAL_MACRO_FOR_RMA(decl,END) \
+  decl(float,      float) END           \
+  decl(double,     double) END          \
+  decl(longdouble, long double) END     \
+  decl(char,       char) END            \
+  decl(short,      short) END           \
+  decl(int,        int) END             \
+  decl(long,       long) END            \
+  decl(longlong,   long long)
+
+#define SHMEM_EVAL_MACRO_FOR_AMO(decl,END) \
+  decl(int,        int) END             \
+  decl(long,       long) END            \
+  decl(longlong,   long long)
+
+#define SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO(decl,END) \
+  SHMEM_EVAL_MACRO_FOR_AMO(decl,END) END            \
+  decl(float,  float) END                        \
+  decl(double, double)
+
+#define SHMEM_EVAL_MACRO_FOR_INTS(decl,END) \
+  decl(short,    short) END              \
+  decl(int,      int) END                \
+  decl(long,     long) END               \
+  decl(longlong, long long)
+
+#define SHMEM_EVAL_MACRO_FOR_FLOATS(decl,END) \
+  decl(float,     float) END               \
+  decl(double,     double) END             \
+  decl(longdouble, long double)
+
+#define SHMEM_EVAL_MACRO_FOR_CMPLX(decl,END) \
+  decl(complexf, float complex) END       \
+  decl(complexd, double complex)
+
+#define SHMEM_EVAL_MACRO_FOR_SIZES(decl,END) \
+  decl(mem,  1) END                       \
+  decl(8,    1*sizeof(uint8_t)) END       \
+  decl(16,   2*sizeof(uint8_t)) END       \
+  decl(32,   4*sizeof(uint8_t)) END       \
+  decl(64,   8*sizeof(uint8_t)) END       \
+  decl(128, 16*sizeof(uint8_t))
+
+#define SHMEM_DECLARE_FOR_RMA(decl) SHMEM_EVAL_MACRO_FOR_RMA(decl,;)
+#define SHMEM_DECLARE_FOR_AMO(decl) SHMEM_EVAL_MACRO_FOR_AMO(decl,;)
+#define SHMEM_DECLARE_FOR_EXTENDED_AMO(decl) SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO(decl,;)
+#define SHMEM_DECLARE_FOR_INTS(decl) SHMEM_EVAL_MACRO_FOR_INTS(decl,;)
+#define SHMEM_DECLARE_FOR_FLOATS(decl) SHMEM_EVAL_MACRO_FOR_FLOATS(decl,;)
+#define SHMEM_DECLARE_FOR_CMPLX(decl) SHMEM_EVAL_MACRO_FOR_CMPLX(decl,;)
+#define SHMEM_DECLARE_FOR_SIZES(decl) SHMEM_EVAL_MACRO_FOR_SIZES(decl,;)
+
+#define SHMEM_DEFINE_FOR_RMA(decl) SHMEM_EVAL_MACRO_FOR_RMA(decl,)
+#define SHMEM_DEFINE_FOR_AMO(decl) SHMEM_EVAL_MACRO_FOR_AMO(decl,)
+#define SHMEM_DEFINE_FOR_EXTENDED_AMO(decl) SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO(decl,)
+#define SHMEM_DEFINE_FOR_INTS(decl) SHMEM_EVAL_MACRO_FOR_INTS(decl,)
+#define SHMEM_DEFINE_FOR_FLOATS(decl) SHMEM_EVAL_MACRO_FOR_FLOATS(decl,)
+#define SHMEM_DEFINE_FOR_CMPLX(decl) SHMEM_EVAL_MACRO_FOR_CMPLX(decl,)
+#define SHMEM_DEFINE_FOR_SIZES(decl) SHMEM_EVAL_MACRO_FOR_SIZES(decl,)
+
 /* 8.3: Elemental Data Put Routines */
-void shmem_float_p(float *addr, float value, int pe);
-void shmem_double_p(double *addr, double value, int pe);
-void shmem_longdouble_p(long double *addr, long double value, int pe);
-void shmem_char_p(char *addr, char value, int pe);
-void shmem_short_p(short *addr, short value, int pe);
-void shmem_int_p(int *addr, int value, int pe);
-void shmem_long_p(long *addr, long value, int pe);
-void shmem_longlong_p(long long *addr, long long value, int pe);
+#define SHMEM_P(TYPENAME,TYPE) \
+    void shmem_##TYPENAME##_p(TYPE *addr, TYPE value, int pe)
+SHMEM_DECLARE_FOR_RMA(SHMEM_P);
 
 /* 8.3: Block Data Put Routines */
-void shmem_float_put(float *target, const float *source, size_t len, int pe);
-void shmem_double_put(double *target, const double *source, size_t len,
-                      int pe);
-void shmem_longdouble_put(long double *target, const long double *source,
-                          size_t len, int pe);
-void shmem_char_put(char *dest, const char *source, size_t nelems, int pe);
-void shmem_short_put(short *target, const short *source, size_t len, int pe);
-void shmem_int_put(int *target, const int *source, size_t len, int pe);
-void shmem_long_put(long *target, const long *source, size_t len, int pe);
-void shmem_longlong_put(long long *target, const long long *source,
-                        size_t len, int pe);
-void shmem_put8(void *dest, const void *source, size_t nelems, int pe);
-void shmem_put16(void *dest, const void *source, size_t nelems, int pe);
-void shmem_put32(void *target, const void *source, size_t len, int pe);
-void shmem_put64(void *target, const void *source, size_t len, int pe);
-void shmem_put128(void *target, const void *source, size_t len, int pe);
-void shmem_putmem(void *target, const void *source, size_t len, int pe);
+#define SHMEM_PUT(TYPENAME,TYPE) \
+    void shmem_##TYPENAME##_put(TYPE *target, const TYPE *source, \
+                                size_t nelems, int pe)
+SHMEM_DECLARE_FOR_RMA(SHMEM_PUT);
+
+#define SHMEM_PUT_N(SIZE,NBYTES) \
+    void shmem_put##SIZE(void* target, const void *source, \
+                         size_t nelems, int pe)
+SHMEM_DECLARE_FOR_SIZES(SHMEM_PUT_N);
 
 /* 8.3: Strided Put Routines */
-void shmem_char_iput(char *target, const char *source, ptrdiff_t tst,
-                     ptrdiff_t sst, size_t len, int pe);
-void shmem_float_iput(float *target, const float *source, ptrdiff_t tst,
-                      ptrdiff_t sst, size_t len, int pe);
-void shmem_double_iput(double *target, const double *source, ptrdiff_t tst,
-                       ptrdiff_t sst, size_t len, int pe);
-void shmem_longdouble_iput(long double *target, const long double *source,
-                           ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_short_iput(short *target, const short *source, ptrdiff_t tst,
-                      ptrdiff_t sst, size_t len, int pe);
-void shmem_int_iput(int *target, const int *source, ptrdiff_t tst,
-                    ptrdiff_t sst, size_t len, int pe);
-void shmem_long_iput(long *target, const long *source, ptrdiff_t tst,
-                     ptrdiff_t sst, size_t len, int pe);
-void shmem_longlong_iput(long long *target, const long long *source,
-                         ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_iput32(void *target, const void *source, ptrdiff_t tst,
-                  ptrdiff_t sst, size_t len, int pe);
-void shmem_iput64(void *target, const void *source, ptrdiff_t tst,
-                  ptrdiff_t sst, size_t len, int pe);
-void shmem_iput128(void *target, const void *source, ptrdiff_t tst,
-                   ptrdiff_t sst, size_t len, int pe);
+#define SHMEM_IPUT(TYPENAME,TYPE) \
+  void shmem_##TYPENAME##_iput(TYPE *target, const TYPE *source,  \
+                               ptrdiff_t tst, ptrdiff_t sst,      \
+                               size_t len, int pe)
+SHMEM_DECLARE_FOR_RMA(SHMEM_IPUT);
+
+#define SHMEM_IPUT_N(SIZE,NBYTES) \
+  void shmem_iput##SIZE(void *target, const void *source,         \
+                        ptrdiff_t tst, ptrdiff_t sst, size_t len, \
+                        int pe)
+SHMEM_DECLARE_FOR_SIZES(SHMEM_IPUT_N);
 
 /* 8.3: Elemental Data Get Routines */
-float shmem_float_g(const float *addr, int pe);
-double shmem_double_g(const double *addr, int pe);
-long double shmem_longdouble_g(const long double *addr, int pe);
-char shmem_char_g(const char *addr, int pe);
-short shmem_short_g(const short *addr, int pe);
-int shmem_int_g(const int *addr, int pe);
-long shmem_long_g(const long *addr, int pe);
-long long shmem_longlong_g(const long long *addr, int pe);
+#define SHMEM_G(TYPENAME,TYPE) \
+    TYPE shmem_##TYPENAME##_g(const TYPE *addr, int pe)
+SHMEM_DECLARE_FOR_RMA(SHMEM_G);
 
 /* 8.3: Block Data Get Routines */
-void shmem_float_get(float *target, const float *source, size_t len, int pe);
-void shmem_double_get(double *target, const double *source, size_t len,
-                      int pe);
-void shmem_longdouble_get(long double *target, const long double *source,
-                          size_t len, int pe);
-void shmem_char_get(char *dest, const char *source, size_t nelems, int pe);
-void shmem_short_get(short *target, const short *source, size_t len, int pe);
-void shmem_int_get(int *target, const int *source, size_t len, int pe);
-void shmem_long_get(long *target, const long *source, size_t len, int pe);
-void shmem_longlong_get(long long *target, const long long *source,
-                        size_t len, int pe);
-void shmem_get8(void *dest, const void *source, size_t nelems, int pe);
-void shmem_get16(void *dest, const void *source, size_t nelems, int pe);
-void shmem_get32(void *target, const void *source, size_t len, int pe);
-void shmem_get64(void *target, const void *source, size_t len, int pe);
-void shmem_get128(void *target, const void *source, size_t len, int pe);
-void shmem_getmem(void *target, const void *source, size_t len, int pe);
+#define SHMEM_GET(TYPENAME,TYPE) \
+    void shmem_##TYPENAME##_get(TYPE *target, const TYPE *source, \
+                                size_t nelems,int pe)
+SHMEM_DECLARE_FOR_RMA(SHMEM_GET);
+
+#define SHMEM_GET_N(SIZE,NBYTES) \
+    void shmem_get##SIZE(void* target, const void *source, \
+                         size_t nelems, int pe)
+SHMEM_DECLARE_FOR_SIZES(SHMEM_GET_N);
 
 /* 8.3: Strided Get Routines */
-void shmem_char_iget(char *target, const char *source, ptrdiff_t tst,
-                     ptrdiff_t sst, size_t len, int pe);
-void shmem_float_iget(float *target, const float *source, ptrdiff_t tst,
-                      ptrdiff_t sst, size_t len, int pe);
-void shmem_double_iget(double *target, const double *source, ptrdiff_t tst,
-                       ptrdiff_t sst, size_t len, int pe);
-void shmem_longdouble_iget(long double *target, const long double *source,
-                           ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_short_iget(short *target, const short *source, ptrdiff_t tst,
-                      ptrdiff_t sst, size_t len, int pe);
-void shmem_int_iget(int *target, const int *source, ptrdiff_t tst,
-                    ptrdiff_t sst, size_t len, int pe);
-void shmem_long_iget(long *target, const long *source, ptrdiff_t tst,
-                     ptrdiff_t sst, size_t len, int pe);
-void shmem_longlong_iget(long long *target, const long long *source,
-                         ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
-void shmem_iget32(void *target, const void *source, ptrdiff_t tst,
-                  ptrdiff_t sst, size_t len, int pe);
-void shmem_iget64(void *target, const void *source, ptrdiff_t tst,
-                  ptrdiff_t sst, size_t len, int pe);
-void shmem_iget128(void *target, const void *source, ptrdiff_t tst,
-                   ptrdiff_t sst, size_t len, int pe);
+#define SHMEM_IGET(TYPENAME,TYPE) \
+    void shmem_##TYPENAME##_iget(TYPE *target, const TYPE *source, \
+                                 ptrdiff_t tst, ptrdiff_t sst,     \
+                                 size_t nelems, int pe)
+SHMEM_DECLARE_FOR_RMA(SHMEM_IGET);
+
+#define SHMEM_IGET_N(SIZE,NBYTES) \
+    void shmem_iget##SIZE(void* target, const void *source, \
+                          ptrdiff_t tst, ptrdiff_t sst,     \
+                          size_t nelems, int pe)
+SHMEM_DECLARE_FOR_SIZES(SHMEM_IGET_N);
 
 /* 8.4: Nonblocking remote memory access routines -- Put */
-void shmem_float_put_nbi(float *dest, const float *source, size_t nelems,
-                         int pe);
-void shmem_double_put_nbi(double *dest, const double *source, size_t nelems,
-                          int pe);
-void shmem_longdouble_put_nbi(long double *dest, const long double *source,
-                              size_t nelems, int pe);
-void shmem_putmem_nbi(void *dest, const void *source, size_t nelems, int pe);
-void shmem_char_put_nbi(char *dest, const char *source, size_t nelems, int pe);
-void shmem_short_put_nbi(short *dest, const short *source, size_t nelems,
-                         int pe);
-void shmem_int_put_nbi(int *dest, const int *source, size_t nelems, int pe);
-void shmem_long_put_nbi(long *dest, const long *source, size_t nelems, int pe);
-void shmem_longlong_put_nbi(long long *dest, const long long *source,
-                            size_t nelems, int pe);
-void shmem_put8_nbi(void *dest, const void *source, size_t nelems, int pe);
-void shmem_put16_nbi(void *dest, const void *source, size_t nelems, int pe);
-void shmem_put32_nbi(void *dest, const void *source, size_t nelems, int pe);
-void shmem_put64_nbi(void *dest, const void *source, size_t nelems, int pe);
-void shmem_put128_nbi(void *dest, const void *source, size_t nelems, int pe);
+#define SHMEM_PUT_NBI(TYPENAME,TYPE) \
+    void shmem_##TYPENAME##_put_nbi(TYPE *target, const TYPE *source,\
+                                    size_t nelems, int pe)
+SHMEM_DECLARE_FOR_RMA(SHMEM_PUT_NBI);
+
+#define SHMEM_PUT_N_NBI(SIZE,NBYTES) \
+    void shmem_put##SIZE##_nbi(void* target, const void *source, \
+                               size_t nelems, int pe)
+SHMEM_DECLARE_FOR_SIZES(SHMEM_PUT_N_NBI);
 
 /* 8.4: Nonblocking remote memory access routines -- Get */
-void shmem_float_get_nbi(float *dest, const float *source, size_t nelems,
-                         int pe);
-void shmem_double_get_nbi(double *dest, const double *source, size_t nelems,
-                          int pe);
-void shmem_longdouble_get_nbi(long double *dest, const long double *source,
-                              size_t nelems, int pe);
-void shmem_getmem_nbi(void *dest, const void *source, size_t nelems, int pe);
-void shmem_char_get_nbi(char *dest, const char *source, size_t nelems, int pe);
-void shmem_short_get_nbi(short *dest, const short *source, size_t nelems,
-                         int pe);
-void shmem_int_get_nbi(int *dest, const int *source, size_t nelems, int pe);
-void shmem_long_get_nbi(long *dest, const long *source, size_t nelems, int pe);
-void shmem_longlong_get_nbi(long long *dest, const long long *source,
-                            size_t nelems, int pe);
-void shmem_get8_nbi(void *dest, const void *source, size_t nelems, int pe);
-void shmem_get16_nbi(void *dest, const void *source, size_t nelems, int pe);
-void shmem_get32_nbi(void *dest, const void *source, size_t nelems, int pe);
-void shmem_get64_nbi(void *dest, const void *source, size_t nelems, int pe);
-void shmem_get128_nbi(void *dest, const void *source, size_t nelems, int pe);
+#define SHMEM_GET_NBI(TYPENAME,TYPE) \
+    void shmem_##TYPENAME##_get_nbi(TYPE *target, const TYPE *source,\
+                                    size_t nelems, int pe)
+SHMEM_DECLARE_FOR_RMA(SHMEM_GET_NBI);
+
+#define SHMEM_GET_N_NBI(SIZE,NBYTES) \
+    void shmem_get##SIZE##_nbi(void* target, const void *source, \
+                               size_t nelems, int pe)
+SHMEM_DECLARE_FOR_SIZES(SHMEM_GET_N_NBI);
 
 /* 8.4: Atomic Memory fetch-and-operate Routines -- Swap */
-float shmem_float_swap(float *target, float value, int pe);
-double shmem_double_swap(double *target, double value, int pe);
-int shmem_int_swap(int *target, int value, int pe);
-long shmem_long_swap(long *target, long value, int pe);
-long long shmem_longlong_swap(long long *target, long long value, int pe);
+#define SHMEM_SWAP(TYPENAME,TYPE) \
+  TYPE shmem_##TYPENAME##_swap(TYPE *target, TYPE value, int pe)
+SHMEM_DECLARE_FOR_EXTENDED_AMO(SHMEM_SWAP);
 
 /* 8.4: Atomic Memory fetch-and-operate Routines -- Cswap */
-int shmem_int_cswap(int *target, int cond, int value, int pe);
-long shmem_long_cswap(long *target, long cond, long value, int pe);
-long long shmem_longlong_cswap(long long * target, long long cond,
-                          long long value, int pe);
+#define SHMEM_CSWAP(TYPENAME,TYPE) \
+  TYPE shmem_##TYPENAME##_cswap(TYPE *target, TYPE cond, TYPE value, \
+                                int pe)
+SHMEM_DECLARE_FOR_AMO(SHMEM_CSWAP);
 
 /* 8.4: Atomic Memory fetch-and-operate Routines -- Fetch and Add */
-int shmem_int_fadd(int *target, int value, int pe);
-long shmem_long_fadd(long *target, long value, int pe);
-long long shmem_longlong_fadd(long long *target, long long value, int pe);
+#define SHMEM_FADD(TYPENAME,TYPE) \
+  TYPE shmem_##TYPENAME##_fadd(TYPE *target, TYPE value, int pe)
+SHMEM_DECLARE_FOR_AMO(SHMEM_FADD);
 
 /* 8.4: Atomic Memory fetch-and-operate Routines -- Fetch and Increment */
-int shmem_int_finc(int *target, int pe);
-long shmem_long_finc(long *target, int pe);
-long long shmem_longlong_finc(long long *target, int pe);
+#define SHMEM_FINC(TYPENAME,TYPE) \
+  TYPE shmem_##TYPENAME##_finc(TYPE *target, int pe)
+SHMEM_DECLARE_FOR_AMO(SHMEM_FINC);
 
 /* 8.4: Atomic Memory Operation Routines -- Add */
-void shmem_int_add(int *target, int value, int pe);
-void shmem_long_add(long *target, long value, int pe);
-void shmem_longlong_add(long long *target, long long value, int pe);
+#define SHMEM_ADD(TYPENAME,TYPE) \
+  void shmem_##TYPENAME##_add(TYPE *target, TYPE value, int pe)
+SHMEM_DECLARE_FOR_AMO(SHMEM_ADD);
 
 /* 8.4: Atomic Memory Operation Routines -- Increment */
-void shmem_int_inc(int *target, int pe);
-void shmem_long_inc(long *target, int pe);
-void shmem_longlong_inc(long long *target, int pe);
+#define SHMEM_INC(TYPENAME,TYPE) \
+  void shmem_##TYPENAME##_inc(TYPE *target, int pe)
+SHMEM_DECLARE_FOR_AMO(SHMEM_INC);
 
 /* 8.4: Atomic fetch */
-int shmem_int_fetch(const int *source, int pe);
-long shmem_long_fetch(const long *source, int pe);
-long long shmem_longlong_fetch(const long long *source, int pe);
-float shmem_float_fetch(const float *source, int pe);
-double shmem_double_fetch(const double *source, int pe);
+#define SHMEM_FETCH(TYPENAME,TYPE) \
+  TYPE shmem_##TYPENAME##_fetch(const TYPE *target, int pe)
+SHMEM_DECLARE_FOR_EXTENDED_AMO(SHMEM_FETCH);
 
 /* 8.4: Atomic set */
-void shmem_int_set(int *dest, int value, int pe);
-void shmem_long_set(long *dest, long value, int pe);
-void shmem_longlong_set(long long *dest, long long value, int pe);
-void shmem_float_set(float *dest, float value, int pe);
-void shmem_double_set(double *dest, double value, int pe);
+#define SHMEM_SET(TYPENAME,TYPE) \
+  void shmem_##TYPENAME##_set(TYPE *target, TYPE value, int pe)
+SHMEM_DECLARE_FOR_EXTENDED_AMO(SHMEM_SET);
 
 /* 8.5: Barrier Synchronization Routines */
 void shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync);
 void shmem_barrier_all(void);
 
 /* 8.5: Reduction Routines */
-void shmem_short_and_to_all(short *target, const short *source, int nreduce,
-                            int PE_start, int logPE_stride, int PE_size,
-                            short *pWrk, long *pSync);
-void shmem_int_and_to_all(int *target, const int *source, int nreduce,
-                          int PE_start, int logPE_stride, int PE_size,
-                          int *pWrk, long *pSync);
-void shmem_long_and_to_all(long *target, const long *source, int nreduce,
-                           int PE_start, int logPE_stride, int PE_size,
-                           long *pWrk, long *pSync);
-void shmem_longlong_and_to_all(long long *target, const long long *source,
-                               int nreduce, int PE_start, int logPE_stride,
-                               int PE_size, long long *pWrk, long *pSync);
+#define SHMEM_AND_TO_ALL(TYPENAME,TYPE) \
+  void shmem_##TYPENAME##_and_to_all(TYPE *target, \
+                                     const TYPE *source, int nreduce,\
+                                     int PE_start, int logPE_stride, \
+                                     int PE_size, TYPE *pWrk, \
+                                     long *pSync)
+SHMEM_DECLARE_FOR_INTS(SHMEM_AND_TO_ALL);
 
-void shmem_short_or_to_all(short *target, const short *source, int nreduce,
-                           int PE_start, int logPE_stride, int PE_size,
-                           short *pWrk, long *pSync);
-void shmem_int_or_to_all(int *target, const int *source, int nreduce,
-                         int PE_start, int logPE_stride, int PE_size,
-                         int *pWrk, long *pSync);
-void shmem_long_or_to_all(long *target, const long *source, int nreduce,
-                          int PE_start, int logPE_stride, int PE_size,
-                          long *pWrk, long *pSync);
-void shmem_longlong_or_to_all(long long *target, const long long *source,
-                              int nreduce, int PE_start, int logPE_stride,
-                              int PE_size, long long *pWrk, long *pSync);
+#define SHMEM_OR_TO_ALL(TYPENAME,TYPE) \
+  void shmem_##TYPENAME##_or_to_all(TYPE *target, \
+                                    const TYPE *source, int nreduce,\
+                                    int PE_start, int logPE_stride, \
+                                    int PE_size, TYPE *pWrk, \
+                                    long *pSync)
+SHMEM_DECLARE_FOR_INTS(SHMEM_OR_TO_ALL);
 
-void shmem_short_xor_to_all(short *target, const short *source, int nreduce,
-                            int PE_start, int logPE_stride, int PE_size,
-                            short *pWrk, long *pSync);
-void shmem_int_xor_to_all(int *target, const int *source, int nreduce,
-                          int PE_start, int logPE_stride, int PE_size,
-                          int *pWrk, long *pSync);
-void shmem_long_xor_to_all(long *target, const long *source, int nreduce,
-                           int PE_start, int logPE_stride, int PE_size,
-                           long *pWrk, long *pSync);
-void shmem_longlong_xor_to_all(long long *target, const long long *source,
-                               int nreduce, int PE_start, int logPE_stride,
-                               int PE_size, long long *pWrk, long *pSync);
+#define SHMEM_XOR_TO_ALL(TYPENAME,TYPE) \
+  void shmem_##TYPENAME##_xor_to_all(TYPE *target, \
+                                     const TYPE *source, int nreduce,\
+                                     int PE_start, int logPE_stride, \
+                                     int PE_size, TYPE *pWrk, \
+                                     long *pSync)
+SHMEM_DECLARE_FOR_INTS(SHMEM_XOR_TO_ALL);
 
-void shmem_float_min_to_all(float *target, const float *source, int nreduce,
-                            int PE_start, int logPE_stride, int PE_size,
-                            float *pWrk, long *pSync);
-void shmem_double_min_to_all(double *target, const double *source, int nreduce,
-                             int PE_start, int logPE_stride, int PE_size,
-                             double *pWrk, long *pSync);
-void shmem_longdouble_min_to_all(long double *target, const long double *source,
-                                 int nreduce, int PE_start, int logPE_stride,
-                                 int PE_size, long double *pWrk, long *pSync);
-void shmem_short_min_to_all(short *target, const short *source, int nreduce,
-                            int PE_start, int logPE_stride, int PE_size,
-                            short *pWrk, long *pSync);
-void shmem_int_min_to_all(int *target, const int *source, int nreduce,
-                          int PE_start, int logPE_stride, int PE_size,
-                          int *pWrk, long *pSync);
-void shmem_long_min_to_all(long *target, const long *source, int nreduce,
-                           int PE_start, int logPE_stride, int PE_size,
-                           long *pWrk, long *pSync);
-void shmem_longlong_min_to_all(long long *target, const long long *source,
-                               int nreduce, int PE_start, int logPE_stride,
-                               int PE_size, long long *pWrk, long *pSync);
+#define SHMEM_MIN_TO_ALL(TYPENAME,TYPE) \
+  void shmem_##TYPENAME##_min_to_all(TYPE *target, \
+                                     const TYPE *source, int nreduce,\
+                                     int PE_start, int logPE_stride, \
+                                     int PE_size, TYPE *pWrk, \
+                                     long *pSync)
+SHMEM_DECLARE_FOR_INTS(SHMEM_MIN_TO_ALL);
+SHMEM_DECLARE_FOR_FLOATS(SHMEM_MIN_TO_ALL);
 
-void shmem_float_max_to_all(float *target, const float *source, int nreduce,
-                            int PE_start, int logPE_stride, int PE_size,
-                            float *pWrk, long *pSync);
-void shmem_double_max_to_all(double *target, const double *source, int nreduce,
-                             int PE_start, int logPE_stride, int PE_size,
-                             double *pWrk, long *pSync);
-void shmem_longdouble_max_to_all(long double *target, const long double *source,
-                                 int nreduce, int PE_start, int logPE_stride,
-                                 int PE_size, long double *pWrk, long *pSync);
-void shmem_short_max_to_all(short *target, const short *source, int nreduce,
-                            int PE_start, int logPE_stride, int PE_size,
-                            short *pWrk, long *pSync);
-void shmem_int_max_to_all(int *target, const int *source, int nreduce,
-                          int PE_start, int logPE_stride, int PE_size,
-                          int *pWrk, long *pSync);
-void shmem_long_max_to_all(long *target, const long *source, int nreduce,
-                           int PE_start, int logPE_stride, int PE_size,
-                           long *pWrk, long *pSync);
-void shmem_longlong_max_to_all(long long *target, const long long *source,
-                               int nreduce, int PE_start, int logPE_stride,
-                               int PE_size, long long *pWrk, long *pSync);
+#define SHMEM_MAX_TO_ALL(TYPENAME,TYPE) \
+  void shmem_##TYPENAME##_max_to_all(TYPE *target, \
+                                     const TYPE *source, int nreduce,\
+                                     int PE_start, int logPE_stride, \
+                                     int PE_size, TYPE *pWrk, \
+                                     long *pSync)
+SHMEM_DECLARE_FOR_INTS(SHMEM_MAX_TO_ALL);
+SHMEM_DECLARE_FOR_FLOATS(SHMEM_MAX_TO_ALL);
 
-void shmem_float_sum_to_all(float *target, const float *source, int nreduce,
-                            int PE_start, int logPE_stride, int PE_size,
-                            float *pWrk, long *pSync);
-void shmem_double_sum_to_all(double *target, const double *source, int nreduce,
-                             int PE_start, int logPE_stride, int PE_size,
-                             double *pWrk, long *pSync);
-void shmem_longdouble_sum_to_all(long double *target, const long double *source,
-                                 int nreduce, int PE_start, int logPE_stride,
-                                 int PE_size, long double *pWrk, long *pSync);
-void shmem_complexf_sum_to_all(float complex *target, const float complex *source,
-                               int nreduce, int PE_start, int logPE_stride,
-                               int PE_size, float complex *pWrk, long *pSync);
-void shmem_complexd_sum_to_all(double complex *target, const double complex *source,
-                               int nreduce, int PE_start, int logPE_stride,
-                               int PE_size, double complex *pWrk, long *pSync);
-void shmem_short_sum_to_all(short *target, const short *source, int nreduce,
-                            int PE_start, int logPE_stride, int PE_size,
-                            short *pWrk, long *pSync);
-void shmem_int_sum_to_all(int *target, const int *source, int nreduce,
-                          int PE_start, int logPE_stride, int PE_size,
-                          int *pWrk, long *pSync);
-void shmem_long_sum_to_all(long *target, const long *source, int nreduce,
-                           int PE_start, int logPE_stride, int PE_size,
-                           long *pWrk, long *pSync);
-void shmem_longlong_sum_to_all(long long *target, const long long *source,
-                               int nreduce, int PE_start, int logPE_stride,
-                               int PE_size, long long *pWrk, long *pSync);
+#define SHMEM_SUM_TO_ALL(TYPENAME,TYPE) \
+  void shmem_##TYPENAME##_sum_to_all(TYPE *target, \
+                                     const TYPE *source, int nreduce,\
+                                     int PE_start, int logPE_stride, \
+                                     int PE_size, TYPE *pWrk, \
+                                     long *pSync)
+SHMEM_DECLARE_FOR_INTS(SHMEM_SUM_TO_ALL);
+SHMEM_DECLARE_FOR_FLOATS(SHMEM_SUM_TO_ALL);
+SHMEM_DECLARE_FOR_CMPLX(SHMEM_SUM_TO_ALL);
 
-void shmem_float_prod_to_all(float *target, const float *source, int nreduce,
-                             int PE_start, int logPE_stride, int PE_size,
-                             float *pWrk, long *pSync);
-void shmem_double_prod_to_all(double *target, const double *source, int nreduce,
-                              int PE_start, int logPE_stride, int PE_size,
-                              double *pWrk, long *pSync);
-void shmem_longdouble_prod_to_all(long double *target, const long double *source,
-                                  int nreduce, int PE_start, int logPE_stride,
-                                  int PE_size, long double *pWrk, long *pSync);
-void shmem_complexf_prod_to_all(float complex *target, const float complex *source,
-                                int nreduce, int PE_start, int logPE_stride,
-                                int PE_size, float complex *pWrk, long *pSync);
-void shmem_complexd_prod_to_all(double complex *target,
-                                const double complex *source, int nreduce,
-                                int PE_start, int logPE_stride, int PE_size,
-                                double complex *pWrk, long *pSync);
-void shmem_short_prod_to_all(short *target, const short *source, int nreduce,
-                             int PE_start, int logPE_stride, int PE_size,
-                             short *pWrk, long *pSync);
-void shmem_int_prod_to_all(int *target, const int *source, int nreduce,
-                           int PE_start, int logPE_stride, int PE_size,
-                           int *pWrk, long *pSync);
-void shmem_long_prod_to_all(long *target, const long *source, int nreduce,
-                            int PE_start, int logPE_stride, int PE_size,
-                            long *pWrk, long *pSync);
-void shmem_longlong_prod_to_all(long long *target, const long long *source,
-                                int nreduce, int PE_start, int logPE_stride,
-                                int PE_size, long long *pWrk, long *pSync);
+#define SHMEM_PROD_TO_ALL(TYPENAME,TYPE) \
+  void shmem_##TYPENAME##_prod_to_all(TYPE *target, \
+                                      const TYPE *source, int nreduce,\
+                                      int PE_start, int logPE_stride, \
+                                      int PE_size, TYPE *pWrk, \
+                                      long *pSync)
+SHMEM_DECLARE_FOR_INTS(SHMEM_PROD_TO_ALL);
+SHMEM_DECLARE_FOR_FLOATS(SHMEM_PROD_TO_ALL);
+SHMEM_DECLARE_FOR_CMPLX(SHMEM_PROD_TO_ALL);
 
 /* 8.5: Collect Routines */
 void shmem_collect32(void *target, const void *source, size_t nlong,
@@ -496,6 +403,36 @@ void *shrealloc(void *ptr, size_t size) __attribute__ ((deprecated));
 void shfree(void *ptr) __attribute__ ((deprecated));
 void start_pes(int npes) __attribute__ ((deprecated));
 
+#undef SHMEM_P
+#undef SHMEM_PUT
+#undef SHMEM_PUT_N
+#undef SHMEM_IPUT
+#undef SHMEM_IPUT_N
+#undef SHMEM_G
+#undef SHMEM_GET
+#undef SHMEM_GET_N
+#undef SHMEM_IGET
+#undef SHMEM_IGET_N
+#undef SHMEM_PUT_NBI
+#undef SHMEM_PUT_N_NBI
+#undef SHMEM_GET_NBI
+#undef SHMEM_GET_N_NBI
+#undef SHMEM_SWAP
+#undef SHMEM_CSWAP
+#undef SHMEM_FADD
+#undef SHMEM_FINC
+#undef SHMEM_ADD
+#undef SHMEM_INC
+#undef SHMEM_FETCH
+#undef SHMEM_SET
+#undef SHMEM_AND_TO_ALL
+#undef SHMEM_OR_TO_ALL
+#undef SHMEM_XOR_TO_ALL
+#undef SHMEM_MIN_TO_ALL
+#undef SHMEM_MAX_TO_ALL
+#undef SHMEM_SUM_TO_ALL
+#undef SHMEM_PROD_TO_ALL
+
 /* C++ overloaded declarations */
 #ifdef __cplusplus
 } /* extern "C" */
@@ -504,301 +441,132 @@ void start_pes(int npes) __attribute__ ((deprecated));
 #endif
 
 /* Blocking block, scalar, and block-strided put */
-static inline void shmem_put(float* dest, const float* source, size_t nelems, int pe) {
-    shmem_float_put(dest, source, nelems, pe);
-}
-static inline void shmem_put(double* dest, const double* source, size_t nelems, int pe) {
-    shmem_double_put(dest, source, nelems, pe);
-}
-static inline void shmem_put(long double* dest, const long double* source, size_t nelems, int pe) {
-    shmem_longdouble_put(dest, source, nelems, pe);
-}
-static inline void shmem_put(char* dest, const char* source, size_t nelems, int pe) {
-    shmem_char_put(dest, source, nelems, pe);
-}
-static inline void shmem_put(short* dest, const short* source, size_t nelems, int pe) {
-    shmem_short_put(dest, source, nelems, pe);
-}
-static inline void shmem_put(int* dest, const int* source, size_t nelems, int pe) {
-    shmem_int_put(dest, source, nelems, pe);
-}
-static inline void shmem_put(long* dest, const long* source, size_t nelems, int pe) {
-    shmem_long_put(dest, source, nelems, pe);
-}
-static inline void shmem_put(long long* dest, const long long* source, size_t nelems, int pe) {
-    shmem_longlong_put(dest, source, nelems, pe);
-}
+#define SHMEM_CXX_PUT(TYPENAME,TYPE) \
+  static inline void shmem_put(TYPE* dest, const TYPE* source, \
+                               size_t nelems, int pe) {        \
+    shmem_##TYPENAME##_put(dest, source, nelems, pe);          \
+  }
+SHMEM_DEFINE_FOR_RMA(SHMEM_CXX_PUT)
 
-static inline void shmem_p(float *addr, float value, int pe) {
-    shmem_float_p(addr, value, pe);
-}
-static inline void shmem_p(double *addr, double value, int pe) {
-    shmem_double_p(addr, value, pe);
-}
-static inline void shmem_p(long double *addr, long double value, int pe) {
-    shmem_longdouble_p(addr, value, pe);
-}
-static inline void shmem_p(char *addr, char value, int pe) {
-    shmem_char_p(addr, value, pe);
-}
-static inline void shmem_p(short *addr, short value, int pe) {
-    shmem_short_p(addr, value, pe);
-}
-static inline void shmem_p(int *addr, int value, int pe) {
-    shmem_int_p(addr, value, pe);
-}
-static inline void shmem_p(long *addr, long value, int pe) {
-    shmem_long_p(addr, value, pe);
-}
-static inline void shmem_p(long long *addr, long long value, int pe) {
-    shmem_longlong_p(addr, value, pe);
-}
+#define SHMEM_CXX_P(TYPENAME,TYPE) \
+  static inline void shmem_p(TYPE* dest, TYPE value, int pe) { \
+    shmem_##TYPENAME##_p(dest, value, pe);                     \
+  }
+SHMEM_DEFINE_FOR_RMA(SHMEM_CXX_P)
 
-static inline void shmem_iput(float *target, const float *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe) {
-    shmem_float_iput(target, source, tst, sst, len, pe);
-}
-static inline void shmem_iput(double *target, const double *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe) {
-    shmem_double_iput(target, source, tst, sst, len, pe);
-}
-static inline void shmem_iput(long double *target, const long double *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe) {
-    shmem_longdouble_iput(target, source, tst, sst, len, pe);
-}
-static inline void shmem_iput(short *target, const short *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe) {
-    shmem_short_iput(target, source, tst, sst, len, pe);
-}
-static inline void shmem_iput(int *target, const int *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe) {
-    shmem_int_iput(target, source, tst, sst, len, pe);
-}
-static inline void shmem_iput(long *target, const long *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe) {
-    shmem_long_iput(target, source, tst, sst, len, pe);
-}
-static inline void shmem_iput(long long *target, const long long *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe) {
-    shmem_longlong_iput(target, source, tst, sst, len, pe);
-}
+#define SHMEM_CXX_IPUT(TYPENAME,TYPE) \
+  static inline void shmem_iput(TYPE *target, const TYPE *source, \
+                                ptrdiff_t tst, ptrdiff_t sst,     \
+                                size_t len, int pe) {             \
+    shmem_##TYPENAME##_iput(target, source, tst, sst, len, pe);   \
+  }
+SHMEM_DEFINE_FOR_RMA(SHMEM_CXX_IPUT)
 
 /* Blocking block, scalar, and block-strided get */
-static inline void shmem_get(float *target, const float *source, size_t len, int pe) {
-    shmem_float_get(target, source, len, pe);
-}
-static inline void shmem_get(double *target, const double *source, size_t len, int pe) {
-    shmem_double_get(target, source, len, pe);
-}
-static inline void shmem_get(long double *target, const long double *source, size_t len, int pe) {
-    shmem_longdouble_get(target, source, len, pe);
-}
-static inline void shmem_get(char *dest, const char *source, size_t nelems, int pe) {
-    shmem_char_get(dest, source, nelems, pe);
-}
-static inline void shmem_get(short *target, const short *source, size_t len, int pe) {
-    shmem_short_get(target, source, len, pe);
-}
-static inline void shmem_get(int *target, const int *source, size_t len, int pe) {
-    shmem_int_get(target, source, len, pe);
-}
-static inline void shmem_get(long *target, const long *source, size_t len, int pe) {
-    shmem_long_get(target, source, len, pe);
-}
-static inline void shmem_get(long long *target, const long long *source, size_t len, int pe) {
-    shmem_longlong_get(target, source, len, pe);
-}
+#define SHMEM_CXX_GET(TYPENAME,TYPE) \
+  static inline void shmem_get(TYPE* dest, const TYPE* source, \
+                               size_t nelems, int pe) {        \
+    shmem_##TYPENAME##_get(dest, source, nelems, pe);          \
+  }
+SHMEM_DEFINE_FOR_RMA(SHMEM_CXX_GET)
 
-static inline float shmem_g(const float *addr, int pe) {
-    return shmem_float_g(addr, pe);
-}
-static inline double shmem_g(const double *addr, int pe) {
-    return shmem_double_g(addr, pe);
-}
-static inline long double shmem_g(const long double *addr, int pe) {
-    return shmem_longdouble_g(addr, pe);
-}
-static inline char shmem_g(const char *addr, int pe) {
-    return shmem_char_g(addr, pe);
-}
-static inline short shmem_g(const short *addr, int pe) {
-    return shmem_short_g(addr, pe);
-}
-static inline int shmem_g(const int *addr, int pe) {
-    return shmem_int_g(addr, pe);
-}
-static inline long shmem_g(const long *addr, int pe) {
-    return shmem_long_g(addr, pe);
-}
-static inline long long shmem_g(const long long *addr, int pe) {
-    return shmem_longlong_g(addr, pe);
-}
+#define SHMEM_CXX_G(TYPENAME,TYPE) \
+  static inline TYPE shmem_g(const TYPE* src, int pe) { \
+    return shmem_##TYPENAME##_g(src, pe);               \
+  }
+SHMEM_DEFINE_FOR_RMA(SHMEM_CXX_G)
 
-static inline void shmem_iget(float *target, const float *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe) {
-    shmem_float_iget(target, source, tst, sst, len, pe);
-}
-static inline void shmem_iget(double *target, const double *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe) {
-    shmem_double_iget(target, source, tst, sst, len, pe);
-}
-static inline void shmem_iget(long double *target, const long double *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe) {
-    shmem_longdouble_iget(target, source, tst, sst, len, pe);
-}
-static inline void shmem_iget(short *target, const short *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe) {
-    shmem_short_iget(target, source, tst, sst, len, pe);
-}
-static inline void shmem_iget(int *target, const int *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe) {
-    shmem_int_iget(target, source, tst, sst, len, pe);
-}
-static inline void shmem_iget(long *target, const long *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe) {
-    shmem_long_iget(target, source, tst, sst, len, pe);
-}
-static inline void shmem_iget(long long *target, const long long *source, ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe) {
-    shmem_longlong_iget(target, source, tst, sst, len, pe);
-}
+#define SHMEM_CXX_IGET(TYPENAME,TYPE) \
+  static inline void shmem_iget(TYPE *target, const TYPE *source, \
+                                ptrdiff_t tst, ptrdiff_t sst,     \
+                                size_t len, int pe) {             \
+    shmem_##TYPENAME##_iget(target, source, tst, sst, len, pe);   \
+  }
+SHMEM_DEFINE_FOR_RMA(SHMEM_CXX_IGET)
 
 /* Nonblocking block put/get */
-static inline void shmem_put_nbi(float *dest, const float *source, size_t nelems, int pe) {
-    shmem_float_put_nbi(dest, source, nelems, pe);
-}
-static inline void shmem_put_nbi(double *dest, const double *source, size_t nelems, int pe) {
-    shmem_double_put_nbi(dest, source, nelems, pe);
-}
-static inline void shmem_put_nbi(long double *dest, const long double *source, size_t nelems, int pe) {
-    shmem_longdouble_put_nbi(dest, source, nelems, pe);
-}
-static inline void shmem_put_nbi(char *dest, const char *source, size_t nelems, int pe) {
-    shmem_char_put_nbi(dest, source, nelems, pe);
-}
-static inline void shmem_put_nbi(short *dest, const short *source, size_t nelems, int pe) {
-    shmem_short_put_nbi(dest, source, nelems, pe);
-}
-static inline void shmem_put_nbi(int *dest, const int *source, size_t nelems, int pe) {
-    shmem_int_put_nbi(dest, source, nelems, pe);
-}
-static inline void shmem_put_nbi(long *dest, const long *source, size_t nelems, int pe) {
-    shmem_long_put_nbi(dest, source, nelems, pe);
-}
-static inline void shmem_put_nbi(long long *dest, const long long *source, size_t nelems, int pe) {
-    shmem_longlong_put_nbi(dest, source, nelems, pe);
-}
+#define SHMEM_CXX_PUT_NBI(TYPENAME,TYPE) \
+  static inline void shmem_put_nbi(TYPE* dest, const TYPE* source, \
+                                   size_t nelems, int pe) {        \
+    shmem_##TYPENAME##_put_nbi(dest, source, nelems, pe);          \
+  }
+SHMEM_DEFINE_FOR_RMA(SHMEM_CXX_PUT_NBI)
 
-static inline void shmem_get_nbi(float *dest, const float *source, size_t nelems, int pe) {
-    shmem_float_get_nbi(dest, source, nelems, pe);
-}
-static inline void shmem_get_nbi(double *dest, const double *source, size_t nelems, int pe) {
-    shmem_double_get_nbi(dest, source, nelems, pe);
-}
-static inline void shmem_get_nbi(long double *dest, const long double *source, size_t nelems, int pe) {
-    shmem_longdouble_get_nbi(dest, source, nelems, pe);
-}
-static inline void shmem_get_nbi(char *dest, const char *source, size_t nelems, int pe) {
-    shmem_char_get_nbi(dest, source, nelems, pe);
-}
-static inline void shmem_get_nbi(short *dest, const short *source, size_t nelems, int pe) {
-    shmem_short_get_nbi(dest, source, nelems, pe);
-}
-static inline void shmem_get_nbi(int *dest, const int *source, size_t nelems, int pe) {
-    shmem_int_get_nbi(dest, source, nelems, pe);
-}
-static inline void shmem_get_nbi(long *dest, const long *source, size_t nelems, int pe) {
-    shmem_long_get_nbi(dest, source, nelems, pe);
-}
-static inline void shmem_get_nbi(long long *dest, const long long *source, size_t nelems, int pe) {
-    shmem_longlong_get_nbi(dest, source, nelems, pe);
-}
+#define SHMEM_CXX_GET_NBI(TYPENAME,TYPE) \
+  static inline void shmem_get_nbi(TYPE* dest, const TYPE* source, \
+                                   size_t nelems, int pe) {        \
+    shmem_##TYPENAME##_get_nbi(dest, source, nelems, pe);          \
+  }
+SHMEM_DEFINE_FOR_RMA(SHMEM_CXX_GET_NBI)
+
 
 /* Atomics with standard AMO types */
-static inline void shmem_add(int *target, int value, int pe) {
-    shmem_int_add(target, value, pe);
-}
-static inline void shmem_add(long *target, long value, int pe) {
-    shmem_long_add(target, value, pe);
-}
-static inline void shmem_add(long long *target, long long value, int pe) {
-    shmem_longlong_add(target, value, pe);
-}
+#define SHMEM_CXX_ADD(TYPENAME,TYPE) \
+  static inline void shmem_add(TYPE *target, TYPE value, int pe) { \
+    shmem_##TYPENAME##_add(target, value, pe);                     \
+  }
+SHMEM_DEFINE_FOR_AMO(SHMEM_CXX_ADD)
 
-static inline int shmem_cswap(int *target, int cond, int value, int pe) {
-    return shmem_int_cswap(target, cond, value, pe);
-}
-static inline long shmem_cswap(long *target, long cond, long value, int pe) {
-    return shmem_long_cswap(target, cond, value, pe);
-}
-static inline long long shmem_cswap(long long * target, long long cond, long long value, int pe) {
-    return shmem_longlong_cswap(target, cond, value, pe);
-}
+#define SHMEM_CXX_CSWAP(TYPENAME,TYPE) \
+  static inline TYPE shmem_cswap(TYPE *target, TYPE cond, TYPE value,\
+                                 int pe) {                           \
+    return shmem_##TYPENAME##_cswap(target, cond, value, pe);        \
+  }
+SHMEM_DEFINE_FOR_AMO(SHMEM_CXX_CSWAP)
 
-static inline int shmem_finc(int *target, int pe) {
-    return shmem_int_finc(target, pe);
-}
-static inline long shmem_finc(long *target, int pe) {
-    return shmem_long_finc(target, pe);
-}
-static inline long long shmem_finc(long long *target, int pe) {
-    return shmem_longlong_finc(target, pe);
-}
+#define SHMEM_CXX_FINC(TYPENAME,TYPE) \
+  static inline TYPE shmem_finc(TYPE *target, int pe) { \
+    return shmem_##TYPENAME##_finc(target, pe);                     \
+  }
+SHMEM_DEFINE_FOR_AMO(SHMEM_CXX_FINC)
 
-static inline void shmem_inc(int *target, int pe) {
-    shmem_int_inc(target, pe);
-}
-static inline void shmem_inc(long *target, int pe) {
-    shmem_long_inc(target, pe);
-}
-static inline void shmem_inc(long long *target, int pe) {
-    shmem_longlong_inc(target, pe);
-}
+#define SHMEM_CXX_INC(TYPENAME,TYPE) \
+  static inline void shmem_inc(TYPE *target, int pe) { \
+    shmem_##TYPENAME##_inc(target, pe);                            \
+  }
+SHMEM_DEFINE_FOR_AMO(SHMEM_CXX_INC)
 
-static inline int shmem_fadd(int *target, int value, int pe) {
-    return shmem_int_fadd(target, value, pe);
-}
-static inline long shmem_fadd(long *target, long value, int pe) {
-    return shmem_long_fadd(target, value, pe);
-}
-static inline long long shmem_fadd(long long *target, long long value, int pe) {
-    return shmem_longlong_fadd(target, value, pe);
-}
+#define SHMEM_CXX_FADD(TYPENAME,TYPE) \
+  static inline TYPE shmem_fadd(TYPE *target, TYPE value, int pe) { \
+    return shmem_##TYPENAME##_fadd(target, value, pe);              \
+  }
+SHMEM_DEFINE_FOR_AMO(SHMEM_CXX_FADD)
 
 /* Atomics with extended AMO types */
-static inline float shmem_swap(float *target, float value, int pe) {
-    return shmem_float_swap(target, value, pe);
-}
-static inline double shmem_swap(double *target, double value, int pe) {
-    return shmem_double_swap(target, value, pe);
-}
-static inline int shmem_swap(int *target, int value, int pe) {
-    return shmem_int_swap(target, value, pe);
-}
-static inline long shmem_swap(long *target, long value, int pe) {
-    return shmem_long_swap(target, value, pe);
-}
-static inline long long shmem_swap(long long *target, long long value, int pe) {
-    return shmem_longlong_swap(target, value, pe);
-}
+#define SHMEM_CXX_SWAP(TYPENAME,TYPE) \
+  static inline TYPE shmem_swap(TYPE *target, TYPE value, int pe) { \
+    return shmem_##TYPENAME##_swap(target, value, pe);              \
+  }
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_CXX_SWAP)
 
-static inline float shmem_fetch(const float *source, int pe) {
-    return shmem_float_fetch(source, pe);
-}
-static inline double shmem_fetch(const double *source, int pe) {
-    return shmem_double_fetch(source, pe);
-}
-static inline int shmem_fetch(const int *source, int pe) {
-    return shmem_int_fetch(source, pe);
-}
-static inline long shmem_fetch(const long *source, int pe) {
-    return shmem_long_fetch(source, pe);
-}
-static inline long long shmem_fetch(const long long *source, int pe) {
-    return shmem_longlong_fetch(source, pe);
-}
+#define SHMEM_CXX_FETCH(TYPENAME,TYPE) \
+  static inline TYPE shmem_fetch(const TYPE *target, int pe) { \
+    return shmem_##TYPENAME##_fetch(target, pe);              \
+  }
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_CXX_FETCH)
 
-static inline void shmem_set(float *dest, float value, int pe) {
-    shmem_float_set(dest, value, pe);
-}
-static inline void shmem_set(double *dest, double value, int pe) {
-    shmem_double_set(dest, value, pe);
-}
-static inline void shmem_set(int *dest, int value, int pe) {
-    shmem_int_set(dest, value, pe);
-}
-static inline void shmem_set(long *dest, long value, int pe) {
-    shmem_long_set(dest, value, pe);
-}
-static inline void shmem_set(long long *dest, long long value, int pe) {
-    shmem_longlong_set(dest, value, pe);
-}
+#define SHMEM_CXX_SET(TYPENAME,TYPE) \
+  static inline void shmem_set(TYPE *target, TYPE value, int pe) { \
+    shmem_##TYPENAME##_set(target, value, pe);                     \
+  }
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_CXX_SET)
+
+#undef SHMEM_CXX_PUT
+#undef SHMEM_CXX_P
+#undef SHMEM_CXX_IPUT
+#undef SHMEM_CXX_GET
+#undef SHMEM_CXX_G
+#undef SHMEM_CXX_IGET
+#undef SHMEM_CXX_PUT_NBI
+#undef SHMEM_CXX_GET_NBI
+#undef SHMEM_CXX_ADD
+#undef SHMEM_CXX_CSWAP
+#undef SHMEM_CXX_FINC
+#undef SHMEM_CXX_INC
+#undef SHMEM_CXX_FADD
+#undef SHMEM_CXX_SWAP
+#undef SHMEM_CXX_FETCH
+#undef SHMEM_CXX_SET
 
 /* C11 Generic Macros */
 #elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
@@ -975,4 +743,33 @@ static inline void shmem_set(long long *dest, long long value, int pe) {
 long shmem_swap(long *target, long value, int pe);
 #endif /* C11 */
 
+#ifndef SHMEM_INTERNAL_INCLUDE
+
+#undef SHMEM_EVAL_MACRO_FOR_RMA
+#undef SHMEM_EVAL_MACRO_FOR_AMO
+#undef SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO
+#undef SHMEM_EVAL_MACRO_FOR_INTS
+#undef SHMEM_EVAL_MACRO_FOR_FLOATS
+#undef SHMEM_EVAL_MACRO_FOR_CMPLX
+#undef SHMEM_EVAL_MACRO_FOR_SIZES
+
+#undef SHMEM_DECLARE_FOR_RMA
+#undef SHMEM_DECLARE_FOR_AMO
+#undef SHMEM_DECLARE_FOR_EXTENDED_AMO
+#undef SHMEM_DECLARE_FOR_INTS
+#undef SHMEM_DECLARE_FOR_FLOATS
+#undef SHMEM_DECLARE_FOR_CMPLX
+#undef SHMEM_DECLARE_FOR_SIZES
+
+#undef SHMEM_DEFINE_FOR_RMA
+#undef SHMEM_DEFINE_FOR_AMO
+#undef SHMEM_DEFINE_FOR_EXTENDED_AMO
+#undef SHMEM_DEFINE_FOR_INTS
+#undef SHMEM_DEFINE_FOR_FLOATS
+#undef SHMEM_DEFINE_FOR_CMPLX
+#undef SHMEM_DEFINE_FOR_SIZES
+
+#endif
+
 #endif /* SHMEM_H */
+

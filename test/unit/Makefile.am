@@ -118,6 +118,9 @@ AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
 pi_SOURCES = pi.c
 pi_LDADD = $(top_builddir)/src/libsma.la
 
+rma_coverage_SOURCES = rma_coverage.c
+rma_coverage_LDADD = $(top_builddir)/src/libsma.la
+
 hello_SOURCES = hello.c
 hello_LDADD = $(top_builddir)/src/libsma.la
 
