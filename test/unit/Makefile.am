@@ -347,6 +347,3 @@ get_nbi_LDADD = $(top_builddir)/src/libsma.la
 put_nbi_SOURCES = put_nbi.c
 put_nbi_LDADD = $(top_builddir)/src/libsma.la
 
-rma_coverage_SOURCES = rma_coverage.c
-rma_coverage_LDADD = $(top_builddir)/src/libsma.la
-
