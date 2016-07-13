@@ -31,6 +31,7 @@
 #include <stdio.h>
 
 #include <shmem.h>
+#include <shmemx.h>
 
 #define N_THREADS 8
 #define N_ELEMS   10
@@ -42,28 +43,31 @@ pthread_barrier_t fencebar;
 void* roundrobin(void* tparam) {
     ptrdiff_t tid = (ptrdiff_t)tparam;
     int offset = tid*N_ELEMS;
-    fprintf(stderr,"Starting thread %lu with offset %d\n",tid,offset);
+    /* fprintf(stderr,"Starting thread %lu with offset %d\n",tid,offset); */
 
     int nextpe = (shmem_my_pe()+1)%shmem_n_pes();
     int prevpe = (shmem_my_pe()-1 + shmem_n_pes())%shmem_n_pes();
     shmem_long_put(target+offset, source+offset, N_ELEMS, nextpe);
 
-    fprintf(stderr,"Thread %lu done first put\n",tid);
+    /* fprintf(stderr,"Thread %lu done first put\n",tid); */
     pthread_barrier_wait(&fencebar);
+    if(tid == 0) shmem_barrier_all();
     pthread_barrier_wait(&fencebar);
 
     shmem_long_get(source+offset, target+offset, N_ELEMS, prevpe);
 
-    fprintf(stderr,"Thread %lu done first get\n",tid);
+    /* fprintf(stderr,"Thread %lu done first get\n",tid); */
     pthread_barrier_wait(&fencebar);
+    if(tid == 0) shmem_barrier_all();
     pthread_barrier_wait(&fencebar);
 
     shmem_long_get(target+offset, source+offset, N_ELEMS, nextpe);
 
-    fprintf(stderr,"Thread %lu done second get\n",tid);
+    /* fprintf(stderr,"Thread %lu done second get\n",tid); */
     pthread_barrier_wait(&fencebar);
+    if(tid == 0) shmem_barrier_all();
     pthread_barrier_wait(&fencebar);
-    fprintf(stderr,"Done thread %lu\n",tid);
+    /* fprintf(stderr,"Done thread %lu\n",tid); */
 
     return 0;
 }
@@ -76,7 +80,16 @@ main(int argc, char* argv[])
         source[i] = i+1;
     }
 
-    shmem_init();
+    int tl_expected = SHMEMX_THREAD_MULTIPLE;
+    int tl;
+
+    shmemx_init_thread(tl_expected,&tl);
+
+    if (tl_expected != tl) {
+        printf("Could not initialize with desired thread level (%d "
+               "requested, got %d)\n", tl_expected, tl);
+        return 0;
+    }
 
     if (shmem_n_pes() == 1) {
         printf("%s: Requires number of PEs > 1\n", argv[0]);
@@ -86,24 +99,14 @@ main(int argc, char* argv[])
 
     pthread_t threads[N_THREADS];
 
-    pthread_barrier_init(&fencebar,NULL,N_THREADS+1);
+    pthread_barrier_init(&fencebar,NULL,N_THREADS);
 
     fprintf(stderr,"Starting threads\n");
     for(i = 0; i < N_THREADS; ++i) {
-        fprintf(stderr,"Starting thread %d\n",i);
+        /* fprintf(stderr,"Starting thread %d\n",i); */
         ptrdiff_t tid = i;
         pthread_create(&threads[i],NULL,&roundrobin,(void*)tid);
     }
-
-    pthread_barrier_wait(&fencebar);
-    shmem_barrier_all(); /* put 1 */
-    pthread_barrier_wait(&fencebar);
-    pthread_barrier_wait(&fencebar);
-    shmem_barrier_all(); /* get 1 */
-    pthread_barrier_wait(&fencebar);
-    pthread_barrier_wait(&fencebar);
-    shmem_barrier_all(); /* get 2, threads end */
-    pthread_barrier_wait(&fencebar);
 
     for(i = 0; i < N_THREADS; ++i) {
         pthread_join(threads[i],NULL);
