@@ -50,6 +50,8 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 static void * thread_main(void *arg) {
+    int* flagvals = calloc(sizeof(int),npes);
+    int* destvals = calloc(sizeof(int),npes);
     int tid = * (int *) arg;
     int i, val, expected;
 
@@ -66,18 +68,27 @@ static void * thread_main(void *arg) {
     for (i = 1; i <= npes; i++)
         shmem_int_inc(&flag[tid], (me + i) % npes);
 
-    shmem_int_wait_until(&flag[tid], SHMEM_CMP_EQ, npes);
+
+    for (i = 1; i <= npes; i++) {
+      shmem_int_wait_until(&flag[tid], SHMEM_CMP_GE, i);
+      flagvals[i-1] = flag[tid];
+      destvals[i-1] = dest[tid];
+    }
 
     expected = (npes-1) * npes / 2;
     if (dest[tid] != expected || flag[tid] != npes) {
         printf("Atomic test error: [PE = %d | TID = %d] -- "
                "dest = %d (expected %d), flag = %d (expected %d)\n",
                me, tid, dest[tid], expected, flag[tid], npes);
+        for (i = 1; i <= npes; i++) {
+          printf("[%d,%d] flag = %d, dest = %d\n",me,tid,flagvals[i-1],destvals[i-1]);
+        }
         pthread_mutex_lock(&mutex);
         ++errors;
         pthread_mutex_unlock(&mutex);
     }
 
+    pthread_barrier_wait(&fencebar);
     if (0 == tid) shmem_barrier_all();
     pthread_barrier_wait(&fencebar);
 

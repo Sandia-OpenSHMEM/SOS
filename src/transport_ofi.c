@@ -381,11 +381,19 @@ int shmemx_domain_create(int thread_level, int num_domains,
 // assumes dom->lock is locked or dom->use_lock == 0
 void shmem_transport_domain_destroy(shmem_transport_dom_t* dom)
 {
+  /* printf("Closing down\n"); */
+  /* fflush(stdout); */
   /* FIXME: add to free list, maybe? */
   shmem_transport_ofi_domains[dom->id] = NULL;
 
   size_t i;
   for(i = 0; i < dom->num_endpoints; ++i) {
+    if(fi_cntr_wait(dom->endpoints[i]->counter,
+        dom->endpoints[i]->pending_count, -1)) {
+      OFI_ERRMSG("Domain endpoint flush failed (%s)",
+          fi_strerror(errno));
+    }
+
     if(fi_close(&dom->endpoints[i]->ep->fid)) {
       OFI_ERRMSG("Domain endpoint close failed (%s)",
           fi_strerror(errno));

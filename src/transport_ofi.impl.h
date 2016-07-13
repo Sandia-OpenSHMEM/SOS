@@ -822,6 +822,7 @@ void shmem_transport_received_cntr_wait(uint64_t ge_val)
     SHMEM_MUTEX_LOCK(shmem_transport_dom->lock);
   }
 
+  /* FIXME: Deadlocks on shared context */
   int ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd, ge_val, -1);
 
   if(shmem_transport_dom->use_lock) {

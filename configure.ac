@@ -81,6 +81,7 @@ AC_ARG_ENABLE([threads],
                     [Enable threading support (default:disabled)])])
 # AS_IF([test "$enable_threads" = "yes"], [AC_DEFINE([ENABLE_THREADS], [1], [Enable threads])])
 AC_DEFINE([ENABLE_THREADS], [1], [Enable threads])
+AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
 
 AC_ARG_ENABLE([pthread-mutexes],
     [AC_HELP_STRING([--enable-pthread-mutexes],
