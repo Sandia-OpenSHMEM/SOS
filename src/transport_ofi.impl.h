@@ -160,6 +160,7 @@ shmem_transport_put_small(void *target, const void *source,
 {
   shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
   shmem_transport_dom_t* dom = ctx->domain;
+  /* printf("put_small to %d (len %lu) with %d\n",pe,len,c); */
 
   if(dom->use_lock) {
     SHMEM_MUTEX_LOCK(dom->lock);

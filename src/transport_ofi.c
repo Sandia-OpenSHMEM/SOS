@@ -292,11 +292,13 @@ int shmemx_domain_create(int thread_level, int num_domains,
     return -1;
   }
   int ret = 0;
-  size_t newSize = shmem_transport_num_domains + num_domains;
+  size_t oldSize = shmem_transport_num_domains;
+  size_t newSize = oldSize + num_domains;
   if(newSize > shmem_transport_available_domains) {
     size_t nBytes = newSize*sizeof(shmem_transport_dom_t*);
     shmem_transport_dom_t** newBlock = malloc(nBytes);
-    memcpy(newBlock,shmem_transport_ofi_domains,nBytes);
+    memcpy(newBlock,shmem_transport_ofi_domains,
+        oldSize*sizeof(shmem_transport_dom_t*));
 
     /* FIXME: Probably need to do an atomic swap here, but idk the
      * right way to do that in C off the top of my head
@@ -507,8 +509,8 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
   ret = fi_enable(ep->ep);
   IF_OFI_ERR_RETURN(ret,"context enable endpoint");
 
-  *ctx = shmem_transport_num_contexts++;
-  size_t newSize = shmem_transport_num_contexts;
+  *ctx = shmem_transport_num_contexts;
+  size_t newSize = ++shmem_transport_num_contexts;
 
   if(newSize > shmem_transport_available_contexts) {
     /* TODO: I used realloc here for simplicity, but if we need atomic
@@ -523,7 +525,7 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
     size_t newAlloc = 2*newSize;
     shmem_transport_available_contexts = newAlloc;
     shmem_transport_ctx_t** ctxArr = shmem_transport_ofi_contexts;
-    ctxArr = realloc(ctxArr,newAlloc);
+    ctxArr = realloc(ctxArr,newAlloc*sizeof(shmem_transport_ctx_t*));
     shmem_transport_ofi_contexts = ctxArr;
   }
 
@@ -533,6 +535,8 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
 
   ctxobj->domain = dom;
   ctxobj->endpoint = ep;
+
+  ++dom->num_active_contexts;
 
   if(dom->use_lock) {
     SHMEM_MUTEX_UNLOCK(dom->lock);

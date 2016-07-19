@@ -15,6 +15,7 @@ TESTS = \
 	hello \
 	pi \
 	ctx \
+	web \
 	micro_unit_shmem \
 	circular_shift \
 	accessible_ping \
@@ -123,6 +124,10 @@ threading_LDFLAGS = -lpthread
 
 pi_SOURCES = pi.c
 pi_LDADD = $(top_builddir)/src/libsma.la
+
+web_SOURCES = web.c
+web_LDADD = $(top_builddir)/src/libsma.la
+web_LDFLAGS = -lpthread
 
 ctx_SOURCES = ctx.c
 ctx_LDADD = $(top_builddir)/src/libsma.la
