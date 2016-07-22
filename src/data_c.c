@@ -370,6 +370,7 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_PUT)
   }
 
 SHMEM_DEFINE_FOR_SIZES(SHMEM_DEF_PUT_N)
+SHMEM_DEF_PUT_N(mem,1)
 
 #define SHMEM_DEF_PUT_NBI(STYPE,TYPE) \
   void shmem_##STYPE##_put_nbi(TYPE *target, const TYPE *source, \
@@ -391,6 +392,7 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_PUT_NBI)
   }
 
 SHMEM_DEFINE_FOR_SIZES(SHMEM_DEF_PUT_N_NBI)
+SHMEM_DEF_PUT_N_NBI(mem,1)
 
 #define SHMEM_DEF_GET(STYPE,TYPE) \
   void shmem_##STYPE##_get(TYPE *target,const TYPE *source,   \
@@ -414,6 +416,7 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_GET)
   }
 
 SHMEM_DEFINE_FOR_SIZES(SHMEM_DEF_GET_N)
+SHMEM_DEF_GET_N(mem,1)
 
 #define SHMEM_DEF_GET_NBI(STYPE,TYPE) \
   void shmem_##STYPE##_get_nbi(TYPE *target, const TYPE *source, \
@@ -434,6 +437,7 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_GET_NBI)
   }
 
 SHMEM_DEFINE_FOR_SIZES(SHMEM_DEF_GET_N_NBI)
+SHMEM_DEF_GET_N_NBI(mem,1)
 
 #define SHMEM_DEF_IPUT(STYPE,TYPE) \
   void shmem_##STYPE##_iput(TYPE *target, const TYPE *source, \
