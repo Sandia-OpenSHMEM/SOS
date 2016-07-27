@@ -8,7 +8,7 @@ env:
         - TRAVIS_PAR_MAKE="-j 4"
         - SOS_GLOBAL_BUILD_OPTS="--disable-long-fortran-header --enable-picky --enable-pmi-simple FCFLAGS=-fcray-pointer"
         - PTL_IFACE_NAME=venet0
-        #- FI_LOG_LEVEL=warn
+        - FI_LOG_LEVEL=warn
         - SHMEM_OFI_USE_PROVIDER=sockets
         - SMA_INFO=1
     matrix:
