@@ -209,7 +209,7 @@ cleanup_handles(void)
 
 
 int
-shmem_transport_init(long eager_size)
+shmem_transport_init()
 {
     ptl_process_t my_id;
     int ret;

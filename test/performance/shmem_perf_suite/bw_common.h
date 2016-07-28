@@ -333,9 +333,6 @@ void static inline bw_init_data_stream(perf_metrics_t *metric_info,
 
     int i = 0;
 
-    /*must be before data_init*/
-    shmem_init();
-
     data_init(metric_info);
 
     only_even_PEs_check(metric_info->my_node, metric_info->num_pes);
@@ -373,8 +370,6 @@ void static inline bw_data_free(perf_metrics_t *metric_info) {
 
     aligned_buffer_free(metric_info->src);
     aligned_buffer_free(metric_info->dest);
-
-    shmem_finalize();
 }
 
 void static inline bi_dir_bw_main(int argc, char *argv[]) {

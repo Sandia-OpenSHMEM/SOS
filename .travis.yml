@@ -88,13 +88,13 @@ script:
     ### Build and check Portals
     ###
     - cd $SOS_SRC
-    - export PATH=$TRAVIS_INSTALL/hydra/bin:$TRAVIS_INSTALL/portals4/bin:$BASE_PATH
-    - ./configure --with-portals4=$TRAVIS_INSTALL/portals4/ --prefix=$TRAVIS_INSTALL/sandia-shmem-portals4 $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
-    - make $TRAVIS_PAR_MAKE
-    - make $TRAVIS_PAR_MAKE check TESTS=
-    #- make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2 timeout 10" check
-    - make install
-    - make clean
+    # - export PATH=$TRAVIS_INSTALL/hydra/bin:$TRAVIS_INSTALL/portals4/bin:$BASE_PATH
+    # - ./configure --with-portals4=$TRAVIS_INSTALL/portals4/ --prefix=$TRAVIS_INSTALL/sandia-shmem-portals4 $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
+    # - make $TRAVIS_PAR_MAKE
+    # - make $TRAVIS_PAR_MAKE check TESTS=
+    # #- make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2 timeout 10" check
+    # - make install
+    # - make clean
     ###
     ### Build and check OFI
     ###

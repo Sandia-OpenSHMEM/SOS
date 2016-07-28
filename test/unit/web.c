@@ -41,7 +41,7 @@
     }                              \
   } while(0)
 
-#define NUM_UNSAFE_DOM 32
+#define NUM_UNSAFE_DOM 0
 #define NUM_DOMAINS    64
 #define NUM_CONTEXTS   128
 

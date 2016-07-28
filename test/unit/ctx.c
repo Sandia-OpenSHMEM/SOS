@@ -79,6 +79,7 @@ int main(int argc, char *argv[])
   /* Get number of threads. Will work event if set OMP_NUM_THREADS env */
 /* #pragma omp master */
   nthreads = omp_get_max_threads();
+  printf("%d threads\n",nthreads);
 
   if (ndomains > nctx) 
   {
