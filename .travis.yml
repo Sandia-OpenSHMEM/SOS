@@ -61,7 +61,8 @@ before_install:
     - make install
     ## Build Hydra
     - cd $TRAVIS_SRC
-    - wget http://www.mpich.org/static/downloads/3.2/hydra-3.2.tar.gz
+    - wget -O hydra-3.2.tar.gz "https://docs.google.com/uc?authuser=0&id=0BxdTWEtawABaU3pKSzY5VlY4SzA&export=download"
+    # - wget http://www.mpich.org/static/downloads/3.2/hydra-3.2.tar.gz
     - tar xvzf hydra-3.2.tar.gz
     - cd hydra-3.2/
     - ./configure --prefix=$TRAVIS_INSTALL/hydra
