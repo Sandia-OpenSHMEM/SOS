@@ -1034,8 +1034,6 @@ static inline int query_for_fabric(struct fabric_info *info)
         info->p_info = NULL;
 
         for (cur_fabric = info->fabrics; cur_fabric; cur_fabric = cur_fabric->next) {
-		fprintf(stderr,"cur_fabric->domain_attr->threading = %d\n",
-			cur_fabric->domain_attr->threading);
             if (info->fabric_name == NULL ||
                 fnmatch(info->fabric_name, cur_fabric->fabric_attr->name, 0) == 0) {
                 if (info->domain_name == NULL ||

@@ -30,7 +30,7 @@ extern int shmem_internal_thread_level;
 
 #define RAISE_WARN(ret)                                                 \
     do {                                                                \
-        fprintf(stderr, "[%03d] ERROR: %s:%d return code %d\n",         \
+        fprintf(stderr, "[%03d] WARN: %s:%d return code %d\n",         \
                 shmem_internal_my_pe, __FILE__, __LINE__, (int) ret);   \
     } while (0)
 
@@ -53,7 +53,7 @@ extern int shmem_internal_thread_level;
 
 #define RAISE_WARN_STR(str)                                             \
     do {                                                                \
-        fprintf(stderr, "[%03d] ERROR: %s:%d: %s\n",                    \
+        fprintf(stderr, "[%03d] WARN: %s:%d: %s\n",                    \
                 shmem_internal_my_pe, __FILE__, __LINE__, str);         \
     } while (0)
 
