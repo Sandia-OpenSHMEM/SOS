@@ -20,7 +20,7 @@
 int main(int argc, char *argv[])
 {
   /* Declarations */
-  int thread_level = SHMEMX_THREAD_SERIALIZED;
+  int thread_level = SHMEMX_THREAD_MULTIPLE;
   int tl;
   int buf_size = 1024;
   int niterations = 1; //10000;
@@ -40,41 +40,41 @@ int main(int argc, char *argv[])
   shmemx_domain_t *rdomains;
   shmemx_ctx_t *sctx;
 
-  /* Command line args */
-  while ((c = getopt(argc, argv, "123b:c:d:i:n:B")) != -1)
-    switch (c)
-    {
-      case '1':
-        thread_level = SHMEMX_THREAD_SINGLE;
-        break;
-      case '2':
-        thread_level = SHMEMX_THREAD_SERIALIZED;
-        break;
-      case '3':
-        thread_level = SHMEMX_THREAD_MULTIPLE;
-        break;
-      case 'b':
-        buf_size = atoi(optarg);
-        break;
-      case 'c':
-        nctx = atoi(optarg);
-        break;
-      case 'i':
-        niterations = atoi(optarg);
-        break;
-      case 'd':
-        ndomains = atoi(optarg);
-        break;
-      case 'n':
-        i = atoi(optarg);
-        omp_set_num_threads(i);
-        break;
-      case 'B':
-        bidirectional = 1;
-        break;
-      default:
-        abort();
-    }
+  /* /1* Command line args *1/ */
+  /* while ((c = getopt(argc, argv, "123b:c:d:i:n:B")) != -1) */
+  /*   switch (c) */
+  /*   { */
+  /*     case '1': */
+  /*       thread_level = SHMEMX_THREAD_SINGLE; */
+  /*       break; */
+  /*     case '2': */
+  /*       thread_level = SHMEMX_THREAD_SERIALIZED; */
+  /*       break; */
+  /*     case '3': */
+  /*       thread_level = SHMEMX_THREAD_MULTIPLE; */
+  /*       break; */
+  /*     case 'b': */
+  /*       buf_size = atoi(optarg); */
+  /*       break; */
+  /*     case 'c': */
+  /*       nctx = atoi(optarg); */
+  /*       break; */
+  /*     case 'i': */
+  /*       niterations = atoi(optarg); */
+  /*       break; */
+  /*     case 'd': */
+  /*       ndomains = atoi(optarg); */
+  /*       break; */
+  /*     case 'n': */
+  /*       i = atoi(optarg); */
+  /*       omp_set_num_threads(i); */
+  /*       break; */
+  /*     case 'B': */
+  /*       bidirectional = 1; */
+  /*       break; */
+  /*     default: */
+  /*       abort(); */
+  /*   } */
 
   /* Get number of threads. Will work event if set OMP_NUM_THREADS env */
 /* #pragma omp master */
