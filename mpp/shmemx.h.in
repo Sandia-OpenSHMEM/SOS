@@ -260,6 +260,7 @@ long shmemx_ctx_swap(long *dest, long value, int pe, shmemx_ctx_t ctx);
 #undef SHMEM_EVAL_MACRO_FOR_FLOATS
 #undef SHMEM_EVAL_MACRO_FOR_CMPLX
 #undef SHMEM_EVAL_MACRO_FOR_SIZES
+#undef SHMEM_EVAL_MACRO_FOR_EXTENDED_SIZES
 
 #undef SHMEM_DECLARE_FOR_RMA
 #undef SHMEM_DECLARE_FOR_AMO
@@ -268,6 +269,7 @@ long shmemx_ctx_swap(long *dest, long value, int pe, shmemx_ctx_t ctx);
 #undef SHMEM_DECLARE_FOR_FLOATS
 #undef SHMEM_DECLARE_FOR_CMPLX
 #undef SHMEM_DECLARE_FOR_SIZES
+#undef SHMEM_DECLARE_FOR_EXTENDED_SIZES
 
 #undef SHMEM_DEFINE_FOR_RMA
 #undef SHMEM_DEFINE_FOR_AMO
@@ -276,6 +278,7 @@ long shmemx_ctx_swap(long *dest, long value, int pe, shmemx_ctx_t ctx);
 #undef SHMEM_DEFINE_FOR_FLOATS
 #undef SHMEM_DEFINE_FOR_CMPLX
 #undef SHMEM_DEFINE_FOR_SIZES
+#undef SHMEM_DEFINE_FOR_EXTENDED_SIZES
 
 #endif /* SHMEM_INTERNAL_INCLUDE */
 
