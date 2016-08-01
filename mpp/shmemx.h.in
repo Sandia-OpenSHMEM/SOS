@@ -230,6 +230,14 @@ void shmemx_sync_all(void);
     void shmemx_ctx_##STYPE##_set(CTYPE *dest, CTYPE value,   \
             int pe, shmemx_ctx_t ctx)
 
+#if !defined(__cplusplus) && !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
+
+long shmemx_ctx_swap(long *dest, long value,
+        int pe, shmemx_ctx_t ctx);
+
+#endif
+
+
 SHMEM_DECLARE_FOR_EXTENDED_SIZES(SHMEMX_CTX_PUTGET_ALIGN_OPS);
 SHMEM_DECLARE_FOR_SIZES(SHMEMX_CTX_PUTGET_ALIGN_STRIDE_OPS);
 

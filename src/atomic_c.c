@@ -134,6 +134,26 @@
 #define SHM_INTERNAL_T_complexf   SHM_INTERNAL_FLOAT_COMPLEX
 #define SHM_INTERNAL_T_complexd   SHM_INTERNAL_DOUBLE_COMPLEX
 
+#if !defined(__cplusplus) && !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
+
+long shmem_swap(long *target, long value, int pe)
+{
+  return shmemx_ctx_swap(target, value, pe, SHMEMX_CTX_DEFAULT);
+}
+
+long shmemx_ctx_swap(long *target, long value, int pe,
+    shmemx_ctx_t c)
+{
+  long newval;
+  SHMEM_ERR_CHECK_INITIALIZED();
+  shmem_internal_swap(target, &value, &newval, sizeof(long), pe,
+      SHM_INTERNAL_T(long), c);
+  shmemx_ctx_quiet(c);
+  return newval;
+}
+
+#endif
+
 #define SHMEM_DEF_SWAP(STYPE,TYPE) \
   TYPE shmem_##STYPE##_swap(TYPE *target, TYPE value, int pe)          \
   {                                                                  \
