@@ -63,12 +63,15 @@
   DECL(complexd, double complex)
 
 #define SHMEM_EVAL_MACRO_FOR_SIZES(DECL,EOL) \
-  DECL(mem,  1) EOL                       \
   DECL(8,    1*sizeof(uint8_t)) EOL       \
   DECL(16,   2*sizeof(uint8_t)) EOL       \
   DECL(32,   4*sizeof(uint8_t)) EOL       \
   DECL(64,   8*sizeof(uint8_t)) EOL       \
   DECL(128, 16*sizeof(uint8_t))
+
+#define SHMEM_EVAL_MACRO_FOR_EXTENDED_SIZES(DECL,EOL) \
+  SHMEM_EVAL_MACRO_FOR_SIZES(DECL,EOL) EOL \
+  DECL(mem,  1*sizeof(uint8_t))
 
 #define SHMEM_DECLARE_FOR_RMA(DECL) SHMEM_EVAL_MACRO_FOR_RMA(DECL,;)
 #define SHMEM_DECLARE_FOR_AMO(DECL) SHMEM_EVAL_MACRO_FOR_AMO(DECL,;)
@@ -77,6 +80,7 @@
 #define SHMEM_DECLARE_FOR_FLOATS(DECL) SHMEM_EVAL_MACRO_FOR_FLOATS(DECL,;)
 #define SHMEM_DECLARE_FOR_CMPLX(DECL) SHMEM_EVAL_MACRO_FOR_CMPLX(DECL,;)
 #define SHMEM_DECLARE_FOR_SIZES(DECL) SHMEM_EVAL_MACRO_FOR_SIZES(DECL,;)
+#define SHMEM_DECLARE_FOR_EXTENDED_SIZES(DECL) SHMEM_EVAL_MACRO_FOR_EXTENDED_SIZES(DECL,;)
 
 #define SHMEM_DEFINE_FOR_RMA(DECL) SHMEM_EVAL_MACRO_FOR_RMA(DECL,)
 #define SHMEM_DEFINE_FOR_AMO(DECL) SHMEM_EVAL_MACRO_FOR_AMO(DECL,)
@@ -85,6 +89,7 @@
 #define SHMEM_DEFINE_FOR_FLOATS(DECL) SHMEM_EVAL_MACRO_FOR_FLOATS(DECL,)
 #define SHMEM_DEFINE_FOR_CMPLX(DECL) SHMEM_EVAL_MACRO_FOR_CMPLX(DECL,)
 #define SHMEM_DEFINE_FOR_SIZES(DECL) SHMEM_EVAL_MACRO_FOR_SIZES(DECL,)
+#define SHMEM_DEFINE_FOR_EXTENDED_SIZES(DECL) SHMEM_EVAL_MACRO_FOR_EXTENDED_SIZES(DECL,)
 
 #endif /* SHMEM_UTIL_MACROS */
 
@@ -136,32 +141,25 @@ void shmemx_sync_all(void);
                                size_t nelems, int pe,                \
                                shmemx_ctx_t ctx);                    \
                                                                      \
-    void shmemx_ctx_iput##STYPE(void *dest, const void *source,      \
-            ptrdiff_t dst, ptrdiff_t sst, size_t nelems, int pe,     \
-            shmemx_ctx_t ctx);                                       \
-                                                                     \
     void shmemx_ctx_get##STYPE(void *dest, const void *source,       \
             size_t nelems, int pe, shmemx_ctx_t ctx);                \
-                                                                     \
-    void shmemx_ctx_iget##STYPE(void *dest, const void *source,      \
-            ptrdiff_t dst, ptrdiff_t sst, size_t nelems, int pe,     \
-            shmemx_ctx_t ctx);                                       \
-                                                                     \
-    void shmemx_ctx_iget##STYPE(void *dest, const void *source,      \
-            ptrdiff_t dst, ptrdiff_t sst, size_t nelems, int pe,     \
-            shmemx_ctx_t ctx);                                       \
                                                                      \
     void shmemx_ctx_put##STYPE##_nbi(void *dest, const void *source,  \
             size_t nelems, int pe, shmemx_ctx_t ctx);                \
                                                                      \
-    void shmemx_ctx_iput##STYPE##_nbi(void *dest, const void *source, \
+    void shmemx_ctx_get##STYPE##_nbi(void *dest, const void *source,  \
+            size_t nelems, int pe, shmemx_ctx_t ctx)
+
+#define SHMEMX_CTX_PUTGET_ALIGN_STRIDE_OPS(STYPE,SIZE) \
+    void shmemx_ctx_iput##STYPE(void *dest, const void *source,      \
             ptrdiff_t dst, ptrdiff_t sst, size_t nelems, int pe,     \
             shmemx_ctx_t ctx);                                       \
                                                                      \
-    void shmemx_ctx_get##STYPE##_nbi(void *dest, const void *source,  \
-            size_t nelems, int pe, shmemx_ctx_t ctx);                \
+    void shmemx_ctx_iget##STYPE(void *dest, const void *source,      \
+            ptrdiff_t dst, ptrdiff_t sst, size_t nelems, int pe,     \
+            shmemx_ctx_t ctx);                                       \
                                                                      \
-    void shmemx_ctx_iget##STYPE##_nbi(void *dest, const void *source, \
+    void shmemx_ctx_iput##STYPE##_nbi(void *dest, const void *source, \
             ptrdiff_t dst, ptrdiff_t sst, size_t nelems, int pe,     \
             shmemx_ctx_t ctx);                                       \
                                                                      \
@@ -232,7 +230,8 @@ void shmemx_sync_all(void);
     void shmemx_ctx_##STYPE##_set(CTYPE *dest, CTYPE value,   \
             int pe, shmemx_ctx_t ctx)
 
-SHMEM_DECLARE_FOR_SIZES(SHMEMX_CTX_PUTGET_ALIGN_OPS);
+SHMEM_DECLARE_FOR_EXTENDED_SIZES(SHMEMX_CTX_PUTGET_ALIGN_OPS);
+SHMEM_DECLARE_FOR_SIZES(SHMEMX_CTX_PUTGET_ALIGN_STRIDE_OPS);
 
 SHMEM_DECLARE_FOR_RMA(SHMEMX_CTX_PG_OPS);
 

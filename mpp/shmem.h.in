@@ -128,12 +128,15 @@ void shmem_free(void *ptr);
   DECL(complexd, double complex)
 
 #define SHMEM_EVAL_MACRO_FOR_SIZES(DECL,EOL) \
-  DECL(mem,  1) EOL                       \
   DECL(8,    1*sizeof(uint8_t)) EOL       \
   DECL(16,   2*sizeof(uint8_t)) EOL       \
   DECL(32,   4*sizeof(uint8_t)) EOL       \
   DECL(64,   8*sizeof(uint8_t)) EOL       \
   DECL(128, 16*sizeof(uint8_t))
+
+#define SHMEM_EVAL_MACRO_FOR_EXTENDED_SIZES(DECL,EOL) \
+  SHMEM_EVAL_MACRO_FOR_SIZES(DECL,EOL) EOL \
+  DECL(mem,  1)
 
 #define SHMEM_DECLARE_FOR_RMA(DECL) SHMEM_EVAL_MACRO_FOR_RMA(DECL,;)
 #define SHMEM_DECLARE_FOR_AMO(DECL) SHMEM_EVAL_MACRO_FOR_AMO(DECL,;)
@@ -142,6 +145,7 @@ void shmem_free(void *ptr);
 #define SHMEM_DECLARE_FOR_FLOATS(DECL) SHMEM_EVAL_MACRO_FOR_FLOATS(DECL,;)
 #define SHMEM_DECLARE_FOR_CMPLX(DECL) SHMEM_EVAL_MACRO_FOR_CMPLX(DECL,;)
 #define SHMEM_DECLARE_FOR_SIZES(DECL) SHMEM_EVAL_MACRO_FOR_SIZES(DECL,;)
+#define SHMEM_DECLARE_FOR_EXTENDED_SIZES(DECL) SHMEM_EVAL_MACRO_FOR_EXTENDED_SIZES(DECL,;)
 
 #define SHMEM_DEFINE_FOR_RMA(DECL) SHMEM_EVAL_MACRO_FOR_RMA(DECL,)
 #define SHMEM_DEFINE_FOR_AMO(DECL) SHMEM_EVAL_MACRO_FOR_AMO(DECL,)
@@ -150,6 +154,7 @@ void shmem_free(void *ptr);
 #define SHMEM_DEFINE_FOR_FLOATS(DECL) SHMEM_EVAL_MACRO_FOR_FLOATS(DECL,)
 #define SHMEM_DEFINE_FOR_CMPLX(DECL) SHMEM_EVAL_MACRO_FOR_CMPLX(DECL,)
 #define SHMEM_DEFINE_FOR_SIZES(DECL) SHMEM_EVAL_MACRO_FOR_SIZES(DECL,)
+#define SHMEM_DEFINE_FOR_EXTENDED_SIZES(DECL) SHMEM_EVAL_MACRO_FOR_EXTENDED_SIZES(DECL,)
 
 #endif /* SHMEM_UTIL_MACROS */
 
@@ -169,7 +174,7 @@ SHMEM_DECLARE_FOR_RMA(SHMEM_PUT);
 #define SHMEM_PUT_N(SIZE,NBYTES) \
     void shmem_put##SIZE(void* target, const void *source, \
                          size_t nelems, int pe)
-SHMEM_DECLARE_FOR_SIZES(SHMEM_PUT_N);
+SHMEM_DECLARE_FOR_EXTENDED_SIZES(SHMEM_PUT_N);
 
 /* 8.3: Strided Put Routines */
 #define SHMEM_IPUT(TYPENAME,TYPE) \
@@ -198,7 +203,7 @@ SHMEM_DECLARE_FOR_RMA(SHMEM_GET);
 #define SHMEM_GET_N(SIZE,NBYTES) \
     void shmem_get##SIZE(void* target, const void *source, \
                          size_t nelems, int pe)
-SHMEM_DECLARE_FOR_SIZES(SHMEM_GET_N);
+SHMEM_DECLARE_FOR_EXTENDED_SIZES(SHMEM_GET_N);
 
 /* 8.3: Strided Get Routines */
 #define SHMEM_IGET(TYPENAME,TYPE) \
@@ -222,7 +227,7 @@ SHMEM_DECLARE_FOR_RMA(SHMEM_PUT_NBI);
 #define SHMEM_PUT_N_NBI(SIZE,NBYTES) \
     void shmem_put##SIZE##_nbi(void* target, const void *source, \
                                size_t nelems, int pe)
-SHMEM_DECLARE_FOR_SIZES(SHMEM_PUT_N_NBI);
+SHMEM_DECLARE_FOR_EXTENDED_SIZES(SHMEM_PUT_N_NBI);
 
 /* 8.4: Nonblocking remote memory access routines -- Get */
 #define SHMEM_GET_NBI(TYPENAME,TYPE) \
@@ -233,7 +238,7 @@ SHMEM_DECLARE_FOR_RMA(SHMEM_GET_NBI);
 #define SHMEM_GET_N_NBI(SIZE,NBYTES) \
     void shmem_get##SIZE##_nbi(void* target, const void *source, \
                                size_t nelems, int pe)
-SHMEM_DECLARE_FOR_SIZES(SHMEM_GET_N_NBI);
+SHMEM_DECLARE_FOR_EXTENDED_SIZES(SHMEM_GET_N_NBI);
 
 /* 8.4: Atomic Memory fetch-and-operate Routines -- Swap */
 #define SHMEM_SWAP(TYPENAME,TYPE) \

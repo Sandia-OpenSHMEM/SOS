@@ -30,7 +30,7 @@ FC_SHMEM_QUIET(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_quiet();
+    shmem_quiet();
 }
 
 
@@ -41,7 +41,7 @@ FC_SHMEM_FENCE(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_fence();
+    shmem_fence();
 }
 
 

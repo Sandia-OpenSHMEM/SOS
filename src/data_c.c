@@ -386,7 +386,7 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_PUT)
     shmem_internal_put(target, source, (SIZE) * nelems, pe, ctx); \
   }
 
-SHMEM_DEFINE_FOR_SIZES(SHMEM_DEF_PUT_N)
+SHMEM_DEFINE_FOR_EXTENDED_SIZES(SHMEM_DEF_PUT_N)
 
 #define SHMEM_DEF_PUT_NBI(STYPE,TYPE) \
   void shmem_##STYPE##_put_nbi(TYPE *target, const TYPE *source,     \
@@ -419,7 +419,7 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_PUT_NBI)
     shmem_internal_put_nbi(target, source, (SIZE)*nelems, pe, ctx); \
   }
 
-SHMEM_DEFINE_FOR_SIZES(SHMEM_DEF_PUT_N_NBI)
+SHMEM_DEFINE_FOR_EXTENDED_SIZES(SHMEM_DEF_PUT_N_NBI)
 
 #define SHMEM_DEF_GET(STYPE,TYPE) \
   void shmem_##STYPE##_get(TYPE *target,const TYPE *source,        \
@@ -454,7 +454,7 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_GET)
     shmemx_ctx_quiet(ctx);                                      \
   }
 
-SHMEM_DEFINE_FOR_SIZES(SHMEM_DEF_GET_N)
+SHMEM_DEFINE_FOR_EXTENDED_SIZES(SHMEM_DEF_GET_N)
 
 #define SHMEM_DEF_GET_NBI(STYPE,TYPE) \
   void shmem_##STYPE##_get_nbi(TYPE *target, const TYPE *source,     \
@@ -486,7 +486,7 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_GET_NBI)
     shmem_internal_get(target, source, (SIZE)*nelems, pe, ctx);     \
   }
 
-SHMEM_DEFINE_FOR_SIZES(SHMEM_DEF_GET_N_NBI)
+SHMEM_DEFINE_FOR_EXTENDED_SIZES(SHMEM_DEF_GET_N_NBI)
 
 #define SHMEM_DEF_IPUT(STYPE,TYPE) \
   void shmem_##STYPE##_iput(TYPE *target, const TYPE *source,       \
