@@ -169,7 +169,7 @@ shmem_transport_put_small(void *target, const void *source,
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
   uint64_t polled = 0;
-  uint64_t key;
+  uint64_t key = 0;
   uint8_t *addr;
 
   shmem_transport_ofi_get_mr(target, pe, &addr, &key);
@@ -211,7 +211,7 @@ shmem_transport_ofi_put_large(void *target, const void *source,
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
   uint64_t polled = 0;
-  uint64_t key;
+  uint64_t key = 0;
   uint8_t *addr;
 
   shmem_transport_ofi_get_mr(target, pe, &addr, &key);
@@ -290,7 +290,7 @@ shmem_transport_get(void *target, const void *source, size_t len,
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
   uint64_t polled = 0;
-  uint64_t key;
+  uint64_t key = 0;
   uint8_t *addr;
 
   shmem_transport_ofi_get_mr(source, pe, &addr, &key);
@@ -351,7 +351,7 @@ shmem_transport_swap(void *target, const void *source, void *dest,
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
   uint64_t polled = 0;
-  uint64_t key;
+  uint64_t key = 0;
   uint8_t *addr;
 
   shmem_transport_ofi_get_mr(target, pe, &addr, &key);
@@ -399,7 +399,7 @@ shmem_transport_cswap(void *target, const void *source, void *dest,
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
   uint64_t polled = 0;
-  uint64_t key;
+  uint64_t key = 0;
   uint8_t *addr;
 
   shmem_transport_ofi_get_mr(target, pe, &addr, &key);
@@ -449,7 +449,7 @@ shmem_transport_mswap(void *target, const void *source, void *dest,
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
   uint64_t polled = 0;
-  uint64_t key;
+  uint64_t key = 0;
   uint8_t *addr;
 
   shmem_transport_ofi_get_mr(target, pe, &addr, &key);
@@ -499,7 +499,7 @@ shmem_transport_atomic_small(void *target, const void *source,
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
   uint64_t polled = 0;
-  uint64_t key;
+  uint64_t key = 0;
   uint8_t *addr;
 
   shmem_transport_ofi_get_mr(target, pe, &addr, &key);
@@ -542,7 +542,7 @@ shmem_transport_atomic_set(void *target, const void *source,
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
   uint64_t polled = 0;
-  uint64_t key;
+  uint64_t key = 0;
   uint8_t *addr;
 
   shmem_transport_ofi_get_mr(target, pe, &addr, &key);
@@ -585,7 +585,7 @@ shmem_transport_atomic_fetch(void *target, const void *source,
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
   uint64_t polled = 0;
-  uint64_t key;
+  uint64_t key = 0;
   uint8_t *addr;
 
   shmem_transport_ofi_get_mr(source, pe, &addr, &key);
@@ -633,7 +633,7 @@ shmem_transport_atomic_nb(void *target, const void *source,
   uint64_t dst = (uint64_t) pe;
   size_t len = full_len/SHMEM_Dtsize[datatype];
   uint64_t polled = 0;
-  uint64_t key;
+  uint64_t key = 0;
   uint8_t *addr;
 
   shmem_internal_assert(SHMEM_Dtsize[datatype] * len == full_len);
@@ -708,7 +708,7 @@ shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
   uint64_t polled = 0;
-  uint64_t key;
+  uint64_t key = 0;
   uint8_t *addr;
 
   shmem_transport_ofi_get_mr(target, pe, &addr, &key);

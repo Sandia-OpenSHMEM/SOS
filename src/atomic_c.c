@@ -38,8 +38,12 @@
 #pragma weak shmem_longlong_swap = pshmem_longlong_swap
 #define shmem_longlong_swap pshmem_longlong_swap
 
+#if !defined(__cplusplus) && !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
+
 #pragma weak shmem_swap = pshmem_swap
 #define shmem_swap pshmem_swap
+
+#endif
 
 #pragma weak shmem_int_cswap = pshmem_int_cswap
 #define shmem_int_cswap pshmem_int_cswap
