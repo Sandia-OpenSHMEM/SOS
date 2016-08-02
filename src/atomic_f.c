@@ -147,8 +147,9 @@ SHMEM_DEFINE_FOR_FC_AMO(SHMEM_DEF_FC_FINC)
       fortran_integer_t *pe) {                                         \
                                                                        \
     SHMEM_ERR_CHECK_INITIALIZED();                                     \
+    shmem_internal_assert(sizeof(TYPE) == NBYTES);                     \
                                                                        \
-    shmem_internal_atomic_small(target, value, 4,                      \
+    shmem_internal_atomic_small(target, value, sizeof(TYPE),           \
         *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_FC_T(FC_type),    \
         SHMEMX_CTX_DEFAULT);                                  \
   }
