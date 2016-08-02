@@ -177,7 +177,7 @@ SHMEM_DEFINE_FOR_FC_SIZES(SHMEM_DEF_FC_IPUT)
       fortran_integer_t *len, fortran_integer_t *pe) {               \
     SHMEM_ERR_CHECK_INITIALIZED();                                   \
                                                                      \
-    shmem_internal_put(target, source,                               \
+    shmem_internal_get(target, source,                               \
         SIZE * *len, *pe, SHMEMX_CTX_DEFAULT);                       \
     shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);                            \
   }
