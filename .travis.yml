@@ -107,9 +107,9 @@ script:
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/ISx/SHMEM
     - make CC=oshcc LDLIBS=-lm
-    - mpiexec.hydra -np 4 ./bin/isx.strong 134217728 output_strong
-    - mpiexec.hydra -np 4 ./bin/isx.weak 33554432 output_weak
-    - mpiexec.hydra -np 4 ./bin/isx.weak_iso 33554432 output_weak_iso
+    - mpiexec.hydra -np 4 ./bin/isx.strong 67108864 output_strong
+    - mpiexec.hydra -np 4 ./bin/isx.weak 16777216 output_weak
+    - mpiexec.hydra -np 4 ./bin/isx.weak_iso 16777216 output_weak_iso
     - make clean
     ###
     ### Run PRK (OFI)
