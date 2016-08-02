@@ -284,6 +284,8 @@ shmem_internal_barrier_tree(int PE_start, int logPE_stride, int PE_size, long *p
             /* Clear pSync */
             shmem_internal_put_small(pSync, &zero, sizeof(zero),
                 shmem_internal_my_pe, SHMEMX_CTX_DEFAULT);
+            shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
+
             SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, 0);
 
             /* Send acks down to children */
@@ -299,6 +301,7 @@ shmem_internal_barrier_tree(int PE_start, int logPE_stride, int PE_size, long *p
             /* send ack to parent */
             shmem_internal_atomic_small(pSync, &one, sizeof(one),
                                         parent, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG, SHMEMX_CTX_DEFAULT);
+            shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
 
             /* wait for ack from parent */
             SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, num_children  + 1);
@@ -306,6 +309,8 @@ shmem_internal_barrier_tree(int PE_start, int logPE_stride, int PE_size, long *p
             /* Clear pSync */
             shmem_internal_put_small(pSync, &zero, sizeof(zero),
                 shmem_internal_my_pe, SHMEMX_CTX_DEFAULT);
+            shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
+
             SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, 0);
 
             /* Send acks down to children */
@@ -322,6 +327,7 @@ shmem_internal_barrier_tree(int PE_start, int logPE_stride, int PE_size, long *p
         /* send message up psync tree */
         shmem_internal_atomic_small(pSync, &one, sizeof(one), parent,
                                     SHM_INTERNAL_SUM, SHM_INTERNAL_LONG, SHMEMX_CTX_DEFAULT);
+        shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
 
         /* wait for ack down psync tree */
         SHMEM_WAIT(pSync, 0);

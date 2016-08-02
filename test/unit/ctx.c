@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 /* #pragma omp for schedule(static,1) */
   for (int ii=0; ii<nctx; ii++) 
   {
-    shmemx_ctx_create(SHMEMX_DOMAIN_DEFAULT, &sctx[ii]);
+    shmemx_ctx_create(rdomains[ii%ndomains], &sctx[ii]);
   }
 
   /* Timing loop */
@@ -167,7 +167,10 @@ int main(int argc, char *argv[])
   }
 
   /* Print output in PE order  */
-  if (mype != 0) shmem_int_wait(flag,1);
+  /* NOTE: shmem_wait take the value it *is*, not the value it will
+   * be. Equivalent to shmem_int_wait_until(flag,SHMEM_CMP_NE,0);
+   */
+  if (mype != 0) shmem_int_wait(flag,0);
 
   if (do_run) { 
     maxtime = 0.0;
@@ -184,6 +187,7 @@ int main(int argc, char *argv[])
     printf("Maxtime_per_it : %e\n",maxtime);
     for (i=0; i<nthreads; i++) 
       printf("t_it[%d] = %e\n",  i, runtime[i]);
+    fflush(stdout);
   }
 
   if (mype != npes-1) shmem_int_inc(flag, mype+1);
