@@ -28,6 +28,8 @@ extern void *shmem_internal_heap_base;
 extern long shmem_internal_heap_length;
 extern void *shmem_internal_data_base;
 extern long shmem_internal_data_length;
+extern int shmem_internal_heap_use_huge_pages;
+extern long shmem_internal_heap_huge_page_size;
 
 #ifdef USE_ON_NODE_COMMS
 extern char *shmem_internal_location_array;

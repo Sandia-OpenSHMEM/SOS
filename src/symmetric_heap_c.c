@@ -15,6 +15,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/mman.h>
+#include <fcntl.h>
+#ifdef __linux__
+#include <mntent.h>
+#include <sys/vfs.h>
+#endif
 
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
@@ -59,6 +64,53 @@ void  dlfree(void*);
 void* dlrealloc(void*, size_t);
 void* dlmemalign(size_t, size_t);
 
+/*
+ * scan /proc/mounts for a huge page file system with the
+ * requested page size - on most Linux systems there will
+ * only be a single 2MB pagesize present.
+ * On success return 0, else -1.
+ */
+
+static int find_hugepage_dir(size_t page_size, char **directory)
+{
+    int ret = -1;
+#ifdef __linux__
+    struct statfs pg_size;
+    struct mntent *mntent;
+    FILE *fd;
+    char *path;
+
+    if (!directory || !page_size) {
+        return ret;
+    }
+
+    fd = setmntent ("/proc/mounts", "r");
+    if (fd == NULL) {
+        return ret;
+    }
+
+    while ((mntent = getmntent(fd)) != NULL) {
+
+        if (strcmp (mntent->mnt_type, "hugetlbfs") != 0) {
+            continue;
+        }
+
+        path = mntent->mnt_dir;
+        if (statfs(path, &pg_size) == 0) {
+            if (pg_size.f_bsize == page_size) {
+                *directory = strdup(path);
+                ret = 0;
+                break;
+            }
+        }
+    }
+
+    endmntent(fd);
+#endif
+
+    return ret;
+}
+
 /* shmalloc and friends are defined to not be thread safe, so this is
    fine.  If they change that definition, this is no longer fine and
    needs to be made thread safe. */
@@ -83,25 +135,73 @@ shmem_internal_get_next(intptr_t incr)
     return orig;
 }
 
+#ifndef FLOOR
+#define FLOOR(a,b)      ((uint64_t)(a) - ( ((uint64_t)(a)) % (uint64_t)(b)))
+#endif
+#ifndef CEILING
+#define CEILING(a,b)    ((uint64_t)(a) <= 0LL ? 0 : (FLOOR((a)-1,b) + (b)))
+#endif
+
 
 /* alloc VM space starting @ '_end' + 1GB */
 #define ONEGIG (1024UL*1024UL*1024UL)
 static void *mmap_alloc(size_t bytes)
 {
+    char *file_name;
+    int fd = 0;
+    char *directory = NULL;
+    const char basename[] = "hugepagefile.SOS";
+    int size;
     void *requested_base = 
         (void*) (((unsigned long) shmem_internal_data_base + 
                   shmem_internal_data_length + 2 * ONEGIG) & ~(ONEGIG - 1));
     void *ret;
 
+    if (shmem_internal_heap_use_huge_pages) {
+
+        /*
+         * check what /proc/mounts has for explicit huge page support
+         */
+
+        if(find_hugepage_dir(shmem_internal_heap_huge_page_size, &directory) == 0) {
+
+            size = snprintf(NULL, 0, "%s/%s.%d", directory, basename, getpid());
+            if (size < 0) {
+
+                RAISE_WARN_STR("snprint returned error, cannot use huge pages");
+
+            } else {
+
+                file_name = malloc(size + 1);
+                if (file_name) {
+                    sprintf(file_name, "%s/%s.%d", directory, basename, getpid());
+                    fd = open(file_name, O_CREAT | O_RDWR, 0755);
+                    if (fd < 0) {
+                        RAISE_WARN_STR("file open failed, cannot use huge pages");
+                        fd = 0;
+                    } else {
+                        /* have to round up
+                           by the pagesize being used */
+                        bytes = CEILING(bytes, shmem_internal_heap_huge_page_size);
+                    }
+                }
+            }
+        }
+    }
+
     ret = mmap(requested_base,
                bytes,
                PROT_READ | PROT_WRITE,
                MAP_ANON | MAP_PRIVATE,
-               0,
+               fd,
                0);
     if (ret == MAP_FAILED) {
-        perror("mmap()");
+        RAISE_WARN_STR("mmap for symmetric heap failed");
         return NULL;
+    }
+    if (fd) {
+        unlink(file_name);
+        close(fd);
     }
     return ret;
 }

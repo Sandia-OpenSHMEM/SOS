@@ -43,6 +43,8 @@ void *shmem_internal_heap_base = NULL;
 long shmem_internal_heap_length = 0;
 void *shmem_internal_data_base = NULL;
 long shmem_internal_data_length = 0;
+int shmem_internal_heap_use_huge_pages = 0;
+long shmem_internal_heap_huge_page_size = 0;
 
 int shmem_internal_my_pe = -1;
 int shmem_internal_num_pes = -1;
@@ -159,6 +161,17 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     heap_size = shmem_util_getenv_long("SYMMETRIC_SIZE", 1, 512 * 1024 * 1024);
     eager_size = shmem_util_getenv_long("BOUNCE_SIZE", 1, 2048);
     heap_use_malloc = shmem_util_getenv_long("SYMMETRIC_HEAP_USE_MALLOC", 0, 0);
+    /* huge page support only on Linux for now, default is to use 2MB large pages */
+#ifdef __linux__
+    if (heap_use_malloc == 0) {
+        shmem_internal_heap_use_huge_pages=
+             (shmem_util_getenv_str("SYMMETRIC_HEAP_USE_HUGE_PAGES") != NULL) ? 1 : 0;
+        shmem_internal_heap_huge_page_size = shmem_util_getenv_long("SYMMETRIC_HEAP_PAGE_SIZE",
+                                                                    1,
+                                                                    2 * 1024 * 1024);
+    }
+#endif
+
 
     /* Find symmetric data */
 #ifdef __APPLE__
@@ -303,6 +316,15 @@ shmem_internal_init(int tl_requested, int *tl_provided)
             printf("SMA_SYMMETRIC_HEAP_USE_MALLOC %s\n",
                    (0 != heap_use_malloc) ? "Set" : "Not set");
             printf("\tIf set, allocate the symmetric heap using malloc\n");
+            if (heap_use_malloc == 0) {
+                printf("SMA_SYMMETRIC_HEAP_USE_HUGE_PAGES %s\n",
+                        shmem_internal_heap_use_huge_pages ? "Yes" : "No");
+                if (shmem_internal_heap_use_huge_pages) {
+                    printf("SMA_SYMMETRIC_HEAP_PAGE_SIZE %ld \n",
+                           shmem_internal_heap_huge_page_size);
+                }
+                printf("\tSymmentric heap use large pages\n");
+            }
             printf("SMA_COLL_CROSSOVER      %d\n", crossover);
             printf("\tCross-over between linear and tree collectives\n");
             printf("SMA_COLL_RADIX          %d\n", radix);

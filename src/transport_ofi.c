@@ -1004,8 +1004,9 @@ static inline int query_for_fabric(struct fabric_info *info)
     domain_attr.mr_mode       = FI_MR_BASIC; /* VA space is pre-allocated */
 #endif
     domain_attr.threading     = FI_THREAD_ENDPOINT; /* we promise to serialize access
-						       to endpoints. we have only one
-						       thread active at a time */
+                                                       to endpoints. we have only one
+                                                       thread active at a time */
+
     hints.domain_attr         = &domain_attr;
     ep_attr.type              = FI_EP_RDM; /* reliable connectionless */
     hints.fabric_attr	      = &fabric_attr;
