@@ -120,7 +120,7 @@ script:
     - make allshmem
     - mpiexec.hydra -np 4 ./SHMEM/Stencil/stencil 100 1000 2>&1 | tee stencil.log
     - grep -qi "Solution validates" stencil.log
-    - mpiexec.hydra -np 4 ./SHMEM/Synch_p2p/p2p 10 800 800 2>&1 | tee p2p.log
+    - mpiexec.hydra -np 4 ./SHMEM/Synch_p2p/p2p 10 500 500 2>&1 | tee p2p.log
     - grep -qi "Solution validates" p2p.log
     - mpiexec.hydra -np 4 ./SHMEM/Transpose/transpose 10 1000 2>&1 | tee transpose.log
     - grep -qi "Solution validates" transpose.log
