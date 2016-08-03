@@ -335,7 +335,15 @@ int shmemx_domain_create(int thread_level, int num_domains,
     IF_ERR_RETURN(dom->endpoints ? 0 : -1, "malloc failed");
 
     int lock = (thread_level != SHMEMX_THREAD_SINGLE);
-    dom->use_lock = lock;
+    if(!lock) {
+      dom->take_lock = &dom_lock_noop;
+      dom->release_lock = &dom_lock_noop;
+      dom->free_lock = &dom_lock_noop;
+    } else {
+      dom->take_lock = &dom_take_mutex;
+      dom->release_lock = &dom_release_mutex;
+      dom->free_lock = &dom_free_mutex;
+    }
 
     if(lock) {
       /* Interesting semantic choice -- this macro is
@@ -423,10 +431,8 @@ void shmem_transport_domain_destroy(shmem_transport_dom_t* dom)
     OFI_ERRMSG("Domain STX close failed (%s)", fi_strerror(errno));
   }
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_UNLOCK(dom->lock);
-    SHMEM_MUTEX_DESTROY(dom->lock);
-  }
+  dom->release_lock(dom);
+  dom->free_lock(dom);
 
   free(dom);
 }
@@ -438,16 +444,13 @@ void shmemx_domain_destroy(int num_domains, shmemx_domain_t domains[])
   for(i = 0; i < num_domains; ++i) {
     shmemx_domain_t ix = domains[i];
     shmem_transport_dom_t* dom = shmem_transport_ofi_domains[ix];
-    if(dom->use_lock) {
-      SHMEM_MUTEX_LOCK(dom->lock);
-    }
+
+    dom->take_lock(dom);
     if(!dom->num_active_contexts) {
       shmem_transport_domain_destroy(dom);
     } else {
       dom->freed = 1;
-      if(dom->use_lock) {
-        SHMEM_MUTEX_UNLOCK(dom->lock);
-      }
+      dom->release_lock(dom);
     }
   }
 }
@@ -462,9 +465,7 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
   int ret = 0;
   shmem_transport_dom_t* dom = shmem_transport_ofi_domains[domain];
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_LOCK(dom->lock);
-  }
+  dom->take_lock(dom);
 
   if(dom->num_endpoints == dom->max_num_endpoints) {
     size_t newSize = (dom->max_num_endpoints *= 2);
@@ -540,9 +541,7 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
 
   ++dom->num_active_contexts;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_UNLOCK(dom->lock);
-  }
+  dom->release_lock(dom);
 
   return 0;
 }
@@ -554,15 +553,13 @@ void shmemx_ctx_destroy(shmemx_ctx_t ctxid) {
 
   shmem_transport_dom_t* dom = ctx->domain;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_LOCK(dom->lock);
-  }
+  dom->take_lock(dom);
 
   --dom->num_active_contexts;
   if(!dom->num_active_contexts && dom->freed) {
     shmem_transport_domain_destroy(dom);
-  } else if(dom->use_lock) {
-    SHMEM_MUTEX_UNLOCK(dom->lock);
+  } else {
+    dom->release_lock(dom);
   }
   free(ctx);
   shmem_transport_ofi_contexts[ctxid] = NULL;
@@ -573,15 +570,11 @@ void shmemx_ctx_quiet(shmemx_ctx_t c)
   shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
   shmem_transport_dom_t* dom = ctx->domain;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_LOCK(dom->lock);
-  }
+  dom->take_lock(dom);
 
   shmem_transport_ctx_quiet(ctx);
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_UNLOCK(dom->lock);
-  }
+  dom->release_lock(dom);
 }
 
 void shmemx_ctx_fence(shmemx_ctx_t c) {
@@ -1370,9 +1363,7 @@ int shmem_transport_fini(void)
     for(i = 0; i < shmem_transport_num_domains; ++i) {
       shmem_transport_dom_t* dom = shmem_transport_ofi_domains[i];
       if(dom) {
-        if(dom->use_lock) {
-          SHMEM_MUTEX_LOCK(dom->lock);
-        }
+        dom->take_lock(dom);
         shmem_transport_domain_destroy(dom);
       }
     }

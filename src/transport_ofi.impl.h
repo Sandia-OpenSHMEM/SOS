@@ -162,9 +162,7 @@ shmem_transport_put_small(void *target, const void *source,
   shmem_transport_dom_t* dom = ctx->domain;
   /* printf("put_small to %d (len %lu) with %d\n",pe,len,c); */
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_LOCK(dom->lock);
-  }
+  dom->take_lock(dom);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -191,9 +189,7 @@ shmem_transport_put_small(void *target, const void *source,
   /* automatically get local completion but need remote completion for fence/quiet*/
   ctx->endpoint->pending_count++;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_UNLOCK(dom->lock);
-  }
+  dom->release_lock(dom);
 }
 
 static inline
@@ -204,9 +200,7 @@ shmem_transport_ofi_put_large(void *target, const void *source,
   shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
   shmem_transport_dom_t* dom = ctx->domain;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_LOCK(dom->lock);
-  }
+  dom->take_lock(dom);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -240,9 +234,7 @@ shmem_transport_ofi_put_large(void *target, const void *source,
     frag_target += frag_len;
   }
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_UNLOCK(dom->lock);
-  }
+  dom->release_lock(dom);
 }
 
 static inline
@@ -283,9 +275,7 @@ shmem_transport_get(void *target, const void *source, size_t len,
   shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
   shmem_transport_dom_t* dom = ctx->domain;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_LOCK(dom->lock);
-  }
+  dom->take_lock(dom);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -331,9 +321,7 @@ shmem_transport_get(void *target, const void *source, size_t len,
       frag_target += frag_len;
     }
   }
-  if(dom->use_lock) {
-    SHMEM_MUTEX_UNLOCK(dom->lock);
-  }
+  dom->release_lock(dom);
 }
 
 static inline
@@ -344,9 +332,7 @@ shmem_transport_swap(void *target, const void *source, void *dest,
   shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
   shmem_transport_dom_t* dom = ctx->domain;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_LOCK(dom->lock);
-  }
+  dom->take_lock(dom);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -376,9 +362,7 @@ shmem_transport_swap(void *target, const void *source, void *dest,
 
   ctx->endpoint->pending_count++;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_UNLOCK(dom->lock);
-  }
+  dom->release_lock(dom);
 }
 
 
@@ -391,9 +375,7 @@ shmem_transport_cswap(void *target, const void *source, void *dest,
   shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
   shmem_transport_dom_t* dom = ctx->domain;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_LOCK(dom->lock);
-  }
+  dom->take_lock(dom);
 
 
   int ret = 0;
@@ -426,9 +408,7 @@ shmem_transport_cswap(void *target, const void *source, void *dest,
 
   ctx->endpoint->pending_count++;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_UNLOCK(dom->lock);
-  }
+  dom->release_lock(dom);
 }
 
 
@@ -441,9 +421,7 @@ shmem_transport_mswap(void *target, const void *source, void *dest,
   shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
   shmem_transport_dom_t* dom = ctx->domain;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_LOCK(dom->lock);
-  }
+  dom->take_lock(dom);
 
 
   int ret = 0;
@@ -477,9 +455,7 @@ shmem_transport_mswap(void *target, const void *source, void *dest,
 
   ctx->endpoint->pending_count++;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_UNLOCK(dom->lock);
-  }
+  dom->release_lock(dom);
 }
 
 
@@ -491,9 +467,7 @@ shmem_transport_atomic_small(void *target, const void *source,
   shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
   shmem_transport_dom_t* dom = ctx->domain;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_LOCK(dom->lock);
-  }
+  dom->take_lock(dom);
 
 
   int ret = 0;
@@ -520,9 +494,7 @@ shmem_transport_atomic_small(void *target, const void *source,
 
   ctx->endpoint->pending_count++;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_UNLOCK(dom->lock);
-  }
+  dom->release_lock(dom);
 }
 
 
@@ -534,9 +506,7 @@ shmem_transport_atomic_set(void *target, const void *source,
   shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
   shmem_transport_dom_t* dom = ctx->domain;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_LOCK(dom->lock);
-  }
+  dom->take_lock(dom);
 
 
   int ret = 0;
@@ -563,9 +533,7 @@ shmem_transport_atomic_set(void *target, const void *source,
 
   ctx->endpoint->pending_count++;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_UNLOCK(dom->lock);
-  }
+  dom->release_lock(dom);
 }
 
 
@@ -577,9 +545,7 @@ shmem_transport_atomic_fetch(void *target, const void *source,
   shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
   shmem_transport_dom_t* dom = ctx->domain;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_LOCK(dom->lock);
-  }
+  dom->take_lock(dom);
 
 
   int ret = 0;
@@ -611,9 +577,7 @@ shmem_transport_atomic_fetch(void *target, const void *source,
 
   ctx->endpoint->pending_count++;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_UNLOCK(dom->lock);
-  }
+  dom->release_lock(dom);
 }
 
 
@@ -625,9 +589,7 @@ shmem_transport_atomic_nb(void *target, const void *source,
   shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
   shmem_transport_dom_t* dom = ctx->domain;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_LOCK(dom->lock);
-  }
+  dom->take_lock(dom);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -687,9 +649,7 @@ shmem_transport_atomic_nb(void *target, const void *source,
     }
   }
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_UNLOCK(dom->lock);
-  }
+  dom->release_lock(dom);
 }
 
 
@@ -701,9 +661,7 @@ shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
   shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
   shmem_transport_dom_t* dom = ctx->domain;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_LOCK(dom->lock);
-  }
+  dom->take_lock(dom);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -734,9 +692,7 @@ shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
 
   ctx->endpoint->pending_count++;
 
-  if(dom->use_lock) {
-    SHMEM_MUTEX_UNLOCK(dom->lock);
-  }
+  dom->release_lock(dom);
 }
 
 
@@ -800,15 +756,11 @@ static inline
 uint64_t shmem_transport_received_cntr_get(void)
 {
 #ifndef ENABLE_HARD_POLLING
-  if(shmem_transport_dom->use_lock) {
-    SHMEM_MUTEX_LOCK(shmem_transport_dom->lock);
-  }
+  dom->take_lock(dom);
 
   int ret =  fi_cntr_read(shmem_transport_ofi_target_cntrfd);
 
-  if(shmem_transport_dom->use_lock) {
-    SHMEM_MUTEX_UNLOCK(shmem_transport_dom->lock);
-  }
+  dom->release_lock(dom);
 
   return ret;
 #else
@@ -821,16 +773,12 @@ static inline
 void shmem_transport_received_cntr_wait(uint64_t ge_val)
 {
 #ifndef ENABLE_HARD_POLLING
-  if(shmem_transport_dom->use_lock) {
-    SHMEM_MUTEX_LOCK(shmem_transport_dom->lock);
-  }
+  dom->take_lock(dom);
 
   /* FIXME: Deadlocks on shared context */
   int ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd, ge_val, -1);
 
-  if(shmem_transport_dom->use_lock) {
-    SHMEM_MUTEX_UNLOCK(shmem_transport_dom->lock);
-  }
+  dom->release_lock(dom);
 
   if (ret) {
     RAISE_ERROR(ret);

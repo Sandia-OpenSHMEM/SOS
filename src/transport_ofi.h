@@ -85,7 +85,9 @@ typedef struct shmem_transport_dom_t {
   int id;
   struct fid_stx* stx;
   shmem_internal_mutex_t lock;
-  int use_lock;
+  void (*take_lock)(struct shmem_transport_dom_t*);
+  void (*release_lock)(struct shmem_transport_dom_t*);
+  void (*free_lock)(struct shmem_transport_dom_t*);
   /* Each endpoint is dedicated to 1 or more contexts. Sharing a
    * counter leads to performance degradation
    */
@@ -101,6 +103,17 @@ typedef struct shmem_transport_dom_t {
   /* Has shmem_domain_destroy been called on this? */
   int freed;
 } shmem_transport_dom_t;
+
+static inline void dom_lock_noop(shmem_transport_dom_t* dom) {}
+static inline void dom_take_mutex(shmem_transport_dom_t* dom) {
+  SHMEM_MUTEX_LOCK(dom->lock);
+}
+static inline void dom_release_mutex(shmem_transport_dom_t* dom) {
+  SHMEM_MUTEX_UNLOCK(dom->lock);
+}
+static inline void dom_free_mutex(shmem_transport_dom_t* dom) {
+  SHMEM_MUTEX_DESTROY(dom->lock);
+}
 
 typedef struct shmem_transport_ctx_t {
   shmem_transport_dom_t* domain;
