@@ -142,14 +142,13 @@ extern size_t    			shmem_transport_ofi_max_msg_size;
 
 extern fi_addr_t *addr_table;
 
-extern int shmem_transport_have_long_double;
-
-extern size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 
 int shmem_transport_init(int thread_level,long eager_size);
 int shmem_transport_startup(void);
+void shmem_transport_print_info(void);
 int shmem_transport_fini(void);
 
+extern size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 
 static inline
 void shmem_transport_received_cntr_wait(uint64_t ge_val);
@@ -241,6 +240,18 @@ static inline
 void
 shmem_transport_put(void *target, const void *source, size_t len,
                        int pe, shmemx_ctx_t c);
+
+static inline
+void
+shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
+    size_t len, int pe, int op, int datatype, shmemx_ctx_t c);
+
+
+/* detect atomic limitation on the fly and provide software reduction support
+    if needed */
+static inline
+int shmem_transport_atomic_supported(shm_internal_op_t op,
+                                     shm_internal_datatype_t datatype);
 
 static inline
 void

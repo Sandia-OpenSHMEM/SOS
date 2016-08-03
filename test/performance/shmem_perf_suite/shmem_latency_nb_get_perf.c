@@ -42,46 +42,18 @@ int main(int argc, char *argv[])
     return 0;
 }  /* end of main() */
 
+/* NO-OP for non-blocking */
+void
+long_element_round_trip_latency(perf_metrics_t data) {}
 
 void
-long_element_round_trip_latency(perf_metrics_t data)
-{
-    double start, end;
-    int dest = 1, i = 0;
-    int partner_pe = partner_node(data.my_node);
-    *data.target = data.my_node;
-
-    if (data.my_node == 0) {
-        printf("\nshmem_long_g results:\n");
-        print_results_header();
-    }
-
-    shmem_barrier_all();
-
-    if (data.my_node == 0) {
-        for (i = 0; i < data.trials + data.warmup; i++) {
-            if(i == data.warmup)
-                start = perf_shmemx_wtime();
-
-            *data.target = shmem_long_g(data.target, dest);
-        }
-        end = perf_shmemx_wtime();
-
-        calc_and_print_results(start, end, sizeof(long), data);
-
-        if(data.validate) {
-            if(*data.target != partner_pe)
-                printf("validation error shmem_long_g target = %ld != %d\n",
-                        *data.target, partner_pe);
-        }
-    }
-} /*gauge small put pathway round trip latency*/
-
+int_element_latency(perf_metrics_t data) {}
 
 void
 streaming_latency(int len, perf_metrics_t *data)
 {
-    double start, end;
+    double start = 0.0;
+    double end = 0.0;
     int i = 0;
 
     if (data->my_node == 0) {

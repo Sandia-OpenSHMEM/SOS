@@ -225,12 +225,12 @@ static int REDUCE_BITWISE_OPS[]=
 };
 
 
-#define SIZEOF_REDC_DT 8
+#define SIZEOF_REDC_DT 9
 static int DT_REDUCE_COMPARE[]=
 {
   SHM_INTERNAL_FLOAT, SHM_INTERNAL_DOUBLE, SHM_INTERNAL_SHORT,
   SHM_INTERNAL_INT, SHM_INTERNAL_LONG, SHM_INTERNAL_LONG_LONG,
-  SHM_INTERNAL_INT32, SHM_INTERNAL_INT64
+  SHM_INTERNAL_INT32, SHM_INTERNAL_INT64, SHM_INTERNAL_LONG_DOUBLE
 };
 #define SIZEOF_REDC_OPS 2
 static int REDUCE_COMPARE_OPS[]=
@@ -239,13 +239,13 @@ static int REDUCE_COMPARE_OPS[]=
 };
 
 
-#define SIZEOF_REDA_DT 10
+#define SIZEOF_REDA_DT 11
 static int DT_REDUCE_ARITH[]=
 {
   SHM_INTERNAL_FLOAT, SHM_INTERNAL_DOUBLE, SHM_INTERNAL_FLOAT_COMPLEX,
   SHM_INTERNAL_DOUBLE_COMPLEX, SHM_INTERNAL_SHORT, SHM_INTERNAL_INT,
   SHM_INTERNAL_LONG, SHM_INTERNAL_LONG_LONG, SHM_INTERNAL_INT32,
-  SHM_INTERNAL_INT64
+  SHM_INTERNAL_INT64, SHM_INTERNAL_LONG_DOUBLE
 };
 #define SIZEOF_REDA_OPS 2
 static int REDUCE_ARITH_OPS[]=
@@ -266,10 +266,12 @@ static int INTERNAL_REQ_OPS[]=
   FI_MSWAP
 };
 
+typedef enum{
+    ATOMIC_NO_SUPPORT,
+    ATOMIC_WARNINGS,
+    ATOMIC_SOFT_SUPPORT,
+}atomic_support_lv;
 
-
-
-int shmem_transport_have_long_double = 1;
 
 //size of CQ
 const static size_t shmem_transport_ofi_queue_slots = 32768;//default CQ Depth....
@@ -639,8 +641,8 @@ static inline int allocate_recv_cntr_mr(void)
                      &shmem_transport_ofi_target_mrfd->fid,
                      FI_REMOTE_READ | FI_REMOTE_WRITE);
     if(ret!=0){
-        OFI_ERRMSG("ep_bind mr2epfd failed\n");
-        return ret;
+	OFI_ERRMSG("ep_bind cntr_epfd2put_cntr failed\n");
+	return ret;
     }
 
     ret = fi_ep_bind(shmem_transport_dom->cq_ep,
@@ -834,17 +836,23 @@ static int populate_mr_tables(void)
     return 0;
 }
 
-static inline int atomicvalid_rtncheck(int ret, int atomic_size, long atomicwarn,
+/*SOFT_SUPPORT will not produce warning or error */
+static inline int atomicvalid_rtncheck(int ret, int atomic_size,
+                                    atomic_support_lv atomic_sup,
                                     char strOP[], char strDT[])
 {
-    if(ret != 0 || atomic_size == 0) {
-        fprintf(stderr, "%s OFI detected no support for atomic '%s' "
-               "on type '%s'\n", (atomicwarn ? "Warning" : "Error"),
-                strOP, strDT);
-        if(!atomicwarn) {
+    if((ret != 0 || atomic_size == 0) && atomic_sup != ATOMIC_SOFT_SUPPORT) {
+        if(atomic_sup == ATOMIC_WARNINGS) {
+            fprintf(stderr, "Warning OFI detected no support for atomic '%s' "
+               "on type '%s'\n", strOP, strDT);
+        }
+        else if(atomic_sup == ATOMIC_NO_SUPPORT) {
             OFI_ERRMSG("Error: atomicvalid ret=%d atomic_size=%d \n",
                        ret, atomic_size);
 	        return ret;
+        } else {
+            OFI_ERRMSG("Error: invalid software atomic support request\n");
+            RAISE_ERROR(-1);
         }
     }
 
@@ -852,17 +860,16 @@ static inline int atomicvalid_rtncheck(int ret, int atomic_size, long atomicwarn
 }
 
 static inline int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
-                                    int OPS[], long atomicwarn)
+                                    int OPS[], atomic_support_lv atomic_sup)
 {
     int i, j, ret = 0;
     size_t atomic_size;
 
     for(i=0; i<DT_MAX; i++) {
       for(j=0; j<OPS_MAX; j++) {
-        ret = fi_atomicvalid(
-            shmem_transport_ctx->endpoint->ep, DT[i],
-            OPS[j], &atomic_size);
-         if(atomicvalid_rtncheck(ret, atomic_size, atomicwarn,
+        ret = fi_atomicvalid(shmem_transport_dom->cq_ep, DT[i],
+                        OPS[j], &atomic_size);
+         if(atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                             SHMEM_OpName[OPS[j]],
                             SHMEM_DtName[DT[i]]))
            return ret;
@@ -873,7 +880,7 @@ static inline int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
 }
 
 static inline int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
-                                    int OPS[], long atomicwarn)
+                                    int OPS[], atomic_support_lv atomic_sup)
 {
     int i, j, ret = 0;
     size_t atomic_size;
@@ -882,7 +889,7 @@ static inline int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
       for(j=0; j<OPS_MAX; j++) {
         ret = fi_compare_atomicvalid(shmem_transport_ctx->endpoint->ep, DT[i],
                         OPS[j], &atomic_size);
-         if(atomicvalid_rtncheck(ret, atomic_size, atomicwarn,
+         if(atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                             SHMEM_OpName[OPS[j]],
                             SHMEM_DtName[DT[i]]))
            return ret;
@@ -893,7 +900,7 @@ static inline int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
 }
 
 static inline int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
-                                    int OPS[], long atomicwarn)
+                                    int OPS[], atomic_support_lv atomic_sup)
 {
     int i, j, ret = 0;
     size_t atomic_size;
@@ -902,7 +909,7 @@ static inline int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
       for(j=0; j<OPS_MAX; j++) {
         ret = fi_fetch_atomicvalid(shmem_transport_ctx->endpoint->ep, DT[i],
                         OPS[j], &atomic_size);
-         if(atomicvalid_rtncheck(ret, atomic_size, atomicwarn,
+         if(atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                             SHMEM_OpName[OPS[j]],
                             SHMEM_DtName[DT[i]]))
            return ret;
@@ -916,14 +923,20 @@ static inline int atomic_limitations_check(void)
 
     /* ----------------------------------------*/
     /* Retrieve messaging limitations from OFI */
+    /*          NOTE:                          */
+    /*   currently only have reduction software*/
+    /*   atomic support, user can optionally   */
+    /*   request for warnings if other atomic  */
+    /*   limitations are detected              */
     /* ----------------------------------------*/
 
-    int j = 0, ret = 0;
-    long atomicwarn = 0;
+    int ret = 0;
+    atomic_support_lv general_atomic_sup = ATOMIC_NO_SUPPORT;
+    atomic_support_lv reduction_sup = ATOMIC_SOFT_SUPPORT;
     size_t atomic_size;
 
     if(NULL != shmem_util_getenv_str("OFI_ATOMIC_CHECKS_WARN"))
-        atomicwarn = 1;
+        general_atomic_sup = ATOMIC_WARNINGS;
 
     init_ofi_tables();
 
@@ -943,85 +956,55 @@ static inline int atomic_limitations_check(void)
 
     /* Standard OPS check */
     ret = atomicvalid_DTxOP(SIZEOF_AMO_DT, SIZEOF_AMO_OPS, DT_AMO_STANDARD,
-                      AMO_STANDARD_OPS, atomicwarn);
+                      AMO_STANDARD_OPS, general_atomic_sup);
     if(ret)
         return ret;
 
     ret = fetch_atomicvalid_DTxOP(SIZEOF_AMO_DT, SIZEOF_AMO_FOPS,
-                    DT_AMO_STANDARD, FETCH_AMO_STANDARD_OPS, atomicwarn);
+                    DT_AMO_STANDARD, FETCH_AMO_STANDARD_OPS,
+                    general_atomic_sup);
     if(ret)
         return ret;
 
     ret = compare_atomicvalid_DTxOP(SIZEOF_AMO_DT, SIZEOF_AMO_COPS,
-                    DT_AMO_STANDARD, COMPARE_AMO_STANDARD_OPS, atomicwarn);
+                    DT_AMO_STANDARD, COMPARE_AMO_STANDARD_OPS,
+                    general_atomic_sup);
     if(ret)
         return ret;
 
     /* Extended OPS check */
     ret = atomicvalid_DTxOP(SIZEOF_AMO_EX_DT, SIZEOF_AMO_EX_OPS, DT_AMO_EXTENDED,
-                      AMO_EXTENDED_OPS, atomicwarn);
+                      AMO_EXTENDED_OPS, general_atomic_sup);
     if(ret)
         return ret;
 
     ret = fetch_atomicvalid_DTxOP(SIZEOF_AMO_EX_DT, SIZEOF_AMO_EX_FOPS,
-                    DT_AMO_EXTENDED, FETCH_AMO_EXTENDED_OPS, atomicwarn);
+                    DT_AMO_EXTENDED, FETCH_AMO_EXTENDED_OPS,
+                    general_atomic_sup);
     if(ret)
         return ret;
 
     /* Reduction OPS check */
     ret = atomicvalid_DTxOP(SIZEOF_RED_DT, SIZEOF_RED_OPS, DT_REDUCE_BITWISE,
-                      REDUCE_BITWISE_OPS, atomicwarn);
+                      REDUCE_BITWISE_OPS, reduction_sup);
     if(ret)
         return ret;
 
     ret = atomicvalid_DTxOP(SIZEOF_REDC_DT, SIZEOF_REDC_OPS, DT_REDUCE_COMPARE,
-                      REDUCE_COMPARE_OPS, atomicwarn);
+                      REDUCE_COMPARE_OPS, reduction_sup);
     if(ret)
         return ret;
 
     ret = atomicvalid_DTxOP(SIZEOF_REDA_DT, SIZEOF_REDA_OPS, DT_REDUCE_ARITH,
-                      REDUCE_ARITH_OPS, atomicwarn);
+                      REDUCE_ARITH_OPS, reduction_sup);
     if(ret)
         return ret;
 
     /* Internal atomic requirement */
     ret = compare_atomicvalid_DTxOP(SIZEOF_INTERNAL_REQ_DT, SIZEOF_INTERNAL_REQ_OPS,
-                    DT_INTERNAL_REQ, INTERNAL_REQ_OPS, atomicwarn);
+                    DT_INTERNAL_REQ, INTERNAL_REQ_OPS, general_atomic_sup);
     if(ret)
         return ret;
-
-    /* LONG DOUBLE limitation is common */
-    for(j=0; j<SIZEOF_REDC_OPS; j++) { //OPS
-      ret = fi_atomicvalid(shmem_transport_ctx->endpoint->ep, SHM_INTERNAL_LONG_DOUBLE,
-                REDUCE_COMPARE_OPS[j], &atomic_size);
-      if(ret!=0 || atomic_size == 0) {
-	    shmem_transport_have_long_double = 0;
-		break;
-	  } else if((atomic_size*sizeof(long double)) !=
-                                    shmem_transport_ofi_max_atomic_size) {
-        fprintf(stderr, "Error OFI detected no support for atomic '%s' "
-               "on type %d\n", SHMEM_OpName[REDUCE_COMPARE_OPS[j]],
-                SHM_INTERNAL_LONG_DOUBLE);
-            OFI_ERRMSG("Error: atomicvalid ret=%d atomic_size=%d \n",
-                       ret, (int)atomic_size);
-      }
-    }
-
-    for(j=0; j<SIZEOF_REDA_OPS; j++) { //OPS
-      ret = fi_atomicvalid(shmem_transport_ctx->endpoint->ep, SHM_INTERNAL_LONG_DOUBLE,
-                REDUCE_ARITH_OPS[j], &atomic_size);
-      if(ret!=0 || atomic_size == 0) {
-	    shmem_transport_have_long_double = 0;
-		break;
-	  } else if((atomic_size*sizeof(long double)) !=
-                                    shmem_transport_ofi_max_atomic_size) {
-        fprintf(stderr, "Error OFI detected no support for atomic '%s' "
-               "on type %d\n", SHMEM_OpName[REDUCE_ARITH_OPS[j]],
-                SHM_INTERNAL_LONG_DOUBLE);
-            OFI_ERRMSG("Error: atomicvalid ret=%d atomic_size=%d \n",
-                       ret, (int)atomic_size);
-      }
-    }
 
     return 0;
 }
@@ -1185,9 +1168,15 @@ static inline int query_for_fabric(struct fabric_info *info)
 #else
     domain_attr.mr_mode       = FI_MR_BASIC; /* VA space is pre-allocated */
 #endif
-    domain_attr.threading     = FI_THREAD_SAFE; /* we promise to serialize access
-						       to endpoints. we have only one
-						       thread active at a time */
+/* <<<<<<< HEAD */
+/*     domain_attr.threading     = FI_THREAD_SAFE; /1* we promise to serialize access */
+/* 						       to endpoints. we have only one */
+/* 						       thread active at a time *1/ */
+/* ======= */
+    domain_attr.threading     = FI_THREAD_ENDPOINT; /* we promise to serialize access
+                                                       to endpoints. we have only one
+                                                       thread active at a time */
+
     hints.domain_attr         = &domain_attr;
     ep_attr.type              = FI_EP_RDM; /* reliable connectionless */
     hints.fabric_attr	      = &fabric_attr;
@@ -1339,6 +1328,32 @@ int shmem_transport_startup(void)
         return ret;
 
     return 0;
+}
+
+void shmem_transport_print_info(void)
+{
+    char *ofi_provider;
+
+    if (NULL == (ofi_provider = shmem_util_getenv_str("OFI_PROVIDER")))
+        if (NULL == (ofi_provider = shmem_util_getenv_str("OFI_USE_PROVIDER")))
+            ofi_provider = "AUTO";
+
+    printf("\n");
+    printf("Network transport:      OFI\n");
+    printf("SMA_OFI_PROVIDER        %s\n", ofi_provider);
+    printf("\tProvider that should be used by the OFI transport\n");
+    printf("SMA_OFI_FABRIC          %s\n",
+           (NULL != shmem_util_getenv_str("OFI_FABRIC")) ?
+           shmem_util_getenv_str("OFI_FABRIC") : "AUTO");
+    printf("\tFabric that should be used by the OFI transport\n");
+    printf("SMA_OFI_DOMAIN          %s\n",
+           (NULL != shmem_util_getenv_str("OFI_DOMAIN")) ?
+           shmem_util_getenv_str("OFI_DOMAIN") : "AUTO");
+    printf("\tFabric domain that should be used by the OFI transport\n");
+    printf("SMA_OFI_ATOMIC_CHECKS_WARN %s\n",
+           (NULL != shmem_util_getenv_str("OFI_ATOMIC_CHECKS_WARN")) ?
+           "Set" : "Not set");
+    printf("\tDisplay warnings about unsupported atomic operations\n");
 }
 
 int shmem_transport_fini(void)

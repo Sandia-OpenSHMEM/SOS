@@ -385,7 +385,7 @@ shmem_transport_startup(void)
     if (PTL_OK != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlGetPhysId failed: %d\n",
                 shmem_internal_my_pe, ret);
-        return ret;
+        goto cleanup;
     }
 
     for (i = 0 ; i < shmem_internal_num_pes; ++i) {
@@ -646,6 +646,13 @@ shmem_transport_startup(void)
  cleanup:
     if (NULL != desired) free(desired);
     return ret;
+}
+
+
+void shmem_transport_print_info(void)
+{
+    printf("\n");
+    printf("Network transport:      Portals\n");
 }
 
 

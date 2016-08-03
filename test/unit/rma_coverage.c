@@ -25,18 +25,30 @@
  * SOFTWARE.
  */
 
-#define SHMEM_INTERNAL_INCLUDE
 #include <shmem.h>
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
 
+#define SHMEM_EVAL_MACRO_FOR_RMA(DECL,EOL) \
+  DECL(float,      float) EOL           \
+  DECL(double,     double) EOL          \
+  DECL(longdouble, long double) EOL     \
+  DECL(char,       char) EOL            \
+  DECL(short,      short) EOL           \
+  DECL(int,        int) EOL             \
+  DECL(long,       long) EOL            \
+  DECL(longlong,   long long)
+
+#define SHMEM_DECLARE_FOR_RMA(DECL) SHMEM_EVAL_MACRO_FOR_RMA(DECL,;)
+#define SHMEM_DEFINE_FOR_RMA(DECL) SHMEM_EVAL_MACRO_FOR_RMA(DECL,)
+
 #define CHUNK_SIZE 10
 #define ARR_SIZE (4*(CHUNK_SIZE))
 
 #define DECLARE_TEST(TYPENAME,TYPE) \
-  int TYPENAME##_rmaTest(int target_pe, int verbose)
+  static int TYPENAME##_rmaTest(int target_pe, int verbose)
 SHMEM_DECLARE_FOR_RMA(DECLARE_TEST);
 
 int main(int argc, char* argv[]) {
@@ -70,7 +82,7 @@ int main(int argc, char* argv[]) {
 #define DEFINE_TEST(TYPENAME,TYPE) \
   TYPE TYPENAME##_shared[ARR_SIZE];                                    \
                                                                        \
-  int TYPENAME##_rmaTest(int target_pe, int verbose) {                 \
+  static int TYPENAME##_rmaTest(int target_pe, int verbose) {          \
       TYPE* shared = TYPENAME##_shared;                                \
       TYPE myvals[ARR_SIZE];                                           \
       TYPE result[ARR_SIZE];                                           \
