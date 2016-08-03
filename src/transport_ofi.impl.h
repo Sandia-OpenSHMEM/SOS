@@ -158,10 +158,10 @@ void
 shmem_transport_put_small(void *target, const void *source,
     size_t len, int pe, shmemx_ctx_t c)
 {
-  shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
+  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
   /* printf("put_small to %d (len %lu) with %d\n",pe,len,c); */
 
-  ctx->take_lock(ctx->domain);
+  ctx->take_lock((shmem_transport_dom_t**)ctx);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -188,7 +188,7 @@ shmem_transport_put_small(void *target, const void *source,
   /* automatically get local completion but need remote completion for fence/quiet*/
   ctx->endpoint.pending_count++;
 
-  ctx->release_lock(ctx->domain);
+  ctx->release_lock((shmem_transport_dom_t**)ctx);
 }
 
 static inline
@@ -196,9 +196,9 @@ void
 shmem_transport_ofi_put_large(void *target, const void *source,
     size_t len, int pe, shmemx_ctx_t c)
 {
-  shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
+  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
 
-  ctx->take_lock(ctx->domain);
+  ctx->take_lock((shmem_transport_dom_t**)ctx);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -232,7 +232,7 @@ shmem_transport_ofi_put_large(void *target, const void *source,
     frag_target += frag_len;
   }
 
-  ctx->release_lock(ctx->domain);
+  ctx->release_lock((shmem_transport_dom_t**)ctx);
 }
 
 static inline
@@ -270,9 +270,9 @@ void
 shmem_transport_get(void *target, const void *source, size_t len,
     int pe, shmemx_ctx_t c)
 {
-  shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
+  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
 
-  ctx->take_lock(ctx->domain);
+  ctx->take_lock((shmem_transport_dom_t**)ctx);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -318,7 +318,7 @@ shmem_transport_get(void *target, const void *source, size_t len,
       frag_target += frag_len;
     }
   }
-  ctx->release_lock(ctx->domain);
+  ctx->release_lock((shmem_transport_dom_t**)ctx);
 }
 
 static inline
@@ -326,9 +326,9 @@ void
 shmem_transport_swap(void *target, const void *source, void *dest,
                      size_t len, int pe, int datatype, shmemx_ctx_t c)
 {
-  shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
+  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
 
-  ctx->take_lock(ctx->domain);
+  ctx->take_lock((shmem_transport_dom_t**)ctx);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -358,7 +358,7 @@ shmem_transport_swap(void *target, const void *source, void *dest,
 
   ctx->endpoint.pending_count++;
 
-  ctx->release_lock(ctx->domain);
+  ctx->release_lock((shmem_transport_dom_t**)ctx);
 }
 
 
@@ -368,9 +368,9 @@ shmem_transport_cswap(void *target, const void *source, void *dest,
                       const void *operand, size_t len, int pe,
                       int datatype, shmemx_ctx_t c)
 {
-  shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
+  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
 
-  ctx->take_lock(ctx->domain);
+  ctx->take_lock((shmem_transport_dom_t**)ctx);
 
 
   int ret = 0;
@@ -403,7 +403,7 @@ shmem_transport_cswap(void *target, const void *source, void *dest,
 
   ctx->endpoint.pending_count++;
 
-  ctx->release_lock(ctx->domain);
+  ctx->release_lock((shmem_transport_dom_t**)ctx);
 }
 
 
@@ -413,9 +413,9 @@ shmem_transport_mswap(void *target, const void *source, void *dest,
                       const void *mask, size_t len, int pe,
                       int datatype, shmemx_ctx_t c)
 {
-  shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
+  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
 
-  ctx->take_lock(ctx->domain);
+  ctx->take_lock((shmem_transport_dom_t**)ctx);
 
 
   int ret = 0;
@@ -449,7 +449,7 @@ shmem_transport_mswap(void *target, const void *source, void *dest,
 
   ctx->endpoint.pending_count++;
 
-  ctx->release_lock(ctx->domain);
+  ctx->release_lock((shmem_transport_dom_t**)ctx);
 }
 
 
@@ -458,9 +458,9 @@ void
 shmem_transport_atomic_small(void *target, const void *source,
     size_t len, int pe, int op, int datatype, shmemx_ctx_t c)
 {
-  shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
+  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
 
-  ctx->take_lock(ctx->domain);
+  ctx->take_lock((shmem_transport_dom_t**)ctx);
 
 
   int ret = 0;
@@ -487,7 +487,7 @@ shmem_transport_atomic_small(void *target, const void *source,
 
   ctx->endpoint.pending_count++;
 
-  ctx->release_lock(ctx->domain);
+  ctx->release_lock((shmem_transport_dom_t**)ctx);
 }
 
 
@@ -496,9 +496,9 @@ void
 shmem_transport_atomic_set(void *target, const void *source,
     size_t len, int pe, int datatype, shmemx_ctx_t c)
 {
-  shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
+  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
 
-  ctx->take_lock(ctx->domain);
+  ctx->take_lock((shmem_transport_dom_t**)ctx);
 
 
   int ret = 0;
@@ -525,7 +525,7 @@ shmem_transport_atomic_set(void *target, const void *source,
 
   ctx->endpoint.pending_count++;
 
-  ctx->release_lock(ctx->domain);
+  ctx->release_lock((shmem_transport_dom_t**)ctx);
 }
 
 
@@ -534,9 +534,9 @@ void
 shmem_transport_atomic_fetch(void *target, const void *source,
     size_t len, int pe, int datatype, shmemx_ctx_t c)
 {
-  shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
+  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
 
-  ctx->take_lock(ctx->domain);
+  ctx->take_lock((shmem_transport_dom_t**)ctx);
 
 
   int ret = 0;
@@ -568,7 +568,7 @@ shmem_transport_atomic_fetch(void *target, const void *source,
 
   ctx->endpoint.pending_count++;
 
-  ctx->release_lock(ctx->domain);
+  ctx->release_lock((shmem_transport_dom_t**)ctx);
 }
 
 
@@ -577,9 +577,9 @@ void
 shmem_transport_atomic_nb(void *target, const void *source,
     size_t full_len, int pe, int op, int datatype, shmemx_ctx_t c)
 {
-  shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
+  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
 
-  ctx->take_lock(ctx->domain);
+  ctx->take_lock((shmem_transport_dom_t**)ctx);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -639,7 +639,7 @@ shmem_transport_atomic_nb(void *target, const void *source,
     }
   }
 
-  ctx->release_lock(ctx->domain);
+  ctx->release_lock((shmem_transport_dom_t**)ctx);
 }
 
 
@@ -648,9 +648,9 @@ void
 shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
     size_t len, int pe, int op, int datatype, shmemx_ctx_t c)
 {
-  shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
+  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
 
-  ctx->take_lock(ctx->domain);
+  ctx->take_lock((shmem_transport_dom_t**)ctx);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -681,7 +681,7 @@ shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
 
   ctx->endpoint.pending_count++;
 
-  ctx->release_lock(ctx->domain);
+  ctx->release_lock((shmem_transport_dom_t**)ctx);
 }
 
 
@@ -745,11 +745,11 @@ static inline
 uint64_t shmem_transport_received_cntr_get(void)
 {
 #ifndef ENABLE_HARD_POLLING
-  ctx->take_lock(ctx->domain);
+  ctx->take_lock((shmem_transport_dom_t**)ctx);
 
   int ret =  fi_cntr_read(shmem_transport_ofi_target_cntrfd);
 
-  ctx->release_lock(ctx->domain);
+  ctx->release_lock((shmem_transport_dom_t**)ctx);
 
   return ret;
 #else
@@ -762,12 +762,12 @@ static inline
 void shmem_transport_received_cntr_wait(uint64_t ge_val)
 {
 #ifndef ENABLE_HARD_POLLING
-  ctx->take_lock(ctx->domain);
+  ctx->take_lock((shmem_transport_dom_t**)ctx);
 
   /* FIXME: Deadlocks on shared context */
   int ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd, ge_val, -1);
 
-  ctx->release_lock(ctx->domain);
+  ctx->release_lock((shmem_transport_dom_t**)ctx);
 
   if (ret) {
     RAISE_ERROR(ret);

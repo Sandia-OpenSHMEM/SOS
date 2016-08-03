@@ -85,9 +85,9 @@ typedef struct shmem_transport_dom_t {
   int id;
   struct fid_stx* stx;
   shmem_internal_mutex_t lock;
-  void (*take_lock)(struct shmem_transport_dom_t*);
-  void (*release_lock)(struct shmem_transport_dom_t*);
-  void (*free_lock)(struct shmem_transport_dom_t*);
+  void (*take_lock)(struct shmem_transport_dom_t**);
+  void (*release_lock)(struct shmem_transport_dom_t**);
+  void (*free_lock)(struct shmem_transport_dom_t**);
   /* Each endpoint is dedicated to 1 or more contexts. Sharing a
    * counter leads to performance degradation
    */
@@ -101,24 +101,30 @@ typedef struct shmem_transport_dom_t {
   int freed;
 } shmem_transport_dom_t;
 
-static inline void dom_lock_noop(shmem_transport_dom_t* dom) {}
-static inline void dom_take_mutex(shmem_transport_dom_t* dom) {
-  SHMEM_MUTEX_LOCK(dom->lock);
+static inline void dom_lock_noop(shmem_transport_dom_t** dom) {}
+static inline void dom_take_mutex(shmem_transport_dom_t** dom) {
+  SHMEM_MUTEX_LOCK((*dom)->lock);
 }
-static inline void dom_release_mutex(shmem_transport_dom_t* dom) {
-  SHMEM_MUTEX_UNLOCK(dom->lock);
+static inline void dom_release_mutex(shmem_transport_dom_t** dom) {
+  SHMEM_MUTEX_UNLOCK((*dom)->lock);
 }
-static inline void dom_free_mutex(shmem_transport_dom_t* dom) {
-  SHMEM_MUTEX_DESTROY(dom->lock);
+static inline void dom_free_mutex(shmem_transport_dom_t** dom) {
+  SHMEM_MUTEX_DESTROY((*dom)->lock);
 }
 
 typedef struct shmem_transport_ctx_t {
-  shmem_transport_cntr_ep_t endpoint;
   shmem_transport_dom_t* domain;
+  shmem_transport_cntr_ep_t endpoint;
 
-  void (*take_lock)(shmem_transport_dom_t*);
-  void (*release_lock)(shmem_transport_dom_t*);
+  void (*take_lock)(shmem_transport_dom_t**);
+  void (*release_lock)(shmem_transport_dom_t**);
+
+  size_t id;
 } shmem_transport_ctx_t;
+
+
+#define TRANSP_FROM_DOM_T(domid) ((shmem_transport_dom_t*)domid)
+#define TRANSP_FROM_CTX_T(ctxid) ((shmem_transport_ctx_t*)ctxid)
 
 extern shmemx_domain_t shmem_transport_default_dom;
 extern shmemx_ctx_t shmem_transport_default_ctx;

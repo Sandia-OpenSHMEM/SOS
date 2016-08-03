@@ -119,11 +119,11 @@ void shmemx_ct_wait(shmemx_ct_t ct, long wait_for);
 
 /* Contexts */
 
-#define SHMEMX_CTX_DEFAULT 0
-#define SHMEMX_DOMAIN_DEFAULT 0
+typedef void* shmemx_ctx_t;
+typedef void* shmemx_domain_t;
 
-typedef int shmemx_ctx_t;
-typedef int shmemx_domain_t;
+extern shmemx_ctx_t SHMEMX_CTX_DEFAULT;
+extern shmemx_domain_t SHMEMX_DOMAIN_DEFAULT;
 
 int shmemx_domain_create(int thread_level, int num_domains, shmemx_domain_t domains[]);
 

@@ -61,6 +61,9 @@ shmemx_ctx_t shmem_transport_default_ctx;
 shmem_transport_dom_t* shmem_transport_dom;
 shmem_transport_ctx_t* shmem_transport_ctx;
 
+shmemx_domain_t SHMEMX_CTX_DEFAULT;
+shmemx_ctx_t SHMEMX_DOMAIN_DEFAULT;
+
 shmem_transport_dom_t** shmem_transport_ofi_domains;
 shmem_transport_ctx_t** shmem_transport_ofi_contexts;
 
@@ -322,9 +325,9 @@ int shmemx_domain_create(int thread_level, int num_domains,
   int i;
   for(i = 0; i < num_domains; ++i) {
     size_t ix = shmem_transport_num_domains++;
-    domains[i] = ix;
     shmem_transport_dom_t* dom;
     domArray[ix] = dom = malloc(sizeof(shmem_transport_dom_t));
+    domains[i] = dom;
 
     dom->id = ix;
     dom->freed = 0;
@@ -405,8 +408,8 @@ void shmem_transport_domain_destroy(shmem_transport_dom_t* dom)
     OFI_ERRMSG("Domain STX close failed (%s)", fi_strerror(errno));
   }
 
-  dom->release_lock(dom);
-  dom->free_lock(dom);
+  dom->release_lock(&dom);
+  dom->free_lock(&dom);
 
   free(dom);
 }
@@ -416,15 +419,14 @@ void shmemx_domain_destroy(int num_domains, shmemx_domain_t domains[])
   int i;
 
   for(i = 0; i < num_domains; ++i) {
-    shmemx_domain_t ix = domains[i];
-    shmem_transport_dom_t* dom = shmem_transport_ofi_domains[ix];
+    shmem_transport_dom_t* dom = TRANSP_FROM_DOM_T(domains[i]);
 
-    dom->take_lock(dom);
+    dom->take_lock(&dom);
     if(!dom->num_active_contexts) {
       shmem_transport_domain_destroy(dom);
     } else {
       dom->freed = 1;
-      dom->release_lock(dom);
+      dom->release_lock(&dom);
     }
   }
 }
@@ -437,9 +439,9 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
    * is not necessarily do-or-die.
    */
   int ret = 0;
-  shmem_transport_dom_t* dom = shmem_transport_ofi_domains[domain];
+  shmem_transport_dom_t* dom = TRANSP_FROM_DOM_T(domain);
 
-  dom->take_lock(dom);
+  dom->take_lock(&dom);
 
   struct fi_cntr_attr cntr_attr = {0};
   cntr_attr.events   = FI_CNTR_EVENTS_COMP;
@@ -454,7 +456,7 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
   info->p_info->tx_attr->mode = 0;
   info->p_info->rx_attr->mode = 0;
 
-  *ctx = shmem_transport_num_contexts;
+  size_t ix = shmem_transport_num_contexts;
   size_t newSize = ++shmem_transport_num_contexts;
 
   if(newSize > shmem_transport_available_contexts) {
@@ -475,8 +477,10 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
   }
 
   size_t nbytes = sizeof(shmem_transport_ctx_t);
-  shmem_transport_ofi_contexts[*ctx] = malloc(nbytes);
-  shmem_transport_ctx_t* ctxobj = shmem_transport_ofi_contexts[*ctx];
+  shmem_transport_ofi_contexts[ix] = malloc(nbytes);
+  shmem_transport_ctx_t* ctxobj = shmem_transport_ofi_contexts[ix];
+  *ctx = ctxobj;
+  ctxobj->id = ix;
 
   shmem_transport_cntr_ep_t* ep = &ctxobj->endpoint;
   ep->pending_count = 0;
@@ -508,7 +512,7 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
 
   ++dom->num_active_contexts;
 
-  dom->release_lock(dom);
+  dom->release_lock(&dom);
 
   return 0;
 }
@@ -516,11 +520,11 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
 void shmemx_ctx_destroy(shmemx_ctx_t ctxid) {
   shmemx_ctx_quiet(ctxid);
 
-  shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[ctxid];
+  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(ctxid);
 
   shmem_transport_dom_t* dom = ctx->domain;
 
-  dom->take_lock(dom);
+  dom->take_lock(&dom);
 
 
   if(fi_close(&ctx->endpoint.ep->fid)) {
@@ -536,22 +540,22 @@ void shmemx_ctx_destroy(shmemx_ctx_t ctxid) {
   if(!dom->num_active_contexts && dom->freed) {
     shmem_transport_domain_destroy(dom);
   } else {
-    dom->release_lock(dom);
+    dom->release_lock(&dom);
   }
+  shmem_transport_ofi_contexts[ctx->id] = NULL;
   free(ctx);
-  shmem_transport_ofi_contexts[ctxid] = NULL;
 }
 
 void shmemx_ctx_quiet(shmemx_ctx_t c)
 {
-  shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[c];
+  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
   shmem_transport_dom_t* dom = ctx->domain;
 
-  dom->take_lock(dom);
+  dom->take_lock(&dom);
 
   shmem_transport_ctx_quiet(ctx);
 
-  dom->release_lock(dom);
+  dom->release_lock(&dom);
 }
 
 void shmemx_ctx_fence(shmemx_ctx_t c) {
@@ -1259,12 +1263,14 @@ int shmem_transport_init(int thread_level, long eager_size)
       &shmem_transport_default_ctx);
   if(ret!=0)
     return ret;
-  if(shmem_transport_default_ctx != SHMEMX_CTX_DEFAULT)
-    return -1;
+
+  SHMEMX_DOMAIN_DEFAULT = shmem_transport_default_dom;
+  SHMEMX_CTX_DEFAULT = shmem_transport_default_ctx;
+
   shmem_transport_dom =
-    shmem_transport_ofi_domains[shmem_transport_default_dom];
+    TRANSP_FROM_DOM_T(shmem_transport_default_dom);
   shmem_transport_ctx =
-    shmem_transport_ofi_contexts[shmem_transport_default_ctx];
+    TRANSP_FROM_CTX_T(shmem_transport_default_ctx);
 
   ret = allocate_recv_cntr_mr();
   if(ret!=0)
@@ -1333,14 +1339,14 @@ int shmem_transport_fini(void)
     for(i = 0; i < shmem_transport_num_contexts; ++i) {
       shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[i];
       if(ctx) {
-        shmemx_ctx_destroy(i);
+        shmemx_ctx_destroy(ctx);
       }
     }
 
     for(i = 0; i < shmem_transport_num_domains; ++i) {
       shmem_transport_dom_t* dom = shmem_transport_ofi_domains[i];
       if(dom) {
-        dom->take_lock(dom);
+        dom->take_lock(&dom);
         shmem_transport_domain_destroy(dom);
       }
     }
