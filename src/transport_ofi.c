@@ -329,10 +329,6 @@ int shmemx_domain_create(int thread_level, int num_domains,
     dom->id = ix;
     dom->freed = 0;
     dom->num_active_contexts = 0;
-    dom->num_endpoints = 0;
-    dom->max_num_endpoints = 8;
-    dom->endpoints = malloc(8*sizeof(shmem_transport_cntr_ep_t*));
-    IF_ERR_RETURN(dom->endpoints ? 0 : -1, "malloc failed");
 
     int lock = (thread_level != SHMEMX_THREAD_SINGLE);
     if(!lock) {
@@ -398,28 +394,6 @@ void shmem_transport_domain_destroy(shmem_transport_dom_t* dom)
   /* FIXME: add to free list, maybe? */
   shmem_transport_ofi_domains[dom->id] = NULL;
 
-  size_t i;
-  for(i = 0; i < dom->num_endpoints; ++i) {
-    if(fi_cntr_wait(dom->endpoints[i]->counter,
-        dom->endpoints[i]->pending_count, -1)) {
-      OFI_ERRMSG("Domain endpoint flush failed (%s)",
-          fi_strerror(errno));
-    }
-
-    if(fi_close(&dom->endpoints[i]->ep->fid)) {
-      OFI_ERRMSG("Domain endpoint close failed (%s)",
-          fi_strerror(errno));
-    }
-    if(fi_close(&dom->endpoints[i]->counter->fid)) {
-      OFI_ERRMSG("Domain counter close failed (%s)",
-          fi_strerror(errno));
-    }
-    free(dom->endpoints[i]);
-  }
-  if(dom->max_num_endpoints) {
-    free(dom->endpoints);
-  }
-
   // The attached CQ is implicitly closed (as I discovered while
   // memory-checking with Valgrind). -jpdoyle
   if(fi_close(&dom->cq_ep->fid)) {
@@ -467,24 +441,8 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
 
   dom->take_lock(dom);
 
-  if(dom->num_endpoints == dom->max_num_endpoints) {
-    size_t newSize = (dom->max_num_endpoints *= 2);
-    dom->endpoints = realloc(dom->endpoints,newSize);
-
-    IF_ERR_RETURN(dom->endpoints ? 0 : -1, "realloc failed");
-  }
-
-  size_t ix = dom->num_endpoints++;
-  dom->endpoints[ix] = malloc(sizeof(shmem_transport_cntr_ep_t));
-
-  shmem_transport_cntr_ep_t* ep = dom->endpoints[ix];
-  ep->pending_count = 0;
-
   struct fi_cntr_attr cntr_attr = {0};
   cntr_attr.events   = FI_CNTR_EVENTS_COMP;
-  ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
-                     &ep->counter, NULL);
-  IF_OFI_ERR_RETURN(ret,"context cntr_open failed");
 
   struct fabric_info* info = &shmem_ofi_cntr_info;
   info->p_info->ep_attr->tx_ctx_cnt = FI_SHARED_CONTEXT;
@@ -495,22 +453,6 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
   info->p_info->mode = 0;
   info->p_info->tx_attr->mode = 0;
   info->p_info->rx_attr->mode = 0;
-
-  ret = fi_endpoint(shmem_transport_ofi_domainfd,
-      info->p_info, &ep->ep, NULL);
-  IF_OFI_ERR_RETURN(ret,"epfd creation failed");
-
-  ret = fi_ep_bind(ep->ep, &dom->stx->fid, 0);
-  IF_OFI_ERR_RETURN(ret,"context ep_bind ep -> stx failed");
-
-  ret = fi_ep_bind(ep->ep, &shmem_transport_ofi_avfd->fid, 0);
-  IF_OFI_ERR_RETURN(ret,"ep_bind cntr_ep2av failed");
-
-  ret = fi_ep_bind(ep->ep, &ep->counter->fid, FI_READ | FI_WRITE);
-  IF_OFI_ERR_RETURN(ret,"ep_bind cntr_ep2cntr failed");
-
-  ret = fi_enable(ep->ep);
-  IF_OFI_ERR_RETURN(ret,"context enable endpoint");
 
   *ctx = shmem_transport_num_contexts;
   size_t newSize = ++shmem_transport_num_contexts;
@@ -536,8 +478,33 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
   shmem_transport_ofi_contexts[*ctx] = malloc(nbytes);
   shmem_transport_ctx_t* ctxobj = shmem_transport_ofi_contexts[*ctx];
 
+  shmem_transport_cntr_ep_t* ep = &ctxobj->endpoint;
+  ep->pending_count = 0;
+
+  ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
+                     &ep->counter, NULL);
+  IF_OFI_ERR_RETURN(ret,"context cntr_open failed");
+
+  ret = fi_endpoint(shmem_transport_ofi_domainfd,
+      info->p_info, &ep->ep, NULL);
+  IF_OFI_ERR_RETURN(ret,"epfd creation failed");
+
+  ret = fi_ep_bind(ep->ep, &dom->stx->fid, 0);
+  IF_OFI_ERR_RETURN(ret,"context ep_bind ep -> stx failed");
+
+  ret = fi_ep_bind(ep->ep, &shmem_transport_ofi_avfd->fid, 0);
+  IF_OFI_ERR_RETURN(ret,"ep_bind cntr_ep2av failed");
+
+  ret = fi_ep_bind(ep->ep, &ep->counter->fid, FI_READ | FI_WRITE);
+  IF_OFI_ERR_RETURN(ret,"ep_bind cntr_ep2cntr failed");
+
+  ret = fi_enable(ep->ep);
+  IF_OFI_ERR_RETURN(ret,"context enable endpoint");
+
+
   ctxobj->domain = dom;
-  ctxobj->endpoint = ep;
+  ctxobj->take_lock = dom->take_lock;
+  ctxobj->release_lock = dom->release_lock;
 
   ++dom->num_active_contexts;
 
@@ -554,6 +521,16 @@ void shmemx_ctx_destroy(shmemx_ctx_t ctxid) {
   shmem_transport_dom_t* dom = ctx->domain;
 
   dom->take_lock(dom);
+
+
+  if(fi_close(&ctx->endpoint.ep->fid)) {
+    OFI_ERRMSG("Domain endpoint close failed (%s)",
+        fi_strerror(errno));
+  }
+  if(fi_close(&ctx->endpoint.counter->fid)) {
+    OFI_ERRMSG("Domain counter close failed (%s)",
+        fi_strerror(errno));
+  }
 
   --dom->num_active_contexts;
   if(!dom->num_active_contexts && dom->freed) {
@@ -880,7 +857,7 @@ static inline int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
 
     for(i=0; i<DT_MAX; i++) {
       for(j=0; j<OPS_MAX; j++) {
-        ret = fi_compare_atomicvalid(shmem_transport_ctx->endpoint->ep, DT[i],
+        ret = fi_compare_atomicvalid(shmem_transport_ctx->endpoint.ep, DT[i],
                         OPS[j], &atomic_size);
          if(atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                             SHMEM_OpName[OPS[j]],
@@ -900,7 +877,7 @@ static inline int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
 
     for(i=0; i<DT_MAX; i++) {
       for(j=0; j<OPS_MAX; j++) {
-        ret = fi_fetch_atomicvalid(shmem_transport_ctx->endpoint->ep, DT[i],
+        ret = fi_fetch_atomicvalid(shmem_transport_ctx->endpoint.ep, DT[i],
                         OPS[j], &atomic_size);
          if(atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                             SHMEM_OpName[OPS[j]],
@@ -934,7 +911,7 @@ static inline int atomic_limitations_check(void)
     init_ofi_tables();
 
     /*Retrieve atomic max size */
-    ret = fi_atomicvalid(shmem_transport_ctx->endpoint->ep, FI_INT64, FI_SUM,
+    ret = fi_atomicvalid(shmem_transport_ctx->endpoint.ep, FI_INT64, FI_SUM,
 			&atomic_size);
     if(ret!=0 || (atomic_size == 0)){ //not supported
 	    OFI_ERRMSG("atomicvalid failed: cannot determine max atomic size for transport\n");

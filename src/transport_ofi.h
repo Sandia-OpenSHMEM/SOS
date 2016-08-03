@@ -91,9 +91,6 @@ typedef struct shmem_transport_dom_t {
   /* Each endpoint is dedicated to 1 or more contexts. Sharing a
    * counter leads to performance degradation
    */
-  shmem_transport_cntr_ep_t** endpoints;
-  size_t num_endpoints;
-  size_t max_num_endpoints;
   /* Completion queue for (non-blocking puts and) error reports.
    * Perhaps there should be one per endpoint?
    */
@@ -116,8 +113,11 @@ static inline void dom_free_mutex(shmem_transport_dom_t* dom) {
 }
 
 typedef struct shmem_transport_ctx_t {
+  shmem_transport_cntr_ep_t endpoint;
   shmem_transport_dom_t* domain;
-  shmem_transport_cntr_ep_t* endpoint;
+
+  void (*take_lock)(shmem_transport_dom_t*);
+  void (*release_lock)(shmem_transport_dom_t*);
 } shmem_transport_ctx_t;
 
 extern shmemx_domain_t shmem_transport_default_dom;
