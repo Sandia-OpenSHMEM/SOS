@@ -68,33 +68,33 @@
 
 #else
 
-/* #define SHMEM_WAIT(var, value)                                          \ */
-/*     do {                                                                \ */
-/*         uint64_t target_cntr;                                           \ */
-/*                                                                         \ */
-/*         while (*(var) == value) {                                       \ */
-/*             target_cntr = shmem_transport_received_cntr_get();          \ */
-/*             COMPILER_FENCE();                                           \ */
-/*             if (*(var) != value) break;                                 \ */
-/*             shmem_transport_received_cntr_wait(target_cntr + 1);        \ */
-/*         }                                                               \ */
-/*     } while(0) */
+#define SHMEM_WAIT(var, value)                                          \
+    do {                                                                \
+        uint64_t target_cntr;                                           \
+                                                                        \
+        while (*(var) == value) {                                       \
+            target_cntr = shmem_transport_received_cntr_get();          \
+            COMPILER_FENCE();                                           \
+            if (*(var) != value) break;                                 \
+            shmem_transport_received_cntr_wait(target_cntr + 1);        \
+        }                                                               \
+    } while(0)
 
-/* #define SHMEM_WAIT_UNTIL(var, cond, value)                              \ */
-/*     do {                                                                \ */
-/*         uint64_t target_cntr;                                           \ */
-/*         int cmpret;                                                     \ */
-/*                                                                         \ */
-/*         COMP(cond, *(var), value, cmpret);                              \ */
-/*         while (!cmpret) {                                               \ */
-/*             target_cntr = shmem_transport_received_cntr_get();          \ */
-/*             COMPILER_FENCE();                                           \ */
-/*             COMP(cond, *(var), value, cmpret);                          \ */
-/*             if (cmpret) break;                                          \ */
-/*             shmem_transport_received_cntr_wait(target_cntr + 1);        \ */
-/*             COMP(cond, *(var), value, cmpret);                          \ */
-/*         }                                                               \ */
-/*     } while(0) */
+#define SHMEM_WAIT_UNTIL(var, cond, value)                              \
+    do {                                                                \
+        uint64_t target_cntr;                                           \
+        int cmpret;                                                     \
+                                                                        \
+        COMP(cond, *(var), value, cmpret);                              \
+        while (!cmpret) {                                               \
+            target_cntr = shmem_transport_received_cntr_get();          \
+            COMPILER_FENCE();                                           \
+            COMP(cond, *(var), value, cmpret);                          \
+            if (cmpret) break;                                          \
+            shmem_transport_received_cntr_wait(target_cntr + 1);        \
+            COMP(cond, *(var), value, cmpret);                          \
+        }                                                               \
+    } while(0)
 
 #endif
 

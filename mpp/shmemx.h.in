@@ -26,6 +26,7 @@
  */
 #ifndef SHMEM_UTIL_MACROS
 #define SHMEM_UTIL_MACROS
+#define SHMEM_UTIL_MACROS_SHMEMX_H
 
 #define SHMEM_EVAL_MACRO_FOR_RMA(DECL,EOL) \
   DECL(float,      float) EOL           \
@@ -257,9 +258,10 @@ long shmemx_ctx_swap(long *dest, long value, int pe, shmemx_ctx_t ctx);
 #undef SHMEMX_CTX_ATOMIC_OPS
 #undef SHMEMX_CTX_SWAP_OPS
 
-#ifndef SHMEM_INTERNAL_INCLUDE
+#if !defined(SHMEM_INTERNAL_INCLUDE) && defined(SHMEM_UTIL_MACROS_SHMEMX_H)
 
-#define SHMEM_UTIL_MACROS
+#undef SHMEM_UTIL_MACROS
+#undef SHMEM_UTIL_MACROS_SHMEMX_H
 
 #undef SHMEM_EVAL_MACRO_FOR_RMA
 #undef SHMEM_EVAL_MACRO_FOR_AMO

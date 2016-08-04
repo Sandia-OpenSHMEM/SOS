@@ -325,10 +325,6 @@
 #endif /* ENABLE_PROFILING */
 
 #define SHMEM_DEF_P(STYPE,TYPE) \
-  void shmem_##STYPE##_p(TYPE *addr, TYPE value, int pe)         \
-  {                                                              \
-    shmemx_ctx_##STYPE##_p(addr, value, pe, SHMEMX_CTX_DEFAULT); \
-  }                                                              \
   void shmemx_ctx_##STYPE##_p(TYPE *addr, TYPE value, int pe,    \
         shmemx_ctx_t c)                                          \
   {                                                              \
@@ -339,10 +335,6 @@
 SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_P)
 
 #define SHMEM_DEF_G(STYPE,TYPE) \
-  TYPE shmem_##STYPE##_g(const TYPE *addr, int pe)               \
-  {                                                              \
-    return shmemx_ctx_##STYPE##_g(addr, pe, SHMEMX_CTX_DEFAULT); \
-  }                                                              \
   TYPE shmemx_ctx_##STYPE##_g(const TYPE *addr, int pe,          \
         shmemx_ctx_t ctx)                                        \
   {                                                              \
@@ -356,12 +348,6 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_P)
 SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_G)
 
 #define SHMEM_DEF_PUT(STYPE,TYPE) \
-  void shmem_##STYPE##_put(TYPE *target, const TYPE *source,         \
-        size_t nelems, int pe)                                       \
-  {                                                                  \
-    shmemx_ctx_##STYPE##_put(target, source, nelems, pe,             \
-        SHMEMX_CTX_DEFAULT);                                         \
-  }                                                                  \
   void shmemx_ctx_##STYPE##_put(TYPE *target, const TYPE *source,    \
         size_t nelems, int pe, shmemx_ctx_t ctx)                     \
   {                                                                  \
@@ -373,12 +359,6 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_G)
 SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_PUT)
 
 #define SHMEM_DEF_PUT_N(NAME,SIZE) \
-  void shmem_put##NAME(void *target, const void *source,          \
-        size_t nelems, int pe)                                    \
-  {                                                               \
-    shmemx_ctx_put##NAME(target, source, nelems, pe,              \
-        SHMEMX_CTX_DEFAULT);                                      \
-  }                                                               \
   void shmemx_ctx_put##NAME(void *target, const void *source,     \
           size_t nelems, int pe, shmemx_ctx_t ctx)                \
   {                                                               \
@@ -389,12 +369,6 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_PUT)
 SHMEM_DEFINE_FOR_EXTENDED_SIZES(SHMEM_DEF_PUT_N)
 
 #define SHMEM_DEF_PUT_NBI(STYPE,TYPE) \
-  void shmem_##STYPE##_put_nbi(TYPE *target, const TYPE *source,     \
-          size_t nelems, int pe)                                     \
-  {                                                                  \
-    shmemx_ctx_##STYPE##_put_nbi(target, source, nelems, pe,         \
-          SHMEMX_CTX_DEFAULT);                                       \
-  }                                                                  \
   void shmemx_ctx_##STYPE##_put_nbi(TYPE *target, const TYPE *source,\
           size_t nelems, int pe, shmemx_ctx_t ctx)                   \
   {                                                                  \
@@ -406,12 +380,6 @@ SHMEM_DEFINE_FOR_EXTENDED_SIZES(SHMEM_DEF_PUT_N)
 SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_PUT_NBI)
 
 #define SHMEM_DEF_PUT_N_NBI(NAME,SIZE) \
-  void shmem_put##NAME##_nbi(void *target, const void *source,      \
-          size_t nelems, int pe)                                    \
-  {                                                                 \
-    shmemx_ctx_put##NAME##_nbi(target, source, nelems, pe,          \
-            SHMEMX_CTX_DEFAULT);                                    \
-  }                                                                 \
   void shmemx_ctx_put##NAME##_nbi(void *target, const void *source, \
           size_t nelems, int pe, shmemx_ctx_t ctx)                  \
   {                                                                 \
@@ -422,12 +390,6 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_PUT_NBI)
 SHMEM_DEFINE_FOR_EXTENDED_SIZES(SHMEM_DEF_PUT_N_NBI)
 
 #define SHMEM_DEF_GET(STYPE,TYPE) \
-  void shmem_##STYPE##_get(TYPE *target,const TYPE *source,        \
-          size_t nelems, int pe)                                   \
-  {                                                                \
-    shmemx_ctx_##STYPE##_get(target, source, nelems, pe,           \
-            SHMEMX_CTX_DEFAULT);                                   \
-  }                                                                \
   void shmemx_ctx_##STYPE##_get(TYPE *target,const TYPE *source,   \
           size_t nelems, int pe, shmemx_ctx_t ctx)                 \
   {                                                                \
@@ -440,12 +402,6 @@ SHMEM_DEFINE_FOR_EXTENDED_SIZES(SHMEM_DEF_PUT_N_NBI)
 SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_GET)
 
 #define SHMEM_DEF_GET_N(NAME,SIZE) \
-  void shmem_get##NAME(void *target, const void *source,        \
-          size_t nelems, int pe)                                \
-  {                                                             \
-    shmemx_ctx_get##NAME(target, source, nelems, pe,            \
-            SHMEMX_CTX_DEFAULT);                                \
-  }                                                             \
   void shmemx_ctx_get##NAME(void *target, const void *source,   \
           size_t nelems, int pe, shmemx_ctx_t ctx)              \
   {                                                             \
@@ -457,12 +413,6 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_GET)
 SHMEM_DEFINE_FOR_EXTENDED_SIZES(SHMEM_DEF_GET_N)
 
 #define SHMEM_DEF_GET_NBI(STYPE,TYPE) \
-  void shmem_##STYPE##_get_nbi(TYPE *target, const TYPE *source,     \
-          size_t nelems, int pe)                                     \
-  {                                                                  \
-    shmemx_ctx_##STYPE##_get_nbi(target, source, nelems, pe,         \
-            SHMEMX_CTX_DEFAULT);                                     \
-  }                                                                  \
   void shmemx_ctx_##STYPE##_get_nbi(TYPE *target, const TYPE *source,\
           size_t nelems, int pe, shmemx_ctx_t c)                     \
   {                                                                  \
@@ -473,12 +423,6 @@ SHMEM_DEFINE_FOR_EXTENDED_SIZES(SHMEM_DEF_GET_N)
 SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_GET_NBI)
 
 #define SHMEM_DEF_GET_N_NBI(NAME,SIZE) \
-  void shmem_get##NAME##_nbi(void *target, const void *source,      \
-          size_t nelems, int pe)                                    \
-  {                                                                 \
-    shmemx_ctx_get##NAME##_nbi(target, source, nelems, pe,          \
-            SHMEMX_CTX_DEFAULT);                                    \
-  }                                                                 \
   void shmemx_ctx_get##NAME##_nbi(void *target, const void *source, \
           size_t nelems, int pe, shmemx_ctx_t ctx)                  \
   {                                                                 \
@@ -489,12 +433,6 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_GET_NBI)
 SHMEM_DEFINE_FOR_EXTENDED_SIZES(SHMEM_DEF_GET_N_NBI)
 
 #define SHMEM_DEF_IPUT(STYPE,TYPE) \
-  void shmem_##STYPE##_iput(TYPE *target, const TYPE *source,       \
-          ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe)      \
-  {                                                                 \
-    shmemx_ctx_##STYPE##_iput(target, source, tst, sst, nelems, pe, \
-            SHMEMX_CTX_DEFAULT);                                    \
-  }                                                                 \
   void shmemx_ctx_##STYPE##_iput(TYPE *target, const TYPE *source,  \
           ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe,      \
           shmemx_ctx_t c)                                           \
@@ -510,12 +448,6 @@ SHMEM_DEFINE_FOR_EXTENDED_SIZES(SHMEM_DEF_GET_N_NBI)
 SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_IPUT)
 
 #define SHMEM_DEF_IPUT_N(NAME,SIZE) \
-  void shmem_iput##NAME(void *target, const void *source,       \
-          ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe)  \
-  {                                                             \
-    shmemx_ctx_iput##NAME(target, source, tst, sst, nelems, pe, \
-            SHMEMX_CTX_DEFAULT);                                \
-  }                                                             \
   void shmemx_ctx_iput##NAME(void *target, const void *source,  \
           ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe,  \
           shmemx_ctx_t ctx)                                     \
@@ -531,12 +463,6 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_IPUT)
 SHMEM_DEFINE_FOR_SIZES(SHMEM_DEF_IPUT_N)
 
 #define SHMEM_DEF_IGET(STYPE,TYPE) \
-  void shmem_##STYPE##_iget(TYPE *target, const TYPE *source,       \
-          ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe)      \
-  {                                                                 \
-    shmemx_ctx_##STYPE##_iget(target, source, tst, sst, nelems, pe, \
-            SHMEMX_CTX_DEFAULT);                                    \
-  }                                                                 \
   void shmemx_ctx_##STYPE##_iget(TYPE *target, const TYPE *source,  \
           ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe,      \
           shmemx_ctx_t ctx)                                         \
@@ -553,12 +479,6 @@ SHMEM_DEFINE_FOR_SIZES(SHMEM_DEF_IPUT_N)
 SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_IGET)
 
 #define SHMEM_DEF_IGET_N(NAME,SIZE) \
-  void shmem_iget##NAME(void *target, const void *source,       \
-          ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe)  \
-  {                                                             \
-    shmemx_ctx_iget##NAME(target, source, tst, sst, nelems, pe, \
-            SHMEMX_CTX_DEFAULT);                                \
-  }                                                             \
   void shmemx_ctx_iget##NAME(void *target, const void *source,  \
           ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe,  \
           shmemx_ctx_t ctx)                                     \

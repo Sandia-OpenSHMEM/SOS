@@ -290,6 +290,8 @@ struct fabric_info shmem_ofi_cntr_info = {0};
 int shmemx_domain_create(int thread_level, int num_domains,
         shmemx_domain_t domains[])
 {
+  SHMEM_ERR_CHECK_INITIALIZED();
+
   if(thread_level > shmem_internal_thread_level) {
     fprintf(stderr,"Cannot create domain with thread level %d when "
         "global thread level is %d\n",thread_level,
@@ -416,6 +418,8 @@ void shmem_transport_domain_destroy(shmem_transport_dom_t* dom)
 
 void shmemx_domain_destroy(int num_domains, shmemx_domain_t domains[])
 {
+  SHMEM_ERR_CHECK_INITIALIZED();
+
   int i;
 
   for(i = 0; i < num_domains; ++i) {
@@ -433,6 +437,8 @@ void shmemx_domain_destroy(int num_domains, shmemx_domain_t domains[])
 
 int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
 {
+  SHMEM_ERR_CHECK_INITIALIZED();
+
   /* FIXME: This does not do resource cleanup (or unlock the mutex on
    * `domain`) on error, it just returns. This is consistent with how
    * initialization worked before, but is worse since context creation
@@ -518,6 +524,8 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
 }
 
 void shmemx_ctx_destroy(shmemx_ctx_t ctxid) {
+  SHMEM_ERR_CHECK_INITIALIZED();
+
   shmemx_ctx_quiet(ctxid);
 
   shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(ctxid);
@@ -548,6 +556,8 @@ void shmemx_ctx_destroy(shmemx_ctx_t ctxid) {
 
 void shmemx_ctx_quiet(shmemx_ctx_t c)
 {
+  SHMEM_ERR_CHECK_INITIALIZED();
+
   shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
   shmem_transport_dom_t* dom = ctx->domain;
 
@@ -559,6 +569,8 @@ void shmemx_ctx_quiet(shmemx_ctx_t c)
 }
 
 void shmemx_ctx_fence(shmemx_ctx_t c) {
+  SHMEM_ERR_CHECK_INITIALIZED();
+
 #if WANT_TOTAL_DATA_ORDERING == 0
   /*unordered network model*/
   shmemx_ctx_quiet(c);
@@ -669,18 +681,18 @@ static inline int allocate_recv_cntr_mr(void)
     /* Bind to endpoint, incoming communication associated with endpoint now
      * has defined resources */
     ret = fi_ep_bind(shmem_transport_ctx->endpoint.ep,
-                     &shmem_transport_ofi_target_heap_mrfd->fid,
+                     &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_READ | FI_REMOTE_WRITE);
     if (ret != 0) {
-        OFI_ERRMSG("ep_bind mr2epfd heap failed\n");
+        OFI_ERRMSG("ep_bind cntr_ep2epfd heap failed\n");
         return ret;
     }
 
     ret = fi_ep_bind(shmem_transport_ctx->endpoint.ep,
-                     &shmem_transport_ofi_target_data_mrfd->fid,
+                     &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_READ | FI_REMOTE_WRITE);
     if (ret != 0) {
-        OFI_ERRMSG("ep_bind mr2epfd data failed\n");
+        OFI_ERRMSG("ep_bind cntr_ep2epfd data failed\n");
         return ret;
     }
 #endif /* ndef ENABLE_HARD_POLLING */

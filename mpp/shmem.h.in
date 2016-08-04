@@ -89,8 +89,8 @@ void shmem_free(void *ptr);
  *  - Joe Doyle 20-Jun-2016
  */
 #ifndef SHMEM_UTIL_MACROS
-
 #define SHMEM_UTIL_MACROS
+#define SHMEM_UTIL_MACROS_SHMEM_H
 
 #define SHMEM_EVAL_MACRO_FOR_RMA(DECL,EOL) \
   DECL(float,      float) EOL           \
@@ -160,126 +160,259 @@ void shmem_free(void *ptr);
 
 /* End duplicated util macros */
 
+/* 8.5: Collect Routines */
+void shmem_collect32(void *target, const void *source, size_t nlong,
+                     int PE_start, int logPE_stride, int PE_size, long *pSync);
+void shmem_collect64(void *target, const void *source, size_t nlong,
+                     int PE_start, int logPE_stride, int PE_size, long *pSync);
+void shmem_fcollect32(void *target, const void *source, size_t nlong,
+                      int PE_start, int logPE_stride, int PE_size,
+                      long *pSync);
+void shmem_fcollect64(void *target, const void *source, size_t nlong,
+                      int PE_start, int logPE_stride, int PE_size,
+                      long *pSync);
+
+/* 8.5: Broadcast Routines */
+void shmem_broadcast32(void *target, const void *source, size_t nlong,
+                       int PE_root, int PE_start, int logPE_stride,
+                       int PE_size, long *pSync);
+void shmem_broadcast64(void *target, const void *source, size_t nlong,
+                       int PE_root, int PE_start, int logPE_stride,
+                       int PE_size, long *pSync);
+
+/* 8.6: All-to-all routines */
+void shmem_alltoall32(void *dest, const void *source, size_t nelems, int PE_start,
+                      int logPE_stride, int PE_size, long *pSync);
+void shmem_alltoall64(void *dest, const void *source, size_t nelems, int PE_start,
+                      int logPE_stride, int PE_size, long *pSync);
+
+void shmem_alltoalls32(void *dest, const void *source, ptrdiff_t dst,
+                       ptrdiff_t sst, size_t nelems, int PE_start,
+                       int logPE_stride, int PE_size, long *pSync);
+void shmem_alltoalls64(void *dest, const void *source, ptrdiff_t dst,
+                       ptrdiff_t sst, size_t nelems, int PE_start,
+                       int logPE_stride, int PE_size, long *pSync);
+
+/* 8.6: Point-to-Point Synchronization Routines -- Wait */
+void shmem_short_wait(volatile short *var, short value);
+void shmem_int_wait(volatile int *var, int value);
+void shmem_long_wait(volatile long *var, long value);
+void shmem_longlong_wait(volatile long long *var, long long value);
+void shmem_wait(volatile long *ivar, long cmp_value);
+
+/* 8.6: Point-to-Point Synchronization Routines -- Wait Until */
+void shmem_short_wait_until(volatile short *var, int cond, short value);
+void shmem_int_wait_until(volatile int *var, int cond, int value);
+void shmem_long_wait_until(volatile long *var, int cond, long value);
+void shmem_longlong_wait_until(volatile long long *var, int cond,
+                               long long value);
+void shmem_wait_until(volatile long *ivar, int cmp, long value);
+
+/* 8.8: Lock Routines */
+void shmem_set_lock(volatile long *lock);
+void shmem_clear_lock(volatile long *lock);
+int shmem_test_lock(volatile long *lock);
+
+/* 8.9: Cache Management Routines (deprecated) */
+void shmem_set_cache_inv(void) __attribute__ ((deprecated));
+void shmem_set_cache_line_inv(void *target) __attribute__ ((deprecated));
+void shmem_clear_cache_inv(void) __attribute__ ((deprecated));
+void shmem_clear_cache_line_inv(void *target) __attribute__ ((deprecated));
+void shmem_udcflush(void) __attribute__ ((deprecated));
+void shmem_udcflush_line(void *target) __attribute__ ((deprecated));
+
+/* F: Deprecated API */
+int _num_pes(void) __attribute__ ((deprecated));
+int _my_pe(void) __attribute__ ((deprecated));
+void *shmalloc(size_t size) __attribute__ ((deprecated));
+void *shmemalign(size_t alignment, size_t size) __attribute__ ((deprecated));
+void *shrealloc(void *ptr, size_t size) __attribute__ ((deprecated));
+void shfree(void *ptr) __attribute__ ((deprecated));
+void start_pes(int npes) __attribute__ ((deprecated));
+
+#include "shmemx.h"
+
 /* 8.3: Elemental Data Put Routines */
 #define SHMEM_C_P(TYPENAME,TYPE) \
-    void shmem_##TYPENAME##_p(TYPE *addr, TYPE value, int pe)
-SHMEM_DECLARE_FOR_RMA(SHMEM_C_P);
+    static inline void shmem_##TYPENAME##_p(TYPE *addr, TYPE value, int pe) { \
+      shmemx_ctx_##TYPENAME##_p(addr, value, pe, SHMEMX_CTX_DEFAULT); \
+    }
+SHMEM_DEFINE_FOR_RMA(SHMEM_C_P)
 
 /* 8.3: Block Data Put Routines */
 #define SHMEM_C_PUT(TYPENAME,TYPE) \
-    void shmem_##TYPENAME##_put(TYPE *target, const TYPE *source, \
-                                size_t nelems, int pe)
-SHMEM_DECLARE_FOR_RMA(SHMEM_C_PUT);
+    static inline void shmem_##TYPENAME##_put(TYPE *target, const TYPE *source, \
+                                size_t nelems, int pe) { \
+      shmemx_ctx_##TYPENAME##_put(target, source, \
+                                nelems, pe, SHMEMX_CTX_DEFAULT); \
+    }
+SHMEM_DEFINE_FOR_RMA(SHMEM_C_PUT)
 
 #define SHMEM_C_PUT_N(SIZE,NBYTES) \
-    void shmem_put##SIZE(void* target, const void *source, \
-                         size_t nelems, int pe)
-SHMEM_DECLARE_FOR_EXTENDED_SIZES(SHMEM_C_PUT_N);
+    static inline void shmem_put##SIZE(void* target, const void *source, \
+                         size_t nelems, int pe) { \
+      shmemx_ctx_put##SIZE(target, source, \
+                         nelems, pe, SHMEMX_CTX_DEFAULT); \
+    }
+SHMEM_DEFINE_FOR_EXTENDED_SIZES(SHMEM_C_PUT_N)
 
 /* 8.3: Strided Put Routines */
 #define SHMEM_C_IPUT(TYPENAME,TYPE) \
-  void shmem_##TYPENAME##_iput(TYPE *target, const TYPE *source,  \
+  static inline void shmem_##TYPENAME##_iput(TYPE *target, const TYPE *source,  \
                                ptrdiff_t tst, ptrdiff_t sst,      \
-                               size_t len, int pe)
-SHMEM_DECLARE_FOR_RMA(SHMEM_C_IPUT);
+                               size_t len, int pe) { \
+    shmemx_ctx_##TYPENAME##_iput(target, source,  \
+                               tst, sst,      \
+                               len, pe, SHMEMX_CTX_DEFAULT); \
+  }
+SHMEM_DEFINE_FOR_RMA(SHMEM_C_IPUT)
 
 #define SHMEM_C_IPUT_N(SIZE,NBYTES) \
-  void shmem_iput##SIZE(void *target, const void *source,         \
+  static inline void shmem_iput##SIZE(void *target, const void *source,         \
                         ptrdiff_t tst, ptrdiff_t sst, size_t len, \
-                        int pe)
-SHMEM_DECLARE_FOR_SIZES(SHMEM_C_IPUT_N);
+                        int pe) { \
+    shmemx_ctx_iput##SIZE(target, source,         \
+                        tst, sst, len, \
+                        pe, SHMEMX_CTX_DEFAULT); \
+  }
+SHMEM_DEFINE_FOR_SIZES(SHMEM_C_IPUT_N)
 
 /* 8.3: Elemental Data Get Routines */
 #define SHMEM_C_G(TYPENAME,TYPE) \
-    TYPE shmem_##TYPENAME##_g(const TYPE *addr, int pe)
-SHMEM_DECLARE_FOR_RMA(SHMEM_C_G);
+    static inline TYPE shmem_##TYPENAME##_g(const TYPE *addr, int pe) { \
+      return shmemx_ctx_##TYPENAME##_g(addr, pe, SHMEMX_CTX_DEFAULT); \
+    }
+SHMEM_DEFINE_FOR_RMA(SHMEM_C_G)
 
 /* 8.3: Block Data Get Routines */
 #define SHMEM_C_GET(TYPENAME,TYPE) \
-    void shmem_##TYPENAME##_get(TYPE *target, const TYPE *source, \
-                                size_t nelems,int pe)
-SHMEM_DECLARE_FOR_RMA(SHMEM_C_GET);
+    static inline void shmem_##TYPENAME##_get(TYPE *target, const TYPE *source, \
+                                size_t nelems,int pe) { \
+      shmemx_ctx_##TYPENAME##_get(target, source, \
+                                nelems,pe, SHMEMX_CTX_DEFAULT); \
+    }
+SHMEM_DEFINE_FOR_RMA(SHMEM_C_GET)
 
 #define SHMEM_C_GET_N(SIZE,NBYTES) \
-    void shmem_get##SIZE(void* target, const void *source, \
-                         size_t nelems, int pe)
-SHMEM_DECLARE_FOR_EXTENDED_SIZES(SHMEM_C_GET_N);
+    static inline void shmem_get##SIZE(void* target, const void *source, \
+                         size_t nelems, int pe) { \
+      shmemx_ctx_get##SIZE(target, source, \
+                         nelems, pe, SHMEMX_CTX_DEFAULT); \
+    }
+SHMEM_DEFINE_FOR_EXTENDED_SIZES(SHMEM_C_GET_N)
 
 /* 8.3: Strided Get Routines */
 #define SHMEM_C_IGET(TYPENAME,TYPE) \
-    void shmem_##TYPENAME##_iget(TYPE *target, const TYPE *source, \
+    static inline void shmem_##TYPENAME##_iget(TYPE *target, const TYPE *source, \
                                  ptrdiff_t tst, ptrdiff_t sst,     \
-                                 size_t nelems, int pe)
-SHMEM_DECLARE_FOR_RMA(SHMEM_C_IGET);
+                                 size_t nelems, int pe) { \
+      shmemx_ctx_##TYPENAME##_iget(target, source, \
+                                 tst, sst,     \
+                                 nelems, pe, SHMEMX_CTX_DEFAULT); \
+    }
+SHMEM_DEFINE_FOR_RMA(SHMEM_C_IGET)
 
 #define SHMEM_C_IGET_N(SIZE,NBYTES) \
-    void shmem_iget##SIZE(void* target, const void *source, \
+    static inline void shmem_iget##SIZE(void* target, const void *source, \
                           ptrdiff_t tst, ptrdiff_t sst,     \
-                          size_t nelems, int pe)
-SHMEM_DECLARE_FOR_SIZES(SHMEM_C_IGET_N);
+                          size_t nelems, int pe) { \
+      shmemx_ctx_iget##SIZE(target, source, \
+                          tst, sst,     \
+                          nelems, pe, SHMEMX_CTX_DEFAULT); \
+    }
+SHMEM_DEFINE_FOR_SIZES(SHMEM_C_IGET_N)
 
 /* 8.4: Nonblocking remote memory access routines -- Put */
 #define SHMEM_C_PUT_NBI(TYPENAME,TYPE) \
-    void shmem_##TYPENAME##_put_nbi(TYPE *target, const TYPE *source,\
-                                    size_t nelems, int pe)
-SHMEM_DECLARE_FOR_RMA(SHMEM_C_PUT_NBI);
+    static inline void shmem_##TYPENAME##_put_nbi(TYPE *target, const TYPE *source,\
+                                    size_t nelems, int pe) { \
+      shmemx_ctx_##TYPENAME##_put_nbi(target, source,\
+                                    nelems, pe, SHMEMX_CTX_DEFAULT); \
+    }
+SHMEM_DEFINE_FOR_RMA(SHMEM_C_PUT_NBI)
 
 #define SHMEM_C_PUT_N_NBI(SIZE,NBYTES) \
-    void shmem_put##SIZE##_nbi(void* target, const void *source, \
-                               size_t nelems, int pe)
-SHMEM_DECLARE_FOR_EXTENDED_SIZES(SHMEM_C_PUT_N_NBI);
+    static inline void shmem_put##SIZE##_nbi(void* target, const void *source, \
+                               size_t nelems, int pe) { \
+      shmemx_ctx_put##SIZE##_nbi(target, source, \
+                               nelems, pe, SHMEMX_CTX_DEFAULT); \
+    }
+SHMEM_DEFINE_FOR_EXTENDED_SIZES(SHMEM_C_PUT_N_NBI)
 
 /* 8.4: Nonblocking remote memory access routines -- Get */
 #define SHMEM_C_GET_NBI(TYPENAME,TYPE) \
-    void shmem_##TYPENAME##_get_nbi(TYPE *target, const TYPE *source,\
-                                    size_t nelems, int pe)
-SHMEM_DECLARE_FOR_RMA(SHMEM_C_GET_NBI);
+    static inline void shmem_##TYPENAME##_get_nbi(TYPE *target, const TYPE *source,\
+                                    size_t nelems, int pe) { \
+      shmemx_ctx_##TYPENAME##_get_nbi(target, source,\
+                                    nelems, pe, SHMEMX_CTX_DEFAULT); \
+    }
+SHMEM_DEFINE_FOR_RMA(SHMEM_C_GET_NBI)
 
 #define SHMEM_C_GET_N_NBI(SIZE,NBYTES) \
-    void shmem_get##SIZE##_nbi(void* target, const void *source, \
-                               size_t nelems, int pe)
-SHMEM_DECLARE_FOR_EXTENDED_SIZES(SHMEM_C_GET_N_NBI);
+    static inline void shmem_get##SIZE##_nbi(void* target, const void *source, \
+                               size_t nelems, int pe) { \
+      shmemx_ctx_get##SIZE##_nbi(target, source, \
+                               nelems, pe, SHMEMX_CTX_DEFAULT); \
+    }
+SHMEM_DEFINE_FOR_EXTENDED_SIZES(SHMEM_C_GET_N_NBI)
 
 /* 8.4: Atomic Memory fetch-and-operate Routines -- Swap */
 #define SHMEM_C_SWAP(TYPENAME,TYPE) \
-  TYPE shmem_##TYPENAME##_swap(TYPE *target, TYPE value, int pe)
-SHMEM_DECLARE_FOR_EXTENDED_AMO(SHMEM_C_SWAP);
+  static inline TYPE shmem_##TYPENAME##_swap(TYPE *target, TYPE value, int pe) { \
+    return shmemx_ctx_##TYPENAME##_swap(target, value, pe, SHMEMX_CTX_DEFAULT); \
+  }
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_C_SWAP)
 
 /* 8.4: Atomic Memory fetch-and-operate Routines -- Cswap */
 #define SHMEM_C_CSWAP(TYPENAME,TYPE) \
-  TYPE shmem_##TYPENAME##_cswap(TYPE *target, TYPE cond, TYPE value, \
-                                int pe)
-SHMEM_DECLARE_FOR_AMO(SHMEM_C_CSWAP);
+  static inline TYPE shmem_##TYPENAME##_cswap(TYPE *target, TYPE cond, TYPE value, \
+                                int pe) { \
+    return shmemx_ctx_##TYPENAME##_cswap(target, cond, value, \
+                                pe, SHMEMX_CTX_DEFAULT); \
+  }
+SHMEM_DEFINE_FOR_AMO(SHMEM_C_CSWAP)
 
 /* 8.4: Atomic Memory fetch-and-operate Routines -- Fetch and Add */
 #define SHMEM_C_FADD(TYPENAME,TYPE) \
-  TYPE shmem_##TYPENAME##_fadd(TYPE *target, TYPE value, int pe)
-SHMEM_DECLARE_FOR_AMO(SHMEM_C_FADD);
+  static inline TYPE shmem_##TYPENAME##_fadd(TYPE *target, TYPE value, int pe) { \
+    return shmemx_ctx_##TYPENAME##_fadd(target, value, pe, SHMEMX_CTX_DEFAULT); \
+  }
+SHMEM_DEFINE_FOR_AMO(SHMEM_C_FADD)
 
 /* 8.4: Atomic Memory fetch-and-operate Routines -- Fetch and Increment */
 #define SHMEM_C_FINC(TYPENAME,TYPE) \
-  TYPE shmem_##TYPENAME##_finc(TYPE *target, int pe)
-SHMEM_DECLARE_FOR_AMO(SHMEM_C_FINC);
+  static inline TYPE shmem_##TYPENAME##_finc(TYPE *target, int pe) { \
+    return shmemx_ctx_##TYPENAME##_finc(target, pe, SHMEMX_CTX_DEFAULT); \
+  }
+SHMEM_DEFINE_FOR_AMO(SHMEM_C_FINC)
 
 /* 8.4: Atomic Memory Operation Routines -- Add */
 #define SHMEM_C_ADD(TYPENAME,TYPE) \
-  void shmem_##TYPENAME##_add(TYPE *target, TYPE value, int pe)
-SHMEM_DECLARE_FOR_AMO(SHMEM_C_ADD);
+  static inline void shmem_##TYPENAME##_add(TYPE *target, TYPE value, int pe) { \
+    shmemx_ctx_##TYPENAME##_add(target, value, pe, SHMEMX_CTX_DEFAULT); \
+  }
+SHMEM_DEFINE_FOR_AMO(SHMEM_C_ADD)
 
 /* 8.4: Atomic Memory Operation Routines -- Increment */
 #define SHMEM_C_INC(TYPENAME,TYPE) \
-  void shmem_##TYPENAME##_inc(TYPE *target, int pe)
-SHMEM_DECLARE_FOR_AMO(SHMEM_C_INC);
+  static inline void shmem_##TYPENAME##_inc(TYPE *target, int pe) { \
+    shmemx_ctx_##TYPENAME##_inc(target, pe, SHMEMX_CTX_DEFAULT); \
+  }
+SHMEM_DEFINE_FOR_AMO(SHMEM_C_INC)
 
 /* 8.4: Atomic fetch */
 #define SHMEM_C_FETCH(TYPENAME,TYPE) \
-  TYPE shmem_##TYPENAME##_fetch(const TYPE *target, int pe)
-SHMEM_DECLARE_FOR_EXTENDED_AMO(SHMEM_C_FETCH);
+  static inline TYPE shmem_##TYPENAME##_fetch(const TYPE *target, int pe) { \
+    return shmemx_ctx_##TYPENAME##_fetch(target, pe, SHMEMX_CTX_DEFAULT); \
+  }
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_C_FETCH)
 
 /* 8.4: Atomic set */
 #define SHMEM_C_SET(TYPENAME,TYPE) \
-  void shmem_##TYPENAME##_set(TYPE *target, TYPE value, int pe)
-SHMEM_DECLARE_FOR_EXTENDED_AMO(SHMEM_C_SET);
+  static inline void shmem_##TYPENAME##_set(TYPE *target, TYPE value, int pe) { \
+    shmemx_ctx_##TYPENAME##_set(target, value, pe, SHMEMX_CTX_DEFAULT); \
+  }
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_C_SET)
 
 /* 8.5: Barrier Synchronization Routines */
 void shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync);
@@ -348,79 +481,13 @@ SHMEM_DECLARE_FOR_INTS(SHMEM_C_PROD_TO_ALL);
 SHMEM_DECLARE_FOR_FLOATS(SHMEM_C_PROD_TO_ALL);
 SHMEM_DECLARE_FOR_CMPLX(SHMEM_C_PROD_TO_ALL);
 
-/* 8.5: Collect Routines */
-void shmem_collect32(void *target, const void *source, size_t nlong,
-                     int PE_start, int logPE_stride, int PE_size, long *pSync);
-void shmem_collect64(void *target, const void *source, size_t nlong,
-                     int PE_start, int logPE_stride, int PE_size, long *pSync);
-void shmem_fcollect32(void *target, const void *source, size_t nlong,
-                      int PE_start, int logPE_stride, int PE_size,
-                      long *pSync);
-void shmem_fcollect64(void *target, const void *source, size_t nlong,
-                      int PE_start, int logPE_stride, int PE_size,
-                      long *pSync);
-
-/* 8.5: Broadcast Routines */
-void shmem_broadcast32(void *target, const void *source, size_t nlong,
-                       int PE_root, int PE_start, int logPE_stride,
-                       int PE_size, long *pSync);
-void shmem_broadcast64(void *target, const void *source, size_t nlong,
-                       int PE_root, int PE_start, int logPE_stride,
-                       int PE_size, long *pSync);
-
-/* 8.6: All-to-all routines */
-void shmem_alltoall32(void *dest, const void *source, size_t nelems, int PE_start,
-                      int logPE_stride, int PE_size, long *pSync);
-void shmem_alltoall64(void *dest, const void *source, size_t nelems, int PE_start,
-                      int logPE_stride, int PE_size, long *pSync);
-
-void shmem_alltoalls32(void *dest, const void *source, ptrdiff_t dst,
-                       ptrdiff_t sst, size_t nelems, int PE_start,
-                       int logPE_stride, int PE_size, long *pSync);
-void shmem_alltoalls64(void *dest, const void *source, ptrdiff_t dst,
-                       ptrdiff_t sst, size_t nelems, int PE_start,
-                       int logPE_stride, int PE_size, long *pSync);
-
-/* 8.6: Point-to-Point Synchronization Routines -- Wait */
-void shmem_short_wait(volatile short *var, short value);
-void shmem_int_wait(volatile int *var, int value);
-void shmem_long_wait(volatile long *var, long value);
-void shmem_longlong_wait(volatile long long *var, long long value);
-void shmem_wait(volatile long *ivar, long cmp_value);
-
-/* 8.6: Point-to-Point Synchronization Routines -- Wait Until */
-void shmem_short_wait_until(volatile short *var, int cond, short value);
-void shmem_int_wait_until(volatile int *var, int cond, int value);
-void shmem_long_wait_until(volatile long *var, int cond, long value);
-void shmem_longlong_wait_until(volatile long long *var, int cond,
-                               long long value);
-void shmem_wait_until(volatile long *ivar, int cmp, long value);
-
 /* 8.7: Memory Ordering Routines */
-void shmem_quiet(void);
-void shmem_fence(void);
-
-/* 8.8: Lock Routines */
-void shmem_set_lock(volatile long *lock);
-void shmem_clear_lock(volatile long *lock);
-int shmem_test_lock(volatile long *lock);
-
-/* 8.9: Cache Management Routines (deprecated) */
-void shmem_set_cache_inv(void) __attribute__ ((deprecated));
-void shmem_set_cache_line_inv(void *target) __attribute__ ((deprecated));
-void shmem_clear_cache_inv(void) __attribute__ ((deprecated));
-void shmem_clear_cache_line_inv(void *target) __attribute__ ((deprecated));
-void shmem_udcflush(void) __attribute__ ((deprecated));
-void shmem_udcflush_line(void *target) __attribute__ ((deprecated));
-
-/* F: Deprecated API */
-int _num_pes(void) __attribute__ ((deprecated));
-int _my_pe(void) __attribute__ ((deprecated));
-void *shmalloc(size_t size) __attribute__ ((deprecated));
-void *shmemalign(size_t alignment, size_t size) __attribute__ ((deprecated));
-void *shrealloc(void *ptr, size_t size) __attribute__ ((deprecated));
-void shfree(void *ptr) __attribute__ ((deprecated));
-void start_pes(int npes) __attribute__ ((deprecated));
+static inline void shmem_quiet(void) {
+  shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
+}
+static inline void shmem_fence(void) {
+  shmemx_ctx_fence(SHMEMX_CTX_DEFAULT);
+}
 
 #undef SHMEM_C_P
 #undef SHMEM_C_PUT
@@ -759,12 +826,15 @@ SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_CXX_SET)
              long long*:        shmem_longlong_set              \
             )(dest, value, pe)
 #else
-long shmem_swap(long *target, long value, int pe);
+static inline long shmem_swap(long *target, long value, int pe) {
+  return shmemx_ctx_swap(target, value, pe, SHMEMX_CTX_DEFAULT);
+}
 #endif /* C11 */
 
-#ifndef SHMEM_INTERNAL_INCLUDE
+#if !defined(SHMEM_INTERNAL_INCLUDE) && defined(SHMEM_UTIL_MACROS_SHMEM_H)
 
 #undef SHMEM_UTIL_MACROS
+#undef SHMEM_UTIL_MACROS_SHMEM_H
 
 #undef SHMEM_EVAL_MACRO_FOR_RMA
 #undef SHMEM_EVAL_MACRO_FOR_AMO

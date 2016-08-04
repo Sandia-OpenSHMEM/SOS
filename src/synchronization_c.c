@@ -62,23 +62,6 @@
 
 #endif /* ENABLE_PROFILING */
 
-void
-shmem_quiet(void)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
-}
-
-
-void
-shmem_fence(void)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    shmemx_ctx_fence(SHMEMX_CTX_DEFAULT);
-}
-
 
 void
 shmem_short_wait(volatile short *var, short value)

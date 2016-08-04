@@ -199,7 +199,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     }
 
     /* set up threading */
-    SHMEM_MUTEX_INIT(shmem_internal_mutex_alloc);
 #ifdef ENABLE_THREADS
     shmem_internal_thread_level = tl_requested;
     *tl_provided = tl_requested;
@@ -207,6 +206,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     shmem_internal_thread_level = SHMEMX_THREAD_SINGLE;
     *tl_provided = SHMEMX_THREAD_SINGLE;
 #endif
+    SHMEM_MUTEX_INIT(shmem_internal_mutex_alloc);
 
     /* Initialize transport devices */
     ret = shmem_transport_init(shmem_internal_thread_level,

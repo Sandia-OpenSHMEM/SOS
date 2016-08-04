@@ -123,6 +123,23 @@ static inline void shmem_transport_ctx_quiet(shmem_transport_ctx_t* ctx)
   }
 }
 
+static inline void shmem_transport_ctx_drain(shmem_transport_ctx_t* ctx)
+{
+  int ret = 0;
+
+  uint64_t cnt = fi_cntr_read(ctx->endpoint.counter);
+  if(cnt < ctx->endpoint.pending_count) {
+    ret = fi_cntr_wait(ctx->endpoint.counter,
+        cnt+1, -1);
+  }
+
+  if(ret) {
+    struct fi_cq_err_entry e = {0};
+    fi_cq_readerr(ctx->domain->cq, (void *)&e, 0);
+    RAISE_ERROR(e.err);
+  }
+}
+
 static inline
 void shmem_transport_ctx_fence(shmem_transport_ctx_t* ctx)
 {
@@ -141,7 +158,7 @@ static inline int try_again(const int ret, uint64_t *polled,
 
   if (ret) {
     if (ret == -FI_EAGAIN) {
-      shmem_transport_ctx_quiet(ctx);
+      shmem_transport_ctx_drain(ctx);
       (*polled)++;
       if ((*polled) <= shmem_transport_ofi_max_poll) {
         return 1;
@@ -745,11 +762,7 @@ static inline
 uint64_t shmem_transport_received_cntr_get(void)
 {
 #ifndef ENABLE_HARD_POLLING
-  ctx->take_lock((shmem_transport_dom_t**)ctx);
-
   int ret =  fi_cntr_read(shmem_transport_ofi_target_cntrfd);
-
-  ctx->release_lock((shmem_transport_dom_t**)ctx);
 
   return ret;
 #else
@@ -762,12 +775,8 @@ static inline
 void shmem_transport_received_cntr_wait(uint64_t ge_val)
 {
 #ifndef ENABLE_HARD_POLLING
-  ctx->take_lock((shmem_transport_dom_t**)ctx);
-
-  /* FIXME: Deadlocks on shared context */
+  /* FIXME: assumes counter waiting is thread-safe */
   int ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd, ge_val, -1);
-
-  ctx->release_lock((shmem_transport_dom_t**)ctx);
 
   if (ret) {
     RAISE_ERROR(ret);
