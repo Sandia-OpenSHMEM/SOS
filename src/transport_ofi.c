@@ -290,8 +290,6 @@ struct fabric_info shmem_ofi_cntr_info = {0};
 int shmemx_domain_create(int thread_level, int num_domains,
         shmemx_domain_t domains[])
 {
-  SHMEM_ERR_CHECK_INITIALIZED();
-
   if(thread_level > shmem_internal_thread_level) {
     fprintf(stderr,"Cannot create domain with thread level %d when "
         "global thread level is %d\n",thread_level,
@@ -437,8 +435,6 @@ void shmemx_domain_destroy(int num_domains, shmemx_domain_t domains[])
 
 int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
 {
-  SHMEM_ERR_CHECK_INITIALIZED();
-
   /* FIXME: This does not do resource cleanup (or unlock the mutex on
    * `domain`) on error, it just returns. This is consistent with how
    * initialization worked before, but is worse since context creation
@@ -593,6 +589,7 @@ static inline int allocate_recv_cntr_mr(void)
     // Create counter for incoming writes
     cntr_attr.events   = FI_CNTR_EVENTS_COMP;
     cntr_attr.flags    = 0;
+    cntr_attr.wait_obj = FI_WAIT_MUTEX_COND;
 
 #ifndef ENABLE_HARD_POLLING
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
@@ -624,7 +621,7 @@ static inline int allocate_recv_cntr_mr(void)
 
     //bind to endpoint, incoming communication associated with endpoint now has defined resources
     ret = fi_ep_bind(shmem_transport_ctx->endpoint.ep,
-                     &shmem_transport_ofi_target_mrfd->fid,
+                     &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_READ | FI_REMOTE_WRITE);
     if(ret!=0){
 	OFI_ERRMSG("ep_bind cntr_epfd2put_cntr failed\n");

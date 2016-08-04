@@ -776,7 +776,8 @@ void shmem_transport_received_cntr_wait(uint64_t ge_val)
 {
 #ifndef ENABLE_HARD_POLLING
   /* FIXME: assumes counter waiting is thread-safe */
-  int ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd, ge_val, -1);
+  int ret = 0;
+  ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd, ge_val, -1);
 
   if (ret) {
     RAISE_ERROR(ret);
