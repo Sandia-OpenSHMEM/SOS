@@ -133,5 +133,7 @@ notifications:
       - regrant@sandia.gov
       - james.dinan@intel.com
       - kayla.seager@intel.com
+      - joethedoyle@gmail.com
     on_success: [change]
-    on_failure: [always] 
+    on_failure: [always]
+
