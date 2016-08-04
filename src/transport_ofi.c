@@ -593,6 +593,7 @@ static inline int allocate_recv_cntr_mr(void)
     // Create counter for incoming writes
     cntr_attr.events   = FI_CNTR_EVENTS_COMP;
     cntr_attr.flags    = 0;
+    cntr_attr.wait_obj = FI_WAIT_MUTEX_COND;
 
 #ifndef ENABLE_HARD_POLLING
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
