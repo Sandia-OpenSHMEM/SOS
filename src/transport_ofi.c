@@ -368,22 +368,22 @@ int shmemx_domain_create(int thread_level, int num_domains,
     struct fabric_info* info = &shmem_ofi_cq_info;
     info->p_info->ep_attr->tx_ctx_cnt = FI_SHARED_CONTEXT;
     info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
-    ret = fi_endpoint(shmem_transport_ofi_domainfd,
-        info->p_info, &dom->cq_ep, NULL);
-    IF_OFI_ERR_RETURN(ret,"domain epfd creation failed");
+    /* ret = fi_endpoint(shmem_transport_ofi_domainfd, */
+    /*     info->p_info, &dom->cq_ep, NULL); */
+    /* IF_OFI_ERR_RETURN(ret,"domain epfd creation failed"); */
 
-    ret = fi_ep_bind(dom->cq_ep, &dom->cq->fid,
-        FI_SEND | FI_SELECTIVE_COMPLETION | FI_TRANSMIT);
-    IF_OFI_ERR_RETURN(ret,"domain ep_bind ep -> cq failed");
-    ret = fi_ep_bind(dom->cq_ep, &shmem_transport_ofi_avfd->fid, 0);
-    IF_OFI_ERR_RETURN(ret,"domain ep_bind ep -> av failed");
+    /* ret = fi_ep_bind(dom->cq_ep, &dom->cq->fid, */
+    /*     FI_SEND | FI_SELECTIVE_COMPLETION | FI_TRANSMIT); */
+    /* IF_OFI_ERR_RETURN(ret,"domain ep_bind ep -> cq failed"); */
+    /* ret = fi_ep_bind(dom->cq_ep, &shmem_transport_ofi_avfd->fid, 0); */
+    /* IF_OFI_ERR_RETURN(ret,"domain ep_bind ep -> av failed"); */
 
-    ret = fi_ep_bind(dom->cq_ep, &dom->stx->fid, 0);
-    IF_OFI_ERR_RETURN(ret,"domain ep_bind ep -> stx failed");
+    /* ret = fi_ep_bind(dom->cq_ep, &dom->stx->fid, 0); */
+    /* IF_OFI_ERR_RETURN(ret,"domain ep_bind ep -> stx failed"); */
 
 
-    ret = fi_enable(dom->cq_ep);
-    IF_OFI_ERR_RETURN(ret,"context enable endpoint");
+    /* ret = fi_enable(dom->cq_ep); */
+    /* IF_OFI_ERR_RETURN(ret,"context enable endpoint"); */
   }
 
   return ret;
@@ -399,10 +399,10 @@ void shmem_transport_domain_destroy(shmem_transport_dom_t* dom)
 
   // The attached CQ is implicitly closed (as I discovered while
   // memory-checking with Valgrind). -jpdoyle
-  if(fi_close(&dom->cq_ep->fid)) {
-    OFI_ERRMSG("Domain CQ Endpoint close failed (%s)",
-        fi_strerror(errno));
-  }
+  /* if(fi_close(&dom->cq_ep->fid)) { */
+  /*   OFI_ERRMSG("Domain CQ Endpoint close failed (%s)", */
+  /*       fi_strerror(errno)); */
+  /* } */
 
   if(fi_close(&dom->stx->fid)) {
     OFI_ERRMSG("Domain STX close failed (%s)", fi_strerror(errno));
@@ -496,11 +496,11 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
   ret = fi_ep_bind(ep->ep, &dom->stx->fid, 0);
   IF_OFI_ERR_RETURN(ret,"context ep_bind ep -> stx failed");
 
-  ret = fi_ep_bind(ep->ep, &shmem_transport_ofi_avfd->fid, 0);
-  IF_OFI_ERR_RETURN(ret,"ep_bind cntr_ep2av failed");
-
   ret = fi_ep_bind(ep->ep, &ep->counter->fid, FI_READ | FI_WRITE);
   IF_OFI_ERR_RETURN(ret,"ep_bind cntr_ep2cntr failed");
+
+  ret = fi_ep_bind(ep->ep, &shmem_transport_ofi_avfd->fid, 0);
+  IF_OFI_ERR_RETURN(ret,"ep_bind cntr_ep2av failed");
 
   ret = fi_enable(ep->ep);
   IF_OFI_ERR_RETURN(ret,"context enable endpoint");
@@ -611,7 +611,7 @@ static inline int allocate_recv_cntr_mr(void)
     }
 
     //bind to endpoint, incoming communication associated with endpoint now has defined resources
-    ret = fi_ep_bind(shmem_transport_dom->cq_ep,
+    ret = fi_ep_bind(shmem_transport_ctx->endpoint.ep,
                      &shmem_transport_ofi_target_mrfd->fid,
                      FI_REMOTE_READ | FI_REMOTE_WRITE);
     if(ret!=0){
@@ -619,7 +619,7 @@ static inline int allocate_recv_cntr_mr(void)
 	return ret;
     }
 
-    ret = fi_ep_bind(shmem_transport_dom->cq_ep,
+    ret = fi_ep_bind(shmem_transport_ctx->endpoint.ep,
 		    &shmem_transport_ofi_target_cntrfd->fid,
                     FI_REMOTE_WRITE | FI_REMOTE_READ);
     if(ret!=0){
@@ -668,7 +668,7 @@ static inline int allocate_recv_cntr_mr(void)
 
     /* Bind to endpoint, incoming communication associated with endpoint now
      * has defined resources */
-    ret = fi_ep_bind(shmem_transport_dom->cq_ep,
+    ret = fi_ep_bind(shmem_transport_ctx->endpoint.ep,
                      &shmem_transport_ofi_target_heap_mrfd->fid,
                      FI_REMOTE_READ | FI_REMOTE_WRITE);
     if (ret != 0) {
@@ -676,7 +676,7 @@ static inline int allocate_recv_cntr_mr(void)
         return ret;
     }
 
-    ret = fi_ep_bind(shmem_transport_dom->cq_ep,
+    ret = fi_ep_bind(shmem_transport_ctx->endpoint.ep,
                      &shmem_transport_ofi_target_data_mrfd->fid,
                      FI_REMOTE_READ | FI_REMOTE_WRITE);
     if (ret != 0) {
@@ -841,7 +841,7 @@ static inline int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
 
     for(i=0; i<DT_MAX; i++) {
       for(j=0; j<OPS_MAX; j++) {
-        ret = fi_atomicvalid(shmem_transport_dom->cq_ep, DT[i],
+        ret = fi_atomicvalid(shmem_transport_ctx->endpoint.ep, DT[i],
                         OPS[j], &atomic_size);
          if(atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                             SHMEM_OpName[OPS[j]],
@@ -1002,7 +1002,7 @@ static inline int publish_av_info(struct fabric_info *info)
     }
 #endif
 
-    ret = fi_getname((fid_t)shmem_transport_dom->cq_ep, epname,
+    ret = fi_getname((fid_t)shmem_transport_ctx->endpoint.ep, epname,
         &epnamelen);
     if(ret!=0 || (epnamelen > sizeof(epname))){
         OFI_ERRMSG("fi_getname failed\n");

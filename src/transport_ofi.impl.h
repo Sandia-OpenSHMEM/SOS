@@ -690,7 +690,7 @@ int shmem_transport_atomic_supported(shm_internal_op_t op,
                                      shm_internal_datatype_t datatype)
 {
    size_t size = 0;
-   int ret = fi_atomicvalid(shmem_transport_dom->cq_ep, datatype, op, &size);
+   int ret = fi_atomicvalid(shmem_transport_ctx->endpoint.ep, datatype, op, &size);
    return !(ret != 0 || size == 0);
 }
 
