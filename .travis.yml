@@ -44,7 +44,8 @@ before_install:
     - cd libev-4.22 && ./configure --prefix=$TRAVIS_INSTALL/libev && make && make install
     ## Build libfabric
     - cd $TRAVIS_SRC
-    - git clone -b v1.3.0 --depth 10 https://github.com/ofiwg/libfabric.git libfabric
+    # - git clone -b v1.3.0 --depth 10 https://github.com/ofiwg/libfabric.git libfabric
+    - git clone --depth 1 https://github.com/jpdoyle/libfabric.git libfabric
     - cd libfabric
     - ./autogen.sh
     - ./configure --prefix=$TRAVIS_INSTALL/libfabric
