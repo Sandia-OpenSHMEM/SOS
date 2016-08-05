@@ -30,7 +30,6 @@ check_PROGRAMS += \
 	shmem_bw_put_perf \
 	shmem_bw_put_thread \
 	shmem_bw_put_ctx_lockless \
-	shmem_bw_put_ctx_lock \
 	shmem_bibw_put_perf \
 	shmem_bw_get_perf \
 	shmem_bibw_get_perf \
