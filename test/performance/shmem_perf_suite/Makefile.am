@@ -28,7 +28,6 @@ check_PROGRAMS += \
 	shmem_latency_put_perf \
 	shmem_latency_get_perf \
 	shmem_bw_put_perf \
-	shmem_bw_put_thread \
 	shmem_bw_put_ctx_lockless \
 	shmem_bibw_put_perf \
 	shmem_bw_get_perf \
@@ -54,9 +53,8 @@ shmem_latency_put_perf_SOURCES = shmem_latency_put_perf.c latency_common.h commo
 shmem_latency_get_perf_SOURCES = shmem_latency_get_perf.c latency_common.h common.h round_t_latency.h int_element_latency.h
 
 shmem_bw_put_perf_SOURCES = shmem_bw_put_perf.c bw_common.h common.h uni_dir.h
-shmem_bw_put_thread_SOURCES = shmem_bw_put_thread.c bw_common.h common.h uni_dir.h
+
 shmem_bw_put_ctx_lockless_SOURCES = shmem_bw_put_ctx_lockless.c bw_common.h common.h uni_dir.h
-shmem_bw_put_ctx_lock_SOURCES = shmem_bw_put_ctx_lock.c bw_common.h common.h uni_dir.h
 
 shmem_bibw_put_perf_SOURCES = shmem_bibw_put_perf.c bw_common.h common.h bi_dir.h
 

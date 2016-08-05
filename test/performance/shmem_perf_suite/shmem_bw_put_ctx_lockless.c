@@ -106,7 +106,7 @@ uni_dir_bw(int len, perf_metrics_t *metric_info)
 
   shmem_barrier_all();
 
-  int chunksize = len/omp_get_num_threads();
+  int chunksize = len/n_threads;
   int numchunks = (len + chunksize - 1)/chunksize;
 
   if (streaming) {
