@@ -44,8 +44,7 @@ before_install:
     - cd libev-4.22 && ./configure --prefix=$TRAVIS_INSTALL/libev && make && make install
     ## Build libfabric
     - cd $TRAVIS_SRC
-    # - git clone -b v1.3.0 --depth 10 https://github.com/ofiwg/libfabric.git libfabric
-    - git clone --depth 1 https://github.com/jpdoyle/libfabric.git libfabric
+    - git clone -b v1.3.0 --depth 10 https://github.com/ofiwg/libfabric.git libfabric
     - cd libfabric
     - ./autogen.sh
     - ./configure --prefix=$TRAVIS_INSTALL/libfabric
@@ -108,9 +107,9 @@ script:
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/ISx/SHMEM
     - make CC=oshcc LDLIBS=-lm
-    - mpiexec.hydra -np 4 ./bin/isx.strong 67108864 output_strong
-    - mpiexec.hydra -np 4 ./bin/isx.weak 16777216 output_weak
-    - mpiexec.hydra -np 4 ./bin/isx.weak_iso 16777216 output_weak_iso
+    - mpiexec.hydra -np 4 ./bin/isx.strong 134217728 output_strong
+    - mpiexec.hydra -np 4 ./bin/isx.weak 33554432 output_weak
+    - mpiexec.hydra -np 4 ./bin/isx.weak_iso 33554432 output_weak_iso
     - make clean
     ###
     ### Run PRK (OFI)
@@ -121,7 +120,7 @@ script:
     - make allshmem
     - mpiexec.hydra -np 4 ./SHMEM/Stencil/stencil 100 1000 2>&1 | tee stencil.log
     - grep -qi "Solution validates" stencil.log
-    - mpiexec.hydra -np 4 ./SHMEM/Synch_p2p/p2p 10 500 500 2>&1 | tee p2p.log
+    - mpiexec.hydra -np 4 ./SHMEM/Synch_p2p/p2p 10 1000 1000 2>&1 | tee p2p.log
     - grep -qi "Solution validates" p2p.log
     - mpiexec.hydra -np 4 ./SHMEM/Transpose/transpose 10 1000 2>&1 | tee transpose.log
     - grep -qi "Solution validates" transpose.log
