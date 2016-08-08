@@ -37,11 +37,15 @@
 #include <uni_dir.h>
 #include <assert.h>
 #include <omp.h>
+#include <unistd.h>
 
 int n_threads, n_dom;
 shmemx_domain_t* doms;
 shmemx_ctx_t* contexts;
 int first = 1;
+char hostname[1024];
+uint64_t bytes_sent = 0;
+
 
 int main(int argc, char *argv[])
 {
@@ -64,6 +68,11 @@ int main(int argc, char *argv[])
     shmemx_ctx_create(doms[i%n_dom],&contexts[i]);
   }
 
+  gethostname(hostname,sizeof(hostname));
+
+  printf("PE %d on host %s\n",shmem_my_pe(),hostname);
+  fflush(stdout);
+
   uni_dir_bw_main(argc, argv);
 
   shmem_barrier_all();
@@ -77,6 +86,7 @@ int main(int argc, char *argv[])
   free(doms);
 
   shmem_finalize();
+printf("%llu bytes sent\n",bytes_sent);
 
   return 0;
 }
@@ -122,12 +132,18 @@ uni_dir_bw(int len, perf_metrics_t *metric_info)
 	      for(k = 0; k < metric_info->window_size; k++) {
 		shmemx_ctx_putmem(metric_info->dest+start, metric_info->src+start,
 				end - start, dest, contexts[j]);
-	      }
 		shmemx_ctx_quiet(contexts[j]);
+	      }
 	}
 
     }
     end = perf_shmemx_wtime();
+
+    for(i = 0; i < metric_info->trials + metric_info->warmup; ++i) {
+        for(j = 0; j < metric_info->window_size; ++j) {
+          bytes_sent += len;
+        }
+    }
 
     calc_and_print_results((end - start), len, *metric_info);
   }
