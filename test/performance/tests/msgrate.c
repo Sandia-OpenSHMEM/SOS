@@ -286,7 +286,7 @@ main(int argc, char *argv[])
         barrier_pSync[i] = SHMEM_SYNC_VALUE;
     for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++)
         reduce_pSync[i] = SHMEM_SYNC_VALUE;
-    for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++)
+    for (i = 0; i < SHMEM_REDUCE_MIN_WRKDATA_SIZE; i++)
         reduce_pWrk[i] = SHMEM_SYNC_VALUE;
 
     shmem_barrier_all();
