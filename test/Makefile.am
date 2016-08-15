@@ -9,4 +9,4 @@
 # distribution.
 #
 
-SUBDIRS = unit performance
+SUBDIRS = unit performance apps
