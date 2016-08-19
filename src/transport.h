@@ -3,7 +3,7 @@
  * Copyright 2011 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
- * 
+ *
  * Copyright (c) 2015 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
@@ -210,7 +210,8 @@ shmem_transport_atomic_set(void *target, const void *source, void *dest, size_t 
 }
 
 static inline
-int shmem_transport_atomic_supported(shm_internal_op_t op, shm_internal_datatype_t datatype)
+int shmem_transport_atomic_supported(shm_internal_op_t op,
+			shm_internal_datatype_t datatype, int count)
 {
     return 0;
 }

@@ -1052,7 +1052,7 @@ shmem_transport_atomic_fetch(void *target, const void *source, size_t len,
 
 
 static inline
-int shmem_transport_atomic_supported(ptl_op_t op, ptl_datatype_t datatype)
+int shmem_transport_atomic_supported(ptl_op_t op, ptl_datatype_t datatype, int count)
 {
     return 1;
 }
