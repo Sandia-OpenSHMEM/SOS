@@ -54,7 +54,6 @@ extern uint64_t 	       	 	shmem_transport_ofi_pending_get_counter;
 extern uint64_t				shmem_transport_ofi_pending_cq_count;
 extern uint64_t				shmem_transport_ofi_max_poll;
 extern size_t          		 	shmem_transport_ofi_max_buffered_send;
-extern size_t    		 	shmem_transport_ofi_max_atomic_size;
 extern size_t    			shmem_transport_ofi_max_msg_size;
 extern size_t    			shmem_transport_ofi_bounce_buffer_size;
 
@@ -756,13 +755,24 @@ shmem_transport_atomic_nb(void *target, const void *source, size_t full_len,
 	uint64_t polled = 0;
         uint64_t key;
         uint8_t *addr;
+	size_t max_atomic_size = 0;
 
         shmem_internal_assert(SHMEM_Dtsize[datatype] * len == full_len);
+
+	ret = fi_atomicvalid(shmem_transport_ofi_epfd, datatype, op,
+				&max_atomic_size);
+	max_atomic_size = max_atomic_size * SHMEM_Dtsize[datatype];
+	if (max_atomic_size > shmem_transport_ofi_max_msg_size
+		|| ret || max_atomic_size == 0) {
+		OFI_ERRMSG("atomic_nb error: datatype %d x op %d not supported\n",
+                    datatype, op);
+		RAISE_ERROR(-1);
+	}
 
         shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
 	if ( full_len <= MIN(shmem_transport_ofi_max_buffered_send,
-				shmem_transport_ofi_max_atomic_size)) {
+        max_atomic_size)) {
 
 		polled = 0;
 
@@ -780,8 +790,7 @@ shmem_transport_atomic_nb(void *target, const void *source, size_t full_len,
 		shmem_transport_ofi_pending_put_counter++;
 
         } else if (full_len <=
-			MIN(shmem_transport_ofi_bounce_buffer_size,
-				shmem_transport_ofi_max_atomic_size)) {
+			MIN(shmem_transport_ofi_bounce_buffer_size, max_atomic_size)) {
 
 			shmem_transport_ofi_bounce_buffer_t *buff = create_bounce_buffer(source, full_len);
 
@@ -808,8 +817,7 @@ shmem_transport_atomic_nb(void *target, const void *source, size_t full_len,
 		while (sent < len) {
 
 			size_t chunksize = MIN((len-sent),
-				(shmem_transport_ofi_max_atomic_size/SHMEM_Dtsize[datatype]));
-
+				(max_atomic_size/SHMEM_Dtsize[datatype]));
 			polled = 0;
 		do {
 			ret = fi_atomic(shmem_transport_ofi_cntr_epfd,
