@@ -764,7 +764,8 @@ shmem_transport_atomic_nb(void *target, const void *source, size_t full_len,
 
         shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
-	if ( full_len <= shmem_transport_ofi_max_buffered_send) {
+	if ( full_len <= MIN(shmem_transport_ofi_max_buffered_send,
+				shmem_transport_ofi_max_atomic_size)) {
 
 		polled = 0;
 
