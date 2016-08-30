@@ -34,6 +34,7 @@
 */
 #include <bw_common.h>
 
+#define ATOMIC_COMM_STYLE COMM_INCAST
 
 #define uni_bw(len, metric_info, snode, NAME, TYPE, op)               \
     do {                                                                       \
@@ -121,11 +122,12 @@ static inline void bw_set_metric_info_len(perf_metrics_t *metric_info)
 {
     unsigned int atomic_sizes[SIZE] = {sizeof(int), sizeof(long),
                                         sizeof(long long)};
+    metric_info->cstyle = ATOMIC_COMM_STYLE;
     int snode = streaming_node(*metric_info);
     atomic_op_type op_type = OP_ADD;
 
-    for(op_type = OP_ADD; op_type < SIZE_OF_OP; op_type++)
-    {
+
+    for(op_type = OP_ADD; op_type < SIZE_OF_OP; op_type++) {
         if(metric_info->my_node == 0)
             printf("%s\n", op_names[op_type]);
 
@@ -133,15 +135,21 @@ static inline void bw_set_metric_info_len(perf_metrics_t *metric_info)
         metric_info->max_len = atomic_sizes[0];
         metric_info->size_inc = NUM_INC;
 
+        shmem_barrier_all();
+
         uni_bw(atomic_sizes[0], metric_info, snode, int, int, op_type);
 
         metric_info->start_len = atomic_sizes[1];
         metric_info->max_len = atomic_sizes[1];
 
+        shmem_barrier_all();
+
         uni_bw(atomic_sizes[1], metric_info, snode, long, long, op_type);
 
         metric_info->start_len = atomic_sizes[2];
         metric_info->max_len = atomic_sizes[2];
+
+        shmem_barrier_all();
 
         uni_bw(atomic_sizes[2], metric_info, snode, longlong, long long, op_type);
     }
