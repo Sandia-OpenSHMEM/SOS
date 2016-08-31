@@ -18,6 +18,7 @@
 #include <time.h>
 #include <stdint.h>
 
+#define ONE 1
 
 /* return microseconds */
 double perf_shmemx_wtime(void);

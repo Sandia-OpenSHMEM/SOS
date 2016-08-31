@@ -52,7 +52,7 @@
                                                                                \
                         for(j = 0; j < metric_info->window_size; j++)          \
                             shmem_##NAME##_add((TYPE *)(metric_info->dest),    \
-                                (TYPE)(metric_info->my_node), dest);           \
+                                ONE, dest);                                    \
                                                                                \
                         shmem_quiet();                                         \
                                                                                \
@@ -80,7 +80,7 @@
                                                                                \
                         for(j = 0; j < metric_info->window_size; j++)          \
                             shmem_##NAME##_fadd((TYPE *)(metric_info->dest),   \
-                                (TYPE)(metric_info->my_node), dest);           \
+                                ONE, dest);                                    \
                     }                                                          \
                     end = perf_shmemx_wtime();                                 \
                 break;                                                         \
@@ -106,7 +106,6 @@
 
 #define NUM_INC 100
 
-#define SIZE 3
 
 typedef enum {
     OP_ADD,
@@ -120,12 +119,12 @@ static const char * op_names [] = { "add", "inc", "fadd", "finc" };
 
 static inline void bw_set_metric_info_len(perf_metrics_t *metric_info)
 {
-    unsigned int atomic_sizes[SIZE] = {sizeof(int), sizeof(long),
+    unsigned int atomic_sizes[ATOMICS_N_DTs] = {sizeof(int), sizeof(long),
                                         sizeof(long long)};
     metric_info->cstyle = ATOMIC_COMM_STYLE;
+    metric_info->type = ATOMIC;
     int snode = streaming_node(*metric_info);
     atomic_op_type op_type = OP_ADD;
-
 
     for(op_type = OP_ADD; op_type < SIZE_OF_OP; op_type++) {
         if(metric_info->my_node == 0)

@@ -21,11 +21,15 @@
 #define WARMUP_LARGE  10
 #define LARGE_MESSAGE_SIZE  8192
 
+/*atomics common */
+#define ATOMICS_N_DTs 3
+#define ATOMICS_N_OPs 4
 #define INCAST_PE 0
 
 typedef enum {
     UNI_DIR,
-    BI_DIR
+    BI_DIR,
+    ATOMIC
 } bw_type;
 
 typedef enum {
@@ -288,6 +292,33 @@ void static inline large_message_metric_chg(perf_metrics_t *metric_info, int len
     }
 }
 
+void validate_atomics(perf_metrics_t m_info, bw_type tbw) {
+    int snode = streaming_node(m_info);
+    int * my_buf = (int *)m_info.dest;
+    unsigned int expected_val = 0;
+    unsigned int ppe_exp_val = ((m_info.trials + m_info.warmup) * m_info.window_size
+                                * ATOMICS_N_DTs * ATOMICS_N_OPs) + m_info.my_node;
+
+    if(m_info.cstyle == COMM_INCAST) {
+        if(tbw == BI_DIR)
+            printf("WARNING: This use-case is not currently well defined\n");
+
+        if(m_info.my_node == 0) {
+            expected_val = ppe_exp_val * m_info.num_pes;
+        } else
+            expected_val = m_info.my_node;
+    } else {
+        assert(m_info.cstyle == COMM_PAIRWISE);
+        expected_val = ppe_exp_val;
+    }
+
+    if((!snode && tbw == UNI_DIR) || tbw == BI_DIR) {
+        if(my_buf[0] != expected_val)
+            printf("validation error for PE %d: %d != %d \n", m_info.my_node, my_buf[0],
+                    expected_val);
+    }
+}
+
 /**************************************************************/
 /*                   Bi-Directional BW                        */
 /**************************************************************/
@@ -314,7 +345,11 @@ void static inline bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
     shmem_barrier_all();
 
     if(metric_info.validate) {
+        if(metric_info.type != ATOMIC) {
             validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
+        } else {
+            validate_atomics(metric_info, BI_DIR);
+        }
     }
 }
 
@@ -328,7 +363,7 @@ void static inline bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
 extern void uni_dir_bw(int len, perf_metrics_t *metric_info);
 
 void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
-    int len = 0, partner_pe = 0;
+    int len = 0, partner_pe = partner_node(metric_info);
 
     if (metric_info.my_node == 0)
         print_results_header(metric_info);
@@ -343,11 +378,13 @@ void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
 
     shmem_barrier_all();
 
-    partner_pe = partner_node(metric_info);
-
-    if(streaming_node(metric_info) && metric_info.validate)
-        validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
-
+    if(metric_info.validate) {
+        if(streaming_node(metric_info) && metric_info.type != ATOMIC) {
+            validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
+        } else if(metric_info.type == ATOMIC) {
+            validate_atomics(metric_info, UNI_DIR);
+        }
+    }
 }
 
 /**************************************************************/
