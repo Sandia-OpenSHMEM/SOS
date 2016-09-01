@@ -81,6 +81,8 @@ void static data_init(perf_metrics_t * data) {
     data->cstyle = COMM_PAIRWISE;
 }
 
+static const char * dt_names [] = { "int", "long", "longlong" };
+
 void static bi_dir_data_init(perf_metrics_t * data) {
     data->bw_type = "Bi-directional Bandwidth";
     data->type = BI_DIR;
@@ -196,16 +198,25 @@ void static inline only_even_PEs_check(int my_node, int num_pes) {
 /*                   Result Printing and Calc                 */
 /**************************************************************/
 
-void static print_data_results(double bw, double mr, perf_metrics_t data, int len) {
-    printf("%9d       ", len);
+void static print_atomic_results_header(perf_metrics_t metric_info) {
+        printf("\nResults for %d PEs %d trials with window size %d \n",
+            metric_info.num_pes, metric_info.trials, metric_info.window_size);
 
-    if(data.unit == KB) {
-        bw = bw * 1e3;
-    } else if(data.unit == B) {
-        bw = bw * 1e6;
+        printf("\nOperation           %s           "\
+            "Message Rate\n", metric_info.bw_type);
+
+    if (metric_info.unit == MB) {
+        printf("%19s in megabytes per second"," ");
+    } else if (metric_info.unit == KB) {
+        printf("%19s in kilobytes per second", " ");
+    } else {
+        printf("%19s in bytes per second", " ");
     }
 
-    printf("%10.2f                          %10.2f\n", bw, mr);
+    printf("         in Million ops/second\n");
+
+    /* hack */
+    printf("shmem_add\n");
 }
 
 void static print_results_header(perf_metrics_t metric_info) {
@@ -228,6 +239,37 @@ void static print_results_header(perf_metrics_t metric_info) {
 
     printf("         in messages/seconds\n");
 }
+
+void static print_data_results(double bw, double mr, perf_metrics_t data, int len) {
+    static int printed_once = false;
+    static int atomic_type_index = 0;
+
+    if(!printed_once) {
+        if (data.type == ATOMIC)
+            print_atomic_results_header(data);
+        else
+            print_results_header(data);
+        printed_once = true;
+    }
+
+    if (data.type == ATOMIC) {
+        printf("%-10s       ", dt_names[atomic_type_index]);
+        atomic_type_index = (++atomic_type_index) % ATOMICS_N_DTs;
+    } else
+        printf("%9d       ", len);
+
+    if(data.unit == KB) {
+        bw = bw * 1e3;
+    } else if(data.unit == B) {
+        bw = bw * 1e6;
+    }
+
+    if (data.type == ATOMIC) {
+        printf("%5s%10.2f                        %10.2f\n", " ", bw, mr/1e6);
+    } else
+        printf("%10.2f                          %10.2f\n", bw, mr);
+}
+
 
 /* reduction to collect performance results from PE set
     then start_pe will print results --- assumes num_pes is even */
@@ -331,9 +373,6 @@ extern void bi_dir_bw(int len, perf_metrics_t *metric_info);
 void static inline bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
     int len = 0, partner_pe = partner_node(metric_info);
 
-    if (metric_info.my_node == 0)
-        print_results_header(metric_info);
-
     for (len = metric_info.start_len; len <= metric_info.max_len;
         len *= metric_info.size_inc) {
 
@@ -364,9 +403,6 @@ extern void uni_dir_bw(int len, perf_metrics_t *metric_info);
 
 void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
     int len = 0, partner_pe = partner_node(metric_info);
-
-    if (metric_info.my_node == 0)
-        print_results_header(metric_info);
 
     for (len = metric_info.start_len; len <= metric_info.max_len;
         len *= metric_info.size_inc) {

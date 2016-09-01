@@ -126,8 +126,8 @@ static inline void bw_set_metric_info_len(perf_metrics_t *metric_info)
     metric_info->type = ATOMIC;
 
     for(op_type = OP_ADD; op_type < SIZE_OF_OP; op_type++) {
-        if(metric_info->my_node == 0)
-            printf("%s\n", op_names[op_type]);
+        if(metric_info->my_node == 0 && op_type != OP_ADD)
+            printf("\nshmem_%s\n", op_names[op_type]);
 
         metric_info->start_len = atomic_sizes[0];
         metric_info->max_len = atomic_sizes[0];
