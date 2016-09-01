@@ -95,6 +95,28 @@
                     }                                                          \
                     end = perf_shmemx_wtime();                                 \
                 break;                                                         \
+                case OP_SWAP:                                                  \
+                    for(i = 0; i < num_itr; i++) {                             \
+                        if(i == metric_info->warmup)                           \
+                            start = perf_shmemx_wtime();                       \
+                                                                               \
+                        for(j = 0; j < metric_info->window_size; j++)          \
+                            shmem_##NAME##_swap((TYPE *)(metric_info->src),    \
+                                ONE, dest);                                    \
+                    }                                                          \
+                    end = perf_shmemx_wtime();                                 \
+                break;                                                         \
+                case OP_CSWAP:                                                 \
+                    for(i = 0; i < num_itr; i++) {                             \
+                        if(i == metric_info->warmup)                           \
+                            start = perf_shmemx_wtime();                       \
+                                                                               \
+                        for(j = 0; j < metric_info->window_size; j++)          \
+                            shmem_##NAME##_cswap((TYPE *)(metric_info->src),   \
+                                dest, ONE, dest);                              \
+                    }                                                          \
+                    end = perf_shmemx_wtime();                                 \
+                break;                                                         \
                 default:                                                       \
                     fprintf(stderr, "Error %d not a valid op case              \
                                                 for atomics\n", op);           \
@@ -112,10 +134,12 @@ typedef enum {
     OP_INC,
     OP_FADD,
     OP_FINC,
+    OP_SWAP,
+    OP_CSWAP,
     SIZE_OF_OP
 } atomic_op_type;
 
-static const char * op_names [] = { "add", "inc", "fadd", "finc" };
+static const char * op_names [] = { "add", "inc", "fadd", "finc", "swap", "cswap" };
 
 static inline void bw_set_metric_info_len(perf_metrics_t *metric_info)
 {

@@ -23,6 +23,7 @@
 
 /*atomics common */
 #define ATOMICS_N_DTs 3
+/*note: ignoring cswap/swap for now in verification */
 #define ATOMICS_N_OPs 4
 #define INCAST_PE 0
 
