@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <strings.h>
 #include <string.h>
+#include <complex.h>
 
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"

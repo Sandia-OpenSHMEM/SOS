@@ -17,9 +17,18 @@
 #define SHMEM_H
 
 #include <stddef.h>
-#include <complex.h>
+
 #ifdef __cplusplus
-#define complex _Complex
+#  define shmem_complex_t _Complex
+#  define SHMEM_HAVE_COMPLEX 1
+#else
+#  define shmem_complex_t complex
+#  ifdef complex
+#    define SHMEM_HAVE_COMPLEX 1
+#  endif
+#endif
+
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -114,8 +123,8 @@ void shmem_free(void *ptr);
   decl(longdouble, long double)
 
 #define SHMEM_EVAL_MACRO_FOR_CMPLX(decl,END) \
-  decl(complexf, float complex) END       \
-  decl(complexd, double complex)
+  decl(complexf, float shmem_complex_t) END       \
+  decl(complexd, double shmem_complex_t)
 
 #define SHMEM_EVAL_MACRO_FOR_SIZES(decl,END) \
   decl(8,    1*sizeof(uint8_t)) END       \
@@ -320,7 +329,9 @@ SHMEM_DECLARE_FOR_FLOATS(SHMEM_C_MAX_TO_ALL);
                                      long *pSync)
 SHMEM_DECLARE_FOR_INTS(SHMEM_C_C_SUM_TO_ALL);
 SHMEM_DECLARE_FOR_FLOATS(SHMEM_C_C_SUM_TO_ALL);
+#if SHMEM_HAVE_COMPLEX
 SHMEM_DECLARE_FOR_CMPLX(SHMEM_C_C_SUM_TO_ALL);
+#endif
 
 #define SHMEM_C_PROD_TO_ALL(TYPENAME,TYPE) \
   void shmem_##TYPENAME##_prod_to_all(TYPE *target, \
@@ -330,7 +341,9 @@ SHMEM_DECLARE_FOR_CMPLX(SHMEM_C_C_SUM_TO_ALL);
                                       long *pSync)
 SHMEM_DECLARE_FOR_INTS(SHMEM_C_PROD_TO_ALL);
 SHMEM_DECLARE_FOR_FLOATS(SHMEM_C_PROD_TO_ALL);
+#if SHMEM_HAVE_COMPLEX
 SHMEM_DECLARE_FOR_CMPLX(SHMEM_C_PROD_TO_ALL);
+#endif
 
 /* 8.5: Collect Routines */
 void shmem_collect32(void *target, const void *source, size_t nlong,
@@ -436,12 +449,10 @@ void start_pes(int npes) __attribute__ ((deprecated));
 #undef SHMEM_C_C_SUM_TO_ALL
 #undef SHMEM_C_PROD_TO_ALL
 
+
 /* C++ overloaded declarations */
 #ifdef __cplusplus
 } /* extern "C" */
-#ifdef complex
-#undef complex
-#endif
 
 /* Blocking block, scalar, and block-strided put */
 #define SHMEM_CXX_PUT(TYPENAME,TYPE) \
@@ -771,6 +782,9 @@ long shmem_swap(long *target, long value, int pe);
 #undef SHMEM_DEFINE_FOR_FLOATS
 #undef SHMEM_DEFINE_FOR_CMPLX
 #undef SHMEM_DEFINE_FOR_SIZES
+
+#undef shmem_complex_t
+#undef SHMEM_HAVE_COMPLEX
 
 #endif
 
