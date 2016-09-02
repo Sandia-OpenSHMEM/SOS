@@ -51,9 +51,9 @@ typedef enum {
 } bw_units;
 
 typedef struct perf_metrics {
-    unsigned int start_len, max_len;
-    unsigned int size_inc, trials;
-    unsigned int window_size, warmup;
+    unsigned long int start_len, max_len;
+    unsigned long int size_inc, trials;
+    unsigned long int window_size, warmup;
     int validate;
     int my_node, num_pes;
     bw_units unit;
@@ -141,21 +141,25 @@ void static command_line_arg_check(int argc, char *argv[],
     extern char *optarg;
 
     /* check command line args */
-    while ((ch = getopt(argc, argv, "e:s:n:kbv")) != EOF) {
+    while ((ch = getopt(argc, argv, "e:s:n:w:p:kbv")) != EOF) {
         switch (ch) {
         case 's':
-            metric_info->start_len = strtol(optarg, (char **)NULL, 0);
+            metric_info->start_len = strtoul(optarg, (char **)NULL, 0);
             if ( metric_info->start_len < 1 ) metric_info->start_len = 1;
             if(!is_pow_of_2(metric_info->start_len)) error = true;
             break;
         case 'e':
-            metric_info->max_len = strtol(optarg, (char **)NULL, 0);
+            metric_info->max_len = strtoul(optarg, (char **)NULL, 0);
             if(!is_pow_of_2(metric_info->max_len)) error = true;
             if(metric_info->max_len < metric_info->start_len) error = true;
             break;
         case 'n':
-            metric_info->trials = strtol(optarg, (char **)NULL, 0);
-            if(metric_info->trials <= (metric_info->warmup*2)) error = true;
+            metric_info->trials = strtoul(optarg, (char **)NULL, 0);
+            if(metric_info->trials < (metric_info->warmup*2)) error = true;
+            break;
+        case 'p':
+            metric_info->warmup = strtoul(optarg, (char **)NULL, 0);
+            if(metric_info->warmup > (metric_info->trials/2)) error = true;
             break;
         case 'k':
             metric_info->unit = KB;
@@ -166,6 +170,9 @@ void static command_line_arg_check(int argc, char *argv[],
         case 'v':
             metric_info->validate = true;
             break;
+        case 'w':
+            metric_info->window_size = strtoul(optarg, (char **)NULL, 0);
+            break;
         default:
             error = true;
             break;
@@ -174,10 +181,12 @@ void static command_line_arg_check(int argc, char *argv[],
 
     if (error) {
         if (metric_info->my_node == 0) {
-            fprintf(stderr, "Usage: [-s start_length] [-e end_length] "\
-                    ": lengths should be a power of two \n " \
-                    "[-n trials (must be greater than 20)] "\
-                    "[-k (kilobytes/second)] [-b (bytes/second)] "\
+            fprintf(stderr, "Usage: \n[-s start_length] [-e end_length] "\
+                    ": lengths should be a power of two \n" \
+                    "[-n trials (must be greater than 2*warmup (default: x => 100))] \n"\
+                    "[-p warm-up (see trials for value restriction)] \n"\
+                    "[-w window size - iterations between completion] \n"\
+                    "[-k (kilobytes/second)] [-b (bytes/second)] \n"\
                     "[-v (validate data stream)] \n");
         }
         shmem_finalize();
@@ -200,10 +209,17 @@ void static inline only_even_PEs_check(int my_node, int num_pes) {
 /**************************************************************/
 
 void static print_atomic_results_header(perf_metrics_t metric_info) {
-        printf("\nResults for %d PEs %d trials with window size %d \n",
+    printf("\nResults for %d PEs %d trials with window size %d ",
             metric_info.num_pes, metric_info.trials, metric_info.window_size);
 
-        printf("\nOperation           %s           "\
+    if (metric_info.cstyle == COMM_INCAST) {
+        printf("using incast communication style\n");
+    } else {
+        assert(metric_info.cstyle == COMM_PAIRWISE);
+        printf("using pairwise communication style\n");
+    }
+
+    printf("\nOperation           %s           "\
             "Message Rate\n", metric_info.bw_type);
 
     if (metric_info.unit == MB) {
@@ -221,12 +237,12 @@ void static print_atomic_results_header(perf_metrics_t metric_info) {
 }
 
 void static print_results_header(perf_metrics_t metric_info) {
-        printf("\nResults for %d PEs %d trials with window size %d "\
+    printf("\nResults for %d PEs %d trials with window size %d "\
             "max message size %d with multiple of %d increments\n",
             metric_info.num_pes, metric_info.trials, metric_info.window_size,
             metric_info.max_len, metric_info.size_inc);
 
-        printf("\nLength           %s           "\
+    printf("\nLength           %s           "\
             "Message Rate\n", metric_info.bw_type);
 
     printf("in bytes         ");
