@@ -783,9 +783,6 @@ long shmem_swap(long *target, long value, int pe);
 #undef SHMEM_DEFINE_FOR_CMPLX
 #undef SHMEM_DEFINE_FOR_SIZES
 
-#undef shmem_complex_t
-#undef SHMEM_HAVE_COMPLEX
-
 #endif
 
 #endif /* SHMEM_H */
