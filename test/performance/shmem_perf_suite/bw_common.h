@@ -31,8 +31,12 @@
 typedef enum {
     UNI_DIR,
     BI_DIR,
-    ATOMIC
 } bw_type;
+
+typedef enum {
+    STYLE_RMA,
+    STYLE_ATOMIC
+} bw_style;
 
 typedef enum {
     FIRST_HALF,
@@ -62,6 +66,7 @@ typedef struct perf_metrics {
     const char *bw_type;
     bw_type type;
     comm_style cstyle;
+    bw_style bwstyle;
 } perf_metrics_t;
 
 long red_psync[_SHMEM_REDUCE_SYNC_SIZE];
@@ -81,6 +86,7 @@ void static data_init(perf_metrics_t * data) {
     data->src = NULL;
     data->dest = NULL;
     data->cstyle = COMM_PAIRWISE;
+    data->bwstyle = STYLE_RMA;
 }
 
 static const char * dt_names [] = { "int", "long", "longlong" };
@@ -264,14 +270,14 @@ void static print_data_results(double bw, double mr, perf_metrics_t data,
     static int atomic_type_index = 0;
 
     if(!printed_once) {
-        if (data.type == ATOMIC)
+        if (data.bwstyle == STYLE_ATOMIC)
             print_atomic_results_header(data);
         else
             print_results_header(data);
         printed_once = true;
     }
 
-    if (data.type == ATOMIC) {
+    if (data.bwstyle == STYLE_ATOMIC) {
         printf("%-10s       ", dt_names[atomic_type_index]);
         atomic_type_index = (++atomic_type_index) % ATOMICS_N_DTs;
     } else
@@ -283,7 +289,7 @@ void static print_data_results(double bw, double mr, perf_metrics_t data,
         bw = bw * 1e6;
     }
 
-    if (data.type == ATOMIC) {
+    if (data.bwstyle == STYLE_ATOMIC) {
         printf("%5s%10.2f                        %10.2f%14s%10.2f\n", " ", bw,
                  mr/1e6, " ", total_t/(data.trials * data.window_size));
     } else
@@ -354,9 +360,10 @@ void static inline large_message_metric_chg(perf_metrics_t *metric_info, int len
     }
 }
 
-void validate_atomics(perf_metrics_t m_info, bw_type tbw) {
+void validate_atomics(perf_metrics_t m_info) {
     int snode = streaming_node(m_info);
     int * my_buf = (int *)m_info.dest;
+    bw_type tbw = m_info.type;
     unsigned int expected_val = 0;
     unsigned int ppe_exp_val = ((m_info.trials + m_info.warmup) * m_info.window_size
                                 * ATOMICS_N_DTs * ATOMICS_N_OPs) + m_info.my_node;
@@ -404,10 +411,10 @@ void static inline bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
     shmem_barrier_all();
 
     if(metric_info.validate) {
-        if(metric_info.type != ATOMIC) {
+        if(metric_info.bwstyle != STYLE_ATOMIC) {
             validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
         } else {
-            validate_atomics(metric_info, BI_DIR);
+            validate_atomics(metric_info);
         }
     }
 }
@@ -435,10 +442,10 @@ void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
     shmem_barrier_all();
 
     if(metric_info.validate) {
-        if(streaming_node(metric_info) && metric_info.type != ATOMIC) {
+        if(streaming_node(metric_info) && metric_info.bwstyle != STYLE_ATOMIC) {
             validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
-        } else if(metric_info.type == ATOMIC) {
-            validate_atomics(metric_info, UNI_DIR);
+        } else if(metric_info.bwstyle == STYLE_ATOMIC) {
+            validate_atomics(metric_info);
         }
     }
 }

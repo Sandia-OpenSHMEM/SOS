@@ -146,7 +146,8 @@ static inline void bw_set_metric_info_len(perf_metrics_t *metric_info)
     unsigned int atomic_sizes[ATOMICS_N_DTs] = {sizeof(int), sizeof(long),
                                         sizeof(long long)};
     metric_info->cstyle = ATOMIC_COMM_STYLE;
-    metric_info->type = ATOMIC;
+    metric_info->type = UNI_DIR;
+    metric_info->bwstyle = STYLE_ATOMIC;
     int snode = streaming_node(*metric_info);
     atomic_op_type op_type = OP_ADD;
 
