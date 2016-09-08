@@ -25,7 +25,8 @@
 #define ATOMICS_N_DTs 3
 /*note: ignoring cswap/swap for now in verification */
 #define ATOMICS_N_OPs 4
-#define INCAST_PE 0
+/*PE 0 is printing its latency, thus have it not be the INCAST PE*/
+#define INCAST_PE 1
 
 typedef enum {
     UNI_DIR,
@@ -220,7 +221,7 @@ void static print_atomic_results_header(perf_metrics_t metric_info) {
     }
 
     printf("\nOperation           %s           "\
-            "Message Rate\n", metric_info.bw_type);
+            "Message Rate%17sLatency\n", metric_info.bw_type, " ");
 
     if (metric_info.unit == MB) {
         printf("%19s in megabytes per second"," ");
@@ -230,7 +231,7 @@ void static print_atomic_results_header(perf_metrics_t metric_info) {
         printf("%19s in bytes per second", " ");
     }
 
-    printf("         in Million ops/second\n");
+    printf("         in Million ops/second%8sin microseconds\n", " ");
 
     /* hack */
     printf("shmem_add\n");
@@ -257,7 +258,8 @@ void static print_results_header(perf_metrics_t metric_info) {
     printf("         in messages/seconds\n");
 }
 
-void static print_data_results(double bw, double mr, perf_metrics_t data, int len) {
+void static print_data_results(double bw, double mr, perf_metrics_t data,
+                            int len, double total_t) {
     static int printed_once = false;
     static int atomic_type_index = 0;
 
@@ -282,7 +284,8 @@ void static print_data_results(double bw, double mr, perf_metrics_t data, int le
     }
 
     if (data.type == ATOMIC) {
-        printf("%5s%10.2f                        %10.2f\n", " ", bw, mr/1e6);
+        printf("%5s%10.2f                        %10.2f%14s%10.2f\n", " ", bw,
+                 mr/1e6, " ", total_t/(data.trials * data.window_size));
     } else
         printf("%10.2f                          %10.2f\n", bw, mr);
 }
@@ -339,7 +342,7 @@ void static inline calc_and_print_results(double total_t, int len,
     if(metric_info.my_node == start_pe) {
         pe_bw_avg = pe_bw_sum;
         pe_mr_avg = pe_bw_avg / (len / 1e6);
-        print_data_results(pe_bw_avg, pe_mr_avg, metric_info, len);
+        print_data_results(pe_bw_avg, pe_mr_avg, metric_info, len, total_t);
     }
 }
 
