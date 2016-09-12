@@ -29,12 +29,8 @@
 #include <unistd.h>
 #include <stddef.h>
 
-extern struct fid_fabric*       	shmem_transport_ofi_fabfd;
-extern struct fid_domain*          	shmem_transport_ofi_domainfd;
 extern struct fid_ep*			shmem_transport_ofi_epfd;
 extern struct fid_ep*			shmem_transport_ofi_cntr_epfd;
-extern struct fid_stx*  		shmem_transport_ofi_stx;
-extern struct fid_av*             	shmem_transport_ofi_avfd;
 extern struct fid_cq*              	shmem_transport_ofi_put_nb_cqfd;
 #ifndef ENABLE_HARD_POLLING
 extern struct fid_cntr*            	shmem_transport_ofi_target_cntrfd;
