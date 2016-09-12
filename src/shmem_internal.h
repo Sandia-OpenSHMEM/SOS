@@ -27,6 +27,7 @@ extern int shmem_internal_num_pes;
 extern int shmem_internal_initialized;
 extern int shmem_internal_finalized;
 extern int shmem_internal_thread_level;
+extern int shmem_internal_debug;
 
 #define RAISE_WARN(ret)                                                 \
     do {                                                                \
