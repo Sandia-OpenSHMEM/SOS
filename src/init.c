@@ -162,6 +162,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     heap_size = shmem_util_getenv_long("SYMMETRIC_SIZE", 1, 512 * 1024 * 1024);
     eager_size = shmem_util_getenv_long("BOUNCE_SIZE", 1, 2048);
     heap_use_malloc = shmem_util_getenv_long("SYMMETRIC_HEAP_USE_MALLOC", 0, 0);
+    shmem_internal_debug = (NULL != shmem_util_getenv_str("DEBUG")) ? 1 : 0;
 
     /* huge page support only on Linux for now, default is to use 2MB large pages */
 #ifdef __linux__
@@ -173,12 +174,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
                                                                     2 * 1024 * 1024);
     }
 #endif
-
-    shmem_internal_debug = (NULL != shmem_util_getenv_str("DEBUG")) ? 1 : 0;
-    if (shmem_internal_debug > 0){
-
-      DEBUG_STR("Debug info test\n");
-    }
 
     /* Find symmetric data */
 #ifdef __APPLE__
@@ -353,7 +348,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
             printf("SMA_CMA_GET_MAX         %s\n", shmem_transport_cma_get_max);
 #endif /* USE_CMA */
             printf("SMA_DEBUG               %s\n", (NULL != shmem_util_getenv_str("DEBUG")) ? "On" : "Off");
-            printf("\tValue for runtime debug information.\n");
+            printf("\tEnable debugging messages.\n");
 
             shmem_transport_print_info();
             printf("\n");

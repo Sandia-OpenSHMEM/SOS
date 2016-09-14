@@ -60,8 +60,10 @@ extern int shmem_internal_debug;
 
 #define DEBUG_STR(str)                                                  \
     do {                                                                \
-        fprintf(stderr, "[%03d] DEBUG: %s:%d: %s\n",                    \
-                shmem_internal_debug, __FILE__, __LINE__, str);         \
+        if(shmem_internal_debug) {                                      \
+            fprintf(stderr, "[%03d] DEBUG: %s:%d: %s\n",                \
+                    shmem_internal_my_pe, __FILE__, __LINE__, str);     \
+        }                                                               \
     } while(0)
 
 #ifdef ENABLE_ERROR_CHECKING
