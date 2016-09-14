@@ -354,6 +354,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 #endif /* USE_CMA */
             printf("SMA_DEBUG               %s\n", (NULL != shmem_util_getenv_str("DEBUG")) ? "On" : "Off");
             printf("\tValue for runtime debug information.\n");
+
             shmem_transport_print_info();
             printf("\n");
             fflush(NULL);
