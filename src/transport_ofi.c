@@ -96,9 +96,9 @@ uint8_t**                       shmem_transport_ofi_target_heap_addrs;
 uint8_t**                       shmem_transport_ofi_target_data_addrs;
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 #endif /* ENABLE_MR_SCALABLE */
+size_t				shmem_transport_ofi_max_atomic_size = 0;
 uint64_t			shmem_transport_ofi_max_poll;
 size_t           		shmem_transport_ofi_max_buffered_send;
-size_t    	 		shmem_transport_ofi_max_atomic_size;
 size_t    			shmem_transport_ofi_max_msg_size;
 size_t    			shmem_transport_ofi_addrlen;
 fi_addr_t			*addr_table;
@@ -278,7 +278,6 @@ typedef enum{
 
 //size of CQ
 const static size_t shmem_transport_ofi_queue_slots = 32768;//default CQ Depth....
-size_t   shmem_transport_ofi_max_atomic_size = 0;
 uint64_t shmem_transport_ofi_max_poll = (1ULL<<30);
 
 #define OFI_MAJOR_VERSION 1
@@ -916,26 +915,11 @@ static inline int atomic_limitations_check(void)
     int ret = 0;
     atomic_support_lv general_atomic_sup = ATOMIC_NO_SUPPORT;
     atomic_support_lv reduction_sup = ATOMIC_SOFT_SUPPORT;
-    size_t atomic_size;
 
     if(NULL != shmem_util_getenv_str("OFI_ATOMIC_CHECKS_WARN"))
         general_atomic_sup = ATOMIC_WARNINGS;
 
     init_ofi_tables();
-
-    /*Retrieve atomic max size */
-    ret = fi_atomicvalid(shmem_transport_ctx->endpoint.ep, FI_INT64, FI_SUM,
-			&atomic_size);
-    if(ret!=0 || (atomic_size == 0)){ //not supported
-	    OFI_ERRMSG("atomicvalid failed: cannot determine max atomic size for transport\n");
-	    return ret;
-    }
-    shmem_transport_ofi_max_atomic_size = atomic_size * (sizeof(int64_t));
-
-    if(shmem_transport_ofi_max_atomic_size > shmem_transport_ofi_max_msg_size) {
-        OFI_ERRMSG("Error: OFI provider max atomic size is larger than max message size\n");
-        RAISE_ERROR(-1);
-    }
 
     /* Standard OPS check */
     ret = atomicvalid_DTxOP(SIZEOF_AMO_DT, SIZEOF_AMO_OPS, DT_AMO_STANDARD,

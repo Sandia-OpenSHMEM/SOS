@@ -162,6 +162,15 @@ options.
         '--with-cma', shmem get lengths <= CMA_GET_MAX use process_vm_readv();
         otherwise use Portals4 transport get.
 
+    SMA_SYMMETRIC_HEAP_USE_HUGE_PAGES (default: off)
+        If defined, large pages will be used to back the symmetric heap.  This
+        feature is only available on Linux.
+
+    SMA_SYMMETRIC_HEAP_PAGE_SIZE (default: 2MB)
+        Used to specify a large page size when using large pages to back the
+        symmetric heap.  Ignored if SMA_SYMMETRIC_HEAP_USE_HUGE_PAGES is not
+        set.  Refer to SMA_SYMMETRIC_SIZE for input syntax.
+
   OFI Transport Environment variables:
 
     SMA_OFI_PROVIDER (default: auto)

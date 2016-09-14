@@ -604,12 +604,23 @@ shmem_transport_atomic_nb(void *target, const void *source,
   uint64_t polled = 0;
   uint64_t key = 0;
   uint8_t *addr;
+  size_t max_atomic_size = 0;
 
   shmem_internal_assert(SHMEM_Dtsize[datatype] * len == full_len);
 
+  ret = fi_atomicvalid(shmem_transport_ctx->endpoint.ep, datatype, op,
+      &max_atomic_size);
+  max_atomic_size = max_atomic_size * SHMEM_Dtsize[datatype];
+  if (max_atomic_size > shmem_transport_ofi_max_msg_size
+        || ret || max_atomic_size == 0) {
+    OFI_ERRMSG("atomic_nb error: datatype %d x op %d not supported\n",
+        datatype, op);
+    RAISE_ERROR(-1);
+  }
+
   shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
-  if ( full_len <= shmem_transport_ofi_max_buffered_send) {
+  if ( full_len <= MIN(shmem_transport_ofi_max_buffered_send, max_atomic_size)) {
 
     polled = 0;
 
