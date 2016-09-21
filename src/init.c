@@ -314,7 +314,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
                    (NULL != shmem_util_getenv_str("INFO")) ? "Set" : "Not set");
             printf("\tIf set, print this help message at startup\n");
             printf("SMA_SYMMETRIC_SIZE      %ld\n", heap_size);
-            printf("\tSymmentric heap size\n");
+            printf("\tSymmetric heap size\n");
             printf("SMA_SYMMETRIC_HEAP_USE_MALLOC %s\n",
                    (0 != heap_use_malloc) ? "Set" : "Not set");
             printf("\tIf set, allocate the symmetric heap using malloc\n");
@@ -325,7 +325,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
                     printf("SMA_SYMMETRIC_HEAP_PAGE_SIZE %ld \n",
                            shmem_internal_heap_huge_page_size);
                 }
-                printf("\tSymmentric heap use large pages\n");
+                printf("\tSymmetric heap use large pages\n");
             }
             printf("SMA_COLL_CROSSOVER      %d\n", crossover);
             printf("\tCross-over between linear and tree collectives\n");
