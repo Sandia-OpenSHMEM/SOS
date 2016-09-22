@@ -327,12 +327,14 @@ void pshmem_double_sum_to_all(double *target, const double *source, int nreduce,
 void pshmem_longdouble_sum_to_all(long double *target, const long double *source,
                                  int nreduce, int PE_start, int logPE_stride,
                                  int PE_size, long double *pWrk, long *pSync);
-void pshmem_complexf_sum_to_all(float complex *target, const float complex *source,
+#if SHMEM_HAVE_COMPLEX
+void pshmem_complexf_sum_to_all(float shmem_complex_t *target, const float shmem_complex_t *source,
                                int nreduce, int PE_start, int logPE_stride,
-                               int PE_size, float complex *pWrk, long *pSync);
-void pshmem_complexd_sum_to_all(double complex *target, const double complex *source,
+                               int PE_size, float shmem_complex_t *pWrk, long *pSync);
+void pshmem_complexd_sum_to_all(double shmem_complex_t *target, const double shmem_complex_t *source,
                                int nreduce, int PE_start, int logPE_stride,
-                               int PE_size, double complex *pWrk, long *pSync);
+                               int PE_size, double shmem_complex_t *pWrk, long *pSync);
+#endif
 void pshmem_short_sum_to_all(short *target, const short *source, int nreduce,
                             int PE_start, int logPE_stride, int PE_size, 
                             short *pWrk, long *pSync);
@@ -355,13 +357,15 @@ void pshmem_double_prod_to_all(double *target, const double *source, int nreduce
 void pshmem_longdouble_prod_to_all(long double *target, const long double *source,
                                   int nreduce, int PE_start, int logPE_stride,
                                   int PE_size, long double *pWrk, long *pSync);
-void pshmem_complexf_prod_to_all(float complex *target, const float complex *source,
+#if SHMEM_HAVE_COMPLEX
+void pshmem_complexf_prod_to_all(float shmem_complex_t *target, const float shmem_complex_t *source,
                                 int nreduce, int PE_start, int logPE_stride,
-                                int PE_size, float complex *pWrk, long *pSync);
-void pshmem_complexd_prod_to_all(double complex *target, 
-                                const double complex *source, int nreduce,
+                                int PE_size, float shmem_complex_t *pWrk, long *pSync);
+void pshmem_complexd_prod_to_all(double shmem_complex_t *target,
+                                const double shmem_complex_t *source, int nreduce,
                                 int PE_start, int logPE_stride, int PE_size, 
-                                double complex *pWrk, long *pSync);
+                                double shmem_complex_t *pWrk, long *pSync);
+#endif
 void pshmem_short_prod_to_all(short *target, const short *source, int nreduce, 
                              int PE_start, int logPE_stride, int PE_size, 
                              short *pWrk, long *pSync);

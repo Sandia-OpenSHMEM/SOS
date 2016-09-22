@@ -18,6 +18,7 @@
  */
 
 #include <stdint.h>
+#include <complex.h>
 #include "transport.h"
 
 #define FUNC_OP_CREATE(type_name, c_type, op_name, calc)                    \
