@@ -32,6 +32,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef TEST_PSHMEM
+#include <pshmem.h>
+#define SHFN(fn) pshmem_##fn
+#else
+#define SHFN(fn) shmem_##fn
+#endif
+
 #define CHUNK_SIZE 10
 #define ARR_SIZE (4*(CHUNK_SIZE))
 
@@ -48,36 +55,36 @@
           myvals[i] = (TYPE)rand();                                    \
       }                                                                \
                                                                        \
-      shmem_##TYPENAME##_put(shared, myvals, CHUNK_SIZE, target_pe);   \
+      SHFN(TYPENAME##_put)(shared, myvals, CHUNK_SIZE, target_pe);     \
       for(i = 0; i < CHUNK_SIZE; ++i) {                                \
-          shmem_##TYPENAME##_p(&shared[CHUNK_SIZE+i],                  \
+          SHFN(TYPENAME##_p)(&shared[CHUNK_SIZE+i],                    \
               myvals[CHUNK_SIZE+i], target_pe);                        \
       }                                                                \
-      shmem_##TYPENAME##_iput(shared+2*CHUNK_SIZE,myvals+2*CHUNK_SIZE, \
+      SHFN(TYPENAME##_iput)(shared+2*CHUNK_SIZE,myvals+2*CHUNK_SIZE,   \
           1, 2, CHUNK_SIZE/2, target_pe);                              \
-      shmem_##TYPENAME##_iput(shared+2*CHUNK_SIZE+CHUNK_SIZE/2,        \
+      SHFN(TYPENAME##_iput)(shared+2*CHUNK_SIZE+CHUNK_SIZE/2,          \
           myvals+2*CHUNK_SIZE+1, 1, 2, CHUNK_SIZE/2, target_pe);       \
-      shmem_##TYPENAME##_put_nbi(shared+3*CHUNK_SIZE,                  \
+      SHFN(TYPENAME##_put_nbi)(shared+3*CHUNK_SIZE,                    \
           myvals+3*CHUNK_SIZE, CHUNK_SIZE, target_pe);                 \
                                                                        \
-      shmem_quiet();                                                   \
-      shmem_barrier_all();                                             \
+      SHFN(quiet)();                                                   \
+      SHFN(barrier_all)();                                             \
                                                                        \
-      shmem_##TYPENAME##_get(result,shared,CHUNK_SIZE,target_pe);      \
+      SHFN(TYPENAME##_get)(result,shared,CHUNK_SIZE,target_pe);        \
       for(i = 0; i < CHUNK_SIZE; ++i) {                                \
-          result[CHUNK_SIZE+i] = shmem_##TYPENAME##_g(                 \
+          result[CHUNK_SIZE+i] = SHFN(TYPENAME##_g)(                   \
                                   &shared[CHUNK_SIZE+i], target_pe);   \
       }                                                                \
-      shmem_##TYPENAME##_iget(result+2*CHUNK_SIZE, shared+2*CHUNK_SIZE,\
+      SHFN(TYPENAME##_iget)(result+2*CHUNK_SIZE, shared+2*CHUNK_SIZE,  \
           2, 1, CHUNK_SIZE/2, target_pe);                              \
-      shmem_##TYPENAME##_iget(result+2*CHUNK_SIZE+1,                   \
+      SHFN(TYPENAME##_iget)(result+2*CHUNK_SIZE+1,                     \
           shared+2*CHUNK_SIZE+CHUNK_SIZE/2, 2, 1, CHUNK_SIZE/2,        \
           target_pe);                                                  \
-      shmem_##TYPENAME##_get_nbi(result+3*CHUNK_SIZE,                  \
+      SHFN(TYPENAME##_get_nbi)(result+3*CHUNK_SIZE,                    \
           shared+3*CHUNK_SIZE, CHUNK_SIZE, target_pe);                 \
                                                                        \
-      shmem_quiet();                                                   \
-      shmem_barrier_all();                                             \
+      SHFN(quiet)();                                                   \
+      SHFN(barrier_all)();                                             \
       int ret = 0;                                                     \
       for(i = 0; i < ARR_SIZE; ++i) {                                  \
           if(result[i] != myvals[i]) {                                 \
@@ -105,9 +112,9 @@ int main(int argc, char* argv[]) {
     int errors = 0;
 
     int me, myshmem_n_pes;
-    shmem_init();
-    myshmem_n_pes = shmem_n_pes();
-    me = shmem_my_pe();
+    SHFN(init)();
+    myshmem_n_pes = SHFN(n_pes)();
+    me = SHFN(my_pe)();
 
     srand(1+me);
 
@@ -119,7 +126,7 @@ int main(int argc, char* argv[]) {
 
     SHMEM_DECLARE_FOR_RMA(RUN_TEST);
 
-    shmem_finalize();
+    SHFN(finalize)();
 
     return errors;
 }

@@ -334,6 +334,8 @@ AM_CONDITIONAL([HAVE_FORTRAN], [test "$FC" != ""])
 
 AM_CONDITIONAL([HAVE_CXX], [test "$enable_cxx" != "no" ])
 
+AM_CONDITIONAL([ENABLE_PROFILING], [test "$enable_profiling" = "yes" ])
+
 dnl check for structures
 
 dnl check for compiler characteristics

@@ -166,6 +166,9 @@
 #pragma weak shmem_longdouble_iput = pshmem_longdouble_iput
 #define shmem_longdouble_iput pshmem_longdouble_iput
 
+#pragma weak shmem_char_iput = pshmem_char_iput
+#define shmem_char_iput pshmem_char_iput
+
 #pragma weak shmem_short_iput = pshmem_short_iput
 #define shmem_short_iput pshmem_short_iput
 
@@ -195,6 +198,9 @@
 
 #pragma weak shmem_longdouble_iget = pshmem_longdouble_iget
 #define shmem_longdouble_iget pshmem_longdouble_iget
+
+#pragma weak shmem_char_iget = pshmem_char_iget
+#define shmem_char_iget pshmem_char_iget
 
 #pragma weak shmem_short_iget = pshmem_short_iget
 #define shmem_short_iget pshmem_short_iget
