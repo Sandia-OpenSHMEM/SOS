@@ -216,7 +216,7 @@ void static inline only_even_PEs_check(int my_node, int num_pes) {
 /**************************************************************/
 
 void static print_atomic_results_header(perf_metrics_t metric_info) {
-    printf("\nResults for %d PEs %d trials with window size %d ",
+    printf("\nResults for %d PEs %lu trials with window size %lu ",
             metric_info.num_pes, metric_info.trials, metric_info.window_size);
 
     if (metric_info.cstyle == COMM_INCAST) {
@@ -244,8 +244,8 @@ void static print_atomic_results_header(perf_metrics_t metric_info) {
 }
 
 void static print_results_header(perf_metrics_t metric_info) {
-    printf("\nResults for %d PEs %d trials with window size %d "\
-            "max message size %d with multiple of %d increments\n",
+    printf("\nResults for %d PEs %lu trials with window size %lu "\
+            "max message size %lu with multiple of %lu increments\n",
             metric_info.num_pes, metric_info.trials, metric_info.window_size,
             metric_info.max_len, metric_info.size_inc);
 
@@ -279,7 +279,7 @@ void static print_data_results(double bw, double mr, perf_metrics_t data,
 
     if (data.bwstyle == STYLE_ATOMIC) {
         printf("%-10s       ", dt_names[atomic_type_index]);
-        atomic_type_index = (++atomic_type_index) % ATOMICS_N_DTs;
+        atomic_type_index = (atomic_type_index + 1) % ATOMICS_N_DTs;
     } else
         printf("%9d       ", len);
 
@@ -360,7 +360,7 @@ void static inline large_message_metric_chg(perf_metrics_t *metric_info, int len
     }
 }
 
-void validate_atomics(perf_metrics_t m_info) {
+static void validate_atomics(perf_metrics_t m_info) {
     int snode = streaming_node(m_info);
     int * my_buf = (int *)m_info.dest;
     bw_type tbw = m_info.type;
