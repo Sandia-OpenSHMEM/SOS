@@ -4,7 +4,7 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2015 Intel Corporation. All rights reserved.
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -13,11 +13,20 @@
  *
  */
 
-#ifndef PORTALS_PSHMEM_H
-#define PORTALS_PSHMEM_H
+#ifndef PSHMEM_H
+#define PSHMEM_H
 
-#include <shmem.h>
 #include <shmemx.h>
+#include <stddef.h>
+#include <complex.h>
+
+#ifdef __cplusplus
+#ifndef complex
+#define complex _Complex
+#define SHMEM_UNDEF_COMPLEX
+#endif
+extern "C" {
+#endif
 
 /* 8.1: OpenSHMEM Library API Library Setup, Exit, and Query Routines */
 void pshmem_init(void);
@@ -468,5 +477,11 @@ long pshmemx_ct_get(shmemx_ct_t ct);
 void pshmemx_ct_set(shmemx_ct_t ct, long value);
 void pshmemx_ct_wait(shmemx_ct_t ct, long wait_for);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#ifdef SHMEM_UNDEF_COMPLEX
+#undef complex
+#endif
+#endif
 
-#endif /* PORTALS_PSHMEM_H */
+#endif /* PSHMEM_H */
