@@ -82,6 +82,9 @@ fi_addr_t			*addr_table;
 #define EPHOSTNAMELEN  _POSIX_HOST_NAME_MAX + 1
 static char         myephostname[EPHOSTNAMELEN];
 #endif
+#ifdef ENABLE_THREADS
+shmem_internal_mutex_t           shmem_transport_ofi_lock;
+#endif
 
 size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 
@@ -1071,6 +1074,10 @@ int shmem_transport_init(long eager_size)
     if(ret!=0)
         return ret;
 
+#ifdef ENABLE_THREADS
+    SHMEM_MUTEX_INIT(shmem_transport_ofi_lock);
+#endif
+
     shmem_transport_ofi_bounce_buffer_size = eager_size;
 
     //init LL for NB buffers
@@ -1236,7 +1243,11 @@ int shmem_transport_fini(void)
     }
 
 #ifdef USE_AV_MAP
-  free(addr_table);
+    free(addr_table);
+#endif
+
+#ifdef ENABLE_THREADS
+    SHMEM_MUTEX_DESTROY(shmem_transport_ofi_lock);
 #endif
 
     return 0;

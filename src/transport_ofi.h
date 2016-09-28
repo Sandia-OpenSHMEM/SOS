@@ -52,6 +52,9 @@ extern uint64_t				shmem_transport_ofi_max_poll;
 extern size_t          		 	shmem_transport_ofi_max_buffered_send;
 extern size_t    			shmem_transport_ofi_max_msg_size;
 extern size_t    			shmem_transport_ofi_bounce_buffer_size;
+#ifdef ENABLE_THREADS
+extern shmem_internal_mutex_t           shmem_transport_ofi_lock;
+#endif
 
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -274,6 +277,8 @@ static inline shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(const v
 
 static inline void shmem_transport_put_quiet(void)
 {
+  SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
+
 	int ret = 0;
 
 	/* wait until all outstanding queue operations have completed */
@@ -288,8 +293,10 @@ static inline void shmem_transport_put_quiet(void)
 	    struct fi_cq_err_entry e = {0};
         fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd,
 		           (void *)&e, 0);
+        SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 		RAISE_ERROR(e.err);
     }
+  SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 }
 
 static inline int shmem_transport_quiet(void)
@@ -337,6 +344,7 @@ static inline
 void
 shmem_transport_put_small(void *target, const void *source, size_t len, int pe)
 {
+  SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
 
 	int ret = 0;
 	uint64_t dst = (uint64_t) pe;
@@ -362,12 +370,14 @@ shmem_transport_put_small(void *target, const void *source, size_t len, int pe)
         shmem_internal_assert(ret == 0);
 	/* automatically get local completion but need remote completion for fence/quiet*/
 	shmem_transport_ofi_pending_put_counter++;
+  SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 }
 
 static inline
 void
 shmem_transport_ofi_put_large(void *target, const void *source, size_t len, int pe)
 {
+  SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
 	int ret = 0;
 	uint64_t dst = (uint64_t) pe;
 	uint64_t polled = 0;
@@ -398,6 +408,7 @@ shmem_transport_ofi_put_large(void *target, const void *source, size_t len, int 
         frag_source += frag_len;
         frag_target += frag_len;
     }
+  SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 }
 
 static inline
@@ -418,6 +429,7 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
 
 	} else if (len <= shmem_transport_ofi_bounce_buffer_size) {
 
+          SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
         shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
 		shmem_transport_ofi_bounce_buffer_t *buff = create_bounce_buffer(source, len);
@@ -431,6 +443,7 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
 		} while(try_again(ret,&polled));
 
 		shmem_transport_ofi_pending_cq_count++;
+                SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 
     } else {
         shmem_transport_ofi_put_large(target, source,len, pe);
@@ -466,6 +479,7 @@ static inline
 void
 shmem_transport_get(void *target, const void *source, size_t len, int pe)
 {
+  SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
 	int ret = 0;
 	uint64_t dst = (uint64_t) pe;
 	uint64_t polled = 0;
@@ -510,6 +524,7 @@ shmem_transport_get(void *target, const void *source, size_t len, int pe)
                 frag_target += frag_len;
             }
         }
+  SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 }
 
 
@@ -517,6 +532,7 @@ static inline
 void
 shmem_transport_get_wait(void)
 {
+  SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
 	int ret = 0;
 
 	/* wait for get counter to meet outstanding count value    */
@@ -526,8 +542,10 @@ shmem_transport_get_wait(void)
 	    struct fi_cq_err_entry e = {0};
         fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd,
 		           (void *)&e, 0);
+        SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 		RAISE_ERROR(e.err);
     }
+  SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 }
 
 
@@ -536,6 +554,7 @@ void
 shmem_transport_swap(void *target, const void *source, void *dest,
                      size_t len, int pe, int datatype)
 {
+  SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
 	int ret = 0;
         uint64_t dst = (uint64_t) pe;
 	uint64_t polled = 0;
@@ -563,6 +582,7 @@ shmem_transport_swap(void *target, const void *source, void *dest,
 	} while(try_again(ret,&polled));
 
 	shmem_transport_ofi_pending_get_counter++;
+  SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 }
 
 
@@ -571,6 +591,7 @@ void
 shmem_transport_cswap(void *target, const void *source, void *dest,
                       const void *operand, size_t len, int pe, int datatype)
 {
+  SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
 
 	int ret = 0;
         uint64_t dst = (uint64_t) pe;
@@ -601,6 +622,7 @@ shmem_transport_cswap(void *target, const void *source, void *dest,
 	} while(try_again(ret,&polled));
 
 	shmem_transport_ofi_pending_get_counter++;
+  SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 }
 
 
@@ -609,6 +631,7 @@ void
 shmem_transport_mswap(void *target, const void *source, void *dest,
                       const void *mask, size_t len, int pe, int datatype)
 {
+  SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
 
 	int ret = 0;
         uint64_t dst = (uint64_t) pe;
@@ -639,6 +662,7 @@ shmem_transport_mswap(void *target, const void *source, void *dest,
 	} while(try_again(ret,&polled));
 
 	shmem_transport_ofi_pending_get_counter++;
+  SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 }
 
 
@@ -647,6 +671,7 @@ void
 shmem_transport_atomic_small(void *target, const void *source, size_t len,
                                        int pe, int op, int datatype)
 {
+  SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
 
 	int ret = 0;
 	uint64_t dst = (uint64_t) pe;
@@ -670,6 +695,7 @@ shmem_transport_atomic_small(void *target, const void *source, size_t len,
 	} while(try_again(ret,&polled));
 
 	shmem_transport_ofi_pending_put_counter++;
+  SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 }
 
 
@@ -678,6 +704,7 @@ void
 shmem_transport_atomic_set(void *target, const void *source, size_t len,
                            int pe, int datatype)
 {
+  SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
 
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
@@ -701,6 +728,7 @@ shmem_transport_atomic_set(void *target, const void *source, size_t len,
     } while (try_again(ret, &polled));
 
     shmem_transport_ofi_pending_put_counter++;
+  SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 }
 
 
@@ -709,6 +737,7 @@ void
 shmem_transport_atomic_fetch(void *target, const void *source, size_t len,
                             int pe, int datatype)
 {
+  SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
 
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
@@ -736,6 +765,7 @@ shmem_transport_atomic_fetch(void *target, const void *source, size_t len,
     } while (try_again(ret, &polled));
 
     shmem_transport_ofi_pending_get_counter++;
+  SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 }
 
 
@@ -745,6 +775,7 @@ shmem_transport_atomic_nb(void *target, const void *source, size_t full_len,
                                    int pe, int op, int datatype,
                                    long *completion)
 {
+  SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
 	int ret = 0;
 	uint64_t dst = (uint64_t) pe;
 	size_t len = full_len/SHMEM_Dtsize[datatype];
@@ -834,6 +865,7 @@ shmem_transport_atomic_nb(void *target, const void *source, size_t full_len,
 			sent += chunksize;
 		}
         }
+  SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 }
 
 
@@ -842,6 +874,7 @@ void
 shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
                              size_t len, int pe, int op, int datatype)
 {
+  SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
         int ret = 0;
         uint64_t dst = (uint64_t) pe;
 	uint64_t polled = 0;
@@ -869,6 +902,7 @@ shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
 	} while(try_again(ret,&polled));
 
 	shmem_transport_ofi_pending_get_counter++;
+  SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 }
 
 
