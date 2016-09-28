@@ -292,13 +292,6 @@ static inline int allocate_endpoints(struct fabric_info *info)
 
     /* this endpoint is used only to get read and write
      * counter updates */
-    info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | /*SEND ONLY */
-                         FI_ATOMICS; /* request atomics capability */
-    info->p_info->caps |= FI_REMOTE_WRITE | FI_REMOTE_READ;
-    info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE | FI_INJECT_COMPLETE;
-    info->p_info->mode = 0;
-    info->p_info->tx_attr->mode = 0;
-    info->p_info->rx_attr->mode = 0;
     ret = fi_endpoint(shmem_transport_ofi_domainfd,
                       info->p_info, &shmem_transport_ofi_cntr_epfd, NULL);
     if(ret!=0){
