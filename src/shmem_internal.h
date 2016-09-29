@@ -246,4 +246,30 @@ static inline double shmem_internal_wtime(void) {
 long shmem_util_getenv_long(const char* name, int is_sized, long default_value);
 char *shmem_util_getenv_str(const char* name);
 
+/* Language bindings helper macros */
+#define SHMEM_EVAL_MACRO_FOR_AMO_WITH_ITYPE(decl,END)           \
+  decl(int,        int,         SHM_INTERNAL_INT) END           \
+  decl(long,       long,        SHM_INTERNAL_LONG) END          \
+  decl(longlong,   long long,   SHM_INTERNAL_LONG_LONG)
+
+#define SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO_WITH_ITYPE(decl,END)  \
+  SHMEM_EVAL_MACRO_FOR_AMO_WITH_ITYPE(decl,END) END             \
+  decl(float,  float,           SHM_INTERNAL_FLOAT) END         \
+  decl(double, double,          SHM_INTERNAL_DOUBLE)
+
+#define SHMEM_INTERNAL_EVAL_MACRO_FOR_INTS_WITH_ITYPE(decl,END) \
+  decl(short,    short,         SHM_INTERNAL_SHORT) END         \
+  decl(int,      int,           SHM_INTERNAL_INT) END           \
+  decl(long,     long,          SHM_INTERNAL_LONG) END          \
+  decl(longlong, long long,     SHM_INTERNAL_LONG_LONG)
+
+#define SHMEM_EVAL_MACRO_FOR_FLOATS_WITH_ITYPE(decl,END)        \
+  decl(float,     float,        SHM_INTERNAL_FLOAT) END         \
+  decl(double,    double,       SHM_INTERNAL_DOUBLE) END        \
+  decl(longdouble,long double,  SHM_INTERNAL_LONG_DOUBLE)
+
+#define SHMEM_EVAL_MACRO_FOR_CMPLX_WITH_ITYPE(decl,END)         \
+  decl(complexf, float complex, SHM_INTERNAL_FLOAT_COMPLEX) END \
+  decl(complexd, double complex,SHM_INTERNAL_DOUBLE_COMPLEX)
+
 #endif
