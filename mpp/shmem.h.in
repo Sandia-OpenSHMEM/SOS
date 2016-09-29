@@ -18,8 +18,12 @@
 
 #include <stddef.h>
 #include <complex.h>
+
 #ifdef __cplusplus
+#ifndef complex
 #define complex _Complex
+#define SHMEM_UNDEF_COMPLEX
+#endif
 extern "C" {
 #endif
 
@@ -439,7 +443,7 @@ void start_pes(int npes) __attribute__ ((deprecated));
 /* C++ overloaded declarations */
 #ifdef __cplusplus
 } /* extern "C" */
-#ifdef complex
+#ifdef SHMEM_UNDEF_COMPLEX
 #undef complex
 #endif
 
