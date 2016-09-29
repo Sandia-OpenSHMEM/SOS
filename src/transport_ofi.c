@@ -290,12 +290,12 @@ static inline int allocate_endpoints(struct fabric_info *info)
 	return ret;
     }
 
-    /* this endpoint is used only to get read and write
-     * counter updates */
-    info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | /*SEND ONLY */
-                         FI_ATOMICS; /* request atomics capability */
+    /* In hard polling builds, ask for remote read/write counter updates to
+     * support shmem_wait that blocks on an update arriving from the network */
+#ifndef ENABLE_HARD_POLLING
     info->p_info->caps |= FI_REMOTE_WRITE | FI_REMOTE_READ;
-    info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE | FI_INJECT_COMPLETE;
+#endif
+    /* Remove FI_CONTEXT flag from this endpoint */
     info->p_info->mode = 0;
     info->p_info->tx_attr->mode = 0;
     info->p_info->rx_attr->mode = 0;
