@@ -294,10 +294,7 @@ static inline int allocate_endpoints(struct fabric_info *info)
      * support shmem_wait that blocks on an update arriving from the network */
 #ifndef ENABLE_HARD_POLLING
     info->p_info->caps |= FI_REMOTE_WRITE | FI_REMOTE_READ;
-#else
-    info->p_info->caps &= (!FI_REMOTE_WRITE & !FI_REMOTE_READ);
 #endif
-    info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
     /* Remove FI_CONTEXT flag from this endpoint */
     info->p_info->mode = 0;
     info->p_info->tx_attr->mode = 0;
