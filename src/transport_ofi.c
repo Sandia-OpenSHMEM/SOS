@@ -1074,9 +1074,7 @@ int shmem_transport_init(long eager_size)
     if(ret!=0)
         return ret;
 
-#ifdef ENABLE_THREADS
     SHMEM_MUTEX_INIT(shmem_transport_ofi_lock);
-#endif
 
     shmem_transport_ofi_bounce_buffer_size = eager_size;
 
@@ -1246,9 +1244,7 @@ int shmem_transport_fini(void)
     free(addr_table);
 #endif
 
-#ifdef ENABLE_THREADS
     SHMEM_MUTEX_DESTROY(shmem_transport_ofi_lock);
-#endif
 
     return 0;
 }
