@@ -96,7 +96,6 @@ uint8_t**                       shmem_transport_ofi_target_heap_addrs;
 uint8_t**                       shmem_transport_ofi_target_data_addrs;
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 #endif /* ENABLE_MR_SCALABLE */
-size_t				shmem_transport_ofi_max_atomic_size = 0;
 uint64_t			shmem_transport_ofi_max_poll;
 size_t           		shmem_transport_ofi_max_buffered_send;
 size_t    			shmem_transport_ofi_max_msg_size;

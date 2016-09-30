@@ -488,7 +488,6 @@ shmem_transport_atomic_small(void *target, const void *source,
 
   shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
-  shmem_internal_assert(SHMEM_Dtsize[datatype] <= shmem_transport_ofi_max_atomic_size);
   shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
 
   do {
@@ -526,7 +525,6 @@ shmem_transport_atomic_set(void *target, const void *source,
 
   shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
-  shmem_internal_assert(SHMEM_Dtsize[datatype] <= shmem_transport_ofi_max_atomic_size);
   shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
 
   do {
@@ -564,7 +562,6 @@ shmem_transport_atomic_fetch(void *target, const void *source,
 
   shmem_transport_ofi_get_mr(source, pe, &addr, &key);
 
-  shmem_internal_assert(SHMEM_Dtsize[datatype] <= shmem_transport_ofi_max_atomic_size);
   shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
 
   do {
@@ -644,7 +641,7 @@ shmem_transport_atomic_nb(void *target, const void *source,
     while (sent < len) {
 
       size_t chunksize = MIN((len-sent),
-          (shmem_transport_ofi_max_atomic_size/SHMEM_Dtsize[datatype]));
+          (max_atomic_size/SHMEM_Dtsize[datatype]));
 
       polled = 0;
       do {
