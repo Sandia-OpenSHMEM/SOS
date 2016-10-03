@@ -40,7 +40,7 @@ program shmem_info
     if (lib_name .ne. SHMEM_VENDOR_STRING) then
         print *, me, "Vendor strings did not match!"
         print *, me, "shmem_info_get_name: ", lib_name
-        print *, me, "SHMEM_VENDOR_STRING: ", lib_name
+        print *, me, "SHMEM_VENDOR_STRING: ", SHMEM_VENDOR_STRING
         call shmem_global_exit(1)
     endif
 
