@@ -37,6 +37,9 @@ program shmem_info
     call shmem_info_get_version(major_ver, minor_ver)
     call shmem_info_get_name(lib_name)
 
+    ! Note: The spec does not require these strings to be identical.
+    !       They are implemented this way in SOS, and we take advantage
+    !       of that property to check the C/Fortran bindings linkage.
     if (lib_name .ne. SHMEM_VENDOR_STRING) then
         print *, me, "Vendor strings did not match!"
         print *, me, "shmem_info_get_name: ", lib_name
