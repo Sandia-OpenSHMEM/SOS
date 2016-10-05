@@ -344,8 +344,8 @@ shmem_internal_init(int tl_requested, int *tl_provided)
             printf("SMA_FCOLLECT_ALGORITHM  %s\n", coll_type_str[shmem_internal_fcollect_type]);
             printf("\tAlgorithm for fcollect.  Options are auto, linear, ring, recdbl\n");
 #ifdef USE_CMA
-            printf("SMA_CMA_PUT_MAX         %s\n", shmem_transport_cma_put_max);
-            printf("SMA_CMA_GET_MAX         %s\n", shmem_transport_cma_get_max);
+            printf("SMA_CMA_PUT_MAX         %zu\n", shmem_transport_cma_put_max);
+            printf("SMA_CMA_GET_MAX         %zu\n", shmem_transport_cma_get_max);
 #endif /* USE_CMA */
             printf("SMA_DEBUG               %s\n", (NULL != shmem_util_getenv_str("DEBUG")) ? "On" : "Off");
             printf("\tEnable debugging messages.\n");
