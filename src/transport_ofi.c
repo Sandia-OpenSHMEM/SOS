@@ -443,7 +443,6 @@ static inline int allocate_recv_cntr_mr(void)
 {
 
     int ret = 0;
-    struct fi_cntr_attr cntr_attr = {0};
 
     /* ------------------------------------*/
     /* POST enable resources for to EP     */
@@ -451,16 +450,20 @@ static inline int allocate_recv_cntr_mr(void)
     /* since this is AFTER enable and RMA you must create memory regions for incoming reads/writes
      * and outgoing non-blocking Puts, specifying entire VA range */
 
-    // Create counter for incoming writes
-    cntr_attr.events   = FI_CNTR_EVENTS_COMP;
-    cntr_attr.flags    = 0;
-
 #ifndef ENABLE_HARD_POLLING
-    ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
-                       &shmem_transport_ofi_target_cntrfd, NULL);
-    if(ret!=0){
-        OFI_ERRMSG("target cntr_open failed\n");
-        return ret;
+    {
+        struct fi_cntr_attr cntr_attr = {0};
+
+        // Create counter for incoming writes
+        cntr_attr.events   = FI_CNTR_EVENTS_COMP;
+        cntr_attr.flags    = 0;
+
+        ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
+                           &shmem_transport_ofi_target_cntrfd, NULL);
+        if(ret!=0){
+            OFI_ERRMSG("target cntr_open failed\n");
+            return ret;
+        }
     }
 #endif
 
