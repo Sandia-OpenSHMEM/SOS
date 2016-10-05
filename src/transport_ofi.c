@@ -830,7 +830,7 @@ static inline int publish_av_info(struct fabric_info *info)
     if(gethostname(myephostname, (EPHOSTNAMELEN - 1)) != 0)
         OFI_ERRMSG("gethostname error: %s \n", strerror(errno));
 
-    myephostname[EPHOSTNAMELEN] = '\0';
+    myephostname[EPHOSTNAMELEN-1] = '\0';
 
     ret = shmem_runtime_put("fi_ephostname", myephostname, EPHOSTNAMELEN);
     if (ret != 0) {
