@@ -165,6 +165,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #if 0
 #include "config.h"
 #endif
@@ -173,9 +174,7 @@
 #define POLY 0x0000000000000007UL
 #define PERIOD 1317624576693539401L
 
-/* Define 64-bit types and corresponding format strings for printf() and constants */
-#define FSTR64 "%ld"
-#define FSTRU64 "%lu"
+/* Define 64-bit constants */
 #define ZERO64B 0LL
 
 uint64_t TotalMemOpt;
@@ -412,12 +411,12 @@ SHMEMRandomAccess(void)
 
   if (MyProc == 0) {
     fprintf( outFile, "Running on %d processors\n", NumProcs);
-    fprintf( outFile, "Total Main table size = 2^" FSTR64 " = " FSTR64 " words\n",
+    fprintf( outFile, "Total Main table size = 2^%" PRIu64 " = %" PRIu64 " words\n",
              logTableSize, TableSize );
-    fprintf( outFile, "PE Main table size = (2^" FSTR64 ")/%d  = " FSTR64 " words/PE MAX\n",
+    fprintf( outFile, "PE Main table size = (2^%" PRIu64 ")/%d  = %" PRIu64 " words/PE MAX\n",
              logTableSize, NumProcs, LocalTableSize);
 
-    fprintf( outFile, "Default number of updates (RECOMMENDED) = " FSTR64 "\n", NumUpdates_Default);
+    fprintf( outFile, "Default number of updates (RECOMMENDED) = %" PRIu64 "\n", NumUpdates_Default);
   }
 
   /* Initialize main table */
@@ -488,7 +487,7 @@ SHMEMRandomAccess(void)
 
   if(MyProc == 0){
     fprintf( outFile, "Verification:  Real time used = %.6f seconds\n", RealTime);
-    fprintf( outFile, "Found " FSTR64 " errors in " FSTR64 " locations (%s).\n",
+    fprintf( outFile, "Found %" PRIu64 " errors in %" PRIu64 " locations (%s).\n",
              GlbNumErrors, TableSize, (GlbNumErrors <= 0.01*TableSize) ?
              "passed" : "failed");
     if (GlbNumErrors > 0.01*TableSize) Failure = 1;
