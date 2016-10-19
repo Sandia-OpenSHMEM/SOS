@@ -88,7 +88,7 @@ shmemx_wtime(void)
 #ifdef CLOCK_MONOTONIC
     struct timespec tv;
     clock_gettime(CLOCK_MONOTONIC, &tv);
-    wtime = tv.tv_second;
+    wtime = tv.tv_sec;
     wtime += (double)tv.tv_nsec / 1000000000.0;
 #else
     struct timeval tv;
