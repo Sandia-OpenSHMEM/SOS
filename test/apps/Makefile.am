@@ -17,7 +17,8 @@ LOG_COMPILER = $(TEST_RUNNER)
 AM_CPPFLAGS = -I$(top_srcdir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
 
-TESTS =
+TESTS = binary-search
+
 check_PROGRAMS = $(TESTS)
 
 if ENABLE_LENGTHY_TESTS
@@ -28,3 +29,6 @@ endif
 
 gups_SOURCES = gups.c
 gups_LDADD = $(top_builddir)/src/libsma.la
+
+binary_search_SOURCES = binary-search.c
+binary_search_LDADD = $(top_builddir)/src/libsma.la
