@@ -293,19 +293,6 @@ static inline int allocate_endpoints(struct fabric_info *info)
 	return ret;
     }
 
-    /* In hard polling builds, ask for remote read/write counter updates to
-     * support shmem_wait that blocks on an update arriving from the network */
-#ifndef ENABLE_HARD_POLLING
-    info->p_info->caps |= FI_REMOTE_WRITE | FI_REMOTE_READ;
-#else
-    info->p_info->caps &= ~FI_REMOTE_WRITE;
-    info->p_info->caps &= ~FI_REMOTE_READ;
-#endif
-
-    /* Remove unused capabilities */
-    info->p_info->caps &= ~FI_MSG;
-    info->p_info->caps &= ~FI_TAGGED;
-
     /* Remove FI_CONTEXT flag from this endpoint */
     info->p_info->mode = 0;
     info->p_info->tx_attr->mode = 0;
