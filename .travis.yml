@@ -15,7 +15,8 @@ env:
         - # Defaults
         - SOS_BUILD_OPTS="--disable-mr-scalable --enable-av-map --disable-cxx"
         - SOS_BUILD_OPTS="--enable-cma --enable-error-checking --enable-profiling --disable-mr-scalable --enable-av-map --enable-remote-virtual-addressing"
-        - SMA_BOUNCE_SIZE=0 SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+        - SOS_BUILD_OPTS="--disable-fortran --disable-cxx --enable-error-checking --enable-remote-virtual-addressing"
+        - SMA_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SMA_BOUNCE_SIZE=0 SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
         - SMA_BARRIER_ALGORITHM=auto   SMA_BCAST_ALGORITHM=auto   SMA_REDUCE_ALGORITHM=auto    SMA_COLLECT_ALGORITHM=auto    SMA_FCOLLECT_ALGORITHM=auto SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
         - SMA_BARRIER_ALGORITHM=linear SMA_BCAST_ALGORITHM=linear SMA_REDUCE_ALGORITHM=linear  SMA_COLLECT_ALGORITHM=linear  SMA_FCOLLECT_ALGORITHM=linear SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
         - SMA_BARRIER_ALGORITHM=tree   SMA_BCAST_ALGORITHM=tree   SMA_REDUCE_ALGORITHM=tree SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
