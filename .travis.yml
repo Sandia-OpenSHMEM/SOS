@@ -113,13 +113,13 @@ script:
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/tests-uh
     - make $TRAVIS_PAR_MAKE C_feature_tests
-    - [ $SOS_DISABLE_FORTRAN ] || make F_feature_tests
+    - test $SOS_DISABLE_FORTRAN || make F_feature_tests
     #- make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
     # Check for failures in the C tests
     #- if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-c-feature-tests.log; then false; else true; fi
-    #- [ $SOS_DISABLE_FORTRAN ] || make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log
+    #- test $SOS_DISABLE_FORTRAN || make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log
     # Check for failures in the Fortran tests
-    #- [ $SOS_DISABLE_FORTRAN ] || if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi
+    #- test $SOS_DISABLE_FORTRAN || if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi
     - make clean
     ###
     ### Run the UH test suite (OFI)
@@ -128,13 +128,13 @@ script:
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/tests-uh
     - make $TRAVIS_PAR_MAKE C_feature_tests
-    - [ $SOS_DISABLE_FORTRAN ] || make F_feature_tests
+    - test $SOS_DISABLE_FORTRAN || make F_feature_tests
     - make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
     # Check for failures in the C tests
     - if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-c-feature-tests.log; then false; else true; fi
-    - [ $SOS_DISABLE_FORTRAN ] || make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log
+    - test $SOS_DISABLE_FORTRAN || make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log
     # Check for failures in the Fortran tests
-    - [ $SOS_DISABLE_FORTRAN ] || if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi
+    - test $SOS_DISABLE_FORTRAN || if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi
     - make clean
     ###
     ### Run ISx (Portals)
