@@ -15,7 +15,7 @@ env:
         - # Defaults
         - SOS_BUILD_OPTS="--disable-mr-scalable --enable-av-map --disable-cxx"
         - SOS_BUILD_OPTS="--enable-cma --enable-error-checking --enable-profiling --disable-mr-scalable --enable-av-map --enable-remote-virtual-addressing"
-        - SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing"
+        - SOS_DISABLE_FORTRAN=1 SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing"
         - SMA_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SMA_BOUNCE_SIZE=0 SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
         - SMA_BARRIER_ALGORITHM=auto   SMA_BCAST_ALGORITHM=auto   SMA_REDUCE_ALGORITHM=auto    SMA_COLLECT_ALGORITHM=auto    SMA_FCOLLECT_ALGORITHM=auto SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
         - SMA_BARRIER_ALGORITHM=linear SMA_BCAST_ALGORITHM=linear SMA_REDUCE_ALGORITHM=linear  SMA_COLLECT_ALGORITHM=linear  SMA_FCOLLECT_ALGORITHM=linear SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
@@ -112,13 +112,14 @@ script:
     - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/tests-uh
-    - make $TRAVIS_PAR_MAKE C_feature_tests F_feature_tests
+    - make $TRAVIS_PAR_MAKE C_feature_tests
+    - [ $SOS_DISABLE_FORTRAN ] || make F_feature_tests
     #- make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
     # Check for failures in the C tests
     #- if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-c-feature-tests.log; then false; else true; fi
-    #- make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log
+    #- [ $SOS_DISABLE_FORTRAN ] || make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log
     # Check for failures in the Fortran tests
-    #- if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi
+    #- [ $SOS_DISABLE_FORTRAN ] || if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi
     - make clean
     ###
     ### Run the UH test suite (OFI)
@@ -126,13 +127,14 @@ script:
     - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/tests-uh
-    - make $TRAVIS_PAR_MAKE C_feature_tests F_feature_tests
+    - make $TRAVIS_PAR_MAKE C_feature_tests
+    - [ $SOS_DISABLE_FORTRAN ] || make F_feature_tests
     - make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
     # Check for failures in the C tests
     - if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-c-feature-tests.log; then false; else true; fi
-    - make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log
+    - [ $SOS_DISABLE_FORTRAN ] || make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log
     # Check for failures in the Fortran tests
-    - if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi
+    - [ $SOS_DISABLE_FORTRAN ] || if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi
     - make clean
     ###
     ### Run ISx (Portals)
