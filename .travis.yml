@@ -15,7 +15,8 @@ env:
         - # Defaults
         - SOS_BUILD_OPTS="--disable-mr-scalable --enable-av-map --disable-cxx"
         - SOS_BUILD_OPTS="--enable-cma --enable-error-checking --enable-profiling --disable-mr-scalable --enable-av-map --enable-remote-virtual-addressing"
-        - SMA_BOUNCE_SIZE=0 SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+        - SOS_DISABLE_FORTRAN=1 SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing"
+        - SMA_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SMA_BOUNCE_SIZE=0 SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
         - SMA_BARRIER_ALGORITHM=auto   SMA_BCAST_ALGORITHM=auto   SMA_REDUCE_ALGORITHM=auto    SMA_COLLECT_ALGORITHM=auto    SMA_FCOLLECT_ALGORITHM=auto SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
         - SMA_BARRIER_ALGORITHM=linear SMA_BCAST_ALGORITHM=linear SMA_REDUCE_ALGORITHM=linear  SMA_COLLECT_ALGORITHM=linear  SMA_FCOLLECT_ALGORITHM=linear SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
         - SMA_BARRIER_ALGORITHM=tree   SMA_BCAST_ALGORITHM=tree   SMA_REDUCE_ALGORITHM=tree SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
@@ -111,13 +112,19 @@ script:
     - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/tests-uh
-    - make $TRAVIS_PAR_MAKE C_feature_tests F_feature_tests
+    - make $TRAVIS_PAR_MAKE C_feature_tests
     #- make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
     # Check for failures in the C tests
     #- if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-c-feature-tests.log; then false; else true; fi
-    #- make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log
-    # Check for failures in the Fortran tests
-    #- if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi
+    - >
+      if [ ! $SOS_DISABLE_FORTRAN ]; then
+          make F_feature_tests;
+          if false && [ $? -ne 0 ]; then
+              make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log;
+              # Check for failures in the Fortran tests
+              if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi;
+          fi;
+      fi
     - make clean
     ###
     ### Run the UH test suite (OFI)
@@ -125,13 +132,19 @@ script:
     - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/tests-uh
-    - make $TRAVIS_PAR_MAKE C_feature_tests F_feature_tests
+    - make $TRAVIS_PAR_MAKE C_feature_tests
     - make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
     # Check for failures in the C tests
     - if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-c-feature-tests.log; then false; else true; fi
-    - make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log
-    # Check for failures in the Fortran tests
-    - if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi
+    - >
+      if [ ! $SOS_DISABLE_FORTRAN ]; then
+          make F_feature_tests;
+          if [ $? -ne 0 ]; then
+              make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log;
+              # Check for failures in the Fortran tests
+              if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi;
+          fi;
+      fi
     - make clean
     ###
     ### Run ISx (Portals)
@@ -148,9 +161,9 @@ script:
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/ISx/SHMEM
     - make CC=oshcc LDLIBS=-lm
-    - mpiexec.hydra -np 4 ./bin/isx.strong 134217728 output_strong
-    - mpiexec.hydra -np 4 ./bin/isx.weak 33554432 output_weak
-    - mpiexec.hydra -np 4 ./bin/isx.weak_iso 33554432 output_weak_iso
+    - oshrun -np 4 ./bin/isx.strong 134217728 output_strong
+    - oshrun -np 4 ./bin/isx.weak 33554432 output_weak
+    - oshrun -np 4 ./bin/isx.weak_iso 33554432 output_weak_iso
     - make clean
     ###
     ### Run PRK (Portals)
@@ -167,12 +180,9 @@ script:
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/PRK
     - make allshmem
-    - mpiexec.hydra -np 4 ./SHMEM/Stencil/stencil 100 1000 2>&1 | tee stencil.log
-    - grep -qi "Solution validates" stencil.log
-    - mpiexec.hydra -np 4 ./SHMEM/Synch_p2p/p2p 10 1000 1000 2>&1 | tee p2p.log
-    - grep -qi "Solution validates" p2p.log
-    - mpiexec.hydra -np 4 ./SHMEM/Transpose/transpose 10 1000 2>&1 | tee transpose.log
-    - grep -qi "Solution validates" transpose.log
+    - oshrun -np 4 ./SHMEM/Stencil/stencil 100 1000
+    - oshrun -np 4 ./SHMEM/Synch_p2p/p2p 10 1000 1000
+    - oshrun -np 4 ./SHMEM/Transpose/transpose 10 1000
     - make clean
 
 notifications:
