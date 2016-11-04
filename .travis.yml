@@ -93,7 +93,7 @@ script:
     - ./configure --with-portals4=$TRAVIS_INSTALL/portals4/ --prefix=$TRAVIS_INSTALL/sandia-shmem-portals4 $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
-    #- make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2 timeout 10" check
+    #- make VERBOSE=1 TEST_RUNNER="oshrun -np 2 timeout 10" check
     - make install
     - make clean
     ###
@@ -104,13 +104,13 @@ script:
     - ./configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --prefix=$TRAVIS_INSTALL/sandia-shmem-ofi $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
-    - make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2" check
+    - make VERBOSE=1 TEST_RUNNER="oshrun -np 2" check
     - make install
     ###
     ### Run the UH test suite (Portals)
     ###
     - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - export OSHRUN_LAUNCHER="mpiexec.hydra"
+    - export OSHRUN_LAUNCHER="oshrun"
     - cd $TRAVIS_SRC/tests-uh
     - make $TRAVIS_PAR_MAKE C_feature_tests
     #- make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
@@ -130,7 +130,7 @@ script:
     ### Run the UH test suite (OFI)
     ###
     - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - export OSHRUN_LAUNCHER="mpiexec.hydra"
+    - export OSHRUN_LAUNCHER="oshrun"
     - cd $TRAVIS_SRC/tests-uh
     - make $TRAVIS_PAR_MAKE C_feature_tests
     - make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
@@ -150,7 +150,7 @@ script:
     ### Run ISx (Portals)
     ###
     - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - export OSHRUN_LAUNCHER="mpiexec.hydra"
+    - export OSHRUN_LAUNCHER="oshrun"
     - cd $TRAVIS_SRC/ISx/SHMEM
     - make CC=oshcc LDLIBS=-lm
     - make clean
@@ -158,18 +158,18 @@ script:
     ### Run ISx (OFI)
     ###
     - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - export OSHRUN_LAUNCHER="mpiexec.hydra"
+    - export OSHRUN_LAUNCHER="oshrun"
     - cd $TRAVIS_SRC/ISx/SHMEM
     - make CC=oshcc LDLIBS=-lm
-    - mpiexec.hydra -np 4 ./bin/isx.strong 134217728 output_strong
-    - mpiexec.hydra -np 4 ./bin/isx.weak 33554432 output_weak
-    - mpiexec.hydra -np 4 ./bin/isx.weak_iso 33554432 output_weak_iso
+    - oshrun -np 4 ./bin/isx.strong 134217728 output_strong
+    - oshrun -np 4 ./bin/isx.weak 33554432 output_weak
+    - oshrun -np 4 ./bin/isx.weak_iso 33554432 output_weak_iso
     - make clean
     ###
     ### Run PRK (Portals)
     ###
     - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - export OSHRUN_LAUNCHER="mpiexec.hydra"
+    - export OSHRUN_LAUNCHER="oshrun"
     - cd $TRAVIS_SRC/PRK
     - make allshmem
     - make clean
@@ -177,12 +177,12 @@ script:
     ### Run PRK (OFI)
     ###
     - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - export OSHRUN_LAUNCHER="mpiexec.hydra"
+    - export OSHRUN_LAUNCHER="oshrun"
     - cd $TRAVIS_SRC/PRK
     - make allshmem
-    - mpiexec.hydra -np 4 ./SHMEM/Stencil/stencil 100 1000
-    - mpiexec.hydra -np 4 ./SHMEM/Synch_p2p/p2p 10 1000 1000
-    - mpiexec.hydra -np 4 ./SHMEM/Transpose/transpose 10 1000
+    - oshrun -np 4 ./SHMEM/Stencil/stencil 100 1000
+    - oshrun -np 4 ./SHMEM/Synch_p2p/p2p 10 1000 1000
+    - oshrun -np 4 ./SHMEM/Transpose/transpose 10 1000
     - make clean
 
 notifications:
