@@ -1173,6 +1173,7 @@ FC_SHMEM_BROADCAST4(void *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(*PE_root);
     SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
@@ -1205,6 +1206,7 @@ FC_SHMEM_BROADCAST8(void *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(*PE_root);
     SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
@@ -1237,6 +1239,7 @@ FC_SHMEM_BROADCAST32(void *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(*PE_root);
     SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
@@ -1269,6 +1272,7 @@ FC_SHMEM_BROADCAST64(void *target,
 {
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(*PE_root);
     SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */

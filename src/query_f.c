@@ -23,6 +23,8 @@ fortran_integer_t FC_NUM_PES(void);
 fortran_integer_t
 FC_NUM_PES(void)
 {
+    SHMEM_ERR_CHECK_INITIALIZED();
+
      return shmem_internal_num_pes;
 }
 
@@ -32,6 +34,8 @@ fortran_integer_t FC_SHMEM_N_PES(void);
 fortran_integer_t
 FC_SHMEM_N_PES(void)
 {
+    SHMEM_ERR_CHECK_INITIALIZED();
+
      return shmem_internal_num_pes;
 }
 
@@ -41,6 +45,8 @@ fortran_integer_t FC_MY_PE(void);
 fortran_integer_t
 FC_MY_PE(void)
 {
+    SHMEM_ERR_CHECK_INITIALIZED();
+
      return shmem_internal_my_pe;
 }
 
@@ -50,6 +56,8 @@ fortran_integer_t FC_SHMEM_MY_PE(void);
 fortran_integer_t
 FC_SHMEM_MY_PE(void)
 {
+    SHMEM_ERR_CHECK_INITIALIZED();
+
      return shmem_internal_my_pe;
 }
 

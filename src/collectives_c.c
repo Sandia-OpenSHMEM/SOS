@@ -841,6 +841,7 @@ shmem_broadcast32(void *target, const void *source, size_t nlong,
                   long *pSync)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(PE_root);
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
 
     shmem_internal_bcast(target, source, nlong * 4,
@@ -855,6 +856,7 @@ shmem_broadcast64(void *target, const void *source, size_t nlong,
                   long *pSync)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(PE_root);
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
 
     shmem_internal_bcast(target, source, nlong * 8,
