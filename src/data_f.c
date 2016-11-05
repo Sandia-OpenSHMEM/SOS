@@ -31,6 +31,7 @@
         long completion = 0;                                            \
                                                                         \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(*pe);                                        \
                                                                         \
         shmem_internal_put_nb(target, source, SIZE * *len, *pe,         \
                               &completion);                             \
@@ -55,6 +56,7 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_PUT_SIZE)
                   fortran_integer_t *pe)                                \
     {                                                                   \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(*pe);                                        \
                                                                         \
         shmem_internal_put_nb(target, source, SIZE * *nelems, *pe, NULL); \
     }
@@ -83,6 +85,7 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_PUT_NBI_SIZE)
         char *source = (char*) sourcep;                                 \
                                                                         \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(*pe);                                        \
                                                                         \
         for ( ; len > 0 ; --len) {                                      \
             shmem_internal_put_small(target, source, SIZE, *pe);        \
@@ -110,6 +113,7 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_IPUT_SIZE)
                   fortran_integer_t *pe)                                \
     {                                                                   \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(*pe);                                        \
                                                                         \
         shmem_internal_get(target, source, SIZE * *len, *pe);           \
         shmem_internal_get_wait();                                      \
@@ -133,6 +137,7 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_GET_SIZE)
                   fortran_integer_t *pe)                                \
     {                                                                   \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(*pe);                                        \
                                                                         \
         shmem_internal_get(target, source, SIZE * *nelems, *pe);        \
     }
@@ -161,6 +166,7 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_GET_NBI_SIZE)
         char *source = (char*) sourcep;                                 \
                                                                         \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(*pe);                                        \
                                                                         \
         for ( ; len > 0 ; --len ) {                                     \
             shmem_internal_get(target, source, SIZE, *pe);              \

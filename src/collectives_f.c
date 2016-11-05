@@ -192,6 +192,7 @@ SHMEM_BIND_F_COLL_SIZES(SHMEM_DEF_FCOLLECT)
         long *pSync_c;                                                  \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size); \
+        SHMEM_ERR_CHECK_PE(*PE_root);                                   \
                                                                         \
         /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */     \
         pSync_c = (long*) pSync;                                        \

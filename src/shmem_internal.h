@@ -105,11 +105,20 @@ extern int shmem_internal_debug;
         }                                                                                               \
     } while (0)
 
+#define SHMEM_ERR_CHECK_PE(pe)                                          \
+    do {                                                                \
+        if ((pe) < 0 || (pe) >= shmem_internal_num_pes) {               \
+            fprintf(stderr, "ERROR: %s(): PE argument (%d) is invalid\n", \
+                    __func__, (pe));                                    \
+            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");  \
+        }                                                               \
+    } while (0)
 
 #else
 #define SHMEM_ERR_CHECK_INITIALIZED()
 #define SHMEM_ERR_CHECK_ARG_POSITIVE(arg)
 #define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size)
+#define SHMEM_ERR_CHECK_PE(pe)
 
 #endif /* ENABLE_ERROR_CHECKING */
 

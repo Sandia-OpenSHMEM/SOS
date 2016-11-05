@@ -33,5 +33,7 @@
 void *
 shmem_ptr(const void *target, int pe)
 {
+    SHMEM_ERR_CHECK_PE(pe);
+
     return shmem_internal_ptr(target, pe);
 }
