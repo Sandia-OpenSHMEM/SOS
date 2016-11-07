@@ -13,6 +13,7 @@ env:
         - SMA_INFO=1
     matrix:
         - # Defaults
+        - SOS_BUILD_OPTS="--enable-threads --enable-error-checking"
         - SOS_BUILD_OPTS="--disable-mr-scalable --enable-av-map --disable-cxx"
         - >
           SOS_DISABLE_FORTRAN=1
