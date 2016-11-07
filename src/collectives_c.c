@@ -1142,8 +1142,8 @@ shmem_alltoalls32(void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,
                   long *pSync)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ARG_POSITIVE(sst);
-    SHMEM_ERR_CHECK_ARG_POSITIVE(dst);
+    SHMEM_ERR_CHECK_POSITIVE(sst);
+    SHMEM_ERR_CHECK_POSITIVE(dst);
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
     SHMEM_ERR_CHECK_SYMMETRIC(dest);
     SHMEM_ERR_CHECK_SYMMETRIC(source);
@@ -1160,8 +1160,8 @@ shmem_alltoalls64(void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,
                   long *pSync)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ARG_POSITIVE(sst);
-    SHMEM_ERR_CHECK_ARG_POSITIVE(dst);
+    SHMEM_ERR_CHECK_POSITIVE(sst);
+    SHMEM_ERR_CHECK_POSITIVE(dst);
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
     SHMEM_ERR_CHECK_SYMMETRIC(dest);
     SHMEM_ERR_CHECK_SYMMETRIC(source);

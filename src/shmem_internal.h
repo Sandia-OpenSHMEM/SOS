@@ -83,7 +83,7 @@ extern long shmem_internal_heap_huge_page_size;
         }                                                               \
     } while (0)
 
-#define SHMEM_ERR_CHECK_ARG_POSITIVE(arg)                               \
+#define SHMEM_ERR_CHECK_POSITIVE(arg)                                   \
     do {                                                                \
         if ((arg) <= 0) {                                               \
             fprintf(stderr, "ERROR: %s(): Argument %s must be positive (%ld)\n", \
@@ -131,7 +131,7 @@ extern long shmem_internal_heap_huge_page_size;
 
 #else
 #define SHMEM_ERR_CHECK_INITIALIZED()
-#define SHMEM_ERR_CHECK_ARG_POSITIVE(arg)
+#define SHMEM_ERR_CHECK_POSITIVE(arg)
 #define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size)
 #define SHMEM_ERR_CHECK_PE(pe)
 #define SHMEM_ERR_CHECK_SYMMETRIC(ptr)
