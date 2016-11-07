@@ -138,6 +138,16 @@ extern long shmem_internal_heap_huge_page_size;
         }                                                                               \
     } while (0)
 
+#define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr)                                             \
+    do {                                                                                \
+        if (! ((void *) (ptr) >= shmem_internal_heap_base &&                            \
+               (uint8_t *) (ptr) < (uint8_t *) shmem_internal_heap_base + shmem_internal_heap_length)) {     \
+            fprintf(stderr, "ERROR: %s(): Argument \"%s\" is not within the symmetric heap (%p)\n",          \
+                    __func__, #ptr, (void *) ptr);                                      \
+            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                  \
+        }                                                                               \
+    } while (0)
+
 #else
 #define SHMEM_ERR_CHECK_INITIALIZED()
 #define SHMEM_ERR_CHECK_POSITIVE(arg)
@@ -145,6 +155,7 @@ extern long shmem_internal_heap_huge_page_size;
 #define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size)
 #define SHMEM_ERR_CHECK_PE(pe)
 #define SHMEM_ERR_CHECK_SYMMETRIC(ptr)
+#define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr)
 
 #endif /* ENABLE_ERROR_CHECKING */
 
