@@ -25,6 +25,7 @@ FC_SHMEM_PTR(void **target, fortran_integer_t *pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     return shmem_internal_ptr(*target, *pe);
 }

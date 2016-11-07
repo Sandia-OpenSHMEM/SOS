@@ -50,6 +50,7 @@ FC_SHMEM_BARRIER(fortran_integer_t *PE_start,
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync);
 
     /* SHMEM_BARRIER_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -77,6 +78,10 @@ FC_SHMEM_BARRIER(fortran_integer_t *PE_start,
         long *pSync_c;                                                  \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size); \
+        SHMEM_ERR_CHECK_SYMMETRIC(target);                              \
+        SHMEM_ERR_CHECK_SYMMETRIC(source);                              \
+        SHMEM_ERR_CHECK_SYMMETRIC(pWrk);                                \
+        SHMEM_ERR_CHECK_SYMMETRIC(pSync);                               \
                                                                         \
         shmem_internal_assert(sizeof(TYPE) == SIZE);                    \
                                                                         \
@@ -126,6 +131,9 @@ SHMEM_BIND_F_FLOATS_OP(SHMEM_DEF_TO_ALL, prod, PROD, SHM_INTERNAL_PROD)
         long *pSync_c;                                                  \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size); \
+        SHMEM_ERR_CHECK_SYMMETRIC(target);                              \
+        SHMEM_ERR_CHECK_SYMMETRIC(source);                              \
+        SHMEM_ERR_CHECK_SYMMETRIC(pSync);                               \
                                                                         \
         /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */     \
         pSync_c = (long*) pSync;                                        \
@@ -158,6 +166,9 @@ SHMEM_BIND_F_COLL_SIZES(SHMEM_DEF_COLLECT)
         long *pSync_c;                                                  \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size); \
+        SHMEM_ERR_CHECK_SYMMETRIC(target);                              \
+        SHMEM_ERR_CHECK_SYMMETRIC(source);                              \
+        SHMEM_ERR_CHECK_SYMMETRIC(pSync);                               \
                                                                         \
         /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */     \
         pSync_c = (long*) pSync;                                        \
@@ -193,6 +204,9 @@ SHMEM_BIND_F_COLL_SIZES(SHMEM_DEF_FCOLLECT)
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size); \
         SHMEM_ERR_CHECK_PE(*PE_root);                                   \
+        SHMEM_ERR_CHECK_SYMMETRIC(target);                              \
+        SHMEM_ERR_CHECK_SYMMETRIC(source);                              \
+        SHMEM_ERR_CHECK_SYMMETRIC(pSync);                               \
                                                                         \
         /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */     \
         pSync_c = (long*) pSync;                                        \
@@ -229,6 +243,9 @@ FC_SHMEM_ALLTOALL32(void *target,
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(source);
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync);
 
     /* SHMEM_ALLTOALL_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -258,6 +275,9 @@ FC_SHMEM_ALLTOALL64(void *target,
     long *pSync_c;
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(source);
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync);
 
     /* SHMEM_ALLTOALL_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -293,6 +313,9 @@ FC_SHMEM_ALLTOALLS32(void *target,
     SHMEM_ERR_CHECK_ARG_POSITIVE(*sst);
     SHMEM_ERR_CHECK_ARG_POSITIVE(*dst);
     SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(source);
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync);
 
     /* SHMEM_ALLTOALL_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -328,6 +351,9 @@ FC_SHMEM_ALLTOALLS64(void *target,
     SHMEM_ERR_CHECK_ARG_POSITIVE(*sst);
     SHMEM_ERR_CHECK_ARG_POSITIVE(*dst);
     SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(source);
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync);
 
     /* SHMEM_ALLTOALL_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;

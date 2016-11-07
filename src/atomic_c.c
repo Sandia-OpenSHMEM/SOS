@@ -124,6 +124,7 @@
         TYPE newval;                                            \
         SHMEM_ERR_CHECK_INITIALIZED();                          \
         SHMEM_ERR_CHECK_PE(pe);                                 \
+        SHMEM_ERR_CHECK_SYMMETRIC(target);                      \
         shmem_internal_swap(target, &value, &newval,            \
                             sizeof(TYPE), pe, ITYPE);           \
         shmem_internal_get_wait();                              \
@@ -141,6 +142,7 @@ shmem_swap(long *target, long value, int pe)
 
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_swap(target, &value, &newval, sizeof(long), pe, SHM_INTERNAL_LONG);
     shmem_internal_get_wait();
@@ -155,6 +157,7 @@ shmem_swap(long *target, long value, int pe)
         TYPE newval;                                                    \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(target);                              \
         shmem_internal_cswap(target, &value, &newval, &cond,            \
                              sizeof(TYPE), pe, ITYPE);                  \
         shmem_internal_get_wait();                                      \
@@ -169,6 +172,7 @@ SHMEM_BIND_C_AMO(SHMEM_DEF_CSWAP)
         TYPE tmp = 1;                                                   \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(target);                              \
         shmem_internal_atomic_small(target, &tmp, sizeof(TYPE), pe,     \
                                     SHM_INTERNAL_SUM, ITYPE);           \
     }
@@ -181,6 +185,7 @@ SHMEM_BIND_C_AMO(SHMEM_DEF_INC)
         TYPE oldval, tmp = 1;                                           \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(target);                              \
         shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(TYPE),\
                                     pe, SHM_INTERNAL_SUM, ITYPE);       \
         shmem_internal_get_wait();                                      \
@@ -194,6 +199,7 @@ SHMEM_BIND_C_AMO(SHMEM_DEF_FINC)
     {                                                                   \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(target);                              \
                                                                         \
         shmem_internal_atomic_small(target, &value, sizeof(TYPE), pe,   \
                                     SHM_INTERNAL_SUM, ITYPE);           \
@@ -208,6 +214,7 @@ SHMEM_BIND_C_AMO(SHMEM_DEF_ADD)
         int oldval;                                                     \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(target);                              \
                                                                         \
         shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(TYPE), \
                                     pe, SHM_INTERNAL_SUM, ITYPE);       \
@@ -224,6 +231,7 @@ SHMEM_BIND_C_AMO(SHMEM_DEF_FADD)
                                                                         \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(source);                              \
                                                                         \
         shmem_internal_atomic_fetch(&val, (void *) source, sizeof(TYPE),\
                                     pe, ITYPE);                         \
@@ -239,6 +247,7 @@ SHMEM_BIND_C_EXTENDED_AMO(SHMEM_DEF_FETCH)
     {                                                                   \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(dest);                                \
                                                                         \
         shmem_internal_atomic_set((void *) dest, &value, sizeof(TYPE),  \
                                   pe, ITYPE);                           \

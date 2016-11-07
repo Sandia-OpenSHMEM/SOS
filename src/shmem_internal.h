@@ -31,6 +31,13 @@ extern int shmem_internal_finalized;
 extern int shmem_internal_thread_level;
 extern int shmem_internal_debug;
 
+extern void *shmem_internal_heap_base;
+extern long shmem_internal_heap_length;
+extern void *shmem_internal_data_base;
+extern long shmem_internal_data_length;
+extern int shmem_internal_heap_use_huge_pages;
+extern long shmem_internal_heap_huge_page_size;
+
 #define RAISE_WARN(ret)                                                 \
     do {                                                                \
         fprintf(stderr, "[%03d] WARN: %s:%d return code %d\n",         \
@@ -114,11 +121,33 @@ extern int shmem_internal_debug;
         }                                                               \
     } while (0)
 
+#define SHMEM_ERR_CHECK_SYMMETRIC(ptr)                                                  \
+    do {                                                                                \
+        if (! (((void *) (ptr) >= shmem_internal_data_base && (uint8_t *) (ptr) < (uint8_t *) shmem_internal_data_base + shmem_internal_data_length) ||      \
+               ((void *) (ptr) >= shmem_internal_heap_base && (uint8_t *) (ptr) < (uint8_t *) shmem_internal_heap_base + shmem_internal_heap_length))) {     \
+            fprintf(stderr, "ERROR: %s(): Argument \"%s\" is not symmetric (%p)\n",     \
+                    __func__, #ptr, (void *) ptr);                                      \
+            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                  \
+        }                                                                               \
+    } while (0)
+
+#define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr)                                             \
+    do {                                                                                \
+        if (! ((void *) (ptr) >= shmem_internal_heap_base &&                            \
+               (uint8_t *) (ptr) < (uint8_t *) shmem_internal_heap_base + shmem_internal_heap_length)) {     \
+            fprintf(stderr, "ERROR: %s(): Argument \"%s\" is not within the symmetric heap (%p)\n",          \
+                    __func__, #ptr, (void *) ptr);                                      \
+            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                  \
+        }                                                                               \
+    } while (0)
+
 #else
 #define SHMEM_ERR_CHECK_INITIALIZED()
 #define SHMEM_ERR_CHECK_ARG_POSITIVE(arg)
 #define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size)
 #define SHMEM_ERR_CHECK_PE(pe)
+#define SHMEM_ERR_CHECK_SYMMETRIC(ptr)
+#define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr)
 
 #endif /* ENABLE_ERROR_CHECKING */
 
