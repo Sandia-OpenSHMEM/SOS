@@ -13,12 +13,16 @@ env:
         - SMA_INFO=1
     matrix:
         - # Defaults
-        - SOS_BUILD_OPTS="--enable-threads --enable-error-checking"
         - SOS_BUILD_OPTS="--disable-mr-scalable --enable-av-map --disable-cxx"
-        - SOS_BUILD_OPTS="--enable-cma --enable-error-checking --enable-profiling --disable-mr-scalable --enable-av-map --enable-remote-virtual-addressing"
         - >
           SOS_DISABLE_FORTRAN=1
           SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing"
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
+          SOS_BUILD_OPTS="--enable-threads --enable-error-checking"
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
+          SOS_BUILD_OPTS="--enable-cma --enable-error-checking --enable-profiling --disable-mr-scalable --enable-av-map --enable-remote-virtual-addressing"
         - >
           SOS_ENABLE_ERROR_TESTS=1
           SMA_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SMA_BOUNCE_SIZE=0
