@@ -94,6 +94,15 @@ extern long shmem_internal_heap_huge_page_size;
         }                                                               \
     } while (0)
 
+#define SHMEM_ERR_CHECK_NON_NEGATIVE(arg)                               \
+    do {                                                                \
+        if ((arg) < 0) {                                                \
+            fprintf(stderr, "ERROR: %s(): Argument %s must be greater or equal to zero (%ld)\n", \
+                    __func__, #arg, (long) arg);                        \
+            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");  \
+        }                                                               \
+    } while (0)
+
 #define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size)                                     \
     do {                                                                                                \
         int shmem_err_check_active_stride = 1 << logPE_stride;                                          \
@@ -144,6 +153,7 @@ extern long shmem_internal_heap_huge_page_size;
 #else
 #define SHMEM_ERR_CHECK_INITIALIZED()
 #define SHMEM_ERR_CHECK_POSITIVE(arg)
+#define SHMEM_ERR_CHECK_NON_NEGATIVE(arg)
 #define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size)
 #define SHMEM_ERR_CHECK_PE(pe)
 #define SHMEM_ERR_CHECK_SYMMETRIC(ptr)

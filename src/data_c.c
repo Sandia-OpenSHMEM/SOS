@@ -363,6 +363,7 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_G)
     SHMEM_ERR_CHECK_INITIALIZED();                               \
     SHMEM_ERR_CHECK_PE(pe);                                      \
     SHMEM_ERR_CHECK_SYMMETRIC(target);                           \
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);                        \
     shmem_internal_put_nb(target, source, sizeof(TYPE) * nelems, \
                           pe, &completion);                      \
     shmem_internal_put_wait(&completion);                        \
@@ -378,6 +379,7 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_PUT)
     SHMEM_ERR_CHECK_INITIALIZED();                             \
     SHMEM_ERR_CHECK_PE(pe);                                    \
     SHMEM_ERR_CHECK_SYMMETRIC(target);                         \
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);                      \
     shmem_internal_put_nb(target, source, (SIZE) * nelems, pe, \
                           &completion);                        \
     shmem_internal_put_wait(&completion);                      \
@@ -393,6 +395,7 @@ SHMEM_DEF_PUT_N(mem,1)
     SHMEM_ERR_CHECK_INITIALIZED();                               \
     SHMEM_ERR_CHECK_PE(pe);                                      \
     SHMEM_ERR_CHECK_SYMMETRIC(target);                           \
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);                        \
     shmem_internal_put_nbi(target, source, sizeof(TYPE)*nelems,  \
         pe);                                                     \
   }
@@ -406,6 +409,7 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_PUT_NBI)
     SHMEM_ERR_CHECK_INITIALIZED();                             \
     SHMEM_ERR_CHECK_PE(pe);                                    \
     SHMEM_ERR_CHECK_SYMMETRIC(target);                         \
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);                      \
     shmem_internal_put_nbi(target, source, (SIZE)*nelems, pe); \
   }
 
@@ -419,6 +423,7 @@ SHMEM_DEF_PUT_N_NBI(mem,1)
     SHMEM_ERR_CHECK_INITIALIZED();                            \
     SHMEM_ERR_CHECK_PE(pe);                                   \
     SHMEM_ERR_CHECK_SYMMETRIC(source);                        \
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);                     \
     shmem_internal_get(target, source, sizeof(TYPE) * nelems, \
         pe);                                                  \
     shmem_internal_get_wait();                                \
@@ -433,6 +438,7 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_GET)
     SHMEM_ERR_CHECK_INITIALIZED();                         \
     SHMEM_ERR_CHECK_PE(pe);                                \
     SHMEM_ERR_CHECK_SYMMETRIC(source);                     \
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);                  \
     shmem_internal_get(target, source, (SIZE)*nelems, pe); \
     shmem_internal_get_wait();                             \
   }
@@ -447,6 +453,7 @@ SHMEM_DEF_GET_N(mem,1)
     SHMEM_ERR_CHECK_INITIALIZED();                               \
     SHMEM_ERR_CHECK_PE(pe);                                      \
     SHMEM_ERR_CHECK_SYMMETRIC(source);                           \
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);                        \
     shmem_internal_get(target, source, sizeof(TYPE)*nelems, pe); \
   }
 
@@ -459,6 +466,7 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_GET_NBI)
     SHMEM_ERR_CHECK_INITIALIZED();                             \
     SHMEM_ERR_CHECK_PE(pe);                                    \
     SHMEM_ERR_CHECK_SYMMETRIC(source);                         \
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);                      \
     shmem_internal_get(target, source, (SIZE)*nelems, pe);     \
   }
 
@@ -473,6 +481,9 @@ SHMEM_DEF_GET_N_NBI(mem,1)
     SHMEM_ERR_CHECK_INITIALIZED();                            \
     SHMEM_ERR_CHECK_PE(pe);                                   \
     SHMEM_ERR_CHECK_SYMMETRIC(target);                        \
+    SHMEM_ERR_CHECK_POSITIVE(tst);                            \
+    SHMEM_ERR_CHECK_POSITIVE(sst);                            \
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);                     \
     for ( ; nelems > 0 ; --nelems) {                          \
       shmem_internal_put_small(target, source, sizeof(TYPE),  \
           pe);                                                \
@@ -491,6 +502,9 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_IPUT)
     SHMEM_ERR_CHECK_INITIALIZED();                           \
     SHMEM_ERR_CHECK_PE(pe);                                  \
     SHMEM_ERR_CHECK_SYMMETRIC(target);                       \
+    SHMEM_ERR_CHECK_POSITIVE(tst);                           \
+    SHMEM_ERR_CHECK_POSITIVE(sst);                           \
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);                    \
     for ( ; nelems > 0 ; --nelems) {                         \
       shmem_internal_put_small(target, source, (SIZE), pe);  \
       target = (uint8_t*)target + tst*(SIZE);                \
@@ -508,6 +522,9 @@ SHMEM_DEFINE_FOR_SIZES(SHMEM_DEF_IPUT_N)
     SHMEM_ERR_CHECK_INITIALIZED();                            \
     SHMEM_ERR_CHECK_PE(pe);                                   \
     SHMEM_ERR_CHECK_SYMMETRIC(source);                        \
+    SHMEM_ERR_CHECK_POSITIVE(tst);                            \
+    SHMEM_ERR_CHECK_POSITIVE(sst);                            \
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);                     \
     for ( ; nelems > 0 ; --nelems) {                          \
       shmem_internal_get(target, source, sizeof(TYPE), pe);   \
       target += tst;                                          \
@@ -526,6 +543,9 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_IGET)
     SHMEM_ERR_CHECK_INITIALIZED();                        \
     SHMEM_ERR_CHECK_PE(pe);                               \
     SHMEM_ERR_CHECK_SYMMETRIC(source);                    \
+    SHMEM_ERR_CHECK_POSITIVE(tst);                        \
+    SHMEM_ERR_CHECK_POSITIVE(sst);                        \
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);                 \
     for ( ; nelems > 0 ; --nelems) {                      \
       shmem_internal_get(target, source, (SIZE), pe);     \
       target = (uint8_t*)target + tst*(SIZE);             \
@@ -542,6 +562,7 @@ shmemx_getmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t nelems
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(pe);
     SHMEM_ERR_CHECK_SYMMETRIC(source);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
 
     shmem_internal_get_ct(ct, target, source, nelems, pe);
     shmem_internal_get_wait();
@@ -555,6 +576,7 @@ void shmemx_putmem_ct(shmemx_ct_t ct, void *target, const void *source,
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(pe);
     SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
 
     shmem_internal_put_ct_nb(ct, target, source, nelems, pe, &completion);
     shmem_internal_put_wait(&completion);
