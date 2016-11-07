@@ -85,6 +85,7 @@ FC_SHMEM_INT4_AND_TO_ALL(int32_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -121,6 +122,7 @@ FC_SHMEM_INT8_AND_TO_ALL(int64_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -157,6 +159,7 @@ FC_SHMEM_INT4_OR_TO_ALL(int32_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -193,6 +196,7 @@ FC_SHMEM_INT8_OR_TO_ALL(int64_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -229,6 +233,7 @@ FC_SHMEM_INT4_XOR_TO_ALL(int32_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -265,6 +270,7 @@ FC_SHMEM_INT8_XOR_TO_ALL(int64_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -307,6 +313,7 @@ FC_SHMEM_INT4_MAX_TO_ALL(int32_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -343,6 +350,7 @@ FC_SHMEM_INT8_MAX_TO_ALL(int64_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -379,6 +387,7 @@ FC_SHMEM_REAL4_MAX_TO_ALL(float *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     shmem_internal_assert(sizeof(float) == 4);
 
@@ -417,6 +426,7 @@ FC_SHMEM_REAL8_MAX_TO_ALL(double *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     shmem_internal_assert(sizeof(double) == 8);
 
@@ -456,6 +466,7 @@ FC_SHMEM_REAL16_MAX_TO_ALL(long double *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -493,6 +504,7 @@ FC_SHMEM_INT4_MIN_TO_ALL(int32_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -529,6 +541,7 @@ FC_SHMEM_INT8_MIN_TO_ALL(int64_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -565,6 +578,7 @@ FC_SHMEM_REAL4_MIN_TO_ALL(float *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     shmem_internal_assert(sizeof(float) == 4);
 
@@ -603,6 +617,7 @@ FC_SHMEM_REAL8_MIN_TO_ALL(double *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     shmem_internal_assert(sizeof(double) == 8);
 
@@ -642,6 +657,7 @@ FC_SHMEM_REAL16_MIN_TO_ALL(long double *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -679,6 +695,7 @@ FC_SHMEM_INT4_SUM_TO_ALL(int32_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -715,6 +732,7 @@ FC_SHMEM_INT8_SUM_TO_ALL(int64_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -751,6 +769,7 @@ FC_SHMEM_REAL4_SUM_TO_ALL(float *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     shmem_internal_assert(sizeof(float) == 4);
 
@@ -789,6 +808,7 @@ FC_SHMEM_REAL8_SUM_TO_ALL(double *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     shmem_internal_assert(sizeof(double) == 8);
 
@@ -828,6 +848,7 @@ FC_SHMEM_REAL16_SUM_TO_ALL(long double *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -865,6 +886,7 @@ FC_SHMEM_INT4_PROD_TO_ALL(int32_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -901,6 +923,7 @@ FC_SHMEM_INT8_PROD_TO_ALL(int64_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -937,6 +960,7 @@ FC_SHMEM_REAL4_PROD_TO_ALL(float *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     shmem_internal_assert(sizeof(float) == 4);
 
@@ -975,6 +999,7 @@ FC_SHMEM_REAL8_PROD_TO_ALL(double *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     shmem_internal_assert(sizeof(double) == 8);
 
@@ -1014,6 +1039,7 @@ FC_SHMEM_REAL16_PROD_TO_ALL(long double *target,
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pWrk);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);
 
     /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1048,6 +1074,7 @@ FC_SHMEM_COLLECT4(void *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target);
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1080,6 +1107,7 @@ FC_SHMEM_COLLECT8(void *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target);
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1112,6 +1140,7 @@ FC_SHMEM_COLLECT32(void *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target);
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1144,6 +1173,7 @@ FC_SHMEM_COLLECT64(void *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target);
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1176,6 +1206,7 @@ FC_SHMEM_FCOLLECT4(void *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target);
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1208,6 +1239,7 @@ FC_SHMEM_FCOLLECT8(void *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target);
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1240,6 +1272,7 @@ FC_SHMEM_FCOLLECT32(void *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target);
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1272,6 +1305,7 @@ FC_SHMEM_FCOLLECT64(void *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target);
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1307,6 +1341,7 @@ FC_SHMEM_BROADCAST4(void *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target);
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1343,6 +1378,7 @@ FC_SHMEM_BROADCAST8(void *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target);
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1379,6 +1415,7 @@ FC_SHMEM_BROADCAST32(void *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target);
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1415,6 +1452,7 @@ FC_SHMEM_BROADCAST64(void *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target);
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
 
     /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1448,6 +1486,7 @@ FC_SHMEM_ALLTOALL32(void *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target);
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
 
     /* SHMEM_ALLTOALL_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1480,6 +1519,7 @@ FC_SHMEM_ALLTOALL64(void *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target);
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
 
     /* SHMEM_ALLTOALL_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1518,6 +1558,7 @@ FC_SHMEM_ALLTOALLS32(void *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target);
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
 
     /* SHMEM_ALLTOALL_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
@@ -1556,6 +1597,7 @@ FC_SHMEM_ALLTOALLS64(void *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target);
     SHMEM_ERR_CHECK_SYMMETRIC(source);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
 
     /* SHMEM_ALLTOALL_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
