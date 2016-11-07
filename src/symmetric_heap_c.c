@@ -287,6 +287,7 @@ void
 shmem_free(void *ptr)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_SYMMETRIC(ptr);
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     dlfree(ptr);
