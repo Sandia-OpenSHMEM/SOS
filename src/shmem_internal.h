@@ -134,6 +134,7 @@ extern long shmem_internal_heap_huge_page_size;
 #define SHMEM_ERR_CHECK_ARG_POSITIVE(arg)
 #define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size)
 #define SHMEM_ERR_CHECK_PE(pe)
+#define SHMEM_ERR_CHECK_SYMMETRIC(ptr)
 
 #endif /* ENABLE_ERROR_CHECKING */
 
