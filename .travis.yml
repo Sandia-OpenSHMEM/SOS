@@ -125,6 +125,15 @@ script:
               if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi;
           fi;
       fi
+    - >
+      if [ ! $SOS_DISABLE_FORTRAN ]; then
+          make F_error_tests;
+          if false && [ $? -ne 0 ]; then
+              make F_error_tests-run 2>&1 | tee uh-tests-f-error-tests.log;
+              # Check for failures in the Fortran tests
+              if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-error-tests.log; then false; else true; fi;
+          fi;
+      fi
     - make clean
     ###
     ### Run the UH test suite (OFI)
@@ -143,6 +152,15 @@ script:
               make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log;
               # Check for failures in the Fortran tests
               if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi;
+          fi;
+      fi
+    - >
+      if [ ! $SOS_DISABLE_FORTRAN ]; then
+          make F_error_tests;
+          if [ $? -ne 0 ]; then
+              make F_error_tests-run 2>&1 | tee uh-tests-f-error-tests.log;
+              # Check for failures in the Fortran tests
+              if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-error-tests.log; then false; else true; fi;
           fi;
       fi
     - make clean
