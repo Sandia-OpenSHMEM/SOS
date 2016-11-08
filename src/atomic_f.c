@@ -34,7 +34,7 @@ FC_SHMEM_SWAP(fortran_integer_t *target,
 
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, SIZEOF_FORTRAN_INTEGER);
 
     shmem_internal_swap(target, value, &newval, SIZEOF_FORTRAN_INTEGER, 
 			*pe, SHM_INTERNAL_FORTRAN_INTEGER);
@@ -56,7 +56,7 @@ FC_SHMEM_INT4_SWAP(int32_t *target,
 
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, 4);
 
     shmem_internal_swap(target, value, &newval, 4, 
 			*pe, SHM_INTERNAL_INT32);
@@ -78,7 +78,7 @@ FC_SHMEM_INT8_SWAP(int64_t *target,
 
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, 8);
 
     shmem_internal_swap(target, value, &newval, 8, 
 			*pe, SHM_INTERNAL_INT64);
@@ -100,7 +100,7 @@ FC_SHMEM_REAL4_SWAP(float *target,
 
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, 4);
 
     shmem_internal_assert(sizeof(float) == 4);
 
@@ -124,7 +124,7 @@ FC_SHMEM_REAL8_SWAP(double *target,
 
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, 8);
 
     shmem_internal_assert(sizeof(double) == 8);
 
@@ -150,7 +150,7 @@ FC_SHMEM_INT4_CSWAP(int32_t *target,
 
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, 4);
 
     shmem_internal_cswap(target, value, &newval, cond, 
                          4, 
@@ -175,7 +175,7 @@ FC_SHMEM_INT8_CSWAP(int64_t *target,
 
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, 8);
 
     shmem_internal_cswap(target, value, &newval, cond,
                          8, 
@@ -198,7 +198,7 @@ FC_SHMEM_INT4_FADD(int32_t *target,
 
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, 4);
 
     shmem_internal_fetch_atomic(target, value, &oldval, 4, 
                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32);
@@ -220,7 +220,7 @@ FC_SHMEM_INT8_FADD(int64_t *target,
 
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, 8);
 
     shmem_internal_fetch_atomic(target, value, &oldval, 8, 
                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64);
@@ -240,7 +240,7 @@ FC_SHMEM_INT4_FINC(int32_t *target,
 
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, 4);
 
     shmem_internal_fetch_atomic(target, &tmp, &oldval, 4, 
                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32);
@@ -260,7 +260,7 @@ FC_SHMEM_INT8_FINC(int64_t *target,
 
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, 8);
 
     shmem_internal_fetch_atomic(target, &tmp, &oldval, 8, 
                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64);
@@ -280,7 +280,7 @@ FC_SHMEM_INT4_ADD(int32_t *target,
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, 4);
 
     shmem_internal_atomic_small(target, value, 4, 
                                  *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32);
@@ -298,7 +298,7 @@ FC_SHMEM_INT8_ADD(int64_t *target,
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, 8);
 
     shmem_internal_atomic_small(target, value, 8, 
                                  *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64);
@@ -316,7 +316,7 @@ FC_SHMEM_INT4_INC(int32_t *target,
 
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, 4);
 
     shmem_internal_atomic_small(target, &tmp, 4, 
                                  *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32);
@@ -334,7 +334,7 @@ FC_SHMEM_INT8_INC(int64_t *target,
 
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, 8);
 
     shmem_internal_atomic_small(target, &tmp, 8, 
                                  *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64);
@@ -352,7 +352,7 @@ FC_SHMEM_INT4_FETCH(int32_t *source,
 
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(source);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, 4);
 
     shmem_internal_atomic_fetch(&val, (void *) source, 4, *pe, SHM_INTERNAL_INT32);
     shmem_internal_get_wait();
@@ -372,7 +372,7 @@ FC_SHMEM_INT8_FETCH(int64_t *source,
 
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(source);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, 8);
 
     shmem_internal_atomic_fetch(&val, (void *) source, 8, *pe, SHM_INTERNAL_INT64);
     shmem_internal_get_wait();
@@ -392,7 +392,7 @@ FC_SHMEM_REAL4_FETCH(float *source,
 
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(source);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, 4);
 
     shmem_internal_assert(sizeof(float) == 4);
 
@@ -414,7 +414,7 @@ FC_SHMEM_REAL8_FETCH(double *source,
 
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(source);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, 8);
 
     shmem_internal_assert(sizeof(double) == 8);
 
@@ -436,7 +436,7 @@ FC_SHMEM_INT4_SET(int32_t *dest,
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(dest);
+    SHMEM_ERR_CHECK_SYMMETRIC(dest, 4);
 
     shmem_internal_atomic_set((void *) dest, (const void *) value, 4, *pe,
                               SHM_INTERNAL_INT32);
@@ -454,7 +454,7 @@ FC_SHMEM_INT8_SET(int64_t *dest,
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(dest);
+    SHMEM_ERR_CHECK_SYMMETRIC(dest, 8);
 
     shmem_internal_atomic_set((void *) dest, (const void *) value, 8, *pe,
                               SHM_INTERNAL_INT64);
@@ -472,7 +472,7 @@ FC_SHMEM_REAL4_SET(float *dest,
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(dest);
+    SHMEM_ERR_CHECK_SYMMETRIC(dest, 4);
 
     shmem_internal_assert(sizeof(float) == 4);
 
@@ -492,7 +492,7 @@ FC_SHMEM_REAL8_SET(double *dest,
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(dest);
+    SHMEM_ERR_CHECK_SYMMETRIC(dest, 8);
 
     shmem_internal_assert(sizeof(double) == 8);
 

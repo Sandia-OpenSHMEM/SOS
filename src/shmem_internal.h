@@ -130,11 +130,17 @@ extern long shmem_internal_heap_huge_page_size;
         }                                                               \
     } while (0)
 
-#define SHMEM_ERR_CHECK_SYMMETRIC(ptr)                                                  \
+#define SHMEM_ERR_CHECK_SYMMETRIC(ptr, len)                                             \
     do {                                                                                \
         if (! (((void *) (ptr) >= shmem_internal_data_base && (uint8_t *) (ptr) < (uint8_t *) shmem_internal_data_base + shmem_internal_data_length) ||      \
                ((void *) (ptr) >= shmem_internal_heap_base && (uint8_t *) (ptr) < (uint8_t *) shmem_internal_heap_base + shmem_internal_heap_length))) {     \
             fprintf(stderr, "ERROR: %s(): Argument \"%s\" is not symmetric (%p)\n",     \
+                    __func__, #ptr, (void *) ptr);                                      \
+            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                  \
+        }                                                                               \
+        else if (! (((void *) (ptr) >= shmem_internal_data_base && (uint8_t *) (ptr) + (len) < (uint8_t *) shmem_internal_data_base + shmem_internal_data_length) ||    \
+                    ((void *) (ptr) >= shmem_internal_heap_base && (uint8_t *) (ptr) + (len) < (uint8_t *) shmem_internal_heap_base + shmem_internal_heap_length))) {   \
+            fprintf(stderr, "ERROR: %s(): Argument \"%s\" extends beyond symmetric region (%p)\n", \
                     __func__, #ptr, (void *) ptr);                                      \
             shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                  \
         }                                                                               \
@@ -156,7 +162,7 @@ extern long shmem_internal_heap_huge_page_size;
 #define SHMEM_ERR_CHECK_NON_NEGATIVE(arg)
 #define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size)
 #define SHMEM_ERR_CHECK_PE(pe)
-#define SHMEM_ERR_CHECK_SYMMETRIC(ptr)
+#define SHMEM_ERR_CHECK_SYMMETRIC(ptr, len)
 #define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr)
 
 #endif /* ENABLE_ERROR_CHECKING */
@@ -293,6 +299,10 @@ static inline double shmem_internal_wtime(void) {
 /* Utility functions */
 long shmem_util_getenv_long(const char* name, int is_sized, long default_value);
 char *shmem_util_getenv_str(const char* name);
+
+#ifndef MAX
+#define MAX(A,B) (A) > (B) ? (A) : (B)
+#endif
 
 /* Language bindings helper macros */
 #define SHMEM_BIND_C_AMO(decl)                                  \

@@ -53,7 +53,7 @@ FC_SHMEM_INT4_WAIT(volatile int32_t *var,
                    int32_t *value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_SYMMETRIC(var);
+    SHMEM_ERR_CHECK_SYMMETRIC(var, 4);
 
     SHMEM_WAIT(var, *value);
 }
@@ -67,7 +67,7 @@ FC_SHMEM_INT8_WAIT(volatile int64_t *var,
                    int64_t *value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_SYMMETRIC(var);
+    SHMEM_ERR_CHECK_SYMMETRIC(var, 8);
 
     SHMEM_WAIT(var, *value);
 }
@@ -81,7 +81,7 @@ FC_SHMEM_WAIT(volatile fortran_integer_t *var,
               fortran_integer_t *value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_SYMMETRIC(var);
+    SHMEM_ERR_CHECK_SYMMETRIC(var, SIZEOF_FORTRAN_INTEGER);
 
     SHMEM_WAIT(var, *value);
 }
@@ -97,7 +97,7 @@ FC_SHMEM_INT4_WAIT_UNTIL(volatile int32_t *var,
                          int32_t *value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_SYMMETRIC(var);
+    SHMEM_ERR_CHECK_SYMMETRIC(var, 4);
 
     SHMEM_WAIT_UNTIL(var, *cond, *value);
 }
@@ -113,7 +113,7 @@ FC_SHMEM_INT8_WAIT_UNTIL(volatile int64_t *var,
                          int64_t *value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_SYMMETRIC(var);
+    SHMEM_ERR_CHECK_SYMMETRIC(var, 8);
 
     SHMEM_WAIT_UNTIL(var, *cond, *value);
 }
@@ -129,7 +129,7 @@ FC_SHMEM_WAIT_UNTIL(volatile fortran_integer_t *var,
                     fortran_integer_t *value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_SYMMETRIC(var);
+    SHMEM_ERR_CHECK_SYMMETRIC(var, SIZEOF_FORTRAN_INTEGER);
 
     SHMEM_WAIT_UNTIL(var, *cond, *value);
 }

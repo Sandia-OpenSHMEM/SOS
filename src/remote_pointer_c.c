@@ -35,7 +35,7 @@ shmem_ptr(const void *target, int pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, 1);
 
     return shmem_internal_ptr(target, pe);
 }
