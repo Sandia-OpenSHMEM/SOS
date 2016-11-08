@@ -16,6 +16,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
+#include <sys/time.h>
 
 #include "shmemx.h"
 #include "runtime.h"
@@ -222,6 +224,23 @@ int shmem_internal_collectives_init(int requested_crossover,
 /* internal allocation, without a barrier */
 void *shmem_internal_shmalloc(size_t size);
 void* shmem_internal_get_next(intptr_t incr);
+
+static inline double shmem_internal_wtime(void) {
+    double wtime = 0.0;
+
+#ifdef CLOCK_MONOTONIC
+    struct timespec tv;
+    clock_gettime(CLOCK_MONOTONIC, &tv);
+    wtime = tv.tv_sec;
+    wtime += (double)tv.tv_nsec / 1.0e9;
+#else
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    wtime = tv.tv_sec;
+    wtime += (double)tv.tv_usec / 1.0e6;
+#endif
+    return wtime;
+}
 
 /* Utility functions */
 long shmem_util_getenv_long(const char* name, int is_sized, long default_value);

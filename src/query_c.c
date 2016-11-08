@@ -14,8 +14,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-#include <sys/time.h>
 
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
@@ -82,20 +80,7 @@ shmem_my_pe(void)
 double
 shmemx_wtime(void)
 {
-    double wtime = 0.0;
-
     SHMEM_ERR_CHECK_INITIALIZED();
 
-#ifdef CLOCK_MONOTONIC
-    struct timespec tv;
-    clock_gettime(CLOCK_MONOTONIC, &tv);
-    wtime = tv.tv_sec;
-    wtime += (double)tv.tv_nsec / 1000000000.0;
-#else
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    wtime = tv.tv_sec;
-    wtime += (double)tv.tv_usec / 1000000.0;
-#endif
-    return wtime;
+    return shmem_internal_wtime();
 }

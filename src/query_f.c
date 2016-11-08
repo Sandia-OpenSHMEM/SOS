@@ -59,20 +59,7 @@ fortran_double_precision_t FC_SHMEMX_WTIME(void);
 fortran_double_precision_t
 FC_SHMEMX_WTIME(void)
 {
-    double wtime = 0.0;
-
     SHMEM_ERR_CHECK_INITIALIZED();
 
-#ifdef CLOCK_MONOTONIC
-    struct timespec tv;
-    clock_gettime(CLOCK_MONOTONIC, &tv);
-    wtime = tv.tv_sec;
-    wtime += (double)tv.tv_nsec / 1000000000.0;
-#else
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    wtime = tv.tv_sec;
-    wtime += (double)tv.tv_usec / 1000000.0;
-#endif
-    return wtime;
+    return shmem_internal_wtime();
 }
