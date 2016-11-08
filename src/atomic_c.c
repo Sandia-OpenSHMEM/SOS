@@ -125,6 +125,8 @@ shmem_float_swap(float *target, float value, int pe)
     float newval;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_swap(target, &value, &newval, sizeof(float), pe, SHM_INTERNAL_FLOAT);
     shmem_internal_get_wait();
@@ -138,6 +140,8 @@ shmem_double_swap(double *target, double value, int pe)
     double newval;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_swap(target, &value, &newval, sizeof(double), pe, SHM_INTERNAL_DOUBLE);
     shmem_internal_get_wait();
@@ -151,6 +155,8 @@ shmem_int_swap(int *target, int value, int pe)
     int newval;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_swap(target, &value, &newval, sizeof(int), pe, SHM_INTERNAL_INT);
     shmem_internal_get_wait();
@@ -164,6 +170,8 @@ shmem_long_swap(long *target, long value, int pe)
     long newval;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_swap(target, &value, &newval, sizeof(long), pe, SHM_INTERNAL_LONG);
     shmem_internal_get_wait();
@@ -177,6 +185,8 @@ shmem_longlong_swap(long long *target, long long value, int pe)
     long long newval;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_swap(target, &value, &newval, sizeof(long long), pe, SHM_INTERNAL_LONG_LONG);
     shmem_internal_get_wait();
@@ -190,6 +200,8 @@ shmem_swap(long *target, long value, int pe)
     long newval;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_swap(target, &value, &newval, sizeof(long), pe, SHM_INTERNAL_LONG);
     shmem_internal_get_wait();
@@ -203,6 +215,8 @@ shmem_int_cswap(int *target, int cond, int value, int pe)
     int newval;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_cswap(target, &value, &newval, &cond, sizeof(int), pe, SHM_INTERNAL_INT);
     shmem_internal_get_wait();
@@ -216,6 +230,8 @@ shmem_long_cswap(long *target, long cond, long value, int pe)
     long newval;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_cswap(target, &value, &newval, &cond, sizeof(long), pe, SHM_INTERNAL_LONG);
     shmem_internal_get_wait();
@@ -230,6 +246,8 @@ shmem_longlong_cswap(long long * target, long long cond,
     long long newval;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_cswap(target, &value, &newval, &cond, sizeof(long long), pe, SHM_INTERNAL_LONG_LONG);
     shmem_internal_get_wait();
@@ -243,6 +261,8 @@ shmem_int_inc(int *target, int pe)
     int tmp = 1;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_atomic_small(target, &tmp, sizeof(int), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT);
 }
@@ -254,6 +274,8 @@ shmem_long_inc(long *target, int pe)
     long tmp = 1;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_atomic_small(target, &tmp, sizeof(long), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
 }
@@ -265,6 +287,8 @@ shmem_longlong_inc(long long *target, int pe)
     long long tmp = 1;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_atomic_small(target, &tmp, sizeof(long long), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG_LONG);
 }
@@ -276,6 +300,8 @@ shmem_int_finc(int *target, int pe)
     int oldval, tmp = 1;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(int), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT);
     shmem_internal_get_wait();
@@ -289,6 +315,8 @@ shmem_long_finc(long *target, int pe)
     long oldval, tmp = 1;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(long), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
     shmem_internal_get_wait();
@@ -302,6 +330,8 @@ shmem_longlong_finc(long long *target, int pe)
     long long oldval, tmp = 1;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(long long), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG_LONG);
     shmem_internal_get_wait();
@@ -313,6 +343,8 @@ void
 shmem_int_add(int *target, int value, int pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_atomic_small(target, &value, sizeof(int), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT);
 }
@@ -322,6 +354,8 @@ void
 shmem_long_add(long *target, long value, int pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_atomic_small(target, &value, sizeof(long), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
 }
@@ -331,6 +365,8 @@ void
 shmem_longlong_add(long long *target, long long value, int pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_atomic_small(target, &value, sizeof(long long), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG_LONG);
 }
@@ -342,6 +378,8 @@ shmem_int_fadd(int *target, int value, int pe)
     int oldval;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(int), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT);
     shmem_internal_get_wait();
@@ -355,6 +393,8 @@ shmem_long_fadd(long *target, long value, int pe)
     long oldval;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(long), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
     shmem_internal_get_wait();
@@ -369,6 +409,8 @@ shmem_longlong_fadd(long long *target, long long value,
     long long oldval;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target);
 
     shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(long long), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG_LONG);
     shmem_internal_get_wait();
@@ -384,6 +426,8 @@ shmem_##type_name##_fetch(const c_type *source, int pe)                         
     c_type val;                                                                 \
                                                                                 \
     SHMEM_ERR_CHECK_INITIALIZED();                                              \
+    SHMEM_ERR_CHECK_PE(pe);                                                     \
+    SHMEM_ERR_CHECK_SYMMETRIC(source);                                          \
                                                                                 \
     shmem_internal_atomic_fetch(&val, (void *) source, sizeof(c_type), pe,      \
                                 dtype);                                         \
@@ -410,6 +454,8 @@ void                                                                            
 shmem_##type_name##_set(c_type *dest, c_type value, int pe)                     \
 {                                                                               \
     SHMEM_ERR_CHECK_INITIALIZED();                                              \
+    SHMEM_ERR_CHECK_PE(pe);                                                     \
+    SHMEM_ERR_CHECK_SYMMETRIC(dest);                                            \
                                                                                 \
     shmem_internal_atomic_set((void *) dest, &value, sizeof(c_type), pe, dtype);\
 }

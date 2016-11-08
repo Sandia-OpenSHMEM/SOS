@@ -33,6 +33,7 @@ fortran_integer_t
 FC_SHMEM_ADDR_ACCESSIBLE(void *addr, fortran_integer_t *pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(*pe);
 
      return shmem_internal_addr_accessible(addr, *pe);
 }
