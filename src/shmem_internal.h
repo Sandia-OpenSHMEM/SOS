@@ -281,11 +281,32 @@ char *shmem_util_getenv_str(const char* name);
   decl(real,      REAL,         SIZEOF_FORTRAN_REAL)
 
 #define SHMEM_EVAL_FC_MACRO_FOR_SIZES(decl,END) \
-  decl(mem,     MEM,     1) END  \
-  decl(4,       4,       4) END  \
-  decl(8,       8,       8) END  \
-  decl(32,      32,      4) END  \
-  decl(64,      64,      8) END  \
-  decl(128,     128,     16) END
+  decl(mem,     MEM,    1) END  \
+  decl(4,       4,      4) END  \
+  decl(8,       8,      8) END  \
+  decl(32,      32,     4) END  \
+  decl(64,      64,     8) END  \
+  decl(128,     128,    16) END
+
+#define SHMEM_EVAL_FC_MACRO_FOR_COLL_SIZES(decl,END) \
+  decl(4,       4) END  \
+  decl(8,       8) END  \
+  decl(32,      4) END  \
+  decl(64,      8) END
+
+#define SHMEM_EVAL_FC_MACRO_FOR_INTS_WITH_ITYPE_OP(decl,sop,SOP,iop,END)        \
+  decl(int4,    INT4,   int32_t,     SHM_INTERNAL_INT32,  sop, SOP, iop, 4) END \
+  decl(int8,    INT8,   int64_t,     SHM_INTERNAL_INT64,  sop, SOP, iop, 8) END
+
+#if SIZEOF_LONG_DOUBLE == 16
+#define SHMEM_EVAL_FC_MACRO_FOR_FLOATS_WITH_ITYPE_OP(decl,sop,SOP,iop,END)      \
+  decl(real4,   REAL4,  float,       SHM_INTERNAL_FLOAT,  sop, SOP, iop, 4) END \
+  decl(real8,   REAL8,  double,      SHM_INTERNAL_DOUBLE, sop, SOP, iop, 8) END \
+  decl(real16,  REAL16, long double, SHM_INTERNAL_LONG_DOUBLE, sop, SOP, iop, 16) END
+#else
+#define SHMEM_EVAL_FC_MACRO_FOR_FLOATS_WITH_ITYPE_OP(decl,sop,SOP,iop,END)      \
+  decl(real4,   REAL4,  float,       SHM_INTERNAL_FLOAT,  sop, SOP, iop, 4) END \
+  decl(real8,   REAL8,  double,      SHM_INTERNAL_DOUBLE, sop, SOP, iop, 8) END
+#endif
 
 #endif
