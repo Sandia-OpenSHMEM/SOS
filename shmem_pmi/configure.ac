@@ -1,4 +1,4 @@
-AC_INIT([shmem_pmi], [1.0], [kayla.seager@intel.com])
+AC_INIT([shmem_pmi], [1.0], [https://github.com/Sandia-OpenSHMEM/SOS])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
 AC_SUBST(shrext_cmds)
