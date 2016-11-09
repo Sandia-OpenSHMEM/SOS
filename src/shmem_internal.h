@@ -272,4 +272,20 @@ char *shmem_util_getenv_str(const char* name);
   decl(complexf, float complex, SHM_INTERNAL_FLOAT_COMPLEX, sop, iop) END  \
   decl(complexd, double complex,SHM_INTERNAL_DOUBLE_COMPLEX,sop, iop)
 
+#define SHMEM_EVAL_FC_MACRO_FOR_RMA(decl,END)                           \
+  decl(character, CHARACTER,    SIZEOF_FORTRAN_CHARACTER) END           \
+  decl(complex,   COMPLEX,      SIZEOF_FORTRAN_COMPLEX) END             \
+  decl(double,    DOUBLE,       SIZEOF_FORTRAN_DOUBLE_PRECISION) END    \
+  decl(integer,   INTEGER,      SIZEOF_FORTRAN_INTEGER) END             \
+  decl(logical,   LOGICAL,      SIZEOF_FORTRAN_LOGICAL) END             \
+  decl(real,      REAL,         SIZEOF_FORTRAN_REAL)
+
+#define SHMEM_EVAL_FC_MACRO_FOR_SIZES(decl,END) \
+  decl(mem,     MEM,     1) END  \
+  decl(4,       4,       4) END  \
+  decl(8,       8,       8) END  \
+  decl(32,      32,      4) END  \
+  decl(64,      64,      8) END  \
+  decl(128,     128,     16) END
+
 #endif
