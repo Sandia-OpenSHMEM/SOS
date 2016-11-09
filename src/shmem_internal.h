@@ -257,19 +257,19 @@ char *shmem_util_getenv_str(const char* name);
   decl(float,  float,           SHM_INTERNAL_FLOAT) END         \
   decl(double, double,          SHM_INTERNAL_DOUBLE)
 
-#define SHMEM_INTERNAL_EVAL_MACRO_FOR_INTS_WITH_ITYPE(decl,END) \
-  decl(short,    short,         SHM_INTERNAL_SHORT) END         \
-  decl(int,      int,           SHM_INTERNAL_INT) END           \
-  decl(long,     long,          SHM_INTERNAL_LONG) END          \
-  decl(longlong, long long,     SHM_INTERNAL_LONG_LONG)
+#define SHMEM_EVAL_MACRO_FOR_INTS_WITH_ITYPE_OP(decl,sop,iop,END)       \
+  decl(short,    short,         SHM_INTERNAL_SHORT,     sop, iop) END   \
+  decl(int,      int,           SHM_INTERNAL_INT,       sop, iop) END   \
+  decl(long,     long,          SHM_INTERNAL_LONG,      sop, iop) END   \
+  decl(longlong, long long,     SHM_INTERNAL_LONG_LONG, sop, iop)
 
-#define SHMEM_EVAL_MACRO_FOR_FLOATS_WITH_ITYPE(decl,END)        \
-  decl(float,     float,        SHM_INTERNAL_FLOAT) END         \
-  decl(double,    double,       SHM_INTERNAL_DOUBLE) END        \
-  decl(longdouble,long double,  SHM_INTERNAL_LONG_DOUBLE)
+#define SHMEM_EVAL_MACRO_FOR_FLOATS_WITH_ITYPE_OP(decl,sop,iop,END)     \
+  decl(float,     float,        SHM_INTERNAL_FLOAT,     sop, iop) END   \
+  decl(double,    double,       SHM_INTERNAL_DOUBLE,    sop, iop) END   \
+  decl(longdouble,long double,  SHM_INTERNAL_LONG_DOUBLE, sop, iop)
 
-#define SHMEM_EVAL_MACRO_FOR_CMPLX_WITH_ITYPE(decl,END)         \
-  decl(complexf, float complex, SHM_INTERNAL_FLOAT_COMPLEX) END \
-  decl(complexd, double complex,SHM_INTERNAL_DOUBLE_COMPLEX)
+#define SHMEM_EVAL_MACRO_FOR_CMPLX_WITH_ITYPE_OP(decl,sop,iop,END)         \
+  decl(complexf, float complex, SHM_INTERNAL_FLOAT_COMPLEX, sop, iop) END  \
+  decl(complexd, double complex,SHM_INTERNAL_DOUBLE_COMPLEX,sop, iop)
 
 #endif
