@@ -56,14 +56,14 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_PUT_SIZE)
     {                                                                   \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
                                                                         \
-        shmem_internal_put_nb(dest, source, SIZE * *nelems, *pe, NULL); \
+        shmem_internal_put_nb(target, source, SIZE * *nelems, *pe, NULL); \
     }
 
 #define SHMEM_DEF_FC_PUT_NBI(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_PUT(FC_FUNC_(shmem_##STYPE_L##_put_nbi, SHMEM_##STYPE_U##_PUT_NBI), SIZE)
+    SHMEM_STAMP_FC_PUT_NBI(FC_FUNC_(shmem_##STYPE_L##_put_nbi, SHMEM_##STYPE_U##_PUT_NBI), SIZE)
 
 #define SHMEM_DEF_FC_PUT_NBI_SIZE(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_PUT(FC_FUNC_(shmem_put##STYPE_L##_nbi, SHMEM_PUT##STYPE_U##_NBI), SIZE)
+    SHMEM_STAMP_FC_PUT_NBI(FC_FUNC_(shmem_put##STYPE_L##_nbi, SHMEM_PUT##STYPE_U##_NBI), SIZE)
 
 
 SHMEM_BIND_F_RMA(SHMEM_DEF_FC_PUT_NBI)
@@ -93,10 +93,10 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_PUT_NBI_SIZE)
 
 
 #define SHMEM_DEF_FC_IPUT(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_PUT(FC_FUNC_(shmem_##STYPE_L##_iput, SHMEM_##STYPE_U##_IPUT), SIZE)
+    SHMEM_STAMP_FC_IPUT(FC_FUNC_(shmem_##STYPE_L##_iput, SHMEM_##STYPE_U##_IPUT), SIZE)
 
 #define SHMEM_DEF_FC_IPUT_SIZE(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_PUT(FC_FUNC_(shmem_iput##STYPE_L, SHMEM_IPUT##STYPE_U), SIZE)
+    SHMEM_STAMP_FC_IPUT(FC_FUNC_(shmem_iput##STYPE_L, SHMEM_IPUT##STYPE_U), SIZE)
 
 
 SHMEM_BIND_F_RMA(SHMEM_DEF_FC_IPUT)
@@ -134,14 +134,14 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_GET_SIZE)
     {                                                                   \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
                                                                         \
-        shmem_internal_get(target, source, SIZE * *len, *pe);           \
+        shmem_internal_get(target, source, SIZE * *nelems, *pe);        \
     }
 
 #define SHMEM_DEF_FC_GET_NBI(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_GET(FC_FUNC_(shmem_##STYPE_L##_get_nbi, SHMEM_##STYPE_U##_GET_NBI), SIZE)
+    SHMEM_STAMP_FC_GET_NBI(FC_FUNC_(shmem_##STYPE_L##_get_nbi, SHMEM_##STYPE_U##_GET_NBI), SIZE)
 
 #define SHMEM_DEF_FC_GET_NBI_SIZE(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_GET(FC_FUNC_(shmem_get##STYPE_L##_nbi, SHMEM_GET##STYPE_U##_NBI), SIZE)
+    SHMEM_STAMP_FC_GET_NBI(FC_FUNC_(shmem_get##STYPE_L##_nbi, SHMEM_GET##STYPE_U##_NBI), SIZE)
 
 
 SHMEM_BIND_F_RMA(SHMEM_DEF_FC_GET_NBI)
@@ -171,10 +171,10 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_GET_NBI_SIZE)
     }
 
 #define SHMEM_DEF_FC_IGET(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_GET(FC_FUNC_(shmem_##STYPE_L##_iget, SHMEM_##STYPE_U##_IGET), SIZE)
+    SHMEM_STAMP_FC_IGET(FC_FUNC_(shmem_##STYPE_L##_iget, SHMEM_##STYPE_U##_IGET), SIZE)
 
 #define SHMEM_DEF_FC_IGET_SIZE(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_GET(FC_FUNC_(shmem_iget##STYPE_L##_nbi, SHMEM_IGET##STYPE_U##_NBI), SIZE)
+    SHMEM_STAMP_FC_IGET(FC_FUNC_(shmem_iget##STYPE_L, SHMEM_IGET##STYPE_U), SIZE)
 
 
 SHMEM_BIND_F_RMA(SHMEM_DEF_FC_IGET)
