@@ -12,9 +12,6 @@
 
 #include "config.h"
 
-#include <time.h>
-#include <sys/time.h>
-
 #include "shmemx.h"
 #include "shmem_internal.h"
 
