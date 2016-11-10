@@ -129,7 +129,7 @@
         return newval;                                          \
     }
 
-SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO_WITH_ITYPE(SHMEM_DEF_SWAP,)
+SHMEM_BIND_C_EXTENDED_AMO(SHMEM_DEF_SWAP)
 
 
 /* shmem_swap is a special case in the API */
@@ -158,7 +158,7 @@ shmem_swap(long *target, long value, int pe)
         return newval;                                                  \
     }
 
-SHMEM_EVAL_MACRO_FOR_AMO_WITH_ITYPE(SHMEM_DEF_CSWAP,)
+SHMEM_BIND_C_AMO(SHMEM_DEF_CSWAP)
 
 #define SHMEM_DEF_INC(STYPE,TYPE,ITYPE)                                 \
     void shmem_##STYPE##_inc(TYPE *target, int pe)                      \
@@ -169,7 +169,7 @@ SHMEM_EVAL_MACRO_FOR_AMO_WITH_ITYPE(SHMEM_DEF_CSWAP,)
                                     SHM_INTERNAL_SUM, ITYPE);           \
     }
 
-SHMEM_EVAL_MACRO_FOR_AMO_WITH_ITYPE(SHMEM_DEF_INC,)
+SHMEM_BIND_C_AMO(SHMEM_DEF_INC)
 
 #define SHMEM_DEF_FINC(STYPE,TYPE,ITYPE)                                \
     TYPE shmem_##STYPE##_finc(TYPE *target, int pe)                     \
@@ -182,7 +182,7 @@ SHMEM_EVAL_MACRO_FOR_AMO_WITH_ITYPE(SHMEM_DEF_INC,)
         return oldval;                                                  \
     }
 
-SHMEM_EVAL_MACRO_FOR_AMO_WITH_ITYPE(SHMEM_DEF_FINC,)
+SHMEM_BIND_C_AMO(SHMEM_DEF_FINC)
 
 #define SHMEM_DEF_ADD(STYPE,TYPE,ITYPE)                                 \
     void shmem_##STYPE##_add(TYPE *target, TYPE value, int pe)          \
@@ -194,7 +194,7 @@ SHMEM_EVAL_MACRO_FOR_AMO_WITH_ITYPE(SHMEM_DEF_FINC,)
     }
 
 
-SHMEM_EVAL_MACRO_FOR_AMO_WITH_ITYPE(SHMEM_DEF_ADD,)
+SHMEM_BIND_C_AMO(SHMEM_DEF_ADD)
 
 #define SHMEM_DEF_FADD(STYPE,TYPE,ITYPE)                                \
     TYPE shmem_##STYPE##_fadd(TYPE *target, TYPE value, int pe)         \
@@ -208,7 +208,7 @@ SHMEM_EVAL_MACRO_FOR_AMO_WITH_ITYPE(SHMEM_DEF_ADD,)
         return oldval;                                                  \
     }
 
-SHMEM_EVAL_MACRO_FOR_AMO_WITH_ITYPE(SHMEM_DEF_FADD,)
+SHMEM_BIND_C_AMO(SHMEM_DEF_FADD)
 
 #define SHMEM_DEF_FETCH(STYPE,TYPE,ITYPE)                               \
     TYPE shmem_##STYPE##_fetch(const TYPE *source, int pe)              \
@@ -223,7 +223,7 @@ SHMEM_EVAL_MACRO_FOR_AMO_WITH_ITYPE(SHMEM_DEF_FADD,)
         return val;                                                     \
     }
 
-SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO_WITH_ITYPE(SHMEM_DEF_FETCH,)
+SHMEM_BIND_C_EXTENDED_AMO(SHMEM_DEF_FETCH)
 
 
 #define SHMEM_DEF_SET(STYPE,TYPE,ITYPE)                                 \
@@ -235,4 +235,4 @@ SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO_WITH_ITYPE(SHMEM_DEF_FETCH,)
                                   pe, ITYPE);                           \
     }
 
-SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO_WITH_ITYPE(SHMEM_DEF_SET,)
+SHMEM_BIND_C_EXTENDED_AMO(SHMEM_DEF_SET)

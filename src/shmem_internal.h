@@ -247,66 +247,66 @@ long shmem_util_getenv_long(const char* name, int is_sized, long default_value);
 char *shmem_util_getenv_str(const char* name);
 
 /* Language bindings helper macros */
-#define SHMEM_EVAL_MACRO_FOR_AMO_WITH_ITYPE(decl,END)           \
-  decl(int,        int,         SHM_INTERNAL_INT) END           \
-  decl(long,       long,        SHM_INTERNAL_LONG) END          \
-  decl(longlong,   long long,   SHM_INTERNAL_LONG_LONG)
+#define SHMEM_BIND_C_AMO(decl)                                  \
+  decl(int,      int,           SHM_INTERNAL_INT)               \
+  decl(long,     long,          SHM_INTERNAL_LONG)              \
+  decl(longlong, long long,     SHM_INTERNAL_LONG_LONG)
 
-#define SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO_WITH_ITYPE(decl,END)  \
-  SHMEM_EVAL_MACRO_FOR_AMO_WITH_ITYPE(decl,END) END             \
-  decl(float,  float,           SHM_INTERNAL_FLOAT) END         \
-  decl(double, double,          SHM_INTERNAL_DOUBLE)
+#define SHMEM_BIND_C_EXTENDED_AMO(decl)                         \
+  SHMEM_BIND_C_AMO(decl)                                        \
+  decl(float,    float,         SHM_INTERNAL_FLOAT)             \
+  decl(double,   double,        SHM_INTERNAL_DOUBLE)
 
-#define SHMEM_EVAL_MACRO_FOR_INTS_WITH_ITYPE_OP(decl,sop,iop,END)       \
-  decl(short,    short,         SHM_INTERNAL_SHORT,     sop, iop) END   \
-  decl(int,      int,           SHM_INTERNAL_INT,       sop, iop) END   \
-  decl(long,     long,          SHM_INTERNAL_LONG,      sop, iop) END   \
-  decl(longlong, long long,     SHM_INTERNAL_LONG_LONG, sop, iop)
+#define SHMEM_BIND_C_INTS_OP(decl, s_op, op)                            \
+  decl(short,    short,         SHM_INTERNAL_SHORT,         s_op, op)   \
+  decl(int,      int,           SHM_INTERNAL_INT,           s_op, op)   \
+  decl(long,     long,          SHM_INTERNAL_LONG,          s_op, op)   \
+  decl(longlong, long long,     SHM_INTERNAL_LONG_LONG,     s_op, op)
 
-#define SHMEM_EVAL_MACRO_FOR_FLOATS_WITH_ITYPE_OP(decl,sop,iop,END)     \
-  decl(float,     float,        SHM_INTERNAL_FLOAT,     sop, iop) END   \
-  decl(double,    double,       SHM_INTERNAL_DOUBLE,    sop, iop) END   \
-  decl(longdouble,long double,  SHM_INTERNAL_LONG_DOUBLE, sop, iop)
+#define SHMEM_BIND_C_FLOATS_OP(decl, s_op, op)                          \
+  decl(float,    float,         SHM_INTERNAL_FLOAT,         s_op, op)   \
+  decl(double,   double,        SHM_INTERNAL_DOUBLE,        s_op, op)   \
+  decl(longdouble, long double, SHM_INTERNAL_LONG_DOUBLE,   s_op, op)
 
-#define SHMEM_EVAL_MACRO_FOR_CMPLX_WITH_ITYPE_OP(decl,sop,iop,END)         \
-  decl(complexf, float complex, SHM_INTERNAL_FLOAT_COMPLEX, sop, iop) END  \
-  decl(complexd, double complex,SHM_INTERNAL_DOUBLE_COMPLEX,sop, iop)
+#define SHMEM_BIND_C_CMPLX_OP(decl, s_op, op)                           \
+  decl(complexf, float complex, SHM_INTERNAL_FLOAT_COMPLEX, s_op, op)   \
+  decl(complexd, double complex,SHM_INTERNAL_DOUBLE_COMPLEX,s_op, op)
 
-#define SHMEM_EVAL_FC_MACRO_FOR_RMA(decl,END)                           \
-  decl(character, CHARACTER,    SIZEOF_FORTRAN_CHARACTER) END           \
-  decl(complex,   COMPLEX,      SIZEOF_FORTRAN_COMPLEX) END             \
-  decl(double,    DOUBLE,       SIZEOF_FORTRAN_DOUBLE_PRECISION) END    \
-  decl(integer,   INTEGER,      SIZEOF_FORTRAN_INTEGER) END             \
-  decl(logical,   LOGICAL,      SIZEOF_FORTRAN_LOGICAL) END             \
-  decl(real,      REAL,         SIZEOF_FORTRAN_REAL)
+#define SHMEM_BIND_F_RMA(decl)                                          \
+  decl(character, CHARACTER,    SIZEOF_FORTRAN_CHARACTER)               \
+  decl(complex,  COMPLEX,       SIZEOF_FORTRAN_COMPLEX)                 \
+  decl(double,   DOUBLE,        SIZEOF_FORTRAN_DOUBLE_PRECISION)        \
+  decl(integer,  INTEGER,       SIZEOF_FORTRAN_INTEGER)                 \
+  decl(logical,  LOGICAL,       SIZEOF_FORTRAN_LOGICAL)                 \
+  decl(real,     REAL,          SIZEOF_FORTRAN_REAL)
 
-#define SHMEM_EVAL_FC_MACRO_FOR_SIZES(decl,END) \
-  decl(mem,     MEM,    1) END  \
-  decl(4,       4,      4) END  \
-  decl(8,       8,      8) END  \
-  decl(32,      32,     4) END  \
-  decl(64,      64,     8) END  \
-  decl(128,     128,    16) END
+#define SHMEM_BIND_F_SIZES(decl)        \
+  decl(mem,     MEM,    1)              \
+  decl(4,       4,      4)              \
+  decl(8,       8,      8)              \
+  decl(32,      32,     4)              \
+  decl(64,      64,     8)              \
+  decl(128,     128,    16)
 
-#define SHMEM_EVAL_FC_MACRO_FOR_COLL_SIZES(decl,END) \
-  decl(4,       4) END  \
-  decl(8,       8) END  \
-  decl(32,      4) END  \
-  decl(64,      8) END
+#define SHMEM_BIND_F_COLL_SIZES(decl)   \
+  decl(4,       4)                      \
+  decl(8,       8)                      \
+  decl(32,      4)                      \
+  decl(64,      8)
 
-#define SHMEM_EVAL_FC_MACRO_FOR_INTS_WITH_ITYPE_OP(decl,sop,SOP,iop,END)        \
-  decl(int4,    INT4,   int32_t,     SHM_INTERNAL_INT32,  sop, SOP, iop, 4) END \
-  decl(int8,    INT8,   int64_t,     SHM_INTERNAL_INT64,  sop, SOP, iop, 8) END
+#define SHMEM_BIND_F_INTS_OP(decl, s_op_l, s_op_u, op) \
+  decl(int4,    INT4,   int32_t,     SHM_INTERNAL_INT32,  s_op_l, s_op_u, op, 4) \
+  decl(int8,    INT8,   int64_t,     SHM_INTERNAL_INT64,  s_op_l, s_op_u, op, 8)
 
 #if SIZEOF_LONG_DOUBLE == 16
-#define SHMEM_EVAL_FC_MACRO_FOR_FLOATS_WITH_ITYPE_OP(decl,sop,SOP,iop,END)      \
-  decl(real4,   REAL4,  float,       SHM_INTERNAL_FLOAT,  sop, SOP, iop, 4) END \
-  decl(real8,   REAL8,  double,      SHM_INTERNAL_DOUBLE, sop, SOP, iop, 8) END \
-  decl(real16,  REAL16, long double, SHM_INTERNAL_LONG_DOUBLE, sop, SOP, iop, 16) END
+#define SHMEM_BIND_F_FLOATS_OP(decl, s_op_l, s_op_u, op) \
+  decl(real4,   REAL4,  float,       SHM_INTERNAL_FLOAT,  s_op_l, s_op_u, op, 4) \
+  decl(real8,   REAL8,  double,      SHM_INTERNAL_DOUBLE, s_op_l, s_op_u, op, 8) \
+  decl(real16,  REAL16, long double, SHM_INTERNAL_LONG_DOUBLE, s_op_l, s_op_u, op, 16)
 #else
-#define SHMEM_EVAL_FC_MACRO_FOR_FLOATS_WITH_ITYPE_OP(decl,sop,SOP,iop,END)      \
-  decl(real4,   REAL4,  float,       SHM_INTERNAL_FLOAT,  sop, SOP, iop, 4) END \
-  decl(real8,   REAL8,  double,      SHM_INTERNAL_DOUBLE, sop, SOP, iop, 8) END
+#define SHMEM_BIND_F_FLOATS_OP(decl, s_op_l, s_op_u, op) \
+  decl(real4,   REAL4,  float,       SHM_INTERNAL_FLOAT,  s_op_l, s_op_u, op, 4) \
+  decl(real8,   REAL8,  double,      SHM_INTERNAL_DOUBLE, s_op_l, s_op_u, op, 8)
 #endif
 
 #endif
