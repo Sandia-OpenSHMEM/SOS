@@ -32,8 +32,8 @@
                                                                         \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(*pe);                                        \
-        SHMEM_ERR_CHECK_SYMMETRIC(target, SIZE * *len);                 \
         SHMEM_ERR_CHECK_NON_NEGATIVE(*len);                             \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, SIZE * *len);                 \
                                                                         \
         shmem_internal_put_nb(target, source, SIZE * *len, *pe,         \
                               &completion);                             \
@@ -59,8 +59,8 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_PUT_SIZE)
     {                                                                   \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(*pe);                                        \
-        SHMEM_ERR_CHECK_SYMMETRIC(target, SIZE * *nelems);              \
         SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);                          \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, SIZE * *nelems);              \
                                                                         \
         shmem_internal_put_nb(target, source, SIZE * *nelems, *pe, NULL); \
     }
@@ -90,10 +90,10 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_PUT_NBI_SIZE)
                                                                         \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(*pe);                                        \
-        SHMEM_ERR_CHECK_SYMMETRIC(target, SIZE*len + SIZE * *tst * (len-1)); \
         SHMEM_ERR_CHECK_POSITIVE(*tst);                                 \
         SHMEM_ERR_CHECK_POSITIVE(*sst);                                 \
         SHMEM_ERR_CHECK_NON_NEGATIVE(*lenp);                            \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, SIZE*len + SIZE * *tst * (len-1)); \
                                                                         \
         for ( ; len > 0 ; --len) {                                      \
             shmem_internal_put_small(target, source, SIZE, *pe);        \
@@ -122,8 +122,8 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_IPUT_SIZE)
     {                                                                   \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(*pe);                                        \
-        SHMEM_ERR_CHECK_SYMMETRIC(source, SIZE * *len);                 \
         SHMEM_ERR_CHECK_NON_NEGATIVE(*len);                             \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, SIZE * *len);                 \
                                                                         \
         shmem_internal_get(target, source, SIZE * *len, *pe);           \
         shmem_internal_get_wait();                                      \
@@ -178,10 +178,10 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_GET_NBI_SIZE)
                                                                         \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(*pe);                                        \
-        SHMEM_ERR_CHECK_SYMMETRIC(source, SIZE*len + SIZE * *sst * (len-1)); \
         SHMEM_ERR_CHECK_POSITIVE(*tst);                                 \
         SHMEM_ERR_CHECK_POSITIVE(*sst);                                 \
         SHMEM_ERR_CHECK_NON_NEGATIVE(*lenp);                            \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, SIZE*len + SIZE * *sst * (len-1)); \
                                                                         \
         for ( ; len > 0 ; --len ) {                                     \
             shmem_internal_get(target, source, SIZE, *pe);              \
