@@ -132,15 +132,30 @@ extern long shmem_internal_heap_huge_page_size;
 
 #define SHMEM_ERR_CHECK_SYMMETRIC(ptr, len)                                             \
     do {                                                                                \
-        if (! (((void *) (ptr) >= shmem_internal_data_base && (uint8_t *) (ptr) < (uint8_t *) shmem_internal_data_base + shmem_internal_data_length) ||      \
-               ((void *) (ptr) >= shmem_internal_heap_base && (uint8_t *) (ptr) < (uint8_t *) shmem_internal_heap_base + shmem_internal_heap_length))) {     \
-            fprintf(stderr, "ERROR: %s(): Argument \"%s\" is not symmetric (%p)\n",     \
-                    __func__, #ptr, (void *) ptr);                                      \
-            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                  \
+        if ((void *) (ptr) >= shmem_internal_data_base &&                               \
+            (uint8_t *) (ptr) < (uint8_t *) shmem_internal_data_base + shmem_internal_data_length)                      \
+        {                                                                               \
+            if ((uint8_t *) (ptr) + (len) > (uint8_t *) shmem_internal_data_base + shmem_internal_data_length) {        \
+                fprintf(stderr, "ERROR: %s(): Argument \"%s\" [%p..%p) exceeds sym. data region [%p..%p)\n",            \
+                        __func__, #ptr, (void *) (ptr), (void *)((uint8_t *) (ptr) + (len)),                            \
+                        (void *) shmem_internal_data_base,                                                              \
+                        (void *)((uint8_t *) shmem_internal_data_base + shmem_internal_data_length));                   \
+                shmem_runtime_abort(100, PACKAGE_NAME " exited in error");              \
+            }                                                                           \
         }                                                                               \
-        else if (! (((void *) (ptr) >= shmem_internal_data_base && (uint8_t *) (ptr) + (len) < (uint8_t *) shmem_internal_data_base + shmem_internal_data_length) ||    \
-                    ((void *) (ptr) >= shmem_internal_heap_base && (uint8_t *) (ptr) + (len) < (uint8_t *) shmem_internal_heap_base + shmem_internal_heap_length))) {   \
-            fprintf(stderr, "ERROR: %s(): Argument \"%s\" extends beyond symmetric region (%p)\n", \
+        else if ((void *) (ptr) >= shmem_internal_heap_base &&                          \
+            (uint8_t *) (ptr) < (uint8_t *) shmem_internal_heap_base + shmem_internal_heap_length)                      \
+        {                                                                               \
+            if ((uint8_t *) (ptr) + (len) > (uint8_t *) shmem_internal_heap_base + shmem_internal_heap_length) {        \
+                fprintf(stderr, "ERROR: %s(): Argument \"%s\" [%p..%p) exceeds sym. heap region [%p..%p)\n",            \
+                        __func__, #ptr, (void *) (ptr), (void *) ((uint8_t *) (ptr) + (len)),                           \
+                        (void *) shmem_internal_heap_base,                                                              \
+                        (void *)((uint8_t *) shmem_internal_heap_base + shmem_internal_heap_length));                   \
+                shmem_runtime_abort(100, PACKAGE_NAME " exited in error");              \
+            }                                                                           \
+        }                                                                               \
+        else {                                                                          \
+            fprintf(stderr, "ERROR: %s(): Argument \"%s\" is not symmetric (%p)\n",     \
                     __func__, #ptr, (void *) ptr);                                      \
             shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                  \
         }                                                                               \
