@@ -93,7 +93,7 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_PUT_NBI_SIZE)
         SHMEM_ERR_CHECK_POSITIVE(*tst);                                 \
         SHMEM_ERR_CHECK_POSITIVE(*sst);                                 \
         SHMEM_ERR_CHECK_NON_NEGATIVE(*lenp);                            \
-        SHMEM_ERR_CHECK_SYMMETRIC(target, SIZE*len + SIZE * *tst * (len-1)); \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, SIZE * ((len-1) * *tst + 1)); \
                                                                         \
         for ( ; len > 0 ; --len) {                                      \
             shmem_internal_put_small(target, source, SIZE, *pe);        \
@@ -181,7 +181,7 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_GET_NBI_SIZE)
         SHMEM_ERR_CHECK_POSITIVE(*tst);                                 \
         SHMEM_ERR_CHECK_POSITIVE(*sst);                                 \
         SHMEM_ERR_CHECK_NON_NEGATIVE(*lenp);                            \
-        SHMEM_ERR_CHECK_SYMMETRIC(source, SIZE*len + SIZE * *sst * (len-1)); \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, SIZE * ((len-1) * *sst + 1)); \
                                                                         \
         for ( ; len > 0 ; --len ) {                                     \
             shmem_internal_get(target, source, SIZE, *pe);              \
