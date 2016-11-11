@@ -335,8 +335,8 @@
   {                                                            \
     SHMEM_ERR_CHECK_INITIALIZED();                             \
     SHMEM_ERR_CHECK_PE(pe);                                    \
-    SHMEM_ERR_CHECK_SYMMETRIC(addr, sizeof(value));            \
-    shmem_internal_put_small(addr, &value, sizeof(value), pe); \
+    SHMEM_ERR_CHECK_SYMMETRIC(addr, sizeof(TYPE));             \
+    shmem_internal_put_small(addr, &value, sizeof(TYPE), pe);  \
   }
 
 SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_P)
@@ -347,8 +347,8 @@ SHMEM_DEFINE_FOR_RMA(SHMEM_DEF_P)
     TYPE tmp;                                        \
     SHMEM_ERR_CHECK_INITIALIZED();                   \
     SHMEM_ERR_CHECK_PE(pe);                          \
-    SHMEM_ERR_CHECK_SYMMETRIC(addr, sizeof(tmp));    \
-    shmem_internal_get(&tmp, addr, sizeof(tmp), pe); \
+    SHMEM_ERR_CHECK_SYMMETRIC(addr, sizeof(TYPE));   \
+    shmem_internal_get(&tmp, addr, sizeof(TYPE), pe);\
     shmem_internal_get_wait();                       \
     return tmp;                                      \
   }

@@ -71,6 +71,8 @@ shmem_init(void)
 char *
 shmemx_nodename(void)
 {
+    SHMEM_ERR_CHECK_INITIALIZED();
+
     return shmem_internal_nodename();
 }
 
