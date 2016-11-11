@@ -171,6 +171,33 @@ extern long shmem_internal_heap_huge_page_size;
         }                                                                               \
     } while (0)
 
+#define SHMEM_ERR_CHECK_NULL(ptr,nelems)                                                \
+    do {                                                                                \
+        if (nelems > 0 && (ptr) == NULL) {                                              \
+                fprintf(stderr, "ERROR: %s(): Argument \"%s\" is NULL\n"                \
+                        __func__, #ptr);                                                \
+                shmem_runtime_abort(100, PACKAGE_NAME " exited in error");              \
+        }                                                                               \
+    } while(0)
+
+#define SHMEM_ERR_CHECK_CMP_OP(op)                                                      \
+    do {                                                                                \
+        switch(op) {                                                                    \
+            case SHMEM_CMP_EQ:                                                          \
+            case SHMEM_CMP_NE:                                                          \
+            case SHMEM_CMP_GT:                                                          \
+            case SHMEM_CMP_GE:                                                          \
+            case SHMEM_CMP_LT:                                                          \
+            case SHMEM_CMP_LE:                                                          \
+                break;                                                                  \
+            default:                                                                    \
+                fprintf(stderr, "ERROR: %s(): Argument \"%s\", "                        \
+                                "invalid comparison operation (%d)\n",                  \
+                        __func__, #op, (int) (op));                                     \
+                shmem_runtime_abort(100, PACKAGE_NAME " exited in error");              \
+        }                                                                               \
+    } while (0)
+
 #else
 #define SHMEM_ERR_CHECK_INITIALIZED()
 #define SHMEM_ERR_CHECK_POSITIVE(arg)
@@ -179,6 +206,8 @@ extern long shmem_internal_heap_huge_page_size;
 #define SHMEM_ERR_CHECK_PE(pe)
 #define SHMEM_ERR_CHECK_SYMMETRIC(ptr, len)
 #define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr)
+#define SHMEM_ERR_CHECK_NULL(ptr,nelems)
+#define SHMEM_ERR_CHECK_CMP_OP(op)
 
 #endif /* ENABLE_ERROR_CHECKING */
 
