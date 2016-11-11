@@ -95,6 +95,7 @@ shmem_wait_until(volatile long *ivar, int cmp, long value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_SYMMETRIC(ivar, sizeof(long));
+    SHMEM_ERR_CHECK_CMP_OP(cmp);
 
     SHMEM_WAIT_UNTIL(ivar, cmp, value);
 }
@@ -116,6 +117,7 @@ SHMEM_DEFINE_FOR_INTS(SHMEM_DEF_WAIT)
     {                                                                           \
         SHMEM_ERR_CHECK_INITIALIZED();                                          \
         SHMEM_ERR_CHECK_SYMMETRIC(var, sizeof(TYPE));                           \
+        SHMEM_ERR_CHECK_CMP_OP(cond);                                           \
                                                                                 \
         SHMEM_WAIT_UNTIL(var, cond, value);                                     \
     }
