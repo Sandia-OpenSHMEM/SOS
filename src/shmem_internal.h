@@ -130,45 +130,51 @@ extern long shmem_internal_heap_huge_page_size;
         }                                                               \
     } while (0)
 
-#define SHMEM_ERR_CHECK_SYMMETRIC(ptr, len)                                             \
+#define SHMEM_ERR_CHECK_SYMMETRIC(ptr_in, len)                                          \
     do {                                                                                \
+        const void *ptr_base = (void*)(ptr_in);                                         \
+        const void *ptr_ext  = (void*)((uint8_t *) (ptr_base) + (len));                 \
+        const void *data_ext = (void*)((uint8_t *) shmem_internal_data_base +           \
+                                                   shmem_internal_data_length);         \
+        const void *heap_ext = (void*)((uint8_t *) shmem_internal_heap_base +           \
+                                                   shmem_internal_heap_length);         \
         if (len == 0) {                                                                 \
-            break; /* Don't perform this check when the length is 0 */                  \
-        } else if ((void *) (ptr) >= shmem_internal_data_base &&                        \
-            (uint8_t *) (ptr) < (uint8_t *) shmem_internal_data_base + shmem_internal_data_length)                      \
-        {                                                                               \
-            if ((uint8_t *) (ptr) + (len) > (uint8_t *) shmem_internal_data_base + shmem_internal_data_length) {        \
-                fprintf(stderr, "ERROR: %s(): Argument \"%s\" [%p..%p) exceeds sym. data region [%p..%p)\n",            \
-                        __func__, #ptr, (void *) (ptr), (void *)((uint8_t *) (ptr) + (len)),                            \
-                        (void *) shmem_internal_data_base,                                                              \
-                        (void *)((uint8_t *) shmem_internal_data_base + shmem_internal_data_length));                   \
+            break; /* Skip this check when the length is 0 */                           \
+        }                                                                               \
+        else if (ptr_base >= shmem_internal_data_base && ptr_base < data_ext) {         \
+            if (ptr_ext > data_ext) {                                                   \
+                fprintf(stderr, "ERROR: %s(): Argument \"%s\" [%p..%p) exceeds "        \
+                                "sym. data region [%p..%p)\n",                          \
+                        __func__, #ptr_in, ptr_base, ptr_ext,                           \
+                        shmem_internal_data_base, data_ext);                            \
                 shmem_runtime_abort(100, PACKAGE_NAME " exited in error");              \
             }                                                                           \
         }                                                                               \
-        else if ((void *) (ptr) >= shmem_internal_heap_base &&                          \
-            (uint8_t *) (ptr) < (uint8_t *) shmem_internal_heap_base + shmem_internal_heap_length)                      \
-        {                                                                               \
-            if ((uint8_t *) (ptr) + (len) > (uint8_t *) shmem_internal_heap_base + shmem_internal_heap_length) {        \
-                fprintf(stderr, "ERROR: %s(): Argument \"%s\" [%p..%p) exceeds sym. heap region [%p..%p)\n",            \
-                        __func__, #ptr, (void *) (ptr), (void *) ((uint8_t *) (ptr) + (len)),                           \
-                        (void *) shmem_internal_heap_base,                                                              \
-                        (void *)((uint8_t *) shmem_internal_heap_base + shmem_internal_heap_length));                   \
+        else if (ptr_base >= shmem_internal_heap_base && ptr_base < heap_ext) {         \
+            if (ptr_ext > heap_ext) {                                                   \
+                fprintf(stderr, "ERROR: %s(): Argument \"%s\" [%p..%p) exceeds "        \
+                                "sym. heap region [%p..%p)\n",                          \
+                        __func__, #ptr_in, ptr_base, ptr_ext,                           \
+                        shmem_internal_heap_base, heap_ext);                            \
                 shmem_runtime_abort(100, PACKAGE_NAME " exited in error");              \
             }                                                                           \
         }                                                                               \
         else {                                                                          \
             fprintf(stderr, "ERROR: %s(): Argument \"%s\" is not symmetric (%p)\n",     \
-                    __func__, #ptr, (void *) ptr);                                      \
+                    __func__, #ptr_in, ptr_base);                                       \
             shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                  \
         }                                                                               \
     } while (0)
 
-#define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr)                                             \
+#define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr_in)                                          \
     do {                                                                                \
-        if (! ((void *) (ptr) >= shmem_internal_heap_base &&                            \
-               (uint8_t *) (ptr) < (uint8_t *) shmem_internal_heap_base + shmem_internal_heap_length)) {     \
-            fprintf(stderr, "ERROR: %s(): Argument \"%s\" is not within the symmetric heap (%p)\n",          \
-                    __func__, #ptr, (void *) ptr);                                      \
+        const void *ptr_base      = (void*)(ptr_in);                                    \
+        const void *heap_ext = (void*)((uint8_t *) shmem_internal_heap_base +           \
+                                                   shmem_internal_heap_length);         \
+        if (! (ptr_base >= shmem_internal_heap_base && ptr_base < heap_ext)) {          \
+            fprintf(stderr, "ERROR: %s(): Argument \"%s\" is not in symm. heap (%p), "  \
+                            "[%p..%p)\n",                                               \
+                    __func__, #ptr_in, ptr_base, shmem_internal_heap_base, heap_ext);   \
             shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                  \
         }                                                                               \
     } while (0)
