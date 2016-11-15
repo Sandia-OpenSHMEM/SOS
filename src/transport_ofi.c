@@ -1134,14 +1134,10 @@ static inline int query_for_fabric(struct fabric_info *info)
 #else
     domain_attr.mr_mode       = FI_MR_BASIC; /* VA space is pre-allocated */
 #endif
-/* <<<<<<< HEAD */
-/*     domain_attr.threading     = FI_THREAD_SAFE; /1* we promise to serialize access */
-/* 						       to endpoints. we have only one */
-/* 						       thread active at a time *1/ */
-/* ======= */
-    domain_attr.threading     = FI_THREAD_ENDPOINT; /* we promise to serialize access
-                                                       to endpoints. we have only one
-                                                       thread active at a time */
+  /* We tell the provider to make concurrent accesses safe. This allows
+   * provider-level optimization of synchronization through techniques like
+   * lock-free concurrent queues */
+    domain_attr.threading     = FI_THREAD_SAFE;
 
     hints.domain_attr         = &domain_attr;
     ep_attr.type              = FI_EP_RDM; /* reliable connectionless */
