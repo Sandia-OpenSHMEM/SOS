@@ -1,0 +1,426 @@
+dnl vi: set ft=m4
+/* -*- C -*-
+ *
+ * Copyright 2011 Sandia Corporation. Under the terms of Contract
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
+ * retains certain rights in this software.
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
+ * This file is part of the Sandia OpenSHMEM software package. For license
+ * information, see the LICENSE file in the top level directory of the
+ * distribution.
+ *
+ */
+
+/*
+ * This is a generated file, do not edit directly.
+ */
+
+include(shmem_bind_c.m4)dnl
+#include "config.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#define SHMEM_INTERNAL_INCLUDE
+#include "shmem.h"
+#include "shmemx.h"
+#include "shmem_internal.h"
+#include "shmem_comm.h"
+
+#ifdef ENABLE_PROFILING
+#include "pshmem.h"
+
+define(`SHMEM_PROF_DEF_P',
+`#pragma weak shmem_$1_p = pshmem_$1_p
+#define shmem_$1_p pshmem_$1_p')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_P')
+
+define(`SHMEM_PROF_DEF_G',
+`#pragma weak shmem_$1_g = pshmem_$1_g
+#define shmem_$1_g pshmem_$1_g')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_G')
+
+define(`SHMEM_PROF_DEF_PUT',
+`#pragma weak shmem_$1_put = pshmem_$1_put
+#define shmem_$1_put pshmem_$1_put')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_PUT')
+
+define(`SHMEM_PROF_DEF_PUT_N',
+`#pragma weak shmem_put$1 = pshmem_put$1
+#define shmem_put$1 pshmem_put$1')dnl
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_PUT_N')
+SHMEM_PROF_DEF_PUT_N(`mem')
+
+define(`SHMEM_PROF_DEF_PUT_NBI',
+`#pragma weak shmem_$1_put_nbi = pshmem_$1_put_nbi
+#define shmem_$1_put_nbi pshmem_$1_put_nbi')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_PUT_NBI')
+
+define(`SHMEM_PROF_DEF_PUT_N_NBI',
+`#pragma weak shmem_put$1_nbi = pshmem_put$1_nbi
+#define shmem_put$1_nbi pshmem_put$1_nbi')dnl
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_PUT_N_NBI')
+SHMEM_PROF_DEF_PUT_N_NBI(`mem')
+
+define(`SHMEM_PROF_DEF_GET',
+`#pragma weak shmem_$1_get = pshmem_$1_get
+#define shmem_$1_get pshmem_$1_get')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_GET')
+
+define(`SHMEM_PROF_DEF_GET_N',
+`#pragma weak shmem_get$1 = pshmem_get$1
+#define shmem_get$1 pshmem_get$1')dnl
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_GET_N')
+SHMEM_PROF_DEF_GET_N(`mem')
+
+define(`SHMEM_PROF_DEF_GET_NBI',
+`#pragma weak shmem_$1_get_nbi = pshmem_$1_get_nbi
+#define shmem_$1_get_nbi pshmem_$1_get_nbi')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_GET_NBI')
+
+define(`SHMEM_PROF_DEF_GET_N_NBI',
+`#pragma weak shmem_get$1_nbi = pshmem_get$1_nbi
+#define shmem_get$1_nbi pshmem_get$1_nbi')dnl
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_GET_N_NBI')
+SHMEM_PROF_DEF_GET_N_NBI(`mem')
+
+define(`SHMEM_PROF_DEF_IPUT',
+`#pragma weak shmem_$1_iput = pshmem_$1_iput
+#define shmem_$1_iput pshmem_$1_iput')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_IPUT')
+
+define(`SHMEM_PROF_DEF_IPUT_N',
+`#pragma weak shmem_iput$1 = pshmem_iput$1
+#define shmem_iput$1 pshmem_iput$1')dnl
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_IPUT_N')
+
+define(`SHMEM_PROF_DEF_IGET',
+`#pragma weak shmem_$1_iget = pshmem_$1_iget
+#define shmem_$1_iget pshmem_$1_iget')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_IGET')
+
+define(`SHMEM_PROF_DEF_IGET_N',
+`#pragma weak shmem_iget$1 = pshmem_iget$1
+#define shmem_iget$1 pshmem_iget$1')dnl
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_IGET_N')
+
+#pragma weak shmemx_putmem_ct = pshmemx_putmem_ct
+#define shmemx_putmem_ct pshmemx_putmem_ct
+#pragma weak shmemx_getmem_ct = pshmemx_getmem_ct
+#define shmemx_getmem_ct pshmemx_getmem_ct
+#pragma weak shmemx_ct_create = pshmemx_ct_create
+#define shmemx_ct_create pshmemx_ct_create
+#pragma weak shmemx_ct_free = pshmemx_ct_free
+#define shmemx_ct_free pshmemx_ct_free
+#pragma weak shmemx_ct_get = pshmemx_ct_get
+#define shmemx_ct_get pshmemx_ct_get
+#pragma weak shmemx_ct_set = pshmemx_ct_set
+#define shmemx_ct_set pshmemx_ct_set
+#pragma weak shmemx_ct_wait = pshmemx_ct_wait
+#define shmemx_ct_wait pshmemx_ct_wait
+
+#endif /* ENABLE_PROFILING */
+
+define(`SHMEM_DEF_P', `
+void
+shmem_$1_p($2 *addr, $2 value, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(addr, sizeof($2));
+    shmem_internal_put_small(addr, &value, sizeof($2), pe);
+}')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_P')
+
+define(`SHMEM_DEF_G', `
+$2
+shmem_$1_g(const $2 *addr, int pe)
+{
+    $2 tmp;
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(addr, sizeof($2));
+    shmem_internal_get(&tmp, addr, sizeof($2), pe);
+    shmem_internal_get_wait();
+    return tmp;
+}')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_G')
+
+define(`SHMEM_DEF_PUT', `
+void
+shmem_$1_put($2 *target, const $2 *source, size_t nelems, int pe)
+{
+    long completion = 0;
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof($2) * nelems);
+    SHMEM_ERR_CHECK_NULL(source, nelems);
+    shmem_internal_put_nb(target, source, sizeof($2) * nelems, pe, &completion);
+    shmem_internal_put_wait(&completion);
+}')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_PUT')
+
+define(`SHMEM_DEF_PUT_N', `
+void
+shmem_put$1(void *target, const void *source, size_t nelems, int pe)
+{
+    long completion = 0;
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, ($2) * nelems);
+    SHMEM_ERR_CHECK_NULL(source, nelems);
+    shmem_internal_put_nb(target, source, ($2) * nelems, pe, &completion);
+    shmem_internal_put_wait(&completion);
+}')dnl
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_PUT_N')
+SHMEM_DEF_PUT_N(`mem', `1')
+
+define(`SHMEM_DEF_PUT_NBI', `
+void
+shmem_$1_put_nbi($2 *target, const $2 *source, size_t nelems, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof($2) * nelems);
+    SHMEM_ERR_CHECK_NULL(source, nelems);
+    shmem_internal_put_nbi(target, source, sizeof($2)*nelems, pe);
+}')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_PUT_NBI')
+
+define(`SHMEM_DEF_PUT_N_NBI', `
+void
+shmem_put$1_nbi(void *target, const void *source, size_t nelems, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, ($2) * nelems);
+    SHMEM_ERR_CHECK_NULL(source, nelems);
+    shmem_internal_put_nbi(target, source, ($2)*nelems, pe);
+}')dnl
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_PUT_N_NBI')
+SHMEM_DEF_PUT_N_NBI(`mem', `1')
+
+define(`SHMEM_DEF_GET', `
+void
+shmem_$1_get($2 *target,const $2 *source, size_t nelems, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof($2) * nelems);
+    SHMEM_ERR_CHECK_NULL(target, nelems);
+    shmem_internal_get(target, source, sizeof($2) * nelems, pe);
+    shmem_internal_get_wait();
+}')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_GET')
+
+define(`SHMEM_DEF_GET_N', `
+void
+shmem_get$1(void *target, const void *source, size_t nelems, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, ($2) * nelems);
+    SHMEM_ERR_CHECK_NULL(target, nelems);
+    shmem_internal_get(target, source, ($2)*nelems, pe);
+    shmem_internal_get_wait();
+}')dnl
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_GET_N')
+SHMEM_DEF_GET_N(`mem', `1')
+
+define(`SHMEM_DEF_GET_NBI', `
+void
+shmem_$1_get_nbi($2 *target, const $2 *source, size_t nelems, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof($2) * nelems);
+    SHMEM_ERR_CHECK_NULL(target, nelems);
+    shmem_internal_get(target, source, sizeof($2)*nelems, pe);
+}')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_GET_NBI')
+
+define(`SHMEM_DEF_GET_N_NBI', `
+void
+shmem_get$1_nbi(void *target, const void *source, size_t nelems, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, ($2) * nelems);
+    SHMEM_ERR_CHECK_NULL(target, nelems);
+    shmem_internal_get(target, source, ($2)*nelems, pe);
+}')dnl
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_GET_N_NBI')
+SHMEM_DEF_GET_N_NBI(`mem', `1')
+
+define(`SHMEM_DEF_IPUT', `
+void
+shmem_$1_iput($2 *target, const $2 *source,
+SH_PAD(`$1')            ptrdiff_t tst, ptrdiff_t sst,
+SH_PAD(`$1')            size_t nelems, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_POSITIVE(tst);
+    SHMEM_ERR_CHECK_POSITIVE(sst);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof($2) * ((nelems-1) * tst + 1));
+    SHMEM_ERR_CHECK_NULL(source, nelems);
+    for ( ; nelems > 0 ; --nelems) {
+        shmem_internal_put_small(target, source, sizeof($2), pe);
+        target += tst;
+        source += sst;
+    }
+}')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_IPUT')
+
+define(`SHMEM_DEF_IPUT_N', `
+void
+shmem_iput$1(void *target, const void *source,
+SH_PAD(`$1')          ptrdiff_t tst, ptrdiff_t sst,
+SH_PAD(`$1')          size_t nelems, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_POSITIVE(tst);
+    SHMEM_ERR_CHECK_POSITIVE(sst);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, $2 * ((nelems-1) * tst + 1));
+    SHMEM_ERR_CHECK_NULL(source, nelems);
+    for ( ; nelems > 0 ; --nelems) {
+        shmem_internal_put_small(target, source, ($2), pe);
+        target = (uint8_t*)target + tst*($2);
+        source = (uint8_t*)source + sst*($2);
+    }
+}')dnl
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_IPUT_N')
+
+define(`SHMEM_DEF_IGET', `
+void
+shmem_$1_iget($2 *target, const $2 *source,
+SH_PAD(`$1')           ptrdiff_t tst, ptrdiff_t sst,
+SH_PAD(`$1')           size_t nelems, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_POSITIVE(tst);
+    SHMEM_ERR_CHECK_POSITIVE(sst);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof($2) * ((nelems-1) * sst + 1));
+    SHMEM_ERR_CHECK_NULL(target, nelems);
+    for ( ; nelems > 0 ; --nelems) {
+        shmem_internal_get(target, source, sizeof($2), pe);
+        target += tst;
+        source += sst;
+    }
+    shmem_internal_get_wait();
+}')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_IGET')
+
+define(`SHMEM_DEF_IGET_N', `
+void
+shmem_iget$1(void *target, const void *source,
+SH_PAD(`$1')          ptrdiff_t tst, ptrdiff_t sst,
+SH_PAD(`$1')          size_t nelems, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_POSITIVE(tst);
+    SHMEM_ERR_CHECK_POSITIVE(sst);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, $2 * ((nelems-1) * sst + 1));
+    SHMEM_ERR_CHECK_NULL(target, nelems);
+    for ( ; nelems > 0 ; --nelems) {
+        shmem_internal_get(target, source, ($2), pe);
+        target = (uint8_t*)target + tst*($2);
+        source = (uint8_t*)source + sst*($2);
+    }
+    shmem_internal_get_wait();
+}')dnl
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_IGET_N')
+
+void
+shmemx_getmem_ct(shmemx_ct_t ct, void *target, const void *source,
+                 size_t nelems, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, nelems);
+    SHMEM_ERR_CHECK_NULL(target, nelems);
+
+    shmem_internal_get_ct(ct, target, source, nelems, pe);
+    shmem_internal_get_wait();
+}
+
+void
+shmemx_putmem_ct(shmemx_ct_t ct, void *target, const void *source,
+                 size_t nelems, int pe)
+{
+    long completion = 0;
+
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, nelems);
+    SHMEM_ERR_CHECK_NULL(source, nelems);
+
+    shmem_internal_put_ct_nb(ct, target, source, nelems, pe, &completion);
+    shmem_internal_put_wait(&completion);
+}
+
+
+void
+shmemx_ct_create(shmemx_ct_t *ct)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_ct_create(ct);
+}
+
+
+void
+shmemx_ct_free(shmemx_ct_t *ct)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_ct_free(ct);
+}
+
+
+long
+shmemx_ct_get(shmemx_ct_t ct)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    return shmem_internal_ct_get(ct);
+}
+
+
+void
+shmemx_ct_set(shmemx_ct_t ct, long value)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_ct_set(ct, value);
+}
+
+
+void
+shmemx_ct_wait(shmemx_ct_t ct, long wait_for)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_ct_wait(ct, wait_for);
+}

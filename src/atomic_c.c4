@@ -1,0 +1,210 @@
+dnl vi: set ft=m4
+/* -*- C -*-
+ *
+ * Copyright 2011 Sandia Corporation. Under the terms of Contract
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
+ * retains certain rights in this software.
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
+ * This file is part of the Sandia OpenSHMEM software package. For license
+ * information, see the LICENSE file in the top level directory of the
+ * distribution.
+ *
+ */
+
+/*
+ * This is a generated file, do not edit directly.
+ */
+
+include(shmem_bind_c.m4)dnl
+#include "config.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define SHMEM_INTERNAL_INCLUDE
+#include "shmem.h"
+#include "shmem_internal.h"
+#include "shmem_comm.h"
+
+#ifdef ENABLE_PROFILING
+#include "pshmem.h"
+
+define(`SHMEM_PROF_DEF_SWAP',
+`#pragma weak shmem_$1_swap = pshmem_$1_swap
+#define shmem_$1_swap pshmem_$1_swap')dnl
+SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_SWAP')
+
+/* shmem_swap is a special case in the API */
+#pragma weak shmem_swap = pshmem_swap
+#define shmem_swap pshmem_swap
+
+define(`SHMEM_PROF_DEF_CSWAP',
+`#pragma weak shmem_$1_cswap = pshmem_$1_cswap
+#define shmem_$1_cswap pshmem_$1_cswap')dnl
+SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_CSWAP')
+
+define(`SHMEM_PROF_DEF_INC',
+`#pragma weak shmem_$1_inc = pshmem_$1_inc
+#define shmem_$1_inc pshmem_$1_inc')dnl
+SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_INC')
+
+define(`SHMEM_PROF_DEF_FINC',
+`#pragma weak shmem_$1_finc = pshmem_$1_finc
+#define shmem_$1_finc pshmem_$1_finc')dnl
+SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_FINC')
+
+define(`SHMEM_PROF_DEF_ADD',
+`#pragma weak shmem_$1_add = pshmem_$1_add
+#define shmem_$1_add pshmem_$1_add')dnl
+SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_ADD')
+
+define(`SHMEM_PROF_DEF_FADD',
+`#pragma weak shmem_$1_fadd = pshmem_$1_fadd
+#define shmem_$1_fadd pshmem_$1_fadd')dnl
+SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_FADD')
+
+define(`SHMEM_PROF_DEF_FETCH',
+`#pragma weak shmem_$1_fetch = pshmem_$1_fetch
+#define shmem_$1_fetch pshmem_$1_fetch')dnl
+SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_FETCH')
+
+define(`SHMEM_PROF_DEF_SET',
+`#pragma weak shmem_$1_set = pshmem_$1_set
+#define shmem_$1_set pshmem_$1_set')dnl
+SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_SET')
+
+#endif /* ENABLE_PROFILING */
+
+dnl args: STYPE,TYPE,ITYPE
+define(`SHMEM_DEF_SWAP', `
+$2 shmem_$1_swap($2 *target, $2 value, int pe)
+{
+    $2 newval;
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof($2));
+    shmem_internal_swap(target, &value, &newval,
+                        sizeof($2), pe, $3);
+    shmem_internal_get_wait();
+    return newval;
+}')dnl
+SHMEM_BIND_C_EXTENDED_AMO(`SHMEM_DEF_SWAP')
+
+/* shmem_swap is a special case in the API */
+long shmem_swap(long *target, long value, int pe)
+{
+    long newval;
+
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(long));
+
+    shmem_internal_swap(target, &value, &newval, sizeof(long), pe, SHM_INTERNAL_LONG);
+    shmem_internal_get_wait();
+    return newval;
+}
+
+dnl args: STYPE,TYPE,ITYPE
+define(`SHMEM_DEF_CSWAP', `
+$2 shmem_$1_cswap($2 *target, $2 cond, $2 value, int pe)
+{
+    $2 newval;
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof($2));
+    shmem_internal_cswap(target, &value, &newval, &cond,
+                         sizeof($2), pe, $3);
+    shmem_internal_get_wait();
+    return newval;
+}')dnl
+SHMEM_BIND_C_AMO(`SHMEM_DEF_CSWAP')
+
+dnl args: STYPE,TYPE,ITYPE
+define(`SHMEM_DEF_INC', `
+void shmem_$1_inc($2 *target, int pe)
+{
+    $2 tmp = 1;
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof($2));
+    shmem_internal_atomic_small(target, &tmp, sizeof($2), pe,
+                                SHM_INTERNAL_SUM, $3);
+}')dnl
+SHMEM_BIND_C_AMO(`SHMEM_DEF_INC')
+
+dnl args: STYPE,TYPE,ITYPE
+define(`SHMEM_DEF_FINC', `
+$2 shmem_$1_finc($2 *target, int pe)
+{
+    $2 oldval, tmp = 1;
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof($2));
+    shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof($2),
+                                pe, SHM_INTERNAL_SUM, $3);
+    shmem_internal_get_wait();
+    return oldval;
+}')dnl
+SHMEM_BIND_C_AMO(`SHMEM_DEF_FINC')
+
+dnl args: STYPE,TYPE,ITYPE
+define(`SHMEM_DEF_ADD', `
+void shmem_$1_add($2 *target, $2 value, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof($2));
+
+    shmem_internal_atomic_small(target, &value, sizeof($2), pe,
+                                SHM_INTERNAL_SUM, $3);
+}')dnl
+SHMEM_BIND_C_AMO(`SHMEM_DEF_ADD')
+
+dnl args: STYPE,TYPE,ITYPE
+define(`SHMEM_DEF_FADD', `
+$2 shmem_$1_fadd($2 *target, $2 value, int pe)
+{
+    int oldval;
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof($2));
+
+    shmem_internal_fetch_atomic(target, &value, &oldval, sizeof($2),
+                                pe, SHM_INTERNAL_SUM, $3);
+    shmem_internal_get_wait();
+    return oldval;
+}')dnl
+SHMEM_BIND_C_AMO(`SHMEM_DEF_FADD')
+
+dnl args: STYPE,TYPE,ITYPE
+define(`SHMEM_DEF_FETCH', `
+$2 shmem_$1_fetch(const $2 *source, int pe)
+{
+    $2 val;
+
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof($2));
+
+    shmem_internal_atomic_fetch(&val, (void *) source, sizeof($2),
+                                pe, $3);
+    shmem_internal_get_wait();
+    return val;
+}')dnl
+SHMEM_BIND_C_EXTENDED_AMO(`SHMEM_DEF_FETCH')
+
+dnl args: STYPE,TYPE,ITYPE
+define(`SHMEM_DEF_SET', `
+void shmem_$1_set($2 *dest, $2 value, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(dest, sizeof($2));
+
+    shmem_internal_atomic_set((void *) dest, &value, sizeof($2),
+                              pe, $3);
+}')dnl
+SHMEM_BIND_C_EXTENDED_AMO(`SHMEM_DEF_SET')

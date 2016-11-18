@@ -357,31 +357,6 @@ char *shmem_util_getenv_str(const char* name);
 #endif
 
 /* Language bindings helper macros */
-#define SHMEM_BIND_C_AMO(decl)                                  \
-  decl(int,      int,           SHM_INTERNAL_INT)               \
-  decl(long,     long,          SHM_INTERNAL_LONG)              \
-  decl(longlong, long long,     SHM_INTERNAL_LONG_LONG)
-
-#define SHMEM_BIND_C_EXTENDED_AMO(decl)                         \
-  SHMEM_BIND_C_AMO(decl)                                        \
-  decl(float,    float,         SHM_INTERNAL_FLOAT)             \
-  decl(double,   double,        SHM_INTERNAL_DOUBLE)
-
-#define SHMEM_BIND_C_INTS_OP(decl, s_op, op)                            \
-  decl(short,    short,         SHM_INTERNAL_SHORT,         s_op, op)   \
-  decl(int,      int,           SHM_INTERNAL_INT,           s_op, op)   \
-  decl(long,     long,          SHM_INTERNAL_LONG,          s_op, op)   \
-  decl(longlong, long long,     SHM_INTERNAL_LONG_LONG,     s_op, op)
-
-#define SHMEM_BIND_C_FLOATS_OP(decl, s_op, op)                          \
-  decl(float,    float,         SHM_INTERNAL_FLOAT,         s_op, op)   \
-  decl(double,   double,        SHM_INTERNAL_DOUBLE,        s_op, op)   \
-  decl(longdouble, long double, SHM_INTERNAL_LONG_DOUBLE,   s_op, op)
-
-#define SHMEM_BIND_C_CMPLX_OP(decl, s_op, op)                           \
-  decl(complexf, float complex, SHM_INTERNAL_FLOAT_COMPLEX, s_op, op)   \
-  decl(complexd, double complex,SHM_INTERNAL_DOUBLE_COMPLEX,s_op, op)
-
 #define SHMEM_BIND_F_RMA(decl)                                          \
   decl(character, CHARACTER,    SIZEOF_FORTRAN_CHARACTER)               \
   decl(complex,  COMPLEX,       SIZEOF_FORTRAN_COMPLEX)                 \

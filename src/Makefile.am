@@ -14,6 +14,12 @@
 
 AM_CPPFLAGS = -I$(top_srcdir)/mpp
 
+C_BINDINGS = \
+	atomic_c.c \
+	collectives_c.c \
+	data_c.c \
+	synchronization_c.c
+
 lib_LTLIBRARIES = libsma.la
 libsma_la_SOURCES = \
 	shmem_free_list.h \
@@ -36,14 +42,15 @@ libsma_la_SOURCES = \
 	accessibility_c.c \
 	symmetric_heap_c.c \
 	remote_pointer_c.c \
-	data_c.c \
-	atomic_c.c \
-	synchronization_c.c \
-	collectives_c.c \
 	lock_c.c \
 	cache_management_c.c \
 	transport.h \
-	util.c
+	util.c \
+	$(C_BINDINGS)
+
+BUILT_SOURCES = $(C_BINDINGS)
+
+CLEANFILES += $(C_BINDINGS)
 
 if HAVE_FORTRAN
 libsma_la_SOURCES += \
@@ -149,5 +156,10 @@ oshfort: shmem_compiler_script.in Makefile
 	@chmod +x oshfort
 
 oshrun: shmem_launcher_script.in Makefile
-	cp $(srcdir)/shmem_launcher_script.in oshrun
+	$(AM_V_SED) cp $(srcdir)/shmem_launcher_script.in oshrun
 	@chmod +x oshrun
+
+SUFFIXES = .c4
+
+.c4.c:
+	$(AM_V_GEN) m4 $< > $@
