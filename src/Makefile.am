@@ -46,6 +46,7 @@ libsma_la_SOURCES = \
 	util.c
 
 PSHMEM_H = \
+	atomic_c_pshmem.h
 	data_c_pshmem.h
 
 BUILT_SOURCES = $(PSHMEM_H)
@@ -162,7 +163,7 @@ oshrun: shmem_launcher_script.in Makefile
 SUFFIXES = .hin
 
 .hin.h:
-	@$(CPP) $(CPPFLAGS) - < $< | $(PERL) -ne ' \
+	@$(CPP) -I$(srcdir)/../mpp - < $< | $(PERL) -ne ' \
 	    next if 1../@profiling_start@/; \
 	    s/##//gs; \
 	    s/\s*\@brk\@\s*/\n/g; \
