@@ -2,7 +2,6 @@
 #include "shmem.h"
 
 @profiling_start@
-
 /@*@
  @*@ Copyright (c) 2016 Intel Corporation. All rights reserved.
  @*@ This software is available to you under the BSD license. For

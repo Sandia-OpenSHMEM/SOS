@@ -48,7 +48,8 @@ libsma_la_SOURCES = \
 PSHMEM_H = \
 	atomic_c_pshmem.h \
 	collectives_c_pshmem.h \
-	data_c_pshmem.h
+	data_c_pshmem.h \
+	synchronization_c_pshmem.h
 
 BUILT_SOURCES = $(PSHMEM_H)
 
