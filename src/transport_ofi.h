@@ -480,12 +480,10 @@ shmem_transport_put_small(void *target, const void *source,
   ctx->release_lock((shmem_transport_dom_t**)ctx);
 }
 
-<<<<<<< HEAD
 static inline
 void
 shmem_transport_ofi_put_large(void *target, const void *source,
     size_t len, int pe, shmemx_ctx_t c)
->>>>>>> SOS/master
 {
   shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
 
@@ -825,10 +823,6 @@ shmem_transport_atomic_fetch(void *target, const void *source,
   shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
 
   ctx->take_lock((shmem_transport_dom_t**)ctx);
-
-	shmem_transport_ofi_pending_put_counter++;
-  SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
-}
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;

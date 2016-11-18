@@ -587,6 +587,7 @@ static inline int allocate_recv_cntr_mr(void)
      * and outgoing non-blocking Puts, specifying entire VA range */
 
     // Create counter for incoming writes
+    struct fi_cntr_attr cntr_attr = {0};
     cntr_attr.events   = FI_CNTR_EVENTS_COMP;
     cntr_attr.flags    = 0;
     cntr_attr.wait_obj = FI_WAIT_MUTEX_COND;

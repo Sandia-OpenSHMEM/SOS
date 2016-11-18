@@ -26,6 +26,7 @@
  */
 
 #include <shmem.h>
+#include <shmemx.h>
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
@@ -53,38 +54,6 @@
 
 #define CHUNK_SIZE 10
 #define ARR_SIZE (4*(CHUNK_SIZE))
-
-#define DECLARE_TEST(TYPENAME,TYPE) \
-  static int TYPENAME##_rmaTest(int target_pe, int verbose)
-SHMEM_DECLARE_FOR_RMA(DECLARE_TEST);
-
-int main(int argc, char* argv[]) {
-    int verbose = 0;
-    if(argc > 1) {
-        verbose = !strcmp("-v",argv[1]);
-    }
-
-    int errors = 0;
-
-    int me, myshmem_n_pes;
-    shmem_init();
-    myshmem_n_pes = shmem_n_pes();
-    me = shmem_my_pe();
-
-    srand(1+me);
-
-    int nextpe = (me+1)%myshmem_n_pes;
-
-#define RUN_TEST(TYPENAME,TYPE) do { \
-        errors += (TYPENAME##_rmaTest(nextpe,verbose)); \
-    } while(0)
-
-    SHMEM_DECLARE_FOR_RMA(RUN_TEST);
-
-    shmem_finalize();
-
-    return errors;
-}
 
 #define DEFINE_TEST(TYPENAME,TYPE) \
   TYPE TYPENAME##_shared[ARR_SIZE];                                    \
