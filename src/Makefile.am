@@ -45,6 +45,13 @@ libsma_la_SOURCES = \
 	transport.h \
 	util.c
 
+PSHMEM_H = \
+	data_c_pshmem.h
+
+BUILT_SOURCES = $(PSHMEM_H)
+
+CLEANFILES += $(PSHMEM_H)
+
 if HAVE_FORTRAN
 libsma_la_SOURCES += \
 	init_f.c \
@@ -151,3 +158,14 @@ oshfort: shmem_compiler_script.in Makefile
 oshrun: shmem_launcher_script.in Makefile
 	cp $(srcdir)/shmem_launcher_script.in oshrun
 	@chmod +x oshrun
+
+SUFFIXES = .hin
+
+.hin.h:
+	@$(CPP) $(CPPFLAGS) - < $< | $(PERL) -ne ' \
+	    next if 1../@profiling_start@/; \
+	    s/##//gs; \
+	    s/\s*\@brk\@\s*/\n/g; \
+	    s/\@(\S+)\@/\1/g; \
+	    s/\@/#/g; \
+	    print;' > $@
