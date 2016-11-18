@@ -22,7 +22,9 @@ TESTS += \
 	shmem_bw_nb_put_perf \
 	shmem_bibw_nb_put_perf \
 	shmem_bw_nb_get_perf \
-	shmem_bibw_nb_get_perf
+	shmem_bibw_nb_get_perf \
+	shmem_bw_atomics_perf 	\
+	shmem_bibw_atomics_perf
 else
 check_PROGRAMS += \
 	shmem_latency_put_perf \
@@ -37,8 +39,10 @@ check_PROGRAMS += \
 	shmem_bw_nb_put_perf \
 	shmem_bibw_nb_put_perf \
 	shmem_bw_nb_get_perf \
-	shmem_bibw_nb_get_perf
- 
+	shmem_bibw_nb_get_perf \
+	shmem_bw_atomics_perf		\
+	shmem_bibw_atomics_perf
+
 endif
 
 NPROCS ?= 2
@@ -73,3 +77,7 @@ shmem_bibw_nb_put_perf_SOURCES = shmem_bibw_nb_put_perf.c bw_common.h common.h b
 shmem_bw_nb_get_perf_SOURCES = shmem_bw_nb_get_perf.c bw_common.h common.h uni_dir.h
 
 shmem_bibw_nb_get_perf_SOURCES = shmem_bibw_nb_get_perf.c bw_common.h common.h bi_dir.h
+
+shmem_bw_atomics_perf_SOURCES = shmem_bw_atomics_perf.c bw_common.h common.h
+
+shmem_bibw_atomics_perf_SOURCES = shmem_bibw_atomics_perf.c bw_common.h common.h

@@ -15,7 +15,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.3.0], [https://github.com/Sandia-OpenSHMEM/SOS])
+AC_INIT([Sandia OpenSHMEM], [1.3.1], [https://github.com/Sandia-OpenSHMEM/SOS])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -341,6 +341,8 @@ AM_CONDITIONAL([HAVE_FORTRAN], [test "$FC" != ""])
 
 AM_CONDITIONAL([HAVE_CXX], [test "$enable_cxx" != "no" ])
 
+AM_CONDITIONAL([ENABLE_PROFILING], [test "$enable_profiling" = "yes" ])
+
 dnl check for structures
 
 dnl check for compiler characteristics
@@ -408,7 +410,8 @@ AC_CONFIG_FILES([Makefile
   test/unit/Makefile
   test/performance/Makefile
   test/performance/shmem_perf_suite/Makefile
-  test/performance/tests/Makefile])
+  test/performance/tests/Makefile
+  test/apps/Makefile])
 AS_IF([test "$enable_pmi_simple" = "yes"],
 	[AC_CONFIG_SUBDIRS([shmem_pmi])])
 AC_OUTPUT

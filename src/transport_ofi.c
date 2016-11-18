@@ -105,6 +105,9 @@ fi_addr_t			*addr_table;
 #define EPHOSTNAMELEN  _POSIX_HOST_NAME_MAX + 1
 static char         myephostname[EPHOSTNAMELEN];
 #endif
+#ifdef ENABLE_THREADS
+shmem_internal_mutex_t           shmem_transport_ofi_lock;
+#endif
 
 size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 
@@ -576,7 +579,6 @@ static inline int allocate_recv_cntr_mr(void)
 {
 
     int ret = 0;
-    struct fi_cntr_attr cntr_attr = {0};
 
     /* ------------------------------------*/
     /* POST enable resources for to EP     */
@@ -590,11 +592,19 @@ static inline int allocate_recv_cntr_mr(void)
     cntr_attr.wait_obj = FI_WAIT_MUTEX_COND;
 
 #ifndef ENABLE_HARD_POLLING
-    ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
-                       &shmem_transport_ofi_target_cntrfd, NULL);
-    if(ret!=0){
-        OFI_ERRMSG("target cntr_open failed\n");
-        return ret;
+    {
+        struct fi_cntr_attr cntr_attr = {0};
+
+        // Create counter for incoming writes
+        cntr_attr.events   = FI_CNTR_EVENTS_COMP;
+        cntr_attr.flags    = 0;
+
+        ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
+                           &shmem_transport_ofi_target_cntrfd, NULL);
+        if(ret!=0){
+            OFI_ERRMSG("target cntr_open failed\n");
+            return ret;
+        }
     }
 #endif
 
@@ -985,7 +995,7 @@ static inline int publish_av_info(struct fabric_info *info)
     if(gethostname(myephostname, (EPHOSTNAMELEN - 1)) != 0)
         OFI_ERRMSG("gethostname error: %s \n", strerror(errno));
 
-    myephostname[EPHOSTNAMELEN] = '\0';
+    myephostname[EPHOSTNAMELEN-1] = '\0';
 
     ret = shmem_runtime_put("fi_ephostname", myephostname, EPHOSTNAMELEN);
     if (ret != 0) {
@@ -1386,7 +1396,7 @@ int shmem_transport_fini(void)
     }
 
 #ifdef USE_AV_MAP
-  free(addr_table);
+    free(addr_table);
 #endif
 
     fi_freeinfo(shmem_ofi_cq_info.fabrics);

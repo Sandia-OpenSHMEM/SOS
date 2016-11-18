@@ -80,6 +80,11 @@ TESTS = \
 	put_nbi \
 	rma_coverage
 
+if ENABLE_PROFILING
+TESTS += \
+	rma_coverage_pshmem
+endif
+
 if USE_PORTALS4
 TESTS += \
 	 shmem_ct
@@ -134,6 +139,10 @@ ctx_LDADD = $(top_builddir)/src/libsma.la
 
 rma_coverage_SOURCES = rma_coverage.c
 rma_coverage_LDADD = $(top_builddir)/src/libsma.la
+
+rma_coverage_pshmem_SOURCES = rma_coverage.c
+rma_coverage_pshmem_LDADD = $(top_builddir)/src/libsma.la
+rma_coverage_pshmem_CFLAGS = -DTEST_PSHMEM
 
 hello_SOURCES = hello.c
 hello_LDADD = $(top_builddir)/src/libsma.la

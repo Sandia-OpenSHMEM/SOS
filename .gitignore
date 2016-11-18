@@ -19,6 +19,7 @@ configure
 libtool
 libfabric.spec
 doxygen
+mpichconf.h*
 
 config/ar-lib
 config/compile

@@ -12,8 +12,6 @@
 
 #include "config.h"
 
-#include <sys/time.h>
-
 #include "shmemx.h"
 #include "shmem_internal.h"
 
@@ -58,11 +56,7 @@ fortran_double_precision_t FC_SHMEMX_WTIME(void);
 fortran_double_precision_t
 FC_SHMEMX_WTIME(void)
 {
-     double wtime;
-     struct timeval tv;
+    SHMEM_ERR_CHECK_INITIALIZED();
 
-     gettimeofday(&tv, NULL);
-     wtime = tv.tv_sec;
-     wtime += (double)tv.tv_usec / 1000000.0;
-     return wtime;
+    return shmem_internal_wtime();
 }

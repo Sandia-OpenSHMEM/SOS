@@ -12,6 +12,7 @@
 
 #include "config.h"
 
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/mman.h>
@@ -147,7 +148,7 @@ shmem_internal_get_next(intptr_t incr)
 #define ONEGIG (1024UL*1024UL*1024UL)
 static void *mmap_alloc(size_t bytes)
 {
-    char *file_name;
+    char *file_name = NULL;
     int fd = 0;
     char *directory = NULL;
     const char basename[] = "hugepagefile.SOS";
@@ -197,11 +198,17 @@ static void *mmap_alloc(size_t bytes)
                0);
     if (ret == MAP_FAILED) {
         RAISE_WARN_STR("mmap for symmetric heap failed");
-        return NULL;
+        ret = NULL;
     }
     if (fd) {
         unlink(file_name);
         close(fd);
+    }
+    if (directory) {
+        free(directory);
+    }
+    if (file_name) {
+        free(file_name);
     }
     return ret;
 }

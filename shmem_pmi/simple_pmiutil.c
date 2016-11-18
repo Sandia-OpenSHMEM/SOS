@@ -12,6 +12,8 @@
    key=value messages
 */
 
+#include "mpichconf.h"
+
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -24,34 +26,40 @@
 #include <unistd.h>
 #endif
 #include <errno.h>
+
+#include "mpl.h"
+
+#include "pmi.h"
 #include "simple_pmiutil.h"
 
+/* Use the memory definitions from mpich/src/include */
+//#include "mpir_mem.h"
 
 #define MAXVALLEN 1024
 #define MAXKEYLEN   32
 
-/* These are not the keyvals in the keyval space that is part of the
+/* These are not the keyvals in the keyval space that is part of the 
    PMI specification.
    They are just part of this implementation's internal utilities.
 */
 struct PMIU_keyval_pairs {
     char key[MAXKEYLEN];
-    char value[MAXVALLEN];
+    char value[MAXVALLEN];	
 };
 static struct PMIU_keyval_pairs PMIU_keyval_tab[64] = { { {0}, {0} } };
 static int  PMIU_keyval_tab_idx = 0;
 
-/* This is used to prepend printed output.  Set the initial value to
+/* This is used to prepend printed output.  Set the initial value to 
    "unset" */
 static char PMIU_print_id[PMIU_IDSIZE] = "unset";
 
 void PMIU_Set_rank( int PMI_rank )
 {
-    MPIU_Snprintf( PMIU_print_id, PMIU_IDSIZE, "cli_%d", PMI_rank );
+    MPL_snprintf( PMIU_print_id, PMIU_IDSIZE, "cli_%d", PMI_rank );
 }
 void PMIU_SetServer( void )
 {
-    MPIU_Strncpy( PMIU_print_id, "server", PMIU_IDSIZE );
+    MPL_strncpy( PMIU_print_id, "server", PMIU_IDSIZE );
 }
 
 /* Note that vfprintf is part of C89 */
@@ -63,7 +71,7 @@ void PMIU_printf( int print_flag, const char *fmt, ... )
 {
     va_list ap;
     static FILE *logfile= 0;
-
+    
     /* In some cases when we are debugging, the handling of stdout or
        stderr may be unreliable.  In that case, we make it possible to
        select an output file. */
@@ -74,7 +82,7 @@ void PMIU_printf( int print_flag, const char *fmt, ... )
 	    char filename[1024];
 	    p = getenv("PMI_ID");
 	    if (p) {
-		MPIU_Snprintf( filename, sizeof(filename),
+		MPL_snprintf( filename, sizeof(filename), 
 			       "testclient-%s.out", p );
 		logfile = fopen( filename, "w" );
 	    }
@@ -82,12 +90,12 @@ void PMIU_printf( int print_flag, const char *fmt, ... )
 		logfile = fopen( "testserver.out", "w" );
 	    }
 	}
-	else
+	else 
 	    logfile = stderr;
     }
 
     if ( print_flag ) {
-	/* MPIU_Error_printf( "[%s]: ", PMIU_print_id ); */
+	/* MPL_error_printf( "[%s]: ", PMIU_print_id ); */
 	/* FIXME: Decide what role PMIU_printf should have (if any) and
 	   select the appropriate MPIU routine */
 	fprintf( logfile, "[%s]: ", PMIU_print_id );
@@ -99,27 +107,27 @@ void PMIU_printf( int print_flag, const char *fmt, ... )
 }
 
 #define MAX_READLINE 1024
-/*
+/* 
  * Return the next newline-terminated string of maximum length maxlen.
  * This is a buffered version, and reads from fd as necessary.  A
  */
 int PMIU_readline( int fd, char *buf, int maxlen )
 {
     static char readbuf[MAX_READLINE];
-    static char *nextChar = 0, *lastChar = 0;  /* lastChar is really one past
+    static char *nextChar = 0, *lastChar = 0;  /* lastChar is really one past 
 						  last char */
     static int lastfd = -1;
     ssize_t n;
     int     curlen;
     char    *p, ch;
 
-    /* Note: On the client side, only one thread at a time should
-       be calling this, and there should only be a single fd.
-       Server side code should not use this routine (see the
+    /* Note: On the client side, only one thread at a time should 
+       be calling this, and there should only be a single fd.  
+       Server side code should not use this routine (see the 
        replacement version in src/pm/util/pmiserv.c) */
     if (nextChar != lastChar && fd != lastfd) {
-	fprintf(stderr,  "Panic - buffer inconsistent\n" );
-	return -1;
+	MPL_internal_error_printf( "Panic - buffer inconsistent\n" );
+	return PMI_FAIL;
     }
 
     p      = buf;
@@ -151,7 +159,7 @@ int PMIU_readline( int fd, char *buf, int maxlen )
 	    /* FIXME: Make this an optional output */
 	    /* printf( "Readline %s\n", readbuf ); */
 	}
-
+	
 	ch   = *nextChar++;
 	*p++ = ch;
 	curlen++;
@@ -165,7 +173,7 @@ int PMIU_readline( int fd, char *buf, int maxlen )
     return curlen-1;
 }
 
-int PMIU_writeline( int fd, char *buf )
+int PMIU_writeline( int fd, char *buf )	
 {
     ssize_t size, n;
 
@@ -185,12 +193,12 @@ int PMIU_writeline( int fd, char *buf )
 	if ( n < 0 ) {
 	    PMIU_printf( 1, "write_line error; fd=%d buf=:%s:\n", fd, buf );
 	    perror("system msg for write_line failure ");
-	    return(-1);
+	    return PMI_FAIL;
 	}
 	if ( n < size)
 	    PMIU_printf( 1, "write_line failed to write entire message\n" );
     }
-    return 0;
+    return PMI_SUCCESS;
 }
 
 /*
@@ -203,7 +211,7 @@ int PMIU_parse_keyvals( char *st )
     int  offset;
 
     if ( !st )
-	return( -1 );
+	return PMI_FAIL;
 
     PMIU_keyval_tab_idx = 0;
     p = st;
@@ -214,10 +222,10 @@ int PMIU_parse_keyvals( char *st )
 	if ( *p == '=' ) {
 	    PMIU_printf( 1, "PMIU_parse_keyvals:  unexpected = at character %d in %s\n",
 		       p - st, st );
-	    return( -1 );
+	    return PMI_FAIL;
 	}
 	if ( *p == '\n' || *p == '\0' )
-	    return( 0 );	/* normal exit */
+	    return PMI_SUCCESS;	/* normal exit */
 	/* got normal character */
 	keystart = p;		/* remember where key started */
 	while ( *p != ' ' && *p != '=' && *p != '\n' && *p != '\0' )
@@ -226,53 +234,53 @@ int PMIU_parse_keyvals( char *st )
 	    PMIU_printf( 1,
        "PMIU_parse_keyvals: unexpected key delimiter at character %d in %s\n",
 		       p - st, st );
-	    return( -1 );
+	    return PMI_FAIL;
 	}
 	/* Null terminate the key */
 	*p = 0;
 	/* store key */
-        MPIU_Strncpy( PMIU_keyval_tab[PMIU_keyval_tab_idx].key, keystart,
+        MPL_strncpy( PMIU_keyval_tab[PMIU_keyval_tab_idx].key, keystart, 
 		      MAXKEYLEN );
 
 	valstart = ++p;			/* start of value */
 	while ( *p != ' ' && *p != '\n' && *p != '\0' )
 	    p++;
 	/* store value */
-        MPIU_Strncpy( PMIU_keyval_tab[PMIU_keyval_tab_idx].value, valstart,
+        MPL_strncpy( PMIU_keyval_tab[PMIU_keyval_tab_idx].value, valstart, 
 		      MAXVALLEN );
 	offset = (int)(p - valstart);
 	/* When compiled with -fPIC, the pgcc compiler generates incorrect
-	   code if "p - valstart" is used instead of using the
+	   code if "p - valstart" is used instead of using the 
 	   intermediate offset */
-	PMIU_keyval_tab[PMIU_keyval_tab_idx].value[offset] = '\0';
+	PMIU_keyval_tab[PMIU_keyval_tab_idx].value[offset] = '\0';  
 	PMIU_keyval_tab_idx++;
 	if ( *p == ' ' )
 	    continue;
 	if ( *p == '\n' || *p == '\0' )
-	    return( 0 );	/* value has been set to empty */
+	    return PMI_SUCCESS;	/* value has been set to empty */
     }
 }
 
 void PMIU_dump_keyvals( void )
 {
     int i;
-    for (i=0; i < PMIU_keyval_tab_idx; i++)
+    for (i=0; i < PMIU_keyval_tab_idx; i++) 
 	PMIU_printf(1, "  %s=%s\n",PMIU_keyval_tab[i].key, PMIU_keyval_tab[i].value);
 }
 
 char *PMIU_getval( const char *keystr, char *valstr, int vallen )
 {
     int i, rc;
-
+    
     for (i = 0; i < PMIU_keyval_tab_idx; i++) {
-	if ( strcmp( keystr, PMIU_keyval_tab[i].key ) == 0 ) {
-	    rc = MPIU_Strncpy( valstr, PMIU_keyval_tab[i].value, vallen );
+	if ( strcmp( keystr, PMIU_keyval_tab[i].key ) == 0 ) { 
+	    rc = MPL_strncpy( valstr, PMIU_keyval_tab[i].value, vallen );
 	    if (rc != 0) {
-		PMIU_printf( 1, "MPIU_Strncpy failed in PMIU_getval\n" );
+		PMIU_printf( 1, "MPL_strncpy failed in PMIU_getval\n" );
 		return NULL;
 	    }
 	    return valstr;
-       }
+       } 
     }
     valstr[0] = '\0';
     return NULL;
@@ -281,10 +289,10 @@ char *PMIU_getval( const char *keystr, char *valstr, int vallen )
 void PMIU_chgval( const char *keystr, char *valstr )
 {
     int i;
-
+    
     for ( i = 0; i < PMIU_keyval_tab_idx; i++ ) {
 	if ( strcmp( keystr, PMIU_keyval_tab[i].key ) == 0 ) {
-	    MPIU_Strncpy( PMIU_keyval_tab[i].value, valstr, MAXVALLEN - 1 );
+	    MPL_strncpy( PMIU_keyval_tab[i].value, valstr, MAXVALLEN - 1 );
 	    PMIU_keyval_tab[i].value[MAXVALLEN - 1] = '\0';
 	}
     }

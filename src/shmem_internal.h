@@ -16,6 +16,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
+#include <sys/time.h>
 
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmemx.h"
@@ -28,6 +30,7 @@ extern int shmem_internal_num_pes;
 extern int shmem_internal_initialized;
 extern int shmem_internal_finalized;
 extern int shmem_internal_thread_level;
+extern int shmem_internal_debug;
 
 #define RAISE_WARN(ret)                                                 \
     do {                                                                \
@@ -57,6 +60,14 @@ extern int shmem_internal_thread_level;
         fprintf(stderr, "[%03d] WARN: %s:%d: %s\n",                    \
                 shmem_internal_my_pe, __FILE__, __LINE__, str);         \
     } while (0)
+
+#define DEBUG_STR(str)                                                  \
+    do {                                                                \
+        if(shmem_internal_debug) {                                      \
+            fprintf(stderr, "[%03d] DEBUG: %s:%d: %s\n",                \
+                    shmem_internal_my_pe, __FILE__, __LINE__, str);     \
+        }                                                               \
+    } while(0)
 
 #ifdef ENABLE_ERROR_CHECKING
 #define SHMEM_ERR_CHECK_INITIALIZED()                                   \
@@ -214,6 +225,23 @@ int shmem_internal_collectives_init(int requested_crossover,
 /* internal allocation, without a barrier */
 void *shmem_internal_shmalloc(size_t size);
 void* shmem_internal_get_next(intptr_t incr);
+
+static inline double shmem_internal_wtime(void) {
+    double wtime = 0.0;
+
+#ifdef CLOCK_MONOTONIC
+    struct timespec tv;
+    clock_gettime(CLOCK_MONOTONIC, &tv);
+    wtime = tv.tv_sec;
+    wtime += (double)tv.tv_nsec / 1.0e9;
+#else
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    wtime = tv.tv_sec;
+    wtime += (double)tv.tv_usec / 1.0e6;
+#endif
+    return wtime;
+}
 
 /* Utility functions */
 long shmem_util_getenv_long(const char* name, int is_sized, long default_value);

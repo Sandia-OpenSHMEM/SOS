@@ -77,7 +77,7 @@ getSize (char *str)
 int
 main(int argc, char **argv)
 {
-    int me, nProcs, c, l, j;
+    int me, c, l, j;
     int nWords, loops, incWords;
 
     pgm = strrchr(argv[0],'/');
@@ -88,7 +88,6 @@ main(int argc, char **argv)
 
     shmem_init();
     me = shmem_my_pe();
-    nProcs = shmem_n_pes();
 
     while ((c = getopt (argc, argv, "hpv")) != -1)
         switch (c)

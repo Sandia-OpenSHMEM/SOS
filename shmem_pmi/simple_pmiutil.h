@@ -3,6 +3,7 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
+
 /* maximum sizes for arrays */
 #define PMIU_MAXLINE 1024
 #define PMIU_IDSIZE    32
@@ -54,9 +55,6 @@
 #if defined HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif /* HAVE_ARPA_INET_H */
-
-
-
 
 
 /* prototypes for PMIU routines */
