@@ -94,6 +94,10 @@ void pshmem_long_iput(long *target, const long *source, ptrdiff_t tst,
                      ptrdiff_t sst, size_t len, int pe);
 void pshmem_longlong_iput(long long *target, const long long *source,
                          ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
+void pshmem_iput8(void *target, const void *source, ptrdiff_t tst,
+                 ptrdiff_t sst, size_t len, int pe);
+void pshmem_iput16(void *target, const void *source, ptrdiff_t tst,
+                  ptrdiff_t sst, size_t len, int pe);
 void pshmem_iput32(void *target, const void *source, ptrdiff_t tst,
                   ptrdiff_t sst, size_t len, int pe);
 void pshmem_iput64(void *target, const void *source, ptrdiff_t tst,
@@ -147,6 +151,10 @@ void pshmem_long_iget(long *target, const long *source, ptrdiff_t tst,
                      ptrdiff_t sst, size_t len, int pe);
 void pshmem_longlong_iget(long long *target, const long long *source,
                          ptrdiff_t tst, ptrdiff_t sst, size_t len, int pe);
+void pshmem_iget8(void *target, const void *source, ptrdiff_t tst,
+                 ptrdiff_t sst, size_t len, int pe);
+void pshmem_iget16(void *target, const void *source, ptrdiff_t tst,
+                  ptrdiff_t sst, size_t len, int pe);
 void pshmem_iget32(void *target, const void *source, ptrdiff_t tst,
                   ptrdiff_t sst, size_t len, int pe);
 void pshmem_iget64(void *target, const void *source, ptrdiff_t tst,
