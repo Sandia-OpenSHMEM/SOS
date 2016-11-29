@@ -13,16 +13,40 @@ env:
         - SMA_INFO=1
     matrix:
         - # Defaults
-        - SOS_BUILD_OPTS="--enable-threads --enable-error-checking"
         - SOS_BUILD_OPTS="--disable-mr-scalable --enable-av-map --disable-cxx"
-        - SOS_BUILD_OPTS="--enable-cma --enable-error-checking --enable-profiling --disable-mr-scalable --enable-av-map --enable-remote-virtual-addressing"
-        - SOS_DISABLE_FORTRAN=1 SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing"
-        - SMA_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SMA_BOUNCE_SIZE=0 SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
-        - SMA_BARRIER_ALGORITHM=auto   SMA_BCAST_ALGORITHM=auto   SMA_REDUCE_ALGORITHM=auto    SMA_COLLECT_ALGORITHM=auto    SMA_FCOLLECT_ALGORITHM=auto SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
-        - SMA_BARRIER_ALGORITHM=linear SMA_BCAST_ALGORITHM=linear SMA_REDUCE_ALGORITHM=linear  SMA_COLLECT_ALGORITHM=linear  SMA_FCOLLECT_ALGORITHM=linear SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
-        - SMA_BARRIER_ALGORITHM=tree   SMA_BCAST_ALGORITHM=tree   SMA_REDUCE_ALGORITHM=tree SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
-        - SMA_BARRIER_ALGORITHM=dissem SMA_REDUCE_ALGORITHM=recdbl  SMA_FCOLLECT_ALGORITHM=recdbl SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
-        - SMA_FCOLLECT_ALGORITHM=ring SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+        - >
+          SOS_DISABLE_FORTRAN=1
+          SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing"
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
+          SOS_BUILD_OPTS="--enable-threads --enable-error-checking"
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
+          SOS_BUILD_OPTS="--enable-cma --enable-error-checking --enable-profiling --disable-mr-scalable --enable-av-map --enable-remote-virtual-addressing"
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
+          SMA_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SMA_BOUNCE_SIZE=0
+          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
+          SMA_BARRIER_ALGORITHM=auto SMA_BCAST_ALGORITHM=auto SMA_REDUCE_ALGORITHM=auto SMA_COLLECT_ALGORITHM=auto SMA_FCOLLECT_ALGORITHM=auto
+          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
+          SMA_BARRIER_ALGORITHM=linear SMA_BCAST_ALGORITHM=linear SMA_REDUCE_ALGORITHM=linear SMA_COLLECT_ALGORITHM=linear SMA_FCOLLECT_ALGORITHM=linear
+          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
+          SMA_BARRIER_ALGORITHM=tree SMA_BCAST_ALGORITHM=tree SMA_REDUCE_ALGORITHM=tree
+          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
+          SMA_BARRIER_ALGORITHM=dissem SMA_REDUCE_ALGORITHM=recdbl SMA_FCOLLECT_ALGORITHM=recdbl
+          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
+          SMA_FCOLLECT_ALGORITHM=ring
+          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
 os:
     - linux
 
@@ -120,10 +144,19 @@ script:
     - >
       if [ ! $SOS_DISABLE_FORTRAN ]; then
           make F_feature_tests;
-          if false && [ $? -ne 0 ]; then
+          if false && [ $? -eq 0 ]; then
               make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log;
               # Check for failures in the Fortran tests
               if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi;
+          fi;
+      fi
+    - >
+      if [ ! $SOS_DISABLE_FORTRAN ]; then
+          make F_error_tests;
+          if false && [ $? -eq 0 -a $SOS_ENABLE_ERROR_TESTS ]; then
+              make F_error_tests-run 2>&1 | tee uh-tests-f-error-tests.log;
+              # Check for failures in the Fortran tests
+              if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-error-tests.log; then false; else true; fi;
           fi;
       fi
     - make clean
@@ -140,10 +173,19 @@ script:
     - >
       if [ ! $SOS_DISABLE_FORTRAN ]; then
           make F_feature_tests;
-          if [ $? -ne 0 ]; then
+          if [ $? -eq 0 ]; then
               make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log;
               # Check for failures in the Fortran tests
               if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi;
+          fi;
+      fi
+    - >
+      if [ ! $SOS_DISABLE_FORTRAN ]; then
+          make F_error_tests;
+          if [ $? -eq 0 -a $SOS_ENABLE_ERROR_TESTS ]; then
+              make F_error_tests-run 2>&1 | tee uh-tests-f-error-tests.log;
+              # Check for failures in the Fortran tests
+              if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-error-tests.log; then false; else true; fi;
           fi;
       fi
     - make clean

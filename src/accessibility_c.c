@@ -44,6 +44,7 @@ int
 shmem_addr_accessible(const void *addr, int pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
 
     return shmem_internal_addr_accessible(addr, pe);
 }
