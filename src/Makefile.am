@@ -45,6 +45,16 @@ libsma_la_SOURCES = \
 	transport.h \
 	util.c
 
+PSHMEM_H = \
+	atomic_c_pshmem.h \
+	collectives_c_pshmem.h \
+	data_c_pshmem.h \
+	synchronization_c_pshmem.h
+
+BUILT_SOURCES = $(PSHMEM_H)
+
+CLEANFILES += $(PSHMEM_H)
+
 if HAVE_FORTRAN
 libsma_la_SOURCES += \
 	init_f.c \
@@ -151,3 +161,22 @@ oshfort: shmem_compiler_script.in Makefile
 oshrun: shmem_launcher_script.in Makefile
 	cp $(srcdir)/shmem_launcher_script.in oshrun
 	@chmod +x oshrun
+
+SUFFIXES = .hin
+
+# Generate profiling headers by passing the input file through the C
+# preprocessor and then applying the following rules:
+#
+#   1. Discard all lines up to and including @profiling_start@
+#   2. Discard token pastings left over by cpp (##)
+#   3. Replace @foo@ with foo
+#   4. Replace any remaining @ characters with #
+
+.hin.h:
+	@$(CPP) -I$(srcdir) -I$(srcdir)/../mpp - < $< | $(PERL) -ne ' \
+	    next if 1../@profiling_start@/; \
+	    s/\s*##\s*//gs; \
+	    s/\s*\@brk\@\s*/\n/g; \
+	    s/\@(\S+)\@/\1/g; \
+	    s/\@/#/g; \
+	    print;' > $@
