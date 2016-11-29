@@ -165,7 +165,7 @@ oshrun: shmem_launcher_script.in Makefile
 SUFFIXES = .hin
 
 # Generate profiling headers by passing the input file through the C
-# preprocessor and then applying the following following rules:
+# preprocessor and then applying the following rules:
 #
 #   1. Discard all lines up to and including @profiling_start@
 #   2. Discard token pastings left over by cpp (##)
