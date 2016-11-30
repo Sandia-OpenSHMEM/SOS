@@ -236,6 +236,13 @@ AS_IF([test $tree_sync_size -lt $recdbl_sync_size],
       [C_COLLECT_SYNC_SIZE=$recdbl_sync_size], [C_COLLECT_SYNC_SIZE=$tree_sync_size])
 C_ALLTOALL_SYNC_SIZE=1
 C_ALLTOALLS_SYNC_SIZE=1
+C_SYNC_SIZE=`$PERL -e "use List::Util qw (max); print max((             \
+                                          $C_BCAST_SYNC_SIZE,           \
+                                          $C_REDUCE_SYNC_SIZE,          \
+                                          $C_BARRIER_SYNC_SIZE,         \
+                                          $C_COLLECT_SYNC_SIZE,         \
+                                          $C_ALLTOALL_SYNC_SIZE,        \
+                                          $C_ALLTOALLS_SYNC_SIZE));"`
 C_REDUCE_MIN_WRKDATA_SIZE=1
 AC_SUBST(C_BCAST_SYNC_SIZE)
 AC_SUBST(C_REDUCE_SYNC_SIZE)
@@ -244,6 +251,7 @@ AC_SUBST(C_COLLECT_SYNC_SIZE)
 AC_SUBST(C_ALLTOALL_SYNC_SIZE)
 AC_SUBST(C_ALLTOALLS_SYNC_SIZE)
 AC_SUBST(C_REDUCE_MIN_WRKDATA_SIZE)
+AC_SUBST(C_SYNC_SIZE)
 
 AC_MSG_CHECKING([if long can hold lock_t])
 AC_TRY_RUN([struct lock_s { int a; int b; }; main() { if (sizeof(long) == sizeof(struct lock_s)) return 0; else return 1; }],
@@ -298,6 +306,13 @@ if test "$FC" != "" ; then
   FORTRAN_ALLTOALL_SYNC_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_long / $ompi_cv_fortran_sizeof_INTEGER * $C_ALLTOALL_SYNC_SIZE)"`
   FORTRAN_ALLTOALLS_SYNC_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_long / $ompi_cv_fortran_sizeof_INTEGER * $C_ALLTOALLS_SYNC_SIZE)"`
   FORTRAN_REDUCE_MIN_WRKDATA_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_long / $ompi_cv_fortran_sizeof_INTEGER * $C_REDUCE_MIN_WRKDATA_SIZE)"`
+  FORTRAN_SYNC_SIZE=`$PERL -e "use List::Util qw (max); print max((             \
+                                                  $FORTRAN_BCAST_SYNC_SIZE,     \
+                                                  $FORTRAN_REDUCE_SYNC_SIZE,    \
+                                                  $FORTRAN_BARRIER_SYNC_SIZE,   \
+                                                  $FORTRAN_COLLECT_SYNC_SIZE,   \
+                                                  $FORTRAN_ALLTOALL_SYNC_SIZE,  \
+                                                  $FORTRAN_ALLTOALLS_SYNC_SIZE));"`
 else
   FORTRAN_BCAST_SYNC_SIZE=0
   FORTRAN_REDUCE_SYNC_SIZE=0
@@ -310,6 +325,7 @@ else
   FORTRAN_INT8_KIND=0
   FORTRAN_REAL4_KIND=0
   FORTRAN_REAL8_KIND=0
+  FORTRAN_SYNC_SIZE=0
   AC_DEFINE([DTYPE_FORTRAN_INTEGER],[-1],[Fortran integer C type (disabled)])
 fi
 if test "$ac_cv_sizeof_voidp" = "4" ; then
@@ -329,6 +345,7 @@ AC_SUBST(FORTRAN_INT8_KIND)
 AC_SUBST(FORTRAN_REAL4_KIND)
 AC_SUBST(FORTRAN_REAL8_KIND)
 AC_SUBST(FORTRAN_PTR_KIND)
+AC_SUBST(FORTRAN_SYNC_SIZE)
 
 AM_CONDITIONAL([HAVE_FORTRAN], [test "$FC" != ""])
 
