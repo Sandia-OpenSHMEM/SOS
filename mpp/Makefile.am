@@ -22,3 +22,12 @@ if HAVE_FORTRAN
 mpp_HEADERS += shmem.fh shmemx.fh
 include_HEADERS += shmem.fh shmemx.fh
 endif
+
+BUILT_SOURCES = shmem.h
+
+CLEANFILES += shmem.h
+
+SUFFIXES = .h4
+
+.h4.h:
+	$(AM_V_GEN) m4 $< > $@
