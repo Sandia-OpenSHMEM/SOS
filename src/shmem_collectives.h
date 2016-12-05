@@ -146,7 +146,7 @@ shmem_internal_op_to_all(void *target, const void *source, int count,
 {
     switch (shmem_internal_reduce_type) {
         case AUTO:
-            if (shmem_transport_atomic_supported(op, datatype)) {
+            if (shmem_transport_atomic_supported(op, datatype, count)) {
                 if (PE_size < shmem_internal_tree_crossover) {
                     shmem_internal_op_to_all_linear(target, source, count, type_size,
                                                     PE_start, logPE_stride, PE_size,
@@ -164,7 +164,7 @@ shmem_internal_op_to_all(void *target, const void *source, int count,
 
             break;
         case LINEAR:
-            if (shmem_transport_atomic_supported(op, datatype)) {
+            if (shmem_transport_atomic_supported(op, datatype, count)) {
                 shmem_internal_op_to_all_linear(target, source, count, type_size,
                                                 PE_start, logPE_stride, PE_size,
                                                 pWrk, pSync, op, datatype);
@@ -175,7 +175,7 @@ shmem_internal_op_to_all(void *target, const void *source, int count,
             }
             break;
         case TREE:
-            if (shmem_transport_atomic_supported(op, datatype)) {
+            if (shmem_transport_atomic_supported(op, datatype, count)) {
                 shmem_internal_op_to_all_tree(target, source, count, type_size,
                                               PE_start, logPE_stride, PE_size,
                                               pWrk, pSync, op, datatype);

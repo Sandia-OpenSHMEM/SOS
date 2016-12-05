@@ -910,11 +910,11 @@ shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
     if needed */
 static inline
 int shmem_transport_atomic_supported(shm_internal_op_t op,
-                                     shm_internal_datatype_t datatype)
+			shm_internal_datatype_t datatype, int count)
 {
    size_t size = 0;
    int ret = fi_atomicvalid(shmem_transport_ofi_epfd, datatype, op, &size);
-   return !(ret != 0 || size == 0);
+   return !(ret != 0 || size < count);
 }
 
 
