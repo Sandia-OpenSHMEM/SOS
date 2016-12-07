@@ -107,28 +107,26 @@ shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 }
 
 
-dnl args: STYPE,TYPE,ITYPE,SOP,IOP
-define(`SHMEM_DEF_TO_ALL', `
-void
-shmem_$1_$4_to_all($2 *target,
-SH_PAD(`$1',`$4')                    const $2 *source, int nreduce,
-SH_PAD(`$1',`$4')                    int PE_start, int logPE_stride,
-SH_PAD(`$1',`$4')                    int PE_size, $2 *pWrk,
-SH_PAD(`$1',`$4')                    long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-    SHMEM_ERR_CHECK_NON_NEGATIVE(nreduce);
-    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof($2)*nreduce);
-    SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof($2)*nreduce);
-    SHMEM_ERR_CHECK_SYMMETRIC(pWrk, sizeof($2) *
-                              MAX(nreduce/2 + 1, SHMEM_REDUCE_MIN_WRKDATA_SIZE));
-    SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_REDUCE_SYNC_SIZE);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof($2),
-                             PE_start, logPE_stride, PE_size,
-                             pWrk, pSync, $5, $3);
-}')dnl
+#define SHMEM_DEF_TO_ALL(STYPE,TYPE,ITYPE,SOP,IOP)                      \
+    void shmem_##STYPE##_##SOP##_to_all(TYPE *target,                   \
+                                       const TYPE *source, int nreduce, \
+                                       int PE_start, int logPE_stride,  \
+                                       int PE_size, TYPE *pWrk,         \
+                                       long *pSync)                     \
+    {                                                                   \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);    \
+        SHMEM_ERR_CHECK_NON_NEGATIVE(nreduce);                          \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE)*nreduce);        \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof(TYPE)*nreduce);        \
+        SHMEM_ERR_CHECK_SYMMETRIC(pWrk, sizeof(TYPE) *                  \
+                                  MAX(nreduce/2 + 1, SHMEM_REDUCE_MIN_WRKDATA_SIZE)); \
+        SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_REDUCE_SYNC_SIZE); \
+                                                                        \
+        shmem_internal_op_to_all(target, source, nreduce, sizeof(TYPE), \
+                                 PE_start, logPE_stride, PE_size,       \
+                                 pWrk, pSync, IOP, ITYPE);              \
+    }
 
 SHMEM_BIND_C_INTS_OP(`SHMEM_DEF_TO_ALL', `and', `SHM_INTERNAL_BAND')
 SHMEM_BIND_C_INTS_OP(`SHMEM_DEF_TO_ALL', `or', `SHM_INTERNAL_BOR')

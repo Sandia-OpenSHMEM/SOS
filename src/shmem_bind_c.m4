@@ -9,8 +9,8 @@ dnl
 dnl This file contains the m4 macros used to generate the SOS C bindings.
 dnl
 define(`SHMEM_EVAL_MACRO_FOR_RMA',
-`$1(float,float)$2
-$1(double,double)$2
+`$1(float,      float)$2
+$1(double,     double)$2
 $1(longdouble, long double)$2
 $1(char,       char)$2
 $1(short,      short)$2
@@ -25,30 +25,30 @@ $1(longlong,   long long)')dnl
 dnl
 define(`SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO',
 `SHMEM_EVAL_MACRO_FOR_AMO(`$1',`$2')$2
-$1(float,  float)$2
-$1(double, double)')dnl
+$1(float,      float)$2
+$1(double,     double)')dnl
 dnl
 define(`SHMEM_EVAL_MACRO_FOR_INTS',
-`$1(short,    short)$2
-$1(int,      int)$2
-$1(long,     long)$2
-$1(longlong, long long)')dnl
+`$1(short,      short)$2
+$1(int,        int)$2
+$1(long,       long)$2
+$1(longlong,   long long)')dnl
 dnl
 define(`SHMEM_EVAL_MACRO_FOR_FLOATS',
-`$1(float,     float)$2
+`$1(float,      float)$2
 $1(double,     double)$2
 $1(longdouble, long double)')dnl
 dnl
 define(`SHMEM_EVAL_MACRO_FOR_CMPLX',
-`$1(complexf, float complex)$2
-$1(complexd, double complex)')dnl
+`$1(complexf,   float complex)$2
+$1(complexd,   double complex)')dnl
 dnl
 define(`SHMEM_EVAL_MACRO_FOR_SIZES',
-`$1(8,    1*sizeof(uint8_t))$2
-$1(16,   2*sizeof(uint8_t))$2
-$1(32,   4*sizeof(uint8_t))$2
-$1(64,   8*sizeof(uint8_t))$2
-$1(128, 16*sizeof(uint8_t))')dnl
+`$1(8,          1*sizeof(uint8_t))$2
+$1(16,         2*sizeof(uint8_t))$2
+$1(32,         4*sizeof(uint8_t))$2
+$1(64,         8*sizeof(uint8_t))$2
+$1(128,        16*sizeof(uint8_t))')dnl
 dnl
 define(`SHMEM_DECLARE_FOR_RMA', `SHMEM_EVAL_MACRO_FOR_RMA(`$1',;);')dnl
 define(`SHMEM_DECLARE_FOR_AMO', `SHMEM_EVAL_MACRO_FOR_AMO(`$1',;);')dnl
