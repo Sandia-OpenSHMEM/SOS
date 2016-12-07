@@ -39,6 +39,7 @@ void
 shmem_clear_lock(volatile long *lockp)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_SYMMETRIC(lockp, sizeof(long));
 
     shmem_internal_clear_lock(lockp);
 }
@@ -48,6 +49,7 @@ void
 shmem_set_lock(volatile long *lockp)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_SYMMETRIC(lockp, sizeof(long));
 
     shmem_internal_set_lock(lockp);
 }
@@ -57,6 +59,7 @@ int
 shmem_test_lock(volatile long *lockp)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_SYMMETRIC(lockp, sizeof(long));
 
     return shmem_internal_test_lock(lockp);
 }

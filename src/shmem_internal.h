@@ -32,6 +32,13 @@ extern int shmem_internal_finalized;
 extern int shmem_internal_thread_level;
 extern int shmem_internal_debug;
 
+extern void *shmem_internal_heap_base;
+extern long shmem_internal_heap_length;
+extern void *shmem_internal_data_base;
+extern long shmem_internal_data_length;
+extern int shmem_internal_heap_use_huge_pages;
+extern long shmem_internal_heap_huge_page_size;
+
 #define RAISE_WARN(ret)                                                 \
     do {                                                                \
         fprintf(stderr, "[%03d] WARN: %s:%d return code %d\n",         \
@@ -79,10 +86,19 @@ extern int shmem_internal_debug;
         }                                                               \
     } while (0)
 
-#define SHMEM_ERR_CHECK_ARG_POSITIVE(arg)                               \
+#define SHMEM_ERR_CHECK_POSITIVE(arg)                                   \
     do {                                                                \
         if ((arg) <= 0) {                                               \
             fprintf(stderr, "ERROR: %s(): Argument %s must be positive (%ld)\n", \
+                    __func__, #arg, (long) arg);                        \
+            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");  \
+        }                                                               \
+    } while (0)
+
+#define SHMEM_ERR_CHECK_NON_NEGATIVE(arg)                               \
+    do {                                                                \
+        if ((arg) < 0) {                                                \
+            fprintf(stderr, "ERROR: %s(): Argument %s must be greater or equal to zero (%ld)\n", \
                     __func__, #arg, (long) arg);                        \
             shmem_runtime_abort(100, PACKAGE_NAME " exited in error");  \
         }                                                               \
@@ -106,11 +122,101 @@ extern int shmem_internal_debug;
         }                                                                                               \
     } while (0)
 
+#define SHMEM_ERR_CHECK_PE(pe)                                          \
+    do {                                                                \
+        if ((pe) < 0 || (pe) >= shmem_internal_num_pes) {               \
+            fprintf(stderr, "ERROR: %s(): PE argument (%d) is invalid\n", \
+                    __func__, (pe));                                    \
+            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");  \
+        }                                                               \
+    } while (0)
+
+#define SHMEM_ERR_CHECK_SYMMETRIC(ptr_in, len)                                          \
+    do {                                                                                \
+        const void *ptr_base = (void*)(ptr_in);                                         \
+        const void *ptr_ext  = (void*)((uint8_t *) (ptr_base) + (len));                 \
+        const void *data_ext = (void*)((uint8_t *) shmem_internal_data_base +           \
+                                                   shmem_internal_data_length);         \
+        const void *heap_ext = (void*)((uint8_t *) shmem_internal_heap_base +           \
+                                                   shmem_internal_heap_length);         \
+        if (len == 0) {                                                                 \
+            break; /* Skip this check when the length is 0 */                           \
+        }                                                                               \
+        else if (ptr_base >= shmem_internal_data_base && ptr_base < data_ext) {         \
+            if (ptr_ext > data_ext) {                                                   \
+                fprintf(stderr, "ERROR: %s(): Argument \"%s\" [%p..%p) exceeds "        \
+                                "sym. data region [%p..%p)\n",                          \
+                        __func__, #ptr_in, ptr_base, ptr_ext,                           \
+                        shmem_internal_data_base, data_ext);                            \
+                shmem_runtime_abort(100, PACKAGE_NAME " exited in error");              \
+            }                                                                           \
+        }                                                                               \
+        else if (ptr_base >= shmem_internal_heap_base && ptr_base < heap_ext) {         \
+            if (ptr_ext > heap_ext) {                                                   \
+                fprintf(stderr, "ERROR: %s(): Argument \"%s\" [%p..%p) exceeds "        \
+                                "sym. heap region [%p..%p)\n",                          \
+                        __func__, #ptr_in, ptr_base, ptr_ext,                           \
+                        shmem_internal_heap_base, heap_ext);                            \
+                shmem_runtime_abort(100, PACKAGE_NAME " exited in error");              \
+            }                                                                           \
+        }                                                                               \
+        else {                                                                          \
+            fprintf(stderr, "ERROR: %s(): Argument \"%s\" is not symmetric (%p)\n",     \
+                    __func__, #ptr_in, ptr_base);                                       \
+            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                  \
+        }                                                                               \
+    } while (0)
+
+#define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr_in)                                          \
+    do {                                                                                \
+        const void *ptr_base      = (void*)(ptr_in);                                    \
+        const void *heap_ext = (void*)((uint8_t *) shmem_internal_heap_base +           \
+                                                   shmem_internal_heap_length);         \
+        if (! (ptr_base >= shmem_internal_heap_base && ptr_base < heap_ext)) {          \
+            fprintf(stderr, "ERROR: %s(): Argument \"%s\" is not in symm. heap (%p), "  \
+                            "[%p..%p)\n",                                               \
+                    __func__, #ptr_in, ptr_base, shmem_internal_heap_base, heap_ext);   \
+            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                  \
+        }                                                                               \
+    } while (0)
+
+#define SHMEM_ERR_CHECK_NULL(ptr, nelems)                                               \
+    do {                                                                                \
+        if (nelems > 0 && (ptr) == NULL) {                                              \
+                fprintf(stderr, "ERROR: %s(): Argument \"%s\" is NULL\n",               \
+                        __func__, #ptr);                                                \
+                shmem_runtime_abort(100, PACKAGE_NAME " exited in error");              \
+        }                                                                               \
+    } while(0)
+
+#define SHMEM_ERR_CHECK_CMP_OP(op)                                                      \
+    do {                                                                                \
+        switch(op) {                                                                    \
+            case SHMEM_CMP_EQ:                                                          \
+            case SHMEM_CMP_NE:                                                          \
+            case SHMEM_CMP_GT:                                                          \
+            case SHMEM_CMP_GE:                                                          \
+            case SHMEM_CMP_LT:                                                          \
+            case SHMEM_CMP_LE:                                                          \
+                break;                                                                  \
+            default:                                                                    \
+                fprintf(stderr, "ERROR: %s(): Argument \"%s\", "                        \
+                                "invalid comparison operation (%d)\n",                  \
+                        __func__, #op, (int) (op));                                     \
+                shmem_runtime_abort(100, PACKAGE_NAME " exited in error");              \
+        }                                                                               \
+    } while (0)
 
 #else
 #define SHMEM_ERR_CHECK_INITIALIZED()
-#define SHMEM_ERR_CHECK_ARG_POSITIVE(arg)
+#define SHMEM_ERR_CHECK_POSITIVE(arg)
+#define SHMEM_ERR_CHECK_NON_NEGATIVE(arg)
 #define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size)
+#define SHMEM_ERR_CHECK_PE(pe)
+#define SHMEM_ERR_CHECK_SYMMETRIC(ptr, len)
+#define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr)
+#define SHMEM_ERR_CHECK_NULL(ptr, nelems)
+#define SHMEM_ERR_CHECK_CMP_OP(op)
 
 #endif /* ENABLE_ERROR_CHECKING */
 
@@ -246,5 +352,72 @@ static inline double shmem_internal_wtime(void) {
 /* Utility functions */
 long shmem_util_getenv_long(const char* name, int is_sized, long default_value);
 char *shmem_util_getenv_str(const char* name);
+
+#ifndef MAX
+#define MAX(A,B) (A) > (B) ? (A) : (B)
+#endif
+
+/* Language bindings helper macros */
+#define SHMEM_BIND_C_AMO(decl)                                  \
+  decl(int,      int,           SHM_INTERNAL_INT)               \
+  decl(long,     long,          SHM_INTERNAL_LONG)              \
+  decl(longlong, long long,     SHM_INTERNAL_LONG_LONG)
+
+#define SHMEM_BIND_C_EXTENDED_AMO(decl)                         \
+  SHMEM_BIND_C_AMO(decl)                                        \
+  decl(float,    float,         SHM_INTERNAL_FLOAT)             \
+  decl(double,   double,        SHM_INTERNAL_DOUBLE)
+
+#define SHMEM_BIND_C_INTS_OP(decl, s_op, op)                            \
+  decl(short,    short,         SHM_INTERNAL_SHORT,         s_op, op)   \
+  decl(int,      int,           SHM_INTERNAL_INT,           s_op, op)   \
+  decl(long,     long,          SHM_INTERNAL_LONG,          s_op, op)   \
+  decl(longlong, long long,     SHM_INTERNAL_LONG_LONG,     s_op, op)
+
+#define SHMEM_BIND_C_FLOATS_OP(decl, s_op, op)                          \
+  decl(float,    float,         SHM_INTERNAL_FLOAT,         s_op, op)   \
+  decl(double,   double,        SHM_INTERNAL_DOUBLE,        s_op, op)   \
+  decl(longdouble, long double, SHM_INTERNAL_LONG_DOUBLE,   s_op, op)
+
+#define SHMEM_BIND_C_CMPLX_OP(decl, s_op, op)                           \
+  decl(complexf, float complex, SHM_INTERNAL_FLOAT_COMPLEX, s_op, op)   \
+  decl(complexd, double complex,SHM_INTERNAL_DOUBLE_COMPLEX,s_op, op)
+
+#define SHMEM_BIND_F_RMA(decl)                                          \
+  decl(character, CHARACTER,    SIZEOF_FORTRAN_CHARACTER)               \
+  decl(complex,  COMPLEX,       SIZEOF_FORTRAN_COMPLEX)                 \
+  decl(double,   DOUBLE,        SIZEOF_FORTRAN_DOUBLE_PRECISION)        \
+  decl(integer,  INTEGER,       SIZEOF_FORTRAN_INTEGER)                 \
+  decl(logical,  LOGICAL,       SIZEOF_FORTRAN_LOGICAL)                 \
+  decl(real,     REAL,          SIZEOF_FORTRAN_REAL)
+
+#define SHMEM_BIND_F_SIZES(decl)        \
+  decl(mem,     MEM,    1)              \
+  decl(4,       4,      4)              \
+  decl(8,       8,      8)              \
+  decl(32,      32,     4)              \
+  decl(64,      64,     8)              \
+  decl(128,     128,    16)
+
+#define SHMEM_BIND_F_COLL_SIZES(decl)   \
+  decl(4,       4)                      \
+  decl(8,       8)                      \
+  decl(32,      4)                      \
+  decl(64,      8)
+
+#define SHMEM_BIND_F_INTS_OP(decl, s_op_l, s_op_u, op) \
+  decl(int4,    INT4,   int32_t,     SHM_INTERNAL_INT32,  s_op_l, s_op_u, op, 4) \
+  decl(int8,    INT8,   int64_t,     SHM_INTERNAL_INT64,  s_op_l, s_op_u, op, 8)
+
+#if SIZEOF_LONG_DOUBLE == 16
+#define SHMEM_BIND_F_FLOATS_OP(decl, s_op_l, s_op_u, op) \
+  decl(real4,   REAL4,  float,       SHM_INTERNAL_FLOAT,  s_op_l, s_op_u, op, 4) \
+  decl(real8,   REAL8,  double,      SHM_INTERNAL_DOUBLE, s_op_l, s_op_u, op, 8) \
+  decl(real16,  REAL16, long double, SHM_INTERNAL_LONG_DOUBLE, s_op_l, s_op_u, op, 16)
+#else
+#define SHMEM_BIND_F_FLOATS_OP(decl, s_op_l, s_op_u, op) \
+  decl(real4,   REAL4,  float,       SHM_INTERNAL_FLOAT,  s_op_l, s_op_u, op, 4) \
+  decl(real8,   REAL8,  double,      SHM_INTERNAL_DOUBLE, s_op_l, s_op_u, op, 8)
+#endif
 
 #endif

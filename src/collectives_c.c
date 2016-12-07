@@ -214,626 +214,48 @@ shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_BARRIER_SYNC_SIZE);
 
     shmem_internal_barrier(PE_start, logPE_stride, PE_size, pSync);
 }
 
 
-void
-shmem_short_and_to_all(short *target, const short *source, int nreduce,
-                       int PE_start, int logPE_stride, int PE_size,
-                       short *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(short),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_BAND, SHM_INTERNAL_SHORT);
-}
-
-
-void
-shmem_int_and_to_all(int *target, const int *source, int nreduce,
-                     int PE_start, int logPE_stride, int PE_size,
-                     int *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(int),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_BAND, SHM_INTERNAL_INT);
-}
-
-
-void
-shmem_long_and_to_all(long *target, const long *source, int nreduce,
-                      int PE_start, int logPE_stride, int PE_size,
-                      long *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(long),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_BAND, SHM_INTERNAL_LONG);
-}
-
-
-void
-shmem_longlong_and_to_all(long long *target, const long long *source,
-                          int nreduce, int PE_start, int logPE_stride,
-                          int PE_size, long long *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(long long),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_BAND, SHM_INTERNAL_LONG);
-}
-
-
-void
-shmem_short_or_to_all(short *target, const short *source, int nreduce,
-                      int PE_start, int logPE_stride, int PE_size,
-                      short *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(short),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_BOR, SHM_INTERNAL_SHORT);
-}
-
-
-void
-shmem_int_or_to_all(int *target, const int *source, int nreduce,
-                    int PE_start, int logPE_stride, int PE_size, 
-                    int *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(int),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_BOR, SHM_INTERNAL_INT);
-}
-
-
-void
-shmem_long_or_to_all(long *target, const long *source, int nreduce,
-                     int PE_start, int logPE_stride, int PE_size, 
-                     long *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(long),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_BOR, SHM_INTERNAL_LONG);
-}
-
-
-void
-shmem_longlong_or_to_all(long long *target, const long long *source,
-                         int nreduce, int PE_start, int logPE_stride,
-                         int PE_size, long long *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(long long),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_BOR, SHM_INTERNAL_LONG);
-}
-
-
-void
-shmem_short_xor_to_all(short *target, const short *source, int nreduce,
-                       int PE_start, int logPE_stride, int PE_size, 
-                       short *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(short),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_BXOR, SHM_INTERNAL_SHORT);
-}
-
-void
-shmem_int_xor_to_all(int *target, const int *source, int nreduce,
-                     int PE_start, int logPE_stride, int PE_size, 
-                     int *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(int),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_BXOR, SHM_INTERNAL_INT);
-}
-
-
-void
-shmem_long_xor_to_all(long *target, const long *source, int nreduce,
-                      int PE_start, int logPE_stride, int PE_size, 
-                      long *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(long),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_BXOR, SHM_INTERNAL_LONG);
-}
-
-
-void
-shmem_longlong_xor_to_all(long long *target, const long long *source,
-                          int nreduce, int PE_start, int logPE_stride,
-                          int PE_size, long long *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(long long),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_BXOR, SHM_INTERNAL_LONG);
-}
-
-
-void
-shmem_float_min_to_all(float *target, const float *source, int nreduce,
-                       int PE_start, int logPE_stride, int PE_size, 
-                       float *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(float),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_MIN, SHM_INTERNAL_FLOAT);
-}
-
-
-void
-shmem_double_min_to_all(double *target, const double *source, int nreduce,
-                        int PE_start, int logPE_stride, int PE_size, 
-                        double *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(double),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_MIN, SHM_INTERNAL_DOUBLE);
-}
-
-
-void
-shmem_longdouble_min_to_all(long double *target, const long double *source,
-                            int nreduce, int PE_start, int logPE_stride,
-                            int PE_size, long double *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(long double),
-                             PE_start, logPE_stride, PE_size,
-                             pWrk, pSync, SHM_INTERNAL_MIN, SHM_INTERNAL_LONG_DOUBLE);
-}
-
-
-void
-shmem_short_min_to_all(short *target, const short *source, int nreduce,
-                       int PE_start, int logPE_stride, int PE_size, 
-                       short *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(short),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_MIN, SHM_INTERNAL_SHORT);
-}
-
-
-void
-shmem_int_min_to_all(int *target, const int *source, int nreduce,
-                     int PE_start, int logPE_stride, int PE_size, 
-                     int *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(int),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_MIN, SHM_INTERNAL_INT);
-}
-
-
-void
-shmem_long_min_to_all(long *target, const long *source, int nreduce,
-                      int PE_start, int logPE_stride, int PE_size, 
-                      long *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(long),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_MIN, SHM_INTERNAL_LONG);
-}
-
-
-void
-shmem_longlong_min_to_all(long long *target, const long long *source,
-                          int nreduce, int PE_start, int logPE_stride,
-                          int PE_size, long long *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(long long),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_MIN, SHM_INTERNAL_LONG_LONG);
-}
-
-
-void
-shmem_float_max_to_all(float *target, const float *source, int nreduce,
-                       int PE_start, int logPE_stride, int PE_size,
-                       float *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(float),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_MAX, SHM_INTERNAL_FLOAT);
-}
-
-
-void
-shmem_double_max_to_all(double *target, const double *source, int nreduce,
-                        int PE_start, int logPE_stride, int PE_size,
-                        double *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(double),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_MAX, SHM_INTERNAL_DOUBLE);
-}
-
-
-void
-shmem_longdouble_max_to_all(long double *target, const long double *source,
-                            int nreduce, int PE_start, int logPE_stride,
-                            int PE_size, long double *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(long double),
-                             PE_start, logPE_stride, PE_size,
-                             pWrk, pSync, SHM_INTERNAL_MAX, SHM_INTERNAL_LONG_DOUBLE);
-}
-
-
-
-void
-shmem_short_max_to_all(short *target, const short *source, int nreduce,
-                       int PE_start, int logPE_stride, int PE_size,
-                       short *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(short),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_MAX, SHM_INTERNAL_SHORT);
-}
-
-
-void
-shmem_int_max_to_all(int *target, const int *source, int nreduce,
-                     int PE_start, int logPE_stride, int PE_size,
-                     int *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(int),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_MAX, SHM_INTERNAL_INT);
-}
-
-
-void
-shmem_long_max_to_all(long *target, const long *source, int nreduce,
-                      int PE_start, int logPE_stride, int PE_size,
-                      long *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(long),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_MAX, SHM_INTERNAL_LONG);
-}
-
-
-void 
-shmem_longlong_max_to_all(long long *target, const long long *source,
-                          int nreduce, int PE_start, int logPE_stride,
-                          int PE_size, long long *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(long long),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_MAX, SHM_INTERNAL_LONG);
-}
-
-
-void
-shmem_float_sum_to_all(float *target, const float *source, int nreduce,
-                       int PE_start, int logPE_stride, int PE_size, 
-                       float *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(float),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_SUM, SHM_INTERNAL_FLOAT);
-}
-
-
-void
-shmem_double_sum_to_all(double *target, const double *source, int nreduce,
-                        int PE_start, int logPE_stride, int PE_size, 
-                        double *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(double),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_SUM, SHM_INTERNAL_DOUBLE);
-}
-
-
-void
-shmem_longdouble_sum_to_all(long double *target, const long double *source,
-                            int nreduce, int PE_start, int logPE_stride,
-                            int PE_size, long double *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(long double),
-                             PE_start, logPE_stride, PE_size,
-                             pWrk, pSync, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG_DOUBLE);
-}
-
-
-void
-shmem_complexf_sum_to_all(float complex *target, const float complex *source,
-                          int nreduce, int PE_start, int logPE_stride,
-                          int PE_size, float complex *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(float complex),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_SUM, SHM_INTERNAL_FLOAT_COMPLEX);
-}
-
-
-void 
-shmem_complexd_sum_to_all(double complex *target, const double complex *source,
-                          int nreduce, int PE_start, int logPE_stride,
-                          int PE_size, double complex *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(double complex),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_SUM, SHM_INTERNAL_DOUBLE_COMPLEX);
-}
-
-
-void
-shmem_short_sum_to_all(short *target, const short *source, int nreduce,
-                       int PE_start, int logPE_stride, int PE_size, 
-                       short *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(short),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_SUM, SHM_INTERNAL_SHORT);
-}
-
-
-void
-shmem_int_sum_to_all(int *target, const int *source, int nreduce,
-                     int PE_start, int logPE_stride, int PE_size, 
-                     int *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(int),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_SUM, SHM_INTERNAL_INT);
-}
-
-
-void
-shmem_long_sum_to_all(long *target, const long *source, int nreduce,
-                      int PE_start, int logPE_stride, int PE_size, 
-                      long *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(long),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
-}
-
-
-void
-shmem_longlong_sum_to_all(long long *target, const long long *source,
-                          int nreduce, int PE_start, int logPE_stride,
-                          int PE_size, long long *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(long long),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
-}
-
-
-void
-shmem_float_prod_to_all(float *target, const float *source, int nreduce,
-                        int PE_start, int logPE_stride, int PE_size, 
-                        float *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(float),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_PROD, SHM_INTERNAL_FLOAT);
-}
-
-
-void
-shmem_double_prod_to_all(double *target, const double *source, int nreduce,
-                         int PE_start, int logPE_stride, int PE_size,
-                         double *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(double),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_PROD, SHM_INTERNAL_DOUBLE);
-}
-
-
-void
-shmem_longdouble_prod_to_all(long double *target, const long double *source,
-                             int nreduce, int PE_start, int logPE_stride,
-                             int PE_size, long double *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(long double),
-                             PE_start, logPE_stride, PE_size,
-                             pWrk, pSync, SHM_INTERNAL_PROD, SHM_INTERNAL_LONG_DOUBLE);
-}
-
-
-void
-shmem_complexf_prod_to_all(float complex *target, const float complex *source,
-                           int nreduce, int PE_start, int logPE_stride,
-                           int PE_size, float complex *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(float complex),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_PROD, SHM_INTERNAL_FLOAT_COMPLEX);
-}
-
-
-void
-shmem_complexd_prod_to_all(double complex *target, const double complex *source,
-                           int nreduce, int PE_start, int logPE_stride,
-                           int PE_size, double complex *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(double complex),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_PROD, SHM_INTERNAL_DOUBLE_COMPLEX);
-}
-
-
-void
-shmem_short_prod_to_all(short *target, const short *source, int nreduce,
-                        int PE_start, int logPE_stride, int PE_size, 
-                        short *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(short),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_PROD, SHM_INTERNAL_SHORT);
-}
-
-
-void
-shmem_int_prod_to_all(int *target, const int *source, int nreduce,
-                      int PE_start, int logPE_stride, int PE_size, 
-                      int *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(int),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_PROD, SHM_INTERNAL_INT);
-}
-
-
-void
-shmem_long_prod_to_all(long *target, const long *source, int nreduce,
-                       int PE_start, int logPE_stride, int PE_size, 
-                       long *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(long),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_PROD, SHM_INTERNAL_LONG);
-}
-
-
-void
-shmem_longlong_prod_to_all(long long *target, const long long *source,
-                           int nreduce, int PE_start, int logPE_stride,
-                           int PE_size, long long *pWrk, long *pSync)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-
-    shmem_internal_op_to_all(target, source, nreduce, sizeof(long long),
-                    PE_start, logPE_stride, PE_size,
-                    pWrk, pSync, SHM_INTERNAL_PROD, SHM_INTERNAL_LONG);
-}
-
+#define SHMEM_DEF_TO_ALL(STYPE,TYPE,ITYPE,SOP,IOP)                      \
+    void shmem_##STYPE##_##SOP##_to_all(TYPE *target,                   \
+                                       const TYPE *source, int nreduce, \
+                                       int PE_start, int logPE_stride,  \
+                                       int PE_size, TYPE *pWrk,         \
+                                       long *pSync)                     \
+    {                                                                   \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);    \
+        SHMEM_ERR_CHECK_NON_NEGATIVE(nreduce);                          \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE)*nreduce);        \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof(TYPE)*nreduce);        \
+        SHMEM_ERR_CHECK_SYMMETRIC(pWrk, sizeof(TYPE) *                  \
+                                  MAX(nreduce/2 + 1, SHMEM_REDUCE_MIN_WRKDATA_SIZE)); \
+        SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_REDUCE_SYNC_SIZE); \
+                                                                        \
+        shmem_internal_op_to_all(target, source, nreduce, sizeof(TYPE), \
+                                 PE_start, logPE_stride, PE_size,       \
+                                 pWrk, pSync, IOP, ITYPE);              \
+    }
+
+SHMEM_BIND_C_INTS_OP(SHMEM_DEF_TO_ALL, and, SHM_INTERNAL_BAND)
+SHMEM_BIND_C_INTS_OP(SHMEM_DEF_TO_ALL, or, SHM_INTERNAL_BOR)
+SHMEM_BIND_C_INTS_OP(SHMEM_DEF_TO_ALL, xor, SHM_INTERNAL_BXOR)
+
+SHMEM_BIND_C_INTS_OP(SHMEM_DEF_TO_ALL, min, SHM_INTERNAL_MIN)
+SHMEM_BIND_C_FLOATS_OP(SHMEM_DEF_TO_ALL, min, SHM_INTERNAL_MIN)
+SHMEM_BIND_C_INTS_OP(SHMEM_DEF_TO_ALL, max, SHM_INTERNAL_MAX)
+SHMEM_BIND_C_FLOATS_OP(SHMEM_DEF_TO_ALL, max, SHM_INTERNAL_MAX)
+
+SHMEM_BIND_C_INTS_OP(SHMEM_DEF_TO_ALL, sum, SHM_INTERNAL_SUM)
+SHMEM_BIND_C_FLOATS_OP(SHMEM_DEF_TO_ALL, sum, SHM_INTERNAL_SUM)
+SHMEM_BIND_C_CMPLX_OP(SHMEM_DEF_TO_ALL, sum, SHM_INTERNAL_SUM)
+SHMEM_BIND_C_INTS_OP(SHMEM_DEF_TO_ALL, prod, SHM_INTERNAL_PROD)
+SHMEM_BIND_C_FLOATS_OP(SHMEM_DEF_TO_ALL, prod, SHM_INTERNAL_PROD)
+SHMEM_BIND_C_CMPLX_OP(SHMEM_DEF_TO_ALL, prod, SHM_INTERNAL_PROD)
 
 void
 shmem_broadcast32(void *target, const void *source, size_t nlong, 
@@ -841,7 +263,12 @@ shmem_broadcast32(void *target, const void *source, size_t nlong,
                   long *pSync)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(PE_root);
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nlong);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, nlong * 4);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, nlong * 4);
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_BCAST_SYNC_SIZE);
 
     shmem_internal_bcast(target, source, nlong * 4,
                          PE_root, PE_start, logPE_stride, PE_size,
@@ -855,7 +282,12 @@ shmem_broadcast64(void *target, const void *source, size_t nlong,
                   long *pSync)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(PE_root);
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nlong);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, nlong * 8);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, nlong * 8);
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_BCAST_SYNC_SIZE);
 
     shmem_internal_bcast(target, source, nlong * 8,
                          PE_root, PE_start, logPE_stride, PE_size,
@@ -869,6 +301,10 @@ shmem_collect32(void *target, const void *source, size_t nlong,
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nlong);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, nlong * 4);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, nlong * 4);
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_COLLECT_SYNC_SIZE);
 
     shmem_internal_collect(target, source, nlong * 4,
                       PE_start, logPE_stride, PE_size, pSync);
@@ -881,6 +317,10 @@ shmem_collect64(void *target, const void *source, size_t nlong,
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nlong);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, nlong * 8);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, nlong * 8);
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_COLLECT_SYNC_SIZE);
 
     shmem_internal_collect(target, source, nlong * 8,
                       PE_start, logPE_stride, PE_size, pSync);
@@ -893,6 +333,10 @@ shmem_fcollect32(void *target, const void *source, size_t nlong,
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nlong);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, nlong * 4);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, nlong * 4);
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_COLLECT_SYNC_SIZE);
 
     shmem_internal_fcollect(target, source, nlong * 4,
                        PE_start, logPE_stride, PE_size, pSync);
@@ -905,6 +349,10 @@ shmem_fcollect64(void *target, const void *source, size_t nlong,
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nlong);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, nlong * 8);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, nlong * 8);
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_COLLECT_SYNC_SIZE);
 
     shmem_internal_fcollect(target, source, nlong * 8,
                        PE_start, logPE_stride, PE_size, pSync);
@@ -917,6 +365,10 @@ shmem_alltoall32(void *dest, const void *source, size_t nelems, int PE_start,
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems * 4);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, nelems * 4);
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_ALLTOALL_SYNC_SIZE);
 
     shmem_internal_alltoall(dest, source, nelems * 4,
                             PE_start, logPE_stride, PE_size, pSync);
@@ -929,6 +381,10 @@ shmem_alltoall64(void *dest, const void *source, size_t nelems, int PE_start,
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems * 8);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, nelems * 8);
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_ALLTOALL_SYNC_SIZE);
 
     shmem_internal_alltoall(dest, source, nelems * 8,
                             PE_start, logPE_stride, PE_size, pSync);
@@ -941,9 +397,13 @@ shmem_alltoalls32(void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,
                   long *pSync)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ARG_POSITIVE(sst);
-    SHMEM_ERR_CHECK_ARG_POSITIVE(dst);
+    SHMEM_ERR_CHECK_POSITIVE(sst);
+    SHMEM_ERR_CHECK_POSITIVE(dst);
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(dest, 4 * ((nelems-1) * dst + 1));
+    SHMEM_ERR_CHECK_SYMMETRIC(source, 4 * ((nelems-1) * sst + 1));
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_ALLTOALL_SYNC_SIZE);
 
     shmem_internal_alltoalls(dest, source, dst, sst, 4, nelems, PE_start,
                              logPE_stride, PE_size, pSync);
@@ -956,9 +416,13 @@ shmem_alltoalls64(void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,
                   long *pSync)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_ARG_POSITIVE(sst);
-    SHMEM_ERR_CHECK_ARG_POSITIVE(dst);
+    SHMEM_ERR_CHECK_POSITIVE(sst);
+    SHMEM_ERR_CHECK_POSITIVE(dst);
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
+    SHMEM_ERR_CHECK_SYMMETRIC(dest, 8 * ((nelems-1) * dst + 1));
+    SHMEM_ERR_CHECK_SYMMETRIC(source, 8 * ((nelems-1) * sst + 1));
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_ALLTOALL_SYNC_SIZE);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
 
     shmem_internal_alltoalls(dest, source, dst, sst, 8, nelems, PE_start,
                              logPE_stride, PE_size, pSync);

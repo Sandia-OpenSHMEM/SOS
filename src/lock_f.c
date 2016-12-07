@@ -32,6 +32,7 @@ void
 FC_SHMEM_CLEAR_LOCK(long *lockp)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_SYMMETRIC(lockp, sizeof(long));
 
     shmem_internal_clear_lock(lockp);
 }
@@ -43,6 +44,7 @@ void
 FC_SHMEM_SET_LOCK(long *lockp)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_SYMMETRIC(lockp, sizeof(long));
 
     shmem_internal_set_lock(lockp);
 }
@@ -54,6 +56,7 @@ fortran_integer_t
 FC_SHMEM_TEST_LOCK(long *lockp)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_SYMMETRIC(lockp, sizeof(long));
 
     return shmem_internal_test_lock(lockp);
 }

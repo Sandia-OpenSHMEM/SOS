@@ -74,6 +74,7 @@ void
 FC_SHPDEALLOC(void **addr, fortran_integer_t *errcode, fortran_integer_t *want_abort)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_SYMMETRIC_HEAP(*addr);
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     dlfree(*addr);
@@ -92,6 +93,7 @@ FC_SHPCLMOVE(void **addr, fortran_integer_t *length, fortran_integer_t *errcode,
     void *ret;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_SYMMETRIC_HEAP(*addr);
 
     if (*length <= 0) {
         if (0 == *want_abort) {

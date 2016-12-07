@@ -55,6 +55,8 @@ FC_SHMEM_SWAP(fortran_integer_t *target,
     fortran_integer_t newval;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(*pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, SIZEOF_FORTRAN_INTEGER);
 
     shmem_internal_swap(target, value, &newval,
         SIZEOF_FORTRAN_INTEGER, *pe, SHM_INTERNAL_FORTRAN_INTEGER,
@@ -71,9 +73,11 @@ FC_SHMEM_SWAP(fortran_integer_t *target,
     TYPE newval;                                                       \
                                                                        \
     SHMEM_ERR_CHECK_INITIALIZED();                                     \
+    SHMEM_ERR_CHECK_PE(*pe);                                           \
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                              \
     shmem_internal_assert(sizeof(TYPE) == NBYTES);                     \
                                                                        \
-    shmem_internal_swap(target, source, &newval, sizeof(TYPE), *pe,     \
+    shmem_internal_swap(target, source, &newval, sizeof(TYPE), *pe,    \
         SHM_INTERNAL_FC_T(FC_type), SHMEMX_CTX_DEFAULT);               \
     shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);                              \
     return newval;                                                     \
@@ -89,6 +93,8 @@ SHMEM_DEFINE_FOR_FC_EXTENDED_AMO(SHMEM_DEF_FC_SWAP)
     TYPE newval;                                                       \
                                                                        \
     SHMEM_ERR_CHECK_INITIALIZED();                                     \
+    SHMEM_ERR_CHECK_PE(*pe);                                           \
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                              \
     shmem_internal_assert(sizeof(TYPE) == NBYTES);                     \
                                                                        \
     shmem_internal_cswap(target, value, &newval, cond, sizeof(TYPE),   \
@@ -108,6 +114,8 @@ SHMEM_DEFINE_FOR_FC_AMO(SHMEM_DEF_FC_CSWAP)
     TYPE oldval;                                                       \
                                                                        \
     SHMEM_ERR_CHECK_INITIALIZED();                                     \
+    SHMEM_ERR_CHECK_PE(*pe);                                           \
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                              \
     shmem_internal_assert(sizeof(TYPE) == NBYTES);                     \
                                                                        \
     shmem_internal_fetch_atomic(target, value, &oldval, sizeof(TYPE),   \
@@ -128,6 +136,8 @@ SHMEM_DEFINE_FOR_FC_AMO(SHMEM_DEF_FC_FADD)
     TYPE oldval, tmp = 1;                                              \
                                                                        \
     SHMEM_ERR_CHECK_INITIALIZED();                                     \
+    SHMEM_ERR_CHECK_PE(*pe);                                           \
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                              \
     shmem_internal_assert(sizeof(TYPE) == NBYTES);                     \
                                                                        \
     shmem_internal_fetch_atomic(target, &tmp, &oldval, sizeof(TYPE),   \
@@ -147,6 +157,8 @@ SHMEM_DEFINE_FOR_FC_AMO(SHMEM_DEF_FC_FINC)
       fortran_integer_t *pe) {                                         \
                                                                        \
     SHMEM_ERR_CHECK_INITIALIZED();                                     \
+    SHMEM_ERR_CHECK_PE(*pe);                                           \
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                              \
     shmem_internal_assert(sizeof(TYPE) == NBYTES);                     \
                                                                        \
     shmem_internal_atomic_small(target, value, sizeof(TYPE),           \
@@ -165,6 +177,8 @@ SHMEM_DEFINE_FOR_FC_AMO(SHMEM_DEF_FC_ADD)
     TYPE tmp = 1;                                             \
                                                               \
     SHMEM_ERR_CHECK_INITIALIZED();                            \
+    SHMEM_ERR_CHECK_PE(*pe);                                           \
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                              \
     shmem_internal_assert(sizeof(TYPE) == NBYTES);            \
                                                               \
     shmem_internal_atomic_small(target, &tmp, sizeof(TYPE),   \
@@ -183,6 +197,8 @@ SHMEM_DEFINE_FOR_FC_AMO(SHMEM_DEF_FC_INC)
     TYPE val;                                              \
                                                                        \
     SHMEM_ERR_CHECK_INITIALIZED();                                     \
+    SHMEM_ERR_CHECK_PE(*pe);                                           \
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                              \
     shmem_internal_assert(sizeof(TYPE) == NBYTES);                     \
                                                                        \
     shmem_internal_atomic_fetch(&val, (void*)source, sizeof(TYPE),  \
@@ -201,6 +217,8 @@ SHMEM_DEFINE_FOR_FC_EXTENDED_AMO(SHMEM_DEF_FC_FETCH)
       fortran_integer_t *pe) {                                \
                                                               \
     SHMEM_ERR_CHECK_INITIALIZED();                            \
+    SHMEM_ERR_CHECK_PE(*pe);                                           \
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                              \
     shmem_internal_assert(sizeof(TYPE) == (NBYTES));            \
                                                               \
     shmem_internal_atomic_set((void*) target, (const void*)value, \
