@@ -217,103 +217,103 @@ SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_CXX_SET')
 define(`SHMEM_C11_GEN_PUT', `               $2*: shmem_$1_put')dnl
 #define shmem_put(dest, source, nelems, pe) \
     _Generic(&*(dest), \
-SHMEM_EVAL_MACRO_FOR_RMA(`SHMEM_C11_GEN_PUT', `, \') \
+SHMEM_BIND_C_RMA(`SHMEM_C11_GEN_PUT', `, \') \
             )(dest, source, nelems, pe)
 
 define(`SHMEM_C11_GEN_P', `               $2*: shmem_$1_p')dnl
 #define shmem_p(dest, source, pe) \
     _Generic(&*(dest), \
-SHMEM_EVAL_MACRO_FOR_RMA(`SHMEM_C11_GEN_P', `, \') \
+SHMEM_BIND_C_RMA(`SHMEM_C11_GEN_P', `, \') \
             )(dest, source, pe)
 
 define(`SHMEM_C11_GEN_IPUT', `               $2*: shmem_$1_iput')dnl
 #define shmem_iput(dest, source, dst, sst, nelems, pe) \
     _Generic(&*(dest), \
-SHMEM_EVAL_MACRO_FOR_RMA(`SHMEM_C11_GEN_IPUT', `, \') \
+SHMEM_BIND_C_RMA(`SHMEM_C11_GEN_IPUT', `, \') \
             )(dest, source, dst, sst, nelems, pe)
 
 /* Blocking block, scalar, and block-strided get */
 define(`SHMEM_C11_GEN_GET', `               $2*: shmem_$1_get')dnl
 #define shmem_get(dest, source, nelems, pe) \
     _Generic(&*(dest), \
-SHMEM_EVAL_MACRO_FOR_RMA(`SHMEM_C11_GEN_GET', `, \') \
+SHMEM_BIND_C_RMA(`SHMEM_C11_GEN_GET', `, \') \
             )(dest, source, nelems, pe)
 
 define(`SHMEM_C11_GEN_G', `               $2*: shmem_$1_g')dnl
 #define shmem_g(dest, pe) \
     _Generic(&*(dest), \
-SHMEM_EVAL_MACRO_FOR_RMA(`SHMEM_C11_GEN_G', `, \') \
+SHMEM_BIND_C_RMA(`SHMEM_C11_GEN_G', `, \') \
             )(dest, pe)
 
 define(`SHMEM_C11_GEN_IGET', `               $2*: shmem_$1_iget')dnl
 #define shmem_iget(dest, source, dst, sst, nelems, pe) \
     _Generic(&*(dest), \
-SHMEM_EVAL_MACRO_FOR_RMA(`SHMEM_C11_GEN_IGET', `, \') \
+SHMEM_BIND_C_RMA(`SHMEM_C11_GEN_IGET', `, \') \
             )(dest, source, dst, sst, nelems, pe)
 
 /* Nonblocking block put/get */
 define(`SHMEM_C11_GEN_PUT_NBI', `               $2*: shmem_$1_put_nbi')dnl
 #define shmem_put_nbi(dest, source, nelems, pe) \
     _Generic(&*(dest), \
-SHMEM_EVAL_MACRO_FOR_RMA(`SHMEM_C11_GEN_PUT_NBI', `, \') \
+SHMEM_BIND_C_RMA(`SHMEM_C11_GEN_PUT_NBI', `, \') \
             )(dest, source, nelems, pe)
 
 define(`SHMEM_C11_GEN_GET_NBI', `               $2*: shmem_$1_get_nbi')dnl
 #define shmem_get_nbi(dest, source, nelems, pe) \
     _Generic(&*(dest), \
-SHMEM_EVAL_MACRO_FOR_RMA(`SHMEM_C11_GEN_GET_NBI', `, \') \
+SHMEM_BIND_C_RMA(`SHMEM_C11_GEN_GET_NBI', `, \') \
             )(dest, source, nelems, pe)
 
 /* Atomics with standard AMO types */
 define(`SHMEM_C11_GEN_ADD', `               $2*: shmem_$1_add')dnl
 #define shmem_add(dest, value, pe) \
     _Generic(&*(dest), \
-SHMEM_EVAL_MACRO_FOR_AMO(`SHMEM_C11_GEN_ADD', `, \') \
+SHMEM_BIND_C_AMO(`SHMEM_C11_GEN_ADD', `, \') \
             )(dest, value, pe)
 
 define(`SHMEM_C11_GEN_CSWAP', `               $2*: shmem_$1_cswap')dnl
 #define shmem_cswap(dest, cond, value, pe) \
     _Generic(&*(dest), \
-SHMEM_EVAL_MACRO_FOR_AMO(`SHMEM_C11_GEN_CSWAP', `, \') \
+SHMEM_BIND_C_AMO(`SHMEM_C11_GEN_CSWAP', `, \') \
             )(dest, cond, value, pe)
 
 define(`SHMEM_C11_GEN_FINC', `               $2*: shmem_$1_finc')dnl
 #define shmem_finc(dest, pe) \
     _Generic(&*(dest), \
-SHMEM_EVAL_MACRO_FOR_AMO(`SHMEM_C11_GEN_FINC', `, \') \
+SHMEM_BIND_C_AMO(`SHMEM_C11_GEN_FINC', `, \') \
             )(dest, pe)
 
 define(`SHMEM_C11_GEN_INC', `               $2*: shmem_$1_inc')dnl
 #define shmem_inc(dest, pe) \
     _Generic(&*(dest), \
-SHMEM_EVAL_MACRO_FOR_AMO(`SHMEM_C11_GEN_INC', `, \') \
+SHMEM_BIND_C_AMO(`SHMEM_C11_GEN_INC', `, \') \
             )(dest, pe)
 
 define(`SHMEM_C11_GEN_FADD', `               $2*: shmem_$1_fadd')dnl
 #define shmem_fadd(dest, value, pe) \
     _Generic(&*(dest), \
-SHMEM_EVAL_MACRO_FOR_AMO(`SHMEM_C11_GEN_FADD', `, \') \
+SHMEM_BIND_C_AMO(`SHMEM_C11_GEN_FADD', `, \') \
             )(dest, value, pe)
 
 /* Atomics with extended AMO types */
 define(`SHMEM_C11_GEN_SWAP', `               $2*: shmem_$1_swap')dnl
 #define shmem_swap(dest, value, pe) \
     _Generic(&*(dest), \
-SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO(`SHMEM_C11_GEN_SWAP', `, \') \
+SHMEM_BIND_C_EXTENDED_AMO(`SHMEM_C11_GEN_SWAP', `, \') \
             )(dest, value, pe)
 
 define(`SHMEM_C11_GEN_FETCH', `               $2*: shmem_$1_fetch')dnl
 define(`SHMEM_C11_GEN_FETCH_CONST', `               const $2*: shmem_$1_fetch')dnl
 #define shmem_fetch(source, pe) \
     _Generic(&*(source), \
-SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO(`SHMEM_C11_GEN_FETCH', `, \'), \
-SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO(`SHMEM_C11_GEN_FETCH_CONST', `, \') \
+SHMEM_BIND_C_EXTENDED_AMO(`SHMEM_C11_GEN_FETCH', `, \'), \
+SHMEM_BIND_C_EXTENDED_AMO(`SHMEM_C11_GEN_FETCH_CONST', `, \') \
             )(source, pe)
 
 define(`SHMEM_C11_GEN_SET', `               $2*: shmem_$1_set')dnl
 #define shmem_set(dest, value, pe) \
     _Generic(&*(dest), \
-SHMEM_EVAL_MACRO_FOR_EXTENDED_AMO(`SHMEM_C11_GEN_SET', `, \') \
+SHMEM_BIND_C_EXTENDED_AMO(`SHMEM_C11_GEN_SET', `, \') \
             )(dest, value, pe)
 #endif /* C11 */
 

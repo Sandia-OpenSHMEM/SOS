@@ -36,5 +36,5 @@ endif
 
 SUFFIXES = .h4
 
-.h4.h:
+.h4.h: shmem_c_func.m4 shmemx_c_func.m4 ../src/shmem_bind_c.m4
 	$(AM_V_GEN) m4 $< > $@

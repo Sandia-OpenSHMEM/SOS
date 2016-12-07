@@ -37,9 +37,12 @@ define(`SHMEM_PROF_DEF_SWAP',
 #define shmem_$1_swap pshmem_$1_swap')dnl
 SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_SWAP')
 
+#if !defined(__cplusplus) && \
+    !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
 /* shmem_swap is a special case in the API */
 #pragma weak shmem_swap = pshmem_swap
 #define shmem_swap pshmem_swap
+#endif
 
 define(`SHMEM_PROF_DEF_CSWAP',
 `#pragma weak shmem_$1_cswap = pshmem_$1_cswap
@@ -91,9 +94,11 @@ SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_SET')
         return newval;                                          \
     }
 
-SHMEM_BIND_C_EXTENDED_AMO(SHMEM_DEF_SWAP)
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_SWAP)
 
 
+#if !defined(__cplusplus) && \
+    !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
 /* shmem_swap is a special case in the API */
 long
 shmem_swap(long *target, long value, int pe)
@@ -108,6 +113,7 @@ shmem_swap(long *target, long value, int pe)
     shmem_internal_get_wait();
     return newval;
 }
+#endif
 
 
 #define SHMEM_DEF_CSWAP(STYPE,TYPE,ITYPE) \
@@ -124,7 +130,7 @@ shmem_swap(long *target, long value, int pe)
         return newval;                                                  \
     }
 
-SHMEM_BIND_C_AMO(SHMEM_DEF_CSWAP)
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_CSWAP)
 
 #define SHMEM_DEF_INC(STYPE,TYPE,ITYPE)                                 \
     void shmem_##STYPE##_inc(TYPE *target, int pe)                      \
@@ -137,7 +143,7 @@ SHMEM_BIND_C_AMO(SHMEM_DEF_CSWAP)
                                     SHM_INTERNAL_SUM, ITYPE);           \
     }
 
-SHMEM_BIND_C_AMO(SHMEM_DEF_INC)
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_INC)
 
 #define SHMEM_DEF_FINC(STYPE,TYPE,ITYPE)                                \
     TYPE shmem_##STYPE##_finc(TYPE *target, int pe)                     \
@@ -152,7 +158,7 @@ SHMEM_BIND_C_AMO(SHMEM_DEF_INC)
         return oldval;                                                  \
     }
 
-SHMEM_BIND_C_AMO(SHMEM_DEF_FINC)
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_FINC)
 
 #define SHMEM_DEF_ADD(STYPE,TYPE,ITYPE)                                 \
     void shmem_##STYPE##_add(TYPE *target, TYPE value, int pe)          \
@@ -166,7 +172,7 @@ SHMEM_BIND_C_AMO(SHMEM_DEF_FINC)
     }
 
 
-SHMEM_BIND_C_AMO(SHMEM_DEF_ADD)
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_ADD)
 
 #define SHMEM_DEF_FADD(STYPE,TYPE,ITYPE)                                \
     TYPE shmem_##STYPE##_fadd(TYPE *target, TYPE value, int pe)         \
@@ -182,7 +188,7 @@ SHMEM_BIND_C_AMO(SHMEM_DEF_ADD)
         return oldval;                                                  \
     }
 
-SHMEM_BIND_C_AMO(SHMEM_DEF_FADD)
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_FADD)
 
 #define SHMEM_DEF_FETCH(STYPE,TYPE,ITYPE)                               \
     TYPE shmem_##STYPE##_fetch(const TYPE *source, int pe)              \
@@ -199,7 +205,7 @@ SHMEM_BIND_C_AMO(SHMEM_DEF_FADD)
         return val;                                                     \
     }
 
-SHMEM_BIND_C_EXTENDED_AMO(SHMEM_DEF_FETCH)
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_FETCH)
 
 
 #define SHMEM_DEF_SET(STYPE,TYPE,ITYPE)                                 \
@@ -213,4 +219,4 @@ SHMEM_BIND_C_EXTENDED_AMO(SHMEM_DEF_FETCH)
                                   pe, ITYPE);                           \
     }
 
-SHMEM_BIND_C_EXTENDED_AMO(SHMEM_DEF_SET)
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_SET)
