@@ -15,17 +15,24 @@
 # shmem.h should appear in BOTH $(includedir)/shmem.h and $(includedir)/mpp/shmem.h!
 mppdir = $(includedir)/mpp
 
-mpp_HEADERS = shmem.h shmemx.h pshmem.h
-include_HEADERS = shmem.h shmemx.h pshmem.h
+mpp_HEADERS = shmem.h shmemx.h
+include_HEADERS = shmem.h shmemx.h
+
+BUILT_SOURCES = shmem.h
+CLEANFILES += shmem.h
+
+if ENABLE_PROFILING
+mpp_HEADERS += pshmem.h
+include_HEADERS += pshmem.h
+
+BUILT_SOURCES += pshmem.h
+CLEANFILES += pshmem.h
+endif
 
 if HAVE_FORTRAN
 mpp_HEADERS += shmem.fh shmemx.fh
 include_HEADERS += shmem.fh shmemx.fh
 endif
-
-BUILT_SOURCES = shmem.h
-
-CLEANFILES += shmem.h
 
 SUFFIXES = .h4
 

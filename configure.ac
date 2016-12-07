@@ -405,6 +405,11 @@ AC_CONFIG_FILES([Makefile
   test/performance/shmem_perf_suite/Makefile
   test/performance/tests/Makefile
   test/apps/Makefile])
+
+if test "$enable_profiling" = "yes"; then
+    AC_CONFIG_FILES([mpp/pshmem.h4])
+fi
+
 AS_IF([test "$enable_pmi_simple" = "yes"],
 	[AC_CONFIG_SUBDIRS([shmem_pmi])])
 AC_OUTPUT

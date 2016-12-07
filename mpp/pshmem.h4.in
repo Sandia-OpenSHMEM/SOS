@@ -1,0 +1,61 @@
+dnl vi: set ft=m4
+/* -*- C -*-
+ *
+ * Copyright 2011 Sandia Corporation. Under the terms of Contract
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
+ * retains certain rights in this software.
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
+ * This file is part of the Sandia OpenSHMEM software package. For license
+ * information, see the LICENSE file in the top level directory of the
+ * distribution.
+ *
+ */
+
+/*
+ * This is a generated file, do not edit directly.
+ */
+
+include(../src/shmem_bind_c.m4)dnl
+#ifndef PSHMEM_H
+#define PSHMEM_H
+
+#include <shmemx.h>
+#include <stddef.h>
+#include <complex.h>
+
+#ifdef __cplusplus
+#ifndef complex
+#define complex _Complex
+#define SHMEM_UNDEF_COMPLEX
+#endif
+extern "C" {
+#endif
+
+define(`SHPRE', `p')dnl
+include(shmem_c_func.m4)dnl
+
+/* EXT: Experimental SHMEM Extensions */
+void pshmemx_init_thread(int tl_requested, int *tl_provided);
+double pshmemx_wtime(void);
+char* pshmemx_nodename(void);
+
+/* EXT: Signalling puts */
+void pshmemx_getmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe);
+void pshmemx_putmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe);
+void pshmemx_ct_create(shmemx_ct_t *ct);
+void pshmemx_ct_free(shmemx_ct_t *ct);
+long pshmemx_ct_get(shmemx_ct_t ct);
+void pshmemx_ct_set(shmemx_ct_t ct, long value);
+void pshmemx_ct_wait(shmemx_ct_t ct, long wait_for);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#ifdef SHMEM_UNDEF_COMPLEX
+#undef complex
+#endif
+#endif
+
+#endif /* PSHMEM_H */
