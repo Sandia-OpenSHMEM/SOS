@@ -91,41 +91,5 @@ define(`SHMEM_BIND_C_CMPLX_OP', dnl args: decl, s_op, op
 `$1(complexf, float complex, SHM_INTERNAL_FLOAT_COMPLEX, $2, $3)
 $1(complexd, double complex,SHM_INTERNAL_DOUBLE_COMPLEX,$2, $3)')dnl
 dnl
-define(`SHMEM_BIND_F_RMA', dnl args: decl
-`$1(character, CHARACTER,    SIZEOF_FORTRAN_CHARACTER)
-$1(complex,  COMPLEX,       SIZEOF_FORTRAN_COMPLEX)
-$1(double,   DOUBLE,        SIZEOF_FORTRAN_DOUBLE_PRECISION)
-$1(integer,  INTEGER,       SIZEOF_FORTRAN_INTEGER)
-$1(logical,  LOGICAL,       SIZEOF_FORTRAN_LOGICAL)
-$1(real,     REAL,          SIZEOF_FORTRAN_REAL)')dnl
-dnl
-define(`SHMEM_BIND_F_SIZES', dnl args: decl
-`$1(mem,     MEM,    1)
-$1(4,       4,      4)
-$1(8,       8,      8)
-$1(32,      32,     4)
-$1(64,      64,     8)
-$1(128,     128,    16)')dnl
-dnl
-define(`SHMEM_BIND_F_COLL_SIZES', dnl args: decl
-`$1(4,       4)
-$1(8,       8)
-$1(32,      4)
-$1(64,      8)')dnl
-dnl
-define(`SHMEM_BIND_F_INTS_OP', dnl args: decl, s_op_l, s_op_u, op
-`$1(int4,    INT4,   int32_t,     SHM_INTERNAL_INT32,  $2, $3, $4, 4)
-$1(int8,    INT8,   int64_t,     SHM_INTERNAL_INT64,  $2, $3, $4, 8)')dnl
-dnl
-define(`SHMEM_BIND_F_FLOATS_OP', dnl args: decl, s_op_l, s_op_u, op
-`#if SIZEOF_LONG_DOUBLE == 16
-$1(real4,   REAL4,  float,       SHM_INTERNAL_FLOAT,  $2, $3, $4, 4)
-$1(real8,   REAL8,  double,      SHM_INTERNAL_DOUBLE, $2, $3, $4, 8)
-$1(real16,  REAL16, long double, SHM_INTERNAL_LONG_DOUBLE, $2, $3, $4, 16)
-#else
-$1(real4,   REAL4,  float,       SHM_INTERNAL_FLOAT,  $2, $3, $4, 4)
-$1(real8,   REAL8,  double,      SHM_INTERNAL_DOUBLE, $2, $3, $4, 8)
-#endif')dnl
-dnl
 define(`SH_PAD',
 `substr(`                    ', 1, eval(len(`$1')+len(`$2')))')dnl

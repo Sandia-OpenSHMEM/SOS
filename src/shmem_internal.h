@@ -356,42 +356,4 @@ char *shmem_util_getenv_str(const char* name);
 #define MAX(A,B) (A) > (B) ? (A) : (B)
 #endif
 
-/* Language bindings helper macros */
-#define SHMEM_BIND_F_RMA(decl)                                          \
-  decl(character, CHARACTER,    SIZEOF_FORTRAN_CHARACTER)               \
-  decl(complex,  COMPLEX,       SIZEOF_FORTRAN_COMPLEX)                 \
-  decl(double,   DOUBLE,        SIZEOF_FORTRAN_DOUBLE_PRECISION)        \
-  decl(integer,  INTEGER,       SIZEOF_FORTRAN_INTEGER)                 \
-  decl(logical,  LOGICAL,       SIZEOF_FORTRAN_LOGICAL)                 \
-  decl(real,     REAL,          SIZEOF_FORTRAN_REAL)
-
-#define SHMEM_BIND_F_SIZES(decl)        \
-  decl(mem,     MEM,    1)              \
-  decl(4,       4,      4)              \
-  decl(8,       8,      8)              \
-  decl(32,      32,     4)              \
-  decl(64,      64,     8)              \
-  decl(128,     128,    16)
-
-#define SHMEM_BIND_F_COLL_SIZES(decl)   \
-  decl(4,       4)                      \
-  decl(8,       8)                      \
-  decl(32,      4)                      \
-  decl(64,      8)
-
-#define SHMEM_BIND_F_INTS_OP(decl, s_op_l, s_op_u, op) \
-  decl(int4,    INT4,   int32_t,     SHM_INTERNAL_INT32,  s_op_l, s_op_u, op, 4) \
-  decl(int8,    INT8,   int64_t,     SHM_INTERNAL_INT64,  s_op_l, s_op_u, op, 8)
-
-#if SIZEOF_LONG_DOUBLE == 16
-#define SHMEM_BIND_F_FLOATS_OP(decl, s_op_l, s_op_u, op) \
-  decl(real4,   REAL4,  float,       SHM_INTERNAL_FLOAT,  s_op_l, s_op_u, op, 4) \
-  decl(real8,   REAL8,  double,      SHM_INTERNAL_DOUBLE, s_op_l, s_op_u, op, 8) \
-  decl(real16,  REAL16, long double, SHM_INTERNAL_LONG_DOUBLE, s_op_l, s_op_u, op, 16)
-#else
-#define SHMEM_BIND_F_FLOATS_OP(decl, s_op_l, s_op_u, op) \
-  decl(real4,   REAL4,  float,       SHM_INTERNAL_FLOAT,  s_op_l, s_op_u, op, 4) \
-  decl(real8,   REAL8,  double,      SHM_INTERNAL_DOUBLE, s_op_l, s_op_u, op, 8)
-#endif
-
 #endif

@@ -14,11 +14,17 @@
 
 AM_CPPFLAGS = -I$(top_srcdir)/mpp
 
-C_BINDINGS = \
+GEN_BINDINGS = \
 	atomic_c.c \
 	collectives_c.c \
 	data_c.c \
 	synchronization_c.c
+
+if HAVE_FORTRAN
+GEN_BINDINGS += \
+	collectives_f.c \
+	data_f.c
+endif
 
 lib_LTLIBRARIES = libsma.la
 libsma_la_SOURCES = \
@@ -46,11 +52,11 @@ libsma_la_SOURCES = \
 	cache_management_c.c \
 	transport.h \
 	util.c \
-	$(C_BINDINGS)
+	$(GEN_BINDINGS)
 
-BUILT_SOURCES = $(C_BINDINGS)
+BUILT_SOURCES = $(GEN_BINDINGS)
 
-CLEANFILES += $(C_BINDINGS)
+CLEANFILES += $(GEN_BINDINGS)
 
 if HAVE_FORTRAN
 libsma_la_SOURCES += \
@@ -59,10 +65,8 @@ libsma_la_SOURCES += \
 	accessibility_f.c \
 	symmetric_heap_f.c \
 	remote_pointer_f.c \
-	data_f.c \
 	atomic_f.c \
 	synchronization_f.c \
-	collectives_f.c \
 	lock_f.c \
 	cache_management_f.c
 endif
