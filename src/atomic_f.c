@@ -198,7 +198,6 @@ SHMEM_DEFINE_FOR_FC_AMO(SHMEM_DEF_FC_INC)
                                                                        \
     SHMEM_ERR_CHECK_INITIALIZED();                                     \
     SHMEM_ERR_CHECK_PE(*pe);                                           \
-    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                              \
     shmem_internal_assert(sizeof(TYPE) == NBYTES);                     \
                                                                        \
     shmem_internal_atomic_fetch(&val, (void*)source, sizeof(TYPE),  \
