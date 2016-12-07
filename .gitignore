@@ -35,6 +35,8 @@ config/missing
 config/test-driver
 mpp/shmem.fh
 mpp/shmem.h
+mpp/shmem.h4
+mpp/pshmem.h4
 mpp/shmemx.fh
 mpp/shmemx.h
 sandia-openshmem.spec

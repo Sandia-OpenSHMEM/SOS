@@ -36,20 +36,7 @@ extern "C" {
 
 define(`SHPRE', `p')dnl
 include(shmem_c_func.m4)dnl
-
-/* EXT: Experimental SHMEM Extensions */
-void pshmemx_init_thread(int tl_requested, int *tl_provided);
-double pshmemx_wtime(void);
-char* pshmemx_nodename(void);
-
-/* EXT: Signalling puts */
-void pshmemx_getmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe);
-void pshmemx_putmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe);
-void pshmemx_ct_create(shmemx_ct_t *ct);
-void pshmemx_ct_free(shmemx_ct_t *ct);
-long pshmemx_ct_get(shmemx_ct_t ct);
-void pshmemx_ct_set(shmemx_ct_t ct, long value);
-void pshmemx_ct_wait(shmemx_ct_t ct, long wait_for);
+include(shmemx_c_func.m4)dnl
 
 #ifdef __cplusplus
 } /* extern "C" */

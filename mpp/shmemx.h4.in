@@ -1,3 +1,4 @@
+dnl vi: set ft=m4
 /* -*- C -*-
  *
  * Copyright 2011 Sandia Corporation. Under the terms of Contract
@@ -13,6 +14,11 @@
  *
  */
 
+/*
+ * This is a generated file, do not edit directly.
+ */
+
+include(../src/shmem_bind_c.m4)dnl
 #ifndef SHMEMX_H
 #define SHMEMX_H
 
@@ -25,19 +31,10 @@
 
 #define HAVE_SHMEMX_WTIME
 
-void shmemx_init_thread(int tl_requested, int *tl_provided);
-double shmemx_wtime(void);
-char* shmemx_nodename(void);
-
 /* Counting puts */
 typedef char * shmemx_ct_t;
 
-void shmemx_getmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe);
-void shmemx_putmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe);
-void shmemx_ct_create(shmemx_ct_t *ct);
-void shmemx_ct_free(shmemx_ct_t *ct);
-long shmemx_ct_get(shmemx_ct_t ct);
-void shmemx_ct_set(shmemx_ct_t ct, long value);
-void shmemx_ct_wait(shmemx_ct_t ct, long wait_for);
+define(`SHPRE', `')dnl
+include(shmemx_c_func.m4)dnl
 
 #endif /* SHMEMX_H */
