@@ -165,6 +165,8 @@ typedef struct shmem_transport_ct_t shmem_transport_ct_t;
         } else if (((void*) target > shmem_internal_heap_base) &&       \
                    ((char*) target < (char*) shmem_internal_heap_base + shmem_internal_heap_length)) { \
         } else {                                                        \
+            offset = 0;                                                 \
+            pt = -1;                                                    \
             printf("[%03d] ERROR: target (0x%lx) outside of symmetric areas\n", \
                    shmem_internal_my_pe, (unsigned long) target);       \
             RAISE_ERROR(1);                                             \
@@ -184,6 +186,8 @@ typedef struct shmem_transport_ct_t shmem_transport_ct_t;
             pt = (heap_pt);                                             \
             offset = (char*) target - (char*) shmem_internal_heap_base; \
         } else {                                                        \
+            offset = 0;                                                 \
+            pt = -1;                                                    \
             printf("[%03d] ERROR: target (0x%lx) outside of symmetric areas\n", \
                    shmem_internal_my_pe, (unsigned long) target);       \
             RAISE_ERROR(1);                                             \
