@@ -165,4 +165,4 @@ oshrun: shmem_launcher_script.in Makefile
 SUFFIXES = .c4
 
 .c4.c: shmem_bind_c.m4 shmem_bind_f.m4
-	$(AM_V_GEN) m4 $< > $@
+	$(AM_V_GEN) $(M4) $< > $@

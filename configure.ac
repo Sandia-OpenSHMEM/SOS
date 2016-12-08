@@ -149,6 +149,11 @@ AC_C_INLINE
 AC_PROG_CXX dnl required even with --disable-cxx due to automake conditionals
 m4_ifdef([AM_PROG_AR],[AM_PROG_AR])
 AC_PATH_PROG([PERL],[perl])
+
+AC_PATH_PROG([M4], [m4], [false])
+AS_IF([test "$M4" = "false"],
+      [AC_MSG_ERROR([Could not find 'm4' macro processor])])
+
 if test "$enable_fortran" != "no" ; then
   AC_PROG_FC
 else
