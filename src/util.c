@@ -112,15 +112,22 @@ char *
 shmem_util_getenv_str(const char* name)
 {
     char *env_name, *env_value;
+    int ret;
 
-    asprintf(&env_name, "SMA_%s", name);
+    ret = asprintf(&env_name, "SMA_%s", name);
+    if (ret < 0) {
+        RAISE_ERROR(ret);
+    }
     env_value = getenv(env_name);
     free(env_name);
     if (env_value != NULL) {
         return env_value;
     }
 
-    asprintf(&env_name, "SHMEM_%s", name);
+    ret = asprintf(&env_name, "SHMEM_%s", name);
+    if (ret < 0) {
+        RAISE_ERROR(ret);
+    }
     env_value = getenv(env_name);
     free(env_name);
     if (env_value != NULL) {
