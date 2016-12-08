@@ -8,30 +8,30 @@ dnl
 dnl This file contains the m4 macros used to generate the SOS C bindings.
 dnl
 define(`SHMEM_BIND_C_RMA',
-`$1(float,      float)`$2'
-$1(double,     double)`$2'
-$1(longdouble, long double)`$2'
-$1(char,       char)`$2'
-$1(short,      short)`$2'
-$1(int,        int)`$2'
-$1(long,       long)`$2'
+`$1(float,      float)$2
+$1(double,     double)$2
+$1(longdouble, long double)$2
+$1(char,       char)$2
+$1(short,      short)$2
+$1(int,        int)$2
+$1(long,       long)$2
 $1(longlong,   long long)')dnl
 dnl
 define(`SHMEM_BIND_C_SIZES',
-`$1(8,          1)`$2'
-$1(16,         2)`$2'
-$1(32,         4)`$2'
-$1(64,         8)`$2'
+`$1(8,          1)$2
+$1(16,         2)$2
+$1(32,         4)$2
+$1(64,         8)$2
 $1(128,        16)')dnl
 dnl
 define(`SHMEM_BIND_C_AMO',
-`$1(int,        int,        `SHM_INTERNAL_INT')`$2'
-$1(long,       long,       `SHM_INTERNAL_LONG')`$2'
+`$1(int,        int,        `SHM_INTERNAL_INT')$2
+$1(long,       long,       `SHM_INTERNAL_LONG')$2
 $1(longlong,   long long,  `SHM_INTERNAL_LONG_LONG')')dnl
 dnl
 define(`SHMEM_BIND_C_EXTENDED_AMO',
-`SHMEM_BIND_C_AMO(`$1',`$2')`$2'
-$1(float,      float,      `SHM_INTERNAL_FLOAT')`$2'
+`SHMEM_BIND_C_AMO(`$1',`$2')$2
+$1(float,      float,      `SHM_INTERNAL_FLOAT')$2
 $1(double,     double,     `SHM_INTERNAL_DOUBLE')')dnl
 dnl
 define(`SHMEM_BIND_C_WAIT',

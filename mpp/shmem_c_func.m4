@@ -215,12 +215,12 @@ void SHPRE()shmem_alltoalls64(void *dest, const void *source, ptrdiff_t dst,
 /* Point-to-Point Synchronization Routines */
 define(`SHMEM_C_WAIT',
 `void SHPRE()shmem_$1_wait(volatile $2 *var, $2 value);')dnl
-void shmem_wait(volatile long *ivar, long cmp_value);
+void SHPRE()shmem_wait(volatile long *ivar, long cmp_value);
 SHMEM_BIND_C_WAIT(`SHMEM_C_WAIT')
 
 define(`SHMEM_C_WAIT_UNTIL',
 `void SHPRE()shmem_$1_wait_until(volatile $2 *var, int cond, $2 value);')dnl
-void shmem_wait_until(volatile long *ivar, int cmp, long value);
+void SHPRE()shmem_wait_until(volatile long *ivar, int cmp, long value);
 SHMEM_BIND_C_WAIT(`SHMEM_C_WAIT_UNTIL')
 
 /* Memory Ordering Routines */

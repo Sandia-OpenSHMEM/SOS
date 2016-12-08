@@ -46,12 +46,12 @@ include(shmem_bind_c.m4)dnl
 define(`SHMEM_PROF_DEF_WAIT',
 `#pragma weak shmem_$1_wait = pshmem_$1_wait
 #define shmem_$1_wait pshmem_$1_wait')dnl
-SHMEM_DEFINE_FOR_INTS(`SHMEM_PROF_DEF_WAIT')
+SHMEM_BIND_C_WAIT(`SHMEM_PROF_DEF_WAIT')
 
 define(`SHMEM_PROF_DEF_WAIT_UNTIL',
 `#pragma weak shmem_$1_wait_until = pshmem_$1_wait_until
 #define shmem_$1_wait_until pshmem_$1_wait_until')dnl
-SHMEM_DEFINE_FOR_INTS(`SHMEM_PROF_DEF_WAIT_UNTIL')
+SHMEM_BIND_C_WAIT(`SHMEM_PROF_DEF_WAIT_UNTIL')
 
 #endif /* ENABLE_PROFILING */
 
