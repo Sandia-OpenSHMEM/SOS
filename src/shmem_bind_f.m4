@@ -1,12 +1,11 @@
-dnl Copyright 2011 Sandia Corporation. Under the terms of Contract
-dnl DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
-dnl retains certain rights in this software.
+dnl Copyright (c) 2016 Intel Corporation. All rights reserved.
+dnl This software is available to you under the BSD license.
 dnl
 dnl This file is part of the Sandia OpenSHMEM software package. For license
 dnl information, see the LICENSE file in the top level directory of the
 dnl distribution.
 dnl
-dnl This file contains the m4 macros used to generate the SOS C bindings.
+dnl This file contains m4 macros used to generate the SOS Fortran bindings.
 dnl
 define(`SHMEM_BIND_F_RMA', dnl args: macro_name
 `$1(character, `SIZEOF_FORTRAN_CHARACTER')

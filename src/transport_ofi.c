@@ -1,8 +1,11 @@
-/*
+/* -*- C -*-
  *
- *  Copyright (c) 2015 Intel Corporation. All rights reserved.
- *  This software is available to you under the BSD license. For
- *  license information, see the LICENSE file in the top level directory.
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
+ * This file is part of the Sandia OpenSHMEM software package. For license
+ * information, see the LICENSE file in the top level directory of the
+ * distribution.
  *
  */
 

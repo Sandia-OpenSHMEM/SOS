@@ -1,6 +1,5 @@
-dnl Copyright 2011 Sandia Corporation. Under the terms of Contract
-dnl DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
-dnl retains certain rights in this software.
+dnl Copyright (c) 2016 Intel Corporation. All rights reserved.
+dnl This software is available to you under the BSD license.
 dnl
 dnl This file is part of the Sandia OpenSHMEM software package. For license
 dnl information, see the LICENSE file in the top level directory of the
