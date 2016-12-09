@@ -11,7 +11,7 @@
 # information, see the LICENSE file in the top level directory of the
 # distribution.
 
-AM_CPPFLAGS = -I$(top_srcdir)/mpp
+AM_CPPFLAGS = -I$(top_builddir)/mpp
 
 GEN_BINDINGS = \
 	atomic_c.c \
@@ -165,4 +165,4 @@ oshrun: shmem_launcher_script.in Makefile
 SUFFIXES = .c4
 
 .c4.c: shmem_bind_c.m4 shmem_bind_f.m4
-	$(AM_V_GEN) $(M4) $< > $@
+	$(AM_V_GEN) $(M4) -I$(top_srcdir)/src $< > $@

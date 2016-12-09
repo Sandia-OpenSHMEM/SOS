@@ -118,8 +118,8 @@ endif
 NPROCS ?= 2
 LOG_COMPILER = $(TEST_RUNNER)
 
-AM_CPPFLAGS = -I$(top_srcdir)/mpp
-AM_FCFLAGS = -I$(top_srcdir)/mpp
+AM_CPPFLAGS = -I$(top_builddir)/mpp
+AM_FCFLAGS = -I$(top_builddir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
 
 pi_SOURCES = pi.c
