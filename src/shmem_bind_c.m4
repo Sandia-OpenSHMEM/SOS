@@ -7,7 +7,7 @@ dnl distribution.
 dnl
 dnl This file contains the m4 macros used to generate the SOS C bindings.
 dnl
-define(`SHMEM_BIND_C_RMA',
+define(`SHMEM_BIND_C_RMA', dnl args: macro_name, end
 `$1(float,      float)$2
 $1(double,     double)$2
 $1(longdouble, long double)$2
@@ -17,41 +17,41 @@ $1(int,        int)$2
 $1(long,       long)$2
 $1(longlong,   long long)')dnl
 dnl
-define(`SHMEM_BIND_C_SIZES',
+define(`SHMEM_BIND_C_SIZES', dnl args: macro_name, end
 `$1(8,          1)$2
 $1(16,         2)$2
 $1(32,         4)$2
 $1(64,         8)$2
 $1(128,        16)')dnl
 dnl
-define(`SHMEM_BIND_C_AMO',
+define(`SHMEM_BIND_C_AMO', dnl args: macro_name, end
 `$1(int,        int,        `SHM_INTERNAL_INT')$2
 $1(long,       long,       `SHM_INTERNAL_LONG')$2
 $1(longlong,   long long,  `SHM_INTERNAL_LONG_LONG')')dnl
 dnl
-define(`SHMEM_BIND_C_EXTENDED_AMO',
+define(`SHMEM_BIND_C_EXTENDED_AMO', dnl args: macro_name, end
 `SHMEM_BIND_C_AMO(`$1',`$2')$2
 $1(float,      float,      `SHM_INTERNAL_FLOAT')$2
 $1(double,     double,     `SHM_INTERNAL_DOUBLE')')dnl
 dnl
-define(`SHMEM_BIND_C_WAIT',
+define(`SHMEM_BIND_C_WAIT', dnl args: macro_name
 `$1(short,      short)
 $1(int,        int)
 $1(long,       long)
 $1(longlong,   long long)')dnl
 dnl
-define(`SHMEM_BIND_C_COLL_INTS',
+define(`SHMEM_BIND_C_COLL_INTS', dnl args: macro_name, op_name, op_const
 `$1(short,    short,         `SHM_INTERNAL_SHORT',         `$2', `$3')
 $1(int,      int,           `SHM_INTERNAL_INT',           `$2', `$3')
 $1(long,     long,          `SHM_INTERNAL_LONG',          `$2', `$3')
 $1(longlong, long long,     `SHM_INTERNAL_LONG_LONG',     `$2', `$3')')dnl
 dnl
-define(`SHMEM_BIND_C_COLL_FLOATS',
+define(`SHMEM_BIND_C_COLL_FLOATS', dnl args: macro_name, op_name, op_const
 `$1(float,    float,         `SHM_INTERNAL_FLOAT',         `$2', `$3')
 $1(double,   double,        `SHM_INTERNAL_DOUBLE',        `$2', `$3')
 $1(longdouble, long double, `SHM_INTERNAL_LONG_DOUBLE',   `$2', `$3')')dnl
 dnl
-define(`SHMEM_BIND_C_COLL_CMPLX',
+define(`SHMEM_BIND_C_COLL_CMPLX', dnl args: macro_name, op_name, op_const
 `$1(complexf, float complex, `SHM_INTERNAL_FLOAT_COMPLEX', `$2', `$3')
 $1(complexd, double complex,`SHM_INTERNAL_DOUBLE_COMPLEX',`$2', `$3')')dnl
 dnl

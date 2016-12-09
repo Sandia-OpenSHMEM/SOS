@@ -22,6 +22,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 #define ATTRIBUTE __attribute__
 #define MPI_MAX_PORT_NAME 256

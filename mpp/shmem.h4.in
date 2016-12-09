@@ -72,7 +72,6 @@ extern "C" {
 #define  SHMEM_VENDOR_STRING "Sandia OpenSHMEM"
 #define _SHMEM_VENDOR_STRING SHMEM_VENDOR_STRING
 
-define(`SHFN', `shmem_')dnl
 define(`SHPRE', `')dnl
 include(shmem_c_func.m4)dnl
 
@@ -84,7 +83,6 @@ include(shmem_c_func.m4)dnl
 #endif
 
 /* Blocking block, scalar, and block-strided put */
-dnl args: TYPENAME,TYPE
 define(`SHMEM_CXX_PUT',
 `static inline void shmem_put($2* dest, const $2* source,
                              size_t nelems, int pe) {
@@ -92,14 +90,12 @@ define(`SHMEM_CXX_PUT',
 }')dnl
 SHMEM_DEFINE_FOR_RMA(`SHMEM_CXX_PUT')
 
-dnl args: TYPENAME,TYPE
 define(`SHMEM_CXX_P',
 `static inline void shmem_p($2* dest, $2 value, int pe) {
     shmem_$1_p(dest, value, pe);
 }')dnl
 SHMEM_DEFINE_FOR_RMA(`SHMEM_CXX_P')
 
-dnl args: TYPENAME,TYPE
 define(`SHMEM_CXX_IPUT',
 `static inline void shmem_iput($2 *target, const $2 *source,
                               ptrdiff_t tst, ptrdiff_t sst,
@@ -109,7 +105,6 @@ define(`SHMEM_CXX_IPUT',
 SHMEM_DEFINE_FOR_RMA(`SHMEM_CXX_IPUT')
 
 /* Blocking block, scalar, and block-strided get */
-dnl args: TYPENAME,TYPE
 define(`SHMEM_CXX_GET',
 `static inline void shmem_get($2* dest, const $2* source,
                              size_t nelems, int pe) {
@@ -117,14 +112,12 @@ define(`SHMEM_CXX_GET',
 }')dnl
 SHMEM_DEFINE_FOR_RMA(`SHMEM_CXX_GET')
 
-dnl args: TYPENAME,TYPE
 define(`SHMEM_CXX_G',
 `static inline $2 shmem_g(const $2* src, int pe) {
     return shmem_$1_g(src, pe);
 }')dnl
 SHMEM_DEFINE_FOR_RMA(`SHMEM_CXX_G')
 
-dnl args: TYPENAME,TYPE
 define(`SHMEM_CXX_IGET',
 `static inline void shmem_iget($2 *target, const $2 *source,
                               ptrdiff_t tst, ptrdiff_t sst,
@@ -134,7 +127,6 @@ define(`SHMEM_CXX_IGET',
 SHMEM_DEFINE_FOR_RMA(`SHMEM_CXX_IGET')
 
 /* Nonblocking block put/get */
-dnl args: TYPENAME,TYPE
 define(`SHMEM_CXX_PUT_NBI',
 `static inline void shmem_put_nbi($2* dest, const $2* source,
                                  size_t nelems, int pe) {
@@ -142,7 +134,6 @@ define(`SHMEM_CXX_PUT_NBI',
 }')dnl
 SHMEM_DEFINE_FOR_RMA(`SHMEM_CXX_PUT_NBI')
 
-dnl args: TYPENAME,TYPE
 define(`SHMEM_CXX_GET_NBI',
 `static inline void shmem_get_nbi($2* dest, const $2* source,
                                  size_t nelems, int pe) {
@@ -152,35 +143,30 @@ SHMEM_DEFINE_FOR_RMA(`SHMEM_CXX_GET_NBI')
 
 
 /* Atomics with standard AMO types */
-dnl args: TYPENAME,TYPE
 define(`SHMEM_CXX_ADD',
 `static inline void shmem_add($2 *target, $2 value, int pe) {
     shmem_$1_add(target, value, pe);
 }')dnl
 SHMEM_DEFINE_FOR_AMO(`SHMEM_CXX_ADD')
 
-dnl args: TYPENAME,TYPE
 define(`SHMEM_CXX_CSWAP',
 `static inline $2 shmem_cswap($2 *target, $2 cond, $2 value, int pe) {
     return shmem_$1_cswap(target, cond, value, pe);
 }')dnl
 SHMEM_DEFINE_FOR_AMO(`SHMEM_CXX_CSWAP')
 
-dnl args: TYPENAME,TYPE
 define(`SHMEM_CXX_FINC',
 `static inline $2 shmem_finc($2 *target, int pe) {
     return shmem_$1_finc(target, pe);
 }')dnl
 SHMEM_DEFINE_FOR_AMO(`SHMEM_CXX_FINC')
 
-dnl args: TYPENAME,TYPE
 define(`SHMEM_CXX_INC',
 `static inline void shmem_inc($2 *target, int pe) {
     shmem_$1_inc(target, pe);
 }')dnl
 SHMEM_DEFINE_FOR_AMO(`SHMEM_CXX_INC')
 
-dnl args: TYPENAME,TYPE
 define(`SHMEM_CXX_FADD',
 `static inline $2 shmem_fadd($2 *target, $2 value, int pe) {
     return shmem_$1_fadd(target, value, pe);
@@ -188,21 +174,18 @@ define(`SHMEM_CXX_FADD',
 SHMEM_DEFINE_FOR_AMO(`SHMEM_CXX_FADD')
 
 /* Atomics with extended AMO types */
-dnl args: TYPENAME,TYPE
 define(`SHMEM_CXX_SWAP',
 `static inline $2 shmem_swap($2 *target, $2 value, int pe) {
     return shmem_$1_swap(target, value, pe);
 }')dnl
 SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_CXX_SWAP')
 
-dnl args: TYPENAME,TYPE
 define(`SHMEM_CXX_FETCH',
 `static inline $2 shmem_fetch(const $2 *target, int pe) {
     return shmem_$1_fetch(target, pe);
 }')dnl
 SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_CXX_FETCH')
 
-dnl args: TYPENAME,TYPE
 define(`SHMEM_CXX_SET',
 `static inline void shmem_set($2 *target, $2 value, int pe) {
     shmem_$1_set(target, value, pe);
