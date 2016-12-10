@@ -1,8 +1,11 @@
-/*
+/* -*- C -*-
  *
- *  Copyright (c) 2015 Intel Corporation. All rights reserved.
- *  This software is available to you under the BSD license. For
- *  license information, see the LICENSE file in the top level directory.
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
+ * This file is part of the Sandia OpenSHMEM software package. For license
+ * information, see the LICENSE file in the top level directory of the
+ * distribution.
  *
  */
 
@@ -131,6 +134,7 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
     }
 
     else {
+        *key = -1;
         *mr_addr = NULL;
         OFI_ERRMSG("[%03d] ERROR in %s: address (0x%p) outside of symmetric areas\n",
                shmem_internal_my_pe, __func__, addr);

@@ -3,16 +3,27 @@
 # Copyright 2011 Sandia Corporation. Under the terms of Contract
 # DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
 # retains certain rights in this software.
-# 
-# Copyright (c) 2015 Intel Corporation. All rights reserved.
+#
+# Copyright (c) 2016 Intel Corporation. All rights reserved.
 # This software is available to you under the BSD license.
 #
 # This file is part of the Sandia OpenSHMEM software package. For license
 # information, see the LICENSE file in the top level directory of the
 # distribution.
-#
 
-AM_CPPFLAGS = -I$(top_srcdir)/mpp
+AM_CPPFLAGS = -I$(top_builddir)/mpp
+
+GEN_BINDINGS = \
+	atomic_c.c \
+	collectives_c.c \
+	data_c.c \
+	synchronization_c.c
+
+if HAVE_FORTRAN
+GEN_BINDINGS += \
+	collectives_f.c \
+	data_f.c
+endif
 
 lib_LTLIBRARIES = libsma.la
 libsma_la_SOURCES = \
@@ -36,14 +47,15 @@ libsma_la_SOURCES = \
 	accessibility_c.c \
 	symmetric_heap_c.c \
 	remote_pointer_c.c \
-	data_c.c \
-	atomic_c.c \
-	synchronization_c.c \
-	collectives_c.c \
 	lock_c.c \
 	cache_management_c.c \
 	transport.h \
-	util.c
+	util.c \
+	$(GEN_BINDINGS)
+
+BUILT_SOURCES = $(GEN_BINDINGS)
+
+CLEANFILES += $(GEN_BINDINGS)
 
 if HAVE_FORTRAN
 libsma_la_SOURCES += \
@@ -52,10 +64,8 @@ libsma_la_SOURCES += \
 	accessibility_f.c \
 	symmetric_heap_f.c \
 	remote_pointer_f.c \
-	data_f.c \
 	atomic_f.c \
 	synchronization_f.c \
-	collectives_f.c \
 	lock_f.c \
 	cache_management_f.c
 endif
@@ -149,5 +159,10 @@ oshfort: shmem_compiler_script.in Makefile
 	@chmod +x oshfort
 
 oshrun: shmem_launcher_script.in Makefile
-	cp $(srcdir)/shmem_launcher_script.in oshrun
+	$(AM_V_SED) cp $(srcdir)/shmem_launcher_script.in oshrun
 	@chmod +x oshrun
+
+SUFFIXES = .c4
+
+.c4.c: shmem_bind_c.m4 shmem_bind_f.m4
+	$(AM_V_GEN) $(M4) -I$(top_srcdir)/src $< > $@

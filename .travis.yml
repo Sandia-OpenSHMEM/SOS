@@ -101,7 +101,9 @@ before_install:
     - git clone --depth 10 https://github.com/ParRes/ISx.git ISx
     ## Fetch PRK
     - cd $TRAVIS_SRC
-    - git clone --depth 10 https://github.com/ParRes/Kernels.git PRK
+    # Work around a bug in the PRK transpose benchmark -- fix is not yet merged upstream
+    #- git clone --depth 10 https://github.com/ParRes/Kernels.git PRK
+    - git clone --depth 10 -b pr/transpose-rdzv https://github.com/jdinan/Kernels.git PRK
     - echo -e "SHMEMCC=oshcc\nSHMEMTOP=$$TRAVIS_INSTALL\n" > PRK/common/make.defs
 
 install:
@@ -114,19 +116,22 @@ script:
     ### Build and check Portals
     ###
     - cd $SOS_SRC
+    - mkdir portals4-build
+    - cd portals4-build
     - export PATH=$TRAVIS_INSTALL/hydra/bin:$TRAVIS_INSTALL/portals4/bin:$BASE_PATH
-    - ./configure --with-portals4=$TRAVIS_INSTALL/portals4/ --prefix=$TRAVIS_INSTALL/sandia-shmem-portals4 $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
+    - ../configure --with-portals4=$TRAVIS_INSTALL/portals4/ --prefix=$TRAVIS_INSTALL/sandia-shmem-portals4 $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
     #- make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2 timeout 10" check
     - make install
-    - make clean
     ###
     ### Build and check OFI
     ###
     - cd $SOS_SRC
+    - mkdir ofi-build
+    - cd ofi-build
     - export PATH=$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - ./configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --prefix=$TRAVIS_INSTALL/sandia-shmem-ofi $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
+    - ../configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --prefix=$TRAVIS_INSTALL/sandia-shmem-ofi $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
     - make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2" check

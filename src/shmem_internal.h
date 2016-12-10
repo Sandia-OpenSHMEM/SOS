@@ -3,7 +3,10 @@
  * Copyright 2011 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
- * 
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
  * This file is part of the Sandia OpenSHMEM software package. For license
  * information, see the LICENSE file in the top level directory of the
  * distribution.
@@ -354,69 +357,6 @@ char *shmem_util_getenv_str(const char* name);
 
 #ifndef MAX
 #define MAX(A,B) (A) > (B) ? (A) : (B)
-#endif
-
-/* Language bindings helper macros */
-#define SHMEM_BIND_C_AMO(decl)                                  \
-  decl(int,      int,           SHM_INTERNAL_INT)               \
-  decl(long,     long,          SHM_INTERNAL_LONG)              \
-  decl(longlong, long long,     SHM_INTERNAL_LONG_LONG)
-
-#define SHMEM_BIND_C_EXTENDED_AMO(decl)                         \
-  SHMEM_BIND_C_AMO(decl)                                        \
-  decl(float,    float,         SHM_INTERNAL_FLOAT)             \
-  decl(double,   double,        SHM_INTERNAL_DOUBLE)
-
-#define SHMEM_BIND_C_INTS_OP(decl, s_op, op)                            \
-  decl(short,    short,         SHM_INTERNAL_SHORT,         s_op, op)   \
-  decl(int,      int,           SHM_INTERNAL_INT,           s_op, op)   \
-  decl(long,     long,          SHM_INTERNAL_LONG,          s_op, op)   \
-  decl(longlong, long long,     SHM_INTERNAL_LONG_LONG,     s_op, op)
-
-#define SHMEM_BIND_C_FLOATS_OP(decl, s_op, op)                          \
-  decl(float,    float,         SHM_INTERNAL_FLOAT,         s_op, op)   \
-  decl(double,   double,        SHM_INTERNAL_DOUBLE,        s_op, op)   \
-  decl(longdouble, long double, SHM_INTERNAL_LONG_DOUBLE,   s_op, op)
-
-#define SHMEM_BIND_C_CMPLX_OP(decl, s_op, op)                           \
-  decl(complexf, float complex, SHM_INTERNAL_FLOAT_COMPLEX, s_op, op)   \
-  decl(complexd, double complex,SHM_INTERNAL_DOUBLE_COMPLEX,s_op, op)
-
-#define SHMEM_BIND_F_RMA(decl)                                          \
-  decl(character, CHARACTER,    SIZEOF_FORTRAN_CHARACTER)               \
-  decl(complex,  COMPLEX,       SIZEOF_FORTRAN_COMPLEX)                 \
-  decl(double,   DOUBLE,        SIZEOF_FORTRAN_DOUBLE_PRECISION)        \
-  decl(integer,  INTEGER,       SIZEOF_FORTRAN_INTEGER)                 \
-  decl(logical,  LOGICAL,       SIZEOF_FORTRAN_LOGICAL)                 \
-  decl(real,     REAL,          SIZEOF_FORTRAN_REAL)
-
-#define SHMEM_BIND_F_SIZES(decl)        \
-  decl(mem,     MEM,    1)              \
-  decl(4,       4,      4)              \
-  decl(8,       8,      8)              \
-  decl(32,      32,     4)              \
-  decl(64,      64,     8)              \
-  decl(128,     128,    16)
-
-#define SHMEM_BIND_F_COLL_SIZES(decl)   \
-  decl(4,       4)                      \
-  decl(8,       8)                      \
-  decl(32,      4)                      \
-  decl(64,      8)
-
-#define SHMEM_BIND_F_INTS_OP(decl, s_op_l, s_op_u, op) \
-  decl(int4,    INT4,   int32_t,     SHM_INTERNAL_INT32,  s_op_l, s_op_u, op, 4) \
-  decl(int8,    INT8,   int64_t,     SHM_INTERNAL_INT64,  s_op_l, s_op_u, op, 8)
-
-#if SIZEOF_LONG_DOUBLE == 16
-#define SHMEM_BIND_F_FLOATS_OP(decl, s_op_l, s_op_u, op) \
-  decl(real4,   REAL4,  float,       SHM_INTERNAL_FLOAT,  s_op_l, s_op_u, op, 4) \
-  decl(real8,   REAL8,  double,      SHM_INTERNAL_DOUBLE, s_op_l, s_op_u, op, 8) \
-  decl(real16,  REAL16, long double, SHM_INTERNAL_LONG_DOUBLE, s_op_l, s_op_u, op, 16)
-#else
-#define SHMEM_BIND_F_FLOATS_OP(decl, s_op_l, s_op_u, op) \
-  decl(real4,   REAL4,  float,       SHM_INTERNAL_FLOAT,  s_op_l, s_op_u, op, 4) \
-  decl(real8,   REAL8,  double,      SHM_INTERNAL_DOUBLE, s_op_l, s_op_u, op, 8)
 #endif
 
 #endif

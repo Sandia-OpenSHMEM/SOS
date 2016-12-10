@@ -3,7 +3,10 @@
  * Copyright 2011 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
- * 
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
  * This file is part of the Sandia OpenSHMEM software package. For license
  * information, see the LICENSE file in the top level directory of the
  * distribution.
@@ -162,6 +165,8 @@ typedef struct shmem_transport_ct_t shmem_transport_ct_t;
         } else if (((void*) target > shmem_internal_heap_base) &&       \
                    ((char*) target < (char*) shmem_internal_heap_base + shmem_internal_heap_length)) { \
         } else {                                                        \
+            offset = 0;                                                 \
+            pt = -1;                                                    \
             printf("[%03d] ERROR: target (0x%lx) outside of symmetric areas\n", \
                    shmem_internal_my_pe, (unsigned long) target);       \
             RAISE_ERROR(1);                                             \
@@ -181,6 +186,8 @@ typedef struct shmem_transport_ct_t shmem_transport_ct_t;
             pt = (heap_pt);                                             \
             offset = (char*) target - (char*) shmem_internal_heap_base; \
         } else {                                                        \
+            offset = 0;                                                 \
+            pt = -1;                                                    \
             printf("[%03d] ERROR: target (0x%lx) outside of symmetric areas\n", \
                    shmem_internal_my_pe, (unsigned long) target);       \
             RAISE_ERROR(1);                                             \

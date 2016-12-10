@@ -4,7 +4,7 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2015 Intel Corporation. All rights reserved.
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -112,15 +112,22 @@ char *
 shmem_util_getenv_str(const char* name)
 {
     char *env_name, *env_value;
+    int ret;
 
-    asprintf(&env_name, "SMA_%s", name);
+    ret = asprintf(&env_name, "SMA_%s", name);
+    if (ret < 0) {
+        RAISE_ERROR(ret);
+    }
     env_value = getenv(env_name);
     free(env_name);
     if (env_value != NULL) {
         return env_value;
     }
 
-    asprintf(&env_name, "SHMEM_%s", name);
+    ret = asprintf(&env_name, "SHMEM_%s", name);
+    if (ret < 0) {
+        RAISE_ERROR(ret);
+    }
     env_value = getenv(env_name);
     free(env_name);
     if (env_value != NULL) {

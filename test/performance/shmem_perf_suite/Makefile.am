@@ -1,9 +1,11 @@
 # -*- Makefile -*-
 #
-# Copyright (c) 2015 Intel Corporation. All rights reserved.
-# This software is available to you under the BSD license. For
-# license information, see the LICENSE file in the top level directory.
+# Copyright (c) 2016 Intel Corporation. All rights reserved.
+# This software is available to you under the BSD license.
 #
+# This file is part of the Sandia OpenSHMEM software package. For license
+# information, see the LICENSE file in the top level directory of the
+# distribution.
 
 check_PROGRAMS = $(TESTS)
 
@@ -47,7 +49,7 @@ endif
 NPROCS ?= 2
 LOG_COMPILER = $(TEST_RUNNER)
 
-AM_CPPFLAGS = -I$(top_srcdir)/mpp
+AM_CPPFLAGS = -I$(top_builddir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
 LDADD = $(top_builddir)/src/libsma.la
 
