@@ -182,12 +182,10 @@ extern fi_addr_t *addr_table;
 #define GET_DEST(dest) ((fi_addr_t)(dest))
 #endif
 
-typedef struct fi_context fi_context_t;
 
 struct shmem_transport_ofi_frag_t {
     shmem_free_list_item_t item;
     uint8_t mytype;
-    fi_context_t context;
 };
 
 typedef struct shmem_transport_ofi_frag_t shmem_transport_ofi_frag_t;
@@ -240,13 +238,12 @@ void shmem_transport_ofi_drain_cq(void)
 
 		if(ret == 1) {
 			shmem_transport_ofi_frag_t *frag =
-				container_of(buf.op_context,
-				struct shmem_transport_ofi_frag_t,
-				context);
+                (shmem_transport_ofi_frag_t *) buf.op_context;
 
 			if(SHMEM_TRANSPORT_OFI_TYPE_BOUNCE == frag->mytype) {
 				shmem_free_list_free(
-					shmem_transport_ofi_bounce_buffers, frag);
+					shmem_transport_ofi_bounce_buffers,
+                    (shmem_transport_ofi_bounce_buffer_t *) frag);
                         }
                         else {
                             RAISE_ERROR_STR("Unrecognized completion object");
@@ -443,7 +440,7 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
 			ret = fi_write(shmem_transport_ofi_epfd,
 					buff->data, len, NULL,
 					GET_DEST(dst), (uint64_t) addr,
-					key, &buff->frag.context);
+					key, buff);
 		} while(try_again(ret,&polled));
 
 		shmem_transport_ofi_pending_cq_count++;
@@ -460,8 +457,12 @@ static inline
 void
 shmem_transport_put_wait(long *completion) {
 
-    if((*completion)-- > 0)
+    shmem_internal_assert((*completion) >= 0);
+
+    if((*completion) > 0) {
         shmem_transport_put_quiet();
+        (*completion)--;
+    }
 }
 
 static inline
@@ -837,7 +838,7 @@ shmem_transport_atomic_nb(void *target, const void *source, size_t full_len,
 				key,
 				datatype,
 				op,
-				&buff->frag.context);
+				buff);
 		} while(try_again(ret,&polled));
 
 			shmem_transport_ofi_pending_cq_count++;
