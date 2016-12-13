@@ -8,6 +8,8 @@
 
 #include <common.h>
 
+#define PUT_IO_NODE 1
+#define GET_IO_NODE !PUT_IO_NODE
 #define INIT_VALUE 1
 
 #define MAX_MSG_SIZE (1<<23)
@@ -134,13 +136,6 @@ extern void streaming_latency(int len, perf_metrics_t *data);
 void static inline  multi_size_latency(perf_metrics_t data, char *argv[]) {
     int len;
     int partner_pe = partner_node(data.my_node);
-
-    if (data.my_node == 0) {
-       printf("\nStreaming results for %d trials each of length %d through %d in"\
-              " powers of %d\n", data.trials, data.start_len,
-              data.max_len, data.inc);
-       print_results_header();
-    }
 
     for (len = data.start_len; len <= data.max_len; len *= data.inc) {
 

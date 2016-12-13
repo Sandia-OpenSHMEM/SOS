@@ -6,13 +6,13 @@ int_p_latency(perf_metrics_t data)
     double end = 0.0;
     int i = 0;
 
-    if (data.my_node == 1) {
+    if (data.my_node == PUT_IO_NODE) {
         printf("\nStream shmem_int_p results:\n");
         print_results_header();
     }
 
     /*puts to zero to match gets validation scheme*/
-    if (data.my_node == 1) {
+    if (data.my_node == PUT_IO_NODE) {
 
         for (i = 0; i < data.trials + data.warmup; i++) {
             if(i == data.warmup)
@@ -42,12 +42,12 @@ int_g_latency(perf_metrics_t data)
     int i = 0;
     int rtnd = -1;
 
-    if (data.my_node == 0) {
+    if (data.my_node == GET_IO_NODE) {
         printf("\nStream shmem_int_g results:\n");
         print_results_header();
     }
 
-    if (data.my_node == 0) {
+    if (data.my_node == GET_IO_NODE) {
 
         for (i = 0; i < data.trials + data.warmup; i++) {
             if(i == data.warmup)

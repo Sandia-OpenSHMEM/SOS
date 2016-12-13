@@ -8,14 +8,14 @@ long_element_round_trip_latency_get(perf_metrics_t data)
     int partner_pe = partner_node(data.my_node);
     *data.target = data.my_node;
 
-    if (data.my_node == 0) {
+    if (data.my_node == GET_IO_NODE) {
         printf("\nshmem_long_g results:\n");
         print_results_header();
     }
 
     shmem_barrier_all();
 
-    if (data.my_node == 0) {
+    if (data.my_node == GET_IO_NODE) {
         for (i = 0; i < data.trials + data.warmup; i++) {
             if(i == data.warmup)
                 start = perf_shmemx_wtime();
@@ -43,14 +43,14 @@ long_element_round_trip_latency_put(perf_metrics_t data)
     int dest = (data.my_node + 1) % data.npes, i = 0;
     tmp = *data.target = INIT_VALUE;
 
-    if (data.my_node == 0) {
+    if (data.my_node == PUT_IO_NODE) {
         printf("\nPing-Pong shmem_long_p results:\n");
         print_results_header();
     }
 
     shmem_barrier_all();
 
-    if (data.my_node == 0) {
+    if (data.my_node == PUT_IO_NODE) {
         for (i = 0; i < data.trials + data.warmup; i++) {
             if(i == data.warmup)
                 start = perf_shmemx_wtime();
