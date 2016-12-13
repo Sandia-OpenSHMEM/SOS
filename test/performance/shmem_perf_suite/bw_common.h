@@ -196,7 +196,9 @@ void static command_line_arg_check(int argc, char *argv[],
                     "[-k (kilobytes/second)] [-b (bytes/second)] \n"\
                     "[-v (validate data stream)] \n");
         }
+#ifndef VERSION_1.0
         shmem_finalize();
+#endif
         exit (-1);
     }
 }
@@ -206,7 +208,9 @@ void static inline only_even_PEs_check(int my_node, int num_pes) {
         if (my_node == 0) {
             fprintf(stderr, "can only use an even number of nodes\n");
         }
+#ifndef VERSION_1.0
         shmem_finalize();
+#endif
         exit(77);
     }
 }
@@ -461,7 +465,11 @@ void static inline bw_init_data_stream(perf_metrics_t *metric_info,
     int i = 0;
 
     /*must be before data_init*/
+#ifndef VERSION_1.0
     shmem_init();
+#else
+    start_pes(0);
+#endif
 
     data_init(metric_info);
 
@@ -501,7 +509,9 @@ void static inline bw_data_free(perf_metrics_t *metric_info) {
     aligned_buffer_free(metric_info->src);
     aligned_buffer_free(metric_info->dest);
 
+#ifndef VERSION_1.0
     shmem_finalize();
+#endif
 }
 
 void static inline bi_dir_bw_main(int argc, char *argv[]) {
