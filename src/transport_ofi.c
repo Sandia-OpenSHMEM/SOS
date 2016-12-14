@@ -398,7 +398,9 @@ static inline int allocate_cntr_and_cq(void)
     int ret = 0;
     struct fi_cntr_attr cntr_attr = {0};
     struct fi_cq_attr   cq_attr = {0};
+
     cntr_attr.events   = FI_CNTR_EVENTS_COMP;
+    cntr_attr.wait_obj = FI_WAIT_UNSPEC;
 
     /* -------------------------------------------------------*/
     /* Define Completion tracking Resources to Attach to EP   */
@@ -454,7 +456,7 @@ static inline int allocate_recv_cntr_mr(void)
 
         // Create counter for incoming writes
         cntr_attr.events   = FI_CNTR_EVENTS_COMP;
-        cntr_attr.flags    = 0;
+        cntr_attr.wait_obj = FI_WAIT_UNSPEC;
 
         ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
                            &shmem_transport_ofi_target_cntrfd, NULL);
