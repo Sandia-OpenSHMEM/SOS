@@ -41,10 +41,10 @@ AC_CANONICAL_HOST
 AC_ARG_ENABLE([picky],
     [AC_HELP_STRING([--enable-picky],
                     [Enable developer-level compiler pickyness when building (default: disabled)])])
-if test -z "$enable_picky" && test -d .svn -o -d .hg ; then
-    echo "--> developer override: enable picky compiler by default"
-    enable_picky=yes
-fi
+
+AC_ARG_ENABLE([debug],
+    [AC_HELP_STRING([--enable-debug],
+                    [Include debugging symbols in the build (default: disabled)])])
 
 AC_ARG_ENABLE([error-checking],
     [AC_HELP_STRING([--enable-error-checking],
@@ -165,6 +165,12 @@ fi
 
 if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
   CFLAGS="$CFLAGS -Wall -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wcomment -pedantic"
+else
+  CFLAGS="$CFLAGS -Wall"
+fi
+
+if test "$enable_debug" = "yes" ; then
+  CFLAGS="$CFLAGS -g"
 fi
 
 AC_CACHE_SAVE
