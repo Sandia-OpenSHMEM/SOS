@@ -296,10 +296,6 @@ static inline int allocate_endpoints(struct fabric_info *info)
 	return ret;
     }
 
-    /* Remove FI_CONTEXT flag from this endpoint */
-    info->p_info->mode = 0;
-    info->p_info->tx_attr->mode = 0;
-    info->p_info->rx_attr->mode = 0;
     ret = fi_endpoint(shmem_transport_ofi_domainfd,
                       info->p_info, &shmem_transport_ofi_cntr_epfd, NULL);
     if(ret!=0){
@@ -984,7 +980,6 @@ static inline int query_for_fabric(struct fabric_info *info)
     hints.caps |= FI_RMA_EVENT; /* want to use remote counters */
 #endif /* ndef ENABLE_HARD_POLLING */
     hints.addr_format         = FI_FORMAT_UNSPEC;
-    hints.mode		      = FI_CONTEXT;
     domain_attr.data_progress = FI_PROGRESS_AUTO;
     domain_attr.resource_mgmt = FI_RM_ENABLED;
 #ifdef ENABLE_MR_SCALABLE
