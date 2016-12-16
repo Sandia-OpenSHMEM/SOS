@@ -378,10 +378,10 @@ void shmem_transport_domain_destroy(shmem_transport_dom_t* dom)
 
   // The attached CQ is implicitly closed (as I discovered while
   // memory-checking with Valgrind). -jpdoyle
-  if(fi_close(&dom->cq_ep->fid)) {
-    OFI_ERRMSG("Domain CQ close failed (%s)",
-        fi_strerror(errno));
-  }
+  /* if(fi_close(&dom->cq_ep->fid)) { */
+  /*   OFI_ERRMSG("Domain CQ close failed (%s)", */
+  /*       fi_strerror(errno)); */
+  /* } */
 
   if(fi_close(&dom->stx->fid)) {
     OFI_ERRMSG("Domain STX close failed (%s)", fi_strerror(errno));
