@@ -113,35 +113,6 @@ script:
     - make $TRAVIS_PAR_MAKE check TESTS=
     - make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2" check
     - make install
-    # ###
-    # ### Run the UH test suite (Portals)
-    # ###
-    # - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    # - export OSHRUN_LAUNCHER="mpiexec.hydra"
-    # - cd $TRAVIS_SRC/tests-uh
-    # - make $TRAVIS_PAR_MAKE C_feature_tests
-    # #- make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
-    # # Check for failures in the C tests
-    # #- if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-c-feature-tests.log; then false; else true; fi
-    # - >
-    #   if [ ! $SOS_DISABLE_FORTRAN ]; then
-    #       make F_feature_tests;
-    #       if false && [ $? -eq 0 ]; then
-    #           make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log;
-    #           # Check for failures in the Fortran tests
-    #           if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi;
-    #       fi;
-    #   fi
-    # - >
-    #   if [ ! $SOS_DISABLE_FORTRAN ]; then
-    #       make F_error_tests;
-    #       if false && [ $? -eq 0 -a $SOS_ENABLE_ERROR_TESTS ]; then
-    #           make F_error_tests-run 2>&1 | tee uh-tests-f-error-tests.log;
-    #           # Check for failures in the Fortran tests
-    #           if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-error-tests.log; then false; else true; fi;
-    #       fi;
-    #   fi
-    # - make clean
     ###
     ### Run the UH test suite (OFI)
     ###
@@ -200,7 +171,6 @@ notifications:
       - regrant@sandia.gov
       - james.dinan@intel.com
       - kayla.seager@intel.com
-      - joethedoyle@gmail.com
     on_success: [change]
     on_failure: [always]
 

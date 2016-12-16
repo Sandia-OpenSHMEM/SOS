@@ -365,26 +365,6 @@ int shmemx_domain_create(int thread_level, int num_domains,
     ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr,
         &dom->cq, NULL);
     IF_OFI_ERR_RETURN(ret,"cq_open failed");
-
-    struct fabric_info* info = &shmem_ofi_cq_info;
-    info->p_info->ep_attr->tx_ctx_cnt = FI_SHARED_CONTEXT;
-    info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
-    /* ret = fi_endpoint(shmem_transport_ofi_domainfd, */
-    /*     info->p_info, &dom->cq_ep, NULL); */
-    /* IF_OFI_ERR_RETURN(ret,"domain epfd creation failed"); */
-
-    /* ret = fi_ep_bind(dom->cq_ep, &dom->cq->fid, */
-    /*     FI_SEND | FI_SELECTIVE_COMPLETION | FI_TRANSMIT); */
-    /* IF_OFI_ERR_RETURN(ret,"domain ep_bind ep -> cq failed"); */
-    /* ret = fi_ep_bind(dom->cq_ep, &shmem_transport_ofi_avfd->fid, 0); */
-    /* IF_OFI_ERR_RETURN(ret,"domain ep_bind ep -> av failed"); */
-
-    /* ret = fi_ep_bind(dom->cq_ep, &dom->stx->fid, 0); */
-    /* IF_OFI_ERR_RETURN(ret,"domain ep_bind ep -> stx failed"); */
-
-
-    /* ret = fi_enable(dom->cq_ep); */
-    /* IF_OFI_ERR_RETURN(ret,"context enable endpoint"); */
   }
 
   return ret;
@@ -393,17 +373,15 @@ int shmemx_domain_create(int thread_level, int num_domains,
 // assumes dom->lock is locked or dom->use_lock == 0
 void shmem_transport_domain_destroy(shmem_transport_dom_t* dom)
 {
-  /* printf("Closing down\n"); */
-  /* fflush(stdout); */
   /* FIXME: add to free list, maybe? */
   shmem_transport_ofi_domains[dom->id] = NULL;
 
   // The attached CQ is implicitly closed (as I discovered while
   // memory-checking with Valgrind). -jpdoyle
-  /* if(fi_close(&dom->cq_ep->fid)) { */
-  /*   OFI_ERRMSG("Domain CQ Endpoint close failed (%s)", */
-  /*       fi_strerror(errno)); */
-  /* } */
+  if(fi_close(&dom->cq_ep->fid)) {
+    OFI_ERRMSG("Domain CQ close failed (%s)",
+        fi_strerror(errno));
+  }
 
   if(fi_close(&dom->stx->fid)) {
     OFI_ERRMSG("Domain STX close failed (%s)", fi_strerror(errno));
@@ -1382,8 +1360,8 @@ int shmem_transport_fini(void)
         OFI_ERRMSG("AV close failed (%s)", fi_strerror(errno));
     }
 
-    /* This seems to be closed by closing some of the other resources
-     * (uncommenting gives a "file not found error" OFI error)
+    /* TODO: domainfd seems to be closed by closing some of the other resources
+     * -- uncommenting these lines gives a "file not found error" OFI error.
      * -jpdoyle
      */
     /* if (shmem_transport_ofi_domainfd && */
