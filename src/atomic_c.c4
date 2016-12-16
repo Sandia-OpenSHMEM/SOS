@@ -177,7 +177,7 @@ SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_ADD)
 #define SHMEM_DEF_FADD(STYPE,TYPE,ITYPE)                                \
     TYPE shmem_##STYPE##_fadd(TYPE *target, TYPE value, int pe)         \
     {                                                                   \
-        int oldval;                                                     \
+        TYPE oldval;                                                     \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \

@@ -8,6 +8,8 @@
 
 #include <common.h>
 
+#define PUT_IO_NODE 1
+#define GET_IO_NODE !PUT_IO_NODE
 #define INIT_VALUE 1
 
 #define MAX_MSG_SIZE (1<<23)
@@ -98,7 +100,9 @@ void static inline command_line_arg_check(int argc, char *argv[],
                     "[-n trials (must be greater than 20)] "\
                     "[-v (validate results)]\n");
         }
+#ifndef VERSION_1.0
         shmem_finalize();
+#endif
         exit (-1);
     }
 }
@@ -108,7 +112,9 @@ void static inline only_two_PEs_check(int my_node, int num_pes) {
         if (my_node == 0) {
             fprintf(stderr, "2-nodes only test\n");
         }
+#ifndef VERSION_1.0
         shmem_finalize();
+#endif
         exit(77);
     }
 }
@@ -130,13 +136,6 @@ extern void streaming_latency(int len, perf_metrics_t *data);
 void static inline  multi_size_latency(perf_metrics_t data, char *argv[]) {
     int len;
     int partner_pe = partner_node(data.my_node);
-
-    if (data.my_node == 0) {
-       printf("\nStreaming results for %d trials each of length %d through %d in"\
-              " powers of %d\n", data.trials, data.start_len,
-              data.max_len, data.inc);
-       print_results_header();
-    }
 
     for (len = data.start_len; len <= data.max_len; len *= data.inc) {
 
@@ -161,7 +160,11 @@ void static inline  multi_size_latency(perf_metrics_t data, char *argv[]) {
 
 void static inline latency_init_resources(int argc, char *argv[],
                                           perf_metrics_t *data) {
+#ifndef VERSION_1.0
     shmem_init();
+#else
+    start_pes(0);
+#endif
 
     data_init(data);
 
@@ -175,16 +178,26 @@ void static inline latency_init_resources(int argc, char *argv[],
     data->dest = aligned_buffer_alloc(data->max_len);
     init_array(data->dest, data->max_len, data->my_node);
 
+#ifndef VERSION_1.0
     data->target = shmem_malloc(sizeof(long));
+#else
+    data->target = shmalloc(sizeof(long));
+#endif
 }
 
 void static inline latency_free_resources(perf_metrics_t *data) {
     shmem_barrier_all();
 
+#ifndef VERSION_1.0
     shmem_free(data->target);
+#else
+    shfree(data->target);
+#endif
     aligned_buffer_free(data->src);
     aligned_buffer_free(data->dest);
+#ifndef VERSION_1.0
     shmem_finalize();
+#endif
 }
 
 void static inline latency_main(int argc, char *argv[]) {
