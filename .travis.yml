@@ -101,9 +101,7 @@ before_install:
     - git clone --depth 10 https://github.com/ParRes/ISx.git ISx
     ## Fetch PRK
     - cd $TRAVIS_SRC
-    # Work around a bug in the PRK transpose benchmark -- fix is not yet merged upstream
-    #- git clone --depth 10 https://github.com/ParRes/Kernels.git PRK
-    - git clone --depth 10 -b pr/transpose-rdzv https://github.com/jdinan/Kernels.git PRK
+    - git clone --depth 10 https://github.com/ParRes/Kernels.git PRK
     - echo -e "SHMEMCC=oshcc\nSHMEMTOP=$$TRAVIS_INSTALL\n" > PRK/common/make.defs
 
 install:
