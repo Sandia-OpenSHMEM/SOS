@@ -41,10 +41,10 @@ static int full_tree_num_children;
 static int full_tree_parent;
 static int tree_radix = -1;
 
-#define COLL_DEBUG
 
-int
-shmem_internal_build_kary_tree(int PE_start, int stride, int PE_size, int PE_root, int *parent, 
+static int
+shmem_internal_build_kary_tree(int radix, int PE_start, int stride,
+                               int PE_size, int PE_root, int *parent,
                                int *num_children, int *children)
 {
     int i;
@@ -52,11 +52,11 @@ shmem_internal_build_kary_tree(int PE_start, int stride, int PE_size, int PE_roo
        participating tasks. where the 0th entry is the root */
     int my_id = (((shmem_internal_my_pe - PE_start) / stride) + PE_size - PE_root) % PE_size;
 
-    *parent = PE_start + ((my_id - 1) / tree_radix + PE_root) * stride;
+    *parent = PE_start + ((my_id - 1) / radix + PE_root) * stride;
 
     *num_children = 0;
-    for (i = 1 ; i <= tree_radix ; ++i) {
-        int tmp = tree_radix * my_id + i;
+    for (i = 1 ; i <= radix ; ++i) {
+        int tmp = radix * my_id + i;
         if (tmp < PE_size) {
             children[(*num_children)++] = (PE_start + ((tmp + PE_root) * stride)) % (PE_size * stride);
         }
@@ -259,8 +259,8 @@ shmem_internal_barrier_tree(int PE_start, int logPE_stride, int PE_size, long *p
         children = full_tree_children;
     } else {
         children = alloca(sizeof(int) * tree_radix);
-        shmem_internal_build_kary_tree(PE_start, stride, PE_size, 0, &parent, 
-                                       &num_children, children);
+        shmem_internal_build_kary_tree(tree_radix, PE_start, stride, PE_size,
+                                       0, &parent, &num_children, children);
     }
 
     if (num_children != 0) {
@@ -454,8 +454,8 @@ shmem_internal_bcast_tree(void *target, const void *source, size_t len,
         children = full_tree_children;
     } else {
         children = alloca(sizeof(int) * tree_radix);
-        shmem_internal_build_kary_tree(PE_start, stride, PE_size, PE_root, &parent, 
-                                       &num_children, children);
+        shmem_internal_build_kary_tree(tree_radix, PE_start, stride, PE_size,
+                                       PE_root, &parent, &num_children, children);
     }
 
     if (0 != num_children) {
@@ -606,8 +606,8 @@ shmem_internal_op_to_all_tree(void *target, const void *source, int count, int t
         children = full_tree_children;
     } else {
         children = alloca(sizeof(int) * tree_radix);
-        shmem_internal_build_kary_tree(PE_start, stride, PE_size, 0, &parent, 
-                                       &num_children, children);
+        shmem_internal_build_kary_tree(tree_radix, PE_start, stride, PE_size,
+                                       0, &parent, &num_children, children);
     }
 
     if (0 != num_children) {

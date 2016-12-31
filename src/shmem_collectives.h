@@ -40,10 +40,6 @@ extern coll_type_t shmem_internal_reduce_type;
 extern coll_type_t shmem_internal_collect_type;
 extern coll_type_t shmem_internal_fcollect_type;
 
-int shmem_internal_build_kary_tree(int PE_start, int stride, int PE_size, int PE_root, 
-                                   int *parent, int *num_children, int *children);
-
-
 void shmem_internal_barrier_linear(int PE_start, int logPE_stride, int PE_size, long *pSync);
 void shmem_internal_barrier_tree(int PE_start, int logPE_stride, int PE_size, long *pSync);
 void shmem_internal_barrier_dissem(int PE_start, int logPE_stride, int PE_size, long *pSync);
