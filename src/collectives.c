@@ -66,6 +66,22 @@ shmem_internal_build_kary_tree(int radix, int PE_start, int stride,
 }
 
 
+/* Circulator iterator for PE active sets */
+static inline int
+shmem_internal_circular_iter_next(int curr, int PE_start, int logPE_stride, int PE_size)
+{
+    const int stride = 1 << logPE_stride;
+    const int last = PE_start + (stride * (PE_size - 1));
+    int next;
+
+    next = curr + stride;
+    if (next > last)
+        next = PE_start;
+
+    return next;
+}
+
+
 int
 shmem_internal_collectives_init(int requested_crossover,
                                 int requested_radix)
@@ -1053,22 +1069,6 @@ shmem_internal_fcollect_recdbl(void *target, const void *source, size_t len,
     }
 
     shmem_internal_quiet();
-}
-
-
-/* Circulator iterator for PE active sets */
-static inline int
-shmem_internal_circular_iter_next(int curr, int PE_start, int logPE_stride, int PE_size)
-{
-    const int stride = 1 << logPE_stride;
-    const int last = PE_start + (stride * (PE_size - 1));
-    int next;
-
-    next = curr + stride;
-    if (next > last)
-        next = PE_start;
-
-    return next;
 }
 
 
