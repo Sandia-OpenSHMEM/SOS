@@ -829,6 +829,76 @@ void
 shmem_internal_collect_linear(void *target, const void *source, size_t len,
                               int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
+    int stride = 1 << logPE_stride;
+    size_t my_offset;
+    long tmp[2];
+    int peer;
+
+    /* Need 2 for lengths and 1 for data */
+    shmem_internal_assert(SHMEM_COLLECT_SYNC_SIZE >= 3);
+
+    if (PE_size == 1) {
+        if (target != source) memcpy(target, source, len);
+        return;
+    }
+
+    /* Linear prefix sum -- propagate update lengths and calculate offset */
+    if (PE_start == shmem_internal_my_pe) {
+        my_offset = 0;
+        tmp[0] = (long) len; /* FIXME: Potential truncation of size_t into long */
+        tmp[1] = 1; /* FIXME: Packing flag with data relies on byte ordering */
+        shmem_internal_put_small(pSync, tmp, 2 * sizeof(long), PE_start + stride);
+    }
+    else {
+        /* wait for send data */
+        SHMEM_WAIT_UNTIL(&pSync[1], SHMEM_CMP_EQ, 1);
+        my_offset = pSync[0];
+
+        /* Not the last guy, so send offset to next PE */
+        if (shmem_internal_my_pe < PE_start + stride * (PE_size - 1)) {
+            tmp[0] = (long) (my_offset + len);
+            tmp[1] = 1;
+            shmem_internal_put_small(pSync, tmp, 2 * sizeof(long),
+                                     shmem_internal_my_pe + stride);
+        }
+    }
+
+    /* Send data round-robin, starting with my PE */
+    peer = shmem_internal_my_pe;
+    do {
+        if (len > 0) {
+            shmem_internal_put_nb(((uint8_t *) target) + my_offset, source,
+                                  len, peer, NULL);
+        }
+        peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
+                                                 PE_size);
+    } while (peer != shmem_internal_my_pe);
+
+    shmem_internal_fence();
+
+    /* Send flags round-robin, starting with my PE */
+    peer = shmem_internal_my_pe;
+    do {
+        const long one = 1;
+        shmem_internal_atomic_small(&pSync[2], &one, sizeof(long), peer,
+                                    SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
+        peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
+                                                 PE_size);
+    } while (peer != shmem_internal_my_pe);
+
+    SHMEM_WAIT_UNTIL(&pSync[2], SHMEM_CMP_EQ, PE_size);
+
+    pSync[0] = SHMEM_SYNC_VALUE;
+    pSync[1] = SHMEM_SYNC_VALUE;
+    pSync[2] = SHMEM_SYNC_VALUE;
+}
+
+
+void
+shmem_internal_collect_linear_bcast(void *target, const void *source,
+                                    size_t len, int PE_start, int logPE_stride,
+                                    int PE_size, long *pSync)
+{
     long tmp[3];
     int stride = 1 << logPE_stride;
     int pe;
