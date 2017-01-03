@@ -1074,7 +1074,16 @@ int shmem_transport_init(long eager_size)
 
     SHMEM_MUTEX_INIT(shmem_transport_ofi_lock);
 
-    shmem_transport_ofi_bounce_buffer_size = eager_size;
+    /* The current bounce buffering implementation is only compatible with
+     * providers that don't require FI_CONTEXT */
+    if (info.p_info->mode & FI_CONTEXT) {
+        if (shmem_internal_my_pe == 0 && eager_size > 0) {
+            DEBUG_STR("OFI provider requires FI_CONTEXT; disabling bounce buffering");
+        }
+        shmem_transport_ofi_bounce_buffer_size = 0;
+    } else {
+        shmem_transport_ofi_bounce_buffer_size = eager_size;
+    }
 
     //init LL for NB buffers
     shmem_transport_ofi_bounce_buffers =
