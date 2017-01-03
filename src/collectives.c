@@ -967,6 +967,8 @@ shmem_internal_collect_linear_bcast(void *target, const void *source,
     shmem_internal_put_small(&pSync[2], &tmp[2], sizeof(long), shmem_internal_my_pe);
 
     /* broadcast out */
+    /* FIXME: This is broken because only PE 0 knows the length of the
+     * broadcast message, all other PEs think it's 0 and send no data. */
     shmem_internal_bcast(target, target, bcast_len, 0, PE_start, logPE_stride, PE_size, pSync + 3, 0);
 
     /* make sure our pSync is clean before we leave... */
