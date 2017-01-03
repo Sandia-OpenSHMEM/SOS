@@ -77,7 +77,8 @@ TESTS = \
 	c11_test_shmem_set \
 	get_nbi \
 	put_nbi \
-	rma_coverage
+	rma_coverage \
+	collect
 
 if ENABLE_PROFILING
 TESTS += \
@@ -357,3 +358,6 @@ get_nbi_LDADD = $(top_builddir)/src/libsma.la
 
 put_nbi_SOURCES = put_nbi.c
 put_nbi_LDADD = $(top_builddir)/src/libsma.la
+
+collect_SOURCES = collect.c
+collect_LDADD = $(top_builddir)/src/libsma.la
