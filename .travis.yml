@@ -68,10 +68,18 @@ before_install:
     - wget http://dist.schmorp.de/libev/Attic/libev-4.22.tar.gz
     - tar -xzvf libev-4.22.tar.gz
     - cd libev-4.22 && ./configure --prefix=$TRAVIS_INSTALL/libev && make && make install
+    ## Build Portals 4
+    - cd $TRAVIS_SRC
+    - git clone --depth 10 https://github.com/regrant/portals4.git portals4
+    - cd portals4
+    - ./autogen.sh
+    - ./configure --prefix=$TRAVIS_INSTALL/portals4/ --with-ev=$TRAVIS_INSTALL/libev --enable-zero-mrs --enable-reliable-udp --disable-pmi-from-portals
+    # JSD: --enable-transport-shmem removed; it was causing tests to hang
+    - make $TRAVIS_PAR_MAKE
+    - make install
     ## Build libfabric
     - cd $TRAVIS_SRC
-    # - git clone -b v1.3.0 --depth 10 https://github.com/ofiwg/libfabric.git libfabric
-    - git clone --depth 1 https://github.com/jpdoyle/libfabric.git libfabric
+    - git clone --depth 10 https://github.com/ofiwg/libfabric.git libfabric
     - cd libfabric
     - ./autogen.sh
     - ./configure --prefix=$TRAVIS_INSTALL/libfabric
@@ -79,8 +87,7 @@ before_install:
     - make install
     ## Build Hydra
     - cd $TRAVIS_SRC
-    - wget -O hydra-3.2.tar.gz "https://docs.google.com/uc?authuser=0&id=0BxdTWEtawABaU3pKSzY5VlY4SzA&export=download"
-    # - wget http://www.mpich.org/static/downloads/3.2/hydra-3.2.tar.gz
+    - wget http://www.mpich.org/static/downloads/3.2/hydra-3.2.tar.gz
     - tar xvzf hydra-3.2.tar.gz
     - cd hydra-3.2/
     - ./configure --prefix=$TRAVIS_INSTALL/hydra
@@ -104,15 +111,58 @@ install:
 script:
     - export BASE_PATH=$PATH
     ###
+    ### Build and check Portals
+    ###
+    - cd $SOS_SRC
+    - mkdir portals4-build
+    - cd portals4-build
+    - export PATH=$TRAVIS_INSTALL/hydra/bin:$TRAVIS_INSTALL/portals4/bin:$BASE_PATH
+    - ../configure --with-portals4=$TRAVIS_INSTALL/portals4/ --prefix=$TRAVIS_INSTALL/sandia-shmem-portals4 $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
+    - make $TRAVIS_PAR_MAKE
+    - make $TRAVIS_PAR_MAKE check TESTS=
+    #- make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2 timeout 10" check
+    - make install
+    ###
     ### Build and check OFI
     ###
     - cd $SOS_SRC
+    - mkdir ofi-build
+    - cd ofi-build
     - export PATH=$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - ./configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --prefix=$TRAVIS_INSTALL/sandia-shmem-ofi $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
+    - ../configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --prefix=$TRAVIS_INSTALL/sandia-shmem-ofi $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
     - make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2" check
     - make install
+    ###
+    ### Run the UH test suite (Portals)
+    ###
+    - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export OSHRUN_LAUNCHER="mpiexec.hydra"
+    - cd $TRAVIS_SRC/tests-uh
+    - make $TRAVIS_PAR_MAKE C_feature_tests
+    #- make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
+    # Check for failures in the C tests
+    #- if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-c-feature-tests.log; then false; else true; fi
+    - >
+      if [ ! $SOS_DISABLE_FORTRAN ]; then
+          make F_feature_tests;
+          if false && [ $? -eq 0 ]; then
+              make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log;
+              # Check for failures in the Fortran tests
+              if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi;
+          fi;
+      fi
+    - >
+      if [ ! $SOS_DISABLE_FORTRAN ]; then
+          make F_error_tests;
+          if false && [ $? -eq 0 -a $SOS_ENABLE_ERROR_TESTS ]; then
+              make F_error_tests-run 2>&1 | tee uh-tests-f-error-tests.log;
+              # Check for failures in the Fortran tests
+              if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-error-tests.log; then false; else true; fi;
+          fi;
+      fi
+    - make clean
     ###
     ### Run the UH test suite (OFI)
     ###
@@ -143,6 +193,14 @@ script:
       fi
     - make clean
     ###
+    ### Run ISx (Portals)
+    ###
+    - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export OSHRUN_LAUNCHER="mpiexec.hydra"
+    - cd $TRAVIS_SRC/ISx/SHMEM
+    - make CC=oshcc LDLIBS=-lm
+    - make clean
+    ###
     ### Run ISx (OFI)
     ###
     - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
@@ -152,6 +210,14 @@ script:
     - oshrun -np 4 ./bin/isx.strong 134217728 output_strong
     - oshrun -np 4 ./bin/isx.weak 33554432 output_weak
     - oshrun -np 4 ./bin/isx.weak_iso 33554432 output_weak_iso
+    - make clean
+    ###
+    ### Run PRK (Portals)
+    ###
+    - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export OSHRUN_LAUNCHER="mpiexec.hydra"
+    - cd $TRAVIS_SRC/PRK
+    - make allshmem
     - make clean
     ###
     ### Run PRK (OFI)
@@ -172,5 +238,4 @@ notifications:
       - james.dinan@intel.com
       - kayla.seager@intel.com
     on_success: [change]
-    on_failure: [always]
-
+    on_failure: [always] 
