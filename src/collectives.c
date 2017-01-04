@@ -14,6 +14,7 @@
  */
 
 #include "config.h"
+#include <string.h>
 
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
