@@ -209,7 +209,7 @@ AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
       ])
 
 AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
-      [AC_MSG_ERROR([No transport found])])
+      [AC_MSG_WARN([No transport found])])
 
 AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
 			[build and run shmem-pmi support])])
