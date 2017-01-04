@@ -31,13 +31,15 @@
 #define SHM_INTERNAL_FLOAT_COMPLEX   -4
 #define SHM_INTERNAL_DOUBLE_COMPLEX  -5
 #define SHM_INTERNAL_SIGNED_BYTE     -6
-#define SHM_INTERNAL_INT32           -7
-#define SHM_INTERNAL_INT64           -8
-#define SHM_INTERNAL_SHORT           -9
-#define SHM_INTERNAL_INT             -10
-#define SHM_INTERNAL_LONG            -11
-#define SHM_INTERNAL_LONG_LONG       -12
-#define SHM_INTERNAL_FORTRAN_INTEGER -13
+#define SHM_INTERNAL_INT8            -7
+#define SHM_INTERNAL_INT16           -8
+#define SHM_INTERNAL_INT32           -9
+#define SHM_INTERNAL_INT64           -10
+#define SHM_INTERNAL_SHORT           DTYPE_SHORT
+#define SHM_INTERNAL_INT             DTYPE_INT
+#define SHM_INTERNAL_LONG            DTYPE_LONG
+#define SHM_INTERNAL_LONG_LONG       DTYPE_LONG_LONG
+#define SHM_INTERNAL_FORTRAN_INTEGER DTYPE_FORTRAN_INTEGER
 
  // Operations
 #define SHM_INTERNAL_BAND            -1
