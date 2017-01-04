@@ -1,5 +1,4 @@
-"
-    "# -*- autoconf -*-
+# -*- autoconf -*-
 #
 # Copyright 2011 Sandia Corporation. Under the terms of Contract
 # DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
@@ -80,18 +79,18 @@ AC_MSG_RESULT([$msg])
 AC_ARG_ENABLE([threads],
     [AC_HELP_STRING([--enable-threads],
                     [Enable threading support (default:disabled)])])
-# AS_IF([test "$enable_threads" = "yes"], [AC_DEFINE([ENABLE_THREADS], [1], [Enable threads])])
-AC_DEFINE([ENABLE_THREADS], [1], [Enable threads])
-AC_OPENMP
-AC_SUBST(AM_CXXFLAGS,"$AM_CXXFLAGS $OPENMP_CXXFLAGS")
-AC_SUBST(AM_CFLAGS,"$AM_CFLAGS $OPENMP_CFLAGS")
-# AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
+AS_IF([test "$enable_threads" = "yes"], [
+       AC_DEFINE([ENABLE_THREADS], [1], [Enable threads])
+       AC_OPENMP
+       AC_SUBST(AM_CXXFLAGS,"$AM_CXXFLAGS $OPENMP_CXXFLAGS")
+       AC_SUBST(AM_CFLAGS,"$AM_CFLAGS $OPENMP_CFLAGS")
+       # AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
+       ])
 
 AC_ARG_ENABLE([pthread-mutexes],
     [AC_HELP_STRING([--enable-pthread-mutexes],
                     [Use pthread mutexes to support threading (used in conjunction with --enable-threads) (default:disabled)])])
 AS_IF([test "$enable_pthread_mutexes" = "yes"], [AC_DEFINE([ENABLE_PTHREAD_MUTEX], [1], [Enable pthread mutexes])])
-# AC_DEFINE([ENABLE_PTHREAD_MUTEX], [1], [Enable pthread mutexes])
 
 AC_ARG_ENABLE([remote-virtual-addressing],
     [AC_HELP_STRING([--enable-remote-virtual-addressing],
