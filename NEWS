@@ -4,6 +4,9 @@ Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
 v1.3.x
 ------
+- Enabled single-process, direct runs with simple PMI
+- Fixed bug in collect routines
+- Enabled VPATH builds
 - Added argument error checking for all SHMEM routines, enabled at compile time
   via --enable-error-checking.
 - Added new C and Fortrans bindings generator that generates all headers and
