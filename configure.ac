@@ -208,9 +208,6 @@ AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
        AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
       ])
 
-AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
-      [AC_MSG_WARN([No transport found])])
-
 AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
 			[build and run shmem-pmi support])])
 AS_IF([test "$enable_pmi_simple" = "yes"],
@@ -423,6 +420,10 @@ fi
 AS_IF([test "$enable_pmi_simple" = "yes"],
 	[AC_CONFIG_SUBDIRS([shmem_pmi])])
 AC_OUTPUT
+
+AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
+      [AC_MSG_WARN([No transport found])])
+
 
 FORT="$FC"
 if test "$FORT" = "" ; then
