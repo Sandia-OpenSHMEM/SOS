@@ -175,6 +175,9 @@ fi
 
 AC_CACHE_SAVE
 
+AC_SEARCH_LIBS([clock_gettime], [rt],
+               [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [define if clock_gettime is available]) ])
+
 dnl check for libraries
 
 OMPI_CHECK_PORTALS4([portals4],
