@@ -16,7 +16,6 @@ check_PROGRAMS = $(TESTS)
 TESTS = \
 	hello \
 	pi \
-	ctx \
 	web \
 	micro_unit_shmem \
 	circular_shift \
@@ -117,6 +116,11 @@ if HAVE_SHORT_FORTRAN_HEADER
 TESTS += \
      set_fetch_f
 endif
+endif
+
+if ENABLE_OPENMP
+TESTS += \
+    ctx
 endif
 
 NPROCS ?= 2

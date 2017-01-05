@@ -32,7 +32,6 @@ check_PROGRAMS += \
 	shmem_latency_put_perf \
 	shmem_latency_get_perf \
 	shmem_bw_put_perf \
-	shmem_bw_put_ctx_lockless \
 	shmem_bibw_put_perf \
 	shmem_bw_get_perf \
 	shmem_bibw_get_perf \
@@ -45,6 +44,10 @@ check_PROGRAMS += \
 	shmem_bw_atomics_perf		\
 	shmem_bibw_atomics_perf
 
+if ENABLE_OPENMP
+check_PROGRAMS += \
+	shmem_bw_put_ctx_lockless
+endif
 endif
 
 NPROCS ?= 2

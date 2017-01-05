@@ -86,6 +86,8 @@ AS_IF([test "$enable_threads" = "yes"], [
        # AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
        ])
 
+AM_CONDITIONAL([ENABLE_OPENMP], [test "$enable_openmp" = "yes"])
+
 AC_ARG_ENABLE([pthread-mutexes],
     [AC_HELP_STRING([--enable-pthread-mutexes],
                     [Use pthread mutexes to support threading (used in conjunction with --enable-threads) (default:disabled)])])
