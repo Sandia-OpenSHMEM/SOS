@@ -122,6 +122,17 @@ script:
     - make $TRAVIS_PAR_MAKE check TESTS=
     - make install
     ###
+    ### Build with only CMA
+    ###
+    - cd $SOS_SRC
+    - mkdir cma-build
+    - cd cma-build
+    - export PATH=$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - ../configure --prefix=$TRAVIS_INSTALL/sandia-shmem-cma $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
+    - make $TRAVIS_PAR_MAKE
+    - make $TRAVIS_PAR_MAKE check TESTS=
+    - make install
+    ###
     ### Build and check Portals
     ###
     - cd $SOS_SRC
