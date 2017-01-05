@@ -337,7 +337,7 @@ void* shmem_internal_get_next(intptr_t incr);
 static inline double shmem_internal_wtime(void) {
     double wtime = 0.0;
 
-#ifdef CLOCK_MONOTONIC
+#ifdef HAVE_CLOCK_GETTIME
     struct timespec tv;
     clock_gettime(CLOCK_MONOTONIC, &tv);
     wtime = tv.tv_sec;

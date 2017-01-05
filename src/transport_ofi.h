@@ -153,6 +153,8 @@ typedef enum fi_op       shm_internal_op_t;
 #define SHM_INTERNAL_FLOAT_COMPLEX   FI_FLOAT_COMPLEX
 #define SHM_INTERNAL_DOUBLE_COMPLEX  FI_DOUBLE_COMPLEX
 #define SHM_INTERNAL_SIGNED_BYTE     FI_INT8
+#define SHM_INTERNAL_INT8            FI_INT8
+#define SHM_INTERNAL_INT16           FI_INT16
 #define SHM_INTERNAL_INT32           FI_INT32
 #define SHM_INTERNAL_INT64           FI_INT64
 #define SHM_INTERNAL_SHORT           DTYPE_SHORT
