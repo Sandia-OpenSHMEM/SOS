@@ -3,8 +3,8 @@
  * Copyright 2011 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
- * 
- * Copyright (c) 2015 Intel Corporation. All rights reserved.
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -72,17 +72,16 @@ static char shmem_internal_my_hostname[HOST_NAME_MAX];
 
 
 static void
-shmem_internal_shutdown(int barrier_requested)
+shmem_internal_shutdown(void)
 {
     if (!shmem_internal_initialized ||
         shmem_internal_finalized) {
         return;
     }
+
+    shmem_internal_barrier_all();
+
     shmem_internal_finalized = 1;
-
-    if (barrier_requested)
-        shmem_internal_barrier_all();
-
     shmem_transport_fini();
 
 #ifdef USE_XPMEM
@@ -108,7 +107,7 @@ shmem_internal_shutdown_atexit(void)
         fprintf(stderr, "Warning: shutting down without a call to shmem_finalize()\n");
     }
 
-    shmem_internal_shutdown(0);
+    shmem_internal_shutdown();
 }
 
 
@@ -395,7 +394,7 @@ shmem_internal_nodename(void)
 
 void shmem_internal_finalize(void)
 {
-    shmem_internal_shutdown(1);
+    shmem_internal_shutdown();
 }
 
 

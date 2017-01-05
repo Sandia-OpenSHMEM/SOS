@@ -4,13 +4,12 @@
 # DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
 # retains certain rights in this software.
 #
-# Copyright (c) 2015 Intel Corporation. All rights reserved.
+# Copyright (c) 2016 Intel Corporation. All rights reserved.
 # This software is available to you under the BSD license.
 #
 # This file is part of the Sandia OpenSHMEM software package. For license
 # information, see the LICENSE file in the top level directory of the
 # distribution.
-#
 
 dnl Init Autoconf/Automake/Libtool
 
@@ -42,10 +41,10 @@ AC_CANONICAL_HOST
 AC_ARG_ENABLE([picky],
     [AC_HELP_STRING([--enable-picky],
                     [Enable developer-level compiler pickyness when building (default: disabled)])])
-if test -z "$enable_picky" && test -d .svn -o -d .hg ; then
-    echo "--> developer override: enable picky compiler by default"
-    enable_picky=yes
-fi
+
+AC_ARG_ENABLE([debug],
+    [AC_HELP_STRING([--enable-debug],
+                    [Include debugging symbols in the build (default: disabled)])])
 
 AC_ARG_ENABLE([error-checking],
     [AC_HELP_STRING([--enable-error-checking],
@@ -156,6 +155,11 @@ AC_C_INLINE
 AC_PROG_CXX dnl required even with --disable-cxx due to automake conditionals
 m4_ifdef([AM_PROG_AR],[AM_PROG_AR])
 AC_PATH_PROG([PERL],[perl])
+
+AC_PATH_PROG([M4], [m4], [false])
+AS_IF([test "$M4" = "false"],
+      [AC_MSG_ERROR([Could not find 'm4' macro processor])])
+
 if test "$enable_fortran" != "no" ; then
   AC_PROG_FC
 else
@@ -165,11 +169,22 @@ if test "$FC" != "" ; then
   AC_FC_WRAPPERS
 fi
 
+AX_GCC_FUNC_ATTRIBUTE([noreturn])
+
 if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
   CFLAGS="$CFLAGS -Wall -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wcomment -pedantic"
+else
+  CFLAGS="$CFLAGS -Wall"
+fi
+
+if test "$enable_debug" = "yes" ; then
+  CFLAGS="$CFLAGS -g"
 fi
 
 AC_CACHE_SAVE
+
+AC_SEARCH_LIBS([clock_gettime], [rt],
+               [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [define if clock_gettime is available]) ])
 
 dnl check for libraries
 
@@ -203,9 +218,6 @@ AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
       [AC_DEFINE([USE_ON_NODE_COMMS], [1], [Define if any on-node comm transport is available])
        AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
       ])
-
-AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
-      [AC_MSG_ERROR([No transport found])])
 
 AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
 			[build and run shmem-pmi support])])
@@ -280,7 +292,7 @@ if test "$FC" != "" ; then
   OMPI_FORTRAN_GET_SIZEOF([], [DOUBLE PRECISION])
   OMPI_FORTRAN_GET_SIZEOF([], [COMPLEX])
 
-  # find Portals integer type corresponding to INTEGER
+  # find transport integer type corresponding to INTEGER
   SHMEM_FIND_FORTRAN_INT_TYPE([INTEGER], [$transport])
 
   # find C type corresponding to given Fortran types
@@ -402,8 +414,8 @@ AC_CONFIG_FILES([Makefile
   mpp/Makefile
   mpp/shmem.fh
   mpp/shmemx.fh
-  mpp/shmem.h
-  mpp/shmemx.h
+  mpp/shmem.h4
+  mpp/shmemx.h4
   src/Makefile
   test/Makefile
   test/unit/Makefile
@@ -411,9 +423,18 @@ AC_CONFIG_FILES([Makefile
   test/performance/shmem_perf_suite/Makefile
   test/performance/tests/Makefile
   test/apps/Makefile])
+
+if test "$enable_profiling" = "yes"; then
+    AC_CONFIG_FILES([mpp/pshmem.h4])
+fi
+
 AS_IF([test "$enable_pmi_simple" = "yes"],
 	[AC_CONFIG_SUBDIRS([shmem_pmi])])
 AC_OUTPUT
+
+AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
+      [AC_MSG_WARN([No transport found])])
+
 
 FORT="$FC"
 if test "$FORT" = "" ; then

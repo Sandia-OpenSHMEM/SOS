@@ -1,29 +1,48 @@
+/* -*- C -*-
+ *
+ * Copyright 2011 Sandia Corporation. Under the terms of Contract
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
+ * retains certain rights in this software.
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
+ * This file is part of the Sandia OpenSHMEM software package. For license
+ * information, see the LICENSE file in the top level directory of the
+ * distribution.
+ *
+ */
+
 #ifndef TRANSPORT_NONE_H
 #define TRANSPORT_NONE_H
 
-// Datatypes
-#define SHM_INTERNAL_FLOAT           -1
-#define SHM_INTERNAL_DOUBLE          -1
-#define SHM_INTERNAL_LONG_DOUBLE     -1
-#define SHM_INTERNAL_FLOAT_COMPLEX   -1
-#define SHM_INTERNAL_DOUBLE_COMPLEX  -1
-#define SHM_INTERNAL_SIGNED_BYTE     -1
-#define SHM_INTERNAL_INT32           -1
-#define SHM_INTERNAL_INT64           -1
-#define SHM_INTERNAL_SHORT           -1
-#define SHM_INTERNAL_INT             -1
-#define SHM_INTERNAL_LONG            -1
-#define SHM_INTERNAL_LONG_LONG       -1
-#define SHM_INTERNAL_FORTRAN_INTEGER -1
+#include "shmem_internal.h"
 
- // Operations
+/* Datatypes */
+#define SHM_INTERNAL_FLOAT           -1
+#define SHM_INTERNAL_DOUBLE          -2
+#define SHM_INTERNAL_LONG_DOUBLE     -3
+#define SHM_INTERNAL_FLOAT_COMPLEX   -4
+#define SHM_INTERNAL_DOUBLE_COMPLEX  -5
+#define SHM_INTERNAL_SIGNED_BYTE     -6
+#define SHM_INTERNAL_INT8            -7
+#define SHM_INTERNAL_INT16           -8
+#define SHM_INTERNAL_INT32           -9
+#define SHM_INTERNAL_INT64           -10
+#define SHM_INTERNAL_SHORT           DTYPE_SHORT
+#define SHM_INTERNAL_INT             DTYPE_INT
+#define SHM_INTERNAL_LONG            DTYPE_LONG
+#define SHM_INTERNAL_LONG_LONG       DTYPE_LONG_LONG
+#define SHM_INTERNAL_FORTRAN_INTEGER DTYPE_FORTRAN_INTEGER
+
+/* Operations */
 #define SHM_INTERNAL_BAND            -1
-#define SHM_INTERNAL_BOR             -1
-#define SHM_INTERNAL_BXOR            -1
-#define SHM_INTERNAL_MIN             -1
-#define SHM_INTERNAL_MAX             -1
-#define SHM_INTERNAL_SUM             -1
-#define SHM_INTERNAL_PROD            -1
+#define SHM_INTERNAL_BOR             -2
+#define SHM_INTERNAL_BXOR            -3
+#define SHM_INTERNAL_MIN             -4
+#define SHM_INTERNAL_MAX             -5
+#define SHM_INTERNAL_SUM             -6
+#define SHM_INTERNAL_PROD            -7
 
 typedef int shm_internal_datatype_t;
 typedef int shm_internal_op_t;
@@ -41,6 +60,16 @@ int
 shmem_transport_startup(void)
 {
     return 0;
+}
+
+/* Print transport info, including settings of environment variables and other
+ * parameters.  Called when SMA_INFO is set.
+ */
+static inline
+void
+shmem_transport_print_info(void)
+{
+    return;
 }
 
 static inline
@@ -162,7 +191,7 @@ shmem_transport_fetch_atomic(void *target, const void *source, void *dest, size_
 
 static inline
 void
-shmem_transport_atomic_fetch(void *target, const void *source, void *dest, size_t len,
+shmem_transport_atomic_fetch(void *target, const void *source, size_t len,
                              int pe, shm_internal_datatype_t datatype)
 {
     RAISE_ERROR_STR("No path to peer");
@@ -170,7 +199,7 @@ shmem_transport_atomic_fetch(void *target, const void *source, void *dest, size_
 
 static inline
 void
-shmem_transport_atomic_set(void *target, const void *source, void *dest, size_t len,
+shmem_transport_atomic_set(void *target, const void *source, size_t len,
                              int pe, shm_internal_datatype_t datatype)
 {
     RAISE_ERROR_STR("No path to peer");
@@ -198,6 +227,7 @@ static inline
 long shmem_transport_ct_get(shmem_transport_ct_t *ct)
 {
     RAISE_ERROR_STR("No path to peer");
+    return 0;
 }
 
 static inline
@@ -249,5 +279,4 @@ void shmem_transport_received_cntr_wait(uint64_t ge_val)
     RAISE_ERROR_STR("No remote peers");
 }
 
-#endif
-
+#endif /* TRANSPORT_NONE_H */

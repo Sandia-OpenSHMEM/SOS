@@ -1,15 +1,24 @@
+dnl vi: set ft=m4
 /* -*- C -*-
  *
  * Copyright 2011 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
- * 
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
  * This file is part of the Sandia OpenSHMEM software package. For license
  * information, see the LICENSE file in the top level directory of the
  * distribution.
  *
  */
 
+/*
+ * This is a generated file, do not edit directly.
+ */
+
+include(shmem_bind_c.m4)dnl
 #include "config.h"
 
 #include <stdio.h>
@@ -23,102 +32,52 @@
 #ifdef ENABLE_PROFILING
 #include "pshmem.h"
 
-#pragma weak shmem_float_swap = pshmem_float_swap
-#define shmem_float_swap pshmem_float_swap
+define(`SHMEM_PROF_DEF_SWAP',
+`#pragma weak shmem_$1_swap = pshmem_$1_swap
+#define shmem_$1_swap pshmem_$1_swap')dnl
+SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_SWAP')
 
-#pragma weak shmem_double_swap = pshmem_double_swap
-#define shmem_double_swap pshmem_double_swap
-
-#pragma weak shmem_int_swap = pshmem_int_swap
-#define shmem_int_swap pshmem_int_swap
-
-#pragma weak shmem_long_swap = pshmem_long_swap
-#define shmem_long_swap pshmem_long_swap
-
-#pragma weak shmem_longlong_swap = pshmem_longlong_swap
-#define shmem_longlong_swap pshmem_longlong_swap
-
-#if !defined(__cplusplus) && !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
-
+#if !defined(__cplusplus) && \
+    !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
+/* shmem_swap is a special case in the API */
 #pragma weak shmem_swap = pshmem_swap
 #define shmem_swap pshmem_swap
-
 #endif
 
-#pragma weak shmem_int_cswap = pshmem_int_cswap
-#define shmem_int_cswap pshmem_int_cswap
+define(`SHMEM_PROF_DEF_CSWAP',
+`#pragma weak shmem_$1_cswap = pshmem_$1_cswap
+#define shmem_$1_cswap pshmem_$1_cswap')dnl
+SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_CSWAP')
 
-#pragma weak shmem_long_cswap = pshmem_long_cswap
-#define shmem_long_cswap pshmem_long_cswap
+define(`SHMEM_PROF_DEF_INC',
+`#pragma weak shmem_$1_inc = pshmem_$1_inc
+#define shmem_$1_inc pshmem_$1_inc')dnl
+SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_INC')
 
-#pragma weak shmem_longlong_cswap = pshmem_longlong_cswap
-#define shmem_longlong_cswap pshmem_longlong_cswap
+define(`SHMEM_PROF_DEF_FINC',
+`#pragma weak shmem_$1_finc = pshmem_$1_finc
+#define shmem_$1_finc pshmem_$1_finc')dnl
+SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_FINC')
 
-#pragma weak shmem_int_inc = pshmem_int_inc
-#define shmem_int_inc pshmem_int_inc
+define(`SHMEM_PROF_DEF_ADD',
+`#pragma weak shmem_$1_add = pshmem_$1_add
+#define shmem_$1_add pshmem_$1_add')dnl
+SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_ADD')
 
-#pragma weak shmem_long_inc = pshmem_long_inc
-#define shmem_long_inc pshmem_long_inc
+define(`SHMEM_PROF_DEF_FADD',
+`#pragma weak shmem_$1_fadd = pshmem_$1_fadd
+#define shmem_$1_fadd pshmem_$1_fadd')dnl
+SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_FADD')
 
-#pragma weak shmem_longlong_inc = pshmem_longlong_inc
-#define shmem_longlong_inc pshmem_longlong_inc
+define(`SHMEM_PROF_DEF_FETCH',
+`#pragma weak shmem_$1_fetch = pshmem_$1_fetch
+#define shmem_$1_fetch pshmem_$1_fetch')dnl
+SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_FETCH')
 
-#pragma weak shmem_int_finc = pshmem_int_finc
-#define shmem_int_finc pshmem_int_finc
-
-#pragma weak shmem_long_finc = pshmem_long_finc
-#define shmem_long_finc pshmem_long_finc
-
-#pragma weak shmem_longlong_finc = pshmem_longlong_finc
-#define shmem_longlong_finc pshmem_longlong_finc
-
-#pragma weak shmem_int_add = pshmem_int_add
-#define shmem_int_add pshmem_int_add
-
-#pragma weak shmem_long_add = pshmem_long_add
-#define shmem_long_add pshmem_long_add
-
-#pragma weak shmem_longlong_add = pshmem_longlong_add
-#define shmem_longlong_add pshmem_longlong_add
-
-#pragma weak shmem_int_fadd = pshmem_int_fadd
-#define shmem_int_fadd pshmem_int_fadd
-
-#pragma weak shmem_long_fadd = pshmem_long_fadd
-#define shmem_long_fadd pshmem_long_fadd
-
-#pragma weak shmem_longlong_fadd = pshmem_longlong_fadd
-#define shmem_longlong_fadd pshmem_longlong_fadd
-
-#pragma weak shmem_int_fetch = pshmem_int_fetch
-#define shmem_int_fetch pshmem_int_fetch
-
-#pragma weak shmem_long_fetch = pshmem_long_fetch
-#define shmem_long_fetch pshmem_long_fetch
-
-#pragma weak shmem_longlong_fetch = pshmem_longlong_fetch
-#define shmem_longlong_fetch pshmem_longlong_fetch
-
-#pragma weak shmem_float_fetch = pshmem_float_fetch
-#define shmem_float_fetch pshmem_float_fetch
-
-#pragma weak shmem_double_fetch = pshmem_double_fetch
-#define shmem_double_fetch pshmem_double_fetch
-
-#pragma weak shmem_int_set = pshmem_int_set
-#define shmem_int_set pshmem_int_set
-
-#pragma weak shmem_long_set = pshmem_long_set
-#define shmem_long_set pshmem_long_set
-
-#pragma weak shmem_longlong_set = pshmem_longlong_set
-#define shmem_longlong_set pshmem_longlong_set
-
-#pragma weak shmem_float_set = pshmem_float_set
-#define shmem_float_set pshmem_float_set
-
-#pragma weak shmem_double_set = pshmem_double_set
-#define shmem_double_set pshmem_double_set
+define(`SHMEM_PROF_DEF_SET',
+`#pragma weak shmem_$1_set = pshmem_$1_set
+#define shmem_$1_set pshmem_$1_set')dnl
+SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_SET')
 
 #endif /* ENABLE_PROFILING */
 
@@ -141,9 +100,11 @@
         return newval;                                             \
     }
 
-SHMEM_BIND_C_EXTENDED_AMO(SHMEM_DEF_SWAP)
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_SWAP)
 
 
+#if !defined(__cplusplus) && \
+    !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
 /* shmem_swap is a special case in the API */
 long
 shmem_swap(long *target, long value, int pe)
@@ -163,6 +124,7 @@ long shmemx_ctx_swap(long *target, long value, int pe, shmemx_ctx_t c)
     shmemx_ctx_quiet(c);
     return newval;
 }
+#endif
 
 
 #define SHMEM_DEF_CSWAP(STYPE,TYPE,ITYPE) \
@@ -185,7 +147,7 @@ long shmemx_ctx_swap(long *target, long value, int pe, shmemx_ctx_t c)
         return newval;                                                  \
     }
 
-SHMEM_BIND_C_AMO(SHMEM_DEF_CSWAP)
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_CSWAP)
 
 #define SHMEM_DEF_INC(STYPE,TYPE,ITYPE)                                 \
     void shmem_##STYPE##_inc(TYPE *target, int pe)                      \
@@ -202,7 +164,7 @@ SHMEM_BIND_C_AMO(SHMEM_DEF_CSWAP)
                                     SHM_INTERNAL_SUM, ITYPE, c);        \
     }
 
-SHMEM_BIND_C_AMO(SHMEM_DEF_INC)
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_INC)
 
 #define SHMEM_DEF_FINC(STYPE,TYPE,ITYPE)                                \
     TYPE shmem_##STYPE##_finc(TYPE *target, int pe)                     \
@@ -222,7 +184,7 @@ SHMEM_BIND_C_AMO(SHMEM_DEF_INC)
         return oldval;                                                  \
     }
 
-SHMEM_BIND_C_AMO(SHMEM_DEF_FINC)
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_FINC)
 
 #define SHMEM_DEF_ADD(STYPE,TYPE,ITYPE)                               \
     void shmem_##STYPE##_add(TYPE *target, TYPE value, int pe)        \
@@ -242,7 +204,7 @@ SHMEM_BIND_C_AMO(SHMEM_DEF_FINC)
     }
 
 
-SHMEM_BIND_C_AMO(SHMEM_DEF_ADD)
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_ADD)
 
 #define SHMEM_DEF_FADD(STYPE,TYPE,ITYPE)                             \
     TYPE shmem_##STYPE##_fadd(TYPE *target, TYPE value, int pe)      \
@@ -265,7 +227,7 @@ SHMEM_BIND_C_AMO(SHMEM_DEF_ADD)
         return oldval;                                               \
     }
 
-SHMEM_BIND_C_AMO(SHMEM_DEF_FADD)
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_FADD)
 
 #define SHMEM_DEF_FETCH(STYPE,TYPE,ITYPE)                        \
     TYPE shmem_##STYPE##_fetch(const TYPE *source, int pe)       \
@@ -288,7 +250,7 @@ SHMEM_BIND_C_AMO(SHMEM_DEF_FADD)
         return val;                                              \
     }
 
-SHMEM_BIND_C_EXTENDED_AMO(SHMEM_DEF_FETCH)
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_FETCH)
 
 
 #define SHMEM_DEF_SET(STYPE,TYPE,ITYPE)                           \
@@ -308,4 +270,4 @@ SHMEM_BIND_C_EXTENDED_AMO(SHMEM_DEF_FETCH)
                                   sizeof(TYPE), pe, ITYPE, c);    \
     }
 
-SHMEM_BIND_C_EXTENDED_AMO(SHMEM_DEF_SET)
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_SET)

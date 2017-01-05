@@ -1,8 +1,11 @@
-/*
+/* -*- C -*-
  *
- *  Copyright (c) 2015 Intel Corporation. All rights reserved.
- *  This software is available to you under the BSD license. For
- *  license information, see the LICENSE file in the top level directory.
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
+ * This file is part of the Sandia OpenSHMEM software package. For license
+ * information, see the LICENSE file in the top level directory of the
+ * distribution.
  *
  */
 
@@ -43,6 +46,8 @@ typedef enum fi_op       shm_internal_op_t;
 #define SHM_INTERNAL_FLOAT_COMPLEX   FI_FLOAT_COMPLEX
 #define SHM_INTERNAL_DOUBLE_COMPLEX  FI_DOUBLE_COMPLEX
 #define SHM_INTERNAL_SIGNED_BYTE     FI_INT8
+#define SHM_INTERNAL_INT8            FI_INT8
+#define SHM_INTERNAL_INT16           FI_INT16
 #define SHM_INTERNAL_INT32           FI_INT32
 #define SHM_INTERNAL_INT64           FI_INT64
 #define SHM_INTERNAL_SHORT           DTYPE_SHORT
@@ -371,6 +376,7 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
     }
 
     else {
+        *key = -1;
         *mr_addr = NULL;
         OFI_ERRMSG("[%03d] ERROR in %s: address (0x%p) outside of symmetric areas\n",
                shmem_internal_my_pe, __func__, addr);
@@ -427,7 +433,6 @@ void shmem_transport_ctx_fence(shmem_transport_ctx_t* ctx)
 static inline int try_again(const int ret, uint64_t *polled,
     shmem_transport_ctx_t* ctx)
 {
-
   if (ret) {
     if (ret == -FI_EAGAIN) {
       shmem_transport_ctx_drain(ctx);
@@ -972,7 +977,6 @@ shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
         op,
         NULL);
   } while(try_again(ret, &polled, ctx));
-
 
   ctx->endpoint.pending_count++;
 

@@ -3,8 +3,8 @@
  * Copyright 2011 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
- * 
- * Copyright (c) 2015 Intel Corporation. All rights reserved.
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -39,10 +39,6 @@ extern coll_type_t shmem_internal_bcast_type;
 extern coll_type_t shmem_internal_reduce_type;
 extern coll_type_t shmem_internal_collect_type;
 extern coll_type_t shmem_internal_fcollect_type;
-
-int shmem_internal_build_kary_tree(int PE_start, int stride, int PE_size, int PE_root, 
-                                   int *parent, int *num_children, int *children);
-
 
 void shmem_internal_barrier_linear(int PE_start, int logPE_stride, int PE_size, long *pSync);
 void shmem_internal_barrier_tree(int PE_start, int logPE_stride, int PE_size, long *pSync);

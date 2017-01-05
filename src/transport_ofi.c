@@ -1,8 +1,11 @@
-/*
+/* -*- C -*-
  *
- *  Copyright (c) 2015 Intel Corporation. All rights reserved.
- *  This software is available to you under the BSD license. For
- *  license information, see the LICENSE file in the top level directory.
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
+ * This file is part of the Sandia OpenSHMEM software package. For license
+ * information, see the LICENSE file in the top level directory of the
+ * distribution.
  *
  */
 
@@ -371,7 +374,7 @@ int shmemx_domain_create(int thread_level, int num_domains,
 }
 
 // assumes dom->lock is locked or dom->use_lock == 0
-void shmem_transport_domain_destroy(shmem_transport_dom_t* dom)
+static void shmem_transport_domain_destroy(shmem_transport_dom_t* dom)
 {
   /* FIXME: add to free list, maybe? */
   shmem_transport_ofi_domains[dom->id] = NULL;
@@ -576,7 +579,7 @@ static inline int allocate_recv_cntr_mr(void)
 
         // Create counter for incoming writes
         cntr_attr.events   = FI_CNTR_EVENTS_COMP;
-        cntr_attr.flags    = 0;
+        cntr_attr.wait_obj = FI_WAIT_UNSPEC;
 
         ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
                            &shmem_transport_ofi_target_cntrfd, NULL);
@@ -1115,7 +1118,6 @@ static inline int query_for_fabric(struct fabric_info *info)
     hints.caps |= FI_RMA_EVENT; /* want to use remote counters */
 #endif /* ndef ENABLE_HARD_POLLING */
     hints.addr_format         = FI_FORMAT_UNSPEC;
-    hints.mode		      = FI_CONTEXT;
     domain_attr.data_progress = FI_PROGRESS_AUTO;
     domain_attr.resource_mgmt = FI_RM_ENABLED;
 #ifdef ENABLE_MR_SCALABLE

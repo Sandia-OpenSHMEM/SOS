@@ -13,22 +13,13 @@
  *
  */
 
-#include "config.h"
+#ifndef SHMEM_DECL_H
+#define SHMEM_DECL_H
 
-#define SHMEM_INTERNAL_INCLUDE
-#include "shmem.h"
-#include "shmem_internal.h"
-#include "shmem_remote_pointer.h"
+#ifdef HAVE_FUNC_ATTRIBUTE_NORETURN
+#define __shmem_attribute_noreturn__ __attribute__ ((noreturn))
+#else
+#define __shmem_attribute_noreturn__
+#endif
 
-
-#define FC_SHMEM_PTR FC_FUNC_(shmem_ptr, SHMEM_PTR)
-void* FC_SHMEM_PTR(void **target, fortran_integer_t *pe);
-void*
-FC_SHMEM_PTR(void **target, fortran_integer_t *pe)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_PE(*pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target, 1);
-
-    return shmem_internal_ptr(*target, *pe);
-}
+#endif /* SHMEM_DECL_H */

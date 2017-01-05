@@ -66,7 +66,7 @@ int me,n_pes,n_threads;
 int max_steps;
 
 // naive LCM of 1..numPes
-int get_max_steps(int numPes) {
+static int get_max_steps(int numPes) {
   int i;
   int ret = 0;
   int done = 0;
@@ -84,7 +84,7 @@ int get_max_steps(int numPes) {
   return ret;
 }
 
-void* runchannel(void* chan) {
+static void* runchannel(void* chan) {
   channel *c = chan;
   int nextpe = (me + c->stride)%n_pes;
   int prevpe = (me + n_pes - c->stride)%n_pes;

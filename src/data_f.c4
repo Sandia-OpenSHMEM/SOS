@@ -1,8 +1,12 @@
+dnl vi: set ft=m4
 /* -*- C -*-
  *
  * Copyright 2011 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
  * 
  * This file is part of the Sandia OpenSHMEM software package. For license
  * information, see the LICENSE file in the top level directory of the
@@ -10,6 +14,11 @@
  *
  */
 
+/*
+ * This is a generated file, do not edit directly.
+ */
+
+include(shmem_bind_f.m4)dnl
 #include "config.h"
 
 #include <stdio.h>
@@ -29,7 +38,7 @@
   DECL(real,    REAL,    SIZEOF_FORTRAN_REAL) \
   DECL(logical, LOGICAL, SIZEOF_FORTRAN_LOGICAL)
 
-#define SHMEM_STAMP_FC_PUT(FUNCNAME, SIZE)                              \
+#define SHMEM_DEF_FC_PUT(FUNCNAME, SIZE)                                \
     void FUNCNAME(void *target, void *source, fortran_integer_t *len,   \
                   fortran_integer_t *pe);                               \
     void FUNCNAME(void *target, void *source, fortran_integer_t *len,   \
@@ -45,18 +54,16 @@
                            SHMEMX_CTX_DEFAULT);                         \
     }
 
-#define SHMEM_DEF_FC_PUT(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_PUT(FC_FUNC_(shmem_##STYPE_L##_put, SHMEM_##STYPE_U##_PUT), SIZE)
+define(`SHMEM_WRAP_FC_PUT',
+`SHMEM_DEF_FC_PUT(FC_FUNC_(SH_DOWNCASE(shmem_$1_put), SH_UPCASE(SHMEM_$1_PUT)), $2)')dnl
+define(`SHMEM_WRAP_FC_PUT_SIZE',
+`SHMEM_DEF_FC_PUT(FC_FUNC_(SH_DOWNCASE(shmem_put$1), SH_UPCASE(SHMEM_PUT$1)), $2)')dnl
 
-#define SHMEM_DEF_FC_PUT_SIZE(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_PUT(FC_FUNC_(shmem_put##STYPE_L, SHMEM_PUT##STYPE_U), SIZE)
-
-
-SHMEM_BIND_F_RMA(SHMEM_DEF_FC_PUT)
-SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_PUT_SIZE)
+SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_PUT')
+SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_PUT_SIZE')
 
 
-#define SHMEM_STAMP_FC_PUT_NBI(FUNCNAME, SIZE)                          \
+#define SHMEM_DEF_FC_PUT_NBI(FUNCNAME, SIZE)                            \
     void FUNCNAME(void *target, void *source, fortran_integer_t *nelems,\
                   fortran_integer_t *pe);                               \
     void FUNCNAME(void *target, void *source, fortran_integer_t *nelems,\
@@ -72,18 +79,15 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_PUT_SIZE)
                                SHMEMX_CTX_DEFAULT);                     \
     }
 
-#define SHMEM_DEF_FC_PUT_NBI(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_PUT_NBI(FC_FUNC_(shmem_##STYPE_L##_put_nbi, SHMEM_##STYPE_U##_PUT_NBI), SIZE)
+define(`SHMEM_WRAP_FC_PUT_NBI',
+`SHMEM_DEF_FC_PUT_NBI(FC_FUNC_(SH_DOWNCASE(shmem_$1_put_nbi), SH_UPCASE(SHMEM_$1_PUT_NBI)), $2)')dnl
+define(`SHMEM_WRAP_FC_PUT_NBI_SIZE',
+`SHMEM_DEF_FC_PUT_NBI(FC_FUNC_(SH_DOWNCASE(shmem_put$1_nbi), SH_UPCASE(SHMEM_PUT$1_NBI)), $2)')dnl
 
-#define SHMEM_DEF_FC_PUT_NBI_SIZE(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_PUT_NBI(FC_FUNC_(shmem_put##STYPE_L##_nbi, SHMEM_PUT##STYPE_U##_NBI), SIZE)
+SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_PUT_NBI')
+SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_PUT_NBI_SIZE')
 
-
-SHMEM_BIND_F_RMA(SHMEM_DEF_FC_PUT_NBI)
-SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_PUT_NBI_SIZE)
-
-
-#define SHMEM_STAMP_FC_IPUT(FUNCNAME, SIZE)                             \
+#define SHMEM_DEF_FC_IPUT(FUNCNAME, SIZE)                               \
     void FUNCNAME(void *targetp, void *sourcep,                         \
                   fortran_integer_t *tst, fortran_integer_t *sst,       \
                   fortran_integer_t *lenp, fortran_integer_t *pe);      \
@@ -111,19 +115,15 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_PUT_NBI_SIZE)
         }                                                               \
     }
 
+define(`SHMEM_WRAP_FC_IPUT',
+`SHMEM_DEF_FC_IPUT(FC_FUNC_(SH_DOWNCASE(shmem_$1_iput), SH_UPCASE(SHMEM_$1_IPUT)), $2)')dnl
+define(`SHMEM_WRAP_FC_IPUT_SIZE',
+`SHMEM_DEF_FC_IPUT(FC_FUNC_(SH_DOWNCASE(shmem_iput$1), SH_UPCASE(SHMEM_IPUT$1)), $2)')dnl
 
-#define SHMEM_DEF_FC_IPUT(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_IPUT(FC_FUNC_(shmem_##STYPE_L##_iput, SHMEM_##STYPE_U##_IPUT), SIZE)
+SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_IPUT')
+SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_IPUT_SIZE')
 
-#define SHMEM_DEF_FC_IPUT_SIZE(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_IPUT(FC_FUNC_(shmem_iput##STYPE_L, SHMEM_IPUT##STYPE_U), SIZE)
-
-
-SHMEM_BIND_F_RMA(SHMEM_DEF_FC_IPUT)
-SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_IPUT_SIZE)
-
-
-#define SHMEM_STAMP_FC_GET(FUNCNAME, SIZE)                              \
+#define SHMEM_DEF_FC_GET(FUNCNAME, SIZE)                                \
     void FUNCNAME(void *target, void *source, fortran_integer_t *len,   \
                   fortran_integer_t *pe);                               \
     void FUNCNAME(void *target, void *source, fortran_integer_t *len,   \
@@ -140,18 +140,15 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_IPUT_SIZE)
         shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);                           \
     }
 
-#define SHMEM_DEF_FC_GET(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_GET(FC_FUNC_(shmem_##STYPE_L##_get, SHMEM_##STYPE_U##_GET), SIZE)
+define(`SHMEM_WRAP_FC_GET',
+`SHMEM_DEF_FC_GET(FC_FUNC_(SH_DOWNCASE(shmem_$1_get), SH_UPCASE(SHMEM_$1_GET)), $2)')dnl
+define(`SHMEM_WRAP_FC_GET_SIZE',
+`SHMEM_DEF_FC_GET(FC_FUNC_(SH_DOWNCASE(shmem_get$1), SH_UPCASE(SHMEM_GET$1)), $2)')dnl
 
-#define SHMEM_DEF_FC_GET_SIZE(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_GET(FC_FUNC_(shmem_get##STYPE_L, SHMEM_GET##STYPE_U), SIZE)
+SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_GET')
+SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_GET_SIZE')
 
-
-SHMEM_BIND_F_RMA(SHMEM_DEF_FC_GET)
-SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_GET_SIZE)
-
-
-#define SHMEM_STAMP_FC_GET_NBI(FUNCNAME, SIZE)                          \
+#define SHMEM_DEF_FC_GET_NBI(FUNCNAME, SIZE)                            \
     void FUNCNAME(void *target, void *source, fortran_integer_t *nelems,\
                   fortran_integer_t *pe);                               \
     void FUNCNAME(void *target, void *source, fortran_integer_t *nelems,\
@@ -166,18 +163,15 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_GET_SIZE)
                            SHMEMX_CTX_DEFAULT);                         \
     }
 
-#define SHMEM_DEF_FC_GET_NBI(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_GET_NBI(FC_FUNC_(shmem_##STYPE_L##_get_nbi, SHMEM_##STYPE_U##_GET_NBI), SIZE)
+define(`SHMEM_WRAP_FC_GET_NBI',
+`SHMEM_DEF_FC_GET_NBI(FC_FUNC_(SH_DOWNCASE(shmem_$1_get_nbi), SH_UPCASE(SHMEM_$1_GET_NBI)), $2)')dnl
+define(`SHMEM_WRAP_FC_GET_NBI_SIZE',
+`SHMEM_DEF_FC_GET_NBI(FC_FUNC_(SH_DOWNCASE(shmem_get$1_nbi), SH_UPCASE(SHMEM_GET$1_NBI)), $2)')dnl
 
-#define SHMEM_DEF_FC_GET_NBI_SIZE(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_GET_NBI(FC_FUNC_(shmem_get##STYPE_L##_nbi, SHMEM_GET##STYPE_U##_NBI), SIZE)
+SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_GET_NBI')
+SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_GET_NBI_SIZE')
 
-
-SHMEM_BIND_F_RMA(SHMEM_DEF_FC_GET_NBI)
-SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_GET_NBI_SIZE)
-
-
-#define SHMEM_STAMP_FC_IGET(FUNCNAME, SIZE)                             \
+#define SHMEM_DEF_FC_IGET(FUNCNAME, SIZE)                               \
     void FUNCNAME(void *targetp, void *sourcep,                         \
                   fortran_integer_t *tst, fortran_integer_t *sst,       \
                   fortran_integer_t *lenp, fortran_integer_t *pe);      \
@@ -203,12 +197,12 @@ SHMEM_BIND_F_SIZES(SHMEM_DEF_FC_GET_NBI_SIZE)
             target += (*tst * SIZE);                                    \
             source += (*sst * SIZE);                                    \
         }                                                               \
-        shmem_internal_get_wait();                                      \
     }
 
-#define SHMEM_DEF_FC_IGET(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_IGET(FC_FUNC_(shmem_##STYPE_L##_iget, SHMEM_##STYPE_U##_IGET), SIZE)
+define(`SHMEM_WRAP_FC_IGET',
+`SHMEM_DEF_FC_IGET(FC_FUNC_(SH_DOWNCASE(shmem_$1_iget), SH_UPCASE(SHMEM_$1_IGET)), $2)')dnl
+define(`SHMEM_WRAP_FC_IGET_SIZE',
+`SHMEM_DEF_FC_IGET(FC_FUNC_(SH_DOWNCASE(shmem_iget$1), SH_UPCASE(SHMEM_IGET$1)), $2)')dnl
 
-#define SHMEM_DEF_FC_IGET_SIZE(STYPE_L,STYPE_U,SIZE) \
-    SHMEM_STAMP_FC_IGET(FC_FUNC_(shmem_iget##STYPE_L, SHMEM_IGET##STYPE_U), SIZE)
-
+SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_IGET')
+SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_IGET_SIZE')

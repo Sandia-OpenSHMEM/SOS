@@ -26,6 +26,7 @@
  */
 
 #include <pthread.h>
+#include "pthread_barrier.h"
 
 #include <string.h>
 #include <stdio.h>

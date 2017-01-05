@@ -42,9 +42,6 @@
   DECL(long,       long) EOL            \
   DECL(longlong,   long long)
 
-#define SHMEM_DECLARE_FOR_RMA(DECL) SHMEM_EVAL_MACRO_FOR_RMA(DECL,;)
-#define SHMEM_DEFINE_FOR_RMA(DECL) SHMEM_EVAL_MACRO_FOR_RMA(DECL,)
-
 #ifdef TEST_PSHMEM
 #include <pshmem.h>
 #define SHFN(fn) pshmem_##fn
@@ -55,7 +52,17 @@
 #define CHUNK_SIZE 10
 #define ARR_SIZE (4*(CHUNK_SIZE))
 
-#define DEFINE_TEST(TYPENAME,TYPE) \
+#define EVAL_MACRO_FOR_RMA(DECL,END)  \
+  DECL(float,      float) END         \
+  DECL(double,     double) END        \
+  DECL(longdouble, long double) END   \
+  DECL(char,       char) END          \
+  DECL(short,      short) END         \
+  DECL(int,        int) END           \
+  DECL(long,       long) END          \
+  DECL(longlong,   long long) END
+
+#define DECLARE_TEST(TYPENAME,TYPE) \
   TYPE TYPENAME##_shared[ARR_SIZE];                                    \
                                                                        \
   static int TYPENAME##_rmaTest(int target_pe, int verbose) {          \
@@ -114,7 +121,7 @@
       return ret;                                                      \
   }
 
-SHMEM_DEFINE_FOR_RMA(DEFINE_TEST)
+EVAL_MACRO_FOR_RMA(DECLARE_TEST,)
 
 int main(int argc, char* argv[]) {
     int verbose = 0;
@@ -137,7 +144,7 @@ int main(int argc, char* argv[]) {
         errors += (TYPENAME##_rmaTest(nextpe,verbose)); \
     } while(0)
 
-    SHMEM_DECLARE_FOR_RMA(RUN_TEST);
+    EVAL_MACRO_FOR_RMA(RUN_TEST,;)
 
     SHFN(finalize)();
 
