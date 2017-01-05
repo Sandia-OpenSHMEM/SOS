@@ -16,9 +16,11 @@
 #ifndef SHMEM_INTERNAL_RUNTIME_H
 #define SHMEM_INTERNAL_RUNTIME_H
 
+#include "sos_decl.h"
+
 int shmem_runtime_init(void);
 int shmem_runtime_fini(void);
-void shmem_runtime_abort(int exit_code, const char msg[]);
+void shmem_runtime_abort(int exit_code, const char msg[]) __sos_attribute_noreturn__ ;
 
 int shmem_runtime_get_rank(void);
 int shmem_runtime_get_size(void);

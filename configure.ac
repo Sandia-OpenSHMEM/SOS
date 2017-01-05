@@ -175,6 +175,8 @@ fi
 
 AC_CACHE_SAVE
 
+AX_GCC_FUNC_ATTRIBUTE([noreturn])
+
 AC_SEARCH_LIBS([clock_gettime], [rt],
                [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [define if clock_gettime is available]) ])
 
