@@ -286,7 +286,7 @@ if test "$FC" != "" ; then
   OMPI_FORTRAN_GET_SIZEOF([], [DOUBLE PRECISION])
   OMPI_FORTRAN_GET_SIZEOF([], [COMPLEX])
 
-  # find Portals integer type corresponding to INTEGER
+  # find transport integer type corresponding to INTEGER
   SHMEM_FIND_FORTRAN_INT_TYPE([INTEGER], [$transport])
 
   # find C type corresponding to given Fortran types
