@@ -89,7 +89,9 @@ typedef struct shmem_transport_cntr_ep_t {
 typedef struct shmem_transport_dom_t {
   int id;
   struct fid_stx* stx;
+#ifdef ENABLE_THREADS
   shmem_internal_mutex_t lock;
+#endif
   void (*take_lock)(struct shmem_transport_dom_t**);
   void (*release_lock)(struct shmem_transport_dom_t**);
   void (*free_lock)(struct shmem_transport_dom_t**);
@@ -107,6 +109,8 @@ typedef struct shmem_transport_dom_t {
 } shmem_transport_dom_t;
 
 static inline void dom_lock_noop(shmem_transport_dom_t** dom) {}
+
+#ifdef ENABLE_THREADS
 static inline void dom_take_mutex(shmem_transport_dom_t** dom) {
   SHMEM_MUTEX_LOCK((*dom)->lock);
 }
@@ -116,6 +120,11 @@ static inline void dom_release_mutex(shmem_transport_dom_t** dom) {
 static inline void dom_free_mutex(shmem_transport_dom_t** dom) {
   SHMEM_MUTEX_DESTROY((*dom)->lock);
 }
+#else
+static inline void dom_take_mutex(shmem_transport_dom_t** dom) { }
+static inline void dom_release_mutex(shmem_transport_dom_t** dom) { }
+static inline void dom_free_mutex(shmem_transport_dom_t** dom) { }
+#endif
 
 typedef struct shmem_transport_ctx_t {
   shmem_transport_dom_t* domain;
