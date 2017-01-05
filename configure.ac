@@ -163,6 +163,8 @@ if test "$FC" != "" ; then
   AC_FC_WRAPPERS
 fi
 
+AX_GCC_FUNC_ATTRIBUTE([noreturn])
+
 if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
   CFLAGS="$CFLAGS -Wall -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wcomment -pedantic"
 else
@@ -174,8 +176,6 @@ if test "$enable_debug" = "yes" ; then
 fi
 
 AC_CACHE_SAVE
-
-AX_GCC_FUNC_ATTRIBUTE([noreturn])
 
 AC_SEARCH_LIBS([clock_gettime], [rt],
                [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [define if clock_gettime is available]) ])
