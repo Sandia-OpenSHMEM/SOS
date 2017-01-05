@@ -13,13 +13,13 @@
  *
  */
 
-#ifndef SOS_DECL_H
-#define SOS_DECL_H
+#ifndef SHMEM_DECL_H
+#define SHMEM_DECL_H
 
 #ifdef HAVE_FUNC_ATTRIBUTE_NORETURN
-#define __sos_attribute_noreturn__ __attribute__ ((noreturn))
+#define __shmem_attribute_noreturn__ __attribute__ ((noreturn))
 #else
-#define __sos_attribute_noreturn__
+#define __shmem_attribute_noreturn__
 #endif
 
-#endif /* SOS_DECL_H */
+#endif /* SHMEM_DECL_H */
