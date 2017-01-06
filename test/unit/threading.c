@@ -41,7 +41,7 @@ static long source[N_THREADS*N_ELEMS];
 static long target[N_THREADS*N_ELEMS];
 pthread_barrier_t fencebar;
 
-void* roundrobin(void* tparam) {
+static void* roundrobin(void* tparam) {
     ptrdiff_t tid = (ptrdiff_t)tparam;
     int offset = tid*N_ELEMS;
     /* fprintf(stderr,"Starting thread %lu with offset %d\n",tid,offset); */
