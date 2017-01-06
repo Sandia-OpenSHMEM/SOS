@@ -1,4 +1,4 @@
-sudo: false
+sudo: true
 language: c
 compiler:
     #- clang
@@ -63,6 +63,8 @@ before_install:
     - export SOS_SRC=$PWD
     - export TRAVIS_SRC=$HOME/travis/src
     - export TRAVIS_INSTALL=$HOME/travis/install
+    ## Disable security protection so CMA will work
+    - sudo echo 0 > /proc/sys/kernel/yama/ptrace_scope
     ## Build libev
     - cd $TRAVIS_SRC
     - wget http://dist.schmorp.de/libev/Attic/libev-4.22.tar.gz
