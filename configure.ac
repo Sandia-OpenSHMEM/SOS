@@ -163,6 +163,8 @@ if test "$FC" != "" ; then
   AC_FC_WRAPPERS
 fi
 
+AX_GCC_FUNC_ATTRIBUTE([noreturn])
+
 if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
   CFLAGS="$CFLAGS -Wall -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wcomment -pedantic"
 else
@@ -174,6 +176,9 @@ if test "$enable_debug" = "yes" ; then
 fi
 
 AC_CACHE_SAVE
+
+AC_SEARCH_LIBS([clock_gettime], [rt],
+               [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [define if clock_gettime is available]) ])
 
 dnl check for libraries
 
@@ -207,9 +212,6 @@ AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
       [AC_DEFINE([USE_ON_NODE_COMMS], [1], [Define if any on-node comm transport is available])
        AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
       ])
-
-AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
-      [AC_MSG_ERROR([No transport found])])
 
 AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
 			[build and run shmem-pmi support])])
@@ -284,7 +286,7 @@ if test "$FC" != "" ; then
   OMPI_FORTRAN_GET_SIZEOF([], [DOUBLE PRECISION])
   OMPI_FORTRAN_GET_SIZEOF([], [COMPLEX])
 
-  # find Portals integer type corresponding to INTEGER
+  # find transport integer type corresponding to INTEGER
   SHMEM_FIND_FORTRAN_INT_TYPE([INTEGER], [$transport])
 
   # find C type corresponding to given Fortran types
@@ -423,6 +425,10 @@ fi
 AS_IF([test "$enable_pmi_simple" = "yes"],
 	[AC_CONFIG_SUBDIRS([shmem_pmi])])
 AC_OUTPUT
+
+AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
+      [AC_MSG_WARN([No transport found])])
+
 
 FORT="$FC"
 if test "$FORT" = "" ; then

@@ -13,18 +13,13 @@
  *
  */
 
-#ifndef TRANSPORT_H
-#define TRANSPORT_H
+#ifndef SHMEM_DECL_H
+#define SHMEM_DECL_H
 
-#if defined (USE_PORTALS4)
-#include "transport_portals4.h"
+#ifdef HAVE_FUNC_ATTRIBUTE_NORETURN
+#define __shmem_attribute_noreturn__ __attribute__ ((noreturn))
+#else
+#define __shmem_attribute_noreturn__
+#endif
 
-#elif defined (USE_OFI)
-#include "transport_ofi.h"
-
-#else /* No transport */
-#include "transport_none.h"
-
-#endif /* Transport selection */
-
-#endif /* TRANSPORT_H */
+#endif /* SHMEM_DECL_H */

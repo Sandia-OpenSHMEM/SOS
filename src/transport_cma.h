@@ -105,6 +105,7 @@ shmem_transport_cma_put(void *target, const void *source, size_t len,
                         (const struct iovec *)&tgt, 1, 0);
 
         if ( bytes < 0 || (size_t) bytes != len) {
+            perror("shmem_transport_cma_put");
             RAISE_ERROR_STR("process_vm_writev() failed");
         }
 }
@@ -132,6 +133,7 @@ shmem_transport_cma_get(void *target, const void *source, size_t len, int pe,
                                 (const struct iovec *)&tgt, 1,
                                 (const struct iovec *)&src, 1, 0);
         if ( bytes < 0 || (size_t) bytes != len) {
+            perror("shmem_transport_cma_get");
             RAISE_ERROR_STR("process_vm_readv() failed");
         }
 }
