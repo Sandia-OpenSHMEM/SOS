@@ -54,7 +54,7 @@ static char * aligned_buffer_alloc(int len)
 
     alignment = getpagesize();
 
-#ifndef VERSION_1.0
+#ifndef VERSION_1_0
     ptr1 = shmem_malloc(ptr_size + alignment + len);
 #else
     ptr1 = shmalloc(ptr_size + alignment + len);
@@ -88,7 +88,7 @@ static void aligned_buffer_free(char * ptr_aligned)
     memcpy(&temp_p, (ptr_aligned - ptr_size), ptr_size);
     ptr_org = (char *) temp_p;
 
-#ifndef VERSION_1.0
+#ifndef VERSION_1_0
     shmem_free(ptr_org);
 #else
     shfree(ptr_org);
