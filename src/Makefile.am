@@ -51,6 +51,7 @@ libsma_la_SOURCES = \
 	cache_management_c.c \
 	transport.h \
 	util.c \
+	contexts_c.c \
 	$(GEN_BINDINGS)
 
 BUILT_SOURCES = $(GEN_BINDINGS)
