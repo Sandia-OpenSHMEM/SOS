@@ -74,12 +74,16 @@ if USE_PORTALS4
 libsma_la_SOURCES += \
 	transport_portals4.h \
 	transport_portals4.c
-endif
-
+else
 if USE_OFI
 libsma_la_SOURCES += \
 	transport_ofi.h \
 	transport_ofi.c
+else
+libsma_la_SOURCES += \
+	transport_none.h \
+	transport_none.c
+endif
 endif
 
 if USE_XPMEM
