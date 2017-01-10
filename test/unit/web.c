@@ -147,6 +147,13 @@ int main(int argc, char* argv[]) {
     n_pes = shmem_n_pes();
     me = shmem_my_pe();
 
+    if (n_pes < 2) {
+        if (me == 0)
+            printf("web: Requires 2 or more PEs\n");
+        shmem_finalize();
+        return 0;
+    }
+
     srand(1+me);
 
     n_threads = 4 * n_pes;
