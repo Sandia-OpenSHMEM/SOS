@@ -59,14 +59,14 @@ usage(char *pgm)
         pgm,NUM_ELEMENTS,DFLT_LOOPS);
 }
 
-
-static inline double gettime_sec(void)
+#if !defined(HAVE_SHMEMX_WTIME)
+static inline double shmemx_wtime(void)
 {
     struct timeval tv;
     gettimeofday(&tv, 0);
     return (double)((tv.tv_usec / 1000000.0) + tv.tv_sec);
 }
-
+#endif
 
 int
 main(int argc, char **argv)
