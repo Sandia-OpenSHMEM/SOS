@@ -164,6 +164,7 @@ if test "$FC" != "" ; then
 fi
 
 AX_GCC_FUNC_ATTRIBUTE([noreturn])
+AX_GCC_BUILTIN([__builtin_trap])
 
 if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
   CFLAGS="$CFLAGS -Wall -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wcomment -pedantic"
