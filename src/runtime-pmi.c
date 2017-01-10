@@ -29,6 +29,7 @@
 #endif
 
 #include "runtime.h"
+#include "shmem_internal.h"
 
 static int rank = -1;
 static int size = 0;
@@ -148,6 +149,12 @@ shmem_runtime_fini(void)
 void
 shmem_runtime_abort(int exit_code, const char msg[])
 {
+
+#ifdef HAVE___BUILTIN_TRAP
+    if (shmem_util_getenv_str("TRAP_ON_ABORT") != NULL)
+        __builtin_trap();
+#endif
+
     PMI_Abort(exit_code, msg);
 
     /* PMI_Abort should not return */
