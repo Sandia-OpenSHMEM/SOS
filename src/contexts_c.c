@@ -40,31 +40,40 @@
 
 int shmemx_domain_create(int thread_level, int num_domains, shmemx_domain_t domains[])
 {
-    return shmem_transport_domain_create(thread_level, num_domains, domains);
+    SHMEM_ERR_CHECK_INITIALIZED();
+    return shmem_transport_domain_create(thread_level, num_domains,
+                                         (shmem_transport_domain_t **) domains);
 }
 
 void shmemx_domain_destroy(int num_domains, shmemx_domain_t domains[])
 {
-    shmem_transport_domain_destroy(num_domains, domains);
+    SHMEM_ERR_CHECK_INITIALIZED();
+    shmem_transport_domain_destroy(num_domains,
+                                   (shmem_transport_domain_t **) domains);
 }
 
 int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
 {
-    return shmem_transport_ctx_create(domain, ctx);
+    SHMEM_ERR_CHECK_INITIALIZED();
+    return shmem_transport_ctx_create((shmem_transport_domain_t *) domain,
+                                      (shmem_transport_ctx_t **) ctx);
 }
 
 void shmemx_ctx_destroy(shmemx_ctx_t ctx)
 {
-    shmem_transport_ctx_destroy(ctx);
+    SHMEM_ERR_CHECK_INITIALIZED();
+    shmem_transport_ctx_destroy((shmem_transport_ctx_t *) ctx);
 }
 
 void shmemx_ctx_fence(shmemx_ctx_t ctx)
 {
-    shmem_transport_ctx_fence(ctx);
+    SHMEM_ERR_CHECK_INITIALIZED();
+    shmem_transport_ctx_fence((shmem_transport_ctx_t *) ctx);
 }
 
 void shmemx_ctx_quiet(shmemx_ctx_t ctx)
 {
-    shmem_transport_ctx_quiet(ctx);
+    SHMEM_ERR_CHECK_INITIALIZED();
+    shmem_transport_ctx_quiet((shmem_transport_ctx_t *) ctx);
 }
 

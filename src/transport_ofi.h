@@ -29,7 +29,6 @@
 #include "shmem_free_list.h"
 #include <string.h>
 #include "shmem_internal.h"
-#include "shmemx.h"
 #include <unistd.h>
 #include <rdma/fabric.h>
 #include <rdma/fi_domain.h>
@@ -86,15 +85,15 @@ typedef struct shmem_transport_cntr_ep_t {
   uint64_t pending_count;
 } shmem_transport_cntr_ep_t;
 
-typedef struct shmem_transport_dom_t {
+typedef struct shmem_transport_domain_t {
   int id;
   struct fid_stx* stx;
 #ifdef ENABLE_THREADS
   shmem_internal_mutex_t lock;
 #endif
-  void (*take_lock)(struct shmem_transport_dom_t**);
-  void (*release_lock)(struct shmem_transport_dom_t**);
-  void (*free_lock)(struct shmem_transport_dom_t**);
+  void (*take_lock)(struct shmem_transport_domain_t**);
+  void (*release_lock)(struct shmem_transport_domain_t**);
+  void (*free_lock)(struct shmem_transport_domain_t**);
   /* Each endpoint is dedicated to 1 or more contexts. Sharing a
    * counter leads to performance degradation
    */
@@ -106,53 +105,38 @@ typedef struct shmem_transport_dom_t {
   size_t num_active_contexts;
   /* Has shmem_domain_destroy been called on this? */
   int freed;
-} shmem_transport_dom_t;
+} shmem_transport_domain_t;
 
-static inline void dom_lock_noop(shmem_transport_dom_t** dom) {}
+static inline void dom_lock_noop(shmem_transport_domain_t** dom) {}
 
 #ifdef ENABLE_THREADS
-static inline void dom_take_mutex(shmem_transport_dom_t** dom) {
+static inline void dom_take_mutex(shmem_transport_domain_t** dom) {
   SHMEM_MUTEX_LOCK((*dom)->lock);
 }
-static inline void dom_release_mutex(shmem_transport_dom_t** dom) {
+static inline void dom_release_mutex(shmem_transport_domain_t** dom) {
   SHMEM_MUTEX_UNLOCK((*dom)->lock);
 }
-static inline void dom_free_mutex(shmem_transport_dom_t** dom) {
+static inline void dom_free_mutex(shmem_transport_domain_t** dom) {
   SHMEM_MUTEX_DESTROY((*dom)->lock);
 }
 #else
-static inline void dom_take_mutex(shmem_transport_dom_t** dom) { }
-static inline void dom_release_mutex(shmem_transport_dom_t** dom) { }
-static inline void dom_free_mutex(shmem_transport_dom_t** dom) { }
+static inline void dom_take_mutex(shmem_transport_domain_t** dom) { }
+static inline void dom_release_mutex(shmem_transport_domain_t** dom) { }
+static inline void dom_free_mutex(shmem_transport_domain_t** dom) { }
 #endif
 
 typedef struct shmem_transport_ctx_t {
-  shmem_transport_dom_t* domain;
+  shmem_transport_domain_t* domain;
   shmem_transport_cntr_ep_t endpoint;
 
-  void (*take_lock)(shmem_transport_dom_t**);
-  void (*release_lock)(shmem_transport_dom_t**);
+  void (*take_lock)(shmem_transport_domain_t**);
+  void (*release_lock)(shmem_transport_domain_t**);
 
-  size_t id;
+  int id;
 } shmem_transport_ctx_t;
 
-
-#define TRANSP_FROM_DOM_T(domid) ((shmem_transport_dom_t*)domid)
-#define TRANSP_FROM_CTX_T(ctxid) ((shmem_transport_ctx_t*)ctxid)
-
-extern shmemx_domain_t shmem_transport_default_dom;
-extern shmemx_ctx_t shmem_transport_default_ctx;
-extern shmem_transport_dom_t* shmem_transport_dom;
-extern shmem_transport_ctx_t* shmem_transport_ctx;
-
-extern shmem_transport_dom_t** shmem_transport_ofi_domains;
-extern shmem_transport_ctx_t** shmem_transport_ofi_contexts;
-
-extern size_t shmem_transport_num_contexts;
-extern size_t shmem_transport_num_domains;
-
-extern size_t shmem_transport_available_contexts;
-extern size_t shmem_transport_available_domains;
+extern shmem_transport_domain_t shmem_transport_default_dom;
+extern shmem_transport_ctx_t shmem_transport_default_ctx;
 
 extern struct fid_fabric*       	shmem_transport_ofi_fabfd;
 extern struct fid_domain*          	shmem_transport_ofi_domainfd;
@@ -223,64 +207,64 @@ int shmem_transport_atomic_supported(shm_internal_op_t op,
 static inline
 void
 shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
-    size_t len, int pe, int op, int datatype, shmemx_ctx_t c);
+    size_t len, int pe, int op, int datatype, shmem_transport_ctx_t *c);
 
 static inline
 void
 shmem_transport_atomic_nb(void *target, const void *source,
-    size_t full_len, int pe, int op, int datatype, shmemx_ctx_t c);
+    size_t full_len, int pe, int op, int datatype, shmem_transport_ctx_t *c);
 
 static inline
 void
 shmem_transport_atomic_fetch(void *target, const void *source,
-    size_t len, int pe, int datatype, shmemx_ctx_t c);
+    size_t len, int pe, int datatype, shmem_transport_ctx_t *c);
 
 static inline
 void
 shmem_transport_atomic_set(void *target, const void *source,
-    size_t len, int pe, int datatype, shmemx_ctx_t c);
+    size_t len, int pe, int datatype, shmem_transport_ctx_t *c);
 
 static inline
 void
 shmem_transport_atomic_small(void *target, const void *source,
-    size_t len, int pe, int op, int datatype, shmemx_ctx_t c);
+    size_t len, int pe, int op, int datatype, shmem_transport_ctx_t *c);
 
 static inline
 void
 shmem_transport_mswap(void *target, const void *source, void *dest,
                       const void *mask, size_t len, int pe,
-                      int datatype, shmemx_ctx_t c);
+                      int datatype, shmem_transport_ctx_t *c);
 
 static inline
 void
 shmem_transport_cswap(void *target, const void *source, void *dest,
                       const void *operand, size_t len, int pe,
-                      int datatype, shmemx_ctx_t c);
+                      int datatype, shmem_transport_ctx_t *c);
 
 static inline
 void
 shmem_transport_swap(void *target, const void *source, void *dest,
-    size_t len, int pe, int datatype, shmemx_ctx_t c);
+    size_t len, int pe, int datatype, shmem_transport_ctx_t *c);
 
 static inline
 void
 shmem_transport_get(void *target, const void *source, size_t len,
-    int pe, shmemx_ctx_t c);
+    int pe, shmem_transport_ctx_t *c);
 
 static inline
 void
 shmem_transport_put_nbi(void *target, const void *source, size_t len,
-    int pe, shmemx_ctx_t c);
+    int pe, shmem_transport_ctx_t *c);
 
 static inline
 void
 shmem_transport_put(void *target, const void *source, size_t len,
-                       int pe, shmemx_ctx_t c);
+                       int pe, shmem_transport_ctx_t *c);
 
 static inline
 void
 shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
-    size_t len, int pe, int op, int datatype, shmemx_ctx_t c);
+    size_t len, int pe, int op, int datatype, shmem_transport_ctx_t *c);
 
 
 /* detect atomic limitation on the fly and provide software reduction support
@@ -292,17 +276,22 @@ int shmem_transport_atomic_supported(shm_internal_op_t op,
 static inline
 void
 shmem_transport_ofi_put_large(void *target, const void *source,
-    size_t len, int pe, shmemx_ctx_t c);
+    size_t len, int pe, shmem_transport_ctx_t *c);
 
 static inline
 void
 shmem_transport_put_small(void *target, const void *source,
-    size_t len, int pe, shmemx_ctx_t c);
+    size_t len, int pe, shmem_transport_ctx_t *c);
 
 static inline
 void shmem_transport_ctx_fence(shmem_transport_ctx_t* ctx);
 
 static inline void shmem_transport_ctx_quiet(shmem_transport_ctx_t* ctx);
+
+int shmem_transport_domain_create(int thread_level, int num_domains, shmem_transport_domain_t *domains[]);
+void shmem_transport_domain_destroy(int num_domains, shmem_transport_domain_t *domains[]);
+int shmem_transport_ctx_create(shmem_transport_domain_t *domain, shmem_transport_ctx_t **ctx);
+void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx);
 
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -400,6 +389,9 @@ static inline void shmem_transport_ctx_quiet(shmem_transport_ctx_t* ctx)
 {
   int ret = 0;
 
+  shmem_transport_domain_t* dom = ctx->domain;
+  dom->take_lock(&dom);
+
   ret = fi_cntr_wait(ctx->endpoint.counter,
       ctx->endpoint.pending_count, -1);
 
@@ -408,6 +400,8 @@ static inline void shmem_transport_ctx_quiet(shmem_transport_ctx_t* ctx)
     fi_cq_readerr(ctx->domain->cq, (void *)&e, 0);
     RAISE_ERROR(e.err);
   }
+
+  dom->release_lock(&dom);
 }
 
 static inline void shmem_transport_ctx_drain(shmem_transport_ctx_t* ctx)
@@ -459,12 +453,9 @@ static inline int try_again(const int ret, uint64_t *polled,
 static inline
 void
 shmem_transport_put_small(void *target, const void *source,
-    size_t len, int pe, shmemx_ctx_t c)
+    size_t len, int pe, shmem_transport_ctx_t *ctx)
 {
-  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
-  /* printf("put_small to %d (len %lu) with %d\n",pe,len,c); */
-
-  ctx->take_lock((shmem_transport_dom_t**)ctx);
+  ctx->take_lock((shmem_transport_domain_t**)ctx);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -491,17 +482,15 @@ shmem_transport_put_small(void *target, const void *source,
   /* automatically get local completion but need remote completion for fence/quiet*/
   ctx->endpoint.pending_count++;
 
-  ctx->release_lock((shmem_transport_dom_t**)ctx);
+  ctx->release_lock((shmem_transport_domain_t**)ctx);
 }
 
 static inline
 void
 shmem_transport_ofi_put_large(void *target, const void *source,
-    size_t len, int pe, shmemx_ctx_t c)
+    size_t len, int pe, shmem_transport_ctx_t *ctx)
 {
-  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
-
-  ctx->take_lock((shmem_transport_dom_t**)ctx);
+  ctx->take_lock((shmem_transport_domain_t**)ctx);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -535,13 +524,13 @@ shmem_transport_ofi_put_large(void *target, const void *source,
     frag_target += frag_len;
   }
 
-  ctx->release_lock((shmem_transport_dom_t**)ctx);
+  ctx->release_lock((shmem_transport_domain_t**)ctx);
 }
 
 static inline
 void
 shmem_transport_put(void *target, const void *source, size_t len,
-                       int pe, shmemx_ctx_t c)
+                       int pe, shmem_transport_ctx_t *c)
 {
   if (len <= shmem_transport_ofi_max_buffered_send) {
 
@@ -555,7 +544,7 @@ shmem_transport_put(void *target, const void *source, size_t len,
 static inline
 void
 shmem_transport_put_nbi(void *target, const void *source, size_t len,
-    int pe, shmemx_ctx_t c)
+    int pe, shmem_transport_ctx_t *c)
 {
   if (len <= shmem_transport_ofi_max_buffered_send) {
 
@@ -571,11 +560,9 @@ shmem_transport_put_nbi(void *target, const void *source, size_t len,
 static inline
 void
 shmem_transport_get(void *target, const void *source, size_t len,
-    int pe, shmemx_ctx_t c)
+    int pe, shmem_transport_ctx_t *ctx)
 {
-  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
-
-  ctx->take_lock((shmem_transport_dom_t**)ctx);
+  ctx->take_lock((shmem_transport_domain_t**)ctx);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -621,17 +608,15 @@ shmem_transport_get(void *target, const void *source, size_t len,
       frag_target += frag_len;
     }
   }
-  ctx->release_lock((shmem_transport_dom_t**)ctx);
+  ctx->release_lock((shmem_transport_domain_t**)ctx);
 }
 
 static inline
 void
 shmem_transport_swap(void *target, const void *source, void *dest,
-                     size_t len, int pe, int datatype, shmemx_ctx_t c)
+                     size_t len, int pe, int datatype, shmem_transport_ctx_t *ctx)
 {
-  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
-
-  ctx->take_lock((shmem_transport_dom_t**)ctx);
+  ctx->take_lock((shmem_transport_domain_t**)ctx);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -661,7 +646,7 @@ shmem_transport_swap(void *target, const void *source, void *dest,
 
   ctx->endpoint.pending_count++;
 
-  ctx->release_lock((shmem_transport_dom_t**)ctx);
+  ctx->release_lock((shmem_transport_domain_t**)ctx);
 }
 
 
@@ -669,11 +654,9 @@ static inline
 void
 shmem_transport_cswap(void *target, const void *source, void *dest,
                       const void *operand, size_t len, int pe,
-                      int datatype, shmemx_ctx_t c)
+                      int datatype, shmem_transport_ctx_t *ctx)
 {
-  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
-
-  ctx->take_lock((shmem_transport_dom_t**)ctx);
+  ctx->take_lock((shmem_transport_domain_t**)ctx);
 
 
   int ret = 0;
@@ -706,7 +689,7 @@ shmem_transport_cswap(void *target, const void *source, void *dest,
 
   ctx->endpoint.pending_count++;
 
-  ctx->release_lock((shmem_transport_dom_t**)ctx);
+  ctx->release_lock((shmem_transport_domain_t**)ctx);
 }
 
 
@@ -714,11 +697,9 @@ static inline
 void
 shmem_transport_mswap(void *target, const void *source, void *dest,
                       const void *mask, size_t len, int pe,
-                      int datatype, shmemx_ctx_t c)
+                      int datatype, shmem_transport_ctx_t *ctx)
 {
-  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
-
-  ctx->take_lock((shmem_transport_dom_t**)ctx);
+  ctx->take_lock((shmem_transport_domain_t**)ctx);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -751,18 +732,16 @@ shmem_transport_mswap(void *target, const void *source, void *dest,
 
   ctx->endpoint.pending_count++;
 
-  ctx->release_lock((shmem_transport_dom_t**)ctx);
+  ctx->release_lock((shmem_transport_domain_t**)ctx);
 }
 
 
 static inline
 void
 shmem_transport_atomic_small(void *target, const void *source,
-    size_t len, int pe, int op, int datatype, shmemx_ctx_t c)
+    size_t len, int pe, int op, int datatype, shmem_transport_ctx_t *ctx)
 {
-  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
-
-  ctx->take_lock((shmem_transport_dom_t**)ctx);
+  ctx->take_lock((shmem_transport_domain_t**)ctx);
 
 
   int ret = 0;
@@ -788,19 +767,16 @@ shmem_transport_atomic_small(void *target, const void *source,
 
   ctx->endpoint.pending_count++;
 
-  ctx->release_lock((shmem_transport_dom_t**)ctx);
+  ctx->release_lock((shmem_transport_domain_t**)ctx);
 }
 
 
 static inline
 void
 shmem_transport_atomic_set(void *target, const void *source,
-    size_t len, int pe, int datatype, shmemx_ctx_t c)
+    size_t len, int pe, int datatype, shmem_transport_ctx_t *ctx)
 {
-  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
-
-  ctx->take_lock((shmem_transport_dom_t**)ctx);
-
+  ctx->take_lock((shmem_transport_domain_t**)ctx);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -825,18 +801,16 @@ shmem_transport_atomic_set(void *target, const void *source,
 
   ctx->endpoint.pending_count++;
 
-  ctx->release_lock((shmem_transport_dom_t**)ctx);
+  ctx->release_lock((shmem_transport_domain_t**)ctx);
 }
 
 
 static inline
 void
 shmem_transport_atomic_fetch(void *target, const void *source,
-    size_t len, int pe, int datatype, shmemx_ctx_t c)
+    size_t len, int pe, int datatype, shmem_transport_ctx_t *ctx)
 {
-  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
-
-  ctx->take_lock((shmem_transport_dom_t**)ctx);
+  ctx->take_lock((shmem_transport_domain_t**)ctx);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -866,18 +840,16 @@ shmem_transport_atomic_fetch(void *target, const void *source,
 
   ctx->endpoint.pending_count++;
 
-  ctx->release_lock((shmem_transport_dom_t**)ctx);
+  ctx->release_lock((shmem_transport_domain_t**)ctx);
 }
 
 
 static inline
 void
 shmem_transport_atomic_nb(void *target, const void *source,
-    size_t full_len, int pe, int op, int datatype, shmemx_ctx_t c)
+    size_t full_len, int pe, int op, int datatype, shmem_transport_ctx_t *ctx)
 {
-  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
-
-  ctx->take_lock((shmem_transport_dom_t**)ctx);
+  ctx->take_lock((shmem_transport_domain_t**)ctx);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -889,7 +861,7 @@ shmem_transport_atomic_nb(void *target, const void *source,
 
   shmem_internal_assert(SHMEM_Dtsize[datatype] * len == full_len);
 
-  ret = fi_atomicvalid(shmem_transport_ctx->endpoint.ep, datatype, op,
+  ret = fi_atomicvalid(shmem_transport_default_ctx.endpoint.ep, datatype, op,
       &max_atomic_size);
   max_atomic_size = max_atomic_size * SHMEM_Dtsize[datatype];
   if (max_atomic_size > shmem_transport_ofi_max_msg_size
@@ -948,18 +920,16 @@ shmem_transport_atomic_nb(void *target, const void *source,
     }
   }
 
-  ctx->release_lock((shmem_transport_dom_t**)ctx);
+  ctx->release_lock((shmem_transport_domain_t**)ctx);
 }
 
 
 static inline
 void
 shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
-    size_t len, int pe, int op, int datatype, shmemx_ctx_t c)
+    size_t len, int pe, int op, int datatype, shmem_transport_ctx_t *ctx)
 {
-  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
-
-  ctx->take_lock((shmem_transport_dom_t**)ctx);
+  ctx->take_lock((shmem_transport_domain_t**)ctx);
 
   int ret = 0;
   uint64_t dst = (uint64_t) pe;
@@ -989,7 +959,7 @@ shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
 
   ctx->endpoint.pending_count++;
 
-  ctx->release_lock((shmem_transport_dom_t**)ctx);
+  ctx->release_lock((shmem_transport_domain_t**)ctx);
 }
 
 
@@ -998,7 +968,7 @@ int shmem_transport_atomic_supported(shm_internal_op_t op,
                                      shm_internal_datatype_t datatype)
 {
    size_t size = 0;
-   int ret = fi_atomicvalid(shmem_transport_ctx->endpoint.ep, datatype, op, &size);
+   int ret = fi_atomicvalid(shmem_transport_default_ctx.endpoint.ep, datatype, op, &size);
    return !(ret != 0 || size == 0);
 }
 

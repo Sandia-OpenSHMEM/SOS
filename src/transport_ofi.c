@@ -59,21 +59,19 @@ struct fabric_info {
     int npes;
 };
 
-shmemx_domain_t shmem_transport_default_dom;
-shmemx_ctx_t shmem_transport_default_ctx;
-shmem_transport_dom_t* shmem_transport_dom;
-shmem_transport_ctx_t* shmem_transport_ctx;
+shmem_transport_domain_t shmem_transport_default_dom;
+shmem_transport_ctx_t shmem_transport_default_ctx;
 
-shmemx_domain_t SHMEMX_CTX_DEFAULT;
-shmemx_ctx_t SHMEMX_DOMAIN_DEFAULT;
+void *SHMEMX_DOMAIN_DEFAULT = &shmem_transport_default_dom;
+void *SHMEMX_CTX_DEFAULT = &shmem_transport_default_ctx;
 
-shmem_transport_dom_t** shmem_transport_ofi_domains;
-shmem_transport_ctx_t** shmem_transport_ofi_contexts;
+static shmem_transport_domain_t** shmem_transport_ofi_domains;
+static shmem_transport_ctx_t** shmem_transport_ofi_contexts;
 
-size_t shmem_transport_num_contexts = 0;
-size_t shmem_transport_num_domains = 0;
+static size_t shmem_transport_num_contexts = 0;
+static size_t shmem_transport_num_domains = 0;
 
-size_t shmem_transport_available_contexts = 0;
+static size_t shmem_transport_available_contexts = 0;
 size_t shmem_transport_available_domains = 0;
 
 struct fid_fabric*          	shmem_transport_ofi_fabfd;
@@ -291,49 +289,12 @@ uint64_t shmem_transport_ofi_max_poll = (1ULL<<30);
 struct fabric_info shmem_ofi_cq_info = {0};
 struct fabric_info shmem_ofi_cntr_info = {0};
 
-int shmemx_domain_create(int thread_level, int num_domains,
-        shmemx_domain_t domains[])
+static int shmem_transport_domain_init(int id, int thread_level,
+                                       shmem_transport_domain_t *dom)
 {
-  if(thread_level > shmem_internal_thread_level) {
-    fprintf(stderr,"Cannot create domain with thread level %d when "
-        "global thread level is %d\n",thread_level,
-        shmem_internal_thread_level);
-    return -1;
-  }
-  int ret = 0;
-  size_t oldSize = shmem_transport_num_domains;
-  size_t newSize = oldSize + num_domains;
-  if(newSize > shmem_transport_available_domains) {
-    size_t nBytes = newSize*sizeof(shmem_transport_dom_t*);
-    shmem_transport_dom_t** newBlock = malloc(nBytes);
-    memcpy(newBlock,shmem_transport_ofi_domains,
-        oldSize*sizeof(shmem_transport_dom_t*));
+    int ret;
 
-    /* FIXME: Probably need to do an atomic swap here, but idk the
-     * right way to do that in C off the top of my head
-     *
-     * If this function is called while another thread is creating
-     * contexts, you could get a use-after-free.
-     */
-    shmem_transport_dom_t** oldBlock = shmem_transport_ofi_domains;
-    shmem_transport_ofi_domains = newBlock;
-    free(oldBlock);
-    shmem_transport_available_domains = newSize;
-  }
-
-  shmem_transport_dom_t** domArray = shmem_transport_ofi_domains;
-
-  /* TODO: maybe block allocate here instead of mallocing each one.
-   * That requires more bookkeeping though.
-   */
-  int i;
-  for(i = 0; i < num_domains; ++i) {
-    size_t ix = shmem_transport_num_domains++;
-    shmem_transport_dom_t* dom;
-    domArray[ix] = dom = malloc(sizeof(shmem_transport_dom_t));
-    domains[i] = dom;
-
-    dom->id = ix;
+    dom->id = id;
     dom->freed = 0;
     dom->num_active_contexts = 0;
 
@@ -368,17 +329,61 @@ int shmemx_domain_create(int thread_level, int num_domains,
     ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr,
         &dom->cq, NULL);
     IF_OFI_ERR_RETURN(ret,"cq_open failed");
+
+    return ret;
+}
+
+int shmem_transport_domain_create(int thread_level, int num_domains,
+        shmem_transport_domain_t *domains[])
+{
+  if(thread_level > shmem_internal_thread_level) {
+    fprintf(stderr,"Cannot create domain with thread level %d when "
+        "global thread level is %d\n",thread_level,
+        shmem_internal_thread_level);
+    return -1;
+  }
+  int ret = 0;
+  size_t oldSize = shmem_transport_num_domains;
+  size_t newSize = oldSize + num_domains;
+  if(newSize > shmem_transport_available_domains) {
+    size_t nBytes = newSize*sizeof(shmem_transport_domain_t*);
+    shmem_transport_domain_t** newBlock = malloc(nBytes);
+    memcpy(newBlock,shmem_transport_ofi_domains,
+        oldSize*sizeof(shmem_transport_domain_t*));
+
+    /* FIXME: Probably need to do an atomic swap here, but idk the
+     * right way to do that in C off the top of my head
+     *
+     * If this function is called while another thread is creating
+     * contexts, you could get a use-after-free.
+     */
+    shmem_transport_domain_t** oldBlock = shmem_transport_ofi_domains;
+    shmem_transport_ofi_domains = newBlock;
+    free(oldBlock);
+    shmem_transport_available_domains = newSize;
+  }
+
+  shmem_transport_domain_t** domArray = shmem_transport_ofi_domains;
+
+  /* TODO: maybe block allocate here instead of mallocing each one.
+   * That requires more bookkeeping though.
+   */
+  int i;
+  for(i = 0; i < num_domains; ++i) {
+    size_t ix = shmem_transport_num_domains++;
+    shmem_transport_domain_t* dom;
+    domArray[ix] = dom = malloc(sizeof(shmem_transport_domain_t));
+    domains[i] = dom;
+
+    ret = shmem_transport_domain_init(ix, thread_level, dom);
   }
 
   return ret;
 }
 
 // assumes dom->lock is locked or dom->use_lock == 0
-static void shmem_transport_domain_destroy(shmem_transport_dom_t* dom)
+static void shmem_transport_domain_free(shmem_transport_domain_t* dom)
 {
-  /* FIXME: add to free list, maybe? */
-  shmem_transport_ofi_domains[dom->id] = NULL;
-
   // The attached CQ is implicitly closed (as I discovered while
   // memory-checking with Valgrind). -jpdoyle
   /* if(fi_close(&dom->cq_ep->fid)) { */
@@ -393,21 +398,25 @@ static void shmem_transport_domain_destroy(shmem_transport_dom_t* dom)
   dom->release_lock(&dom);
   dom->free_lock(&dom);
 
-  free(dom);
+  /* FIXME: add to free list, maybe? */
+  if (dom->id >= 0) {
+      shmem_transport_ofi_domains[dom->id] = NULL;
+      free(dom);
+  }
 }
 
-void shmemx_domain_destroy(int num_domains, shmemx_domain_t domains[])
+void shmem_transport_domain_destroy(int num_domains, shmem_transport_domain_t *domains[])
 {
   SHMEM_ERR_CHECK_INITIALIZED();
 
   int i;
 
   for(i = 0; i < num_domains; ++i) {
-    shmem_transport_dom_t* dom = TRANSP_FROM_DOM_T(domains[i]);
+    shmem_transport_domain_t* dom = domains[i];
 
     dom->take_lock(&dom);
     if(!dom->num_active_contexts) {
-      shmem_transport_domain_destroy(dom);
+      shmem_transport_domain_free(dom);
     } else {
       dom->freed = 1;
       dom->release_lock(&dom);
@@ -415,16 +424,10 @@ void shmemx_domain_destroy(int num_domains, shmemx_domain_t domains[])
   }
 }
 
-int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
+static int shmem_transport_ctx_init(int id, shmem_transport_domain_t *dom,
+                                    shmem_transport_ctx_t *ctx)
 {
-  /* FIXME: This does not do resource cleanup (or unlock the mutex on
-   * `domain`) on error, it just returns. This is consistent with how
-   * initialization worked before, but is worse since context creation
-   * is not necessarily do-or-die.
-   */
   int ret = 0;
-  shmem_transport_dom_t* dom = TRANSP_FROM_DOM_T(domain);
-
   dom->take_lock(&dom);
 
   struct fi_cntr_attr cntr_attr = {0};
@@ -440,6 +443,51 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
   info->p_info->tx_attr->mode = 0;
   info->p_info->rx_attr->mode = 0;
 
+  ctx->id = id;
+
+  shmem_transport_cntr_ep_t* ep = &ctx->endpoint;
+  ep->pending_count = 0;
+
+  ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
+                     &ep->counter, NULL);
+  IF_OFI_ERR_RETURN(ret,"context cntr_open failed");
+
+  ret = fi_endpoint(shmem_transport_ofi_domainfd,
+      info->p_info, &ep->ep, NULL);
+  IF_OFI_ERR_RETURN(ret,"epfd creation failed");
+
+  ret = fi_ep_bind(ep->ep, &dom->stx->fid, 0);
+  IF_OFI_ERR_RETURN(ret,"context ep_bind ep -> stx failed");
+
+  ret = fi_ep_bind(ep->ep, &ep->counter->fid, FI_READ | FI_WRITE);
+  IF_OFI_ERR_RETURN(ret,"ep_bind cntr_ep2cntr failed");
+
+  ret = fi_ep_bind(ep->ep, &shmem_transport_ofi_avfd->fid, 0);
+  IF_OFI_ERR_RETURN(ret,"ep_bind cntr_ep2av failed");
+
+  ret = fi_enable(ep->ep);
+  IF_OFI_ERR_RETURN(ret,"context enable endpoint");
+
+
+  ctx->domain = dom;
+  ctx->take_lock = dom->take_lock;
+  ctx->release_lock = dom->release_lock;
+
+  ++dom->num_active_contexts;
+
+  dom->release_lock(&dom);
+
+  return 0;
+}
+
+
+int shmem_transport_ctx_create(shmem_transport_domain_t *dom, shmem_transport_ctx_t **ctx)
+{
+  /* FIXME: This does not do resource cleanup (or unlock the mutex on
+   * `domain`) on error, it just returns. This is consistent with how
+   * initialization worked before, but is worse since context creation
+   * is not necessarily do-or-die.
+   */
   size_t ix = shmem_transport_num_contexts;
   size_t newSize = ++shmem_transport_num_contexts;
 
@@ -464,51 +512,18 @@ int shmemx_ctx_create(shmemx_domain_t domain, shmemx_ctx_t *ctx)
   shmem_transport_ofi_contexts[ix] = malloc(nbytes);
   shmem_transport_ctx_t* ctxobj = shmem_transport_ofi_contexts[ix];
   *ctx = ctxobj;
-  ctxobj->id = ix;
 
-  shmem_transport_cntr_ep_t* ep = &ctxobj->endpoint;
-  ep->pending_count = 0;
-
-  ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
-                     &ep->counter, NULL);
-  IF_OFI_ERR_RETURN(ret,"context cntr_open failed");
-
-  ret = fi_endpoint(shmem_transport_ofi_domainfd,
-      info->p_info, &ep->ep, NULL);
-  IF_OFI_ERR_RETURN(ret,"epfd creation failed");
-
-  ret = fi_ep_bind(ep->ep, &dom->stx->fid, 0);
-  IF_OFI_ERR_RETURN(ret,"context ep_bind ep -> stx failed");
-
-  ret = fi_ep_bind(ep->ep, &ep->counter->fid, FI_READ | FI_WRITE);
-  IF_OFI_ERR_RETURN(ret,"ep_bind cntr_ep2cntr failed");
-
-  ret = fi_ep_bind(ep->ep, &shmem_transport_ofi_avfd->fid, 0);
-  IF_OFI_ERR_RETURN(ret,"ep_bind cntr_ep2av failed");
-
-  ret = fi_enable(ep->ep);
-  IF_OFI_ERR_RETURN(ret,"context enable endpoint");
-
-
-  ctxobj->domain = dom;
-  ctxobj->take_lock = dom->take_lock;
-  ctxobj->release_lock = dom->release_lock;
-
-  ++dom->num_active_contexts;
-
-  dom->release_lock(&dom);
+  shmem_transport_ctx_init(ix, dom, ctxobj);
 
   return 0;
 }
 
-void shmemx_ctx_destroy(shmemx_ctx_t ctxid) {
+void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx) {
   SHMEM_ERR_CHECK_INITIALIZED();
 
-  shmemx_ctx_quiet(ctxid);
+  shmem_transport_ctx_quiet(ctx);
 
-  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(ctxid);
-
-  shmem_transport_dom_t* dom = ctx->domain;
+  shmem_transport_domain_t* dom = ctx->domain;
 
   dom->take_lock(&dom);
 
@@ -524,35 +539,15 @@ void shmemx_ctx_destroy(shmemx_ctx_t ctxid) {
 
   --dom->num_active_contexts;
   if(!dom->num_active_contexts && dom->freed) {
-    shmem_transport_domain_destroy(dom);
+    shmem_transport_domain_free(dom);
   } else {
     dom->release_lock(&dom);
   }
-  shmem_transport_ofi_contexts[ctx->id] = NULL;
-  free(ctx);
-}
 
-void shmemx_ctx_quiet(shmemx_ctx_t c)
-{
-  SHMEM_ERR_CHECK_INITIALIZED();
-
-  shmem_transport_ctx_t* ctx = TRANSP_FROM_CTX_T(c);
-  shmem_transport_dom_t* dom = ctx->domain;
-
-  dom->take_lock(&dom);
-
-  shmem_transport_ctx_quiet(ctx);
-
-  dom->release_lock(&dom);
-}
-
-void shmemx_ctx_fence(shmemx_ctx_t c) {
-  SHMEM_ERR_CHECK_INITIALIZED();
-
-#if WANT_TOTAL_DATA_ORDERING == 0
-  /*unordered network model*/
-  shmemx_ctx_quiet(c);
-#endif
+  if (ctx->id >= 0) {
+    shmem_transport_ofi_contexts[ctx->id] = NULL;
+    free(ctx);
+  }
 }
 
 
@@ -667,7 +662,7 @@ static inline int allocate_recv_cntr_mr(void)
 
     /* Bind to endpoint, incoming communication associated with endpoint now
      * has defined resources */
-    ret = fi_ep_bind(shmem_transport_ctx->endpoint.ep,
+    ret = fi_ep_bind(shmem_transport_default_ctx.endpoint.ep,
                      &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_READ | FI_REMOTE_WRITE);
     if (ret != 0) {
@@ -675,7 +670,7 @@ static inline int allocate_recv_cntr_mr(void)
         return ret;
     }
 
-    ret = fi_ep_bind(shmem_transport_ctx->endpoint.ep,
+    ret = fi_ep_bind(shmem_transport_default_ctx.endpoint.ep,
                      &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_READ | FI_REMOTE_WRITE);
     if (ret != 0) {
@@ -840,7 +835,7 @@ static inline int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
 
     for(i=0; i<DT_MAX; i++) {
       for(j=0; j<OPS_MAX; j++) {
-        ret = fi_atomicvalid(shmem_transport_ctx->endpoint.ep, DT[i],
+        ret = fi_atomicvalid(shmem_transport_default_ctx.endpoint.ep, DT[i],
                         OPS[j], &atomic_size);
          if(atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                             SHMEM_OpName[OPS[j]],
@@ -860,7 +855,7 @@ static inline int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
 
     for(i=0; i<DT_MAX; i++) {
       for(j=0; j<OPS_MAX; j++) {
-        ret = fi_compare_atomicvalid(shmem_transport_ctx->endpoint.ep, DT[i],
+        ret = fi_compare_atomicvalid(shmem_transport_default_ctx.endpoint.ep, DT[i],
                         OPS[j], &atomic_size);
          if(atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                             SHMEM_OpName[OPS[j]],
@@ -880,7 +875,7 @@ static inline int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
 
     for(i=0; i<DT_MAX; i++) {
       for(j=0; j<OPS_MAX; j++) {
-        ret = fi_fetch_atomicvalid(shmem_transport_ctx->endpoint.ep, DT[i],
+        ret = fi_fetch_atomicvalid(shmem_transport_default_ctx.endpoint.ep, DT[i],
                         OPS[j], &atomic_size);
          if(atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                             SHMEM_OpName[OPS[j]],
@@ -986,7 +981,7 @@ static inline int publish_av_info(struct fabric_info *info)
     }
 #endif
 
-    ret = fi_getname((fid_t)shmem_transport_ctx->endpoint.ep, epname,
+    ret = fi_getname((fid_t)shmem_transport_default_ctx.endpoint.ep, epname,
         &epnamelen);
     if(ret!=0 || (epnamelen > sizeof(epname))){
         OFI_ERRMSG("fi_getname failed\n");
@@ -1229,27 +1224,19 @@ int shmem_transport_init(int thread_level, long eager_size)
   shmem_transport_available_contexts = 8;
   shmem_transport_available_domains = 8;
   shmem_transport_ofi_domains = malloc(
-    shmem_transport_available_domains*sizeof(shmem_transport_dom_t*));
+    shmem_transport_available_domains*sizeof(shmem_transport_domain_t*));
   shmem_transport_ofi_contexts = malloc(
     shmem_transport_available_contexts
     *sizeof(shmem_transport_ctx_t*));
 
-  ret = shmemx_domain_create(thread_level,1,&shmem_transport_default_dom);
+  ret = shmem_transport_domain_init(-1, thread_level, &shmem_transport_default_dom);
   if(ret!=0)
     return ret;
 
-  ret = shmemx_ctx_create(shmem_transport_default_dom,
-      &shmem_transport_default_ctx);
+  ret = shmem_transport_ctx_init(-1, &shmem_transport_default_dom,
+                                 &shmem_transport_default_ctx);
   if(ret!=0)
     return ret;
-
-  SHMEMX_DOMAIN_DEFAULT = shmem_transport_default_dom;
-  SHMEMX_CTX_DEFAULT = shmem_transport_default_ctx;
-
-  shmem_transport_dom =
-    TRANSP_FROM_DOM_T(shmem_transport_default_dom);
-  shmem_transport_ctx =
-    TRANSP_FROM_CTX_T(shmem_transport_default_ctx);
 
   ret = allocate_recv_cntr_mr();
   if(ret!=0)
@@ -1318,17 +1305,20 @@ int shmem_transport_fini(void)
     for(i = 0; i < shmem_transport_num_contexts; ++i) {
       shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[i];
       if(ctx) {
-        shmemx_ctx_destroy(ctx);
+        shmem_transport_ctx_destroy(ctx);
       }
     }
 
     for(i = 0; i < shmem_transport_num_domains; ++i) {
-      shmem_transport_dom_t* dom = shmem_transport_ofi_domains[i];
+      shmem_transport_domain_t* dom = shmem_transport_ofi_domains[i];
       if(dom) {
         dom->take_lock(&dom);
-        shmem_transport_domain_destroy(dom);
+        shmem_transport_domain_free(dom);
       }
     }
+
+    shmem_transport_domain_free(&shmem_transport_default_dom);
+    shmem_transport_ctx_destroy(&shmem_transport_default_ctx);
 
     free(shmem_transport_ofi_domains);
     free(shmem_transport_ofi_contexts);
