@@ -384,6 +384,8 @@ int shmem_transport_domain_create(int thread_level, int num_domains,
 // assumes dom->lock is locked or dom->use_lock == 0
 static void shmem_transport_domain_free(shmem_transport_domain_t* dom)
 {
+  int ret;
+
   // The attached CQ is implicitly closed (as I discovered while
   // memory-checking with Valgrind). -jpdoyle
   /* if(fi_close(&dom->cq_ep->fid)) { */
@@ -391,10 +393,13 @@ static void shmem_transport_domain_free(shmem_transport_domain_t* dom)
   /*       fi_strerror(errno)); */
   /* } */
 
-  if(fi_close(&dom->stx->fid)) {
+  ret = fi_close(&dom->stx->fid);
+
+  if (ret) {
     OFI_ERRMSG("Domain STX close failed (%s)", fi_strerror(errno));
   }
 
+  dom->freed = 1;
   dom->release_lock(&dom);
   dom->free_lock(&dom);
 
@@ -415,10 +420,9 @@ void shmem_transport_domain_destroy(int num_domains, shmem_transport_domain_t *d
     shmem_transport_domain_t* dom = domains[i];
 
     dom->take_lock(&dom);
-    if(!dom->num_active_contexts) {
+    if (0 == dom->num_active_contexts) {
       shmem_transport_domain_free(dom);
     } else {
-      dom->freed = 1;
       dom->release_lock(&dom);
     }
   }
@@ -537,8 +541,8 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx) {
         fi_strerror(errno));
   }
 
-  --dom->num_active_contexts;
-  if(!dom->num_active_contexts && dom->freed) {
+  --(dom->num_active_contexts);
+  if(0 == dom->num_active_contexts && !dom->freed) {
     shmem_transport_domain_free(dom);
   } else {
     dom->release_lock(&dom);
@@ -1317,8 +1321,14 @@ int shmem_transport_fini(void)
       }
     }
 
-    shmem_transport_domain_free(&shmem_transport_default_dom);
     shmem_transport_ctx_destroy(&shmem_transport_default_ctx);
+
+    /* Freeing the default ctx should reduce the reference count on the default
+     * domain to zero causing it to be freed automatically.  Raise an error if
+     * this doesn't happen. */
+    if (!shmem_transport_default_dom.freed) {
+        OFI_ERRMSG("Default domain was not automatically freed");
+    }
 
     free(shmem_transport_ofi_domains);
     free(shmem_transport_ofi_contexts);
