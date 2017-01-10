@@ -83,6 +83,7 @@ AS_IF([test "$enable_threads" = "yes"], [
        AC_OPENMP
        AC_SUBST(AM_CXXFLAGS,"$AM_CXXFLAGS $OPENMP_CXXFLAGS")
        AC_SUBST(AM_CFLAGS,"$AM_CFLAGS $OPENMP_CFLAGS")
+       AX_PTHREAD([AC_DEFINE([HAVE_PTHREADS], [1], [Have support for pthreads])])
        # AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
        ])
 

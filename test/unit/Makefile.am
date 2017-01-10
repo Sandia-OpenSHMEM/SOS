@@ -130,16 +130,18 @@ AM_CPPFLAGS = -I$(top_builddir)/mpp
 AM_FCFLAGS = -I$(top_builddir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
 
-threading_SOURCES = threading.c
+threading_SOURCES = threading.c pthread_barrier.h
 threading_LDADD = $(top_builddir)/src/libsma.la
-threading_LDFLAGS = -lpthread
+threading_LDFLAGS = $(PTHREAD_LIBS)
+threading_CFLAGS = $(PTHREAD_CFLAGS)
 
 pi_SOURCES = pi.c
 pi_LDADD = $(top_builddir)/src/libsma.la
 
-web_SOURCES = web.c
+web_SOURCES = web.c pthread_barrier.h
 web_LDADD = $(top_builddir)/src/libsma.la
-web_LDFLAGS = -lpthread
+web_LDFLAGS = $(PTHREAD_LIBS)
+web_CFLAGS = $(PTHREAD_CFLAGS)
 
 ctx_SOURCES = ctx.c
 ctx_LDADD = $(top_builddir)/src/libsma.la
@@ -293,8 +295,9 @@ shmem_ct_SOURCES = shmem_ct.c
 shmem_ct_LDADD = $(top_builddir)/src/libsma.la
 
 mt_a2a_SOURCES = mt_a2a.c pthread_barrier.h
-mt_a2a_LDADD = $(top_builddir)/src/libsma.la -lpthread
-mt_a2a_CFLAGS = -pthread
+mt_a2a_LDADD = $(top_builddir)/src/libsma.la
+mt_a2a_LDFLAGS = $(PTHREAD_LIBS)
+mt_a2a_CFLAGS = $(PTHREAD_CFLAGS)
 
 global_exit_SOURCES = global_exit.c
 global_exit_LDADD = $(top_builddir)/src/libsma.la
