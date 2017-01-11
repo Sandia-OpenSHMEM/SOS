@@ -126,6 +126,9 @@ shmem_internal_mutex_t shmem_internal_mutex_ptl4_event_slots;
 shmem_internal_mutex_t shmem_internal_mutex_ptl4_nb_fence;
 #endif
 
+void *SHMEMX_CTX_DEFAULT = NULL;
+void *SHMEMX_DOMAIN_DEFAULT = NULL;
+
 static
 void
 init_bounce_buffer(shmem_free_list_item_t *item)
@@ -212,7 +215,7 @@ cleanup_handles(void)
 
 
 int
-shmem_transport_init()
+shmem_transport_init(int thread_level, long eager_size)
 {
     ptl_process_t my_id;
     int ret;
