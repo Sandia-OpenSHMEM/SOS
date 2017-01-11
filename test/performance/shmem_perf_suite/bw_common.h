@@ -8,7 +8,7 @@
 
 #include <common.h>
 
-#define MAX_MSG_SIZE (1<<22)
+#define MAX_MSG_SIZE (1<<23)
 #define START_LEN 1
 
 #define INC 2

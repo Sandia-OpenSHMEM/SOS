@@ -3,8 +3,7 @@ program hello
 
   integer npes, me
 
-  ! call start_pes(0)
-  call shmem_init()
+  call start_pes(0)
   npes = num_pes()
   me = my_pe()
 

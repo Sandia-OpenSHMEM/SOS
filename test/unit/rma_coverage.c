@@ -26,21 +26,10 @@
  */
 
 #include <shmem.h>
-#include <shmemx.h>
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define SHMEM_EVAL_MACRO_FOR_RMA(DECL,EOL) \
-  DECL(float,      float) EOL           \
-  DECL(double,     double) EOL          \
-  DECL(longdouble, long double) EOL     \
-  DECL(char,       char) EOL            \
-  DECL(short,      short) EOL           \
-  DECL(int,        int) EOL             \
-  DECL(long,       long) EOL            \
-  DECL(longlong,   long long)
 
 #ifdef TEST_PSHMEM
 #include <pshmem.h>
@@ -150,4 +139,3 @@ int main(int argc, char* argv[]) {
 
     return errors;
 }
-
