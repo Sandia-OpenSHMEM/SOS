@@ -80,7 +80,8 @@ TESTS = \
 	get_nbi \
 	put_nbi \
 	rma_coverage \
-	collect
+	collect \
+	many-ctx
 
 if ENABLE_PROFILING
 TESTS += \
@@ -382,3 +383,6 @@ put_nbi_LDADD = $(top_builddir)/src/libsma.la
 
 collect_SOURCES = collect.c
 collect_LDADD = $(top_builddir)/src/libsma.la
+
+many_ctx_SOURCES = many-ctx.c
+many_ctx_LDADD = $(top_builddir)/src/libsma.la
