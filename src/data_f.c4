@@ -31,13 +31,6 @@ include(shmem_bind_f.m4)dnl
 #include "shmem_internal.h"
 #include "shmem_comm.h"
 
-#define SHMEM_DEFINE_FOR_FC_RMA(DECL) \
-  DECL(complex, COMPLEX, SIZEOF_FORTRAN_COMPLEX) \
-  DECL(double,  DOUBLE,  SIZEOF_FORTRAN_DOUBLE_PRECISION)  \
-  DECL(integer, INTEGER, SIZEOF_FORTRAN_INTEGER) \
-  DECL(real,    REAL,    SIZEOF_FORTRAN_REAL) \
-  DECL(logical, LOGICAL, SIZEOF_FORTRAN_LOGICAL)
-
 #define SHMEM_DEF_FC_PUT(FUNCNAME, SIZE)                                \
     void FUNCNAME(void *target, void *source, fortran_integer_t *len,   \
                   fortran_integer_t *pe);                               \
