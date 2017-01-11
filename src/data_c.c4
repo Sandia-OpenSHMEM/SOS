@@ -36,76 +36,104 @@ include(shmem_bind_c.m4)dnl
 
 define(`SHMEM_PROF_DEF_P',
 `#pragma weak shmem_$1_p = pshmem_$1_p
-#define shmem_$1_p pshmem_$1_p')dnl
+#define shmem_$1_p pshmem_$1_p
+#pragma weak shmemx_ctx_$1_p = pshmemx_ctx_$1_p
+#define shmemx_ctx_$1_p pshmemx_ctx_$1_p')dnl
 SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_P')
 
 define(`SHMEM_PROF_DEF_G',
 `#pragma weak shmem_$1_g = pshmem_$1_g
-#define shmem_$1_g pshmem_$1_g')dnl
+#define shmem_$1_g pshmem_$1_g
+#pragma weak shmemx_ctx_$1_g = pshmemx_ctx_$1_g
+#define shmemx_ctx_$1_g pshmemx_ctx_$1_g')dnl
 SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_G')
 
 define(`SHMEM_PROF_DEF_PUT',
 `#pragma weak shmem_$1_put = pshmem_$1_put
-#define shmem_$1_put pshmem_$1_put')dnl
+#define shmem_$1_put pshmem_$1_put
+#pragma weak shmemx_ctx_$1_put = pshmemx_ctx_$1_put
+#define shmemx_ctx_$1_put pshmemx_ctx_$1_put')dnl
 SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_PUT')
 
 define(`SHMEM_PROF_DEF_PUT_N',
 `#pragma weak shmem_put$1 = pshmem_put$1
-#define shmem_put$1 pshmem_put$1')dnl
+#define shmem_put$1 pshmem_put$1
+#pragma weak shmemx_ctx_put$1 = pshmemx_ctx_put$1
+#define shmemx_ctx_put$1 pshmemx_ctx_put$1')dnl
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_PUT_N')
 SHMEM_PROF_DEF_PUT_N(`mem')
 
 define(`SHMEM_PROF_DEF_PUT_NBI',
 `#pragma weak shmem_$1_put_nbi = pshmem_$1_put_nbi
-#define shmem_$1_put_nbi pshmem_$1_put_nbi')dnl
+#define shmem_$1_put_nbi pshmem_$1_put_nbi
+#pragma weak shmemx_ctx_$1_put_nbi = pshmemx_ctx_$1_put_nbi
+#define shmemx_ctx_$1_put_nbi pshmemx_ctx_$1_put_nbi')dnl
 SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_PUT_NBI')
 
 define(`SHMEM_PROF_DEF_PUT_N_NBI',
 `#pragma weak shmem_put$1_nbi = pshmem_put$1_nbi
-#define shmem_put$1_nbi pshmem_put$1_nbi')dnl
+#define shmem_put$1_nbi pshmem_put$1_nbi
+#pragma weak shmemx_ctx_put$1_nbi = pshmemx_ctx_put$1_nbi
+#define shmemx_ctx_put$1_nbi pshmemx_ctx_put$1_nbi')dnl
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_PUT_N_NBI')
 SHMEM_PROF_DEF_PUT_N_NBI(`mem')
 
 define(`SHMEM_PROF_DEF_GET',
 `#pragma weak shmem_$1_get = pshmem_$1_get
-#define shmem_$1_get pshmem_$1_get')dnl
+#define shmem_$1_get pshmem_$1_get
+#pragma weak shmemx_ctx_$1_get = pshmemx_ctx_$1_get
+#define shmemx_ctx_$1_get pshmemx_ctx_$1_get')dnl
 SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_GET')
 
 define(`SHMEM_PROF_DEF_GET_N',
 `#pragma weak shmem_get$1 = pshmem_get$1
-#define shmem_get$1 pshmem_get$1')dnl
+#define shmem_get$1 pshmem_get$1
+#pragma weak shmemx_ctx_get$1 = pshmemx_ctx_get$1
+#define shmemx_ctx_get$1 pshmemx_ctx_get$1')dnl
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_GET_N')
 SHMEM_PROF_DEF_GET_N(`mem')
 
 define(`SHMEM_PROF_DEF_GET_NBI',
 `#pragma weak shmem_$1_get_nbi = pshmem_$1_get_nbi
-#define shmem_$1_get_nbi pshmem_$1_get_nbi')dnl
+#define shmem_$1_get_nbi pshmem_$1_get_nbi
+#pragma weak shmemx_ctx_$1_get_nbi = pshmemx_ctx_$1_get_nbi
+#define shmemx_ctx_$1_get_nbi pshmemx_ctx_$1_get_nbi')dnl
 SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_GET_NBI')
 
 define(`SHMEM_PROF_DEF_GET_N_NBI',
 `#pragma weak shmem_get$1_nbi = pshmem_get$1_nbi
-#define shmem_get$1_nbi pshmem_get$1_nbi')dnl
+#define shmem_get$1_nbi pshmem_get$1_nbi
+#pragma weak shmemx_ctx_get$1_nbi = pshmemx_ctx_get$1_nbi
+#define shmemx_ctx_get$1_nbi pshmemx_ctx_get$1_nbi')dnl
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_GET_N_NBI')
 SHMEM_PROF_DEF_GET_N_NBI(`mem')
 
 define(`SHMEM_PROF_DEF_IPUT',
 `#pragma weak shmem_$1_iput = pshmem_$1_iput
-#define shmem_$1_iput pshmem_$1_iput')dnl
+#define shmem_$1_iput pshmem_$1_iput
+#pragma weak shmemx_ctx_$1_iput = pshmemx_ctx_$1_iput
+#define shmemx_ctx_$1_iput pshmemx_ctx_$1_iput')dnl
 SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_IPUT')
 
 define(`SHMEM_PROF_DEF_IPUT_N',
 `#pragma weak shmem_iput$1 = pshmem_iput$1
-#define shmem_iput$1 pshmem_iput$1')dnl
+#define shmem_iput$1 pshmem_iput$1
+#pragma weak shmemx_ctx_iput$1 = pshmemx_ctx_iput$1
+#define shmemx_ctx_iput$1 pshmemx_ctx_iput$1')dnl
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_IPUT_N')
 
 define(`SHMEM_PROF_DEF_IGET',
 `#pragma weak shmem_$1_iget = pshmem_$1_iget
-#define shmem_$1_iget pshmem_$1_iget')dnl
+#define shmem_$1_iget pshmem_$1_iget
+#pragma weak shmemx_ctx_$1_iget = pshmemx_ctx_$1_iget
+#define shmemx_ctx_$1_iget pshmemx_ctx_$1_iget')dnl
 SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_IGET')
 
 define(`SHMEM_PROF_DEF_IGET_N',
 `#pragma weak shmem_iget$1 = pshmem_iget$1
-#define shmem_iget$1 pshmem_iget$1')dnl
+#define shmem_iget$1 pshmem_iget$1
+#pragma weak shmemx_ctx_iget$1 = pshmemx_ctx_iget$1
+#define shmemx_ctx_iget$1 pshmemx_ctx_iget$1')dnl
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_IGET_N')
 
 #pragma weak shmemx_putmem_ct = pshmemx_putmem_ct

@@ -34,7 +34,9 @@ include(shmem_bind_c.m4)dnl
 
 define(`SHMEM_PROF_DEF_SWAP',
 `#pragma weak shmem_$1_swap = pshmem_$1_swap
-#define shmem_$1_swap pshmem_$1_swap')dnl
+#define shmem_$1_swap pshmem_$1_swap
+#pragma weak shmemx_ctx_$1_swap = pshmemx_ctx_$1_swap
+#define shmemx_ctx_$1_swap pshmemx_ctx_$1_swap')dnl
 SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_SWAP')
 
 #if !defined(__cplusplus) && \
@@ -46,37 +48,51 @@ SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_SWAP')
 
 define(`SHMEM_PROF_DEF_CSWAP',
 `#pragma weak shmem_$1_cswap = pshmem_$1_cswap
-#define shmem_$1_cswap pshmem_$1_cswap')dnl
+#define shmem_$1_cswap pshmem_$1_cswap
+#pragma weak shmemx_ctx_$1_cswap = pshmemx_ctx_$1_cswap
+#define shmemx_ctx_$1_cswap pshmemx_ctx_$1_cswap')dnl
 SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_CSWAP')
 
 define(`SHMEM_PROF_DEF_INC',
 `#pragma weak shmem_$1_inc = pshmem_$1_inc
-#define shmem_$1_inc pshmem_$1_inc')dnl
+#define shmem_$1_inc pshmem_$1_inc
+#pragma weak shmemx_ctx_$1_inc = pshmemx_ctx_$1_inc
+#define shmemx_ctx_$1_inc pshmemx_ctx_$1_inc')dnl
 SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_INC')
 
 define(`SHMEM_PROF_DEF_FINC',
 `#pragma weak shmem_$1_finc = pshmem_$1_finc
-#define shmem_$1_finc pshmem_$1_finc')dnl
+#define shmem_$1_finc pshmem_$1_finc
+#pragma weak shmemx_ctx_$1_finc = pshmemx_ctx_$1_finc
+#define shmemx_ctx_$1_finc pshmemx_ctx_$1_finc')dnl
 SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_FINC')
 
 define(`SHMEM_PROF_DEF_ADD',
 `#pragma weak shmem_$1_add = pshmem_$1_add
-#define shmem_$1_add pshmem_$1_add')dnl
+#define shmem_$1_add pshmem_$1_add
+#pragma weak shmemx_ctx_$1_add = pshmemx_ctx_$1_add
+#define shmemx_ctx_$1_add pshmemx_ctx_$1_add')dnl
 SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_ADD')
 
 define(`SHMEM_PROF_DEF_FADD',
 `#pragma weak shmem_$1_fadd = pshmem_$1_fadd
-#define shmem_$1_fadd pshmem_$1_fadd')dnl
+#define shmem_$1_fadd pshmem_$1_fadd
+#pragma weak shmemx_ctx_$1_fadd = pshmemx_ctx_$1_fadd
+#define shmemx_ctx_$1_fadd pshmemx_ctx_$1_fadd')dnl
 SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_FADD')
 
 define(`SHMEM_PROF_DEF_FETCH',
 `#pragma weak shmem_$1_fetch = pshmem_$1_fetch
-#define shmem_$1_fetch pshmem_$1_fetch')dnl
+#define shmem_$1_fetch pshmem_$1_fetch
+#pragma weak shmemx_ctx_$1_fetch = pshmemx_ctx_$1_fetch
+#define shmemx_ctx_$1_fetch pshmemx_ctx_$1_fetch')dnl
 SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_FETCH')
 
 define(`SHMEM_PROF_DEF_SET',
 `#pragma weak shmem_$1_set = pshmem_$1_set
-#define shmem_$1_set pshmem_$1_set')dnl
+#define shmem_$1_set pshmem_$1_set
+#pragma weak shmemx_ctx_$1_set = pshmemx_ctx_$1_set
+#define shmemx_ctx_$1_set pshmemx_ctx_$1_set')dnl
 SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_SET')
 
 #endif /* ENABLE_PROFILING */
