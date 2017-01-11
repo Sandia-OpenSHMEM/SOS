@@ -284,9 +284,9 @@ shmem_transport_put_small(void *target, const void *source,
     size_t len, int pe, shmem_transport_ctx_t *c);
 
 static inline
-void shmem_transport_ctx_fence(shmem_transport_ctx_t* ctx);
+void shmem_transport_fence(shmem_transport_ctx_t* ctx);
 
-static inline void shmem_transport_ctx_quiet(shmem_transport_ctx_t* ctx);
+static inline void shmem_transport_quiet(shmem_transport_ctx_t* ctx);
 
 int shmem_transport_domain_create(int thread_level, int num_domains, shmem_transport_domain_t *domains[]);
 void shmem_transport_domain_destroy(int num_domains, shmem_transport_domain_t *domains[]);
@@ -385,7 +385,7 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
 
 
 /* assumes the associated domain is already locked if necessary */
-static inline void shmem_transport_ctx_quiet(shmem_transport_ctx_t* ctx)
+static inline void shmem_transport_quiet(shmem_transport_ctx_t* ctx)
 {
   int ret = 0;
 
@@ -422,11 +422,11 @@ static inline void shmem_transport_ctx_drain(shmem_transport_ctx_t* ctx)
 }
 
 static inline
-void shmem_transport_ctx_fence(shmem_transport_ctx_t* ctx)
+void shmem_transport_fence(shmem_transport_ctx_t* ctx)
 {
 #if WANT_TOTAL_DATA_ORDERING == 0
   /*unordered network model*/
-  shmem_transport_ctx_quiet(ctx);
+  shmem_transport_quiet(ctx);
 /* #else */
 /*   return 0; */
 #endif

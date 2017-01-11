@@ -68,12 +68,12 @@ void shmemx_ctx_destroy(shmemx_ctx_t ctx)
 void shmemx_ctx_fence(shmemx_ctx_t ctx)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    shmem_transport_ctx_fence((shmem_transport_ctx_t *) ctx);
+    shmem_transport_fence((shmem_transport_ctx_t *) ctx);
 }
 
 void shmemx_ctx_quiet(shmemx_ctx_t ctx)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    shmem_transport_ctx_quiet((shmem_transport_ctx_t *) ctx);
+    shmem_transport_quiet((shmem_transport_ctx_t *) ctx);
 }
 

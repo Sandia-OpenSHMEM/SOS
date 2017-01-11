@@ -525,7 +525,7 @@ int shmem_transport_ctx_create(shmem_transport_domain_t *dom, shmem_transport_ct
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx) {
   SHMEM_ERR_CHECK_INITIALIZED();
 
-  shmem_transport_ctx_quiet(ctx);
+  shmem_transport_quiet(ctx);
 
   shmem_transport_domain_t* dom = ctx->domain;
 
