@@ -423,7 +423,11 @@ fi
 
 AS_IF([test "$enable_pmi_simple" = "yes"],
 	[AC_CONFIG_SUBDIRS([shmem_pmi])])
+
 AC_OUTPUT
+
+AS_IF([test "$enable_pmi_simple" != "yes" -a "$ompi_check_pmi_happy" != "yes" -a -z "$pmi_type"],
+         [AC_MSG_WARN([No PMI found, if build fails consider --enable-pmi-simple or --with-pmi])])
 
 AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
       [AC_MSG_WARN([No transport found])])
