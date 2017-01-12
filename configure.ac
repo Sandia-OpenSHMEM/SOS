@@ -122,11 +122,11 @@ AC_ARG_ENABLE([profiling],
 AS_IF([test "$enable_profiling" = "yes"], [AC_DEFINE([ENABLE_PROFILING], [1], [Enable shmem call profiling])])
 
 AC_ARG_ENABLE([long-fortran-header],
-    [AC_HELP_STRING([--disable-long-fortran-header],
-                    [Disable long Fortran header to omit function declarations (default:enabled)])])
-AS_IF([test "$enable_long_fortran_header" = "no"], [FORTRAN_LONG_HEADER="!"], [FORTRAN_LONG_HEADER=" "])
+    [AC_HELP_STRING([--enable-long-fortran-header],
+                    [Enable long Fortran header, including all function declarations (default:disabled)])])
+AS_IF([test "$enable_long_fortran_header" = "yes"], [FORTRAN_LONG_HEADER=" "], [FORTRAN_LONG_HEADER="!"])
 AC_SUBST([FORTRAN_LONG_HEADER])
-AM_CONDITIONAL([HAVE_SHORT_FORTRAN_HEADER], [test "$enable_long_fortran_header" = "no"])
+AM_CONDITIONAL([HAVE_LONG_FORTRAN_HEADER], [test "$enable_long_fortran_header" = "yes"])
 
 AC_ARG_ENABLE([mr-scalable],
     [AC_HELP_STRING([--disable-mr-scalable],
@@ -216,9 +216,8 @@ AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
 AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
 			[build and run shmem-pmi support])])
 AS_IF([test "$enable_pmi_simple" = "yes"],
-     [TEST_RUNNER='$(abs_top_builddir)/src/oshrun -n $(NPROCS)' SHMEM_PMI="shmem_pmi"],
-     [OPAL_CHECK_PMI(pmi_type) SHMEM_PMI=""])
-AC_SUBST([SHMEM_PMI])
+     [TEST_RUNNER='$(abs_top_builddir)/src/oshrun -n $(NPROCS)'],
+     [OPAL_CHECK_PMI(pmi_type)])
 AM_CONDITIONAL([USE_SHMEM_PMI], [test "$enable_pmi_simple" = "yes"])
 AM_CONDITIONAL([USE_PMI2], [test "$pmi_type" = "pmi2"])
 
