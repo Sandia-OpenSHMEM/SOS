@@ -29,11 +29,23 @@
 #endif
 
 #include "runtime.h"
+#include "uthash.h"
 
 static int rank = -1;
 static int size = 0;
 static char *kvs_name, *kvs_key, *kvs_value;
 static int max_name_len, max_key_len, max_val_len;
+
+#define SINGLETON_KEY_LEN 128
+#define SINGLETON_VAL_LEN 256
+
+typedef struct {
+    char key[SINGLETON_KEY_LEN];
+    char val[SINGLETON_VAL_LEN];
+    UT_hash_handle hh;
+} singleton_kvs_t;
+
+singleton_kvs_t *singleton_kvs = NULL;
 
 static int
 encode(const void *inval, int invallen, char *outval, int outvallen)
@@ -102,35 +114,44 @@ shmem_runtime_init(void)
         }
     }
 
-    if (PMI_SUCCESS != PMI_KVS_Get_name_length_max(&max_name_len)) {
-        return 3;
-    }
-    kvs_name = (char*) malloc(max_name_len);
-    if (NULL == kvs_name) return 4;
-
-    if (PMI_SUCCESS != PMI_KVS_Get_key_length_max(&max_key_len)) {
-        return 5;
-    }
-    kvs_key = (char*) malloc(max_key_len);
-    if (NULL == kvs_key) return 6;
-
-    if (PMI_SUCCESS != PMI_KVS_Get_value_length_max(&max_val_len)) {
-        return 7;
-    }
-    kvs_value = (char*) malloc(max_val_len);
-    if (NULL == kvs_value) return 8;
-
-    if (PMI_SUCCESS != PMI_KVS_Get_my_name(kvs_name, max_name_len)) {
-        return 7;
-    }
-
     if (PMI_SUCCESS != PMI_Get_rank(&rank)) {
-        return 9;
+        return 3;
     }
 
     if (PMI_SUCCESS != PMI_Get_size(&size)) {
-        return 10;
+        return 4;
     }
+
+    if (size > 1) {
+        if (PMI_SUCCESS != PMI_KVS_Get_name_length_max(&max_name_len)) {
+            return 5;
+        }
+        kvs_name = (char*) malloc(max_name_len);
+        if (NULL == kvs_name) return 6;
+
+        if (PMI_SUCCESS != PMI_KVS_Get_key_length_max(&max_key_len)) {
+            return 7;
+        }
+        if (PMI_SUCCESS != PMI_KVS_Get_value_length_max(&max_val_len)) {
+            return 8;
+        }
+        if (PMI_SUCCESS != PMI_KVS_Get_my_name(kvs_name, max_name_len)) {
+            return 9;
+        }
+    }
+    else {
+        /* Use a local KVS for singleton runs */
+        max_key_len = SINGLETON_KEY_LEN;
+        max_val_len = SINGLETON_VAL_LEN;
+        kvs_name = NULL;
+        max_name_len = 0;
+    }
+
+    kvs_key = (char*) malloc(max_key_len);
+    if (NULL == kvs_key) return 10;
+
+    kvs_value = (char*) malloc(max_val_len);
+    if (NULL == kvs_value) return 11;
 
     return 0;
 }
@@ -148,6 +169,11 @@ shmem_runtime_fini(void)
 void
 shmem_runtime_abort(int exit_code, const char msg[])
 {
+    if (size == 1) {
+        fprintf(stderr, "%s\n", msg);
+        exit(exit_code);
+    }
+
     PMI_Abort(exit_code, msg);
 
     /* PMI_Abort should not return */
@@ -172,6 +198,10 @@ shmem_runtime_get_size(void)
 int
 shmem_runtime_exchange(void)
 {
+    /* Use singleton KVS for single process jobs */
+    if (size == 1)
+        return 0;
+
     if (PMI_SUCCESS != PMI_KVS_Commit(kvs_name)) {
         return 5;
     }
@@ -191,8 +221,17 @@ shmem_runtime_put(char *key, void *value, size_t valuelen)
     if (0 != encode(value, valuelen, kvs_value, max_val_len)) {
         return 1;
     }
-    if (PMI_SUCCESS != PMI_KVS_Put(kvs_name, kvs_key, kvs_value)) {
-        return 2;
+
+    if (size == 1) {
+        singleton_kvs_t *e = malloc(sizeof(singleton_kvs_t));
+        if (e == NULL) return 3;
+        strncpy(e->key, kvs_key, max_key_len);
+        strncpy(e->val, kvs_value, max_val_len);
+        HASH_ADD_STR(singleton_kvs, key, e);
+    } else {
+        if (PMI_SUCCESS != PMI_KVS_Put(kvs_name, kvs_key, kvs_value)) {
+            return 2;
+        }
     }
 
     return 0;
@@ -203,8 +242,17 @@ int
 shmem_runtime_get(int pe, char *key, void *value, size_t valuelen)
 {
     snprintf(kvs_key, max_key_len, "shmem-%lu-%s", (long unsigned) pe, key);
-    if (PMI_SUCCESS != PMI_KVS_Get(kvs_name, kvs_key, kvs_value, max_val_len)) {
-        return 1;
+    if (size == 1) {
+        singleton_kvs_t *e;
+        HASH_FIND_STR(singleton_kvs, kvs_key, e);
+        if (e == NULL)
+            return 3;
+        kvs_value = e->val;
+    }
+    else {
+        if (PMI_SUCCESS != PMI_KVS_Get(kvs_name, kvs_key, kvs_value, max_val_len)) {
+            return 1;
+        }
     }
     if (0 != decode(kvs_value, value, valuelen)) {
         return 2;
