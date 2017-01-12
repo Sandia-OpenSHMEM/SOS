@@ -141,7 +141,7 @@ shmem_runtime_abort(int exit_code, const char msg[])
 {
 
 #ifdef HAVE___BUILTIN_TRAP
-    if (shmem_util_getenv_str("TRAP_ON_ABORT") != NULL)
+    if (shmem_internal_trap_on_abort)
         __builtin_trap();
 #endif
 
