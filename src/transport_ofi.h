@@ -26,11 +26,12 @@
 #if USE_PORTALS4
 #include <portals4.h>
 #endif
-#include "shmem_free_list.h"
 #include <string.h>
-#include "shmem_internal.h"
 #include <unistd.h>
 #include <stddef.h>
+#include "shmem_free_list.h"
+#include "shmem_internal.h"
+#include "shmem_atomic.h"
 
 extern struct fid_ep*			shmem_transport_ofi_epfd;
 extern struct fid_ep*			shmem_transport_ofi_cntr_epfd;
@@ -293,7 +294,11 @@ static inline void shmem_transport_put_quiet(void)
     do {
         success = fi_cntr_read(shmem_transport_ofi_put_cntrfd);
         fail = fi_cntr_readerr(shmem_transport_ofi_put_cntrfd);
-        if (fail) {
+
+        if (success < shmem_transport_ofi_pending_put_counter && fail == 0) {
+            SPINLOCK_BODY();
+        }
+        else if (fail) {
             struct fi_cq_err_entry e = {0};
             fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
             SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
@@ -558,7 +563,11 @@ shmem_transport_get_wait(void)
     do {
         success = fi_cntr_read(shmem_transport_ofi_get_cntrfd);
         fail = fi_cntr_readerr(shmem_transport_ofi_get_cntrfd);
-        if (fail) {
+
+        if (success < shmem_transport_ofi_pending_put_counter && fail == 0) {
+            SPINLOCK_BODY();
+        }
+        else if (fail) {
             struct fi_cq_err_entry e = {0};
             fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
             SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
