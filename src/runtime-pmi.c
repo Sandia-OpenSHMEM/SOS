@@ -29,6 +29,7 @@
 #endif
 
 #include "runtime.h"
+#include "shmem_internal.h"
 #include "uthash.h"
 
 static int rank = -1;
@@ -169,6 +170,12 @@ shmem_runtime_fini(void)
 void
 shmem_runtime_abort(int exit_code, const char msg[])
 {
+
+#ifdef HAVE___BUILTIN_TRAP
+    if (shmem_internal_trap_on_abort)
+        __builtin_trap();
+#endif
+
     if (size == 1) {
         fprintf(stderr, "%s\n", msg);
         exit(exit_code);

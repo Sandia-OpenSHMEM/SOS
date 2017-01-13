@@ -139,6 +139,12 @@ shmem_runtime_fini(void)
 void
 shmem_runtime_abort(int exit_code, const char msg[])
 {
+
+#ifdef HAVE___BUILTIN_TRAP
+    if (shmem_internal_trap_on_abort)
+        __builtin_trap();
+#endif
+
     PMI2_Abort(exit_code, msg);
 
     /* PMI_Abort should not return */
