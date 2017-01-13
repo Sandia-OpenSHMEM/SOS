@@ -110,10 +110,8 @@ if HAVE_FORTRAN
 TESTS += \
      hello_f \
      shmem_info_f
-endif
 
-if HAVE_FORTRAN
-if HAVE_SHORT_FORTRAN_HEADER
+if !HAVE_LONG_FORTRAN_HEADER
 TESTS += \
      set_fetch_f
 endif

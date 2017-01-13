@@ -13,6 +13,14 @@
 
 ACLOCAL_AMFLAGS = -I config
 
-EXTRA_DIST = README NEWS LICENSE shmem_pmi sandia-openshmem.spec
+EXTRA_DIST = README NEWS LICENSE sandia-openshmem.spec
 
-SUBDIRS = mpp $(SHMEM_PMI) src test
+SUBDIRS = mpp
+
+if USE_SHMEM_PMI
+EXTRA_DIST += shmem_pmi
+SUBDIRS += shmem_pmi
+endif
+
+SUBDIRS += src test
+

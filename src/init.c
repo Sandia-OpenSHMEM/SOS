@@ -55,6 +55,7 @@ int shmem_internal_global_exit_called = 0;
 
 int shmem_internal_thread_level;
 int shmem_internal_debug = 0;
+int shmem_internal_trap_on_abort = 0;
 
 #ifdef ENABLE_THREADS
 shmem_internal_mutex_t shmem_internal_mutex_alloc;
@@ -162,6 +163,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     eager_size = shmem_util_getenv_long("BOUNCE_SIZE", 1, 2048);
     heap_use_malloc = shmem_util_getenv_long("SYMMETRIC_HEAP_USE_MALLOC", 0, 0);
     shmem_internal_debug = (NULL != shmem_util_getenv_str("DEBUG")) ? 1 : 0;
+    shmem_internal_trap_on_abort = (NULL != shmem_util_getenv_str("TRAP_ON_ABORT")) ? 1 : 0;
 
     /* huge page support only on Linux for now, default is to use 2MB large pages */
 #ifdef __linux__
@@ -343,12 +345,14 @@ shmem_internal_init(int tl_requested, int *tl_provided)
             printf("\tAlgorithm for collect.  Options are auto, linear\n");
             printf("SMA_FCOLLECT_ALGORITHM  %s\n", coll_type_str[shmem_internal_fcollect_type]);
             printf("\tAlgorithm for fcollect.  Options are auto, linear, ring, recdbl\n");
+            printf("SMA_DEBUG               %s\n", shmem_internal_debug ? "On" : "Off");
+            printf("\tEnable debugging messages\n");
+            printf("SMA_TRAP_ON_ABORT       %s\n", shmem_internal_trap_on_abort ? "On" : "Off");
+            printf("\tGenerate trap if the program aborts or calls shmem_global_exit\n");
 #ifdef USE_CMA
             printf("SMA_CMA_PUT_MAX         %zu\n", shmem_transport_cma_put_max);
             printf("SMA_CMA_GET_MAX         %zu\n", shmem_transport_cma_get_max);
 #endif /* USE_CMA */
-            printf("SMA_DEBUG               %s\n", (NULL != shmem_util_getenv_str("DEBUG")) ? "On" : "Off");
-            printf("\tEnable debugging messages.\n");
 
             shmem_transport_print_info();
             printf("\n");
