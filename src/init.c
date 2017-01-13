@@ -344,9 +344,9 @@ shmem_internal_init(int tl_requested, int *tl_provided)
             printf("\tAlgorithm for collect.  Options are auto, linear\n");
             printf("SMA_FCOLLECT_ALGORITHM  %s\n", coll_type_str[shmem_internal_fcollect_type]);
             printf("\tAlgorithm for fcollect.  Options are auto, linear, ring, recdbl\n");
-            printf("SMA_DEBUG               %s\n", (NULL != shmem_util_getenv_str("DEBUG")) ? "On" : "Off");
+            printf("SMA_DEBUG               %s\n", shmem_internal_debug ? "On" : "Off");
             printf("\tEnable debugging messages\n");
-            printf("SMA_TRAP_ON_ABORT       %s\n", (NULL != shmem_util_getenv_str("DEBUG")) ? "On" : "Off");
+            printf("SMA_TRAP_ON_ABORT       %s\n", shmem_internal_trap_on_abort ? "On" : "Off");
             printf("\tGenerate trap if the program aborts or calls shmem_global_exit\n");
 #ifdef USE_CMA
             printf("SMA_CMA_PUT_MAX         %zu\n", shmem_transport_cma_put_max);
