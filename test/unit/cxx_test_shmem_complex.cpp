@@ -90,6 +90,7 @@ int main(int argc, char* argv[]) {
   TEST_COMPLEX(double,d,sum);
   TEST_COMPLEX(double,d,prod);
 
+  shmem_finalize();
   return rc;
 }
 
