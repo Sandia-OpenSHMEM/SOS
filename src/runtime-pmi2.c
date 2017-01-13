@@ -34,6 +34,7 @@
 #endif
 
 #include "runtime.h"
+#include "shmem_internal.h"
 
 static int rank = -1;
 static int size = 0;
@@ -95,14 +96,9 @@ decode(const char *inval, void *outval, int outvallen)
 int
 shmem_runtime_init(void)
 {
-    int spawned, appnum, my_node;
-    int initialized;
+    int spawned, appnum;
 
-    if (PMI2_SUCCESS != PMI2_Initialized()) {
-        return 1;
-    }
-
-    if (!initialized) {
+    if (!PMI2_Initialized()) {
         if (PMI2_SUCCESS != PMI2_Init(&spawned, &size, &rank, &appnum)) {
             return 2;
         }
