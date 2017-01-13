@@ -60,7 +60,6 @@ TESTS = \
 	ns \
 	bcast_flood \
 	lfinc \
-	mt_a2a \
 	shmem_info \
 	global_exit \
 	asym_alloc \
@@ -112,6 +111,11 @@ if !HAVE_LONG_FORTRAN_HEADER
 TESTS += \
      set_fetch_f
 endif
+endif
+
+if HAVE_PTHREADS
+TESTS += \
+    mt_a2a
 endif
 
 NPROCS ?= 2
@@ -273,8 +277,9 @@ shmem_ct_SOURCES = shmem_ct.c
 shmem_ct_LDADD = $(top_builddir)/src/libsma.la
 
 mt_a2a_SOURCES = mt_a2a.c pthread_barrier.h
-mt_a2a_LDADD = $(top_builddir)/src/libsma.la -lpthread
-mt_a2a_CFLAGS = -pthread
+mt_a2a_LDADD = $(top_builddir)/src/libsma.la
+mt_a2a_LDFLAGS = $(PTHREAD_LIBS)
+mt_a2a_CFLAGS = $(PTHREAD_CFLAGS)
 
 global_exit_SOURCES = global_exit.c
 global_exit_LDADD = $(top_builddir)/src/libsma.la

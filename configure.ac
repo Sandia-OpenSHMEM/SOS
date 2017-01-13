@@ -78,7 +78,17 @@ AC_MSG_RESULT([$msg])
 AC_ARG_ENABLE([threads],
     [AC_HELP_STRING([--enable-threads],
                     [Enable threading support (default:disabled)])])
-AS_IF([test "$enable_threads" = "yes"], [AC_DEFINE([ENABLE_THREADS], [1], [Enable threads])])
+AS_IF([test "$enable_threads" = "yes"], [
+       OPAL_CONFIG_POSIX_THREADS(HAVE_POSIX_THREADS=1, HAVE_POSIX_THREADS=0)
+       AC_MSG_CHECKING([for working POSIX threads package])
+       if test "$HAVE_POSIX_THREADS" = "1" ; then
+           AC_MSG_RESULT([yes])
+       else
+           AC_MSG_RESULT([no])
+       fi
+       AC_DEFINE([ENABLE_THREADS], [1], [Enable threads])
+       ])
+AM_CONDITIONAL([HAVE_PTHREADS], [test "$HAVE_POSIX_THREADS" = "1"])
 
 AC_ARG_ENABLE([pthread-mutexes],
     [AC_HELP_STRING([--enable-pthread-mutexes],
