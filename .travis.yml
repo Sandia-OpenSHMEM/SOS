@@ -19,7 +19,7 @@ env:
           SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing"
         - >
           SOS_ENABLE_ERROR_TESTS=1
-          SOS_BUILD_OPTS="--enable-threads --enable-error-checking"
+          SOS_BUILD_OPTS="--enable-threads --enable-error-checking --enable-completion-polling"
         - >
           SOS_ENABLE_ERROR_TESTS=1
           SOS_BUILD_OPTS="--with-cma --enable-error-checking --enable-profiling --disable-mr-scalable --enable-av-map --enable-remote-virtual-addressing"
