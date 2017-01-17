@@ -56,7 +56,10 @@ int main(int argc, char **argv) {
     for (i = 0; i < NUM_CTX; i++)
         shmemx_ctx_long_inc(&data, (me+1) % npes, ctx[i]);
 
-    shmem_barrier_all();
+    for (i = 0; i < NUM_CTX; i++)
+        shmemx_ctx_quiet(ctx[i]);
+
+    shmemx_sync_all();
 
     if (data != NUM_CTX) {
         printf("%d: error expected %d, got %ld\n", me, NUM_CTX, data);
