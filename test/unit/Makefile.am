@@ -16,7 +16,6 @@ check_PROGRAMS = $(TESTS)
 TESTS = \
 	hello \
 	pi \
-	web \
 	micro_unit_shmem \
 	circular_shift \
 	accessible_ping \
@@ -58,11 +57,9 @@ TESTS = \
 	fcollect64 \
 	bigput \
 	bigget \
-	threading \
 	ns \
 	bcast_flood \
 	lfinc \
-	mt_a2a \
 	shmem_info \
 	global_exit \
 	asym_alloc \
@@ -120,6 +117,13 @@ endif
 if ENABLE_OPENMP
 TESTS += \
     ctx
+endif
+
+if HAVE_PTHREADS
+TESTS += \
+    mt_a2a \
+    threading \
+    web
 endif
 
 NPROCS ?= 2
