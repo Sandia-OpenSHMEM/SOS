@@ -396,7 +396,11 @@ static inline int allocate_cntr_and_cq(void)
     struct fi_cq_attr   cq_attr = {0};
 
     cntr_attr.events   = FI_CNTR_EVENTS_COMP;
+#ifdef ENABLE_COMPLETION_POLLING
+    cntr_attr.wait_obj = FI_WAIT_NONE;
+#else
     cntr_attr.wait_obj = FI_WAIT_UNSPEC;
+#endif
 
     /* -------------------------------------------------------*/
     /* Define Completion tracking Resources to Attach to EP   */
