@@ -38,6 +38,7 @@
 #include <assert.h>
 #include <omp.h>
 #include <unistd.h>
+#include <shmemx.h>
 
 int n_threads, n_dom;
 shmemx_domain_t* doms;
