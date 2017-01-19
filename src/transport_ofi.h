@@ -564,7 +564,7 @@ shmem_transport_get_wait(void)
         success = fi_cntr_read(shmem_transport_ofi_get_cntrfd);
         fail = fi_cntr_readerr(shmem_transport_ofi_get_cntrfd);
 
-        if (success < shmem_transport_ofi_pending_put_counter && fail == 0) {
+        if (success < shmem_transport_ofi_pending_get_counter && fail == 0) {
             SPINLOCK_BODY();
         }
         else if (fail) {
