@@ -154,7 +154,6 @@ dnl check for programs
 
 AC_PROG_CC
 AM_PROG_CC_C_O
-AC_PROG_CC_C99
 AC_C_INLINE
 AC_PROG_CXX dnl required even with --disable-cxx due to automake conditionals
 m4_ifdef([AM_PROG_AR],[AM_PROG_AR])
@@ -177,7 +176,7 @@ AX_GCC_FUNC_ATTRIBUTE([noreturn])
 AX_GCC_BUILTIN([__builtin_trap])
 
 if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
-  CFLAGS="$CFLAGS -Wall -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wcomment -pedantic"
+  CFLAGS="$CFLAGS -Wall -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wcomment -pedantic -std=gnu99"
 else
   CFLAGS="$CFLAGS -Wall"
 fi
