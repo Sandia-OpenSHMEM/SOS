@@ -637,7 +637,7 @@ static inline int allocate_recv_cntr_mr(void)
     }
 
     //bind to endpoint, incoming communication associated with endpoint now has defined resources
-    ret = fi_ep_bind(shmem_transport_ctx->endpoint.ep,
+    ret = fi_ep_bind(shmem_transport_default_ctx.endpoint.ep,
                      &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_READ | FI_REMOTE_WRITE);
     if(ret!=0){
@@ -645,7 +645,7 @@ static inline int allocate_recv_cntr_mr(void)
 	return ret;
     }
 
-    ret = fi_ep_bind(shmem_transport_ctx->endpoint.ep,
+    ret = fi_ep_bind(shmem_transport_default_ctx.endpoint.ep,
 		    &shmem_transport_ofi_target_cntrfd->fid,
                     FI_REMOTE_WRITE | FI_REMOTE_READ);
     if(ret!=0){
