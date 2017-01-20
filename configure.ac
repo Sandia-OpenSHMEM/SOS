@@ -159,51 +159,33 @@ AC_PROG_CXX dnl required even with --disable-cxx due to automake conditionals
 m4_ifdef([AM_PROG_AR],[AM_PROG_AR])
 AC_PATH_PROG([PERL],[perl])
 
-# start -std check
+# start gnu11/gnu99 check
 ORIG_CFLAGS=$CFLAGS
+WRAPPER_CC=$CC
+AC_SUBST(WRAPPER_CC)
 
-AC_CACHE_CHECK([if -std=gnu11 works], [shmem_cv_c11_works],
-               [AC_LANG_PUSH([C])
-                CFLAGS="-pedantic-errors -std=gnu11"
-                AC_COMPILE_IFELSE(
-                  [AC_LANG_PROGRAM([[
+AC_MSG_CHECKING([if -std=gnu11 works])
+
+AC_LANG_PUSH([C])
+CFLAGS="-pedantic-errors -std=gnu11"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
                    void g(int i){}
                    #define f(X) _Generic((X), default: g)(X)
                    ]], [[
-                   f(1);
-                   ]]
-                  )],
-                  [shmem_cv_c11_works="yes"], [shmem_cv_c11_works="no"])
-               ])
+                        f(1);
+                        ]]
+                   )],
+                   [shmem_cv_c11_works="yes"], [shmem_cv_c11_works="no"])
 AS_IF([test "$shmem_cv_c11_works" = "no"],
-      [AC_MSG_WARN([C program does not compile with -std=gnu11.])])
-
-if test "$shmem_cv_c11_works" = "no" ; then
-  AC_CACHE_CHECK([if -std=gnu99 works], [shmem_cv_c99_works],
-                 [AC_LANG_PUSH([C])
-                  CFLAGS="-pedantic-errors -std=gnu99"
-                  AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,
-                    [[
-                      for(int i=0; i<2; i++){}
-                    ]])],
-                    [shmem_cv_c99_works="yes"], [shmem_cv_c99_works="no"])
-                 ])
-  AS_IF([test "$shmem_cv_c99_works" = "no"],
-        [AC_MSG_WARN([C program does not compile with -std=gnu99.])])
-fi
-
-if test "$shmem_cv_c11_works" = "yes" ; then
-  CFLAGS="-std=gnu11 $ORIG_CFLAGS "
-else
-  AC_MSG_WARN([C flag -std=gnu11 not supported.])
-  if test "$shmem_cv_c99_works" = "yes" ; then
-    CFLAGS="-std=gnu99 $ORIG_CFLAGS "
-  else
-    CFLAGS="$ORIG_CFLAGS"
-    AC_MSG_WARN([A compiler that supports either -std=gnu11 or -std=gnu99 is required.])
-  fi
-fi
-# end -std check
+      [AC_MSG_RESULT([no])
+      AC_MSG_WARN([No C11 support detected, unable to test _Generic bindings.])
+      CFLAGS="-std=gnu99 $ORIG_CFLAGS"
+      ],
+      [AC_MSG_RESULT([yes])
+      CFLAGS="-std=gnu11 $ORIG_CFLAGS"]
+      )
+AC_LANG_POP([C])
+# end gnu11/gnu99 check
 
 
 AC_PATH_PROG([M4], [m4], [false])
