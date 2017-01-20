@@ -456,6 +456,7 @@ static int shmem_transport_ofi_ctx_init(int id, shmem_transport_domain_t *dom,
 
     struct fi_cntr_attr cntr_attr = {0};
     cntr_attr.events   = FI_CNTR_EVENTS_COMP;
+    cntr_attr.wait_obj = FI_WAIT_UNSPEC;
 
     struct fabric_info* info = &shmem_ofi_cntr_info;
     info->p_info->ep_attr->tx_ctx_cnt = FI_SHARED_CONTEXT;
@@ -598,12 +599,6 @@ static inline int allocate_recv_cntr_mr(void)
     /* ------------------------------------*/
     /* since this is AFTER enable and RMA you must create memory regions for incoming reads/writes
      * and outgoing non-blocking Puts, specifying entire VA range */
-
-    // Create counter for incoming writes
-    struct fi_cntr_attr cntr_attr = {0};
-    cntr_attr.events   = FI_CNTR_EVENTS_COMP;
-    cntr_attr.flags    = 0;
-    cntr_attr.wait_obj = FI_WAIT_MUTEX_COND;
 
 #ifndef ENABLE_HARD_POLLING
     {
