@@ -404,6 +404,11 @@ static void shmem_transport_ofi_domain_free(shmem_transport_domain_t* dom)
     /*       fi_strerror(errno)); */
     /* } */
 
+    if (0 != dom->num_active_contexts) {
+        OFI_ERRMSG("Cannot free a domain while in use (%zu ctx)",
+                   dom->num_active_contexts);
+    }
+
     ret = fi_close(&dom->stx->fid);
 
     if (ret) {
