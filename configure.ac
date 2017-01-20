@@ -159,6 +159,53 @@ AC_PROG_CXX dnl required even with --disable-cxx due to automake conditionals
 m4_ifdef([AM_PROG_AR],[AM_PROG_AR])
 AC_PATH_PROG([PERL],[perl])
 
+# start -std check
+ORIG_CFLAGS=$CFLAGS
+
+AC_CACHE_CHECK([if -std=gnu11 works], [shmem_cv_c11_works],
+               [AC_LANG_PUSH([C])
+                CFLAGS="-pedantic-errors -std=gnu11"
+                AC_COMPILE_IFELSE(
+                  [AC_LANG_PROGRAM([[
+                   void g(int i){}
+                   #define f(X) _Generic((X), default: g)(X)
+                   ]], [[
+                   f(1);
+                   ]]
+                  )],
+                  [shmem_cv_c11_works="yes"], [shmem_cv_c11_works="no"])
+               ])
+AS_IF([test "$shmem_cv_c11_works" = "no"],
+      [AC_MSG_WARN([C program does not compile with -std=gnu11.])])
+
+if test "$shmem_cv_c11_works" = "no" ; then
+  AC_CACHE_CHECK([if -std=gnu99 works], [shmem_cv_c99_works],
+                 [AC_LANG_PUSH([C])
+                  CFLAGS="-pedantic-errors -std=gnu99"
+                  AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,
+                    [[
+                      for(int i=0; i<2; i++){}
+                    ]])],
+                    [shmem_cv_c99_works="yes"], [shmem_cv_c99_works="no"])
+                 ])
+  AS_IF([test "$shmem_cv_c99_works" = "no"],
+        [AC_MSG_WARN([C program does not compile with -std=gnu99.])])
+fi
+
+if test "$shmem_cv_c11_works" = "yes" ; then
+  CFLAGS="-std=gnu11 $ORIG_CFLAGS "
+else
+  AC_MSG_WARN([C flag -std=gnu11 not supported.])
+  if test "$shmem_cv_c99_works" = "yes" ; then
+    CFLAGS="-std=gnu99 $ORIG_CFLAGS "
+  else
+    CFLAGS="$ORIG_CFLAGS"
+    AC_MSG_WARN([A compiler that supports either -std=gnu11 or -std=gnu99 is required.])
+  fi
+fi
+# end -std check
+
+
 AC_PATH_PROG([M4], [m4], [false])
 AS_IF([test "$M4" = "false"],
       [AC_MSG_ERROR([Could not find 'm4' macro processor])])
@@ -176,7 +223,7 @@ AX_GCC_FUNC_ATTRIBUTE([noreturn])
 AX_GCC_BUILTIN([__builtin_trap])
 
 if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
-  CFLAGS="$CFLAGS -Wall -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wcomment -pedantic -std=gnu99"
+  CFLAGS="$CFLAGS -Wall -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wcomment -pedantic"
 else
   CFLAGS="$CFLAGS -Wall"
 fi
