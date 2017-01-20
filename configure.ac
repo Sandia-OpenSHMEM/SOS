@@ -161,9 +161,8 @@ AC_PATH_PROG([PERL],[perl])
 
 # start gnu11/gnu99 check
 ORIG_CFLAGS=$CFLAGS
-WRAPPER_CC=$CC
-AC_SUBST(WRAPPER_CC)
-
+WRAPPER_COMPILER_CC=$CC
+AC_SUBST([WRAPPER_COMPILER_CC])
 AC_MSG_CHECKING([if -std=gnu11 works])
 
 AC_LANG_PUSH([C])
@@ -179,7 +178,8 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 AS_IF([test "$shmem_cv_c11_works" = "no"],
       [AC_MSG_RESULT([no])
       AC_MSG_WARN([No C11 support detected, unable to test _Generic bindings.])
-      CFLAGS="-std=gnu99 $ORIG_CFLAGS"
+      CFLAGS="$ORIG_CFLAGS"
+      AC_PROG_CC_C99
       ],
       [AC_MSG_RESULT([yes])
       CFLAGS="-std=gnu11 $ORIG_CFLAGS"]
