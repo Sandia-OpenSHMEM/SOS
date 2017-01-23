@@ -159,6 +159,35 @@ AC_PROG_CXX dnl required even with --disable-cxx due to automake conditionals
 m4_ifdef([AM_PROG_AR],[AM_PROG_AR])
 AC_PATH_PROG([PERL],[perl])
 
+# start gnu11/gnu99 check
+ORIG_CFLAGS=$CFLAGS
+WRAPPER_COMPILER_CC=$CC
+AC_SUBST([WRAPPER_COMPILER_CC])
+AC_MSG_CHECKING([if -std=gnu11 works])
+
+AC_LANG_PUSH([C])
+CFLAGS="-pedantic-errors -std=gnu11"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+                   void g(int i){}
+                   #define f(X) _Generic((X), default: g)(X)
+                   ]], [[
+                        f(1);
+                        ]]
+                   )],
+                   [shmem_cv_c11_works="yes"], [shmem_cv_c11_works="no"])
+AS_IF([test "$shmem_cv_c11_works" = "no"],
+      [AC_MSG_RESULT([no])
+      AC_MSG_WARN([No C11 support detected, unable to test _Generic bindings.])
+      CFLAGS="$ORIG_CFLAGS"
+      AC_PROG_CC_C99
+      ],
+      [AC_MSG_RESULT([yes])
+      CFLAGS="-std=gnu11 $ORIG_CFLAGS"]
+      )
+AC_LANG_POP([C])
+# end gnu11/gnu99 check
+
+
 AC_PATH_PROG([M4], [m4], [false])
 AS_IF([test "$M4" = "false"],
       [AC_MSG_ERROR([Could not find 'm4' macro processor])])
@@ -176,7 +205,7 @@ AX_GCC_FUNC_ATTRIBUTE([noreturn])
 AX_GCC_BUILTIN([__builtin_trap])
 
 if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
-  CFLAGS="$CFLAGS -Wall -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wcomment -pedantic -std=gnu99"
+  CFLAGS="$CFLAGS -Wall -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wcomment -pedantic"
 else
   CFLAGS="$CFLAGS -Wall"
 fi
