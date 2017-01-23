@@ -26,11 +26,12 @@
 #if USE_PORTALS4
 #include <portals4.h>
 #endif
-#include "shmem_free_list.h"
 #include <string.h>
-#include "shmem_internal.h"
 #include <unistd.h>
 #include <stddef.h>
+#include "shmem_free_list.h"
+#include "shmem_internal.h"
+#include "shmem_atomic.h"
 
 extern struct fid_ep*			shmem_transport_ofi_epfd;
 extern struct fid_ep*			shmem_transport_ofi_cntr_epfd;
@@ -280,26 +281,41 @@ static inline shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(const v
 
 static inline void shmem_transport_put_quiet(void)
 {
-  SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
+    SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
 
-	int ret = 0;
-
-	/* wait until all outstanding queue operations have completed */
-	while(shmem_transport_ofi_pending_cq_count) {
-		shmem_transport_ofi_drain_cq();
-	}
-
-	/* wait for put counter to meet outstanding count value    */
-	ret = fi_cntr_wait(shmem_transport_ofi_put_cntrfd,
-			shmem_transport_ofi_pending_put_counter,-1);
-    if(ret) {
-	    struct fi_cq_err_entry e = {0};
-        fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd,
-		           (void *)&e, 0);
-        SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
-		RAISE_ERROR(e.err);
+    /* wait until all outstanding queue operations have completed */
+    while (shmem_transport_ofi_pending_cq_count) {
+        shmem_transport_ofi_drain_cq();
     }
-  SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
+
+    /* wait for put counter to meet outstanding count value */
+#ifdef ENABLE_COMPLETION_POLLING
+    uint64_t success, fail;
+    do {
+        success = fi_cntr_read(shmem_transport_ofi_put_cntrfd);
+        fail = fi_cntr_readerr(shmem_transport_ofi_put_cntrfd);
+
+        if (success < shmem_transport_ofi_pending_put_counter && fail == 0) {
+            SPINLOCK_BODY();
+        }
+        else if (fail) {
+            struct fi_cq_err_entry e = {0};
+            fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
+            SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
+            RAISE_ERROR(e.err);
+        }
+    } while (success < shmem_transport_ofi_pending_put_counter);
+#else
+    int ret = fi_cntr_wait(shmem_transport_ofi_put_cntrfd,
+                           shmem_transport_ofi_pending_put_counter, -1);
+    if (ret) {
+        struct fi_cq_err_entry e = {0};
+        fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
+        SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
+        RAISE_ERROR(e.err);
+    }
+#endif
+    SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 }
 
 static inline int shmem_transport_quiet(void)
@@ -539,19 +555,36 @@ static inline
 void
 shmem_transport_get_wait(void)
 {
-  SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
-	int ret = 0;
+    SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
 
-	/* wait for get counter to meet outstanding count value    */
-	ret = fi_cntr_wait(shmem_transport_ofi_get_cntrfd,
-			shmem_transport_ofi_pending_get_counter,-1);
-    if(ret) {
-	    struct fi_cq_err_entry e = {0};
-        fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd,
-		           (void *)&e, 0);
+    /* wait for get counter to meet outstanding count value */
+#ifdef ENABLE_COMPLETION_POLLING
+    uint64_t success, fail;
+    do {
+        success = fi_cntr_read(shmem_transport_ofi_get_cntrfd);
+        fail = fi_cntr_readerr(shmem_transport_ofi_get_cntrfd);
+
+        if (success < shmem_transport_ofi_pending_get_counter && fail == 0) {
+            SPINLOCK_BODY();
+        }
+        else if (fail) {
+            struct fi_cq_err_entry e = {0};
+            fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
+            SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
+            RAISE_ERROR(e.err);
+        }
+    } while (success < shmem_transport_ofi_pending_get_counter);
+#else
+    int ret = fi_cntr_wait(shmem_transport_ofi_get_cntrfd,
+                           shmem_transport_ofi_pending_get_counter, -1);
+    if (ret) {
+        struct fi_cq_err_entry e = {0};
+        fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
         SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
-		RAISE_ERROR(e.err);
+        RAISE_ERROR(e.err);
     }
+#endif
+
   SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 }
 

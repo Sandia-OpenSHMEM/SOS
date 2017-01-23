@@ -57,6 +57,12 @@ AC_ARG_ENABLE([hard-polling],
                     [Enable hard polling of wait calls (default:disabled)])])
 AS_IF([test "$enable_hard_polling" = "yes"], [AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])])
 
+AC_ARG_ENABLE([completion-polling],
+    [AC_HELP_STRING([--enable-completion-polling],
+                    [Enable polling in quiet, fence, and local completion operations (default:disabled)])])
+AS_IF([test "$enable_completion_polling" = "yes"],
+      [AC_DEFINE([ENABLE_COMPLETION_POLLING], [1], [Enable polling for local/remote completions])])
+
 AC_ARG_ENABLE([nonblocking-fence],
     [AC_HELP_STRING([--enable-nonblocking-fence],
                     [When total data ordering is not available, make shmem_fence a non-blocking operation.  shmem_fence will return immediately, but the next communication call will block until all previous communications finish. (default:disabled)])])
