@@ -1179,71 +1179,71 @@ int shmem_transport_fini(void)
 
     if (shmem_transport_ofi_epfd &&
 		    fi_close(&shmem_transport_ofi_epfd->fid)) {
-        RAISE_ERROR_MSG("Endpoint close failed (%s)", fi_strerror(errno));
+        RAISE_ERROR_MSG("Endpoint close failed (%s)\n", fi_strerror(errno));
     }
 
     if (shmem_transport_ofi_cntr_epfd &&
 		    fi_close(&shmem_transport_ofi_cntr_epfd->fid)) {
-        RAISE_ERROR_MSG("Endpoint close failed (%s)", fi_strerror(errno));
+        RAISE_ERROR_MSG("Endpoint close failed (%s)\n", fi_strerror(errno));
     }
 
     if (shmem_transport_ofi_stx &&
 		    fi_close(&shmem_transport_ofi_stx->fid)) {
-        RAISE_ERROR_MSG("Shared context close failed (%s)", fi_strerror(errno));
+        RAISE_ERROR_MSG("Shared context close failed (%s)\n", fi_strerror(errno));
     }
 
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     if (shmem_transport_ofi_target_mrfd &&
 		    fi_close(&shmem_transport_ofi_target_mrfd->fid)) {
-	RAISE_ERROR_MSG("Target MR close failed (%s)", fi_strerror(errno));
+	RAISE_ERROR_MSG("Target MR close failed (%s)\n", fi_strerror(errno));
     }
 #else
     if (shmem_transport_ofi_target_heap_mrfd &&
         fi_close(&shmem_transport_ofi_target_heap_mrfd->fid)) {
-        RAISE_ERROR_MSG("Target heap MR close failed (%s)", fi_strerror(errno));
+        RAISE_ERROR_MSG("Target heap MR close failed (%s)\n", fi_strerror(errno));
     }
 
     if (shmem_transport_ofi_target_data_mrfd &&
         fi_close(&shmem_transport_ofi_target_data_mrfd->fid)) {
-        RAISE_ERROR_MSG("Target data MR close failed (%s)", fi_strerror(errno));
+        RAISE_ERROR_MSG("Target data MR close failed (%s)\n", fi_strerror(errno));
     }
 #endif
 
     if (shmem_transport_ofi_put_nb_cqfd &&
 		    fi_close(&shmem_transport_ofi_put_nb_cqfd->fid)) {
-        RAISE_ERROR_MSG("Write CQ close failed (%s)", fi_strerror(errno));
+        RAISE_ERROR_MSG("Write CQ close failed (%s)\n", fi_strerror(errno));
     }
 
     if(shmem_transport_ofi_put_cntrfd &&
 		    fi_close(&shmem_transport_ofi_put_cntrfd->fid)){
-        RAISE_ERROR_MSG("INJECT PUT CT close failed (%s)", fi_strerror(errno));
+        RAISE_ERROR_MSG("INJECT PUT CT close failed (%s)\n", fi_strerror(errno));
     }
 
     if(shmem_transport_ofi_get_cntrfd &&
 		    fi_close(&shmem_transport_ofi_get_cntrfd->fid)){
-        RAISE_ERROR_MSG("GET CT close failed (%s)", fi_strerror(errno));
+        RAISE_ERROR_MSG("GET CT close failed (%s)\n", fi_strerror(errno));
     }
 
 #ifndef ENABLE_HARD_POLLING
     if(shmem_transport_ofi_target_cntrfd &&
 		    fi_close(&shmem_transport_ofi_target_cntrfd->fid)){
-        RAISE_ERROR_MSG("Target CT close failed (%s)", fi_strerror(errno));
+        RAISE_ERROR_MSG("Target CT close failed (%s)\n", fi_strerror(errno));
     }
 #endif
 
     if (shmem_transport_ofi_avfd &&
 		    fi_close(&shmem_transport_ofi_avfd->fid)) {
-        RAISE_ERROR_MSG("AV close failed (%s)", fi_strerror(errno));
+        RAISE_ERROR_MSG("AV close failed (%s)\n", fi_strerror(errno));
     }
 
     if (shmem_transport_ofi_domainfd &&
 		    fi_close(&shmem_transport_ofi_domainfd->fid)) {
-        RAISE_ERROR_MSG("Domain close failed (%s)", fi_strerror(errno));
+        RAISE_ERROR_MSG("Domain close failed (%s)\n", fi_strerror(errno));
     }
 
     if (shmem_transport_ofi_fabfd &&
 		    fi_close(&shmem_transport_ofi_fabfd->fid)) {
-        RAISE_ERROR_MSG("Fabric close failed (%s)", fi_strerror(errno));
+        RAISE_ERROR_MSG("Fabric close failed (%s)\n", fi_strerror(errno));
     }
 
     if (NULL != shmem_transport_ofi_bounce_buffers) {
