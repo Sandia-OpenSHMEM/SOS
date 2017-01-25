@@ -288,9 +288,7 @@ static int shmem_transport_ofi_domain_init(int id, int thread_level,
     int ret;
 
     dom->id = id;
-    dom->refcnt = 1;
-    dom->freed = 0;
-    dom->num_active_contexts = 0;
+    dom->refcnt = 0;
 
     int lock = (thread_level != SHMEMX_THREAD_SINGLE);
     if(!lock) {
@@ -389,45 +387,34 @@ int shmem_transport_domain_create(int thread_level, int num_domains,
 // assumes dom->lock is locked or dom->use_lock == 0
 static void shmem_transport_ofi_domain_free(shmem_transport_domain_t* dom)
 {
-    int ret = FI_SUCCESS;
+    int ret;
 
-    // The attached CQ is implicitly closed (as I discovered while
-    // memory-checking with Valgrind). -jpdoyle
-    /* if(fi_close(&dom->cq_ep->fid)) { */
-    /*   RAISE_WARN_MSG("Domain CQ close failed (%s)", */
-    /*       fi_strerror(errno)); */
-    /* } */
-
-    if (0 != dom->num_active_contexts) {
-        RAISE_WARN_MSG("Cannot free a domain while in use (%zu ctx)\n",
-                   dom->num_active_contexts);
+    if (0 != dom->refcnt) {
+        RAISE_ERROR_MSG("Cannot free domain while in use (refcnt %d)\n",
+                        dom->refcnt);
     }
 
-    if (0 == --(dom->refcnt)) {
-
     ret = fi_close(&dom->stx->fid);
-
     if (ret) {
-        RAISE_WARN_MSG("Domain STX close failed (%s)\n", fi_strerror(errno));
+        RAISE_ERROR_MSG("Domain STX close failed (%s)\n", fi_strerror(errno));
     }
 
     ret = fi_close(&dom->cq->fid);
-
     if (ret) {
-        RAISE_WARN_MSG("Domain CQ close failed (%s)\n", fi_strerror(errno));
+        RAISE_ERROR_MSG("Domain CQ close failed (%s)\n", fi_strerror(errno));
     }
 
-        dom->freed = 1;
-        dom->release_lock(&dom);
-        dom->free_lock(&dom);
-        if (dom->id >= 0) {
-            shmem_transport_ofi_domains[dom->id] = NULL;
-        }
+    dom->refcnt = -1; /* set to invalid */
+    dom->release_lock(&dom);
+    dom->free_lock(&dom);
 
-    } else {
-        dom->release_lock(&dom);
+    if (dom->id >= 0) {
+        SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
+        shmem_transport_ofi_domains[dom->id] = NULL;
+        SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
+
+        free(dom);
     }
-
 }
 
 
@@ -441,8 +428,12 @@ void shmem_transport_domain_destroy(int num_domains, shmem_transport_domain_t *d
         shmem_transport_domain_t* dom = domains[i];
 
         dom->take_lock(&dom);
-        if (0 == dom->num_active_contexts) {
+        --(dom->refcnt);
+        if (dom->refcnt == 0) {
             shmem_transport_ofi_domain_free(dom);
+        } else if (dom->refcnt < 0) {
+            dom->release_lock(&dom);
+            RAISE_ERROR_STR("Invalid domain");
         } else {
             dom->release_lock(&dom);
         }
@@ -506,7 +497,7 @@ static int shmem_transport_ofi_ctx_init(int id, shmem_transport_domain_t *dom,
     ctx->take_lock = dom->take_lock;
     ctx->release_lock = dom->release_lock;
 
-    ++dom->num_active_contexts;
+    ++dom->refcnt;
 
     dom->release_lock(&dom);
 
@@ -565,8 +556,6 @@ int shmem_transport_ctx_create(shmem_transport_domain_t *dom, shmem_transport_ct
 
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 {
-    SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
-
     shmem_transport_domain_t* dom = ctx->domain;
 
     shmem_transport_quiet(ctx);
@@ -579,19 +568,22 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         RAISE_ERROR_MSG("Context counter close failed (%s)\n", fi_strerror(errno));
     }
 
-    --(dom->num_active_contexts);
-    if (0 == dom->num_active_contexts && !dom->freed) {
+    --(dom->refcnt);
+
+    if (dom->refcnt == 0) {
         shmem_transport_ofi_domain_free(dom);
+    } else if (dom->refcnt < 0) {
+        RAISE_ERROR_STR("Attempted to destroy invalid domain");
     } else {
         dom->release_lock(&dom);
     }
 
     if (ctx->id >= 0) {
+        SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
         shmem_transport_ofi_contexts[ctx->id] = NULL;
+        SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
         free(ctx);
     }
-
-    SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 }
 
 
@@ -1328,6 +1320,9 @@ int shmem_transport_fini(void)
       shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[i];
       if(ctx) {
         shmem_transport_ctx_destroy(ctx);
+        if (shmem_transport_ofi_contexts[i] != NULL) {
+          RAISE_ERROR_MSG("Unable to free ctx %zu", i);
+        }
       }
     }
 
@@ -1336,7 +1331,9 @@ int shmem_transport_fini(void)
       if(dom) {
         dom->take_lock(&dom);
         shmem_transport_ofi_domain_free(dom);
-        if (dom->freed) free(dom);
+
+        if (dom->refcnt >= 0 || shmem_transport_ofi_domains[i] != NULL)
+            RAISE_ERROR_MSG("Unable to free domain %zu\n", i);
       }
     }
 
@@ -1345,7 +1342,7 @@ int shmem_transport_fini(void)
     /* Freeing the default ctx should reduce the reference count on the default
      * domain to zero causing it to be freed automatically.  Raise an error if
      * this doesn't happen. */
-    if (!shmem_transport_default_dom.freed) {
+    if (shmem_transport_default_dom.refcnt >= 0) {
         RAISE_ERROR_STR("Default domain was not automatically freed");
     }
 

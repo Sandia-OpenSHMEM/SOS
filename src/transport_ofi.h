@@ -103,10 +103,6 @@ typedef struct shmem_transport_domain_t {
    * Perhaps there should be one per endpoint?
    */
   struct fid_cq* cq;
-  struct fid_ep* cq_ep;
-  size_t num_active_contexts;
-  /* Has shmem_domain_destroy been called on this? */
-  int freed;
 } shmem_transport_domain_t;
 
 static inline void dom_lock_noop(shmem_transport_domain_t** dom) {}
@@ -127,7 +123,7 @@ static inline void dom_release_mutex(shmem_transport_domain_t** dom) { }
 static inline void dom_free_mutex(shmem_transport_domain_t** dom) { }
 #endif
 
-typedef struct shmem_transport_ctx_t {
+typedef struct {
   shmem_transport_domain_t* domain;
   shmem_transport_cntr_ep_t endpoint;
 
