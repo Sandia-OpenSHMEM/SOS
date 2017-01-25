@@ -407,6 +407,12 @@ static void shmem_transport_ofi_domain_free(shmem_transport_domain_t* dom)
         RAISE_WARN_MSG("Domain STX close failed (%s)\n", fi_strerror(errno));
     }
 
+    ret = fi_close(&dom->cq->fid);
+
+    if (ret) {
+        RAISE_WARN_MSG("Domain CQ close failed (%s)\n", fi_strerror(errno));
+    }
+
     dom->freed = 1;
     dom->release_lock(&dom);
     dom->free_lock(&dom);
@@ -638,14 +644,6 @@ static inline int allocate_recv_cntr_mr(void)
         RAISE_WARN_STR("ep_bind cntr_epfd2put_cntr failed");
         return ret;
     }
-
-    ret = fi_ep_bind(shmem_transport_default_ctx.endpoint.ep,
-		    &shmem_transport_ofi_target_cntrfd->fid,
-                    FI_REMOTE_WRITE | FI_REMOTE_READ);
-    if(ret!=0){
-        RAISE_WARN_STR("ep_bind cntr_epfd2put_cntr failed");
-        return ret;
-    }
 #endif /* ndef ENABLE_HARD_POLLING */
 
 #else
@@ -693,14 +691,6 @@ static inline int allocate_recv_cntr_mr(void)
                      FI_REMOTE_READ | FI_REMOTE_WRITE);
     if (ret != 0) {
         RAISE_WARN_STR("ep_bind cntr_ep2epfd heap failed");
-        return ret;
-    }
-
-    ret = fi_ep_bind(shmem_transport_default_ctx.endpoint.ep,
-                     &shmem_transport_ofi_target_cntrfd->fid,
-                     FI_REMOTE_READ | FI_REMOTE_WRITE);
-    if (ret != 0) {
-        RAISE_WARN_STR("ep_bind cntr_ep2epfd data failed");
         return ret;
     }
 #endif /* ndef ENABLE_HARD_POLLING */
@@ -1384,14 +1374,10 @@ int shmem_transport_fini(void)
         RAISE_ERROR_MSG("AV close failed (%s)\n", fi_strerror(errno));
     }
 
-    /* TODO: domainfd seems to be closed by closing some of the other resources
-     * -- uncommenting these lines gives a "file not found error" OFI error.
-     * -jpdoyle
-     */
-    /* if (shmem_transport_ofi_domainfd && */
-		    /* fi_close(&shmem_transport_ofi_domainfd->fid)) { */
-    /*     RAISE_ERROR_MSG("Domain close failed (%s)\n", fi_strerror(errno)); */
-    /* } */
+    if (shmem_transport_ofi_domainfd &&
+                    fi_close(&shmem_transport_ofi_domainfd->fid)) {
+        RAISE_ERROR_MSG("Domain close failed (%s)\n", fi_strerror(errno));
+    }
 
     if (shmem_transport_ofi_fabfd &&
 		    fi_close(&shmem_transport_ofi_fabfd->fid)) {
