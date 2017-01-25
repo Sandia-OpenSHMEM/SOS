@@ -288,6 +288,7 @@ static int shmem_transport_ofi_domain_init(int id, int thread_level,
     int ret;
 
     dom->id = id;
+    dom->refcnt = 1;
     dom->freed = 0;
     dom->num_active_contexts = 0;
 
@@ -375,6 +376,7 @@ int shmem_transport_domain_create(int thread_level, int num_domains,
             shmem_transport_ofi_domains[id] = dom;
             domains[i] = dom;
             shmem_transport_ofi_num_dom++;
+            dom->refcnt++;
         }
     }
 
@@ -387,7 +389,7 @@ int shmem_transport_domain_create(int thread_level, int num_domains,
 // assumes dom->lock is locked or dom->use_lock == 0
 static void shmem_transport_ofi_domain_free(shmem_transport_domain_t* dom)
 {
-    int ret;
+    int ret = FI_SUCCESS;
 
     // The attached CQ is implicitly closed (as I discovered while
     // memory-checking with Valgrind). -jpdoyle
@@ -401,6 +403,8 @@ static void shmem_transport_ofi_domain_free(shmem_transport_domain_t* dom)
                    dom->num_active_contexts);
     }
 
+    if (0 == --(dom->refcnt)) {
+
     ret = fi_close(&dom->stx->fid);
 
     if (ret) {
@@ -413,15 +417,17 @@ static void shmem_transport_ofi_domain_free(shmem_transport_domain_t* dom)
         RAISE_WARN_MSG("Domain CQ close failed (%s)\n", fi_strerror(errno));
     }
 
-    dom->freed = 1;
-    dom->release_lock(&dom);
-    dom->free_lock(&dom);
+        dom->freed = 1;
+        dom->release_lock(&dom);
+        dom->free_lock(&dom);
+        if (dom->id >= 0) {
+            shmem_transport_ofi_domains[dom->id] = NULL;
+        }
 
-    /* FIXME: add to free list, maybe? */
-    if (dom->id >= 0) {
-        shmem_transport_ofi_domains[dom->id] = NULL;
-        free(dom);
+    } else {
+        dom->release_lock(&dom);
     }
+
 }
 
 
@@ -1330,6 +1336,7 @@ int shmem_transport_fini(void)
       if(dom) {
         dom->take_lock(&dom);
         shmem_transport_ofi_domain_free(dom);
+        if (dom->freed) free(dom);
       }
     }
 

@@ -88,6 +88,7 @@ typedef struct shmem_transport_cntr_ep_t {
 
 typedef struct shmem_transport_domain_t {
   int id;
+  int refcnt;
   struct fid_stx* stx;
 #ifdef ENABLE_THREADS
   shmem_internal_mutex_t lock;
