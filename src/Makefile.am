@@ -135,7 +135,7 @@ EXTRA_DIST = shmem_compiler_script.in \
              shmem_launcher_script.in
 
 do_subst = sed -e 's|[@]PERL[@]|$(PERL)|g' \
-               -e 's|[@]CC[@]|$(CC)|g' \
+               -e 's|[@]WRAPPER_COMPILER_CC[@]|$(WRAPPER_COMPILER_CC)|g' \
                -e 's|[@]CXX[@]|$(CXX)|g' \
                -e 's|[@]FC[@]|$(FC)|g' \
                -e 's|[@]WRAPPER_COMPILER_INCLUDEDIR[@]|$(includedir)|g' \

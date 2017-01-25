@@ -456,7 +456,11 @@ static int shmem_transport_ofi_ctx_init(int id, shmem_transport_domain_t *dom,
 
     struct fi_cntr_attr cntr_attr = {0};
     cntr_attr.events   = FI_CNTR_EVENTS_COMP;
+#ifdef ENABLE_COMPLETION_POLLING
+    cntr_attr.wait_obj = FI_WAIT_NONE;
+#else
     cntr_attr.wait_obj = FI_WAIT_UNSPEC;
+#endif
 
     struct fabric_info* info = &shmem_ofi_cntr_info;
     info->p_info->ep_attr->tx_ctx_cnt = FI_SHARED_CONTEXT;

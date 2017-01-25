@@ -26,14 +26,15 @@
 #if USE_PORTALS4
 #include <portals4.h>
 #endif
-#include "shmem_free_list.h"
 #include <string.h>
-#include "shmem_internal.h"
 #include <unistd.h>
 #include <rdma/fabric.h>
 #include <rdma/fi_domain.h>
 #include <rdma/fi_endpoint.h>
 #include <stddef.h>
+#include "shmem_free_list.h"
+#include "shmem_internal.h"
+#include "shmem_atomic.h"
 
 typedef enum fi_datatype shm_internal_datatype_t;
 typedef enum fi_op       shm_internal_op_t;
@@ -387,38 +388,77 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
 /* assumes the associated domain is already locked if necessary */
 static inline void shmem_transport_quiet(shmem_transport_ctx_t* ctx)
 {
-  int ret = 0;
-
   shmem_transport_domain_t* dom = ctx->domain;
   dom->take_lock(&dom);
 
-  ret = fi_cntr_wait(ctx->endpoint.counter,
-      ctx->endpoint.pending_count, -1);
+
+    /* wait for put counter to meet outstanding count value */
+#ifdef ENABLE_COMPLETION_POLLING
+    uint64_t success, fail;
+    do {
+        success = fi_cntr_read(ctx->endpoint.counter);
+        fail = fi_cntr_readerr(ctx->endpoint.counter);
+
+        if (success < ctx->endpoint.pending_count && fail == 0) {
+            SPINLOCK_BODY();
+        }
+        else if (fail) {
+            struct fi_cq_err_entry e = {0};
+            fi_cq_readerr(ctx->domain->cq, (void *)&e, 0);
+            dom->release_lock(&dom);
+            RAISE_ERROR(e.err);
+        }
+    } while (success < ctx->endpoint.pending_count);
+#else
+    int ret = fi_cntr_wait(ctx->endpoint.counter,
+                           ctx->endpoint.pending_count, -1);
 
   if(ret) {
     struct fi_cq_err_entry e = {0};
     fi_cq_readerr(ctx->domain->cq, (void *)&e, 0);
+    dom->release_lock(&dom);
     RAISE_ERROR(e.err);
   }
+#endif
 
   dom->release_lock(&dom);
 }
 
 static inline void shmem_transport_ctx_drain(shmem_transport_ctx_t* ctx)
 {
-  int ret = 0;
+#ifdef ENABLE_COMPLETION_POLLING
+    uint64_t success = 0, fail = 0;
+    uint64_t wait_val = fi_cntr_read(ctx->endpoint.counter);
 
-  uint64_t cnt = fi_cntr_read(ctx->endpoint.counter);
-  if(cnt < ctx->endpoint.pending_count) {
-    ret = fi_cntr_wait(ctx->endpoint.counter,
-        cnt+1, -1);
-  }
+    if (success < ctx->endpoint.pending_count) {
+        do {
+            success = fi_cntr_read(ctx->endpoint.counter);
+            fail = fi_cntr_readerr(ctx->endpoint.counter);
 
-  if(ret) {
-    struct fi_cq_err_entry e = {0};
-    fi_cq_readerr(ctx->domain->cq, (void *)&e, 0);
-    RAISE_ERROR(e.err);
-  }
+            if (success < wait_val + 1 && fail == 0) {
+                SPINLOCK_BODY();
+            }
+            else if (fail) {
+                struct fi_cq_err_entry e = {0};
+                fi_cq_readerr(ctx->domain->cq, (void *)&e, 0);
+                RAISE_ERROR(e.err);
+            }
+        } while (success < wait_val + 1);
+    }
+#else
+    int ret = 0;
+    uint64_t cnt = fi_cntr_read(ctx->endpoint.counter);
+
+    if(cnt < ctx->endpoint.pending_count) {
+        ret = fi_cntr_wait(ctx->endpoint.counter, cnt+1, -1);
+    }
+
+    if(ret) {
+        struct fi_cq_err_entry e = {0};
+        fi_cq_readerr(ctx->domain->cq, (void *)&e, 0);
+        RAISE_ERROR(e.err);
+    }
+#endif
 }
 
 static inline

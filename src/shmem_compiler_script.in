@@ -107,7 +107,7 @@ my $includedir = "@WRAPPER_COMPILER_INCLUDEDIR@";
 my $libdir = "@WRAPPER_COMPILER_LIBDIR@";
 
 my $lang = "@LANG@";
-my $CC = "@CC@";
+my $CC = "@WRAPPER_COMPILER_CC@";
 my $CXX = "@CXX@";
 my $FC = "@FC@";
 my $extra_ldflags = "@WRAPPER_COMPILER_EXTRA_LDFLAGS@";
