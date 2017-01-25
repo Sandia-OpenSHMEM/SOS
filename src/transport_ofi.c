@@ -35,17 +35,9 @@
 #include <unistd.h>
 #include "runtime.h"
 
-#define IF_ERR_RETURN(ret,msg) do {                 \
-    if(ret) {                                           \
-        OFI_ERRMSG(msg " (%s:%d)\n",__FILE__,__LINE__); \
-        return ret;                                     \
-    }                                                   \
-  } while(0)
-
 #define IF_OFI_ERR_RETURN(RET,MSG) do {              \
     if(RET) {                                        \
-        fprintf(stderr,"SHMEM Error %d (%s:%d): %s", \
-                (RET),__FILE__,__LINE__,(MSG "\n")); \
+        RAISE_WARN_STR(MSG);                         \
         return RET;                                  \
     }                                                \
   } while(0)
@@ -358,7 +350,7 @@ int shmem_transport_domain_create(int thread_level, int num_domains,
             shmem_transport_ofi_avail_dom * sizeof(shmem_transport_domain_t*));
 
         if (shmem_transport_ofi_domains == NULL) {
-            OFI_ERRMSG("Error: out of memory in realloc of OFI domain array\n");
+            RAISE_WARN_STR("Error: out of memory in realloc of OFI domain array");
             RAISE_ERROR(1);
         }
     }
@@ -368,7 +360,7 @@ int shmem_transport_domain_create(int thread_level, int num_domains,
         shmem_transport_domain_t* dom = malloc(sizeof(shmem_transport_domain_t));
 
         if (dom == NULL) {
-            OFI_ERRMSG("Error: out of memory when allocating OFI domain object\n");
+            RAISE_WARN_STR("Error: out of memory when allocating OFI domain object");
             RAISE_ERROR(1);
         }
 
@@ -377,7 +369,7 @@ int shmem_transport_domain_create(int thread_level, int num_domains,
         if (ret) {
             shmem_transport_ofi_domains[id] = NULL;
             free(dom);
-            OFI_ERRMSG("Error: initialization of OFI domain object failed\n");
+            RAISE_WARN_STR("Error: initialization of OFI domain object failed");
             RAISE_ERROR(1);
         } else {
             shmem_transport_ofi_domains[id] = dom;
@@ -400,19 +392,19 @@ static void shmem_transport_ofi_domain_free(shmem_transport_domain_t* dom)
     // The attached CQ is implicitly closed (as I discovered while
     // memory-checking with Valgrind). -jpdoyle
     /* if(fi_close(&dom->cq_ep->fid)) { */
-    /*   OFI_ERRMSG("Domain CQ close failed (%s)", */
+    /*   RAISE_WARN_MSG("Domain CQ close failed (%s)", */
     /*       fi_strerror(errno)); */
     /* } */
 
     if (0 != dom->num_active_contexts) {
-        OFI_ERRMSG("Cannot free a domain while in use (%zu ctx)",
+        RAISE_WARN_MSG("Cannot free a domain while in use (%zu ctx)\n",
                    dom->num_active_contexts);
     }
 
     ret = fi_close(&dom->stx->fid);
 
     if (ret) {
-        OFI_ERRMSG("Domain STX close failed (%s)", fi_strerror(errno));
+        RAISE_WARN_MSG("Domain STX close failed (%s)\n", fi_strerror(errno));
     }
 
     dom->freed = 1;
@@ -533,16 +525,14 @@ int shmem_transport_ctx_create(shmem_transport_domain_t *dom, shmem_transport_ct
             shmem_transport_ofi_avail_ctx * sizeof(shmem_transport_ctx_t*));
 
         if (shmem_transport_ofi_contexts == NULL) {
-            OFI_ERRMSG("Error: out of memory when allocating OFI ctx array\n");
-            RAISE_ERROR(1);
+            RAISE_ERROR_STR("Error: out of memory when allocating OFI ctx array");
         }
     }
 
     shmem_transport_ctx_t *ctxp = malloc(sizeof(shmem_transport_ctx_t));
 
     if (ctxp == NULL) {
-        OFI_ERRMSG("Error: out of memory when allocating OFI ctx object\n");
-        RAISE_ERROR(1);
+        RAISE_ERROR_STR("Error: out of memory when allocating OFI ctx object");
     }
 
     ret = shmem_transport_ofi_ctx_init(id, dom, ctxp);
@@ -571,10 +561,10 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
     dom->take_lock(&dom);
 
     if (fi_close(&ctx->endpoint.ep->fid)) {
-        OFI_ERRMSG("Context endpoint close failed (%s)", fi_strerror(errno));
+        RAISE_ERROR_MSG("Context endpoint close failed (%s)\n", fi_strerror(errno));
     }
     if (fi_close(&ctx->endpoint.counter->fid)) {
-        OFI_ERRMSG("Context counter close failed (%s)", fi_strerror(errno));
+        RAISE_ERROR_MSG("Context counter close failed (%s)\n", fi_strerror(errno));
     }
 
     --(dom->num_active_contexts);
@@ -615,7 +605,7 @@ static inline int allocate_recv_cntr_mr(void)
         ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
                            &shmem_transport_ofi_target_cntrfd, NULL);
         if(ret!=0){
-            OFI_ERRMSG("target cntr_open failed\n");
+            RAISE_WARN_STR("target cntr_open failed");
             return ret;
         }
     }
@@ -626,8 +616,8 @@ static inline int allocate_recv_cntr_mr(void)
 		    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, 0,
 		    &shmem_transport_ofi_target_mrfd, NULL);
     if(ret!=0){
-	OFI_ERRMSG("mr_reg failed\n");
-	return ret;
+        RAISE_WARN_STR("mr_reg failed");
+        return ret;
     }
 
     // Bind counter with target memory region for incoming messages
@@ -636,7 +626,7 @@ static inline int allocate_recv_cntr_mr(void)
                      &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_WRITE | FI_REMOTE_READ);
     if(ret!=0){
-        OFI_ERRMSG("mr_bind failed\n");
+        RAISE_WARN_STR("mr_bind failed");
         return ret;
     }
 
@@ -645,16 +635,16 @@ static inline int allocate_recv_cntr_mr(void)
                      &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_READ | FI_REMOTE_WRITE);
     if(ret!=0){
-	OFI_ERRMSG("ep_bind cntr_epfd2put_cntr failed\n");
-	return ret;
+        RAISE_WARN_STR("ep_bind cntr_epfd2put_cntr failed");
+        return ret;
     }
 
     ret = fi_ep_bind(shmem_transport_default_ctx.endpoint.ep,
 		    &shmem_transport_ofi_target_cntrfd->fid,
                     FI_REMOTE_WRITE | FI_REMOTE_READ);
     if(ret!=0){
-	OFI_ERRMSG("ep_bind cntr_epfd2put_cntr failed\n");
-	return ret;
+        RAISE_WARN_STR("ep_bind cntr_epfd2put_cntr failed");
+        return ret;
     }
 #endif /* ndef ENABLE_HARD_POLLING */
 
@@ -667,7 +657,7 @@ static inline int allocate_recv_cntr_mr(void)
                     FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 1ULL, 0,
                     &shmem_transport_ofi_target_heap_mrfd, NULL);
     if (ret != 0) {
-        OFI_ERRMSG("mr_reg heap failed\n");
+        RAISE_WARN_STR("mr_reg heap failed");
         return ret;
     }
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_data_base,
@@ -675,7 +665,7 @@ static inline int allocate_recv_cntr_mr(void)
                     FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, 0,
                     &shmem_transport_ofi_target_data_mrfd, NULL);
     if (ret != 0) {
-        OFI_ERRMSG("mr_reg data segment failed\n");
+        RAISE_WARN_STR("mr_reg data segment failed");
         return ret;
     }
 
@@ -685,14 +675,14 @@ static inline int allocate_recv_cntr_mr(void)
                      &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_WRITE | FI_REMOTE_READ);
     if (ret != 0) {
-        OFI_ERRMSG("mr_bind heap failed\n");
+        RAISE_WARN_STR("mr_bind heap failed");
         return ret;
     }
     ret = fi_mr_bind(shmem_transport_ofi_target_data_mrfd,
                      &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_WRITE | FI_REMOTE_READ);
     if (ret != 0) {
-        OFI_ERRMSG("mr_bind data segment failed\n");
+        RAISE_WARN_STR("mr_bind data segment failed");
         return ret;
     }
 
@@ -702,7 +692,7 @@ static inline int allocate_recv_cntr_mr(void)
                      &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_READ | FI_REMOTE_WRITE);
     if (ret != 0) {
-        OFI_ERRMSG("ep_bind cntr_ep2epfd heap failed\n");
+        RAISE_WARN_STR("ep_bind cntr_ep2epfd heap failed");
         return ret;
     }
 
@@ -710,7 +700,7 @@ static inline int allocate_recv_cntr_mr(void)
                      &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_READ | FI_REMOTE_WRITE);
     if (ret != 0) {
-        OFI_ERRMSG("ep_bind cntr_ep2epfd data failed\n");
+        RAISE_WARN_STR("ep_bind cntr_ep2epfd data failed");
         return ret;
     }
 #endif /* ndef ENABLE_HARD_POLLING */
@@ -731,13 +721,13 @@ static int publish_mr_info(void)
 
         err = shmem_runtime_put("fi_heap_key", &heap_key, sizeof(uint64_t));
         if (err) {
-            OFI_ERRMSG("Error putting heap key to runtime KVS\n");
+            RAISE_WARN_STR("Error putting heap key to runtime KVS");
             return 1;
         }
 
         err = shmem_runtime_put("fi_data_key", &data_key, sizeof(uint64_t));
         if (err) {
-            OFI_ERRMSG("Error putting data segment key to runtime KVS\n");
+            RAISE_WARN_STR("Error putting data segment key to runtime KVS");
             return 1;
         }
     }
@@ -747,13 +737,13 @@ static int publish_mr_info(void)
         int err;
         err = shmem_runtime_put("fi_heap_addr", &shmem_internal_heap_base, sizeof(uint8_t*));
         if (err) {
-            OFI_ERRMSG("Error putting heap address to runtime KVS\n");
+            RAISE_WARN_STR("Error putting heap address to runtime KVS");
             return 1;
         }
 
         err = shmem_runtime_put("fi_data_addr", &shmem_internal_data_base, sizeof(uint8_t*));
         if (err) {
-            OFI_ERRMSG("Error putting data segment address to runtime KVS\n");
+            RAISE_WARN_STR("Error putting data segment address to runtime KVS");
             return 1;
         }
     }
@@ -771,13 +761,13 @@ static int populate_mr_tables(void)
 
         shmem_transport_ofi_target_heap_keys = malloc(sizeof(uint64_t) * shmem_internal_num_pes);
         if (NULL == shmem_transport_ofi_target_heap_keys) {
-            OFI_ERRMSG("Out of memory allocating heap keytable\n");
+            RAISE_WARN_STR("Out of memory allocating heap keytable");
             return 1;
         }
 
         shmem_transport_ofi_target_data_keys = malloc(sizeof(uint64_t) * shmem_internal_num_pes);
         if (NULL == shmem_transport_ofi_target_data_keys) {
-            OFI_ERRMSG("Out of memory allocating heap keytable\n");
+            RAISE_WARN_STR("Out of memory allocating heap keytable");
             return 1;
         }
 
@@ -787,14 +777,14 @@ static int populate_mr_tables(void)
                                     &shmem_transport_ofi_target_heap_keys[i],
                                     sizeof(uint64_t));
             if (err) {
-                OFI_ERRMSG("Error getting heap key from runtime KVS\n");
+                RAISE_WARN_STR("Error getting heap key from runtime KVS");
                 return 1;
             }
             err = shmem_runtime_get(i, "fi_data_key",
                                     &shmem_transport_ofi_target_data_keys[i],
                                     sizeof(uint64_t));
             if (err) {
-                OFI_ERRMSG("Error getting data segment key from runtime KVS\n");
+                RAISE_WARN_STR("Error getting data segment key from runtime KVS");
                 return 1;
             }
         }
@@ -806,13 +796,13 @@ static int populate_mr_tables(void)
 
         shmem_transport_ofi_target_heap_addrs = malloc(sizeof(uint8_t*) * shmem_internal_num_pes);
         if (NULL == shmem_transport_ofi_target_heap_addrs) {
-            OFI_ERRMSG("Out of memory allocating heap addrtable\n");
+            RAISE_WARN_STR("Out of memory allocating heap addrtable");
             return 1;
         }
 
         shmem_transport_ofi_target_data_addrs = malloc(sizeof(uint8_t*) * shmem_internal_num_pes);
         if (NULL == shmem_transport_ofi_target_data_addrs) {
-            OFI_ERRMSG("Out of memory allocating data addrtable\n");
+            RAISE_WARN_STR("Out of memory allocating data addrtable");
             return 1;
         }
 
@@ -822,14 +812,14 @@ static int populate_mr_tables(void)
                                     &shmem_transport_ofi_target_heap_addrs[i],
                                     sizeof(uint8_t*));
             if (err) {
-                OFI_ERRMSG("Error getting heap addr from runtime KVS\n");
+                RAISE_WARN_STR("Error getting heap addr from runtime KVS");
                 return 1;
             }
             err = shmem_runtime_get(i, "fi_data_addr",
                                     &shmem_transport_ofi_target_data_addrs[i],
                                     sizeof(uint8_t*));
             if (err) {
-                OFI_ERRMSG("Error getting data segment addr from runtime KVS\n");
+                RAISE_WARN_STR("Error getting data segment addr from runtime KVS");
                 return 1;
             }
         }
@@ -851,12 +841,11 @@ static inline int atomicvalid_rtncheck(int ret, int atomic_size,
                "on type '%s'\n", strOP, strDT);
         }
         else if(atomic_sup == ATOMIC_NO_SUPPORT) {
-            OFI_ERRMSG("Error: atomicvalid ret=%d atomic_size=%d \n",
+            RAISE_WARN_MSG("Error: atomicvalid ret=%d atomic_size=%d\n",
                        ret, atomic_size);
 	        return ret;
         } else {
-            OFI_ERRMSG("Error: invalid software atomic support request\n");
-            RAISE_ERROR(-1);
+            RAISE_ERROR_STR("Error: invalid software atomic support request");
         }
     }
 
@@ -1006,13 +995,13 @@ static inline int publish_av_info(struct fabric_info *info)
 
 #ifdef USE_ON_NODE_COMMS
     if(gethostname(myephostname, (EPHOSTNAMELEN - 1)) != 0)
-        OFI_ERRMSG("gethostname error: %s \n", strerror(errno));
+        RAISE_ERROR_MSG("gethostname error: %s \n", strerror(errno));
 
     myephostname[EPHOSTNAMELEN-1] = '\0';
 
     ret = shmem_runtime_put("fi_ephostname", myephostname, EPHOSTNAMELEN);
     if (ret != 0) {
-        OFI_ERRMSG("shmem_runtime_put ephostname failed\n");
+        RAISE_WARN_STR("shmem_runtime_put ephostname failed");
         return ret;
     }
 #endif
@@ -1020,13 +1009,13 @@ static inline int publish_av_info(struct fabric_info *info)
     ret = fi_getname((fid_t)shmem_transport_default_ctx.endpoint.ep, epname,
         &epnamelen);
     if(ret!=0 || (epnamelen > sizeof(epname))){
-        OFI_ERRMSG("fi_getname failed\n");
+        RAISE_WARN_STR("fi_getname failed");
         return ret;
     }
 
     ret = shmem_runtime_put("fi_epname", epname, epnamelen);
     if (ret != 0) {
-        OFI_ERRMSG("shmem_runtime_put epname failed\n");
+        RAISE_WARN_STR("shmem_runtime_put epname failed");
         return ret;
     }
 
@@ -1049,7 +1038,7 @@ static inline int populate_av(void)
 
     alladdrs = malloc(shmem_internal_num_pes * shmem_transport_ofi_addrlen);
     if (alladdrs == NULL) {
-        OFI_ERRMSG("Out of memory allocating 'alladdrs'\n");
+        RAISE_WARN_STR("Out of memory allocating 'alladdrs'");
         return ret;
     }
 
@@ -1062,7 +1051,7 @@ static inline int populate_av(void)
         if(strncmp(myephostname, ephostname, EPHOSTNAMELEN) == 0) {
             SHMEM_SET_RANK_SAME_NODE(i, num_on_node++);
             if (num_on_node > 255) {
-	            OFI_ERRMSG("ERROR: Too many local ranks\n");
+                RAISE_WARN_STR("ERROR: Too many local ranks");
                 return 1;
             }
         }
@@ -1076,7 +1065,7 @@ static inline int populate_av(void)
                        0,
                        NULL);
     if (ret != shmem_internal_num_pes) {
-        OFI_ERRMSG("av insert failed\n");
+        RAISE_WARN_STR("av insert failed");
         return ret;
     }
 
@@ -1094,16 +1083,16 @@ static inline int allocate_fabric_resources(struct fabric_info *info)
     /* fabric domain: define domain of resources physical and logical*/
     ret = fi_fabric(info->p_info->fabric_attr, &shmem_transport_ofi_fabfd, NULL);
     if(ret!=0){
-	OFI_ERRMSG("fabric initialization failed\n");
-	return ret;
+        RAISE_WARN_STR("fabric initialization failed");
+        return ret;
     }
 
     /*access domain: define communication resource limits/boundary within fabric domain */
     ret = fi_domain(shmem_transport_ofi_fabfd, info->p_info,
 		    &shmem_transport_ofi_domainfd,NULL);
     if(ret!=0){
-	OFI_ERRMSG("domain initialization failed\n");
-	return ret;
+        RAISE_WARN_STR("domain initialization failed");
+        return ret;
     }
 
     /*AV table set-up for PE mapping*/
@@ -1122,8 +1111,8 @@ static inline int allocate_fabric_resources(struct fabric_info *info)
 		    &shmem_transport_ofi_avfd,
 		    NULL);
     if(ret!=0){
-	OFI_ERRMSG("av open failed\n");
-	return ret;
+        RAISE_WARN_STR("av open failed");
+        return ret;
     }
 
     return ret;
@@ -1175,9 +1164,9 @@ static inline int query_for_fabric(struct fabric_info *info)
                       NULL, NULL, 0, &hints, &(info->fabrics));
 
     if(ret!=0){
-        OFI_ERRMSG("OFI transport did not find any valid fabric services (provider=%s)\n",
-                   info->prov_name != NULL ? info->prov_name : "<auto>");
-	return ret;
+        RAISE_WARN_MSG("OFI transport did not find any valid fabric services (provider=%s)\n",
+                       info->prov_name != NULL ? info->prov_name : "<auto>");
+        return ret;
     }
 
     /* If the user supplied a fabric or domain name, use it to select the
@@ -1203,18 +1192,18 @@ static inline int query_for_fabric(struct fabric_info *info)
     }
 
     if(NULL == info->p_info) {
-        OFI_ERRMSG("OFI transport, no valid fabric (prov=%s, fabric=%s, domain=%s)\n",
-                   info->prov_name != NULL ? info->prov_name : "<auto>",
-                   info->fabric_name != NULL ? info->fabric_name : "<auto>",
-                   info->domain_name != NULL ? info->domain_name : "<auto>");
-	return ret;
+        RAISE_WARN_MSG("OFI transport, no valid fabric (prov=%s, fabric=%s, domain=%s)\n",
+                       info->prov_name != NULL ? info->prov_name : "<auto>",
+                       info->fabric_name != NULL ? info->fabric_name : "<auto>",
+                       info->domain_name != NULL ? info->domain_name : "<auto>");
+        return ret;
     }
 
     if(info->p_info->ep_attr->max_msg_size > 0) {
         shmem_transport_ofi_max_msg_size = info->p_info->ep_attr->max_msg_size;
     } else {
-        OFI_ERRMSG("OFI provider did not set max_msg_size\n");
-	return 1;
+        RAISE_WARN_STR("OFI provider did not set max_msg_size");
+        return 1;
     }
 
     shmem_internal_assertp(info->p_info->tx_attr->inject_size >= shmem_transport_ofi_max_buffered_send);
@@ -1360,7 +1349,7 @@ int shmem_transport_fini(void)
      * domain to zero causing it to be freed automatically.  Raise an error if
      * this doesn't happen. */
     if (!shmem_transport_default_dom.freed) {
-        OFI_ERRMSG("Default domain was not automatically freed");
+        RAISE_ERROR_STR("Default domain was not automatically freed");
     }
 
     free(shmem_transport_ofi_domains);
@@ -1369,30 +1358,30 @@ int shmem_transport_fini(void)
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     if (shmem_transport_ofi_target_mrfd &&
 		    fi_close(&shmem_transport_ofi_target_mrfd->fid)) {
-	OFI_ERRMSG("Target MR close failed (%s)", fi_strerror(errno));
+	RAISE_ERROR_MSG("Target MR close failed (%s)\n", fi_strerror(errno));
     }
 #else
     if (shmem_transport_ofi_target_heap_mrfd &&
         fi_close(&shmem_transport_ofi_target_heap_mrfd->fid)) {
-        OFI_ERRMSG("Target heap MR close failed (%s)", fi_strerror(errno));
+        RAISE_ERROR_MSG("Target heap MR close failed (%s)\n", fi_strerror(errno));
     }
 
     if (shmem_transport_ofi_target_data_mrfd &&
         fi_close(&shmem_transport_ofi_target_data_mrfd->fid)) {
-        OFI_ERRMSG("Target data MR close failed (%s)", fi_strerror(errno));
+        RAISE_ERROR_MSG("Target data MR close failed (%s)\n", fi_strerror(errno));
     }
 #endif
 
 #ifndef ENABLE_HARD_POLLING
     if(shmem_transport_ofi_target_cntrfd &&
 		    fi_close(&shmem_transport_ofi_target_cntrfd->fid)){
-        OFI_ERRMSG("Target CT close failed (%s)", fi_strerror(errno));
+        RAISE_ERROR_MSG("Target CT close failed (%s)\n", fi_strerror(errno));
     }
 #endif
 
     if (shmem_transport_ofi_avfd &&
 		    fi_close(&shmem_transport_ofi_avfd->fid)) {
-        OFI_ERRMSG("AV close failed (%s)", fi_strerror(errno));
+        RAISE_ERROR_MSG("AV close failed (%s)\n", fi_strerror(errno));
     }
 
     /* TODO: domainfd seems to be closed by closing some of the other resources
@@ -1401,12 +1390,12 @@ int shmem_transport_fini(void)
      */
     /* if (shmem_transport_ofi_domainfd && */
 		    /* fi_close(&shmem_transport_ofi_domainfd->fid)) { */
-    /*     OFI_ERRMSG("Domain close failed (%s)", fi_strerror(errno)); */
+    /*     RAISE_ERROR_MSG("Domain close failed (%s)\n", fi_strerror(errno)); */
     /* } */
 
     if (shmem_transport_ofi_fabfd &&
 		    fi_close(&shmem_transport_ofi_fabfd->fid)) {
-        OFI_ERRMSG("Fabric close failed (%s)", fi_strerror(errno));
+        RAISE_ERROR_MSG("Fabric close failed (%s)\n", fi_strerror(errno));
     }
 
 #ifdef USE_AV_MAP

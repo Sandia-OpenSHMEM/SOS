@@ -298,17 +298,10 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx);
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #endif
 
-#define OFI_ERRMSG(...)                                                    \
-    do {                                                                        \
-        fprintf(stderr, "%s:%d: \n", __FILE__, __LINE__);                       \
-        fprintf(stderr, __VA_ARGS__);                                      \
-    } while (0)
-
 #define OFI_RET_CHECK(ret)                                                      \
     do {                                                                        \
         if (ret) {                                                              \
-            fprintf(stderr, "OFI error #%d: %s \n", ret, fi_strerror(ret));     \
-            RAISE_ERROR(ret);                                                   \
+            RAISE_ERROR_MSG("OFI error #%zd: %s \n", ret, fi_strerror(ret));    \
         }                                                                       \
     } while (0)
 
@@ -317,6 +310,13 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx);
 #else
 #define GET_DEST(dest) ((fi_addr_t)(dest))
 #endif
+
+#define OFI_CQ_ERROR(cq, err)                                                   \
+    do {                                                                        \
+        const char *errmsg = fi_cq_strerror(cq, (err)->prov_errno,              \
+                                            (err)->err_data, NULL, 0);          \
+        RAISE_ERROR_STR(errmsg);                                                \
+    } while (0)
 
 #ifdef ENABLE_MR_SCALABLE
 static inline
@@ -340,9 +340,8 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
     } else {
         *key = 0;
         *mr_addr = NULL;
-        OFI_ERRMSG("[%03d] ERROR in %s: address (0x%p) outside of symmetric areas\n",
+        RAISE_ERROR_MSG("[%03d] ERROR in %s: address (0x%p) outside of symmetric areas\n",
                shmem_internal_my_pe, __func__, addr);
-        RAISE_ERROR(1);
     }
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 
@@ -377,9 +376,8 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
     else {
         *key = -1;
         *mr_addr = NULL;
-        OFI_ERRMSG("[%03d] ERROR in %s: address (0x%p) outside of symmetric areas\n",
+        RAISE_ERROR_MSG("[%03d] ERROR in %s: address (0x%p) outside of symmetric areas\n",
                shmem_internal_my_pe, __func__, addr);
-        RAISE_ERROR(1);
     }
 }
 #endif
@@ -390,7 +388,6 @@ static inline void shmem_transport_quiet(shmem_transport_ctx_t* ctx)
 {
   shmem_transport_domain_t* dom = ctx->domain;
   dom->take_lock(&dom);
-
 
     /* wait for put counter to meet outstanding count value */
 #ifdef ENABLE_COMPLETION_POLLING
@@ -406,7 +403,7 @@ static inline void shmem_transport_quiet(shmem_transport_ctx_t* ctx)
             struct fi_cq_err_entry e = {0};
             fi_cq_readerr(ctx->domain->cq, (void *)&e, 0);
             dom->release_lock(&dom);
-            RAISE_ERROR(e.err);
+            OFI_CQ_ERROR(ctx->domain->cq, &e);
         }
     } while (success < ctx->endpoint.pending_count);
 #else
@@ -417,7 +414,7 @@ static inline void shmem_transport_quiet(shmem_transport_ctx_t* ctx)
     struct fi_cq_err_entry e = {0};
     fi_cq_readerr(ctx->domain->cq, (void *)&e, 0);
     dom->release_lock(&dom);
-    RAISE_ERROR(e.err);
+    OFI_CQ_ERROR(ctx->domain->cq, &e);
   }
 #endif
 
@@ -441,7 +438,7 @@ static inline void shmem_transport_ctx_drain(shmem_transport_ctx_t* ctx)
             else if (fail) {
                 struct fi_cq_err_entry e = {0};
                 fi_cq_readerr(ctx->domain->cq, (void *)&e, 0);
-                RAISE_ERROR(e.err);
+                OFI_CQ_ERROR(ctx->domain->cq, &e);
             }
         } while (success < wait_val + 1);
     }
@@ -456,7 +453,7 @@ static inline void shmem_transport_ctx_drain(shmem_transport_ctx_t* ctx)
     if(ret) {
         struct fi_cq_err_entry e = {0};
         fi_cq_readerr(ctx->domain->cq, (void *)&e, 0);
-        RAISE_ERROR(e.err);
+        OFI_CQ_ERROR(ctx->domain->cq, &e);
     }
 #endif
 }
@@ -906,9 +903,8 @@ shmem_transport_atomic_nb(void *target, const void *source,
   max_atomic_size = max_atomic_size * SHMEM_Dtsize[datatype];
   if (max_atomic_size > shmem_transport_ofi_max_msg_size
         || ret || max_atomic_size == 0) {
-    OFI_ERRMSG("atomic_nb error: datatype %d x op %d not supported\n",
+    RAISE_ERROR_MSG("atomic_nb error: datatype %d x op %d not supported\n",
         datatype, op);
-    RAISE_ERROR(-1);
   }
 
   shmem_transport_ofi_get_mr(target, pe, &addr, &key);
@@ -1080,9 +1076,7 @@ void shmem_transport_received_cntr_wait(uint64_t ge_val)
   int ret = 0;
   ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd, ge_val, -1);
 
-  if (ret) {
-    RAISE_ERROR(ret);
-  }
+    OFI_RET_CHECK(ret);
 #else
   RAISE_ERROR_STR("OFI transport configured for hard polling");
 #endif
