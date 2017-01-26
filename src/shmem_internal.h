@@ -71,6 +71,24 @@ extern long shmem_internal_heap_huge_page_size;
                 shmem_internal_my_pe, __FILE__, __LINE__, str);         \
     } while (0)
 
+
+#define RAISE_ERROR_MSG(...)                                            \
+    do {                                                                \
+        fprintf(stderr, "[%03d] ERROR: %s:%d:\n",                       \
+                shmem_internal_my_pe, __FILE__, __LINE__);              \
+        fprintf(stderr, __VA_ARGS__);                                   \
+        shmem_runtime_abort(1, PACKAGE_NAME " exited in error");        \
+    } while (0)
+
+
+#define RAISE_WARN_MSG(...)                                             \
+    do {                                                                \
+        fprintf(stderr, "[%03d] WARN: %s:%d:\n",                        \
+                shmem_internal_my_pe, __FILE__, __LINE__);              \
+        fprintf(stderr, __VA_ARGS__);                                   \
+    } while (0)
+
+
 #define DEBUG_STR(str)                                                  \
     do {                                                                \
         if(shmem_internal_debug) {                                      \
