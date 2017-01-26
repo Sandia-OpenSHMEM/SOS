@@ -102,8 +102,8 @@ AS_IF([test "$HAVE_POSIX_THREADS" = "1"], [
        AC_DEFINE([ENABLE_THREADS], [1], [Enable threads])
        AS_IF([test "$enable_openmp" != "no"], [
              AC_OPENMP
-             AC_SUBST(AM_CXXFLAGS,"$AM_CXXFLAGS $OPENMP_CXXFLAGS")
-             AC_SUBST(AM_CFLAGS,"$AM_CFLAGS $OPENMP_CFLAGS")])
+             AC_SUBST(AM_OPENMP_CXXFLAGS,"$OPENMP_CXXFLAGS")
+             AC_SUBST(AM_OPENMP_CFLAGS,"$OPENMP_CFLAGS")])
        # AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
        ])
 AM_CONDITIONAL([HAVE_PTHREADS], [test "$HAVE_POSIX_THREADS" = "1"])

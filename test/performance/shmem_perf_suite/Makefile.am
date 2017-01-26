@@ -64,6 +64,7 @@ shmem_latency_get_perf_SOURCES = shmem_latency_get_perf.c latency_common.h commo
 shmem_bw_put_perf_SOURCES = shmem_bw_put_perf.c bw_common.h common.h uni_dir.h
 
 shmem_bw_put_ctx_lockless_SOURCES = shmem_bw_put_ctx_lockless.c bw_common.h common.h uni_dir.h
+shmem_bw_put_ctx_lockless_CFLAGS = $(AM_OPENMP_CFLAGS)
 
 shmem_bibw_put_perf_SOURCES = shmem_bibw_put_perf.c bw_common.h common.h bi_dir.h
 

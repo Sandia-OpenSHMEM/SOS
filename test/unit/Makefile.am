@@ -148,6 +148,7 @@ web_CFLAGS = $(PTHREAD_CFLAGS)
 
 ctx_SOURCES = ctx.c
 ctx_LDADD = $(top_builddir)/src/libsma.la
+ctx_CFLAGS = $(AM_OPENMP_CFLAGS)
 
 rma_coverage_SOURCES = rma_coverage.c
 rma_coverage_LDADD = $(top_builddir)/src/libsma.la
