@@ -422,8 +422,6 @@ void shmem_transport_domain_destroy(int num_domains, shmem_transport_domain_t *d
 {
     int i;
 
-    SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
-
     for (i = 0; i < num_domains; ++i) {
         shmem_transport_domain_t* dom = domains[i];
 
@@ -438,8 +436,6 @@ void shmem_transport_domain_destroy(int num_domains, shmem_transport_domain_t *d
             dom->release_lock(&dom);
         }
     }
-
-    SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
 }
 
 
