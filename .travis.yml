@@ -98,6 +98,9 @@ before_install:
     ## Fetch UH Tests
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/openshmem-org/tests-uh.git tests-uh
+    # Fetch Cray Tests
+    - cd $TRAVIS_SRC
+    - git clone -b openshmem --depth 10 https://github.com/davidozog/tests-cray.git tests-cray
     ## Fetch ISx
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ParRes/ISx.git ISx
@@ -216,6 +219,14 @@ script:
           fi;
       fi
     - make clean
+    ###
+    ### Run the Cray test suite (OFI)
+    ###
+    - export CUSTOM_SHMEM_DIR=$TRAVIS_INSTALL/sandia-shmem-ofi
+    - export PATH=$CUSTOM_SHMEM_DIR/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export CRAY_TESTS_DIR=$TRAVIS_SRC/tests-cray
+    - $SOS_SRC/scripts/cray_tests.sh
+
     ###
     ### Run ISx (Portals)
     ###
