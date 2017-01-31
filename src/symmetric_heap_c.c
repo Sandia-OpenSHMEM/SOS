@@ -291,7 +291,9 @@ void
 shmem_free(void *ptr)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr);
+    if (ptr != NULL) {
+      SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr);
+    }
 
     shmem_internal_barrier_all();
 
@@ -307,6 +309,9 @@ shmem_realloc(void *ptr, size_t size)
     void *ret;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    if (ptr != NULL) {
+      SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr);
+    }
 
     shmem_internal_barrier_all();
 
