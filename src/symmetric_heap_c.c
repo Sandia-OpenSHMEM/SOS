@@ -21,6 +21,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <fcntl.h>
+#include <inttypes.h>
 #ifdef __linux__
 #include <mntent.h>
 #include <sys/vfs.h>
@@ -131,8 +132,10 @@ shmem_internal_get_next(intptr_t incr)
         shmem_internal_heap_curr = (char*) shmem_internal_heap_base;
     } else if (shmem_internal_heap_curr - (char*) shmem_internal_heap_base >
                shmem_internal_heap_length) {
-        fprintf(stderr, "[%03d] WARNING: top of symmetric heap found\n",
-                shmem_internal_my_pe);
+        fprintf(stderr, "[%03d] WARNING: Out of symmetric memory, heap size %ld, overrun %"PRIdPTR"\n"
+                        "[%03d]          Try increasing SHMEM_SYMMETRIC_SIZE\n",
+                        shmem_internal_my_pe, shmem_internal_heap_length, incr,
+                        shmem_internal_my_pe);
         shmem_internal_heap_curr = orig;
         orig = (void*) -1;
     }

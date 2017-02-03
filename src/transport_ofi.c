@@ -1193,8 +1193,11 @@ static inline int query_for_fabric(struct fabric_info *info)
     shmem_internal_assertp(info->p_info->tx_attr->inject_size >= shmem_transport_ofi_max_buffered_send);
     shmem_transport_ofi_max_buffered_send = info->p_info->tx_attr->inject_size;
 
-    return ret;
+    DEBUG_MSG("OFI provider: %s, fabric: %s, domain: %s\n",
+              info->p_info->fabric_attr->prov_name,
+              info->p_info->fabric_attr->name, info->p_info->domain_attr->name);
 
+    return ret;
 }
 
 int shmem_transport_init(int thread_level, long eager_size)
