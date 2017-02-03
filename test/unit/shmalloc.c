@@ -60,6 +60,7 @@ usage (void)
             "  [loops]  # of loops\n"
             "  [incWords] nWords += incWords per loop\n");
     }
+    shmem_finalize();
     exit (1);
 }
 
@@ -164,6 +165,7 @@ main(int argc, char **argv)
         if (! result)
         {
             perror ("Failed result memory allocation");
+            shmem_finalize();
             exit (1);
         }
         for(dp=result; dp < &result[(result_sz/sizeof(DataType))];)
@@ -174,6 +176,7 @@ main(int argc, char **argv)
         if (!(target = (DataType *)shmem_malloc(target_sz)))
         {
             perror ("Failed target memory allocation");
+            shmem_finalize();
             exit (1);
         }
         for(dp=target; dp < &target[(target_sz / sizeof(DataType))];)
@@ -183,6 +186,7 @@ main(int argc, char **argv)
         if (!(source = (DataType *)shmem_malloc(source_sz)))
         {
             perror ("Failed source memory allocation");
+            shmem_finalize();
             exit (1);
         }
         for(dp=source; dp < &source[(source_sz / sizeof(DataType))];)
