@@ -6,14 +6,14 @@ export CC=oshcc
 export CXX=oshCC
 export FTN=oshfort
 export LAUNCHER=oshrun
-export CFLAGS="-DOPENSHMEM"
-export FFLAGS="-DOPENSHMEM -DOPENSHMEM_FORT_SHORT_HEADER -fcray-pointer"
+export CFLAGS="-DQUICK_TEST -DOPENSHMEM"
+export FFLAGS="-DQUICK_TEST -DOPENSHMEM -DOPENSHMEM_FORT_SHORT_HEADER -fcray-pointer"
 export NPES=4
 
 cd $CRAY_TESTS_DIR
 source configure.sh
-make sma1 MAKE_FLAGS=$TRAVIS_PAR_MAKE 
-make sma2 MAKE_FLAGS=$TRAVIS_PAR_MAKE 
+make sma1 MAKE_FLAGS="$TRAVIS_PAR_MAKE"
+make sma2 MAKE_FLAGS="$TRAVIS_PAR_MAKE"
 source $CRAY_TESTS_DIR/sma1/sma1_run 2>&1 | tee cray-tests-sma1.log
 source $CRAY_TESTS_DIR/sma2/sma2_run 2>&1 | tee cray-tests-sma2.log
 
@@ -24,7 +24,7 @@ tests_failed=0
 if grep "FAIL" cray-tests-sma1.log; then ((tests_failed+=1)); fi
 if grep "FAIL" cray-tests-sma2.log; then ((tests_failed+=1)); fi
 if [ ! $SOS_DISABLE_FORTRAN ]; then
-    make smaf MAKE_FLAGS=$TRAVIS_PAR_MAKE
+    make smaf MAKE_FLAGS="$TRAVIS_PAR_MAKE"
     if [ $? -eq 0 ]; then
         source $CRAY_TESTS_DIR/smaf/smaf_run 2>&1 | tee cray-tests-smaf.log;
         # Check for failures in the Fortran tests
