@@ -9,6 +9,7 @@ export LAUNCHER=oshrun
 export CFLAGS="-DQUICK_TEST -DOPENSHMEM"
 export FFLAGS="-DQUICK_TEST -DOPENSHMEM -DOPENSHMEM_FORT_SHORT_HEADER -fcray-pointer"
 export NPES=4
+export CRAY_PRINT_IF_FAIL=1
 
 cd $CRAY_TESTS_DIR
 source configure.sh
