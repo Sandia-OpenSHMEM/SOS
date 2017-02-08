@@ -234,12 +234,21 @@ OMPI_CHECK_PORTALS4([portals4],
     [transport_portals4="no"])
 AM_CONDITIONAL([USE_PORTALS4], [test "$transport_portals4" = "yes"])
 
-OMPI_CHECK_OFI([ofi],
+OPAL_CHECK_LIBFABRIC([libfabric],
     [AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
      transport="ofi"
      transport_ofi="yes"],
     [transport_ofi="no"])
 AM_CONDITIONAL([USE_OFI], [test "$transport_ofi" = "yes"])
+
+if test "$transport_ofi" = "no" ; then
+  OMPI_CHECK_OFI([ofi],
+      [AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
+       transport="ofi"
+       transport_ofi="yes"],
+      [transport_ofi="no"])
+  AM_CONDITIONAL([USE_OFI], [test "$transport_ofi" = "yes"])
+fi
 
 SANDIA_CHECK_XPMEM(
     [AC_DEFINE([USE_XPMEM], [1], [Define if XPMEM transport is active])
@@ -437,13 +446,13 @@ AC_SUBST(CLEANFILES)
 
 # last minute updates of the flags so that tests don't fail oddly if
 # portals libdir isn't in LD_LIBRARY_PATH...
-CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS $ofi_CPPFLAGS $XPMEM_CPPFLAGS $pmi_CPPFLAGS"
-LDFLAGS="$LDFLAGS $portals4_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS $RPATH_LDFLAGS"
-LIBS="$LIBS $portals4_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
+CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS $libfabric_CPPFLAGS $ofi_CPPFLAGS $XPMEM_CPPFLAGS $pmi_CPPFLAGS"
+LDFLAGS="$LDFLAGS $portals4_LDFLAGS $libfabric_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS $RPATH_LDFLAGS"
+LIBS="$LIBS $portals4_LIBS $libfabric_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
 
 # wrapper compiler gorp
-WRAPPER_COMPILER_EXTRA_LDFLAGS="$portals4_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS $RPATH_LDFLAGS"
-WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
+WRAPPER_COMPILER_EXTRA_LDFLAGS="$portals4_LDFLAGS $libfabric_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS $RPATH_LDFLAGS"
+WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS $libfabric_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LDFLAGS)
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
 
