@@ -24,6 +24,8 @@ m4_ifndef([AS_VAR_COPY],
     [m4_define([AS_VAR_COPY],
        [AS_LITERAL_IF([$1[]$2], [$1=$$2], [eval $1=\$$2])])])
 
+OPAL_TOP_BUILDDIR="`pwd`"
+
 dnl Work around change in how the rules were implemented between
 dnl 1.11.2 and 1.11.3.
 AM_SILENT_RULES([yes])
@@ -129,7 +131,7 @@ AC_SUBST([LIBTOOL_WRAPPER_LDFLAGS])
 AC_ARG_ENABLE([rpath],
   [AS_HELP_STRING([--disable-rpath],
     [Disable use of rpath in compiler wrappers and building tests (default: enabled)])])
-AS_IF([test "$enable_rpath" = "no"], [RPATH_LDFLAGS=], [RPATH_LDFLAGS="-Wl,-rpath -Wl,$libdir"])
+AS_IF([test "$enable_rpath" = "no"], [RPATH_LDFLAGS=], [RPATH_LDFLAGS="-Wl,-rpath -Wl,$libdir"; enable_wrapper_rpath="yes"])
 
 
 AC_ARG_ENABLE([profiling],
@@ -450,9 +452,18 @@ CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS $libfabric_CPPFLAGS $ofi_CPPFLAGS $XPMEM_
 LDFLAGS="$LDFLAGS $portals4_LDFLAGS $libfabric_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS $RPATH_LDFLAGS"
 LIBS="$LIBS $portals4_LIBS $libfabric_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
 
+# Need the libtool binary before setting up rpath
+LT_OUTPUT
+
+OPAL_SETUP_RPATH
+
 # wrapper compiler gorp
 WRAPPER_COMPILER_EXTRA_LDFLAGS="$portals4_LDFLAGS $libfabric_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS $RPATH_LDFLAGS"
 WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS $libfabric_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
+
+AC_MSG_CHECKING([for OPAL LDFLAGS])
+RPATHIFY_LDFLAGS([WRAPPER_COMPILER_EXTRA_LDFLAGS])
+AC_MSG_RESULT([$WRAPPER_COMPILER_EXTRA_LDFLAGS])
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LDFLAGS)
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
 
