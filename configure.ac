@@ -131,7 +131,7 @@ AC_SUBST([LIBTOOL_WRAPPER_LDFLAGS])
 AC_ARG_ENABLE([rpath],
   [AS_HELP_STRING([--disable-rpath],
     [Disable use of rpath in compiler wrappers and building tests (default: enabled)])])
-AS_IF([test "$enable_rpath" = "no"], [RPATH_LDFLAGS=], [RPATH_LDFLAGS="-Wl,-rpath -Wl,$libdir"; enable_wrapper_rpath="yes"])
+AS_IF([test "$enable_rpath" = "no"], [RPATH_LDFLAGS=], [enable_wrapper_rpath="yes"])
 
 
 AC_ARG_ENABLE([profiling],
@@ -463,6 +463,7 @@ WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS $libfabric_LIBS $ofi_LIBS $XPMEM_LIB
 
 AC_MSG_CHECKING([for OPAL LDFLAGS])
 RPATHIFY_LDFLAGS([WRAPPER_COMPILER_EXTRA_LDFLAGS])
+WRAPPER_COMPILER_EXTRA_LDFLAGS=`echo "$WRAPPER_COMPILER_EXTRA_LDFLAGS" | sed -e 's/@{libdir}/\${libdir}/g'`
 AC_MSG_RESULT([$WRAPPER_COMPILER_EXTRA_LDFLAGS])
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LDFLAGS)
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
