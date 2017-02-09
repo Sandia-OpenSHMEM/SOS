@@ -131,7 +131,7 @@ AC_SUBST([LIBTOOL_WRAPPER_LDFLAGS])
 AC_ARG_ENABLE([rpath],
   [AS_HELP_STRING([--disable-rpath],
     [Disable use of rpath in compiler wrappers and building tests (default: enabled)])])
-AS_IF([test "$enable_rpath" = "no"], [RPATH_LDFLAGS=], [enable_wrapper_rpath="yes"])
+AS_IF([test "$enable_rpath" = "no"], [], [enable_wrapper_rpath="yes"])
 
 
 AC_ARG_ENABLE([profiling],
@@ -449,7 +449,7 @@ AC_SUBST(CLEANFILES)
 # last minute updates of the flags so that tests don't fail oddly if
 # portals libdir isn't in LD_LIBRARY_PATH...
 CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS $libfabric_CPPFLAGS $ofi_CPPFLAGS $XPMEM_CPPFLAGS $pmi_CPPFLAGS"
-LDFLAGS="$LDFLAGS $portals4_LDFLAGS $libfabric_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS $RPATH_LDFLAGS"
+LDFLAGS="$LDFLAGS $portals4_LDFLAGS $libfabric_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
 LIBS="$LIBS $portals4_LIBS $libfabric_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
 
 # Need the libtool binary before setting up rpath
@@ -458,7 +458,7 @@ LT_OUTPUT
 OPAL_SETUP_RPATH
 
 # wrapper compiler gorp
-WRAPPER_COMPILER_EXTRA_LDFLAGS="$portals4_LDFLAGS $libfabric_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS $RPATH_LDFLAGS"
+WRAPPER_COMPILER_EXTRA_LDFLAGS="$portals4_LDFLAGS $libfabric_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
 WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS $libfabric_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
 
 AC_MSG_CHECKING([for OPAL LDFLAGS])
