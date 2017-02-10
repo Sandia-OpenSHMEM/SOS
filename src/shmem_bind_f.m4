@@ -43,6 +43,10 @@ $1(real4,   float,       `SHM_INTERNAL_FLOAT', 4, `$2', `$3')
 $1(real8,   double,      `SHM_INTERNAL_DOUBLE', 8, `$2', `$3')
 #endif')dnl
 dnl
+define(`SHMEM_BIND_F_COLL_COMPS', dnl args: macro_name, op_name, op_const
+`$1(comp4, float _Complex,  `SHM_INTERNAL_FLOAT_COMPLEX',  8,  `$2', `$3')
+$1(comp8,  double _Complex, `SHM_INTERNAL_DOUBLE_COMPLEX', 16, `$2', `$3')')
+dnl
 define(`SH_UPCASE', `translit(`$*', `abcdefghijklmnopqrstuvwxyz', `ABCDEFGHIJKLMNOPQRSTUVWXYZ')')dnl
 define(`SH_DOWNCASE', `translit(`$*', `ABCDEFGHIJKLMNOPQRSTUVWXYZ', `abcdefghijklmnopqrstuvwxyz')')dnl
 dnl
