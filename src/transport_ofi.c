@@ -1157,7 +1157,6 @@ void shmem_transport_print_info(void)
         if (NULL == (ofi_provider = shmem_util_getenv_str("OFI_USE_PROVIDER")))
             ofi_provider = "AUTO";
 
-    printf("\n");
     printf("Network transport:      OFI\n");
     printf("SMA_OFI_PROVIDER        %s\n", ofi_provider);
     printf("\tProvider that should be used by the OFI transport\n");
