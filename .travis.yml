@@ -169,7 +169,7 @@ script:
     # Check for failures in the C tests
     #- if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-c-feature-tests.log; then false; else true; fi
     - >
-      if [ ! $SOS_DISABLE_FORTRAN ]; then
+      if [ -z "$SOS_DISABLE_FORTRAN" ]; then
           make F_feature_tests;
           if false && [ $? -eq 0 ]; then
               make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log;
@@ -178,7 +178,7 @@ script:
           fi;
       fi
     - >
-      if [ ! $SOS_DISABLE_FORTRAN ]; then
+      if [ -z "$SOS_DISABLE_FORTRAN" ]; then
           make F_error_tests;
           if false && [ $? -eq 0 -a $SOS_ENABLE_ERROR_TESTS ]; then
               make F_error_tests-run 2>&1 | tee uh-tests-f-error-tests.log;
@@ -198,7 +198,7 @@ script:
     # Check for failures in the C tests
     - if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-c-feature-tests.log; then false; else true; fi
     - >
-      if [ ! $SOS_DISABLE_FORTRAN ]; then
+      if [ -z "$SOS_DISABLE_FORTRAN" ]; then
           make F_feature_tests;
           if [ $? -eq 0 ]; then
               make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log;
@@ -207,7 +207,7 @@ script:
           fi;
       fi
     - >
-      if [ ! $SOS_DISABLE_FORTRAN ]; then
+      if [ -z "$SOS_DISABLE_FORTRAN" ]; then
           make F_error_tests;
           if [ $? -eq 0 -a $SOS_ENABLE_ERROR_TESTS ]; then
               make F_error_tests-run 2>&1 | tee uh-tests-f-error-tests.log;
