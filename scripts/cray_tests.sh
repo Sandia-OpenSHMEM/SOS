@@ -24,7 +24,7 @@ tests_failed=0
 #Check for failures in the C/C++ tests
 if grep "FAIL" cray-tests-sma1.log; then ((tests_failed+=1)); fi
 if grep "FAIL" cray-tests-sma2.log; then ((tests_failed+=1)); fi
-if [ ! $SOS_DISABLE_FORTRAN ]; then
+if [ -z $SOS_DISABLE_FORTRAN ]; then
     make smaf MAKE_FLAGS="$TRAVIS_PAR_MAKE"
     if [ $? -eq 0 ]; then
         source $CRAY_TESTS_DIR/smaf/smaf_run 2>&1 | tee cray-tests-smaf.log;
