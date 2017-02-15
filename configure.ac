@@ -24,8 +24,6 @@ m4_ifndef([AS_VAR_COPY],
     [m4_define([AS_VAR_COPY],
        [AS_LITERAL_IF([$1[]$2], [$1=$$2], [eval $1=\$$2])])])
 
-OPAL_TOP_BUILDDIR="`pwd`"
-
 dnl Work around change in how the rules were implemented between
 dnl 1.11.2 and 1.11.3.
 AM_SILENT_RULES([yes])
@@ -455,6 +453,7 @@ LIBS="$LIBS $portals4_LIBS $libfabric_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
 # Need the libtool binary before setting up rpath
 LT_OUTPUT
 
+OPAL_TOP_BUILDDIR="`pwd`"
 OPAL_SETUP_RPATH
 
 # wrapper compiler gorp
