@@ -29,11 +29,11 @@
 AC_DEFUN([OMPI_CHECK_OFI],[
     AC_ARG_WITH([ofi],
         [AC_HELP_STRING([--with-ofi(=DIR)],
-             [Build OFI support, optionally adding DIR/include, DIR/lib, and DIR/lib64 to the search path for headers and libraries])])
+             [(Deprecated: please use --with-libfabric) Build OFI support, optionally adding DIR/include, DIR/lib, and DIR/lib64 to the search path for headers and libraries])])
     OMPI_CHECK_WITHDIR([ofi], [$with_ofi], [include/rdma/fabric.h])
     AC_ARG_WITH([ofi-libdir],
         [AC_HELP_STRING([--with-ofi-libdir=DIR],
-             [Search for OFI libraries in DIR])])
+             [(Deprecated: please use --with-libfabric-libdir) Search for OFI libraries in DIR])])
     OMPI_CHECK_WITHDIR([ofi-libdir], [$with_ofi_libdir], [libfabric.*])
 
     ompi_check_ofi_$1_save_CPPFLAGS="$CPPFLAGS"
