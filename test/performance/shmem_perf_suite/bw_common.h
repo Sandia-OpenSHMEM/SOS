@@ -104,6 +104,9 @@ void static uni_dir_data_init(perf_metrics_t * data) {
 
 int static inline partner_node(perf_metrics_t my_info)
 {
+    if(my_info.num_pes == 1)
+        return 0;
+
     if(my_info.cstyle == COMM_PAIRWISE) {
         int pairs = my_info.num_pes / 2;
 
@@ -473,8 +476,6 @@ void static inline bw_init_data_stream(perf_metrics_t *metric_info,
 
     data_init(metric_info);
 
-    only_even_PEs_check(metric_info->my_node, metric_info->num_pes);
-
     for(i = 0; i < _SHMEM_REDUCE_MIN_WRKDATA_SIZE; i++)
         red_psync[i] = _SHMEM_SYNC_VALUE;
 
@@ -492,6 +493,8 @@ void static inline bi_dir_init(perf_metrics_t *metric_info, int argc,
                                 char *argv[]) {
     bw_init_data_stream(metric_info, argc, argv);
 
+    only_even_PEs_check(metric_info->my_node, metric_info->num_pes);
+
     bi_dir_data_init(metric_info);
 
 }
@@ -499,6 +502,9 @@ void static inline bi_dir_init(perf_metrics_t *metric_info, int argc,
 void static inline uni_dir_init(perf_metrics_t *metric_info, int argc,
                                 char *argv[]) {
     bw_init_data_stream(metric_info, argc, argv);
+
+    if(metric_info->num_pes != 1)
+        only_even_PEs_check(metric_info->my_node, metric_info->num_pes);
 
     uni_dir_data_init(metric_info);
 }

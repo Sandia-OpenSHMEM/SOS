@@ -4,10 +4,11 @@ void static inline uni_bw(int len, perf_metrics_t *metric_info, int streaming_no
     double start = 0.0, end = 0.0;
     int i = 0, j = 0;
     int dest = partner_node(*metric_info);
+    int snode = (metric_info->num_pes != 1)? streaming_node : true;
 
     shmem_barrier_all();
 
-    if (streaming_node) {
+    if (snode) {
         for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
             if(i == metric_info->warmup)
                 start = perf_shmemx_wtime();
