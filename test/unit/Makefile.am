@@ -105,6 +105,7 @@ endif
 if HAVE_FORTRAN
 TESTS += \
      hello_f \
+     complex_reductions_f \
      shmem_info_f
 
 if !HAVE_LONG_FORTRAN_HEADER
@@ -140,6 +141,9 @@ hello_LDADD = $(top_builddir)/src/libsma.la
 
 hello_f_SOURCES = hello_f.f90
 hello_f_LDADD = $(top_builddir)/src/libsma.la
+
+complex_reductions_f_SOURCES = complex_reductions_f.f90
+complex_reductions_f_LDADD = $(top_builddir)/src/libsma.la
 
 micro_unit_shmem_SOURCES = micro_unit_shmem.c
 micro_unit_shmem_LDADD = $(top_builddir)/src/libsma.la
