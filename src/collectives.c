@@ -266,6 +266,7 @@ shmem_internal_barrier_tree(int PE_start, int logPE_stride, int PE_size, long *p
 
     /* need 1 slot */
     shmem_internal_assert(SHMEM_BARRIER_SYNC_SIZE >= 1);
+    shmem_internal_assert(PE_size > 1 || PE_root == PE_start);
 
     shmem_internal_quiet();
 
@@ -325,7 +326,8 @@ shmem_internal_barrier_tree(int PE_start, int logPE_stride, int PE_size, long *p
             }
         }
 
-    } else {
+    }
+    else if (shmem_internal_my_pe != PE_root) {
         /* Leaf node */
 
         /* send message up psync tree */
