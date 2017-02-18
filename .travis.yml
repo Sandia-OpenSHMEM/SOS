@@ -47,12 +47,15 @@ env:
           SOS_ENABLE_ERROR_TESTS=1
           SMA_FCOLLECT_ALGORITHM=ring
           SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+matrix:
     allow_failures:
-        - >
+        - compiler: gcc
+          env: >
           SOS_ENABLE_ERROR_TESTS=1
           SMA_BARRIER_ALGORITHM=tree SMA_BCAST_ALGORITHM=tree SMA_REDUCE_ALGORITHM=tree
           SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
-        - >
+        - compiler: gcc
+          env: >
           SOS_ENABLE_ERROR_TESTS=1
           SMA_BARRIER_ALGORITHM=dissem SMA_REDUCE_ALGORITHM=recdbl SMA_FCOLLECT_ALGORITHM=recdbl
           SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
