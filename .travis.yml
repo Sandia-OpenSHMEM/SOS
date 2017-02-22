@@ -100,7 +100,7 @@ before_install:
     - git clone --depth 10 https://github.com/openshmem-org/tests-uh.git tests-uh
     # Fetch Cray Tests
     - cd $TRAVIS_SRC
-    - git clone -b openshmem --depth 10 https://github.com/davidozog/tests-cray.git tests-cray
+    - git clone --depth 10 https://github.com/openshmem-org/tests-cray.git tests-cray
     ## Fetch ISx
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ParRes/ISx.git ISx
