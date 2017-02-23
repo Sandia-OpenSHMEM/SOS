@@ -13,6 +13,7 @@ dnl
 
 # OPAL_CHECK_LIBFABRIC(prefix, [action-if-found], [action-if-not-found]
 # --------------------------------------------------------
+#
 # Check if libfabric support can be found.
 #
 # Sets prefix_{CPPFLAGS, LDFLAGs, LIBS} as needed and runs
