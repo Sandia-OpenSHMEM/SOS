@@ -36,7 +36,7 @@
       call shmem_comp4_sum_to_all(z_target, z_src, nr, 0, 0, npes, pwrk, psync)
 
       ! Check the result:
-      call check_result_complex(z_target, z_src, exp_result, nr, 1)
+      call check_result_complex(z_target, exp_result, nr, 1)
 
       call shmem_barrier_all()
 
@@ -55,7 +55,7 @@
             end do
           end do
 
-          call check_result_complex(z_target, z_src, exp_result, nr, 2)
+          call check_result_complex(z_target, exp_result, nr, 2)
 
         endif
       endif
@@ -71,7 +71,7 @@
       ! Test double precision complex sum_to_all reductions:
       call shmem_comp8_sum_to_all(zd_target, zd_src, nr, 0, 0, npes, pwrkd, psync)
       
-      call check_result_complex_dbl(zd_target, zd_src, exp_result_d, nr, 3)
+      call check_result_complex_dbl(zd_target, exp_result_d, nr, 3)
 
       call shmem_barrier_all()
       
@@ -85,7 +85,7 @@
             exp_result_d(i) = zd_src(i)*(npes/2)
           end do
 
-          call check_result_complex_dbl(zd_target, zd_src, exp_result_d, nr, 4)
+          call check_result_complex_dbl(zd_target, exp_result_d, nr, 4)
 
         endif
       endif
@@ -107,7 +107,7 @@
       call shmem_comp4_prod_to_all(z_target, z_src, nr, 0, 0, npes, pwrk, psync)
 
       ! Check the result:
-      call check_result_complex(z_target, z_src, exp_result, nr, 5)
+      call check_result_complex(z_target, exp_result, nr, 5)
       
       call shmem_barrier_all()
       
@@ -126,7 +126,7 @@
             end do
           end do
 
-          call check_result_complex(z_target, z_src, exp_result, nr, 6)
+          call check_result_complex(z_target, exp_result, nr, 6)
 
         endif
       endif
@@ -147,7 +147,7 @@
       ! Test double precision complex product_to_all reductions:
       call shmem_comp8_prod_to_all(zd_target, zd_src, nr, 0, 0, npes, pwrkd, psync)
       
-      call check_result_complex_dbl(zd_target, zd_src, exp_result_d, nr, 7)
+      call check_result_complex_dbl(zd_target, exp_result_d, nr, 7)
 
       call shmem_barrier_all()
       
@@ -166,7 +166,7 @@
             end do
           end do
 
-          call check_result_complex_dbl(zd_target, zd_src, exp_result_d, nr, 8)
+          call check_result_complex_dbl(zd_target, exp_result_d, nr, 8)
 
         endif
       endif
@@ -175,37 +175,44 @@
 
       contains
 
-      subroutine check_result_complex(z_target, z_src, correct, N, id)
+      subroutine check_result_complex(z_target, correct, N, id)
         implicit none
         integer N, id, me
-        complex z_target(N), z_src(N), correct(N)
+        complex z_target(N), correct(N)
+        real e
 
         me = shmem_my_pe()
         do i=1,N
-          if (z_target(i) .ne. exp_result(i)) then
-            print *, "fail : have ", z_target(i), " expected ", &
-                     exp_result(i), " on process ", me, " test #", id
-            call shmem_global_exit(id)
-          endif
+        if ( abs(realpart(z_target(i)) - realpart(correct(i))) .gt. epsilon(e) ) then
+          print *, "fail : incorrect real component ", realpart(z_target(i)), &
+            " expected ", realpart(correct(i)), " on process ", me, "test #", id
+          call shmem_global_exit(id)
+        endif
+        if ( abs(imagpart(z_target(i)) - imagpart(correct(i))) .gt. epsilon(e) ) then
+          print *, "fail : incorrect imaginary component ", imagpart(z_target(i)), &
+            " expected ", imagpart(correct(i)), " on process ", me, "test #", id
+          call shmem_global_exit(id)
+        endif
         end do
+
       end subroutine check_result_complex
 
-      subroutine check_result_complex_dbl(zd_target, zd_src, correct, N, id)
+      subroutine check_result_complex_dbl(zd_target, correct, N, id)
         implicit none
         integer N, id, me
-        double complex zd_target(N), zd_src(N), correct(N)
+        double complex zd_target(N), correct(N)
         double precision e
 
         me = shmem_my_pe()
         do i=1,N
-        if ( (realpart(zd_target(i)) - realpart(exp_result_d(i))) .gt. epsilon(e) ) then
+        if ( abs(realpart(zd_target(i)) - realpart(correct(i))) .gt. epsilon(e) ) then
           print *, "fail : incorrect real component ", realpart(zd_target(i)), &
-            " expected ", realpart(exp_result_d(i)), " on process ", me, "test #", id
+            " expected ", realpart(correct(i)), " on process ", me, "test #", id
           call shmem_global_exit(id)
         endif
-        if ( (imagpart(zd_target(i)) - imagpart(exp_result_d(i))) .gt. epsilon(e) ) then
+        if ( abs(imagpart(zd_target(i)) - imagpart(correct(i))) .gt. epsilon(e) ) then
           print *, "fail : incorrect imaginary component ", imagpart(zd_target(i)), &
-            " expected ", imagpart(exp_result_d(i)), " on process ", me, "test #", id
+            " expected ", imagpart(correct(i)), " on process ", me, "test #", id
           call shmem_global_exit(id)
         endif
         end do
