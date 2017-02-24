@@ -484,6 +484,8 @@ shmem_internal_bcast_tree(void *target, const void *source, size_t len,
     /* need 1 slot */
     shmem_internal_assert(SHMEM_BCAST_SYNC_SIZE >= 1);
 
+    if (PE_size == 1) return;
+
     if (PE_size == shmem_internal_num_pes && 0 == PE_root) {
         /* we're the full tree, use the binomial tree */
         parent = full_tree_parent;
