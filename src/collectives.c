@@ -501,6 +501,8 @@ shmem_internal_bcast_tree(void *target, const void *source, size_t len,
         int i;
 
         if (parent != shmem_internal_my_pe) {
+            send_buf = target;
+
             /* wait for data arrival message if not the root */
             SHMEM_WAIT(pSync, 0);
 
