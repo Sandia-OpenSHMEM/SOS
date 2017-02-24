@@ -100,14 +100,14 @@ before_install:
     - git clone --depth 10 https://github.com/openshmem-org/tests-uh.git tests-uh
     # Fetch Cray Tests
     - cd $TRAVIS_SRC
-    - git clone -b openshmem --depth 10 https://github.com/davidozog/tests-cray.git tests-cray
+    - git clone --depth 10 https://github.com/openshmem-org/tests-cray.git tests-cray
     ## Fetch ISx
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ParRes/ISx.git ISx
     ## Fetch PRK
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ParRes/Kernels.git PRK
-    - echo -e "SHMEMCC=oshcc\nSHMEMTOP=$$TRAVIS_INSTALL\n" > PRK/common/make.defs
+    - echo -e "SHMEMCC=oshcc -std=c99\nSHMEMTOP=$$TRAVIS_INSTALL\n" > PRK/common/make.defs
 
 install:
     - cd $SOS_SRC
