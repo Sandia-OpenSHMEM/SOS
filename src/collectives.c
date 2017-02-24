@@ -63,6 +63,26 @@ shmem_internal_build_kary_tree(int radix, int PE_start, int stride,
         }
     }
 
+    if (shmem_internal_debug) {
+        int len;
+        char debug_str[256];
+        len = snprintf(debug_str, sizeof(debug_str), "Building k-ary tree:"
+                       "\n\t\tradix=%d, PE_start=%d, stride=%d, PE_size=%d, PE_root=%d\n",
+                       radix, PE_start, stride, PE_size, PE_root);
+
+        len += snprintf(debug_str+len, sizeof(debug_str) - len, "\t\tid=%d, parent=%d, children[%d] = { ",
+                        my_id, *parent, *num_children);
+
+        for (i = 0; i < *num_children && len < sizeof(debug_str); i++)
+            len += snprintf(debug_str+len, sizeof(debug_str) - len, "%d ",
+                            children[i]);
+
+        if (len < sizeof(debug_str))
+            len += snprintf(debug_str+len, sizeof(debug_str) - len, "}");
+
+        DEBUG_STR(debug_str);
+    }
+
     return 0;
 }
 
