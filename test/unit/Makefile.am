@@ -77,7 +77,8 @@ TESTS = \
 	get_nbi \
 	put_nbi \
 	rma_coverage \
-	collect
+	collect \
+	repeated_barriers
 
 if ENABLE_PROFILING
 TESTS += \
@@ -364,3 +365,6 @@ put_nbi_LDADD = $(top_builddir)/src/libsma.la
 
 collect_SOURCES = collect.c
 collect_LDADD = $(top_builddir)/src/libsma.la
+
+repeated_barriers_SOURCES = repeated_barriers.c
+repeated_barriers_LDADD = $(top_builddir)/src/libsma.la
