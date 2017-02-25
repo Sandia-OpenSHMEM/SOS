@@ -63,8 +63,7 @@ shmem_internal_build_kary_tree(int radix, int PE_start, int stride,
     for (i = 1 ; i <= radix ; ++i) {
         int tmp = radix * my_id + i;
         if (tmp < PE_size) {
-            const int child_idx = (PE_root + tmp) % PE_size;
-            children[(*num_children)++] = PE_start + child_idx * stride;
+            children[(*num_children)++] = (PE_start + ((tmp + PE_root) * stride)) % (PE_size * stride);
         }
     }
 
