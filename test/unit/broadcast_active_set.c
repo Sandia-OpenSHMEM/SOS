@@ -64,6 +64,9 @@ int main(void)
         barrier_psync1[i] = SHMEM_SYNC_VALUE;
     }
 
+    if (me == 0)
+        printf("Shrinking active set test\n");
+
     shmem_barrier_all();
 
     /* A total of npes tests are performed, where the active set in each test
@@ -72,7 +75,7 @@ int main(void)
         int j;
 
         if (me == i)
-            printf(" + iteration %d\n", i);
+            printf(" + active set size %d\n", npes-i);
 
         shmem_broadcast64(dst, src, NELEM, 0, i, 0, npes-i, bcast_psync);
 
@@ -89,6 +92,37 @@ int main(void)
         shmem_barrier(i, 0, npes-i, (i % 2) ? barrier_psync0 : barrier_psync1);
     }
 
+    shmem_barrier_all();
+
+    for (i = 0; i < NELEM; i++)
+        dst[i] = -1;
+
+    if (me == 0)
+        printf("Changing root test\n");
+
+    shmem_barrier_all();
+
+    /* A total of npes tests are performed, where the root changes each time */
+    for (i = 0; i < npes; i++) {
+        int j;
+
+        if (me == i)
+            printf(" + root %d\n", i);
+
+        shmem_broadcast64(dst, src, NELEM, i, 0, 0, npes, bcast_psync);
+
+        /* Validate broadcasted data */
+        for (j = 0; j < NELEM; j++) {
+            int64_t expected = (me == i) ? i-1 : i;
+            if (dst[j] != expected) {
+                printf("%d: Expected dst[%d] = %"PRId64", got dst[%d] = %"PRId64", iteration %d\n",
+                       me, j, expected, j, dst[j], i);
+                errors++;
+            }
+        }
+
+        shmem_barrier(0, 0, npes, barrier_psync0);
+    }
     shmem_finalize();
 
     return errors != 0;
