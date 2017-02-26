@@ -54,9 +54,9 @@ shmem_internal_build_kary_tree(int radix, int PE_start, int stride,
        participating tasks. where the 0th entry is the root */
     int my_id = (((shmem_internal_my_pe - PE_start) / stride) + PE_size - PE_root) % PE_size;
 
-    /* PE active set layout is: 0 [ 1 2 3 4 ] [ 5 6 7 8 ] ...
-       where radix is 4 and the first group [ 1 2 3 4 ] are chilren of 0,
-       second group chilren of 1, and so on */
+    /* We shift PE_root to index 0, resulting in a PE active set layout of (for
+       example radix 2): 0 [ 1 2 ] [ 3 4 ] [ 5 6 ] ...  The first group [ 1 2 ]
+       are chilren of 0, second group [ 3 4 ] are chilren of 1, and so on */
     *parent = PE_start + (((my_id - 1) / radix + PE_root) % PE_size) * stride;
 
     *num_children = 0;
