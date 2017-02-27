@@ -79,7 +79,8 @@ TESTS = \
 	rma_coverage \
 	collect \
 	repeated_barriers \
-	broadcast_active_set
+	broadcast_active_set \
+	reduce_active_set
 
 if ENABLE_PROFILING
 TESTS += \
@@ -372,3 +373,6 @@ repeated_barriers_LDADD = $(top_builddir)/src/libsma.la
 
 broadcast_active_set_SOURCES = broadcast_active_set.c
 broadcast_active_set_LDADD = $(top_builddir)/src/libsma.la
+
+reduce_active_set_SOURCES = reduce_active_set.c
+reduce_active_set_LDADD = $(top_builddir)/src/libsma.la
