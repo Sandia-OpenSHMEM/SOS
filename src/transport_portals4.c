@@ -654,7 +654,6 @@ shmem_transport_startup(void)
 
 void shmem_transport_print_info(void)
 {
-    printf("\n");
     printf("Network transport:      Portals\n");
 }
 

@@ -53,9 +53,11 @@ libsma_la_SOURCES = \
 	util.c \
 	$(GEN_BINDINGS)
 
-BUILT_SOURCES = $(GEN_BINDINGS)
+BUILT_SOURCES = $(GEN_BINDINGS) \
+		build_info.h
 
-CLEANFILES += $(GEN_BINDINGS)
+CLEANFILES += $(GEN_BINDINGS) \
+		build_info.h
 
 if HAVE_FORTRAN
 libsma_la_SOURCES += \
@@ -141,6 +143,18 @@ do_subst = sed -e 's|[@]PERL[@]|$(PERL)|g' \
 AM_V_SED = $(am__v_SED_@AM_V@)
 am__v_SED_ = $(am__v_SED_@AM_DEFAULT_V@)
 am__v_SED_0 = @echo "  SED     " $@;
+
+build_info.h: $(top_builddir)/config.status
+	$(AM_V_GEN) echo "#ifndef BUILD_INFO_H" > $@
+	if [ -f $(srcdir)/../.git/HEAD ]; then \
+	     echo "#define SOS_GIT_VERSION \"$(shell git describe --abbrev=8 --dirty --always --tags) \
+	                                    ($(shell git rev-parse --abbrev-ref HEAD))\"" >> $@; \
+	fi;
+	@echo "#define SOS_CONFIGURE_ARGS \"$(shell $(top_builddir)/config.status --config)\"" >> $@;
+	@echo "#define SOS_BUILD_DATE \"$(shell date)\"" >> $@;
+	@echo "#define SOS_BUILD_CC \"$(CC)\"" >> $@;
+	@echo "#define SOS_BUILD_CFLAGS \"$(CFLAGS)\"" >> $@;
+	@echo "#endif" >> $@
 
 oshcc: shmem_compiler_script.in Makefile
 	$(AM_V_SED)$(do_subst) -e 's|[@]LANG[@]|C|g' < $(srcdir)/shmem_compiler_script.in > oshcc
