@@ -69,7 +69,6 @@ int main(void)
     /* A total of npes tests are performed, where the active set in each test
      * includes PEs i..npes-1 */
     for (i = 0; i <= me; i++) {
-    //for (i = 1; i <= me && i <= 1; i++) {
         int j;
 
         if (me == i)
