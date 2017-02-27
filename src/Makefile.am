@@ -144,11 +144,10 @@ AM_V_SED = $(am__v_SED_@AM_V@)
 am__v_SED_ = $(am__v_SED_@AM_DEFAULT_V@)
 am__v_SED_0 = @echo "  SED     " $@;
 
-build_info.h:
+build_info.h: $(top_builddir)/config.status
 	$(AM_V_GEN) echo "#ifndef BUILD_INFO_H" > $@
 	if [ -f $(srcdir)/../.git/HEAD ] && \
-	   [ -f $(srcdir)/../.git/index ] && \
-	   [ -f $(top_builddir)/config.status ]; then \
+	   [ -f $(srcdir)/../.git/index ]; then \
 	     echo "#define SOS_GIT_VERSION \"$(shell git describe --abbrev=8 --dirty --always --tags) \
 	                                    ($(shell git rev-parse --abbrev-ref HEAD))\"" >> $@; \
 	fi;
