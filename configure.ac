@@ -318,6 +318,11 @@ AC_TRY_RUN([struct lock_s { int a; int b; }; main() { if (sizeof(long) == sizeof
 
 if test "$FC" != "" ; then
   AC_DEFINE([ENABLE_FORTRAN],[1],[Fortran support enabled])
+  AC_MSG_CHECKING([if complex sizes are appropriate])
+  AC_TRY_RUN([float _Complex x; double _Complex y; main() { if (sizeof(x)==8 && sizeof(y)==16) return 0; else return 1; }],
+                 [AC_MSG_RESULT([yes])], [
+                  AC_MSG_RESULT([no])
+                  AC_MSG_ERROR([float _Complex and double _Complex must be 4 and 8 bytes, respectively]) ])
   # make sure Fortran supports ISO_C_BINDING (Fortran 2003)
   AC_CACHE_CHECK([if Fortran compiler supports ISO_C_BINDING],
     [shmem_cv_fortran_iso_c_binding],
