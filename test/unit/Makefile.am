@@ -77,7 +77,10 @@ TESTS = \
 	get_nbi \
 	put_nbi \
 	rma_coverage \
-	collect
+	collect \
+	repeated_barriers \
+	broadcast_active_set \
+	reduce_active_set
 
 if ENABLE_PROFILING
 TESTS += \
@@ -364,3 +367,12 @@ put_nbi_LDADD = $(top_builddir)/src/libsma.la
 
 collect_SOURCES = collect.c
 collect_LDADD = $(top_builddir)/src/libsma.la
+
+repeated_barriers_SOURCES = repeated_barriers.c
+repeated_barriers_LDADD = $(top_builddir)/src/libsma.la
+
+broadcast_active_set_SOURCES = broadcast_active_set.c
+broadcast_active_set_LDADD = $(top_builddir)/src/libsma.la
+
+reduce_active_set_SOURCES = reduce_active_set.c
+reduce_active_set_LDADD = $(top_builddir)/src/libsma.la
