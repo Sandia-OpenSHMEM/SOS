@@ -1,10 +1,6 @@
 !
-!  Copyright 2011 Sandia Corporation. Under the terms of Contract
-!  DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
-!  retains certain rights in this software.
-!
-!   Copyright (c) 2017 Intel Corporation. All rights reserved.
-!   This software is available to you under the BSD license below:
+!  Copyright (c) 2017 Intel Corporation. All rights reserved.
+!  This software is available to you under the BSD license below:
 !
 !       Redistribution and use in source and binary forms, with or
 !       without modification, are permitted provided that the following
