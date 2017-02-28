@@ -32,15 +32,15 @@
       integer psync(shmem_reduce_sync_size), i, j, nr
       data psync /shmem_reduce_sync_size*shmem_sync_value/
       parameter (nr=10)
-      complex z_src(nr), z_target(nr)
-      complex pwrk(max(nr/2+1,shmem_reduce_min_wrkdata_size))
-      double complex zd_src(nr), zd_target(nr)
-      double complex pwrkd(max(nr/2+1,shmem_reduce_min_wrkdata_size))
+      complex(kind=4) z_src(nr), z_target(nr)
+      complex(kind=4) pwrk(max(nr/2+1,shmem_reduce_min_wrkdata_size))
+      complex(kind=8) zd_src(nr), zd_target(nr)
+      complex(kind=8) pwrkd(max(nr/2+1,shmem_reduce_min_wrkdata_size))
       common /com/ z_src, z_target, pwrk
       common /com/ zd_src, zd_target, pwrkd
       integer shmem_my_pe, shmem_n_pes, npes, me
-      complex exp_result(nr)
-      double complex exp_result_d(nr)
+      complex(kind=4) exp_result(nr)
+      complex(kind=8) exp_result_d(nr)
       
       
       call shmem_init()
@@ -205,7 +205,7 @@
       subroutine check_result_complex(z_target, correct, N, id)
         implicit none
         integer N, id, me
-        complex z_target(N), correct(N)
+        complex(kind=4) z_target(N), correct(N)
         real e
 
         me = shmem_my_pe()
@@ -227,7 +227,7 @@
       subroutine check_result_complex_dbl(zd_target, correct, N, id)
         implicit none
         integer N, id, me
-        double complex zd_target(N), correct(N)
+        complex(kind=8) zd_target(N), correct(N)
         double precision e
 
         me = shmem_my_pe()
