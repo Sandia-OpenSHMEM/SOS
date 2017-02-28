@@ -17,7 +17,7 @@ v1.3.2-rc1
   providers that require software-generated progress.
 - Update symmetric heap allocator to dlmalloc v2.8.6
 - Update PMI-1 client library from MPICH
-- Fixed bug in collect routines
+- Improved bandwidth efficiency and fixed bug in collect routines
 - Fixed several bugs in tree-based collectives when using PE active sets
 - Fixed several bugs in recursive-doubling reduction routine when using PE
   active sets and when source and target buffers overlap
