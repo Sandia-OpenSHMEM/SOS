@@ -47,6 +47,8 @@ rm -f %{buildroot}%{_libdir}/*.la
 # Prepare tests
 install -d %{testdir}/unit
 install test/unit/.libs/* %{testdir}/unit
+install -d %{testdir}/apps
+install test/apps/.libs/* %{testdir}/apps
 install -d %{testdir}/performance/shmem_perf_suite
 install test/performance/shmem_perf_suite/.libs/* %{testdir}/performance/shmem_perf_suite
 install -d %{testdir}/performance/tests
