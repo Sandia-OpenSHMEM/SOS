@@ -646,7 +646,9 @@ shmem_internal_op_to_all_tree(void *target, const void *source, int count, int t
     shmem_internal_assert(SHMEM_REDUCE_SYNC_SIZE >= 2 + SHMEM_BCAST_SYNC_SIZE);
 
     if (PE_size == 1) {
-        memcpy(target, source, type_size*count);
+        if (target != source)
+            memcpy(target, source, type_size*count);
+        }
         return;
     }
 
@@ -726,7 +728,9 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, int count, 
     const long ps_target_ready = 1, ps_data_ready = 2;
 
     if (PE_size == 1) {
-        memcpy(target, source, type_size*count);
+        if (target != source) {
+            memcpy(target, source, type_size*count);
+        }
         free(current_target);
         return;
     }
