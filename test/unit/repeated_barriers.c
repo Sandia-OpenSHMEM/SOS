@@ -25,34 +25,44 @@
  * SOFTWARE.
  */
 
-void static inline bi_bw(int len, perf_metrics_t *metric_info)
+#include <stdio.h>
+#include <shmem.h>
+
+#define NREPS 50
+
+long barrier_psync0[SHMEM_BARRIER_SYNC_SIZE];
+long barrier_psync1[SHMEM_BARRIER_SYNC_SIZE];
+
+int main(void)
 {
-    double start = 0.0, end = 0.0;
-    int dest = partner_node(*metric_info);
-    int i = 0, j = 0;
+    int i, me, npes;
+
+    shmem_init();
+
+    me = shmem_my_pe();
+    npes = shmem_n_pes();
+
+    for (i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++) {
+        barrier_psync0[i] = SHMEM_SYNC_VALUE;
+        barrier_psync1[i] = SHMEM_SYNC_VALUE;
+    }
 
     shmem_barrier_all();
 
-    if (streaming_node(*metric_info)) {
-        for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
-            if(i == metric_info->warmup)
-                start = perf_shmemx_wtime();
+    /* A total of npes tests are performed, where the active set in each test
+     * includes PEs i..npes-1 */
+    for (i = 0; i <= me; i++) {
+        int j;
 
-            for(j = 0; j < metric_info->window_size; j++)
-                shmem_putmem(metric_info->dest, metric_info->src, len, dest);
+        if (me == i)
+            printf(" + iteration %d\n", i);
 
-            shmem_quiet();
-        }
-        end = perf_shmemx_wtime();
-
-        calc_and_print_results((end - start), len, *metric_info);
-
-    } else {
-        for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
-            for(j = 0; j < metric_info->window_size; j++)
-                shmem_putmem(metric_info->dest, metric_info->src, len, dest);
-
-            shmem_quiet();
-        }
+        /* Test that barrier can be called repeatedly with the *same* pSync */
+        for (j = 0; j < NREPS; j++)
+            shmem_barrier(i, 0, npes-i, (i % 2) ? barrier_psync0 : barrier_psync1);
     }
+
+    shmem_finalize();
+
+    return 0;
 }

@@ -2,22 +2,26 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
-v1.3.x
-------
-- Fixed synchronization bug in memory management routines
-- Added --enable-completion-polling build option to poll in quiet/fence
-  operations rather than waiting.  This can improve performance for libfabric
-  providers that require software-generated progress.
-- Enabled single-process, direct runs with simple PMI
-- Fixed bug in collect routines
+v1.3.2-rc1
+----------
+- Enabled single-process, direct execution of SOS binaries with simple PMI
 - Enabled VPATH builds
 - Added argument error checking for all SHMEM routines, enabled at compile time
   via --enable-error-checking.
 - Added new C and Fortrans bindings generator that generates all headers and
   bindings, including profiling interfaces.
-- Fix VPATH builds
+- Added support for Fortran complex reductions API
+- Updated SHMEM_DEBUG output to include detailed build information
+- Added --enable-completion-polling build option to poll in quiet/fence
+  operations rather than waiting.  This can improve performance for libfabric
+  providers that require software-generated progress.
 - Update symmetric heap allocator to dlmalloc v2.8.6
 - Update PMI-1 client library from MPICH
+- Improved bandwidth efficiency and fixed bug in collect routines
+- Fixed several bugs in tree-based collectives when using PE active sets
+- Fixed several bugs in recursive-doubling reduction routine when using PE
+  active sets and when source and target buffers overlap
+- Fixed synchronization bug in memory management routines
 
 1.3.1
 -----
