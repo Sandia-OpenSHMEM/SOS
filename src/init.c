@@ -31,6 +31,7 @@
 #include "shmem_collectives.h"
 #include "shmem_comm.h"
 #include "runtime.h"
+#include "build_info.h"
 
 #ifdef __APPLE__
 #include <mach-o/getsect.h>
@@ -168,12 +169,16 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     /* huge page support only on Linux for now, default is to use 2MB large pages */
 #ifdef __linux__
     if (heap_use_malloc == 0) {
-        shmem_internal_heap_use_huge_pages=
-             (shmem_util_getenv_str("SYMMETRIC_HEAP_USE_HUGE_PAGES") != NULL) ? 1 : 0;
-        shmem_internal_heap_huge_page_size = shmem_util_getenv_long("SYMMETRIC_HEAP_PAGE_SIZE",
-                                                                    1,
-                                                                    2 * 1024 * 1024);
+        shmem_internal_heap_use_huge_pages =
+            (shmem_util_getenv_str("SYMMETRIC_HEAP_USE_HUGE_PAGES") != NULL) ? 1 : 0;
+        shmem_internal_heap_huge_page_size =
+            shmem_util_getenv_long("SYMMETRIC_HEAP_PAGE_SIZE", 1, 2 * 1024 * 1024);
     }
+#endif
+
+#ifdef USE_CMA
+    shmem_transport_cma_put_max = shmem_util_getenv_long("CMA_PUT_MAX", 1, 8*1024);
+    shmem_transport_cma_get_max = shmem_util_getenv_long("CMA_GET_MAX", 1, 16*1024);
 #endif
 
     /* Find symmetric data */
@@ -220,10 +225,8 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     }
     xpmem_initialized = 1;
 #endif
-#ifdef USE_CMA
-    shmem_transport_cma_put_max = shmem_util_getenv_long("CMA_PUT_MAX", 1, 8*1024);
-    shmem_transport_cma_get_max = shmem_util_getenv_long("CMA_GET_MAX", 1, 16*1024);
 
+#ifdef USE_CMA
     ret = shmem_transport_cma_init(eager_size);
     if (0 != ret) {
         fprintf(stderr,
@@ -301,13 +304,15 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
     /* last minute printing of information */
     if (0 == shmem_internal_my_pe) {
-        if (NULL != shmem_util_getenv_str("VERSION")) {
+        if (NULL != shmem_util_getenv_str("VERSION") ||
+            NULL != shmem_util_getenv_str("INFO")    ||
+            shmem_internal_debug)
+        {
             printf(PACKAGE_STRING "\n");
             fflush(NULL);
         }
 
         if (NULL != shmem_util_getenv_str("INFO")) {
-            printf(PACKAGE_STRING "\n\n");
             printf("SMA_VERSION             %s\n",
                    (NULL != shmem_util_getenv_str("VERSION")) ? "Set" : "Not set");
             printf("\tIf set, print library version at startup\n");
@@ -348,15 +353,38 @@ shmem_internal_init(int tl_requested, int *tl_provided)
             printf("\tEnable debugging messages\n");
             printf("SMA_TRAP_ON_ABORT       %s\n", shmem_internal_trap_on_abort ? "On" : "Off");
             printf("\tGenerate trap if the program aborts or calls shmem_global_exit\n");
+
+            printf("\n");
+#ifdef USE_XPMEM
+            printf("On-node transport:      XPMEM\n");
+#endif
 #ifdef USE_CMA
+            printf("On-node transport:      CMA\n");
             printf("SMA_CMA_PUT_MAX         %zu\n", shmem_transport_cma_put_max);
             printf("SMA_CMA_GET_MAX         %zu\n", shmem_transport_cma_get_max);
 #endif /* USE_CMA */
+#if !defined(USE_XPMEM) && !defined(USE_CMA)
+            printf("On-node transport:      NONE\n");
+#endif
 
+            printf("\n");
             shmem_transport_print_info();
             printf("\n");
-            fflush(NULL);
         }
+
+        if (shmem_internal_debug) {
+            printf("Build information:\n");
+#ifdef SOS_GIT_VERSION
+            printf("%-23s %s\n", "Git Version", SOS_GIT_VERSION);
+#endif
+            printf("%-23s %s\n", "Configure Args", SOS_CONFIGURE_ARGS);
+            printf("%-23s %s\n", "Build Date", SOS_BUILD_DATE);
+            printf("%-23s %s\n", "Build CC", SOS_BUILD_CC);
+            printf("%-23s %s\n", "Build CFLAGS", SOS_BUILD_CFLAGS);
+            printf("\n");
+        }
+
+        fflush(NULL);
     }
 
     /* finish up */
