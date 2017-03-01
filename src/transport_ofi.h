@@ -67,7 +67,7 @@ extern shmem_internal_mutex_t           shmem_transport_ofi_lock;
 #define OFI_RET_CHECK(ret)                                                      \
     do {                                                                        \
         if (ret) {                                                              \
-            RAISE_ERROR_MSG("OFI error #%zd: %s \n", ret, fi_strerror(ret));    \
+            RAISE_ERROR_MSG("OFI error #%d: %s\n", ret, fi_strerror(ret));      \
         }                                                                       \
     } while (0)
 
@@ -233,7 +233,9 @@ void shmem_transport_ofi_drain_cq(void)
 				              (void *)&e, 0);
 				OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
 			} else {
-				OFI_RET_CHECK(ret);
+                                if (ret) {
+                                    RAISE_ERROR_MSG("OFI error #%zd: %s\n", ret, fi_strerror(ret));
+                                }
 			}
 		}
 
