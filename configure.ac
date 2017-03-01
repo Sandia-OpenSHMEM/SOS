@@ -318,6 +318,11 @@ AC_TRY_RUN([struct lock_s { int a; int b; }; main() { if (sizeof(long) == sizeof
 
 if test "$FC" != "" ; then
   AC_DEFINE([ENABLE_FORTRAN],[1],[Fortran support enabled])
+  AC_MSG_CHECKING([if complex sizes are appropriate])
+  AC_TRY_RUN([float _Complex x; double _Complex y; main() { if (sizeof(x)==8 && sizeof(y)==16) return 0; else return 1; }],
+                 [AC_MSG_RESULT([yes])], [
+                  AC_MSG_RESULT([no])
+                  AC_MSG_ERROR([float _Complex and double _Complex must be 4 and 8 bytes, respectively]) ])
   # make sure Fortran supports ISO_C_BINDING (Fortran 2003)
   AC_CACHE_CHECK([if Fortran compiler supports ISO_C_BINDING],
     [shmem_cv_fortran_iso_c_binding],
@@ -338,6 +343,7 @@ if test "$FC" != "" ; then
   OMPI_FORTRAN_GET_SIZEOF([], [REAL])
   OMPI_FORTRAN_GET_SIZEOF([], [DOUBLE PRECISION])
   OMPI_FORTRAN_GET_SIZEOF([], [COMPLEX])
+  OMPI_FORTRAN_GET_SIZEOF([], [DOUBLE COMPLEX])
 
   # find transport integer type corresponding to INTEGER
   SHMEM_FIND_FORTRAN_INT_TYPE([INTEGER], [$transport])
@@ -352,6 +358,8 @@ if test "$FC" != "" ; then
   OMPI_FORTRAN_GET_KIND_VALUE([C_INT64_T], [FORTRAN_INT8_KIND])
   OMPI_FORTRAN_GET_KIND_VALUE([C_FLOAT], [FORTRAN_REAL4_KIND])
   OMPI_FORTRAN_GET_KIND_VALUE([C_DOUBLE], [FORTRAN_REAL8_KIND])
+  OMPI_FORTRAN_GET_KIND_VALUE([C_FLOAT_COMPLEX], [FORTRAN_COMP4_KIND])
+  OMPI_FORTRAN_GET_KIND_VALUE([C_DOUBLE_COMPLEX], [FORTRAN_COMP8_KIND])
 
   # The collectives are all implemented in C and require the psync to
   # hold a variable number of C longs.  Find how many INTEGERs it takes to
@@ -375,6 +383,8 @@ else
   FORTRAN_INT8_KIND=0
   FORTRAN_REAL4_KIND=0
   FORTRAN_REAL8_KIND=0
+  FORTRAN_COMP4_KIND=0
+  FORTRAN_COMP8_KIND=0
   AC_DEFINE([DTYPE_FORTRAN_INTEGER],[-1],[Fortran integer C type (disabled)])
 fi
 if test "$ac_cv_sizeof_voidp" = "4" ; then
@@ -393,6 +403,8 @@ AC_SUBST(FORTRAN_INT4_KIND)
 AC_SUBST(FORTRAN_INT8_KIND)
 AC_SUBST(FORTRAN_REAL4_KIND)
 AC_SUBST(FORTRAN_REAL8_KIND)
+AC_SUBST(FORTRAN_COMP4_KIND)
+AC_SUBST(FORTRAN_COMP8_KIND)
 AC_SUBST(FORTRAN_PTR_KIND)
 
 AM_CONDITIONAL([HAVE_FORTRAN], [test "$FC" != ""])
