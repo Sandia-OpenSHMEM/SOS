@@ -146,7 +146,7 @@ am__v_SED_0 = @echo "  SED     " $@;
 
 build_info.h: $(top_builddir)/config.status
 	$(AM_V_GEN) echo "#ifndef BUILD_INFO_H" > $@
-	if [ -f $(srcdir)/../.git/HEAD ]; then \
+	@if [ -f $(srcdir)/../.git/HEAD ]; then \
 	     echo "#define SOS_GIT_VERSION \"$(shell git describe --abbrev=8 --dirty --always --tags) \
 	                                    ($(shell git rev-parse --abbrev-ref HEAD))\"" >> $@; \
 	fi;
