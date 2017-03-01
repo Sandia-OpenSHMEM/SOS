@@ -990,6 +990,10 @@ static inline int query_for_fabric(struct fabric_info *info)
 #else
     domain_attr.mr_mode       = FI_MR_BASIC; /* VA space is pre-allocated */
 #endif
+#if !defined(ENABLE_MR_SCALABLE) || !defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
+    domain_attr.mr_key_size   = 1; /* Heap and data use different MR keys, need
+                                      at least 1 byte */
+#endif
     domain_attr.threading     = FI_THREAD_ENDPOINT; /* we promise to serialize access
                                                        to endpoints. we have only one
                                                        thread active at a time */
@@ -1049,6 +1053,14 @@ static inline int query_for_fabric(struct fabric_info *info)
         RAISE_WARN_STR("OFI provider did not set max_msg_size");
         return 1;
     }
+
+#if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
+    /* Only use a single MR, no keys required */
+    info->p_info->domain_attr->mr_key_size = 0;
+#else
+    /* Heap and data use different MR keys, need at least 1 byte */
+    info->p_info->domain_attr->mr_key_size = 1;
+#endif
 
     shmem_internal_assertp(info->p_info->tx_attr->inject_size >= shmem_transport_ofi_max_buffered_send);
     shmem_transport_ofi_max_buffered_send = info->p_info->tx_attr->inject_size;
