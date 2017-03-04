@@ -12,7 +12,7 @@
    key=value messages
 */
 
-#include "mpichconf.h"
+#include "config.h"
 
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H

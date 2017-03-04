@@ -17,10 +17,8 @@ EXTRA_DIST = README NEWS LICENSE sandia-openshmem.spec
 
 SUBDIRS = mpp
 
-if USE_SHMEM_PMI
 EXTRA_DIST += shmem_pmi
 SUBDIRS += shmem_pmi
-endif
 
 SUBDIRS += src test
 

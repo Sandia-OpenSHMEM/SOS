@@ -277,6 +277,9 @@ AM_CONDITIONAL([USE_PMI2], [test "$pmi_type" = "pmi2"])
 
 dnl check for header files
 AC_CHECK_HEADERS([fnmatch.h])
+AS_IF([test "$enable_pmi_simple" = "yes"],
+      [AC_CHECK_HEADERS([assert.h arpa/inet.h sys/types.h unistd.h stdlib.h string.h strings.h])
+      AC_DEFINE([USE_PMI_PORT], [1], [Use port])])
 
 dnl check for types
 
@@ -481,6 +484,7 @@ AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
 
 AC_CONFIG_FILES([Makefile
   sandia-openshmem.spec
+  shmem_pmi/Makefile
   mpp/Makefile
   mpp/shmem.fh
   mpp/shmemx.fh
@@ -497,9 +501,6 @@ AC_CONFIG_FILES([Makefile
 if test "$enable_profiling" = "yes"; then
     AC_CONFIG_FILES([mpp/pshmem.h4])
 fi
-
-AS_IF([test "$enable_pmi_simple" = "yes"],
-	[AC_CONFIG_SUBDIRS([shmem_pmi])])
 
 AC_OUTPUT
 
