@@ -33,7 +33,3 @@ TESTS += gups
 else
 check_PROGRAMS += gups
 endif
-
-gups_SOURCES = gups.c
-
-binary_search_SOURCES = binary-search.c

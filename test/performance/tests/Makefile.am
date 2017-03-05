@@ -35,8 +35,3 @@ LDADD = $(top_builddir)/src/libsma.la
 if USE_SHMEM_PMI
 LDADD += $(top_builddir)/shmem_pmi/libshmem_pmi.la
 endif
-
-shmemlatency_SOURCES = shmemlatency.c
-
-msgrate_SOURCES = msgrate.c
-
