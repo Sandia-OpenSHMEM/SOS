@@ -98,10 +98,6 @@ endif
 
 if USE_SHMEM_PMI
 AM_CPPFLAGS += -I$(top_srcdir)/shmem_pmi
-
-libsma_la_LIBADD = \
-	../shmem_pmi/simple_pmi.lo \
-	../shmem_pmi/simple_pmiutil.lo
 endif
 
 if USE_PMI2

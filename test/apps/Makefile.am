@@ -18,6 +18,11 @@ LOG_COMPILER = $(TEST_RUNNER)
 
 AM_CPPFLAGS = -I$(top_builddir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
+LDADD = $(top_builddir)/src/libsma.la
+
+if USE_SHMEM_PMI
+LDADD += $(top_builddir)/shmem_pmi/libshmem_pmi.la
+endif
 
 TESTS = binary-search
 
@@ -30,7 +35,5 @@ check_PROGRAMS += gups
 endif
 
 gups_SOURCES = gups.c
-gups_LDADD = $(top_builddir)/src/libsma.la
 
 binary_search_SOURCES = binary-search.c
-binary_search_LDADD = $(top_builddir)/src/libsma.la

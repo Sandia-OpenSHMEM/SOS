@@ -53,6 +53,10 @@ AM_CPPFLAGS = -I$(top_builddir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
 LDADD = $(top_builddir)/src/libsma.la
 
+if USE_SHMEM_PMI
+LDADD += $(top_builddir)/shmem_pmi/libshmem_pmi.la
+endif
+
 shmem_latency_put_perf_SOURCES = shmem_latency_put_perf.c latency_common.h common.h round_t_latency.h int_element_latency.h
 
 shmem_latency_get_perf_SOURCES = shmem_latency_get_perf.c latency_common.h common.h round_t_latency.h int_element_latency.h
