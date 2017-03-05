@@ -96,8 +96,8 @@ libsma_la_SOURCES += \
 	transport_cma.c
 endif
 
-if USE_SHMEM_PMI
-AM_CPPFLAGS += -I$(top_srcdir)/shmem_pmi
+if USE_PMI_SIMPLE
+AM_CPPFLAGS += -I$(top_srcdir)/pmi-simple
 endif
 
 if USE_PMI2

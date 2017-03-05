@@ -20,8 +20,8 @@ AM_CPPFLAGS = -I$(top_builddir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
 LDADD = $(top_builddir)/src/libsma.la
 
-if USE_SHMEM_PMI
-LDADD += $(top_builddir)/shmem_pmi/libshmem_pmi.la
+if USE_PMI_SIMPLE
+LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
 endif
 
 TESTS = binary-search
