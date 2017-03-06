@@ -2,8 +2,8 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
-v1.3.2-rc1
-----------
+v1.3.2rc1
+---------
 - Enabled single-process, direct execution of SOS binaries with simple PMI
 - Enabled VPATH builds
 - Added argument error checking for all SHMEM routines, enabled at compile time
@@ -15,6 +15,7 @@ v1.3.2-rc1
 - Added --enable-completion-polling build option to poll in quiet/fence
   operations rather than waiting.  This can improve performance for libfabric
   providers that require software-generated progress.
+- Improved library path propagation in compiler wrappers
 - Update symmetric heap allocator to dlmalloc v2.8.6
 - Update PMI-1 client library from MPICH
 - Improved bandwidth efficiency and fixed bug in collect routines

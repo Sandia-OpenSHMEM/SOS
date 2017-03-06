@@ -12,25 +12,37 @@
 # distribution.
 
 # shmem.h should appear in BOTH $(includedir)/shmem.h and $(includedir)/mpp/shmem.h!
+
+EXTRA_DIST = shmem.h4.in  \
+             shmemx.h4.in \
+             pshmem.h4.in \
+             shmem.fh.in  \
+             shmemx.fh.in \
+             shmem_c_func.m4 \
+             shmemx_c_func.m4
+
 mppdir = $(includedir)/mpp
 
-mpp_HEADERS = shmem.h shmemx.h
-include_HEADERS = shmem.h shmemx.h
+nodist_mpp_HEADERS = shmem.h shmemx.h
+nodist_include_HEADERS = shmem.h shmemx.h
 
-BUILT_SOURCES = shmem.h
-CLEANFILES += shmem.h
+BUILT_SOURCES = shmem.h shmemx.h
+CLEANFILES += shmem.h shmemx.h
 
 if ENABLE_PROFILING
-mpp_HEADERS += pshmem.h
-include_HEADERS += pshmem.h
+nodist_mpp_HEADERS += pshmem.h
+nodist_include_HEADERS += pshmem.h
 
 BUILT_SOURCES += pshmem.h
 CLEANFILES += pshmem.h
 endif
 
 if HAVE_FORTRAN
-mpp_HEADERS += shmem.fh shmemx.fh
-include_HEADERS += shmem.fh shmemx.fh
+nodist_mpp_HEADERS += shmem.fh shmemx.fh
+nodist_include_HEADERS += shmem.fh shmemx.fh
+
+BUILT_SOURCES += shmem.fh shmemx.fh
+CLEANFILES += shmem.fh shmemx.fh
 endif
 
 SUFFIXES = .h4

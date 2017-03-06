@@ -51,6 +51,10 @@ libsma_la_SOURCES = \
 	cache_management_c.c \
 	transport.h \
 	util.c \
+	uthash.h \
+	shmem_decl.h
+
+nodist_libsma_la_SOURCES = \
 	$(GEN_BINDINGS)
 
 BUILT_SOURCES = $(GEN_BINDINGS) \
@@ -125,7 +129,15 @@ CLEANFILES += oshfort
 endif
 
 EXTRA_DIST = shmem_compiler_script.in \
-             shmem_launcher_script.in
+             shmem_launcher_script.in \
+             atomic_c.c4              \
+             collectives_c.c4         \
+             collectives_f.c4         \
+             data_c.c4                \
+             data_f.c4                \
+             synchronization_c.c4     \
+             shmem_bind_c.m4          \
+             shmem_bind_f.m4
 
 do_subst = sed -e 's|[@]PERL[@]|$(PERL)|g' \
                -e 's|[@]WRAPPER_COMPILER_CC[@]|$(WRAPPER_COMPILER_CC)|g' \
