@@ -18,19 +18,21 @@ LOG_COMPILER = $(TEST_RUNNER)
 
 AM_CPPFLAGS = -I$(top_builddir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
+LDADD = $(top_builddir)/src/libsma.la
 
-TESTS = binary-search
-
-check_PROGRAMS = $(TESTS)
-
-if ENABLE_LENGTHY_TESTS
-TESTS += gups
-else
-check_PROGRAMS += gups
+if USE_PMI_SIMPLE
+LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
 endif
 
-gups_SOURCES = gups.c
-gups_LDADD = $(top_builddir)/src/libsma.la
+check_PROGRAMS = \
+	binary-search \
+	gups
 
-binary_search_SOURCES = binary-search.c
-binary_search_LDADD = $(top_builddir)/src/libsma.la
+SHORT_TESTS = \
+	binary-search
+
+if ENABLE_LENGTHY_TESTS
+TESTS = $(check_PROGRAMS)
+else
+TESTS = $(SHORT_TESTS)
+endif

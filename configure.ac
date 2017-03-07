@@ -272,11 +272,14 @@ AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
 AS_IF([test "$enable_pmi_simple" = "yes"],
      [TEST_RUNNER='$(abs_top_builddir)/src/oshrun -n $(NPROCS)'],
      [OPAL_CHECK_PMI(pmi_type)])
-AM_CONDITIONAL([USE_SHMEM_PMI], [test "$enable_pmi_simple" = "yes"])
+AM_CONDITIONAL([USE_PMI_SIMPLE], [test "$enable_pmi_simple" = "yes"])
 AM_CONDITIONAL([USE_PMI2], [test "$pmi_type" = "pmi2"])
 
 dnl check for header files
 AC_CHECK_HEADERS([fnmatch.h])
+AS_IF([test "$enable_pmi_simple" = "yes"],
+      [AC_CHECK_HEADERS([assert.h arpa/inet.h sys/types.h unistd.h stdlib.h string.h strings.h])
+      AC_DEFINE([USE_PMI_PORT], [1], [Use port])])
 
 dnl check for types
 
@@ -472,6 +475,9 @@ OPAL_SETUP_RPATH
 WRAPPER_COMPILER_EXTRA_LDFLAGS="$portals4_LDFLAGS $libfabric_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
 WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS $libfabric_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
 
+AS_IF([test "$enable_pmi_simple" = "yes"],
+     [WRAPPER_COMPILER_EXTRA_LIBS="$WRAPPER_COMPILER_EXTRA_LIBS -lpmi_simple"])
+
 AC_MSG_CHECKING([for OPAL LDFLAGS])
 RPATHIFY_LDFLAGS([WRAPPER_COMPILER_EXTRA_LDFLAGS])
 WRAPPER_COMPILER_EXTRA_LDFLAGS=`echo "$WRAPPER_COMPILER_EXTRA_LDFLAGS" | sed -e 's/@{libdir}/\${libdir}/g'`
@@ -481,6 +487,7 @@ AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
 
 AC_CONFIG_FILES([Makefile
   sandia-openshmem.spec
+  pmi-simple/Makefile
   mpp/Makefile
   mpp/shmem.fh
   mpp/shmemx.fh
@@ -497,9 +504,6 @@ AC_CONFIG_FILES([Makefile
 if test "$enable_profiling" = "yes"; then
     AC_CONFIG_FILES([mpp/pshmem.h4])
 fi
-
-AS_IF([test "$enable_pmi_simple" = "yes"],
-	[AC_CONFIG_SUBDIRS([shmem_pmi])])
 
 AC_OUTPUT
 

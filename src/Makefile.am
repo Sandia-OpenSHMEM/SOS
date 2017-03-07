@@ -100,12 +100,8 @@ libsma_la_SOURCES += \
 	transport_cma.c
 endif
 
-if USE_SHMEM_PMI
-AM_CPPFLAGS += -I$(top_srcdir)/shmem_pmi
-
-libsma_la_LIBADD = \
-	../shmem_pmi/simple_pmi.lo \
-	../shmem_pmi/simple_pmiutil.lo
+if USE_PMI_SIMPLE
+AM_CPPFLAGS += -I$(top_srcdir)/pmi-simple
 endif
 
 if USE_PMI2
@@ -158,7 +154,7 @@ am__v_SED_0 = @echo "  SED     " $@;
 
 build_info.h: $(top_builddir)/config.status
 	$(AM_V_GEN) echo "#ifndef BUILD_INFO_H" > $@
-	@if [ -f $(srcdir)/../.git/HEAD ]; then \
+	@if [ -f $(top_srcdir)/.git/HEAD ]; then \
 	     echo "#define SOS_GIT_VERSION \"$(shell git describe --abbrev=8 --dirty --always --tags) \
 	                                    ($(shell git rev-parse --abbrev-ref HEAD))\"" >> $@; \
 	fi;
