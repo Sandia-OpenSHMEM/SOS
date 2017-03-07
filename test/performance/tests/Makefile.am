@@ -12,8 +12,7 @@
 # distribution.
 
 check_PROGRAMS = \
-	shmemlatency \
-	msgrate
+	shmemlatency
 
 if ENABLE_LENGTHY_TESTS
 TESTS = $(check_PROGRAMS)
