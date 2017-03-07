@@ -11,9 +11,7 @@
 # information, see the LICENSE file in the top level directory of the
 # distribution.
 
-check_PROGRAMS = $(TESTS)
-
-TESTS = \
+check_PROGRAMS = \
 	hello \
 	pi \
 	micro_unit_shmem \
@@ -83,17 +81,17 @@ TESTS = \
 	reduce_active_set
 
 if ENABLE_PROFILING
-TESTS += \
+check_PROGRAMS += \
 	rma_coverage_pshmem
 endif
 
 if USE_PORTALS4
-TESTS += \
+check_PROGRAMS += \
 	 shmem_ct
 endif
 
 if HAVE_CXX
-TESTS += \
+check_PROGRAMS += \
     cxx_test_shmem_add \
     cxx_test_shmem_fetch \
     cxx_test_shmem_g \
@@ -106,21 +104,23 @@ TESTS += \
 endif
 
 if HAVE_FORTRAN
-TESTS += \
+check_PROGRAMS += \
      hello_f \
      complex_reductions_f \
      shmem_info_f
 
 if !HAVE_LONG_FORTRAN_HEADER
-TESTS += \
+check_PROGRAMS += \
      set_fetch_f
 endif
 endif
 
 if HAVE_PTHREADS
-TESTS += \
+check_PROGRAMS += \
     mt_a2a
 endif
+
+TESTS = $(check_PROGRAMS)
 
 NPROCS ?= 2
 LOG_COMPILER = $(TEST_RUNNER)

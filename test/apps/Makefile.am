@@ -24,12 +24,15 @@ if USE_PMI_SIMPLE
 LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
 endif
 
-TESTS = binary-search
+check_PROGRAMS = \
+	binary-search \
+	gups
 
-check_PROGRAMS = $(TESTS)
+SHORT_TESTS = \
+	binary-search
 
 if ENABLE_LENGTHY_TESTS
-TESTS += gups
+TESTS = $(check_PROGRAMS)
 else
-check_PROGRAMS += gups
+TESTS = $(SHORT_TESTS)
 endif

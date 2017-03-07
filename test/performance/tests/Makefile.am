@@ -11,18 +11,12 @@
 # information, see the LICENSE file in the top level directory of the
 # distribution.
 
-check_PROGRAMS = $(TESTS)
-
-TESTS =
+check_PROGRAMS = \
+	shmemlatency \
+	msgrate
 
 if ENABLE_LENGTHY_TESTS
-TESTS += \
-        shmemlatency \
-	msgrate
-else
-check_PROGRAMS += \
-        shmemlatency \
-	msgrate
+TESTS = $(check_PROGRAMS)
 endif
 
 NPROCS ?= 2
