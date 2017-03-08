@@ -88,7 +88,7 @@ typedef struct perf_metrics {
     bw_style bwstyle;
 } perf_metrics_t;
 
-long red_psync[_SHMEM_REDUCE_SYNC_SIZE];
+long red_psync[SHMEM_REDUCE_SYNC_SIZE];
 
 /*default settings if no input is provided */
 void static data_init(perf_metrics_t * data) {
@@ -349,7 +349,7 @@ void static inline calc_and_print_results(double total_t, int len,
     static double pe_bw_sum, bw = 0.0; /*must be symmetric for reduction*/
     double pe_bw_avg = 0.0, pe_mr_avg = 0.0;
     int nred_elements = 1;
-    static double pwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
+    static double pwrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
 
     PE_set_used_adjustments(&nPEs, &stride, &start_pe, metric_info);
 
@@ -495,8 +495,8 @@ void static inline bw_init_data_stream(perf_metrics_t *metric_info,
 
     data_init(metric_info);
 
-    for(i = 0; i < _SHMEM_REDUCE_MIN_WRKDATA_SIZE; i++)
-        red_psync[i] = _SHMEM_SYNC_VALUE;
+    for(i = 0; i < SHMEM_REDUCE_MIN_WRKDATA_SIZE; i++)
+        red_psync[i] = SHMEM_SYNC_VALUE;
 
     command_line_arg_check(argc, argv, metric_info);
 
