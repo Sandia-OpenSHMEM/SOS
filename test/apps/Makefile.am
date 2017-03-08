@@ -29,7 +29,8 @@ check_PROGRAMS = \
 	gups
 
 SHORT_TESTS = \
-	binary-search
+	binary-search \
+	gups
 
 if ENABLE_LENGTHY_TESTS
 TESTS = $(check_PROGRAMS)
