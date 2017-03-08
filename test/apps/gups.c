@@ -321,23 +321,23 @@ SHMEMRandomAccess(void)
                        * NumUpdates_Default due to execution time bounds */
   int64_t ProcNumUpdates; /* number of updates per processor */
 
-  static long pSync_bcast[_SHMEM_BCAST_SYNC_SIZE];
-  static long long int llpWrk[_SHMEM_REDUCE_SYNC_SIZE];
+  static long pSync_bcast[SHMEM_BCAST_SYNC_SIZE];
+  static long long int llpWrk[SHMEM_REDUCE_SYNC_SIZE];
 
-  static long pSync_reduce[_SHMEM_REDUCE_SYNC_SIZE];
-  static int ipWrk[_SHMEM_REDUCE_SYNC_SIZE];
+  static long pSync_reduce[SHMEM_REDUCE_SYNC_SIZE];
+  static int ipWrk[SHMEM_REDUCE_SYNC_SIZE];
 
   FILE *outFile = NULL;
   double *GUPs;
   double *temp_GUPs;
 
 
-  for (i = 0; i < _SHMEM_BCAST_SYNC_SIZE; i += 1){
-        pSync_bcast[i] = _SHMEM_SYNC_VALUE;
+  for (i = 0; i < SHMEM_BCAST_SYNC_SIZE; i += 1){
+        pSync_bcast[i] = SHMEM_SYNC_VALUE;
   }
 
-  for (i = 0; i < _SHMEM_REDUCE_SYNC_SIZE; i += 1){
-        pSync_reduce[i] = _SHMEM_SYNC_VALUE;
+  for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i += 1){
+        pSync_reduce[i] = SHMEM_SYNC_VALUE;
   }
 
   SHMEMGUPs = -1;
