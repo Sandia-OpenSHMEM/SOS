@@ -334,9 +334,11 @@ SHMEMRandomAccess(void)
 
   for (i = 0; i < _SHMEM_BCAST_SYNC_SIZE; i += 1){
         pSync_bcast[i] = _SHMEM_SYNC_VALUE;
-        pSync_reduce[i] = _SHMEM_SYNC_VALUE;
   }
 
+  for (i = 0; i < _SHMEM_REDUCE_SYNC_SIZE; i += 1){
+        pSync_reduce[i] = _SHMEM_SYNC_VALUE;
+  }
 
   SHMEMGUPs = -1;
   GUPs = &SHMEMGUPs;
