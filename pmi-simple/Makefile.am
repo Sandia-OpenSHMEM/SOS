@@ -11,13 +11,14 @@
 # information, see the LICENSE file in the top level directory of the
 # distribution.
 
-ACLOCAL_AMFLAGS = -I config
+AM_CPPFLAGS= -I$(top_builddir)/../src
 
-AM_CPPFLAGS= -I$(top_srcdir)/shmem_pmi
-
-lib_LTLIBRARIES = libshmem_pmi.la
-libshmem_pmi_la_SOURCES = \
+if USE_PMI_SIMPLE
+lib_LTLIBRARIES = libpmi_simple.la
+libpmi_simple_la_SOURCES = \
 	simple_pmi.c \
 	simple_pmiutil.c \
 	simple_pmiutil.h \
-	pmi.h
+	pmi.h \
+	mpl.h
+endif

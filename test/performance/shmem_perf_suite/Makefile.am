@@ -7,12 +7,7 @@
 # information, see the LICENSE file in the top level directory of the
 # distribution.
 
-check_PROGRAMS = $(TESTS)
-
-TESTS =
-
-if ENABLE_LENGTHY_TESTS
-TESTS += \
+check_PROGRAMS = \
 	shmem_latency_put_perf \
 	shmem_latency_get_perf \
 	shmem_bw_put_perf \
@@ -25,29 +20,25 @@ TESTS += \
 	shmem_bibw_nb_put_perf \
 	shmem_bw_nb_get_perf \
 	shmem_bibw_nb_get_perf \
-	shmem_bw_atomics_perf 	\
-	shmem_bibw_atomics_perf
-else
-check_PROGRAMS += \
-	shmem_latency_put_perf \
-	shmem_latency_get_perf \
-	shmem_bw_put_perf \
-	shmem_bibw_put_perf \
-	shmem_bw_get_perf \
-	shmem_bibw_get_perf \
-	shmem_latency_nb_put_perf \
-	shmem_latency_nb_get_perf \
-	shmem_bw_nb_put_perf \
-	shmem_bibw_nb_put_perf \
-	shmem_bw_nb_get_perf \
-	shmem_bibw_nb_get_perf \
-	shmem_bw_atomics_perf		\
+	shmem_bw_atomics_perf \
 	shmem_bibw_atomics_perf
 
 if ENABLE_OPENMP
 check_PROGRAMS += \
 	shmem_bw_put_ctx_lockless
 endif
+
+noinst_HEADERS = \
+	common.h \
+	latency_common.h \
+	round_t_latency.h \
+	int_element_latency.h \
+	bw_common.h \
+	uni_dir.h \
+	bi_dir.h
+
+if ENABLE_LENGTHY_TESTS
+TESTS = $(check_PROGRAMS)
 endif
 
 NPROCS ?= 2
@@ -57,33 +48,8 @@ AM_CPPFLAGS = -I$(top_builddir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
 LDADD = $(top_builddir)/src/libsma.la
 
-shmem_latency_put_perf_SOURCES = shmem_latency_put_perf.c latency_common.h common.h round_t_latency.h int_element_latency.h
+if USE_PMI_SIMPLE
+LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
+endif
 
-shmem_latency_get_perf_SOURCES = shmem_latency_get_perf.c latency_common.h common.h round_t_latency.h int_element_latency.h
-
-shmem_bw_put_perf_SOURCES = shmem_bw_put_perf.c bw_common.h common.h uni_dir.h
-
-shmem_bw_put_ctx_lockless_SOURCES = shmem_bw_put_ctx_lockless.c bw_common.h common.h uni_dir.h
 shmem_bw_put_ctx_lockless_CFLAGS = $(AM_OPENMP_CFLAGS)
-
-shmem_bibw_put_perf_SOURCES = shmem_bibw_put_perf.c bw_common.h common.h bi_dir.h
-
-shmem_bw_get_perf_SOURCES = shmem_bw_get_perf.c bw_common.h common.h uni_dir.h
-
-shmem_bibw_get_perf_SOURCES = shmem_bibw_get_perf.c bw_common.h common.h bi_dir.h
-
-shmem_latency_nb_put_perf_SOURCES = shmem_latency_nb_put_perf.c latency_common.h common.h
-
-shmem_latency_nb_get_perf_SOURCES = shmem_latency_nb_get_perf.c latency_common.h common.h
-
-shmem_bw_nb_put_perf_SOURCES = shmem_bw_nb_put_perf.c bw_common.h common.h uni_dir.h
-
-shmem_bibw_nb_put_perf_SOURCES = shmem_bibw_nb_put_perf.c bw_common.h common.h bi_dir.h
-
-shmem_bw_nb_get_perf_SOURCES = shmem_bw_nb_get_perf.c bw_common.h common.h uni_dir.h
-
-shmem_bibw_nb_get_perf_SOURCES = shmem_bibw_nb_get_perf.c bw_common.h common.h bi_dir.h
-
-shmem_bw_atomics_perf_SOURCES = shmem_bw_atomics_perf.c bw_common.h common.h
-
-shmem_bibw_atomics_perf_SOURCES = shmem_bibw_atomics_perf.c bw_common.h common.h

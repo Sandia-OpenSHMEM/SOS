@@ -13,7 +13,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.3.1], [https://github.com/Sandia-OpenSHMEM/SOS])
+AC_INIT([Sandia OpenSHMEM], [1.3.2rc1], [https://github.com/Sandia-OpenSHMEM/SOS])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -142,7 +142,7 @@ AC_SUBST([LIBTOOL_WRAPPER_LDFLAGS])
 AC_ARG_ENABLE([rpath],
   [AS_HELP_STRING([--disable-rpath],
     [Disable use of rpath in compiler wrappers and building tests (default: enabled)])])
-AS_IF([test "$enable_rpath" = "no"], [RPATH_LDFLAGS=], [RPATH_LDFLAGS="-Wl,-rpath -Wl,$libdir"])
+AS_IF([test "$enable_rpath" = "no"], [], [enable_wrapper_rpath="yes"])
 
 
 AC_ARG_ENABLE([profiling],
@@ -247,12 +247,21 @@ OMPI_CHECK_PORTALS4([portals4],
     [transport_portals4="no"])
 AM_CONDITIONAL([USE_PORTALS4], [test "$transport_portals4" = "yes"])
 
-OMPI_CHECK_OFI([ofi],
+OPAL_CHECK_LIBFABRIC([libfabric],
     [AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
      transport="ofi"
      transport_ofi="yes"],
     [transport_ofi="no"])
 AM_CONDITIONAL([USE_OFI], [test "$transport_ofi" = "yes"])
+
+if test "$transport_ofi" = "no" ; then
+  OMPI_CHECK_OFI([ofi],
+      [AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
+       transport="ofi"
+       transport_ofi="yes"],
+      [transport_ofi="no"])
+  AM_CONDITIONAL([USE_OFI], [test "$transport_ofi" = "yes"])
+fi
 
 SANDIA_CHECK_XPMEM(
     [AC_DEFINE([USE_XPMEM], [1], [Define if XPMEM transport is active])
@@ -276,11 +285,14 @@ AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
 AS_IF([test "$enable_pmi_simple" = "yes"],
      [TEST_RUNNER='$(abs_top_builddir)/src/oshrun -n $(NPROCS)'],
      [OPAL_CHECK_PMI(pmi_type)])
-AM_CONDITIONAL([USE_SHMEM_PMI], [test "$enable_pmi_simple" = "yes"])
+AM_CONDITIONAL([USE_PMI_SIMPLE], [test "$enable_pmi_simple" = "yes"])
 AM_CONDITIONAL([USE_PMI2], [test "$pmi_type" = "pmi2"])
 
 dnl check for header files
 AC_CHECK_HEADERS([fnmatch.h])
+AS_IF([test "$enable_pmi_simple" = "yes"],
+      [AC_CHECK_HEADERS([assert.h arpa/inet.h sys/types.h unistd.h stdlib.h string.h strings.h])
+      AC_DEFINE([USE_PMI_PORT], [1], [Use port])])
 
 dnl check for types
 
@@ -322,6 +334,11 @@ AC_TRY_RUN([struct lock_s { int a; int b; }; main() { if (sizeof(long) == sizeof
 
 if test "$FC" != "" ; then
   AC_DEFINE([ENABLE_FORTRAN],[1],[Fortran support enabled])
+  AC_MSG_CHECKING([if complex sizes are appropriate])
+  AC_TRY_RUN([float _Complex x; double _Complex y; main() { if (sizeof(x)==8 && sizeof(y)==16) return 0; else return 1; }],
+                 [AC_MSG_RESULT([yes])], [
+                  AC_MSG_RESULT([no])
+                  AC_MSG_ERROR([float _Complex and double _Complex must be 4 and 8 bytes, respectively]) ])
   # make sure Fortran supports ISO_C_BINDING (Fortran 2003)
   AC_CACHE_CHECK([if Fortran compiler supports ISO_C_BINDING],
     [shmem_cv_fortran_iso_c_binding],
@@ -342,6 +359,7 @@ if test "$FC" != "" ; then
   OMPI_FORTRAN_GET_SIZEOF([], [REAL])
   OMPI_FORTRAN_GET_SIZEOF([], [DOUBLE PRECISION])
   OMPI_FORTRAN_GET_SIZEOF([], [COMPLEX])
+  OMPI_FORTRAN_GET_SIZEOF([], [DOUBLE COMPLEX])
 
   # find transport integer type corresponding to INTEGER
   SHMEM_FIND_FORTRAN_INT_TYPE([INTEGER], [$transport])
@@ -356,6 +374,8 @@ if test "$FC" != "" ; then
   OMPI_FORTRAN_GET_KIND_VALUE([C_INT64_T], [FORTRAN_INT8_KIND])
   OMPI_FORTRAN_GET_KIND_VALUE([C_FLOAT], [FORTRAN_REAL4_KIND])
   OMPI_FORTRAN_GET_KIND_VALUE([C_DOUBLE], [FORTRAN_REAL8_KIND])
+  OMPI_FORTRAN_GET_KIND_VALUE([C_FLOAT_COMPLEX], [FORTRAN_COMP4_KIND])
+  OMPI_FORTRAN_GET_KIND_VALUE([C_DOUBLE_COMPLEX], [FORTRAN_COMP8_KIND])
 
   # The collectives are all implemented in C and require the psync to
   # hold a variable number of C longs.  Find how many INTEGERs it takes to
@@ -379,6 +399,8 @@ else
   FORTRAN_INT8_KIND=0
   FORTRAN_REAL4_KIND=0
   FORTRAN_REAL8_KIND=0
+  FORTRAN_COMP4_KIND=0
+  FORTRAN_COMP8_KIND=0
   AC_DEFINE([DTYPE_FORTRAN_INTEGER],[-1],[Fortran integer C type (disabled)])
 fi
 if test "$ac_cv_sizeof_voidp" = "4" ; then
@@ -397,6 +419,8 @@ AC_SUBST(FORTRAN_INT4_KIND)
 AC_SUBST(FORTRAN_INT8_KIND)
 AC_SUBST(FORTRAN_REAL4_KIND)
 AC_SUBST(FORTRAN_REAL8_KIND)
+AC_SUBST(FORTRAN_COMP4_KIND)
+AC_SUBST(FORTRAN_COMP8_KIND)
 AC_SUBST(FORTRAN_PTR_KIND)
 
 AM_CONDITIONAL([HAVE_FORTRAN], [test "$FC" != ""])
@@ -450,18 +474,33 @@ AC_SUBST(CLEANFILES)
 
 # last minute updates of the flags so that tests don't fail oddly if
 # portals libdir isn't in LD_LIBRARY_PATH...
-CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS $ofi_CPPFLAGS $XPMEM_CPPFLAGS $pmi_CPPFLAGS"
-LDFLAGS="$LDFLAGS $portals4_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS $RPATH_LDFLAGS"
-LIBS="$LIBS $portals4_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
+CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS $libfabric_CPPFLAGS $ofi_CPPFLAGS $XPMEM_CPPFLAGS $pmi_CPPFLAGS"
+LDFLAGS="$LDFLAGS $portals4_LDFLAGS $libfabric_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
+LIBS="$LIBS $portals4_LIBS $libfabric_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
+
+# Need the libtool binary before setting up rpath
+LT_OUTPUT
+
+OPAL_TOP_BUILDDIR="`pwd`"
+OPAL_SETUP_RPATH
 
 # wrapper compiler gorp
-WRAPPER_COMPILER_EXTRA_LDFLAGS="$portals4_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS $RPATH_LDFLAGS"
-WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
+WRAPPER_COMPILER_EXTRA_LDFLAGS="$portals4_LDFLAGS $libfabric_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
+WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS $libfabric_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
+
+AS_IF([test "$enable_pmi_simple" = "yes"],
+     [WRAPPER_COMPILER_EXTRA_LIBS="$WRAPPER_COMPILER_EXTRA_LIBS -lpmi_simple"])
+
+AC_MSG_CHECKING([for OPAL LDFLAGS])
+RPATHIFY_LDFLAGS([WRAPPER_COMPILER_EXTRA_LDFLAGS])
+WRAPPER_COMPILER_EXTRA_LDFLAGS=`echo "$WRAPPER_COMPILER_EXTRA_LDFLAGS" | sed -e 's/@{libdir}/\${libdir}/g'`
+AC_MSG_RESULT([$WRAPPER_COMPILER_EXTRA_LDFLAGS])
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LDFLAGS)
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
 
 AC_CONFIG_FILES([Makefile
   sandia-openshmem.spec
+  pmi-simple/Makefile
   mpp/Makefile
   mpp/shmem.fh
   mpp/shmemx.fh
@@ -478,9 +517,6 @@ AC_CONFIG_FILES([Makefile
 if test "$enable_profiling" = "yes"; then
     AC_CONFIG_FILES([mpp/pshmem.h4])
 fi
-
-AS_IF([test "$enable_pmi_simple" = "yes"],
-	[AC_CONFIG_SUBDIRS([shmem_pmi])])
 
 AC_OUTPUT
 

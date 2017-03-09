@@ -11,18 +11,11 @@
 # information, see the LICENSE file in the top level directory of the
 # distribution.
 
-check_PROGRAMS = $(TESTS)
-
-TESTS =
+check_PROGRAMS = \
+	shmemlatency
 
 if ENABLE_LENGTHY_TESTS
-TESTS += \
-        shmemlatency \
-	msgrate
-else
-check_PROGRAMS += \
-        shmemlatency \
-	msgrate
+TESTS = $(check_PROGRAMS)
 endif
 
 NPROCS ?= 2
@@ -32,7 +25,6 @@ AM_CPPFLAGS = -I$(top_builddir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
 LDADD = $(top_builddir)/src/libsma.la
 
-shmemlatency_SOURCES = shmemlatency.c
-
-msgrate_SOURCES = msgrate.c
-
+if USE_PMI_SIMPLE
+LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
+endif

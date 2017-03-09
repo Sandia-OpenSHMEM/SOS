@@ -298,7 +298,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx);
 #define OFI_RET_CHECK(ret)                                                      \
     do {                                                                        \
         if (ret) {                                                              \
-            RAISE_ERROR_MSG("OFI error #%zd: %s \n", ret, fi_strerror(ret));    \
+            RAISE_ERROR_MSG("OFI error #%d: %s\n", ret, fi_strerror(ret));      \
         }                                                                       \
     } while (0)
 

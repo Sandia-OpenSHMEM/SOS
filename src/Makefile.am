@@ -52,11 +52,17 @@ libsma_la_SOURCES = \
 	transport.h \
 	util.c \
 	contexts_c.c \
+	uthash.h \
+	shmem_decl.h
+
+nodist_libsma_la_SOURCES = \
 	$(GEN_BINDINGS)
 
-BUILT_SOURCES = $(GEN_BINDINGS)
+BUILT_SOURCES = $(GEN_BINDINGS) \
+		build_info.h
 
-CLEANFILES += $(GEN_BINDINGS)
+CLEANFILES += $(GEN_BINDINGS) \
+		build_info.h
 
 if HAVE_FORTRAN
 libsma_la_SOURCES += \
@@ -99,12 +105,8 @@ libsma_la_SOURCES += \
 	transport_cma.c
 endif
 
-if USE_SHMEM_PMI
-AM_CPPFLAGS += -I$(top_srcdir)/shmem_pmi
-
-libsma_la_LIBADD = \
-	../shmem_pmi/simple_pmi.lo \
-	../shmem_pmi/simple_pmiutil.lo
+if USE_PMI_SIMPLE
+AM_CPPFLAGS += -I$(top_srcdir)/pmi-simple
 endif
 
 if USE_PMI2
@@ -132,7 +134,15 @@ CLEANFILES += oshfort
 endif
 
 EXTRA_DIST = shmem_compiler_script.in \
-             shmem_launcher_script.in
+             shmem_launcher_script.in \
+             atomic_c.c4              \
+             collectives_c.c4         \
+             collectives_f.c4         \
+             data_c.c4                \
+             data_f.c4                \
+             synchronization_c.c4     \
+             shmem_bind_c.m4          \
+             shmem_bind_f.m4
 
 do_subst = sed -e 's|[@]PERL[@]|$(PERL)|g' \
                -e 's|[@]WRAPPER_COMPILER_CC[@]|$(WRAPPER_COMPILER_CC)|g' \
@@ -146,6 +156,18 @@ do_subst = sed -e 's|[@]PERL[@]|$(PERL)|g' \
 AM_V_SED = $(am__v_SED_@AM_V@)
 am__v_SED_ = $(am__v_SED_@AM_DEFAULT_V@)
 am__v_SED_0 = @echo "  SED     " $@;
+
+build_info.h: $(top_builddir)/config.status
+	$(AM_V_GEN) echo "#ifndef BUILD_INFO_H" > $@
+	@if [ -f $(top_srcdir)/.git/HEAD ]; then \
+	     echo "#define SOS_GIT_VERSION \"$(shell git describe --abbrev=8 --dirty --always --tags) \
+	                                    ($(shell git rev-parse --abbrev-ref HEAD))\"" >> $@; \
+	fi;
+	@echo "#define SOS_CONFIGURE_ARGS \"$(shell $(top_builddir)/config.status --config)\"" >> $@;
+	@echo "#define SOS_BUILD_DATE \"$(shell date)\"" >> $@;
+	@echo "#define SOS_BUILD_CC \"$(CC)\"" >> $@;
+	@echo "#define SOS_BUILD_CFLAGS \"$(CFLAGS)\"" >> $@;
+	@echo "#endif" >> $@
 
 oshcc: shmem_compiler_script.in Makefile
 	$(AM_V_SED)$(do_subst) -e 's|[@]LANG[@]|C|g' < $(srcdir)/shmem_compiler_script.in > oshcc

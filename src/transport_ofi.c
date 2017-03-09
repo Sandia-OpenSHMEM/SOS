@@ -1134,6 +1134,11 @@ static inline int query_for_fabric(struct fabric_info *info)
    * lock-free concurrent queues */
     domain_attr.threading     = FI_THREAD_SAFE;
 
+#if !defined(ENABLE_MR_SCALABLE) || !defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
+    domain_attr.mr_key_size   = 1; /* Heap and data use different MR keys, need
+                                      at least 1 byte */
+#endif
+
     hints.domain_attr         = &domain_attr;
     ep_attr.type              = FI_EP_RDM; /* reliable connectionless */
     hints.fabric_attr	      = &fabric_attr;
@@ -1189,6 +1194,14 @@ static inline int query_for_fabric(struct fabric_info *info)
         RAISE_WARN_STR("OFI provider did not set max_msg_size");
         return 1;
     }
+
+#if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
+    /* Only use a single MR, no keys required */
+    info->p_info->domain_attr->mr_key_size = 0;
+#else
+    /* Heap and data use different MR keys, need at least 1 byte */
+    info->p_info->domain_attr->mr_key_size = 1;
+#endif
 
     shmem_internal_assertp(info->p_info->tx_attr->inject_size >= shmem_transport_ofi_max_buffered_send);
     shmem_transport_ofi_max_buffered_send = info->p_info->tx_attr->inject_size;
@@ -1293,7 +1306,6 @@ void shmem_transport_print_info(void)
         if (NULL == (ofi_provider = shmem_util_getenv_str("OFI_USE_PROVIDER")))
             ofi_provider = "AUTO";
 
-    printf("\n");
     printf("Network transport:      OFI\n");
     printf("SMA_OFI_PROVIDER        %s\n", ofi_provider);
     printf("\tProvider that should be used by the OFI transport\n");

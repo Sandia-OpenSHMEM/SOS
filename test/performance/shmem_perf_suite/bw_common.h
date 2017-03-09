@@ -1,10 +1,29 @@
 /*
-*
-*  Copyright (c) 2015 Intel Corporation. All rights reserved.
-*  This software is available to you under the BSD license. For
-*  license information, see the LICENSE file in the top level directory.
-*
-*/
+ *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  This software is available to you under the BSD license below:
+ *
+ *      Redistribution and use in source and binary forms, with or
+ *      without modification, are permitted provided that the following
+ *      conditions are met:
+ *
+ *      - Redistributions of source code must retain the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer.
+ *
+ *      - Redistributions in binary form must reproduce the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer in the documentation and/or other materials
+ *        provided with the distribution.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 #include <common.h>
 
@@ -69,7 +88,7 @@ typedef struct perf_metrics {
     bw_style bwstyle;
 } perf_metrics_t;
 
-long red_psync[_SHMEM_REDUCE_SYNC_SIZE];
+long red_psync[SHMEM_REDUCE_SYNC_SIZE];
 
 /*default settings if no input is provided */
 void static data_init(perf_metrics_t * data) {
@@ -104,6 +123,9 @@ void static uni_dir_data_init(perf_metrics_t * data) {
 
 int static inline partner_node(perf_metrics_t my_info)
 {
+    if(my_info.num_pes == 1)
+        return 0;
+
     if(my_info.cstyle == COMM_PAIRWISE) {
         int pairs = my_info.num_pes / 2;
 
@@ -327,7 +349,7 @@ void static inline calc_and_print_results(double total_t, int len,
     static double pe_bw_sum, bw = 0.0; /*must be symmetric for reduction*/
     double pe_bw_avg = 0.0, pe_mr_avg = 0.0;
     int nred_elements = 1;
-    static double pwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
+    static double pwrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
 
     PE_set_used_adjustments(&nPEs, &stride, &start_pe, metric_info);
 
@@ -473,10 +495,8 @@ void static inline bw_init_data_stream(perf_metrics_t *metric_info,
 
     data_init(metric_info);
 
-    only_even_PEs_check(metric_info->my_node, metric_info->num_pes);
-
-    for(i = 0; i < _SHMEM_REDUCE_MIN_WRKDATA_SIZE; i++)
-        red_psync[i] = _SHMEM_SYNC_VALUE;
+    for(i = 0; i < SHMEM_REDUCE_MIN_WRKDATA_SIZE; i++)
+        red_psync[i] = SHMEM_SYNC_VALUE;
 
     command_line_arg_check(argc, argv, metric_info);
 
@@ -492,6 +512,8 @@ void static inline bi_dir_init(perf_metrics_t *metric_info, int argc,
                                 char *argv[]) {
     bw_init_data_stream(metric_info, argc, argv);
 
+    only_even_PEs_check(metric_info->my_node, metric_info->num_pes);
+
     bi_dir_data_init(metric_info);
 
 }
@@ -499,6 +521,9 @@ void static inline bi_dir_init(perf_metrics_t *metric_info, int argc,
 void static inline uni_dir_init(perf_metrics_t *metric_info, int argc,
                                 char *argv[]) {
     bw_init_data_stream(metric_info, argc, argv);
+
+    if(metric_info->num_pes != 1)
+        only_even_PEs_check(metric_info->my_node, metric_info->num_pes);
 
     uni_dir_data_init(metric_info);
 }

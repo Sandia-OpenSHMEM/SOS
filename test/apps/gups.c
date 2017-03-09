@@ -321,22 +321,24 @@ SHMEMRandomAccess(void)
                        * NumUpdates_Default due to execution time bounds */
   int64_t ProcNumUpdates; /* number of updates per processor */
 
-  static long llpSync[_SHMEM_BCAST_SYNC_SIZE];
-  static long long int llpWrk[_SHMEM_REDUCE_SYNC_SIZE];
+  static long pSync_bcast[SHMEM_BCAST_SYNC_SIZE];
+  static long long int llpWrk[SHMEM_REDUCE_SYNC_SIZE];
 
-  static long ipSync[_SHMEM_BCAST_SYNC_SIZE];
-  static int ipWrk[_SHMEM_REDUCE_SYNC_SIZE];
+  static long pSync_reduce[SHMEM_REDUCE_SYNC_SIZE];
+  static int ipWrk[SHMEM_REDUCE_SYNC_SIZE];
 
   FILE *outFile = NULL;
   double *GUPs;
   double *temp_GUPs;
 
 
-  for (i = 0; i < _SHMEM_BCAST_SYNC_SIZE; i += 1){
-        ipSync[i] = _SHMEM_SYNC_VALUE;
-        llpSync[i] = _SHMEM_SYNC_VALUE;
+  for (i = 0; i < SHMEM_BCAST_SYNC_SIZE; i += 1){
+        pSync_bcast[i] = SHMEM_SYNC_VALUE;
   }
 
+  for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i += 1){
+        pSync_reduce[i] = SHMEM_SYNC_VALUE;
+  }
 
   SHMEMGUPs = -1;
   GUPs = &SHMEMGUPs;
@@ -394,7 +396,7 @@ SHMEMRandomAccess(void)
   if (! HPCC_PELock) sAbort = 1;
 
   shmem_barrier_all();
-  shmem_int_sum_to_all(&rAbort, &sAbort, 1, 0, 0, NumProcs, ipWrk, ipSync);
+  shmem_int_sum_to_all(&rAbort, &sAbort, 1, 0, 0, NumProcs, ipWrk, pSync_reduce);
   shmem_barrier_all();
 
   if (rAbort > 0) {
@@ -454,7 +456,7 @@ SHMEMRandomAccess(void)
   /* distribute result to all nodes */
   temp_GUPs = GUPs;
   shmem_barrier_all();
-  shmem_broadcast64(GUPs,temp_GUPs,1,0,0,0,NumProcs,llpSync);
+  shmem_broadcast64(GUPs,temp_GUPs,1,0,0,0,NumProcs,pSync_bcast);
   shmem_barrier_all();
 
   /* Verification phase */
@@ -478,7 +480,7 @@ SHMEMRandomAccess(void)
   }
 
   shmem_barrier_all(); 
-  shmem_longlong_sum_to_all( (long long *)&GlbNumErrors,  (long long *)&NumErrors, 1, 0,0, NumProcs,llpWrk, llpSync);
+  shmem_longlong_sum_to_all( (long long *)&GlbNumErrors,  (long long *)&NumErrors, 1, 0,0, NumProcs,llpWrk, pSync_reduce);
   shmem_barrier_all(); 
 
   /* End timed section */

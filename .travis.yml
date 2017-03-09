@@ -98,13 +98,16 @@ before_install:
     ## Fetch UH Tests
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/openshmem-org/tests-uh.git tests-uh
+    # Fetch Cray Tests
+    - cd $TRAVIS_SRC
+    - git clone --depth 10 https://github.com/openshmem-org/tests-cray.git tests-cray
     ## Fetch ISx
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ParRes/ISx.git ISx
     ## Fetch PRK
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ParRes/Kernels.git PRK
-    - echo -e "SHMEMCC=oshcc\nSHMEMTOP=$$TRAVIS_INSTALL\n" > PRK/common/make.defs
+    - echo -e "SHMEMCC=oshcc -std=c99\nSHMEMTOP=$$TRAVIS_INSTALL\n" > PRK/common/make.defs
 
 install:
     - cd $SOS_SRC
@@ -154,7 +157,7 @@ script:
     - mkdir ofi-build
     - cd ofi-build
     - export PATH=$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - ../configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --prefix=$TRAVIS_INSTALL/sandia-shmem-ofi $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
+    - ../configure --with-libfabric=$TRAVIS_INSTALL/libfabric/ --prefix=$TRAVIS_INSTALL/sandia-shmem-ofi $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
     - make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2" check
@@ -171,7 +174,7 @@ script:
     # Check for failures in the C tests
     #- if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-c-feature-tests.log; then false; else true; fi
 #    - >
-#      if [ ! $SOS_DISABLE_FORTRAN ]; then
+#      if [ -z "$SOS_DISABLE_FORTRAN" ]; then
 #          make F_feature_tests;
 #          if false && [ $? -eq 0 ]; then
 #              make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log;
@@ -180,7 +183,7 @@ script:
 #          fi;
 #      fi
 #    - >
-#      if [ ! $SOS_DISABLE_FORTRAN ]; then
+#      if [ -z "$SOS_DISABLE_FORTRAN" ]; then
 #          make F_error_tests;
 #          if false && [ $? -eq 0 -a $SOS_ENABLE_ERROR_TESTS ]; then
 #              make F_error_tests-run 2>&1 | tee uh-tests-f-error-tests.log;
@@ -200,7 +203,7 @@ script:
     # Check for failures in the C tests
     - if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-c-feature-tests.log; then false; else true; fi
     - >
-      if [ ! $SOS_DISABLE_FORTRAN ]; then
+      if [ -z "$SOS_DISABLE_FORTRAN" ]; then
           make F_feature_tests;
           if [ $? -eq 0 ]; then
               make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log;
@@ -209,7 +212,7 @@ script:
           fi;
       fi
     - >
-      if [ ! $SOS_DISABLE_FORTRAN ]; then
+      if [ -z "$SOS_DISABLE_FORTRAN" ]; then
           make F_error_tests;
           if [ $? -eq 0 -a $SOS_ENABLE_ERROR_TESTS ]; then
               make F_error_tests-run 2>&1 | tee uh-tests-f-error-tests.log;
@@ -218,6 +221,14 @@ script:
           fi;
       fi
     - make clean
+    ###
+    ### Run the Cray test suite (OFI)
+    ###
+    - export CUSTOM_SHMEM_DIR=$TRAVIS_INSTALL/sandia-shmem-ofi
+    - export PATH=$CUSTOM_SHMEM_DIR/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export CRAY_TESTS_DIR=$TRAVIS_SRC/tests-cray
+    - $SOS_SRC/scripts/cray_tests.sh
+
     ###
     ### Run ISx (Portals)
     ###

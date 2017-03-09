@@ -41,7 +41,6 @@ mpp/pshmem.h4
 mpp/shmemx.fh
 mpp/shmemx.h
 sandia-openshmem.spec
-shmem_pmi/config/
 src/oshCC
 src/oshc++
 src/oshcc

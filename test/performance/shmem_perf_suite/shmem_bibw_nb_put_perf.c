@@ -1,12 +1,12 @@
 /*
- *  Copyright (c) 2015 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2017 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
- * *	Redistribution and use in source and binary forms, with or
- *	without modification, are permitted provided that the following
- *	conditions are met:
+ *      Redistribution and use in source and binary forms, with or
+ *      without modification, are permitted provided that the following
+ *      conditions are met:
  *
- *	- Redistributions of source code must retain the above
+ *      - Redistributions of source code must retain the above
  *        copyright notice, this list of conditions and the following
  *        disclaimer.
  *
@@ -23,6 +23,9 @@
  * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ */
+
+/*
 **
 **  This is a bandwidth centric test for put: back-to-back message rate
 **
