@@ -392,8 +392,11 @@ SHMEMRandomAccess(void)
   HPCC_Table = shmem_malloc(LocalTableSize * sizeof(uint64_t));
   if (! HPCC_Table) sAbort = 1;
 
-  HPCC_PELock = shmem_malloc(sizeof(uint64_t) * shmem_n_pes());
+  HPCC_PELock = shmem_malloc(sizeof(uint64_t) * NumProcs);
   if (! HPCC_PELock) sAbort = 1;
+
+  for (i = 0; i < NumProcs; i++)
+      HPCC_PELock[i] = 0;
 
   shmem_barrier_all();
   shmem_int_sum_to_all(&rAbort, &sAbort, 1, 0, 0, NumProcs, ipWrk, pSync_reduce);
