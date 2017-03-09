@@ -177,8 +177,8 @@
 /* Define 64-bit constants */
 #define ZERO64B 0LL
 
-uint64_t TotalMemOpt;
-int NumUpdatesOpt;
+uint64_t TotalMemOpt = 8192;
+int NumUpdatesOpt = 0; /* FIXME: This option is ignored */
 double SHMEMGUPs;
 double SHMEMRandomAccess_ErrorsFraction;
 double SHMEMRandomAccess_time;
@@ -355,8 +355,8 @@ SHMEMRandomAccess(void)
    * TODO: replace this
    */
 
-  TotalMem = TotalMemOpt ? TotalMemOpt : 200000; /* max single node memory */
-  TotalMem *= NumProcs;             /* max memory in NumProcs nodes */
+  TotalMem = TotalMemOpt; /* max single node memory */
+  TotalMem *= NumProcs;   /* max memory in NumProcs nodes */
 
   TotalMem /= sizeof(uint64_t);
 
