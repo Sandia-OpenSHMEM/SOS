@@ -994,9 +994,14 @@ static inline int query_for_fabric(struct fabric_info *info)
     domain_attr.mr_key_size   = 1; /* Heap and data use different MR keys, need
                                       at least 1 byte */
 #endif
-    domain_attr.threading     = FI_THREAD_ENDPOINT; /* we promise to serialize access
-                                                       to endpoints. we have only one
-                                                       thread active at a time */
+#ifdef ENABLE_THREADS
+    if (shmem_internal_thread_level == SHMEMX_THREAD_MULTIPLE)
+        domain_attr.threading = FI_THREAD_SAFE;
+    else
+        domain_attr.threading = FI_THREAD_DOMAIN;
+#else
+    domain_attr.threading     = FI_THREAD_DOMAIN;
+#endif
 
     hints.domain_attr         = &domain_attr;
     ep_attr.type              = FI_EP_RDM; /* reliable connectionless */

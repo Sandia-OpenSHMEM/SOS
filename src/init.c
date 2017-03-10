@@ -140,6 +140,16 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     int cma_initialized       = 0;
 #endif
 
+    /* set up threading */
+    SHMEM_MUTEX_INIT(shmem_internal_mutex_alloc);
+#ifdef ENABLE_THREADS
+    shmem_internal_thread_level = tl_requested;
+    *tl_provided = tl_requested;
+#else
+    shmem_internal_thread_level = SHMEMX_THREAD_SINGLE;
+    *tl_provided = SHMEMX_THREAD_SINGLE;
+#endif
+
     ret = shmem_runtime_init();
     if (0 != ret) {
         fprintf(stderr, "ERROR: runtime init failed: %d\n", ret);
@@ -283,16 +293,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
     atexit(shmem_internal_shutdown_atexit);
     shmem_internal_initialized = 1;
-
-    /* set up threading */
-    SHMEM_MUTEX_INIT(shmem_internal_mutex_alloc);
-#ifdef ENABLE_THREADS
-    shmem_internal_thread_level = tl_requested;
-    *tl_provided = tl_requested;
-#else
-    shmem_internal_thread_level = SHMEMX_THREAD_SINGLE;
-    *tl_provided = SHMEMX_THREAD_SINGLE;
-#endif
 
     /* get hostname for shmem_getnodename */
     if (gethostname(shmem_internal_my_hostname,
