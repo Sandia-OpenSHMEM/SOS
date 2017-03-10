@@ -85,9 +85,6 @@ fi_addr_t			*addr_table;
 #define EPHOSTNAMELEN  _POSIX_HOST_NAME_MAX + 1
 static char         myephostname[EPHOSTNAMELEN];
 #endif
-#ifdef ENABLE_THREADS
-shmem_internal_mutex_t           shmem_transport_ofi_lock;
-#endif
 
 size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 
@@ -1095,8 +1092,6 @@ int shmem_transport_init(long eager_size)
     if(ret!=0)
         return ret;
 
-    SHMEM_MUTEX_INIT(shmem_transport_ofi_lock);
-
     /* The current bounce buffering implementation is only compatible with
      * providers that don't require FI_CONTEXT */
     if (info.p_info->mode & FI_CONTEXT) {
@@ -1272,8 +1267,6 @@ int shmem_transport_fini(void)
 #ifdef USE_AV_MAP
     free(addr_table);
 #endif
-
-    SHMEM_MUTEX_DESTROY(shmem_transport_ofi_lock);
 
     return 0;
 }
