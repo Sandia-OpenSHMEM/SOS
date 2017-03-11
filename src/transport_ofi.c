@@ -85,9 +85,6 @@ fi_addr_t			*addr_table;
 #define EPHOSTNAMELEN  _POSIX_HOST_NAME_MAX + 1
 static char         myephostname[EPHOSTNAMELEN];
 #endif
-#ifdef ENABLE_THREADS
-shmem_internal_mutex_t           shmem_transport_ofi_lock;
-#endif
 
 size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 
@@ -994,9 +991,14 @@ static inline int query_for_fabric(struct fabric_info *info)
     domain_attr.mr_key_size   = 1; /* Heap and data use different MR keys, need
                                       at least 1 byte */
 #endif
-    domain_attr.threading     = FI_THREAD_ENDPOINT; /* we promise to serialize access
-                                                       to endpoints. we have only one
-                                                       thread active at a time */
+#ifdef ENABLE_THREADS
+    if (shmem_internal_thread_level == SHMEMX_THREAD_MULTIPLE)
+        domain_attr.threading = FI_THREAD_SAFE;
+    else
+        domain_attr.threading = FI_THREAD_DOMAIN;
+#else
+    domain_attr.threading     = FI_THREAD_DOMAIN;
+#endif
 
     hints.domain_attr         = &domain_attr;
     ep_attr.type              = FI_EP_RDM; /* reliable connectionless */
@@ -1089,8 +1091,6 @@ int shmem_transport_init(long eager_size)
     ret = query_for_fabric(&info);
     if(ret!=0)
         return ret;
-
-    SHMEM_MUTEX_INIT(shmem_transport_ofi_lock);
 
     /* The current bounce buffering implementation is only compatible with
      * providers that don't require FI_CONTEXT */
@@ -1267,8 +1267,6 @@ int shmem_transport_fini(void)
 #ifdef USE_AV_MAP
     free(addr_table);
 #endif
-
-    SHMEM_MUTEX_DESTROY(shmem_transport_ofi_lock);
 
     return 0;
 }
