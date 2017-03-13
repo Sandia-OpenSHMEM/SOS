@@ -2,7 +2,7 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
-v1.3.2rc1
+v1.3.2rc2
 ---------
 - Improved support for proposed multithreading extension (see shmemx.h)
 - Enabled single-process, direct execution of SOS binaries with simple PMI
