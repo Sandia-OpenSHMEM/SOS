@@ -4,18 +4,21 @@ Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
 v1.3.2rc1
 ---------
+- Improved support for proposed multithreading extension (see shmemx.h)
 - Enabled single-process, direct execution of SOS binaries with simple PMI
-- Enabled VPATH builds
 - Added argument error checking for all SHMEM routines, enabled at compile time
   via --enable-error-checking.
-- Added new C and Fortrans bindings generator that generates all headers and
+- Multiple build system improvements, including support for VPATH builds
+- Added new C and Fortran bindings generator that generates all headers and
   bindings, including profiling interfaces.
 - Added support for Fortran complex reductions API
+- Updated Fortran bindings to use short (OpenSHMEM style) header by default
 - Updated SHMEM_DEBUG output to include detailed build information
 - Added --enable-completion-polling build option to poll in quiet/fence
   operations rather than waiting.  This can improve performance for libfabric
   providers that require software-generated progress.
-- Improved library path propagation in compiler wrappers
+- Improved library path propagation (rpath) in compiler wrappers
+- Improved PMI simple build and fixed integration of libpmi_simple library
 - Update symmetric heap allocator to dlmalloc v2.8.6
 - Update PMI-1 client library from MPICH
 - Improved bandwidth efficiency and fixed bug in collect routines
