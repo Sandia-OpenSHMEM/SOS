@@ -92,7 +92,7 @@ int main(void)
         for (j = 0; j < npes - i; j++) {
             for (k = 0; k < i+j; k++, idx++) {
                 if (dst[idx] != i+j) {
-                    printf("%d: Expected dst[%d] = %"PRId64", got dst[%d] = %"PRId64", iteration %d\n",
+                    printf("%d: Expected dst[%d] = %d, got dst[%d] = %"PRId64", iteration %d\n",
                            me, idx, i+j, idx, dst[idx], i);
                     errors++;
                 }
@@ -102,8 +102,8 @@ int main(void)
         /* Validate unused destination buffer */
         for ( ; idx < MAX_NPES*MAX_NPES; idx++) {
             if (dst[idx] != -1) {
-                printf("%d: Expected dst[%d] = %"PRId64", got dst[%d] = %"PRId64", iteration %d\n",
-                       me, idx, (int64_t) -1, idx, dst[idx], i);
+                printf("%d: Expected dst[%d] = %d, got dst[%d] = %"PRId64", iteration %d\n",
+                       me, idx, -1, idx, dst[idx], i);
                 errors++;
             }
         }
