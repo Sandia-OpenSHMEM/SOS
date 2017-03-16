@@ -18,6 +18,8 @@ v1.3.2rc2
 - Added --enable-completion-polling build option to poll in quiet/fence
   operations rather than waiting.  This can improve performance for libfabric
   providers that require software-generated progress.
+- Added --disable-bounce-buffers build option to disable bounce buffering by
+  default (i.e. set SHMEM_BOUNCE_SIZE to 0 by default).
 - Improved library path propagation (rpath) in compiler wrappers
 - Improved PMI simple build and fixed integration of libpmi_simple library
 - Update symmetric heap allocator to dlmalloc v2.8.6
