@@ -451,7 +451,9 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
 
     } else {
         shmem_transport_ofi_put_large(target, source,len, pe);
-        (*completion)++;
+        if (completion != NULL) {
+            (*completion)++;
+        }
     }
 }
 
