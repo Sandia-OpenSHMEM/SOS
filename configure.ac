@@ -156,6 +156,14 @@ AC_ARG_ENABLE([av-map],
 AS_IF([test "$enable_av_map" = "yes"],
       [AC_DEFINE([USE_AV_MAP], [1], [If defined, the OFI transport will use FI_AV_MAP.  Otherwise, FI_AV_TABLE is used.])])
 
+AC_ARG_ENABLE([bounce-buffers],
+    [AC_HELP_STRING([--disable-bounce-buffers],
+                    [Disable bounce buffers by default (default: enabled)])])
+AS_IF([test "$enable_bounce_buffers" = "no"],
+      [AC_DEFINE([DEFAULT_BOUNCE_SIZE], [0], [Default bounce buffer threshold])],
+      [AC_DEFINE([DEFAULT_BOUNCE_SIZE], [2048], [Default bounce buffer threshold])])
+
+
 dnl check for programs
 
 AC_PROG_CC
