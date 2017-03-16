@@ -78,7 +78,8 @@ check_PROGRAMS = \
 	collect \
 	repeated_barriers \
 	broadcast_active_set \
-	reduce_active_set
+	reduce_active_set \
+	collect_active_set
 
 if ENABLE_PROFILING
 check_PROGRAMS += \
