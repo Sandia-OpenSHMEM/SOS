@@ -40,6 +40,9 @@
 #define WARMUP_LARGE  10
 #define LARGE_MESSAGE_SIZE  8192
 
+#define TARGET_SZ_MIN 8
+#define TARGET_SZ_MAX 4096
+
 /*atomics common */
 #define ATOMICS_N_DTs 3
 /*note: ignoring cswap/swap for now in verification */
@@ -79,6 +82,7 @@ typedef struct perf_metrics {
     unsigned long int size_inc, trials;
     unsigned long int window_size, warmup;
     int validate;
+    int target_data;
     int my_node, num_pes;
     bw_units unit;
     char *src, *dest;
@@ -100,6 +104,7 @@ void static data_init(perf_metrics_t * data) {
     data->warmup = WARMUP; /*number of initial iterations to skip*/
     data->unit = MB;
     data->validate = false;
+    data->target_data = false;
     data->my_node = shmem_my_pe();
     data->num_pes = shmem_n_pes();
     data->src = NULL;
@@ -170,7 +175,7 @@ void static command_line_arg_check(int argc, char *argv[],
     extern char *optarg;
 
     /* check command line args */
-    while ((ch = getopt(argc, argv, "e:s:n:w:p:kbv")) != EOF) {
+    while ((ch = getopt(argc, argv, "e:s:n:w:p:kbvt")) != EOF) {
         switch (ch) {
         case 's':
             metric_info->start_len = strtoul(optarg, (char **)NULL, 0);
@@ -198,14 +203,30 @@ void static command_line_arg_check(int argc, char *argv[],
             break;
         case 'v':
             metric_info->validate = true;
+            if(metric_info->target_data) error = true;
             break;
         case 'w':
             metric_info->window_size = strtoul(optarg, (char **)NULL, 0);
+            break;
+        case 't':
+            metric_info->target_data = true;
+            if(metric_info->validate) error = true;
             break;
         default:
             error = true;
             break;
         }
+    }
+
+    /* filling in 8/4KB chunks into array alloc'd to max_len */
+    if(metric_info->target_data) {
+        metric_info->start_len = TARGET_SZ_MIN;
+        if((metric_info->max_len <
+            ((metric_info->trials + metric_info->warmup) * TARGET_SZ_MIN)) ||
+            (metric_info->max_len <
+            ((metric_info->trials + metric_info->warmup) * TARGET_SZ_MAX))) {
+                error = true;
+            }
     }
 
     if (error) {
@@ -216,7 +237,11 @@ void static command_line_arg_check(int argc, char *argv[],
                     "[-p warm-up (see trials for value restriction)] \n"\
                     "[-w window size - iterations between completion] \n"\
                     "[-k (kilobytes/second)] [-b (bytes/second)] \n"\
-                    "[-v (validate data stream)] \n");
+                    "[-v (validate data stream)] \n"\
+                    "[-t output data for target side (default is initiator,"\
+                    " only use with put_bw),\n cannot be used in conjunction "\
+                    "with validate, special sizes used, \ntrials" \
+                    " + warmup * sizes (8/4KB) <= max length \n");
         }
 #ifndef VERSION_1_0
         shmem_finalize();
@@ -292,16 +317,7 @@ void static print_results_header(perf_metrics_t metric_info) {
 
 void static print_data_results(double bw, double mr, perf_metrics_t data,
                             int len, double total_t) {
-    static int printed_once = false;
     static int atomic_type_index = 0;
-
-    if(!printed_once) {
-        if (data.bwstyle == STYLE_ATOMIC)
-            print_atomic_results_header(data);
-        else
-            print_results_header(data);
-        printed_once = true;
-    }
 
     if (data.bwstyle == STYLE_ATOMIC) {
         printf("%-10s       ", dt_names[atomic_type_index]);
@@ -456,6 +472,13 @@ extern void uni_dir_bw(int len, perf_metrics_t *metric_info);
 
 void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
     int len = 0, partner_pe = partner_node(metric_info);
+
+    if(metric_info.my_node == 0) {
+        if (metric_info.bwstyle == STYLE_ATOMIC)
+            print_atomic_results_header(metric_info);
+        else
+            print_results_header(metric_info);
+    }
 
     for (len = metric_info.start_len; len <= metric_info.max_len;
         len *= metric_info.size_inc) {
