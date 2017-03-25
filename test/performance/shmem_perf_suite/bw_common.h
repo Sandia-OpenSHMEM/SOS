@@ -83,7 +83,7 @@ typedef struct perf_metrics {
     unsigned long int window_size, warmup;
     int validate;
     int target_data;
-    int my_node, num_pes;
+    uint32_t my_node, num_pes;
     bw_units unit;
     char *src, *dest;
     const char *bw_type;
@@ -126,13 +126,13 @@ void static uni_dir_data_init(perf_metrics_t * data) {
 }
 
 
-int static inline partner_node(perf_metrics_t my_info)
+uint32_t static inline partner_node(perf_metrics_t my_info)
 {
     if(my_info.num_pes == 1)
         return 0;
 
     if(my_info.cstyle == COMM_PAIRWISE) {
-        int pairs = my_info.num_pes / 2;
+        uint32_t pairs = my_info.num_pes / 2;
 
         return (my_info.my_node < pairs ? my_info.my_node + pairs :
                     my_info.my_node - pairs);
@@ -153,7 +153,7 @@ int static inline streaming_node(perf_metrics_t my_info)
 }
 
 /* put/get bw use opposite streaming/validate nodes */
-red_PE_set static inline validation_set(perf_metrics_t my_info, int *nPEs)
+red_PE_set static inline validation_set(perf_metrics_t my_info, uint32_t *nPEs)
 {
     if(my_info.cstyle == COMM_PAIRWISE) {
         *nPEs = my_info.num_pes/2;
@@ -250,7 +250,7 @@ void static command_line_arg_check(int argc, char *argv[],
     }
 }
 
-void static inline only_even_PEs_check(int my_node, int num_pes) {
+void static inline only_even_PEs_check(uint32_t my_node, uint32_t num_pes) {
     if (num_pes % 2 != 0) {
         if (my_node == 0) {
             fprintf(stderr, "can only use an even number of nodes\n");
@@ -341,7 +341,7 @@ void static print_data_results(double bw, double mr, perf_metrics_t data,
 
 /* reduction to collect performance results from PE set
     then start_pe will print results --- assumes num_pes is even */
-void static inline PE_set_used_adjustments(int *nPEs, int *stride, int *start_pe,
+void static inline PE_set_used_adjustments(uint32_t *nPEs, int *stride, uint32_t *start_pe,
                                             perf_metrics_t my_info)
 {
     red_PE_set PE_set = validation_set(my_info, nPEs);
@@ -361,11 +361,12 @@ void static inline PE_set_used_adjustments(int *nPEs, int *stride, int *start_pe
 void static inline calc_and_print_results(double total_t, int len,
                             perf_metrics_t metric_info)
 {
-    int stride = 0, start_pe = 0, nPEs = 0;
+    int stride = 0;
     static double pe_bw_sum, bw = 0.0; /*must be symmetric for reduction*/
     double pe_bw_avg = 0.0, pe_mr_avg = 0.0;
     int nred_elements = 1;
     static double pwrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
+    uint32_t start_pe = 0, nPEs = 0;
 
     PE_set_used_adjustments(&nPEs, &stride, &start_pe, metric_info);
 
@@ -404,7 +405,7 @@ void static inline large_message_metric_chg(perf_metrics_t *metric_info, int len
 
 static void validate_atomics(perf_metrics_t m_info) {
     int snode = streaming_node(m_info);
-    int * my_buf = (int *)m_info.dest;
+    uint32_t * my_buf = (uint32_t *)m_info.dest;
     bw_type tbw = m_info.type;
     unsigned int expected_val = 0;
     unsigned int ppe_exp_val = ((m_info.trials + m_info.warmup) * m_info.window_size
@@ -440,7 +441,8 @@ static void validate_atomics(perf_metrics_t m_info) {
 extern void bi_dir_bw(int len, perf_metrics_t *metric_info);
 
 void static inline bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
-    int len = 0, partner_pe = partner_node(metric_info);
+    int len = 0;
+    uint32_t partner_pe = partner_node(metric_info);
 
     for (len = metric_info.start_len; len <= metric_info.max_len;
         len *= metric_info.size_inc) {
@@ -471,7 +473,8 @@ void static inline bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
 extern void uni_dir_bw(int len, perf_metrics_t *metric_info);
 
 void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
-    int len = 0, partner_pe = partner_node(metric_info);
+    int len = 0;
+    uint32_t partner_pe = partner_node(metric_info);
 
     if(metric_info.my_node == 0) {
         if (metric_info.bwstyle == STYLE_ATOMIC)

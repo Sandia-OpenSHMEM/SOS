@@ -131,11 +131,11 @@ int static inline is_pow_of_2(unsigned int num)
     return ((num == 1 || num == 0)? true : false);
 }
 
-void static init_array(char * const buf, int len, int my_pe_num)
+void static init_array(char * const buf, int len, uint32_t my_pe_num)
 {
     int i = 0;
     int array_size = len / sizeof(int);
-    int * ibuf = (int *)buf;
+    uint32_t * ibuf = (uint32_t *)buf;
 
     assert(is_divisible_by_4(len));
 
@@ -144,11 +144,11 @@ void static init_array(char * const buf, int len, int my_pe_num)
 
 }
 
-void static inline validate_recv(char * buf, int len, int partner_pe)
+void static inline validate_recv(char * buf, int len, uint32_t partner_pe)
 {
     int i = 0;
     int array_size = len / sizeof(int);
-    int * ibuf = (int *)buf;
+    uint32_t * ibuf = (uint32_t *)buf;
 
     assert(is_divisible_by_4(len));
 

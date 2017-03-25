@@ -43,7 +43,7 @@
     do {                                                                       \
         double start = 0.0, end = 0.0;                                         \
         int i = 0, j = 0, num_itr = metric_info->trials + metric_info->warmup; \
-        int dest = partner_node(*metric_info);                                 \
+        uint32_t dest = partner_node(*metric_info);                                 \
         shmem_barrier_all();                                                   \
                                                                                \
         if(snode) {                                                   \
