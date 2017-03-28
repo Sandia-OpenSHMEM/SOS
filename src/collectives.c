@@ -894,8 +894,8 @@ shmem_internal_collect_linear(void *target, const void *source, size_t len,
     peer = shmem_internal_my_pe;
     do {
         if (len > 0) {
-            shmem_internal_put_nb(((uint8_t *) target) + my_offset, source,
-                                  len, peer, NULL);
+            shmem_internal_put_nbi(((uint8_t *) target) + my_offset, source,
+                                  len, peer);
         }
         peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
                                                  PE_size);
@@ -1107,8 +1107,8 @@ shmem_internal_alltoall(void *dest, const void *source, size_t len,
     do {
         int peer_as_rank = (peer - PE_start) / stride; /* Peer's index in active set */
 
-        shmem_internal_put_nb((void *) dest_ptr, (uint8_t *) source + peer_as_rank * len,
-                              len, peer, NULL);
+        shmem_internal_put_nbi((void *) dest_ptr, (uint8_t *) source + peer_as_rank * len,
+                              len, peer);
         peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
                                                  PE_size);
     } while (peer != shmem_internal_my_pe);

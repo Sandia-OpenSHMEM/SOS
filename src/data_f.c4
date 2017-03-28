@@ -71,7 +71,7 @@ SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_PUT_SIZE')
         SHMEM_ERR_CHECK_SYMMETRIC(target, SIZE * *nelems);              \
         SHMEM_ERR_CHECK_NULL(source, *nelems);                          \
                                                                         \
-        shmem_internal_put_nb(target, source, SIZE * *nelems, *pe, NULL); \
+        shmem_internal_put_nbi(target, source, SIZE * *nelems, *pe);    \
     }
 
 define(`SHMEM_WRAP_FC_PUT_NBI',
