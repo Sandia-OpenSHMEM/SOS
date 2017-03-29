@@ -56,6 +56,8 @@ typedef enum {
 } bw_type;
 
 typedef enum {
+    STYLE_PUT,
+    STYLE_GET,
     STYLE_RMA,
     STYLE_ATOMIC
 } bw_style;
@@ -494,7 +496,8 @@ void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
     shmem_barrier_all();
 
     if(metric_info.validate) {
-        if(streaming_node(metric_info) && metric_info.bwstyle != STYLE_ATOMIC) {
+        if((streaming_node(metric_info) && metric_info.bwstyle == STYLE_GET) ||
+            (!streaming_node(metric_info) && metric_info.bwstyle == STYLE_PUT)) {
             validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
         } else if(metric_info.bwstyle == STYLE_ATOMIC) {
             validate_atomics(metric_info);
@@ -545,8 +548,11 @@ void static inline bi_dir_init(perf_metrics_t *metric_info, int argc,
 }
 
 void static inline uni_dir_init(perf_metrics_t *metric_info, int argc,
-                                char *argv[]) {
+                                char *argv[], bw_style bwstyl) {
     bw_init_data_stream(metric_info, argc, argv);
+
+    /* uni-dir validate needs to know if its a put or get */
+    metric_info->bwstyle = bwstyl;
 
     if(metric_info->num_pes != 1)
         only_even_PEs_check(metric_info->my_node, metric_info->num_pes);
@@ -577,11 +583,11 @@ void static inline bi_dir_bw_main(int argc, char *argv[]) {
 
 } /*main() */
 
-void static inline uni_dir_bw_main(int argc, char *argv[]) {
+void static inline uni_dir_bw_main(int argc, char *argv[], bw_style bwstyl) {
 
     perf_metrics_t metric_info;
 
-    uni_dir_init(&metric_info, argc, argv);
+    uni_dir_init(&metric_info, argc, argv, bwstyl);
 
     uni_dir_bw_test_and_output(metric_info);
 
