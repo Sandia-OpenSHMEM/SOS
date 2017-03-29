@@ -25,21 +25,22 @@
  * SOFTWARE.
  */
 
-void static inline target_data_uni_bw(int len, perf_metrics_t metric_info, int streaming_node, uint32_t start_pe)
+void static inline target_data_uni_bw(int len, perf_metrics_t metric_info, uint32_t start_pe)
 {
     double start = 0.0, end = 0.0;
     int i = 0, j = 0;
     uint32_t dest = partner_node(metric_info);
-    int snode = (metric_info.num_pes != 1)? streaming_node : true;
+    int snode = (metric_info.num_pes != 1)? streaming_node(metric_info) : true;
     size_t final_len = (metric_info.trials + metric_info.warmup - 1) * len;
     uint32_t result[2] = {dest, dest};
+    uint32_t init[2] = {metric_info.my_node, metric_info.my_node};
     uint64_t *end_dst_ptr = (uint64_t *)(metric_info.dest + (final_len));
 
     shmem_barrier_all();
 
     /* reset pointer we will be waiting on */
     if(!snode)
-        *(end_dst_ptr) = 0;
+        *(end_dst_ptr) = (*(long *)init);
 
     shmem_barrier_all();
     start = perf_shmemx_wtime();
@@ -71,18 +72,18 @@ void static inline target_data_uni_bw(int len, perf_metrics_t metric_info, int s
         calc_and_print_results((end - start), len, metric_info);
 }
 
-void static inline target_bw_itr(int len, perf_metrics_t *metric_info, int snode)
+void static inline target_bw_itr(int len, perf_metrics_t *metric_info)
 {
     int stride = 0;
     uint32_t start_pe = 0, nPEs = 0;
     PE_set_used_adjustments(&nPEs, &stride, &start_pe, *metric_info);
 
-    target_data_uni_bw(len, *metric_info, snode, start_pe);
+    target_data_uni_bw(len, *metric_info, start_pe);
 
     metric_info->start_len = TARGET_SZ_MAX;
     len = TARGET_SZ_MAX;
 
-    target_data_uni_bw(len, *metric_info, snode, start_pe);
+    target_data_uni_bw(len, *metric_info, start_pe);
 
     /* stopping upper layer from iterating, we are done */
     metric_info->max_len = TARGET_SZ_MIN;

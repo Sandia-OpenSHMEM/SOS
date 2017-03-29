@@ -37,21 +37,10 @@
 */
 #include <bw_common.h>
 #include <uni_dir.h>
-#include <target_put.h>
 
 int main(int argc, char *argv[])
 {
-    uni_dir_bw_main(argc, argv);
+    uni_dir_bw_main(argc, argv, STYLE_PUT);
 
     return 0;
-}
-
-void uni_dir_bw(int len, perf_metrics_t *metric_info)
-{
-    if(metric_info->target_data) {
-        target_bw_itr(len, metric_info, !streaming_node(*metric_info));
-        return;
-    }
-
-    uni_bw(len, metric_info, !streaming_node(*metric_info));
 }
