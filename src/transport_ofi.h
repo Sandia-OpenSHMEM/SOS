@@ -428,6 +428,7 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
         uint64_t key;
         uint8_t *addr;
 
+        shmem_internal_assert(completion != NULL);
 
 	if (len <= shmem_transport_ofi_max_buffered_send) {
 
@@ -451,9 +452,7 @@ shmem_transport_put_nb(void *target, const void *source, size_t len,
 
     } else {
         shmem_transport_ofi_put_large(target, source,len, pe);
-        if (completion != NULL) {
-            (*completion)++;
-        }
+        (*completion)++;
     }
 }
 
