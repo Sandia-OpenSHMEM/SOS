@@ -50,11 +50,11 @@
 
       ! Set up the source buffer and calculate the expected sum reduction result:
       do i=1,nr
-        z_src(i) = complex(me,me+1)
+        z_src(i) = cmplx(me,me+1)
         exp_result(i) = z_src(i)
         do j=0,npes-1
           if (j .ne. me) then
-            exp_result(i) = exp_result(i) + complex(j,j+1)
+            exp_result(i) = exp_result(i) + cmplx(j,j+1)
           end if
         end do
       end do
@@ -77,7 +77,7 @@
             exp_result(i) = z_src(i)
             do j=0,npes-1,2
               if (j .ne. me) then
-                exp_result(i) = exp_result(i) + complex(j,j+1)
+                exp_result(i) = exp_result(i) + cmplx(j,j+1)
               end if
             end do
           end do
@@ -121,11 +121,11 @@
 
       ! Re-initialize the source and expected result buffers for single precision
       do i=1,nr
-        z_src(i) = complex(me,me+1)
+        z_src(i) = cmplx(me,me+1)
         exp_result(i) = z_src(i)
         do j=0,npes-1
           if (j .ne. me) then
-            exp_result(i) = exp_result(i) * complex(j,j+1)
+            exp_result(i) = exp_result(i) * cmplx(j,j+1)
           end if
         end do
       end do
@@ -148,7 +148,7 @@
             exp_result(i) = z_src(i)
             do j=0,npes-1,2
               if (j .ne. me) then
-                exp_result(i) = exp_result(i) * complex(j,j+1)
+                exp_result(i) = exp_result(i) * cmplx(j,j+1)
               end if
             end do
           end do
