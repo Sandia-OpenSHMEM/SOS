@@ -210,14 +210,14 @@
 
         me = shmem_my_pe()
         do i=1,N
-        if ( abs(realpart(z_target(i)) - realpart(correct(i))) .gt. epsilon(e) ) then
-          print *, "fail : incorrect real component ", realpart(z_target(i)), &
-            " expected ", realpart(correct(i)), " on process ", me, "test #", id
+        if ( abs(real(z_target(i)) - real(correct(i))) .gt. epsilon(e) ) then
+          print *, "fail : incorrect real component ", real(z_target(i)), &
+            " expected ", real(correct(i)), " on process ", me, "test #", id
           call shmem_global_exit(id)
         endif
-        if ( abs(imagpart(z_target(i)) - imagpart(correct(i))) .gt. epsilon(e) ) then
-          print *, "fail : incorrect imaginary component ", imagpart(z_target(i)), &
-            " expected ", imagpart(correct(i)), " on process ", me, "test #", id
+        if ( abs(aimag(z_target(i)) - aimag(correct(i))) .gt. epsilon(e) ) then
+          print *, "fail : incorrect imaginary component ", aimag(z_target(i)), &
+            " expected ", aimag(correct(i)), " on process ", me, "test #", id
           call shmem_global_exit(id)
         endif
         end do
@@ -232,14 +232,14 @@
 
         me = shmem_my_pe()
         do i=1,N
-        if ( abs(realpart(zd_target(i)) - realpart(correct(i))) .gt. epsilon(e) ) then
-          print *, "fail : incorrect real component ", realpart(zd_target(i)), &
-            " expected ", realpart(correct(i)), " on process ", me, "test #", id
+        if ( abs(real(zd_target(i)) - real(correct(i))) .gt. epsilon(e) ) then
+          print *, "fail : incorrect real component ", real(zd_target(i)), &
+            " expected ", real(correct(i)), " on process ", me, "test #", id
           call shmem_global_exit(id)
         endif
-        if ( abs(imagpart(zd_target(i)) - imagpart(correct(i))) .gt. epsilon(e) ) then
-          print *, "fail : incorrect imaginary component ", imagpart(zd_target(i)), &
-            " expected ", imagpart(correct(i)), " on process ", me, "test #", id
+        if ( abs(aimag(zd_target(i)) - aimag(correct(i))) .gt. epsilon(e) ) then
+          print *, "fail : incorrect imaginary component ", aimag(zd_target(i)), &
+            " expected ", aimag(correct(i)), " on process ", me, "test #", id
           call shmem_global_exit(id)
         endif
         end do
