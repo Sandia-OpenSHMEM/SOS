@@ -56,15 +56,16 @@ main(int argc, char* argv[])
     int i, Verbose=0;
     char *pgm;
 
-    if ((pgm=strrchr(argv[0],'/')))
+    if ((pgm=strrchr(argv[0],'/'))) {
         pgm++;
-    else
+    } else {
         pgm = argv[0];
+    }
 
-	if (argc > 1) {
-        if (strncmp(argv[1],"-v",3) == 0)
+    if (argc > 1) {
+        if (strncmp(argv[1],"-v",3) == 0) {
             Verbose=1;
-        else if (strncmp(argv[1],"-h",3) == 0) {
+        } else if (strncmp(argv[1],"-h",3) == 0) {
             fprintf(stderr,"usage: %s {v(verbose)|h(help)}\n",pgm);
             shmem_finalize();
             exit(1);
