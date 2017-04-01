@@ -322,7 +322,7 @@ AC_SUBST(C_ALLTOALLS_SYNC_SIZE)
 AC_SUBST(C_REDUCE_MIN_WRKDATA_SIZE)
 
 AC_MSG_CHECKING([if long can hold lock_t])
-AC_TRY_RUN([struct lock_s { int a; int b; }; main() { if (sizeof(long) == sizeof(struct lock_s)) return 0; else return 1; }],
+AC_TRY_RUN([struct lock_s { int a; int b; }; int main(void) { if (sizeof(long) == sizeof(struct lock_s)) return 0; else return 1; }],
                [AC_MSG_RESULT([yes])], [
                 AC_MSG_RESULT([no])
                 AC_MSG_ERROR([Lock API requires long can hold 'struct { int a; int b; }']) ])
@@ -330,7 +330,7 @@ AC_TRY_RUN([struct lock_s { int a; int b; }; main() { if (sizeof(long) == sizeof
 if test "$FC" != "" ; then
   AC_DEFINE([ENABLE_FORTRAN],[1],[Fortran support enabled])
   AC_MSG_CHECKING([if complex sizes are appropriate])
-  AC_TRY_RUN([float _Complex x; double _Complex y; main() { if (sizeof(x)==8 && sizeof(y)==16) return 0; else return 1; }],
+  AC_TRY_RUN([float _Complex x; double _Complex y; int main(void) { if (sizeof(x)==8 && sizeof(y)==16) return 0; else return 1; }],
                  [AC_MSG_RESULT([yes])], [
                   AC_MSG_RESULT([no])
                   AC_MSG_ERROR([float _Complex and double _Complex must be 4 and 8 bytes, respectively]) ])
