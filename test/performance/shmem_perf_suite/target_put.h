@@ -25,7 +25,7 @@
  * SOFTWARE.
  */
 
-void static inline target_data_uni_bw(int len, perf_metrics_t metric_info, uint32_t start_pe)
+void static inline target_data_uni_bw(int len, perf_metrics_t metric_info)
 {
     double start = 0.0, end = 0.0;
     int i = 0, j = 0;
@@ -39,19 +39,16 @@ void static inline target_data_uni_bw(int len, perf_metrics_t metric_info, uint3
     shmem_barrier_all();
 
     /* reset pointer we will be waiting on */
-    if(!snode)
+    if(target_node(metric_info))
         *(end_dst_ptr) = (*(long *)init);
 
     shmem_barrier_all();
     start = perf_shmemx_wtime();
 
     /* wait on 8 bytes of final chunk, dst was filled with my_node ints */
-    if(!snode) {
+    if(target_node(metric_info)) {
         shmem_long_wait_until((long *)end_dst_ptr, SHMEM_CMP_EQ, *((long *)result));
         end = perf_shmemx_wtime();
-
-        if(start_pe == metric_info.my_node)
-            printf("target: \n");
 
         calc_and_print_results((end - start), len, metric_info);
     } else if(snode) {
@@ -65,25 +62,18 @@ void static inline target_data_uni_bw(int len, perf_metrics_t metric_info, uint3
     }
 
     shmem_barrier_all();
-
-    if(start_pe == metric_info.my_node && snode)
-        printf("initator: \n");
     if(snode)
         calc_and_print_results((end - start), len, metric_info);
 }
 
 void static inline target_bw_itr(int len, perf_metrics_t *metric_info)
 {
-    int stride = 0;
-    uint32_t start_pe = 0, nPEs = 0;
-    PE_set_used_adjustments(&nPEs, &stride, &start_pe, *metric_info);
-
-    target_data_uni_bw(len, *metric_info, start_pe);
+    target_data_uni_bw(len, *metric_info);
 
     metric_info->start_len = TARGET_SZ_MAX;
     len = TARGET_SZ_MAX;
 
-    target_data_uni_bw(len, *metric_info, start_pe);
+    target_data_uni_bw(len, *metric_info);
 
     /* stopping upper layer from iterating, we are done */
     metric_info->max_len = TARGET_SZ_MIN;

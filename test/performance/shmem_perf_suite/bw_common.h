@@ -85,7 +85,7 @@ typedef struct perf_metrics {
     unsigned long int window_size, warmup;
     int validate;
     int target_data;
-    int my_node, num_pes;
+    int my_node, num_pes, sztarget, midpt;
     bw_units unit;
     char *src, *dest;
     const char *bw_type;
@@ -109,6 +109,8 @@ void static data_init(perf_metrics_t * data) {
     data->target_data = false;
     data->my_node = shmem_my_pe();
     data->num_pes = shmem_n_pes();
+    data->midpt = data->num_pes/2;
+    data->sztarget = data->midpt;
     data->src = NULL;
     data->dest = NULL;
     data->cstyle = COMM_PAIRWISE;
@@ -134,10 +136,11 @@ int static inline partner_node(perf_metrics_t my_info)
         return 0;
 
     if(my_info.cstyle == COMM_PAIRWISE) {
-        int pairs = my_info.num_pes / 2;
+        int pairs = my_info.midpt;
 
-        return (my_info.my_node < pairs ? my_info.my_node + pairs :
-                    my_info.my_node - pairs);
+        return (my_info.my_node < pairs ?
+            ((my_info.my_node + pairs) % (my_info.sztarget + pairs)) :
+            my_info.my_node - pairs);
     } else {
         assert(my_info.cstyle == COMM_INCAST);
         return INCAST_PE;
@@ -147,19 +150,33 @@ int static inline partner_node(perf_metrics_t my_info)
 int static inline streaming_node(perf_metrics_t my_info)
 {
     if(my_info.cstyle == COMM_PAIRWISE) {
-        return (my_info.my_node < (my_info.num_pes / 2));
+        return (my_info.my_node < my_info.midpt);
     } else {
         assert(my_info.cstyle == COMM_INCAST);
         return true;
     }
 }
 
+int static inline target_node(perf_metrics_t my_info)
+{
+    return (my_info.my_node >= my_info.midpt &&
+        (my_info.my_node < (my_info.midpt + my_info.sztarget)));
+}
+
 /* put/get bw use opposite streaming/validate nodes */
 red_PE_set static inline validation_set(perf_metrics_t my_info, int *nPEs)
 {
     if(my_info.cstyle == COMM_PAIRWISE) {
-        *nPEs = my_info.num_pes/2;
-        return (streaming_node(my_info) ? FIRST_HALF : SECOND_HALF);
+        if(streaming_node(my_info)) {
+            *nPEs = my_info.midpt;
+            return FIRST_HALF;
+        } else if(target_node(my_info)) {
+            *nPEs = my_info.sztarget;
+            return SECOND_HALF;
+        } else {
+            fprintf(stderr, "Warning: you are getting data from a node that " \
+                "wasn't a part of the perf set \n ");
+        }
     } else {
         assert(my_info.cstyle == COMM_INCAST);
         *nPEs = my_info.num_pes;
@@ -177,7 +194,7 @@ void static command_line_arg_check(int argc, char *argv[],
     extern char *optarg;
 
     /* check command line args */
-    while ((ch = getopt(argc, argv, "e:s:n:w:p:kbvt")) != EOF) {
+    while ((ch = getopt(argc, argv, "e:s:n:w:p:r:kbvt")) != EOF) {
         switch (ch) {
         case 's':
             metric_info->start_len = strtoul(optarg, (char **)NULL, 0);
@@ -214,6 +231,10 @@ void static command_line_arg_check(int argc, char *argv[],
             metric_info->target_data = true;
             if(metric_info->validate) error = true;
             break;
+        case 'r':
+            metric_info->sztarget = strtoul(optarg, (char **)NULL, 0);
+            if(metric_info->sztarget > metric_info->midpt) error = true;
+            break;
         default:
             error = true;
             break;
@@ -243,7 +264,8 @@ void static command_line_arg_check(int argc, char *argv[],
                     "[-t output data for target side (default is initiator,"\
                     " only use with put_bw),\n cannot be used in conjunction "\
                     "with validate, special sizes used, \ntrials" \
-                    " + warmup * sizes (8/4KB) <= max length \n");
+                    " + warmup * sizes (8/4KB) <= max length \n" \
+                    "[-r number of nodes at target] \n");
         }
 #ifndef VERSION_1_0
         shmem_finalize();
@@ -298,9 +320,10 @@ void static print_atomic_results_header(perf_metrics_t metric_info) {
 
 void static print_results_header(perf_metrics_t metric_info) {
     printf("\nResults for %d PEs %lu trials with window size %lu "\
-            "max message size %lu with multiple of %lu increments\n",
-            metric_info.num_pes, metric_info.trials, metric_info.window_size,
-            metric_info.max_len, metric_info.size_inc);
+            "max message size %lu with multiple of %lu increments, "\
+            "targeting %zu remote PEs\n", metric_info.num_pes,
+            metric_info.trials, metric_info.window_size, metric_info.max_len,
+            metric_info.size_inc, metric_info.sztarget);
 
     printf("\nLength           %s           "\
             "Message Rate\n", metric_info.bw_type);
@@ -320,6 +343,14 @@ void static print_results_header(perf_metrics_t metric_info) {
 void static print_data_results(double bw, double mr, perf_metrics_t data,
                             int len, double total_t) {
     static int atomic_type_index = 0;
+
+    if(data.target_data) {
+        if(data.my_node < data.midpt) {
+            printf("initator:\n");
+        } else  {
+            printf("target:\n");
+        }
+    }
 
     if (data.bwstyle == STYLE_ATOMIC) {
         printf("%-10s       ", dt_names[atomic_type_index]);
@@ -353,7 +384,7 @@ void static inline PE_set_used_adjustments(int *nPEs, int *stride, int *start_pe
     }
     else {
         assert(PE_set == SECOND_HALF);
-        *start_pe = my_info.num_pes / 2;
+        *start_pe = my_info.midpt;
     }
 
     *stride = 0; /* back to back PEs */
@@ -383,7 +414,7 @@ void static inline calc_and_print_results(double total_t, int len,
     /* base case: will be overwritten by collective if num_pes > 2 */
     pe_bw_sum = bw;
 
-    if(metric_info.num_pes > 2)
+    if(nPEs >= 2)
         shmem_double_sum_to_all(&pe_bw_sum, &bw, nred_elements, start_pe,
                                 stride, nPEs, pwrk,
                                 red_psync);
@@ -494,7 +525,7 @@ void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
 
     if(metric_info.validate) {
         if((streaming_node(metric_info) && metric_info.bwstyle == STYLE_GET) ||
-            (!streaming_node(metric_info) && metric_info.bwstyle == STYLE_PUT)) {
+            (target_node(metric_info) && metric_info.bwstyle == STYLE_PUT)) {
             validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
         } else if(metric_info.bwstyle == STYLE_ATOMIC) {
             validate_atomics(metric_info);
