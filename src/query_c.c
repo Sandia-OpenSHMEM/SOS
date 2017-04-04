@@ -41,6 +41,9 @@
 #pragma weak shmemx_wtime = pshmemx_wtime
 #define shmemx_wtime pshmemx_wtime
 
+#pragma weak shmemx_pcontrol = pshmemx_pcontrol
+#define shmemx_pcontrol pshmemx_pcontrol
+
 #endif /* ENABLE_PROFILING */
 
 
@@ -86,4 +89,11 @@ shmemx_wtime(void)
     SHMEM_ERR_CHECK_INITIALIZED();
 
     return shmem_internal_wtime();
+}
+
+
+int
+shmemx_pcontrol(int level, ...)
+{
+    return 0;
 }
