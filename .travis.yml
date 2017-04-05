@@ -2,8 +2,8 @@ sudo: required
 language: c
 compiler:
     #- clang
+    #- icc
     - gcc
-    - icc
 env:
     global:
         - TRAVIS_PAR_MAKE="-j 4"
@@ -66,6 +66,10 @@ before_install:
     ## Disable security protection so CMA will work
     - sudo sysctl -w kernel.yama.ptrace_scope=0
     ## Run the icc installation script:
+    - >
+      if [ "$CC" = "icc" ]; then
+          ./scripts/install-icc.sh --components icc,ifort
+      fi
     - ./scripts/install-icc.sh --components icc,ifort
     - source ~/.bashrc
     ## Build libev
@@ -269,7 +273,10 @@ script:
     - oshrun -np 4 ./SHMEM/Transpose/transpose 10 1000
     - make clean
 after_script:
-    - '[[ ! -z "${INTEL_INSTALL_PATH}" ]] && uninstall_intel_software'
+    - >
+      if [ "$CC" = "icc" ]; then
+          '[[ ! -z "${INTEL_INSTALL_PATH}" ]] && uninstall_intel_software'
+      fi
 
 notifications:
   email:
