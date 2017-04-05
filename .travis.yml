@@ -66,8 +66,16 @@ before_install:
     ## Disable security protection so CMA will work
     - sudo sysctl -w kernel.yama.ptrace_scope=0
     ## Run the icc installation script:
-    - ./scripts/install-icc.sh --components icc,ifort
-    - source ~/.bashrc
+    - >
+      if [ "$CC" = "icc" ]; then
+          if [ "$TRAVIS_REPO_SLUG" = "Sandia-OpenSHMEM/SOS" ]; then
+              ./scripts/install-icc.sh --components icc,ifort
+              source ~/.bashrc
+          else
+              echo "Cannot test Intel compiler on a fork.  Exiting now."
+              exit 0
+          fi
+      fi
     ## Build libev
     - cd $TRAVIS_SRC
     - wget http://dist.schmorp.de/libev/Attic/libev-4.22.tar.gz
@@ -269,7 +277,10 @@ script:
     - oshrun -np 4 ./SHMEM/Transpose/transpose 10 1000
     - make clean
 after_script:
-    - '[[ ! -z "${INTEL_INSTALL_PATH}" ]] && uninstall_intel_software'
+    - >
+      if [ "$CC" = "icc" ]; then
+        '[[ ! -z "${INTEL_INSTALL_PATH}" ]] && uninstall_intel_software'
+      fi
 
 notifications:
   email:
