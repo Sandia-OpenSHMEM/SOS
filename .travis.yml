@@ -69,7 +69,7 @@ before_install:
     - >
       if [ "$CC" = "icc" ]; then
           if [ "$TRAVIS_REPO_SLUG" = "Sandia-OpenSHMEM/SOS" -a \
-               "$TRAVIS_PULL_REQUEST" = "false"]; then
+               "$TRAVIS_PULL_REQUEST" = "false" ]; then
               ./scripts/install-icc.sh --components icc,ifort
               source ~/.bashrc
           else
