@@ -25,6 +25,7 @@
 #include "shmemx.h"
 #include "runtime.h"
 #include "config.h"
+#include "shmem_env.h"
 
 extern int shmem_internal_my_pe;
 extern int shmem_internal_num_pes;

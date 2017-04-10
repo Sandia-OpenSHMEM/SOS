@@ -32,6 +32,7 @@ struct shmem_internal_params_s {
 
 extern struct shmem_internal_params_s shmem_internal_params;
 
-void shmem_internal_parse_env();
+void shmem_internal_parse_env(void);
+void shmem_internal_print_env(void);
 
 #endif /* SHMEM_ENV_H */

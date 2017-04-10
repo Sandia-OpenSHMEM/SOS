@@ -11,13 +11,6 @@
 
 struct shmem_internal_params_s shmem_internal_params;
 
-/* FIXME: Debugging stuff */
-void shmem_runtime_abort(int code, const char *msg) {
-    exit(code);
-}
-
-int shmem_internal_my_pe = 0;
-
 /* atol() + optional scaled suffix recognition: 1K, 2M, 3G, 1T */
 static long
 atol_scaled(char *s)
@@ -150,14 +143,14 @@ static bool shmem_internal_getenv_bool(const char *name, bool default_val) {
     return (env != NULL) ? !default_val : default_val;
 }
 
-void shmem_internal_parse_env() {
+void shmem_internal_parse_env(void) {
 #define SHMEM_INTERNAL_ENV_DEF(NAME, KIND, DEFAULT, CATEGORY, SHORT_DESC) \
     shmem_internal_params.NAME = shmem_internal_getenv_##KIND(#NAME, DEFAULT);
 #include "shmem_env_defs.h"
 #undef SHMEM_INTERNAL_ENV_DEF
 }
 
-void shmem_internal_print_env() {
+void shmem_internal_print_env(void) {
 #define SHMEM_INTERNAL_ENV_DEF(NAME, KIND, DEFAULT, CATEGORY, SHORT_DESC)       \
     if (CATEGORY == SHMEM_INTERNAL_ENV_CAT_OPENSHMEM)                               \
         printf("  SHMEM_%-20s %"SHPRI_##KIND" (type: %s, default: %"SHPRI_##KIND")\n\t%s\n", \
@@ -214,9 +207,4 @@ printf("\nOn-node transport: %s\n",
                #NAME, shmem_internal_params.NAME, #KIND, (shmem_internal_env_##KIND) DEFAULT, SHORT_DESC);
 #include "shmem_env_defs.h"
 #undef SHMEM_INTERNAL_ENV_DEF
-}
-
-int main(void) {
-    shmem_internal_parse_env();
-    shmem_internal_print_env();
 }
