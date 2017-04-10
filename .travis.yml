@@ -3,6 +3,7 @@ language: c
 compiler:
     #- clang
     - gcc
+    - icc
 env:
     global:
         - TRAVIS_PAR_MAKE="-j 4"
@@ -11,15 +12,14 @@ env:
         - FI_LOG_LEVEL=warn
         - SHMEM_OFI_USE_PROVIDER=sockets
         - SMA_INFO=1
+        ## An encrypted value for INTEL_SERIAL_NUMBER:
+        - secure: "luxfwDy26Pva+A58T/vPP7+Zek4rBEbpB2TpdXuLdIu/MJ2laoUkaZj/ouT6YgdSxUoiyLUlGIzLnByxnrVgWqYELsWHiV9hzsXZCNfgQDdUHV8UITCqSYVcd5WGNoVdC0QohKuIj47y6bP5ttcv1sIfpV74ztPJZE1dbb2QzgvWcIKWN8Abj55364ZnIidW7ErYLrAiKlBzSxZXCKiKD6qOUbpOBN8yuzaX9diXYJViest7iBC+BfwzXO8Shuouh6QrQhJ1T4oG6u6YJn17fnOwXKJCdkeQYr/E8ka4JRf8vZm7CNO1YdwNhtGtFNEzTJaP2XFLAQGCB9vffCxcqRbpWv+lpsFRsH+eiF/zp/xKGr5qzB9sPUxNANJyhphXK0VfIqDan7nz9di99NFBEF94Jl33E+KODTCAeHb6+a7yboR5B4BalM4jXKrcn/2A4pYrk45YF5IdLLOEvzTaOyVSgHoNIzXRZvHEL2AeYuvz5qLukzMB+QClbA1EeCBNyokuXK/TemeTvveXpQpCaVKNQ8zp/v30u8eiaV8R/dFa2evlJ6kwSaeXlXpXifeXd5Px0x6HF4FT9HLOtPVQ3rZXyfL2Eh92egu15GiTqMNkdVlVGUC20+iddLjtbPqRnVw0WnZkekh62A6rGuT4cTfAbZ2GVPD+IMqzokO1IGg="
     matrix:
         - # Defaults
         - SOS_BUILD_OPTS="--disable-mr-scalable --enable-av-map --disable-cxx"
         - >
           SOS_DISABLE_FORTRAN=1
           SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing"
-        - >
-          SOS_ENABLE_ERROR_TESTS=1
-          SOS_BUILD_OPTS="--enable-threads --enable-error-checking --enable-completion-polling"
         - >
           SOS_ENABLE_ERROR_TESTS=1
           SOS_BUILD_OPTS="--with-cma --enable-error-checking --enable-profiling --disable-mr-scalable --enable-av-map --enable-remote-virtual-addressing"
@@ -65,6 +65,18 @@ before_install:
     - export TRAVIS_INSTALL=$HOME/travis/install
     ## Disable security protection so CMA will work
     - sudo sysctl -w kernel.yama.ptrace_scope=0
+    ## Run the icc installation script:
+    - >
+      if [ "$CC" = "icc" ]; then
+          if [ "$TRAVIS_REPO_SLUG" = "Sandia-OpenSHMEM/SOS" -a \
+               "$TRAVIS_PULL_REQUEST" = "false" ]; then
+              ./scripts/install-icc.sh --components icc,ifort
+              source ~/.bashrc
+          else
+              echo "Cannot test Intel compiler on a fork.  Exiting now."
+              exit 0
+          fi
+      fi
     ## Build libev
     - cd $TRAVIS_SRC
     - wget http://dist.schmorp.de/libev/Attic/libev-4.22.tar.gz
@@ -267,6 +279,11 @@ script:
     - oshrun -np 4 ./SHMEM/Synch_p2p/p2p 10 1000 1000
     - oshrun -np 4 ./SHMEM/Transpose/transpose 10 1000
     - make clean
+after_script:
+    - >
+      if [ "$CC" = "icc" ]; then
+        '[[ ! -z "${INTEL_INSTALL_PATH}" ]] && uninstall_intel_software'
+      fi
 
 notifications:
   email:

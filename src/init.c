@@ -140,6 +140,16 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     int cma_initialized       = 0;
 #endif
 
+    /* set up threading */
+    SHMEM_MUTEX_INIT(shmem_internal_mutex_alloc);
+#ifdef ENABLE_THREADS
+    shmem_internal_thread_level = tl_requested;
+    *tl_provided = tl_requested;
+#else
+    shmem_internal_thread_level = SHMEMX_THREAD_SINGLE;
+    *tl_provided = SHMEMX_THREAD_SINGLE;
+#endif
+
     ret = shmem_runtime_init();
     if (0 != ret) {
         fprintf(stderr, "ERROR: runtime init failed: %d\n", ret);
@@ -161,7 +171,10 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     radix = shmem_util_getenv_long("COLL_RADIX", 0, 4);
     crossover = shmem_util_getenv_long("COLL_CROSSOVER", 0, 4);
     heap_size = shmem_util_getenv_long("SYMMETRIC_SIZE", 1, 512 * 1024 * 1024);
-    eager_size = shmem_util_getenv_long("BOUNCE_SIZE", 1, 2048);
+    eager_size = shmem_util_getenv_long("BOUNCE_SIZE", 1,
+                            /* Disable by default in MULTIPLE because of threading overheads */
+                            shmem_internal_thread_level == SHMEMX_THREAD_MULTIPLE ?
+                            0 : DEFAULT_BOUNCE_SIZE);
     heap_use_malloc = shmem_util_getenv_long("SYMMETRIC_HEAP_USE_MALLOC", 0, 0);
     shmem_internal_debug = (NULL != shmem_util_getenv_str("DEBUG")) ? 1 : 0;
     shmem_internal_trap_on_abort = (NULL != shmem_util_getenv_str("TRAP_ON_ABORT")) ? 1 : 0;

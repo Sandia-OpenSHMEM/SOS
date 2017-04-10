@@ -1129,14 +1129,19 @@ static inline int query_for_fabric(struct fabric_info *info)
 #else
     domain_attr.mr_mode       = FI_MR_BASIC; /* VA space is pre-allocated */
 #endif
-  /* We tell the provider to make concurrent accesses safe. This allows
-   * provider-level optimization of synchronization through techniques like
-   * lock-free concurrent queues */
-    domain_attr.threading     = FI_THREAD_SAFE;
 
 #if !defined(ENABLE_MR_SCALABLE) || !defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     domain_attr.mr_key_size   = 1; /* Heap and data use different MR keys, need
                                       at least 1 byte */
+#endif
+
+#ifdef ENABLE_THREADS
+    if (shmem_internal_thread_level == SHMEMX_THREAD_MULTIPLE)
+        domain_attr.threading = FI_THREAD_SAFE;
+    else
+        domain_attr.threading = FI_THREAD_DOMAIN;
+#else
+    domain_attr.threading     = FI_THREAD_DOMAIN;
 #endif
 
     hints.domain_attr         = &domain_attr;
@@ -1242,7 +1247,6 @@ int shmem_transport_init(int thread_level, long eager_size)
     return ret;
 
   ret = allocate_fabric_resources(&shmem_ofi_cq_info);
-
   if(ret!=0)
     return ret;
 

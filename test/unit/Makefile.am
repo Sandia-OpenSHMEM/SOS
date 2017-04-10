@@ -79,6 +79,7 @@ check_PROGRAMS = \
 	repeated_barriers \
 	broadcast_active_set \
 	reduce_active_set \
+	collect_active_set \
 	many-ctx
 
 if ENABLE_PROFILING

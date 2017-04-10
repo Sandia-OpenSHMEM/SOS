@@ -867,6 +867,9 @@ shmem_internal_collect_linear(void *target, const void *source, size_t len,
     /* Need 2 for lengths and 1 for data */
     shmem_internal_assert(SHMEM_COLLECT_SYNC_SIZE >= 3);
 
+    DEBUG_MSG("target=%p, source=%p, len=%zd, PE_Start=%d, logPE_stride=%d, PE_size=%d, pSync=%p\n",
+              target, source, len, PE_start, logPE_stride, PE_size, (void*) pSync);
+
     if (PE_size == 1) {
         if (target != source) memcpy(target, source, len);
         return;
@@ -899,8 +902,8 @@ shmem_internal_collect_linear(void *target, const void *source, size_t len,
     peer = shmem_internal_my_pe;
     do {
         if (len > 0) {
-            shmem_internal_put(((uint8_t *) target) + my_offset, source,
-                               len, peer, SHMEMX_CTX_DEFAULT);
+            shmem_internal_put_nbi(((uint8_t *) target) + my_offset, source,
+                                  len, peer, SHMEMX_CTX_DEFAULT);
         }
         peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
                                                  PE_size);
@@ -1108,7 +1111,7 @@ shmem_internal_alltoall(void *dest, const void *source, size_t len,
     do {
         int peer_as_rank = (peer - PE_start) / stride; /* Peer's index in active set */
 
-        shmem_internal_put((void *) dest_ptr, (uint8_t *) source + peer_as_rank * len,
+        shmem_internal_put_nbi((void *) dest_ptr, (uint8_t *) source + peer_as_rank * len,
                               len, peer, SHMEMX_CTX_DEFAULT);
         peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
                                                  PE_size);
