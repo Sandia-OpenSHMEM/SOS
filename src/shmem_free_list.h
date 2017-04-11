@@ -44,7 +44,7 @@ struct shmem_free_list_t {
 };
 typedef struct shmem_free_list_t shmem_free_list_t;
 
-shmem_free_list_t* shmem_free_list_init(unsigned int element_size, 
+shmem_free_list_t* shmem_free_list_init(unsigned int element_size,
                                         shmem_free_list_item_init_fn_t init_fn);
 void shmem_free_list_destroy(shmem_free_list_t *fl);
 int shmem_free_list_more(shmem_free_list_t *fl);
@@ -79,7 +79,7 @@ void
 shmem_free_list_free(shmem_free_list_t *fl, void *data)
 {
     shmem_free_list_item_t *item = (shmem_free_list_item_t*) data;
-    
+
     SHMEM_MUTEX_LOCK(fl->lock);
     item->next = fl->head;
     fl->head = item;
