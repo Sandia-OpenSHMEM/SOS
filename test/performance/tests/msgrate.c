@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301, USA.
  */
 
@@ -121,8 +121,8 @@ test_one_way(void)
 
                 tmp = timer();
                 for (k = 0 ; k < nmsgs ; ++k) {
-                    shmem_putmem(recv_buf + (nbytes * k), 
-                                 send_buf + (nbytes * k), 
+                    shmem_putmem(recv_buf + (nbytes * k),
+                                 send_buf + (nbytes * k),
                                  nbytes, rank + (world_size / 2));
                 }
                 shmem_quiet();
@@ -174,8 +174,8 @@ test_prepost(void)
         tmp = timer();
         for (j = 0 ; j < npeers ; ++j) {
             for (k = 0 ; k < nmsgs ; ++k) {
-                shmem_putmem(recv_buf + (nbytes * (k + j * nmsgs)), 
-                             send_buf + (nbytes * (k + j * nmsgs)), 
+                shmem_putmem(recv_buf + (nbytes * (k + j * nmsgs)),
+                             send_buf + (nbytes * (k + j * nmsgs)),
                              nbytes, send_peers[npeers - j - 1]);
             }
         }
@@ -226,7 +226,7 @@ main(int argc, char *argv[])
     /* root handles arguments and bcasts answers */
     if (0 == rank) {
         int ch;
-        while (start_err != 1 && 
+        while (start_err != 1 &&
                (ch = getopt(argc, argv, "p:i:m:s:c:n:oh")) != -1) {
             switch (ch) {
             case 'p':
@@ -264,7 +264,7 @@ main(int argc, char *argv[])
             if (world_size < 3) {
                 fprintf(stderr, "Error: At least three processes are required\n");
                 start_err = 1;
-            } else 
+            } else
 #endif
                 if (world_size <= npeers) {
                 fprintf(stderr, "Error: job size (%d) <= number of peers (%d)\n",
@@ -320,7 +320,7 @@ main(int argc, char *argv[])
             printf("cache size: %d\n", cache_size * (int)sizeof(int));
             printf("ppn:        %d\n", ppn);
         } else {
-            printf("%d %d %d %d %d %d %d ", 
+            printf("%d %d %d %d %d %d %d ",
                    world_size, npeers, niters, nmsgs, nbytes,
                    cache_size * (int)sizeof(int), ppn);
         }
@@ -357,7 +357,7 @@ main(int argc, char *argv[])
             } else {
                 recv_peers[i] = (rank + world_size + ((i - npeers / 2 + 1) * ppn)) % world_size;
             }
-        } 
+        }
     } else {
         /* odd */
         for (i = 0 ; i < npeers ; ++i) {

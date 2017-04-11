@@ -28,7 +28,7 @@
       program complex_reductions_f
       implicit none
       include "shmem.fh"
-      
+
       integer psync(shmem_reduce_sync_size), i, j, nr
       data psync /shmem_reduce_sync_size*shmem_sync_value/
       parameter (nr=10)
@@ -41,10 +41,10 @@
       integer shmem_my_pe, shmem_n_pes, npes, me
       complex(kind=4) exp_result(nr)
       complex(kind=8) exp_result_d(nr)
-      
-      
+
+
       call shmem_init()
-      
+
       npes = shmem_n_pes()
       me = shmem_my_pe()
 
@@ -93,15 +93,15 @@
       do i=1,nr
         zd_src(i) = dcmplx(-7.123123123123123123123, 2.32132132132132132132)
         exp_result_d(i) = zd_src(i)*npes
-      end do 
+      end do
 
       ! Test double precision complex sum_to_all reductions:
       call shmem_comp8_sum_to_all(zd_target, zd_src, nr, 0, 0, npes, pwrkd, psync)
-      
+
       call check_result_complex_dbl(zd_target, exp_result_d, nr, 3)
 
       call shmem_barrier_all()
-      
+
       ! Test double precision sum reductions on a PE subset with a stride of 2
       if ( mod(me,2) .eq. 0) then
         if ( mod(shmem_n_pes(),2) .eq. 0) then
@@ -135,9 +135,9 @@
 
       ! Check the result:
       call check_result_complex(z_target, exp_result, nr, 5)
-      
+
       call shmem_barrier_all()
-      
+
       ! Test single precision product reduction on a PE subset with a stride of 2
       if ( mod(me,2) .eq. 0) then
         if ( mod(shmem_n_pes(),2) .eq. 0) then
@@ -157,9 +157,9 @@
 
         endif
       endif
-      
+
       call shmem_barrier_all()
-      
+
       ! Re-initialize the double precision buffers and expected result
       do i=1,nr
         zd_src(i) = dcmplx(me, me+1)
@@ -169,15 +169,15 @@
             exp_result_d(i) = exp_result_d(i) * dcmplx(j,j+1)
           end if
         end do
-      end do 
+      end do
 
       ! Test double precision complex product_to_all reductions:
       call shmem_comp8_prod_to_all(zd_target, zd_src, nr, 0, 0, npes, pwrkd, psync)
-      
+
       call check_result_complex_dbl(zd_target, exp_result_d, nr, 7)
 
       call shmem_barrier_all()
-      
+
       ! Test double precision product reduction on a PE subset with a stride of 2
       if ( mod(me,2) .eq. 0) then
         if ( mod(shmem_n_pes(),2) .eq. 0) then
@@ -197,7 +197,7 @@
 
         endif
       endif
-      
+
       call shmem_finalize()
 
       contains
@@ -244,5 +244,5 @@
         endif
         end do
       end subroutine check_result_complex_dbl
-      
+
       end program complex_reductions_f

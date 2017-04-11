@@ -102,9 +102,9 @@ main(int argc, char* argv[])
 
         lock_cnt = 0;
         lock = 0;
-    
+
         shmem_barrier_all();  /* sync all ranks */
-        
+
         shmem_set_lock(&lock);
 
         for(pe=0; pe < num_ranks; pe++) {
@@ -114,7 +114,7 @@ main(int argc, char* argv[])
             printf("[%d] locked: lock_cnt(%d)\n", my_rank, lock_cnt);
 
         shmem_clear_lock( &lock );
-    
+
         shmem_int_wait_until( &lock_cnt, SHMEM_CMP_GE, num_ranks );
 
         shmem_barrier_all();  /* sync all ranks */
