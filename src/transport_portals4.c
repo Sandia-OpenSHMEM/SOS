@@ -235,7 +235,7 @@ shmem_transport_init(int thread_level, long eager_size)
     SHMEM_MUTEX_INIT(shmem_internal_mutex_ptl4_nb_fence);
 
     shmem_transport_portals4_bounce_buffer_size = eager_size;
-    shmem_transport_portals4_bounce_buffers = 
+    shmem_transport_portals4_bounce_buffers =
         shmem_free_list_init(sizeof(shmem_transport_portals4_bounce_buffer_t) + eager_size,
                              init_bounce_buffer);
 
@@ -326,7 +326,7 @@ shmem_transport_init(int thread_level, long eager_size)
 
         bases[0] = (uintptr_t) shmem_internal_heap_base;
         bases[1] = (uintptr_t) shmem_internal_data_base;
-        
+
         ret = shmem_runtime_put("portals4-bases", bases, sizeof(uint64_t) * 2);
         if (0 != ret) {
             fprintf(stderr, "[%03d] ERROR: runtime_put failed: %d\n",
@@ -417,7 +417,7 @@ shmem_transport_startup(void)
     }
 
     ret = PtlSetMap(shmem_transport_portals4_ni_h,
-                    shmem_internal_num_pes,                    
+                    shmem_internal_num_pes,
                     desired);
     if (PTL_OK != ret && PTL_IGNORED != ret) {
         fprintf(stderr, "[%03d] ERROR: PtlSetMap failed: %d\n",
@@ -454,7 +454,7 @@ shmem_transport_startup(void)
     }
 
     /* create portal table entries */
-    ret = PtlEQAlloc(shmem_transport_portals4_ni_h, 
+    ret = PtlEQAlloc(shmem_transport_portals4_ni_h,
                      shmem_transport_portals4_event_slots,
                      &shmem_transport_portals4_eq_h);
     if (PTL_OK != ret) {
@@ -509,7 +509,7 @@ shmem_transport_startup(void)
     le.ct_handle = shmem_transport_portals4_target_ct_h;
 #endif
     le.uid = uid;
-    le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET | 
+    le.options = PTL_LE_OP_PUT | PTL_LE_OP_GET |
         PTL_LE_EVENT_LINK_DISABLE |
         PTL_LE_EVENT_SUCCESS_DISABLE;
 #if !defined(ENABLE_HARD_POLLING)
@@ -631,7 +631,7 @@ shmem_transport_startup(void)
 
     md.start = 0;
     md.length = PTL_SIZE_MAX;
-    md.options = PTL_MD_EVENT_CT_REPLY | 
+    md.options = PTL_MD_EVENT_CT_REPLY |
         PTL_MD_EVENT_SUCCESS_DISABLE;
     if (1 == PORTALS4_TOTAL_DATA_ORDERING) {
         md.options |= PTL_MD_UNORDERED;
@@ -670,7 +670,7 @@ shmem_transport_fini(void)
     PtlAtomicSync();
 
     /* wait for remote completion (acks) of all pending events */
-    PtlCTWait(shmem_transport_portals4_put_ct_h, 
+    PtlCTWait(shmem_transport_portals4_put_ct_h,
               shmem_transport_portals4_pending_put_counter, &ct);
     if (shmem_transport_portals4_pending_put_counter != ct.success + ct.failure) {
         fprintf(stderr, "[%03d] WARNING: put count mismatch: %ld, %ld\n",
@@ -678,7 +678,7 @@ shmem_transport_fini(void)
                 (long) (ct.success + ct.failure));
     }
 
-    PtlCTWait(shmem_transport_portals4_get_ct_h, 
+    PtlCTWait(shmem_transport_portals4_get_ct_h,
               shmem_transport_portals4_pending_get_counter, &ct);
     if (shmem_transport_portals4_pending_get_counter != ct.success + ct.failure) {
         fprintf(stderr, "[%03d] WARNING: get count mismatch: %ld, %ld\n",

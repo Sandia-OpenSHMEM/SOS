@@ -48,12 +48,12 @@
  */
 #define FC_SHMEM_SWAP FC_FUNC_(shmem_swap, SHMEM_SWAP)
 fortran_integer_t FC_SHMEM_SWAP(fortran_integer_t *target,
-				fortran_integer_t *value,
-				fortran_integer_t *pe);
+                                fortran_integer_t *value,
+                                fortran_integer_t *pe);
 fortran_integer_t
 FC_SHMEM_SWAP(fortran_integer_t *target,
-	      fortran_integer_t *value,
-	      fortran_integer_t *pe)
+              fortran_integer_t *value,
+              fortran_integer_t *pe)
 {
     fortran_integer_t newval;
 
@@ -229,4 +229,3 @@ SHMEM_DEFINE_FOR_FC_EXTENDED_AMO(SHMEM_DEF_FC_FETCH)
   }
 
 SHMEM_DEFINE_FOR_FC_EXTENDED_AMO(SHMEM_DEF_FC_SET)
-

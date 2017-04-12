@@ -156,9 +156,6 @@ extern size_t    			shmem_transport_ofi_max_msg_size;
 
 extern fi_addr_t *addr_table;
 extern size_t    			shmem_transport_ofi_bounce_buffer_size;
-#ifdef ENABLE_THREADS
-extern shmem_internal_mutex_t           shmem_transport_ofi_lock;
-#endif
 
 
 int shmem_transport_init(int thread_level,long eager_size);

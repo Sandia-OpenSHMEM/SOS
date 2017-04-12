@@ -56,15 +56,16 @@ main(int argc, char* argv[])
     int Verbose = 0;
     char *pgm;
 
-    if ((pgm=strrchr(argv[0],'/')))
+    if ((pgm=strrchr(argv[0],'/'))) {
         pgm++;
-    else
+    } else {
         pgm = argv[0];
+    }
 
-	if (argc > 1) {
-        if (strncmp(argv[1],"-v",3) == 0)
+    if (argc > 1) {
+        if (strncmp(argv[1],"-v",3) == 0) {
             Verbose=1;
-        else if (strncmp(argv[1],"-h",3) == 0) {
+        } else if (strncmp(argv[1],"-h",3) == 0) {
             fprintf(stderr,"usage: %s {-v(verbose)|h(help)}\n",pgm);
             shmem_finalize();
             exit(1);
@@ -110,9 +111,9 @@ main(int argc, char* argv[])
         }
         *src_long = 8;
 
-    	shmem_barrier_all();
+        shmem_barrier_all();
 
-    	for (pe=0 ; pe < num_pes; ++pe) {
+        for (pe=0 ; pe < num_pes; ++pe) {
             if (!shmem_addr_accessible(src_short,pe)) {
                 printf("PE-%d local addr %p not accessible from PE-%d?\n",
                        me, (void*)src_short, pe);
@@ -148,9 +149,9 @@ main(int argc, char* argv[])
                 printf("PE-%d dst_long %ld != 8?\n",me,dst_long);
                 shmem_global_exit(1);
             }
-    	}
+        }
 
-    	shmem_barrier_all();
+        shmem_barrier_all();
 
         shmem_free(src_short);
         shmem_free(src_int);
@@ -160,7 +161,7 @@ main(int argc, char* argv[])
     }
 
     if (Verbose)
-		fprintf(stderr,"[%d] exit\n",shmem_my_pe());
+        fprintf(stderr,"[%d] exit\n",shmem_my_pe());
 
     shmem_finalize();
 

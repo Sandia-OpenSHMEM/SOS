@@ -177,8 +177,8 @@
 /* Define 64-bit constants */
 #define ZERO64B 0LL
 
-uint64_t TotalMemOpt;
-int NumUpdatesOpt;
+uint64_t TotalMemOpt = 8192;
+int NumUpdatesOpt = 0; /* FIXME: This option is ignored */
 double SHMEMGUPs;
 double SHMEMRandomAccess_ErrorsFraction;
 double SHMEMRandomAccess_time;
@@ -195,64 +195,64 @@ int SHMEMRandomAccess(void);
 
 static double RTSEC(void)
 {
-	struct timeval tp;
-	gettimeofday (&tp, NULL);
-	return tp.tv_sec + tp.tv_usec/(double)1.0e6;
+  struct timeval tp;
+  gettimeofday (&tp, NULL);
+  return tp.tv_sec + tp.tv_usec/(double)1.0e6;
 }
 
 static void print_usage(void)
 {
-	fprintf(stderr, "\nOptions:\n");
-	fprintf(stderr, " %-20s %s\n", "-h", "display this help message");
-	fprintf(stderr, " %-20s %s\n", "-m", "memory in bytes per PE");
-	fprintf(stderr, " %-20s %s\n", "-n", "number of updates per PE");
+  fprintf(stderr, "\nOptions:\n");
+  fprintf(stderr, " %-20s %s\n", "-h", "display this help message");
+  fprintf(stderr, " %-20s %s\n", "-m", "memory in bytes per PE");
+  fprintf(stderr, " %-20s %s\n", "-n", "number of updates per PE");
 
-	return;
+  return;
 }
 
 static int64_t starts(uint64_t n)
 {
-	/* int64_t i, j; */
-	int i, j;
-	uint64_t m2[64];
-	uint64_t temp, ran;
+  /* int64_t i, j; */
+  int i, j;
+  uint64_t m2[64];
+  uint64_t temp, ran;
 
-	/*
-	 * this loop doesn't make sense
-	 * so commenting out.
-	 */
+  /*
+   * this loop doesn't make sense
+   * so commenting out.
+   */
 #if 0
-	while (n < 0)
-		n += PERIOD;
+  while (n < 0)
+    n += PERIOD;
 #endif
-	while (n > PERIOD)
-		n -= PERIOD;
-	if (n == 0)
-		return 0x1;
+  while (n > PERIOD)
+    n -= PERIOD;
+  if (n == 0)
+    return 0x1;
 
-	temp = 0x1;
-	for (i=0; i<64; i++) {
-		m2[i] = temp;
-		temp = (temp << 1) ^ ((int64_t) temp < 0 ? POLY : 0);
-		temp = (temp << 1) ^ ((int64_t) temp < 0 ? POLY : 0);
-	}
+  temp = 0x1;
+  for (i=0; i<64; i++) {
+    m2[i] = temp;
+    temp = (temp << 1) ^ ((int64_t) temp < 0 ? POLY : 0);
+    temp = (temp << 1) ^ ((int64_t) temp < 0 ? POLY : 0);
+  }
 
-	for (i=62; i>=0; i--)
-		if ((n >> i) & 1) break;
+  for (i=62; i>=0; i--)
+    if ((n >> i) & 1) break;
 
-	ran = 0x2;
+  ran = 0x2;
 
-	while (i > 0) {
-		temp = 0;
-		for (j=0; j<64; j++)
-			if ((ran >> j) & 1) temp ^= m2[j];
-		ran = temp;
-		i -= 1;
-		if ((n >> i) & 1)
-			ran = (ran << 1) ^ ((int64_t) ran < 0 ? POLY : 0);
-	}
+  while (i > 0) {
+    temp = 0;
+    for (j=0; j<64; j++)
+      if ((ran >> j) & 1) temp ^= m2[j];
+    ran = temp;
+    i -= 1;
+    if ((n >> i) & 1)
+      ran = (ran << 1) ^ ((int64_t) ran < 0 ? POLY : 0);
+  }
 
-	return ran;
+  return ran;
 }
 
 static void
@@ -355,8 +355,8 @@ SHMEMRandomAccess(void)
    * TODO: replace this
    */
 
-  TotalMem = TotalMemOpt ? TotalMemOpt : 200000; /* max single node memory */
-  TotalMem *= NumProcs;             /* max memory in NumProcs nodes */
+  TotalMem = TotalMemOpt; /* max single node memory */
+  TotalMem *= NumProcs;   /* max memory in NumProcs nodes */
 
   TotalMem /= sizeof(uint64_t);
 
@@ -392,8 +392,11 @@ SHMEMRandomAccess(void)
   HPCC_Table = shmem_malloc(LocalTableSize * sizeof(uint64_t));
   if (! HPCC_Table) sAbort = 1;
 
-  HPCC_PELock = shmem_malloc(sizeof(uint64_t) * shmem_n_pes());
+  HPCC_PELock = shmem_malloc(sizeof(uint64_t) * NumProcs);
   if (! HPCC_PELock) sAbort = 1;
+
+  for (i = 0; i < NumProcs; i++)
+      HPCC_PELock[i] = 0;
 
   shmem_barrier_all();
   shmem_int_sum_to_all(&rAbort, &sAbort, 1, 0, 0, NumProcs, ipWrk, pSync_reduce);
@@ -479,9 +482,9 @@ SHMEMRandomAccess(void)
       NumErrors++;
   }
 
-  shmem_barrier_all(); 
+  shmem_barrier_all();
   shmem_longlong_sum_to_all( (long long *)&GlbNumErrors,  (long long *)&NumErrors, 1, 0,0, NumProcs,llpWrk, pSync_reduce);
-  shmem_barrier_all(); 
+  shmem_barrier_all();
 
   /* End timed section */
 
@@ -509,42 +512,42 @@ SHMEMRandomAccess(void)
 
 int main(int argc, char **argv)
 {
-	int op;
+  int op;
 
-	while ((op = getopt(argc, argv, "hm:n:")) != -1) {
-		switch (op) {
-		/*
-		 * memory per PE (used for determining table size)
-		 */
-		case 'm':
-			TotalMemOpt = atoll(optarg);
-			if (TotalMemOpt <= 0) {
-				print_usage();
-				return -1;
-			}
-			break;
+  while ((op = getopt(argc, argv, "hm:n:")) != -1) {
+    switch (op) {
+      /*
+       * memory per PE (used for determining table size)
+       */
+      case 'm':
+        TotalMemOpt = atoll(optarg);
+        if (TotalMemOpt <= 0) {
+          print_usage();
+          return -1;
+        }
+        break;
 
-		/*
-		 * num updates/PE
-		 */
-		case 'n':
-			NumUpdatesOpt = atoi(optarg);
-			if (NumUpdatesOpt <= 0) {
-				print_usage();
-				return -1;
-			}
-			break;
+        /*
+         * num updates/PE
+         */
+      case 'n':
+        NumUpdatesOpt = atoi(optarg);
+        if (NumUpdatesOpt <= 0) {
+          print_usage();
+          return -1;
+        }
+        break;
 
-		case '?':
-		case 'h':
-			print_usage();
-			return -1;
-		}
-	}
+      case '?':
+      case 'h':
+        print_usage();
+        return -1;
+    }
+  }
 
-	shmem_init();
-	SHMEMRandomAccess();
-	shmem_finalize();
+  shmem_init();
+  SHMEMRandomAccess();
+  shmem_finalize();
 
-	return 0;
+  return 0;
 }

@@ -33,7 +33,7 @@
  * test shmem_int_inc() atomic_inc {-v|q} {loop-cnt(default=10)(default=10)}
  * where: -q == quiet, -v == verbose/debug
  *  Loop for loop-cnt
- *   all PEs call shmem_int_inc(), PE-0 totals 
+ *   all PEs call shmem_int_inc(), PE-0 totals
  *
  */
 
@@ -71,7 +71,7 @@ main(int argc, char* argv[])
         shmem_finalize();
         return 0;
     }
- 
+
     while((c=getopt(argc,argv,"vq")) != -1) {
         switch(c) {
           case 'v':
@@ -103,7 +103,7 @@ main(int argc, char* argv[])
     {
         lock_cnt = 0;
         shmem_barrier_all();  /* sync all ranks */
-        
+
         for(c=0; c < num_ranks; c++)
             shmem_int_inc( &lock_cnt, c );
 

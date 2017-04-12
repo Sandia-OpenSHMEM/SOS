@@ -113,8 +113,9 @@ extern long shmem_internal_heap_huge_page_size;
         if(shmem_internal_debug) {                                      \
             char str[256];                                              \
             size_t off;                                                 \
-            off = snprintf(str, sizeof(str), "[%03d] DEBUG: %s:%d:\n",  \
-                           shmem_internal_my_pe, __FILE__, __LINE__);   \
+            off = snprintf(str, sizeof(str), "[%03d] DEBUG: %s:%d: %s\n", \
+                           shmem_internal_my_pe, __FILE__, __LINE__,    \
+                           __func__);                                   \
             off+= snprintf(str+off, sizeof(str)-off, "[%03d]        ",  \
                            shmem_internal_my_pe);                       \
             off+= snprintf(str+off, sizeof(str)-off, __VA_ARGS__);      \
@@ -371,7 +372,7 @@ char *shmem_internal_nodename(void);
 
 int shmem_internal_symmetric_init(size_t requested_length, int use_malloc);
 int shmem_internal_symmetric_fini(void);
-int shmem_internal_collectives_init(int requested_crossover, 
+int shmem_internal_collectives_init(int requested_crossover,
                                     int requested_radix);
 
 /* internal allocation, without a barrier */

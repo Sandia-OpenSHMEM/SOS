@@ -56,21 +56,22 @@ long *pSync;
 int
 main(int argc, char **argv)
 {
-	int i,ps,ps_cnt=2;
-	int *target;
-	int *source;
-	int me, npes, elements=N_ELEMENTS, loops=DFLT_LOOPS;
+    int i,ps,ps_cnt=2;
+    int *target;
+    int *source;
+    int me, npes, elements=N_ELEMENTS, loops=DFLT_LOOPS;
     char *pgm;
-	double start_time, time_taken;
+    double start_time, time_taken;
 
-	shmem_init();
-	me = shmem_my_pe();
-	npes = shmem_n_pes();
+    shmem_init();
+    me = shmem_my_pe();
+    npes = shmem_n_pes();
 
-    if ((pgm=strrchr(argv[0],'/')))
+    if ((pgm=strrchr(argv[0],'/'))) {
         pgm++;
-    else
+    } else {
         pgm = argv[0];
+    }
 
     while ((i = getopt (argc, argv, "hve:l:p:s")) != EOF) {
         switch (i)
@@ -116,43 +117,45 @@ main(int argc, char **argv)
         }
     }
 
-	ps_cnt *= SHMEM_BCAST_SYNC_SIZE;
-	pSync = shmem_malloc( ps_cnt * sizeof(long) );
+    ps_cnt *= SHMEM_BCAST_SYNC_SIZE;
+    pSync = shmem_malloc( ps_cnt * sizeof(long) );
 
-	for (i = 0; i < ps_cnt; i++)
-	  pSync[i] = SHMEM_SYNC_VALUE;
+    for (i = 0; i < ps_cnt; i++) {
+      pSync[i] = SHMEM_SYNC_VALUE;
+    }
 
-	source = (int *) shmem_malloc( elements * sizeof(*source) );
+    source = (int *) shmem_malloc( elements * sizeof(*source) );
 
-	target = (int *) shmem_malloc( elements * sizeof(*target) );
-	for (i = 0; i < elements; i += 1) {
-	    source[i] = i + 1;
-	    target[i] = -90;
-	}
+    target = (int *) shmem_malloc( elements * sizeof(*target) );
+    for (i = 0; i < elements; i += 1) {
+        source[i] = i + 1;
+        target[i] = -90;
+    }
 
-    if (me==0 && Verbose)
+    if (me==0 && Verbose) {
         fprintf(stderr,"ps_cnt %d loops %d nElems %d\n",
                         ps_cnt,loops,elements);
+    }
 
-	shmem_barrier_all();
+    shmem_barrier_all();
 
-	for(time_taken = 0.0, ps = i = 0; i < loops; i++) {
+    for(time_taken = 0.0, ps = i = 0; i < loops; i++) {
 
-	    start_time = shmemx_wtime();
+        start_time = shmemx_wtime();
 
-	    shmem_broadcast32(target, source, elements, 0, 0, 0, npes, &pSync[ps]);
+        shmem_broadcast32(target, source, elements, 0, 0, 0, npes, &pSync[ps]);
 
         if (Serialize) shmem_barrier_all();
 
-	    time_taken += (shmemx_wtime() - start_time);
+        time_taken += (shmemx_wtime() - start_time);
 
         if (ps_cnt > 1 ) {
-	        ps += SHMEM_BCAST_SYNC_SIZE;
-	        if ( ps >= ps_cnt ) ps = 0;
+            ps += SHMEM_BCAST_SYNC_SIZE;
+            if ( ps >= ps_cnt ) ps = 0;
         }
-	}
+    }
 
-	if(me == 0 && Verbose) {
+    if(me == 0 && Verbose) {
         printf("%d loops of Broadcast32(%ld bytes) over %d PEs: %7.3f secs\n",
             loops, (elements*sizeof(*source)), npes, time_taken);
         elements = (elements * loops * sizeof(*source)) / (1024*1024);
@@ -162,17 +165,17 @@ main(int argc, char **argv)
 
     if (Verbose > 1)  fprintf(stderr,"[%d] pre B1\n",me);
 
-	shmem_barrier_all();
+    shmem_barrier_all();
 
     if (Verbose > 1)  fprintf(stderr,"[%d] post B1\n",me);
 
-	shmem_free(pSync);
-	shmem_free(target);
-	shmem_free(source);
+    shmem_free(pSync);
+    shmem_free(target);
+    shmem_free(source);
 
-	shmem_finalize();
+    shmem_finalize();
 
-	return 0;
+    return 0;
 }
 
 
@@ -180,11 +183,11 @@ static int
 atoi_scaled(char *s)
 {
     long val;
-    char *e; 
+    char *e;
 
     val = strtol(s,&e,0);
     if (e == NULL || *e =='\0')
-        return (int)val; 
+        return (int)val;
 
     if (*e == 'k' || *e == 'K')
         val *= 1024;

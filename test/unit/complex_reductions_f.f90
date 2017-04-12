@@ -28,7 +28,7 @@
       program complex_reductions_f
       implicit none
       include "shmem.fh"
-      
+
       integer psync(shmem_reduce_sync_size), i, j, nr
       data psync /shmem_reduce_sync_size*shmem_sync_value/
       parameter (nr=10)
@@ -41,20 +41,20 @@
       integer shmem_my_pe, shmem_n_pes, npes, me
       complex(kind=4) exp_result(nr)
       complex(kind=8) exp_result_d(nr)
-      
-      
+
+
       call shmem_init()
-      
+
       npes = shmem_n_pes()
       me = shmem_my_pe()
 
       ! Set up the source buffer and calculate the expected sum reduction result:
       do i=1,nr
-        z_src(i) = complex(me,me+1)
+        z_src(i) = cmplx(me,me+1)
         exp_result(i) = z_src(i)
         do j=0,npes-1
           if (j .ne. me) then
-            exp_result(i) = exp_result(i) + complex(j,j+1)
+            exp_result(i) = exp_result(i) + cmplx(j,j+1)
           end if
         end do
       end do
@@ -77,7 +77,7 @@
             exp_result(i) = z_src(i)
             do j=0,npes-1,2
               if (j .ne. me) then
-                exp_result(i) = exp_result(i) + complex(j,j+1)
+                exp_result(i) = exp_result(i) + cmplx(j,j+1)
               end if
             end do
           end do
@@ -93,15 +93,15 @@
       do i=1,nr
         zd_src(i) = dcmplx(-7.123123123123123123123, 2.32132132132132132132)
         exp_result_d(i) = zd_src(i)*npes
-      end do 
+      end do
 
       ! Test double precision complex sum_to_all reductions:
       call shmem_comp8_sum_to_all(zd_target, zd_src, nr, 0, 0, npes, pwrkd, psync)
-      
+
       call check_result_complex_dbl(zd_target, exp_result_d, nr, 3)
 
       call shmem_barrier_all()
-      
+
       ! Test double precision sum reductions on a PE subset with a stride of 2
       if ( mod(me,2) .eq. 0) then
         if ( mod(shmem_n_pes(),2) .eq. 0) then
@@ -121,11 +121,11 @@
 
       ! Re-initialize the source and expected result buffers for single precision
       do i=1,nr
-        z_src(i) = complex(me,me+1)
+        z_src(i) = cmplx(me,me+1)
         exp_result(i) = z_src(i)
         do j=0,npes-1
           if (j .ne. me) then
-            exp_result(i) = exp_result(i) * complex(j,j+1)
+            exp_result(i) = exp_result(i) * cmplx(j,j+1)
           end if
         end do
       end do
@@ -135,9 +135,9 @@
 
       ! Check the result:
       call check_result_complex(z_target, exp_result, nr, 5)
-      
+
       call shmem_barrier_all()
-      
+
       ! Test single precision product reduction on a PE subset with a stride of 2
       if ( mod(me,2) .eq. 0) then
         if ( mod(shmem_n_pes(),2) .eq. 0) then
@@ -148,7 +148,7 @@
             exp_result(i) = z_src(i)
             do j=0,npes-1,2
               if (j .ne. me) then
-                exp_result(i) = exp_result(i) * complex(j,j+1)
+                exp_result(i) = exp_result(i) * cmplx(j,j+1)
               end if
             end do
           end do
@@ -157,9 +157,9 @@
 
         endif
       endif
-      
+
       call shmem_barrier_all()
-      
+
       ! Re-initialize the double precision buffers and expected result
       do i=1,nr
         zd_src(i) = dcmplx(me, me+1)
@@ -169,15 +169,15 @@
             exp_result_d(i) = exp_result_d(i) * dcmplx(j,j+1)
           end if
         end do
-      end do 
+      end do
 
       ! Test double precision complex product_to_all reductions:
       call shmem_comp8_prod_to_all(zd_target, zd_src, nr, 0, 0, npes, pwrkd, psync)
-      
+
       call check_result_complex_dbl(zd_target, exp_result_d, nr, 7)
 
       call shmem_barrier_all()
-      
+
       ! Test double precision product reduction on a PE subset with a stride of 2
       if ( mod(me,2) .eq. 0) then
         if ( mod(shmem_n_pes(),2) .eq. 0) then
@@ -197,7 +197,7 @@
 
         endif
       endif
-      
+
       call shmem_finalize()
 
       contains
@@ -210,14 +210,14 @@
 
         me = shmem_my_pe()
         do i=1,N
-        if ( abs(realpart(z_target(i)) - realpart(correct(i))) .gt. epsilon(e) ) then
-          print *, "fail : incorrect real component ", realpart(z_target(i)), &
-            " expected ", realpart(correct(i)), " on process ", me, "test #", id
+        if ( abs(real(z_target(i)) - real(correct(i))) .gt. epsilon(e) ) then
+          print *, "fail : incorrect real component ", real(z_target(i)), &
+            " expected ", real(correct(i)), " on process ", me, "test #", id
           call shmem_global_exit(id)
         endif
-        if ( abs(imagpart(z_target(i)) - imagpart(correct(i))) .gt. epsilon(e) ) then
-          print *, "fail : incorrect imaginary component ", imagpart(z_target(i)), &
-            " expected ", imagpart(correct(i)), " on process ", me, "test #", id
+        if ( abs(aimag(z_target(i)) - aimag(correct(i))) .gt. epsilon(e) ) then
+          print *, "fail : incorrect imaginary component ", aimag(z_target(i)), &
+            " expected ", aimag(correct(i)), " on process ", me, "test #", id
           call shmem_global_exit(id)
         endif
         end do
@@ -232,17 +232,17 @@
 
         me = shmem_my_pe()
         do i=1,N
-        if ( abs(realpart(zd_target(i)) - realpart(correct(i))) .gt. epsilon(e) ) then
-          print *, "fail : incorrect real component ", realpart(zd_target(i)), &
-            " expected ", realpart(correct(i)), " on process ", me, "test #", id
+        if ( abs(real(zd_target(i)) - real(correct(i))) .gt. epsilon(e) ) then
+          print *, "fail : incorrect real component ", real(zd_target(i)), &
+            " expected ", real(correct(i)), " on process ", me, "test #", id
           call shmem_global_exit(id)
         endif
-        if ( abs(imagpart(zd_target(i)) - imagpart(correct(i))) .gt. epsilon(e) ) then
-          print *, "fail : incorrect imaginary component ", imagpart(zd_target(i)), &
-            " expected ", imagpart(correct(i)), " on process ", me, "test #", id
+        if ( abs(aimag(zd_target(i)) - aimag(correct(i))) .gt. epsilon(e) ) then
+          print *, "fail : incorrect imaginary component ", aimag(zd_target(i)), &
+            " expected ", aimag(correct(i)), " on process ", me, "test #", id
           call shmem_global_exit(id)
         endif
         end do
       end subroutine check_result_complex_dbl
-      
+
       end program complex_reductions_f

@@ -160,8 +160,8 @@ static void *mmap_alloc(size_t bytes)
     char *directory = NULL;
     const char basename[] = "hugepagefile.SOS";
     int size;
-    void *requested_base = 
-        (void*) (((unsigned long) shmem_internal_data_base + 
+    void *requested_base =
+        (void*) (((unsigned long) shmem_internal_data_base +
                   shmem_internal_data_length + 2 * ONEGIG) & ~(ONEGIG - 1));
     void *ret;
 
@@ -231,11 +231,11 @@ shmem_internal_symmetric_init(size_t requested_length, int use_malloc)
 
     if (0 == shmem_internal_use_malloc) {
         shmem_internal_heap_base =
-            shmem_internal_heap_curr = 
+            shmem_internal_heap_curr =
             mmap_alloc(shmem_internal_heap_length);
     } else {
-        shmem_internal_heap_base = 
-            shmem_internal_heap_curr = 
+        shmem_internal_heap_base =
+            shmem_internal_heap_curr =
             malloc(shmem_internal_heap_length);
     }
 

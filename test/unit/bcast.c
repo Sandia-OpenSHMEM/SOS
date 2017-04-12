@@ -68,26 +68,29 @@ main(int argc, char* argv[])
         return 0;
     }
 
-    if ((pgm=strrchr(argv[0],'/')))
+    if ((pgm=strrchr(argv[0],'/'))) {
         pgm++;
-    else
+    } else {
         pgm = argv[0];
+    }
 
-	if (argc > 1) {
-        if (strncmp(argv[1],"-v",3) == 0)
+    if (argc > 1) {
+        if (strncmp(argv[1],"-v",3) == 0) {
             Verbose=1;
-        else if (strncmp(argv[1],"-h",3) == 0) {
+        } else if (strncmp(argv[1],"-h",3) == 0) {
             fprintf(stderr,"usage: %s {-v(verbose)|h(help)}\n",pgm);
             shmem_finalize();
             exit(1);
         }
     }
 
-    for (i = 0; i < SHMEM_BCAST_SYNC_SIZE; i += 1)
+    for (i = 0; i < SHMEM_BCAST_SYNC_SIZE; i += 1) {
         pSync[i] = SHMEM_SYNC_VALUE;
+    }
 
-    if ( mpe == 0 && Verbose )
+    if ( mpe == 0 && Verbose ) {
         fprintf(stderr,"%d loops\n",loops);
+    }
 
     for(cloop=1; cloop <= loops; cloop++) {
 
@@ -100,8 +103,9 @@ main(int argc, char* argv[])
         }
         memset( (void*)dst, 0, nBytes );
         src = &dst[nLongs];
-        for (i = 1; i < nLongs; i++)
+        for (i = 1; i < nLongs; i++) {
             src[i] = i+1;
+        }
 
         shmem_barrier_all();
 
@@ -113,7 +117,7 @@ main(int argc, char* argv[])
                 fprintf(stderr,"[%d] dst[%d] %ld != expected %ld\n",
                         mpe, i, dst[i],src[i]);
                 shmem_global_exit(1);
-            } else if (1 == mpe && dst[i] != 0) { 
+            } else if (1 == mpe && dst[i] != 0) {
                 fprintf(stderr,"[%d] dst[%d] %ld != expected 0\n",
                         mpe, i, dst[i]);
                 shmem_global_exit(1);

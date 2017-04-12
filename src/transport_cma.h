@@ -37,7 +37,7 @@ int shmem_transport_cma_startup(void);
 int shmem_transport_cma_fini(void);
 
 /*
- * Validate address is within SHMEM bounds: data and/or symHeap. 
+ * Validate address is within SHMEM bounds: data and/or symHeap.
  */
 #ifdef ENABLE_ERROR_CHECKING
 #define CHK_ACCESS(target,name)                                         \

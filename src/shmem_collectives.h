@@ -122,7 +122,7 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
                                   logPE_stride, PE_size, pSync, complete);
         break;
     default:
-        fprintf(stderr, "[%03d] Illegal broadcast type %d\n", 
+        fprintf(stderr, "[%03d] Illegal broadcast type %d\n",
                 shmem_internal_my_pe, shmem_internal_bcast_type);
     }
 }
@@ -130,11 +130,11 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
 
 void shmem_internal_op_to_all_linear(void *target, const void *source, int count, int type_size,
                                      int PE_start, int logPE_stride, int PE_size,
-                                     void *pWrk, long *pSync, 
+                                     void *pWrk, long *pSync,
                                      shm_internal_op_t op, shm_internal_datatype_t datatype);
 void shmem_internal_op_to_all_tree(void *target, const void *source, int count, int type_size,
                                    int PE_start, int logPE_stride, int PE_size,
-                                   void *pWrk, long *pSync, 
+                                   void *pWrk, long *pSync,
                                    shm_internal_op_t op, shm_internal_datatype_t datatype);
 
 void shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, int count, int type_size,
@@ -197,7 +197,7 @@ shmem_internal_op_to_all(void *target, const void *source, int count,
                                                pWrk, pSync, op, datatype);
             break;
     default:
-        fprintf(stderr, "[%03d] Illegal reduction type %d\n", 
+        fprintf(stderr, "[%03d] Illegal reduction type %d\n",
                 shmem_internal_my_pe, shmem_internal_reduce_type);
     }
 }
@@ -221,7 +221,7 @@ shmem_internal_collect(void *target, const void *source, size_t len,
                                       PE_size, pSync);
         break;
     default:
-        fprintf(stderr, "[%03d] Illegal collect type %d\n", 
+        fprintf(stderr, "[%03d] Illegal collect type %d\n",
                 shmem_internal_my_pe, shmem_internal_collect_type);
     }
 }
@@ -262,7 +262,7 @@ shmem_internal_fcollect(void *target, const void *source, size_t len,
         }
         break;
     default:
-        fprintf(stderr, "[%03d] Illegal fcollect type %d\n", 
+        fprintf(stderr, "[%03d] Illegal fcollect type %d\n",
                 shmem_internal_my_pe, shmem_internal_fcollect_type);
     }
 }
