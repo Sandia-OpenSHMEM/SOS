@@ -92,8 +92,8 @@ shmemx_wtime(void)
 }
 
 
-int
+void
 shmemx_pcontrol(int level, ...)
 {
-    return 0;
+    return;
 }
