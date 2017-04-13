@@ -60,11 +60,11 @@ static int
 atoi_scaled(char *s)
 {
     long val;
-    char *e; 
+    char *e;
 
     val = strtol(s,&e,0);
     if (e == NULL || *e =='\0')
-        return (int)val; 
+        return (int)val;
 
     if (*e == 'k' || *e == 'K')
         val *= 1024;
@@ -123,40 +123,40 @@ main(int argc, char **argv)
     while ((i = getopt (argc, argv, "hve:l:st")) != EOF) {
         switch (i)
         {
-          case 'v':
-              Verbose++;
-              break;
-          case 'e':
-              if ((elements = atoi_scaled(optarg)) <= 0) {
-                  fprintf(stderr,"ERR: Bad elements count %d\n",elements);
-                  shmem_finalize();
-                  return 1;
-              }
-              break;
-          case 'l':
-              if ((loops = atoi_scaled(optarg)) <= 0) {
-                  fprintf(stderr,"ERR: Bad loop count %d\n",loops);
-                  shmem_finalize();
-                  return 1;
-              }
-              break;
-          case 's':
-              Sync++;
-              break;
-          case 't':
-              Track++;
-              break;
-          case 'h':
-              if (me == 0)
-                  usage(pgm);
-              return 0;
-          default:
-              if (me == 0) {
-                  fprintf(stderr,"%s: unknown switch '-%c'?\n",pgm,i);
-                  usage(pgm);
-              }
-              shmem_finalize();
-              return 1;
+            case 'v':
+                Verbose++;
+                break;
+            case 'e':
+                if ((elements = atoi_scaled(optarg)) <= 0) {
+                    fprintf(stderr,"ERR: Bad elements count %d\n",elements);
+                    shmem_finalize();
+                    return 1;
+                }
+                break;
+            case 'l':
+                if ((loops = atoi_scaled(optarg)) <= 0) {
+                    fprintf(stderr,"ERR: Bad loop count %d\n",loops);
+                    shmem_finalize();
+                    return 1;
+                }
+                break;
+            case 's':
+                Sync++;
+                break;
+            case 't':
+                Track++;
+                break;
+            case 'h':
+                if (me == 0)
+                    usage(pgm);
+                return 0;
+            default:
+                if (me == 0) {
+                    fprintf(stderr,"%s: unknown switch '-%c'?\n",pgm,i);
+                    usage(pgm);
+                }
+                shmem_finalize();
+                return 1;
         }
     }
 
@@ -167,58 +167,58 @@ main(int argc, char **argv)
 
     total_time = (double *) shmem_malloc( npes * sizeof(double) );
     if (!total_time) {
-      fprintf(stderr,"ERR: bad total_time shmem_malloc(%ld)\n",
-              (elements * sizeof(double)));
-      shmem_global_exit(1);
+        fprintf(stderr,"ERR: bad total_time shmem_malloc(%ld)\n",
+                (elements * sizeof(double)));
+        shmem_global_exit(1);
     }
     for(i=0; i < npes; i++)
         total_time[i] = -1.0;
 
     Source = (int *) shmem_malloc( elements * sizeof(*Source) );
     if (!Source) {
-      fprintf(stderr,"ERR: bad Source shmem_malloc(%ld)\n",
-              (elements * sizeof(*Target)));
-      shmem_free(total_time);
-      shmem_global_exit(1);
+        fprintf(stderr,"ERR: bad Source shmem_malloc(%ld)\n",
+                (elements * sizeof(*Target)));
+        shmem_free(total_time);
+        shmem_global_exit(1);
     }
 
     Target = (int *) shmem_malloc( elements * sizeof(*Target) );
     if (!Target) {
-      fprintf(stderr,"ERR: bad Target shmem_malloc(%ld)\n",
-              (elements * sizeof(*Target)));
-      shmem_free(Source);
-      shmem_free(total_time);
-      shmem_global_exit(1);
+        fprintf(stderr,"ERR: bad Target shmem_malloc(%ld)\n",
+                (elements * sizeof(*Target)));
+        shmem_free(Source);
+        shmem_free(total_time);
+        shmem_global_exit(1);
     }
 
     for (i = 0; i < elements; i++) {
-      Target[i] = -90;
-      Source[i] = i + 1;
+        Target[i] = -90;
+        Source[i] = i + 1;
     }
 
     bytes = loops * sizeof(int) * elements;
 
     if (Verbose && me==0) {
-      fprintf(stderr,
-        "%s: INFO - %d loops, put %d (int) elements to PE+1 Max put ??\n",
-              pgm, loops, elements);
+        fprintf(stderr,
+                "%s: INFO - %d loops, put %d (int) elements to PE+1 Max put ??\n",
+                pgm, loops, elements);
     }
     shmem_barrier_all();
 
     for(i=0; i < loops; i++) {
 
-		start_time = shmemx_wtime();
+        start_time = shmemx_wtime();
 
-		shmem_int_put(Target, Source, elements, target_PE);
+        shmem_int_put(Target, Source, elements, target_PE);
 
-		time_taken += (shmemx_wtime() - start_time);
+        time_taken += (shmemx_wtime() - start_time);
 
-		if (me==0) {
-		  if ( Track && i > 0 && ((i % 200) == 0))
-		    fprintf(stderr,".%d",i);
-		}
-		if (Sync)
-		    shmem_barrier_all();
+        if (me==0) {
+            if ( Track && i > 0 && ((i % 200) == 0))
+                fprintf(stderr,".%d",i);
+        }
+        if (Sync)
+            shmem_barrier_all();
     }
 
     // collect time per node.
@@ -228,11 +228,11 @@ main(int argc, char **argv)
     shmem_barrier_all();
 
     for (i = 0; i < elements; i++) {
-      if (Target[i] != i + 1) {
-          printf("%d: Error Target[%d] = %d, expected %d\n",
-                 me, i, Target[i], i + 1);
-          shmem_global_exit(1);
-      }
+        if (Target[i] != i + 1) {
+            printf("%d: Error Target[%d] = %d, expected %d\n",
+                   me, i, Target[i], i + 1);
+            shmem_global_exit(1);
+        }
     }
 
     if ( Track && me == 0 ) fprintf(stderr,"\n");
@@ -252,11 +252,11 @@ main(int argc, char **argv)
         comp_time /= (double)npes;
         if (sum_time != comp_time)
             printf("%s: computed_time %7.5f != sum_to_all_time %7.5f)\n",
-                pgm, comp_time, sum_time );
+                   pgm, comp_time, sum_time );
 
         rate = ((double)bytes/(1024.0*1024.0)) / comp_time;
         printf("%s: shmem_int_put() %7.4f MB/sec (bytes %ld secs %7.4f)\n",
-                pgm, rate, bytes, sum_time);
+               pgm, rate, bytes, sum_time);
     }
 
     shmem_free(total_time);

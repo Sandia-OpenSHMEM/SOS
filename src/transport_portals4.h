@@ -196,7 +196,7 @@ typedef struct shmem_transport_ct_t shmem_transport_ct_t;
         }                                                               \
     } while (0)
 #endif
-#else 
+#else
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
 #define PORTALS4_GET_REMOTE_ACCESS_ONEPT(target, pt, offset, shr_pt)    \
     do {                                                                \
@@ -260,7 +260,7 @@ shmem_transport_quiet(void)
     shmem_transport_get_wait();
 
     /* wait for remote completion (acks) of all pending put events */
-    ret = PtlCTWait(shmem_transport_portals4_put_ct_h, 
+    ret = PtlCTWait(shmem_transport_portals4_put_ct_h,
                     shmem_transport_portals4_pending_put_counter, &ct);
     if (PTL_OK != ret) { return ret; }
     if (ct.failure != 0) { return -1; }
@@ -347,7 +347,7 @@ shmem_transport_portals4_drain_eq(void)
 
     shmem_transport_portals4_event_slots++;
 
-    shmem_transport_portals4_frag_t *frag = 
+    shmem_transport_portals4_frag_t *frag =
          (shmem_transport_portals4_frag_t*) ev.user_ptr;
 
     /* NOTE-MT: A different thread may have created this frag, so we need a
@@ -361,7 +361,7 @@ shmem_transport_portals4_drain_eq(void)
                               frag);
     } else {
          /* it's one of the long messages we're waiting for */
-         shmem_transport_portals4_long_frag_t *long_frag = 
+         shmem_transport_portals4_long_frag_t *long_frag =
               (shmem_transport_portals4_long_frag_t*) frag;
 
          (*(long_frag->completion))--;
@@ -703,7 +703,7 @@ shmem_transport_get_wait(void)
     int ret;
     ptl_ct_event_t ct;
 
-    ret = PtlCTWait(shmem_transport_portals4_get_ct_h, 
+    ret = PtlCTWait(shmem_transport_portals4_get_ct_h,
                     shmem_transport_portals4_pending_get_counter,
                     &ct);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }

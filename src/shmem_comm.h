@@ -206,7 +206,8 @@ shmem_internal_mswap(void *target, void *source, void *dest, void *mask, size_t 
 static inline
 void
 shmem_internal_atomic_small(void *target, const void *source, size_t len,
-			   int pe, shm_internal_op_t op, shm_internal_datatype_t datatype)
+                            int pe, shm_internal_op_t op,
+                            shm_internal_datatype_t datatype)
 {
     shmem_transport_atomic_small(target, source, len, pe, op, datatype);
 }
@@ -233,8 +234,8 @@ shmem_internal_atomic_set(void *target, const void *source, size_t len,
 static inline
 void
 shmem_internal_atomic_nb(void *target, const void *source, size_t len,
-	              int pe, shm_internal_op_t op, shm_internal_datatype_t datatype,
-                      long *completion)
+                         int pe, shm_internal_op_t op,
+                         shm_internal_datatype_t datatype, long *completion)
 {
     shmem_transport_atomic_nb(target, source, len, pe, op, datatype, completion);
 }
@@ -244,7 +245,8 @@ shmem_internal_atomic_nb(void *target, const void *source, size_t len,
 static inline
 void
 shmem_internal_fetch_atomic(void *target, void *source, void *dest, size_t len,
-			    int pe, shm_internal_op_t op, shm_internal_datatype_t datatype)
+                            int pe, shm_internal_op_t op,
+                            shm_internal_datatype_t datatype)
 {
     shmem_transport_fetch_atomic(target, source, dest, len, pe, op, datatype);
 }

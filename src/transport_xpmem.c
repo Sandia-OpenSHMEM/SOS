@@ -100,7 +100,7 @@ shmem_transport_xpmem_startup(void)
     }
 
     /* allocate space for local peers */
-    shmem_transport_xpmem_peers = calloc(num_on_node, 
+    shmem_transport_xpmem_peers = calloc(num_on_node,
                                          sizeof(struct shmem_transport_xpmem_peer_info_t));
     if (NULL == shmem_transport_xpmem_peers) return 1;
 
@@ -110,9 +110,9 @@ shmem_transport_xpmem_startup(void)
         if (-1 == peer_num) continue;
 
         if (shmem_internal_my_pe == i) {
-            shmem_transport_xpmem_peers[peer_num].data_ptr = 
+            shmem_transport_xpmem_peers[peer_num].data_ptr =
                 shmem_internal_data_base;
-            shmem_transport_xpmem_peers[peer_num].heap_ptr = 
+            shmem_transport_xpmem_peers[peer_num].heap_ptr =
                 shmem_internal_heap_base;
         } else {
             ret = shmem_runtime_get(i, "xpmem-segids", &info, sizeof(struct share_info_t));
@@ -133,14 +133,14 @@ shmem_transport_xpmem_startup(void)
             addr.apid = shmem_transport_xpmem_peers[peer_num].data_apid;
             addr.offset = 0;
 
-            shmem_transport_xpmem_peers[peer_num].data_attach_ptr = 
+            shmem_transport_xpmem_peers[peer_num].data_attach_ptr =
                 xpmem_attach(addr, info.data_len, NULL);
             if ((size_t) shmem_transport_xpmem_peers[peer_num].data_ptr == XPMEM_MAXADDR_SIZE) {
                 fprintf(stderr, "[%03d] ERROR: could not get data segment: %s\n",
                         shmem_internal_my_pe, strerror(errno));
                 return 1;
             }
-            shmem_transport_xpmem_peers[peer_num].data_ptr = 
+            shmem_transport_xpmem_peers[peer_num].data_ptr =
                 (char*) shmem_transport_xpmem_peers[peer_num].data_attach_ptr + info.data_off;
 
             shmem_transport_xpmem_peers[peer_num].heap_apid =
@@ -154,14 +154,14 @@ shmem_transport_xpmem_startup(void)
             addr.apid = shmem_transport_xpmem_peers[peer_num].heap_apid;
             addr.offset = 0;
 
-            shmem_transport_xpmem_peers[peer_num].heap_attach_ptr = 
+            shmem_transport_xpmem_peers[peer_num].heap_attach_ptr =
                 xpmem_attach(addr, info.heap_len, NULL);
             if ((size_t) shmem_transport_xpmem_peers[peer_num].heap_ptr == XPMEM_MAXADDR_SIZE) {
                 fprintf(stderr, "[%03d] ERROR: could not get data segment: %s\n",
                         shmem_internal_my_pe, strerror(errno));
                 return 1;
             }
-            shmem_transport_xpmem_peers[peer_num].heap_ptr = 
+            shmem_transport_xpmem_peers[peer_num].heap_ptr =
                 (char*) shmem_transport_xpmem_peers[peer_num].heap_attach_ptr + info.heap_off;
         }
     }
@@ -184,21 +184,21 @@ shmem_transport_xpmem_fini(void)
             if (NULL != shmem_transport_xpmem_peers[peer_num].data_ptr) {
                 xpmem_detach(shmem_transport_xpmem_peers[peer_num].data_attach_ptr);
             }
-                
+
             if (0 != shmem_transport_xpmem_peers[peer_num].data_apid) {
                 xpmem_release(shmem_transport_xpmem_peers[peer_num].data_apid);
             }
-                
+
             if (NULL != shmem_transport_xpmem_peers[peer_num].heap_ptr) {
                 xpmem_detach(shmem_transport_xpmem_peers[peer_num].heap_attach_ptr);
             }
-                
+
             if (0 != shmem_transport_xpmem_peers[peer_num].heap_apid) {
                 xpmem_release(shmem_transport_xpmem_peers[peer_num].heap_apid);
             }
         }
         free(shmem_transport_xpmem_peers);
-    } 
+    }
 
     if (0 != my_info.data_seg) {
         xpmem_remove(my_info.data_seg);

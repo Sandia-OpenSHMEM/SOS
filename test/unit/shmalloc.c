@@ -225,7 +225,7 @@ main(int argc, char **argv)
 #if 0
         printf("[%d] source %p target %p result %p\n",
             me, (void*)source,(void*)target,(void*)result);
-        shmem_barrier_all(); 
+        shmem_barrier_all();
 #endif
 
         shmem_barrier_all(); /* sync sender and receiver */

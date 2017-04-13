@@ -253,7 +253,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     /* exchange information */
     ret = shmem_runtime_exchange();
     if (0 != ret) {
-        fprintf(stderr, "[%03d] ERROR: runtime exchange failed: %d\n", 
+        fprintf(stderr, "[%03d] ERROR: runtime exchange failed: %d\n",
                 shmem_internal_my_pe, ret);
         goto cleanup;
     }
