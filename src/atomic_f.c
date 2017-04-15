@@ -25,13 +25,13 @@
 
 
 #define FC_SHMEM_SWAP FC_FUNC_(shmem_swap, SHMEM_SWAP)
-fortran_integer_t FC_SHMEM_SWAP(fortran_integer_t *target, 
-				fortran_integer_t *value,
-				fortran_integer_t *pe);
+fortran_integer_t FC_SHMEM_SWAP(fortran_integer_t *target,
+                                fortran_integer_t *value,
+                                fortran_integer_t *pe);
 fortran_integer_t
 FC_SHMEM_SWAP(fortran_integer_t *target,
-	      fortran_integer_t *value, 
-	      fortran_integer_t *pe)
+              fortran_integer_t *value,
+              fortran_integer_t *pe)
 {
     fortran_integer_t newval;
 
@@ -39,7 +39,7 @@ FC_SHMEM_SWAP(fortran_integer_t *target,
     SHMEM_ERR_CHECK_PE(*pe);
     SHMEM_ERR_CHECK_SYMMETRIC(target, SIZEOF_FORTRAN_INTEGER);
 
-    shmem_internal_swap(target, value, &newval, SIZEOF_FORTRAN_INTEGER, 
+    shmem_internal_swap(target, value, &newval, SIZEOF_FORTRAN_INTEGER,
                         *pe, SHM_INTERNAL_FORTRAN_INTEGER, SHMEMX_CTX_DEFAULT);
     shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
     return newval;
@@ -47,12 +47,12 @@ FC_SHMEM_SWAP(fortran_integer_t *target,
 
 
 #define FC_SHMEM_INT4_SWAP FC_FUNC_(shmem_int4_swap, SHMEM_INT4_SWAP)
-int32_t FC_SHMEM_INT4_SWAP(int32_t *target, 
+int32_t FC_SHMEM_INT4_SWAP(int32_t *target,
                            int32_t *value,
                            fortran_integer_t *pe);
 int32_t
 FC_SHMEM_INT4_SWAP(int32_t *target,
-                   int32_t *value, 
+                   int32_t *value,
                    fortran_integer_t *pe)
 {
     int32_t newval;
@@ -69,12 +69,12 @@ FC_SHMEM_INT4_SWAP(int32_t *target,
 
 
 #define FC_SHMEM_INT8_SWAP FC_FUNC_(shmem_int8_swap, SHMEM_INT8_SWAP)
-int64_t FC_SHMEM_INT8_SWAP(int64_t *target, 
+int64_t FC_SHMEM_INT8_SWAP(int64_t *target,
                            int64_t *value,
                            fortran_integer_t *pe);
 int64_t
 FC_SHMEM_INT8_SWAP(int64_t *target,
-                   int64_t *value, 
+                   int64_t *value,
                    fortran_integer_t *pe)
 {
     int64_t newval;
@@ -91,12 +91,12 @@ FC_SHMEM_INT8_SWAP(int64_t *target,
 
 
 #define FC_SHMEM_REAL4_SWAP FC_FUNC_(shmem_real4_swap, SHMEM_REAL4_SWAP)
-float FC_SHMEM_REAL4_SWAP(float *target, 
+float FC_SHMEM_REAL4_SWAP(float *target,
                           float *value,
                           fortran_integer_t *pe);
 float
 FC_SHMEM_REAL4_SWAP(float *target,
-                    float *value, 
+                    float *value,
                     fortran_integer_t *pe)
 {
     float newval;
@@ -115,12 +115,12 @@ FC_SHMEM_REAL4_SWAP(float *target,
 
 
 #define FC_SHMEM_REAL8_SWAP FC_FUNC_(shmem_real8_swap, SHMEM_REAL8_SWAP)
-double FC_SHMEM_REAL8_SWAP(double *target, 
+double FC_SHMEM_REAL8_SWAP(double *target,
                            double *value,
                            fortran_integer_t *pe);
 double
 FC_SHMEM_REAL8_SWAP(double *target,
-                    double *value, 
+                    double *value,
                     fortran_integer_t *pe)
 {
     double newval;
@@ -139,14 +139,14 @@ FC_SHMEM_REAL8_SWAP(double *target,
 
 
 #define FC_SHMEM_INT4_CSWAP FC_FUNC_(shmem_int4_cswap, SHMEM_INT4_CSWAP)
-int32_t FC_SHMEM_INT4_CSWAP(int32_t *target, 
+int32_t FC_SHMEM_INT4_CSWAP(int32_t *target,
                             int32_t *cond,
                             int32_t *value,
                             fortran_integer_t *pe);
 int32_t
 FC_SHMEM_INT4_CSWAP(int32_t *target,
-                    int32_t *cond, 
-                    int32_t *value, 
+                    int32_t *cond,
+                    int32_t *value,
                     fortran_integer_t *pe)
 {
     int32_t newval;
@@ -163,14 +163,14 @@ FC_SHMEM_INT4_CSWAP(int32_t *target,
 
 
 #define FC_SHMEM_INT8_CSWAP FC_FUNC_(shmem_int8_cswap, SHMEM_INT8_CSWAP)
-int64_t FC_SHMEM_INT8_CSWAP(int64_t *target, 
+int64_t FC_SHMEM_INT8_CSWAP(int64_t *target,
                             int64_t *cond,
                             int64_t *value,
                             fortran_integer_t *pe);
 int64_t
 FC_SHMEM_INT8_CSWAP(int64_t *target,
-                    int64_t *cond, 
-                    int64_t *value, 
+                    int64_t *cond,
+                    int64_t *value,
                     fortran_integer_t *pe)
 {
     int64_t newval;
@@ -187,12 +187,12 @@ FC_SHMEM_INT8_CSWAP(int64_t *target,
 
 
 #define FC_SHMEM_INT4_FADD FC_FUNC_(shmem_int4_fadd, SHMEM_INT4_FADD)
-int32_t FC_SHMEM_INT4_FADD(int32_t *target, 
+int32_t FC_SHMEM_INT4_FADD(int32_t *target,
                            int32_t *value,
                            fortran_integer_t *pe);
 int32_t
 FC_SHMEM_INT4_FADD(int32_t *target,
-                   int32_t *value, 
+                   int32_t *value,
                    fortran_integer_t *pe)
 {
     int32_t oldval;
@@ -210,12 +210,12 @@ FC_SHMEM_INT4_FADD(int32_t *target,
 
 
 #define FC_SHMEM_INT8_FADD FC_FUNC_(shmem_int8_fadd, SHMEM_INT8_FADD)
-int64_t FC_SHMEM_INT8_FADD(int64_t *target, 
+int64_t FC_SHMEM_INT8_FADD(int64_t *target,
                            int64_t *value,
                            fortran_integer_t *pe);
 int64_t
 FC_SHMEM_INT8_FADD(int64_t *target,
-                   int64_t *value, 
+                   int64_t *value,
                    fortran_integer_t *pe)
 {
     int64_t oldval;
@@ -233,7 +233,7 @@ FC_SHMEM_INT8_FADD(int64_t *target,
 
 
 #define FC_SHMEM_INT4_FINC FC_FUNC_(shmem_int4_finc, SHMEM_INT4_FINC)
-int32_t FC_SHMEM_INT4_FINC(int32_t *target, 
+int32_t FC_SHMEM_INT4_FINC(int32_t *target,
                            fortran_integer_t *pe);
 int32_t
 FC_SHMEM_INT4_FINC(int32_t *target,
@@ -254,7 +254,7 @@ FC_SHMEM_INT4_FINC(int32_t *target,
 
 
 #define FC_SHMEM_INT8_FINC FC_FUNC_(shmem_int8_finc, SHMEM_INT8_FINC)
-int64_t FC_SHMEM_INT8_FINC(int64_t *target, 
+int64_t FC_SHMEM_INT8_FINC(int64_t *target,
                            fortran_integer_t *pe);
 int64_t
 FC_SHMEM_INT8_FINC(int64_t *target,
@@ -275,12 +275,12 @@ FC_SHMEM_INT8_FINC(int64_t *target,
 
 
 #define FC_SHMEM_INT4_ADD FC_FUNC_(shmem_int4_add, SHMEM_INT4_ADD)
-void FC_SHMEM_INT4_ADD(int32_t *target, 
+void FC_SHMEM_INT4_ADD(int32_t *target,
                        int32_t *value,
                        fortran_integer_t *pe);
 void
 FC_SHMEM_INT4_ADD(int32_t *target,
-                  int32_t *value, 
+                  int32_t *value,
                   fortran_integer_t *pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -294,12 +294,12 @@ FC_SHMEM_INT4_ADD(int32_t *target,
 
 
 #define FC_SHMEM_INT8_ADD FC_FUNC_(shmem_int8_add, SHMEM_INT8_ADD)
-void FC_SHMEM_INT8_ADD(int64_t *target, 
+void FC_SHMEM_INT8_ADD(int64_t *target,
                        int64_t *value,
                        fortran_integer_t *pe);
 void
 FC_SHMEM_INT8_ADD(int64_t *target,
-                  int64_t *value, 
+                  int64_t *value,
                   fortran_integer_t *pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -313,7 +313,7 @@ FC_SHMEM_INT8_ADD(int64_t *target,
 
 
 #define FC_SHMEM_INT4_INC FC_FUNC_(shmem_int4_inc, SHMEM_INT4_INC)
-void FC_SHMEM_INT4_INC(int32_t *target, 
+void FC_SHMEM_INT4_INC(int32_t *target,
                        fortran_integer_t *pe);
 void
 FC_SHMEM_INT4_INC(int32_t *target,
@@ -332,7 +332,7 @@ FC_SHMEM_INT4_INC(int32_t *target,
 
 
 #define FC_SHMEM_INT8_INC FC_FUNC_(shmem_int8_inc, SHMEM_INT8_INC)
-void FC_SHMEM_INT8_INC(int64_t *target, 
+void FC_SHMEM_INT8_INC(int64_t *target,
                        fortran_integer_t *pe);
 void
 FC_SHMEM_INT8_INC(int64_t *target,

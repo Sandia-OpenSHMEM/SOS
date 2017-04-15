@@ -49,7 +49,7 @@ FC_SHMEM_FENCE(void)
 
 
 #define FC_SHMEM_INT4_WAIT FC_FUNC_(shmem_int4_wait, SHMEM_INT4_WAIT)
-void FC_SHMEM_INT4_WAIT(volatile int32_t *var, 
+void FC_SHMEM_INT4_WAIT(volatile int32_t *var,
                         int32_t *value);
 void
 FC_SHMEM_INT4_WAIT(volatile int32_t *var,
@@ -63,7 +63,7 @@ FC_SHMEM_INT4_WAIT(volatile int32_t *var,
 
 
 #define FC_SHMEM_INT8_WAIT FC_FUNC_(shmem_int8_wait, SHMEM_INT8_WAIT)
-void FC_SHMEM_INT8_WAIT(volatile int64_t *var, 
+void FC_SHMEM_INT8_WAIT(volatile int64_t *var,
                         int64_t *value);
 void
 FC_SHMEM_INT8_WAIT(volatile int64_t *var,
@@ -77,7 +77,7 @@ FC_SHMEM_INT8_WAIT(volatile int64_t *var,
 
 
 #define FC_SHMEM_WAIT FC_FUNC_(shmem_wait, SHMEM_WAIT)
-void FC_SHMEM_WAIT(volatile fortran_integer_t *var, 
+void FC_SHMEM_WAIT(volatile fortran_integer_t *var,
                    fortran_integer_t *value);
 void
 FC_SHMEM_WAIT(volatile fortran_integer_t *var,
@@ -91,7 +91,7 @@ FC_SHMEM_WAIT(volatile fortran_integer_t *var,
 
 
 #define FC_SHMEM_INT4_WAIT_UNTIL FC_FUNC_(shmem_int4_wait_until, SHMEM_INT4_WAIT_UNTIL)
-void FC_SHMEM_INT4_WAIT_UNTIL(volatile int32_t *var, 
+void FC_SHMEM_INT4_WAIT_UNTIL(volatile int32_t *var,
                               fortran_integer_t *cond,
                               int32_t *value);
 void
@@ -108,7 +108,7 @@ FC_SHMEM_INT4_WAIT_UNTIL(volatile int32_t *var,
 
 
 #define FC_SHMEM_INT8_WAIT_UNTIL FC_FUNC_(shmem_int8_wait_until, SHMEM_INT8_WAIT_UNTIL)
-void FC_SHMEM_INT8_WAIT_UNTIL(volatile int64_t *var, 
+void FC_SHMEM_INT8_WAIT_UNTIL(volatile int64_t *var,
                               fortran_integer_t *cond,
                               int64_t *value);
 void
@@ -125,7 +125,7 @@ FC_SHMEM_INT8_WAIT_UNTIL(volatile int64_t *var,
 
 
 #define FC_SHMEM_WAIT_UNTIL FC_FUNC_(shmem_wait_until, SHMEM_WAIT_UNTIL)
-void FC_SHMEM_WAIT_UNTIL(volatile fortran_integer_t *var, 
+void FC_SHMEM_WAIT_UNTIL(volatile fortran_integer_t *var,
                          fortran_integer_t *cond,
                          fortran_integer_t *value);
 void

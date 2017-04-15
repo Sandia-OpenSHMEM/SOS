@@ -183,11 +183,11 @@ static int
 atoi_scaled(char *s)
 {
     long val;
-    char *e; 
+    char *e;
 
     val = strtol(s,&e,0);
     if (e == NULL || *e =='\0')
-        return (int)val; 
+        return (int)val;
 
     if (*e == 'k' || *e == 'K')
         val *= 1024;

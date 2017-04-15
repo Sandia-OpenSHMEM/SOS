@@ -34,7 +34,7 @@
 
 #endif /* ENABLE_PROFILING */
 
-int 
+int
 shmem_pe_accessible(int pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();

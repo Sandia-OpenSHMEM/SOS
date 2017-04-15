@@ -372,7 +372,7 @@ char *shmem_internal_nodename(void);
 
 int shmem_internal_symmetric_init(size_t requested_length, int use_malloc);
 int shmem_internal_symmetric_fini(void);
-int shmem_internal_collectives_init(int requested_crossover, 
+int shmem_internal_collectives_init(int requested_crossover,
                                     int requested_radix);
 
 /* internal allocation, without a barrier */

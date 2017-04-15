@@ -61,7 +61,7 @@ main(int argc, char* argv[])
         shmem_short_iput(target, source, 1, 2, 5, 1);
     }
 
-    shmem_barrier_all();	/* sync sender and receiver */
+    shmem_barrier_all(); /* sync sender and receiver */
 
     if (me == 1) {
         if (! (target[0] == source[0] &&

@@ -145,7 +145,7 @@ SHMEM_BIND_C_COLL_FLOATS(`SHMEM_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 SHMEM_BIND_C_COLL_CMPLX(`SHMEM_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 
 void
-shmem_broadcast32(void *target, const void *source, size_t nlong, 
+shmem_broadcast32(void *target, const void *source, size_t nlong,
                   int PE_root, int PE_start, int logPE_stride, int PE_size,
                   long *pSync)
 {

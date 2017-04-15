@@ -86,7 +86,7 @@ main(int argc, char* argv[])
     shmem_long_max_to_all(dst, src, N, 0, 0, shmem_n_pes(), pWrk, pSync);
 
     if (Verbose) {
-        printf("%d/%d	dst =", shmem_my_pe(), shmem_n_pes() );
+        printf("%d/%d\tdst =", shmem_my_pe(), shmem_n_pes() );
         for (i = 0; i < N; i+= 1) {
             printf(" %ld", dst[i]);
         }

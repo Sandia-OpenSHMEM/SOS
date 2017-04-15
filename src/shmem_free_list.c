@@ -72,7 +72,7 @@ shmem_free_list_more(shmem_free_list_t *fl)
 
     num_elements = 2;
 
-    buf = malloc(sizeof(shmem_free_list_alloc_t) + 
+    buf = malloc(sizeof(shmem_free_list_alloc_t) +
                  num_elements * fl->element_size);
     if (NULL == buf) return 1;
 
