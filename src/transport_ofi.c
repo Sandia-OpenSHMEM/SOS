@@ -67,15 +67,15 @@ static size_t shmem_transport_ofi_grow_size = 128;
 static size_t shmem_transport_ofi_avail_ctx = 0;
 static size_t shmem_transport_ofi_avail_dom = 0;
 
-struct fid_fabric*          	shmem_transport_ofi_fabfd;
-struct fid_domain*          	shmem_transport_ofi_domainfd;
-struct fid_av*             	shmem_transport_ofi_avfd;
+struct fid_fabric*              shmem_transport_ofi_fabfd;
+struct fid_domain*              shmem_transport_ofi_domainfd;
+struct fid_av*                  shmem_transport_ofi_avfd;
 #ifndef ENABLE_HARD_POLLING
-struct fid_cntr*            	shmem_transport_ofi_target_cntrfd;
+struct fid_cntr*                shmem_transport_ofi_target_cntrfd;
 #endif
 #ifdef ENABLE_MR_SCALABLE
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-struct fid_mr*              	shmem_transport_ofi_target_mrfd;
+struct fid_mr*                  shmem_transport_ofi_target_mrfd;
 #else  /* !ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 struct fid_mr*                  shmem_transport_ofi_target_heap_mrfd;
 struct fid_mr*                  shmem_transport_ofi_target_data_mrfd;
@@ -90,17 +90,17 @@ uint8_t**                       shmem_transport_ofi_target_heap_addrs;
 uint8_t**                       shmem_transport_ofi_target_data_addrs;
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 #endif /* ENABLE_MR_SCALABLE */
-uint64_t			shmem_transport_ofi_max_poll;
-size_t           		shmem_transport_ofi_max_buffered_send;
-size_t    			shmem_transport_ofi_max_msg_size;
-size_t    			shmem_transport_ofi_addrlen;
-fi_addr_t			*addr_table;
+uint64_t                        shmem_transport_ofi_max_poll;
+size_t                          shmem_transport_ofi_max_buffered_send;
+size_t                          shmem_transport_ofi_max_msg_size;
+size_t                          shmem_transport_ofi_addrlen;
+fi_addr_t                       *addr_table;
 #ifdef USE_ON_NODE_COMMS
 #define EPHOSTNAMELEN  _POSIX_HOST_NAME_MAX + 1
-static char         myephostname[EPHOSTNAMELEN];
+static char                     myephostname[EPHOSTNAMELEN];
 #endif
 #ifdef ENABLE_THREADS
-shmem_internal_mutex_t           shmem_transport_ofi_lock;
+shmem_internal_mutex_t          shmem_transport_ofi_lock;
 #endif
 
 size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
@@ -166,23 +166,23 @@ static inline void init_ofi_tables(void)
 #define SIZEOF_AMO_DT 5
 static int DT_AMO_STANDARD[]=
 {
-  SHM_INTERNAL_INT, SHM_INTERNAL_LONG, SHM_INTERNAL_LONG_LONG,
-  SHM_INTERNAL_INT32, SHM_INTERNAL_INT64
+    SHM_INTERNAL_INT, SHM_INTERNAL_LONG, SHM_INTERNAL_LONG_LONG,
+    SHM_INTERNAL_INT32, SHM_INTERNAL_INT64
 };
 #define SIZEOF_AMO_OPS 1
 static int AMO_STANDARD_OPS[]=
 {
-  SHM_INTERNAL_SUM
+    SHM_INTERNAL_SUM
 };
 #define SIZEOF_AMO_FOPS 1
 static int FETCH_AMO_STANDARD_OPS[]=
 {
-  SHM_INTERNAL_SUM
+    SHM_INTERNAL_SUM
 };
 #define SIZEOF_AMO_COPS 1
 static int COMPARE_AMO_STANDARD_OPS[]=
 {
-  FI_CSWAP
+    FI_CSWAP
 };
 
 /* Note: Fortran-specific types should be last so they can be disabled here */
@@ -193,19 +193,19 @@ static int COMPARE_AMO_STANDARD_OPS[]=
 #endif
 static int DT_AMO_EXTENDED[]=
 {
-  SHM_INTERNAL_FLOAT, SHM_INTERNAL_DOUBLE, SHM_INTERNAL_INT, SHM_INTERNAL_LONG,
-  SHM_INTERNAL_LONG_LONG, SHM_INTERNAL_INT32, SHM_INTERNAL_INT64,
-  SHM_INTERNAL_FORTRAN_INTEGER
+    SHM_INTERNAL_FLOAT, SHM_INTERNAL_DOUBLE, SHM_INTERNAL_INT, SHM_INTERNAL_LONG,
+    SHM_INTERNAL_LONG_LONG, SHM_INTERNAL_INT32, SHM_INTERNAL_INT64,
+    SHM_INTERNAL_FORTRAN_INTEGER
 };
 #define SIZEOF_AMO_EX_OPS 1
 static int AMO_EXTENDED_OPS[]=
 {
-  FI_ATOMIC_WRITE
+    FI_ATOMIC_WRITE
 };
 #define SIZEOF_AMO_EX_FOPS 2
 static int FETCH_AMO_EXTENDED_OPS[]=
 {
-  FI_ATOMIC_WRITE, FI_ATOMIC_READ
+    FI_ATOMIC_WRITE, FI_ATOMIC_READ
 };
 
 
@@ -214,42 +214,42 @@ static int FETCH_AMO_EXTENDED_OPS[]=
 #define SIZEOF_RED_DT 6
 static int DT_REDUCE_BITWISE[]=
 {
-  SHM_INTERNAL_SHORT, SHM_INTERNAL_INT, SHM_INTERNAL_LONG,
-  SHM_INTERNAL_LONG_LONG, SHM_INTERNAL_INT32, SHM_INTERNAL_INT64
+    SHM_INTERNAL_SHORT, SHM_INTERNAL_INT, SHM_INTERNAL_LONG,
+    SHM_INTERNAL_LONG_LONG, SHM_INTERNAL_INT32, SHM_INTERNAL_INT64
 };
 #define SIZEOF_RED_OPS 3
 static int REDUCE_BITWISE_OPS[]=
 {
-  SHM_INTERNAL_BAND, SHM_INTERNAL_BOR, SHM_INTERNAL_BXOR
+    SHM_INTERNAL_BAND, SHM_INTERNAL_BOR, SHM_INTERNAL_BXOR
 };
 
 
 #define SIZEOF_REDC_DT 9
 static int DT_REDUCE_COMPARE[]=
 {
-  SHM_INTERNAL_FLOAT, SHM_INTERNAL_DOUBLE, SHM_INTERNAL_SHORT,
-  SHM_INTERNAL_INT, SHM_INTERNAL_LONG, SHM_INTERNAL_LONG_LONG,
-  SHM_INTERNAL_INT32, SHM_INTERNAL_INT64, SHM_INTERNAL_LONG_DOUBLE
+    SHM_INTERNAL_FLOAT, SHM_INTERNAL_DOUBLE, SHM_INTERNAL_SHORT,
+    SHM_INTERNAL_INT, SHM_INTERNAL_LONG, SHM_INTERNAL_LONG_LONG,
+    SHM_INTERNAL_INT32, SHM_INTERNAL_INT64, SHM_INTERNAL_LONG_DOUBLE
 };
 #define SIZEOF_REDC_OPS 2
 static int REDUCE_COMPARE_OPS[]=
 {
-  SHM_INTERNAL_MAX, SHM_INTERNAL_MIN
+    SHM_INTERNAL_MAX, SHM_INTERNAL_MIN
 };
 
 
 #define SIZEOF_REDA_DT 11
 static int DT_REDUCE_ARITH[]=
 {
-  SHM_INTERNAL_FLOAT, SHM_INTERNAL_DOUBLE, SHM_INTERNAL_FLOAT_COMPLEX,
-  SHM_INTERNAL_DOUBLE_COMPLEX, SHM_INTERNAL_SHORT, SHM_INTERNAL_INT,
-  SHM_INTERNAL_LONG, SHM_INTERNAL_LONG_LONG, SHM_INTERNAL_INT32,
-  SHM_INTERNAL_INT64, SHM_INTERNAL_LONG_DOUBLE
+    SHM_INTERNAL_FLOAT, SHM_INTERNAL_DOUBLE, SHM_INTERNAL_FLOAT_COMPLEX,
+    SHM_INTERNAL_DOUBLE_COMPLEX, SHM_INTERNAL_SHORT, SHM_INTERNAL_INT,
+    SHM_INTERNAL_LONG, SHM_INTERNAL_LONG_LONG, SHM_INTERNAL_INT32,
+    SHM_INTERNAL_INT64, SHM_INTERNAL_LONG_DOUBLE
 };
 #define SIZEOF_REDA_OPS 2
 static int REDUCE_ARITH_OPS[]=
 {
-  SHM_INTERNAL_SUM, SHM_INTERNAL_PROD
+    SHM_INTERNAL_SUM, SHM_INTERNAL_PROD
 };
 
 /* Internal to SHMEM implementation atomic requirement */
@@ -257,12 +257,12 @@ static int REDUCE_ARITH_OPS[]=
 #define SIZEOF_INTERNAL_REQ_DT 1
 static int DT_INTERNAL_REQ[]=
 {
-  SHM_INTERNAL_INT
+    SHM_INTERNAL_INT
 };
 #define SIZEOF_INTERNAL_REQ_OPS 1
 static int INTERNAL_REQ_OPS[]=
 {
-  FI_MSWAP
+    FI_MSWAP
 };
 
 typedef enum{
@@ -292,34 +292,34 @@ static int shmem_transport_ofi_domain_init(int id, int thread_level,
 
     int lock = (thread_level != SHMEMX_THREAD_SINGLE);
     if(!lock) {
-      dom->take_lock = &dom_lock_noop;
-      dom->release_lock = &dom_lock_noop;
-      dom->free_lock = &dom_lock_noop;
+        dom->take_lock = &dom_lock_noop;
+        dom->release_lock = &dom_lock_noop;
+        dom->free_lock = &dom_lock_noop;
     } else {
-      dom->take_lock = &dom_take_mutex;
-      dom->release_lock = &dom_release_mutex;
-      dom->free_lock = &dom_free_mutex;
+        dom->take_lock = &dom_take_mutex;
+        dom->release_lock = &dom_release_mutex;
+        dom->free_lock = &dom_free_mutex;
     }
 
     if(lock) {
-      /* Interesting semantic choice -- this macro is
-       * pass-by-reference
-       */
-      SHMEM_MUTEX_INIT(dom->lock);
+        /* Interesting semantic choice -- this macro is
+         * pass-by-reference
+         */
+        SHMEM_MUTEX_INIT(dom->lock);
     }
 
     /* TODO: fill tx_attr */
     ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL,
-        &dom->stx, NULL);
+                         &dom->stx, NULL);
     IF_OFI_ERR_RETURN(ret,"stx context initialization failed");
 
-    struct fi_cq_attr   cq_attr = {0};
+    struct fi_cq_attr cq_attr = {0};
     /* event type for CQ,only context stored/reported */
     cq_attr.format = FI_CQ_FORMAT_CONTEXT;
     cq_attr.size   = shmem_transport_ofi_queue_slots;
 
     ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr,
-        &dom->cq, NULL);
+                     &dom->cq, NULL);
     IF_OFI_ERR_RETURN(ret,"cq_open failed");
 
     return ret;
@@ -346,7 +346,7 @@ int shmem_transport_domain_create(int thread_level, int num_domains,
     if ((shmem_transport_ofi_num_dom + num_domains) > shmem_transport_ofi_avail_dom) {
         shmem_transport_ofi_avail_dom += MAX(num_domains, shmem_transport_ofi_grow_size);
         shmem_transport_ofi_domains = realloc(shmem_transport_ofi_domains,
-            shmem_transport_ofi_avail_dom * sizeof(shmem_transport_domain_t*));
+                      shmem_transport_ofi_avail_dom * sizeof(shmem_transport_domain_t*));
 
         if (shmem_transport_ofi_domains == NULL) {
             RAISE_WARN_STR("Error: out of memory in realloc of OFI domain array");
@@ -521,7 +521,7 @@ int shmem_transport_ctx_create(shmem_transport_domain_t *dom, shmem_transport_ct
     if (shmem_transport_ofi_num_ctx == shmem_transport_ofi_avail_ctx) {
         shmem_transport_ofi_avail_ctx += shmem_transport_ofi_grow_size;
         shmem_transport_ofi_contexts = realloc(shmem_transport_ofi_contexts,
-            shmem_transport_ofi_avail_ctx * sizeof(shmem_transport_ctx_t*));
+               shmem_transport_ofi_avail_ctx * sizeof(shmem_transport_ctx_t*));
 
         if (shmem_transport_ofi_contexts == NULL) {
             RAISE_ERROR_STR("Error: out of memory when allocating OFI ctx array");
@@ -613,8 +613,8 @@ static inline int allocate_recv_cntr_mr(void)
 
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, 0, UINT64_MAX,
-		    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, 0,
-		    &shmem_transport_ofi_target_mrfd, NULL);
+                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, 0,
+                    &shmem_transport_ofi_target_mrfd, NULL);
     if(ret!=0){
         RAISE_WARN_STR("mr_reg failed");
         return ret;
@@ -816,18 +816,18 @@ static int populate_mr_tables(void)
 
 /*SOFT_SUPPORT will not produce warning or error */
 static inline int atomicvalid_rtncheck(int ret, int atomic_size,
-                                    atomic_support_lv atomic_sup,
-                                    char strOP[], char strDT[])
+                                       atomic_support_lv atomic_sup,
+                                       char strOP[], char strDT[])
 {
     if((ret != 0 || atomic_size == 0) && atomic_sup != ATOMIC_SOFT_SUPPORT) {
         if(atomic_sup == ATOMIC_WARNINGS) {
             fprintf(stderr, "Warning OFI detected no support for atomic '%s' "
-               "on type '%s'\n", strOP, strDT);
+                    "on type '%s'\n", strOP, strDT);
         }
         else if(atomic_sup == ATOMIC_NO_SUPPORT) {
             RAISE_WARN_MSG("Error: atomicvalid ret=%d atomic_size=%d\n",
-                       ret, atomic_size);
-	        return ret;
+                           ret, atomic_size);
+            return ret;
         } else {
             RAISE_ERROR_STR("Error: invalid software atomic support request");
         }
@@ -843,58 +843,59 @@ static inline int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
     size_t atomic_size;
 
     for(i=0; i<DT_MAX; i++) {
-      for(j=0; j<OPS_MAX; j++) {
-        ret = fi_atomicvalid(shmem_transport_default_ctx.endpoint.ep, DT[i],
-                        OPS[j], &atomic_size);
-         if(atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
-                            SHMEM_OpName[OPS[j]],
-                            SHMEM_DtName[DT[i]]))
-           return ret;
-      }
+        for(j=0; j<OPS_MAX; j++) {
+            ret = fi_atomicvalid(shmem_transport_default_ctx.endpoint.ep, DT[i],
+                                 OPS[j], &atomic_size);
+            if(atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
+                                    SHMEM_OpName[OPS[j]],
+                                    SHMEM_DtName[DT[i]]))
+                return ret;
+        }
     }
 
     return 0;
 }
 
 static inline int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
-                                    int OPS[], atomic_support_lv atomic_sup)
+                                            int OPS[], atomic_support_lv atomic_sup)
 {
     int i, j, ret = 0;
     size_t atomic_size;
 
     for(i=0; i<DT_MAX; i++) {
-      for(j=0; j<OPS_MAX; j++) {
-        ret = fi_compare_atomicvalid(shmem_transport_default_ctx.endpoint.ep, DT[i],
-                        OPS[j], &atomic_size);
-         if(atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
-                            SHMEM_OpName[OPS[j]],
-                            SHMEM_DtName[DT[i]]))
-           return ret;
-      }
+        for(j=0; j<OPS_MAX; j++) {
+            ret = fi_compare_atomicvalid(shmem_transport_default_ctx.endpoint.ep, DT[i],
+                                         OPS[j], &atomic_size);
+            if(atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
+                                    SHMEM_OpName[OPS[j]],
+                                    SHMEM_DtName[DT[i]]))
+                return ret;
+        }
     }
 
     return 0;
 }
 
 static inline int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
-                                    int OPS[], atomic_support_lv atomic_sup)
+                                          int OPS[], atomic_support_lv atomic_sup)
 {
     int i, j, ret = 0;
     size_t atomic_size;
 
     for(i=0; i<DT_MAX; i++) {
-      for(j=0; j<OPS_MAX; j++) {
-        ret = fi_fetch_atomicvalid(shmem_transport_default_ctx.endpoint.ep, DT[i],
-                        OPS[j], &atomic_size);
-         if(atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
-                            SHMEM_OpName[OPS[j]],
-                            SHMEM_DtName[DT[i]]))
-           return ret;
-      }
+        for(j=0; j<OPS_MAX; j++) {
+            ret = fi_fetch_atomicvalid(shmem_transport_default_ctx.endpoint.ep, DT[i],
+                                       OPS[j], &atomic_size);
+            if(atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
+                                    SHMEM_OpName[OPS[j]],
+                                    SHMEM_DtName[DT[i]]))
+                return ret;
+        }
     }
 
     return 0;
 }
+
 static inline int atomic_limitations_check(void)
 {
 
@@ -918,53 +919,53 @@ static inline int atomic_limitations_check(void)
 
     /* Standard OPS check */
     ret = atomicvalid_DTxOP(SIZEOF_AMO_DT, SIZEOF_AMO_OPS, DT_AMO_STANDARD,
-                      AMO_STANDARD_OPS, general_atomic_sup);
+                            AMO_STANDARD_OPS, general_atomic_sup);
     if(ret)
         return ret;
 
     ret = fetch_atomicvalid_DTxOP(SIZEOF_AMO_DT, SIZEOF_AMO_FOPS,
-                    DT_AMO_STANDARD, FETCH_AMO_STANDARD_OPS,
-                    general_atomic_sup);
+                                  DT_AMO_STANDARD, FETCH_AMO_STANDARD_OPS,
+                                  general_atomic_sup);
     if(ret)
         return ret;
 
     ret = compare_atomicvalid_DTxOP(SIZEOF_AMO_DT, SIZEOF_AMO_COPS,
-                    DT_AMO_STANDARD, COMPARE_AMO_STANDARD_OPS,
-                    general_atomic_sup);
+                                    DT_AMO_STANDARD, COMPARE_AMO_STANDARD_OPS,
+                                    general_atomic_sup);
     if(ret)
         return ret;
 
     /* Extended OPS check */
     ret = atomicvalid_DTxOP(SIZEOF_AMO_EX_DT, SIZEOF_AMO_EX_OPS, DT_AMO_EXTENDED,
-                      AMO_EXTENDED_OPS, general_atomic_sup);
+                            AMO_EXTENDED_OPS, general_atomic_sup);
     if(ret)
         return ret;
 
     ret = fetch_atomicvalid_DTxOP(SIZEOF_AMO_EX_DT, SIZEOF_AMO_EX_FOPS,
-                    DT_AMO_EXTENDED, FETCH_AMO_EXTENDED_OPS,
-                    general_atomic_sup);
+                                  DT_AMO_EXTENDED, FETCH_AMO_EXTENDED_OPS,
+                                  general_atomic_sup);
     if(ret)
         return ret;
 
     /* Reduction OPS check */
     ret = atomicvalid_DTxOP(SIZEOF_RED_DT, SIZEOF_RED_OPS, DT_REDUCE_BITWISE,
-                      REDUCE_BITWISE_OPS, reduction_sup);
+                            REDUCE_BITWISE_OPS, reduction_sup);
     if(ret)
         return ret;
 
     ret = atomicvalid_DTxOP(SIZEOF_REDC_DT, SIZEOF_REDC_OPS, DT_REDUCE_COMPARE,
-                      REDUCE_COMPARE_OPS, reduction_sup);
+                            REDUCE_COMPARE_OPS, reduction_sup);
     if(ret)
         return ret;
 
     ret = atomicvalid_DTxOP(SIZEOF_REDA_DT, SIZEOF_REDA_OPS, DT_REDUCE_ARITH,
-                      REDUCE_ARITH_OPS, reduction_sup);
+                            REDUCE_ARITH_OPS, reduction_sup);
     if(ret)
         return ret;
 
     /* Internal atomic requirement */
     ret = compare_atomicvalid_DTxOP(SIZEOF_INTERNAL_REQ_DT, SIZEOF_INTERNAL_REQ_OPS,
-                    DT_INTERNAL_REQ, INTERNAL_REQ_OPS, general_atomic_sup);
+                                    DT_INTERNAL_REQ, INTERNAL_REQ_OPS, general_atomic_sup);
     if(ret)
         return ret;
 
@@ -991,7 +992,7 @@ static inline int publish_av_info(struct fabric_info *info)
 #endif
 
     ret = fi_getname((fid_t)shmem_transport_default_ctx.endpoint.ep, epname,
-        &epnamelen);
+                     &epnamelen);
     if(ret!=0 || (epnamelen > sizeof(epname))){
         RAISE_WARN_STR("fi_getname failed");
         return ret;
@@ -1073,7 +1074,7 @@ static inline int allocate_fabric_resources(struct fabric_info *info)
 
     /*access domain: define communication resource limits/boundary within fabric domain */
     ret = fi_domain(shmem_transport_ofi_fabfd, info->p_info,
-		    &shmem_transport_ofi_domainfd,NULL);
+                    &shmem_transport_ofi_domainfd,NULL);
     if(ret!=0){
         RAISE_WARN_STR("domain initialization failed");
         return ret;
@@ -1091,9 +1092,9 @@ static inline int allocate_fabric_resources(struct fabric_info *info)
 #endif
 
     ret = fi_av_open(shmem_transport_ofi_domainfd,
-		    &av_attr,
-		    &shmem_transport_ofi_avfd,
-		    NULL);
+                     &av_attr,
+                     &shmem_transport_ofi_avfd,
+                     NULL);
     if(ret!=0){
         RAISE_WARN_STR("av open failed");
         return ret;
@@ -1116,7 +1117,7 @@ static inline int query_for_fabric(struct fabric_info *info)
     fabric_attr.prov_name = info->prov_name;
 
     hints.caps   = FI_RMA |     /* request rma capability
-                                    implies FI_READ/WRITE FI_REMOTE_READ/WRITE */
+                                   implies FI_READ/WRITE FI_REMOTE_READ/WRITE */
                    FI_ATOMICS;  /* request atomics capability */
 #ifndef ENABLE_HARD_POLLING
     hints.caps |= FI_RMA_EVENT; /* want to use remote counters */
@@ -1146,11 +1147,11 @@ static inline int query_for_fabric(struct fabric_info *info)
 
     hints.domain_attr         = &domain_attr;
     ep_attr.type              = FI_EP_RDM; /* reliable connectionless */
-    hints.fabric_attr	      = &fabric_attr;
+    hints.fabric_attr         = &fabric_attr;
     tx_attr.op_flags          = FI_DELIVERY_COMPLETE;
     tx_attr.inject_size       = shmem_transport_ofi_max_buffered_send; /*require provider to support this as a min*/
-    hints.tx_attr	      = &tx_attr; /* TODO: fill tx_attr */
-    hints.rx_attr	      = NULL;
+    hints.tx_attr             = &tx_attr; /* TODO: fill tx_attr */
+    hints.rx_attr             = NULL;
     hints.ep_attr             = &ep_attr;
 
     /* find fabric provider to use that is able to support RMA and ATOMICS */
@@ -1220,69 +1221,69 @@ static inline int query_for_fabric(struct fabric_info *info)
 
 int shmem_transport_init(int thread_level, long eager_size)
 {
-  int ret = 0;
+    int ret = 0;
 
-  {
-    struct fabric_info info = {0};
+    {
+        struct fabric_info info = {0};
 
-    info.npes      = shmem_runtime_get_size();
+        info.npes      = shmem_runtime_get_size();
 
-    info.prov_name = shmem_util_getenv_str("OFI_PROVIDER");
-    if (NULL == info.prov_name)
-      info.prov_name = shmem_util_getenv_str("OFI_USE_PROVIDER");
+        info.prov_name = shmem_util_getenv_str("OFI_PROVIDER");
+        if (NULL == info.prov_name)
+            info.prov_name = shmem_util_getenv_str("OFI_USE_PROVIDER");
 
-    info.fabric_name = shmem_util_getenv_str("OFI_FABRIC");
-    info.domain_name = shmem_util_getenv_str("OFI_DOMAIN");
+        info.fabric_name = shmem_util_getenv_str("OFI_FABRIC");
+        info.domain_name = shmem_util_getenv_str("OFI_DOMAIN");
 
-    shmem_ofi_cq_info = info;
-    shmem_ofi_cntr_info = info;
-  }
+        shmem_ofi_cq_info = info;
+        shmem_ofi_cntr_info = info;
+    }
 
-  ret = query_for_fabric(&shmem_ofi_cq_info);
-  if(ret!=0)
-    return ret;
+    ret = query_for_fabric(&shmem_ofi_cq_info);
+    if(ret!=0)
+        return ret;
 
-  ret = query_for_fabric(&shmem_ofi_cntr_info);
-  if(ret!=0)
-    return ret;
+    ret = query_for_fabric(&shmem_ofi_cntr_info);
+    if(ret!=0)
+        return ret;
 
-  ret = allocate_fabric_resources(&shmem_ofi_cq_info);
-  if(ret!=0)
-    return ret;
+    ret = allocate_fabric_resources(&shmem_ofi_cq_info);
+    if(ret!=0)
+        return ret;
 
-  shmem_transport_ofi_avail_ctx = shmem_transport_ofi_grow_size;
-  shmem_transport_ofi_avail_dom = shmem_transport_ofi_grow_size;
-  shmem_transport_ofi_domains = malloc(
-    shmem_transport_ofi_avail_dom*sizeof(shmem_transport_domain_t*));
-  shmem_transport_ofi_contexts = malloc(shmem_transport_ofi_avail_ctx
-                                        * sizeof(shmem_transport_ctx_t*));
+    shmem_transport_ofi_avail_ctx = shmem_transport_ofi_grow_size;
+    shmem_transport_ofi_avail_dom = shmem_transport_ofi_grow_size;
+    shmem_transport_ofi_domains = malloc(
+                                         shmem_transport_ofi_avail_dom*sizeof(shmem_transport_domain_t*));
+    shmem_transport_ofi_contexts = malloc(shmem_transport_ofi_avail_ctx
+                                          * sizeof(shmem_transport_ctx_t*));
 
-  ret = shmem_transport_ofi_domain_init(-1, thread_level, &shmem_transport_default_dom);
-  if(ret!=0)
-    return ret;
+    ret = shmem_transport_ofi_domain_init(-1, thread_level, &shmem_transport_default_dom);
+    if(ret!=0)
+        return ret;
 
-  ret = shmem_transport_ofi_ctx_init(-1, &shmem_transport_default_dom,
-                                     &shmem_transport_default_ctx);
-  if(ret!=0)
-    return ret;
+    ret = shmem_transport_ofi_ctx_init(-1, &shmem_transport_default_dom,
+                                       &shmem_transport_default_ctx);
+    if(ret!=0)
+        return ret;
 
-  ret = allocate_recv_cntr_mr();
-  if(ret!=0)
-    return ret;
+    ret = allocate_recv_cntr_mr();
+    if(ret!=0)
+        return ret;
 
-  ret = publish_mr_info();
-  if (ret != 0)
-    return ret;
+    ret = publish_mr_info();
+    if (ret != 0)
+        return ret;
 
-  ret = atomic_limitations_check();
-  if(ret!=0)
-    return ret;
+    ret = atomic_limitations_check();
+    if(ret!=0)
+        return ret;
 
-  ret = publish_av_info(&shmem_ofi_cq_info);
-  if(ret!=0)
-    return ret;
+    ret = publish_av_info(&shmem_ofi_cq_info);
+    if(ret!=0)
+        return ret;
 
-  return 0;
+    return 0;
 }
 
 int shmem_transport_startup(void)
@@ -1332,24 +1333,24 @@ int shmem_transport_fini(void)
     /* Wait for acks before shutdown */
     size_t i;
     for(i = 0; i < shmem_transport_ofi_num_ctx; ++i) {
-      shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[i];
-      if(ctx) {
-        shmem_transport_ctx_destroy(ctx);
-        if (shmem_transport_ofi_contexts[i] != NULL) {
-          RAISE_ERROR_MSG("Unable to free ctx %zu", i);
+        shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[i];
+        if(ctx) {
+            shmem_transport_ctx_destroy(ctx);
+            if (shmem_transport_ofi_contexts[i] != NULL) {
+                RAISE_ERROR_MSG("Unable to free ctx %zu", i);
+            }
         }
-      }
     }
 
     for(i = 0; i < shmem_transport_ofi_num_dom; ++i) {
-      shmem_transport_domain_t* dom = shmem_transport_ofi_domains[i];
-      if(dom) {
-        dom->take_lock(&dom);
-        shmem_transport_ofi_domain_free(dom);
+        shmem_transport_domain_t* dom = shmem_transport_ofi_domains[i];
+        if(dom) {
+            dom->take_lock(&dom);
+            shmem_transport_ofi_domain_free(dom);
 
-        if (dom->refcnt >= 0 || shmem_transport_ofi_domains[i] != NULL)
-            RAISE_ERROR_MSG("Unable to free domain %zu\n", i);
-      }
+            if (dom->refcnt >= 0 || shmem_transport_ofi_domains[i] != NULL)
+                RAISE_ERROR_MSG("Unable to free domain %zu\n", i);
+        }
     }
 
     shmem_transport_ctx_destroy(&shmem_transport_default_ctx);
@@ -1366,8 +1367,8 @@ int shmem_transport_fini(void)
 
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     if (shmem_transport_ofi_target_mrfd &&
-		    fi_close(&shmem_transport_ofi_target_mrfd->fid)) {
-	RAISE_ERROR_MSG("Target MR close failed (%s)\n", fi_strerror(errno));
+        fi_close(&shmem_transport_ofi_target_mrfd->fid)) {
+        RAISE_ERROR_MSG("Target MR close failed (%s)\n", fi_strerror(errno));
     }
 #else
     if (shmem_transport_ofi_target_heap_mrfd &&
@@ -1383,23 +1384,23 @@ int shmem_transport_fini(void)
 
 #ifndef ENABLE_HARD_POLLING
     if(shmem_transport_ofi_target_cntrfd &&
-		    fi_close(&shmem_transport_ofi_target_cntrfd->fid)){
+       fi_close(&shmem_transport_ofi_target_cntrfd->fid)){
         RAISE_ERROR_MSG("Target CT close failed (%s)\n", fi_strerror(errno));
     }
 #endif
 
     if (shmem_transport_ofi_avfd &&
-		    fi_close(&shmem_transport_ofi_avfd->fid)) {
+        fi_close(&shmem_transport_ofi_avfd->fid)) {
         RAISE_ERROR_MSG("AV close failed (%s)\n", fi_strerror(errno));
     }
 
     if (shmem_transport_ofi_domainfd &&
-                    fi_close(&shmem_transport_ofi_domainfd->fid)) {
+        fi_close(&shmem_transport_ofi_domainfd->fid)) {
         RAISE_ERROR_MSG("Domain close failed (%s)\n", fi_strerror(errno));
     }
 
     if (shmem_transport_ofi_fabfd &&
-		    fi_close(&shmem_transport_ofi_fabfd->fid)) {
+        fi_close(&shmem_transport_ofi_fabfd->fid)) {
         RAISE_ERROR_MSG("Fabric close failed (%s)\n", fi_strerror(errno));
     }
 
