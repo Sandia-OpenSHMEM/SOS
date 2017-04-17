@@ -117,7 +117,7 @@ main(int argc, char* argv[])
                 fprintf(stderr,"[%d] dst[%d] %ld != expected %ld\n",
                         mpe, i, dst[i],src[i]);
                 shmem_global_exit(1);
-            } else if (1 == mpe && dst[i] != 0) { 
+            } else if (1 == mpe && dst[i] != 0) {
                 fprintf(stderr,"[%d] dst[%d] %ld != expected 0\n",
                         mpe, i, dst[i]);
                 shmem_global_exit(1);

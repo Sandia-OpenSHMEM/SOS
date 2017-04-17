@@ -18,7 +18,7 @@
 
 #include "shmem_comm.h"
 
-static inline int 
+static inline int
 shmem_internal_pe_accessible(int pe)
 {
     return (pe >= 0 && pe < shmem_internal_num_pes) ? 1 : 0;

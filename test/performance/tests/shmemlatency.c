@@ -30,8 +30,8 @@
  */
 
 /*
-**  This is a pingpong test used to calculate 
-**  latency and bandwidth for various message 
+**  This is a pingpong test used to calculate
+**  latency and bandwidth for various message
 **  sizes.
 **
 **  SHMEM version
@@ -43,7 +43,7 @@
 #include <shmem.h>
 #include <shmemx.h>
 
-#define SIZE		(10000000)
+#define SIZE  (10000000)
 
 #define TRUE  (1)
 #define FALSE (0)
@@ -56,13 +56,12 @@ char *buf;
 
 int my_node;
 
-int 
+int
 main(int argc, char *argv[])
 {
 
     extern char *optarg;
     int ch, error;
-	
     int len, start_len, end_len, increment, inc, trials, i;
     int mega;
     double latency, bandwidth;
@@ -88,7 +87,7 @@ main(int argc, char *argv[])
     increment = 16;
     trials= 1000;
     mega= TRUE;
- 
+
     /* check command line args */
     while ((ch= getopt(argc, argv, "i:e:s:n:m")) != EOF)   {
         switch (ch)   {
@@ -105,7 +104,7 @@ main(int argc, char *argv[])
         case 'n':
             trials= strtol(optarg, (char **)NULL, 0);
             break;
-        case 'm': 
+        case 'm':
             mega= FALSE;
             break;
         default:
@@ -113,7 +112,7 @@ main(int argc, char *argv[])
             break;
         }
     }
- 
+
     if (error)   {
         if (my_node == 0)   {
             fprintf(stderr, "Usage: %s [-s start_length] [-e end_length] [-i inc] [-n trials] [-m (millions)]\n", argv[0]);
@@ -124,7 +123,7 @@ main(int argc, char *argv[])
 
     if (my_node == 0)   {
         printf("\n");
-        printf("Results for %d trials each of length %d through %d in increments of %d\n\n", 
+        printf("Results for %d trials each of length %d through %d in increments of %d\n\n",
                trials, start_len, end_len, increment);
         printf("Length                  Latency                             Bandwidth\n");
         printf("in bytes            in micro seconds                ");
@@ -173,14 +172,14 @@ main(int argc, char *argv[])
             printf("%9d  %8.2f    %8.2f    %8.2f    ",
                    len, min_latency, tot_latency / trials, max_latency);
             if (mega)   {
-                printf("%8.2f    %8.2f    %8.2f\n", 
+                printf("%8.2f    %8.2f    %8.2f\n",
                        min_bandwidth / (1024 * 1024),
-                       (tot_bandwidth / trials) / (1024 * 1024), 
+                       (tot_bandwidth / trials) / (1024 * 1024),
                        max_bandwidth / (1024 * 1024));
             } else   {
-                printf("%8.2f    %8.2f    %8.2f\n", 
-                       min_bandwidth / 1000000.0, 
-                       (tot_bandwidth / trials) / 1000000.0, 
+                printf("%8.2f    %8.2f    %8.2f\n",
+                       min_bandwidth / 1000000.0,
+                       (tot_bandwidth / trials) / 1000000.0,
                        max_bandwidth / 1000000.0);
             }
         }

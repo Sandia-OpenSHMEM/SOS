@@ -35,7 +35,7 @@
 
 int aaa, bbb;
 
-int 
+int
 main(int argc, char* argv[])
 {
     int me, neighbor;

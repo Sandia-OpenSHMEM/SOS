@@ -25,7 +25,7 @@ static inline void
 shmem_internal_quiet(void)
 {
     int ret;
- 
+
     ret = shmem_transport_quiet();
     if (0 != ret) { RAISE_ERROR(ret); }
 
@@ -34,13 +34,13 @@ shmem_internal_quiet(void)
     if (0 != ret) { RAISE_ERROR(ret); }
 #endif
 }
- 
- 
+
+
 static inline void
 shmem_internal_fence(void)
 {
     int ret;
- 
+
     ret = shmem_transport_fence();
     if (0 != ret) { RAISE_ERROR(ret); }
 

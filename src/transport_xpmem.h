@@ -96,7 +96,7 @@ shmem_transport_xpmem_fence(void)
 
 static inline
 void
-shmem_transport_xpmem_put(void *target, const void *source, size_t len, 
+shmem_transport_xpmem_put(void *target, const void *source, size_t len,
                           int pe, int noderank)
 {
     char *remote_ptr;
@@ -105,7 +105,7 @@ shmem_transport_xpmem_put(void *target, const void *source, size_t len,
 #ifdef ENABLE_ERROR_CHECKING
     if (NULL == remote_ptr) {
         fprintf(stderr, "[%03d] ERROR: target (0x%lx) outside of symmetric areas\n",
-                shmem_internal_my_pe, (unsigned long) target);      
+                shmem_internal_my_pe, (unsigned long) target);
         RAISE_ERROR(1);
     }
 #endif
@@ -117,7 +117,7 @@ shmem_transport_xpmem_put(void *target, const void *source, size_t len,
 
 static inline
 void
-shmem_transport_xpmem_get(void *target, const void *source, size_t len, 
+shmem_transport_xpmem_get(void *target, const void *source, size_t len,
                           int pe, int noderank)
 {
     char *remote_ptr;
@@ -126,7 +126,7 @@ shmem_transport_xpmem_get(void *target, const void *source, size_t len,
 #ifdef ENABLE_ERROR_CHECKING
     if (NULL == remote_ptr) {
         fprintf(stderr, "[%03d] ERROR: target (0x%lx) outside of symmetric areas\n",
-                shmem_internal_my_pe, (unsigned long) target);      
+                shmem_internal_my_pe, (unsigned long) target);
         RAISE_ERROR(1);
     }
 #endif

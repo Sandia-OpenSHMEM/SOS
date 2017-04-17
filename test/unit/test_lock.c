@@ -39,8 +39,8 @@
  * For n loops:
  *   Each pe attempts to lock the global lock, if lock is taken, increment the
  *   lock count on all pes and then waits until the lock count reaches num_pes()
- *   which is the exit condition. 
- *   On a failed lock attempt, increment local lock_tries counter and repeat. 
+ *   which is the exit condition.
+ *   On a failed lock attempt, increment local lock_tries counter and repeat.
  */
 #include <shmem.h>
 #include <stdio.h>
@@ -131,7 +131,7 @@ main(int argc, char* argv[])
         lock = 0;
         lock_cnt = 0;
         tries = 0;
-    
+
         shmem_barrier_all();  /* sync all ranks */
 
         while( *(&lock_cnt) < num_ranks ) {
