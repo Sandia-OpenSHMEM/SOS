@@ -423,7 +423,8 @@ static inline void shmem_transport_quiet(shmem_transport_ctx_t* ctx)
     dom->release_lock(&dom);
 }
 
-static inline void shmem_transport_ctx_drain(shmem_transport_ctx_t* ctx)
+static inline
+void shmem_transport_ctx_drain(shmem_transport_ctx_t* ctx)
 {
 #ifdef ENABLE_COMPLETION_POLLING
     uint64_t success = 0, fail = 0;
@@ -471,9 +472,10 @@ void shmem_transport_fence(shmem_transport_ctx_t* ctx)
 #endif
 }
 
-/*RM requires polling until space is available*/
-static inline int try_again(const int ret, uint64_t *polled,
-                            shmem_transport_ctx_t* ctx)
+/* RM requires polling until space is available */
+static inline
+int try_again(const int ret, uint64_t *polled,
+              shmem_transport_ctx_t* ctx)
 {
     if (ret) {
         if (ret == -FI_EAGAIN) {
@@ -490,9 +492,8 @@ static inline int try_again(const int ret, uint64_t *polled,
 }
 
 static inline
-void
-shmem_transport_put_small(void *target, const void *source,
-                          size_t len, int pe, shmem_transport_ctx_t *ctx)
+void shmem_transport_put_small(void *target, const void *source,
+                               size_t len, int pe, shmem_transport_ctx_t *ctx)
 {
     ctx->take_lock((shmem_transport_domain_t**)ctx);
 
@@ -525,9 +526,9 @@ shmem_transport_put_small(void *target, const void *source,
 }
 
 static inline
-void
-shmem_transport_ofi_put_large(void *target, const void *source,
-                              size_t len, int pe, shmem_transport_ctx_t *ctx)
+void shmem_transport_ofi_put_large(void *target, const void *source,
+                                   size_t len, int pe,
+                                   shmem_transport_ctx_t *ctx)
 {
     ctx->take_lock((shmem_transport_domain_t**)ctx);
 
@@ -567,9 +568,8 @@ shmem_transport_ofi_put_large(void *target, const void *source,
 }
 
 static inline
-void
-shmem_transport_put(void *target, const void *source, size_t len,
-                    int pe, shmem_transport_ctx_t *c)
+void shmem_transport_put(void *target, const void *source, size_t len,
+                         int pe, shmem_transport_ctx_t *c)
 {
     if (len <= shmem_transport_ofi_max_buffered_send) {
         shmem_transport_put_small(target, source, len, pe, c);
@@ -580,9 +580,8 @@ shmem_transport_put(void *target, const void *source, size_t len,
 }
 
 static inline
-void
-shmem_transport_put_nbi(void *target, const void *source, size_t len,
-                        int pe, shmem_transport_ctx_t *c)
+void shmem_transport_put_nbi(void *target, const void *source, size_t len,
+                             int pe, shmem_transport_ctx_t *c)
 {
     if (len <= shmem_transport_ofi_max_buffered_send) {
         shmem_transport_put_small(target, source, len, pe, c);
@@ -594,9 +593,8 @@ shmem_transport_put_nbi(void *target, const void *source, size_t len,
 
 
 static inline
-void
-shmem_transport_get(void *target, const void *source, size_t len,
-                    int pe, shmem_transport_ctx_t *ctx)
+void shmem_transport_get(void *target, const void *source, size_t len,
+                         int pe, shmem_transport_ctx_t *ctx)
 {
     ctx->take_lock((shmem_transport_domain_t**)ctx);
 
@@ -648,10 +646,9 @@ shmem_transport_get(void *target, const void *source, size_t len,
 }
 
 static inline
-void
-shmem_transport_swap(void *target, const void *source, void *dest,
-                     size_t len, int pe, int datatype,
-                     shmem_transport_ctx_t *ctx)
+void shmem_transport_swap(void *target, const void *source, void *dest,
+                          size_t len, int pe, int datatype,
+                          shmem_transport_ctx_t *ctx)
 {
     ctx->take_lock((shmem_transport_domain_t**)ctx);
 
@@ -688,10 +685,9 @@ shmem_transport_swap(void *target, const void *source, void *dest,
 
 
 static inline
-void
-shmem_transport_cswap(void *target, const void *source, void *dest,
-                      const void *operand, size_t len, int pe,
-                      int datatype, shmem_transport_ctx_t *ctx)
+void shmem_transport_cswap(void *target, const void *source, void *dest,
+                           const void *operand, size_t len, int pe,
+                           int datatype, shmem_transport_ctx_t *ctx)
 {
     ctx->take_lock((shmem_transport_domain_t**)ctx);
 
@@ -731,10 +727,9 @@ shmem_transport_cswap(void *target, const void *source, void *dest,
 
 
 static inline
-void
-shmem_transport_mswap(void *target, const void *source, void *dest,
-                      const void *mask, size_t len, int pe,
-                      int datatype, shmem_transport_ctx_t *ctx)
+void shmem_transport_mswap(void *target, const void *source, void *dest,
+                           const void *mask, size_t len, int pe,
+                           int datatype, shmem_transport_ctx_t *ctx)
 {
     ctx->take_lock((shmem_transport_domain_t**)ctx);
 
@@ -774,10 +769,9 @@ shmem_transport_mswap(void *target, const void *source, void *dest,
 
 
 static inline
-void
-shmem_transport_atomic_small(void *target, const void *source,
-                             size_t len, int pe, int op, int datatype,
-                             shmem_transport_ctx_t *ctx)
+void shmem_transport_atomic_small(void *target, const void *source,
+                                  size_t len, int pe, int op, int datatype,
+                                  shmem_transport_ctx_t *ctx)
 {
     ctx->take_lock((shmem_transport_domain_t**)ctx);
 
@@ -809,10 +803,9 @@ shmem_transport_atomic_small(void *target, const void *source,
 
 
 static inline
-void
-shmem_transport_atomic_set(void *target, const void *source,
-                           size_t len, int pe, int datatype,
-                           shmem_transport_ctx_t *ctx)
+void shmem_transport_atomic_set(void *target, const void *source,
+                                size_t len, int pe, int datatype,
+                                shmem_transport_ctx_t *ctx)
 {
     ctx->take_lock((shmem_transport_domain_t**)ctx);
 
@@ -844,10 +837,9 @@ shmem_transport_atomic_set(void *target, const void *source,
 
 
 static inline
-void
-shmem_transport_atomic_fetch(void *target, const void *source,
-                             size_t len, int pe, int datatype,
-                             shmem_transport_ctx_t *ctx)
+void shmem_transport_atomic_fetch(void *target, const void *source,
+                                  size_t len, int pe, int datatype,
+                                  shmem_transport_ctx_t *ctx)
 {
     ctx->take_lock((shmem_transport_domain_t**)ctx);
 
@@ -884,10 +876,9 @@ shmem_transport_atomic_fetch(void *target, const void *source,
 
 
 static inline
-void
-shmem_transport_atomic_nb(void *target, const void *source,
-                          size_t full_len, int pe, int op, int datatype,
-                          shmem_transport_ctx_t *ctx)
+void shmem_transport_atomic_nb(void *target, const void *source,
+                               size_t full_len, int pe, int op, int datatype,
+                               shmem_transport_ctx_t *ctx)
 {
     ctx->take_lock((shmem_transport_domain_t**)ctx);
 
@@ -964,10 +955,9 @@ shmem_transport_atomic_nb(void *target, const void *source,
 
 
 static inline
-void
-shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
-                             size_t len, int pe, int op, int datatype,
-                             shmem_transport_ctx_t *ctx)
+void shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
+                                  size_t len, int pe, int op, int datatype,
+                                  shmem_transport_ctx_t *ctx)
 {
     ctx->take_lock((shmem_transport_domain_t**)ctx);
 
@@ -1015,9 +1005,9 @@ int shmem_transport_atomic_supported(shm_internal_op_t op,
 
 
 static inline
-void
-shmem_transport_put_ct_nb(shmem_transport_ct_t *ct, void *target,
-                          const void *source, size_t len, int pe, long *completion)
+void shmem_transport_put_ct_nb(shmem_transport_ct_t *ct, void *target,
+                               const void *source, size_t len, int pe,
+                               long *completion)
 {
     RAISE_ERROR_STR("OFI transport does not currently support CT operations");
 }

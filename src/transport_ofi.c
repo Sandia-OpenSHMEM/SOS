@@ -110,55 +110,55 @@ static char * SHMEM_OpName[FI_ATOMIC_OP_LAST];
 
 static inline void init_ofi_tables(void)
 {
-  SHMEM_Dtsize[FI_INT8]                = sizeof(int8_t);
-  SHMEM_Dtsize[FI_UINT8]               = sizeof(uint8_t);
-  SHMEM_Dtsize[FI_INT16]               = sizeof(int16_t);
-  SHMEM_Dtsize[FI_UINT16]              = sizeof(uint16_t);
-  SHMEM_Dtsize[FI_INT32]               = sizeof(int32_t);
-  SHMEM_Dtsize[FI_UINT32]              = sizeof(uint32_t);
-  SHMEM_Dtsize[FI_INT64]               = sizeof(int64_t);
-  SHMEM_Dtsize[FI_UINT64]              = sizeof(uint64_t);
-  SHMEM_Dtsize[FI_FLOAT]               = sizeof(float);
-  SHMEM_Dtsize[FI_DOUBLE]              = sizeof(double);
-  SHMEM_Dtsize[FI_FLOAT_COMPLEX]       = sizeof(float complex);
-  SHMEM_Dtsize[FI_DOUBLE_COMPLEX]      = sizeof(double complex);
-  SHMEM_Dtsize[FI_LONG_DOUBLE]         = sizeof(long double);
-  SHMEM_Dtsize[FI_LONG_DOUBLE_COMPLEX] = sizeof(long double complex);
+    SHMEM_Dtsize[FI_INT8]                = sizeof(int8_t);
+    SHMEM_Dtsize[FI_UINT8]               = sizeof(uint8_t);
+    SHMEM_Dtsize[FI_INT16]               = sizeof(int16_t);
+    SHMEM_Dtsize[FI_UINT16]              = sizeof(uint16_t);
+    SHMEM_Dtsize[FI_INT32]               = sizeof(int32_t);
+    SHMEM_Dtsize[FI_UINT32]              = sizeof(uint32_t);
+    SHMEM_Dtsize[FI_INT64]               = sizeof(int64_t);
+    SHMEM_Dtsize[FI_UINT64]              = sizeof(uint64_t);
+    SHMEM_Dtsize[FI_FLOAT]               = sizeof(float);
+    SHMEM_Dtsize[FI_DOUBLE]              = sizeof(double);
+    SHMEM_Dtsize[FI_FLOAT_COMPLEX]       = sizeof(float complex);
+    SHMEM_Dtsize[FI_DOUBLE_COMPLEX]      = sizeof(double complex);
+    SHMEM_Dtsize[FI_LONG_DOUBLE]         = sizeof(long double);
+    SHMEM_Dtsize[FI_LONG_DOUBLE_COMPLEX] = sizeof(long double complex);
 
-  SHMEM_DtName[FI_INT8]                = "int8";
-  SHMEM_DtName[FI_UINT8]               = "uint8";
-  SHMEM_DtName[FI_INT16]               = "int16";
-  SHMEM_DtName[FI_UINT16]              = "uint16";
-  SHMEM_DtName[FI_INT32]               = "int32";
-  SHMEM_DtName[FI_UINT32]              = "uint32";
-  SHMEM_DtName[FI_INT64]               = "int64";
-  SHMEM_DtName[FI_UINT64]              = "uint64";
-  SHMEM_DtName[FI_FLOAT]               = "float";
-  SHMEM_DtName[FI_DOUBLE]              = "double";
-  SHMEM_DtName[FI_FLOAT_COMPLEX]       = "float complex";
-  SHMEM_DtName[FI_DOUBLE_COMPLEX]      = "double complex";
-  SHMEM_DtName[FI_LONG_DOUBLE]         = "long double";
-  SHMEM_DtName[FI_LONG_DOUBLE_COMPLEX] = "long double complex";
+    SHMEM_DtName[FI_INT8]                = "int8";
+    SHMEM_DtName[FI_UINT8]               = "uint8";
+    SHMEM_DtName[FI_INT16]               = "int16";
+    SHMEM_DtName[FI_UINT16]              = "uint16";
+    SHMEM_DtName[FI_INT32]               = "int32";
+    SHMEM_DtName[FI_UINT32]              = "uint32";
+    SHMEM_DtName[FI_INT64]               = "int64";
+    SHMEM_DtName[FI_UINT64]              = "uint64";
+    SHMEM_DtName[FI_FLOAT]               = "float";
+    SHMEM_DtName[FI_DOUBLE]              = "double";
+    SHMEM_DtName[FI_FLOAT_COMPLEX]       = "float complex";
+    SHMEM_DtName[FI_DOUBLE_COMPLEX]      = "double complex";
+    SHMEM_DtName[FI_LONG_DOUBLE]         = "long double";
+    SHMEM_DtName[FI_LONG_DOUBLE_COMPLEX] = "long double complex";
 
-  SHMEM_OpName[FI_MIN]                 = "MIN";
-  SHMEM_OpName[FI_MAX]                 = "MAX";
-  SHMEM_OpName[FI_SUM]                 = "SUM";
-  SHMEM_OpName[FI_PROD]                = "PROD";
-  SHMEM_OpName[FI_LOR]                 = "LOR";
-  SHMEM_OpName[FI_LAND]                = "LAND";
-  SHMEM_OpName[FI_BOR]                 = "BOR";
-  SHMEM_OpName[FI_BAND]                = "BAND";
-  SHMEM_OpName[FI_LXOR]                = "LXOR";
-  SHMEM_OpName[FI_BXOR]                = "BXOR";
-  SHMEM_OpName[FI_ATOMIC_READ]         = "ATOMIC_WRITE";
-  SHMEM_OpName[FI_ATOMIC_WRITE]        = "ATOMIC_READ";
-  SHMEM_OpName[FI_CSWAP]               = "CSWAP";
-  SHMEM_OpName[FI_CSWAP_NE]            = "CSWAP_NE";
-  SHMEM_OpName[FI_CSWAP_LE]            = "CSWAP_LE";
-  SHMEM_OpName[FI_CSWAP_LT]            = "CSWAP_LT";
-  SHMEM_OpName[FI_CSWAP_GE]            = "CSWAP_GE";
-  SHMEM_OpName[FI_CSWAP_GT]            = "CSWAP_GT";
-  SHMEM_OpName[FI_MSWAP]               = "MSWAP";
+    SHMEM_OpName[FI_MIN]                 = "MIN";
+    SHMEM_OpName[FI_MAX]                 = "MAX";
+    SHMEM_OpName[FI_SUM]                 = "SUM";
+    SHMEM_OpName[FI_PROD]                = "PROD";
+    SHMEM_OpName[FI_LOR]                 = "LOR";
+    SHMEM_OpName[FI_LAND]                = "LAND";
+    SHMEM_OpName[FI_BOR]                 = "BOR";
+    SHMEM_OpName[FI_BAND]                = "BAND";
+    SHMEM_OpName[FI_LXOR]                = "LXOR";
+    SHMEM_OpName[FI_BXOR]                = "BXOR";
+    SHMEM_OpName[FI_ATOMIC_READ]         = "ATOMIC_WRITE";
+    SHMEM_OpName[FI_ATOMIC_WRITE]        = "ATOMIC_READ";
+    SHMEM_OpName[FI_CSWAP]               = "CSWAP";
+    SHMEM_OpName[FI_CSWAP_NE]            = "CSWAP_NE";
+    SHMEM_OpName[FI_CSWAP_LE]            = "CSWAP_LE";
+    SHMEM_OpName[FI_CSWAP_LT]            = "CSWAP_LT";
+    SHMEM_OpName[FI_CSWAP_GE]            = "CSWAP_GE";
+    SHMEM_OpName[FI_CSWAP_GT]            = "CSWAP_GT";
+    SHMEM_OpName[FI_MSWAP]               = "MSWAP";
 }
 
 /* Cover OpenSHMEM atomics API */
@@ -253,7 +253,7 @@ static int REDUCE_ARITH_OPS[]=
 };
 
 /* Internal to SHMEM implementation atomic requirement */
-/*Locking implementation requirement */
+/* Locking implementation requirement */
 #define SIZEOF_INTERNAL_REQ_DT 1
 static int DT_INTERNAL_REQ[]=
 {
@@ -272,7 +272,7 @@ typedef enum{
 }atomic_support_lv;
 
 
-//size of CQ
+/* default CQ depth */
 const static size_t shmem_transport_ofi_queue_slots = 32768;//default CQ Depth....
 uint64_t shmem_transport_ofi_max_poll = (1ULL<<30);
 
@@ -282,8 +282,9 @@ uint64_t shmem_transport_ofi_max_poll = (1ULL<<30);
 struct fabric_info shmem_ofi_cq_info = {0};
 struct fabric_info shmem_ofi_cntr_info = {0};
 
-static int shmem_transport_ofi_domain_init(int id, int thread_level,
-                                           shmem_transport_domain_t *dom)
+static
+int shmem_transport_ofi_domain_init(int id, int thread_level,
+                                    shmem_transport_domain_t *dom)
 {
     int ret;
 
@@ -418,7 +419,8 @@ static void shmem_transport_ofi_domain_free(shmem_transport_domain_t* dom)
 }
 
 
-void shmem_transport_domain_destroy(int num_domains, shmem_transport_domain_t *domains[])
+void shmem_transport_domain_destroy(int num_domains,
+                                    shmem_transport_domain_t *domains[])
 {
     int i;
 
@@ -583,28 +585,31 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 }
 
 
-static inline int allocate_recv_cntr_mr(void)
+static inline
+int allocate_recv_cntr_mr(void)
 {
 
     int ret = 0;
 
-    /* ------------------------------------*/
-    /* POST enable resources for to EP     */
-    /* ------------------------------------*/
-    /* since this is AFTER enable and RMA you must create memory regions for incoming reads/writes
-     * and outgoing non-blocking Puts, specifying entire VA range */
+    /* ------------------------------------ */
+    /* POST enable resources for to EP      */
+    /* ------------------------------------ */
+
+    /* since this is AFTER enable and RMA you must create memory regions for
+     * incoming reads/writes and outgoing non-blocking Puts, specifying entire
+     * VA range */
 
 #ifndef ENABLE_HARD_POLLING
     {
         struct fi_cntr_attr cntr_attr = {0};
 
-        // Create counter for incoming writes
+        /* Create counter for incoming writes */
         cntr_attr.events   = FI_CNTR_EVENTS_COMP;
         cntr_attr.wait_obj = FI_WAIT_UNSPEC;
 
         ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
                            &shmem_transport_ofi_target_cntrfd, NULL);
-        if(ret!=0){
+        if (ret!=0) {
             RAISE_WARN_STR("target cntr_open failed");
             return ret;
         }
@@ -615,17 +620,17 @@ static inline int allocate_recv_cntr_mr(void)
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, 0, UINT64_MAX,
                     FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, 0,
                     &shmem_transport_ofi_target_mrfd, NULL);
-    if(ret!=0){
+    if (ret!=0) {
         RAISE_WARN_STR("mr_reg failed");
         return ret;
     }
 
-    // Bind counter with target memory region for incoming messages
+    /* Bind counter with target memory region for incoming messages */
 #ifndef ENABLE_HARD_POLLING
     ret = fi_mr_bind(shmem_transport_ofi_target_mrfd,
                      &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_WRITE | FI_REMOTE_READ);
-    if(ret!=0){
+    if (ret!=0) {
         RAISE_WARN_STR("mr_bind failed");
         return ret;
     }
@@ -634,7 +639,7 @@ static inline int allocate_recv_cntr_mr(void)
     ret = fi_ep_bind(shmem_transport_default_ctx.endpoint.ep,
                      &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_READ | FI_REMOTE_WRITE);
-    if(ret!=0){
+    if (ret!=0) {
         RAISE_WARN_STR("ep_bind cntr_epfd2put_cntr failed");
         return ret;
     }
@@ -693,7 +698,8 @@ static inline int allocate_recv_cntr_mr(void)
     return ret;
 }
 
-static int publish_mr_info(void)
+static
+int publish_mr_info(void)
 {
 #ifndef ENABLE_MR_SCALABLE
     {
@@ -737,7 +743,8 @@ static int publish_mr_info(void)
     return 0;
 }
 
-static int populate_mr_tables(void)
+static
+int populate_mr_tables(void)
 {
 #ifndef ENABLE_MR_SCALABLE
     {
@@ -814,17 +821,18 @@ static int populate_mr_tables(void)
     return 0;
 }
 
-/*SOFT_SUPPORT will not produce warning or error */
-static inline int atomicvalid_rtncheck(int ret, int atomic_size,
-                                       atomic_support_lv atomic_sup,
-                                       char strOP[], char strDT[])
+/* SOFT_SUPPORT will not produce warning or error */
+static inline
+int atomicvalid_rtncheck(int ret, int atomic_size,
+                         atomic_support_lv atomic_sup,
+                         char strOP[], char strDT[])
 {
-    if((ret != 0 || atomic_size == 0) && atomic_sup != ATOMIC_SOFT_SUPPORT) {
-        if(atomic_sup == ATOMIC_WARNINGS) {
+    if ((ret != 0 || atomic_size == 0) && atomic_sup != ATOMIC_SOFT_SUPPORT) {
+        if (atomic_sup == ATOMIC_WARNINGS) {
             fprintf(stderr, "Warning OFI detected no support for atomic '%s' "
                     "on type '%s'\n", strOP, strDT);
         }
-        else if(atomic_sup == ATOMIC_NO_SUPPORT) {
+        else if (atomic_sup == ATOMIC_NO_SUPPORT) {
             RAISE_WARN_MSG("Error: atomicvalid ret=%d atomic_size=%d\n",
                            ret, atomic_size);
             return ret;
@@ -836,8 +844,9 @@ static inline int atomicvalid_rtncheck(int ret, int atomic_size,
     return 0;
 }
 
-static inline int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
-                                    int OPS[], atomic_support_lv atomic_sup)
+static inline
+int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[], int OPS[],
+                      atomic_support_lv atomic_sup)
 {
     int i, j, ret = 0;
     size_t atomic_size;
@@ -856,8 +865,9 @@ static inline int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
     return 0;
 }
 
-static inline int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
-                                            int OPS[], atomic_support_lv atomic_sup)
+static inline
+int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
+                              int OPS[], atomic_support_lv atomic_sup)
 {
     int i, j, ret = 0;
     size_t atomic_size;
@@ -876,8 +886,9 @@ static inline int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
     return 0;
 }
 
-static inline int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
-                                          int OPS[], atomic_support_lv atomic_sup)
+static inline
+int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[], int OPS[],
+                            atomic_support_lv atomic_sup)
 {
     int i, j, ret = 0;
     size_t atomic_size;
@@ -896,23 +907,20 @@ static inline int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
     return 0;
 }
 
-static inline int atomic_limitations_check(void)
+static inline
+int atomic_limitations_check(void)
 {
-
-    /* ----------------------------------------*/
-    /* Retrieve messaging limitations from OFI */
-    /*          NOTE:                          */
-    /*   currently only have reduction software*/
-    /*   atomic support, user can optionally   */
-    /*   request for warnings if other atomic  */
-    /*   limitations are detected              */
-    /* ----------------------------------------*/
+    /* Retrieve messaging limitations from OFI
+     *
+     * NOTE: Currently only have reduction software atomic support. User can
+     * optionally request for warnings if other atomic limitations are detected
+     */
 
     int ret = 0;
     atomic_support_lv general_atomic_sup = ATOMIC_NO_SUPPORT;
     atomic_support_lv reduction_sup = ATOMIC_SOFT_SUPPORT;
 
-    if(NULL != shmem_util_getenv_str("OFI_ATOMIC_CHECKS_WARN"))
+    if (NULL != shmem_util_getenv_str("OFI_ATOMIC_CHECKS_WARN"))
         general_atomic_sup = ATOMIC_WARNINGS;
 
     init_ofi_tables();
@@ -920,66 +928,68 @@ static inline int atomic_limitations_check(void)
     /* Standard OPS check */
     ret = atomicvalid_DTxOP(SIZEOF_AMO_DT, SIZEOF_AMO_OPS, DT_AMO_STANDARD,
                             AMO_STANDARD_OPS, general_atomic_sup);
-    if(ret)
+    if (ret)
         return ret;
 
     ret = fetch_atomicvalid_DTxOP(SIZEOF_AMO_DT, SIZEOF_AMO_FOPS,
                                   DT_AMO_STANDARD, FETCH_AMO_STANDARD_OPS,
                                   general_atomic_sup);
-    if(ret)
+    if (ret)
         return ret;
 
     ret = compare_atomicvalid_DTxOP(SIZEOF_AMO_DT, SIZEOF_AMO_COPS,
                                     DT_AMO_STANDARD, COMPARE_AMO_STANDARD_OPS,
                                     general_atomic_sup);
-    if(ret)
+    if (ret)
         return ret;
 
     /* Extended OPS check */
     ret = atomicvalid_DTxOP(SIZEOF_AMO_EX_DT, SIZEOF_AMO_EX_OPS, DT_AMO_EXTENDED,
                             AMO_EXTENDED_OPS, general_atomic_sup);
-    if(ret)
+    if (ret)
         return ret;
 
     ret = fetch_atomicvalid_DTxOP(SIZEOF_AMO_EX_DT, SIZEOF_AMO_EX_FOPS,
                                   DT_AMO_EXTENDED, FETCH_AMO_EXTENDED_OPS,
                                   general_atomic_sup);
-    if(ret)
+    if (ret)
         return ret;
 
     /* Reduction OPS check */
     ret = atomicvalid_DTxOP(SIZEOF_RED_DT, SIZEOF_RED_OPS, DT_REDUCE_BITWISE,
                             REDUCE_BITWISE_OPS, reduction_sup);
-    if(ret)
+    if (ret)
         return ret;
 
     ret = atomicvalid_DTxOP(SIZEOF_REDC_DT, SIZEOF_REDC_OPS, DT_REDUCE_COMPARE,
                             REDUCE_COMPARE_OPS, reduction_sup);
-    if(ret)
+    if (ret)
         return ret;
 
     ret = atomicvalid_DTxOP(SIZEOF_REDA_DT, SIZEOF_REDA_OPS, DT_REDUCE_ARITH,
                             REDUCE_ARITH_OPS, reduction_sup);
-    if(ret)
+    if (ret)
         return ret;
 
     /* Internal atomic requirement */
     ret = compare_atomicvalid_DTxOP(SIZEOF_INTERNAL_REQ_DT, SIZEOF_INTERNAL_REQ_OPS,
-                                    DT_INTERNAL_REQ, INTERNAL_REQ_OPS, general_atomic_sup);
-    if(ret)
+                                    DT_INTERNAL_REQ, INTERNAL_REQ_OPS,
+                                    general_atomic_sup);
+    if (ret)
         return ret;
 
     return 0;
 }
 
-static inline int publish_av_info(struct fabric_info *info)
+static inline
+int publish_av_info(struct fabric_info *info)
 {
     int    ret = 0;
     char   epname[128];
     size_t epnamelen = sizeof(epname);
 
 #ifdef USE_ON_NODE_COMMS
-    if(gethostname(myephostname, (EPHOSTNAMELEN - 1)) != 0)
+    if (gethostname(myephostname, (EPHOSTNAMELEN - 1)) != 0)
         RAISE_ERROR_MSG("gethostname error: %s \n", strerror(errno));
 
     myephostname[EPHOSTNAMELEN-1] = '\0';
@@ -993,7 +1003,7 @@ static inline int publish_av_info(struct fabric_info *info)
 
     ret = fi_getname((fid_t)shmem_transport_default_ctx.endpoint.ep, epname,
                      &epnamelen);
-    if(ret!=0 || (epnamelen > sizeof(epname))){
+    if (ret!=0 || (epnamelen > sizeof(epname))) {
         RAISE_WARN_STR("fi_getname failed");
         return ret;
     }
@@ -1012,7 +1022,8 @@ static inline int publish_av_info(struct fabric_info *info)
     return ret;
 }
 
-static inline int populate_av(void)
+static inline
+int populate_av(void)
 {
     int    i, ret = 0;
     char   *alladdrs = NULL;
@@ -1033,7 +1044,7 @@ static inline int populate_av(void)
 
 #ifdef USE_ON_NODE_COMMS
         shmem_runtime_get(i, "fi_ephostname", ephostname, EPHOSTNAMELEN);
-        if(strncmp(myephostname, ephostname, EPHOSTNAMELEN) == 0) {
+        if (strncmp(myephostname, ephostname, EPHOSTNAMELEN) == 0) {
             SHMEM_SET_RANK_SAME_NODE(i, num_on_node++);
             if (num_on_node > 255) {
                 RAISE_WARN_STR("ERROR: Too many local ranks");
@@ -1059,23 +1070,25 @@ static inline int populate_av(void)
     return 0;
 }
 
-static inline int allocate_fabric_resources(struct fabric_info *info)
+static inline
+int allocate_fabric_resources(struct fabric_info *info)
 {
     int ret = 0;
     struct fi_av_attr   av_attr = {0};
 
 
-    /* fabric domain: define domain of resources physical and logical*/
+    /* fabric domain: define domain of resources physical and logical */
     ret = fi_fabric(info->p_info->fabric_attr, &shmem_transport_ofi_fabfd, NULL);
-    if(ret!=0){
+    if (ret!=0) {
         RAISE_WARN_STR("fabric initialization failed");
         return ret;
     }
 
-    /*access domain: define communication resource limits/boundary within fabric domain */
+    /* access domain: define communication resource limits/boundary within
+     * fabric domain */
     ret = fi_domain(shmem_transport_ofi_fabfd, info->p_info,
                     &shmem_transport_ofi_domainfd,NULL);
-    if(ret!=0){
+    if (ret!=0) {
         RAISE_WARN_STR("domain initialization failed");
         return ret;
     }
@@ -1095,7 +1108,7 @@ static inline int allocate_fabric_resources(struct fabric_info *info)
                      &av_attr,
                      &shmem_transport_ofi_avfd,
                      NULL);
-    if(ret!=0){
+    if (ret!=0) {
         RAISE_WARN_STR("av open failed");
         return ret;
     }
@@ -1103,7 +1116,8 @@ static inline int allocate_fabric_resources(struct fabric_info *info)
     return ret;
 }
 
-static inline int query_for_fabric(struct fabric_info *info)
+static inline
+int query_for_fabric(struct fabric_info *info)
 {
     int                 ret = 0;
     struct fi_info      hints = {0};
@@ -1149,7 +1163,7 @@ static inline int query_for_fabric(struct fabric_info *info)
     ep_attr.type              = FI_EP_RDM; /* reliable connectionless */
     hints.fabric_attr         = &fabric_attr;
     tx_attr.op_flags          = FI_DELIVERY_COMPLETE;
-    tx_attr.inject_size       = shmem_transport_ofi_max_buffered_send; /*require provider to support this as a min*/
+    tx_attr.inject_size       = shmem_transport_ofi_max_buffered_send; /* require provider to support this as a min */
     hints.tx_attr             = &tx_attr; /* TODO: fill tx_attr */
     hints.rx_attr             = NULL;
     hints.ep_attr             = &ep_attr;
@@ -1158,7 +1172,7 @@ static inline int query_for_fabric(struct fabric_info *info)
     ret = fi_getinfo( FI_VERSION(OFI_MAJOR_VERSION, OFI_MINOR_VERSION),
                       NULL, NULL, 0, &hints, &(info->fabrics));
 
-    if(ret!=0){
+    if (ret!=0) {
         RAISE_WARN_MSG("OFI transport did not find any valid fabric services (provider=%s)\n",
                        info->prov_name != NULL ? info->prov_name : "<auto>");
         return ret;
@@ -1186,7 +1200,7 @@ static inline int query_for_fabric(struct fabric_info *info)
         info->p_info = info->fabrics;
     }
 
-    if(NULL == info->p_info) {
+    if (NULL == info->p_info) {
         RAISE_WARN_MSG("OFI transport, no valid fabric (prov=%s, fabric=%s, domain=%s)\n",
                        info->prov_name != NULL ? info->prov_name : "<auto>",
                        info->fabric_name != NULL ? info->fabric_name : "<auto>",
@@ -1194,7 +1208,7 @@ static inline int query_for_fabric(struct fabric_info *info)
         return ret;
     }
 
-    if(info->p_info->ep_attr->max_msg_size > 0) {
+    if (info->p_info->ep_attr->max_msg_size > 0) {
         shmem_transport_ofi_max_msg_size = info->p_info->ep_attr->max_msg_size;
     } else {
         RAISE_WARN_STR("OFI provider did not set max_msg_size");
@@ -1264,11 +1278,11 @@ int shmem_transport_init(int thread_level, long eager_size)
 
     ret = shmem_transport_ofi_ctx_init(-1, &shmem_transport_default_dom,
                                        &shmem_transport_default_ctx);
-    if(ret!=0)
+    if (ret!=0)
         return ret;
 
     ret = allocate_recv_cntr_mr();
-    if(ret!=0)
+    if (ret!=0)
         return ret;
 
     ret = publish_mr_info();
@@ -1276,11 +1290,11 @@ int shmem_transport_init(int thread_level, long eager_size)
         return ret;
 
     ret = atomic_limitations_check();
-    if(ret!=0)
+    if (ret!=0)
         return ret;
 
     ret = publish_av_info(&shmem_ofi_cq_info);
-    if(ret!=0)
+    if (ret!=0)
         return ret;
 
     return 0;
@@ -1295,7 +1309,7 @@ int shmem_transport_startup(void)
         return ret;
 
     ret = populate_av();
-    if(ret!=0)
+    if (ret!=0)
         return ret;
 
     SHMEM_MUTEX_INIT(shmem_transport_ofi_lock);
@@ -1383,8 +1397,8 @@ int shmem_transport_fini(void)
 #endif
 
 #ifndef ENABLE_HARD_POLLING
-    if(shmem_transport_ofi_target_cntrfd &&
-       fi_close(&shmem_transport_ofi_target_cntrfd->fid)){
+    if (shmem_transport_ofi_target_cntrfd &&
+        fi_close(&shmem_transport_ofi_target_cntrfd->fid)){
         RAISE_ERROR_MSG("Target CT close failed (%s)\n", fi_strerror(errno));
     }
 #endif
