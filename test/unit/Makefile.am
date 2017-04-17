@@ -80,6 +80,7 @@ check_PROGRAMS = \
 	broadcast_active_set \
 	reduce_active_set \
 	collect_active_set \
+	pcontrol \
 	many-ctx
 
 if ENABLE_PROFILING

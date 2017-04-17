@@ -9,6 +9,8 @@ void SHPRE()shmemx_init_thread(int tl_requested, int *tl_provided);
 double SHPRE()shmemx_wtime(void);
 char* SHPRE()shmemx_nodename(void);
 
+void SHPRE()shmemx_pcontrol(int level, ...);
+
 /* Counting Operations */
 void SHPRE()shmemx_getmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe);
 void SHPRE()shmemx_putmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe);
@@ -153,4 +155,3 @@ SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEMX_CTX_C_FETCH')
 define(`SHMEMX_CTX_C_SET',
 `void SHPRE()shmemx_ctx_$1_set($2 *target, $2 value, int pe, shmemx_ctx_t ctx)')dnl
 SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEMX_CTX_C_SET')
-

@@ -147,8 +147,13 @@ AS_IF([test "$enable_rpath" = "no"], [], [enable_wrapper_rpath="yes"])
 
 AC_ARG_ENABLE([profiling],
     [AC_HELP_STRING([--enable-profiling],
-                    [Enable shmem call profiling (default:disabled)])])
-AS_IF([test "$enable_profiling" = "yes"], [AC_DEFINE([ENABLE_PROFILING], [1], [Enable shmem call profiling])])
+                    [Enable profiling (pshmem) interface (default:disabled)])])
+AS_IF([test "$enable_profiling" = "yes"],
+      [OPAL_C_WEAK_SYMBOLS()
+       AS_IF([test "$OPAL_C_HAVE_WEAK_SYMBOLS" = 1],
+             [AC_DEFINE([ENABLE_PROFILING], [1], [Enable profiling (pshmem) interface])],
+             [AC_MSG_ERROR("Profiling interface requires weak symbols support")])
+       ])
 
 AC_ARG_ENABLE([long-fortran-header],
     [AC_HELP_STRING([--enable-long-fortran-header],
