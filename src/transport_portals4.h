@@ -148,6 +148,12 @@ struct shmem_transport_ct_t {
 };
 typedef struct shmem_transport_ct_t shmem_transport_ct_t;
 
+typedef void shmem_transport_ctx_t;
+typedef void shmem_transport_domain_t;
+
+extern void *SHMEMX_CTX_DEFAULT;
+extern void *SHMEMX_DOMAIN_DEFAULT;
+
 /*
  * PORTALS4_GET_REMOTE_ACCESS is used to get the correct PT and offset
  * from the base of the list entry on that PT for a given target
@@ -236,7 +242,7 @@ typedef struct shmem_transport_ct_t shmem_transport_ct_t;
 #define PORTALS4_TOTAL_DATA_ORDERING shmem_transport_portals4_total_data_ordering
 #endif
 
-int shmem_transport_init(long eager_size);
+int shmem_transport_init(int thread_level, long eager_size);
 
 int shmem_transport_startup(void);
 
@@ -248,7 +254,7 @@ static inline void shmem_transport_get_wait(void);
 
 static inline
 int
-shmem_transport_quiet(void)
+shmem_transport_quiet(shmem_transport_ctx_t *c)
 {
     int ret;
     ptl_ct_event_t ct;
@@ -271,7 +277,7 @@ shmem_transport_quiet(void)
 
 static inline
 int
-shmem_transport_fence(void)
+shmem_transport_fence(shmem_transport_ctx_t *c)
 {
     int ret = 0;
 
@@ -285,7 +291,7 @@ shmem_transport_fence(void)
         shmem_transport_portals4_fence_pending = 1;
         SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_nb_fence);
 #else
-        ret = shmem_transport_quiet();
+        ret = shmem_transport_quiet(c);
 #endif
     }
 #if WANT_TOTAL_DATA_ORDERING != 0
@@ -296,7 +302,7 @@ shmem_transport_fence(void)
         shmem_transport_portals4_fence_pending = 1;
         SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_nb_fence);
 #else
-        ret = shmem_transport_quiet();
+        ret = shmem_transport_quiet(c);
 #endif
         shmem_transport_portals4_long_pending = 0;
     }
@@ -317,7 +323,7 @@ shmem_transport_portals4_fence_complete(void)
     /* If a fence is pending, complete */
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_nb_fence);
     if (0 != shmem_transport_portals4_fence_pending) {
-        ret = shmem_transport_quiet();
+        ret = shmem_transport_quiet(NULL);
         shmem_transport_portals4_fence_pending = 0;
     }
     SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_nb_fence);
@@ -379,7 +385,8 @@ shmem_transport_portals4_drain_eq(void)
 
 static inline
 void
-shmem_transport_put_small(void *target, const void *source, size_t len, int pe)
+shmem_transport_put_small(void *target, const void *source,
+                          size_t len, int pe, shmem_transport_ctx_t *c)
 {
     int ret;
     ptl_process_t peer;
@@ -527,7 +534,7 @@ shmem_transport_portals4_put_nb_internal(void *target, const void *source, size_
 static inline
 void
 shmem_transport_put_nb(void *target, const void *source, size_t len,
-                                int pe, long *completion)
+                       int pe, long *completion, shmem_transport_ctx_t *c)
 {
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
     shmem_transport_portals4_put_nb_internal(target, source, len, pe,
@@ -600,7 +607,8 @@ shmem_transport_portals4_put_nbi_internal(void *target, const void *source, size
 
 static inline
 void
-shmem_transport_put_nbi(void *target, const void *source, size_t len, int pe)
+shmem_transport_put_nbi(void *target, const void *source, size_t len,
+                        int pe, shmem_transport_ctx_t *c)
 {
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
     shmem_transport_portals4_put_nbi_internal(target, source, len, pe,
@@ -670,7 +678,8 @@ shmem_transport_portals4_get_internal(void *target, const void *source, size_t l
 
 
 static inline
-void shmem_transport_get(void *target, const void *source, size_t len, int pe)
+void shmem_transport_get(void *target, const void *source,
+                         size_t len, int pe, shmem_transport_ctx_t *c)
 {
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
     shmem_transport_portals4_get_internal(target, source, len, pe,
@@ -713,8 +722,9 @@ shmem_transport_get_wait(void)
 
 static inline
 void
-shmem_transport_swap(void *target, const void *source, void *dest, size_t len,
-                     int pe, ptl_datatype_t datatype)
+shmem_transport_swap(void *target, const void *source, void *dest,
+                     size_t len, int pe, ptl_datatype_t datatype,
+                     shmem_transport_ctx_t *c)
 {
     int ret;
     ptl_process_t peer;
@@ -755,7 +765,7 @@ static inline
 void
 shmem_transport_cswap(void *target, const void *source, void *dest,
                       const void *operand, size_t len, int pe,
-                      ptl_datatype_t datatype)
+                      ptl_datatype_t datatype, shmem_transport_ctx_t *c)
 {
     int ret;
     ptl_process_t peer;
@@ -796,7 +806,7 @@ static inline
 void
 shmem_transport_mswap(void *target, const void *source, void *dest,
                       const void *mask, size_t len, int pe,
-                      ptl_datatype_t datatype)
+                      ptl_datatype_t datatype, shmem_transport_ctx_t *c)
 {
     int ret;
     ptl_process_t peer;
@@ -835,8 +845,9 @@ shmem_transport_mswap(void *target, const void *source, void *dest,
 
 static inline
 void
-shmem_transport_atomic_small(void *target, const void *source, size_t len,
-                             int pe, ptl_op_t op, ptl_datatype_t datatype)
+shmem_transport_atomic_small(void *target, const void *source,
+                             size_t len, int pe, ptl_op_t op,
+                             ptl_datatype_t datatype, shmem_transport_ctx_t *c)
 {
     int ret;
     ptl_pt_index_t pt;
@@ -871,8 +882,9 @@ shmem_transport_atomic_small(void *target, const void *source, size_t len,
 
 static inline
 void
-shmem_transport_atomic_nb(void *target, const void *source, size_t len, int pe,
-                          ptl_op_t op, ptl_datatype_t datatype, long *completion)
+shmem_transport_atomic_nb(void *target, const void *source,
+                          size_t len, int pe, ptl_op_t op,
+                          ptl_datatype_t datatype, shmem_transport_ctx_t *c)
 {
     int ret;
     ptl_pt_index_t pt;
@@ -996,9 +1008,9 @@ shmem_transport_atomic_nb(void *target, const void *source, size_t len, int pe,
 
 static inline
 void
-shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
-                             size_t len, int pe, ptl_op_t op,
-                             ptl_datatype_t datatype)
+shmem_transport_fetch_atomic(void *target, const void *source,
+                             void *dest, size_t len, int pe, ptl_op_t op,
+                             ptl_datatype_t datatype, shmem_transport_ctx_t *c)
 {
     int ret;
     ptl_pt_index_t pt;
@@ -1036,23 +1048,25 @@ shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
 
 static inline
 void
-shmem_transport_atomic_set(void *target, const void *source, size_t len,
-                           int pe, int datatype)
+shmem_transport_atomic_set(void *target, const void *source,
+                           size_t len, int pe, int datatype,
+                           shmem_transport_ctx_t *c)
 {
     shmem_internal_assert(len <= shmem_transport_portals4_max_atomic_size);
 
-    shmem_transport_put_small(target, source, len, pe);
+    shmem_transport_put_small(target, source, len, pe, c);
 }
 
 
 static inline
 void
-shmem_transport_atomic_fetch(void *target, const void *source, size_t len,
-                             int pe, int datatype)
+shmem_transport_atomic_fetch(void *target, const void *source,
+                             size_t len, int pe, int datatype,
+                             shmem_transport_ctx_t *c)
 {
     shmem_internal_assert(len <= shmem_transport_portals4_max_fetch_atomic_size);
 
-    shmem_transport_get(target, source, len, pe);
+    shmem_transport_get(target, source, len, pe, c);
 }
 
 

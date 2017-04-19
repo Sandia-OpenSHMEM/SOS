@@ -25,37 +25,47 @@
  * SOFTWARE.
  */
 
-/*
-**
-**  This is a bandwidth centric test for put: back-to-back message rate
-**
-**  Features of Test: uni-directional bandwidth
-**
-**  -by default megabytes/second results
-**
-**NOTE: this test assumes correctness of reduction algorithm
-*/
+#include <shmem.h>
+#include <shmemx.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#include <bw_common.h>
+#define NUM_CTX 64
 
-#define shmem_putmem(dest, source, nelems, pe) \
-        shmem_putmem_nbi(dest, source, nelems, pe)
+long data = 0;
 
-#include <uni_dir.h>
+int main(int argc, char **argv) {
+    int me, npes, i;
+    int errors = 0;
+    shmemx_ctx_t ctx[NUM_CTX];
 
-int main(int argc, char *argv[])
-{
-  shmem_init();
+    shmem_init();
 
-  uni_dir_bw_main(argc, argv);
+    me = shmem_my_pe();
+    npes = shmem_n_pes();
 
-  shmem_finalize();
+    for (i = 0; i < NUM_CTX; i++) {
+        int err = shmemx_ctx_create(SHMEMX_DOMAIN_DEFAULT, &ctx[i]);
 
-  return 0;
-}
+        if (err) {
+            printf("%d: Error creating context %d (%d)\n", me, i, err);
+            shmem_global_exit(1);
+        }
+    }
 
-void
-uni_dir_bw(int len, perf_metrics_t *metric_info)
-{
-    uni_bw(len, metric_info, !streaming_node(*metric_info));
+    for (i = 0; i < NUM_CTX; i++)
+        shmemx_ctx_long_inc(&data, (me+1) % npes, ctx[i]);
+
+    for (i = 0; i < NUM_CTX; i++)
+        shmemx_ctx_quiet(ctx[i]);
+
+    shmemx_sync_all();
+
+    if (data != NUM_CTX) {
+        printf("%d: error expected %d, got %ld\n", me, NUM_CTX, data);
+        ++errors;
+    }
+
+    shmem_finalize();
+    return errors;
 }

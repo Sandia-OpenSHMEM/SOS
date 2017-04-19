@@ -27,9 +27,9 @@ include(shmem_bind_f.m4)dnl
 
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
+#include "shmemx.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"
-
 
 #define SHMEM_DEF_FC_PUT(FUNCNAME, SIZE)                                \
     void FUNCNAME(void *target, void *source, fortran_integer_t *len,   \
@@ -37,17 +37,14 @@ include(shmem_bind_f.m4)dnl
     void FUNCNAME(void *target, void *source, fortran_integer_t *len,   \
                   fortran_integer_t *pe)                                \
     {                                                                   \
-        long completion = 0;                                            \
-                                                                        \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(*pe);                                        \
         SHMEM_ERR_CHECK_NON_NEGATIVE(*len);                             \
         SHMEM_ERR_CHECK_SYMMETRIC(target, SIZE * *len);                 \
         SHMEM_ERR_CHECK_NULL(source, *len);                             \
                                                                         \
-        shmem_internal_put_nb(target, source, SIZE * *len, *pe,         \
-                              &completion);                             \
-        shmem_internal_put_wait(&completion);                           \
+        shmem_internal_put(target, source, SIZE * *len, *pe,            \
+                           SHMEMX_CTX_DEFAULT);                         \
     }
 
 define(`SHMEM_WRAP_FC_PUT',
@@ -71,7 +68,8 @@ SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_PUT_SIZE')
         SHMEM_ERR_CHECK_SYMMETRIC(target, SIZE * *nelems);              \
         SHMEM_ERR_CHECK_NULL(source, *nelems);                          \
                                                                         \
-        shmem_internal_put_nbi(target, source, SIZE * *nelems, *pe);    \
+        shmem_internal_put_nbi(target, source, SIZE * *nelems, *pe,     \
+                               SHMEMX_CTX_DEFAULT);                     \
     }
 
 define(`SHMEM_WRAP_FC_PUT_NBI',
@@ -103,7 +101,8 @@ SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_PUT_NBI_SIZE')
         SHMEM_ERR_CHECK_NULL(source, len);                              \
                                                                         \
         for ( ; len > 0 ; --len) {                                      \
-            shmem_internal_put_small(target, source, SIZE, *pe);        \
+            shmem_internal_put_small(target, source, SIZE, *pe,          \
+                                     SHMEMX_CTX_DEFAULT);               \
             target += (*tst * SIZE);                                    \
             source += (*sst * SIZE);                                    \
         }                                                               \
@@ -129,8 +128,9 @@ SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_IPUT_SIZE')
         SHMEM_ERR_CHECK_SYMMETRIC(source, SIZE * *len);                 \
         SHMEM_ERR_CHECK_NULL(target, *len);                             \
                                                                         \
-        shmem_internal_get(target, source, SIZE * *len, *pe);           \
-        shmem_internal_get_wait();                                      \
+        shmem_internal_get(target, source, SIZE * *len, *pe,            \
+                           SHMEMX_CTX_DEFAULT);                         \
+        shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);                           \
     }
 
 define(`SHMEM_WRAP_FC_GET',
@@ -152,7 +152,8 @@ SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_GET_SIZE')
         SHMEM_ERR_CHECK_SYMMETRIC(source, SIZE * *nelems);              \
         SHMEM_ERR_CHECK_NULL(target, *nelems);                          \
                                                                         \
-        shmem_internal_get(target, source, SIZE * *nelems, *pe);        \
+        shmem_internal_get(target, source, SIZE * *nelems, *pe,         \
+                           SHMEMX_CTX_DEFAULT);                         \
     }
 
 define(`SHMEM_WRAP_FC_GET_NBI',
@@ -184,11 +185,11 @@ SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_GET_NBI_SIZE')
         SHMEM_ERR_CHECK_NULL(target, len);                              \
                                                                         \
         for ( ; len > 0 ; --len ) {                                     \
-            shmem_internal_get(target, source, SIZE, *pe);              \
+            shmem_internal_get(target, source, SIZE, *pe,               \
+                               SHMEMX_CTX_DEFAULT);                     \
             target += (*tst * SIZE);                                    \
             source += (*sst * SIZE);                                    \
         }                                                               \
-        shmem_internal_get_wait();                                      \
     }
 
 define(`SHMEM_WRAP_FC_IGET',

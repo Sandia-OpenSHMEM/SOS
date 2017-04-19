@@ -40,8 +40,8 @@ FC_SHMEM_SWAP(fortran_integer_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target, SIZEOF_FORTRAN_INTEGER);
 
     shmem_internal_swap(target, value, &newval, SIZEOF_FORTRAN_INTEGER,
-                        *pe, SHM_INTERNAL_FORTRAN_INTEGER);
-    shmem_internal_get_wait();
+                        *pe, SHM_INTERNAL_FORTRAN_INTEGER, SHMEMX_CTX_DEFAULT);
+    shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
     return newval;
 }
 
@@ -62,8 +62,8 @@ FC_SHMEM_INT4_SWAP(int32_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target, 4);
 
     shmem_internal_swap(target, value, &newval, 4,
-                        *pe, SHM_INTERNAL_INT32);
-    shmem_internal_get_wait();
+                        *pe, SHM_INTERNAL_INT32, SHMEMX_CTX_DEFAULT);
+    shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
     return newval;
 }
 
@@ -84,8 +84,8 @@ FC_SHMEM_INT8_SWAP(int64_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target, 8);
 
     shmem_internal_swap(target, value, &newval, 8,
-                        *pe, SHM_INTERNAL_INT64);
-    shmem_internal_get_wait();
+                        *pe, SHM_INTERNAL_INT64, SHMEMX_CTX_DEFAULT);
+    shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
     return newval;
 }
 
@@ -108,8 +108,8 @@ FC_SHMEM_REAL4_SWAP(float *target,
     shmem_internal_assert(sizeof(float) == 4);
 
     shmem_internal_swap(target, value, &newval, 4,
-                        *pe, SHM_INTERNAL_FLOAT);
-    shmem_internal_get_wait();
+                        *pe, SHM_INTERNAL_FLOAT, SHMEMX_CTX_DEFAULT);
+    shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
     return newval;
 }
 
@@ -132,8 +132,8 @@ FC_SHMEM_REAL8_SWAP(double *target,
     shmem_internal_assert(sizeof(double) == 8);
 
     shmem_internal_swap(target, value, &newval, 8,
-                        *pe, SHM_INTERNAL_DOUBLE);
-    shmem_internal_get_wait();
+                        *pe, SHM_INTERNAL_DOUBLE, SHMEMX_CTX_DEFAULT);
+    shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
     return newval;
 }
 
@@ -155,10 +155,9 @@ FC_SHMEM_INT4_CSWAP(int32_t *target,
     SHMEM_ERR_CHECK_PE(*pe);
     SHMEM_ERR_CHECK_SYMMETRIC(target, 4);
 
-    shmem_internal_cswap(target, value, &newval, cond,
-                         4,
-                         *pe, SHM_INTERNAL_INT32);
-    shmem_internal_get_wait();
+    shmem_internal_cswap(target, value, &newval, cond, 4,
+                         *pe, SHM_INTERNAL_INT32, SHMEMX_CTX_DEFAULT);
+    shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
     return newval;
 }
 
@@ -180,10 +179,9 @@ FC_SHMEM_INT8_CSWAP(int64_t *target,
     SHMEM_ERR_CHECK_PE(*pe);
     SHMEM_ERR_CHECK_SYMMETRIC(target, 8);
 
-    shmem_internal_cswap(target, value, &newval, cond,
-                         8,
-                         *pe, SHM_INTERNAL_INT64);
-    shmem_internal_get_wait();
+    shmem_internal_cswap(target, value, &newval, cond, 8,
+                         *pe, SHM_INTERNAL_INT64, SHMEMX_CTX_DEFAULT);
+    shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
     return newval;
 }
 
@@ -204,8 +202,9 @@ FC_SHMEM_INT4_FADD(int32_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target, 4);
 
     shmem_internal_fetch_atomic(target, value, &oldval, 4,
-                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32);
-    shmem_internal_get_wait();
+                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32,
+                                SHMEMX_CTX_DEFAULT);
+    shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
     return oldval;
 }
 
@@ -226,8 +225,9 @@ FC_SHMEM_INT8_FADD(int64_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target, 8);
 
     shmem_internal_fetch_atomic(target, value, &oldval, 8,
-                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64);
-    shmem_internal_get_wait();
+                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64,
+                                SHMEMX_CTX_DEFAULT);
+    shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
     return oldval;
 }
 
@@ -246,8 +246,9 @@ FC_SHMEM_INT4_FINC(int32_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target, 4);
 
     shmem_internal_fetch_atomic(target, &tmp, &oldval, 4,
-                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32);
-    shmem_internal_get_wait();
+                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32,
+                                SHMEMX_CTX_DEFAULT);
+    shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
     return oldval;
 }
 
@@ -266,8 +267,9 @@ FC_SHMEM_INT8_FINC(int64_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target, 8);
 
     shmem_internal_fetch_atomic(target, &tmp, &oldval, 8,
-                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64);
-    shmem_internal_get_wait();
+                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64,
+                                SHMEMX_CTX_DEFAULT);
+    shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
     return oldval;
 }
 
@@ -286,7 +288,8 @@ FC_SHMEM_INT4_ADD(int32_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target, 4);
 
     shmem_internal_atomic_small(target, value, 4,
-                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32);
+                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32,
+                                 SHMEMX_CTX_DEFAULT);
 }
 
 
@@ -304,7 +307,8 @@ FC_SHMEM_INT8_ADD(int64_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target, 8);
 
     shmem_internal_atomic_small(target, value, 8,
-                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64);
+                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64,
+                                 SHMEMX_CTX_DEFAULT);
 }
 
 
@@ -322,7 +326,8 @@ FC_SHMEM_INT4_INC(int32_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target, 4);
 
     shmem_internal_atomic_small(target, &tmp, 4,
-                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32);
+                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32,
+                                 SHMEMX_CTX_DEFAULT);
 }
 
 
@@ -340,7 +345,8 @@ FC_SHMEM_INT8_INC(int64_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target, 8);
 
     shmem_internal_atomic_small(target, &tmp, 8,
-                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64);
+                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64,
+                                 SHMEMX_CTX_DEFAULT);
 }
 
 
@@ -357,8 +363,9 @@ FC_SHMEM_INT4_FETCH(int32_t *source,
     SHMEM_ERR_CHECK_PE(*pe);
     SHMEM_ERR_CHECK_SYMMETRIC(source, 4);
 
-    shmem_internal_atomic_fetch(&val, (void *) source, 4, *pe, SHM_INTERNAL_INT32);
-    shmem_internal_get_wait();
+    shmem_internal_atomic_fetch(&val, (void *) source, 4, *pe,
+                                SHM_INTERNAL_INT32, SHMEMX_CTX_DEFAULT);
+    shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
 
     return val;
 }
@@ -377,8 +384,9 @@ FC_SHMEM_INT8_FETCH(int64_t *source,
     SHMEM_ERR_CHECK_PE(*pe);
     SHMEM_ERR_CHECK_SYMMETRIC(source, 8);
 
-    shmem_internal_atomic_fetch(&val, (void *) source, 8, *pe, SHM_INTERNAL_INT64);
-    shmem_internal_get_wait();
+    shmem_internal_atomic_fetch(&val, (void *) source, 8, *pe,
+                                SHM_INTERNAL_INT64, SHMEMX_CTX_DEFAULT);
+    shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
 
     return val;
 }
@@ -399,8 +407,9 @@ FC_SHMEM_REAL4_FETCH(float *source,
 
     shmem_internal_assert(sizeof(float) == 4);
 
-    shmem_internal_atomic_fetch(&val, (void *) source, 4, *pe, SHM_INTERNAL_INT32);
-    shmem_internal_get_wait();
+    shmem_internal_atomic_fetch(&val, (void *) source, 4, *pe,
+                                SHM_INTERNAL_INT32, SHMEMX_CTX_DEFAULT);
+    shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
 
     return val;
 }
@@ -421,8 +430,9 @@ FC_SHMEM_REAL8_FETCH(double *source,
 
     shmem_internal_assert(sizeof(double) == 8);
 
-    shmem_internal_atomic_fetch(&val, (void *) source, 8, *pe, SHM_INTERNAL_INT64);
-    shmem_internal_get_wait();
+    shmem_internal_atomic_fetch(&val, (void *) source, 8, *pe,
+                                SHM_INTERNAL_INT64, SHMEMX_CTX_DEFAULT);
+    shmemx_ctx_quiet(SHMEMX_CTX_DEFAULT);
 
     return val;
 }
@@ -442,7 +452,7 @@ FC_SHMEM_INT4_SET(int32_t *dest,
     SHMEM_ERR_CHECK_SYMMETRIC(dest, 4);
 
     shmem_internal_atomic_set((void *) dest, (const void *) value, 4, *pe,
-                              SHM_INTERNAL_INT32);
+                              SHM_INTERNAL_INT32, SHMEMX_CTX_DEFAULT);
 }
 
 
@@ -460,7 +470,7 @@ FC_SHMEM_INT8_SET(int64_t *dest,
     SHMEM_ERR_CHECK_SYMMETRIC(dest, 8);
 
     shmem_internal_atomic_set((void *) dest, (const void *) value, 8, *pe,
-                              SHM_INTERNAL_INT64);
+                              SHM_INTERNAL_INT64, SHMEMX_CTX_DEFAULT);
 }
 
 
@@ -480,7 +490,7 @@ FC_SHMEM_REAL4_SET(float *dest,
     shmem_internal_assert(sizeof(float) == 4);
 
     shmem_internal_atomic_set((void *) dest, (const void *) value, 4, *pe,
-                              SHM_INTERNAL_INT32);
+                              SHM_INTERNAL_INT32, SHMEMX_CTX_DEFAULT);
 }
 
 
@@ -500,5 +510,5 @@ FC_SHMEM_REAL8_SET(double *dest,
     shmem_internal_assert(sizeof(double) == 8);
 
     shmem_internal_atomic_set((void *) dest, (const void *) value, 8, *pe,
-                              SHM_INTERNAL_INT64);
+                              SHM_INTERNAL_INT64, SHMEMX_CTX_DEFAULT);
 }

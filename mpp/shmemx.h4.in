@@ -34,6 +34,14 @@ include(shmem_bind_c.m4)dnl
 /* Counting puts */
 typedef char * shmemx_ct_t;
 
+/* Contexts */
+
+typedef void* shmemx_ctx_t;
+typedef void* shmemx_domain_t;
+
+extern shmemx_ctx_t SHMEMX_CTX_DEFAULT;
+extern shmemx_domain_t SHMEMX_DOMAIN_DEFAULT;
+
 define(`SHPRE', `')dnl
 include(shmemx_c_func.m4)dnl
 

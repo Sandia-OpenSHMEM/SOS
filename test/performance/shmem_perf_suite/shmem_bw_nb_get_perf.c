@@ -45,9 +45,13 @@
 
 int main(int argc, char *argv[])
 {
-    uni_dir_bw_main(argc,argv);
+  shmem_init();
 
-    return 0;
+  uni_dir_bw_main(argc,argv);
+
+  shmem_finalize();
+
+  return 0;
 }  /* end of main() */
 
 void

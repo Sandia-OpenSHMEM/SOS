@@ -22,6 +22,7 @@
 #include <time.h>
 #include <sys/time.h>
 
+#define SHMEM_INTERNAL_INCLUDE
 #include "shmemx.h"
 #include "runtime.h"
 #include "config.h"
@@ -307,22 +308,22 @@ typedef pthread_mutex_t shmem_internal_mutex_t;
 
 #   define SHMEM_MUTEX_INIT(_mutex)                                     \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level != SHMEMX_THREAD_SINGLE)          \
             pthread_mutex_init(&_mutex, NULL); \
     } while (0)
 #   define SHMEM_MUTEX_DESTROY(_mutex)                                  \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level != SHMEMX_THREAD_SINGLE)          \
             pthread_mutex_destroy(&_mutex);                             \
     } while (0)
 #   define SHMEM_MUTEX_LOCK(_mutex)                                     \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level != SHMEMX_THREAD_SINGLE)          \
             pthread_mutex_lock(&_mutex);                                \
     } while (0)
 #   define SHMEM_MUTEX_UNLOCK(_mutex)                                   \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level != SHMEMX_THREAD_SINGLE)          \
             pthread_mutex_unlock(&_mutex);                              \
     } while (0)
 
@@ -332,22 +333,22 @@ typedef shmem_spinlock_t shmem_internal_mutex_t;
 
 #   define SHMEM_MUTEX_INIT(_mutex)                                     \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level != SHMEMX_THREAD_SINGLE)          \
             shmem_spinlock_init(&_mutex);                               \
     } while (0)
 #   define SHMEM_MUTEX_DESTROY(_mutex)                                  \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level != SHMEMX_THREAD_SINGLE)          \
             shmem_spinlock_fini(&_mutex);                               \
     } while (0)
 #   define SHMEM_MUTEX_LOCK(_mutex)                                     \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level != SHMEMX_THREAD_SINGLE)          \
             shmem_spinlock_lock(&_mutex);                               \
     } while (0)
 #   define SHMEM_MUTEX_UNLOCK(_mutex)                                   \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level != SHMEMX_THREAD_SINGLE)          \
             shmem_spinlock_unlock(&_mutex);                             \
     } while (0)
 

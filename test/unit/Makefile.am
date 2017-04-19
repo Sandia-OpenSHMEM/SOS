@@ -80,7 +80,8 @@ check_PROGRAMS = \
 	broadcast_active_set \
 	reduce_active_set \
 	collect_active_set \
-	pcontrol
+	pcontrol \
+	many-ctx
 
 if ENABLE_PROFILING
 check_PROGRAMS += \
@@ -117,10 +118,20 @@ check_PROGRAMS += \
 endif
 endif
 
+if ENABLE_OPENMP
+check_PROGRAMS += \
+    ctx
+endif
+
 if HAVE_PTHREADS
 check_PROGRAMS += \
-    mt_a2a
+    mt_a2a \
+    threading \
+    web
 endif
+
+noinst_HEADERS = \
+    pthread_barrier.h
 
 TESTS = $(check_PROGRAMS)
 
@@ -135,6 +146,14 @@ LDADD = $(top_builddir)/src/libsma.la
 if USE_PMI_SIMPLE
 LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
 endif
+
+threading_LDFLAGS = $(PTHREAD_LIBS)
+threading_CFLAGS = $(PTHREAD_CFLAGS)
+
+web_LDFLAGS = $(PTHREAD_LIBS)
+web_CFLAGS = $(PTHREAD_CFLAGS)
+
+ctx_CFLAGS = $(AM_OPENMP_CFLAGS)
 
 # C Tests with special flags
 rma_coverage_pshmem_SOURCES = rma_coverage.c

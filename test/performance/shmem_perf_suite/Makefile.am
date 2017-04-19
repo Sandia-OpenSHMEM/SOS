@@ -23,6 +23,11 @@ check_PROGRAMS = \
 	shmem_bw_atomics_perf \
 	shmem_bibw_atomics_perf
 
+if ENABLE_OPENMP
+check_PROGRAMS += \
+	shmem_bw_put_ctx_lockless
+endif
+
 noinst_HEADERS = \
 	common.h \
 	latency_common.h \
@@ -46,3 +51,5 @@ LDADD = $(top_builddir)/src/libsma.la
 if USE_PMI_SIMPLE
 LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
 endif
+
+shmem_bw_put_ctx_lockless_CFLAGS = $(AM_OPENMP_CFLAGS)
