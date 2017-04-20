@@ -856,7 +856,7 @@ shmem_internal_collect_linear(void *target, const void *source, size_t len,
     int stride = 1 << logPE_stride;
     size_t my_offset;
     long tmp[2];
-    int peer;
+    int peer, start_pe, i;
 
     /* Need 2 for lengths and 1 for data */
     shmem_internal_assert(SHMEM_COLLECT_SYNC_SIZE >= 3);
@@ -890,8 +890,11 @@ shmem_internal_collect_linear(void *target, const void *source, size_t len,
         }
     }
 
-    /* Send data round-robin, starting with my PE */
-    peer = shmem_internal_my_pe;
+    /* Send data round-robin, ending with my PE */
+    start_pe = shmem_internal_circular_iter_next(shmem_internal_my_pe,
+                                                 PE_start, logPE_stride,
+                                                 PE_size);
+    peer = start_pe;
     do {
         if (len > 0) {
             shmem_internal_put_nbi(((uint8_t *) target) + my_offset, source,
@@ -899,25 +902,15 @@ shmem_internal_collect_linear(void *target, const void *source, size_t len,
         }
         peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
                                                  PE_size);
-    } while (peer != shmem_internal_my_pe);
+    } while (peer != start_pe);
 
-    shmem_internal_fence();
-
-    /* Send flags round-robin, starting with my PE */
-    peer = shmem_internal_my_pe;
-    do {
-        const long one = 1;
-        shmem_internal_atomic_small(&pSync[2], &one, sizeof(long), peer,
-                                    SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
-        peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
-                                                 PE_size);
-    } while (peer != shmem_internal_my_pe);
-
-    SHMEM_WAIT_UNTIL(&pSync[2], SHMEM_CMP_EQ, PE_size);
+    shmem_internal_barrier(PE_start, logPE_stride, PE_size, &pSync[2]);
 
     pSync[0] = SHMEM_SYNC_VALUE;
     pSync[1] = SHMEM_SYNC_VALUE;
-    pSync[2] = SHMEM_SYNC_VALUE;
+
+    for (i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
+        pSync[2+i] = SHMEM_SYNC_VALUE;
 }
 
 
