@@ -316,7 +316,7 @@ linear_sync_size=`$PERL -e "print 2 + $C_BARRIER_SYNC_SIZE"`
 tree_sync_size=`$PERL -e "print $C_BCAST_SYNC_SIZE + 3"`
 recdbl_sync_size=`$PERL -e "print $ac_cv_sizeof_int * 8 * ($ac_cv_sizeof_int / $ac_cv_sizeof_long)"`
 C_COLLECT_SYNC_SIZE=`$PERL -e "use List::Util qw(max); print max($linear_sync_size, $tree_sync_size, $recdbl_sync_size)"`
-C_ALLTOALL_SYNC_SIZE=1
+C_ALLTOALL_SYNC_SIZE=$C_BARRIER_SYNC_SIZE
 C_ALLTOALLS_SYNC_SIZE=1
 C_REDUCE_MIN_WRKDATA_SIZE=1
 AC_SUBST(C_BCAST_SYNC_SIZE)

@@ -1086,17 +1086,19 @@ void
 shmem_internal_alltoall(void *dest, const void *source, size_t len,
                         int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
-    const long one = 1;
     const int stride = 1 << logPE_stride;
     const int my_as_rank = (shmem_internal_my_pe - PE_start) / stride;
     const void *dest_ptr = (uint8_t *) dest + my_as_rank * len;
-    int peer;
+    int peer, start_pe, i;
 
     if (0 == len)
         return;
 
-    /* Send data round-robin, starting with my PE */
-    peer = shmem_internal_my_pe;
+    /* Send data round-robin, ending with my PE */
+    start_pe = shmem_internal_circular_iter_next(shmem_internal_my_pe,
+                                                 PE_start, logPE_stride,
+                                                 PE_size);
+    peer = start_pe;
     do {
         int peer_as_rank = (peer - PE_start) / stride; /* Peer's index in active set */
 
@@ -1104,21 +1106,12 @@ shmem_internal_alltoall(void *dest, const void *source, size_t len,
                               len, peer);
         peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
                                                  PE_size);
-    } while (peer != shmem_internal_my_pe);
+    } while (peer != start_pe);
 
-    shmem_internal_fence();
+    shmem_internal_barrier(PE_start, logPE_stride, PE_size, pSync);
 
-    /* Send flags round-robin, starting with my PE */
-    peer = shmem_internal_my_pe;
-    do {
-        shmem_internal_atomic_small(pSync, &one, sizeof(long), peer,
-                                    SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
-        peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
-                                                 PE_size);
-    } while (peer != shmem_internal_my_pe);
-
-    SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, PE_size);
-    *pSync = 0;
+    for (i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
+        pSync[i] = SHMEM_SYNC_VALUE;
 }
 
 
@@ -1127,11 +1120,10 @@ shmem_internal_alltoalls(void *dest, const void *source, ptrdiff_t dst,
                          ptrdiff_t sst, size_t elem_size, size_t nelems,
                          int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
-    const long one = 1;
     const int stride = 1 << logPE_stride;
     const int my_as_rank = (shmem_internal_my_pe - PE_start) / stride;
     const void *dest_base = (uint8_t *) dest + my_as_rank * nelems * dst * elem_size;
-    int peer;
+    int peer, start_pe, i;
 
     if (0 == nelems)
         return;
@@ -1144,8 +1136,11 @@ shmem_internal_alltoalls(void *dest, const void *source, ptrdiff_t dst,
      * incast.
      */
 
-    /* Send data round-robin, starting with my PE */
-    peer = shmem_internal_my_pe;
+    /* Send data round-robin, ending with my PE */
+    start_pe = shmem_internal_circular_iter_next(shmem_internal_my_pe,
+                                                 PE_start, logPE_stride,
+                                                 PE_size);
+    peer = start_pe;
     do {
         size_t i;
         int peer_as_rank    = (peer - PE_start) / stride; /* Peer's index in active set */
@@ -1161,19 +1156,10 @@ shmem_internal_alltoalls(void *dest, const void *source, ptrdiff_t dst,
         }
         peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
                                                  PE_size);
-    } while (peer != shmem_internal_my_pe);
+    } while (peer != start_pe);
 
-    shmem_internal_fence();
+    shmem_internal_barrier(PE_start, logPE_stride, PE_size, pSync);
 
-    /* Send flags round-robin, starting with my PE */
-    peer = shmem_internal_my_pe;
-    do {
-        shmem_internal_atomic_small(pSync, &one, sizeof(long), peer,
-                                    SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
-        peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
-                                                 PE_size);
-    } while (peer != shmem_internal_my_pe);
-
-    SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, PE_size);
-    *pSync = 0;
+    for (i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
+        pSync[i] = SHMEM_SYNC_VALUE;
 }
