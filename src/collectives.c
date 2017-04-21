@@ -858,8 +858,8 @@ shmem_internal_collect_linear(void *target, const void *source, size_t len,
     long tmp[2];
     int peer, start_pe, i;
 
-    /* Need 2 for lengths and 1 for data */
-    shmem_internal_assert(SHMEM_COLLECT_SYNC_SIZE >= 3);
+    /* Need 2 for lengths and barrier for completion */
+    shmem_internal_assert(SHMEM_COLLECT_SYNC_SIZE >= 2 + SHMEM_BARRIER_SYNC_SIZE);
 
     DEBUG_MSG("target=%p, source=%p, len=%zd, PE_Start=%d, logPE_stride=%d, PE_size=%d, pSync=%p\n",
               target, source, len, PE_start, logPE_stride, PE_size, (void*) pSync);
@@ -1091,6 +1091,8 @@ shmem_internal_alltoall(void *dest, const void *source, size_t len,
     const void *dest_ptr = (uint8_t *) dest + my_as_rank * len;
     int peer, start_pe, i;
 
+    shmem_internal_assert(SHMEM_ALLTOALL_SYNC_SIZE >= SHMEM_BARRIER_SYNC_SIZE);
+
     if (0 == len)
         return;
 
@@ -1124,6 +1126,8 @@ shmem_internal_alltoalls(void *dest, const void *source, ptrdiff_t dst,
     const int my_as_rank = (shmem_internal_my_pe - PE_start) / stride;
     const void *dest_base = (uint8_t *) dest + my_as_rank * nelems * dst * elem_size;
     int peer, start_pe, i;
+
+    shmem_internal_assert(SHMEM_ALLTOALLS_SYNC_SIZE >= SHMEM_BARRIER_SYNC_SIZE);
 
     if (0 == nelems)
         return;
