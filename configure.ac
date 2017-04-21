@@ -241,42 +241,44 @@ AC_SEARCH_LIBS([clock_gettime], [rt],
 dnl check for libraries
 
 OMPI_CHECK_PORTALS4([portals4],
-    [AC_DEFINE([USE_PORTALS4], [1], [Define if Portals 4 transport active])
-     transport="portals4"
+    [transport="portals4"
      transport_portals4="yes"],
     [transport_portals4="no"])
-AM_CONDITIONAL([USE_PORTALS4], [test "$transport_portals4" = "yes"])
 
 OPAL_CHECK_LIBFABRIC([libfabric],
-    [AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
-     transport="ofi"
+    [transport="ofi"
      transport_libfabric="yes"],
     [transport_libfabric="no"])
-AM_CONDITIONAL([USE_OFI], [test "$transport_libfabric" = "yes"])
 
 if test -n "$with_libfabric" ; then
+    transport="ofi"
     transport_portals4="no"
+    AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
 elif test -n "$with_portals4" ; then
+    transport="portals4"
     transport_libfabric="no"
+    AC_DEFINE([USE_PORTALS4], [1], [Define if Portals 4 transport active])
 fi
+AM_CONDITIONAL([USE_OFI], [test "$transport_libfabric" = "yes"])
+AM_CONDITIONAL([USE_PORTALS4], [test "$transport_portals4" = "yes"])
 
 SANDIA_CHECK_XPMEM(
-    [AC_DEFINE([USE_XPMEM], [1], [Define if XPMEM transport is active])
-     transport_xpmem="yes"],
+    [transport_xpmem="yes"],
     [transport_xpmem="no"])
-AM_CONDITIONAL([USE_XPMEM], [test "$transport_xpmem" = "yes"])
 
 CHECK_CMA(
-   [AC_DEFINE([USE_CMA], [1], [Define if Cross Memory Attach transport is active])
-    transport_cma="yes"],
-   [transport_cma="no"])
-AM_CONDITIONAL([USE_CMA], [test "$transport_cma" = "yes"])
+    [transport_cma="yes"],
+    [transport_cma="no"])
 
 if test -n "$with_xpmem" ; then
     transport_cma="no"
+    AC_DEFINE([USE_XPMEM], [1], [Define if XPMEM transport is active])
 elif test -n "$with_cma" ; then
     transport_xpmem="no"
+    AC_DEFINE([USE_CMA], [1], [Define if Cross Memory Attach transport is active])
 fi
+AM_CONDITIONAL([USE_XPMEM], [test "$transport_xpmem" = "yes"])
+AM_CONDITIONAL([USE_CMA], [test "$transport_cma" = "yes"])
 
 AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
       [AC_DEFINE([USE_ON_NODE_COMMS], [1], [Define if any on-node comm transport is available])
