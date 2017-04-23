@@ -18,3 +18,7 @@ void SHPRE()shmemx_ct_set(shmemx_ct_t ct, long value);
 void SHPRE()shmemx_ct_wait(shmemx_ct_t ct, long wait_for);
 
 void SHPRE()shmemx_pcontrol(int level, ...);
+
+void SHPRE()shmemx_int_bxor(int *target, int value, int pe);
+void SHPRE()shmemx_long_bxor(long *target, long value, int pe);
+void SHPRE()shmemx_longlong_bxor(long long *target, long long value, int pe);
