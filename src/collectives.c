@@ -407,6 +407,9 @@ shmem_internal_barrier_dissem(int PE_start, int logPE_stride, int PE_size, long 
                                     shmem_internal_my_pe,
                                     SHM_INTERNAL_SUM, SHM_INTERNAL_INT);
     }
+
+    /* Ensure local pSync decrements are done before a subsequent barrier */
+    shmem_internal_quiet();
 }
 
 
