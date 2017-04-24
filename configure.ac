@@ -241,38 +241,43 @@ AC_SEARCH_LIBS([clock_gettime], [rt],
 dnl check for libraries
 
 OMPI_CHECK_PORTALS4([portals4],
-    [AC_DEFINE([USE_PORTALS4], [1], [Define if Portals 4 transport active])
-     transport="portals4"
+    [transport="portals4"
      transport_portals4="yes"],
     [transport_portals4="no"])
-AM_CONDITIONAL([USE_PORTALS4], [test "$transport_portals4" = "yes"])
 
 OPAL_CHECK_LIBFABRIC([libfabric],
-    [AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
-     transport="ofi"
-     transport_ofi="yes"],
-    [transport_ofi="no"])
-AM_CONDITIONAL([USE_OFI], [test "$transport_ofi" = "yes"])
+    [transport="ofi"
+     transport_libfabric="yes"],
+    [transport_libfabric="no"])
 
-if test "$transport_ofi" = "no" ; then
-  OMPI_CHECK_OFI([ofi],
-      [AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
-       transport="ofi"
-       transport_ofi="yes"],
-      [transport_ofi="no"])
-  AM_CONDITIONAL([USE_OFI], [test "$transport_ofi" = "yes"])
+if test -n "$with_libfabric" ; then
+    transport="ofi"
+    transport_portals4="no"
+    AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
+elif test -n "$with_portals4" ; then
+    transport="portals4"
+    transport_libfabric="no"
+    AC_DEFINE([USE_PORTALS4], [1], [Define if Portals 4 transport active])
 fi
+AM_CONDITIONAL([USE_OFI], [test "$transport_libfabric" = "yes"])
+AM_CONDITIONAL([USE_PORTALS4], [test "$transport_portals4" = "yes"])
 
 SANDIA_CHECK_XPMEM(
-    [AC_DEFINE([USE_XPMEM], [1], [Define if XPMEM transport is active])
-     transport_xpmem="yes"],
+    [transport_xpmem="yes"],
     [transport_xpmem="no"])
-AM_CONDITIONAL([USE_XPMEM], [test "$transport_xpmem" = "yes"])
 
 CHECK_CMA(
-   [AC_DEFINE([USE_CMA], [1], [Define if Cross Memory Attach transport is active])
-    transport_cma="yes"],
-   [transport_cma="no"])
+    [transport_cma="yes"],
+    [transport_cma="no"])
+
+if test -n "$with_xpmem" ; then
+    transport_cma="no"
+    AC_DEFINE([USE_XPMEM], [1], [Define if XPMEM transport is active])
+elif test -n "$with_cma" ; then
+    transport_xpmem="no"
+    AC_DEFINE([USE_CMA], [1], [Define if Cross Memory Attach transport is active])
+fi
+AM_CONDITIONAL([USE_XPMEM], [test "$transport_xpmem" = "yes"])
 AM_CONDITIONAL([USE_CMA], [test "$transport_cma" = "yes"])
 
 AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
@@ -470,8 +475,8 @@ DISTCHECK_CONFIGURE_FLAGS=
 if test -n "$with_portals4" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-portals4=${with_portals4}"
 fi
-if test -n "$with_ofi" ; then
-  DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-ofi=${with_ofi}"
+if test -n "$with_libfabric" ; then
+  DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-libfabric=${with_libfabric}"
 fi
 if test -n "$with_xpmem" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-xpmem=${with_xpmem}"
@@ -490,19 +495,41 @@ AC_SUBST(CLEANFILES)
 
 # last minute updates of the flags so that tests don't fail oddly if
 # portals libdir isn't in LD_LIBRARY_PATH...
-CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS $libfabric_CPPFLAGS $ofi_CPPFLAGS $XPMEM_CPPFLAGS $pmi_CPPFLAGS"
-LDFLAGS="$LDFLAGS $portals4_LDFLAGS $libfabric_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
-LIBS="$LIBS $portals4_LIBS $libfabric_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
+if test "$transport_portals4" = "yes" ; then
+    CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $portals4_LDFLAGS"
+    LIBS="$LIBS $portals4_LIBS"
+    WRAPPER_COMPILER_EXTRA_LDFLAGS="$portals4_LDFLAGS"
+    WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS"
+fi
+
+if test "$transport_libfabric" = "yes" ; then
+    CPPFLAGS="$CPPFLAGS $libfabric_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $libfabric_LDFLAGS"
+    LIBS="$LIBS $libfabric_LIBS"
+    WRAPPER_COMPILER_EXTRA_LDFLAGS="$libfabric_LDFLAGS"
+    WRAPPER_COMPILER_EXTRA_LIBS="$libfabric_LIBS"
+fi
+
+if test "$transport_xpmem" = "yes" ; then
+    CPPFLAGS="$CPPFLAGS $XPMEM_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $XPMEM_LDFLAGS"
+    LIBS="$LIBS $XPMEM_LIBS"
+    WRAPPER_COMPILER_EXTRA_LDFLAGS="$XPMEM_LDFLAGS"
+    WRAPPER_COMPILER_EXTRA_LIBS="$XPMEM_LIBS"
+fi
+
+CPPFLAGS="$CPPFLAGS $pmi_CPPFLAGS"
+LDFLAGS="$LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
+LIBS="$LIBS $pmi_LIBS"
+WRAPPER_COMPILER_EXTRA_LDFLAGS="$WRAPPER_COMPILER_EXTRA_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
+WRAPPER_COMPILER_EXTRA_LIBS="$WRAPPER_COMPILER_LIBS $pmi_LIBS"
 
 # Need the libtool binary before setting up rpath
 LT_OUTPUT
 
 OPAL_TOP_BUILDDIR="`pwd`"
 OPAL_SETUP_RPATH
-
-# wrapper compiler gorp
-WRAPPER_COMPILER_EXTRA_LDFLAGS="$portals4_LDFLAGS $libfabric_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
-WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS $libfabric_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
 
 AS_IF([test "$enable_pmi_simple" = "yes"],
      [WRAPPER_COMPILER_EXTRA_LIBS="$WRAPPER_COMPILER_EXTRA_LIBS -lpmi_simple"])
@@ -539,7 +566,7 @@ AC_OUTPUT
 AS_IF([test "$enable_pmi_simple" != "yes" -a "$ompi_check_pmi_happy" != "yes" -a -z "$pmi_type"],
          [AC_MSG_WARN([No PMI found, if build fails consider --enable-pmi-simple or --with-pmi])])
 
-AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
+AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_libfabric" != "yes"],
       [AC_MSG_WARN([No transport found])])
 
 
@@ -560,7 +587,7 @@ echo "  Fortran:        $FORT"
 echo ""
 echo "Transports:"
 echo "  Portals 4:      $transport_portals4"
-echo "  OFI:            $transport_ofi"
+echo "  OFI:            $transport_libfabric"
 echo "  XPMEM:          $transport_xpmem"
 echo "  CMA:            $transport_cma"
 echo ""
