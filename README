@@ -30,7 +30,7 @@ Options to configure include:
 
   --prefix=<DIR>          Install implementation in <DIR>, default: /usr/local
   --with-portals4=<DIR>   Find the Portals 4 library in <DIR>
-  --with-libfabric=<DIR>  Find the libfabric library in <DIR>
+  --with-ofi=<DIR>        Find the libfabric library in <DIR>
   --with-xpmem=<DIR>      Find the XPMEM library in <DIR>
   --with-cma              Use cross-memory attach for on-node communication
   --with-pmi=DIR          Location of PMI installation.  Configure will 
