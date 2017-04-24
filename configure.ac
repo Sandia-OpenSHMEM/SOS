@@ -307,24 +307,40 @@ AC_CHECK_SIZEOF([double])
 AC_CHECK_SIZEOF([long double])
 AC_CHECK_SIZEOF([void*])
 
+dnl Determine psync and pwrk sizes for collectives
+
 C_LOG_MAXPES=32
-C_BCAST_SYNC_SIZE=1
-C_REDUCE_SYNC_SIZE=`$PERL -e "print $C_BCAST_SYNC_SIZE + 2 + $C_LOG_MAXPES"`
-C_BARRIER_SYNC_SIZE=`$PERL -e "use POSIX; print $ac_cv_sizeof_int * 8 * ($ac_cv_sizeof_int / $ac_cv_sizeof_long)"`
-tree_sync_size=`$PERL -e "print $C_BCAST_SYNC_SIZE + 3"`
-recdbl_sync_size=`$PERL -e "use POSIX; print $ac_cv_sizeof_int * 8 * ($ac_cv_sizeof_int / $ac_cv_sizeof_long)"`
-AS_IF([test $tree_sync_size -lt $recdbl_sync_size],
-      [C_COLLECT_SYNC_SIZE=$recdbl_sync_size], [C_COLLECT_SYNC_SIZE=$tree_sync_size])
-C_ALLTOALL_SYNC_SIZE=1
-C_ALLTOALLS_SYNC_SIZE=1
-C_REDUCE_MIN_WRKDATA_SIZE=1
-AC_SUBST(C_BCAST_SYNC_SIZE)
-AC_SUBST(C_REDUCE_SYNC_SIZE)
-AC_SUBST(C_BARRIER_SYNC_SIZE)
-AC_SUBST(C_COLLECT_SYNC_SIZE)
-AC_SUBST(C_ALLTOALL_SYNC_SIZE)
-AC_SUBST(C_ALLTOALLS_SYNC_SIZE)
-AC_SUBST(C_REDUCE_MIN_WRKDATA_SIZE)
+AC_MSG_CHECKING([size of SHMEM_BCAST_SYNC_SIZE])
+    C_BCAST_SYNC_SIZE=1
+    AC_SUBST(C_BCAST_SYNC_SIZE)
+AC_MSG_RESULT([$C_BCAST_SYNC_SIZE])
+AC_MSG_CHECKING([size of SHMEM_REDUCE_SYNC_SIZE])
+    C_REDUCE_SYNC_SIZE=`$PERL -e "print $C_BCAST_SYNC_SIZE + 2 + $C_LOG_MAXPES"`
+    AC_SUBST(C_REDUCE_SYNC_SIZE)
+AC_MSG_RESULT([$C_REDUCE_SYNC_SIZE])
+AC_MSG_CHECKING([size of SHMEM_BARRIER_SYNC_SIZE])
+    C_BARRIER_SYNC_SIZE=`$PERL -e "print $ac_cv_sizeof_int * 8 * ($ac_cv_sizeof_int / $ac_cv_sizeof_long)"`
+    AC_SUBST(C_BARRIER_SYNC_SIZE)
+AC_MSG_RESULT([$C_BARRIER_SYNC_SIZE])
+AC_MSG_CHECKING([size of SHMEM_COLLECT_SYNC_SIZE])
+    linear_sync_size=`$PERL -e "print 2 + $C_BARRIER_SYNC_SIZE"`
+    tree_sync_size=`$PERL -e "print $C_BCAST_SYNC_SIZE + 3"`
+    recdbl_sync_size=`$PERL -e "print $ac_cv_sizeof_int * 8 * ($ac_cv_sizeof_int / $ac_cv_sizeof_long)"`
+    C_COLLECT_SYNC_SIZE=`$PERL -e "use List::Util qw(max); print max($linear_sync_size, $tree_sync_size, $recdbl_sync_size)"`
+    AC_SUBST(C_COLLECT_SYNC_SIZE)
+AC_MSG_RESULT([$C_COLLECT_SYNC_SIZE])
+AC_MSG_CHECKING([size of SHMEM_ALLTOALL_SYNC_SIZE])
+    C_ALLTOALL_SYNC_SIZE=$C_BARRIER_SYNC_SIZE
+    AC_SUBST(C_ALLTOALL_SYNC_SIZE)
+AC_MSG_RESULT([$C_ALLTOALL_SYNC_SIZE])
+AC_MSG_CHECKING([size of SHMEM_ALLTOALLS_SYNC_SIZE])
+    C_ALLTOALLS_SYNC_SIZE=$C_BARRIER_SYNC_SIZE
+    AC_SUBST(C_ALLTOALLS_SYNC_SIZE)
+AC_MSG_RESULT([$C_ALLTOALLS_SYNC_SIZE])
+AC_MSG_CHECKING([size of SHMEM_REDUCE_MIN_WRKDATA_SIZE])
+    C_REDUCE_MIN_WRKDATA_SIZE=1
+    AC_SUBST(C_REDUCE_MIN_WRKDATA_SIZE)
+AC_MSG_RESULT([$C_REDUCE_MIN_WRKDATA_SIZE])
 
 AC_MSG_CHECKING([if long can hold lock_t])
 AC_TRY_RUN([struct lock_s { int a; int b; }; int main(void) { if (sizeof(long) == sizeof(struct lock_s)) return 0; else return 1; }],
