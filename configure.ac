@@ -241,24 +241,24 @@ AC_SEARCH_LIBS([clock_gettime], [rt],
 dnl check for libraries
 
 OMPI_CHECK_PORTALS4([portals4],
-    [transport="portals4"
-     transport_portals4="yes"],
+    [transport_portals4="yes"],
     [transport_portals4="no"])
 
 OPAL_CHECK_OFI([ofi],
-    [transport="ofi"
-     transport_ofi="yes"],
+    [transport_ofi="yes"],
     [transport_ofi="no"])
 
 # assure that only ofi is enabled if portals4 is also detected
-if test -n "$with_ofi" ; then
+if test "$transport_ofi" = "yes" ; then
     transport="ofi"
     transport_portals4="no"
     AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
-elif test -n "$with_portals4" ; then
+elif test "$transport_portals4" = "yes" ; then
     transport="portals4"
     transport_ofi="no"
     AC_DEFINE([USE_PORTALS4], [1], [Define if Portals 4 transport active])
+else
+    AC_MSG_WARN([Neither OFI nor portals4 transport found])
 fi
 AM_CONDITIONAL([USE_OFI], [test "$transport_ofi" = "yes"])
 AM_CONDITIONAL([USE_PORTALS4], [test "$transport_portals4" = "yes"])
@@ -271,10 +271,10 @@ CHECK_CMA(
     [transport_cma="yes"],
     [transport_cma="no"])
 
-if test -n "$with_xpmem" ; then
+if test "$transport_xpmem" = "yes" ; then
     transport_cma="no"
     AC_DEFINE([USE_XPMEM], [1], [Define if XPMEM transport is active])
-elif test -n "$with_cma" ; then
+elif test "$transport_cma" = "yes" ; then
     transport_xpmem="no"
     AC_DEFINE([USE_CMA], [1], [Define if Cross Memory Attach transport is active])
 fi
