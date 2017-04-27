@@ -249,11 +249,11 @@ OPAL_CHECK_OFI([ofi],
     [transport_ofi="no"])
 
 # assure that only ofi is enabled if portals4 is also detected
-if test "$transport_ofi" = "yes" ; then
+if test -n "$with_ofi" -a "$with_ofi" != "no" ; then
     transport="ofi"
     transport_portals4="no"
     AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
-elif test "$transport_portals4" = "yes" ; then
+elif test -n "$with_portals4" -a "$with_portals4" != "no" ; then
     transport="portals4"
     transport_ofi="no"
     AC_DEFINE([USE_PORTALS4], [1], [Define if Portals 4 transport active])
@@ -271,10 +271,10 @@ CHECK_CMA(
     [transport_cma="yes"],
     [transport_cma="no"])
 
-if test "$transport_xpmem" = "yes" ; then
+if test -n "$with_xpmem" -a "$with_xpmem" != "no" ; then
     transport_cma="no"
     AC_DEFINE([USE_XPMEM], [1], [Define if XPMEM transport is active])
-elif test "$transport_cma" = "yes" ; then
+elif test -n "$with_cma" -a "$with_cma" != "no" ; then
     transport_xpmem="no"
     AC_DEFINE([USE_CMA], [1], [Define if Cross Memory Attach transport is active])
 fi
