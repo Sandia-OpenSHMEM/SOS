@@ -21,5 +21,5 @@ void SHPRE()shmemx_pcontrol(int level, ...);
 
 /* AMO: Atomic Bitwise Routines */
 define(`SHMEM_C_XOR',
-`void SHPRE()shmem_$1_atomic_xor($2 *target, $2 value, int pe)')dnl
+`void SHPRE()shmemx_$1_atomic_xor($2 *target, $2 value, int pe)')dnl
 SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_XOR')
