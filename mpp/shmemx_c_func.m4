@@ -19,6 +19,7 @@ void SHPRE()shmemx_ct_wait(shmemx_ct_t ct, long wait_for);
 
 void SHPRE()shmemx_pcontrol(int level, ...);
 
-void SHPRE()shmemx_int_bxor(int *target, int value, int pe);
-void SHPRE()shmemx_long_bxor(long *target, long value, int pe);
-void SHPRE()shmemx_longlong_bxor(long long *target, long long value, int pe);
+/* AMO: Atomic Bitwise Routines */
+define(`SHMEM_C_XOR',
+`void SHPRE()shmem_$1_atomic_xor($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_XOR')

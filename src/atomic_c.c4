@@ -221,8 +221,8 @@ SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_FETCH)
 
 SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_SET)
 
-#define SHMEM_DEF_BXOR(STYPE,TYPE,ITYPE)                                \
-    void shmemx_##STYPE##_bxor(TYPE *target, TYPE value, int pe)         \
+#define SHMEM_DEF_XOR(STYPE,TYPE,ITYPE)                                \
+    void shmemx_##STYPE##_atomic_xor(TYPE *target, TYPE value, int pe)         \
     {                                                                   \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
@@ -232,4 +232,4 @@ SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_SET)
                                     SHM_INTERNAL_BXOR, ITYPE);          \
     }
 
-SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_BXOR)
+SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_XOR)
