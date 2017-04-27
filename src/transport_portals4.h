@@ -1249,6 +1249,13 @@ void shmem_transport_ct_wait(shmem_transport_ct_t *ct, long wait_for)
 
 
 static inline
+void shmem_transport_spinlock_body(void)
+{
+    /* Nop */
+}
+
+
+static inline
 uint64_t shmem_transport_received_cntr_get(void)
 {
 #ifndef ENABLE_HARD_POLLING

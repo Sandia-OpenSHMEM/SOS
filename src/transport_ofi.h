@@ -955,6 +955,18 @@ void shmem_transport_ct_wait(shmem_transport_ct_t *ct, long wait_for)
 }
 
 static inline
+void shmem_transport_spinlock_body(void)
+{
+#ifdef ENABLE_PROGRESS_ASSIST
+    struct fi_cq_err_entry e = {0};
+    ssize_t ret = fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd,
+                                (void *)&e, 0);
+    if (ret != -FI_EAGAIN)
+        OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
+#endif
+}
+
+static inline
 uint64_t shmem_transport_received_cntr_get(void)
 {
 #ifndef ENABLE_HARD_POLLING

@@ -63,6 +63,11 @@ AC_ARG_ENABLE([completion-polling],
 AS_IF([test "$enable_completion_polling" = "yes"],
       [AC_DEFINE([ENABLE_COMPLETION_POLLING], [1], [Enable polling for local/remote completions])])
 
+AC_ARG_ENABLE([progress-assist],
+    [AC_HELP_STRING([--enable-progress-assist],
+                    [Enable progress assistance in hard polling loop. (default:disabled)])])
+AS_IF([test "$enable_progress_assist" = "yes"], [AC_DEFINE([ENABLE_PROGRESS_ASSIST], [1], [Enable progress assistance])])
+
 AC_ARG_ENABLE([nonblocking-fence],
     [AC_HELP_STRING([--enable-nonblocking-fence],
                     [When total data ordering is not available, make shmem_fence a non-blocking operation.  shmem_fence will return immediately, but the next communication call will block until all previous communications finish. (default:disabled)])])

@@ -257,6 +257,12 @@ void shmem_transport_get_ct(shmem_transport_ct_t *ct, void
     RAISE_ERROR_STR("No path to peer");
 }
 
+static inline
+void shmem_transport_spinlock_body(void)
+{
+    /* Nop */
+}
+
 /**
  * Query the value of the transport's received messages counter.
  */

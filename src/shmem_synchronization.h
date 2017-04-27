@@ -83,7 +83,10 @@ shmem_internal_fence(void)
 
 #define SHMEM_WAIT(var, value)                           \
     do {                                                 \
-        while (*(var) == value) { SPINLOCK_BODY(); }     \
+        while (*(var) == value) {                        \
+            shmem_transport_spinlock_body();             \
+            SPINLOCK_BODY();                             \
+        }                                                \
     } while(0)
 
 #define SHMEM_WAIT_UNTIL(var, cond, value)               \
@@ -92,6 +95,7 @@ shmem_internal_fence(void)
                                                          \
         COMP(cond, *(var), value, cmpret);               \
         while (!cmpret) {                                \
+            shmem_transport_spinlock_body();             \
             SPINLOCK_BODY();                             \
             COMP(cond, *(var), value, cmpret);           \
         }                                                \
