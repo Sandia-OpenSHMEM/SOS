@@ -187,7 +187,7 @@ int Failure;
 
 /* Allocate main table (in global memory) */
 uint64_t *HPCC_Table;
-uint64_t *HPCC_PELock;
+long *HPCC_PELock;
 
 static uint64_t GlobalStartMyProc;
 
@@ -264,7 +264,7 @@ UpdateTable(uint64_t *Table,
             int64_t niterate,
             int use_lock)
 {
-  uint64_t iterate;
+  int64_t iterate;
   int index;
   uint64_t ran, remote_val, global_offset;
   int remote_pe;
@@ -287,11 +287,11 @@ UpdateTable(uint64_t *Table,
       }
       index = global_offset - global_start_at_pe;
 
-      if (use_lock) shmem_set_lock((long *)&HPCC_PELock[remote_pe]);
+      if (use_lock) shmem_set_lock(&HPCC_PELock[remote_pe]);
       remote_val = (uint64_t) shmem_long_g((long *)&Table[index], remote_pe);
       remote_val ^= ran;
       shmem_long_p((long *)&Table[index], remote_val, remote_pe);
-      if (use_lock) shmem_clear_lock((long *)&HPCC_PELock[remote_pe]);
+      if (use_lock) shmem_clear_lock(&HPCC_PELock[remote_pe]);
   }
 
   shmem_barrier_all();
@@ -322,10 +322,10 @@ SHMEMRandomAccess(void)
   int64_t ProcNumUpdates; /* number of updates per processor */
 
   static long pSync_bcast[SHMEM_BCAST_SYNC_SIZE];
-  static long long int llpWrk[SHMEM_REDUCE_SYNC_SIZE];
+  static long long int llpWrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
 
   static long pSync_reduce[SHMEM_REDUCE_SYNC_SIZE];
-  static int ipWrk[SHMEM_REDUCE_SYNC_SIZE];
+  static int ipWrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
 
   FILE *outFile = NULL;
   double *GUPs;
@@ -392,7 +392,7 @@ SHMEMRandomAccess(void)
   HPCC_Table = shmem_malloc(LocalTableSize * sizeof(uint64_t));
   if (! HPCC_Table) sAbort = 1;
 
-  HPCC_PELock = shmem_malloc(sizeof(uint64_t) * NumProcs);
+  HPCC_PELock = (long *) shmem_malloc(sizeof(long) * NumProcs);
   if (! HPCC_PELock) sAbort = 1;
 
   for (i = 0; i < NumProcs; i++)
