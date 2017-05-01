@@ -156,6 +156,9 @@ shmem_util_wrap(const char *str, const size_t wraplen, const char *indent)
     char *out_p = out;
     char *str_p = (char*) str;
 
+    if (out == NULL)
+        RAISE_ERROR_STR("unable to allocate output buffer");
+
     while (*str_p != '\0') {
         /* Remember location of last space */
         if (*str_p == ' ') {
