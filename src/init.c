@@ -377,6 +377,10 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         fflush(NULL);
     }
 
+    DEBUG_MSG("Sym. heap=%p len=%ld -- data=%p len=%ld\n",
+              shmem_internal_heap_base, shmem_internal_heap_length,
+              shmem_internal_data_base, shmem_internal_data_length);
+
     /* finish up */
     shmem_runtime_barrier();
     return;
