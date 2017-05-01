@@ -358,15 +358,20 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         }
 
         if (shmem_internal_debug) {
+            char *wrapped_configure_args = shmem_util_wrap(SOS_CONFIGURE_ARGS, 60,
+                                                           "                        ");
+
             printf("Build information:\n");
 #ifdef SOS_GIT_VERSION
             printf("%-23s %s\n", "Git Version", SOS_GIT_VERSION);
 #endif
-            printf("%-23s %s\n", "Configure Args", SOS_CONFIGURE_ARGS);
+            printf("%-23s %s\n", "Configure Args", wrapped_configure_args);
             printf("%-23s %s\n", "Build Date", SOS_BUILD_DATE);
             printf("%-23s %s\n", "Build CC", SOS_BUILD_CC);
             printf("%-23s %s\n", "Build CFLAGS", SOS_BUILD_CFLAGS);
             printf("\n");
+
+            free(wrapped_configure_args);
         }
 
         fflush(NULL);

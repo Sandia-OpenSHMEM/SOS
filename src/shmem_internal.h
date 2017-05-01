@@ -413,6 +413,7 @@ static inline double shmem_internal_wtime(void) {
 /* Utility functions */
 long shmem_util_getenv_long(const char* name, int is_sized, long default_value);
 char *shmem_util_getenv_str(const char* name);
+char *shmem_util_wrap(const char *str, const size_t wraplen, const char *indent);
 
 #ifndef MAX
 #define MAX(A,B) (A) > (B) ? (A) : (B)

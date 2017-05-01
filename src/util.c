@@ -138,3 +138,52 @@ shmem_util_getenv_str(const char* name)
 
     return NULL;
 }
+
+
+/* Wrap 'str' to fit within 'wraplen' columns.  After each line break, insert
+ * 'indent' string (if provided).  Caller must free the returned buffer.
+ */
+char *
+shmem_util_wrap(const char *str, const size_t wraplen, const char *indent)
+{
+    const size_t indent_len = indent != NULL ? strlen(indent) : 0;
+    const size_t str_len = strlen(str);
+    size_t linelen = 0;
+    char *str_s = NULL, *out_s = NULL;
+
+    /* Worst case is wrapping at 1/2 wraplen */
+    char *out = malloc(str_len + 2*(str_len/wraplen + 1) * indent_len);
+    char *out_p = out;
+    char *str_p = (char*) str;
+
+    while (*str_p != '\0') {
+        /* Remember location of last space */
+        if (*str_p == ' ') {
+            str_s = str_p;
+            out_s = out_p;
+        }
+        /* Reached end of line, try to wrap */
+        if (linelen >= wraplen) {
+            if (str_s != NULL) {
+                out_p = out_s; /* Jump back to last space */
+                str_p = str_s;
+                *out_p = '\n'; /* Append newline and indent */
+                out_p++;
+                if (indent) {
+                    strcpy(out_p, indent);
+                    out_p += indent_len;
+                }
+                str_p++;
+                out_s = str_s = NULL;
+                linelen = 0;
+                continue;
+            }
+        }
+        *out_p = *str_p;
+        out_p++;
+        str_p++;
+        linelen++;
+    }
+    *out_p = '\0';
+    return out;
+}
