@@ -42,6 +42,9 @@ extern long shmem_internal_data_length;
 extern int shmem_internal_heap_use_huge_pages;
 extern long shmem_internal_heap_huge_page_size;
 
+/* Note: must be accompanied by shmem_internal_my_pe in arguments */
+#define RAISE_PE_PREFIX "[%03d]        "
+
 #define RAISE_WARN(ret)                                                 \
     do {                                                                \
         fprintf(stderr, "[%03d] WARN: %s:%d return code %d\n",         \
@@ -57,10 +60,16 @@ extern long shmem_internal_heap_huge_page_size;
     } while (0)
 
 
-#define RAISE_ERROR_STR(str)                                            \
+#define RETURN_ERROR_STR(str)                                           \
     do {                                                                \
         fprintf(stderr, "[%03d] ERROR: %s:%d: %s\n",                    \
                 shmem_internal_my_pe, __FILE__, __LINE__, str);         \
+    } while (0)
+
+
+#define RAISE_ERROR_STR(str)                                            \
+    do {                                                                \
+        RETURN_ERROR_STR(str);                                          \
         shmem_runtime_abort(1, PACKAGE_NAME " exited in error");        \
     } while (0)
 
@@ -72,16 +81,22 @@ extern long shmem_internal_heap_huge_page_size;
     } while (0)
 
 
-#define RAISE_ERROR_MSG(...)                                            \
+#define RETURN_ERROR_MSG(...)                                           \
     do {                                                                \
         char str[256];                                                  \
         size_t off;                                                     \
         off = snprintf(str, sizeof(str), "[%03d] ERROR: %s:%d:\n",      \
                        shmem_internal_my_pe, __FILE__, __LINE__);       \
-        off+= snprintf(str+off, sizeof(str)-off, "[%03d]        ",      \
+        off+= snprintf(str+off, sizeof(str)-off, RAISE_PE_PREFIX,       \
                        shmem_internal_my_pe);                           \
         off+= snprintf(str+off, sizeof(str)-off, __VA_ARGS__);          \
         fprintf(stderr, "%s", str);                                     \
+    } while (0)
+
+
+#define RAISE_ERROR_MSG(...)                                            \
+    do {                                                                \
+        RETURN_ERROR_MSG(__VA_ARGS__);                                  \
         shmem_runtime_abort(1, PACKAGE_NAME " exited in error");        \
     } while (0)
 
@@ -90,9 +105,9 @@ extern long shmem_internal_heap_huge_page_size;
     do {                                                                \
         char str[256];                                                  \
         size_t off;                                                     \
-        off = snprintf(str, sizeof(str), "[%03d] WARN: %s:%d:\n",       \
+        off = snprintf(str, sizeof(str), "[%03d] WARN:  %s:%d:\n",      \
                        shmem_internal_my_pe, __FILE__, __LINE__);       \
-        off+= snprintf(str+off, sizeof(str)-off, "[%03d]       ",       \
+        off+= snprintf(str+off, sizeof(str)-off, RAISE_PE_PREFIX,       \
                        shmem_internal_my_pe);                           \
         off+= snprintf(str+off, sizeof(str)-off, __VA_ARGS__);          \
         fprintf(stderr, "%s", str);                                     \
@@ -115,7 +130,7 @@ extern long shmem_internal_heap_huge_page_size;
             off = snprintf(str, sizeof(str), "[%03d] DEBUG: %s:%d: %s\n", \
                            shmem_internal_my_pe, __FILE__, __LINE__,    \
                            __func__);                                   \
-            off+= snprintf(str+off, sizeof(str)-off, "[%03d]        ",  \
+            off+= snprintf(str+off, sizeof(str)-off, RAISE_PE_PREFIX,   \
                            shmem_internal_my_pe);                       \
             off+= snprintf(str+off, sizeof(str)-off, __VA_ARGS__);      \
             fprintf(stderr, "%s", str);                                 \

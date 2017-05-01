@@ -681,8 +681,8 @@ int atomicvalid_rtncheck(int ret, int atomic_size,
 {
     if ((ret != 0 || atomic_size == 0) && atomic_sup != ATOMIC_SOFT_SUPPORT) {
         if (atomic_sup == ATOMIC_WARNINGS) {
-            fprintf(stderr, "Warning OFI detected no support for atomic '%s' "
-                    "on type '%s'\n", strOP, strDT);
+            RAISE_WARN_MSG("Warning OFI detected no support for atomic '%s' "
+                           "on type '%s'\n", strOP, strDT);
         }
         else if (atomic_sup == ATOMIC_NO_SUPPORT) {
             RAISE_WARN_MSG("Error: atomicvalid ret=%d atomic_size=%d\n",

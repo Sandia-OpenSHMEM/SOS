@@ -46,9 +46,7 @@ FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, 
             *errcode = -1;
             return;
         } else {
-            fprintf(stderr, "[%03d] ERROR: shpalloc failure (invalid length).  Aborting job.\n",
-                    shmem_internal_my_pe);
-            RAISE_ERROR(1);
+            RAISE_ERROR_STR("shpalloc failure (invalid length).  Aborting job.");
         }
     }
 
@@ -61,9 +59,7 @@ FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, 
             *errcode = -2;
             return;
         } else {
-            fprintf(stderr, "[%03d] ERROR: shpalloc failure.  Aborting job.\n",
-                    shmem_internal_my_pe);
-            RAISE_ERROR(1);
+            RAISE_ERROR_STR("shpalloc failure.  Aborting job.");
         }
     }
 
@@ -100,9 +96,7 @@ FC_SHPCLMOVE(void **addr, fortran_integer_t *length, fortran_integer_t *errcode,
 
     if (*length <= 0) {
         if (0 == *want_abort) {
-            fprintf(stderr, "[%03d] shpclmove failure (invalid length)\n",
-                    shmem_internal_my_pe);
-            RAISE_ERROR(-1);
+            RAISE_ERROR_STR("shpclmove failure (invalid length)");
         } else {
             *errcode = -1;
             return;
@@ -124,9 +118,7 @@ FC_SHPCLMOVE(void **addr, fortran_integer_t *length, fortran_integer_t *errcode,
         *addr = ret;
     } else {
         if (0 == *want_abort) {
-            fprintf(stderr, "[%03d] shpclmove failure\n",
-                    shmem_internal_my_pe);
-            RAISE_ERROR(-2);
+            RAISE_ERROR_STR("shpclmove failure");
         } else {
             *errcode = -2;
             return;

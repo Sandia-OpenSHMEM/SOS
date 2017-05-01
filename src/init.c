@@ -106,7 +106,7 @@ shmem_internal_shutdown_atexit(void)
     if ( shmem_internal_initialized && !shmem_internal_finalized &&
          !shmem_internal_initialized_with_start_pes && !shmem_internal_global_exit_called &&
          shmem_internal_my_pe == 0) {
-        fprintf(stderr, "Warning: shutting down without a call to shmem_finalize()\n");
+        RAISE_WARN_STR("shutting down without a call to shmem_finalize");
     }
 
     shmem_internal_shutdown();
@@ -161,9 +161,8 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
     /* Ensure that the vendor string will not cause an overflow in user code */
     if (sizeof(SHMEM_VENDOR_STRING) > SHMEM_MAX_NAME_LEN) {
-        fprintf(stderr,
-                "[%03d] ERROR: SHMEM_VENDOR_STRING length (%zu) exceeds SHMEM_MAX_NAME_LEN (%d)\n",
-                shmem_internal_my_pe, sizeof(SHMEM_VENDOR_STRING), SHMEM_MAX_NAME_LEN);
+        RETURN_ERROR_MSG("SHMEM_VENDOR_STRING length (%zu) exceeds SHMEM_MAX_NAME_LEN (%d)\n",
+                         sizeof(SHMEM_VENDOR_STRING), SHMEM_MAX_NAME_LEN);
         goto cleanup;
     }
 
@@ -213,27 +212,21 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     /* create symmetric heap */
     ret = shmem_internal_symmetric_init(heap_size, heap_use_malloc);
     if (0 != ret) {
-        fprintf(stderr,
-                "[%03d] ERROR: symmetric heap initialization failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("symmetric heap initialization failed: %d\n", ret);
         goto cleanup;
     }
 
     /* Initialize transport devices */
     ret = shmem_transport_init(eager_size);
     if (0 != ret) {
-        fprintf(stderr,
-                "[%03d] ERROR: Transport init failed\n",
-                shmem_internal_my_pe);
+        RETURN_ERROR_STR("Transport init failed");
         goto cleanup;
     }
     transport_initialized = 1;
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_init(eager_size);
     if (0 != ret) {
-        fprintf(stderr,
-                "[%03d] ERROR: XPMEM init failed\n",
-                shmem_internal_my_pe);
+        RETURN_ERROR_STR("XPMEM init failed");
         goto cleanup;
     }
     xpmem_initialized = 1;
@@ -242,9 +235,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 #ifdef USE_CMA
     ret = shmem_transport_cma_init(eager_size);
     if (0 != ret) {
-        fprintf(stderr,
-                "[%03d] ERROR: CMA init failed\n",
-                shmem_internal_my_pe);
+        RETURN_ERROR_STR("CMA init failed");
         goto cleanup;
     }
     cma_initialized = 1;
@@ -253,44 +244,35 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     /* exchange information */
     ret = shmem_runtime_exchange();
     if (0 != ret) {
-        fprintf(stderr, "[%03d] ERROR: runtime exchange failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("runtime exchange failed: %d\n", ret);
         goto cleanup;
     }
 
     /* finish transport initialization after information sharing. */
     ret = shmem_transport_startup();
     if (0 != ret) {
-        fprintf(stderr,
-                "[%03d] ERROR: Transport startup failed\n",
-                shmem_internal_my_pe);
+        RETURN_ERROR_STR("Transport startup failed");
         goto cleanup;
     }
 
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_startup();
     if (0 != ret) {
-        fprintf(stderr,
-                "[%03d] ERROR: XPMEM startup failed\n",
-                shmem_internal_my_pe);
+        RETURN_ERROR_STR("XPMEM startup failed");
         goto cleanup;
     }
 #endif
 #ifdef USE_CMA
     ret = shmem_transport_cma_startup();
     if (0 != ret) {
-        fprintf(stderr,
-                "[%03d] ERROR: CMA startup failed\n",
-                shmem_internal_my_pe);
+        RETURN_ERROR_STR("CMA startup failed");
         goto cleanup;
     }
 #endif
 
     ret = shmem_internal_collectives_init(crossover, radix);
     if (ret != 0) {
-        fprintf(stderr,
-                "[%03d] ERROR: initialization of collectives failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("initialization of collectives failed: %d\n", ret);
         goto cleanup;
     }
 

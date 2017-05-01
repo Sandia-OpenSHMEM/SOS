@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <errno.h>
+#include <string.h>
 
 #include "shmem_internal.h"
 
@@ -62,8 +63,9 @@ errchk_atol(char *s)
 
     val = strtol(s,&e,0);
     if(errno != 0) {
-        perror("env var conversion");
-        exit(1);
+        char errmsg[128];
+        strerror_r(errno, errmsg, 128);
+        RAISE_ERROR_MSG("conversion failed (%s)\n", errmsg);
     }
 
     return val;

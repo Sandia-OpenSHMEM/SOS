@@ -221,7 +221,7 @@ shmem_transport_init(long eager_size)
     /* Initialize Portals */
     ret = PtlInit();
     if (PTL_OK != ret) {
-        fprintf(stderr, "ERROR: PtlInit failed (%d), try setting PTL_IFACE_NAME\n", ret);
+        RETURN_ERROR_MSG("PtlInit failed (%d), try setting PTL_IFACE_NAME\n", ret);
         return 1;
     }
 
@@ -271,27 +271,28 @@ shmem_transport_init(long eager_size)
                     &ni_limits,
                     &shmem_transport_portals4_ni_h);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlNIInit failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("PtlNIInit failed: %d\n", ret);
         return ret;
     }
 
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
     if ((PTL_TARGET_BIND_INACCESSIBLE & ni_limits.features) == 0) {
-        fprintf(stderr,
-                "[%03d] ERROR: Remote virtual addressing feature enabled, but Portals\n"
-                "doesn't support PTL_TARGET_BIND_INACCESSIBLE.  Aborting.\n",
-                shmem_internal_my_pe);
+        RETURN_ERROR_MSG("Remote virtual addressing feature enabled, but Portals\n"
+                         RAISE_PE_PREFIX
+                         "doesn't support PTL_TARGET_BIND_INACCESSIBLE.  Aborting.\n",
+                         shmem_internal_my_pe);
+        return PTL_FAIL;
     }
 #endif
 
 #if WANT_TOTAL_DATA_ORDERING != 0
     if ((PTL_TOTAL_DATA_ORDERING & ni_limits.features) == 0) {
         if (1 == WANT_TOTAL_DATA_ORDERING) {
-            fprintf(stderr,
-                    "[%03d] ERROR: Total data ordering feature enabled, but Portals\n"
-                    "doesn't support PTL_TOTAL_DATA_ORDERING.  Aborting.\n",
-                    shmem_internal_my_pe);
+            RETURN_ERROR_MSG("Total data ordering feature enabled, but Portals\n"
+                             RAISE_PE_PREFIX
+                             "doesn't support PTL_TOTAL_DATA_ORDERING.  Aborting.\n",
+                             shmem_internal_my_pe);
+            return PTL_FAIL;
         } else {
             shmem_transport_portals4_total_data_ordering = 1;
         }
@@ -303,16 +304,14 @@ shmem_transport_init(long eager_size)
 
     ret = PtlGetPhysId(shmem_transport_portals4_ni_h, &my_id);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlGetPhysId failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("PtlGetPhysId failed: %d\n", ret);
         return ret;
     }
 
     /* Share information */
     ret = shmem_runtime_put("portals4-procid", &my_id, sizeof(my_id));
     if (0 != ret) {
-        fprintf(stderr, "[%03d] ERROR: runtime_put failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("runtime_put failed: %d\n", ret);
         return ret;
     }
 
@@ -326,8 +325,7 @@ shmem_transport_init(long eager_size)
 
         ret = shmem_runtime_put("portals4-bases", bases, sizeof(uint64_t) * 2);
         if (0 != ret) {
-            fprintf(stderr, "[%03d] ERROR: runtime_put failed: %d\n",
-                    shmem_internal_my_pe, ret);
+            RETURN_ERROR_MSG("runtime_put failed: %d\n", ret);
             return ret;
         }
     }
@@ -360,19 +358,22 @@ shmem_transport_startup(void)
 
         ret = shmem_runtime_get(peer, "portals4-bases", bases, sizeof(uint64_t) * 2);
         if (0 != ret) {
-            fprintf(stderr, "[%03d] ERROR: runtime_put failed: %d\n",
-                    shmem_internal_my_pe, ret);
+            RETURN_ERROR_MSG("runtime_put failed: %d\n", ret);
             return ret;
         }
 
         if ((uintptr_t) shmem_internal_heap_base != bases[0]) {
-            fprintf(stderr, "[%03d] ERROR: heap base address does not match with rank %03d and virtual addressing is enabled\n",
-                    shmem_internal_my_pe, peer);
+            RETURN_ERROR_MSG("heap base address does not match with rank %d\n"
+                             RAISE_PE_PREFIX
+                             "and remote virtual addressing is enabled\n",
+                             shmem_internal_my_pe, peer);
             return -1;
         }
         if ((uintptr_t) shmem_internal_data_base != bases[1]) {
-            fprintf(stderr, "[%03d] ERROR: data base address does not match with rank %03d and virtual addressing is enabled\n",
-                    shmem_internal_my_pe, peer);
+            RETURN_ERROR_MSG("data base address does not match with rank %d\n"
+                             RAISE_PE_PREFIX
+                             "and remote virtual addressing is enabled\n",
+                             shmem_internal_my_pe, peer);
             return -1;
         }
     }
@@ -386,8 +387,7 @@ shmem_transport_startup(void)
 
     ret = PtlGetPhysId(shmem_transport_portals4_ni_h, &my_id);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlGetPhysId failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("PtlGetPhysId failed: %d\n", ret);
         goto cleanup;
     }
 
@@ -395,8 +395,7 @@ shmem_transport_startup(void)
         ret = shmem_runtime_get(i, "portals4-procid",
                                 &desired[i], sizeof(ptl_process_t));
         if (0 != ret) {
-            fprintf(stderr, "[%03d] ERROR: runtime_get failed: %d\n",
-                    shmem_internal_my_pe, ret);
+            RETURN_ERROR_MSG("runtime_get failed: %d\n", ret);
             goto cleanup;
         }
 
@@ -405,8 +404,7 @@ shmem_transport_startup(void)
         if (desired[i].phys.nid == my_id.phys.nid) {
             SHMEM_SET_RANK_SAME_NODE(i, num_on_node++);
             if (num_on_node > 255) {
-                fprintf(stderr, "[%03d] ERROR: Too many local ranks.\n",
-                        shmem_internal_my_pe);
+                RETURN_ERROR_STR("Too many local ranks");
                 goto cleanup;
             }
         }
@@ -417,15 +415,13 @@ shmem_transport_startup(void)
                     shmem_internal_num_pes,
                     desired);
     if (PTL_OK != ret && PTL_IGNORED != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlSetMap failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("PtlSetMap failed: %d\n", ret);
         goto cleanup;
     }
 
     ret = PtlGetUid(shmem_transport_portals4_ni_h, &uid);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlGetUid failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("PtlGetUid failed: %d\n", ret);
         goto cleanup;
     }
 
@@ -435,18 +431,18 @@ shmem_transport_startup(void)
     shmem_transport_portals4_max_msg_size = ni_limits.max_msg_size;
 
     if (shmem_transport_portals4_max_volatile_size < sizeof(long double complex)) {
-        fprintf(stderr, "[%03d] ERROR: Max volatile size found to be %lu, too small to continue\n",
-                shmem_internal_my_pe, (unsigned long) shmem_transport_portals4_max_volatile_size);
+        RETURN_ERROR_MSG("Max volatile size found to be %lu, too small to continue\n",
+                         (unsigned long) shmem_transport_portals4_max_volatile_size);
         goto cleanup;
     }
     if (shmem_transport_portals4_max_atomic_size < sizeof(long double complex)) {
-        fprintf(stderr, "[%03d] ERROR: Max atomic size found to be %lu, too small to continue\n",
-                shmem_internal_my_pe, (unsigned long) shmem_transport_portals4_max_atomic_size);
+        RETURN_ERROR_MSG("Max atomic size found to be %lu, too small to continue\n",
+                         (unsigned long) shmem_transport_portals4_max_atomic_size);
         goto cleanup;
     }
     if (shmem_transport_portals4_max_fetch_atomic_size < sizeof(long double complex)) {
-        fprintf(stderr, "[%03d] ERROR: Max fetch atomic size found to be %lu, too small to continue\n",
-                shmem_internal_my_pe, (unsigned long) shmem_transport_portals4_max_fetch_atomic_size);
+        RETURN_ERROR_MSG("Max fetch atomic size found to be %lu, too small to continue\n",
+                         (unsigned long) shmem_transport_portals4_max_fetch_atomic_size);
         goto cleanup;
     }
 
@@ -455,8 +451,7 @@ shmem_transport_startup(void)
                      shmem_transport_portals4_event_slots,
                      &shmem_transport_portals4_eq_h);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlEQAlloc failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("PtlEQAlloc failed: %d\n", ret);
         goto cleanup;
     }
 
@@ -467,8 +462,7 @@ shmem_transport_startup(void)
                      shmem_transport_portals4_pt,
                      &all_pt);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlPTAlloc of table entry failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("PtlPTAlloc of table entry failed: %d\n", ret);
         goto cleanup;
     }
 #else
@@ -478,8 +472,7 @@ shmem_transport_startup(void)
                      shmem_transport_portals4_data_pt,
                      &data_pt);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlPTAlloc of data table failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("PtlPTAlloc of data table failed: %d\n", ret);
         goto cleanup;
     }
     ret = PtlPTAlloc(shmem_transport_portals4_ni_h,
@@ -488,8 +481,7 @@ shmem_transport_startup(void)
                      shmem_transport_portals4_heap_pt,
                      &heap_pt);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlPTAlloc of heap table failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("PtlPTAlloc of heap table failed: %d\n", ret);
         goto cleanup;
     }
 #endif
@@ -498,8 +490,7 @@ shmem_transport_startup(void)
     /* target ct */
     ret = PtlCTAlloc(shmem_transport_portals4_ni_h, &shmem_transport_portals4_target_ct_h);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlCTAlloc of target ct failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("PtlCTAlloc of target ct failed: %d\n", ret);
         goto cleanup;
     }
 
@@ -522,8 +513,7 @@ shmem_transport_startup(void)
                       NULL,
                       &shmem_transport_portals4_le_h);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlLEAppend of all memory failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("PtlLEAppend of all memory failed: %d\n", ret);
         goto cleanup;
     }
 #else
@@ -537,8 +527,7 @@ shmem_transport_startup(void)
                       NULL,
                       &shmem_transport_portals4_heap_le_h);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlLEAppend of heap section failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("PtlLEAppend of heap section failed: %d\n", ret);
         goto cleanup;
     }
 
@@ -552,8 +541,7 @@ shmem_transport_startup(void)
                       NULL,
                       &shmem_transport_portals4_data_le_h);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlLEAppend of data section failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("PtlLEAppend of data section failed: %d\n", ret);
         goto cleanup;
     }
 #endif
@@ -561,14 +549,12 @@ shmem_transport_startup(void)
     /* Open MD to all memory */
     ret = PtlCTAlloc(shmem_transport_portals4_ni_h, &shmem_transport_portals4_put_ct_h);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlCTAlloc of put ct failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("PtlCTAlloc of put ct failed: %d\n", ret);
         goto cleanup;
     }
     ret = PtlCTAlloc(shmem_transport_portals4_ni_h, &shmem_transport_portals4_get_ct_h);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlCTAlloc of get ct failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("PtlCTAlloc of get ct failed: %d\n", ret);
         goto cleanup;
     }
 
@@ -584,8 +570,7 @@ shmem_transport_startup(void)
                     &md,
                     &shmem_transport_portals4_put_event_md_h);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlMDBind of put MD failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("PtlMDBind of put MD failed: %d\n", ret);
         goto cleanup;
     }
 
@@ -603,8 +588,7 @@ shmem_transport_startup(void)
                     &md,
                     &shmem_transport_portals4_put_volatile_md_h);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlMDBind of put MD failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("PtlMDBind of put MD failed: %d\n", ret);
         goto cleanup;
     }
 
@@ -621,8 +605,7 @@ shmem_transport_startup(void)
                     &md,
                     &shmem_transport_portals4_put_cntr_md_h);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlMDBind of put cntr MD failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("PtlMDBind of put cntr MD failed: %d\n", ret);
         goto cleanup;
     }
 
@@ -639,8 +622,7 @@ shmem_transport_startup(void)
                     &md,
                     &shmem_transport_portals4_get_md_h);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlMDBind of get MD failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("PtlMDBind of get MD failed: %d\n", ret);
         goto cleanup;
     }
 
@@ -670,17 +652,17 @@ shmem_transport_fini(void)
     PtlCTWait(shmem_transport_portals4_put_ct_h,
               shmem_transport_portals4_pending_put_counter, &ct);
     if (shmem_transport_portals4_pending_put_counter != ct.success + ct.failure) {
-        fprintf(stderr, "[%03d] WARNING: put count mismatch: %ld, %ld\n",
-                shmem_internal_my_pe, (long) shmem_transport_portals4_pending_put_counter,
-                (long) (ct.success + ct.failure));
+        RAISE_WARN_MSG("put count mismatch: %ld, %ld\n",
+                       (long) shmem_transport_portals4_pending_put_counter,
+                       (long) (ct.success + ct.failure));
     }
 
     PtlCTWait(shmem_transport_portals4_get_ct_h,
               shmem_transport_portals4_pending_get_counter, &ct);
     if (shmem_transport_portals4_pending_get_counter != ct.success + ct.failure) {
-        fprintf(stderr, "[%03d] WARNING: get count mismatch: %ld, %ld\n",
-                shmem_internal_my_pe, (long) shmem_transport_portals4_pending_get_counter,
-                (long) (ct.success + ct.failure));
+        RAISE_WARN_MSG("get count mismatch: %ld, %ld\n",
+                       (long) shmem_transport_portals4_pending_get_counter,
+                       (long) (ct.success + ct.failure));
     }
 
     cleanup_handles();

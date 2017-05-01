@@ -24,6 +24,8 @@
 #include <sys/types.h>
 #include <string.h>
 #include <errno.h>
+#include <stdint.h>
+#include <inttypes.h>
 
 #include "shmem_internal.h"
 
@@ -47,9 +49,8 @@ int shmem_transport_cma_fini(void);
         } else if (((void*) target > shmem_internal_heap_base) &&       \
                    ((char*) target < (char*) shmem_internal_heap_base + shmem_internal_heap_length)) { \
         } else {                                                        \
-            printf("[%03d] ERROR: %s (0x%lx) outside of symmetric areas\n", \
-                   shmem_internal_my_pe, name, (unsigned long) target);     \
-            RAISE_ERROR(1);                                             \
+            RAISE_ERROR_MSG("%s (0x%"PRIXPTR") outside of symmetric areas\n", \
+                            name, (uintptr_t) target);                  \
         }                                                               \
     } while (0)
 #else   // ! ENABLE_ERROR_CHECKING
@@ -105,8 +106,9 @@ shmem_transport_cma_put(void *target, const void *source, size_t len,
                         (const struct iovec *)&tgt, 1, 0);
 
         if ( bytes < 0 || (size_t) bytes != len) {
-            perror("shmem_transport_cma_put");
-            RAISE_ERROR_STR("process_vm_writev() failed");
+            char errmsg[128];
+            strerror_r(errno, errmsg, 128);
+            RAISE_ERROR_MSG("process_vm_writev() failed (%s)\n", errmsg);
         }
 }
 
@@ -133,8 +135,9 @@ shmem_transport_cma_get(void *target, const void *source, size_t len, int pe,
                                 (const struct iovec *)&tgt, 1,
                                 (const struct iovec *)&src, 1, 0);
         if ( bytes < 0 || (size_t) bytes != len) {
-            perror("shmem_transport_cma_get");
-            RAISE_ERROR_STR("process_vm_readv() failed");
+            char errmsg[128];
+            strerror_r(errno, errmsg, 128);
+            RAISE_ERROR_MSG("process_vm_readv() failed (%s)\n", errmsg);
         }
 }
 
