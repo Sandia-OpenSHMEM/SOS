@@ -43,18 +43,18 @@ extern int shmem_internal_heap_use_huge_pages;
 extern long shmem_internal_heap_huge_page_size;
 
 /* Note: must be accompanied by shmem_internal_my_pe in arguments */
-#define RAISE_PE_PREFIX "[%03d]        "
+#define RAISE_PE_PREFIX "[%04d]        "
 
 #define RAISE_WARN(ret)                                                 \
     do {                                                                \
-        fprintf(stderr, "[%03d] WARN: %s:%d return code %d\n",         \
+        fprintf(stderr, "[%04d] WARN: %s:%d return code %d\n",          \
                 shmem_internal_my_pe, __FILE__, __LINE__, (int) ret);   \
     } while (0)
 
 
 #define RAISE_ERROR(ret)                                                \
     do {                                                                \
-        fprintf(stderr, "[%03d] ERROR: %s:%d return code %d\n",         \
+        fprintf(stderr, "[%04d] ERROR: %s:%d return code %d\n",         \
                 shmem_internal_my_pe, __FILE__, __LINE__, (int) ret);   \
         shmem_runtime_abort(1, PACKAGE_NAME " exited in error");        \
     } while (0)
@@ -62,7 +62,7 @@ extern long shmem_internal_heap_huge_page_size;
 
 #define RETURN_ERROR_STR(str)                                           \
     do {                                                                \
-        fprintf(stderr, "[%03d] ERROR: %s:%d: %s\n",                    \
+        fprintf(stderr, "[%04d] ERROR: %s:%d: %s\n",                    \
                 shmem_internal_my_pe, __FILE__, __LINE__, str);         \
     } while (0)
 
@@ -76,7 +76,7 @@ extern long shmem_internal_heap_huge_page_size;
 
 #define RAISE_WARN_STR(str)                                             \
     do {                                                                \
-        fprintf(stderr, "[%03d] WARN: %s:%d: %s\n",                    \
+        fprintf(stderr, "[%04d] WARN: %s:%d: %s\n",                     \
                 shmem_internal_my_pe, __FILE__, __LINE__, str);         \
     } while (0)
 
@@ -85,7 +85,7 @@ extern long shmem_internal_heap_huge_page_size;
     do {                                                                \
         char str[256];                                                  \
         size_t off;                                                     \
-        off = snprintf(str, sizeof(str), "[%03d] ERROR: %s:%d:\n",      \
+        off = snprintf(str, sizeof(str), "[%04d] ERROR: %s:%d:\n",      \
                        shmem_internal_my_pe, __FILE__, __LINE__);       \
         off+= snprintf(str+off, sizeof(str)-off, RAISE_PE_PREFIX,       \
                        shmem_internal_my_pe);                           \
@@ -105,7 +105,7 @@ extern long shmem_internal_heap_huge_page_size;
     do {                                                                \
         char str[256];                                                  \
         size_t off;                                                     \
-        off = snprintf(str, sizeof(str), "[%03d] WARN:  %s:%d:\n",      \
+        off = snprintf(str, sizeof(str), "[%04d] WARN:  %s:%d:\n",      \
                        shmem_internal_my_pe, __FILE__, __LINE__);       \
         off+= snprintf(str+off, sizeof(str)-off, RAISE_PE_PREFIX,       \
                        shmem_internal_my_pe);                           \
@@ -117,7 +117,7 @@ extern long shmem_internal_heap_huge_page_size;
 #define DEBUG_STR(str)                                                  \
     do {                                                                \
         if(shmem_internal_debug) {                                      \
-            fprintf(stderr, "[%03d] DEBUG: %s:%d: %s\n",                \
+            fprintf(stderr, "[%04d] DEBUG: %s:%d: %s\n",                \
                     shmem_internal_my_pe, __FILE__, __LINE__, str);     \
         }                                                               \
     } while(0)
@@ -127,7 +127,7 @@ extern long shmem_internal_heap_huge_page_size;
         if(shmem_internal_debug) {                                      \
             char str[256];                                              \
             size_t off;                                                 \
-            off = snprintf(str, sizeof(str), "[%03d] DEBUG: %s:%d: %s\n", \
+            off = snprintf(str, sizeof(str), "[%04d] DEBUG: %s:%d: %s\n", \
                            shmem_internal_my_pe, __FILE__, __LINE__,    \
                            __func__);                                   \
             off+= snprintf(str+off, sizeof(str)-off, RAISE_PE_PREFIX,   \
@@ -290,7 +290,7 @@ extern long shmem_internal_heap_huge_page_size;
  */
 #define shmem_internal_assert_fail(file_, line_, cond_)                 \
     do {                                                                \
-        fprintf(stderr, "[%03d] Assertion Failed: %s:%d: %s\n",         \
+        fprintf(stderr, "[%04d] Assertion Failed: %s:%d: %s\n",         \
                 shmem_internal_my_pe, file_, line_, cond_);             \
         shmem_runtime_abort(1, PACKAGE_NAME " exited in error");        \
     } while (0)
