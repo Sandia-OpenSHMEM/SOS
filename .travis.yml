@@ -137,7 +137,7 @@ script:
     - mkdir no-transport-build
     - cd no-transport-build
     - export PATH=$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - ../configure --prefix=$TRAVIS_INSTALL/sandia-shmem-none $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
+    - ../configure --prefix=$TRAVIS_INSTALL/sandia-shmem-none --without-ofi --without-portals4 $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
     - make install

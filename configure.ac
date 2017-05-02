@@ -248,8 +248,11 @@ OPAL_CHECK_OFI([ofi],
     [transport_ofi="yes"],
     [transport_ofi="no"])
 
-# assure that only ofi is enabled if portals4 is also detected
-if test -n "$with_ofi" -a "$with_ofi" != "no" ; then
+# If both OFI and portals4 requested, user needs to choose one:
+if test -n "$with_ofi" -a "$with_ofi" != "no" -a -n "$with_portals4" -a "$with_portals4" != "no" ; then
+    AC_MSG_ERROR([Cannot choose both OFI and portals4 transports, use --with to choose one])
+# Check which was requested, OFI or portals4:
+elif test -n "$with_ofi" -a "$with_ofi" != "no" ; then
     transport="ofi"
     transport_portals4="no"
     AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
@@ -257,8 +260,12 @@ elif test -n "$with_portals4" -a "$with_portals4" != "no" ; then
     transport="portals4"
     transport_ofi="no"
     AC_DEFINE([USE_PORTALS4], [1], [Define if Portals 4 transport active])
+# If neither, set transport to "none" and print a warning:
 else
-    AC_MSG_WARN([Neither OFI nor portals4 transport found])
+    transport="none"
+    transport_ofi="no"
+    transport_portals4="no"
+    AC_MSG_WARN([Neither OFI nor portals4 transport requested])
 fi
 AM_CONDITIONAL([USE_OFI], [test "$transport_ofi" = "yes"])
 AM_CONDITIONAL([USE_PORTALS4], [test "$transport_portals4" = "yes"])
@@ -271,12 +278,21 @@ CHECK_CMA(
     [transport_cma="yes"],
     [transport_cma="no"])
 
-if test -n "$with_xpmem" -a "$with_xpmem" != "no" ; then
+# If both XPMEM and CMA requested, user needs to choose one:
+if test -n "$with_xpmem" -a "$with_xpmem" != "no" -a -n "$with_cma" -a "$with_cma" != "no" ; then
+    AC_MSG_ERROR([Cannot choose both XPMEM and CMA transports, use --with to choose one])
+# Check which was requested, XPMEM or CMA:
+elif test -n "$with_xpmem" -a "$with_xpmem" != "no" ; then
     transport_cma="no"
     AC_DEFINE([USE_XPMEM], [1], [Define if XPMEM transport is active])
 elif test -n "$with_cma" -a "$with_cma" != "no" ; then
     transport_xpmem="no"
     AC_DEFINE([USE_CMA], [1], [Define if Cross Memory Attach transport is active])
+# If neither, disable XPMEM and CMA:
+else
+    transport_xpmem="no"
+    transport_cma="no"
+    AC_MSG_RESULT([Neither XPMEM nor CMA transport requested])
 fi
 AM_CONDITIONAL([USE_XPMEM], [test "$transport_xpmem" = "yes"])
 AM_CONDITIONAL([USE_CMA], [test "$transport_cma" = "yes"])
