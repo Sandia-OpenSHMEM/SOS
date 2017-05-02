@@ -250,7 +250,7 @@ OPAL_CHECK_OFI([ofi],
 
 # If both OFI and portals4 requested, user needs to choose one:
 if test -n "$with_ofi" -a "$with_ofi" != "no" -a -n "$with_portals4" -a "$with_portals4" != "no" ; then
-    AC_MSG_ERROR([Cannot choose both OFI and portals4 transports, use --with to choose one])
+    AC_MSG_ERROR([Cannot choose both OFI and portals4 transports, see --help for details])
 # Check which was requested, OFI or portals4:
 elif test -n "$with_ofi" -a "$with_ofi" != "no" ; then
     transport="ofi"
