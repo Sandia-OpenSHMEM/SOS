@@ -473,16 +473,16 @@ LT_INIT
 OPAL_CASE_SENSITIVE_FS_SETUP
 
 DISTCHECK_CONFIGURE_FLAGS=
-if test -n "$with_portals4" ; then
+if test -n "$with_portals4" -a "$with_portals4" != "no" -a "$with_portals4" != "yes" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-portals4=${with_portals4}"
 fi
-if test -n "$with_ofi" ; then
+if test -n "$with_ofi" -a "$with_ofi" != "no" -a "$with_ofi" != "yes" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-ofi=${with_ofi}"
 fi
-if test -n "$with_xpmem" ; then
+if test -n "$with_xpmem" -a "$with_xpmem" != "no" -a "$with_xpmem" != "yes" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-xpmem=${with_xpmem}"
 fi
-if test -n "$with_pmi" ; then
+if test -n "$with_pmi" -a "$with_pmi" != "no" -a "$with_pmi" != "yes" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-pmi=${with_pmi}"
 fi
 if test -n "$FCFLAGS" ; then
