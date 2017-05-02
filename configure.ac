@@ -280,7 +280,7 @@ CHECK_CMA(
 
 # If both XPMEM and CMA requested, user needs to choose one:
 if test -n "$with_xpmem" -a "$with_xpmem" != "no" -a -n "$with_cma" -a "$with_cma" != "no" ; then
-    AC_MSG_ERROR([Cannot choose both XPMEM and CMA transports, use --with to choose one])
+    AC_MSG_ERROR([Cannot choose both XPMEM and CMA transports, see --help for details])
 # Check which was requested, XPMEM or CMA:
 elif test -n "$with_xpmem" -a "$with_xpmem" != "no" ; then
     transport_cma="no"
