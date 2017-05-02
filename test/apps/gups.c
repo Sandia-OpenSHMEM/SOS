@@ -389,13 +389,13 @@ SHMEMRandomAccess(void)
 
 
   sAbort = 0;
-  HPCC_PELock = (long *) shmem_malloc(sizeof(long) * NumProcs);
-  if (! HPCC_PELock) sAbort = 1;
-
   /* Ensure the allocation size is symmetric */
   HPCC_Table = shmem_malloc((Remainder > 0 ? (MinLocalTableSize + 1) : LocalTableSize)
                             * sizeof(uint64_t));
   if (! HPCC_Table) sAbort = 1;
+
+  HPCC_PELock = (long *) shmem_malloc(sizeof(long) * NumProcs);
+  if (! HPCC_PELock) sAbort = 1;
 
   for (i = 0; i < NumProcs; i++)
       HPCC_PELock[i] = 0;
