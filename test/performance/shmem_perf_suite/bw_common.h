@@ -85,7 +85,7 @@ typedef struct perf_metrics {
     unsigned long int window_size, warmup;
     int validate;
     int target_data;
-    int my_node, num_pes, sztarget, midpt;
+    int my_node, num_pes, sztarget, szinitiator, midpt;
     bw_units unit;
     char *src, *dest;
     const char *bw_type;
@@ -111,6 +111,7 @@ void static data_init(perf_metrics_t * data) {
     data->num_pes = shmem_n_pes();
     data->midpt = data->num_pes/2;
     data->sztarget = data->midpt;
+    data->szinitiator = data->midpt;
     data->src = NULL;
     data->dest = NULL;
     data->cstyle = COMM_PAIRWISE;
@@ -140,7 +141,7 @@ int static inline partner_node(perf_metrics_t my_info)
 
         return (my_info.my_node < pairs ?
             ((my_info.my_node + pairs) % (my_info.sztarget + pairs)) :
-            my_info.my_node - pairs);
+            (my_info.my_node - pairs) % my_info.szinitiator);
     } else {
         assert(my_info.cstyle == COMM_INCAST);
         return INCAST_PE;
@@ -150,7 +151,7 @@ int static inline partner_node(perf_metrics_t my_info)
 int static inline streaming_node(perf_metrics_t my_info)
 {
     if(my_info.cstyle == COMM_PAIRWISE) {
-        return (my_info.my_node < my_info.midpt);
+        return (my_info.my_node < my_info.szinitiator);
     } else {
         assert(my_info.cstyle == COMM_INCAST);
         return true;
@@ -168,7 +169,7 @@ red_PE_set static inline validation_set(perf_metrics_t my_info, int *nPEs)
 {
     if(my_info.cstyle == COMM_PAIRWISE) {
         if(streaming_node(my_info)) {
-            *nPEs = my_info.midpt;
+            *nPEs = my_info.szinitiator;
             return FIRST_HALF;
         } else if(target_node(my_info)) {
             *nPEs = my_info.sztarget;
@@ -194,7 +195,7 @@ void static command_line_arg_check(int argc, char *argv[],
     extern char *optarg;
 
     /* check command line args */
-    while ((ch = getopt(argc, argv, "e:s:n:w:p:r:kbvt")) != EOF) {
+    while ((ch = getopt(argc, argv, "e:s:n:w:p:r:l:kbvt")) != EOF) {
         switch (ch) {
         case 's':
             metric_info->start_len = strtoul(optarg, (char **)NULL, 0);
@@ -233,7 +234,13 @@ void static command_line_arg_check(int argc, char *argv[],
             break;
         case 'r':
             metric_info->sztarget = strtoul(optarg, (char **)NULL, 0);
-            if(metric_info->sztarget > metric_info->midpt) error = true;
+            if(metric_info->sztarget > metric_info->midpt ||
+                metric_info->szinitiator < metric_info->midpt) error = true;
+            break;
+        case 'l':
+            metric_info->szinitiator = strtoul(optarg, (char **)NULL, 0);
+            if(metric_info->szinitiator > metric_info->midpt ||
+                metric_info->sztarget < metric_info->midpt) error = true;
             break;
         default:
             error = true;
@@ -265,7 +272,8 @@ void static command_line_arg_check(int argc, char *argv[],
                     " only use with put_bw),\n cannot be used in conjunction "\
                     "with validate, special sizes used, \ntrials" \
                     " + warmup * sizes (8/4KB) <= max length \n" \
-                    "[-r number of nodes at target] \n");
+                    "[-r number of nodes at target] \n" \
+                    "[-l number of nodes at initiator] \n");
         }
 #ifndef VERSION_1_0
         shmem_finalize();
@@ -321,10 +329,9 @@ void static print_atomic_results_header(perf_metrics_t metric_info) {
 void static print_results_header(perf_metrics_t metric_info) {
     printf("\nResults for %d PEs %lu trials with window size %lu "\
             "max message size %lu with multiple of %lu increments, "\
-            "targeting %zu remote PEs\n", metric_info.num_pes,
+            "\ntargeting %d remote PEs initiated from %d PEs\n", metric_info.num_pes,
             metric_info.trials, metric_info.window_size, metric_info.max_len,
-            metric_info.size_inc, metric_info.sztarget);
-
+            metric_info.size_inc, metric_info.sztarget, metric_info.szinitiator);
     printf("\nLength           %s           "\
             "Message Rate\n", metric_info.bw_type);
 
@@ -346,7 +353,7 @@ void static print_data_results(double bw, double mr, perf_metrics_t data,
 
     if(data.target_data) {
         if(data.my_node < data.midpt) {
-            printf("initator:\n");
+            printf("initiator:\n");
         } else  {
             printf("target:\n");
         }
