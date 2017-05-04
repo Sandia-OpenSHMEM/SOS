@@ -261,10 +261,10 @@ UpdateTable(uint64_t *Table,
             uint64_t MinLocalTableSize,
             uint64_t Top,
             int Remainder,
-            int64_t niterate,
+            uint64_t niterate,
             int use_lock)
 {
-  int64_t iterate;
+  uint64_t iterate;
   int index;
   uint64_t ran, remote_val, global_offset;
   int remote_pe;
@@ -307,7 +307,7 @@ SHMEMRandomAccess(void)
   int NumProcs, MyProc;
   int Remainder;            /* Number of processors with (LocalTableSize + 1) entries */
   uint64_t Top;               /* Number of table entries in top of Table */
-  int64_t LocalTableSize;    /* Local table width */
+  uint64_t LocalTableSize;    /* Local table width */
   uint64_t MinLocalTableSize; /* Integer ratio TableSize/NumProcs */
   uint64_t logTableSize, TableSize;
 
