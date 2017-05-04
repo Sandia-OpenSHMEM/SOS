@@ -33,7 +33,7 @@ void inline uni_dir_bw(int len, perf_metrics_t *metric_info)
     int dest = partner_node(*metric_info);
     int snode = (metric_info->num_pes != 1)? streaming_node(*metric_info) : true;
 
-    if(metric_info->target_data && metric_info->bwstyle == STYLE_PUT) {
+    if(metric_info->target_data) {
         target_bw_itr(len, metric_info);
         return;
     }

@@ -227,9 +227,11 @@ void static command_line_arg_check(int argc, char *argv[],
             break;
         case 'w':
             metric_info->window_size = strtoul(optarg, (char **)NULL, 0);
+            if(metric_info->target_data) error = true;
             break;
         case 't':
             metric_info->target_data = true;
+            metric_info->window_size = 1;
             if(metric_info->validate) error = true;
             break;
         case 'r':
@@ -265,7 +267,7 @@ void static command_line_arg_check(int argc, char *argv[],
                     ": lengths should be a power of two \n" \
                     "[-n trials (must be greater than 2*warmup (default: x => 100))] \n"\
                     "[-p warm-up (see trials for value restriction)] \n"\
-                    "[-w window size - iterations between completion] \n"\
+                    "[-w window size - iterations between completion, cannot use with -t] \n"\
                     "[-k (kilobytes/second)] [-b (bytes/second)] \n"\
                     "[-v (validate data stream)] \n"\
                     "[-t output data for target side (default is initiator,"\
