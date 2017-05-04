@@ -319,7 +319,7 @@ SHMEMRandomAccess(void)
   uint64_t NumUpdates_Default; /* Number of updates to table (suggested: 4x number of table entries) */
   uint64_t NumUpdates;  /* actual number of updates to table - may be smaller than
                        * NumUpdates_Default due to execution time bounds */
-  int64_t ProcNumUpdates; /* number of updates per processor */
+  uint64_t ProcNumUpdates; /* number of updates per processor */
 
   static long pSync_bcast[SHMEM_BCAST_SYNC_SIZE];
   static long long int llpWrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
