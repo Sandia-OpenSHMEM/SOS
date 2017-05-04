@@ -38,7 +38,7 @@
       complex(kind=8) pwrkd(max(nr/2+1,shmem_reduce_min_wrkdata_size))
       common /com/ z_src, z_target, pwrk
       common /com/ zd_src, zd_target, pwrkd
-      integer npes, me
+      integer shmem_my_pe, shmem_n_pes, npes, me
       complex(kind=4) exp_result(nr)
       complex(kind=8) exp_result_d(nr)
 
