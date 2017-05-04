@@ -35,7 +35,7 @@ $1(float,      float,      `SHM_INTERNAL_FLOAT')$2
 $1(double,     double,     `SHM_INTERNAL_DOUBLE')')dnl
 dnl
 define(`SHMEM_BIND_C_BITWISE_AMO', dnl args: macro_name, end
-`$1(uint,      unsigned int,       `SHM_INTERNAL_UINT')$2
+`$1(uint,       unsigned int,       `SHM_INTERNAL_UINT')$2
 $1(ulong,      unsigned long,      `SHM_INTERNAL_ULONG')$2
 $1(ulonglong,  unsigned long long, `SHM_INTERNAL_ULONG_LONG')$2
 $1(int32,      int32_t,            `SHM_INTERNAL_INT32')$2
