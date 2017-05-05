@@ -101,6 +101,8 @@ main(int argc, char* argv[])
     assert(shared_uint32 == XOR_MASK);
     assert(shared_uint64 == XOR_MASK);
 
+    shmem_barrier_all();
+
     /*
      * Test fetching XOR. Prior to this block, all shared variables contain the
      * value XOR_MASK. Here, we XOR them with XOR_MASK2.
@@ -122,6 +124,8 @@ main(int argc, char* argv[])
     assert(fetched_int64 == XOR_MASK); assert(shared_int64 == ((int64_t)XOR_MASK ^ (int64_t)XOR_MASK2));
     assert(fetched_uint32 == XOR_MASK); assert(shared_uint32 == ((uint32_t)XOR_MASK ^ (uint32_t)XOR_MASK2));
     assert(fetched_uint64 == XOR_MASK); assert(shared_uint64 == ((uint64_t)XOR_MASK ^ (uint64_t)XOR_MASK2));
+
+    shmem_barrier_all();
 
     /*
      * Test non-fetching OR. Prior to this block, all shared variables have the
@@ -146,6 +150,8 @@ main(int argc, char* argv[])
     assert(shared_uint32 == 0xffff);
     assert(shared_uint64 == 0xffff);
 
+    shmem_barrier_all();
+
     /*
      * Test fetching OR. Prior to this block, all shared variables have the
      * value (XOR_MASK ^ XOR_MASK2) | OR_MASK (i.e. 0xffff). Here we OR with
@@ -169,6 +175,8 @@ main(int argc, char* argv[])
     assert(fetched_uint32 == 0xffff); assert(shared_uint32 == (uint32_t)0xffffff);
     assert(fetched_uint64 == 0xffff); assert(shared_uint64 == (uint64_t)0xffffff);
 
+    shmem_barrier_all();
+
     /*
      * Test non-fetching AND. All shared variables store the value 0xffffff.
      * Here, we AND with 0xffff00.
@@ -190,6 +198,8 @@ main(int argc, char* argv[])
     assert(shared_int64     == AND_MASK);
     assert(shared_uint32    == AND_MASK);
     assert(shared_uint64    == AND_MASK);
+
+    shmem_barrier_all();
 
     /*
      * Test fetching AND. All shared variables store the value 0xffff00. Here,
