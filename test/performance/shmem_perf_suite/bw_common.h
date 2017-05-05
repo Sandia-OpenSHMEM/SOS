@@ -139,9 +139,8 @@ int static inline partner_node(perf_metrics_t my_info)
     if(my_info.cstyle == COMM_PAIRWISE) {
         int pairs = my_info.midpt;
 
-        return (my_info.my_node < pairs ?
-            ((my_info.my_node + pairs) % (my_info.sztarget + pairs)) :
-            (my_info.my_node - pairs) % my_info.szinitiator);
+        return (my_info.my_node < pairs ? (my_info.my_node + pairs) :
+            (my_info.my_node - pairs));
     } else {
         assert(my_info.cstyle == COMM_INCAST);
         return INCAST_PE;
@@ -237,12 +236,14 @@ void static command_line_arg_check(int argc, char *argv[],
         case 'r':
             metric_info->sztarget = strtoul(optarg, (char **)NULL, 0);
             if(metric_info->sztarget > metric_info->midpt ||
-                metric_info->szinitiator < metric_info->midpt) error = true;
+                metric_info->szinitiator < metric_info->midpt ||
+                !metric_info->target_data) error = true;
             break;
         case 'l':
             metric_info->szinitiator = strtoul(optarg, (char **)NULL, 0);
             if(metric_info->szinitiator > metric_info->midpt ||
-                metric_info->sztarget < metric_info->midpt) error = true;
+                metric_info->sztarget < metric_info->midpt ||
+                !metric_info->target_data) error = true;
             break;
         default:
             error = true;
@@ -274,8 +275,9 @@ void static command_line_arg_check(int argc, char *argv[],
                     " only use with put_bw),\n cannot be used in conjunction "\
                     "with validate, special sizes used, \ntrials" \
                     " + warmup * sizes (8/4KB) <= max length \n" \
-                    "[-r number of nodes at target] \n" \
-                    "[-l number of nodes at initiator] \n");
+                    "[-r number of nodes at target, use only with -t] \n" \
+                    "[-l number of nodes at initiator, use only with -t, " \
+                    "l/r cannot be used together] \n");
         }
 #ifndef VERSION_1_0
         shmem_finalize();
