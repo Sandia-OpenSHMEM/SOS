@@ -202,7 +202,10 @@ static void *mmap_alloc(size_t bytes)
                fd,
                0);
     if (ret == MAP_FAILED) {
-        RAISE_WARN_MSG("symmetric heap setup failed (%zuB), reduce SHMEM_SYMMETRIC_SIZE\n", bytes);
+        RAISE_WARN_MSG("Unable to allocate sym. heap, size %zuB: %s\n"
+                       RAISE_PE_PREFIX
+                       "Try reducing SHMEM_SYMMETRIC_SIZE or number of PEs per node\n",
+                       bytes, strerror(errno), shmem_internal_my_pe);
         ret = NULL;
     }
     if (fd) {
