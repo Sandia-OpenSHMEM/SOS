@@ -212,21 +212,21 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     /* create symmetric heap */
     ret = shmem_internal_symmetric_init(heap_size, heap_use_malloc);
     if (0 != ret) {
-        RETURN_ERROR_MSG("symmetric heap initialization failed: %d\n", ret);
+        RETURN_ERROR_MSG("Symmetric heap initialization failed (%d)\n", ret);
         goto cleanup;
     }
 
     /* Initialize transport devices */
     ret = shmem_transport_init(eager_size);
     if (0 != ret) {
-        RETURN_ERROR_STR("Transport init failed");
+        RETURN_ERROR_MSG("Transport init failed (%d)\n", ret);
         goto cleanup;
     }
     transport_initialized = 1;
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_init(eager_size);
     if (0 != ret) {
-        RETURN_ERROR_STR("XPMEM init failed");
+        RETURN_ERROR_MSG("XPMEM init failed (%d)\n", ret);
         goto cleanup;
     }
     xpmem_initialized = 1;
@@ -235,7 +235,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 #ifdef USE_CMA
     ret = shmem_transport_cma_init(eager_size);
     if (0 != ret) {
-        RETURN_ERROR_STR("CMA init failed");
+        RETURN_ERROR_MSG("CMA init failed (%d)\n", ret);
         goto cleanup;
     }
     cma_initialized = 1;
@@ -244,35 +244,35 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     /* exchange information */
     ret = shmem_runtime_exchange();
     if (0 != ret) {
-        RETURN_ERROR_MSG("runtime exchange failed: %d\n", ret);
+        RETURN_ERROR_MSG("Runtime exchange failed (%d)\n", ret);
         goto cleanup;
     }
 
     /* finish transport initialization after information sharing. */
     ret = shmem_transport_startup();
     if (0 != ret) {
-        RETURN_ERROR_STR("Transport startup failed");
+        RETURN_ERROR_MSG("Transport startup failed (%d)\n", ret);
         goto cleanup;
     }
 
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_startup();
     if (0 != ret) {
-        RETURN_ERROR_STR("XPMEM startup failed");
+        RETURN_ERROR_MSG("XPMEM startup failed (%d)\n", ret);
         goto cleanup;
     }
 #endif
 #ifdef USE_CMA
     ret = shmem_transport_cma_startup();
     if (0 != ret) {
-        RETURN_ERROR_STR("CMA startup failed");
+        RETURN_ERROR_MSG("CMA startup failed (%d)\n", ret);
         goto cleanup;
     }
 #endif
 
     ret = shmem_internal_collectives_init(crossover, radix);
     if (ret != 0) {
-        RETURN_ERROR_MSG("initialization of collectives failed: %d\n", ret);
+        RETURN_ERROR_MSG("Initialization of collectives failed (%d)\n", ret);
         goto cleanup;
     }
 

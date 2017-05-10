@@ -186,7 +186,7 @@ shmem_internal_op_to_all(void *target, const void *source, int count,
                                                PE_start, logPE_stride, PE_size,
                                                pWrk, pSync, op, datatype);
             break;
-    default:
+        default:
             RAISE_ERROR_MSG("Illegal reduction type (%d)\n",
                             shmem_internal_reduce_type);
     }

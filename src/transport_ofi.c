@@ -563,13 +563,13 @@ int publish_mr_info(void)
 
         err = shmem_runtime_put("fi_heap_key", &heap_key, sizeof(uint64_t));
         if (err) {
-            RAISE_WARN_STR("Error putting heap key to runtime KVS");
+            RAISE_WARN_STR("Put of heap key to runtime KVS failed");
             return 1;
         }
 
         err = shmem_runtime_put("fi_data_key", &data_key, sizeof(uint64_t));
         if (err) {
-            RAISE_WARN_STR("Error putting data segment key to runtime KVS");
+            RAISE_WARN_STR("Put of data segment key to runtime KVS failed");
             return 1;
         }
     }
@@ -579,13 +579,13 @@ int publish_mr_info(void)
         int err;
         err = shmem_runtime_put("fi_heap_addr", &shmem_internal_heap_base, sizeof(uint8_t*));
         if (err) {
-            RAISE_WARN_STR("Error putting heap address to runtime KVS");
+            RAISE_WARN_STR("Put of heap address to runtime KVS failed");
             return 1;
         }
 
         err = shmem_runtime_put("fi_data_addr", &shmem_internal_data_base, sizeof(uint8_t*));
         if (err) {
-            RAISE_WARN_STR("Error putting data segment address to runtime KVS");
+            RAISE_WARN_STR("Put of data segment address to runtime KVS failed");
             return 1;
         }
     }
@@ -620,14 +620,14 @@ int populate_mr_tables(void)
                                     &shmem_transport_ofi_target_heap_keys[i],
                                     sizeof(uint64_t));
             if (err) {
-                RAISE_WARN_STR("Error getting heap key from runtime KVS");
+                RAISE_WARN_STR("Get of heap key from runtime KVS failed");
                 return 1;
             }
             err = shmem_runtime_get(i, "fi_data_key",
                                     &shmem_transport_ofi_target_data_keys[i],
                                     sizeof(uint64_t));
             if (err) {
-                RAISE_WARN_STR("Error getting data segment key from runtime KVS");
+                RAISE_WARN_STR("Get of data segment key from runtime KVS failed");
                 return 1;
             }
         }
@@ -655,14 +655,14 @@ int populate_mr_tables(void)
                                     &shmem_transport_ofi_target_heap_addrs[i],
                                     sizeof(uint8_t*));
             if (err) {
-                RAISE_WARN_STR("Error getting heap addr from runtime KVS");
+                RAISE_WARN_STR("Get of heap addr from runtime KVS failed");
                 return 1;
             }
             err = shmem_runtime_get(i, "fi_data_addr",
                                     &shmem_transport_ofi_target_data_addrs[i],
                                     sizeof(uint8_t*));
             if (err) {
-                RAISE_WARN_STR("Error getting data segment addr from runtime KVS");
+                RAISE_WARN_STR("Get of data segment addr from runtime KVS failed");
                 return 1;
             }
         }
@@ -680,16 +680,11 @@ int atomicvalid_rtncheck(int ret, int atomic_size,
                          char strOP[], char strDT[])
 {
     if ((ret != 0 || atomic_size == 0) && atomic_sup != ATOMIC_SOFT_SUPPORT) {
-        if (atomic_sup == ATOMIC_WARNINGS) {
-            RAISE_WARN_MSG("Warning OFI detected no support for atomic '%s' "
-                           "on type '%s'\n", strOP, strDT);
-        }
-        else if (atomic_sup == ATOMIC_NO_SUPPORT) {
-            RAISE_WARN_MSG("Error: atomicvalid ret=%d atomic_size=%d\n",
-                           ret, atomic_size);
-            return ret;
-        } else {
-            RAISE_ERROR_STR("Error: invalid software atomic support request");
+        RAISE_WARN_MSG("Provider does not support atomic '%s' "
+                       "on type '%s' (%d, %d)\n", strOP, strDT, ret, atomic_size);
+
+        if (atomic_sup != ATOMIC_WARNINGS) {
+            return ret ? ret : -1;
         }
     }
 
@@ -898,7 +893,7 @@ int populate_av(void)
         if (strncmp(myephostname, ephostname, EPHOSTNAMELEN) == 0) {
             SHMEM_SET_RANK_SAME_NODE(i, num_on_node++);
             if (num_on_node > 255) {
-                RAISE_WARN_STR("ERROR: Too many local ranks");
+                RAISE_WARN_STR("Number of local ranks exceeds limit (255)");
                 return 1;
             }
         }
