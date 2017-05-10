@@ -202,7 +202,7 @@ static void *mmap_alloc(size_t bytes)
                fd,
                0);
     if (ret == MAP_FAILED) {
-        RAISE_WARN_STR("mmap for symmetric heap failed");
+        RAISE_WARN_MSG("symmetric heap setup failed (%zuB), reduce SHMEM_SYMMETRIC_SIZE\n", bytes);
         ret = NULL;
     }
     if (fd) {
