@@ -655,14 +655,14 @@ int populate_mr_tables(void)
                                     &shmem_transport_ofi_target_heap_addrs[i],
                                     sizeof(uint8_t*));
             if (err) {
-                RAISE_WARN_STR("Get of heap addr from runtime KVS failed");
+                RAISE_WARN_STR("Get of heap address from runtime KVS failed");
                 return 1;
             }
             err = shmem_runtime_get(i, "fi_data_addr",
                                     &shmem_transport_ofi_target_data_addrs[i],
                                     sizeof(uint8_t*));
             if (err) {
-                RAISE_WARN_STR("Get of data segment addr from runtime KVS failed");
+                RAISE_WARN_STR("Get of data segment address from runtime KVS failed");
                 return 1;
             }
         }
@@ -893,7 +893,7 @@ int populate_av(void)
         if (strncmp(myephostname, ephostname, EPHOSTNAMELEN) == 0) {
             SHMEM_SET_RANK_SAME_NODE(i, num_on_node++);
             if (num_on_node > 255) {
-                RAISE_WARN_STR("Number of local ranks exceeds limit (255)");
+                RAISE_WARN_STR("Number of local ranks exceeds limit of 255");
                 return 1;
             }
         }
