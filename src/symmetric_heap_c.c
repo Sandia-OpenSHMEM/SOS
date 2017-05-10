@@ -22,6 +22,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <inttypes.h>
+#include <errno.h>
 #ifdef __linux__
 #include <mntent.h>
 #include <sys/vfs.h>
