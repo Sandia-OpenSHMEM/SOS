@@ -214,7 +214,7 @@ shmem_runtime_exchange(void)
     }
 
     if (PMI_SUCCESS != PMI_Barrier()) {
-        return 5;
+        return 6;
     }
 
     return 0;

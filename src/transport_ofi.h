@@ -97,8 +97,7 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
     } else {
         *key = 0;
         *mr_addr = NULL;
-        RAISE_ERROR_MSG("[%03d] ERROR in %s: address (0x%p) outside of symmetric areas\n",
-                        shmem_internal_my_pe, __func__, addr);
+        RAISE_ERROR_MSG("address (0x%p) outside of symmetric areas\n", addr);
     }
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 
@@ -133,8 +132,7 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
     else {
         *key = -1;
         *mr_addr = NULL;
-        RAISE_ERROR_MSG("[%03d] ERROR in %s: address (0x%p) outside of symmetric areas\n",
-                        shmem_internal_my_pe, __func__, addr);
+        RAISE_ERROR_MSG("address (0x%p) outside of symmetric areas\n", addr);
     }
 }
 #endif
@@ -231,6 +229,7 @@ void shmem_transport_ofi_drain_cq(void)
                 OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
             } else {
                 if (ret) {
+                    /* Can't call OFI_RET_CHECK because ret is ssize_t */
                     RAISE_ERROR_MSG("OFI error #%zd: %s\n", ret, fi_strerror(ret));
                 }
             }
@@ -269,7 +268,7 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(const void *source,
 
     /* if LL empty = error, should've been avoided with EQ drain */
     if (NULL == buff)
-        RAISE_ERROR_STR("Error allocating bounce buffer");
+        RAISE_ERROR_STR("Bounce buffer allocation failed");
 
     shmem_internal_assert(buff->frag.mytype == SHMEM_TRANSPORT_OFI_TYPE_BOUNCE);
 
@@ -786,7 +785,7 @@ void shmem_transport_atomic_nb(void *target, const void *source,
     max_atomic_size = max_atomic_size * SHMEM_Dtsize[datatype];
     if (max_atomic_size > shmem_transport_ofi_max_msg_size
         || ret || max_atomic_size == 0) {
-        RAISE_ERROR_MSG("atomic_nb error: datatype %d x op %d not supported\n",
+        RAISE_ERROR_MSG("Atomic operation with datatype %d and op %d not supported\n",
                         datatype, op);
     }
 

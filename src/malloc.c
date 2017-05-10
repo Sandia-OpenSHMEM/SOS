@@ -533,6 +533,7 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 #include <stdio.h>
 #include <time.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include "shmem_internal.h"
 
 #define USE_DL_PREFIX 1
@@ -543,19 +544,16 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 #define HAVE_MREMAP 0
 #define USAGE_ERROR_ACTION(m, p)                                        \
     do {                                                                \
-        fprintf(stderr,                                                 \
-                "[%03d] ERROR: symmetric heap usage error detected, possibly at 0x%lx.\n", \
-                shmem_internal_my_pe, (unsigned long) p);               \
-         fflush(NULL);                                                  \
+        RETURN_ERROR_MSG("Symmetric heap usage error detected, "        \
+                         "possibly at 0x%"PRIXPTR"\n", (uintptr_t) p);  \
+        fflush(NULL);                                                   \
         ABORT;                                                          \
     } while (0)
 
 #define CORRUPTION_ERROR_ACTION(m)                                      \
     do {                                                                \
-        fprintf(stderr,                                                 \
-                "[%03d] ERROR: symmetric heap data structure corruption found.\n", \
-                shmem_internal_my_pe);                                  \
-         fflush(NULL);                                                  \
+        RETURN_ERROR_STR("Symmetric heap data structure corruption found"); \
+        fflush(NULL);                                                   \
         ABORT;                                                          \
     } while (0)
 

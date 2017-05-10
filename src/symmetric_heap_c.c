@@ -22,6 +22,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <inttypes.h>
+#include <errno.h>
 #ifdef __linux__
 #include <mntent.h>
 #include <sys/vfs.h>
@@ -127,15 +128,13 @@ shmem_internal_get_next(intptr_t incr)
 
     shmem_internal_heap_curr += incr;
     if (shmem_internal_heap_curr < (char*) shmem_internal_heap_base) {
-        fprintf(stderr, "[%03d] WARNING: symmetric heap pointer pushed below start\n",
-                shmem_internal_my_pe);
+        RAISE_WARN_STR("symmetric heap pointer pushed below start");
         shmem_internal_heap_curr = (char*) shmem_internal_heap_base;
     } else if (shmem_internal_heap_curr - (char*) shmem_internal_heap_base >
                shmem_internal_heap_length) {
-        fprintf(stderr, "[%03d] WARNING: Out of symmetric memory, heap size %ld, overrun %"PRIdPTR"\n"
-                        "[%03d]          Try increasing SHMEM_SYMMETRIC_SIZE\n",
-                        shmem_internal_my_pe, shmem_internal_heap_length, incr,
-                        shmem_internal_my_pe);
+        RAISE_WARN_MSG("Out of symmetric memory, heap size %ld, overrun %"PRIdPTR"\n"
+                       RAISE_PE_PREFIX "Try increasing SHMEM_SYMMETRIC_SIZE\n",
+                       shmem_internal_heap_length, incr, shmem_internal_my_pe);
         shmem_internal_heap_curr = orig;
         orig = (void*) -1;
     }
@@ -204,7 +203,10 @@ static void *mmap_alloc(size_t bytes)
                fd,
                0);
     if (ret == MAP_FAILED) {
-        RAISE_WARN_MSG("symmetric heap setup failed (%zuB), reduce SHMEM_SYMMETRIC_SIZE\n", bytes);
+        RAISE_WARN_MSG("Unable to allocate sym. heap, size %zuB: %s\n"
+                       RAISE_PE_PREFIX
+                       "Try reducing SHMEM_SYMMETRIC_SIZE or number of PEs per node\n",
+                       bytes, strerror(errno), shmem_internal_my_pe);
         ret = NULL;
     }
     if (fd) {

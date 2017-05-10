@@ -173,8 +173,7 @@ void static inline shmem_internal_reduce_local(shm_internal_op_t op,
         REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_SIGNED_BYTE, int8, int8_t);
 
         default:
-            printf("invalid data type (%d)", (int) datatype);
-            RAISE_ERROR_STR("invalid data type");
+            RAISE_ERROR_MSG("invalid data type (%d)", (int) datatype);
     }
 }
 

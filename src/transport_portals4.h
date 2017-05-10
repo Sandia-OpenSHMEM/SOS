@@ -20,6 +20,8 @@
 #include <portals4.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include <inttypes.h>
 
 #include "shmem_free_list.h"
 
@@ -169,9 +171,8 @@ typedef struct shmem_transport_ct_t shmem_transport_ct_t;
         } else {                                                        \
             offset = 0;                                                 \
             pt = -1;                                                    \
-            printf("[%03d] ERROR: target (0x%lx) outside of symmetric areas\n", \
-                   shmem_internal_my_pe, (unsigned long) target);       \
-            RAISE_ERROR(1);                                             \
+            RAISE_ERROR_MSG("target (0x%"PRIXPTR") outside of symmetric areas\n", \
+                            (uintptr_t) target);                        \
         }                                                               \
         pt = shr_pt;                                                    \
         offset = (uintptr_t) target;                                    \
@@ -190,9 +191,8 @@ typedef struct shmem_transport_ct_t shmem_transport_ct_t;
         } else {                                                        \
             offset = 0;                                                 \
             pt = -1;                                                    \
-            printf("[%03d] ERROR: target (0x%lx) outside of symmetric areas\n", \
-                   shmem_internal_my_pe, (unsigned long) target);       \
-            RAISE_ERROR(1);                                             \
+            RAISE_ERROR_MSG("target (0x%"PRIXPTR") outside of symmetric areas\n", \
+                            (uintptr_t) target);                        \
         }                                                               \
     } while (0)
 #endif
@@ -1100,15 +1100,11 @@ void shmem_transport_portals4_ct_attach(ptl_handle_ct_t ptl_ct, void *seg_base,
                      des_pt,
                      seg_pt);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlPTAlloc of data table failed: %d\n",
-                shmem_internal_my_pe, ret);
-        RAISE_ERROR(ret);
+        RAISE_ERROR_MSG("PtlPTAlloc of data table failed: %d\n", ret);
     }
     if (*seg_pt != des_pt) {
-        fprintf(stderr, "[%03d] ERROR: data portal table index mis-match: "
-                "desired = %d, actual = %d\n",
-                shmem_internal_my_pe, des_pt, *seg_pt);
-        RAISE_ERROR(-1);
+        RAISE_ERROR_MSG("data portal table index mis-match: "
+                        "desired = %d, actual = %d\n", des_pt, *seg_pt);
     }
 
     /* Open LE to data segment */
@@ -1127,9 +1123,7 @@ void shmem_transport_portals4_ct_attach(ptl_handle_ct_t ptl_ct, void *seg_base,
                       NULL,
                       seg_le);
     if (PTL_OK != ret) {
-        fprintf(stderr, "[%03d] ERROR: PtlLEAppend of data section failed: %d\n",
-                shmem_internal_my_pe, ret);
-        RAISE_ERROR(ret);
+        RAISE_ERROR_MSG("PtlLEAppend of data section failed: %d\n", ret);
     }
 }
 
