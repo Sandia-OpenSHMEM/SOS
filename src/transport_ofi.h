@@ -53,7 +53,8 @@ extern uint64_t                         shmem_transport_ofi_pending_put_counter;
 extern uint64_t                         shmem_transport_ofi_pending_get_counter;
 extern uint64_t                         shmem_transport_ofi_pending_cq_count;
 extern uint64_t                         shmem_transport_ofi_max_poll;
-extern uint64_t                         shmem_transport_ofi_poll_limit;
+extern uint64_t                         shmem_transport_ofi_put_poll_limit;
+extern uint64_t                         shmem_transport_ofi_get_poll_limit;
 extern size_t                           shmem_transport_ofi_max_buffered_send;
 extern size_t                           shmem_transport_ofi_max_msg_size;
 extern size_t                           shmem_transport_ofi_bounce_buffer_size;
@@ -304,7 +305,7 @@ void shmem_transport_put_quiet(void)
     } while (success < shmem_transport_ofi_pending_put_counter);
 #else
     uint64_t success = 0, fail, poll_count = 0;
-    while (poll_count < shmem_transport_ofi_poll_limit && \
+    while (poll_count < shmem_transport_ofi_put_poll_limit && \
            success < shmem_transport_ofi_pending_put_counter) {
         success = fi_cntr_read(shmem_transport_ofi_put_cntrfd);
         fail    = fi_cntr_readerr(shmem_transport_ofi_put_cntrfd);
@@ -576,7 +577,7 @@ void shmem_transport_get_wait(void)
     } while (success < shmem_transport_ofi_pending_get_counter);
 #else
     uint64_t success = 0, fail, poll_count = 0;
-    while (poll_count < shmem_transport_ofi_poll_limit && \
+    while (poll_count < shmem_transport_ofi_get_poll_limit && \
            success < shmem_transport_ofi_pending_get_counter) {
         success = fi_cntr_read(shmem_transport_ofi_get_cntrfd);
         fail    = fi_cntr_readerr(shmem_transport_ofi_get_cntrfd);

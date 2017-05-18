@@ -193,6 +193,23 @@ options.
         If defined, OFI will not abort if fabric provider doesn't support every data
         type x op combination, instead it will print a warning.
 
+    SMA_OFI_GLOBAL_POLL_LIMIT (default: 0)
+        If defined, sets the maximum number of iterations through the put
+        (quiet) and get (wait) polling loops.  Setting this to -1 enables
+        continuous completion polling (i.e. there is no polling limit).  The
+        default behavior is to call fi_cntr_wait without polling.  If set, this
+        value overrides both SMA_OFI_PUT_POLL_LIMIT and SMA_OFI_GET_POLL_LIMIT.
+
+    SMA_OFI_PUT_POLL_LIMIT (default: 0)
+        Similar to SMA_OFI_GLOBAL_POLL_LIMIT, but only sets the maximum polling
+        limit for put (quiet) operations.  Setting SMA_OFI_GLOBAL_POLL_LIMIT
+        overrides SMA_OFI_PUT_POLL_LIMIT.
+
+    SMA_OFI_GET_POLL_LIMIT (default: 0)
+        Similar to SMA_OFI_GLOBAL_POLL_LIMIT, but only sets the maximum polling
+        limit for get (wait) operations.  Setting SMA_OFI_GLOBAL_POLL_LIMIT
+        overrides SMA_OFI_GET_POLL_LIMIT.
+
   Debugging Environment variables:
 
     SMA_DEBUG (default: off)
