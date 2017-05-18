@@ -19,6 +19,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #if HAVE_FNMATCH_H
 #include <fnmatch.h>
@@ -76,6 +77,7 @@ uint64_t                        shmem_transport_ofi_pending_put_counter;
 uint64_t                        shmem_transport_ofi_pending_get_counter;
 uint64_t                        shmem_transport_ofi_pending_cq_count;
 uint64_t                        shmem_transport_ofi_max_poll;
+uint64_t                        shmem_transport_ofi_poll_limit;
 size_t                          shmem_transport_ofi_max_buffered_send;
 size_t                          shmem_transport_ofi_max_msg_size;
 size_t                          shmem_transport_ofi_bounce_buffer_size;
@@ -1121,6 +1123,12 @@ int shmem_transport_init(long eager_size)
         shmem_free_list_init(sizeof(shmem_transport_ofi_bounce_buffer_t)
                              + eager_size, init_bounce_buffer);
 
+    if (NULL != shmem_util_getenv_str("OFI_POLL_LIMIT")) {
+        shmem_transport_ofi_poll_limit = shmem_util_getenv_long("OFI_POLL_LIMIT", 0, DEFAULT_POLL_LIMIT);
+        shmem_transport_ofi_poll_limit = ( shmem_transport_ofi_poll_limit == -1 ? \
+                                           UINT64_MAX : shmem_transport_ofi_poll_limit );
+    }
+
     ret = allocate_fabric_resources(&info);
 
     if (ret!=0)
@@ -1197,6 +1205,8 @@ void shmem_transport_print_info(void)
            (NULL != shmem_util_getenv_str("OFI_ATOMIC_CHECKS_WARN")) ?
            "Set" : "Not set");
     printf("\tDisplay warnings about unsupported atomic operations\n");
+    printf("SMA_OFI_POLL_LIMIT      %ld\n", shmem_util_getenv_long("OFI_POLL_LIMIT", 0, DEFAULT_POLL_LIMIT));
+    printf("\tMax # of polls for remote/local completions is %"PRIu64"\n", shmem_transport_ofi_poll_limit);
 }
 
 int shmem_transport_fini(void)

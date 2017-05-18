@@ -53,6 +53,7 @@ extern uint64_t                         shmem_transport_ofi_pending_put_counter;
 extern uint64_t                         shmem_transport_ofi_pending_get_counter;
 extern uint64_t                         shmem_transport_ofi_pending_cq_count;
 extern uint64_t                         shmem_transport_ofi_max_poll;
+extern uint64_t                         shmem_transport_ofi_poll_limit;
 extern size_t                           shmem_transport_ofi_max_buffered_send;
 extern size_t                           shmem_transport_ofi_max_msg_size;
 extern size_t                           shmem_transport_ofi_bounce_buffer_size;
@@ -302,12 +303,29 @@ void shmem_transport_put_quiet(void)
         }
     } while (success < shmem_transport_ofi_pending_put_counter);
 #else
-    int ret = fi_cntr_wait(shmem_transport_ofi_put_cntrfd,
-                           shmem_transport_ofi_pending_put_counter, -1);
-    if (ret) {
-        struct fi_cq_err_entry e = {0};
-        fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
-        OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
+    uint64_t success = 0, fail, poll_count = 0;
+    while (poll_count < shmem_transport_ofi_poll_limit && \
+           success < shmem_transport_ofi_pending_put_counter) {
+        success = fi_cntr_read(shmem_transport_ofi_put_cntrfd);
+        fail    = fi_cntr_readerr(shmem_transport_ofi_put_cntrfd);
+
+        if (success < shmem_transport_ofi_pending_put_counter && fail == 0) {
+            SPINLOCK_BODY();
+        } else if (fail) {
+            struct fi_cq_err_entry e = {0};
+            fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
+            OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
+        }
+        poll_count++;
+    }
+    if (success < shmem_transport_ofi_pending_put_counter) {
+        int ret = fi_cntr_wait(shmem_transport_ofi_put_cntrfd,
+                               shmem_transport_ofi_pending_put_counter, -1);
+        if (ret) {
+            struct fi_cq_err_entry e = {0};
+            fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
+            OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
+        }
     }
 #endif
 }
@@ -557,12 +575,29 @@ void shmem_transport_get_wait(void)
         }
     } while (success < shmem_transport_ofi_pending_get_counter);
 #else
-    int ret = fi_cntr_wait(shmem_transport_ofi_get_cntrfd,
-                           shmem_transport_ofi_pending_get_counter, -1);
-    if (ret) {
-        struct fi_cq_err_entry e = {0};
-        fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
-        OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
+    uint64_t success = 0, fail, poll_count = 0;
+    while (poll_count < shmem_transport_ofi_poll_limit && \
+           success < shmem_transport_ofi_pending_get_counter) {
+        success = fi_cntr_read(shmem_transport_ofi_get_cntrfd);
+        fail    = fi_cntr_readerr(shmem_transport_ofi_get_cntrfd);
+
+        if (success < shmem_transport_ofi_pending_get_counter && fail == 0) {
+            SPINLOCK_BODY();
+        } else if (fail) {
+            struct fi_cq_err_entry e = {0};
+            fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
+            OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
+        }
+        poll_count++;
+    }
+    if (success < shmem_transport_ofi_pending_get_counter) {
+        int ret = fi_cntr_wait(shmem_transport_ofi_get_cntrfd,
+                               shmem_transport_ofi_pending_get_counter, -1);
+        if (ret) {
+            struct fi_cq_err_entry e = {0};
+            fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
+            OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
+        }
     }
 #endif
 }
