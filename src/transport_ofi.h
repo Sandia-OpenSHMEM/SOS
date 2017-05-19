@@ -288,22 +288,6 @@ void shmem_transport_put_quiet(void)
     }
 
     /* wait for put counter to meet outstanding count value */
-#ifdef ENABLE_COMPLETION_POLLING
-    uint64_t success, fail;
-    do {
-        success = fi_cntr_read(shmem_transport_ofi_put_cntrfd);
-        fail = fi_cntr_readerr(shmem_transport_ofi_put_cntrfd);
-
-        if (success < shmem_transport_ofi_pending_put_counter && fail == 0) {
-            SPINLOCK_BODY();
-        }
-        else if (fail) {
-            struct fi_cq_err_entry e = {0};
-            fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
-            OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
-        }
-    } while (success < shmem_transport_ofi_pending_put_counter);
-#else
     uint64_t success = 0, fail, poll_count = 0;
     while (poll_count < shmem_transport_ofi_put_poll_limit && \
            success < shmem_transport_ofi_pending_put_counter) {
@@ -328,7 +312,6 @@ void shmem_transport_put_quiet(void)
             OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
         }
     }
-#endif
 }
 
 static inline
@@ -560,22 +543,6 @@ static inline
 void shmem_transport_get_wait(void)
 {
     /* wait for get counter to meet outstanding count value */
-#ifdef ENABLE_COMPLETION_POLLING
-    uint64_t success, fail;
-    do {
-        success = fi_cntr_read(shmem_transport_ofi_get_cntrfd);
-        fail = fi_cntr_readerr(shmem_transport_ofi_get_cntrfd);
-
-        if (success < shmem_transport_ofi_pending_get_counter && fail == 0) {
-            SPINLOCK_BODY();
-        }
-        else if (fail) {
-            struct fi_cq_err_entry e = {0};
-            fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
-            OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
-        }
-    } while (success < shmem_transport_ofi_pending_get_counter);
-#else
     uint64_t success = 0, fail, poll_count = 0;
     while (poll_count < shmem_transport_ofi_get_poll_limit && \
            success < shmem_transport_ofi_pending_get_counter) {
@@ -600,7 +567,6 @@ void shmem_transport_get_wait(void)
             OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
         }
     }
-#endif
 }
 
 
