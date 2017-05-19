@@ -38,6 +38,10 @@ AC_CONFIG_HEADERS([src/config.h])
 
 AC_CANONICAL_HOST
 
+echo 'before attributes'
+OPAL_CHECK_ATTRIBUTES
+echo 'after attributes'
+
 AC_ARG_ENABLE([picky],
     [AC_HELP_STRING([--enable-picky],
                     [Enable developer-level compiler pickyness when building (default: disabled)])])
@@ -481,6 +485,10 @@ esac
 AC_SUBST(aslr_LDFLAGS)
 
 dnl check for library functions
+
+echo 'before visibility'
+OPAL_CHECK_VISIBILITY
+echo 'after visibility'
 
 dnl final output
 
