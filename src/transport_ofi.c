@@ -19,7 +19,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdint.h>
-#include <inttypes.h>
 
 #if HAVE_FNMATCH_H
 #include <fnmatch.h>
@@ -77,8 +76,8 @@ uint64_t                        shmem_transport_ofi_pending_put_counter;
 uint64_t                        shmem_transport_ofi_pending_get_counter;
 uint64_t                        shmem_transport_ofi_pending_cq_count;
 uint64_t                        shmem_transport_ofi_max_poll;
-uint64_t                        shmem_transport_ofi_put_poll_limit;
-uint64_t                        shmem_transport_ofi_get_poll_limit;
+long                            shmem_transport_ofi_put_poll_limit;
+long                            shmem_transport_ofi_get_poll_limit;
 size_t                          shmem_transport_ofi_max_buffered_send;
 size_t                          shmem_transport_ofi_max_msg_size;
 size_t                          shmem_transport_ofi_bounce_buffer_size;
@@ -406,12 +405,12 @@ int allocate_cntr_and_cq(void)
     cntr_get_attr.events   = FI_CNTR_EVENTS_COMP;
 
     /* Set FI_WAIT based on the put and get polling limits defined above */
-    if (shmem_transport_ofi_put_poll_limit == UINT64_MAX) {
+    if (shmem_transport_ofi_put_poll_limit == LONG_MAX) {
         cntr_put_attr.wait_obj = FI_WAIT_NONE;
     } else {
         cntr_put_attr.wait_obj = FI_WAIT_UNSPEC;
     }
-    if (shmem_transport_ofi_get_poll_limit == UINT64_MAX) {
+    if (shmem_transport_ofi_get_poll_limit == LONG_MAX) {
         cntr_get_attr.wait_obj = FI_WAIT_NONE;
     } else {
         cntr_get_attr.wait_obj = FI_WAIT_UNSPEC;
@@ -1133,19 +1132,12 @@ int shmem_transport_init(long eager_size)
         shmem_free_list_init(sizeof(shmem_transport_ofi_bounce_buffer_t)
                              + eager_size, init_bounce_buffer);
 
-    if (NULL != shmem_util_getenv_str("OFI_GLOBAL_POLL_LIMIT")) {
-        shmem_transport_ofi_put_poll_limit = shmem_util_getenv_long("OFI_GLOBAL_POLL_LIMIT", 0, DEFAULT_POLL_LIMIT);
-        shmem_transport_ofi_put_poll_limit = ( shmem_transport_ofi_put_poll_limit == -1 ? \
-                                               UINT64_MAX : shmem_transport_ofi_put_poll_limit );
-        shmem_transport_ofi_get_poll_limit = shmem_transport_ofi_put_poll_limit;
-    } else {
-        shmem_transport_ofi_put_poll_limit = shmem_util_getenv_long("OFI_PUT_POLL_LIMIT", 0, DEFAULT_POLL_LIMIT);
-        shmem_transport_ofi_put_poll_limit = ( shmem_transport_ofi_put_poll_limit == -1 ? \
-                                               UINT64_MAX : shmem_transport_ofi_put_poll_limit );
-        shmem_transport_ofi_get_poll_limit = shmem_util_getenv_long("OFI_GET_POLL_LIMIT", 0, DEFAULT_POLL_LIMIT);
-        shmem_transport_ofi_get_poll_limit = ( shmem_transport_ofi_get_poll_limit == -1 ? \
-                                               UINT64_MAX : shmem_transport_ofi_get_poll_limit );
-    }
+    shmem_transport_ofi_put_poll_limit = shmem_util_getenv_long("OFI_TX_POLL_LIMIT", 0, DEFAULT_POLL_LIMIT);
+    shmem_transport_ofi_put_poll_limit = ( shmem_transport_ofi_put_poll_limit < 0 ? \
+                                           LONG_MAX : shmem_transport_ofi_put_poll_limit );
+    shmem_transport_ofi_get_poll_limit = shmem_util_getenv_long("OFI_RX_POLL_LIMIT", 0, DEFAULT_POLL_LIMIT);
+    shmem_transport_ofi_get_poll_limit = ( shmem_transport_ofi_get_poll_limit < 0 ? \
+                                               LONG_MAX : shmem_transport_ofi_get_poll_limit );
 
     ret = allocate_fabric_resources(&info);
 
@@ -1224,15 +1216,10 @@ void shmem_transport_print_info(void)
            "Set" : "Not set");
     printf("\tDisplay warnings about unsupported atomic operations\n");
 
-    if (NULL != shmem_util_getenv_str("OFI_GLOBAL_POLL_LIMIT")) {
-        printf("SMA_OFI_GLOBAL_POLL_LIMIT      %ld\n", shmem_util_getenv_long("OFI_GLOBAL_POLL_LIMIT", 0, DEFAULT_POLL_LIMIT));
-        printf("\tMax # of polls for put/get completions is %"PRIu64"\n", shmem_transport_ofi_put_poll_limit);
-    } else {
-        printf("SMA_OFI_PUT_POLL_LIMIT  %ld\n", shmem_util_getenv_long("OFI_PUT_POLL_LIMIT", 0, DEFAULT_POLL_LIMIT));
-        printf("\tMax # of polls for put (quiet) completions is %"PRIu64"\n", shmem_transport_ofi_put_poll_limit);
-        printf("SMA_OFI_GET_POLL_LIMIT  %ld\n", shmem_util_getenv_long("OFI_GET_POLL_LIMIT", 0, DEFAULT_POLL_LIMIT));
-        printf("\tMax # of polls for get (wait) completions is %"PRIu64"\n", shmem_transport_ofi_get_poll_limit);
-    }
+    printf("SMA_OFI_TX_POLL_LIMIT  %ld\n", shmem_transport_ofi_put_poll_limit);
+    printf("\tMax # of polls for transmission (put/quiet) completions\n");
+    printf("SMA_OFI_RX_POLL_LIMIT  %ld\n", shmem_transport_ofi_get_poll_limit);
+    printf("\tMax # of polls for receive (get/wait) completions\n");
 
 }
 
