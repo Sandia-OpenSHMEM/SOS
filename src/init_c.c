@@ -47,7 +47,7 @@
 
 #endif /* ENABLE_PROFILING */
 
-void
+void __shmem_function_attributes__
 start_pes(int npes)
 {
     if (shmem_internal_initialized) {
@@ -58,7 +58,7 @@ start_pes(int npes)
 }
 
 
-void
+void __shmem_function_attributes__
 shmem_init(void)
 {
     int tl_provided;
@@ -71,7 +71,7 @@ shmem_init(void)
 }
 
 
-char *
+char __shmem_function_attributes__ *
 shmemx_nodename(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -80,7 +80,7 @@ shmemx_nodename(void)
 }
 
 
-void
+void __shmem_function_attributes__
 shmemx_init_thread(int tl_requested, int *tl_provided)
 {
     if (shmem_internal_initialized) {
@@ -91,7 +91,7 @@ shmemx_init_thread(int tl_requested, int *tl_provided)
 }
 
 
-void
+void __shmem_function_attributes__
 shmem_global_exit(int status)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -100,7 +100,7 @@ shmem_global_exit(int status)
 }
 
 
-void
+void __shmem_function_attributes__
 shmem_finalize(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -109,7 +109,7 @@ shmem_finalize(void)
 }
 
 
-void
+void __shmem_function_attributes__
 shmem_info_get_version(int *major, int *minor)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -119,7 +119,7 @@ shmem_info_get_version(int *major, int *minor)
 }
 
 
-void
+void __shmem_function_attributes__
 shmem_info_get_name(char *name)
 {
     SHMEM_ERR_CHECK_INITIALIZED();

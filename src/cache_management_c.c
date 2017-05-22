@@ -42,7 +42,7 @@
 
 #endif /* ENABLE_PROFILING */
 
-void
+void __shmem_function_attributes__
 shmem_clear_cache_inv(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -51,7 +51,7 @@ shmem_clear_cache_inv(void)
 }
 
 
-void
+void __shmem_function_attributes__
 shmem_set_cache_inv(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -60,7 +60,7 @@ shmem_set_cache_inv(void)
 }
 
 
-void
+void __shmem_function_attributes__
 shmem_clear_cache_line_inv(void *target)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -69,7 +69,7 @@ shmem_clear_cache_line_inv(void *target)
 }
 
 
-void
+void __shmem_function_attributes__
 shmem_set_cache_line_inv(void *target)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -78,7 +78,7 @@ shmem_set_cache_line_inv(void *target)
 }
 
 
-void
+void __shmem_function_attributes__
 shmem_udcflush(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -87,7 +87,7 @@ shmem_udcflush(void)
 }
 
 
-void
+void __shmem_function_attributes__
 shmem_udcflush_line(void *target)
 {
     SHMEM_ERR_CHECK_INITIALIZED();

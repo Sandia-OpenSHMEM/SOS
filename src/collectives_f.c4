@@ -35,7 +35,8 @@ include(shmem_bind_f.m4)dnl
 
 
 #define FC_SHMEM_BARRIER_ALL FC_FUNC_(shmem_barrier_all, SHMEM_BARRIER_ALL)
-void FC_SHMEM_BARRIER_ALL(void);
+void __shmem_function_attributes__
+FC_SHMEM_BARRIER_ALL(void);
 void
 FC_SHMEM_BARRIER_ALL(void)
 {
@@ -46,10 +47,11 @@ FC_SHMEM_BARRIER_ALL(void)
 
 
 #define FC_SHMEM_BARRIER FC_FUNC_(shmem_barrier, SHMEM_BARRIER)
-void FC_SHMEM_BARRIER(fortran_integer_t *PE_start,
-                      fortran_integer_t *logPE_stride,
-                      fortran_integer_t *PE_size,
-                      fortran_integer_t *pSync);
+void __shmem_function_attributes__
+FC_SHMEM_BARRIER(fortran_integer_t *PE_start,
+                 fortran_integer_t *logPE_stride,
+                 fortran_integer_t *PE_size,
+                 fortran_integer_t *pSync);
 void
 FC_SHMEM_BARRIER(fortran_integer_t *PE_start,
                  fortran_integer_t *logPE_stride,
@@ -69,7 +71,8 @@ FC_SHMEM_BARRIER(fortran_integer_t *PE_start,
 
 
 #define SHMEM_DEF_TO_ALL(FUNCNAME,TYPE,ITYPE,SIZE,IOP)                  \
-    void FUNCNAME(TYPE *target, TYPE *source,                           \
+    void __shmem_function_attributes__                                  \
+    FUNCNAME(TYPE *target, TYPE *source,                                \
                   fortran_integer_t *nreduce,                           \
                   fortran_integer_t *PE_start,                          \
                   fortran_integer_t *logPE_stride,                      \
@@ -126,7 +129,8 @@ SHMEM_BIND_F_COLL_FLOATS(`SHMEM_WRAP_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 SHMEM_BIND_F_COLL_COMPS(`SHMEM_WRAP_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 
 #define SHMEM_DEF_COLLECT(FUNCNAME, SIZE)                               \
-    void FUNCNAME(void *target, void *source,                           \
+    void __shmem_function_attributes__                                  \
+    FUNCNAME(void *target, void *source,                                \
                   fortran_integer_t *nelems,                            \
                   fortran_integer_t *PE_start,                          \
                   fortran_integer_t *logPE_stride,                      \
@@ -160,7 +164,8 @@ define(`SHMEM_WRAP_COLLECT',
 SHMEM_BIND_F_COLL_SIZES(`SHMEM_WRAP_COLLECT')
 
 #define SHMEM_DEF_FCOLLECT(FUNCNAME, SIZE)                              \
-    void FUNCNAME(void *target, void *source,                           \
+    void __shmem_function_attributes__                                  \
+    FUNCNAME(void *target, void *source,                                \
                   fortran_integer_t *nelems,                            \
                   fortran_integer_t *PE_start,                          \
                   fortran_integer_t *logPE_stride,                      \
@@ -194,7 +199,8 @@ define(`SHMEM_WRAP_FCOLLECT',
 SHMEM_BIND_F_COLL_SIZES(`SHMEM_WRAP_FCOLLECT')
 
 #define SHMEM_DEF_BROADCAST(FUNCNAME, SIZE)                             \
-    void FUNCNAME(void *target, void *source,                           \
+    void __shmem_function_attributes__                                  \
+    FUNCNAME(void *target, void *source,                                \
                   fortran_integer_t *nelems,                            \
                   fortran_integer_t *PE_root,                           \
                   fortran_integer_t *PE_start,                          \
@@ -232,13 +238,14 @@ define(`SHMEM_WRAP_BROADCAST',
 SHMEM_BIND_F_COLL_SIZES(`SHMEM_WRAP_BROADCAST')
 
 #define FC_SHMEM_ALLTOALL32 FC_FUNC_(shmem_alltoall32, SHMEM_ALLTOALL32)
-void FC_SHMEM_ALLTOALL32(void *target,
-                          void *source,
-                          fortran_integer_t *nelems,
-                          fortran_integer_t *PE_start,
-                          fortran_integer_t *logPE_stride,
-                          fortran_integer_t *PE_size,
-                          fortran_integer_t *pSync);
+void __shmem_function_attributes__
+FC_SHMEM_ALLTOALL32(void *target,
+                    void *source,
+                    fortran_integer_t *nelems,
+                    fortran_integer_t *PE_start,
+                    fortran_integer_t *logPE_stride,
+                    fortran_integer_t *PE_size,
+                    fortran_integer_t *pSync);
 void
 FC_SHMEM_ALLTOALL32(void *target,
                     void *source,
@@ -265,13 +272,14 @@ FC_SHMEM_ALLTOALL32(void *target,
 
 
 #define FC_SHMEM_ALLTOALL64 FC_FUNC_(shmem_alltoall64, SHMEM_ALLTOALL64)
-void FC_SHMEM_ALLTOALL64(void *target,
-                          void *source,
-                          fortran_integer_t *nelems,
-                          fortran_integer_t *PE_start,
-                          fortran_integer_t *logPE_stride,
-                          fortran_integer_t *PE_size,
-                          fortran_integer_t *pSync);
+void __shmem_function_attributes__
+FC_SHMEM_ALLTOALL64(void *target,
+                    void *source,
+                    fortran_integer_t *nelems,
+                    fortran_integer_t *PE_start,
+                    fortran_integer_t *logPE_stride,
+                    fortran_integer_t *PE_size,
+                    fortran_integer_t *pSync);
 void
 FC_SHMEM_ALLTOALL64(void *target,
                     void *source,
@@ -298,15 +306,16 @@ FC_SHMEM_ALLTOALL64(void *target,
 
 
 #define FC_SHMEM_ALLTOALLS32 FC_FUNC_(shmem_alltoalls32, SHMEM_ALLTOALLS32)
-void FC_SHMEM_ALLTOALLS32(void *target,
-                          void *source,
-                          fortran_integer_t *dst,
-                          fortran_integer_t *sst,
-                          fortran_integer_t *nelems,
-                          fortran_integer_t *PE_start,
-                          fortran_integer_t *logPE_stride,
-                          fortran_integer_t *PE_size,
-                          fortran_integer_t *pSync);
+void __shmem_function_attributes__
+FC_SHMEM_ALLTOALLS32(void *target,
+                     void *source,
+                     fortran_integer_t *dst,
+                     fortran_integer_t *sst,
+                     fortran_integer_t *nelems,
+                     fortran_integer_t *PE_start,
+                     fortran_integer_t *logPE_stride,
+                     fortran_integer_t *PE_size,
+                     fortran_integer_t *pSync);
 void
 FC_SHMEM_ALLTOALLS32(void *target,
                      void *source,
@@ -337,15 +346,16 @@ FC_SHMEM_ALLTOALLS32(void *target,
 
 
 #define FC_SHMEM_ALLTOALLS64 FC_FUNC_(shmem_alltoalls64, SHMEM_ALLTOALLS64)
-void FC_SHMEM_ALLTOALLS64(void *target,
-                          void *source,
-                          fortran_integer_t *dst,
-                          fortran_integer_t *sst,
-                          fortran_integer_t *nelems,
-                          fortran_integer_t *PE_start,
-                          fortran_integer_t *logPE_stride,
-                          fortran_integer_t *PE_size,
-                          fortran_integer_t *pSync);
+void __shmem_function_attributes__
+FC_SHMEM_ALLTOALLS64(void *target,
+                     void *source,
+                     fortran_integer_t *dst,
+                     fortran_integer_t *sst,
+                     fortran_integer_t *nelems,
+                     fortran_integer_t *PE_start,
+                     fortran_integer_t *logPE_stride,
+                     fortran_integer_t *PE_size,
+                     fortran_integer_t *pSync);
 void
 FC_SHMEM_ALLTOALLS64(void *target,
                      void *source,

@@ -275,7 +275,7 @@ shmem_internal_shmalloc(size_t size)
 }
 
 
-void *
+void __shmem_function_attributes__ *
 shmem_malloc(size_t size)
 {
     void *ret;
@@ -292,7 +292,7 @@ shmem_malloc(size_t size)
 }
 
 
-void
+void __shmem_function_attributes__
 shmem_free(void *ptr)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -308,7 +308,7 @@ shmem_free(void *ptr)
 }
 
 
-void *
+void __shmem_function_attributes__ *
 shmem_realloc(void *ptr, size_t size)
 {
     void *ret;
@@ -330,7 +330,7 @@ shmem_realloc(void *ptr, size_t size)
 }
 
 
-void *
+void __shmem_function_attributes__ *
 shmem_align(size_t alignment, size_t size)
 {
     void *ret;
@@ -353,25 +353,25 @@ shmem_align(size_t alignment, size_t size)
  * should make the up-call invsible to a profiling tool.
  */
 
-void * shmalloc(size_t size)
+void __shmem_function_attributes__ * shmalloc(size_t size)
 {
     return shmem_malloc(size);
 }
 
 
-void shfree(void *ptr)
+void __shmem_function_attributes__ shfree(void *ptr)
 {
     shmem_free(ptr);
 }
 
 
-void * shrealloc(void *ptr, size_t size)
+void __shmem_function_attributes__ * shrealloc(void *ptr, size_t size)
 {
     return shmem_realloc(ptr, size);
 }
 
 
-void * shmemalign(size_t alignment, size_t size)
+void __shmem_function_attributes__ * shmemalign(size_t alignment, size_t size)
 {
     return shmem_align(alignment, size);
 }
