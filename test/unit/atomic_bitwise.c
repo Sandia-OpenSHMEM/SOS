@@ -71,6 +71,11 @@ main(int argc, char* argv[])
         shmem_finalize();
         return 0;
     }
+    if (sizeof(unsigned int) < 4) {
+        fprintf(stderr, "ERR - Expected ints to be at least 4 bytes\n");
+        shmem_finalize();
+        return 0;
+    }
 
     int neighbor;
     if ((my_rank % 2) == 0) {
