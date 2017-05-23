@@ -18,3 +18,28 @@ void SHPRE()shmemx_ct_set(shmemx_ct_t ct, long value);
 void SHPRE()shmemx_ct_wait(shmemx_ct_t ct, long wait_for);
 
 void SHPRE()shmemx_pcontrol(int level, ...);
+
+/* AMO: Atomic Bitwise Routines */
+define(`SHMEM_C_XOR',
+`void SHPRE()shmemx_$1_atomic_xor($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_XOR')
+
+define(`SHMEM_C_AND',
+`void SHPRE()shmemx_$1_atomic_and($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_AND')
+
+define(`SHMEM_C_OR',
+`void SHPRE()shmemx_$1_atomic_or($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_OR')
+
+define(`SHMEM_C_FETCH_XOR',
+`$2 SHPRE()shmemx_$1_atomic_fetch_xor($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_FETCH_XOR')
+
+define(`SHMEM_C_FETCH_AND',
+`$2 SHPRE()shmemx_$1_atomic_fetch_and($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_FETCH_AND')
+
+define(`SHMEM_C_FETCH_OR',
+`$2 SHPRE()shmemx_$1_atomic_fetch_or($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_FETCH_OR')
