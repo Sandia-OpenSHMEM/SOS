@@ -223,7 +223,6 @@ if ($want_help == 1) {
     print("== OSHRUN HELP ======================================\n");
     print("OSHRUN_LAUNCHER= $comp\n\n");
     print("== LAUNCHER HELP ====================================\n");
-    
 }
 
 if ($dry_run == 1) {
