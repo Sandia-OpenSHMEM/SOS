@@ -161,6 +161,7 @@ my @args = @ARGV;
 my $want_preproc = 1;
 my $want_compile = 1;
 my $want_link = 1;
+my $want_help = 0;
 my $dry_run = 0;
 my $disable_flags = 1;
 my $real_flag = 0;
@@ -179,7 +180,11 @@ while (scalar(@args) > 0) {
             $want_compile = 0;
             $want_link = 0;
             $real_flag = 1;
-        } elsif ($arg eq "-S") {
+        } elsif ($arg eq "-h" || $arg eq "--help"){
+            $arg = "--help";
+            $want_help = 1;
+            $real_flag = 1;
+        }elsif ($arg eq "-S") {
             $want_link = 0;
             $real_flag = 1;
         } elsif ($arg =~ /^-.*/) {
@@ -213,6 +218,12 @@ if ($want_compile == 1) {
 if ($want_link == 1) {
     push(@exec_argv, split(' ', $linker_flags));
     push(@exec_argv, split(' ', $libs));
+}
+if ($want_help == 1) {
+    print("== OSHRUN HELP ======================================\n");
+    print("OSHRUN_LAUNCHER= $comp\n\n");
+    print("== LAUNCHER HELP ====================================\n");
+    
 }
 
 if ($dry_run == 1) {
