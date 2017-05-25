@@ -220,7 +220,7 @@ if ($want_link == 1) {
     push(@exec_argv, split(' ', $libs));
 }
 if ($want_help == 1) {
-    print("== Sandia OpenSHMEM Help ======================================\n");
+    print("== Sandia OpenSHMEM Help ============================\n");
     print("SOS LAUNCHER= $comp\n\n");
     print("== LAUNCHER HELP ====================================\n");
 }
