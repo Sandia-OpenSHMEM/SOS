@@ -174,8 +174,9 @@ red_PE_set static inline validation_set(perf_metrics_t my_info, int *nPEs)
             *nPEs = my_info.sztarget;
             return SECOND_HALF;
         } else {
-            fprintf(stderr, "Warning: you are getting data from a node that " \
+            fprintf(stderr, "Warning: you are getting data from a node that "
                 "wasn't a part of the perf set \n ");
+	    return 0;
         }
     } else {
         assert(my_info.cstyle == COMM_INCAST);
@@ -264,19 +265,19 @@ void static command_line_arg_check(int argc, char *argv[],
 
     if (error) {
         if (metric_info->my_node == 0) {
-            fprintf(stderr, "Usage: \n[-s start_length] [-e end_length] "\
-                    ": lengths should be a power of two \n" \
-                    "[-n trials (must be greater than 2*warmup (default: x => 100))] \n"\
-                    "[-p warm-up (see trials for value restriction)] \n"\
-                    "[-w window size - iterations between completion, cannot use with -t] \n"\
-                    "[-k (kilobytes/second)] [-b (bytes/second)] \n"\
-                    "[-v (validate data stream)] \n"\
-                    "[-t output data for target side (default is initiator,"\
-                    " only use with put_bw),\n cannot be used in conjunction "\
-                    "with validate, special sizes used, \ntrials" \
-                    " + warmup * sizes (8/4KB) <= max length \n" \
-                    "[-r number of nodes at target, use only with -t] \n" \
-                    "[-l number of nodes at initiator, use only with -t, " \
+            fprintf(stderr, "Usage: \n[-s start_length] [-e end_length] "
+                    ": lengths should be a power of two \n"
+                    "[-n trials (must be greater than 2*warmup (default: x => 100))] \n"
+                    "[-p warm-up (see trials for value restriction)] \n"
+                    "[-w window size - iterations between completion, cannot use with -t] \n"
+                    "[-k (kilobytes/second)] [-b (bytes/second)] \n"
+                    "[-v (validate data stream)] \n"
+                    "[-t output data for target side (default is initiator,"
+                    " only use with put_bw),\n cannot be used in conjunction "
+                    "with validate, special sizes used, \ntrials"
+                    " + warmup * sizes (8/4KB) <= max length \n"
+                    "[-r number of nodes at target, use only with -t] \n"
+                    "[-l number of nodes at initiator, use only with -t, "
                     "l/r cannot be used together] \n");
         }
 #ifndef VERSION_1_0
@@ -313,7 +314,7 @@ void static print_atomic_results_header(perf_metrics_t metric_info) {
         printf("using pairwise communication style\n");
     }
 
-    printf("\nOperation           %s           "\
+    printf("\nOperation           %s           "
             "Message Rate%17sLatency\n", metric_info.bw_type, " ");
 
     if (metric_info.unit == MB) {
@@ -331,12 +332,12 @@ void static print_atomic_results_header(perf_metrics_t metric_info) {
 }
 
 void static print_results_header(perf_metrics_t metric_info) {
-    printf("\nResults for %d PEs %lu trials with window size %lu "\
-            "max message size %lu with multiple of %lu increments, "\
+    printf("\nResults for %d PEs %lu trials with window size %lu "
+            "max message size %lu with multiple of %lu increments, "
             "\ntargeting %d remote PEs initiated from %d PEs\n", metric_info.num_pes,
             metric_info.trials, metric_info.window_size, metric_info.max_len,
             metric_info.size_inc, metric_info.sztarget, metric_info.szinitiator);
-    printf("\nLength           %s           "\
+    printf("\nLength           %s           "
             "Message Rate\n", metric_info.bw_type);
 
     printf("in bytes         ");

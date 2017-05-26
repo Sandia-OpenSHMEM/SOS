@@ -25,14 +25,14 @@
  * SOFTWARE.
  */
 
-int get_size_of_side(perf_metrics_t my_info) {
+int static inline get_size_of_side(perf_metrics_t my_info) {
     if(my_info.my_node < my_info.midpt)
         return my_info.szinitiator;
     else
         return my_info.sztarget;
 }
 
-int get_num_partners(perf_metrics_t my_info) {
+int static inline get_num_partners(perf_metrics_t my_info) {
     int unused_PEs = 0, num_partners = 0, num_xtra_partners = 0;
     int active_PEs = get_size_of_side(my_info);
 
@@ -50,7 +50,7 @@ int get_num_partners(perf_metrics_t my_info) {
 }
 
 /* target only needs to know num of partners */
-int *get_initiators_partners(perf_metrics_t my_info, int num_partners) {
+int static inline *get_initiators_partners(perf_metrics_t my_info, int num_partners) {
     int node_to_shadow = my_info.my_node;
     int i = 0;
     int *partner_nodes = NULL;
