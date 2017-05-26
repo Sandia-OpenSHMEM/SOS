@@ -62,3 +62,26 @@ AC_DEFUN([SHMEM_FIND_FORTRAN_INT_TYPE],[
 		       [Transport layer datatype corresponding to $1])
 	AS_VAR_POPDEF([size_var])
 ])
+
+AC_DEFUN([SHMEM_FIND_UINT_TYPE],[
+         AC_CHECK_SIZEOF([$1])
+         case "$AS_TR_SH([ac_cv_sizeof_$1])" in
+            1)
+                type=SHM_INTERNAL_UINT8
+            ;;
+            2)
+                type=SHM_INTERNAL_UINT16
+            ;;
+            4)
+                type=SHM_INTERNAL_UINT32
+            ;;
+            8)
+                type=SHM_INTERNAL_UINT64
+            ;;
+            *)
+                AC_MSG_ERROR([No matching type for $1])
+        esac
+
+        AC_DEFINE_UNQUOTED(AS_TR_CPP([DTYPE_$1]), [$type], [Transport layer datatype corresponding to $1])
+])
+
