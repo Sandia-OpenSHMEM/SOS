@@ -43,7 +43,7 @@
     do {                                                                       \
         double start = 0.0, end = 0.0;                                         \
         int i = 0, j = 0, num_itr = metric_info->trials + metric_info->warmup; \
-        int dest = partner_node(*metric_info);                                 \
+        uint32_t dest = partner_node(*metric_info);                                 \
         shmem_barrier_all();                                                   \
                                                                                \
         if(snode) {                                                   \
@@ -150,7 +150,6 @@ static inline void bw_set_metric_info_len(perf_metrics_t *metric_info)
                                         sizeof(long long)};
     metric_info->cstyle = ATOMIC_COMM_STYLE;
     metric_info->type = UNI_DIR;
-    metric_info->bwstyle = STYLE_ATOMIC;
     int snode = streaming_node(*metric_info);
     atomic_op_type op_type = OP_ADD;
 
@@ -189,7 +188,7 @@ void uni_dir_bw(int len, perf_metrics_t *metric_info)
 
 int main(int argc, char *argv[])
 {
-    uni_dir_bw_main(argc, argv);
+    uni_dir_bw_main(argc, argv, STYLE_ATOMIC);
 
     return 0;
 }

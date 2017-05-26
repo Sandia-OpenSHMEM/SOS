@@ -24,13 +24,19 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include <target_put.h>
 
-void static inline uni_bw(int len, perf_metrics_t *metric_info, int streaming_node)
+void inline uni_dir_bw(int len, perf_metrics_t *metric_info)
 {
     double start = 0.0, end = 0.0;
     int i = 0, j = 0;
-    int dest = partner_node(*metric_info);
-    int snode = (metric_info->num_pes != 1)? streaming_node : true;
+    uint32_t dest = partner_node(*metric_info);
+    int snode = (metric_info->num_pes != 1)? streaming_node(*metric_info) : true;
+
+    if(metric_info->target_data && metric_info->bwstyle == STYLE_PUT) {
+        target_bw_itr(len, metric_info);
+        return;
+    }
 
     shmem_barrier_all();
 

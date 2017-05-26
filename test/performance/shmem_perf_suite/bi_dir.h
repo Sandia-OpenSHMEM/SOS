@@ -28,7 +28,7 @@
 void static inline bi_bw(int len, perf_metrics_t *metric_info)
 {
     double start = 0.0, end = 0.0;
-    int dest = partner_node(*metric_info);
+    uint32_t dest = partner_node(*metric_info);
     int i = 0, j = 0;
 
     shmem_barrier_all();
