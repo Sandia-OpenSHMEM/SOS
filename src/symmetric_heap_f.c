@@ -31,7 +31,7 @@ void* dlmemalign(size_t, size_t);
 
 
 #define FC_SHPALLOC FC_FUNC_(shpalloc, SHPALLOC)
-void __shmem_function_attributes__ FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, fortran_integer_t *want_abort);
+void SHMEM_FUNCTION_ATTRIBUTES FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, fortran_integer_t *want_abort);
 void
 FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, fortran_integer_t *want_abort)
 {
@@ -68,7 +68,7 @@ FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, 
 
 
 #define FC_SHPDEALLOC FC_FUNC_(shpdeallc, SHPDEALLOC)
-void __shmem_function_attributes__ FC_SHPDEALLOC(void **addr, fortran_integer_t *errcode, fortran_integer_t *want_abort);
+void SHMEM_FUNCTION_ATTRIBUTES FC_SHPDEALLOC(void **addr, fortran_integer_t *errcode, fortran_integer_t *want_abort);
 void
 FC_SHPDEALLOC(void **addr, fortran_integer_t *errcode, fortran_integer_t *want_abort)
 {
@@ -85,7 +85,7 @@ FC_SHPDEALLOC(void **addr, fortran_integer_t *errcode, fortran_integer_t *want_a
 
 
 #define FC_SHPCLMOVE FC_FUNC_(shpclmove, SHPCLMOVE)
-void __shmem_function_attributes__ FC_SHPCLMOVE(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, fortran_integer_t *want_abort);
+void SHMEM_FUNCTION_ATTRIBUTES FC_SHPCLMOVE(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, fortran_integer_t *want_abort);
 void
 FC_SHPCLMOVE(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, fortran_integer_t *want_abort)
 {

@@ -17,21 +17,21 @@
 #define SHMEM_DECL_H
 
 #ifdef HAVE_FUNC_ATTRIBUTE_NORETURN
-#define __shmem_attribute_noreturn__ __attribute__ ((noreturn))
+#define SHMEM_ATTRIBUTE_NORETURN __attribute__ ((noreturn))
 #else
-#define __shmem_attribute_noreturn__
+#define SHMEM_ATTRIBUTE_NORETURN
 #endif
 
-#ifndef __shmem_attribute_visibility__
+#ifndef SHMEM_ATTRIBUTE_VISIBILITY
 #   if defined(OPAL_C_HAVE_VISIBILITY) && (OPAL_C_HAVE_VISIBILITY == 1)
-#       define __shmem_attribute_visibility__ __attribute__((visibility("default")))
+#       define SHMEM_ATTRIBUTE_VISIBILITY __attribute__((visibility("default")))
 #   else
-#       define __shmem_attribute_visibility__
+#       define SHMEM_ATTRIBUTE_VISIBILITY
 #   endif
 #endif
 
-#ifndef __shmem_function_attributes__
-#    define __shmem_function_attributes__ __shmem_attribute_visibility__
+#ifndef SHMEM_FUNCTION_ATTRIBUTES
+#    define SHMEM_FUNCTION_ATTRIBUTES SHMEM_ATTRIBUTE_VISIBILITY
 #endif
 
 #endif /* SHMEM_DECL_H */

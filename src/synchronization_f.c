@@ -27,7 +27,7 @@
 
 
 #define FC_SHMEM_QUIET FC_FUNC_(shmem_quiet, SHMEM_QUIET)
-void __shmem_function_attributes__
+void SHMEM_FUNCTION_ATTRIBUTES
 FC_SHMEM_QUIET(void);
 void
 FC_SHMEM_QUIET(void)
@@ -39,7 +39,7 @@ FC_SHMEM_QUIET(void)
 
 
 #define FC_SHMEM_FENCE FC_FUNC_(shmem_fence, SHMEM_FENCE)
-void __shmem_function_attributes__
+void SHMEM_FUNCTION_ATTRIBUTES
 FC_SHMEM_FENCE(void);
 void
 FC_SHMEM_FENCE(void)
@@ -51,7 +51,7 @@ FC_SHMEM_FENCE(void)
 
 
 #define FC_SHMEM_INT4_WAIT FC_FUNC_(shmem_int4_wait, SHMEM_INT4_WAIT)
-void __shmem_function_attributes__
+void SHMEM_FUNCTION_ATTRIBUTES
 FC_SHMEM_INT4_WAIT(volatile int32_t *var,
                    int32_t *value);
 void
@@ -66,7 +66,7 @@ FC_SHMEM_INT4_WAIT(volatile int32_t *var,
 
 
 #define FC_SHMEM_INT8_WAIT FC_FUNC_(shmem_int8_wait, SHMEM_INT8_WAIT)
-void __shmem_function_attributes__
+void SHMEM_FUNCTION_ATTRIBUTES
 FC_SHMEM_INT8_WAIT(volatile int64_t *var,
                    int64_t *value);
 void
@@ -81,7 +81,7 @@ FC_SHMEM_INT8_WAIT(volatile int64_t *var,
 
 
 #define FC_SHMEM_WAIT FC_FUNC_(shmem_wait, SHMEM_WAIT)
-void __shmem_function_attributes__
+void SHMEM_FUNCTION_ATTRIBUTES
 FC_SHMEM_WAIT(volatile fortran_integer_t *var,
               fortran_integer_t *value);
 void
@@ -96,7 +96,7 @@ FC_SHMEM_WAIT(volatile fortran_integer_t *var,
 
 
 #define FC_SHMEM_INT4_WAIT_UNTIL FC_FUNC_(shmem_int4_wait_until, SHMEM_INT4_WAIT_UNTIL)
-void __shmem_function_attributes__
+void SHMEM_FUNCTION_ATTRIBUTES
 FC_SHMEM_INT4_WAIT_UNTIL(volatile int32_t *var,
                          fortran_integer_t *cond,
                          int32_t *value);
@@ -114,7 +114,7 @@ FC_SHMEM_INT4_WAIT_UNTIL(volatile int32_t *var,
 
 
 #define FC_SHMEM_INT8_WAIT_UNTIL FC_FUNC_(shmem_int8_wait_until, SHMEM_INT8_WAIT_UNTIL)
-void __shmem_function_attributes__
+void SHMEM_FUNCTION_ATTRIBUTES
 FC_SHMEM_INT8_WAIT_UNTIL(volatile int64_t *var,
                          fortran_integer_t *cond,
                          int64_t *value);
@@ -132,7 +132,7 @@ FC_SHMEM_INT8_WAIT_UNTIL(volatile int64_t *var,
 
 
 #define FC_SHMEM_WAIT_UNTIL FC_FUNC_(shmem_wait_until, SHMEM_WAIT_UNTIL)
-void __shmem_function_attributes__
+void SHMEM_FUNCTION_ATTRIBUTES
 FC_SHMEM_WAIT_UNTIL(volatile fortran_integer_t *var,
                     fortran_integer_t *cond,
                     fortran_integer_t *value);

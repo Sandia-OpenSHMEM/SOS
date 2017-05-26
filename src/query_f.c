@@ -20,7 +20,7 @@
 
 
 #define FC_NUM_PES FC_FUNC_(num_pes, NUM_PES)
-fortran_integer_t __shmem_function_attributes__ FC_NUM_PES(void);
+fortran_integer_t SHMEM_FUNCTION_ATTRIBUTES FC_NUM_PES(void);
 fortran_integer_t
 FC_NUM_PES(void)
 {
@@ -31,7 +31,7 @@ FC_NUM_PES(void)
 
 
 #define FC_SHMEM_N_PES FC_FUNC_(shmem_n_pes, SHMEM_N_PES)
-fortran_integer_t __shmem_function_attributes__ FC_SHMEM_N_PES(void);
+fortran_integer_t SHMEM_FUNCTION_ATTRIBUTES FC_SHMEM_N_PES(void);
 fortran_integer_t
 FC_SHMEM_N_PES(void)
 {
@@ -42,7 +42,7 @@ FC_SHMEM_N_PES(void)
 
 
 #define FC_MY_PE FC_FUNC_(my_pe, MY_PE)
-fortran_integer_t __shmem_function_attributes__ FC_MY_PE(void);
+fortran_integer_t SHMEM_FUNCTION_ATTRIBUTES FC_MY_PE(void);
 fortran_integer_t
 FC_MY_PE(void)
 {
@@ -53,7 +53,7 @@ FC_MY_PE(void)
 
 
 #define FC_SHMEM_MY_PE FC_FUNC_(shmem_my_pe, SHMEM_MY_PE)
-fortran_integer_t __shmem_function_attributes__ FC_SHMEM_MY_PE(void);
+fortran_integer_t SHMEM_FUNCTION_ATTRIBUTES FC_SHMEM_MY_PE(void);
 fortran_integer_t
 FC_SHMEM_MY_PE(void)
 {
@@ -63,7 +63,7 @@ FC_SHMEM_MY_PE(void)
 }
 
 #define FC_SHMEMX_WTIME FC_FUNC_(shmemx_wtime, SHMEMX_WTIME)
-fortran_double_precision_t __shmem_function_attributes__ FC_SHMEMX_WTIME(void);
+fortran_double_precision_t SHMEM_FUNCTION_ATTRIBUTES FC_SHMEMX_WTIME(void);
 fortran_double_precision_t
 FC_SHMEMX_WTIME(void)
 {
