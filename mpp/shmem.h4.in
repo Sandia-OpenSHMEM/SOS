@@ -84,20 +84,20 @@ include(shmem_c_func.m4)dnl
 
 /* Blocking block, scalar, and block-strided put */
 define(`SHMEM_CXX_PUT',
-`static inline void shmem_put($2* dest, const $2* source,
+`SHMEM_FUNCTION_ATTRIBUTES static inline void shmem_put($2* dest, const $2* source,
                              size_t nelems, int pe) {
     shmem_$1_put(dest, source, nelems, pe);
 }')dnl
 SHMEM_DEFINE_FOR_RMA(`SHMEM_CXX_PUT')
 
 define(`SHMEM_CXX_P',
-`static inline void shmem_p($2* dest, $2 value, int pe) {
+`SHMEM_FUNCTION_ATTRIBUTES static inline void shmem_p($2* dest, $2 value, int pe) {
     shmem_$1_p(dest, value, pe);
 }')dnl
 SHMEM_DEFINE_FOR_RMA(`SHMEM_CXX_P')
 
 define(`SHMEM_CXX_IPUT',
-`static inline void shmem_iput($2 *target, const $2 *source,
+`SHMEM_FUNCTION_ATTRIBUTES static inline void shmem_iput($2 *target, const $2 *source,
                               ptrdiff_t tst, ptrdiff_t sst,
                               size_t len, int pe) {
     shmem_$1_iput(target, source, tst, sst, len, pe);
@@ -106,14 +106,14 @@ SHMEM_DEFINE_FOR_RMA(`SHMEM_CXX_IPUT')
 
 /* Blocking block, scalar, and block-strided get */
 define(`SHMEM_CXX_GET',
-`static inline void shmem_get($2* dest, const $2* source,
+`SHMEM_FUNCTION_ATTRIBUTES static inline void shmem_get($2* dest, const $2* source,
                              size_t nelems, int pe) {
     shmem_$1_get(dest, source, nelems, pe);
 }')dnl
 SHMEM_DEFINE_FOR_RMA(`SHMEM_CXX_GET')
 
 define(`SHMEM_CXX_G',
-`static inline $2 shmem_g(const $2* src, int pe) {
+`SHMEM_FUNCTION_ATTRIBUTES static inline $2 shmem_g(const $2* src, int pe) {
     return shmem_$1_g(src, pe);
 }')dnl
 SHMEM_DEFINE_FOR_RMA(`SHMEM_CXX_G')
