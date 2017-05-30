@@ -48,13 +48,7 @@
 
 int main(int argc, char *argv[])
 {
-    uni_dir_bw_main(argc,argv);
+    uni_dir_bw_main(argc,argv, STYLE_GET);
 
     return 0;
 }  /* end of main() */
-
-void
-uni_dir_bw(int len, perf_metrics_t *metric_info)
-{
-    uni_bw(len, metric_info, streaming_node(*metric_info));
-}
