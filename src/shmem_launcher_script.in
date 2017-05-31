@@ -13,6 +13,8 @@
 
 SEARCH_LAUNCHERS="yod mpirun mpiexec srun"
 LAUNCHER=""
+SOS_LAUNCHER_PATH="$0";
+SOS_LAUNCHER=${SOS_LAUNCHER_PATH##*/};
 
 # Users can set the OSHRUN_LAUNCHER environment variable to specify the command
 # that will be used by oshrun
@@ -27,6 +29,21 @@ else
             break;
         fi
     done
+fi
+
+want_help=0;
+
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+    want_help=1
+fi
+
+if [ $want_help = 1 ]; then
+    printf "== Sandia OpenSHMEM Help ============================\n";
+    printf "SOS LAUNCHER= ${SOS_LAUNCHER}\n";
+    printf "usage: ${SOS_LAUNCHER} [options] [exec] [exec args]\n\n";
+    printf "LAUNCHER= ${LAUNCHER}\n\n";
+    printf "Options provided by ${LAUNCHER} can also be used by ${SOS_LAUNCHER}.\n\n";
+    printf "== LAUNCHER HELP ====================================\n";
 fi
 
 if [ -z "${LAUNCHER}" ]; then

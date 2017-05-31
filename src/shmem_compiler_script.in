@@ -105,6 +105,7 @@ use File::Spec::Functions;
 
 my $includedir = "@WRAPPER_COMPILER_INCLUDEDIR@";
 my $libdir = "@WRAPPER_COMPILER_LIBDIR@";
+my $wrapperdir = $0;
 
 my $lang = "@LANG@";
 my $CC = "@WRAPPER_COMPILER_CC@";
@@ -118,6 +119,7 @@ my $include_flag = "-I";
 my $libdir_flag = "-L";
 
 my $comp = "";
+my $wrapper = (split(/\//, $wrapperdir))[-1];
 my $preproc_flags = $include_flag . $includedir;
 my $comp_flags = "";
 my $comp_flags_prefix = "";
@@ -180,11 +182,11 @@ while (scalar(@args) > 0) {
             $want_compile = 0;
             $want_link = 0;
             $real_flag = 1;
-        } elsif ($arg eq "-h" || $arg eq "--help"){
+        } elsif ($arg eq "-h" || $arg eq "--help") {
             $arg = "--help";
             $want_help = 1;
             $real_flag = 1;
-        }elsif ($arg eq "-S") {
+        } elsif ($arg eq "-S") {
             $want_link = 0;
             $real_flag = 1;
         } elsif ($arg =~ /^-.*/) {
@@ -221,8 +223,11 @@ if ($want_link == 1) {
 }
 if ($want_help == 1) {
     print("== Sandia OpenSHMEM Help ============================\n");
-    print("SOS LAUNCHER= $comp\n\n");
-    print("== LAUNCHER HELP ====================================\n");
+    print("SOS WRAPPER= $wrapper\n");
+    print("usage: ",$wrapper," [options]... [file]...\n\n");
+    print("COMPILER= $comp\n\n");
+    print("Options provided by ",$comp," can also be used by ",$wrapper,".\n\n");
+    print("== COMPILER HELP ====================================\n");
 }
 
 if ($dry_run == 1) {
