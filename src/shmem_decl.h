@@ -16,7 +16,7 @@
 #ifndef SHMEM_DECL_H
 #define SHMEM_DECL_H
 
-#ifdef HAVE_FUNC_ATTRIBUTE_NORETURN
+#ifdef OPAL_HAVE_ATTRIBUTE_NORETURN
 #define SHMEM_ATTRIBUTE_NORETURN __attribute__ ((noreturn))
 #else
 #define SHMEM_ATTRIBUTE_NORETURN

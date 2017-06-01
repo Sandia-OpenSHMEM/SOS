@@ -222,7 +222,6 @@ if test "$FC" != "" ; then
   AC_FC_WRAPPERS
 fi
 
-AX_GCC_FUNC_ATTRIBUTE([noreturn])
 AX_GCC_BUILTIN([__builtin_trap])
 
 if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
@@ -431,6 +430,7 @@ if test "$FC" != "" ; then
   FORTRAN_ALLTOALL_SYNC_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_long / $ompi_cv_fortran_sizeof_INTEGER * $C_ALLTOALL_SYNC_SIZE)"`
   FORTRAN_ALLTOALLS_SYNC_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_long / $ompi_cv_fortran_sizeof_INTEGER * $C_ALLTOALLS_SYNC_SIZE)"`
   FORTRAN_REDUCE_MIN_WRKDATA_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_long / $ompi_cv_fortran_sizeof_INTEGER * $C_REDUCE_MIN_WRKDATA_SIZE)"`
+  AC_LANG_POP([Fortran])
 else
   FORTRAN_BCAST_SYNC_SIZE=0
   FORTRAN_REDUCE_SYNC_SIZE=0
@@ -478,7 +478,6 @@ dnl check for structures
 dnl check for compiler characteristics
 
 # make all symbols hidden by default
-AC_LANG_POP([Fortran])
 OPAL_CHECK_VISIBILITY
 CFLAGS="$CFLAGS $OPAL_VISIBILITY_CFLAGS"
 
