@@ -87,7 +87,7 @@ SHMEM_BIND_C_COLL_CMPLX(`SHMEM_PROF_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 
 #endif /* ENABLE_PROFILING */
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_barrier_all(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -96,7 +96,7 @@ shmem_barrier_all(void)
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -108,7 +108,8 @@ shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 
 
 #define SHMEM_DEF_TO_ALL(STYPE,TYPE,ITYPE,SOP,IOP)                      \
-    void shmem_##STYPE##_##SOP##_to_all(TYPE *target,                   \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    shmem_##STYPE##_##SOP##_to_all(TYPE *target,                        \
                                        const TYPE *source, int nreduce, \
                                        int PE_start, int logPE_stride,  \
                                        int PE_size, TYPE *pWrk,         \
@@ -144,7 +145,7 @@ SHMEM_BIND_C_COLL_INTS(`SHMEM_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 SHMEM_BIND_C_COLL_FLOATS(`SHMEM_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 SHMEM_BIND_C_COLL_CMPLX(`SHMEM_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_broadcast32(void *target, const void *source, size_t nlong,
                   int PE_root, int PE_start, int logPE_stride, int PE_size,
                   long *pSync)
@@ -162,7 +163,7 @@ shmem_broadcast32(void *target, const void *source, size_t nlong,
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_broadcast64(void *target, const void *source, size_t nlong,
                   int PE_root, int PE_start, int logPE_stride, int PE_size,
                   long *pSync)
@@ -180,7 +181,7 @@ shmem_broadcast64(void *target, const void *source, size_t nlong,
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_collect32(void *target, const void *source, size_t nlong,
                 int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
@@ -195,7 +196,7 @@ shmem_collect32(void *target, const void *source, size_t nlong,
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_collect64(void *target, const void *source, size_t nlong,
                 int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
@@ -210,7 +211,7 @@ shmem_collect64(void *target, const void *source, size_t nlong,
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_fcollect32(void *target, const void *source, size_t nlong,
                  int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
@@ -225,7 +226,7 @@ shmem_fcollect32(void *target, const void *source, size_t nlong,
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_fcollect64(void *target, const void *source, size_t nlong,
                  int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
@@ -240,7 +241,7 @@ shmem_fcollect64(void *target, const void *source, size_t nlong,
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_alltoall32(void *dest, const void *source, size_t nelems, int PE_start,
                  int logPE_stride, int PE_size, long *pSync)
 {
@@ -255,7 +256,7 @@ shmem_alltoall32(void *dest, const void *source, size_t nelems, int PE_start,
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_alltoall64(void *dest, const void *source, size_t nelems, int PE_start,
                  int logPE_stride, int PE_size, long *pSync)
 {
@@ -270,7 +271,7 @@ shmem_alltoall64(void *dest, const void *source, size_t nelems, int PE_start,
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_alltoalls32(void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,
                   size_t nelems, int PE_start, int logPE_stride, int PE_size,
                   long *pSync)
@@ -288,7 +289,7 @@ shmem_alltoalls32(void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_alltoalls64(void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,
                   size_t nelems, int PE_start, int logPE_stride, int PE_size,
                   long *pSync)

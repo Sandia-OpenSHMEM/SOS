@@ -38,6 +38,8 @@ AC_CONFIG_HEADERS([src/config.h])
 
 AC_CANONICAL_HOST
 
+OPAL_CHECK_ATTRIBUTES
+
 AC_ARG_ENABLE([picky],
     [AC_HELP_STRING([--enable-picky],
                     [Enable developer-level compiler pickyness when building (default: disabled)])])
@@ -220,7 +222,6 @@ if test "$FC" != "" ; then
   AC_FC_WRAPPERS
 fi
 
-AX_GCC_FUNC_ATTRIBUTE([noreturn])
 AX_GCC_BUILTIN([__builtin_trap])
 
 if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
@@ -390,7 +391,8 @@ if test "$FC" != "" ; then
 	integer(c_int) :: i
 	i = 5
 ]])], [shmem_cv_fortran_iso_c_binding="yes"],
-      [shmem_cv_fortran_iso_c_binding="no"])])
+      [shmem_cv_fortran_iso_c_binding="no"])
+      AC_LANG_POP([Fortran])])
   AS_IF([test "$shmem_cv_fortran_iso_c_binding" = "no"],
     [AC_MSG_ERROR([Fortran compiler does not support ISO_C_BINDING, which is required for Sandia OpenSHMEM.])])
 
@@ -474,6 +476,14 @@ AM_CONDITIONAL([ENABLE_PROFILING], [test "$enable_profiling" = "yes" ])
 dnl check for structures
 
 dnl check for compiler characteristics
+
+# make all symbols hidden by default
+OPAL_CHECK_VISIBILITY
+AS_IF([test "$opal_visibility_define" = 1],
+      [SHMEM_C_HAVE_VISIBILITY=1],
+      [SHMEM_C_HAVE_VISIBILITY=0])
+AC_SUBST(SHMEM_C_HAVE_VISIBILITY)
+CFLAGS="$CFLAGS $OPAL_VISIBILITY_CFLAGS"
 
 # disable aslr, if possible at link time
 aslr_LDFLAGS=
