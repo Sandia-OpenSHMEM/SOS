@@ -391,7 +391,8 @@ if test "$FC" != "" ; then
 	integer(c_int) :: i
 	i = 5
 ]])], [shmem_cv_fortran_iso_c_binding="yes"],
-      [shmem_cv_fortran_iso_c_binding="no"])])
+      [shmem_cv_fortran_iso_c_binding="no"])
+      AC_LANG_POP([Fortran])])
   AS_IF([test "$shmem_cv_fortran_iso_c_binding" = "no"],
     [AC_MSG_ERROR([Fortran compiler does not support ISO_C_BINDING, which is required for Sandia OpenSHMEM.])])
 
@@ -430,7 +431,6 @@ if test "$FC" != "" ; then
   FORTRAN_ALLTOALL_SYNC_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_long / $ompi_cv_fortran_sizeof_INTEGER * $C_ALLTOALL_SYNC_SIZE)"`
   FORTRAN_ALLTOALLS_SYNC_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_long / $ompi_cv_fortran_sizeof_INTEGER * $C_ALLTOALLS_SYNC_SIZE)"`
   FORTRAN_REDUCE_MIN_WRKDATA_SIZE=`$PERL -e "use POSIX; print ceil($ac_cv_sizeof_long / $ompi_cv_fortran_sizeof_INTEGER * $C_REDUCE_MIN_WRKDATA_SIZE)"`
-  AC_LANG_POP([Fortran])
 else
   FORTRAN_BCAST_SYNC_SIZE=0
   FORTRAN_REDUCE_SYNC_SIZE=0
@@ -479,6 +479,10 @@ dnl check for compiler characteristics
 
 # make all symbols hidden by default
 OPAL_CHECK_VISIBILITY
+AS_IF([test "$opal_visibility_define" = 1],
+      [SHMEM_C_HAVE_VISIBILITY=1],
+      [SHMEM_C_HAVE_VISIBILITY=0])
+AC_SUBST(SHMEM_C_HAVE_VISIBILITY)
 CFLAGS="$CFLAGS $OPAL_VISIBILITY_CFLAGS"
 
 # disable aslr, if possible at link time
