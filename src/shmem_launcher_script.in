@@ -37,10 +37,14 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 fi
 
 if [ $want_help = 1 ]; then
-    printf "== OSHRUN HELP ============================\n";
-    printf "usage: ${SOS_LAUNCHER} [options] [exec] [exec args]\n\n";
-    printf "OSHRUN_LAUNCHER= ${SOS_LAUNCHER}\n\n";
-    printf "Selected Launcher= ${LAUNCHER}\n\n";
+    printf "== OSHRUN HELP ====================================\n";
+    printf "usage: ${SOS_LAUNCHER} [oshrun_options] [launcher_arguments]\n\n";
+    if [ -z "${OSHRUN_LAUNCHER}" ]; then
+        printf "OSHRUN_LAUNCHER = (none)\n\n";
+    else
+        printf "OSHRUN_LAUNCHER = ${OSHRUN_LAUNCHER}\n\n";
+    fi
+    printf "Selected launcher: ${LAUNCHER}\n\n";
     printf "${SOS_LAUNCHER} options:\n";
     printf "\t--help | -h     Display this information\n\n";
     printf "Options provided by ${LAUNCHER} can also be used by ${SOS_LAUNCHER}.\n\n";

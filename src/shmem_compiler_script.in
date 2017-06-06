@@ -100,7 +100,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-use File::Basename;
+use File::Basename qw(basename);
 use File::Spec::Functions;
 
 my $includedir = "@WRAPPER_COMPILER_INCLUDEDIR@";
@@ -171,7 +171,7 @@ my @appargs = ();
 while (scalar(@args) > 0) {
     my $arg = shift(@args);
 
-    if ($arg eq "-showme") {
+    if ($arg eq "-showme" || $arg eq "-show") {
         $dry_run = 1;
     } else {
         if ($arg eq "-c") {
@@ -221,16 +221,17 @@ if ($want_link == 1) {
     push(@exec_argv, split(' ', $libs));
 }
 if ($want_help == 1) {
-    print("== ",uc $wrapper," HELP ============================\n");
-    print("usage: ",$wrapper," [options]... file...\n\n");
-    print("COMPILER= $comp\n\n");
+    print("== ",uc $wrapper," HELP ===================================\n");
+    print("usage: ",$wrapper," [",$wrapper,"_options] [compiler_arguments]\n\n");
+    print("COMPILER = $comp\n\n");
     print($wrapper," options:\n");
-    print("\t--help | -h     Display this information\n");
-    print("\t-showme         Print the command that would be ran without executing it\n");
-    print("\t-E | -M         Disable compilation and linking\n");
-    print("\t-S              Disable linking\n\n");
+    print("\t--help | -h       Display this information\n");
+    print("\t-showme | -show   Print the command that would be run without executing it\n");
+    print("\t-E | -M           Disable compilation and linking\n");
+    print("\t-S                Disable linking\n");
+    print("\t-c                Compile and assemble. Disable linking\n\n");
     print("Options provided by ",$comp," can also be used by ",$wrapper,".\n\n");
-    print("== ",uc $comp," HELP ============================\n");
+    print("== ",uc $comp," HELP =====================================\n");
 }
 
 if ($dry_run == 1) {
