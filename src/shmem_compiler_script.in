@@ -182,6 +182,7 @@ while (scalar(@args) > 0) {
             $want_link = 0;
             $real_flag = 1;
         } elsif ($arg eq "-h" || $arg eq "--help") {
+            $arg = "--help";
             $want_help = 1;
             $real_flag = 1;
         } elsif ($arg eq "-S") {
