@@ -21,14 +21,19 @@ enum shmem_internal_env_categories {
     SHMEM_INTERNAL_ENV_CAT_OTHER
 };
 
-#define SHMEM_INTERNAL_ENV_DEF(NAME, KIND, DEFAULT, CATEGORY, SHORT_DESC) \
-  shmem_internal_env_##KIND NAME;
 
 struct shmem_internal_params_s {
+#define SHMEM_INTERNAL_ENV_DEF(NAME, KIND, DEFAULT, CATEGORY, SHORT_DESC) \
+  shmem_internal_env_##KIND NAME;
 #include "shmem_env_defs.h"
+#undef SHMEM_INTERNAL_ENV_DEF
+
+#define SHMEM_INTERNAL_ENV_DEF(NAME, KIND, DEFAULT, CATEGORY, SHORT_DESC) \
+  shmem_internal_env_bool NAME##_provided;
+#include "shmem_env_defs.h"
+#undef SHMEM_INTERNAL_ENV_DEF
 };
 
-#undef SHMEM_INTERNAL_ENV_DEF
 
 extern struct shmem_internal_params_s shmem_internal_params;
 

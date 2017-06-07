@@ -145,7 +145,7 @@ static bool shmem_internal_getenv_bool(const char *name, bool default_val) {
 
 void shmem_internal_parse_env(void) {
 #define SHMEM_INTERNAL_ENV_DEF(NAME, KIND, DEFAULT, CATEGORY, SHORT_DESC) \
-    shmem_internal_params.NAME = shmem_internal_getenv_##KIND(#NAME, DEFAULT);
+    shmem_internal_params.NAME = shmem_internal_getenv_##KIND(#NAME, DEFAULT, &(shmem_internal_params.NAME##_provided));
 #include "shmem_env_defs.h"
 #undef SHMEM_INTERNAL_ENV_DEF
 }
