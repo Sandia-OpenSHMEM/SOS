@@ -26,13 +26,13 @@ atol_scaled(char *s)
     if (e == NULL || *e =='\0')
         return val;
 
-    if (*e == 'K')
+    if (*e == 'K' || *e == 'k')
         val *= 1024L;
-    else if (*e == 'M')
+    else if (*e == 'M' || *e == 'm')
         val *= 1024L*1024L;
-    else if (*e == 'G')
+    else if (*e == 'G' || *e == 'g')
         val *= 1024L*1024L*1024L;
-    else if (*e == 'T')
+    else if (*e == 'T' || *e == 't')
         val *= 1024L*1024L*1024L*1024L;
 
     return val;
