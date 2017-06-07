@@ -181,8 +181,7 @@ while (scalar(@args) > 0) {
             $want_compile = 0;
             $want_link = 0;
             $real_flag = 1;
-        } elsif ($arg eq "-h" || $arg eq "--help") {
-            $arg = "--help";
+        } elsif ($arg eq "--help") {
             $want_help = 1;
             $real_flag = 1;
         } elsif ($arg eq "-S") {
@@ -225,7 +224,7 @@ if ($want_help == 1) {
     print("usage: ",$wrapper," [",$wrapper,"_options] [compiler_arguments]\n\n");
     print("COMPILER = $comp\n\n");
     print($wrapper," options:\n");
-    print("\t--help | -h       Display this information\n");
+    print("\t--help            Display this information\n");
     print("\t-showme | -show   Print the command that would be run without executing it\n");
     print("\t-E | -M           Disable compilation and linking\n");
     print("\t-S                Disable linking\n");
