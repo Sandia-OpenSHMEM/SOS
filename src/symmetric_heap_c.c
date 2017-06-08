@@ -346,9 +346,23 @@ shmem_align(size_t alignment, size_t size)
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    /* Alignment must be at least sizeof(void *) and a power of two */
-    if (alignment < sizeof(void*) || (alignment & (alignment-1)) != 0)
+    /* Alignment must be at least sizeof(void*) */
+    if (alignment < sizeof(void*))
         return NULL;
+
+    /* Round alignment up to the nearest power of two if
+     * not already a power of two */
+    if ((alignment & (alignment-1)) != 0) {
+        size_t c, log2_alignment = 0;
+
+        for (c = alignment >> 1; c; c >>= 1)
+            log2_alignment++;
+
+        RAISE_DEBUG_MSG("Alignment was rounded up from %zu to %zu\n",
+                        alignment, (size_t) 1 << (log2_alignment + 1));
+
+        alignment = 1 << (log2_alignment + 1);
+    }
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     ret = dlmemalign(alignment, size);
