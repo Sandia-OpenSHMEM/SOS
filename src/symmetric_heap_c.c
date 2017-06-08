@@ -302,9 +302,13 @@ shmem_free(void *ptr)
 
     shmem_internal_barrier_all();
 
-    SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
-    dlfree(ptr);
-    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
+    /* It's fine to call dlfree with NULL, but better to avoid unnecessarily
+     * taking the mutex in the threaded case. */
+    if (ptr != NULL) {
+        SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
+        dlfree(ptr);
+        SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
+    }
 }
 
 
