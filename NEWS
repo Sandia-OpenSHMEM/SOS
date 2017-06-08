@@ -2,6 +2,18 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.3.3rc1
+---------
+- Fixed dissemination barrier race that could lead to incorrect synchronization.
+- Improved collect and all-to-all collectives performance.
+- Improved error reporting and debugging output.
+- Added support for proposed bitwise atomics (see shmemx.h).
+- Added shmemx_pcontrol function to profiling interface extension (see shmemx.h).
+- Added symbol hiding support in SHMEM library.
+- Fixed symmetric heap corruption bug in GUPS benchmark (see test/apps/gups.c).
+- Added target-side measurement and asymmetric configuration support to
+  performance suite benchmarks.
+
 v1.3.2
 ------
 - Improved support for proposed multithreading extension (see shmemx.h),

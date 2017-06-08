@@ -154,7 +154,7 @@ main(int argc, char **argv)
     for(l=0; l < loops; l++)
     {
         /* align 2**2 ... 2**23; 24 exceeds symetric heap max */
-        for(j=0,c=2; j < 23; j++,c<<=1)
+        for(j=0,c=8; j < 21; j++,c<<=1)
         {
             target_sz = nWords * sizeof(DataType);
             if (!(target = (DataType *)shmem_align(c,target_sz))) {
