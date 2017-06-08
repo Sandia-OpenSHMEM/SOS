@@ -321,7 +321,12 @@ shmem_realloc(void *ptr, size_t size)
     shmem_internal_barrier_all();
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
-    ret = dlrealloc(ptr, size);
+    if (size == 0 && ptr != NULL) {
+        dlfree(ptr);
+        ret = NULL;
+    } else {
+        ret = dlrealloc(ptr, size);
+    }
     SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
 
     shmem_internal_barrier_all();
