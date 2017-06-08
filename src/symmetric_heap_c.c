@@ -358,8 +358,8 @@ shmem_align(size_t alignment, size_t size)
         for (c = alignment >> 1; c; c >>= 1)
             log2_alignment++;
 
-        RAISE_DEBUG_MSG("Alignment was rounded up from %zu to %zu\n",
-                        alignment, (size_t) 1 << (log2_alignment + 1));
+        DEBUG_MSG("Alignment was rounded up from %zu to %zu\n",
+                  alignment, (size_t) 1 << (log2_alignment + 1));
 
         alignment = 1 << (log2_alignment + 1);
     }
