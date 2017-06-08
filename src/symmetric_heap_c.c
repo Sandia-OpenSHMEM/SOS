@@ -337,6 +337,10 @@ shmem_align(size_t alignment, size_t size)
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
+    /* Alignment must be at least sizeof(void *) and a power of two */
+    if (alignment < sizeof(void*) || (alignment & (alignment-1)) != 0)
+        return NULL;
+
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     ret = dlmemalign(alignment, size);
     SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
