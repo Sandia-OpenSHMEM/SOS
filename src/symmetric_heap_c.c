@@ -184,7 +184,7 @@ static void *mmap_alloc(size_t bytes)
                         fd = 0;
                     } else {
                         /* have to round up by the pagesize being used */
-                        bytes = CEILING(bytes, shmem_internal_heap_huge_page_size);
+                        bytes = CEILING(bytes, shmem_internal_params.SYMMETRIC_HEAP_PAGE_SIZE);
                     }
                 }
             }
