@@ -1088,7 +1088,7 @@ int query_for_fabric(struct fabric_info *info)
     return ret;
 }
 
-int shmem_transport_init(long eager_size)
+int shmem_transport_init(void)
 {
     int ret = 0;
     struct fabric_info info = {0};
@@ -1119,17 +1119,18 @@ int shmem_transport_init(long eager_size)
     /* The current bounce buffering implementation is only compatible with
      * providers that don't require FI_CONTEXT */
     if (info.p_info->mode & FI_CONTEXT) {
-        if (shmem_internal_my_pe == 0 && eager_size > 0) {
+        if (shmem_internal_my_pe == 0 && shmem_internal_params.BOUNCE_SIZE > 0) {
             DEBUG_STR("OFI provider requires FI_CONTEXT; disabling bounce buffering");
         }
         shmem_transport_ofi_bounce_buffer_size = 0;
+        shmem_transport_ofi_bounce_buffers = NULL;
     } else {
-        shmem_transport_ofi_bounce_buffer_size = eager_size;
+        shmem_transport_ofi_bounce_buffer_size = shmem_internal_params.BOUNCE_SIZE;
+        shmem_transport_ofi_bounce_buffers =
+            shmem_free_list_init(sizeof(shmem_transport_ofi_bounce_buffer_t) +
+                                 shmem_transport_ofi_bounce_buffer_size,
+                                 init_bounce_buffer);
     }
-
-    shmem_transport_ofi_bounce_buffers =
-        shmem_free_list_init(sizeof(shmem_transport_ofi_bounce_buffer_t)
-                             + eager_size, init_bounce_buffer);
 
     ret = allocate_fabric_resources(&info);
 

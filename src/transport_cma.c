@@ -41,7 +41,7 @@ typedef struct pmi_shmem_data {
 
 
 int
-shmem_transport_cma_init(long eager_size)
+shmem_transport_cma_init(void)
 {
     int ret;
     pmi_cma_data_t cma_data;

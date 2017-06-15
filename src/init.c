@@ -123,7 +123,6 @@ void
 shmem_internal_init(int tl_requested, int *tl_provided)
 {
     int ret;
-    long eager_size;
 
     int runtime_initialized   = 0;
     int transport_initialized = 0;
@@ -167,10 +166,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
      * because of threading overheads */
     if (shmem_internal_thread_level == SHMEMX_THREAD_MULTIPLE &&
         !shmem_internal_params.BOUNCE_SIZE_provided) {
-        eager_size = 0;
-    }
-    else {
-        eager_size = shmem_internal_params.BOUNCE_SIZE;
+        shmem_internal_params.BOUNCE_SIZE = 0;
     }
 
 #ifdef USE_CMA
@@ -202,14 +198,14 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     }
 
     /* Initialize transport devices */
-    ret = shmem_transport_init(eager_size);
+    ret = shmem_transport_init();
     if (0 != ret) {
         RETURN_ERROR_MSG("Transport init failed (%d)\n", ret);
         goto cleanup;
     }
     transport_initialized = 1;
 #ifdef USE_XPMEM
-    ret = shmem_transport_xpmem_init(eager_size);
+    ret = shmem_transport_xpmem_init();
     if (0 != ret) {
         RETURN_ERROR_MSG("XPMEM init failed (%d)\n", ret);
         goto cleanup;
@@ -218,7 +214,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 #endif
 
 #ifdef USE_CMA
-    ret = shmem_transport_cma_init(eager_size);
+    ret = shmem_transport_cma_init();
     if (0 != ret) {
         RETURN_ERROR_MSG("CMA init failed (%d)\n", ret);
         goto cleanup;

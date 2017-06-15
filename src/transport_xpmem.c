@@ -44,7 +44,7 @@ static struct share_info_t my_info;
                                         page_size + 1) * page_size)
 
 int
-shmem_transport_xpmem_init(long eager_size)
+shmem_transport_xpmem_init(void)
 {
     long page_size = sysconf(_SC_PAGESIZE);
     char *base;
