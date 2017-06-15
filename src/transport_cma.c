@@ -32,8 +32,6 @@
 
 pid_t shmem_transport_cma_my_pid;
 pid_t *shmem_transport_cma_peers = NULL;
-size_t shmem_transport_cma_put_max=8*1024;
-size_t shmem_transport_cma_get_max=16*1024;
 
 typedef struct pmi_shmem_data {
     pid_t           lpid;   /* OS specific */

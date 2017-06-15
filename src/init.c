@@ -222,11 +222,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
               shmem_internal_heap_base, shmem_internal_heap_length,
               shmem_internal_data_base, shmem_internal_data_length);
 
-#ifdef USE_CMA
-    shmem_transport_cma_put_max = shmem_internal_param.CMA_PUT_MAX;
-    shmem_transport_cma_get_max = shmem_internal_param.CMA_GET_MAX;
-#endif
-
 #ifdef USE_ON_NODE_COMMS
     shmem_internal_location_array = malloc(sizeof(char) * shmem_internal_num_pes);
     if (NULL == shmem_internal_location_array) goto cleanup;

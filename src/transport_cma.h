@@ -31,8 +31,6 @@
 
 extern pid_t shmem_transport_cma_my_pid;
 extern pid_t *shmem_transport_cma_peers;
-extern size_t shmem_transport_cma_put_max;
-extern size_t shmem_transport_cma_get_max;
 
 int shmem_transport_cma_init(void);
 int shmem_transport_cma_startup(void);
