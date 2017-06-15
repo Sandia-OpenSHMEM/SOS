@@ -39,7 +39,7 @@ atol_scaled(char *s)
 }
 
 
-static inline long
+static long
 errchk_atol(char *s)
 {
     long val;
@@ -55,52 +55,13 @@ errchk_atol(char *s)
     return val;
 }
 
-
-static long
-shmem_internal_getenv_long_sized(const char* name, int is_sized, long default_value)
+static char *
+shmem_internal_getenv(const char* name)
 {
     char *env_name, *env_value;
     int ret;
-
-    ret = asprintf(&env_name, "SMA_%s", name);
-    if (ret < 0) {
-        RAISE_ERROR(ret);
-    }
-    env_value = getenv(env_name);
-    free(env_name);
-    if (env_value != NULL) {
-        if (is_sized) {
-            return atol_scaled(env_value);
-        } else {
-            return errchk_atol(env_value);
-        }
-    }
 
     ret = asprintf(&env_name, "SHMEM_%s", name);
-    if (ret < 0) {
-        RAISE_ERROR(ret);
-    }
-    env_value = getenv(env_name);
-    free(env_name);
-    if (env_value != NULL) {
-        if (is_sized) {
-            return atol_scaled(env_value);
-        } else {
-            return errchk_atol(env_value);
-        }
-    }
-
-    return default_value;
-}
-
-
-static char *
-shmem_internal_getenv_str(const char* name)
-{
-    char *env_name, *env_value;
-    int ret;
-
-    ret = asprintf(&env_name, "SMA_%s", name);
     if (ret < 0) {
         RAISE_ERROR(ret);
     }
@@ -110,7 +71,7 @@ shmem_internal_getenv_str(const char* name)
         return env_value;
     }
 
-    ret = asprintf(&env_name, "SHMEM_%s", name);
+    ret = asprintf(&env_name, "SMA_%s", name);
     if (ret < 0) {
         RAISE_ERROR(ret);
     }
@@ -122,30 +83,46 @@ shmem_internal_getenv_str(const char* name)
 
     return NULL;
 }
-static const char * shmem_internal_getenv_string(const char *name, const char *default_val) {
-    char *env = shmem_internal_getenv_str(name);
-    if (env != NULL)
-        return env;
-    else
-        return default_val;
+
+static void
+shmem_internal_getenv_string(const char *name,
+                             const shmem_internal_env_string default_val,
+                             shmem_internal_env_string *out, bool *provided) {
+    char *env = shmem_internal_getenv(name);
+    *provided = (env != NULL);
+    *out = (*provided) ? env : default_val;
 }
 
-static long shmem_internal_getenv_long(const char *name, long default_val) {
-    return shmem_internal_getenv_long_sized(name, 0, default_val);
+static void
+shmem_internal_getenv_long(const char *name,
+                           shmem_internal_env_long default_val,
+                           shmem_internal_env_long *out, bool *provided) {
+    char *env = shmem_internal_getenv(name);
+    *provided = (env != NULL);
+    *out = (*provided) ? errchk_atol(env) : default_val;
 }
 
-static size_t shmem_internal_getenv_size(const char *name, size_t default_val) {
-    return shmem_internal_getenv_long_sized(name, 1, default_val);
+static void
+shmem_internal_getenv_size(const char *name,
+                           shmem_internal_env_size default_val,
+                           shmem_internal_env_size *out, bool *provided) {
+    char *env = shmem_internal_getenv(name);
+    *provided = (env != NULL);
+    *out = (*provided) ? atol_scaled(env) : default_val;
 }
 
-static bool shmem_internal_getenv_bool(const char *name, bool default_val) {
-    char *env = shmem_internal_getenv_str(name);
-    return (env != NULL) ? !default_val : default_val;
+static void
+shmem_internal_getenv_bool(const char *name,
+                           shmem_internal_env_bool default_val,
+                           shmem_internal_env_bool *out, bool *provided) {
+    char *env = shmem_internal_getenv(name);
+    *provided = (env != NULL);
+    *out = (*provided) ? !default_val : default_val;
 }
 
 void shmem_internal_parse_env(void) {
 #define SHMEM_INTERNAL_ENV_DEF(NAME, KIND, DEFAULT, CATEGORY, SHORT_DESC) \
-    shmem_internal_params.NAME = shmem_internal_getenv_##KIND(#NAME, DEFAULT, &(shmem_internal_params.NAME##_provided));
+    shmem_internal_getenv_##KIND(#NAME, DEFAULT, &(shmem_internal_params.NAME), &(shmem_internal_params.NAME##_provided));
 #include "shmem_env_defs.h"
 #undef SHMEM_INTERNAL_ENV_DEF
 }

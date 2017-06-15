@@ -8,7 +8,7 @@
 typedef long   shmem_internal_env_long;
 typedef size_t shmem_internal_env_size;
 typedef bool   shmem_internal_env_bool;
-typedef const char* shmem_internal_env_string;
+typedef char*  shmem_internal_env_string;
 
 #define SHPRI_long "ld"
 #define SHPRI_size "zd"
@@ -29,7 +29,7 @@ struct shmem_internal_params_s {
 #undef SHMEM_INTERNAL_ENV_DEF
 
 #define SHMEM_INTERNAL_ENV_DEF(NAME, KIND, DEFAULT, CATEGORY, SHORT_DESC) \
-  shmem_internal_env_bool NAME##_provided;
+  bool NAME##_provided;
 #include "shmem_env_defs.h"
 #undef SHMEM_INTERNAL_ENV_DEF
 };
