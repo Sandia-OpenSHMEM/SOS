@@ -158,27 +158,27 @@ static void *mmap_alloc(size_t bytes)
     int fd = 0;
     char *directory = NULL;
     const char basename[] = "hugepagefile.SOS";
-    int size;
     void *requested_base =
         (void*) (((unsigned long) shmem_internal_data_base +
                   shmem_internal_data_length + 2 * ONEGIG) & ~(ONEGIG - 1));
     void *ret;
 
-    if (shmem_internal_heap_use_huge_pages) {
+#ifdef __linux__
+    /* huge page support only on Linux for now, default is to use 2MB large pages */
+    if (shmem_internal_params.SYMMETRIC_HEAP_USE_HUGE_PAGES) {
 
         /*
          * check what /proc/mounts has for explicit huge page support
          */
 
-        if(find_hugepage_dir(shmem_internal_heap_huge_page_size, &directory) == 0) {
+        if (find_hugepage_dir(shmem_internal_params.SYMMETRIC_HEAP_PAGE_SIZE,
+                             &directory) == 0)
+        {
+            int size = snprintf(NULL, 0, "%s/%s.%d", directory, basename, getpid());
 
-            size = snprintf(NULL, 0, "%s/%s.%d", directory, basename, getpid());
             if (size < 0) {
-
-                RAISE_WARN_STR("snprint returned error, cannot use huge pages");
-
+                RAISE_WARN_STR("snprintf returned error, cannot use huge pages");
             } else {
-
                 file_name = malloc(size + 1);
                 if (file_name) {
                     sprintf(file_name, "%s/%s.%d", directory, basename, getpid());
@@ -187,14 +187,14 @@ static void *mmap_alloc(size_t bytes)
                         RAISE_WARN_STR("file open failed, cannot use huge pages");
                         fd = 0;
                     } else {
-                        /* have to round up
-                           by the pagesize being used */
+                        /* have to round up by the pagesize being used */
                         bytes = CEILING(bytes, shmem_internal_heap_huge_page_size);
                     }
                 }
             }
         }
     }
+#endif /* __linux__ */
 
     ret = mmap(requested_base,
                bytes,
@@ -210,7 +210,8 @@ static void *mmap_alloc(size_t bytes)
         ret = NULL;
     }
     if (fd) {
-        unlink(file_name);
+        if (file_name)
+            unlink(file_name);
         close(fd);
     }
     if (directory) {

@@ -44,8 +44,6 @@ void *shmem_internal_heap_base = NULL;
 long shmem_internal_heap_length = 0;
 void *shmem_internal_data_base = NULL;
 long shmem_internal_data_length = 0;
-int shmem_internal_heap_use_huge_pages = 0;
-long shmem_internal_heap_huge_page_size = 0;
 
 int shmem_internal_my_pe = -1;
 int shmem_internal_num_pes = -1;
@@ -174,16 +172,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     else {
         eager_size = shmem_internal_params.BOUNCE_SIZE;
     }
-
-    /* huge page support only on Linux for now, default is to use 2MB large pages */
-#ifdef __linux__
-    if (shmem_internal_params.SYMMETRIC_HEAP_USE_MALLOC == 0) {
-        shmem_internal_heap_use_huge_pages =
-            shmem_internal_param.SYMMETRIC_HEAP_USE_HUGE_PAGES;
-        shmem_internal_heap_huge_page_size =
-            shmem_internal_param.SYMMETRIC_HEAP_PAGE_SIZE;
-    }
-#endif
 
 #ifdef USE_CMA
     shmem_transport_cma_put_max = shmem_internal_param.CMA_PUT_MAX;

@@ -38,8 +38,6 @@ extern void *shmem_internal_heap_base;
 extern long shmem_internal_heap_length;
 extern void *shmem_internal_data_base;
 extern long shmem_internal_data_length;
-extern int shmem_internal_heap_use_huge_pages;
-extern long shmem_internal_heap_huge_page_size;
 
 /* Note: must be accompanied by shmem_internal_my_pe in arguments */
 #define RAISE_PE_PREFIX "[%04d]        "
