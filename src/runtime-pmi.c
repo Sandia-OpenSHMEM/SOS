@@ -172,7 +172,7 @@ shmem_runtime_abort(int exit_code, const char msg[])
 {
 
 #ifdef HAVE___BUILTIN_TRAP
-    if (shmem_internal_trap_on_abort)
+    if (shmem_internal_params.TRAP_ON_ABORT)
         __builtin_trap();
 #endif
 

@@ -33,8 +33,6 @@ extern int shmem_internal_num_pes;
 extern int shmem_internal_initialized;
 extern int shmem_internal_finalized;
 extern int shmem_internal_thread_level;
-extern int shmem_internal_debug;
-extern int shmem_internal_trap_on_abort;
 
 extern void *shmem_internal_heap_base;
 extern long shmem_internal_heap_length;
@@ -123,7 +121,7 @@ extern long shmem_internal_heap_huge_page_size;
 
 #define DEBUG_STR(str)                                                  \
     do {                                                                \
-        if(shmem_internal_debug) {                                      \
+        if(shmem_internal_params.DEBUG) {                               \
             fprintf(stderr, "[%04d] DEBUG: %s:%d: %s\n"                 \
                     RAISE_PE_PREFIX "%s\n",                             \
                     shmem_internal_my_pe, __FILE__, __LINE__, __func__, \
@@ -133,7 +131,7 @@ extern long shmem_internal_heap_huge_page_size;
 
 #define DEBUG_MSG(...)                                                  \
     do {                                                                \
-        if(shmem_internal_debug) {                                      \
+        if(shmem_internal_params.DEBUG) {                               \
             char str[256];                                              \
             size_t off;                                                 \
             off = snprintf(str, sizeof(str), "[%04d] DEBUG: %s:%d: %s\n", \

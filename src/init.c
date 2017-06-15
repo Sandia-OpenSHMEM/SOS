@@ -55,8 +55,6 @@ int shmem_internal_initialized_with_start_pes = 0;
 int shmem_internal_global_exit_called = 0;
 
 int shmem_internal_thread_level;
-int shmem_internal_debug = 0;
-int shmem_internal_trap_on_abort = 0;
 
 #ifdef ENABLE_THREADS
 shmem_internal_mutex_t shmem_internal_mutex_alloc;
@@ -176,9 +174,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     else {
         eager_size = shmem_internal_params.BOUNCE_SIZE;
     }
-
-    shmem_internal_debug = shmem_internal_params.DEBUG;
-    shmem_internal_trap_on_abort = shmem_internal_params.TRAP_ON_ABORT;
 
     /* huge page support only on Linux for now, default is to use 2MB large pages */
 #ifdef __linux__
@@ -303,7 +298,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
             shmem_internal_print_env();
         }
 
-        if (shmem_internal_debug) {
+        if (shmem_internal_params.DEBUG) {
             char *wrapped_configure_args = shmem_util_wrap(SOS_CONFIGURE_ARGS, 60,
                                                            "                        ");
 

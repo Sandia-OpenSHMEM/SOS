@@ -68,7 +68,7 @@ shmem_internal_build_kary_tree(int radix, int PE_start, int stride,
         }
     }
 
-    if (shmem_internal_debug) {
+    if (shmem_internal_params.DEBUG) {
         size_t len;
         char debug_str[256];
         len = snprintf(debug_str, sizeof(debug_str), "Building k-ary tree:"
