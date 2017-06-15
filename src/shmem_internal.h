@@ -395,8 +395,7 @@ char *shmem_internal_nodename(void);
 
 int shmem_internal_symmetric_init(void);
 int shmem_internal_symmetric_fini(void);
-int shmem_internal_collectives_init(int requested_crossover,
-                                    int requested_radix);
+int shmem_internal_collectives_init(void);
 
 /* internal allocation, without a barrier */
 void *shmem_internal_shmalloc(size_t size);

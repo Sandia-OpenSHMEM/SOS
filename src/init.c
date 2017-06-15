@@ -283,8 +283,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     }
 #endif
 
-    ret = shmem_internal_collectives_init(shmem_internal_params.COLL_CROSSOVER,
-                                          shmem_internal_params.COLL_RADIX);
+    ret = shmem_internal_collectives_init();
     if (ret != 0) {
         RETURN_ERROR_MSG("Initialization of collectives failed (%d)\n", ret);
         goto cleanup;

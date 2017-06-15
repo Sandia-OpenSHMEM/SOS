@@ -28,7 +28,6 @@ coll_type_t shmem_internal_reduce_type = AUTO;
 coll_type_t shmem_internal_collect_type = AUTO;
 coll_type_t shmem_internal_fcollect_type = AUTO;
 long *shmem_internal_barrier_all_psync;
-int shmem_internal_tree_crossover = -1;
 
 char *coll_type_str[] = { "AUTO",
                           "LINEAR",
@@ -109,16 +108,14 @@ shmem_internal_circular_iter_next(int curr, int PE_start, int logPE_stride, int 
 
 
 int
-shmem_internal_collectives_init(int requested_crossover,
-                                int requested_radix)
+shmem_internal_collectives_init(void)
 {
     int i, j, k;
     int tmp_radix;
     int my_root = 0;
     char *type;
 
-    tree_radix = requested_radix;
-    shmem_internal_tree_crossover = requested_crossover;
+    tree_radix = (int) shmem_internal_params.COLL_RADIX;
 
     /* initialize barrier_all psync array */
     shmem_internal_barrier_all_psync =
