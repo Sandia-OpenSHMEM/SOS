@@ -160,7 +160,8 @@ shmem_internal_collectives_init(int requested_crossover,
     }
     full_tree_parent = my_root;
 
-    if (NULL != (type = shmem_util_getenv_str("BARRIER_ALGORITHM"))) {
+    if (shmem_internal_params.BARRIER_ALGORITHM_provided) {
+        type = shmem_internal_params.BARRIER_ALGORITHM;
         if (0 == strcmp(type, "auto")) {
             shmem_internal_barrier_type = AUTO;
         } else if (0 == strcmp(type, "linear")) {
@@ -173,7 +174,8 @@ shmem_internal_collectives_init(int requested_crossover,
             RAISE_WARN_MSG("Ignoring bad barrier algorithm '%s'\n", type);
         }
     }
-    if (NULL != (type = shmem_util_getenv_str("BCAST_ALGORITHM"))) {
+    if (shmem_internal_params.BCAST_ALGORITHM_provided) {
+        type = shmem_internal_params.BCAST_ALGORITHM;
         if (0 == strcmp(type, "auto")) {
             shmem_internal_bcast_type = AUTO;
         } else if (0 == strcmp(type, "linear")) {
@@ -184,7 +186,8 @@ shmem_internal_collectives_init(int requested_crossover,
             RAISE_WARN_MSG("Ignoring bad broadcast algorithm '%s'\n", type);
         }
     }
-    if (NULL != (type = shmem_util_getenv_str("REDUCE_ALGORITHM"))) {
+    if (shmem_internal_params.REDUCE_ALGORITHM_provided) {
+        type = shmem_internal_params.REDUCE_ALGORITHM;
         if (0 == strcmp(type, "auto")) {
             shmem_internal_reduce_type = AUTO;
         } else if (0 == strcmp(type, "linear")) {
@@ -197,7 +200,8 @@ shmem_internal_collectives_init(int requested_crossover,
             RAISE_WARN_MSG("Ignoring bad reduction algorithm '%s'\n", type);
         }
     }
-    if (NULL != (type = shmem_util_getenv_str("COLLECT_ALGORITHM"))) {
+    if (shmem_internal_params.COLLECT_ALGORITHM_provided) {
+        type = shmem_internal_params.COLLECT_ALGORITHM;
         if (0 == strcmp(type, "auto")) {
             shmem_internal_collect_type = AUTO;
         } else if (0 == strcmp(type, "linear")) {
@@ -206,7 +210,8 @@ shmem_internal_collectives_init(int requested_crossover,
             RAISE_WARN_MSG("Ignoring bad collect algorithm '%s'\n", type);
         }
     }
-    if (NULL != (type = shmem_util_getenv_str("FCOLLECT_ALGORITHM"))) {
+    if (shmem_internal_params.FCOLLECT_ALGORITHM_provided) {
+        type = shmem_internal_params.FCOLLECT_ALGORITHM;
         if (0 == strcmp(type, "auto")) {
             shmem_internal_fcollect_type = AUTO;
         } else if (0 == strcmp(type, "linear")) {

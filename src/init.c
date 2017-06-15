@@ -167,27 +167,32 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         goto cleanup;
     }
 
-    /* Process environment variables */
-    eager_size = shmem_util_getenv_long("BOUNCE_SIZE", 1,
-                            /* Disable by default in MULTIPLE because of threading overheads */
-                            shmem_internal_thread_level == SHMEMX_THREAD_MULTIPLE ?
-                            0 : DEFAULT_BOUNCE_SIZE);
-    shmem_internal_debug = (NULL != shmem_util_getenv_str("DEBUG")) ? 1 : 0;
-    shmem_internal_trap_on_abort = (NULL != shmem_util_getenv_str("TRAP_ON_ABORT")) ? 1 : 0;
+    /* Unless the user asked for it, disable bounce buffering in MULTIPLE
+     * because of threading overheads */
+    if (shmem_internal_thread_level == SHMEMX_THREAD_MULTIPLE &&
+        !shmem_internal_params.BOUNCE_SIZE_provided) {
+        eager_size = 0;
+    }
+    else {
+        eager_size = shmem_internal_params.BOUNCE_SIZE;
+    }
+
+    shmem_internal_debug = shmem_internal_params.DEBUG;
+    shmem_internal_trap_on_abort = shmem_internal_params.TRAP_ON_ABORT;
 
     /* huge page support only on Linux for now, default is to use 2MB large pages */
 #ifdef __linux__
     if (shmem_internal_params.SYMMETRIC_HEAP_USE_MALLOC == 0) {
         shmem_internal_heap_use_huge_pages =
-            (shmem_util_getenv_str("SYMMETRIC_HEAP_USE_HUGE_PAGES") != NULL) ? 1 : 0;
+            shmem_internal_param.SYMMETRIC_HEAP_USE_HUGE_PAGES;
         shmem_internal_heap_huge_page_size =
-            shmem_util_getenv_long("SYMMETRIC_HEAP_PAGE_SIZE", 1, 2 * 1024 * 1024);
+            shmem_internal_param.SYMMETRIC_HEAP_PAGE_SIZE;
     }
 #endif
 
 #ifdef USE_CMA
-    shmem_transport_cma_put_max = shmem_util_getenv_long("CMA_PUT_MAX", 1, 8*1024);
-    shmem_transport_cma_get_max = shmem_util_getenv_long("CMA_GET_MAX", 1, 16*1024);
+    shmem_transport_cma_put_max = shmem_internal_param.CMA_PUT_MAX;
+    shmem_transport_cma_get_max = shmem_internal_param.CMA_GET_MAX;
 #endif
 
     /* Find symmetric data */
