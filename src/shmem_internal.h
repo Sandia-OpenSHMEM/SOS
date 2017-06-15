@@ -39,6 +39,8 @@ extern long shmem_internal_heap_length;
 extern void *shmem_internal_data_base;
 extern long shmem_internal_data_length;
 
+#define SHMEM_INTERNAL_LIBRARY_OVERHEAD (1024*1024)
+
 /* Note: must be accompanied by shmem_internal_my_pe in arguments */
 #define RAISE_PE_PREFIX "[%04d]        "
 
@@ -391,7 +393,7 @@ void shmem_internal_finalize(void);
 void shmem_internal_global_exit(int status);
 char *shmem_internal_nodename(void);
 
-int shmem_internal_symmetric_init(size_t requested_length, int use_malloc);
+int shmem_internal_symmetric_init(void);
 int shmem_internal_symmetric_fini(void);
 int shmem_internal_collectives_init(int requested_crossover,
                                     int requested_radix);

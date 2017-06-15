@@ -195,8 +195,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 #endif
 
     /* create symmetric heap */
-    ret = shmem_internal_symmetric_init(shmem_internal_params.SYMMETRIC_SIZE,
-                                        shmem_internal_params.SYMMETRIC_HEAP_USE_MALLOC);
+    ret = shmem_internal_symmetric_init();
     if (0 != ret) {
         RETURN_ERROR_MSG("Symmetric heap initialization failed (%d)\n", ret);
         goto cleanup;
