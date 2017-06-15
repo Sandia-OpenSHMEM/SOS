@@ -169,10 +169,38 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         shmem_internal_params.BOUNCE_SIZE = 0;
     }
 
-#ifdef USE_CMA
-    shmem_transport_cma_put_max = shmem_internal_param.CMA_PUT_MAX;
-    shmem_transport_cma_get_max = shmem_internal_param.CMA_GET_MAX;
+    /* Print library parameters */
+    if (0 == shmem_internal_my_pe) {
+        if (shmem_internal_params.VERSION || shmem_internal_params.INFO ||
+            shmem_internal_params.DEBUG)
+        {
+            printf(PACKAGE_STRING "\n");
+        }
+
+        if (shmem_internal_params.INFO) {
+            shmem_internal_print_env();
+            printf("\n");
+        }
+
+        if (shmem_internal_params.DEBUG) {
+            char *wrapped_configure_args = shmem_util_wrap(SOS_CONFIGURE_ARGS, 60,
+                                                           "                        ");
+
+            printf("Build information:\n");
+#ifdef SOS_GIT_VERSION
+            printf("%-23s %s\n", "  Git Version", SOS_GIT_VERSION);
 #endif
+            printf("%-23s %s\n", "  Configure Args", wrapped_configure_args);
+            printf("%-23s %s\n", "  Build Date", SOS_BUILD_DATE);
+            printf("%-23s %s\n", "  Build CC", SOS_BUILD_CC);
+            printf("%-23s %s\n", "  Build CFLAGS", SOS_BUILD_CFLAGS);
+            printf("\n");
+
+            free(wrapped_configure_args);
+        }
+
+        fflush(NULL);
+    }
 
     /* Find symmetric data */
 #ifdef __APPLE__
@@ -183,19 +211,28 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     shmem_internal_data_length = (unsigned long) &end  - (unsigned long) &data_start;
 #endif
 
-#ifdef USE_ON_NODE_COMMS
-    shmem_internal_location_array = malloc(sizeof(char) * shmem_internal_num_pes);
-    if (NULL == shmem_internal_location_array) goto cleanup;
-
-    memset(shmem_internal_location_array, -1, shmem_internal_num_pes);
-#endif
-
     /* create symmetric heap */
     ret = shmem_internal_symmetric_init();
     if (0 != ret) {
         RETURN_ERROR_MSG("Symmetric heap initialization failed (%d)\n", ret);
         goto cleanup;
     }
+
+    DEBUG_MSG("Sym. heap=%p len=%ld -- data=%p len=%ld\n",
+              shmem_internal_heap_base, shmem_internal_heap_length,
+              shmem_internal_data_base, shmem_internal_data_length);
+
+#ifdef USE_CMA
+    shmem_transport_cma_put_max = shmem_internal_param.CMA_PUT_MAX;
+    shmem_transport_cma_get_max = shmem_internal_param.CMA_GET_MAX;
+#endif
+
+#ifdef USE_ON_NODE_COMMS
+    shmem_internal_location_array = malloc(sizeof(char) * shmem_internal_num_pes);
+    if (NULL == shmem_internal_location_array) goto cleanup;
+
+    memset(shmem_internal_location_array, -1, shmem_internal_num_pes);
+#endif
 
     /* Initialize transport devices */
     ret = shmem_transport_init();
@@ -268,42 +305,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
                     sizeof(shmem_internal_my_hostname),
                     "ERR: gethostname '%s'?", strerror(errno));
     }
-
-    /* last minute printing of information */
-    if (0 == shmem_internal_my_pe) {
-        if (shmem_internal_params.VERSION || shmem_internal_params.INFO ||
-            shmem_internal_params.DEBUG)
-        {
-            printf(PACKAGE_STRING "\n");
-        }
-
-        if (shmem_internal_params.INFO) {
-            shmem_internal_print_env();
-        }
-
-        if (shmem_internal_params.DEBUG) {
-            char *wrapped_configure_args = shmem_util_wrap(SOS_CONFIGURE_ARGS, 60,
-                                                           "                        ");
-
-            printf("Build information:\n");
-#ifdef SOS_GIT_VERSION
-            printf("%-23s %s\n", "Git Version", SOS_GIT_VERSION);
-#endif
-            printf("%-23s %s\n", "Configure Args", wrapped_configure_args);
-            printf("%-23s %s\n", "Build Date", SOS_BUILD_DATE);
-            printf("%-23s %s\n", "Build CC", SOS_BUILD_CC);
-            printf("%-23s %s\n", "Build CFLAGS", SOS_BUILD_CFLAGS);
-            printf("\n");
-
-            free(wrapped_configure_args);
-        }
-
-        fflush(NULL);
-    }
-
-    DEBUG_MSG("Sym. heap=%p len=%ld -- data=%p len=%ld\n",
-              shmem_internal_heap_base, shmem_internal_heap_length,
-              shmem_internal_data_base, shmem_internal_data_length);
 
     /* finish up */
     shmem_runtime_barrier();
