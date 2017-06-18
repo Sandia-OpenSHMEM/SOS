@@ -2,8 +2,8 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
-v1.3.3rc1
----------
+v1.3.3
+------
 - Fixed dissemination barrier race that could lead to incorrect synchronization.
 - Improved collect and all-to-all collectives performance.
 - Improved error reporting and debugging output.
