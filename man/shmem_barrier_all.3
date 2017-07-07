@@ -1,0 +1,140 @@
+.TH SHMEM_BARRIER_ALL 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_barrier_all \- 
+Registers the arrival of a PE at a barrier and suspends PE execution
+until all other PEs arrive at the barrier and all local and remote memory
+updates are completed.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B void
+.B shmem_barrier_all(void)
+
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.SS Fortran:
+
+.nf
+
+.BR "CALL " "SHMEM_BARRIER_ALL"
+
+.fi
+
+./ sectionEnd
+
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.B None.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+The 
+.B shmem\_barrier\_all
+routine registers the arrival of a PE at
+a barrier. Barriers are a fast mechanism for synchronizing all PEs at
+once. This routine causes a PE to suspend execution until all PEs
+have called 
+.BR "shmem\_barrier\_all" .
+This routine must be used with
+PEs started by 
+.BR "shmem\_init" .
+
+
+Prior to synchronizing with other PEs, 
+.B shmem\_barrier\_all
+ensures completion of all previously issued memory stores and remote memory
+updates issued via OpenSHMEM AMOs and RMA routine calls such
+as 
+.B shmem\_int\_add
+, 
+.B shmem\_put32
+, 
+.B shmem\_put\_nbi
+, and 
+.BR "shmem\_get\_nbi" .
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+None.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+The 
+.B shmem\_barrier\_all
+routine can be used to
+portably ensure that memory access operations observe remote updates in the order
+enforced by initiator PEs.
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.SS Examples
+
+
+
+The following 
+.B shmem\_barrier\_all
+example is for C11 programs:
+
+.nf
+#include <stdio.h>
+#include <shmem.h>
+
+int main(void)
+{
+  static int x = 1010;
+
+  shmem_init();
+  int me = shmem_my_pe();
+  int npes = shmem_n_pes();
+
+  /* put to next  PE in a circular fashion */
+  shmem_p(&x, 4, (me + 1) % npes);
+
+  /* synchronize all PEs */
+  shmem_barrier_all();
+  printf("%d: x = %d\\n", me, x);
+  shmem_finalize();
+  return 0;
+}
+.fi
+
+
+
+
+
