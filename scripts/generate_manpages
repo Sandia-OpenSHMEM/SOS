@@ -543,7 +543,7 @@ def tablerowReplacements(tex):
 
 
 ##########################################################################
-##                    REFERENCES AND REF TABLE REPLACEMENTS                 ##
+##                    REFERENCES AND REF TABLE REPLACEMENTS             ##
 ##########################################################################
 
 def refTextReplacements(tex):
@@ -631,7 +631,7 @@ def parseRefTables(tableTex):
     where <number> is the number of spaces between the start of firstCol
     and the start of secondCol. 
     Displays as:
-                    <firstCol>                     <secondCol>
+                    <firstCol>                   <secondCol>
                     <----------<number>---------->
     If the length of <firstCol> surpasses <number>, it will display as:
                     <----------<number>---------->
@@ -694,7 +694,7 @@ def addRefTable(tableID, directory):
     return text
 
 ##########################################################################
-##                            CODE REPLACEMENTS                             ##
+##                            CODE REPLACEMENTS                         ##
 ##########################################################################
 
 def synCReplacements(tex, keyString):
@@ -801,7 +801,7 @@ def codeReplace(tex):
     return tex
 
 ##########################################################################
-##                            HELPER FUNCTIONS                             ##
+##                            HELPER FUNCTIONS                          ##
 ##########################################################################
 
 def cleanText(text):
@@ -873,7 +873,7 @@ def findMatchingBrace(tex, ind):
     return ptr - 1
 
 ##########################################################################
-##                            MAIN FUNCTIONS                                 ##
+##                            MAIN FUNCTIONS                            ##
 ##########################################################################
 
 def convertFile(functionName, directory, gen_dir):
