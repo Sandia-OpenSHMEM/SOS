@@ -225,7 +225,7 @@ shmem_internal_symmetric_init(void)
 {
     /* add library overhead such that the max can be shmalloc()'ed */
     shmem_internal_heap_length = shmem_internal_params.SYMMETRIC_SIZE +
-                                 SHMEM_INTERNAL_LIBRARY_OVERHEAD;
+                                 SHMEM_INTERNAL_HEAP_OVERHEAD;
 
     if (!shmem_internal_params.SYMMETRIC_HEAP_USE_MALLOC) {
         shmem_internal_heap_base =

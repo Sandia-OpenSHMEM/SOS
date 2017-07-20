@@ -39,7 +39,7 @@ extern long shmem_internal_heap_length;
 extern void *shmem_internal_data_base;
 extern long shmem_internal_data_length;
 
-#define SHMEM_INTERNAL_LIBRARY_OVERHEAD (1024*1024)
+#define SHMEM_INTERNAL_HEAP_OVERHEAD (1024*1024)
 
 /* Note: must be accompanied by shmem_internal_my_pe in arguments */
 #define RAISE_PE_PREFIX "[%04d]        "
