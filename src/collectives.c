@@ -39,7 +39,7 @@ char *coll_type_str[] = { "AUTO",
 static int *full_tree_children;
 static int full_tree_num_children;
 static int full_tree_parent;
-static int tree_radix = -1;
+static long tree_radix = -1;
 
 
 static int
@@ -115,7 +115,7 @@ shmem_internal_collectives_init(void)
     int my_root = 0;
     char *type;
 
-    tree_radix = (int) shmem_internal_params.COLL_RADIX;
+    tree_radix = shmem_internal_params.COLL_RADIX;
 
     /* initialize barrier_all psync array */
     shmem_internal_barrier_all_psync =
