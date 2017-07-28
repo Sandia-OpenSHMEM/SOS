@@ -255,6 +255,7 @@ script:
     ###
     - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
+    - export SMA_SYMMETRIC_SIZE='4G'
     - cd $TRAVIS_SRC/ISx/SHMEM
     - make CC=oshcc LDLIBS=-lm
     - oshrun -np 4 ./bin/isx.strong 134217728 output_strong
