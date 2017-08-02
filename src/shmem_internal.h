@@ -398,6 +398,7 @@ int shmem_internal_symmetric_init(size_t requested_length, int use_malloc);
 int shmem_internal_symmetric_fini(void);
 int shmem_internal_collectives_init(int requested_crossover,
                                     int requested_radix);
+void shmem_internal_collectives_fini(void);
 
 /* internal allocation, without a barrier */
 void *shmem_internal_shmalloc(size_t size);

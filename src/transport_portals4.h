@@ -875,6 +875,46 @@ shmem_transport_atomic_small(void *target, const void *source, size_t len,
     shmem_transport_portals4_pending_put_counter += 1;
 }
 
+static inline
+void
+shmem_transport_triggered_atomic_small(const void *source, size_t len,
+                                       int pe, ptl_op_t op, ptl_datatype_t datatype,
+                                       shmem_transport_ct_t *ct, long threshold)
+{
+    int ret;
+    long offset = 0;
+    ptl_process_t peer;
+
+    shmem_transport_portals4_fence_complete();
+
+    peer.rank = pe;
+
+    shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
+
+    shmem_transport_portals4_fence_complete();
+
+    ret = PtlTriggeredAtomic(shmem_transport_portals4_put_volatile_md_h,
+                    (ptl_size_t) source,
+                    len,
+                    PTL_OC_ACK_REQ,
+                    peer,
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+                    ct->shr_pt,
+#else
+                    ct->data_pt,
+#endif
+                    0,
+                    offset,
+                    NULL,
+                    0,
+                    op,
+                    datatype,
+                    ct->ct,
+                    (ptl_size_t) threshold);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+    shmem_transport_portals4_pending_put_counter += 1;
+}
+
 
 static inline
 void
@@ -1229,6 +1269,20 @@ void shmem_transport_ct_set(shmem_transport_ct_t *ct, long value)
     ev.failure = (ptl_size_t) 0;
 
     ret = PtlCTSet(ct->ct, ev);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+}
+
+
+static inline
+void shmem_transport_triggered_ct_set(shmem_transport_ct_t *ct, long value, long threshold)
+{
+    int ret;
+    ptl_ct_event_t ev;
+
+    ev.success = (ptl_size_t) value;
+    ev.failure = (ptl_size_t) 0;
+
+    ret = PtlTriggeredCTSet(ct->ct, ev, ct->ct, 0);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 }
 

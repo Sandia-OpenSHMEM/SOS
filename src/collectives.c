@@ -34,6 +34,7 @@ char *coll_type_str[] = { "AUTO",
                           "LINEAR",
                           "TREE",
                           "DISSEM",
+                          "TRIGGER",
                           "RING",
                           "RECDBL" };
 
@@ -42,6 +43,8 @@ static int full_tree_num_children;
 static int full_tree_parent;
 static int tree_radix = -1;
 
+static shmemx_ct_t ct;
+static long nbarriers = 0;
 
 static int
 shmem_internal_build_kary_tree(int radix, int PE_start, int stride,
@@ -169,6 +172,8 @@ shmem_internal_collectives_init(int requested_crossover,
             shmem_internal_barrier_type = TREE;
         } else if (0 == strcmp(type, "dissem")) {
             shmem_internal_barrier_type = DISSEM;
+        } else if (0 == strcmp(type, "trigger")) {
+            shmem_internal_barrier_type = TRIGGER;
         } else {
             RAISE_WARN_MSG("Ignoring bad barrier algorithm '%s'\n", type);
         }
@@ -222,7 +227,19 @@ shmem_internal_collectives_init(int requested_crossover,
         }
     }
 
+    if (shmem_internal_barrier_type == TRIGGER) {
+        shmem_internal_ct_create(&ct);
+    }
+
     return 0;
+}
+
+void
+shmem_internal_collectives_fini()
+{
+    if (shmem_internal_barrier_type == TRIGGER) {
+        shmem_internal_ct_free(&ct);
+    }
 }
 
 
@@ -405,6 +422,80 @@ shmem_internal_barrier_dissem(int PE_start, int logPE_stride, int PE_size, long 
 
     /* Ensure local pSync decrements are done before a subsequent barrier */
     shmem_internal_quiet();
+}
+
+void
+shmem_internal_barrier_trigger_tree(int PE_start, int logPE_stride, int PE_size, long *pSync)
+{
+    long one = 1;
+    int stride = 1 << logPE_stride;
+    int parent, num_children, *children;
+
+    nbarriers++;
+    shmem_internal_quiet();
+
+    if (PE_size == shmem_internal_num_pes) {
+        /* we're the full tree, use the binomial tree */
+        parent = full_tree_parent;
+        num_children = full_tree_num_children;
+        children = full_tree_children;
+    } else {
+        children = alloca(sizeof(int) * tree_radix);
+        shmem_internal_build_kary_tree(tree_radix, PE_start, stride, PE_size,
+                                       0, &parent, &num_children, children);
+    }
+
+    if (num_children != 0) {
+        /* Not a pure leaf node */
+        int i;
+
+        if (parent == shmem_internal_my_pe) {
+            /* The root of the tree */
+
+            /* Setup triggered acks down to children */
+            for (i = 0 ; i < num_children ; ++i) {
+                shmem_internal_triggered_atomic_small(&one, sizeof(one),
+                                                      children[i],
+                                                      SHM_INTERNAL_SUM,
+                                                      SHM_INTERNAL_LONG,
+                                                      ct,
+                                                      num_children*nbarriers);
+            }
+            shmem_internal_ct_wait(ct, num_children*nbarriers);
+
+        } else {
+            /* Middle of the tree */
+
+            /* Setup triggered ack to parent */
+            shmem_internal_triggered_atomic_small(&one, sizeof(one),
+                                                  parent,
+                                                  SHM_INTERNAL_SUM,
+                                                  SHM_INTERNAL_LONG,
+                                                  ct,
+                                                  num_children*nbarriers);
+
+            /* Setup triggered acks down to children */
+            for (i = 0 ; i < num_children ; ++i) {
+                shmem_internal_triggered_atomic_small(&one, sizeof(one),
+                                            children[i],
+                                            SHM_INTERNAL_SUM,
+                                            SHM_INTERNAL_LONG,
+                                            ct, (num_children+1)*nbarriers);
+            }
+            shmem_internal_ct_wait(ct, (num_children+1)*nbarriers);
+
+        }
+
+    } else {
+        /* Leaf node */
+
+        /* Send message up the tree immediately (trigger at zero) */
+        shmem_internal_triggered_atomic_small(&one, sizeof(one), parent,
+                                              SHM_INTERNAL_SUM, SHM_INTERNAL_LONG,
+                                              ct, 0);
+        shmem_internal_ct_wait(ct, nbarriers);
+    }
+
 }
 
 
