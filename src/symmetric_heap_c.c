@@ -64,12 +64,12 @@
 #endif /* ENABLE_PROFILING */
 
 static char *shmem_internal_heap_curr = NULL;
-static int shmem_internal_use_malloc = 0;
 
 void* dlmalloc(size_t);
 void  dlfree(void*);
 void* dlrealloc(void*, size_t);
 void* dlmemalign(size_t, size_t);
+
 
 /*
  * scan /proc/mounts for a huge page file system with the
@@ -78,10 +78,10 @@ void* dlmemalign(size_t, size_t);
  * On success return 0, else -1.
  */
 
+#ifdef __linux__
 static int find_hugepage_dir(size_t page_size, char **directory)
 {
     int ret = -1;
-#ifdef __linux__
     struct statfs pg_size;
     struct mntent *mntent;
     FILE *fd;
@@ -113,10 +113,9 @@ static int find_hugepage_dir(size_t page_size, char **directory)
     }
 
     endmntent(fd);
-#endif
-
     return ret;
 }
+#endif /* __linux__ */
 
 /* shmalloc and friends are defined to not be thread safe, so this is
    fine.  If they change that definition, this is no longer fine and
@@ -157,28 +156,25 @@ static void *mmap_alloc(size_t bytes)
     char *file_name = NULL;
     int fd = 0;
     char *directory = NULL;
-    const char basename[] = "hugepagefile.SOS";
-    int size;
     void *requested_base =
         (void*) (((unsigned long) shmem_internal_data_base +
                   shmem_internal_data_length + 2 * ONEGIG) & ~(ONEGIG - 1));
     void *ret;
 
-    if (shmem_internal_heap_use_huge_pages) {
+#ifdef __linux__
+    /* huge page support only on Linux for now, default is to use 2MB large pages */
+    if (shmem_internal_params.SYMMETRIC_HEAP_USE_HUGE_PAGES) {
+        const char basename[] = "hugepagefile.SOS";
 
-        /*
-         * check what /proc/mounts has for explicit huge page support
-         */
+        /* check what /proc/mounts has for explicit huge page support */
+        if (find_hugepage_dir(shmem_internal_params.SYMMETRIC_HEAP_PAGE_SIZE,
+                             &directory) == 0)
+        {
+            int size = snprintf(NULL, 0, "%s/%s.%d", directory, basename, getpid());
 
-        if(find_hugepage_dir(shmem_internal_heap_huge_page_size, &directory) == 0) {
-
-            size = snprintf(NULL, 0, "%s/%s.%d", directory, basename, getpid());
             if (size < 0) {
-
-                RAISE_WARN_STR("snprint returned error, cannot use huge pages");
-
+                RAISE_WARN_STR("snprintf returned error, cannot use huge pages");
             } else {
-
                 file_name = malloc(size + 1);
                 if (file_name) {
                     sprintf(file_name, "%s/%s.%d", directory, basename, getpid());
@@ -187,14 +183,14 @@ static void *mmap_alloc(size_t bytes)
                         RAISE_WARN_STR("file open failed, cannot use huge pages");
                         fd = 0;
                     } else {
-                        /* have to round up
-                           by the pagesize being used */
-                        bytes = CEILING(bytes, shmem_internal_heap_huge_page_size);
+                        /* have to round up by the pagesize being used */
+                        bytes = CEILING(bytes, shmem_internal_params.SYMMETRIC_HEAP_PAGE_SIZE);
                     }
                 }
             }
         }
     }
+#endif /* __linux__ */
 
     ret = mmap(requested_base,
                bytes,
@@ -210,7 +206,8 @@ static void *mmap_alloc(size_t bytes)
         ret = NULL;
     }
     if (fd) {
-        unlink(file_name);
+        if (file_name)
+            unlink(file_name);
         close(fd);
     }
     if (directory) {
@@ -224,14 +221,13 @@ static void *mmap_alloc(size_t bytes)
 
 
 int
-shmem_internal_symmetric_init(size_t requested_length, int use_malloc)
+shmem_internal_symmetric_init(void)
 {
-    shmem_internal_use_malloc = use_malloc;
-
     /* add library overhead such that the max can be shmalloc()'ed */
-    shmem_internal_heap_length = requested_length + (1024*1024);
+    shmem_internal_heap_length = shmem_internal_params.SYMMETRIC_SIZE +
+                                 SHMEM_INTERNAL_HEAP_OVERHEAD;
 
-    if (0 == shmem_internal_use_malloc) {
+    if (!shmem_internal_params.SYMMETRIC_HEAP_USE_MALLOC) {
         shmem_internal_heap_base =
             shmem_internal_heap_curr =
             mmap_alloc(shmem_internal_heap_length);
@@ -249,7 +245,7 @@ int
 shmem_internal_symmetric_fini(void)
 {
     if (NULL != shmem_internal_heap_base) {
-        if (0 == shmem_internal_use_malloc) {
+        if (!shmem_internal_params.SYMMETRIC_HEAP_USE_MALLOC) {
             munmap( (void*)shmem_internal_heap_base, (size_t)shmem_internal_heap_length );
         } else {
             free(shmem_internal_heap_base);

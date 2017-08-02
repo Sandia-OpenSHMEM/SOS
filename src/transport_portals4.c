@@ -212,7 +212,7 @@ cleanup_handles(void)
 
 
 int
-shmem_transport_init(long eager_size)
+shmem_transport_init(void)
 {
     ptl_process_t my_id;
     int ret;
@@ -231,9 +231,10 @@ shmem_transport_init(long eager_size)
     SHMEM_MUTEX_INIT(shmem_internal_mutex_ptl4_event_slots);
     SHMEM_MUTEX_INIT(shmem_internal_mutex_ptl4_nb_fence);
 
-    shmem_transport_portals4_bounce_buffer_size = eager_size;
+    shmem_transport_portals4_bounce_buffer_size = shmem_internal_params.BOUNCE_SIZE;
     shmem_transport_portals4_bounce_buffers =
-        shmem_free_list_init(sizeof(shmem_transport_portals4_bounce_buffer_t) + eager_size,
+        shmem_free_list_init(sizeof(shmem_transport_portals4_bounce_buffer_t) +
+                             shmem_transport_portals4_bounce_buffer_size,
                              init_bounce_buffer);
 
     shmem_transport_portals4_long_frags =

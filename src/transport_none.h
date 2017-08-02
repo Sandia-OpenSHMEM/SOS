@@ -55,7 +55,7 @@ typedef int shmem_transport_ct_t;
 
 static inline
 int
-shmem_transport_init(long eager_size)
+shmem_transport_init(void)
 {
     return 0;
 }

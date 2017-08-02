@@ -52,7 +52,10 @@ libsma_la_SOURCES = \
 	transport.h \
 	util.c \
 	uthash.h \
-	shmem_decl.h
+	shmem_decl.h \
+	shmem_env.c \
+	shmem_env.h \
+	shmem_env_defs.h
 
 nodist_libsma_la_SOURCES = \
 	$(GEN_BINDINGS)

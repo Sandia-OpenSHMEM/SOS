@@ -204,7 +204,7 @@ typedef int shmem_transport_ct_t;
 
 extern shmem_free_list_t *shmem_transport_ofi_bounce_buffers;
 
-int shmem_transport_init(long eager_size);
+int shmem_transport_init(void);
 int shmem_transport_startup(void);
 void shmem_transport_print_info(void);
 int shmem_transport_fini(void);
