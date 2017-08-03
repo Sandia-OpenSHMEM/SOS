@@ -80,7 +80,8 @@ check_PROGRAMS = \
 	broadcast_active_set \
 	reduce_active_set \
 	collect_active_set \
-	pcontrol
+	pcontrol \
+	atomic_bitwise
 
 if ENABLE_PROFILING
 check_PROGRAMS += \
@@ -108,11 +109,11 @@ endif
 if HAVE_FORTRAN
 check_PROGRAMS += \
      hello_f \
-     complex_reductions_f \
      shmem_info_f
 
 if !HAVE_LONG_FORTRAN_HEADER
 check_PROGRAMS += \
+     complex_reductions_f \
      set_fetch_f
 endif
 endif

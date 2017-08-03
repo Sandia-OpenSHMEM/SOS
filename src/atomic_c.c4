@@ -81,8 +81,9 @@ SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_SET')
 
 #endif /* ENABLE_PROFILING */
 
-#define SHMEM_DEF_SWAP(STYPE,TYPE,ITYPE) \
-    TYPE shmem_##STYPE##_swap(TYPE *target, TYPE value, int pe) \
+#define SHMEM_DEF_SWAP(STYPE,TYPE,ITYPE)                        \
+    TYPE SHMEM_FUNCTION_ATTRIBUTES                              \
+    shmem_##STYPE##_swap(TYPE *target, TYPE value, int pe)      \
     {                                                           \
         TYPE newval;                                            \
         SHMEM_ERR_CHECK_INITIALIZED();                          \
@@ -100,7 +101,7 @@ SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_SWAP)
 #if !defined(__cplusplus) && \
     !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
 /* shmem_swap is a special case in the API */
-long
+long SHMEM_FUNCTION_ATTRIBUTES
 shmem_swap(long *target, long value, int pe)
 {
     long newval;
@@ -116,8 +117,9 @@ shmem_swap(long *target, long value, int pe)
 #endif
 
 
-#define SHMEM_DEF_CSWAP(STYPE,TYPE,ITYPE) \
-    TYPE shmem_##STYPE##_cswap(TYPE *target, TYPE cond, TYPE value,     \
+#define SHMEM_DEF_CSWAP(STYPE,TYPE,ITYPE)                               \
+    TYPE SHMEM_FUNCTION_ATTRIBUTES                                      \
+    shmem_##STYPE##_cswap(TYPE *target, TYPE cond, TYPE value,          \
                                int pe)                                  \
     {                                                                   \
         TYPE newval;                                                    \
@@ -133,7 +135,8 @@ shmem_swap(long *target, long value, int pe)
 SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_CSWAP)
 
 #define SHMEM_DEF_INC(STYPE,TYPE,ITYPE)                                 \
-    void shmem_##STYPE##_inc(TYPE *target, int pe)                      \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    shmem_##STYPE##_inc(TYPE *target, int pe)                           \
     {                                                                   \
         TYPE tmp = 1;                                                   \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
@@ -146,7 +149,8 @@ SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_CSWAP)
 SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_INC)
 
 #define SHMEM_DEF_FINC(STYPE,TYPE,ITYPE)                                \
-    TYPE shmem_##STYPE##_finc(TYPE *target, int pe)                     \
+    TYPE SHMEM_FUNCTION_ATTRIBUTES                                      \
+    shmem_##STYPE##_finc(TYPE *target, int pe)                          \
     {                                                                   \
         TYPE oldval, tmp = 1;                                           \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
@@ -161,7 +165,8 @@ SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_INC)
 SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_FINC)
 
 #define SHMEM_DEF_ADD(STYPE,TYPE,ITYPE)                                 \
-    void shmem_##STYPE##_add(TYPE *target, TYPE value, int pe)          \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    shmem_##STYPE##_add(TYPE *target, TYPE value, int pe)               \
     {                                                                   \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
@@ -175,9 +180,10 @@ SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_FINC)
 SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_ADD)
 
 #define SHMEM_DEF_FADD(STYPE,TYPE,ITYPE)                                \
-    TYPE shmem_##STYPE##_fadd(TYPE *target, TYPE value, int pe)         \
+    TYPE SHMEM_FUNCTION_ATTRIBUTES                                      \
+    shmem_##STYPE##_fadd(TYPE *target, TYPE value, int pe)              \
     {                                                                   \
-        TYPE oldval;                                                     \
+        TYPE oldval;                                                    \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
@@ -191,7 +197,8 @@ SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_ADD)
 SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_FADD)
 
 #define SHMEM_DEF_FETCH(STYPE,TYPE,ITYPE)                               \
-    TYPE shmem_##STYPE##_fetch(const TYPE *source, int pe)              \
+    TYPE SHMEM_FUNCTION_ATTRIBUTES                                      \
+    shmem_##STYPE##_fetch(const TYPE *source, int pe)                   \
     {                                                                   \
         TYPE val;                                                       \
                                                                         \
@@ -209,7 +216,8 @@ SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_FETCH)
 
 
 #define SHMEM_DEF_SET(STYPE,TYPE,ITYPE)                                 \
-    void shmem_##STYPE##_set(TYPE *dest, TYPE value, int pe)            \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    shmem_##STYPE##_set(TYPE *dest, TYPE value, int pe)                 \
     {                                                                   \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
@@ -220,3 +228,96 @@ SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_FETCH)
     }
 
 SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_SET)
+
+#define SHMEM_DEF_XOR(STYPE,TYPE,ITYPE)                                 \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    shmemx_##STYPE##_atomic_xor(TYPE *target, TYPE value, int pe)       \
+    {                                                                   \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
+                                                                        \
+        shmem_internal_atomic_small(target, &value, sizeof(TYPE), pe,   \
+                                    SHM_INTERNAL_BXOR, ITYPE);          \
+    }
+
+SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_XOR)
+
+#define SHMEM_DEF_AND(STYPE,TYPE,ITYPE)                                 \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    shmemx_##STYPE##_atomic_and(TYPE *target, TYPE value, int pe)       \
+    {                                                                   \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
+                                                                        \
+        shmem_internal_atomic_small(target, &value, sizeof(TYPE), pe,   \
+                                    SHM_INTERNAL_BAND, ITYPE);          \
+    }
+
+SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_AND)
+
+#define SHMEM_DEF_OR(STYPE,TYPE,ITYPE)                                  \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    shmemx_##STYPE##_atomic_or(TYPE *target, TYPE value, int pe)        \
+    {                                                                   \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
+                                                                        \
+        shmem_internal_atomic_small(target, &value, sizeof(TYPE), pe,   \
+                                    SHM_INTERNAL_BOR, ITYPE);           \
+    }
+
+SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_OR)
+
+#define SHMEM_DEF_FETCH_XOR(STYPE,TYPE,ITYPE)                                \
+    TYPE SHMEM_FUNCTION_ATTRIBUTES                                           \
+    shmemx_##STYPE##_atomic_fetch_xor(TYPE *target, TYPE value, int pe)      \
+    {                                                                        \
+        TYPE oldval;                                                         \
+        SHMEM_ERR_CHECK_INITIALIZED();                                       \
+        SHMEM_ERR_CHECK_PE(pe);                                              \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                     \
+                                                                             \
+        shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(TYPE),   \
+                                    pe, SHM_INTERNAL_BXOR, ITYPE);           \
+        shmem_internal_get_wait();                                           \
+        return oldval;                                                       \
+    }
+
+SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_FETCH_XOR)
+
+#define SHMEM_DEF_FETCH_AND(STYPE,TYPE,ITYPE)                                \
+    TYPE SHMEM_FUNCTION_ATTRIBUTES                                           \
+    shmemx_##STYPE##_atomic_fetch_and(TYPE *target, TYPE value, int pe)      \
+    {                                                                        \
+        TYPE oldval;                                                         \
+        SHMEM_ERR_CHECK_INITIALIZED();                                       \
+        SHMEM_ERR_CHECK_PE(pe);                                              \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                     \
+                                                                             \
+        shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(TYPE),   \
+                                    pe, SHM_INTERNAL_BAND, ITYPE);           \
+        shmem_internal_get_wait();                                           \
+        return oldval;                                                       \
+    }
+
+SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_FETCH_AND)
+
+#define SHMEM_DEF_FETCH_OR(STYPE,TYPE,ITYPE)                                 \
+    TYPE SHMEM_FUNCTION_ATTRIBUTES                                           \
+    shmemx_##STYPE##_atomic_fetch_or(TYPE *target, TYPE value, int pe)       \
+    {                                                                        \
+        TYPE oldval;                                                         \
+        SHMEM_ERR_CHECK_INITIALIZED();                                       \
+        SHMEM_ERR_CHECK_PE(pe);                                              \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                     \
+                                                                             \
+        shmem_internal_fetch_atomic(target, &value, &oldval, sizeof(TYPE),   \
+                                    pe, SHM_INTERNAL_BOR, ITYPE);            \
+        shmem_internal_get_wait();                                           \
+        return oldval;                                                       \
+    }
+
+SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_FETCH_OR)

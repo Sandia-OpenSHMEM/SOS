@@ -47,7 +47,7 @@
 #endif /* ENABLE_PROFILING */
 
 
-int
+int SHMEM_FUNCTION_ATTRIBUTES
 _num_pes(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -56,7 +56,7 @@ _num_pes(void)
 }
 
 
-int
+int SHMEM_FUNCTION_ATTRIBUTES
 shmem_n_pes(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -65,7 +65,7 @@ shmem_n_pes(void)
 }
 
 
-int
+int SHMEM_FUNCTION_ATTRIBUTES
 _my_pe(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -74,7 +74,7 @@ _my_pe(void)
 }
 
 
-int
+int SHMEM_FUNCTION_ATTRIBUTES
 shmem_my_pe(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -83,7 +83,7 @@ shmem_my_pe(void)
 }
 
 
-double
+double SHMEM_FUNCTION_ATTRIBUTES
 shmemx_wtime(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -92,7 +92,7 @@ shmemx_wtime(void)
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmemx_pcontrol(int level, ...)
 {
     return;

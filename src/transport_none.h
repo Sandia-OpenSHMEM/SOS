@@ -34,6 +34,11 @@
 #define SHM_INTERNAL_LONG            DTYPE_LONG
 #define SHM_INTERNAL_LONG_LONG       DTYPE_LONG_LONG
 #define SHM_INTERNAL_FORTRAN_INTEGER DTYPE_FORTRAN_INTEGER
+#define SHM_INTERNAL_UINT            DTYPE_UNSIGNED_INT
+#define SHM_INTERNAL_ULONG           DTYPE_UNSIGNED_LONG
+#define SHM_INTERNAL_ULONG_LONG      DTYPE_UNSIGNED_LONG_LONG
+#define SHM_INTERNAL_UINT32          -13
+#define SHM_INTERNAL_UINT64          -14
 
 /* Operations */
 #define SHM_INTERNAL_BAND            -1
@@ -50,7 +55,7 @@ typedef int shmem_transport_ct_t;
 
 static inline
 int
-shmem_transport_init(long eager_size)
+shmem_transport_init(void)
 {
     return 0;
 }

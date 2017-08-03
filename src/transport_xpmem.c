@@ -44,7 +44,7 @@ static struct share_info_t my_info;
                                         page_size + 1) * page_size)
 
 int
-shmem_transport_xpmem_init(long eager_size)
+shmem_transport_xpmem_init(void)
 {
     long page_size = sysconf(_SC_PAGESIZE);
     char *base;
@@ -56,8 +56,7 @@ shmem_transport_xpmem_init(long eager_size)
     len = FIND_LEN(shmem_internal_data_base, shmem_internal_data_length, page_size);
     my_info.data_seg = xpmem_make(base, len, XPMEM_PERMIT_MODE, (void*)0666);
     if (-1 == my_info.data_seg) {
-        fprintf(stderr, "[%03d] ERROR: xpmem_make failed: %s\n",
-                shmem_internal_my_pe, strerror(errno));
+        RETURN_ERROR_MSG("xpmem_make failed: %s\n", strerror(errno));
         return 1;
     }
     my_info.data_off = (char*) shmem_internal_data_base - (char*) base;
@@ -68,8 +67,7 @@ shmem_transport_xpmem_init(long eager_size)
     len = FIND_LEN(shmem_internal_heap_base, shmem_internal_heap_length, page_size);
     my_info.heap_seg = xpmem_make(base, len, XPMEM_PERMIT_MODE, (void*)0666);
     if (-1 == my_info.heap_seg) {
-        fprintf(stderr, "[%03d] ERROR: xpmem_make failed: %s\n",
-                shmem_internal_my_pe, strerror(errno));
+        RETURN_ERROR_MSG("xpmem_make failed: %s\n", strerror(errno));
         return 1;
     }
     my_info.heap_off = (char*) shmem_internal_heap_base - (char*) base;
@@ -77,8 +75,7 @@ shmem_transport_xpmem_init(long eager_size)
 
     ret = shmem_runtime_put("xpmem-segids", &my_info, sizeof(struct share_info_t));
     if (0 != ret) {
-        fprintf(stderr, "[%03d] ERROR: runtime_put failed: %d\n",
-                shmem_internal_my_pe, ret);
+        RETURN_ERROR_MSG("runtime_put failed: %d\n", ret);
         return 1;
     }
 
@@ -117,16 +114,14 @@ shmem_transport_xpmem_startup(void)
         } else {
             ret = shmem_runtime_get(i, "xpmem-segids", &info, sizeof(struct share_info_t));
             if (0 != ret) {
-                fprintf(stderr, "[%03d] ERROR: runtime_get failed: %d\n",
-                        shmem_internal_my_pe, ret);
+                RETURN_ERROR_MSG("runtime_get failed: %d\n", ret);
                 return 1;
             }
 
             shmem_transport_xpmem_peers[peer_num].data_apid =
                 xpmem_get(info.data_seg, XPMEM_RDWR, XPMEM_PERMIT_MODE, (void*)0666);
             if (shmem_transport_xpmem_peers[peer_num].data_apid < 0) {
-                fprintf(stderr, "[%03d] ERROR: could not get data apid: %s\n",
-                        shmem_internal_my_pe, strerror(errno));
+                RETURN_ERROR_MSG("could not get data apid: %s\n", strerror(errno));
                 return 1;
             }
 
@@ -136,8 +131,7 @@ shmem_transport_xpmem_startup(void)
             shmem_transport_xpmem_peers[peer_num].data_attach_ptr =
                 xpmem_attach(addr, info.data_len, NULL);
             if ((size_t) shmem_transport_xpmem_peers[peer_num].data_ptr == XPMEM_MAXADDR_SIZE) {
-                fprintf(stderr, "[%03d] ERROR: could not get data segment: %s\n",
-                        shmem_internal_my_pe, strerror(errno));
+                RETURN_ERROR_MSG("could not get data segment: %s\n", strerror(errno));
                 return 1;
             }
             shmem_transport_xpmem_peers[peer_num].data_ptr =
@@ -146,8 +140,7 @@ shmem_transport_xpmem_startup(void)
             shmem_transport_xpmem_peers[peer_num].heap_apid =
                 xpmem_get(info.heap_seg, XPMEM_RDWR, XPMEM_PERMIT_MODE, (void*)0666);
             if (shmem_transport_xpmem_peers[peer_num].heap_apid < 0) {
-                fprintf(stderr, "[%03d] ERROR: could not get heap apid: %s\n",
-                        shmem_internal_my_pe, strerror(errno));
+                RETURN_ERROR_MSG("could not get heap apid: %s\n", strerror(errno));
                 return 1;
             }
 
@@ -157,8 +150,7 @@ shmem_transport_xpmem_startup(void)
             shmem_transport_xpmem_peers[peer_num].heap_attach_ptr =
                 xpmem_attach(addr, info.heap_len, NULL);
             if ((size_t) shmem_transport_xpmem_peers[peer_num].heap_ptr == XPMEM_MAXADDR_SIZE) {
-                fprintf(stderr, "[%03d] ERROR: could not get data segment: %s\n",
-                        shmem_internal_my_pe, strerror(errno));
+                RETURN_ERROR_MSG("could not get data segment: %s\n", strerror(errno));
                 return 1;
             }
             shmem_transport_xpmem_peers[peer_num].heap_ptr =

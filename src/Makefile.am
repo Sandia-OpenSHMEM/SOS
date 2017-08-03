@@ -52,7 +52,10 @@ libsma_la_SOURCES = \
 	transport.h \
 	util.c \
 	uthash.h \
-	shmem_decl.h
+	shmem_decl.h \
+	shmem_env.c \
+	shmem_env.h \
+	shmem_env_defs.h
 
 nodist_libsma_la_SOURCES = \
 	$(GEN_BINDINGS)
@@ -86,6 +89,13 @@ if USE_OFI
 libsma_la_SOURCES += \
 	transport_ofi.h \
 	transport_ofi.c
+endif
+
+if !USE_PORTALS4
+if !USE_OFI
+libsma_la_SOURCES += \
+	transport_none.h
+endif
 endif
 
 if USE_XPMEM

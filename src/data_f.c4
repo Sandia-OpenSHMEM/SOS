@@ -32,7 +32,8 @@ include(shmem_bind_f.m4)dnl
 
 
 #define SHMEM_DEF_FC_PUT(FUNCNAME, SIZE)                                \
-    void FUNCNAME(void *target, void *source, fortran_integer_t *len,   \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *target, void *source, fortran_integer_t *len,        \
                   fortran_integer_t *pe);                               \
     void FUNCNAME(void *target, void *source, fortran_integer_t *len,   \
                   fortran_integer_t *pe)                                \
@@ -60,7 +61,8 @@ SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_PUT_SIZE')
 
 
 #define SHMEM_DEF_FC_PUT_NBI(FUNCNAME, SIZE)                            \
-    void FUNCNAME(void *target, void *source, fortran_integer_t *nelems,\
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *target, void *source, fortran_integer_t *nelems,     \
                   fortran_integer_t *pe);                               \
     void FUNCNAME(void *target, void *source, fortran_integer_t *nelems,\
                   fortran_integer_t *pe)                                \
@@ -83,7 +85,8 @@ SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_PUT_NBI')
 SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_PUT_NBI_SIZE')
 
 #define SHMEM_DEF_FC_IPUT(FUNCNAME, SIZE)                               \
-    void FUNCNAME(void *targetp, void *sourcep,                         \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *targetp, void *sourcep,                              \
                   fortran_integer_t *tst, fortran_integer_t *sst,       \
                   fortran_integer_t *lenp, fortran_integer_t *pe);      \
     void FUNCNAME(void *targetp, void *sourcep,                         \
@@ -118,7 +121,8 @@ SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_IPUT')
 SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_IPUT_SIZE')
 
 #define SHMEM_DEF_FC_GET(FUNCNAME, SIZE)                                \
-    void FUNCNAME(void *target, void *source, fortran_integer_t *len,   \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *target, void *source, fortran_integer_t *len,        \
                   fortran_integer_t *pe);                               \
     void FUNCNAME(void *target, void *source, fortran_integer_t *len,   \
                   fortran_integer_t *pe)                                \
@@ -142,7 +146,8 @@ SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_GET')
 SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_GET_SIZE')
 
 #define SHMEM_DEF_FC_GET_NBI(FUNCNAME, SIZE)                            \
-    void FUNCNAME(void *target, void *source, fortran_integer_t *nelems,\
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *target, void *source, fortran_integer_t *nelems,     \
                   fortran_integer_t *pe);                               \
     void FUNCNAME(void *target, void *source, fortran_integer_t *nelems,\
                   fortran_integer_t *pe)                                \
@@ -164,7 +169,8 @@ SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_GET_NBI')
 SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_GET_NBI_SIZE')
 
 #define SHMEM_DEF_FC_IGET(FUNCNAME, SIZE)                               \
-    void FUNCNAME(void *targetp, void *sourcep,                         \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *targetp, void *sourcep,                              \
                   fortran_integer_t *tst, fortran_integer_t *sst,       \
                   fortran_integer_t *lenp, fortran_integer_t *pe);      \
     void FUNCNAME(void *targetp, void *sourcep,                         \
