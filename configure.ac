@@ -13,7 +13,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.3.2], [https://github.com/Sandia-OpenSHMEM/SOS])
+AC_INIT([Sandia OpenSHMEM], [1.3.3rc1], [https://github.com/Sandia-OpenSHMEM/SOS])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -37,6 +37,8 @@ dnl information on the package
 AC_CONFIG_HEADERS([src/config.h])
 
 AC_CANONICAL_HOST
+
+OPAL_CHECK_ATTRIBUTES
 
 AC_ARG_ENABLE([picky],
     [AC_HELP_STRING([--enable-picky],
@@ -168,6 +170,9 @@ AS_IF([test "$enable_bounce_buffers" = "no"],
       [AC_DEFINE([DEFAULT_BOUNCE_SIZE], [0], [Default bounce buffer threshold])],
       [AC_DEFINE([DEFAULT_BOUNCE_SIZE], [2048], [Default bounce buffer threshold])])
 
+AC_ARG_WITH([oshrun-launcher],
+    [AC_HELP_STRING([--with-oshrun-launcher],
+                    [Set launcher to be used by oshrun launcher wrapper. (default: auto)])])
 
 dnl check for programs
 
@@ -220,7 +225,6 @@ if test "$FC" != "" ; then
   AC_FC_WRAPPERS
 fi
 
-AX_GCC_FUNC_ATTRIBUTE([noreturn])
 AX_GCC_BUILTIN([__builtin_trap])
 
 if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
@@ -241,38 +245,60 @@ AC_SEARCH_LIBS([clock_gettime], [rt],
 dnl check for libraries
 
 OMPI_CHECK_PORTALS4([portals4],
-    [AC_DEFINE([USE_PORTALS4], [1], [Define if Portals 4 transport active])
-     transport="portals4"
-     transport_portals4="yes"],
+    [transport_portals4="yes"],
     [transport_portals4="no"])
+
+OPAL_CHECK_OFI([ofi],
+    [transport_ofi="yes"],
+    [transport_ofi="no"])
+
+# If both OFI and portals4 requested, user needs to choose one:
+if test -n "$with_ofi" -a "$with_ofi" != "no" -a -n "$with_portals4" -a "$with_portals4" != "no" ; then
+    AC_MSG_ERROR([Cannot choose both OFI and portals4 transports, see --help for details])
+# Check which was requested, OFI or portals4:
+elif test -n "$with_ofi" -a "$with_ofi" != "no" ; then
+    transport="ofi"
+    transport_portals4="no"
+    AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
+elif test -n "$with_portals4" -a "$with_portals4" != "no" ; then
+    transport="portals4"
+    transport_ofi="no"
+    AC_DEFINE([USE_PORTALS4], [1], [Define if Portals 4 transport active])
+# If neither, set transport to "none" and print a warning:
+else
+    transport="none"
+    transport_ofi="no"
+    transport_portals4="no"
+    AC_MSG_WARN([Neither OFI nor portals4 transport requested])
+fi
+AM_CONDITIONAL([USE_OFI], [test "$transport_ofi" = "yes"])
 AM_CONDITIONAL([USE_PORTALS4], [test "$transport_portals4" = "yes"])
 
-OPAL_CHECK_LIBFABRIC([libfabric],
-    [AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
-     transport="ofi"
-     transport_ofi="yes"],
-    [transport_ofi="no"])
-AM_CONDITIONAL([USE_OFI], [test "$transport_ofi" = "yes"])
-
-if test "$transport_ofi" = "no" ; then
-  OMPI_CHECK_OFI([ofi],
-      [AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
-       transport="ofi"
-       transport_ofi="yes"],
-      [transport_ofi="no"])
-  AM_CONDITIONAL([USE_OFI], [test "$transport_ofi" = "yes"])
-fi
-
 SANDIA_CHECK_XPMEM(
-    [AC_DEFINE([USE_XPMEM], [1], [Define if XPMEM transport is active])
-     transport_xpmem="yes"],
+    [transport_xpmem="yes"],
     [transport_xpmem="no"])
-AM_CONDITIONAL([USE_XPMEM], [test "$transport_xpmem" = "yes"])
 
 CHECK_CMA(
-   [AC_DEFINE([USE_CMA], [1], [Define if Cross Memory Attach transport is active])
-    transport_cma="yes"],
-   [transport_cma="no"])
+    [transport_cma="yes"],
+    [transport_cma="no"])
+
+# If both XPMEM and CMA requested, user needs to choose one:
+if test -n "$with_xpmem" -a "$with_xpmem" != "no" -a -n "$with_cma" -a "$with_cma" != "no" ; then
+    AC_MSG_ERROR([Cannot choose both XPMEM and CMA transports, see --help for details])
+# Check which was requested, XPMEM or CMA:
+elif test -n "$with_xpmem" -a "$with_xpmem" != "no" ; then
+    transport_cma="no"
+    AC_DEFINE([USE_XPMEM], [1], [Define if XPMEM transport is active])
+elif test -n "$with_cma" -a "$with_cma" != "no" ; then
+    transport_xpmem="no"
+    AC_DEFINE([USE_CMA], [1], [Define if Cross Memory Attach transport is active])
+# If neither, disable XPMEM and CMA:
+else
+    transport_xpmem="no"
+    transport_cma="no"
+    AC_MSG_RESULT([Neither XPMEM nor CMA transport requested])
+fi
+AM_CONDITIONAL([USE_XPMEM], [test "$transport_xpmem" = "yes"])
 AM_CONDITIONAL([USE_CMA], [test "$transport_cma" = "yes"])
 
 AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
@@ -302,29 +328,49 @@ SHMEM_FIND_INT_TYPE([int], [$transport])
 SHMEM_FIND_INT_TYPE([long], [$transport])
 SHMEM_FIND_INT_TYPE([long long], [$transport])
 
+SHMEM_FIND_UINT_TYPE([unsigned int], [$transport])
+SHMEM_FIND_UINT_TYPE([unsigned long], [$transport])
+SHMEM_FIND_UINT_TYPE([unsigned long long], [$transport])
+
 AC_CHECK_SIZEOF([float])
 AC_CHECK_SIZEOF([double])
 AC_CHECK_SIZEOF([long double])
 AC_CHECK_SIZEOF([void*])
 
+dnl Determine psync and pwrk sizes for collectives
+
 C_LOG_MAXPES=32
-C_BCAST_SYNC_SIZE=1
-C_REDUCE_SYNC_SIZE=`$PERL -e "print $C_BCAST_SYNC_SIZE + 2 + $C_LOG_MAXPES"`
-C_BARRIER_SYNC_SIZE=`$PERL -e "use POSIX; print $ac_cv_sizeof_int * 8 * ($ac_cv_sizeof_int / $ac_cv_sizeof_long)"`
-tree_sync_size=`$PERL -e "print $C_BCAST_SYNC_SIZE + 3"`
-recdbl_sync_size=`$PERL -e "use POSIX; print $ac_cv_sizeof_int * 8 * ($ac_cv_sizeof_int / $ac_cv_sizeof_long)"`
-AS_IF([test $tree_sync_size -lt $recdbl_sync_size],
-      [C_COLLECT_SYNC_SIZE=$recdbl_sync_size], [C_COLLECT_SYNC_SIZE=$tree_sync_size])
-C_ALLTOALL_SYNC_SIZE=1
-C_ALLTOALLS_SYNC_SIZE=1
-C_REDUCE_MIN_WRKDATA_SIZE=1
-AC_SUBST(C_BCAST_SYNC_SIZE)
-AC_SUBST(C_REDUCE_SYNC_SIZE)
-AC_SUBST(C_BARRIER_SYNC_SIZE)
-AC_SUBST(C_COLLECT_SYNC_SIZE)
-AC_SUBST(C_ALLTOALL_SYNC_SIZE)
-AC_SUBST(C_ALLTOALLS_SYNC_SIZE)
-AC_SUBST(C_REDUCE_MIN_WRKDATA_SIZE)
+AC_MSG_CHECKING([size of SHMEM_BCAST_SYNC_SIZE])
+    C_BCAST_SYNC_SIZE=1
+    AC_SUBST(C_BCAST_SYNC_SIZE)
+AC_MSG_RESULT([$C_BCAST_SYNC_SIZE])
+AC_MSG_CHECKING([size of SHMEM_REDUCE_SYNC_SIZE])
+    C_REDUCE_SYNC_SIZE=`$PERL -e "print $C_BCAST_SYNC_SIZE + 2 + $C_LOG_MAXPES"`
+    AC_SUBST(C_REDUCE_SYNC_SIZE)
+AC_MSG_RESULT([$C_REDUCE_SYNC_SIZE])
+AC_MSG_CHECKING([size of SHMEM_BARRIER_SYNC_SIZE])
+    C_BARRIER_SYNC_SIZE=`$PERL -e "print $ac_cv_sizeof_int * 8 * ($ac_cv_sizeof_int / $ac_cv_sizeof_long)"`
+    AC_SUBST(C_BARRIER_SYNC_SIZE)
+AC_MSG_RESULT([$C_BARRIER_SYNC_SIZE])
+AC_MSG_CHECKING([size of SHMEM_COLLECT_SYNC_SIZE])
+    linear_sync_size=`$PERL -e "print 2 + $C_BARRIER_SYNC_SIZE"`
+    tree_sync_size=`$PERL -e "print $C_BCAST_SYNC_SIZE + 3"`
+    recdbl_sync_size=`$PERL -e "print $ac_cv_sizeof_int * 8 * ($ac_cv_sizeof_int / $ac_cv_sizeof_long)"`
+    C_COLLECT_SYNC_SIZE=`$PERL -e "use List::Util qw(max); print max($linear_sync_size, $tree_sync_size, $recdbl_sync_size)"`
+    AC_SUBST(C_COLLECT_SYNC_SIZE)
+AC_MSG_RESULT([$C_COLLECT_SYNC_SIZE])
+AC_MSG_CHECKING([size of SHMEM_ALLTOALL_SYNC_SIZE])
+    C_ALLTOALL_SYNC_SIZE=$C_BARRIER_SYNC_SIZE
+    AC_SUBST(C_ALLTOALL_SYNC_SIZE)
+AC_MSG_RESULT([$C_ALLTOALL_SYNC_SIZE])
+AC_MSG_CHECKING([size of SHMEM_ALLTOALLS_SYNC_SIZE])
+    C_ALLTOALLS_SYNC_SIZE=$C_BARRIER_SYNC_SIZE
+    AC_SUBST(C_ALLTOALLS_SYNC_SIZE)
+AC_MSG_RESULT([$C_ALLTOALLS_SYNC_SIZE])
+AC_MSG_CHECKING([size of SHMEM_REDUCE_MIN_WRKDATA_SIZE])
+    C_REDUCE_MIN_WRKDATA_SIZE=1
+    AC_SUBST(C_REDUCE_MIN_WRKDATA_SIZE)
+AC_MSG_RESULT([$C_REDUCE_MIN_WRKDATA_SIZE])
 
 AC_MSG_CHECKING([if long can hold lock_t])
 AC_TRY_RUN([struct lock_s { int a; int b; }; int main(void) { if (sizeof(long) == sizeof(struct lock_s)) return 0; else return 1; }],
@@ -348,7 +394,8 @@ if test "$FC" != "" ; then
 	integer(c_int) :: i
 	i = 5
 ]])], [shmem_cv_fortran_iso_c_binding="yes"],
-      [shmem_cv_fortran_iso_c_binding="no"])])
+      [shmem_cv_fortran_iso_c_binding="no"])
+      AC_LANG_POP([Fortran])])
   AS_IF([test "$shmem_cv_fortran_iso_c_binding" = "no"],
     [AC_MSG_ERROR([Fortran compiler does not support ISO_C_BINDING, which is required for Sandia OpenSHMEM.])])
 
@@ -433,6 +480,14 @@ dnl check for structures
 
 dnl check for compiler characteristics
 
+# make all symbols hidden by default
+OPAL_CHECK_VISIBILITY
+AS_IF([test "$opal_visibility_define" = 1],
+      [SHMEM_C_HAVE_VISIBILITY=1],
+      [SHMEM_C_HAVE_VISIBILITY=0])
+AC_SUBST(SHMEM_C_HAVE_VISIBILITY)
+CFLAGS="$CFLAGS $OPAL_VISIBILITY_CFLAGS"
+
 # disable aslr, if possible at link time
 aslr_LDFLAGS=
 case $host_os in
@@ -451,16 +506,16 @@ LT_INIT
 OPAL_CASE_SENSITIVE_FS_SETUP
 
 DISTCHECK_CONFIGURE_FLAGS=
-if test -n "$with_portals4" ; then
+if test -n "$with_portals4" -a "$with_portals4" != "no" -a "$with_portals4" != "yes" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-portals4=${with_portals4}"
 fi
-if test -n "$with_ofi" ; then
+if test -n "$with_ofi" -a "$with_ofi" != "no" -a "$with_ofi" != "yes" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-ofi=${with_ofi}"
 fi
-if test -n "$with_xpmem" ; then
+if test -n "$with_xpmem" -a "$with_xpmem" != "no" -a "$with_xpmem" != "yes" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-xpmem=${with_xpmem}"
 fi
-if test -n "$with_pmi" ; then
+if test -n "$with_pmi" -a "$with_pmi" != "no" -a "$with_pmi" != "yes" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-pmi=${with_pmi}"
 fi
 if test -n "$FCFLAGS" ; then
@@ -472,21 +527,50 @@ dnl Cause Automake to delete emacs turds
 CLEANFILES="*~"
 AC_SUBST(CLEANFILES)
 
+# configuration for --with-oshrun-launcher
+WRAPPER_SEARCH_LAUNCHERS="yod mpirun mpiexec srun"
+if test -n "$with_oshrun_launcher" ; then
+    WRAPPER_SEARCH_LAUNCHERS="$with_oshrun_launcher"
+fi
+AC_SUBST(WRAPPER_SEARCH_LAUNCHERS)
+
 # last minute updates of the flags so that tests don't fail oddly if
 # portals libdir isn't in LD_LIBRARY_PATH...
-CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS $libfabric_CPPFLAGS $ofi_CPPFLAGS $XPMEM_CPPFLAGS $pmi_CPPFLAGS"
-LDFLAGS="$LDFLAGS $portals4_LDFLAGS $libfabric_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
-LIBS="$LIBS $portals4_LIBS $libfabric_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
+if test "$transport_portals4" = "yes" ; then
+    CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $portals4_LDFLAGS"
+    LIBS="$LIBS $portals4_LIBS"
+    WRAPPER_COMPILER_EXTRA_LDFLAGS="$portals4_LDFLAGS"
+    WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS"
+fi
+
+if test "$transport_ofi" = "yes" ; then
+    CPPFLAGS="$CPPFLAGS $ofi_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $ofi_LDFLAGS"
+    LIBS="$LIBS $ofi_LIBS"
+    WRAPPER_COMPILER_EXTRA_LDFLAGS="$ofi_LDFLAGS"
+    WRAPPER_COMPILER_EXTRA_LIBS="$ofi_LIBS"
+fi
+
+if test "$transport_xpmem" = "yes" ; then
+    CPPFLAGS="$CPPFLAGS $XPMEM_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $XPMEM_LDFLAGS"
+    LIBS="$LIBS $XPMEM_LIBS"
+    WRAPPER_COMPILER_EXTRA_LDFLAGS="$XPMEM_LDFLAGS"
+    WRAPPER_COMPILER_EXTRA_LIBS="$XPMEM_LIBS"
+fi
+
+CPPFLAGS="$CPPFLAGS $pmi_CPPFLAGS"
+LDFLAGS="$LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
+LIBS="$LIBS $pmi_LIBS"
+WRAPPER_COMPILER_EXTRA_LDFLAGS="$WRAPPER_COMPILER_EXTRA_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
+WRAPPER_COMPILER_EXTRA_LIBS="$WRAPPER_COMPILER_LIBS $pmi_LIBS"
 
 # Need the libtool binary before setting up rpath
 LT_OUTPUT
 
 OPAL_TOP_BUILDDIR="`pwd`"
 OPAL_SETUP_RPATH
-
-# wrapper compiler gorp
-WRAPPER_COMPILER_EXTRA_LDFLAGS="$portals4_LDFLAGS $libfabric_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
-WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS $libfabric_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
 
 AS_IF([test "$enable_pmi_simple" = "yes"],
      [WRAPPER_COMPILER_EXTRA_LIBS="$WRAPPER_COMPILER_EXTRA_LIBS -lpmi_simple"])
