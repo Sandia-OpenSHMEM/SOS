@@ -8,32 +8,36 @@ import argparse
 # boldWordsC and boldWordsF are a set of the key words that will be
 # bolded in the man page
 boldWordsC = {"void", "int", "const", "size_t", "short", "ptrdiff_t", 
-        "long", "TYPE", "shmem_global_exit(int"}
+            "long", "TYPE", "shmem_global_exit(int"}
 boldWordsF = {"INTEGER", "CALL", "POINTER", "LOGICAL", "INTEGER*4",
-        "INTEGER*8", "REAL*4", "REAL*8", "CHARACTER"}
+                "INTEGER*8", "REAL*4", "REAL*8", "CHARACTER"}
 
 def writePageHeader(functionName):
-    """Write the page header for the man page. Takes in the form of:
+    """
+    Write the page header for the man page. Takes in the form of:
     .TH [name of program] [section number] [center footer] [left footer] 
-        [center header]"""
+          [center header]
+    """
 
     titleHeader = ".TH " + functionName.upper() + " 3 " \
-            + "" + "" \
-            + "\"Open Source Software Solutions, Inc.\"" + "" \
-            + "\"OpenSHEMEM Library Documentation\"" + "\n"
+                     + "" + "" \
+                     + "\"Open Source Software Solutions, Inc.\"" + "" \
+                     + "\"OpenSHEMEM Library Documentation\"" + "\n"
     return titleHeader
 
 ##########################################################################
-##                       MACRO REPLACEMENTS                             ##
+##                            MACRO REPLACEMENTS                        ##
 ##########################################################################
 
 def funcReplacements(tex):
-    """Convert every FUNC macro with the bolded argument string 
+    """
+    Convert every FUNC macro with the bolded argument string 
     (.B <argument>).
     -- Special consideration to any periods after the macro, since a 
     period at the beginning of a line denotes a comment and the 
     entire line will not appear.
-    (.BR <argument> .)"""
+    (.BR <argument> .)
+    """
 
     keyString = "\FUNC{"
     while (tex.find(keyString) != -1):
@@ -43,8 +47,8 @@ def funcReplacements(tex):
         innerText = tex[startBrace+1:endBrace]
         if(endBrace + 1 < len(tex) and tex[endBrace + 1] == "."):
             tex = tex[:index] + "\n" + \
-                ".BR \"" + innerText + \
-                "\" .\n" + tex[endBrace+2:]
+                    ".BR \"" + innerText + \
+                    "\" .\n" + tex[endBrace+2:]
         else:                                                                
             tex = tex[:index] + "\n" + \
                 ".B " + innerText + \
@@ -52,14 +56,16 @@ def funcReplacements(tex):
     return tex
 
 def varReplacements(tex, keyString):
-    """Convert every VAR/VARTH macro with the bolded argument string 
+    """
+    Convert every VAR/VARTH macro with the bolded argument string 
     (.I <argument>).
     -- Special consideration to any periods after the macro, since a 
     period at the beginning of a line denotes a comment and the 
     entire line will not appear.
     (.IR <argument> .)
     -- Special consideration to any argument of "VARTH", which will 
-    require appending "th" to the argument string."""
+    require appending "th" to the argument string.
+    """
 
     while (tex.find(keyString) != -1):
         index = tex.find(keyString)
@@ -73,10 +79,10 @@ def varReplacements(tex, keyString):
         else:
             if (tex[endBrace + 1] != "."):
                 tex = tex[:index] + "\n.I " + innerText \
-                    + "\n" + tex[endBrace+1:]
+                                + "\n" + tex[endBrace+1:]
             else:
                 tex = tex[:index] + "\n.IR \"" + innerText \
-                    + "\" .\n" + tex[endBrace+1:]
+                                + "\" .\n" + tex[endBrace+1:]
     return tex
 
 def variableReplacements(tex):
@@ -85,7 +91,9 @@ def variableReplacements(tex):
     return tex
 
 def mBoxReplacements(tex):
-    """Replace the Latex command "|mbox{<argument>}|" with just argument """
+    """
+    Replace the Latex command "|mbox{<argument>}|" with just <argument>
+    """
 
     while (tex.find("|\mbox") != -1):
         index = tex.find("|\mbox")
@@ -93,17 +101,19 @@ def mBoxReplacements(tex):
         ebrace = tex.find("}", sbrace)
         ebar = tex.find("|", sbrace)
         tex = tex[:index] + tex[sbrace+1:ebrace] \
-            + tex[ebar+1:]
+                        + tex[ebar+1:]
     return tex
 
 def boldReplacements(tex):
-    """SPECIFIC TO shmem_reductions:
+    """
+    SPECIFIC TO shmem_reductions:
     Replace the Latex command: 
     "\\textbf{<NAME>} \\newline <text> <code> \\newline...\\bigskip" 
     --NAME will the title of a new section header with <text> as the 
     immediate content. 
     -- <code> will be replaced as normal (See function codeReplace(tex))
-    -- \\bigskip will be replaced by the empty string. """
+    -- \\bigskip will be replaced by the empty string. 
+    """
 
     while (tex.find("\\textbf{") != -1):
         beg = tex.find("\\textbf{")
@@ -114,32 +124,36 @@ def boldReplacements(tex):
         clean = tex[fnewline + len("\\newline"):snewline]
         clean = macroReplacements(clean)
         tex = tex[:beg] + "\n.SH " + tex[sbrace+1:ebrace] \
-            + "\n" + clean \
-            + tex[snewline + len("\\newline"):]
+                        + "\n" + clean \
+                        + tex[snewline + len("\\newline"):]
     tex = tex.replace("\\bigskip", "")
     return tex
 
 def italReplacements(tex):
-    """ Replace the Latex command "\\textit{<argument>}" with just 
-    argument """
+    """ 
+    Replace the Latex command "\\textit{<argument>}" with just 
+    argument 
+    """
 
     while (tex.find("\\textit{") != -1):
         beg = tex.find("\\textit{")
         sbrace = tex.find("{", beg)
         ebrace = tex.find("}", sbrace)
         tex = tex[:beg] + tex[sbrace+1:ebrace] \
-            + tex[ebrace+1:]
+                        + tex[ebrace+1:]
     return tex
 
 def oprReplacements(tex):
-    """Convert every OPR macro with the bolded argument string 
+    """
+    Convert every OPR macro with the bolded argument string 
     (.I <argument>).
     -- Special consideration to any periods after the macro, since a 
     period at the beginning of a line denotes a comment and the 
     entire line will not appear.
     (.IR <argument> .)
     -- Special consideration to any argument of "VARTH", which will 
-    require appending "th" to the argument string. """
+    require appending "th" to the argument string. 
+    """
 
     while (tex.find("\\OPR") != -1):
         index = tex.find("\\OPR")
@@ -147,15 +161,17 @@ def oprReplacements(tex):
         endBrace = tex.find("}", index)
         if (endBrace + 1 == len(tex) or tex[endBrace + 1] != "."):
             tex = tex[:index] + "\n.I " + tex[startBrace+1:endBrace] \
-                + "\n" + tex[endBrace+1:]
+                            + "\n" + tex[endBrace+1:]
         else:
             tex = tex[:index] + "\n.IR \"" + tex[startBrace+1:endBrace] \
-                + "\" .\n" + tex[endBrace+1:]
+                            + "\" .\n" + tex[endBrace+1:]
     return tex
 
 def constReplacements(tex):
-    """Replace the Latex command "\CONST{<argument>}" with just 
-    argument. """
+    """
+    Replace the Latex command "\CONST{<argument>}" with just 
+    argument. 
+    """
 
     while (tex.find("\\CONST") != -1):
         index = tex.find("\\CONST")
@@ -164,13 +180,28 @@ def constReplacements(tex):
         tex = tex[:index] + tex[startBrace+1:endBrace] + tex[endBrace+1:]
     return tex
 
+def cTypeReplacements(tex):
+    """
+    Replace the Latex command "\CONST{<argument>}" with just 
+    argument. 
+    """
+
+    while (tex.find("\\CTYPE") != -1):
+        index = tex.find("\\CTYPE")
+        startBrace = tex.find("{", index)
+        endBrace = tex.find("}", startBrace)
+        tex = tex[:index] + tex[startBrace+1:endBrace] + tex[endBrace+1:]
+    return tex
+
 def generalReplacements(tex):
-    """Replace the common Latex macros that take in no arguments and all 
+    """
+    Replace the common Latex macros that take in no arguments and all 
     Latex definitions that contain a backslash (which may have unde-
     fined behavior in the actual manpage). Some text may need to be 
     processed separately if it is followed by a period, which will 
     cause all text in the same line following the period to be not 
-    shown."""
+    shown.
+    """
 
     tex = tex.replace("\openshmem{}", "OpenSHMEM")
     tex = tex.replace("\openshmem", "OpenSHMEM")
@@ -207,7 +238,8 @@ def generalReplacements(tex):
 ##########################################################################
 
 def descrReplacements(tex):
-    """Search tex file for the keyString "\\apidecription{" and its matching
+    """
+    Search tex file for the keyString "\\apidecription{" and its matching
     parenthesis. All text between will be processed such that there are no
     consecutive spaces, no tabs, and unnecessary "\\n". The text will then 
     have all the macros replaced and put back into its corresponding place
@@ -216,19 +248,21 @@ def descrReplacements(tex):
     beginning and end of the processed text, respectively, for differenti-
     ation between the text with sections and "dangling text".
     These strings will not appear in the manpage as any line that begins 
-    with a period will be treated as a comment. """
+    with a period will be treated as a comment.
+    """
 
     startOfText = tex.find("\\apidescription{")
     endOfText = findMatchingBrace(tex, tex.find("{", startOfText))
     sectionText = cleanText(tex[startOfText:endOfText])
     tex = tex[:startOfText] + \
-        "./ sectionStart\n" + "\n.SS API Description\n" + \
-        sectionText + "\n./ sectionEnd\n" + tex[endOfText+1:]
+            "./ sectionStart\n" + "\n.SS API Description\n" + \
+            sectionText + "\n./ sectionEnd\n" + tex[endOfText+1:]
     tex = tex.replace("\\apidescription{", "")
     return tex
 
 def retReplacements(tex):
-    """Search tex file for the keyString "\\apireturnavalues{" and its matching
+    """
+    Search tex file for the keyString "\\apireturnavalues{" and its matching
     parenthesis. All text between will be processed such that there are no
     consecutive spaces, no tabs, and unnecessary "\\n". The text will then 
     have all the macros replaced and put back into its corresponding place
@@ -237,19 +271,21 @@ def retReplacements(tex):
     beginning and end of the processed text, respectively, for differenti-
     ation between the text with sections and "dangling text".
     These strings will not appear in the manpage as any line that begins 
-    with a period will be treated as a comment. """
+    with a period will be treated as a comment. 
+    """
 
     startOfText = tex.find("\\apireturnvalues{")
     endOfText = findMatchingBrace(tex, tex.find("{", startOfText))
     sectionText = cleanText(tex[startOfText:endOfText])
     tex = tex[:startOfText] + \
-        "./ sectionStart\n" + "\n.SS Return Values\n" + \
-        sectionText + "\n./ sectionEnd\n" + tex[endOfText + 1:]
+            "./ sectionStart\n" + "\n.SS Return Values\n" + \
+            sectionText + "\n./ sectionEnd\n" + tex[endOfText + 1:]
     tex = tex.replace("\\apireturnvalues{", "")
     return tex
 
 def notesReplacements(tex):
-    """Search tex file for the keyString "\\apinotes{" and its matching
+    """
+    Search tex file for the keyString "\\apinotes{" and its matching
     parenthesis. All text between will be processed such that there are no
     consecutive spaces, no tabs, and unnecessary "\\n". The text will then 
     have all the macros replaced and put back into its corresponding place
@@ -258,19 +294,21 @@ def notesReplacements(tex):
     beginning and end of the processed text, respectively, for differenti-
     ation between the text with sections and "dangling text".
     These strings will not appear in the manpage as any line that begins 
-    with a period will be treated as a comment. """
+    with a period will be treated as a comment. 
+    """
 
     startOfText = tex.find("\\apinotes{")
     endOfText = findMatchingBrace(tex, tex.find("{", startOfText))
     sectionText = cleanText(tex[startOfText:endOfText])
     tex = tex[:startOfText] + \
-        "./ sectionStart\n" + "\n.SS API Notes\n" + \
-        sectionText + "\n./ sectionEnd\n" + tex[endOfText + 1:]
+            "./ sectionStart\n" + "\n.SS API Notes\n" + \
+            sectionText + "\n./ sectionEnd\n" + tex[endOfText + 1:]
     tex = tex.replace("\\apinotes{", "")
     return tex
 
 def impnotesReplacements(tex):
-    """Search tex file for the keyString "\\apiimpnotes{" and its matching
+    """
+    Search tex file for the keyString "\\apiimpnotes{" and its matching
     parenthesis. All text between will be processed such that there are no
     consecutive spaces, no tabs, and unnecessary "\\n". The text will then 
     have all the macros replaced and put back into its corresponding place
@@ -279,19 +317,21 @@ def impnotesReplacements(tex):
     beginning and end of the processed text, respectively, for differenti-
     ation between the text with sections and "dangling text".
     These strings will not appear in the manpage as any line that begins 
-    with a period will be treated as a comment. """
+    with a period will be treated as a comment. 
+    """
 
     startOfText = tex.find("\\apiimpnotes{")
     endOfText = findMatchingBrace(tex, tex.find("{", startOfText))
     sectionText = cleanText(tex[startOfText:endOfText])
     tex = tex[:startOfText] + \
-        "./ sectionStart\n" + "\n.SS API Notes\n" + \
-        sectionText + "\n./ sectionEnd\n" + tex[endOfText + 1:]
+            "./ sectionStart\n" + "\n.SS API Notes\n" + \
+            sectionText + "\n./ sectionEnd\n" + tex[endOfText + 1:]
     tex = tex.replace("\\apiimpnotes{", "")
     return tex
 
 def sumReplacements(tex, functionName):
-    """Search tex file for the keyString "\\apisummary{" and its matching
+    """
+    Search tex file for the keyString "\\apisummary{" and its matching
     parenthesis. All text between will be processed such that there are no
     consecutive spaces, no tabs, and unnecessary "\\n". The text will then 
     have all the macros replaced and put back into its corresponding place
@@ -300,21 +340,23 @@ def sumReplacements(tex, functionName):
     beginning and end of the processed text, respectively, for differenti-
     ation between the text with sections and "dangling text".
     These strings will not appear in the manpage as any line that begins 
-    with a period will be treated as a comment. """    
+    with a period will be treated as a comment. 
+    """
 
     startOfText = tex.find("\\apisummary{")
     endOfText = findMatchingBrace(tex, tex.find("{", startOfText))
     sectionText = cleanText(tex[startOfText:endOfText])
     tex = tex[:startOfText] + \
-        "./ sectionStart\n" + \
-        ".SH NAME\n" + functionName + " \- " \
-        + sectionText + "\n" + \
-        "./ sectionEnd\n" + tex[endOfText+1:]
+            "./ sectionStart\n" + \
+            ".SH NAME\n" + functionName + " \- " \
+            + sectionText + "\n" + \
+            "./ sectionEnd\n" + tex[endOfText+1:]
     tex = tex.replace("\\apisummary{", "")
     return tex
 
 def exampleCodeReplace(sectionText, in_directory, keyString):
-    """Searches throught the given text and replaces the files of code with
+    """
+    Searches throught the given text and replaces the files of code with
     the actual code in the file. 
     
     All examples in the Latex file follows the following pattern:
@@ -323,7 +365,8 @@ def exampleCodeReplace(sectionText, in_directory, keyString):
     prior to this function call and will be concatenated to the return
     string.
     -- The pattern ".nf\\n ... .fi\\n" will have the text in between ".nf"
-    and "fi" be presented without formatting. """
+    and "fi" be presented without formatting. 
+    """
 
     while(sectionText.find(keyString) != -1):
         startOfText = sectionText.find(keyString)
@@ -345,7 +388,8 @@ def exampleCodeReplace(sectionText, in_directory, keyString):
     return sectionText
 
 def exampleReplacements(tex, in_directory):
-    """Search tex file for the keyString "\\begin{apiexamples}" and its matching
+    """
+    Search tex file for the keyString "\\begin{apiexamples}" and its matching
     "\\end{apiexamples}". All text between will be processed such that there 
     are no consecutive spaces, no tabs, and unnecessary "\\n". The text will 
     then have all the macros replaced and put back into its corresponding 
@@ -358,7 +402,8 @@ def exampleReplacements(tex, in_directory):
     the example section of the manpage is always the last section. 
     Dangling text is identified as the text between a "./ sectionEnd" and
     ./sectionStart. Since there will be no text following this section, the
-    "./ sectionEnd" flag is no necessary. """
+    "./ sectionEnd" flag is no necessary. 
+    """
 
     startOfText = tex.find("\\begin{apiexamples}")
     endOfText = tex.find("\\end{apiexamples}")
@@ -366,18 +411,19 @@ def exampleReplacements(tex, in_directory):
     sectionText = cleanText(text)
 
     sectionText = exampleCodeReplace(sectionText, in_directory, 
-                "\\apicexample")
+                    "\\apicexample")
     sectionText = exampleCodeReplace(sectionText, in_directory,
-                "\\apifexample")
+                    "\\apifexample")
 
     tex = tex[:startOfText] + "\n" \
-        "./ sectionStart" + "\n.SS Examples\n" + \
-        sectionText + \
-        tex[endOfText + len("\\end{apiexamples}"):]
+            "./ sectionStart" + "\n.SS Examples\n" + \
+            sectionText + \
+            tex[endOfText + len("\\end{apiexamples}"):]
     return tex
 
 def argReplacements(tex):
-    """All elements within the section defined between "\\begin{apiarguments}"
+    """
+    All elements within the section defined between "\\begin{apiarguments}"
     and "\end{apiarguments}" will follow the following pattern:
             \\apiargument{<STATUS>}{<name>}{<description>}
     The following code will convert the above text such that STATUS will be
@@ -387,7 +433,8 @@ def argReplacements(tex):
     the form:
             \\apiargument{"None."}{}{}
     in which case, the code will conver the macro above to have "None." as
-    bolded. """
+    bolded. 
+    """
 
     startOfText = tex.find("\\apiargument")
     endOfText = tex.find("\\end{apiarguments}")
@@ -409,24 +456,25 @@ def argReplacements(tex):
             cleanArgList.append(".B None.")
         else:
             cleanArgList.append(".BR \"" + status + \
-                    " \" -" + "\n.I " + name + \
-                    "\n- " + text + \
-                    arg[thirdEndBrace+1:])
+                        " \" -" + "\n.I " + name + \
+                        "\n- " + text + \
+                        arg[thirdEndBrace+1:])
     sectionText = "\n\n".join(cleanArgList)
     tex = tex[:startOfText] + "\n" + \
-        "./ sectionStart\n" + "\n" + \
-        ".SH DESCRIPTION\n.SS Arguments\n" + \
-        sectionText + "\n./ sectionEnd\n" + tex[endOfText:]
+            "./ sectionStart\n" + "\n" + \
+            ".SH DESCRIPTION\n.SS Arguments\n" + \
+            sectionText + "\n./ sectionEnd\n" + tex[endOfText:]
     tex = tex.replace("\\begin{apiarguments}", "")
     tex = tex.replace("\\end{apiarguments}", "")
     return tex
 
 ##########################################################################
-##                        TABLE REPLACEMENTS                            ##
+##                            TABLE REPLACEMENTS                        ##
 ##########################################################################
 
 def descTReplacements(tex):
-    """All elements within the tex file defined to begin with "\\apidesctable{"
+    """
+    All elements within the tex file defined to begin with "\\apidesctable{"
     will follow the following pattern:
             \\apidesctable{{<desc>}{<firstColHead>}{<secondColHead>}
     The following code will convert the above text to display such that 
@@ -440,7 +488,7 @@ def descTReplacements(tex):
     where <number> is the number of spaces between the start of firstCol
     and the start of secondCol. 
     Displays as:
-                    <firstCol>                   <secondCol>
+                    <firstCol>                     <secondCol>
                     <----------<number>---------->
     If the length of <firstCol> surpasses <number>, it will display as:
                     <----------<number>---------->
@@ -459,7 +507,8 @@ def descTReplacements(tex):
     beginning and end of every row processed, respectively, for differenti-
     ating between the text with sections and "dangling text".
     These strings will not appear in the manpage as any line that begins 
-    with a period will be treated as a comment. """
+    with a period will be treated as a comment. 
+    """
 
     index = tex.find("\\apidesctable{")
     firstStartBrace = tex.find("{", index)
@@ -479,7 +528,8 @@ def descTReplacements(tex):
     return tex
 
 def tablerowReplacements(tex):
-    """All elements within the tex file defined to begin with "\\apitablerow"
+    """
+    All elements within the tex file defined to begin with "\\apitablerow"
     will follow the following pattern:
             \\apitablerow{<firstCol>}{<secondCol>}
     The following code will convert the above text to display in tabular 
@@ -492,7 +542,7 @@ def tablerowReplacements(tex):
     where <number> is the number of spaces between the start of firstCol
     and the start of secondCol. 
     Displays as:
-                    <firstCol>                   <secondCol>
+                    <firstCol>                     <secondCol>
                     <----------<number>---------->
     If the length of <firstCol> surpasses <number>, it will display as:
                     <----------<number>---------->
@@ -515,7 +565,8 @@ def tablerowReplacements(tex):
     beginning and end of every row processed, respectively, for differenti-
     ating between the text with sections and "dangling text".
     These strings will not appear in the manpage as any line that begins 
-    with a period will be treated as a comment. """
+    with a period will be treated as a comment. 
+    """
 
     while(tex.find("\\apitablerow") != -1):
         startOfText = tex.find("\\apitablerow")
@@ -547,7 +598,8 @@ def tablerowReplacements(tex):
 ##########################################################################
 
 def refTextReplacements(tex):
-    """Searches through the tex file and processes "dangling text", or text that
+    """
+    Searches through the tex file and processes "dangling text", or text that
     does not belong to a designated section. It finds these strings by search-
     ing for text in between any two consecutive "./ sectionStart" and 
     "./ sectionEnd" These text will sometimes have references to tables, iden-
@@ -555,7 +607,8 @@ def refTextReplacements(tex):
     have a unique integer that it can be identified with, consistent with the
     Latex file.
     The function will return the processed string with an indication array of 
-    which tables are to be appended to the end of the man page. """
+    which tables are to be appended to the end of the man page. 
+    """
 
     tables = [0, 0, 0, 0, 0]
     last = 0
@@ -589,10 +642,12 @@ def refTextReplacements(tex):
     return (tex, tables)
 
 def refMEMReplacements(tex):
-    """ Searches through the tex for any reference that specifically points to 
+    """ 
+    Searches through the tex for any reference that specifically points to 
     the memory modelled and replaces that sentence with a hard-coded string.
     Processing the section that was in the original text is not an option
-    because the reference the Latex file does not apply to the man pages. """
+    because the reference the Latex file does not apply to the man pages. 
+    """
 
     if (tex.find("\\ref{subsec:memory_model}") != -1):
         while(tex.find("\\ref{subsec:memory_model}") != -1):
@@ -611,7 +666,8 @@ def refMEMReplacements(tex):
     return tex
 
 def parseRefTables(tableTex):
-    """ The function takes in a tex file that contains a type table as input
+    """ 
+    The function takes in a tex file that contains a type table as input
     and returns the processed table in tabular form.
     All elements within the tex file that is desired will follow the 
     following pattern:
@@ -631,12 +687,12 @@ def parseRefTables(tableTex):
     where <number> is the number of spaces between the start of firstCol
     and the start of secondCol. 
     Displays as:
-                    <firstCol>                   <secondCol>
+                    <firstCol>                     <secondCol>
                     <----------<number>---------->
     If the length of <firstCol> surpasses <number>, it will display as:
                     <----------<number>---------->
                     <firstCol>                     
-                                                 <secondCol>
+                                                  <secondCol>
     
     Every row of the table must include the ".TP" or the text will be
     processed with default formatting. 
@@ -647,7 +703,8 @@ def parseRefTables(tableTex):
     for when the second column begins is the next "\\n" 
     
     .B at the start of a line will underline/italicize all text until
-    the next "\\n" """
+    the next "\\n" 
+    """
 
     startIdx = tableTex.find("\\hline")
     endIdx = tableTex.find("\\end{tabular}")
@@ -668,11 +725,13 @@ def parseRefTables(tableTex):
     return text
 
 def addRefTable(tableID, directory):
-    """ This function maps the tableID given to each reference table to its
+    """ 
+    This function maps the tableID given to each reference table to its
     corresponding to tex file that contains the table. It then calls a
     helper function to parse the table and returns the subsection text, 
     containing the subsection header, the caption for the table, and the
-    table. """
+    table. 
+    """
 
     if tableID == 1:
         tableTex = open(directory + "/stdrmatypes.tex", "r").read()
@@ -698,9 +757,14 @@ def addRefTable(tableID, directory):
 ##########################################################################
 
 def synCReplacements(tex, keyString):
-    """ Replaces the code identified between "\\begin{<keyString>}" and 
+    """ 
+    Replaces the code identified between "\\begin{<keyString>}" and 
     "\end{<keyString>}" to have C keywords (defined as a global variable) 
-    bolded and the argument variables underlined. 
+    bolded and the argument variables underlined. Also compiles a list, 
+    linkCFuncs, of all functions that falls within the scope of this manpage.
+    For instance, shmem_malloc, shmem_free, shmeme_realloc, and shmem_align 
+    all fall under the shmem_malloc manpage. In this case, linkCFuncs will
+    be ["shmem_malloc", "shmem_free", "shmeme_realloc", "shmem_align"].
     
     .B at the start of a line will bold all text until
     the next "\\n"
@@ -711,8 +775,10 @@ def synCReplacements(tex, keyString):
     
     .IB "A" "B" "C"
     
-    will have "A" and "C" as italicized and "B" will be bolded. """
+    will have "A" and "C" as italicized and "B" will be bolded. 
+    """
 
+    linkCFuncs = []
     while (tex.find("\\begin{" + keyString + "}") != -1):
         startOfText = tex.find("\\begin{" + keyString + "}")
         endOfText = tex.find("\\end{" + keyString + "}")
@@ -724,6 +790,14 @@ def synCReplacements(tex, keyString):
             line = line.strip()
             wordList = line.split()
             for i in xrange(len(wordList)):
+                if (wordList[i].find("shmem") != -1 and 
+                        wordList[i].find("TYPENAME") == -1 and
+                        wordList[i].find("SIZE") == -1):
+                    stripAsterisk = wordList[i].replace("*", "")
+                    argStart = stripAsterisk.find("(")
+                    funcName = stripAsterisk[:argStart]
+                    linkCFuncs.append(funcName.strip())
+
                 if(i < 2):
                     wordList[i] = "\n.B " + wordList[i]
                 else:
@@ -755,12 +829,17 @@ def synCReplacements(tex, keyString):
                 header + formattedCode  + "\n" + \
                 "./ sectionEnd\n" + \
                 tex[endOfText + len("\\end{" + keyString + "}"):]
-    return tex
+    return (tex, linkCFuncs)
 
 def synFReplacements(tex):
-    """ Replaces the code identified between "\\begin{Fsynopsis}" and 
+    """ 
+    Replaces the code identified between "\\begin{Fsynopsis}" and 
     "\end{Fsynopsis}" to have Fortran keywords (defined as a global 
-    variable) bolded. 
+    variable) bolded. Also compiles a list, linkFortranFuncs, of all 
+    functions that falls within the scope of this manpage. For instance, 
+    shmem_malloc, shmem_free, shmeme_realloc, and shmem_align all fall 
+    under the shmem_malloc manpage. In this case, linkCFuncs will be 
+    ["shmem_malloc", "shmem_free", "shmeme_realloc", "shmem_align"].
     
     .B at the start of a line will bold all text untilthe next "\\n"
 
@@ -768,8 +847,10 @@ def synFReplacements(tex):
     
     .BR "A" "B" "C"
     
-    will have "A" and "C" as bolded and "B" will be regular. """
+    will have "A" and "C" as bolded and "B" will be regular. 
+    """
 
+    linkFortranFuncs = []
     while (tex.find("\\begin{Fsynopsis}") != -1):
         startOfText = tex.find("\\begin{Fsynopsis}")
         endOfText = tex.find("\\end{Fsynopsis}")
@@ -787,31 +868,56 @@ def synFReplacements(tex):
                         " ".join(wordList[1:]) + "\""
             text = text[:s] + line + text[e:]
             last = s
+
+            if(wordList[0] == "CALL"):
+                argStart = wordList[1].find("(")
+                if (argStart < 0):
+                    funcName = wordList[1]
+                else:
+                    funcName = wordList[1][:argStart]
+                linkFortranFuncs.append(funcName.strip())
+
+            if(wordList[0] not in boldWordsF):
+                for i in xrange(len(wordList)):
+                    if (wordList[i].find("SHMEM") != -1):
+                        argStart = wordList[i].find("(")
+                        funcName = wordList[i][:argStart]
+                        linkFortranFuncs.append(funcName.strip())
+
         tex = tex[:startOfText] + "\n./ sectionStart" + "\n" + \
                 ".SS Fortran:\n" + "\n.nf\n" + text + "\n.fi\n" + \
                  "\n./ sectionEnd"  + "\n" + \
                  tex[endOfText + len("\\end{Fsynopsis}"):]
-    return tex
+    return (tex, linkFortranFuncs)
 
 def codeReplace(tex):
-    tex = synCReplacements(tex, "C11synopsis")
-    tex = synCReplacements(tex, "Csynopsis")
-    tex = synCReplacements(tex, "CsynopsisCol")
-    tex = synFReplacements(tex)
-    return tex
+    linkFuncsAll = []
+    (tex, linkC11) = synCReplacements(tex, "C11synopsis")
+    (tex, linkC) = synCReplacements(tex, "Csynopsis")
+    (tex, linkCCol) = synCReplacements(tex, "CsynopsisCol")
+    (tex, linkFortran) = synFReplacements(tex)
+    linkFuncsAll.extend(linkC11)
+    linkFuncsAll.extend(linkC)
+    linkFuncsAll.extend(linkCCol)
+    linkFuncsAll.extend(linkFortran)
+    print(linkFuncsAll)
+    return (tex, linkFuncsAll)
 
 ##########################################################################
 ##                            HELPER FUNCTIONS                          ##
 ##########################################################################
 
 def cleanText(text):
-    """ Gets rid of consecutive spaces and tabs in the given text but maintains
+    """ 
+    Gets rid of consecutive spaces and tabs in the given text but maintains
     any "\\n\\n" which is the indicator of a new paragraph. For every para-
     graph, the code will replace all macros and rejoin the paragraphs as 
     the final return string.
     NOTE: Typically manpages ignores "\\n" within the text and displays
     the text as if there is no "\\n". "\\n\\n" will parsed as the beginning
-    of a new paragraph. """
+    of a new paragraph. 
+    """
+
     text = text.replace("\t", "")
     while(text.find("  ") != -1):
         text = text.replace("  ", " ")
@@ -831,6 +937,7 @@ def macroReplacements(paragraph):
     paragraph = variableReplacements(paragraph)
     paragraph = generalReplacements(paragraph)
     paragraph = constReplacements(paragraph)
+    paragraph = cTypeReplacements(paragraph)
     paragraph = oprReplacements(paragraph)
     paragraph = funcReplacements(paragraph)
     paragraph = italReplacements(paragraph)
@@ -838,9 +945,11 @@ def macroReplacements(paragraph):
     return paragraph
 
 def generateRoutineList(TOC):
-    """ Takes the Table of Contents and compiles a list of all function names
+    """ 
+    Takes the Table of Contents and compiles a list of all function names
     that needs to be parsed to manpages. The code assumes that every function
-    entry will be preceded by the macro, "\\subsubsection{\\textbf" """
+    entry will be preceded by the macro, "\\subsubsection{\\textbf" 
+    """
 
     count = 0;
     routineList = []
@@ -857,9 +966,12 @@ def generateRoutineList(TOC):
     return routineList
 
 def findMatchingBrace(tex, ind):
-    """ Takes in the tex string and the index of the open brace to which we 
+    """ 
+    Takes in the tex string and the index of the open brace to which we 
     need to find the matching brace. 
-    Function returns the index of the matching brace """
+    Function returns the index of the matching brace 
+    """
+
     count = 0
     if (tex[ind] == "{"):
         count += 1
@@ -871,6 +983,55 @@ def findMatchingBrace(tex, ind):
             count = count - 1
         ptr += 1
     return ptr - 1
+
+##########################################################################
+##                        REDIRECTION FUNCTIONS                         ##
+##########################################################################
+
+def writeLinkFunctions(functionName, linkFunctions, gen_dir):
+    """
+    Takes in a list of all functions that refers to the same man page as
+    the one with <functionName>, which is the parent man page. 
+    """
+    for link in linkFunctions:
+        if link != functionName:
+            manFile = open(gen_dir + '/' + link + ".3", "w")
+            manFile.write(".so " + functionName + ".3\n")
+            manFile.close()
+
+def parseDeprecationTable(directory, gen_dir):
+    """ 
+    ***PREREQUISITE: This function only gets calls when the user gives
+    a directory to the script. The main routines from the Table of Con-
+    tents must have been converted for this functin to execute properly.
+
+    Parse the deprecation table in the Appendix of the specification.
+    Creates and directs the deprecated functions to the most updated ver-
+    sion. 
+    If the deprecated function has an entry in the Table of Contents, no
+    new page will be created.
+    If the deprecated function already has an entry in the output, no new
+    page will be created.
+    """
+    tableTex = open(directory + "/deprecationTable.tex", "r").read()
+    tableRows = tableTex.split("\\hline")
+    for row in tableRows:
+        columns = row.split("&")
+        if (columns[0].find("\\FUNC") != -1):
+            argStart = columns[0].find("\\FUNC{") + len("\\FUNC{")
+            argEnd = columns[0].find("}", argStart)
+            deprFuncName = columns[0][argStart:argEnd].replace("\\", "")
+            if not os.path.isfile(gen_dir + "/" + deprFuncName + ".3"):
+                manFile = open(gen_dir + '/' + deprFuncName + ".3", "w")
+                argStartPar = columns[3].find("\\FUNC{") + len("\\FUNC{")
+                argEndPar = columns[3].find("}", argStartPar)
+                parentName = columns[3][argStartPar:argEndPar].replace("\\", "")
+                if not os.path.isfile(gen_dir + "/" + parentName + ".3"):
+                    print("Error: " + deprFuncName + " redirects to "
+                        + parentName + ", which has not been generated yet.\n")
+                    exit(1)
+                manFile.write(".so " + parentName + ".3\n")
+                manFile.close()
 
 ##########################################################################
 ##                            MAIN FUNCTIONS                            ##
@@ -886,8 +1047,10 @@ def convertFile(functionName, directory, gen_dir):
     manFile.write(titleHeader)
 
     tex = texFile.read()
-    tex = tex.replace("\\begin{DeprecateBlock}", "")
-    tex = tex.replace("\\end{DeprecateBlock}", "")
+    tex = tex.replace("\\begin{DeprecateBlock}", 
+        "./ sectionStart\n.B ***********DEPRECATED***********\n./ sectionEnd\n")
+    tex = tex.replace("\\end{DeprecateBlock}", 
+        "./ sectionStart\n.B ********************************\n./ sectionEnd\n")
     tex = tex.replace("\\begin{apidefinition}\n", 
                 "./ sectionStart\n.SH   SYNOPSIS\n./ sectionEnd")
     tex = sumReplacements(tex, functionName)
@@ -897,7 +1060,7 @@ def convertFile(functionName, directory, gen_dir):
     tex = notesReplacements(tex)
     tex = retReplacements(tex)
     tex = boldReplacements(tex)
-    tex = codeReplace(tex)
+    (tex, linkFunctions) = codeReplace(tex)
     if (tex.find("\\apiimpnotes{") != -1):
         tex = impnotesReplacements(tex)
     while(tex.find("\\apidesctable{") != -1):
@@ -930,11 +1093,12 @@ def convertFile(functionName, directory, gen_dir):
     print("Finished converting " + functionName + ".tex")
     manFile.close()
     texFile.close()
+    writeLinkFunctions(functionName, linkFunctions, gen_dir)
 
 def main():
     parser = argparse.ArgumentParser(description='Generate OpenSHMEM manpages')
     parser.add_argument('-d', '--directory', type=str, required=False,
-                        help='OpenSHMEM specification LaTeX directory path')
+                        help='OpenSHMEM specification content LaTeX directory path')
     parser.add_argument('-o', '--output-directory', type=str, required=False, default="./man",
                         help='Output directory for generated manpages')
     parser.add_argument('-f', '--filename', type=str, required=False,
@@ -964,6 +1128,7 @@ def main():
                     exit(1)
                 else:
                     convertFile(routine, args.directory, args.output_directory)
+            parseDeprecationTable(args.directory, args.output_directory)
     else:
         if not os.path.isfile(args.filename):
             print("Error: input file, " + args.filename + ", does not appear to exist.")
