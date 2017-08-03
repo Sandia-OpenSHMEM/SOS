@@ -156,7 +156,7 @@ do_subst = sed -e 's|[@]PERL[@]|$(PERL)|g' \
                -e 's|[@]WRAPPER_COMPILER_INCLUDEDIR[@]|$(includedir)|g' \
                -e 's|[@]WRAPPER_COMPILER_LIBDIR[@]|$(libdir)|g' \
                -e 's|[@]WRAPPER_COMPILER_EXTRA_LDFLAGS[@]|$(WRAPPER_COMPILER_EXTRA_LDFLAGS)|g' \
-               -e 's|[@]WRAPPER_COMPILER_EXTRA_LIBS[@]|$(WRAPPER_COMPILER_EXTRA_LIBS)|g' 
+               -e 's|[@]WRAPPER_COMPILER_EXTRA_LIBS[@]|$(WRAPPER_COMPILER_EXTRA_LIBS)|g'
 
 do_subst_launcher = sed -e 's|[@]WRAPPER_SEARCH_LAUNCHERS[@]|$(WRAPPER_SEARCH_LAUNCHERS)|g' 
 
