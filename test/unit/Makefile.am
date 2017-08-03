@@ -142,9 +142,6 @@ rma_coverage_pshmem_SOURCES = rma_coverage.c
 rma_coverage_pshmem_CFLAGS = -DTEST_PSHMEM
 
 mt_a2a_SOURCES = mt_a2a.c pthread_barrier.h
-mt_a2a_LDFLAGS = $(PTHREAD_LIBS)
-mt_a2a_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
-mt_a2a_CFLAGS = $(PTHREAD_CFLAGS)
 
 # Fortran Tests (only .c tests use automatic _SOURCES)
 hello_f_SOURCES = hello_f.f90

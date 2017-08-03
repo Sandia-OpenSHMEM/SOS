@@ -91,6 +91,7 @@ AS_IF([test "$enable_threads" = "yes"], [
        AC_MSG_CHECKING([for working POSIX threads package])
        if test "$HAVE_POSIX_THREADS" = "1" ; then
            AC_MSG_RESULT([yes])
+           LDFLAGS="$LDFLAGS $PTHREAD_LIBS $PTHREAD_CFLAGS" #Note: Currently, PTHREADS_LDFLAGS is not set by the OPAL pthreads script, but we need -lpthread/-pthread at link time
        else
            AC_MSG_RESULT([no])
        fi
@@ -571,7 +572,6 @@ WRAPPER_COMPILER_EXTRA_LDFLAGS=`echo "$WRAPPER_COMPILER_EXTRA_LDFLAGS" | sed -e 
 AC_MSG_RESULT([$WRAPPER_COMPILER_EXTRA_LDFLAGS])
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LDFLAGS)
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
-AC_SUBST(PTHREAD_CFLAGS)
 
 AC_CONFIG_FILES([Makefile
   sandia-openshmem.spec
