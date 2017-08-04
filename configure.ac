@@ -91,6 +91,8 @@ AS_IF([test "$enable_threads" = "yes"], [
        AC_MSG_CHECKING([for working POSIX threads package])
        if test "$HAVE_POSIX_THREADS" = "1" ; then
            AC_MSG_RESULT([yes])
+           AC_SUBST(PTHREAD_CFLAGS)
+           AC_SUBST(PTHREAD_LIBS)
        else
            AC_MSG_RESULT([no])
        fi
