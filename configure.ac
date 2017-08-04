@@ -172,6 +172,9 @@ AS_IF([test "$enable_bounce_buffers" = "no"],
       [AC_DEFINE([DEFAULT_BOUNCE_SIZE], [0], [Default bounce buffer threshold])],
       [AC_DEFINE([DEFAULT_BOUNCE_SIZE], [2048], [Default bounce buffer threshold])])
 
+AC_ARG_WITH([oshrun-launcher],
+    [AC_HELP_STRING([--with-oshrun-launcher],
+                    [Set launcher to be used by oshrun launcher wrapper. (default: auto)])])
 
 dnl check for programs
 
@@ -525,6 +528,13 @@ AC_SUBST(DISTCHECK_CONFIGURE_FLAGS)
 dnl Cause Automake to delete emacs turds
 CLEANFILES="*~"
 AC_SUBST(CLEANFILES)
+
+# configuration for --with-oshrun-launcher
+WRAPPER_SEARCH_LAUNCHERS="yod mpirun mpiexec srun"
+if test -n "$with_oshrun_launcher" ; then
+    WRAPPER_SEARCH_LAUNCHERS="$with_oshrun_launcher"
+fi
+AC_SUBST(WRAPPER_SEARCH_LAUNCHERS)
 
 # last minute updates of the flags so that tests don't fail oddly if
 # portals libdir isn't in LD_LIBRARY_PATH...

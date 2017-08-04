@@ -158,6 +158,8 @@ do_subst = sed -e 's|[@]PERL[@]|$(PERL)|g' \
                -e 's|[@]WRAPPER_COMPILER_EXTRA_LDFLAGS[@]|$(WRAPPER_COMPILER_EXTRA_LDFLAGS)|g' \
                -e 's|[@]WRAPPER_COMPILER_EXTRA_LIBS[@]|$(WRAPPER_COMPILER_EXTRA_LIBS)|g'
 
+do_subst_launcher = sed -e 's|[@]WRAPPER_SEARCH_LAUNCHERS[@]|$(WRAPPER_SEARCH_LAUNCHERS)|g' 
+
 AM_V_SED = $(am__v_SED_@AM_V@)
 am__v_SED_ = $(am__v_SED_@AM_DEFAULT_V@)
 am__v_SED_0 = @echo "  SED     " $@;
@@ -190,7 +192,7 @@ oshfort: shmem_compiler_script.in Makefile
 	@chmod +x oshfort
 
 oshrun: shmem_launcher_script.in Makefile
-	$(AM_V_SED) cp $(srcdir)/shmem_launcher_script.in oshrun
+	$(AM_V_SED)$(do_subst_launcher) < $(srcdir)/shmem_launcher_script.in > oshrun
 	@chmod +x oshrun
 
 SUFFIXES = .c4
