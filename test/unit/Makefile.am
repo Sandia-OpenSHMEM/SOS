@@ -82,6 +82,7 @@ check_PROGRAMS = \
 	collect_active_set \
 	pcontrol \
 	atomic_bitwise \
+	nop_collectives \
 	self_collectives
 
 if ENABLE_PROFILING
