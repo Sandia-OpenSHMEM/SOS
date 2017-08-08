@@ -428,6 +428,8 @@ shmem_internal_bcast_linear(void *target, const void *source, size_t len,
     /* need 1 slot */
     shmem_internal_assert(SHMEM_BCAST_SYNC_SIZE >= 1);
 
+    if (PE_size == 1 || len == 0) return;
+
     if (real_root == shmem_internal_my_pe) {
         int i, pe;
 
@@ -489,7 +491,7 @@ shmem_internal_bcast_tree(void *target, const void *source, size_t len,
     /* need 1 slot */
     shmem_internal_assert(SHMEM_BCAST_SYNC_SIZE >= 1);
 
-    if (PE_size == 1) return;
+    if (PE_size == 1 || len == 0) return;
 
     if (PE_size == shmem_internal_num_pes && 0 == PE_root) {
         /* we're the full tree, use the binomial tree */
@@ -584,6 +586,8 @@ shmem_internal_op_to_all_linear(void *target, const void *source, int count, int
     /* need 2 slots, plus bcast */
     shmem_internal_assert(SHMEM_REDUCE_SYNC_SIZE >= 2 + SHMEM_BCAST_SYNC_SIZE);
 
+    if (count == 0) return;
+
     if (PE_start == shmem_internal_my_pe) {
         int pe, i;
         /* update our target buffer with our contribution.  The put
@@ -651,6 +655,8 @@ shmem_internal_op_to_all_tree(void *target, const void *source, int count, int t
         }
         return;
     }
+
+    if (count == 0) return;
 
     if (PE_size == shmem_internal_num_pes) {
         /* we're the full tree, use the binomial tree */
@@ -734,6 +740,8 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, int count, 
         free(current_target);
         return;
     }
+
+    if (count == 0) return;
 
     while (i != 1) {
         i >>= 1;
@@ -986,6 +994,8 @@ shmem_internal_fcollect_ring(void *target, const void *source, size_t len,
     /* need 1 slot */
     shmem_internal_assert(SHMEM_COLLECT_SYNC_SIZE >= 1);
 
+    if (len == 0) return;
+
     /* copy my portion to the right place */
     memcpy((char*) target + (my_id * len), source, len);
 
@@ -1046,6 +1056,8 @@ shmem_internal_fcollect_recdbl(void *target, const void *source, size_t len,
      * on INT is required by the SHMEM atomics API. */
     shmem_internal_assert(SHMEM_COLLECT_SYNC_SIZE >= (sizeof(int) * 8) / (sizeof(long) / sizeof(int)));
     shmem_internal_assert(0 == (PE_size & (PE_size - 1)));
+
+    if (len == 0) return;
 
     /* copy my portion to the right place */
     curr_offset = my_id * len;
