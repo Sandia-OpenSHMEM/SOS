@@ -112,14 +112,18 @@ endif
 
 if USE_PMI_SIMPLE
 AM_CPPFLAGS += -I$(top_srcdir)/pmi-simple
+libsma_la_SOURCES += \
+	runtime-pmi.c
 endif
 
 if USE_PMI2
 libsma_la_SOURCES += \
 	runtime-pmi2.c
-else
+endif
+
+if USE_PMIX
 libsma_la_SOURCES += \
-	runtime-pmi.c
+	runtime-pmix.c
 endif
 
 

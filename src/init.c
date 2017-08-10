@@ -301,7 +301,9 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     }
 
     /* finish up */
+#ifndef USE_PMIX
     shmem_runtime_barrier();
+#endif
     return;
 
  cleanup:

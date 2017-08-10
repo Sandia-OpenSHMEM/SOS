@@ -40,6 +40,8 @@ AC_CANONICAL_HOST
 
 OPAL_CHECK_ATTRIBUTES
 
+OPAL_CHECK_PMIX
+
 AC_ARG_ENABLE([picky],
     [AC_HELP_STRING([--enable-picky],
                     [Enable developer-level compiler pickyness when building (default: disabled)])])
@@ -316,6 +318,7 @@ AS_IF([test "$enable_pmi_simple" = "yes"],
      [OPAL_CHECK_PMI(pmi_type)])
 AM_CONDITIONAL([USE_PMI_SIMPLE], [test "$enable_pmi_simple" = "yes"])
 AM_CONDITIONAL([USE_PMI2], [test "$pmi_type" = "pmi2"])
+AM_CONDITIONAL([USE_PMIX], [test "$opal_external_pmix_version_found" = 1])
 
 dnl check for header files
 AC_CHECK_HEADERS([fnmatch.h])
@@ -563,11 +566,11 @@ if test "$transport_xpmem" = "yes" ; then
     WRAPPER_COMPILER_EXTRA_LIBS="$XPMEM_LIBS"
 fi
 
-CPPFLAGS="$CPPFLAGS $pmi_CPPFLAGS"
-LDFLAGS="$LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
-LIBS="$LIBS $pmi_LIBS"
-WRAPPER_COMPILER_EXTRA_LDFLAGS="$WRAPPER_COMPILER_EXTRA_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
-WRAPPER_COMPILER_EXTRA_LIBS="$WRAPPER_COMPILER_LIBS $pmi_LIBS"
+CPPFLAGS="$CPPFLAGS $pmi_CPPFLAGS $opal_external_pmix_CPPFLAGS"
+LDFLAGS="$LDFLAGS $pmi_LDFLAGS $opal_external_pmix_LDFLAGS $aslr_LDFLAGS"
+LIBS="$LIBS $pmi_LIBS $opal_external_pmix_LIBS"
+WRAPPER_COMPILER_EXTRA_LDFLAGS="$WRAPPER_COMPILER_EXTRA_LDFLAGS $pmi_LDFLAGS $opal_external_pmix_LDFLAGS $aslr_LDFLAGS"
+WRAPPER_COMPILER_EXTRA_LIBS="$WRAPPER_COMPILER_LIBS $pmi_LIBS $opal_external_pmix_LIBS"
 
 # Need the libtool binary before setting up rpath
 LT_OUTPUT
@@ -608,7 +611,7 @@ fi
 
 AC_OUTPUT
 
-AS_IF([test "$enable_pmi_simple" != "yes" -a "$ompi_check_pmi_happy" != "yes" -a -z "$pmi_type"],
+AS_IF([test "$enable_pmi_simple" != "yes" -a "$opal_external_pmix_version_found" != 1 -a "$ompi_check_pmi_happy" != "yes" -a -z "$pmi_type"],
          [AC_MSG_WARN([No PMI found, if build fails consider --enable-pmi-simple or --with-pmi])])
 
 AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
