@@ -38,8 +38,6 @@ static size_t size;
 int
 shmem_runtime_init(void)
 {
-    printf("HELLO FROM PMIX\n");
-
     pmix_status_t rc;
     pmix_proc_t proc;
     proc.rank = PMIX_RANK_WILDCARD;
@@ -53,10 +51,6 @@ shmem_runtime_init(void)
             fprintf(stderr, "PMIx_Init failed\n");
             return rc;
         }
-        // else {
-        //     pmix_output_verbose(stderr, pmix_globals.debug_output,
-        //     "PMIx_Init executed successfully");
-        // }
     }
 
     (void)strncpy(proc.nspace, myproc.nspace, PMIX_MAX_NSLEN);
@@ -86,10 +80,6 @@ shmem_runtime_fini(void)
 
         return rc;
     }
-    // else{
-    //     pmix_output_verbose(stderr, pmix_globals.debug_output,
-    //         "PMIx_Finalize executed successfully");
-    // }
 
     return PMIX_SUCCESS;
 }
@@ -100,7 +90,7 @@ shmem_runtime_abort(int exit_code, const char msg[])
 {
 
 #ifdef HAVE___BUILTIN_TRAP
-    if (shmem_internal_trap_on_abort)
+    if (shmem_internal_params.TRAP_ON_ABORT)
         __builtin_trap();
 #endif
 
@@ -109,10 +99,6 @@ shmem_runtime_abort(int exit_code, const char msg[])
     if (PMIX_SUCCESS != (rc = PMIx_Abort(exit_code, msg, NULL, 0))) {
         fprintf(stderr, "PMIx_Abort failed");
     }
-    // else{
-    //     pmix_output_verbose(stderr, pmix_globals.debug_output,
-    //         "PMIx_Abort executed successfully");
-    // }
 
     /* PMI_Abort should not return */
     abort();
@@ -148,8 +134,7 @@ shmem_runtime_exchange(void)
     pmix_status_t rc;
     pmix_info_t info;
     bool wantit=true;
-    pmix_proc_t proc;
-    bool active = true;
+    //bool active = true;
 
     /* commit any values we "put" */
     if (PMIX_SUCCESS != (rc = PMIx_Commit())) {
@@ -161,7 +146,11 @@ shmem_runtime_exchange(void)
     PMIX_INFO_CONSTRUCT(&info);
     PMIX_INFO_LOAD(&info, PMIX_COLLECT_DATA, &wantit, PMIX_BOOL);
 
-    // Future optimization for when 
+    // Future optimization for when fabrics are ready to support the non-block-
+    // ing capabilities. The commented out call function above, the commented
+    // variable "bool active," and the PMIx_Fence_nb if-statement are here for
+    // when that is ready. Current implementations will cause the test to hang.
+    
     // if (PMIX_SUCCESS != (rc = PMIx_Fence_nb(NULL, 0, &info, 1, opcbfunc, &active))) {
     if (PMIX_SUCCESS != (rc = PMIx_Fence(NULL, 0, &info, 1))) {
         fprintf(stderr, "PMIx_Fence failed");
