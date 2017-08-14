@@ -81,7 +81,9 @@ check_PROGRAMS = \
 	reduce_active_set \
 	collect_active_set \
 	pcontrol \
-	atomic_bitwise
+	atomic_bitwise \
+	nop_collectives \
+	self_collectives
 
 if ENABLE_PROFILING
 check_PROGRAMS += \
