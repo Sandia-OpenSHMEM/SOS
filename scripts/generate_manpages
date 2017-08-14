@@ -4,6 +4,7 @@ import sys
 import os
 import string
 import argparse
+import time
 
 # boldWordsC and boldWordsF are a set of the key words that will be
 # bolded in the man page
@@ -20,8 +21,8 @@ def writePageHeader(functionName):
     """
 
     titleHeader = ".TH " + functionName.upper() + " 3 " \
-                     + "" + "" \
-                     + "\"Open Source Software Solutions, Inc.\"" + "" \
+                     + "\"Open Source Software Solutions, Inc.\" " \
+                     + time.strftime("%m/%d/%Y") + " " \
                      + "\"OpenSHEMEM Library Documentation\"" + "\n"
     return titleHeader
 
@@ -850,7 +851,7 @@ def synFReplacements(tex):
     will have "A" and "C" as bolded and "B" will be regular. 
     """
 
-    linkFortranFuncs = []
+    # linkFortranFuncs = []
     while (tex.find("\\begin{Fsynopsis}") != -1):
         startOfText = tex.find("\\begin{Fsynopsis}")
         endOfText = tex.find("\\end{Fsynopsis}")
@@ -869,38 +870,38 @@ def synFReplacements(tex):
             text = text[:s] + line + text[e:]
             last = s
 
-            if(wordList[0] == "CALL"):
-                argStart = wordList[1].find("(")
-                if (argStart < 0):
-                    funcName = wordList[1]
-                else:
-                    funcName = wordList[1][:argStart]
-                linkFortranFuncs.append(funcName.strip())
+            # if(wordList[0] == "CALL"):
+            #     argStart = wordList[1].find("(")
+            #     if (argStart < 0):
+            #         funcName = wordList[1]
+            #     else:
+            #         funcName = wordList[1][:argStart]
+            #     linkFortranFuncs.append(funcName.strip())
 
-            if(wordList[0] not in boldWordsF):
-                for i in xrange(len(wordList)):
-                    if (wordList[i].find("SHMEM") != -1):
-                        argStart = wordList[i].find("(")
-                        funcName = wordList[i][:argStart]
-                        linkFortranFuncs.append(funcName.strip())
+            # if(wordList[0] not in boldWordsF):
+            #     for i in xrange(len(wordList)):
+            #         if (wordList[i].find("SHMEM") != -1):
+            #             argStart = wordList[i].find("(")
+            #             funcName = wordList[i][:argStart]
+            #             linkFortranFuncs.append(funcName.strip())
 
         tex = tex[:startOfText] + "\n./ sectionStart" + "\n" + \
                 ".SS Fortran:\n" + "\n.nf\n" + text + "\n.fi\n" + \
                  "\n./ sectionEnd"  + "\n" + \
                  tex[endOfText + len("\\end{Fsynopsis}"):]
-    return (tex, linkFortranFuncs)
+    return tex 
 
 def codeReplace(tex):
     linkFuncsAll = []
     (tex, linkC11) = synCReplacements(tex, "C11synopsis")
     (tex, linkC) = synCReplacements(tex, "Csynopsis")
     (tex, linkCCol) = synCReplacements(tex, "CsynopsisCol")
-    (tex, linkFortran) = synFReplacements(tex)
+    tex = synFReplacements(tex)
     linkFuncsAll.extend(linkC11)
     linkFuncsAll.extend(linkC)
     linkFuncsAll.extend(linkCCol)
-    linkFuncsAll.extend(linkFortran)
-    print(linkFuncsAll)
+    # linkFuncsAll.extend(linkFortran)
+    # print(linkFuncsAll)
     return (tex, linkFuncsAll)
 
 ##########################################################################
@@ -1021,7 +1022,8 @@ def parseDeprecationTable(directory, gen_dir):
             argStart = columns[0].find("\\FUNC{") + len("\\FUNC{")
             argEnd = columns[0].find("}", argStart)
             deprFuncName = columns[0][argStart:argEnd].replace("\\", "")
-            if not os.path.isfile(gen_dir + "/" + deprFuncName + ".3"):
+            if not os.path.isfile(gen_dir + "/" + deprFuncName + ".3") \
+                            and deprFuncName.islower():
                 manFile = open(gen_dir + '/' + deprFuncName + ".3", "w")
                 argStartPar = columns[3].find("\\FUNC{") + len("\\FUNC{")
                 argEndPar = columns[3].find("}", argStartPar)
