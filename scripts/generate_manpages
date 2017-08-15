@@ -24,7 +24,7 @@ def writePageHeader(functionName):
     titleHeader = ".TH " + functionName.upper() + " 3 " \
                      + "\"Open Source Software Solutions, Inc.\" " \
                      + time.strftime("%m/%d/%Y") + " " \
-                     + "\"OpenSHEMEM Library Documentation\"" + "\n"
+                     + "\"OpenSHMEM Library Documentation\"" + "\n"
     return titleHeader
 
 ##########################################################################
@@ -1038,6 +1038,139 @@ def parseDeprecationTable(directory, gen_dir, build_fortran):
                 manFile.close()
 
 ##########################################################################
+##                        EXECUTABLE  FUNCTIONS                         ##
+##########################################################################
+    
+def writeOshcc(gen_dir):
+    manFile = open(gen_dir + '/' + "oshcc.1", "w")
+    manFile.write(".TH " + "OSHCC" + " 1 " \
+                     + "\"Open Source Software Solutions, Inc.\" " \
+                     + time.strftime("%m/%d/%Y") + " " \
+                     + "\"OpenSHMEM Library Documentation\"" + "\n")
+    manFile.write(".SH NAME\n")
+    manFile.write("oshcc - Compiles and links OpenSHMEM programs " + \
+        "written in C\n")
+    manFile.write(".SH DESCRIPTION\n")
+    manFile.write("This command can be used to compile and link Open" + \
+        "SHMEM programs written in C.\n")
+    manFile.write("It provides the options and any special libraries " + \
+        "that are needed to compile and link OpenSHMEM programs.\n\n" + \
+        "It is important to use this command, particularly when link" + \
+        "ing programs, as it provides the necessary libraries.\n\n")
+    manFile.write("usage: oshcc [oshcc_options] [compiler_arguments]\n")
+    manFile.write(".SH COMMAND LINE ARGUMENTS\n")
+    manFile.write(".TP 8\n")
+    manFile.write(".B --help\n")
+    manFile.write("- Display this information\n")
+    manFile.write(".TP\n")
+    manFile.write(".B -showme | -show\n")
+    manFile.write("- Print the command that would be run without executing it\n")
+    manFile.write(".TP\n")
+    manFile.write(".B -E | -M\n")
+    manFile.write("- Disable compilation and linking\n")
+    manFile.write(".TP\n")
+    manFile.write(".B -S\n")
+    manFile.write("- Disable linking\n")
+    manFile.write(".TP\n")
+    manFile.write(".B -c\n")
+    manFile.write("- Compile and assemble. Disable link\n")
+    manFile.close()
+
+def writeOshCC(gen_dir):
+    manFile = open(gen_dir + '/' + "oshc++.1", "w")
+    manFile.write(".TH " + "OSHC++" + " 1 " \
+                     + "\"Open Source Software Solutions, Inc.\" " \
+                     + time.strftime("%m/%d/%Y") + " " \
+                     + "\"OpenSHMEM Library Documentation\"" + "\n")
+    manFile.write(".SH NAME\n")
+    manFile.write("oshc++ - Compiles and links OpenSHMEM programs " + \
+        "written in C++\n")
+    manFile.write(".SH DESCRIPTION\n")
+    manFile.write("This command can be used to compile and link Open" + \
+        "SHMEM programs written in C++.\n")
+    manFile.write("It provides the options and any special libraries " + \
+        "that are needed to compile and link OpenSHMEM programs.\n\n" + \
+        "It is important to use this command, particularly when link" + \
+        "ing programs, as it provides the necessary libraries.\n\n")
+    manFile.write("usage: oshc++ [oshc++_options] [compiler_arguments]\n")
+    manFile.write(".SH COMMAND LINE ARGUMENTS\n")
+    manFile.write(".TP 8\n")
+    manFile.write(".B --help\n")
+    manFile.write("- Display this information\n")
+    manFile.write(".TP\n")
+    manFile.write(".B -showme | -show\n")
+    manFile.write("- Print the command that would be run without executing it\n")
+    manFile.write(".TP\n")
+    manFile.write(".B -E | -M\n")
+    manFile.write("- Disable compilation and linking\n")
+    manFile.write(".TP\n")
+    manFile.write(".B -S\n")
+    manFile.write("- Disable linking\n")
+    manFile.write(".TP\n")
+    manFile.write(".B -c\n")
+    manFile.write("- Compile and assemble. Disable link\n")
+    manFile.close()
+
+def writeOshfort(gen_dir):
+    manFile = open(gen_dir + '/' + "oshfort.1", "w")
+    manFile.write(".TH " + "OSHFORT" + " 1 " \
+                     + "\"Open Source Software Solutions, Inc.\" " \
+                     + time.strftime("%m/%d/%Y") + " " \
+                     + "\"OpenSHMEM Library Documentation\"" + "\n")
+    manFile.write(".SH NAME\n")
+    manFile.write("oshfort - Compiles and links OpenSHMEM programs " + \
+        "written in Fortran\n")
+    manFile.write(".SH DESCRIPTION\n")
+    manFile.write("This command can be used to compile and link Open" + \
+        "SHMEM programs written in Fortran.\n")
+    manFile.write("It provides the options and any special libraries " + \
+        "that are needed to compile and link OpenSHMEM programs.\n\n" + \
+        "It is important to use this command, particularly when link" + \
+        "ing programs, as it provides the necessary libraries.\n\n")
+    manFile.write("usage: oshfort [oshfort_options] [compiler_arguments]\n")
+    manFile.write(".SH COMMAND LINE ARGUMENTS\n")
+    manFile.write(".TP 8\n")
+    manFile.write(".B --help\n")
+    manFile.write("- Display this information\n")
+    manFile.write(".TP\n")
+    manFile.write(".B -showme | -show\n")
+    manFile.write("- Print the command that would be run without executing it\n")
+    manFile.write(".TP\n")
+    manFile.write(".B -E | -M\n")
+    manFile.write("- Disable compilation and linking\n")
+    manFile.write(".TP\n")
+    manFile.write(".B -S\n")
+    manFile.write("- Disable linking\n")
+    manFile.write(".TP\n")
+    manFile.write(".B -c\n")
+    manFile.write("- Compile and assemble. Disable link\n")
+    manFile.close()
+
+def writeOshrun(gen_dir):
+    manFile = open(gen_dir + '/' + "oshrun.1", "w")
+    manFile.write(".TH " + "OSHRUN" + " 1 " \
+                     + "\"Open Source Software Solutions, Inc.\" " \
+                     + time.strftime("%m/%d/%Y") + " " \
+                     + "\"OpenSHMEM Library Documentation\"" + "\n")
+    manFile.write(".SH NAME\n")
+    manFile.write("oshrun - Run a OpenSHMEM program\n")
+    manFile.write(".SH DESCRIPTION\n")
+    manFile.write(".B oshrun\n")
+    manFile.write("launches the OpenSHMEM programs with a given number " + \
+        "of processes.\n\n")
+    manFile.write(".SH COMMAND LINE ARGUMENTS\n")
+    manFile.write(".TP 8\n")
+    manFile.write(".B --help | -h\n")
+    manFile.write("- Display this information\n")
+    manFile.close()
+
+def writeExecFunctions(gen_dir):
+    writeOshfort(gen_dir)
+    writeOshcc(gen_dir)
+    writeOshCC(gen_dir)
+    writeOshrun(gen_dir)
+
+##########################################################################
 ##                            MAIN FUNCTIONS                            ##
 ##########################################################################
 
@@ -1139,6 +1272,7 @@ def main():
                 else:
                     convertFile(routine, args.directory, args.output_directory, args.build_fortran)
             parseDeprecationTable(args.directory, args.output_directory, args.build_fortran)
+            writeExecFunctions(args.output_directory)
     else:
         if not os.path.isfile(args.filename):
             print("Error: input file, " + args.filename + ", does not appear to exist.")
