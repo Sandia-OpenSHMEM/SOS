@@ -5,6 +5,7 @@ import os
 import string
 import argparse
 import time
+import platform
 
 # boldWordsC and boldWordsF are a set of the key words that will be
 # bolded in the man page
@@ -832,7 +833,7 @@ def synCReplacements(tex, keyString):
                 tex[endOfText + len("\\end{" + keyString + "}"):]
     return (tex, linkCFuncs)
 
-def synFReplacements(tex):
+def synFReplacements(tex, build_fortran):
     """ 
     Replaces the code identified between "\\begin{Fsynopsis}" and 
     "\end{Fsynopsis}" to have Fortran keywords (defined as a global 
@@ -851,7 +852,7 @@ def synFReplacements(tex):
     will have "A" and "C" as bolded and "B" will be regular. 
     """
 
-    # linkFortranFuncs = []
+    linkFortranFuncs = []
     while (tex.find("\\begin{Fsynopsis}") != -1):
         startOfText = tex.find("\\begin{Fsynopsis}")
         endOfText = tex.find("\\end{Fsynopsis}")
@@ -870,38 +871,38 @@ def synFReplacements(tex):
             text = text[:s] + line + text[e:]
             last = s
 
-            # if(wordList[0] == "CALL"):
-            #     argStart = wordList[1].find("(")
-            #     if (argStart < 0):
-            #         funcName = wordList[1]
-            #     else:
-            #         funcName = wordList[1][:argStart]
-            #     linkFortranFuncs.append(funcName.strip())
+            if (build_fortran):
+                if(wordList[0] == "CALL"):
+                    argStart = wordList[1].find("(")
+                    if (argStart < 0):
+                        funcName = wordList[1]
+                    else:
+                        funcName = wordList[1][:argStart]
+                    linkFortranFuncs.append(funcName.strip())
 
-            # if(wordList[0] not in boldWordsF):
-            #     for i in xrange(len(wordList)):
-            #         if (wordList[i].find("SHMEM") != -1):
-            #             argStart = wordList[i].find("(")
-            #             funcName = wordList[i][:argStart]
-            #             linkFortranFuncs.append(funcName.strip())
+                if(wordList[0] not in boldWordsF):
+                    for i in xrange(len(wordList)):
+                        if (wordList[i].find("SHMEM") != -1):
+                            argStart = wordList[i].find("(")
+                            funcName = wordList[i][:argStart]
+                            linkFortranFuncs.append(funcName.strip())
 
         tex = tex[:startOfText] + "\n./ sectionStart" + "\n" + \
                 ".SS Fortran:\n" + "\n.nf\n" + text + "\n.fi\n" + \
                  "\n./ sectionEnd"  + "\n" + \
                  tex[endOfText + len("\\end{Fsynopsis}"):]
-    return tex 
+    return (tex, linkFortranFuncs)
 
-def codeReplace(tex):
+def codeReplace(tex, build_fortran):
     linkFuncsAll = []
     (tex, linkC11) = synCReplacements(tex, "C11synopsis")
     (tex, linkC) = synCReplacements(tex, "Csynopsis")
     (tex, linkCCol) = synCReplacements(tex, "CsynopsisCol")
-    tex = synFReplacements(tex)
+    (tex, linkFortran) = synFReplacements(tex, build_fortran)
     linkFuncsAll.extend(linkC11)
     linkFuncsAll.extend(linkC)
     linkFuncsAll.extend(linkCCol)
-    # linkFuncsAll.extend(linkFortran)
-    # print(linkFuncsAll)
+    linkFuncsAll.extend(linkFortran)
     return (tex, linkFuncsAll)
 
 ##########################################################################
@@ -1000,11 +1001,11 @@ def writeLinkFunctions(functionName, linkFunctions, gen_dir):
             manFile.write(".so " + functionName + ".3\n")
             manFile.close()
 
-def parseDeprecationTable(directory, gen_dir):
+def parseDeprecationTable(directory, gen_dir, build_fortran):
     """ 
     ***PREREQUISITE: This function only gets calls when the user gives
     a directory to the script. The main routines from the Table of Con-
-    tents must have been converted for this functin to execute properly.
+    tents must have been converted for this function to execute properly.
 
     Parse the deprecation table in the Appendix of the specification.
     Creates and directs the deprecated functions to the most updated ver-
@@ -1022,8 +1023,9 @@ def parseDeprecationTable(directory, gen_dir):
             argStart = columns[0].find("\\FUNC{") + len("\\FUNC{")
             argEnd = columns[0].find("}", argStart)
             deprFuncName = columns[0][argStart:argEnd].replace("\\", "")
-            if not os.path.isfile(gen_dir + "/" + deprFuncName + ".3") \
-                            and deprFuncName.islower():
+            if "Fortran" in columns[0] and not build_fortran:
+                continue
+            if not os.path.isfile(gen_dir + "/" + deprFuncName + ".3"):
                 manFile = open(gen_dir + '/' + deprFuncName + ".3", "w")
                 argStartPar = columns[3].find("\\FUNC{") + len("\\FUNC{")
                 argEndPar = columns[3].find("}", argStartPar)
@@ -1039,7 +1041,7 @@ def parseDeprecationTable(directory, gen_dir):
 ##                            MAIN FUNCTIONS                            ##
 ##########################################################################
 
-def convertFile(functionName, directory, gen_dir):
+def convertFile(functionName, directory, gen_dir, build_fortran=False):
     filename = directory + '/' + functionName + ".tex"
     texFile = open(filename, "r")
     if not os.path.exists(gen_dir):
@@ -1062,7 +1064,7 @@ def convertFile(functionName, directory, gen_dir):
     tex = notesReplacements(tex)
     tex = retReplacements(tex)
     tex = boldReplacements(tex)
-    (tex, linkFunctions) = codeReplace(tex)
+    (tex, linkFunctions) = codeReplace(tex, build_fortran)
     if (tex.find("\\apiimpnotes{") != -1):
         tex = impnotesReplacements(tex)
     while(tex.find("\\apidesctable{") != -1):
@@ -1105,11 +1107,17 @@ def main():
                         help='Output directory for generated manpages')
     parser.add_argument('-f', '--filename', type=str, required=False,
                         help='LaTeX file path for an OpenSHMEM routine')
+    parser.add_argument('--build-fortran', required=False, default=False, action="store_true",
+                        help='build Fortran manpages (requires setting -d)')
     args = parser.parse_args()
 
     if (args.directory == None) and (args.filename == None):
         parser.print_usage()
         exit(1)
+
+    if platform.system() == 'Darwin' and args.build_fortran:
+        print("Warning: OSX may have a case-insensitive filesystem, which " +
+              "would break some Fortran manpages.")
 
     if args.directory != None:
         if not os.path.realpath(args.directory):
@@ -1129,8 +1137,8 @@ def main():
                     print("Error: " + routine + ".tex is not in the given directory")
                     exit(1)
                 else:
-                    convertFile(routine, args.directory, args.output_directory)
-            parseDeprecationTable(args.directory, args.output_directory)
+                    convertFile(routine, args.directory, args.output_directory, args.build_fortran)
+            parseDeprecationTable(args.directory, args.output_directory, args.build_fortran)
     else:
         if not os.path.isfile(args.filename):
             print("Error: input file, " + args.filename + ", does not appear to exist.")
