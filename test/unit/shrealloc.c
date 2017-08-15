@@ -73,9 +73,9 @@ static int source_sz;
 static int target_sz;
 static int result_sz;
 
-static int prev_source_idx;
-static int prev_target_idx;
-static int prev_result_idx;
+static int prev_source_idx = 0;
+static int prev_target_idx = 0;
+static int prev_result_idx = 0;
 
 static char *pgm;
 
@@ -147,6 +147,12 @@ main(int argc, char **argv)
     shmem_init();
     me = shmem_my_pe();
     nProcs = shmem_n_pes();
+
+    if (nProcs <= 1) {
+        fprintf(stderr, "ERR - Requires > 1 PEs\n");
+        shmem_finalize();
+        return 0;
+    }
 
     while ((c = getopt (argc, argv, "hpv")) != -1)
         switch (c)
