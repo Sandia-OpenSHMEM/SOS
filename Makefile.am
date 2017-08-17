@@ -15,5 +15,6 @@ ACLOCAL_AMFLAGS = -I config
 
 EXTRA_DIST = README NEWS LICENSE sandia-openshmem.spec pmi-simple
 
-SUBDIRS = mpp pmi-simple src test
+SUBDIRS = man mpp pmi-simple src test
+
 

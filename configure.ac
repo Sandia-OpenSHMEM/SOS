@@ -586,6 +586,7 @@ AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
 
 AC_CONFIG_FILES([Makefile
   sandia-openshmem.spec
+  man/Makefile
   pmi-simple/Makefile
   mpp/Makefile
   mpp/shmem.fh

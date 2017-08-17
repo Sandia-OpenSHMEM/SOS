@@ -1,0 +1,163 @@
+.TH SHMEM_FENCE 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_fence \- 
+Assures ordering of delivery of PUT, AMOs, and memory store routines
+to symmetric data objects.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B void
+.B shmem_fence(void)
+
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.SS Fortran:
+
+.nf
+
+.BR "CALL " "SHMEM_FENCE"
+
+.fi
+
+./ sectionEnd
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.B None.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+This routine assures ordering of delivery of PUT, AMOs, and memory store
+routines to symmetric data objects. All PUT, AMOs, and memory store
+routines to symmetric data objects issued to a particular remote PE prior
+to the call to 
+.B shmem\_fence
+are guaranteed to be delivered before any
+subsequent PUT, AMOs, and memory store routines to symmetric data
+objects to the same PE. 
+.B shmem\_fence
+guarantees order of delivery,
+not completion.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+None.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+.B shmem\_fence
+only provides per-PE ordering guarantees and does not
+guarantee completion of delivery. 
+.B shmem\_fence
+also does not have an effect on the ordering between memory 
+accesses issued by the target PE. 
+.B shmem\_wait
+, 
+.B shmem\_wait\_until
+, 
+.B shmem\_test
+,
+.B shmem\_barrier
+, 
+.B shmem\_barrier\_all
+routines can be called by the target PE to guarantee 
+ordering of its memory accesses.
+There is a subtle difference between
+.B shmem\_fence
+and 
+.B shmem\_quiet
+, in that, 
+.B shmem\_quiet
+guarantees completion of PUT, AMOs, and memory store routines to
+symmetric data objects which makes the updates visible to all other
+PEs. 
+
+The 
+.B shmem\_quiet
+routine should be called if completion of PUT,
+AMOs, and memory store routines to symmetric data objects is desired
+when multiple remote PEs are involved.
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.SS Examples
+
+
+
+The following 
+.B shmem\_fence
+example is for C11 programs: 
+
+.nf
+#include <stdio.h>
+#include <shmem.h>
+
+int main(void)
+{
+  int src = 99;
+  long source[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+  static long dest[10];
+  static int targ;
+  shmem_init();
+  int me = shmem_my_pe();
+  if (me == 0) {
+     shmem_put(dest, source, 10, 1); /* put1 */
+     shmem_put(dest, source, 10, 2); /* put2 */
+     shmem_fence();
+     shmem_put(&targ, &src, 1, 1); /* put3 */
+     shmem_put(&targ, &src, 1, 2); /* put4 */
+  }
+  shmem_barrier_all();  /* sync sender and receiver */
+  printf("dest[0] on PE %d is %ld\\n", me, dest[0]);
+  shmem_finalize();
+  return 0;
+}
+.fi
+
+.I Put1
+will be ordered to be delivered before 
+.I put3
+and 
+.I put2
+will be ordered to be delivered before 
+.IR "put4" .
+.
+
+
+
+
