@@ -83,7 +83,8 @@ check_PROGRAMS = \
 	pcontrol \
 	atomic_bitwise \
 	nop_collectives \
-	self_collectives
+	self_collectives \
+	zero_comm
 
 if ENABLE_PROFILING
 check_PROGRAMS += \
