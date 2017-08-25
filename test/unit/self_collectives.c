@@ -52,7 +52,7 @@ int64_t in_64, out_64;
 
 int main(void) {
     int i, errors = 0;
-    int me, npes;
+    int me;
 
     for (i = 0; i < SHMEM_BCAST_SYNC_SIZE; i++)
         bcast_psync[i] = SHMEM_SYNC_VALUE;
@@ -75,7 +75,6 @@ int main(void) {
     shmem_init();
 
     me = shmem_my_pe();
-    npes = shmem_n_pes();
 
     if (me == 0) printf("Testing single PE active set collectives\n");
 
