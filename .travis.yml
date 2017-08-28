@@ -116,6 +116,11 @@ before_install:
     # Fetch Cray Tests
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/openshmem-org/tests-cray.git tests-cray
+    # Fetch Mellanox Tests
+    - cd $TRAVIS_SRC
+#    - git clone --depth 10 https://github.com/openshmem-org/tests-mellanox.git tests-mellanox
+    - git clone --depth 10 https://github.com/openshmem-org/tests-mellanox.git
+
     ## Fetch ISx
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ParRes/ISx.git ISx
@@ -241,6 +246,25 @@ script:
     - export PATH=$CUSTOM_SHMEM_DIR/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
     - export CRAY_TESTS_DIR=$TRAVIS_SRC/tests-cray
     - $SOS_SRC/scripts/cray_tests.sh
+
+    ###
+    ### Run the Mellanox test suite (OFI)
+    ###
+    - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export MELLANOX_TESTS_DIR=$TRAVIS_SRC/tests-mellanox
+    - cd $MELLANOX_TESTS_DIR/verifier
+    - export SMA_SYMMETRIC_SIZE='4G'
+    - export SHMEM_SYMMETRIC_SIZE='4G'
+    - ./autogen.sh
+    - ./configure --prefix=$PWD/install CC=oshcc
+    - make clean
+    - make install
+    - make oshmem_test
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=nbi
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=misc
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=atomic
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=lock
+    - make clean
 
     ###
     ### Run ISx (Portals)
