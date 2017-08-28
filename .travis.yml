@@ -256,7 +256,7 @@ script:
     - export SMA_SYMMETRIC_SIZE='4G'
     - export SHMEM_SYMMETRIC_SIZE='4G'
     - ./autogen.sh
-    - ./configure --prefix=$PWD/install CC=oshcc
+    - ./configure --prefix=$PWD/install CFLAGS=" -Wno-deprecated -Wno-deprecated-declarations" LDFLAGS="-lpthread"
     - make clean
     - make install
     - make oshmem_test
