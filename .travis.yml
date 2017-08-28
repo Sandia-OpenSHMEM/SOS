@@ -258,8 +258,8 @@ script:
     - ./autogen.sh
     - ./configure --prefix=$PWD/install CFLAGS=" -Wno-deprecated -Wno-deprecated-declarations" LDFLAGS="-lpthread"
     - make clean
-    - make install
-    - make oshmem_test
+    - make install CC=oshcc
+    - make oshmem_test CC=oshcc
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=nbi
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=misc
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=atomic
