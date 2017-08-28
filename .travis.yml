@@ -120,6 +120,7 @@ before_install:
     - cd $TRAVIS_SRC
 #    - git clone --depth 10 https://github.com/openshmem-org/tests-mellanox.git tests-mellanox
     - git clone --depth 10 https://github.com/openshmem-org/tests-mellanox.git
+    - git clone --depth 10 https://github.com/open-mpi/ompi.git  
 
     ## Fetch ISx
     - cd $TRAVIS_SRC
@@ -252,11 +253,16 @@ script:
     ###
     - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
     - export MELLANOX_TESTS_DIR=$TRAVIS_SRC/tests-mellanox
+      # tests are temporarily dependent on MPI
+    - export OMPI_DIR=$TRAVIS_SRC/ompi
+    - ./autogen.sh
+    - ./configure --prefix=$TRAVIS_SRC/mpi
+    - make all install
     - cd $MELLANOX_TESTS_DIR/verifier
     - export SMA_SYMMETRIC_SIZE='4G'
     - export SHMEM_SYMMETRIC_SIZE='4G'
     - ./autogen.sh
-    - ./configure --prefix=$PWD/install CFLAGS=" -Wno-deprecated -Wno-deprecated-declarations" LDFLAGS="-lpthread"
+    - ./configure --prefix=$PWD/install CFLAGS=" -Wno-deprecated -Wno-deprecated-declarations -L$TRAVIS_SRC/mpi/lib -I$TRAVIS_SRC/mpi/include" LDFLAGS="-lpthread -lmpi"
     - make clean
     - make install CC=oshcc
     - make oshmem_test CC=oshcc
