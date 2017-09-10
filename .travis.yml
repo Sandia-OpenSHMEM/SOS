@@ -255,6 +255,7 @@ script:
 
       # tests are temporarily dependent on MPI
     - export OMPI_DIR=$TRAVIS_SRC/ompi
+    - cd OMPI_DIR
     - ./autogen.pl
     - ./configure --prefix=$TRAVIS_INSTALL/mpi
     - make all install
