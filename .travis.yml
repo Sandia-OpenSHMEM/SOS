@@ -252,20 +252,23 @@ script:
     ### Run the Mellanox test suite (OFI)
     ###
     - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - export MELLANOX_TESTS_DIR=$TRAVIS_SRC/tests-mellanox
+
       # tests are temporarily dependent on MPI
     - export OMPI_DIR=$TRAVIS_SRC/ompi
-    - ./autogen.sh
-    - ./configure --prefix=$TRAVIS_SRC/mpi
+    - ./autogen.pl
+    - ./configure --prefix=$TRAVIS_INSTALL/mpi
     - make all install
+    - export PATH=$TRAVIS_INSTALL/mpi:$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+
+    - export MELLANOX_TESTS_DIR=$TRAVIS_SRC/tests-mellanox
     - cd $MELLANOX_TESTS_DIR/verifier
     - export SMA_SYMMETRIC_SIZE='4G'
     - export SHMEM_SYMMETRIC_SIZE='4G'
     - ./autogen.sh
-    - ./configure --prefix=$PWD/install CFLAGS=" -Wno-deprecated -Wno-deprecated-declarations -L$TRAVIS_SRC/mpi/lib -I$TRAVIS_SRC/mpi/include" LDFLAGS="-lpthread -lmpi"
+    - ./configure --prefix=$PWD/install CFLAGS=" -Wno-deprecated -Wno-deprecated-declarations -L$TRAVIS_SRC/mpi/lib -I$TRAVIS_SRC/mpi/include -std=gnu99" LDFLAGS="-lpthread -lmpi CC=oshcc"
     - make clean
-    - make install CC=oshcc
-    - make oshmem_test CC=oshcc
+    - make install 
+    - make oshmem_test 
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=nbi
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=misc
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=atomic
