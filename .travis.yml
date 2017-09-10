@@ -259,13 +259,14 @@ script:
     - ./configure --prefix=$TRAVIS_INSTALL/mpi
     - make all install
     - export PATH=$TRAVIS_INSTALL/mpi:$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export LD_LIBRARY_PATH=$TRAVIS_INSTALL/mpi/lib:$LD_LIBRARY_PATH
 
     - export MELLANOX_TESTS_DIR=$TRAVIS_SRC/tests-mellanox
     - cd $MELLANOX_TESTS_DIR/verifier
     - export SMA_SYMMETRIC_SIZE='4G'
     - export SHMEM_SYMMETRIC_SIZE='4G'
     - ./autogen.sh
-    - ./configure --prefix=$PWD/install CFLAGS=" -Wno-deprecated -Wno-deprecated-declarations -L$TRAVIS_SRC/mpi/lib -I$TRAVIS_SRC/mpi/include -std=gnu99" LDFLAGS="-lpthread -lmpi CC=oshcc"
+    - ./configure --prefix=$PWD/install CFLAGS=" -Wno-deprecated -Wno-deprecated-declarations -L$TRAVIS_INSTALL/mpi/lib -I$TRAVIS_INSTALL/mpi/include -std=gnu99" LDFLAGS="-lpthread -lmpi" CC=oshcc
     - make clean
     - make install 
     - make oshmem_test 
