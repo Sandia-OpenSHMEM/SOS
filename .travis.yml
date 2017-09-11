@@ -261,7 +261,6 @@ script:
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=sync
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=stride
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=nbi
-    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=misc
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=atomic
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=lock
     #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=data
@@ -269,6 +268,8 @@ script:
     #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic
       # analysis test is not a functional test, and it consumes too much time
     #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=analysis
+      # tests opal_progress() function, which SOS does not have
+    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=misc
       # mix test is SOS with MPI, which requires an MPI lib
     #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=mix
     - make clean
