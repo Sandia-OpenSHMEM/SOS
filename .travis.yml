@@ -118,9 +118,7 @@ before_install:
     - git clone --depth 10 https://github.com/openshmem-org/tests-cray.git tests-cray
     # Fetch Mellanox Tests
     - cd $TRAVIS_SRC
-#    - git clone --depth 10 https://github.com/openshmem-org/tests-mellanox.git tests-mellanox
-    - git clone --depth 10 https://github.com/openshmem-org/tests-mellanox.git
-    - git clone --depth 10 https://github.com/open-mpi/ompi.git  
+    - git clone --depth 10 https://github.com/ireed/tests-mellanox-sandbox.git tests-mellanox
 
     ## Fetch ISx
     - cd $TRAVIS_SRC
@@ -252,29 +250,27 @@ script:
     ### Run the Mellanox test suite (OFI)
     ###
     - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-
-      # tests are temporarily dependent on MPI
-    - export OMPI_DIR=$TRAVIS_SRC/ompi
-    - cd $OMPI_DIR
-    - ./autogen.pl
-    - ./configure --prefix=$TRAVIS_INSTALL/mpi
-    - make all install
-    - export PATH=$TRAVIS_INSTALL/mpi:$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - export LD_LIBRARY_PATH=$TRAVIS_INSTALL/mpi/lib:$LD_LIBRARY_PATH
-
     - export MELLANOX_TESTS_DIR=$TRAVIS_SRC/tests-mellanox
     - cd $MELLANOX_TESTS_DIR/verifier
-    - export SMA_SYMMETRIC_SIZE='4G'
-    - export SHMEM_SYMMETRIC_SIZE='4G'
     - ./autogen.sh
-    - ./configure --prefix=$PWD/install CFLAGS=" -Wno-deprecated -Wno-deprecated-declarations -L$TRAVIS_INSTALL/mpi/lib -I$TRAVIS_INSTALL/mpi/include -std=gnu99" LDFLAGS="-lpthread -lmpi" CC=oshcc
+    - ./configure --prefix=$PWD/install CFLAGS=" -Wno-deprecated -Wno-deprecated-declarations -std=gnu99" LDFLAGS="-lpthread" CC=oshcc
     - make clean
-    - make install 
-    - make oshmem_test 
+    - make install
+    - make oshmem_test
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=coll
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=sync
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=stride
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=nbi
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=misc
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=atomic
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=lock
+    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=data
+      # this suite will fail until the shmem_malloc issues are resolved
+    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic
+      # analysis test is not a functional test, and it consumes too much time
+    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=analysis
+      # mix test is SOS with MPI, which requires an MPI lib
+    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=mix
     - make clean
 
     ###
