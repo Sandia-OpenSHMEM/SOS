@@ -119,14 +119,26 @@ main(int argc, char **argv)
 
     ps_cnt *= SHMEM_BCAST_SYNC_SIZE;
     pSync = shmem_malloc( ps_cnt * sizeof(long) );
+    if (!pSync) {
+        fprintf(stderr, "ERR - null pSync pointer\n");
+        shmem_global_exit(1);
+    }
 
     for (i = 0; i < ps_cnt; i++) {
       pSync[i] = SHMEM_SYNC_VALUE;
     }
 
     source = (int *) shmem_malloc( elements * sizeof(*source) );
+    if (!source) {
+        fprintf(stderr, "ERR - null source pointer\n");
+        shmem_global_exit(1);
+    }
 
     target = (int *) shmem_malloc( elements * sizeof(*target) );
+    if (!target) {
+        fprintf(stderr, "ERR - null target pointer\n");
+        shmem_global_exit(1);
+    }
     for (i = 0; i < elements; i += 1) {
         source[i] = i + 1;
         target[i] = -90;
