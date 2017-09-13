@@ -741,7 +741,10 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, int count, 
         return;
     }
 
-    if (count == 0) return;
+    if (count == 0) {
+        free(current_target);
+        return;
+    }
 
     while (i != 1) {
         i >>= 1;
