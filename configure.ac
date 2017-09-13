@@ -36,6 +36,8 @@ AS_IF([test -z "$AM_V"],
 dnl information on the package
 AC_CONFIG_HEADERS([src/config.h])
 
+AC_CONFIG_SUBDIRS([openpa])
+
 AC_CANONICAL_HOST
 
 OPAL_CHECK_ATTRIBUTES
