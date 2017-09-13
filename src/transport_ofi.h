@@ -308,7 +308,7 @@ void shmem_transport_put_quiet(void)
             fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
             OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
         }
-    } while (success < shmem_transport_ofi_pending_put_counter);
+    } while (success < OPA_load_int(&shmem_transport_ofi_pending_put_counter));
 #else
     int ret = fi_cntr_wait(shmem_transport_ofi_put_cntrfd,
                            OPA_load_int(&shmem_transport_ofi_pending_put_counter), -1);
