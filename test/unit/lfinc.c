@@ -62,6 +62,14 @@ int main( int argc, char *argv[])
     my_pe = shmem_my_pe();
     npes = shmem_n_pes();
 
+    if (loops <= 0) {
+        if (my_pe == 0)
+            printf("Error: loops must be greater than 0\n");
+
+        shmem_finalize();
+        return 1;
+    }
+
     data = shmem_malloc(data_sz);
     if (!data) {
         fprintf(stderr,"[%d] shmem_malloc(%ld) failure? %d\n",
