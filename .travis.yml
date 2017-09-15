@@ -118,7 +118,7 @@ before_install:
     - git clone --depth 10 https://github.com/openshmem-org/tests-cray.git tests-cray
     # Fetch Mellanox Tests
     - cd $TRAVIS_SRC
-    - git clone --depth 10 https://github.com/ireed/tests-mellanox-sandbox.git tests-mellanox
+    - git clone --depth 10 https://github.com/ireed/tests-mellanox.git tests-mellanox
 
     ## Fetch ISx
     - cd $TRAVIS_SRC
@@ -253,16 +253,16 @@ script:
     - export MELLANOX_TESTS_DIR=$TRAVIS_SRC/tests-mellanox
     - cd $MELLANOX_TESTS_DIR/verifier
     - ./autogen.sh
-    - ./configure --prefix=$PWD/install CFLAGS=" -Wno-deprecated -Wno-deprecated-declarations -std=gnu99" LDFLAGS="-lpthread" CC=oshcc
+    - ./configure --prefix=$PWD/install CFLAGS=" -Wno-deprecated -Wno-deprecated-declarations -std=gnu99 -O3" LDFLAGS="-lpthread" CC=oshcc
     - make clean
     - make install
     - make oshmem_test
-    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=coll
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=sync
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=stride
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=nbi
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=atomic
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=lock
+    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=coll
     #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=data
       # this suite will fail until the shmem_malloc issues are resolved
     #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic
