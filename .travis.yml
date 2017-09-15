@@ -260,10 +260,10 @@ script:
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=stride
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=atomic
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=lock
-    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=nbi
-    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=sync
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=nbi
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=sync
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=data
     #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=coll
-    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=data
       # this suite will fail until the shmem_malloc issues are resolved
     #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic
       # analysis test is not a functional test, and it consumes too much time
