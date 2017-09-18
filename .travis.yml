@@ -262,10 +262,25 @@ script:
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=lock
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=nbi
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=sync
-    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=data
-    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=coll
-      # this suite will fail until the shmem_malloc issues are resolved
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=data -o 5
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=coll
+
+      #call each basic test individually for now, because 1 has a known failure
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:start
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:whoami
+      #this test fails
+    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:shmalloc
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:get
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:put
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:barrier
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:static
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:heap
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:fence
+
+      #after the shmalloc test is resolved, this line replaces the basic:* tests
     #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic
+      #reduce suite fails
+    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=reduce
       # analysis test is not a functional test, and it consumes too much time
     #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=analysis
       # tests opal_progress() function, which SOS does not have
