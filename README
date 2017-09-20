@@ -4,9 +4,7 @@ Sandia OpenSHMEM
 * About
 
 Sandia OpenSHMEM is an implementation of the OpenSHMEM specification over
-Portals 4.0, the Open Fabrics Interface (OFI), and XPMEM.  The implementation
-is complete, although performance tuning is still a work in progress.
-
+Portals 4.0, the Open Fabrics Interface (OFI), and XPMEM.
 
 * Building
 
@@ -24,7 +22,7 @@ check utilizes the TEST_RUNNER and NPROCS make variables, which can be used to
 override defaults, e.g. "make check NPROCS=4" or "make check
 TEST_RUNNER='mpiexec -n 2 -ppn 1 -hosts compute1,compute2'".
 
-Sandia SHMEM must be configures to use either the Portals 4 or OFI network
+Sandia OpenSHMEM must be configured to use either the Portals 4 or OFI network
 transport, but not both.  It can optionally be configured to use XPMEM or CMA
 to optimize communication between PEs within the same shared memory domain.
 
@@ -48,12 +46,12 @@ Options to configure include:
                           block the implementation when waiting for 
                           local memory changes.  On some implementations,
                           enabling hard polling may increase target side
-                          message rate
+                          message rate.
   --enable-remote-virtual-addressing
                           Enable optimizations assuming the symmetric heap is
                           always symmetric with regards to virtual address.
                           This may cause applications to abort during
-                          start_pes() if such a symmetric heap can not be
+                          shmem_init() if such a symmetric heap can not be
                           created, but will reduce the instruction count for
                           some operations. This optimization also requires
                           that the Portals 4 implementation support
@@ -175,6 +173,9 @@ options.
 
     SMA_OFI_PROVIDER (default: auto)
         The name of the provider that should be used by the OFI transport.
+        Shell-style wildcards, including * and ?, are allowed.  The fi_info
+        utility included with libfabric can be used for assistance with
+        identifying the desired provider.
 
     SMA_OFI_FABRIC (default: auto)
         The name of the fabric that should be used by the OFI transport.
@@ -192,5 +193,11 @@ options.
         If defined, OFI will not abort if fabric provider doesn't support every data
         type x op combination, instead it will print a warning.
 
+  Debugging Environment variables:
+
     SMA_DEBUG (default: off)
         If defined enables debugging messages from OpenSHMEM runtime. 
+
+    SMA_TRAP_ON_ABORT (default: off)
+        If defined, generate a trap when aborting an OpenSHMEM program.  This
+        can be used to interface with a debugger or generate core files.

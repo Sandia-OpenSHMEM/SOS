@@ -1,0 +1,41 @@
+dnl vi: set ft=m4
+/* -*- C -*-
+ *
+ * Copyright 2011 Sandia Corporation. Under the terms of Contract
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
+ * retains certain rights in this software.
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
+ * This file is part of the Sandia OpenSHMEM software package. For license
+ * information, see the LICENSE file in the top level directory of the
+ * distribution.
+ *
+ */
+
+/*
+ * This is a generated file, do not edit directly.
+ */
+
+include(shmem_bind_c.m4)dnl
+#ifndef SHMEMX_H
+#define SHMEMX_H
+
+#include <stddef.h>
+#include <stdint.h>
+
+#define SHMEMX_THREAD_SINGLE     0
+#define SHMEMX_THREAD_FUNNELED   1
+#define SHMEMX_THREAD_SERIALIZED 2
+#define SHMEMX_THREAD_MULTIPLE   3
+
+#define HAVE_SHMEMX_WTIME
+
+/* Counting puts */
+typedef char * shmemx_ct_t;
+
+define(`SHPRE', `')dnl
+include(shmemx_c_func.m4)dnl
+
+#endif /* SHMEMX_H */

@@ -3,16 +3,27 @@
 # Copyright 2011 Sandia Corporation. Under the terms of Contract
 # DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
 # retains certain rights in this software.
-# 
-# Copyright (c) 2015 Intel Corporation. All rights reserved.
+#
+# Copyright (c) 2016 Intel Corporation. All rights reserved.
 # This software is available to you under the BSD license.
 #
 # This file is part of the Sandia OpenSHMEM software package. For license
 # information, see the LICENSE file in the top level directory of the
 # distribution.
-#
 
-AM_CPPFLAGS = -I$(top_srcdir)/mpp
+AM_CPPFLAGS = -I$(top_builddir)/mpp
+
+GEN_BINDINGS = \
+	atomic_c.c \
+	collectives_c.c \
+	data_c.c \
+	synchronization_c.c
+
+if HAVE_FORTRAN
+GEN_BINDINGS += \
+	collectives_f.c \
+	data_f.c
+endif
 
 lib_LTLIBRARIES = libsma.la
 libsma_la_SOURCES = \
@@ -36,14 +47,24 @@ libsma_la_SOURCES = \
 	accessibility_c.c \
 	symmetric_heap_c.c \
 	remote_pointer_c.c \
-	data_c.c \
-	atomic_c.c \
-	synchronization_c.c \
-	collectives_c.c \
 	lock_c.c \
 	cache_management_c.c \
 	transport.h \
-	util.c
+	util.c \
+	uthash.h \
+	shmem_decl.h \
+	shmem_env.c \
+	shmem_env.h \
+	shmem_env_defs.h
+
+nodist_libsma_la_SOURCES = \
+	$(GEN_BINDINGS)
+
+BUILT_SOURCES = $(GEN_BINDINGS) \
+		build_info.h
+
+CLEANFILES += $(GEN_BINDINGS) \
+		build_info.h
 
 if HAVE_FORTRAN
 libsma_la_SOURCES += \
@@ -52,10 +73,8 @@ libsma_la_SOURCES += \
 	accessibility_f.c \
 	symmetric_heap_f.c \
 	remote_pointer_f.c \
-	data_f.c \
 	atomic_f.c \
 	synchronization_f.c \
-	collectives_f.c \
 	lock_f.c \
 	cache_management_f.c
 endif
@@ -72,6 +91,13 @@ libsma_la_SOURCES += \
 	transport_ofi.c
 endif
 
+if !USE_PORTALS4
+if !USE_OFI
+libsma_la_SOURCES += \
+	transport_none.h
+endif
+endif
+
 if USE_XPMEM
 libsma_la_SOURCES += \
 	transport_xpmem.h \
@@ -84,12 +110,8 @@ libsma_la_SOURCES += \
 	transport_cma.c
 endif
 
-if USE_SHMEM_PMI
-AM_CPPFLAGS += -I$(top_srcdir)/shmem_pmi
-
-libsma_la_LIBADD = \
-	../shmem_pmi/simple_pmi.lo \
-	../shmem_pmi/simple_pmiutil.lo
+if USE_PMI_SIMPLE
+AM_CPPFLAGS += -I$(top_srcdir)/pmi-simple
 endif
 
 if USE_PMI2
@@ -117,10 +139,18 @@ CLEANFILES += oshfort
 endif
 
 EXTRA_DIST = shmem_compiler_script.in \
-             shmem_launcher_script.in
+             shmem_launcher_script.in \
+             atomic_c.c4              \
+             collectives_c.c4         \
+             collectives_f.c4         \
+             data_c.c4                \
+             data_f.c4                \
+             synchronization_c.c4     \
+             shmem_bind_c.m4          \
+             shmem_bind_f.m4
 
 do_subst = sed -e 's|[@]PERL[@]|$(PERL)|g' \
-               -e 's|[@]CC[@]|$(CC)|g' \
+               -e 's|[@]WRAPPER_COMPILER_CC[@]|$(WRAPPER_COMPILER_CC)|g' \
                -e 's|[@]CXX[@]|$(CXX)|g' \
                -e 's|[@]FC[@]|$(FC)|g' \
                -e 's|[@]WRAPPER_COMPILER_INCLUDEDIR[@]|$(includedir)|g' \
@@ -128,9 +158,22 @@ do_subst = sed -e 's|[@]PERL[@]|$(PERL)|g' \
                -e 's|[@]WRAPPER_COMPILER_EXTRA_LDFLAGS[@]|$(WRAPPER_COMPILER_EXTRA_LDFLAGS)|g' \
                -e 's|[@]WRAPPER_COMPILER_EXTRA_LIBS[@]|$(WRAPPER_COMPILER_EXTRA_LIBS)|g'
 
+do_subst_launcher = sed -e 's|[@]WRAPPER_SEARCH_LAUNCHERS[@]|$(WRAPPER_SEARCH_LAUNCHERS)|g' 
+
 AM_V_SED = $(am__v_SED_@AM_V@)
 am__v_SED_ = $(am__v_SED_@AM_DEFAULT_V@)
 am__v_SED_0 = @echo "  SED     " $@;
+
+build_info.h: $(top_builddir)/config.status
+	$(AM_V_GEN) echo "#ifndef BUILD_INFO_H" > $@
+	@if [ -f $(top_srcdir)/.git/HEAD ]; then \
+	     echo "#define SOS_GIT_VERSION \"$(shell git describe --abbrev=8 --dirty --always --tags) ($(shell git rev-parse --abbrev-ref HEAD))\"" >> $@; \
+	fi;
+	@echo "#define SOS_CONFIGURE_ARGS \"$(shell $(top_builddir)/config.status --config)\"" >> $@;
+	@echo "#define SOS_BUILD_DATE \"$(shell date)\"" >> $@;
+	@echo "#define SOS_BUILD_CC \"$(CC)\"" >> $@;
+	@echo "#define SOS_BUILD_CFLAGS \"$(CFLAGS)\"" >> $@;
+	@echo "#endif" >> $@
 
 oshcc: shmem_compiler_script.in Makefile
 	$(AM_V_SED)$(do_subst) -e 's|[@]LANG[@]|C|g' < $(srcdir)/shmem_compiler_script.in > oshcc
@@ -149,5 +192,10 @@ oshfort: shmem_compiler_script.in Makefile
 	@chmod +x oshfort
 
 oshrun: shmem_launcher_script.in Makefile
-	cp $(srcdir)/shmem_launcher_script.in oshrun
+	$(AM_V_SED)$(do_subst_launcher) < $(srcdir)/shmem_launcher_script.in > oshrun
 	@chmod +x oshrun
+
+SUFFIXES = .c4
+
+.c4.c: shmem_bind_c.m4 shmem_bind_f.m4
+	$(AM_V_GEN) $(M4) -I$(top_srcdir)/src $< > $@

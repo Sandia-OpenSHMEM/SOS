@@ -4,17 +4,16 @@
 # DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
 # retains certain rights in this software.
 #
-# Copyright (c) 2015 Intel Corporation. All rights reserved.
+# Copyright (c) 2016 Intel Corporation. All rights reserved.
 # This software is available to you under the BSD license.
 #
 # This file is part of the Sandia OpenSHMEM software package. For license
 # information, see the LICENSE file in the top level directory of the
 # distribution.
-#
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.3.0], [https://github.com/Sandia-OpenSHMEM/SOS])
+AC_INIT([Sandia OpenSHMEM], [1.3.3], [https://github.com/Sandia-OpenSHMEM/SOS])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -39,13 +38,15 @@ AC_CONFIG_HEADERS([src/config.h])
 
 AC_CANONICAL_HOST
 
+OPAL_CHECK_ATTRIBUTES
+
 AC_ARG_ENABLE([picky],
     [AC_HELP_STRING([--enable-picky],
                     [Enable developer-level compiler pickyness when building (default: disabled)])])
-if test -z "$enable_picky" && test -d .svn -o -d .hg ; then
-    echo "--> developer override: enable picky compiler by default"
-    enable_picky=yes
-fi
+
+AC_ARG_ENABLE([debug],
+    [AC_HELP_STRING([--enable-debug],
+                    [Include debugging symbols in the build (default: disabled)])])
 
 AC_ARG_ENABLE([error-checking],
     [AC_HELP_STRING([--enable-error-checking],
@@ -57,6 +58,12 @@ AC_ARG_ENABLE([hard-polling],
     [AC_HELP_STRING([--enable-hard-polling],
                     [Enable hard polling of wait calls (default:disabled)])])
 AS_IF([test "$enable_hard_polling" = "yes"], [AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])])
+
+AC_ARG_ENABLE([completion-polling],
+    [AC_HELP_STRING([--enable-completion-polling],
+                    [Enable polling in quiet, fence, and local completion operations (default:disabled)])])
+AS_IF([test "$enable_completion_polling" = "yes"],
+      [AC_DEFINE([ENABLE_COMPLETION_POLLING], [1], [Enable polling for local/remote completions])])
 
 AC_ARG_ENABLE([nonblocking-fence],
     [AC_HELP_STRING([--enable-nonblocking-fence],
@@ -79,7 +86,19 @@ AC_MSG_RESULT([$msg])
 AC_ARG_ENABLE([threads],
     [AC_HELP_STRING([--enable-threads],
                     [Enable threading support (default:disabled)])])
-AS_IF([test "$enable_threads" = "yes"], [AC_DEFINE([ENABLE_THREADS], [1], [Enable threads])])
+AS_IF([test "$enable_threads" = "yes"], [
+       OPAL_CONFIG_POSIX_THREADS(HAVE_POSIX_THREADS=1, HAVE_POSIX_THREADS=0)
+       AC_MSG_CHECKING([for working POSIX threads package])
+       if test "$HAVE_POSIX_THREADS" = "1" ; then
+           AC_MSG_RESULT([yes])
+           AC_SUBST(PTHREAD_CFLAGS)
+           AC_SUBST(PTHREAD_LIBS)
+       else
+           AC_MSG_RESULT([no])
+       fi
+       AC_DEFINE([ENABLE_THREADS], [1], [Enable threads])
+       ])
+AM_CONDITIONAL([HAVE_PTHREADS], [test "$HAVE_POSIX_THREADS" = "1"])
 
 AC_ARG_ENABLE([pthread-mutexes],
     [AC_HELP_STRING([--enable-pthread-mutexes],
@@ -114,20 +133,25 @@ AC_SUBST([LIBTOOL_WRAPPER_LDFLAGS])
 AC_ARG_ENABLE([rpath],
   [AS_HELP_STRING([--disable-rpath],
     [Disable use of rpath in compiler wrappers and building tests (default: enabled)])])
-AS_IF([test "$enable_rpath" = "no"], [RPATH_LDFLAGS=], [RPATH_LDFLAGS="-Wl,-rpath -Wl,$libdir"])
+AS_IF([test "$enable_rpath" = "no"], [], [enable_wrapper_rpath="yes"])
 
 
 AC_ARG_ENABLE([profiling],
     [AC_HELP_STRING([--enable-profiling],
-                    [Enable shmem call profiling (default:disabled)])])
-AS_IF([test "$enable_profiling" = "yes"], [AC_DEFINE([ENABLE_PROFILING], [1], [Enable shmem call profiling])])
+                    [Enable profiling (pshmem) interface (default:disabled)])])
+AS_IF([test "$enable_profiling" = "yes"],
+      [OPAL_C_WEAK_SYMBOLS()
+       AS_IF([test "$OPAL_C_HAVE_WEAK_SYMBOLS" = 1],
+             [AC_DEFINE([ENABLE_PROFILING], [1], [Enable profiling (pshmem) interface])],
+             [AC_MSG_ERROR("Profiling interface requires weak symbols support")])
+       ])
 
 AC_ARG_ENABLE([long-fortran-header],
-    [AC_HELP_STRING([--disable-long-fortran-header],
-                    [Disable long Fortran header to omit function declarations (default:enabled)])])
-AS_IF([test "$enable_long_fortran_header" = "no"], [FORTRAN_LONG_HEADER="!"], [FORTRAN_LONG_HEADER=" "])
+    [AC_HELP_STRING([--enable-long-fortran-header],
+                    [Enable long Fortran header, including all function declarations (default:disabled)])])
+AS_IF([test "$enable_long_fortran_header" = "yes"], [FORTRAN_LONG_HEADER=" "], [FORTRAN_LONG_HEADER="!"])
 AC_SUBST([FORTRAN_LONG_HEADER])
-AM_CONDITIONAL([HAVE_SHORT_FORTRAN_HEADER], [test "$enable_long_fortran_header" = "no"])
+AM_CONDITIONAL([HAVE_LONG_FORTRAN_HEADER], [test "$enable_long_fortran_header" = "yes"])
 
 AC_ARG_ENABLE([mr-scalable],
     [AC_HELP_STRING([--disable-mr-scalable],
@@ -141,15 +165,59 @@ AC_ARG_ENABLE([av-map],
 AS_IF([test "$enable_av_map" = "yes"],
       [AC_DEFINE([USE_AV_MAP], [1], [If defined, the OFI transport will use FI_AV_MAP.  Otherwise, FI_AV_TABLE is used.])])
 
+AC_ARG_ENABLE([bounce-buffers],
+    [AC_HELP_STRING([--disable-bounce-buffers],
+                    [Disable bounce buffers by default (default: enabled)])])
+AS_IF([test "$enable_bounce_buffers" = "no"],
+      [AC_DEFINE([DEFAULT_BOUNCE_SIZE], [0], [Default bounce buffer threshold])],
+      [AC_DEFINE([DEFAULT_BOUNCE_SIZE], [2048], [Default bounce buffer threshold])])
+
+AC_ARG_WITH([oshrun-launcher],
+    [AC_HELP_STRING([--with-oshrun-launcher],
+                    [Set launcher to be used by oshrun launcher wrapper. (default: auto)])])
+
 dnl check for programs
 
 AC_PROG_CC
 AM_PROG_CC_C_O
-AC_PROG_CC_C99
 AC_C_INLINE
 AC_PROG_CXX dnl required even with --disable-cxx due to automake conditionals
 m4_ifdef([AM_PROG_AR],[AM_PROG_AR])
 AC_PATH_PROG([PERL],[perl])
+
+# start gnu11/gnu99 check
+ORIG_CFLAGS=$CFLAGS
+WRAPPER_COMPILER_CC=$CC
+AC_SUBST([WRAPPER_COMPILER_CC])
+AC_MSG_CHECKING([if -std=gnu11 works])
+
+AC_LANG_PUSH([C])
+CFLAGS="-pedantic-errors -std=gnu11"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+                   void g(int i){}
+                   #define f(X) _Generic((X), default: g)(X)
+                   ]], [[
+                        f(1);
+                        ]]
+                   )],
+                   [shmem_cv_c11_works="yes"], [shmem_cv_c11_works="no"])
+AS_IF([test "$shmem_cv_c11_works" = "no"],
+      [AC_MSG_RESULT([no])
+      AC_MSG_WARN([No C11 support detected, unable to test _Generic bindings.])
+      CFLAGS="$ORIG_CFLAGS"
+      AC_PROG_CC_C99
+      ],
+      [AC_MSG_RESULT([yes])
+      CFLAGS="-std=gnu11 $ORIG_CFLAGS"]
+      )
+AC_LANG_POP([C])
+# end gnu11/gnu99 check
+
+
+AC_PATH_PROG([M4], [m4], [false])
+AS_IF([test "$M4" = "false"],
+      [AC_MSG_ERROR([Could not find 'm4' macro processor])])
+
 if test "$enable_fortran" != "no" ; then
   AC_PROG_FC
 else
@@ -159,38 +227,80 @@ if test "$FC" != "" ; then
   AC_FC_WRAPPERS
 fi
 
+AX_GCC_BUILTIN([__builtin_trap])
+
 if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
   CFLAGS="$CFLAGS -Wall -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wcomment -pedantic"
+else
+  CFLAGS="$CFLAGS -Wall"
+fi
+
+if test "$enable_debug" = "yes" ; then
+  CFLAGS="$CFLAGS -g"
 fi
 
 AC_CACHE_SAVE
 
+AC_SEARCH_LIBS([clock_gettime], [rt],
+               [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [define if clock_gettime is available]) ])
+
 dnl check for libraries
 
 OMPI_CHECK_PORTALS4([portals4],
-    [AC_DEFINE([USE_PORTALS4], [1], [Define if Portals 4 transport active])
-     transport="portals4"
-     transport_portals4="yes"],
+    [transport_portals4="yes"],
     [transport_portals4="no"])
+
+OPAL_CHECK_OFI([ofi],
+    [transport_ofi="yes"],
+    [transport_ofi="no"])
+
+# If both OFI and portals4 requested, user needs to choose one:
+if test -n "$with_ofi" -a "$with_ofi" != "no" -a -n "$with_portals4" -a "$with_portals4" != "no" ; then
+    AC_MSG_ERROR([Cannot choose both OFI and portals4 transports, see --help for details])
+# Check which was requested, OFI or portals4:
+elif test -n "$with_ofi" -a "$with_ofi" != "no" ; then
+    transport="ofi"
+    transport_portals4="no"
+    AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
+elif test -n "$with_portals4" -a "$with_portals4" != "no" ; then
+    transport="portals4"
+    transport_ofi="no"
+    AC_DEFINE([USE_PORTALS4], [1], [Define if Portals 4 transport active])
+# If neither, set transport to "none" and print a warning:
+else
+    transport="none"
+    transport_ofi="no"
+    transport_portals4="no"
+    AC_MSG_WARN([Neither OFI nor portals4 transport requested])
+fi
+AM_CONDITIONAL([USE_OFI], [test "$transport_ofi" = "yes"])
 AM_CONDITIONAL([USE_PORTALS4], [test "$transport_portals4" = "yes"])
 
-OMPI_CHECK_OFI([ofi],
-    [AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
-     transport="ofi"
-     transport_ofi="yes"],
-    [transport_ofi="no"])
-AM_CONDITIONAL([USE_OFI], [test "$transport_ofi" = "yes"])
-
 SANDIA_CHECK_XPMEM(
-    [AC_DEFINE([USE_XPMEM], [1], [Define if XPMEM transport is active])
-     transport_xpmem="yes"],
+    [transport_xpmem="yes"],
     [transport_xpmem="no"])
-AM_CONDITIONAL([USE_XPMEM], [test "$transport_xpmem" = "yes"])
 
 CHECK_CMA(
-   [AC_DEFINE([USE_CMA], [1], [Define if Cross Memory Attach transport is active])
-    transport_cma="yes"],
-   [transport_cma="no"])
+    [transport_cma="yes"],
+    [transport_cma="no"])
+
+# If both XPMEM and CMA requested, user needs to choose one:
+if test -n "$with_xpmem" -a "$with_xpmem" != "no" -a -n "$with_cma" -a "$with_cma" != "no" ; then
+    AC_MSG_ERROR([Cannot choose both XPMEM and CMA transports, see --help for details])
+# Check which was requested, XPMEM or CMA:
+elif test -n "$with_xpmem" -a "$with_xpmem" != "no" ; then
+    transport_cma="no"
+    AC_DEFINE([USE_XPMEM], [1], [Define if XPMEM transport is active])
+elif test -n "$with_cma" -a "$with_cma" != "no" ; then
+    transport_xpmem="no"
+    AC_DEFINE([USE_CMA], [1], [Define if Cross Memory Attach transport is active])
+# If neither, disable XPMEM and CMA:
+else
+    transport_xpmem="no"
+    transport_cma="no"
+    AC_MSG_RESULT([Neither XPMEM nor CMA transport requested])
+fi
+AM_CONDITIONAL([USE_XPMEM], [test "$transport_xpmem" = "yes"])
 AM_CONDITIONAL([USE_CMA], [test "$transport_cma" = "yes"])
 
 AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
@@ -198,20 +308,19 @@ AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
        AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
       ])
 
-AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
-      [AC_MSG_ERROR([No transport found])])
-
 AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
 			[build and run shmem-pmi support])])
 AS_IF([test "$enable_pmi_simple" = "yes"],
-     [TEST_RUNNER='$(abs_top_builddir)/src/oshrun -n $(NPROCS)' SHMEM_PMI="shmem_pmi"],
-     [OPAL_CHECK_PMI(pmi_type) SHMEM_PMI=""])
-AC_SUBST([SHMEM_PMI])
-AM_CONDITIONAL([USE_SHMEM_PMI], [test "$enable_pmi_simple" = "yes"])
+     [TEST_RUNNER='$(abs_top_builddir)/src/oshrun -n $(NPROCS)'],
+     [OPAL_CHECK_PMI(pmi_type)])
+AM_CONDITIONAL([USE_PMI_SIMPLE], [test "$enable_pmi_simple" = "yes"])
 AM_CONDITIONAL([USE_PMI2], [test "$pmi_type" = "pmi2"])
 
 dnl check for header files
 AC_CHECK_HEADERS([fnmatch.h])
+AS_IF([test "$enable_pmi_simple" = "yes"],
+      [AC_CHECK_HEADERS([assert.h arpa/inet.h sys/types.h unistd.h stdlib.h string.h strings.h])
+      AC_DEFINE([USE_PMI_PORT], [1], [Use port])])
 
 dnl check for types
 
@@ -221,46 +330,63 @@ SHMEM_FIND_INT_TYPE([int], [$transport])
 SHMEM_FIND_INT_TYPE([long], [$transport])
 SHMEM_FIND_INT_TYPE([long long], [$transport])
 
+SHMEM_FIND_UINT_TYPE([unsigned int], [$transport])
+SHMEM_FIND_UINT_TYPE([unsigned long], [$transport])
+SHMEM_FIND_UINT_TYPE([unsigned long long], [$transport])
+
 AC_CHECK_SIZEOF([float])
 AC_CHECK_SIZEOF([double])
 AC_CHECK_SIZEOF([long double])
 AC_CHECK_SIZEOF([void*])
 
+dnl Determine psync and pwrk sizes for collectives
+
 C_LOG_MAXPES=32
-C_BCAST_SYNC_SIZE=1
-C_REDUCE_SYNC_SIZE=`$PERL -e "print $C_BCAST_SYNC_SIZE + 2 + $C_LOG_MAXPES"`
-C_BARRIER_SYNC_SIZE=`$PERL -e "use POSIX; print $ac_cv_sizeof_int * 8 * ($ac_cv_sizeof_int / $ac_cv_sizeof_long)"`
-tree_sync_size=`$PERL -e "print $C_BCAST_SYNC_SIZE + 3"`
-recdbl_sync_size=`$PERL -e "use POSIX; print $ac_cv_sizeof_int * 8 * ($ac_cv_sizeof_int / $ac_cv_sizeof_long)"`
-AS_IF([test $tree_sync_size -lt $recdbl_sync_size],
-      [C_COLLECT_SYNC_SIZE=$recdbl_sync_size], [C_COLLECT_SYNC_SIZE=$tree_sync_size])
-C_ALLTOALL_SYNC_SIZE=1
-C_ALLTOALLS_SYNC_SIZE=1
-C_SYNC_SIZE=`$PERL -e "use List::Util qw (max); print max((             \
-                                          $C_BCAST_SYNC_SIZE,           \
-                                          $C_REDUCE_SYNC_SIZE,          \
-                                          $C_BARRIER_SYNC_SIZE,         \
-                                          $C_COLLECT_SYNC_SIZE,         \
-                                          $C_ALLTOALL_SYNC_SIZE,        \
-                                          $C_ALLTOALLS_SYNC_SIZE));"`
-C_REDUCE_MIN_WRKDATA_SIZE=1
-AC_SUBST(C_BCAST_SYNC_SIZE)
-AC_SUBST(C_REDUCE_SYNC_SIZE)
-AC_SUBST(C_BARRIER_SYNC_SIZE)
-AC_SUBST(C_COLLECT_SYNC_SIZE)
-AC_SUBST(C_ALLTOALL_SYNC_SIZE)
-AC_SUBST(C_ALLTOALLS_SYNC_SIZE)
-AC_SUBST(C_REDUCE_MIN_WRKDATA_SIZE)
-AC_SUBST(C_SYNC_SIZE)
+AC_MSG_CHECKING([size of SHMEM_BCAST_SYNC_SIZE])
+    C_BCAST_SYNC_SIZE=1
+    AC_SUBST(C_BCAST_SYNC_SIZE)
+AC_MSG_RESULT([$C_BCAST_SYNC_SIZE])
+AC_MSG_CHECKING([size of SHMEM_REDUCE_SYNC_SIZE])
+    C_REDUCE_SYNC_SIZE=`$PERL -e "print $C_BCAST_SYNC_SIZE + 2 + $C_LOG_MAXPES"`
+    AC_SUBST(C_REDUCE_SYNC_SIZE)
+AC_MSG_RESULT([$C_REDUCE_SYNC_SIZE])
+AC_MSG_CHECKING([size of SHMEM_BARRIER_SYNC_SIZE])
+    C_BARRIER_SYNC_SIZE=`$PERL -e "print $ac_cv_sizeof_int * 8 * ($ac_cv_sizeof_int / $ac_cv_sizeof_long)"`
+    AC_SUBST(C_BARRIER_SYNC_SIZE)
+AC_MSG_RESULT([$C_BARRIER_SYNC_SIZE])
+AC_MSG_CHECKING([size of SHMEM_COLLECT_SYNC_SIZE])
+    linear_sync_size=`$PERL -e "print 2 + $C_BARRIER_SYNC_SIZE"`
+    tree_sync_size=`$PERL -e "print $C_BCAST_SYNC_SIZE + 3"`
+    recdbl_sync_size=`$PERL -e "print $ac_cv_sizeof_int * 8 * ($ac_cv_sizeof_int / $ac_cv_sizeof_long)"`
+    C_COLLECT_SYNC_SIZE=`$PERL -e "use List::Util qw(max); print max($linear_sync_size, $tree_sync_size, $recdbl_sync_size)"`
+    AC_SUBST(C_COLLECT_SYNC_SIZE)
+AC_MSG_RESULT([$C_COLLECT_SYNC_SIZE])
+AC_MSG_CHECKING([size of SHMEM_ALLTOALL_SYNC_SIZE])
+    C_ALLTOALL_SYNC_SIZE=$C_BARRIER_SYNC_SIZE
+    AC_SUBST(C_ALLTOALL_SYNC_SIZE)
+AC_MSG_RESULT([$C_ALLTOALL_SYNC_SIZE])
+AC_MSG_CHECKING([size of SHMEM_ALLTOALLS_SYNC_SIZE])
+    C_ALLTOALLS_SYNC_SIZE=$C_BARRIER_SYNC_SIZE
+    AC_SUBST(C_ALLTOALLS_SYNC_SIZE)
+AC_MSG_RESULT([$C_ALLTOALLS_SYNC_SIZE])
+AC_MSG_CHECKING([size of SHMEM_REDUCE_MIN_WRKDATA_SIZE])
+    C_REDUCE_MIN_WRKDATA_SIZE=1
+    AC_SUBST(C_REDUCE_MIN_WRKDATA_SIZE)
+AC_MSG_RESULT([$C_REDUCE_MIN_WRKDATA_SIZE])
 
 AC_MSG_CHECKING([if long can hold lock_t])
-AC_TRY_RUN([struct lock_s { int a; int b; }; main() { if (sizeof(long) == sizeof(struct lock_s)) return 0; else return 1; }],
+AC_TRY_RUN([struct lock_s { int a; int b; }; int main(void) { if (sizeof(long) == sizeof(struct lock_s)) return 0; else return 1; }],
                [AC_MSG_RESULT([yes])], [
                 AC_MSG_RESULT([no])
                 AC_MSG_ERROR([Lock API requires long can hold 'struct { int a; int b; }']) ])
 
 if test "$FC" != "" ; then
   AC_DEFINE([ENABLE_FORTRAN],[1],[Fortran support enabled])
+  AC_MSG_CHECKING([if complex sizes are appropriate])
+  AC_TRY_RUN([float _Complex x; double _Complex y; int main(void) { if (sizeof(x)==8 && sizeof(y)==16) return 0; else return 1; }],
+                 [AC_MSG_RESULT([yes])], [
+                  AC_MSG_RESULT([no])
+                  AC_MSG_ERROR([float _Complex and double _Complex must be 4 and 8 bytes, respectively]) ])
   # make sure Fortran supports ISO_C_BINDING (Fortran 2003)
   AC_CACHE_CHECK([if Fortran compiler supports ISO_C_BINDING],
     [shmem_cv_fortran_iso_c_binding],
@@ -270,7 +396,8 @@ if test "$FC" != "" ; then
 	integer(c_int) :: i
 	i = 5
 ]])], [shmem_cv_fortran_iso_c_binding="yes"],
-      [shmem_cv_fortran_iso_c_binding="no"])])
+      [shmem_cv_fortran_iso_c_binding="no"])
+      AC_LANG_POP([Fortran])])
   AS_IF([test "$shmem_cv_fortran_iso_c_binding" = "no"],
     [AC_MSG_ERROR([Fortran compiler does not support ISO_C_BINDING, which is required for Sandia OpenSHMEM.])])
 
@@ -281,8 +408,9 @@ if test "$FC" != "" ; then
   OMPI_FORTRAN_GET_SIZEOF([], [REAL])
   OMPI_FORTRAN_GET_SIZEOF([], [DOUBLE PRECISION])
   OMPI_FORTRAN_GET_SIZEOF([], [COMPLEX])
+  OMPI_FORTRAN_GET_SIZEOF([], [DOUBLE COMPLEX])
 
-  # find Portals integer type corresponding to INTEGER
+  # find transport integer type corresponding to INTEGER
   SHMEM_FIND_FORTRAN_INT_TYPE([INTEGER], [$transport])
 
   # find C type corresponding to given Fortran types
@@ -295,6 +423,8 @@ if test "$FC" != "" ; then
   OMPI_FORTRAN_GET_KIND_VALUE([C_INT64_T], [FORTRAN_INT8_KIND])
   OMPI_FORTRAN_GET_KIND_VALUE([C_FLOAT], [FORTRAN_REAL4_KIND])
   OMPI_FORTRAN_GET_KIND_VALUE([C_DOUBLE], [FORTRAN_REAL8_KIND])
+  OMPI_FORTRAN_GET_KIND_VALUE([C_FLOAT_COMPLEX], [FORTRAN_COMP4_KIND])
+  OMPI_FORTRAN_GET_KIND_VALUE([C_DOUBLE_COMPLEX], [FORTRAN_COMP8_KIND])
 
   # The collectives are all implemented in C and require the psync to
   # hold a variable number of C longs.  Find how many INTEGERs it takes to
@@ -320,12 +450,14 @@ else
   FORTRAN_COLLECT_SYNC_SIZE=0
   FORTRAN_ALLTOALL_SYNC_SIZE=0
   FORTRAN_ALLTOALLS_SYNC_SIZE=0
+  FORTRAN_SYNC_SIZE=0
   FORTRAN_REDUCE_MIN_WRKDATA_SIZE=0
   FORTRAN_INT4_KIND=0
   FORTRAN_INT8_KIND=0
   FORTRAN_REAL4_KIND=0
   FORTRAN_REAL8_KIND=0
-  FORTRAN_SYNC_SIZE=0
+  FORTRAN_COMP4_KIND=0
+  FORTRAN_COMP8_KIND=0
   AC_DEFINE([DTYPE_FORTRAN_INTEGER],[-1],[Fortran integer C type (disabled)])
 fi
 if test "$ac_cv_sizeof_voidp" = "4" ; then
@@ -339,13 +471,15 @@ AC_SUBST(FORTRAN_BARRIER_SYNC_SIZE)
 AC_SUBST(FORTRAN_COLLECT_SYNC_SIZE)
 AC_SUBST(FORTRAN_ALLTOALL_SYNC_SIZE)
 AC_SUBST(FORTRAN_ALLTOALLS_SYNC_SIZE)
+AC_SUBST(FORTRAN_SYNC_SIZE)
 AC_SUBST(FORTRAN_REDUCE_MIN_WRKDATA_SIZE)
 AC_SUBST(FORTRAN_INT4_KIND)
 AC_SUBST(FORTRAN_INT8_KIND)
 AC_SUBST(FORTRAN_REAL4_KIND)
 AC_SUBST(FORTRAN_REAL8_KIND)
+AC_SUBST(FORTRAN_COMP4_KIND)
+AC_SUBST(FORTRAN_COMP8_KIND)
 AC_SUBST(FORTRAN_PTR_KIND)
-AC_SUBST(FORTRAN_SYNC_SIZE)
 
 AM_CONDITIONAL([HAVE_FORTRAN], [test "$FC" != ""])
 
@@ -356,6 +490,14 @@ AM_CONDITIONAL([ENABLE_PROFILING], [test "$enable_profiling" = "yes" ])
 dnl check for structures
 
 dnl check for compiler characteristics
+
+# make all symbols hidden by default
+OPAL_CHECK_VISIBILITY
+AS_IF([test "$opal_visibility_define" = 1],
+      [SHMEM_C_HAVE_VISIBILITY=1],
+      [SHMEM_C_HAVE_VISIBILITY=0])
+AC_SUBST(SHMEM_C_HAVE_VISIBILITY)
+CFLAGS="$CFLAGS $OPAL_VISIBILITY_CFLAGS"
 
 # disable aslr, if possible at link time
 aslr_LDFLAGS=
@@ -375,16 +517,16 @@ LT_INIT
 OPAL_CASE_SENSITIVE_FS_SETUP
 
 DISTCHECK_CONFIGURE_FLAGS=
-if test -n "$with_portals4" ; then
+if test -n "$with_portals4" -a "$with_portals4" != "no" -a "$with_portals4" != "yes" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-portals4=${with_portals4}"
 fi
-if test -n "$with_ofi" ; then
+if test -n "$with_ofi" -a "$with_ofi" != "no" -a "$with_ofi" != "yes" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-ofi=${with_ofi}"
 fi
-if test -n "$with_xpmem" ; then
+if test -n "$with_xpmem" -a "$with_xpmem" != "no" -a "$with_xpmem" != "yes" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-xpmem=${with_xpmem}"
 fi
-if test -n "$with_pmi" ; then
+if test -n "$with_pmi" -a "$with_pmi" != "no" -a "$with_pmi" != "yes" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-pmi=${with_pmi}"
 fi
 if test -n "$FCFLAGS" ; then
@@ -396,25 +538,70 @@ dnl Cause Automake to delete emacs turds
 CLEANFILES="*~"
 AC_SUBST(CLEANFILES)
 
+# configuration for --with-oshrun-launcher
+WRAPPER_SEARCH_LAUNCHERS="yod mpirun mpiexec srun"
+if test -n "$with_oshrun_launcher" ; then
+    WRAPPER_SEARCH_LAUNCHERS="$with_oshrun_launcher"
+fi
+AC_SUBST(WRAPPER_SEARCH_LAUNCHERS)
+
 # last minute updates of the flags so that tests don't fail oddly if
 # portals libdir isn't in LD_LIBRARY_PATH...
-CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS $ofi_CPPFLAGS $XPMEM_CPPFLAGS $pmi_CPPFLAGS"
-LDFLAGS="$LDFLAGS $portals4_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS $RPATH_LDFLAGS"
-LIBS="$LIBS $portals4_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
+if test "$transport_portals4" = "yes" ; then
+    CPPFLAGS="$CPPFLAGS $portals4_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $portals4_LDFLAGS"
+    LIBS="$LIBS $portals4_LIBS"
+    WRAPPER_COMPILER_EXTRA_LDFLAGS="$portals4_LDFLAGS"
+    WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS"
+fi
 
-# wrapper compiler gorp
-WRAPPER_COMPILER_EXTRA_LDFLAGS="$portals4_LDFLAGS $ofi_LDFLAGS $XPMEM_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS $RPATH_LDFLAGS"
-WRAPPER_COMPILER_EXTRA_LIBS="$portals4_LIBS $ofi_LIBS $XPMEM_LIBS $pmi_LIBS"
+if test "$transport_ofi" = "yes" ; then
+    CPPFLAGS="$CPPFLAGS $ofi_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $ofi_LDFLAGS"
+    LIBS="$LIBS $ofi_LIBS"
+    WRAPPER_COMPILER_EXTRA_LDFLAGS="$ofi_LDFLAGS"
+    WRAPPER_COMPILER_EXTRA_LIBS="$ofi_LIBS"
+fi
+
+if test "$transport_xpmem" = "yes" ; then
+    CPPFLAGS="$CPPFLAGS $XPMEM_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $XPMEM_LDFLAGS"
+    LIBS="$LIBS $XPMEM_LIBS"
+    WRAPPER_COMPILER_EXTRA_LDFLAGS="$XPMEM_LDFLAGS"
+    WRAPPER_COMPILER_EXTRA_LIBS="$XPMEM_LIBS"
+fi
+
+CPPFLAGS="$CPPFLAGS $pmi_CPPFLAGS"
+LDFLAGS="$LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
+LIBS="$LIBS $pmi_LIBS"
+WRAPPER_COMPILER_EXTRA_LDFLAGS="$WRAPPER_COMPILER_EXTRA_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
+WRAPPER_COMPILER_EXTRA_LIBS="$WRAPPER_COMPILER_LIBS $pmi_LIBS"
+
+# Need the libtool binary before setting up rpath
+LT_OUTPUT
+
+OPAL_TOP_BUILDDIR="`pwd`"
+OPAL_SETUP_RPATH
+
+AS_IF([test "$enable_pmi_simple" = "yes"],
+     [WRAPPER_COMPILER_EXTRA_LIBS="$WRAPPER_COMPILER_EXTRA_LIBS -lpmi_simple"])
+
+AC_MSG_CHECKING([for OPAL LDFLAGS])
+RPATHIFY_LDFLAGS([WRAPPER_COMPILER_EXTRA_LDFLAGS])
+WRAPPER_COMPILER_EXTRA_LDFLAGS=`echo "$WRAPPER_COMPILER_EXTRA_LDFLAGS" | sed -e 's/@{libdir}/\${libdir}/g'`
+AC_MSG_RESULT([$WRAPPER_COMPILER_EXTRA_LDFLAGS])
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LDFLAGS)
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
 
 AC_CONFIG_FILES([Makefile
   sandia-openshmem.spec
+  man/Makefile
+  pmi-simple/Makefile
   mpp/Makefile
   mpp/shmem.fh
   mpp/shmemx.fh
-  mpp/shmem.h
-  mpp/shmemx.h
+  mpp/shmem.h4
+  mpp/shmemx.h4
   src/Makefile
   test/Makefile
   test/unit/Makefile
@@ -422,9 +609,19 @@ AC_CONFIG_FILES([Makefile
   test/performance/shmem_perf_suite/Makefile
   test/performance/tests/Makefile
   test/apps/Makefile])
-AS_IF([test "$enable_pmi_simple" = "yes"],
-	[AC_CONFIG_SUBDIRS([shmem_pmi])])
+
+if test "$enable_profiling" = "yes"; then
+    AC_CONFIG_FILES([mpp/pshmem.h4])
+fi
+
 AC_OUTPUT
+
+AS_IF([test "$enable_pmi_simple" != "yes" -a "$ompi_check_pmi_happy" != "yes" -a -z "$pmi_type"],
+         [AC_MSG_WARN([No PMI found, if build fails consider --enable-pmi-simple or --with-pmi])])
+
+AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
+      [AC_MSG_WARN([No transport found])])
+
 
 FORT="$FC"
 if test "$FORT" = "" ; then

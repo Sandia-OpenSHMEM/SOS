@@ -1,0 +1,32 @@
+"Simple" PMI-1 client library:
+==============================
+
+This directory contains the "simple" PMI-1 process manager interface (PMI)
+client implementation from MPICH, located at the following URL.
+
+https://github.com/pmodels/mpich/tree/master/src/pmi/simple
+
+This PMI-1 client implementation is compatible with many PMI-1 compliant
+process managers.  In particular, it can be used with the Hydra process
+manager, which is available as a component in MPICH or as a standalone package
+at the following URL.
+
+http://www.mpich.org/downloads/
+
+This PMI client library can be enabled in the SOS build at configuration time
+by passing the --enable-pmi-simple.
+
+
+Modifying and maintaining these files:
+======================================
+
+Local modifications should be kept to a minimum and any bugfixes should be
+pushed upstream to MPICH.  Some modifications are necessary to integrate this
+code with SOS.  These modifications should ideally be isolated in the local
+"mpl.h" and autoconf generated "config.h" headers.
+
+Periodically, we synchronize these files with MPICH.  This can generally be
+accomplished by copying the source files from the MPICH repository at the above
+URL and commenting out inclusions of missing headers (at the time of writing,
+"mpi.h" and "mpir_mem.h").
+

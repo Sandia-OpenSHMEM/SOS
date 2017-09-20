@@ -3,7 +3,10 @@
  * Copyright 2011 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
- * 
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
  * This file is part of the Sandia OpenSHMEM software package. For license
  * information, see the LICENSE file in the top level directory of the
  * distribution.
@@ -23,5 +26,9 @@ void* FC_SHMEM_PTR(void **target, fortran_integer_t *pe);
 void*
 FC_SHMEM_PTR(void **target, fortran_integer_t *pe)
 {
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(*pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, 1);
+
     return shmem_internal_ptr(*target, *pe);
 }

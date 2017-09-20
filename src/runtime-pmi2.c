@@ -3,14 +3,18 @@
  * Copyright 2011 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
- * 
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
  * This file is part of the Sandia OpenSHMEM software package. For license
  * information, see the LICENSE file in the top level directory of the
  * distribution.
  *
- *
- * Run-time support for the built-in runtime that is part of the
- * shared memory implementation Portals
+ */
+
+/*
+ * Wrappers to interface with PMI2 runtime
  */
 
 #include "config.h"
@@ -30,6 +34,7 @@
 #endif
 
 #include "runtime.h"
+#include "shmem_internal.h"
 
 static int rank = -1;
 static int size = 0;
@@ -91,14 +96,9 @@ decode(const char *inval, void *outval, int outvallen)
 int
 shmem_runtime_init(void)
 {
-    int spawned, appnum, my_node;
-    int initialized;
+    int spawned, appnum;
 
-    if (PMI2_SUCCESS != PMI2_Initialized()) {
-        return 1;
-    }
-
-    if (!initialized) {
+    if (!PMI2_Initialized()) {
         if (PMI2_SUCCESS != PMI2_Init(&spawned, &size, &rank, &appnum)) {
             return 2;
         }
@@ -135,6 +135,12 @@ shmem_runtime_fini(void)
 void
 shmem_runtime_abort(int exit_code, const char msg[])
 {
+
+#ifdef HAVE___BUILTIN_TRAP
+    if (shmem_internal_params.TRAP_ON_ABORT)
+        __builtin_trap();
+#endif
+
     PMI2_Abort(exit_code, msg);
 
     /* PMI_Abort should not return */
@@ -167,7 +173,7 @@ shmem_runtime_exchange(void)
 
 
 int
-shmem_runtime_put(char *key, void *value, size_t valuelen) 
+shmem_runtime_put(char *key, void *value, size_t valuelen)
 {
     snprintf(kvs_key, max_key_len, "shmem-%lu-%s", (long unsigned) rank, key);
     if (0 != encode(value, valuelen, kvs_value, max_val_len)) {

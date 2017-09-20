@@ -1,0 +1,160 @@
+.TH SHMEM_LOCK 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_lock \- 
+Releases, locks, and tests a mutual exclusion memory lock.
+
+./ sectionEnd
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B void
+.B shmem_clear_lock(long
+.I *lock
+.B );
+
+
+
+.B void
+.B shmem_set_lock(long
+.I *lock
+.B );
+
+
+
+.B int
+.B shmem_test_lock(long
+.I *lock
+.B );
+
+
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.SS Fortran:
+
+.nf
+
+.BR "INTEGER " "lock, SHMEM_TEST_LOCK"
+.BR "CALL " "SHMEM_CLEAR_LOCK(lock)"
+.BR "CALL " "SHMEM_SET_LOCK(lock)"
+I = SHMEM_TEST_LOCK(lock)
+
+.fi
+
+./ sectionEnd
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I lock
+- A symmetric data object that is a scalar variable or an array
+of length 1. This data object must be set to 0 on all
+PEs prior to the first use. 
+.I lock
+must be of type long.
+If you are using Fortran, it must be of default kind.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+The 
+.B shmem\_set\_lock
+routine sets a mutual exclusion lock after waiting
+for the lock to be freed by any other PE currently holding the lock.
+Waiting PEs are assured of getting the lock in a first-come, first-served
+manner. The 
+.B shmem\_clear\_lock
+routine releases a lock previously set
+by 
+.B shmem\_set\_lock
+after ensuring that all local and remote stores
+initiated in the critical region are complete. The 
+.B shmem\_test\_lock
+routine sets a mutual exclusion lock only if it is currently cleared. By using
+this routine, a PE can avoid blocking on a set lock. If the lock is
+currently set, the routine returns without waiting. These routines are
+appropriate for protecting a critical region from simultaneous update by
+multiple PEs.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+The 
+.B shmem\_test\_lock
+routine returns 0 if the lock was
+originally cleared and this call was able to set the lock. A value of
+1 is returned if the lock had been set and the call returned without
+waiting to set the lock.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+Please refer to the subsection on the Memory Model for the definition of the term "remotely accessible".
+The lock variable should always be initialized to zero and accessed only by the OpenSHMEM locking
+API. Changing the value of the lock variable by other means without using
+the OpenSHMEM API, can lead to undefined behavior.
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.SS Examples
+
+
+
+The following example uses 
+.B shmem\_lock
+in a C[11] program.
+
+.nf
+#include <stdio.h>
+#include <shmem.h>
+
+int main(void)
+{
+  static long lock = 0;
+  static int count = 0;
+  shmem_init();
+  int me = shmem_my_pe();
+  shmem_set_lock(&lock);
+  int val = shmem_g(&count, 0); /* get count value on PE 0 */
+  printf("%d: count is %d\\n", me, val);
+  val++; /* incrementing and updating count on PE 0 */
+  shmem_p(&count, val, 0);
+  shmem_quiet();
+  shmem_clear_lock(&lock);
+  shmem_finalize();
+  return 0;
+}
+.fi
+
+
+
+
+

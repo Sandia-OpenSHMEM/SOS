@@ -3,7 +3,10 @@
  * Copyright 2011 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
- * 
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
  * This file is part of the Sandia OpenSHMEM software package. For license
  * information, see the LICENSE file in the top level directory of the
  * distribution.
@@ -28,7 +31,7 @@ void* dlmemalign(size_t, size_t);
 
 
 #define FC_SHPALLOC FC_FUNC_(shpalloc, SHPALLOC)
-void FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, fortran_integer_t *want_abort);
+void SHMEM_FUNCTION_ATTRIBUTES FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, fortran_integer_t *want_abort);
 void
 FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, fortran_integer_t *want_abort)
 {
@@ -43,9 +46,7 @@ FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, 
             *errcode = -1;
             return;
         } else {
-            fprintf(stderr, "[%03d] ERROR: shpalloc failure (invalid length).  Aborting job.\n",
-                    shmem_internal_my_pe);
-            RAISE_ERROR(1);
+            RAISE_ERROR_STR("shpalloc failure (invalid length).  Aborting job.");
         }
     }
 
@@ -58,9 +59,7 @@ FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, 
             *errcode = -2;
             return;
         } else {
-            fprintf(stderr, "[%03d] ERROR: shpalloc failure.  Aborting job.\n",
-                    shmem_internal_my_pe);
-            RAISE_ERROR(1);
+            RAISE_ERROR_STR("shpalloc failure.  Aborting job.");
         }
     }
 
@@ -69,40 +68,42 @@ FC_SHPALLOC(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, 
 
 
 #define FC_SHPDEALLOC FC_FUNC_(shpdeallc, SHPDEALLOC)
-void FC_SHPDEALLOC(void **addr, fortran_integer_t *errcode, fortran_integer_t *want_abort);
+void SHMEM_FUNCTION_ATTRIBUTES FC_SHPDEALLOC(void **addr, fortran_integer_t *errcode, fortran_integer_t *want_abort);
 void
 FC_SHPDEALLOC(void **addr, fortran_integer_t *errcode, fortran_integer_t *want_abort)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_SYMMETRIC_HEAP(*addr);
+
+    shmem_internal_barrier_all();
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     dlfree(*addr);
     SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
     *errcode = 0;
-
-    shmem_internal_barrier_all();
 }
 
 
 #define FC_SHPCLMOVE FC_FUNC_(shpclmove, SHPCLMOVE)
-void FC_SHPCLMOVE(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, fortran_integer_t *want_abort);
+void SHMEM_FUNCTION_ATTRIBUTES FC_SHPCLMOVE(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, fortran_integer_t *want_abort);
 void
 FC_SHPCLMOVE(void **addr, fortran_integer_t *length, fortran_integer_t *errcode, fortran_integer_t *want_abort)
 {
     void *ret;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_SYMMETRIC_HEAP(*addr);
 
     if (*length <= 0) {
         if (0 == *want_abort) {
-            fprintf(stderr, "[%03d] shpclmove failure (invalid length)\n",
-                    shmem_internal_my_pe);
-            RAISE_ERROR(-1);
+            RAISE_ERROR_STR("shpclmove failure (invalid length)");
         } else {
             *errcode = -1;
             return;
         }
     }
+
+    shmem_internal_barrier_all();
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     ret = dlrealloc(*addr, *length * 4); /* length is number of 32 bit words */
@@ -117,9 +118,7 @@ FC_SHPCLMOVE(void **addr, fortran_integer_t *length, fortran_integer_t *errcode,
         *addr = ret;
     } else {
         if (0 == *want_abort) {
-            fprintf(stderr, "[%03d] shpclmove failure\n",
-                    shmem_internal_my_pe);
-            RAISE_ERROR(-2);
+            RAISE_ERROR_STR("shpclmove failure");
         } else {
             *errcode = -2;
             return;

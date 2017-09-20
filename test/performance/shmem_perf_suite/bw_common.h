@@ -1,10 +1,29 @@
 /*
-*
-*  Copyright (c) 2015 Intel Corporation. All rights reserved.
-*  This software is available to you under the BSD license. For
-*  license information, see the LICENSE file in the top level directory.
-*
-*/
+ *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  This software is available to you under the BSD license below:
+ *
+ *      Redistribution and use in source and binary forms, with or
+ *      without modification, are permitted provided that the following
+ *      conditions are met:
+ *
+ *      - Redistributions of source code must retain the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer.
+ *
+ *      - Redistributions in binary form must reproduce the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer in the documentation and/or other materials
+ *        provided with the distribution.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 #include <common.h>
 
@@ -21,6 +40,9 @@
 #define WARMUP_LARGE  10
 #define LARGE_MESSAGE_SIZE  8192
 
+#define TARGET_SZ_MIN 8
+#define TARGET_SZ_MAX 4096
+
 /*atomics common */
 #define ATOMICS_N_DTs 3
 /*note: ignoring cswap/swap for now in verification */
@@ -34,6 +56,8 @@ typedef enum {
 } bw_type;
 
 typedef enum {
+    STYLE_PUT,
+    STYLE_GET,
     STYLE_RMA,
     STYLE_ATOMIC
 } bw_style;
@@ -60,7 +84,8 @@ typedef struct perf_metrics {
     unsigned long int size_inc, trials;
     unsigned long int window_size, warmup;
     int validate;
-    int my_node, num_pes;
+    int target_data;
+    int my_node, num_pes, sztarget, szinitiator, midpt;
     bw_units unit;
     char *src, *dest;
     const char *bw_type;
@@ -69,7 +94,7 @@ typedef struct perf_metrics {
     bw_style bwstyle;
 } perf_metrics_t;
 
-long red_psync[_SHMEM_REDUCE_SYNC_SIZE];
+long red_psync[SHMEM_REDUCE_SYNC_SIZE];
 
 /*default settings if no input is provided */
 void static data_init(perf_metrics_t * data) {
@@ -81,8 +106,12 @@ void static data_init(perf_metrics_t * data) {
     data->warmup = WARMUP; /*number of initial iterations to skip*/
     data->unit = MB;
     data->validate = false;
+    data->target_data = false;
     data->my_node = shmem_my_pe();
     data->num_pes = shmem_n_pes();
+    data->midpt = data->num_pes/2;
+    data->sztarget = data->midpt;
+    data->szinitiator = data->midpt;
     data->src = NULL;
     data->dest = NULL;
     data->cstyle = COMM_PAIRWISE;
@@ -104,11 +133,14 @@ void static uni_dir_data_init(perf_metrics_t * data) {
 
 int static inline partner_node(perf_metrics_t my_info)
 {
-    if(my_info.cstyle == COMM_PAIRWISE) {
-        int pairs = my_info.num_pes / 2;
+    if(my_info.num_pes == 1)
+        return 0;
 
-        return (my_info.my_node < pairs ? my_info.my_node + pairs :
-                    my_info.my_node - pairs);
+    if(my_info.cstyle == COMM_PAIRWISE) {
+        int pairs = my_info.midpt;
+
+        return (my_info.my_node < pairs ? (my_info.my_node + pairs) :
+            (my_info.my_node - pairs));
     } else {
         assert(my_info.cstyle == COMM_INCAST);
         return INCAST_PE;
@@ -118,19 +150,34 @@ int static inline partner_node(perf_metrics_t my_info)
 int static inline streaming_node(perf_metrics_t my_info)
 {
     if(my_info.cstyle == COMM_PAIRWISE) {
-        return (my_info.my_node < (my_info.num_pes / 2));
+        return (my_info.my_node < my_info.szinitiator);
     } else {
         assert(my_info.cstyle == COMM_INCAST);
         return true;
     }
 }
 
+int static inline target_node(perf_metrics_t my_info)
+{
+    return (my_info.my_node >= my_info.midpt &&
+        (my_info.my_node < (my_info.midpt + my_info.sztarget)));
+}
+
 /* put/get bw use opposite streaming/validate nodes */
 red_PE_set static inline validation_set(perf_metrics_t my_info, int *nPEs)
 {
     if(my_info.cstyle == COMM_PAIRWISE) {
-        *nPEs = my_info.num_pes/2;
-        return (streaming_node(my_info) ? FIRST_HALF : SECOND_HALF);
+        if(streaming_node(my_info)) {
+            *nPEs = my_info.szinitiator;
+            return FIRST_HALF;
+        } else if(target_node(my_info)) {
+            *nPEs = my_info.sztarget;
+            return SECOND_HALF;
+        } else {
+            fprintf(stderr, "Warning: you are getting data from a node that "
+                "wasn't a part of the perf set \n ");
+	    return 0;
+        }
     } else {
         assert(my_info.cstyle == COMM_INCAST);
         *nPEs = my_info.num_pes;
@@ -148,7 +195,7 @@ void static command_line_arg_check(int argc, char *argv[],
     extern char *optarg;
 
     /* check command line args */
-    while ((ch = getopt(argc, argv, "e:s:n:w:p:kbv")) != EOF) {
+    while ((ch = getopt(argc, argv, "e:s:n:w:p:r:l:kbvt")) != EOF) {
         switch (ch) {
         case 's':
             metric_info->start_len = strtoul(optarg, (char **)NULL, 0);
@@ -176,9 +223,28 @@ void static command_line_arg_check(int argc, char *argv[],
             break;
         case 'v':
             metric_info->validate = true;
+            if(metric_info->target_data) error = true;
             break;
         case 'w':
             metric_info->window_size = strtoul(optarg, (char **)NULL, 0);
+            if(metric_info->target_data) error = true;
+            break;
+        case 't':
+            metric_info->target_data = true;
+            metric_info->window_size = 1;
+            if(metric_info->validate) error = true;
+            break;
+        case 'r':
+            metric_info->sztarget = strtoul(optarg, (char **)NULL, 0);
+            if(metric_info->sztarget > metric_info->midpt ||
+                metric_info->szinitiator < metric_info->midpt ||
+                !metric_info->target_data) error = true;
+            break;
+        case 'l':
+            metric_info->szinitiator = strtoul(optarg, (char **)NULL, 0);
+            if(metric_info->szinitiator > metric_info->midpt ||
+                metric_info->sztarget < metric_info->midpt ||
+                !metric_info->target_data) error = true;
             break;
         default:
             error = true;
@@ -186,17 +252,37 @@ void static command_line_arg_check(int argc, char *argv[],
         }
     }
 
+    /* filling in 8/4KB chunks into array alloc'd to max_len */
+    if(metric_info->target_data) {
+        metric_info->start_len = TARGET_SZ_MIN;
+        if((metric_info->max_len <
+            ((metric_info->trials + metric_info->warmup) * TARGET_SZ_MIN)) ||
+            (metric_info->max_len <
+            ((metric_info->trials + metric_info->warmup) * TARGET_SZ_MAX))) {
+                error = true;
+            }
+    }
+
     if (error) {
         if (metric_info->my_node == 0) {
-            fprintf(stderr, "Usage: \n[-s start_length] [-e end_length] "\
-                    ": lengths should be a power of two \n" \
-                    "[-n trials (must be greater than 2*warmup (default: x => 100))] \n"\
-                    "[-p warm-up (see trials for value restriction)] \n"\
-                    "[-w window size - iterations between completion] \n"\
-                    "[-k (kilobytes/second)] [-b (bytes/second)] \n"\
-                    "[-v (validate data stream)] \n");
+            fprintf(stderr, "Usage: \n[-s start_length] [-e end_length] "
+                    ": lengths should be a power of two \n"
+                    "[-n trials (must be greater than 2*warmup (default: x => 100))] \n"
+                    "[-p warm-up (see trials for value restriction)] \n"
+                    "[-w window size - iterations between completion, cannot use with -t] \n"
+                    "[-k (kilobytes/second)] [-b (bytes/second)] \n"
+                    "[-v (validate data stream)] \n"
+                    "[-t output data for target side (default is initiator,"
+                    " only use with put_bw),\n cannot be used in conjunction "
+                    "with validate, special sizes used, \ntrials"
+                    " + warmup * sizes (8/4KB) <= max length \n"
+                    "[-r number of nodes at target, use only with -t] \n"
+                    "[-l number of nodes at initiator, use only with -t, "
+                    "l/r cannot be used together] \n");
         }
+#ifndef VERSION_1_0
         shmem_finalize();
+#endif
         exit (-1);
     }
 }
@@ -206,7 +292,9 @@ void static inline only_even_PEs_check(int my_node, int num_pes) {
         if (my_node == 0) {
             fprintf(stderr, "can only use an even number of nodes\n");
         }
+#ifndef VERSION_1_0
         shmem_finalize();
+#endif
         exit(77);
     }
 }
@@ -226,7 +314,7 @@ void static print_atomic_results_header(perf_metrics_t metric_info) {
         printf("using pairwise communication style\n");
     }
 
-    printf("\nOperation           %s           "\
+    printf("\nOperation           %s           "
             "Message Rate%17sLatency\n", metric_info.bw_type, " ");
 
     if (metric_info.unit == MB) {
@@ -244,12 +332,12 @@ void static print_atomic_results_header(perf_metrics_t metric_info) {
 }
 
 void static print_results_header(perf_metrics_t metric_info) {
-    printf("\nResults for %d PEs %lu trials with window size %lu "\
-            "max message size %lu with multiple of %lu increments\n",
-            metric_info.num_pes, metric_info.trials, metric_info.window_size,
-            metric_info.max_len, metric_info.size_inc);
-
-    printf("\nLength           %s           "\
+    printf("\nResults for %d PEs %lu trials with window size %lu "
+            "max message size %lu with multiple of %lu increments, "
+            "\ntargeting %d remote PEs initiated from %d PEs\n", metric_info.num_pes,
+            metric_info.trials, metric_info.window_size, metric_info.max_len,
+            metric_info.size_inc, metric_info.sztarget, metric_info.szinitiator);
+    printf("\nLength           %s           "
             "Message Rate\n", metric_info.bw_type);
 
     printf("in bytes         ");
@@ -266,15 +354,14 @@ void static print_results_header(perf_metrics_t metric_info) {
 
 void static print_data_results(double bw, double mr, perf_metrics_t data,
                             int len, double total_t) {
-    static int printed_once = false;
     static int atomic_type_index = 0;
 
-    if(!printed_once) {
-        if (data.bwstyle == STYLE_ATOMIC)
-            print_atomic_results_header(data);
-        else
-            print_results_header(data);
-        printed_once = true;
+    if(data.target_data) {
+        if(data.my_node < data.midpt) {
+            printf("initiator:\n");
+        } else  {
+            printf("target:\n");
+        }
     }
 
     if (data.bwstyle == STYLE_ATOMIC) {
@@ -309,7 +396,7 @@ void static inline PE_set_used_adjustments(int *nPEs, int *stride, int *start_pe
     }
     else {
         assert(PE_set == SECOND_HALF);
-        *start_pe = my_info.num_pes / 2;
+        *start_pe = my_info.midpt;
     }
 
     *stride = 0; /* back to back PEs */
@@ -323,7 +410,7 @@ void static inline calc_and_print_results(double total_t, int len,
     static double pe_bw_sum, bw = 0.0; /*must be symmetric for reduction*/
     double pe_bw_avg = 0.0, pe_mr_avg = 0.0;
     int nred_elements = 1;
-    static double pwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
+    static double pwrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
 
     PE_set_used_adjustments(&nPEs, &stride, &start_pe, metric_info);
 
@@ -339,7 +426,7 @@ void static inline calc_and_print_results(double total_t, int len,
     /* base case: will be overwritten by collective if num_pes > 2 */
     pe_bw_sum = bw;
 
-    if(metric_info.num_pes > 2)
+    if(nPEs >= 2)
         shmem_double_sum_to_all(&pe_bw_sum, &bw, nred_elements, start_pe,
                                 stride, nPEs, pwrk,
                                 red_psync);
@@ -431,6 +518,13 @@ extern void uni_dir_bw(int len, perf_metrics_t *metric_info);
 void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
     int len = 0, partner_pe = partner_node(metric_info);
 
+    if(metric_info.my_node == 0) {
+        if (metric_info.bwstyle == STYLE_ATOMIC)
+            print_atomic_results_header(metric_info);
+        else
+            print_results_header(metric_info);
+    }
+
     for (len = metric_info.start_len; len <= metric_info.max_len;
         len *= metric_info.size_inc) {
 
@@ -442,7 +536,8 @@ void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
     shmem_barrier_all();
 
     if(metric_info.validate) {
-        if(streaming_node(metric_info) && metric_info.bwstyle != STYLE_ATOMIC) {
+        if((streaming_node(metric_info) && metric_info.bwstyle == STYLE_GET) ||
+            (target_node(metric_info) && metric_info.bwstyle == STYLE_PUT)) {
             validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
         } else if(metric_info.bwstyle == STYLE_ATOMIC) {
             validate_atomics(metric_info);
@@ -461,14 +556,16 @@ void static inline bw_init_data_stream(perf_metrics_t *metric_info,
     int i = 0;
 
     /*must be before data_init*/
+#ifndef VERSION_1_0
     shmem_init();
+#else
+    start_pes(0);
+#endif
 
     data_init(metric_info);
 
-    only_even_PEs_check(metric_info->my_node, metric_info->num_pes);
-
-    for(i = 0; i < _SHMEM_REDUCE_MIN_WRKDATA_SIZE; i++)
-        red_psync[i] = _SHMEM_SYNC_VALUE;
+    for(i = 0; i < SHMEM_REDUCE_MIN_WRKDATA_SIZE; i++)
+        red_psync[i] = SHMEM_SYNC_VALUE;
 
     command_line_arg_check(argc, argv, metric_info);
 
@@ -484,13 +581,21 @@ void static inline bi_dir_init(perf_metrics_t *metric_info, int argc,
                                 char *argv[]) {
     bw_init_data_stream(metric_info, argc, argv);
 
+    only_even_PEs_check(metric_info->my_node, metric_info->num_pes);
+
     bi_dir_data_init(metric_info);
 
 }
 
 void static inline uni_dir_init(perf_metrics_t *metric_info, int argc,
-                                char *argv[]) {
+                                char *argv[], bw_style bwstyl) {
     bw_init_data_stream(metric_info, argc, argv);
+
+    /* uni-dir validate needs to know if its a put or get */
+    metric_info->bwstyle = bwstyl;
+
+    if(metric_info->num_pes != 1)
+        only_even_PEs_check(metric_info->my_node, metric_info->num_pes);
 
     uni_dir_data_init(metric_info);
 }
@@ -501,7 +606,9 @@ void static inline bw_data_free(perf_metrics_t *metric_info) {
     aligned_buffer_free(metric_info->src);
     aligned_buffer_free(metric_info->dest);
 
+#ifndef VERSION_1_0
     shmem_finalize();
+#endif
 }
 
 void static inline bi_dir_bw_main(int argc, char *argv[]) {
@@ -516,11 +623,11 @@ void static inline bi_dir_bw_main(int argc, char *argv[]) {
 
 } /*main() */
 
-void static inline uni_dir_bw_main(int argc, char *argv[]) {
+void static inline uni_dir_bw_main(int argc, char *argv[], bw_style bwstyl) {
 
     perf_metrics_t metric_info;
 
-    uni_dir_init(&metric_info, argc, argv);
+    uni_dir_init(&metric_info, argc, argv, bwstyl);
 
     uni_dir_bw_test_and_output(metric_info);
 

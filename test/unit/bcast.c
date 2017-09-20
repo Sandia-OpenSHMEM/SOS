@@ -1,4 +1,35 @@
 /*
+ * Copyright 2011 Sandia Corporation. Under the terms of Contract
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
+ * retains certain rights in this software.
+ *
+ *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  This software is available to you under the BSD license below:
+ *
+ *      Redistribution and use in source and binary forms, with or
+ *      without modification, are permitted provided that the following
+ *      conditions are met:
+ *
+ *      - Redistributions of source code must retain the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer.
+ *
+ *      - Redistributions in binary form must reproduce the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer in the documentation and/or other materials
+ *        provided with the distribution.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/*
  * broadcast [0...num_pes]
  *
  * usage: bcast {-v|h}
@@ -37,26 +68,35 @@ main(int argc, char* argv[])
         return 0;
     }
 
-    if ((pgm=strrchr(argv[0],'/')))
-        pgm++;
-    else
-        pgm = argv[0];
+    if (sizeof(long) != 8) {
+        printf("Test assumes 64-bit long (%zd)\n", sizeof(long));
+        shmem_global_exit(1);
+        return 0;
+    }
 
-	if (argc > 1) {
-        if (strncmp(argv[1],"-v",3) == 0)
+    if ((pgm=strrchr(argv[0],'/'))) {
+        pgm++;
+    } else {
+        pgm = argv[0];
+    }
+
+    if (argc > 1) {
+        if (strncmp(argv[1],"-v",3) == 0) {
             Verbose=1;
-        else if (strncmp(argv[1],"-h",3) == 0) {
+        } else if (strncmp(argv[1],"-h",3) == 0) {
             fprintf(stderr,"usage: %s {-v(verbose)|h(help)}\n",pgm);
             shmem_finalize();
             exit(1);
         }
     }
 
-    for (i = 0; i < SHMEM_BCAST_SYNC_SIZE; i += 1)
+    for (i = 0; i < SHMEM_BCAST_SYNC_SIZE; i += 1) {
         pSync[i] = SHMEM_SYNC_VALUE;
+    }
 
-    if ( mpe == 0 && Verbose )
+    if ( mpe == 0 && Verbose ) {
         fprintf(stderr,"%d loops\n",loops);
+    }
 
     for(cloop=1; cloop <= loops; cloop++) {
 
@@ -69,8 +109,9 @@ main(int argc, char* argv[])
         }
         memset( (void*)dst, 0, nBytes );
         src = &dst[nLongs];
-        for (i = 1; i < nLongs; i++)
+        for (i = 1; i < nLongs; i++) {
             src[i] = i+1;
+        }
 
         shmem_barrier_all();
 
@@ -82,7 +123,7 @@ main(int argc, char* argv[])
                 fprintf(stderr,"[%d] dst[%d] %ld != expected %ld\n",
                         mpe, i, dst[i],src[i]);
                 shmem_global_exit(1);
-            } else if (1 == mpe && dst[i] != 0) { 
+            } else if (1 == mpe && dst[i] != 0) {
                 fprintf(stderr,"[%d] dst[%d] %ld != expected 0\n",
                         mpe, i, dst[i]);
                 shmem_global_exit(1);

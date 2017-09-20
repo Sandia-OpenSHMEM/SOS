@@ -19,6 +19,7 @@ configure
 libtool
 libfabric.spec
 doxygen
+mpichconf.h*
 
 config/ar-lib
 config/compile
@@ -34,15 +35,23 @@ config/missing
 config/test-driver
 mpp/shmem.fh
 mpp/shmem.h
+mpp/shmem.h4
+mpp/shmemx.h4
+mpp/pshmem.h4
 mpp/shmemx.fh
 mpp/shmemx.h
 sandia-openshmem.spec
-shmem_pmi/config/
 src/oshCC
 src/oshc++
 src/oshcc
 src/oshfort
 src/oshrun
+src/atomic_c.c
+src/collectives_c.c
+src/collectives_f.c
+src/data_c.c
+src/data_f.c
+src/synchronization_c.c
 test/unit/.Tpo
 *.log
 *.trs

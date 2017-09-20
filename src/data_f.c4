@@ -1,0 +1,206 @@
+dnl vi: set ft=m4
+/* -*- C -*-
+ *
+ * Copyright 2011 Sandia Corporation. Under the terms of Contract
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
+ * retains certain rights in this software.
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
+ * This file is part of the Sandia OpenSHMEM software package. For license
+ * information, see the LICENSE file in the top level directory of the
+ * distribution.
+ *
+ */
+
+/*
+ * This is a generated file, do not edit directly.
+ */
+
+include(shmem_bind_f.m4)dnl
+#include "config.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#define SHMEM_INTERNAL_INCLUDE
+#include "shmem.h"
+#include "shmem_internal.h"
+#include "shmem_comm.h"
+
+
+#define SHMEM_DEF_FC_PUT(FUNCNAME, SIZE)                                \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *target, void *source, fortran_integer_t *len,        \
+                  fortran_integer_t *pe);                               \
+    void FUNCNAME(void *target, void *source, fortran_integer_t *len,   \
+                  fortran_integer_t *pe)                                \
+    {                                                                   \
+        long completion = 0;                                            \
+                                                                        \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(*pe);                                        \
+        SHMEM_ERR_CHECK_NON_NEGATIVE(*len);                             \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, SIZE * *len);                 \
+        SHMEM_ERR_CHECK_NULL(source, *len);                             \
+                                                                        \
+        shmem_internal_put_nb(target, source, SIZE * *len, *pe,         \
+                              &completion);                             \
+        shmem_internal_put_wait(&completion);                           \
+    }
+
+define(`SHMEM_WRAP_FC_PUT',
+`SHMEM_DEF_FC_PUT(FC_FUNC_(SH_DOWNCASE(shmem_$1_put), SH_UPCASE(SHMEM_$1_PUT)), $2)')dnl
+define(`SHMEM_WRAP_FC_PUT_SIZE',
+`SHMEM_DEF_FC_PUT(FC_FUNC_(SH_DOWNCASE(shmem_put$1), SH_UPCASE(SHMEM_PUT$1)), $2)')dnl
+
+SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_PUT')
+SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_PUT_SIZE')
+
+
+#define SHMEM_DEF_FC_PUT_NBI(FUNCNAME, SIZE)                            \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *target, void *source, fortran_integer_t *nelems,     \
+                  fortran_integer_t *pe);                               \
+    void FUNCNAME(void *target, void *source, fortran_integer_t *nelems,\
+                  fortran_integer_t *pe)                                \
+    {                                                                   \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(*pe);                                        \
+        SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);                          \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, SIZE * *nelems);              \
+        SHMEM_ERR_CHECK_NULL(source, *nelems);                          \
+                                                                        \
+        shmem_internal_put_nbi(target, source, SIZE * *nelems, *pe);    \
+    }
+
+define(`SHMEM_WRAP_FC_PUT_NBI',
+`SHMEM_DEF_FC_PUT_NBI(FC_FUNC_(SH_DOWNCASE(shmem_$1_put_nbi), SH_UPCASE(SHMEM_$1_PUT_NBI)), $2)')dnl
+define(`SHMEM_WRAP_FC_PUT_NBI_SIZE',
+`SHMEM_DEF_FC_PUT_NBI(FC_FUNC_(SH_DOWNCASE(shmem_put$1_nbi), SH_UPCASE(SHMEM_PUT$1_NBI)), $2)')dnl
+
+SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_PUT_NBI')
+SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_PUT_NBI_SIZE')
+
+#define SHMEM_DEF_FC_IPUT(FUNCNAME, SIZE)                               \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *targetp, void *sourcep,                              \
+                  fortran_integer_t *tst, fortran_integer_t *sst,       \
+                  fortran_integer_t *lenp, fortran_integer_t *pe);      \
+    void FUNCNAME(void *targetp, void *sourcep,                         \
+                  fortran_integer_t *tst, fortran_integer_t *sst,       \
+                  fortran_integer_t *lenp, fortran_integer_t *pe)       \
+    {                                                                   \
+        fortran_integer_t len = *lenp;                                  \
+        char *target = (char*) targetp;                                 \
+        char *source = (char*) sourcep;                                 \
+                                                                        \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(*pe);                                        \
+        SHMEM_ERR_CHECK_POSITIVE(*tst);                                 \
+        SHMEM_ERR_CHECK_POSITIVE(*sst);                                 \
+        SHMEM_ERR_CHECK_NON_NEGATIVE(*lenp);                            \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, SIZE * ((len-1) * *tst + 1)); \
+        SHMEM_ERR_CHECK_NULL(source, len);                              \
+                                                                        \
+        for ( ; len > 0 ; --len) {                                      \
+            shmem_internal_put_small(target, source, SIZE, *pe);        \
+            target += (*tst * SIZE);                                    \
+            source += (*sst * SIZE);                                    \
+        }                                                               \
+    }
+
+define(`SHMEM_WRAP_FC_IPUT',
+`SHMEM_DEF_FC_IPUT(FC_FUNC_(SH_DOWNCASE(shmem_$1_iput), SH_UPCASE(SHMEM_$1_IPUT)), $2)')dnl
+define(`SHMEM_WRAP_FC_IPUT_SIZE',
+`SHMEM_DEF_FC_IPUT(FC_FUNC_(SH_DOWNCASE(shmem_iput$1), SH_UPCASE(SHMEM_IPUT$1)), $2)')dnl
+
+SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_IPUT')
+SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_IPUT_SIZE')
+
+#define SHMEM_DEF_FC_GET(FUNCNAME, SIZE)                                \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *target, void *source, fortran_integer_t *len,        \
+                  fortran_integer_t *pe);                               \
+    void FUNCNAME(void *target, void *source, fortran_integer_t *len,   \
+                  fortran_integer_t *pe)                                \
+    {                                                                   \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(*pe);                                        \
+        SHMEM_ERR_CHECK_NON_NEGATIVE(*len);                             \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, SIZE * *len);                 \
+        SHMEM_ERR_CHECK_NULL(target, *len);                             \
+                                                                        \
+        shmem_internal_get(target, source, SIZE * *len, *pe);           \
+        shmem_internal_get_wait();                                      \
+    }
+
+define(`SHMEM_WRAP_FC_GET',
+`SHMEM_DEF_FC_GET(FC_FUNC_(SH_DOWNCASE(shmem_$1_get), SH_UPCASE(SHMEM_$1_GET)), $2)')dnl
+define(`SHMEM_WRAP_FC_GET_SIZE',
+`SHMEM_DEF_FC_GET(FC_FUNC_(SH_DOWNCASE(shmem_get$1), SH_UPCASE(SHMEM_GET$1)), $2)')dnl
+
+SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_GET')
+SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_GET_SIZE')
+
+#define SHMEM_DEF_FC_GET_NBI(FUNCNAME, SIZE)                            \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *target, void *source, fortran_integer_t *nelems,     \
+                  fortran_integer_t *pe);                               \
+    void FUNCNAME(void *target, void *source, fortran_integer_t *nelems,\
+                  fortran_integer_t *pe)                                \
+    {                                                                   \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(*pe);                                        \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, SIZE * *nelems);              \
+        SHMEM_ERR_CHECK_NULL(target, *nelems);                          \
+                                                                        \
+        shmem_internal_get(target, source, SIZE * *nelems, *pe);        \
+    }
+
+define(`SHMEM_WRAP_FC_GET_NBI',
+`SHMEM_DEF_FC_GET_NBI(FC_FUNC_(SH_DOWNCASE(shmem_$1_get_nbi), SH_UPCASE(SHMEM_$1_GET_NBI)), $2)')dnl
+define(`SHMEM_WRAP_FC_GET_NBI_SIZE',
+`SHMEM_DEF_FC_GET_NBI(FC_FUNC_(SH_DOWNCASE(shmem_get$1_nbi), SH_UPCASE(SHMEM_GET$1_NBI)), $2)')dnl
+
+SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_GET_NBI')
+SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_GET_NBI_SIZE')
+
+#define SHMEM_DEF_FC_IGET(FUNCNAME, SIZE)                               \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *targetp, void *sourcep,                              \
+                  fortran_integer_t *tst, fortran_integer_t *sst,       \
+                  fortran_integer_t *lenp, fortran_integer_t *pe);      \
+    void FUNCNAME(void *targetp, void *sourcep,                         \
+                  fortran_integer_t *tst, fortran_integer_t *sst,       \
+                  fortran_integer_t *lenp, fortran_integer_t *pe)       \
+    {                                                                   \
+        fortran_integer_t len = *lenp;                                  \
+        char *target = (char*) targetp;                                 \
+        char *source = (char*) sourcep;                                 \
+                                                                        \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(*pe);                                        \
+        SHMEM_ERR_CHECK_POSITIVE(*tst);                                 \
+        SHMEM_ERR_CHECK_POSITIVE(*sst);                                 \
+        SHMEM_ERR_CHECK_NON_NEGATIVE(*lenp);                            \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, SIZE * ((len-1) * *sst + 1)); \
+        SHMEM_ERR_CHECK_NULL(target, len);                              \
+                                                                        \
+        for ( ; len > 0 ; --len ) {                                     \
+            shmem_internal_get(target, source, SIZE, *pe);              \
+            target += (*tst * SIZE);                                    \
+            source += (*sst * SIZE);                                    \
+        }                                                               \
+        shmem_internal_get_wait();                                      \
+    }
+
+define(`SHMEM_WRAP_FC_IGET',
+`SHMEM_DEF_FC_IGET(FC_FUNC_(SH_DOWNCASE(shmem_$1_iget), SH_UPCASE(SHMEM_$1_IGET)), $2)')dnl
+define(`SHMEM_WRAP_FC_IGET_SIZE',
+`SHMEM_DEF_FC_IGET(FC_FUNC_(SH_DOWNCASE(shmem_iget$1), SH_UPCASE(SHMEM_IGET$1)), $2)')dnl
+
+SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_IGET')
+SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_IGET_SIZE')

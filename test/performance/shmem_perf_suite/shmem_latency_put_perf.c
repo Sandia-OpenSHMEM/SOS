@@ -1,12 +1,12 @@
 /*
- *  Copyright (c) 2015 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2017 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
- * *	Redistribution and use in source and binary forms, with or
- *	without modification, are permitted provided that the following
- *	conditions are met:
+ *      Redistribution and use in source and binary forms, with or
+ *      without modification, are permitted provided that the following
+ *      conditions are met:
  *
- *	- Redistributions of source code must retain the above
+ *      - Redistributions of source code must retain the above
  *        copyright notice, this list of conditions and the following
  *        disclaimer.
  *
@@ -23,6 +23,9 @@
  * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ */
+
+/*
 **
 **  Notice: micro benchmark ~ two nodes only
 **
@@ -63,6 +66,14 @@ streaming_latency(int len, perf_metrics_t *data)
     double start = 0.0;
     double end = 0.0;
     int i = 0;
+    static int print_once = 0;
+    if(!print_once && data->my_node == PUT_IO_NODE) {
+        printf("\nStreaming results for %d trials each of length %d through %d in"\
+              " powers of %d\n", data->trials, data->start_len,
+              data->max_len, data->inc);
+        print_results_header();
+        print_once++;
+    }
 
     /*puts to zero to match gets validation scheme*/
     if (data->my_node == 1) {

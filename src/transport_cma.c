@@ -3,7 +3,10 @@
  * Copyright 2011 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
- * 
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
  * This file is part of the Sandia OpenSHMEM software package. For license
  * information, see the LICENSE file in the top level directory of the
  * distribution.
@@ -29,8 +32,6 @@
 
 pid_t shmem_transport_cma_my_pid;
 pid_t *shmem_transport_cma_peers = NULL;
-size_t shmem_transport_cma_put_max=8*1024;
-size_t shmem_transport_cma_get_max=16*1024;
 
 typedef struct pmi_shmem_data {
     pid_t           lpid;   /* OS specific */
@@ -38,7 +39,7 @@ typedef struct pmi_shmem_data {
 
 
 int
-shmem_transport_cma_init(long eager_size)
+shmem_transport_cma_init(void)
 {
     int ret;
     pmi_cma_data_t cma_data;
@@ -48,8 +49,7 @@ shmem_transport_cma_init(long eager_size)
     /* Share information */
     ret = shmem_runtime_put("cma-procid", &cma_data, sizeof(pmi_cma_data_t));
     if (0 != ret) {
-        fprintf(stderr, "[%03d] %s() ERROR: runtime_put failed: %d\n",
-                shmem_internal_my_pe, __func__, ret);
+        RETURN_ERROR_MSG("runtime_put failed: %d\n", ret);
     }
 
     return ret;
@@ -69,8 +69,7 @@ shmem_transport_cma_startup(void)
     }
 
     if (num_on_node > 255) {
-        fprintf(stderr, "[%03d] ERROR: Too many local ranks for CMA transport.\n",
-                shmem_internal_my_pe);
+        RETURN_ERROR_STR("Too many local ranks for CMA transport");
         return 1;
     }
 
@@ -86,8 +85,7 @@ shmem_transport_cma_startup(void)
         ret = shmem_runtime_get(i, "cma-procid", &cma_data,
                                 sizeof(pmi_cma_data_t));
         if (0 != ret) {
-            fprintf(stderr, "[%03d] %s() ERROR: runtime_get failed: %d\n",
-                    shmem_internal_my_pe, __func__, ret);
+            RETURN_ERROR_MSG("runtime_get failed: %d\n", ret);
             return 1;
         }
 

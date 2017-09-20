@@ -1,3 +1,34 @@
+/*
+ * Copyright 2011 Sandia Corporation. Under the terms of Contract
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
+ * retains certain rights in this software.
+ *
+ *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  This software is available to you under the BSD license below:
+ *
+ *      Redistribution and use in source and binary forms, with or
+ *      without modification, are permitted provided that the following
+ *      conditions are met:
+ *
+ *      - Redistributions of source code must retain the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer.
+ *
+ *      - Redistributions in binary form must reproduce the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer in the documentation and/or other materials
+ *        provided with the distribution.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #include <shmem.h>
 
 #include <string.h>
@@ -25,15 +56,16 @@ main(int argc, char* argv[])
     int Verbose = 0;
     char *pgm;
 
-    if ((pgm=strrchr(argv[0],'/')))
+    if ((pgm=strrchr(argv[0],'/'))) {
         pgm++;
-    else
+    } else {
         pgm = argv[0];
+    }
 
-	if (argc > 1) {
-        if (strncmp(argv[1],"-v",3) == 0)
+    if (argc > 1) {
+        if (strncmp(argv[1],"-v",3) == 0) {
             Verbose=1;
-        else if (strncmp(argv[1],"-h",3) == 0) {
+        } else if (strncmp(argv[1],"-h",3) == 0) {
             fprintf(stderr,"usage: %s {-v(verbose)|h(help)}\n",pgm);
             shmem_finalize();
             exit(1);
@@ -79,9 +111,9 @@ main(int argc, char* argv[])
         }
         *src_long = 8;
 
-    	shmem_barrier_all();
+        shmem_barrier_all();
 
-    	for (pe=0 ; pe < num_pes; ++pe) {
+        for (pe=0 ; pe < num_pes; ++pe) {
             if (!shmem_addr_accessible(src_short,pe)) {
                 printf("PE-%d local addr %p not accessible from PE-%d?\n",
                        me, (void*)src_short, pe);
@@ -117,9 +149,9 @@ main(int argc, char* argv[])
                 printf("PE-%d dst_long %ld != 8?\n",me,dst_long);
                 shmem_global_exit(1);
             }
-    	}
+        }
 
-    	shmem_barrier_all();
+        shmem_barrier_all();
 
         shmem_free(src_short);
         shmem_free(src_int);
@@ -129,7 +161,7 @@ main(int argc, char* argv[])
     }
 
     if (Verbose)
-		fprintf(stderr,"[%d] exit\n",shmem_my_pe());
+        fprintf(stderr,"[%d] exit\n",shmem_my_pe());
 
     shmem_finalize();
 

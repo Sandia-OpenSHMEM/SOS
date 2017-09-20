@@ -1,16 +1,34 @@
 /*
-*
-*  Copyright (c) 2015 Intel Corporation. All rights reserved.
-*  This software is available to you under the BSD license. For
-*  license information, see the LICENSE file in the top level directory.
-*
-*/
+ *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  This software is available to you under the BSD license below:
+ *
+ *      Redistribution and use in source and binary forms, with or
+ *      without modification, are permitted provided that the following
+ *      conditions are met:
+ *
+ *      - Redistributions of source code must retain the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer.
+ *
+ *      - Redistributions in binary form must reproduce the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer in the documentation and/or other materials
+ *        provided with the distribution.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <shmem.h>
-#include <shmemx.h>
 #include <string.h>
 #include <assert.h>
 #include <stdbool.h>
@@ -55,7 +73,11 @@ static char * aligned_buffer_alloc(int len)
 
     alignment = getpagesize();
 
+#ifndef VERSION_1_0
     ptr1 = shmem_malloc(ptr_size + alignment + len);
+#else
+    ptr1 = shmalloc(ptr_size + alignment + len);
+#endif
     assert(ptr1 != NULL);
 
     save_ptr1 = (uintptr_t)ptr1;
@@ -85,7 +107,11 @@ static void aligned_buffer_free(char * ptr_aligned)
     memcpy(&temp_p, (ptr_aligned - ptr_size), ptr_size);
     ptr_org = (char *) temp_p;
 
+#ifndef VERSION_1_0
     shmem_free(ptr_org);
+#else
+    shfree(ptr_org);
+#endif
 }
 
 int static inline is_divisible_by_4(int num)

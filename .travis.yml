@@ -1,26 +1,55 @@
-sudo: false
+sudo: required
 language: c
 compiler:
     #- clang
     - gcc
+    - icc
 env:
     global:
         - TRAVIS_PAR_MAKE="-j 4"
-        - SOS_GLOBAL_BUILD_OPTS="--disable-long-fortran-header --enable-picky --enable-pmi-simple FCFLAGS=-fcray-pointer"
+        - SOS_GLOBAL_BUILD_OPTS="--enable-picky --enable-pmi-simple FCFLAGS=-fcray-pointer"
         - PTL_IFACE_NAME=venet0
         - FI_LOG_LEVEL=warn
         - SHMEM_OFI_USE_PROVIDER=sockets
         - SMA_INFO=1
+        ## An encrypted value for INTEL_SERIAL_NUMBER:
+        - secure: "luxfwDy26Pva+A58T/vPP7+Zek4rBEbpB2TpdXuLdIu/MJ2laoUkaZj/ouT6YgdSxUoiyLUlGIzLnByxnrVgWqYELsWHiV9hzsXZCNfgQDdUHV8UITCqSYVcd5WGNoVdC0QohKuIj47y6bP5ttcv1sIfpV74ztPJZE1dbb2QzgvWcIKWN8Abj55364ZnIidW7ErYLrAiKlBzSxZXCKiKD6qOUbpOBN8yuzaX9diXYJViest7iBC+BfwzXO8Shuouh6QrQhJ1T4oG6u6YJn17fnOwXKJCdkeQYr/E8ka4JRf8vZm7CNO1YdwNhtGtFNEzTJaP2XFLAQGCB9vffCxcqRbpWv+lpsFRsH+eiF/zp/xKGr5qzB9sPUxNANJyhphXK0VfIqDan7nz9di99NFBEF94Jl33E+KODTCAeHb6+a7yboR5B4BalM4jXKrcn/2A4pYrk45YF5IdLLOEvzTaOyVSgHoNIzXRZvHEL2AeYuvz5qLukzMB+QClbA1EeCBNyokuXK/TemeTvveXpQpCaVKNQ8zp/v30u8eiaV8R/dFa2evlJ6kwSaeXlXpXifeXd5Px0x6HF4FT9HLOtPVQ3rZXyfL2Eh92egu15GiTqMNkdVlVGUC20+iddLjtbPqRnVw0WnZkekh62A6rGuT4cTfAbZ2GVPD+IMqzokO1IGg="
     matrix:
         - # Defaults
         - SOS_BUILD_OPTS="--disable-mr-scalable --enable-av-map --disable-cxx"
-        - SOS_BUILD_OPTS="--enable-cma --enable-error-checking --enable-profiling --disable-mr-scalable --enable-av-map --enable-remote-virtual-addressing"
-        - SMA_BOUNCE_SIZE=0 SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
-        - SMA_BARRIER_ALGORITHM=auto   SMA_BCAST_ALGORITHM=auto   SMA_REDUCE_ALGORITHM=auto    SMA_COLLECT_ALGORITHM=auto    SMA_FCOLLECT_ALGORITHM=auto SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
-        - SMA_BARRIER_ALGORITHM=linear SMA_BCAST_ALGORITHM=linear SMA_REDUCE_ALGORITHM=linear  SMA_COLLECT_ALGORITHM=linear  SMA_FCOLLECT_ALGORITHM=linear SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
-        - SMA_BARRIER_ALGORITHM=tree   SMA_BCAST_ALGORITHM=tree   SMA_REDUCE_ALGORITHM=tree SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
-        - SMA_BARRIER_ALGORITHM=dissem SMA_REDUCE_ALGORITHM=recdbl  SMA_FCOLLECT_ALGORITHM=recdbl SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
-        - SMA_FCOLLECT_ALGORITHM=ring SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+        - >
+          SOS_DISABLE_FORTRAN=1
+          SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing"
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
+          SOS_BUILD_OPTS="--enable-threads --enable-error-checking"
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
+          SOS_BUILD_OPTS="--with-cma --enable-error-checking --enable-profiling --disable-mr-scalable --enable-av-map --enable-remote-virtual-addressing"
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
+          SMA_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SMA_BOUNCE_SIZE=0
+          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
+          SMA_BARRIER_ALGORITHM=auto SMA_BCAST_ALGORITHM=auto SMA_REDUCE_ALGORITHM=auto SMA_COLLECT_ALGORITHM=auto SMA_FCOLLECT_ALGORITHM=auto
+          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
+          SMA_BARRIER_ALGORITHM=linear SMA_BCAST_ALGORITHM=linear SMA_REDUCE_ALGORITHM=linear SMA_COLLECT_ALGORITHM=linear SMA_FCOLLECT_ALGORITHM=linear
+          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
+          SMA_BARRIER_ALGORITHM=tree SMA_BCAST_ALGORITHM=tree SMA_REDUCE_ALGORITHM=tree
+          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
+          SMA_BARRIER_ALGORITHM=dissem SMA_REDUCE_ALGORITHM=recdbl SMA_FCOLLECT_ALGORITHM=recdbl
+          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
+          SMA_FCOLLECT_ALGORITHM=ring
+          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
 os:
     - linux
 
@@ -37,6 +66,20 @@ before_install:
     - export SOS_SRC=$PWD
     - export TRAVIS_SRC=$HOME/travis/src
     - export TRAVIS_INSTALL=$HOME/travis/install
+    ## Disable security protection so CMA will work
+    - sudo sysctl -w kernel.yama.ptrace_scope=0
+    ## Run the icc installation script:
+    - >
+      if [ "$CC" = "icc" ]; then
+          if [ "$TRAVIS_REPO_SLUG" = "Sandia-OpenSHMEM/SOS" -a \
+               "$TRAVIS_PULL_REQUEST" = "false" ]; then
+              ./scripts/install-icc.sh --components icc,ifort
+              source ~/.bashrc
+          else
+              echo "Cannot test Intel compiler on a fork.  Exiting now."
+              exit 0
+          fi
+      fi
     ## Build libev
     - cd $TRAVIS_SRC
     - wget http://dist.schmorp.de/libev/Attic/libev-4.22.tar.gz
@@ -70,13 +113,16 @@ before_install:
     ## Fetch UH Tests
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/openshmem-org/tests-uh.git tests-uh
+    # Fetch Cray Tests
+    - cd $TRAVIS_SRC
+    - git clone --depth 10 https://github.com/openshmem-org/tests-cray.git tests-cray
     ## Fetch ISx
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ParRes/ISx.git ISx
     ## Fetch PRK
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ParRes/Kernels.git PRK
-    - echo -e "SHMEMCC=oshcc\nSHMEMTOP=$$TRAVIS_INSTALL\n" > PRK/common/make.defs
+    - echo -e "SHMEMCC=oshcc -std=c99\nSHMEMTOP=$$TRAVIS_INSTALL\n" > PRK/common/make.defs
 
 install:
     - cd $SOS_SRC
@@ -85,22 +131,47 @@ install:
 script:
     - export BASE_PATH=$PATH
     ###
+    ### Build without transport
+    ###
+    - cd $SOS_SRC
+    - mkdir no-transport-build
+    - cd no-transport-build
+    - export PATH=$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - ../configure --prefix=$TRAVIS_INSTALL/sandia-shmem-none --without-ofi --without-portals4 $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
+    - make $TRAVIS_PAR_MAKE
+    - make $TRAVIS_PAR_MAKE check TESTS=
+    - make install
+    ###
+    ### Build with only CMA
+    ###
+    - cd $SOS_SRC
+    - mkdir cma-build
+    - cd cma-build
+    - export PATH=$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - ../configure --prefix=$TRAVIS_INSTALL/sandia-shmem-cma --with-cma $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
+    - make $TRAVIS_PAR_MAKE
+    - make $TRAVIS_PAR_MAKE check TESTS=
+    - make install
+    ###
     ### Build and check Portals
     ###
     - cd $SOS_SRC
+    - mkdir portals4-build
+    - cd portals4-build
     - export PATH=$TRAVIS_INSTALL/hydra/bin:$TRAVIS_INSTALL/portals4/bin:$BASE_PATH
-    - ./configure --with-portals4=$TRAVIS_INSTALL/portals4/ --prefix=$TRAVIS_INSTALL/sandia-shmem-portals4 $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
+    - ../configure --with-portals4=$TRAVIS_INSTALL/portals4/ --prefix=$TRAVIS_INSTALL/sandia-shmem-portals4 $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
     #- make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2 timeout 10" check
     - make install
-    - make clean
     ###
     ### Build and check OFI
     ###
     - cd $SOS_SRC
+    - mkdir ofi-build
+    - cd ofi-build
     - export PATH=$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
-    - ./configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --prefix=$TRAVIS_INSTALL/sandia-shmem-ofi $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
+    - ../configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --prefix=$TRAVIS_INSTALL/sandia-shmem-ofi $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
     - make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2" check
@@ -111,13 +182,28 @@ script:
     - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/tests-uh
-    - make $TRAVIS_PAR_MAKE C_feature_tests F_feature_tests
+    - make $TRAVIS_PAR_MAKE C_feature_tests
     #- make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
     # Check for failures in the C tests
     #- if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-c-feature-tests.log; then false; else true; fi
-    #- make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log
-    # Check for failures in the Fortran tests
-    #- if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi
+    - >
+      if [ -z "$SOS_DISABLE_FORTRAN" ]; then
+          make F_feature_tests;
+          if false && [ $? -eq 0 ]; then
+              make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log;
+              # Check for failures in the Fortran tests
+              if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi;
+          fi;
+      fi
+    - >
+      if [ -z "$SOS_DISABLE_FORTRAN" ]; then
+          make F_error_tests;
+          if false && [ $? -eq 0 -a $SOS_ENABLE_ERROR_TESTS ]; then
+              make F_error_tests-run 2>&1 | tee uh-tests-f-error-tests.log;
+              # Check for failures in the Fortran tests
+              if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-error-tests.log; then false; else true; fi;
+          fi;
+      fi
     - make clean
     ###
     ### Run the UH test suite (OFI)
@@ -125,14 +211,37 @@ script:
     - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/tests-uh
-    - make $TRAVIS_PAR_MAKE C_feature_tests F_feature_tests
+    - make $TRAVIS_PAR_MAKE C_feature_tests
     - make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
     # Check for failures in the C tests
     - if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-c-feature-tests.log; then false; else true; fi
-    - make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log
-    # Check for failures in the Fortran tests
-    - if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi
+    - >
+      if [ -z "$SOS_DISABLE_FORTRAN" ]; then
+          make F_feature_tests;
+          if [ $? -eq 0 ]; then
+              make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log;
+              # Check for failures in the Fortran tests
+              if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi;
+          fi;
+      fi
+    - >
+      if [ -z "$SOS_DISABLE_FORTRAN" ]; then
+          make F_error_tests;
+          if [ $? -eq 0 -a $SOS_ENABLE_ERROR_TESTS ]; then
+              make F_error_tests-run 2>&1 | tee uh-tests-f-error-tests.log;
+              # Check for failures in the Fortran tests
+              if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-error-tests.log; then false; else true; fi;
+          fi;
+      fi
     - make clean
+    ###
+    ### Run the Cray test suite (OFI)
+    ###
+    - export CUSTOM_SHMEM_DIR=$TRAVIS_INSTALL/sandia-shmem-ofi
+    - export PATH=$CUSTOM_SHMEM_DIR/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export CRAY_TESTS_DIR=$TRAVIS_SRC/tests-cray
+    - $SOS_SRC/scripts/cray_tests.sh
+
     ###
     ### Run ISx (Portals)
     ###
@@ -148,9 +257,10 @@ script:
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/ISx/SHMEM
     - make CC=oshcc LDLIBS=-lm
-    - mpiexec.hydra -np 4 ./bin/isx.strong 134217728 output_strong
-    - mpiexec.hydra -np 4 ./bin/isx.weak 33554432 output_weak
-    - mpiexec.hydra -np 4 ./bin/isx.weak_iso 33554432 output_weak_iso
+    # Note: This SMA_SYMMETRIC_SIZE setting may exceed the memory available in the CI testing environment
+    - oshrun -np 4 -env SMA_SYMMETRIC_SIZE '4G' ./bin/isx.strong 134217728 output_strong
+    - oshrun -np 4 -env SMA_SYMMETRIC_SIZE '4G' ./bin/isx.weak 33554432 output_weak
+    - oshrun -np 4 -env SMA_SYMMETRIC_SIZE '4G' ./bin/isx.weak_iso 33554432 output_weak_iso
     - make clean
     ###
     ### Run PRK (Portals)
@@ -167,13 +277,15 @@ script:
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/PRK
     - make allshmem
-    - mpiexec.hydra -np 4 ./SHMEM/Stencil/stencil 100 1000 2>&1 | tee stencil.log
-    - grep -qi "Solution validates" stencil.log
-    - mpiexec.hydra -np 4 ./SHMEM/Synch_p2p/p2p 10 1000 1000 2>&1 | tee p2p.log
-    - grep -qi "Solution validates" p2p.log
-    - mpiexec.hydra -np 4 ./SHMEM/Transpose/transpose 10 1000 2>&1 | tee transpose.log
-    - grep -qi "Solution validates" transpose.log
+    - oshrun -np 4 ./SHMEM/Stencil/stencil 100 1000
+    - oshrun -np 4 ./SHMEM/Synch_p2p/p2p 10 1000 1000
+    - oshrun -np 4 ./SHMEM/Transpose/transpose 10 1000
     - make clean
+after_script:
+    - >
+      if [ "$CC" = "icc" ]; then
+        '[[ ! -z "${INTEL_INSTALL_PATH}" ]] && uninstall_intel_software'
+      fi
 
 notifications:
   email:

@@ -1,5 +1,36 @@
 /* :vim:sw=4:ts=4: */
 /*
+ * Copyright 2011 Sandia Corporation. Under the terms of Contract
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
+ * retains certain rights in this software.
+ *
+ *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  This software is available to you under the BSD license below:
+ *
+ *      Redistribution and use in source and binary forms, with or
+ *      without modification, are permitted provided that the following
+ *      conditions are met:
+ *
+ *      - Redistributions of source code must retain the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer.
+ *
+ *      - Redistributions in binary form must reproduce the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer in the documentation and/or other materials
+ *        provided with the distribution.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/*
  *  usage: shmalloc [-p] [nWords] [loops] [incWords-per-loop]
  *    where: -p == power-of-two allocation bump per loop
  *      [nWords] # of longs to shmem_malloc()\n"
@@ -60,6 +91,7 @@ usage (void)
             "  [loops]  # of loops\n"
             "  [incWords] nWords += incWords per loop\n");
     }
+    shmem_finalize();
     exit (1);
 }
 
@@ -164,6 +196,7 @@ main(int argc, char **argv)
         if (! result)
         {
             perror ("Failed result memory allocation");
+            shmem_finalize();
             exit (1);
         }
         for(dp=result; dp < &result[(result_sz/sizeof(DataType))];)
@@ -174,6 +207,7 @@ main(int argc, char **argv)
         if (!(target = (DataType *)shmem_malloc(target_sz)))
         {
             perror ("Failed target memory allocation");
+            shmem_finalize();
             exit (1);
         }
         for(dp=target; dp < &target[(target_sz / sizeof(DataType))];)
@@ -183,6 +217,7 @@ main(int argc, char **argv)
         if (!(source = (DataType *)shmem_malloc(source_sz)))
         {
             perror ("Failed source memory allocation");
+            shmem_finalize();
             exit (1);
         }
         for(dp=source; dp < &source[(source_sz / sizeof(DataType))];)
@@ -190,7 +225,7 @@ main(int argc, char **argv)
 #if 0
         printf("[%d] source %p target %p result %p\n",
             me, (void*)source,(void*)target,(void*)result);
-        shmem_barrier_all(); 
+        shmem_barrier_all();
 #endif
 
         shmem_barrier_all(); /* sync sender and receiver */

@@ -2,11 +2,11 @@
  *  Copyright (c) 2015 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
- * *	Redistribution and use in source and binary forms, with or
- *	without modification, are permitted provided that the following
- *	conditions are met:
+ *      Redistribution and use in source and binary forms, with or
+ *      without modification, are permitted provided that the following
+ *      conditions are met:
  *
- *	- Redistributions of source code must retain the above
+ *      - Redistributions of source code must retain the above
  *        copyright notice, this list of conditions and the following
  *        disclaimer.
  *
@@ -25,7 +25,6 @@
  * SOFTWARE.
  */
 
-#define SHMEM_INTERNAL_INCLUDE
 #include <shmem.h>
 #include <stdio.h>
 #include <time.h>
@@ -41,6 +40,16 @@
 
 #define CHUNK_SIZE 10
 #define ARR_SIZE (4*(CHUNK_SIZE))
+
+#define EVAL_MACRO_FOR_RMA(DECL,END)  \
+  DECL(float,      float) END         \
+  DECL(double,     double) END        \
+  DECL(longdouble, long double) END   \
+  DECL(char,       char) END          \
+  DECL(short,      short) END         \
+  DECL(int,        int) END           \
+  DECL(long,       long) END          \
+  DECL(longlong,   long long) END
 
 #define DECLARE_TEST(TYPENAME,TYPE) \
   TYPE TYPENAME##_shared[ARR_SIZE];                                    \
@@ -101,7 +110,7 @@
       return ret;                                                      \
   }
 
-SHMEM_DEFINE_FOR_RMA(DECLARE_TEST)
+EVAL_MACRO_FOR_RMA(DECLARE_TEST,)
 
 int main(int argc, char* argv[]) {
     int verbose = 0;
@@ -124,7 +133,7 @@ int main(int argc, char* argv[]) {
         errors += (TYPENAME##_rmaTest(nextpe,verbose)); \
     } while(0)
 
-    SHMEM_DECLARE_FOR_RMA(RUN_TEST);
+    EVAL_MACRO_FOR_RMA(RUN_TEST,;)
 
     SHFN(finalize)();
 

@@ -1,4 +1,35 @@
 /*
+ * Copyright 2011 Sandia Corporation. Under the terms of Contract
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
+ * retains certain rights in this software.
+ *
+ *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  This software is available to you under the BSD license below:
+ *
+ *      Redistribution and use in source and binary forms, with or
+ *      without modification, are permitted provided that the following
+ *      conditions are met:
+ *
+ *      - Redistributions of source code must retain the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer.
+ *
+ *      - Redistributions in binary form must reproduce the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer in the documentation and/or other materials
+ *        provided with the distribution.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/*
  * shmem_test_lock()  test_lock {-v|q|n} {loop-cnt}
  *  where:
  *      -v == verbose/debug
@@ -8,8 +39,8 @@
  * For n loops:
  *   Each pe attempts to lock the global lock, if lock is taken, increment the
  *   lock count on all pes and then waits until the lock count reaches num_pes()
- *   which is the exit condition. 
- *   On a failed lock attempt, increment local lock_tries counter and repeat. 
+ *   which is the exit condition.
+ *   On a failed lock attempt, increment local lock_tries counter and repeat.
  */
 #include <shmem.h>
 #include <stdio.h>
@@ -100,7 +131,7 @@ main(int argc, char* argv[])
         lock = 0;
         lock_cnt = 0;
         tries = 0;
-    
+
         shmem_barrier_all();  /* sync all ranks */
 
         while( *(&lock_cnt) < num_ranks ) {

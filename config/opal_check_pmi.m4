@@ -154,7 +154,7 @@ AC_DEFUN([OPAL_CHECK_PMI],[
     slurm_pmi_found=
 
     # enable Portals4 PMI if using Portals4 provider else slurm PMI check
-    AS_IF([ test ! -z "$with_portals4"],[
+    AS_IF([ test -n "$with_portals4" -a "$enable_pmi1" != "no"],[
         AS_IF([test ! -z "$with_pmi" -a "$with_pmi" != "yes"],
                 [ompi_check_pmi_dir="$with_pmi"])
         AS_IF([test ! -z "$with_pmi_libdir" -a "$with_pmi_libdir" != "yes"],

@@ -1,4 +1,35 @@
 /*
+ * Copyright 2011 Sandia Corporation. Under the terms of Contract
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
+ * retains certain rights in this software.
+ *
+ *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  This software is available to you under the BSD license below:
+ *
+ *      Redistribution and use in source and binary forms, with or
+ *      without modification, are permitted provided that the following
+ *      conditions are met:
+ *
+ *      - Redistributions of source code must retain the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer.
+ *
+ *      - Redistributions in binary form must reproduce the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer in the documentation and/or other materials
+ *        provided with the distribution.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/*
  * ipgm / shmem iput/iget multiple
  *  usage: ipgm [-rmhd] [nWords] [loops] [incWords-per-loop]
  *   where:
@@ -63,7 +94,7 @@ usage (void)
             "    -v == Verbose output\n"
             "    -h == help.\n");
     }
-    exit (1);
+    shmem_global_exit(1);
 }
 
 int
@@ -143,6 +174,12 @@ main(int argc, char **argv)
     nProcs = shmem_n_pes();
     workers = nProcs - 1;
 
+    if (nProcs <= 1) {
+        fprintf(stderr, "ERR - Requires > 1 PEs\n");
+        shmem_finalize();
+        return 0;
+    }
+
     while ((c = getopt (argc, argv, "hmrvdD")) != -1)
         switch (c)
         {
@@ -210,7 +247,7 @@ main(int argc, char **argv)
         if (!results)
         {
             perror ("Failed results memory allocation");
-            exit (1);
+            shmem_global_exit(1);
         }
         prev_sz = rc;
 
@@ -220,7 +257,7 @@ main(int argc, char **argv)
                 (rc/sizeof(DataType)),ridx,(prev_sz/sizeof(DataType)));
             for(j=1; j < nProcs; j++) {
                 printf("  PE[%d] results[%d...%d]\n",
-                            j,idx,(idx+(nWords-1))); 
+                            j,idx,(idx+(nWords-1)));
                 idx += nWords;
             }
         }
@@ -235,7 +272,7 @@ main(int argc, char **argv)
 
         if (! source) {
             perror ("Failed source memory allocation");
-            exit (1);
+            shmem_global_exit(1);
         }
         if (Debug > 3)
             printf("shmem_malloc() source %p (%d bytes)\n",(void*)source,rc);
@@ -254,13 +291,13 @@ main(int argc, char **argv)
 
         if ( ! target ) {
             perror ("Failed target memory allocation");
-            exit (1);
+            shmem_global_exit(1);
         }
         memset(target, 0, rc);
         if (Debug > 3)
             printf("shmem_malloc() target %p (%d bytes)\n",(void*)target,rc);
 
-        shmem_barrier_all(); 
+        shmem_barrier_all();
 
         if (me == 0) {
             /* put nWords of DataType into target on PE's [1 to (nProcs-1)] */
@@ -271,7 +308,7 @@ main(int argc, char **argv)
         shmem_barrier_all();
 
         if (me != 0) {
-            // Verify iput target data 
+            // Verify iput target data
             rc = target_data_good(target, nWords, 0, __LINE__);
             if (rc)
                 shmem_global_exit(1);
@@ -291,7 +328,7 @@ main(int argc, char **argv)
             for(j=1; j < nProcs; j++) {
                 if (Debug > 1)
                     printf("PE[0] iget(%d words PE[%d]) results[%d...%d]\n",
-                                    nWords,j,ridx,(ridx+(nWords-1))); 
+                                    nWords,j,ridx,(ridx+(nWords-1)));
                 IGET(&results[ridx], target, 1, 1, nWords, j);
                 rc = target_data_good( &results[ridx], nWords, j, __LINE__);
                 if (rc)

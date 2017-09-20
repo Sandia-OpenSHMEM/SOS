@@ -1,0 +1,385 @@
+dnl vi: set ft=m4
+/* -*- C -*-
+ *
+ * Copyright 2011 Sandia Corporation. Under the terms of Contract
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
+ * retains certain rights in this software.
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
+ * This file is part of the Sandia OpenSHMEM software package. For license
+ * information, see the LICENSE file in the top level directory of the
+ * distribution.
+ *
+ */
+
+/*
+ * This is a generated file, do not edit directly.
+ */
+
+include(shmem_bind_f.m4)dnl
+#include "config.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
+#include <string.h>
+
+#define SHMEM_INTERNAL_INCLUDE
+#include "shmem.h"
+#include "shmem_internal.h"
+#include "shmem_comm.h"
+#include "shmem_collectives.h"
+#include "shmem_synchronization.h"
+
+
+#define FC_SHMEM_BARRIER_ALL FC_FUNC_(shmem_barrier_all, SHMEM_BARRIER_ALL)
+void SHMEM_FUNCTION_ATTRIBUTES
+FC_SHMEM_BARRIER_ALL(void);
+void
+FC_SHMEM_BARRIER_ALL(void)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_barrier_all();
+}
+
+
+#define FC_SHMEM_BARRIER FC_FUNC_(shmem_barrier, SHMEM_BARRIER)
+void SHMEM_FUNCTION_ATTRIBUTES
+FC_SHMEM_BARRIER(fortran_integer_t *PE_start,
+                 fortran_integer_t *logPE_stride,
+                 fortran_integer_t *PE_size,
+                 fortran_integer_t *pSync);
+void
+FC_SHMEM_BARRIER(fortran_integer_t *PE_start,
+                 fortran_integer_t *logPE_stride,
+                 fortran_integer_t *PE_size,
+                 fortran_integer_t *pSync)
+{
+    long *pSync_c;
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_BARRIER_SYNC_SIZE);
+
+    /* SHMEM_BARRIER_SYNC_SIZE is defined to allow this cast */
+    pSync_c = (long*) pSync;
+
+    shmem_internal_barrier(*PE_start, *logPE_stride, *PE_size, pSync_c);
+}
+
+
+#define SHMEM_DEF_TO_ALL(FUNCNAME,TYPE,ITYPE,SIZE,IOP)                  \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(TYPE *target, TYPE *source,                                \
+                  fortran_integer_t *nreduce,                           \
+                  fortran_integer_t *PE_start,                          \
+                  fortran_integer_t *logPE_stride,                      \
+                  fortran_integer_t *PE_size,                           \
+                  int32_t *pWrk,                                        \
+                  fortran_integer_t *pSync);                            \
+    void FUNCNAME(TYPE *target, TYPE *source,                           \
+                  fortran_integer_t *nreduce,                           \
+                  fortran_integer_t *PE_start,                          \
+                  fortran_integer_t *logPE_stride,                      \
+                  fortran_integer_t *PE_size,                           \
+                  int32_t *pWrk,                                        \
+                  fortran_integer_t *pSync)                             \
+    {                                                                   \
+        long *pSync_c;                                                  \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size); \
+        SHMEM_ERR_CHECK_NON_NEGATIVE(*nreduce);                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE) * *nreduce);     \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof(TYPE) * *nreduce);     \
+        SHMEM_ERR_CHECK_SYMMETRIC(pWrk, sizeof(TYPE) *                  \
+                                  MAX(*nreduce/2 + 1, SHMEM_REDUCE_MIN_WRKDATA_SIZE)); \
+        SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_REDUCE_SYNC_SIZE); \
+                                                                        \
+        shmem_internal_assert(sizeof(TYPE) == SIZE);                    \
+                                                                        \
+        /* SHMEM_REDUCE_SYNC_SIZE is defined to allow this cast */      \
+        pSync_c = (long*) pSync;                                        \
+                                                                        \
+        shmem_internal_op_to_all(target, source, *nreduce, SIZE,        \
+                                 *PE_start, *logPE_stride, *PE_size,    \
+                                 pWrk, pSync_c, IOP, ITYPE);            \
+    }
+
+define(`SHMEM_WRAP_TO_ALL',
+`SHMEM_DEF_TO_ALL(FC_FUNC_(SH_DOWNCASE(shmem_$1_$5_to_all), SH_UPCASE(SHMEM_$1_$5_to_all)),
+                 $2, $3, $4, $6)')dnl
+
+SHMEM_BIND_F_COLL_INTS(`SHMEM_WRAP_TO_ALL', `and', `SHM_INTERNAL_BAND')
+SHMEM_BIND_F_COLL_INTS(`SHMEM_WRAP_TO_ALL', `or', `SHM_INTERNAL_BOR')
+SHMEM_BIND_F_COLL_INTS(`SHMEM_WRAP_TO_ALL', `xor', `SHM_INTERNAL_BXOR')
+
+SHMEM_BIND_F_COLL_INTS(`SHMEM_WRAP_TO_ALL', `min', `SHM_INTERNAL_MIN')
+SHMEM_BIND_F_COLL_FLOATS(`SHMEM_WRAP_TO_ALL', `min', `SHM_INTERNAL_MIN')
+SHMEM_BIND_F_COLL_INTS(`SHMEM_WRAP_TO_ALL', `max', `SHM_INTERNAL_MAX')
+SHMEM_BIND_F_COLL_FLOATS(`SHMEM_WRAP_TO_ALL', `max', `SHM_INTERNAL_MAX')
+
+SHMEM_BIND_F_COLL_INTS(`SHMEM_WRAP_TO_ALL', `sum', `SHM_INTERNAL_SUM')
+SHMEM_BIND_F_COLL_FLOATS(`SHMEM_WRAP_TO_ALL', `sum', `SHM_INTERNAL_SUM')
+SHMEM_BIND_F_COLL_COMPS(`SHMEM_WRAP_TO_ALL', `sum', `SHM_INTERNAL_SUM')
+
+SHMEM_BIND_F_COLL_INTS(`SHMEM_WRAP_TO_ALL', `prod', `SHM_INTERNAL_PROD')
+SHMEM_BIND_F_COLL_FLOATS(`SHMEM_WRAP_TO_ALL', `prod', `SHM_INTERNAL_PROD')
+SHMEM_BIND_F_COLL_COMPS(`SHMEM_WRAP_TO_ALL', `prod', `SHM_INTERNAL_PROD')
+
+#define SHMEM_DEF_COLLECT(FUNCNAME, SIZE)                               \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *target, void *source,                                \
+                  fortran_integer_t *nelems,                            \
+                  fortran_integer_t *PE_start,                          \
+                  fortran_integer_t *logPE_stride,                      \
+                  fortran_integer_t *PE_size,                           \
+                  fortran_integer_t *pSync);                            \
+    void FUNCNAME(void *target, void *source,                           \
+                  fortran_integer_t *nelems,                            \
+                  fortran_integer_t *PE_start,                          \
+                  fortran_integer_t *logPE_stride,                      \
+                  fortran_integer_t *PE_size,                           \
+                  fortran_integer_t *pSync)                             \
+    {                                                                   \
+        long *pSync_c;                                                  \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size); \
+        SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);                          \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, *nelems * SIZE);              \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, *nelems * SIZE);              \
+        SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_COLLECT_SYNC_SIZE); \
+                                                                        \
+        /* SHMEM_COLLECT_SYNC_SIZE is defined to allow this cast */     \
+        pSync_c = (long*) pSync;                                        \
+                                                                        \
+        shmem_internal_collect(target, source, *nelems * SIZE, *PE_start, \
+                               *logPE_stride, *PE_size, pSync_c);       \
+    }
+
+define(`SHMEM_WRAP_COLLECT',
+`SHMEM_DEF_COLLECT(FC_FUNC_(SH_DOWNCASE(shmem_collect$1), SH_UPCASE(SHMEM_COLLECT$1)), $2)')dnl
+
+SHMEM_BIND_F_COLL_SIZES(`SHMEM_WRAP_COLLECT')
+
+#define SHMEM_DEF_FCOLLECT(FUNCNAME, SIZE)                              \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *target, void *source,                                \
+                  fortran_integer_t *nelems,                            \
+                  fortran_integer_t *PE_start,                          \
+                  fortran_integer_t *logPE_stride,                      \
+                  fortran_integer_t *PE_size,                           \
+                  fortran_integer_t *pSync);                            \
+    void FUNCNAME(void *target, void *source,                           \
+                  fortran_integer_t *nelems,                            \
+                  fortran_integer_t *PE_start,                          \
+                  fortran_integer_t *logPE_stride,                      \
+                  fortran_integer_t *PE_size,                           \
+                  fortran_integer_t *pSync)                             \
+    {                                                                   \
+        long *pSync_c;                                                  \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size); \
+        SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);                          \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, *nelems * SIZE);              \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, *nelems * SIZE);              \
+        SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_COLLECT_SYNC_SIZE); \
+                                                                        \
+        /* SHMEM_FCOLLECT_SYNC_SIZE is defined to allow this cast */    \
+        pSync_c = (long*) pSync;                                        \
+                                                                        \
+        shmem_internal_fcollect(target, source, *nelems * SIZE, *PE_start, \
+                               *logPE_stride, *PE_size, pSync_c);       \
+    }
+
+define(`SHMEM_WRAP_FCOLLECT',
+`SHMEM_DEF_FCOLLECT(FC_FUNC_(SH_DOWNCASE(shmem_fcollect$1), SH_UPCASE(SHMEM_FCOLLECT$1)), $2)')dnl
+
+SHMEM_BIND_F_COLL_SIZES(`SHMEM_WRAP_FCOLLECT')
+
+#define SHMEM_DEF_BROADCAST(FUNCNAME, SIZE)                             \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *target, void *source,                                \
+                  fortran_integer_t *nelems,                            \
+                  fortran_integer_t *PE_root,                           \
+                  fortran_integer_t *PE_start,                          \
+                  fortran_integer_t *logPE_stride,                      \
+                  fortran_integer_t *PE_size,                           \
+                  fortran_integer_t *pSync);                            \
+    void FUNCNAME(void *target, void *source,                           \
+                  fortran_integer_t *nelems,                            \
+                  fortran_integer_t *PE_root,                           \
+                  fortran_integer_t *PE_start,                          \
+                  fortran_integer_t *logPE_stride,                      \
+                  fortran_integer_t *PE_size,                           \
+                  fortran_integer_t *pSync)                             \
+    {                                                                   \
+        long *pSync_c;                                                  \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size); \
+        SHMEM_ERR_CHECK_PE(*PE_root);                                   \
+        SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);                          \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, SIZE * *nelems);              \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, SIZE * *nelems);              \
+        SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_BCAST_SYNC_SIZE); \
+                                                                        \
+        /* SHMEM_BCAST_SYNC_SIZE is defined to allow this cast */       \
+        pSync_c = (long*) pSync;                                        \
+                                                                        \
+        shmem_internal_bcast(target, source, *nelems * SIZE,            \
+                         *PE_root, *PE_start, *logPE_stride, *PE_size,  \
+                         pSync_c, 1);                                   \
+    }
+
+define(`SHMEM_WRAP_BROADCAST',
+`SHMEM_DEF_BROADCAST(FC_FUNC_(SH_DOWNCASE(shmem_broadcast$1), SH_UPCASE(SHMEM_BROADCAST$1)), $2)')dnl
+
+SHMEM_BIND_F_COLL_SIZES(`SHMEM_WRAP_BROADCAST')
+
+#define FC_SHMEM_ALLTOALL32 FC_FUNC_(shmem_alltoall32, SHMEM_ALLTOALL32)
+void SHMEM_FUNCTION_ATTRIBUTES
+FC_SHMEM_ALLTOALL32(void *target,
+                    void *source,
+                    fortran_integer_t *nelems,
+                    fortran_integer_t *PE_start,
+                    fortran_integer_t *logPE_stride,
+                    fortran_integer_t *PE_size,
+                    fortran_integer_t *pSync);
+void
+FC_SHMEM_ALLTOALL32(void *target,
+                    void *source,
+                    fortran_integer_t *nelems,
+                    fortran_integer_t *PE_start,
+                    fortran_integer_t *logPE_stride,
+                    fortran_integer_t *PE_size,
+                    fortran_integer_t *pSync)
+{
+    long *pSync_c;
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, *nelems * 4);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, *nelems * 4);
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_ALLTOALL_SYNC_SIZE);
+
+    /* SHMEM_ALLTOALL_SYNC_SIZE is defined to allow this cast */
+    pSync_c = (long*) pSync;
+
+    shmem_internal_alltoall(target, source, *nelems * 4, *PE_start,
+                            *logPE_stride, *PE_size, pSync_c);
+}
+
+
+#define FC_SHMEM_ALLTOALL64 FC_FUNC_(shmem_alltoall64, SHMEM_ALLTOALL64)
+void SHMEM_FUNCTION_ATTRIBUTES
+FC_SHMEM_ALLTOALL64(void *target,
+                    void *source,
+                    fortran_integer_t *nelems,
+                    fortran_integer_t *PE_start,
+                    fortran_integer_t *logPE_stride,
+                    fortran_integer_t *PE_size,
+                    fortran_integer_t *pSync);
+void
+FC_SHMEM_ALLTOALL64(void *target,
+                    void *source,
+                    fortran_integer_t *nelems,
+                    fortran_integer_t *PE_start,
+                    fortran_integer_t *logPE_stride,
+                    fortran_integer_t *PE_size,
+                    fortran_integer_t *pSync)
+{
+    long *pSync_c;
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, *nelems * 8);
+    SHMEM_ERR_CHECK_SYMMETRIC(source, *nelems * 8);
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_ALLTOALL_SYNC_SIZE);
+
+    /* SHMEM_ALLTOALL_SYNC_SIZE is defined to allow this cast */
+    pSync_c = (long*) pSync;
+
+    shmem_internal_alltoall(target, source, *nelems * 8, *PE_start,
+                            *logPE_stride, *PE_size, pSync_c);
+}
+
+
+#define FC_SHMEM_ALLTOALLS32 FC_FUNC_(shmem_alltoalls32, SHMEM_ALLTOALLS32)
+void SHMEM_FUNCTION_ATTRIBUTES
+FC_SHMEM_ALLTOALLS32(void *target,
+                     void *source,
+                     fortran_integer_t *dst,
+                     fortran_integer_t *sst,
+                     fortran_integer_t *nelems,
+                     fortran_integer_t *PE_start,
+                     fortran_integer_t *logPE_stride,
+                     fortran_integer_t *PE_size,
+                     fortran_integer_t *pSync);
+void
+FC_SHMEM_ALLTOALLS32(void *target,
+                     void *source,
+                     fortran_integer_t *dst,
+                     fortran_integer_t *sst,
+                     fortran_integer_t *nelems,
+                     fortran_integer_t *PE_start,
+                     fortran_integer_t *logPE_stride,
+                     fortran_integer_t *PE_size,
+                     fortran_integer_t *pSync)
+{
+    long *pSync_c;
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_POSITIVE(*sst);
+    SHMEM_ERR_CHECK_POSITIVE(*dst);
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, 4 * ((*nelems-1) * *dst + 1));
+    SHMEM_ERR_CHECK_SYMMETRIC(source, 4 * ((*nelems-1) * *sst + 1));
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_ALLTOALL_SYNC_SIZE);
+
+    /* SHMEM_ALLTOALLS_SYNC_SIZE is defined to allow this cast */
+    pSync_c = (long*) pSync;
+
+    shmem_internal_alltoalls(target, source, *dst, *sst, 4, *nelems,
+                             *PE_start, *logPE_stride, *PE_size, pSync_c);
+}
+
+
+#define FC_SHMEM_ALLTOALLS64 FC_FUNC_(shmem_alltoalls64, SHMEM_ALLTOALLS64)
+void SHMEM_FUNCTION_ATTRIBUTES
+FC_SHMEM_ALLTOALLS64(void *target,
+                     void *source,
+                     fortran_integer_t *dst,
+                     fortran_integer_t *sst,
+                     fortran_integer_t *nelems,
+                     fortran_integer_t *PE_start,
+                     fortran_integer_t *logPE_stride,
+                     fortran_integer_t *PE_size,
+                     fortran_integer_t *pSync);
+void
+FC_SHMEM_ALLTOALLS64(void *target,
+                     void *source,
+                     fortran_integer_t *dst,
+                     fortran_integer_t *sst,
+                     fortran_integer_t *nelems,
+                     fortran_integer_t *PE_start,
+                     fortran_integer_t *logPE_stride,
+                     fortran_integer_t *PE_size,
+                     fortran_integer_t *pSync)
+{
+    long *pSync_c;
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_POSITIVE(*sst);
+    SHMEM_ERR_CHECK_POSITIVE(*dst);
+    SHMEM_ERR_CHECK_ACTIVE_SET(*PE_start, *logPE_stride, *PE_size);
+    SHMEM_ERR_CHECK_NON_NEGATIVE(*nelems);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, 8 * ((*nelems-1) * *dst + 1));
+    SHMEM_ERR_CHECK_SYMMETRIC(source, 8 * ((*nelems-1) * *sst + 1));
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_ALLTOALL_SYNC_SIZE);
+
+    /* SHMEM_ALLTOALLS_SYNC_SIZE is defined to allow this cast */
+    pSync_c = (long*) pSync;
+
+    shmem_internal_alltoalls(target, source, *dst, *sst, 8, *nelems,
+                             *PE_start, *logPE_stride, *PE_size, pSync_c);
+}

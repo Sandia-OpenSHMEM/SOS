@@ -3,7 +3,10 @@
  * Copyright 2011 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
- * 
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
  * This file is part of the Sandia OpenSHMEM software package. For license
  * information, see the LICENSE file in the top level directory of the
  * distribution.
@@ -31,7 +34,7 @@
 
 #endif /* ENABLE_PROFILING */
 
-int 
+int SHMEM_FUNCTION_ATTRIBUTES
 shmem_pe_accessible(int pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -40,10 +43,11 @@ shmem_pe_accessible(int pe)
 }
 
 
-int
+int SHMEM_FUNCTION_ATTRIBUTES
 shmem_addr_accessible(const void *addr, int pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
 
     return shmem_internal_addr_accessible(addr, pe);
 }

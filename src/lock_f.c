@@ -3,7 +3,10 @@
  * Copyright 2011 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
- * 
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
  * This file is part of the Sandia OpenSHMEM software package. For license
  * information, see the LICENSE file in the top level directory of the
  * distribution.
@@ -27,33 +30,36 @@
 
 
 #define FC_SHMEM_CLEAR_LOCK FC_FUNC_(shmem_clear_lock, SHMEM_CLEAR_LOCK)
-void FC_SHMEM_CLEAR_LOCK(long *lockp);
+void SHMEM_FUNCTION_ATTRIBUTES FC_SHMEM_CLEAR_LOCK(long *lockp);
 void
 FC_SHMEM_CLEAR_LOCK(long *lockp)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_SYMMETRIC(lockp, sizeof(long));
 
     shmem_internal_clear_lock(lockp);
 }
 
 
 #define FC_SHMEM_SET_LOCK FC_FUNC_(shmem_set_lock, SHMEM_SET_LOCK)
-void FC_SHMEM_SET_LOCK(long *lockp);
+void SHMEM_FUNCTION_ATTRIBUTES FC_SHMEM_SET_LOCK(long *lockp);
 void
 FC_SHMEM_SET_LOCK(long *lockp)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_SYMMETRIC(lockp, sizeof(long));
 
     shmem_internal_set_lock(lockp);
 }
 
 
 #define FC_SHMEM_TEST_LOCK FC_FUNC_(shmem_test_lock, SHMEM_TEST_LOCK)
-fortran_integer_t FC_SHMEM_TEST_LOCK(long *lockp);
+fortran_integer_t SHMEM_FUNCTION_ATTRIBUTES FC_SHMEM_TEST_LOCK(long *lockp);
 fortran_integer_t
 FC_SHMEM_TEST_LOCK(long *lockp)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_SYMMETRIC(lockp, sizeof(long));
 
     return shmem_internal_test_lock(lockp);
 }

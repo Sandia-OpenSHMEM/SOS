@@ -2,6 +2,55 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.3.3
+------
+- Fixed dissemination barrier race that could lead to incorrect synchronization.
+- Improved collect and all-to-all collectives performance.
+- Improved error reporting and debugging output.
+- Added support for proposed bitwise atomics (see shmemx.h).
+- Added shmemx_pcontrol function to profiling interface extension (see shmemx.h).
+- Added symbol hiding support in SHMEM library.
+- Fixed symmetric heap corruption bug in GUPS benchmark (see test/apps/gups.c).
+- Added target-side measurement and asymmetric configuration support to
+  performance suite benchmarks.
+
+v1.3.2
+------
+- Improved support for proposed multithreading extension (see shmemx.h),
+  enabled at compile time via --enable-threads.
+- Enabled single-process, direct execution of SOS binaries with simple PMI.
+- Added argument error checking for all SHMEM routines, enabled at compile time
+  via --enable-error-checking.
+- Multiple build system improvements, including support for VPATH builds.
+- Added new C and Fortran bindings generator that generates all headers and
+  bindings, including profiling interfaces.
+- Added support for Fortran complex reductions API.
+- Updated Fortran bindings to use short (OpenSHMEM style) header by default.
+- Updated SHMEM_DEBUG output to include detailed build information.
+- Added --enable-completion-polling build option to poll in quiet/fence
+  operations rather than waiting.  This can improve performance for libfabric
+  providers that require software-generated progress.
+- Added --disable-bounce-buffers build option to disable bounce buffering by
+  default (i.e. set SHMEM_BOUNCE_SIZE to 0 by default).
+- Improved library path propagation (rpath) in compiler wrappers.
+- Improved PMI simple build and fixed integration of libpmi_simple library.
+- Update symmetric heap allocator to dlmalloc v2.8.6.
+- Update PMI-1 client library from MPICH.
+- Improved bandwidth efficiency and fixed bug in collect routines.
+- Fixed several bugs in tree-based collectives when using PE active sets.
+- Fixed several bugs in recursive-doubling reduction routine when using PE
+  active sets and when source and target buffers overlap.
+- Fixed synchronization bug in memory management routines.
+
+1.3.1
+-----
+- Support for allocating the symmetric heap using Linux huge pages.
+- Improved support for Cray XC platforms.
+- Improved support for variations in atomics support across OFI providers.
+- Initial support for thread safety in the OFI transport.
+- Fix several issues with C/C++ bindings and profiling interface.
+- Added new benchmarks, unit tests, and examples.
+
 1.3.0
 -----
 - Support for OpenSHMEM 1.3 specification, including nonblocking communication,

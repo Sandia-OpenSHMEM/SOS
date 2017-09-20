@@ -3,7 +3,10 @@
  * Copyright 2011 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
- * 
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
  * This file is part of the Sandia OpenSHMEM software package. For license
  * information, see the LICENSE file in the top level directory of the
  * distribution.
@@ -41,7 +44,7 @@ struct shmem_free_list_t {
 };
 typedef struct shmem_free_list_t shmem_free_list_t;
 
-shmem_free_list_t* shmem_free_list_init(unsigned int element_size, 
+shmem_free_list_t* shmem_free_list_init(unsigned int element_size,
                                         shmem_free_list_item_init_fn_t init_fn);
 void shmem_free_list_destroy(shmem_free_list_t *fl);
 int shmem_free_list_more(shmem_free_list_t *fl);
@@ -76,7 +79,7 @@ void
 shmem_free_list_free(shmem_free_list_t *fl, void *data)
 {
     shmem_free_list_item_t *item = (shmem_free_list_item_t*) data;
-    
+
     SHMEM_MUTEX_LOCK(fl->lock);
     item->next = fl->head;
     fl->head = item;

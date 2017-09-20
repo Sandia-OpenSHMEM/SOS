@@ -4,7 +4,7 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2015 Intel Corporation. All rights reserved.
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -23,13 +23,6 @@
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
 #include "shmemx.h"
-
-extern void *shmem_internal_heap_base;
-extern long shmem_internal_heap_length;
-extern void *shmem_internal_data_base;
-extern long shmem_internal_data_length;
-extern int shmem_internal_heap_use_huge_pages;
-extern long shmem_internal_heap_huge_page_size;
 
 #ifdef USE_ON_NODE_COMMS
 extern char *shmem_internal_location_array;
@@ -59,6 +52,8 @@ shmem_internal_put_small(void *target, const void *source, size_t len, int pe)
 {
     int node_rank;
 
+    shmem_internal_assert(len > 0);
+
     if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
 #if USE_XPMEM
         shmem_transport_xpmem_put(target, source, len, pe, node_rank);
@@ -80,11 +75,13 @@ shmem_internal_put_nb(void *target, const void *source, size_t len, int pe,
 {
     int node_rank;
 
+    if (len == 0) return;
+
     if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
 #if USE_XPMEM
         shmem_transport_xpmem_put(target, source, len, pe, node_rank);
 #elif USE_CMA
-        if (len > shmem_transport_cma_put_max) {
+        if (len > shmem_internal_params.CMA_PUT_MAX) {
             shmem_transport_put_nb(target, source, len, pe, completion);
         } else {
             shmem_transport_cma_put(target, source, len, pe, node_rank);
@@ -103,11 +100,13 @@ shmem_internal_put_nbi(void *target, const void *source, size_t len, int pe)
 {
     int node_rank;
 
+    if (len == 0) return;
+
     if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
 #if USE_XPMEM
         shmem_transport_xpmem_put(target, source, len, pe, node_rank);
 #elif USE_CMA
-        if (len > shmem_transport_cma_put_max) {
+        if (len > shmem_internal_params.CMA_PUT_MAX) {
             shmem_transport_put_nbi(target, source, len, pe);
         } else {
             shmem_transport_cma_put(target, source, len, pe, node_rank);
@@ -147,11 +146,13 @@ shmem_internal_get(void *target, const void *source, size_t len, int pe)
 {
     int node_rank;
 
+    if (len == 0) return;
+
     if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
 #if USE_XPMEM
         shmem_transport_xpmem_get(target, source, len, pe, node_rank);
 #elif USE_CMA
-        if (len > shmem_transport_cma_get_max) {
+        if (len > shmem_internal_params.CMA_GET_MAX) {
             shmem_transport_get(target, source, len, pe);
         } else {
             shmem_transport_cma_get(target, source, len, pe, node_rank);
@@ -188,6 +189,8 @@ void
 shmem_internal_swap(void *target, void *source, void *dest, size_t len,
                     int pe, shm_internal_datatype_t datatype)
 {
+    shmem_internal_assert(len > 0);
+
     shmem_transport_swap(target, source, dest, len, pe, datatype);
 }
 
@@ -197,6 +200,8 @@ void
 shmem_internal_cswap(void *target, void *source, void *dest, void *operand, size_t len,
                     int pe, shm_internal_datatype_t datatype)
 {
+    shmem_internal_assert(len > 0);
+
     shmem_transport_cswap(target, source, dest, operand, len, pe, datatype);
 }
 
@@ -206,6 +211,8 @@ void
 shmem_internal_mswap(void *target, void *source, void *dest, void *mask, size_t len,
                     int pe, shm_internal_datatype_t datatype)
 {
+    shmem_internal_assert(len > 0);
+
     shmem_transport_mswap(target, source, dest, mask, len, pe, datatype);
 }
 
@@ -213,8 +220,11 @@ shmem_internal_mswap(void *target, void *source, void *dest, void *mask, size_t 
 static inline
 void
 shmem_internal_atomic_small(void *target, const void *source, size_t len,
-			   int pe, shm_internal_op_t op, shm_internal_datatype_t datatype)
+                            int pe, shm_internal_op_t op,
+                            shm_internal_datatype_t datatype)
 {
+    shmem_internal_assert(len > 0);
+
     shmem_transport_atomic_small(target, source, len, pe, op, datatype);
 }
 
@@ -224,6 +234,8 @@ void
 shmem_internal_atomic_fetch(void *target, const void *source, size_t len,
                             int pe, shm_internal_datatype_t datatype)
 {
+    shmem_internal_assert(len > 0);
+
     shmem_transport_atomic_fetch(target, source, len, pe, datatype);
 }
 
@@ -233,6 +245,8 @@ void
 shmem_internal_atomic_set(void *target, const void *source, size_t len,
                           int pe, shm_internal_datatype_t datatype)
 {
+    shmem_internal_assert(len > 0);
+
     shmem_transport_atomic_set(target, source, len, pe, datatype);
 }
 
@@ -240,9 +254,11 @@ shmem_internal_atomic_set(void *target, const void *source, size_t len,
 static inline
 void
 shmem_internal_atomic_nb(void *target, const void *source, size_t len,
-	              int pe, shm_internal_op_t op, shm_internal_datatype_t datatype,
-                      long *completion)
+                         int pe, shm_internal_op_t op,
+                         shm_internal_datatype_t datatype, long *completion)
 {
+    shmem_internal_assert(len > 0);
+
     shmem_transport_atomic_nb(target, source, len, pe, op, datatype, completion);
 }
 
@@ -251,8 +267,11 @@ shmem_internal_atomic_nb(void *target, const void *source, size_t len,
 static inline
 void
 shmem_internal_fetch_atomic(void *target, void *source, void *dest, size_t len,
-			    int pe, shm_internal_op_t op, shm_internal_datatype_t datatype)
+                            int pe, shm_internal_op_t op,
+                            shm_internal_datatype_t datatype)
 {
+    shmem_internal_assert(len > 0);
+
     shmem_transport_fetch_atomic(target, source, dest, len, pe, op, datatype);
 }
 

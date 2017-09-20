@@ -1,13 +1,34 @@
 /*
-*
-*  Copyright (c) 2015 Intel Corporation. All rights reserved.
-*  This software is available to you under the BSD license. For
-*  license information, see the LICENSE file in the top level directory.
-*
-*/
+ *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  This software is available to you under the BSD license below:
+ *
+ *      Redistribution and use in source and binary forms, with or
+ *      without modification, are permitted provided that the following
+ *      conditions are met:
+ *
+ *      - Redistributions of source code must retain the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer.
+ *
+ *      - Redistributions in binary form must reproduce the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer in the documentation and/or other materials
+ *        provided with the distribution.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 #include <common.h>
 
+#define PUT_IO_NODE 1
+#define GET_IO_NODE !PUT_IO_NODE
 #define INIT_VALUE 1
 
 #define MAX_MSG_SIZE (1<<23)
@@ -98,7 +119,9 @@ void static inline command_line_arg_check(int argc, char *argv[],
                     "[-n trials (must be greater than 20)] "\
                     "[-v (validate results)]\n");
         }
+#ifndef VERSION_1_0
         shmem_finalize();
+#endif
         exit (-1);
     }
 }
@@ -108,7 +131,9 @@ void static inline only_two_PEs_check(int my_node, int num_pes) {
         if (my_node == 0) {
             fprintf(stderr, "2-nodes only test\n");
         }
+#ifndef VERSION_1_0
         shmem_finalize();
+#endif
         exit(77);
     }
 }
@@ -130,13 +155,6 @@ extern void streaming_latency(int len, perf_metrics_t *data);
 void static inline  multi_size_latency(perf_metrics_t data, char *argv[]) {
     int len;
     int partner_pe = partner_node(data.my_node);
-
-    if (data.my_node == 0) {
-       printf("\nStreaming results for %d trials each of length %d through %d in"\
-              " powers of %d\n", data.trials, data.start_len,
-              data.max_len, data.inc);
-       print_results_header();
-    }
 
     for (len = data.start_len; len <= data.max_len; len *= data.inc) {
 
@@ -161,7 +179,11 @@ void static inline  multi_size_latency(perf_metrics_t data, char *argv[]) {
 
 void static inline latency_init_resources(int argc, char *argv[],
                                           perf_metrics_t *data) {
+#ifndef VERSION_1_0
     shmem_init();
+#else
+    start_pes(0);
+#endif
 
     data_init(data);
 
@@ -175,16 +197,26 @@ void static inline latency_init_resources(int argc, char *argv[],
     data->dest = aligned_buffer_alloc(data->max_len);
     init_array(data->dest, data->max_len, data->my_node);
 
+#ifndef VERSION_1_0
     data->target = shmem_malloc(sizeof(long));
+#else
+    data->target = shmalloc(sizeof(long));
+#endif
 }
 
 void static inline latency_free_resources(perf_metrics_t *data) {
     shmem_barrier_all();
 
+#ifndef VERSION_1_0
     shmem_free(data->target);
+#else
+    shfree(data->target);
+#endif
     aligned_buffer_free(data->src);
     aligned_buffer_free(data->dest);
+#ifndef VERSION_1_0
     shmem_finalize();
+#endif
 }
 
 void static inline latency_main(int argc, char *argv[]) {

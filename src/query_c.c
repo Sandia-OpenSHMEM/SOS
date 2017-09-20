@@ -3,7 +3,10 @@
  * Copyright 2011 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
- * 
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
  * This file is part of the Sandia OpenSHMEM software package. For license
  * information, see the LICENSE file in the top level directory of the
  * distribution.
@@ -14,7 +17,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/time.h>
 
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
@@ -39,10 +41,13 @@
 #pragma weak shmemx_wtime = pshmemx_wtime
 #define shmemx_wtime pshmemx_wtime
 
+#pragma weak shmemx_pcontrol = pshmemx_pcontrol
+#define shmemx_pcontrol pshmemx_pcontrol
+
 #endif /* ENABLE_PROFILING */
 
 
-int
+int SHMEM_FUNCTION_ATTRIBUTES
 _num_pes(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -51,7 +56,7 @@ _num_pes(void)
 }
 
 
-int
+int SHMEM_FUNCTION_ATTRIBUTES
 shmem_n_pes(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -60,7 +65,7 @@ shmem_n_pes(void)
 }
 
 
-int
+int SHMEM_FUNCTION_ATTRIBUTES
 _my_pe(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -69,7 +74,7 @@ _my_pe(void)
 }
 
 
-int
+int SHMEM_FUNCTION_ATTRIBUTES
 shmem_my_pe(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -78,23 +83,17 @@ shmem_my_pe(void)
 }
 
 
-double
+double SHMEM_FUNCTION_ATTRIBUTES
 shmemx_wtime(void)
 {
-    double wtime = 0.0;
-
     SHMEM_ERR_CHECK_INITIALIZED();
 
-#ifdef CLOCK_MONOTONIC
-    struct timespec tv;
-    clock_gettime(CLOCK_MONOTONIC, &tv);
-    wtime = tv.tv_sec;
-    wtime += (double)tv.tv_nsec / 1000000000.0;
-#else
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    wtime = tv.tv_sec;
-    wtime += (double)tv.tv_usec / 1000000.0;
-#endif
-    return wtime;
+    return shmem_internal_wtime();
+}
+
+
+void SHMEM_FUNCTION_ATTRIBUTES
+shmemx_pcontrol(int level, ...)
+{
+    return;
 }

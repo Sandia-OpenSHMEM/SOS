@@ -3,8 +3,8 @@
  * Copyright 2011 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
- * 
- * Copyright (c) 2015 Intel Corporation. All rights reserved.
+ *
+ * Copyright (c) 2016 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -25,7 +25,7 @@ static inline void
 shmem_internal_quiet(void)
 {
     int ret;
- 
+
     ret = shmem_transport_quiet();
     if (0 != ret) { RAISE_ERROR(ret); }
 
@@ -34,13 +34,13 @@ shmem_internal_quiet(void)
     if (0 != ret) { RAISE_ERROR(ret); }
 #endif
 }
- 
- 
+
+
 static inline void
 shmem_internal_fence(void)
 {
     int ret;
- 
+
     ret = shmem_transport_fence();
     if (0 != ret) { RAISE_ERROR(ret); }
 

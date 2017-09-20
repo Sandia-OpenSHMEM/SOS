@@ -1,4 +1,35 @@
 /*
+ * Copyright 2011 Sandia Corporation. Under the terms of Contract
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
+ * retains certain rights in this software.
+ *
+ *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  This software is available to you under the BSD license below:
+ *
+ *      Redistribution and use in source and binary forms, with or
+ *      without modification, are permitted provided that the following
+ *      conditions are met:
+ *
+ *      - Redistributions of source code must retain the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer.
+ *
+ *      - Redistributions in binary form must reproduce the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer in the documentation and/or other materials
+ *        provided with the distribution.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/*
  * (big get) each PE gets N elements (1 MB) from (my_pe()+1 mod num_pes()).
  */
 
@@ -26,11 +57,11 @@ static int
 atoi_scaled(char *s)
 {
     long val;
-    char *e; 
+    char *e;
 
     val = strtol(s,&e,0);
     if (e == NULL || *e =='\0')
-        return (int)val; 
+        return (int)val;
 
     if (*e == 'k' || *e == 'K')
         val *= 1024;
@@ -81,40 +112,40 @@ main(int argc, char **argv)
     while ((i = getopt (argc, argv, "hve:l:st")) != EOF) {
         switch (i)
         {
-          case 'v':
-              Verbose++;
-              break;
-          case 'e':
-              if ((elements = atoi_scaled(optarg)) <= 0) {
-                  fprintf(stderr,"ERR: Bad elements count %d\n",elements);
-                  shmem_finalize();
-                  return 1;
-              }
-              break;
-          case 'l':
-              if ((loops = atoi_scaled(optarg)) <= 0) {
-                  fprintf(stderr,"ERR: Bad loop count %d\n",loops);
-                  shmem_finalize();
-                  return 1;
-              }
-              break;
-          case 's':
-              Sync++;
-              break;
-          case 't':
-              Track++;
-              break;
-          case 'h':
-              if (me == 0)
-                  usage(pgm);
-              return 0;
-          default:
-              if (me == 0) {
-                  fprintf(stderr,"%s: unknown switch '-%c'?\n",pgm,i);
-                  usage(pgm);
-              }
-              shmem_finalize();
-              return 1;
+            case 'v':
+                Verbose++;
+                break;
+            case 'e':
+                if ((elements = atoi_scaled(optarg)) <= 0) {
+                    fprintf(stderr,"ERR: Bad elements count %d\n",elements);
+                    shmem_finalize();
+                    return 1;
+                }
+                break;
+            case 'l':
+                if ((loops = atoi_scaled(optarg)) <= 0) {
+                    fprintf(stderr,"ERR: Bad loop count %d\n",loops);
+                    shmem_finalize();
+                    return 1;
+                }
+                break;
+            case 's':
+                Sync++;
+                break;
+            case 't':
+                Track++;
+                break;
+            case 'h':
+                if (me == 0)
+                    usage(pgm);
+                return 0;
+            default:
+                if (me == 0) {
+                    fprintf(stderr,"%s: unknown switch '-%c'?\n",pgm,i);
+                    usage(pgm);
+                }
+                shmem_finalize();
+                return 1;
         }
     }
 
@@ -122,55 +153,55 @@ main(int argc, char **argv)
 
     total_time = (double *) shmem_malloc( npes * sizeof(double) );
     if (!total_time) {
-      fprintf(stderr,"ERR: bad total_time shmem_malloc(%ld)\n",
-              (elements * sizeof(double)));
-      shmem_global_exit(1);
+        fprintf(stderr,"ERR: bad total_time shmem_malloc(%ld)\n",
+                (elements * sizeof(double)));
+        shmem_global_exit(1);
     }
 
     Source = (int *) shmem_malloc( elements * sizeof(*Source) );
     if (!Source) {
-      fprintf(stderr,"ERR: bad Source shmem_malloc(%ld)\n",
-              (elements * sizeof(*Target)));
-      shmem_free(total_time);
-      shmem_global_exit(1);
+        fprintf(stderr,"ERR: bad Source shmem_malloc(%ld)\n",
+                (elements * sizeof(*Target)));
+        shmem_free(total_time);
+        shmem_global_exit(1);
     }
 
     Target = (int *) shmem_malloc( elements * sizeof(*Target) );
     if (!Target) {
-      fprintf(stderr,"ERR: bad Target shmem_malloc(%ld)\n",
-              (elements * sizeof(*Target)));
-      shmem_free(Source);
-      shmem_free(total_time);
-      shmem_global_exit(1);
+        fprintf(stderr,"ERR: bad Target shmem_malloc(%ld)\n",
+                (elements * sizeof(*Target)));
+        shmem_free(Source);
+        shmem_free(total_time);
+        shmem_global_exit(1);
     }
 
     for (i = 0; i < elements; i++) {
-      Target[i] = -90;
-      Source[i] = i + 1;
+        Target[i] = -90;
+        Source[i] = i + 1;
     }
 
     bytes = loops * sizeof(int) * elements;
 
     if (Verbose && me==0)
-      fprintf(stderr, "%s: INFO - %d loops, get %d (int) elements from PE+1\n",
-                        pgm, loops, elements);
+        fprintf(stderr, "%s: INFO - %d loops, get %d (int) elements from PE+1\n",
+                pgm, loops, elements);
 
     shmem_barrier_all();
 
     for(i=0; i < loops; i++) {
 
-		start_time = shmemx_wtime();
+        start_time = shmemx_wtime();
 
-		shmem_int_get( Target, Source, elements, target_pe );
+        shmem_int_get( Target, Source, elements, target_pe );
 
-		time_taken += shmemx_wtime() - start_time;
+        time_taken += shmemx_wtime() - start_time;
 
-		if (me==0) {
-		  if ( Track && i > 0 && ((i % 200) == 0))
-		    fprintf(stderr,".%d",i);
-		}
-		if (Sync)
-		    shmem_barrier_all();
+        if (me==0) {
+            if ( Track && i > 0 && ((i % 200) == 0))
+                fprintf(stderr,".%d",i);
+        }
+        if (Sync)
+            shmem_barrier_all();
     }
 
     // collect time per node elapsed time.
@@ -179,15 +210,15 @@ main(int argc, char **argv)
     shmem_barrier_all();
 
     for (i = 0; i < elements; i++) {
-      if (Target[i] != i + 1) {
-          printf("%d: Error Target[%d] = %d, expected %d\n",
-                 me, i, Target[i], i + 1);
-          shmem_global_exit(1);
-      }
+        if (Target[i] != i + 1) {
+            printf("%d: Error Target[%d] = %d, expected %d\n",
+                   me, i, Target[i], i + 1);
+            shmem_global_exit(1);
+        }
     }
 
     if ( Track && me == 0 )
-		fprintf(stderr,"\n");
+        fprintf(stderr,"\n");
 
     if (Verbose && me == 0) {
         double rate,secs;
@@ -198,7 +229,7 @@ main(int argc, char **argv)
         secs /= (double)npes;
         rate = ((double)bytes/(1024.0*1024.0)) / secs;
         printf("%s: ave %5.3f MB/sec (bytes %ld secs %5.3f)\n",
-                pgm, rate, bytes, secs);
+               pgm, rate, bytes, secs);
     }
 
     shmem_free(total_time);

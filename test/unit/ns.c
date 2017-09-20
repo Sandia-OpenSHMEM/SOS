@@ -1,3 +1,34 @@
+/*
+ * Copyright 2011 Sandia Corporation. Under the terms of Contract
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
+ * retains certain rights in this software.
+ *
+ *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  This software is available to you under the BSD license below:
+ *
+ *      Redistribution and use in source and binary forms, with or
+ *      without modification, are permitted provided that the following
+ *      conditions are met:
+ *
+ *      - Redistributions of source code must retain the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer.
+ *
+ *      - Redistributions in binary form must reproduce the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer in the documentation and/or other materials
+ *        provided with the distribution.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 
 /*
  * Neighbor swap:
@@ -23,14 +54,14 @@ int
 main(int argc, char *argv[])
 {
     char *pgm;
-	int l, laps = DFLT_LAPS;
-	long *target;
-	int me, npes;
-	long swapped_val, new_val;
+    int l, laps = DFLT_LAPS;
+    long *target;
+    int me, npes;
+    long swapped_val, new_val;
 
-	shmem_init();
-	me = shmem_my_pe();
-	npes = shmem_n_pes();
+    shmem_init();
+    me = shmem_my_pe();
+    npes = shmem_n_pes();
 
     if ((pgm=strrchr(argv[0],'/')))
         pgm++;
@@ -64,34 +95,33 @@ main(int argc, char *argv[])
         }
     }
 
-    for(l=0; l < laps; l++) {
-
-    	target = (long *) shmem_malloc(sizeof (*target));
+    for (l=0; l < laps; l++) {
+        target = (long *) shmem_malloc(sizeof (*target));
         if (!target) {
             fprintf(stderr,"[%d] shmem_malloc() failed?\n",me);
             shmem_global_exit(1);
         }
 
-	    *target = me;
-	    new_val = me;
+        *target = me;
+        new_val = me;
 
-	    shmem_barrier_all();
+        shmem_barrier_all();
 
-	    if (me & 1) {
-	        swapped_val = shmem_long_swap (target, new_val, (me + 1) % npes);
-	        if (Verbose > 1)
+        if (me & 1) {
+            swapped_val = shmem_long_swap (target, new_val, (me + 1) % npes);
+            if (Verbose > 1)
                 printf("[%d] target %ld, swapped %ld\n",
-                        me, *target, swapped_val);
-	    }
-	    shmem_barrier_all();
-	    shmem_free (target);
-	    if (Verbose == 1 && me == 0)  fprintf(stderr,".");
+                       me, *target, swapped_val);
+        }
+        shmem_barrier_all();
+        shmem_free (target);
+        if (Verbose == 1 && me == 0)  fprintf(stderr,".");
     }
-	if (Verbose && me == 0)  fprintf(stderr,"\n");
+    if (Verbose && me == 0)  fprintf(stderr,"\n");
 
-	shmem_finalize();
+    shmem_finalize();
 
-	return 0;
+    return 0;
 }
 
 
@@ -99,11 +129,11 @@ static int
 atoi_scaled(char *s)
 {
     long val;
-    char *e; 
+    char *e;
 
     val = strtol(s,&e,0);
     if (e == NULL || *e =='\0')
-        return (int)val; 
+        return (int)val;
 
     if (*e == 'k' || *e == 'K')
         val *= 1024;
