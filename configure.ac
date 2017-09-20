@@ -369,6 +369,16 @@ AC_MSG_CHECKING([size of SHMEM_ALLTOALLS_SYNC_SIZE])
     C_ALLTOALLS_SYNC_SIZE=$C_BARRIER_SYNC_SIZE
     AC_SUBST(C_ALLTOALLS_SYNC_SIZE)
 AC_MSG_RESULT([$C_ALLTOALLS_SYNC_SIZE])
+AC_MSG_CHECKING([size of SHMEM_SYNC_SIZE])
+    C_SYNC_SIZE=`$PERL -e "use List::Util qw (max); print max((       \
+                                              $C_BCAST_SYNC_SIZE,     \
+                                              $C_REDUCE_SYNC_SIZE,    \
+                                              $C_BARRIER_SYNC_SIZE,   \
+                                              $C_COLLECT_SYNC_SIZE,   \
+                                              $C_ALLTOALL_SYNC_SIZE,  \
+                                              $C_ALLTOALLS_SYNC_SIZE));"`
+    AC_SUBST(C_SYNC_SIZE)
+AC_MSG_RESULT([$C_SYNC_SIZE])
 AC_MSG_CHECKING([size of SHMEM_REDUCE_MIN_WRKDATA_SIZE])
     C_REDUCE_MIN_WRKDATA_SIZE=1
     AC_SUBST(C_REDUCE_MIN_WRKDATA_SIZE)
