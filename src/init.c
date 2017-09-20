@@ -133,6 +133,8 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     int cma_initialized       = 0;
 #endif
 
+    /* TODO: Initialize atomics? */
+
     /* set up threading */
     SHMEM_MUTEX_INIT(shmem_internal_mutex_alloc);
 #ifdef ENABLE_THREADS

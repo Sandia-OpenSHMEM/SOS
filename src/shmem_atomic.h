@@ -74,4 +74,101 @@ shmem_spinlock_fini(shmem_spinlock_t *lock)
     shmem_internal_assertp(lock->enter == lock->exit);
 }
 
+/* Atomics */
+#  ifdef ENABLE_THREADS
+
+#    ifdef __STDC_NO_ATOMICS__
+typedef uint64_t shmem_atomic_uint64_t;
+
+static inline
+void
+shmem_internal_atomic_init(shmem_atomic_uint64_t *val) {
+    __sync_lock_test_and_set(val, 0);
+    return;
+}
+
+static inline
+shmem_atomic_uint64_t
+shmem_internal_atomic_read(shmem_atomic_uint64_t *val) {
+    return __sync_fetch_and_add(val, 0);
+}
+
+static inline
+void
+shmem_internal_atomic_inc(shmem_atomic_uint64_t *val) {
+    __sync_fetch_and_add(val, 1);
+    return;
+}
+
+static inline
+void
+shmem_internal_atomic_dec(shmem_atomic_uint64_t *val) {
+    __sync_fetch_and_sub(val, 1);
+    return;
+}
+
+#    else
+#include <stdatomic.h>
+
+typedef _Atomic uint64_t shmem_atomic_uint64_t;
+
+static inline
+void
+shmem_internal_atomic_init(shmem_atomic_uint64_t *val) {
+    atomic_store(val, 0);
+    return;
+}
+
+static inline
+shmem_atomic_uint64_t
+shmem_internal_atomic_read(shmem_atomic_uint64_t *val) {
+    return atomic_load(val);
+}
+
+static inline
+void
+shmem_internal_atomic_inc(shmem_atomic_uint64_t *val) {
+    atomic_fetch_add(val, 1);
+    return;
+}
+
+static inline
+void
+shmem_internal_atomic_dec(shmem_atomic_uint64_t *val) {
+    atomic_fetch_sub(val, 1);
+    return;
+}
+#    endif
+
+#  else /* !define( ENABLE_THREADS ) */
+typedef uint64_t shmem_atomic_uint64_t;
+
+static inline
+void
+shmem_internal_atomic_init(shmem_atomic_uint64_t *val) {
+    *val = 0;
+    return;
+}
+
+static inline
+shmem_atomic_uint64_t
+shmem_internal_atomic_read(shmem_atomic_uint64_t *val) {
+    return *val;
+}
+
+static inline
+void
+shmem_internal_atomic_inc(shmem_atomic_uint64_t *val) {
+    *val = *val+1;
+    return;
+}
+
+static inline
+void
+shmem_internal_atomic_dec(shmem_atomic_uint64_t *val) {
+    *val = *val-1;
+    return;
+}
+#  endif /* ENABLE_THREADS */
+
 #endif
