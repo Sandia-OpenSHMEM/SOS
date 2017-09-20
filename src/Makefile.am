@@ -11,7 +11,7 @@
 # information, see the LICENSE file in the top level directory of the
 # distribution.
 
-AM_CPPFLAGS = -I$(top_builddir)/mpp
+AM_CPPFLAGS = -I$(top_builddir)/mpp -I$(top_srcdir)/openpa/src -I$(top_builddir)/openpa/src
 
 GEN_BINDINGS = \
 	atomic_c.c \
