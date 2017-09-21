@@ -1167,6 +1167,10 @@ int shmem_transport_init(void)
 
     fi_freeinfo(info.fabrics);
 
+    shmem_internal_atomic_init(&shmem_transport_ofi_pending_put_counter);
+    shmem_internal_atomic_init(&shmem_transport_ofi_pending_get_counter);
+    shmem_internal_atomic_init(&shmem_transport_ofi_pending_cq_count);
+
     return 0;
 }
 

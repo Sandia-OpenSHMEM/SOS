@@ -300,7 +300,7 @@ void shmem_transport_put_quiet(void)
         fail = fi_cntr_readerr(shmem_transport_ofi_put_cntrfd);
 
         if (success < \
-            shmem_internal_atomic_inc(&shmem_transport_ofi_pending_put_counter) && \
+            shmem_internal_atomic_read(&shmem_transport_ofi_pending_put_counter) && \
             fail == 0) {
             SPINLOCK_BODY();
         }

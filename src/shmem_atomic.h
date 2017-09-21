@@ -78,8 +78,8 @@ shmem_spinlock_fini(shmem_spinlock_t *lock)
 #  ifdef ENABLE_THREADS
 
 #    if (defined(__STDC_NO_ATOMICS__) || !defined(HAVE_STD_ATOMICS_HEADER))
-typedef uint64_t shmem_atomic_uint64_t;
 
+typedef uint64_t shmem_atomic_uint64_t;
 
 static inline
 void
@@ -109,6 +109,7 @@ shmem_internal_atomic_dec(shmem_atomic_uint64_t *val) {
 }
 
 #    else
+
 #include <stdatomic.h>
 
 typedef _Atomic uint64_t shmem_atomic_uint64_t;
@@ -142,6 +143,7 @@ shmem_internal_atomic_dec(shmem_atomic_uint64_t *val) {
 #    endif
 
 #  else /* !define( ENABLE_THREADS ) */
+
 typedef uint64_t shmem_atomic_uint64_t;
 
 static inline
