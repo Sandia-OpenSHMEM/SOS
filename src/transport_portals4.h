@@ -243,7 +243,7 @@ typedef struct shmem_transport_ct_t shmem_transport_ct_t;
 #define PORTALS4_TOTAL_DATA_ORDERING shmem_transport_portals4_total_data_ordering
 #endif
 
-int shmem_transport_init(long eager_size);
+int shmem_transport_init(void);
 
 int shmem_transport_startup(void);
 

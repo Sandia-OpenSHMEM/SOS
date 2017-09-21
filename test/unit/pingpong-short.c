@@ -278,8 +278,6 @@ main(int argc, char* argv[])
                                 l,k,work[k],(DataType)l);
                         failures++;
                     }
-                    assert(wp[k] == l);
-                    break;
                 }
                 if (failures)
                     break;

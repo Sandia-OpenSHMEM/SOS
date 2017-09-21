@@ -1,0 +1,91 @@
+.TH SHMEM_INFO_GET_VERSION 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_info_get_version \- 
+Returns the major and minor version of the library implementation.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B void
+.B shmem_info_get_version(int
+.IB "*major" ,
+.B int
+.I *minor
+.B );
+
+
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.SS Fortran:
+
+.nf
+
+.BR "INTEGER " "MAJOR, MINOR"
+SHMEM_INFO_GET_VERSION(MAJOR, MINOR)   
+
+.fi
+
+./ sectionEnd
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "OUT " -
+.I major
+- The major version of the OpenSHMEM standard in use.
+
+
+.BR "OUT " -
+.I minor
+- The minor version of the OpenSHMEM standard in use.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+This routine returns the major and minor version of the OpenSHMEM standard
+in use. For a given library implementation, the major and minor version
+returned by these calls are consistent with the library constants
+SHMEM\_MAJOR\_VERSION and SHMEM\_MINOR\_VERSION.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+None.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+None. 
+
+./ sectionEnd
+
+
+
+

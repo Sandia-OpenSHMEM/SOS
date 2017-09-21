@@ -1,0 +1,169 @@
+.TH SHMEM_QUIET 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_quiet \- 
+Waits for completion of all outstanding PUT, AMOs, memory store,
+and non-blocking PUT and GET routines to symmetric data
+objects issued by a PE.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B void
+.B shmem_quiet(void)
+
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.SS Fortran:
+
+.nf
+
+.BR "CALL " "SHMEM_QUIET"
+
+.fi
+
+./ sectionEnd
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.B None.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+The 
+.B shmem\_quiet
+routine ensures completion of PUT, AMOs,
+memory store, and non-blocking PUT and GET routines on
+symmetric data objects issued by the calling PE. All PUT, AMOs,
+memory store, and non-blocking PUT and GET routines to
+symmetric data objects are guaranteed to be completed and visible to all
+PEs when 
+.B shmem\_quiet
+returns. 
+
+./ sectionEnd
+
+
+
+./ sectionStart
+
+.SS Return Values
+
+None.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+.B shmem\_quiet
+is most useful as a way of ensuring completion of
+several PUT, AMOs, memory store, and non-blocking PUT
+and GET routines to symmetric data objects initiated by the calling
+PE. For example, you might use 
+.B shmem\_quiet
+to await delivery
+of a block of data before issuing another PUT or non-blocking
+PUT routine, which sets a completion flag on another PE.
+.B shmem\_quiet
+is not usually needed if
+.B shmem\_barrier\_all
+or 
+.B shmem\_barrier
+are called. The barrier
+routines wait for the completion of outstanding writes (PUT, AMO,
+memory stores, and nonblocking PUT and GET routines) to
+symmetric data objects on all PEs.
+
+
+.B shmem\_quiet
+does not have an effect on the ordering between memory 
+accesses issued by the target PE.
+.B shmem\_wait
+, 
+.B shmem\_wait\_until
+, 
+.B shmem\_test
+, 
+.B shmem\_barrier
+,
+.B shmem\_barrier\_all
+routines can be called by the target PE to guarantee 
+ordering of its memory accesses.
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.SS Examples
+
+
+
+The following example uses 
+.B shmem\_quiet
+in a C11 program: 
+
+.nf
+#include <stdio.h>
+#include <shmem.h>
+
+int main(void)
+{
+  static long dest[3];
+  static long source[3] = { 1, 2, 3 };
+  static int targ;
+  static int src = 90;
+  long x[3] = { 0 };
+  int y = 0;
+  shmem_init();
+  int me = shmem_my_pe();
+  if (me == 0) {
+     shmem_put(dest, source, 3, 1); /* put1 */
+     shmem_put(&targ, &src, 1, 2);  /* put2 */
+     shmem_quiet();
+     shmem_get(x, dest, 3, 1);   /* gets updated value from dest on PE 1 to local array x */
+     shmem_get(&y, &targ, 1, 2); /* gets updated value from targ on PE 2 to local variable y */
+     printf("x: { %ld, %ld, %ld }\\n", x[0], x[1], x[2]); /* x: { 1, 2, 3 } */
+     printf("y: %d\\n", y); /* y: 90 */
+     shmem_put(&targ, &src, 1, 1); /* put3 */
+     shmem_put(&targ, &src, 1, 2); /* put4 */
+  }
+  shmem_finalize();
+  return 0;
+}
+.fi
+
+.I Put1
+and 
+.I put2
+will be completed and visible before 
+.I put3
+and 
+.IR "put4" .
+.
+
+
+

@@ -767,7 +767,7 @@ int atomic_limitations_check(void)
     atomic_support_lv general_atomic_sup = ATOMIC_NO_SUPPORT;
     atomic_support_lv reduction_sup = ATOMIC_SOFT_SUPPORT;
 
-    if (NULL != shmem_util_getenv_str("OFI_ATOMIC_CHECKS_WARN"))
+    if (shmem_internal_params.OFI_ATOMIC_CHECKS_WARN)
         general_atomic_sup = ATOMIC_WARNINGS;
 
     init_ofi_tables();
@@ -1088,19 +1088,29 @@ int query_for_fabric(struct fabric_info *info)
     return ret;
 }
 
-int shmem_transport_init(long eager_size)
+int shmem_transport_init(void)
 {
     int ret = 0;
     struct fabric_info info = {0};
 
     info.npes      = shmem_runtime_get_size();
 
-    info.prov_name = shmem_util_getenv_str("OFI_PROVIDER");
-    if (NULL == info.prov_name)
-        info.prov_name = shmem_util_getenv_str("OFI_USE_PROVIDER");
+    if (shmem_internal_params.OFI_PROVIDER_provided)
+        info.prov_name = shmem_internal_params.OFI_PROVIDER;
+    if (shmem_internal_params.OFI_USE_PROVIDER_provided)
+        info.prov_name = shmem_internal_params.OFI_USE_PROVIDER;
+    else
+        info.prov_name = NULL;
 
-    info.fabric_name = shmem_util_getenv_str("OFI_FABRIC");
-    info.domain_name = shmem_util_getenv_str("OFI_DOMAIN");
+    if (shmem_internal_params.OFI_FABRIC_provided)
+        info.fabric_name = shmem_internal_params.OFI_FABRIC;
+    else
+        info.fabric_name = NULL;
+
+    if (shmem_internal_params.OFI_DOMAIN_provided)
+        info.domain_name = shmem_internal_params.OFI_DOMAIN;
+    else
+        info.domain_name = NULL;
 
     ret = query_for_fabric(&info);
     if (ret!=0)
@@ -1109,17 +1119,18 @@ int shmem_transport_init(long eager_size)
     /* The current bounce buffering implementation is only compatible with
      * providers that don't require FI_CONTEXT */
     if (info.p_info->mode & FI_CONTEXT) {
-        if (shmem_internal_my_pe == 0 && eager_size > 0) {
+        if (shmem_internal_my_pe == 0 && shmem_internal_params.BOUNCE_SIZE > 0) {
             DEBUG_STR("OFI provider requires FI_CONTEXT; disabling bounce buffering");
         }
         shmem_transport_ofi_bounce_buffer_size = 0;
+        shmem_transport_ofi_bounce_buffers = NULL;
     } else {
-        shmem_transport_ofi_bounce_buffer_size = eager_size;
+        shmem_transport_ofi_bounce_buffer_size = shmem_internal_params.BOUNCE_SIZE;
+        shmem_transport_ofi_bounce_buffers =
+            shmem_free_list_init(sizeof(shmem_transport_ofi_bounce_buffer_t) +
+                                 shmem_transport_ofi_bounce_buffer_size,
+                                 init_bounce_buffer);
     }
-
-    shmem_transport_ofi_bounce_buffers =
-        shmem_free_list_init(sizeof(shmem_transport_ofi_bounce_buffer_t)
-                             + eager_size, init_bounce_buffer);
 
     ret = allocate_fabric_resources(&info);
 
@@ -1172,31 +1183,6 @@ int shmem_transport_startup(void)
         return ret;
 
     return 0;
-}
-
-void shmem_transport_print_info(void)
-{
-    char *ofi_provider;
-
-    if (NULL == (ofi_provider = shmem_util_getenv_str("OFI_PROVIDER")))
-        if (NULL == (ofi_provider = shmem_util_getenv_str("OFI_USE_PROVIDER")))
-            ofi_provider = "AUTO";
-
-    printf("Network transport:      OFI\n");
-    printf("SMA_OFI_PROVIDER        %s\n", ofi_provider);
-    printf("\tProvider that should be used by the OFI transport\n");
-    printf("SMA_OFI_FABRIC          %s\n",
-           (NULL != shmem_util_getenv_str("OFI_FABRIC")) ?
-           shmem_util_getenv_str("OFI_FABRIC") : "AUTO");
-    printf("\tFabric that should be used by the OFI transport\n");
-    printf("SMA_OFI_DOMAIN          %s\n",
-           (NULL != shmem_util_getenv_str("OFI_DOMAIN")) ?
-           shmem_util_getenv_str("OFI_DOMAIN") : "AUTO");
-    printf("\tFabric domain that should be used by the OFI transport\n");
-    printf("SMA_OFI_ATOMIC_CHECKS_WARN %s\n",
-           (NULL != shmem_util_getenv_str("OFI_ATOMIC_CHECKS_WARN")) ?
-           "Set" : "Not set");
-    printf("\tDisplay warnings about unsupported atomic operations\n");
 }
 
 int shmem_transport_fini(void)

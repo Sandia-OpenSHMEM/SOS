@@ -32,7 +32,6 @@ typedef enum coll_type_t coll_type_t;
 extern char *coll_type_str[];
 
 extern long *shmem_internal_barrier_all_psync;
-extern int shmem_internal_tree_crossover;
 
 extern coll_type_t shmem_internal_barrier_type;
 extern coll_type_t shmem_internal_bcast_type;
@@ -50,7 +49,7 @@ shmem_internal_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
     switch (shmem_internal_barrier_type) {
     case AUTO:
-        if (PE_size < shmem_internal_tree_crossover) {
+        if (PE_size < shmem_internal_params.COLL_CROSSOVER) {
             shmem_internal_barrier_linear(PE_start, logPE_stride, PE_size, pSync);
         } else {
             shmem_internal_barrier_tree(PE_start, logPE_stride, PE_size, pSync);
@@ -95,7 +94,7 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
 {
     switch (shmem_internal_bcast_type) {
     case AUTO:
-        if (PE_size < shmem_internal_tree_crossover) {
+        if (PE_size < shmem_internal_params.COLL_CROSSOVER) {
             shmem_internal_bcast_linear(target, source, len, PE_root, PE_start,
                                         logPE_stride, PE_size, pSync, complete);
         } else {
@@ -143,7 +142,7 @@ shmem_internal_op_to_all(void *target, const void *source, int count,
     switch (shmem_internal_reduce_type) {
         case AUTO:
             if (shmem_transport_atomic_supported(op, datatype)) {
-                if (PE_size < shmem_internal_tree_crossover) {
+                if (PE_size < shmem_internal_params.COLL_CROSSOVER) {
                     shmem_internal_op_to_all_linear(target, source, count, type_size,
                                                     PE_start, logPE_stride, PE_size,
                                                     pWrk, pSync, op, datatype);

@@ -97,7 +97,7 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
     } else {
         *key = 0;
         *mr_addr = NULL;
-        RAISE_ERROR_MSG("address (0x%p) outside of symmetric areas\n", addr);
+        RAISE_ERROR_MSG("address (%p) outside of symmetric areas\n", addr);
     }
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 
@@ -132,7 +132,7 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
     else {
         *key = -1;
         *mr_addr = NULL;
-        RAISE_ERROR_MSG("address (0x%p) outside of symmetric areas\n", addr);
+        RAISE_ERROR_MSG("address (%p) outside of symmetric areas\n", addr);
     }
 }
 #endif
@@ -204,7 +204,7 @@ typedef int shmem_transport_ct_t;
 
 extern shmem_free_list_t *shmem_transport_ofi_bounce_buffers;
 
-int shmem_transport_init(long eager_size);
+int shmem_transport_init(void);
 int shmem_transport_startup(void);
 void shmem_transport_print_info(void);
 int shmem_transport_fini(void);
