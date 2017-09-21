@@ -97,7 +97,7 @@ AS_IF([test "$enable_threads" = "yes"], [
            AC_MSG_RESULT([no])
        fi
        AC_DEFINE([ENABLE_THREADS], [1], [Enable threads])
-       AC_CHECK_HEADERS([stdatomic.h], [AC_DEFINE([HAVE_STD_ATOMICS_HEADER], [1], [defined when stdatomics.h is available])])
+       AC_CHECK_HEADERS([stdatomic.h])
        ])
 AM_CONDITIONAL([HAVE_PTHREADS], [test "$HAVE_POSIX_THREADS" = "1"])
 

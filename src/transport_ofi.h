@@ -299,8 +299,8 @@ void shmem_transport_put_quiet(void)
         success = fi_cntr_read(shmem_transport_ofi_put_cntrfd);
         fail = fi_cntr_readerr(shmem_transport_ofi_put_cntrfd);
 
-        if (success < \
-            shmem_internal_atomic_read(&shmem_transport_ofi_pending_put_counter) && \
+        if (success <
+            shmem_internal_atomic_read(&shmem_transport_ofi_pending_put_counter) &&
             fail == 0) {
             SPINLOCK_BODY();
         }
@@ -308,16 +308,23 @@ void shmem_transport_put_quiet(void)
             struct fi_cq_err_entry e = {0};
             fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
             OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
+        } else {
+            break;
         }
-    } while (success < shmem_internal_atomic_read(&shmem_transport_ofi_pending_put_counter));
+    } while (1);
 #else
-    int ret = fi_cntr_wait(shmem_transport_ofi_put_cntrfd,
-                           shmem_internal_atomic_read(&shmem_transport_ofi_pending_put_counter), -1);
-    if (ret) {
-        struct fi_cq_err_entry e = {0};
-        fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
-        OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
-    }
+    uint64_t cnt, cnt_new;
+    cnt_new = shmem_internal_atomic_read(&shmem_transport_ofi_pending_put_counter);
+    do {
+        cnt = cnt_new;
+        int ret = fi_cntr_wait(shmem_transport_ofi_put_cntrfd, cnt, -1);
+        cnt_new = shmem_internal_atomic_read(&shmem_transport_ofi_pending_put_counter);
+        if (ret) {
+            struct fi_cq_err_entry e = {0};
+            fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
+            OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
+        }
+    } while (cnt != cnt_new);
 #endif
 }
 
@@ -566,16 +573,24 @@ void shmem_transport_get_wait(void)
             struct fi_cq_err_entry e = {0};
             fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
             OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
+        } else {
+            break;
         }
-    } while (success < shmem_internal_atomic_read(&shmem_transport_ofi_pending_get_counter));
+    } while (1);
 #else
-    int ret = fi_cntr_wait(shmem_transport_ofi_get_cntrfd,
-                           shmem_internal_atomic_read(&shmem_transport_ofi_pending_get_counter), -1);
-    if (ret) {
-        struct fi_cq_err_entry e = {0};
-        fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
-        OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
-    }
+    uint64_t cnt, cnt_new;
+    cnt_new = shmem_internal_atomic_read(&shmem_transport_ofi_pending_get_counter);
+    do {
+        cnt = cnt_new;
+        int ret = fi_cntr_wait(shmem_transport_ofi_get_cntrfd, cnt, -1);
+        cnt_new = shmem_internal_atomic_read(&shmem_transport_ofi_pending_get_counter);
+        if (ret) {
+            struct fi_cq_err_entry e = {0};
+            fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
+            OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
+        }
+    } while (cnt != cnt_new);
+
 #endif
 }
 

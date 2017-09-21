@@ -77,14 +77,14 @@ shmem_spinlock_fini(shmem_spinlock_t *lock)
 /* Atomics */
 #  ifdef ENABLE_THREADS
 
-#    if (defined(__STDC_NO_ATOMICS__) || !defined(HAVE_STD_ATOMICS_HEADER))
+#    if (defined(__STDC_NO_ATOMICS__) || !defined(HAVE_STDATOMIC_H))
 
 typedef uint64_t shmem_atomic_uint64_t;
 
 static inline
 void
-shmem_internal_atomic_init(shmem_atomic_uint64_t *val) {
-    __sync_lock_test_and_set(val, 0);
+shmem_internal_atomic_write(shmem_atomic_uint64_t *ptr, uint64_t value) {
+    __sync_lock_test_and_set(ptr, value);
     return;
 }
 
@@ -112,19 +112,19 @@ shmem_internal_atomic_dec(shmem_atomic_uint64_t *val) {
 
 #include <stdatomic.h>
 
-typedef _Atomic uint64_t shmem_atomic_uint64_t;
+typedef _Atomic uint_fast64_t shmem_atomic_uint64_t;
 
 static inline
 void
-shmem_internal_atomic_init(shmem_atomic_uint64_t *val) {
-    atomic_store(val, 0);
+shmem_internal_atomic_write(shmem_atomic_uint64_t *ptr, uint64_t value) {
+    atomic_store(ptr, value);
     return;
 }
 
 static inline
-shmem_atomic_uint64_t
+uint64_t
 shmem_internal_atomic_read(shmem_atomic_uint64_t *val) {
-    return atomic_load(val);
+    return (uint64_t)atomic_load(val);
 }
 
 static inline
@@ -148,8 +148,8 @@ typedef uint64_t shmem_atomic_uint64_t;
 
 static inline
 void
-shmem_internal_atomic_init(shmem_atomic_uint64_t *val) {
-    *val = 0;
+shmem_internal_atomic_write(shmem_atomic_uint64_t *ptr, uint64_t value) {
+    *ptr = value;
     return;
 }
 
