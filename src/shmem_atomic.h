@@ -77,8 +77,9 @@ shmem_spinlock_fini(shmem_spinlock_t *lock)
 /* Atomics */
 #  ifdef ENABLE_THREADS
 
-#    ifdef __STDC_NO_ATOMICS__
+#    if (defined(__STDC_NO_ATOMICS__) || !defined(HAVE_STD_ATOMICS_HEADER))
 typedef uint64_t shmem_atomic_uint64_t;
+
 
 static inline
 void
