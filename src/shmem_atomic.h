@@ -89,7 +89,7 @@ shmem_internal_atomic_write(shmem_internal_atomic_uint64_t *ptr, uint64_t value)
 }
 
 static inline
-shmem_internal_atomic_uint64_t
+uint64_t
 shmem_internal_atomic_read(shmem_internal_atomic_uint64_t *val) {
     return __sync_fetch_and_add(val, 0);
 }
@@ -154,7 +154,7 @@ shmem_internal_atomic_write(shmem_internal_atomic_uint64_t *ptr, uint64_t value)
 }
 
 static inline
-shmem_internal_atomic_uint64_t
+uint64_t
 shmem_internal_atomic_read(shmem_internal_atomic_uint64_t *val) {
     return *val;
 }
