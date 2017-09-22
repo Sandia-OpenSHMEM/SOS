@@ -74,4 +74,104 @@ shmem_spinlock_fini(shmem_spinlock_t *lock)
     shmem_internal_assertp(lock->enter == lock->exit);
 }
 
+/* Atomics */
+#  ifdef ENABLE_THREADS
+
+#    if (defined(__STDC_NO_ATOMICS__) || !defined(HAVE_STDATOMIC_H))
+
+typedef uint64_t shmem_internal_atomic_uint64_t;
+
+static inline
+void
+shmem_internal_atomic_write(shmem_internal_atomic_uint64_t *ptr, uint64_t value) {
+    __sync_lock_test_and_set(ptr, value);
+    return;
+}
+
+static inline
+uint64_t
+shmem_internal_atomic_read(shmem_internal_atomic_uint64_t *val) {
+    return __sync_fetch_and_add(val, 0);
+}
+
+static inline
+void
+shmem_internal_atomic_inc(shmem_internal_atomic_uint64_t *val) {
+    __sync_fetch_and_add(val, 1);
+    return;
+}
+
+static inline
+void
+shmem_internal_atomic_dec(shmem_internal_atomic_uint64_t *val) {
+    __sync_fetch_and_sub(val, 1);
+    return;
+}
+
+#    else
+
+#include <stdatomic.h>
+
+typedef atomic_uint_fast64_t shmem_internal_atomic_uint64_t;
+
+static inline
+void
+shmem_internal_atomic_write(shmem_internal_atomic_uint64_t *ptr, uint64_t value) {
+    atomic_store(ptr, value);
+    return;
+}
+
+static inline
+uint64_t
+shmem_internal_atomic_read(shmem_internal_atomic_uint64_t *val) {
+    return (uint64_t)atomic_load(val);
+}
+
+static inline
+void
+shmem_internal_atomic_inc(shmem_internal_atomic_uint64_t *val) {
+    atomic_fetch_add(val, 1);
+    return;
+}
+
+static inline
+void
+shmem_internal_atomic_dec(shmem_internal_atomic_uint64_t *val) {
+    atomic_fetch_sub(val, 1);
+    return;
+}
+#    endif
+
+#  else /* !define( ENABLE_THREADS ) */
+
+typedef uint64_t shmem_internal_atomic_uint64_t;
+
+static inline
+void
+shmem_internal_atomic_write(shmem_internal_atomic_uint64_t *ptr, uint64_t value) {
+    *ptr = value;
+    return;
+}
+
+static inline
+uint64_t
+shmem_internal_atomic_read(shmem_internal_atomic_uint64_t *val) {
+    return *val;
+}
+
+static inline
+void
+shmem_internal_atomic_inc(shmem_internal_atomic_uint64_t *val) {
+    *val = *val+1;
+    return;
+}
+
+static inline
+void
+shmem_internal_atomic_dec(shmem_internal_atomic_uint64_t *val) {
+    *val = *val-1;
+    return;
+}
+#  endif /* ENABLE_THREADS */
+
 #endif

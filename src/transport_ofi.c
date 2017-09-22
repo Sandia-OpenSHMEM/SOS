@@ -72,9 +72,9 @@ uint8_t**                       shmem_transport_ofi_target_heap_addrs;
 uint8_t**                       shmem_transport_ofi_target_data_addrs;
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 #endif /* ENABLE_MR_SCALABLE */
-uint64_t                        shmem_transport_ofi_pending_put_counter;
-uint64_t                        shmem_transport_ofi_pending_get_counter;
-uint64_t                        shmem_transport_ofi_pending_cq_count;
+shmem_internal_atomic_uint64_t  shmem_transport_ofi_pending_put_counter;
+shmem_internal_atomic_uint64_t  shmem_transport_ofi_pending_get_counter;
+shmem_internal_atomic_uint64_t  shmem_transport_ofi_pending_cq_count;
 uint64_t                        shmem_transport_ofi_max_poll;
 size_t                          shmem_transport_ofi_max_buffered_send;
 size_t                          shmem_transport_ofi_max_msg_size;
@@ -1166,6 +1166,10 @@ int shmem_transport_init(void)
         return ret;
 
     fi_freeinfo(info.fabrics);
+
+    shmem_internal_atomic_write(&shmem_transport_ofi_pending_put_counter, 0);
+    shmem_internal_atomic_write(&shmem_transport_ofi_pending_get_counter, 0);
+    shmem_internal_atomic_write(&shmem_transport_ofi_pending_cq_count, 0);
 
     return 0;
 }
