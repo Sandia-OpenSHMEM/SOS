@@ -293,6 +293,13 @@ void shmem_transport_put_quiet(void)
     }
 
     /* wait for put counter to meet outstanding count value */
+
+    /* Note: the communication routines increment pending put counters before
+     * each FI call (thus before the corresponding event counter is
+     * incremented), but the completion routine below reads the counters in the
+     * reverse order: first the fid_cntr event counter, then the put issued
+     * counter.  We'll want to preserve this property in the future.
+     */
 #ifdef ENABLE_COMPLETION_POLLING
     uint64_t success, fail;
     do {
@@ -558,6 +565,13 @@ static inline
 void shmem_transport_get_wait(void)
 {
     /* wait for get counter to meet outstanding count value */
+
+    /* Note: the communication routines increment pending get counters before
+     * each FI call (thus before the corresponding event counter is
+     * incremented), but the completion routine below reads the counters in the
+     * reverse order: first the fid_cntr event counter, then the get issued
+     * counter.  We'll want to preserve this property in the future.
+     */
 #ifdef ENABLE_COMPLETION_POLLING
     uint64_t success, fail;
     do {

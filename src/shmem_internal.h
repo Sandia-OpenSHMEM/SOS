@@ -384,7 +384,6 @@ extern shmem_internal_mutex_t shmem_internal_mutex_alloc;
 #   define SHMEM_MUTEX_DESTROY(_mutex)
 #   define SHMEM_MUTEX_LOCK(_mutex)
 #   define SHMEM_MUTEX_UNLOCK(_mutex)
-typedef uint64_t shmem_atomic_uint64_t;
 #endif /* ENABLE_THREADS */
 
 typedef shmem_atomic_uint64_t shmem_internal_atomic_uint64_t;

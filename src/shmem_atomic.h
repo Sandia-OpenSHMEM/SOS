@@ -112,7 +112,7 @@ shmem_internal_atomic_dec(shmem_atomic_uint64_t *val) {
 
 #include <stdatomic.h>
 
-typedef _Atomic uint_fast64_t shmem_atomic_uint64_t;
+typedef atomic_uint_fast64_t shmem_atomic_uint64_t;
 
 static inline
 void
