@@ -174,4 +174,6 @@ shmem_internal_atomic_dec(shmem_atomic_uint64_t *val) {
 }
 #  endif /* ENABLE_THREADS */
 
+typedef shmem_atomic_uint64_t shmem_internal_atomic_uint64_t;
+
 #endif
