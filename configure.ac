@@ -617,6 +617,10 @@ AS_IF([test "$enable_pmi_simple" != "yes" -a "$opal_external_pmix_version_found"
 AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
       [AC_MSG_WARN([No transport found])])
 
+#Note: The --with-pmix flag is not currently marked as experimental in
+#      --help, because the AC_HELP string is set in upstream OMPI.
+AS_IF([test "$opal_external_pmix_happy" = "yes"],
+      [AC_MSG_WARN([PMIx is an experimental feature in Sandia OpenSHMEM])])
 
 FORT="$FC"
 if test "$FORT" = "" ; then
