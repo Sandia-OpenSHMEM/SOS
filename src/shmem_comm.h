@@ -55,7 +55,9 @@ shmem_internal_put_small(void *target, const void *source, size_t len, int pe)
     shmem_internal_assert(len > 0);
 
     if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
-#if USE_XPMEM
+#if USE_SELF_OPTIMIZATION
+        memcpy(target, source, len);
+#elif USE_XPMEM
         shmem_transport_xpmem_put(target, source, len, pe, node_rank);
 #elif USE_CMA
         shmem_transport_cma_put(target, source, len, pe, node_rank);
@@ -78,7 +80,9 @@ shmem_internal_put_nb(void *target, const void *source, size_t len, int pe,
     if (len == 0) return;
 
     if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
-#if USE_XPMEM
+#if USE_SELF_OPTIMIZATION
+        memcpy(target, source, len);
+#elif USE_XPMEM
         shmem_transport_xpmem_put(target, source, len, pe, node_rank);
 #elif USE_CMA
         if (len > shmem_internal_params.CMA_PUT_MAX) {
@@ -103,7 +107,9 @@ shmem_internal_put_nbi(void *target, const void *source, size_t len, int pe)
     if (len == 0) return;
 
     if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
-#if USE_XPMEM
+#if USE_SELF_OPTIMIZATION
+        memcpy(target, source, len);
+#elif USE_XPMEM
         shmem_transport_xpmem_put(target, source, len, pe, node_rank);
 #elif USE_CMA
         if (len > shmem_internal_params.CMA_PUT_MAX) {
@@ -149,7 +155,9 @@ shmem_internal_get(void *target, const void *source, size_t len, int pe)
     if (len == 0) return;
 
     if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
-#if USE_XPMEM
+#if USE_SELF_OPTIMIZATION
+        memcpy(target, source, len);
+#elif USE_XPMEM
         shmem_transport_xpmem_get(target, source, len, pe, node_rank);
 #elif USE_CMA
         if (len > shmem_internal_params.CMA_GET_MAX) {
