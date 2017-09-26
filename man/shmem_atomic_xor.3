@@ -1,0 +1,138 @@
+.TH SHMEM_ATOMIC_XOR 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_atomic_xor \- 
+Atomically perform a non-fetching bitwise exclusive OR (XOR) operation on a
+remote data object.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C11:
+
+.B void
+.B shmem_atomic_xor(TYPE
+.IB "*dest" ,
+.B TYPE
+.IB "value" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the bitwise AMO types specified by
+Table 4.
+./ sectionStart
+.SS C/C++:
+
+.B void
+.B shmem_<TYPENAME>_atomic_xor(TYPE
+.IB "*dest" ,
+.B TYPE
+.IB "value" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the bitwise AMO types and has a corresponding
+TYPENAME specified by Table 4.
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "OUT " -
+.I dest
+- A pointer to the remotely accessible data object to
+be updated.
+
+
+.BR "IN " -
+.I value
+- The operand to the bitwise XOR operation.
+
+
+.BR "IN " -
+.I pe
+- An integer value for the PE on which 
+.I dest
+is to be updated.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+.B shmem\_atomic\_xor
+atomically performs a non-fetching bitwise XOR
+on the remotely accessible data object pointed to by 
+.I dest
+at PE
+.I pe
+with the operand 
+.IR "value" .
+.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+None.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+None.
+
+./ sectionEnd
+
+
+
+
+.SS Table 4:
+Bitwise AMO Types and Names
+.TP 25
+.B \TYPE
+.B \TYPENAME
+.TP
+unsigned int
+uint
+.TP
+unsigned long
+ulong
+.TP
+unsigned long long
+ulonglong
+.TP
+int32\_t
+int32
+.TP
+int64\_t
+int64
+.TP
+uint32\_t
+uint32
+.TP
+uint64\_t
+uint64

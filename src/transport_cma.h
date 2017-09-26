@@ -18,7 +18,12 @@
 
 #define _GNU_SOURCE
 #include <unistd.h>
+
+#ifdef HAVE_LIBC_CMA
+#include <sys/uio.h>
+#else
 #include <sys/syscall.h>
+#endif
 
 #include <sys/uio.h>
 #include <sys/types.h>
@@ -31,10 +36,8 @@
 
 extern pid_t shmem_transport_cma_my_pid;
 extern pid_t *shmem_transport_cma_peers;
-extern size_t shmem_transport_cma_put_max;
-extern size_t shmem_transport_cma_get_max;
 
-int shmem_transport_cma_init(long eager_size);
+int shmem_transport_cma_init(void);
 int shmem_transport_cma_startup(void);
 int shmem_transport_cma_fini(void);
 

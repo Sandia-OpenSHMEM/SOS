@@ -91,10 +91,13 @@ AS_IF([test "$enable_threads" = "yes"], [
        AC_MSG_CHECKING([for working POSIX threads package])
        if test "$HAVE_POSIX_THREADS" = "1" ; then
            AC_MSG_RESULT([yes])
+           AC_SUBST(PTHREAD_CFLAGS)
+           AC_SUBST(PTHREAD_LIBS)
        else
            AC_MSG_RESULT([no])
        fi
        AC_DEFINE([ENABLE_THREADS], [1], [Enable threads])
+       AC_CHECK_HEADERS([stdatomic.h])
        ])
 AM_CONDITIONAL([HAVE_PTHREADS], [test "$HAVE_POSIX_THREADS" = "1"])
 
@@ -170,6 +173,9 @@ AS_IF([test "$enable_bounce_buffers" = "no"],
       [AC_DEFINE([DEFAULT_BOUNCE_SIZE], [0], [Default bounce buffer threshold])],
       [AC_DEFINE([DEFAULT_BOUNCE_SIZE], [2048], [Default bounce buffer threshold])])
 
+AC_ARG_WITH([oshrun-launcher],
+    [AC_HELP_STRING([--with-oshrun-launcher],
+                    [Set launcher to be used by oshrun launcher wrapper. (default: auto)])])
 
 dnl check for programs
 
@@ -524,6 +530,13 @@ dnl Cause Automake to delete emacs turds
 CLEANFILES="*~"
 AC_SUBST(CLEANFILES)
 
+# configuration for --with-oshrun-launcher
+WRAPPER_SEARCH_LAUNCHERS="yod mpirun mpiexec srun"
+if test -n "$with_oshrun_launcher" ; then
+    WRAPPER_SEARCH_LAUNCHERS="$with_oshrun_launcher"
+fi
+AC_SUBST(WRAPPER_SEARCH_LAUNCHERS)
+
 # last minute updates of the flags so that tests don't fail oddly if
 # portals libdir isn't in LD_LIBRARY_PATH...
 if test "$transport_portals4" = "yes" ; then
@@ -574,6 +587,7 @@ AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
 
 AC_CONFIG_FILES([Makefile
   sandia-openshmem.spec
+  man/Makefile
   pmi-simple/Makefile
   mpp/Makefile
   mpp/shmem.fh

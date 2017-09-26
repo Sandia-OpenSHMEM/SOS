@@ -28,7 +28,6 @@ coll_type_t shmem_internal_reduce_type = AUTO;
 coll_type_t shmem_internal_collect_type = AUTO;
 coll_type_t shmem_internal_fcollect_type = AUTO;
 long *shmem_internal_barrier_all_psync;
-int shmem_internal_tree_crossover = -1;
 
 char *coll_type_str[] = { "AUTO",
                           "LINEAR",
@@ -40,7 +39,7 @@ char *coll_type_str[] = { "AUTO",
 static int *full_tree_children;
 static int full_tree_num_children;
 static int full_tree_parent;
-static int tree_radix = -1;
+static long tree_radix = -1;
 
 
 static int
@@ -68,7 +67,7 @@ shmem_internal_build_kary_tree(int radix, int PE_start, int stride,
         }
     }
 
-    if (shmem_internal_debug) {
+    if (shmem_internal_params.DEBUG) {
         size_t len;
         char debug_str[256];
         len = snprintf(debug_str, sizeof(debug_str), "Building k-ary tree:"
@@ -109,16 +108,14 @@ shmem_internal_circular_iter_next(int curr, int PE_start, int logPE_stride, int 
 
 
 int
-shmem_internal_collectives_init(int requested_crossover,
-                                int requested_radix)
+shmem_internal_collectives_init(void)
 {
     int i, j, k;
     int tmp_radix;
     int my_root = 0;
     char *type;
 
-    tree_radix = requested_radix;
-    shmem_internal_tree_crossover = requested_crossover;
+    tree_radix = shmem_internal_params.COLL_RADIX;
 
     /* initialize barrier_all psync array */
     shmem_internal_barrier_all_psync =
@@ -160,7 +157,8 @@ shmem_internal_collectives_init(int requested_crossover,
     }
     full_tree_parent = my_root;
 
-    if (NULL != (type = shmem_util_getenv_str("BARRIER_ALGORITHM"))) {
+    if (shmem_internal_params.BARRIER_ALGORITHM_provided) {
+        type = shmem_internal_params.BARRIER_ALGORITHM;
         if (0 == strcmp(type, "auto")) {
             shmem_internal_barrier_type = AUTO;
         } else if (0 == strcmp(type, "linear")) {
@@ -173,7 +171,8 @@ shmem_internal_collectives_init(int requested_crossover,
             RAISE_WARN_MSG("Ignoring bad barrier algorithm '%s'\n", type);
         }
     }
-    if (NULL != (type = shmem_util_getenv_str("BCAST_ALGORITHM"))) {
+    if (shmem_internal_params.BCAST_ALGORITHM_provided) {
+        type = shmem_internal_params.BCAST_ALGORITHM;
         if (0 == strcmp(type, "auto")) {
             shmem_internal_bcast_type = AUTO;
         } else if (0 == strcmp(type, "linear")) {
@@ -184,7 +183,8 @@ shmem_internal_collectives_init(int requested_crossover,
             RAISE_WARN_MSG("Ignoring bad broadcast algorithm '%s'\n", type);
         }
     }
-    if (NULL != (type = shmem_util_getenv_str("REDUCE_ALGORITHM"))) {
+    if (shmem_internal_params.REDUCE_ALGORITHM_provided) {
+        type = shmem_internal_params.REDUCE_ALGORITHM;
         if (0 == strcmp(type, "auto")) {
             shmem_internal_reduce_type = AUTO;
         } else if (0 == strcmp(type, "linear")) {
@@ -197,7 +197,8 @@ shmem_internal_collectives_init(int requested_crossover,
             RAISE_WARN_MSG("Ignoring bad reduction algorithm '%s'\n", type);
         }
     }
-    if (NULL != (type = shmem_util_getenv_str("COLLECT_ALGORITHM"))) {
+    if (shmem_internal_params.COLLECT_ALGORITHM_provided) {
+        type = shmem_internal_params.COLLECT_ALGORITHM;
         if (0 == strcmp(type, "auto")) {
             shmem_internal_collect_type = AUTO;
         } else if (0 == strcmp(type, "linear")) {
@@ -206,7 +207,8 @@ shmem_internal_collectives_init(int requested_crossover,
             RAISE_WARN_MSG("Ignoring bad collect algorithm '%s'\n", type);
         }
     }
-    if (NULL != (type = shmem_util_getenv_str("FCOLLECT_ALGORITHM"))) {
+    if (shmem_internal_params.FCOLLECT_ALGORITHM_provided) {
+        type = shmem_internal_params.FCOLLECT_ALGORITHM;
         if (0 == strcmp(type, "auto")) {
             shmem_internal_fcollect_type = AUTO;
         } else if (0 == strcmp(type, "linear")) {
@@ -426,6 +428,8 @@ shmem_internal_bcast_linear(void *target, const void *source, size_t len,
     /* need 1 slot */
     shmem_internal_assert(SHMEM_BCAST_SYNC_SIZE >= 1);
 
+    if (PE_size == 1 || len == 0) return;
+
     if (real_root == shmem_internal_my_pe) {
         int i, pe;
 
@@ -487,7 +491,7 @@ shmem_internal_bcast_tree(void *target, const void *source, size_t len,
     /* need 1 slot */
     shmem_internal_assert(SHMEM_BCAST_SYNC_SIZE >= 1);
 
-    if (PE_size == 1) return;
+    if (PE_size == 1 || len == 0) return;
 
     if (PE_size == shmem_internal_num_pes && 0 == PE_root) {
         /* we're the full tree, use the binomial tree */
@@ -582,6 +586,8 @@ shmem_internal_op_to_all_linear(void *target, const void *source, int count, int
     /* need 2 slots, plus bcast */
     shmem_internal_assert(SHMEM_REDUCE_SYNC_SIZE >= 2 + SHMEM_BCAST_SYNC_SIZE);
 
+    if (count == 0) return;
+
     if (PE_start == shmem_internal_my_pe) {
         int pe, i;
         /* update our target buffer with our contribution.  The put
@@ -649,6 +655,8 @@ shmem_internal_op_to_all_tree(void *target, const void *source, int count, int t
         }
         return;
     }
+
+    if (count == 0) return;
 
     if (PE_size == shmem_internal_num_pes) {
         /* we're the full tree, use the binomial tree */
@@ -729,6 +737,11 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, int count, 
         if (target != source) {
             memcpy(target, source, type_size*count);
         }
+        free(current_target);
+        return;
+    }
+
+    if (count == 0) {
         free(current_target);
         return;
     }
@@ -984,6 +997,8 @@ shmem_internal_fcollect_ring(void *target, const void *source, size_t len,
     /* need 1 slot */
     shmem_internal_assert(SHMEM_COLLECT_SYNC_SIZE >= 1);
 
+    if (len == 0) return;
+
     /* copy my portion to the right place */
     memcpy((char*) target + (my_id * len), source, len);
 
@@ -1044,6 +1059,8 @@ shmem_internal_fcollect_recdbl(void *target, const void *source, size_t len,
      * on INT is required by the SHMEM atomics API. */
     shmem_internal_assert(SHMEM_COLLECT_SYNC_SIZE >= (sizeof(int) * 8) / (sizeof(long) / sizeof(int)));
     shmem_internal_assert(0 == (PE_size & (PE_size - 1)));
+
+    if (len == 0) return;
 
     /* copy my portion to the right place */
     curr_offset = my_id * len;
