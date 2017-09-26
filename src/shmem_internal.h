@@ -384,7 +384,6 @@ extern shmem_internal_mutex_t shmem_internal_mutex_alloc;
 #   define SHMEM_MUTEX_DESTROY(_mutex)
 #   define SHMEM_MUTEX_LOCK(_mutex)
 #   define SHMEM_MUTEX_UNLOCK(_mutex)
-
 #endif /* ENABLE_THREADS */
 
 void shmem_internal_start_pes(int npes);
