@@ -61,6 +61,10 @@ int main(int argc, char **argv) {
     /* Write to neighbor's buffer */
     target = (me + 1) % npes;
     buf_in = malloc(sizeof(int) * (target + 1));
+    if (!buf_in) {
+        fprintf(stderr, "ERR - null buf_in pointer\n");
+        shmem_global_exit(1);
+    }
 
     for (i = 0; i < target + 1; i++)
         buf_in[i] = target;

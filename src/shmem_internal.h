@@ -25,6 +25,7 @@
 #include "shmemx.h"
 #include "runtime.h"
 #include "config.h"
+#include "shmem_env.h"
 
 extern int shmem_internal_my_pe;
 extern int shmem_internal_num_pes;
@@ -32,15 +33,13 @@ extern int shmem_internal_num_pes;
 extern int shmem_internal_initialized;
 extern int shmem_internal_finalized;
 extern int shmem_internal_thread_level;
-extern int shmem_internal_debug;
-extern int shmem_internal_trap_on_abort;
 
 extern void *shmem_internal_heap_base;
 extern long shmem_internal_heap_length;
 extern void *shmem_internal_data_base;
 extern long shmem_internal_data_length;
-extern int shmem_internal_heap_use_huge_pages;
-extern long shmem_internal_heap_huge_page_size;
+
+#define SHMEM_INTERNAL_HEAP_OVERHEAD (1024*1024)
 
 /* Note: must be accompanied by shmem_internal_my_pe in arguments */
 #define RAISE_PE_PREFIX "[%04d]        "
@@ -122,7 +121,7 @@ extern long shmem_internal_heap_huge_page_size;
 
 #define DEBUG_STR(str)                                                  \
     do {                                                                \
-        if(shmem_internal_debug) {                                      \
+        if(shmem_internal_params.DEBUG) {                               \
             fprintf(stderr, "[%04d] DEBUG: %s:%d: %s\n"                 \
                     RAISE_PE_PREFIX "%s\n",                             \
                     shmem_internal_my_pe, __FILE__, __LINE__, __func__, \
@@ -132,7 +131,7 @@ extern long shmem_internal_heap_huge_page_size;
 
 #define DEBUG_MSG(...)                                                  \
     do {                                                                \
-        if(shmem_internal_debug) {                                      \
+        if(shmem_internal_params.DEBUG) {                               \
             char str[256];                                              \
             size_t off;                                                 \
             off = snprintf(str, sizeof(str), "[%04d] DEBUG: %s:%d: %s\n", \
@@ -385,7 +384,6 @@ extern shmem_internal_mutex_t shmem_internal_mutex_alloc;
 #   define SHMEM_MUTEX_DESTROY(_mutex)
 #   define SHMEM_MUTEX_LOCK(_mutex)
 #   define SHMEM_MUTEX_UNLOCK(_mutex)
-
 #endif /* ENABLE_THREADS */
 
 void shmem_internal_start_pes(int npes);
@@ -394,10 +392,9 @@ void shmem_internal_finalize(void);
 void shmem_internal_global_exit(int status);
 char *shmem_internal_nodename(void);
 
-int shmem_internal_symmetric_init(size_t requested_length, int use_malloc);
+int shmem_internal_symmetric_init(void);
 int shmem_internal_symmetric_fini(void);
-int shmem_internal_collectives_init(int requested_crossover,
-                                    int requested_radix);
+int shmem_internal_collectives_init(void);
 
 /* internal allocation, without a barrier */
 void *shmem_internal_shmalloc(size_t size);
@@ -421,8 +418,6 @@ static inline double shmem_internal_wtime(void) {
 }
 
 /* Utility functions */
-long shmem_util_getenv_long(const char* name, int is_sized, long default_value);
-char *shmem_util_getenv_str(const char* name);
 char *shmem_util_wrap(const char *str, const size_t wraplen, const char *indent);
 
 #ifndef MAX

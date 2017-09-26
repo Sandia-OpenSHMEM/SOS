@@ -1,0 +1,112 @@
+.TH SHMEM_CALLOC 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_calloc \- 
+Allocate a zeroed block of symmetric memory.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B void
+.B *shmem_calloc(size_t
+.IB "count" ,
+.B size_t
+.I size
+.B );
+
+
+
+./ sectionEnd
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I count
+- The number of elements to allocate.
+
+
+.BR "IN " -
+.I size
+- The size in bytes of each element to allocate.
+./ sectionEnd
+
+
+
+./ sectionStart
+
+.SS API Description
+
+The 
+.B shmem\_calloc
+routine allocates a region of remotely-accessible
+memory for an array of 
+.I count
+objects of 
+.I size
+bytes each and
+returns a pointer to the lowest byte address of the allocated symmetric
+memory. The space is initialized to all bits zero.
+
+If the allocation succeeds, the pointer returned shall be suitably
+aligned so that it may be assigned to a pointer to any type of object.
+If the allocation does not succeed, or either 
+.I count
+or 
+.I size
+is
+0, the return value is a null pointer.
+
+The values for 
+.I count
+and 
+.I size
+shall each be equal across
+all PEs calling 
+.B shmem\_calloc
+; otherwise, the behavior is
+undefined.
+
+The 
+.B shmem\_calloc
+routine calls 
+.B shmem\_barrier\_all
+on exit.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+The 
+.B shmem\_calloc
+routine returns a pointer to the lowest byte
+address of the allocated space; otherwise, it returns a null pointer.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+None.
+
+./ sectionEnd
+
+
+
+

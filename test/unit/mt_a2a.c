@@ -78,6 +78,7 @@ static void * thread_main(void *arg) {
         pthread_mutex_unlock(&mutex);
     }
 
+    pthread_barrier_wait(&fencebar);
     if (0 == tid) shmem_barrier_all();
     pthread_barrier_wait(&fencebar);
 

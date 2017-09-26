@@ -397,19 +397,20 @@ SHMEMRandomAccess(void)
   HPCC_PELock = (long *) shmem_malloc(sizeof(long) * NumProcs);
   if (! HPCC_PELock) sAbort = 1;
 
-  for (i = 0; i < NumProcs; i++)
-      HPCC_PELock[i] = 0;
-
   shmem_barrier_all();
   shmem_int_sum_to_all(&rAbort, &sAbort, 1, 0, 0, NumProcs, ipWrk, pSync_reduce);
   shmem_barrier_all();
 
   if (rAbort > 0) {
-    if (MyProc == 0) fprintf(outFile, "Failed to allocate memory for the main table.\n");
+    if (MyProc == 0) fprintf(outFile, "Failed to allocate memory\n");
     /* check all allocations in case there are new added and their order changes */
     if (HPCC_Table) shmem_free( HPCC_Table );
+    if (HPCC_PELock) shmem_free( HPCC_PELock );
     goto failed_table;
   }
+
+  for (i = 0; i < NumProcs; i++)
+      HPCC_PELock[i] = 0;
 
   /* Default number of global updates to table: 4x number of table entries */
   NumUpdates_Default = 4 * TableSize;

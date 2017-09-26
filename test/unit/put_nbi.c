@@ -50,11 +50,20 @@ main(int argc, char* argv[])
 
     target = (long*) shmem_malloc(sizeof(long) * 10);
     flag = (int*) shmem_malloc(sizeof(int));
+    if (!flag) {
+        fprintf(stderr, "ERR - null flag pointer\n");
+        shmem_global_exit(1);
+    }
     *flag = 0;
 
     num_pes=shmem_n_pes();
 
-    memset(target, 0, sizeof(long)*10);
+    if (target) {
+        memset(target, 0, sizeof(long)*10);
+    } else {
+        fprintf(stderr, "ERR - null target pointer\n");
+        shmem_global_exit(1);
+    }
 
     shmem_barrier_all();
 

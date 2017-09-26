@@ -44,8 +44,6 @@ void *shmem_internal_heap_base = NULL;
 long shmem_internal_heap_length = 0;
 void *shmem_internal_data_base = NULL;
 long shmem_internal_data_length = 0;
-int shmem_internal_heap_use_huge_pages = 0;
-long shmem_internal_heap_huge_page_size = 0;
 
 int shmem_internal_my_pe = -1;
 int shmem_internal_num_pes = -1;
@@ -55,8 +53,6 @@ int shmem_internal_initialized_with_start_pes = 0;
 int shmem_internal_global_exit_called = 0;
 
 int shmem_internal_thread_level;
-int shmem_internal_debug = 0;
-int shmem_internal_trap_on_abort = 0;
 
 #ifdef ENABLE_THREADS
 shmem_internal_mutex_t shmem_internal_mutex_alloc;
@@ -127,9 +123,6 @@ void
 shmem_internal_init(int tl_requested, int *tl_provided)
 {
     int ret;
-    int radix = -1, crossover = -1;
-    long heap_size, eager_size;
-    int heap_use_malloc = 0;
 
     int runtime_initialized   = 0;
     int transport_initialized = 0;
@@ -150,6 +143,9 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     *tl_provided = SHMEMX_THREAD_SINGLE;
 #endif
 
+    /* Parse environment variables into shmem_internal_params */
+    shmem_internal_parse_env();
+
     ret = shmem_runtime_init();
     if (0 != ret) {
         fprintf(stderr, "ERROR: runtime init failed: %d\n", ret);
@@ -166,32 +162,45 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         goto cleanup;
     }
 
-    /* Process environment variables */
-    radix = shmem_util_getenv_long("COLL_RADIX", 0, 4);
-    crossover = shmem_util_getenv_long("COLL_CROSSOVER", 0, 4);
-    heap_size = shmem_util_getenv_long("SYMMETRIC_SIZE", 1, 512 * 1024 * 1024);
-    eager_size = shmem_util_getenv_long("BOUNCE_SIZE", 1,
-                            /* Disable by default in MULTIPLE because of threading overheads */
-                            shmem_internal_thread_level == SHMEMX_THREAD_MULTIPLE ?
-                            0 : DEFAULT_BOUNCE_SIZE);
-    heap_use_malloc = shmem_util_getenv_long("SYMMETRIC_HEAP_USE_MALLOC", 0, 0);
-    shmem_internal_debug = (NULL != shmem_util_getenv_str("DEBUG")) ? 1 : 0;
-    shmem_internal_trap_on_abort = (NULL != shmem_util_getenv_str("TRAP_ON_ABORT")) ? 1 : 0;
-
-    /* huge page support only on Linux for now, default is to use 2MB large pages */
-#ifdef __linux__
-    if (heap_use_malloc == 0) {
-        shmem_internal_heap_use_huge_pages =
-            (shmem_util_getenv_str("SYMMETRIC_HEAP_USE_HUGE_PAGES") != NULL) ? 1 : 0;
-        shmem_internal_heap_huge_page_size =
-            shmem_util_getenv_long("SYMMETRIC_HEAP_PAGE_SIZE", 1, 2 * 1024 * 1024);
+    /* Unless the user asked for it, disable bounce buffering in MULTIPLE
+     * because of threading overheads */
+    if (shmem_internal_thread_level == SHMEMX_THREAD_MULTIPLE &&
+        !shmem_internal_params.BOUNCE_SIZE_provided) {
+        shmem_internal_params.BOUNCE_SIZE = 0;
     }
-#endif
 
-#ifdef USE_CMA
-    shmem_transport_cma_put_max = shmem_util_getenv_long("CMA_PUT_MAX", 1, 8*1024);
-    shmem_transport_cma_get_max = shmem_util_getenv_long("CMA_GET_MAX", 1, 16*1024);
+    /* Print library parameters */
+    if (0 == shmem_internal_my_pe) {
+        if (shmem_internal_params.VERSION || shmem_internal_params.INFO ||
+            shmem_internal_params.DEBUG)
+        {
+            printf(PACKAGE_STRING "\n");
+        }
+
+        if (shmem_internal_params.INFO) {
+            shmem_internal_print_env();
+            printf("\n");
+        }
+
+        if (shmem_internal_params.DEBUG) {
+            char *wrapped_configure_args = shmem_util_wrap(SOS_CONFIGURE_ARGS, 60,
+                                                           "                        ");
+
+            printf("Build information:\n");
+#ifdef SOS_GIT_VERSION
+            printf("%-23s %s\n", "  Git Version", SOS_GIT_VERSION);
 #endif
+            printf("%-23s %s\n", "  Configure Args", wrapped_configure_args);
+            printf("%-23s %s\n", "  Build Date", SOS_BUILD_DATE);
+            printf("%-23s %s\n", "  Build CC", SOS_BUILD_CC);
+            printf("%-23s %s\n", "  Build CFLAGS", SOS_BUILD_CFLAGS);
+            printf("\n");
+
+            free(wrapped_configure_args);
+        }
+
+        fflush(NULL);
+    }
 
     /* Find symmetric data */
 #ifdef __APPLE__
@@ -202,6 +211,17 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     shmem_internal_data_length = (unsigned long) &end  - (unsigned long) &data_start;
 #endif
 
+    /* create symmetric heap */
+    ret = shmem_internal_symmetric_init();
+    if (0 != ret) {
+        RETURN_ERROR_MSG("Symmetric heap initialization failed (%d)\n", ret);
+        goto cleanup;
+    }
+
+    DEBUG_MSG("Sym. heap=%p len=%ld -- data=%p len=%ld\n",
+              shmem_internal_heap_base, shmem_internal_heap_length,
+              shmem_internal_data_base, shmem_internal_data_length);
+
 #ifdef USE_ON_NODE_COMMS
     shmem_internal_location_array = malloc(sizeof(char) * shmem_internal_num_pes);
     if (NULL == shmem_internal_location_array) goto cleanup;
@@ -209,22 +229,15 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     memset(shmem_internal_location_array, -1, shmem_internal_num_pes);
 #endif
 
-    /* create symmetric heap */
-    ret = shmem_internal_symmetric_init(heap_size, heap_use_malloc);
-    if (0 != ret) {
-        RETURN_ERROR_MSG("Symmetric heap initialization failed (%d)\n", ret);
-        goto cleanup;
-    }
-
     /* Initialize transport devices */
-    ret = shmem_transport_init(eager_size);
+    ret = shmem_transport_init();
     if (0 != ret) {
         RETURN_ERROR_MSG("Transport init failed (%d)\n", ret);
         goto cleanup;
     }
     transport_initialized = 1;
 #ifdef USE_XPMEM
-    ret = shmem_transport_xpmem_init(eager_size);
+    ret = shmem_transport_xpmem_init();
     if (0 != ret) {
         RETURN_ERROR_MSG("XPMEM init failed (%d)\n", ret);
         goto cleanup;
@@ -233,7 +246,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 #endif
 
 #ifdef USE_CMA
-    ret = shmem_transport_cma_init(eager_size);
+    ret = shmem_transport_cma_init();
     if (0 != ret) {
         RETURN_ERROR_MSG("CMA init failed (%d)\n", ret);
         goto cleanup;
@@ -270,7 +283,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     }
 #endif
 
-    ret = shmem_internal_collectives_init(crossover, radix);
+    ret = shmem_internal_collectives_init();
     if (ret != 0) {
         RETURN_ERROR_MSG("Initialization of collectives failed (%d)\n", ret);
         goto cleanup;
@@ -286,100 +299,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
                     sizeof(shmem_internal_my_hostname),
                     "ERR: gethostname '%s'?", strerror(errno));
     }
-
-    /* last minute printing of information */
-    if (0 == shmem_internal_my_pe) {
-        if (NULL != shmem_util_getenv_str("VERSION") ||
-            NULL != shmem_util_getenv_str("INFO")    ||
-            shmem_internal_debug)
-        {
-            printf(PACKAGE_STRING "\n");
-            fflush(NULL);
-        }
-
-        if (NULL != shmem_util_getenv_str("INFO")) {
-            printf("SMA_VERSION             %s\n",
-                   (NULL != shmem_util_getenv_str("VERSION")) ? "Set" : "Not set");
-            printf("\tIf set, print library version at startup\n");
-            printf("SMA_INFO                %s\n",
-                   (NULL != shmem_util_getenv_str("INFO")) ? "Set" : "Not set");
-            printf("\tIf set, print this help message at startup\n");
-            printf("SMA_SYMMETRIC_SIZE      %ld\n", heap_size);
-            printf("\tSymmetric heap size\n");
-            printf("SMA_SYMMETRIC_HEAP_USE_MALLOC %s\n",
-                   (0 != heap_use_malloc) ? "Set" : "Not set");
-            printf("\tIf set, allocate the symmetric heap using malloc\n");
-            if (heap_use_malloc == 0) {
-                printf("SMA_SYMMETRIC_HEAP_USE_HUGE_PAGES %s\n",
-                        shmem_internal_heap_use_huge_pages ? "Yes" : "No");
-                if (shmem_internal_heap_use_huge_pages) {
-                    printf("SMA_SYMMETRIC_HEAP_PAGE_SIZE %ld \n",
-                           shmem_internal_heap_huge_page_size);
-                }
-                printf("\tSymmetric heap use large pages\n");
-            }
-            printf("SMA_COLL_CROSSOVER      %d\n", crossover);
-            printf("\tCross-over between linear and tree collectives\n");
-            printf("SMA_COLL_RADIX          %d\n", radix);
-            printf("\tRadix for tree-based collectives\n");
-            printf("SMA_BOUNCE_SIZE         %ld\n", eager_size);
-            printf("\tMaximum message size to bounce buffer\n");
-            printf("SMA_BARRIER_ALGORITHM   %s\n", coll_type_str[shmem_internal_barrier_type]);
-            printf("\tAlgorithm for barrier.  Options are auto, linear, tree, dissem\n");
-            printf("SMA_BCAST_ALGORITHM     %s\n", coll_type_str[shmem_internal_bcast_type]);
-            printf("\tAlgorithm for broadcast.  Options are auto, linear, tree\n");
-            printf("SMA_REDUCE_ALGORITHM    %s\n", coll_type_str[shmem_internal_reduce_type]);
-            printf("\tAlgorithm for reductions.  Options are auto, linear, tree, recdbl\n");
-            printf("SMA_COLLECT_ALGORITHM   %s\n", coll_type_str[shmem_internal_collect_type]);
-            printf("\tAlgorithm for collect.  Options are auto, linear\n");
-            printf("SMA_FCOLLECT_ALGORITHM  %s\n", coll_type_str[shmem_internal_fcollect_type]);
-            printf("\tAlgorithm for fcollect.  Options are auto, linear, ring, recdbl\n");
-            printf("SMA_DEBUG               %s\n", shmem_internal_debug ? "On" : "Off");
-            printf("\tEnable debugging messages\n");
-            printf("SMA_TRAP_ON_ABORT       %s\n", shmem_internal_trap_on_abort ? "On" : "Off");
-            printf("\tGenerate trap if the program aborts or calls shmem_global_exit\n");
-
-            printf("\n");
-#ifdef USE_XPMEM
-            printf("On-node transport:      XPMEM\n");
-#endif
-#ifdef USE_CMA
-            printf("On-node transport:      CMA\n");
-            printf("SMA_CMA_PUT_MAX         %zu\n", shmem_transport_cma_put_max);
-            printf("SMA_CMA_GET_MAX         %zu\n", shmem_transport_cma_get_max);
-#endif /* USE_CMA */
-#if !defined(USE_XPMEM) && !defined(USE_CMA)
-            printf("On-node transport:      NONE\n");
-#endif
-
-            printf("\n");
-            shmem_transport_print_info();
-            printf("\n");
-        }
-
-        if (shmem_internal_debug) {
-            char *wrapped_configure_args = shmem_util_wrap(SOS_CONFIGURE_ARGS, 60,
-                                                           "                        ");
-
-            printf("Build information:\n");
-#ifdef SOS_GIT_VERSION
-            printf("%-23s %s\n", "Git Version", SOS_GIT_VERSION);
-#endif
-            printf("%-23s %s\n", "Configure Args", wrapped_configure_args);
-            printf("%-23s %s\n", "Build Date", SOS_BUILD_DATE);
-            printf("%-23s %s\n", "Build CC", SOS_BUILD_CC);
-            printf("%-23s %s\n", "Build CFLAGS", SOS_BUILD_CFLAGS);
-            printf("\n");
-
-            free(wrapped_configure_args);
-        }
-
-        fflush(NULL);
-    }
-
-    DEBUG_MSG("Sym. heap=%p len=%ld -- data=%p len=%ld\n",
-              shmem_internal_heap_base, shmem_internal_heap_length,
-              shmem_internal_data_base, shmem_internal_data_length);
 
     /* finish up */
     shmem_runtime_barrier();

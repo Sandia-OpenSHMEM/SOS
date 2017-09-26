@@ -97,8 +97,8 @@ void static inline target_data_uni_bw(int len, perf_metrics_t metric_info)
             shmem_int_inc(&completion_signal, my_PE_partners[i]);
         }
         end = perf_shmemx_wtime();
-        free(my_PE_partners);
     }
+    free(my_PE_partners);
 
     shmem_barrier_all();
     completion_signal = 0;

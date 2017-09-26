@@ -58,7 +58,7 @@ extern struct shmem_transport_xpmem_peer_info_t *shmem_transport_xpmem_peers;
     } while (0)
 #endif
 
-int shmem_transport_xpmem_init(long eager_size);
+int shmem_transport_xpmem_init(void);
 
 int shmem_transport_xpmem_startup(void);
 
