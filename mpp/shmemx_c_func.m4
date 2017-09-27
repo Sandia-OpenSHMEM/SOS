@@ -52,3 +52,5 @@ SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_FETCH_AND')
 define(`SHMEM_C_FETCH_OR',
 `SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmemx_$1_atomic_fetch_or($2 *target, $2 value, int pe)')dnl
 SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_FETCH_OR')
+
+/* FIXME: Need C11 generic selection macros */
