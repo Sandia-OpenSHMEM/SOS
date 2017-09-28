@@ -303,6 +303,44 @@ define(`SHMEM_C11_GEN_SET', `               $2*: shmem_$1_set')dnl
     _Generic(&*(dest), \
 SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_SET', `, \') \
             )(dest, value, pe)
+
+/* Atomics with bitwise AMO types */
+define(`SHMEM_C11_GEN_AND', `               $2*: shmem_$1_atomic_and')dnl
+#define shmem_atomic_and(dest, value, pe) \
+    _Generic(&*(dest), \
+SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_C11_GEN_AND', `, \') \
+            )(dest, value, pe)
+
+define(`SHMEM_C11_GEN_OR', `               $2*: shmem_$1_atomic_or')dnl
+#define shmem_atomic_or(dest, value, pe) \
+    _Generic(&*(dest), \
+SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_C11_GEN_OR', `, \') \
+            )(dest, value, pe)
+
+define(`SHMEM_C11_GEN_XOR', `               $2*: shmem_$1_atomic_xor')dnl
+#define shmem_atomic_xor(dest, value, pe) \
+    _Generic(&*(dest), \
+SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_C11_GEN_XOR', `, \') \
+            )(dest, value, pe)
+
+define(`SHMEM_C11_GEN_FETCH_AND', `               $2*: shmem_$1_atomic_fetch_and')dnl
+#define shmem_atomic_fetch_and(dest, value, pe) \
+    _Generic(&*(dest), \
+SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_C11_GEN_FETCH_AND', `, \') \
+            )(dest, value, pe)
+
+define(`SHMEM_C11_GEN_FETCH_OR', `               $2*: shmem_$1_atomic_fetch_or')dnl
+#define shmem_atomic_fetch_or(dest, value, pe) \
+    _Generic(&*(dest), \
+SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_C11_GEN_FETCH_OR', `, \') \
+            )(dest, value, pe)
+
+define(`SHMEM_C11_GEN_FETCH_XOR', `               $2*: shmem_$1_atomic_fetch_xor')dnl
+#define shmem_atomic_fetch_xor(dest, value, pe) \
+    _Generic(&*(dest), \
+SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_C11_GEN_FETCH_XOR', `, \') \
+            )(dest, value, pe)
+
 #endif /* C11 */
 
 #endif /* SHMEM_H */
