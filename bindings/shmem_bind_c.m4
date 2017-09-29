@@ -11,8 +11,8 @@ define(`SHMEM_BIND_C_RMA', dnl args: macro_name, end
 `$1(float,      float)$2
 $1(double,     double)$2
 $1(longdouble, long double)$2
-$1(schar,      signed char)$2
 $1(char,       char)$2
+$1(schar,      signed char)$2
 $1(short,      short)$2
 $1(int,        int)$2
 $1(long,       long)$2
