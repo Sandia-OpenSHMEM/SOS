@@ -14,6 +14,13 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
+#include "config.h"
+
+#if OPAL_HAVE_ATTRIBUTE_UNUSED
+#define VAR_IS_UNUSED __attribute__((unused))
+#else
+#define VAR_IS_UNUSED
+#endif
 
 #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
 
@@ -79,7 +86,7 @@
 
 #define GEN_RMA_ASSOC(TYPENAME, CTYPE, TYPE_CLASS)              \
   do {                                                          \
-    CTYPE val;                                                  \
+    CTYPE val VAR_IS_UNUSED;                                    \
     if (NEED_##TYPE_CLASS##_ASSOC(val))                         \
       printf("$1(%s, %s)$2\n", #TYPENAME, #CTYPE);              \
   }                                                             \
@@ -87,7 +94,7 @@
 
 #define GEN_AMO_ASSOC(TYPENAME, CTYPE, SHMTYPE, TYPE_CLASS)     \
   do {                                                          \
-    CTYPE val;                                                  \
+    CTYPE val VAR_IS_UNUSED;                                    \
     if (NEED_##TYPE_CLASS##_ASSOC(val))                         \
       printf("$1(%s, %s, %s)$2\n", #TYPENAME, #CTYPE, #SHMTYPE);\
   }                                                             \
