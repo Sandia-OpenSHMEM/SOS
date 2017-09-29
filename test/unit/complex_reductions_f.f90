@@ -202,20 +202,21 @@
 
       contains
 
+      ! Checks that real and imaginary components are within 1/1000th of
+      ! a percent of the expected value:
       subroutine check_result_complex(z_target, correct, N, id)
         implicit none
         integer N, id, me
         complex(kind=4) z_target(N), correct(N)
-        real e
 
         me = shmem_my_pe()
         do i=1,N
-        if ( abs(real(z_target(i)) - real(correct(i))) .gt. epsilon(e) ) then
+        if ( abs(1 - real(z_target(i)) / real(correct(i))) .gt. 1e-5 ) then
           print *, "fail : incorrect real component ", real(z_target(i)), &
             " expected ", real(correct(i)), " on process ", me, "test #", id
           call shmem_global_exit(id)
         endif
-        if ( abs(aimag(z_target(i)) - aimag(correct(i))) .gt. epsilon(e) ) then
+        if ( abs(1 - aimag(z_target(i)) / aimag(correct(i))) .gt. 1e-5 ) then
           print *, "fail : incorrect imaginary component ", aimag(z_target(i)), &
             " expected ", aimag(correct(i)), " on process ", me, "test #", id
           call shmem_global_exit(id)
@@ -228,16 +229,15 @@
         implicit none
         integer N, id, me
         complex(kind=8) zd_target(N), correct(N)
-        double precision e
 
         me = shmem_my_pe()
         do i=1,N
-        if ( abs(real(zd_target(i)) - real(correct(i))) .gt. epsilon(e) ) then
+        if ( abs(1 - real(zd_target(i)) / real(correct(i))) .gt. 1e-5 ) then
           print *, "fail : incorrect real component ", real(zd_target(i)), &
             " expected ", real(correct(i)), " on process ", me, "test #", id
           call shmem_global_exit(id)
         endif
-        if ( abs(aimag(zd_target(i)) - aimag(correct(i))) .gt. epsilon(e) ) then
+        if ( abs(1 - aimag(zd_target(i)) / aimag(correct(i))) .gt. 1e-5 ) then
           print *, "fail : incorrect imaginary component ", aimag(zd_target(i)), &
             " expected ", aimag(correct(i)), " on process ", me, "test #", id
           call shmem_global_exit(id)
