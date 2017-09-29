@@ -27,8 +27,8 @@
 /* Note: Mirrors SHMEM_BIND_C11_RMA */
 #define NEED_RMA_ASSOC(VAL)       \
   _Generic((VAL),                 \
-           signed char: 0,        \
            char: 0,               \
+           signed char: 0,        \
            short: 0,              \
            int: 0,                \
            long: 0,               \

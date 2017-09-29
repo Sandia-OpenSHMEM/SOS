@@ -15,8 +15,8 @@ SHMEM_BIND_C11_RMA_EXTRAS($1,$2)dnl
 `$1(float,      float)$2
 $1(double,     double)$2
 $1(longdouble, long double)$2
-$1(schar,      signed char)$2
 $1(char,       char)$2
+$1(schar,      signed char)$2
 $1(short,      short)$2
 $1(int,        int)$2
 $1(long,       long)$2
