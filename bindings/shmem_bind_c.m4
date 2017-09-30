@@ -12,10 +12,26 @@ define(`SHMEM_BIND_C_RMA', dnl args: macro_name, end
 $1(double,     double)$2
 $1(longdouble, long double)$2
 $1(char,       char)$2
+$1(schar,      signed char)$2
 $1(short,      short)$2
 $1(int,        int)$2
 $1(long,       long)$2
-$1(longlong,   long long)')dnl
+$1(longlong,   long long)$2
+$1(uchar,      unsigned char)$2
+$1(ushort,     unsigned short)$2
+$1(uint,       unsigned int)$2
+$1(ulong,      unsigned long)$2
+$1(ulonglong,  unsigned long long)$2
+$1(int8,       int8_t)$2
+$1(int16,      int16_t)$2
+$1(int32,      int32_t)$2
+$1(int64,      int64_t)$2
+$1(uint8,      uint8_t)$2
+$1(uint16,     uint16_t)$2
+$1(uint32,     uint32_t)$2
+$1(uint64,     uint64_t)$2
+$1(size,       size_t)$2
+$1(ptrdiff,    ptrdiff_t)')dnl
 dnl
 define(`SHMEM_BIND_C_SIZES', dnl args: macro_name, end
 `$1(8,          1)$2
@@ -25,9 +41,18 @@ $1(64,         8)$2
 $1(128,        16)')dnl
 dnl
 define(`SHMEM_BIND_C_AMO', dnl args: macro_name, end
-`$1(int,        int,        `SHM_INTERNAL_INT')$2
-$1(long,       long,       `SHM_INTERNAL_LONG')$2
-$1(longlong,   long long,  `SHM_INTERNAL_LONG_LONG')')dnl
+`$1(int,        int,                `SHM_INTERNAL_INT')$2
+$1(long,       long,               `SHM_INTERNAL_LONG')$2
+$1(longlong,   long long,          `SHM_INTERNAL_LONG_LONG')$2
+$1(uint,       unsigned int,       `SHM_INTERNAL_UINT')$2
+$1(ulong,      unsigned long,      `SHM_INTERNAL_ULONG')$2
+$1(ulonglong,  unsigned long long, `SHM_INTERNAL_ULONG_LONG')$2
+$1(int32,      int32_t,            `SHM_INTERNAL_INT32')$2
+$1(int64,      int64_t,            `SHM_INTERNAL_INT64')$2
+$1(uint32,     uint32_t,           `SHM_INTERNAL_UINT32')$2
+$1(uint64,     uint64_t,           `SHM_INTERNAL_UINT64')$2
+$1(size,       size_t,             `SHM_INTERNAL_SIZE_T')$2
+$1(ptrdiff,    ptrdiff_t,          `SHM_INTERNAL_PTRDIFF_T')')dnl
 dnl
 define(`SHMEM_BIND_C_EXTENDED_AMO', dnl args: macro_name, end
 `SHMEM_BIND_C_AMO(`$1',`$2')$2

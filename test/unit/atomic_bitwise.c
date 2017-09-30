@@ -37,7 +37,6 @@
 #include <limits.h>
 #include <string.h>
 #include <shmem.h>
-#include <shmemx.h>
 #include <assert.h>
 
 #define XOR_MASK 0xff
@@ -88,13 +87,13 @@ main(int argc, char* argv[])
      * Test non-fetching XOR. This should result in each shared variable having
      * its value set to XOR_MASK. All shared values are initialized to zero.
      */
-    shmemx_uint_atomic_xor(&shared_uint, (unsigned int)XOR_MASK, neighbor);
-    shmemx_ulong_atomic_xor(&shared_ulong, (unsigned long)XOR_MASK, neighbor);
-    shmemx_ulonglong_atomic_xor(&shared_ulonglong, (unsigned long long)XOR_MASK, neighbor);
-    shmemx_int32_atomic_xor(&shared_int32, (int32_t)XOR_MASK, neighbor);
-    shmemx_int64_atomic_xor(&shared_int64, (int64_t)XOR_MASK, neighbor);
-    shmemx_uint32_atomic_xor(&shared_uint32, (uint32_t)XOR_MASK, neighbor);
-    shmemx_uint64_atomic_xor(&shared_uint64, (uint64_t)XOR_MASK, neighbor);
+    shmem_uint_atomic_xor(&shared_uint, (unsigned int)XOR_MASK, neighbor);
+    shmem_ulong_atomic_xor(&shared_ulong, (unsigned long)XOR_MASK, neighbor);
+    shmem_ulonglong_atomic_xor(&shared_ulonglong, (unsigned long long)XOR_MASK, neighbor);
+    shmem_int32_atomic_xor(&shared_int32, (int32_t)XOR_MASK, neighbor);
+    shmem_int64_atomic_xor(&shared_int64, (int64_t)XOR_MASK, neighbor);
+    shmem_uint32_atomic_xor(&shared_uint32, (uint32_t)XOR_MASK, neighbor);
+    shmem_uint64_atomic_xor(&shared_uint64, (uint64_t)XOR_MASK, neighbor);
 
     shmem_barrier_all();
 
@@ -112,13 +111,13 @@ main(int argc, char* argv[])
      * Test fetching XOR. Prior to this block, all shared variables contain the
      * value XOR_MASK. Here, we XOR them with XOR_MASK2.
      */
-    unsigned int fetched_uint = shmemx_uint_atomic_fetch_xor(&shared_uint, (unsigned int)XOR_MASK2, neighbor);
-    unsigned long fetched_ulong = shmemx_ulong_atomic_fetch_xor(&shared_ulong, (unsigned long)XOR_MASK2, neighbor);
-    unsigned long long fetched_ulonglong = shmemx_ulonglong_atomic_fetch_xor(&shared_ulonglong, (unsigned long long)XOR_MASK2, neighbor);
-    int32_t fetched_int32 = shmemx_int32_atomic_fetch_xor(&shared_int32, (int32_t)XOR_MASK2, neighbor);
-    int64_t fetched_int64 = shmemx_int64_atomic_fetch_xor(&shared_int64, (int64_t)XOR_MASK2, neighbor);
-    uint32_t fetched_uint32 = shmemx_uint32_atomic_fetch_xor(&shared_uint32, (uint32_t)XOR_MASK2, neighbor);
-    uint64_t fetched_uint64 = shmemx_uint64_atomic_fetch_xor(&shared_uint64, (uint64_t)XOR_MASK2, neighbor);
+    unsigned int fetched_uint = shmem_uint_atomic_fetch_xor(&shared_uint, (unsigned int)XOR_MASK2, neighbor);
+    unsigned long fetched_ulong = shmem_ulong_atomic_fetch_xor(&shared_ulong, (unsigned long)XOR_MASK2, neighbor);
+    unsigned long long fetched_ulonglong = shmem_ulonglong_atomic_fetch_xor(&shared_ulonglong, (unsigned long long)XOR_MASK2, neighbor);
+    int32_t fetched_int32 = shmem_int32_atomic_fetch_xor(&shared_int32, (int32_t)XOR_MASK2, neighbor);
+    int64_t fetched_int64 = shmem_int64_atomic_fetch_xor(&shared_int64, (int64_t)XOR_MASK2, neighbor);
+    uint32_t fetched_uint32 = shmem_uint32_atomic_fetch_xor(&shared_uint32, (uint32_t)XOR_MASK2, neighbor);
+    uint64_t fetched_uint64 = shmem_uint64_atomic_fetch_xor(&shared_uint64, (uint64_t)XOR_MASK2, neighbor);
 
     shmem_barrier_all();
 
@@ -137,13 +136,13 @@ main(int argc, char* argv[])
      * value XOR_MASK ^ XOR_MASK2 (i.e. 0xff00). Here, we do a bitwise OR with
      * OR_MASK (i.e. 0xff).
      */
-    shmemx_uint_atomic_or(&shared_uint, (unsigned int)OR_MASK, neighbor);
-    shmemx_ulong_atomic_or(&shared_ulong, (unsigned long)OR_MASK, neighbor);
-    shmemx_ulonglong_atomic_or(&shared_ulonglong, (unsigned long long)OR_MASK, neighbor);
-    shmemx_int32_atomic_or(&shared_int32, (int32_t)OR_MASK, neighbor);
-    shmemx_int64_atomic_or(&shared_int64, (int64_t)OR_MASK, neighbor);
-    shmemx_uint32_atomic_or(&shared_uint32, (uint32_t)OR_MASK, neighbor);
-    shmemx_uint64_atomic_or(&shared_uint64, (uint64_t)OR_MASK, neighbor);
+    shmem_uint_atomic_or(&shared_uint, (unsigned int)OR_MASK, neighbor);
+    shmem_ulong_atomic_or(&shared_ulong, (unsigned long)OR_MASK, neighbor);
+    shmem_ulonglong_atomic_or(&shared_ulonglong, (unsigned long long)OR_MASK, neighbor);
+    shmem_int32_atomic_or(&shared_int32, (int32_t)OR_MASK, neighbor);
+    shmem_int64_atomic_or(&shared_int64, (int64_t)OR_MASK, neighbor);
+    shmem_uint32_atomic_or(&shared_uint32, (uint32_t)OR_MASK, neighbor);
+    shmem_uint64_atomic_or(&shared_uint64, (uint64_t)OR_MASK, neighbor);
 
     shmem_barrier_all();
 
@@ -162,13 +161,13 @@ main(int argc, char* argv[])
      * value (XOR_MASK ^ XOR_MASK2) | OR_MASK (i.e. 0xffff). Here we OR with
      * OR_MASK2 (i.e. 0xff0000).
      */
-    fetched_uint = shmemx_uint_atomic_fetch_or(&shared_uint, (unsigned int)OR_MASK2, neighbor);
-    fetched_ulong = shmemx_ulong_atomic_fetch_or(&shared_ulong, (unsigned long)OR_MASK2, neighbor);
-    fetched_ulonglong = shmemx_ulonglong_atomic_fetch_or(&shared_ulonglong, (unsigned long long)OR_MASK2, neighbor);
-    fetched_int32 = shmemx_int32_atomic_fetch_or(&shared_int32, (int32_t)OR_MASK2, neighbor);
-    fetched_int64 = shmemx_int64_atomic_fetch_or(&shared_int64, (int64_t)OR_MASK2, neighbor);
-    fetched_uint32 = shmemx_uint32_atomic_fetch_or(&shared_uint32, (uint32_t)OR_MASK2, neighbor);
-    fetched_uint64 = shmemx_uint64_atomic_fetch_or(&shared_uint64, (uint64_t)OR_MASK2, neighbor);
+    fetched_uint = shmem_uint_atomic_fetch_or(&shared_uint, (unsigned int)OR_MASK2, neighbor);
+    fetched_ulong = shmem_ulong_atomic_fetch_or(&shared_ulong, (unsigned long)OR_MASK2, neighbor);
+    fetched_ulonglong = shmem_ulonglong_atomic_fetch_or(&shared_ulonglong, (unsigned long long)OR_MASK2, neighbor);
+    fetched_int32 = shmem_int32_atomic_fetch_or(&shared_int32, (int32_t)OR_MASK2, neighbor);
+    fetched_int64 = shmem_int64_atomic_fetch_or(&shared_int64, (int64_t)OR_MASK2, neighbor);
+    fetched_uint32 = shmem_uint32_atomic_fetch_or(&shared_uint32, (uint32_t)OR_MASK2, neighbor);
+    fetched_uint64 = shmem_uint64_atomic_fetch_or(&shared_uint64, (uint64_t)OR_MASK2, neighbor);
 
     shmem_barrier_all();
 
@@ -186,13 +185,13 @@ main(int argc, char* argv[])
      * Test non-fetching AND. All shared variables store the value 0xffffff.
      * Here, we AND with 0xffff00.
      */
-    shmemx_uint_atomic_and(&shared_uint, (unsigned int)AND_MASK, neighbor);
-    shmemx_ulong_atomic_and(&shared_ulong, (unsigned long)AND_MASK, neighbor);
-    shmemx_ulonglong_atomic_and(&shared_ulonglong, (unsigned long long)AND_MASK, neighbor);
-    shmemx_int32_atomic_and(&shared_int32, (int32_t)AND_MASK, neighbor);
-    shmemx_int64_atomic_and(&shared_int64, (int64_t)AND_MASK, neighbor);
-    shmemx_uint32_atomic_and(&shared_uint32, (uint32_t)AND_MASK, neighbor);
-    shmemx_uint64_atomic_and(&shared_uint64, (uint64_t)AND_MASK, neighbor);
+    shmem_uint_atomic_and(&shared_uint, (unsigned int)AND_MASK, neighbor);
+    shmem_ulong_atomic_and(&shared_ulong, (unsigned long)AND_MASK, neighbor);
+    shmem_ulonglong_atomic_and(&shared_ulonglong, (unsigned long long)AND_MASK, neighbor);
+    shmem_int32_atomic_and(&shared_int32, (int32_t)AND_MASK, neighbor);
+    shmem_int64_atomic_and(&shared_int64, (int64_t)AND_MASK, neighbor);
+    shmem_uint32_atomic_and(&shared_uint32, (uint32_t)AND_MASK, neighbor);
+    shmem_uint64_atomic_and(&shared_uint64, (uint64_t)AND_MASK, neighbor);
 
     shmem_barrier_all();
 
@@ -210,13 +209,13 @@ main(int argc, char* argv[])
      * Test fetching AND. All shared variables store the value 0xffff00. Here,
      * we AND with 0xff0000.
      */
-    fetched_uint = shmemx_uint_atomic_fetch_and(&shared_uint, (unsigned int)AND_MASK2, neighbor);
-    fetched_ulong = shmemx_ulong_atomic_fetch_and(&shared_ulong, (unsigned long)AND_MASK2, neighbor);
-    fetched_ulonglong = shmemx_ulonglong_atomic_fetch_and(&shared_ulonglong, (unsigned long long)AND_MASK2, neighbor);
-    fetched_int32 = shmemx_int32_atomic_fetch_and(&shared_int32, (int32_t)AND_MASK2, neighbor);
-    fetched_int64 = shmemx_int64_atomic_fetch_and(&shared_int64, (int64_t)AND_MASK2, neighbor);
-    fetched_uint32 = shmemx_uint32_atomic_fetch_and(&shared_uint32, (uint32_t)AND_MASK2, neighbor);
-    fetched_uint64 = shmemx_uint64_atomic_fetch_and(&shared_uint64, (uint64_t)AND_MASK2, neighbor);
+    fetched_uint = shmem_uint_atomic_fetch_and(&shared_uint, (unsigned int)AND_MASK2, neighbor);
+    fetched_ulong = shmem_ulong_atomic_fetch_and(&shared_ulong, (unsigned long)AND_MASK2, neighbor);
+    fetched_ulonglong = shmem_ulonglong_atomic_fetch_and(&shared_ulonglong, (unsigned long long)AND_MASK2, neighbor);
+    fetched_int32 = shmem_int32_atomic_fetch_and(&shared_int32, (int32_t)AND_MASK2, neighbor);
+    fetched_int64 = shmem_int64_atomic_fetch_and(&shared_int64, (int64_t)AND_MASK2, neighbor);
+    fetched_uint32 = shmem_uint32_atomic_fetch_and(&shared_uint32, (uint32_t)AND_MASK2, neighbor);
+    fetched_uint64 = shmem_uint64_atomic_fetch_and(&shared_uint64, (uint64_t)AND_MASK2, neighbor);
 
     shmem_barrier_all();
 

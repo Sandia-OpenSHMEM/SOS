@@ -11,10 +11,14 @@
 # information, see the LICENSE file in the top level directory of the
 # distribution.
 
-ACLOCAL_AMFLAGS = -I config
+EXTRA_DIST = shmem_bind_c.m4   \
+             shmem_bind_c11.m4 \
+             shmem_bind_f.m4
 
-EXTRA_DIST = README NEWS LICENSE sandia-openshmem.spec pmi-simple man
+BUILT_SOURCES = shmem_bind_c11_extras.m4
 
-SUBDIRS = bindings man mpp pmi-simple src test
+noinst_PROGRAMS = generate_bind_c11_extras
+generate_bind_c11_extras_SOURCES = generate_bind_c11_extras.c
 
-
+shmem_bind_c11_extras.m4: generate_bind_c11_extras
+	$(AM_V_GEN)./generate_bind_c11_extras > shmem_bind_c11_extras.m4
