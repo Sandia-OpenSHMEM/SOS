@@ -59,6 +59,15 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_ADD(int);
   TEST_SHMEM_ADD(long);
   TEST_SHMEM_ADD(long long);
+  TEST_SHMEM_ADD(unsigned int);
+  TEST_SHMEM_ADD(unsigned long);
+  TEST_SHMEM_ADD(unsigned long long);
+  TEST_SHMEM_ADD(int32_t);
+  TEST_SHMEM_ADD(int64_t);
+  TEST_SHMEM_ADD(uint32_t);
+  TEST_SHMEM_ADD(uint64_t);
+  TEST_SHMEM_ADD(size_t);
+  TEST_SHMEM_ADD(ptrdiff_t);
 
   shmem_finalize();
   return rc;

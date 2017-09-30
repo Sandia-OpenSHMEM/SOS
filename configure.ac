@@ -330,10 +330,12 @@ SHMEM_FIND_INT_TYPE([short], [$transport])
 SHMEM_FIND_INT_TYPE([int], [$transport])
 SHMEM_FIND_INT_TYPE([long], [$transport])
 SHMEM_FIND_INT_TYPE([long long], [$transport])
+SHMEM_FIND_INT_TYPE([ptrdiff_t], [$transport])
 
 SHMEM_FIND_UINT_TYPE([unsigned int], [$transport])
 SHMEM_FIND_UINT_TYPE([unsigned long], [$transport])
 SHMEM_FIND_UINT_TYPE([unsigned long long], [$transport])
+SHMEM_FIND_UINT_TYPE([size_t], [$transport])
 
 AC_CHECK_SIZEOF([float])
 AC_CHECK_SIZEOF([double])
@@ -607,6 +609,7 @@ AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
 AC_CONFIG_FILES([Makefile
   sandia-openshmem.spec
   man/Makefile
+  bindings/Makefile
   pmi-simple/Makefile
   mpp/Makefile
   mpp/shmem.fh

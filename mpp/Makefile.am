@@ -47,5 +47,5 @@ endif
 
 SUFFIXES = .h4
 
-.h4.h: shmem_c_func.m4 shmemx_c_func.m4 shmem_bind_c.m4
-	$(AM_V_GEN) $(M4) -I$(top_srcdir)/mpp -I$(top_srcdir)/src $< > $@
+.h4.h: shmem_c_func.m4 shmemx_c_func.m4 $(top_srcdir)/bindings/shmem_bind_c11.m4 $(top_srcdir)/bindings/shmem_bind_c.m4
+	$(AM_V_GEN) $(M4) -I$(top_srcdir)/mpp -I$(top_srcdir)/bindings -I$(top_builddir)/bindings $< > $@

@@ -60,10 +60,26 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_G(double);
   TEST_SHMEM_G(long double);
   TEST_SHMEM_G(char);
+  TEST_SHMEM_G(signed char);
   TEST_SHMEM_G(short);
   TEST_SHMEM_G(int);
   TEST_SHMEM_G(long);
   TEST_SHMEM_G(long long);
+  TEST_SHMEM_G(unsigned char);
+  TEST_SHMEM_G(unsigned short);
+  TEST_SHMEM_G(unsigned int);
+  TEST_SHMEM_G(unsigned long);
+  TEST_SHMEM_G(unsigned long long);
+  TEST_SHMEM_G(int8_t);
+  TEST_SHMEM_G(int16_t);
+  TEST_SHMEM_G(int32_t);
+  TEST_SHMEM_G(int64_t);
+  TEST_SHMEM_G(uint8_t);
+  TEST_SHMEM_G(uint16_t);
+  TEST_SHMEM_G(uint32_t);
+  TEST_SHMEM_G(uint64_t);
+  TEST_SHMEM_G(size_t);
+  TEST_SHMEM_G(ptrdiff_t);
 
   shmem_finalize();
   return rc;

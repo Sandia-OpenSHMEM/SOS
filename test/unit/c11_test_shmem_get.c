@@ -70,10 +70,26 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_GET(double);
   TEST_SHMEM_GET(long double);
   TEST_SHMEM_GET(char);
+  TEST_SHMEM_GET(signed char);
   TEST_SHMEM_GET(short);
   TEST_SHMEM_GET(int);
   TEST_SHMEM_GET(long);
   TEST_SHMEM_GET(long long);
+  TEST_SHMEM_GET(unsigned char);
+  TEST_SHMEM_GET(unsigned short);
+  TEST_SHMEM_GET(unsigned int);
+  TEST_SHMEM_GET(unsigned long);
+  TEST_SHMEM_GET(unsigned long long);
+  TEST_SHMEM_GET(int8_t);
+  TEST_SHMEM_GET(int16_t);
+  TEST_SHMEM_GET(int32_t);
+  TEST_SHMEM_GET(int64_t);
+  TEST_SHMEM_GET(uint8_t);
+  TEST_SHMEM_GET(uint16_t);
+  TEST_SHMEM_GET(uint32_t);
+  TEST_SHMEM_GET(uint64_t);
+  TEST_SHMEM_GET(size_t);
+  TEST_SHMEM_GET(ptrdiff_t);
 
   shmem_finalize();
   return rc;
