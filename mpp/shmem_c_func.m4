@@ -112,48 +112,77 @@ SHMEM_C_GET_N_NBI(mem,1);
 
 /* AMO: Atomic Swap Routines */
 define(`SHMEM_C_SWAP',
-`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_swap($2 *target, $2 value, int pe)')dnl
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_swap($2 *target, $2 value, int pe) __attribute__ ((deprecated))')dnl
 SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_SWAP')
+
+define(`SHMEM_C_ATOMIC_SWAP',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_atomic_swap($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_ATOMIC_SWAP')
 
 /* Special case, only enabled when C++ and C11 bindings are disabled */
 #if !defined(__cplusplus) && \
     !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
 long SHPRE()shmem_swap(long *target, long value, int pe);
+long SHPRE()shmem_atomic_swap(long *target, long value, int pe);
 #endif
 
 /* AMO: Atomic Conditional Swap Routines */
 define(`SHMEM_C_CSWAP',
-`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_cswap($2 *target, $2 cond, $2 value, int pe)')dnl
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_cswap($2 *target, $2 cond, $2 value, int pe) __attribute__ ((deprecated))')dnl
 SHMEM_DECLARE_FOR_AMO(`SHMEM_C_CSWAP')
+
+define(`SHMEM_C_ATOMIC_COMPARE_SWAP',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_atomic_compare_swap($2 *target, $2 cond, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_ATOMIC_COMPARE_SWAP')
 
 /* AMO: Atomic Fetch-and-Add Routines */
 define(`SHMEM_C_FADD',
-`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_fadd($2 *target, $2 value, int pe)')dnl
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_fadd($2 *target, $2 value, int pe) __attribute__ ((deprecated))')dnl
 SHMEM_DECLARE_FOR_AMO(`SHMEM_C_FADD')
+
+define(`SHMEM_C_ATOMIC_FETCH_ADD',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_atomic_fetch_add($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_ATOMIC_FETCH_ADD')
 
 /* AMO: Atomic Fetch-and-Increment Routines */
 define(`SHMEM_C_FINC',
-`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_finc($2 *target, int pe)')dnl
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_finc($2 *target, int pe) __attribute__ ((deprecated))')dnl
 SHMEM_DECLARE_FOR_AMO(`SHMEM_C_FINC')
+
+define(`SHMEM_C_ATOMIC_FETCH_INC',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_atomic_fetch_inc($2 *target, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_ATOMIC_FETCH_INC')
 
 /* AMO: Atomic Add Routines */
 define(`SHMEM_C_ADD',
-`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_add($2 *target, $2 value, int pe)')dnl
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_add($2 *target, $2 value, int pe) __attribute__ ((deprecated))')dnl
 SHMEM_DECLARE_FOR_AMO(`SHMEM_C_ADD')
+
+define(`SHMEM_C_ATOMIC_ADD',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_atomic_add($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_ATOMIC_ADD')
 
 /* AMO: Atomic Increment Routines */
 define(`SHMEM_C_INC',
-`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_inc($2 *target, int pe)')dnl
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_inc($2 *target, int pe) __attribute__ ((deprecated)) __attribute__ ((deprecated))')dnl
 SHMEM_DECLARE_FOR_AMO(`SHMEM_C_INC')
+
+define(`SHMEM_C_ATOMIC_INC',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_atomic_inc($2 *target, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_ATOMIC_INC')
 
 /* AMO: Atomic Fetch Routines */
 define(`SHMEM_C_FETCH',
-`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_fetch(const $2 *target, int pe)')dnl
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_fetch(const $2 *target, int pe) __attribute__ ((deprecated))')dnl
 SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_FETCH')
+
+define(`SHMEM_C_ATOMIC_FETCH',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_atomic_fetch(const $2 *target, int pe)')dnl
+SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_ATOMIC_FETCH')
 
 /* AMO: Atomic Set Routines */
 define(`SHMEM_C_SET',
-`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_set($2 *target, $2 value, int pe)')dnl
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_set($2 *target, $2 value, int pe) __attribute__ ((deprecated))')dnl
 SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_SET')
 
 /* AMO: Atomic Bitwise Routines */
@@ -181,6 +210,10 @@ SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_FETCH_AND')
 define(`SHMEM_C_FETCH_OR',
 `SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_atomic_fetch_or($2 *target, $2 value, int pe)')dnl
 SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_FETCH_OR')
+
+define(`SHMEM_C_ATOMIC_SET',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_atomic_set($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_ATOMIC_SET')
 
 /* COLL: Barrier Synchronization Routines */
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync);
