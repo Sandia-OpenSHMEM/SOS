@@ -502,6 +502,32 @@ AC_SUBST(aslr_LDFLAGS)
 
 dnl check for library functions
 
+AC_MSG_CHECKING([for data segment pointer])
+AC_TRY_RUN([
+#ifdef __APPLE__
+#include <mach-o/getsect.h>
+#else
+extern char data_start;
+extern char end;
+#endif
+
+int main(void) {
+    void *base;
+    unsigned long length;
+#ifdef __APPLE__
+    base = (void*) get_etext();
+    length = get_end() - get_etext();
+#else
+    base = &data_start;
+    length = (unsigned long) &end  - (unsigned long) &data_start;
+#endif
+    return 0;
+}],
+    AC_MSG_RESULT([found]),
+    [ AC_MSG_RESULT([not found])
+      AC_MSG_ERROR([Could not locate data segment])
+    ])
+
 dnl final output
 
 LT_INIT
