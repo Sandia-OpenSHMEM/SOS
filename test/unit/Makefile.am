@@ -72,6 +72,7 @@ check_PROGRAMS = \
 	c11_test_shmem_p \
 	c11_test_shmem_put \
 	c11_test_shmem_set \
+	c11_test_shmem_atomic_or \
 	get_nbi \
 	put_nbi \
 	rma_coverage \
