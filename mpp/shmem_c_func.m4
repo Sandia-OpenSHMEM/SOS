@@ -123,7 +123,6 @@ SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_ATOMIC_SWAP')
 #if !defined(__cplusplus) && \
     !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
 long SHPRE()shmem_swap(long *target, long value, int pe);
-long SHPRE()shmem_atomic_swap(long *target, long value, int pe);
 #endif
 
 /* AMO: Atomic Conditional Swap Routines */

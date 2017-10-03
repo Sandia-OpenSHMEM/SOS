@@ -47,8 +47,6 @@ SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_ATOMIC_SWAP')
 /* shmem_swap is a special case in the API */
 #pragma weak shmem_swap = pshmem_swap
 #define shmem_swap pshmem_swap
-#pragma weak shmem_atomic_swap = pshmem_atomic_swap
-#define shmem_atomic_swap pshmem_atomic_swap
 #endif
 
 define(`SHMEM_PROF_DEF_CSWAP',
@@ -191,19 +189,6 @@ SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_ATOMIC_SWAP)
 /* shmem_swap is a special case in the API */
 long SHMEM_FUNCTION_ATTRIBUTES
 shmem_swap(long *target, long value, int pe)
-{
-    long newval;
-
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_PE(pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(long));
-
-    shmem_internal_swap(target, &value, &newval, sizeof(long), pe, SHM_INTERNAL_LONG);
-    shmem_internal_get_wait();
-    return newval;
-}
-long SHMEM_FUNCTION_ATTRIBUTES
-shmem_atomic_swap(long *target, long value, int pe)
 {
     long newval;
 

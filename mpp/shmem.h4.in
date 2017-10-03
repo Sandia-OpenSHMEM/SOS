@@ -314,7 +314,7 @@ SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_CSWAP', `, \') \
             )(dest, cond, value, pe)
 
 define(`SHMEM_C11_GEN_ATOMIC_COMPARE_SWAP', ` $2*: shmem_$1_atomic_compare_swap')dnl
-#define shmem_atomic_cswap(dest, cond, value, pe) \
+#define shmem_atomic_compare_swap(dest, cond, value, pe) \
     _Generic(&*(dest), \
 SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_ATOMIC_COMPARE_SWAP', `, \') \
             )(dest, cond, value, pe)
