@@ -69,16 +69,6 @@ shmem_transport_startup(void)
     return 0;
 }
 
-/* Print transport info, including settings of environment variables and other
- * parameters.  Called when SMA_INFO is set.
- */
-static inline
-void
-shmem_transport_print_info(void)
-{
-    return;
-}
-
 static inline
 int
 shmem_transport_fini(void)
