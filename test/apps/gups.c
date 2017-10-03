@@ -269,7 +269,7 @@ UpdateTable(uint64_t *Table,
   uint64_t ran, global_offset;
   int remote_pe;
   int global_start_at_pe;
-#if USE_PUT_GET
+#if USE_GET_PUT
   uint64_t remote_val;
 #endif
 
