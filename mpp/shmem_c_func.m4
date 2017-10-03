@@ -7,7 +7,7 @@ dnl distribution.
 dnl
 
 #ifndef SHMEM_FUNCTION_ATTRIBUTES
-#  if SHMEM_HAVE_VISIBILITY == 1
+#  if SHMEM_HAVE_ATTRIBUTE_VISIBILITY == 1
 #     define SHMEM_FUNCTION_ATTRIBUTES __attribute__((visibility("default")))
 #  else
 #     define SHMEM_FUNCTION_ATTRIBUTES

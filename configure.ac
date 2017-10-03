@@ -511,9 +511,9 @@ dnl check for compiler characteristics
 # make all symbols hidden by default
 OPAL_CHECK_VISIBILITY
 AS_IF([test "$opal_visibility_define" = 1],
-      [SHMEM_C_HAVE_VISIBILITY=1],
-      [SHMEM_C_HAVE_VISIBILITY=0])
-AC_SUBST(SHMEM_C_HAVE_VISIBILITY)
+      [SHMEM_C_HAVE_ATTRIBUTE_VISIBILITY=1],
+      [SHMEM_C_HAVE_ATTRIBUTE_VISIBILITY=0])
+AC_SUBST(SHMEM_C_HAVE_ATTRIBUTE_VISIBILITY)
 CFLAGS="$CFLAGS $OPAL_VISIBILITY_CFLAGS"
 
 # disable aslr, if possible at link time
