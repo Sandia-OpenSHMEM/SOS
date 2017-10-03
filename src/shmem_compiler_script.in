@@ -130,7 +130,7 @@ sub check_env {
     my $envvar = shift;
     my $str = shift;
 
-    foreach my $var (("SMA", "SHMEM_")) {
+    foreach my $var (("SHMEM_", "SMA_")) {
         my $testvar = $var . $envvar;
         if (exists($ENV{$testvar})) {
             $str = $ENV{$testvar};
