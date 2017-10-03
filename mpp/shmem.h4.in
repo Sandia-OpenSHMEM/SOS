@@ -214,6 +214,42 @@ define(`SHMEM_CXX_ATOMIC_FETCH_ADD',
 }')dnl
 SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_ATOMIC_FETCH_ADD')
 
+define(`SHMEM_CXX_ATOMIC_AND',
+`static inline void shmem_atomic_and($2 *dest, $2 value, int pe) {
+    shmem_$1_atomic_and(dest, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_AND')
+
+define(`SHMEM_CXX_ATOMIC_OR',
+`static inline void shmem_atomic_or($2 *dest, $2 value, int pe) {
+    shmem_$1_atomic_or(dest, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_OR')
+
+define(`SHMEM_CXX_ATOMIC_XOR',
+`static inline void shmem_atomic_xor($2 *dest, $2 value, int pe) {
+    shmem_$1_atomic_xor(dest, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_XOR')
+
+define(`SHMEM_CXX_ATOMIC_FETCH_AND',
+`static inline $2 shmem_atomic_fetch_and($2 *dest, $2 value, int pe) {
+    return shmem_$1_atomic_fetch_and(dest, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_FETCH_AND')
+
+define(`SHMEM_CXX_ATOMIC_FETCH_OR',
+`static inline $2 shmem_atomic_fetch_or($2 *dest, $2 value, int pe) {
+    return shmem_$1_atomic_fetch_or(dest, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_FETCH_OR')
+
+define(`SHMEM_CXX_ATOMIC_FETCH_XOR',
+`static inline $2 shmem_atomic_fetch_xor($2 *dest, $2 value, int pe) {
+    return shmem_$1_atomic_fetch_xor(dest, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_FETCH_XOR')
+
 /* Atomics with extended AMO types */
 define(`SHMEM_CXX_SWAP',
 `static inline $2 shmem_swap($2 *target, $2 value, int pe) {
