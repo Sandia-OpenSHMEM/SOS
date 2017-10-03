@@ -82,6 +82,7 @@ check_PROGRAMS = \
 	c11_test_shmem_atomic_xor \
 	c11_test_shmem_atomic_fetch_or \
 	c11_test_shmem_atomic_fetch_and \
+	c11_test_shmem_atomic_fetch_xor \
 	get_nbi \
 	put_nbi \
 	rma_coverage \
