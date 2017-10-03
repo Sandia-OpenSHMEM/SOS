@@ -266,9 +266,12 @@ UpdateTable(uint64_t *Table,
 {
   uint64_t iterate;
   int index;
-  uint64_t ran, remote_val, global_offset;
+  uint64_t ran, global_offset;
   int remote_pe;
   int global_start_at_pe;
+#if USE_PUT_GET
+  uint64_t remote_val;
+#endif
 
   shmem_barrier_all();
 
@@ -288,9 +291,13 @@ UpdateTable(uint64_t *Table,
       index = global_offset - global_start_at_pe;
 
       if (use_lock) shmem_set_lock(&HPCC_PELock[remote_pe]);
+#if USE_GET_PUT
       remote_val = (uint64_t) shmem_long_g((long *)&Table[index], remote_pe);
       remote_val ^= ran;
       shmem_long_p((long *)&Table[index], remote_val, remote_pe);
+#else
+      shmem_uint64_atomic_xor(&Table[index], ran, remote_pe);
+#endif
       if (use_lock) shmem_clear_lock(&HPCC_PELock[remote_pe]);
   }
 
