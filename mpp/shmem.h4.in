@@ -63,7 +63,8 @@ extern "C" {
 #define _SHMEM_REDUCE_MIN_WRKDATA_SIZE @C_REDUCE_MIN_WRKDATA_SIZE@
 #define  SHMEM_REDUCE_MIN_WRKDATA_SIZE @C_REDUCE_MIN_WRKDATA_SIZE@
 
-#define SHMEM_HAVE_VISIBILITY @SHMEM_C_HAVE_VISIBILITY@
+#define SHMEM_HAVE_ATTRIBUTE_VISIBILITY @SHMEM_AC_HAVE_ATTRIBUTE_VISIBILITY@
+#define SHMEM_HAVE_ATTRIBUTE_DEPRECATED @SHMEM_AC_HAVE_ATTRIBUTE_DEPRECATED@
 
 #define  SHMEM_SYNC_VALUE 0
 #define _SHMEM_SYNC_VALUE SHMEM_SYNC_VALUE
@@ -154,11 +155,23 @@ define(`SHMEM_CXX_ADD',
 }')dnl
 SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_ADD')
 
+define(`SHMEM_CXX_ATOMIC_ADD',
+`static inline void shmem_atomic_add($2 *target, $2 value, int pe) {
+    shmem_$1_atomic_add(target, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_ATOMIC_ADD')
+
 define(`SHMEM_CXX_CSWAP',
 `static inline $2 shmem_cswap($2 *target, $2 cond, $2 value, int pe) {
     return shmem_$1_cswap(target, cond, value, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_CSWAP')
+
+define(`SHMEM_CXX_ATOMIC_COMPARE_SWAP',
+`static inline $2 shmem_atomic_compare_swap($2 *target, $2 cond, $2 value, int pe) {
+    return shmem_$1_atomic_compare_swap(target, cond, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_ATOMIC_COMPARE_SWAP')
 
 define(`SHMEM_CXX_FINC',
 `static inline $2 shmem_finc($2 *target, int pe) {
@@ -166,11 +179,23 @@ define(`SHMEM_CXX_FINC',
 }')dnl
 SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_FINC')
 
+define(`SHMEM_CXX_ATOMIC_FETCH_INC',
+`static inline $2 shmem_atomic_fetch_inc($2 *target, int pe) {
+    return shmem_$1_atomic_fetch_inc(target, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_ATOMIC_FETCH_INC')
+
 define(`SHMEM_CXX_INC',
 `static inline void shmem_inc($2 *target, int pe) {
     shmem_$1_inc(target, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_INC')
+
+define(`SHMEM_CXX_ATOMIC_INC',
+`static inline void shmem_atomic_inc($2 *target, int pe) {
+    shmem_$1_atomic_inc(target, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_ATOMIC_INC')
 
 define(`SHMEM_CXX_FADD',
 `static inline $2 shmem_fadd($2 *target, $2 value, int pe) {
@@ -221,17 +246,35 @@ define(`SHMEM_CXX_SWAP',
 }')dnl
 SHMEM_CXX_DEFINE_FOR_EXTENDED_AMO(`SHMEM_CXX_SWAP')
 
+define(`SHMEM_CXX_ATOMIC_SWAP',
+`static inline $2 shmem_atomic_swap($2 *target, $2 value, int pe) {
+    return shmem_$1_atomic_swap(target, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_EXTENDED_AMO(`SHMEM_CXX_ATOMIC_SWAP')
+
 define(`SHMEM_CXX_FETCH',
 `static inline $2 shmem_fetch(const $2 *target, int pe) {
     return shmem_$1_fetch(target, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_EXTENDED_AMO(`SHMEM_CXX_FETCH')
 
+define(`SHMEM_CXX_ATOMIC_FETCH',
+`static inline $2 shmem_atomic_fetch(const $2 *target, int pe) {
+    return shmem_$1_atomic_fetch(target, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_EXTENDED_AMO(`SHMEM_CXX_ATOMIC_FETCH')
+
 define(`SHMEM_CXX_SET',
 `static inline void shmem_set($2 *target, $2 value, int pe) {
     shmem_$1_set(target, value, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_EXTENDED_AMO(`SHMEM_CXX_SET')
+
+define(`SHMEM_CXX_ATOMIC_SET',
+`static inline void shmem_atomic_set($2 *target, $2 value, int pe) {
+    shmem_$1_atomic_set(target, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_EXTENDED_AMO(`SHMEM_CXX_ATOMIC_SET')
 
 /* C11 Generic Macros */
 #elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
@@ -301,10 +344,22 @@ define(`SHMEM_C11_GEN_CSWAP', `               $2*: shmem_$1_cswap')dnl
 SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_CSWAP', `, \') \
             )(dest, cond, value, pe)
 
+define(`SHMEM_C11_GEN_ATOMIC_COMPARE_SWAP', ` $2*: shmem_$1_atomic_compare_swap')dnl
+#define shmem_atomic_compare_swap(dest, cond, value, pe) \
+    _Generic(&*(dest), \
+SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_ATOMIC_COMPARE_SWAP', `, \') \
+            )(dest, cond, value, pe)
+
 define(`SHMEM_C11_GEN_FINC', `               $2*: shmem_$1_finc')dnl
 #define shmem_finc(dest, pe) \
     _Generic(&*(dest), \
 SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_FINC', `, \') \
+            )(dest, pe)
+
+define(`SHMEM_C11_GEN_ATOMIC_FETCH_INC', `        $2*: shmem_$1_atomic_fetch_inc')dnl
+#define shmem_atomic_fetch_inc(dest, pe) \
+    _Generic(&*(dest), \
+SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_ATOMIC_FETCH_INC', `, \') \
             )(dest, pe)
 
 define(`SHMEM_C11_GEN_INC', `               $2*: shmem_$1_inc')dnl
@@ -313,10 +368,22 @@ define(`SHMEM_C11_GEN_INC', `               $2*: shmem_$1_inc')dnl
 SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_INC', `, \') \
             )(dest, pe)
 
+define(`SHMEM_C11_GEN_ATOMIC_INC', `        $2*: shmem_$1_atomic_inc')dnl
+#define shmem_atomic_inc(dest, pe) \
+    _Generic(&*(dest), \
+SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_ATOMIC_INC', `, \') \
+            )(dest, pe)
+
 define(`SHMEM_C11_GEN_FADD', `               $2*: shmem_$1_fadd')dnl
 #define shmem_fadd(dest, value, pe) \
     _Generic(&*(dest), \
 SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_FADD', `, \') \
+            )(dest, value, pe)
+
+define(`SHMEM_C11_GEN_ATOMIC_FETCH_ADD', `        $2*: shmem_$1_atomic_fetch_add')dnl
+#define shmem_atomic_fetch_add(dest, value, pe) \
+    _Generic(&*(dest), \
+SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_ATOMIC_FETCH_ADD', `, \') \
             )(dest, value, pe)
 
 /* Atomics with extended AMO types */
@@ -326,18 +393,37 @@ define(`SHMEM_C11_GEN_SWAP', `               $2*: shmem_$1_swap')dnl
 SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_SWAP', `, \') \
             )(dest, value, pe)
 
+define(`SHMEM_C11_GEN_ATOMIC_SWAP', `        $2*: shmem_$1_atomic_swap')dnl
+#define shmem_atomic_swap(dest, value, pe) \
+    _Generic(&*(dest), \
+SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_ATOMIC_SWAP', `, \') \
+            )(dest, value, pe)
+
 define(`SHMEM_C11_GEN_FETCH', `               $2*: shmem_$1_fetch')dnl
+define(`SHMEM_C11_GEN_ATOMIC_FETCH', `        $2*: shmem_$1_atomic_fetch')dnl
 define(`SHMEM_C11_GEN_FETCH_CONST', `               const $2*: shmem_$1_fetch')dnl
+define(`SHMEM_C11_GEN_ATOMIC_FETCH_CONST', `        const $2*: shmem_$1_atomic_fetch')dnl
 #define shmem_fetch(source, pe) \
     _Generic(&*(source), \
 SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_FETCH', `, \'), \
 SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_FETCH_CONST', `, \') \
+            )(source, pe)
+#define shmem_atomic_fetch(source, pe) \
+    _Generic(&*(source), \
+SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_ATOMIC_FETCH', `, \'), \
+SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_ATOMIC_FETCH_CONST', `, \') \
             )(source, pe)
 
 define(`SHMEM_C11_GEN_SET', `               $2*: shmem_$1_set')dnl
 #define shmem_set(dest, value, pe) \
     _Generic(&*(dest), \
 SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_SET', `, \') \
+            )(dest, value, pe)
+
+define(`SHMEM_C11_GEN_ATOMIC_SET', `        $2*: shmem_$1_atomic_set')dnl
+#define shmem_atomic_set(dest, value, pe) \
+    _Generic(&*(dest), \
+SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_ATOMIC_SET', `, \') \
             )(dest, value, pe)
 
 /* Atomics with bitwise AMO types */
