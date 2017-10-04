@@ -96,7 +96,7 @@ before_install:
     - make install
     ## Build libfabric
     - cd $TRAVIS_SRC
-    - git clone --depth 10 https://github.com/ofiwg/libfabric.git libfabric
+    - git clone  -b v1.5.0 --depth 10 https://github.com/ofiwg/libfabric.git libfabric
     - cd libfabric
     - ./autogen.sh
     - ./configure --prefix=$TRAVIS_INSTALL/libfabric
