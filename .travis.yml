@@ -1,5 +1,6 @@
 sudo: required
 language: c
+dist: trusty
 compiler:
     #- clang
     - gcc
