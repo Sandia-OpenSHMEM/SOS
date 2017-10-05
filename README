@@ -95,56 +95,56 @@ options.
 
   Environment variables:
 
-    SMA_VERSION: if defined, print SHMEM version during start_pes().
+    SHMEM_VERSION: if defined, print SHMEM version during start_pes().
 
-    SMA_INFO: if defined, print (stdout) SHMEM environment variables.
+    SHMEM_INFO: if defined, print (stdout) SHMEM environment variables.
 
-    SMA_SYMMETRIC_SIZE (default: 64 MiB)
+    SHMEM_SYMMETRIC_SIZE (default: 64 MiB)
         The allocated size of the symmetric heap which shmalloc() and shfree()
         operates on. The size value can be scaled with a suffix of
             'K' for kilobytes (B * 1024),
             'M' for Megabytes (KiB * 1024)
             'G' for Gigabytes (MiB * 1024)
 
-    SMA_BOUNCE_SIZE (default: 2 KiB)
+    SHMEM_BOUNCE_SIZE (default: 2 KiB)
         The maximum size of a bounce buffer for put messages.
         Messages greater than the immediate send value for the
         underlying network but greater than this threshold will be
         copied into a bounce buffer and then sent.
 
-    SMA_COLL_CROSSOVER (default: 4)
-        For num_pes < SMA_COLL_CROSSOVER, collective algorithms are
+    SHMEM_COLL_CROSSOVER (default: 4)
+        For num_pes < SHMEM_COLL_CROSSOVER, collective algorithms are
         serial instead of tree based.
 
-    SMA_COLL_RADIX (default: 4)
+    SHMEM_COLL_RADIX (default: 4)
         Controls the width of the n-ary tree for collectives, such that each
-        node will fanout-send to a max of approximately SMA_COLL_RADIX
+        node will fanout-send to a max of approximately SHMEM_COLL_RADIX
 
-    SMA_SYMMETRIC_HEAP_USE_MALLOC (default: 0)
+    SHMEM_SYMMETRIC_HEAP_USE_MALLOC (default: 0)
         If set to a non-zero integer, will use malloc() instead of
         mmap() to allocate the symmetric heap.
 
-    SMA_BARRIER_ALGORITHM (default: auto)
+    SHMEM_BARRIER_ALGORITHM (default: auto)
         Algorithm to use for barriers.  Default is to auto-select (which
         may result in different algorithms being used for different 
         PE sets).  Options are: auto, linear, tree, dissem.
 
-    SMA_BCAST_ALGORITHM (default: auto)
+    SHMEM_BCAST_ALGORITHM (default: auto)
         Algorithm to use for broadcasts.  Default is to auto-select (which
         may result in different algorithms being used for different 
         PE sets).  Options are: auto, linear, tree.
 
-    SMA_REDUCE_ALGORITHM (default: auto)
+    SHMEM_REDUCE_ALGORITHM (default: auto)
         Algorithm to use for reductions.  Default is to auto-select (which
         may result in different algorithms being used for different 
         PE sets).  Options are: auto, linear, tree, recdbl.
 
-    SMA_COLLECT_ALGORITHM (default: auto)
+    SHMEM_COLLECT_ALGORITHM (default: auto)
         Algorithm to use for allgathers.  Default is to auto-select (which
         may result in different algorithms being used for different 
         PE sets).  Options are: auto, linear.
 
-    SMA_FCOLLECT_ALGORITHM (default: auto)
+    SHMEM_FCOLLECT_ALGORITHM (default: auto)
         Algorithm to use for allgathers with fixed contribution amounts.
         Default is to auto-select (which may result in different 
         algorithms being used for different PE sets).  
@@ -152,52 +152,52 @@ options.
         doubling (recdbl) will fall back to ring if the PE set is not a
         power of two in size.
 
-    SMA_CMA_PUT_MAX (default: 8192)
+    SHMEM_CMA_PUT_MAX (default: 8192)
         '--with-cma', shmem put lengths <= CMA_PUT_MAX use process_vm_writev();
         otherwise use Portals4 transport put.
 
-    SMA_CMA_GET_MAX (default: 16384)
+    SHMEM_CMA_GET_MAX (default: 16384)
         '--with-cma', shmem get lengths <= CMA_GET_MAX use process_vm_readv();
         otherwise use Portals4 transport get.
 
-    SMA_SYMMETRIC_HEAP_USE_HUGE_PAGES (default: off)
+    SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES (default: off)
         If defined, large pages will be used to back the symmetric heap.  This
         feature is only available on Linux.
 
-    SMA_SYMMETRIC_HEAP_PAGE_SIZE (default: 2MB)
+    SHMEM_SYMMETRIC_HEAP_PAGE_SIZE (default: 2MB)
         Used to specify a large page size when using large pages to back the
-        symmetric heap.  Ignored if SMA_SYMMETRIC_HEAP_USE_HUGE_PAGES is not
-        set.  Refer to SMA_SYMMETRIC_SIZE for input syntax.
+        symmetric heap.  Ignored if SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES is not
+        set.  Refer to SHMEM_SYMMETRIC_SIZE for input syntax.
 
   OFI Transport Environment variables:
 
-    SMA_OFI_PROVIDER (default: auto)
+    SHMEM_OFI_PROVIDER (default: auto)
         The name of the provider that should be used by the OFI transport.
         Shell-style wildcards, including * and ?, are allowed.  The fi_info
         utility included with libfabric can be used for assistance with
         identifying the desired provider.
 
-    SMA_OFI_FABRIC (default: auto)
+    SHMEM_OFI_FABRIC (default: auto)
         The name of the fabric that should be used by the OFI transport.
         Shell-style wildcards, including * and ?, are allowed.  The fi_info
         utility included with libfabric can be used for assistance with
         identifying the desired fabric.
 
-    SMA_OFI_DOMAIN (default: auto)
+    SHMEM_OFI_DOMAIN (default: auto)
         The name of the fabric domain that should be used by the OFI transport.
         Shell-style wildcards, including * and ?, are allowed.  The fi_info
         utility included with libfabric can be used for assistance with
         identifying the desired fabric domain.
 
-    SMA_OFI_ATOMIC_CHECKS_WARN (default: off)
-        If defined, OFI will not abort if fabric provider doesn't support every data
-        type x op combination, instead it will print a warning.
+    SHMEM_OFI_ATOMIC_CHECKS_WARN (default: off)
+        If defined, OFI will not abort if fabric provider doesn't support every
+        data type x op combination, instead it will print a warning.
 
   Debugging Environment variables:
 
-    SMA_DEBUG (default: off)
+    SHMEM_DEBUG (default: off)
         If defined enables debugging messages from OpenSHMEM runtime. 
 
-    SMA_TRAP_ON_ABORT (default: off)
+    SHMEM_TRAP_ON_ABORT (default: off)
         If defined, generate a trap when aborting an OpenSHMEM program.  This
         can be used to interface with a debugger or generate core files.

@@ -338,6 +338,12 @@ define(`SHMEM_C11_GEN_ADD', `               $2*: shmem_$1_add')dnl
 SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_ADD', `, \') \
             )(dest, value, pe)
 
+define(`SHMEM_C11_GEN_ATOMIC_ADD', `         $2*: shmem_$1_atomic_add')dnl
+#define shmem_atomic_add(dest, value, pe) \
+    _Generic(&*(dest), \
+SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_ATOMIC_ADD', `, \') \
+            )(dest, value, pe)
+
 define(`SHMEM_C11_GEN_CSWAP', `               $2*: shmem_$1_cswap')dnl
 #define shmem_cswap(dest, cond, value, pe) \
     _Generic(&*(dest), \
