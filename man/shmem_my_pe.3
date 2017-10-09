@@ -1,0 +1,95 @@
+.TH SHMEM_MY_PE 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_my_pe \- 
+Returns the number of the calling PE.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B int
+.B shmem_my_pe(void)
+
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.SS Fortran:
+
+.nf
+
+.BR "INTEGER " "SHMEM_MY_PE, ME"
+ME = SHMEM_MY_PE()
+
+.fi
+
+./ sectionEnd
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.B None.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+This routine returns the PE number of the calling PE. It accepts no
+arguments. The result is an integer between 0 and 
+.I npes
+-
+1, where 
+.I npes
+is the total number of PEs executing the
+current program.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+Integer - Between 0 and 
+.I npes
+- 1
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+Each PE has a unique number or identifier. As of OpenSHMEM Specification
+1.2 the use of 
+.B \_my\_pe
+has been deprecated. Although OpenSHMEM
+libraries are required to support the call, users are encouraged to use
+.B shmem\_my\_pe
+instead. The behavior and signature of the routine
+.B shmem\_my\_pe
+remains unchanged from the deprecated 
+.B \_my\_pe
+version.
+
+./ sectionEnd
+
+
+
+

@@ -37,16 +37,23 @@ typedef ptl_op_t shm_internal_op_t;
 #define SHM_INTERNAL_FLOAT_COMPLEX PTL_FLOAT_COMPLEX
 #define SHM_INTERNAL_DOUBLE_COMPLEX PTL_DOUBLE_COMPLEX
 
-#define SHM_INTERNAL_SIGNED_BYTE PTL_INT8_T
-#define SHM_INTERNAL_INT8 PTL_INT8_T
-#define SHM_INTERNAL_INT16 PTL_INT16_T
-#define SHM_INTERNAL_INT32 PTL_INT32_T
-#define SHM_INTERNAL_INT64 PTL_INT64_T
-#define SHM_INTERNAL_SHORT DTYPE_SHORT
-#define SHM_INTERNAL_INT DTYPE_INT
-#define SHM_INTERNAL_LONG DTYPE_LONG
-#define SHM_INTERNAL_LONG_LONG DTYPE_LONG_LONG
+#define SHM_INTERNAL_SIGNED_BYTE     PTL_INT8_T
+#define SHM_INTERNAL_INT8            PTL_INT8_T
+#define SHM_INTERNAL_INT16           PTL_INT16_T
+#define SHM_INTERNAL_INT32           PTL_INT32_T
+#define SHM_INTERNAL_INT64           PTL_INT64_T
+#define SHM_INTERNAL_SHORT           DTYPE_SHORT
+#define SHM_INTERNAL_INT             DTYPE_INT
+#define SHM_INTERNAL_LONG            DTYPE_LONG
+#define SHM_INTERNAL_LONG_LONG       DTYPE_LONG_LONG
 #define SHM_INTERNAL_FORTRAN_INTEGER DTYPE_FORTRAN_INTEGER
+#define SHM_INTERNAL_UINT            DTYPE_UNSIGNED_INT
+#define SHM_INTERNAL_ULONG           DTYPE_UNSIGNED_LONG
+#define SHM_INTERNAL_ULONG_LONG      DTYPE_UNSIGNED_LONG_LONG
+#define SHM_INTERNAL_INT32           PTL_INT32_T
+#define SHM_INTERNAL_INT64           PTL_INT64_T
+#define SHM_INTERNAL_UINT32          PTL_UINT32_T
+#define SHM_INTERNAL_UINT64          PTL_UINT64_T
 
 #define SHM_INTERNAL_BAND PTL_BAND
 #define SHM_INTERNAL_BOR PTL_BOR
@@ -236,7 +243,7 @@ typedef struct shmem_transport_ct_t shmem_transport_ct_t;
 #define PORTALS4_TOTAL_DATA_ORDERING shmem_transport_portals4_total_data_ordering
 #endif
 
-int shmem_transport_init(long eager_size);
+int shmem_transport_init(void);
 
 int shmem_transport_startup(void);
 

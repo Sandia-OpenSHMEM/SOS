@@ -34,7 +34,7 @@
 
 #endif /* ENABLE_PROFILING */
 
-int
+int SHMEM_FUNCTION_ATTRIBUTES
 shmem_pe_accessible(int pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -43,7 +43,7 @@ shmem_pe_accessible(int pe)
 }
 
 
-int
+int SHMEM_FUNCTION_ATTRIBUTES
 shmem_addr_accessible(const void *addr, int pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();

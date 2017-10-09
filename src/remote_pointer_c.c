@@ -33,7 +33,7 @@
 #endif /* ENABLE_PROFILING */
 
 
-void *
+void SHMEM_FUNCTION_ATTRIBUTES *
 shmem_ptr(const void *target, int pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();

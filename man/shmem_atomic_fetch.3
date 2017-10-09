@@ -1,0 +1,152 @@
+.TH SHMEM_ATOMIC_FETCH 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_atomic_fetch \- 
+Atomically fetches the value of a remote data object.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C11:
+
+.B TYPE
+.B shmem_atomic_fetch(const
+.B TYPE
+.IB "*dest" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the extended AMO types specified by
+Table 3.
+./ sectionStart
+.SS C/C++:
+
+.B TYPE
+.B shmem_<TYPENAME>_atomic_fetch(const
+.B TYPE
+.IB "*dest" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the extended AMO types and has a corresponding
+TYPENAME specified by Table 3.
+./ sectionStart
+.SS Fortran:
+
+.nf
+
+.BR "INTEGER " "pe"
+.BR "INTEGER*4 " "SHMEM_INT4_FETCH, ires_i4"
+ires_i4 = SHMEM_INT4_FETCH(dest, pe)
+.BR "INTEGER*8 " "SHMEM_INT8_FETCH, ires_i8"
+ires_i8 = SHMEM_INT8_FETCH(dest, pe)
+.BR "REAL*4 " "SHMEM_REAL4_FETCH, res_r4"
+res_r4 = SHMEM_REAL4_FETCH(dest, pe)
+.BR "REAL*8 " "SHMEM_REAL8_FETCH, res_r8"
+res_r8 = SHMEM_REAL8_FETCH(dest, pe)
+
+.fi
+
+./ sectionEnd
+
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I dest
+- The remotely accessible data object to be fetched from
+the remote PE.
+
+
+.BR "IN " -
+.I pe
+- An integer that indicates the PE number from which
+.I dest
+is to be fetched.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+.B shmem\_atomic\_fetch
+performs an atomic fetch operation.
+It returns the contents of the 
+.I dest
+as an atomic operation.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+The contents at the 
+.I dest
+address on the remote PE.
+The data type of the return value is the same as the type of
+the remote data object.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+As of OpenSHMEM[1.4], 
+.B shmem\_fetch
+has been deprecated.
+Its behavior and call signature are identical to the replacement
+interface, 
+.BR "shmem\_atomic\_fetch" .
+
+./ sectionEnd
+
+
+
+
+.SS Table 3:
+Extended AMO Types and Names
+.TP 25
+.B \TYPE
+.B \TYPENAME
+.TP
+float
+float
+.TP
+double
+double
+.TP
+int
+int
+.TP
+long
+long
+.TP
+long long
+longlong

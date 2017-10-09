@@ -38,7 +38,7 @@
 #endif /* ENABLE_PROFILING */
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_clear_lock(volatile long *lockp)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -48,7 +48,7 @@ shmem_clear_lock(volatile long *lockp)
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_set_lock(volatile long *lockp)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -58,7 +58,7 @@ shmem_set_lock(volatile long *lockp)
 }
 
 
-int
+int SHMEM_FUNCTION_ATTRIBUTES
 shmem_test_lock(volatile long *lockp)
 {
     SHMEM_ERR_CHECK_INITIALIZED();

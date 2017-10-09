@@ -49,9 +49,9 @@ extern uint8_t**                       shmem_transport_ofi_target_heap_addrs;
 extern uint8_t**                       shmem_transport_ofi_target_data_addrs;
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 #endif /* ENABLE_MR_SCALABLE */
-extern uint64_t                         shmem_transport_ofi_pending_put_counter;
-extern uint64_t                         shmem_transport_ofi_pending_get_counter;
-extern uint64_t                         shmem_transport_ofi_pending_cq_count;
+extern shmem_internal_atomic_uint64_t   shmem_transport_ofi_pending_put_counter;
+extern shmem_internal_atomic_uint64_t   shmem_transport_ofi_pending_get_counter;
+extern shmem_internal_atomic_uint64_t   shmem_transport_ofi_pending_cq_count;
 extern uint64_t                         shmem_transport_ofi_max_poll;
 extern long                             shmem_transport_ofi_put_poll_limit;
 extern long                             shmem_transport_ofi_get_poll_limit;
@@ -99,7 +99,7 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
     } else {
         *key = 0;
         *mr_addr = NULL;
-        RAISE_ERROR_MSG("address (0x%p) outside of symmetric areas\n", addr);
+        RAISE_ERROR_MSG("address (%p) outside of symmetric areas\n", addr);
     }
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 
@@ -134,7 +134,7 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
     else {
         *key = -1;
         *mr_addr = NULL;
-        RAISE_ERROR_MSG("address (0x%p) outside of symmetric areas\n", addr);
+        RAISE_ERROR_MSG("address (%p) outside of symmetric areas\n", addr);
     }
 }
 #endif
@@ -158,6 +158,13 @@ typedef enum fi_op       shm_internal_op_t;
 #define SHM_INTERNAL_LONG            DTYPE_LONG
 #define SHM_INTERNAL_LONG_LONG       DTYPE_LONG_LONG
 #define SHM_INTERNAL_FORTRAN_INTEGER DTYPE_FORTRAN_INTEGER
+#define SHM_INTERNAL_UINT            DTYPE_UNSIGNED_INT
+#define SHM_INTERNAL_ULONG           DTYPE_UNSIGNED_LONG
+#define SHM_INTERNAL_ULONG_LONG      DTYPE_UNSIGNED_LONG_LONG
+#define SHM_INTERNAL_INT32           FI_INT32
+#define SHM_INTERNAL_INT64           FI_INT64
+#define SHM_INTERNAL_UINT32          FI_UINT32
+#define SHM_INTERNAL_UINT64          FI_UINT64
 
 /* Operations */
 #define SHM_INTERNAL_BAND            FI_BAND
@@ -199,7 +206,7 @@ typedef int shmem_transport_ct_t;
 
 extern shmem_free_list_t *shmem_transport_ofi_bounce_buffers;
 
-int shmem_transport_init(long eager_size);
+int shmem_transport_init(void);
 int shmem_transport_startup(void);
 void shmem_transport_print_info(void);
 int shmem_transport_fini(void);
@@ -215,7 +222,7 @@ void shmem_transport_ofi_drain_cq(void)
     ssize_t ret = 0;
     struct fi_cq_entry buf;
 
-    if (!shmem_transport_ofi_pending_cq_count) {
+    if (!shmem_internal_atomic_read(&shmem_transport_ofi_pending_cq_count)) {
         return;
     }
 
@@ -250,7 +257,7 @@ void shmem_transport_ofi_drain_cq(void)
                 RAISE_ERROR_STR("Unrecognized completion object");
             }
 
-            shmem_transport_ofi_pending_cq_count--;
+            shmem_internal_atomic_dec(&shmem_transport_ofi_pending_cq_count);
 
         }
 
@@ -283,35 +290,46 @@ static inline
 void shmem_transport_put_quiet(void)
 {
     /* wait until all outstanding queue operations have completed */
-    while (shmem_transport_ofi_pending_cq_count) {
+    while (shmem_internal_atomic_read(&shmem_transport_ofi_pending_cq_count)) {
         shmem_transport_ofi_drain_cq();
     }
 
     /* wait for put counter to meet outstanding count value */
-    uint64_t success = 0, fail, poll_count = 0;
-    while (poll_count < shmem_transport_ofi_put_poll_limit && \
-           success < shmem_transport_ofi_pending_put_counter) {
-        success = fi_cntr_read(shmem_transport_ofi_put_cntrfd);
-        fail    = fi_cntr_readerr(shmem_transport_ofi_put_cntrfd);
 
-        if (success < shmem_transport_ofi_pending_put_counter && fail == 0) {
+    /* Note: the communication routines increment pending put counters before
+     * each FI call (thus before the corresponding event counter is
+     * incremented), but the completion routine below reads the counters in the
+     * reverse order: first the fid_cntr event counter, then the put issued
+     * counter.  We'll want to preserve this property in the future.
+     */
+    uint64_t success, fail, cnt, cnt_new, poll_count = 0;
+    while (poll_count < shmem_transport_ofi_put_poll_limit) {
+        success = fi_cntr_read(shmem_transport_ofi_put_cntrfd);
+        fail = fi_cntr_readerr(shmem_transport_ofi_put_cntrfd);
+        cnt = shmem_internal_atomic_read(&shmem_transport_ofi_pending_put_counter);
+
+        if (success < cnt  && fail == 0) {
             SPINLOCK_BODY();
         } else if (fail) {
             struct fi_cq_err_entry e = {0};
             fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
             OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
+        } else {
+            break;
         }
         poll_count++;
     }
-    if (success < shmem_transport_ofi_pending_put_counter) {
-        int ret = fi_cntr_wait(shmem_transport_ofi_put_cntrfd,
-                               shmem_transport_ofi_pending_put_counter, -1);
+    cnt_new = shmem_internal_atomic_read(&shmem_transport_ofi_pending_put_counter);
+    do {
+        cnt = cnt_new;
+        int ret = fi_cntr_wait(shmem_transport_ofi_put_cntrfd, cnt, -1);
+        cnt_new = shmem_internal_atomic_read(&shmem_transport_ofi_pending_put_counter);
         if (ret) {
             struct fi_cq_err_entry e = {0};
             fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
             OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
         }
-    }
+    } while (cnt != cnt_new);
 }
 
 static inline
@@ -369,6 +387,8 @@ void shmem_transport_put_small(void *target, const void *source, size_t len,
 
     shmem_internal_assert(len <= shmem_transport_ofi_max_buffered_send);
 
+    shmem_internal_atomic_inc(&shmem_transport_ofi_pending_put_counter);
+
     do {
 
         ret = fi_inject_write(shmem_transport_ofi_cntr_epfd,
@@ -383,7 +403,6 @@ void shmem_transport_put_small(void *target, const void *source, size_t len,
     shmem_internal_assert(ret == 0);
     /* automatically get local completion but need remote completion for
      * fence/quiet*/
-    shmem_transport_ofi_pending_put_counter++;
 }
 
 static inline
@@ -409,14 +428,14 @@ void shmem_transport_ofi_put_large(void *target, const void *source,
                        (size_t) (((uint8_t *) source) + len - frag_source));
         polled = 0;
 
+        shmem_internal_atomic_inc(&shmem_transport_ofi_pending_put_counter);
+
         do {
             ret = fi_write(shmem_transport_ofi_cntr_epfd,
                            frag_source, frag_len, NULL,
                            GET_DEST(dst), frag_target,
                            key, NULL);
         } while (try_again(ret,&polled));
-
-        shmem_transport_ofi_pending_put_counter++;
 
         frag_source += frag_len;
         frag_target += frag_len;
@@ -446,14 +465,14 @@ void shmem_transport_put_nb(void *target, const void *source, size_t len,
         shmem_transport_ofi_bounce_buffer_t *buff = create_bounce_buffer(source, len);
         polled = 0;
 
+        shmem_internal_atomic_inc(&shmem_transport_ofi_pending_cq_count);
+
         do {
             ret = fi_write(shmem_transport_ofi_epfd,
                            buff->data, len, NULL,
                            GET_DEST(dst), (uint64_t) addr,
                            key, buff);
         } while(try_again(ret,&polled));
-
-        shmem_transport_ofi_pending_cq_count++;
 
     } else {
         shmem_transport_ofi_put_large(target, source,len, pe);
@@ -500,6 +519,8 @@ void shmem_transport_get(void *target, const void *source, size_t len, int pe)
     shmem_transport_ofi_get_mr(source, pe, &addr, &key);
 
     if (len <= shmem_transport_ofi_max_msg_size) {
+
+        shmem_internal_atomic_inc(&shmem_transport_ofi_pending_get_counter);
         do {
             ret = fi_read(shmem_transport_ofi_cntr_epfd,
                           target,
@@ -510,8 +531,6 @@ void shmem_transport_get(void *target, const void *source, size_t len, int pe)
                           key,
                           NULL);
         } while (try_again(ret,&polled));
-
-        shmem_transport_ofi_pending_get_counter++;
     }
     else {
         uint8_t *frag_target = (uint8_t *) target;
@@ -523,14 +542,14 @@ void shmem_transport_get(void *target, const void *source, size_t len, int pe)
                            (size_t) (((uint8_t *) target) + len - frag_target));
             polled = 0;
 
+            shmem_internal_atomic_inc(&shmem_transport_ofi_pending_get_counter);
+
             do {
                 ret = fi_read(shmem_transport_ofi_cntr_epfd,
                               frag_target, frag_len, NULL,
                               GET_DEST(dst), frag_source,
                               key, NULL);
             } while (try_again(ret,&polled));
-
-            shmem_transport_ofi_pending_get_counter++;
 
             frag_source += frag_len;
             frag_target += frag_len;
@@ -543,30 +562,41 @@ static inline
 void shmem_transport_get_wait(void)
 {
     /* wait for get counter to meet outstanding count value */
-    uint64_t success = 0, fail, poll_count = 0;
-    while (poll_count < shmem_transport_ofi_get_poll_limit && \
-           success < shmem_transport_ofi_pending_get_counter) {
-        success = fi_cntr_read(shmem_transport_ofi_get_cntrfd);
-        fail    = fi_cntr_readerr(shmem_transport_ofi_get_cntrfd);
 
-        if (success < shmem_transport_ofi_pending_get_counter && fail == 0) {
+    /* Note: the communication routines increment pending get counters before
+     * each FI call (thus before the corresponding event counter is
+     * incremented), but the completion routine below reads the counters in the
+     * reverse order: first the fid_cntr event counter, then the get issued
+     * counter.  We'll want to preserve this property in the future.
+     */
+    uint64_t success, fail, cnt, cnt_new, poll_count = 0;
+    while (poll_count < shmem_transport_ofi_get_poll_limit) {
+        success = fi_cntr_read(shmem_transport_ofi_get_cntrfd);
+        fail = fi_cntr_readerr(shmem_transport_ofi_get_cntrfd);
+        cnt = shmem_internal_atomic_read(&shmem_transport_ofi_pending_get_counter);
+
+        if (success < cnt && fail == 0) {
             SPINLOCK_BODY();
         } else if (fail) {
             struct fi_cq_err_entry e = {0};
             fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
             OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
+        } else {
+            break;
         }
         poll_count++;
     }
-    if (success < shmem_transport_ofi_pending_get_counter) {
-        int ret = fi_cntr_wait(shmem_transport_ofi_get_cntrfd,
-                               shmem_transport_ofi_pending_get_counter, -1);
+    cnt_new = shmem_internal_atomic_read(&shmem_transport_ofi_pending_get_counter);
+    do {
+        cnt = cnt_new;
+        int ret = fi_cntr_wait(shmem_transport_ofi_get_cntrfd, cnt, -1);
+        cnt_new = shmem_internal_atomic_read(&shmem_transport_ofi_pending_get_counter);
         if (ret) {
             struct fi_cq_err_entry e = {0};
             fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
             OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
         }
-    }
+    } while (cnt != cnt_new);
 }
 
 
@@ -585,6 +615,8 @@ void shmem_transport_swap(void *target, const void *source, void *dest,
     shmem_internal_assert(len <= sizeof(double complex));
     shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
 
+    shmem_internal_atomic_inc(&shmem_transport_ofi_pending_get_counter);
+
     do {
         ret = fi_fetch_atomic(shmem_transport_ofi_cntr_epfd,
                               source,
@@ -600,7 +632,6 @@ void shmem_transport_swap(void *target, const void *source, void *dest,
                               NULL);
     } while(try_again(ret,&polled));
 
-    shmem_transport_ofi_pending_get_counter++;
 }
 
 
@@ -619,6 +650,8 @@ void shmem_transport_cswap(void *target, const void *source, void *dest,
     shmem_internal_assert(len <= sizeof(double complex));
     shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
 
+    shmem_internal_atomic_inc(&shmem_transport_ofi_pending_get_counter);
+
     do {
         ret = fi_compare_atomic(shmem_transport_ofi_cntr_epfd,
                                 source,
@@ -635,8 +668,6 @@ void shmem_transport_cswap(void *target, const void *source, void *dest,
                                 FI_CSWAP,
                                 NULL);
     } while(try_again(ret,&polled));
-
-    shmem_transport_ofi_pending_get_counter++;
 }
 
 
@@ -655,6 +686,8 @@ void shmem_transport_mswap(void *target, const void *source, void *dest,
     shmem_internal_assert(len <= sizeof(double complex));
     shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
 
+    shmem_internal_atomic_inc(&shmem_transport_ofi_pending_get_counter);
+
     do {
         ret = fi_compare_atomic(shmem_transport_ofi_cntr_epfd,
                                 source,
@@ -671,8 +704,6 @@ void shmem_transport_mswap(void *target, const void *source, void *dest,
                                 FI_MSWAP,
                                 NULL);
     } while(try_again(ret,&polled));
-
-    shmem_transport_ofi_pending_get_counter++;
 }
 
 
@@ -690,6 +721,8 @@ void shmem_transport_atomic_small(void *target, const void *source, size_t len,
 
     shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
 
+    shmem_internal_atomic_inc(&shmem_transport_ofi_pending_put_counter);
+
     do {
         ret = fi_inject_atomic(shmem_transport_ofi_cntr_epfd,
                                source,
@@ -700,8 +733,6 @@ void shmem_transport_atomic_small(void *target, const void *source, size_t len,
                                datatype,
                                op);
     } while(try_again(ret,&polled));
-
-    shmem_transport_ofi_pending_put_counter++;
 }
 
 
@@ -719,6 +750,7 @@ void shmem_transport_atomic_set(void *target, const void *source, size_t len,
 
     shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
 
+    shmem_internal_atomic_inc(&shmem_transport_ofi_pending_put_counter);
     do {
         ret = fi_inject_atomic(shmem_transport_ofi_cntr_epfd,
                                source,
@@ -729,8 +761,6 @@ void shmem_transport_atomic_set(void *target, const void *source, size_t len,
                                datatype,
                                FI_ATOMIC_WRITE);
     } while (try_again(ret, &polled));
-
-    shmem_transport_ofi_pending_put_counter++;
 }
 
 
@@ -748,6 +778,8 @@ void shmem_transport_atomic_fetch(void *target, const void *source, size_t len,
 
     shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
 
+    shmem_internal_atomic_inc(&shmem_transport_ofi_pending_get_counter);
+
     do {
         ret = fi_fetch_atomic(shmem_transport_ofi_cntr_epfd,
                               NULL,
@@ -762,8 +794,6 @@ void shmem_transport_atomic_fetch(void *target, const void *source, size_t len,
                               FI_ATOMIC_READ,
                               NULL);
     } while (try_again(ret, &polled));
-
-    shmem_transport_ofi_pending_get_counter++;
 }
 
 
@@ -798,6 +828,8 @@ void shmem_transport_atomic_nb(void *target, const void *source,
 
         polled = 0;
 
+        shmem_internal_atomic_inc(&shmem_transport_ofi_pending_put_counter);
+
         do {
             ret = fi_inject_atomic(shmem_transport_ofi_cntr_epfd,
                                    source,
@@ -809,14 +841,14 @@ void shmem_transport_atomic_nb(void *target, const void *source,
                                    op);
         } while(try_again(ret,&polled));
 
-        shmem_transport_ofi_pending_put_counter++;
-
     } else if (full_len <=
                MIN(shmem_transport_ofi_bounce_buffer_size, max_atomic_size)) {
 
         shmem_transport_ofi_bounce_buffer_t *buff = create_bounce_buffer(source, full_len);
 
         polled = 0;
+
+        shmem_internal_atomic_inc(&shmem_transport_ofi_pending_cq_count);
 
         do {
             ret = fi_atomic(shmem_transport_ofi_epfd,
@@ -831,8 +863,6 @@ void shmem_transport_atomic_nb(void *target, const void *source,
                             buff);
         } while(try_again(ret,&polled));
 
-        shmem_transport_ofi_pending_cq_count++;
-
     } else {
         size_t sent = 0;
 
@@ -841,6 +871,7 @@ void shmem_transport_atomic_nb(void *target, const void *source,
             size_t chunksize = MIN((len-sent),
                                    (max_atomic_size/SHMEM_Dtsize[datatype]));
             polled = 0;
+            shmem_internal_atomic_inc(&shmem_transport_ofi_pending_put_counter);
             do {
                 ret = fi_atomic(shmem_transport_ofi_cntr_epfd,
                                 (void *)((char *)source +
@@ -856,7 +887,6 @@ void shmem_transport_atomic_nb(void *target, const void *source,
                                 NULL);
             } while(try_again(ret,&polled));
 
-            shmem_transport_ofi_pending_put_counter++;
             sent += chunksize;
         }
     }
@@ -878,6 +908,8 @@ void shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
     shmem_internal_assert(len <= sizeof(double complex));
     shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
 
+    shmem_internal_atomic_inc(&shmem_transport_ofi_pending_get_counter);
+
     do {
         ret = fi_fetch_atomic(shmem_transport_ofi_cntr_epfd,
                               source,
@@ -892,8 +924,6 @@ void shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
                               op,
                               NULL);
     } while(try_again(ret,&polled));
-
-    shmem_transport_ofi_pending_get_counter++;
 }
 
 
