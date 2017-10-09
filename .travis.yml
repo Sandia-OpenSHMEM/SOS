@@ -116,6 +116,9 @@ before_install:
     # Fetch Cray Tests
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/openshmem-org/tests-cray.git tests-cray
+    # Fetch Mellanox Tests
+    - cd $TRAVIS_SRC
+    - git clone -b wip/pending_pr --depth 10 https://github.com/davidozog/tests-mellanox.git tests-mellanox
     ## Fetch ISx
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ParRes/ISx.git ISx
@@ -243,6 +246,51 @@ script:
     - $SOS_SRC/scripts/cray_tests.sh
 
     ###
+    ### Run the Mellanox test suite (OFI)
+    ###
+    - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export MELLANOX_TESTS_DIR=$TRAVIS_SRC/tests-mellanox
+    - cd $MELLANOX_TESTS_DIR/verifier
+    - ./autogen.sh
+    - ./configure --prefix=$PWD/install CFLAGS=" -Wno-deprecated -Wno-deprecated-declarations -std=gnu99 -O3" LDFLAGS="-lpthread" CC=oshcc --disable-mpi --enable-quick-tests --enable-active-sets
+    - make clean
+    - make install
+    - make oshmem_test
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=atomic
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:start
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:whoami
+    ## conflicting semantic for shmem_align with a non-power of two:
+    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:shmalloc
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:get
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:put
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:barrier
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:static
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:heap
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:fence
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=coll
+    ## Unresolved occasional failures probably due to memory mismanagement/corruption:
+    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=data
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=lock
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=reduce
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=sync:barrier_all
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=sync:wait
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=sync:wait_until
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=sync:barrier
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=sync:quiet
+    ## stress tests are not functional tests, and they consumes too much time:
+    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=sync:barrier_stress
+    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=sync:fence_stress
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=stride
+    ## mix test is SOS with MPI, which requires an MPI lib:
+    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=mix
+    ## analysis test is not a functional test, and it consumes too much time:
+    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=analysis
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=nbi
+    ## tests opal_progress() function, which SOS does not have:
+    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=misc
+    - make clean
+
+    ###
     ### Run ISx (Portals)
     ###
     - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
@@ -257,9 +305,10 @@ script:
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/ISx/SHMEM
     - make CC=oshcc LDLIBS=-lm
-    - oshrun -np 4 ./bin/isx.strong 134217728 output_strong
-    - oshrun -np 4 ./bin/isx.weak 33554432 output_weak
-    - oshrun -np 4 ./bin/isx.weak_iso 33554432 output_weak_iso
+    # Note: This SMA_SYMMETRIC_SIZE setting may exceed the memory available in the CI testing environment
+    - oshrun -np 4 -env SMA_SYMMETRIC_SIZE '4G' ./bin/isx.strong 134217728 output_strong
+    - oshrun -np 4 -env SMA_SYMMETRIC_SIZE '4G' ./bin/isx.weak 33554432 output_weak
+    - oshrun -np 4 -env SMA_SYMMETRIC_SIZE '4G' ./bin/isx.weak_iso 33554432 output_weak_iso
     - make clean
     ###
     ### Run PRK (Portals)

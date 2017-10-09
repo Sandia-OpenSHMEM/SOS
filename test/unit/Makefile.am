@@ -80,7 +80,11 @@ check_PROGRAMS = \
 	broadcast_active_set \
 	reduce_active_set \
 	collect_active_set \
-	pcontrol
+	pcontrol \
+	atomic_bitwise \
+	nop_collectives \
+	self_collectives \
+	zero_comm
 
 if ENABLE_PROFILING
 check_PROGRAMS += \
@@ -143,6 +147,7 @@ rma_coverage_pshmem_CFLAGS = -DTEST_PSHMEM
 mt_a2a_SOURCES = mt_a2a.c pthread_barrier.h
 mt_a2a_LDFLAGS = $(PTHREAD_LIBS)
 mt_a2a_CFLAGS = $(PTHREAD_CFLAGS)
+mt_a2a_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 # Fortran Tests (only .c tests use automatic _SOURCES)
 hello_f_SOURCES = hello_f.f90

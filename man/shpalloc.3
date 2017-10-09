@@ -1,0 +1,142 @@
+.TH SHPALLOC 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shpalloc \- 
+Allocates a block of memory from the symmetric heap.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS Fortran:
+
+.nf
+
+.BR "POINTER " "(addr, A(1))"
+.BR "INTEGER " "length, errcode, abort"
+.BR "CALL " "SHPALLOC(addr, length, errcode, abort)"
+
+.fi
+
+./ sectionEnd
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "OUT " -
+.I addr
+- First word address of the allocated block.
+
+
+.BR "IN " -
+.I length
+- Number of words of memory requested. One word is 32 bits.
+
+
+.BR "OUT " -
+.I errcode
+- Error code is 0 if no error was detected;
+otherwise, it is a negative integer code for the type of error.
+
+
+.BR "IN " -
+.I abort
+- Abort code; nonzero requests abort on error;
+0 requests an error code.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+.B SHPALLOC
+allocates a block of memory from the program's symmetric heap
+that is greater than or equal to the size requested. To maintain symmetric heap
+consistency, all PEs in an program must call 
+.B SHPALLOC
+with the same
+value of length; if any PEs are missing, the program will hang.
+
+By using the Fortran POINTER mechanism in the following manner, you
+can use array 
+.I A
+to refer to the block allocated by 
+.B SHPALLOC
+:
+POINTER (
+.I addr
+, 
+.I A
+())
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+./ sectionEnd
+
+
+./ sectionStart
+.TP 25
+Error Code
+Condition
+./ sectionEnd
+
+
+./ sectionStart
+.TP 25
+-1 
+Length is not an integer greater than 0
+./ sectionEnd
+
+
+./ sectionStart
+.TP 25
+-2
+No more memory is available from the system (checked if the request cannot be satisfied from the available blocks on the symmetric heap).
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+The total size of the symmetric heap is determined at job startup. One may
+adjust the size of the heap using the SHMEM\_SYMMETRIC\_SIZE environment
+variable (if available).
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+The symmetric heap allocation routines always return a pointer to corresponding
+symmetric objects across all PEs. The OpenSHMEM specification does not
+require that the virtual addresses are equal across all PEs. Nevertheless,
+the implementation must avoid costly address translation operations in the
+communication path, including order N (where N is the number of PEs)
+memory translation tables. In order to avoid address translations, the
+implementation may re-map the allocated block of memory based on agreed virtual
+address. Additionally, some operating systems provide an option to disable
+virtual address randomization, which enables predictable allocation of virtual
+memory addresses.
+
+./ sectionEnd
+
+
+
+

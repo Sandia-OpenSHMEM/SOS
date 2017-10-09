@@ -13,7 +13,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.3.2], [https://github.com/Sandia-OpenSHMEM/SOS])
+AC_INIT([Sandia OpenSHMEM], [1.3.3], [https://github.com/Sandia-OpenSHMEM/SOS])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -37,6 +37,8 @@ dnl information on the package
 AC_CONFIG_HEADERS([src/config.h])
 
 AC_CANONICAL_HOST
+
+OPAL_CHECK_ATTRIBUTES
 
 AC_ARG_ENABLE([picky],
     [AC_HELP_STRING([--enable-picky],
@@ -91,10 +93,13 @@ AS_IF([test "$enable_threads" = "yes"], [
        AC_MSG_CHECKING([for working POSIX threads package])
        if test "$HAVE_POSIX_THREADS" = "1" ; then
            AC_MSG_RESULT([yes])
+           AC_SUBST(PTHREAD_CFLAGS)
+           AC_SUBST(PTHREAD_LIBS)
        else
            AC_MSG_RESULT([no])
        fi
        AC_DEFINE([ENABLE_THREADS], [1], [Enable threads])
+       AC_CHECK_HEADERS([stdatomic.h])
        ])
 AM_CONDITIONAL([HAVE_PTHREADS], [test "$HAVE_POSIX_THREADS" = "1"])
 
@@ -170,6 +175,9 @@ AS_IF([test "$enable_bounce_buffers" = "no"],
       [AC_DEFINE([DEFAULT_BOUNCE_SIZE], [0], [Default bounce buffer threshold])],
       [AC_DEFINE([DEFAULT_BOUNCE_SIZE], [2048], [Default bounce buffer threshold])])
 
+AC_ARG_WITH([oshrun-launcher],
+    [AC_HELP_STRING([--with-oshrun-launcher],
+                    [Set launcher to be used by oshrun launcher wrapper. (default: auto)])])
 
 dnl check for programs
 
@@ -222,7 +230,6 @@ if test "$FC" != "" ; then
   AC_FC_WRAPPERS
 fi
 
-AX_GCC_FUNC_ATTRIBUTE([noreturn])
 AX_GCC_BUILTIN([__builtin_trap])
 
 if test "$enable_picky" = "yes" -a "$GCC" = "yes" ; then
@@ -326,6 +333,10 @@ SHMEM_FIND_INT_TYPE([int], [$transport])
 SHMEM_FIND_INT_TYPE([long], [$transport])
 SHMEM_FIND_INT_TYPE([long long], [$transport])
 
+SHMEM_FIND_UINT_TYPE([unsigned int], [$transport])
+SHMEM_FIND_UINT_TYPE([unsigned long], [$transport])
+SHMEM_FIND_UINT_TYPE([unsigned long long], [$transport])
+
 AC_CHECK_SIZEOF([float])
 AC_CHECK_SIZEOF([double])
 AC_CHECK_SIZEOF([long double])
@@ -388,7 +399,8 @@ if test "$FC" != "" ; then
 	integer(c_int) :: i
 	i = 5
 ]])], [shmem_cv_fortran_iso_c_binding="yes"],
-      [shmem_cv_fortran_iso_c_binding="no"])])
+      [shmem_cv_fortran_iso_c_binding="no"])
+      AC_LANG_POP([Fortran])])
   AS_IF([test "$shmem_cv_fortran_iso_c_binding" = "no"],
     [AC_MSG_ERROR([Fortran compiler does not support ISO_C_BINDING, which is required for Sandia OpenSHMEM.])])
 
@@ -473,6 +485,14 @@ dnl check for structures
 
 dnl check for compiler characteristics
 
+# make all symbols hidden by default
+OPAL_CHECK_VISIBILITY
+AS_IF([test "$opal_visibility_define" = 1],
+      [SHMEM_C_HAVE_VISIBILITY=1],
+      [SHMEM_C_HAVE_VISIBILITY=0])
+AC_SUBST(SHMEM_C_HAVE_VISIBILITY)
+CFLAGS="$CFLAGS $OPAL_VISIBILITY_CFLAGS"
+
 # disable aslr, if possible at link time
 aslr_LDFLAGS=
 case $host_os in
@@ -483,6 +503,32 @@ esac
 AC_SUBST(aslr_LDFLAGS)
 
 dnl check for library functions
+
+AC_MSG_CHECKING([for data segment pointer])
+AC_TRY_RUN([
+#ifdef __APPLE__
+#include <mach-o/getsect.h>
+#else
+extern char data_start;
+extern char end;
+#endif
+
+int main(void) {
+    void *base;
+    unsigned long length;
+#ifdef __APPLE__
+    base = (void*) get_etext();
+    length = get_end() - get_etext();
+#else
+    base = &data_start;
+    length = (unsigned long) &end  - (unsigned long) &data_start;
+#endif
+    return 0;
+}],
+    AC_MSG_RESULT([found]),
+    [ AC_MSG_RESULT([not found])
+      AC_MSG_ERROR([Could not locate data segment])
+    ])
 
 dnl final output
 
@@ -511,6 +557,13 @@ AC_SUBST(DISTCHECK_CONFIGURE_FLAGS)
 dnl Cause Automake to delete emacs turds
 CLEANFILES="*~"
 AC_SUBST(CLEANFILES)
+
+# configuration for --with-oshrun-launcher
+WRAPPER_SEARCH_LAUNCHERS="yod mpirun mpiexec srun"
+if test -n "$with_oshrun_launcher" ; then
+    WRAPPER_SEARCH_LAUNCHERS="$with_oshrun_launcher"
+fi
+AC_SUBST(WRAPPER_SEARCH_LAUNCHERS)
 
 # last minute updates of the flags so that tests don't fail oddly if
 # portals libdir isn't in LD_LIBRARY_PATH...
@@ -562,6 +615,7 @@ AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
 
 AC_CONFIG_FILES([Makefile
   sandia-openshmem.spec
+  man/Makefile
   pmi-simple/Makefile
   mpp/Makefile
   mpp/shmem.fh

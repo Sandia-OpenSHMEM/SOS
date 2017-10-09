@@ -30,7 +30,7 @@
 
 
 #define FC_SHMEM_CLEAR_LOCK FC_FUNC_(shmem_clear_lock, SHMEM_CLEAR_LOCK)
-void FC_SHMEM_CLEAR_LOCK(long *lockp);
+void SHMEM_FUNCTION_ATTRIBUTES FC_SHMEM_CLEAR_LOCK(long *lockp);
 void
 FC_SHMEM_CLEAR_LOCK(long *lockp)
 {
@@ -42,7 +42,7 @@ FC_SHMEM_CLEAR_LOCK(long *lockp)
 
 
 #define FC_SHMEM_SET_LOCK FC_FUNC_(shmem_set_lock, SHMEM_SET_LOCK)
-void FC_SHMEM_SET_LOCK(long *lockp);
+void SHMEM_FUNCTION_ATTRIBUTES FC_SHMEM_SET_LOCK(long *lockp);
 void
 FC_SHMEM_SET_LOCK(long *lockp)
 {
@@ -54,7 +54,7 @@ FC_SHMEM_SET_LOCK(long *lockp)
 
 
 #define FC_SHMEM_TEST_LOCK FC_FUNC_(shmem_test_lock, SHMEM_TEST_LOCK)
-fortran_integer_t FC_SHMEM_TEST_LOCK(long *lockp);
+fortran_integer_t SHMEM_FUNCTION_ATTRIBUTES FC_SHMEM_TEST_LOCK(long *lockp);
 fortran_integer_t
 FC_SHMEM_TEST_LOCK(long *lockp)
 {
