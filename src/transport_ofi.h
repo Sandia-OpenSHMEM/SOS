@@ -302,7 +302,7 @@ void shmem_transport_put_quiet(void)
      * reverse order: first the fid_cntr event counter, then the put issued
      * counter.  We'll want to preserve this property in the future.
      */
-    uint64_t success, fail, cnt, cnt_new, poll_count = 0;
+    uint64_t success, fail, cnt = 0, cnt_new, poll_count = 0;
     while (poll_count < shmem_transport_ofi_put_poll_limit) {
         success = fi_cntr_read(shmem_transport_ofi_put_cntrfd);
         fail = fi_cntr_readerr(shmem_transport_ofi_put_cntrfd);
@@ -315,12 +315,12 @@ void shmem_transport_put_quiet(void)
             fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
             OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
         } else {
-            break;
+            return;
         }
         poll_count++;
     }
     cnt_new = shmem_internal_atomic_read(&shmem_transport_ofi_pending_put_counter);
-    do {
+    while (cnt != cnt_new) {
         cnt = cnt_new;
         int ret = fi_cntr_wait(shmem_transport_ofi_put_cntrfd, cnt, -1);
         cnt_new = shmem_internal_atomic_read(&shmem_transport_ofi_pending_put_counter);
@@ -329,7 +329,7 @@ void shmem_transport_put_quiet(void)
             fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
             OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
         }
-    } while (cnt != cnt_new);
+    }
 }
 
 static inline
@@ -569,7 +569,7 @@ void shmem_transport_get_wait(void)
      * reverse order: first the fid_cntr event counter, then the get issued
      * counter.  We'll want to preserve this property in the future.
      */
-    uint64_t success, fail, cnt, cnt_new, poll_count = 0;
+    uint64_t success, fail, cnt = 0, cnt_new, poll_count = 0;
     while (poll_count < shmem_transport_ofi_get_poll_limit) {
         success = fi_cntr_read(shmem_transport_ofi_get_cntrfd);
         fail = fi_cntr_readerr(shmem_transport_ofi_get_cntrfd);
@@ -582,12 +582,12 @@ void shmem_transport_get_wait(void)
             fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
             OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
         } else {
-          break;
+            return;
         }
         poll_count++;
     }
     cnt_new = shmem_internal_atomic_read(&shmem_transport_ofi_pending_get_counter);
-    do {
+    while (cnt != cnt_new) {
         cnt = cnt_new;
         int ret = fi_cntr_wait(shmem_transport_ofi_get_cntrfd, cnt, -1);
         cnt_new = shmem_internal_atomic_read(&shmem_transport_ofi_pending_get_counter);
@@ -596,7 +596,7 @@ void shmem_transport_get_wait(void)
             fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
             OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
         }
-    } while (cnt != cnt_new);
+    }
 }
 
 
