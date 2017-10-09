@@ -31,17 +31,17 @@
  */
 
 /*
- *  usage: shmalloc [-p] [nWords] [loops] [incWords-per-loop]
+ *  usage: shmem_calloc [-p] [nWords] [loops] [incWords-per-loop]
  *    where: -p == power-of-two allocation bump per loop
- *      [nWords] # of longs to shmem_malloc()\n"
+ *      [nWords] # of longs to shmem_calloc()\n"
  *      [loops(1)]  # of loops\n"
  *      [incWords(2)] nWords += incWords per loop\n");
  * Loop:
- *  PE* shmem_malloc(nWords)
+ *  PE* shmem_calloc(nWords)
  *   set *DataType = 1
- *  PE* shmem_malloc(nWords)
+ *  PE* shmem_calloc(nWords)
  *   set *DataType = 2
- *  PE* shmem_malloc(nWords)
+ *  PE* shmem_calloc(nWords)
  *   set *DataType = 3
  *
  *  for(1...3) allocated ranges
@@ -85,9 +85,9 @@ usage (void)
             "Usage: %s [-p]  [nWords(%d)] [loops(%d)] [incWords(%d)]\n",
             pgm, DFLT_NWORDS, DFLT_LOOPS, DFLT_INCR);
         fprintf (stderr,
-            "  -p  == (2**0 ... 2**22) shmem_malloc(), other args ignored\n"
+            "  -p  == (2**0 ... 2**22) shmem_calloc(), other args ignored\n"
             "  -v == Verbose output\n"
-            "  [nWords] # of longs to shmem_malloc()\n"
+            "  [nWords] # of longs to shmem_calloc()\n"
             "  [loops]  # of loops\n"
             "  [incWords] nWords += incWords per loop\n");
     }
@@ -192,7 +192,7 @@ main(int argc, char **argv)
     for(l=0; l < loops; l++) {
 
         result_sz = (nProcs-1) * (nWords * sizeof(DataType));
-        result = (DataType *)shmem_malloc(result_sz);
+        result = (DataType *)shmem_calloc((nProcs-1)*nWords, sizeof(DataType));
         if (! result)
         {
             perror ("Failed result memory allocation");
@@ -200,28 +200,28 @@ main(int argc, char **argv)
             exit (1);
         }
         for(dp=result; dp < &result[(result_sz/sizeof(DataType))];)
-            *dp++ = 1;
+            *dp++ += 1;
 
 
         target_sz = nWords * sizeof(DataType);
-        if (!(target = (DataType *)shmem_malloc(target_sz)))
+        if (!(target = (DataType *)shmem_calloc(nWords, sizeof(DataType))))
         {
             perror ("Failed target memory allocation");
             shmem_finalize();
             exit (1);
         }
         for(dp=target; dp < &target[(target_sz / sizeof(DataType))];)
-            *dp++ = 2;
+            *dp++ += 2;
 
         source_sz = 2 * nWords * sizeof(DataType);
-        if (!(source = (DataType *)shmem_malloc(source_sz)))
+        if (!(source = (DataType *)shmem_calloc(2*nWords, sizeof(DataType))))
         {
             perror ("Failed source memory allocation");
             shmem_finalize();
             exit (1);
         }
         for(dp=source; dp < &source[(source_sz / sizeof(DataType))];)
-            *dp++ = 3;
+            *dp++ += 3;
 
         shmem_barrier_all(); /* sync sender and receiver */
 

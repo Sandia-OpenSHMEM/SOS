@@ -40,6 +40,9 @@
 #pragma weak shmem_malloc = pshmem_malloc
 #define shmem_malloc pshmem_malloc
 
+#pragma weak shmem_calloc = pshmem_calloc
+#define shmem_calloc pshmem_calloc
+
 #pragma weak shmem_align = pshmem_align
 #define shmem_align pshmem_align
 
@@ -66,6 +69,7 @@
 static char *shmem_internal_heap_curr = NULL;
 
 void* dlmalloc(size_t);
+void* dlcalloc(size_t, size_t);
 void  dlfree(void*);
 void* dlrealloc(void*, size_t);
 void* dlmemalign(size_t, size_t);
@@ -287,6 +291,21 @@ shmem_malloc(size_t size)
     return ret;
 }
 
+void SHMEM_FUNCTION_ATTRIBUTES *
+shmem_calloc(size_t count, size_t size)
+{
+    void *ret;
+
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
+    ret = dlcalloc(count, size);
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
+
+    shmem_internal_barrier_all();
+
+    return ret;
+}
 
 void SHMEM_FUNCTION_ATTRIBUTES
 shmem_free(void *ptr)

@@ -29,6 +29,7 @@ check_PROGRAMS = \
 	ping \
 	pingpong \
 	shmalloc \
+	shmem_calloc \
 	shrealloc \
 	shmemalign \
 	get_g \

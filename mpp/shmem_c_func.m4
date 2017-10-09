@@ -38,6 +38,7 @@ SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_info_get_name(char *name);
 
 /* Memory Management Routines */
 SHMEM_FUNCTION_ATTRIBUTES void *SHPRE()shmem_malloc(size_t size);
+SHMEM_FUNCTION_ATTRIBUTES void *SHPRE()shmem_calloc(size_t count, size_t size);
 SHMEM_FUNCTION_ATTRIBUTES void *SHPRE()shmem_align(size_t alignment, size_t size);
 SHMEM_FUNCTION_ATTRIBUTES void *SHPRE()shmem_realloc(void *ptr, size_t size);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_free(void *ptr);

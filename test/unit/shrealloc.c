@@ -244,12 +244,6 @@ main(int argc, char **argv)
                 dp < &source[(source_sz/sizeof(DataType))];) *dp++ = 3;
         prev_source_idx = source_sz / sizeof(DataType);
 
-#if 0
-        printf("[%d] source %p target %p result %p\n",
-            me, (void*)source,(void*)target,(void*)result);
-        shmem_barrier_all();
-#endif
-
         for(dp=source; dp < &source[(source_sz / sizeof(DataType))]; dp++)
             if (*dp != 3 ) {
                 printf("source not consistent @ 3?\n");
