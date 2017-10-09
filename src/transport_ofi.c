@@ -1144,8 +1144,12 @@ int shmem_transport_init(void)
     }
 
     shmem_transport_ofi_put_poll_limit = shmem_internal_params.OFI_TX_POLL_LIMIT;
+    shmem_transport_ofi_put_poll_limit = ( shmem_transport_ofi_put_poll_limit < 0 ? \
+                                           LONG_MAX : shmem_transport_ofi_put_poll_limit );
 
     shmem_transport_ofi_get_poll_limit = shmem_internal_params.OFI_RX_POLL_LIMIT;
+    shmem_transport_ofi_get_poll_limit = ( shmem_transport_ofi_get_poll_limit < 0 ? \
+                                           LONG_MAX : shmem_transport_ofi_get_poll_limit );
 
     ret = allocate_fabric_resources(&info);
 

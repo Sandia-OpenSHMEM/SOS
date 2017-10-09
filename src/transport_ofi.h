@@ -305,7 +305,7 @@ void shmem_transport_put_quiet(void)
     uint64_t success, fail, cnt, cnt_new, poll_count = 0;
     while (poll_count < shmem_transport_ofi_put_poll_limit) {
         success = fi_cntr_read(shmem_transport_ofi_put_cntrfd);
-        fail    = fi_cntr_readerr(shmem_transport_ofi_put_cntrfd);
+        fail = fi_cntr_readerr(shmem_transport_ofi_put_cntrfd);
         cnt = shmem_internal_atomic_read(&shmem_transport_ofi_pending_put_counter);
 
         if (success < cnt  && fail == 0) {
@@ -328,7 +328,7 @@ void shmem_transport_put_quiet(void)
             struct fi_cq_err_entry e = {0};
             fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
             OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
-        }     
+        }
     } while (cnt != cnt_new);
 }
 
@@ -572,7 +572,7 @@ void shmem_transport_get_wait(void)
     uint64_t success, fail, cnt, cnt_new, poll_count = 0;
     while (poll_count < shmem_transport_ofi_get_poll_limit) {
         success = fi_cntr_read(shmem_transport_ofi_get_cntrfd);
-        fail    = fi_cntr_readerr(shmem_transport_ofi_get_cntrfd);
+        fail = fi_cntr_readerr(shmem_transport_ofi_get_cntrfd);
         cnt = shmem_internal_atomic_read(&shmem_transport_ofi_pending_get_counter);
 
         if (success < cnt && fail == 0) {
