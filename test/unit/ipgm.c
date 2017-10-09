@@ -139,10 +139,6 @@ target_data_good( DataType *data, int elements, int id, int lineno )
                 shmem_my_pe(), lineno, j, k+id, data[j] );
 
             for(rc=0,k=1; rc < elements; rc++,k++) {
-#if 0
-                if ( k % 5 == 0 )
-                    printf("\ndata[%d] ",rc);
-#endif
                 printf("%ld ",data[rc]);
             }
             rc = 1;
