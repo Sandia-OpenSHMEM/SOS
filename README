@@ -193,6 +193,18 @@ options.
         If defined, OFI will not abort if fabric provider doesn't support every data
         type x op combination, instead it will print a warning.
 
+    SMA_OFI_TX_POLL_LIMIT (default: 0)
+        Sets the maximum number of iterations for the transmit polling loop
+        (for put/quiet operations).  Setting this to -1 enables continuous
+        completion polling (i.e. there is no polling limit).  The default
+        behavior is to call fi_cntr_wait without polling.
+
+    SMA_OFI_RX_POLL_LIMIT (default: 0)
+        Sets the maximum number of iterations for the receive polling loop (for
+        get/wait operations).  Setting this to -1 enables continuous completion
+        polling (i.e. there is no polling limit).  The default behavior is to
+        call fi_cntr_wait without polling.
+
   Debugging Environment variables:
 
     SMA_DEBUG (default: off)

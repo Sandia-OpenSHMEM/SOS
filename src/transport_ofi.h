@@ -53,6 +53,8 @@ extern shmem_internal_atomic_uint64_t   shmem_transport_ofi_pending_put_counter;
 extern shmem_internal_atomic_uint64_t   shmem_transport_ofi_pending_get_counter;
 extern shmem_internal_atomic_uint64_t   shmem_transport_ofi_pending_cq_count;
 extern uint64_t                         shmem_transport_ofi_max_poll;
+extern long                             shmem_transport_ofi_put_poll_limit;
+extern long                             shmem_transport_ofi_get_poll_limit;
 extern size_t                           shmem_transport_ofi_max_buffered_send;
 extern size_t                           shmem_transport_ofi_max_msg_size;
 extern size_t                           shmem_transport_ofi_bounce_buffer_size;
@@ -300,27 +302,25 @@ void shmem_transport_put_quiet(void)
      * reverse order: first the fid_cntr event counter, then the put issued
      * counter.  We'll want to preserve this property in the future.
      */
-#ifdef ENABLE_COMPLETION_POLLING
-    uint64_t success, fail;
-    do {
+    uint64_t success, fail, cnt, cnt_new;
+    long poll_count = 0;
+    while (poll_count < shmem_transport_ofi_put_poll_limit ||
+           shmem_transport_ofi_put_poll_limit < 0) {
         success = fi_cntr_read(shmem_transport_ofi_put_cntrfd);
         fail = fi_cntr_readerr(shmem_transport_ofi_put_cntrfd);
+        cnt = shmem_internal_atomic_read(&shmem_transport_ofi_pending_put_counter);
 
-        if (success <
-            shmem_internal_atomic_read(&shmem_transport_ofi_pending_put_counter) &&
-            fail == 0) {
+        if (success < cnt && fail == 0) {
             SPINLOCK_BODY();
-        }
-        else if (fail) {
+        } else if (fail) {
             struct fi_cq_err_entry e = {0};
             fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
             OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
         } else {
-            break;
+            return;
         }
-    } while (1);
-#else
-    uint64_t cnt, cnt_new;
+        poll_count++;
+    }
     cnt_new = shmem_internal_atomic_read(&shmem_transport_ofi_pending_put_counter);
     do {
         cnt = cnt_new;
@@ -331,8 +331,8 @@ void shmem_transport_put_quiet(void)
             fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
             OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
         }
-    } while (cnt != cnt_new);
-#endif
+    } while (cnt < cnt_new);
+    shmem_internal_assert(cnt == cnt_new);
 }
 
 static inline
@@ -572,27 +572,25 @@ void shmem_transport_get_wait(void)
      * reverse order: first the fid_cntr event counter, then the get issued
      * counter.  We'll want to preserve this property in the future.
      */
-#ifdef ENABLE_COMPLETION_POLLING
-    uint64_t success, fail;
-    do {
+    uint64_t success, fail, cnt, cnt_new;
+    long poll_count = 0;
+    while (poll_count < shmem_transport_ofi_get_poll_limit ||
+           shmem_transport_ofi_get_poll_limit < 0) {
         success = fi_cntr_read(shmem_transport_ofi_get_cntrfd);
         fail = fi_cntr_readerr(shmem_transport_ofi_get_cntrfd);
+        cnt = shmem_internal_atomic_read(&shmem_transport_ofi_pending_get_counter);
 
-        if (success < \
-            shmem_internal_atomic_read(&shmem_transport_ofi_pending_get_counter) && \
-            fail == 0) {
+        if (success < cnt && fail == 0) {
             SPINLOCK_BODY();
-        }
-        else if (fail) {
+        } else if (fail) {
             struct fi_cq_err_entry e = {0};
             fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
             OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
         } else {
-            break;
+            return;
         }
-    } while (1);
-#else
-    uint64_t cnt, cnt_new;
+        poll_count++;
+    }
     cnt_new = shmem_internal_atomic_read(&shmem_transport_ofi_pending_get_counter);
     do {
         cnt = cnt_new;
@@ -603,9 +601,8 @@ void shmem_transport_get_wait(void)
             fi_cq_readerr(shmem_transport_ofi_put_nb_cqfd, (void *)&e, 0);
             OFI_CQ_ERROR(shmem_transport_ofi_put_nb_cqfd, &e);
         }
-    } while (cnt != cnt_new);
-
-#endif
+    } while (cnt < cnt_new);
+    shmem_internal_assert(cnt == cnt_new);
 }
 
 
