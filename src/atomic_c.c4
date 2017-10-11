@@ -119,11 +119,6 @@ define(`SHMEM_PROF_DEF_CTX_ATOMIC_FETCH_INC',
 #define shmem_ctx_$1_atomic_fetch_inc pshmem_ctx_$1_atomic_fetch_inc')dnl
 SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_CTX_ATOMIC_FETCH_INC')
 
-define(`SHMEM_PROF_DEF_CTX_ATOMIC_FETCH_INC',
-`#pragma weak shmem_ctx_$1_atomic_fetch_inc = pshmem_ctx_$1_atomic_fetch_inc
-#define shmem_ctx_$1_atomic_fetch_inc pshmem_ctx_$1_atomic_fetch_inc')dnl
-SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_CTX_ATOMIC_FETCH_INC')
-
 define(`SHMEM_PROF_DEF_ADD',
 `#pragma weak shmem_$1_add = pshmem_$1_add
 #define shmem_$1_add pshmem_$1_add')dnl
