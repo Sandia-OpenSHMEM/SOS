@@ -60,7 +60,7 @@ SHMEM_INTERNAL_ENV_DEF(OFI_FABRIC, string, "auto", SHMEM_INTERNAL_ENV_CAT_TRANSP
 SHMEM_INTERNAL_ENV_DEF(OFI_DOMAIN, string, "auto", SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Fabric domain that should be used by the OFI transport")
 SHMEM_INTERNAL_ENV_DEF(OFI_TX_POLL_LIMIT, long, 0, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
-                       "Put completion poll limit");
+                       "Put completion poll limit")
 SHMEM_INTERNAL_ENV_DEF(OFI_RX_POLL_LIMIT, long, 0, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
-                       "Get completion poll limit");
+                       "Get completion poll limit")
 #endif

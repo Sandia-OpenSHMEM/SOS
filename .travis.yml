@@ -50,6 +50,7 @@ env:
           SOS_ENABLE_ERROR_TESTS=1
           SMA_FCOLLECT_ALGORITHM=ring
           SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+          SMA_OFI_TX_POLL_LIMIT=1 SMA_OFI_RX_POLL_LIMIT=1
 os:
     - linux
 

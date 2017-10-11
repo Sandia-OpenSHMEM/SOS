@@ -405,12 +405,12 @@ int allocate_cntr_and_cq(void)
     cntr_get_attr.events   = FI_CNTR_EVENTS_COMP;
 
     /* Set FI_WAIT based on the put and get polling limits defined above */
-    if (shmem_transport_ofi_put_poll_limit == LONG_MAX) {
+    if (shmem_transport_ofi_put_poll_limit < 0) {
         cntr_put_attr.wait_obj = FI_WAIT_NONE;
     } else {
         cntr_put_attr.wait_obj = FI_WAIT_UNSPEC;
     }
-    if (shmem_transport_ofi_get_poll_limit == LONG_MAX) {
+    if (shmem_transport_ofi_get_poll_limit < 0) {
         cntr_get_attr.wait_obj = FI_WAIT_NONE;
     } else {
         cntr_get_attr.wait_obj = FI_WAIT_UNSPEC;
@@ -1144,12 +1144,7 @@ int shmem_transport_init(void)
     }
 
     shmem_transport_ofi_put_poll_limit = shmem_internal_params.OFI_TX_POLL_LIMIT;
-    shmem_transport_ofi_put_poll_limit = ( shmem_transport_ofi_put_poll_limit < 0 ? \
-                                           LONG_MAX : shmem_transport_ofi_put_poll_limit );
-
     shmem_transport_ofi_get_poll_limit = shmem_internal_params.OFI_RX_POLL_LIMIT;
-    shmem_transport_ofi_get_poll_limit = ( shmem_transport_ofi_get_poll_limit < 0 ? \
-                                           LONG_MAX : shmem_transport_ofi_get_poll_limit );
 
     ret = allocate_fabric_resources(&info);
 
