@@ -301,6 +301,7 @@ elif test -n "$with_cma" -a "$with_cma" != "no" ; then
 else
     transport_xpmem="no"
     transport_cma="no"
+    AC_DEFINE([USE_SELF_OPTIMIZATION], [1], [Define if intranode self-communication optimization is enabled])
     AC_MSG_RESULT([Neither XPMEM nor CMA transport requested])
 fi
 AM_CONDITIONAL([USE_XPMEM], [test "$transport_xpmem" = "yes"])
