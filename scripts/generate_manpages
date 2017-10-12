@@ -23,8 +23,7 @@ def writePageHeader(functionName):
     """
 
     titleHeader = ".TH " + functionName.upper() + " 3 " \
-                     + "\"Open Source Software Solutions, Inc.\" " \
-                     + time.strftime("%m/%d/%Y") + " " \
+                     + "\"Open Source Software Solutions, Inc.\"" \
                      + "\"OpenSHMEM Library Documentation\"" + "\n"
     return titleHeader
 
@@ -1045,8 +1044,6 @@ def parseDeprecationTable(directory, gen_dir, build_fortran):
 def writeOshcc(gen_dir):
     manFile = open(gen_dir + '/' + "oshcc.1", "w")
     manFile.write(".TH " + "OSHCC" + " 1 " \
-                     + "\"Open Source Software Solutions, Inc.\" " \
-                     + time.strftime("%m/%d/%Y") + " " \
                      + "\"OpenSHMEM Library Documentation\"" + "\n")
     manFile.write(".SH NAME\n")
     manFile.write("oshcc - Compiles and links OpenSHMEM programs " + \
@@ -1080,8 +1077,6 @@ def writeOshcc(gen_dir):
 def writeOshCC(gen_dir):
     manFile = open(gen_dir + '/' + "oshc++.1", "w")
     manFile.write(".TH " + "OSHC++" + " 1 " \
-                     + "\"Open Source Software Solutions, Inc.\" " \
-                     + time.strftime("%m/%d/%Y") + " " \
                      + "\"OpenSHMEM Library Documentation\"" + "\n")
     manFile.write(".SH NAME\n")
     manFile.write("oshc++ - Compiles and links OpenSHMEM programs " + \
@@ -1115,8 +1110,6 @@ def writeOshCC(gen_dir):
 def writeOshfort(gen_dir):
     manFile = open(gen_dir + '/' + "oshfort.1", "w")
     manFile.write(".TH " + "OSHFORT" + " 1 " \
-                     + "\"Open Source Software Solutions, Inc.\" " \
-                     + time.strftime("%m/%d/%Y") + " " \
                      + "\"OpenSHMEM Library Documentation\"" + "\n")
     manFile.write(".SH NAME\n")
     manFile.write("oshfort - Compiles and links OpenSHMEM programs " + \
@@ -1150,8 +1143,6 @@ def writeOshfort(gen_dir):
 def writeOshrun(gen_dir):
     manFile = open(gen_dir + '/' + "oshrun.1", "w")
     manFile.write(".TH " + "OSHRUN" + " 1 " \
-                     + "\"Open Source Software Solutions, Inc.\" " \
-                     + time.strftime("%m/%d/%Y") + " " \
                      + "\"OpenSHMEM Library Documentation\"" + "\n")
     manFile.write(".SH NAME\n")
     manFile.write("oshrun - Run a OpenSHMEM program\n")
@@ -1159,6 +1150,7 @@ def writeOshrun(gen_dir):
     manFile.write(".B oshrun\n")
     manFile.write("launches the OpenSHMEM programs with a given number " + \
         "of processes.\n\n")
+    manFile.write("usage: oshrun [oshrun_options] [launcher_arguments]\n")
     manFile.write(".SH COMMAND LINE ARGUMENTS\n")
     manFile.write(".TP 8\n")
     manFile.write(".B --help | -h\n")

@@ -1,19 +1,14 @@
-.TH SHMEM_P 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+.TH SHMEM_P 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_p \- 
 Copies one data item to a remote PE.
-
 ./ sectionEnd
-
-
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
-
 ./ sectionStart
 .SS C11:
-
 .B void
 .B shmem_p(TYPE
 .IB "*dest" ,
@@ -22,16 +17,10 @@ Copies one data item to a remote PE.
 .B int
 .I pe
 .B );
-
-
-
 ./ sectionEnd
-
-
 where TYPE is one of the standard RMA types specified by Table 1.
 ./ sectionStart
 .SS C/C++:
-
 .B void
 .B shmem_<TYPENAME>_p(TYPE
 .IB "*dest" ,
@@ -40,87 +29,53 @@ where TYPE is one of the standard RMA types specified by Table 1.
 .B int
 .I pe
 .B );
-
-
-
 ./ sectionEnd
-
-
 where TYPE is one of the standard RMA types and has a corresponding TYPENAME specified by Table 1.
 ./ sectionStart
-
 .SH DESCRIPTION
 .SS Arguments
 .BR "IN " -
 .I addr
 - The remotely accessible array element or scalar data object
 which will receive the data on the remote PE.
-
-
 .BR "IN " -
 .I value
 - The value to be transferred to 
 .I addr
 on the
 remote PE.
-
-
 .BR "IN " -
 .I pe
 - The number of the remote PE.
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Description
-
 These routines provide a very low latency put capability for single elements of
 most basic types.
-
 As with 
 .B shmem\_put
 , these routines start the remote transfer and may
 return before the data is delivered to the remote PE. Use
 .B shmem\_quiet
 to force completion of all remote PUT transfers.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS Return Values
-
 None.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Notes
-
 None.
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Examples
-
-
-
 The following example uses 
 .B shmem\_p
 in a C[11] program.
-
 .nf
 #include <stdio.h>
 #include <math.h>
 #include <shmem.h>
-
 int main(void)
 {
   const double e = 2.71828182;
@@ -137,11 +92,6 @@ int main(void)
   return 0;
 }
 .fi
-
-
-
-
-
 .SS Table 1:
 Standard RMA Types and Names
 .TP 25

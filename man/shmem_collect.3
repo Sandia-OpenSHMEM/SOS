@@ -1,20 +1,15 @@
-.TH SHMEM_COLLECT 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+.TH SHMEM_COLLECT 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_collect \- 
 Concatenates blocks of data from multiple PEs to an array in every
 PE.
-
 ./ sectionEnd
-
-
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
-
 ./ sectionStart
 .SS C/C++:
-
 .B void
 .B shmem_collect32(void
 .IB "*dest" ,
@@ -32,9 +27,6 @@ PE.
 .B long
 .I *pSync
 .B );
-
-
-
 .B void
 .B shmem_collect64(void
 .IB "*dest" ,
@@ -52,9 +44,6 @@ PE.
 .B long
 .I *pSync
 .B );
-
-
-
 .B void
 .B shmem_fcollect32(void
 .IB "*dest" ,
@@ -72,9 +61,6 @@ PE.
 .B long
 .I *pSync
 .B );
-
-
-
 .B void
 .B shmem_fcollect64(void
 .IB "*dest" ,
@@ -92,18 +78,10 @@ PE.
 .B long
 .I *pSync
 .B );
-
-
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Fortran:
-
 .nf
-
 .BR "INTEGER " "nelems"
 .BR "INTEGER " "PE_start, logPE_stride, PE_size"
 .BR "INTEGER " "pSync(SHMEM_COLLECT_SYNC_SIZE)"
@@ -115,17 +93,9 @@ PE.
 .BR "CALL " "SHMEM_FCOLLECT8(dest, source, nelems, PE_start, logPE_stride, PE_size, pSync)"
 .BR "CALL " "SHMEM_FCOLLECT32(dest, source, nelems, PE_start, logPE_stride, PE_size, pSync)"
 .BR "CALL " "SHMEM_FCOLLECT64(dest, source, nelems, PE_start, logPE_stride, PE_size, pSync)"
-
 .fi
-
 ./ sectionEnd
-
-
-
-
-
 ./ sectionStart
-
 .SH DESCRIPTION
 .SS Arguments
 .BR "OUT " -
@@ -157,16 +127,12 @@ and  C/C++ structures are not permitted. For
 ,
 any data type with an element size of 32 bits. Fortran derived
 types, Fortran character type, and  C/C++ structures are not permitted.
-
-
 .BR "IN " -
 .I source
 - A symmetric data object that can be of any type permissible
 for the 
 .I "dest"
 argument.
-
-
 .BR "IN " -
 .I nelems
 - The number of elements in the 
@@ -177,8 +143,6 @@ must be of type
 .I size\_t
 for C. If you are using Fortran, it must be
 a default integer value.
-
-
 .BR "IN " -
 .I PE\_start
 - The lowest PE number of the 
@@ -188,8 +152,6 @@ PEs.
 .I PE\_start
 must be of type integer. If you are using Fortran,
 it must be a default integer value.
-
-
 .BR "IN " -
 .I logPE\_stride
 - The log (base 2) of the stride between
@@ -198,8 +160,6 @@ consecutive PE numbers in the
 .I logPE\_stride
 must be of
 type integer. If you are using Fortran, it must be a default integer value.
-
-
 .BR "IN " -
 .I PE\_size
 - The number of PEs in the 
@@ -207,8 +167,6 @@ type integer. If you are using Fortran, it must be a default integer value.
 .I PE\_size
 must be of type integer. If you are using Fortran, it must be a default
 integer value.
-
-
 .BR "IN " -
 .I pSync
 - A symmetric work array. In  C/C++, 
@@ -226,14 +184,9 @@ enter
 .B shmem\_collect
 or 
 .BR "shmem\_fcollect" .
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Description
-
 OpenSHMEM 
 .B collect
 and 
@@ -264,8 +217,6 @@ second, and so on. The collected result is written to the
 array for all
 PEs in the 
 .IR "Active set" .
-
-
 The 
 .B fcollect
 routines require that 
@@ -277,14 +228,12 @@ routines allow
 .I nelems
 to
 vary from PE to PE.
-
 As with all OpenSHMEM collective routines, each of these routines assumes that
 only PEs in the 
 .I "Active set"
 call the routine. If a PE not in the
 .I "Active set"
 and calls this collective routine, the behavior is undefined.
-
 The values of arguments 
 .I PE\_start
 , 
@@ -301,8 +250,6 @@ arrays and the same
 .I pSync
 work array must be passed to all PEs in the
 .IR "Active set" .
-
-
 Upon return from a collective routine, the following are true for the local
 PE: The 
 .I "dest"
@@ -313,23 +260,13 @@ The values in the
 .I pSync
 array are
 restored to the original values.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS Return Values
-
 None.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Notes
-
 All OpenSHMEM collective routines reset the values in 
 .I pSync
 before they
@@ -337,7 +274,6 @@ return, so a particular
 .I pSync
 buffer need only be initialized the first
 time it is used.
-
 You must ensure that the 
 .I pSync
 array is not being updated on any PE
@@ -361,7 +297,6 @@ that used the same
 .I pSync
 array. In general, this may be ensured only by
 doing some type of synchronization. 
-
 The collective routines operate on active PE sets that have a
 non-power-of-two 
 .I PE\_size
@@ -369,50 +304,35 @@ with some performance degradation. They operate
 with no performance degradation when 
 .I nelems
 is a non-power-of-two value.
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Examples
-
-
-
 The following 
 .B shmem\_collec
 t example is for  C/C++ programs:
-
 .nf
 #include <stdio.h>
 #include <stdlib.h>
 #include <shmem.h>
-
 int main(void)
 {
   static long lock = 0;
   static long pSync[SHMEM_COLLECT_SYNC_SIZE];
   for (int i = 0; i < SHMEM_COLLECT_SYNC_SIZE; i++)
      pSync[i] = SHMEM_SYNC_VALUE;
-
   shmem_init();
   int me = shmem_my_pe();
   int npes = shmem_n_pes();
   int my_nelem = me + 1; /* linearly increasing number of elements with PE */
   int total_nelem = (npes * (npes + 1)) / 2;
-
   int* source = (int*) shmem_malloc(npes*sizeof(int)); /* symmetric alloc */
   int* dest = (int*) shmem_malloc(total_nelem*sizeof(int));
-
   for (int i = 0; i < my_nelem; i++)
      source[i] = (me * (me + 1)) / 2 + i;
   for (int i = 0; i < total_nelem; i++)
      dest[i] = -9999;
-
   shmem_barrier_all(); /* Wait for all PEs to update source/dest */
-
   shmem_collect32(dest, source, my_nelem, 0, 0, npes, pSync);
-
   shmem_set_lock(&lock); /* Lock prevents interleaving printfs */
   printf("%d: %d", me, dest[0]);
   for (int i = 1; i < total_nelem; i++)
@@ -423,24 +343,13 @@ int main(void)
   return 0;
 }
 .fi
-
-
-
 The following 
 .B SHMEM\_COLLECT
 example is for Fortran programs:
-
 .nf
 INCLUDE "shmem.fh"
-
 INTEGER PSYNC(SHMEM_COLLECT_SYNC_SIZE)
 DATA PSYNC /SHMEM_COLLECT_SYNC_SIZE*SHMEM_SYNC_VALUE/
-
 CALL SHMEM_COLLECT4(DEST, SOURCE, 64, PE_START, LOGPE_STRIDE,
 &  PE_SIZE, PSYNC)
 .fi
-
-
-
-
-

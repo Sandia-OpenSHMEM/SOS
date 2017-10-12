@@ -1,20 +1,15 @@
-.TH SHMEM_ALLTOALL 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+.TH SHMEM_ALLTOALL 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_alltoall \- 
 shmem\_alltoall is a collective routine where each PE exchanges a fixed amount of data with all other PEs in the
 .IR "Active set" .
-
 ./ sectionEnd
-
-
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
-
 ./ sectionStart
 .SS C/C++:
-
 .B void
 .B shmem_alltoall32(void
 .IB "*dest" ,
@@ -32,9 +27,6 @@ shmem\_alltoall is a collective routine where each PE exchanges a fixed amount o
 .B long
 .I *pSync
 .B );
-
-
-
 .B void
 .B shmem_alltoall64(void
 .IB "*dest" ,
@@ -52,33 +44,17 @@ shmem\_alltoall is a collective routine where each PE exchanges a fixed amount o
 .B long
 .I *pSync
 .B );
-
-
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Fortran:
-
 .nf
-
 .BR "INTEGER " "pSync(SHMEM_ALLTOALL_SYNC_SIZE)"
 .BR "INTEGER " "PE_start, logPE_stride, PE_size, nelems"
 .BR "CALL " "SHMEM_ALLTOALL32(dest, source, nelems, PE_start, logPE_stride, PE_size, pSync)"
 .BR "CALL " "SHMEM_ALLTOALL64(dest, source, nelems, PE_start, logPE_stride, PE_size, pSync)"
-
 .fi
-
 ./ sectionEnd
-
-
-
-
-
 ./ sectionStart
-
 .SH DESCRIPTION
 .SS Arguments
 .BR "OUT " -
@@ -88,9 +64,6 @@ the combined total of
 .I nelems
 elements from each PE in the
 .IR "Active set" .
-
-
-
 .BR "IN " -
 .I source
 - A symmetric data object that contains 
@@ -99,16 +72,12 @@ elements of data for each PE in the
 .I "Active set"
 , ordered according to
 destination PE.
-
-
 .BR "IN " -
 .I nelems
 - The number of elements to exchange for each PE.
 .I nelems
 must be of type size\_t for  C/C++. If you are using
 Fortran, it must be a default integer value.
-
-
 .BR "IN " -
 .I PE\_start
 - The lowest PE number of the 
@@ -118,8 +87,6 @@ PEs.
 .I PE\_start
 must be of type integer. If you are using Fortran,
 it must be a default integer value.
-
-
 .BR "IN " -
 .I logPE\_stride
 - The log (base 2) of the stride between
@@ -128,8 +95,6 @@ consecutive PE numbers in the
 .I logPE\_stride
 must be of
 type integer. If you are using Fortran, it must be a default integer value.
-
-
 .BR "IN " -
 .I PE\_size
 - The number of PEs in the 
@@ -137,8 +102,6 @@ type integer. If you are using Fortran, it must be a default integer value.
 .I PE\_size
 must be of type integer. If you are using Fortran, it must
 be a default integer value.
-
-
 .BR "IN " -
 .I pSync
 - A symmetric work array. In  C/C++, 
@@ -153,12 +116,8 @@ the value SHMEM\_SYNC\_VALUE before any of the PEs in the
 .I "Active set"
 enter the routine.
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Description
-
 The 
 .B shmem\_alltoall
 routines are collective routines. Each PE
@@ -215,7 +174,6 @@ the
 object of PE 
 .IR "j" .
 .
-
 As with all OpenSHMEM collective routines, this routine assumes
 that only PEs in the 
 .I "Active set"
@@ -224,7 +182,6 @@ in the
 .I "Active set"
 calls an OpenSHMEM collective routine, undefined
 behavior results.
-
 The values of arguments 
 .I nelems
 , 
@@ -245,8 +202,6 @@ data objects, and the same
 work
 array must be passed to all PEs in the 
 .IR "Active set" .
-
-
 Before any PE calls a 
 .B shmem\_alltoall
 routine, the following
@@ -265,7 +220,6 @@ all PEs in the
 is ready to accept the
 .B shmem\_alltoall
 data.
-
 Upon return from a 
 .B shmem\_alltoall
 routine, the following is true for
@@ -278,58 +232,37 @@ data object.
 The values in the 
 .I pSync
 array are restored to the original values.
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
-
 The 
 .I "dest"
 and 
 .I "source"
 data objects must conform to certain typing
 constraints, which are as follows:
-
 .TP 25
 Routine
 Data type of 
 .I dest
 and 
 .I source
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .TP 25
 shmem\_alltoall64
 64 bits aligned.
 ./ sectionEnd
-
-
 ./ sectionStart
 .TP 25
 shmem\_alltoall32
 32 bits aligned.
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS Return Values
-
 None.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Notes
-
 This routine restores 
 .I pSync
 to its original contents. Multiple calls
@@ -370,40 +303,28 @@ routine call that used the same
 .I pSync
 array. In general, this can be
 ensured only by doing some type of synchronization.
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Examples
-
-
-
 This example shows a 
 .B shmem\_alltoall64
 on two long elements among all
 PEs.
-
 .nf
 #include <stdio.h>
 #include <inttypes.h>
 #include <shmem.h>
-
 int main(void)
 {
   static long pSync[SHMEM_ALLTOALL_SYNC_SIZE];
   for (int i = 0; i < SHMEM_ALLTOALL_SYNC_SIZE; i++)
      pSync[i] = SHMEM_SYNC_VALUE;
-
   shmem_init();
   int me = shmem_my_pe();
   int npes = shmem_n_pes();
-
   const int count = 2;
   int64_t* dest = (int64_t*) shmem_malloc(count * npes * sizeof(int64_t));
   int64_t* source = (int64_t*) shmem_malloc(count * npes * sizeof(int64_t));
-
   /* assign source values */
   for (int pe = 0; pe < npes; pe++) {
      for (int i = 0; i < count; i++) {
@@ -413,10 +334,8 @@ int main(void)
   }
   /* wait for all PEs to update source/dest */
   shmem_barrier_all();
-
   /* alltoall on all PES */
   shmem_alltoall64(dest, source, count, 0, 0, npes, pSync);
-
   /* verify results */
   for (int pe = 0; pe < npes; pe++) {
      for (int i = 0; i < count; i++) {
@@ -426,16 +345,9 @@ int main(void)
           }
       }
   }
-
   shmem_free(dest);
   shmem_free(source);
   shmem_finalize();
   return 0;
 }
 .fi
-
-
-
-
-
-

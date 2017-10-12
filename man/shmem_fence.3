@@ -1,54 +1,31 @@
-.TH SHMEM_FENCE 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+.TH SHMEM_FENCE 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_fence \- 
 Assures ordering of delivery of PUT, AMOs, and memory store routines
 to symmetric data objects.
-
 ./ sectionEnd
-
-
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
-
 ./ sectionStart
 .SS C/C++:
-
 .B void
 .B shmem_fence(void)
-
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Fortran:
-
 .nf
-
 .BR "CALL " "SHMEM_FENCE"
-
 .fi
-
 ./ sectionEnd
-
-
-
-
 ./ sectionStart
-
 .SH DESCRIPTION
 .SS Arguments
 .B None.
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Description
-
 This routine assures ordering of delivery of PUT, AMOs, and memory store
 routines to symmetric data objects. All PUT, AMOs, and memory store
 routines to symmetric data objects issued to a particular remote PE prior
@@ -60,23 +37,13 @@ objects to the same PE.
 .B shmem\_fence
 guarantees order of delivery,
 not completion.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS Return Values
-
 None.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Notes
-
 .B shmem\_fence
 only provides per-PE ordering guarantees and does not
 guarantee completion of delivery. 
@@ -103,30 +70,20 @@ and
 guarantees completion of PUT, AMOs, and memory store routines to
 symmetric data objects which makes the updates visible to all other
 PEs. 
-
 The 
 .B shmem\_quiet
 routine should be called if completion of PUT,
 AMOs, and memory store routines to symmetric data objects is desired
 when multiple remote PEs are involved.
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Examples
-
-
-
 The following 
 .B shmem\_fence
 example is for C11 programs: 
-
 .nf
 #include <stdio.h>
 #include <shmem.h>
-
 int main(void)
 {
   int src = 99;
@@ -148,7 +105,6 @@ int main(void)
   return 0;
 }
 .fi
-
 .I Put1
 will be ordered to be delivered before 
 .I put3
@@ -157,7 +113,3 @@ and
 will be ordered to be delivered before 
 .IR "put4" .
 .
-
-
-
-
