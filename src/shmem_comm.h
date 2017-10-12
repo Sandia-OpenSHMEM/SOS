@@ -33,7 +33,7 @@ extern char *shmem_internal_location_array;
     } while (0)
 
 #define SHMEM_GET_RANK_SAME_NODE(pe) (shmem_internal_location_array[pe])
-#elif defined(USE_SELF_OPTIMIZATION)
+#elif defined(USE_MEMCPY)
 #define SHMEM_GET_RANK_SAME_NODE(pe) ((pe) == shmem_internal_my_pe ? 1 : -1)
 #else
 #define SHMEM_GET_RANK_SAME_NODE(pe) (-1)
@@ -58,7 +58,7 @@ shmem_internal_put_small(void *target, const void *source, size_t len, int pe)
     shmem_internal_assert(len > 0);
 
     if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
-#if USE_SELF_OPTIMIZATION
+#if USE_MEMCPY
         memcpy(target, source, len);
 #elif USE_XPMEM
         shmem_transport_xpmem_put(target, source, len, pe, node_rank);
@@ -83,7 +83,7 @@ shmem_internal_put_nb(void *target, const void *source, size_t len, int pe,
     if (len == 0) return;
 
     if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
-#if USE_SELF_OPTIMIZATION
+#if USE_MEMCPY
         memcpy(target, source, len);
 #elif USE_XPMEM
         shmem_transport_xpmem_put(target, source, len, pe, node_rank);
@@ -110,7 +110,7 @@ shmem_internal_put_nbi(void *target, const void *source, size_t len, int pe)
     if (len == 0) return;
 
     if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
-#if USE_SELF_OPTIMIZATION
+#if USE_MEMCPY
         memcpy(target, source, len);
 #elif USE_XPMEM
         shmem_transport_xpmem_put(target, source, len, pe, node_rank);
@@ -158,7 +158,7 @@ shmem_internal_get(void *target, const void *source, size_t len, int pe)
     if (len == 0) return;
 
     if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
-#if USE_SELF_OPTIMIZATION
+#if USE_MEMCPY
         memcpy(target, source, len);
 #elif USE_XPMEM
         shmem_transport_xpmem_get(target, source, len, pe, node_rank);

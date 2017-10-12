@@ -179,6 +179,10 @@ AC_ARG_WITH([oshrun-launcher],
     [AC_HELP_STRING([--with-oshrun-launcher],
                     [Set launcher to be used by oshrun launcher wrapper. (default: auto)])])
 
+AC_ARG_ENABLE([memcpy],
+    [AC_HELP_STRING([--enable-memcpy],
+                    [Use memcpy to perform local put/get operations (default:disabled)])])
+
 dnl check for programs
 
 AC_PROG_CC
@@ -293,16 +297,22 @@ if test -n "$with_xpmem" -a "$with_xpmem" != "no" -a -n "$with_cma" -a "$with_cm
 # Check which was requested, XPMEM or CMA:
 elif test -n "$with_xpmem" -a "$with_xpmem" != "no" ; then
     transport_cma="no"
+    transport_memcpy="no"
     AC_DEFINE([USE_XPMEM], [1], [Define if XPMEM transport is active])
 elif test -n "$with_cma" -a "$with_cma" != "no" ; then
     transport_xpmem="no"
+    transport_memcpy="no"
     AC_DEFINE([USE_CMA], [1], [Define if Cross Memory Attach transport is active])
 # If neither, disable XPMEM and CMA:
 else
     transport_xpmem="no"
     transport_cma="no"
-    AC_DEFINE([USE_SELF_OPTIMIZATION], [1], [Define if intranode self-communication optimization is enabled])
     AC_MSG_RESULT([Neither XPMEM nor CMA transport requested])
+
+    if test "$enable_memcpy" = "yes" ; then
+        transport_memcpy="yes"
+        AC_DEFINE([USE_MEMCPY], [1], [Define to use memcpy for local put/get communication])
+    fi
 fi
 AM_CONDITIONAL([USE_XPMEM], [test "$transport_xpmem" = "yes"])
 AM_CONDITIONAL([USE_CMA], [test "$transport_cma" = "yes"])
@@ -664,4 +674,5 @@ echo "  Portals 4:      $transport_portals4"
 echo "  OFI:            $transport_ofi"
 echo "  XPMEM:          $transport_xpmem"
 echo "  CMA:            $transport_cma"
+echo "  memcpy:         $transport_memcpy"
 echo ""
