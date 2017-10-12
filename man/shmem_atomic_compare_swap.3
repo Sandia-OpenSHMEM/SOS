@@ -1,19 +1,14 @@
-.TH SHMEM_ATOMIC_COMPARE_SWAP 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+.TH SHMEM_ATOMIC_COMPARE_SWAP 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_atomic_compare_swap \- 
 Performs an atomic conditional swap on a remote data object.
-
 ./ sectionEnd
-
-
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
-
 ./ sectionStart
 .SS C11:
-
 .B TYPE
 .B shmem_atomic_compare_swap(TYPE
 .IB "*dest" ,
@@ -24,17 +19,11 @@ Performs an atomic conditional swap on a remote data object.
 .B int
 .I pe
 .B );
-
-
-
 ./ sectionEnd
-
-
 where TYPE is one of the standard AMO types specified by
 Table 2.
 ./ sectionStart
 .SS C/C++:
-
 .B TYPE
 .B shmem_<TYPENAME>_atomic_compare_swap(TYPE
 .IB "*dest" ,
@@ -45,42 +34,26 @@ Table 2.
 .B int
 .I pe
 .B );
-
-
-
 ./ sectionEnd
-
-
 where TYPE is one of the standard AMO types and has a corresponding
 TYPENAME specified by Table 2.
 ./ sectionStart
 .SS Fortran:
-
 .nf
-
 .BR "INTEGER " "pe"
 .BR "INTEGER*4 " "SHMEM_INT4_CSWAP, cond_i4, value_i4, ires_i4"
 ires_i4 = SHMEM_INT4_CSWAP(dest, cond_i4, value_i4, pe)
 .BR "INTEGER*8 " "SHMEM_INT8_CSWAP, cond_i8, value_i8, ires_i8"
 ires_i8 = SHMEM_INT8_CSWAP(dest, cond_i8, value_i8, pe)
-
 .fi
-
 ./ sectionEnd
-
-
-
-
 ./ sectionStart
-
 .SH DESCRIPTION
 .SS Arguments
 .BR "OUT " -
 .I dest
 - The remotely accessible integer data object to be
 updated on the remote PE. 
-
-
 .BR "IN " -
 .I cond
 - 
@@ -107,8 +80,6 @@ must be of the same data
 type as 
 .IR "dest" .
 .
-
-
 .BR "IN " -
 .I value
 - The value to be atomically written to the remote
@@ -117,8 +88,6 @@ PE.
 must be the same data type as 
 .IR "dest" .
 .
-
-
 .BR "IN " -
 .I pe
 - An integer that indicates the PE number upon which
@@ -126,99 +95,65 @@ must be the same data type as
 is to be updated. If you are using Fortran, it must be a default
 integer value.
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Description
-
 The conditional swap routines conditionally update a 
 .I dest
 data object on
 the specified PE and return the prior contents of the data object in one
 atomic operation.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 The 
 .I dest
 and 
 .I value
 data objects must conform to certain typing
 constraints, which are as follows:
-
 .TP 25
 Routine
 Data type of 
 .I dest
 and 
 .I value
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .TP 25
 SHMEM\_INT4\_CSWAP
 4-byte integer.
 ./ sectionEnd
-
-
 ./ sectionStart
 .TP 25
 SHMEM\_INT8\_CSWAP
 8-byte integer.
 ./ sectionEnd
-
-
-
 ./ sectionStart
-
 .SS Return Values
-
 The contents that had been in the 
 .I dest
 data object on the remote
 PE prior to the conditional swap. Data type is the same as the
 .I dest
 data type.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Notes
-
 As of OpenSHMEM[1.4], 
 .B shmem\_cswap
 has been deprecated.
 Its behavior and call signature are identical to the replacement
 interface, 
 .BR "shmem\_atomic\_compare\_swap" .
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Examples
-
-
-
 The following call ensures that the first PE to execute the
 conditional swap will successfully write its PE number to
 .I race\_winner
 on PE 0.
-
 .nf
 #include <stdio.h>
 #include <shmem.h>
-
 int main(void)
 {
   static int race_winner = -1;
@@ -230,11 +165,6 @@ int main(void)
   return 0;
 }
 .fi
-
-
-
-
-
 .SS Table 2:
 Standard AMO Types and Names
 .TP 25

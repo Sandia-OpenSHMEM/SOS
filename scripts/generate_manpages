@@ -6,6 +6,7 @@ import string
 import argparse
 import time
 import platform
+import subprocess
 
 # boldWordsC and boldWordsF are a set of the key words that will be
 # bolded in the man page
@@ -22,8 +23,7 @@ def writePageHeader(functionName):
     """
 
     titleHeader = ".TH " + functionName.upper() + " 3 " \
-                     + "\"Open Source Software Solutions, Inc.\" " \
-                     + time.strftime("%m/%d/%Y") + " " \
+                     + "\"Open Source Software Solutions, Inc.\"" \
                      + "\"OpenSHMEM Library Documentation\"" + "\n"
     return titleHeader
 
@@ -1044,8 +1044,6 @@ def parseDeprecationTable(directory, gen_dir, build_fortran):
 def writeOshcc(gen_dir):
     manFile = open(gen_dir + '/' + "oshcc.1", "w")
     manFile.write(".TH " + "OSHCC" + " 1 " \
-                     + "\"Open Source Software Solutions, Inc.\" " \
-                     + time.strftime("%m/%d/%Y") + " " \
                      + "\"OpenSHMEM Library Documentation\"" + "\n")
     manFile.write(".SH NAME\n")
     manFile.write("oshcc - Compiles and links OpenSHMEM programs " + \
@@ -1079,8 +1077,6 @@ def writeOshcc(gen_dir):
 def writeOshCC(gen_dir):
     manFile = open(gen_dir + '/' + "oshc++.1", "w")
     manFile.write(".TH " + "OSHC++" + " 1 " \
-                     + "\"Open Source Software Solutions, Inc.\" " \
-                     + time.strftime("%m/%d/%Y") + " " \
                      + "\"OpenSHMEM Library Documentation\"" + "\n")
     manFile.write(".SH NAME\n")
     manFile.write("oshc++ - Compiles and links OpenSHMEM programs " + \
@@ -1114,8 +1110,6 @@ def writeOshCC(gen_dir):
 def writeOshfort(gen_dir):
     manFile = open(gen_dir + '/' + "oshfort.1", "w")
     manFile.write(".TH " + "OSHFORT" + " 1 " \
-                     + "\"Open Source Software Solutions, Inc.\" " \
-                     + time.strftime("%m/%d/%Y") + " " \
                      + "\"OpenSHMEM Library Documentation\"" + "\n")
     manFile.write(".SH NAME\n")
     manFile.write("oshfort - Compiles and links OpenSHMEM programs " + \
@@ -1149,8 +1143,6 @@ def writeOshfort(gen_dir):
 def writeOshrun(gen_dir):
     manFile = open(gen_dir + '/' + "oshrun.1", "w")
     manFile.write(".TH " + "OSHRUN" + " 1 " \
-                     + "\"Open Source Software Solutions, Inc.\" " \
-                     + time.strftime("%m/%d/%Y") + " " \
                      + "\"OpenSHMEM Library Documentation\"" + "\n")
     manFile.write(".SH NAME\n")
     manFile.write("oshrun - Run a OpenSHMEM program\n")
@@ -1158,6 +1150,7 @@ def writeOshrun(gen_dir):
     manFile.write(".B oshrun\n")
     manFile.write("launches the OpenSHMEM programs with a given number " + \
         "of processes.\n\n")
+    manFile.write("usage: oshrun [oshrun_options] [launcher_arguments]\n")
     manFile.write(".SH COMMAND LINE ARGUMENTS\n")
     manFile.write(".TP 8\n")
     manFile.write(".B --help | -h\n")
@@ -1231,6 +1224,15 @@ def convertFile(functionName, directory, gen_dir, build_fortran=False):
     manFile.close()
     texFile.close()
     writeLinkFunctions(functionName, linkFunctions, gen_dir)
+    return manFile
+
+# Quick fix for the extra newline problem seen in vimpager:
+def cleanManFile(man_file):
+    """
+    Remove all double newlines from manpage file.
+    """
+    subprocess.call("tr -s '\n' < " + man_file.name + " > .tmpfile", shell=True)
+    subprocess.call("mv .tmpfile " + man_file.name, shell=True)
 
 def main():
     parser = argparse.ArgumentParser(description='Generate OpenSHMEM manpages')
@@ -1243,6 +1245,7 @@ def main():
     parser.add_argument('--build-fortran', required=False, default=False, action="store_true",
                         help='build Fortran manpages (requires setting -d)')
     args = parser.parse_args()
+
 
     if (args.directory == None) and (args.filename == None):
         parser.print_usage()
@@ -1270,9 +1273,12 @@ def main():
                     print("Error: " + routine + ".tex is not in the given directory")
                     exit(1)
                 else:
-                    convertFile(routine, args.directory, args.output_directory, args.build_fortran)
+                    man_file = convertFile(routine, args.directory, args.output_directory, args.build_fortran)
+                    cleanManFile(man_file)
+
             parseDeprecationTable(args.directory, args.output_directory, args.build_fortran)
             writeExecFunctions(args.output_directory)
+
     else:
         if not os.path.isfile(args.filename):
             print("Error: input file, " + args.filename + ", does not appear to exist.")
@@ -1284,7 +1290,8 @@ def main():
                 last = args.filename.find("/", last) + 1
 
             functionName = args.filename[last:per]
-            convertFile(functionName, args.filename[:last], args.output_directory)
+            man_file = convertFile(functionName, args.filename[:last], args.output_directory)
+            cleanManFile(man_file)
 
 if __name__== "__main__":
     main()

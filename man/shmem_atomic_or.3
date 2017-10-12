@@ -1,20 +1,15 @@
-.TH SHMEM_ATOMIC_OR 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+.TH SHMEM_ATOMIC_OR 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_atomic_or \- 
 Atomically perform a non-fetching bitwise OR operation on a
 remote data object.
-
 ./ sectionEnd
-
-
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
-
 ./ sectionStart
 .SS C11:
-
 .B void
 .B shmem_atomic_or(TYPE
 .IB "*dest" ,
@@ -23,17 +18,11 @@ remote data object.
 .B int
 .I pe
 .B );
-
-
-
 ./ sectionEnd
-
-
 where TYPE is one of the bitwise AMO types specified by
 Table 4.
 ./ sectionStart
 .SS C/C++:
-
 .B void
 .B shmem_<TYPENAME>_atomic_or(TYPE
 .IB "*dest" ,
@@ -42,41 +31,27 @@ Table 4.
 .B int
 .I pe
 .B );
-
-
-
 ./ sectionEnd
-
-
 where TYPE is one of the bitwise AMO types and has a corresponding
 TYPENAME specified by Table 4.
 ./ sectionStart
-
 .SH DESCRIPTION
 .SS Arguments
 .BR "OUT " -
 .I dest
 - A pointer to the remotely accessible data object to
 be updated.
-
-
 .BR "IN " -
 .I value
 - The operand to the bitwise OR operation.
-
-
 .BR "IN " -
 .I pe
 - An integer value for the PE on which 
 .I dest
 is to be updated.
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Description
-
 .B shmem\_atomic\_or
 atomically performs a non-fetching bitwise OR
 on the remotely accessible data object pointed to by 
@@ -86,30 +61,15 @@ at PE
 with the operand 
 .IR "value" .
 .
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS Return Values
-
 None.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Notes
-
 None.
-
 ./ sectionEnd
-
-
-
-
 .SS Table 4:
 Bitwise AMO Types and Names
 .TP 25

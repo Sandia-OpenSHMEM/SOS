@@ -1,59 +1,35 @@
-.TH SHMEM_INFO_GET_NAME 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+.TH SHMEM_INFO_GET_NAME 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_info_get_name \- 
 This routine returns the vendor defined character string.
-
 ./ sectionEnd
-
-
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
-
 ./ sectionStart
 .SS C/C++:
-
 .B void
 .B shmem_info_get_name(char
 .I *name
 .B );
-
-
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Fortran:
-
 .nf
-
 .BR "CHARACTER " "*(*)NAME"
 SHMEM_INFO_GET_NAME(NAME)   
-
 .fi
-
 ./ sectionEnd
-
-
-
-
 ./ sectionStart
-
 .SH DESCRIPTION
 .SS Arguments
 .BR "OUT " -
 .I name
 - The vendor defined string.
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Description
-
 This routine returns the vendor defined character string of size defined by
 the library constant SHMEM\_MAX\_NAME\_LEN. The program calling
 this function prepares the 
@@ -71,27 +47,12 @@ memory buffer is provided with size less than
 SHMEM\_MAX\_NAME\_LEN, behavior is undefined. For a given library
 implementation, the vendor string returned is consistent with the library
 constant SHMEM\_VENDOR\_STRING.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS Return Values
-
 None. 
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Notes
-
 None. 
-
 ./ sectionEnd
-
-
-
-
