@@ -1231,7 +1231,7 @@ def cleanManFile(man_file):
     """
     Remove all double newlines from manpage file.
     """
-    subprocess.call("tr -s '\n\n' < " + man_file.name + " > .tmpfile", shell=True)
+    subprocess.call("tr -s '\n' < " + man_file.name + " > .tmpfile", shell=True)
     subprocess.call("mv .tmpfile " + man_file.name, shell=True)
 
 def main():
