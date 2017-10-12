@@ -178,10 +178,6 @@ printf("\nOn-node transport: %s\n",
 #endif
        );
 
-#if defined(USE_SELF_OPTIMZATION)
-printf("\nSelf Optimization: Enabled\n");
-#endif
-
 #define SHMEM_INTERNAL_ENV_DEF(NAME, KIND, DEFAULT, CATEGORY, SHORT_DESC)       \
     if (CATEGORY == SHMEM_INTERNAL_ENV_CAT_INTRANODE)                               \
         printf("  SHMEM_%-20s %"SHPRI_##KIND" (type: %s, default: %"SHPRI_##KIND")\n\t%s\n", \

@@ -32,6 +32,8 @@ extern char *shmem_internal_location_array;
     } while (0)
 
 #define SHMEM_GET_RANK_SAME_NODE(pe) (shmem_internal_location_array[pe])
+#elif defined(USE_SELF_OPTIMIZATION)
+#define SHMEM_GET_RANK_SAME_NODE(pe) ((pe) == shmem_internal_my_pe)
 #else
 #define SHMEM_GET_RANK_SAME_NODE(pe) (-1)
 #endif
