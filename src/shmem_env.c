@@ -173,7 +173,7 @@ printf("\nOn-node transport: %s\n",
        "Linux CMA"
 #elif defined(USE_XPMEM)
        "XPMEM"
-#elif define(USE_MEMCPY)
+#elif defined(USE_MEMCPY)
        "memcpy"
 #else
        "none"
