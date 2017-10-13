@@ -47,8 +47,7 @@ shmem_runtime_init(void)
 
     if (!initialized) {
         if (PMIX_SUCCESS != (rc = PMIx_Init(&myproc, NULL, 0))) {
-
-            fprintf(stderr, "PMIx_Init failed\n");
+            RETURN_ERROR_MSG_PREINIT("PMIx_Init failed (%d)\n", rc);
             return rc;
         }
     }
@@ -61,8 +60,7 @@ shmem_runtime_init(void)
         PMIX_VALUE_RELEASE(val);
     }
     else {
-        fprintf(stderr, "Size is not properly initiated\n");
-
+        RETURN_ERROR_MSG_PREINIT("Size is not properly initiated (%d)\n", rc);
         return rc;
     }
 
@@ -76,8 +74,7 @@ shmem_runtime_fini(void)
     pmix_status_t rc;
 
     if (PMIX_SUCCESS != (rc = PMIx_Finalize(NULL, 0))) {
-        fprintf(stderr, "PMIx_Finalize failed\n");
-
+        RETURN_ERROR_MSG_PREINIT("PMIx_Finalize failed (%d)\n", rc);
         return rc;
     }
 
@@ -97,7 +94,7 @@ shmem_runtime_abort(int exit_code, const char msg[])
     pmix_status_t rc;
 
     if (PMIX_SUCCESS != (rc = PMIx_Abort(exit_code, msg, NULL, 0))) {
-        fprintf(stderr, "PMIx_Abort failed");
+        RETURN_ERROR_STR("PMIx_Abort failed");
     }
 
     /* PMI_Abort should not return */
@@ -138,7 +135,7 @@ shmem_runtime_exchange(void)
 
     /* commit any values we "put" */
     if (PMIX_SUCCESS != (rc = PMIx_Commit())) {
-        fprintf(stderr, "PMIx_Commit failed\n");
+        RETURN_ERROR_MSG("PMIx_Commit failed (%d)\n", rc);
         return rc;
     }
 
@@ -150,10 +147,10 @@ shmem_runtime_exchange(void)
     // ing capabilities. The commented out call function above, the commented
     // variable "bool active," and the PMIx_Fence_nb if-statement are here for
     // when that is ready. Current implementations will cause the test to hang.
-    
+
     // if (PMIX_SUCCESS != (rc = PMIx_Fence_nb(NULL, 0, &info, 1, opcbfunc, &active))) {
     if (PMIX_SUCCESS != (rc = PMIx_Fence(NULL, 0, &info, 1))) {
-        fprintf(stderr, "PMIx_Fence failed");
+        RETURN_ERROR_MSG("PMIx_Fence failed (%d)\n", rc);
     }
     PMIX_INFO_DESTRUCT(&info);
 
