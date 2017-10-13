@@ -171,8 +171,10 @@ printf("\nNetwork transport: %s\n",
 printf("\nOn-node transport: %s\n",
 #if defined(USE_CMA)
        "Linux CMA"
-#elif defined(XPMEM)
+#elif defined(USE_XPMEM)
        "XPMEM"
+#elif define(USE_MEMCPY)
+       "memcpy"
 #else
        "none"
 #endif

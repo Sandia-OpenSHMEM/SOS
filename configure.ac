@@ -297,11 +297,9 @@ if test -n "$with_xpmem" -a "$with_xpmem" != "no" -a -n "$with_cma" -a "$with_cm
 # Check which was requested, XPMEM or CMA:
 elif test -n "$with_xpmem" -a "$with_xpmem" != "no" ; then
     transport_cma="no"
-    transport_memcpy="no"
     AC_DEFINE([USE_XPMEM], [1], [Define if XPMEM transport is active])
 elif test -n "$with_cma" -a "$with_cma" != "no" ; then
     transport_xpmem="no"
-    transport_memcpy="no"
     AC_DEFINE([USE_CMA], [1], [Define if Cross Memory Attach transport is active])
 # If neither, disable XPMEM and CMA:
 else
@@ -309,11 +307,17 @@ else
     transport_cma="no"
     AC_MSG_RESULT([Neither XPMEM nor CMA transport requested])
 
-    if test "$enable_memcpy" = "yes" ; then
-        transport_memcpy="yes"
-        AC_DEFINE([USE_MEMCPY], [1], [Define to use memcpy for local put/get communication])
-    fi
 fi
+
+if test "$enable_memcpy" = "yes" -a "$transport_xpmem" = "no" -a "$transport_cma" = "no" ; then
+    transport_memcpy="yes"
+    AC_DEFINE([USE_MEMCPY], [1], [Define to use memcpy for local put/get communication])
+elif test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes" ; then
+    transport_memcpy="yes"
+else
+    transport_memcpy="no"
+fi
+
 AM_CONDITIONAL([USE_XPMEM], [test "$transport_xpmem" = "yes"])
 AM_CONDITIONAL([USE_CMA], [test "$transport_cma" = "yes"])
 
