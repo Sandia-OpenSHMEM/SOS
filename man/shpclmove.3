@@ -1,67 +1,44 @@
-.TH SHPCLMOVE 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+.TH SHPCLMOVE 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shpclmove \- 
 Extends a symmetric heap block or copies the contents of the block into a
 larger block.
-
 ./ sectionEnd
-
-
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
-
 ./ sectionStart
 .SS Fortran:
-
 .nf
-
 .BR "POINTER " "(addr, A(1))"
 .BR "INTEGER " "length, status, abort"
 .BR "CALL " "SHPCLMOVE (addr, length, status, abort)"
-
 .fi
-
 ./ sectionEnd
-
-
-
-
 ./ sectionStart
-
 .SH DESCRIPTION
 .SS Arguments
 .BR "INOUT " -
 .I addr
 - On entry, first word address of the block to
 change; on exit, the new address of the block if it was moved.
-
-
 .BR "IN " -
 .I length
 - Requested new total length in words. One word is
 32 bits.
-
-
 .BR "OUT " -
 .I status
 - Status is 0 if the block was extended in
 place, 1 if it was moved, and a negative integer for the type of
 error detected.
-
-
 .BR "IN " -
 .I abort
 - Abort code. Nonzero requests abort on error;
 0 requests an error code.
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Description
-
 The 
 .B SHPCLMOVE
 routine either extends a symmetric heap block if the block
@@ -74,67 +51,41 @@ with the same value of
 .I addr
 to maintain symmetric heap
 consistency; if any PEs are missing, the program hangs.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS Return Values
-
 ./ sectionEnd
-
-
 ./ sectionStart
 .TP 25
 Error Code
 Condition
 ./ sectionEnd
-
-
 ./ sectionStart
 .TP 25
 -1 
 Length is not an integer greater than 0
 ./ sectionEnd
-
-
 ./ sectionStart
 .TP 25
 -2
 No more memory is available from the system (checked if the request cannot be satisfied from the available blocks on the symmetric heap).
 ./ sectionEnd
-
-
 ./ sectionStart
 .TP 25
 -3
 Address is outside the bounds of the symmetric heap.
 ./ sectionEnd
-
-
 ./ sectionStart
 .TP 25
 -4
 Block is already free.
 ./ sectionEnd
-
-
 ./ sectionStart
 .TP 25
 -5
 Address is not at the beginning of a block.
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Notes
-
 None.
-
 ./ sectionEnd
-
-
-
-

@@ -1,72 +1,39 @@
-.TH SHMEM_N_PES 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+.TH SHMEM_N_PES 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_n_pes \- 
 Returns the number of PEs running in a program.
-
 ./ sectionEnd
-
-
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
-
 ./ sectionStart
 .SS C/C++:
-
 .B int
 .B shmem_n_pes(void)
-
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Fortran:
-
 .nf
-
 .BR "INTEGER " "SHMEM_N_PES, N_PES"
 N_PES = SHMEM_N_PES()
-
 .fi
-
 ./ sectionEnd
-
-
-
-
 ./ sectionStart
-
 .SH DESCRIPTION
 .SS Arguments
 .B None.
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Description
-
 The routine returns the number of PEs running in the program.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS Return Values
-
 Integer - Number of PEs running in the OpenSHMEM program.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Notes
-
 As of OpenSHMEM Specification 1.2 the use of 
 .B \_num\_pes
 has been
@@ -80,27 +47,18 @@ remains unchanged from the
 deprecated 
 .B \_num\_pes
 version.
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Examples
-
-
-
 The following 
 .B shmem\_my\_pe
 and 
 .B shmem\_n\_pes
 example is for
 C/C++ programs:
-
 .nf
 #include <stdio.h>
 #include <shmem.h>
-
 int main(void)
 {
   shmem_init();
@@ -111,8 +69,3 @@ int main(void)
   return 0;
 }
 .fi
-
-
-
-
-

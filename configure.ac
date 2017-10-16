@@ -67,7 +67,9 @@ AC_ARG_ENABLE([completion-polling],
     [AC_HELP_STRING([--enable-completion-polling],
                     [Enable polling in quiet, fence, and local completion operations (default:disabled)])])
 AS_IF([test "$enable_completion_polling" = "yes"],
-      [AC_DEFINE([ENABLE_COMPLETION_POLLING], [1], [Enable polling for local/remote completions])])
+      [AC_DEFINE([ENABLE_COMPLETION_POLLING], [1], [Enable polling for local/remote completions])
+       AC_DEFINE([DEFAULT_POLL_LIMIT], [-1], [Poll limit for local/remote completions])],
+      [AC_DEFINE([DEFAULT_POLL_LIMIT], [0], [Poll limit for local/remote completions])])
 
 AC_ARG_ENABLE([nonblocking-fence],
     [AC_HELP_STRING([--enable-nonblocking-fence],
@@ -180,6 +182,10 @@ AS_IF([test "$enable_bounce_buffers" = "no"],
 AC_ARG_WITH([oshrun-launcher],
     [AC_HELP_STRING([--with-oshrun-launcher],
                     [Set launcher to be used by oshrun launcher wrapper. (default: auto)])])
+
+AC_ARG_ENABLE([memcpy],
+    [AC_HELP_STRING([--enable-memcpy],
+                    [Use memcpy to perform local put/get operations (default:disabled)])])
 
 dnl check for programs
 
@@ -304,7 +310,18 @@ else
     transport_xpmem="no"
     transport_cma="no"
     AC_MSG_RESULT([Neither XPMEM nor CMA transport requested])
+
 fi
+
+if test "$enable_memcpy" = "yes" -a "$transport_xpmem" = "no" -a "$transport_cma" = "no" ; then
+    transport_memcpy="yes"
+    AC_DEFINE([USE_MEMCPY], [1], [Define to use memcpy for local put/get communication])
+elif test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes" ; then
+    transport_memcpy="yes"
+else
+    transport_memcpy="no"
+fi
+
 AM_CONDITIONAL([USE_XPMEM], [test "$transport_xpmem" = "yes"])
 AM_CONDITIONAL([USE_CMA], [test "$transport_cma" = "yes"])
 
@@ -687,4 +704,5 @@ echo "  Portals 4:      $transport_portals4"
 echo "  OFI:            $transport_ofi"
 echo "  XPMEM:          $transport_xpmem"
 echo "  CMA:            $transport_cma"
+echo "  memcpy:         $transport_memcpy"
 echo ""
