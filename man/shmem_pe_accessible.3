@@ -1,49 +1,29 @@
-.TH SHMEM_PE_ACCESSIBLE 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+.TH SHMEM_PE_ACCESSIBLE 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_pe_accessible \- 
 Determines whether a PE is accessible via OpenSHMEM's data transfer
 routines.
-
 ./ sectionEnd
-
-
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
-
 ./ sectionStart
 .SS C/C++:
-
 .B int
 .B shmem_pe_accessible(int
 .I pe
 .B );
-
-
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Fortran:
-
 .nf
-
 .BR "LOGICAL " "LOG, SHMEM_PE_ACCESSIBLE"
 .BR "INTEGER " "pe"
 LOG = SHMEM_PE_ACCESSIBLE(pe)
-
 .fi
-
 ./ sectionEnd
-
-
-
-
 ./ sectionStart
-
 .SH DESCRIPTION
 .SS Arguments
 .BR "IN " -
@@ -51,12 +31,8 @@ LOG = SHMEM_PE_ACCESSIBLE(pe)
 - Specific PE to be checked for accessibility from
 the local PE.
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Description
-
 .B shmem\_pe\_accessible
 is a query routine that indicates whether a
 specified PE is accessible via OpenSHMEM from the local PE. The
@@ -75,31 +51,15 @@ executable file. However, OpenSHMEM support between processes of different
 executable files is supported only for data objects on the symmetric heap,
 since static data objects are not symmetric between different executable
 files. 
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS Return Values
-
 C/C++: The return value is 1 if the specified PE is a valid remote PE
 for OpenSHMEM routines; otherwise, it is 0. 
-
-
-
 Fortran: The return value is .TRUE. if the specified PE is a valid
 remote PE for OpenSHMEM routines; otherwise, it is .FALSE.. 
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Notes
 None. 
 ./ sectionEnd
-
-
-
-

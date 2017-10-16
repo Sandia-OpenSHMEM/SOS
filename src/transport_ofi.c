@@ -76,6 +76,8 @@ shmem_internal_atomic_uint64_t  shmem_transport_ofi_pending_put_counter;
 shmem_internal_atomic_uint64_t  shmem_transport_ofi_pending_get_counter;
 shmem_internal_atomic_uint64_t  shmem_transport_ofi_pending_cq_count;
 uint64_t                        shmem_transport_ofi_max_poll;
+long                            shmem_transport_ofi_put_poll_limit;
+long                            shmem_transport_ofi_get_poll_limit;
 size_t                          shmem_transport_ofi_max_buffered_send;
 size_t                          shmem_transport_ofi_max_msg_size;
 size_t                          shmem_transport_ofi_bounce_buffer_size;
@@ -395,15 +397,24 @@ int allocate_cntr_and_cq(void)
 {
 
     int ret = 0;
-    struct fi_cntr_attr cntr_attr = {0};
+    struct fi_cntr_attr cntr_put_attr = {0};
+    struct fi_cntr_attr cntr_get_attr = {0};
     struct fi_cq_attr   cq_attr = {0};
 
-    cntr_attr.events   = FI_CNTR_EVENTS_COMP;
-#ifdef ENABLE_COMPLETION_POLLING
-    cntr_attr.wait_obj = FI_WAIT_NONE;
-#else
-    cntr_attr.wait_obj = FI_WAIT_UNSPEC;
-#endif
+    cntr_put_attr.events   = FI_CNTR_EVENTS_COMP;
+    cntr_get_attr.events   = FI_CNTR_EVENTS_COMP;
+
+    /* Set FI_WAIT based on the put and get polling limits defined above */
+    if (shmem_transport_ofi_put_poll_limit < 0) {
+        cntr_put_attr.wait_obj = FI_WAIT_NONE;
+    } else {
+        cntr_put_attr.wait_obj = FI_WAIT_UNSPEC;
+    }
+    if (shmem_transport_ofi_get_poll_limit < 0) {
+        cntr_get_attr.wait_obj = FI_WAIT_NONE;
+    } else {
+        cntr_get_attr.wait_obj = FI_WAIT_UNSPEC;
+    }
 
     /* ------------------------------------------------------- */
     /* Define Completion tracking Resources to Attach to EP    */
@@ -411,7 +422,7 @@ int allocate_cntr_and_cq(void)
 
     /* Create counter for counting completions of outgoing writes */
 
-    ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
+    ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_put_attr,
                        &shmem_transport_ofi_put_cntrfd, NULL);
     if (ret!=0) {
         RAISE_WARN_STR("put cntr_open failed");
@@ -420,7 +431,7 @@ int allocate_cntr_and_cq(void)
 
     /* Create counter for counting completions of outbound reads */
 
-    ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
+    ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_get_attr,
                        &shmem_transport_ofi_get_cntrfd, NULL);
     if (ret!=0) {
         RAISE_WARN_STR("get cntr_open failed");
@@ -1131,6 +1142,9 @@ int shmem_transport_init(void)
                                  shmem_transport_ofi_bounce_buffer_size,
                                  init_bounce_buffer);
     }
+
+    shmem_transport_ofi_put_poll_limit = shmem_internal_params.OFI_TX_POLL_LIMIT;
+    shmem_transport_ofi_get_poll_limit = shmem_internal_params.OFI_RX_POLL_LIMIT;
 
     ret = allocate_fabric_resources(&info);
 

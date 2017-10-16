@@ -1,55 +1,32 @@
-.TH SHMEM_QUIET 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+.TH SHMEM_QUIET 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_quiet \- 
 Waits for completion of all outstanding PUT, AMOs, memory store,
 and non-blocking PUT and GET routines to symmetric data
 objects issued by a PE.
-
 ./ sectionEnd
-
-
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
-
 ./ sectionStart
 .SS C/C++:
-
 .B void
 .B shmem_quiet(void)
-
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Fortran:
-
 .nf
-
 .BR "CALL " "SHMEM_QUIET"
-
 .fi
-
 ./ sectionEnd
-
-
-
-
 ./ sectionStart
-
 .SH DESCRIPTION
 .SS Arguments
 .B None.
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Description
-
 The 
 .B shmem\_quiet
 routine ensures completion of PUT, AMOs,
@@ -60,24 +37,13 @@ symmetric data objects are guaranteed to be completed and visible to all
 PEs when 
 .B shmem\_quiet
 returns. 
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
-
 .SS Return Values
-
 None.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Notes
-
 .B shmem\_quiet
 is most useful as a way of ensuring completion of
 several PUT, AMOs, memory store, and non-blocking PUT
@@ -96,8 +62,6 @@ are called. The barrier
 routines wait for the completion of outstanding writes (PUT, AMO,
 memory stores, and nonblocking PUT and GET routines) to
 symmetric data objects on all PEs.
-
-
 .B shmem\_quiet
 does not have an effect on the ordering between memory 
 accesses issued by the target PE.
@@ -112,24 +76,15 @@ accesses issued by the target PE.
 .B shmem\_barrier\_all
 routines can be called by the target PE to guarantee 
 ordering of its memory accesses.
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Examples
-
-
-
 The following example uses 
 .B shmem\_quiet
 in a C11 program: 
-
 .nf
 #include <stdio.h>
 #include <shmem.h>
-
 int main(void)
 {
   static long dest[3];
@@ -155,7 +110,6 @@ int main(void)
   return 0;
 }
 .fi
-
 .I Put1
 and 
 .I put2
@@ -164,6 +118,3 @@ will be completed and visible before
 and 
 .IR "put4" .
 .
-
-
-

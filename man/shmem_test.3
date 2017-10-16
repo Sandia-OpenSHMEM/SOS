@@ -1,19 +1,14 @@
-.TH SHMEM_TEST 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+.TH SHMEM_TEST 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_test \- 
 Test whether a variable on the local PE has changed.
-
 ./ sectionEnd
-
-
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
-
 ./ sectionStart
 .SS C11:
-
 .B int
 .B shmem_test(TYPE
 .IB "*ivar" ,
@@ -22,17 +17,11 @@ Test whether a variable on the local PE has changed.
 .B TYPE
 .I value
 .B );
-
-
-
 ./ sectionEnd
-
-
 where TYPE is one of the point-to-point synchronization types specified by
 Table 5.
 ./ sectionStart
 .SS C/C++:
-
 .B int
 .B shmem_<TYPENAME>_test(TYPE
 .IB "*ivar" ,
@@ -41,23 +30,15 @@ Table 5.
 .B TYPE
 .I value
 .B );
-
-
-
 ./ sectionEnd
-
-
 where TYPE is one of the point-to-point synchronization types and has a
 corresponding TYPENAME specified by Table 5.
 ./ sectionStart
-
 .SH DESCRIPTION
 .SS Arguments
 .BR "OUT " -
 .I ivar
 - A pointer to a remotely accessible data object.
-
-
 .BR "IN " -
 .I cmp
 - The comparison operator that compares 
@@ -65,8 +46,6 @@ corresponding TYPENAME specified by Table 5.
 with
 .IR "value" .
 .
-
-
 .BR "IN " -
 .I value
 - The value against which the object pointed to
@@ -74,12 +53,8 @@ by
 .I ivar
 will be compared.
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Description
-
 .B shmem\_test
 tests the numeric comparison of the symmetric object
 pointed to by 
@@ -90,14 +65,9 @@ according to the
 comparison operator 
 .IR "cmp" .
 .
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS Return Values
-
 .B shmem\_test
 returns 1 if the comparison of the symmetric object
 pointed to by 
@@ -108,33 +78,20 @@ according to the
 comparison operator 
 .I cmp
 evalutes to true; otherwise, it returns 0.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Notes
-
 None.
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Examples
-
-
 The following example demonstrates the use of 
 .B shmem\_test
 to
 wait on an array of symmetric objects and return the index of an
 element that satisfies the specified condition.
-
 .nf
 #include <shmem.h>
-
 int user_wait_any(long *ivar, int count, shmem_cmp_t cmp, long value)
 {
  int idx = 0;
@@ -143,10 +100,6 @@ int user_wait_any(long *ivar, int count, shmem_cmp_t cmp, long value)
  return idx;
 }
 .fi
-
-
-
-
 .SS Table 5:
 Point-to-Point Synchronization Types and Names
 .TP 25

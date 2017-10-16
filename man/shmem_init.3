@@ -1,55 +1,31 @@
-.TH SHMEM_INIT 3 "Open Source Software Solutions, Inc.""OpenSHEMEM Library Documentation"
+.TH SHMEM_INIT 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_init \- 
 A collective operation that allocates and initializes the resources used by
 the OpenSHMEM library.
-
 ./ sectionEnd
-
-
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
-
 ./ sectionStart
 .SS C/C++:
-
 .B void
 .B shmem_init(void)
-
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Fortran:
-
 .nf
-
 .BR "CALL " "SHMEM_INIT()"
-
 .fi
-
 ./ sectionEnd
-
-
-
-
-
 ./ sectionStart
-
 .SH DESCRIPTION
 .SS Arguments
 .B None.
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Description
-
 .B shmem\_init
 allocates and initializes resources used by the OpenSHMEM
 library. It is a collective operation that all PEs must call before any
@@ -66,23 +42,13 @@ subsequent call to
 .B shmem\_init
 in the same program results in undefined
 behavior.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS Return Values
-
 None.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Notes
-
 As of OpenSHMEM Specification 1.2 the use of 
 .B start\_pes
 has been
@@ -113,46 +79,27 @@ case of
 .B start\_pes
 after the
 first one resulted in a no-op.
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Examples
-
-
-
 This is a simple program that calls 
 .B shmem\_init
 : 
-
 .nf
 PROGRAM PUT
 INCLUDE "shmem.fh"
-
 INTEGER TARG, SRC, RECEIVER, BAR
 COMMON /T/ TARG
 PARAMETER (RECEIVER=1)
 CALL SHMEM_INIT()
-
 IF (SHMEM_MY_PE() .EQ. 0) THEN
    SRC = 33
    CALL SHMEM_INTEGER_PUT(TARG, SRC, 1, RECEIVER)
 ENDIF
-
 CALL SHMEM_BARRIER_ALL           ! SYNCHRONIZES SENDER AND RECEIVER
-
 IF (SHMEM_MY_PE() .EQ. RECEIVER) THEN
    PRINT*,'PE ', SHMEM_MY_PE(),' TARG=',TARG,' (expect 33)'
 ENDIF
-
 CALL SHMEM_FINALIZE()
-
 END
 .fi
-
-
-
-
-
