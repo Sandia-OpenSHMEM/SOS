@@ -44,6 +44,13 @@ extern long shmem_internal_data_length;
 /* Note: must be accompanied by shmem_internal_my_pe in arguments */
 #define RAISE_PE_PREFIX "[%04d]        "
 
+
+/* Function prototype for standard routines with the default context: */
+#define SHMEM_FUNC_PROTOTYPE(FUNCNAME,  ...)        \
+  shmem_##FUNCNAME(__VA_ARGS__) {                   \
+  const shmem_ctx_t ctx = SHMEM_CTX_DEFAULT;
+
+
 #define RAISE_WARN(ret)                                                 \
     do {                                                                \
         fprintf(stderr, "[%04d] WARN:  %s:%d %s, return code %d\n",     \
