@@ -316,6 +316,10 @@ AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
 AS_IF([test "$enable_pmi_simple" = "yes"],
      [TEST_RUNNER='$(abs_top_builddir)/src/oshrun -n $(NPROCS)'],
      [OPAL_CHECK_PMI(pmi_type)])
+AS_IF([test "$opal_external_pmix_version_found" = 1],
+     [pmi_CPPFLAGS="$opal_external_pmix_CPPFLAGS"
+      pmi_LDFLAGS="$opal_external_pmix_LDFLAGS"
+      pmi_LIBS="$opal_external_pmix_LIBS"])
 AM_CONDITIONAL([USE_PMI_SIMPLE], [test "$enable_pmi_simple" = "yes"])
 AM_CONDITIONAL([USE_PMI2], [test "$pmi_type" = "pmi2"])
 AM_CONDITIONAL([USE_PMIX], [test "$opal_external_pmix_version_found" = 1])
@@ -566,11 +570,11 @@ if test "$transport_xpmem" = "yes" ; then
     WRAPPER_COMPILER_EXTRA_LIBS="$XPMEM_LIBS"
 fi
 
-CPPFLAGS="$CPPFLAGS $pmi_CPPFLAGS $opal_external_pmix_CPPFLAGS"
-LDFLAGS="$LDFLAGS $pmi_LDFLAGS $opal_external_pmix_LDFLAGS $aslr_LDFLAGS"
-LIBS="$LIBS $pmi_LIBS $opal_external_pmix_LIBS"
-WRAPPER_COMPILER_EXTRA_LDFLAGS="$WRAPPER_COMPILER_EXTRA_LDFLAGS $pmi_LDFLAGS $opal_external_pmix_LDFLAGS $aslr_LDFLAGS"
-WRAPPER_COMPILER_EXTRA_LIBS="$WRAPPER_COMPILER_LIBS $pmi_LIBS $opal_external_pmix_LIBS"
+CPPFLAGS="$CPPFLAGS $pmi_CPPFLAGS"
+LDFLAGS="$LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
+LIBS="$LIBS $pmi_LIBS"
+WRAPPER_COMPILER_EXTRA_LDFLAGS="$WRAPPER_COMPILER_EXTRA_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
+WRAPPER_COMPILER_EXTRA_LIBS="$WRAPPER_COMPILER_LIBS $pmi_LIBS"
 
 # Need the libtool binary before setting up rpath
 LT_OUTPUT
