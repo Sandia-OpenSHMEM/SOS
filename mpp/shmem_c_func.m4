@@ -321,6 +321,14 @@ define(`SHMEM_C_CTX_SET',
 `SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_$1_set(shmem_ctx_t ctx, $2 *target, $2 value, int pe) SHMEM_ATTRIBUTE_DEPRECATED')dnl
 SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_CTX_SET')
 
+define(`SHMEM_C_ATOMIC_SET',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_atomic_set($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_ATOMIC_SET')
+
+define(`SHMEM_C_CTX_ATOMIC_SET',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_$1_atomic_set(shmem_ctx_t ctx, $2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_CTX_ATOMIC_SET')
+
 /* AMO: Atomic Bitwise Routines */
 define(`SHMEM_C_XOR',
 `SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_atomic_xor($2 *target, $2 value, int pe)')dnl
@@ -370,14 +378,6 @@ SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_FETCH_OR')
 define(`SHMEM_C_CTX_FETCH_OR',
 `SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_ctx_$1_atomic_fetch_or(shmem_ctx_t ctx, $2 *target, $2 value, int pe)')dnl
 SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_CTX_FETCH_OR')
-
-define(`SHMEM_C_ATOMIC_SET',
-`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_atomic_set($2 *target, $2 value, int pe)')dnl
-SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_ATOMIC_SET')
-
-define(`SHMEM_C_CTX_ATOMIC_SET',
-`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_$1_atomic_set(shmem_ctx_t ctx, $2 *target, $2 value, int pe)')dnl
-SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_CTX_ATOMIC_SET')
 
 /* COLL: Barrier Synchronization Routines */
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync);
