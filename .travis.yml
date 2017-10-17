@@ -1,4 +1,5 @@
 sudo: required
+dist: trusty
 language: c
 compiler:
     #- clang
@@ -127,7 +128,30 @@ before_install:
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ParRes/Kernels.git PRK
     - echo -e "SHMEMCC=oshcc -std=c99\nSHMEMTOP=$$TRAVIS_INSTALL\n" > PRK/common/make.defs
-
+    ## Build Libevent
+    - cd $TRAVIS_SRC
+    - wget https://github.com/libevent/libevent/releases/download/release-2.0.22-stable/libevent-2.0.22-stable.tar.gz
+    - tar -xzvf libevent-2.0.22-stable.tar.gz
+    - cd libevent-2.0.22-stable
+    - ./autogen.sh
+    - ./configure --prefix=$PWD/install
+    - make clean all install
+    ## Build PMIx
+    - cd $TRAVIS_SRC
+    - git clone --depth 10 --single-branch -b v2.0 https://github.com/pmix/pmix pmix
+    - cd pmix
+    - ./autogen.pl
+    - ./configure --prefix=$PWD/install --with-libevent=$TRAVIS_SRC/libevent-2.0.22-stable/install --with-devel-headers --disable-visibility && make clean all install
+    ## Build OMPI from source (takes too long, so removed in favor of RPM install below)
+    #- cd $TRAVIS_SRC
+    #- git clone --depth 10 --single-branch -b v3.0.x https://github.com/open-mpi/ompi.git ompi
+    #- cd ompi
+    #- ./autogen.pl
+    #- ./configure --prefix=$PWD/install --with-libevent=$TRAVIS_SRC/libevent-2.0.22-stable/install --with-pmix=$TRAVIS_SRC/pmix/install && make clean all install
+    ## Download and install OpenMPI RPM 
+    - cd $TRAVIS_INSTALL
+    - wget http://gdurl.com/P5og -O openmpi-v3.0.x.deb
+    - sudo dpkg -i openmpi-v3.0.x.deb
 install:
     - cd $SOS_SRC
     - ./autogen.sh
@@ -179,6 +203,18 @@ script:
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
     - make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2" check
+    - make install
+    ###
+    ### Build and check with ORTE (Open MPI's launcher)
+    ###
+    - cd $SOS_SRC
+    - mkdir ompi-build
+    - cd ompi-build
+    - export PATH=/opt/openmpi/gitclone/bin:$BASE_PATH
+    - ../configure --prefix=$PWD/install --with-ofi=$TRAVIS_INSTALL/libfabric --with-pmix=$TRAVIS_SRC/pmix/install
+    - make $TRAVIS_PAR_MAKE
+    - echo "localhost slots=4" > /tmp/hostfile.txt
+    - make VERBOSE=1 TEST_RUNNER="mpiexec --hostfile /tmp/hostfile.txt -np 4" check
     - make install
     ###
     ### Run the UH test suite (Portals)
