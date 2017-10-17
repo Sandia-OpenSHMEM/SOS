@@ -339,6 +339,11 @@ SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_IGET_N')
     shmem_internal_get_wait();                            \
   }
 
+/* Function prototype for standard routines with the default context: */
+#define SHMEM_FUNC_PROTOTYPE(FUNCNAME,  ...)        \
+  shmem_##FUNCNAME(__VA_ARGS__) {                   \
+  const shmem_ctx_t ctx = SHMEM_CTX_DEFAULT;
+
 SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_P')
 SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_G')
 SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_PUT')

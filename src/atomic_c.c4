@@ -596,6 +596,11 @@ shmem_swap(long *target, long value, int pe)
         return oldval;                                                       \
     }
 
+/* Function prototype for standard routines with the default context: */
+#define SHMEM_FUNC_PROTOTYPE(FUNCNAME,  ...)        \
+  shmem_##FUNCNAME(__VA_ARGS__) {                   \
+  const shmem_ctx_t ctx = SHMEM_CTX_DEFAULT;
+
 SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_SWAP)
 SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_ATOMIC_SWAP)
 SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_CSWAP)
