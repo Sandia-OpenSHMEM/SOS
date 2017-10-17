@@ -22,10 +22,6 @@ dnl
 #   endif
 #endif
 
-/* Temporary placeholder to avoid undefined warnings: */
-#define SHMEM_CTX_DEFAULT NULL
-typedef void *shmem_ctx_t;
-
 /* Library Setup, Exit, and Query Routines */
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_init(void);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_finalize(void);
