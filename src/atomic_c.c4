@@ -37,11 +37,6 @@ define(`SHMEM_PROF_DEF_SWAP',
 #define shmem_$1_swap pshmem_$1_swap')dnl
 SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_SWAP')
 
-define(`SHMEM_PROF_DEF_CTX_SWAP',
-`#pragma weak shmem_ctx_$1_swap = pshmem_ctx_$1_swap
-#define shmem_ctx_$1_swap pshmem_ctx_$1_swap')dnl
-SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_CTX_SWAP')
-
 define(`SHMEM_PROF_DEF_ATOMIC_SWAP',
 `#pragma weak shmem_$1_atomic_swap = pshmem_$1_atomic_swap
 #define shmem_$1_atomic_swap pshmem_$1_atomic_swap')dnl
@@ -64,11 +59,6 @@ define(`SHMEM_PROF_DEF_CSWAP',
 #define shmem_$1_cswap pshmem_$1_cswap')dnl
 SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_CSWAP')
 
-define(`SHMEM_PROF_DEF_CTX_CSWAP',
-`#pragma weak shmem_ctx_$1_cswap = pshmem_ctx_$1_cswap
-#define shmem_ctx_$1_cswap pshmem_ctx_$1_cswap')dnl
-SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_CTX_CSWAP')
-
 define(`SHMEM_PROF_DEF_ATOMIC_COMPARE_SWAP',
 `#pragma weak shmem_$1_atomic_compare_swap = pshmem_$1_atomic_compare_swap
 #define shmem_$1_atomic_compare_swap pshmem_$1_atomic_compare_swap')dnl
@@ -83,11 +73,6 @@ define(`SHMEM_PROF_DEF_INC',
 `#pragma weak shmem_$1_inc = pshmem_$1_inc
 #define shmem_$1_inc pshmem_$1_inc')dnl
 SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_INC')
-
-define(`SHMEM_PROF_DEF_CTX_INC',
-`#pragma weak shmem_ctx_$1_inc = pshmem_ctx_$1_inc
-#define shmem_ctx_$1_inc pshmem_ctx_$1_inc')dnl
-SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_CTX_INC')
 
 define(`SHMEM_PROF_DEF_ATOMIC_INC',
 `#pragma weak shmem_$1_atomic_inc = pshmem_$1_atomic_inc
@@ -104,11 +89,6 @@ define(`SHMEM_PROF_DEF_FINC',
 #define shmem_$1_finc pshmem_$1_finc')dnl
 SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_FINC')
 
-define(`SHMEM_PROF_DEF_CTX_FINC',
-`#pragma weak shmem_ctx_$1_finc = pshmem_ctx_$1_finc
-#define shmem_ctx_$1_finc pshmem_ctx_$1_finc')dnl
-SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_CTX_FINC')
-
 define(`SHMEM_PROF_DEF_ATOMIC_FETCH_INC',
 `#pragma weak shmem_$1_atomic_fetch_inc = pshmem_$1_atomic_fetch_inc
 #define shmem_$1_atomic_fetch_inc pshmem_$1_atomic_fetch_inc')dnl
@@ -123,11 +103,6 @@ define(`SHMEM_PROF_DEF_ADD',
 `#pragma weak shmem_$1_add = pshmem_$1_add
 #define shmem_$1_add pshmem_$1_add')dnl
 SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_ADD')
-
-define(`SHMEM_PROF_DEF_CTX_ADD',
-`#pragma weak shmem_ctx_$1_add = pshmem_ctx_$1_add
-#define shmem_ctx_$1_add pshmem_ctx_$1_add')dnl
-SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_CTX_ADD')
 
 define(`SHMEM_PROF_DEF_ATOMIC_ADD',
 `#pragma weak shmem_$1_atomic_add = pshmem_$1_atomic_add
@@ -144,11 +119,6 @@ define(`SHMEM_PROF_DEF_FADD',
 #define shmem_$1_fadd pshmem_$1_fadd')dnl
 SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_FADD')
 
-define(`SHMEM_PROF_DEF_CTX_FADD',
-`#pragma weak shmem_ctx_$1_fadd = pshmem_ctx_$1_fadd
-#define shmem_ctx_$1_fadd pshmem_ctx_$1_fadd')dnl
-SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_CTX_FADD')
-
 define(`SHMEM_PROF_DEF_ATOMIC_FETCH_ADD',
 `#pragma weak shmem_$1_atomic_fetch_add = pshmem_$1_atomic_fetch_add
 #define shmem_$1_atomic_fetch_add pshmem_$1_atomic_fetch_add')dnl
@@ -164,11 +134,6 @@ define(`SHMEM_PROF_DEF_FETCH',
 #define shmem_$1_fetch pshmem_$1_fetch')dnl
 SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_FETCH')
 
-define(`SHMEM_PROF_DEF_CTX_FETCH',
-`#pragma weak shmem_ctx_$1_fetch = pshmem_ctx_$1_fetch
-#define shmem_ctx_$1_fetch pshmem_ctx_$1_fetch')dnl
-SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_CTX_FETCH')
-
 define(`SHMEM_PROF_DEF_ATOMIC_FETCH',
 `#pragma weak shmem_$1_atomic_fetch = pshmem_$1_atomic_fetch
 #define shmem_$1_atomic_fetch pshmem_$1_atomic_fetch')dnl
@@ -183,11 +148,6 @@ define(`SHMEM_PROF_DEF_SET',
 `#pragma weak shmem_$1_set = pshmem_$1_set
 #define shmem_$1_set pshmem_$1_set')dnl
 SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_SET')
-
-define(`SHMEM_PROF_DEF_CTX_SET',
-`#pragma weak shmem_ctx_$1_set = pshmem_ctx_$1_set
-#define shmem_ctx_$1_set pshmem_ctx_$1_set')dnl
-SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_CTX_SET')
 
 define(`SHMEM_PROF_DEF_AND',
 `#pragma weak shmem_$1_atomic_and = pshmem_$1_atomic_and
