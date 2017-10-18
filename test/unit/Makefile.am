@@ -82,6 +82,7 @@ check_PROGRAMS = \
 	rma_coverage \
 	collect \
 	repeated_barriers \
+	repeated_syncs \
 	broadcast_active_set \
 	reduce_active_set \
 	collect_active_set \
