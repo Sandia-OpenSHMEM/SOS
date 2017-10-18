@@ -49,7 +49,9 @@ $1(double,     double,             `SHM_INTERNAL_DOUBLE')')dnl
 dnl
 define(`SHMEM_BIND_CXX_BITWISE_AMO', dnl args: macro_name, end
 SHMEM_BIND_CXX_BITWISE_AMO_EXTRAS($1,$2)dnl
-`$1(uint,       unsigned int,       `SHM_INTERNAL_UINT')$2
+`$1(int32,      int32_t,            `SHM_INTERNAL_INT32')$2
+$1(int64,      int64_t,            `SHM_INTERNAL_INT64')$2
+$1(uint,       unsigned int,       `SHM_INTERNAL_UINT')$2
 $1(ulong,      unsigned long,      `SHM_INTERNAL_ULONG')$2
 $1(ulonglong,  unsigned long long, `SHM_INTERNAL_ULONG_LONG')')dnl
 dnl

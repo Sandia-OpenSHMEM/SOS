@@ -65,7 +65,9 @@
 
 /* Note: Mirrors SHMEM_BIND_CXX_BITWISE_AMO */
 #define NEED_BITWISE_AMO_ASSOC(CTYPE)               \
-           COMPARE_TYPES_FIRST(unsigned int, CTYPE) \
+           COMPARE_TYPES_FIRST(int32_t, CTYPE)      \
+           COMPARE_TYPES(int64_t, CTYPE)            \
+           COMPARE_TYPES(unsigned int, CTYPE)       \
            COMPARE_TYPES(unsigned long, CTYPE)      \
            COMPARE_TYPES(unsigned long long, CTYPE)
 
@@ -131,8 +133,6 @@ int main(int argc, char **argv)
     printf("')dnl\n");
 
     printf("define(`SHMEM_BIND_CXX_BITWISE_AMO_EXTRAS',\n`");
-    GEN_AMO_ASSOC(int32,     int32_t,     SHM_INTERNAL_INT32, BITWISE_AMO);
-    GEN_AMO_ASSOC(int64,     int64_t,     SHM_INTERNAL_INT64, BITWISE_AMO);
     GEN_AMO_ASSOC(uint32,   uint32_t,    SHM_INTERNAL_UINT32, BITWISE_AMO);
     GEN_AMO_ASSOC(uint64,   uint64_t,    SHM_INTERNAL_UINT64, BITWISE_AMO);
     printf("')dnl\n");
