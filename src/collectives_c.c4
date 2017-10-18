@@ -40,6 +40,11 @@ include(shmem_bind_c.m4)dnl
 #pragma weak shmem_barrier = pshmem_barrier
 #define shmem_barrier pshmem_barrier
 
+#pragma weak shmem_sync_all = pshmem_sync_all
+#define shmem_sync_all pshmem_sync_all
+#pragma weak shmem_sync = pshmem_sync
+#define shmem_sync pshmem_sync
+
 define(`SHMEM_PROF_DEF_TO_ALL',
 `#pragma weak shmem_$1_$4_to_all = pshmem_$1_$4_to_all
 #define shmem_$1_$4_to_all pshmem_$1_$4_to_all')dnl
@@ -104,6 +109,26 @@ shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_BARRIER_SYNC_SIZE);
 
     shmem_internal_barrier(PE_start, logPE_stride, PE_size, pSync);
+}
+
+
+void SHMEM_FUNCTION_ATTRIBUTES
+shmem_sync_all(void)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_sync_all();
+}
+
+
+void SHMEM_FUNCTION_ATTRIBUTES
+shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_BARRIER_SYNC_SIZE);
+
+    shmem_internal_sync(PE_start, logPE_stride, PE_size, pSync);
 }
 
 

@@ -28,6 +28,7 @@ coll_type_t shmem_internal_reduce_type = AUTO;
 coll_type_t shmem_internal_collect_type = AUTO;
 coll_type_t shmem_internal_fcollect_type = AUTO;
 long *shmem_internal_barrier_all_psync;
+long *shmem_internal_sync_all_psync;
 
 char *coll_type_str[] = { "AUTO",
                           "LINEAR",
@@ -124,6 +125,14 @@ shmem_internal_collectives_init(void)
 
     for (i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
         shmem_internal_barrier_all_psync[i] = SHMEM_SYNC_VALUE;
+
+    /* initialize sync_all psync array */
+    shmem_internal_sync_all_psync =
+        shmem_internal_shmalloc(sizeof(long) * SHMEM_BARRIER_SYNC_SIZE);
+    if (NULL == shmem_internal_sync_all_psync) return -1;
+
+    for (i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
+        shmem_internal_sync_all_psync[i] = SHMEM_SYNC_VALUE;
 
     /* initialize the binomial tree for collective operations over
        entire tree */
@@ -230,19 +239,17 @@ shmem_internal_collectives_init(void)
 
 /*****************************************
  *
- * BARRIER
+ * BARRIER/SYNC Implementations
  *
  *****************************************/
 void
-shmem_internal_barrier_linear(int PE_start, int logPE_stride, int PE_size, long *pSync)
+shmem_internal_sync_linear(int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
     long zero = 0, one = 1;
     int stride = 1 << logPE_stride;
 
     /* need 1 slot */
     shmem_internal_assert(SHMEM_BARRIER_SYNC_SIZE >= 1);
-
-    shmem_internal_quiet();
 
     if (PE_start == shmem_internal_my_pe) {
         int pe, i;
@@ -280,7 +287,7 @@ shmem_internal_barrier_linear(int PE_start, int logPE_stride, int PE_size, long 
 
 
 void
-shmem_internal_barrier_tree(int PE_start, int logPE_stride, int PE_size, long *pSync)
+shmem_internal_sync_tree(int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
     long zero = 0, one = 1;
     int stride = 1 << logPE_stride;
@@ -288,8 +295,6 @@ shmem_internal_barrier_tree(int PE_start, int logPE_stride, int PE_size, long *p
 
     /* need 1 slot */
     shmem_internal_assert(SHMEM_BARRIER_SYNC_SIZE >= 1);
-
-    shmem_internal_quiet();
 
     if (PE_size == shmem_internal_num_pes) {
         /* we're the full tree, use the binomial tree */
@@ -366,7 +371,7 @@ shmem_internal_barrier_tree(int PE_start, int logPE_stride, int PE_size, long *p
 
 
 void
-shmem_internal_barrier_dissem(int PE_start, int logPE_stride, int PE_size, long *pSync)
+shmem_internal_sync_dissem(int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
     int one = 1, neg_one = -1;
     int stride = 1 << logPE_stride;
@@ -382,8 +387,6 @@ shmem_internal_barrier_dissem(int PE_start, int logPE_stride, int PE_size, long 
      * get better cache locality.  We chose int here for portability, since SUM
      * on INT is required by the SHMEM atomics API. */
     shmem_internal_assert(SHMEM_BARRIER_SYNC_SIZE >= (sizeof(int) * 8) / (sizeof(long) / sizeof(int)));
-
-    shmem_internal_quiet();
 
     for (i = 0, distance = 1 ; distance < PE_size ; ++i, distance <<= 1) {
         to = ((coll_rank + distance) % PE_size);
