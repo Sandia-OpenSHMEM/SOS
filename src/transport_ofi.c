@@ -942,8 +942,10 @@ int allocate_fabric_resources(struct fabric_info *info)
         return ret;
     }
 
-    DEBUG_MSG("OFI version 0x%"PRIx32", provider version 0x%"PRIx32"\n",
-              fi_version(), info->p_info->fabric_attr->prov_version);
+    DEBUG_MSG("OFI version: built %d.%d, current %d.%d; provider version: 0x%"PRIx32"\n",
+              FI_MAJOR_VERSION, FI_MINOR_VERSION,
+              FI_MAJOR(fi_version()), FI_MINOR(fi_version()),
+              info->p_info->fabric_attr->prov_version);
 
     /* access domain: define communication resource limits/boundary within
      * fabric domain */
