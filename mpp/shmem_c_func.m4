@@ -226,6 +226,8 @@ SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_ATOMIC_SET')
 /* COLL: Barrier Synchronization Routines */
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_barrier_all(void);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_sync_all(void);
 
 /* COLL: Reduction Routines */
 define(`SHMEM_C_TO_ALL',
