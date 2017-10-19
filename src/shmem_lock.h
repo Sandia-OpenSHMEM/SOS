@@ -41,7 +41,7 @@ shmem_internal_clear_lock(volatile long *lockp)
     lock_t *lock = (lock_t*) lockp;
     int curr, cond, zero = 0, sig = SIGNAL_MASK;
 
-    shmem_internal_quiet();
+    shmem_internal_quiet(SHMEM_CTX_DEFAULT);
 
     /* release the lock if I'm the last to try to obtain it */
     cond = shmem_internal_my_pe + 1;
@@ -75,7 +75,7 @@ shmem_internal_set_lock(volatile long *lockp)
 
     /* initialize my elements to zero */
     shmem_internal_put_small(SHMEM_CTX_DEFAULT, &(lock->data), &zero, sizeof(zero), shmem_internal_my_pe);
-    shmem_internal_quiet();
+    shmem_internal_quiet(SHMEM_CTX_DEFAULT);
 
     /* update last with my value to add me to the queue */
     shmem_internal_swap(SHMEM_CTX_DEFAULT, &(lock->last), &me, &curr, sizeof(int), 0, SHM_INTERNAL_INT);
@@ -105,7 +105,7 @@ shmem_internal_test_lock(volatile long *lockp)
 
     /* initialize my elements to zero */
     shmem_internal_put_small(SHMEM_CTX_DEFAULT, &(lock->data), &zero, sizeof(zero), shmem_internal_my_pe);
-    shmem_internal_quiet();
+    shmem_internal_quiet(SHMEM_CTX_DEFAULT);
 
     /* add self to last if and only if the lock is zero (ie, no one has the lock) */
     shmem_internal_cswap(SHMEM_CTX_DEFAULT, &(lock->last), &me, &curr, &zero, sizeof(int), 0, SHM_INTERNAL_INT);

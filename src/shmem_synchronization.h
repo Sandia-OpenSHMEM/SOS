@@ -22,7 +22,7 @@
 
 
 static inline void
-shmem_internal_quiet(void)
+shmem_internal_quiet(shmem_ctx_t ctx)
 {
     int ret;
 
@@ -37,7 +37,7 @@ shmem_internal_quiet(void)
 
 
 static inline void
-shmem_internal_fence(void)
+shmem_internal_fence(shmem_ctx_t ctx)
 {
     int ret;
 
