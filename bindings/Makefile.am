@@ -13,12 +13,38 @@
 
 EXTRA_DIST = shmem_bind_c.m4   \
              shmem_bind_c11.m4 \
+             shmem_bind_cxx.m4 \
+             shmem_bind_c11_extras_none.m4 \
+             shmem_bind_cxx_extras_none.m4 \
              shmem_bind_f.m4
 
-BUILT_SOURCES = shmem_bind_c11_extras.m4
+BUILT_SOURCES = shmem_bind_c11_extras.m4 \
+                shmem_bind_cxx_extras.m4
 
-noinst_PROGRAMS = generate_bind_c11_extras
+CLEANFILES = $(BUILT_SOURCES)
+
+noinst_PROGRAMS =
+
+if HAVE_C11
+noinst_PROGRAMS += generate_bind_c11_extras
+
 generate_bind_c11_extras_SOURCES = generate_bind_c11_extras.c
-
 shmem_bind_c11_extras.m4: generate_bind_c11_extras
-	$(AM_V_GEN)./generate_bind_c11_extras > shmem_bind_c11_extras.m4
+	$(AM_V_GEN)./generate_bind_c11_extras > $@
+
+else
+shmem_bind_c11_extras.m4:
+	$(AM_V_GEN)cp $(top_srcdir)/bindings/shmem_bind_c11_extras_none.m4 $@
+endif
+
+if HAVE_CXX
+noinst_PROGRAMS += generate_bind_cxx_extras
+generate_bind_cxx_extras_SOURCES = generate_bind_cxx_extras.cpp
+shmem_bind_cxx_extras.m4: generate_bind_cxx_extras
+	$(AM_V_GEN)./generate_bind_cxx_extras > $@
+
+else
+shmem_bind_cxx_extras.m4:
+	$(AM_V_GEN)cp $(top_srcdir)/bindings/shmem_bind_cxx_extras_none.m4 $@
+endif
+

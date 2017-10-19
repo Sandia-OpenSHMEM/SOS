@@ -9,6 +9,7 @@
  *
  */
 
+#include <type_traits>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -22,82 +23,69 @@
 #define VAR_IS_UNUSED
 #endif
 
-#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
+#define COMPARE_TYPES_FIRST(A,B) if (std::is_same<A, B>::value) need_assoc = false;
+#define COMPARE_TYPES(A,B)       else if (std::is_same<A, B>::value) need_assoc = false;
 
-/* Note: Mirrors SHMEM_BIND_C11_RMA */
-#define NEED_RMA_ASSOC(VAL)       \
-  _Generic((VAL),                 \
-           char: 0,               \
-           signed char: 0,        \
-           short: 0,              \
-           int: 0,                \
-           long: 0,               \
-           long long: 0,          \
-           unsigned char: 0,      \
-           unsigned short: 0,     \
-           unsigned int: 0,       \
-           unsigned long: 0,      \
-           unsigned long long: 0, \
-           float: 0,              \
-           double: 0,             \
-           long double: 0,        \
-           default: 1)
+/* Note: Mirrors SHMEM_BIND_CXX_RMA */
+#define NEED_RMA_ASSOC(CTYPE)                       \
+           COMPARE_TYPES_FIRST(char, CTYPE)         \
+           COMPARE_TYPES(signed char, CTYPE)        \
+           COMPARE_TYPES(short, CTYPE)              \
+           COMPARE_TYPES(int, CTYPE)                \
+           COMPARE_TYPES(long, CTYPE)               \
+           COMPARE_TYPES(long long, CTYPE)          \
+           COMPARE_TYPES(unsigned char, CTYPE)      \
+           COMPARE_TYPES(unsigned short, CTYPE)     \
+           COMPARE_TYPES(unsigned int, CTYPE)       \
+           COMPARE_TYPES(unsigned long, CTYPE)      \
+           COMPARE_TYPES(unsigned long long, CTYPE) \
+           COMPARE_TYPES(float, CTYPE)              \
+           COMPARE_TYPES(double, CTYPE)             \
+           COMPARE_TYPES(long double, CTYPE)
 
-/* Note: Mirrors SHMEM_BIND_C11_AMO */
-#define NEED_AMO_ASSOC(VAL)       \
-  _Generic((VAL),                 \
-           int: 0,                \
-           long: 0,               \
-           long long: 0,          \
-           unsigned int: 0,       \
-           unsigned long: 0,      \
-           unsigned long long: 0, \
-           default: 1)
+/* Note: Mirrors SHMEM_BIND_CXX_AMO */
+#define NEED_AMO_ASSOC(CTYPE)                       \
+           COMPARE_TYPES_FIRST(int, CTYPE)          \
+           COMPARE_TYPES(long, CTYPE)               \
+           COMPARE_TYPES(long long, CTYPE)          \
+           COMPARE_TYPES(unsigned int, CTYPE)       \
+           COMPARE_TYPES(unsigned long, CTYPE)      \
+           COMPARE_TYPES(unsigned long long, CTYPE)
 
-/* Note: Mirrors SHMEM_BIND_C11_EXTENDED_AMO */
-#define NEED_EXTENDED_AMO_ASSOC(VAL) \
-  _Generic((VAL),                 \
-           int: 0,                \
-           long: 0,               \
-           long long: 0,          \
-           unsigned int: 0,       \
-           unsigned long: 0,      \
-           unsigned long long: 0, \
-           float: 0,              \
-           double: 0,             \
-           default: 1)
+/* Note: Mirrors SHMEM_BIND_CXX_EXTENDED_AMO */
+#define NEED_EXTENDED_AMO_ASSOC(CTYPE)              \
+           COMPARE_TYPES_FIRST(int, CTYPE)          \
+           COMPARE_TYPES(long, CTYPE)               \
+           COMPARE_TYPES(long long, CTYPE)          \
+           COMPARE_TYPES(unsigned int, CTYPE)       \
+           COMPARE_TYPES(unsigned long, CTYPE)      \
+           COMPARE_TYPES(unsigned long long, CTYPE) \
+           COMPARE_TYPES(float, CTYPE)              \
+           COMPARE_TYPES(double, CTYPE)             \
 
-/* Note: Mirrors SHMEM_BIND_C11_BITWISE_AMO */
-#define NEED_BITWISE_AMO_ASSOC(VAL) \
-  _Generic((VAL),                 \
-           int32_t: 0,            \
-           int64_t: 0,            \
-           unsigned int: 0,       \
-           unsigned long: 0,      \
-           unsigned long long: 0, \
-           default: 1)
+/* Note: Mirrors SHMEM_BIND_CXX_BITWISE_AMO */
+#define NEED_BITWISE_AMO_ASSOC(CTYPE)               \
+           COMPARE_TYPES_FIRST(int32_t, CTYPE)      \
+           COMPARE_TYPES(int64_t, CTYPE)            \
+           COMPARE_TYPES(unsigned int, CTYPE)       \
+           COMPARE_TYPES(unsigned long, CTYPE)      \
+           COMPARE_TYPES(unsigned long long, CTYPE)
 
-#else
-/* Compiler does not support C11 _Generic */
-#define NEED_RMA_ASSOC(VAL) 0
-#define NEED_AMO_ASSOC(VAL) 0
-#define NEED_EXTENDED_AMO_ASSOC(VAL) 0
-#define NEED_BITWISE_AMO_ASSOC(VAL) 0
-
-#endif
 
 #define GEN_RMA_ASSOC(TYPENAME, CTYPE, TYPE_CLASS)              \
   do {                                                          \
-    CTYPE val VAR_IS_UNUSED;                                    \
-    if (NEED_##TYPE_CLASS##_ASSOC(val))                         \
+    bool need_assoc = true;                                     \
+    NEED_##TYPE_CLASS##_ASSOC(CTYPE)                            \
+    if (need_assoc)                                             \
       printf("$1(%s, %s)$2\n", #TYPENAME, #CTYPE);              \
   }                                                             \
   while (0)
 
 #define GEN_AMO_ASSOC(TYPENAME, CTYPE, SHMTYPE, TYPE_CLASS)     \
   do {                                                          \
-    CTYPE val VAR_IS_UNUSED;                                    \
-    if (NEED_##TYPE_CLASS##_ASSOC(val))                         \
+    bool need_assoc = true;                                     \
+    NEED_##TYPE_CLASS##_ASSOC(CTYPE)                            \
+    if (need_assoc)                                             \
       printf("$1(%s, %s, %s)$2\n", #TYPENAME, #CTYPE, #SHMTYPE);\
   }                                                             \
   while (0)
@@ -111,7 +99,7 @@ int main(int argc, char **argv)
     strftime(timestr, sizeof(timestr)-1, "%m-%d-%Y %H:%M", t);
 
     printf("dnl Generated by %s, %s\n", argv[0], timestr);
-    printf("define(`SHMEM_BIND_C11_RMA_EXTRAS',\n`");
+    printf("define(`SHMEM_BIND_CXX_RMA_EXTRAS',\n`");
     GEN_RMA_ASSOC(int8,       int8_t, RMA);
     GEN_RMA_ASSOC(int16,     int16_t, RMA);
     GEN_RMA_ASSOC(int32,     int32_t, RMA);
@@ -124,7 +112,7 @@ int main(int argc, char **argv)
     GEN_RMA_ASSOC(ptrdiff, ptrdiff_t, RMA);
     printf("')dnl\n");
 
-    printf("define(`SHMEM_BIND_C11_AMO_EXTRAS',\n`");
+    printf("define(`SHMEM_BIND_CXX_AMO_EXTRAS',\n`");
     GEN_AMO_ASSOC(int32,     int32_t,     SHM_INTERNAL_INT32, AMO);
     GEN_AMO_ASSOC(int64,     int64_t,     SHM_INTERNAL_INT64, AMO);
     GEN_AMO_ASSOC(uint32,   uint32_t,    SHM_INTERNAL_UINT32, AMO);
@@ -133,7 +121,7 @@ int main(int argc, char **argv)
     GEN_AMO_ASSOC(ptrdiff, ptrdiff_t, SHM_INTERNAL_PTRDIFF_T, AMO);
     printf("')dnl\n");
 
-    printf("define(`SHMEM_BIND_C11_EXTENDED_AMO_EXTRAS',\n`");
+    printf("define(`SHMEM_BIND_CXX_EXTENDED_AMO_EXTRAS',\n`");
     GEN_AMO_ASSOC(int32,     int32_t,     SHM_INTERNAL_INT32, EXTENDED_AMO);
     GEN_AMO_ASSOC(int64,     int64_t,     SHM_INTERNAL_INT64, EXTENDED_AMO);
     GEN_AMO_ASSOC(uint32,   uint32_t,    SHM_INTERNAL_UINT32, EXTENDED_AMO);
@@ -144,7 +132,7 @@ int main(int argc, char **argv)
     GEN_AMO_ASSOC(double,     double,    SHM_INTERNAL_DOUBLE, EXTENDED_AMO);
     printf("')dnl\n");
 
-    printf("define(`SHMEM_BIND_C11_BITWISE_AMO_EXTRAS',\n`");
+    printf("define(`SHMEM_BIND_CXX_BITWISE_AMO_EXTRAS',\n`");
     GEN_AMO_ASSOC(uint32,   uint32_t,    SHM_INTERNAL_UINT32, BITWISE_AMO);
     GEN_AMO_ASSOC(uint64,   uint64_t,    SHM_INTERNAL_UINT64, BITWISE_AMO);
     printf("')dnl\n");

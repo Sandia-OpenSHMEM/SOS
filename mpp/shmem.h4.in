@@ -20,6 +20,7 @@ dnl vi: set ft=m4
 
 include(shmem_bind_c.m4)dnl
 include(shmem_bind_c11.m4)dnl
+include(shmem_bind_cxx.m4)dnl
 #ifndef SHMEM_H
 #define SHMEM_H
 

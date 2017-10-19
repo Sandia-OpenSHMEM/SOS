@@ -196,6 +196,11 @@ AC_PROG_CXX dnl required even with --disable-cxx due to automake conditionals
 m4_ifdef([AM_PROG_AR],[AM_PROG_AR])
 AC_PATH_PROG([PERL],[perl])
 
+dnl C++ bindings require std::is_same, which is part of C++11
+if test "$enable_cxx" != "no" ; then
+    AX_CXX_COMPILE_STDCXX([11])
+fi
+
 # start gnu11/gnu99 check
 ORIG_CFLAGS=$CFLAGS
 WRAPPER_COMPILER_CC=$CC
@@ -214,7 +219,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
                    [shmem_cv_c11_works="yes"], [shmem_cv_c11_works="no"])
 AS_IF([test "$shmem_cv_c11_works" = "no"],
       [AC_MSG_RESULT([no])
-      AC_MSG_WARN([No C11 support detected, unable to test _Generic bindings.])
       CFLAGS="$ORIG_CFLAGS"
       AC_PROG_CC_C99
       ],
@@ -222,6 +226,7 @@ AS_IF([test "$shmem_cv_c11_works" = "no"],
       CFLAGS="-std=gnu11 $ORIG_CFLAGS"]
       )
 AC_LANG_POP([C])
+AM_CONDITIONAL([HAVE_C11], [test "$shmem_cv_c11_works" = "yes"])
 # end gnu11/gnu99 check
 
 
@@ -683,6 +688,14 @@ AS_IF([test "$enable_pmi_simple" != "yes" -a "$ompi_check_pmi_happy" != "yes" -a
 AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
       [AC_MSG_WARN([No transport found])])
 
+AS_IF([test "$shmem_cv_c11_works" != "yes"],
+      [AC_MSG_WARN([C compiler does not support _Generic, unabled to verify and test C11 bindings])])
+
+AS_IF([test "$enable_cxx" == "no"],
+      [AC_MSG_WARN([No C++ compiler or C++ disabled, unabled to verify and test C++ bindings])])
+
+AS_IF([test "$enable_fortran" == "no"],
+      [AC_MSG_WARN([No Fortran compiler or Fortran disabled, unabled to test Fortran bindings])])
 
 FORT="$FC"
 if test "$FORT" = "" ; then
