@@ -78,6 +78,10 @@ extern "C" {
 #define  SHMEM_VENDOR_STRING "Sandia OpenSHMEM"
 #define _SHMEM_VENDOR_STRING SHMEM_VENDOR_STRING
 
+/* Temporary placeholder to avoid undefined warnings: */
+#define SHMEM_CTX_DEFAULT NULL
+typedef void *shmem_ctx_t;
+
 define(`SHPRE', `')dnl
 include(shmem_c_func.m4)dnl
 

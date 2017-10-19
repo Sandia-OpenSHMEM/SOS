@@ -44,6 +44,7 @@ extern long shmem_internal_data_length;
 /* Note: must be accompanied by shmem_internal_my_pe in arguments */
 #define RAISE_PE_PREFIX "[%04d]        "
 
+
 #define RAISE_WARN(ret)                                                 \
     do {                                                                \
         fprintf(stderr, "[%04d] WARN:  %s:%d %s, return code %d\n",     \
