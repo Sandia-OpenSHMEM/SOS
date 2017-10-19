@@ -44,8 +44,8 @@ SHMEM_FUNCTION_ATTRIBUTES void *SHPRE()shmem_realloc(void *ptr, size_t size);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_free(void *ptr);
 
 /* Communicatoin Management Routines */
-SHMEM_FUNCTION_ATTRIBUTES int shmem_ctx_create(long options, shmem_ctx_t *ctx);
-SHMEM_FUNCTION_ATTRIBUTES void shmem_ctx_destroy(shmem_ctx_t ctx);
+SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_ctx_create(long options, shmem_ctx_t *ctx);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_destroy(shmem_ctx_t ctx);
 
 /* RMA: Elemental Data Put Routines */
 define(`SHMEM_C_P',
