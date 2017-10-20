@@ -32,6 +32,14 @@ SHORT_TESTS = \
 	binary-search \
 	gups
 
+if HAVE_PTHREADS
+check_PROGRAMS += \
+	mandelbrot
+
+SHORT_TESTS += \
+	mandelbrot
+endif
+
 if ENABLE_LENGTHY_TESTS
 TESTS = $(check_PROGRAMS)
 else

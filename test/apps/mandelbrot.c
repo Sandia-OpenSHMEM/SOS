@@ -47,7 +47,6 @@
 #endif
 
 #include <shmem.h>
-#include <shmemx.h>
 #include "../unit/pthread_barrier.h" /* FIXME -- this is for MacOS */
 
 #ifdef ENABLE_PINNING
@@ -64,8 +63,8 @@
 #define IMAGE_PE 0
 
 // Default values for width and height
-int width = 4096;
-int height = 4096;
+int width = 2048;
+int height = 2048;
 
 // An interesting transition point is job_points*sizeof(int) being
 // smaller/bigger than max_volatile size for Portals implementation
@@ -89,8 +88,8 @@ long sumL2_ICM = 0;
 pthread_barrier_t fencebar;
 
 // Parameters set on the command-line
-int use_contexts = 0;
-int use_pipelining = 0;
+int use_contexts = 1;
+int use_pipelining = 1;
 int use_blocking = 0;
 
 static long getTime()
@@ -152,13 +151,13 @@ static int computeSingle(int cx, int cy) {
 
 struct th_arg{
     int tid;
-    shmemx_ctx_t ctx[2];
+    shmem_ctx_t ctx[2];
     int cpu;
 };
 
 static void *thread_worker(void *arg) {
     int tid = ((struct th_arg*)arg)->tid;
-    shmemx_ctx_t *ctx = ((struct th_arg*)arg)->ctx;
+    shmem_ctx_t *ctx = ((struct th_arg*)arg)->ctx;
     int i, j;
     long timer;
     long work_start, work_end;
@@ -231,7 +230,7 @@ static void *thread_worker(void *arg) {
             rr_pe = (rr_pe + 1) % npes;
         } while(!pe_mask[rr_pe]);
 
-        work_start = shmemx_ctx_long_fadd(&nextPoint, job_points, rr_pe, ctx[index]);
+        work_start = shmem_ctx_long_atomic_fetch_add(ctx[index], &nextPoint, job_points, rr_pe);
         work_end = work_start + job_points;
 
         // Check if all work at this PE has been done
@@ -248,7 +247,7 @@ static void *thread_worker(void *arg) {
         }
 
         if (!use_blocking)
-            shmemx_ctx_quiet(ctx[index]);
+            shmem_ctx_quiet(ctx[index]);
 
         // Do actual compute work
         for (i = work_start, j = 0; i < work_end; i++, j++) {
@@ -257,11 +256,11 @@ static void *thread_worker(void *arg) {
 
         // Return the computed image data to the PE responsible for it
         if (use_blocking)
-            shmemx_ctx_putmem(&imageData[work_start], pixels[index],
-                              (work_end-work_start)*sizeof(int), rr_pe, ctx[index]);
+            shmem_ctx_putmem(ctx[index], &imageData[work_start], pixels[index],
+                             (work_end-work_start)*sizeof(int), rr_pe);
         else
-            shmemx_ctx_putmem_nbi(&imageData[work_start], pixels[index],
-                                  (work_end-work_start)*sizeof(int), rr_pe, ctx[index]);
+            shmem_ctx_putmem_nbi(ctx[index], &imageData[work_start], pixels[index],
+                                 (work_end-work_start)*sizeof(int), rr_pe);
 
         total_work += work_end - work_start;
 
@@ -293,12 +292,12 @@ static void *thread_worker(void *arg) {
 static void printUsage() {
     printf("USAGE: mandelbrot [options]\n");
     printf("                  -t <num_threads> number of worker threads (def: 1)\n");
-    printf("                  -w <width>       width of the mandelbrot domain (def: 4096)\n");
-    printf("                  -w <height>      height of the mandelbrot domain (def: 4096)\n");
-    printf("                  -j <job_points>  load balancing granularity (def: 256)\n");
+    printf("                  -w <width>       width of the mandelbrot domain (def: 2048)\n");
+    printf("                  -w <height>      height of the mandelbrot domain (def: 2048)\n");
+    printf("                  -j <job_points>  load balancing granularity (def: 128)\n");
     printf("                  -o               output image mandelbrot.pgm (def: off)\n");
-    printf("                  -c               use OpenSHMEM contexts (def: off)\n");
-    printf("                  -p               enable pipelining (implies -c) (def: off)\n");
+    printf("                  -c               use OpenSHMEM contexts (def: on)\n");
+    printf("                  -p               enable pipelining (implies -c) (def: on)\n");
     printf("                  -b               use blocking communication (def: off)\n");
     printf("                  -?               prints this message\n");
 }
@@ -310,7 +309,6 @@ int main(int argc, char** argv) {
     int out_file = 0;
     pthread_t *threads;
     struct th_arg *t_arg;
-    shmemx_domain_t *domains = NULL;
 
 #ifdef ENABLE_PINNING
     int p4_cpu;
@@ -319,7 +317,7 @@ int main(int argc, char** argv) {
 #endif
 
 #ifdef ENABLE_PINNING
-    // Must pin the main thread here before calling PtlInit() inside shmemx_init().
+    // Must pin the main thread here before calling PtlInit() inside shmem_init().
     // This is the way we control the pinning of Portals4 progress_thread.
     // see portals4 configuration flag: --enable-progress-thread-polling
     //p4_cpu = CPU_PIN_OFFSET*(getpid()%(NUM_CPUS/CPU_PIN_OFFSET));
@@ -378,25 +376,24 @@ int main(int argc, char** argv) {
     // Allocate local memory (non-symmetric)
     t_arg = malloc(sizeof(struct th_arg)*num_threads);
     threads = malloc(sizeof(pthread_t)*num_threads);
-    if (use_contexts)
-        domains = malloc(sizeof(shmemx_domain_t)*num_threads);
-    if (NULL == t_arg || NULL == threads || (use_contexts && NULL == domains)) {
+
+    if (NULL == t_arg || NULL == threads) {
         printf("ERROR: malloc failed\n");
         return 1;
     }
 
     // Start SHMEM (allso calls PtlInit())
     if (num_threads > 1) {
-        shmemx_init_thread(SHMEMX_THREAD_MULTIPLE, &tl);
+        shmem_init_thread(SHMEM_THREAD_MULTIPLE, &tl);
         // If OpenSHMEM doesn't support multithreading, exit gracefully
-        if (SHMEMX_THREAD_MULTIPLE != tl) {
+        if (SHMEM_THREAD_MULTIPLE != tl) {
             printf("Warning: Exiting because threading is disabled, tested nothing\n");
             shmem_global_exit(0);
             return 0;
         }
     }
     else {
-        shmemx_init_thread(SHMEMX_THREAD_SINGLE, &tl);
+        shmem_init_thread(SHMEM_THREAD_SINGLE, &tl);
     }
 
     // Allocate symmtric memory for image data
@@ -413,16 +410,6 @@ int main(int argc, char** argv) {
     // Divide work balancing counter between all PEs
     nextPoint = (width*height / npes) * me;
 
-    // Create SHMEM context domains
-    if (use_contexts) {
-        int ret = shmemx_domain_create(SHMEMX_THREAD_SINGLE, num_threads, domains);
-        if (ret) {
-            printf("%d: Error during domain creation (requested %d)\n", me, num_threads);
-            shmem_global_exit(ret);
-            exit(1);
-        }
-    }
-
     // Initalize barrier for thread synchronization inside PE
     pthread_barrier_init(&fencebar, NULL, num_threads);
 
@@ -436,16 +423,16 @@ int main(int argc, char** argv) {
         int err;
         t_arg[i].tid = i;
         if (1 == use_contexts) {
-            shmemx_ctx_create(domains[i], &t_arg[i].ctx[0]);
+            shmem_ctx_create(0, &t_arg[i].ctx[0]);
 
             if (use_pipelining)
-                shmemx_ctx_create(domains[i], &t_arg[i].ctx[1]);
+                shmem_ctx_create(0, &t_arg[i].ctx[1]);
             else
                 t_arg[i].ctx[1] = t_arg[i].ctx[0];
         }
         else {
-            t_arg[i].ctx[0] = SHMEMX_CTX_DEFAULT;
-            t_arg[i].ctx[1] = SHMEMX_CTX_DEFAULT;
+            t_arg[i].ctx[0] = SHMEM_CTX_DEFAULT;
+            t_arg[i].ctx[1] = SHMEM_CTX_DEFAULT;
         }
 #ifdef ENABLE_PINNING
         t_arg[i].cpu = (p4_cpu+i+1)%NUM_CPUS;
@@ -503,15 +490,12 @@ int main(int argc, char** argv) {
     // Cleanup
     if (use_contexts) {
         for (i = 0; i < num_threads; i++)
-            shmemx_ctx_destroy(t_arg[i].ctx[0]);
+            shmem_ctx_destroy(t_arg[i].ctx[0]);
 
         if (use_pipelining) {
             for (i = 0; i < num_threads; i++)
-                shmemx_ctx_destroy(t_arg[i].ctx[1]);
+                shmem_ctx_destroy(t_arg[i].ctx[1]);
         }
-
-        shmemx_domain_destroy(num_threads, domains);
-        free(domains);
     }
 
     pthread_barrier_destroy(&fencebar);
