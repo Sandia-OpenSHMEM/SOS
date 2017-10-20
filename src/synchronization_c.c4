@@ -38,6 +38,11 @@ include(shmem_bind_c.m4)dnl
 #pragma weak shmem_fence = pshmem_fence
 #define shmem_fence pshmem_fence
 
+#pragma weak shmem_ctx_quiet = pshmem_ctx_quiet
+#define shmem_ctx_quiet pshmem_ctx_quiet
+#pragma weak shmem_ctx_fence = pshmem_ctx_fence
+#define shmem_ctx_fence pshmem_ctx_fence
+
 #pragma weak shmem_wait = pshmem_wait
 #define shmem_wait pshmem_wait
 #pragma weak shmem_wait_until = pshmem_wait_until
@@ -66,6 +71,24 @@ shmem_quiet(void)
 
 void SHMEM_FUNCTION_ATTRIBUTES
 shmem_fence(void)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_fence();
+}
+
+
+void SHMEM_FUNCTION_ATTRIBUTES
+shmem_ctx_quiet(shmem_ctx_t ctx)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_quiet();
+}
+
+
+void SHMEM_FUNCTION_ATTRIBUTES
+shmem_ctx_fence(shmem_ctx_t ctx)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 

@@ -43,6 +43,10 @@ SHMEM_FUNCTION_ATTRIBUTES void *SHPRE()shmem_align(size_t alignment, size_t size
 SHMEM_FUNCTION_ATTRIBUTES void *SHPRE()shmem_realloc(void *ptr, size_t size);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_free(void *ptr);
 
+/* Communicatoin Management Routines */
+SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_ctx_create(long options, shmem_ctx_t *ctx);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_destroy(shmem_ctx_t ctx);
+
 /* RMA: Elemental Data Put Routines */
 define(`SHMEM_C_P',
 `SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_p($2 *addr, $2 value, int pe)')dnl
@@ -428,6 +432,8 @@ SHMEM_BIND_C_WAIT(`SHMEM_C_WAIT_UNTIL')
 /* Memory Ordering Routines */
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_quiet(void);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_fence(void);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_quiet(shmem_ctx_t ctx);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_fence(shmem_ctx_t ctx);
 
 /* Distributed Locking Routines */
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_set_lock(volatile long *lock);
