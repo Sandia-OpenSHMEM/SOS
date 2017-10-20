@@ -57,7 +57,7 @@ shmem_internal_clear_lock(volatile long *lockp)
             if (NEXT(lock_cur.data) != 0)
                 break;
 
-            shmem_int_wait(&(lock->data), lock_cur.data);
+            SHMEM_WAIT(&(lock->data), lock_cur.data);
         }
 
         /* set the signal bit on new lock holder */
@@ -91,7 +91,7 @@ shmem_internal_set_lock(volatile long *lockp)
             if (SIGNAL(lock_cur.data) != 0)
                 break;
 
-            shmem_int_wait(&(lock->data), lock_cur.data);
+            SHMEM_WAIT(&(lock->data), lock_cur.data);
         }
     }
 }
