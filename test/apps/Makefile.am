@@ -45,3 +45,7 @@ TESTS = $(check_PROGRAMS)
 else
 TESTS = $(SHORT_TESTS)
 endif
+
+mandelbrot_LDFLAGS = $(PTHREAD_LIBS)
+mandelbrot_CFLAGS = $(PTHREAD_CFLAGS)
+mandelbrot_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
