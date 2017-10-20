@@ -26,7 +26,7 @@ shmem_internal_quiet(shmem_ctx_t ctx)
 {
     int ret;
 
-    ret = shmem_transport_quiet();
+    ret = shmem_transport_quiet(ctx);
     if (0 != ret) { RAISE_ERROR(ret); }
 
 #ifdef USE_XPMEM
@@ -41,7 +41,7 @@ shmem_internal_fence(shmem_ctx_t ctx)
 {
     int ret;
 
-    ret = shmem_transport_fence();
+    ret = shmem_transport_fence(ctx);
     if (0 != ret) { RAISE_ERROR(ret); }
 
 #ifdef USE_XPMEM

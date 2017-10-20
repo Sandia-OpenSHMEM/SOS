@@ -214,10 +214,10 @@ int shmem_transport_fini(void);
 
 extern size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 
-static inline void shmem_transport_get_wait(void);
+static inline void shmem_transport_get_wait(shmem_ctx_t ctx);
 
 static inline
-void shmem_transport_ofi_drain_cq(void)
+void shmem_transport_ofi_drain_cq(shmem_ctx_t ctx)
 {
 
     ssize_t ret = 0;
@@ -288,11 +288,11 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(const void *source,
 }
 
 static inline
-void shmem_transport_put_quiet(void)
+void shmem_transport_put_quiet(shmem_ctx_t ctx)
 {
     /* wait until all outstanding queue operations have completed */
     while (shmem_internal_atomic_read(&shmem_transport_ofi_pending_cq_count)) {
-        shmem_transport_ofi_drain_cq();
+        shmem_transport_ofi_drain_cq(ctx);
     }
 
     /* wait for put counter to meet outstanding count value */
@@ -337,22 +337,22 @@ void shmem_transport_put_quiet(void)
 }
 
 static inline
-int shmem_transport_quiet(void)
+int shmem_transport_quiet(shmem_ctx_t ctx)
 {
 
-    shmem_transport_put_quiet();
-    shmem_transport_get_wait();
+    shmem_transport_put_quiet(ctx);
+    shmem_transport_get_wait(ctx);
 
     return 0;
 }
 
 
 static inline
-int shmem_transport_fence(void)
+int shmem_transport_fence(shmem_ctx_t ctx)
 {
 #if WANT_TOTAL_DATA_ORDERING == 0
     /*unordered network model*/
-    return shmem_transport_quiet();
+    return shmem_transport_quiet(ctx);
 #else
     return 0;
 #endif
@@ -361,11 +361,11 @@ int shmem_transport_fence(void)
 
 /* RM requires polling until space is available */
 static inline
-int try_again(const int ret, uint64_t *polled) {
+int try_again(shmem_ctx_t ctx, const int ret, uint64_t *polled) {
 
     if (ret) {
         if (ret == -FI_EAGAIN) {
-            shmem_transport_ofi_drain_cq();
+            shmem_transport_ofi_drain_cq(ctx);
             (*polled)++;
             if ((*polled) <= shmem_transport_ofi_max_poll) {
                 return 1;
@@ -378,7 +378,7 @@ int try_again(const int ret, uint64_t *polled) {
 }
 
 static inline
-void shmem_transport_put_small(void *target, const void *source, size_t len,
+void shmem_transport_put_small(shmem_ctx_t ctx, void *target, const void *source, size_t len,
                                int pe)
 {
     int ret = 0;
@@ -402,7 +402,7 @@ void shmem_transport_put_small(void *target, const void *source, size_t len,
                               (uint64_t) addr,
                               key);
 
-    } while(try_again(ret,&polled));
+    } while(try_again(ctx,ret,&polled));
 
     shmem_internal_assert(ret == 0);
     /* automatically get local completion but need remote completion for
@@ -410,7 +410,7 @@ void shmem_transport_put_small(void *target, const void *source, size_t len,
 }
 
 static inline
-void shmem_transport_ofi_put_large(void *target, const void *source,
+void shmem_transport_ofi_put_large(shmem_ctx_t ctx, void *target, const void *source,
                                    size_t len, int pe)
 {
     int ret = 0;
@@ -439,7 +439,7 @@ void shmem_transport_ofi_put_large(void *target, const void *source,
                            frag_source, frag_len, NULL,
                            GET_DEST(dst), frag_target,
                            key, NULL);
-        } while (try_again(ret,&polled));
+        } while (try_again(ctx,ret,&polled));
 
         frag_source += frag_len;
         frag_target += frag_len;
@@ -447,7 +447,7 @@ void shmem_transport_ofi_put_large(void *target, const void *source,
 }
 
 static inline
-void shmem_transport_put_nb(void *target, const void *source, size_t len,
+void shmem_transport_put_nb(shmem_ctx_t ctx, void *target, const void *source, size_t len,
                             int pe, long *completion)
 {
     int ret = 0;
@@ -460,7 +460,7 @@ void shmem_transport_put_nb(void *target, const void *source, size_t len,
 
     if (len <= shmem_transport_ofi_max_buffered_send) {
 
-        shmem_transport_put_small(target, source, len, pe);
+        shmem_transport_put_small(ctx, target, source, len, pe);
 
     } else if (len <= shmem_transport_ofi_bounce_buffer_size) {
 
@@ -476,43 +476,43 @@ void shmem_transport_put_nb(void *target, const void *source, size_t len,
                            buff->data, len, NULL,
                            GET_DEST(dst), (uint64_t) addr,
                            key, buff);
-        } while(try_again(ret,&polled));
+        } while(try_again(ctx,ret,&polled));
 
     } else {
-        shmem_transport_ofi_put_large(target, source,len, pe);
+        shmem_transport_ofi_put_large(ctx, target, source,len, pe);
         (*completion)++;
     }
 }
 
 /* compatibility with Portals transport */
 static inline
-void shmem_transport_put_wait(long *completion) {
+void shmem_transport_put_wait(shmem_ctx_t ctx, long *completion) {
 
     shmem_internal_assert((*completion) >= 0);
 
     if((*completion) > 0) {
-        shmem_transport_put_quiet();
+        shmem_transport_put_quiet(ctx);
         (*completion)--;
     }
 }
 
 static inline
-void shmem_transport_put_nbi(void *target, const void *source, size_t len,
+void shmem_transport_put_nbi(shmem_ctx_t ctx, void *target, const void *source, size_t len,
                              int pe)
 {
     if (len <= shmem_transport_ofi_max_buffered_send) {
 
-        shmem_transport_put_small(target, source, len, pe);
+        shmem_transport_put_small(ctx, target, source, len, pe);
 
     } else {
 
-        shmem_transport_ofi_put_large(target, source, len, pe);
+        shmem_transport_ofi_put_large(ctx, target, source, len, pe);
     }
 }
 
 
 static inline
-void shmem_transport_get(void *target, const void *source, size_t len, int pe)
+void shmem_transport_get(shmem_ctx_t ctx, void *target, const void *source, size_t len, int pe)
 {
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
@@ -534,7 +534,7 @@ void shmem_transport_get(void *target, const void *source, size_t len, int pe)
                           (uint64_t) addr,
                           key,
                           NULL);
-        } while (try_again(ret,&polled));
+        } while (try_again(ctx,ret,&polled));
     }
     else {
         uint8_t *frag_target = (uint8_t *) target;
@@ -553,7 +553,7 @@ void shmem_transport_get(void *target, const void *source, size_t len, int pe)
                               frag_target, frag_len, NULL,
                               GET_DEST(dst), frag_source,
                               key, NULL);
-            } while (try_again(ret,&polled));
+            } while (try_again(ctx,ret,&polled));
 
             frag_source += frag_len;
             frag_target += frag_len;
@@ -563,7 +563,7 @@ void shmem_transport_get(void *target, const void *source, size_t len, int pe)
 
 
 static inline
-void shmem_transport_get_wait(void)
+void shmem_transport_get_wait(shmem_ctx_t ctx)
 {
     /* wait for get counter to meet outstanding count value */
 
@@ -608,7 +608,7 @@ void shmem_transport_get_wait(void)
 
 
 static inline
-void shmem_transport_swap(void *target, const void *source, void *dest,
+void shmem_transport_swap(shmem_ctx_t ctx, void *target, const void *source, void *dest,
                           size_t len, int pe, int datatype)
 {
     int ret = 0;
@@ -637,13 +637,13 @@ void shmem_transport_swap(void *target, const void *source, void *dest,
                               datatype,
                               FI_ATOMIC_WRITE,
                               NULL);
-    } while(try_again(ret,&polled));
+    } while(try_again(ctx,ret,&polled));
 
 }
 
 
 static inline
-void shmem_transport_cswap(void *target, const void *source, void *dest,
+void shmem_transport_cswap(shmem_ctx_t ctx, void *target, const void *source, void *dest,
                            const void *operand, size_t len, int pe, int datatype)
 {
     int ret = 0;
@@ -674,12 +674,12 @@ void shmem_transport_cswap(void *target, const void *source, void *dest,
                                 datatype,
                                 FI_CSWAP,
                                 NULL);
-    } while(try_again(ret,&polled));
+    } while(try_again(ctx,ret,&polled));
 }
 
 
 static inline
-void shmem_transport_mswap(void *target, const void *source, void *dest,
+void shmem_transport_mswap(shmem_ctx_t ctx, void *target, const void *source, void *dest,
                            const void *mask, size_t len, int pe, int datatype)
 {
     int ret = 0;
@@ -710,12 +710,12 @@ void shmem_transport_mswap(void *target, const void *source, void *dest,
                                 datatype,
                                 FI_MSWAP,
                                 NULL);
-    } while(try_again(ret,&polled));
+    } while(try_again(ctx,ret,&polled));
 }
 
 
 static inline
-void shmem_transport_atomic_small(void *target, const void *source, size_t len,
+void shmem_transport_atomic_small(shmem_ctx_t ctx, void *target, const void *source, size_t len,
                                   int pe, int op, int datatype)
 {
     int ret = 0;
@@ -739,12 +739,12 @@ void shmem_transport_atomic_small(void *target, const void *source, size_t len,
                                key,
                                datatype,
                                op);
-    } while(try_again(ret,&polled));
+    } while(try_again(ctx,ret,&polled));
 }
 
 
 static inline
-void shmem_transport_atomic_set(void *target, const void *source, size_t len,
+void shmem_transport_atomic_set(shmem_ctx_t ctx, void *target, const void *source, size_t len,
                                 int pe, int datatype)
 {
     int ret = 0;
@@ -767,12 +767,12 @@ void shmem_transport_atomic_set(void *target, const void *source, size_t len,
                                key,
                                datatype,
                                FI_ATOMIC_WRITE);
-    } while (try_again(ret, &polled));
+    } while (try_again(ctx,ret, &polled));
 }
 
 
 static inline
-void shmem_transport_atomic_fetch(void *target, const void *source, size_t len,
+void shmem_transport_atomic_fetch(shmem_ctx_t ctx, void *target, const void *source, size_t len,
                                   int pe, int datatype)
 {
     int ret = 0;
@@ -800,12 +800,12 @@ void shmem_transport_atomic_fetch(void *target, const void *source, size_t len,
                               datatype,
                               FI_ATOMIC_READ,
                               NULL);
-    } while (try_again(ret, &polled));
+    } while (try_again(ctx,ret, &polled));
 }
 
 
 static inline
-void shmem_transport_atomic_nb(void *target, const void *source,
+void shmem_transport_atomic_nb(shmem_ctx_t ctx, void *target, const void *source,
                                size_t full_len, int pe, int op, int datatype,
                                long *completion)
 {
@@ -846,7 +846,7 @@ void shmem_transport_atomic_nb(void *target, const void *source,
                                    key,
                                    datatype,
                                    op);
-        } while(try_again(ret,&polled));
+        } while(try_again(ctx,ret,&polled));
 
     } else if (full_len <=
                MIN(shmem_transport_ofi_bounce_buffer_size, max_atomic_size)) {
@@ -868,7 +868,7 @@ void shmem_transport_atomic_nb(void *target, const void *source,
                             datatype,
                             op,
                             buff);
-        } while(try_again(ret,&polled));
+        } while(try_again(ctx,ret,&polled));
 
     } else {
         size_t sent = 0;
@@ -892,7 +892,7 @@ void shmem_transport_atomic_nb(void *target, const void *source,
                                 datatype,
                                 op,
                                 NULL);
-            } while(try_again(ret,&polled));
+            } while(try_again(ctx,ret,&polled));
 
             sent += chunksize;
         }
@@ -901,7 +901,7 @@ void shmem_transport_atomic_nb(void *target, const void *source,
 
 
 static inline
-void shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
+void shmem_transport_fetch_atomic(shmem_ctx_t ctx, void *target, const void *source, void *dest,
                                   size_t len, int pe, int op, int datatype)
 {
     int ret = 0;
@@ -930,7 +930,7 @@ void shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
                               datatype,
                               op,
                               NULL);
-    } while(try_again(ret,&polled));
+    } while(try_again(ctx,ret,&polled));
 }
 
 
