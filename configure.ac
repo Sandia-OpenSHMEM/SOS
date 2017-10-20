@@ -90,10 +90,10 @@ AC_MSG_CHECKING([For total data ordering behavior])
 AC_MSG_RESULT([$msg])
 
 AC_ARG_ENABLE([threads],
-    [AC_HELP_STRING([--enable-threads],
-                    [Enable threading support (default:disabled)])])
+    [AC_HELP_STRING([--disable-threads],
+                    [Disable threading support (default:enabled)])])
 
-AS_IF([test "$enable_threads" = "yes"], [
+AS_IF([test "$enable_threads" != "no"], [
        OPAL_CONFIG_POSIX_THREADS(HAVE_POSIX_THREADS=1, HAVE_POSIX_THREADS=0)
        AC_MSG_CHECKING([for working POSIX threads package])
        if test "$HAVE_POSIX_THREADS" = "1" ; then
@@ -112,13 +112,13 @@ AC_ARG_ENABLE([openmp],
     [AC_HELP_STRING([--disable-openmp],
                     [Disable OpenMP support (default: enabled)])])
 
-AS_IF([test "$enable_threads" = "yes"], [
+AS_IF([test "$enable_threads" != "no"], [
        AS_IF([test "$enable_openmp" != "no"], [
              AC_OPENMP
              AC_SUBST(AM_OPENMP_CXXFLAGS,"$OPENMP_CXXFLAGS")
              AC_SUBST(AM_OPENMP_CFLAGS,"$OPENMP_CFLAGS")])
        ])
-AM_CONDITIONAL([HAVE_OPENMP], [test "$enable_threads" = "yes" -a "$enable_openmp" != "no" -a "$ac_cv_prog_c_openmp" != "unsupported"])
+AM_CONDITIONAL([HAVE_OPENMP], [test "$enable_threads" != "no" -a "$enable_openmp" != "no" -a "$ac_cv_prog_c_openmp" != "unsupported"])
 
 AC_ARG_ENABLE([pthread-mutexes],
     [AC_HELP_STRING([--enable-pthread-mutexes],
