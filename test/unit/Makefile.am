@@ -92,7 +92,8 @@ check_PROGRAMS = \
 	self_collectives \
 	zero_comm \
 	sync-size \
-	shmem_ctx_pipelined_reduce
+	shmem_ctx_pipelined_reduce \
+	many-ctx
 
 if ENABLE_PROFILING
 check_PROGRAMS += \
