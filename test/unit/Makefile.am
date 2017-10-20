@@ -134,6 +134,11 @@ check_PROGRAMS += \
     mt_a2a
 endif
 
+if HAVE_OPENMP
+check_PROGRAMS += \
+    shmem_ctx
+endif
+
 TESTS = $(check_PROGRAMS)
 
 NPROCS ?= 2
@@ -156,6 +161,8 @@ mt_a2a_SOURCES = mt_a2a.c pthread_barrier.h
 mt_a2a_LDFLAGS = $(PTHREAD_LIBS)
 mt_a2a_CFLAGS = $(PTHREAD_CFLAGS)
 mt_a2a_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
+
+shmem_ctx_CFLAGS = $(AM_OPENMP_CFLAGS)
 
 # Fortran Tests (only .c tests use automatic _SOURCES)
 hello_f_SOURCES = hello_f.f90
