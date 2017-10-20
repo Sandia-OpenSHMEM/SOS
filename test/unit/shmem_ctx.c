@@ -35,11 +35,11 @@ int main(void) {
         /* Process tasks on all PEs, starting with the local PE.  After
          * all tasks on a PE are completed, help the next PE. */
         while (pes_done < npes) {
-            long task = shmem_atomic_fetch_inc(ctx, &task_cntr, task_pe);
+            long task = shmem_ctx_long_atomic_fetch_inc(ctx, &task_cntr, task_pe);
             while (task < ntasks) {
                 /* Perform task (task_pe, task) */
                 tasks_done++;
-                task = shmem_atomic_fetch_inc(ctx, &task_cntr, task_pe);
+                task = shmem_ctx_long_atomic_fetch_inc(ctx, &task_cntr, task_pe);
             }
             pes_done++;
             task_pe = (task_pe + 1) % npes;
