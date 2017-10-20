@@ -362,10 +362,10 @@ AC_LANG_PUSH([C])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>
                    _Noreturn void f(void){ exit(0); }
                    ]], [[ f(); ]] )],
-                  [SHMEM_NORETURN="_Noreturn"
-                   AC_SUBST(SHMEM_NORETURN)
-                   AC_DEFINE([SHMEM_NORETURN], [_Noreturn], [Defined to C _Noreturn function specifier, if present])],
-                  [AC_DEFINE([SHMEM_NORETURN], [], [Defined to C _Noreturn function specifier, if present])],
+                  [NORETURN_FN_SPEC="_Noreturn"
+                   AC_SUBST(NORETURN_FN_SPEC)
+                   AC_DEFINE([NORETURN_FN_SPEC], [_Noreturn], [Defined to C _Noreturn function specifier, if present])],
+                  [AC_DEFINE([NORETURN_FN_SPEC], [], [Defined to C _Noreturn function specifier, if present])],
                  )
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[ _Complex v; ]] )],
                   [],

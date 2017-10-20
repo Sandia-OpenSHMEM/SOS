@@ -132,7 +132,7 @@ shmem_runtime_fini(void)
 }
 
 
-void SHMEM_NORETURN
+void NORETURN_FN_SPEC
 shmem_runtime_abort(int exit_code, const char msg[])
 {
 
