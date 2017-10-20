@@ -44,6 +44,8 @@ AS_IF([test "$opal_cv___attribute__deprecated" = 1],
       [SHMEM_AC_HAVE_ATTRIBUTE_DEPRECATED=0])
 AC_SUBST(SHMEM_AC_HAVE_ATTRIBUTE_DEPRECATED)
 
+OPAL_CHECK_PMIX
+
 AC_ARG_ENABLE([picky],
     [AC_HELP_STRING([--enable-picky],
                     [Enable developer-level compiler pickyness when building (default: disabled)])])
@@ -340,8 +342,13 @@ AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
 AS_IF([test "$enable_pmi_simple" = "yes"],
      [TEST_RUNNER='$(abs_top_builddir)/src/oshrun -n $(NPROCS)'],
      [OPAL_CHECK_PMI(pmi_type)])
+AS_IF([test "$opal_external_pmix_version_found" = 1],
+     [pmi_CPPFLAGS="$opal_external_pmix_CPPFLAGS"
+      pmi_LDFLAGS="$opal_external_pmix_LDFLAGS"
+      pmi_LIBS="$opal_external_pmix_LIBS"])
 AM_CONDITIONAL([USE_PMI_SIMPLE], [test "$enable_pmi_simple" = "yes"])
 AM_CONDITIONAL([USE_PMI2], [test "$pmi_type" = "pmi2"])
+AM_CONDITIONAL([USE_PMIX], [test "$opal_external_pmix_version_found" = 1])
 
 dnl check for header files
 AC_CHECK_HEADERS([fnmatch.h])
@@ -682,7 +689,7 @@ fi
 
 AC_OUTPUT
 
-AS_IF([test "$enable_pmi_simple" != "yes" -a "$ompi_check_pmi_happy" != "yes" -a -z "$pmi_type"],
+AS_IF([test "$enable_pmi_simple" != "yes" -a "$opal_external_pmix_version_found" != 1 -a "$ompi_check_pmi_happy" != "yes" -a -z "$pmi_type"],
          [AC_MSG_WARN([No PMI found, if build fails consider --enable-pmi-simple or --with-pmi])])
 
 AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
@@ -696,6 +703,11 @@ AS_IF([test "$enable_cxx" == "no"],
 
 AS_IF([test "$enable_fortran" == "no"],
       [AC_MSG_WARN([No Fortran compiler or Fortran disabled, unabled to test Fortran bindings])])
+
+#Note: The --with-pmix flag is not currently marked as experimental in
+#      --help, because the AC_HELP string is set in upstream OMPI.
+AS_IF([test "$opal_external_pmix_happy" = "yes"],
+      [AC_MSG_WARN([PMIx is an experimental feature in Sandia OpenSHMEM])])
 
 FORT="$FC"
 if test "$FORT" = "" ; then

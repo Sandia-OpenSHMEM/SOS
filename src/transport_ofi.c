@@ -19,6 +19,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #if HAVE_FNMATCH_H
 #include <fnmatch.h>
@@ -940,6 +941,13 @@ int allocate_fabric_resources(struct fabric_info *info)
         RAISE_WARN_STR("fabric initialization failed");
         return ret;
     }
+
+    DEBUG_MSG("OFI version: built %"PRIu32".%"PRIu32", cur. %"PRIu32".%"PRIu32"; "
+              "provider version: %"PRIu32".%"PRIu32"\n",
+              FI_MAJOR_VERSION, FI_MINOR_VERSION,
+              FI_MAJOR(fi_version()), FI_MINOR(fi_version()),
+              FI_MAJOR(info->p_info->fabric_attr->prov_version),
+              FI_MINOR(info->p_info->fabric_attr->prov_version));
 
     /* access domain: define communication resource limits/boundary within
      * fabric domain */
