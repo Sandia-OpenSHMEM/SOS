@@ -619,7 +619,7 @@ void shmem_transport_swap(void *target, const void *source, void *dest,
 
     shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
-    shmem_internal_assert(len <= sizeof(double complex));
+    shmem_internal_assert(len <= sizeof(double _Complex));
     shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
 
     shmem_internal_atomic_inc(&shmem_transport_ofi_pending_get_counter);
@@ -654,7 +654,7 @@ void shmem_transport_cswap(void *target, const void *source, void *dest,
 
     shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
-    shmem_internal_assert(len <= sizeof(double complex));
+    shmem_internal_assert(len <= sizeof(double _Complex));
     shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
 
     shmem_internal_atomic_inc(&shmem_transport_ofi_pending_get_counter);
@@ -690,7 +690,7 @@ void shmem_transport_mswap(void *target, const void *source, void *dest,
 
     shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
-    shmem_internal_assert(len <= sizeof(double complex));
+    shmem_internal_assert(len <= sizeof(double _Complex));
     shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
 
     shmem_internal_atomic_inc(&shmem_transport_ofi_pending_get_counter);
@@ -912,7 +912,7 @@ void shmem_transport_fetch_atomic(void *target, const void *source, void *dest,
 
     shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
-    shmem_internal_assert(len <= sizeof(double complex));
+    shmem_internal_assert(len <= sizeof(double _Complex));
     shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
 
     shmem_internal_atomic_inc(&shmem_transport_ofi_pending_get_counter);

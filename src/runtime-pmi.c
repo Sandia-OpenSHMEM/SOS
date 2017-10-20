@@ -167,7 +167,7 @@ shmem_runtime_fini(void)
 }
 
 
-void
+void SHMEM_NORETURN
 shmem_runtime_abort(int exit_code, const char msg[])
 {
 

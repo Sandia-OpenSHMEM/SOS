@@ -347,7 +347,7 @@ void shmem_internal_finalize(void)
 }
 
 
-void
+void SHMEM_NORETURN
 shmem_internal_global_exit(int status)
 {
     char str[256];

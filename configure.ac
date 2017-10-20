@@ -358,6 +358,20 @@ AS_IF([test "$enable_pmi_simple" = "yes"],
 
 dnl check for types
 
+AC_LANG_PUSH([C])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>
+                   _Noreturn void f(void){ exit(0); }
+                   ]], [[ f(); ]] )],
+                  [SHMEM_NORETURN="_Noreturn"
+                   AC_SUBST(SHMEM_NORETURN)
+                   AC_DEFINE([SHMEM_NORETURN], [_Noreturn], [Defined to C _Noreturn function specifier, if present])],
+                  [AC_DEFINE([SHMEM_NORETURN], [], [Defined to C _Noreturn function specifier, if present])],
+                 )
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[ _Complex v; ]] )],
+                  [],
+                  [AC_ERROR([C Compiler does not support _Complex])])
+AC_LANG_POP([C])
+
 SHMEM_FIND_INT_TYPE([char], [$transport])
 SHMEM_FIND_INT_TYPE([short], [$transport])
 SHMEM_FIND_INT_TYPE([int], [$transport])
@@ -674,6 +688,8 @@ AC_CONFIG_FILES([Makefile
   mpp/shmem.fh
   mpp/shmemx.fh
   mpp/shmem.h4
+  mpp/shmem_c_func.h4
+  mpp/shmemx_c_func.h4
   mpp/shmemx.h4
   src/Makefile
   test/Makefile

@@ -25,7 +25,7 @@ dnl
 /* Library Setup, Exit, and Query Routines */
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_init(void);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_finalize(void);
-SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_global_exit(int status);
+SHMEM_FUNCTION_ATTRIBUTES @SHMEM_NORETURN@ void SHPRE()shmem_global_exit(int status);
 SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_n_pes(void);
 SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_my_pe(void);
 
