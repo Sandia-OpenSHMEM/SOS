@@ -84,7 +84,7 @@ static inline
 void
 shmem_internal_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
-    shmem_internal_quiet();
+    shmem_internal_quiet(SHMEM_CTX_DEFAULT);
     shmem_internal_sync(PE_start, logPE_stride, PE_size, pSync);
 }
 
@@ -93,7 +93,7 @@ static inline
 void
 shmem_internal_barrier_all(void)
 {
-    shmem_internal_quiet();
+    shmem_internal_quiet(SHMEM_CTX_DEFAULT);
     shmem_internal_sync(0, 0, shmem_internal_num_pes, shmem_internal_barrier_all_psync);
 }
 
