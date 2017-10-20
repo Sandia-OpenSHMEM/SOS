@@ -55,7 +55,8 @@ libsma_la_SOURCES = \
 	shmem_decl.h \
 	shmem_env.c \
 	shmem_env.h \
-	shmem_env_defs.h
+	shmem_env_defs.h \
+	contexts_c.c
 
 nodist_libsma_la_SOURCES = \
 	$(GEN_BINDINGS)
@@ -112,14 +113,18 @@ endif
 
 if USE_PMI_SIMPLE
 AM_CPPFLAGS += -I$(top_srcdir)/pmi-simple
+libsma_la_SOURCES += \
+	runtime-pmi.c
 endif
 
 if USE_PMI2
 libsma_la_SOURCES += \
 	runtime-pmi2.c
-else
+endif
+
+if USE_PMIX
 libsma_la_SOURCES += \
-	runtime-pmi.c
+	runtime-pmix.c
 endif
 
 

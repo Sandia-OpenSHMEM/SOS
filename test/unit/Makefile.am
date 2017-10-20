@@ -91,7 +91,8 @@ check_PROGRAMS = \
 	nop_collectives \
 	self_collectives \
 	zero_comm \
-	sync-size
+	sync-size \
+	shmem_ctx_pipelined_reduce
 
 if ENABLE_PROFILING
 check_PROGRAMS += \

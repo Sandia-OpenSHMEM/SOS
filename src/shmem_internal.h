@@ -120,6 +120,19 @@ extern long shmem_internal_data_length;
     } while (0)
 
 
+#define RETURN_ERROR_MSG_PREINIT(...)                                   \
+    do {                                                                \
+        char str[256];                                                  \
+        size_t off;                                                     \
+        off = snprintf(str, sizeof(str), "[????] ERROR: %s:%d: %s\n",   \
+                       __FILE__, __LINE__, __func__);                   \
+        off+= snprintf(str+off, sizeof(str)-off, RAISE_PE_PREFIX,       \
+                       shmem_internal_my_pe);                           \
+        off+= snprintf(str+off, sizeof(str)-off, __VA_ARGS__);          \
+        fprintf(stderr, "%s", str);                                     \
+    } while (0)
+
+
 #define DEBUG_STR(str)                                                  \
     do {                                                                \
         if(shmem_internal_params.DEBUG) {                               \

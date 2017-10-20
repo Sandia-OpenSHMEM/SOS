@@ -185,6 +185,8 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         if (shmem_internal_params.DEBUG) {
             char *wrapped_configure_args = shmem_util_wrap(SOS_CONFIGURE_ARGS, 60,
                                                            "                        ");
+            char *wrapped_build_cflags   = shmem_util_wrap(SOS_BUILD_CFLAGS, 60,
+                                                           "                        ");
 
             printf("Build information:\n");
 #ifdef SOS_GIT_VERSION
@@ -193,10 +195,11 @@ shmem_internal_init(int tl_requested, int *tl_provided)
             printf("%-23s %s\n", "  Configure Args", wrapped_configure_args);
             printf("%-23s %s\n", "  Build Date", SOS_BUILD_DATE);
             printf("%-23s %s\n", "  Build CC", SOS_BUILD_CC);
-            printf("%-23s %s\n", "  Build CFLAGS", SOS_BUILD_CFLAGS);
+            printf("%-23s %s\n", "  Build CFLAGS", wrapped_build_cflags);
             printf("\n");
 
             free(wrapped_configure_args);
+            free(wrapped_build_cflags);
         }
 
         fflush(NULL);
@@ -301,7 +304,9 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     }
 
     /* finish up */
+#ifndef USE_PMIX
     shmem_runtime_barrier();
+#endif
     return;
 
  cleanup:
