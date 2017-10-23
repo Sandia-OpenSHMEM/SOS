@@ -80,7 +80,7 @@ shmemx_nodename(void)
 }
 
 
-void SHMEM_FUNCTION_ATTRIBUTES
+int SHMEM_FUNCTION_ATTRIBUTES
 shmem_init_thread(int tl_requested, int *tl_provided)
 {
     if (shmem_internal_initialized) {
@@ -88,6 +88,7 @@ shmem_init_thread(int tl_requested, int *tl_provided)
     }
 
     shmem_internal_init(tl_requested, tl_provided);
+    return 0;
 }
 
 
