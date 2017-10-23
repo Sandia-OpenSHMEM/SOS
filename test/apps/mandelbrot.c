@@ -93,7 +93,7 @@ int use_contexts = 1;
 int use_pipelining = 1;
 int use_blocking = 0;
 
-static long getTime()
+static long getTime(void)
 {
     struct timeval tv;
 
@@ -101,7 +101,7 @@ static long getTime()
     return tv.tv_sec*1e6 + tv.tv_usec;
 }
 
-static void fileDump() {
+static void fileDump(void) {
     int i, j;
     FILE *fp;
     fp = fopen("mandelbrot.pgm", "w");
@@ -290,7 +290,7 @@ static void *thread_worker(void *arg) {
     return NULL;
 }
 
-static void printUsage() {
+static void printUsage(void) {
     printf("USAGE: mandelbrot [options]\n");
     printf("                  -t <num_threads> number of worker threads (def: 1)\n");
     printf("                  -w <width>       width of the mandelbrot domain (def: 2048)\n");
