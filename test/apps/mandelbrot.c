@@ -47,7 +47,8 @@
 #endif
 
 #include <shmem.h>
-#include "../unit/pthread_barrier.h" /* FIXME -- this is for MacOS */
+/* For systems without the PThread barrier API (e.g. MacOS) */
+#include "pthread_barrier.h"
 
 #ifdef ENABLE_PINNING
 // Number of CPUs on the machine

@@ -162,15 +162,15 @@ rma_coverage_pshmem_CFLAGS = -DTEST_PSHMEM
 
 mt_a2a_SOURCES = mt_a2a.c pthread_barrier.h
 mt_a2a_LDFLAGS = $(PTHREAD_LIBS)
-mt_a2a_CFLAGS = $(PTHREAD_CFLAGS)
+mt_a2a_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 mt_a2a_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 threading_LDFLAGS = $(PTHREAD_LIBS)
-threading_CFLAGS = $(PTHREAD_CFLAGS)
+threading_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 threading_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 web_LDFLAGS = $(PTHREAD_LIBS)
-web_CFLAGS = $(PTHREAD_CFLAGS)
+web_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 web_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 shmem_ctx_CFLAGS = $(AM_OPENMP_CFLAGS)

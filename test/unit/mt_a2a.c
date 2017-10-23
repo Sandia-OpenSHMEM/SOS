@@ -34,8 +34,10 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <pthread.h>
-#include <pthread_barrier.h>
 #include <shmem.h>
+
+/* For systems without the PThread barrier API (e.g. MacOS) */
+#include "pthread_barrier.h"
 
 #define T 8
 

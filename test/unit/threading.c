@@ -28,8 +28,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
-#include "pthread_barrier.h"
 #include <shmem.h>
+
+/* For systems without the PThread barrier API (e.g. MacOS) */
+#include "pthread_barrier.h"
 
 #define N_THREADS 8
 #define N_ELEMS   10
