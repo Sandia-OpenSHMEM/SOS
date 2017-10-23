@@ -14,7 +14,6 @@ dnl
 #  endif
 #endif
 
-SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_init_thread(int tl_requested, int *tl_provided);
 SHMEM_FUNCTION_ATTRIBUTES double SHPRE()shmemx_wtime(void);
 SHMEM_FUNCTION_ATTRIBUTES char* SHPRE()shmemx_nodename(void);
 
