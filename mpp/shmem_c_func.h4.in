@@ -29,7 +29,11 @@ SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_finalize(void);
 SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_n_pes(void);
 SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_my_pe(void);
 #ifdef __cplusplus
+#  if __cplusplus >= 201103L
 SHMEM_FUNCTION_ATTRIBUTES [[ noreturn ]] void SHPRE()shmem_global_exit(int status);
+#  else
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_global_exit(int status);
+#  endif
 #else
 SHMEM_FUNCTION_ATTRIBUTES @NORETURN_FN_SPEC@ void SHPRE()shmem_global_exit(int status);
 #endif
