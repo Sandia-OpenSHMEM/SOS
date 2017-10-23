@@ -77,6 +77,12 @@ check_PROGRAMS = \
 	c11_test_shmem_put \
 	c11_test_shmem_set \
 	c11_test_shmem_atomic_set \
+	c11_test_shmem_atomic_or \
+	c11_test_shmem_atomic_and \
+	c11_test_shmem_atomic_xor \
+	c11_test_shmem_atomic_fetch_or \
+	c11_test_shmem_atomic_fetch_and \
+	c11_test_shmem_atomic_fetch_xor \
 	get_nbi \
 	put_nbi \
 	rma_coverage \
@@ -115,7 +121,13 @@ check_PROGRAMS += \
     cxx_test_shmem_p \
     cxx_test_shmem_put \
     cxx_test_shmem_set \
-    cxx_test_shmem_complex
+    cxx_test_shmem_complex \
+    cxx_test_shmem_atomic_or \
+    cxx_test_shmem_atomic_and \
+    cxx_test_shmem_atomic_xor \
+    cxx_test_shmem_atomic_fetch_or \
+    cxx_test_shmem_atomic_fetch_and \
+    cxx_test_shmem_atomic_fetch_xor
 endif
 
 if HAVE_FORTRAN
@@ -191,3 +203,9 @@ cxx_test_shmem_put_SOURCES = cxx_test_shmem_put.cpp
 cxx_test_shmem_fetch_SOURCES = cxx_test_shmem_fetch.cpp
 cxx_test_shmem_set_SOURCES = cxx_test_shmem_set.cpp
 cxx_test_shmem_complex_SOURCES = cxx_test_shmem_complex.cpp
+cxx_test_shmem_atomic_or_SOURCES = cxx_test_shmem_atomic_or.cpp
+cxx_test_shmem_atomic_and_SOURCES = cxx_test_shmem_atomic_and.cpp
+cxx_test_shmem_atomic_xor_SOURCES = cxx_test_shmem_atomic_xor.cpp
+cxx_test_shmem_atomic_fetch_or_SOURCES = cxx_test_shmem_atomic_fetch_or.cpp
+cxx_test_shmem_atomic_fetch_and_SOURCES = cxx_test_shmem_atomic_fetch_and.cpp
+cxx_test_shmem_atomic_fetch_xor_SOURCES =cxx_test_shmem_atomic_fetch_xor.cpp
