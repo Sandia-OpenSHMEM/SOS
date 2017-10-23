@@ -62,7 +62,7 @@ AM_CONDITIONAL([ENABLE_ERROR_CHECKING], [test "$enable_error_checking" = "yes"])
 
 AC_ARG_ENABLE([hard-polling],
     [AC_HELP_STRING([--enable-hard-polling],
-                    [Enable hard polling of wait calls (default:disabled)])])
+                    [Enable hard polling of wait calls (default:automatic)])])
 AS_IF([test "$enable_hard_polling" = "yes"], [AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])])
 
 AC_ARG_ENABLE([completion-polling],
