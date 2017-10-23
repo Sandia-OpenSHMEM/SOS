@@ -77,6 +77,12 @@ check_PROGRAMS = \
 	c11_test_shmem_put \
 	c11_test_shmem_set \
 	c11_test_shmem_atomic_set \
+	c11_test_shmem_atomic_or \
+	c11_test_shmem_atomic_and \
+	c11_test_shmem_atomic_xor \
+	c11_test_shmem_atomic_fetch_or \
+	c11_test_shmem_atomic_fetch_and \
+	c11_test_shmem_atomic_fetch_xor \
 	get_nbi \
 	put_nbi \
 	rma_coverage \
@@ -92,7 +98,8 @@ check_PROGRAMS = \
 	self_collectives \
 	zero_comm \
 	sync-size \
-	shmem_ctx_pipelined_reduce
+	shmem_ctx_pipelined_reduce \
+	many-ctx
 
 if ENABLE_PROFILING
 check_PROGRAMS += \
@@ -114,7 +121,13 @@ check_PROGRAMS += \
     cxx_test_shmem_p \
     cxx_test_shmem_put \
     cxx_test_shmem_set \
-    cxx_test_shmem_complex
+    cxx_test_shmem_complex \
+    cxx_test_shmem_atomic_or \
+    cxx_test_shmem_atomic_and \
+    cxx_test_shmem_atomic_xor \
+    cxx_test_shmem_atomic_fetch_or \
+    cxx_test_shmem_atomic_fetch_and \
+    cxx_test_shmem_atomic_fetch_xor
 endif
 
 if HAVE_FORTRAN
@@ -131,7 +144,14 @@ endif
 
 if HAVE_PTHREADS
 check_PROGRAMS += \
-    mt_a2a
+    mt_a2a \
+    threading \
+    web
+endif
+
+if HAVE_OPENMP
+check_PROGRAMS += \
+    shmem_ctx
 endif
 
 TESTS = $(check_PROGRAMS)
@@ -154,8 +174,18 @@ rma_coverage_pshmem_CFLAGS = -DTEST_PSHMEM
 
 mt_a2a_SOURCES = mt_a2a.c pthread_barrier.h
 mt_a2a_LDFLAGS = $(PTHREAD_LIBS)
-mt_a2a_CFLAGS = $(PTHREAD_CFLAGS)
+mt_a2a_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 mt_a2a_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
+
+threading_LDFLAGS = $(PTHREAD_LIBS)
+threading_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
+threading_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
+
+web_LDFLAGS = $(PTHREAD_LIBS)
+web_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
+web_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
+
+shmem_ctx_CFLAGS = $(AM_OPENMP_CFLAGS)
 
 # Fortran Tests (only .c tests use automatic _SOURCES)
 hello_f_SOURCES = hello_f.f90
@@ -173,3 +203,9 @@ cxx_test_shmem_put_SOURCES = cxx_test_shmem_put.cpp
 cxx_test_shmem_fetch_SOURCES = cxx_test_shmem_fetch.cpp
 cxx_test_shmem_set_SOURCES = cxx_test_shmem_set.cpp
 cxx_test_shmem_complex_SOURCES = cxx_test_shmem_complex.cpp
+cxx_test_shmem_atomic_or_SOURCES = cxx_test_shmem_atomic_or.cpp
+cxx_test_shmem_atomic_and_SOURCES = cxx_test_shmem_atomic_and.cpp
+cxx_test_shmem_atomic_xor_SOURCES = cxx_test_shmem_atomic_xor.cpp
+cxx_test_shmem_atomic_fetch_or_SOURCES = cxx_test_shmem_atomic_fetch_or.cpp
+cxx_test_shmem_atomic_fetch_and_SOURCES = cxx_test_shmem_atomic_fetch_and.cpp
+cxx_test_shmem_atomic_fetch_xor_SOURCES =cxx_test_shmem_atomic_fetch_xor.cpp

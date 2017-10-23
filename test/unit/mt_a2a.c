@@ -34,9 +34,10 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <pthread.h>
-#include <pthread_barrier.h>
 #include <shmem.h>
-#include <shmemx.h>
+
+/* For systems without the PThread barrier API (e.g. MacOS) */
+#include "pthread_barrier.h"
 
 #define T 8
 
@@ -117,10 +118,10 @@ int main(int argc, char **argv) {
     pthread_t threads[T];
     int       t_arg[T];
 
-    shmemx_init_thread(SHMEMX_THREAD_MULTIPLE, &tl);
+    shmem_init_thread(SHMEM_THREAD_MULTIPLE, &tl);
 
     /* If OpenSHMEM doesn't support multithreading, exit gracefully */
-    if (SHMEMX_THREAD_MULTIPLE != tl) {
+    if (SHMEM_THREAD_MULTIPLE != tl) {
         printf("Warning: Exiting because threading is disabled, tested nothing\n");
         shmem_finalize();
         return 0;

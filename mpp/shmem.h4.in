@@ -74,6 +74,15 @@ extern "C" {
 #define  SHMEM_VENDOR_STRING "Sandia OpenSHMEM"
 #define _SHMEM_VENDOR_STRING SHMEM_VENDOR_STRING
 
+#define SHMEM_THREAD_SINGLE     0
+#define SHMEM_THREAD_FUNNELED   1
+#define SHMEM_THREAD_SERIALIZED 2
+#define SHMEM_THREAD_MULTIPLE   3
+
+#define SHMEM_CTX_PRIVATE       1
+#define SHMEM_CTX_SERIALIZED    2
+#define SHMEM_CTX_NOSTORE       4
+
 /* Temporary placeholder to avoid undefined warnings: */
 #define SHMEM_CTX_DEFAULT NULL
 typedef void *shmem_ctx_t;
@@ -205,6 +214,42 @@ define(`SHMEM_CXX_ATOMIC_FETCH_ADD',
     return shmem_$1_atomic_fetch_add(target, value, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_ATOMIC_FETCH_ADD')
+
+define(`SHMEM_CXX_ATOMIC_AND',
+`static inline void shmem_atomic_and($2 *dest, $2 value, int pe) {
+    shmem_$1_atomic_and(dest, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_AND')
+
+define(`SHMEM_CXX_ATOMIC_OR',
+`static inline void shmem_atomic_or($2 *dest, $2 value, int pe) {
+    shmem_$1_atomic_or(dest, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_OR')
+
+define(`SHMEM_CXX_ATOMIC_XOR',
+`static inline void shmem_atomic_xor($2 *dest, $2 value, int pe) {
+    shmem_$1_atomic_xor(dest, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_XOR')
+
+define(`SHMEM_CXX_ATOMIC_FETCH_AND',
+`static inline $2 shmem_atomic_fetch_and($2 *dest, $2 value, int pe) {
+    return shmem_$1_atomic_fetch_and(dest, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_FETCH_AND')
+
+define(`SHMEM_CXX_ATOMIC_FETCH_OR',
+`static inline $2 shmem_atomic_fetch_or($2 *dest, $2 value, int pe) {
+    return shmem_$1_atomic_fetch_or(dest, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_FETCH_OR')
+
+define(`SHMEM_CXX_ATOMIC_FETCH_XOR',
+`static inline $2 shmem_atomic_fetch_xor($2 *dest, $2 value, int pe) {
+    return shmem_$1_atomic_fetch_xor(dest, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_FETCH_XOR')
 
 /* Atomics with extended AMO types */
 define(`SHMEM_CXX_SWAP',

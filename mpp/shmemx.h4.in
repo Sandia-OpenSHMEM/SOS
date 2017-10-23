@@ -23,12 +23,6 @@ include(shmem_bind_c.m4)dnl
 #define SHMEMX_H
 
 #include <stddef.h>
-#include <stdint.h>
-
-#define SHMEMX_THREAD_SINGLE     0
-#define SHMEMX_THREAD_FUNNELED   1
-#define SHMEMX_THREAD_SERIALIZED 2
-#define SHMEMX_THREAD_MULTIPLE   3
 
 #define HAVE_SHMEMX_WTIME
 

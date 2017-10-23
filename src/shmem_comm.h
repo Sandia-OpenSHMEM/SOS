@@ -51,7 +51,7 @@ extern char *shmem_internal_location_array;
 
 static inline
 void
-shmem_internal_put_small(void *target, const void *source, size_t len, int pe)
+shmem_internal_put_small(shmem_ctx_t ctx, void *target, const void *source, size_t len, int pe)
 {
     int node_rank;
 
@@ -75,7 +75,7 @@ shmem_internal_put_small(void *target, const void *source, size_t len, int pe)
 
 static inline
 void
-shmem_internal_put_nb(void *target, const void *source, size_t len, int pe,
+shmem_internal_put_nb(shmem_ctx_t ctx, void *target, const void *source, size_t len, int pe,
                       long *completion)
 {
     int node_rank;
@@ -103,7 +103,7 @@ shmem_internal_put_nb(void *target, const void *source, size_t len, int pe,
 
 static inline
 void
-shmem_internal_put_nbi(void *target, const void *source, size_t len, int pe)
+shmem_internal_put_nbi(shmem_ctx_t ctx, void *target, const void *source, size_t len, int pe)
 {
     int node_rank;
 
@@ -142,7 +142,7 @@ shmem_internal_put_ct_nb(shmemx_ct_t ct, void *target, const void *source, size_
 
 static inline
 void
-shmem_internal_put_wait(long *completion)
+shmem_internal_put_wait(shmem_ctx_t ctx, long *completion)
 {
     shmem_transport_put_wait(completion);
     /* on-node is always blocking, so this is a no-op for them */
@@ -151,7 +151,7 @@ shmem_internal_put_wait(long *completion)
 
 static inline
 void
-shmem_internal_get(void *target, const void *source, size_t len, int pe)
+shmem_internal_get(shmem_ctx_t ctx, void *target, const void *source, size_t len, int pe)
 {
     int node_rank;
 
@@ -189,7 +189,7 @@ shmem_internal_get_ct(shmemx_ct_t ct, void *target, const void *source, size_t l
 
 static inline
 void
-shmem_internal_get_wait(void)
+shmem_internal_get_wait(shmem_ctx_t ctx)
 {
     shmem_transport_get_wait();
     /* on-node is always blocking, so this is a no-op for them */
@@ -197,7 +197,7 @@ shmem_internal_get_wait(void)
 
 static inline
 void
-shmem_internal_swap(void *target, void *source, void *dest, size_t len,
+shmem_internal_swap(shmem_ctx_t ctx, void *target, void *source, void *dest, size_t len,
                     int pe, shm_internal_datatype_t datatype)
 {
     shmem_internal_assert(len > 0);
@@ -208,7 +208,7 @@ shmem_internal_swap(void *target, void *source, void *dest, size_t len,
 
 static inline
 void
-shmem_internal_cswap(void *target, void *source, void *dest, void *operand, size_t len,
+shmem_internal_cswap(shmem_ctx_t ctx, void *target, void *source, void *dest, void *operand, size_t len,
                     int pe, shm_internal_datatype_t datatype)
 {
     shmem_internal_assert(len > 0);
@@ -219,7 +219,7 @@ shmem_internal_cswap(void *target, void *source, void *dest, void *operand, size
 
 static inline
 void
-shmem_internal_mswap(void *target, void *source, void *dest, void *mask, size_t len,
+shmem_internal_mswap(shmem_ctx_t ctx, void *target, void *source, void *dest, void *mask, size_t len,
                     int pe, shm_internal_datatype_t datatype)
 {
     shmem_internal_assert(len > 0);
@@ -230,7 +230,7 @@ shmem_internal_mswap(void *target, void *source, void *dest, void *mask, size_t 
 
 static inline
 void
-shmem_internal_atomic_small(void *target, const void *source, size_t len,
+shmem_internal_atomic_small(shmem_ctx_t ctx, void *target, const void *source, size_t len,
                             int pe, shm_internal_op_t op,
                             shm_internal_datatype_t datatype)
 {
@@ -242,7 +242,7 @@ shmem_internal_atomic_small(void *target, const void *source, size_t len,
 
 static inline
 void
-shmem_internal_atomic_fetch(void *target, const void *source, size_t len,
+shmem_internal_atomic_fetch(shmem_ctx_t ctx, void *target, const void *source, size_t len,
                             int pe, shm_internal_datatype_t datatype)
 {
     shmem_internal_assert(len > 0);
@@ -253,7 +253,7 @@ shmem_internal_atomic_fetch(void *target, const void *source, size_t len,
 
 static inline
 void
-shmem_internal_atomic_set(void *target, const void *source, size_t len,
+shmem_internal_atomic_set(shmem_ctx_t ctx, void *target, const void *source, size_t len,
                           int pe, shm_internal_datatype_t datatype)
 {
     shmem_internal_assert(len > 0);
@@ -264,7 +264,7 @@ shmem_internal_atomic_set(void *target, const void *source, size_t len,
 
 static inline
 void
-shmem_internal_atomic_nb(void *target, const void *source, size_t len,
+shmem_internal_atomic_nb(shmem_ctx_t ctx, void *target, const void *source, size_t len,
                          int pe, shm_internal_op_t op,
                          shm_internal_datatype_t datatype, long *completion)
 {
@@ -277,7 +277,7 @@ shmem_internal_atomic_nb(void *target, const void *source, size_t len,
 
 static inline
 void
-shmem_internal_fetch_atomic(void *target, void *source, void *dest, size_t len,
+shmem_internal_fetch_atomic(shmem_ctx_t ctx, void *target, void *source, void *dest, size_t len,
                             int pe, shm_internal_op_t op,
                             shm_internal_datatype_t datatype)
 {

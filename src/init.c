@@ -26,7 +26,6 @@
 
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
-#include "shmemx.h"
 #include "shmem_internal.h"
 #include "shmem_collectives.h"
 #include "shmem_comm.h"
@@ -115,7 +114,7 @@ shmem_internal_start_pes(int npes)
     int tl_provided;
 
     shmem_internal_initialized_with_start_pes = 1;
-    shmem_internal_init(SHMEMX_THREAD_SINGLE, &tl_provided);
+    shmem_internal_init(SHMEM_THREAD_SINGLE, &tl_provided);
 }
 
 
@@ -139,8 +138,8 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     shmem_internal_thread_level = tl_requested;
     *tl_provided = tl_requested;
 #else
-    shmem_internal_thread_level = SHMEMX_THREAD_SINGLE;
-    *tl_provided = SHMEMX_THREAD_SINGLE;
+    shmem_internal_thread_level = SHMEM_THREAD_SINGLE;
+    *tl_provided = SHMEM_THREAD_SINGLE;
 #endif
 
     /* Parse environment variables into shmem_internal_params */
@@ -164,7 +163,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
     /* Unless the user asked for it, disable bounce buffering in MULTIPLE
      * because of threading overheads */
-    if (shmem_internal_thread_level == SHMEMX_THREAD_MULTIPLE &&
+    if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE &&
         !shmem_internal_params.BOUNCE_SIZE_provided) {
         shmem_internal_params.BOUNCE_SIZE = 0;
     }

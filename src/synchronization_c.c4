@@ -65,7 +65,7 @@ shmem_quiet(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_quiet();
+    shmem_internal_quiet(SHMEM_CTX_DEFAULT);
 }
 
 
@@ -74,7 +74,7 @@ shmem_fence(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_fence();
+    shmem_internal_fence(SHMEM_CTX_DEFAULT);
 }
 
 
@@ -83,7 +83,7 @@ shmem_ctx_quiet(shmem_ctx_t ctx)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_quiet();
+    shmem_internal_quiet(ctx);
 }
 
 
@@ -92,7 +92,7 @@ shmem_ctx_fence(shmem_ctx_t ctx)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_internal_fence();
+    shmem_internal_fence(ctx);
 }
 
 

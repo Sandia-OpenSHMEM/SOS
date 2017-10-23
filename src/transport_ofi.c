@@ -1025,7 +1025,7 @@ int query_for_fabric(struct fabric_info *info)
                                       at least 1 byte */
 #endif
 #ifdef ENABLE_THREADS
-    if (shmem_internal_thread_level == SHMEMX_THREAD_MULTIPLE)
+    if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE)
         domain_attr.threading = FI_THREAD_SAFE;
     else
         domain_attr.threading = FI_THREAD_DOMAIN;
