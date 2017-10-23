@@ -336,7 +336,7 @@ shmem_transport_portals4_fence_complete(void)
 
 static inline
 void
-shmem_transport_portals4_drain_eq(shmem_ctx_t ctx)
+shmem_transport_portals4_drain_eq()
 {
     int ret;
     ptl_event_t ev;
@@ -454,7 +454,7 @@ shmem_transport_portals4_put_nb_internal(shmem_ctx_t ctx, void *target, const vo
         SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_event_slots);
         while (0 >= --shmem_transport_portals4_event_slots) {
             shmem_transport_portals4_event_slots++;
-            shmem_transport_portals4_drain_eq(ctx);
+            shmem_transport_portals4_drain_eq();
         }
         SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
 
@@ -494,7 +494,7 @@ shmem_transport_portals4_put_nb_internal(shmem_ctx_t ctx, void *target, const vo
         SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_event_slots);
         while (0 >= --shmem_transport_portals4_event_slots) {
             shmem_transport_portals4_event_slots++;
-            shmem_transport_portals4_drain_eq(ctx);
+            shmem_transport_portals4_drain_eq();
         }
         SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
 
@@ -640,7 +640,7 @@ void
 shmem_transport_put_wait(shmem_ctx_t ctx, long *completion)
 {
     while (*completion > 0) {
-        shmem_transport_portals4_drain_eq(ctx);
+        shmem_transport_portals4_drain_eq();
     }
 }
 
@@ -918,7 +918,7 @@ shmem_transport_atomic_nb(shmem_ctx_t ctx, void *target, const void *source, siz
         SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_event_slots);
         while (0 >= --shmem_transport_portals4_event_slots) {
             shmem_transport_portals4_event_slots++;
-            shmem_transport_portals4_drain_eq(ctx);
+            shmem_transport_portals4_drain_eq();
         }
         SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
 
@@ -970,7 +970,7 @@ shmem_transport_atomic_nb(shmem_ctx_t ctx, void *target, const void *source, siz
              SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_event_slots);
              while (0 >= --shmem_transport_portals4_event_slots) {
                   shmem_transport_portals4_event_slots++;
-                  shmem_transport_portals4_drain_eq(ctx);
+                  shmem_transport_portals4_drain_eq();
              }
              SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
 
