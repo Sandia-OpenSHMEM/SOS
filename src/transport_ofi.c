@@ -1214,7 +1214,7 @@ int shmem_transport_startup(void)
 int shmem_transport_fini(void)
 {
     /* Wait for acks before shutdown */
-    shmem_transport_quiet(SHMEM_CTX_DEFAULT);
+    shmem_transport_quiet(&shmem_transport_ctx_default);
 
     if (shmem_transport_ofi_epfd &&
         fi_close(&shmem_transport_ofi_epfd->fid)) {
