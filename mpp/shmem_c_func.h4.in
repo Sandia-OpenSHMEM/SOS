@@ -434,8 +434,8 @@ SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_wait(volatile long *ivar, long cmp_v
 SHMEM_BIND_C_WAIT(`SHMEM_C_WAIT')
 
 define(`SHMEM_C_WAIT_UNTIL',
-`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_wait_until(volatile $2 *var, int cond, $2 value);')dnl
-SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_wait_until(volatile long *ivar, int cmp, long value);
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_wait_until(volatile $2 *var, shmem_cmp_t cmp, $2 value);')dnl
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_wait_until(volatile long *ivar, shmem_cmp_t cmp, long value);
 SHMEM_BIND_C_WAIT(`SHMEM_C_WAIT_UNTIL')
 
 /* Memory Ordering Routines */

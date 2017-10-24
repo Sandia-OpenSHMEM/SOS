@@ -107,7 +107,7 @@ shmem_wait(volatile long *ivar, long cmp_value)
 
 
 void SHMEM_FUNCTION_ATTRIBUTES
-shmem_wait_until(volatile long *ivar, int cmp, long value)
+shmem_wait_until(volatile long *ivar, shmem_cmp_t cmp, long value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_SYMMETRIC(ivar, sizeof(long));
@@ -131,7 +131,7 @@ SHMEM_BIND_C_WAIT(`SHMEM_DEF_WAIT')
 
 #define SHMEM_DEF_WAIT_UNTIL(STYPE,TYPE)                                                       \
     void SHMEM_FUNCTION_ATTRIBUTES                                                             \
-    shmem_##STYPE##_wait_until(volatile TYPE *var, int cond, TYPE value)                       \
+    shmem_##STYPE##_wait_until(volatile TYPE *var, shmem_cmp_t cond, TYPE value)               \
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(var, sizeof(TYPE));                                          \

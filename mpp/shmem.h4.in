@@ -31,12 +31,12 @@ include(shmem_bind_cxx.m4)dnl
 extern "C" {
 #endif
 
-#define SHMEM_CMP_EQ 1
-#define SHMEM_CMP_NE 2
-#define SHMEM_CMP_GT 3
-#define SHMEM_CMP_GE 4
-#define SHMEM_CMP_LT 5
-#define SHMEM_CMP_LE 6
+typedef enum { SHMEM_CMP_EQ=1,
+               SHMEM_CMP_NE=2,
+               SHMEM_CMP_GT=3,
+               SHMEM_CMP_GE=4,
+               SHMEM_CMP_LT=5,
+               SHMEM_CMP_LE=6 } shmem_cmp_t;
 
 #define _SHMEM_CMP_EQ 1
 #define _SHMEM_CMP_NE 2
