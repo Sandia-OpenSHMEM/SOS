@@ -26,13 +26,8 @@ include(shmem_bind_cxx.m4)dnl
 
 #include <stddef.h>
 #include <stdint.h>
-#include <complex.h>
 
 #ifdef __cplusplus
-#ifndef complex
-#define complex _Complex
-#define SHMEM_UNDEF_COMPLEX
-#endif
 extern "C" {
 #endif
 
@@ -93,14 +88,11 @@ extern "C" {
 typedef void *shmem_ctx_t;
 
 define(`SHPRE', `')dnl
-include(shmem_c_func.m4)dnl
+include(shmem_c_func.h4)dnl
 
 /* C++ overloaded declarations */
 #ifdef __cplusplus
 } /* extern "C" */
-#ifdef SHMEM_UNDEF_COMPLEX
-#undef complex
-#endif
 
 /* Blocking block, scalar, and block-strided put */
 define(`SHMEM_CXX_PUT',

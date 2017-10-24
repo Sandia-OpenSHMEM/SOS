@@ -16,7 +16,6 @@
 #ifndef TRANSPORT_PORTALS_H
 #define TRANSPORT_PORTALS_H
 
-#include <complex.h>
 #include <portals4.h>
 #include <stdlib.h>
 #include <string.h>
@@ -731,7 +730,7 @@ shmem_transport_swap(void *target, const void *source, void *dest, size_t len,
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
-    shmem_internal_assert(len <= sizeof(long double complex));
+    shmem_internal_assert(len <= sizeof(long double _Complex));
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
@@ -772,7 +771,7 @@ shmem_transport_cswap(void *target, const void *source, void *dest,
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
-    shmem_internal_assert(len <= sizeof(long double complex));
+    shmem_internal_assert(len <= sizeof(long double _Complex));
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
@@ -813,7 +812,7 @@ shmem_transport_mswap(void *target, const void *source, void *dest,
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
-    shmem_internal_assert(len <= sizeof(long double complex));
+    shmem_internal_assert(len <= sizeof(long double _Complex));
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();

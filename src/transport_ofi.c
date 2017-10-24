@@ -106,10 +106,10 @@ static inline void init_ofi_tables(void)
     SHMEM_Dtsize[FI_UINT64]              = sizeof(uint64_t);
     SHMEM_Dtsize[FI_FLOAT]               = sizeof(float);
     SHMEM_Dtsize[FI_DOUBLE]              = sizeof(double);
-    SHMEM_Dtsize[FI_FLOAT_COMPLEX]       = sizeof(float complex);
-    SHMEM_Dtsize[FI_DOUBLE_COMPLEX]      = sizeof(double complex);
+    SHMEM_Dtsize[FI_FLOAT_COMPLEX]       = sizeof(float _Complex);
+    SHMEM_Dtsize[FI_DOUBLE_COMPLEX]      = sizeof(double _Complex);
     SHMEM_Dtsize[FI_LONG_DOUBLE]         = sizeof(long double);
-    SHMEM_Dtsize[FI_LONG_DOUBLE_COMPLEX] = sizeof(long double complex);
+    SHMEM_Dtsize[FI_LONG_DOUBLE_COMPLEX] = sizeof(long double _Complex);
 
     SHMEM_DtName[FI_INT8]                = "int8";
     SHMEM_DtName[FI_UINT8]               = "uint8";
@@ -121,10 +121,10 @@ static inline void init_ofi_tables(void)
     SHMEM_DtName[FI_UINT64]              = "uint64";
     SHMEM_DtName[FI_FLOAT]               = "float";
     SHMEM_DtName[FI_DOUBLE]              = "double";
-    SHMEM_DtName[FI_FLOAT_COMPLEX]       = "float complex";
-    SHMEM_DtName[FI_DOUBLE_COMPLEX]      = "double complex";
+    SHMEM_DtName[FI_FLOAT_COMPLEX]       = "float _Complex";
+    SHMEM_DtName[FI_DOUBLE_COMPLEX]      = "double _Complex";
     SHMEM_DtName[FI_LONG_DOUBLE]         = "long double";
-    SHMEM_DtName[FI_LONG_DOUBLE_COMPLEX] = "long double complex";
+    SHMEM_DtName[FI_LONG_DOUBLE_COMPLEX] = "long double _Complex";
 
     SHMEM_OpName[FI_MIN]                 = "MIN";
     SHMEM_OpName[FI_MAX]                 = "MAX";

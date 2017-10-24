@@ -18,8 +18,8 @@ EXTRA_DIST = shmem.h4.in  \
              pshmem.h4.in \
              shmem.fh.in  \
              shmemx.fh.in \
-             shmem_c_func.m4 \
-             shmemx_c_func.m4
+             shmem_c_func.h4.in \
+             shmemx_c_func.h4.in
 
 mppdir = $(includedir)/mpp
 
@@ -47,5 +47,12 @@ endif
 
 SUFFIXES = .h4
 
-.h4.h: shmem_c_func.m4 shmemx_c_func.m4 $(top_srcdir)/bindings/shmem_bind_c11.m4 $(top_srcdir)/bindings/shmem_bind_c.m4
-	$(AM_V_GEN) $(M4) -I$(top_srcdir)/mpp -I$(top_srcdir)/bindings -I$(top_builddir)/bindings $< > $@
+BINDINGS_GEN = \
+            $(top_srcdir)/bindings/shmem_bind_c.m4 \
+            $(top_srcdir)/bindings/shmem_bind_c11.m4 \
+            $(top_srcdir)/bindings/shmem_bind_cxx.m4 \
+            $(top_builddir)/bindings/shmem_bind_c11_extras.m4 \
+            $(top_builddir)/bindings/shmem_bind_cxx_extras.m4
+
+.h4.h: shmem_c_func.h4 shmemx_c_func.h4 $(BINDINGS_GEN)
+	$(AM_V_GEN) $(M4) -I$(top_srcdir)/bindings -I$(top_builddir)/bindings $< > $@
