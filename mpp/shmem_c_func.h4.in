@@ -431,7 +431,7 @@ SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_alltoalls64(void *dest, const void *
 define(`SHMEM_C_WAIT',
 `SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_wait(volatile $2 *var, $2 value);')dnl
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_wait(volatile long *ivar, long cmp_value);
-SHMEM_BIND_C_SYNC(`SHMEM_C_WAIT')
+SHMEM_BIND_C_WAIT(`SHMEM_C_WAIT')
 
 define(`SHMEM_C_WAIT_UNTIL',
 `SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_wait_until(volatile $2 *var, shmem_cmp_t cmp, $2 value);')dnl

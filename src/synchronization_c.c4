@@ -51,7 +51,7 @@ include(shmem_bind_c.m4)dnl
 define(`SHMEM_PROF_DEF_WAIT',
 `#pragma weak shmem_$1_wait = pshmem_$1_wait
 #define shmem_$1_wait pshmem_$1_wait')dnl
-SHMEM_BIND_C_SYNC(`SHMEM_PROF_DEF_WAIT')
+SHMEM_BIND_C_WAIT(`SHMEM_PROF_DEF_WAIT')
 
 define(`SHMEM_PROF_DEF_WAIT_UNTIL',
 `#pragma weak shmem_$1_wait_until = pshmem_$1_wait_until
@@ -132,7 +132,7 @@ shmem_wait_until(volatile long *ivar, shmem_cmp_t cmp, long value)
         SHMEM_WAIT(var, value);                                                \
     }
 
-SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT')
+SHMEM_BIND_C_WAIT(`SHMEM_DEF_WAIT')
 
 #define SHMEM_DEF_WAIT_UNTIL(STYPE,TYPE)                                                       \
     void SHMEM_FUNCTION_ATTRIBUTES                                                             \

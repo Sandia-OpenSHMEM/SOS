@@ -68,6 +68,12 @@ $1(int64,      int64_t,            `SHM_INTERNAL_INT64')$2
 $1(uint32,     uint32_t,           `SHM_INTERNAL_UINT32')$2
 $1(uint64,     uint64_t,           `SHM_INTERNAL_UINT64')')dnl
 dnl
+define(`SHMEM_BIND_C_WAIT', dnl args: macro_name
+`$1(short,      short)
+$1(int,        int)
+$1(long,       long)
+$1(longlong,   long long)')dnl
+dnl
 define(`SHMEM_BIND_C_SYNC', dnl args: macro_name
 `$1(short,      short)
 $1(int,        int)
