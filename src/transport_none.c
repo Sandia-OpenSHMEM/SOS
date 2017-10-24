@@ -11,5 +11,4 @@
 
 #include "transport_none.h"
 
-void *SHMEMX_CTX_DEFAULT = NULL;
-void *SHMEMX_DOMAIN_DEFAULT = NULL;
+void *SHMEM_CTX_DEFAULT = NULL;
