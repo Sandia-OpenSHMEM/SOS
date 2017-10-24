@@ -99,7 +99,8 @@ check_PROGRAMS = \
 	zero_comm \
 	sync-size \
 	shmem_ctx_pipelined_reduce \
-	many-ctx
+	many-ctx \
+	shmem_test
 
 if ENABLE_PROFILING
 check_PROGRAMS += \
