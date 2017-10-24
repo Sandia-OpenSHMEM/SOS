@@ -40,14 +40,24 @@ long tasks_done = 0; /* Tasks done by this PE */
 long total_done = 0; /* Total tasks done by all PEs */
 
 int main(void) {
-    int tl, i;
+    int tl, i, ret;
     long ntasks = 1024;  /* Total tasks per PE */
 
     for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++)
         psync[i] = SHMEM_SYNC_VALUE;
 
-    shmem_init_thread(SHMEM_THREAD_MULTIPLE, &tl);
-    if (tl != SHMEM_THREAD_MULTIPLE) shmem_global_exit(1);
+    ret = shmem_init_thread(SHMEM_THREAD_MULTIPLE, &tl);
+
+    if (tl != SHMEM_THREAD_MULTIPLE || ret != 0) {
+        printf("Init failed (requested thread level %d, got %d, ret %d)\n",
+               SHMEM_THREAD_MULTIPLE, tl, ret);
+
+        if (ret == 0) {
+            shmem_global_exit(1);
+        } else {
+            return ret;
+        }
+    }
 
     int me = shmem_my_pe();
     int npes = shmem_n_pes();

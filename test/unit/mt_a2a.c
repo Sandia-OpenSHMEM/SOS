@@ -114,17 +114,21 @@ static void * thread_main(void *arg) {
 
 
 int main(int argc, char **argv) {
-    int tl, i;
+    int tl, i, ret;
     pthread_t threads[T];
     int       t_arg[T];
 
-    shmem_init_thread(SHMEM_THREAD_MULTIPLE, &tl);
+    ret = shmem_init_thread(SHMEM_THREAD_MULTIPLE, &tl);
 
-    /* If OpenSHMEM doesn't support multithreading, exit gracefully */
-    if (SHMEM_THREAD_MULTIPLE != tl) {
-        printf("Warning: Exiting because threading is disabled, tested nothing\n");
-        shmem_finalize();
-        return 0;
+    if (tl != SHMEM_THREAD_MULTIPLE || ret != 0) {
+        printf("Init failed (requested thread level %d, got %d, ret %d)\n",
+               SHMEM_THREAD_MULTIPLE, tl, ret);
+
+        if (ret == 0) {
+            shmem_global_exit(1);
+        } else {
+            return ret;
+        }
     }
 
     me = shmem_my_pe();
