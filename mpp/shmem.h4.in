@@ -86,7 +86,11 @@ extern "C" {
 
 /* Contexts */
 typedef void* shmem_ctx_t;
-extern shmem_ctx_t SHMEM_CTX_DEFAULT;
+#if SHMEM_HAVE_ATTRIBUTE_VISIBILITY == 1
+  __attribute__((visibility("default"))) extern shmem_ctx_t SHMEM_CTX_DEFAULT;
+#else
+  extern shmem_ctx_t SHMEM_CTX_DEFAULT;
+#endif
 #define SHMEM_CTX_PRIVATE       1
 #define SHMEM_CTX_SERIALIZED    2
 #define SHMEM_CTX_NOSTORE       4

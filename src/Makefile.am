@@ -95,6 +95,7 @@ endif
 if !USE_PORTALS4
 if !USE_OFI
 libsma_la_SOURCES += \
+	transport_none.c \
 	transport_none.h
 endif
 endif
