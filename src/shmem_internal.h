@@ -26,6 +26,7 @@
 #include "runtime.h"
 #include "config.h"
 #include "shmem_env.h"
+#include "shmem_decl.h"
 
 extern int shmem_internal_my_pe;
 extern int shmem_internal_num_pes;
@@ -403,7 +404,7 @@ extern shmem_internal_mutex_t shmem_internal_mutex_alloc;
 void shmem_internal_start_pes(int npes);
 void shmem_internal_init(int tl_requested, int *tl_provided);
 void shmem_internal_finalize(void);
-NORETURN_FN_SPEC void shmem_internal_global_exit(int status);
+void shmem_internal_global_exit(int status) SHMEM_ATTRIBUTE_NORETURN;
 char *shmem_internal_nodename(void);
 
 int shmem_internal_symmetric_init(void);

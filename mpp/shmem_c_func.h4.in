@@ -30,12 +30,14 @@ SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_n_pes(void);
 SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_my_pe(void);
 #ifdef __cplusplus
 #  if __cplusplus >= 201103L
-SHMEM_FUNCTION_ATTRIBUTES [[ noreturn ]] void SHPRE()shmem_global_exit(int status);
+[[noreturn]] void SHPRE()shmem_global_exit(int status) SHMEM_FUNCTION_ATTRIBUTES;
 #  else
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_global_exit(int status);
 #  endif
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+SHMEM_FUNCTION_ATTRIBUTES _Noreturn void SHPRE()shmem_global_exit(int status);
 #else
-SHMEM_FUNCTION_ATTRIBUTES @NORETURN_FN_SPEC@ void SHPRE()shmem_global_exit(int status);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_global_exit(int status);
 #endif
 
 SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_pe_accessible(int pe);
