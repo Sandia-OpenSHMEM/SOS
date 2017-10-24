@@ -431,17 +431,17 @@ shmem_transport_startup(void)
     shmem_transport_portals4_max_fetch_atomic_size = ni_limits.max_fetch_atomic_size;
     shmem_transport_portals4_max_msg_size = ni_limits.max_msg_size;
 
-    if (shmem_transport_portals4_max_volatile_size < sizeof(long double complex)) {
+    if (shmem_transport_portals4_max_volatile_size < sizeof(long double _Complex)) {
         RETURN_ERROR_MSG("Max volatile size found to be %lu, too small to continue\n",
                          (unsigned long) shmem_transport_portals4_max_volatile_size);
         goto cleanup;
     }
-    if (shmem_transport_portals4_max_atomic_size < sizeof(long double complex)) {
+    if (shmem_transport_portals4_max_atomic_size < sizeof(long double _Complex)) {
         RETURN_ERROR_MSG("Max atomic size found to be %lu, too small to continue\n",
                          (unsigned long) shmem_transport_portals4_max_atomic_size);
         goto cleanup;
     }
-    if (shmem_transport_portals4_max_fetch_atomic_size < sizeof(long double complex)) {
+    if (shmem_transport_portals4_max_fetch_atomic_size < sizeof(long double _Complex)) {
         RETURN_ERROR_MSG("Max fetch atomic size found to be %lu, too small to continue\n",
                          (unsigned long) shmem_transport_portals4_max_fetch_atomic_size);
         goto cleanup;

@@ -30,6 +30,6 @@ include(shmem_bind_c.m4)dnl
 typedef char * shmemx_ct_t;
 
 define(`SHPRE', `')dnl
-include(shmemx_c_func.m4)dnl
+include(shmemx_c_func.h4)dnl
 
 #endif /* SHMEMX_H */

@@ -16,11 +16,12 @@
 #ifndef SHMEM_INTERNAL_RUNTIME_H
 #define SHMEM_INTERNAL_RUNTIME_H
 
+#include "config.h"
 #include "shmem_decl.h"
 
 int shmem_runtime_init(void);
 int shmem_runtime_fini(void);
-void shmem_runtime_abort(int exit_code, const char msg[]) SHMEM_ATTRIBUTE_NORETURN ;
+NORETURN_FN_SPEC void shmem_runtime_abort(int exit_code, const char msg[]) SHMEM_ATTRIBUTE_NORETURN ;
 
 int shmem_runtime_get_rank(void);
 int shmem_runtime_get_size(void);
