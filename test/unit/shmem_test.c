@@ -52,7 +52,7 @@ int main(void)
 
   /* Put mype+1 to every other PE */
   for (int i = 0; i < npes; i++)
-      shmem_p(&wait_vars[mype], mype+1, i);
+      shmem_long_p(&wait_vars[mype], mype+1, i);
 
   int nrecv = 0, errors = 0;
 
