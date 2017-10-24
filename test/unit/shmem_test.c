@@ -37,7 +37,7 @@
 int wait_any(long *ivar, int count, shmem_cmp_t cmp, long value)
 {
   int idx = 0;
-  while (!shmem_test(&ivar[idx], cmp, value))
+  while (!shmem_long_test(&ivar[idx], cmp, value))
     idx = (idx + 1) % count;
   return idx;
 }
