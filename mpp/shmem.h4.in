@@ -288,6 +288,21 @@ define(`SHMEM_CXX_ATOMIC_SET',
 }')dnl
 SHMEM_CXX_DEFINE_FOR_EXTENDED_AMO(`SHMEM_CXX_ATOMIC_SET')
 
+/* Point-to-point synchronization */
+
+define(`SHMEM_CXX_WAIT_UNTIL',
+`static inline void shmem_wait_until($2 *ivar, shmem_cmp_t cmp, $2 cmp_value) {
+    shmem_$1_wait_until(ivar, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL')
+
+define(`SHMEM_CXX_TEST',
+`static inline int shmem_test($2 *ivar, shmem_cmp_t cmp, $2 cmp_value) {
+    return shmem_$1_test(ivar, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST')
+
+
 /* C11 Generic Macros */
 #elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
 #include <stdint.h>
@@ -480,6 +495,21 @@ define(`SHMEM_C11_GEN_FETCH_XOR', `               $2*: shmem_$1_atomic_fetch_xor
     _Generic(&*(dest), \
 SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_C11_GEN_FETCH_XOR', `, \') \
             )(dest, value, pe)
+
+/* Point-to-point synchronization */
+
+define(`SHMEM_C11_GEN_WAIT_UNTIL', `               $2*: shmem_$1_wait_until')dnl
+#define shmem_wait_until(ivar, cmp, cmp_value) \
+    _Generic(&*(ivar), \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_WAIT_UNTIL', `, \') \
+            )(ivar, cmp, cmp_value)
+
+define(`SHMEM_C11_GEN_TEST', `               $2*: shmem_$1_test')dnl
+#define shmem_test(ivar, cmp, cmp_value) \
+    _Generic(&*(ivar), \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_TEST', `, \') \
+            )(ivar, cmp, cmp_value)
+
 
 #endif /* C11 */
 

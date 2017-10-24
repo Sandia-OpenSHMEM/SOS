@@ -51,12 +51,17 @@ include(shmem_bind_c.m4)dnl
 define(`SHMEM_PROF_DEF_WAIT',
 `#pragma weak shmem_$1_wait = pshmem_$1_wait
 #define shmem_$1_wait pshmem_$1_wait')dnl
-SHMEM_BIND_C_WAIT(`SHMEM_PROF_DEF_WAIT')
+SHMEM_BIND_C_SYNC(`SHMEM_PROF_DEF_WAIT')
 
 define(`SHMEM_PROF_DEF_WAIT_UNTIL',
 `#pragma weak shmem_$1_wait_until = pshmem_$1_wait_until
 #define shmem_$1_wait_until pshmem_$1_wait_until')dnl
-SHMEM_BIND_C_WAIT(`SHMEM_PROF_DEF_WAIT_UNTIL')
+SHMEM_BIND_C_SYNC(`SHMEM_PROF_DEF_WAIT_UNTIL')
+
+define(`SHMEM_PROF_DEF_TEST',
+`#pragma weak shmem_$1_test = pshmem_$1_test
+#define shmem_$1_test pshmem_$1_test')dnl
+SHMEM_BIND_C_SYNC(`SHMEM_PROF_DEF_TEST')
 
 #endif /* ENABLE_PROFILING */
 
@@ -127,7 +132,7 @@ shmem_wait_until(volatile long *ivar, shmem_cmp_t cmp, long value)
         SHMEM_WAIT(var, value);                                                \
     }
 
-SHMEM_BIND_C_WAIT(`SHMEM_DEF_WAIT')
+SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT')
 
 #define SHMEM_DEF_WAIT_UNTIL(STYPE,TYPE)                                                       \
     void SHMEM_FUNCTION_ATTRIBUTES                                                             \
@@ -140,4 +145,22 @@ SHMEM_BIND_C_WAIT(`SHMEM_DEF_WAIT')
         SHMEM_WAIT_UNTIL(var, cond, value);                                                    \
     }
 
-SHMEM_BIND_C_WAIT(`SHMEM_DEF_WAIT_UNTIL')
+SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL')
+
+#define SHMEM_DEF_TEST(STYPE,TYPE)                                                             \
+    int SHMEM_FUNCTION_ATTRIBUTES                                                              \
+    shmem_##STYPE##_test(TYPE *var, shmem_cmp_t cond, TYPE value)                              \
+    {                                                                                          \
+        int cmpret;                                                                            \
+        SHMEM_ERR_CHECK_INITIALIZED();                                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(var, sizeof(TYPE));                                          \
+        SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
+                                                                                               \
+        COMP(cond, *(var), value, cmpret);                                                     \
+        if (cmpret) {                                                                          \
+            /* TODO: Memory ordering */                                                        \
+        }                                                                                      \
+        return cmpret;                                                                         \
+    }
+
+SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST')

@@ -55,13 +55,19 @@ $1(uint,       unsigned int,       `SHM_INTERNAL_UINT')$2
 $1(ulong,      unsigned long,      `SHM_INTERNAL_ULONG')$2
 $1(ulonglong,  unsigned long long, `SHM_INTERNAL_ULONG_LONG')')dnl
 dnl
-define(`SHMEM_BIND_CXX_WAIT', dnl args: macro_name
-`$1(short,      short)
-$1(int,        int)
-$1(long,       long)
-$1(longlong,   long long)')dnl
+define(`SHMEM_BIND_CXX_SYNC', dnl args: macro_name
+SHMEM_BIND_CXX_SYNC_EXTRAS($1,$2)dnl
+`$1(short,      short)$2
+$1(int,        int)$2
+$1(long,       long)$2
+$1(longlong,   long long)$2
+$1(ushort,     unsigned short)$2
+$1(uint,       unsigned int)$2
+$1(ulong,      unsigned long)$2
+$1(ulonglong,  unsigned long long)')dnl
 dnl
 define(`SHMEM_CXX_DEFINE_FOR_RMA', `SHMEM_BIND_CXX_RMA(`$1')')dnl
 define(`SHMEM_CXX_DEFINE_FOR_AMO', `SHMEM_BIND_CXX_AMO(`$1')')dnl
 define(`SHMEM_CXX_DEFINE_FOR_EXTENDED_AMO', `SHMEM_BIND_CXX_EXTENDED_AMO(`$1')')dnl
 define(`SHMEM_CXX_DEFINE_FOR_BITWISE_AMO', `SHMEM_BIND_CXX_BITWISE_AMO(`$1')')dnl
+define(`SHMEM_CXX_DEFINE_FOR_SYNC', `SHMEM_BIND_CXX_BITWISE_AMO(`$1')')dnl
