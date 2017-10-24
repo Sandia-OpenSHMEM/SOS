@@ -142,12 +142,21 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    int err;
+    int err, tl, ret;
     int errors = 0;
-    int tl = SHMEM_THREAD_MULTIPLE, tl_provided;
 
-    shmem_init_thread(tl,&tl_provided);
-    CHECK_ASSERT(tl == tl_provided);
+    ret = shmem_init_thread(SHMEM_THREAD_MULTIPLE, &tl);
+
+    if (tl != SHMEM_THREAD_MULTIPLE || ret != 0) {
+        printf("Init failed (requested thread level %d, got %d, ret %d)\n",
+               SHMEM_THREAD_MULTIPLE, tl, ret);
+
+        if (ret == 0) {
+            shmem_global_exit(1);
+        } else {
+            return ret;
+        }
+    }
 
     n_pes = shmem_n_pes();
     me = shmem_my_pe();

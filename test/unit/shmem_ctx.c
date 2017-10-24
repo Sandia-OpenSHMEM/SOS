@@ -1,3 +1,34 @@
+/*
+ *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  This software is available to you under the BSD license below:
+ *
+ *      Redistribution and use in source and binary forms, with or
+ *      without modification, are permitted provided that the following
+ *      conditions are met:
+ *
+ *      - Redistributions of source code must retain the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer.
+ *
+ *      - Redistributions in binary form must reproduce the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer in the documentation and/or other materials
+ *        provided with the distribution.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * This test is derived from an example provided in the OpenSHMEM 1.4
+ * specification.  Additional copyrights may apply.
+ *
+ */
+
 #include <stdio.h>
 #include <shmem.h>
 
@@ -9,14 +40,24 @@ long tasks_done = 0; /* Tasks done by this PE */
 long total_done = 0; /* Total tasks done by all PEs */
 
 int main(void) {
-    int tl, i;
+    int tl, i, ret;
     long ntasks = 1024;  /* Total tasks per PE */
 
     for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++)
         psync[i] = SHMEM_SYNC_VALUE;
 
-    shmem_init_thread(SHMEM_THREAD_MULTIPLE, &tl);
-    if (tl != SHMEM_THREAD_MULTIPLE) shmem_global_exit(1);
+    ret = shmem_init_thread(SHMEM_THREAD_MULTIPLE, &tl);
+
+    if (tl != SHMEM_THREAD_MULTIPLE || ret != 0) {
+        printf("Init failed (requested thread level %d, got %d, ret %d)\n",
+               SHMEM_THREAD_MULTIPLE, tl, ret);
+
+        if (ret == 0) {
+            shmem_global_exit(1);
+        } else {
+            return ret;
+        }
+    }
 
     int me = shmem_my_pe();
     int npes = shmem_n_pes();

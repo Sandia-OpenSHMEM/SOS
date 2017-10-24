@@ -80,15 +80,18 @@ main(int argc, char* argv[])
         source[i] = i+1;
     }
 
-    int tl_expected = SHMEM_THREAD_MULTIPLE;
     int tl;
+    int ret = shmem_init_thread(SHMEM_THREAD_MULTIPLE, &tl);
 
-    shmem_init_thread(tl_expected,&tl);
+    if (tl != SHMEM_THREAD_MULTIPLE || ret != 0) {
+        printf("Init failed (requested thread level %d, got %d, ret %d)\n",
+               SHMEM_THREAD_MULTIPLE, tl, ret);
 
-    if (tl_expected != tl) {
-        printf("Could not initialize with desired thread level (%d "
-               "requested, got %d)\n", tl_expected, tl);
-        return 0;
+        if (ret == 0) {
+            shmem_global_exit(1);
+        } else {
+            return ret;
+        }
     }
 
     if (shmem_n_pes() == 1) {

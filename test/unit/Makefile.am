@@ -146,7 +146,8 @@ if HAVE_PTHREADS
 check_PROGRAMS += \
     mt_a2a \
     threading \
-    web
+    web \
+    thread_wait
 endif
 
 if HAVE_OPENMP
@@ -184,6 +185,10 @@ threading_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 web_LDFLAGS = $(PTHREAD_LIBS)
 web_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 web_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
+
+thread_wait_LDFLAGS = $(PTHREAD_LIBS)
+thread_wait_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
+thread_wait_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 shmem_ctx_CFLAGS = $(AM_OPENMP_CFLAGS)
 
