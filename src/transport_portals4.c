@@ -126,6 +126,8 @@ shmem_internal_mutex_t shmem_internal_mutex_ptl4_event_slots;
 shmem_internal_mutex_t shmem_internal_mutex_ptl4_nb_fence;
 #endif
 
+shmem_transport_ctx_t shmem_transport_ctx_default;
+
 static
 void
 init_bounce_buffer(shmem_free_list_item_t *item)

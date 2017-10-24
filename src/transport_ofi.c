@@ -89,6 +89,9 @@ fi_addr_t                       *addr_table;
 static char                     myephostname[EPHOSTNAMELEN];
 #endif
 
+
+shmem_transport_ctx_t shmem_transport_ctx_default;
+
 size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 
 static char * SHMEM_DtName[FI_DATATYPE_LAST];

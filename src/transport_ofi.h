@@ -214,7 +214,7 @@ struct shmem_transport_ctx_t {
 };
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
-shmem_transport_ctx_t shmem_transport_ctx_default;
+extern shmem_transport_ctx_t shmem_transport_ctx_default;
 
 extern shmem_free_list_t *shmem_transport_ofi_bounce_buffers;
 
