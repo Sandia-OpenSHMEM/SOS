@@ -160,7 +160,7 @@ struct shmem_transport_ct_t {
 typedef struct shmem_transport_ct_t shmem_transport_ct_t;
 
 /* TODO populate this context struct: */
-struct shmem_transport_ctx_t { int dummy };
+struct shmem_transport_ctx_t { int dummy; };
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
 extern shmem_transport_ctx_t shmem_transport_ctx_default;

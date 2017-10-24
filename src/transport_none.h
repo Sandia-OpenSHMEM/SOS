@@ -55,7 +55,7 @@ typedef int shm_internal_datatype_t;
 typedef int shm_internal_op_t;
 typedef int shmem_transport_ct_t;
 
-struct shmem_transport_ctx_t{ int dummy };
+struct shmem_transport_ctx_t{ int dummy; };
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
 

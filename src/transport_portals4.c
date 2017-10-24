@@ -127,6 +127,7 @@ shmem_internal_mutex_t shmem_internal_mutex_ptl4_nb_fence;
 #endif
 
 shmem_transport_ctx_t shmem_transport_ctx_default;
+void *SHMEM_CTX_DEFAULT = &shmem_transport_ctx_default;
 
 static
 void
