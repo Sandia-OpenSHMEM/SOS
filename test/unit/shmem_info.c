@@ -47,6 +47,7 @@ main(int argc, char* argv[])
     assert(minor_ver == SHMEM_MINOR_VERSION);
     assert(major_ver >= 1);
     assert(minor_ver >= 0);
+    assert(strcmp(name, SHMEM_VENDOR_STRING) == 0);
 
     printf("%d: OpenSHMEM %d.%d -- \"%s\"\n", shmem_my_pe(), major_ver,
            minor_ver, name);
