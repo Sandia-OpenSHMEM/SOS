@@ -58,7 +58,6 @@ typedef int shmem_transport_ct_t;
 struct shmem_transport_ctx_t{ int dummy; };
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
-extern void * SHMEM_CTX_DEFAULT;
 
 static inline
 int
