@@ -308,196 +308,211 @@ SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST')
 
 /* C11 Generic Macros */
 #elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
-#include <stdint.h>
+
+/* These are expressions with no effect that cause the compiler to perform type
+ * processing on the argument, e.g. to process int[5] down to int *.  */
+
+#define SHMEM_C11_TYPE_EVAL_PTR(arg) &*(arg)
+#define SHMEM_C11_TYPE_EVAL_PTR_OR_SCALAR(arg) (arg)+0
+
+/* Helper routines to pick off specific arguments from a varags list. */
+#define SHMEM_C11_ARG0(...) SHMEM_C11_ARG0_HELPER(__VA_ARGS__, sentinel)
+#define SHMEM_C11_ARG0_HELPER(first, ...) first
+
+#define SHMEM_C11_ARG1(first, ...) SHMEM_C11_ARG1_HELPER(__VA_ARGS__, sentinel)
+#define SHMEM_C11_ARG1_HELPER(second, ...) second
+
+#define SHMEM_C11_ARG2(first, second, ...) SHMEM_C11_ARG2_HELPER(__VA_ARGS__, sentinel)
+#define SHMEM_C11_ARG2_HELPER(third, ...) third
 
 /* Blocking block, scalar, and block-strided put */
 define(`SHMEM_C11_GEN_PUT', `               $2*: shmem_$1_put')dnl
-#define shmem_put(dest, source, nelems, pe) \
-    _Generic(&*(dest), \
+#define shmem_put(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_PUT', `, \') \
-            )(dest, source, nelems, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_P', `               $2*: shmem_$1_p')dnl
-#define shmem_p(dest, source, pe) \
-    _Generic(&*(dest), \
+#define shmem_p(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_P', `, \') \
-            )(dest, source, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_IPUT', `               $2*: shmem_$1_iput')dnl
-#define shmem_iput(dest, source, dst, sst, nelems, pe) \
-    _Generic(&*(dest), \
+#define shmem_iput(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_IPUT', `, \') \
-            )(dest, source, dst, sst, nelems, pe)
+            )(__VA_ARGS__)
 
 /* Blocking block, scalar, and block-strided get */
 define(`SHMEM_C11_GEN_GET', `               $2*: shmem_$1_get')dnl
-#define shmem_get(dest, source, nelems, pe) \
-    _Generic(&*(dest), \
+#define shmem_get(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_GET', `, \') \
-            )(dest, source, nelems, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_G', `               $2*: shmem_$1_g')dnl
-#define shmem_g(dest, pe) \
-    _Generic(&*(dest), \
+#define shmem_g(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_G', `, \') \
-            )(dest, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_IGET', `               $2*: shmem_$1_iget')dnl
-#define shmem_iget(dest, source, dst, sst, nelems, pe) \
-    _Generic(&*(dest), \
+#define shmem_iget(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_IGET', `, \') \
-            )(dest, source, dst, sst, nelems, pe)
+            )(__VA_ARGS__)
 
 /* Nonblocking block put/get */
 define(`SHMEM_C11_GEN_PUT_NBI', `               $2*: shmem_$1_put_nbi')dnl
-#define shmem_put_nbi(dest, source, nelems, pe) \
-    _Generic(&*(dest), \
+#define shmem_put_nbi(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_PUT_NBI', `, \') \
-            )(dest, source, nelems, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_GET_NBI', `               $2*: shmem_$1_get_nbi')dnl
-#define shmem_get_nbi(dest, source, nelems, pe) \
-    _Generic(&*(dest), \
+#define shmem_get_nbi(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_GET_NBI', `, \') \
-            )(dest, source, nelems, pe)
+            )(__VA_ARGS__)
 
 /* Atomics with standard AMO types */
 define(`SHMEM_C11_GEN_ADD', `               $2*: shmem_$1_add')dnl
-#define shmem_add(dest, value, pe) \
-    _Generic(&*(dest), \
+#define shmem_add(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_ADD', `, \') \
-            )(dest, value, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_ATOMIC_ADD', `         $2*: shmem_$1_atomic_add')dnl
-#define shmem_atomic_add(dest, value, pe) \
-    _Generic(&*(dest), \
+#define shmem_atomic_add(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_ATOMIC_ADD', `, \') \
-            )(dest, value, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_CSWAP', `               $2*: shmem_$1_cswap')dnl
-#define shmem_cswap(dest, cond, value, pe) \
-    _Generic(&*(dest), \
+#define shmem_cswap(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_CSWAP', `, \') \
-            )(dest, cond, value, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_ATOMIC_COMPARE_SWAP', ` $2*: shmem_$1_atomic_compare_swap')dnl
-#define shmem_atomic_compare_swap(dest, cond, value, pe) \
-    _Generic(&*(dest), \
+#define shmem_atomic_compare_swap(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_ATOMIC_COMPARE_SWAP', `, \') \
-            )(dest, cond, value, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_FINC', `               $2*: shmem_$1_finc')dnl
-#define shmem_finc(dest, pe) \
-    _Generic(&*(dest), \
+#define shmem_finc(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_FINC', `, \') \
-            )(dest, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_ATOMIC_FETCH_INC', `        $2*: shmem_$1_atomic_fetch_inc')dnl
-#define shmem_atomic_fetch_inc(dest, pe) \
-    _Generic(&*(dest), \
+#define shmem_atomic_fetch_inc(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_ATOMIC_FETCH_INC', `, \') \
-            )(dest, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_INC', `               $2*: shmem_$1_inc')dnl
-#define shmem_inc(dest, pe) \
-    _Generic(&*(dest), \
+#define shmem_inc(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_INC', `, \') \
-            )(dest, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_ATOMIC_INC', `        $2*: shmem_$1_atomic_inc')dnl
-#define shmem_atomic_inc(dest, pe) \
-    _Generic(&*(dest), \
+#define shmem_atomic_inc(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_ATOMIC_INC', `, \') \
-            )(dest, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_FADD', `               $2*: shmem_$1_fadd')dnl
-#define shmem_fadd(dest, value, pe) \
-    _Generic(&*(dest), \
+#define shmem_fadd(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_FADD', `, \') \
-            )(dest, value, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_ATOMIC_FETCH_ADD', `        $2*: shmem_$1_atomic_fetch_add')dnl
-#define shmem_atomic_fetch_add(dest, value, pe) \
-    _Generic(&*(dest), \
+#define shmem_atomic_fetch_add(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_ATOMIC_FETCH_ADD', `, \') \
-            )(dest, value, pe)
+            )(__VA_ARGS__)
 
 /* Atomics with extended AMO types */
 define(`SHMEM_C11_GEN_SWAP', `               $2*: shmem_$1_swap')dnl
-#define shmem_swap(dest, value, pe) \
-    _Generic(&*(dest), \
+#define shmem_swap(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_SWAP', `, \') \
-            )(dest, value, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_ATOMIC_SWAP', `        $2*: shmem_$1_atomic_swap')dnl
-#define shmem_atomic_swap(dest, value, pe) \
-    _Generic(&*(dest), \
+#define shmem_atomic_swap(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_ATOMIC_SWAP', `, \') \
-            )(dest, value, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_FETCH', `               $2*: shmem_$1_fetch')dnl
 define(`SHMEM_C11_GEN_ATOMIC_FETCH', `        $2*: shmem_$1_atomic_fetch')dnl
 define(`SHMEM_C11_GEN_FETCH_CONST', `               const $2*: shmem_$1_fetch')dnl
 define(`SHMEM_C11_GEN_ATOMIC_FETCH_CONST', `        const $2*: shmem_$1_atomic_fetch')dnl
-#define shmem_fetch(source, pe) \
-    _Generic(&*(source), \
+#define shmem_fetch(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_FETCH', `, \'), \
 SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_FETCH_CONST', `, \') \
-            )(source, pe)
-#define shmem_atomic_fetch(source, pe) \
-    _Generic(&*(source), \
+            )(__VA_ARGS__)
+#define shmem_atomic_fetch(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_ATOMIC_FETCH', `, \'), \
 SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_ATOMIC_FETCH_CONST', `, \') \
-            )(source, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_SET', `               $2*: shmem_$1_set')dnl
-#define shmem_set(dest, value, pe) \
-    _Generic(&*(dest), \
+#define shmem_set(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_SET', `, \') \
-            )(dest, value, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_ATOMIC_SET', `        $2*: shmem_$1_atomic_set')dnl
-#define shmem_atomic_set(dest, value, pe) \
-    _Generic(&*(dest), \
+#define shmem_atomic_set(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_ATOMIC_SET', `, \') \
-            )(dest, value, pe)
+            )(__VA_ARGS__)
 
 /* Atomics with bitwise AMO types */
 define(`SHMEM_C11_GEN_AND', `               $2*: shmem_$1_atomic_and')dnl
-#define shmem_atomic_and(dest, value, pe) \
-    _Generic(&*(dest), \
+#define shmem_atomic_and(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_C11_GEN_AND', `, \') \
-            )(dest, value, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_OR', `               $2*: shmem_$1_atomic_or')dnl
-#define shmem_atomic_or(dest, value, pe) \
-    _Generic(&*(dest), \
+#define shmem_atomic_or(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_C11_GEN_OR', `, \') \
-            )(dest, value, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_XOR', `               $2*: shmem_$1_atomic_xor')dnl
-#define shmem_atomic_xor(dest, value, pe) \
-    _Generic(&*(dest), \
+#define shmem_atomic_xor(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_C11_GEN_XOR', `, \') \
-            )(dest, value, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_FETCH_AND', `               $2*: shmem_$1_atomic_fetch_and')dnl
-#define shmem_atomic_fetch_and(dest, value, pe) \
-    _Generic(&*(dest), \
+#define shmem_atomic_fetch_and(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_C11_GEN_FETCH_AND', `, \') \
-            )(dest, value, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_FETCH_OR', `               $2*: shmem_$1_atomic_fetch_or')dnl
-#define shmem_atomic_fetch_or(dest, value, pe) \
-    _Generic(&*(dest), \
+#define shmem_atomic_fetch_or(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_C11_GEN_FETCH_OR', `, \') \
-            )(dest, value, pe)
+            )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_FETCH_XOR', `               $2*: shmem_$1_atomic_fetch_xor')dnl
-#define shmem_atomic_fetch_xor(dest, value, pe) \
-    _Generic(&*(dest), \
+#define shmem_atomic_fetch_xor(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_C11_GEN_FETCH_XOR', `, \') \
-            )(dest, value, pe)
+            )(__VA_ARGS__)
 
 /* Point-to-point synchronization */
 
