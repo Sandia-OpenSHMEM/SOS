@@ -164,6 +164,12 @@ AC_ARG_ENABLE([mr-scalable],
 AS_IF([test "$enable_mr_scalable" != "no"],
       [AC_DEFINE([ENABLE_MR_SCALABLE], [1], [If defined, the OFI transport will use FI_MR_SCALABLE.  Otherwise, FI_MR_BASIC is used.])])
 
+AC_ARG_ENABLE([mr-rma-event],
+    [AC_HELP_STRING([--enable-mr-rma-event],
+                    [Enable FI_MR_RMA_EVENT memory registration support in OFI transport.  Required by some providers. (default: disabled)])])
+AS_IF([test "$enable_mr_rma_event" = "yes"],
+      [AC_DEFINE([ENABLE_MR_RMA_EVENT], [1], [If defined, the OFI transport will enable support for FI_MR_RMA_EVENT.])])
+
 AC_ARG_ENABLE([av-map],
     [AC_HELP_STRING([--enable-av-map],
                     [enable av-map instead of av-table in the OFI transport. (default: disabled)])])
