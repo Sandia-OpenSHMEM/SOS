@@ -79,13 +79,16 @@ extern "C" {
 #define SHMEM_THREAD_SERIALIZED 2
 #define SHMEM_THREAD_MULTIPLE   3
 
+/* Contexts */
+typedef void* shmem_ctx_t;
+#if SHMEM_HAVE_ATTRIBUTE_VISIBILITY == 1
+  __attribute__((visibility("default"))) extern shmem_ctx_t SHMEM_CTX_DEFAULT;
+#else
+  extern shmem_ctx_t SHMEM_CTX_DEFAULT;
+#endif
 #define SHMEM_CTX_PRIVATE       1
 #define SHMEM_CTX_SERIALIZED    2
 #define SHMEM_CTX_NOSTORE       4
-
-/* Temporary placeholder to avoid undefined warnings: */
-#define SHMEM_CTX_DEFAULT NULL
-typedef void *shmem_ctx_t;
 
 define(`SHPRE', `')dnl
 include(shmem_c_func.h4)dnl

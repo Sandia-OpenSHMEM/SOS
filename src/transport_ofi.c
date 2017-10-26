@@ -89,6 +89,10 @@ fi_addr_t                       *addr_table;
 static char                     myephostname[EPHOSTNAMELEN];
 #endif
 
+
+shmem_transport_ctx_t shmem_transport_ctx_default;
+void *SHMEM_CTX_DEFAULT = &shmem_transport_ctx_default;
+
 size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 
 static char * SHMEM_DtName[FI_DATATYPE_LAST];
@@ -1214,7 +1218,7 @@ int shmem_transport_startup(void)
 int shmem_transport_fini(void)
 {
     /* Wait for acks before shutdown */
-    shmem_transport_quiet();
+    shmem_transport_quiet(&shmem_transport_ctx_default);
 
     if (shmem_transport_ofi_epfd &&
         fi_close(&shmem_transport_ofi_epfd->fid)) {
