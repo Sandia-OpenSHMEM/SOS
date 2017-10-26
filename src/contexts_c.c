@@ -18,6 +18,7 @@
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
 #include "shmem_internal.h"
+#include "transport.h"
 
 #ifdef ENABLE_PROFILING
 #include "pshmem.h"
@@ -34,7 +35,10 @@ SHMEM_FUNCTION_ATTRIBUTES int
 shmem_ctx_create(long options, shmem_ctx_t *ctx)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_NULL(ctx, 1);
+
+    shmem_transport_ctx_create((shmem_transport_ctx_t **) ctx);
+
+    SHMEM_ERR_CHECK_NULL(ctx, 0);
 
     return 0;
 }
