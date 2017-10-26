@@ -163,6 +163,7 @@ struct shmem_transport_ctx_t { int dummy; };
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
 extern shmem_transport_ctx_t shmem_transport_ctx_default;
+void shmem_transport_ctx_create(shmem_transport_ctx_t **ctx);
 
 /*
  * PORTALS4_GET_REMOTE_ACCESS is used to get the correct PT and offset

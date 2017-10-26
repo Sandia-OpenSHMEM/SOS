@@ -129,6 +129,10 @@ shmem_internal_mutex_t shmem_internal_mutex_ptl4_nb_fence;
 shmem_transport_ctx_t shmem_transport_ctx_default;
 void *SHMEM_CTX_DEFAULT = &shmem_transport_ctx_default;
 
+void shmem_transport_ctx_create(shmem_transport_ctx_t **ctx) {
+  return;
+}
+
 static
 void
 init_bounce_buffer(shmem_free_list_item_t *item)
