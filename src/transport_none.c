@@ -10,5 +10,6 @@
  */
 
 #include "transport_none.h"
+#include "shmem.h"
 
 void *SHMEM_CTX_DEFAULT = NULL;
