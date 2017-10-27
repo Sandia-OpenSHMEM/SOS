@@ -191,7 +191,7 @@ static inline
 void
 shmem_internal_get_wait(shmem_ctx_t ctx)
 {
-    shmem_transport_get_wait(ctx);
+    shmem_transport_get_wait((shmem_transport_ctx_t *)ctx);
     /* on-node is always blocking, so this is a no-op for them */
 }
 
