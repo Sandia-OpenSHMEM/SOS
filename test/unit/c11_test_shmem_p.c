@@ -38,12 +38,15 @@
 
 #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
 
-#define TEST_SHMEM_P(TYPE)                              \
+#define TEST_SHMEM_P(USE_CTX, TYPE)                     \
   do {                                                  \
     static TYPE remote;                                 \
     const int mype = shmem_my_pe();                     \
     const int npes = shmem_n_pes();                     \
-    shmem_p(&remote, (TYPE)mype, (mype + 1) % npes);    \
+    if (USE_CTX)                                        \
+        shmem_p(SHMEM_CTX_DEFAULT, &remote, (TYPE)mype, (mype + 1) % npes); \
+    else                                                \
+        shmem_p(&remote, (TYPE)mype, (mype + 1) % npes);\
     shmem_barrier_all();                                \
     if (remote != (TYPE)((mype + npes - 1) % npes)) {   \
       fprintf(stderr,                                   \
@@ -54,7 +57,7 @@
   } while (false)
 
 #else
-#define TEST_SHMEM_P(TYPE)
+#define TEST_SHMEM_P(USE_CTX, TYPE)
 
 #endif
 
@@ -62,30 +65,55 @@ int main(int argc, char* argv[]) {
   shmem_init();
 
   int rc = EXIT_SUCCESS;
-  TEST_SHMEM_P(float);
-  TEST_SHMEM_P(double);
-  TEST_SHMEM_P(long double);
-  TEST_SHMEM_P(char);
-  TEST_SHMEM_P(signed char);
-  TEST_SHMEM_P(short);
-  TEST_SHMEM_P(int);
-  TEST_SHMEM_P(long);
-  TEST_SHMEM_P(long long);
-  TEST_SHMEM_P(unsigned char);
-  TEST_SHMEM_P(unsigned short);
-  TEST_SHMEM_P(unsigned int);
-  TEST_SHMEM_P(unsigned long);
-  TEST_SHMEM_P(unsigned long long);
-  TEST_SHMEM_P(int8_t);
-  TEST_SHMEM_P(int16_t);
-  TEST_SHMEM_P(int32_t);
-  TEST_SHMEM_P(int64_t);
-  TEST_SHMEM_P(uint8_t);
-  TEST_SHMEM_P(uint16_t);
-  TEST_SHMEM_P(uint32_t);
-  TEST_SHMEM_P(uint64_t);
-  TEST_SHMEM_P(size_t);
-  TEST_SHMEM_P(ptrdiff_t);
+  TEST_SHMEM_P(0, float);
+  TEST_SHMEM_P(0, double);
+  TEST_SHMEM_P(0, long double);
+  TEST_SHMEM_P(0, char);
+  TEST_SHMEM_P(0, signed char);
+  TEST_SHMEM_P(0, short);
+  TEST_SHMEM_P(0, int);
+  TEST_SHMEM_P(0, long);
+  TEST_SHMEM_P(0, long long);
+  TEST_SHMEM_P(0, unsigned char);
+  TEST_SHMEM_P(0, unsigned short);
+  TEST_SHMEM_P(0, unsigned int);
+  TEST_SHMEM_P(0, unsigned long);
+  TEST_SHMEM_P(0, unsigned long long);
+  TEST_SHMEM_P(0, int8_t);
+  TEST_SHMEM_P(0, int16_t);
+  TEST_SHMEM_P(0, int32_t);
+  TEST_SHMEM_P(0, int64_t);
+  TEST_SHMEM_P(0, uint8_t);
+  TEST_SHMEM_P(0, uint16_t);
+  TEST_SHMEM_P(0, uint32_t);
+  TEST_SHMEM_P(0, uint64_t);
+  TEST_SHMEM_P(0, size_t);
+  TEST_SHMEM_P(0, ptrdiff_t);
+
+  TEST_SHMEM_P(1, float);
+  TEST_SHMEM_P(1, double);
+  TEST_SHMEM_P(1, long double);
+  TEST_SHMEM_P(1, char);
+  TEST_SHMEM_P(1, signed char);
+  TEST_SHMEM_P(1, short);
+  TEST_SHMEM_P(1, int);
+  TEST_SHMEM_P(1, long);
+  TEST_SHMEM_P(1, long long);
+  TEST_SHMEM_P(1, unsigned char);
+  TEST_SHMEM_P(1, unsigned short);
+  TEST_SHMEM_P(1, unsigned int);
+  TEST_SHMEM_P(1, unsigned long);
+  TEST_SHMEM_P(1, unsigned long long);
+  TEST_SHMEM_P(1, int8_t);
+  TEST_SHMEM_P(1, int16_t);
+  TEST_SHMEM_P(1, int32_t);
+  TEST_SHMEM_P(1, int64_t);
+  TEST_SHMEM_P(1, uint8_t);
+  TEST_SHMEM_P(1, uint16_t);
+  TEST_SHMEM_P(1, uint32_t);
+  TEST_SHMEM_P(1, uint64_t);
+  TEST_SHMEM_P(1, size_t);
+  TEST_SHMEM_P(1, ptrdiff_t);
 
   shmem_finalize();
   return rc;

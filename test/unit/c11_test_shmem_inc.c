@@ -38,13 +38,30 @@
 
 #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
 
-#define TEST_SHMEM_INC(TYPE)                                            \
+enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC };
+
+#define TEST_SHMEM_INC(OP, TYPE)                                        \
   do {                                                                  \
     static TYPE remote = (TYPE)0;                                       \
     const int mype = shmem_my_pe();                                     \
     const int npes = shmem_n_pes();                                     \
+    remote = (TYPE)0;                                                   \
+    shmem_barrier_all();                                                \
     for (int i = 0; i < npes; i++)                                      \
-      shmem_inc(&remote, i);                                            \
+      switch (OP) {                                                     \
+        case INC:                                                       \
+          shmem_inc(&remote, i);                                        \
+          break;                                                        \
+        case ATOMIC_INC:                                                \
+          shmem_atomic_inc(&remote, i);                                 \
+          break;                                                        \
+        case CTX_ATOMIC_INC:                                            \
+          shmem_atomic_inc(SHMEM_CTX_DEFAULT, &remote, i);              \
+          break;                                                        \
+        default:                                                        \
+          printf("Invalid operation (%d)\n", OP);                       \
+          shmem_global_exit(1);                                         \
+      }                                                                 \
     shmem_barrier_all();                                                \
     if (remote != (TYPE)npes) {                                         \
       fprintf(stderr,                                                   \
@@ -55,7 +72,7 @@
   } while (false)
 
 #else
-#define TEST_SHMEM_INC(TYPE)
+#define TEST_SHMEM_INC(OP, TYPE)
 
 #endif
 
@@ -63,18 +80,44 @@ int main(int argc, char* argv[]) {
   shmem_init();
 
   int rc = EXIT_SUCCESS;
-  TEST_SHMEM_INC(int);
-  TEST_SHMEM_INC(long);
-  TEST_SHMEM_INC(long long);
-  TEST_SHMEM_INC(unsigned int);
-  TEST_SHMEM_INC(unsigned long);
-  TEST_SHMEM_INC(unsigned long long);
-  TEST_SHMEM_INC(int32_t);
-  TEST_SHMEM_INC(int64_t);
-  TEST_SHMEM_INC(uint32_t);
-  TEST_SHMEM_INC(uint64_t);
-  TEST_SHMEM_INC(size_t);
-  TEST_SHMEM_INC(ptrdiff_t);
+  TEST_SHMEM_INC(INC, int);
+  TEST_SHMEM_INC(INC, long);
+  TEST_SHMEM_INC(INC, long long);
+  TEST_SHMEM_INC(INC, unsigned int);
+  TEST_SHMEM_INC(INC, unsigned long);
+  TEST_SHMEM_INC(INC, unsigned long long);
+  TEST_SHMEM_INC(INC, int32_t);
+  TEST_SHMEM_INC(INC, int64_t);
+  TEST_SHMEM_INC(INC, uint32_t);
+  TEST_SHMEM_INC(INC, uint64_t);
+  TEST_SHMEM_INC(INC, size_t);
+  TEST_SHMEM_INC(INC, ptrdiff_t);
+
+  TEST_SHMEM_INC(ATOMIC_INC, int);
+  TEST_SHMEM_INC(ATOMIC_INC, long);
+  TEST_SHMEM_INC(ATOMIC_INC, long long);
+  TEST_SHMEM_INC(ATOMIC_INC, unsigned int);
+  TEST_SHMEM_INC(ATOMIC_INC, unsigned long);
+  TEST_SHMEM_INC(ATOMIC_INC, unsigned long long);
+  TEST_SHMEM_INC(ATOMIC_INC, int32_t);
+  TEST_SHMEM_INC(ATOMIC_INC, int64_t);
+  TEST_SHMEM_INC(ATOMIC_INC, uint32_t);
+  TEST_SHMEM_INC(ATOMIC_INC, uint64_t);
+  TEST_SHMEM_INC(ATOMIC_INC, size_t);
+  TEST_SHMEM_INC(ATOMIC_INC, ptrdiff_t);
+
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, int);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, long);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, long long);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, unsigned int);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, unsigned long);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, unsigned long long);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, int32_t);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, int64_t);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, uint32_t);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, uint64_t);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, size_t);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, ptrdiff_t);
 
   shmem_finalize();
   return rc;

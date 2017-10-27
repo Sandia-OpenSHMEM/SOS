@@ -38,24 +38,41 @@
 
 #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
 
-#define TEST_SHMEM_ADD(TYPE)                                            \
+enum op { ADD = 0, ATOMIC_ADD, CTX_ATOMIC_ADD };
+
+#define TEST_SHMEM_ADD(OP, TYPE)                                        \
   do {                                                                  \
-    static TYPE remote = (TYPE)0;                                       \
+    static TYPE remote;                                                 \
     const int mype = shmem_my_pe();                                     \
     const int npes = shmem_n_pes();                                     \
+    remote = (TYPE)0;                                                   \
+    shmem_barrier_all();                                                \
     for (int i = 0; i < npes; i++)                                      \
-      shmem_add(&remote, (TYPE)(mype + 1), i);                          \
+      switch (OP) {                                                     \
+        case ADD:                                                       \
+          shmem_add(&remote, (TYPE)(mype + 1), i);                      \
+          break;                                                        \
+        case ATOMIC_ADD:                                                \
+          shmem_atomic_add(&remote, (TYPE)(mype + 1), i);               \
+          break;                                                        \
+        case CTX_ATOMIC_ADD:                                            \
+          shmem_atomic_add(SHMEM_CTX_DEFAULT, &remote, (TYPE)(mype + 1), i); \
+          break;                                                        \
+        default:                                                        \
+          printf("Invalid operation (%d)\n", OP);                       \
+          shmem_global_exit(1);                                         \
+      }                                                                 \
     shmem_barrier_all();                                                \
     if (remote != (TYPE)(npes * (npes + 1) / 2)) {                      \
       fprintf(stderr,                                                   \
-              "PE %i observed error with shmem_add(%s, ...)\n",         \
+              "PE %i observed error with shmem_atomic_add(%s, ...)\n",  \
               mype, #TYPE);                                             \
       rc = EXIT_FAILURE;                                                \
     }                                                                   \
   } while (false)
 
 #else
-#define TEST_SHMEM_ADD(TYPE)
+#define TEST_SHMEM_ADD(OP, TYPE)
 
 #endif
 
@@ -63,18 +80,44 @@ int main(int argc, char* argv[]) {
   shmem_init();
 
   int rc = EXIT_SUCCESS;
-  TEST_SHMEM_ADD(int);
-  TEST_SHMEM_ADD(long);
-  TEST_SHMEM_ADD(long long);
-  TEST_SHMEM_ADD(unsigned int);
-  TEST_SHMEM_ADD(unsigned long);
-  TEST_SHMEM_ADD(unsigned long long);
-  TEST_SHMEM_ADD(int32_t);
-  TEST_SHMEM_ADD(int64_t);
-  TEST_SHMEM_ADD(uint32_t);
-  TEST_SHMEM_ADD(uint64_t);
-  TEST_SHMEM_ADD(size_t);
-  TEST_SHMEM_ADD(ptrdiff_t);
+  TEST_SHMEM_ADD(ADD, int);
+  TEST_SHMEM_ADD(ADD, long);
+  TEST_SHMEM_ADD(ADD, long long);
+  TEST_SHMEM_ADD(ADD, unsigned int);
+  TEST_SHMEM_ADD(ADD, unsigned long);
+  TEST_SHMEM_ADD(ADD, unsigned long long);
+  TEST_SHMEM_ADD(ADD, int32_t);
+  TEST_SHMEM_ADD(ADD, int64_t);
+  TEST_SHMEM_ADD(ADD, uint32_t);
+  TEST_SHMEM_ADD(ADD, uint64_t);
+  TEST_SHMEM_ADD(ADD, size_t);
+  TEST_SHMEM_ADD(ADD, ptrdiff_t);
+
+  TEST_SHMEM_ADD(ATOMIC_ADD, int);
+  TEST_SHMEM_ADD(ATOMIC_ADD, long);
+  TEST_SHMEM_ADD(ATOMIC_ADD, long long);
+  TEST_SHMEM_ADD(ATOMIC_ADD, unsigned int);
+  TEST_SHMEM_ADD(ATOMIC_ADD, unsigned long);
+  TEST_SHMEM_ADD(ATOMIC_ADD, unsigned long long);
+  TEST_SHMEM_ADD(ATOMIC_ADD, int32_t);
+  TEST_SHMEM_ADD(ATOMIC_ADD, int64_t);
+  TEST_SHMEM_ADD(ATOMIC_ADD, uint32_t);
+  TEST_SHMEM_ADD(ATOMIC_ADD, uint64_t);
+  TEST_SHMEM_ADD(ATOMIC_ADD, size_t);
+  TEST_SHMEM_ADD(ATOMIC_ADD, ptrdiff_t);
+
+  TEST_SHMEM_ADD(CTX_ATOMIC_ADD, int);
+  TEST_SHMEM_ADD(CTX_ATOMIC_ADD, long);
+  TEST_SHMEM_ADD(CTX_ATOMIC_ADD, long long);
+  TEST_SHMEM_ADD(CTX_ATOMIC_ADD, unsigned int);
+  TEST_SHMEM_ADD(CTX_ATOMIC_ADD, unsigned long);
+  TEST_SHMEM_ADD(CTX_ATOMIC_ADD, unsigned long long);
+  TEST_SHMEM_ADD(CTX_ATOMIC_ADD, int32_t);
+  TEST_SHMEM_ADD(CTX_ATOMIC_ADD, int64_t);
+  TEST_SHMEM_ADD(CTX_ATOMIC_ADD, uint32_t);
+  TEST_SHMEM_ADD(CTX_ATOMIC_ADD, uint64_t);
+  TEST_SHMEM_ADD(CTX_ATOMIC_ADD, size_t);
+  TEST_SHMEM_ADD(CTX_ATOMIC_ADD, ptrdiff_t);
 
   shmem_finalize();
   return rc;
