@@ -26,7 +26,7 @@
  *
  */
 
-/* Each PE sends a message to every other PE.  PEs wait for all messages to
+/* Each PE sends a message to every PE.  PEs wait for all messages to
  * arrive using shmem_test to poll the array. */
 
 #include <stdio.h>
@@ -50,7 +50,7 @@ int main(void)
 
   long *wait_vars = shmem_calloc(npes, sizeof(long));
 
-  /* Put mype+1 to every other PE */
+  /* Put mype+1 to every PE */
   for (int i = 0; i < npes; i++)
       shmem_long_p(&wait_vars[mype], mype+1, i);
 
