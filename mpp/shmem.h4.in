@@ -651,19 +651,19 @@ SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_CTX_C11_GEN_FETCH_XOR', `, \'), \
 SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_C11_GEN_FETCH_XOR', `, \') \
     )(__VA_ARGS__)
 
+
 /* Point-to-point synchronization */
-
-define(`SHMEM_C11_GEN_WAIT_UNTIL', `               $2*: shmem_$1_wait_until')dnl
-#define shmem_wait_until(ivar, cmp, cmp_value) \
-    _Generic(&*(ivar), \
+define(`SHMEM_C11_GEN_WAIT_UNTIL', `        $2*: shmem_$1_wait_until')dnl
+#define shmem_wait_until(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_WAIT_UNTIL', `, \') \
-            )(ivar, cmp, cmp_value)
+    )(__VA_ARGS__)
 
-define(`SHMEM_C11_GEN_TEST', `               $2*: shmem_$1_test')dnl
-#define shmem_test(ivar, cmp, cmp_value) \
-    _Generic(&*(ivar), \
+define(`SHMEM_C11_GEN_TEST', `        $2*: shmem_$1_test')dnl
+#define shmem_test(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_TEST', `, \') \
-            )(ivar, cmp, cmp_value)
+    )(__VA_ARGS__)
 
 
 #endif /* C11 */
