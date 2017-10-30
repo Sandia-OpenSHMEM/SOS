@@ -76,7 +76,6 @@ check_PROGRAMS = \
 	c11_test_shmem_atomic_or \
 	c11_test_shmem_atomic_and \
 	c11_test_shmem_atomic_xor \
-	c11_test_shmem_atomic_fetch_or \
 	c11_test_shmem_atomic_fetch_xor \
 	c11_test_shmem_wait_until \
 	c11_test_shmem_test \
