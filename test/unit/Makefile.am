@@ -65,13 +65,13 @@ check_PROGRAMS = \
 	set_fetch \
 	alltoall \
 	alltoalls \
-	c11_test_shmem_fetch \
 	c11_test_shmem_g \
 	c11_test_shmem_get \
 	c11_test_shmem_inc \
 	c11_test_shmem_p \
 	c11_test_shmem_put \
-	c11_test_shmem_set \
+	c11_test_shmem_atomic_fetch \
+	c11_test_shmem_atomic_set \
 	c11_test_shmem_atomic_add \
 	c11_test_shmem_atomic_and \
 	c11_test_shmem_atomic_or \
