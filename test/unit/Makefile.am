@@ -111,23 +111,22 @@ endif
 
 if HAVE_CXX
 check_PROGRAMS += \
-    cxx_test_shmem_add \
-    cxx_test_shmem_fetch \
-    cxx_test_shmem_g \
-    cxx_test_shmem_get \
-    cxx_test_shmem_inc \
-    cxx_test_shmem_p \
-    cxx_test_shmem_put \
-    cxx_test_shmem_set \
-    cxx_test_shmem_complex \
-    cxx_test_shmem_atomic_or \
-    cxx_test_shmem_atomic_and \
-    cxx_test_shmem_atomic_xor \
-    cxx_test_shmem_atomic_fetch_or \
-    cxx_test_shmem_atomic_fetch_and \
-    cxx_test_shmem_atomic_fetch_xor \
-    cxx_test_shmem_wait_until \
-    cxx_test_shmem_test
+	cxx_test_shmem_complex \
+	cxx_test_shmem_g \
+	cxx_test_shmem_get \
+	cxx_test_shmem_p \
+	cxx_test_shmem_put \
+	cxx_test_shmem_atomic_fetch \
+	cxx_test_shmem_atomic_set \
+	cxx_test_shmem_atomic_add \
+	cxx_test_shmem_atomic_inc \
+	cxx_test_shmem_atomic_and \
+	cxx_test_shmem_atomic_or \
+	cxx_test_shmem_atomic_xor \
+	cxx_test_shmem_atomic_swap \
+	cxx_test_shmem_atomic_cswap \
+	cxx_test_shmem_wait_until \
+	cxx_test_shmem_test
 endif
 
 if HAVE_FORTRAN
@@ -199,20 +198,19 @@ shmem_info_f_SOURCES = shmem_info_f.f90
 set_fetch_f_SOURCES = set_fetch_f.f90
 
 # C++ Tests
-cxx_test_shmem_add_SOURCES = cxx_test_shmem_add.cpp
+cxx_test_shmem_complex_SOURCES = cxx_test_shmem_complex.cpp
 cxx_test_shmem_g_SOURCES = cxx_test_shmem_g.cpp
 cxx_test_shmem_get_SOURCES = cxx_test_shmem_get.cpp
-cxx_test_shmem_inc_SOURCES = cxx_test_shmem_inc.cpp
 cxx_test_shmem_p_SOURCES = cxx_test_shmem_p.cpp
 cxx_test_shmem_put_SOURCES = cxx_test_shmem_put.cpp
-cxx_test_shmem_fetch_SOURCES = cxx_test_shmem_fetch.cpp
-cxx_test_shmem_set_SOURCES = cxx_test_shmem_set.cpp
-cxx_test_shmem_complex_SOURCES = cxx_test_shmem_complex.cpp
-cxx_test_shmem_atomic_or_SOURCES = cxx_test_shmem_atomic_or.cpp
+cxx_test_shmem_atomic_fetch_SOURCES = cxx_test_shmem_atomic_fetch.cpp
+cxx_test_shmem_atomic_set_SOURCES = cxx_test_shmem_atomic_set.cpp
+cxx_test_shmem_atomic_add_SOURCES = cxx_test_shmem_atomic_add.cpp
+cxx_test_shmem_atomic_inc_SOURCES = cxx_test_shmem_atomic_inc.cpp
 cxx_test_shmem_atomic_and_SOURCES = cxx_test_shmem_atomic_and.cpp
+cxx_test_shmem_atomic_or_SOURCES = cxx_test_shmem_atomic_or.cpp
 cxx_test_shmem_atomic_xor_SOURCES = cxx_test_shmem_atomic_xor.cpp
-cxx_test_shmem_atomic_fetch_or_SOURCES = cxx_test_shmem_atomic_fetch_or.cpp
-cxx_test_shmem_atomic_fetch_and_SOURCES = cxx_test_shmem_atomic_fetch_and.cpp
-cxx_test_shmem_atomic_fetch_xor_SOURCES = cxx_test_shmem_atomic_fetch_xor.cpp
+cxx_test_shmem_atomic_swap_SOURCES = cxx_test_shmem_atomic_swap.cpp
+cxx_test_shmem_atomic_cswap_SOURCES = cxx_test_shmem_atomic_cswap.cpp
 cxx_test_shmem_wait_until_SOURCES = cxx_test_shmem_wait_until.cpp
 cxx_test_shmem_test_SOURCES = cxx_test_shmem_test.cpp

@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <shmem.h>
 
-#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 
 enum op { XOR = 0, CTX_XOR, FETCH_XOR, CTX_FETCH_XOR };
 

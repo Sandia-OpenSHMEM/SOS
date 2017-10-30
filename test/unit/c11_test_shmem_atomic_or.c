@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <shmem.h>
 
-#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 
 enum op { OR = 0, CTX_OR, FETCH_OR, CTX_FETCH_OR };
 
@@ -88,7 +88,7 @@ enum op { OR = 0, CTX_OR, FETCH_OR, CTX_FETCH_OR };
   } while (false)
 
 #else
-#define TEST_SHMEM_OR(TYPE)
+#define TEST_SHMEM_OR(OP, TYPE)
 
 #endif
 

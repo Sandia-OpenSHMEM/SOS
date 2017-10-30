@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <shmem.h>
 
-#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 
 enum op { AND = 0, CTX_AND, FETCH_AND, CTX_FETCH_AND };
 
