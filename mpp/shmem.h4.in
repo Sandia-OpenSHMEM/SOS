@@ -103,12 +103,19 @@ define(`SHMEM_CXX_PUT',
 `static inline void shmem_put($2* dest, const $2* source,
                              size_t nelems, int pe) {
     shmem_$1_put(dest, source, nelems, pe);
+}
+static inline void shmem_put(shmem_ctx_t ctx, $2* dest, const $2* source,
+                             size_t nelems, int pe) {
+    shmem_ctx_$1_put(ctx, dest, source, nelems, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_PUT')
 
 define(`SHMEM_CXX_P',
 `static inline void shmem_p($2* dest, $2 value, int pe) {
     shmem_$1_p(dest, value, pe);
+}
+static inline void shmem_p(shmem_ctx_t ctx, $2* dest, $2 value, int pe) {
+    shmem_ctx_$1_p(ctx, dest, value, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_P')
 
@@ -117,6 +124,11 @@ define(`SHMEM_CXX_IPUT',
                               ptrdiff_t tst, ptrdiff_t sst,
                               size_t len, int pe) {
     shmem_$1_iput(target, source, tst, sst, len, pe);
+}
+static inline void shmem_iput(shmem_ctx_t ctx, $2 *target, const $2 *source,
+                              ptrdiff_t tst, ptrdiff_t sst,
+                              size_t len, int pe) {
+    shmem_ctx_$1_iput(ctx, target, source, tst, sst, len, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_IPUT')
 
@@ -125,12 +137,19 @@ define(`SHMEM_CXX_GET',
 `static inline void shmem_get($2* dest, const $2* source,
                              size_t nelems, int pe) {
     shmem_$1_get(dest, source, nelems, pe);
+}
+static inline void shmem_get(shmem_ctx_t ctx, $2* dest, const $2* source,
+                             size_t nelems, int pe) {
+    shmem_ctx_$1_get(ctx, dest, source, nelems, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_GET')
 
 define(`SHMEM_CXX_G',
 `static inline $2 shmem_g(const $2* src, int pe) {
     return shmem_$1_g(src, pe);
+}
+static inline $2 shmem_g(shmem_ctx_t ctx, const $2* src, int pe) {
+    return shmem_ctx_$1_g(ctx, src, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_G')
 
@@ -139,6 +158,11 @@ define(`SHMEM_CXX_IGET',
                               ptrdiff_t tst, ptrdiff_t sst,
                               size_t len, int pe) {
     shmem_$1_iget(target, source, tst, sst, len, pe);
+}
+static inline void shmem_iget(shmem_ctx_t ctx, $2 *target, const $2 *source,
+                              ptrdiff_t tst, ptrdiff_t sst,
+                              size_t len, int pe) {
+    shmem_ctx_$1_iget(ctx, target, source, tst, sst, len, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_IGET')
 
@@ -147,6 +171,10 @@ define(`SHMEM_CXX_PUT_NBI',
 `static inline void shmem_put_nbi($2* dest, const $2* source,
                                  size_t nelems, int pe) {
     shmem_$1_put_nbi(dest, source, nelems, pe);
+}
+static inline void shmem_put_nbi(shmem_ctx_t ctx, $2* dest, const $2* source,
+                                 size_t nelems, int pe) {
+    shmem_ctx_$1_put_nbi(ctx, dest, source, nelems, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_PUT_NBI')
 
@@ -154,6 +182,10 @@ define(`SHMEM_CXX_GET_NBI',
 `static inline void shmem_get_nbi($2* dest, const $2* source,
                                  size_t nelems, int pe) {
     shmem_$1_get_nbi(dest, source, nelems, pe);
+}
+static inline void shmem_get_nbi(shmem_ctx_t ctx, $2* dest, const $2* source,
+                                 size_t nelems, int pe) {
+    shmem_ctx_$1_get_nbi(ctx, dest, source, nelems, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_GET_NBI')
 
@@ -168,6 +200,9 @@ SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_ADD')
 define(`SHMEM_CXX_ATOMIC_ADD',
 `static inline void shmem_atomic_add($2 *target, $2 value, int pe) {
     shmem_$1_atomic_add(target, value, pe);
+}
+static inline void shmem_atomic_add(shmem_ctx_t ctx, $2 *target, $2 value, int pe) {
+    shmem_ctx_$1_atomic_add(ctx, target, value, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_ATOMIC_ADD')
 
@@ -180,6 +215,9 @@ SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_CSWAP')
 define(`SHMEM_CXX_ATOMIC_COMPARE_SWAP',
 `static inline $2 shmem_atomic_compare_swap($2 *target, $2 cond, $2 value, int pe) {
     return shmem_$1_atomic_compare_swap(target, cond, value, pe);
+}
+static inline $2 shmem_atomic_compare_swap(shmem_ctx_t ctx, $2 *target, $2 cond, $2 value, int pe) {
+    return shmem_ctx_$1_atomic_compare_swap(ctx, target, cond, value, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_ATOMIC_COMPARE_SWAP')
 
@@ -192,6 +230,9 @@ SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_FINC')
 define(`SHMEM_CXX_ATOMIC_FETCH_INC',
 `static inline $2 shmem_atomic_fetch_inc($2 *target, int pe) {
     return shmem_$1_atomic_fetch_inc(target, pe);
+}
+static inline $2 shmem_atomic_fetch_inc(shmem_ctx_t ctx, $2 *target, int pe) {
+    return shmem_ctx_$1_atomic_fetch_inc(ctx, target, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_ATOMIC_FETCH_INC')
 
@@ -204,6 +245,9 @@ SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_INC')
 define(`SHMEM_CXX_ATOMIC_INC',
 `static inline void shmem_atomic_inc($2 *target, int pe) {
     shmem_$1_atomic_inc(target, pe);
+}
+static inline void shmem_atomic_inc(shmem_ctx_t ctx, $2 *target, int pe) {
+    shmem_ctx_$1_atomic_inc(ctx, target, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_ATOMIC_INC')
 
@@ -216,42 +260,63 @@ SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_FADD')
 define(`SHMEM_CXX_ATOMIC_FETCH_ADD',
 `static inline $2 shmem_atomic_fetch_add($2 *target, $2 value, int pe) {
     return shmem_$1_atomic_fetch_add(target, value, pe);
+}
+static inline $2 shmem_atomic_fetch_add(shmem_ctx_t ctx, $2 *target, $2 value, int pe) {
+    return shmem_ctx_$1_atomic_fetch_add(ctx, target, value, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_ATOMIC_FETCH_ADD')
 
 define(`SHMEM_CXX_ATOMIC_AND',
 `static inline void shmem_atomic_and($2 *dest, $2 value, int pe) {
     shmem_$1_atomic_and(dest, value, pe);
+}
+static inline void shmem_atomic_and(shmem_ctx_t ctx, $2 *dest, $2 value, int pe) {
+    shmem_ctx_$1_atomic_and(ctx, dest, value, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_AND')
 
 define(`SHMEM_CXX_ATOMIC_OR',
 `static inline void shmem_atomic_or($2 *dest, $2 value, int pe) {
     shmem_$1_atomic_or(dest, value, pe);
+}
+static inline void shmem_atomic_or(shmem_ctx_t ctx, $2 *dest, $2 value, int pe) {
+    shmem_ctx_$1_atomic_or(ctx, dest, value, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_OR')
 
 define(`SHMEM_CXX_ATOMIC_XOR',
 `static inline void shmem_atomic_xor($2 *dest, $2 value, int pe) {
     shmem_$1_atomic_xor(dest, value, pe);
+}
+static inline void shmem_atomic_xor(shmem_ctx_t ctx, $2 *dest, $2 value, int pe) {
+    shmem_ctx_$1_atomic_xor(ctx, dest, value, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_XOR')
 
 define(`SHMEM_CXX_ATOMIC_FETCH_AND',
 `static inline $2 shmem_atomic_fetch_and($2 *dest, $2 value, int pe) {
     return shmem_$1_atomic_fetch_and(dest, value, pe);
+}
+static inline $2 shmem_atomic_fetch_and(shmem_ctx_t ctx, $2 *dest, $2 value, int pe) {
+    return shmem_ctx_$1_atomic_fetch_and(ctx, dest, value, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_FETCH_AND')
 
 define(`SHMEM_CXX_ATOMIC_FETCH_OR',
 `static inline $2 shmem_atomic_fetch_or($2 *dest, $2 value, int pe) {
     return shmem_$1_atomic_fetch_or(dest, value, pe);
+}
+static inline $2 shmem_atomic_fetch_or(shmem_ctx_t ctx, $2 *dest, $2 value, int pe) {
+    return shmem_ctx_$1_atomic_fetch_or(ctx, dest, value, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_FETCH_OR')
 
 define(`SHMEM_CXX_ATOMIC_FETCH_XOR',
 `static inline $2 shmem_atomic_fetch_xor($2 *dest, $2 value, int pe) {
     return shmem_$1_atomic_fetch_xor(dest, value, pe);
+}
+static inline $2 shmem_atomic_fetch_xor(shmem_ctx_t ctx, $2 *dest, $2 value, int pe) {
+    return shmem_ctx_$1_atomic_fetch_xor(ctx, dest, value, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_FETCH_XOR')
 
@@ -265,6 +330,9 @@ SHMEM_CXX_DEFINE_FOR_EXTENDED_AMO(`SHMEM_CXX_SWAP')
 define(`SHMEM_CXX_ATOMIC_SWAP',
 `static inline $2 shmem_atomic_swap($2 *target, $2 value, int pe) {
     return shmem_$1_atomic_swap(target, value, pe);
+}
+static inline $2 shmem_atomic_swap(shmem_ctx_t ctx, $2 *target, $2 value, int pe) {
+    return shmem_ctx_$1_atomic_swap(ctx, target, value, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_EXTENDED_AMO(`SHMEM_CXX_ATOMIC_SWAP')
 
@@ -277,6 +345,9 @@ SHMEM_CXX_DEFINE_FOR_EXTENDED_AMO(`SHMEM_CXX_FETCH')
 define(`SHMEM_CXX_ATOMIC_FETCH',
 `static inline $2 shmem_atomic_fetch(const $2 *target, int pe) {
     return shmem_$1_atomic_fetch(target, pe);
+}
+static inline $2 shmem_atomic_fetch(shmem_ctx_t ctx, const $2 *target, int pe) {
+    return shmem_ctx_$1_atomic_fetch(ctx, target, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_EXTENDED_AMO(`SHMEM_CXX_ATOMIC_FETCH')
 
@@ -289,6 +360,9 @@ SHMEM_CXX_DEFINE_FOR_EXTENDED_AMO(`SHMEM_CXX_SET')
 define(`SHMEM_CXX_ATOMIC_SET',
 `static inline void shmem_atomic_set($2 *target, $2 value, int pe) {
     shmem_$1_atomic_set(target, value, pe);
+}
+static inline void shmem_atomic_set(shmem_ctx_t ctx, $2 *target, $2 value, int pe) {
+    shmem_ctx_$1_atomic_set(ctx, target, value, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_EXTENDED_AMO(`SHMEM_CXX_ATOMIC_SET')
 
