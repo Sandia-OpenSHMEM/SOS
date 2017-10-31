@@ -86,8 +86,7 @@ static char                     myephostname[EPHOSTNAMELEN];
 shmem_internal_mutex_t          shmem_transport_ofi_lock;
 #endif
 
-struct fabric_info shmem_ofi_cq_info = {0};
-struct fabric_info shmem_ofi_cntr_info = {0};
+struct fabric_info shmem_transport_ofi_info = {0};
 
 static shmem_transport_ctx_t** shmem_transport_ofi_contexts;
 static size_t shmem_transport_ofi_num_ctx = 0;
@@ -1129,7 +1128,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
         cntr_attr.wait_obj = FI_WAIT_UNSPEC;
     }
 
-    struct fabric_info* info = &shmem_ofi_cntr_info;
+    struct fabric_info* info = &shmem_transport_ofi_info;
     info->p_info->ep_attr->tx_ctx_cnt = FI_SHARED_CONTEXT;
     info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | /*SEND ONLY */
         FI_ATOMICS; /* request atomics capability */
@@ -1144,9 +1143,8 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     shmem_internal_atomic_write(&ep->pending_put_counter, 0);
     shmem_internal_atomic_write(&ep->pending_get_counter, 0);
 
-
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
-                       &ctx->endpoint.put_cntrfd, NULL);
+                       &ep->put_cntrfd, NULL);
     if (ret!=0) {
         RAISE_ERROR_MSG("context cntr_open failed (%s)\n", fi_strerror(errno));
         return ret;
@@ -1178,41 +1176,36 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 int shmem_transport_init(void)
 {
     int ret = 0;
-    {
-    struct fabric_info info = {0};
 
-    info.npes      = shmem_runtime_get_size();
+    shmem_transport_ofi_info.npes      = shmem_runtime_get_size();
 
     if (shmem_internal_params.OFI_PROVIDER_provided)
-        info.prov_name = shmem_internal_params.OFI_PROVIDER;
+        shmem_transport_ofi_info.prov_name = shmem_internal_params.OFI_PROVIDER;
     if (shmem_internal_params.OFI_USE_PROVIDER_provided)
-        info.prov_name = shmem_internal_params.OFI_USE_PROVIDER;
+        shmem_transport_ofi_info.prov_name = shmem_internal_params.OFI_USE_PROVIDER;
     else
-        info.prov_name = NULL;
+        shmem_transport_ofi_info.prov_name = NULL;
 
     if (shmem_internal_params.OFI_FABRIC_provided)
-        info.fabric_name = shmem_internal_params.OFI_FABRIC;
+        shmem_transport_ofi_info.fabric_name = shmem_internal_params.OFI_FABRIC;
     else
-        info.fabric_name = NULL;
+        shmem_transport_ofi_info.fabric_name = NULL;
 
     if (shmem_internal_params.OFI_DOMAIN_provided)
-        info.domain_name = shmem_internal_params.OFI_DOMAIN;
+        shmem_transport_ofi_info.domain_name = shmem_internal_params.OFI_DOMAIN;
     else
-        info.domain_name = NULL;
-    shmem_ofi_cq_info = info;
-    shmem_ofi_cntr_info = info;
-    }
+        shmem_transport_ofi_info.domain_name = NULL;
 
 
-    ret = query_for_fabric(&shmem_ofi_cq_info);
+    ret = query_for_fabric(&shmem_transport_ofi_info);
     if(ret!=0)
         return ret;
 
-    ret = query_for_fabric(&shmem_ofi_cntr_info);
+    ret = query_for_fabric(&shmem_transport_ofi_info);
     if (ret!=0)
         return ret;
 
-    ret = allocate_fabric_resources(&shmem_ofi_cq_info);
+    ret = allocate_fabric_resources(&shmem_transport_ofi_info);
     if(ret!=0)
         return ret;
 
@@ -1223,7 +1216,7 @@ int shmem_transport_init(void)
 
     /* The current bounce buffering implementation is only compatible with
      * providers that don't require FI_CONTEXT */
-    if (shmem_ofi_cq_info.p_info->mode & FI_CONTEXT) {
+    if (shmem_transport_ofi_info.p_info->mode & FI_CONTEXT) {
         if (shmem_internal_my_pe == 0 && shmem_internal_params.BOUNCE_SIZE > 0) {
             DEBUG_STR("OFI provider requires FI_CONTEXT; disabling bounce buffering");
         }
@@ -1244,7 +1237,7 @@ int shmem_transport_init(void)
     //if (ret!=0)
     //    return ret;
 
-    ret = allocate_endpoints(&shmem_transport_ctx_default, &shmem_ofi_cq_info);
+    ret = allocate_endpoints(&shmem_transport_ctx_default, &shmem_transport_ofi_info);
     if (ret!=0)
         return ret;
 
@@ -1268,12 +1261,9 @@ int shmem_transport_init(void)
     if (ret!=0)
         return ret;
 
-    ret = publish_av_info(&shmem_ofi_cq_info);
+    ret = publish_av_info(&shmem_transport_ofi_info);
     if (ret!=0)
         return ret;
-
-    //fi_freeinfo(shmem_ofi_cq_info.fabrics);
-    //fi_freeinfo(shmem_ofi_cntr_info.fabrics);
 
     shmem_internal_atomic_write(&shmem_transport_ctx_default.endpoint.pending_put_counter, 0);
     shmem_internal_atomic_write(&shmem_transport_ctx_default.endpoint.pending_get_counter, 0);
@@ -1464,8 +1454,7 @@ int shmem_transport_fini(void)
     free(addr_table);
 #endif
 
-    fi_freeinfo(shmem_ofi_cq_info.fabrics);
-    fi_freeinfo(shmem_ofi_cntr_info.fabrics);
+    fi_freeinfo(shmem_transport_ofi_info.fabrics);
 
     return 0;
 }
