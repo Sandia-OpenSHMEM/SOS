@@ -39,7 +39,7 @@
 
 
 void SHMEM_FUNCTION_ATTRIBUTES
-shmem_clear_lock(volatile long *lockp)
+shmem_clear_lock(long *lockp)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_SYMMETRIC(lockp, sizeof(long));
@@ -49,7 +49,7 @@ shmem_clear_lock(volatile long *lockp)
 
 
 void SHMEM_FUNCTION_ATTRIBUTES
-shmem_set_lock(volatile long *lockp)
+shmem_set_lock(long *lockp)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_SYMMETRIC(lockp, sizeof(long));
@@ -59,7 +59,7 @@ shmem_set_lock(volatile long *lockp)
 
 
 int SHMEM_FUNCTION_ATTRIBUTES
-shmem_test_lock(volatile long *lockp)
+shmem_test_lock(long *lockp)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_SYMMETRIC(lockp, sizeof(long));
