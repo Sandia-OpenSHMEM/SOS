@@ -1376,6 +1376,7 @@ int shmem_transport_fini(void)
     }
 
     //shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
+    shmem_transport_quiet(&shmem_transport_ctx_default);
 
     if (shmem_transport_ctx_default.endpoint.ep &&
         fi_close(&shmem_transport_ctx_default.endpoint.ep->fid)) {
