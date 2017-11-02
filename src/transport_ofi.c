@@ -495,8 +495,6 @@ int allocate_recv_cntr_mr(void)
             flags |= FI_RMA_EVENT;
 #endif /* ENABLE_MR_RMA_EVENT */
     }
-#else
-    shmem_internal_assertp(!shmem_transport_ofi_mr_rma_event);
 #endif
 
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
