@@ -75,9 +75,9 @@ enum op { PUT = 0, IPUT, PUT_NBI };
     shmem_barrier_all();                                        \
     for (int i = 0; i < 10; i++)                                \
       if (remote[i] != (TYPE)((mype + npes - 1) % npes)) {      \
-        fprintf(stderr,                                         \
-                "PE %i received incorrect value "               \
-                "for shmem_put(%s,...)\n", mype, #TYPE);        \
+        printf("PE %i received incorrect value with "           \
+               "TEST_SHMEM_PUT(%s, %d, %s)\n", mype,            \
+               #OP, (int)(USE_CTX), #TYPE);                     \
         rc = EXIT_FAILURE;                                      \
       }                                                         \
   } while (false)

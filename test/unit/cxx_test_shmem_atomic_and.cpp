@@ -78,9 +78,8 @@ enum op { AND = 0, CTX_AND, FETCH_AND, CTX_FETCH_AND };
       }                                                                 \
     shmem_barrier_all();                                                \
     if (remote != ~(TYPE)((1LLU << npes) - 1LLU)) {                     \
-      fprintf(stderr,                                                   \
-              "PE %i observed error with shmem_atomic_and(%s, ...)\n",  \
-              mype, #TYPE);                                             \
+      printf("PE %i observed error with TEST_SHMEM_AND(%s, %s)\n",      \
+              mype, #OP, #TYPE);                                        \
       rc = EXIT_FAILURE;                                                \
     }                                                                   \
   } while (false)

@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <shmem.h>
 
-enum op { SWAP = 0, ATOMIC_SWAP, CTX_ATOMIC_SWAP }; 
+enum op { SWAP = 0, ATOMIC_SWAP, CTX_ATOMIC_SWAP };
 
 #define TEST_SHMEM_SWAP(OP, TYPE)                                       \
   do {                                                                  \
@@ -63,13 +63,12 @@ enum op { SWAP = 0, ATOMIC_SWAP, CTX_ATOMIC_SWAP };
     }                                                                   \
     shmem_barrier_all();                                                \
     if (remote != (TYPE)((mype + npes - 1) % npes)) {                   \
-      fprintf(stderr,                                                   \
-              "PE %i received incorrect value "                         \
-              "for shmem_p(%s, ...)\n", mype, #TYPE);                   \
+      printf("PE %i received incorrect value with "                     \
+             "TEST_SHMEM_SWAP(%s, %s)\n", mype, #OP, #TYPE);            \
       rc = EXIT_FAILURE;                                                \
     }                                                                   \
     if (old != npes) {                                                  \
-      fprintf(stderr, "PE %i error inconsistent value of old (%s, %s)\n", \
+      printf("PE %i error inconsistent value of old (%s, %s)\n",        \
              mype, #OP, #TYPE);                                         \
       rc = EXIT_FAILURE;                                                \
     }                                                                   \

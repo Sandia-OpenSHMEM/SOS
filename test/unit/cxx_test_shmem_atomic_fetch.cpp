@@ -61,9 +61,8 @@ enum op { FETCH = 0, ATOMIC_FETCH, CTX_ATOMIC_FETCH };
         shmem_global_exit(1);                                   \
     }                                                           \
     if (val != (TYPE)((mype + 1) % npes)) {                     \
-      fprintf(stderr,                                           \
-              "PE %i received incorrect value "                 \
-              "for shmem_fetch(%s, ...)\n", mype, #TYPE);       \
+      printf("PE %i received incorrect value with "             \
+             "TEST_SHMEM_FETCH(%s, %s)\n", mype, #OP, #TYPE);   \
       rc = EXIT_FAILURE;                                        \
     }                                                           \
   } while (false)

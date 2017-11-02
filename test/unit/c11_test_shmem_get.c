@@ -75,9 +75,9 @@ enum op { GET = 0, IGET, GET_NBI };
     }                                                           \
     for (int i = 0; i < 10; i++)                                \
       if (local[i] != (TYPE)((mype + 1) % npes)) {              \
-        fprintf(stderr,                                         \
-                "PE %i received incorrect value "               \
-                "for shmem_get(%s,...)\n", mype, #TYPE);        \
+        printf("PE %i received incorrect value with"            \
+               "TEST_SHMEM_GET(%s, %d, %s)\n", mype, #OP,       \
+               (int)(USE_CTX), #TYPE);                          \
         rc = EXIT_FAILURE;                                      \
       }                                                         \
   } while (false)

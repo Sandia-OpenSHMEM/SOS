@@ -44,9 +44,8 @@
     shmem_p(&remote, (TYPE)mype+1, (mype + 1) % npes);  \
     while (!shmem_test(&remote, SHMEM_CMP_NE, 0)) ;     \
     if (remote != (TYPE)((mype + npes - 1) % npes)+1) { \
-      fprintf(stderr,                                   \
-              "PE %i received incorrect value "         \
-              "for shmem_p(%s, ...)\n", mype, #TYPE);   \
+      printf("PE %i received incorrect value with "     \
+             "TEST_SHMEM_TEST(%s)\n", mype, #TYPE);     \
       rc = EXIT_FAILURE;                                \
     }                                                   \
   } while (false)

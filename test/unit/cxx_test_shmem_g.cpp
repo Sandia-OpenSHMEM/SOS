@@ -49,9 +49,9 @@
     else                                                \
         val = shmem_g(&remote, (mype + 1) % npes);      \
     if (val != (TYPE)((mype + 1) % npes)) {             \
-      fprintf(stderr,                                   \
-              "PE %i received incorrect value "         \
-              "for shmem_g(%s, ...)\n", mype, #TYPE);   \
+      printf("PE %i received incorrect value with"      \
+             "TEST_SHMEM_G(%d, %s)\n", mype,            \
+             (int)(USE_CTX), #TYPE);                    \
       rc = EXIT_FAILURE;                                \
     }                                                   \
   } while (false)

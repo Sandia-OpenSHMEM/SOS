@@ -59,9 +59,8 @@ enum op { SET = 0, ATOMIC_SET, CTX_ATOMIC_SET };
     }                                                   \
     shmem_barrier_all();                                \
     if (remote != (TYPE)((mype + npes - 1) % npes)) {   \
-      fprintf(stderr,                                   \
-              "PE %i received incorrect value "         \
-              "for shmem_set(%s, ...)\n", mype, #TYPE); \
+      printf("PE %i received incorrect value with "     \
+             "TEST_SHMEM_SET(%s, %s)\n", mype, #OP, #TYPE); \
       rc = EXIT_FAILURE;                                \
     }                                                   \
   } while (false)

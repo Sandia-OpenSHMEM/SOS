@@ -49,9 +49,9 @@
         shmem_p(&remote, (TYPE)mype, (mype + 1) % npes);\
     shmem_barrier_all();                                \
     if (remote != (TYPE)((mype + npes - 1) % npes)) {   \
-      fprintf(stderr,                                   \
-              "PE %i received incorrect value "         \
-              "for shmem_p(%s, ...)\n", mype, #TYPE);   \
+      printf("PE %i received incorrect value with "     \
+             "TEST_SHMEM_P(%d, %s)\n", mype,            \
+             (int)(USE_CTX), #TYPE);                    \
       rc = EXIT_FAILURE;                                \
     }                                                   \
   } while (false)

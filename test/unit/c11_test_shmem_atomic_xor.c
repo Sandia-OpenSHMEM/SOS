@@ -80,9 +80,8 @@ enum op { XOR = 0, CTX_XOR, FETCH_XOR, CTX_FETCH_XOR };
       }                                                                 \
     shmem_barrier_all();                                                \
     if (remote != ~(TYPE)((1LLU << npes) - 1LLU)) {                     \
-      fprintf(stderr,                                                   \
-              "PE %i observed error with shmem_atomic_xor(%s, ...)\n",  \
-              mype, #TYPE);                                             \
+      printf("PE %i observed error with TEST_SHMEM_XOR(%s, %s)\n",      \
+              mype, #OP, #TYPE);                                        \
       rc = EXIT_FAILURE;                                                \
     }                                                                   \
   } while (false)

@@ -88,9 +88,8 @@ enum op { ADD = 0, ATOMIC_ADD, CTX_ATOMIC_ADD, FADD, ATOMIC_FETCH_ADD,
       }                                                                 \
     shmem_barrier_all();                                                \
     if (remote != (TYPE)(npes * (npes + 1) / 2)) {                      \
-      fprintf(stderr,                                                   \
-              "PE %i observed error with shmem_atomic_add(%s, ...)\n",  \
-              mype, #TYPE);                                             \
+      printf("PE %i observed error with TEST_SHMEM_ADD(%s, %s)\n",      \
+             mype, #OP, #TYPE);                                         \
       rc = EXIT_FAILURE;                                                \
     }                                                                   \
   } while (false)

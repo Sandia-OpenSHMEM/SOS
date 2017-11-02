@@ -88,9 +88,8 @@ enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
       }                                                                 \
     shmem_barrier_all();                                                \
     if (remote != (TYPE)npes) {                                         \
-      fprintf(stderr,                                                   \
-              "PE %i observed error with shmem_inc(%s, ...)\n",         \
-              mype, #TYPE);                                             \
+      printf("PE %i observed error with TEST_SHMEM_INC(%s, %s)\n",      \
+              mype, #OP, #TYPE);                                        \
       rc = EXIT_FAILURE;                                                \
     }                                                                   \
   } while (false)

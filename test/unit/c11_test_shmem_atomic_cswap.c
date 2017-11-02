@@ -68,13 +68,12 @@ enum op { CSWAP = 0, ATOMIC_COMPARE_SWAP, CTX_ATOMIC_COMPARE_SWAP };
     }                                                                   \
     shmem_barrier_all();                                                \
     if (remote != (TYPE)((mype + npes - 1) % npes)) {                   \
-      fprintf(stderr,                                                   \
-              "PE %i received incorrect value "                         \
-              "for shmem_p(%s, ...)\n", mype, #TYPE);                   \
+      printf("PE %i observed error with TEST_SHMEM_CSWAP(%s, %s)\n",    \
+             mype, #OP, #TYPE);                                         \
       rc = EXIT_FAILURE;                                                \
     }                                                                   \
     if (old != npes) {                                                  \
-      fprintf(stderr, "PE %i error inconsistent value of old (%s, %s)\n", \
+      printf("PE %i error inconsistent value of old (%s, %s)\n",        \
              mype, #OP, #TYPE);                                         \
       rc = EXIT_FAILURE;                                                \
     }                                                                   \
