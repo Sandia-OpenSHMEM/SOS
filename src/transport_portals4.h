@@ -631,10 +631,10 @@ shmem_transport_put_ct_nb(shmem_transport_ct_t *ct, void *target, const void *so
                           size_t len, int pe, long *completion)
 {
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-    shmem_transport_portals4_put_nb_internal(SHMEM_CTX_DEFAULT, target, source, len, pe,
+    shmem_transport_portals4_put_nb_internal((shmem_transport_ctx_t *)SHMEM_CTX_DEFAULT, target, source, len, pe,
                                              completion, ct->shr_pt, -1);
 #else
-    shmem_transport_portals4_put_nb_internal(SHMEM_CTX_DEFAULT, target, source, len, pe,
+    shmem_transport_portals4_put_nb_internal((shmem_transport_ctx_t *)SHMEM_CTX_DEFAULT, target, source, len, pe,
                                              completion, ct->data_pt, ct->heap_pt);
 #endif
 }
@@ -700,9 +700,9 @@ void shmem_transport_get_ct(shmem_transport_ct_t *ct, void *target,
                             const void *source, size_t len, int pe)
 {
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-    shmem_transport_portals4_get_internal(SHMEM_CTX_DEFAULT, target, source, len, pe, ct->shr_pt, -1);
+    shmem_transport_portals4_get_internal((shmem_transport_ctx_t *)SHMEM_CTX_DEFAULT, target, source, len, pe, ct->shr_pt, -1);
 #else
-    shmem_transport_portals4_get_internal(SHMEM_CTX_DEFAULT, target, source, len, pe,
+    shmem_transport_portals4_get_internal((shmem_transport_ctx_t *)SHMEM_CTX_DEFAULT, target, source, len, pe,
                                           ct->data_pt, ct->heap_pt);
 #endif
 }

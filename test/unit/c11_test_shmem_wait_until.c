@@ -4,7 +4,7 @@
  *  to copyright protection in the United States.  Foreign copyrights may
  *  apply.
  *
- *  Copyright (c) 2016 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2017 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <shmem.h>
 
-#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 
 #define TEST_SHMEM_WAIT_UNTIL(TYPE)                     \
   do {                                                  \
@@ -46,9 +46,8 @@
     shmem_p(&remote, (TYPE)mype+1, (mype + 1) % npes);  \
     shmem_wait_until(&remote, SHMEM_CMP_NE, 0);         \
     if (remote != (TYPE)((mype + npes - 1) % npes)+1) { \
-      fprintf(stderr,                                   \
-              "PE %i received incorrect value "         \
-              "for shmem_p(%s, ...)\n", mype, #TYPE);   \
+      printf("PE %i received incorrect value with "     \
+             "TEST_SHMEM_WAIT_UNTIL(%s)\n", mype, #TYPE); \
       rc = EXIT_FAILURE;                                \
     }                                                   \
   } while (false)

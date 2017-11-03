@@ -91,7 +91,7 @@ static char                     myephostname[EPHOSTNAMELEN];
 
 
 shmem_transport_ctx_t shmem_transport_ctx_default;
-void *SHMEM_CTX_DEFAULT = &shmem_transport_ctx_default;
+shmem_ctx_t SHMEM_CTX_DEFAULT = (shmem_ctx_t) &shmem_transport_ctx_default;
 
 size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 

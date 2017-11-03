@@ -36,8 +36,6 @@
 #include <stdio.h>
 #include <shmem.h>
 
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-
 enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
           CTX_ATOMIC_FETCH_INC };
 
@@ -95,11 +93,6 @@ enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
       rc = EXIT_FAILURE;                                                \
     }                                                                   \
   } while (false)
-
-#else
-#define TEST_SHMEM_INC(OP, TYPE)
-
-#endif
 
 int main(int argc, char* argv[]) {
   shmem_init();

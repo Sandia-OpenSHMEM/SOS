@@ -53,7 +53,7 @@ static void* dst_thread_fn(void *arg) {
 }
 
 int main(int argc, char* argv[]) {
-    int i, tl, ret;
+    int tl, ret;
     pthread_t src_thread, dst_thread;
 
     ret = shmem_init_thread(SHMEM_THREAD_MULTIPLE, &tl);
