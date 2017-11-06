@@ -1198,10 +1198,6 @@ int shmem_transport_init(void)
 
 
     ret = query_for_fabric(&shmem_transport_ofi_info);
-    if(ret!=0)
-        return ret;
-
-    ret = query_for_fabric(&shmem_transport_ofi_info);
     if (ret!=0)
         return ret;
 
