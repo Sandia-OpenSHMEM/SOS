@@ -11,6 +11,7 @@ v1.3.4
 - Rewrite of environment variable management code and improved info output.
 - Added support for processor atomics in thread-safe build.
 - Added support for local communication optimization (--enable-memcpy).
+- Added support for libfabric FI_MR_RMA_EVENT memory registration mode.
 - Fixed completion race in multithreaded mode.
 - Fixed bugs in support for zero-length point-to-point and collective
   communication.
