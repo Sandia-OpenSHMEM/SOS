@@ -2,6 +2,20 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.3.4
+------
+- Added manpages for OpenSHMEM API routines.
+- Added polling limit control variables SMA_OFI_TX_POLL_LIMIT and
+  SMA_OFI_RX_POLL_LIMIT (see README for details) to allow control over quiet
+  and wait polling limits, respectively.
+- Rewrite of environment variable management code and improved info output.
+- Added support for processor atomics in thread-safe build.
+- Added support for local communication optimization (--enable-memcpy).
+- Fixed completion race in multithreaded mode.
+- Fixed bugs in support for zero-length point-to-point and collective
+  communication.
+- Multiple bugfixes to test suite, including GUPS benchmark
+
 v1.3.3
 ------
 - Fixed dissemination barrier race that could lead to incorrect synchronization.
