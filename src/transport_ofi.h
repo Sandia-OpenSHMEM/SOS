@@ -33,6 +33,7 @@
 #include "shmem_internal.h"
 #include "shmem_atomic.h"
 
+extern struct fid_ep*                   shmem_transport_ofi_epfd;
 extern struct fid_cq*                   shmem_transport_ofi_put_nb_cqfd;
 #ifndef ENABLE_HARD_POLLING
 extern struct fid_cntr*                 shmem_transport_ofi_target_cntrfd;
@@ -201,7 +202,6 @@ typedef struct shmem_transport_ofi_bounce_buffer_t shmem_transport_ofi_bounce_bu
 typedef int shmem_transport_ct_t;
 
 struct shmem_transport_ctx_t {
-  struct fid_ep*                  ep;
   struct fid_ep*                  cntr_ep;
   struct fid_cntr*                put_cntrfd;
   struct fid_cntr*                get_cntrfd;
@@ -482,7 +482,7 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
         shmem_internal_atomic_inc(&shmem_transport_ofi_pending_cq_count);
 
         do {
-            ret = fi_write(ctx->ep,
+            ret = fi_write(shmem_transport_ofi_epfd,
                            buff->data, len, NULL,
                            GET_DEST(dst), (uint64_t) addr,
                            key, buff);
@@ -829,7 +829,7 @@ void shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const v
 
     shmem_internal_assert(SHMEM_Dtsize[datatype] * len == full_len);
 
-    ret = fi_atomicvalid(ctx->ep, datatype, op,
+    ret = fi_atomicvalid(shmem_transport_ofi_epfd, datatype, op,
                          &max_atomic_size);
     max_atomic_size = max_atomic_size * SHMEM_Dtsize[datatype];
     if (max_atomic_size > shmem_transport_ofi_max_msg_size
@@ -868,7 +868,7 @@ void shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const v
         shmem_internal_atomic_inc(&shmem_transport_ofi_pending_cq_count);
 
         do {
-            ret = fi_atomic(ctx->ep,
+            ret = fi_atomic(shmem_transport_ofi_epfd,
                             buff->data,
                             len,
                             NULL,
@@ -951,7 +951,7 @@ int shmem_transport_atomic_supported(shm_internal_op_t op,
                                      shm_internal_datatype_t datatype)
 {
     size_t size = 0;
-    int ret = fi_atomicvalid(shmem_transport_ctx_default.ep, datatype, op, &size);
+    int ret = fi_atomicvalid(shmem_transport_ofi_epfd, datatype, op, &size);
     return !(ret != 0 || size == 0);
 }
 
