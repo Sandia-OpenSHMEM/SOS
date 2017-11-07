@@ -12,7 +12,8 @@ v1.3.4
 - Added support for processor atomics in thread-safe build.
 - Added support for local communication optimization (--enable-memcpy).
 - Added support for libfabric FI_MR_RMA_EVENT memory registration mode.
-- Added experimental support for PMIx process manager interface (--with-pmix).
+- Added experimental support for the PMIx process management interface
+  (--with-pmix).
 - Fixed completion race in multithreaded mode.
 - Fixed bugs in support for zero-length point-to-point and collective
   communication.
