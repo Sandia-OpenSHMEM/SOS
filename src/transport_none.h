@@ -88,6 +88,13 @@ shmem_transport_ctx_create(shmem_transport_ctx_t **ctx)
 }
 
 static inline
+void
+shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
+{
+    return;
+}
+
+static inline
 int
 shmem_transport_quiet(shmem_transport_ctx_t* ctx)
 {
