@@ -1233,6 +1233,7 @@ int shmem_transport_init(void)
     shmem_transport_ofi_put_poll_limit = shmem_internal_params.OFI_TX_POLL_LIMIT;
     shmem_transport_ofi_get_poll_limit = shmem_internal_params.OFI_RX_POLL_LIMIT;
 
+    /* TODO: initialize the default context with the same routine as user contexts */
     //ret = shmem_transport_ofi_ctx_init(-1, &shmem_transport_ctx_default);
     //if (ret!=0)
     //    return ret;
