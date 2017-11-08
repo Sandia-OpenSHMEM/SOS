@@ -202,6 +202,7 @@ typedef struct shmem_transport_ofi_bounce_buffer_t shmem_transport_ofi_bounce_bu
 typedef int shmem_transport_ct_t;
 
 struct shmem_transport_ctx_t {
+  long                            options;
   struct fid_ep*                  cntr_ep;
   struct fid_cntr*                put_cntr;
   struct fid_cntr*                get_cntr;
@@ -213,7 +214,7 @@ struct shmem_transport_ctx_t {
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
 extern shmem_transport_ctx_t shmem_transport_ctx_default;
 
-int shmem_transport_ctx_create(shmem_transport_ctx_t **ctx);
+int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx);
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx);
 
 extern shmem_free_list_t *shmem_transport_ofi_bounce_buffers;
@@ -472,7 +473,7 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
 
         shmem_transport_put_small(ctx, target, source, len, pe);
 
-    } else if (len <= shmem_transport_ofi_bounce_buffer_size) {
+    } else if (len <= shmem_transport_ofi_bounce_buffer_size && ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
 
         shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
@@ -859,7 +860,7 @@ void shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const v
         } while(try_again(ret,&polled));
 
     } else if (full_len <=
-               MIN(shmem_transport_ofi_bounce_buffer_size, max_atomic_size)) {
+               MIN(shmem_transport_ofi_bounce_buffer_size, max_atomic_size) && ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
 
         shmem_transport_ofi_bounce_buffer_t *buff = create_bounce_buffer(source, full_len);
 

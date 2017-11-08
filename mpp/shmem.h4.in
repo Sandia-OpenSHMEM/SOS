@@ -86,9 +86,9 @@ typedef void* shmem_ctx_t;
 #else
   extern shmem_ctx_t SHMEM_CTX_DEFAULT;
 #endif
-#define SHMEM_CTX_PRIVATE       1
-#define SHMEM_CTX_SERIALIZED    2
-#define SHMEM_CTX_NOSTORE       4
+#define SHMEM_CTX_PRIVATE       (1<<0)
+#define SHMEM_CTX_SERIALIZED    (1<<1)
+#define SHMEM_CTX_NOSTORE       (1<<2)
 
 define(`SHPRE', `')dnl
 include(shmem_c_func.h4)dnl

@@ -1252,6 +1252,8 @@ int shmem_transport_init(void)
     //if (ret!=0)
     //    return ret;
 
+    shmem_transport_ctx_default.options |= SHMEMX_CTX_BOUNCE_BUFFER;
+
     ret = allocate_endpoints(&shmem_transport_ctx_default, &shmem_transport_ofi_info);
     if (ret!=0)
         return ret;
@@ -1306,7 +1308,7 @@ int shmem_transport_startup(void)
     return 0;
 }
 
-int shmem_transport_ctx_create(shmem_transport_ctx_t **ctx)
+int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
 {
     SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
 
@@ -1335,6 +1337,8 @@ int shmem_transport_ctx_create(shmem_transport_ctx_t **ctx)
     if (ctxp == NULL) {
         RAISE_ERROR_STR("Error: out of memory when allocating OFI ctx object");
     }
+
+    ctxp->options = options;
 
     ret = shmem_transport_ofi_ctx_init(ctxp, id);
 

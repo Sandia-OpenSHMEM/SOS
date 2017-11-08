@@ -163,7 +163,7 @@ struct shmem_transport_ctx_t { int dummy; };
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
 extern shmem_transport_ctx_t shmem_transport_ctx_default;
-void shmem_transport_ctx_create(shmem_transport_ctx_t **ctx);
+void shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx);
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx);
 
 /*

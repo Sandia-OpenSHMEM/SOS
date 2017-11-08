@@ -36,7 +36,7 @@ shmem_ctx_create(long options, shmem_ctx_t *ctx)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_transport_ctx_create((shmem_transport_ctx_t **) ctx);
+    shmem_transport_ctx_create(options, (shmem_transport_ctx_t **) ctx);
 
     SHMEM_ERR_CHECK_NULL(ctx, 0);
 
