@@ -71,7 +71,6 @@ before_install:
     - export TRAVIS_INSTALL=$HOME/travis/install
     ## Disable security protection so CMA will work
     - sudo sysctl -w kernel.yama.ptrace_scope=0
-    - ulimit -n 2048
     ## Run the icc installation script:
     - >
       if [ "$CC" = "icc" ]; then
