@@ -371,7 +371,7 @@ int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx)
     /* attaching to endpoint enables counting "writes" for calls used with this
      * endpoint */
     ret = fi_ep_bind(ctx->cntr_ep,
-                     &ctx->put_cntrfd->fid, FI_WRITE);
+                     &ctx->put_cntr->fid, FI_WRITE);
     if (ret!=0) {
         RAISE_WARN_STR("ep_bind cntr_epfd2put_cntr failed");
         return ret;
@@ -379,7 +379,7 @@ int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx)
 
     /* attach to endpoint */
     ret = fi_ep_bind(ctx->cntr_ep,
-                     &ctx->get_cntrfd->fid, FI_READ);
+                     &ctx->get_cntr->fid, FI_READ);
     if (ret!=0) {
         RAISE_WARN_STR("ep_bind cntr_epfd2get_cntr failed");
         return ret;
@@ -442,7 +442,7 @@ int allocate_cntr_and_cq(shmem_transport_ctx_t *ctx)
     /* Create counter for counting completions of outgoing writes */
 
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_put_attr,
-                       &ctx->put_cntrfd, NULL);
+                       &ctx->put_cntr, NULL);
     if (ret!=0) {
         RAISE_WARN_STR("put cntr_open failed");
         return ret;
@@ -451,7 +451,7 @@ int allocate_cntr_and_cq(shmem_transport_ctx_t *ctx)
     /* Create counter for counting completions of outbound reads */
 
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_get_attr,
-                       &ctx->get_cntrfd, NULL);
+                       &ctx->get_cntr, NULL);
     if (ret!=0) {
         RAISE_WARN_STR("get cntr_open failed");
         return ret;
@@ -1157,18 +1157,18 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     info->p_info->rx_attr->mode = 0;
 
     ctx->id = id;
-    shmem_internal_atomic_write(&ctx->pending_put_counter, 0);
-    shmem_internal_atomic_write(&ctx->pending_get_counter, 0);
+    shmem_internal_atomic_write(&ctx->pending_put_cntr, 0);
+    shmem_internal_atomic_write(&ctx->pending_get_cntr, 0);
 
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_put_attr,
-                       &ctx->put_cntrfd, NULL);
+                       &ctx->put_cntr, NULL);
     if (ret!=0) {
         RAISE_ERROR_MSG("context cntr_open failed (%s)\n", fi_strerror(errno));
         return ret;
     }
 
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_get_attr,
-                       &ctx->get_cntrfd, NULL);
+                       &ctx->get_cntr, NULL);
     if (ret!=0) {
         RAISE_ERROR_MSG("context cntr_open failed (%s)\n", fi_strerror(errno));
         return ret;
@@ -1284,8 +1284,8 @@ int shmem_transport_init(void)
     if (ret!=0)
         return ret;
 
-    shmem_internal_atomic_write(&shmem_transport_ctx_default.pending_put_counter, 0);
-    shmem_internal_atomic_write(&shmem_transport_ctx_default.pending_get_counter, 0);
+    shmem_internal_atomic_write(&shmem_transport_ctx_default.pending_put_cntr, 0);
+    shmem_internal_atomic_write(&shmem_transport_ctx_default.pending_get_cntr, 0);
     shmem_internal_atomic_write(&shmem_transport_ofi_pending_cq_count, 0);
 
     return 0;
@@ -1317,9 +1317,6 @@ int shmem_transport_ctx_create(shmem_transport_ctx_t **ctx)
      * on error, it just returns. This is consistent with how
      * initialization worked before, but is worse since context creation
      * is not necessarily do-or-die.
-     */
-    /* JD: This needs to have a mutex around it to synchronize a possible
-     * update to the contexts array.
      *
      * This also does not reuse entries from contexts that were freed.
      */
@@ -1362,10 +1359,10 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
     if (fi_close(&ctx->cntr_ep->fid)) {
         RAISE_ERROR_MSG("Context cntr endpoint close failed (%s)\n", fi_strerror(errno));
     }
-    if (fi_close(&ctx->put_cntrfd->fid)) {
+    if (fi_close(&ctx->put_cntr->fid)) {
         RAISE_ERROR_MSG("Context counter close failed (%s)\n", fi_strerror(errno));
     }
-    if (fi_close(&ctx->get_cntrfd->fid)) {
+    if (fi_close(&ctx->get_cntr->fid)) {
         RAISE_ERROR_MSG("Context counter close failed (%s)\n", fi_strerror(errno));
     }
 
@@ -1374,6 +1371,8 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         shmem_transport_ofi_contexts[ctx->id] = NULL;
         SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
         free(ctx);
+    } else {
+        RAISE_ERROR_MSG("Attempted to destroy an invalid context (%s)\n", fi_strerror(errno));
     }
 }
 
@@ -1391,8 +1390,9 @@ int shmem_transport_fini(void)
         }
     }
 
-    //shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
     shmem_transport_quiet(&shmem_transport_ctx_default);
+    /* TODO: destroy the default context with the same routine as user contexts */
+    //shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
 
     if (shmem_transport_ofi_epfd &&
         fi_close(&shmem_transport_ofi_epfd->fid)) {
@@ -1431,13 +1431,13 @@ int shmem_transport_fini(void)
         RAISE_ERROR_MSG("Write CQ close failed (%s)\n", fi_strerror(errno));
     }
 
-    if (shmem_transport_ctx_default.put_cntrfd &&
-        fi_close(&shmem_transport_ctx_default.put_cntrfd->fid)) {
+    if (shmem_transport_ctx_default.put_cntr &&
+        fi_close(&shmem_transport_ctx_default.put_cntr->fid)) {
         RAISE_ERROR_MSG("INJECT PUT CT close failed (%s)\n", fi_strerror(errno));
     }
 
-    if (shmem_transport_ctx_default.get_cntrfd &&
-        fi_close(&shmem_transport_ctx_default.get_cntrfd->fid)) {
+    if (shmem_transport_ctx_default.get_cntr &&
+        fi_close(&shmem_transport_ctx_default.get_cntr->fid)) {
         RAISE_ERROR_MSG("GET CT close failed (%s)\n", fi_strerror(errno));
     }
 

@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define NUM_CTX 64
+#define NUM_CTX 32
 
 long data = 0;
 
