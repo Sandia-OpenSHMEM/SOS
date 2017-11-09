@@ -2,6 +2,17 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.4.0a1
+--------
+- Support for OpenSHMEM 1.4 specification.
+- New features include: Thread safety, communication management API (contexts),
+  test routines, sync routines, calloc for symmetric objects, bitwise atomic
+  operations, and updated C11 generic selection bindings.
+- Deprecations include: Fortran API, shmem_wait routines, mpp header directory,
+  and SMA-prefixed environment variables.
+- This is an alpha release; full API support is provided, but the
+  implementation may contain bugs and is not yet optimized for performance.
+
 v1.3.3
 ------
 - Fixed dissemination barrier race that could lead to incorrect synchronization.
