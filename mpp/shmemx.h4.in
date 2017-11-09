@@ -32,4 +32,6 @@ typedef char * shmemx_ct_t;
 define(`SHPRE', `')dnl
 include(shmemx_c_func.h4)dnl
 
+#define SHMEMX_CTX_BOUNCE_BUFFER  (1<<31)
+
 #endif /* SHMEMX_H */

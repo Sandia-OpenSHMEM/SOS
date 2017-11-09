@@ -47,7 +47,6 @@ struct fabric_info {
 struct fid_fabric*              shmem_transport_ofi_fabfd;
 struct fid_domain*              shmem_transport_ofi_domainfd;
 struct fid_ep*                  shmem_transport_ofi_epfd;
-struct fid_ep*                  shmem_transport_ofi_cntr_epfd;
 struct fid_stx*                 shmem_transport_ofi_stx;
 struct fid_av*                  shmem_transport_ofi_avfd;
 struct fid_cq*                  shmem_transport_ofi_put_nb_cqfd;
@@ -84,10 +83,20 @@ fi_addr_t                       *addr_table;
 #define EPHOSTNAMELEN  _POSIX_HOST_NAME_MAX + 1
 static char                     myephostname[EPHOSTNAMELEN];
 #endif
+#ifdef ENABLE_THREADS
+shmem_internal_mutex_t          shmem_transport_ofi_lock;
+#endif
 
+struct fabric_info shmem_transport_ofi_info = {0};
+
+static shmem_transport_ctx_t** shmem_transport_ofi_contexts;
+static size_t shmem_transport_ofi_num_ctx = 0;
 
 shmem_transport_ctx_t shmem_transport_ctx_default;
 shmem_ctx_t SHMEM_CTX_DEFAULT = (shmem_ctx_t) &shmem_transport_ctx_default;
+
+static size_t shmem_transport_ofi_grow_size = 128;
+static size_t shmem_transport_ofi_avail_ctx = 0;
 
 size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 
@@ -276,7 +285,7 @@ void init_bounce_buffer(shmem_free_list_item_t *item)
 }
 
 static inline
-int allocate_endpoints(struct fabric_info *info)
+int allocate_endpoints(shmem_transport_ctx_t *ctx, struct fabric_info *info)
 {
 
     int ret = 0;
@@ -297,7 +306,7 @@ int allocate_endpoints(struct fabric_info *info)
     }
 
     ret = fi_endpoint(shmem_transport_ofi_domainfd,
-                      info->p_info, &shmem_transport_ofi_cntr_epfd, NULL);
+                      info->p_info, &ctx->cntr_ep, NULL);
     if (ret!=0) {
         RAISE_WARN_STR("cntr_epfd creation failed");
         return ret;
@@ -308,42 +317,14 @@ int allocate_endpoints(struct fabric_info *info)
 }
 
 static inline
-int bind_resources_to_and_enable_ep(void)
+int bind_enable_cq_ep_resources(shmem_transport_ctx_t *ctx)
 {
-    /* must bind resources created to EP then enable EP for communication
-     * (resources can now be used) */
-
     int ret = 0;
-
-    /* attach the endpoints to the shared context */
+    /* attach the endpoint to the shared context */
     ret = fi_ep_bind(shmem_transport_ofi_epfd,
                      &shmem_transport_ofi_stx->fid, 0);
     if (ret!=0) {
         RAISE_WARN_STR("ep_bind epfd2stx failed");
-        return ret;
-    }
-
-    ret = fi_ep_bind(shmem_transport_ofi_cntr_epfd,
-                     &shmem_transport_ofi_stx->fid, 0);
-    if (ret!=0) {
-        RAISE_WARN_STR("ep_bind cntr_epfd2stx failed");
-        return ret;
-    }
-
-    /* attaching to endpoint enables counting "writes" for calls used with this
-     * endpoint */
-    ret = fi_ep_bind(shmem_transport_ofi_cntr_epfd,
-                     &shmem_transport_ctx_default.endpoint.put_cntrfd->fid, FI_WRITE);
-    if (ret!=0) {
-        RAISE_WARN_STR("ep_bind cntr_epfd2put_cntr failed");
-        return ret;
-    }
-
-    /* attach to endpoint */
-    ret = fi_ep_bind(shmem_transport_ofi_cntr_epfd,
-                     &shmem_transport_ctx_default.endpoint.get_cntrfd->fid, FI_READ);
-    if (ret!=0) {
-        RAISE_WARN_STR("ep_bind cntr_epfd2get_cntr failed");
         return ret;
     }
 
@@ -355,8 +336,57 @@ int bind_resources_to_and_enable_ep(void)
         return ret;
     }
 
+    ret = fi_ep_bind(shmem_transport_ofi_epfd,
+                     &shmem_transport_ofi_avfd->fid, 0);
+    if (ret!=0) {
+        RAISE_WARN_STR("ep_bind ep2av failed");
+        return ret;
+    }
+    ret = fi_enable(shmem_transport_ofi_epfd);
+    if (ret!=0) {
+        RAISE_WARN_STR("enable_epfd failed");
+        return ret;
+    }
+
+    return ret;
+
+}
+
+static inline
+int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx)
+{
+    /* must bind resources created to EP then enable EP for communication
+     * (resources can now be used) */
+
+    int ret = 0;
+
+    /* attach the endpoint to the shared context */
+    ret = fi_ep_bind(ctx->cntr_ep,
+                     &shmem_transport_ofi_stx->fid, 0);
+    if (ret!=0) {
+        RAISE_WARN_STR("ep_bind cntr_epfd2stx failed");
+        return ret;
+    }
+
+    /* attaching to endpoint enables counting "writes" for calls used with this
+     * endpoint */
+    ret = fi_ep_bind(ctx->cntr_ep,
+                     &ctx->put_cntr->fid, FI_WRITE);
+    if (ret!=0) {
+        RAISE_WARN_STR("ep_bind cntr_epfd2put_cntr failed");
+        return ret;
+    }
+
+    /* attach to endpoint */
+    ret = fi_ep_bind(ctx->cntr_ep,
+                     &ctx->get_cntr->fid, FI_READ);
+    if (ret!=0) {
+        RAISE_WARN_STR("ep_bind cntr_epfd2get_cntr failed");
+        return ret;
+    }
+
     /* attach CQ for error handling on cntr EP */
-    ret = fi_ep_bind(shmem_transport_ofi_cntr_epfd,
+    ret = fi_ep_bind(ctx->cntr_ep,
                      &shmem_transport_ofi_put_nb_cqfd->fid,
                      FI_SELECTIVE_COMPLETION | FI_TRANSMIT);
     if (ret!=0) {
@@ -364,14 +394,7 @@ int bind_resources_to_and_enable_ep(void)
         return ret;
     }
 
-    ret = fi_ep_bind(shmem_transport_ofi_epfd,
-                     &shmem_transport_ofi_avfd->fid, 0);
-    if (ret!=0) {
-        RAISE_WARN_STR("ep_bind ep2av failed");
-        return ret;
-    }
-
-    ret = fi_ep_bind(shmem_transport_ofi_cntr_epfd,
+    ret = fi_ep_bind(ctx->cntr_ep,
                      &shmem_transport_ofi_avfd->fid, 0);
     if (ret!=0) {
         RAISE_WARN_STR("ep_bind cntr_ep2av failed");
@@ -379,12 +402,7 @@ int bind_resources_to_and_enable_ep(void)
     }
 
     /* enable active endpoint state: can now perform data transfers */
-    ret = fi_enable(shmem_transport_ofi_epfd);
-    if (ret!=0) {
-        RAISE_WARN_STR("enable_epfd failed");
-        return ret;
-    }
-    ret = fi_enable(shmem_transport_ofi_cntr_epfd);
+    ret = fi_enable(ctx->cntr_ep);
     if (ret!=0) {
         RAISE_WARN_STR("enable_cntr_epfd failed");
         return ret;
@@ -394,7 +412,7 @@ int bind_resources_to_and_enable_ep(void)
 }
 
 static inline
-int allocate_cntr_and_cq(void)
+int allocate_cntr_and_cq(shmem_transport_ctx_t *ctx)
 {
 
     int ret = 0;
@@ -424,7 +442,7 @@ int allocate_cntr_and_cq(void)
     /* Create counter for counting completions of outgoing writes */
 
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_put_attr,
-                       &shmem_transport_ctx_default.endpoint.put_cntrfd, NULL);
+                       &ctx->put_cntr, NULL);
     if (ret!=0) {
         RAISE_WARN_STR("put cntr_open failed");
         return ret;
@@ -433,7 +451,7 @@ int allocate_cntr_and_cq(void)
     /* Create counter for counting completions of outbound reads */
 
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_get_attr,
-                       &shmem_transport_ctx_default.endpoint.get_cntrfd, NULL);
+                       &ctx->get_cntr, NULL);
     if (ret!=0) {
         RAISE_WARN_STR("get cntr_open failed");
         return ret;
@@ -504,7 +522,7 @@ int allocate_recv_cntr_mr(void)
         return ret;
     }
 
-    ret = fi_ep_bind(shmem_transport_ofi_cntr_epfd,
+    ret = fi_ep_bind(shmem_transport_ctx_default.cntr_ep,
                      &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE | FI_REMOTE_READ);
     if (ret!=0) {
         RAISE_WARN_STR("ep_bind cntr_epfd2put_cntr failed");
@@ -550,7 +568,7 @@ int allocate_recv_cntr_mr(void)
         return ret;
     }
 
-    ret = fi_ep_bind(shmem_transport_ofi_cntr_epfd,
+    ret = fi_ep_bind(shmem_transport_ctx_default.cntr_ep,
                      &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE | FI_REMOTE_READ);
     if (ret!=0) {
         RAISE_WARN_STR("ep_bind cntr_epfd2put_cntr failed");
@@ -1107,37 +1125,112 @@ int query_for_fabric(struct fabric_info *info)
     return ret;
 }
 
+static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
+{
+    int ret = 0;
+
+    struct fi_cntr_attr cntr_put_attr = {0};
+    struct fi_cntr_attr cntr_get_attr = {0};
+    cntr_put_attr.events   = FI_CNTR_EVENTS_COMP;
+    cntr_get_attr.events   = FI_CNTR_EVENTS_COMP;
+
+    /* Set FI_WAIT based on the put and get polling limits defined above */
+    if (shmem_transport_ofi_put_poll_limit < 0) {
+        cntr_put_attr.wait_obj = FI_WAIT_NONE;
+    } else {
+        cntr_put_attr.wait_obj = FI_WAIT_UNSPEC;
+    }
+    if (shmem_transport_ofi_get_poll_limit < 0) {
+        cntr_get_attr.wait_obj = FI_WAIT_NONE;
+    } else {
+        cntr_get_attr.wait_obj = FI_WAIT_UNSPEC;
+    }
+
+    struct fabric_info* info = &shmem_transport_ofi_info;
+    info->p_info->ep_attr->tx_ctx_cnt = FI_SHARED_CONTEXT;
+    info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | /*SEND ONLY */
+        FI_ATOMICS; /* request atomics capability */
+    info->p_info->caps |= FI_REMOTE_WRITE | FI_REMOTE_READ;
+    info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE | FI_INJECT_COMPLETE;
+    info->p_info->mode = 0;
+    info->p_info->tx_attr->mode = 0;
+    info->p_info->rx_attr->mode = 0;
+
+    ctx->id = id;
+    shmem_internal_atomic_write(&ctx->pending_put_cntr, 0);
+    shmem_internal_atomic_write(&ctx->pending_get_cntr, 0);
+
+    ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_put_attr,
+                       &ctx->put_cntr, NULL);
+    if (ret!=0) {
+        RAISE_ERROR_MSG("context cntr_open failed (%s)\n", fi_strerror(errno));
+        return ret;
+    }
+
+    ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_get_attr,
+                       &ctx->get_cntr, NULL);
+    if (ret!=0) {
+        RAISE_ERROR_MSG("context cntr_open failed (%s)\n", fi_strerror(errno));
+        return ret;
+    }
+
+    ret = fi_endpoint(shmem_transport_ofi_domainfd,
+                      info->p_info, &ctx->cntr_ep, NULL);
+    if (ret!=0) {
+        RAISE_WARN_STR("context ctr_ep creation failed");
+        return ret;
+    }
+
+    ret = bind_enable_cntr_ep_resources(ctx);
+    if (ret!=0) {
+        RAISE_ERROR_MSG("context bind/enable resources failed (%s)\n", fi_strerror(errno));
+        return ret;
+    }
+
+    return 0;
+}
+
+
 int shmem_transport_init(void)
 {
     int ret = 0;
-    struct fabric_info info = {0};
 
-    info.npes      = shmem_runtime_get_size();
+    shmem_transport_ofi_info.npes      = shmem_runtime_get_size();
 
     if (shmem_internal_params.OFI_PROVIDER_provided)
-        info.prov_name = shmem_internal_params.OFI_PROVIDER;
+        shmem_transport_ofi_info.prov_name = shmem_internal_params.OFI_PROVIDER;
     if (shmem_internal_params.OFI_USE_PROVIDER_provided)
-        info.prov_name = shmem_internal_params.OFI_USE_PROVIDER;
+        shmem_transport_ofi_info.prov_name = shmem_internal_params.OFI_USE_PROVIDER;
     else
-        info.prov_name = NULL;
+        shmem_transport_ofi_info.prov_name = NULL;
 
     if (shmem_internal_params.OFI_FABRIC_provided)
-        info.fabric_name = shmem_internal_params.OFI_FABRIC;
+        shmem_transport_ofi_info.fabric_name = shmem_internal_params.OFI_FABRIC;
     else
-        info.fabric_name = NULL;
+        shmem_transport_ofi_info.fabric_name = NULL;
 
     if (shmem_internal_params.OFI_DOMAIN_provided)
-        info.domain_name = shmem_internal_params.OFI_DOMAIN;
+        shmem_transport_ofi_info.domain_name = shmem_internal_params.OFI_DOMAIN;
     else
-        info.domain_name = NULL;
+        shmem_transport_ofi_info.domain_name = NULL;
 
-    ret = query_for_fabric(&info);
+
+    ret = query_for_fabric(&shmem_transport_ofi_info);
     if (ret!=0)
         return ret;
 
+    ret = allocate_fabric_resources(&shmem_transport_ofi_info);
+    if(ret!=0)
+        return ret;
+
+    shmem_transport_ofi_avail_ctx = shmem_transport_ofi_grow_size;
+
+    shmem_transport_ofi_contexts = malloc(shmem_transport_ofi_avail_ctx
+                                          * sizeof(shmem_transport_ctx_t*));
+
     /* The current bounce buffering implementation is only compatible with
      * providers that don't require FI_CONTEXT */
-    if (info.p_info->mode & FI_CONTEXT) {
+    if (shmem_transport_ofi_info.p_info->mode & FI_CONTEXT) {
         if (shmem_internal_my_pe == 0 && shmem_internal_params.BOUNCE_SIZE > 0) {
             DEBUG_STR("OFI provider requires FI_CONTEXT; disabling bounce buffering");
         }
@@ -1154,20 +1247,26 @@ int shmem_transport_init(void)
     shmem_transport_ofi_put_poll_limit = shmem_internal_params.OFI_TX_POLL_LIMIT;
     shmem_transport_ofi_get_poll_limit = shmem_internal_params.OFI_RX_POLL_LIMIT;
 
-    ret = allocate_fabric_resources(&info);
+    /* TODO: initialize the default context with the same routine as user contexts */
+    //ret = shmem_transport_ofi_ctx_init(-1, &shmem_transport_ctx_default);
+    //if (ret!=0)
+    //    return ret;
 
+    shmem_transport_ctx_default.options |= SHMEMX_CTX_BOUNCE_BUFFER;
+
+    ret = allocate_endpoints(&shmem_transport_ctx_default, &shmem_transport_ofi_info);
     if (ret!=0)
         return ret;
 
-    ret = allocate_endpoints(&info);
+    ret = allocate_cntr_and_cq(&shmem_transport_ctx_default);
     if (ret!=0)
         return ret;
 
-    ret = allocate_cntr_and_cq();
+    ret = bind_enable_cq_ep_resources(&shmem_transport_ctx_default);
     if (ret!=0)
         return ret;
 
-    ret = bind_resources_to_and_enable_ep();
+    ret = bind_enable_cntr_ep_resources(&shmem_transport_ctx_default);
     if (ret!=0)
         return ret;
 
@@ -1183,14 +1282,12 @@ int shmem_transport_init(void)
     if (ret!=0)
         return ret;
 
-    ret = publish_av_info(&info);
+    ret = publish_av_info(&shmem_transport_ofi_info);
     if (ret!=0)
         return ret;
 
-    fi_freeinfo(info.fabrics);
-
-    shmem_internal_atomic_write(&shmem_transport_ctx_default.endpoint.pending_put_counter, 0);
-    shmem_internal_atomic_write(&shmem_transport_ctx_default.endpoint.pending_get_counter, 0);
+    shmem_internal_atomic_write(&shmem_transport_ctx_default.pending_put_cntr, 0);
+    shmem_internal_atomic_write(&shmem_transport_ctx_default.pending_get_cntr, 0);
     shmem_internal_atomic_write(&shmem_transport_ofi_pending_cq_count, 0);
 
     return 0;
@@ -1211,24 +1308,103 @@ int shmem_transport_startup(void)
     return 0;
 }
 
-void shmem_transport_ctx_create(shmem_transport_ctx_t **ctx)
+int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
 {
-    /* For now, assign all user-defined contexts to the default context */
-    *ctx = &shmem_transport_ctx_default;
+    SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
+
+    int ret;
+    int id = shmem_transport_ofi_num_ctx;
+
+    /* FIXME: This does not do resource cleanup 
+     * on error, it just returns. This is consistent with how
+     * initialization worked before, but is worse since context creation
+     * is not necessarily do-or-die.
+     *
+     * This also does not reuse entries from contexts that were freed.
+     */
+    if (shmem_transport_ofi_num_ctx == shmem_transport_ofi_avail_ctx) {
+        shmem_transport_ofi_avail_ctx += shmem_transport_ofi_grow_size;
+        shmem_transport_ofi_contexts = realloc(shmem_transport_ofi_contexts,
+               shmem_transport_ofi_avail_ctx * sizeof(shmem_transport_ctx_t*));
+
+        if (shmem_transport_ofi_contexts == NULL) {
+            RAISE_ERROR_STR("Error: out of memory when allocating OFI ctx array");
+        }
+    }
+
+    shmem_transport_ctx_t *ctxp = malloc(sizeof(shmem_transport_ctx_t));
+
+    if (ctxp == NULL) {
+        RAISE_ERROR_STR("Error: out of memory when allocating OFI ctx object");
+    }
+
+    ctxp->options = options;
+
+    ret = shmem_transport_ofi_ctx_init(ctxp, id);
+
+    if (ret) {
+        shmem_transport_ofi_contexts[id] = NULL;
+        free(ctxp);
+    } else {
+        shmem_transport_ofi_contexts[id] = ctxp;
+        shmem_transport_ofi_num_ctx++;
+        *ctx = ctxp;
+    }
+
+    SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
+    return ret;
+
+}
+
+void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
+{
+    shmem_transport_quiet(ctx);
+
+    if (fi_close(&ctx->cntr_ep->fid)) {
+        RAISE_ERROR_MSG("Context cntr endpoint close failed (%s)\n", fi_strerror(errno));
+    }
+    if (fi_close(&ctx->put_cntr->fid)) {
+        RAISE_ERROR_MSG("Context counter close failed (%s)\n", fi_strerror(errno));
+    }
+    if (fi_close(&ctx->get_cntr->fid)) {
+        RAISE_ERROR_MSG("Context counter close failed (%s)\n", fi_strerror(errno));
+    }
+
+    if (ctx->id >= 0) {
+        SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
+        shmem_transport_ofi_contexts[ctx->id] = NULL;
+        SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
+        free(ctx);
+    } else {
+        RAISE_ERROR_MSG("Attempted to destroy an invalid context (%s)\n", fi_strerror(errno));
+    }
 }
 
 int shmem_transport_fini(void)
 {
     /* Wait for acks before shutdown */
+    size_t i;
+    for(i = 0; i < shmem_transport_ofi_num_ctx; ++i) {
+        shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[i];
+        if(ctx) {
+            shmem_transport_ctx_destroy(ctx);
+            if (shmem_transport_ofi_contexts[i] != NULL) {
+                RAISE_ERROR_MSG("Unable to free ctx %zu", i);
+            }
+        }
+    }
+
     shmem_transport_quiet(&shmem_transport_ctx_default);
+    /* TODO: destroy the default context with the same routine as user contexts */
+    //shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
 
     if (shmem_transport_ofi_epfd &&
         fi_close(&shmem_transport_ofi_epfd->fid)) {
         RAISE_ERROR_MSG("Endpoint close failed (%s)\n", fi_strerror(errno));
     }
 
-    if (shmem_transport_ofi_cntr_epfd &&
-        fi_close(&shmem_transport_ofi_cntr_epfd->fid)) {
+    if (shmem_transport_ctx_default.cntr_ep &&
+        fi_close(&shmem_transport_ctx_default.cntr_ep->fid)) {
         RAISE_ERROR_MSG("Endpoint close failed (%s)\n", fi_strerror(errno));
     }
 
@@ -1259,13 +1435,13 @@ int shmem_transport_fini(void)
         RAISE_ERROR_MSG("Write CQ close failed (%s)\n", fi_strerror(errno));
     }
 
-    if (shmem_transport_ctx_default.endpoint.put_cntrfd &&
-        fi_close(&shmem_transport_ctx_default.endpoint.put_cntrfd->fid)) {
+    if (shmem_transport_ctx_default.put_cntr &&
+        fi_close(&shmem_transport_ctx_default.put_cntr->fid)) {
         RAISE_ERROR_MSG("INJECT PUT CT close failed (%s)\n", fi_strerror(errno));
     }
 
-    if (shmem_transport_ctx_default.endpoint.get_cntrfd &&
-        fi_close(&shmem_transport_ctx_default.endpoint.get_cntrfd->fid)) {
+    if (shmem_transport_ctx_default.get_cntr &&
+        fi_close(&shmem_transport_ctx_default.get_cntr->fid)) {
         RAISE_ERROR_MSG("GET CT close failed (%s)\n", fi_strerror(errno));
     }
 
@@ -1298,6 +1474,8 @@ int shmem_transport_fini(void)
 #ifdef USE_AV_MAP
     free(addr_table);
 #endif
+
+    fi_freeinfo(shmem_transport_ofi_info.fabrics);
 
     return 0;
 }

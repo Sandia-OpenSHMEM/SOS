@@ -46,8 +46,8 @@
     }                              \
   } while(0)
 
-#define NUM_UNSAFE_CTX 64
-#define NUM_CONTEXTS   128
+#define NUM_UNSAFE_CTX 10
+#define NUM_CONTEXTS   20
 
 typedef struct {
   int idx;

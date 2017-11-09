@@ -82,8 +82,19 @@ shmem_transport_fini(void)
 
 static inline
 void
-shmem_transport_ctx_create(shmem_transport_ctx_t **ctx)
+shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
 {
+    *ctx = NULL;
+    return;
+}
+
+static inline
+void
+shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
+{
+    if (ctx != NULL) {
+        RAISE_ERROR_STR("Invalid ctx_destroy");
+    }
     return;
 }
 
