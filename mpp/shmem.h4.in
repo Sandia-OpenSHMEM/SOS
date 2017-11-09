@@ -31,12 +31,12 @@ include(shmem_bind_cxx.m4)dnl
 extern "C" {
 #endif
 
-typedef enum { SHMEM_CMP_EQ=1,
-               SHMEM_CMP_NE=2,
-               SHMEM_CMP_GT=3,
-               SHMEM_CMP_GE=4,
-               SHMEM_CMP_LT=5,
-               SHMEM_CMP_LE=6 } shmem_cmp_t;
+#define SHMEM_CMP_EQ 1
+#define SHMEM_CMP_NE 2
+#define SHMEM_CMP_GT 3
+#define SHMEM_CMP_GE 4
+#define SHMEM_CMP_LT 5
+#define SHMEM_CMP_LE 6
 
 #define _SHMEM_CMP_EQ 1
 #define _SHMEM_CMP_NE 2
@@ -369,13 +369,13 @@ SHMEM_CXX_DEFINE_FOR_EXTENDED_AMO(`SHMEM_CXX_ATOMIC_SET')
 /* Point-to-point synchronization */
 
 define(`SHMEM_CXX_WAIT_UNTIL',
-`static inline void shmem_wait_until($2 *ivar, shmem_cmp_t cmp, $2 cmp_value) {
+`static inline void shmem_wait_until($2 *ivar, int cmp, $2 cmp_value) {
     shmem_$1_wait_until(ivar, cmp, cmp_value);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL')
 
 define(`SHMEM_CXX_TEST',
-`static inline int shmem_test($2 *ivar, shmem_cmp_t cmp, $2 cmp_value) {
+`static inline int shmem_test($2 *ivar, int cmp, $2 cmp_value) {
     return shmem_$1_test(ivar, cmp, cmp_value);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST')
