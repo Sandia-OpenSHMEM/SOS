@@ -12,7 +12,7 @@ Wait for a variable on the local PE to change.
 .B void
 .B shmem_wait_until(TYPE
 .IB "*ivar" ,
-.I shmem_cmp_t
+.I int
 .IB "cmp" ,
 .B TYPE
 .I cmp_value
@@ -39,7 +39,7 @@ Table 5.
 .B void
 .B shmem_<TYPENAME>_wait_until(TYPE
 .IB "*ivar" ,
-.I shmem_cmp_t
+.I int
 .IB "cmp" ,
 .B TYPE
 .I cmp_value

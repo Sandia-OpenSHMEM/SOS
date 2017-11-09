@@ -12,7 +12,7 @@ Test whether a variable on the local PE has changed.
 .B int
 .B shmem_test(TYPE
 .IB "*ivar" ,
-.I shmem_cmp_t
+.I int
 .IB "cmp" ,
 .B TYPE
 .I value
@@ -25,7 +25,7 @@ Table 5.
 .B int
 .B shmem_<TYPENAME>_test(TYPE
 .IB "*ivar" ,
-.I shmem_cmp_t
+.I int
 .IB "cmp" ,
 .B TYPE
 .I value
@@ -92,7 +92,7 @@ wait on an array of symmetric objects and return the index of an
 element that satisfies the specified condition.
 .nf
 #include <shmem.h>
-int user_wait_any(long *ivar, int count, shmem_cmp_t cmp, long value)
+int user_wait_any(long *ivar, int count, int cmp, long value)
 {
  int idx = 0;
  while (!shmem_test(&ivar[idx], cmp, value))
