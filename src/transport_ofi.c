@@ -1316,13 +1316,13 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 {
     shmem_transport_quiet(ctx);
 
-    if (fi_close(&ctx->cntr_ep->fid)) {
+    if (ctx->cntr_ep && fi_close(&ctx->cntr_ep->fid)) {
         RAISE_ERROR_MSG("Context cntr endpoint close failed (%s)\n", fi_strerror(errno));
     }
-    if (fi_close(&ctx->put_cntr->fid)) {
+    if (ctx->put_cntr && fi_close(&ctx->put_cntr->fid)) {
         RAISE_ERROR_MSG("Context counter close failed (%s)\n", fi_strerror(errno));
     }
-    if (fi_close(&ctx->get_cntr->fid)) {
+    if (ctx->get_cntr && fi_close(&ctx->get_cntr->fid)) {
         RAISE_ERROR_MSG("Context counter close failed (%s)\n", fi_strerror(errno));
     }
 
@@ -1331,7 +1331,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         shmem_transport_ofi_contexts[ctx->id] = NULL;
         SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
         free(ctx);
-    } else {
+    } else if (ctx->id != -1) {
         RAISE_ERROR_MSG("Attempted to destroy an invalid context (%s)\n", fi_strerror(errno));
     }
 }
@@ -1351,16 +1351,10 @@ int shmem_transport_fini(void)
     }
 
     shmem_transport_quiet(&shmem_transport_ctx_default);
-    /* TODO: destroy the default context with the same routine as user contexts */
-    //shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
+    shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
 
     if (shmem_transport_ofi_epfd &&
         fi_close(&shmem_transport_ofi_epfd->fid)) {
-        RAISE_ERROR_MSG("Endpoint close failed (%s)\n", fi_strerror(errno));
-    }
-
-    if (shmem_transport_ctx_default.cntr_ep &&
-        fi_close(&shmem_transport_ctx_default.cntr_ep->fid)) {
         RAISE_ERROR_MSG("Endpoint close failed (%s)\n", fi_strerror(errno));
     }
 
@@ -1389,16 +1383,6 @@ int shmem_transport_fini(void)
     if (shmem_transport_ofi_put_nb_cqfd &&
         fi_close(&shmem_transport_ofi_put_nb_cqfd->fid)) {
         RAISE_ERROR_MSG("Write CQ close failed (%s)\n", fi_strerror(errno));
-    }
-
-    if (shmem_transport_ctx_default.put_cntr &&
-        fi_close(&shmem_transport_ctx_default.put_cntr->fid)) {
-        RAISE_ERROR_MSG("INJECT PUT CT close failed (%s)\n", fi_strerror(errno));
-    }
-
-    if (shmem_transport_ctx_default.get_cntr &&
-        fi_close(&shmem_transport_ctx_default.get_cntr->fid)) {
-        RAISE_ERROR_MSG("GET CT close failed (%s)\n", fi_strerror(errno));
     }
 
 #ifndef ENABLE_HARD_POLLING
