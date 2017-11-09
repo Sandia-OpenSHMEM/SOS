@@ -78,6 +78,9 @@ size_t                          shmem_transport_ofi_max_buffered_send;
 size_t                          shmem_transport_ofi_max_msg_size;
 size_t                          shmem_transport_ofi_bounce_buffer_size;
 size_t                          shmem_transport_ofi_addrlen;
+#ifdef ENABLE_MR_RMA_EVENT
+int                             shmem_transport_ofi_mr_rma_event;
+#endif
 fi_addr_t                       *addr_table;
 #ifdef USE_ON_NODE_COMMS
 #define EPHOSTNAMELEN  _POSIX_HOST_NAME_MAX + 1
@@ -274,7 +277,11 @@ const static size_t shmem_transport_ofi_queue_slots = 32768;
 uint64_t shmem_transport_ofi_max_poll = (1ULL<<30);
 
 #define OFI_MAJOR_VERSION 1
+#ifdef ENABLE_MR_RMA_EVENT
+#define OFI_MINOR_VERSION 5
+#else
 #define OFI_MINOR_VERSION 0
+#endif
 
 static
 void init_bounce_buffer(shmem_free_list_item_t *item)
@@ -475,8 +482,8 @@ int allocate_cntr_and_cq(shmem_transport_ctx_t *ctx)
 static inline
 int allocate_recv_cntr_mr(void)
 {
-
     int ret = 0;
+    uint64_t flags = 0;
 
     /* ------------------------------------ */
     /* POST enable resources for to EP      */
@@ -500,12 +507,17 @@ int allocate_recv_cntr_mr(void)
             RAISE_WARN_STR("target cntr_open failed");
             return ret;
         }
+
+#ifdef ENABLE_MR_RMA_EVENT
+        if (shmem_transport_ofi_mr_rma_event)
+            flags |= FI_RMA_EVENT;
+#endif /* ENABLE_MR_RMA_EVENT */
     }
 #endif
 
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, 0, UINT64_MAX,
-                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, 0,
+                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, flags,
                     &shmem_transport_ofi_target_mrfd, NULL);
     if (ret!=0) {
         RAISE_WARN_STR("mr_reg failed");
@@ -528,6 +540,16 @@ int allocate_recv_cntr_mr(void)
         RAISE_WARN_STR("ep_bind cntr_epfd2put_cntr failed");
         return ret;
     }
+
+#ifdef ENABLE_MR_RMA_EVENT
+    if (shmem_transport_ofi_mr_rma_event) {
+        ret = fi_mr_enable(shmem_transport_ofi_target_mrfd);
+        if (ret!=0) {
+            RAISE_WARN_STR("mr_enable target_mrfd failed");
+            return ret;
+        }
+    }
+#endif /* ENABLE_MR_RMA_EVENT */
 #endif /* ndef ENABLE_HARD_POLLING */
 
 #else
@@ -536,7 +558,7 @@ int allocate_recv_cntr_mr(void)
      * the provider. */
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_heap_base,
                     shmem_internal_heap_length,
-                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 1ULL, 0,
+                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 1ULL, flags,
                     &shmem_transport_ofi_target_heap_mrfd, NULL);
     if (ret != 0) {
         RAISE_WARN_STR("mr_reg heap failed");
@@ -544,7 +566,7 @@ int allocate_recv_cntr_mr(void)
     }
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_data_base,
                     shmem_internal_data_length,
-                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, 0,
+                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, flags,
                     &shmem_transport_ofi_target_data_mrfd, NULL);
     if (ret != 0) {
         RAISE_WARN_STR("mr_reg data segment failed");
@@ -574,6 +596,22 @@ int allocate_recv_cntr_mr(void)
         RAISE_WARN_STR("ep_bind cntr_epfd2put_cntr failed");
         return ret;
     }
+
+#ifdef ENABLE_MR_RMA_EVENT
+    if (shmem_transport_ofi_mr_rma_event) {
+        ret = fi_mr_enable(shmem_transport_ofi_target_data_mrfd);
+        if (ret!=0) {
+            RAISE_WARN_STR("mr_enable target_data_mrfd failed");
+            return ret;
+        }
+
+        ret = fi_mr_enable(shmem_transport_ofi_target_heap_mrfd);
+        if (ret!=0) {
+            RAISE_WARN_STR("mr_enable target_heap_mrfd failed");
+            return ret;
+        }
+    }
+#endif /* ENABLE_MR_RMA_EVENT */
 #endif /* ndef ENABLE_HARD_POLLING */
 #endif
 
@@ -1035,6 +1073,9 @@ int query_for_fabric(struct fabric_info *info)
     domain_attr.resource_mgmt = FI_RM_ENABLED;
 #ifdef ENABLE_MR_SCALABLE
     domain_attr.mr_mode       = FI_MR_SCALABLE; /* VA space-doesn't have to be pre-allocated */
+#  if !defined(ENABLE_HARD_POLLING) && defined(ENABLE_MR_RMA_EVENT)
+    domain_attr.mr_mode      |= FI_MR_RMA_EVENT; /* can support RMA_EVENT on MR */
+#  endif
 #else
     domain_attr.mr_mode       = FI_MR_BASIC; /* VA space is pre-allocated */
 #endif
@@ -1117,6 +1158,9 @@ int query_for_fabric(struct fabric_info *info)
 
     shmem_internal_assertp(info->p_info->tx_attr->inject_size >= shmem_transport_ofi_max_buffered_send);
     shmem_transport_ofi_max_buffered_send = info->p_info->tx_attr->inject_size;
+#ifdef ENABLE_MR_RMA_EVENT
+    shmem_transport_ofi_mr_rma_event = (info->p_info->domain_attr->mr_mode & FI_MR_RMA_EVENT) != 0;
+#endif
 
     DEBUG_MSG("OFI provider: %s, fabric: %s, domain: %s\n",
               info->p_info->fabric_attr->prov_name,
