@@ -285,7 +285,7 @@ void init_bounce_buffer(shmem_free_list_item_t *item)
 }
 
 static inline
-int allocate_endpoints(shmem_transport_ctx_t *ctx, struct fabric_info *info)
+int allocate_endpoint(shmem_transport_ctx_t *ctx, struct fabric_info *info)
 {
 
     int ret = 0;
@@ -302,13 +302,6 @@ int allocate_endpoints(shmem_transport_ctx_t *ctx, struct fabric_info *info)
                       info->p_info, &shmem_transport_ofi_epfd, NULL);
     if (ret!=0) {
         RAISE_WARN_STR("epfd creation failed");
-        return ret;
-    }
-
-    ret = fi_endpoint(shmem_transport_ofi_domainfd,
-                      info->p_info, &ctx->cntr_ep, NULL);
-    if (ret!=0) {
-        RAISE_WARN_STR("cntr_epfd creation failed");
         return ret;
     }
 
@@ -412,50 +405,11 @@ int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx)
 }
 
 static inline
-int allocate_cntr_and_cq(shmem_transport_ctx_t *ctx)
+int allocate_cq(shmem_transport_ctx_t *ctx)
 {
 
     int ret = 0;
-    struct fi_cntr_attr cntr_put_attr = {0};
-    struct fi_cntr_attr cntr_get_attr = {0};
     struct fi_cq_attr   cq_attr = {0};
-
-    cntr_put_attr.events   = FI_CNTR_EVENTS_COMP;
-    cntr_get_attr.events   = FI_CNTR_EVENTS_COMP;
-
-    /* Set FI_WAIT based on the put and get polling limits defined above */
-    if (shmem_transport_ofi_put_poll_limit < 0) {
-        cntr_put_attr.wait_obj = FI_WAIT_NONE;
-    } else {
-        cntr_put_attr.wait_obj = FI_WAIT_UNSPEC;
-    }
-    if (shmem_transport_ofi_get_poll_limit < 0) {
-        cntr_get_attr.wait_obj = FI_WAIT_NONE;
-    } else {
-        cntr_get_attr.wait_obj = FI_WAIT_UNSPEC;
-    }
-
-    /* ------------------------------------------------------- */
-    /* Define Completion tracking Resources to Attach to EP    */
-    /* ------------------------------------------------------- */
-
-    /* Create counter for counting completions of outgoing writes */
-
-    ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_put_attr,
-                       &ctx->put_cntr, NULL);
-    if (ret!=0) {
-        RAISE_WARN_STR("put cntr_open failed");
-        return ret;
-    }
-
-    /* Create counter for counting completions of outbound reads */
-
-    ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_get_attr,
-                       &ctx->get_cntr, NULL);
-    if (ret!=0) {
-        RAISE_WARN_STR("get cntr_open failed");
-        return ret;
-    }
 
     /* Create CQ to be used for NB puts, only context reported */
     cq_attr.format    = FI_CQ_FORMAT_CONTEXT;
@@ -1160,17 +1114,23 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     shmem_internal_atomic_write(&ctx->pending_put_cntr, 0);
     shmem_internal_atomic_write(&ctx->pending_get_cntr, 0);
 
+    /* ------------------------------------------------------- */
+    /* Define Completion tracking Resources to Attach to EP    */
+    /* ------------------------------------------------------- */
+
+    /* Create counter for counting completions of outgoing writes */
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_put_attr,
                        &ctx->put_cntr, NULL);
     if (ret!=0) {
-        RAISE_ERROR_MSG("context cntr_open failed (%s)\n", fi_strerror(errno));
+        RAISE_ERROR_MSG("context put cntr_open failed (%s)\n", fi_strerror(errno));
         return ret;
     }
 
+    /* Create counter for counting completions of outbound reads */
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_get_attr,
                        &ctx->get_cntr, NULL);
     if (ret!=0) {
-        RAISE_ERROR_MSG("context cntr_open failed (%s)\n", fi_strerror(errno));
+        RAISE_ERROR_MSG("context get cntr_open failed (%s)\n", fi_strerror(errno));
         return ret;
     }
 
@@ -1247,26 +1207,22 @@ int shmem_transport_init(void)
     shmem_transport_ofi_put_poll_limit = shmem_internal_params.OFI_TX_POLL_LIMIT;
     shmem_transport_ofi_get_poll_limit = shmem_internal_params.OFI_RX_POLL_LIMIT;
 
-    /* TODO: initialize the default context with the same routine as user contexts */
-    //ret = shmem_transport_ofi_ctx_init(-1, &shmem_transport_ctx_default);
-    //if (ret!=0)
-    //    return ret;
-
-    shmem_transport_ctx_default.options |= SHMEMX_CTX_BOUNCE_BUFFER;
-
-    ret = allocate_endpoints(&shmem_transport_ctx_default, &shmem_transport_ofi_info);
+    ret = allocate_cq(&shmem_transport_ctx_default);
     if (ret!=0)
         return ret;
 
-    ret = allocate_cntr_and_cq(&shmem_transport_ctx_default);
+    /* Initialize the default context */
+    ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, -1);
+    if (ret!=0)
+        return ret;
+
+    shmem_transport_ctx_default.options |= SHMEMX_CTX_BOUNCE_BUFFER;
+
+    ret = allocate_endpoint(&shmem_transport_ctx_default, &shmem_transport_ofi_info);
     if (ret!=0)
         return ret;
 
     ret = bind_enable_cq_ep_resources(&shmem_transport_ctx_default);
-    if (ret!=0)
-        return ret;
-
-    ret = bind_enable_cntr_ep_resources(&shmem_transport_ctx_default);
     if (ret!=0)
         return ret;
 
