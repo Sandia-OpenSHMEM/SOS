@@ -1212,7 +1212,7 @@ int shmem_transport_init(void)
         return ret;
 
     /* Initialize the default context */
-    ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, -1);
+    ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, SHMEM_CTX_DEFAULT_ID);
     if (ret!=0)
         return ret;
 
@@ -1331,7 +1331,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         shmem_transport_ofi_contexts[ctx->id] = NULL;
         SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
         free(ctx);
-    } else if (ctx->id != -1) {
+    } else if (ctx->id != SHMEM_CTX_DEFAULT_ID) {
         RAISE_ERROR_MSG("Attempted to destroy an invalid context (%s)\n", fi_strerror(errno));
     }
 }

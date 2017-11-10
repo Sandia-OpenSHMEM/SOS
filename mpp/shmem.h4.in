@@ -89,6 +89,7 @@ typedef void* shmem_ctx_t;
 #define SHMEM_CTX_PRIVATE       (1<<0)
 #define SHMEM_CTX_SERIALIZED    (1<<1)
 #define SHMEM_CTX_NOSTORE       (1<<2)
+#define SHMEM_CTX_DEFAULT_ID    -1
 
 define(`SHPRE', `')dnl
 include(shmem_c_func.h4)dnl
