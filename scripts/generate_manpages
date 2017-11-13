@@ -11,9 +11,10 @@ import subprocess
 # boldWordsC and boldWordsF are a set of the key words that will be
 # bolded in the man page
 boldWordsC = {"void", "int", "const", "size_t", "short", "ptrdiff_t", 
-            "long", "TYPE", "shmem_global_exit(int"}
+            "long", "TYPE", "shmem_global_exit(int", "shmem_ctx_t"}
 boldWordsF = {"INTEGER", "CALL", "POINTER", "LOGICAL", "INTEGER*4",
                 "INTEGER*8", "REAL*4", "REAL*8", "CHARACTER"}
+sizes = ["8", "16", "32", "64", "128"]
 
 def writePageHeader(functionName):
     """
@@ -646,7 +647,7 @@ def refTextReplacements(tex):
 def refMEMReplacements(tex):
     """ 
     Searches through the tex for any reference that specifically points to 
-    the memory modelled and replaces that sentence with a hard-coded string.
+    the memory model and replaces that sentence with a hard-coded string.
     Processing the section that was in the original text is not an option
     because the reference the Latex file does not apply to the man pages. 
     """
@@ -713,6 +714,7 @@ def parseRefTables(tableTex):
     table = cleanText(tableTex[startIdx + len("\\hline"):endIdx])
     text = ""
     count = 0
+    typename = []
     while(table.find("\\hline") >= 0):
         line = table[:table.find("\\hline")]
         firstCol = line[:line.find("&")].strip()
@@ -722,9 +724,10 @@ def parseRefTables(tableTex):
                     ".B " + secondCol + "\n"
         else:
             text += ".TP\n" + firstCol + "\n" + secondCol + "\n"
+            typename.append(secondCol)
         table = table[table.find("\\hline") + len("\\hline"):]
         count += 1
-    return text
+    return (text, typename)
 
 def addRefTable(tableID, directory):
     """ 
@@ -734,25 +737,39 @@ def addRefTable(tableID, directory):
     containing the subsection header, the caption for the table, and the
     table. 
     """
-
+    numTable = 0
     if tableID == 1:
-        tableTex = open(directory + "/stdrmatypes.tex", "r").read()
+        tableTex = open(directory + "/rma_intro.tex", "r").read()
+        numTable = 1
     elif tableID == 2: 
-        tableTex = open(directory + "/stdamotypes.tex", "r").read()
+        tableTex = open(directory + "/atomics_intro.tex", "r").read()
+        numTable = 1
     elif tableID == 3:
-        tableTex = open(directory + "/extamotypes.tex", "r").read()
+        tableTex = open(directory + "/atomics_intro.tex", "r").read()
+        numTable = 2
     elif tableID == 4:
-        tableTex = open(directory + "/bitamotypes.tex", "r").read()
+        tableTex = open(directory + "/atomics_intro.tex", "r").read()
+        numTable = 3
     else:
-        tableTex = open(directory + "/p2psynctypes.tex", "r").read()
+        tableTex = open(directory + "/p2p_sync_intro.tex", "r").read()
+        numTable = 1
+    count = 0
+    beginTable = 0
+    while (count < numTable):
+        beginTable = tableTex.find("\\begin{table}", beginTable)
+        count = count + 1
+
+    endTable = tableTex.find("\\end{table}", beginTable) + len("\\end{table}")
+    tableTex = tableTex[beginTable:endTable]
     captionIdx = tableTex.find("\\caption")
     startBrace = captionIdx + len("\\caption")
     endBrace = findMatchingBrace(tableTex, startBrace)
 
     caption = generalReplacements(tableTex[startBrace+1:endBrace])
+    (tex, typenames) = parseRefTables(tableTex)
     text = ".SS Table " + str(tableID) + ":\n" + caption + "\n" + \
-            parseRefTables(tableTex)
-    return text
+            tex
+    return (text, typenames)
 
 ##########################################################################
 ##                            CODE REPLACEMENTS                         ##
@@ -793,8 +810,9 @@ def synCReplacements(tex, keyString):
             wordList = line.split()
             for i in xrange(len(wordList)):
                 if (wordList[i].find("shmem") != -1 and 
-                        wordList[i].find("TYPENAME") == -1 and
-                        wordList[i].find("SIZE") == -1):
+                        # wordList[i].find("TYPENAME") == -1 and
+                        # wordList[i].find("SIZE") == -1 and
+                        wordList[i] not in boldWordsC):
                     stripAsterisk = wordList[i].replace("*", "")
                     argStart = stripAsterisk.find("(")
                     funcName = stripAsterisk[:argStart]
@@ -887,9 +905,11 @@ def synFReplacements(tex, build_fortran):
                             funcName = wordList[i][:argStart]
                             linkFortranFuncs.append(funcName.strip())
 
-        tex = tex[:startOfText] + "\n./ sectionStart" + "\n" + \
-                ".SS Fortran:\n" + "\n.nf\n" + text + "\n.fi\n" + \
-                 "\n./ sectionEnd"  + "\n" + \
+        tex = tex[:startOfText] + "\n./ sectionStart" + \
+            "\n.B ***************DEPRECATED***************\n" + \
+                ".SS Fortran:\n" + "\n.nf\n" + text + "\n.fi" + \
+                "\n.B ****************************************\n" + \
+                "\n./ sectionEnd"  + "\n" + \
                  tex[endOfText + len("\\end{Fsynopsis}"):]
     return (tex, linkFortranFuncs)
 
@@ -990,16 +1010,29 @@ def findMatchingBrace(tex, ind):
 ##                        REDIRECTION FUNCTIONS                         ##
 ##########################################################################
 
-def writeLinkFunctions(functionName, linkFunctions, gen_dir):
+def writeLinkFunctions(functionName, linkFunctions, gen_dir, typenames):
     """
     Takes in a list of all functions that refers to the same man page as
     the one with <functionName>, which is the parent man page. 
     """
     for link in linkFunctions:
         if link != functionName:
-            manFile = open(gen_dir + '/' + link + ".3", "w")
-            manFile.write(".so " + functionName + ".3\n")
-            manFile.close()
+            if link.find("<TYPENAME>") != -1:
+                for s in typenames:
+                    newlink = link.replace("<TYPENAME>", s)
+                    manFile = open(gen_dir + '/' + newlink + ".3", "w")
+                    manFile.write(".so " + functionName + ".3\n")
+                    manFile.close()
+            elif link.find("<SIZE>") != -1:
+                for s in sizes:
+                    newlink = link.replace("<SIZE>", s)
+                    manFile = open(gen_dir + '/' + newlink + ".3", "w")
+                    manFile.write(".so " + functionName + ".3\n")
+                    manFile.close()
+            else:
+                manFile = open(gen_dir + '/' + link + ".3", "w")
+                manFile.write(".so " + functionName + ".3\n")
+                manFile.close()
 
 def parseDeprecationTable(directory, gen_dir, build_fortran):
     """ 
@@ -1015,7 +1048,9 @@ def parseDeprecationTable(directory, gen_dir, build_fortran):
     If the deprecated function already has an entry in the output, no new
     page will be created.
     """
-    tableTex = open(directory + "/deprecationTable.tex", "r").read()
+    tableTex = open(directory + "/backmatter.tex", "r").read()
+    beginTable = tableTex.find("\\begin{longtable}")
+    endTable = tableTex.find("\\end{longtable}", beginTable)
     tableRows = tableTex.split("\\hline")
     for row in tableRows:
         columns = row.split("&")
@@ -1177,10 +1212,7 @@ def convertFile(functionName, directory, gen_dir, build_fortran=False):
     manFile.write(titleHeader)
 
     tex = texFile.read()
-    tex = tex.replace("\\begin{DeprecateBlock}", 
-        "./ sectionStart\n.B ***********DEPRECATED***********\n./ sectionEnd\n")
-    tex = tex.replace("\\end{DeprecateBlock}", 
-        "./ sectionStart\n.B ********************************\n./ sectionEnd\n")
+    
     tex = tex.replace("\\begin{apidefinition}\n", 
                 "./ sectionStart\n.SH   SYNOPSIS\n./ sectionEnd")
     tex = sumReplacements(tex, functionName)
@@ -1200,16 +1232,22 @@ def convertFile(functionName, directory, gen_dir, build_fortran=False):
     if (tex.find("\\begin{apiexamples}") != -1):
         tex = exampleReplacements(tex, directory)
     (tex, tables) = refTextReplacements(tex)
+    typenames = []
     if (tables[0]):
-        tex = tex + addRefTable(1, directory)
+        (t, typenames) = addRefTable(1, directory)
+        tex = tex + t
     if (tables[1]):
-        tex = tex + addRefTable(2, directory)
+        (t, typenames) = addRefTable(2, directory)
+        tex = tex + t
     if (tables[2]):
-        tex = tex + addRefTable(3, directory)
+        (t, typenames) = addRefTable(3, directory)
+        tex = tex + t
     if (tables[3]):
-        tex = tex + addRefTable(4, directory)
+        (t, typenames) = addRefTable(4, directory)
+        tex = tex + t
     if (tables[4]):
-        tex = tex + addRefTable(5, directory)
+        (t, typenames) = addRefTable(5, directory)
+        tex = tex + t
     tex = tex.replace("\\begin{apidefinition}", "")
     tex = tex.replace("\\end{apidefinition}", "")
     text = tex[:tex.find(".SS Examples")]
@@ -1219,11 +1257,16 @@ def convertFile(functionName, directory, gen_dir, build_fortran=False):
     text = text.replace("$", "")
     tex = text + tex[tex.find(".SS Examples"):]
     tex = tex.replace("\n ", "\n")
+    tex = tex.replace("\\begin{DeprecateBlock}", 
+        "\n./ sectionStart\n.B ***************DEPRECATED***************\n./ sectionEnd\n")
+    tex = tex.replace("\\end{DeprecateBlock}", 
+        "\n./ sectionStart\n.B ****************************************\n./ sectionEnd\n")
     manFile.write(tex.replace("\\n", "\\\\" + "n"))
+
     print("Finished converting " + functionName + ".tex")
     manFile.close()
     texFile.close()
-    writeLinkFunctions(functionName, linkFunctions, gen_dir)
+    writeLinkFunctions(functionName, linkFunctions, gen_dir, typenames)
     return manFile
 
 # Quick fix for the extra newline problem seen in vimpager:
@@ -1268,13 +1311,14 @@ def main():
 
             TOC = open(args.directory + "/../main_spec.tex").read()
             routineList = generateRoutineList(TOC)
+            print(routineList)
             for routine in routineList:
                 if routine + ".tex" not in os.listdir(args.directory):
                     print("Error: " + routine + ".tex is not in the given directory")
                     exit(1)
                 else:
                     man_file = convertFile(routine, args.directory, args.output_directory, args.build_fortran)
-                    cleanManFile(man_file)
+                    # cleanManFile(man_file)
 
             parseDeprecationTable(args.directory, args.output_directory, args.build_fortran)
             writeExecFunctions(args.output_directory)
@@ -1291,7 +1335,7 @@ def main():
 
             functionName = args.filename[last:per]
             man_file = convertFile(functionName, args.filename[:last], args.output_directory)
-            cleanManFile(man_file)
+            # cleanManFile(man_file)
 
 if __name__== "__main__":
     main()
