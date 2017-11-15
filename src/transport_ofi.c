@@ -536,11 +536,11 @@ int allocate_recv_cntr_mr(void)
 
 #else
     /* Register separate data and heap segments using keys 0 and 1,
-     * respectively.  In MR_BASIC_MODE, the keys are ignored and selected by
+     * respectively.  In MR_BASIC_MODE, the keys are selected by
      * the provider. */
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_heap_base,
                     shmem_internal_heap_length,
-                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 1ULL, flags,
+                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, flags,
                     &shmem_transport_ofi_target_heap_mrfd, NULL);
     if (ret != 0) {
         RAISE_WARN_STR("mr_reg heap failed");
