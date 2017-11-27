@@ -24,7 +24,7 @@ def writePageHeader(functionName):
     """
 
     titleHeader = ".TH " + functionName.upper() + " 3 " \
-                     + "\"Open Source Software Solutions, Inc.\"" \
+                     + "\"Open Source Software Solutions, Inc.\" " \
                      + "\"OpenSHMEM Library Documentation\"" + "\n"
     return titleHeader
 
@@ -48,10 +48,12 @@ def funcReplacements(tex):
         startBrace = tex.find("{", index)
         endBrace = tex.find("}", startBrace)
         innerText = tex[startBrace+1:endBrace]
-        if(endBrace + 1 < len(tex) and tex[endBrace + 1] == "."):
+        if(endBrace + 1 < len(tex) and 
+            (tex[endBrace + 1] == "." or tex[endBrace + 1] == ",") 
+            or tex[endBrace + 1] == ";"):
             tex = tex[:index] + "\n" + \
                     ".BR \"" + innerText + \
-                    "\" .\n" + tex[endBrace+2:]
+                    "\" " + tex[endBrace + 1] + "\n" + tex[endBrace+2:]
         else:                                                                
             tex = tex[:index] + "\n" + \
                 ".B " + innerText + \
@@ -85,7 +87,7 @@ def varReplacements(tex, keyString):
                                 + "\n" + tex[endBrace+1:]
             else:
                 tex = tex[:index] + "\n.IR \"" + innerText \
-                                + "\" .\n" + tex[endBrace+1:]
+                                + "\" .\n" + tex[endBrace+2:]
     return tex
 
 def variableReplacements(tex):
@@ -181,6 +183,30 @@ def constReplacements(tex):
         startBrace = tex.find("{", index)
         endBrace = tex.find("}", startBrace)
         tex = tex[:index] + tex[startBrace+1:endBrace] + tex[endBrace+1:]
+
+    while (tex.find("\\LibConstRef{") != -1):
+        index = tex.find("\\LibConstRef{")
+        startBrace = tex.find("{", index)
+        endBrace = tex.find("}", startBrace)
+        tex = tex[:index] + tex[startBrace+1:endBrace] + tex[endBrace+1:]
+    while (tex.find("\\footnote") != -1):
+        index = tex.find("\\footnote")
+        startBrace = tex.find("{", index)
+        endBrace = tex.find("}", startBrace)
+        tex = tex[:index] + "(" + tex[startBrace+1:endBrace] + ")" + tex[endBrace+1:]
+    return tex
+
+def paragraphReplacements(tex):
+    """
+    Replace the Latex command "\CONST{<argument>}" with just 
+    argument. 
+    """
+
+    while (tex.find("\\paragraph") != -1):
+        index = tex.find("\\paragraph")
+        startBrace = tex.find("{", index)
+        endBrace = tex.find("}", startBrace)
+        tex = tex[:index] + ".SH " + tex[startBrace+1:endBrace] + "\n" + tex[endBrace+1:]
     return tex
 
 def cTypeReplacements(tex):
@@ -216,6 +242,8 @@ def generalReplacements(tex):
     tex = tex.replace("\\ac{API}", "API")
     tex = tex.replace("\\acp{RMA}", "RMAs")
     tex = tex.replace("\\ac{RMA}", "RMA")
+    tex = tex.replace("\\ac{MPMD}", "Multiple Program Multiple Data (MPMD)")
+    tex = tex.replace("\\CorCppFor", " C/C++/Fortran")
     tex = tex.replace("\\CorCpp{}", " C/C++")
     tex = tex.replace("\\CorCpp", " C/C++")
     tex = tex.replace("\\Fortran{}", "Fortran")
@@ -327,7 +355,7 @@ def impnotesReplacements(tex):
     endOfText = findMatchingBrace(tex, tex.find("{", startOfText))
     sectionText = cleanText(tex[startOfText:endOfText])
     tex = tex[:startOfText] + \
-            "./ sectionStart\n" + "\n.SS API Notes\n" + \
+            "./ sectionStart\n" + "\n.SS Note to Implementors\n" + \
             sectionText + "\n./ sectionEnd\n" + tex[endOfText + 1:]
     tex = tex.replace("\\apiimpnotes{", "")
     return tex
@@ -729,6 +757,45 @@ def parseRefTables(tableTex):
         count += 1
     return (text, typename)
 
+def bulletReplacements(tex):
+    """ 
+    The function takes in a tex file that contains a bulleted list
+    as input and returns the processed text to display a list in 
+    manpages.
+    All elements within the tex file that is desired will follow the 
+    following pattern:
+    
+            \begin{itemize}
+            \item ...
+            \item ...
+            \end{itemize}
+    
+    The following code will convert the above text to display in tabular 
+    form. 
+    
+    The bullet header is:
+                    .IP 
+                    \(bu ...
+                    \(bu ...
+    The .RE flag will have the indentation default to the previous set-
+    ting prior to the list.
+    
+    NOTE: Typically manpages ignores "\\n" within the text and displays
+    the text as if there is no "\\n". Under the ".TP" header, the flag
+    for when the second column begins is the next "\\n" 
+    
+    .B at the start of a line will underline/italicize all text until
+    the next "\\n" 
+    """
+
+    startIdx = tex.find("\\begin{itemize}")
+    endIdx = tex.find("\\end{itemize}")
+    text = cleanText(tex[startIdx + len("\\begin{itemize}"):endIdx])
+    text = text.replace("\\item", "\n\\(bu")
+    tex = tex[:startIdx] + "\n.IP\n" + text + "\n.RE" + tex[endIdx + len("\\end{itemize}"):]
+
+    return tex
+
 def addRefTable(tableID, directory):
     """ 
     This function maps the tableID given to each reference table to its
@@ -756,13 +823,13 @@ def addRefTable(tableID, directory):
     count = 0
     beginTable = 0
     while (count < numTable):
-        beginTable = tableTex.find("\\begin{table}", beginTable)
+        beginTable = tableTex.find("\\begin{table}", beginTable + 1)
         count = count + 1
 
     endTable = tableTex.find("\\end{table}", beginTable) + len("\\end{table}")
     tableTex = tableTex[beginTable:endTable]
-    captionIdx = tableTex.find("\\caption")
-    startBrace = captionIdx + len("\\caption")
+    captionIdx = tableTex.find("\\TableCaptionRef")
+    startBrace = captionIdx + len("\TableCaptionRef")
     endBrace = findMatchingBrace(tableTex, startBrace)
 
     caption = generalReplacements(tableTex[startBrace+1:endBrace])
@@ -807,11 +874,13 @@ def synCReplacements(tex, keyString):
 
         for line in codeList:
             line = line.strip()
+            line = line.replace("@\\FuncDecl{", "")
+            line = line.replace("\\FuncParam{", "")
+            line = line.replace("}", "")
+            line = line.replace("@", "")
             wordList = line.split()
             for i in xrange(len(wordList)):
                 if (wordList[i].find("shmem") != -1 and 
-                        # wordList[i].find("TYPENAME") == -1 and
-                        # wordList[i].find("SIZE") == -1 and
                         wordList[i] not in boldWordsC):
                     stripAsterisk = wordList[i].replace("*", "")
                     argStart = stripAsterisk.find("(")
@@ -876,6 +945,9 @@ def synFReplacements(tex, build_fortran):
         endOfText = tex.find("\\end{Fsynopsis}")
         text = tex[startOfText + len("\\begin{Fsynopsis}\n"):endOfText]
         text = "\n" + text.replace("\n", ";\n")
+        text = text.replace("@\\FuncDecl{", "")
+        text = text.replace("}", "")
+        text = text.replace("@", "")
         last = 0;
         while(text.find(";") != -1):
             s = text.find("\n", last) + len("\n")
@@ -906,7 +978,7 @@ def synFReplacements(tex, build_fortran):
                             linkFortranFuncs.append(funcName.strip())
 
         tex = tex[:startOfText] + "\n./ sectionStart" + \
-            "\n.B ***************DEPRECATED***************\n" + \
+            "\n\n.B ***************DEPRECATED***************\n" + \
                 ".SS Fortran:\n" + "\n.nf\n" + text + "\n.fi" + \
                 "\n.B ****************************************\n" + \
                 "\n./ sectionEnd"  + "\n" + \
@@ -941,6 +1013,7 @@ def cleanText(text):
     """
 
     text = text.replace("\t", "")
+    text = text.replace("\\newline", "")
     while(text.find("  ") != -1):
         text = text.replace("  ", " ")
     text = text.replace("\n ", "\n")
@@ -963,6 +1036,7 @@ def macroReplacements(paragraph):
     paragraph = oprReplacements(paragraph)
     paragraph = funcReplacements(paragraph)
     paragraph = italReplacements(paragraph)
+    paragraph = paragraphReplacements(paragraph)
     paragraph = paragraph.replace("\n ", "\n")
     return paragraph
 
@@ -1016,16 +1090,17 @@ def writeLinkFunctions(functionName, linkFunctions, gen_dir, typenames):
     the one with <functionName>, which is the parent man page. 
     """
     for link in linkFunctions:
-        if link != functionName:
-            if link.find("<TYPENAME>") != -1:
+        link = link.replace("\\", "")
+        if link != functionName and link.find("@") == -1:
+            if link.find("TYPENAME") != -1:
                 for s in typenames:
-                    newlink = link.replace("<TYPENAME>", s)
+                    newlink = link.replace("TYPENAME", s)
                     manFile = open(gen_dir + '/' + newlink + ".3", "w")
                     manFile.write(".so " + functionName + ".3\n")
                     manFile.close()
-            elif link.find("<SIZE>") != -1:
+            elif link.find("SIZE") != -1:
                 for s in sizes:
-                    newlink = link.replace("<SIZE>", s)
+                    newlink = link.replace("SIZE", s)
                     manFile = open(gen_dir + '/' + newlink + ".3", "w")
                     manFile.write(".so " + functionName + ".3\n")
                     manFile.close()
@@ -1227,6 +1302,8 @@ def convertFile(functionName, directory, gen_dir, build_fortran=False):
         tex = impnotesReplacements(tex)
     while(tex.find("\\apidesctable{") != -1):
         tex = descTReplacements(tex)
+    while(tex.find("\\begin{itemize}") != -1):
+        tex = bulletReplacements(tex)
     tex = tablerowReplacements(tex)
     tex = refMEMReplacements(tex)
     if (tex.find("\\begin{apiexamples}") != -1):
@@ -1261,8 +1338,11 @@ def convertFile(functionName, directory, gen_dir, build_fortran=False):
         "\n./ sectionStart\n.B ***************DEPRECATED***************\n./ sectionEnd\n")
     tex = tex.replace("\\end{DeprecateBlock}", 
         "\n./ sectionStart\n.B ****************************************\n./ sectionEnd\n")
+    tex = tex.replace("\\deprecationstart", 
+        "\n./ sectionStart\n.B ***************DEPRECATED***************\n./ sectionEnd\n")
+    tex = tex.replace("\\deprecationend", 
+        "\n./ sectionStart\n.RE\n.B ****************************************\n./ sectionEnd\n")
     manFile.write(tex.replace("\\n", "\\\\" + "n"))
-
     print("Finished converting " + functionName + ".tex")
     manFile.close()
     texFile.close()
@@ -1311,7 +1391,6 @@ def main():
 
             TOC = open(args.directory + "/../main_spec.tex").read()
             routineList = generateRoutineList(TOC)
-            print(routineList)
             for routine in routineList:
                 if routine + ".tex" not in os.listdir(args.directory):
                     print("Error: " + routine + ".tex is not in the given directory")
