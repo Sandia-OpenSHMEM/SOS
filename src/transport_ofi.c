@@ -267,8 +267,6 @@ typedef enum{
 }atomic_support_lv;
 
 
-shmem_free_list_t *shmem_transport_ofi_bounce_buffers = NULL;
-
 /* default CQ depth */
 const static size_t shmem_transport_ofi_queue_slots = 32768;
 uint64_t shmem_transport_ofi_max_poll = (1ULL<<30);
@@ -1038,7 +1036,9 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     ret = bind_enable_cntr_ep_resources(ctx);
     OFI_CHECK_RETURN_MSG(ret, "context bind/enable CNTR endpoint failed (%s)\n", fi_strerror(errno));
 
-    if (ctx->options | SHMEMX_CTX_BOUNCE_BUFFER) {
+    if (ctx->options | SHMEMX_CTX_BOUNCE_BUFFER &&
+        shmem_transport_ofi_bounce_buffer_size > 0)
+    {
         info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
         ret = fi_endpoint(shmem_transport_ofi_domainfd,
                           info->p_info, &ctx->cq_ep, NULL);
@@ -1048,6 +1048,16 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
         OFI_CHECK_RETURN_MSG(ret, "context bind/enable CQ endpoint failed (%s)\n", fi_strerror(errno));
 
         shmem_internal_atomic_write(&ctx->pending_cq_cntr, 0);
+
+        ctx->bounce_buffers =
+            shmem_free_list_init(sizeof(shmem_transport_ofi_bounce_buffer_t) +
+                                 shmem_transport_ofi_bounce_buffer_size,
+                                 init_bounce_buffer);
+    }
+    else {
+        ctx->cq_ep = NULL;
+        ctx->pending_cq_cntr = 0;
+        ctx->bounce_buffers = NULL;
     }
 
     return 0;
@@ -1096,14 +1106,8 @@ int shmem_transport_init(void)
             DEBUG_STR("OFI provider requires FI_CONTEXT; disabling bounce buffering");
         }
         shmem_transport_ofi_bounce_buffer_size = 0;
-        shmem_transport_ofi_bounce_buffers = NULL;
     } else {
-        /* FIXME: Move bounce buffering into the context */
         shmem_transport_ofi_bounce_buffer_size = shmem_internal_params.BOUNCE_SIZE;
-        shmem_transport_ofi_bounce_buffers =
-            shmem_free_list_init(sizeof(shmem_transport_ofi_bounce_buffer_t) +
-                                 shmem_transport_ofi_bounce_buffer_size,
-                                 init_bounce_buffer);
     }
 
     shmem_transport_ofi_put_poll_limit = shmem_internal_params.OFI_TX_POLL_LIMIT;
@@ -1199,9 +1203,11 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
     ret = fi_close(&ctx->cntr_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Context CNTR endpoint close failed (%s)\n", fi_strerror(errno));
 
-    if (ctx->options | SHMEMX_CTX_BOUNCE_BUFFER) {
+    if (ctx->cq_ep) {
         ret = fi_close(&ctx->cq_ep->fid);
         OFI_CHECK_ERROR_MSG(ret, "Context CQ EP close failed (%s)\n", fi_strerror(errno));
+
+        shmem_free_list_destroy(ctx->bounce_buffers);
     }
 
     ret = fi_close(&ctx->put_cntr->fid);
@@ -1282,10 +1288,6 @@ int shmem_transport_fini(void)
     if (shmem_transport_ofi_fabfd &&
         fi_close(&shmem_transport_ofi_fabfd->fid)) {
         RAISE_ERROR_MSG("Fabric close failed (%s)\n", fi_strerror(errno));
-    }
-
-    if (NULL != shmem_transport_ofi_bounce_buffers) {
-        shmem_free_list_destroy(shmem_transport_ofi_bounce_buffers);
     }
 
 #ifdef USE_AV_MAP

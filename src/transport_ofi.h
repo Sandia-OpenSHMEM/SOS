@@ -237,6 +237,7 @@ struct shmem_transport_ctx_t {
   shmem_internal_atomic_uint64_t  pending_cq_cntr;
   shmem_internal_atomic_uint64_t  pending_put_cntr;
   shmem_internal_atomic_uint64_t  pending_get_cntr;
+  shmem_free_list_t              *bounce_buffers;
   int id;
 };
 
@@ -245,8 +246,6 @@ extern shmem_transport_ctx_t shmem_transport_ctx_default;
 
 int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx);
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx);
-
-extern shmem_free_list_t *shmem_transport_ofi_bounce_buffers;
 
 int shmem_transport_init(void);
 int shmem_transport_startup(void);
@@ -275,7 +274,7 @@ void shmem_transport_ofi_drain_cq(shmem_transport_ctx_t *ctx)
                 (shmem_transport_ofi_frag_t *) buf.op_context;
 
             if (SHMEM_TRANSPORT_OFI_TYPE_BOUNCE == frag->mytype) {
-                shmem_free_list_free(shmem_transport_ofi_bounce_buffers,
+                shmem_free_list_free(ctx->bounce_buffers,
                                      (shmem_transport_ofi_bounce_buffer_t *) frag);
             } else {
                 RAISE_ERROR_STR("Unrecognized completion object");
@@ -303,13 +302,13 @@ void shmem_transport_ofi_drain_cq(shmem_transport_ctx_t *ctx)
 }
 
 static inline
-shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(const void *source,
+shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_free_list_t *pool,
+                                                           const void *source,
                                                            const size_t len)
 {
     shmem_transport_ofi_bounce_buffer_t *buff;
 
-    buff = (shmem_transport_ofi_bounce_buffer_t*)
-        shmem_free_list_alloc(shmem_transport_ofi_bounce_buffers);
+    buff = (shmem_transport_ofi_bounce_buffer_t*) shmem_free_list_alloc(pool);
 
     /* if LL empty = error, should've been avoided with EQ drain */
     if (NULL == buff)
@@ -493,11 +492,13 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
 
         shmem_transport_put_small(ctx, target, source, len, pe);
 
-    } else if (len <= shmem_transport_ofi_bounce_buffer_size && ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
+    } else if (len <= shmem_transport_ofi_bounce_buffer_size &&
+               ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
 
         shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
-        shmem_transport_ofi_bounce_buffer_t *buff = create_bounce_buffer(source, len);
+        shmem_transport_ofi_bounce_buffer_t *buff =
+            create_bounce_buffer(ctx->bounce_buffers, source, len);
         polled = 0;
 
         shmem_internal_atomic_inc(&ctx->pending_cq_cntr);
@@ -876,9 +877,11 @@ void shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const v
         } while (try_again(ctx, ret, &polled));
 
     } else if (full_len <=
-               MIN(shmem_transport_ofi_bounce_buffer_size, max_atomic_size) && ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
+               MIN(shmem_transport_ofi_bounce_buffer_size, max_atomic_size) &&
+               ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
 
-        shmem_transport_ofi_bounce_buffer_t *buff = create_bounce_buffer(source, full_len);
+        shmem_transport_ofi_bounce_buffer_t *buff =
+            create_bounce_buffer(ctx->bounce_buffers, source, full_len);
 
         polled = 0;
 
