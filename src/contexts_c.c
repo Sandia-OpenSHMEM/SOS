@@ -48,7 +48,14 @@ SHMEM_FUNCTION_ATTRIBUTES void
 shmem_ctx_destroy(shmem_ctx_t ctx)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    /* TODO: Error check: ctx != SHMEM_CTX_DEFAULT */
+
+    if (ctx == SHMEM_CTX_DEFAULT) {
+        fprintf(stderr, "ERROR: %s(): SHMEM_CTX_DEFAULT cannot be destroyed\n",
+                __func__);
+        shmem_runtime_abort(100, PACKAGE_NAME " exited in error");
+    }
+
+    shmem_transport_ctx_destroy((shmem_transport_ctx_t *) ctx);
 
     return;
 }
