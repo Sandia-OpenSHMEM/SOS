@@ -124,7 +124,7 @@ AM_CONDITIONAL([HAVE_OPENMP], [test "$enable_threads" != "no" -a "$enable_openmp
 
 AC_ARG_ENABLE([pthread-mutexes],
     [AC_HELP_STRING([--enable-pthread-mutexes],
-                    [Use pthread mutexes to support threading (used in conjunction with --enable-threads) (default:disabled)])])
+                    [Use pthread mutexes instead of spinlocks (used in conjunction with --enable-threads) (default:disabled)])])
 AS_IF([test "$enable_pthread_mutexes" = "yes"], [AC_DEFINE([ENABLE_PTHREAD_MUTEX], [1], [Enable pthread mutexes])])
 
 AC_ARG_ENABLE([remote-virtual-addressing],
