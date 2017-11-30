@@ -1068,7 +1068,9 @@ int shmem_transport_init(void)
 {
     int ret = 0;
 
-    shmem_transport_ofi_info.npes      = shmem_runtime_get_size();
+    SHMEM_MUTEX_INIT(shmem_transport_ofi_lock);
+
+    shmem_transport_ofi_info.npes = shmem_runtime_get_size();
 
     if (shmem_internal_params.OFI_PROVIDER_provided)
         shmem_transport_ofi_info.prov_name = shmem_internal_params.OFI_PROVIDER;
@@ -1295,6 +1297,8 @@ int shmem_transport_fini(void)
 #endif
 
     fi_freeinfo(shmem_transport_ofi_info.fabrics);
+
+    SHMEM_MUTEX_DESTROY(shmem_transport_ofi_lock);
 
     return 0;
 }
