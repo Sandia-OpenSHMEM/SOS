@@ -74,6 +74,7 @@ long                            shmem_transport_ofi_get_poll_limit;
 size_t                          shmem_transport_ofi_max_buffered_send;
 size_t                          shmem_transport_ofi_max_msg_size;
 size_t                          shmem_transport_ofi_bounce_buffer_size;
+long                            shmem_transport_ofi_max_bounce_buffers;
 size_t                          shmem_transport_ofi_addrlen;
 #ifdef ENABLE_MR_RMA_EVENT
 int                             shmem_transport_ofi_mr_rma_event;
@@ -1037,7 +1038,8 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     OFI_CHECK_RETURN_MSG(ret, "context bind/enable CNTR endpoint failed (%s)\n", fi_strerror(errno));
 
     if (ctx->options | SHMEMX_CTX_BOUNCE_BUFFER &&
-        shmem_transport_ofi_bounce_buffer_size > 0)
+        shmem_transport_ofi_bounce_buffer_size > 0 &&
+        shmem_transport_ofi_max_bounce_buffers > 0)
     {
         info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
         ret = fi_endpoint(shmem_transport_ofi_domainfd,
@@ -1047,16 +1049,14 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
         ret = bind_enable_cq_ep_resources(ctx);
         OFI_CHECK_RETURN_MSG(ret, "context bind/enable CQ endpoint failed (%s)\n", fi_strerror(errno));
 
-        shmem_internal_atomic_write(&ctx->pending_cq_cntr, 0);
-
         ctx->bounce_buffers =
             shmem_free_list_init(sizeof(shmem_transport_ofi_bounce_buffer_t) +
                                  shmem_transport_ofi_bounce_buffer_size,
                                  init_bounce_buffer);
     }
     else {
+        ctx->options &= ~SHMEMX_CTX_BOUNCE_BUFFER;
         ctx->cq_ep = NULL;
-        ctx->pending_cq_cntr = 0;
         ctx->bounce_buffers = NULL;
     }
 
@@ -1106,8 +1106,10 @@ int shmem_transport_init(void)
             DEBUG_STR("OFI provider requires FI_CONTEXT; disabling bounce buffering");
         }
         shmem_transport_ofi_bounce_buffer_size = 0;
+        shmem_transport_ofi_max_bounce_buffers = 0;
     } else {
         shmem_transport_ofi_bounce_buffer_size = shmem_internal_params.BOUNCE_SIZE;
+        shmem_transport_ofi_max_bounce_buffers = shmem_internal_params.MAX_BOUNCE_BUFFERS;
     }
 
     shmem_transport_ofi_put_poll_limit = shmem_internal_params.OFI_TX_POLL_LIMIT;

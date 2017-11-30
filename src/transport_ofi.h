@@ -29,6 +29,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stddef.h>
+#include <inttypes.h>
 #include "shmem_free_list.h"
 #include "shmem_internal.h"
 #include "shmem_atomic.h"
@@ -50,6 +51,7 @@ extern long                             shmem_transport_ofi_get_poll_limit;
 extern size_t                           shmem_transport_ofi_max_buffered_send;
 extern size_t                           shmem_transport_ofi_max_msg_size;
 extern size_t                           shmem_transport_ofi_bounce_buffer_size;
+extern long                             shmem_transport_ofi_max_bounce_buffers;
 
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -59,6 +61,23 @@ extern size_t                           shmem_transport_ofi_bounce_buffer_size;
     do {                                                                        \
         if (ret) {                                                              \
             RAISE_ERROR_MSG("OFI error %d: %s\n", ret, fi_strerror(ret));       \
+        }                                                                       \
+    } while (0)
+
+#define OFI_CTX_CHECK_ERROR(ctx, err)                                           \
+    do {                                                                        \
+        if ((err) == -FI_EAVAIL) {                                              \
+            struct fi_cq_err_entry e = {0};                                     \
+            ssize_t ret = fi_cq_readerr((ctx)->cq, (void *)&e, 0);              \
+            if (ret == 1) {                                                     \
+                const char *errmsg = fi_cq_strerror((ctx)->cq, e.prov_errno,    \
+                                                    e.err_data, NULL, 0);       \
+                RAISE_ERROR_STR(errmsg);                                        \
+            } else {                                                            \
+                RAISE_ERROR_MSG("Error reading from CQ (%zd)\n", ret);          \
+            }                                                                   \
+        } else if (err) {                                                       \
+            RAISE_ERROR_MSG("OFI error %zd: %s\n", err, fi_strerror(err));      \
         }                                                                       \
     } while (0)
 
@@ -85,18 +104,6 @@ extern size_t                           shmem_transport_ofi_bounce_buffer_size;
         }                                                                       \
     } while (0)
 
-#define OFI_CQ_ERROR(cq)                                                        \
-    do {                                                                        \
-        struct fi_cq_err_entry e = {0};                                         \
-        ssize_t ret = fi_cq_readerr(cq, (void *)&e, 0);                         \
-        if (ret == 1) {                                                         \
-            const char *errmsg = fi_cq_strerror(cq, e.prov_errno, e.err_data,   \
-                                                NULL, 0);                       \
-            RAISE_ERROR_STR(errmsg);                                            \
-        } else {                                                                \
-            RAISE_ERROR_MSG("Unknown error occurred (%zd)\n", ret);             \
-        }                                                                       \
-    } while (0)
 
 #ifdef ENABLE_MR_SCALABLE
 static inline
@@ -234,7 +241,6 @@ struct shmem_transport_ctx_t {
   struct fid_cntr*                put_cntr;
   struct fid_cntr*                get_cntr;
   struct fid_cq*                  cq;
-  shmem_internal_atomic_uint64_t  pending_cq_cntr;
   shmem_internal_atomic_uint64_t  pending_put_cntr;
   shmem_internal_atomic_uint64_t  pending_get_cntr;
   shmem_free_list_t              *bounce_buffers;
@@ -255,21 +261,20 @@ extern size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 
 static inline void shmem_transport_get_wait(shmem_transport_ctx_t* ctx);
 
+/* Drain all available events from the CQ.  Note, ctx->bounce_buffers must be
+ * locked before calling this routine */
 static inline
 void shmem_transport_ofi_drain_cq(shmem_transport_ctx_t *ctx)
 {
-
     ssize_t ret = 0;
     struct fi_cq_entry buf;
 
-    if (0 == shmem_internal_atomic_read(&ctx->pending_cq_cntr)) {
-        return;
-    }
-
-    do {
+    for (;;) {
         ret = fi_cq_read(ctx->cq, (void *)&buf, 1);
 
-        if (ret == 1) {
+        if (ret == -FI_EAGAIN) break; /* No events */
+
+        else if (ret == 1) {
             shmem_transport_ofi_frag_t *frag =
                 (shmem_transport_ofi_frag_t *) buf.op_context;
 
@@ -279,38 +284,35 @@ void shmem_transport_ofi_drain_cq(shmem_transport_ctx_t *ctx)
             } else {
                 RAISE_ERROR_STR("Unrecognized completion object");
             }
-
-            shmem_internal_atomic_dec(&ctx->pending_cq_cntr);
         }
 
-        else if (ret == -FI_EAGAIN)
-            continue;
-
         else if (ret < 0) {
-            if (ret == -FI_EAVAIL) {
-                OFI_CQ_ERROR(ctx->cq);
-            } else {
-                RAISE_ERROR_MSG("OFI error %zd: %s\n", ret, fi_strerror(ret));
-            }
+            OFI_CTX_CHECK_ERROR(ctx, ret);
         }
 
         else {
-            RAISE_ERROR_MSG("fi_cq_read returned too many events (%zd)\n", ret);
+            RAISE_ERROR_MSG("fi_cq_read returned invalid event count (%zd)\n", ret);
         }
-
-    } while (ret > 0);
+    }
 }
 
 static inline
-shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_free_list_t *pool,
+shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_transport_ctx_t *ctx,
                                                            const void *source,
                                                            const size_t len)
 {
     shmem_transport_ofi_bounce_buffer_t *buff;
 
-    buff = (shmem_transport_ofi_bounce_buffer_t*) shmem_free_list_alloc(pool);
+    shmem_free_list_lock(ctx->bounce_buffers);
 
-    /* if LL empty = error, should've been avoided with EQ drain */
+    while (ctx->bounce_buffers->nalloc > shmem_transport_ofi_max_bounce_buffers) {
+        shmem_transport_ofi_drain_cq(ctx);
+    }
+
+    buff = (shmem_transport_ofi_bounce_buffer_t*) shmem_free_list_alloc(ctx->bounce_buffers);
+
+    shmem_free_list_unlock(ctx->bounce_buffers);
+
     if (NULL == buff)
         RAISE_ERROR_STR("Bounce buffer allocation failed");
 
@@ -324,9 +326,15 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_free_list_t *po
 static inline
 void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
 {
-    /* wait until all outstanding queue operations have completed */
-    while (shmem_internal_atomic_read(&ctx->pending_cq_cntr)) {
-        shmem_transport_ofi_drain_cq(ctx);
+    /* Wait for bounce buffered operations to complete */
+    if (ctx->cq_ep) {
+        shmem_free_list_lock(ctx->bounce_buffers);
+
+        while (ctx->bounce_buffers->nalloc > 0) {
+            shmem_transport_ofi_drain_cq(ctx);
+        }
+
+        shmem_free_list_unlock(ctx->bounce_buffers);
     }
 
     /* wait for put counter to meet outstanding count value */
@@ -348,7 +356,8 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
         if (success < cnt && fail == 0) {
             SPINLOCK_BODY();
         } else if (fail) {
-            OFI_CQ_ERROR(ctx->cq);
+            RAISE_ERROR_MSG("Operations completed in error (%" PRIu64 ").  Aborting.\n",
+                            fail);
         } else {
             return;
         }
@@ -359,9 +368,7 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
         cnt = cnt_new;
         int ret = fi_cntr_wait(ctx->put_cntr, cnt, -1);
         cnt_new = shmem_internal_atomic_read(&ctx->pending_put_cntr);
-        if (ret) {
-            OFI_CQ_ERROR(ctx->cq);
-        }
+        OFI_CTX_CHECK_ERROR(ctx, ret);
     } while (cnt < cnt_new);
     shmem_internal_assert(cnt == cnt_new);
 }
@@ -389,27 +396,55 @@ int shmem_transport_fence(shmem_transport_ctx_t* ctx)
 
 }
 
-/* RM requires polling until space is available */
+
+/* Process RMA operation return code.  If libfabric returned -FI_EAGAIN, attempt
+ * to reclaim resources and indicate that the operation should be retried.  If
+ * retry limit (ofi_max_poll) is exceeded, abort. */
 static inline
 int try_again(shmem_transport_ctx_t *ctx, const int ret, uint64_t *polled) {
 
     if (ret) {
         if (ret == -FI_EAGAIN) {
-            shmem_transport_ofi_drain_cq(ctx);
+            if (ctx->cq_ep) {
+                shmem_free_list_lock(ctx->bounce_buffers);
+                shmem_transport_ofi_drain_cq(ctx);
+                shmem_free_list_unlock(ctx->bounce_buffers);
+            }
+            else if (0) {
+                /* Poke CQ for errors to encourage progress */
+                struct fi_cq_err_entry e = {0};
+                ssize_t ret = fi_cq_readerr(ctx->cq, (void *)&e, 0);
+                if (ret == 1) {
+                    const char *errmsg = fi_cq_strerror(ctx->cq, e.prov_errno,
+                                                        e.err_data, NULL, 0);
+                    RAISE_ERROR_STR(errmsg);
+                } else if (ret && ret != -FI_EAGAIN) {
+                    RAISE_ERROR_MSG("Error reading from CQ (%zd)\n", ret);
+                }
+            }
+
             (*polled)++;
+
             if ((*polled) <= shmem_transport_ofi_max_poll) {
                 return 1;
             }
+            else {
+                RAISE_ERROR_MSG("Operation retry limit exceeded (%" PRIu64 ").  Aborting.\n",
+                                shmem_transport_ofi_max_poll);
+            }
         }
-        OFI_CHECK_ERROR(ret);
+        else {
+            OFI_CTX_CHECK_ERROR(ctx, ret);
+        }
     }
 
     return 0;
 }
 
+
 static inline
-void shmem_transport_put_small(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
-                               int pe)
+void shmem_transport_put_small(shmem_transport_ctx_t* ctx, void *target, const
+                               void *source, size_t len, int pe)
 {
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
@@ -433,10 +468,6 @@ void shmem_transport_put_small(shmem_transport_ctx_t* ctx, void *target, const v
                               key);
 
     } while (try_again(ctx, ret, &polled));
-
-    shmem_internal_assert(ret == 0);
-    /* automatically get local completion but need remote completion for
-     * fence/quiet*/
 }
 
 static inline
@@ -492,16 +523,13 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
 
         shmem_transport_put_small(ctx, target, source, len, pe);
 
-    } else if (len <= shmem_transport_ofi_bounce_buffer_size &&
-               ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
+    } else if (len <= shmem_transport_ofi_bounce_buffer_size && ctx->cq_ep) {
 
         shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
         shmem_transport_ofi_bounce_buffer_t *buff =
-            create_bounce_buffer(ctx->bounce_buffers, source, len);
+            create_bounce_buffer(ctx, source, len);
         polled = 0;
-
-        shmem_internal_atomic_inc(&ctx->pending_cq_cntr);
 
         do {
             ret = fi_write(ctx->cq_ep,
@@ -616,7 +644,8 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
         if (success < cnt && fail == 0) {
             SPINLOCK_BODY();
         } else if (fail) {
-            OFI_CQ_ERROR(ctx->cq);
+            RAISE_ERROR_MSG("Operations completed in error (%" PRIu64 ").  Aborting.\n",
+                            fail);
         } else {
             return;
         }
@@ -627,9 +656,7 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
         cnt = cnt_new;
         int ret = fi_cntr_wait(ctx->get_cntr, cnt, -1);
         cnt_new = shmem_internal_atomic_read(&ctx->pending_get_cntr);
-        if (ret) {
-            OFI_CQ_ERROR(ctx->cq);
-        }
+        OFI_CTX_CHECK_ERROR(ctx, ret);
     } while (cnt < cnt_new);
     shmem_internal_assert(cnt == cnt_new);
 }
@@ -878,14 +905,12 @@ void shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const v
 
     } else if (full_len <=
                MIN(shmem_transport_ofi_bounce_buffer_size, max_atomic_size) &&
-               ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
+               ctx->cq_ep) {
 
         shmem_transport_ofi_bounce_buffer_t *buff =
-            create_bounce_buffer(ctx->bounce_buffers, source, full_len);
+            create_bounce_buffer(ctx, source, full_len);
 
         polled = 0;
-
-        shmem_internal_atomic_inc(&ctx->pending_cq_cntr);
 
         do {
             ret = fi_atomic(ctx->cq_ep,
