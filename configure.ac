@@ -13,7 +13,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.3.3], [https://github.com/Sandia-OpenSHMEM/SOS])
+AC_INIT([Sandia OpenSHMEM], [1.4.0a1], [https://github.com/Sandia-OpenSHMEM/SOS])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -180,6 +180,12 @@ AC_ARG_ENABLE([mr-scalable],
                     [Disable the use of scalable memory regions in the OFI transport.  Required by some providers. (default: enabled)])])
 AS_IF([test "$enable_mr_scalable" != "no"],
       [AC_DEFINE([ENABLE_MR_SCALABLE], [1], [If defined, the OFI transport will use FI_MR_SCALABLE.  Otherwise, FI_MR_BASIC is used.])])
+
+AC_ARG_ENABLE([mr-rma-event],
+    [AC_HELP_STRING([--enable-mr-rma-event],
+                    [Enable FI_MR_RMA_EVENT memory registration support in OFI transport.  Required by some providers. (default: disabled)])])
+AS_IF([test "$enable_mr_rma_event" = "yes"],
+      [AC_DEFINE([ENABLE_MR_RMA_EVENT], [1], [If defined, the OFI transport will enable support for FI_MR_RMA_EVENT.])])
 
 AC_ARG_ENABLE([av-map],
     [AC_HELP_STRING([--enable-av-map],

@@ -36,48 +36,45 @@
 #include <stdio.h>
 #include <shmem.h>
 
-#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 
-/* Initially, remote = 000...b.  Each PE performs an atomic OR where the
- * PEth bit of the input value is set to 1 and all other bits are set to 0.
- * The result has the NPES least significant bits set, 000...111...b.
- */
-
-#define TEST_SHMEM_FETCH_OR(TYPE)                                       \
-  do {                                                                  \
-    static TYPE remote = (TYPE)0;                                       \
-    TYPE old = (TYPE)0;                                                 \
-    if (npes-1 > sizeof(TYPE)) break; /* Avoid overflow */              \
-    for (int i = 0; i < npes; i++)                                      \
-      old = shmem_atomic_fetch_or(&remote, (TYPE)(1LLU << mype), i);    \
-    shmem_barrier_all();                                                \
-    if (remote != (TYPE)((1LLU << npes) - 1LLU) || old >= remote) {     \
-      fprintf(stderr,                                                   \
-              "PE %i observed error with shmem_atomic_fetch_or(%s, ...)\n", \
-              mype, #TYPE);                                             \
-      rc = EXIT_FAILURE;                                                \
-    }                                                                   \
+#define TEST_SHMEM_WAIT_UNTIL(TYPE)                     \
+  do {                                                  \
+    static TYPE remote = 0;                             \
+    const int mype = shmem_my_pe();                     \
+    const int npes = shmem_n_pes();                     \
+    shmem_p(&remote, (TYPE)mype+1, (mype + 1) % npes);  \
+    shmem_wait_until(&remote, SHMEM_CMP_NE, 0);         \
+    if (remote != (TYPE)((mype + npes - 1) % npes)+1) { \
+      printf("PE %i received incorrect value with "     \
+             "TEST_SHMEM_WAIT_UNTIL(%s)\n", mype, #TYPE); \
+      rc = EXIT_FAILURE;                                \
+    }                                                   \
   } while (false)
 
 #else
-#define TEST_SHMEM_FETCH_OR(TYPE)
+#define TEST_SHMEM_WAIT_UNTIL(TYPE)
 
 #endif
 
 int main(int argc, char* argv[]) {
   shmem_init();
 
-  const int mype = shmem_my_pe();
-  const int npes = shmem_n_pes();
-
   int rc = EXIT_SUCCESS;
-  TEST_SHMEM_FETCH_OR(unsigned int);
-  TEST_SHMEM_FETCH_OR(unsigned long);
-  TEST_SHMEM_FETCH_OR(unsigned long long);
-  TEST_SHMEM_FETCH_OR(int32_t);
-  TEST_SHMEM_FETCH_OR(int64_t);
-  TEST_SHMEM_FETCH_OR(uint32_t);
-  TEST_SHMEM_FETCH_OR(uint64_t);
+  TEST_SHMEM_WAIT_UNTIL(short);
+  TEST_SHMEM_WAIT_UNTIL(int);
+  TEST_SHMEM_WAIT_UNTIL(long);
+  TEST_SHMEM_WAIT_UNTIL(long long);
+  TEST_SHMEM_WAIT_UNTIL(unsigned short);
+  TEST_SHMEM_WAIT_UNTIL(unsigned int);
+  TEST_SHMEM_WAIT_UNTIL(unsigned long);
+  TEST_SHMEM_WAIT_UNTIL(unsigned long long);
+  TEST_SHMEM_WAIT_UNTIL(int32_t);
+  TEST_SHMEM_WAIT_UNTIL(int64_t);
+  TEST_SHMEM_WAIT_UNTIL(uint32_t);
+  TEST_SHMEM_WAIT_UNTIL(uint64_t);
+  TEST_SHMEM_WAIT_UNTIL(size_t);
+  TEST_SHMEM_WAIT_UNTIL(ptrdiff_t);
 
   shmem_finalize();
   return rc;

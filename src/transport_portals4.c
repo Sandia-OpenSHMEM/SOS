@@ -127,7 +127,19 @@ shmem_internal_mutex_t shmem_internal_mutex_ptl4_nb_fence;
 #endif
 
 shmem_transport_ctx_t shmem_transport_ctx_default;
-void *SHMEM_CTX_DEFAULT = &shmem_transport_ctx_default;
+shmem_ctx_t SHMEM_CTX_DEFAULT = (shmem_ctx_t) &shmem_transport_ctx_default;
+
+void shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx) {
+  *ctx = NULL;
+  return;
+}
+
+void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx) {
+  if (ctx != NULL) {
+      RAISE_ERROR_STR("Invalid ctx_destroy");
+  }
+  return;
+}
 
 static
 void

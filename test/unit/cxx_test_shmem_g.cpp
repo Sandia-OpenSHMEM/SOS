@@ -4,7 +4,7 @@
  *  to copyright protection in the United States.  Foreign copyrights may
  *  apply.
  *
- *  Copyright (c) 2016 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2017 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -36,18 +36,22 @@
 #include <stdio.h>
 #include <shmem.h>
 
-#define TEST_SHMEM_G(TYPE)                              \
+#define TEST_SHMEM_G(USE_CTX, TYPE)                     \
   do {                                                  \
     static TYPE remote;                                 \
+    TYPE val;                                           \
     const int mype = shmem_my_pe();                     \
     const int npes = shmem_n_pes();                     \
     remote = (TYPE)mype;                                \
     shmem_barrier_all();                                \
-    TYPE val = shmem_g(&remote, (mype + 1) % npes);     \
+    if (USE_CTX)                                        \
+        val = shmem_g(SHMEM_CTX_DEFAULT, &remote, (mype + 1) % npes); \
+    else                                                \
+        val = shmem_g(&remote, (mype + 1) % npes);      \
     if (val != (TYPE)((mype + 1) % npes)) {             \
-      fprintf(stderr,                                   \
-              "PE %i received incorrect value "         \
-              "for shmem_g(%s, ...)\n", mype, #TYPE);   \
+      printf("PE %i received incorrect value with"      \
+             "TEST_SHMEM_G(%d, %s)\n", mype,            \
+             (int)(USE_CTX), #TYPE);                    \
       rc = EXIT_FAILURE;                                \
     }                                                   \
   } while (false)
@@ -56,30 +60,55 @@ int main(int argc, char* argv[]) {
   shmem_init();
 
   int rc = EXIT_SUCCESS;
-  TEST_SHMEM_G(float);
-  TEST_SHMEM_G(double);
-  TEST_SHMEM_G(long double);
-  TEST_SHMEM_G(char);
-  TEST_SHMEM_G(signed char);
-  TEST_SHMEM_G(short);
-  TEST_SHMEM_G(int);
-  TEST_SHMEM_G(long);
-  TEST_SHMEM_G(long long);
-  TEST_SHMEM_G(unsigned char);
-  TEST_SHMEM_G(unsigned short);
-  TEST_SHMEM_G(unsigned int);
-  TEST_SHMEM_G(unsigned long);
-  TEST_SHMEM_G(unsigned long long);
-  TEST_SHMEM_G(int8_t);
-  TEST_SHMEM_G(int16_t);
-  TEST_SHMEM_G(int32_t);
-  TEST_SHMEM_G(int64_t);
-  TEST_SHMEM_G(uint8_t);
-  TEST_SHMEM_G(uint16_t);
-  TEST_SHMEM_G(uint32_t);
-  TEST_SHMEM_G(uint64_t);
-  TEST_SHMEM_G(size_t);
-  TEST_SHMEM_G(ptrdiff_t);
+  TEST_SHMEM_G(0, float);
+  TEST_SHMEM_G(0, double);
+  TEST_SHMEM_G(0, long double);
+  TEST_SHMEM_G(0, char);
+  TEST_SHMEM_G(0, signed char);
+  TEST_SHMEM_G(0, short);
+  TEST_SHMEM_G(0, int);
+  TEST_SHMEM_G(0, long);
+  TEST_SHMEM_G(0, long long);
+  TEST_SHMEM_G(0, unsigned char);
+  TEST_SHMEM_G(0, unsigned short);
+  TEST_SHMEM_G(0, unsigned int);
+  TEST_SHMEM_G(0, unsigned long);
+  TEST_SHMEM_G(0, unsigned long long);
+  TEST_SHMEM_G(0, int8_t);
+  TEST_SHMEM_G(0, int16_t);
+  TEST_SHMEM_G(0, int32_t);
+  TEST_SHMEM_G(0, int64_t);
+  TEST_SHMEM_G(0, uint8_t);
+  TEST_SHMEM_G(0, uint16_t);
+  TEST_SHMEM_G(0, uint32_t);
+  TEST_SHMEM_G(0, uint64_t);
+  TEST_SHMEM_G(0, size_t);
+  TEST_SHMEM_G(0, ptrdiff_t);
+
+  TEST_SHMEM_G(1, float);
+  TEST_SHMEM_G(1, double);
+  TEST_SHMEM_G(1, long double);
+  TEST_SHMEM_G(1, char);
+  TEST_SHMEM_G(1, signed char);
+  TEST_SHMEM_G(1, short);
+  TEST_SHMEM_G(1, int);
+  TEST_SHMEM_G(1, long);
+  TEST_SHMEM_G(1, long long);
+  TEST_SHMEM_G(1, unsigned char);
+  TEST_SHMEM_G(1, unsigned short);
+  TEST_SHMEM_G(1, unsigned int);
+  TEST_SHMEM_G(1, unsigned long);
+  TEST_SHMEM_G(1, unsigned long long);
+  TEST_SHMEM_G(1, int8_t);
+  TEST_SHMEM_G(1, int16_t);
+  TEST_SHMEM_G(1, int32_t);
+  TEST_SHMEM_G(1, int64_t);
+  TEST_SHMEM_G(1, uint8_t);
+  TEST_SHMEM_G(1, uint16_t);
+  TEST_SHMEM_G(1, uint32_t);
+  TEST_SHMEM_G(1, uint64_t);
+  TEST_SHMEM_G(1, size_t);
+  TEST_SHMEM_G(1, ptrdiff_t);
 
   shmem_finalize();
   return rc;

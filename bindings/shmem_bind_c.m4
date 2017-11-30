@@ -74,6 +74,22 @@ $1(int,        int)
 $1(long,       long)
 $1(longlong,   long long)')dnl
 dnl
+define(`SHMEM_BIND_C_SYNC', dnl args: macro_name
+`$1(short,      short)
+$1(int,        int)
+$1(long,       long)
+$1(longlong,   long long)
+$1(ushort,     unsigned short)
+$1(uint,       unsigned int)
+$1(ulong,      unsigned long)
+$1(ulonglong,  unsigned long long)
+$1(int32,      int32_t)
+$1(int64,      int64_t)
+$1(uint32,     uint32_t)
+$1(uint64,     uint64_t)
+$1(size,       size_t)
+$1(ptrdiff,    ptrdiff_t)')dnl
+dnl
 define(`SHMEM_BIND_C_COLL_INTS', dnl args: macro_name, op_name, op_const
 `$1(short,    short,         `SHM_INTERNAL_SHORT',         `$2', `$3')
 $1(int,      int,           `SHM_INTERNAL_INT',           `$2', `$3')

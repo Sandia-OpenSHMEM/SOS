@@ -23,48 +23,52 @@
  * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ *
  */
 
-#include <shmem.h>
+/* Each PE sends a message to every PE.  PEs wait for all messages to
+ * arrive using shmem_test to poll the array. */
+
 #include <stdio.h>
-#include <stdlib.h>
+#include <shmem.h>
 
-#define NUM_CTX 32
+/* Wait for any entry in the given ivar array to match the wait criteria and
+ * return the index of the entry that satisfied the test. */
+int wait_any(long *ivar, int count, int cmp, long value)
+{
+  int idx = 0;
+  while (!shmem_long_test(&ivar[idx], cmp, value))
+    idx = (idx + 1) % count;
+  return idx;
+}
 
-long data = 0;
+int main(void)
+{
+  shmem_init();
+  const int mype = shmem_my_pe();
+  const int npes = shmem_n_pes();
 
-int main(int argc, char **argv) {
-    int me, npes, i;
-    int errors = 0;
-    shmem_ctx_t ctx[NUM_CTX];
+  long *wait_vars = shmem_calloc(npes, sizeof(long));
 
-    shmem_init();
+  /* Put mype+1 to every PE */
+  for (int i = 0; i < npes; i++)
+      shmem_long_p(&wait_vars[mype], mype+1, i);
 
-    me = shmem_my_pe();
-    npes = shmem_n_pes();
+  int nrecv = 0, errors = 0;
 
-    for (i = 0; i < NUM_CTX; i++) {
-        int err = shmem_ctx_create(0, &ctx[i]);
-
-        if (err) {
-            printf("%d: Error creating context %d (%d)\n", me, i, err);
-            shmem_global_exit(1);
-        }
+  /* Wait for all messages to arrive */
+  while (nrecv < npes) {
+    int who = wait_any(wait_vars, npes, SHMEM_CMP_NE, 0);
+    if (wait_vars[who] != who+1) {
+        printf("%d: wait_vars[%d] = %ld, expected %d\n",
+               mype, who, wait_vars[who], who+1);
+        errors++;
     }
+    wait_vars[who] = 0;
+    nrecv++;
+  }
 
-    for (i = 0; i < NUM_CTX; i++)
-        shmem_ctx_long_atomic_inc(ctx[i], &data, (me+1) % npes);
-
-    for (i = 0; i < NUM_CTX; i++)
-        shmem_ctx_quiet(ctx[i]);
-
-    shmem_sync_all();
-
-    if (data != NUM_CTX) {
-        printf("%d: error expected %d, got %ld\n", me, NUM_CTX, data);
-        ++errors;
-    }
-
-    shmem_finalize();
-    return errors;
+  shmem_free(wait_vars);
+  shmem_finalize();
+  return errors;
 }

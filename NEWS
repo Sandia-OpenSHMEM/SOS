@@ -2,6 +2,34 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.4.0a1
+--------
+- Support for OpenSHMEM 1.4 specification.
+- New features include: Thread safety, communication management API (contexts),
+  test routines, sync routines, calloc for symmetric objects, bitwise atomic
+  operations, and updated C11 generic selection bindings.
+- Deprecations include: Fortran API, shmem_wait routines, mpp header directory,
+  and SMA-prefixed environment variables.
+- This is an alpha release; full API support is provided, but the
+  implementation may contain bugs and is not yet optimized for performance.
+
+v1.3.4
+------
+- Added manpages for OpenSHMEM API routines.
+- Added polling limit control variables SMA_OFI_TX_POLL_LIMIT and
+  SMA_OFI_RX_POLL_LIMIT (see README for details) to allow control over quiet
+  and wait polling limits, respectively.
+- Rewrite of environment variable management code and improved info output.
+- Added support for processor atomics in thread-safe build.
+- Added support for local communication optimization (--enable-memcpy).
+- Added support for libfabric FI_MR_RMA_EVENT memory registration mode.
+- Added experimental support for the PMIx process management interface
+  (--with-pmix).
+- Fixed completion race in multithreaded mode.
+- Fixed bugs in support for zero-length point-to-point and collective
+  communication.
+- Multiple bugfixes to test suite, including GUPS benchmark
+
 v1.3.3
 ------
 - Fixed dissemination barrier race that could lead to incorrect synchronization.
