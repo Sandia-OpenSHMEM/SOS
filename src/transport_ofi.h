@@ -238,6 +238,7 @@ struct shmem_transport_ctx_t {
   long                            options;
   struct fid_ep*                  cntr_ep;
   struct fid_ep*                  cq_ep;
+  struct fid_stx*                 stx;
   struct fid_cntr*                put_cntr;
   struct fid_cntr*                get_cntr;
   struct fid_cq*                  cq;

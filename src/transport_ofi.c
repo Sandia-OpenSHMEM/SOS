@@ -46,7 +46,6 @@ struct fabric_info {
 
 struct fid_fabric*              shmem_transport_ofi_fabfd;
 struct fid_domain*              shmem_transport_ofi_domainfd;
-struct fid_stx*                 shmem_transport_ofi_stx;
 struct fid_av*                  shmem_transport_ofi_avfd;
 #ifndef ENABLE_HARD_POLLING
 struct fid_cntr*                shmem_transport_ofi_target_cntrfd;
@@ -294,7 +293,7 @@ int bind_enable_cq_ep_resources(shmem_transport_ctx_t *ctx)
     int ret = 0;
 
     /* Attach the shared context */
-    ret = fi_ep_bind(ctx->cq_ep, &shmem_transport_ofi_stx->fid, 0);
+    ret = fi_ep_bind(ctx->cq_ep, &ctx->stx->fid, 0);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to CQ endpoint failed");
 
     /* Attach CQ for obtaining completions for buffered puts */
@@ -318,7 +317,7 @@ int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx)
     int ret = 0;
 
     /* Attach the shared context */
-    ret = fi_ep_bind(ctx->cntr_ep, &shmem_transport_ofi_stx->fid, 0);
+    ret = fi_ep_bind(ctx->cntr_ep, &ctx->stx->fid, 0);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to CNTR endpoint failed");
 
     /* Attach counter for obtaining put completions */
@@ -834,14 +833,6 @@ int allocate_fabric_resources(struct fabric_info *info)
                     &shmem_transport_ofi_domainfd,NULL);
     OFI_CHECK_RETURN_STR(ret, "domain initialization failed");
 
-    /* transmit context: allocate one transmit context for this SHMEM PE
-     * and share it across different multiple endpoints. Since we have only
-     * one thread per PE, a single context is sufficient and allows more
-     * more PEs/node (i.e. doesn't exhaust contexts)  */
-    ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL, /* TODO: fill tx_attr */
-                         &shmem_transport_ofi_stx, NULL);
-    OFI_CHECK_RETURN_STR(ret, "STX context creation failed");
-
     /* AV table set-up for PE mapping */
 
 #ifdef USE_AV_MAP
@@ -1030,6 +1021,15 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr, &ctx->cq, NULL);
     OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(errno));
 
+    /* TODO: STX contexts should be shared by SHMEM contexts that are private
+     * to the same thread (i.e. have SHMEM_CTX_PRIVATE option set and same
+     * thread ID/gettid()).  There should also be a limit on the number of
+     * contexts created per PE, beyond which we start sharing STXs across SHMEM
+     * contexts. */
+    /* TODO: Fill in TX attr */
+    ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL, &ctx->stx, NULL);
+    OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
+
     ret = fi_endpoint(shmem_transport_ofi_domainfd,
                       info->p_info, &ctx->cntr_ep, NULL);
     OFI_CHECK_RETURN_MSG(ret, "cntr_ep creation failed (%s)\n", fi_strerror(errno));
@@ -1212,6 +1212,9 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         shmem_free_list_destroy(ctx->bounce_buffers);
     }
 
+    ret = fi_close(&ctx->stx->fid);
+    OFI_CHECK_ERROR_MSG(ret, "STX context close failed (%s)\n", fi_strerror(errno));
+
     ret = fi_close(&ctx->put_cntr->fid);
     OFI_CHECK_ERROR_MSG(ret, "Context put CNTR close failed (%s)\n", fi_strerror(errno));
 
@@ -1247,11 +1250,6 @@ int shmem_transport_fini(void)
     }
 
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
-
-    if (shmem_transport_ofi_stx &&
-        fi_close(&shmem_transport_ofi_stx->fid)) {
-        RAISE_ERROR_MSG("Shared context close failed (%s)\n", fi_strerror(errno));
-    }
 
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     if (shmem_transport_ofi_target_mrfd &&
