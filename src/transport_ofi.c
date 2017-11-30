@@ -889,9 +889,13 @@ int query_for_fabric(struct fabric_info *info)
                                       at least 1 byte */
 #endif
 #ifdef ENABLE_THREADS
-    if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE)
+    if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE) {
+#ifdef USE_THREAD_COMPLETION
+        domain_attr.threading = FI_THREAD_COMPLETION;
+#else
         domain_attr.threading = FI_THREAD_SAFE;
-    else
+#endif /* USE_THREAD_COMPLETION */
+    } else
         domain_attr.threading = FI_THREAD_DOMAIN;
 #else
     domain_attr.threading     = FI_THREAD_DOMAIN;
@@ -1007,6 +1011,9 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     info->p_info->rx_attr->mode = 0;
 
     ctx->id = id;
+#ifdef USE_CTX_LOCK
+    SHMEM_MUTEX_INIT(ctx->lock);
+#endif
     shmem_internal_atomic_write(&ctx->pending_put_cntr, 0);
     shmem_internal_atomic_write(&ctx->pending_get_cntr, 0);
 
@@ -1225,6 +1232,10 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 
     ret = fi_close(&ctx->cq->fid);
     OFI_CHECK_ERROR_MSG(ret, "Context CQ close failed (%s)\n", fi_strerror(errno));
+
+#ifdef USE_CTX_LOCK
+    SHMEM_MUTEX_DESTROY(ctx->lock);
+#endif
 
     if (ctx->id >= 0) {
         SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);

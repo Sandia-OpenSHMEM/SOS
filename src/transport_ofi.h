@@ -235,6 +235,10 @@ typedef struct shmem_transport_ofi_bounce_buffer_t shmem_transport_ofi_bounce_bu
 typedef int shmem_transport_ct_t;
 
 struct shmem_transport_ctx_t {
+  int                             id;
+#ifdef USE_CTX_LOCK
+  shmem_internal_mutex_t          lock;
+#endif
   long                            options;
   struct fid_ep*                  cntr_ep;
   struct fid_ep*                  cq_ep;
@@ -245,11 +249,18 @@ struct shmem_transport_ctx_t {
   shmem_internal_atomic_uint64_t  pending_put_cntr;
   shmem_internal_atomic_uint64_t  pending_get_cntr;
   shmem_free_list_t              *bounce_buffers;
-  int id;
 };
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
 extern shmem_transport_ctx_t shmem_transport_ctx_default;
+
+#ifdef USE_CTX_LOCK
+#define SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx) SHMEM_MUTEX_LOCK((ctx)->lock);
+#define SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx) SHMEM_MUTEX_UNLOCK((ctx)->lock);
+#else
+#define SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx)
+#define SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx)
+#endif
 
 int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx);
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx);
@@ -327,6 +338,8 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_transport_ctx_t
 static inline
 void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
 {
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+
     /* Wait for bounce buffered operations to complete */
     if (ctx->cq_ep) {
         shmem_free_list_lock(ctx->bounce_buffers);
@@ -360,6 +373,7 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
             RAISE_ERROR_MSG("Operations completed in error (%" PRIu64 ").  Aborting.\n",
                             fail);
         } else {
+            SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
             return;
         }
         poll_count++;
@@ -372,6 +386,8 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
         OFI_CTX_CHECK_ERROR(ctx, ret);
     } while (cnt < cnt_new);
     shmem_internal_assert(cnt == cnt_new);
+
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
 
 static inline
@@ -457,6 +473,7 @@ void shmem_transport_put_small(shmem_transport_ctx_t* ctx, void *target, const
 
     shmem_internal_assert(len <= shmem_transport_ofi_max_buffered_send);
 
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     shmem_internal_atomic_inc(&ctx->pending_put_cntr);
 
     do {
@@ -469,6 +486,7 @@ void shmem_transport_put_small(shmem_transport_ctx_t* ctx, void *target, const
                               key);
 
     } while (try_again(ctx, ret, &polled));
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
 
 static inline
@@ -489,6 +507,7 @@ void shmem_transport_ofi_put_large(shmem_transport_ctx_t* ctx, void *target, con
 
     /* operation generates counting events and must be completed by
      * quiet. */
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     while (frag_source < ((uint8_t *) source) + len) {
         frag_len = MIN(shmem_transport_ofi_max_msg_size,
                        (size_t) (((uint8_t *) source) + len - frag_source));
@@ -506,6 +525,7 @@ void shmem_transport_ofi_put_large(shmem_transport_ctx_t* ctx, void *target, con
         frag_source += frag_len;
         frag_target += frag_len;
     }
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
 
 static inline
@@ -526,6 +546,7 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
 
     } else if (len <= shmem_transport_ofi_bounce_buffer_size && ctx->cq_ep) {
 
+        SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
         shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
         shmem_transport_ofi_bounce_buffer_t *buff =
@@ -538,6 +559,7 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
                            GET_DEST(dst), (uint64_t) addr,
                            key, buff);
         } while (try_again(ctx, ret, &polled));
+        SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 
     } else {
         shmem_transport_ofi_put_large(ctx, target, source,len, pe);
@@ -583,6 +605,7 @@ void shmem_transport_get(shmem_transport_ctx_t* ctx, void *target, const void *s
 
     shmem_transport_ofi_get_mr(source, pe, &addr, &key);
 
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     if (len <= shmem_transport_ofi_max_msg_size) {
 
         shmem_internal_atomic_inc(&ctx->pending_get_cntr);
@@ -620,6 +643,7 @@ void shmem_transport_get(shmem_transport_ctx_t* ctx, void *target, const void *s
             frag_target += frag_len;
         }
     }
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
 
 
@@ -636,6 +660,9 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
      */
     uint64_t success, fail, cnt, cnt_new;
     long poll_count = 0;
+
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+
     while (poll_count < shmem_transport_ofi_get_poll_limit ||
            shmem_transport_ofi_get_poll_limit < 0) {
         success = fi_cntr_read(ctx->get_cntr);
@@ -648,6 +675,7 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
             RAISE_ERROR_MSG("Operations completed in error (%" PRIu64 ").  Aborting.\n",
                             fail);
         } else {
+            SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
             return;
         }
         poll_count++;
@@ -660,6 +688,8 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
         OFI_CTX_CHECK_ERROR(ctx, ret);
     } while (cnt < cnt_new);
     shmem_internal_assert(cnt == cnt_new);
+
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
 
 
@@ -678,6 +708,7 @@ void shmem_transport_swap(shmem_transport_ctx_t* ctx, void *target, const void *
     shmem_internal_assert(len <= sizeof(double _Complex));
     shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
 
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     shmem_internal_atomic_inc(&ctx->pending_get_cntr);
 
     do {
@@ -694,6 +725,7 @@ void shmem_transport_swap(shmem_transport_ctx_t* ctx, void *target, const void *
                               FI_ATOMIC_WRITE,
                               NULL);
     } while (try_again(ctx, ret, &polled));
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 
 }
 
@@ -1053,6 +1085,7 @@ static inline
 uint64_t shmem_transport_received_cntr_get(void)
 {
 #ifndef ENABLE_HARD_POLLING
+    shmem_internal_assert(shmem_internal_thread_level == SHMEM_THREAD_SINGLE);
     return fi_cntr_read(shmem_transport_ofi_target_cntrfd);
 #else
     RAISE_ERROR_STR("OFI transport configured for hard polling");
@@ -1064,6 +1097,7 @@ static inline
 void shmem_transport_received_cntr_wait(uint64_t ge_val)
 {
 #ifndef ENABLE_HARD_POLLING
+    shmem_internal_assert(shmem_internal_thread_level == SHMEM_THREAD_SINGLE);
     int ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd, ge_val, -1);
 
     OFI_CHECK_ERROR(ret);
