@@ -72,7 +72,7 @@ extern long                             shmem_transport_ofi_max_bounce_buffers;
             if (ret == 1) {                                                     \
                 const char *errmsg = fi_cq_strerror((ctx)->cq, e.prov_errno,    \
                                                     e.err_data, NULL, 0);       \
-                RAISE_ERROR_STR(errmsg);                                        \
+                RAISE_ERROR_MSG("Error in operation: %s\n", errmsg);            \
             } else {                                                            \
                 RAISE_ERROR_MSG("Error reading from CQ (%zd)\n", ret);          \
             }                                                                   \
@@ -370,8 +370,7 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
         if (success < cnt && fail == 0) {
             SPINLOCK_BODY();
         } else if (fail) {
-            RAISE_ERROR_MSG("Operations completed in error (%" PRIu64 ").  Aborting.\n",
-                            fail);
+            RAISE_ERROR_MSG("Operations completed in error (%" PRIu64 ")\n", fail);
         } else {
             SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
             return;
@@ -434,7 +433,7 @@ int try_again(shmem_transport_ctx_t *ctx, const int ret, uint64_t *polled) {
                 if (ret == 1) {
                     const char *errmsg = fi_cq_strerror(ctx->cq, e.prov_errno,
                                                         e.err_data, NULL, 0);
-                    RAISE_ERROR_STR(errmsg);
+                    RAISE_ERROR_MSG("Error in operation: %s\n", errmsg);
                 } else if (ret && ret != -FI_EAGAIN) {
                     RAISE_ERROR_MSG("Error reading from CQ (%zd)\n", ret);
                 }
@@ -446,7 +445,7 @@ int try_again(shmem_transport_ctx_t *ctx, const int ret, uint64_t *polled) {
                 return 1;
             }
             else {
-                RAISE_ERROR_MSG("Operation retry limit exceeded (%" PRIu64 ").  Aborting.\n",
+                RAISE_ERROR_MSG("Operation retry limit exceeded (%" PRIu64 ")\n",
                                 shmem_transport_ofi_max_poll);
             }
         }
@@ -672,8 +671,7 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
         if (success < cnt && fail == 0) {
             SPINLOCK_BODY();
         } else if (fail) {
-            RAISE_ERROR_MSG("Operations completed in error (%" PRIu64 ").  Aborting.\n",
-                            fail);
+            RAISE_ERROR_MSG("Operations completed in error (%" PRIu64 ")\n", fail);
         } else {
             SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
             return;
