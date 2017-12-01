@@ -317,7 +317,7 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_transport_ctx_t
 
     shmem_free_list_lock(ctx->bounce_buffers);
 
-    while (ctx->bounce_buffers->nalloc > shmem_transport_ofi_max_bounce_buffers) {
+    while (ctx->bounce_buffers->nalloc >= shmem_transport_ofi_max_bounce_buffers) {
         shmem_transport_ofi_drain_cq(ctx);
     }
 
@@ -426,7 +426,7 @@ int try_again(shmem_transport_ctx_t *ctx, const int ret, uint64_t *polled) {
                 shmem_transport_ofi_drain_cq(ctx);
                 shmem_free_list_unlock(ctx->bounce_buffers);
             }
-            else if (0) {
+            else {
                 /* Poke CQ for errors to encourage progress */
                 struct fi_cq_err_entry e = {0};
                 ssize_t ret = fi_cq_readerr(ctx->cq, (void *)&e, 0);
