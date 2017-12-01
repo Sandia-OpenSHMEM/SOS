@@ -64,7 +64,7 @@ extern long                             shmem_transport_ofi_max_bounce_buffers;
         }                                                                       \
     } while (0)
 
-#define OFI_CTX_CHECK_ERROR(ctx, err)                                           \
+#define OFI_CTX_CHECK_ERROR(ctx, /* ssize_t */ err)                             \
     do {                                                                        \
         if ((err) == -FI_EAVAIL) {                                              \
             struct fi_cq_err_entry e = {0};                                     \
@@ -380,7 +380,7 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
     cnt_new = shmem_internal_atomic_read(&ctx->pending_put_cntr);
     do {
         cnt = cnt_new;
-        int ret = fi_cntr_wait(ctx->put_cntr, cnt, -1);
+        ssize_t ret = fi_cntr_wait(ctx->put_cntr, cnt, -1);
         cnt_new = shmem_internal_atomic_read(&ctx->pending_put_cntr);
         OFI_CTX_CHECK_ERROR(ctx, ret);
     } while (cnt < cnt_new);
@@ -450,7 +450,7 @@ int try_again(shmem_transport_ctx_t *ctx, const int ret, uint64_t *polled) {
             }
         }
         else {
-            OFI_CTX_CHECK_ERROR(ctx, ret);
+            OFI_CTX_CHECK_ERROR(ctx, (ssize_t) ret);
         }
     }
 
@@ -681,7 +681,7 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
     cnt_new = shmem_internal_atomic_read(&ctx->pending_get_cntr);
     do {
         cnt = cnt_new;
-        int ret = fi_cntr_wait(ctx->get_cntr, cnt, -1);
+        ssize_t ret = fi_cntr_wait(ctx->get_cntr, cnt, -1);
         cnt_new = shmem_internal_atomic_read(&ctx->pending_get_cntr);
         OFI_CTX_CHECK_ERROR(ctx, ret);
     } while (cnt < cnt_new);
