@@ -48,6 +48,7 @@ struct fid_fabric*              shmem_transport_ofi_fabfd;
 struct fid_domain*              shmem_transport_ofi_domainfd;
 struct fid_stx*                 shmem_transport_ofi_stx;
 struct fid_av*                  shmem_transport_ofi_avfd;
+struct fid_ep*                  shmem_transport_ofi_target_ep;
 #ifndef ENABLE_HARD_POLLING
 struct fid_cntr*                shmem_transport_ofi_target_cntrfd;
 #endif
@@ -390,7 +391,7 @@ int allocate_recv_cntr_mr(void)
                      FI_REMOTE_WRITE | FI_REMOTE_READ);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to MR failed");
 
-    ret = fi_ep_bind(shmem_transport_ctx_default.cntr_ep,
+    ret = fi_ep_bind(shmem_transport_ofi_target_ep,
                      &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE | FI_REMOTE_READ);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to EP failed");
 
@@ -430,7 +431,7 @@ int allocate_recv_cntr_mr(void)
                      FI_REMOTE_WRITE | FI_REMOTE_READ);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to data MR failed");
 
-    ret = fi_ep_bind(shmem_transport_ctx_default.cntr_ep,
+    ret = fi_ep_bind(shmem_transport_ofi_target_ep,
                      &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE | FI_REMOTE_READ);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to EP failed");
 
@@ -744,7 +745,7 @@ int publish_av_info(struct fabric_info *info)
     OFI_CHECK_RETURN_STR(ret, "shmem_runtime_put fi_ephostname failed");
 #endif
 
-    ret = fi_getname((fid_t)shmem_transport_ctx_default.cntr_ep, epname, &epnamelen);
+    ret = fi_getname((fid_t)shmem_transport_ofi_target_ep, epname, &epnamelen);
     if (ret != 0 || (epnamelen > sizeof(epname))) {
         RAISE_WARN_STR("fi_getname failed");
         return ret;
@@ -980,6 +981,38 @@ int query_for_fabric(struct fabric_info *info)
     return ret;
 }
 
+static int shmem_transport_ofi_target_ep_init() {
+    int ret = 0;
+
+    struct fabric_info* info = &shmem_transport_ofi_info;
+    info->p_info->ep_attr->tx_ctx_cnt = FI_SHARED_CONTEXT;
+    info->p_info->caps = FI_RMA | FI_ATOMICS;
+    info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
+    info->p_info->mode = 0;
+    info->p_info->tx_attr->mode = 0;
+    info->p_info->rx_attr->mode = 0;
+
+    ret = fi_endpoint(shmem_transport_ofi_domainfd,
+                      info->p_info, &shmem_transport_ofi_target_ep, NULL);
+    OFI_CHECK_RETURN_MSG(ret, "target endpoint creation failed (%s)\n", fi_strerror(errno));
+
+    /* Attach the shared context */
+    ret = fi_ep_bind(shmem_transport_ofi_target_ep, &shmem_transport_ofi_stx->fid, 0);
+    OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to target endpoint failed");
+
+    /* Attach the address vector */
+    ret = fi_ep_bind(shmem_transport_ofi_target_ep, &shmem_transport_ofi_avfd->fid, 0);
+    OFI_CHECK_RETURN_STR(ret, "fi_ep_bind AV to target endpoint failed");
+
+    ret = allocate_recv_cntr_mr();
+    if (ret != 0) return ret;
+
+    ret = fi_enable(shmem_transport_ofi_target_ep);
+    OFI_CHECK_RETURN_STR(ret, "fi_enable on target endpoint failed");
+
+    return 0;
+}
+
 static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 {
     int ret = 0;
@@ -1007,9 +1040,8 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 
     struct fabric_info* info = &shmem_transport_ofi_info;
     info->p_info->ep_attr->tx_ctx_cnt = FI_SHARED_CONTEXT;
-    info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | FI_ATOMICS
-                         | FI_REMOTE_WRITE | FI_REMOTE_READ;
-    info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE | FI_INJECT_COMPLETE;
+    info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | FI_ATOMICS;
+    info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
     info->p_info->mode = 0;
     info->p_info->tx_attr->mode = 0;
     info->p_info->rx_attr->mode = 0;
@@ -1118,7 +1150,7 @@ int shmem_transport_init(void)
     ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, SHMEM_CTX_DEFAULT_ID);
     if (ret != 0) return ret;
 
-    ret = allocate_recv_cntr_mr();
+    ret = shmem_transport_ofi_target_ep_init();
     if (ret != 0) return ret;
 
     ret = publish_mr_info();
@@ -1245,6 +1277,11 @@ int shmem_transport_fini(void)
     }
 
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
+
+    if (shmem_transport_ofi_target_ep &&
+        fi_close(&shmem_transport_ofi_target_ep->fid)) {
+        RAISE_ERROR_MSG("target endpoint close failed (%s)\n", fi_strerror(errno));
+    }
 
     if (shmem_transport_ofi_stx &&
         fi_close(&shmem_transport_ofi_stx->fid)) {
