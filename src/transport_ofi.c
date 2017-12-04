@@ -985,8 +985,8 @@ static int shmem_transport_ofi_target_ep_init() {
     int ret = 0;
 
     struct fabric_info* info = &shmem_transport_ofi_info;
-    info->p_info->ep_attr->tx_ctx_cnt = FI_SHARED_CONTEXT;
-    info->p_info->caps = FI_RMA | FI_ATOMICS;
+    info->p_info->ep_attr->tx_ctx_cnt = 0;
+    info->p_info->caps = FI_RMA | FI_ATOMICS | FI_REMOTE_READ | FI_REMOTE_WRITE;
     info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
     info->p_info->mode = 0;
     info->p_info->tx_attr->mode = 0;
@@ -995,10 +995,6 @@ static int shmem_transport_ofi_target_ep_init() {
     ret = fi_endpoint(shmem_transport_ofi_domainfd,
                       info->p_info, &shmem_transport_ofi_target_ep, NULL);
     OFI_CHECK_RETURN_MSG(ret, "target endpoint creation failed (%s)\n", fi_strerror(errno));
-
-    /* Attach the shared context */
-    ret = fi_ep_bind(shmem_transport_ofi_target_ep, &shmem_transport_ofi_stx->fid, 0);
-    OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to target endpoint failed");
 
     /* Attach the address vector */
     ret = fi_ep_bind(shmem_transport_ofi_target_ep, &shmem_transport_ofi_avfd->fid, 0);
