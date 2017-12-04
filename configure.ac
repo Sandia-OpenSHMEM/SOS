@@ -738,6 +738,9 @@ AS_IF([test "$enable_cxx" == "no"],
 AS_IF([test "$enable_fortran" == "no"],
       [AC_MSG_WARN([No Fortran compiler or Fortran disabled, unabled to test Fortran bindings])])
 
+AS_IF([test "$enable_fortran" != "no"],
+      [AC_MSG_WARN([Fortran bindings have been deprecated as of OpenSHMEM v1.4])])
+
 #Note: The --with-pmix flag is not currently marked as experimental in
 #      --help, because the AC_HELP string is set in upstream OMPI.
 AS_IF([test "$opal_external_pmix_happy" = "yes"],
