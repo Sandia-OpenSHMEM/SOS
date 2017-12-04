@@ -404,12 +404,12 @@ static inline
 int shmem_transport_fence(shmem_transport_ctx_t* ctx)
 {
 #if WANT_TOTAL_DATA_ORDERING == 0
-    /*unordered network model*/
-    return shmem_transport_quiet(ctx);
-#else
-    return 0;
+    /* Communication is unordered; must wait for puts and buffered (injected)
+     * non-fetching atomics to be completed in order to ensure ordering. */
+    shmem_transport_put_quiet(ctx);
 #endif
 
+    return 0;
 }
 
 
