@@ -1278,6 +1278,8 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 
 int shmem_transport_fini(void)
 {
+    int ret;
+
     /* Wait for acks before shutdown */
     size_t i;
     for(i = 0; i < shmem_transport_ofi_num_ctx; ++i) {
@@ -1292,49 +1294,33 @@ int shmem_transport_fini(void)
 
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
 
-    if (shmem_transport_ofi_target_ep &&
-        fi_close(&shmem_transport_ofi_target_ep->fid)) {
-        RAISE_ERROR_MSG("target endpoint close failed (%s)\n", fi_strerror(errno));
-    }
+    ret = fi_close(&shmem_transport_ofi_target_ep->fid);
+    OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));
 
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
-    if (shmem_transport_ofi_target_mrfd &&
-        fi_close(&shmem_transport_ofi_target_mrfd->fid)) {
-        RAISE_ERROR_MSG("Target MR close failed (%s)\n", fi_strerror(errno));
-    }
+    ret = fi_close(&shmem_transport_ofi_target_mrfd->fid);
+    OFI_CHECK_ERROR_MSG(ret, "Target MR close failed (%s)\n", fi_strerror(errno));
 #else
-    if (shmem_transport_ofi_target_heap_mrfd &&
-        fi_close(&shmem_transport_ofi_target_heap_mrfd->fid)) {
-        RAISE_ERROR_MSG("Target heap MR close failed (%s)\n", fi_strerror(errno));
-    }
+    ret = fi_close(&shmem_transport_ofi_target_heap_mrfd->fid);
+    OFI_CHECK_ERROR_MSG(ret, "Target heap MR close failed (%s)\n", fi_strerror(errno));
 
-    if (shmem_transport_ofi_target_data_mrfd &&
-        fi_close(&shmem_transport_ofi_target_data_mrfd->fid)) {
-        RAISE_ERROR_MSG("Target data MR close failed (%s)\n", fi_strerror(errno));
-    }
+    ret = fi_close(&shmem_transport_ofi_target_data_mrfd->fid);
+    OFI_CHECK_ERROR_MSG(ret, "Target data MR close failed (%s)\n", fi_strerror(errno));
 #endif
 
 #ifndef ENABLE_HARD_POLLING
-    if (shmem_transport_ofi_target_cntrfd &&
-        fi_close(&shmem_transport_ofi_target_cntrfd->fid)) {
-        RAISE_ERROR_MSG("Target CT close failed (%s)\n", fi_strerror(errno));
-    }
+    ret = fi_close(&shmem_transport_ofi_target_cntrfd->fid);
+    OFI_CHECK_ERROR_MSG(ret, "Target CT close failed (%s)\n", fi_strerror(errno));
 #endif
 
-    if (shmem_transport_ofi_avfd &&
-        fi_close(&shmem_transport_ofi_avfd->fid)) {
-        RAISE_ERROR_MSG("AV close failed (%s)\n", fi_strerror(errno));
-    }
+    ret = fi_close(&shmem_transport_ofi_avfd->fid);
+    OFI_CHECK_ERROR_MSG(ret, "AV close failed (%s)\n", fi_strerror(errno));
 
-    if (shmem_transport_ofi_domainfd &&
-        fi_close(&shmem_transport_ofi_domainfd->fid)) {
-        RAISE_ERROR_MSG("Domain close failed (%s)\n", fi_strerror(errno));
-    }
+    ret = fi_close(&shmem_transport_ofi_domainfd->fid);
+    OFI_CHECK_ERROR_MSG(ret, "Domain close failed (%s)\n", fi_strerror(errno));
 
-    if (shmem_transport_ofi_fabfd &&
-        fi_close(&shmem_transport_ofi_fabfd->fid)) {
-        RAISE_ERROR_MSG("Fabric close failed (%s)\n", fi_strerror(errno));
-    }
+    ret = fi_close(&shmem_transport_ofi_fabfd->fid);
+    OFI_CHECK_ERROR_MSG(ret, "Fabric close failed (%s)\n", fi_strerror(errno));
 
 #ifdef USE_AV_MAP
     free(addr_table);
