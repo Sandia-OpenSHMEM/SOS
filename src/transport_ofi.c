@@ -1297,11 +1297,6 @@ int shmem_transport_fini(void)
         RAISE_ERROR_MSG("target endpoint close failed (%s)\n", fi_strerror(errno));
     }
 
-    if (shmem_transport_ofi_stx &&
-        fi_close(&shmem_transport_ofi_stx->fid)) {
-        RAISE_ERROR_MSG("Shared context close failed (%s)\n", fi_strerror(errno));
-    }
-
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     if (shmem_transport_ofi_target_mrfd &&
         fi_close(&shmem_transport_ofi_target_mrfd->fid)) {
