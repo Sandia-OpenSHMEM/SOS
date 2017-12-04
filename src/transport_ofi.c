@@ -998,7 +998,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 
     struct fi_cq_attr cq_attr = {0};
     cq_attr.format = FI_CQ_FORMAT_CONTEXT;
-    cq_attr.size = 0; /* Size choosen by provider */
+    cq_attr.size = 0; /* Size chosen by provider */
 
     struct fabric_info* info = &shmem_transport_ofi_info;
     info->p_info->ep_attr->tx_ctx_cnt = FI_SHARED_CONTEXT;
