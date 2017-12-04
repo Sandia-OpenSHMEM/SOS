@@ -347,7 +347,7 @@ typedef pthread_mutex_t shmem_internal_mutex_t;
 #   define SHMEM_MUTEX_INIT(_mutex)                                     \
     do {                                                                \
         if (shmem_internal_thread_level > SHMEM_THREAD_SINGLE)          \
-            pthread_mutex_init(&_mutex, NULL); \
+            pthread_mutex_init(&_mutex, NULL);                          \
     } while (0)
 #   define SHMEM_MUTEX_DESTROY(_mutex)                                  \
     do {                                                                \

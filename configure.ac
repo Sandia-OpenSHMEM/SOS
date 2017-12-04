@@ -124,8 +124,15 @@ AM_CONDITIONAL([HAVE_OPENMP], [test "$enable_threads" != "no" -a "$enable_openmp
 
 AC_ARG_ENABLE([pthread-mutexes],
     [AC_HELP_STRING([--enable-pthread-mutexes],
-                    [Use pthread mutexes to support threading (used in conjunction with --enable-threads) (default:disabled)])])
+                    [Use pthread mutexes instead of spinlocks (used in conjunction with --enable-threads) (default:disabled)])])
 AS_IF([test "$enable_pthread_mutexes" = "yes"], [AC_DEFINE([ENABLE_PTHREAD_MUTEX], [1], [Enable pthread mutexes])])
+
+AC_ARG_ENABLE([thread-completion],
+    [AC_HELP_STRING([--enable-thread-completion],
+        [Support SHMEM_THREAD_MULTIPLE using FI_THREAD_COMPLETION thread safety model instead of FI_THREAD_SAFE (default: disabled)])])
+AS_IF([test "$enable_thread_completion" = "yes"],
+      [AC_DEFINE([USE_CTX_LOCK], [1], [Enable per-context locks])
+       AC_DEFINE([USE_THREAD_COMPLETION], [1], [Support SHMEM_THREAD_MULTIPLE using FI_THREAD_COMPLETION instead of FI_THREAD_SAFE])])
 
 AC_ARG_ENABLE([remote-virtual-addressing],
     [AC_HELP_STRING([--enable-remote-virtual-addressing],
