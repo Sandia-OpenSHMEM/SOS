@@ -112,6 +112,9 @@ options.
         underlying network but greater than this threshold will be
         copied into a bounce buffer and then sent.
 
+    SHMEM_MAX_BOUNCE_BUFFERS (default: 128)
+        The maximum number of bounce buffers that can be created per context.
+
     SHMEM_COLL_CROSSOVER (default: 4)
         For num_pes < SHMEM_COLL_CROSSOVER, collective algorithms are
         serial instead of tree based.

@@ -371,8 +371,10 @@ shmem_transport_portals4_drain_eq(void)
     if (SHMEM_TRANSPORT_PORTALS4_TYPE_BOUNCE == frag->type) {
          /* it's a short send completing */
          SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_frag);
+         shmem_free_list_lock(shmem_transport_portals4_bounce_buffers);
          shmem_free_list_free(shmem_transport_portals4_bounce_buffers,
                               frag);
+         shmem_free_list_unlock(shmem_transport_portals4_bounce_buffers);
     } else {
          /* it's one of the long messages we're waiting for */
          shmem_transport_portals4_long_frag_t *long_frag =
@@ -382,8 +384,10 @@ shmem_transport_portals4_drain_eq(void)
          if (0 >= --long_frag->reference) {
               long_frag->reference = 0;
               SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_frag);
+              shmem_free_list_lock(shmem_transport_portals4_long_frags);
               shmem_free_list_free(shmem_transport_portals4_long_frags,
                                    frag);
+              shmem_free_list_unlock(shmem_transport_portals4_long_frags);
          } else {
               SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_frag);
          }
@@ -465,8 +469,10 @@ shmem_transport_portals4_put_nb_internal(shmem_transport_ctx_t* ctx, void *targe
         }
         SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
 
+        shmem_free_list_lock(shmem_transport_portals4_bounce_buffers);
         buff = (shmem_transport_portals4_bounce_buffer_t*)
             shmem_free_list_alloc(shmem_transport_portals4_bounce_buffers);
+        shmem_free_list_unlock(shmem_transport_portals4_bounce_buffers);
         if (NULL == buff) RAISE_ERROR(-1);
 
         shmem_internal_assert(buff->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_BOUNCE);
@@ -505,8 +511,10 @@ shmem_transport_portals4_put_nb_internal(shmem_transport_ctx_t* ctx, void *targe
         }
         SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
 
+        shmem_free_list_lock(shmem_transport_portals4_long_frags);
         long_frag = (shmem_transport_portals4_long_frag_t*)
             shmem_free_list_alloc(shmem_transport_portals4_long_frags);
+        shmem_free_list_unlock(shmem_transport_portals4_long_frags);
         if (NULL == long_frag) { RAISE_ERROR(-1); }
 
         shmem_internal_assert(long_frag->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_LONG);
@@ -929,8 +937,10 @@ shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *
         }
         SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
 
+        shmem_free_list_lock(shmem_transport_portals4_bounce_buffers);
         buff = (shmem_transport_portals4_bounce_buffer_t*)
             shmem_free_list_alloc(shmem_transport_portals4_bounce_buffers);
+        shmem_free_list_unlock(shmem_transport_portals4_bounce_buffers);
         if (NULL == buff) RAISE_ERROR(-1);
 
         shmem_internal_assert(buff->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_BOUNCE);
@@ -959,8 +969,10 @@ shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *
         ptl_size_t base_offset;
         shmem_transport_portals4_long_frag_t *long_frag;
 
+        shmem_free_list_lock(shmem_transport_portals4_long_frags);
         long_frag = (shmem_transport_portals4_long_frag_t*)
              shmem_free_list_alloc(shmem_transport_portals4_long_frags);
+        shmem_free_list_unlock(shmem_transport_portals4_long_frags);
         if (NULL == long_frag) { RAISE_ERROR(-1); }
 
         shmem_internal_assert(long_frag->frag.type == SHMEM_TRANSPORT_PORTALS4_TYPE_LONG);

@@ -35,7 +35,7 @@ env:
         - >
           SOS_ENABLE_ERROR_TESTS=1
           SMA_BARRIER_ALGORITHM=auto SMA_BCAST_ALGORITHM=auto SMA_REDUCE_ALGORITHM=auto SMA_COLLECT_ALGORITHM=auto SMA_FCOLLECT_ALGORITHM=auto
-          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-thread-completion"
         - >
           SOS_ENABLE_ERROR_TESTS=1
           SMA_BARRIER_ALGORITHM=linear SMA_BCAST_ALGORITHM=linear SMA_REDUCE_ALGORITHM=linear SMA_COLLECT_ALGORITHM=linear SMA_FCOLLECT_ALGORITHM=linear
