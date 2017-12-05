@@ -254,6 +254,8 @@ struct shmem_transport_ctx_t {
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
 extern shmem_transport_ctx_t shmem_transport_ctx_default;
 
+extern struct fid_ep* shmem_transport_ofi_target_ep;
+
 #ifdef USE_CTX_LOCK
 #define SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx) SHMEM_MUTEX_LOCK((ctx)->lock);
 #define SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx) SHMEM_MUTEX_UNLOCK((ctx)->lock);
