@@ -269,7 +269,6 @@ typedef enum{
 
 
 /* default CQ depth */
-const static size_t shmem_transport_ofi_queue_slots = 32768;
 uint64_t shmem_transport_ofi_max_poll = (1ULL<<30);
 
 #define OFI_MAJOR_VERSION 1
@@ -1026,9 +1025,11 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
         cntr_get_attr.wait_obj = FI_WAIT_UNSPEC;
     }
 
+    /* Allow provider to choose CQ size, since we are using FI_RM_ENABLED.
+     * Context format is used to return bounce buffer pointers in the event
+     * so that they can be inserted back into to the free list. */
     struct fi_cq_attr cq_attr = {0};
     cq_attr.format = FI_CQ_FORMAT_CONTEXT;
-    cq_attr.size = shmem_transport_ofi_queue_slots;
 
     struct fabric_info* info = &shmem_transport_ofi_info;
     info->p_info->ep_attr->tx_ctx_cnt = FI_SHARED_CONTEXT;
