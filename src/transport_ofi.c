@@ -271,6 +271,26 @@ typedef enum{
 /* default CQ depth */
 uint64_t shmem_transport_ofi_max_poll = (1ULL<<30);
 
+
+/* STX control variables */
+enum stx_share_alg_t {
+    ROUNDROBIN = 0,
+    RANDOM
+};
+typedef enum stx_share_alg_t stx_share_alg_t;
+stx_share_alg_t shmem_transport_stx_share_alg;
+
+long shmem_transport_ofi_stx_max;
+
+struct shmem_transport_stx_t {
+    long ref_cnt;
+    int priv; /* 1 if private, 0 if shared */
+    int  owner_tid;
+};
+typedef struct shmem_transport_stx_t shmem_transport_stx_t;
+shmem_transport_stx_t* shmem_transport_ofi_stx_pool;
+
+
 #define OFI_MAJOR_VERSION 1
 #ifdef ENABLE_MR_RMA_EVENT
 #define OFI_MINOR_VERSION 5
@@ -1063,6 +1083,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
      * contexts created per PE, beyond which we start sharing STXs across SHMEM
      * contexts. */
     /* TODO: Fill in TX attr */
+
     ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL, &ctx->stx, NULL);
     OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
 
@@ -1073,7 +1094,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     ret = bind_enable_cntr_ep_resources(ctx);
     OFI_CHECK_RETURN_MSG(ret, "context bind/enable CNTR endpoint failed (%s)\n", fi_strerror(errno));
 
-    if (ctx->options | SHMEMX_CTX_BOUNCE_BUFFER &&
+    if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER &&
         shmem_transport_ofi_bounce_buffer_size > 0 &&
         shmem_transport_ofi_max_bounce_buffers > 0)
     {
@@ -1137,6 +1158,34 @@ int shmem_transport_init(void)
     shmem_transport_ofi_contexts = malloc(shmem_transport_ofi_avail_ctx
                                           * sizeof(shmem_transport_ctx_t*));
 
+    /* STX max settings */
+    if (shmem_internal_params.OFI_STX_MAX_provided) {
+        shmem_transport_ofi_stx_max = shmem_internal_params.OFI_STX_MAX;
+    }
+
+    /* STX sharing settings */
+    if (shmem_internal_params.OFI_STX_SHARE_ALGORITHM_provided) {
+        char *type = shmem_internal_params.OFI_STX_SHARE_ALGORITHM;
+        if (0 == strcmp(type, "round-robin")) {
+            shmem_transport_stx_share_alg = ROUNDROBIN;
+        } else if (0 == strcmp(type, "random")) {
+            shmem_transport_stx_share_alg = RANDOM;
+        } else {
+            RAISE_WARN_MSG("Ignoring bad STX share algorithm '%s'\n", type);
+        }
+    }
+
+    if (shmem_internal_thread_level == SHMEM_THREAD_SINGLE &&
+        shmem_transport_ofi_stx_max > 1) {
+        /* We need only 1 STX per PE */
+        RAISE_WARN_MSG("Ignoring invalid STX max setting '%ld' w/THREAD_SINGLE, using 1\n", 
+                       shmem_transport_ofi_stx_max);
+        shmem_transport_ofi_stx_max = 1;
+    }
+
+    /* Allocate STX array with max length */
+    shmem_transport_ofi_stx_pool = malloc(shmem_transport_ofi_stx_max * sizeof(shmem_transport_stx_t));
+
     /* The current bounce buffering implementation is only compatible with
      * providers that don't require FI_CONTEXT */
     if (shmem_transport_ofi_info.p_info->mode & FI_CONTEXT) {
@@ -1149,6 +1198,7 @@ int shmem_transport_init(void)
         shmem_transport_ofi_bounce_buffer_size = shmem_internal_params.BOUNCE_SIZE;
         shmem_transport_ofi_max_bounce_buffers = shmem_internal_params.MAX_BOUNCE_BUFFERS;
     }
+
 
     shmem_transport_ofi_put_poll_limit = shmem_internal_params.OFI_TX_POLL_LIMIT;
     shmem_transport_ofi_get_poll_limit = shmem_internal_params.OFI_RX_POLL_LIMIT;
@@ -1294,6 +1344,8 @@ int shmem_transport_fini(void)
     }
 
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
+
+    free(shmem_transport_ofi_stx_pool);
 
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));

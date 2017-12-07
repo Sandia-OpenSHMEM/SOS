@@ -208,6 +208,17 @@ options.
         polling (i.e. there is no polling limit).  The default behavior is to
         call fi_cntr_wait without polling.
 
+    SHMEM_OFI_STX_MAX (default: 256)
+        Sets the maximum number of sharable transmit contexts (STXs) per PE.
+        After reaching the maximum, PEs share the available STXs using the
+        SHMEM_OFI_STX_SHARE_HEURISTIC parameter.
+
+    SHMEM_OFI_STX_SHARE_ALGORITHM (default: round-robin)
+        Algorithm to share the available STX contexts after reaching the value
+        of SHMEM_OFI_STX_SHARE_MAX.  The default option is round-robin, which
+        uses STXs in increasing circular order.  Options are: round-robin,
+        random.
+
   Debugging Environment variables:
 
     SHMEM_DEBUG (default: off)
