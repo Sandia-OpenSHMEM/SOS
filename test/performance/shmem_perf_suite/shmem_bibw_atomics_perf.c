@@ -52,8 +52,8 @@
                         start = perf_shmemx_wtime();                       \
                                                                            \
                     for(j = 0; j < metric_info->window_size; j++)          \
-                        shmem_##NAME##_add((TYPE *)(metric_info->dest),    \
-                            ONE, dest);                                    \
+                        shmem_##NAME##_atomic_add(                         \
+                            (TYPE *)(metric_info->dest), ONE, dest);       \
                                                                            \
                     shmem_quiet();                                         \
                 }                                                          \
@@ -66,8 +66,8 @@
                         start = perf_shmemx_wtime();                       \
                                                                            \
                     for(j = 0; j < metric_info->window_size; j++)          \
-                        shmem_##NAME##_inc((TYPE *)(metric_info->dest),    \
-                            dest);                                         \
+                        shmem_##NAME##_atomic_inc(                         \
+                            (TYPE *)(metric_info->dest), dest);            \
                                                                            \
                     shmem_quiet();                                         \
                 }                                                          \
@@ -80,8 +80,8 @@
                         start = perf_shmemx_wtime();                       \
                                                                            \
                     for(j = 0; j < metric_info->window_size; j++)          \
-                        shmem_##NAME##_fadd((TYPE *)(metric_info->dest),   \
-                            ONE, dest);                                    \
+                        shmem_##NAME##_atomic_fetch_add(                   \
+                            (TYPE *)(metric_info->dest), ONE, dest);       \
                 }                                                          \
                 if(snode)                                                  \
                     end = perf_shmemx_wtime();                             \
@@ -92,8 +92,8 @@
                         start = perf_shmemx_wtime();                       \
                                                                            \
                     for(j = 0; j < metric_info->window_size; j++)          \
-                        shmem_##NAME##_finc((TYPE *)(metric_info->dest),   \
-                            dest);                                         \
+                        shmem_##NAME##_atomic_fetch_inc(                   \
+                            (TYPE *)(metric_info->dest), dest);            \
                 }                                                          \
                 if(snode)                                                  \
                     end = perf_shmemx_wtime();                             \
@@ -104,8 +104,8 @@
                         start = perf_shmemx_wtime();                       \
                                                                            \
                     for(j = 0; j < metric_info->window_size; j++)          \
-                        shmem_##NAME##_swap((TYPE *)(metric_info->src),    \
-                            ONE, dest);                                    \
+                        shmem_##NAME##_atomic_swap(                        \
+                            (TYPE *)(metric_info->src), ONE, dest);        \
                 }                                                          \
                 if(snode)                                                  \
                     end = perf_shmemx_wtime();                             \
@@ -116,8 +116,8 @@
                         start = perf_shmemx_wtime();                       \
                                                                            \
                     for(j = 0; j < metric_info->window_size; j++)          \
-                        shmem_##NAME##_cswap((TYPE *)(metric_info->src),   \
-                            dest, ONE, dest);                              \
+                        shmem_##NAME##_atomic_compare_swap(                \
+                            (TYPE *)(metric_info->src), dest, ONE, dest);  \
                 }                                                          \
                 if(snode)                                                  \
                     end = perf_shmemx_wtime();                             \

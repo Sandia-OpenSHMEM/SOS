@@ -57,7 +57,7 @@ static void * thread_main(void *arg) {
     /* TEST CONCURRENT ATOMICS */
     val = me;
     for (i = 1; i <= npes; i++)
-        shmem_int_add(&dest[tid], val, (me + i) % npes);
+        shmem_int_atomic_add(&dest[tid], val, (me + i) % npes);
 
     /* Ensure that fence does not overlap with communication calls */
     pthread_barrier_wait(&fencebar);
@@ -65,7 +65,7 @@ static void * thread_main(void *arg) {
     pthread_barrier_wait(&fencebar);
 
     for (i = 1; i <= npes; i++)
-        shmem_int_inc(&flag[tid], (me + i) % npes);
+        shmem_int_atomic_inc(&flag[tid], (me + i) % npes);
 
     shmem_int_wait_until(&flag[tid], SHMEM_CMP_EQ, npes);
 

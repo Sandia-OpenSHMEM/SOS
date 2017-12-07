@@ -38,6 +38,12 @@
 
 enum op { CSWAP = 0, ATOMIC_COMPARE_SWAP, CTX_ATOMIC_COMPARE_SWAP };
 
+#ifdef ENABLE_DEPRECATED_TESTS
+#define DEPRECATED_CSWAP shmem_cswap
+#else
+#define DEPRECATED_CSWAP shmem_atomic_compare_swap
+#endif
+
 #define TEST_SHMEM_CSWAP(OP, TYPE)                                      \
   do {                                                                  \
     static TYPE remote;                                                 \
@@ -48,7 +54,7 @@ enum op { CSWAP = 0, ATOMIC_COMPARE_SWAP, CTX_ATOMIC_COMPARE_SWAP };
     shmem_barrier_all();                                                \
     switch (OP) {                                                       \
         case CSWAP:                                                     \
-            old = shmem_cswap(&remote, (TYPE)npes, (TYPE)mype,          \
+            old = DEPRECATED_CSWAP(&remote, (TYPE)npes, (TYPE)mype,     \
                               (mype + 1) % npes);                       \
             break;                                                      \
         case ATOMIC_COMPARE_SWAP:                                       \
@@ -77,10 +83,13 @@ enum op { CSWAP = 0, ATOMIC_COMPARE_SWAP, CTX_ATOMIC_COMPARE_SWAP };
     }                                                                   \
   } while (false)
 
+
 int main(int argc, char* argv[]) {
   shmem_init();
 
   int rc = EXIT_SUCCESS;
+
+#ifdef ENABLE_DEPRECATED_TESTS
   TEST_SHMEM_CSWAP(CSWAP, int);
   TEST_SHMEM_CSWAP(CSWAP, long);
   TEST_SHMEM_CSWAP(CSWAP, long long);
@@ -93,6 +102,7 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_CSWAP(CSWAP, uint64_t);
   TEST_SHMEM_CSWAP(CSWAP, size_t);
   TEST_SHMEM_CSWAP(CSWAP, ptrdiff_t);
+#endif /* ENABLE_DEPRECATED_TESTS */
 
   TEST_SHMEM_CSWAP(ATOMIC_COMPARE_SWAP, int);
   TEST_SHMEM_CSWAP(ATOMIC_COMPARE_SWAP, long);

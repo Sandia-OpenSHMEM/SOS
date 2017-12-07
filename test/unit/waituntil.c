@@ -46,7 +46,6 @@
 #define SHM_PUTP  shmem_long_p
 #define SHM_GETP  shmem_long_g
 
-#define SHM_WAIT  shmem_long_wait
 #define SHM_WAITU shmem_long_wait_until
 #define PF "%ld"
 

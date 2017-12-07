@@ -272,14 +272,14 @@ static void *thread_worker(void *arg) {
     timer = getTime() - timer;
 
     // send stats data to IMAGE_PE
-    shmem_long_add(&sumTime, timer, IMAGE_PE);
-    shmem_long_add(&sumWorkRate, (long)(total_work / ((double)timer / 1e6) + 0.5), IMAGE_PE);
+    shmem_long_atomic_add(&sumTime, timer, IMAGE_PE);
+    shmem_long_atomic_add(&sumWorkRate, (long)(total_work / ((double)timer / 1e6) + 0.5), IMAGE_PE);
 
 #ifdef ENABLE_PAPI
     // Read PAPI cache miss counters
     PAPI_read_counters(counters, 4);
-    shmem_long_add(&sumL1_ICM, counters[0]*1e6/counters[2], IMAGE_PE);
-    shmem_long_add(&sumL2_ICM, counters[1]*1e6/counters[3], IMAGE_PE);
+    shmem_long_atomic_add(&sumL1_ICM, counters[0]*1e6/counters[2], IMAGE_PE);
+    shmem_long_atomic_add(&sumL2_ICM, counters[1]*1e6/counters[3], IMAGE_PE);
 #endif
 
     free(pixels[0]);

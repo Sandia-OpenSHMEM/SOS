@@ -41,6 +41,14 @@
 enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
           CTX_ATOMIC_FETCH_INC };
 
+#ifdef ENABLE_DEPRECATED_TESTS
+#define DEPRECATED_INC shmem_inc
+#define DEPRECATED_FINC shmem_finc
+#else
+#define DEPRECATED_INC shmem_atomic_inc
+#define DEPRECATED_FINC shmem_atomic_fetch_inc
+#endif
+
 #define TEST_SHMEM_INC(OP, TYPE)                                        \
   do {                                                                  \
     static TYPE remote = (TYPE)0;                                       \
@@ -52,7 +60,7 @@ enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
     for (int i = 0; i < npes; i++)                                      \
       switch (OP) {                                                     \
         case INC:                                                       \
-          shmem_inc(&remote, i);                                        \
+          DEPRECATED_INC(&remote, i);                                   \
           break;                                                        \
         case ATOMIC_INC:                                                \
           shmem_atomic_inc(&remote, i);                                 \
@@ -61,7 +69,7 @@ enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
           shmem_atomic_inc(SHMEM_CTX_DEFAULT, &remote, i);              \
           break;                                                        \
         case FINC:                                                      \
-          old = shmem_finc(&remote, i);                                 \
+          old = DEPRECATED_FINC(&remote, i);                            \
           if (old > npes) {                                             \
             printf("PE %i error inconsistent value of old (%s, %s)\n",  \
                    mype, #OP, #TYPE);                                   \
@@ -105,6 +113,8 @@ int main(int argc, char* argv[]) {
   shmem_init();
 
   int rc = EXIT_SUCCESS;
+
+#ifdef ENABLE_DEPRECATED_TESTS
   TEST_SHMEM_INC(INC, int);
   TEST_SHMEM_INC(INC, long);
   TEST_SHMEM_INC(INC, long long);
@@ -117,6 +127,7 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_INC(INC, uint64_t);
   TEST_SHMEM_INC(INC, size_t);
   TEST_SHMEM_INC(INC, ptrdiff_t);
+#endif /* ENABLE_DEPRECATED_TESTS */
 
   TEST_SHMEM_INC(ATOMIC_INC, int);
   TEST_SHMEM_INC(ATOMIC_INC, long);

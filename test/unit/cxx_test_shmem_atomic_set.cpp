@@ -38,6 +38,12 @@
 
 enum op { SET = 0, ATOMIC_SET, CTX_ATOMIC_SET };
 
+#ifdef ENABLE_DEPRECATED_TESTS
+#define DEPRECATED_SET shmem_set
+#else
+#define DEPRECATED_SET shmem_atomic_set
+#endif
+
 #define TEST_SHMEM_SET(OP, TYPE)                        \
   do {                                                  \
     static TYPE remote;                                 \
@@ -45,7 +51,7 @@ enum op { SET = 0, ATOMIC_SET, CTX_ATOMIC_SET };
     const int npes = shmem_n_pes();                     \
     switch (OP) {                                       \
       case SET:                                         \
-        shmem_set(&remote, (TYPE)mype, (mype + 1) % npes); \
+        DEPRECATED_SET(&remote, (TYPE)mype, (mype + 1) % npes); \
         break;                                          \
       case ATOMIC_SET:                                  \
         shmem_atomic_set(&remote, (TYPE)mype, (mype + 1) % npes); \
@@ -65,10 +71,13 @@ enum op { SET = 0, ATOMIC_SET, CTX_ATOMIC_SET };
     }                                                   \
   } while (false)
 
+
 int main(int argc, char* argv[]) {
   shmem_init();
 
   int rc = EXIT_SUCCESS;
+
+#ifdef ENABLE_DEPRECATED_TESTS
   TEST_SHMEM_SET(SET, float);
   TEST_SHMEM_SET(SET, double);
   TEST_SHMEM_SET(SET, int);
@@ -83,6 +92,7 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_SET(SET, uint64_t);
   TEST_SHMEM_SET(SET, size_t);
   TEST_SHMEM_SET(SET, ptrdiff_t);
+#endif /* ENABLE_DEPRECATED_TESTS */
 
   TEST_SHMEM_SET(ATOMIC_SET, float);
   TEST_SHMEM_SET(ATOMIC_SET, double);

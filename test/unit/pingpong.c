@@ -208,10 +208,10 @@ main(int argc, char* argv[])
             if (Slow) {
                 /* wait for each put to complete */
                 for(k=0; k < nWords; k++)
-                    shmem_wait(&Target[k],my_pe);
+                    shmem_long_wait_until(&Target[k], SHMEM_CMP_NE, my_pe);
             } else {
                 /* wait for last word to be written */
-                shmem_wait(&Target[nWords-1],my_pe);
+                shmem_long_wait_until(&Target[nWords-1], SHMEM_CMP_NE, my_pe);
             }
         }
 #if _DEBUG
@@ -254,10 +254,10 @@ main(int argc, char* argv[])
                 wp = &work[ l*nWords ]; // procs nWords chunk
 #if 1
                 /* wait for last long to be written from each PE */
-                shmem_wait(&wp[nWords-1],0);
+                shmem_long_wait_until(&wp[nWords-1], SHMEM_CMP_NE, 0);
 #else
                 for(k=0; k < nWords; k++)
-                    shmem_wait(&wp[k],0);
+                    shmem_long_wait_until(&wp[k], SHMEM_CMP_NE, 0);
 #endif
             }
         }
