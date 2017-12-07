@@ -283,9 +283,10 @@ stx_share_alg_t shmem_transport_stx_share_alg;
 long shmem_transport_ofi_stx_max;
 
 struct shmem_transport_stx_t {
-    long ref_cnt;
-    int priv; /* 1 if private, 0 if shared */
-    int  owner_tid;
+    struct fid_stx*   stx;
+    long              ref_cnt;
+    bool              private;   /* true if private, false if shared */
+    int               owner_tid;
 };
 typedef struct shmem_transport_stx_t shmem_transport_stx_t;
 shmem_transport_stx_t* shmem_transport_ofi_stx_pool;
@@ -308,12 +309,12 @@ void init_bounce_buffer(shmem_free_list_item_t *item)
 
 
 static inline
-int bind_enable_cq_ep_resources(shmem_transport_ctx_t *ctx)
+int bind_enable_cq_ep_resources(shmem_transport_ctx_t *ctx, uint32_t stx_idx)
 {
     int ret = 0;
 
     /* Attach the shared context */
-    ret = fi_ep_bind(ctx->cq_ep, &ctx->stx->fid, 0);
+    ret = fi_ep_bind(ctx->cq_ep, &shmem_transport_ofi_stx_pool[stx_idx].stx->fid, 0);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to CQ endpoint failed");
 
     /* Attach CQ for obtaining completions for buffered puts */
@@ -332,12 +333,12 @@ int bind_enable_cq_ep_resources(shmem_transport_ctx_t *ctx)
 
 
 static inline
-int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx)
+int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx, uint32_t stx_idx)
 {
     int ret = 0;
 
     /* Attach the shared context */
-    ret = fi_ep_bind(ctx->cntr_ep, &ctx->stx->fid, 0);
+    ret = fi_ep_bind(ctx->cntr_ep, &shmem_transport_ofi_stx_pool[stx_idx].stx->fid, 0);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to CNTR endpoint failed");
 
     /* Attach counter for obtaining put completions */
@@ -1077,6 +1078,10 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr, &ctx->cq, NULL);
     OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(errno));
 
+    ret = fi_endpoint(shmem_transport_ofi_domainfd,
+                      info->p_info, &ctx->cntr_ep, NULL);
+    OFI_CHECK_RETURN_MSG(ret, "cntr_ep creation failed (%s)\n", fi_strerror(errno));
+
     /* TODO: STX contexts should be shared by SHMEM contexts that are private
      * to the same thread (i.e. have SHMEM_CTX_PRIVATE option set and same
      * thread ID/gettid()).  There should also be a limit on the number of
@@ -1084,14 +1089,29 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
      * contexts. */
     /* TODO: Fill in TX attr */
 
-    ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL, &ctx->stx, NULL);
-    OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
+    int stx_idx;
+    switch (shmem_internal_thread_level) {
+        case (SHMEM_THREAD_SINGLE):
+            stx_idx = 0;
+            break;
+        case (SHMEM_THREAD_FUNNELED):
+            // TODO
+            stx_idx = 0;
+            break;
+        case (SHMEM_THREAD_SERIALIZED):
+            // TODO
+            stx_idx = 0;
+            break;
+        case (SHMEM_THREAD_MULTIPLE):
+            // TODO
+            stx_idx = 0;
+            break;
+    }
 
-    ret = fi_endpoint(shmem_transport_ofi_domainfd,
-                      info->p_info, &ctx->cntr_ep, NULL);
-    OFI_CHECK_RETURN_MSG(ret, "cntr_ep creation failed (%s)\n", fi_strerror(errno));
+    //ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL, &ctx->stx, NULL);
+    //OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
 
-    ret = bind_enable_cntr_ep_resources(ctx);
+    ret = bind_enable_cntr_ep_resources(ctx, stx_idx);
     OFI_CHECK_RETURN_MSG(ret, "context bind/enable CNTR endpoint failed (%s)\n", fi_strerror(errno));
 
     if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER &&
@@ -1103,7 +1123,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
                           info->p_info, &ctx->cq_ep, NULL);
         OFI_CHECK_RETURN_MSG(ret, "cq_ep creation failed (%s)\n", fi_strerror(errno));
 
-        ret = bind_enable_cq_ep_resources(ctx);
+        ret = bind_enable_cq_ep_resources(ctx, stx_idx);
         OFI_CHECK_RETURN_MSG(ret, "context bind/enable CQ endpoint failed (%s)\n", fi_strerror(errno));
 
         ctx->bounce_buffers =
@@ -1124,6 +1144,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 int shmem_transport_init(void)
 {
     int ret = 0;
+    int i;
 
     SHMEM_MUTEX_INIT(shmem_transport_ofi_lock);
 
@@ -1159,25 +1180,21 @@ int shmem_transport_init(void)
                                           * sizeof(shmem_transport_ctx_t*));
 
     /* STX max settings */
-    if (shmem_internal_params.OFI_STX_MAX_provided) {
-        shmem_transport_ofi_stx_max = shmem_internal_params.OFI_STX_MAX;
-    }
+    shmem_transport_ofi_stx_max = shmem_internal_params.OFI_STX_MAX;
 
     /* STX sharing settings */
-    if (shmem_internal_params.OFI_STX_SHARE_ALGORITHM_provided) {
-        char *type = shmem_internal_params.OFI_STX_SHARE_ALGORITHM;
-        if (0 == strcmp(type, "round-robin")) {
-            shmem_transport_stx_share_alg = ROUNDROBIN;
-        } else if (0 == strcmp(type, "random")) {
-            shmem_transport_stx_share_alg = RANDOM;
-        } else {
-            RAISE_WARN_MSG("Ignoring bad STX share algorithm '%s'\n", type);
-        }
+    char *type = shmem_internal_params.OFI_STX_SHARE_ALGORITHM;
+    if (0 == strcmp(type, "round-robin")) {
+        shmem_transport_stx_share_alg = ROUNDROBIN;
+    } else if (0 == strcmp(type, "random")) {
+        shmem_transport_stx_share_alg = RANDOM;
+    } else {
+        RAISE_WARN_MSG("Ignoring bad STX share algorithm '%s'\n", type);
     }
 
     if (shmem_internal_thread_level == SHMEM_THREAD_SINGLE &&
         shmem_transport_ofi_stx_max > 1) {
-        /* We need only 1 STX per PE */
+        /* We need only 1 STX per PE with SHMEM_THREAD_SINGLE */
         RAISE_WARN_MSG("Ignoring invalid STX max setting '%ld' w/THREAD_SINGLE, using 1\n", 
                        shmem_transport_ofi_stx_max);
         shmem_transport_ofi_stx_max = 1;
@@ -1185,6 +1202,11 @@ int shmem_transport_init(void)
 
     /* Allocate STX array with max length */
     shmem_transport_ofi_stx_pool = malloc(shmem_transport_ofi_stx_max * sizeof(shmem_transport_stx_t));
+
+    for (i = 0; i < shmem_transport_ofi_stx_max; i++) {
+        ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL, &shmem_transport_ofi_stx_pool[i].stx, NULL);
+        OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
+    }
 
     /* The current bounce buffering implementation is only compatible with
      * providers that don't require FI_CONTEXT */
@@ -1300,8 +1322,8 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         shmem_free_list_destroy(ctx->bounce_buffers);
     }
 
-    ret = fi_close(&ctx->stx->fid);
-    OFI_CHECK_ERROR_MSG(ret, "STX context close failed (%s)\n", fi_strerror(errno));
+    //ret = fi_close(&ctx->stx->fid);
+    //OFI_CHECK_ERROR_MSG(ret, "STX context close failed (%s)\n", fi_strerror(errno));
 
     ret = fi_close(&ctx->put_cntr->fid);
     OFI_CHECK_ERROR_MSG(ret, "Context put CNTR close failed (%s)\n", fi_strerror(errno));
@@ -1345,6 +1367,10 @@ int shmem_transport_fini(void)
 
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
 
+    for(i = 0; i < shmem_transport_ofi_stx_max; ++i) {
+        ret = fi_close(&shmem_transport_ofi_stx_pool[i].stx->fid);
+        OFI_CHECK_ERROR_MSG(ret, "STX context close failed (%s)\n", fi_strerror(errno));
+    }
     free(shmem_transport_ofi_stx_pool);
 
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);
