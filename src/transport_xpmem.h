@@ -80,7 +80,7 @@ static inline
 int
 shmem_transport_xpmem_quiet(void)
 {
-    __sync_synchronize();
+    shmem_internal_membar();
     return 0;
 }
 
@@ -89,7 +89,7 @@ static inline
 int
 shmem_transport_xpmem_fence(void)
 {
-    __sync_synchronize();
+    shmem_internal_membar();
     return 0;
 }
 
@@ -110,7 +110,6 @@ shmem_transport_xpmem_put(void *target, const void *source, size_t len,
 #endif
 
     memcpy(remote_ptr, source, len);
-    __sync_synchronize();
 }
 
 
@@ -129,7 +128,6 @@ shmem_transport_xpmem_get(void *target, const void *source, size_t len,
     }
 #endif
 
-    __sync_synchronize();
     memcpy(target, remote_ptr, len);
 }
 

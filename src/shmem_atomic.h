@@ -74,6 +74,46 @@ shmem_spinlock_fini(shmem_spinlock_t *lock)
     shmem_internal_assertp(lock->enter == lock->exit);
 }
 
+
+static inline
+void
+shmem_internal_membar(void) {
+#if (defined(__STDC_NO_ATOMICS__) || !defined(HAVE_STDATOMIC_H))
+    __sync_synchronize();
+#else
+#include <stdatomic.h>
+    atomic_thread_fence(memory_order_seq_cst);
+#endif
+    return;
+}
+
+
+static inline
+void
+shmem_internal_membar_load(void) {
+#if (defined(__STDC_NO_ATOMICS__) || !defined(HAVE_STDATOMIC_H))
+    __sync_synchronize();
+#else
+#include <stdatomic.h>
+    atomic_thread_fence(memory_order_acquire);
+#endif
+    return;
+}
+
+
+static inline
+void
+shmem_internal_membar_store(void) {
+#if (defined(__STDC_NO_ATOMICS__) || !defined(HAVE_STDATOMIC_H))
+    __sync_synchronize();
+#else
+#include <stdatomic.h>
+    atomic_thread_fence(memory_order_release);
+#endif
+    return;
+}
+
+
 /* Atomics */
 #  ifdef ENABLE_THREADS
 

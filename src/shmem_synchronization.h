@@ -32,6 +32,10 @@ shmem_internal_quiet(shmem_ctx_t ctx)
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_quiet();
     if (0 != ret) { RAISE_ERROR(ret); }
+#else
+    if (shmem_internal_thread_level != SHMEM_THREAD_SINGLE) {
+        shmem_internal_membar();
+    }
 #endif
 }
 
@@ -47,6 +51,10 @@ shmem_internal_fence(shmem_ctx_t ctx)
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_fence();
     if (0 != ret) { RAISE_ERROR(ret); }
+#else
+    if (shmem_internal_thread_level != SHMEM_THREAD_SINGLE) {
+        shmem_internal_membar();
+    }
 #endif
 }
 
