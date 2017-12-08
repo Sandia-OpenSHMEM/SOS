@@ -91,7 +91,7 @@ shmem_internal_mutex_t          shmem_transport_ofi_lock;
 struct fabric_info shmem_transport_ofi_info = {0};
 
 static shmem_transport_ctx_t** shmem_transport_ofi_contexts = NULL;
-static size_t shmem_transport_ofi_contexts_size = 0;
+static size_t shmem_transport_ofi_contexts_len = 0;
 static size_t shmem_transport_ofi_grow_size = 128;
 
 shmem_transport_ctx_t shmem_transport_ctx_default;
@@ -1192,19 +1192,19 @@ int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
      */
 
     /* Look for an open slot in the contexts array */
-    for (id = 0; id < shmem_transport_ofi_contexts_size; id++)
+    for (id = 0; id < shmem_transport_ofi_contexts_len; id++)
         if (shmem_transport_ofi_contexts[id] == NULL) break;
 
     /* If none found, grow the array */
-    if (id >= shmem_transport_ofi_contexts_size) {
-        id = shmem_transport_ofi_contexts_size;
+    if (id >= shmem_transport_ofi_contexts_len) {
+        id = shmem_transport_ofi_contexts_len;
 
-        ssize_t i = shmem_transport_ofi_contexts_size;
-        shmem_transport_ofi_contexts_size += shmem_transport_ofi_grow_size;
+        ssize_t i = shmem_transport_ofi_contexts_len;
+        shmem_transport_ofi_contexts_len += shmem_transport_ofi_grow_size;
         shmem_transport_ofi_contexts = realloc(shmem_transport_ofi_contexts,
-               shmem_transport_ofi_contexts_size * sizeof(shmem_transport_ctx_t*));
+               shmem_transport_ofi_contexts_len * sizeof(shmem_transport_ctx_t*));
 
-        for ( ; i < shmem_transport_ofi_contexts_size; i++)
+        for ( ; i < shmem_transport_ofi_contexts_len; i++)
             shmem_transport_ofi_contexts[i] = NULL;
 
         if (shmem_transport_ofi_contexts == NULL) {
@@ -1286,7 +1286,7 @@ int shmem_transport_fini(void)
     /* Free all shareable contexts.  This performs a quiet on each context,
      * ensuring all operations have completed before proceeding with shutdown. */
 
-    for (i = 0; i < shmem_transport_ofi_contexts_size; ++i) {
+    for (i = 0; i < shmem_transport_ofi_contexts_len; ++i) {
         if (shmem_transport_ofi_contexts[i]) {
             shmem_transport_ctx_destroy(shmem_transport_ofi_contexts[i]);
         }
