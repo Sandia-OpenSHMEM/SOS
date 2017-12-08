@@ -279,9 +279,9 @@ enum stx_share_alg_t {
     RANDOM
 };
 typedef enum stx_share_alg_t stx_share_alg_t;
-stx_share_alg_t shmem_transport_stx_share_alg;
+static stx_share_alg_t shmem_transport_ofi_stx_share_alg;
 
-long shmem_transport_ofi_stx_max;
+static long shmem_transport_ofi_stx_max;
 
 struct shmem_transport_stx_t {
     struct fid_stx*   stx;
@@ -294,7 +294,7 @@ struct shmem_transport_stx_t {
 #endif
 };
 typedef struct shmem_transport_stx_t shmem_transport_stx_t;
-shmem_transport_stx_t* shmem_transport_ofi_stx_pool;
+static shmem_transport_stx_t* shmem_transport_ofi_stx_pool;
 
 
 #define OFI_MAJOR_VERSION 1
@@ -314,12 +314,12 @@ void init_bounce_buffer(shmem_free_list_item_t *item)
 
 
 static inline
-int bind_enable_cq_ep_resources(shmem_transport_ctx_t *ctx, uint32_t stx_idx)
+int bind_enable_cq_ep_resources(shmem_transport_ctx_t *ctx)
 {
     int ret = 0;
 
     /* Attach the shared context */
-    ret = fi_ep_bind(ctx->cq_ep, &shmem_transport_ofi_stx_pool[stx_idx].stx->fid, 0);
+    ret = fi_ep_bind(ctx->cq_ep, &shmem_transport_ofi_stx_pool[ctx->stx_idx].stx->fid, 0);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to CQ endpoint failed");
 
     /* Attach CQ for obtaining completions for buffered puts */
@@ -338,16 +338,15 @@ int bind_enable_cq_ep_resources(shmem_transport_ctx_t *ctx, uint32_t stx_idx)
 
 
 static inline
-int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx, uint32_t stx_idx)
+int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx)
 {
     int ret = 0;
 
     /* Attach the shared context */
-    ret = fi_ep_bind(ctx->cntr_ep, &shmem_transport_ofi_stx_pool[stx_idx].stx->fid, 0);
+    ret = fi_ep_bind(ctx->cntr_ep, &shmem_transport_ofi_stx_pool[ctx->stx_idx].stx->fid, 0);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to CNTR endpoint failed");
 
-    shmem_transport_ofi_stx_pool[stx_idx].ref_cnt += 1;
-    ctx->stx_idx = stx_idx;
+    shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt += 1;
 
     /* Attach counter for obtaining put completions */
     ret = fi_ep_bind(ctx->cntr_ep, &ctx->put_cntr->fid, FI_WRITE);
@@ -1098,10 +1097,10 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     /* After reaching the STX limit, share STXs by selecting an array index
      * according to the "stx_share_algorithm". */
     /* TODO: Use tid for more effective sharing */
-    int stx_idx = 0;
+    uint32_t stx_idx = 0;
     if (shmem_internal_thread_level != SHMEM_THREAD_SINGLE &&
-        shmem_internal_thread_level != SHMEM_THREAD_FUNNELED ) {
-        switch (shmem_transport_stx_share_alg) {
+        shmem_internal_thread_level != SHMEM_THREAD_FUNNELED) {
+        switch (shmem_transport_ofi_stx_share_alg) {
             case (ROUNDROBIN):
                 stx_idx = (stx_idx + 1) % shmem_transport_ofi_stx_max;
                 break;
@@ -1110,14 +1109,15 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
                 break;
         }
     }
+    ctx->stx_idx = stx_idx;
 
 #ifdef __APPLE__
     pthread_threadid_np(NULL, &shmem_transport_ofi_stx_pool[stx_idx].owner_tid);
 #else
-    shmem_transport_ofi_stx_pool[stx_idx].owner_tid = getid();
+    shmem_transport_ofi_stx_pool[stx_idx].owner_tid = gettid();
 #endif
 
-    ret = bind_enable_cntr_ep_resources(ctx, stx_idx);
+    ret = bind_enable_cntr_ep_resources(ctx);
     OFI_CHECK_RETURN_MSG(ret, "context bind/enable CNTR endpoint failed (%s)\n", fi_strerror(errno));
 
     if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER &&
@@ -1129,7 +1129,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
                           info->p_info, &ctx->cq_ep, NULL);
         OFI_CHECK_RETURN_MSG(ret, "cq_ep creation failed (%s)\n", fi_strerror(errno));
 
-        ret = bind_enable_cq_ep_resources(ctx, stx_idx);
+        ret = bind_enable_cq_ep_resources(ctx);
         OFI_CHECK_RETURN_MSG(ret, "context bind/enable CQ endpoint failed (%s)\n", fi_strerror(errno));
 
         ctx->bounce_buffers =
@@ -1191,26 +1191,31 @@ int shmem_transport_init(void)
     /* STX sharing settings */
     char *type = shmem_internal_params.OFI_STX_SHARE_ALGORITHM;
     if (0 == strcmp(type, "round-robin")) {
-        shmem_transport_stx_share_alg = ROUNDROBIN;
+        shmem_transport_ofi_stx_share_alg = ROUNDROBIN;
     } else if (0 == strcmp(type, "random")) {
-        shmem_transport_stx_share_alg = RANDOM;
+        shmem_transport_ofi_stx_share_alg = RANDOM;
     } else {
-        RAISE_WARN_MSG("Ignoring bad STX share algorithm '%s'\n", type);
+        RAISE_WARN_MSG("Ignoring bad STX share algorithm '%s', using 'round-robin'\n", type);
+        shmem_transport_ofi_stx_share_alg = ROUNDROBIN;
     }
 
-    if (shmem_internal_thread_level == SHMEM_THREAD_SINGLE &&
-        shmem_transport_ofi_stx_max > 1) {
-        /* We need only 1 STX per PE with SHMEM_THREAD_SINGLE */
+    if ((shmem_internal_thread_level == SHMEM_THREAD_SINGLE ||
+         shmem_internal_thread_level == SHMEM_THREAD_FUNNELED ) &&
+         shmem_internal_params.OFI_STX_MAX_provided &&
+         shmem_internal_params.OFI_STX_MAX > 1) {
+        /* We need only 1 STX per PE with SHMEM_THREAD_SINGLE or SHMEM_THREAD_FUNNELED */
         RAISE_WARN_MSG("Ignoring invalid STX max setting '%ld' w/THREAD_SINGLE, using 1\n", 
-                       shmem_transport_ofi_stx_max);
+                       shmem_internal_params.OFI_STX_MAX);
         shmem_transport_ofi_stx_max = 1;
     }
 
     /* Allocate STX array with max length */
-    shmem_transport_ofi_stx_pool = malloc(shmem_transport_ofi_stx_max * sizeof(shmem_transport_stx_t));
+    shmem_transport_ofi_stx_pool = malloc(shmem_transport_ofi_stx_max *
+                                          sizeof(shmem_transport_stx_t));
 
     for (i = 0; i < shmem_transport_ofi_stx_max; i++) {
-        ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL, &shmem_transport_ofi_stx_pool[i].stx, NULL);
+        ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL,
+                             &shmem_transport_ofi_stx_pool[i].stx, NULL);
         OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
     }
 
