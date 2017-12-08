@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <sys/types.h>
 
 #if HAVE_FNMATCH_H
 #include <fnmatch.h>
@@ -286,7 +287,11 @@ struct shmem_transport_stx_t {
     struct fid_stx*   stx;
     long              ref_cnt;
     bool              private;   /* true if private, false if shared */
-    int               owner_tid;
+#ifdef __APPLE__
+    uint64_t          owner_tid;
+#else
+    pid_t             owner_tid;
+#endif
 };
 typedef struct shmem_transport_stx_t shmem_transport_stx_t;
 shmem_transport_stx_t* shmem_transport_ofi_stx_pool;
@@ -340,6 +345,9 @@ int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx, uint32_t stx_idx)
     /* Attach the shared context */
     ret = fi_ep_bind(ctx->cntr_ep, &shmem_transport_ofi_stx_pool[stx_idx].stx->fid, 0);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to CNTR endpoint failed");
+
+    shmem_transport_ofi_stx_pool[stx_idx].ref_cnt += 1;
+    ctx->stx_idx = stx_idx;
 
     /* Attach counter for obtaining put completions */
     ret = fi_ep_bind(ctx->cntr_ep, &ctx->put_cntr->fid, FI_WRITE);
@@ -1084,32 +1092,30 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 
     /* TODO: STX contexts should be shared by SHMEM contexts that are private
      * to the same thread (i.e. have SHMEM_CTX_PRIVATE option set and same
-     * thread ID/gettid()).  There should also be a limit on the number of
-     * contexts created per PE, beyond which we start sharing STXs across SHMEM
-     * contexts. */
+     * thread ID/gettid()).  */
     /* TODO: Fill in TX attr */
 
-    int stx_idx;
-    switch (shmem_internal_thread_level) {
-        case (SHMEM_THREAD_SINGLE):
-            stx_idx = 0;
-            break;
-        case (SHMEM_THREAD_FUNNELED):
-            // TODO
-            stx_idx = 0;
-            break;
-        case (SHMEM_THREAD_SERIALIZED):
-            // TODO
-            stx_idx = 0;
-            break;
-        case (SHMEM_THREAD_MULTIPLE):
-            // TODO
-            stx_idx = 0;
-            break;
+    /* After reaching the STX limit, share STXs by selecting an array index
+     * according to the "stx_share_algorithm". */
+    /* TODO: Use tid for more effective sharing */
+    int stx_idx = 0;
+    if (shmem_internal_thread_level != SHMEM_THREAD_SINGLE &&
+        shmem_internal_thread_level != SHMEM_THREAD_FUNNELED ) {
+        switch (shmem_transport_stx_share_alg) {
+            case (ROUNDROBIN):
+                stx_idx = (stx_idx + 1) % shmem_transport_ofi_stx_max;
+                break;
+            case (RANDOM):
+                stx_idx = rand() % shmem_transport_ofi_stx_max;
+                break;
+        }
     }
 
-    //ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL, &ctx->stx, NULL);
-    //OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
+#ifdef __APPLE__
+    pthread_threadid_np(NULL, &shmem_transport_ofi_stx_pool[stx_idx].owner_tid);
+#else
+    shmem_transport_ofi_stx_pool[stx_idx].owner_tid = getid();
+#endif
 
     ret = bind_enable_cntr_ep_resources(ctx, stx_idx);
     OFI_CHECK_RETURN_MSG(ret, "context bind/enable CNTR endpoint failed (%s)\n", fi_strerror(errno));
@@ -1322,8 +1328,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         shmem_free_list_destroy(ctx->bounce_buffers);
     }
 
-    //ret = fi_close(&ctx->stx->fid);
-    //OFI_CHECK_ERROR_MSG(ret, "STX context close failed (%s)\n", fi_strerror(errno));
+    shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt--;
 
     ret = fi_close(&ctx->put_cntr->fid);
     OFI_CHECK_ERROR_MSG(ret, "Context put CNTR close failed (%s)\n", fi_strerror(errno));

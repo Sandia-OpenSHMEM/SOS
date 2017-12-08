@@ -242,13 +242,13 @@ struct shmem_transport_ctx_t {
   long                            options;
   struct fid_ep*                  cntr_ep;
   struct fid_ep*                  cq_ep;
-  struct fid_stx*                 stx;
   struct fid_cntr*                put_cntr;
   struct fid_cntr*                get_cntr;
   struct fid_cq*                  cq;
   shmem_internal_atomic_uint64_t  pending_put_cntr;
   shmem_internal_atomic_uint64_t  pending_get_cntr;
   shmem_free_list_t              *bounce_buffers;
+  int                             stx_idx;
 };
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
