@@ -99,7 +99,7 @@ include(shmem_c_func.h4)dnl
 #ifdef __cplusplus
 } /* extern "C" */
 
-#if __cplusplus >= 201103L
+#if __cplusplus >= 201402L
 #define SHMEM_CXX_ATTRIBUTE_DEPRECATED [[deprecated]]
 #else
 #define SHMEM_CXX_ATTRIBUTE_DEPRECATED
