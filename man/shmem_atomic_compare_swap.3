@@ -1,16 +1,21 @@
-.TH SHMEM_ATOMIC_COMPARE_SWAP 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
+.TH SHMEM_ATOMIC_COMPARE_SWAP 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_atomic_compare_swap \- 
 Performs an atomic conditional swap on a remote data object.
+
 ./ sectionEnd
+
+
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
+
 ./ sectionStart
 .SS C11:
+
 .B TYPE
-.B shmem_atomic_compare_swap(TYPE
+.B shmem\_atomic\_compare\_swap(TYPE
 .IB "*dest" ,
 .B TYPE
 .IB "cond" ,
@@ -19,13 +24,34 @@ Performs an atomic conditional swap on a remote data object.
 .B int
 .I pe
 .B );
+
+
+
+.B TYPE
+.B shmem\_atomic\_compare\_swap(shmem_ctx_t
+.IB "ctx" ,
+.B TYPE
+.IB "*dest" ,
+.B TYPE
+.IB "cond" ,
+.B TYPE
+.IB "value" ,
+.B int
+.I pe
+.B );
+
+
+
 ./ sectionEnd
+
+
 where TYPE is one of the standard AMO types specified by
 Table 2.
 ./ sectionStart
 .SS C/C++:
+
 .B TYPE
-.B shmem_<TYPENAME>_atomic_compare_swap(TYPE
+.B shmem\_TYPENAME\_atomic\_compare\_swap(TYPE
 .IB "*dest" ,
 .B TYPE
 .IB "cond" ,
@@ -34,26 +60,119 @@ Table 2.
 .B int
 .I pe
 .B );
+
+
+
+.B TYPE
+.B shmem\_ctx\_TYPENAME\_atomic\_compare\_swap(shmem_ctx_t
+.IB "ctx" ,
+.B TYPE
+.IB "*dest" ,
+.B TYPE
+.IB "cond" ,
+.B TYPE
+.IB "value" ,
+.B int
+.I pe
+.B );
+
+
+
 ./ sectionEnd
+
+
 where TYPE is one of the standard AMO types and has a corresponding
 TYPENAME specified by Table 2.
+
+
 ./ sectionStart
+.B ***************DEPRECATED***************
+./ sectionEnd
+
+./ sectionStart
+.SS C11:
+
+.B TYPE
+.B shmem\_cswap(TYPE
+.IB "*dest" ,
+.B TYPE
+.IB "cond" ,
+.B TYPE
+.IB "value" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of \{int, long, long long\}.
+./ sectionStart
+.SS C/C++:
+
+.B TYPE
+.B shmem\_TYPENAME\_cswap(TYPE
+.IB "*dest" ,
+.B TYPE
+.IB "cond" ,
+.B TYPE
+.IB "value" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of \{int, long, long long\}
+and has a corresponding TYPENAME specified by Table 2.
+
+./ sectionStart
+.B ****************************************
+./ sectionEnd
+
+./ sectionStart
+
+.B ***************DEPRECATED***************
 .SS Fortran:
+
 .nf
+
 .BR "INTEGER " "pe"
 .BR "INTEGER*4 " "SHMEM_INT4_CSWAP, cond_i4, value_i4, ires_i4"
-ires_i4 = SHMEM_INT4_CSWAP(dest, cond_i4, value_i4, pe)
+ires\_i4 = SHMEM\_INT4\_CSWAP(dest, cond_i4, value_i4, pe)
 .BR "INTEGER*8 " "SHMEM_INT8_CSWAP, cond_i8, value_i8, ires_i8"
-ires_i8 = SHMEM_INT8_CSWAP(dest, cond_i8, value_i8, pe)
+ires\_i8 = SHMEM\_INT8\_CSWAP(dest, cond_i8, value_i8, pe)
+
 .fi
+.B ****************************************
+
 ./ sectionEnd
+
+
+
+
 ./ sectionStart
+
 .SH DESCRIPTION
 .SS Arguments
+.BR "IN " -
+.I ctx
+- The context on which to perform the operation.
+When this argument is not provided, the operation is performed on
+SHMEM\_CTX\_DEFAULT.
+
+
 .BR "OUT " -
 .I dest
 - The remotely accessible integer data object to be
 updated on the remote PE. 
+
+
 .BR "IN " -
 .I cond
 - 
@@ -67,8 +186,8 @@ and the remote
 are equal, then 
 .I value
 is swapped into the remote 
-.IR "dest" .
-. Otherwise, the remote 
+.I dest
+; otherwise, the remote 
 .I dest
 is
 unchanged. In either case, the old value of the remote 
@@ -79,7 +198,9 @@ returned as the routine return value.
 must be of the same data
 type as 
 .IR "dest" .
-.
+
+
+
 .BR "IN " -
 .I value
 - The value to be atomically written to the remote
@@ -87,73 +208,107 @@ PE.
 .I value
 must be the same data type as 
 .IR "dest" .
-.
+
+
+
 .BR "IN " -
 .I pe
 - An integer that indicates the PE number upon which
 .I dest
-is to be updated. If you are using Fortran, it must be a default
+is to be updated. When using Fortran, it must be a default
 integer value.
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Description
+
 The conditional swap routines conditionally update a 
 .I dest
 data object on
 the specified PE and return the prior contents of the data object in one
 atomic operation.
+
 ./ sectionEnd
+
+
 ./ sectionStart
-The 
+
+When using Fortran, 
 .I dest
-and 
+, 
+.I cond
+, and 
 .I value
-data objects must conform to certain typing
-constraints, which are as follows:
+must be of the following type:
+
 .TP 25
 Routine
 Data type of 
 .I dest
-and 
+, 
+.I cond
+, and 
 .I value
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
 .TP 25
 SHMEM\_INT4\_CSWAP
 4-byte integer.
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 SHMEM\_INT8\_CSWAP
 8-byte integer.
 ./ sectionEnd
+
+
+
 ./ sectionStart
+
 .SS Return Values
+
 The contents that had been in the 
 .I dest
 data object on the remote
 PE prior to the conditional swap. Data type is the same as the
 .I dest
 data type.
+
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Notes
-As of OpenSHMEM[1.4], 
-.B shmem\_cswap
-has been deprecated.
-Its behavior and call signature are identical to the replacement
-interface, 
-.BR "shmem\_atomic\_compare\_swap" .
+
+None.
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
 .SS Examples
+
+
+
 The following call ensures that the first PE to execute the
 conditional swap will successfully write its PE number to
 .I race\_winner
 on PE 0.
+
 .nf
 #include <stdio.h>
 #include <shmem.h>
+
 int main(void)
 {
   static int race_winner = -1;
@@ -165,6 +320,11 @@ int main(void)
   return 0;
 }
 .fi
+
+
+
+
+
 .SS Table 2:
 Standard AMO Types and Names
 .TP 25
@@ -179,3 +339,30 @@ long
 .TP
 long long
 longlong
+.TP
+unsigned int
+uint
+.TP
+unsigned long
+ulong
+.TP
+unsigned long long
+ulonglong
+.TP
+int32\_t
+int32
+.TP
+int64\_t
+int64
+.TP
+uint32\_t
+uint32
+.TP
+uint64\_t
+uint64
+.TP
+size\_t
+size
+.TP
+ptrdiff\_t
+ptrdiff

@@ -1,51 +1,161 @@
-.TH SHMEM_ATOMIC_FETCH_ADD 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
+.TH SHMEM_ATOMIC_FETCH_ADD 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_atomic_fetch_add \- 
 Performs an atomic fetch-and-add operation on a remote data object.
+
 ./ sectionEnd
+
+
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
+
 ./ sectionStart
 .SS C11:
+
 .B TYPE
-.B shmem_atomic_fetch_add(TYPE
+.B shmem\_atomic\_fetch\_add(TYPE
 .IB "*dest" ,
 .B TYPE
 .IB "value" ,
 .B int
 .I pe
 .B );
+
+
+
+.B TYPE
+.B shmem\_atomic\_fetch\_add(shmem_ctx_t
+.IB "ctx" ,
+.B TYPE
+.IB "*dest" ,
+.B TYPE
+.IB "value" ,
+.B int
+.I pe
+.B );
+
+
+
 ./ sectionEnd
+
+
 where TYPE is one of the standard AMO types specified by
 Table 2.
 ./ sectionStart
 .SS C/C++:
+
 .B TYPE
-.B shmem_<TYPENAME>_atomic_fetch_add(TYPE
+.B shmem\_TYPENAME\_atomic\_fetch\_add(TYPE
 .IB "*dest" ,
 .B TYPE
 .IB "value" ,
 .B int
 .I pe
 .B );
+
+
+
+.B TYPE
+.B shmem\_ctx\_TYPENAME\_atomic\_fetch\_add(shmem_ctx_t
+.IB "ctx" ,
+.B TYPE
+.IB "*dest" ,
+.B TYPE
+.IB "value" ,
+.B int
+.I pe
+.B );
+
+
+
 ./ sectionEnd
+
+
 where TYPE is one of the standard AMO types and has a corresponding
 TYPENAME specified by Table 2.
+
+
 ./ sectionStart
+.B ***************DEPRECATED***************
+./ sectionEnd
+
+./ sectionStart
+.SS C11:
+
+.B TYPE
+.B shmem\_fadd(TYPE
+.IB "*dest" ,
+.B TYPE
+.IB "value" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of \{int, long, long long\}.
+./ sectionStart
+.SS C/C++:
+
+.B TYPE
+.B shmem\_TYPENAME\_fadd(TYPE
+.IB "*dest" ,
+.B TYPE
+.IB "value" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of \{int, long, long long\}
+and has a corresponding TYPENAME specified by Table 2.
+
+./ sectionStart
+.B ****************************************
+./ sectionEnd
+
+./ sectionStart
+
+.B ***************DEPRECATED***************
 .SS Fortran:
+
 .nf
+
 .BR "INTEGER " "pe"
 .BR "INTEGER*4 " "SHMEM_INT4_FADD, ires_i4, value_i4"
-ires_i4 = SHMEM_INT4_FADD(dest, value_i4, pe)
+ires\_i4 = SHMEM\_INT4\_FADD(dest, value_i4, pe)
 .BR "INTEGER*8 " "SHMEM_INT8_FADD, ires_i8, value_i8"
-ires_i8 = SHMEM_INT8_FADD(dest, value_i8, pe)
+ires\_i8 = SHMEM\_INT8\_FADD(dest, value_i8, pe)
+
 .fi
+.B ****************************************
+
 ./ sectionEnd
+
+
+
+
+
 ./ sectionStart
+
 .SH DESCRIPTION
 .SS Arguments
+.BR "IN " -
+.I ctx
+- The context on which to perform the operation.
+When this argument is not provided, the operation is performed on
+SHMEM\_CTX\_DEFAULT.
+
+
 .BR "OUT " -
 .I dest
 - The remotely accessible integer data object to be updated on
@@ -53,23 +163,31 @@ the remote PE. The type of
 .I dest
 should match that implied in the
 SYNOPSIS section.
+
+
 .BR "IN " -
 .I value
 - The value to be atomically added to 
 .IR "dest" .
-. The
+The
 type of 
 .I value
 should match that implied in the SYNOPSIS section.
+
+
 .BR "IN " -
 .I pe
 - An integer that indicates the PE number on which
 .I dest
-is to be updated. If you are using Fortran, it must be a default
+is to be updated. When using Fortran, it must be a default
 integer value.
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Description
+
 .B shmem\_atomic\_fetch\_add
 routines perform an atomic fetch-and-add operation. An
 atomic fetch-and-add operation fetches the old 
@@ -89,56 +207,83 @@ on
 and return the previous contents of
 .I dest
 as an atomic operation.
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
-If you are using Fortran, 
+
+When using Fortran, 
 .I dest
+and 
+.I value
 must be of the following type:
+
 .TP 25
 Routine
 Data type of 
 .I dest
 and 
-.I source
+.I value
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
 .TP 25
 SHMEM\_INT4\_FADD
 4-byte integer
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 SHMEM\_INT8\_FADD
 8-byte integer
 ./ sectionEnd
+
+
+
 ./ sectionStart
+
 .SS Return Values
+
 The contents that had been at the 
 .I dest
 address on the remote PE
 prior to the atomic addition operation. The data type of the return value is
 the same as the 
 .IR "dest" .
-.
+
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Notes
-As of OpenSHMEM[1.4], 
-.B shmem\_fadd
-has been deprecated.
-Its behavior and call signature are identical to the replacement
-interface, 
-.BR "shmem\_atomic\_fetch\_add" .
+
+None.
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
 .SS Examples
+
+
+
 The following 
 .B shmem\_atomic\_fetch\_add
 example is for
 C[11] programs:
+
 .nf
 #include <stdio.h>
 #include <shmem.h>
+
 int main(void)
 {
   int old = -1;
@@ -153,6 +298,11 @@ int main(void)
   return 0;
 }
 .fi
+
+
+
+
+
 .SS Table 2:
 Standard AMO Types and Names
 .TP 25
@@ -167,3 +317,30 @@ long
 .TP
 long long
 longlong
+.TP
+unsigned int
+uint
+.TP
+unsigned long
+ulong
+.TP
+unsigned long long
+ulonglong
+.TP
+int32\_t
+int32
+.TP
+int64\_t
+int64
+.TP
+uint32\_t
+uint32
+.TP
+uint64\_t
+uint64
+.TP
+size\_t
+size
+.TP
+ptrdiff\_t
+ptrdiff

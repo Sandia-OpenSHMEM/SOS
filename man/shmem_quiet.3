@@ -1,57 +1,105 @@
-.TH SHMEM_QUIET 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
+.TH SHMEM_QUIET 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_quiet \- 
-Waits for completion of all outstanding PUT, AMOs, memory store,
-and non-blocking PUT and GET routines to symmetric data
+Waits for completion of all outstanding PUT, AMO, memory store,
+and nonblocking PUT and GET routines to symmetric data
 objects issued by a PE.
+
 ./ sectionEnd
+
+
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
+
 ./ sectionStart
 .SS C/C++:
+
 .B void
-.B shmem_quiet(void)
+.B shmem\_quiet(void)
+
+
+.B void
+.B shmem\_ctx\_quiet(shmem_ctx_t
+.I ctx
+.B );
+
+
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
+
+.B ***************DEPRECATED***************
 .SS Fortran:
+
 .nf
-.BR "CALL " "SHMEM_QUIET"
+
+.BR "CALL " "SHMEM\_QUIET"
+
 .fi
+.B ****************************************
+
 ./ sectionEnd
+
+
+
+
 ./ sectionStart
+
 .SH DESCRIPTION
 .SS Arguments
-.B None.
+.BR "IN " -
+.I ctx
+- The context on which to perform the operation.
+When this argument is not provided, the operation is performed on
+SHMEM\_CTX\_DEFAULT.
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Description
+
 The 
 .B shmem\_quiet
-routine ensures completion of PUT, AMOs,
-memory store, and non-blocking PUT and GET routines on
-symmetric data objects issued by the calling PE. All PUT, AMOs,
-memory store, and non-blocking PUT and GET routines to
+routine ensures completion of PUT, AMO,
+memory store, and nonblocking PUT and GET routines on
+symmetric data objects issued by the calling PE on the given context. All PUT, AMO,
+memory store, and nonblocking PUT and GET routines to
 symmetric data objects are guaranteed to be completed and visible to all
 PEs when 
 .B shmem\_quiet
 returns. 
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
+
 .SS Return Values
+
 None.
+
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Notes
+
 .B shmem\_quiet
 is most useful as a way of ensuring completion of
-several PUT, AMOs, memory store, and non-blocking PUT
+several PUT, AMO, memory store, and nonblocking PUT
 and GET routines to symmetric data objects initiated by the calling
-PE. For example, you might use 
+PE. For example, one might use 
 .B shmem\_quiet
 to await delivery
-of a block of data before issuing another PUT or non-blocking
+of a block of data before issuing another PUT or nonblocking
 PUT routine, which sets a completion flag on another PE.
 .B shmem\_quiet
 is not usually needed if
@@ -62,29 +110,70 @@ are called. The barrier
 routines wait for the completion of outstanding writes (PUT, AMO,
 memory stores, and nonblocking PUT and GET routines) to
 symmetric data objects on all PEs.
+
+In an OpenSHMEM program with multithreaded PEs, it is the
+user's responsibility to ensure ordering between operations issued by the threads
+in a PE that target symmetric memory (e.g. PUT, AMO, memory stores,
+and nonblocking routines) and calls by threads in that PE to
+.BR "shmem\_quiet" .
+The 
 .B shmem\_quiet
-does not have an effect on the ordering between memory 
-accesses issued by the target PE.
-.B shmem\_wait
-, 
-.B shmem\_wait\_until
-, 
-.B shmem\_test
-, 
-.B shmem\_barrier
-,
+routine can enforce memory store ordering only for the
+calling thread. Thus, to ensure ordering for memory stores performed by a thread that is
+not the thread calling 
+.BR "shmem\_quiet" ,
+the update must be made visible to the
+calling thread according to the rules of the memory model associated with
+the threading environment.
+
+A call to 
+.B shmem\_quiet
+by a thread completes the operations posted prior
+to calling 
+.BR "shmem\_quiet" .
+If the user intends to also complete operations
+issued by a thread that is not the thread calling 
+.BR "shmem\_quiet" ,
+the
+user must ensure that the operations are performed prior to the call to
+.BR "shmem\_quiet" .
+This may require the use of a synchronization
+operation provided by the threading package. For example, when using POSIX
+Threads, the user may call the 
+.B pthread\_barrier\_wait
+routine to
+ensure that all threads have issued operations before a thread calls
+.BR "shmem\_quiet" .
+
+
+
+.B shmem\_quiet
+does not have an effect on the ordering between memory
+accesses issued by the target PE. 
+.BR "shmem\_wait\_until" ,
+.BR "shmem\_test" ,
+.BR "shmem\_barrier" ,
 .B shmem\_barrier\_all
-routines can be called by the target PE to guarantee 
-ordering of its memory accesses.
+routines
+can be called by the target PE to guarantee ordering of its memory accesses.
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
 .SS Examples
+
+
+
 The following example uses 
 .B shmem\_quiet
-in a C11 program: 
+in a C[11] program: 
+
 .nf
 #include <stdio.h>
 #include <shmem.h>
+
 int main(void)
 {
   static long dest[3];
@@ -110,6 +199,7 @@ int main(void)
   return 0;
 }
 .fi
+
 .I Put1
 and 
 .I put2
@@ -117,4 +207,7 @@ will be completed and visible before
 .I put3
 and 
 .IR "put4" .
-.
+
+
+
+
