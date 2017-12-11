@@ -25,6 +25,8 @@
 #endif
 
 #define COMPILER_FENCE() do { __asm__ __volatile__ ("" ::: "memory"); } while (0)
+#define LFENCE()  __asm__ __volatile__ ("lfence" ::: "memory")
+#define SFENCE()  __asm__ __volatile__ ("sfence" ::: "memory")
 
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
@@ -75,44 +77,54 @@ shmem_spinlock_fini(shmem_spinlock_t *lock)
 }
 
 
+#if (defined(__STDC_NO_ATOMICS__) || !defined(HAVE_STDATOMIC_H))
+
 static inline
 void
 shmem_internal_membar(void) {
-#if (defined(__STDC_NO_ATOMICS__) || !defined(HAVE_STDATOMIC_H))
     __sync_synchronize();
-#else
-#include <stdatomic.h>
-    atomic_thread_fence(memory_order_seq_cst);
-#endif
     return;
 }
-
 
 static inline
 void
 shmem_internal_membar_load(void) {
-#if (defined(__STDC_NO_ATOMICS__) || !defined(HAVE_STDATOMIC_H))
-    __sync_synchronize();
-#else
-#include <stdatomic.h>
-    atomic_thread_fence(memory_order_acquire);
-#endif
+    LFENCE();
     return;
 }
-
 
 static inline
 void
 shmem_internal_membar_store(void) {
-#if (defined(__STDC_NO_ATOMICS__) || !defined(HAVE_STDATOMIC_H))
-    __sync_synchronize();
-#else
-#include <stdatomic.h>
-    atomic_thread_fence(memory_order_release);
-#endif
+    SFENCE();
     return;
 }
 
+#else
+#include <stdatomic.h>
+
+static inline
+void
+shmem_internal_membar(void) {
+    atomic_thread_fence(memory_order_seq_cst);
+    return;
+}
+
+static inline
+void
+shmem_internal_membar_load(void) {
+    atomic_thread_fence(memory_order_acquire);
+    return;
+}
+
+static inline
+void
+shmem_internal_membar_store(void) {
+    atomic_thread_fence(memory_order_release);
+    return;
+}
+
+#endif
 
 /* Atomics */
 #  ifdef ENABLE_THREADS
