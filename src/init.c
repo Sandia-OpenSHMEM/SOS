@@ -36,7 +36,7 @@
 #ifdef __APPLE__
 #include <mach-o/getsect.h>
 #else
-extern char data_start;
+extern char etext;
 extern char end;
 #endif
 
@@ -210,8 +210,8 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     shmem_internal_data_base = (void*) get_etext();
     shmem_internal_data_length = get_end() - get_etext();
 #else
-    shmem_internal_data_base = &data_start;
-    shmem_internal_data_length = (unsigned long) &end  - (unsigned long) &data_start;
+    shmem_internal_data_base = &etext;
+    shmem_internal_data_length = (unsigned long) &end  - (unsigned long) &etext;
 #endif
 
     /* create symmetric heap */
