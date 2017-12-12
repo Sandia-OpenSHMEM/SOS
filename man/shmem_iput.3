@@ -1,16 +1,21 @@
-.TH SHMEM_IPUT 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
+.TH SHMEM_IPUT 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_iput \- 
 Copies strided data to a specified PE.
+
 ./ sectionEnd
+
+
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
+
 ./ sectionStart
 .SS C11:
+
 .B void
-.B shmem_iput(TYPE
+.B shmem\_iput(TYPE
 .IB "*dest" ,
 .B const
 .B TYPE
@@ -24,12 +29,38 @@ Copies strided data to a specified PE.
 .B int
 .I pe
 .B );
+
+
+
+.B void
+.B shmem\_iput(shmem_ctx_t
+.IB "ctx" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B ptrdiff_t
+.IB "dst" ,
+.B ptrdiff_t
+.IB "sst" ,
+.B size_t
+.IB "nelems" ,
+.B int
+.I pe
+.B );
+
+
+
 ./ sectionEnd
+
+
 where TYPE is one of the standard RMA types specified by Table 1.
 ./ sectionStart
 .SS C/C++:
+
 .B void
-.B shmem_<TYPENAME>_iput(TYPE
+.B shmem\_TYPENAME\_iput(TYPE
 .IB "*dest" ,
 .B const
 .B TYPE
@@ -43,11 +74,37 @@ where TYPE is one of the standard RMA types specified by Table 1.
 .B int
 .I pe
 .B );
+
+
+
+.B void
+.B shmem\_ctx\_TYPENAME\_iput(shmem_ctx_t
+.IB "ctx" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B ptrdiff_t
+.IB "dst" ,
+.B ptrdiff_t
+.IB "sst" ,
+.B size_t
+.IB "nelems" ,
+.B int
+.I pe
+.B );
+
+
+
 ./ sectionEnd
+
+
 where TYPE is one of the standard RMA types and has a corresponding TYPENAME specified by Table 1.
 ./ sectionStart
+
 .B void
-.B shmem_iput<SIZE>(void
+.B shmem\_iputSIZE(void
 .IB "*dest" ,
 .B const
 .B void
@@ -61,34 +118,82 @@ where TYPE is one of the standard RMA types and has a corresponding TYPENAME spe
 .B int
 .I pe
 .B );
+
+
+
+.B void
+.B shmem\_ctx\_iputSIZE(shmem_ctx_t
+.IB "ctx" ,
+.B void
+.IB "*dest" ,
+.B const
+.B void
+.IB "*source" ,
+.B ptrdiff_t
+.IB "dst" ,
+.B ptrdiff_t
+.IB "sst" ,
+.B size_t
+.IB "nelems" ,
+.B int
+.I pe
+.B );
+
+
+
 ./ sectionEnd
+
+
 where SIZE is one of 8, 16, 32, 64, 128.
 ./ sectionStart
+
+.B ***************DEPRECATED***************
 .SS Fortran:
+
 .nf
+
 .BR "INTEGER " "dst, sst, nelems, pe"
-.BR "CALL " "SHMEM_COMPLEX_IPUT(dest, source, dst, sst, nelems, pe)"
-.BR "CALL " "SHMEM_DOUBLE_IPUT(dest, source, dst, sst, nelems, pe)"
-.BR "CALL " "SHMEM_INTEGER_IPUT(dest, source, dst, sst, nelems, pe)"
-.BR "CALL " "SHMEM_IPUT4(dest, source, dst, sst, nelems, pe)"
-.BR "CALL " "SHMEM_IPUT8(dest, source, dst, sst, nelems, pe)"
-.BR "CALL " "SHMEM_IPUT32(dest, source, dst, sst, nelems, pe)"
-.BR "CALL " "SHMEM_IPUT64(dest, source, dst, sst, nelems, pe)"
-.BR "CALL " "SHMEM_IPUT128(dest, source, dst, sst, nelems, pe)"
-.BR "CALL " "SHMEM_LOGICAL_IPUT(dest, source, dst, sst, nelems, pe)"
-.BR "CALL " "SHMEM_REAL_IPUT(dest, source, dst, sst, nelems, pe)"
+.BR "CALL " "SHMEM\_COMPLEX\_IPUT(dest, source, dst, sst, nelems, pe)"
+.BR "CALL " "SHMEM\_DOUBLE\_IPUT(dest, source, dst, sst, nelems, pe)"
+.BR "CALL " "SHMEM\_INTEGER\_IPUT(dest, source, dst, sst, nelems, pe)"
+.BR "CALL " "SHMEM\_IPUT4(dest, source, dst, sst, nelems, pe)"
+.BR "CALL " "SHMEM\_IPUT8(dest, source, dst, sst, nelems, pe)"
+.BR "CALL " "SHMEM\_IPUT32(dest, source, dst, sst, nelems, pe)"
+.BR "CALL " "SHMEM\_IPUT64(dest, source, dst, sst, nelems, pe)"
+.BR "CALL " "SHMEM\_IPUT128(dest, source, dst, sst, nelems, pe)"
+.BR "CALL " "SHMEM\_LOGICAL\_IPUT(dest, source, dst, sst, nelems, pe)"
+.BR "CALL " "SHMEM\_REAL\_IPUT(dest, source, dst, sst, nelems, pe)"
+
 .fi
+.B ****************************************
+
 ./ sectionEnd
+
+
+
+
 ./ sectionStart
+
 .SH DESCRIPTION
 .SS Arguments
+.BR "IN " -
+.I ctx
+- The context on which to perform the operation.
+When this argument is not provided, the operation is performed on
+SHMEM\_CTX\_DEFAULT.
+
+
 .BR "OUT " -
 .I dest
 - Array to be updated on the remote PE. This data
 object must be remotely accessible.
+
+
 .BR "IN " -
 .I source
 - Array containing the data to be copied.
+
+
 .BR "IN " -
 .I dst
 - The stride between consecutive elements of the 
@@ -99,7 +204,9 @@ array. A
 value of 1 indicates contiguous data. 
 .I dst
 must be of type
-ptrdiff\_t. If you are using Fortran, it must be a default integer value.
+ptrdiff\_t. When using Fortran, it must be a default integer value.
+
+
 .BR "IN " -
 .I sst
 - The stride between consecutive elements of the
@@ -109,8 +216,10 @@ array. The stride is scaled by the element size of the
 array. A value of 1 indicates contiguous data. 
 .I sst
 must be
-of type ptrdiff\_t. If you are using Fortran, it must be a
+of type ptrdiff\_t. When using Fortran, it must be a
 default integer value.
+
+
 .BR "IN " -
 .I nelems
 - Number of elements in the 
@@ -121,19 +230,26 @@ arrays.
 .I nelems
 must be of type 
 .I size\_t
-for C. If you are
+for C. When
 using Fortran, it must be a constant, variable, or array element of
 default integer type.
+
+
 .BR "IN " -
 .I pe
 - PE number of the remote PE. 
 .I pe
 must be
-of type integer. If you are using Fortran, it must be a constant,
+of type integer. When using Fortran, it must be a constant,
 variable, or array element of default integer type.
 ./ sectionEnd
+
+
+
 ./ sectionStart
+
 .SS API Description
+
 The 
 .B iput
 routines provide a method for copying strided data
@@ -157,88 +273,134 @@ been copied out of the
 .I source
 array on the local PE but not
 necessarily before the data has been delivered to the remote data object.
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
+
 The 
 .I "dest"
 and 
 .I "source"
 data objects must conform to typing constraints,
 which are as follows:
+
 .TP 25
 Routine
 Data type of 
 .I dest
 and 
 .I source
+
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 shmem\_iput4, shmem\_iput32
 Any noncharacter type that has a storage size equal to 32 bits.
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 shmem\_iput8
 C: Any noncharacter type that has a storage size equal to 8 bits.
 ./ sectionEnd
+
+
+
 ./ sectionStart
 Fortran: Any noncharacter type that has a storage size equal to 64 bits.
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 shmem\_iput64
 Any noncharacter type that has a storage size equal to 64 bits.
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 shmem\_iput128
 Any noncharacter type that has a storage size equal to 128 bits.
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 SHMEM\_COMPLEX\_IPUT
 Elements of type complex of default size.
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 SHMEM\_DOUBLE\_IPUT
 Elements of type double precision.
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 SHMEM\_INTEGER\_IPUT
 Elements of type integer.
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 SHMEM\_LOGICAL\_IPUT
 Elements of type logical.
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 SHMEM\_REAL\_IPUT
 Elements of type real.
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS Return Values
+
 None.
+
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Notes
-If you are using Fortran, data types must be of default size. For example, a
+
+When using Fortran, data types must be of default size. For example, a
 real variable must be declared as REAL, REAL*4 or
 REAL(KIND=KIND(1.0)).
 Please refer to the subsection on the Memory Model for the definition of the term "remotely accessible".
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
 .SS Examples
+
+
+
 Consider the following 
 .B shmem\_iput
-example for C11 programs.
+example for C[11] programs.
+
 .nf
 #include <stdio.h>
 #include <shmem.h>
+
 int main(void)
 {
   short source[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
@@ -256,6 +418,10 @@ int main(void)
   return 0;
 }
 .fi
+
+
+
+
 .SS Table 1:
 Standard RMA Types and Names
 .TP 25

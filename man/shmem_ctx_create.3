@@ -1,0 +1,119 @@
+.TH SHMEM_CTX_CREATE 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_ctx_create \- 
+Create a communication context.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B int
+.B shmem\_ctx\_create(long
+.IB "options" ,
+.B shmem_ctx_t
+.I *ctx
+.B );
+
+
+
+./ sectionEnd
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I options
+- The set of options requested for the given context.
+Multiple options may be requested by combining them with a bitwise
+OR operation; otherwise, 0 can be given if no options are
+requested.
+
+
+.BR "OUT " -
+.I ctx
+- A handle to the newly created context.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+The 
+.B shmem\_ctx\_create
+routine creates a new communication context
+and returns its handle through the 
+.I ctx
+argument. If the context was
+created successfully, a value of zero is returned; otherwise, a nonzero
+value is returned. An unsuccessful context
+creation call is not treated as an error and the OpenSHMEM library remains
+in a correct state. The creation call can be reattempted with different
+options or after additional resources become available.
+
+By default, contexts are {\em shareable} and, when it is allowed by the
+threading model provided by the OpenSHMEM library, they can be used concurrently by
+multiple threads within the PE where they were created.
+%
+The following options can be supplied during context creation to restrict
+this usage model and enable performance optimizations. When using a given
+context, the application must comply with the requirements of all options
+set on that context; otherwise, the behavior is undefined.
+No options are enabled on the default context.
+
+
+./ sectionStart
+.TP 25
+SHMEM\_CTX\_SERIALIZED
+The given context is shareable; however, it will not be used by multiple threads concurrently. When the SHMEM\_CTX\_SERIALIZED option is set, the user must ensure that operations involving the given context are serialized by the application.
+./ sectionEnd
+
+
+
+./ sectionStart
+.TP 25
+SHMEM\_CTX\_PRIVATE
+The given context will be used only by the thread that created it.
+./ sectionEnd
+
+
+
+./ sectionStart
+.TP 25
+SHMEM\_CTX\_NOSTORE
+Quiet and fence operations performed on the given context are not required to enforce completion and ordering of memory store operations. When ordering of store operations is needed, the application must perform a synchronization operation on a context without the SHMEM\_CTX\_NOSTORE option enabled.
+./ sectionEnd
+
+
+./ sectionEnd
+./ sectionStart
+
+.SS Return Values
+
+Zero on success and nonzero otherwise.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+None.
+
+./ sectionEnd
+
+
+
+
