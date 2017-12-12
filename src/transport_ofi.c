@@ -87,6 +87,16 @@ static char                     myephostname[EPHOSTNAMELEN];
 #endif
 #ifdef ENABLE_THREADS
 shmem_internal_mutex_t          shmem_transport_ofi_lock;
+/* Need a syscall to gettid() because glibc doesn't provide a wrapper
+ * (see gettid manpage in the NOTES section): */
+    #ifndef __APPLE__
+        #include <sys/syscall.h>
+        #ifdef SYS_gettid
+        #define gettid() syscall(SYS_gettid)
+        #else
+        #warning "SYS_gettid not available"
+        #endif
+    #endif
 #endif
 
 struct fabric_info shmem_transport_ofi_info = {0};
@@ -1098,8 +1108,8 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
      * according to the "stx_share_algorithm". */
     /* TODO: Use tid for more effective sharing */
     uint32_t stx_idx = 0;
-    if (shmem_internal_thread_level != SHMEM_THREAD_SINGLE &&
-        shmem_internal_thread_level != SHMEM_THREAD_FUNNELED) {
+#ifdef ENABLE_THREADS
+    if (shmem_internal_thread_level > SHMEM_THREAD_FUNNELED) {
         switch (shmem_transport_ofi_stx_share_alg) {
             case (ROUNDROBIN):
                 stx_idx = (stx_idx + 1) % shmem_transport_ofi_stx_max;
@@ -1108,14 +1118,16 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
                 stx_idx = rand() % shmem_transport_ofi_stx_max;
                 break;
         }
+        #ifdef __APPLE__
+        pthread_threadid_np(NULL, &shmem_transport_ofi_stx_pool[stx_idx].owner_tid);
+        #else
+        shmem_transport_ofi_stx_pool[stx_idx].owner_tid = gettid();
+        #endif
     }
-    ctx->stx_idx = stx_idx;
-
-#ifdef __APPLE__
-    pthread_threadid_np(NULL, &shmem_transport_ofi_stx_pool[stx_idx].owner_tid);
 #else
-    shmem_transport_ofi_stx_pool[stx_idx].owner_tid = gettid();
+    shmem_transport_ofi_stx_pool[stx_idx].owner_tid = 0;
 #endif
+    ctx->stx_idx = stx_idx;
 
     ret = bind_enable_cntr_ep_resources(ctx);
     OFI_CHECK_RETURN_MSG(ret, "context bind/enable CNTR endpoint failed (%s)\n", fi_strerror(errno));
