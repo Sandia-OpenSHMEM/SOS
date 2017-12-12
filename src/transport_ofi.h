@@ -258,8 +258,12 @@ extern struct fid_ep* shmem_transport_ofi_target_ep;
 
 
 #ifdef USE_CTX_LOCK
-#define SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx) SHMEM_MUTEX_LOCK((ctx)->lock);
-#define SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx) SHMEM_MUTEX_UNLOCK((ctx)->lock);
+#define SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx)                               \
+    if (!((ctx)->options & (SHMEM_CTX_PRIVATE | SHMEM_CTX_SERIALIZED))) \
+        SHMEM_MUTEX_LOCK((ctx)->lock);
+#define SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx)                             \
+    if (!((ctx)->options & (SHMEM_CTX_PRIVATE | SHMEM_CTX_SERIALIZED))) \
+         SHMEM_MUTEX_UNLOCK((ctx)->lock);
 #else
 #define SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx)
 #define SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx)
@@ -318,7 +322,8 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_transport_ctx_t
 {
     shmem_transport_ofi_bounce_buffer_t *buff;
 
-    shmem_free_list_lock(ctx->bounce_buffers);
+    if (!((ctx)->options & (SHMEM_CTX_PRIVATE | SHMEM_CTX_SERIALIZED)))
+        shmem_free_list_lock(ctx->bounce_buffers);
 
     while (ctx->bounce_buffers->nalloc >= shmem_transport_ofi_max_bounce_buffers) {
         shmem_transport_ofi_drain_cq(ctx);
@@ -326,7 +331,8 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_transport_ctx_t
 
     buff = (shmem_transport_ofi_bounce_buffer_t*) shmem_free_list_alloc(ctx->bounce_buffers);
 
-    shmem_free_list_unlock(ctx->bounce_buffers);
+    if (!((ctx)->options & (SHMEM_CTX_PRIVATE | SHMEM_CTX_SERIALIZED)))
+        shmem_free_list_unlock(ctx->bounce_buffers);
 
     if (NULL == buff)
         RAISE_ERROR_STR("Bounce buffer allocation failed");
@@ -345,13 +351,15 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
 
     /* Wait for bounce buffered operations to complete */
     if (ctx->cq_ep) {
-        shmem_free_list_lock(ctx->bounce_buffers);
+        if (!((ctx)->options & (SHMEM_CTX_PRIVATE | SHMEM_CTX_SERIALIZED)))
+            shmem_free_list_lock(ctx->bounce_buffers);
 
         while (ctx->bounce_buffers->nalloc > 0) {
             shmem_transport_ofi_drain_cq(ctx);
         }
 
-        shmem_free_list_unlock(ctx->bounce_buffers);
+        if (!((ctx)->options & (SHMEM_CTX_PRIVATE | SHMEM_CTX_SERIALIZED)))
+            shmem_free_list_unlock(ctx->bounce_buffers);
     }
 
     /* wait for put counter to meet outstanding count value */
@@ -425,9 +433,11 @@ int try_again(shmem_transport_ctx_t *ctx, const int ret, uint64_t *polled) {
     if (ret) {
         if (ret == -FI_EAGAIN) {
             if (ctx->cq_ep) {
-                shmem_free_list_lock(ctx->bounce_buffers);
+                if (!((ctx)->options & (SHMEM_CTX_PRIVATE | SHMEM_CTX_SERIALIZED)))
+                    shmem_free_list_lock(ctx->bounce_buffers);
                 shmem_transport_ofi_drain_cq(ctx);
-                shmem_free_list_unlock(ctx->bounce_buffers);
+                if (!((ctx)->options & (SHMEM_CTX_PRIVATE | SHMEM_CTX_SERIALIZED)))
+                    shmem_free_list_unlock(ctx->bounce_buffers);
             }
             else {
                 /* Poke CQ for errors to encourage progress */
