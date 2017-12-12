@@ -18,6 +18,7 @@
 
 #include <string.h>
 #include <xpmem.h>
+#include "shmem_atomic.h"
 
 struct shmem_transport_xpmem_peer_info_t {
     xpmem_apid_t data_apid;
