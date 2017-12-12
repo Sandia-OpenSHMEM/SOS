@@ -25,8 +25,6 @@
 #endif
 
 #define COMPILER_FENCE() do { __asm__ __volatile__ ("" ::: "memory"); } while (0)
-#define LFENCE()  __asm__ __volatile__ ("lfence" ::: "memory")
-#define SFENCE()  __asm__ __volatile__ ("sfence" ::: "memory")
 
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
@@ -89,14 +87,22 @@ shmem_internal_membar(void) {
 static inline
 void
 shmem_internal_membar_load(void) {
-    LFENCE();
+#if defined(__i386__) || defined(__x86_64__)
+    __asm__ __volatile__ ("lfence" ::: "memory"); 
+#else
+    __sync_synchronize();
+#endif    
     return;
 }
 
 static inline
 void
 shmem_internal_membar_store(void) {
-    SFENCE();
+#if defined(__i386__) || defined(__x86_64__)
+    __asm__ __volatile__ ("sfence" ::: "memory");
+#else
+    __sync_synchronize();
+#endif
     return;
 }
 
