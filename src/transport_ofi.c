@@ -1190,11 +1190,6 @@ int shmem_transport_init(void)
     ret = allocate_fabric_resources(&shmem_transport_ofi_info);
     if (ret != 0) return ret;
 
-    shmem_transport_ofi_avail_ctx = shmem_transport_ofi_grow_size;
-
-    shmem_transport_ofi_contexts = malloc(shmem_transport_ofi_avail_ctx
-                                          * sizeof(shmem_transport_ctx_t*));
-
     /* STX max settings */
     shmem_transport_ofi_stx_max = shmem_internal_params.OFI_STX_MAX;
 
