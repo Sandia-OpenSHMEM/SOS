@@ -84,6 +84,7 @@ enum op { XOR = 0, CTX_XOR, FETCH_XOR, CTX_FETCH_XOR };
     }                                                                   \
   } while (false)
 
+
 int main(int argc, char* argv[]) {
   shmem_init();
 

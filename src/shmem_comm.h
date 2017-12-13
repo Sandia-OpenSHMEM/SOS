@@ -164,7 +164,7 @@ shmem_internal_get(shmem_ctx_t ctx, void *target, const void *source, size_t len
         shmem_transport_xpmem_get(target, source, len, pe, node_rank);
 #elif USE_CMA
         if (len > shmem_internal_params.CMA_GET_MAX) {
-            shmem_transport_get(ctx, target, source, len, pe);
+            shmem_transport_get((shmem_transport_ctx_t *)ctx, target, source, len, pe);
         } else {
             shmem_transport_cma_get(target, source, len, pe, node_rank);
         }

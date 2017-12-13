@@ -135,7 +135,7 @@ test_one_way(void)
                 shmem_barrier(0, 0, pe_size, barrier_pSync);
 
                 tmp = timer();
-                shmem_short_wait((short*) (recv_buf + (nbytes * (nmsgs - 1))), 0);
+                shmem_short_wait_until((short*) (recv_buf + (nbytes * (nmsgs - 1))), SHMEM_CMP_NE, 0);
                 total += (timer() - tmp);
                 memset(recv_buf, 0, npeers * nmsgs * nbytes);
             }
@@ -180,7 +180,7 @@ test_prepost(void)
             }
         }
         shmem_quiet();
-        shmem_short_wait((short*) (recv_buf + (nbytes * ((nmsgs - 1) + (npeers - 1) * nmsgs))), 0);
+        shmem_short_wait_until((short*) (recv_buf + (nbytes * ((nmsgs - 1) + (npeers - 1) * nmsgs))), SHMEM_CMP_NE, 0);
         total += (timer() - tmp);
         memset(recv_buf, 0, npeers * nmsgs * nbytes);
     }

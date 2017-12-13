@@ -20,6 +20,7 @@
 #include <unistd.h>
 
 #ifdef HAVE_LIBC_CMA
+#define _GNU_SOURCE
 #include <sys/uio.h>
 #else
 #include <sys/syscall.h>

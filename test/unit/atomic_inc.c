@@ -30,10 +30,10 @@
  */
 
 /*
- * test shmem_int_inc() atomic_inc {-v|q} {loop-cnt(default=10)(default=10)}
+ * test shmem_int_atomic_inc() atomic_inc {-v|q} {loop-cnt(default=10)(default=10)}
  * where: -q == quiet, -v == verbose/debug
  *  Loop for loop-cnt
- *   all PEs call shmem_int_inc(), PE-0 totals
+ *   all PEs call shmem_int_atomic_inc(), PE-0 totals
  *
  */
 
@@ -105,7 +105,7 @@ main(int argc, char* argv[])
         shmem_barrier_all();  /* sync all ranks */
 
         for(c=0; c < num_ranks; c++)
-            shmem_int_inc( &lock_cnt, c );
+            shmem_int_atomic_inc( &lock_cnt, c );
 
         Vprintf("[%d] locked: lock_cnt(%d)\n", my_rank, lock_cnt);
 

@@ -139,7 +139,7 @@ main(int argc, char* argv[])
             if ( rc == 0 ) {
                 /* incr lock_cnt on all ranks */
                 for(pe=0; pe < num_ranks; pe++) {
-                    shmem_int_add( &lock_cnt, 1, pe );
+                    shmem_int_atomic_add( &lock_cnt, 1, pe );
                 }
                 Vprintf("[%d] locked: lock_cnt(%d)\n", my_rank, lock_cnt);
                 shmem_clear_lock( &lock );
