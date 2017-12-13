@@ -1104,7 +1104,6 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 
     /* After reaching the STX limit, share STXs by selecting an array index
      * according to the "stx_share_algorithm". */
-    /* TODO: Use tid for more effective sharing */
     uint32_t stx_idx = 0;
 #ifdef ENABLE_THREADS
     if (shmem_internal_thread_level > SHMEM_THREAD_FUNNELED) {
@@ -1236,7 +1235,6 @@ int shmem_transport_init(void)
         shmem_transport_ofi_bounce_buffer_size = shmem_internal_params.BOUNCE_SIZE;
         shmem_transport_ofi_max_bounce_buffers = shmem_internal_params.MAX_BOUNCE_BUFFERS;
     }
-
 
     shmem_transport_ofi_put_poll_limit = shmem_internal_params.OFI_TX_POLL_LIMIT;
     shmem_transport_ofi_get_poll_limit = shmem_internal_params.OFI_RX_POLL_LIMIT;
