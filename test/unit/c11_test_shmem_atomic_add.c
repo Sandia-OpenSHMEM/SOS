@@ -41,6 +41,14 @@
 enum op { ADD = 0, ATOMIC_ADD, CTX_ATOMIC_ADD, FADD, ATOMIC_FETCH_ADD,
           CTX_ATOMIC_FETCH_ADD };
 
+#ifdef ENABLE_DEPRECATED_TESTS
+#define DEPRECATED_ADD shmem_add
+#define DEPRECATED_FADD shmem_fadd
+#else
+#define DEPRECATED_ADD shmem_atomic_add
+#define DEPRECATED_FADD shmem_atomic_fetch_add
+#endif
+
 #define TEST_SHMEM_ADD(OP, TYPE)                                        \
   do {                                                                  \
     static TYPE remote;                                                 \
@@ -52,7 +60,7 @@ enum op { ADD = 0, ATOMIC_ADD, CTX_ATOMIC_ADD, FADD, ATOMIC_FETCH_ADD,
     for (int i = 0; i < npes; i++)                                      \
       switch (OP) {                                                     \
         case ADD:                                                       \
-          shmem_add(&remote, (TYPE)(mype + 1), i);                      \
+          DEPRECATED_ADD(&remote, (TYPE)(mype + 1), i);                 \
           break;                                                        \
         case ATOMIC_ADD:                                                \
           shmem_atomic_add(&remote, (TYPE)(mype + 1), i);               \
@@ -61,7 +69,7 @@ enum op { ADD = 0, ATOMIC_ADD, CTX_ATOMIC_ADD, FADD, ATOMIC_FETCH_ADD,
           shmem_atomic_add(SHMEM_CTX_DEFAULT, &remote, (TYPE)(mype + 1), i); \
           break;                                                        \
         case FADD:                                                      \
-          old = shmem_fadd(&remote, (TYPE)(mype + 1), i);               \
+          old = DEPRECATED_FADD(&remote, (TYPE)(mype + 1), i);          \
           if (old > (TYPE)(npes * (npes + 1) / 2)) {                    \
             printf("PE %i error inconsistent value of old (%s, %s)\n",  \
                    mype, #OP, #TYPE);                                   \
@@ -105,6 +113,8 @@ int main(int argc, char* argv[]) {
   shmem_init();
 
   int rc = EXIT_SUCCESS;
+
+#ifdef ENABLE_DEPRECATED_TESTS
   TEST_SHMEM_ADD(ADD, int);
   TEST_SHMEM_ADD(ADD, long);
   TEST_SHMEM_ADD(ADD, long long);
@@ -117,6 +127,7 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_ADD(ADD, uint64_t);
   TEST_SHMEM_ADD(ADD, size_t);
   TEST_SHMEM_ADD(ADD, ptrdiff_t);
+#endif /* ENABLE_DEPRECATED_TESTS */
 
   TEST_SHMEM_ADD(ATOMIC_ADD, int);
   TEST_SHMEM_ADD(ATOMIC_ADD, long);

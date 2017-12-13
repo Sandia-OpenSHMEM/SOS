@@ -1012,7 +1012,8 @@ int query_for_fabric(struct fabric_info *info)
     return ret;
 }
 
-static int shmem_transport_ofi_target_ep_init() {
+static int shmem_transport_ofi_target_ep_init(void)
+{
     int ret = 0;
 
     struct fabric_info* info = &shmem_transport_ofi_info;

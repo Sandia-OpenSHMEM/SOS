@@ -71,7 +71,7 @@ main(int argc, char* argv[])
         for(i = 0; i < num_pes; i++) {
             shmem_long_put_nbi(target, source, 10, i);
             shmem_fence();
-            shmem_int_inc(flag, i);
+            shmem_int_atomic_inc(flag, i);
         }
     }
 

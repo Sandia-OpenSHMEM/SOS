@@ -34,7 +34,7 @@
 
 /* Wait for any entry in the given ivar array to match the wait criteria and
  * return the index of the entry that satisfied the test. */
-int wait_any(long *ivar, int count, int cmp, long value)
+static int wait_any(long *ivar, int count, int cmp, long value)
 {
   int idx = 0;
   while (!shmem_long_test(&ivar[idx], cmp, value))

@@ -108,7 +108,7 @@ main(int argc, char* argv[])
         shmem_set_lock(&lock);
 
         for(pe=0; pe < num_ranks; pe++) {
-            shmem_int_add( &lock_cnt, 1, pe );
+            shmem_int_atomic_add( &lock_cnt, 1, pe );
         }
         if (Verbose)
             printf("[%d] locked: lock_cnt(%d)\n", my_rank, lock_cnt);
