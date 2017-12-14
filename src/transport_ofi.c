@@ -35,6 +35,7 @@
 #include "transport_ofi.h"
 #include <unistd.h>
 #include "runtime.h"
+#include "uthash.h"
 
 struct fabric_info {
     struct fi_info *fabrics;
@@ -294,16 +295,18 @@ static long shmem_transport_ofi_stx_max;
 struct shmem_transport_ofi_stx_t {
     struct fid_stx*   stx;
     long              ref_cnt;
-    bool              private;   /* true if private, false if shared */
-#ifdef __APPLE__
-    uint64_t          owner_tid;
-#else
-    pid_t             owner_tid;
-#endif
 };
 typedef struct shmem_transport_ofi_stx_t shmem_transport_ofi_stx_t;
 static shmem_transport_ofi_stx_t* shmem_transport_ofi_stx_pool;
 
+struct shmem_transport_ofi_stx_kvs_t {
+    TID_TYPE        tid;
+    struct fid_stx* stx;
+    long            ref_cnt;
+    UT_hash_handle  hh;
+};
+typedef struct shmem_transport_ofi_stx_kvs_t shmem_transport_ofi_stx_kvs_t;
+static shmem_transport_ofi_stx_kvs_t* shmem_transport_ofi_stx_kvs = NULL;
 
 #define OFI_MAJOR_VERSION 1
 #ifdef ENABLE_MR_RMA_EVENT
@@ -350,11 +353,38 @@ int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx)
 {
     int ret = 0;
 
-    /* Attach the shared context */
-    ret = fi_ep_bind(ctx->cntr_ep, &shmem_transport_ofi_stx_pool[ctx->stx_idx].stx->fid, 0);
-    OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to CNTR endpoint failed");
+    /* STX contexts are shared by SHMEM contexts that are private to the same
+     * thread (i.e. have SHMEM_CTX_PRIVATE option set and same thread ID).  */
+    if (ctx->options & SHMEM_CTX_PRIVATE) {
+        shmem_transport_ofi_stx_kvs_t *e = malloc(sizeof(shmem_transport_ofi_stx_kvs_t));
+        e->tid = ctx->tid;
 
-    shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt += 1;
+        shmem_transport_ofi_stx_kvs_t *f = malloc(sizeof(shmem_transport_ofi_stx_kvs_t));
+        HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, f);
+        if (f) {
+            e->ref_cnt++;
+            HASH_REPLACE_INT(shmem_transport_ofi_stx_kvs, tid, e, f);
+        } else {
+            e->ref_cnt = 1;
+           ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL, &e->stx, NULL);
+           OFI_CHECK_RETURN_MSG(ret, "STX private context creation failed (%s)\n",
+                                fi_strerror(ret));
+
+           ret = fi_ep_bind(ctx->cntr_ep, &e->stx->fid, 0);
+           OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX private to CNTR endpoint failed");
+
+           HASH_ADD_INT(shmem_transport_ofi_stx_kvs, tid, e);
+        }
+
+        free(e); free(f);
+    } else {
+        /* Attach the shared context */
+        ret = fi_ep_bind(ctx->cntr_ep, &shmem_transport_ofi_stx_pool[ctx->stx_idx].stx->fid, 0);
+        OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to CNTR endpoint failed");
+
+        shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt += 1;
+        printf("here3\n");
+    }
 
     /* Attach counter for obtaining put completions */
     ret = fi_ep_bind(ctx->cntr_ep, &ctx->put_cntr->fid, FI_WRITE);
@@ -1098,9 +1128,6 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
                       info->p_info, &ctx->cntr_ep, NULL);
     OFI_CHECK_RETURN_MSG(ret, "cntr_ep creation failed (%s)\n", fi_strerror(errno));
 
-    /* TODO: STX contexts should be shared by SHMEM contexts that are private
-     * to the same thread (i.e. have SHMEM_CTX_PRIVATE option set and same
-     * thread ID/gettid()).  */
     /* TODO: Fill in TX attr */
 
     /* After reaching the STX limit, share STXs by selecting an array index
@@ -1117,13 +1144,13 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
                 break;
         }
         #ifdef __APPLE__
-        pthread_threadid_np(NULL, &shmem_transport_ofi_stx_pool[stx_idx].owner_tid);
+        if (ctx->options & SHMEM_CTX_PRIVATE)
+            pthread_threadid_np(NULL, &ctx->tid);
         #else
-        shmem_transport_ofi_stx_pool[stx_idx].owner_tid = gettid();
+        if (ctx->options & SHMEM_CTX_PRIVATE)
+            ctx->tid = gettid();
         #endif
     }
-#else
-    shmem_transport_ofi_stx_pool[stx_idx].owner_tid = 0;
 #endif
     ctx->stx_idx = stx_idx;
 
@@ -1345,7 +1372,24 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         shmem_free_list_destroy(ctx->bounce_buffers);
     }
 
-    shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt--;
+    if (ctx->options & SHMEM_CTX_PRIVATE) {
+        shmem_transport_ofi_stx_kvs_t *f = malloc(sizeof(shmem_transport_ofi_stx_kvs_t));
+        HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, f);
+        if (f) {
+          f->ref_cnt--;
+        }
+        else {
+          RAISE_WARN_STR("Context tid not found during shmem_ctx_destroy");
+        }
+        if (f->ref_cnt == 0) {
+            ret = fi_close(&f->stx->fid);
+            OFI_CHECK_ERROR_MSG(ret, "STX private context close failed (%s)\n",
+                                fi_strerror(errno));
+        }
+        free(f);
+    } else {
+        shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt--;
+    }
 
     ret = fi_close(&ctx->put_cntr->fid);
     OFI_CHECK_ERROR_MSG(ret, "Context put CNTR close failed (%s)\n", fi_strerror(errno));
