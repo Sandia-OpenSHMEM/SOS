@@ -291,7 +291,7 @@ static stx_share_alg_t shmem_transport_ofi_stx_share_alg;
 
 static long shmem_transport_ofi_stx_max;
 
-struct shmem_transport_stx_t {
+struct shmem_transport_ofi_stx_t {
     struct fid_stx*   stx;
     long              ref_cnt;
     bool              private;   /* true if private, false if shared */
@@ -301,8 +301,8 @@ struct shmem_transport_stx_t {
     pid_t             owner_tid;
 #endif
 };
-typedef struct shmem_transport_stx_t shmem_transport_stx_t;
-static shmem_transport_stx_t* shmem_transport_ofi_stx_pool;
+typedef struct shmem_transport_ofi_stx_t shmem_transport_ofi_stx_t;
+static shmem_transport_ofi_stx_t* shmem_transport_ofi_stx_pool;
 
 
 #define OFI_MAJOR_VERSION 1
@@ -1216,7 +1216,7 @@ int shmem_transport_init(void)
 
     /* Allocate STX array with max length */
     shmem_transport_ofi_stx_pool = malloc(shmem_transport_ofi_stx_max *
-                                          sizeof(shmem_transport_stx_t));
+                                          sizeof(shmem_transport_ofi_stx_t));
 
     for (i = 0; i < shmem_transport_ofi_stx_max; i++) {
         ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL,
