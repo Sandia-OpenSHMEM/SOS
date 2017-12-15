@@ -289,6 +289,8 @@ enum stx_share_alg_t {
 };
 typedef enum stx_share_alg_t stx_share_alg_t;
 static stx_share_alg_t shmem_transport_ofi_stx_share_alg;
+static int stx_idx = -1;
+static int stx_idx_prev = -1;
 
 static long shmem_transport_ofi_stx_max;
 
@@ -299,10 +301,13 @@ struct shmem_transport_ofi_stx_t {
 typedef struct shmem_transport_ofi_stx_t shmem_transport_ofi_stx_t;
 static shmem_transport_ofi_stx_t* shmem_transport_ofi_stx_pool;
 
+/* FIXME: There's some duplication here with the stx_t struct
+ * above that *might* be avoidable (i.e., stx, ref_cnt):  */
 struct shmem_transport_ofi_stx_kvs_t {
     TID_TYPE        tid;
     struct fid_stx* stx;
     long            ref_cnt;
+    int             stx_idx;
     UT_hash_handle  hh;
 };
 typedef struct shmem_transport_ofi_stx_kvs_t shmem_transport_ofi_stx_kvs_t;
@@ -362,18 +367,27 @@ int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx)
         shmem_transport_ofi_stx_kvs_t *f = malloc(sizeof(shmem_transport_ofi_stx_kvs_t));
         HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, f);
         if (f) {
-            e->ref_cnt++;
+            /* A thread-private STX already exists for this thread id, so increment the
+             * reference count and rollback to the last index into the STX resource pool:  */
+            e->ref_cnt = f->ref_cnt + 1;
+            stx_idx = stx_idx_prev;
+            e->stx_idx = f->stx_idx;
+            ctx->stx_idx = f->stx_idx;
+            e->stx = f->stx;
+
+            ret = fi_ep_bind(ctx->cntr_ep, &e->stx->fid, 0);
+            OFI_CHECK_RETURN_STR(ret, "fi_ep_bind existing STX private to CNTR endpoint failed");
+
             HASH_REPLACE_INT(shmem_transport_ofi_stx_kvs, tid, e, f);
         } else {
-            e->ref_cnt = 1;
-           ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL, &e->stx, NULL);
-           OFI_CHECK_RETURN_MSG(ret, "STX private context creation failed (%s)\n",
-                                fi_strerror(ret));
+            e->stx_idx = ctx->stx_idx;
+            e->ref_cnt = shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt + 1;
+            e->stx = shmem_transport_ofi_stx_pool[ctx->stx_idx].stx;
 
-           ret = fi_ep_bind(ctx->cntr_ep, &e->stx->fid, 0);
-           OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX private to CNTR endpoint failed");
+            ret = fi_ep_bind(ctx->cntr_ep, &e->stx->fid, 0);
+            OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX private to CNTR endpoint failed");
 
-           HASH_ADD_INT(shmem_transport_ofi_stx_kvs, tid, e);
+            HASH_ADD_INT(shmem_transport_ofi_stx_kvs, tid, e);
         }
 
         free(f);
@@ -1132,14 +1146,14 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 
     /* After reaching the STX limit, share STXs by selecting an array index
      * according to the "stx_share_algorithm". */
-    uint32_t stx_idx = 0;
 #ifdef ENABLE_THREADS
     if (shmem_internal_thread_level > SHMEM_THREAD_FUNNELED) {
+        stx_idx_prev = stx_idx;
         switch (shmem_transport_ofi_stx_share_alg) {
             case (ROUNDROBIN):
                 stx_idx = (stx_idx + 1) % shmem_transport_ofi_stx_max;
                 break;
-            case (RANDOM):
+            case (RANDOM): /* TODO: Assure fair sharing w/ a periodic PRNG */
                 stx_idx = rand() % shmem_transport_ofi_stx_max;
                 break;
         }
@@ -1150,7 +1164,11 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
         if (ctx->options & SHMEM_CTX_PRIVATE)
             ctx->tid = gettid();
         #endif
+    } else {
+        stx_idx = 0;
     }
+#else
+    stx_idx = 0;
 #endif
     ctx->stx_idx = stx_idx;
 
@@ -1249,6 +1267,7 @@ int shmem_transport_init(void)
         ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL,
                              &shmem_transport_ofi_stx_pool[i].stx, NULL);
         OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
+        shmem_transport_ofi_stx_pool[i].ref_cnt = 0;
     }
 
     /* The current bounce buffering implementation is only compatible with
@@ -1380,11 +1399,6 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         }
         else {
           RAISE_WARN_STR("Context tid not found during shmem_ctx_destroy");
-        }
-        if (f->ref_cnt == 0) {
-            ret = fi_close(&f->stx->fid);
-            OFI_CHECK_ERROR_MSG(ret, "STX private context close failed (%s)\n",
-                                fi_strerror(errno));
         }
         free(f);
     } else {

@@ -255,7 +255,7 @@ struct shmem_transport_ctx_t {
   shmem_internal_atomic_uint64_t  pending_put_cntr;
   shmem_internal_atomic_uint64_t  pending_get_cntr;
   shmem_free_list_t              *bounce_buffers;
-  uint32_t                        stx_idx;
+  int                             stx_idx;
   TID_TYPE                        tid;
 };
 
