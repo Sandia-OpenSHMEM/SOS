@@ -376,7 +376,7 @@ int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx)
            HASH_ADD_INT(shmem_transport_ofi_stx_kvs, tid, e);
         }
 
-        free(e); free(f);
+        free(f);
     } else {
         /* Attach the shared context */
         ret = fi_ep_bind(ctx->cntr_ep, &shmem_transport_ofi_stx_pool[ctx->stx_idx].stx->fid, 0);
@@ -1373,7 +1373,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
     }
 
     if (ctx->options & SHMEM_CTX_PRIVATE) {
-        shmem_transport_ofi_stx_kvs_t *f = malloc(sizeof(shmem_transport_ofi_stx_kvs_t));
+        shmem_transport_ofi_stx_kvs_t *f;
         HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, f);
         if (f) {
           f->ref_cnt--;
