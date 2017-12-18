@@ -1,183 +1,259 @@
-.TH SHMEM_WAIT 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
+.TH SHMEM_WAIT 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_wait \- 
 Wait for a variable on the local PE to change.
+
 ./ sectionEnd
+
+
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
+
 ./ sectionStart
 .SS C11:
+
 .B void
-.B shmem_wait_until(TYPE
+.B shmem\_wait\_until(TYPE
 .IB "*ivar" ,
-.I int
+.B int
 .IB "cmp" ,
 .B TYPE
 .I cmp_value
 .B );
+
+
+
 ./ sectionEnd
-./ sectionStart
-.B ***********DEPRECATED***********
-./ sectionEnd
-./ sectionStart
-.B void
-.B shmem_wait(TYPE
-.IB "*ivar" ,
-.B TYPE
-.I cmp_value
-.B );
-./ sectionEnd
-./ sectionStart
-.B ********************************
-./ sectionEnd
+
+
 where TYPE is one of the point-to-point synchronization types specified by
 Table 5.
 ./ sectionStart
 .SS C/C++:
+
 .B void
-.B shmem_<TYPENAME>_wait_until(TYPE
+.B shmem\_TYPENAME\_wait\_until(TYPE
 .IB "*ivar" ,
-.I int
+.B int
 .IB "cmp" ,
 .B TYPE
 .I cmp_value
 .B );
+
+
+
 ./ sectionEnd
+
+
+where TYPE is one of the point-to-point synchronization types and has a
+corresponding TYPENAME specified by Table 5.
+
+
 ./ sectionStart
-.B ***********DEPRECATED***********
+.B ***************DEPRECATED***************
 ./ sectionEnd
+
 ./ sectionStart
+
 .B void
-.B shmem_<TYPENAME>_wait(TYPE
+.B shmem\_wait\_until(long
+.IB "*ivar" ,
+.B int
+.IB "cmp" ,
+.B long
+.I cmp_value
+.B );
+
+
+
+.B void
+.B shmem\_wait(long
+.IB "*ivar" ,
+.B long
+.I cmp_value
+.B );
+
+
+
+.B void
+.B shmem\_TYPENAME\_wait(TYPE
 .IB "*ivar" ,
 .B TYPE
 .I cmp_value
 .B );
+
+
+
 ./ sectionEnd
+
+
+where TYPE is one of \{short, int, long,
+long long\} and has a corresponding TYPENAME specified by
+Table 5.
+
 ./ sectionStart
-.B ********************************
+.B ****************************************
 ./ sectionEnd
-where TYPE is one of the point-to-point synchronization types and has a
-corresponding TYPENAME specified by Table 5.
+
 ./ sectionStart
+
+.B ***************DEPRECATED***************
 .SS Fortran:
+
 .nf
-.BR "CALL " "SHMEM_INT4_WAIT(ivar, cmp_value)"
-.BR "CALL " "SHMEM_INT4_WAIT_UNTIL(ivar, cmp, cmp_value)"
-.BR "CALL " "SHMEM_INT8_WAIT(ivar, cmp_value)"
-.BR "CALL " "SHMEM_INT8_WAIT_UNTIL(ivar, cmp, cmp_value)"
-.BR "CALL " "SHMEM_WAIT(ivar, cmp_value)"
-.BR "CALL " "SHMEM_WAIT_UNTIL(ivar, cmp, cmp_value)"
+
+.BR "CALL " "SHMEM\_INT4\_WAIT(ivar, cmp_value)"
+.BR "CALL " "SHMEM\_INT4\_WAIT\_UNTIL(ivar, cmp, cmp_value)"
+.BR "CALL " "SHMEM\_INT8\_WAIT(ivar, cmp_value)"
+.BR "CALL " "SHMEM\_INT8\_WAIT\_UNTIL(ivar, cmp, cmp_value)"
+.BR "CALL " "SHMEM\_WAIT(ivar, cmp_value)"
+.BR "CALL " "SHMEM\_WAIT\_UNTIL(ivar, cmp, cmp_value)"
+
 .fi
+.B ****************************************
+
 ./ sectionEnd
+
+
+
+
+
 ./ sectionStart
+
 .SH DESCRIPTION
 .SS Arguments
 .BR "OUT " -
 .I ivar
-- A remotely accessible integer variable that is being updated
-by another PE. If you are using  C/C++, the type of 
+- A remotely accessible integer variable. When using  C/C++,
+the type of 
 .I ivar
-should
-match that implied in the SYNOPSIS section. 
+should match that implied in the SYNOPSIS section. 
+
+
 .BR "IN " -
 .I cmp
 - The compare operator that compares 
 .I ivar
 with
 .IR "cmp\_value" .
-. If you are using Fortran, it must be of default kind.
-If you are using  C/C++, it must be of type shmem\_cmp\_t.
+When using Fortran, it must be of default kind.
+When using  C/C++, it must be of type int.
+
+
 .BR "IN " -
 .I cmp\_value
 - 
 .I cmp\_value
-must be of type integer. If you are
+must be of type integer. When
 using  C/C++, the type of 
 .I cmp\_value
 should match that implied in the
-SYNOPSIS section. If you are using Fortran, cmp\_value must be an integer of
+SYNOPSIS section. When using Fortran, cmp\_value must be an integer of
 the same size and kind as 
 .IR "ivar" .
-.
+
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Description
+
 .B shmem\_wait
 and 
 .B shmem\_wait\_until
 wait for 
 .I ivar
 to be
-changed by a remote write or an atomic operation issued by a different PE.
+changed by a write or an atomic operation issued by a PE.
 These routines can be used for point-to-point direct synchronization. A call
 to 
-.I shmem\_wait
-does not return until some other PE writes a value,
+.B shmem\_wait
+does not return until a PE writes a value
 not equal to 
 .I cmp\_value
-, into 
+into 
 .I ivar
 on the waiting PE. A call
 to 
 .B shmem\_wait\_until
-does not return until some other PE changes
+does not return until a PE changes
 .I ivar
 to satisfy the condition implied by 
 .I cmp
 and 
 .IR "cmp\_value" .
-.
-This mechanism is useful when a PE needs to tell another PE that it
-has completed some action. The 
+The 
 .B shmem\_wait
-routines return when
+routines return when 
 .I ivar
 is no longer equal to 
 .IR "cmp\_value" .
-. The
+The
 .B shmem\_wait\_until
 routines return when the compare condition is true.
 The compare condition is defined by the 
 .I ivar
 argument compared with the
 .I cmp\_value
-using the comparison operator, 
+using the comparison operator 
 .IR "cmp" .
-. 
+
 ./ sectionEnd
+
+
+
+
 ./ sectionStart
-If you are using Fortran, 
+
+When using Fortran, 
 .I ivar
 must be a specific sized integer type
 according to the routine being called, as follows:
+
 .TP 25
 Routine
 Data type
 ./ sectionEnd
+
+
+
 ./ sectionStart
 .TP 25
 shmem\_wait, shmem\_wait\_until
 default INTEGER
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 shmem\_int4\_wait, shmem\_int4\_wait\_until
 INTEGER*4
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 shmem\_int8\_wait, shmem\_int8\_wait\_until
 INTEGER*8
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS Return Values
+
 None.
+
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Notes
+
 As of OpenSHMEM[1.4], the 
 .B shmem\_wait
 routine is deprecated,
@@ -188,9 +264,14 @@ is equivalent to
 where 
 .I cmp
 is SHMEM\_CMP\_NE.
+
 ./ sectionEnd
+
+
 ./ sectionStart
-.SS API Notes
+
+.SS Note to Implementors
+
 Implementations must ensure that 
 .B shmem\_wait
 and
@@ -204,40 +285,65 @@ must not cause
 or 
 .B shmem\_wait\_until
 to return.
+
 ./ sectionEnd
+
+
+
+
 ./ sectionStart
 .SS Examples
+
+
+
 The following call returns when variable 
 .I ivar
 is not equal to 100:
+
 .nf
 INCLUDE "shmem.fh"
+
 INTEGER*8 IVAR
 CALL SHMEM_INT8_WAIT(IVAR, INTEGER*8(100))
 .fi
+
+
+
 The following call to 
 .B SHMEM\_INT8\_WAIT\_UNTIL
 is equivalent to the
 call to 
 .B SHMEM\_INT8\_WAIT
 in example 1:
+
 .nf
 INCLUDE "shmem.fh"
+
 INTEGER*8 IVAR
 CALL SHMEM_INT8_WAIT_UNTIL(IVAR, SHMEM_CMP_NE, INTEGER*8(100))
 .fi
+
+
+
 The following  C/C++ call waits until the value in 
 .I ivar
 is set to
 be less than zero by a transfer from a remote PE:
+
 .nf
 #include <stdio.h>#include <shmem.h>
+
 int ivar;
 shmem_int_wait_until(&ivar, SHMEM_CMP_LT, 0);
 .fi
+
+
+
 The following Fortran example is in the context of a subroutine:
+
 .nf
 INCLUDE "shmem.fh"
+
 SUBROUTINE EXAMPLE()
 INTEGER FLAG_VAR
 COMMON/FLAG/FLAG_VAR
@@ -251,6 +357,11 @@ FLAG_VAR = FLAG_VALUE    !  reset the event variable for next time
 . . .
 END
 .fi
+
+
+
+
+
 .SS Table 5:
 Point-to-Point Synchronization Types and Names
 .TP 25

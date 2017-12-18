@@ -1,31 +1,58 @@
-.TH SHMEM_INIT 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
+.TH SHMEM_INIT 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_init \- 
 A collective operation that allocates and initializes the resources used by
 the OpenSHMEM library.
+
 ./ sectionEnd
+
+
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
+
 ./ sectionStart
 .SS C/C++:
+
 .B void
-.B shmem_init(void)
+.B shmem\_init(void)
+
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
+
+.B ***************DEPRECATED***************
 .SS Fortran:
+
 .nf
-.BR "CALL " "SHMEM_INIT()"
+
+.BR "CALL " "SHMEM\_INIT()"
+
 .fi
+.B ****************************************
+
 ./ sectionEnd
+
+
+
+
+
 ./ sectionStart
+
 .SH DESCRIPTION
 .SS Arguments
 .B None.
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Description
+
 .B shmem\_init
 allocates and initializes resources used by the OpenSHMEM
 library. It is a collective operation that all PEs must call before any
@@ -36,70 +63,95 @@ must be matched with a
 call to 
 .BR "shmem\_finalize" .
 After the first call to 
-.B shmem\_init
-, a
+.BR "shmem\_init" ,
+a
 subsequent call to 
 .B shmem\_init
-in the same program results in undefined
-behavior.
+or 
+.B shmem\_init\_thread
+in the
+same program results in undefined behavior.
+
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS Return Values
+
 None.
+
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Notes
-As of OpenSHMEM Specification 1.2 the use of 
+
+As of OpenSHMEM[1.2], the use of 
 .B start\_pes
 has been
-deprecated and is replaced with 
+deprecated and calls to it should be replaced with calls to 
 .BR "shmem\_init" .
 While support for
 .B start\_pes
 is still required in OpenSHMEM libraries, users are
 encouraged to use 
 .BR "shmem\_init" .
-Replacing 
-.B start\_pes
-with
+An important difference between
 .B shmem\_init
-in OpenSHMEM programs with no further changes is possible;
-there is an implicit 
-.B shmem\_finalize
-at the end of main. However,
-.B shmem\_init
-differs slightly from 
+and 
 .B start\_pes
-: multiple calls to
+is that multiple calls to
 .B shmem\_init
 within a program results in undefined behavior, while in the
 case of 
-.B start\_pes
-, any subsequent calls to 
+.BR "start\_pes" ,
+any subsequent calls to 
 .B start\_pes
 after the
-first one resulted in a no-op.
+first one results in a no-op.
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
 .SS Examples
-This is a simple program that calls 
+
+
+
+The following 
 .B shmem\_init
-: 
+example is for C[11] programs: 
+
 .nf
-PROGRAM PUT
-INCLUDE "shmem.fh"
-INTEGER TARG, SRC, RECEIVER, BAR
-COMMON /T/ TARG
-PARAMETER (RECEIVER=1)
-CALL SHMEM_INIT()
-IF (SHMEM_MY_PE() .EQ. 0) THEN
-   SRC = 33
-   CALL SHMEM_INTEGER_PUT(TARG, SRC, 1, RECEIVER)
-ENDIF
-CALL SHMEM_BARRIER_ALL           ! SYNCHRONIZES SENDER AND RECEIVER
-IF (SHMEM_MY_PE() .EQ. RECEIVER) THEN
-   PRINT*,'PE ', SHMEM_MY_PE(),' TARG=',TARG,' (expect 33)'
-ENDIF
-CALL SHMEM_FINALIZE()
-END
+#include <stdio.h>
+#include <shmem.h>
+
+int main(void) {
+   static int targ = 0;
+
+   shmem_init();
+   int me = shmem_my_pe();
+   int receiver = 1 % shmem_n_pes();
+
+   if (me == 0) {
+       int src = 33;
+       shmem_put(&targ, &src, 1, receiver);
+   }
+
+   shmem_barrier_all(); /* Synchronizes sender and receiver */
+
+   if (me == receiver)
+       printf("PE %d targ=%d (expect 33)\\n", me, targ);
+
+   shmem_finalize();
+   return 0;
+}
 .fi
+
+
+
+
+
