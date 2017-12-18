@@ -301,13 +301,10 @@ struct shmem_transport_ofi_stx_t {
 typedef struct shmem_transport_ofi_stx_t shmem_transport_ofi_stx_t;
 static shmem_transport_ofi_stx_t* shmem_transport_ofi_stx_pool;
 
-/* FIXME: There's some duplication here with the stx_t struct
- * above that *might* be avoidable (i.e., stx, ref_cnt):  */
 struct shmem_transport_ofi_stx_kvs_t {
-    TID_TYPE        tid;
-    struct fid_stx* stx;
-    long            ref_cnt;
+    struct shmem_transport_ofi_stx_t* stxs;
     int             stx_idx;
+    TID_TYPE        tid;
     UT_hash_handle  hh;
 };
 typedef struct shmem_transport_ofi_stx_kvs_t shmem_transport_ofi_stx_kvs_t;
@@ -369,22 +366,22 @@ int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx)
         if (f) {
             /* A thread-private STX already exists for this thread id, so increment the
              * reference count and rollback to the last index into the STX resource pool:  */
-            e->ref_cnt = f->ref_cnt + 1;
+            e->stxs->ref_cnt = f->stxs->ref_cnt + 1;
             stx_idx = stx_idx_prev;
             e->stx_idx = f->stx_idx;
             ctx->stx_idx = f->stx_idx;
-            e->stx = f->stx;
+            e->stxs->stx = f->stxs->stx;
 
-            ret = fi_ep_bind(ctx->cntr_ep, &e->stx->fid, 0);
+            ret = fi_ep_bind(ctx->cntr_ep, &e->stxs->stx->fid, 0);
             OFI_CHECK_RETURN_STR(ret, "fi_ep_bind existing STX private to CNTR endpoint failed");
 
             HASH_REPLACE_INT(shmem_transport_ofi_stx_kvs, tid, e, f);
         } else {
             e->stx_idx = ctx->stx_idx;
-            e->ref_cnt = shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt + 1;
-            e->stx = shmem_transport_ofi_stx_pool[ctx->stx_idx].stx;
+            e->stxs->ref_cnt = shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt + 1;
+            e->stxs->stx = shmem_transport_ofi_stx_pool[ctx->stx_idx].stx;
 
-            ret = fi_ep_bind(ctx->cntr_ep, &e->stx->fid, 0);
+            ret = fi_ep_bind(ctx->cntr_ep, &e->stxs->stx->fid, 0);
             OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX private to CNTR endpoint failed");
 
             HASH_ADD_INT(shmem_transport_ofi_stx_kvs, tid, e);
@@ -1395,7 +1392,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         shmem_transport_ofi_stx_kvs_t *f;
         HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, f);
         if (f) {
-          f->ref_cnt--;
+          f->stxs->ref_cnt--;
         }
         else {
           RAISE_WARN_STR("Context tid not found during shmem_ctx_destroy");
