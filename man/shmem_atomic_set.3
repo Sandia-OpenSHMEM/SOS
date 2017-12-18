@@ -1,70 +1,190 @@
-.TH SHMEM_ATOMIC_SET 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
+.TH SHMEM_ATOMIC_SET 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_atomic_set \- 
 Atomically sets the value of a remote data object.
+
 ./ sectionEnd
+
+
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
+
 ./ sectionStart
 .SS C11:
+
 .B void
-.B shmem_atomic_set(TYPE
+.B shmem\_atomic\_set(TYPE
 .IB "*dest" ,
 .B TYPE
 .IB "value" ,
 .B int
 .I pe
 .B );
+
+
+
+.B void
+.B shmem\_atomic\_set(shmem_ctx_t
+.IB "ctx" ,
+.B TYPE
+.IB "*dest" ,
+.B TYPE
+.IB "value" ,
+.B int
+.I pe
+.B );
+
+
+
 ./ sectionEnd
+
+
 where TYPE is one of the extended AMO types specified by
 Table 3.
 ./ sectionStart
 .SS C/C++:
+
 .B void
-.B shmem_<TYPENAME>_atomic_set(TYPE
+.B shmem\_TYPENAME\_atomic\_set(TYPE
 .IB "*dest" ,
 .B TYPE
 .IB "value" ,
 .B int
 .I pe
 .B );
+
+
+
+.B void
+.B shmem\_ctx\_TYPENAME\_atomic\_set(shmem_ctx_t
+.IB "ctx" ,
+.B TYPE
+.IB "*dest" ,
+.B TYPE
+.IB "value" ,
+.B int
+.I pe
+.B );
+
+
+
 ./ sectionEnd
+
+
 where TYPE is one of the extended AMO types and has a corresponding
 TYPENAME specified by Table 3.
+
+
 ./ sectionStart
+.B ***************DEPRECATED***************
+./ sectionEnd
+
+./ sectionStart
+.SS C11:
+
+.B void
+.B shmem\_set(TYPE
+.IB "*dest" ,
+.B TYPE
+.IB "value" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of \{float, double, int,
+long, long long\}.
+./ sectionStart
+.SS C/C++:
+
+.B void
+.B shmem\_TYPENAME\_set(TYPE
+.IB "*dest" ,
+.B TYPE
+.IB "value" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of \{float, double, int,
+long, long long\} and has a corresponding
+TYPENAME specified by Table 3.
+
+./ sectionStart
+.B ****************************************
+./ sectionEnd
+
+./ sectionStart
+
+.B ***************DEPRECATED***************
 .SS Fortran:
+
 .nf
+
 .BR "INTEGER " "pe"
 .BR "INTEGER*4 " "SHMEM_INT4_SET, value_i4"
-.BR "CALL " "SHMEM_INT4_SET(dest, value_i4, pe)"
+.BR "CALL " "SHMEM\_INT4\_SET(dest, value_i4, pe)"
 .BR "INTEGER*8 " "SHMEM_INT8_SET, value_i8"
-.BR "CALL " "SHMEM_INT8_SET(dest, value_i8, pe)"
+.BR "CALL " "SHMEM\_INT8\_SET(dest, value_i8, pe)"
 .BR "REAL*4 " "SHMEM_REAL4_SET, value_r4"
-.BR "CALL " "SHMEM_REAL4_SET(dest, value_r4, pe)"
+.BR "CALL " "SHMEM\_REAL4\_SET(dest, value_r4, pe)"
 .BR "REAL*8 " "SHMEM_REAL8_SET, value_r8"
-.BR "CALL " "SHMEM_REAL8_SET(dest, value_r8, pe)"
+.BR "CALL " "SHMEM\_REAL8\_SET(dest, value_r8, pe)"
+
 .fi
+.B ****************************************
+
 ./ sectionEnd
+
+
+
+
+
 ./ sectionStart
+
 .SH DESCRIPTION
 .SS Arguments
 .BR "IN " -
+.I ctx
+- The context on which to perform the operation.
+When this argument is not provided, the operation is performed on
+SHMEM\_CTX\_DEFAULT.
+
+
+.BR "OUT " -
 .I dest
 - The remotely accessible data object to be set on
 the remote PE.
+
+
 .BR "IN " -
 .I value
 - The value to be atomically written to the remote PE.
+
+
 .BR "IN " -
 .I pe
 - An integer that indicates the PE number on which
 .I dest
 is to be updated.
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Description
+
 .B shmem\_atomic\_set
 performs an atomic set operation. It writes the
 .I value
@@ -73,20 +193,30 @@ into
 on 
 .I pe
 as an atomic operation.
+
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS Return Values
+
 None.
+
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Notes
-As of OpenSHMEM[1.4], 
-.B shmem\_set
-has been deprecated.
-Its behavior and call signature are identical to the replacement
-interface, 
-.BR "shmem\_atomic\_set" .
+
+None.
+
 ./ sectionEnd
+
+
+
+
 .SS Table 3:
 Extended AMO Types and Names
 .TP 25
@@ -107,3 +237,30 @@ long
 .TP
 long long
 longlong
+.TP
+unsigned int
+uint
+.TP
+unsigned long
+ulong
+.TP
+unsigned long long
+ulonglong
+.TP
+int32\_t
+int32
+.TP
+int64\_t
+int64
+.TP
+uint32\_t
+uint32
+.TP
+uint64\_t
+uint64
+.TP
+size\_t
+size
+.TP
+ptrdiff\_t
+ptrdiff
