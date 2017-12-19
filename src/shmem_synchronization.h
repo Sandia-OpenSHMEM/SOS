@@ -133,7 +133,7 @@ shmem_internal_fence(shmem_ctx_t ctx)
         shmem_internal_membar_load();                                   \
     } while (0)
 
-#define SHMEM_WAIT_UNTIL(var, cond, value) do                           \
+#define SHMEM_WAIT_UNTIL(var, cond, value) do {                         \
         SHMEM_WAIT_UNTIL_POLL(var, cond, value);                        \
         shmem_internal_membar_load();                                   \
     } while (0) 
