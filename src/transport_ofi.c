@@ -92,7 +92,7 @@ shmem_internal_mutex_t          shmem_transport_ofi_lock;
 #ifndef __APPLE__
 #ifdef HAVE_SYS_GETTID
 static inline
-TID_TYPE shmem_transport_ofi_gettid()
+TID_TYPE shmem_transport_ofi_gettid(void)
 {
     return syscall(SYS_gettid);
 }
