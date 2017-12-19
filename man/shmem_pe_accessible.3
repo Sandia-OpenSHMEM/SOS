@@ -1,29 +1,52 @@
-.TH SHMEM_PE_ACCESSIBLE 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
+.TH SHMEM_PE_ACCESSIBLE 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_pe_accessible \- 
 Determines whether a PE is accessible via OpenSHMEM's data transfer
 routines.
+
 ./ sectionEnd
+
+
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
+
 ./ sectionStart
 .SS C/C++:
+
 .B int
-.B shmem_pe_accessible(int
+.B shmem\_pe\_accessible(int
 .I pe
 .B );
+
+
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
+
+.B ***************DEPRECATED***************
 .SS Fortran:
+
 .nf
+
 .BR "LOGICAL " "LOG, SHMEM_PE_ACCESSIBLE"
 .BR "INTEGER " "pe"
 LOG = SHMEM_PE_ACCESSIBLE(pe)
+
 .fi
+.B ****************************************
+
 ./ sectionEnd
+
+
+
+
 ./ sectionStart
+
 .SH DESCRIPTION
 .SS Arguments
 .BR "IN " -
@@ -31,35 +54,52 @@ LOG = SHMEM_PE_ACCESSIBLE(pe)
 - Specific PE to be checked for accessibility from
 the local PE.
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Description
+
 .B shmem\_pe\_accessible
 is a query routine that indicates whether a
 specified PE is accessible via OpenSHMEM from the local PE. The
 .B shmem\_pe\_accessible
-routine returns TRUE only if the remote
+routine returns a value indicating whether the remote
 PE is a process running from the same executable file as the local
-PE, indicating that full OpenSHMEM support for symmetric data objects
-(that reside in the static memory and symmetric heap) is available, otherwise it
-returns FALSE. This routine may be particularly useful for hybrid
-programming with other communication libraries (such as a MPI) or parallel
-languages. For example, on SGI Altix series systems, OpenSHMEM is
-supported across multiple partitioned hosts and InfiniBand connected hosts.
-When running multiple executable MPI programs using OpenSHMEM on an Altix, full
-OpenSHMEM support is available between processes running from the same
-executable file. However, OpenSHMEM support between processes of different
-executable files is supported only for data objects on the symmetric heap,
-since static data objects are not symmetric between different executable
-files. 
+PE, thereby indicating whether full support for symmetric data objects,
+which may reside in either static memory or the symmetric heap, is available.
+
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS Return Values
+
 C/C++: The return value is 1 if the specified PE is a valid remote PE
-for OpenSHMEM routines; otherwise, it is 0. 
+for OpenSHMEM routines; otherwise, it is 0.
+
 Fortran: The return value is .TRUE. if the specified PE is a valid
-remote PE for OpenSHMEM routines; otherwise, it is .FALSE.. 
+remote PE for OpenSHMEM routines; otherwise, it is .FALSE..
+
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Notes
-None. 
+
+This routine may be particularly useful for hybrid programming with other
+communication libraries (such as MPI) or parallel languages. For
+example, when an MPI job uses Multiple Program Multiple Data (MPMD) mode, multiple executable
+MPI programs are executed as part of the same MPI job. In such cases,
+OpenSHMEM support may only be available between processes running from the
+same executable file. In addition, some environments may allow a hybrid
+job to span multiple network partitions. In such scenarios, OpenSHMEM
+support may only be available between PEs within the same partition.
+
 ./ sectionEnd
+
+
+
+

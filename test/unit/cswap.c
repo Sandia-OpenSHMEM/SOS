@@ -101,7 +101,7 @@ main(int argc, char* argv[])
             Vprintf("PE-0 Initial Conditions(int) local %d rem(%d)\n",
                     dst_int,itmp);
 
-            dst_int = shmem_int_cswap(src_int,*src_int,0,1);
+            dst_int = shmem_int_atomic_compare_swap(src_int,*src_int,0,1);
             if (dst_int != 4) {
                 printf("PE-%d dst_int %d != 4?\n",me,dst_int);
                 shmem_global_exit(1);
@@ -114,7 +114,7 @@ main(int argc, char* argv[])
             }
             Vprintf("PE-0 1st int_cswap done: local %d rem(%d)\n",dst_int,itmp);
 
-            dst_int = shmem_int_cswap(src_int,0,dst_int,1);
+            dst_int = shmem_int_atomic_compare_swap(src_int,0,dst_int,1);
             if (dst_int != 0) {
                 printf("PE-%d dst_int %d != 0?\n",me,dst_int);
                 shmem_global_exit(1);
@@ -128,7 +128,7 @@ main(int argc, char* argv[])
             Vprintf("PE-0 2nd int_swap done: local %d rem(%d)\n",dst_int,itmp);
 
             /* cswap() should not swap as cond(0) != remote(4) */
-            dst_int = shmem_int_cswap(src_int,0,0,1);
+            dst_int = shmem_int_atomic_compare_swap(src_int,0,0,1);
             if (dst_int != 4) {
                 printf("PE-%d int no-swap returned dst_int %d != 4?\n",
                         me,dst_int);
@@ -147,7 +147,7 @@ main(int argc, char* argv[])
             Vprintf("PE-0 Initial Conditions(long) local %ld rem(%ld)\n",
                     dst_long,ltmp);
 
-            dst_long = shmem_long_cswap(src_long,*src_long,0,1);
+            dst_long = shmem_long_atomic_compare_swap(src_long,*src_long,0,1);
             if (dst_long != 8) {
                 printf("PE-%d dst_long %ld != 8?\n",me,dst_long);
                 shmem_global_exit(1);
@@ -161,7 +161,7 @@ main(int argc, char* argv[])
             Vprintf("PE-0 1st long_cswap done: local %ld rem(%ld)\n",
                     dst_long,ltmp);
 
-            dst_long = shmem_long_cswap(src_long,0,dst_long,1);
+            dst_long = shmem_long_atomic_compare_swap(src_long,0,dst_long,1);
             if (dst_long != 0) {
                 printf("PE-%d dst_long %ld != 0?\n",me,dst_long);
                 shmem_global_exit(1);
@@ -176,7 +176,7 @@ main(int argc, char* argv[])
                     dst_long,ltmp);
 
             /* cswap() should not swap as cond(0) != remote(8) */
-            dst_long = shmem_long_cswap(src_long,0,0,1);
+            dst_long = shmem_long_atomic_compare_swap(src_long,0,0,1);
             if (dst_long != 8) {
                 printf("PE-%d long no-swap returned dst_long %ld != 8?\n",
                         me,dst_long);
@@ -195,7 +195,7 @@ main(int argc, char* argv[])
             Vprintf("PE-0 Initial Conditions(long long) local %lld rem(%lld)\n",
                     dst_llong,lltmp);
 
-            dst_llong = shmem_longlong_cswap(src_llong,*src_llong,0,1);
+            dst_llong = shmem_longlong_atomic_compare_swap(src_llong,*src_llong,0,1);
             if (dst_llong != 16) {
                 printf("PE-%d dst_llong %lld != 16?\n",me,dst_llong);
                 shmem_global_exit(1);
@@ -209,7 +209,7 @@ main(int argc, char* argv[])
             Vprintf("PE-0 1st longlong_cswap done: local %lld rem(%lld)\n",
                     dst_llong, lltmp);
 
-            dst_llong = shmem_longlong_cswap(src_llong,0,dst_llong,1);
+            dst_llong = shmem_longlong_atomic_compare_swap(src_llong,0,dst_llong,1);
             if (dst_llong != 0) {
                 printf("PE-%d dst_llong %lld != 0?\n",me,dst_llong);
                 shmem_global_exit(1);
@@ -224,7 +224,7 @@ main(int argc, char* argv[])
                     dst_llong,lltmp);
 
             /* cswap() should not swap as cond(0) != remote(8) */
-            dst_llong = shmem_longlong_cswap(src_llong,0,0,1);
+            dst_llong = shmem_longlong_atomic_compare_swap(src_llong,0,0,1);
             if (dst_llong != 16) {
                 printf("PE-%d longlong no-swap returned dst_llong %lld != 16?\n",
                         me,dst_llong);
@@ -269,9 +269,9 @@ main(int argc, char* argv[])
         }
         shmem_barrier_all();
 
-        (void)shmem_int_fadd( &itmp, me+1, 0 );
-        (void)shmem_long_fadd( &ltmp, me+1, 0 );
-        (void)shmem_longlong_fadd( &lltmp, me+1, 0 );
+        (void)shmem_int_atomic_fetch_add( &itmp, me+1, 0 );
+        (void)shmem_long_atomic_fetch_add( &ltmp, me+1, 0 );
+        (void)shmem_longlong_atomic_fetch_add( &lltmp, me+1, 0 );
 
         shmem_barrier_all();
 
@@ -292,9 +292,9 @@ main(int argc, char* argv[])
         }
         shmem_barrier_all();
 
-        (void)shmem_int_finc(src_int,0);
-        (void)shmem_long_finc(src_long,0);
-        (void)shmem_longlong_finc(src_llong,0);
+        (void)shmem_int_atomic_fetch_inc(src_int,0);
+        (void)shmem_long_atomic_fetch_inc(src_long,0);
+        (void)shmem_longlong_atomic_fetch_inc(src_llong,0);
 
         shmem_barrier_all();
 

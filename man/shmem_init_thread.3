@@ -1,0 +1,117 @@
+.TH SHMEM_INIT_THREAD 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_init_thread \- 
+Initializes the OpenSHMEM library, similar to 
+.BR "shmem\_init" ,
+and performs any
+initialization required for supporting the provided thread level.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B int
+.B shmem\_init\_thread(int
+.IB "requested" ,
+.B int
+.I *provided
+.B );
+
+
+
+./ sectionEnd
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I requested
+- The thread level support requested by the user.
+
+
+.BR "OUT " -
+.I provided
+- The thread level support provided by the OpenSHMEM implementation.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+.B shmem\_init\_thread
+initializes the OpenSHMEM library in the same way as 
+.BR "shmem\_init" .
+In addition, 
+.B shmem\_init\_thread
+also performs 
+the initialization required for supporting the provided thread level. 
+The argument 
+.I requested
+is used to specify the desired level of 
+thread support. The argument 
+.I provided
+returns the support level 
+provided by the library. The allowed values for 
+.I provided
+and 
+.I requested
+are SHMEM\_THREAD\_SINGLE, SHMEM\_THREAD\_FUNNELED,
+SHMEM\_THREAD\_SERIALIZED, and SHMEM\_THREAD\_MULTIPLE.
+
+An OpenSHMEM program is initialized either by 
+.B shmem\_init
+or 
+.BR "shmem\_init\_thread" .
+Once an OpenSHMEM library initialization call has been performed, a subsequent
+initialization call in the same program results in undefined behavior.
+If the call to 
+.B shmem\_init\_thread
+is unsuccessful in allocating and initializing resources for the 
+OpenSHMEM library, then the behavior of any subsequent call 
+to the OpenSHMEM library is undefined.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+.B shmem\_init\_thread
+returns 0 upon success; otherwise, it returns a
+non-zero value.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+The OpenSHMEM library can be initialized either by 
+.B shmem\_init
+or 
+.BR "shmem\_init\_thread" .
+If the OpenSHMEM library is initialized 
+by 
+.BR "shmem\_init" ,
+the library implementation can choose to 
+support any one of the defined thread levels.
+
+./ sectionEnd
+
+
+
+

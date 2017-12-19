@@ -94,7 +94,7 @@ void static inline target_data_uni_bw(int len, perf_metrics_t metric_info)
                 shmem_putmem(metric_info.dest, metric_info.src, len, my_PE_partners[i]);
                 shmem_quiet();
             }
-            shmem_int_inc(&completion_signal, my_PE_partners[i]);
+            shmem_int_atomic_inc(&completion_signal, my_PE_partners[i]);
         }
         end = perf_shmemx_wtime();
     }

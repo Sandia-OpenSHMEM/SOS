@@ -84,6 +84,7 @@ enum op { OR = 0, CTX_OR, FETCH_OR, CTX_FETCH_OR };
     }                                                                   \
   } while (false)
 
+
 int main(int argc, char* argv[]) {
   shmem_init();
 

@@ -1,20 +1,24 @@
-.TH SHMEM_BARRIER 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
+.TH SHMEM_BARRIER 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_barrier \- 
 Performs all operations described in the 
 .B shmem\_barrier\_all
 interface
-but with respect to a subset of PEs defined by the 
-.IR "Active set" .
+but with respect to a subset of PEs defined by the active set.
+
 ./ sectionEnd
+
+
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
+
 ./ sectionStart
 .SS C/C++:
+
 .B void
-.B shmem_barrier(int
+.B shmem\_barrier(int
 .IB "PE_start" ,
 .B int
 .IB "logPE_stride" ,
@@ -23,68 +27,90 @@ but with respect to a subset of PEs defined by the
 .B long
 .I *pSync
 .B );
+
+
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
+
+.B ***************DEPRECATED***************
 .SS Fortran:
+
 .nf
+
 .BR "INTEGER " "PE_start, logPE_stride, PE_size"
 .BR "INTEGER " "pSync(SHMEM_BARRIER_SYNC_SIZE)"
-.BR "CALL " "SHMEM_BARRIER(PE_start, logPE_stride, PE_size, pSync)"
+.BR "CALL " "SHMEM\_BARRIER(PE_start, logPE_stride, PE_size, pSync)"
+
 .fi
+.B ****************************************
+
 ./ sectionEnd
+
+
+
+
+
 ./ sectionStart
+
 .SH DESCRIPTION
 .SS Arguments
 .BR "IN " -
 .I PE\_start
-- The lowest PE number of the 
-.I "Active set"
-of PEs.
+- The lowest PE number of the active set of PEs.
 .I PE\_start
-must be of type integer. If you are using Fortran, it must be
+must be of type integer. When using Fortran, it must be
 a default integer value.
+
+
 .BR "IN " -
 .I logPE\_stride
 - The log (base 2) of the stride between consecutive
-PE numbers in the 
-.IR "Active set" .
+PE numbers in the active set. 
 .I logPE\_stride
 must be of type integer.
-If you are using Fortran, it must be a default integer value.
+When using Fortran, it must be a default integer value.
+
+
 .BR "IN " -
 .I PE\_size
-- The number of PEs in the 
-.IR "Active set" .
+- The number of PEs in the active set. 
 .I PE\_size
-must be of type integer. If you are using Fortran, it must be a default
+must be of type integer. When using Fortran, it must be a default
 integer value.
+
+
 .BR "IN " -
 .I pSync
-- A symmetric work array. In  C/C++, 
+- 
+A symmetric work array of size SHMEM\_BARRIER\_SYNC\_SIZE.
+In  C/C++, 
 .I pSync
-must
-be of type long and size SHMEM\_BARRIER\_SYNC\_SIZE. In Fortran,
+must be an array of elements of type long.
+In Fortran, 
 .I pSync
-must be of type integer and size SHMEM\_BARRIER\_SYNC\_SIZE.
-If you are using Fortran, it must be a default integer type. Every element
+must be an array of elements of default integer type.
+Every element
 of this array must be initialized to SHMEM\_SYNC\_VALUE before any of
-the PEs in the 
-.I "Active set"
-enter 
+the PEs in the active set enter 
 .B shmem\_barrier
 the first time.
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Description
+
 .B shmem\_barrier
 is a collective synchronization routine over an
-.IR "Active set" .
-Control returns from 
+active set. Control returns from 
 .B shmem\_barrier
 after all PEs in
-the 
-.I "Active set"
-(specified by 
+the active set (specified by 
 .I PE\_start
 , 
 .I logPE\_stride
@@ -92,55 +118,62 @@ the
 .I PE\_size
 ) have called 
 .BR "shmem\_barrier" .
+
+
 As with all OpenSHMEM collective routines, each of these routines assumes that
-only PEs in the 
-.I "Active set"
-call the routine. If a PE not in the
-.I "Active set"
-calls an OpenSHMEM collective routine, undefined behavior results.
+only PEs in the active set call the routine. If a PE not in the
+active set calls an OpenSHMEM collective routine, the behavior is undefined.
+
 The values of arguments 
 .I PE\_start
 , 
 .I logPE\_stride
 , and 
 .I PE\_size
-must be equal on all PEs in the 
-.IR "Active set" .
-The same work array must be
+must be the same value on all PEs in the active set. The same work array must be
 passed in 
 .I pSync
-to all PEs in the 
-.IR "Active set" .
+to all PEs in the active set.
+
+
 .B shmem\_barrier
 ensures that all previously issued stores and remote
 memory updates, including AMOs and RMA operations, done by any of the
-PEs in the 
-.I "Active set"
-are complete before returning.
+PEs in the active set on the default context are complete before returning.
+
 The same 
 .I pSync
 array may be reused on consecutive calls to
 .B shmem\_barrier
-if the same active PE set is used.
+if the same active set is used.
+
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS Return Values
+
 None.
+
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Notes
+
 If the 
 .I pSync
-array is initialized at run time, be sure to use some type of
-synchronization, for example, a call to 
-.B shmem\_barrier\_all
-, before
-calling 
+array is initialized at the run time, all
+PEs must be synchronized before the first call to 
 .B shmem\_barrier
-for the first time.
-If the 
-.I "Active set"
-does not change, 
+(e.g., by 
+.B shmem\_barrier\_all
+) to ensure the array has been initialized
+by all PEs before it is used.
+
+If the active set does not change, 
 .B shmem\_barrier
 can be called
 repeatedly with the same 
@@ -149,27 +182,45 @@ array. No additional synchronization
 beyond that implied by 
 .B shmem\_barrier
 itself is necessary in this case.
+
 The 
 .B shmem\_barrier
 routine can be used to
 portably ensure that memory access operations observe remote updates in the order
 enforced by initiator PEs.
+
+Calls to 
+.B shmem\_ctx\_quiet
+can be performed prior
+to calling the barrier routine to ensure completion of operations issued on
+additional contexts.
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
 .SS Examples
-The following barrier example is for C11 programs:
+
+
+
+The following barrier example is for C[11] programs:
+
 .nf
 #include <stdio.h>
 #include <shmem.h>
+
 int main(void)
 {
   static int x = 10101;
   static long pSync[SHMEM_BARRIER_SYNC_SIZE];
   for (int i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
      pSync[i] = SHMEM_SYNC_VALUE;
+
   shmem_init();
   int me = shmem_my_pe();
   int npes = shmem_n_pes();
+
   if (me % 2 == 0) {
      /* put to next even PE in a circular fashion */
      shmem_p(&x, 4, (me + 2) % npes);
@@ -181,3 +232,8 @@ int main(void)
   return 0;
 }
 .fi
+
+
+
+
+

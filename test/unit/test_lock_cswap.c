@@ -101,7 +101,7 @@ main(int argc, char* argv[])
         shmem_barrier_all();  /* sync all ranks */
 
         while (!got_lock) {
-            long lockval = shmem_long_cswap(&lock, 0, my_rank+1, 0);
+            long lockval = shmem_long_atomic_compare_swap(&lock, 0, my_rank+1, 0);
 
             if (lockval == 0) {
                 long unlockval;
@@ -109,7 +109,7 @@ main(int argc, char* argv[])
 
                 Vprintf("[%d] locked: lock_cnt(%d) lock(%lx)\n", my_rank, lock_cnt, lock);
 
-                unlockval = shmem_long_cswap(&lock, my_rank+1, 0, 0); /* RACE: PE 1 hangs here */
+                unlockval = shmem_long_atomic_compare_swap(&lock, my_rank+1, 0, 0); /* RACE: PE 1 hangs here */
                 if (unlockval != my_rank+1) {
                     printf("[%d] unlock failed, expected %lx got %lx\n", my_rank, (long) my_rank+1, unlockval);
                     shmem_global_exit(1);

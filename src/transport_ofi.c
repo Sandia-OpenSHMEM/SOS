@@ -90,14 +90,12 @@ shmem_internal_mutex_t          shmem_transport_ofi_lock;
 
 struct fabric_info shmem_transport_ofi_info = {0};
 
-static shmem_transport_ctx_t** shmem_transport_ofi_contexts;
-static size_t shmem_transport_ofi_num_ctx = 0;
+static shmem_transport_ctx_t** shmem_transport_ofi_contexts = NULL;
+static size_t shmem_transport_ofi_contexts_len = 0;
+static size_t shmem_transport_ofi_grow_size = 128;
 
 shmem_transport_ctx_t shmem_transport_ctx_default;
 shmem_ctx_t SHMEM_CTX_DEFAULT = (shmem_ctx_t) &shmem_transport_ctx_default;
-
-static size_t shmem_transport_ofi_grow_size = 128;
-static size_t shmem_transport_ofi_avail_ctx = 0;
 
 size_t SHMEM_Dtsize[FI_DATATYPE_LAST];
 
@@ -976,7 +974,8 @@ int query_for_fabric(struct fabric_info *info)
     return ret;
 }
 
-static int shmem_transport_ofi_target_ep_init() {
+static int shmem_transport_ofi_target_ep_init(void)
+{
     int ret = 0;
 
     struct fabric_info* info = &shmem_transport_ofi_info;
@@ -1073,7 +1072,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     ret = bind_enable_cntr_ep_resources(ctx);
     OFI_CHECK_RETURN_MSG(ret, "context bind/enable CNTR endpoint failed (%s)\n", fi_strerror(errno));
 
-    if (ctx->options | SHMEMX_CTX_BOUNCE_BUFFER &&
+    if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER &&
         shmem_transport_ofi_bounce_buffer_size > 0 &&
         shmem_transport_ofi_max_bounce_buffers > 0)
     {
@@ -1132,11 +1131,6 @@ int shmem_transport_init(void)
     ret = allocate_fabric_resources(&shmem_transport_ofi_info);
     if (ret != 0) return ret;
 
-    shmem_transport_ofi_avail_ctx = shmem_transport_ofi_grow_size;
-
-    shmem_transport_ofi_contexts = malloc(shmem_transport_ofi_avail_ctx
-                                          * sizeof(shmem_transport_ctx_t*));
-
     /* The current bounce buffering implementation is only compatible with
      * providers that don't require FI_CONTEXT */
     if (shmem_transport_ofi_info.p_info->mode & FI_CONTEXT) {
@@ -1191,19 +1185,28 @@ int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
     SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
 
     int ret;
-    int id = shmem_transport_ofi_num_ctx;
+    int id;
 
-    /* FIXME: This does not do resource cleanup 
-     * on error, it just returns. This is consistent with how
-     * initialization worked before, but is worse since context creation
-     * is not necessarily do-or-die.
-     *
-     * This also does not reuse entries from contexts that were freed.
+    /* FIXME: Context creation does not do resource cleanup on error, it just
+     * returns. This is consistent with how initialization worked before, but
+     * is worse since context creation is not necessarily do-or-die.
      */
-    if (shmem_transport_ofi_num_ctx == shmem_transport_ofi_avail_ctx) {
-        shmem_transport_ofi_avail_ctx += shmem_transport_ofi_grow_size;
+
+    /* Look for an open slot in the contexts array */
+    for (id = 0; id < shmem_transport_ofi_contexts_len; id++)
+        if (shmem_transport_ofi_contexts[id] == NULL) break;
+
+    /* If none found, grow the array */
+    if (id >= shmem_transport_ofi_contexts_len) {
+        id = shmem_transport_ofi_contexts_len;
+
+        ssize_t i = shmem_transport_ofi_contexts_len;
+        shmem_transport_ofi_contexts_len += shmem_transport_ofi_grow_size;
         shmem_transport_ofi_contexts = realloc(shmem_transport_ofi_contexts,
-               shmem_transport_ofi_avail_ctx * sizeof(shmem_transport_ctx_t*));
+               shmem_transport_ofi_contexts_len * sizeof(shmem_transport_ctx_t*));
+
+        for ( ; i < shmem_transport_ofi_contexts_len; i++)
+            shmem_transport_ofi_contexts[i] = NULL;
 
         if (shmem_transport_ofi_contexts == NULL) {
             RAISE_ERROR_STR("Error: out of memory when allocating OFI ctx array");
@@ -1225,7 +1228,6 @@ int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
         free(ctxp);
     } else {
         shmem_transport_ofi_contexts[id] = ctxp;
-        shmem_transport_ofi_num_ctx++;
         *ctx = ctxp;
     }
 
@@ -1278,19 +1280,19 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 int shmem_transport_fini(void)
 {
     int ret;
-
-    /* Wait for acks before shutdown */
     size_t i;
-    for(i = 0; i < shmem_transport_ofi_num_ctx; ++i) {
-        shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[i];
-        if(ctx) {
-            shmem_transport_quiet(ctx); 
-            shmem_transport_ctx_destroy(ctx);
-            if (shmem_transport_ofi_contexts[i] != NULL) {
-                RAISE_ERROR_MSG("Unable to free ctx %zu", i);
-            }
+
+    /* Free all shareable contexts.  This performs a quiet on each context,
+     * ensuring all operations have completed before proceeding with shutdown. */
+
+    for (i = 0; i < shmem_transport_ofi_contexts_len; ++i) {
+        if (shmem_transport_ofi_contexts[i]) {
+            shmem_transport_quiet(shmem_transport_ofi_contexts[i]); 
+            shmem_transport_ctx_destroy(shmem_transport_ofi_contexts[i]);
         }
     }
+
+    if (shmem_transport_ofi_contexts) free(shmem_transport_ofi_contexts);
 
     shmem_transport_quiet(&shmem_transport_ctx_default); 
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
