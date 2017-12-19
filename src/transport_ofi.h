@@ -235,20 +235,20 @@ typedef struct shmem_transport_ofi_bounce_buffer_t shmem_transport_ofi_bounce_bu
 typedef int shmem_transport_ct_t;
 
 struct shmem_transport_ctx_t {
-  int                             id;
+    int                             id;
 #ifdef USE_CTX_LOCK
-  shmem_internal_mutex_t          lock;
+    shmem_internal_mutex_t          lock;
 #endif
-  long                            options;
-  struct fid_ep*                  cntr_ep;
-  struct fid_ep*                  cq_ep;
-  struct fid_stx*                 stx;
-  struct fid_cntr*                put_cntr;
-  struct fid_cntr*                get_cntr;
-  struct fid_cq*                  cq;
-  shmem_internal_atomic_uint64_t  pending_put_cntr;
-  shmem_internal_atomic_uint64_t  pending_get_cntr;
-  shmem_free_list_t              *bounce_buffers;
+    long                            options;
+    struct fid_ep*                  cntr_ep;
+    struct fid_ep*                  cq_ep;
+    struct fid_stx*                 stx;
+    struct fid_cntr*                put_cntr;
+    struct fid_cntr*                get_cntr;
+    struct fid_cq*                  cq;
+    shmem_internal_atomic_uint64_t  pending_put_cntr;
+    shmem_internal_atomic_uint64_t  pending_get_cntr;
+    shmem_free_list_t              *bounce_buffers;
 };
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
