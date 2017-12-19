@@ -1238,8 +1238,6 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 {
     int ret;
 
-    shmem_transport_quiet(ctx);
-
     ret = fi_close(&ctx->cntr_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Context CNTR endpoint close failed (%s)\n", fi_strerror(errno));
 
@@ -1286,6 +1284,7 @@ int shmem_transport_fini(void)
     for(i = 0; i < shmem_transport_ofi_num_ctx; ++i) {
         shmem_transport_ctx_t* ctx = shmem_transport_ofi_contexts[i];
         if(ctx) {
+            shmem_transport_quiet(ctx); 
             shmem_transport_ctx_destroy(ctx);
             if (shmem_transport_ofi_contexts[i] != NULL) {
                 RAISE_ERROR_MSG("Unable to free ctx %zu", i);
@@ -1293,6 +1292,7 @@ int shmem_transport_fini(void)
         }
     }
 
+    shmem_transport_quiet(&shmem_transport_ctx_default); 
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
 
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);

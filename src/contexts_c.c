@@ -56,7 +56,7 @@ shmem_ctx_destroy(shmem_ctx_t ctx)
         shmem_runtime_abort(100, PACKAGE_NAME " exited in error");
     }
 
-    //shmem_internal_quiet(ctx);
+    shmem_internal_quiet(ctx);
     shmem_transport_ctx_destroy((shmem_transport_ctx_t *) ctx);
 
     return;
