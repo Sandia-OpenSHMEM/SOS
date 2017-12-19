@@ -1,0 +1,82 @@
+.TH SHMEM_QUERY_THREAD 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_query_thread \- 
+Returns the level of thread support provided by the library.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B void
+.B shmem\_query\_thread(int
+.I *provided
+.B );
+
+
+
+./ sectionEnd
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "OUT " -
+.I provided
+- The thread level support provided by the OpenSHMEM implementation.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+The 
+.B shmem\_query\_thread
+call returns the level of thread support
+currently being provided. The value returned will be same as was returned in 
+.I provided
+by a call to 
+.BR "shmem\_init\_thread" ,
+if the OpenSHMEM library was
+initialized by 
+.BR "shmem\_init\_thread" .
+If the library was initialized by
+.BR "shmem\_init" ,
+the implementation can choose to provide any one of the defined
+thread levels, and 
+.B shmem\_query\_thread
+returns this thread level.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+None.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+None.
+
+./ sectionEnd
+
+
+
+

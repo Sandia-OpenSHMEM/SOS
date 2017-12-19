@@ -2,6 +2,23 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.4.0rc1
+---------
+
+- Added support for OFI FI_THREAD_COMPLETION thread safety model, needed to use
+  the SHMEM_THREAD_MULTIPLE mode with the PSM2 provider and others (see
+  --enable-thread-completion).  For providers that support FI_THREAD_SAFE, this
+  mode may also provider better performance for private and serialized
+  contexts.
+- Added manpages for OpenSHMEM 1.4 API routines.
+- Improved performance of private and serialized contexts.
+- Improved performance of shmem_fence operation.
+- Added memory barriers needed to support shared memory interactions between
+  threads and PEs.
+- Updated unit tests to remove use of deprecated API routines.
+- Improved portability of the profiling interfaces by using the standard etext
+  symbol to identify the start of the symmetric data segment.
+
 v1.4.0a1
 --------
 - Support for OpenSHMEM 1.4 specification.

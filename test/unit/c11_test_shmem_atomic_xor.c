@@ -48,6 +48,8 @@ enum op { XOR = 0, CTX_XOR, FETCH_XOR, CTX_FETCH_XOR };
 #define TEST_SHMEM_XOR(OP, TYPE)                                        \
   do {                                                                  \
     static TYPE remote = ~(TYPE)0;                                      \
+    const int mype = shmem_my_pe();                                     \
+    const int npes = shmem_n_pes();                                     \
     TYPE old;                                                           \
     if (npes-1 > sizeof(TYPE)) break; /* Avoid overflow */              \
     for (int i = 0; i < npes; i++)                                      \
@@ -93,9 +95,6 @@ enum op { XOR = 0, CTX_XOR, FETCH_XOR, CTX_FETCH_XOR };
 
 int main(int argc, char* argv[]) {
   shmem_init();
-
-  const int mype = shmem_my_pe();
-  const int npes = shmem_n_pes();
 
   int rc = EXIT_SUCCESS;
   TEST_SHMEM_XOR(XOR, unsigned int);

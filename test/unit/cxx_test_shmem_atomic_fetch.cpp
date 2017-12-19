@@ -38,6 +38,12 @@
 
 enum op { FETCH = 0, ATOMIC_FETCH, CTX_ATOMIC_FETCH };
 
+#ifdef ENABLE_DEPRECATED_TESTS
+#define DEPRECATED_FETCH shmem_fetch
+#else
+#define DEPRECATED_FETCH shmem_atomic_fetch
+#endif
+
 #define TEST_SHMEM_FETCH(OP, TYPE)                              \
   do {                                                          \
     static TYPE remote;                                         \
@@ -48,7 +54,7 @@ enum op { FETCH = 0, ATOMIC_FETCH, CTX_ATOMIC_FETCH };
     shmem_barrier_all();                                        \
     switch (OP) {                                               \
       case FETCH:                                               \
-        val = shmem_fetch(&remote, (mype + 1) % npes);          \
+        val = DEPRECATED_FETCH(&remote, (mype + 1) % npes);     \
         break;                                                  \
       case ATOMIC_FETCH:                                        \
         val = shmem_atomic_fetch(&remote, (mype + 1) % npes);   \
@@ -67,10 +73,13 @@ enum op { FETCH = 0, ATOMIC_FETCH, CTX_ATOMIC_FETCH };
     }                                                           \
   } while (false)
 
+
 int main(int argc, char* argv[]) {
   shmem_init();
 
   int rc = EXIT_SUCCESS;
+
+#ifdef ENABLE_DEPRECATED_TESTS
   TEST_SHMEM_FETCH(FETCH, float);
   TEST_SHMEM_FETCH(FETCH, double);
   TEST_SHMEM_FETCH(FETCH, int);
@@ -85,6 +94,7 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_FETCH(FETCH, uint64_t);
   TEST_SHMEM_FETCH(FETCH, size_t);
   TEST_SHMEM_FETCH(FETCH, ptrdiff_t);
+#endif /* ENABLE_DEPRECATED_TESTS */
 
   TEST_SHMEM_FETCH(ATOMIC_FETCH, float);
   TEST_SHMEM_FETCH(ATOMIC_FETCH, double);

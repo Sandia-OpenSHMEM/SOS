@@ -1,16 +1,21 @@
-.TH SHMEM_GET 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
+.TH SHMEM_GET 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_get \- 
 Copies data from a specified PE.
+
 ./ sectionEnd
+
+
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
+
 ./ sectionStart
 .SS C11:
+
 .B void
-.B shmem_get(TYPE
+.B shmem\_get(TYPE
 .IB "*dest" ,
 .B const
 .B TYPE
@@ -20,12 +25,34 @@ Copies data from a specified PE.
 .B int
 .I pe
 .B );
+
+
+
+.B void
+.B shmem\_get(shmem_ctx_t
+.IB "ctx" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.B int
+.I pe
+.B );
+
+
+
 ./ sectionEnd
+
+
 where TYPE is one of the standard RMA types specified by Table 1.
 ./ sectionStart
 .SS C/C++:
+
 .B void
-.B shmem_<TYPENAME>_get(TYPE
+.B shmem\_TYPENAME\_get(TYPE
 .IB "*dest" ,
 .B const
 .B TYPE
@@ -35,11 +62,33 @@ where TYPE is one of the standard RMA types specified by Table 1.
 .B int
 .I pe
 .B );
+
+
+
+.B void
+.B shmem\_ctx\_TYPENAME\_get(shmem_ctx_t
+.IB "ctx" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.B int
+.I pe
+.B );
+
+
+
 ./ sectionEnd
+
+
 where TYPE is one of the standard RMA types and has a corresponding TYPENAME specified by Table 1.
 ./ sectionStart
+
 .B void
-.B shmem_get<SIZE>(void
+.B shmem\_getSIZE(void
 .IB "*dest" ,
 .B const
 .B void
@@ -49,11 +98,33 @@ where TYPE is one of the standard RMA types and has a corresponding TYPENAME spe
 .B int
 .I pe
 .B );
+
+
+
+.B void
+.B shmem\_ctx\_getSIZE(shmem_ctx_t
+.IB "ctx" ,
+.B void
+.IB "*dest" ,
+.B const
+.B void
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.B int
+.I pe
+.B );
+
+
+
 ./ sectionEnd
+
+
 where SIZE is one of 8, 16, 32, 64, 128.
 ./ sectionStart
+
 .B void
-.B shmem_getmem(void
+.B shmem\_getmem(void
 .IB "*dest" ,
 .B const
 .B void
@@ -63,37 +134,82 @@ where SIZE is one of 8, 16, 32, 64, 128.
 .B int
 .I pe
 .B );
+
+
+
+.B void
+.B shmem\_ctx\_getmem(shmem_ctx_t
+.IB "ctx" ,
+.B void
+.IB "*dest" ,
+.B const
+.B void
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.B int
+.I pe
+.B );
+
+
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
+
+.B ***************DEPRECATED***************
 .SS Fortran:
+
 .nf
+
 .BR "INTEGER " "nelems, pe"
-.BR "CALL " "SHMEM_CHARACTER_GET(dest, source, nelems, pe)"
-.BR "CALL " "SHMEM_COMPLEX_GET(dest, source, nelems, pe)"
-.BR "CALL " "SHMEM_DOUBLE_GET(dest, source, nelems, pe)"
-.BR "CALL " "SHMEM_GET4(dest, source, nelems, pe)"
-.BR "CALL " "SHMEM_GET8(dest, source, nelems, pe)"
-.BR "CALL " "SHMEM_GET32(dest, source, nelems, pe)"
-.BR "CALL " "SHMEM_GET64(dest, source, nelems, pe)"
-.BR "CALL " "SHMEM_GET128(dest, source, nelems, pe)"
-.BR "CALL " "SHMEM_GETMEM(dest, source, nelems, pe)"
-.BR "CALL " "SHMEM_INTEGER_GET(dest, source, nelems, pe)"
-.BR "CALL " "SHMEM_LOGICAL_GET(dest, source, nelems, pe)"
-.BR "CALL " "SHMEM_REAL_GET(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_CHARACTER\_GET(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_COMPLEX\_GET(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_DOUBLE\_GET(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_GET4(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_GET8(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_GET32(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_GET64(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_GET128(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_GETMEM(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_INTEGER\_GET(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_LOGICAL\_GET(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_REAL\_GET(dest, source, nelems, pe)"
+
 .fi
+.B ****************************************
+
 ./ sectionEnd
+
+
+
+
 ./ sectionStart
+
 .SH DESCRIPTION
 .SS Arguments
+.BR "IN " -
+.I ctx
+- The context on which to perform the operation.
+When this argument is not provided, the operation is performed on
+SHMEM\_CTX\_DEFAULT.
+
+
 .BR "OUT " -
 .I dest
 - Local data object to be updated.
+
+
 .BR "IN " -
 .I source
 - Data object on the PE identified by 
 .I pe
 that contains the data to be copied. This data object must be remotely
 accessible.
+
+
 .BR "IN " -
 .I nelems
 - Number of elements in the 
@@ -104,67 +220,96 @@ arrays.
 .I nelems
 must be of type 
 .I size\_t
-for C. If you are
+for C. When
 using Fortran, it must be a constant, variable, or array element of default
 integer type.
+
+
 .BR "IN " -
 .I pe
 - PE number of the remote PE. 
 .I pe
 must
-be of type integer. If you are using Fortran, it must be a constant,
+be of type integer. When using Fortran, it must be a constant,
 variable, or array element of default integer type.
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Description
+
 The get routines provide a method for copying a contiguous symmetric data
 object from a different PE to a contiguous data object on the local
 PE. The routines return after the data has been delivered to the
 .I "dest"
 array on the local PE. 
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
+
 The 
 .I "dest"
 and 
 .I "source"
 data objects must conform to typing constraints,
 which are as follows:
+
 .TP 25
 Routine
 Data type of 
 .I dest
 and 
 .I source
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
 .TP 25
 shmem\_getmem
 Fortran: Any noncharacter type. C: Any data type. nelems is scaled in bytes.
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 shmem\_get4, shmem\_get32
 Any noncharacter type that has a storage size equal to 32 bits.
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 shmem\_get8
 C: Any noncharacter type that has a storage size equal to 8 bits.
 ./ sectionEnd
+
+
+
 ./ sectionStart
 Fortran: Any noncharacter type that has a storage size equal to 64 bits.
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 shmem\_get64
 Any noncharacter type that has a storage size equal to 64 bits.
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 shmem\_get128
 Any noncharacter type that has a storage size equal to 128 bits.
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 SHMEM\_CHARACTER\_GET
@@ -176,48 +321,76 @@ and
 .I "dest"
 variables are ignored.
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 SHMEM\_COMPLEX\_GET
 Elements of type complex of default size.
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 SHMEM\_DOUBLE\_GET
 Fortran: Elements of type double precision.
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 SHMEM\_INTEGER\_GET
 Elements of type integer.
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 SHMEM\_LOGICAL\_GET
 Elements of type logical.
 ./ sectionEnd
+
+
 ./ sectionStart
 .TP 25
 SHMEM\_REAL\_GET
 Elements of type real.
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS Return Values
+
 None.
+
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Notes
+
 Please refer to the subsection on the Memory Model for the definition of the term "remotely accessible".
-If you are using Fortran, data types must be of default size. For example, a real
+When using Fortran, data types must be of default size. For example, a real
 variable must be declared as REAL, REAL*4, or
 REAL(KIND=KIND(1.0)).
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
 .SS Examples
+
+
+
 Consider this example for Fortran.
+
 .nf
 PROGRAM REDUCTION
 INCLUDE "shmem.fh"
+
 REAL VALUES, SUM
 COMMON /C/ VALUES
 REAL WORK
@@ -233,6 +406,11 @@ PRINT*,'PE ',SHMEM_MY_PE(),' COMPUTED SUM=',SUM
 CALL SHMEM_BARRIER_ALL
 END
 .fi
+
+
+
+
+
 .SS Table 1:
 Standard RMA Types and Names
 .TP 25
