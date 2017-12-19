@@ -16,6 +16,7 @@
 #ifndef SHMEM_SYNCHRONIZATION_H
 #define SHMEM_SYNCHRONIZATION_H
 
+#include "shmem_atomic.h"
 #include "shmem_comm.h"
 #include "transport.h"
 
@@ -32,9 +33,7 @@ shmem_internal_quiet(shmem_ctx_t ctx)
     ret = shmem_transport_xpmem_quiet();
     if (0 != ret) { RAISE_ERROR(ret); }
 #else
-    if (shmem_internal_thread_level != SHMEM_THREAD_SINGLE) {
-        shmem_internal_membar();
-    }
+    shmem_internal_membar();
 #endif
 }
 
@@ -51,9 +50,7 @@ shmem_internal_fence(shmem_ctx_t ctx)
     ret = shmem_transport_xpmem_fence();
     if (0 != ret) { RAISE_ERROR(ret); }
 #else
-    if (shmem_internal_thread_level != SHMEM_THREAD_SINGLE) {
-        shmem_internal_membar();
-    }
+    shmem_internal_membar_store();
 #endif
 }
 
@@ -131,8 +128,15 @@ shmem_internal_fence(shmem_ctx_t ctx)
     } while(0)
 
 #if defined(ENABLE_HARD_POLLING)
-#define SHMEM_WAIT(var, value) SHMEM_WAIT_POLL(var, value)
-#define SHMEM_WAIT_UNTIL(var, cond, value) SHMEM_WAIT_UNTIL_POLL(var, cond, value)
+#define SHMEM_WAIT(var, value) do {                                     \
+        SHMEM_WAIT_POLL(var, value);                                    \
+        shmem_internal_membar_load();                                   \
+    } while (0)
+
+#define SHMEM_WAIT_UNTIL(var, cond, value) do                           \
+        SHMEM_WAIT_UNTIL_POLL(var, cond, value);                        \
+        shmem_internal_membar_load();                                   \
+    } while (0) 
 
 #else
 #define SHMEM_WAIT(var, value) do {                                     \
@@ -141,6 +145,7 @@ shmem_internal_fence(shmem_ctx_t ctx)
         } else {                                                        \
             SHMEM_WAIT_POLL(var, value);                                \
         }                                                               \
+        shmem_internal_membar_load();                                   \
     } while (0)
 
 #define SHMEM_WAIT_UNTIL(var, cond, value) do {                         \
@@ -149,6 +154,7 @@ shmem_internal_fence(shmem_ctx_t ctx)
         } else {                                                        \
             SHMEM_WAIT_UNTIL_POLL(var, cond, value);                    \
         }                                                               \
+        shmem_internal_membar_load();                                   \
     } while (0)
 #endif /* HARD_POLLING */
 

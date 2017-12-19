@@ -24,7 +24,6 @@
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
 #include "shmemx.h"
-#include "shmem_atomic.h"
 
 #ifdef USE_ON_NODE_COMMS
 extern char *shmem_internal_location_array;
@@ -147,13 +146,6 @@ shmem_internal_put_wait(shmem_ctx_t ctx, long *completion)
 {
     shmem_transport_put_wait((shmem_transport_ctx_t *)ctx, completion);
     /* on-node is always blocking, so this is a no-op for them */
-#if USE_XPMEM
-    shmem_internal_membar_store();
-#else
-    if (shmem_internal_thread_level != SHMEM_THREAD_SINGLE) {
-        shmem_internal_membar_store();
-    }
-#endif
 }
 
 
@@ -201,13 +193,6 @@ shmem_internal_get_wait(shmem_ctx_t ctx)
 {
     shmem_transport_get_wait((shmem_transport_ctx_t *)ctx);
     /* on-node is always blocking, so this is a no-op for them */
-#if USE_XPMEM
-    shmem_internal_membar_load();
-#else
-    if (shmem_internal_thread_level != SHMEM_THREAD_SINGLE) {
-        shmem_internal_membar_load();
-    }
-#endif
 }
 
 static inline

@@ -19,6 +19,7 @@
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "transport.h"
+#include "shmem_synchronization.h"
 
 #ifdef ENABLE_PROFILING
 #include "pshmem.h"
@@ -55,6 +56,7 @@ shmem_ctx_destroy(shmem_ctx_t ctx)
         shmem_runtime_abort(100, PACKAGE_NAME " exited in error");
     }
 
+    shmem_internal_quiet(ctx);
     shmem_transport_ctx_destroy((shmem_transport_ctx_t *) ctx);
 
     return;

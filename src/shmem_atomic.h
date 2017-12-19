@@ -80,28 +80,34 @@ shmem_spinlock_fini(shmem_spinlock_t *lock)
 static inline
 void
 shmem_internal_membar(void) {
+#if USE_XPMEM || shmem_internal_thread_level != SHMEM_THREAD_SINGLE 
     __sync_synchronize();
+#endif
     return;
 }
 
 static inline
 void
 shmem_internal_membar_load(void) {
-#if defined(__i386__) || defined(__x86_64__)
+#if USE_XPMEM || shmem_internal_thread_level != SHMEM_THREAD_SINGLE 
+#  if defined(__i386__) || defined(__x86_64__)
     __asm__ __volatile__ ("lfence" ::: "memory"); 
-#else
+#  else
     __sync_synchronize();
-#endif    
+#  endif    
+#endif
     return;
 }
 
 static inline
 void
 shmem_internal_membar_store(void) {
-#if defined(__i386__) || defined(__x86_64__)
+#if USE_XPMEM || shmem_internal_thread_level != SHMEM_THREAD_SINGLE 
+#  if defined(__i386__) || defined(__x86_64__)
     __asm__ __volatile__ ("sfence" ::: "memory");
-#else
+#  else
     __sync_synchronize();
+#  endif
 #endif
     return;
 }
@@ -112,21 +118,27 @@ shmem_internal_membar_store(void) {
 static inline
 void
 shmem_internal_membar(void) {
+#if USE_XPMEM || shmem_internal_thread_level != SHMEM_THREAD_SINGLE 
     atomic_thread_fence(memory_order_seq_cst);
+#endif
     return;
 }
 
 static inline
 void
 shmem_internal_membar_load(void) {
+#if USE_XPMEM || shmem_internal_thread_level != SHMEM_THREAD_SINGLE 
     atomic_thread_fence(memory_order_acquire);
+#endif
     return;
 }
 
 static inline
 void
 shmem_internal_membar_store(void) {
+#if USE_XPMEM || shmem_internal_thread_level != SHMEM_THREAD_SINGLE 
     atomic_thread_fence(memory_order_release);
+#endif
     return;
 }
 

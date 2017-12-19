@@ -158,7 +158,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL')
                                                                                                \
         COMP(cond, *(var), value, cmpret);                                                     \
         if (cmpret) {                                                                          \
-            /* TODO: Memory ordering */                                                        \
+            shmem_internal_membar_load();                                                      \
         }                                                                                      \
         return cmpret;                                                                         \
     }

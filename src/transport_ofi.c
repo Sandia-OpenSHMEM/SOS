@@ -1238,8 +1238,6 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 {
     int ret;
 
-    shmem_transport_quiet(ctx);
-
     ret = fi_close(&ctx->cntr_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Context CNTR endpoint close failed (%s)\n", fi_strerror(errno));
 
