@@ -22,10 +22,6 @@
 #include <rdma/fi_rma.h>
 #include <rdma/fi_cm.h>
 #include <rdma/fi_atomic.h>
-#include <netdb.h>
-#if USE_PORTALS4
-#include <portals4.h>
-#endif
 #include <string.h>
 #include <unistd.h>
 #include <stddef.h>
