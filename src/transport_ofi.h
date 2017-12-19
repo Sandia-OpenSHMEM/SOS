@@ -33,6 +33,13 @@
 #include "shmem_free_list.h"
 #include "shmem_internal.h"
 #include "shmem_atomic.h"
+#include <sys/types.h>
+
+#ifdef HAVE_SYS_GETTID
+#define _GNU_SOURCE
+#include <sys/syscall.h>
+#endif
+
 
 #ifndef ENABLE_HARD_POLLING
 extern struct fid_cntr*                 shmem_transport_ofi_target_cntrfd;

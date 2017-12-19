@@ -20,7 +20,6 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <inttypes.h>
-#include <sys/types.h>
 
 #if HAVE_FNMATCH_H
 #include <fnmatch.h>
@@ -90,15 +89,18 @@ static char                     myephostname[EPHOSTNAMELEN];
 shmem_internal_mutex_t          shmem_transport_ofi_lock;
 /* Need a syscall to gettid() because glibc doesn't provide a wrapper
  * (see gettid manpage in the NOTES section): */
-    #ifndef __APPLE__
-        #include <sys/syscall.h>
-        #ifdef SYS_gettid
-        #define gettid() syscall(SYS_gettid)
-        #else
-        #warning "SYS_gettid not available"
-        #endif
-    #endif
-#endif
+#ifndef __APPLE__
+#ifdef HAVE_SYS_GETTID
+static inline
+TID_TYPE shmem_transport_ofi_gettid()
+{
+    return syscall(SYS_gettid);
+}
+#else
+#error "SYS_gettid not available"
+#endif /* HAVE_SYS_GETTID */
+#endif /* APPLE */
+#endif /* ENABLE_THREADS */
 
 struct fabric_info shmem_transport_ofi_info = {0};
 
@@ -394,7 +396,6 @@ int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx)
         OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to CNTR endpoint failed");
 
         shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt += 1;
-        printf("here3\n");
     }
 
     /* Attach counter for obtaining put completions */
@@ -1159,7 +1160,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
             pthread_threadid_np(NULL, &ctx->tid);
         #else
         if (ctx->options & SHMEM_CTX_PRIVATE)
-            ctx->tid = gettid();
+            ctx->tid = shmem_transport_ofi_gettid();
         #endif
     } else {
         stx_idx = 0;
