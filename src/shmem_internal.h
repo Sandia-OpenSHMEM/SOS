@@ -26,6 +26,7 @@
 #include "runtime.h"
 #include "config.h"
 #include "shmem_env.h"
+#include "shmem_decl.h"
 
 extern int shmem_internal_my_pe;
 extern int shmem_internal_num_pes;
@@ -43,6 +44,7 @@ extern long shmem_internal_data_length;
 
 /* Note: must be accompanied by shmem_internal_my_pe in arguments */
 #define RAISE_PE_PREFIX "[%04d]        "
+
 
 #define RAISE_WARN(ret)                                                 \
     do {                                                                \
@@ -344,22 +346,22 @@ typedef pthread_mutex_t shmem_internal_mutex_t;
 
 #   define SHMEM_MUTEX_INIT(_mutex)                                     \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
-            pthread_mutex_init(&_mutex, NULL); \
+        if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE)       \
+            pthread_mutex_init(&_mutex, NULL);                          \
     } while (0)
 #   define SHMEM_MUTEX_DESTROY(_mutex)                                  \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE)       \
             pthread_mutex_destroy(&_mutex);                             \
     } while (0)
 #   define SHMEM_MUTEX_LOCK(_mutex)                                     \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE)       \
             pthread_mutex_lock(&_mutex);                                \
     } while (0)
 #   define SHMEM_MUTEX_UNLOCK(_mutex)                                   \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE)       \
             pthread_mutex_unlock(&_mutex);                              \
     } while (0)
 
@@ -369,22 +371,22 @@ typedef shmem_spinlock_t shmem_internal_mutex_t;
 
 #   define SHMEM_MUTEX_INIT(_mutex)                                     \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE)       \
             shmem_spinlock_init(&_mutex);                               \
     } while (0)
 #   define SHMEM_MUTEX_DESTROY(_mutex)                                  \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE)       \
             shmem_spinlock_fini(&_mutex);                               \
     } while (0)
 #   define SHMEM_MUTEX_LOCK(_mutex)                                     \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE)       \
             shmem_spinlock_lock(&_mutex);                               \
     } while (0)
 #   define SHMEM_MUTEX_UNLOCK(_mutex)                                   \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE)       \
             shmem_spinlock_unlock(&_mutex);                             \
     } while (0)
 
@@ -402,7 +404,7 @@ extern shmem_internal_mutex_t shmem_internal_mutex_alloc;
 void shmem_internal_start_pes(int npes);
 void shmem_internal_init(int tl_requested, int *tl_provided);
 void shmem_internal_finalize(void);
-void shmem_internal_global_exit(int status);
+void shmem_internal_global_exit(int status) SHMEM_ATTRIBUTE_NORETURN;
 char *shmem_internal_nodename(void);
 
 int shmem_internal_symmetric_init(void);

@@ -208,7 +208,7 @@ doit(int len, double *latency, double *bandwidth)
 
         shmem_putmem( buf, buf, len, 1 );
 
-        shmem_wait( (long *)&buf[len-1], (long)0 );
+        shmem_long_wait_until( (long *)&buf[len-1], SHMEM_CMP_NE, (long)0 );
 
         end = shmemx_wtime();
 
@@ -222,7 +222,7 @@ doit(int len, double *latency, double *bandwidth)
 
     } else {
 
-        shmem_wait( (long *)&buf[len-1], (long)1 );
+        shmem_long_wait_until( (long *)&buf[len-1], SHMEM_CMP_NE, (long)1 );
 
         buf[len-1] = (char)1;
 

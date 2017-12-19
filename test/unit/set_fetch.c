@@ -43,11 +43,11 @@ double    var_double   = -1;
 do {                                                                    \
     printf("%d: Entering %s test\n", me, #typename);                    \
     if (me == 0)                                                        \
-        shmem_##typename##_set(&var_##typename, nproc-1, me);           \
+        shmem_##typename##_atomic_set(&var_##typename, nproc-1, me);    \
                                                                         \
-    while (0 > shmem_##typename##_fetch(&var_##typename, me)) ;         \
+    while (0 > shmem_##typename##_atomic_fetch(&var_##typename, me)) ;  \
                                                                         \
-    shmem_##typename##_set(&var_##typename, me, (me+1) % nproc);        \
+    shmem_##typename##_atomic_set(&var_##typename, me, (me+1) % nproc); \
                                                                         \
     if (var_##typename - ((me + (nproc-1)) % nproc) > 0.01) {           \
         printf("[%d] Type '%s' expected %d, got " fmt "\n", me,         \

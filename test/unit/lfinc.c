@@ -29,7 +29,7 @@
  * SOFTWARE.
  */
 
-/* long_finc neighbor - Perf test shmem_atomic_finc(); */
+/* long_finc neighbor - Perf test shmem_atomic_fetch_inc(); */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -84,7 +84,7 @@ int main( int argc, char *argv[])
     start_time = shmemx_wtime();
     for(j=0,elapsed=0.0; j < loops; j++) {
         start_time = shmemx_wtime();
-        lval = shmem_long_finc( (void*)&data[1], neighbor );
+        lval = shmem_long_atomic_fetch_inc( (void*)&data[1], neighbor );
         elapsed += shmemx_wtime() - start_time;
         if (lval != (long) j) {
             fprintf(stderr,"[%d] Test: FAIL previous val %ld != %d Exit.\n",
@@ -108,8 +108,8 @@ int main( int argc, char *argv[])
     if (my_pe == 0 ) {
         if (rc == 0 && Verbose)
             fprintf(stderr,"[%d] finc neighbor: PASSED.\n",my_pe);
-        fprintf(stderr,"[%d] %d loops of shmem_long_finc() in %6.4f secs\n"
-                "  %2.6f usecs per shmem_long_finc()\n",
+        fprintf(stderr,"[%d] %d loops of shmem_long_atomic_fetch_inc() in %6.4f secs\n"
+                "  %2.6f usecs per shmem_long_atomic_fetch_inc()\n",
                     my_pe,loops,elapsed,((elapsed*100000.0)/(double)loops));
     }
     shmem_free(data);

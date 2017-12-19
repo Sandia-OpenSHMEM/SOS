@@ -55,7 +55,8 @@ libsma_la_SOURCES = \
 	shmem_decl.h \
 	shmem_env.c \
 	shmem_env.h \
-	shmem_env_defs.h
+	shmem_env_defs.h \
+	contexts_c.c
 
 nodist_libsma_la_SOURCES = \
 	$(GEN_BINDINGS)
@@ -94,6 +95,7 @@ endif
 if !USE_PORTALS4
 if !USE_OFI
 libsma_la_SOURCES += \
+	transport_none.c \
 	transport_none.h
 endif
 endif
@@ -149,9 +151,7 @@ EXTRA_DIST = shmem_compiler_script.in \
              collectives_f.c4         \
              data_c.c4                \
              data_f.c4                \
-             synchronization_c.c4     \
-             shmem_bind_c.m4          \
-             shmem_bind_f.m4
+             synchronization_c.c4
 
 do_subst = sed -e 's|[@]PERL[@]|$(PERL)|g' \
                -e 's|[@]WRAPPER_COMPILER_CC[@]|$(WRAPPER_COMPILER_CC)|g' \
@@ -201,5 +201,5 @@ oshrun: shmem_launcher_script.in Makefile
 
 SUFFIXES = .c4
 
-.c4.c: shmem_bind_c.m4 shmem_bind_f.m4
-	$(AM_V_GEN) $(M4) -I$(top_srcdir)/src $< > $@
+.c4.c: $(top_srcdir)/bindings/shmem_bind_c.m4 $(top_srcdir)/bindings/shmem_bind_f.m4
+	$(AM_V_GEN) $(M4) -I$(top_srcdir)/bindings -I$(top_builddir)/bindings $< > $@

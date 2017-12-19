@@ -164,10 +164,10 @@ main(int argc, char* argv[])
             if (Slow) {
                 /* wait for each put to complete */
                 for(k=0; k < nWords; k++)
-                    shmem_wait(&Target[k],proc);
+                    shmem_long_wait_until(&Target[k], SHMEM_CMP_NE, proc);
             } else {
                 /* wait for last word to be written */
-                shmem_wait(&Target[nWords-1],proc);
+                shmem_long_wait_until(&Target[nWords-1], SHMEM_CMP_NE, proc);
             }
         }
 

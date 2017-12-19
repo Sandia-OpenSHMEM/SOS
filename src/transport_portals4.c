@@ -126,6 +126,21 @@ shmem_internal_mutex_t shmem_internal_mutex_ptl4_event_slots;
 shmem_internal_mutex_t shmem_internal_mutex_ptl4_nb_fence;
 #endif
 
+shmem_transport_ctx_t shmem_transport_ctx_default;
+shmem_ctx_t SHMEM_CTX_DEFAULT = (shmem_ctx_t) &shmem_transport_ctx_default;
+
+void shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx) {
+  *ctx = NULL;
+  return;
+}
+
+void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx) {
+  if (ctx != NULL) {
+      RAISE_ERROR_STR("Invalid ctx_destroy");
+  }
+  return;
+}
+
 static
 void
 init_bounce_buffer(shmem_free_list_item_t *item)
@@ -431,17 +446,17 @@ shmem_transport_startup(void)
     shmem_transport_portals4_max_fetch_atomic_size = ni_limits.max_fetch_atomic_size;
     shmem_transport_portals4_max_msg_size = ni_limits.max_msg_size;
 
-    if (shmem_transport_portals4_max_volatile_size < sizeof(long double complex)) {
+    if (shmem_transport_portals4_max_volatile_size < sizeof(long double _Complex)) {
         RETURN_ERROR_MSG("Max volatile size found to be %lu, too small to continue\n",
                          (unsigned long) shmem_transport_portals4_max_volatile_size);
         goto cleanup;
     }
-    if (shmem_transport_portals4_max_atomic_size < sizeof(long double complex)) {
+    if (shmem_transport_portals4_max_atomic_size < sizeof(long double _Complex)) {
         RETURN_ERROR_MSG("Max atomic size found to be %lu, too small to continue\n",
                          (unsigned long) shmem_transport_portals4_max_atomic_size);
         goto cleanup;
     }
-    if (shmem_transport_portals4_max_fetch_atomic_size < sizeof(long double complex)) {
+    if (shmem_transport_portals4_max_fetch_atomic_size < sizeof(long double _Complex)) {
         RETURN_ERROR_MSG("Max fetch atomic size found to be %lu, too small to continue\n",
                          (unsigned long) shmem_transport_portals4_max_fetch_atomic_size);
         goto cleanup;
@@ -632,12 +647,6 @@ shmem_transport_startup(void)
  cleanup:
     if (NULL != desired) free(desired);
     return ret;
-}
-
-
-void shmem_transport_print_info(void)
-{
-    printf("Network transport:      Portals\n");
 }
 
 

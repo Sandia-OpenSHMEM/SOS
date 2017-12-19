@@ -1,6 +1,7 @@
 sudo: required
 dist: trusty
 language: c
+dist: trusty
 compiler:
     #- clang
     - gcc
@@ -23,7 +24,7 @@ env:
           SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing"
         - >
           SOS_ENABLE_ERROR_TESTS=1
-          SOS_BUILD_OPTS="--enable-threads --enable-error-checking"
+          SOS_BUILD_OPTS="--disable-threads --enable-error-checking"
         - >
           SOS_ENABLE_ERROR_TESTS=1
           SOS_BUILD_OPTS="--with-cma --enable-error-checking --enable-profiling --disable-mr-scalable --enable-av-map --enable-remote-virtual-addressing"
@@ -34,7 +35,7 @@ env:
         - >
           SOS_ENABLE_ERROR_TESTS=1
           SMA_BARRIER_ALGORITHM=auto SMA_BCAST_ALGORITHM=auto SMA_REDUCE_ALGORITHM=auto SMA_COLLECT_ALGORITHM=auto SMA_FCOLLECT_ALGORITHM=auto
-          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-thread-completion"
         - >
           SOS_ENABLE_ERROR_TESTS=1
           SMA_BARRIER_ALGORITHM=linear SMA_BCAST_ALGORITHM=linear SMA_REDUCE_ALGORITHM=linear SMA_COLLECT_ALGORITHM=linear SMA_FCOLLECT_ALGORITHM=linear
@@ -98,7 +99,7 @@ before_install:
     - make install
     ## Build libfabric
     - cd $TRAVIS_SRC
-    - git clone --depth 10 https://github.com/ofiwg/libfabric.git libfabric
+    - git clone -b v1.5.1 --depth 10 https://github.com/ofiwg/libfabric.git libfabric
     - cd libfabric
     - ./autogen.sh
     - ./configure --prefix=$TRAVIS_INSTALL/libfabric

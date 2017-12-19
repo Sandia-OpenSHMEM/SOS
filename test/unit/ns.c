@@ -108,7 +108,7 @@ main(int argc, char *argv[])
         shmem_barrier_all();
 
         if (me & 1) {
-            swapped_val = shmem_long_swap (target, new_val, (me + 1) % npes);
+            swapped_val = shmem_long_atomic_swap(target, new_val, (me + 1) % npes);
             if (Verbose > 1)
                 printf("[%d] target %ld, swapped %ld\n",
                        me, *target, swapped_val);

@@ -158,7 +158,7 @@ main(int argc, char* argv[])
         if ( me == 0 ) {
             shmem_quiet();
             for(j=1; j < num_procs; j++) {
-                dst_int[j] = shmem_int_swap(src_int+j,0,j);
+                dst_int[j] = shmem_int_atomic_swap(src_int+j,0,j);
                 if (dst_int[j] != 4) {
                     printf("PE-%d dst_int[%d] %d != 4?\n",me,j,dst_int[j]);
                     shmem_global_exit(1);
@@ -175,7 +175,7 @@ main(int argc, char* argv[])
                 }
 
                 /* swap back */
-                dst_int[j] = shmem_int_swap(src_int+j,dst_int[j],j);
+                dst_int[j] = shmem_int_atomic_swap(src_int+j,dst_int[j],j);
                 if (dst_int[j] != 0) {
                     printf("PE-0 dst_int[%d] %d != 0?\n",j,dst_int[j]);
                     shmem_global_exit(1);
@@ -189,7 +189,7 @@ main(int argc, char* argv[])
             }
 
             for(j=1; j < num_procs; j++) {
-                dst_float[j] = shmem_float_swap(src_float+j,0.0,j);
+                dst_float[j] = shmem_float_atomic_swap(src_float+j,0.0,j);
                 if (dst_float[j] != 4.0) {
                     printf("PE-0 dst_float[%d] %f != 4.0?\n",j,dst_float[j]);
                     shmem_global_exit(1);
@@ -202,7 +202,7 @@ main(int argc, char* argv[])
                     shmem_global_exit(1);
                 }
                 /* swap back */
-                dst_float[j] = shmem_float_swap(src_float+j,dst_float[j],j);
+                dst_float[j] = shmem_float_atomic_swap(src_float+j,dst_float[j],j);
                 if (dst_float[j] != 0.0) {
                     printf("PE-0 dst_float[%d] %f != 0.0?\n",j,dst_float[j]);
                     shmem_global_exit(1);
@@ -215,7 +215,7 @@ main(int argc, char* argv[])
             }
 
             for(j=1; j < num_procs; j++) {
-                dst_double[j] = shmem_double_swap(src_double+j,0.0,j);
+                dst_double[j] = shmem_double_atomic_swap(src_double+j,0.0,j);
                 if (dst_double[j] != 8.0) {
                     printf("PE-0 dst_double[%d] %f != 8.0?\n",j,dst_double[j]);
                     shmem_global_exit(1);
@@ -226,7 +226,7 @@ main(int argc, char* argv[])
                     printf("PE-0 float rem(%f) != 0.0?\n",dtmp);
                     shmem_global_exit(1);
                 }
-                dst_double[j] = shmem_double_swap(src_double+j,dst_double[j],j);
+                dst_double[j] = shmem_double_atomic_swap(src_double+j,dst_double[j],j);
                 if (dst_double[j] != 0.0) {
                     printf("PE-0 dst_double[%d] %f != 0.0?\n",j,dst_double[j]);
                     shmem_global_exit(1);
@@ -239,7 +239,7 @@ main(int argc, char* argv[])
             }
 
             for(j=1; j < num_procs; j++) {
-                dst_long[j] = shmem_long_swap(src_long+j,0,j);
+                dst_long[j] = shmem_long_atomic_swap(src_long+j,0,j);
                 if (dst_long[j] != 8) {
                     printf("PE-0 dst_long[%d] %ld != 8?\n",j,dst_long[j]);
                     shmem_global_exit(1);
@@ -255,7 +255,7 @@ main(int argc, char* argv[])
                     shmem_global_exit(1);
                 }
                 /* swap back */
-                dst_long[j] = shmem_long_swap(src_long+j,dst_long[j],j);
+                dst_long[j] = shmem_long_atomic_swap(src_long+j,dst_long[j],j);
                 if (dst_long[j] != 0) {
                     printf("PE-%d dst_long[%d] %ld != 0?\n",me,j,dst_long[j]);
                     shmem_global_exit(1);
@@ -268,7 +268,7 @@ main(int argc, char* argv[])
             }
 
             for(j=1; j < num_procs; j++) {
-                dst_llong[j] = shmem_longlong_swap(src_llong+j,0,j);
+                dst_llong[j] = shmem_longlong_atomic_swap(src_llong+j,0,j);
                 if (dst_llong[j] != 16) {
                     printf("PE-%d dst_llong[%d] %lld != 16?\n",me,j,dst_llong[j]);
                     shmem_global_exit(1);
@@ -284,7 +284,7 @@ main(int argc, char* argv[])
                     shmem_global_exit(1);
                 }
                 /* swap back */
-                dst_llong[j] = shmem_longlong_swap(src_llong+j,dst_llong[j],j);
+                dst_llong[j] = shmem_longlong_atomic_swap(src_llong+j,dst_llong[j],j);
                 if (dst_llong[j] != 0) {
                     printf("PE-%d  dst_llong[%d] %lld != 0?\n", me,j,dst_llong[j]);
                     shmem_global_exit(1);

@@ -35,8 +35,8 @@ extern "C" {
 #endif
 
 define(`SHPRE', `p')dnl
-include(shmem_c_func.m4)dnl
-include(shmemx_c_func.m4)dnl
+include(shmem_c_func.h4)dnl
+include(shmemx_c_func.h4)dnl
 
 #ifdef __cplusplus
 } /* extern "C" */

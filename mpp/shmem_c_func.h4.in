@@ -1,0 +1,479 @@
+dnl Copyright (c) 2016 Intel Corporation. All rights reserved.
+dnl This software is available to you under the BSD license.
+dnl
+dnl This file is part of the Sandia OpenSHMEM software package. For license
+dnl information, see the LICENSE file in the top level directory of the
+dnl distribution.
+dnl
+
+#ifndef SHMEM_FUNCTION_ATTRIBUTES
+#  if SHMEM_HAVE_ATTRIBUTE_VISIBILITY == 1
+#     define SHMEM_FUNCTION_ATTRIBUTES __attribute__((visibility("default")))
+#  else
+#     define SHMEM_FUNCTION_ATTRIBUTES
+#  endif
+#endif
+
+#ifndef SHMEM_ATTRIBUTE_DEPRECATED
+#   if SHMEM_HAVE_ATTRIBUTE_DEPRECATED == 1
+#       define SHMEM_ATTRIBUTE_DEPRECATED __attribute__((deprecated))
+#   else
+#       define SHMEM_ATTRIBUTE_DEPRECATED
+#   endif
+#endif
+
+/* Library Setup, Exit, and Query Routines */
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_init(void);
+SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_init_thread(int requested, int *provided);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_finalize(void);
+SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_n_pes(void);
+SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_my_pe(void);
+#ifdef __cplusplus
+#  if __cplusplus >= 201103L
+[[noreturn]] void SHPRE()shmem_global_exit(int status) SHMEM_FUNCTION_ATTRIBUTES;
+#  else
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_global_exit(int status);
+#  endif
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+SHMEM_FUNCTION_ATTRIBUTES _Noreturn void SHPRE()shmem_global_exit(int status);
+#else
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_global_exit(int status);
+#endif
+
+SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_pe_accessible(int pe);
+SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_addr_accessible(const void *addr, int pe);
+SHMEM_FUNCTION_ATTRIBUTES void *SHPRE()shmem_ptr(const void *target, int pe);
+
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_info_get_version(int *major, int *minor);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_info_get_name(char *name);
+
+/* Memory Management Routines */
+SHMEM_FUNCTION_ATTRIBUTES void *SHPRE()shmem_malloc(size_t size);
+SHMEM_FUNCTION_ATTRIBUTES void *SHPRE()shmem_calloc(size_t count, size_t size);
+SHMEM_FUNCTION_ATTRIBUTES void *SHPRE()shmem_align(size_t alignment, size_t size);
+SHMEM_FUNCTION_ATTRIBUTES void *SHPRE()shmem_realloc(void *ptr, size_t size);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_free(void *ptr);
+
+/* Communicatoin Management Routines */
+SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_ctx_create(long options, shmem_ctx_t *ctx);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_destroy(shmem_ctx_t ctx);
+
+/* RMA: Elemental Data Put Routines */
+define(`SHMEM_C_P',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_p($2 *addr, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_P')
+
+define(`SHMEM_C_CTX_P',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_$1_p(shmem_ctx_t ctx, $2 *addr, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_CTX_P')
+
+/* RMA: Contiguous Data Put Routines */
+define(`SHMEM_C_PUT',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_put($2 *target, const $2 *source, size_t nelems, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_PUT')
+
+define(`SHMEM_C_CTX_PUT',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_$1_put(shmem_ctx_t ctx, $2 *target, const $2 *source, size_t nelems, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_CTX_PUT')
+
+define(`SHMEM_C_PUT_N',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_put$1(void* target, const void *source, size_t nelems, int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_PUT_N')
+SHMEM_C_PUT_N(mem,1);
+
+define(`SHMEM_C_CTX_PUT_N',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_put$1(shmem_ctx_t ctx, void* target, const void *source, size_t nelems, int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_CTX_PUT_N')
+SHMEM_C_CTX_PUT_N(mem,1);
+
+/* RMA: Strided Put Routines */
+define(`SHMEM_C_IPUT',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_iput($2 *target, const $2 *source,
+SH_PAD(`$1')                 ptrdiff_t tst, ptrdiff_t sst,
+SH_PAD(`$1')                 size_t len, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_IPUT')
+
+define(`SHMEM_C_CTX_IPUT',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_$1_iput(shmem_ctx_t ctx, $2 *target, const $2 *source,
+SH_PAD(`$1')                 ptrdiff_t tst, ptrdiff_t sst,
+SH_PAD(`$1')                 size_t len, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_CTX_IPUT')
+
+define(`SHMEM_C_IPUT_N',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_iput$1(void *target, const void *source,
+SH_PAD(`$1')                ptrdiff_t tst, ptrdiff_t sst, size_t len,
+SH_PAD(`$1')                int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_IPUT_N')
+
+define(`SHMEM_C_CTX_IPUT_N',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_iput$1(shmem_ctx_t ctx, void *target, const void *source,
+SH_PAD(`$1')                ptrdiff_t tst, ptrdiff_t sst, size_t len,
+SH_PAD(`$1')                int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_CTX_IPUT_N')
+
+/* RMA: Elemental Data Get Routines */
+define(`SHMEM_C_G',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_g(const $2 *addr, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_G')
+
+define(`SHMEM_C_CTX_G',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_ctx_$1_g(shmem_ctx_t ctx, const $2 *addr, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_CTX_G')
+
+/* RMA: Contiguous Data Get Routines */
+define(`SHMEM_C_GET',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_get($2 *target, const $2 *source, size_t nelems,int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_GET')
+
+define(`SHMEM_C_CTX_GET',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_$1_get(shmem_ctx_t ctx, $2 *target, const $2 *source, size_t nelems,int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_CTX_GET')
+
+define(`SHMEM_C_GET_N',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_get$1(void* target, const void *source, size_t nelems, int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_GET_N')
+SHMEM_C_GET_N(mem,1);
+
+define(`SHMEM_C_CTX_GET_N',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_get$1(shmem_ctx_t ctx, void* target, const void *source, size_t nelems, int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_CTX_GET_N')
+SHMEM_C_CTX_GET_N(mem,1);
+
+/* RMA: Strided Get Routines */
+define(`SHMEM_C_IGET',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_iget($2 *target, const $2 *source,
+SH_PAD(`$1')                 ptrdiff_t tst, ptrdiff_t sst,
+SH_PAD(`$1')                 size_t nelems, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_IGET')
+
+define(`SHMEM_C_CTX_IGET',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_$1_iget(shmem_ctx_t ctx, $2 *target, const $2 *source,
+SH_PAD(`$1')                 ptrdiff_t tst, ptrdiff_t sst,
+SH_PAD(`$1')                 size_t nelems, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_CTX_IGET')
+
+define(`SHMEM_C_IGET_N',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_iget$1(void* target, const void *source,
+SH_PAD(`$1')                ptrdiff_t tst, ptrdiff_t sst,
+SH_PAD(`$1')                size_t nelems, int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_IGET_N')
+
+define(`SHMEM_C_CTX_IGET_N',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_iget$1(shmem_ctx_t ctx, void* target, const void *source,
+SH_PAD(`$1')                ptrdiff_t tst, ptrdiff_t sst,
+SH_PAD(`$1')                size_t nelems, int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_CTX_IGET_N')
+
+/* RMA: Nonblocking Contiguous Data Put Routines */
+define(`SHMEM_C_PUT_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_put_nbi($2 *target, const $2 *source, size_t nelems, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_PUT_NBI')
+
+define(`SHMEM_C_CTX_PUT_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_$1_put_nbi(shmem_ctx_t ctx, $2 *target, const $2 *source, size_t nelems, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_CTX_PUT_NBI')
+
+define(`SHMEM_C_PUT_N_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_put$1_nbi(void* target, const void *source, size_t nelems, int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_PUT_N_NBI')
+SHMEM_C_PUT_N_NBI(mem,1);
+
+define(`SHMEM_C_CTX_PUT_N_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_put$1_nbi(shmem_ctx_t ctx, void* target, const void *source, size_t nelems, int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_CTX_PUT_N_NBI')
+SHMEM_C_CTX_PUT_N_NBI(mem,1);
+
+/* RMA: Nonblocking Contiguous Data Get Routines */
+define(`SHMEM_C_GET_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_get_nbi($2 *target, const $2 *source, size_t nelems, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_GET_NBI')
+
+define(`SHMEM_C_CTX_GET_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_$1_get_nbi(shmem_ctx_t ctx, $2 *target, const $2 *source, size_t nelems, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_CTX_GET_NBI')
+
+define(`SHMEM_C_GET_N_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_get$1_nbi(void* target, const void *source, size_t nelems, int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_GET_N_NBI')
+SHMEM_C_GET_N_NBI(mem,1);
+
+define(`SHMEM_C_CTX_GET_N_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_get$1_nbi(shmem_ctx_t ctx, void* target, const void *source, size_t nelems, int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_CTX_GET_N_NBI')
+SHMEM_C_CTX_GET_N_NBI(mem,1);
+
+/* AMO: Atomic Swap Routines */
+define(`SHMEM_C_SWAP',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_swap($2 *target, $2 value, int pe) SHMEM_ATTRIBUTE_DEPRECATED')dnl
+SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_SWAP')
+
+define(`SHMEM_C_ATOMIC_SWAP',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_atomic_swap($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_ATOMIC_SWAP')
+
+define(`SHMEM_C_CTX_ATOMIC_SWAP',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_ctx_$1_atomic_swap(shmem_ctx_t ctx, $2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_CTX_ATOMIC_SWAP')
+
+/* Special case, only enabled when C++ and C11 bindings are disabled */
+#if !defined(__cplusplus) && \
+    !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
+SHMEM_FUNCTION_ATTRIBUTES long SHPRE()shmem_swap(long *target, long value, int pe);
+#endif
+
+/* AMO: Atomic Conditional Swap Routines */
+define(`SHMEM_C_CSWAP',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_cswap($2 *target, $2 cond, $2 value, int pe) SHMEM_ATTRIBUTE_DEPRECATED')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_CSWAP')
+
+define(`SHMEM_C_ATOMIC_COMPARE_SWAP',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_atomic_compare_swap($2 *target, $2 cond, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_ATOMIC_COMPARE_SWAP')
+
+define(`SHMEM_C_CTX_ATOMIC_COMPARE_SWAP',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_ctx_$1_atomic_compare_swap(shmem_ctx_t ctx, $2 *target, $2 cond, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_CTX_ATOMIC_COMPARE_SWAP')
+
+/* AMO: Atomic Fetch-and-Add Routines */
+define(`SHMEM_C_FADD',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_fadd($2 *target, $2 value, int pe) SHMEM_ATTRIBUTE_DEPRECATED')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_FADD')
+
+define(`SHMEM_C_ATOMIC_FETCH_ADD',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_atomic_fetch_add($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_ATOMIC_FETCH_ADD')
+
+define(`SHMEM_C_CTX_ATOMIC_FETCH_ADD',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_ctx_$1_atomic_fetch_add(shmem_ctx_t ctx, $2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_CTX_ATOMIC_FETCH_ADD')
+
+/* AMO: Atomic Fetch-and-Increment Routines */
+define(`SHMEM_C_FINC',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_finc($2 *target, int pe) SHMEM_ATTRIBUTE_DEPRECATED')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_FINC')
+
+define(`SHMEM_C_ATOMIC_FETCH_INC',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_atomic_fetch_inc($2 *target, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_ATOMIC_FETCH_INC')
+
+define(`SHMEM_C_CTX_ATOMIC_FETCH_INC',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_ctx_$1_atomic_fetch_inc(shmem_ctx_t ctx, $2 *target, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_CTX_ATOMIC_FETCH_INC')
+
+/* AMO: Atomic Add Routines */
+define(`SHMEM_C_ADD',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_add($2 *target, $2 value, int pe) SHMEM_ATTRIBUTE_DEPRECATED')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_ADD')
+
+define(`SHMEM_C_ATOMIC_ADD',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_atomic_add($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_ATOMIC_ADD')
+
+define(`SHMEM_C_CTX_ATOMIC_ADD',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_$1_atomic_add(shmem_ctx_t ctx, $2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_CTX_ATOMIC_ADD')
+
+/* AMO: Atomic Increment Routines */
+define(`SHMEM_C_INC',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_inc($2 *target, int pe) SHMEM_ATTRIBUTE_DEPRECATED')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_INC')
+
+define(`SHMEM_C_ATOMIC_INC',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_atomic_inc($2 *target, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_ATOMIC_INC')
+
+define(`SHMEM_C_CTX_ATOMIC_INC',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_$1_atomic_inc(shmem_ctx_t ctx, $2 *target, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_CTX_ATOMIC_INC')
+
+/* AMO: Atomic Fetch Routines */
+define(`SHMEM_C_FETCH',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_fetch(const $2 *target, int pe) SHMEM_ATTRIBUTE_DEPRECATED')dnl
+SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_FETCH')
+
+define(`SHMEM_C_ATOMIC_FETCH',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_atomic_fetch(const $2 *target, int pe)')dnl
+SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_ATOMIC_FETCH')
+
+define(`SHMEM_C_CTX_ATOMIC_FETCH',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_ctx_$1_atomic_fetch(shmem_ctx_t ctx, const $2 *target, int pe)')dnl
+SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_CTX_ATOMIC_FETCH')
+
+/* AMO: Atomic Set Routines */
+define(`SHMEM_C_SET',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_set($2 *target, $2 value, int pe) SHMEM_ATTRIBUTE_DEPRECATED')dnl
+SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_SET')
+
+define(`SHMEM_C_ATOMIC_SET',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_atomic_set($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_ATOMIC_SET')
+
+define(`SHMEM_C_CTX_ATOMIC_SET',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_$1_atomic_set(shmem_ctx_t ctx, $2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_CTX_ATOMIC_SET')
+
+/* AMO: Atomic Bitwise Routines */
+define(`SHMEM_C_XOR',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_atomic_xor($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_XOR')
+
+define(`SHMEM_C_CTX_XOR',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_$1_atomic_xor(shmem_ctx_t ctx, $2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_CTX_XOR')
+
+define(`SHMEM_C_AND',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_atomic_and($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_AND')
+
+define(`SHMEM_C_CTX_AND',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_$1_atomic_and(shmem_ctx_t ctx, $2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_CTX_AND')
+
+define(`SHMEM_C_OR',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_atomic_or($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_OR')
+
+define(`SHMEM_C_CTX_OR',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_$1_atomic_or(shmem_ctx_t ctx, $2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_CTX_OR')
+
+/* AMO: Fetching atomic Bitwise Routines */
+define(`SHMEM_C_FETCH_XOR',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_atomic_fetch_xor($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_FETCH_XOR')
+
+define(`SHMEM_C_CTX_FETCH_XOR',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_ctx_$1_atomic_fetch_xor(shmem_ctx_t ctx, $2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_CTX_FETCH_XOR')
+
+define(`SHMEM_C_FETCH_AND',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_atomic_fetch_and($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_FETCH_AND')
+
+define(`SHMEM_C_CTX_FETCH_AND',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_ctx_$1_atomic_fetch_and(shmem_ctx_t ctx, $2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_CTX_FETCH_AND')
+
+define(`SHMEM_C_FETCH_OR',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_$1_atomic_fetch_or($2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_FETCH_OR')
+
+define(`SHMEM_C_CTX_FETCH_OR',
+`SHMEM_FUNCTION_ATTRIBUTES $2 SHPRE()shmem_ctx_$1_atomic_fetch_or(shmem_ctx_t ctx, $2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_CTX_FETCH_OR')
+
+/* COLL: Barrier Synchronization Routines */
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_barrier_all(void);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_sync_all(void);
+
+/* COLL: Reduction Routines */
+define(`SHMEM_C_TO_ALL',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_$4_to_all($2 *target,
+SH_PAD(`$1',`$4')                    const $2 *source, int nreduce,
+SH_PAD(`$1',`$4')                    int PE_start, int logPE_stride,
+SH_PAD(`$1',`$4')                    int PE_size, $2 *pWrk,
+SH_PAD(`$1',`$4')                    long *pSync);')dnl
+dnl
+SHMEM_BIND_C_COLL_INTS(`SHMEM_C_TO_ALL', `and')
+
+SHMEM_BIND_C_COLL_INTS(`SHMEM_C_TO_ALL', `or')
+
+SHMEM_BIND_C_COLL_INTS(`SHMEM_C_TO_ALL', `xor')
+
+SHMEM_BIND_C_COLL_INTS(`SHMEM_C_TO_ALL', `min')
+SHMEM_BIND_C_COLL_FLOATS(`SHMEM_C_TO_ALL', `min')
+
+SHMEM_BIND_C_COLL_INTS(`SHMEM_C_TO_ALL', `max')
+SHMEM_BIND_C_COLL_FLOATS(`SHMEM_C_TO_ALL', `max')
+
+SHMEM_BIND_C_COLL_INTS(`SHMEM_C_TO_ALL', `sum')
+SHMEM_BIND_C_COLL_FLOATS(`SHMEM_C_TO_ALL', `sum')
+SHMEM_BIND_C_COLL_CMPLX(`SHMEM_C_TO_ALL', `sum')
+
+SHMEM_BIND_C_COLL_INTS(`SHMEM_C_TO_ALL', `prod')
+SHMEM_BIND_C_COLL_FLOATS(`SHMEM_C_TO_ALL', `prod')
+SHMEM_BIND_C_COLL_CMPLX(`SHMEM_C_TO_ALL', `prod')
+
+/* COLL: Collect Routines */
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_collect32(void *target, const void *source, size_t nlong,
+                     int PE_start, int logPE_stride, int PE_size, long *pSync);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_collect64(void *target, const void *source, size_t nlong,
+                     int PE_start, int logPE_stride, int PE_size, long *pSync);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_fcollect32(void *target, const void *source, size_t nlong,
+                      int PE_start, int logPE_stride, int PE_size,
+                      long *pSync);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_fcollect64(void *target, const void *source, size_t nlong,
+                      int PE_start, int logPE_stride, int PE_size,
+                      long *pSync);
+
+/* COLL: Broadcast Routines */
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_broadcast32(void *target, const void *source, size_t nlong,
+                       int PE_root, int PE_start, int logPE_stride,
+                       int PE_size, long *pSync);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_broadcast64(void *target, const void *source, size_t nlong,
+                       int PE_root, int PE_start, int logPE_stride,
+                       int PE_size, long *pSync);
+
+/* COLL: All-to-All routines */
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_alltoall32(void *dest, const void *source, size_t nelems, int PE_start,
+                      int logPE_stride, int PE_size, long *pSync);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_alltoall64(void *dest, const void *source, size_t nelems, int PE_start,
+                      int logPE_stride, int PE_size, long *pSync);
+
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_alltoalls32(void *dest, const void *source, ptrdiff_t dst,
+                       ptrdiff_t sst, size_t nelems, int PE_start,
+                       int logPE_stride, int PE_size, long *pSync);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_alltoalls64(void *dest, const void *source, ptrdiff_t dst,
+                       ptrdiff_t sst, size_t nelems, int PE_start,
+                       int logPE_stride, int PE_size, long *pSync);
+
+/* Point-to-Point Synchronization Routines */
+define(`SHMEM_C_WAIT',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_wait($2 *var, $2 value) SHMEM_ATTRIBUTE_DEPRECATED;')dnl
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_wait(long *ivar, long cmp_value) SHMEM_ATTRIBUTE_DEPRECATED;
+SHMEM_BIND_C_WAIT(`SHMEM_C_WAIT')
+
+define(`SHMEM_C_WAIT_UNTIL',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_$1_wait_until($2 *var, int cmp, $2 value);')dnl
+SHMEM_BIND_C_SYNC(`SHMEM_C_WAIT_UNTIL')
+
+/* Special case, only enabled when C++ and C11 bindings are disabled */
+#if !defined(__cplusplus) && \
+    !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_wait_until(long *ivar, int cmp, long value);
+#endif
+
+define(`SHMEM_C_TEST',
+`SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_$1_test($2 *var, int cmp, $2 value);')dnl
+SHMEM_BIND_C_SYNC(`SHMEM_C_TEST')
+
+/* Memory Ordering Routines */
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_quiet(void);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_fence(void);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_quiet(shmem_ctx_t ctx);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_fence(shmem_ctx_t ctx);
+
+/* Distributed Locking Routines */
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_set_lock(long *lock);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_clear_lock(long *lock);
+SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_test_lock(long *lock);
+
+/* Cache Management Routines (deprecated) */
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_set_cache_inv(void) SHMEM_ATTRIBUTE_DEPRECATED;
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_set_cache_line_inv(void *target) SHMEM_ATTRIBUTE_DEPRECATED;
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_clear_cache_inv(void) SHMEM_ATTRIBUTE_DEPRECATED;
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_clear_cache_line_inv(void *target) SHMEM_ATTRIBUTE_DEPRECATED;
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_udcflush(void) SHMEM_ATTRIBUTE_DEPRECATED;
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_udcflush_line(void *target) SHMEM_ATTRIBUTE_DEPRECATED;
+
+/* Deprecated API */
+SHMEM_FUNCTION_ATTRIBUTES int SHPRE()_num_pes(void) SHMEM_ATTRIBUTE_DEPRECATED;
+SHMEM_FUNCTION_ATTRIBUTES int SHPRE()_my_pe(void) SHMEM_ATTRIBUTE_DEPRECATED;
+SHMEM_FUNCTION_ATTRIBUTES void *SHPRE()shmalloc(size_t size) SHMEM_ATTRIBUTE_DEPRECATED;
+SHMEM_FUNCTION_ATTRIBUTES void *SHPRE()shmemalign(size_t alignment, size_t size) SHMEM_ATTRIBUTE_DEPRECATED;
+SHMEM_FUNCTION_ATTRIBUTES void *SHPRE()shrealloc(void *ptr, size_t size) SHMEM_ATTRIBUTE_DEPRECATED;
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shfree(void *ptr) SHMEM_ATTRIBUTE_DEPRECATED;
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()start_pes(int npes) SHMEM_ATTRIBUTE_DEPRECATED;
+

@@ -1,0 +1,5 @@
+define(`SHMEM_BIND_C11_RMA_EXTRAS', `')dnl
+define(`SHMEM_BIND_C11_AMO_EXTRAS', `')dnl
+define(`SHMEM_BIND_C11_EXTENDED_AMO_EXTRAS', `')dnl
+define(`SHMEM_BIND_C11_BITWISE_AMO_EXTRAS', `')dnl
+define(`SHMEM_BIND_C11_SYNC_EXTRAS', `')dnl

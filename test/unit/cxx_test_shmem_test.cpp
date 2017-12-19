@@ -4,7 +4,7 @@
  *  to copyright protection in the United States.  Foreign copyrights may
  *  apply.
  *
- *  Copyright (c) 2016 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2017 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -36,38 +36,38 @@
 #include <stdio.h>
 #include <shmem.h>
 
-#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
-
-#define TEST_SHMEM_FETCH(TYPE)                                  \
-  do {                                                          \
-    static TYPE remote;                                         \
-    const int mype = shmem_my_pe();                             \
-    const int npes = shmem_n_pes();                             \
-    remote = (TYPE)mype;                                        \
-    shmem_barrier_all();                                        \
-    TYPE val = shmem_fetch(&remote, (mype + 1) % npes);         \
-    if (val != (TYPE)((mype + 1) % npes)) {                     \
-      fprintf(stderr,                                           \
-              "PE %i received incorrect value "                 \
-              "for shmem_fetch(%s, ...)\n", mype, #TYPE);       \
-      rc = EXIT_FAILURE;                                        \
-    }                                                           \
+#define TEST_SHMEM_TEST(TYPE)                           \
+  do {                                                  \
+    static TYPE remote = 0;                             \
+    const int mype = shmem_my_pe();                     \
+    const int npes = shmem_n_pes();                     \
+    shmem_p(&remote, (TYPE)mype+1, (mype + 1) % npes);  \
+    while (!shmem_test(&remote, SHMEM_CMP_NE, 0)) ;     \
+    if (remote != (TYPE)((mype + npes - 1) % npes)+1) { \
+      printf("PE %i received incorrect value with "     \
+             "TEST_SHMEM_TEST(%s)\n", mype, #TYPE);     \
+      rc = EXIT_FAILURE;                                \
+    }                                                   \
   } while (false)
-
-#else
-#define TEST_SHMEM_FETCH(TYPE)
-
-#endif
 
 int main(int argc, char* argv[]) {
   shmem_init();
 
   int rc = EXIT_SUCCESS;
-  TEST_SHMEM_FETCH(float);
-  TEST_SHMEM_FETCH(double);
-  TEST_SHMEM_FETCH(int);
-  TEST_SHMEM_FETCH(long);
-  TEST_SHMEM_FETCH(long long);
+  TEST_SHMEM_TEST(short);
+  TEST_SHMEM_TEST(int);
+  TEST_SHMEM_TEST(long);
+  TEST_SHMEM_TEST(long long);
+  TEST_SHMEM_TEST(unsigned short);
+  TEST_SHMEM_TEST(unsigned int);
+  TEST_SHMEM_TEST(unsigned long);
+  TEST_SHMEM_TEST(unsigned long long);
+  TEST_SHMEM_TEST(int32_t);
+  TEST_SHMEM_TEST(int64_t);
+  TEST_SHMEM_TEST(uint32_t);
+  TEST_SHMEM_TEST(uint64_t);
+  TEST_SHMEM_TEST(size_t);
+  TEST_SHMEM_TEST(ptrdiff_t);
 
   shmem_finalize();
   return rc;

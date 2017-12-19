@@ -22,11 +22,11 @@
 
 
 static inline void
-shmem_internal_quiet(void)
+shmem_internal_quiet(shmem_ctx_t ctx)
 {
     int ret;
 
-    ret = shmem_transport_quiet();
+    ret = shmem_transport_quiet((shmem_transport_ctx_t *)ctx);
     if (0 != ret) { RAISE_ERROR(ret); }
 
 #ifdef USE_XPMEM
@@ -37,11 +37,11 @@ shmem_internal_quiet(void)
 
 
 static inline void
-shmem_internal_fence(void)
+shmem_internal_fence(shmem_ctx_t ctx)
 {
     int ret;
 
-    ret = shmem_transport_fence();
+    ret = shmem_transport_fence((shmem_transport_ctx_t *)ctx);
     if (0 != ret) { RAISE_ERROR(ret); }
 
 #ifdef USE_XPMEM
@@ -79,14 +79,12 @@ shmem_internal_fence(void)
     } while(0)
 
 
-#if defined(ENABLE_HARD_POLLING)
-
-#define SHMEM_WAIT(var, value)                           \
+#define SHMEM_WAIT_POLL(var, value)                      \
     do {                                                 \
         while (*(var) == value) { SPINLOCK_BODY(); }     \
     } while(0)
 
-#define SHMEM_WAIT_UNTIL(var, cond, value)               \
+#define SHMEM_WAIT_UNTIL_POLL(var, cond, value)          \
     do {                                                 \
         int cmpret;                                      \
                                                          \
@@ -97,9 +95,7 @@ shmem_internal_fence(void)
         }                                                \
     } while(0)
 
-#else
-
-#define SHMEM_WAIT(var, value)                                          \
+#define SHMEM_WAIT_BLOCK(var, value)                                    \
     do {                                                                \
         uint64_t target_cntr;                                           \
                                                                         \
@@ -111,7 +107,7 @@ shmem_internal_fence(void)
         }                                                               \
     } while(0)
 
-#define SHMEM_WAIT_UNTIL(var, cond, value)                              \
+#define SHMEM_WAIT_UNTIL_BLOCK(var, cond, value)                        \
     do {                                                                \
         uint64_t target_cntr;                                           \
         int cmpret;                                                     \
@@ -127,6 +123,26 @@ shmem_internal_fence(void)
         }                                                               \
     } while(0)
 
-#endif
+#if defined(ENABLE_HARD_POLLING)
+#define SHMEM_WAIT(var, value) SHMEM_WAIT_POLL(var, value)
+#define SHMEM_WAIT_UNTIL(var, cond, value) SHMEM_WAIT_UNTIL_POLL(var, cond, value)
+
+#else
+#define SHMEM_WAIT(var, value) do {                                     \
+        if (shmem_internal_thread_level == SHMEM_THREAD_SINGLE) {       \
+            SHMEM_WAIT_BLOCK(var, value);                               \
+        } else {                                                        \
+            SHMEM_WAIT_POLL(var, value);                                \
+        }                                                               \
+    } while (0)
+
+#define SHMEM_WAIT_UNTIL(var, cond, value) do {                         \
+        if (shmem_internal_thread_level == SHMEM_THREAD_SINGLE) {       \
+            SHMEM_WAIT_UNTIL_BLOCK(var, cond, value);                   \
+        } else {                                                        \
+            SHMEM_WAIT_UNTIL_POLL(var, cond, value);                    \
+        }                                                               \
+    } while (0)
+#endif /* HARD_POLLING */
 
 #endif

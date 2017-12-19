@@ -16,6 +16,7 @@
 #ifndef SHMEM_INTERNAL_RUNTIME_H
 #define SHMEM_INTERNAL_RUNTIME_H
 
+#include "config.h"
 #include "shmem_decl.h"
 
 int shmem_runtime_init(void);
