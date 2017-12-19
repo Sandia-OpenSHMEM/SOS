@@ -362,8 +362,9 @@ int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx)
     if (ctx->options & SHMEM_CTX_PRIVATE) {
         shmem_transport_ofi_stx_kvs_t *e = malloc(sizeof(shmem_transport_ofi_stx_kvs_t));
         e->tid = ctx->tid;
+        e->stxs = malloc(sizeof(shmem_transport_ofi_stx_t));
 
-        shmem_transport_ofi_stx_kvs_t *f = malloc(sizeof(shmem_transport_ofi_stx_kvs_t));
+        shmem_transport_ofi_stx_kvs_t *f;
         HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, f);
         if (f) {
             /* A thread-private STX already exists for this thread id, so increment the
@@ -380,8 +381,8 @@ int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx)
             HASH_REPLACE_INT(shmem_transport_ofi_stx_kvs, tid, e, f);
         } else {
             e->stx_idx = ctx->stx_idx;
-            e->stxs->ref_cnt = shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt + 1;
             e->stxs->stx = shmem_transport_ofi_stx_pool[ctx->stx_idx].stx;
+            e->stxs->ref_cnt = shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt + 1;
 
             ret = fi_ep_bind(ctx->cntr_ep, &e->stxs->stx->fid, 0);
             OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX private to CNTR endpoint failed");
@@ -389,7 +390,6 @@ int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx)
             HASH_ADD_INT(shmem_transport_ofi_stx_kvs, tid, e);
         }
 
-        free(f);
     } else {
         /* Attach the shared context */
         ret = fi_ep_bind(ctx->cntr_ep, &shmem_transport_ofi_stx_pool[ctx->stx_idx].stx->fid, 0);
@@ -1142,16 +1142,17 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 
     /* TODO: Fill in TX attr */
 
-    /* After reaching the STX limit, share STXs by selecting an array index
-     * according to the "stx_share_algorithm". */
+    /* Share STXs by selecting an array index according to the "stx_share_algorithm". */
 #ifdef ENABLE_THREADS
     if (shmem_internal_thread_level > SHMEM_THREAD_FUNNELED) {
         stx_idx_prev = stx_idx;
         switch (shmem_transport_ofi_stx_share_alg) {
             case (ROUNDROBIN):
+                /* TODO: After reaching the limit, could search for elements with ref_cnt==0. */
                 stx_idx = (stx_idx + 1) % shmem_transport_ofi_stx_max;
                 break;
-            case (RANDOM): /* TODO: Assure fair sharing w/ a periodic PRNG */
+            case (RANDOM):
+                /* TODO: Assure fair sharing w/ a periodic PRNG. Could also search for ref_cnt==0. */
                 stx_idx = rand() % shmem_transport_ofi_stx_max;
                 break;
         }
@@ -1390,15 +1391,14 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
     }
 
     if (ctx->options & SHMEM_CTX_PRIVATE) {
-        shmem_transport_ofi_stx_kvs_t *f;
-        HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, f);
-        if (f) {
-          f->stxs->ref_cnt--;
+        shmem_transport_ofi_stx_kvs_t *e;
+        HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, e);
+        if (e) {
+          e->stxs->ref_cnt--;
         }
         else {
           RAISE_WARN_STR("Context tid not found during shmem_ctx_destroy");
         }
-        free(f);
     } else {
         shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt--;
     }
