@@ -26,7 +26,7 @@ env:
           SOS_ENABLE_ERROR_TESTS=1
           SOS_BUILD_OPTS="--disable-threads --enable-error-checking"
         - >
-          SOS_ENABLE_ERROR_TESTS=1
+          SOS_ENABLE_ERROR_TESTS=0
           SOS_BUILD_OPTS="--with-cma --enable-error-checking --enable-profiling --disable-mr-scalable --enable-av-map --enable-remote-virtual-addressing"
         - >
           SOS_ENABLE_ERROR_TESTS=1
@@ -99,7 +99,7 @@ before_install:
     - make install
     ## Build libfabric
     - cd $TRAVIS_SRC
-    - git clone -b v1.5.1 --depth 10 https://github.com/ofiwg/libfabric.git libfabric
+    - git clone -b v1.5.x --depth 10 https://github.com/ofiwg/libfabric.git libfabric
     - cd libfabric
     - ./autogen.sh
     - ./configure --prefix=$TRAVIS_INSTALL/libfabric
