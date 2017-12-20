@@ -1,67 +1,140 @@
-.TH SHMEM_G 3 "Open Source Software Solutions, Inc.""OpenSHMEM Library Documentation"
+.TH SHMEM_G 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
 shmem_g \- 
 Copies one data item from a remote PE
+
 ./ sectionEnd
+
+
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
+
 ./ sectionStart
 .SS C11:
+
 .B TYPE
-.B shmem_g(const
+.B shmem\_g(const
 .B TYPE
-.IB "*addr" ,
+.IB "*source" ,
 .B int
 .I pe
 .B );
+
+
+
+.B TYPE
+.B shmem\_g(shmem_ctx_t
+.IB "ctx" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B int
+.I pe
+.B );
+
+
+
 ./ sectionEnd
+
+
 where TYPE is one of the standard RMA types specified by Table 1.
 ./ sectionStart
 .SS C/C++:
+
 .B TYPE
-.B shmem_<TYPENAME>_g(const
+.B shmem\_TYPENAME\_g(const
 .B TYPE
-.IB "*addr" ,
+.IB "*source" ,
 .B int
 .I pe
 .B );
+
+
+
+.B TYPE
+.B shmem\_ctx\_TYPENAME\_g(shmem_ctx_t
+.IB "ctx" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B int
+.I pe
+.B );
+
+
+
 ./ sectionEnd
+
+
 where TYPE is one of the standard RMA types and has a corresponding TYPENAME specified by Table 1.
 ./ sectionStart
+
 .SH DESCRIPTION
 .SS Arguments
 .BR "IN " -
-.I addr
+.I ctx
+- The context on which to perform the operation.
+When this argument is not provided, the operation is performed on
+SHMEM\_CTX\_DEFAULT.
+
+
+.BR "IN " -
+.I source
 - The remotely accessible array element or scalar data object.
+
+
 .BR "IN " -
 .I pe
 - The number of the remote PE on which 
-.I addr
+.I source
 resides.
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Description
+
 These routines provide a very low latency get capability for single elements
 of most basic types. 
+
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS Return Values
+
 Returns a single element of type specified in the synopsis.
+
 ./ sectionEnd
+
+
 ./ sectionStart
+
 .SS API Notes
+
 None.
+
 ./ sectionEnd
+
+
+
 ./ sectionStart
 .SS Examples
+
+
+
 The following 
 .B shmem\_g
-example is for C11 programs:
+example is for C[11] programs:
+
 .nf
 #include <stdio.h>
 #include <shmem.h>
+
 int main(void)
 {
   long y = -1;
@@ -76,6 +149,10 @@ int main(void)
   return 0;
 }
 .fi
+
+
+
+
 .SS Table 1:
 Standard RMA Types and Names
 .TP 25

@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <netdb.h>
 
 #if HAVE_FNMATCH_H
 #include <fnmatch.h>

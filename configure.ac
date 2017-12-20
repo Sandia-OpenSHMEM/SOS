@@ -13,7 +13,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.4.0a1], [https://github.com/Sandia-OpenSHMEM/SOS])
+AC_INIT([Sandia OpenSHMEM], [1.4.0rc1], [https://github.com/Sandia-OpenSHMEM/SOS])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -108,8 +108,11 @@ AS_IF([test "$enable_threads" != "no"], [
        AC_DEFINE([ENABLE_THREADS], [1], [Enable threads])
        AC_CHECK_HEADERS([stdatomic.h])
        CHECK_GETTID(
-           [AC_DEFINE([HAVE_SYS_GETTID], [1], ["Have SYS_gettid"])],
-           [AC_MSG_WARN([Do not have SYS_gettid])])
+           [AC_DEFINE([HAVE_SYS_GETTID], [1], [Have support for SYS_gettid syscall])],
+           [AC_MSG_WARN([No support for SYS_gettid syscall])])
+       AS_IF([test "$enable_thread_completion" = "yes"],
+             [AC_DEFINE([USE_CTX_LOCK], [1], [Enable per-context locks])
+             AC_DEFINE([USE_THREAD_COMPLETION], [1], [Support SHMEM_THREAD_MULTIPLE using FI_THREAD_COMPLETION instead of FI_THREAD_SAFE])])
        ])
 AM_CONDITIONAL([HAVE_PTHREADS], [test "$HAVE_POSIX_THREADS" = "1"])
 
@@ -133,9 +136,6 @@ AS_IF([test "$enable_pthread_mutexes" = "yes"], [AC_DEFINE([ENABLE_PTHREAD_MUTEX
 AC_ARG_ENABLE([thread-completion],
     [AC_HELP_STRING([--enable-thread-completion],
         [Support SHMEM_THREAD_MULTIPLE using FI_THREAD_COMPLETION thread safety model instead of FI_THREAD_SAFE (default: disabled)])])
-AS_IF([test "$enable_thread_completion" = "yes"],
-      [AC_DEFINE([USE_CTX_LOCK], [1], [Enable per-context locks])
-       AC_DEFINE([USE_THREAD_COMPLETION], [1], [Support SHMEM_THREAD_MULTIPLE using FI_THREAD_COMPLETION instead of FI_THREAD_SAFE])])
 
 AC_ARG_ENABLE([remote-virtual-addressing],
     [AC_HELP_STRING([--enable-remote-virtual-addressing],
