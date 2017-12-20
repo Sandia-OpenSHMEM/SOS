@@ -95,6 +95,9 @@ shmem_internal_set_lock(long *lockp)
             SHMEM_WAIT(&(lock->data), lock_cur.data);
         }
     } else {
+        /* Lock was acquired immediately without calling SHMEM_WAIT, 
+         * which provides memory ordering. Therefore, issuing a load 
+         * fence to ensure memory ordering. */
         shmem_internal_membar_load();
     }
 }
