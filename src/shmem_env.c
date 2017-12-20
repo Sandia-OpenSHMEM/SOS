@@ -1,6 +1,9 @@
 #include "config.h"
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE /* for asprintf */
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>

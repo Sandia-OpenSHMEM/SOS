@@ -16,17 +16,16 @@
 #ifndef SHMEM_TRANSPORT_CMA_H
 #define SHMEM_TRANSPORT_CMA_H
 
-#define _GNU_SOURCE
-#include <unistd.h>
-
 #ifdef HAVE_LIBC_CMA
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #include <sys/uio.h>
 #else
 #include <sys/syscall.h>
 #endif
 
-#include <sys/uio.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <string.h>
 #include <errno.h>
@@ -111,8 +110,14 @@ shmem_transport_cma_put(void *target, const void *source, size_t len,
 
         if ( bytes < 0 || (size_t) bytes != len) {
             char errmsg[128];
-            strerror_r(errno, errmsg, 128);
-            RAISE_ERROR_MSG("process_vm_writev() failed (%s)\n", errmsg);
+#ifdef _GNU_SOURCE
+            char *errstr = strerror_r(errno, errmsg, 128);
+#else
+            char *errstr = errmsg;
+            int err = strerror_r(errno, errmsg, 128);
+            if (err) RAISER_ERROR_MSG("Error in call to strerr_r (%d)\n", err);
+#endif
+            RAISE_ERROR_MSG("process_vm_writev() failed (%s)\n", errstr);
         }
 }
 
@@ -140,8 +145,14 @@ shmem_transport_cma_get(void *target, const void *source, size_t len, int pe,
                                 (const struct iovec *)&src, 1, 0);
         if ( bytes < 0 || (size_t) bytes != len) {
             char errmsg[128];
-            strerror_r(errno, errmsg, 128);
-            RAISE_ERROR_MSG("process_vm_readv() failed (%s)\n", errmsg);
+#ifdef _GNU_SOURCE
+            char *errstr = strerror_r(errno, errmsg, 128);
+#else
+            char *errstr = errmsg;
+            err = strerror_r(errno, errmsg, 128);
+            if (err) RAISER_ERROR_MSG("Error in call to strerr_r (%d)\n", err);
+#endif
+            RAISE_ERROR_MSG("process_vm_readv() failed (%s)\n", errstr);
         }
 }
 
