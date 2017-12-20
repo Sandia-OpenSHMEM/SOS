@@ -18,7 +18,6 @@
 
 #include <string.h>
 #include <xpmem.h>
-#include "shmem_atomic.h"
 
 struct shmem_transport_xpmem_peer_info_t {
     xpmem_apid_t data_apid;
@@ -74,24 +73,6 @@ shmem_transport_xpmem_ptr(const void *target, int pe, int noderank)
 
     XPMEM_GET_REMOTE_ACCESS(target, noderank, remote_ptr);
     return remote_ptr;
-}
-
-
-static inline
-int
-shmem_transport_xpmem_quiet(void)
-{
-    shmem_internal_membar();
-    return 0;
-}
-
-
-static inline
-int
-shmem_transport_xpmem_fence(void)
-{
-    shmem_internal_membar();
-    return 0;
 }
 
 
