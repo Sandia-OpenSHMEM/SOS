@@ -1241,8 +1241,6 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 {
     int ret;
 
-    shmem_transport_quiet(ctx);
-
     ret = fi_close(&ctx->cntr_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Context CNTR endpoint close failed (%s)\n", fi_strerror(errno));
 
@@ -1290,11 +1288,14 @@ int shmem_transport_fini(void)
 
     for (i = 0; i < shmem_transport_ofi_contexts_len; ++i) {
         if (shmem_transport_ofi_contexts[i]) {
+            shmem_transport_quiet(shmem_transport_ofi_contexts[i]); 
             shmem_transport_ctx_destroy(shmem_transport_ofi_contexts[i]);
         }
     }
 
     if (shmem_transport_ofi_contexts) free(shmem_transport_ofi_contexts);
+
+    shmem_transport_quiet(&shmem_transport_ctx_default); 
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
 
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);

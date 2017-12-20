@@ -18,6 +18,7 @@
 
 #include "shmem_comm.h"
 #include "shmem_synchronization.h"
+#include "shmem_atomic.h"
 
 
 /*
@@ -93,6 +94,11 @@ shmem_internal_set_lock(long *lockp)
 
             SHMEM_WAIT(&(lock->data), lock_cur.data);
         }
+    } else {
+        /* Lock was acquired immediately without calling SHMEM_WAIT, 
+         * which provides memory ordering. Therefore, issuing a load 
+         * fence to ensure memory ordering. */
+        shmem_internal_membar_load();
     }
 }
 
@@ -111,6 +117,7 @@ shmem_internal_test_lock(long *lockp)
     shmem_internal_cswap(SHMEM_CTX_DEFAULT, &(lock->last), &me, &curr, &zero, sizeof(int), 0, SHM_INTERNAL_INT);
     shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
     if (0 == curr) {
+        shmem_internal_membar_load();
         return 0;
     }
     return 1;

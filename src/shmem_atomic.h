@@ -29,6 +29,19 @@
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
 
+#define SHMEM_INTERNAL_INCLUDE
+#include "shmem.h"
+
+/* Internal variable defined to identify whether a memory barrier is needed */
+
+#if defined(USE_XPMEM)
+# define SHMEM_INTERNAL_NEED_MEMBAR 1
+#elif defined(ENABLE_THREADS)
+# define SHMEM_INTERNAL_NEED_MEMBAR (shmem_internal_thread_level != SHMEM_THREAD_SINGLE)
+#else
+# define SHMEM_INTERNAL_NEED_MEMBAR 0
+#endif
+
 /* Spinlocks */
 
 struct shmem_spinlock_t {
@@ -73,6 +86,72 @@ shmem_spinlock_fini(shmem_spinlock_t *lock)
 {
     shmem_internal_assertp(lock->enter == lock->exit);
 }
+
+
+#if (defined(__STDC_NO_ATOMICS__) || !defined(HAVE_STDATOMIC_H))
+
+static inline
+void
+shmem_internal_membar(void) {
+    if (SHMEM_INTERNAL_NEED_MEMBAR)
+        __sync_synchronize();
+    return;
+}
+
+static inline
+void
+shmem_internal_membar_load(void) {
+#if defined(__i386__) || defined(__x86_64__)
+    if (SHMEM_INTERNAL_NEED_MEMBAR) 
+        __asm__ __volatile__ ("lfence" ::: "memory"); 
+#else
+    if (SHMEM_INTERNAL_NEED_MEMBAR) 
+        __sync_synchronize();
+#endif
+    return;
+}
+
+static inline
+void
+shmem_internal_membar_store(void) {
+#if defined(__i386__) || defined(__x86_64__)
+    if (SHMEM_INTERNAL_NEED_MEMBAR) 
+        __asm__ __volatile__ ("sfence" ::: "memory");
+#else
+    if (SHMEM_INTERNAL_NEED_MEMBAR) 
+        __sync_synchronize();
+#endif
+    return;
+}
+
+#else
+#include <stdatomic.h>
+
+static inline
+void
+shmem_internal_membar(void) {
+    if (SHMEM_INTERNAL_NEED_MEMBAR) 
+        atomic_thread_fence(memory_order_seq_cst);
+    return;
+}
+
+static inline
+void
+shmem_internal_membar_load(void) {
+    if (SHMEM_INTERNAL_NEED_MEMBAR) 
+        atomic_thread_fence(memory_order_acquire);
+    return;
+}
+
+static inline
+void
+shmem_internal_membar_store(void) {
+    if (SHMEM_INTERNAL_NEED_MEMBAR) 
+        atomic_thread_fence(memory_order_release);
+    return;
+}
+
+#endif
 
 /* Atomics */
 #  ifdef ENABLE_THREADS
