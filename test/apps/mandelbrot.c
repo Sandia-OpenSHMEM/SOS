@@ -195,8 +195,15 @@ static void *thread_worker(void *arg) {
     pixels[1] = malloc(sizeof(int)*job_points);
     pe_mask = malloc(sizeof(int)*npes);
     pe_ct_max = malloc(sizeof(int)*npes);
+
     if (NULL == pixels[0] || NULL == pixels[1] || NULL == pe_mask || NULL == pe_ct_max) {
         printf("%d, %d: Error, thread malloc failed\n", me, tid);
+
+        if (pixels[0]) free(pixels[0]);
+        if (pixels[1]) free(pixels[1]);
+        if (pe_mask)   free(pe_mask);
+        if (pe_ct_max) free(pe_ct_max);
+
         return NULL;
     }
 
