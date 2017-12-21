@@ -4,7 +4,7 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * Copyright (c) 2017 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -16,7 +16,10 @@
 
 #include "config.h"
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE /* for asprintf */
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>

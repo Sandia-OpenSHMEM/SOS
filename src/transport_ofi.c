@@ -1,6 +1,6 @@
 /* -*- C -*-
  *
- * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * Copyright (c) 2017 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -9,8 +9,8 @@
  *
  */
 
-#include <errno.h>
 #include "config.h"
+#include <errno.h>
 #include <stdlib.h>
 #include <sys/time.h>
 #include <sys/param.h>
@@ -135,6 +135,7 @@ static shmem_transport_ctx_t** shmem_transport_ofi_contexts = NULL;
 static size_t shmem_transport_ofi_contexts_len = 0;
 static size_t shmem_transport_ofi_grow_size = 128;
 
+#define SHMEM_CTX_DEFAULT_ID -1
 shmem_transport_ctx_t shmem_transport_ctx_default;
 shmem_ctx_t SHMEM_CTX_DEFAULT = (shmem_ctx_t) &shmem_transport_ctx_default;
 
@@ -1424,8 +1425,6 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 {
     int ret;
 
-    shmem_transport_quiet(ctx);
-
     ret = fi_close(&ctx->cntr_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Context CNTR endpoint close failed (%s)\n", fi_strerror(errno));
 
@@ -1487,11 +1486,14 @@ int shmem_transport_fini(void)
 
     for (i = 0; i < shmem_transport_ofi_contexts_len; ++i) {
         if (shmem_transport_ofi_contexts[i]) {
+            shmem_transport_quiet(shmem_transport_ofi_contexts[i]);
             shmem_transport_ctx_destroy(shmem_transport_ofi_contexts[i]);
         }
     }
 
     if (shmem_transport_ofi_contexts) free(shmem_transport_ofi_contexts);
+
+    shmem_transport_quiet(&shmem_transport_ctx_default);
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
 
     for(i = 0; i < shmem_transport_ofi_stx_max; ++i) {

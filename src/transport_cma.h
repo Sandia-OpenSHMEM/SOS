@@ -4,7 +4,7 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * Copyright (c) 2017 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -110,8 +110,14 @@ shmem_transport_cma_put(void *target, const void *source, size_t len,
 
         if ( bytes < 0 || (size_t) bytes != len) {
             char errmsg[128];
-            strerror_r(errno, errmsg, 128);
-            RAISE_ERROR_MSG("process_vm_writev() failed (%s)\n", errmsg);
+#ifdef _GNU_SOURCE
+            char *errstr = strerror_r(errno, errmsg, 128);
+#else
+            char *errstr = errmsg;
+            int err = strerror_r(errno, errmsg, 128);
+            if (err) RAISER_ERROR_MSG("Error in call to strerr_r (%d)\n", err);
+#endif
+            RAISE_ERROR_MSG("process_vm_writev() failed (%s)\n", errstr);
         }
 }
 
@@ -139,8 +145,14 @@ shmem_transport_cma_get(void *target, const void *source, size_t len, int pe,
                                 (const struct iovec *)&src, 1, 0);
         if ( bytes < 0 || (size_t) bytes != len) {
             char errmsg[128];
-            strerror_r(errno, errmsg, 128);
-            RAISE_ERROR_MSG("process_vm_readv() failed (%s)\n", errmsg);
+#ifdef _GNU_SOURCE
+            char *errstr = strerror_r(errno, errmsg, 128);
+#else
+            char *errstr = errmsg;
+            err = strerror_r(errno, errmsg, 128);
+            if (err) RAISER_ERROR_MSG("Error in call to strerr_r (%d)\n", err);
+#endif
+            RAISE_ERROR_MSG("process_vm_readv() failed (%s)\n", errstr);
         }
 }
 
