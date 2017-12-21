@@ -6,7 +6,7 @@ AC_DEFUN([CHECK_GETTID], [
     AC_LANG_PUSH([C])
     AC_COMPILE_IFELSE([
        AC_LANG_SOURCE([[#include <sys/syscall.h>]],
-                      [[int tid = SYS_gettid;]])],
+                      [[long tid = SYS_gettid;]])],
        [gettid_happy="yes"],
        [gettid_happy="no"])
     AC_LANG_POP([C])

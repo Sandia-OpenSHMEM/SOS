@@ -22,6 +22,13 @@
 #include <inttypes.h>
 #include <netdb.h>
 
+#ifdef HAVE_SYS_GETTID
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <sys/syscall.h>
+#endif
+
 #if HAVE_FNMATCH_H
 #include <fnmatch.h>
 #else
@@ -88,18 +95,37 @@ static char                     myephostname[EPHOSTNAMELEN];
 #endif
 #ifdef ENABLE_THREADS
 shmem_internal_mutex_t          shmem_transport_ofi_lock;
-/* Need a syscall to gettid() because glibc doesn't provide a wrapper
- * (see gettid manpage in the NOTES section): */
 #ifndef __APPLE__
 #ifdef HAVE_SYS_GETTID
+/* Need a syscall to gettid() because glibc doesn't provide a wrapper
+ * (see gettid manpage in the NOTES section): */
 static inline
-TID_TYPE shmem_transport_ofi_gettid(void)
+pid_t shmem_transport_ofi_gettid(void)
 {
     return syscall(SYS_gettid);
 }
 #else
-#error "SYS_gettid not available"
+static inline
+uint64_t shmem_transport_ofi_gettid(void)
+{
+    static uint64_t tid = 0;
+    return tid++;
+}
 #endif /* HAVE_SYS_GETTID */
+#else
+static inline
+uint64_t shmem_transport_ofi_gettid(void)
+{
+    int ret;
+    uint64_t tid;
+    ret = pthread_threadid_np(NULL, &tid);
+    if (ret == 0) {
+      return tid;
+    } else {
+        RAISE_ERROR_MSG("Error geting thread ID: %s \n", strerror(ret));
+        return -1;
+    }
+}
 #endif /* APPLE */
 #endif /* ENABLE_THREADS */
 
@@ -292,26 +318,92 @@ enum stx_share_alg_t {
 };
 typedef enum stx_share_alg_t stx_share_alg_t;
 static stx_share_alg_t shmem_transport_ofi_stx_share_alg;
-static int stx_idx = -1;
-static int stx_idx_prev = -1;
+static int stx_start_idx = 0;
 
 static long shmem_transport_ofi_stx_max;
 
 struct shmem_transport_ofi_stx_t {
     struct fid_stx*   stx;
     long              ref_cnt;
+    bool              is_private;
 };
 typedef struct shmem_transport_ofi_stx_t shmem_transport_ofi_stx_t;
 static shmem_transport_ofi_stx_t* shmem_transport_ofi_stx_pool;
 
 struct shmem_transport_ofi_stx_kvs_t {
-    struct shmem_transport_ofi_stx_t* stxs;
+    struct shmem_transport_ofi_stx_t* stx;
     int             stx_idx;
     TID_TYPE        tid;
     UT_hash_handle  hh;
 };
 typedef struct shmem_transport_ofi_stx_kvs_t shmem_transport_ofi_stx_kvs_t;
 static shmem_transport_ofi_stx_kvs_t* shmem_transport_ofi_stx_kvs = NULL;
+
+
+static inline
+void shmem_transport_ofi_stx_pool_search(shmem_transport_ctx_t *ctx)
+{
+    switch (shmem_transport_ofi_stx_share_alg) {
+        case (ROUNDROBIN):
+            for(int i=stx_start_idx; i<shmem_transport_ofi_stx_max; i++) {
+                if( shmem_transport_ofi_stx_pool[i].ref_cnt == 0 &&
+                   !shmem_transport_ofi_stx_pool[i].is_private ) {
+                    ctx->stx_idx = i;
+                }
+            }
+            /* No free STX is available, so share with shmem_ctx_default */
+            ctx->stx_idx = 0;
+            break;
+
+        case (RANDOM):
+            /* TODO: Assure fair sharing w/ a periodic PRNG. Could also search for ref_cnt==0. */
+            stx_start_idx = rand() % shmem_transport_ofi_stx_max;
+            while ( shmem_transport_ofi_stx_pool[stx_start_idx].ref_cnt != 0 ||
+                    shmem_transport_ofi_stx_pool[stx_start_idx].is_private ) {
+                stx_start_idx = rand() % shmem_transport_ofi_stx_max;
+            }
+            ctx->stx_idx = stx_start_idx;
+            break;
+    }
+    return;
+}
+
+
+static inline
+void shmem_transport_ofi_stx_pool_get_next(shmem_transport_ctx_t *ctx)
+{
+    /* STX contexts are shared by SHMEM contexts that are private to the same
+     * thread (i.e. have SHMEM_CTX_PRIVATE option set and same thread ID).  */
+    if (ctx->options & SHMEM_CTX_PRIVATE) {
+
+        shmem_transport_ofi_stx_kvs_t *f;
+        HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, f);
+        if (f) {
+            /* A thread-private STX already exists for this thread id, so increment the
+             * reference count and rollback to the last index into the STX resource pool:  */
+            f->stx->ref_cnt++;
+            ctx->stx_idx = f->stx_idx;
+
+        } else {
+            shmem_transport_ofi_stx_pool_search(ctx);
+            shmem_transport_ofi_stx_kvs_t *e = malloc(sizeof(shmem_transport_ofi_stx_kvs_t));
+            e->tid = ctx->tid;
+            e->stx_idx = ctx->stx_idx;
+            e->stx = &shmem_transport_ofi_stx_pool[ctx->stx_idx];
+            e->stx->ref_cnt++;
+            e->stx->is_private = true;
+
+            HASH_ADD_INT(shmem_transport_ofi_stx_kvs, tid, e);
+        }
+
+
+    } else {
+        shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private = false;
+        shmem_transport_ofi_stx_pool_search(ctx);
+        shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt += 1;
+    }
+    return;
+}
 
 #define OFI_MAJOR_VERSION 1
 #ifdef ENABLE_MR_RMA_EVENT
@@ -358,46 +450,9 @@ int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx)
 {
     int ret = 0;
 
-    /* STX contexts are shared by SHMEM contexts that are private to the same
-     * thread (i.e. have SHMEM_CTX_PRIVATE option set and same thread ID).  */
-    if (ctx->options & SHMEM_CTX_PRIVATE) {
-        shmem_transport_ofi_stx_kvs_t *e = malloc(sizeof(shmem_transport_ofi_stx_kvs_t));
-        e->tid = ctx->tid;
-        e->stxs = malloc(sizeof(shmem_transport_ofi_stx_t));
-
-        shmem_transport_ofi_stx_kvs_t *f;
-        HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, f);
-        if (f) {
-            /* A thread-private STX already exists for this thread id, so increment the
-             * reference count and rollback to the last index into the STX resource pool:  */
-            e->stxs->ref_cnt = f->stxs->ref_cnt + 1;
-            stx_idx = stx_idx_prev;
-            e->stx_idx = f->stx_idx;
-            ctx->stx_idx = f->stx_idx;
-            e->stxs->stx = f->stxs->stx;
-
-            ret = fi_ep_bind(ctx->cntr_ep, &e->stxs->stx->fid, 0);
-            OFI_CHECK_RETURN_STR(ret, "fi_ep_bind existing STX private to CNTR endpoint failed");
-
-            HASH_REPLACE_INT(shmem_transport_ofi_stx_kvs, tid, e, f);
-        } else {
-            e->stx_idx = ctx->stx_idx;
-            e->stxs->stx = shmem_transport_ofi_stx_pool[ctx->stx_idx].stx;
-            e->stxs->ref_cnt = shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt + 1;
-
-            ret = fi_ep_bind(ctx->cntr_ep, &e->stxs->stx->fid, 0);
-            OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX private to CNTR endpoint failed");
-
-            HASH_ADD_INT(shmem_transport_ofi_stx_kvs, tid, e);
-        }
-
-    } else {
-        /* Attach the shared context */
-        ret = fi_ep_bind(ctx->cntr_ep, &shmem_transport_ofi_stx_pool[ctx->stx_idx].stx->fid, 0);
-        OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to CNTR endpoint failed");
-
-        shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt += 1;
-    }
+    /* Attach the shared context */
+    ret = fi_ep_bind(ctx->cntr_ep, &shmem_transport_ofi_stx_pool[ctx->stx_idx].stx->fid, 0);
+    OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to CNTR endpoint failed");
 
     /* Attach counter for obtaining put completions */
     ret = fi_ep_bind(ctx->cntr_ep, &ctx->put_cntr->fid, FI_WRITE);
@@ -1146,31 +1201,19 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     /* Share STXs by selecting an array index according to the "stx_share_algorithm". */
 #ifdef ENABLE_THREADS
     if (shmem_internal_thread_level > SHMEM_THREAD_FUNNELED) {
-        stx_idx_prev = stx_idx;
-        switch (shmem_transport_ofi_stx_share_alg) {
-            case (ROUNDROBIN):
-                /* TODO: After reaching the limit, could search for elements with ref_cnt==0. */
-                stx_idx = (stx_idx + 1) % shmem_transport_ofi_stx_max;
-                break;
-            case (RANDOM):
-                /* TODO: Assure fair sharing w/ a periodic PRNG. Could also search for ref_cnt==0. */
-                stx_idx = rand() % shmem_transport_ofi_stx_max;
-                break;
-        }
-        #ifdef __APPLE__
-        if (ctx->options & SHMEM_CTX_PRIVATE)
-            pthread_threadid_np(NULL, &ctx->tid);
-        #else
-        if (ctx->options & SHMEM_CTX_PRIVATE)
+
+        if (ctx->options & SHMEM_CTX_PRIVATE) {
             ctx->tid = shmem_transport_ofi_gettid();
-        #endif
+        }
+
+        shmem_transport_ofi_stx_pool_get_next(ctx);
     } else {
-        stx_idx = 0;
+        stx_start_idx = 0;
     }
 #else
     stx_idx = 0;
 #endif
-    ctx->stx_idx = stx_idx;
+    ctx->stx_idx = stx_start_idx;
 
     ret = bind_enable_cntr_ep_resources(ctx);
     OFI_CHECK_RETURN_MSG(ret, "context bind/enable CNTR endpoint failed (%s)\n", fi_strerror(errno));
@@ -1251,11 +1294,12 @@ int shmem_transport_init(void)
 
     if ((shmem_internal_thread_level == SHMEM_THREAD_SINGLE ||
          shmem_internal_thread_level == SHMEM_THREAD_FUNNELED ) &&
-         shmem_internal_params.OFI_STX_MAX_provided &&
          shmem_internal_params.OFI_STX_MAX > 1) {
-        /* We need only 1 STX per PE with SHMEM_THREAD_SINGLE or SHMEM_THREAD_FUNNELED */
-        RAISE_WARN_MSG("Ignoring invalid STX max setting '%ld' w/THREAD_SINGLE, using 1\n", 
-                       shmem_internal_params.OFI_STX_MAX);
+        if (shmem_internal_params.OFI_STX_MAX_provided) {
+            /* We need only 1 STX per PE with SHMEM_THREAD_SINGLE or SHMEM_THREAD_FUNNELED */
+            RAISE_WARN_MSG("Ignoring invalid STX max setting '%ld' w/THREAD_SINGLE, using 1\n",
+                           shmem_internal_params.OFI_STX_MAX);
+        }
         shmem_transport_ofi_stx_max = 1;
     }
 
@@ -1268,6 +1312,7 @@ int shmem_transport_init(void)
                              &shmem_transport_ofi_stx_pool[i].stx, NULL);
         OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
         shmem_transport_ofi_stx_pool[i].ref_cnt = 0;
+        shmem_transport_ofi_stx_pool[i].is_private = false;
     }
 
     /* The current bounce buffering implementation is only compatible with
@@ -1395,7 +1440,11 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         shmem_transport_ofi_stx_kvs_t *e;
         HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, e);
         if (e) {
-          e->stxs->ref_cnt--;
+            e->stx->ref_cnt--;
+            if (e->stx->ref_cnt == 0) {
+                HASH_DEL(shmem_transport_ofi_stx_kvs, e);
+                free(e);
+            }
         }
         else {
           RAISE_WARN_STR("Context tid not found during shmem_ctx_destroy");
@@ -1450,6 +1499,16 @@ int shmem_transport_fini(void)
         OFI_CHECK_ERROR_MSG(ret, "STX context close failed (%s)\n", fi_strerror(errno));
     }
     free(shmem_transport_ofi_stx_pool);
+
+
+    shmem_transport_ofi_stx_kvs_t* e;
+    int stx_len = 0;
+    for(e = shmem_transport_ofi_stx_kvs; e != NULL; e = e->hh.next) {
+        if (e) stx_len++;
+    }
+    if (stx_len > 0) {
+        RAISE_ERROR_MSG("Leftover private contexts need to be destroyed: %d\n", stx_len);
+    }
 
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));

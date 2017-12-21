@@ -208,7 +208,7 @@ options.
         polling (i.e. there is no polling limit).  The default behavior is to
         call fi_cntr_wait without polling.
 
-    SHMEM_OFI_STX_MAX (default: 128)
+    SHMEM_OFI_STX_MAX (default: 16)
         Sets the maximum number of sharable transmit contexts (STXs) per PE.
         After reaching the maximum, PEs share the available STXs using the
         SHMEM_OFI_STX_SHARE_HEURISTIC parameter.

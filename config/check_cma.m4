@@ -14,7 +14,7 @@ AC_DEFUN([CHECK_CMA], [
              AC_LANG_PUSH([C])
              AC_COMPILE_IFELSE([
                 AC_LANG_SOURCE([[#include <sys/syscall.h>]],
-                               [[int cma=__NR_process_vm_readv;]])],
+                               [[long cma=__NR_process_vm_readv;]])],
                 [cma_happy="yes"],
                 [cma_happy="no"])
              AC_LANG_POP([C])

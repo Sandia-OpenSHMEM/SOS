@@ -31,10 +31,6 @@
 #include "shmem_atomic.h"
 #include <sys/types.h>
 
-#ifdef HAVE_SYS_GETTID
-#define _GNU_SOURCE
-#include <sys/syscall.h>
-#endif
 
 
 #ifndef ENABLE_HARD_POLLING
@@ -243,7 +239,6 @@ typedef int shmem_transport_ct_t;
 #define TID_TYPE pid_t
 #endif
 
-
 struct shmem_transport_ctx_t {
     int                             id;
 #ifdef USE_CTX_LOCK
@@ -266,7 +261,6 @@ typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
 extern shmem_transport_ctx_t shmem_transport_ctx_default;
 
 extern struct fid_ep* shmem_transport_ofi_target_ep;
-
 
 #ifdef USE_CTX_LOCK
 #define SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx)                                       \
