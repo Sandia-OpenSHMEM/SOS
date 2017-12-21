@@ -6,7 +6,7 @@
 #
 # Copyright (c) 2016 Los Alamos National Security, LLC. All rights reserved.
 #
-# Copyright (c) 2016 Intel Corporation. All rights reserved.
+# Copyright (c) 2017 Intel Corporation. All rights reserved.
 # This software is available to you under the BSD license.
 #
 # This file is part of the Sandia OpenSHMEM software package. For license
