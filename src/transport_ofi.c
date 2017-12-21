@@ -95,6 +95,7 @@ static shmem_transport_ctx_t** shmem_transport_ofi_contexts = NULL;
 static size_t shmem_transport_ofi_contexts_len = 0;
 static size_t shmem_transport_ofi_grow_size = 128;
 
+#define SHMEM_CTX_DEFAULT_ID -1
 shmem_transport_ctx_t shmem_transport_ctx_default;
 shmem_ctx_t SHMEM_CTX_DEFAULT = (shmem_ctx_t) &shmem_transport_ctx_default;
 
@@ -1288,14 +1289,14 @@ int shmem_transport_fini(void)
 
     for (i = 0; i < shmem_transport_ofi_contexts_len; ++i) {
         if (shmem_transport_ofi_contexts[i]) {
-            shmem_transport_quiet(shmem_transport_ofi_contexts[i]); 
+            shmem_transport_quiet(shmem_transport_ofi_contexts[i]);
             shmem_transport_ctx_destroy(shmem_transport_ofi_contexts[i]);
         }
     }
 
     if (shmem_transport_ofi_contexts) free(shmem_transport_ofi_contexts);
 
-    shmem_transport_quiet(&shmem_transport_ctx_default); 
+    shmem_transport_quiet(&shmem_transport_ctx_default);
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
 
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);
