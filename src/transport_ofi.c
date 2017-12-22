@@ -344,26 +344,48 @@ static shmem_transport_ofi_stx_kvs_t* shmem_transport_ofi_stx_kvs = NULL;
 static inline
 void shmem_transport_ofi_stx_pool_search(shmem_transport_ctx_t *ctx)
 {
+    int i, count = 0;
     switch (shmem_transport_ofi_stx_share_alg) {
         case (ROUNDROBIN):
-            for(int i=stx_start_idx; i<shmem_transport_ofi_stx_max; i++) {
+            i = stx_start_idx;
+            while (count < shmem_transport_ofi_stx_max) {
                 if( shmem_transport_ofi_stx_pool[i].ref_cnt == 0 &&
                    !shmem_transport_ofi_stx_pool[i].is_private ) {
                     ctx->stx_idx = i;
+                    stx_start_idx = i;
+                    break;
+                } else {
+                    i = (i + 1) % shmem_transport_ofi_stx_max;
+                    count++;
                 }
             }
-            /* No free STX is available, so share with shmem_ctx_default */
-            ctx->stx_idx = 0;
+
+            if (count == shmem_transport_ofi_stx_max) {
+                /* No free STX is available, so share with shmem_ctx_default */
+                ctx->stx_idx = 0;
+                stx_start_idx = 1;
+            }
             break;
 
         case (RANDOM):
-            /* TODO: Assure fair sharing w/ a periodic PRNG. Could also search for ref_cnt==0. */
+            /* TODO: Assure fair sharing w/ a periodic PRNG. */
             stx_start_idx = rand() % shmem_transport_ofi_stx_max;
-            while ( shmem_transport_ofi_stx_pool[stx_start_idx].ref_cnt != 0 ||
-                    shmem_transport_ofi_stx_pool[stx_start_idx].is_private ) {
-                stx_start_idx = rand() % shmem_transport_ofi_stx_max;
+            while (true) {
+                if((shmem_transport_ofi_stx_pool[stx_start_idx].ref_cnt == 0 &&
+                   !shmem_transport_ofi_stx_pool[stx_start_idx].is_private) ||
+                    count > shmem_transport_ofi_stx_max * 3) {
+                    break;
+                } else {
+                    stx_start_idx = rand() % shmem_transport_ofi_stx_max;
+                    count++;
+                }
             }
-            ctx->stx_idx = stx_start_idx;
+            if (count > shmem_transport_ofi_stx_max * 3) {
+                /* Likely, no free STX is available, so share with shmem_ctx_default */
+                ctx->stx_idx = 0;
+            } else {
+                ctx->stx_idx = stx_start_idx;
+            }
             break;
     }
     return;
@@ -399,8 +421,8 @@ void shmem_transport_ofi_stx_pool_get_next(shmem_transport_ctx_t *ctx)
 
 
     } else {
-        shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private = false;
         shmem_transport_ofi_stx_pool_search(ctx);
+        shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private = false;
         shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt += 1;
     }
     return;
