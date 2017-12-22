@@ -594,8 +594,10 @@ AC_TRY_RUN([
 #ifdef __APPLE__
 #include <mach-o/getsect.h>
 #else
-extern char data_start;
-extern char end;
+#pragma weak __data_start
+#pragma weak _end
+extern char __data_start;
+extern char _end;
 #endif
 
 int main(void) {
@@ -605,8 +607,7 @@ int main(void) {
     base = (void*) get_etext();
     length = get_end() - get_etext();
 #else
-    base = &data_start;
-    length = (unsigned long) &end  - (unsigned long) &data_start;
+    if (&__data_start == 0 || &_end == 0) return 1;
 #endif
     return 0;
 }],
