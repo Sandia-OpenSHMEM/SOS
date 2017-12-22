@@ -16,8 +16,6 @@ v1.4.0rc1
 - Added memory barriers needed to support shared memory interactions between
   threads and PEs.
 - Updated unit tests to remove use of deprecated API routines.
-- Improved portability of the profiling interfaces by using the standard etext
-  symbol to identify the start of the symmetric data segment.
 
 v1.4.0a1
 --------
