@@ -232,7 +232,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         RETURN_ERROR_MSG("Unable to locate symmetric data segment (%p, %p)\n",
                          (void*) &__data_start, (void*) &_end);
 
-    shmem_internal_data_base = &__data_start;
+    shmem_internal_data_base = (void*) &__data_start;
     shmem_internal_data_length = (long) ((char*) &_end - (char*) &__data_start);
 #endif
 
