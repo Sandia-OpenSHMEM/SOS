@@ -341,6 +341,7 @@ typedef struct shmem_transport_ofi_stx_kvs_t shmem_transport_ofi_stx_kvs_t;
 static shmem_transport_ofi_stx_kvs_t* shmem_transport_ofi_stx_kvs = NULL;
 
 
+#ifdef ENABLE_THREADS
 static inline
 void shmem_transport_ofi_stx_pool_search(shmem_transport_ctx_t *ctx)
 {
@@ -427,6 +428,7 @@ void shmem_transport_ofi_stx_pool_get_next(shmem_transport_ctx_t *ctx)
     }
     return;
 }
+#endif
 
 #define OFI_MAJOR_VERSION 1
 #ifdef ENABLE_MR_RMA_EVENT
@@ -1234,7 +1236,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
         stx_start_idx = 0;
     }
 #else
-    stx_idx = 0;
+    stx_start_idx = 0;
 #endif
     ctx->stx_idx = stx_start_idx;
 
