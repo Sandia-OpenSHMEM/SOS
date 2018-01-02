@@ -596,19 +596,24 @@ AC_TRY_RUN([
 #else
 #pragma weak __data_start
 #pragma weak _end
-extern char __data_start;
-extern char _end;
+extern int __data_start;
+extern int _end;
 #endif
+
+int data;
 
 int main(void) {
     void *base;
-    unsigned long length;
+    long length;
 #ifdef __APPLE__
     base = (void*) get_etext();
     length = get_end() - get_etext();
 #else
-    if (&__data_start == 0 || &_end == 0) return 1;
+    if (&__data_start == (int*) 0 || &_end == (int*) 0) return 1;
+    base = (void*) &__data_start;
+    length = (long) ((char*) &_end - (char*) &__data_start);
 #endif
+    if (!(base != (void*)0 && length > 0)) return 2;
     return 0;
 }],
     AC_MSG_RESULT([found]),
