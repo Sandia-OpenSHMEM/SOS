@@ -233,7 +233,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
                          (void*) &__data_start, (void*) &_end);
 
     shmem_internal_data_base = &__data_start;
-    shmem_internal_data_length = (unsigned long) &_end  - (unsigned long) &__data_start;
+    shmem_internal_data_length = (long) ((char*) &_end - (char*) &__data_start);
 #endif
 
     /* create symmetric heap */
