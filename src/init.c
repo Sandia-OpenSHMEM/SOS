@@ -213,7 +213,21 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     shmem_internal_data_base = (void*) get_etext();
     shmem_internal_data_length = get_end() - get_etext();
 #else
-    if (&__data_start == 0 || &_end == 0)
+    /* We declare data_start and end as weak symbols, which allows them to
+     * remain unbound after dynamic linking.  This is needed for compatibility
+     * with binaries (e.g. forked processes or tools) that are used with
+     * OpenSHMEM programs but don't themselves use OpenSHMEM.  Such binaries
+     * need not be compiled with the OpenSHMEM library and, as a result, will
+     * not have exposed these symbols for dynamic linking.  However, if the
+     * OpenSHMEM library has a strong dependence on the symbols, the dynamic
+     * linker will flag an error when loading the binary.
+     *
+     * If the data_start and end symbols are unbound, the dynamic linker will
+     * assign them an lvalue of 0.  Here, we check that the binary that
+     * initializes OpenSHMEM has exposed these symbols, enabling the library to
+     * locate its symmetric data segment. */
+
+    if (&__data_start == (int*) 0 || &_end == (int*) 0)
         RETURN_ERROR_MSG("Unable to locate symmetric data segment (%p, %p)\n",
                          (void*) &__data_start, (void*) &_end);
 
