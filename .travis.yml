@@ -53,6 +53,10 @@ env:
           SMA_FCOLLECT_ALGORITHM=ring
           SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
           SMA_OFI_TX_POLL_LIMIT=1 SMA_OFI_RX_POLL_LIMIT=1
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
+          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
+          SHMEM_OFI_STX_MAX=8 SHMEM_OFI_STX_SHARE_ALGORITHM=random
 os:
     - linux
 
