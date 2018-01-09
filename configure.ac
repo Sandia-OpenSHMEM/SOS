@@ -600,7 +600,12 @@ extern int __data_start;
 extern int _end;
 #endif
 
-int data;
+/* Ensure data segment is not empty.  Anything simpler gets optimized
+ * away by the compiler. */
+int ensure_nonempty_data(void) {
+    static int ncall = 0;
+    return ncall++;
+}
 
 int main(void) {
     void *base;
