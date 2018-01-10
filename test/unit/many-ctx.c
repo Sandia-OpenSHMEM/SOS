@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
         if (err) {
             printf("%d: Unable to create context #%d (%d)\n", me, max_num_ctx, err);
             /* Need to free up some resources to avoid the open file limit: */
-            for (i=1; i<npes; i++) {
+            for (i=1; i<=npes; i++) {
                 shmem_ctx_destroy(ctx[max_num_ctx-i]);
             }
             break;
@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
 
     /* Destroy ~1/2 the contexts to free up resources for the atomics below: */
     new_max = min_num_ctx / 2;
-    for (i=max_num_ctx-npes; i>new_max; i--) {
+    for (i=max_num_ctx-npes-1; i>new_max; i--) {
         shmem_ctx_destroy(ctx[i]);
     }
 
@@ -88,6 +88,8 @@ int main(int argc, char **argv) {
     if (data != new_max) {
         printf("%d: error expected %d, got %ld\n", me, new_max, data);
         ++errors;
+    } else {
+        printf("PE:%d success!\n", me);
     }
 
     shmem_finalize();

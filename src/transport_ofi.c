@@ -1044,8 +1044,14 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 #ifdef USE_CTX_LOCK
     SHMEM_MUTEX_INIT(ctx->lock);
 #endif
-    shmem_internal_atomic_write(&ctx->pending_put_cntr, 0);
-    shmem_internal_atomic_write(&ctx->pending_get_cntr, 0);
+    ctx->cntr_ep = NULL;
+    ctx->cq_ep = NULL;
+    ctx->stx = NULL;
+    ctx->put_cntr = NULL;
+    ctx->get_cntr = NULL;
+    ctx->cq = NULL;
+    ctx->pending_put_cntr =  0;
+    ctx->pending_get_cntr = 0;
 
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_put_attr,
                        &ctx->put_cntr, NULL);
