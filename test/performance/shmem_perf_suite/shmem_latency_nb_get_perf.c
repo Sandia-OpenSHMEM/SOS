@@ -39,7 +39,6 @@
 
 int main(int argc, char *argv[])
 {
-
     latency_main(argc, argv);
 
     return 0;
