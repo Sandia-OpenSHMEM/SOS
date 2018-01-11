@@ -390,50 +390,49 @@ static inline
 int shmem_transport_ofi_stx_locate(int want_unused)
 {
     static int rr_start_idx = 0;
-    int stx_idx = -1;
+    int stx_idx = -1, i, count;
 
-    /* Shared STX requested, return SHMEM_CTX_DEFAULT STX */
-    if (!want_unused) {
-        stx_idx = 0;
-        rr_start_idx = 1;
-    }
-
-    /* Search for an unused STX that is suitable for privatization */
-    else {
-        int i, count;
-        switch (shmem_transport_ofi_stx_allocator) {
-            case ROUNDROBIN:
-                i = rr_start_idx;
-                for (count = 0; count < shmem_transport_ofi_stx_max; count++) {
-                    if (shmem_transport_ofi_stx_pool[i].ref_cnt == 0) {
-                        shmem_internal_assert(!shmem_transport_ofi_stx_pool[i].is_private);
-                        stx_idx = i;
-                        rr_start_idx = (i + 1) % shmem_transport_ofi_stx_max;
-                        break;
-                    } else {
-                        i = (i + 1) % shmem_transport_ofi_stx_max;
-                    }
+    switch (shmem_transport_ofi_stx_allocator) {
+        case ROUNDROBIN:
+            i = rr_start_idx;
+            for (count = 0; count < shmem_transport_ofi_stx_max; count++) {
+                if (want_unused && shmem_transport_ofi_stx_pool[i].ref_cnt == 0) {
+                    shmem_internal_assert(!shmem_transport_ofi_stx_pool[i].is_private);
+                    stx_idx = i;
+                    rr_start_idx = (i + 1) % shmem_transport_ofi_stx_max;
+                    break;
+                } else if (!want_unused && !shmem_transport_ofi_stx_pool[i].is_private) {
+                    stx_idx = i;
+                    rr_start_idx = (i + 1) % shmem_transport_ofi_stx_max;
+                    break;
+                } else {
+                    i = (i + 1) % shmem_transport_ofi_stx_max;
                 }
+            }
 
-                break;
+            break;
 
-            case RANDOM:
-                i = shmem_transport_ofi_stx_rand_next();
-                for (count = 0; count < shmem_transport_ofi_stx_max; count++) {
-                    if (shmem_transport_ofi_stx_pool[i].ref_cnt == 0) {
-                        shmem_internal_assert(!shmem_transport_ofi_stx_pool[i].is_private);
-                        stx_idx = i;
-                        break;
-                    } else {
-                        i = shmem_transport_ofi_stx_rand_next();
-                    }
+        case RANDOM:
+            /* Restart the random iterator to ensure all entries are visited */
+            rand_pool_top_idx = shmem_transport_ofi_stx_max - 1;
+            i = shmem_transport_ofi_stx_rand_next();
+            for (count = 0; count < shmem_transport_ofi_stx_max; count++) {
+                if (want_unused && shmem_transport_ofi_stx_pool[i].ref_cnt == 0) {
+                    shmem_internal_assert(!shmem_transport_ofi_stx_pool[i].is_private);
+                    stx_idx = i;
+                    break;
+                } else if (!want_unused && !shmem_transport_ofi_stx_pool[i].is_private) {
+                    stx_idx = i;
+                    break;
+                } else {
+                    i = shmem_transport_ofi_stx_rand_next();
                 }
+            }
 
-                break;
-            default:
-                RAISE_ERROR_MSG("Invalid STX allocator (%d)\n",
-                                shmem_transport_ofi_stx_allocator);
-        }
+            break;
+        default:
+            RAISE_ERROR_MSG("Invalid STX allocator (%d)\n",
+                            shmem_transport_ofi_stx_allocator);
     }
 
     return stx_idx;
@@ -468,6 +467,7 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
                 stx_idx = shmem_transport_ofi_stx_locate(0);
             }
 
+            /* We presently assume that STX allocation is always successful */
             shmem_internal_assert(stx_idx >= 0);
             stx = &shmem_transport_ofi_stx_pool[stx_idx];
             ctx->stx_idx = stx_idx;
@@ -483,6 +483,8 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
             if (is_unused) {
                 stx->is_private = 1;
                 HASH_ADD_INT(shmem_transport_ofi_stx_kvs, tid, e);
+            } else {
+                ctx->options &= ~SHMEM_CTX_PRIVATE;
             }
         }
     } else {
