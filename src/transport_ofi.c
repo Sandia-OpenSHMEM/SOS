@@ -313,12 +313,12 @@ uint64_t shmem_transport_ofi_max_poll = (1ULL<<30);
 
 
 /* STX control variables */
-enum stx_share_alg_t {
+enum stx_allocator_t {
     ROUNDROBIN = 0,
     RANDOM
 };
-typedef enum stx_share_alg_t stx_share_alg_t;
-static stx_share_alg_t shmem_transport_ofi_stx_share_alg;
+typedef enum stx_allocator_t stx_allocator_t;
+static stx_allocator_t shmem_transport_ofi_stx_allocator;
 static int stx_start_idx = 0;
 
 static long shmem_transport_ofi_stx_max;
@@ -326,13 +326,12 @@ static long shmem_transport_ofi_stx_max;
 struct shmem_transport_ofi_stx_t {
     struct fid_stx*   stx;
     long              ref_cnt;
-    bool              is_private;
+    int               is_private;
 };
 typedef struct shmem_transport_ofi_stx_t shmem_transport_ofi_stx_t;
 static shmem_transport_ofi_stx_t* shmem_transport_ofi_stx_pool;
 
 struct shmem_transport_ofi_stx_kvs_t {
-    struct shmem_transport_ofi_stx_t* stx;
     int             stx_idx;
     TID_TYPE        tid;
     UT_hash_handle  hh;
@@ -391,100 +390,110 @@ void shmem_transport_ofi_stx_rand_fini() {
     return;
 }
 
-#ifdef ENABLE_THREADS
 static inline
-void shmem_transport_ofi_stx_pool_search(shmem_transport_ctx_t *ctx)
+int shmem_transport_ofi_stx_locate(int want_unused)
 {
-    int i, count = 0;
-    switch (shmem_transport_ofi_stx_share_alg) {
-        case (ROUNDROBIN):
-            i = stx_start_idx;
-            while (count < shmem_transport_ofi_stx_max) {
-                if( shmem_transport_ofi_stx_pool[i].ref_cnt == 0 &&
-                   !shmem_transport_ofi_stx_pool[i].is_private ) {
-                    ctx->stx_idx = i;
-                    stx_start_idx = i;
-                    break;
-                } else {
-                    i = (i + 1) % shmem_transport_ofi_stx_max;
-                    count++;
-                }
-            }
+    int i, count = 0, stx_idx = -1;
 
-            if (count == shmem_transport_ofi_stx_max) {
-                /* No free STX is available, so share with shmem_ctx_default */
-                ctx->stx_idx = 0;
-                stx_start_idx = 1;
-                if (ctx->options & SHMEM_CTX_PRIVATE) {
-                    RAISE_WARN_STR("No OFI STX available, so sharing with the default context.");
-                }
-            }
-            break;
-
-        case (RANDOM):
-            i = fair_rand();
-            while (count < shmem_transport_ofi_stx_max) {
-                if( shmem_transport_ofi_stx_pool[i].ref_cnt == 0 &&
-                   !shmem_transport_ofi_stx_pool[i].is_private ) {
-                    ctx->stx_idx = i;
-                    break;
-                } else {
-                    i = fair_rand();
-                    count++;
-                }
-            }
-            if (count == shmem_transport_ofi_stx_max) {
-                /* No free STX is available, so share with shmem_ctx_default */
-                ctx->stx_idx = 0;
-                if (ctx->options & SHMEM_CTX_PRIVATE) {
-                    RAISE_WARN_STR("No OFI STX available, so sharing with the default context.");
-                }
-            }
-            break;
+    /* Shared STX requested, return SHMEM_CTX_DEFAULT STX */
+    if (!want_unused) {
+        stx_idx = 0;
+        stx_start_idx = 1;
     }
-    return;
+
+    /* Search for an unused STX that is suitable for privatization */
+    else {
+        switch (shmem_transport_ofi_stx_allocator) {
+            case (ROUNDROBIN):
+                i = stx_start_idx;
+                while (count < shmem_transport_ofi_stx_max) {
+                    if( shmem_transport_ofi_stx_pool[i].ref_cnt == 0 &&
+                        !shmem_transport_ofi_stx_pool[i].is_private ) {
+                        stx_idx = i;
+                        stx_start_idx = i;
+                        break;
+                    } else {
+                        i = (i + 1) % shmem_transport_ofi_stx_max;
+                        count++;
+                    }
+                }
+
+                break;
+
+            case (RANDOM):
+                i = fair_rand();
+                while (count < shmem_transport_ofi_stx_max) {
+                    if( shmem_transport_ofi_stx_pool[i].ref_cnt == 0 &&
+                        !shmem_transport_ofi_stx_pool[i].is_private ) {
+                        stx_idx = i;
+                        break;
+                    } else {
+                        i = fair_rand();
+                        count++;
+                    }
+                }
+                break;
+        }
+    }
+
+    return stx_idx;
 }
 
 
 static inline
-void shmem_transport_ofi_stx_pool_get_next(shmem_transport_ctx_t *ctx)
+void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
 {
-    /* STX contexts are shared by SHMEM contexts that are private to the same
-     * thread (i.e. have SHMEM_CTX_PRIVATE option set and same thread ID).  */
+    /* SHMEM contexts that are private to the same thread (i.e. have
+     * SHMEM_CTX_PRIVATE option set) share the same STX.  */
     if (ctx->options & SHMEM_CTX_PRIVATE) {
 
         shmem_transport_ofi_stx_kvs_t *f;
         HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, f);
+
         if (f) {
-            /* A thread-private STX already exists for this thread id, so increment the
-             * reference count and rollback to the last index into the STX resource pool:  */
-            f->stx->ref_cnt++;
+            shmem_transport_ofi_stx_pool[f->stx_idx].ref_cnt++;
             ctx->stx_idx = f->stx_idx;
 
         } else {
-            shmem_transport_ofi_stx_pool_search(ctx);
+            /* No STX allocated to the given TID, attempt to allocate one */
+            int is_unused = 1;
+            int stx_idx;
+            shmem_transport_ofi_stx_t *stx = NULL;
+
+            stx_idx = shmem_transport_ofi_stx_locate(1);
+
+            if (stx_idx < 0) {
+                DEBUG_STR("private STX unavailable, falling back to STX sharing");
+                is_unused = 0;
+                stx_idx = shmem_transport_ofi_stx_locate(0);
+            }
+
+            shmem_internal_assert(stx_idx >= 0);
+            stx = &shmem_transport_ofi_stx_pool[stx_idx];
+            ctx->stx_idx = stx_idx;
+            stx->ref_cnt++;
+
             shmem_transport_ofi_stx_kvs_t *e = malloc(sizeof(shmem_transport_ofi_stx_kvs_t));
             if (e == NULL) {
-                RAISE_ERROR_STR("Error: out of memory when allocating OFI STX key/value");
+                RAISE_ERROR_STR("out of memory when allocating STX KVS entry");
             }
-            e->tid = ctx->tid;
+            e->tid     = ctx->tid;
             e->stx_idx = ctx->stx_idx;
-            e->stx = &shmem_transport_ofi_stx_pool[ctx->stx_idx];
-            e->stx->ref_cnt++;
-            e->stx->is_private = true;
 
-            HASH_ADD_INT(shmem_transport_ofi_stx_kvs, tid, e);
+            if (is_unused) {
+                stx->is_private = 1;
+                HASH_ADD_INT(shmem_transport_ofi_stx_kvs, tid, e);
+            }
         }
-
-
     } else {
-        shmem_transport_ofi_stx_pool_search(ctx);
-        shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private = false;
-        shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt += 1;
+        int stx_idx = shmem_transport_ofi_stx_locate(0);
+        shmem_internal_assert(stx_idx >= 0);
+        ctx->stx_idx = stx_idx;
+        shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt++;
     }
+
     return;
 }
-#endif
 
 #define OFI_MAJOR_VERSION 1
 #ifdef ENABLE_MR_RMA_EVENT
@@ -1279,22 +1288,12 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 
     /* TODO: Fill in TX attr */
 
-    /* Share STXs by selecting an array index according to the "stx_share_algorithm". */
-#ifdef ENABLE_THREADS
-    if (shmem_internal_thread_level > SHMEM_THREAD_FUNNELED) {
-
-        if (ctx->options & SHMEM_CTX_PRIVATE) {
+    /* Allocate STX from the pool */
+    if (shmem_internal_thread_level > SHMEM_THREAD_FUNNELED &&
+        ctx->options & SHMEM_CTX_PRIVATE) {
             ctx->tid = shmem_transport_ofi_gettid();
-        }
-
-        shmem_transport_ofi_stx_pool_get_next(ctx);
-    } else {
-        stx_start_idx = 0;
     }
-#else
-    stx_start_idx = 0;
-#endif
-    ctx->stx_idx = stx_start_idx;
+    shmem_transport_ofi_stx_allocate(ctx);
 
     ret = bind_enable_cntr_ep_resources(ctx);
     OFI_CHECK_RETURN_MSG(ret, "context bind/enable CNTR endpoint failed (%s)\n", fi_strerror(errno));
@@ -1376,13 +1375,13 @@ int shmem_transport_init(void)
     /* STX sharing settings */
     char *type = shmem_internal_params.OFI_STX_SHARE_ALGORITHM;
     if (0 == strcmp(type, "round-robin")) {
-        shmem_transport_ofi_stx_share_alg = ROUNDROBIN;
+        shmem_transport_ofi_stx_allocator = ROUNDROBIN;
     } else if (0 == strcmp(type, "random")) {
-        shmem_transport_ofi_stx_share_alg = RANDOM;
+        shmem_transport_ofi_stx_allocator = RANDOM;
         shmem_transport_ofi_stx_rand_init();
     } else {
         RAISE_WARN_MSG("Ignoring bad STX share algorithm '%s', using 'round-robin'\n", type);
-        shmem_transport_ofi_stx_share_alg = ROUNDROBIN;
+        shmem_transport_ofi_stx_allocator = ROUNDROBIN;
     }
 
     /* Allocate STX array with max length */
@@ -1397,7 +1396,7 @@ int shmem_transport_init(void)
                              &shmem_transport_ofi_stx_pool[i].stx, NULL);
         OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
         shmem_transport_ofi_stx_pool[i].ref_cnt = 0;
-        shmem_transport_ofi_stx_pool[i].is_private = false;
+        shmem_transport_ofi_stx_pool[i].is_private = 0;
     }
 
     /* The current bounce buffering implementation is only compatible with
@@ -1523,11 +1522,12 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         shmem_transport_ofi_stx_kvs_t *e;
         HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, e);
         if (e) {
-            e->stx->ref_cnt--;
-            if (e->stx->ref_cnt == 0) {
+            shmem_transport_ofi_stx_t *stx = &shmem_transport_ofi_stx_pool[ctx->stx_idx];
+            stx->ref_cnt--;
+            if (stx->ref_cnt == 0) {
                 HASH_DEL(shmem_transport_ofi_stx_kvs, e);
                 free(e);
-                shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private = false;
+                shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private = 0;
             }
         }
         else {
@@ -1535,6 +1535,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         }
     } else {
         shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt--;
+        shmem_internal_assert(!shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private);
     }
 
     ret = fi_close(&ctx->put_cntr->fid);
@@ -1628,7 +1629,7 @@ int shmem_transport_fini(void)
 #ifdef USE_AV_MAP
     free(addr_table);
 #endif
-    switch (shmem_transport_ofi_stx_share_alg) {
+    switch (shmem_transport_ofi_stx_allocator) {
         case (ROUNDROBIN):
             break;
         case (RANDOM):
