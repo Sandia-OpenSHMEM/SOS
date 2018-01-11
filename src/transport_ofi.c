@@ -95,6 +95,8 @@ static char                     myephostname[EPHOSTNAMELEN];
 #endif
 #ifdef ENABLE_THREADS
 shmem_internal_mutex_t          shmem_transport_ofi_lock;
+#endif /* ENABLE_THREADS */
+
 #ifndef __APPLE__
 #ifdef HAVE_SYS_GETTID
 /* Need a syscall to gettid() because glibc doesn't provide a wrapper
@@ -127,7 +129,6 @@ uint64_t shmem_transport_ofi_gettid(void)
     }
 }
 #endif /* APPLE */
-#endif /* ENABLE_THREADS */
 
 struct fabric_info shmem_transport_ofi_info = {0};
 
@@ -1598,7 +1599,7 @@ int shmem_transport_fini(void)
 
     for (i = 0; i < shmem_transport_ofi_stx_max; ++i) {
         if (shmem_transport_ofi_stx_pool[i].ref_cnt != 0)
-            RAISE_WARN_MSG("Closing STX %zu with nonzero ref. count (%d)\n", i,
+            RAISE_WARN_MSG("Closing STX %zu with nonzero ref. count (%ld)\n", i,
                            shmem_transport_ofi_stx_pool[i].ref_cnt);
         ret = fi_close(&shmem_transport_ofi_stx_pool[i].stx->fid);
         OFI_CHECK_ERROR_MSG(ret, "STX context close failed (%s)\n", fi_strerror(errno));
