@@ -39,15 +39,8 @@
 #include <unistd.h>
 #include <shmem.h>
 
-int n_threads = 8;
-int first = 1;
-uint64_t bytes_sent = 0;
-
-
 int main(int argc, char *argv[])
 {
-  omp_set_num_threads(n_threads);
-
   uni_dir_bw_main(argc, argv, STYLE_PUT);
 
   return 0;
@@ -57,73 +50,59 @@ void uni_dir_bw(int len, perf_metrics_t *metric_info)
 {
   int streaming = !streaming_node(*metric_info);
   double start = 0.0, end = 0.0;
-  int i = 0, j = 0, k = 0;
+  int j = 0;
   int dest = partner_node(*metric_info);
 
-  shmem_ctx_t *contexts = malloc(sizeof(shmem_ctx_t)*n_threads);
-
-  for(i = 0; i < n_threads; ++i) {
-    /* FIXME: Contexts should be private, which means they should be created in
-     * the parallel region instead of here */
-    shmem_ctx_create(0, &contexts[i]);
-  }
-
-  /* FIXME: This is a horrible way to change the buffer, but I didn't
-   * want to mess with the initialization code in common.h
-   */
-  if(first) {
-    first = 0;
-
-    metric_info->src = aligned_buffer_alloc(metric_info->max_len*n_threads);
-    init_array(metric_info->src, metric_info->max_len*n_threads, metric_info->my_node);
-
-    metric_info->dest = aligned_buffer_alloc(metric_info->max_len*n_threads);
-    init_array(metric_info->dest, metric_info->max_len*n_threads, metric_info->my_node);
-  }
-  /* end FIXME */
+  char *src = aligned_buffer_alloc (metric_info->nthreads * len);
+  char *dst = aligned_buffer_alloc (metric_info->nthreads * len);
+  assert(src && dst);
 
   shmem_barrier_all();
 
-  int chunksize = len/n_threads;
-  int numchunks = (len + chunksize - 1)/chunksize;
-
   if (streaming) {
-    for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
-      if(i == metric_info->warmup)
-        start = perf_shmemx_wtime();
+      int i, k;
+      int chunksize = len < metric_info->nthreads ? 1 : len/metric_info->nthreads;
+      shmem_ctx_t *contexts = malloc(sizeof(shmem_ctx_t) * metric_info->nthreads);
 
-      /* FIXME: Don't want parallel region start/stop overhead to show up in
-       * measurements! */
-#pragma omp parallel for
-	for(j = 0; j < n_threads; ++j) {
-		int start = j*chunksize;
-		int end = (j+1)*chunksize;
-		if(end > len) { end = len; }
-	      for(k = 0; k < metric_info->window_size; k++) {
-		shmem_ctx_putmem(contexts[j], metric_info->dest+start, metric_info->src+start,
-				end - start, dest);
-		shmem_ctx_quiet(contexts[j]);
-	      }
-	}
+      for(i = 0; i < metric_info->nthreads; ++i) {
+        shmem_ctx_create(SHMEM_CTX_PRIVATE, &contexts[i]);
+      }
+    
+      for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
+        if(i == metric_info->warmup) {
+#pragma omp barrier // Keep threads in sync
 
-    }
-    end = perf_shmemx_wtime();
-
-    for(i = 0; i < metric_info->trials + metric_info->warmup; ++i) {
-        for(j = 0; j < metric_info->window_size; ++j) {
-          bytes_sent += len;
+#pragma omp master
+          {
+            start = perf_shmemx_wtime();
+          }
         }
-    }
+#pragma omp parallel for
+        for(j = 0; j < metric_info->nthreads; ++j) {
+          int start_index = j * chunksize;
+          int end_index = (j + 1) * chunksize;
+          if(end_index > len) { 
+            end_index = len; 
+          }
+          for(k = 0; k < metric_info->window_size; k++) {
+            shmem_ctx_putmem(contexts[j], dst + start_index, src + start_index,
+			end_index - start_index, dest);
+            shmem_ctx_quiet(contexts[j]);
+	  }
+        }
+      }
+      end = perf_shmemx_wtime();
 
+      for(i = 0; i < metric_info->nthreads; ++i) {
+        shmem_ctx_destroy(contexts[i]);
+      }
+      free(contexts);
     calc_and_print_results((end - start), len, *metric_info);
   }
 
-  for(i = 0; i < n_threads; ++i) {
-    /* FIXME: Private contexts would need to be destroyed before the end of the
-     * parallel region */
-    shmem_ctx_destroy(contexts[i]);
-  }
+  shmem_barrier_all();
 
-  free(contexts);
+  aligned_buffer_free(src);
+  aligned_buffer_free(dst);
 
 }

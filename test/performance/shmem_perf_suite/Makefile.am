@@ -26,7 +26,7 @@ check_PROGRAMS = \
 if HAVE_OPENMP
 check_PROGRAMS += \
 	shmem_bw_put_ctx_lockless \
-	shmem_ctx_bw_nb_put_perf
+	shmem_bw_nb_put_ctx_perf
 endif
 
 noinst_HEADERS = \
@@ -58,4 +58,3 @@ if USE_PMI_SIMPLE
 LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
 endif
 
-shmem_bw_put_ctx_lockless_CFLAGS = $(AM_OPENMP_CFLAGS)
