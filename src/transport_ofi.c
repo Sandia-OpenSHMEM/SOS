@@ -319,7 +319,6 @@ enum stx_allocator_t {
 };
 typedef enum stx_allocator_t stx_allocator_t;
 static stx_allocator_t shmem_transport_ofi_stx_allocator;
-static int stx_start_idx = 0;
 
 static long shmem_transport_ofi_stx_max;
 
@@ -340,51 +339,48 @@ typedef struct shmem_transport_ofi_stx_kvs_t shmem_transport_ofi_stx_kvs_t;
 static shmem_transport_ofi_stx_kvs_t* shmem_transport_ofi_stx_kvs = NULL;
 
 
-/* Random STX selection: */
-static uint32_t *rand_pool_indices;
-static int rand_pool_top_idx;
-
 /* This uses a slightly modified version of the Fisher-Yates shuffle algorithm
  * (or Knuth Shuffle).  It selects a random element from the so-far
  * unselected subset of the STX pool.  After depleting the pool, we start over
  * again on the (now random) array of pool indices, and so on.*/
+static int *rand_pool_indices;
+static int rand_pool_top_idx;
+
 static inline
 void shmem_transport_ofi_stx_rand_init() {
-    rand_pool_indices = malloc(shmem_transport_ofi_stx_max*sizeof(uint32_t));
-    if (rand_pool_indices == NULL) {
-        RAISE_ERROR_STR("Error: out of memory when allocating OFI random STX indices");
-    }
+    rand_pool_indices = malloc(shmem_transport_ofi_stx_max * sizeof(int));
 
-    for(int i=0; i<shmem_transport_ofi_stx_max; i++) {
+    if (rand_pool_indices == NULL)
+        RAISE_ERROR_STR("out of memory initializing random STX allocator");
+
+    for (int i = 0; i < shmem_transport_ofi_stx_max; i++)
         rand_pool_indices[i] = i;
-    }
-    /* Start at the last element: */
-    rand_pool_top_idx = shmem_transport_ofi_stx_max-1;
+
+    rand_pool_top_idx = shmem_transport_ofi_stx_max - 1;
 
     return;
 }
 
 static inline
-int fair_rand() {
+int shmem_transport_ofi_stx_rand_next(void) {
     /* Choose an STX index from the unselected subset */
-    int choice = rand() % rand_pool_top_idx;
+    int choice = rand() % (rand_pool_top_idx + 1);
 
     /* Swap the value at the chosen index with the value at the top index */
     int tmp = rand_pool_indices[choice];
     rand_pool_indices[choice] = rand_pool_indices[rand_pool_top_idx];
     rand_pool_indices[rand_pool_top_idx] = tmp;
 
-    /* If we've reached the first element, then start over from the top
-     * (skipping the 0th element reserved for the default context) */
-    if (rand_pool_top_idx == 1) {
+    /* If we've reached the last element, then start over from the top */
+    if (rand_pool_top_idx == 0)
         rand_pool_top_idx = shmem_transport_ofi_stx_max - 1;
-    } else {
+    else
         rand_pool_top_idx--;
-    }
 
     return tmp;
 }
 
+static inline
 void shmem_transport_ofi_stx_rand_fini() {
     free(rand_pool_indices);
     return;
@@ -393,46 +389,50 @@ void shmem_transport_ofi_stx_rand_fini() {
 static inline
 int shmem_transport_ofi_stx_locate(int want_unused)
 {
-    int i, count = 0, stx_idx = -1;
+    static int rr_start_idx = 0;
+    int stx_idx = -1;
 
     /* Shared STX requested, return SHMEM_CTX_DEFAULT STX */
     if (!want_unused) {
         stx_idx = 0;
-        stx_start_idx = 1;
+        rr_start_idx = 1;
     }
 
     /* Search for an unused STX that is suitable for privatization */
     else {
+        int i, count;
         switch (shmem_transport_ofi_stx_allocator) {
-            case (ROUNDROBIN):
-                i = stx_start_idx;
-                while (count < shmem_transport_ofi_stx_max) {
-                    if( shmem_transport_ofi_stx_pool[i].ref_cnt == 0 &&
-                        !shmem_transport_ofi_stx_pool[i].is_private ) {
+            case ROUNDROBIN:
+                i = rr_start_idx;
+                for (count = 0; count < shmem_transport_ofi_stx_max; count++) {
+                    if (shmem_transport_ofi_stx_pool[i].ref_cnt == 0) {
+                        shmem_internal_assert(!shmem_transport_ofi_stx_pool[i].is_private);
                         stx_idx = i;
-                        stx_start_idx = i;
+                        rr_start_idx = (i + 1) % shmem_transport_ofi_stx_max;
                         break;
                     } else {
                         i = (i + 1) % shmem_transport_ofi_stx_max;
-                        count++;
                     }
                 }
 
                 break;
 
-            case (RANDOM):
-                i = fair_rand();
-                while (count < shmem_transport_ofi_stx_max) {
-                    if( shmem_transport_ofi_stx_pool[i].ref_cnt == 0 &&
-                        !shmem_transport_ofi_stx_pool[i].is_private ) {
+            case RANDOM:
+                i = shmem_transport_ofi_stx_rand_next();
+                for (count = 0; count < shmem_transport_ofi_stx_max; count++) {
+                    if (shmem_transport_ofi_stx_pool[i].ref_cnt == 0) {
+                        shmem_internal_assert(!shmem_transport_ofi_stx_pool[i].is_private);
                         stx_idx = i;
                         break;
                     } else {
-                        i = fair_rand();
-                        count++;
+                        i = shmem_transport_ofi_stx_rand_next();
                     }
                 }
+
                 break;
+            default:
+                RAISE_ERROR_MSG("Invalid STX allocator (%d)\n",
+                                shmem_transport_ofi_stx_allocator);
         }
     }
 
@@ -1373,7 +1373,7 @@ int shmem_transport_init(void)
     }
 
     /* STX sharing settings */
-    char *type = shmem_internal_params.OFI_STX_SHARE_ALGORITHM;
+    char *type = shmem_internal_params.OFI_STX_ALLOCATOR;
     if (0 == strcmp(type, "round-robin")) {
         shmem_transport_ofi_stx_allocator = ROUNDROBIN;
     } else if (0 == strcmp(type, "random")) {
@@ -1630,10 +1630,14 @@ int shmem_transport_fini(void)
     free(addr_table);
 #endif
     switch (shmem_transport_ofi_stx_allocator) {
-        case (ROUNDROBIN):
+        case ROUNDROBIN:
             break;
-        case (RANDOM):
+        case RANDOM:
             shmem_transport_ofi_stx_rand_fini();
+            break;
+        default:
+            RAISE_ERROR_MSG("Invalid STX allocator (%d)\n",
+                            shmem_transport_ofi_stx_allocator);
     }
 
     fi_freeinfo(shmem_transport_ofi_info.fabrics);

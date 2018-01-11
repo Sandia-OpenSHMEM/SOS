@@ -210,13 +210,13 @@ options.
 
     SHMEM_OFI_STX_MAX (default: 16)
         Sets the maximum number of sharable transmit contexts (STXs) per PE.
-        After reaching the maximum, PEs share the available STXs using the
-        SHMEM_OFI_STX_SHARE_ALGORITHM parameter.
+        STXs are the underlying transmit resources that are allocated to
+        OpenSHMEM contexts, according to the SHMEM_OFI_STX_ALLOCATOR parameter.
 
-    SHMEM_OFI_STX_SHARE_ALGORITHM (default: round-robin)
-        Algorithm to share the available STX contexts after reaching the value
-        of SHMEM_OFI_STX_SHARE_MAX.  The default option is round-robin, which
-        uses STXs in increasing circular order.  Options are: round-robin,
+    SHMEM_OFI_STX_ALLOCATOR (default: round-robin)
+        Algorithm for allocating STX resources to OpenSHMEM contexts.  In
+        particular, the algorithm determines how resources are shared by
+        contexts once all STXs have been allocated.  Options are: round-robin,
         random.
 
   Debugging Environment variables:

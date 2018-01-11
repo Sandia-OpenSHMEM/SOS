@@ -81,7 +81,7 @@ SHMEM_INTERNAL_ENV_DEF(OFI_TX_POLL_LIMIT, long, 0, SHMEM_INTERNAL_ENV_CAT_TRANSP
 SHMEM_INTERNAL_ENV_DEF(OFI_RX_POLL_LIMIT, long, 0, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Get completion poll limit")
 SHMEM_INTERNAL_ENV_DEF(OFI_STX_MAX, long, 16, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
-                       "Maximum number of STX contexts per PE")
-SHMEM_INTERNAL_ENV_DEF(OFI_STX_SHARE_ALGORITHM, string, "round-robin", SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
-                       "Algorithm for sharing the STX contexts after reaching OFI_STX_MAX")
+                       "Maximum number of STX contexts")
+SHMEM_INTERNAL_ENV_DEF(OFI_STX_ALLOCATOR, string, "round-robin", SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Algorithm for allocating STX resources to contexts")
 #endif
