@@ -122,7 +122,7 @@ uint64_t shmem_transport_ofi_gettid(void)
     if (ret == 0) {
       return tid;
     } else {
-        RAISE_ERROR_MSG("Error geting thread ID: %s \n", strerror(ret));
+        RAISE_ERROR_MSG("Error geting thread ID: %s\n", strerror(ret));
         return -1;
     }
 }
@@ -312,7 +312,6 @@ typedef enum{
 uint64_t shmem_transport_ofi_max_poll = (1ULL<<30);
 
 
-/* STX control variables */
 enum stx_allocator_t {
     ROUNDROBIN = 0,
     RANDOM
@@ -341,8 +340,8 @@ static shmem_transport_ofi_stx_kvs_t* shmem_transport_ofi_stx_kvs = NULL;
 
 /* This uses a slightly modified version of the Fisher-Yates shuffle algorithm
  * (or Knuth Shuffle).  It selects a random element from the so-far
- * unselected subset of the STX pool.  After depleting the pool, we start over
- * again on the (now random) array of pool indices, and so on.*/
+ * unselected subset of the STX pool.  The top_idx should be reset before each
+ * new search to ensure that all entries are visited. */
 static int *rand_pool_indices;
 static int rand_pool_top_idx;
 
@@ -467,7 +466,7 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
                 stx_idx = shmem_transport_ofi_stx_locate(0);
             }
 
-            /* We presently assume that STX allocation is always successful */
+            /* STX allocation is always successful */
             shmem_internal_assert(stx_idx >= 0);
             stx = &shmem_transport_ofi_stx_pool[stx_idx];
             ctx->stx_idx = stx_idx;
@@ -962,7 +961,7 @@ int publish_av_info(struct fabric_info *info)
 
 #ifdef USE_ON_NODE_COMMS
     if (gethostname(myephostname, (EPHOSTNAMELEN - 1)) != 0)
-        RAISE_ERROR_MSG("gethostname error: %s \n", strerror(errno));
+        RAISE_ERROR_MSG("gethostname error: %s\n", strerror(errno));
 
     myephostname[EPHOSTNAMELEN-1] = '\0';
 
@@ -1533,7 +1532,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
             }
         }
         else {
-          RAISE_WARN_STR("Context tid not found during shmem_ctx_destroy");
+          RAISE_WARN_STR("Unable to locate private STX");
         }
     } else {
         shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt--;
@@ -1568,6 +1567,8 @@ int shmem_transport_fini(void)
 {
     int ret;
     size_t i;
+    shmem_transport_ofi_stx_kvs_t* e;
+    int stx_len = 0;
 
     /* Free all shareable contexts.  This performs a quiet on each context,
      * ensuring all operations have completed before proceeding with shutdown. */
@@ -1584,21 +1585,26 @@ int shmem_transport_fini(void)
     shmem_transport_quiet(&shmem_transport_ctx_default);
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
 
-    for(i = 0; i < shmem_transport_ofi_stx_max; ++i) {
+    for (e = shmem_transport_ofi_stx_kvs; e != NULL; e = e->hh.next) {
+        if (e) {
+            stx_len++;
+            free(e);
+        }
+    }
+
+    if (stx_len > 0) {
+        RAISE_WARN_MSG("Shutting down with %d active private contexts\n", stx_len);
+    }
+
+    for (i = 0; i < shmem_transport_ofi_stx_max; ++i) {
+        if (shmem_transport_ofi_stx_pool[i].ref_cnt != 0)
+            RAISE_WARN_MSG("Closing STX %zu with nonzero ref. count (%d)\n", i,
+                           shmem_transport_ofi_stx_pool[i].ref_cnt);
         ret = fi_close(&shmem_transport_ofi_stx_pool[i].stx->fid);
         OFI_CHECK_ERROR_MSG(ret, "STX context close failed (%s)\n", fi_strerror(errno));
     }
     free(shmem_transport_ofi_stx_pool);
 
-
-    shmem_transport_ofi_stx_kvs_t* e;
-    int stx_len = 0;
-    for(e = shmem_transport_ofi_stx_kvs; e != NULL; e = e->hh.next) {
-        if (e) stx_len++;
-    }
-    if (stx_len > 0) {
-        RAISE_ERROR_MSG("Leftover private contexts need to be destroyed: %d\n", stx_len);
-    }
 
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));

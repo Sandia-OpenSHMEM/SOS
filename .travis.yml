@@ -56,7 +56,7 @@ env:
         - >
           SOS_ENABLE_ERROR_TESTS=1
           SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing"
-          SHMEM_OFI_STX_MAX=8 SHMEM_OFI_STX_SHARE_ALGORITHM=random
+          SHMEM_OFI_STX_MAX=8 SHMEM_OFI_STX_ALLOCATOR=random
 os:
     - linux
 
