@@ -321,6 +321,7 @@ typedef enum stx_allocator_t stx_allocator_t;
 static stx_allocator_t shmem_transport_ofi_stx_allocator;
 
 static long shmem_transport_ofi_stx_max;
+static long shmem_transport_ofi_stx_threshold;
 
 struct shmem_transport_ofi_stx_t {
     struct fid_stx*   stx;
@@ -416,7 +417,7 @@ int shmem_transport_ofi_stx_search_unused(void)
 }
 
 static inline
-int shmem_transport_ofi_stx_search_shared(void)
+int shmem_transport_ofi_stx_search_shared(long threshold)
 {
     static int rr_start_idx = 0;
     int stx_idx = -1, i, count;
@@ -426,6 +427,7 @@ int shmem_transport_ofi_stx_search_shared(void)
             i = rr_start_idx;
             for (count = 0; count < shmem_transport_ofi_stx_max; count++) {
                 if (shmem_transport_ofi_stx_pool[i].ref_cnt > 0 &&
+                    (shmem_transport_ofi_stx_pool[i].ref_cnt <= threshold || threshold == -1) &&
                     !shmem_transport_ofi_stx_pool[i].is_private) {
                     stx_idx = i;
                     rr_start_idx = (i + 1) % shmem_transport_ofi_stx_max;
@@ -443,6 +445,7 @@ int shmem_transport_ofi_stx_search_shared(void)
             i = shmem_transport_ofi_stx_rand_next();
             for (count = 0; count < shmem_transport_ofi_stx_max; count++) {
                 if (shmem_transport_ofi_stx_pool[i].ref_cnt > 0 &&
+                    (shmem_transport_ofi_stx_pool[i].ref_cnt <= threshold || threshold == -1) &&
                     !shmem_transport_ofi_stx_pool[i].is_private) {
                     stx_idx = i;
                     rr_start_idx = (i + 1) % shmem_transport_ofi_stx_max;
@@ -490,7 +493,9 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
             if (stx_idx < 0) {
                 DEBUG_STR("private STX unavailable, falling back to STX sharing");
                 is_unused = 0;
-                stx_idx = shmem_transport_ofi_stx_search_shared();
+                stx_idx = shmem_transport_ofi_stx_search_shared(shmem_transport_ofi_stx_threshold);
+                if (stx_idx < 0)
+                    stx_idx = shmem_transport_ofi_stx_search_shared(-1);
             }
 
             shmem_internal_assert(stx_idx >= 0);
@@ -512,15 +517,15 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
                 ctx->options &= ~SHMEM_CTX_PRIVATE;
             }
         }
-    /* TODO: Optimize this case? else if (ctx->options & SHMEM_CTX_PRIVATE) */
+    /* TODO: Optimize this case? else if (ctx->options & SHMEM_CTX_SERIALIZED) */
     } else {
-        int stx_idx = shmem_transport_ofi_stx_search_unused();
+        int stx_idx = shmem_transport_ofi_stx_search_shared(shmem_transport_ofi_stx_threshold);
 
-        /* TODO: Currently only support greedy assignment of STX to non-private
-         * contexts.  In the future, we may want to set a threshold for refs on
-         * a shared STX before allocating the next one. */
         if (stx_idx < 0)
-            stx_idx = shmem_transport_ofi_stx_search_shared();
+            stx_idx = shmem_transport_ofi_stx_search_unused();
+
+        if (stx_idx < 0)
+            stx_idx = shmem_transport_ofi_stx_search_shared(-1);
 
         shmem_internal_assert(stx_idx >= 0);
         ctx->stx_idx = stx_idx;
@@ -1408,6 +1413,7 @@ int shmem_transport_init(void)
     } else {
         shmem_transport_ofi_stx_max = shmem_internal_params.OFI_STX_MAX;
     }
+    shmem_transport_ofi_stx_threshold = shmem_internal_params.OFI_STX_THRESHOLD;
 
     /* STX sharing settings */
     char *type = shmem_internal_params.OFI_STX_ALLOCATOR;
