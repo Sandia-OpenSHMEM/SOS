@@ -387,7 +387,23 @@ void shmem_transport_ofi_stx_rand_fini() {
 }
 
 static inline
-int shmem_transport_ofi_stx_locate(int want_unused)
+int shmem_transport_ofi_stx_search_unused(void)
+{
+    int stx_idx = -1, i;
+
+    for (i = 0; i < shmem_transport_ofi_stx_max; i++) {
+        if (shmem_transport_ofi_stx_pool[i].ref_cnt == 0) {
+            shmem_internal_assert(!shmem_transport_ofi_stx_pool[i].is_private);
+            stx_idx = i;
+            break;
+        }
+    }
+
+    return stx_idx;
+}
+
+static inline
+int shmem_transport_ofi_stx_search_shared(void)
 {
     static int rr_start_idx = 0;
     int stx_idx = -1, i, count;
@@ -396,18 +412,14 @@ int shmem_transport_ofi_stx_locate(int want_unused)
         case ROUNDROBIN:
             i = rr_start_idx;
             for (count = 0; count < shmem_transport_ofi_stx_max; count++) {
-                if (want_unused && shmem_transport_ofi_stx_pool[i].ref_cnt == 0) {
-                    shmem_internal_assert(!shmem_transport_ofi_stx_pool[i].is_private);
+                if (shmem_transport_ofi_stx_pool[i].ref_cnt > 0 &&
+                    !shmem_transport_ofi_stx_pool[i].is_private) {
                     stx_idx = i;
                     rr_start_idx = (i + 1) % shmem_transport_ofi_stx_max;
                     break;
-                } else if (!want_unused && !shmem_transport_ofi_stx_pool[i].is_private) {
-                    stx_idx = i;
-                    rr_start_idx = (i + 1) % shmem_transport_ofi_stx_max;
-                    break;
-                } else {
-                    i = (i + 1) % shmem_transport_ofi_stx_max;
                 }
+
+                i = (i + 1) % shmem_transport_ofi_stx_max;
             }
 
             break;
@@ -417,16 +429,14 @@ int shmem_transport_ofi_stx_locate(int want_unused)
             rand_pool_top_idx = shmem_transport_ofi_stx_max - 1;
             i = shmem_transport_ofi_stx_rand_next();
             for (count = 0; count < shmem_transport_ofi_stx_max; count++) {
-                if (want_unused && shmem_transport_ofi_stx_pool[i].ref_cnt == 0) {
-                    shmem_internal_assert(!shmem_transport_ofi_stx_pool[i].is_private);
+                if (shmem_transport_ofi_stx_pool[i].ref_cnt > 0 &&
+                    !shmem_transport_ofi_stx_pool[i].is_private) {
                     stx_idx = i;
+                    rr_start_idx = (i + 1) % shmem_transport_ofi_stx_max;
                     break;
-                } else if (!want_unused && !shmem_transport_ofi_stx_pool[i].is_private) {
-                    stx_idx = i;
-                    break;
-                } else {
-                    i = shmem_transport_ofi_stx_rand_next();
                 }
+
+                i = shmem_transport_ofi_stx_rand_next();
             }
 
             break;
@@ -437,6 +447,7 @@ int shmem_transport_ofi_stx_locate(int want_unused)
 
     return stx_idx;
 }
+
 
 
 static inline
@@ -459,15 +470,16 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
             int stx_idx;
             shmem_transport_ofi_stx_t *stx = NULL;
 
-            stx_idx = shmem_transport_ofi_stx_locate(1);
+            stx_idx = shmem_transport_ofi_stx_search_unused();
 
+            /* Couldn't get new STX, assign a shared one */
+            /* Note: shared STX allocation is always successful */
             if (stx_idx < 0) {
                 DEBUG_STR("private STX unavailable, falling back to STX sharing");
                 is_unused = 0;
-                stx_idx = shmem_transport_ofi_stx_locate(0);
+                stx_idx = shmem_transport_ofi_stx_search_shared();
             }
 
-            /* STX allocation is always successful */
             shmem_internal_assert(stx_idx >= 0);
             stx = &shmem_transport_ofi_stx_pool[stx_idx];
             ctx->stx_idx = stx_idx;
@@ -487,8 +499,16 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
                 ctx->options &= ~SHMEM_CTX_PRIVATE;
             }
         }
+    /* TODO: Optimize this case? else if (ctx->options & SHMEM_CTX_PRIVATE) */
     } else {
-        int stx_idx = shmem_transport_ofi_stx_locate(0);
+        int stx_idx = shmem_transport_ofi_stx_search_unused();
+
+        /* TODO: Currently only support greedy assignment of STX to non-private
+         * contexts.  In the future, we may want to set a threshold for refs on
+         * a shared STX before allocating the next one. */
+        if (stx_idx < 0)
+            stx_idx = shmem_transport_ofi_stx_search_shared();
+
         shmem_internal_assert(stx_idx >= 0);
         ctx->stx_idx = stx_idx;
         shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt++;
