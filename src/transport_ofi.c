@@ -503,15 +503,14 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
             ctx->stx_idx = stx_idx;
             stx->ref_cnt++;
 
-            shmem_transport_ofi_stx_kvs_t *e = malloc(sizeof(shmem_transport_ofi_stx_kvs_t));
-            if (e == NULL) {
-                RAISE_ERROR_STR("out of memory when allocating STX KVS entry");
-            }
-            e->tid     = ctx->tid;
-            e->stx_idx = ctx->stx_idx;
-
             if (is_unused) {
                 stx->is_private = 1;
+                shmem_transport_ofi_stx_kvs_t *e = malloc(sizeof(shmem_transport_ofi_stx_kvs_t));
+                if (e == NULL) {
+                    RAISE_ERROR_STR("out of memory when allocating STX KVS entry");
+                }
+                e->tid     = ctx->tid;
+                e->stx_idx = ctx->stx_idx;
                 HASH_ADD_INT(shmem_transport_ofi_stx_kvs, tid, e);
             } else {
                 ctx->options &= ~SHMEM_CTX_PRIVATE;
