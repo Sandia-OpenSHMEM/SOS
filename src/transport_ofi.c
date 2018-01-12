@@ -338,6 +338,19 @@ struct shmem_transport_ofi_stx_kvs_t {
 typedef struct shmem_transport_ofi_stx_kvs_t shmem_transport_ofi_stx_kvs_t;
 static shmem_transport_ofi_stx_kvs_t* shmem_transport_ofi_stx_kvs = NULL;
 
+#define SHMEM_TRANSPORT_OFI_DUMP_STX()                                                          \
+    do {                                                                                        \
+        char stx_str[256];                                                                      \
+        int i, offset;                                                                          \
+                                                                                                \
+        for (i = offset = 0; i < shmem_transport_ofi_stx_max; i++)                              \
+            offset += snprintf(stx_str+offset, 256-offset,                                      \
+                               (i == shmem_transport_ofi_stx_max-1) ? "%ld%s" : "%ld%s ",       \
+                               shmem_transport_ofi_stx_pool[i].ref_cnt,                         \
+                               shmem_transport_ofi_stx_pool[i].is_private ? "P" : "S");         \
+                                                                                                \
+        DEBUG_MSG("STX[%ld] = [ %s ]\n", shmem_transport_ofi_stx_max, stx_str);                 \
+    } while (0)
 
 /* This uses a slightly modified version of the Fisher-Yates shuffle algorithm
  * (or Knuth Shuffle).  It selects a random element from the so-far
@@ -513,6 +526,8 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
         ctx->stx_idx = stx_idx;
         shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt++;
     }
+
+    SHMEM_TRANSPORT_OFI_DUMP_STX();
 
     return;
 }
