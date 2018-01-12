@@ -107,6 +107,8 @@ pid_t shmem_transport_ofi_gettid(void)
     return syscall(SYS_gettid);
 }
 #else
+/* Cannot query the tid with a syscall, so instead assume each tid
+ * query corresponds to a unique thread. */
 static inline
 uint64_t shmem_transport_ofi_gettid(void)
 {
@@ -121,12 +123,9 @@ uint64_t shmem_transport_ofi_gettid(void)
     int ret;
     uint64_t tid;
     ret = pthread_threadid_np(NULL, &tid);
-    if (ret == 0) {
-      return tid;
-    } else {
+    if (ret != 0)
         RAISE_ERROR_MSG("Error geting thread ID: %s\n", strerror(ret));
-        return -1;
-    }
+    return tid;
 }
 #endif /* APPLE */
 

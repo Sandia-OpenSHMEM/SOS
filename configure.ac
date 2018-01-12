@@ -108,8 +108,7 @@ AS_IF([test "$enable_threads" != "no"], [
        AC_DEFINE([ENABLE_THREADS], [1], [Enable threads])
        AC_CHECK_HEADERS([stdatomic.h])
        CHECK_GETTID(
-           [AC_DEFINE([_GNU_SOURCE], [1], [Use of syscall from libc requires _GNU_SOURCE feature macro])
-            AC_DEFINE([HAVE_SYS_GETTID], [1], [Have support for SYS_gettid syscall])],
+           [AC_DEFINE([HAVE_SYS_GETTID], [1], [Have support for SYS_gettid syscall])],
            [AC_MSG_WARN([No support for SYS_gettid syscall])])
        AS_IF([test "$enable_thread_completion" = "yes"],
              [AC_DEFINE([USE_CTX_LOCK], [1], [Enable per-context locks])
