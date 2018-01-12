@@ -1044,14 +1044,6 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 #ifdef USE_CTX_LOCK
     SHMEM_MUTEX_INIT(ctx->lock);
 #endif
-    ctx->cntr_ep = NULL;
-    ctx->cq_ep = NULL;
-    ctx->stx = NULL;
-    ctx->put_cntr = NULL;
-    ctx->get_cntr = NULL;
-    ctx->cq = NULL;
-    ctx->pending_put_cntr =  0;
-    ctx->pending_get_cntr = 0;
 
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_put_attr,
                        &ctx->put_cntr, NULL);
@@ -1063,7 +1055,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 
     ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr, &ctx->cq, NULL);
     if (ret && errno == FI_EMFILE) {
-        DEBUG_STR("Consider increasing the open file limit with 'ulimit' command");
+        DEBUG_STR("Context creation failed because of open files limit, consider increasing with 'ulimit' command");
     }
     OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(errno));
 
@@ -1224,6 +1216,10 @@ int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
     if (ctxp == NULL) {
         RAISE_ERROR_STR("Error: out of memory when allocating OFI ctx object");
     }
+
+    memset(ctxp, 0, sizeof(shmem_transport_ctx_t));
+    shmem_internal_atomic_write(&ctxp->pending_put_cntr, 0);
+    shmem_internal_atomic_write(&ctxp->pending_get_cntr, 0);
 
     ctxp->options = options;
 

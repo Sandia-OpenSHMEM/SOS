@@ -29,67 +29,40 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define UPPER_LIMIT_NUM_CTX 1024
-
-#define MAX(a,b) ((a)>(b))?(b):(a)
-#define WRK_SIZE MAX(2, SHMEM_REDUCE_MIN_WRKDATA_SIZE)
+#define NUM_CTX 32
 
 long data = 0;
-int min_num_ctx = 0;
-int max_num_ctx = 0;
-
-long pSync[SHMEM_REDUCE_SYNC_SIZE];
-int pWrk[WRK_SIZE];
 
 int main(int argc, char **argv) {
     int me, npes, i;
     int errors = 0;
-    shmem_ctx_t ctx[UPPER_LIMIT_NUM_CTX];
-
-    int new_max = 0;
+    shmem_ctx_t ctx[NUM_CTX];
 
     shmem_init();
 
     me = shmem_my_pe();
     npes = shmem_n_pes();
 
-    /* Create as many contexts as possible until a failure occurs: */
-    while (max_num_ctx < UPPER_LIMIT_NUM_CTX) {
-        int err = shmem_ctx_create(0, &ctx[max_num_ctx]);
+    for (i = 0; i < NUM_CTX; i++) {
+        int err = shmem_ctx_create(0, &ctx[i]);
+
         if (err) {
-            printf("%d: Unable to create context #%d (%d)\n", me, max_num_ctx, err);
-            /* Need to free up some resources to avoid the open file limit: */
-            for (i=1; i<=npes; i++) {
-                shmem_ctx_destroy(ctx[max_num_ctx-i]);
-            }
-            break;
-        } else {
-            max_num_ctx++;
+            printf("%d: Error creating context %d (%d)\n", me, i, err);
+            shmem_global_exit(1);
         }
     }
 
-    /* Some processes might have failed earlier than others - find minimum: */
-    shmem_int_min_to_all(&min_num_ctx, &max_num_ctx, 1, 0, 0, npes, pWrk, pSync);
-
-    /* Destroy ~1/2 the contexts to free up resources for the atomics below: */
-    new_max = min_num_ctx / 2;
-    for (i=max_num_ctx-npes-1; i>new_max; i--) {
-        shmem_ctx_destroy(ctx[i]);
-    }
-
-    for (i = 0; i < new_max; i++)
+    for (i = 0; i < NUM_CTX; i++)
         shmem_ctx_long_atomic_inc(ctx[i], &data, (me+1) % npes);
 
-    for (i = 0; i < new_max; i++)
+    for (i = 0; i < NUM_CTX; i++)
         shmem_ctx_quiet(ctx[i]);
 
     shmem_sync_all();
 
-    if (data != new_max) {
-        printf("%d: error expected %d, got %ld\n", me, new_max, data);
+    if (data != NUM_CTX) {
+        printf("%d: error expected %d, got %ld\n", me, NUM_CTX, data);
         ++errors;
-    } else {
-        printf("PE:%d success!\n", me);
     }
 
     shmem_finalize();
