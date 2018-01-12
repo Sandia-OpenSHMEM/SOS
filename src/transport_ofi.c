@@ -1404,7 +1404,7 @@ int shmem_transport_init(void)
          shmem_internal_params.OFI_STX_MAX > 1) {
         if (shmem_internal_params.OFI_STX_MAX_provided) {
             /* We need only 1 STX per PE with SHMEM_THREAD_SINGLE or SHMEM_THREAD_FUNNELED */
-            RAISE_WARN_MSG("Ignoring invalid STX max setting '%ld' w/THREAD_SINGLE, using 1\n",
+            RAISE_WARN_MSG("Ignoring invalid STX max setting '%ld'; using 1 STX in single-threaded mode",
                            shmem_internal_params.OFI_STX_MAX);
         }
         shmem_transport_ofi_stx_max = 1;
