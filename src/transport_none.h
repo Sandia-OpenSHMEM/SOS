@@ -81,11 +81,11 @@ shmem_transport_fini(void)
 }
 
 static inline
-void
+int
 shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
 {
     *ctx = NULL;
-    return;
+    return 0;
 }
 
 static inline

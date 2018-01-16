@@ -129,9 +129,9 @@ shmem_internal_mutex_t shmem_internal_mutex_ptl4_nb_fence;
 shmem_transport_ctx_t shmem_transport_ctx_default;
 shmem_ctx_t SHMEM_CTX_DEFAULT = (shmem_ctx_t) &shmem_transport_ctx_default;
 
-void shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx) {
+int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx) {
   *ctx = NULL;
-  return;
+  return 0;
 }
 
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx) {
