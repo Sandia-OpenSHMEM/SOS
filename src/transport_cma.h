@@ -16,10 +16,11 @@
 #ifndef SHMEM_TRANSPORT_CMA_H
 #define SHMEM_TRANSPORT_CMA_H
 
-#ifdef HAVE_LIBC_CMA
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
+
+#ifdef HAVE_LIBC_CMA
 #include <sys/uio.h>
 #else
 #include <sys/syscall.h>
