@@ -37,11 +37,11 @@ shmem_ctx_create(long options, shmem_ctx_t *ctx)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmem_transport_ctx_create(options, (shmem_transport_ctx_t **) ctx);
+    int ret = shmem_transport_ctx_create(options, (shmem_transport_ctx_t **) ctx);
 
     SHMEM_ERR_CHECK_NULL(ctx, 0);
 
-    return 0;
+    return ret;
 }
 
 
