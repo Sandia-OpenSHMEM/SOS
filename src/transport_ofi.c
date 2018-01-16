@@ -375,7 +375,15 @@ void shmem_transport_ofi_stx_rand_init() {
 }
 
 static inline
+void shmem_transport_ofi_stx_rand_restart(void) {
+    rand_pool_top_idx = shmem_transport_ofi_stx_max - 1;
+}
+
+static inline
 int shmem_transport_ofi_stx_rand_next(void) {
+    /* Iterator is empty and should be restarted */
+    if (rand_pool_top_idx < 0) return -1;
+
     /* Choose an STX index from the unselected subset */
     int choice = rand() % (rand_pool_top_idx + 1);
 
@@ -384,12 +392,7 @@ int shmem_transport_ofi_stx_rand_next(void) {
     rand_pool_indices[choice] = rand_pool_indices[rand_pool_top_idx];
     rand_pool_indices[rand_pool_top_idx] = tmp;
 
-    /* If we've reached the last element, then start over from the top */
-    if (rand_pool_top_idx == 0)
-        rand_pool_top_idx = shmem_transport_ofi_stx_max - 1;
-    else
-        rand_pool_top_idx--;
-
+    rand_pool_top_idx--;
     return tmp;
 }
 
@@ -439,10 +442,8 @@ int shmem_transport_ofi_stx_search_shared(long threshold)
             break;
 
         case RANDOM:
-            /* Restart the random iterator to ensure all entries are visited */
-            rand_pool_top_idx = shmem_transport_ofi_stx_max - 1;
-            i = shmem_transport_ofi_stx_rand_next();
-            for (count = 0; count < shmem_transport_ofi_stx_max; count++) {
+            shmem_transport_ofi_stx_rand_restart();
+            while ((i = shmem_transport_ofi_stx_rand_next()) >= 0) {
                 if (shmem_transport_ofi_stx_pool[i].ref_cnt > 0 &&
                     (shmem_transport_ofi_stx_pool[i].ref_cnt <= threshold || threshold == -1) &&
                     !shmem_transport_ofi_stx_pool[i].is_private) {
@@ -450,8 +451,6 @@ int shmem_transport_ofi_stx_search_shared(long threshold)
                     rr_start_idx = (i + 1) % shmem_transport_ofi_stx_max;
                     break;
                 }
-
-                i = shmem_transport_ofi_stx_rand_next();
             }
 
             break;
