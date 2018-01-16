@@ -14,8 +14,11 @@ AC_DEFUN([CHECK_CMA], [
             [AC_MSG_CHECKING([CMA syscall definitions])
              AC_LANG_PUSH([C])
              AC_COMPILE_IFELSE([
-                AC_LANG_SOURCE([[#include <sys/syscall.h>]],
-                               [[long cma=__NR_process_vm_readv;]])],
+                AC_LANG_SOURCE([[
+#define _GNU_SOURCE
+#include <sys/syscall.h>
+long cma=__NR_process_vm_readv;
+]])],
                 [cma_happy="yes"],
                 [cma_happy="no"])
              AC_LANG_POP([C])
