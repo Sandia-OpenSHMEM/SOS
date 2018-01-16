@@ -1307,8 +1307,6 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 #ifdef USE_CTX_LOCK
     SHMEM_MUTEX_INIT(ctx->lock);
 #endif
-    shmem_internal_atomic_write(&ctx->pending_put_cntr, 0);
-    shmem_internal_atomic_write(&ctx->pending_get_cntr, 0);
 
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_put_attr,
                        &ctx->put_cntr, NULL);
@@ -1319,6 +1317,9 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     OFI_CHECK_RETURN_MSG(ret, "get_cntr creation failed (%s)\n", fi_strerror(errno));
 
     ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr, &ctx->cq, NULL);
+    if (ret && errno == FI_EMFILE) {
+        DEBUG_STR("Context creation failed because of open files limit, consider increasing with 'ulimit' command");
+    }
     OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(errno));
 
     ret = fi_endpoint(shmem_transport_ofi_domainfd,
@@ -1495,11 +1496,6 @@ int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
     int ret;
     int id;
 
-    /* FIXME: Context creation does not do resource cleanup on error, it just
-     * returns. This is consistent with how initialization worked before, but
-     * is worse since context creation is not necessarily do-or-die.
-     */
-
     /* Look for an open slot in the contexts array */
     for (id = 0; id < shmem_transport_ofi_contexts_len; id++)
         if (shmem_transport_ofi_contexts[id] == NULL) break;
@@ -1527,13 +1523,17 @@ int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
         RAISE_ERROR_STR("Error: out of memory when allocating OFI ctx object");
     }
 
+    memset(ctxp, 0, sizeof(shmem_transport_ctx_t));
+    shmem_internal_atomic_write(&ctxp->pending_put_cntr, 0);
+    shmem_internal_atomic_write(&ctxp->pending_get_cntr, 0);
+
+    ctxp->stx_idx = -1;
     ctxp->options = options;
 
     ret = shmem_transport_ofi_ctx_init(ctxp, id);
 
     if (ret) {
-        shmem_transport_ofi_contexts[id] = NULL;
-        free(ctxp);
+        shmem_transport_ctx_destroy(ctxp);
     } else {
         shmem_transport_ofi_contexts[id] = ctxp;
         *ctx = ctxp;
@@ -1548,8 +1548,10 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 {
     int ret;
 
-    ret = fi_close(&ctx->cntr_ep->fid);
-    OFI_CHECK_ERROR_MSG(ret, "Context CNTR endpoint close failed (%s)\n", fi_strerror(errno));
+    if (ctx->cntr_ep) {
+        ret = fi_close(&ctx->cntr_ep->fid);
+        OFI_CHECK_ERROR_MSG(ret, "Context CNTR endpoint close failed (%s)\n", fi_strerror(errno));
+    }
 
     if (ctx->cq_ep) {
         ret = fi_close(&ctx->cq_ep->fid);
@@ -1558,34 +1560,42 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         shmem_free_list_destroy(ctx->bounce_buffers);
     }
 
-    if (ctx->options & SHMEM_CTX_PRIVATE) {
-        shmem_transport_ofi_stx_kvs_t *e;
-        HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, e);
-        if (e) {
-            shmem_transport_ofi_stx_t *stx = &shmem_transport_ofi_stx_pool[ctx->stx_idx];
-            stx->ref_cnt--;
-            if (stx->ref_cnt == 0) {
-                HASH_DEL(shmem_transport_ofi_stx_kvs, e);
-                free(e);
-                shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private = 0;
+    if (ctx->stx_idx >= 0) {
+        if (ctx->options & SHMEM_CTX_PRIVATE) {
+            shmem_transport_ofi_stx_kvs_t *e;
+            HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, e);
+            if (e) {
+                shmem_transport_ofi_stx_t *stx = &shmem_transport_ofi_stx_pool[ctx->stx_idx];
+                stx->ref_cnt--;
+                if (stx->ref_cnt == 0) {
+                    HASH_DEL(shmem_transport_ofi_stx_kvs, e);
+                    free(e);
+                    shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private = 0;
+                }
             }
+            else {
+                RAISE_WARN_STR("Unable to locate private STX");
+            }
+        } else {
+            shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt--;
+            shmem_internal_assert(!shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private);
         }
-        else {
-          RAISE_WARN_STR("Unable to locate private STX");
-        }
-    } else {
-        shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt--;
-        shmem_internal_assert(!shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private);
     }
 
-    ret = fi_close(&ctx->put_cntr->fid);
-    OFI_CHECK_ERROR_MSG(ret, "Context put CNTR close failed (%s)\n", fi_strerror(errno));
+    if (ctx->put_cntr) {
+        ret = fi_close(&ctx->put_cntr->fid);
+        OFI_CHECK_ERROR_MSG(ret, "Context put CNTR close failed (%s)\n", fi_strerror(errno));
+    }
 
-    ret = fi_close(&ctx->get_cntr->fid);
-    OFI_CHECK_ERROR_MSG(ret, "Context get CNTR close failed (%s)\n", fi_strerror(errno));
+    if (ctx->get_cntr) {
+        ret = fi_close(&ctx->get_cntr->fid);
+        OFI_CHECK_ERROR_MSG(ret, "Context get CNTR close failed (%s)\n", fi_strerror(errno));
+    }
 
-    ret = fi_close(&ctx->cq->fid);
-    OFI_CHECK_ERROR_MSG(ret, "Context CQ close failed (%s)\n", fi_strerror(errno));
+    if (ctx->cq) {
+        ret = fi_close(&ctx->cq->fid);
+        OFI_CHECK_ERROR_MSG(ret, "Context CQ close failed (%s)\n", fi_strerror(errno));
+    }
 
 #ifdef USE_CTX_LOCK
     SHMEM_MUTEX_DESTROY(ctx->lock);
