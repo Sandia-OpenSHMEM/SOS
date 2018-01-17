@@ -8,14 +8,16 @@ AC_DEFUN([CHECK_CMA], [
 
     if test "$with_cma" = "yes" ; then
         AC_CHECK_FUNC([process_vm_writev],
-            [AC_DEFINE([_GNU_SOURCE], [1], [Use of CMA from libc requires _GNU_SOURCE feature macro])
-             AC_DEFINE([HAVE_LIBC_CMA], [1], [LibC has process_vm_writev])
+            [AC_DEFINE([HAVE_LIBC_CMA], [1], [LibC has process_vm_writev])
              cma_happy="yes" ],
             [AC_MSG_CHECKING([CMA syscall definitions])
              AC_LANG_PUSH([C])
              AC_COMPILE_IFELSE([
-                AC_LANG_SOURCE([[#include <sys/syscall.h>]],
-                               [[int cma=__NR_process_vm_readv;]])],
+                AC_LANG_SOURCE([[
+#define _GNU_SOURCE
+#include <sys/syscall.h>
+long cma=__NR_process_vm_readv;
+]])],
                 [cma_happy="yes"],
                 [cma_happy="no"])
              AC_LANG_POP([C])

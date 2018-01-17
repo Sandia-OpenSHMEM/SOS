@@ -22,6 +22,13 @@
 #include <inttypes.h>
 #include <netdb.h>
 
+#ifdef HAVE_SYS_GETTID
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <sys/syscall.h>
+#endif
+
 #if HAVE_FNMATCH_H
 #include <fnmatch.h>
 #else
@@ -35,6 +42,7 @@
 #include "transport_ofi.h"
 #include <unistd.h>
 #include "runtime.h"
+#include "uthash.h"
 
 struct fabric_info {
     struct fi_info *fabrics;
@@ -87,7 +95,39 @@ static char                     myephostname[EPHOSTNAMELEN];
 #endif
 #ifdef ENABLE_THREADS
 shmem_internal_mutex_t          shmem_transport_ofi_lock;
-#endif
+#endif /* ENABLE_THREADS */
+
+#ifndef __APPLE__
+#ifdef HAVE_SYS_GETTID
+/* Need a syscall to gettid() because glibc doesn't provide a wrapper
+ * (see gettid manpage in the NOTES section): */
+static inline
+pid_t shmem_transport_ofi_gettid(void)
+{
+    return syscall(SYS_gettid);
+}
+#else
+/* Cannot query the tid with a syscall, so instead assume each tid
+ * query corresponds to a unique thread. */
+static inline
+uint64_t shmem_transport_ofi_gettid(void)
+{
+    static uint64_t tid = 0;
+    return tid++;
+}
+#endif /* HAVE_SYS_GETTID */
+#else
+static inline
+uint64_t shmem_transport_ofi_gettid(void)
+{
+    int ret;
+    uint64_t tid;
+    ret = pthread_threadid_np(NULL, &tid);
+    if (ret != 0)
+        RAISE_ERROR_MSG("Error geting thread ID: %s\n", strerror(ret));
+    return tid;
+}
+#endif /* APPLE */
 
 struct fabric_info shmem_transport_ofi_info = {0};
 
@@ -271,6 +311,229 @@ typedef enum{
 /* default CQ depth */
 uint64_t shmem_transport_ofi_max_poll = (1ULL<<30);
 
+
+enum stx_allocator_t {
+    ROUNDROBIN = 0,
+    RANDOM
+};
+typedef enum stx_allocator_t stx_allocator_t;
+static stx_allocator_t shmem_transport_ofi_stx_allocator;
+
+static long shmem_transport_ofi_stx_max;
+static long shmem_transport_ofi_stx_threshold;
+
+struct shmem_transport_ofi_stx_t {
+    struct fid_stx*   stx;
+    long              ref_cnt;
+    int               is_private;
+};
+typedef struct shmem_transport_ofi_stx_t shmem_transport_ofi_stx_t;
+static shmem_transport_ofi_stx_t* shmem_transport_ofi_stx_pool;
+
+struct shmem_transport_ofi_stx_kvs_t {
+    int             stx_idx;
+    TID_TYPE        tid;
+    UT_hash_handle  hh;
+};
+typedef struct shmem_transport_ofi_stx_kvs_t shmem_transport_ofi_stx_kvs_t;
+static shmem_transport_ofi_stx_kvs_t* shmem_transport_ofi_stx_kvs = NULL;
+
+#define SHMEM_TRANSPORT_OFI_DUMP_STX()                                                          \
+    do {                                                                                        \
+        char stx_str[256];                                                                      \
+        int i, offset;                                                                          \
+                                                                                                \
+        for (i = offset = 0; i < shmem_transport_ofi_stx_max; i++)                              \
+            offset += snprintf(stx_str+offset, 256-offset,                                      \
+                               (i == shmem_transport_ofi_stx_max-1) ? "%ld%s" : "%ld%s ",       \
+                               shmem_transport_ofi_stx_pool[i].ref_cnt,                         \
+                               shmem_transport_ofi_stx_pool[i].is_private ? "P" : "S");         \
+                                                                                                \
+        DEBUG_MSG("STX[%ld] = [ %s ]\n", shmem_transport_ofi_stx_max, stx_str);                 \
+    } while (0)
+
+/* This uses a slightly modified version of the Fisher-Yates shuffle algorithm
+ * (or Knuth Shuffle).  It selects a random element from the so-far
+ * unselected subset of the STX pool.  The top_idx should be reset before each
+ * new search to ensure that all entries are visited. */
+static int *rand_pool_indices;
+static int rand_pool_top_idx;
+
+static inline
+void shmem_transport_ofi_stx_rand_init() {
+    rand_pool_indices = malloc(shmem_transport_ofi_stx_max * sizeof(int));
+
+    if (rand_pool_indices == NULL)
+        RAISE_ERROR_STR("out of memory initializing random STX allocator");
+
+    for (int i = 0; i < shmem_transport_ofi_stx_max; i++)
+        rand_pool_indices[i] = i;
+
+    rand_pool_top_idx = shmem_transport_ofi_stx_max - 1;
+
+    return;
+}
+
+static inline
+void shmem_transport_ofi_stx_rand_restart(void) {
+    rand_pool_top_idx = shmem_transport_ofi_stx_max - 1;
+}
+
+static inline
+int shmem_transport_ofi_stx_rand_next(void) {
+    /* Iterator is empty and should be restarted */
+    if (rand_pool_top_idx < 0) return -1;
+
+    /* Choose an STX index from the unselected subset */
+    int choice = rand() % (rand_pool_top_idx + 1);
+
+    /* Swap the value at the chosen index with the value at the top index */
+    int tmp = rand_pool_indices[choice];
+    rand_pool_indices[choice] = rand_pool_indices[rand_pool_top_idx];
+    rand_pool_indices[rand_pool_top_idx] = tmp;
+
+    rand_pool_top_idx--;
+    return tmp;
+}
+
+static inline
+void shmem_transport_ofi_stx_rand_fini() {
+    free(rand_pool_indices);
+    return;
+}
+
+static inline
+int shmem_transport_ofi_stx_search_unused(void)
+{
+    int stx_idx = -1, i;
+
+    for (i = 0; i < shmem_transport_ofi_stx_max; i++) {
+        if (shmem_transport_ofi_stx_pool[i].ref_cnt == 0) {
+            shmem_internal_assert(!shmem_transport_ofi_stx_pool[i].is_private);
+            stx_idx = i;
+            break;
+        }
+    }
+
+    return stx_idx;
+}
+
+static inline
+int shmem_transport_ofi_stx_search_shared(long threshold)
+{
+    static int rr_start_idx = 0;
+    int stx_idx = -1, i, count;
+
+    switch (shmem_transport_ofi_stx_allocator) {
+        case ROUNDROBIN:
+            i = rr_start_idx;
+            for (count = 0; count < shmem_transport_ofi_stx_max; count++) {
+                if (shmem_transport_ofi_stx_pool[i].ref_cnt > 0 &&
+                    (shmem_transport_ofi_stx_pool[i].ref_cnt <= threshold || threshold == -1) &&
+                    !shmem_transport_ofi_stx_pool[i].is_private) {
+                    stx_idx = i;
+                    rr_start_idx = (i + 1) % shmem_transport_ofi_stx_max;
+                    break;
+                }
+
+                i = (i + 1) % shmem_transport_ofi_stx_max;
+            }
+
+            break;
+
+        case RANDOM:
+            shmem_transport_ofi_stx_rand_restart();
+            while ((i = shmem_transport_ofi_stx_rand_next()) >= 0) {
+                if (shmem_transport_ofi_stx_pool[i].ref_cnt > 0 &&
+                    (shmem_transport_ofi_stx_pool[i].ref_cnt <= threshold || threshold == -1) &&
+                    !shmem_transport_ofi_stx_pool[i].is_private) {
+                    stx_idx = i;
+                    rr_start_idx = (i + 1) % shmem_transport_ofi_stx_max;
+                    break;
+                }
+            }
+
+            break;
+        default:
+            RAISE_ERROR_MSG("Invalid STX allocator (%d)\n",
+                            shmem_transport_ofi_stx_allocator);
+    }
+
+    return stx_idx;
+}
+
+
+
+static inline
+void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
+{
+    /* SHMEM contexts that are private to the same thread (i.e. have
+     * SHMEM_CTX_PRIVATE option set) share the same STX.  */
+    if (ctx->options & SHMEM_CTX_PRIVATE) {
+
+        shmem_transport_ofi_stx_kvs_t *f;
+        HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, f);
+
+        if (f) {
+            shmem_transport_ofi_stx_pool[f->stx_idx].ref_cnt++;
+            ctx->stx_idx = f->stx_idx;
+
+        } else {
+            /* No STX allocated to the given TID, attempt to allocate one */
+            int is_unused = 1;
+            int stx_idx;
+            shmem_transport_ofi_stx_t *stx = NULL;
+
+            stx_idx = shmem_transport_ofi_stx_search_unused();
+
+            /* Couldn't get new STX, assign a shared one */
+            /* Note: shared STX allocation is always successful */
+            if (stx_idx < 0) {
+                DEBUG_STR("private STX unavailable, falling back to STX sharing");
+                is_unused = 0;
+                stx_idx = shmem_transport_ofi_stx_search_shared(shmem_transport_ofi_stx_threshold);
+                if (stx_idx < 0)
+                    stx_idx = shmem_transport_ofi_stx_search_shared(-1);
+            }
+
+            shmem_internal_assert(stx_idx >= 0);
+            stx = &shmem_transport_ofi_stx_pool[stx_idx];
+            ctx->stx_idx = stx_idx;
+            stx->ref_cnt++;
+
+            if (is_unused) {
+                stx->is_private = 1;
+                shmem_transport_ofi_stx_kvs_t *e = malloc(sizeof(shmem_transport_ofi_stx_kvs_t));
+                if (e == NULL) {
+                    RAISE_ERROR_STR("out of memory when allocating STX KVS entry");
+                }
+                e->tid     = ctx->tid;
+                e->stx_idx = ctx->stx_idx;
+                HASH_ADD_INT(shmem_transport_ofi_stx_kvs, tid, e);
+            } else {
+                ctx->options &= ~SHMEM_CTX_PRIVATE;
+            }
+        }
+    /* TODO: Optimize this case? else if (ctx->options & SHMEM_CTX_SERIALIZED) */
+    } else {
+        int stx_idx = shmem_transport_ofi_stx_search_shared(shmem_transport_ofi_stx_threshold);
+
+        if (stx_idx < 0)
+            stx_idx = shmem_transport_ofi_stx_search_unused();
+
+        if (stx_idx < 0)
+            stx_idx = shmem_transport_ofi_stx_search_shared(-1);
+
+        shmem_internal_assert(stx_idx >= 0);
+        ctx->stx_idx = stx_idx;
+        shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt++;
+    }
+
+    SHMEM_TRANSPORT_OFI_DUMP_STX();
+
+    return;
+}
+
 #define OFI_MAJOR_VERSION 1
 #ifdef ENABLE_MR_RMA_EVENT
 #define OFI_MINOR_VERSION 5
@@ -293,7 +556,7 @@ int bind_enable_cq_ep_resources(shmem_transport_ctx_t *ctx)
     int ret = 0;
 
     /* Attach the shared context */
-    ret = fi_ep_bind(ctx->cq_ep, &ctx->stx->fid, 0);
+    ret = fi_ep_bind(ctx->cq_ep, &shmem_transport_ofi_stx_pool[ctx->stx_idx].stx->fid, 0);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to CQ endpoint failed");
 
     /* Attach CQ for obtaining completions for buffered puts */
@@ -317,7 +580,7 @@ int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx)
     int ret = 0;
 
     /* Attach the shared context */
-    ret = fi_ep_bind(ctx->cntr_ep, &ctx->stx->fid, 0);
+    ret = fi_ep_bind(ctx->cntr_ep, &shmem_transport_ofi_stx_pool[ctx->stx_idx].stx->fid, 0);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to CNTR endpoint failed");
 
     /* Attach counter for obtaining put completions */
@@ -736,7 +999,7 @@ int publish_av_info(struct fabric_info *info)
 
 #ifdef USE_ON_NODE_COMMS
     if (gethostname(myephostname, (EPHOSTNAMELEN - 1)) != 0)
-        RAISE_ERROR_MSG("gethostname error: %s \n", strerror(errno));
+        RAISE_ERROR_MSG("gethostname error: %s\n", strerror(errno));
 
     myephostname[EPHOSTNAMELEN-1] = '\0';
 
@@ -1059,18 +1322,18 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     }
     OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(errno));
 
-    /* TODO: STX contexts should be shared by SHMEM contexts that are private
-     * to the same thread (i.e. have SHMEM_CTX_PRIVATE option set and same
-     * thread ID/gettid()).  There should also be a limit on the number of
-     * contexts created per PE, beyond which we start sharing STXs across SHMEM
-     * contexts. */
-    /* TODO: Fill in TX attr */
-    ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL, &ctx->stx, NULL);
-    OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
-
     ret = fi_endpoint(shmem_transport_ofi_domainfd,
                       info->p_info, &ctx->cntr_ep, NULL);
     OFI_CHECK_RETURN_MSG(ret, "cntr_ep creation failed (%s)\n", fi_strerror(errno));
+
+    /* TODO: Fill in TX attr */
+
+    /* Allocate STX from the pool */
+    if (shmem_internal_thread_level > SHMEM_THREAD_FUNNELED &&
+        ctx->options & SHMEM_CTX_PRIVATE) {
+            ctx->tid = shmem_transport_ofi_gettid();
+    }
+    shmem_transport_ofi_stx_allocate(ctx);
 
     ret = bind_enable_cntr_ep_resources(ctx);
     OFI_CHECK_RETURN_MSG(ret, "context bind/enable CNTR endpoint failed (%s)\n", fi_strerror(errno));
@@ -1105,6 +1368,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 int shmem_transport_init(void)
 {
     int ret = 0;
+    int i;
 
     SHMEM_MUTEX_INIT(shmem_transport_ofi_lock);
 
@@ -1133,6 +1397,48 @@ int shmem_transport_init(void)
 
     ret = allocate_fabric_resources(&shmem_transport_ofi_info);
     if (ret != 0) return ret;
+
+    /* STX max settings */
+    if ((shmem_internal_thread_level == SHMEM_THREAD_SINGLE ||
+         shmem_internal_thread_level == SHMEM_THREAD_FUNNELED ) &&
+         shmem_internal_params.OFI_STX_MAX > 1) {
+        if (shmem_internal_params.OFI_STX_MAX_provided) {
+            /* We need only 1 STX per PE with SHMEM_THREAD_SINGLE or SHMEM_THREAD_FUNNELED */
+            RAISE_WARN_MSG("Ignoring invalid STX max setting '%ld'; using 1 STX in single-threaded mode",
+                           shmem_internal_params.OFI_STX_MAX);
+        }
+        shmem_transport_ofi_stx_max = 1;
+    } else {
+        shmem_transport_ofi_stx_max = shmem_internal_params.OFI_STX_MAX;
+    }
+    shmem_transport_ofi_stx_threshold = shmem_internal_params.OFI_STX_THRESHOLD;
+
+    /* STX sharing settings */
+    char *type = shmem_internal_params.OFI_STX_ALLOCATOR;
+    if (0 == strcmp(type, "round-robin")) {
+        shmem_transport_ofi_stx_allocator = ROUNDROBIN;
+    } else if (0 == strcmp(type, "random")) {
+        shmem_transport_ofi_stx_allocator = RANDOM;
+        shmem_transport_ofi_stx_rand_init();
+    } else {
+        RAISE_WARN_MSG("Ignoring bad STX share algorithm '%s', using 'round-robin'\n", type);
+        shmem_transport_ofi_stx_allocator = ROUNDROBIN;
+    }
+
+    /* Allocate STX array with max length */
+    shmem_transport_ofi_stx_pool = malloc(shmem_transport_ofi_stx_max *
+                                          sizeof(shmem_transport_ofi_stx_t));
+    if (shmem_transport_ofi_stx_pool == NULL) {
+        RAISE_ERROR_STR("Error: out of memory when allocating OFI STX pool");
+    }
+
+    for (i = 0; i < shmem_transport_ofi_stx_max; i++) {
+        ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL,
+                             &shmem_transport_ofi_stx_pool[i].stx, NULL);
+        OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
+        shmem_transport_ofi_stx_pool[i].ref_cnt = 0;
+        shmem_transport_ofi_stx_pool[i].is_private = 0;
+    }
 
     /* The current bounce buffering implementation is only compatible with
      * providers that don't require FI_CONTEXT */
@@ -1221,6 +1527,7 @@ int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
     shmem_internal_atomic_write(&ctxp->pending_put_cntr, 0);
     shmem_internal_atomic_write(&ctxp->pending_get_cntr, 0);
 
+    ctxp->stx_idx = -1;
     ctxp->options = options;
 
     ret = shmem_transport_ofi_ctx_init(ctxp, id);
@@ -1253,9 +1560,26 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         shmem_free_list_destroy(ctx->bounce_buffers);
     }
 
-    if (ctx->stx) {
-        ret = fi_close(&ctx->stx->fid);
-        OFI_CHECK_ERROR_MSG(ret, "STX context close failed (%s)\n", fi_strerror(errno));
+    if (ctx->stx_idx >= 0) {
+        if (ctx->options & SHMEM_CTX_PRIVATE) {
+            shmem_transport_ofi_stx_kvs_t *e;
+            HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, e);
+            if (e) {
+                shmem_transport_ofi_stx_t *stx = &shmem_transport_ofi_stx_pool[ctx->stx_idx];
+                stx->ref_cnt--;
+                if (stx->ref_cnt == 0) {
+                    HASH_DEL(shmem_transport_ofi_stx_kvs, e);
+                    free(e);
+                    shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private = 0;
+                }
+            }
+            else {
+                RAISE_WARN_STR("Unable to locate private STX");
+            }
+        } else {
+            shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt--;
+            shmem_internal_assert(!shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private);
+        }
     }
 
     if (ctx->put_cntr) {
@@ -1292,6 +1616,8 @@ int shmem_transport_fini(void)
 {
     int ret;
     size_t i;
+    shmem_transport_ofi_stx_kvs_t* e;
+    int stx_len = 0;
 
     /* Free all shareable contexts.  This performs a quiet on each context,
      * ensuring all operations have completed before proceeding with shutdown. */
@@ -1307,6 +1633,27 @@ int shmem_transport_fini(void)
 
     shmem_transport_quiet(&shmem_transport_ctx_default);
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
+
+    for (e = shmem_transport_ofi_stx_kvs; e != NULL; e = e->hh.next) {
+        if (e) {
+            stx_len++;
+            free(e);
+        }
+    }
+
+    if (stx_len > 0) {
+        RAISE_WARN_MSG("Shutting down with %d active private contexts\n", stx_len);
+    }
+
+    for (i = 0; i < shmem_transport_ofi_stx_max; ++i) {
+        if (shmem_transport_ofi_stx_pool[i].ref_cnt != 0)
+            RAISE_WARN_MSG("Closing STX %zu with nonzero ref. count (%ld)\n", i,
+                           shmem_transport_ofi_stx_pool[i].ref_cnt);
+        ret = fi_close(&shmem_transport_ofi_stx_pool[i].stx->fid);
+        OFI_CHECK_ERROR_MSG(ret, "STX context close failed (%s)\n", fi_strerror(errno));
+    }
+    free(shmem_transport_ofi_stx_pool);
+
 
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));
@@ -1339,6 +1686,16 @@ int shmem_transport_fini(void)
 #ifdef USE_AV_MAP
     free(addr_table);
 #endif
+    switch (shmem_transport_ofi_stx_allocator) {
+        case ROUNDROBIN:
+            break;
+        case RANDOM:
+            shmem_transport_ofi_stx_rand_fini();
+            break;
+        default:
+            RAISE_ERROR_MSG("Invalid STX allocator (%d)\n",
+                            shmem_transport_ofi_stx_allocator);
+    }
 
     fi_freeinfo(shmem_transport_ofi_info.fabrics);
 
