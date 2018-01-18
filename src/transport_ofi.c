@@ -1634,11 +1634,10 @@ int shmem_transport_fini(void)
     shmem_transport_quiet(&shmem_transport_ctx_default);
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
 
-    for (e = shmem_transport_ofi_stx_kvs; e != NULL; e = e->hh.next) {
-        if (e) {
-            stx_len++;
-            free(e);
-        }
+    for (e = shmem_transport_ofi_stx_kvs; e != NULL; ) {
+        stx_len++;
+        e = e->hh.next;
+        free(e);
     }
 
     if (stx_len > 0) {
