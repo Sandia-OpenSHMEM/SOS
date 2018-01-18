@@ -360,7 +360,7 @@ static int *rand_pool_indices;
 static int rand_pool_top_idx;
 
 static inline
-void shmem_transport_ofi_stx_rand_init() {
+void shmem_transport_ofi_stx_rand_init(void) {
     rand_pool_indices = malloc(shmem_transport_ofi_stx_max * sizeof(int));
 
     if (rand_pool_indices == NULL)
@@ -397,7 +397,7 @@ int shmem_transport_ofi_stx_rand_next(void) {
 }
 
 static inline
-void shmem_transport_ofi_stx_rand_fini() {
+void shmem_transport_ofi_stx_rand_fini(void) {
     free(rand_pool_indices);
     return;
 }
@@ -1634,11 +1634,11 @@ int shmem_transport_fini(void)
     shmem_transport_quiet(&shmem_transport_ctx_default);
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
 
-    for (e = shmem_transport_ofi_stx_kvs; e != NULL; e = e->hh.next) {
-        if (e) {
-            stx_len++;
-            free(e);
-        }
+    for (e = shmem_transport_ofi_stx_kvs; e != NULL; ) {
+        shmem_transport_ofi_stx_kvs_t *last = e;
+        stx_len++;
+        e = e->hh.next;
+        free(last);
     }
 
     if (stx_len > 0) {
