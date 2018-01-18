@@ -1635,9 +1635,10 @@ int shmem_transport_fini(void)
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
 
     for (e = shmem_transport_ofi_stx_kvs; e != NULL; ) {
+        shmem_transport_ofi_stx_kvs_t *last = e;
         stx_len++;
         e = e->hh.next;
-        free(e);
+        free(last);
     }
 
     if (stx_len > 0) {
