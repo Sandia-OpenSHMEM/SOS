@@ -10,6 +10,8 @@ v1.4.0rc2
   and SHMEM_OFI_STX_THRESHOLD.  See README for details.
 - Added support for returning gracefully when context creation is unsuccessful.
 - Updated data segment exposure method to improve compatibility with tools.
+- Updated thread safety support in Portals, eliminating several possible races
+  in communication tracking/completion code.
 
 v1.4.0rc1
 ---------
