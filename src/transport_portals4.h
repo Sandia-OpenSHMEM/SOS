@@ -266,7 +266,7 @@ shmem_transport_quiet(shmem_transport_ctx_t* ctx)
 {
     int ret;
     ptl_ct_event_t ct;
-    uint64_t cnt;
+    uint64_t cnt, cnt_new;
 
     /* synchronize the atomic cache, if there is one */
     PtlAtomicSync();
@@ -275,13 +275,19 @@ shmem_transport_quiet(shmem_transport_ctx_t* ctx)
     shmem_transport_get_wait(ctx);
 
     /* wait for remote completion (acks) of all pending put events */
-    cnt = shmem_internal_atomic_read(&shmem_transport_portals4_pending_put_counter);
-    ret = PtlCTWait(shmem_transport_portals4_put_ct_h, cnt, &ct);
-    if (PTL_OK != ret) { return ret; }
-    if (ct.failure != 0) {
-        RETURN_ERROR_MSG("put operations failed, %" PRIu64 "\n", ct.failure);
-        return -1;
-    }
+    /* NOTE-MT: continue to wait if additional operations are issued during the quiet */
+    cnt_new = shmem_internal_atomic_read(&shmem_transport_portals4_pending_put_counter);
+    do {
+        cnt = cnt_new;
+        ret = PtlCTWait(shmem_transport_portals4_put_ct_h, cnt, &ct);
+        cnt_new = shmem_internal_atomic_read(&shmem_transport_portals4_pending_put_counter);
+        if (PTL_OK != ret) { return ret; }
+        if (ct.failure != 0) {
+            RETURN_ERROR_MSG("put operations failed, %" PRIu64 "\n", ct.failure);
+            return -1;
+        }
+    } while (cnt < cnt_new);
+    shmem_internal_assert(cnt == cnt_new);
 
     return 0;
 }
@@ -728,12 +734,18 @@ shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
 {
     int ret;
     ptl_ct_event_t ct;
-    uint64_t cnt;
+    uint64_t cnt, cnt_new;
 
-    cnt = shmem_internal_atomic_read(&shmem_transport_portals4_pending_get_counter);
-    ret = PtlCTWait(shmem_transport_portals4_get_ct_h, cnt, &ct);
-    if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    if (ct.failure != 0) { RAISE_ERROR_MSG("get operations failed (%" PRIu64 "\n", ct.failure); }
+    /* NOTE-MT: continue to wait if additional operations are issued */
+    cnt_new = shmem_internal_atomic_read(&shmem_transport_portals4_pending_get_counter);
+    do {
+        cnt = cnt_new;
+        ret = PtlCTWait(shmem_transport_portals4_get_ct_h, cnt, &ct);
+        cnt_new = shmem_internal_atomic_read(&shmem_transport_portals4_pending_get_counter);
+        if (PTL_OK != ret) { RAISE_ERROR(ret); }
+        if (ct.failure != 0) { RAISE_ERROR_MSG("get operations failed (%" PRIu64 "\n", ct.failure); }
+    } while (cnt < cnt_new);
+    shmem_internal_assert(cnt == cnt_new);
 }
 
 
