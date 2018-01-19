@@ -23,6 +23,8 @@
 #include <inttypes.h>
 
 #include "shmem_free_list.h"
+#include "shmem_internal.h"
+#include "shmem_atomic.h"
 
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
