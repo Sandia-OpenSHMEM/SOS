@@ -92,6 +92,9 @@ int main(void) {
     shmem_long_sum_to_all(&total_done, &tasks_done, 1, 0, 0, npes, pwrk, psync);
 
     int result = (total_done != ntasks * npes);
+    if (me == 0 && result)
+        printf("Error: total_done is %ld, expected %ld\n", total_done, ntasks * npes);
+
     shmem_finalize();
     return result;
 }
