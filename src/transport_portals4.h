@@ -99,8 +99,8 @@ extern ptl_size_t shmem_transport_portals4_max_fetch_atomic_size;
 extern ptl_size_t shmem_transport_portals4_max_fence_size;
 extern ptl_size_t shmem_transport_portals4_max_msg_size;
 
-extern ptl_size_t shmem_transport_portals4_pending_put_counter;
-extern ptl_size_t shmem_transport_portals4_pending_get_counter;
+extern shmem_internal_atomic_uint64_t shmem_transport_portals4_pending_put_counter;
+extern shmem_internal_atomic_uint64_t shmem_transport_portals4_pending_get_counter;
 
 extern int32_t shmem_transport_portals4_event_slots;
 
@@ -266,6 +266,7 @@ shmem_transport_quiet(shmem_transport_ctx_t* ctx)
 {
     int ret;
     ptl_ct_event_t ct;
+    uint64_t cnt;
 
     /* synchronize the atomic cache, if there is one */
     PtlAtomicSync();
@@ -274,10 +275,13 @@ shmem_transport_quiet(shmem_transport_ctx_t* ctx)
     shmem_transport_get_wait(ctx);
 
     /* wait for remote completion (acks) of all pending put events */
-    ret = PtlCTWait(shmem_transport_portals4_put_ct_h,
-                    shmem_transport_portals4_pending_put_counter, &ct);
+    cnt = shmem_internal_atomic_read(&shmem_transport_portals4_pending_put_counter);
+    ret = PtlCTWait(shmem_transport_portals4_put_ct_h, cnt, &ct);
     if (PTL_OK != ret) { return ret; }
-    if (ct.failure != 0) { return -1; }
+    if (ct.failure != 0) {
+        RETURN_ERROR_MSG("put operations failed, %" PRIu64 "\n", ct.failure);
+        return -1;
+    }
 
     return 0;
 }
@@ -422,7 +426,7 @@ shmem_transport_put_small(shmem_transport_ctx_t* ctx, void *target, const void *
                  NULL,
                  0);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    shmem_transport_portals4_pending_put_counter++;
+    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
 }
 
 
@@ -542,7 +546,7 @@ shmem_transport_portals4_put_nb_internal(shmem_transport_ctx_t* ctx, void *targe
         shmem_transport_portals4_long_pending = 1;
 #endif
     }
-    shmem_transport_portals4_pending_put_counter++;
+    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
 }
 
 
@@ -616,7 +620,7 @@ shmem_transport_portals4_put_nbi_internal(shmem_transport_ctx_t* ctx, void *targ
         shmem_transport_portals4_long_pending = 1;
 #endif
     }
-    shmem_transport_portals4_pending_put_counter++;
+    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
 }
 
 
@@ -687,7 +691,7 @@ shmem_transport_portals4_get_internal(shmem_transport_ctx_t* ctx, void *target, 
                  offset,
                  0);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    shmem_transport_portals4_pending_get_counter++;
+    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_get_counter);
 }
 
 
@@ -724,12 +728,12 @@ shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
 {
     int ret;
     ptl_ct_event_t ct;
+    uint64_t cnt;
 
-    ret = PtlCTWait(shmem_transport_portals4_get_ct_h,
-                    shmem_transport_portals4_pending_get_counter,
-                    &ct);
+    cnt = shmem_internal_atomic_read(&shmem_transport_portals4_pending_get_counter);
+    ret = PtlCTWait(shmem_transport_portals4_get_ct_h, cnt, &ct);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    if (ct.failure != 0) { RAISE_ERROR(ct.failure); }
+    if (ct.failure != 0) { RAISE_ERROR_MSG("get operations failed (%" PRIu64 "\n", ct.failure); }
 }
 
 
@@ -769,7 +773,7 @@ shmem_transport_swap(shmem_transport_ctx_t* ctx, void *target, const void *sourc
                   PTL_SWAP,
                   datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    shmem_transport_portals4_pending_get_counter++;
+    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_get_counter);
 }
 
 
@@ -810,7 +814,7 @@ shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
                   PTL_CSWAP,
                   datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    shmem_transport_portals4_pending_get_counter++;
+    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_get_counter);
 }
 
 
@@ -851,7 +855,7 @@ shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
                   PTL_MSWAP,
                   datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    shmem_transport_portals4_pending_get_counter++;
+    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_get_counter);
 }
 
 
@@ -887,7 +891,7 @@ shmem_transport_atomic_small(shmem_transport_ctx_t* ctx, void *target, const voi
                     op,
                     datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    shmem_transport_portals4_pending_put_counter += 1;
+    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
 }
 
 
@@ -924,7 +928,7 @@ shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *
                         op,
                         datatype);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
-        shmem_transport_portals4_pending_put_counter++;
+        shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
 
     } else if (len <= MIN(shmem_transport_portals4_bounce_buffer_size,
                           shmem_transport_portals4_max_atomic_size)) {
@@ -960,7 +964,7 @@ shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *
                         op,
                         datatype);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
-        shmem_transport_portals4_pending_put_counter += 1;
+        shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
 #if WANT_TOTAL_DATA_ORDERING != 0
         shmem_transport_portals4_long_pending = 1;
 #endif
@@ -1009,7 +1013,7 @@ shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *
             if (PTL_OK != ret) { RAISE_ERROR(ret); }
             (*(long_frag->completion))++;
             long_frag->reference++;
-            shmem_transport_portals4_pending_put_counter++;
+            shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
             sent += bufsize;
         }
         SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_frag);
@@ -1056,7 +1060,7 @@ shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target, const voi
                          op,
                          datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    shmem_transport_portals4_pending_get_counter++;
+    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_get_counter);
 }
 
 
