@@ -580,7 +580,7 @@ shmem_transport_startup(void)
     md.start = 0;
     md.length = PTL_SIZE_MAX;
     md.options = PTL_MD_EVENT_CT_ACK;
-    if (1 == PORTALS4_TOTAL_DATA_ORDERING) {
+    if (1 != PORTALS4_TOTAL_DATA_ORDERING) {
         md.options |= PTL_MD_UNORDERED;
     }
     md.eq_handle = shmem_transport_portals4_eq_h;
@@ -598,7 +598,7 @@ shmem_transport_startup(void)
     md.options = PTL_MD_EVENT_CT_ACK |
         PTL_MD_EVENT_SUCCESS_DISABLE |
         PTL_MD_VOLATILE;
-    if (1 == PORTALS4_TOTAL_DATA_ORDERING) {
+    if (1 != PORTALS4_TOTAL_DATA_ORDERING) {
         md.options |= PTL_MD_UNORDERED;
     }
     md.eq_handle = shmem_transport_portals4_eq_h;
@@ -615,7 +615,7 @@ shmem_transport_startup(void)
     md.length = PTL_SIZE_MAX;
     md.options = PTL_MD_EVENT_CT_ACK |
         PTL_MD_EVENT_SUCCESS_DISABLE;
-    if (1 == PORTALS4_TOTAL_DATA_ORDERING) {
+    if (1 != PORTALS4_TOTAL_DATA_ORDERING) {
         md.options |= PTL_MD_UNORDERED;
     }
     md.eq_handle = shmem_transport_portals4_eq_h;
@@ -632,7 +632,7 @@ shmem_transport_startup(void)
     md.length = PTL_SIZE_MAX;
     md.options = PTL_MD_EVENT_CT_REPLY |
         PTL_MD_EVENT_SUCCESS_DISABLE;
-    if (1 == PORTALS4_TOTAL_DATA_ORDERING) {
+    if (1 != PORTALS4_TOTAL_DATA_ORDERING) {
         md.options |= PTL_MD_UNORDERED;
     }
     md.eq_handle = shmem_transport_portals4_eq_h;
