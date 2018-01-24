@@ -1608,7 +1608,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         free(ctx);
     }
     else if (ctx->id != SHMEM_TRANSPORT_CTX_DEFAULT_ID) {
-        RAISE_ERROR_MSG("Attempted to destroy an invalid context (%s)\n", fi_strerror(errno));
+        RAISE_ERROR_MSG("Attempted to destroy an invalid context (%d)\n", ctx->id);
     }
 }
 
