@@ -1624,6 +1624,8 @@ int shmem_transport_fini(void)
 
     for (i = 0; i < shmem_transport_ofi_contexts_len; ++i) {
         if (shmem_transport_ofi_contexts[i]) {
+            if (shmem_transport_ofi_contexts[i]->options & SHMEM_CTX_PRIVATE)
+                RAISE_WARN_MSG("Shutting down with unfreed private context (%zd)\n", i);
             shmem_transport_quiet(shmem_transport_ofi_contexts[i]);
             shmem_transport_ctx_destroy(shmem_transport_ofi_contexts[i]);
         }
