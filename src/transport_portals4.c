@@ -121,19 +121,28 @@ static ptl_pt_index_t heap_pt = PTL_PT_ANY;
 #endif
 
 #ifdef ENABLE_THREADS
+shmem_internal_mutex_t shmem_internal_mutex_ptl4_ctx;
 shmem_internal_mutex_t shmem_internal_mutex_ptl4_pt_state;
 shmem_internal_mutex_t shmem_internal_mutex_ptl4_frag;
 shmem_internal_mutex_t shmem_internal_mutex_ptl4_event_slots;
 shmem_internal_mutex_t shmem_internal_mutex_ptl4_nb_fence;
 #endif
 
+static shmem_transport_ctx_t** shmem_transport_portals4_contexts = NULL;
+static size_t shmem_transport_portals4_contexts_len = 0;
+static size_t shmem_transport_portals4_grow_size = 128;
+
+#define SHMEM_TRANSPORT_CTX_DEFAULT_ID -1
 shmem_transport_ctx_t shmem_transport_ctx_default;
 shmem_ctx_t SHMEM_CTX_DEFAULT = (shmem_ctx_t) &shmem_transport_ctx_default;
 
-int shmem_transport_ctx_init(long options, shmem_transport_ctx_t *ctx) {
+static int
+shmem_transport_ctx_init(shmem_transport_ctx_t *ctx, long options, int id)
+{
     int ret;
     ptl_md_t md;
 
+    ctx->id = id;
     ctx->options = options;
     ctx->put_md = PTL_INVALID_HANDLE;
     ctx->get_md = PTL_INVALID_HANDLE;
@@ -221,8 +230,33 @@ cleanup:
     return 1;
 }
 
-int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx) {
-    int ret;
+int
+shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
+{
+    int ret, id;
+
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_ctx);
+
+    /* Look for an open slot in the contexts array */
+    for (id = 0; id < shmem_transport_portals4_contexts_len; id++)
+        if (shmem_transport_portals4_contexts[id] == NULL) break;
+
+    /* If none found, grow the array */
+    if (id >= shmem_transport_portals4_contexts_len) {
+        id = shmem_transport_portals4_contexts_len;
+
+        ssize_t i = shmem_transport_portals4_contexts_len;
+        shmem_transport_portals4_contexts_len += shmem_transport_portals4_grow_size;
+        shmem_transport_portals4_contexts = realloc(shmem_transport_portals4_contexts,
+               shmem_transport_portals4_contexts_len * sizeof(shmem_transport_ctx_t*));
+
+        for ( ; i < shmem_transport_portals4_contexts_len; i++)
+            shmem_transport_portals4_contexts[i] = NULL;
+
+        if (shmem_transport_portals4_contexts == NULL) {
+            RAISE_ERROR_STR("Error: out of memory when allocating ctx array");
+        }
+    }
 
     *ctx = malloc(sizeof(shmem_transport_ctx_t));
     if (*ctx == NULL) {
@@ -230,19 +264,42 @@ int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx) {
         return 1;
     }
 
-    ret = shmem_transport_ctx_init(options, *ctx);
-    if (ret) free(ctx);
+    memset(*ctx, 0, sizeof(shmem_transport_ctx_t));
+
+    ret = shmem_transport_ctx_init(*ctx, options, id);
+
+    if (ret) {
+        free(ctx);
+        *ctx = NULL;
+    } else {
+        shmem_transport_portals4_contexts[id] = *ctx;
+    }
+
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_ctx);
 
     return ret;
 }
 
-void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx) {
+void
+shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
+{
     PtlMDRelease(ctx->put_volatile_md);
     PtlMDRelease(ctx->put_md);
     PtlMDRelease(ctx->get_md);
     PtlCTFree(ctx->put_ct);
     PtlCTFree(ctx->get_ct);
-    free(ctx);
+
+    if (ctx->id >= 0) {
+        SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_ctx);
+        shmem_transport_portals4_contexts[ctx->id] = NULL;
+        SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_ctx);
+        free(ctx);
+    }
+    else if (ctx->id != SHMEM_TRANSPORT_CTX_DEFAULT_ID) {
+        RAISE_ERROR_MSG("Attempted to destroy an invalid context (%d)\n",
+                        ctx->id);
+    }
+
     return;
 }
 
@@ -348,6 +405,7 @@ shmem_transport_init(void)
     }
 
     /* Initialize Mutexes */
+    SHMEM_MUTEX_INIT(shmem_internal_mutex_ptl4_ctx);
     SHMEM_MUTEX_INIT(shmem_internal_mutex_ptl4_pt_state);
     SHMEM_MUTEX_INIT(shmem_internal_mutex_ptl4_frag);
     SHMEM_MUTEX_INIT(shmem_internal_mutex_ptl4_event_slots);
@@ -753,8 +811,9 @@ shmem_transport_startup(void)
     }
 
     ret = 0;
-    ret = shmem_transport_ctx_init(SHMEMX_CTX_BOUNCE_BUFFER,
-                                   (shmem_transport_ctx_t*)SHMEM_CTX_DEFAULT);
+    ret = shmem_transport_ctx_init((shmem_transport_ctx_t*)SHMEM_CTX_DEFAULT,
+                                   SHMEMX_CTX_BOUNCE_BUFFER,
+                                   SHMEM_TRANSPORT_CTX_DEFAULT_ID);
 
  cleanup:
     if (NULL != desired) free(desired);
@@ -767,6 +826,7 @@ shmem_transport_fini(void)
 {
     ptl_ct_event_t ct;
     uint64_t cnt;
+    int i;
 
     /* synchronize the atomic cache, if there is one */
     PtlAtomicSync();
@@ -788,10 +848,28 @@ shmem_transport_fini(void)
     if (ct.failure)
         RAISE_WARN_MSG("get operations failed: %" PRIu64 "\n", (uint64_t) ct.failure);
 
+    /* Free all shareable contexts.  This performs a quiet on each context,
+     * ensuring all operations have completed before proceeding with shutdown. */
+
+    for (i = 0; i < shmem_transport_portals4_contexts_len; ++i) {
+        if (shmem_transport_portals4_contexts[i]) {
+            if (shmem_transport_portals4_contexts[i]->options & SHMEM_CTX_PRIVATE)
+                RAISE_WARN_MSG("Shutting down with unfreed private context (%zd)\n", i);
+            shmem_transport_quiet(shmem_transport_portals4_contexts[i]);
+            shmem_transport_ctx_destroy(shmem_transport_portals4_contexts[i]);
+        }
+    }
+
+    if (shmem_transport_portals4_contexts)
+        free(shmem_transport_portals4_contexts);
+
+    shmem_transport_quiet(&shmem_transport_ctx_default);
+    shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
 
     cleanup_handles();
     PtlFini();
 
+    SHMEM_MUTEX_DESTROY(shmem_internal_mutex_ptl4_ctx);
     SHMEM_MUTEX_DESTROY(shmem_internal_mutex_ptl4_pt_state);
     SHMEM_MUTEX_DESTROY(shmem_internal_mutex_ptl4_frag);
     SHMEM_MUTEX_DESTROY(shmem_internal_mutex_ptl4_event_slots);

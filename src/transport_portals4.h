@@ -119,6 +119,7 @@ extern int shmem_transport_portals4_fence_pending;
 #endif
 
 #ifdef ENABLE_THREADS
+extern shmem_internal_mutex_t shmem_internal_mutex_ptl4_ctx;
 extern shmem_internal_mutex_t shmem_internal_mutex_ptl4_pt_state;
 extern shmem_internal_mutex_t shmem_internal_mutex_ptl4_frag;
 extern shmem_internal_mutex_t shmem_internal_mutex_ptl4_event_slots;
@@ -164,6 +165,7 @@ struct shmem_transport_ct_t {
 typedef struct shmem_transport_ct_t shmem_transport_ct_t;
 
 struct shmem_transport_ctx_t {
+    int id;
     long options;
     ptl_handle_md_t put_volatile_md;
     ptl_handle_md_t put_md;
