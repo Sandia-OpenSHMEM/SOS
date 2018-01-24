@@ -27,6 +27,7 @@
 
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
+#include "shmemx.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"
 #include "runtime.h"
@@ -129,16 +130,120 @@ shmem_internal_mutex_t shmem_internal_mutex_ptl4_nb_fence;
 shmem_transport_ctx_t shmem_transport_ctx_default;
 shmem_ctx_t SHMEM_CTX_DEFAULT = (shmem_ctx_t) &shmem_transport_ctx_default;
 
+int shmem_transport_ctx_init(long options, shmem_transport_ctx_t *ctx) {
+    int ret;
+    ptl_md_t md;
+
+    ctx->options = options;
+    ctx->put_md = PTL_INVALID_HANDLE;
+    ctx->get_md = PTL_INVALID_HANDLE;
+    ctx->put_ct = PTL_INVALID_HANDLE;
+    ctx->get_ct = PTL_INVALID_HANDLE;
+    shmem_internal_atomic_write(&ctx->pending_put_cntr, 0);
+    shmem_internal_atomic_write(&ctx->pending_get_cntr, 0);
+
+    /* Allocate put completion tracking resources */
+    ret = PtlCTAlloc(shmem_transport_portals4_ni_h, &ctx->put_ct);
+    if (PTL_OK != ret) {
+        RAISE_WARN_MSG("Put CT allocation failed: %d\n", ret);
+        goto cleanup;
+    }
+
+    md.start = 0;
+    md.length = PTL_SIZE_MAX;
+    md.options = PTL_MD_EVENT_CT_ACK | PTL_MD_EVENT_SUCCESS_DISABLE;
+    if (1 != PORTALS4_TOTAL_DATA_ORDERING) {
+        md.options |= PTL_MD_UNORDERED;
+    }
+    md.eq_handle = shmem_transport_portals4_eq_h;
+    md.ct_handle = ctx->put_ct;
+    ret = PtlMDBind(shmem_transport_portals4_ni_h, &md,
+                    &ctx->put_md);
+    if (PTL_OK != ret) {
+        RETURN_ERROR_MSG("PtlMDBind of put MD failed: %d\n", ret);
+        goto cleanup;
+    }
+
+    /* Allocate put volatile resources */
+    md.start = 0;
+    md.length = PTL_SIZE_MAX;
+    md.options = PTL_MD_EVENT_CT_ACK |
+        PTL_MD_EVENT_SUCCESS_DISABLE |
+        PTL_MD_VOLATILE;
+    if (1 != PORTALS4_TOTAL_DATA_ORDERING) {
+        md.options |= PTL_MD_UNORDERED;
+    }
+    md.eq_handle = shmem_transport_portals4_eq_h;
+    md.ct_handle = ctx->put_ct;
+    ret = PtlMDBind(shmem_transport_portals4_ni_h, &md,
+                    &ctx->put_volatile_md);
+    if (PTL_OK != ret) {
+        RETURN_ERROR_MSG("PtlMDBind of volatile put MD failed: %d\n", ret);
+        goto cleanup;
+    }
+
+    /* Allocate get completion tracking resources */
+    ret = PtlCTAlloc(shmem_transport_portals4_ni_h, &ctx->get_ct);
+    if (PTL_OK != ret) {
+        RAISE_WARN_MSG("Get CT allocation failed: %d\n", ret);
+        goto cleanup;
+    }
+
+    md.start = 0;
+    md.length = PTL_SIZE_MAX;
+    md.options = PTL_MD_EVENT_CT_REPLY | PTL_MD_EVENT_SUCCESS_DISABLE;
+    if (1 != PORTALS4_TOTAL_DATA_ORDERING) {
+        md.options |= PTL_MD_UNORDERED;
+    }
+    md.eq_handle = shmem_transport_portals4_eq_h;
+    md.ct_handle = ctx->get_ct;
+    ret = PtlMDBind(shmem_transport_portals4_ni_h, &md,
+                    &ctx->get_md);
+    if (PTL_OK != ret) {
+        RETURN_ERROR_MSG("PtlMDBind of get MD failed: %d\n", ret);
+        goto cleanup;
+    }
+
+    return 0;
+
+cleanup:
+    if (!PtlHandleIsEqual(ctx->put_volatile_md, PTL_INVALID_HANDLE))
+        PtlMDRelease(ctx->put_volatile_md);
+    if (!PtlHandleIsEqual(ctx->put_md, PTL_INVALID_HANDLE))
+        PtlMDRelease(ctx->put_md);
+    if (!PtlHandleIsEqual(ctx->get_md, PTL_INVALID_HANDLE))
+        PtlMDRelease(ctx->get_md);
+    if (!PtlHandleIsEqual(ctx->put_ct, PTL_INVALID_HANDLE))
+        PtlCTFree(ctx->put_ct);
+    if (!PtlHandleIsEqual(ctx->get_ct, PTL_INVALID_HANDLE))
+        PtlCTFree(ctx->get_ct);
+
+    return 1;
+}
+
 int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx) {
-  *ctx = NULL;
-  return 0;
+    int ret;
+
+    *ctx = malloc(sizeof(shmem_transport_ctx_t));
+    if (*ctx == NULL) {
+        RAISE_WARN_STR("Out of memory allocating context");
+        return 1;
+    }
+
+    ret = shmem_transport_ctx_init(options, *ctx);
+    if (ret) free(ctx);
+
+    return ret;
 }
 
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx) {
-  if (ctx != NULL) {
-      RAISE_ERROR_STR("Invalid context handle");
-  }
-  return;
+    PtlMDRelease(ctx->put_volatile_md);
+    PtlMDRelease(ctx->put_md);
+    PtlMDRelease(ctx->get_md);
+    PtlCTFree(ctx->put_ct);
+    PtlCTFree(ctx->get_ct);
+    free(ctx);
+    return;
 }
 
 static
@@ -164,6 +269,8 @@ init_long_frag(shmem_free_list_item_t *item)
 static void
 cleanup_handles(void)
 {
+    shmem_transport_ctx_destroy((shmem_transport_ctx_t*)SHMEM_CTX_DEFAULT);
+
     if (!PtlHandleIsEqual(shmem_transport_portals4_get_md_h, PTL_INVALID_HANDLE)) {
         PtlMDRelease(shmem_transport_portals4_get_md_h);
     }
@@ -646,6 +753,8 @@ shmem_transport_startup(void)
     }
 
     ret = 0;
+    ret = shmem_transport_ctx_init(SHMEMX_CTX_BOUNCE_BUFFER,
+                                   (shmem_transport_ctx_t*)SHMEM_CTX_DEFAULT);
 
  cleanup:
     if (NULL != desired) free(desired);

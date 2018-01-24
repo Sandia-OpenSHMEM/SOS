@@ -163,8 +163,16 @@ struct shmem_transport_ct_t {
 };
 typedef struct shmem_transport_ct_t shmem_transport_ct_t;
 
-/* TODO populate this context struct: */
-struct shmem_transport_ctx_t { int dummy; };
+struct shmem_transport_ctx_t {
+    long options;
+    ptl_handle_md_t put_volatile_md;
+    ptl_handle_md_t put_md;
+    ptl_handle_md_t get_md;
+    ptl_handle_ct_t put_ct;
+    ptl_handle_ct_t get_ct;
+    shmem_internal_atomic_uint64_t pending_put_cntr;
+    shmem_internal_atomic_uint64_t pending_get_cntr;
+};
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
 extern shmem_transport_ctx_t shmem_transport_ctx_default;
