@@ -1644,13 +1644,14 @@ int shmem_transport_fini(void)
     }
 
     if (stx_len > 0) {
-        RAISE_WARN_MSG("Shutting down with %d active private contexts\n", stx_len);
+        RAISE_WARN_MSG("Key/value store contained %d unfreed private contexts\n", stx_len);
     }
 
     for (i = 0; i < shmem_transport_ofi_stx_max; ++i) {
         if (shmem_transport_ofi_stx_pool[i].ref_cnt != 0)
-            RAISE_WARN_MSG("Closing STX %zu with nonzero ref. count (%ld)\n", i,
-                           shmem_transport_ofi_stx_pool[i].ref_cnt);
+            RAISE_WARN_MSG("Closing a %s STX %zu with nonzero ref. count (%ld)\n",
+                           shmem_transport_ofi_stx_pool[i].is_private ? "private" : "shared",
+                           i, shmem_transport_ofi_stx_pool[i].ref_cnt);
         ret = fi_close(&shmem_transport_ofi_stx_pool[i].stx->fid);
         OFI_CHECK_ERROR_MSG(ret, "STX context close failed (%s)\n", fi_strerror(errno));
     }
