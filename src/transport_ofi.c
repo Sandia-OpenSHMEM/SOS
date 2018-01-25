@@ -1649,7 +1649,7 @@ int shmem_transport_fini(void)
 
     for (i = 0; i < shmem_transport_ofi_stx_max; ++i) {
         if (shmem_transport_ofi_stx_pool[i].ref_cnt != 0)
-            RAISE_WARN_MSG("Closing a %s STX %zu with nonzero ref. count (%ld)\n",
+            RAISE_WARN_MSG("Closing a %s STX (%zu) with nonzero ref. count (%ld)\n",
                            shmem_transport_ofi_stx_pool[i].is_private ? "private" : "shared",
                            i, shmem_transport_ofi_stx_pool[i].ref_cnt);
         ret = fi_close(&shmem_transport_ofi_stx_pool[i].stx->fid);
