@@ -58,3 +58,4 @@ if USE_PMI_SIMPLE
 LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
 endif
 
+shmem_bw_nb_put_ctx_perf_CFLAGS = -DUSE_NONBLOCKING_API
