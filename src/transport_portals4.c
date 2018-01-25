@@ -72,10 +72,7 @@ int8_t shmem_transport_portals4_pt_state[SHMEM_TRANSPORT_PORTALS4_NUM_PTS] = {
 };
 
 ptl_handle_ni_t shmem_transport_portals4_ni_h = PTL_INVALID_HANDLE;
-ptl_handle_md_t shmem_transport_portals4_put_volatile_md_h = PTL_INVALID_HANDLE;
-ptl_handle_md_t shmem_transport_portals4_put_cntr_md_h = PTL_INVALID_HANDLE;
 ptl_handle_md_t shmem_transport_portals4_put_event_md_h = PTL_INVALID_HANDLE;
-ptl_handle_md_t shmem_transport_portals4_get_md_h = PTL_INVALID_HANDLE;
 #if ENABLE_REMOTE_VIRTUAL_ADDRESSING
 ptl_handle_le_t shmem_transport_portals4_le_h = PTL_INVALID_HANDLE;
 #else
@@ -85,8 +82,6 @@ ptl_handle_le_t shmem_transport_portals4_heap_le_h = PTL_INVALID_HANDLE;
 #ifndef ENABLE_HARD_POLLING
 ptl_handle_ct_t shmem_transport_portals4_target_ct_h = PTL_INVALID_HANDLE;
 #endif
-ptl_handle_ct_t shmem_transport_portals4_put_ct_h = PTL_INVALID_HANDLE;
-ptl_handle_ct_t shmem_transport_portals4_get_ct_h = PTL_INVALID_HANDLE;
 ptl_handle_eq_t shmem_transport_portals4_eq_h = PTL_INVALID_HANDLE;
 
 shmem_free_list_t *shmem_transport_portals4_bounce_buffers = NULL;
@@ -97,9 +92,6 @@ ptl_size_t shmem_transport_portals4_max_volatile_size = 0;
 ptl_size_t shmem_transport_portals4_max_atomic_size = 0;
 ptl_size_t shmem_transport_portals4_max_fetch_atomic_size = 0;
 ptl_size_t shmem_transport_portals4_max_msg_size = 0;
-
-shmem_internal_atomic_uint64_t shmem_transport_portals4_pending_put_counter = 0;
-shmem_internal_atomic_uint64_t shmem_transport_portals4_pending_get_counter = 0;
 
 int32_t shmem_transport_portals4_event_slots = 2048;
 
@@ -166,8 +158,7 @@ shmem_transport_ctx_init(shmem_transport_ctx_t *ctx, long options, int id)
     }
     md.eq_handle = shmem_transport_portals4_eq_h;
     md.ct_handle = ctx->put_ct;
-    ret = PtlMDBind(shmem_transport_portals4_ni_h, &md,
-                    &ctx->put_md);
+    ret = PtlMDBind(shmem_transport_portals4_ni_h, &md, &ctx->put_md);
     if (PTL_OK != ret) {
         RETURN_ERROR_MSG("PtlMDBind of put MD failed: %d\n", ret);
         goto cleanup;
@@ -184,8 +175,7 @@ shmem_transport_ctx_init(shmem_transport_ctx_t *ctx, long options, int id)
     }
     md.eq_handle = shmem_transport_portals4_eq_h;
     md.ct_handle = ctx->put_ct;
-    ret = PtlMDBind(shmem_transport_portals4_ni_h, &md,
-                    &ctx->put_volatile_md);
+    ret = PtlMDBind(shmem_transport_portals4_ni_h, &md, &ctx->put_volatile_md);
     if (PTL_OK != ret) {
         RETURN_ERROR_MSG("PtlMDBind of volatile put MD failed: %d\n", ret);
         goto cleanup;
@@ -206,8 +196,7 @@ shmem_transport_ctx_init(shmem_transport_ctx_t *ctx, long options, int id)
     }
     md.eq_handle = shmem_transport_portals4_eq_h;
     md.ct_handle = ctx->get_ct;
-    ret = PtlMDBind(shmem_transport_portals4_ni_h, &md,
-                    &ctx->get_md);
+    ret = PtlMDBind(shmem_transport_portals4_ni_h, &md, &ctx->get_md);
     if (PTL_OK != ret) {
         RETURN_ERROR_MSG("PtlMDBind of get MD failed: %d\n", ret);
         goto cleanup;
@@ -328,23 +317,8 @@ cleanup_handles(void)
 {
     shmem_transport_ctx_destroy((shmem_transport_ctx_t*)SHMEM_CTX_DEFAULT);
 
-    if (!PtlHandleIsEqual(shmem_transport_portals4_get_md_h, PTL_INVALID_HANDLE)) {
-        PtlMDRelease(shmem_transport_portals4_get_md_h);
-    }
     if (!PtlHandleIsEqual(shmem_transport_portals4_put_event_md_h, PTL_INVALID_HANDLE)) {
         PtlMDRelease(shmem_transport_portals4_put_event_md_h);
-    }
-    if (!PtlHandleIsEqual(shmem_transport_portals4_put_volatile_md_h, PTL_INVALID_HANDLE)) {
-        PtlMDRelease(shmem_transport_portals4_put_volatile_md_h);
-    }
-    if (!PtlHandleIsEqual(shmem_transport_portals4_put_cntr_md_h, PTL_INVALID_HANDLE)) {
-        PtlMDRelease(shmem_transport_portals4_put_cntr_md_h);
-    }
-    if (!PtlHandleIsEqual(shmem_transport_portals4_get_ct_h, PTL_INVALID_HANDLE)) {
-        PtlCTFree(shmem_transport_portals4_get_ct_h);
-    }
-    if (!PtlHandleIsEqual(shmem_transport_portals4_put_ct_h, PTL_INVALID_HANDLE)) {
-        PtlCTFree(shmem_transport_portals4_put_ct_h);
     }
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
     if (!PtlHandleIsEqual(shmem_transport_portals4_le_h, PTL_INVALID_HANDLE)) {
@@ -420,9 +394,6 @@ shmem_transport_init(void)
     shmem_transport_portals4_long_frags =
         shmem_free_list_init(sizeof(shmem_transport_portals4_long_frag_t),
                              init_long_frag);
-
-    shmem_internal_atomic_write(&shmem_transport_portals4_pending_put_counter, 0);
-    shmem_internal_atomic_write(&shmem_transport_portals4_pending_get_counter, 0);
 
     /* Initialize network */
     ni_req_limits.max_entries = 1024;
@@ -730,18 +701,8 @@ shmem_transport_startup(void)
     }
 #endif
 
+#if 0 /* FIXME */
     /* Open MD to all memory */
-    ret = PtlCTAlloc(shmem_transport_portals4_ni_h, &shmem_transport_portals4_put_ct_h);
-    if (PTL_OK != ret) {
-        RETURN_ERROR_MSG("PtlCTAlloc of put ct failed: %d\n", ret);
-        goto cleanup;
-    }
-    ret = PtlCTAlloc(shmem_transport_portals4_ni_h, &shmem_transport_portals4_get_ct_h);
-    if (PTL_OK != ret) {
-        RETURN_ERROR_MSG("PtlCTAlloc of get ct failed: %d\n", ret);
-        goto cleanup;
-    }
-
     md.start = 0;
     md.length = PTL_SIZE_MAX;
     md.options = PTL_MD_EVENT_CT_ACK;
@@ -749,68 +710,15 @@ shmem_transport_startup(void)
         md.options |= PTL_MD_UNORDERED;
     }
     md.eq_handle = shmem_transport_portals4_eq_h;
-    md.ct_handle = shmem_transport_portals4_put_ct_h;
-    ret = PtlMDBind(shmem_transport_portals4_ni_h,
-                    &md,
+    md.ct_handle = PTL_INVALID_HANDLE;
+    ret = PtlMDBind(shmem_transport_portals4_ni_h, &md,
                     &shmem_transport_portals4_put_event_md_h);
     if (PTL_OK != ret) {
         RETURN_ERROR_MSG("PtlMDBind of put MD failed: %d\n", ret);
         goto cleanup;
     }
+#endif
 
-    md.start = 0;
-    md.length = PTL_SIZE_MAX;
-    md.options = PTL_MD_EVENT_CT_ACK |
-        PTL_MD_EVENT_SUCCESS_DISABLE |
-        PTL_MD_VOLATILE;
-    if (1 != PORTALS4_TOTAL_DATA_ORDERING) {
-        md.options |= PTL_MD_UNORDERED;
-    }
-    md.eq_handle = shmem_transport_portals4_eq_h;
-    md.ct_handle = shmem_transport_portals4_put_ct_h;
-    ret = PtlMDBind(shmem_transport_portals4_ni_h,
-                    &md,
-                    &shmem_transport_portals4_put_volatile_md_h);
-    if (PTL_OK != ret) {
-        RETURN_ERROR_MSG("PtlMDBind of put MD failed: %d\n", ret);
-        goto cleanup;
-    }
-
-    md.start = 0;
-    md.length = PTL_SIZE_MAX;
-    md.options = PTL_MD_EVENT_CT_ACK |
-        PTL_MD_EVENT_SUCCESS_DISABLE;
-    if (1 != PORTALS4_TOTAL_DATA_ORDERING) {
-        md.options |= PTL_MD_UNORDERED;
-    }
-    md.eq_handle = shmem_transport_portals4_eq_h;
-    md.ct_handle = shmem_transport_portals4_put_ct_h;
-    ret = PtlMDBind(shmem_transport_portals4_ni_h,
-                    &md,
-                    &shmem_transport_portals4_put_cntr_md_h);
-    if (PTL_OK != ret) {
-        RETURN_ERROR_MSG("PtlMDBind of put cntr MD failed: %d\n", ret);
-        goto cleanup;
-    }
-
-    md.start = 0;
-    md.length = PTL_SIZE_MAX;
-    md.options = PTL_MD_EVENT_CT_REPLY |
-        PTL_MD_EVENT_SUCCESS_DISABLE;
-    if (1 != PORTALS4_TOTAL_DATA_ORDERING) {
-        md.options |= PTL_MD_UNORDERED;
-    }
-    md.eq_handle = shmem_transport_portals4_eq_h;
-    md.ct_handle = shmem_transport_portals4_get_ct_h;
-    ret = PtlMDBind(shmem_transport_portals4_ni_h,
-                    &md,
-                    &shmem_transport_portals4_get_md_h);
-    if (PTL_OK != ret) {
-        RETURN_ERROR_MSG("PtlMDBind of get MD failed: %d\n", ret);
-        goto cleanup;
-    }
-
-    ret = 0;
     ret = shmem_transport_ctx_init((shmem_transport_ctx_t*)SHMEM_CTX_DEFAULT,
                                    SHMEMX_CTX_BOUNCE_BUFFER,
                                    SHMEM_TRANSPORT_CTX_DEFAULT_ID);
@@ -824,29 +732,10 @@ shmem_transport_startup(void)
 int
 shmem_transport_fini(void)
 {
-    ptl_ct_event_t ct;
-    uint64_t cnt;
     int i;
 
     /* synchronize the atomic cache, if there is one */
     PtlAtomicSync();
-
-    /* wait for remote completion (acks) of all pending events */
-    cnt = shmem_internal_atomic_read(&shmem_transport_portals4_pending_put_counter);
-    PtlCTWait(shmem_transport_portals4_put_ct_h, cnt, &ct);
-    if (cnt != ct.success)
-        RAISE_WARN_MSG("put count mismatch: %" PRIu64 ", %" PRIu64 "\n",
-                       cnt, (uint64_t) ct.success);
-    if (ct.failure)
-        RAISE_WARN_MSG("put operations failed: %" PRIu64 "\n", (uint64_t) ct.failure);
-
-    cnt = shmem_internal_atomic_read(&shmem_transport_portals4_pending_get_counter);
-    PtlCTWait(shmem_transport_portals4_get_ct_h, cnt, &ct);
-    if (cnt != ct.success)
-        RAISE_WARN_MSG("get count mismatch: %" PRIu64 ", %" PRIu64 "\n",
-                       cnt, (uint64_t) ct.success);
-    if (ct.failure)
-        RAISE_WARN_MSG("get operations failed: %" PRIu64 "\n", (uint64_t) ct.failure);
 
     /* Free all shareable contexts.  This performs a quiet on each context,
      * ensuring all operations have completed before proceeding with shutdown. */

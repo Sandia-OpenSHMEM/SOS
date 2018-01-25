@@ -80,15 +80,10 @@ typedef ptl_op_t shm_internal_op_t;
 extern int8_t shmem_transport_portals4_pt_state[SHMEM_TRANSPORT_PORTALS4_NUM_PTS];
 
 extern ptl_handle_ni_t shmem_transport_portals4_ni_h;
-extern ptl_handle_md_t shmem_transport_portals4_put_volatile_md_h;
-extern ptl_handle_md_t shmem_transport_portals4_put_cntr_md_h;
 extern ptl_handle_md_t shmem_transport_portals4_put_event_md_h;
-extern ptl_handle_md_t shmem_transport_portals4_get_md_h;
 #ifndef ENABLE_HARD_POLLING
 extern ptl_handle_ct_t shmem_transport_portals4_target_ct_h;
 #endif
-extern ptl_handle_ct_t shmem_transport_portals4_put_ct_h;
-extern ptl_handle_ct_t shmem_transport_portals4_get_ct_h;
 extern ptl_handle_eq_t shmem_transport_portals4_eq_h;
 
 extern shmem_free_list_t *shmem_transport_portals4_bounce_buffers;
@@ -100,12 +95,6 @@ extern ptl_size_t shmem_transport_portals4_max_atomic_size;
 extern ptl_size_t shmem_transport_portals4_max_fetch_atomic_size;
 extern ptl_size_t shmem_transport_portals4_max_fence_size;
 extern ptl_size_t shmem_transport_portals4_max_msg_size;
-
-/* NOTE-MT: Pending counters must be incremented before ops are issued to avoid
- * a race between the pending counter increment and corresponding counting
- * event arrival.  This race can cause early exit from quiet. */
-extern shmem_internal_atomic_uint64_t shmem_transport_portals4_pending_put_counter;
-extern shmem_internal_atomic_uint64_t shmem_transport_portals4_pending_get_counter;
 
 extern int32_t shmem_transport_portals4_event_slots;
 
@@ -172,6 +161,10 @@ struct shmem_transport_ctx_t {
     ptl_handle_md_t get_md;
     ptl_handle_ct_t put_ct;
     ptl_handle_ct_t get_ct;
+
+    /* NOTE-MT: Pending counters must be incremented before ops are issued to avoid
+     * a race between the pending counter increment and corresponding counting
+     * event arrival.  This race can cause early exit from quiet. */
     shmem_internal_atomic_uint64_t pending_put_cntr;
     shmem_internal_atomic_uint64_t pending_get_cntr;
 };
@@ -291,11 +284,11 @@ shmem_transport_quiet(shmem_transport_ctx_t* ctx)
 
     /* wait for remote completion (acks) of all pending put events */
     /* NOTE-MT: continue to wait if additional operations are issued during the quiet */
-    cnt_new = shmem_internal_atomic_read(&shmem_transport_portals4_pending_put_counter);
+    cnt_new = shmem_internal_atomic_read(&ctx->pending_put_cntr);
     do {
         cnt = cnt_new;
-        ret = PtlCTWait(shmem_transport_portals4_put_ct_h, cnt, &ct);
-        cnt_new = shmem_internal_atomic_read(&shmem_transport_portals4_pending_put_counter);
+        ret = PtlCTWait(ctx->put_ct, cnt, &ct);
+        cnt_new = shmem_internal_atomic_read(&ctx->pending_put_cntr);
         if (PTL_OK != ret) { return ret; }
         if (ct.failure != 0) {
             RETURN_ERROR_MSG("put operations failed, %" PRIu64 "\n", ct.failure);
@@ -435,9 +428,9 @@ shmem_transport_put_small(shmem_transport_ctx_t* ctx, void *target, const void *
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
-    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
+    shmem_internal_atomic_inc(&ctx->pending_put_cntr);
 
-    ret = PtlPut(shmem_transport_portals4_put_volatile_md_h,
+    ret = PtlPut(ctx->put_volatile_md,
                  (ptl_size_t) source,
                  len,
                  PTL_OC_ACK_REQ,
@@ -470,10 +463,10 @@ shmem_transport_portals4_put_nb_internal(shmem_transport_ctx_t* ctx, void *targe
 #endif
 
     shmem_transport_portals4_fence_complete();
-    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
+    shmem_internal_atomic_inc(&ctx->pending_put_cntr);
 
     if (len <= shmem_transport_portals4_max_volatile_size) {
-        ret = PtlPut(shmem_transport_portals4_put_volatile_md_h,
+        ret = PtlPut(ctx->put_volatile_md,
                      (ptl_size_t) source,
                      len,
                      PTL_OC_ACK_REQ,
@@ -608,10 +601,10 @@ shmem_transport_portals4_put_nbi_internal(shmem_transport_ctx_t* ctx, void *targ
 #endif
 
     shmem_transport_portals4_fence_complete();
-    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
+    shmem_internal_atomic_inc(&ctx->pending_put_cntr);
 
     if (len <= shmem_transport_portals4_max_volatile_size) {
-        ret = PtlPut(shmem_transport_portals4_put_volatile_md_h,
+        ret = PtlPut(ctx->put_volatile_md,
                      (ptl_size_t) source,
                      len,
                      PTL_OC_ACK_REQ,
@@ -626,7 +619,7 @@ shmem_transport_portals4_put_nbi_internal(shmem_transport_ctx_t* ctx, void *targ
     } else {
         shmem_internal_assert(len <= shmem_transport_portals4_max_msg_size);
 
-        ret = PtlPut(shmem_transport_portals4_put_cntr_md_h,
+        ret = PtlPut(ctx->put_md,
                      (ptl_size_t) source,
                      len,
                      PTL_OC_ACK_REQ,
@@ -702,9 +695,9 @@ shmem_transport_portals4_get_internal(shmem_transport_ctx_t* ctx, void *target, 
 #endif
 
     shmem_internal_assert(len <= shmem_transport_portals4_max_msg_size);
-    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_get_counter);
+    shmem_internal_atomic_inc(&ctx->pending_get_cntr);
 
-    ret = PtlGet(shmem_transport_portals4_get_md_h,
+    ret = PtlGet(ctx->get_md,
                  (ptl_size_t) target,
                  len,
                  peer,
@@ -752,11 +745,11 @@ shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
     uint64_t cnt, cnt_new;
 
     /* NOTE-MT: continue to wait if additional operations are issued */
-    cnt_new = shmem_internal_atomic_read(&shmem_transport_portals4_pending_get_counter);
+    cnt_new = shmem_internal_atomic_read(&ctx->pending_get_cntr);
     do {
         cnt = cnt_new;
-        ret = PtlCTWait(shmem_transport_portals4_get_ct_h, cnt, &ct);
-        cnt_new = shmem_internal_atomic_read(&shmem_transport_portals4_pending_get_counter);
+        ret = PtlCTWait(ctx->get_ct, cnt, &ct);
+        cnt_new = shmem_internal_atomic_read(&ctx->pending_get_cntr);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
         if (ct.failure != 0) { RAISE_ERROR_MSG("get operations failed (%" PRIu64 "\n", ct.failure); }
     } while (cnt < cnt_new);
@@ -781,14 +774,14 @@ shmem_transport_swap(shmem_transport_ctx_t* ctx, void *target, const void *sourc
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
-    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_get_counter);
+    shmem_internal_atomic_inc(&ctx->pending_get_cntr);
 
     /* note: No ack is generated on the ct associated with the
        volatile md because the reply comes back on the get md.  So no
        need to increment the put counter */
-    ret = PtlSwap(shmem_transport_portals4_get_md_h,
+    ret = PtlSwap(ctx->get_md,
                   (ptl_size_t) dest,
-                  shmem_transport_portals4_put_volatile_md_h,
+                  ctx->put_volatile_md,
                   (ptl_size_t) source,
                   len,
                   peer,
@@ -822,14 +815,14 @@ shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
-    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_get_counter);
+    shmem_internal_atomic_inc(&ctx->pending_get_cntr);
 
     /* note: No ack is generated on the ct associated with the
        volatile md because the reply comes back on the get md.  So no
        need to increment the put counter */
-    ret = PtlSwap(shmem_transport_portals4_get_md_h,
+    ret = PtlSwap(ctx->get_md,
                   (ptl_size_t) dest,
-                  shmem_transport_portals4_put_volatile_md_h,
+                  ctx->put_volatile_md,
                   (ptl_size_t) source,
                   len,
                   peer,
@@ -863,14 +856,14 @@ shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
-    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_get_counter);
+    shmem_internal_atomic_inc(&ctx->pending_get_cntr);
 
     /* note: No ack is generated on the ct associated with the
        volatile md because the reply comes back on the get md.  So no
        need to increment the put counter */
-    ret = PtlSwap(shmem_transport_portals4_get_md_h,
+    ret = PtlSwap(ctx->get_md,
                   (ptl_size_t) dest,
-                  shmem_transport_portals4_put_volatile_md_h,
+                  ctx->put_volatile_md,
                   (ptl_size_t) source,
                   len,
                   peer,
@@ -904,9 +897,9 @@ shmem_transport_atomic_small(shmem_transport_ctx_t* ctx, void *target, const voi
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
-    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
+    shmem_internal_atomic_inc(&ctx->pending_put_cntr);
 
-    ret = PtlAtomic(shmem_transport_portals4_put_volatile_md_h,
+    ret = PtlAtomic(ctx->put_volatile_md,
                     (ptl_size_t) source,
                     len,
                     PTL_OC_ACK_REQ,
@@ -942,8 +935,8 @@ shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *
     shmem_transport_portals4_fence_complete();
 
     if (len <= shmem_transport_portals4_max_volatile_size) {
-        shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
-        ret = PtlAtomic(shmem_transport_portals4_put_volatile_md_h,
+        shmem_internal_atomic_inc(&ctx->pending_put_cntr);
+        ret = PtlAtomic(ctx->put_volatile_md,
                         (ptl_size_t) source,
                         len,
                         PTL_OC_ACK_REQ,
@@ -978,7 +971,7 @@ shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *
 
         memcpy(buff->data, source, len);
 
-        shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
+        shmem_internal_atomic_inc(&ctx->pending_put_cntr);
         ret = PtlAtomic(shmem_transport_portals4_put_event_md_h,
                         (ptl_size_t) buff->data,
                         len,
@@ -1025,7 +1018,7 @@ shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *
              SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
 
             size_t bufsize = MIN(len - sent, shmem_transport_portals4_max_atomic_size);
-            shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
+            shmem_internal_atomic_inc(&ctx->pending_put_cntr);
 
             ret = PtlAtomic(shmem_transport_portals4_put_event_md_h,
                             base_offset + sent,
@@ -1070,14 +1063,14 @@ shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target, const voi
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
-    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_get_counter);
+    shmem_internal_atomic_inc(&ctx->pending_get_cntr);
 
     /* note: No ack is generated on the ct associated with the
        volatile md because the reply comes back on the get md.  So no
        need to increment the put counter */
-    ret = PtlFetchAtomic(shmem_transport_portals4_get_md_h,
+    ret = PtlFetchAtomic(ctx->get_md,
                          (ptl_size_t) dest,
-                         shmem_transport_portals4_put_volatile_md_h,
+                         ctx->put_volatile_md,
                          (ptl_size_t) source,
                          len,
                          peer,
