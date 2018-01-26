@@ -284,9 +284,20 @@ shmem_transport_quiet(shmem_transport_ctx_t* ctx)
     /* wait for completion of all pending NB get events */
     shmem_transport_get_wait(ctx);
 
-    /* FIXME: Needs to be done in a loop */
-    cnt = shmem_internal_atomic_read(&shmem_transport_portals4_pending_put_event_cntr);
-    PtlCTWait(shmem_transport_portals4_put_event_ct_h, cnt, &ct);
+    /* wait for remote completion (acks) of all buffered puts */
+    /* NOTE-MT: continue to wait if additional operations are issued during the quiet */
+    cnt_new = shmem_internal_atomic_read(&shmem_transport_portals4_pending_put_event_cntr);
+    do {
+        cnt = cnt_new;
+        ret = PtlCTWait(shmem_transport_portals4_put_event_ct_h, cnt, &ct);
+        cnt_new = shmem_internal_atomic_read(&shmem_transport_portals4_pending_put_event_cntr);
+        if (PTL_OK != ret) { return ret; }
+        if (ct.failure != 0) {
+            RETURN_ERROR_MSG("buffered put operations failed, %" PRIu64 "\n", ct.failure);
+            return -1;
+        }
+    } while (cnt < cnt_new);
+    shmem_internal_assert(cnt == cnt_new);
 
     /* wait for remote completion (acks) of all pending put events */
     /* NOTE-MT: continue to wait if additional operations are issued during the quiet */
