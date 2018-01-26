@@ -261,7 +261,7 @@ shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
     ret = shmem_transport_ctx_init(*ctx, options, id);
 
     if (ret) {
-        free(ctx);
+        free(*ctx);
         *ctx = NULL;
     } else {
         shmem_transport_portals4_contexts[id] = *ctx;
