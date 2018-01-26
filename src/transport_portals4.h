@@ -81,6 +81,8 @@ extern int8_t shmem_transport_portals4_pt_state[SHMEM_TRANSPORT_PORTALS4_NUM_PTS
 
 extern ptl_handle_ni_t shmem_transport_portals4_ni_h;
 extern ptl_handle_md_t shmem_transport_portals4_put_event_md_h;
+extern ptl_handle_ct_t shmem_transport_portals4_put_event_ct_h;
+extern shmem_internal_atomic_uint64_t shmem_transport_portals4_pending_put_event_cntr;
 #ifndef ENABLE_HARD_POLLING
 extern ptl_handle_ct_t shmem_transport_portals4_target_ct_h;
 #endif
@@ -282,6 +284,10 @@ shmem_transport_quiet(shmem_transport_ctx_t* ctx)
     /* wait for completion of all pending NB get events */
     shmem_transport_get_wait(ctx);
 
+    /* FIXME: Needs to be done in a loop */
+    cnt = shmem_internal_atomic_read(&shmem_transport_portals4_pending_put_event_cntr);
+    PtlCTWait(shmem_transport_portals4_put_event_ct_h, cnt, &ct);
+
     /* wait for remote completion (acks) of all pending put events */
     /* NOTE-MT: continue to wait if additional operations are issued during the quiet */
     cnt_new = shmem_internal_atomic_read(&ctx->pending_put_cntr);
@@ -463,9 +469,9 @@ shmem_transport_portals4_put_nb_internal(shmem_transport_ctx_t* ctx, void *targe
 #endif
 
     shmem_transport_portals4_fence_complete();
-    shmem_internal_atomic_inc(&ctx->pending_put_cntr);
 
     if (len <= shmem_transport_portals4_max_volatile_size) {
+        shmem_internal_atomic_inc(&ctx->pending_put_cntr);
         ret = PtlPut(ctx->put_volatile_md,
                      (ptl_size_t) source,
                      len,
@@ -498,6 +504,7 @@ shmem_transport_portals4_put_nb_internal(shmem_transport_ctx_t* ctx, void *targe
 
         memcpy(buff->data, source, len);
 
+        shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_event_cntr);
         ret = PtlPut(shmem_transport_portals4_put_event_md_h,
                      (ptl_size_t) buff->data,
                      len,
@@ -515,13 +522,11 @@ shmem_transport_portals4_put_nb_internal(shmem_transport_ctx_t* ctx, void *targe
 #endif
     } else {
         shmem_transport_portals4_long_frag_t *long_frag;
-        ptl_handle_md_t md;
 
         shmem_internal_assert(len <= shmem_transport_portals4_max_msg_size);
 
         /* User requested completion notification, create a frag object and
          * append the completion pointer */
-        md = shmem_transport_portals4_put_event_md_h;
 
         SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_event_slots);
         while (0 >= --shmem_transport_portals4_event_slots) {
@@ -545,7 +550,8 @@ shmem_transport_portals4_put_nb_internal(shmem_transport_ctx_t* ctx, void *targe
         (*(long_frag->completion))++;
         long_frag->reference++;
 
-        ret = PtlPut(md,
+        shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_event_cntr);
+        ret = PtlPut(shmem_transport_portals4_put_event_md_h,
                      (ptl_size_t) source,
                      len,
                      PTL_OC_ACK_REQ,
@@ -1018,8 +1024,8 @@ shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *
              SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
 
             size_t bufsize = MIN(len - sent, shmem_transport_portals4_max_atomic_size);
-            shmem_internal_atomic_inc(&ctx->pending_put_cntr);
 
+            shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_event_cntr);
             ret = PtlAtomic(shmem_transport_portals4_put_event_md_h,
                             base_offset + sent,
                             bufsize,

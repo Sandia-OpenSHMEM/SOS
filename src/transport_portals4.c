@@ -73,6 +73,8 @@ int8_t shmem_transport_portals4_pt_state[SHMEM_TRANSPORT_PORTALS4_NUM_PTS] = {
 
 ptl_handle_ni_t shmem_transport_portals4_ni_h = PTL_INVALID_HANDLE;
 ptl_handle_md_t shmem_transport_portals4_put_event_md_h = PTL_INVALID_HANDLE;
+ptl_handle_ct_t shmem_transport_portals4_put_event_ct_h = PTL_INVALID_HANDLE;
+shmem_internal_atomic_uint64_t shmem_transport_portals4_pending_put_event_cntr;
 #if ENABLE_REMOTE_VIRTUAL_ADDRESSING
 ptl_handle_le_t shmem_transport_portals4_le_h = PTL_INVALID_HANDLE;
 #else
@@ -255,6 +257,7 @@ shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
 
     memset(*ctx, 0, sizeof(shmem_transport_ctx_t));
 
+    shmem_internal_atomic_write(&shmem_transport_portals4_pending_put_event_cntr, 0);
     ret = shmem_transport_ctx_init(*ctx, options, id);
 
     if (ret) {
@@ -319,6 +322,9 @@ cleanup_handles(void)
 
     if (!PtlHandleIsEqual(shmem_transport_portals4_put_event_md_h, PTL_INVALID_HANDLE)) {
         PtlMDRelease(shmem_transport_portals4_put_event_md_h);
+    }
+    if (!PtlHandleIsEqual(shmem_transport_portals4_put_event_ct_h, PTL_INVALID_HANDLE)) {
+        PtlCTFree(shmem_transport_portals4_put_event_ct_h);
     }
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
     if (!PtlHandleIsEqual(shmem_transport_portals4_le_h, PTL_INVALID_HANDLE)) {
@@ -701,8 +707,14 @@ shmem_transport_startup(void)
     }
 #endif
 
-#if 0 /* FIXME */
     /* Open MD to all memory */
+    ret = PtlCTAlloc(shmem_transport_portals4_ni_h,
+                     &shmem_transport_portals4_put_event_ct_h);
+    if (PTL_OK != ret) {
+        RAISE_WARN_MSG("Put CT allocation failed: %d\n", ret);
+        goto cleanup;
+    }
+
     md.start = 0;
     md.length = PTL_SIZE_MAX;
     md.options = PTL_MD_EVENT_CT_ACK;
@@ -710,14 +722,13 @@ shmem_transport_startup(void)
         md.options |= PTL_MD_UNORDERED;
     }
     md.eq_handle = shmem_transport_portals4_eq_h;
-    md.ct_handle = PTL_INVALID_HANDLE;
+    md.ct_handle = shmem_transport_portals4_put_event_ct_h;
     ret = PtlMDBind(shmem_transport_portals4_ni_h, &md,
                     &shmem_transport_portals4_put_event_md_h);
     if (PTL_OK != ret) {
         RETURN_ERROR_MSG("PtlMDBind of put MD failed: %d\n", ret);
         goto cleanup;
     }
-#endif
 
     ret = shmem_transport_ctx_init((shmem_transport_ctx_t*)SHMEM_CTX_DEFAULT,
                                    SHMEMX_CTX_BOUNCE_BUFFER,
