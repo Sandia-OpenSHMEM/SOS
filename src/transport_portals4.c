@@ -731,7 +731,7 @@ shmem_transport_startup(void)
     }
 
     ret = shmem_transport_ctx_init((shmem_transport_ctx_t*)SHMEM_CTX_DEFAULT,
-                                   SHMEMX_CTX_BOUNCE_BUFFER,
+                                   SHMEMX_CTX_BOUNCE_BUFFER | SHMEMX_CTX_ISOLATE_PUTS,
                                    SHMEM_TRANSPORT_CTX_DEFAULT_ID);
 
  cleanup:
@@ -754,7 +754,7 @@ shmem_transport_fini(void)
     for (i = 0; i < shmem_transport_portals4_contexts_len; ++i) {
         if (shmem_transport_portals4_contexts[i]) {
             if (shmem_transport_portals4_contexts[i]->options & SHMEM_CTX_PRIVATE)
-                RAISE_WARN_MSG("Shutting down with unfreed private context (%zd)\n", i);
+                RAISE_WARN_MSG("Shutting down with unfreed private context (%d)\n", i);
             shmem_transport_quiet(shmem_transport_portals4_contexts[i]);
             shmem_transport_ctx_destroy(shmem_transport_portals4_contexts[i]);
         }

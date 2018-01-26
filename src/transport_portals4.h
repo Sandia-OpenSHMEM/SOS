@@ -484,7 +484,8 @@ shmem_transport_portals4_put_nb_internal(shmem_transport_ctx_t* ctx, void *targe
                      0);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
 
-    } else if (len <= shmem_transport_portals4_bounce_buffer_size) {
+    } else if (len <= shmem_transport_portals4_bounce_buffer_size &&
+               ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
         shmem_transport_portals4_bounce_buffer_t *buff;
 
         SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_event_slots);
@@ -572,25 +573,6 @@ shmem_transport_portals4_put_nb_internal(shmem_transport_ctx_t* ctx, void *targe
 
 static inline
 void
-shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
-                                int pe, long *completion)
-{
-#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-    shmem_transport_portals4_put_nb_internal(ctx, target, source, len, pe,
-                                             completion,
-                                             shmem_transport_portals4_pt,
-                                             -1);
-#else
-    shmem_transport_portals4_put_nb_internal(ctx, target, source, len, pe,
-                                             completion,
-                                             shmem_transport_portals4_data_pt,
-                                             shmem_transport_portals4_heap_pt);
-#endif
-}
-
-
-static inline
-void
 shmem_transport_portals4_put_nbi_internal(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
                                 int pe, ptl_pt_index_t data_pt, ptl_pt_index_t heap_pt)
 {
@@ -659,6 +641,30 @@ shmem_transport_put_nbi(shmem_transport_ctx_t* ctx, void *target, const void *so
 #endif
 }
 
+
+static inline
+void
+shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
+                                int pe, long *completion)
+{
+    if (ctx->options & SHMEMX_CTX_ISOLATE_PUTS) {
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+        shmem_transport_portals4_put_nb_internal(ctx, target, source, len, pe,
+                                                 completion,
+                                                 shmem_transport_portals4_pt,
+                                                 -1);
+#else
+        shmem_transport_portals4_put_nb_internal(ctx, target, source, len, pe,
+                                                 completion,
+                                                 shmem_transport_portals4_data_pt,
+                                                 shmem_transport_portals4_heap_pt);
+#endif
+    } else {
+        shmem_transport_put_nbi(ctx, target, source, len, pe);
+    }
+}
+
+
 static inline
 void
 shmem_transport_put_ct_nb(shmem_transport_ct_t *ct, void *target, const void *source,
@@ -678,8 +684,12 @@ static inline
 void
 shmem_transport_put_wait(shmem_transport_ctx_t* ctx, long *completion)
 {
-    while (*completion > 0) {
-        shmem_transport_portals4_drain_eq();
+    if (ctx->options & SHMEMX_CTX_ISOLATE_PUTS) {
+        while (*completion > 0) {
+            shmem_transport_portals4_drain_eq();
+        }
+    } else {
+        shmem_transport_quiet(ctx);
     }
 }
 
