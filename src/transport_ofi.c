@@ -135,7 +135,7 @@ static shmem_transport_ctx_t** shmem_transport_ofi_contexts = NULL;
 static size_t shmem_transport_ofi_contexts_len = 0;
 static size_t shmem_transport_ofi_grow_size = 128;
 
-#define SHMEM_CTX_DEFAULT_ID -1
+#define SHMEM_TRANSPORT_CTX_DEFAULT_ID -1
 shmem_transport_ctx_t shmem_transport_ctx_default;
 shmem_ctx_t SHMEM_CTX_DEFAULT = (shmem_ctx_t) &shmem_transport_ctx_default;
 
@@ -1458,7 +1458,7 @@ int shmem_transport_init(void)
 
     shmem_transport_ctx_default.options = SHMEMX_CTX_BOUNCE_BUFFER;
 
-    ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, SHMEM_CTX_DEFAULT_ID);
+    ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, SHMEM_TRANSPORT_CTX_DEFAULT_ID);
     if (ret != 0) return ret;
 
     ret = shmem_transport_ofi_target_ep_init();
@@ -1607,8 +1607,8 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
         free(ctx);
     }
-    else if (ctx->id != SHMEM_CTX_DEFAULT_ID) {
-        RAISE_ERROR_MSG("Attempted to destroy an invalid context (%s)\n", fi_strerror(errno));
+    else if (ctx->id != SHMEM_TRANSPORT_CTX_DEFAULT_ID) {
+        RAISE_ERROR_MSG("Attempted to destroy an invalid context (%d)\n", ctx->id);
     }
 }
 
@@ -1624,6 +1624,8 @@ int shmem_transport_fini(void)
 
     for (i = 0; i < shmem_transport_ofi_contexts_len; ++i) {
         if (shmem_transport_ofi_contexts[i]) {
+            if (shmem_transport_ofi_contexts[i]->options & SHMEM_CTX_PRIVATE)
+                RAISE_WARN_MSG("Shutting down with unfreed private context (%zd)\n", i);
             shmem_transport_quiet(shmem_transport_ofi_contexts[i]);
             shmem_transport_ctx_destroy(shmem_transport_ofi_contexts[i]);
         }
@@ -1642,13 +1644,14 @@ int shmem_transport_fini(void)
     }
 
     if (stx_len > 0) {
-        RAISE_WARN_MSG("Shutting down with %d active private contexts\n", stx_len);
+        RAISE_WARN_MSG("Key/value store contained %d unfreed private contexts\n", stx_len);
     }
 
     for (i = 0; i < shmem_transport_ofi_stx_max; ++i) {
         if (shmem_transport_ofi_stx_pool[i].ref_cnt != 0)
-            RAISE_WARN_MSG("Closing STX %zu with nonzero ref. count (%ld)\n", i,
-                           shmem_transport_ofi_stx_pool[i].ref_cnt);
+            RAISE_WARN_MSG("Closing a %s STX (%zu) with nonzero ref. count (%ld)\n",
+                           shmem_transport_ofi_stx_pool[i].is_private ? "private" : "shared",
+                           i, shmem_transport_ofi_stx_pool[i].ref_cnt);
         ret = fi_close(&shmem_transport_ofi_stx_pool[i].stx->fid);
         OFI_CHECK_ERROR_MSG(ret, "STX context close failed (%s)\n", fi_strerror(errno));
     }
