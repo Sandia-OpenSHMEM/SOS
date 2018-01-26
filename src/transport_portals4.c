@@ -711,7 +711,7 @@ shmem_transport_startup(void)
     ret = PtlCTAlloc(shmem_transport_portals4_ni_h,
                      &shmem_transport_portals4_put_event_ct_h);
     if (PTL_OK != ret) {
-        RAISE_WARN_MSG("Put CT allocation failed: %d\n", ret);
+        RAISE_WARN_MSG("Put event CT allocation failed: %d\n", ret);
         goto cleanup;
     }
 
@@ -726,7 +726,7 @@ shmem_transport_startup(void)
     ret = PtlMDBind(shmem_transport_portals4_ni_h, &md,
                     &shmem_transport_portals4_put_event_md_h);
     if (PTL_OK != ret) {
-        RETURN_ERROR_MSG("PtlMDBind of put MD failed: %d\n", ret);
+        RETURN_ERROR_MSG("PtlMDBind of put event MD failed: %d\n", ret);
         goto cleanup;
     }
 
@@ -748,8 +748,8 @@ shmem_transport_fini(void)
     /* synchronize the atomic cache, if there is one */
     PtlAtomicSync();
 
-    /* Free all shareable contexts.  This performs a quiet on each context,
-     * ensuring all operations have completed before proceeding with shutdown. */
+    /* Free all contexts.  This performs a quiet on each context, ensuring all
+     * operations have completed before proceeding with shutdown. */
 
     for (i = 0; i < shmem_transport_portals4_contexts_len; ++i) {
         if (shmem_transport_portals4_contexts[i]) {
