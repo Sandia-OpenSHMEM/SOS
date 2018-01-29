@@ -17,6 +17,7 @@
 #define TRANSPORT_XPMEM_H
 
 #include <string.h>
+#include <inttypes.h>
 #include <xpmem.h>
 
 struct shmem_transport_xpmem_peer_info_t {
