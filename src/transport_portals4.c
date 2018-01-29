@@ -711,7 +711,7 @@ shmem_transport_startup(void)
     ret = PtlCTAlloc(shmem_transport_portals4_ni_h,
                      &shmem_transport_portals4_put_event_ct_h);
     if (PTL_OK != ret) {
-        RAISE_WARN_MSG("Put event CT allocation failed: %d\n", ret);
+        RAISE_ERROR_MSG("Put event CT allocation failed: %d\n", ret);
         goto cleanup;
     }
 
