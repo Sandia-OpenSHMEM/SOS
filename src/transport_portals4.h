@@ -23,6 +23,8 @@
 #include <inttypes.h>
 
 #include "shmem_free_list.h"
+#include "shmem_internal.h"
+#include "shmem_atomic.h"
 
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -99,8 +101,11 @@ extern ptl_size_t shmem_transport_portals4_max_fetch_atomic_size;
 extern ptl_size_t shmem_transport_portals4_max_fence_size;
 extern ptl_size_t shmem_transport_portals4_max_msg_size;
 
-extern ptl_size_t shmem_transport_portals4_pending_put_counter;
-extern ptl_size_t shmem_transport_portals4_pending_get_counter;
+/* NOTE-MT: Pending counters must be incremented before ops are issued to avoid
+ * a race between the pending counter increment and corresponding counting
+ * event arrival.  This race can cause early exit from quiet. */
+extern shmem_internal_atomic_uint64_t shmem_transport_portals4_pending_put_counter;
+extern shmem_internal_atomic_uint64_t shmem_transport_portals4_pending_get_counter;
 
 extern int32_t shmem_transport_portals4_event_slots;
 
@@ -163,7 +168,7 @@ struct shmem_transport_ctx_t { int dummy; };
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
 extern shmem_transport_ctx_t shmem_transport_ctx_default;
-void shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx);
+int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx);
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx);
 
 /*
@@ -266,6 +271,7 @@ shmem_transport_quiet(shmem_transport_ctx_t* ctx)
 {
     int ret;
     ptl_ct_event_t ct;
+    uint64_t cnt, cnt_new;
 
     /* synchronize the atomic cache, if there is one */
     PtlAtomicSync();
@@ -274,10 +280,19 @@ shmem_transport_quiet(shmem_transport_ctx_t* ctx)
     shmem_transport_get_wait(ctx);
 
     /* wait for remote completion (acks) of all pending put events */
-    ret = PtlCTWait(shmem_transport_portals4_put_ct_h,
-                    shmem_transport_portals4_pending_put_counter, &ct);
-    if (PTL_OK != ret) { return ret; }
-    if (ct.failure != 0) { return -1; }
+    /* NOTE-MT: continue to wait if additional operations are issued during the quiet */
+    cnt_new = shmem_internal_atomic_read(&shmem_transport_portals4_pending_put_counter);
+    do {
+        cnt = cnt_new;
+        ret = PtlCTWait(shmem_transport_portals4_put_ct_h, cnt, &ct);
+        cnt_new = shmem_internal_atomic_read(&shmem_transport_portals4_pending_put_counter);
+        if (PTL_OK != ret) { return ret; }
+        if (ct.failure != 0) {
+            RETURN_ERROR_MSG("put operations failed, %" PRIu64 "\n", ct.failure);
+            return -1;
+        }
+    } while (cnt < cnt_new);
+    shmem_internal_assert(cnt == cnt_new);
 
     return 0;
 }
@@ -410,6 +425,7 @@ shmem_transport_put_small(shmem_transport_ctx_t* ctx, void *target, const void *
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
+    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
 
     ret = PtlPut(shmem_transport_portals4_put_volatile_md_h,
                  (ptl_size_t) source,
@@ -422,7 +438,6 @@ shmem_transport_put_small(shmem_transport_ctx_t* ctx, void *target, const void *
                  NULL,
                  0);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    shmem_transport_portals4_pending_put_counter++;
 }
 
 
@@ -445,6 +460,7 @@ shmem_transport_portals4_put_nb_internal(shmem_transport_ctx_t* ctx, void *targe
 #endif
 
     shmem_transport_portals4_fence_complete();
+    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
 
     if (len <= shmem_transport_portals4_max_volatile_size) {
         ret = PtlPut(shmem_transport_portals4_put_volatile_md_h,
@@ -542,7 +558,6 @@ shmem_transport_portals4_put_nb_internal(shmem_transport_ctx_t* ctx, void *targe
         shmem_transport_portals4_long_pending = 1;
 #endif
     }
-    shmem_transport_portals4_pending_put_counter++;
 }
 
 
@@ -583,6 +598,7 @@ shmem_transport_portals4_put_nbi_internal(shmem_transport_ctx_t* ctx, void *targ
 #endif
 
     shmem_transport_portals4_fence_complete();
+    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
 
     if (len <= shmem_transport_portals4_max_volatile_size) {
         ret = PtlPut(shmem_transport_portals4_put_volatile_md_h,
@@ -616,7 +632,6 @@ shmem_transport_portals4_put_nbi_internal(shmem_transport_ctx_t* ctx, void *targ
         shmem_transport_portals4_long_pending = 1;
 #endif
     }
-    shmem_transport_portals4_pending_put_counter++;
 }
 
 
@@ -677,6 +692,7 @@ shmem_transport_portals4_get_internal(shmem_transport_ctx_t* ctx, void *target, 
 #endif
 
     shmem_internal_assert(len <= shmem_transport_portals4_max_msg_size);
+    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_get_counter);
 
     ret = PtlGet(shmem_transport_portals4_get_md_h,
                  (ptl_size_t) target,
@@ -687,7 +703,6 @@ shmem_transport_portals4_get_internal(shmem_transport_ctx_t* ctx, void *target, 
                  offset,
                  0);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    shmem_transport_portals4_pending_get_counter++;
 }
 
 
@@ -724,12 +739,18 @@ shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
 {
     int ret;
     ptl_ct_event_t ct;
+    uint64_t cnt, cnt_new;
 
-    ret = PtlCTWait(shmem_transport_portals4_get_ct_h,
-                    shmem_transport_portals4_pending_get_counter,
-                    &ct);
-    if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    if (ct.failure != 0) { RAISE_ERROR(ct.failure); }
+    /* NOTE-MT: continue to wait if additional operations are issued */
+    cnt_new = shmem_internal_atomic_read(&shmem_transport_portals4_pending_get_counter);
+    do {
+        cnt = cnt_new;
+        ret = PtlCTWait(shmem_transport_portals4_get_ct_h, cnt, &ct);
+        cnt_new = shmem_internal_atomic_read(&shmem_transport_portals4_pending_get_counter);
+        if (PTL_OK != ret) { RAISE_ERROR(ret); }
+        if (ct.failure != 0) { RAISE_ERROR_MSG("get operations failed (%" PRIu64 "\n", ct.failure); }
+    } while (cnt < cnt_new);
+    shmem_internal_assert(cnt == cnt_new);
 }
 
 
@@ -750,6 +771,7 @@ shmem_transport_swap(shmem_transport_ctx_t* ctx, void *target, const void *sourc
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
+    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_get_counter);
 
     /* note: No ack is generated on the ct associated with the
        volatile md because the reply comes back on the get md.  So no
@@ -769,7 +791,6 @@ shmem_transport_swap(shmem_transport_ctx_t* ctx, void *target, const void *sourc
                   PTL_SWAP,
                   datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    shmem_transport_portals4_pending_get_counter++;
 }
 
 
@@ -791,6 +812,7 @@ shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
+    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_get_counter);
 
     /* note: No ack is generated on the ct associated with the
        volatile md because the reply comes back on the get md.  So no
@@ -810,7 +832,6 @@ shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
                   PTL_CSWAP,
                   datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    shmem_transport_portals4_pending_get_counter++;
 }
 
 
@@ -832,6 +853,7 @@ shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
+    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_get_counter);
 
     /* note: No ack is generated on the ct associated with the
        volatile md because the reply comes back on the get md.  So no
@@ -851,7 +873,6 @@ shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
                   PTL_MSWAP,
                   datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    shmem_transport_portals4_pending_get_counter++;
 }
 
 
@@ -873,6 +894,7 @@ shmem_transport_atomic_small(shmem_transport_ctx_t* ctx, void *target, const voi
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
+    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
 
     ret = PtlAtomic(shmem_transport_portals4_put_volatile_md_h,
                     (ptl_size_t) source,
@@ -887,7 +909,6 @@ shmem_transport_atomic_small(shmem_transport_ctx_t* ctx, void *target, const voi
                     op,
                     datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    shmem_transport_portals4_pending_put_counter += 1;
 }
 
 
@@ -911,6 +932,7 @@ shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *
     shmem_transport_portals4_fence_complete();
 
     if (len <= shmem_transport_portals4_max_volatile_size) {
+        shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
         ret = PtlAtomic(shmem_transport_portals4_put_volatile_md_h,
                         (ptl_size_t) source,
                         len,
@@ -924,7 +946,6 @@ shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *
                         op,
                         datatype);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
-        shmem_transport_portals4_pending_put_counter++;
 
     } else if (len <= MIN(shmem_transport_portals4_bounce_buffer_size,
                           shmem_transport_portals4_max_atomic_size)) {
@@ -947,6 +968,7 @@ shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *
 
         memcpy(buff->data, source, len);
 
+        shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
         ret = PtlAtomic(shmem_transport_portals4_put_event_md_h,
                         (ptl_size_t) buff->data,
                         len,
@@ -960,7 +982,6 @@ shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *
                         op,
                         datatype);
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
-        shmem_transport_portals4_pending_put_counter += 1;
 #if WANT_TOTAL_DATA_ORDERING != 0
         shmem_transport_portals4_long_pending = 1;
 #endif
@@ -994,6 +1015,8 @@ shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *
              SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_event_slots);
 
             size_t bufsize = MIN(len - sent, shmem_transport_portals4_max_atomic_size);
+            shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_counter);
+
             ret = PtlAtomic(shmem_transport_portals4_put_event_md_h,
                             base_offset + sent,
                             bufsize,
@@ -1009,7 +1032,6 @@ shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *
             if (PTL_OK != ret) { RAISE_ERROR(ret); }
             (*(long_frag->completion))++;
             long_frag->reference++;
-            shmem_transport_portals4_pending_put_counter++;
             sent += bufsize;
         }
         SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_frag);
@@ -1038,6 +1060,7 @@ shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target, const voi
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
     shmem_transport_portals4_fence_complete();
+    shmem_internal_atomic_inc(&shmem_transport_portals4_pending_get_counter);
 
     /* note: No ack is generated on the ct associated with the
        volatile md because the reply comes back on the get md.  So no
@@ -1056,7 +1079,6 @@ shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target, const voi
                          op,
                          datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
-    shmem_transport_portals4_pending_get_counter++;
 }
 
 

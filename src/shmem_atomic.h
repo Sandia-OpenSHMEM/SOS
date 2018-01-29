@@ -158,6 +158,8 @@ shmem_internal_membar_store(void) {
 
 #    if (defined(__STDC_NO_ATOMICS__) || !defined(HAVE_STDATOMIC_H))
 
+#include <stdint.h>
+
 typedef uint64_t shmem_internal_atomic_uint64_t;
 
 static inline

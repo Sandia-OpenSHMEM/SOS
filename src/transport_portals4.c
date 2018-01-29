@@ -97,8 +97,8 @@ ptl_size_t shmem_transport_portals4_max_atomic_size = 0;
 ptl_size_t shmem_transport_portals4_max_fetch_atomic_size = 0;
 ptl_size_t shmem_transport_portals4_max_msg_size = 0;
 
-ptl_size_t shmem_transport_portals4_pending_put_counter = 0;
-ptl_size_t shmem_transport_portals4_pending_get_counter = 0;
+shmem_internal_atomic_uint64_t shmem_transport_portals4_pending_put_counter = 0;
+shmem_internal_atomic_uint64_t shmem_transport_portals4_pending_get_counter = 0;
 
 int32_t shmem_transport_portals4_event_slots = 2048;
 
@@ -129,9 +129,9 @@ shmem_internal_mutex_t shmem_internal_mutex_ptl4_nb_fence;
 shmem_transport_ctx_t shmem_transport_ctx_default;
 shmem_ctx_t SHMEM_CTX_DEFAULT = (shmem_ctx_t) &shmem_transport_ctx_default;
 
-void shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx) {
+int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx) {
   *ctx = NULL;
-  return;
+  return 0;
 }
 
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx) {
@@ -255,6 +255,9 @@ shmem_transport_init(void)
     shmem_transport_portals4_long_frags =
         shmem_free_list_init(sizeof(shmem_transport_portals4_long_frag_t),
                              init_long_frag);
+
+    shmem_internal_atomic_write(&shmem_transport_portals4_pending_put_counter, 0);
+    shmem_internal_atomic_write(&shmem_transport_portals4_pending_get_counter, 0);
 
     /* Initialize network */
     ni_req_limits.max_entries = 1024;
@@ -577,7 +580,7 @@ shmem_transport_startup(void)
     md.start = 0;
     md.length = PTL_SIZE_MAX;
     md.options = PTL_MD_EVENT_CT_ACK;
-    if (1 == PORTALS4_TOTAL_DATA_ORDERING) {
+    if (1 != PORTALS4_TOTAL_DATA_ORDERING) {
         md.options |= PTL_MD_UNORDERED;
     }
     md.eq_handle = shmem_transport_portals4_eq_h;
@@ -595,7 +598,7 @@ shmem_transport_startup(void)
     md.options = PTL_MD_EVENT_CT_ACK |
         PTL_MD_EVENT_SUCCESS_DISABLE |
         PTL_MD_VOLATILE;
-    if (1 == PORTALS4_TOTAL_DATA_ORDERING) {
+    if (1 != PORTALS4_TOTAL_DATA_ORDERING) {
         md.options |= PTL_MD_UNORDERED;
     }
     md.eq_handle = shmem_transport_portals4_eq_h;
@@ -612,7 +615,7 @@ shmem_transport_startup(void)
     md.length = PTL_SIZE_MAX;
     md.options = PTL_MD_EVENT_CT_ACK |
         PTL_MD_EVENT_SUCCESS_DISABLE;
-    if (1 == PORTALS4_TOTAL_DATA_ORDERING) {
+    if (1 != PORTALS4_TOTAL_DATA_ORDERING) {
         md.options |= PTL_MD_UNORDERED;
     }
     md.eq_handle = shmem_transport_portals4_eq_h;
@@ -629,7 +632,7 @@ shmem_transport_startup(void)
     md.length = PTL_SIZE_MAX;
     md.options = PTL_MD_EVENT_CT_REPLY |
         PTL_MD_EVENT_SUCCESS_DISABLE;
-    if (1 == PORTALS4_TOTAL_DATA_ORDERING) {
+    if (1 != PORTALS4_TOTAL_DATA_ORDERING) {
         md.options |= PTL_MD_UNORDERED;
     }
     md.eq_handle = shmem_transport_portals4_eq_h;
@@ -654,26 +657,28 @@ int
 shmem_transport_fini(void)
 {
     ptl_ct_event_t ct;
+    uint64_t cnt;
 
     /* synchronize the atomic cache, if there is one */
     PtlAtomicSync();
 
     /* wait for remote completion (acks) of all pending events */
-    PtlCTWait(shmem_transport_portals4_put_ct_h,
-              shmem_transport_portals4_pending_put_counter, &ct);
-    if (shmem_transport_portals4_pending_put_counter != ct.success + ct.failure) {
-        RAISE_WARN_MSG("put count mismatch: %ld, %ld\n",
-                       (long) shmem_transport_portals4_pending_put_counter,
-                       (long) (ct.success + ct.failure));
-    }
+    cnt = shmem_internal_atomic_read(&shmem_transport_portals4_pending_put_counter);
+    PtlCTWait(shmem_transport_portals4_put_ct_h, cnt, &ct);
+    if (cnt != ct.success)
+        RAISE_WARN_MSG("put count mismatch: %" PRIu64 ", %" PRIu64 "\n",
+                       cnt, (uint64_t) ct.success);
+    if (ct.failure)
+        RAISE_WARN_MSG("put operations failed: %" PRIu64 "\n", (uint64_t) ct.failure);
 
-    PtlCTWait(shmem_transport_portals4_get_ct_h,
-              shmem_transport_portals4_pending_get_counter, &ct);
-    if (shmem_transport_portals4_pending_get_counter != ct.success + ct.failure) {
-        RAISE_WARN_MSG("get count mismatch: %ld, %ld\n",
-                       (long) shmem_transport_portals4_pending_get_counter,
-                       (long) (ct.success + ct.failure));
-    }
+    cnt = shmem_internal_atomic_read(&shmem_transport_portals4_pending_get_counter);
+    PtlCTWait(shmem_transport_portals4_get_ct_h, cnt, &ct);
+    if (cnt != ct.success)
+        RAISE_WARN_MSG("get count mismatch: %" PRIu64 ", %" PRIu64 "\n",
+                       cnt, (uint64_t) ct.success);
+    if (ct.failure)
+        RAISE_WARN_MSG("get operations failed: %" PRIu64 "\n", (uint64_t) ct.failure);
+
 
     cleanup_handles();
     PtlFini();

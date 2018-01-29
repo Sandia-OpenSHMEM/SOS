@@ -208,6 +208,25 @@ options.
         polling (i.e. there is no polling limit).  The default behavior is to
         call fi_cntr_wait without polling.
 
+    SHMEM_OFI_STX_MAX (default: 16)
+        Sets the maximum number of sharable transmit contexts (STXs) per PE.
+        STXs are the underlying transmit resources that are allocated to
+        OpenSHMEM contexts and they are allocated using the algorithm specified
+        by the SHMEM_OFI_STX_ALLOCATOR parameter.
+
+    SHMEM_OFI_STX_ALLOCATOR (default: round-robin)
+        Algorithm for allocating STX resources to OpenSHMEM contexts.  In
+        particular, the algorithm determines how resources are shared by
+        contexts once all STXs have been allocated.  Options are: round-robin,
+        random.
+
+    SHMEM_OFI_STX_THRESHOLD (default: 1)
+       Number of contexts that must be allocated to all shared STXs before
+       another shared STX can be allocated.  This threshold can be increased to
+       reduce the number of shared STXs and increase the number of STXs
+       available for private use (i.e., with contexts that enable the
+       SHMEM_CTX_PRIVATE option).
+
   Debugging Environment variables:
 
     SHMEM_DEBUG (default: off)
