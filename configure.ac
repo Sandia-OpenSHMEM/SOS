@@ -537,20 +537,31 @@ AC_TRY_RUN([
 #ifdef __APPLE__
 #include <mach-o/getsect.h>
 #else
-extern char data_start;
-extern char end;
+#pragma weak __data_start
+#pragma weak _end
+extern int __data_start;
+extern int _end;
 #endif
+
+/* Ensure data segment is not empty.  Anything simpler gets optimized
+ * away by the compiler. */
+int ensure_nonempty_data(void) {
+    static int ncall = 0;
+    return ncall++;
+}
 
 int main(void) {
     void *base;
-    unsigned long length;
+    long length;
 #ifdef __APPLE__
     base = (void*) get_etext();
     length = get_end() - get_etext();
 #else
-    base = &data_start;
-    length = (unsigned long) &end  - (unsigned long) &data_start;
+    if (&__data_start == (int*) 0 || &_end == (int*) 0) return 1;
+    base = (void*) &__data_start;
+    length = (long) ((char*) &_end - (char*) &__data_start);
 #endif
+    if (!(base != (void*)0 && length > 0)) return 2;
     return 0;
 }],
     AC_MSG_RESULT([found]),

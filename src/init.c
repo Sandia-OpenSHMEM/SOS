@@ -36,8 +36,12 @@
 #ifdef __APPLE__
 #include <mach-o/getsect.h>
 #else
-extern char data_start;
-extern char end;
+/* Declare data_start and end as weak to avoid a linker error if the symbols
+ * are not present.  During initialization we check if the symbols exist. */
+#pragma weak __data_start
+#pragma weak _end
+extern int __data_start;
+extern int _end;
 #endif
 
 void *shmem_internal_heap_base = NULL;
@@ -210,8 +214,26 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     shmem_internal_data_base = (void*) get_etext();
     shmem_internal_data_length = get_end() - get_etext();
 #else
-    shmem_internal_data_base = &data_start;
-    shmem_internal_data_length = (unsigned long) &end  - (unsigned long) &data_start;
+    /* We declare data_start and end as weak symbols, which allows them to
+     * remain unbound after dynamic linking.  This is needed for compatibility
+     * with binaries (e.g. forked processes or tools) that are used with
+     * OpenSHMEM programs but don't themselves use OpenSHMEM.  Such binaries
+     * need not be compiled with the OpenSHMEM library and, as a result, will
+     * not have exposed these symbols for dynamic linking.  However, if the
+     * OpenSHMEM library has a strong dependence on the symbols, the dynamic
+     * linker will flag an error when loading the binary.
+     *
+     * If the data_start and end symbols are unbound, the dynamic linker will
+     * assign them an lvalue of 0.  Here, we check that the binary that
+     * initializes OpenSHMEM has exposed these symbols, enabling the library to
+     * locate its symmetric data segment. */
+
+    if (&__data_start == (int*) 0 || &_end == (int*) 0)
+        RETURN_ERROR_MSG("Unable to locate symmetric data segment (%p, %p)\n",
+                         (void*) &__data_start, (void*) &_end);
+
+    shmem_internal_data_base = (void*) &__data_start;
+    shmem_internal_data_length = (long) ((char*) &_end - (char*) &__data_start);
 #endif
 
     /* create symmetric heap */
