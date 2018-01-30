@@ -20,9 +20,8 @@
 #define _GNU_SOURCE
 #endif
 
-#ifdef HAVE_LIBC_CMA
 #include <sys/uio.h>
-#else
+#ifndef HAVE_LIBC_CMA
 #include <sys/syscall.h>
 #endif
 
