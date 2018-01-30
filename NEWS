@@ -2,6 +2,12 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.3.5
+------
+- Changed the symmetric data segment variables (data_start/end) to be weak
+  symbols to avoid a linker error for tools using the PSHMEM interface.
+- Added a missing header file (inttypes.h), needed for the XPMEM transport.
+
 v1.3.4
 ------
 - Added manpages for OpenSHMEM API routines.
