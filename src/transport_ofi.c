@@ -1524,8 +1524,11 @@ int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
     }
 
     memset(ctxp, 0, sizeof(shmem_transport_ctx_t));
+
+#ifndef USE_CTX_LOCK
     shmem_internal_atomic_write(&ctxp->pending_put_cntr, 0);
     shmem_internal_atomic_write(&ctxp->pending_get_cntr, 0);
+#endif
 
     ctxp->stx_idx = -1;
     ctxp->options = options;
