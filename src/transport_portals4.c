@@ -731,7 +731,7 @@ shmem_transport_startup(void)
     }
 
     ret = shmem_transport_ctx_init((shmem_transport_ctx_t*)SHMEM_CTX_DEFAULT,
-                                   SHMEMX_CTX_BOUNCE_BUFFER | SHMEMX_CTX_ISOLATE_PUTS,
+                                   SHMEMX_CTX_BOUNCE_BUFFER,
                                    SHMEM_TRANSPORT_CTX_DEFAULT_ID);
 
  cleanup:

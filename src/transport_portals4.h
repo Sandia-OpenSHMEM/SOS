@@ -658,7 +658,7 @@ void
 shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
                                 int pe, long *completion)
 {
-    if (ctx->options & SHMEMX_CTX_ISOLATE_PUTS) {
+    if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
         shmem_transport_portals4_put_nb_internal(ctx, target, source, len, pe,
                                                  completion,
@@ -695,7 +695,7 @@ static inline
 void
 shmem_transport_put_wait(shmem_transport_ctx_t* ctx, long *completion)
 {
-    if (ctx->options & SHMEMX_CTX_ISOLATE_PUTS) {
+    if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
         while (*completion > 0) {
             shmem_transport_portals4_drain_eq();
         }
