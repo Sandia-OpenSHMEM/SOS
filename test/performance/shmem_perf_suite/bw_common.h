@@ -585,6 +585,13 @@ extern void bi_dir_bw(int len, perf_metrics_t *metric_info);
 void static inline bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
     int len = 0, partner_pe = partner_node(metric_info);
 
+    if(metric_info.my_node == 0) {
+        if (metric_info.bwstyle == STYLE_ATOMIC)
+            print_atomic_results_header(metric_info);
+        else
+            print_results_header(metric_info);
+    }
+
     for (len = metric_info.start_len; len <= metric_info.max_len;
         len *= metric_info.size_inc) {
 
