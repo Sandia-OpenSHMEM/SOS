@@ -10,6 +10,14 @@
  */
 
 #include "config.h"
+
+#ifdef HAVE_SYS_GETTID
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <sys/syscall.h>
+#endif
+
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/time.h>
@@ -21,13 +29,6 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include <netdb.h>
-
-#ifdef HAVE_SYS_GETTID
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-#include <sys/syscall.h>
-#endif
 
 #if HAVE_FNMATCH_H
 #include <fnmatch.h>
