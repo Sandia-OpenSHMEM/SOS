@@ -49,5 +49,5 @@ int main(int argc, char *argv[])
 void
 bi_dir_bw(int len, perf_metrics_t *metric_info)
 {
-    bi_bw(len, metric_info);
+    bi_bw_put(len, metric_info);
 }

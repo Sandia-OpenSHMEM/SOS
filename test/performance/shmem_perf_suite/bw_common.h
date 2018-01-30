@@ -393,6 +393,18 @@ static const char *thread_safety_str(const int thread_safety) {
     }
 }
 
+static void inline thread_safety_validation_check(perf_metrics_t *metric_info) {
+    if (metric_info->nthreads == 1)
+        return;
+    else {
+        if (metric_info->thread_safety != SHMEM_THREAD_MULTIPLE) {
+            fprintf(stderr, "Switching to single thread for thread safety %s\n", thread_safety_str(metric_info->thread_safety));
+            metric_info->nthreads = 1;
+        }
+        return;
+    }
+}
+
 void static print_atomic_results_header(perf_metrics_t metric_info) {
     printf("\nResults for %d PEs %lu trials with window size %lu ",
             metric_info.num_pes, metric_info.trials, metric_info.window_size);
@@ -661,6 +673,7 @@ void static inline bw_init_data_stream(perf_metrics_t *metric_info,
     int i = 0;
     data_set_defaults(metric_info);
     command_line_arg_check(argc, argv, metric_info);
+    thread_safety_validation_check(metric_info);
 
 #ifndef VERSION_1_0
     int tl;
