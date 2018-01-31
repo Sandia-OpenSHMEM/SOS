@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2018 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -398,7 +398,9 @@ static void inline thread_safety_validation_check(perf_metrics_t *metric_info) {
         return;
     else {
         if (metric_info->thread_safety != SHMEM_THREAD_MULTIPLE) {
-            fprintf(stderr, "Switching to single thread for thread safety %s\n", thread_safety_str(metric_info->thread_safety));
+            fprintf(stderr, "Warning: argument \"-T %d\" is ignored because of the thread level specified." 
+                            " Switching to single thread with thread safety %s\n", metric_info->nthreads, 
+                            thread_safety_str(metric_info->thread_safety));
             metric_info->nthreads = 1;
         }
         return;
