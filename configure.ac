@@ -341,6 +341,7 @@ elif test -n "$with_xpmem" -a "$with_xpmem" != "no" ; then
 elif test -n "$with_cma" -a "$with_cma" != "no" ; then
     transport_xpmem="no"
     AC_DEFINE([USE_CMA], [1], [Define if Cross Memory Attach transport is active])
+    AC_DEFINE([_GNU_SOURCE], [1], [CMA transport header requires global definition of _GNU_SOURCE])
 # If neither, disable XPMEM and CMA:
 else
     transport_xpmem="no"

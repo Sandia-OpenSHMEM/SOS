@@ -17,12 +17,11 @@
 #define SHMEM_TRANSPORT_CMA_H
 
 #ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+#error CMA transport requires definition of _GNU_SOURCE
 #endif
 
-#ifdef HAVE_LIBC_CMA
 #include <sys/uio.h>
-#else
+#ifndef HAVE_LIBC_CMA
 #include <sys/syscall.h>
 #endif
 
@@ -116,7 +115,7 @@ shmem_transport_cma_put(void *target, const void *source, size_t len,
 #else
             char *errstr = errmsg;
             int err = strerror_r(errno, errmsg, 128);
-            if (err) RAISER_ERROR_MSG("Error in call to strerr_r (%d)\n", err);
+            if (err) RAISE_ERROR_MSG("Error in call to strerr_r (%d)\n", err);
 #endif
             RAISE_ERROR_MSG("process_vm_writev() failed (%s)\n", errstr);
         }
@@ -150,8 +149,8 @@ shmem_transport_cma_get(void *target, const void *source, size_t len, int pe,
             char *errstr = strerror_r(errno, errmsg, 128);
 #else
             char *errstr = errmsg;
-            err = strerror_r(errno, errmsg, 128);
-            if (err) RAISER_ERROR_MSG("Error in call to strerr_r (%d)\n", err);
+            int err = strerror_r(errno, errmsg, 128);
+            if (err) RAISE_ERROR_MSG("Error in call to strerr_r (%d)\n", err);
 #endif
             RAISE_ERROR_MSG("process_vm_readv() failed (%s)\n", errstr);
         }
