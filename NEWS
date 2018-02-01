@@ -2,6 +2,33 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.4.0
+------
+- Support for OpenSHMEM 1.4 specification.
+- New features include: Thread safety, communication management API (contexts),
+  test routines, sync routines, calloc for symmetric objects, bitwise atomic
+  operations, and updated C11 generic selection bindings.
+- Deprecations include: Fortran API, shmem_wait routines, mpp header directory,
+  and SMA-prefixed environment variables.
+- Added support for OFI FI_THREAD_COMPLETION thread safety model, needed to use
+  the SHMEM_THREAD_MULTIPLE mode with the PSM2 provider and others (see
+  --enable-thread-completion).  For providers that support FI_THREAD_SAFE, this
+  mode may also provider better performance for private and serialized
+  contexts.
+- Added manpages and unit tests for OpenSHMEM 1.4 API routines.
+- Optimized performance of private and serialized contexts.
+- Improved performance of shmem_fence operation.
+- Added memory barriers needed to support shared memory interactions between
+  threads and PEs.
+- Updated unit tests to remove use of deprecated API routines.
+- Added support to OFI transport for sharing STX resources across contexts.
+- Added several environment variables that can be used to control STX resource
+  management in the OFI transport: SHMEM_OFI_STX_MAX, SHMEM_OFI_STX_ALLOCATOR,
+  and SHMEM_OFI_STX_THRESHOLD.  See README for details.
+- Updated data segment exposure method to improve compatibility with tools.
+- Updated thread safety support in Portals transport, eliminating several
+  possible races in communication tracking/completion code.
+
 v1.4.0rc2
 ---------
 - Added support to OFI transport for sharing STX resources across contexts.
