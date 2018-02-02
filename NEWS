@@ -7,9 +7,11 @@ v1.4.0
 - Support for OpenSHMEM 1.4 specification.
 - New features include: Thread safety, communication management API (contexts),
   test routines, sync routines, calloc for symmetric objects, bitwise atomic
-  operations, and updated C11 generic selection bindings.
+  operations, and updated C11 generic selection bindings.  See OpenSHMEM 1.4
+  Specification, Annex G for details.
 - Deprecations include: Fortran API, shmem_wait routines, mpp header directory,
-  and SMA-prefixed environment variables.
+  and SMA-prefixed environment variables.  See OpenSHMEM 1.4 Specification,
+  Annex F for details.
 - Added support for OFI FI_THREAD_COMPLETION thread safety model, needed to use
   the SHMEM_THREAD_MULTIPLE mode with the PSM2 provider and others (see
   --enable-thread-completion).  For providers that support FI_THREAD_SAFE, this
