@@ -126,7 +126,7 @@ void static data_set_defaults(perf_metrics_t * data) {
     data->nthreads = 1;
 }
 
-void static error_checking_init_target_usage(perf_metrics_t *metric_info) {
+static int error_checking_init_target_usage(perf_metrics_t *metric_info) {
     int error = false;
     assert(metric_info->midpt > 0);
 
@@ -151,17 +151,18 @@ void static error_checking_init_target_usage(perf_metrics_t *metric_info) {
 
     if(error) {
         fprintf(stderr, "invalid usage of command line arg -r/-l, use --help for info\n");
-        exit(-1);
+        return -1;
     }
+    return 0;
 }
 
 /* must use shmem_init beforehand */
-void static data_runtime_update(perf_metrics_t *data) {
+static int data_runtime_update(perf_metrics_t *data) {
     data->my_node = shmem_my_pe();
     data->num_pes = shmem_n_pes();
     assert(data->num_pes);
     data->midpt = data->num_pes/2;
-    error_checking_init_target_usage(data);
+    return error_checking_init_target_usage(data);
 }
 
 static const char * dt_names [] = { "int", "long", "longlong" };
@@ -235,7 +236,7 @@ red_PE_set static inline validation_set(perf_metrics_t my_info, int *nPEs)
 /*                   Input Checking                           */
 /**************************************************************/
 
-static void command_line_arg_check(int argc, char *argv[],
+static int command_line_arg_check(int argc, char *argv[],
                                   perf_metrics_t *metric_info) {
     int ch, error = false;
     extern char *optarg;
@@ -358,38 +359,38 @@ static void command_line_arg_check(int argc, char *argv[],
                     "[-C thread-safety-config: SINGLE, FUNNELED, SERIALIZED, or MULTIPLE] \n"
                     "[-T num-threads] \n");
         }
-        exit (-1);
+        return -1;
     }
+    return 0;
 }
 
-void static inline only_even_PEs_check(int my_node, int num_pes) {
+static inline int only_even_PEs_check(int my_node, int num_pes) {
     if (num_pes % 2 != 0) {
         if (my_node == 0) {
-            fprintf(stderr, "can only use an even number of nodes\n");
+            fprintf(stderr, "Only even number of nodes can be used\n");
         }
-#ifndef VERSION_1_0
-        shmem_finalize();
-#endif
-        exit(77);
-    }
+        return 77;
+    } else
+        return 0;
 }
 
 /**************************************************************/
 /*                   Result Printing and Calc                 */
 /**************************************************************/
 
-static const char *thread_safety_str(const int thread_safety) {
-    if (thread_safety == SHMEM_THREAD_SINGLE) {
+static const char *thread_safety_str(perf_metrics_t *metric_info) {
+    if (metric_info->thread_safety == SHMEM_THREAD_SINGLE) {
         return "SINGLE";
-    } else if (thread_safety == SHMEM_THREAD_FUNNELED) {
+    } else if (metric_info->thread_safety == SHMEM_THREAD_FUNNELED) {
         return "FUNNELED";
-    } else if (thread_safety == SHMEM_THREAD_SERIALIZED) {
+    } else if (metric_info->thread_safety == SHMEM_THREAD_SERIALIZED) {
         return "SERIALIZED";
-    } else if (thread_safety == SHMEM_THREAD_MULTIPLE) {
+    } else if (metric_info->thread_safety == SHMEM_THREAD_MULTIPLE) {
         return "MULTIPLE";
     } else {
-        fprintf(stderr, "Unexpected thread safety value: %d\n", thread_safety);
-        exit(1);
+        fprintf(stderr, "Unexpected thread safety value: %d. Setting it to SINGLE\n", metric_info->thread_safety);
+        metric_info->thread_safety = SHMEM_THREAD_SINGLE;
+        return "SINGLE";
     }
 }
 
@@ -400,7 +401,7 @@ static void inline thread_safety_validation_check(perf_metrics_t *metric_info) {
         if (metric_info->thread_safety != SHMEM_THREAD_MULTIPLE) {
             fprintf(stderr, "Warning: argument \"-T %d\" is ignored because of the thread level specified." 
                             " Switching to single thread with thread safety %s\n", metric_info->nthreads, 
-                            thread_safety_str(metric_info->thread_safety));
+                            thread_safety_str(metric_info));
             metric_info->nthreads = 1;
         }
         return;
@@ -442,7 +443,7 @@ void static print_results_header(perf_metrics_t metric_info) {
             metric_info.trials, metric_info.window_size, metric_info.max_len,
             metric_info.size_inc, metric_info.sztarget, metric_info.szinitiator);
     printf(", thread safety %s (%d threads)\n",
-            thread_safety_str(metric_info.thread_safety), metric_info.nthreads);
+            thread_safety_str(&metric_info), metric_info.nthreads);
     printf("\nLength           %s           "
             "Message Rate\n", metric_info.bw_type);
 
@@ -669,12 +670,15 @@ void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
 /**************************************************************/
 
 /*create and init (with my_PE_num) two symmetric arrays on the heap */
-void static inline bw_init_data_stream(perf_metrics_t *metric_info,
+static inline int bw_init_data_stream(perf_metrics_t *metric_info,
                                             int argc, char *argv[]) {
 
     int i = 0;
     data_set_defaults(metric_info);
-    command_line_arg_check(argc, argv, metric_info);
+    int ret = command_line_arg_check(argc, argv, metric_info);
+    if (ret != 0) {
+        return -1;
+    }
     thread_safety_validation_check(metric_info);
 
 #ifndef VERSION_1_0
@@ -683,50 +687,54 @@ void static inline bw_init_data_stream(perf_metrics_t *metric_info,
     if(tl != metric_info->thread_safety) {
         fprintf(stderr,"Could not initialize with requested thread "
                 "level %d: got %d\n", metric_info->thread_safety, tl);
-        exit(-1);
+        return -2;
     }
 #else
     start_pes(0);
 #endif
 
-    data_runtime_update(metric_info);
+    if (data_runtime_update(metric_info) == -1)
+        return -2;	
     metric_info->sztarget = metric_info->midpt;
     metric_info->szinitiator = metric_info->midpt;
 
     for(i = 0; i < SHMEM_REDUCE_MIN_WRKDATA_SIZE; i++)
         red_psync[i] = SHMEM_SYNC_VALUE;
 
-    only_even_PEs_check(metric_info->my_node, metric_info->num_pes);
+    if (only_even_PEs_check(metric_info->my_node, metric_info->num_pes) != 0) {
+        return -2;
+    }
 
     metric_info->src = aligned_buffer_alloc(metric_info->max_len);
     init_array(metric_info->src, metric_info->max_len, metric_info->my_node);
 
     metric_info->dest = aligned_buffer_alloc(metric_info->max_len);
     init_array(metric_info->dest, metric_info->max_len, metric_info->my_node);
+
+    return 0;
 }
 
 
-void static inline bi_dir_init(perf_metrics_t *metric_info, int argc,
+static inline int bi_dir_init(perf_metrics_t *metric_info, int argc,
                                 char *argv[]) {
-    bw_init_data_stream(metric_info, argc, argv);
-
-    only_even_PEs_check(metric_info->my_node, metric_info->num_pes);
-
-    bi_dir_data_init(metric_info);
-
+    int ret = bw_init_data_stream(metric_info, argc, argv);
+    if (ret == 0) {
+        bi_dir_data_init(metric_info);
+        return 0;
+    } else 
+        return ret;
 }
 
-void static inline uni_dir_init(perf_metrics_t *metric_info, int argc,
+static inline int uni_dir_init(perf_metrics_t *metric_info, int argc,
                                 char *argv[], bw_style bwstyl) {
-    bw_init_data_stream(metric_info, argc, argv);
-
-    /* uni-dir validate needs to know if its a put or get */
-    metric_info->bwstyle = bwstyl;
-
-    if(metric_info->num_pes != 1)
-        only_even_PEs_check(metric_info->my_node, metric_info->num_pes);
-
-    uni_dir_data_init(metric_info);
+    int ret = bw_init_data_stream(metric_info, argc, argv);
+    if (ret == 0) {
+        /* uni-dir validate needs to know if its a put or get */
+        metric_info->bwstyle = bwstyl;
+        uni_dir_data_init(metric_info);
+        return 0;
+    } else 
+        return ret;
 }
 
 void static inline bw_data_free(perf_metrics_t *metric_info) {
@@ -736,26 +744,38 @@ void static inline bw_data_free(perf_metrics_t *metric_info) {
     aligned_buffer_free(metric_info->dest);
 }
 
+static void inline bw_finalize(void) {
+#ifndef VERSION_1_0
+    shmem_finalize();
+#endif
+}
+
 void static inline bi_dir_bw_main(int argc, char *argv[]) {
 
     perf_metrics_t metric_info;
 
-    bi_dir_init(&metric_info, argc, argv);
+    int ret = bi_dir_init(&metric_info, argc, argv);
 
-    bi_dir_bw_test_and_output(metric_info);
+    if (ret == 0) {
+        bi_dir_bw_test_and_output(metric_info);
+        bw_data_free(&metric_info);
+    }
 
-    bw_data_free(&metric_info);
-
+    if (ret != -1)
+        bw_finalize(); 
 } /*main() */
 
 void static inline uni_dir_bw_main(int argc, char *argv[], bw_style bwstyl) {
 
     perf_metrics_t metric_info;
 
-    uni_dir_init(&metric_info, argc, argv, bwstyl);
+    int ret = uni_dir_init(&metric_info, argc, argv, bwstyl);
 
-    uni_dir_bw_test_and_output(metric_info);
+    if (ret == 0) {
+        uni_dir_bw_test_and_output(metric_info);
+        bw_data_free(&metric_info);
+    }
 
-    bw_data_free(&metric_info);
-
+    if (ret != -1)
+        bw_finalize();
 } /*main() */
