@@ -1,0 +1,95 @@
+#include <stdio.h>
+#include <assert.h>
+#include <pthread.h>
+#include <shmem.h>
+
+#define T 2
+#define ITER 100
+
+#ifndef MAX
+#define MAX(A,B)   (((A)>(B)) ? (A) : (B))
+#endif
+
+int shared_dest = 0, result = 0;
+int me, npes, errors = 0, sum_error = 0;
+
+long pSync[_SHMEM_REDUCE_SYNC_SIZE];
+int pWrk[MAX(1, _SHMEM_REDUCE_MIN_WRKDATA_SIZE)];
+
+static void * thread_main(void *arg) {
+    int tid = *(int *) arg;
+    int one = 1, zero = 0;
+    int i;
+
+    for (i = 0; i < ITER; i++) {
+        if (tid == 0) {
+            shared_dest = 1;
+            shmem_fence();
+            shmem_int_wait_until(&shared_dest, SHMEM_CMP_EQ, zero);
+            shmem_int_atomic_add(&result, one, me);
+        }
+
+        if (tid == 1) {
+            shmem_int_wait_until(&shared_dest, SHMEM_CMP_EQ, one);
+            shmem_int_atomic_add(&result, one, me);
+            shared_dest = 0;
+            shmem_fence();
+        }
+    }
+
+    return NULL;
+}
+
+int main(int argc, char **argv) {
+    int tl, i, ret;
+    pthread_t threads[T];
+    int t_arg[T];
+
+    ret = shmem_init_thread(SHMEM_THREAD_MULTIPLE, &tl);
+
+    if (tl != SHMEM_THREAD_MULTIPLE || ret != 0) {
+        printf("Init failed (requested thread level %d, got %d, ret %d)\n", 
+               SHMEM_THREAD_MULTIPLE, tl, ret);
+        if (ret == 0) {
+            shmem_global_exit(1);
+        } else {
+            return ret;
+        }
+    }
+
+    me = shmem_my_pe();
+    npes = shmem_n_pes();
+
+    for (i = 0; i < _SHMEM_REDUCE_SYNC_SIZE; i++) {
+        pSync[i] = _SHMEM_SYNC_VALUE;
+    }
+
+    if (me == 0) {
+        printf("Starting multi-threaded test on %d PEs, %d threads/PE\n", npes, T);
+    }
+
+    for (i = 0; i < T; i++) {
+        int err;
+        t_arg[i] = i;
+        err = pthread_create(&threads[i], NULL, thread_main, (void *) &t_arg[i]);
+        assert(0 == err);
+    }
+
+    for (i = 0; i < T; i++) {
+        int err;
+        err = pthread_join(threads[i], NULL);
+        assert(0 == err);
+    }
+
+    shmem_sync_all();
+
+    errors = result == T * ITER ? 0 : 1;
+    if (errors != 0) {
+        printf("%d : result = %d, expected = %d\n", me, result, T * ITER);
+    }
+    shmem_barrier_all(); 
+    shmem_int_sum_to_all(&sum_error, &errors, 1, 0, 0, npes, pWrk, pSync);
+
+    shmem_finalize();
+    return (sum_error == 0) ? 0 : 1;
+}
