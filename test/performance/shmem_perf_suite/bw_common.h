@@ -477,14 +477,14 @@ void static print_data_results(double bw, double mr, perf_metrics_t data,
         printf("%9d       ", len);
 
     if(data.unit == KB) {
-        bw = bw * 1e3;
+        bw = bw * 1.0e3;
     } else if(data.unit == B) {
-        bw = bw * 1e6;
+        bw = bw * 1.0e6;
     }
 
     if (data.bwstyle == STYLE_ATOMIC) {
         printf("%5s%10.2f                        %10.2f%14s%10.2f\n", " ", bw,
-                 mr/1e6, " ", total_t/(data.trials * data.window_size));
+                 mr/1.0e6, " ", total_t/(data.trials * data.window_size));
     } else
         printf("%10.2f                          %10.2f\n", bw, mr);
 }
@@ -523,17 +523,17 @@ void static inline calc_and_print_results(double total_t, int len,
     if (total_t > 0 ) {
 
 #ifdef ENABLE_OPENMP
-        bw = (len / 1e6 * metric_info.window_size * metric_info.trials *
-                (double)metric_info.nthreads) / (total_t / 1e6);
+        bw = (len / 1.0e6 * metric_info.window_size * metric_info.trials *
+                (double)metric_info.nthreads) / (total_t / 1.0e6);
 #else
-        bw = (len / 1e6 * metric_info.window_size * metric_info.trials) /
-                (total_t / 1e6);
+        bw = (len / 1.0e6 * metric_info.window_size * metric_info.trials) /
+                (total_t / 1.0e6);
 #endif
     }
 
     /* 2x as many messages/bytes at once for bi-directional */
     if(metric_info.type == BI_DIR)
-        bw *= 2;
+        bw *= 2.0;
 
     /* base case: will be overwritten by collective if num_pes > 2 */
     pe_bw_sum = bw;
@@ -546,7 +546,7 @@ void static inline calc_and_print_results(double total_t, int len,
     /* aggregate bw since bw op pairs are communicating simultaneously */
     if(metric_info.my_node == start_pe) {
         pe_bw_avg = pe_bw_sum;
-        pe_mr_avg = pe_bw_avg / (len / 1e6);
+        pe_mr_avg = pe_bw_avg / (len / 1.0e6);
         print_data_results(pe_bw_avg, pe_mr_avg, metric_info, len, total_t);
     }
 }

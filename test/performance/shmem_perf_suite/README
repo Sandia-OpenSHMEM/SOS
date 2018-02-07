@@ -5,11 +5,17 @@
 ===============================================================================
 includes:
     shmem_bw_put_perf
-    shmem_bibw_put_perf
-    shmem_latency_put_perf
     shmem_bw_get_perf
+    shmem_bw_atomics_perf
+    shmem_bw_put_ctx_perf
+    shmem_bibw_put_perf
     shmem_bibw_get_perf
+    shmem_bibw_atomics_perf
+    shmem_bibw_put_ctx_perf
+    shmem_latency_put_perf
     shmem_latency_get_perf
+    shmem_latency_nb_put_perf
+    shmem_latency_nb_get_perf
 
 Notes for Users:
 
@@ -37,8 +43,10 @@ Notes for Users:
         -n : number of trials (must be greater than 20 (warmup size)) DEFAULT: 100
         -v : validate input stream used for performance data (off by default)
         BW only:
-            -K : output in KB
-            -B : output in B
+            -k : output in KB
+            -b : output in B
+            -T : number of threads, DEFAULT: 1
+            -C : thread level (SINGLE, FUNNELED, SERIALIZED, MULTIPLE), DEFAULT: SINGLE
 
 Notes for performance tests developers:
     overall model:

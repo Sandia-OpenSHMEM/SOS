@@ -47,9 +47,9 @@ void static inline uni_bw_put(int len, perf_metrics_t *metric_info)
 
             for(j = 0; j < metric_info->window_size; j++) {
 #ifdef USE_NONBLOCKING_API
-                shmem_putmem(metric_info->dest, metric_info->src, len, dest);
-#else
                 shmem_putmem_nbi(metric_info->dest, metric_info->src, len, dest);
+#else
+                shmem_putmem(metric_info->dest, metric_info->src, len, dest);
 #endif
             }
             shmem_quiet();
@@ -82,13 +82,12 @@ void static inline uni_bw_get(int len, perf_metrics_t *metric_info)
 
             for(j = 0; j < metric_info->window_size; j++) {
 #ifdef USE_NONBLOCKING_API
-                shmem_getmem(metric_info->dest, metric_info->src, len, dest);
-#else
                 shmem_getmem_nbi(metric_info->dest, metric_info->src, len, dest);
+                shmem_quiet();
+#else
+                shmem_getmem(metric_info->dest, metric_info->src, len, dest);
 #endif
             }
-            shmem_quiet();
-
         }
         end = perf_shmemx_wtime();
 
