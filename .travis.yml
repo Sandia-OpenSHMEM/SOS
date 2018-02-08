@@ -381,12 +381,3 @@ after_script:
       if [ "$CC" = "icc" ]; then
         '[[ ! -z "${INTEL_INSTALL_PATH}" ]] && uninstall_intel_software'
       fi
-
-notifications:
-  email:
-    recipients:
-      - regrant@sandia.gov
-      - james.dinan@intel.com
-      - kayla.seager@intel.com
-    on_success: [change]
-    on_failure: [always] 
