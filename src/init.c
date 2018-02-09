@@ -378,3 +378,12 @@ shmem_internal_global_exit(int status)
     shmem_internal_global_exit_called = 1;
     shmem_runtime_abort(status, str);
 }
+
+uint64_t (*shmem_internal_gettid_fn)(void);
+int shmem_internal_gettid_registered = 0;
+
+void shmem_internal_register_gettid(uint64_t (*gettid_fn)(void))
+{
+    shmem_internal_gettid_fn = gettid_fn;
+    shmem_internal_gettid_registered = 1;
+}

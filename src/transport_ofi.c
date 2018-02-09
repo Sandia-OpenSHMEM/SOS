@@ -105,7 +105,11 @@ shmem_internal_mutex_t          shmem_transport_ofi_lock;
 static inline
 pid_t shmem_transport_ofi_gettid(void)
 {
-    return syscall(SYS_gettid);
+    if (shmem_internal_gettid_registered) {
+        return (*shmem_internal_gettid_fn)();
+    } else {
+        return syscall(SYS_gettid);
+    }
 }
 #else
 /* Cannot query the tid with a syscall, so instead assume each tid
@@ -113,20 +117,28 @@ pid_t shmem_transport_ofi_gettid(void)
 static inline
 uint64_t shmem_transport_ofi_gettid(void)
 {
-    static uint64_t tid = 0;
-    return tid++;
+    if (shmem_internal_gettid_registered) {
+        return (*shmem_internal_gettid_fn)();
+    } else {
+        static uint64_t tid = 0;
+        return tid++;
+    }
 }
 #endif /* HAVE_SYS_GETTID */
 #else
 static inline
 uint64_t shmem_transport_ofi_gettid(void)
 {
-    int ret;
-    uint64_t tid;
-    ret = pthread_threadid_np(NULL, &tid);
-    if (ret != 0)
-        RAISE_ERROR_MSG("Error geting thread ID: %s\n", strerror(ret));
-    return tid;
+    if (shmem_internal_gettid_registered) {
+        return (*shmem_internal_gettid_fn)();
+    } else {
+        int ret;
+        uint64_t tid;
+        ret = pthread_threadid_np(NULL, &tid);
+        if (ret != 0)
+            RAISE_ERROR_MSG("Error getting thread ID: %s\n", strerror(ret));
+        return tid;
+    }
 }
 #endif /* APPLE */
 
