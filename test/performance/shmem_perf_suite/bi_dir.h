@@ -88,6 +88,9 @@ void static inline bi_bw_get(int len, perf_metrics_t *metric_info)
                 shmem_getmem(metric_info->dest, metric_info->src, len, dest);
 #endif
             }
+#ifdef USE_NONBLOCKING_API
+            shmem_quiet();
+#endif
         }
         end = perf_shmemx_wtime();
 
@@ -105,6 +108,9 @@ void static inline bi_bw_get(int len, perf_metrics_t *metric_info)
                 shmem_getmem(metric_info->dest, metric_info->src, len, dest);
 #endif
             }
+#ifdef USE_NONBLOCKING_API
+            shmem_quiet();
+#endif
         }
     }
 }
