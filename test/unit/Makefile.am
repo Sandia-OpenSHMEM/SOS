@@ -145,6 +145,7 @@ if HAVE_PTHREADS
 check_PROGRAMS += \
     mt_a2a \
     mt_contention \
+    gettid_register \
     threading \
     web \
     thread_wait
