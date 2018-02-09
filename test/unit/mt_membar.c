@@ -3,15 +3,23 @@
 #include <pthread.h>
 #include <shmem.h>
 
+/* For systems without the PThread barrier API (e.g. MacOS) */
+#include "pthread_barrier.h"
+
 #define T 2
-#define ITER 100
+#define ITER 10
 
 #ifndef MAX
 #define MAX(A,B)   (((A)>(B)) ? (A) : (B))
 #endif
 
-int shared_dest = 0, result = 0;
+int shared_dest_1 = 0, shared_dest_2 = 0, result = 0;
 int me, npes, errors = 0, sum_error = 0;
+long lock = 0;
+
+pthread_barrier_t fencebar;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
 long pSync[_SHMEM_REDUCE_SYNC_SIZE];
 int pWrk[MAX(1, _SHMEM_REDUCE_MIN_WRKDATA_SIZE)];
@@ -21,21 +29,123 @@ static void * thread_main(void *arg) {
     int one = 1, zero = 0;
     int i;
 
+    /* TEST WAIT */
     for (i = 0; i < ITER; i++) {
         if (tid == 0) {
-            shared_dest = 1;
-            shmem_fence();
-            shmem_int_wait_until(&shared_dest, SHMEM_CMP_EQ, zero);
+            shared_dest_1 = 1;
+            shmem_int_wait_until(&shared_dest_1, SHMEM_CMP_EQ, zero);
             shmem_int_atomic_add(&result, one, me);
         }
 
         if (tid == 1) {
-            shmem_int_wait_until(&shared_dest, SHMEM_CMP_EQ, one);
+            shmem_int_wait_until(&shared_dest_1, SHMEM_CMP_EQ, one);
             shmem_int_atomic_add(&result, one, me);
-            shared_dest = 0;
-            shmem_fence();
+            shared_dest_1 = 0;
         }
     }
+
+    pthread_barrier_wait(&fencebar);
+    if (0 == tid) shmem_barrier_all();
+    pthread_barrier_wait(&fencebar);
+
+    if (tid == 0) {
+        errors += result == T * ITER ? 0 : 1;
+        if (result != T * ITER) {
+            printf("ERROR in WAIT test from %d : result = %d, expected = %d\n", 
+                    me, result, T * ITER);
+        }
+        result = 0;
+	shared_dest_1 = 0;
+    }
+
+    pthread_barrier_wait(&fencebar);
+    if (0 == tid) shmem_barrier_all();
+    pthread_barrier_wait(&fencebar);
+
+    /* TEST FENCE */
+    for (i = 0; i < ITER; i++) {
+        if (tid == 0) {
+            shared_dest_1 += 1;
+            shared_dest_2 += 1;
+            shmem_fence();
+
+            pthread_mutex_lock(&mutex);
+            pthread_cond_signal(&cond);
+            while (shared_dest_1 != zero) {
+                pthread_cond_wait(&cond, &mutex);
+            }
+            pthread_mutex_unlock(&mutex);
+        }
+
+        if (tid == 1) {
+            pthread_mutex_lock(&mutex);
+            while (shared_dest_2 != one) {
+                pthread_cond_wait(&cond, &mutex);
+            }
+            pthread_mutex_unlock(&mutex);
+            shmem_int_atomic_add(&result, shared_dest_1 + shared_dest_2, me);
+            shared_dest_2 = 0;
+            shared_dest_1 = 0;
+            shmem_fence();
+
+            pthread_mutex_lock(&mutex);
+            pthread_cond_signal(&cond);
+            pthread_mutex_unlock(&mutex);
+
+        }
+    }
+
+    pthread_barrier_wait(&fencebar);
+    if (0 == tid) shmem_barrier_all();
+    pthread_barrier_wait(&fencebar);
+
+    if (tid == 0) {
+        errors += result == T * ITER ? 0 : 1;
+        if (result != T * ITER) {
+            printf("ERROR in FENCE test from %d : result = %d, expected = %d\n",
+                    me, result, T * ITER);
+        }
+        result = 0;
+	shared_dest_1 = 0;
+	shared_dest_2 = 0;
+    }
+
+    pthread_barrier_wait(&fencebar);
+    if (0 == tid) shmem_barrier_all();
+    pthread_barrier_wait(&fencebar);
+
+    /* TEST LOCK */
+/*    for (i = 0; i < ITER; i++) {
+        if (tid == 0) {
+            shmem_set_lock(&lock);
+            shared_dest_1++;
+            printf("%d from %d is seeing shared_dest = %d\n", tid, me, shared_dest_1);
+            shmem_clear_lock(&lock);
+        }
+
+        if (tid == 1) {
+            shmem_set_lock(&lock);
+            shared_dest_1++;
+            printf("%d from %d is seeing shared_dest = %d\n", tid, me, shared_dest_1);
+            shmem_clear_lock(&lock);
+        }
+    }
+
+    pthread_barrier_wait(&fencebar);
+    if (0 == tid) shmem_barrier_all();
+    pthread_barrier_wait(&fencebar);
+
+    if (tid == 0) {
+        errors += result == T * ITER ? 0 : 1;
+        if (result != T * ITER) {
+            printf("ERROR in LOCK test from %d : result = %d, expected = %d\n",
+                    me, result, T * ITER);
+        }
+        result = 0;
+    }
+*/
+    pthread_barrier_wait(&fencebar);
+    if (0 == tid) shmem_barrier_all();
 
     return NULL;
 }
@@ -64,6 +174,8 @@ int main(int argc, char **argv) {
         pSync[i] = _SHMEM_SYNC_VALUE;
     }
 
+    pthread_barrier_init(&fencebar, NULL, T);
+
     if (me == 0) {
         printf("Starting multi-threaded test on %d PEs, %d threads/PE\n", npes, T);
     }
@@ -83,10 +195,8 @@ int main(int argc, char **argv) {
 
     shmem_sync_all();
 
-    errors = result == T * ITER ? 0 : 1;
-    if (errors != 0) {
-        printf("%d : result = %d, expected = %d\n", me, result, T * ITER);
-    }
+    pthread_barrier_destroy(&fencebar);    
+
     shmem_barrier_all(); 
     shmem_int_sum_to_all(&sum_error, &errors, 1, 0, 0, npes, pWrk, pSync);
 
