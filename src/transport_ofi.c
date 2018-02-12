@@ -103,17 +103,17 @@ shmem_internal_mutex_t          shmem_transport_ofi_lock;
 /* Need a syscall to gettid() because glibc doesn't provide a wrapper
  * (see gettid manpage in the NOTES section): */
 static inline
-pid_t shmem_transport_ofi_gettid(void)
+struct shmem_internal_tid shmem_transport_ofi_gettid(void)
 {
     struct shmem_internal_tid tid;
 
     if (shmem_internal_gettid_registered) {
         tid.tid_t = UINT64_T;
-        tid.shmem_internal_uint64_t = (*shmem_internal_gettid_fn)();
+        tid.uint64_val = (*shmem_internal_gettid_fn)();
         return tid;
     } else {
         tid.tid_t = PID_T;
-        tid.shmem_internal_pid_t = syscall(SYS_gettid);
+        tid.pid_val = syscall(SYS_gettid);
         return tid;
     }
 }
@@ -127,12 +127,12 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
     tid.tid_t = UINT64_T;
 
     if (shmem_internal_gettid_registered) {
-        tid.shmem_internal_uint64_t = (*shmem_internal_gettid_fn)();
+        tid.uint64_val = (*shmem_internal_gettid_fn)();
         return tid;
     } else {
         static uint64_t tid_val = 0;
         tid_val++;
-        tid.shmem_internal_uint64_t = tid_val;
+        tid.uint64_val = tid_val;
         return tid;
     }
 }
@@ -145,11 +145,11 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
     tid.tid_t = UINT64_T;
 
     if (shmem_internal_gettid_registered) {
-        tid.shmem_internal_uint64_t = (*shmem_internal_gettid_fn)();
+        tid.uint64_val = (*shmem_internal_gettid_fn)();
         return tid;
     } else {
         int ret;
-        ret = pthread_threadid_np(NULL, &tid.shmem_internal_uint64_t);
+        ret = pthread_threadid_np(NULL, &tid.uint64_val);
         if (ret != 0)
             RAISE_ERROR_MSG("Error getting thread ID: %s\n", strerror(ret));
         return tid;

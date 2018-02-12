@@ -239,8 +239,8 @@ struct shmem_internal_tid
   enum shmem_internal_tid_t tid_t;
   union
   {
-    pid_t shmem_internal_pid_t;
-    uint64_t shmem_internal_uint64_t;
+    pid_t pid_val;
+    uint64_t uint64_val;
   };
 };
 
