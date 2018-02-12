@@ -380,10 +380,10 @@ shmem_internal_global_exit(int status)
 }
 
 uint64_t (*shmem_internal_gettid_fn)(void);
-int shmem_internal_gettid_registered = 0;
+int shmem_internal_gettid_is_registered = 0;
 
 void shmem_internal_register_gettid(uint64_t (*gettid_fn)(void))
 {
     shmem_internal_gettid_fn = gettid_fn;
-    shmem_internal_gettid_registered = 1;
+    shmem_internal_gettid_is_registered = 1;
 }

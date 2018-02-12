@@ -25,8 +25,7 @@
  * SOFTWARE.
  */
 
-/* Multithreaded Contention Test: Overlapping AMO/quiet on a shared (default)
- * context */
+/* Gettid Register Test: Register a custom gettid function pointer  */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,6 +54,10 @@ static void * thread_main(void *arg) {
 
     shmem_ctx_t ctx;
     int ret = shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
+    if (ret != 0) {
+        printf("Error creating context (%d)\n", ret);
+        shmem_global_exit(2);
+    }
 
     for (i = 1; i <= npes; i++)
         shmem_ctx_int_atomic_add(ctx, &dest, tid, (me + i) % npes);

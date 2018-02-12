@@ -98,8 +98,6 @@ static char                     myephostname[EPHOSTNAMELEN];
 shmem_internal_mutex_t          shmem_transport_ofi_lock;
 #endif /* ENABLE_THREADS */
 
-#ifndef __APPLE__
-#ifdef HAVE_SYS_GETTID
 /* Need a syscall to gettid() because glibc doesn't provide a wrapper
  * (see gettid manpage in the NOTES section): */
 static inline
@@ -107,55 +105,32 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
 {
     struct shmem_internal_tid tid;
 
-    if (shmem_internal_gettid_registered) {
+    if (shmem_internal_gettid_is_registered) {
         tid.tid_t = UINT64_T;
         tid.uint64_val = (*shmem_internal_gettid_fn)();
-        return tid;
     } else {
+#ifndef __APPLE__
+#ifdef HAVE_SYS_GETTID
         tid.tid_t = PID_T;
         tid.pid_val = syscall(SYS_gettid);
-        return tid;
-    }
-}
 #else
-/* Cannot query the tid with a syscall, so instead assume each tid
- * query corresponds to a unique thread. */
-static inline
-struct shmem_internal_tid shmem_transport_ofi_gettid(void)
-{
-    struct shmem_internal_tid tid;
-    tid.tid_t = UINT64_T;
-
-    if (shmem_internal_gettid_registered) {
-        tid.uint64_val = (*shmem_internal_gettid_fn)();
-        return tid;
-    } else {
+        /* Cannot query the tid with a syscall, so instead assume each tid
+         * query corresponds to a unique thread. */
+        tid.tid_t = UINT64_T;
         static uint64_t tid_val = 0;
         tid_val++;
         tid.uint64_val = tid_val;
-        return tid;
-    }
-}
 #endif /* HAVE_SYS_GETTID */
 #else
-static inline
-struct shmem_internal_tid shmem_transport_ofi_gettid(void)
-{
-    struct shmem_internal_tid tid;
-    tid.tid_t = UINT64_T;
-
-    if (shmem_internal_gettid_registered) {
-        tid.uint64_val = (*shmem_internal_gettid_fn)();
-        return tid;
-    } else {
+        tid.tid_t = UINT64_T;
         int ret;
         ret = pthread_threadid_np(NULL, &tid.uint64_val);
         if (ret != 0)
             RAISE_ERROR_MSG("Error getting thread ID: %s\n", strerror(ret));
-        return tid;
-    }
-}
 #endif /* APPLE */
+    }
+    return tid;
+}
 
 struct fabric_info shmem_transport_ofi_info = {0};
 
