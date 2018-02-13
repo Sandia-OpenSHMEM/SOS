@@ -32,6 +32,10 @@
 #include "runtime.h"
 #include "build_info.h"
 
+#if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING) && defined(__linux__)
+#include <sys/personality.h>
+#endif
+
 #ifdef __APPLE__
 #include <mach-o/getsect.h>
 #else
@@ -209,6 +213,28 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
         fflush(NULL);
     }
+
+    /* ASLR is an OS security feature that randomizes the address map of each
+     * process.  Remote virtual addressing assumes that symmetric addresses are
+     * identical across processes and cannot be used when ASLR is present. */
+#if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING) && defined(__linux__)
+    FILE *aslr = fopen("/proc/sys/kernel/randomize_va_space", "r");
+    if (aslr) {
+        int aslr_status = fgetc(aslr);
+        if (aslr_status != EOF && aslr_status != '0') {
+            int persona = personality(0xffffffff);
+	    /* Check if ASLR was disabled with setarch */
+            if (! (persona & ADDR_NO_RANDOMIZE)) {
+                RAISE_ERROR_MSG("Remote virtual addressing is enabled; however, address space layout randomization\n"
+                                RAISE_PE_PREFIX
+                                "is present.  Disable ASLR or rebuild without '--enable-remote-virtual-addressing'.\n",
+                                shmem_internal_my_pe);
+            }
+        }
+        fclose(aslr);
+    }
+#endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
+
 
     /* Find symmetric data */
 #ifdef __APPLE__
