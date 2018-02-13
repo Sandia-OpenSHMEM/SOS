@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2018 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -25,7 +25,11 @@
  * SOFTWARE.
  */
 
+#include <shmemx.h>
 #include <common.h>
+#ifdef ENABLE_OPENMP
+#include <omp.h>
+#endif
 
 #define MAX_MSG_SIZE (1<<23)
 #define START_LEN 1
@@ -92,12 +96,14 @@ typedef struct perf_metrics {
     bw_type type;
     comm_style cstyle;
     bw_style bwstyle;
+    int thread_safety;
+    int nthreads;
 } perf_metrics_t;
 
 long red_psync[SHMEM_REDUCE_SYNC_SIZE];
 
 /*default settings if no input is provided */
-void static data_init(perf_metrics_t * data) {
+void static data_set_defaults(perf_metrics_t * data) {
     data->start_len = START_LEN;
     data->max_len = MAX_MSG_SIZE;
     data->size_inc = INC;
@@ -107,15 +113,56 @@ void static data_init(perf_metrics_t * data) {
     data->unit = MB;
     data->validate = false;
     data->target_data = false;
-    data->my_node = shmem_my_pe();
-    data->num_pes = shmem_n_pes();
-    data->midpt = data->num_pes/2;
-    data->sztarget = data->midpt;
-    data->szinitiator = data->midpt;
+    data->my_node = -1;
+    data->num_pes = -1;
+    data->midpt = -1;
+    data->sztarget = -1;
+    data->szinitiator = -1;
     data->src = NULL;
     data->dest = NULL;
     data->cstyle = COMM_PAIRWISE;
     data->bwstyle = STYLE_RMA;
+    data->thread_safety = SHMEM_THREAD_SINGLE;
+    data->nthreads = 1;
+}
+
+static int error_checking_init_target_usage(perf_metrics_t *metric_info) {
+    int error = false;
+    assert(metric_info->midpt > 0);
+
+    if(metric_info->sztarget != -1 && metric_info->szinitiator != -1)
+        error = true; /* can't use them together  */
+
+    if(metric_info->sztarget != -1) {
+         if(metric_info->sztarget < 1 || metric_info->sztarget > metric_info->midpt
+            || !metric_info->target_data)
+            error = true;
+    } else {
+        metric_info->sztarget = metric_info->midpt;
+    }
+
+    if(metric_info->szinitiator != -1) {
+        if(metric_info->szinitiator < 1 || metric_info->szinitiator > metric_info->midpt
+            || !metric_info->target_data)
+            error = true;
+    } else {
+        metric_info->szinitiator = metric_info->midpt;
+    }
+
+    if(error) {
+        fprintf(stderr, "invalid usage of command line arg -r/-l, use --help for info\n");
+        return -1;
+    }
+    return 0;
+}
+
+/* must use shmem_init beforehand */
+static int data_runtime_update(perf_metrics_t *data) {
+    data->my_node = shmem_my_pe();
+    data->num_pes = shmem_n_pes();
+    assert(data->num_pes);
+    data->midpt = data->num_pes/2;
+    return error_checking_init_target_usage(data);
 }
 
 static const char * dt_names [] = { "int", "long", "longlong" };
@@ -189,31 +236,50 @@ red_PE_set static inline validation_set(perf_metrics_t my_info, int *nPEs)
 /*                   Input Checking                           */
 /**************************************************************/
 
-void static command_line_arg_check(int argc, char *argv[],
-                                   perf_metrics_t *metric_info) {
+static int command_line_arg_check(int argc, char *argv[],
+                                  perf_metrics_t *metric_info) {
     int ch, error = false;
     extern char *optarg;
 
     /* check command line args */
-    while ((ch = getopt(argc, argv, "e:s:n:w:p:r:l:kbvt")) != EOF) {
+    while ((ch = getopt(argc, argv, "e:s:n:w:p:r:l:kbvtC:T:")) != EOF) {
         switch (ch) {
         case 's':
             metric_info->start_len = strtoul(optarg, (char **)NULL, 0);
             if ( metric_info->start_len < 1 ) metric_info->start_len = 1;
-            if(!is_pow_of_2(metric_info->start_len)) error = true;
+            if(!is_pow_of_2(metric_info->start_len)) {
+                fprintf(stderr, "Error: start_length must be a power of two\n");
+                error = true;
+            }
             break;
         case 'e':
             metric_info->max_len = strtoul(optarg, (char **)NULL, 0);
-            if(!is_pow_of_2(metric_info->max_len)) error = true;
-            if(metric_info->max_len < metric_info->start_len) error = true;
+            if(!is_pow_of_2(metric_info->max_len)) {
+                fprintf(stderr, "Error: end_length must be a power of two\n");
+                error = true;
+            }
+            if(metric_info->max_len < metric_info->start_len) {
+                fprintf(stderr, "Error: end_length (%ld) must be >= "
+                        "start_length (%ld)\n", metric_info->max_len,
+                        metric_info->start_len);
+                error = true;
+            }
             break;
         case 'n':
             metric_info->trials = strtoul(optarg, (char **)NULL, 0);
-            if(metric_info->trials < (metric_info->warmup*2)) error = true;
+            if(metric_info->trials < (metric_info->warmup*2)) {
+                fprintf(stderr, "Error: trials (%ld) must be >= 2*warmup "
+                        "(%ld)\n", metric_info->trials, metric_info->warmup*2);
+                error = true;
+            }
             break;
         case 'p':
             metric_info->warmup = strtoul(optarg, (char **)NULL, 0);
-            if(metric_info->warmup > (metric_info->trials/2)) error = true;
+            if(metric_info->warmup > (metric_info->trials/2)) {
+                fprintf(stderr, "Error: warmup (%ld) must be <= trials/2 "
+                        "(%ld)\n", metric_info->warmup, metric_info->trials/2);
+                error = true;
+            }
             break;
         case 'k':
             metric_info->unit = KB;
@@ -236,15 +302,26 @@ void static command_line_arg_check(int argc, char *argv[],
             break;
         case 'r':
             metric_info->sztarget = strtoul(optarg, (char **)NULL, 0);
-            if(metric_info->sztarget > metric_info->midpt ||
-                metric_info->szinitiator < metric_info->midpt ||
-                !metric_info->target_data) error = true;
             break;
         case 'l':
             metric_info->szinitiator = strtoul(optarg, (char **)NULL, 0);
-            if(metric_info->szinitiator > metric_info->midpt ||
-                metric_info->sztarget < metric_info->midpt ||
-                !metric_info->target_data) error = true;
+            break;
+        case 'C':
+            if (strcmp(optarg, "SINGLE") == 0) {
+                metric_info->thread_safety = SHMEM_THREAD_SINGLE;
+            } else if (strcmp(optarg, "FUNNELED") == 0) {
+                metric_info->thread_safety = SHMEM_THREAD_FUNNELED;
+            } else if (strcmp(optarg, "SERIALIZED") == 0) {
+                metric_info->thread_safety = SHMEM_THREAD_SERIALIZED;
+            } else if (strcmp(optarg, "MULTIPLE") == 0) {
+                metric_info->thread_safety = SHMEM_THREAD_MULTIPLE;
+            } else {
+                fprintf(stderr, "Invalid threading level: \"%s\"\n", optarg);
+                error = true;
+            }
+            break;
+        case 'T':
+            metric_info->nthreads = atoi(optarg);
             break;
         default:
             error = true;
@@ -278,30 +355,58 @@ void static command_line_arg_check(int argc, char *argv[],
                     " + warmup * sizes (8/4KB) <= max length \n"
                     "[-r number of nodes at target, use only with -t] \n"
                     "[-l number of nodes at initiator, use only with -t, "
-                    "l/r cannot be used together] \n");
+                    "l/r cannot be used together] \n"
+                    "[-C thread-safety-config: SINGLE, FUNNELED, SERIALIZED, or MULTIPLE] \n"
+                    "[-T num-threads] \n");
         }
-#ifndef VERSION_1_0
-        shmem_finalize();
-#endif
-        exit (-1);
+        return -1;
     }
+    return 0;
 }
 
-void static inline only_even_PEs_check(int my_node, int num_pes) {
+static inline int only_even_PEs_check(int my_node, int num_pes) {
     if (num_pes % 2 != 0) {
         if (my_node == 0) {
-            fprintf(stderr, "can only use an even number of nodes\n");
+            fprintf(stderr, "Only even number of nodes can be used\n");
         }
-#ifndef VERSION_1_0
-        shmem_finalize();
-#endif
-        exit(77);
-    }
+        return 77;
+    } else
+        return 0;
 }
 
 /**************************************************************/
 /*                   Result Printing and Calc                 */
 /**************************************************************/
+
+static const char *thread_safety_str(perf_metrics_t *metric_info) {
+    if (metric_info->thread_safety == SHMEM_THREAD_SINGLE) {
+        return "SINGLE";
+    } else if (metric_info->thread_safety == SHMEM_THREAD_FUNNELED) {
+        return "FUNNELED";
+    } else if (metric_info->thread_safety == SHMEM_THREAD_SERIALIZED) {
+        return "SERIALIZED";
+    } else if (metric_info->thread_safety == SHMEM_THREAD_MULTIPLE) {
+        return "MULTIPLE";
+    } else {
+        fprintf(stderr, "Unexpected thread safety value: %d. Setting it to SINGLE\n", metric_info->thread_safety);
+        metric_info->thread_safety = SHMEM_THREAD_SINGLE;
+        return "SINGLE";
+    }
+}
+
+static void inline thread_safety_validation_check(perf_metrics_t *metric_info) {
+    if (metric_info->nthreads == 1)
+        return;
+    else {
+        if (metric_info->thread_safety != SHMEM_THREAD_MULTIPLE) {
+            fprintf(stderr, "Warning: argument \"-T %d\" is ignored because of the thread level specified." 
+                            " Switching to single thread with thread safety %s\n", metric_info->nthreads, 
+                            thread_safety_str(metric_info));
+            metric_info->nthreads = 1;
+        }
+        return;
+    }
+}
 
 void static print_atomic_results_header(perf_metrics_t metric_info) {
     printf("\nResults for %d PEs %lu trials with window size %lu ",
@@ -334,9 +439,11 @@ void static print_atomic_results_header(perf_metrics_t metric_info) {
 void static print_results_header(perf_metrics_t metric_info) {
     printf("\nResults for %d PEs %lu trials with window size %lu "
             "max message size %lu with multiple of %lu increments, "
-            "\ntargeting %d remote PEs initiated from %d PEs\n", metric_info.num_pes,
+            "\ntargeting %d remote PEs initiated from %d PEs", metric_info.num_pes,
             metric_info.trials, metric_info.window_size, metric_info.max_len,
             metric_info.size_inc, metric_info.sztarget, metric_info.szinitiator);
+    printf(", thread safety %s (%d threads)\n",
+            thread_safety_str(&metric_info), metric_info.nthreads);
     printf("\nLength           %s           "
             "Message Rate\n", metric_info.bw_type);
 
@@ -371,14 +478,14 @@ void static print_data_results(double bw, double mr, perf_metrics_t data,
         printf("%9d       ", len);
 
     if(data.unit == KB) {
-        bw = bw * 1e3;
+        bw = bw * 1.0e3;
     } else if(data.unit == B) {
-        bw = bw * 1e6;
+        bw = bw * 1.0e6;
     }
 
     if (data.bwstyle == STYLE_ATOMIC) {
         printf("%5s%10.2f                        %10.2f%14s%10.2f\n", " ", bw,
-                 mr/1e6, " ", total_t/(data.trials * data.window_size));
+                 mr/1.0e6, " ", total_t/(data.trials * data.window_size));
     } else
         printf("%10.2f                          %10.2f\n", bw, mr);
 }
@@ -415,13 +522,19 @@ void static inline calc_and_print_results(double total_t, int len,
     PE_set_used_adjustments(&nPEs, &stride, &start_pe, metric_info);
 
     if (total_t > 0 ) {
-        bw = (len / 1e6 * metric_info.window_size * metric_info.trials) /
-                (total_t / 1e6);
+
+#ifdef ENABLE_OPENMP
+        bw = (len / 1.0e6 * metric_info.window_size * metric_info.trials *
+                (double)metric_info.nthreads) / (total_t / 1.0e6);
+#else
+        bw = (len / 1.0e6 * metric_info.window_size * metric_info.trials) /
+                (total_t / 1.0e6);
+#endif
     }
 
     /* 2x as many messages/bytes at once for bi-directional */
     if(metric_info.type == BI_DIR)
-        bw *= 2;
+        bw *= 2.0;
 
     /* base case: will be overwritten by collective if num_pes > 2 */
     pe_bw_sum = bw;
@@ -434,7 +547,7 @@ void static inline calc_and_print_results(double total_t, int len,
     /* aggregate bw since bw op pairs are communicating simultaneously */
     if(metric_info.my_node == start_pe) {
         pe_bw_avg = pe_bw_sum;
-        pe_mr_avg = pe_bw_avg / (len / 1e6);
+        pe_mr_avg = pe_bw_avg / (len / 1.0e6);
         print_data_results(pe_bw_avg, pe_mr_avg, metric_info, len, total_t);
     }
 }
@@ -486,6 +599,13 @@ extern void bi_dir_bw(int len, perf_metrics_t *metric_info);
 
 void static inline bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
     int len = 0, partner_pe = partner_node(metric_info);
+
+    if(metric_info.my_node == 0) {
+        if (metric_info.bwstyle == STYLE_ATOMIC)
+            print_atomic_results_header(metric_info);
+        else
+            print_results_header(metric_info);
+    }
 
     for (len = metric_info.start_len; len <= metric_info.max_len;
         len *= metric_info.size_inc) {
@@ -550,54 +670,71 @@ void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
 /**************************************************************/
 
 /*create and init (with my_PE_num) two symmetric arrays on the heap */
-void static inline bw_init_data_stream(perf_metrics_t *metric_info,
+static inline int bw_init_data_stream(perf_metrics_t *metric_info,
                                             int argc, char *argv[]) {
 
     int i = 0;
+    data_set_defaults(metric_info);
+    int ret = command_line_arg_check(argc, argv, metric_info);
+    if (ret != 0) {
+        return -1;
+    }
+    thread_safety_validation_check(metric_info);
 
-    /*must be before data_init*/
 #ifndef VERSION_1_0
-    shmem_init();
+    int tl;
+    shmem_init_thread(metric_info->thread_safety, &tl);
+    if(tl != metric_info->thread_safety) {
+        fprintf(stderr,"Could not initialize with requested thread "
+                "level %d: got %d\n", metric_info->thread_safety, tl);
+        return -2;
+    }
 #else
     start_pes(0);
 #endif
 
-    data_init(metric_info);
+    if (data_runtime_update(metric_info) == -1)
+        return -2;	
+    metric_info->sztarget = metric_info->midpt;
+    metric_info->szinitiator = metric_info->midpt;
 
     for(i = 0; i < SHMEM_REDUCE_MIN_WRKDATA_SIZE; i++)
         red_psync[i] = SHMEM_SYNC_VALUE;
 
-    command_line_arg_check(argc, argv, metric_info);
+    if (only_even_PEs_check(metric_info->my_node, metric_info->num_pes) != 0) {
+        return -2;
+    }
 
     metric_info->src = aligned_buffer_alloc(metric_info->max_len);
     init_array(metric_info->src, metric_info->max_len, metric_info->my_node);
 
     metric_info->dest = aligned_buffer_alloc(metric_info->max_len);
     init_array(metric_info->dest, metric_info->max_len, metric_info->my_node);
+
+    return 0;
 }
 
 
-void static inline bi_dir_init(perf_metrics_t *metric_info, int argc,
+static inline int bi_dir_init(perf_metrics_t *metric_info, int argc,
                                 char *argv[]) {
-    bw_init_data_stream(metric_info, argc, argv);
-
-    only_even_PEs_check(metric_info->my_node, metric_info->num_pes);
-
-    bi_dir_data_init(metric_info);
-
+    int ret = bw_init_data_stream(metric_info, argc, argv);
+    if (ret == 0) {
+        bi_dir_data_init(metric_info);
+        return 0;
+    } else 
+        return ret;
 }
 
-void static inline uni_dir_init(perf_metrics_t *metric_info, int argc,
+static inline int uni_dir_init(perf_metrics_t *metric_info, int argc,
                                 char *argv[], bw_style bwstyl) {
-    bw_init_data_stream(metric_info, argc, argv);
-
-    /* uni-dir validate needs to know if its a put or get */
-    metric_info->bwstyle = bwstyl;
-
-    if(metric_info->num_pes != 1)
-        only_even_PEs_check(metric_info->my_node, metric_info->num_pes);
-
-    uni_dir_data_init(metric_info);
+    int ret = bw_init_data_stream(metric_info, argc, argv);
+    if (ret == 0) {
+        /* uni-dir validate needs to know if its a put or get */
+        metric_info->bwstyle = bwstyl;
+        uni_dir_data_init(metric_info);
+        return 0;
+    } else 
+        return ret;
 }
 
 void static inline bw_data_free(perf_metrics_t *metric_info) {
@@ -605,7 +742,9 @@ void static inline bw_data_free(perf_metrics_t *metric_info) {
 
     aligned_buffer_free(metric_info->src);
     aligned_buffer_free(metric_info->dest);
+}
 
+static void inline bw_finalize(void) {
 #ifndef VERSION_1_0
     shmem_finalize();
 #endif
@@ -615,22 +754,28 @@ void static inline bi_dir_bw_main(int argc, char *argv[]) {
 
     perf_metrics_t metric_info;
 
-    bi_dir_init(&metric_info, argc, argv);
+    int ret = bi_dir_init(&metric_info, argc, argv);
 
-    bi_dir_bw_test_and_output(metric_info);
+    if (ret == 0) {
+        bi_dir_bw_test_and_output(metric_info);
+        bw_data_free(&metric_info);
+    }
 
-    bw_data_free(&metric_info);
-
+    if (ret != -1)
+        bw_finalize(); 
 } /*main() */
 
 void static inline uni_dir_bw_main(int argc, char *argv[], bw_style bwstyl) {
 
     perf_metrics_t metric_info;
 
-    uni_dir_init(&metric_info, argc, argv, bwstyl);
+    int ret = uni_dir_init(&metric_info, argc, argv, bwstyl);
 
-    uni_dir_bw_test_and_output(metric_info);
+    if (ret == 0) {
+        uni_dir_bw_test_and_output(metric_info);
+        bw_data_free(&metric_info);
+    }
 
-    bw_data_free(&metric_info);
-
+    if (ret != -1)
+        bw_finalize();
 } /*main() */

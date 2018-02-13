@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2018 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -49,5 +49,5 @@ int main(int argc, char *argv[])
 void
 bi_dir_bw(int len, perf_metrics_t *metric_info)
 {
-    bi_bw(len, metric_info);
+    bi_bw_put(len, metric_info);
 }
