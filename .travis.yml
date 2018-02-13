@@ -77,6 +77,8 @@ before_install:
     - export TRAVIS_INSTALL=$HOME/travis/install
     ## Disable security protection so CMA will work
     - sudo sysctl -w kernel.yama.ptrace_scope=0
+    ## Disable ASLR so remote virtual addressing will work
+    - sudo sysctl -w kernel.randomize_va_space=0
     ## Run the icc installation script:
     - >
       if [ "$CC" = "icc" ]; then
