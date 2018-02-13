@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2018 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -37,13 +37,6 @@
 */
 
 #include <bw_common.h>
-
-#define shmem_putmem(dest, source, nelems, pe) \
-        shmem_getmem(dest, source, nelems, pe)
-
-/* NO-OP */
-#define shmem_quiet();
-
 #include <uni_dir.h>
 
 int main(int argc, char *argv[])
@@ -52,3 +45,10 @@ int main(int argc, char *argv[])
 
     return 0;
 }  /* end of main() */
+
+void
+uni_dir_bw(int len, perf_metrics_t *metric_info)
+{
+    uni_bw_get(len, metric_info);
+}
+

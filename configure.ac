@@ -139,7 +139,7 @@ AC_ARG_ENABLE([thread-completion],
 
 AC_ARG_ENABLE([remote-virtual-addressing],
     [AC_HELP_STRING([--enable-remote-virtual-addressing],
-                    [Enable optimizations assuming the symmetric heap is always symmetric with regards to virtual address.  This may cause applications to abort during start_pes() if such a symmetric heap can not be created, but will reduce the instruction count for some operations.  This optimization also requires that the Portals 4 implementation support BIND_INACCESSIBLE on LEs. (default: disabled)])])
+                    [Enable optimizations assuming the symmetric heap and data segments are located at identical addresses at all PEs.  This may cause erroneous behavior if this assumption is violated, but will reduce the instruction count for some operations.  On Linux systems, this optimization requires disabling ASLR.  This optimization also requires that the Portals 4 implementation support BIND_INACCESSIBLE on LEs. (default: disabled)])])
 AS_IF([test "$enable_remote_virtual_addressing" = "yes"],
       [AC_DEFINE([ENABLE_REMOTE_VIRTUAL_ADDRESSING], [1], [If defined, the implementation will use one LE/PT to cover all of the symmetric data and heap, setup so that no offset transformation is needed on the target virtual address.])])
 
