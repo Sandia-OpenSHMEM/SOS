@@ -223,7 +223,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         int aslr_status = fgetc(aslr);
         if (aslr_status != EOF && aslr_status != '0') {
             int persona = personality(0xffffffff);
-	    /* Check if ASLR was disabled with setarch */
+            /* Check if ASLR was disabled with setarch */
             if (! (persona & ADDR_NO_RANDOMIZE)) {
                 RAISE_ERROR_MSG("Remote virtual addressing is enabled; however, address space layout randomization\n"
                                 RAISE_PE_PREFIX
