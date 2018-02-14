@@ -162,7 +162,7 @@ LOG_COMPILER = $(TEST_RUNNER)
 
 AM_CPPFLAGS = -I$(top_builddir)/mpp
 AM_FCFLAGS = -I$(top_builddir)/mpp
-AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
+AM_LDFLAGS = $(aslr_LDFLAGS) $(LIBTOOL_WRAPPER_LDFLAGS)
 LDADD = $(top_builddir)/src/libsma.la
 
 if USE_PMI_SIMPLE
@@ -174,23 +174,23 @@ rma_coverage_pshmem_SOURCES = rma_coverage.c
 rma_coverage_pshmem_CFLAGS = -DTEST_PSHMEM
 
 mt_a2a_SOURCES = mt_a2a.c pthread_barrier.h
-mt_a2a_LDFLAGS = $(PTHREAD_LIBS)
+mt_a2a_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 mt_a2a_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 mt_a2a_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
-mt_contention_LDFLAGS = $(PTHREAD_LIBS)
+mt_contention_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 mt_contention_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 mt_contention_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
-threading_LDFLAGS = $(PTHREAD_LIBS)
+threading_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 threading_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 threading_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
-web_LDFLAGS = $(PTHREAD_LIBS)
+web_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 web_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 web_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
-thread_wait_LDFLAGS = $(PTHREAD_LIBS)
+thread_wait_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 thread_wait_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 thread_wait_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 

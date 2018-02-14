@@ -581,13 +581,18 @@ AS_IF([test "$opal_visibility_define" = 1],
 AC_SUBST(SHMEM_AC_HAVE_ATTRIBUTE_VISIBILITY)
 CFLAGS="$CFLAGS $OPAL_VISIBILITY_CFLAGS"
 
-# disable aslr, if possible at link time
-aslr_LDFLAGS=
-case $host_os in
-darwin*)
-    aslr_LDFLAGS="-Wl,-no_pie"
-    ;;
-esac
+# If remote VA is enabled, disable ASLR at link time by instructing the linker
+# not to generate position-independent code
+AS_IF([test "$enable_remote_virtual_addressing" = "yes"],
+      [aslr_LDFLAGS=
+       case $host_os in
+       darwin*)
+           aslr_LDFLAGS="-Wl,-no_pie"
+           ;;
+       linux*)
+           aslr_LDFLAGS="-no-pie"
+           ;;
+       esac])
 AC_SUBST(aslr_LDFLAGS)
 
 dnl check for library functions
@@ -691,7 +696,7 @@ if test "$transport_xpmem" = "yes" ; then
 fi
 
 CPPFLAGS="$CPPFLAGS $pmi_CPPFLAGS"
-LDFLAGS="$LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
+LDFLAGS="$LDFLAGS $pmi_LDFLAGS"
 LIBS="$LIBS $pmi_LIBS"
 WRAPPER_COMPILER_EXTRA_LDFLAGS="$WRAPPER_COMPILER_EXTRA_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
 WRAPPER_COMPILER_EXTRA_LIBS="$WRAPPER_COMPILER_LIBS $pmi_LIBS"

@@ -23,7 +23,7 @@ NPROCS ?= 2
 LOG_COMPILER = $(TEST_RUNNER)
 
 AM_CPPFLAGS = -I$(top_builddir)/mpp
-AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
+AM_LDFLAGS = $(aslr_LDFLAGS) $(LIBTOOL_WRAPPER_LDFLAGS)
 LDADD = $(top_builddir)/src/libsma.la
 
 if USE_PMI_SIMPLE
