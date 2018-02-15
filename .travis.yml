@@ -84,6 +84,9 @@ before_install:
                "$TRAVIS_PULL_REQUEST" = "false" ]; then
               ./scripts/install-icc.sh --components icc,ifort
               source ~/.bashrc
+              export CC=icc
+              export CXX=icpc
+              export FC=ifort
           else
               echo "Cannot test Intel compiler on a fork.  Exiting now."
               exit 0
