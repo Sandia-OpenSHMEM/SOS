@@ -42,7 +42,6 @@ void static inline uni_bw_put(int len, perf_metrics_t *metric_info)
 
     if (snode) {
         for (i = 0; i < metric_info->warmup; i++) {
-
             for(j = 0; j < metric_info->window_size; j++) {
 #ifdef USE_NONBLOCKING_API
                 shmem_putmem_nbi(metric_info->dest, metric_info->src, len, dest);
@@ -55,9 +54,8 @@ void static inline uni_bw_put(int len, perf_metrics_t *metric_info)
     }
 
     shmem_barrier_all();
-    start = perf_shmemx_wtime();
-
     if (snode) {
+        start = perf_shmemx_wtime();
         for (i = 0; i < metric_info->trials; i++) {
             for(j = 0; j < metric_info->window_size; j++) {
 #ifdef USE_NONBLOCKING_API
@@ -71,8 +69,8 @@ void static inline uni_bw_put(int len, perf_metrics_t *metric_info)
     }
 
     shmem_barrier_all();
-    end = perf_shmemx_wtime();
     if (snode) {
+        end = perf_shmemx_wtime();
         calc_and_print_results((end - start), len, *metric_info);
     }
 }
@@ -92,10 +90,7 @@ void static inline uni_bw_get(int len, perf_metrics_t *metric_info)
     shmem_barrier_all();
 
     if (snode) {
-        for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
-            if(i == metric_info->warmup)
-                start = perf_shmemx_wtime();
-
+        for (i = 0; i < metric_info->warmup; i++) {
             for(j = 0; j < metric_info->window_size; j++) {
                 /* Choosing to skip quiet for both blocking and non-blocking getmem
                  * as this sequence of operation (writing to the same location) is
@@ -110,8 +105,28 @@ void static inline uni_bw_get(int len, perf_metrics_t *metric_info)
             shmem_quiet();
 #endif
         }
-        end = perf_shmemx_wtime();
+    }
 
+    shmem_barrier_all();
+    if (snode) {
+        start = perf_shmemx_wtime();
+        for (i = 0; i < metric_info->trials; i++) {
+            for(j = 0; j < metric_info->window_size; j++) {
+#ifdef USE_NONBLOCKING_API
+                shmem_getmem_nbi(metric_info->dest, metric_info->src, len, dest);
+#else
+                shmem_getmem(metric_info->dest, metric_info->src, len, dest);
+#endif
+            }
+#ifdef USE_NONBLOCKING_API
+            shmem_quiet();
+#endif
+        }
+    }
+
+    shmem_barrier_all();
+    if (snode) {
+        end = perf_shmemx_wtime();
         calc_and_print_results((end - start), len, *metric_info);
     }
 }

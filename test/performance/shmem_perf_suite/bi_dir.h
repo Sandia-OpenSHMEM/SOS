@@ -34,10 +34,7 @@ void static inline bi_bw_put(int len, perf_metrics_t *metric_info)
     shmem_barrier_all();
 
     if (streaming_node(*metric_info)) {
-        for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
-            if(i == metric_info->warmup)
-                start = perf_shmemx_wtime();
-
+        for (i = 0; i < metric_info->warmup; i++) {
             for(j = 0; j < metric_info->window_size; j++) {
 #ifdef USE_NONBLOCKING_API
                 shmem_putmem_nbi(metric_info->dest, metric_info->src, len, dest);
@@ -47,12 +44,8 @@ void static inline bi_bw_put(int len, perf_metrics_t *metric_info)
             }
             shmem_quiet();
         }
-        end = perf_shmemx_wtime();
-
-        calc_and_print_results((end - start), len, *metric_info);
-
     } else {
-        for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
+        for (i = 0; i < metric_info->warmup; i++) {
             for(j = 0; j < metric_info->window_size; j++) {
 #ifdef USE_NONBLOCKING_API
                 shmem_putmem_nbi(metric_info->dest, metric_info->src, len, dest);
@@ -62,6 +55,38 @@ void static inline bi_bw_put(int len, perf_metrics_t *metric_info)
             }
             shmem_quiet();
         }
+    }
+
+    shmem_barrier_all();
+    if (streaming_node(*metric_info)) {
+        start = perf_shmemx_wtime();
+        for (i = 0; i < metric_info->trials; i++) {
+            for(j = 0; j < metric_info->window_size; j++) {
+#ifdef USE_NONBLOCKING_API
+                shmem_putmem_nbi(metric_info->dest, metric_info->src, len, dest);
+#else
+                shmem_putmem(metric_info->dest, metric_info->src, len, dest);
+#endif
+            }
+            shmem_quiet();
+        }
+    } else {
+        for (i = 0; i < metric_info->trials; i++) {
+            for(j = 0; j < metric_info->window_size; j++) {
+#ifdef USE_NONBLOCKING_API
+                shmem_putmem_nbi(metric_info->dest, metric_info->src, len, dest);
+#else
+                shmem_putmem(metric_info->dest, metric_info->src, len, dest);
+#endif
+            }
+            shmem_quiet();
+        }
+    }
+
+    shmem_barrier_all();
+    if (streaming_node(*metric_info)) {
+        end = perf_shmemx_wtime();
+        calc_and_print_results((end - start), len, *metric_info);
     }
 }
 
@@ -74,10 +99,7 @@ void static inline bi_bw_get(int len, perf_metrics_t *metric_info)
     shmem_barrier_all();
 
     if (streaming_node(*metric_info)) {
-        for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
-            if(i == metric_info->warmup)
-                start = perf_shmemx_wtime();
-
+        for (i = 0; i < metric_info->warmup; i++) {
             for(j = 0; j < metric_info->window_size; j++) {
 		/* Choosing to skip quiet for both blocking and non-blocking getmem
                  * as this sequence of operation (writing to the same location) is 
@@ -92,12 +114,25 @@ void static inline bi_bw_get(int len, perf_metrics_t *metric_info)
             shmem_quiet();
 #endif
         }
-        end = perf_shmemx_wtime();
-
-        calc_and_print_results((end - start), len, *metric_info);
-
     } else {
-        for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
+        for (i = 0; i < metric_info->warmup; i++) {
+            for(j = 0; j < metric_info->window_size; j++) {
+#ifdef USE_NONBLOCKING_API
+                shmem_getmem_nbi(metric_info->dest, metric_info->src, len, dest);
+#else
+                shmem_getmem(metric_info->dest, metric_info->src, len, dest);
+#endif
+            }
+#ifdef USE_NONBLOCKING_API
+            shmem_quiet();
+#endif
+        }
+    }
+
+    shmem_barrier_all();
+    if (streaming_node(*metric_info)) {
+        start = perf_shmemx_wtime();
+        for (i = 0; i < metric_info->trials; i++) {
             for(j = 0; j < metric_info->window_size; j++) {
                 /* Choosing to skip quiet for both blocking and non-blocking getmem
                  * as this sequence of operation (writing to the same location) is
@@ -112,6 +147,25 @@ void static inline bi_bw_get(int len, perf_metrics_t *metric_info)
             shmem_quiet();
 #endif
         }
+    } else {
+        for (i = 0; i < metric_info->trials; i++) {
+            for(j = 0; j < metric_info->window_size; j++) {
+#ifdef USE_NONBLOCKING_API
+                shmem_getmem_nbi(metric_info->dest, metric_info->src, len, dest);
+#else
+                shmem_getmem(metric_info->dest, metric_info->src, len, dest);
+#endif
+            }
+#ifdef USE_NONBLOCKING_API
+            shmem_quiet();
+#endif
+        }
+    }
+
+    shmem_barrier_all();
+    if (streaming_node(*metric_info)) {
+        end = perf_shmemx_wtime();
+        calc_and_print_results((end - start), len, *metric_info);
     }
 }
 
