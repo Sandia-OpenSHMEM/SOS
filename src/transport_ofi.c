@@ -105,7 +105,7 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
 {
     struct shmem_internal_tid tid;
 
-    if (shmem_internal_gettid_is_registered) {
+    if (shmem_internal_gettid_fn) {
         tid.tid_t = UINT64_T;
         tid.uint64_val = (*shmem_internal_gettid_fn)();
     } else {

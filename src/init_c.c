@@ -45,9 +45,6 @@
 #pragma weak shmem_info_get_name = pshmem_info_get_name
 #define shmem_info_get_name pshmem_info_get_name
 
-#pragma weak shmemx_register_gettid = pshmemx_register_gettid
-#define shmemx_register_gettid pshmemx_register_gettid
-
 #endif /* ENABLE_PROFILING */
 
 void SHMEM_FUNCTION_ATTRIBUTES
@@ -130,11 +127,4 @@ shmem_info_get_name(char *name)
 
     strncpy(name, SHMEM_VENDOR_STRING, SHMEM_MAX_NAME_LEN);
     name[SHMEM_MAX_NAME_LEN-1] = '\0'; /* Ensure string is null terminated */
-}
-
-void SHMEM_FUNCTION_ATTRIBUTES
-shmemx_register_gettid(uint64_t (*gettid_fn)(void))
-{
-    shmem_internal_register_gettid(gettid_fn);
-    return;
 }
