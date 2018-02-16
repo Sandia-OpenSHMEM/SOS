@@ -43,8 +43,8 @@ int errors = 0;
 
 
 uint64_t my_gettid(void) {
-    static uint64_t tid_val = 100;
-    return tid_val++;
+    uint64_t tid_val = (uint64_t)pthread_self();
+    return tid_val;
 }
 
 
