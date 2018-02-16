@@ -33,54 +33,31 @@ void static inline bi_bw_put(int len, perf_metrics_t *metric_info)
 
     shmem_barrier_all();
 
-    if (streaming_node(*metric_info)) {
-        for (i = 0; i < metric_info->warmup; i++) {
-            for(j = 0; j < metric_info->window_size; j++) {
+    for (i = 0; i < metric_info->warmup; i++) {
+        for(j = 0; j < metric_info->window_size; j++) {
 #ifdef USE_NONBLOCKING_API
-                shmem_putmem_nbi(metric_info->dest, metric_info->src, len, dest);
+            shmem_putmem_nbi(metric_info->dest, metric_info->src, len, dest);
 #else
-                shmem_putmem(metric_info->dest, metric_info->src, len, dest);
+            shmem_putmem(metric_info->dest, metric_info->src, len, dest);
 #endif
-            }
-            shmem_quiet();
         }
-    } else {
-        for (i = 0; i < metric_info->warmup; i++) {
-            for(j = 0; j < metric_info->window_size; j++) {
-#ifdef USE_NONBLOCKING_API
-                shmem_putmem_nbi(metric_info->dest, metric_info->src, len, dest);
-#else
-                shmem_putmem(metric_info->dest, metric_info->src, len, dest);
-#endif
-            }
-            shmem_quiet();
-        }
+        shmem_quiet();
     }
 
     shmem_barrier_all();
     if (streaming_node(*metric_info)) {
         start = perf_shmemx_wtime();
-        for (i = 0; i < metric_info->trials; i++) {
-            for(j = 0; j < metric_info->window_size; j++) {
+    }
+
+    for (i = 0; i < metric_info->trials; i++) {
+        for(j = 0; j < metric_info->window_size; j++) {
 #ifdef USE_NONBLOCKING_API
-                shmem_putmem_nbi(metric_info->dest, metric_info->src, len, dest);
+            shmem_putmem_nbi(metric_info->dest, metric_info->src, len, dest);
 #else
-                shmem_putmem(metric_info->dest, metric_info->src, len, dest);
+            shmem_putmem(metric_info->dest, metric_info->src, len, dest);
 #endif
-            }
-            shmem_quiet();
         }
-    } else {
-        for (i = 0; i < metric_info->trials; i++) {
-            for(j = 0; j < metric_info->window_size; j++) {
-#ifdef USE_NONBLOCKING_API
-                shmem_putmem_nbi(metric_info->dest, metric_info->src, len, dest);
-#else
-                shmem_putmem(metric_info->dest, metric_info->src, len, dest);
-#endif
-            }
-            shmem_quiet();
-        }
+        shmem_quiet();
     }
 
     shmem_barrier_all();
@@ -98,69 +75,42 @@ void static inline bi_bw_get(int len, perf_metrics_t *metric_info)
 
     shmem_barrier_all();
 
-    if (streaming_node(*metric_info)) {
-        for (i = 0; i < metric_info->warmup; i++) {
-            for(j = 0; j < metric_info->window_size; j++) {
+    for (i = 0; i < metric_info->warmup; i++) {
+        for(j = 0; j < metric_info->window_size; j++) {
 		/* Choosing to skip quiet for both blocking and non-blocking getmem
                  * as this sequence of operation (writing to the same location) is 
                  * currently undefined by the OpenSHMEM Spec. */ 
 #ifdef USE_NONBLOCKING_API
-                shmem_getmem_nbi(metric_info->dest, metric_info->src, len, dest);
+            shmem_getmem_nbi(metric_info->dest, metric_info->src, len, dest);
 #else
-                shmem_getmem(metric_info->dest, metric_info->src, len, dest);
-#endif
-            }
-#ifdef USE_NONBLOCKING_API
-            shmem_quiet();
+            shmem_getmem(metric_info->dest, metric_info->src, len, dest);
 #endif
         }
-    } else {
-        for (i = 0; i < metric_info->warmup; i++) {
-            for(j = 0; j < metric_info->window_size; j++) {
 #ifdef USE_NONBLOCKING_API
-                shmem_getmem_nbi(metric_info->dest, metric_info->src, len, dest);
-#else
-                shmem_getmem(metric_info->dest, metric_info->src, len, dest);
+        shmem_quiet();
 #endif
-            }
-#ifdef USE_NONBLOCKING_API
-            shmem_quiet();
-#endif
-        }
     }
 
     shmem_barrier_all();
     if (streaming_node(*metric_info)) {
         start = perf_shmemx_wtime();
-        for (i = 0; i < metric_info->trials; i++) {
-            for(j = 0; j < metric_info->window_size; j++) {
+    }
+
+    for (i = 0; i < metric_info->trials; i++) {
+        for(j = 0; j < metric_info->window_size; j++) {
                 /* Choosing to skip quiet for both blocking and non-blocking getmem
                  * as this sequence of operation (writing to the same location) is
                  * currently undefined by the OpenSHMEM Spec. */
 #ifdef USE_NONBLOCKING_API
-                shmem_getmem_nbi(metric_info->dest, metric_info->src, len, dest);
+            shmem_getmem_nbi(metric_info->dest, metric_info->src, len, dest);
 #else
-                shmem_getmem(metric_info->dest, metric_info->src, len, dest);
-#endif
-            }
-#ifdef USE_NONBLOCKING_API
-            shmem_quiet();
+            shmem_getmem(metric_info->dest, metric_info->src, len, dest);
 #endif
         }
-    } else {
-        for (i = 0; i < metric_info->trials; i++) {
-            for(j = 0; j < metric_info->window_size; j++) {
 #ifdef USE_NONBLOCKING_API
-                shmem_getmem_nbi(metric_info->dest, metric_info->src, len, dest);
-#else
-                shmem_getmem(metric_info->dest, metric_info->src, len, dest);
+        shmem_quiet();
 #endif
-            }
-#ifdef USE_NONBLOCKING_API
-            shmem_quiet();
-#endif
-        }
-    }
+    } 
 
     shmem_barrier_all();
     if (streaming_node(*metric_info)) {
