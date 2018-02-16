@@ -143,6 +143,13 @@ AC_ARG_ENABLE([remote-virtual-addressing],
 AS_IF([test "$enable_remote_virtual_addressing" = "yes"],
       [AC_DEFINE([ENABLE_REMOTE_VIRTUAL_ADDRESSING], [1], [If defined, the implementation will use one LE/PT to cover all of the symmetric data and heap, setup so that no offset transformation is needed on the target virtual address.])])
 
+AC_ARG_ENABLE([aslr-check],
+    [AC_HELP_STRING([--disable-aslr-check],
+                    [Disable check for address space layout randomization (ASLR).  This can be useful when ASLR is enabled, but position-independent executable generation is disabled by compiler or linker flags. (default: enabled)])])
+AS_IF([test "$enable_aslr_check" = "no"],
+      [AC_DEFINE(DISABLE_ASLR_CHECK, [1], [Disable ASLR check])])
+
+
 AC_ARG_ENABLE([lengthy-tests],
     [AC_HELP_STRING([--enable-lengthy-tests],
                     [Enable long running tests in the test suite (default: disabled)])])
