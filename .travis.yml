@@ -87,6 +87,7 @@ before_install:
               export CC=icc
               export CXX=icpc
               export FC=ifort
+              export FCFLAGS=
           else
               echo "Cannot test Intel compiler on a fork.  Exiting now."
               exit 0
