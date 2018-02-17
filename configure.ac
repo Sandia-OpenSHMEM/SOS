@@ -596,9 +596,6 @@ AS_IF([test "$enable_remote_virtual_addressing" = "yes"],
        darwin*)
            aslr_LDFLAGS="-Wl,-no_pie"
            ;;
-       linux*)
-           aslr_LDFLAGS="-no-pie"
-           ;;
        esac])
 AC_SUBST(aslr_LDFLAGS)
 
