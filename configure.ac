@@ -590,25 +590,16 @@ CFLAGS="$CFLAGS $OPAL_VISIBILITY_CFLAGS"
 
 # If remote VA is enabled, disable ASLR at link time by instructing the linker
 # not to generate position-independent code
-if test "$enable_remote_virtual_addressing" = "yes" ; then
-    C_FLAGS_CHECK([-no-pie],nopie)
-    C_FLAGS_CHECK([-fno-pie],fnopie)
-    C_FLAGS_CHECK([-fno-pic],fnopic)
-    C_FLAGS_CHECK([-Wl,-no_pie],ld_nopie)
-
-    if test "$ax_cv_c_flags_nopie" = "yes" ; then
-        aslr_LDFLAGS="-no-pie"
-    elif test "$ax_cv_c_flags_fnopie" = "yes" ; then
-        aslr_LDFLAGS="-fno-pie"
-    elif test "$ax_cv_c_flags_fnopic" = "yes" ; then
-        aslr_LDFLAGS="-fno-pic"
-    elif test "$ax_cv_c_flags_ld_nopie" = "yes" ; then
-        aslr_LDFLAGS="-Wl,-no_pie"
-    else
-        aslr_LDFLAGS=
-        AC_MSG_WARN([Unable to force PIE building, remote VA may be broken])
-    fi
-fi
+AS_IF([test "$enable_remote_virtual_addressing" = "yes"],
+      [aslr_LDFLAGS=
+       case $host_os in
+       darwin*)
+           aslr_LDFLAGS="-Wl,-no_pie"
+           ;;
+       linux*)
+           aslr_LDFLAGS="-no-pie"
+           ;;
+       esac])
 AC_SUBST(aslr_LDFLAGS)
 
 dnl check for library functions
