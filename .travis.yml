@@ -16,6 +16,7 @@ env:
         - FI_LOG_LEVEL=warn
         - SHMEM_OFI_USE_PROVIDER=sockets
         - SHMEM_INFO=1
+        - SOS_ENABLE_ERROR_TESTS=0
         ## An encrypted value for INTEL_SERIAL_NUMBER:
         - secure: "luxfwDy26Pva+A58T/vPP7+Zek4rBEbpB2TpdXuLdIu/MJ2laoUkaZj/ouT6YgdSxUoiyLUlGIzLnByxnrVgWqYELsWHiV9hzsXZCNfgQDdUHV8UITCqSYVcd5WGNoVdC0QohKuIj47y6bP5ttcv1sIfpV74ztPJZE1dbb2QzgvWcIKWN8Abj55364ZnIidW7ErYLrAiKlBzSxZXCKiKD6qOUbpOBN8yuzaX9diXYJViest7iBC+BfwzXO8Shuouh6QrQhJ1T4oG6u6YJn17fnOwXKJCdkeQYr/E8ka4JRf8vZm7CNO1YdwNhtGtFNEzTJaP2XFLAQGCB9vffCxcqRbpWv+lpsFRsH+eiF/zp/xKGr5qzB9sPUxNANJyhphXK0VfIqDan7nz9di99NFBEF94Jl33E+KODTCAeHb6+a7yboR5B4BalM4jXKrcn/2A4pYrk45YF5IdLLOEvzTaOyVSgHoNIzXRZvHEL2AeYuvz5qLukzMB+QClbA1EeCBNyokuXK/TemeTvveXpQpCaVKNQ8zp/v30u8eiaV8R/dFa2evlJ6kwSaeXlXpXifeXd5Px0x6HF4FT9HLOtPVQ3rZXyfL2Eh92egu15GiTqMNkdVlVGUC20+iddLjtbPqRnVw0WnZkekh62A6rGuT4cTfAbZ2GVPD+IMqzokO1IGg="
     matrix:
@@ -28,7 +29,6 @@ env:
           SOS_ENABLE_ERROR_TESTS=1 SHMEM_SYMMETRIC_HEAP_USE_MALLOC=1
           SOS_BUILD_OPTS="--disable-threads --enable-error-checking"
         - >
-          SOS_ENABLE_ERROR_TESTS=0
           SOS_BUILD_OPTS="--with-cma --enable-error-checking --enable-profiling --disable-mr-scalable --enable-av-map --enable-remote-virtual-addressing"
         - >
           SOS_ENABLE_ERROR_TESTS=1
@@ -255,7 +255,7 @@ script:
     - >
       if [ -z "$SOS_DISABLE_FORTRAN" ]; then
           make F_error_tests;
-          if false && [ $? -eq 0 -a $SOS_ENABLE_ERROR_TESTS ]; then
+          if false && [ $? -eq 0 -a $SOS_ENABLE_ERROR_TESTS -eq 1 ]; then
               make F_error_tests-run 2>&1 | tee uh-tests-f-error-tests.log;
               # Check for failures in the Fortran tests
               if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-error-tests.log; then false; else true; fi;
@@ -284,7 +284,7 @@ script:
     - >
       if [ -z "$SOS_DISABLE_FORTRAN" ]; then
           make F_error_tests;
-          if [ $? -eq 0 -a $SOS_ENABLE_ERROR_TESTS ]; then
+          if [ $? -eq 0 -a $SOS_ENABLE_ERROR_TESTS -eq 1 ]; then
               make F_error_tests-run 2>&1 | tee uh-tests-f-error-tests.log;
               # Check for failures in the Fortran tests
               if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-error-tests.log; then false; else true; fi;
