@@ -1,3 +1,34 @@
+/*
+ *  Copyright (c) 2018 Intel Corporation. All rights reserved.
+ *  This software is available to you under the BSD license below:
+ *
+ *      Redistribution and use in source and binary forms, with or
+ *      without modification, are permitted provided that the following
+ *      conditions are met:
+ *
+ *      - Redistributions of source code must retain the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer.
+ *
+ *      - Redistributions in binary form must reproduce the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer in the documentation and/or other materials
+ *        provided with the distribution.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/* Multi-threaded tests for validation of memory barrier implemented in 
+ * different synchronization routines.
+*/
+
 #include <stdio.h>
 #include <assert.h>
 #include <pthread.h>
@@ -19,8 +50,8 @@ long lock = 0;
 
 pthread_barrier_t fencebar;
 
-long pSync[_SHMEM_REDUCE_SYNC_SIZE];
-int pWrk[MAX(1, _SHMEM_REDUCE_MIN_WRKDATA_SIZE)];
+long pSync[SHMEM_REDUCE_SYNC_SIZE];
+int pWrk[MAX(1, SHMEM_REDUCE_MIN_WRKDATA_SIZE)];
 
 static void * thread_main(void *arg) {
     int tid = *(int *) arg;
@@ -47,7 +78,7 @@ static void * thread_main(void *arg) {
     pthread_barrier_wait(&fencebar);
 
     if (tid == 0) {
-        errors += result == T * ITER ? 0 : 1;
+        errors += ((result == (T * ITER)) ? 0 : 1);
         if (result != T * ITER) {
             printf("ERROR in WAIT test from %d : result = %d, expected = %d\n", 
                     me, result, T * ITER);
@@ -83,14 +114,14 @@ static void * thread_main(void *arg) {
     pthread_barrier_wait(&fencebar);
 
     if (tid == 0) {
-        errors += result == T * ITER ? 0 : 1;
+        errors += ((result == (T * ITER)) ? 0 : 1);
         if (result != T * ITER) {
             printf("ERROR in FENCE test from %d : result = %d, expected = %d\n",
                     me, result, T * ITER);
         }
         result = 0;
-	shared_dest_1 = 0;
-	shared_dest_2 = 0;
+        shared_dest_1 = 0;
+        shared_dest_2 = 0;
     }
 
     pthread_barrier_wait(&fencebar);
@@ -109,7 +140,7 @@ static void * thread_main(void *arg) {
 
         if (tid == 1) {
             shmem_int_wait_until(&shared_dest_2, SHMEM_CMP_EQ, one);
-            shmem_int_atomic_add(&result, shared_dest_1, me);
+            result += shared_dest_1;
             shared_dest_1 = 0;
             shared_dest_2 = 0;
         }
@@ -120,7 +151,7 @@ static void * thread_main(void *arg) {
     pthread_barrier_wait(&fencebar);
 
     if (tid == 0) {
-        errors += result == ITER ? 0 : 1;
+        errors += ((result == ITER) ? 0 : 1);
         if (result != ITER) {
             printf("ERROR in LOCK test from %d : result = %d, expected = %d\n",
                     me, result, T * ITER);
@@ -154,8 +185,8 @@ int main(int argc, char **argv) {
     me = shmem_my_pe();
     npes = shmem_n_pes();
 
-    for (i = 0; i < _SHMEM_REDUCE_SYNC_SIZE; i++) {
-        pSync[i] = _SHMEM_SYNC_VALUE;
+    for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++) {
+        pSync[i] = SHMEM_SYNC_VALUE;
     }
 
     pthread_barrier_init(&fencebar, NULL, T);
@@ -176,8 +207,6 @@ int main(int argc, char **argv) {
         err = pthread_join(threads[i], NULL);
         assert(0 == err);
     }
-
-    shmem_sync_all();
 
     pthread_barrier_destroy(&fencebar);    
 
