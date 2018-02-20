@@ -60,17 +60,9 @@ static void * thread_main(void *arg) {
 
     /* TEST WAIT */
     for (i = 0; i < ITER; i++) {
-        if (tid == 0) {
-            shared_dest_1 = 1;
-            shmem_int_wait_until(&shared_dest_1, SHMEM_CMP_EQ, zero);
-            shmem_int_atomic_add(&result, one, me);
-        }
-
-        if (tid == 1) {
-            shmem_int_wait_until(&shared_dest_1, SHMEM_CMP_EQ, one);
-            shmem_int_atomic_add(&result, one, me);
-            shared_dest_1 = 0;
-        }
+        shmem_int_wait_until(&shared_dest_1, SHMEM_CMP_EQ, tid);
+        shmem_int_atomic_add(&result, one, me);
+        shared_dest_1 = (tid + 1) % T;
     }
 
     pthread_barrier_wait(&fencebar);
@@ -85,6 +77,32 @@ static void * thread_main(void *arg) {
         }
         result = 0;
 	shared_dest_1 = 0;
+    }
+
+    pthread_barrier_wait(&fencebar);
+    if (0 == tid) shmem_barrier_all();
+    pthread_barrier_wait(&fencebar);
+
+    /* TEST WAIT & FENCE WITH NON-ATOMIC READ-WRITE */
+    for (i = 0; i < ITER; i++) {
+        shmem_int_wait_until(&shared_dest_1, SHMEM_CMP_EQ, tid);
+        result++;
+        shmem_fence();
+        shared_dest_1 = (tid + 1) % T;
+    }
+
+    pthread_barrier_wait(&fencebar);
+    if (0 == tid) shmem_barrier_all();
+    pthread_barrier_wait(&fencebar);
+
+    if (tid == 0) {
+        errors += ((result == (T * ITER)) ? 0 : 1);
+        if (result != T * ITER) {
+            printf("ERROR in WAIT test from %d : result = %d, expected = %d\n",
+                    me, result, T * ITER);
+        }
+        result = 0;
+        shared_dest_1 = 0;
     }
 
     pthread_barrier_wait(&fencebar);
