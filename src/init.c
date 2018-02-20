@@ -71,6 +71,8 @@ static char shmem_internal_my_hostname[MAXHOSTNAMELEN];
 static char shmem_internal_my_hostname[HOST_NAME_MAX];
 #endif
 
+static char *shmem_internal_thread_level_str[4] = { "SINGLE", "FUNNELED",
+                                                    "SERIALIZED", "MULTIPLE" };
 
 static void
 shmem_internal_shutdown(void)
@@ -242,7 +244,12 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         goto cleanup;
     }
 
-    DEBUG_MSG("Sym. heap=%p len=%ld -- data=%p len=%ld\n",
+    DEBUG_MSG("Thread level=%s, Num. PEs=%d\n"
+              RAISE_PE_PREFIX
+              "Sym. heap=%p len=%ld -- data=%p len=%ld\n",
+              shmem_internal_thread_level_str[shmem_internal_thread_level],
+              shmem_internal_num_pes,
+              shmem_internal_my_pe,
               shmem_internal_heap_base, shmem_internal_heap_length,
               shmem_internal_data_base, shmem_internal_data_length);
 
