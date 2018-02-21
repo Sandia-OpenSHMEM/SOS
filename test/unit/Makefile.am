@@ -141,6 +141,7 @@ check_PROGRAMS += \
     mt_a2a \
     mt_contention \
     mt_membar \
+    mt_lock_test \
     threading \
     web \
     thread_wait \
@@ -161,11 +162,11 @@ AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
 
 if EXTERNAL_TESTS
 bin_PROGRAMS = $(check_PROGRAMS)
-AM_CPPFLAGS =
+AM_CPPFLAGS = -I$(top_srcdir)/test/include
 AM_FCFLAGS =
 LDADD =
 else
-AM_CPPFLAGS = -I$(top_builddir)/mpp
+AM_CPPFLAGS = -I$(top_builddir)/mpp -I$(top_srcdir)/test/include
 AM_FCFLAGS = -I$(top_builddir)/mpp
 LDADD = $(top_builddir)/src/libsma.la
 endif
@@ -189,6 +190,11 @@ mt_a2a_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 mt_contention_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 mt_contention_CFLAGS = $(PTHREAD_CFLAGS)
 mt_contention_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
+
+mt_lock_test_SOURCES = mt_lock_test.c mt_lock.c mt_lock.h
+mt_lock_test_LDFLAGS = $(PTHREAD_LIBS)
+mt_lock_test_CFLAGS = $(PTHREAD_CFLAGS)
+mt_lock_test_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 mt_membar_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 mt_membar_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
