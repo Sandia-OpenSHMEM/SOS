@@ -13,6 +13,10 @@
  *
  */
 
+/* This header depends on 'config.h', which cannot be included here. Please
+ * include 'config.h' before including this file, 'shmem_env_defs.h'
+ */
+
 /* SOS_ENV( name, kind, default, category, short description )
  *
  * Kinds: long, size, bool, string
