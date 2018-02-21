@@ -393,6 +393,7 @@ typedef shmem_spinlock_t shmem_internal_mutex_t;
 #   endif /* ENABLE_PTHREAD_MUTEX */
 
 extern shmem_internal_mutex_t shmem_internal_mutex_alloc;
+extern shmem_internal_mutex_t shmem_internal_mutex_lock_guards;
 
 #else
 #   define SHMEM_MUTEX_INIT(_mutex)
