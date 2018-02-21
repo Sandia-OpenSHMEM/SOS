@@ -183,8 +183,8 @@ mt_contention_LDFLAGS = $(PTHREAD_LIBS)
 mt_contention_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 mt_contention_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
-gettid_register_LDFLAGS = $(PTHREAD_LIBS)
-gettid_register_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
+gettid_register_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
+gettid_register_CFLAGS = $(PTHREAD_CFLAGS)
 gettid_register_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 threading_LDFLAGS = $(PTHREAD_LIBS)

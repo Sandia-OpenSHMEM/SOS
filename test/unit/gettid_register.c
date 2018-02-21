@@ -90,6 +90,12 @@ int main(int argc, char **argv) {
         }
     }
 
+    if (sizeof(pthread_t) > sizeof(uint64_t)) {
+        printf("Cannot run this test, size of pthread_t is larger than 64 bits\n");
+        shmem_finalize();
+        return 0;
+    }
+
     me = shmem_my_pe();
     npes = shmem_n_pes();
 

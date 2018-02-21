@@ -13,7 +13,6 @@
  *
  */
 
-#define SHMEM_INTERNAL_INCLUDE
 #include "shmem_internal.h"
 
 uint64_t (*shmem_internal_gettid_fn)(void) = NULL;

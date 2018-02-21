@@ -233,15 +233,15 @@ typedef struct shmem_transport_ofi_bounce_buffer_t shmem_transport_ofi_bounce_bu
 
 typedef int shmem_transport_ct_t;
 
-enum shmem_internal_tid_t { PID_T, UINT64_T };
+enum shmem_internal_tid_t { tid_is_pid_t, tid_is_uint64_t };
 struct shmem_internal_tid
 {
-  enum shmem_internal_tid_t tid_t;
-  union
-  {
-    pid_t pid_val;
-    uint64_t uint64_val;
-  };
+    enum shmem_internal_tid_t tid_t;
+    union
+    {
+        pid_t pid_val;
+        uint64_t uint64_val;
+    };
 };
 
 struct shmem_transport_ctx_t {
