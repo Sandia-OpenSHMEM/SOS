@@ -33,6 +33,7 @@
 #include <pthread.h>
 #include <shmem.h>
 #include <shmemx.h>
+#include <string.h>
 
 #define T 8
 
@@ -41,19 +42,26 @@ int dest;
 int me, npes;
 int errors = 0;
 
+pthread_key_t key;
 
 uint64_t my_gettid(void) {
-    uint64_t tid_val = (uint64_t)pthread_self();
+    uint64_t tid_val = 0;
+
+    memcpy(&tid_val, pthread_getspecific(key), sizeof(uint64_t));
+
     return tid_val;
 }
 
 
 static void * thread_main(void *arg) {
-    int tid = * (int *) arg;
+    uint64_t tid = * (uint64_t *) arg;
     int i;
 
+    int ret = pthread_setspecific(key, &tid);
+    assert(0 == ret);
+
     shmem_ctx_t ctx;
-    int ret = shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
+    ret = shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
     if (ret != 0) {
         printf("Error creating context (%d)\n", ret);
         shmem_global_exit(2);
@@ -73,7 +81,7 @@ static void * thread_main(void *arg) {
 int main(int argc, char **argv) {
     int tl, i, ret;
     pthread_t threads[T];
-    int       t_arg[T];
+    uint64_t  t_arg[T];
 
     shmemx_register_gettid( &my_gettid );
 
@@ -101,6 +109,9 @@ int main(int argc, char **argv) {
 
 
     if (me == 0) printf("Starting multithreaded test on %d PEs, %d threads/PE\n", npes, T);
+
+    ret = pthread_key_create(&key, NULL);
+    assert(0 == ret);
 
     for (i = 0; i < T; i++) {
         int err;
