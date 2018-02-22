@@ -146,6 +146,7 @@ check_PROGRAMS += \
     mt_a2a \
     mt_contention \
     mt_membar \
+    mt_locking \
     threading \
     web \
     thread_wait
@@ -182,6 +183,10 @@ mt_a2a_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 mt_contention_LDFLAGS = $(PTHREAD_LIBS)
 mt_contention_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 mt_contention_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
+
+mt_locking_LDFLAGS = $(PTHREAD_LIBS)
+mt_locking_CFLAGS = $(PTHREAD_CFLAGS)
+mt_locking_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 mt_membar_LDFLAGS = $(PTHREAD_LIBS)
 mt_membar_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
