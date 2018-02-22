@@ -123,9 +123,12 @@ uint64_t shmem_transport_ofi_gettid(void)
 {
     int ret;
     uint64_t tid;
+    char errmsg[256];
+
     ret = pthread_threadid_np(NULL, &tid);
     if (ret != 0)
-        RAISE_ERROR_MSG("Error geting thread ID: %s\n", strerror(ret));
+        RAISE_ERROR_MSG("Error geting thread ID: %s\n",
+                        shmem_util_strerror(ret, errmsg, 256));
     return tid;
 }
 #endif /* APPLE */
@@ -999,8 +1002,11 @@ int publish_av_info(struct fabric_info *info)
     size_t epnamelen = sizeof(epname);
 
 #ifdef USE_ON_NODE_COMMS
+    char errmsg[256];
+
     if (gethostname(myephostname, (EPHOSTNAMELEN - 1)) != 0)
-        RAISE_ERROR_MSG("gethostname error: %s\n", strerror(errno));
+        RAISE_ERROR_MSG("gethostname error: %s\n",
+                        shmem_util_strerror(ret, errmsg, 256));
 
     myephostname[EPHOSTNAMELEN-1] = '\0';
 

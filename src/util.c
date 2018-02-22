@@ -13,12 +13,7 @@
  *
  */
 
-
 #include "config.h"
-
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE /* for asprintf */
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -78,4 +73,24 @@ shmem_util_wrap(const char *str, const size_t wraplen, const char *indent)
     }
     *out_p = '\0';
     return out;
+}
+
+
+/* Wrap strerror_r to iron out API differences when _GNU_SOURCE is enabled
+ * errnum - Error code
+ * buf    - User-supplied buffer to store error message
+ * buflen - buflen Length of buffer pointed to by buf
+ * return - pointer to error message (may differ from buf)
+ */
+char *shmem_util_strerror(int errnum, char *buf, size_t buflen) {
+#ifdef _GNU_SOURCE
+    return strerror_r(errnum, buf, buflen);
+#else
+    int err = strerror_r(errnum, buf, buflen);
+    if (err == ERANGE)
+        RAISE_WARN_MSG("Error message was truncated\n");
+    else if (err)
+        RAISE_WARN_MSG("Error in call to strerr_r (%d)\n", err);
+    return buf;
+#endif
 }

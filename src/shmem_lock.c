@@ -29,6 +29,7 @@ static shmem_internal_lock_guard_t *guards = NULL;
 
 void shmem_internal_lock_guard_enter(long *lockp) {
     int ret;
+    char errmsg[256];
     shmem_internal_lock_guard_t *g;
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_lock_guards);
@@ -44,15 +45,18 @@ void shmem_internal_lock_guard_enter(long *lockp) {
 
         g->key = lockp;
         ret = pthread_mutex_init(&g->mutex, NULL);
-        if (ret) RAISE_ERROR_MSG("pthread_mutex_init failed: %s\n", strerror(ret));
+        if (ret)
+            RAISE_ERROR_MSG("pthread_mutex_init failed: %s\n",
+                            shmem_util_strerror(ret, errmsg, 256));
 
         HASH_ADD_PTR(guards, key, g);
     }
     SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_lock_guards);
 
     ret = pthread_mutex_lock(&g->mutex);
-    if (ret) RAISE_ERROR_MSG("pthread_mutex_lock failed: %s\n", strerror(ret));
-    /* FIXME: Use strerror_r */
+    if (ret)
+        RAISE_ERROR_MSG("pthread_mutex_lock failed: %s\n",
+                        shmem_util_strerror(ret, errmsg, 256));
 }
 
 

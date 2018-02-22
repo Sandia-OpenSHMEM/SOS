@@ -132,6 +132,7 @@ void
 shmem_internal_init(int tl_requested, int *tl_provided)
 {
     int ret;
+    char errmsg[256];
 
     int runtime_initialized   = 0;
     int transport_initialized = 0;
@@ -333,7 +334,8 @@ shmem_internal_init(int tl_requested, int *tl_provided)
                     sizeof(shmem_internal_my_hostname))) {
         snprintf(shmem_internal_my_hostname,
                     sizeof(shmem_internal_my_hostname),
-                    "ERR: gethostname '%s'?", strerror(errno));
+                    "ERR: gethostname '%s'?",
+                    shmem_util_strerror(errno, errmsg, 256));
     }
 
     /* finish up */

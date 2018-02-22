@@ -109,15 +109,9 @@ shmem_transport_cma_put(void *target, const void *source, size_t len,
                         (const struct iovec *)&tgt, 1, 0);
 
         if ( bytes < 0 || (size_t) bytes != len) {
-            char errmsg[128];
-#ifdef _GNU_SOURCE
-            char *errstr = strerror_r(errno, errmsg, 128);
-#else
-            char *errstr = errmsg;
-            int err = strerror_r(errno, errmsg, 128);
-            if (err) RAISE_ERROR_MSG("Error in call to strerr_r (%d)\n", err);
-#endif
-            RAISE_ERROR_MSG("process_vm_writev() failed (%s)\n", errstr);
+            char errmsg[256];
+            RAISE_ERROR_MSG("process_vm_writev() failed (%s)\n",
+                            shmem_util_strerror(errno, errmsg, 256);
         }
 }
 
@@ -144,15 +138,9 @@ shmem_transport_cma_get(void *target, const void *source, size_t len, int pe,
                                 (const struct iovec *)&tgt, 1,
                                 (const struct iovec *)&src, 1, 0);
         if ( bytes < 0 || (size_t) bytes != len) {
-            char errmsg[128];
-#ifdef _GNU_SOURCE
-            char *errstr = strerror_r(errno, errmsg, 128);
-#else
-            char *errstr = errmsg;
-            int err = strerror_r(errno, errmsg, 128);
-            if (err) RAISE_ERROR_MSG("Error in call to strerr_r (%d)\n", err);
-#endif
-            RAISE_ERROR_MSG("process_vm_readv() failed (%s)\n", errstr);
+            char errmsg[256];
+            RAISE_ERROR_MSG("process_vm_readv() failed (%s)\n",
+                            shmem_util_strerror(errno, errmsg, 256);
         }
 }
 
