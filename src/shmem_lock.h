@@ -37,6 +37,7 @@ typedef struct lock_t lock_t;
 #define SIGNAL(A) (A & SIGNAL_MASK)
 
 void shmem_internal_lock_guard_enter(long *lockp);
+int shmem_internal_lock_guard_test_enter(long *lockp);
 void shmem_internal_lock_guard_exit(long *lockp);
 void shmem_internal_lock_guards_free(void);
 
@@ -45,6 +46,16 @@ shmem_internal_lock_enter(long *lockp) {
     /* Guards use a local mutex to prevent concurrent requests on the same lock */
     if (shmem_internal_thread_level > SHMEM_THREAD_FUNNELED)
         shmem_internal_lock_guard_enter(lockp);
+}
+
+
+static inline int
+shmem_internal_lock_test_enter(long *lockp) {
+    /* Guards use a local mutex to prevent concurrent requests on the same lock */
+    if (shmem_internal_thread_level > SHMEM_THREAD_FUNNELED)
+        return shmem_internal_lock_guard_test_enter(lockp);
+    else
+        return 0;
 }
 
 
@@ -132,7 +143,8 @@ shmem_internal_test_lock(long *lockp)
     lock_t *lock = (lock_t*) lockp;
     int curr, me = shmem_internal_my_pe + 1, zero = 0;
 
-    shmem_internal_lock_enter(lockp);
+    if (shmem_internal_lock_test_enter(lockp))
+        return 1;
 
     /* initialize my elements to zero */
     shmem_internal_put_small(SHMEM_CTX_DEFAULT, &(lock->data), &zero, sizeof(zero), shmem_internal_my_pe);
