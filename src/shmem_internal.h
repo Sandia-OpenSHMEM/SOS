@@ -439,4 +439,7 @@ char *shmem_util_wrap(const char *str, const size_t wraplen, const char *indent)
 #define MAX(A,B) (A) > (B) ? (A) : (B)
 #endif
 
+extern uint64_t (*shmem_internal_gettid_fn)(void);
+extern void shmem_internal_register_gettid(uint64_t (*gettid_fn)(void));
+
 #endif
