@@ -111,7 +111,7 @@ shmem_transport_cma_put(void *target, const void *source, size_t len,
         if ( bytes < 0 || (size_t) bytes != len) {
             char errmsg[256];
             RAISE_ERROR_MSG("process_vm_writev() failed (%s)\n",
-                            shmem_util_strerror(errno, errmsg, 256);
+                            shmem_util_strerror(errno, errmsg, 256));
         }
 }
 
@@ -140,7 +140,7 @@ shmem_transport_cma_get(void *target, const void *source, size_t len, int pe,
         if ( bytes < 0 || (size_t) bytes != len) {
             char errmsg[256];
             RAISE_ERROR_MSG("process_vm_readv() failed (%s)\n",
-                            shmem_util_strerror(errno, errmsg, 256);
+                            shmem_util_strerror(errno, errmsg, 256));
         }
 }
 
