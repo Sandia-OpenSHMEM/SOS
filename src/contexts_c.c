@@ -30,6 +30,10 @@
 #pragma weak shmem_ctx_destroy = pshmem_ctx_destroy
 #define shmem_ctx_destroy pshmem_ctx_destroy
 
+#pragma weak shmemx_register_gettid = pshmemx_register_gettid
+#define shmemx_register_gettid pshmemx_register_gettid
+
+
 #endif /* ENABLE_PROFILING */
 
 SHMEM_FUNCTION_ATTRIBUTES int
@@ -59,5 +63,12 @@ shmem_ctx_destroy(shmem_ctx_t ctx)
     shmem_internal_quiet(ctx);
     shmem_transport_ctx_destroy((shmem_transport_ctx_t *) ctx);
 
+    return;
+}
+
+void SHMEM_FUNCTION_ATTRIBUTES
+shmemx_register_gettid(uint64_t (*gettid_fn)(void))
+{
+    shmem_internal_register_gettid(gettid_fn);
     return;
 }
