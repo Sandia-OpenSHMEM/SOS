@@ -81,30 +81,48 @@ void static inline target_data_uni_bw(int len, perf_metrics_t metric_info)
         get_initiators_partners(metric_info, num_partners): NULL);
 
     shmem_barrier_all();
-    start = perf_shmemx_wtime();
-
-    if(target_node(metric_info)) {
+    if (target_node(metric_info)) {
         shmem_int_wait_until(&completion_signal, SHMEM_CMP_EQ, num_partners);
-        end = perf_shmemx_wtime();
-
-        calc_and_print_results((end - start), len, metric_info);
-    } else if(snode) {
+    } else if (snode) {
         for (i = 0; i < num_partners; i++) {
-            for(j = 0; j < metric_info.trials + metric_info.warmup; j++) {
+            for(j = 0; j < metric_info.warmup; j++) {
+#ifdef USE_NONBLOCKING_API
+                shmem_putmem_nbi(metric_info.dest, metric_info.src, len, my_PE_partners[i]);
+#else
                 shmem_putmem(metric_info.dest, metric_info.src, len, my_PE_partners[i]);
-                shmem_quiet();
+#endif
             }
+            shmem_quiet();
             shmem_int_atomic_inc(&completion_signal, my_PE_partners[i]);
         }
-        end = perf_shmemx_wtime();
     }
-    free(my_PE_partners);
+
+    completion_signal = 0;
+    shmem_barrier_all();
+    start = perf_shmemx_wtime();
+
+    if (target_node(metric_info)) {
+        shmem_int_wait_until(&completion_signal, SHMEM_CMP_EQ, num_partners);
+    } else if (snode) {
+        for (i = 0; i < num_partners; i++) {
+            for(j = 0; j < metric_info.trials; j++) {
+#ifdef USE_NONBLOCKING_API
+                shmem_putmem_nbi(metric_info.dest, metric_info.src, len, my_PE_partners[i]);
+#else
+                shmem_putmem(metric_info.dest, metric_info.src, len, my_PE_partners[i]);
+#endif
+            }
+            shmem_quiet();
+            shmem_int_atomic_inc(&completion_signal, my_PE_partners[i]);
+        }
+    }
 
     shmem_barrier_all();
-    completion_signal = 0;
-
-    if(snode)
+    if (snode || target_node(metric_info)) {
+        end = perf_shmemx_wtime();
         calc_and_print_results((end - start), len, metric_info);
+    }
+    free(my_PE_partners);
 }
 
 void static inline target_bw_itr(int len, perf_metrics_t *metric_info)
