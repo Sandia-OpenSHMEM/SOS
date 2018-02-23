@@ -33,7 +33,6 @@
 #include <pthread.h>
 #include <shmem.h>
 #include <shmemx.h>
-#include <string.h>
 
 #define T 8
 
@@ -47,17 +46,16 @@ pthread_key_t key;
 uint64_t my_gettid(void) {
     uint64_t tid_val = 0;
 
-    memcpy(&tid_val, pthread_getspecific(key), sizeof(uint64_t));
+    tid_val = * (uint64_t*) pthread_getspecific(key);
 
     return tid_val;
 }
 
 
 static void * thread_main(void *arg) {
-    uint64_t tid = * (uint64_t *) arg;
     int i;
 
-    int ret = pthread_setspecific(key, &tid);
+    int ret = pthread_setspecific(key, arg);
     assert(0 == ret);
 
     shmem_ctx_t ctx;
@@ -68,7 +66,7 @@ static void * thread_main(void *arg) {
     }
 
     for (i = 1; i <= npes; i++)
-        shmem_ctx_int_atomic_add(ctx, &dest, tid, (me + i) % npes);
+        shmem_ctx_int_atomic_add(ctx, &dest, *(uint64_t *)arg, (me + i) % npes);
 
     shmem_quiet();
 
