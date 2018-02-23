@@ -34,6 +34,7 @@ main(int argc, char* argv[])
 {
     int tl, ret, provided;
 
+#if defined(ENABLE_THREADS)
     ret = shmem_init_thread(SHMEM_THREAD_FUNNELED, &tl);
 
     if (tl != SHMEM_THREAD_FUNNELED || ret != 0) {
@@ -45,10 +46,18 @@ main(int argc, char* argv[])
             return ret;
         }
     }
+#else
+    shmem_init();
+#endif
 
     shmem_query_thread(&provided);
 
+#if defined(ENABLE_THREADS)
     assert(provided == SHMEM_THREAD_FUNNELED);
+#else
+    assert(provided == SHMEM_THREAD_SINGLE);
+#endif
+
     printf("%d: Query result for thread level %d\n", shmem_my_pe(), provided);
 
     shmem_finalize();
