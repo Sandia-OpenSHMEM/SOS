@@ -60,6 +60,7 @@ check_PROGRAMS = \
 	bcast_flood \
 	lfinc \
 	shmem_info \
+	query_thread \
 	global_exit \
 	asym_alloc \
 	set_fetch \
