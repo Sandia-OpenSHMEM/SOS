@@ -145,6 +145,7 @@ if HAVE_PTHREADS
 check_PROGRAMS += \
     mt_a2a \
     mt_contention \
+    gettid_register \
     mt_membar \
     mt_locking \
     threading \
@@ -188,7 +189,11 @@ mt_locking_LDFLAGS = $(PTHREAD_LIBS)
 mt_locking_CFLAGS = $(PTHREAD_CFLAGS)
 mt_locking_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
-mt_membar_LDFLAGS = $(PTHREAD_LIBS)
+gettid_register_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
+gettid_register_CFLAGS = $(PTHREAD_CFLAGS)
+gettid_register_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
+
+mt_membar_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 mt_membar_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 mt_membar_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 

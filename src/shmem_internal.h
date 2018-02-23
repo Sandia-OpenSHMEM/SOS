@@ -441,4 +441,7 @@ char *shmem_util_strerror(int errnum, char *buf, size_t buflen);
 #define MAX(A,B) (A) > (B) ? (A) : (B)
 #endif
 
+extern uint64_t (*shmem_internal_gettid_fn)(void);
+extern void shmem_internal_register_gettid(uint64_t (*gettid_fn)(void));
+
 #endif

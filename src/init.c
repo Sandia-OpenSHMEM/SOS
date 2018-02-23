@@ -392,3 +392,4 @@ shmem_internal_global_exit(int status)
     shmem_internal_global_exit_called = 1;
     shmem_runtime_abort(status, str);
 }
+
