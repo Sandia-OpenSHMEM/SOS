@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2018 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -34,7 +34,8 @@
 #include <pthread.h>
 #include <shmem.h>
 
-#define T 8
+#define T 16
+#define N 16
 
 long dest = 0;
 long lock = 0;
@@ -43,21 +44,23 @@ int me, npes;
 int errors = 0;
 
 static void * thread_main(void *arg) {
-    int i;
+    int i, j;
 
     for (i = 0 ; i < npes; i++) {
-        /* Alternate even/odd PEs using set_lock versus a test_lock loop to
-         * acquire the lock */
-        if ((me+i) % 2 == 0) {
-            shmem_set_lock(&lock);
-            long d = shmem_long_g(&dest, i);
-            shmem_long_p(&dest, d+1, i);
-            shmem_clear_lock(&lock);
-        } else {
-            while (shmem_test_lock(&lock)) ;
-            long d = shmem_long_g(&dest, i);
-            shmem_long_p(&dest, d+1, i);
-            shmem_clear_lock(&lock);
+        for (j = 0; j < N; j++) {
+            /* Alternate even/odd PEs using set_lock versus a test_lock loop to
+             * acquire the lock */
+            if ((me+j) % 2 == 0) {
+                shmem_set_lock(&lock);
+                long d = shmem_long_g(&dest, i);
+                shmem_long_p(&dest, d+1, i);
+                shmem_clear_lock(&lock);
+            } else {
+                while (shmem_test_lock(&lock)) ;
+                long d = shmem_long_g(&dest, i);
+                shmem_long_p(&dest, d+1, i);
+                shmem_clear_lock(&lock);
+            }
         }
     }
 
@@ -103,8 +106,8 @@ int main(int argc, char **argv) {
 
     shmem_barrier_all();
 
-    if (dest != npes*T) {
-        printf("%d: Error expected %d, got %ld\n", me, npes*T, dest);
+    if (dest != npes*T*N) {
+        printf("%d: Error expected %d, got %ld\n", me, npes*T*N, dest);
         errors++;
     }
 
