@@ -48,9 +48,15 @@ endif
 NPROCS ?= 2
 LOG_COMPILER = $(TEST_RUNNER)
 
-AM_CPPFLAGS = -I$(top_builddir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
+
+if EXTERNAL_TESTS
+AM_CPPFLAGS =
+LDADD =
+else
+AM_CPPFLAGS = -I$(top_builddir)/mpp
 LDADD = $(top_builddir)/src/libsma.la
+endif
 
 if USE_PMI_SIMPLE
 LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
