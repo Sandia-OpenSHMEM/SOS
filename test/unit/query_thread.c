@@ -32,9 +32,10 @@
 int
 main(int argc, char* argv[])
 {
-    int tl, ret, provided;
+    int provided;
 
 #if defined(ENABLE_THREADS)
+    int tl, ret;
     ret = shmem_init_thread(SHMEM_THREAD_FUNNELED, &tl);
 
     if (tl != SHMEM_THREAD_FUNNELED || ret != 0) {
