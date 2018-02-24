@@ -37,7 +37,6 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
-#include <time.h>
 #include <sys/time.h>
 
 #include <shmem.h>

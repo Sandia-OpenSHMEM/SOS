@@ -89,7 +89,6 @@ check_PROGRAMS = \
 	broadcast_active_set \
 	reduce_active_set \
 	collect_active_set \
-	pcontrol \
 	atomic_bitwise \
 	nop_collectives \
 	self_collectives \
@@ -101,6 +100,7 @@ check_PROGRAMS = \
 
 if ENABLE_PROFILING
 check_PROGRAMS += \
+	pcontrol \
 	rma_coverage_pshmem
 endif
 

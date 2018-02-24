@@ -36,11 +36,20 @@
 #include <errno.h>
 #include <string.h>
 #include <assert.h>
+#include <sys/time.h>
 
 #include <shmem.h>
 #include <shmemx.h>
 
 #define LOOPS 25000
+
+#ifndef HAVE_SHMEMX_WTIME
+static double shmemx_wtime(void) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (double) tv.tv_sec + (double) tv.tv_usec / 1000000.0;
+}
+#endif /* HAVE_SHMEMX_WTIME */
 
 int Verbose;
 double elapsed;
