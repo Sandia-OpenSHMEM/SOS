@@ -227,6 +227,7 @@ AC_PROG_CXX dnl required even with --disable-cxx due to automake conditionals
 m4_ifdef([AM_PROG_AR],[AM_PROG_AR])
 AC_PATH_PROG([PERL],[perl])
 AM_CONDITIONAL([EXTERNAL_TESTS], [false])
+AM_CONDITIONAL([SHMEMX_TESTS], [true])
 
 dnl C++ bindings require std::is_same, which is part of C++11
 if test "$enable_cxx" != "no" ; then
