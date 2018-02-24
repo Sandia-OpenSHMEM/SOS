@@ -128,6 +128,7 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
 #else
         tid.tid_t = tid_is_uint64_t;
         int ret;
+        char errmsg[256];
         ret = pthread_threadid_np(NULL, &tid.uint64_val);
         if (ret != 0)
             RAISE_ERROR_MSG("Error geting thread ID: %s\n",

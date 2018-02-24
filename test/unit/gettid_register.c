@@ -43,7 +43,7 @@ int errors = 0;
 
 pthread_key_t key;
 
-uint64_t my_gettid(void) {
+static uint64_t my_gettid(void) {
     uint64_t tid_val = 0;
 
     tid_val = * (uint64_t*) pthread_getspecific(key);
