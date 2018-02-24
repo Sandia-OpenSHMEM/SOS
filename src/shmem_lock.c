@@ -20,22 +20,20 @@
 #include "shmem_lock.h"
 #include "uthash.h"
 
-#define NCOND 4
-
 typedef struct {
     long           *key;
-    pthread_mutex_t mutex;
-    pthread_cond_t  cond[NCOND];
     UT_hash_handle  hh;
+    pthread_mutex_t mutex;
+    pthread_cond_t  cond[];
 } shmem_internal_lock_guard_t;
 
 static shmem_internal_lock_guard_t *guards = NULL;
 
 static uint64_t next_ticket = 0, cur_ticket = 0;
 
-/* Simple queueing lock using Lamport's bakery algorithm.  Uses NCOND condition
- * variables per lock to reduce the number of threads that are woken up when
- * the lock is released. */
+/* Simple queueing lock using Lamport's bakery algorithm.  Uses LOCK_QUEUE_SIZE
+ * condition variables per lock to reduce the number of threads that are woken
+ * up when the lock is released. */
 static inline void shmem_internal_qlock_lock(shmem_internal_lock_guard_t *g) {
     int ret;
     char errmsg[256];
@@ -47,7 +45,9 @@ static inline void shmem_internal_qlock_lock(shmem_internal_lock_guard_t *g) {
 
     my_ticket = next_ticket++;
     while (my_ticket != cur_ticket) {
-        ret = pthread_cond_wait(&g->cond[my_ticket % NCOND], &g->mutex);
+        ret = pthread_cond_wait(&g->cond[my_ticket %
+                                shmem_internal_params.LOCK_QUEUE_SIZE],
+                                &g->mutex);
         if (ret) RAISE_ERROR_MSG("pthread_cond_wait failed: %s\n",
                                  shmem_util_strerror(ret, errmsg, 256));
     }
@@ -58,7 +58,8 @@ static inline void shmem_internal_qlock_unlock(shmem_internal_lock_guard_t *g) {
     char errmsg[256];
 
     cur_ticket++;
-    ret = pthread_cond_broadcast(&g->cond[cur_ticket % NCOND]);
+    ret = pthread_cond_broadcast(&g->cond[cur_ticket %
+                                 shmem_internal_params.LOCK_QUEUE_SIZE]);
     if (ret) RAISE_ERROR_MSG("pthread_cond_broadcast failed: %s\n",
                              shmem_util_strerror(ret, errmsg, 256));
     ret = pthread_mutex_unlock(&g->mutex);
@@ -99,7 +100,8 @@ shmem_internal_lock_guard_locate(long *lockp) {
         DEBUG_MSG("Registering guard for lock %p\n", (void*) lockp);
 
         g = (shmem_internal_lock_guard_t*)
-            malloc(sizeof(shmem_internal_lock_guard_t));
+            malloc(sizeof(shmem_internal_lock_guard_t) + sizeof(pthread_cond_t)
+                   * shmem_internal_params.LOCK_QUEUE_SIZE);
         if (g == NULL)
             RAISE_ERROR_STR("Out of memory allocating lock guard");
 
@@ -107,7 +109,7 @@ shmem_internal_lock_guard_locate(long *lockp) {
         ret = pthread_mutex_init(&g->mutex, NULL);
         if (ret) RAISE_ERROR_MSG("pthread_mutex_init failed: %s\n",
                                  shmem_util_strerror(ret, errmsg, 256));
-        for (i = 0; i < NCOND ; i++) {
+        for (i = 0; i < shmem_internal_params.LOCK_QUEUE_SIZE ; i++) {
             ret = pthread_cond_init(&g->cond[i], NULL);
             if (ret) RAISE_ERROR_MSG("pthread_cond_init failed: %s\n",
                                      shmem_util_strerror(ret, errmsg, 256));
@@ -158,7 +160,7 @@ void shmem_internal_lock_guards_free(void) {
         ret = pthread_mutex_destroy(&g->mutex);
         if (ret) RAISE_ERROR_MSG("pthread_mutex_destroy failed: %s\n",
                                  shmem_util_strerror(ret, errmsg, 256));
-        for (i = 0; i < NCOND; i++) {
+        for (i = 0; i < shmem_internal_params.LOCK_QUEUE_SIZE; i++) {
             ret = pthread_cond_destroy(&g->cond[i]);
             if (ret) RAISE_ERROR_MSG("pthread_cond_destroy failed: %s\n",
                                      shmem_util_strerror(ret, errmsg, 256));

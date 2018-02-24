@@ -46,6 +46,8 @@ SHMEM_INTERNAL_ENV_DEF(MAX_BOUNCE_BUFFERS, long, 128, SHMEM_INTERNAL_ENV_CAT_OTH
                        "Maximum number of bounce buffers per context")
 SHMEM_INTERNAL_ENV_DEF(TRAP_ON_ABORT, bool, false, SHMEM_INTERNAL_ENV_CAT_OTHER,
                        "Generate trap if the program aborts or calls shmem_global_exit")
+SHMEM_INTERNAL_ENV_DEF(LOCK_QUEUE_SIZE, long, 4, SHMEM_INTERNAL_ENV_CAT_OTHER,
+                       "Local queue length for multithreaded SHMEM lock requests")
 
 SHMEM_INTERNAL_ENV_DEF(COLL_CROSSOVER, long, 4, SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
                        "Crossover between linear and tree collectives")
