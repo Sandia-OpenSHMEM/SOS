@@ -34,8 +34,8 @@
 #include <pthread.h>
 #include <shmem.h>
 
-#define T 16
-#define N 16
+#define T 4
+#define N 4
 
 long dest = 0;
 long *locks;
