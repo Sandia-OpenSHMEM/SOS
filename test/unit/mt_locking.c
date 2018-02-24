@@ -38,7 +38,7 @@
 #define N 16
 
 long dest = 0;
-long lock = 0;
+long *locks;
 
 int me, npes;
 int errors = 0;
@@ -46,20 +46,20 @@ int errors = 0;
 static void * thread_main(void *arg) {
     int i, j;
 
-    for (i = 0 ; i < npes; i++) {
-        for (j = 0; j < N; j++) {
+    for (j = 0; j < N; j++) {
+        for (i = 0 ; i < npes; i++) {
             /* Alternate even/odd PEs using set_lock versus a test_lock loop to
              * acquire the lock */
             if ((me+j) % 2 == 0) {
-                shmem_set_lock(&lock);
+                shmem_set_lock(&locks[i]);
                 long d = shmem_long_g(&dest, i);
                 shmem_long_p(&dest, d+1, i);
-                shmem_clear_lock(&lock);
+                shmem_clear_lock(&locks[i]);
             } else {
-                while (shmem_test_lock(&lock)) ;
+                while (shmem_test_lock(&locks[i])) ;
                 long d = shmem_long_g(&dest, i);
                 shmem_long_p(&dest, d+1, i);
-                shmem_clear_lock(&lock);
+                shmem_clear_lock(&locks[i]);
             }
         }
     }
@@ -88,6 +88,7 @@ int main(int argc, char **argv) {
 
     me = shmem_my_pe();
     npes = shmem_n_pes();
+    locks = shmem_calloc(npes, sizeof(long));
 
     if (me == 0) printf("Starting MT locking test on %d PEs, %d threads/PE\n", npes, T);
 
