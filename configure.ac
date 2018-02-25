@@ -116,10 +116,6 @@ AS_IF([test "$enable_threads" != "no"], [
        ])
 AM_CONDITIONAL([HAVE_PTHREADS], [test "$HAVE_POSIX_THREADS" = "1"])
 
-AC_ARG_ENABLE([openmp],
-    [AC_HELP_STRING([--disable-openmp],
-                    [Disable OpenMP support (default: enabled)])])
-
 AS_IF([test "$enable_threads" != "no"], [
        AS_IF([test "$enable_openmp" != "no"], [
              AC_OPENMP
