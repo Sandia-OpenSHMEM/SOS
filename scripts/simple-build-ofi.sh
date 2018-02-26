@@ -12,9 +12,14 @@
 # Exit if any command fails
 set -e
 
-SOS_VERSION="v1.4.0"
-OFI_VERSION="v1.5.3"
-HYDRA_URL="http://www.mpich.org/static/downloads/3.2/hydra-3.2.tar.gz"
+if [ -z "$SOS_VERSION" ] ; then
+    SOS_VERSION="v1.4.0"
+fi
+if [ -z "$OFI_VERSION" ] ; then
+    OFI_VERSION="v1.5.3"
+fi
+
+HYDRA_URL="http://www.mpich.org/static/downloads/3.2.1/mpich-3.2.1.tar.gz"
 
 PAR_MAKE="-j 2"
 CLONE_DEPTH="10"
