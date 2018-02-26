@@ -89,7 +89,6 @@ check_PROGRAMS = \
 	broadcast_active_set \
 	reduce_active_set \
 	collect_active_set \
-	pcontrol \
 	atomic_bitwise \
 	nop_collectives \
 	self_collectives \
@@ -101,6 +100,7 @@ check_PROGRAMS = \
 
 if ENABLE_PROFILING
 check_PROGRAMS += \
+	pcontrol \
 	rma_coverage_pshmem
 endif
 
@@ -145,11 +145,15 @@ if HAVE_PTHREADS
 check_PROGRAMS += \
     mt_a2a \
     mt_contention \
-    gettid_register \
     mt_membar \
     threading \
     web \
     thread_wait
+
+if SHMEMX_TESTS
+check_PROGRAMS += \
+    gettid_register
+endif
 endif
 
 if HAVE_OPENMP
@@ -162,10 +166,18 @@ TESTS = $(check_PROGRAMS)
 NPROCS ?= 2
 LOG_COMPILER = $(TEST_RUNNER)
 
+AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
+
+if EXTERNAL_TESTS
+bin_PROGRAMS = $(check_PROGRAMS)
+AM_CPPFLAGS =
+AM_FCFLAGS =
+LDADD =
+else
 AM_CPPFLAGS = -I$(top_builddir)/mpp
 AM_FCFLAGS = -I$(top_builddir)/mpp
-AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
 LDADD = $(top_builddir)/src/libsma.la
+endif
 
 if USE_PMI_SIMPLE
 LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
@@ -184,9 +196,11 @@ mt_contention_LDFLAGS = $(PTHREAD_LIBS)
 mt_contention_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 mt_contention_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
+if SHMEMX_TESTS
 gettid_register_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 gettid_register_CFLAGS = $(PTHREAD_CFLAGS)
 gettid_register_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
+endif
 
 mt_membar_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 mt_membar_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)

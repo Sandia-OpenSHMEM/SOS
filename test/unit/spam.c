@@ -44,7 +44,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <sys/time.h>
 #include <getopt.h>
 #include <string.h>
@@ -568,7 +567,7 @@ usage(char *pgm)
 
 #ifndef HAVE_SHMEMX_WTIME
 
-double
+static double
 shmemx_wtime(void)
 {
     double wtime;

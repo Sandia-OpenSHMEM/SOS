@@ -33,7 +33,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+#include <sys/time.h>
 #include <getopt.h>
 #include <string.h>
 #include <assert.h>
@@ -43,6 +43,14 @@
 
 static int atoi_scaled(char *s);
 static void usage(char *pgm);
+
+#ifndef HAVE_SHMEMX_WTIME
+static double shmemx_wtime(void) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (double) tv.tv_sec + (double) tv.tv_usec / 1000000.0;
+}
+#endif /* HAVE_SHMEMX_WTIME */
 
 int Verbose=0;
 int Serialize;
