@@ -19,7 +19,7 @@ if [ -z "$OFI_VERSION" ] ; then
     OFI_VERSION="v1.5.3"
 fi
 
-HYDRA_URL="http://www.mpich.org/static/downloads/3.2.1/mpich-3.2.1.tar.gz"
+HYDRA_URL="http://www.mpich.org/static/downloads/3.2.1/hydra-3.2.1.tar.gz"
 
 PAR_MAKE="-j 2"
 CLONE_DEPTH="10"
