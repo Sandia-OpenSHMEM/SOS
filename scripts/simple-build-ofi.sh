@@ -12,8 +12,8 @@
 # Exit if any command fails
 set -e
 
-SOS_VERSION="v1.3.2"
-OFI_VERSION="v1.4.1"
+SOS_VERSION="v1.4.0"
+OFI_VERSION="v1.5.3"
 HYDRA_URL="http://www.mpich.org/static/downloads/3.2/hydra-3.2.tar.gz"
 
 PAR_MAKE="-j 2"
