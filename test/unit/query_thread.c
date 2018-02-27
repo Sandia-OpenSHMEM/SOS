@@ -26,13 +26,12 @@
  */
 
 #include <stdio.h>
-#include <assert.h>
 #include <shmem.h>
 
 int
 main(int argc, char* argv[])
 {
-    int provided, requested;
+    int provided;
 
 #if defined(ENABLE_THREADS)
     int tl, ret;
@@ -47,18 +46,21 @@ main(int argc, char* argv[])
             return ret;
         }
     }
-    requested = SHMEM_THREAD_FUNNELED;
 #else
     shmem_init();
-    requested = SHMEM_THREAD_SINGLE;
 #endif
 
     shmem_query_thread(&provided);
-    printf("%d: Query result for thread level %d, and requested %d\n", 
-            shmem_my_pe(), provided, requested);
+    printf("%d: Query result for thread level %d\n", shmem_my_pe(), provided);
 
-    if (provided != requested) 
+#if defined(ENABLE_THREADS)
+    if (provided != SHMEM_THREAD_FUNNELED) 
         shmem_global_exit(1);
+#else
+    if (provided != SHMEM_THREAD_SINGLE && provided != SHMEM_THREAD_FUNNELED && 
+        provided != SHMEM_THREAD_SERIALIZED && provided != SHMEM_THREAD_MULTIPLE) 
+        shmem_global_exit(1);
+#endif
 
     shmem_finalize();
     return 0;
