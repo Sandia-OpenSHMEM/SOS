@@ -241,7 +241,7 @@ struct shmem_internal_tid
     {
         pid_t pid_val;
         uint64_t uint64_val;
-    };
+    } val;
 };
 
 struct shmem_transport_ctx_t {
