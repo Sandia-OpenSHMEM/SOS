@@ -193,7 +193,7 @@ mt_a2a_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 mt_a2a_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 mt_contention_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
-mt_contention_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
+mt_contention_CFLAGS = $(PTHREAD_CFLAGS)
 mt_contention_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 if SHMEMX_TESTS
@@ -211,11 +211,11 @@ threading_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 threading_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 web_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
-web_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
+web_CFLAGS = $(PTHREAD_CFLAGS)
 web_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 thread_wait_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
-thread_wait_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
+thread_wait_CFLAGS = $(PTHREAD_CFLAGS)
 thread_wait_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 shmem_ctx_CFLAGS = $(AM_OPENMP_CFLAGS)

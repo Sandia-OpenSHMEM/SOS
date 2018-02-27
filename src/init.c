@@ -219,7 +219,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
      * identical across processes.  ASLR can violate this assumption.
      *
      * However, ASLR does not always preclude identical symmetric addresses
-     * across PEs.  Linking the application with -no-pie can cause the OS the
+     * across PEs.  Linking the application with -no-pie can cause the OS to
      * load the data segment at symmetric addresses.  The heap is mmap'd
      * relative to the location of the data segment and will also be symmetric.
      * Thus, we allow advanced users to disable this check. */
