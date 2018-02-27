@@ -61,7 +61,6 @@ check_PROGRAMS = \
 	lfinc \
 	shmem_info \
 	query_thread \
-	query_thread_funneled \
 	global_exit \
 	asym_alloc \
 	set_fetch \
@@ -150,7 +149,8 @@ check_PROGRAMS += \
     mt_membar \
     threading \
     web \
-    thread_wait
+    thread_wait \
+    query_thread_funneled 
 
 if SHMEMX_TESTS
 check_PROGRAMS += \
