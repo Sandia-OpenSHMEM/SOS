@@ -61,6 +61,7 @@ check_PROGRAMS = \
 	lfinc \
 	shmem_info \
 	query_thread \
+	query_thread_funneled \
 	global_exit \
 	asym_alloc \
 	set_fetch \
@@ -187,6 +188,9 @@ endif
 # C Tests with special flags
 rma_coverage_pshmem_SOURCES = rma_coverage.c
 rma_coverage_pshmem_CFLAGS = -DTEST_PSHMEM
+
+query_thread_funneled_SOURCES = query_thread.c
+query_thread_funneled_CFLAGS = -DENABLE_THREADS
 
 mt_a2a_SOURCES = mt_a2a.c pthread_barrier.h
 mt_a2a_LDFLAGS = $(PTHREAD_LIBS)
