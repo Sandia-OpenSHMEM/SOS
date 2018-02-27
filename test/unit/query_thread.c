@@ -32,7 +32,7 @@
 int
 main(int argc, char* argv[])
 {
-    int provided;
+    int provided, requested;
 
 #if defined(ENABLE_THREADS)
     int tl, ret;
@@ -47,19 +47,18 @@ main(int argc, char* argv[])
             return ret;
         }
     }
+    requested = SHMEM_THREAD_FUNNELED;
 #else
     shmem_init();
+    requested = SHMEM_THREAD_SINGLE;
 #endif
 
     shmem_query_thread(&provided);
+    printf("%d: Query result for thread level %d, and requested %d\n", 
+            shmem_my_pe(), provided, requested);
 
-#if defined(ENABLE_THREADS)
-    assert(provided == SHMEM_THREAD_FUNNELED);
-#else
-    assert(provided == SHMEM_THREAD_SINGLE);
-#endif
-
-    printf("%d: Query result for thread level %d\n", shmem_my_pe(), provided);
+    if (provided != requested) 
+        shmem_global_exit(1);
 
     shmem_finalize();
     return 0;
