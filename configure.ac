@@ -589,11 +589,11 @@ CFLAGS="$CFLAGS $OPAL_VISIBILITY_CFLAGS"
 # Disable ASLR at link time by instructing the linker not to generate
 # position-independent executable code
 aslr_LDFLAGS=
-    case $host_os in
-        darwin*)
-               aslr_LDFLAGS="-Wl,-no_pie"
-               ;;
-    esac
+case $host_os in
+    darwin*)
+           aslr_LDFLAGS="-Wl,-no_pie"
+           ;;
+esac
 AC_SUBST(aslr_LDFLAGS)
 
 dnl check for library functions
