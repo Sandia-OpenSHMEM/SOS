@@ -6,6 +6,8 @@ dnl information, see the LICENSE file in the top level directory of the
 dnl distribution.
 dnl
 
+#include <inttypes.h>
+
 #ifndef SHMEM_FUNCTION_ATTRIBUTES
 #  if OPAL_C_HAVE_VISIBILITY == 1
 #     define SHMEM_FUNCTION_ATTRIBUTES __attribute__((visibility("default")))
@@ -26,3 +28,5 @@ SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ct_set(shmemx_ct_t ct, long value);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ct_wait(shmemx_ct_t ct, long wait_for);
 
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcontrol(int level, ...);
+
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_register_gettid(uint64_t (*gettid_fn)(void));

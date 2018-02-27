@@ -116,10 +116,6 @@ AS_IF([test "$enable_threads" != "no"], [
        ])
 AM_CONDITIONAL([HAVE_PTHREADS], [test "$HAVE_POSIX_THREADS" = "1"])
 
-AC_ARG_ENABLE([openmp],
-    [AC_HELP_STRING([--disable-openmp],
-                    [Disable OpenMP support (default: enabled)])])
-
 AS_IF([test "$enable_threads" != "no"], [
        AS_IF([test "$enable_openmp" != "no"], [
              AC_OPENMP
@@ -233,6 +229,8 @@ AC_C_INLINE
 AC_PROG_CXX dnl required even with --disable-cxx due to automake conditionals
 m4_ifdef([AM_PROG_AR],[AM_PROG_AR])
 AC_PATH_PROG([PERL],[perl])
+AM_CONDITIONAL([EXTERNAL_TESTS], [false])
+AM_CONDITIONAL([SHMEMX_TESTS], [true])
 
 dnl C++ bindings require std::is_same, which is part of C++11
 if test "$enable_cxx" != "no" ; then

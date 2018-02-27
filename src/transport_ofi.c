@@ -98,37 +98,43 @@ static char                     myephostname[EPHOSTNAMELEN];
 shmem_internal_mutex_t          shmem_transport_ofi_lock;
 #endif /* ENABLE_THREADS */
 
-#ifndef __APPLE__
-#ifdef HAVE_SYS_GETTID
 /* Need a syscall to gettid() because glibc doesn't provide a wrapper
  * (see gettid manpage in the NOTES section): */
 static inline
-pid_t shmem_transport_ofi_gettid(void)
+struct shmem_internal_tid shmem_transport_ofi_gettid(void)
 {
-    return syscall(SYS_gettid);
-}
+    struct shmem_internal_tid tid;
+
+    if (shmem_internal_gettid_fn) {
+        tid.tid_t = tid_is_uint64_t;
+        tid.val.uint64_val = (*shmem_internal_gettid_fn)();
+    } else {
+#ifndef __APPLE__
+#ifdef HAVE_SYS_GETTID
+        tid.tid_t = tid_is_pid_t;
+        tid.val.pid_val = syscall(SYS_gettid);
 #else
-/* Cannot query the tid with a syscall, so instead assume each tid
- * query corresponds to a unique thread. */
-static inline
-uint64_t shmem_transport_ofi_gettid(void)
-{
-    static uint64_t tid = 0;
-    return tid++;
-}
+        /* Cannot query the tid with a syscall, so instead assume each tid
+         * query corresponds to a unique thread. */
+        tid.tid_t = tid_is_uint64_t;
+        static uint64_t tid_val = 0;
+        static int tid_cnt_start = 0;
+        if (!tid_cnt_start)
+            tid_cnt_start = 1;
+        else
+            tid_val++;
+        tid.val.uint64_val = tid_val;
 #endif /* HAVE_SYS_GETTID */
 #else
-static inline
-uint64_t shmem_transport_ofi_gettid(void)
-{
-    int ret;
-    uint64_t tid;
-    ret = pthread_threadid_np(NULL, &tid);
-    if (ret != 0)
-        RAISE_ERROR_MSG("Error geting thread ID: %s\n", strerror(ret));
+        tid.tid_t = tid_is_uint64_t;
+        int ret;
+        ret = pthread_threadid_np(NULL, &tid.uint64_val);
+        if (ret != 0)
+            RAISE_ERROR_MSG("Error getting thread ID: %s\n", strerror(ret));
+#endif /* APPLE */
+    }
     return tid;
 }
-#endif /* APPLE */
 
 struct fabric_info shmem_transport_ofi_info = {0};
 
@@ -332,9 +338,9 @@ typedef struct shmem_transport_ofi_stx_t shmem_transport_ofi_stx_t;
 static shmem_transport_ofi_stx_t* shmem_transport_ofi_stx_pool;
 
 struct shmem_transport_ofi_stx_kvs_t {
-    int             stx_idx;
-    TID_TYPE        tid;
-    UT_hash_handle  hh;
+    int                         stx_idx;
+    struct shmem_internal_tid   tid;
+    UT_hash_handle              hh;
 };
 typedef struct shmem_transport_ofi_stx_kvs_t shmem_transport_ofi_stx_kvs_t;
 static shmem_transport_ofi_stx_kvs_t* shmem_transport_ofi_stx_kvs = NULL;

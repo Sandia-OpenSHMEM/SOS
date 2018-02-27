@@ -399,9 +399,11 @@ static void inline thread_safety_validation_check(perf_metrics_t *metric_info) {
         return;
     else {
         if (metric_info->thread_safety != SHMEM_THREAD_MULTIPLE) {
-            fprintf(stderr, "Warning: argument \"-T %d\" is ignored because of the thread level specified." 
+            if(metric_info->my_node == 0) {
+                fprintf(stderr, "Warning: argument \"-T %d\" is ignored because of the thread level specified." 
                             " Switching to single thread with thread safety %s\n", metric_info->nthreads, 
                             thread_safety_str(metric_info));
+            }
             metric_info->nthreads = 1;
         }
         return;
@@ -679,7 +681,6 @@ static inline int bw_init_data_stream(perf_metrics_t *metric_info,
     if (ret != 0) {
         return -1;
     }
-    thread_safety_validation_check(metric_info);
 
 #ifndef VERSION_1_0
     int tl;
@@ -695,6 +696,7 @@ static inline int bw_init_data_stream(perf_metrics_t *metric_info,
 
     if (data_runtime_update(metric_info) == -1)
         return -2;	
+    thread_safety_validation_check(metric_info);
     metric_info->sztarget = metric_info->midpt;
     metric_info->szinitiator = metric_info->midpt;
 
