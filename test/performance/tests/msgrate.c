@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 /* configuration parameters - setable by command line arguments */
 int npeers = 6;
@@ -80,7 +81,13 @@ cache_invalidate(void)
 static inline double
 timer(void)
 {
+#ifdef HAVE_SHMEMX_WTIME
     return shmemx_wtime();
+#else
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (double) tv.tv_sec + (double) tv.tv_usec / 1000000.0;
+#endif /* HAVE_SHMEMX_WTIME */
 }
 
 
