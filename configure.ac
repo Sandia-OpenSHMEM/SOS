@@ -586,15 +586,14 @@ AS_IF([test "$opal_visibility_define" = 1],
 AC_SUBST(SHMEM_AC_HAVE_ATTRIBUTE_VISIBILITY)
 CFLAGS="$CFLAGS $OPAL_VISIBILITY_CFLAGS"
 
-# If remote VA is enabled, disable ASLR at link time by instructing the linker
-# not to generate position-independent code
-AS_IF([test "$enable_remote_virtual_addressing" = "yes"],
-      [aslr_LDFLAGS=
-       case $host_os in
-       darwin*)
-           aslr_LDFLAGS="-Wl,-no_pie"
-           ;;
-       esac])
+# Disable ASLR at link time by instructing the linker not to generate
+# position-independent executable code
+aslr_LDFLAGS=
+    case $host_os in
+        darwin*)
+               aslr_LDFLAGS="-Wl,-no_pie"
+               ;;
+    esac
 AC_SUBST(aslr_LDFLAGS)
 
 dnl check for library functions
