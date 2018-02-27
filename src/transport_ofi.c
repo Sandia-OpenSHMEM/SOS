@@ -128,7 +128,7 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
 #else
         tid.tid_t = tid_is_uint64_t;
         int ret;
-        ret = pthread_threadid_np(NULL, &tid.uint64_val);
+        ret = pthread_threadid_np(NULL, &tid.val.uint64_val);
         if (ret != 0)
             RAISE_ERROR_MSG("Error getting thread ID: %s\n", strerror(ret));
 #endif /* APPLE */
