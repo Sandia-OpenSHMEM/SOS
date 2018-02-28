@@ -53,6 +53,6 @@ if USE_PMI_SIMPLE
 LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
 endif
 
-mandelbrot_LDFLAGS = $(PTHREAD_LIBS)
+mandelbrot_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 mandelbrot_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 mandelbrot_LDADD = $(LDADD) $(PTHREAD_CFLAGS)

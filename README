@@ -125,7 +125,8 @@ options.
 
     SHMEM_SYMMETRIC_HEAP_USE_MALLOC (default: 0)
         If set to a non-zero integer, will use malloc() instead of
-        mmap() to allocate the symmetric heap.
+        mmap() to allocate the symmetric heap.  This option may result in
+        incorrect behavior when remote virtual addressing is enabled.
 
     SHMEM_BARRIER_ALGORITHM (default: auto)
         Algorithm to use for barriers.  Default is to auto-select (which
@@ -171,6 +172,9 @@ options.
         Used to specify a large page size when using large pages to back the
         symmetric heap.  Ignored if SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES is not
         set.  Refer to SHMEM_SYMMETRIC_SIZE for input syntax.
+
+    SHMEM_DISABLE_ASLR_CHECK (default: on)
+        Disable runtime checks for address space layout randomization (ASLR).
 
   OFI Transport Environment variables:
 

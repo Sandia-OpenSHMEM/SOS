@@ -41,6 +41,7 @@ extern void *shmem_internal_data_base;
 extern long shmem_internal_data_length;
 
 #define SHMEM_INTERNAL_HEAP_OVERHEAD (1024*1024)
+#define SHMEM_INTERNAL_DIAG_STRLEN 1024
 
 /* Note: must be accompanied by shmem_internal_my_pe in arguments */
 #define RAISE_PE_PREFIX "[%04d]        "
@@ -90,7 +91,7 @@ extern long shmem_internal_data_length;
 
 #define RETURN_ERROR_MSG(...)                                           \
     do {                                                                \
-        char str[256];                                                  \
+        char str[SHMEM_INTERNAL_DIAG_STRLEN];                           \
         size_t off;                                                     \
         off = snprintf(str, sizeof(str), "[%04d] ERROR: %s:%d: %s\n",   \
                        shmem_internal_my_pe, __FILE__, __LINE__, __func__); \
@@ -110,7 +111,7 @@ extern long shmem_internal_data_length;
 
 #define RAISE_WARN_MSG(...)                                             \
     do {                                                                \
-        char str[256];                                                  \
+        char str[SHMEM_INTERNAL_DIAG_STRLEN];                           \
         size_t off;                                                     \
         off = snprintf(str, sizeof(str), "[%04d] WARN:  %s:%d: %s\n",   \
                        shmem_internal_my_pe, __FILE__, __LINE__, __func__); \
@@ -123,7 +124,7 @@ extern long shmem_internal_data_length;
 
 #define RETURN_ERROR_MSG_PREINIT(...)                                   \
     do {                                                                \
-        char str[256];                                                  \
+        char str[SHMEM_INTERNAL_DIAG_STRLEN];                           \
         size_t off;                                                     \
         off = snprintf(str, sizeof(str), "[????] ERROR: %s:%d: %s\n",   \
                        __FILE__, __LINE__, __func__);                   \
@@ -147,7 +148,7 @@ extern long shmem_internal_data_length;
 #define DEBUG_MSG(...)                                                  \
     do {                                                                \
         if(shmem_internal_params.DEBUG) {                               \
-            char str[256];                                              \
+            char str[SHMEM_INTERNAL_DIAG_STRLEN];                       \
             size_t off;                                                 \
             off = snprintf(str, sizeof(str), "[%04d] DEBUG: %s:%d: %s\n", \
                            shmem_internal_my_pe, __FILE__, __LINE__,    \

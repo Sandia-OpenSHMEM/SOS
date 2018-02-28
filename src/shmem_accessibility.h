@@ -32,11 +32,11 @@ shmem_internal_addr_accessible(const void *addr, int pe)
         return 0;
     }
 
-    if ((char*) addr > (char*) shmem_internal_heap_base &&
+    if ((char*) addr >= (char*) shmem_internal_heap_base &&
         (char*) addr < (char*) shmem_internal_heap_base + shmem_internal_heap_length) {
         return 1;
     }
-    if ((char*) addr > (char*) shmem_internal_data_base &&
+    if ((char*) addr >= (char*) shmem_internal_data_base &&
         (char*) addr < (char*) shmem_internal_data_base + shmem_internal_data_length) {
         return 1;
     }
