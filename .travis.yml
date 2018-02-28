@@ -134,7 +134,7 @@ before_install:
     - git clone --depth 10 https://github.com/openshmem-org/tests-cray.git tests-cray
     # Fetch Mellanox Tests
     - cd $TRAVIS_SRC
-    - git clone -b wip/pending_pr --depth 10 https://github.com/davidozog/tests-mellanox.git tests-mellanox
+    - git clone --depth 10 https://github.com/openshmem-org/tests-mellanox.git tests-mellanox
     ## Fetch ISx
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ParRes/ISx.git ISx
