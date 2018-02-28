@@ -13,6 +13,10 @@
  *
  */
 
+/* This header depends on 'config.h', which cannot be included here. Please
+ * include 'config.h' before including this file, 'shmem_env_defs.h'
+ */
+
 /* SOS_ENV( name, kind, default, category, short description )
  *
  * Kinds: long, size, bool, string
@@ -32,6 +36,10 @@ SHMEM_INTERNAL_ENV_DEF(SYMMETRIC_HEAP_USE_HUGE_PAGES, bool, false, SHMEM_INTERNA
                        "Use Linux huge pages for symmetric heap")
 SHMEM_INTERNAL_ENV_DEF(SYMMETRIC_HEAP_PAGE_SIZE, size, 2*1024*1024, SHMEM_INTERNAL_ENV_CAT_OTHER,
                        "Page size to use for huge pages")
+#endif
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+SHMEM_INTERNAL_ENV_DEF(DISABLE_ASLR_CHECK, bool, false, SHMEM_INTERNAL_ENV_CAT_OTHER,
+                       "Disable check for address space layout randomization (ASLR)")
 #endif
 
 SHMEM_INTERNAL_ENV_DEF(SYMMETRIC_HEAP_USE_MALLOC, bool, false, SHMEM_INTERNAL_ENV_CAT_OTHER,
@@ -76,9 +84,9 @@ SHMEM_INTERNAL_ENV_DEF(OFI_FABRIC, string, "auto", SHMEM_INTERNAL_ENV_CAT_TRANSP
                        "Fabric that should be used by the OFI transport")
 SHMEM_INTERNAL_ENV_DEF(OFI_DOMAIN, string, "auto", SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Fabric domain that should be used by the OFI transport")
-SHMEM_INTERNAL_ENV_DEF(OFI_TX_POLL_LIMIT, long, 0, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+SHMEM_INTERNAL_ENV_DEF(OFI_TX_POLL_LIMIT, long, DEFAULT_POLL_LIMIT, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Put completion poll limit")
-SHMEM_INTERNAL_ENV_DEF(OFI_RX_POLL_LIMIT, long, 0, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+SHMEM_INTERNAL_ENV_DEF(OFI_RX_POLL_LIMIT, long, DEFAULT_POLL_LIMIT, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Get completion poll limit")
 SHMEM_INTERNAL_ENV_DEF(OFI_STX_MAX, long, 16, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Maximum number of STX contexts")

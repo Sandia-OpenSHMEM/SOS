@@ -233,11 +233,16 @@ typedef struct shmem_transport_ofi_bounce_buffer_t shmem_transport_ofi_bounce_bu
 
 typedef int shmem_transport_ct_t;
 
-#ifdef __APPLE__
-#define TID_TYPE uint64_t
-#else
-#define TID_TYPE pid_t
-#endif
+enum shmem_internal_tid_t { tid_is_pid_t, tid_is_uint64_t };
+struct shmem_internal_tid
+{
+    enum shmem_internal_tid_t tid_t;
+    union
+    {
+        pid_t pid_val;
+        uint64_t uint64_val;
+    } val;
+};
 
 struct shmem_transport_ctx_t {
     int                             id;
@@ -260,7 +265,7 @@ struct shmem_transport_ctx_t {
 #endif
     shmem_free_list_t              *bounce_buffers;
     int                             stx_idx;
-    TID_TYPE                        tid;
+    struct shmem_internal_tid       tid;
 };
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;

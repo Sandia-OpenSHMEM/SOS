@@ -32,6 +32,10 @@
 #include "runtime.h"
 #include "build_info.h"
 
+#if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING) && defined(__linux__)
+#include <sys/personality.h>
+#endif
+
 #ifdef __APPLE__
 #include <mach-o/getsect.h>
 #else
@@ -210,6 +214,40 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         fflush(NULL);
     }
 
+    /* ASLR is an OS security feature that randomizes the address map of each
+     * process.  Remote virtual addressing assumes that symmetric addresses are
+     * identical across processes.  ASLR can violate this assumption.
+     *
+     * However, ASLR does not always preclude identical symmetric addresses
+     * across PEs.  Linking the application with -no-pie can cause the OS to
+     * load the data segment at symmetric addresses.  The heap is mmap'd
+     * relative to the location of the data segment and will also be symmetric.
+     * Thus, we allow advanced users to disable this check. */
+#if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING) && defined(__linux__) && !defined(DISABLE_ASLR_CHECK)
+    if (!shmem_internal_params.DISABLE_ASLR_CHECK) {
+        FILE *aslr = fopen("/proc/sys/kernel/randomize_va_space", "r");
+        if (aslr) {
+            int aslr_status = fgetc(aslr);
+            if (aslr_status != EOF && aslr_status != '0') {
+                int persona = personality(0xffffffff);
+                /* Check if ASLR was disabled with setarch */
+                if (! (persona & ADDR_NO_RANDOMIZE)) {
+                    RAISE_ERROR_MSG("Remote virtual addressing is enabled; however, address space layout randomization\n"
+                                    RAISE_PE_PREFIX
+                                    "is present.  Disable ASLR or rebuild without '--enable-remote-virtual-addressing'.\n"
+                                    RAISE_PE_PREFIX
+                                    "This error message can be disabled by setting SHMEM_DISABLE_ASLR_CHECK or building\n"
+                                    RAISE_PE_PREFIX
+                                    "with --disable-aslr-check.\n",
+                                    shmem_internal_my_pe, shmem_internal_my_pe, shmem_internal_my_pe);
+                }
+            }
+            fclose(aslr);
+        }
+    }
+#endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
+
+
     /* Find symmetric data */
 #ifdef __APPLE__
     shmem_internal_data_base = (void*) get_etext();
@@ -385,3 +423,4 @@ shmem_internal_global_exit(int status)
     shmem_internal_global_exit_called = 1;
     shmem_runtime_abort(status, str);
 }
+

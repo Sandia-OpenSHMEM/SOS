@@ -16,13 +16,7 @@
 NPROCS ?= 2
 LOG_COMPILER = $(TEST_RUNNER)
 
-AM_CPPFLAGS = -I$(top_builddir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
-LDADD = $(top_builddir)/src/libsma.la
-
-if USE_PMI_SIMPLE
-LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
-endif
 
 check_PROGRAMS = \
 	binary-search \
@@ -46,6 +40,19 @@ else
 TESTS = $(SHORT_TESTS)
 endif
 
-mandelbrot_LDFLAGS = $(PTHREAD_LIBS)
+if EXTERNAL_TESTS
+bin_PROGRAMS = $(check_PROGRAMS)
+AM_CPPFLAGS =
+LDADD =
+else
+AM_CPPFLAGS = -I$(top_builddir)/mpp
+LDADD = $(top_builddir)/src/libsma.la
+endif
+
+if USE_PMI_SIMPLE
+LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
+endif
+
+mandelbrot_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 mandelbrot_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 mandelbrot_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
