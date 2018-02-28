@@ -193,12 +193,12 @@ query_thread_funneled_SOURCES = query_thread.c
 query_thread_funneled_CFLAGS = -DENABLE_THREADS
 
 mt_a2a_SOURCES = mt_a2a.c pthread_barrier.h
-mt_a2a_LDFLAGS = $(PTHREAD_LIBS)
+mt_a2a_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 mt_a2a_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 mt_a2a_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
-mt_contention_LDFLAGS = $(PTHREAD_LIBS)
-mt_contention_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
+mt_contention_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
+mt_contention_CFLAGS = $(PTHREAD_CFLAGS)
 mt_contention_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 if SHMEMX_TESTS
@@ -211,16 +211,16 @@ mt_membar_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 mt_membar_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 mt_membar_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
-threading_LDFLAGS = $(PTHREAD_LIBS)
+threading_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 threading_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
 threading_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
-web_LDFLAGS = $(PTHREAD_LIBS)
-web_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
+web_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
+web_CFLAGS = $(PTHREAD_CFLAGS)
 web_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
-thread_wait_LDFLAGS = $(PTHREAD_LIBS)
-thread_wait_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
+thread_wait_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
+thread_wait_CFLAGS = $(PTHREAD_CFLAGS)
 thread_wait_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 shmem_ctx_CFLAGS = $(AM_OPENMP_CFLAGS)

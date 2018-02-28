@@ -139,6 +139,13 @@ AC_ARG_ENABLE([remote-virtual-addressing],
 AS_IF([test "$enable_remote_virtual_addressing" = "yes"],
       [AC_DEFINE([ENABLE_REMOTE_VIRTUAL_ADDRESSING], [1], [If defined, the implementation will use one LE/PT to cover all of the symmetric data and heap, setup so that no offset transformation is needed on the target virtual address.])])
 
+AC_ARG_ENABLE([aslr-check],
+    [AC_HELP_STRING([--disable-aslr-check],
+                    [Disable check for address space layout randomization (ASLR).  This can be useful when ASLR is enabled, but position-independent executable generation is disabled by compiler or linker flags. (default: enabled)])])
+AS_IF([test "$enable_aslr_check" = "no"],
+      [AC_DEFINE(DISABLE_ASLR_CHECK, [1], [Disable ASLR check])])
+
+
 AC_ARG_ENABLE([lengthy-tests],
     [AC_HELP_STRING([--enable-lengthy-tests],
                     [Enable long running tests in the test suite (default: disabled)])])
@@ -579,12 +586,13 @@ AS_IF([test "$opal_visibility_define" = 1],
 AC_SUBST(SHMEM_AC_HAVE_ATTRIBUTE_VISIBILITY)
 CFLAGS="$CFLAGS $OPAL_VISIBILITY_CFLAGS"
 
-# disable aslr, if possible at link time
+# Disable ASLR at link time by instructing the linker not to generate
+# position-independent executable code
 aslr_LDFLAGS=
 case $host_os in
-darwin*)
-    aslr_LDFLAGS="-Wl,-no_pie"
-    ;;
+    darwin*)
+           aslr_LDFLAGS="-Wl,-no_pie"
+           ;;
 esac
 AC_SUBST(aslr_LDFLAGS)
 
