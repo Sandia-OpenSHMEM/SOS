@@ -60,6 +60,7 @@ check_PROGRAMS = \
 	bcast_flood \
 	lfinc \
 	shmem_info \
+	query_thread \
 	global_exit \
 	asym_alloc \
 	set_fetch \
@@ -148,7 +149,8 @@ check_PROGRAMS += \
     mt_membar \
     threading \
     web \
-    thread_wait
+    thread_wait \
+    query_thread_funneled 
 
 if SHMEMX_TESTS
 check_PROGRAMS += \
@@ -186,6 +188,9 @@ endif
 # C Tests with special flags
 rma_coverage_pshmem_SOURCES = rma_coverage.c
 rma_coverage_pshmem_CFLAGS = -DTEST_PSHMEM
+
+query_thread_funneled_SOURCES = query_thread.c
+query_thread_funneled_CFLAGS = -DENABLE_THREADS
 
 mt_a2a_SOURCES = mt_a2a.c pthread_barrier.h
 mt_a2a_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
