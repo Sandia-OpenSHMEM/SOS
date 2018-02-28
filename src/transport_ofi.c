@@ -107,12 +107,12 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
 
     if (shmem_internal_gettid_fn) {
         tid.tid_t = tid_is_uint64_t;
-        tid.uint64_val = (*shmem_internal_gettid_fn)();
+        tid.val.uint64_val = (*shmem_internal_gettid_fn)();
     } else {
 #ifndef __APPLE__
 #ifdef HAVE_SYS_GETTID
         tid.tid_t = tid_is_pid_t;
-        tid.pid_val = syscall(SYS_gettid);
+        tid.val.pid_val = syscall(SYS_gettid);
 #else
         /* Cannot query the tid with a syscall, so instead assume each tid
          * query corresponds to a unique thread. */
@@ -123,13 +123,13 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
             tid_cnt_start = 1;
         else
             tid_val++;
-        tid.uint64_val = tid_val;
+        tid.val.uint64_val = tid_val;
 #endif /* HAVE_SYS_GETTID */
 #else
         tid.tid_t = tid_is_uint64_t;
         int ret;
         char errmsg[256];
-        ret = pthread_threadid_np(NULL, &tid.uint64_val);
+        ret = pthread_threadid_np(NULL, &tid.val.uint64_val);
         if (ret != 0)
             RAISE_ERROR_MSG("Error geting thread ID: %s\n",
                             shmem_util_strerror(ret, errmsg, 256));
