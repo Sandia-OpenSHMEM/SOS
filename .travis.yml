@@ -24,7 +24,7 @@ env:
         - SOS_BUILD_OPTS="--disable-mr-scalable --enable-av-map --disable-cxx --enable-memcpy"
         - >
           SOS_DISABLE_FORTRAN=1
-          SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing"
+          SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing --disable-aslr-check"
         - >
           SOS_ENABLE_ERROR_TESTS=1 SHMEM_SYMMETRIC_HEAP_USE_MALLOC=1
           SOS_BUILD_OPTS="--disable-threads --enable-error-checking"

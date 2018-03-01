@@ -143,7 +143,7 @@ AC_ARG_ENABLE([aslr-check],
     [AC_HELP_STRING([--disable-aslr-check],
                     [Disable check for address space layout randomization (ASLR).  This can be useful when ASLR is enabled, but position-independent executable generation is disabled by compiler or linker flags. (default: enabled)])])
 AS_IF([test "$enable_aslr_check" = "no"],
-      [AC_DEFINE(DISABLE_ASLR_CHECK, [1], [Disable ASLR check])])
+      [AC_DEFINE(DISABLE_ASLR_CHECK_AC, [1], [Disable ASLR check])])
 
 
 AC_ARG_ENABLE([lengthy-tests],
