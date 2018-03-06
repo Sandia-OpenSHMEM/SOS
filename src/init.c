@@ -229,7 +229,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
      * load the data segment at symmetric addresses.  The heap is mmap'd
      * relative to the location of the data segment and will also be symmetric.
      * Thus, we allow advanced users to disable this check. */
-#if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING) && defined(__linux__) && !defined(DISABLE_ASLR_CHECK)
+#if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING) && defined(__linux__) && !defined(DISABLE_ASLR_CHECK_AC)
     if (!shmem_internal_params.DISABLE_ASLR_CHECK) {
         FILE *aslr = fopen("/proc/sys/kernel/randomize_va_space", "r");
         if (aslr) {

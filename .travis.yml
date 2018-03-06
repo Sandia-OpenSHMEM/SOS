@@ -24,7 +24,7 @@ env:
         - SOS_BUILD_OPTS="--disable-mr-scalable --enable-av-map --disable-cxx --enable-memcpy"
         - >
           SOS_DISABLE_FORTRAN=1
-          SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing"
+          SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing --disable-aslr-check"
         - >
           SOS_ENABLE_ERROR_TESTS=1 SHMEM_SYMMETRIC_HEAP_USE_MALLOC=1
           SOS_BUILD_OPTS="--disable-threads --enable-error-checking"
@@ -134,7 +134,7 @@ before_install:
     - git clone --depth 10 https://github.com/openshmem-org/tests-cray.git tests-cray
     # Fetch Mellanox Tests
     - cd $TRAVIS_SRC
-    - git clone -b wip/pending_pr --depth 10 https://github.com/davidozog/tests-mellanox.git tests-mellanox
+    - git clone --depth 10 https://github.com/openshmem-org/tests-mellanox.git tests-mellanox
     ## Fetch ISx
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ParRes/ISx.git ISx
@@ -306,7 +306,7 @@ script:
     - export MELLANOX_TESTS_DIR=$TRAVIS_SRC/tests-mellanox
     - cd $MELLANOX_TESTS_DIR/verifier
     - ./autogen.sh
-    - ./configure --prefix=$PWD/install CFLAGS=" -Wno-deprecated -Wno-deprecated-declarations -std=gnu99 -O3" LDFLAGS="-lpthread" CC=oshcc --disable-mpi --enable-quick-tests --enable-active-sets
+    - ./configure --prefix=$PWD/install CFLAGS=" -Wno-deprecated -Wno-deprecated-declarations -std=gnu99 -O3" LDFLAGS="-lpthread" CC=oshcc --disable-mpi --enable-quick-tests --enable-active-sets --disable-error
     - make clean
     - make install
     - make oshmem_test

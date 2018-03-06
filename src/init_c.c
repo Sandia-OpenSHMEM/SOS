@@ -45,6 +45,9 @@
 #pragma weak shmem_info_get_name = pshmem_info_get_name
 #define shmem_info_get_name pshmem_info_get_name
 
+#pragma weak shmem_query_thread = pshmem_query_thread
+#define shmem_query_thread pshmem_query_thread
+
 #endif /* ENABLE_PROFILING */
 
 void SHMEM_FUNCTION_ATTRIBUTES
@@ -93,6 +96,15 @@ shmem_init_thread(int tl_requested, int *tl_provided)
 
 
 void SHMEM_FUNCTION_ATTRIBUTES
+shmem_query_thread(int *provided)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    *provided = shmem_internal_thread_level;
+}
+
+
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_global_exit(int status)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -128,3 +140,4 @@ shmem_info_get_name(char *name)
     strncpy(name, SHMEM_VENDOR_STRING, SHMEM_MAX_NAME_LEN);
     name[SHMEM_MAX_NAME_LEN-1] = '\0'; /* Ensure string is null terminated */
 }
+

@@ -37,7 +37,7 @@ SHMEM_INTERNAL_ENV_DEF(SYMMETRIC_HEAP_USE_HUGE_PAGES, bool, false, SHMEM_INTERNA
 SHMEM_INTERNAL_ENV_DEF(SYMMETRIC_HEAP_PAGE_SIZE, size, 2*1024*1024, SHMEM_INTERNAL_ENV_CAT_OTHER,
                        "Page size to use for huge pages")
 #endif
-#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+#if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING) && defined(__linux__) && !defined(DISABLE_ASLR_CHECK_AC)
 SHMEM_INTERNAL_ENV_DEF(DISABLE_ASLR_CHECK, bool, false, SHMEM_INTERNAL_ENV_CAT_OTHER,
                        "Disable check for address space layout randomization (ASLR)")
 #endif
@@ -90,7 +90,7 @@ SHMEM_INTERNAL_ENV_DEF(OFI_TX_POLL_LIMIT, long, DEFAULT_POLL_LIMIT, SHMEM_INTERN
                        "Put completion poll limit")
 SHMEM_INTERNAL_ENV_DEF(OFI_RX_POLL_LIMIT, long, DEFAULT_POLL_LIMIT, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Get completion poll limit")
-SHMEM_INTERNAL_ENV_DEF(OFI_STX_MAX, long, 16, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+SHMEM_INTERNAL_ENV_DEF(OFI_STX_MAX, long, 1, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Maximum number of STX contexts")
 SHMEM_INTERNAL_ENV_DEF(OFI_STX_THRESHOLD, long, 1, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Maximum number of shared contexts per STX before allocating a new STX resource")
