@@ -51,11 +51,18 @@ static inline void shmem_internal_qlock_lock(shmem_internal_lock_guard_t *g) {
         if (ret) RAISE_ERROR_MSG("pthread_cond_wait failed: %s\n",
                                  shmem_util_strerror(ret, errmsg, 256));
     }
+    ret = pthread_mutex_unlock(&g->mutex);
+    if (ret) RAISE_ERROR_MSG("pthread_mutex_unlock failed: %s\n",
+                             shmem_util_strerror(ret, errmsg, 256));
 }
 
 static inline void shmem_internal_qlock_unlock(shmem_internal_lock_guard_t *g) {
     int ret;
     char errmsg[256];
+
+    ret = pthread_mutex_lock(&g->mutex);
+    if (ret) RAISE_ERROR_MSG("pthread_mutex_lock failed: %s\n",
+                             shmem_util_strerror(ret, errmsg, 256));
 
     g->cur_ticket++;
     ret = pthread_cond_broadcast(&g->cond[g->cur_ticket %
@@ -77,6 +84,9 @@ static inline int shmem_internal_qlock_trylock(shmem_internal_lock_guard_t *g) {
 
     if (g->next_ticket == g->cur_ticket) {
         g->next_ticket++;
+        ret = pthread_mutex_unlock(&g->mutex);
+        if (ret) RAISE_ERROR_MSG("pthread_mutex_unlock failed: %s\n",
+                                 shmem_util_strerror(ret, errmsg, 256));
         return 0;
     }
     else {
