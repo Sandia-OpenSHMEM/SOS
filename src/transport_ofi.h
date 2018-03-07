@@ -52,6 +52,8 @@ extern size_t                           shmem_transport_ofi_max_msg_size;
 extern size_t                           shmem_transport_ofi_bounce_buffer_size;
 extern long                             shmem_transport_ofi_max_bounce_buffers;
 
+extern pthread_mutex_t                  shmem_transport_ofi_progress_lock;
+
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #endif
@@ -308,6 +310,17 @@ extern struct fid_ep* shmem_transport_ofi_target_ep;
             shmem_free_list_unlock(ctx->bounce_buffers);                        \
     } while (0)
 
+static inline
+void shmem_transport_probe(void) {
+#if defined(ENABLE_MANUAL_PROGRESS) && !defined(HARD_POLLING)
+    if (0 == pthread_mutex_trylock(&shmem_transport_ofi_progress_lock)) {
+        fi_cntr_read(shmem_transport_ofi_target_cntrfd);
+        pthread_mutex_unlock(&shmem_transport_ofi_progress_lock);
+    }
+#endif
+    return;
+}
+
 int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx);
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx);
 
@@ -412,6 +425,8 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
         success = fi_cntr_read(ctx->put_cntr);
         fail = fi_cntr_readerr(ctx->put_cntr);
         cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
+
+        shmem_transport_probe();
 
         if (success < cnt && fail == 0) {
             SPINLOCK_BODY();
@@ -713,6 +728,8 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
         success = fi_cntr_read(ctx->get_cntr);
         fail = fi_cntr_readerr(ctx->get_cntr);
         cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr);
+
+        shmem_transport_probe();
 
         if (success < cnt && fail == 0) {
             SPINLOCK_BODY();
@@ -1153,29 +1170,39 @@ static inline
 uint64_t shmem_transport_received_cntr_get(void)
 {
 #ifndef ENABLE_HARD_POLLING
-    shmem_internal_assert(shmem_internal_thread_level == SHMEM_THREAD_SINGLE);
-    /* NOTE-MT: This is only reachable in single-threaded runs, otherwise
-     * we would need a mutex to support FI_THREAD_COMPLETION builds. */
+#ifdef USE_THREAD_COMPLETION
+    uint64_t cnt = 0;
+    if (0 == pthread_mutex_trylock(&shmem_transport_ofi_progress_lock)) {
+        cnt = fi_cntr_read(shmem_transport_ofi_target_cntrfd);
+        pthread_mutex_unlock(&shmem_transport_ofi_progress_lock);
+    }
+    return cnt;
+#else
     return fi_cntr_read(shmem_transport_ofi_target_cntrfd);
+#endif /* USE_THREAD_COMPLETION */
 #else
     RAISE_ERROR_STR("OFI transport configured for hard polling");
-    return 0;
-#endif
+#endif /* ENABLE_HARD_POLLING */
 }
 
 static inline
 void shmem_transport_received_cntr_wait(uint64_t ge_val)
 {
 #ifndef ENABLE_HARD_POLLING
-    shmem_internal_assert(shmem_internal_thread_level == SHMEM_THREAD_SINGLE);
-    /* NOTE-MT: This is only reachable in single-threaded runs, otherwise
-     * we would need a mutex to support FI_THREAD_COMPLETION builds. */
+#ifdef USE_THREAD_COMPLETION
+    if (0 == pthread_mutex_trylock(&shmem_transport_ofi_progress_lock)) {
+        int ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd, ge_val, -1);
+        OFI_CHECK_ERROR(ret);
+        pthread_mutex_unlock(&shmem_transport_ofi_progress_lock);
+    }
+#else
     int ret = fi_cntr_wait(shmem_transport_ofi_target_cntrfd, ge_val, -1);
-
     OFI_CHECK_ERROR(ret);
+#endif /* USE_THREAD_COMPLETION */
 #else
     RAISE_ERROR_STR("OFI transport configured for hard polling");
-#endif
+#endif /* ENABLE_HARD_POLLING */
+    return;
 }
 
 #endif /* TRANSPORT_OFI_H */

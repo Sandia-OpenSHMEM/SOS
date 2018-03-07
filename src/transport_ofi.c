@@ -96,6 +96,7 @@ static char                     myephostname[EPHOSTNAMELEN];
 #endif
 #ifdef ENABLE_THREADS
 shmem_internal_mutex_t          shmem_transport_ofi_lock;
+pthread_mutex_t                 shmem_transport_ofi_progress_lock = PTHREAD_MUTEX_INITIALIZER;
 #endif /* ENABLE_THREADS */
 
 /* Need a syscall to gettid() because glibc doesn't provide a wrapper

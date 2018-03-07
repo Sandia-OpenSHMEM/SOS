@@ -75,7 +75,9 @@ shmem_internal_fence(shmem_ctx_t ctx)
 
 #define SHMEM_WAIT_POLL(var, value)                      \
     do {                                                 \
-        while (*(var) == value) { SPINLOCK_BODY(); }     \
+        while (*(var) == value) {                        \
+            shmem_transport_probe();                     \
+            SPINLOCK_BODY(); }                           \
     } while(0)
 
 #define SHMEM_WAIT_UNTIL_POLL(var, cond, value)          \
@@ -84,6 +86,7 @@ shmem_internal_fence(shmem_ctx_t ctx)
                                                          \
         COMP(cond, *(var), value, cmpret);               \
         while (!cmpret) {                                \
+            shmem_transport_probe();                     \
             SPINLOCK_BODY();                             \
             COMP(cond, *(var), value, cmpret);           \
         }                                                \
