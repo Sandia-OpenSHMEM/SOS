@@ -67,6 +67,7 @@ addons:
     apt:
         packages:
             - gfortran
+            - pkg-config
 
 before_install:
     ## Set up the environment
