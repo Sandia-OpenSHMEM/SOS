@@ -57,6 +57,14 @@ streaming_latency(int len, perf_metrics_t *data)
     double start = 0.0;
     double end = 0.0;
     int i = 0;
+    static int print_once = 0;
+    if(!print_once && data->my_node == GET_IO_NODE) {
+        printf("\nStreaming results for %d trials each of length %d through %d in"\
+              " powers of %d\n", data->trials, data->start_len,
+              data->max_len, data->inc);
+        print_results_header();
+        print_once++;
+    }
 
     if (data->my_node == 0) {
 
