@@ -231,6 +231,12 @@ options.
        available for private use (i.e., with contexts that enable the
        SHMEM_CTX_PRIVATE option).
 
+    SHMEM_OFI_STX_DISABLE_PRIVATE (default: 0)
+       Disallow private contexts from having exclusive STX access.  Setting this
+       to 1 may improve performance for applications using many private
+       contexts, especially if the number of threads that use private contexts
+       is greater than SHMEM_OFI_STX_MAX.
+
   Debugging Environment variables:
 
     SHMEM_DEBUG (default: off)
