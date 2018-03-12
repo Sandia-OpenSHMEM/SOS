@@ -104,6 +104,7 @@ static inline
 struct shmem_internal_tid shmem_transport_ofi_gettid(void)
 {
     struct shmem_internal_tid tid;
+    memset(&tid, 0, sizeof(struct shmem_internal_tid));
 
     if (shmem_internal_gettid_fn) {
         tid.tid_t = tid_is_uint64_t;
@@ -479,7 +480,8 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
     if (ctx->options & SHMEM_CTX_PRIVATE) {
 
         shmem_transport_ofi_stx_kvs_t *f;
-        HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, f);
+        HASH_FIND(hh, shmem_transport_ofi_stx_kvs,
+                  &ctx->tid, sizeof(struct shmem_internal_tid), f);
 
         if (f) {
             shmem_transport_ofi_stx_pool[f->stx_idx].ref_cnt++;
@@ -516,7 +518,8 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
                 }
                 e->tid     = ctx->tid;
                 e->stx_idx = ctx->stx_idx;
-                HASH_ADD_INT(shmem_transport_ofi_stx_kvs, tid, e);
+                HASH_ADD(hh, shmem_transport_ofi_stx_kvs, tid,
+                         sizeof(struct shmem_internal_tid), e);
             } else {
                 ctx->options &= ~SHMEM_CTX_PRIVATE;
             }
@@ -1573,7 +1576,8 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
     if (ctx->stx_idx >= 0) {
         if (ctx->options & SHMEM_CTX_PRIVATE) {
             shmem_transport_ofi_stx_kvs_t *e;
-            HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, e);
+            HASH_FIND(hh, shmem_transport_ofi_stx_kvs, &ctx->tid,
+                      sizeof(struct shmem_internal_tid), e);
             if (e) {
                 shmem_transport_ofi_stx_t *stx = &shmem_transport_ofi_stx_pool[ctx->stx_idx];
                 stx->ref_cnt--;
