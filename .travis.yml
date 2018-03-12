@@ -304,10 +304,11 @@ script:
     ### Run the Mellanox test suite (OFI)
     ###
     - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export PKG_CONFIG_PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/lib/pkgconfig:$PKG_CONFIG_PATH
     - export MELLANOX_TESTS_DIR=$TRAVIS_SRC/tests-mellanox
     - cd $MELLANOX_TESTS_DIR/verifier
     - ./autogen.sh
-    - ./configure --prefix=$PWD/install CFLAGS=" -Wno-deprecated -Wno-deprecated-declarations -std=gnu99 -O3" LDFLAGS="-lpthread" CC=oshcc --disable-mpi --enable-quick-tests --enable-active-sets --disable-error
+    - ./configure --prefix=$PWD/install CFLAGS=" -Wno-deprecated -Wno-deprecated-declarations -std=gnu99 -O3 `pkg-config --cflags sos`" LDFLAGS="`pkg-config --libs sos` -lpthread" --disable-mpi --enable-quick-tests --enable-active-sets --disable-error
     - make clean
     - make install
     - make oshmem_test
