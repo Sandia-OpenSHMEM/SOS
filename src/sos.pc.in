@@ -9,3 +9,7 @@ URL: @PACKAGE_URL@
 Version: @VERSION@
 Libs: -L${libdir} @WRAPPER_COMPILER_EXTRA_LDFLAGS@ -lsma @WRAPPER_COMPILER_EXTRA_LIBS@
 Cflags: -I${includedir}
+
+cxxflags=-I${includedir}
+fflags=-I${includedir}
+fcflags=-I${includedir}
