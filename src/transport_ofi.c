@@ -362,7 +362,7 @@ static shmem_transport_ofi_stx_kvs_t* shmem_transport_ofi_stx_kvs = NULL;
 static int shmem_transport_ofi_disable_private;
 
 static inline
-int shmem_transport_ofi_check_private(long options, int disable) {
+int shmem_transport_ofi_is_private(long options, int disable) {
     if (!disable && (options & SHMEM_CTX_PRIVATE)) {
         return 1;
     } else {
@@ -487,7 +487,7 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
 {
     /* SHMEM contexts that are private to the same thread (i.e. have
      * SHMEM_CTX_PRIVATE option set) share the same STX.  */
-    if (shmem_transport_ofi_check_private(ctx->options, shmem_transport_ofi_disable_private)) {
+    if (shmem_transport_ofi_is_private(ctx->options, shmem_transport_ofi_disable_private)) {
 
         shmem_transport_ofi_stx_kvs_t *f;
         HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, f);
@@ -1348,7 +1348,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 
     /* Allocate STX from the pool */
     if (shmem_internal_thread_level > SHMEM_THREAD_FUNNELED &&
-        shmem_transport_ofi_check_private(ctx->options, shmem_transport_ofi_disable_private)) {
+        shmem_transport_ofi_is_private(ctx->options, shmem_transport_ofi_disable_private)) {
             ctx->tid = shmem_transport_ofi_gettid();
     }
     shmem_transport_ofi_stx_allocate(ctx);
@@ -1588,7 +1588,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
     }
 
     if (ctx->stx_idx >= 0) {
-        if (shmem_transport_ofi_check_private(ctx->options, shmem_transport_ofi_disable_private)) {
+        if (shmem_transport_ofi_is_private(ctx->options, shmem_transport_ofi_disable_private)) {
             shmem_transport_ofi_stx_kvs_t *e;
             HASH_FIND_INT(shmem_transport_ofi_stx_kvs, &ctx->tid, e);
             if (e) {
@@ -1651,7 +1651,7 @@ int shmem_transport_fini(void)
 
     for (i = 0; i < shmem_transport_ofi_contexts_len; ++i) {
         if (shmem_transport_ofi_contexts[i]) {
-            if (shmem_transport_ofi_check_private(shmem_transport_ofi_contexts[i]->options,
+            if (shmem_transport_ofi_is_private(shmem_transport_ofi_contexts[i]->options,
                                                   shmem_transport_ofi_disable_private))
                 RAISE_WARN_MSG("Shutting down with unfreed private context (%zd)\n", i);
             shmem_transport_quiet(shmem_transport_ofi_contexts[i]);
