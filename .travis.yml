@@ -308,7 +308,7 @@ script:
     - export MELLANOX_TESTS_DIR=$TRAVIS_SRC/tests-mellanox
     - cd $MELLANOX_TESTS_DIR/verifier
     - ./autogen.sh
-    - ./configure --prefix=$PWD/install CC=cc CFLAGS="-Wno-deprecated -Wno-deprecated-declarations -std=gnu99 -O3 $(pkg-config --cflags sos)" LDFLAGS="$(pkg-config --libs sos) -lpthread" --disable-mpi --enable-quick-tests --enable-active-sets --disable-error
+    - ./configure --prefix=$PWD/install CC=gcc CFLAGS="-Wno-deprecated -Wno-deprecated-declarations -std=gnu99 -O3 $(pkg-config --cflags sos)" LDFLAGS="$(pkg-config --libs sos) -lpthread" --disable-mpi --enable-quick-tests --enable-active-sets --disable-error
     - make clean
     - make install
     - make oshmem_test
