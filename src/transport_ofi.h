@@ -32,8 +32,9 @@
 #include <sys/types.h>
 
 
+#define ENABLE_TARGET_CNTR (!defined(ENABLE_HARD_POLLING) || defined(ENABLE_MANUAL_PROGRESS))
 
-#ifndef ENABLE_HARD_POLLING
+#if ENABLE_TARGET_CNTR
 extern struct fid_cntr*                 shmem_transport_ofi_target_cntrfd;
 #endif
 #ifndef ENABLE_MR_SCALABLE
@@ -312,11 +313,15 @@ extern struct fid_ep* shmem_transport_ofi_target_ep;
 
 static inline
 void shmem_transport_probe(void) {
-#if defined(ENABLE_MANUAL_PROGRESS) && !defined(HARD_POLLING)
+#if defined(ENABLE_MANUAL_PROGRESS)
+#  ifdef USE_THREAD_COMPLETION
     if (0 == pthread_mutex_trylock(&shmem_transport_ofi_progress_lock)) {
+#  endif
         fi_cntr_read(shmem_transport_ofi_target_cntrfd);
+#  ifdef USE_THREAD_COMPLETION
         pthread_mutex_unlock(&shmem_transport_ofi_progress_lock);
     }
+#  endif
 #endif
     return;
 }
