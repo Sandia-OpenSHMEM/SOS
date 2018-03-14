@@ -13,7 +13,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.4.0], [https://github.com/Sandia-OpenSHMEM/SOS])
+AC_INIT([Sandia OpenSHMEM], [1.4.0], [https://github.com/Sandia-OpenSHMEM/SOS/issues], [sos], [https://github.com/Sandia-OpenSHMEM/SOS])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -220,6 +220,8 @@ AC_ARG_WITH([oshrun-launcher],
 AC_ARG_ENABLE([memcpy],
     [AC_HELP_STRING([--enable-memcpy],
                     [Use memcpy to perform local put/get operations (default:disabled)])])
+
+PKG_INSTALLDIR()
 
 dnl check for programs
 
@@ -731,6 +733,7 @@ AC_CONFIG_FILES([Makefile
   mpp/shmemx_c_func.h4
   mpp/shmemx.h4
   src/Makefile
+  src/sos.pc
   test/Makefile
   test/unit/Makefile
   test/performance/Makefile
