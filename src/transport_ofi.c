@@ -58,7 +58,7 @@ struct fid_fabric*              shmem_transport_ofi_fabfd;
 struct fid_domain*              shmem_transport_ofi_domainfd;
 struct fid_av*                  shmem_transport_ofi_avfd;
 struct fid_ep*                  shmem_transport_ofi_target_ep;
-#ifndef ENABLE_HARD_POLLING
+#if ENABLE_TARGET_CNTR
 struct fid_cntr*                shmem_transport_ofi_target_cntrfd;
 #endif
 #ifdef ENABLE_MR_SCALABLE
@@ -96,6 +96,7 @@ static char                     myephostname[EPHOSTNAMELEN];
 #endif
 #ifdef ENABLE_THREADS
 shmem_internal_mutex_t          shmem_transport_ofi_lock;
+pthread_mutex_t                 shmem_transport_ofi_progress_lock = PTHREAD_MUTEX_INITIALIZER;
 #endif /* ENABLE_THREADS */
 
 /* Need a syscall to gettid() because glibc doesn't provide a wrapper
@@ -641,7 +642,7 @@ int allocate_recv_cntr_mr(void)
      * incoming reads/writes and outgoing non-blocking Puts, specifying entire
      * VA range */
 
-#ifndef ENABLE_HARD_POLLING
+#if ENABLE_TARGET_CNTR
     {
         struct fi_cntr_attr cntr_attr = {0};
 
@@ -667,7 +668,7 @@ int allocate_recv_cntr_mr(void)
     OFI_CHECK_RETURN_STR(ret, "target memory (all) registration failed");
 
     /* Bind counter with target memory region for incoming messages */
-#ifndef ENABLE_HARD_POLLING
+#if ENABLE_TARGET_CNTR
     ret = fi_mr_bind(shmem_transport_ofi_target_mrfd,
                      &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_WRITE | FI_REMOTE_READ);
@@ -683,7 +684,7 @@ int allocate_recv_cntr_mr(void)
         OFI_CHECK_RETURN_STR(ret, "target MR enable failed");
     }
 #endif /* ENABLE_MR_RMA_EVENT */
-#endif /* ndef ENABLE_HARD_POLLING */
+#endif /* ENABLE_TARGET_CNTR */
 
 #else
     /* Register separate data and heap segments using keys 0 and 1,
@@ -702,7 +703,7 @@ int allocate_recv_cntr_mr(void)
     OFI_CHECK_RETURN_STR(ret, "target memory (data) registration failed");
 
     /* Bind counter with target memory region for incoming messages */
-#ifndef ENABLE_HARD_POLLING
+#if ENABLE_TARGET_CNTR
     ret = fi_mr_bind(shmem_transport_ofi_target_heap_mrfd,
                      &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_WRITE | FI_REMOTE_READ);
@@ -726,7 +727,7 @@ int allocate_recv_cntr_mr(void)
         OFI_CHECK_RETURN_STR(ret, "target heap MR enable failed");
     }
 #endif /* ENABLE_MR_RMA_EVENT */
-#endif /* ndef ENABLE_HARD_POLLING */
+#endif /* ENABLE_TARGET_CNTR */
 #endif
 
     return ret;
@@ -1153,9 +1154,9 @@ int query_for_fabric(struct fabric_info *info)
     hints.caps   = FI_RMA |     /* request rma capability
                                    implies FI_READ/WRITE FI_REMOTE_READ/WRITE */
         FI_ATOMICS;  /* request atomics capability */
-#ifndef ENABLE_HARD_POLLING
+#if ENABLE_TARGET_CNTR
     hints.caps |= FI_RMA_EVENT; /* want to use remote counters */
-#endif /* ndef ENABLE_HARD_POLLING */
+#endif /* ENABLE_TARGET_CNTR */
     hints.addr_format         = FI_FORMAT_UNSPEC;
     domain_attr.data_progress = FI_PROGRESS_AUTO;
     domain_attr.resource_mgmt = FI_RM_ENABLED;
@@ -1696,7 +1697,7 @@ int shmem_transport_fini(void)
     OFI_CHECK_ERROR_MSG(ret, "Target data MR close failed (%s)\n", fi_strerror(errno));
 #endif
 
-#ifndef ENABLE_HARD_POLLING
+#if ENABLE_TARGET_CNTR
     ret = fi_close(&shmem_transport_ofi_target_cntrfd->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target CT close failed (%s)\n", fi_strerror(errno));
 #endif
