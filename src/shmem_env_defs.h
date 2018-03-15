@@ -94,4 +94,6 @@ SHMEM_INTERNAL_ENV_DEF(OFI_STX_THRESHOLD, long, 1, SHMEM_INTERNAL_ENV_CAT_TRANSP
                        "Maximum number of shared contexts per STX before allocating a new STX resource")
 SHMEM_INTERNAL_ENV_DEF(OFI_STX_ALLOCATOR, string, "round-robin", SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Algorithm for allocating STX resources to contexts")
+SHMEM_INTERNAL_ENV_DEF(OFI_STX_DISABLE_PRIVATE, bool, false, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Disallow private contexts from having exclusive STX access")
 #endif
