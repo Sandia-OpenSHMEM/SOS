@@ -105,10 +105,6 @@ int shmem_transport_portals4_total_data_ordering = 0;
 int shmem_transport_portals4_long_pending = 0;
 #endif
 
-#ifdef ENABLE_NONBLOCKING_FENCE
-int shmem_transport_portals4_fence_pending = 0;
-#endif
-
 static ptl_ni_limits_t ni_limits;
 #if ENABLE_REMOTE_VIRTUAL_ADDRESSING
 static ptl_pt_index_t all_pt = PTL_PT_ANY;
