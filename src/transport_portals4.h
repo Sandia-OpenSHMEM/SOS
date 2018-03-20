@@ -281,7 +281,7 @@ shmem_transport_quiet(shmem_transport_ctx_t* ctx)
     uint64_t cnt, cnt_new;
 
     /* synchronize the atomic cache, if there is one */
-    PtlAtomicSync();
+    shmem_transport_syncmem();
 
     /* wait for completion of all pending NB get events */
     shmem_transport_get_wait(ctx);
@@ -329,7 +329,7 @@ shmem_transport_fence(shmem_transport_ctx_t* ctx)
     if (0 == PORTALS4_TOTAL_DATA_ORDERING) {
 #ifdef ENABLE_NONBLOCKING_FENCE
         /* synchronize the atomic cache, if there is one */
-        PtlAtomicSync();
+        shmem_transport_syncmem();
 
         /* non-blocking fence.  Always mark and return */
         SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_nb_fence);
@@ -1368,4 +1368,10 @@ void shmem_transport_received_cntr_wait(uint64_t ge_val)
 #endif
 }
 
-#endif
+static inline
+void shmem_transport_syncmem(void)
+{
+    PtlAtomicSync();
+}
+
+#endif /* TRANSPORT_PORTALS_H */

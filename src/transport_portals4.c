@@ -749,7 +749,7 @@ shmem_transport_fini(void)
     int i;
 
     /* synchronize the atomic cache, if there is one */
-    PtlAtomicSync();
+    shmem_transport_syncmem();
 
     /* Free all contexts.  This performs a quiet on each context, ensuring all
      * operations have completed before proceeding with shutdown. */
