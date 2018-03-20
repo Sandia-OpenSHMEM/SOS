@@ -231,6 +231,11 @@ options.
        available for private use (i.e., with contexts that enable the
        SHMEM_CTX_PRIVATE option).
 
+    SHMEM_OFI_STX_DISABLE_PRIVATE (default: off)
+       Disable STX privatization. Enabling this may improve load balance across
+       transmit resources, especially in scenarios where the number of contexts
+       exceeds the number of STXs.
+
   Debugging Environment variables:
 
     SHMEM_DEBUG (default: off)

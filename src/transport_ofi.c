@@ -58,7 +58,7 @@ struct fid_fabric*              shmem_transport_ofi_fabfd;
 struct fid_domain*              shmem_transport_ofi_domainfd;
 struct fid_av*                  shmem_transport_ofi_avfd;
 struct fid_ep*                  shmem_transport_ofi_target_ep;
-#ifndef ENABLE_HARD_POLLING
+#if ENABLE_TARGET_CNTR
 struct fid_cntr*                shmem_transport_ofi_target_cntrfd;
 #endif
 #ifdef ENABLE_MR_SCALABLE
@@ -96,6 +96,7 @@ static char                     myephostname[EPHOSTNAMELEN];
 #endif
 #ifdef ENABLE_THREADS
 shmem_internal_mutex_t          shmem_transport_ofi_lock;
+pthread_mutex_t                 shmem_transport_ofi_progress_lock = PTHREAD_MUTEX_INITIALIZER;
 #endif /* ENABLE_THREADS */
 
 /* Need a syscall to gettid() because glibc doesn't provide a wrapper
@@ -360,6 +361,16 @@ static shmem_transport_ofi_stx_kvs_t* shmem_transport_ofi_stx_kvs = NULL;
         DEBUG_MSG("STX[%ld] = [ %s ]\n", shmem_transport_ofi_stx_max, stx_str);                 \
     } while (0)
 
+static inline
+int shmem_transport_ofi_is_private(long options) {
+    if (!shmem_internal_params.OFI_STX_DISABLE_PRIVATE &&
+        (options & SHMEM_CTX_PRIVATE)) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 /* This uses a slightly modified version of the Fisher-Yates shuffle algorithm
  * (or Knuth Shuffle).  It selects a random element from the so-far
  * unselected subset of the STX pool.  The top_idx should be reset before each
@@ -477,7 +488,7 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
 {
     /* SHMEM contexts that are private to the same thread (i.e. have
      * SHMEM_CTX_PRIVATE option set) share the same STX.  */
-    if (ctx->options & SHMEM_CTX_PRIVATE) {
+    if (shmem_transport_ofi_is_private(ctx->options)) {
 
         shmem_transport_ofi_stx_kvs_t *f;
         HASH_FIND(hh, shmem_transport_ofi_stx_kvs,
@@ -631,7 +642,7 @@ int allocate_recv_cntr_mr(void)
      * incoming reads/writes and outgoing non-blocking Puts, specifying entire
      * VA range */
 
-#ifndef ENABLE_HARD_POLLING
+#if ENABLE_TARGET_CNTR
     {
         struct fi_cntr_attr cntr_attr = {0};
 
@@ -657,7 +668,7 @@ int allocate_recv_cntr_mr(void)
     OFI_CHECK_RETURN_STR(ret, "target memory (all) registration failed");
 
     /* Bind counter with target memory region for incoming messages */
-#ifndef ENABLE_HARD_POLLING
+#if ENABLE_TARGET_CNTR
     ret = fi_mr_bind(shmem_transport_ofi_target_mrfd,
                      &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_WRITE | FI_REMOTE_READ);
@@ -673,7 +684,7 @@ int allocate_recv_cntr_mr(void)
         OFI_CHECK_RETURN_STR(ret, "target MR enable failed");
     }
 #endif /* ENABLE_MR_RMA_EVENT */
-#endif /* ndef ENABLE_HARD_POLLING */
+#endif /* ENABLE_TARGET_CNTR */
 
 #else
     /* Register separate data and heap segments using keys 0 and 1,
@@ -692,7 +703,7 @@ int allocate_recv_cntr_mr(void)
     OFI_CHECK_RETURN_STR(ret, "target memory (data) registration failed");
 
     /* Bind counter with target memory region for incoming messages */
-#ifndef ENABLE_HARD_POLLING
+#if ENABLE_TARGET_CNTR
     ret = fi_mr_bind(shmem_transport_ofi_target_heap_mrfd,
                      &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_WRITE | FI_REMOTE_READ);
@@ -716,7 +727,7 @@ int allocate_recv_cntr_mr(void)
         OFI_CHECK_RETURN_STR(ret, "target heap MR enable failed");
     }
 #endif /* ENABLE_MR_RMA_EVENT */
-#endif /* ndef ENABLE_HARD_POLLING */
+#endif /* ENABLE_TARGET_CNTR */
 #endif
 
     return ret;
@@ -1143,9 +1154,9 @@ int query_for_fabric(struct fabric_info *info)
     hints.caps   = FI_RMA |     /* request rma capability
                                    implies FI_READ/WRITE FI_REMOTE_READ/WRITE */
         FI_ATOMICS;  /* request atomics capability */
-#ifndef ENABLE_HARD_POLLING
+#if ENABLE_TARGET_CNTR
     hints.caps |= FI_RMA_EVENT; /* want to use remote counters */
-#endif /* ndef ENABLE_HARD_POLLING */
+#endif /* ENABLE_TARGET_CNTR */
     hints.addr_format         = FI_FORMAT_UNSPEC;
     domain_attr.data_progress = FI_PROGRESS_AUTO;
     domain_attr.resource_mgmt = FI_RM_ENABLED;
@@ -1340,7 +1351,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 
     /* Allocate STX from the pool */
     if (shmem_internal_thread_level > SHMEM_THREAD_FUNNELED &&
-        ctx->options & SHMEM_CTX_PRIVATE) {
+        shmem_transport_ofi_is_private(ctx->options)) {
             ctx->tid = shmem_transport_ofi_gettid();
     }
     shmem_transport_ofi_stx_allocate(ctx);
@@ -1574,7 +1585,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
     }
 
     if (ctx->stx_idx >= 0) {
-        if (ctx->options & SHMEM_CTX_PRIVATE) {
+        if (shmem_transport_ofi_is_private(ctx->options)) {
             shmem_transport_ofi_stx_kvs_t *e;
             HASH_FIND(hh, shmem_transport_ofi_stx_kvs, &ctx->tid,
                       sizeof(struct shmem_internal_tid), e);
@@ -1638,7 +1649,7 @@ int shmem_transport_fini(void)
 
     for (i = 0; i < shmem_transport_ofi_contexts_len; ++i) {
         if (shmem_transport_ofi_contexts[i]) {
-            if (shmem_transport_ofi_contexts[i]->options & SHMEM_CTX_PRIVATE)
+            if (shmem_transport_ofi_is_private(shmem_transport_ofi_contexts[i]->options))
                 RAISE_WARN_MSG("Shutting down with unfreed private context (%zd)\n", i);
             shmem_transport_quiet(shmem_transport_ofi_contexts[i]);
             shmem_transport_ctx_destroy(shmem_transport_ofi_contexts[i]);
@@ -1686,7 +1697,7 @@ int shmem_transport_fini(void)
     OFI_CHECK_ERROR_MSG(ret, "Target data MR close failed (%s)\n", fi_strerror(errno));
 #endif
 
-#ifndef ENABLE_HARD_POLLING
+#if ENABLE_TARGET_CNTR
     ret = fi_close(&shmem_transport_ofi_target_cntrfd->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target CT close failed (%s)\n", fi_strerror(errno));
 #endif

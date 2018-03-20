@@ -266,6 +266,8 @@ int shmem_transport_fini(void);
 
 static inline void shmem_transport_get_wait(shmem_transport_ctx_t*);
 
+static inline void shmem_transport_probe(void){ return; };
+
 static inline
 int
 shmem_transport_quiet(shmem_transport_ctx_t* ctx)
@@ -1261,7 +1263,6 @@ void shmem_transport_ct_wait(shmem_transport_ct_t *ct, long wait_for)
         RAISE_ERROR(ret);
     }
 }
-
 
 static inline
 uint64_t shmem_transport_received_cntr_get(void)

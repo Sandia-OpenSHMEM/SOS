@@ -317,8 +317,6 @@ init_long_frag(shmem_free_list_item_t *item)
 static void
 cleanup_handles(void)
 {
-    shmem_transport_ctx_destroy((shmem_transport_ctx_t*)SHMEM_CTX_DEFAULT);
-
     if (!PtlHandleIsEqual(shmem_transport_portals4_put_event_md_h, PTL_INVALID_HANDLE)) {
         PtlMDRelease(shmem_transport_portals4_put_event_md_h);
     }
