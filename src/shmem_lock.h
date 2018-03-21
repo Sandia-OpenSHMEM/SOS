@@ -99,6 +99,7 @@ shmem_internal_set_lock(long *lockp)
          * which provides memory ordering. Therefore, issuing a load 
          * fence to ensure memory ordering. */
         shmem_internal_membar_load();
+        shmem_transport_syncmem();                                                         \
     }
 }
 
@@ -118,6 +119,7 @@ shmem_internal_test_lock(long *lockp)
     shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
     if (0 == curr) {
         shmem_internal_membar_load();
+        shmem_transport_syncmem();                                                         \
         return 0;
     }
     return 1;

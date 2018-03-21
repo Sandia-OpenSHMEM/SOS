@@ -30,6 +30,7 @@ shmem_internal_quiet(shmem_ctx_t ctx)
     if (0 != ret) { RAISE_ERROR(ret); }
 
     shmem_internal_membar();
+    shmem_transport_syncmem();
 }
 
 
@@ -42,6 +43,7 @@ shmem_internal_fence(shmem_ctx_t ctx)
     if (0 != ret) { RAISE_ERROR(ret); }
 
     shmem_internal_membar_store();
+    shmem_transport_syncmem();
 }
 
 
@@ -124,11 +126,13 @@ shmem_internal_fence(shmem_ctx_t ctx)
 #define SHMEM_WAIT(var, value) do {                                     \
         SHMEM_WAIT_POLL(var, value);                                    \
         shmem_internal_membar_load();                                   \
+        shmem_transport_syncmem();
     } while (0)
 
 #define SHMEM_WAIT_UNTIL(var, cond, value) do {                         \
         SHMEM_WAIT_UNTIL_POLL(var, cond, value);                        \
         shmem_internal_membar_load();                                   \
+        shmem_transport_syncmem();
     } while (0) 
 
 #else
@@ -139,6 +143,7 @@ shmem_internal_fence(shmem_ctx_t ctx)
             SHMEM_WAIT_POLL(var, value);                                \
         }                                                               \
         shmem_internal_membar_load();                                   \
+        shmem_transport_syncmem();
     } while (0)
 
 #define SHMEM_WAIT_UNTIL(var, cond, value) do {                         \
@@ -148,6 +153,7 @@ shmem_internal_fence(shmem_ctx_t ctx)
             SHMEM_WAIT_UNTIL_POLL(var, cond, value);                    \
         }                                                               \
         shmem_internal_membar_load();                                   \
+        shmem_transport_syncmem();
     } while (0)
 #endif /* HARD_POLLING */
 
