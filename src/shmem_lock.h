@@ -19,7 +19,8 @@
 #include "shmem_comm.h"
 #include "shmem_synchronization.h"
 #include "shmem_atomic.h"
-
+#define SHMEM_INTERNAL_INCLUDE
+#include "shmem.h"
 
 /*
  * Use basic MCS distributed lock algorithm for lock
@@ -34,6 +35,35 @@ typedef struct lock_t lock_t;
 #define SIGNAL_MASK 0x80000000U
 #define NEXT(A)   (A & NEXT_MASK)
 #define SIGNAL(A) (A & SIGNAL_MASK)
+
+void shmem_internal_lock_guard_enter(long *lockp);
+int shmem_internal_lock_guard_test_enter(long *lockp);
+void shmem_internal_lock_guard_exit(long *lockp);
+void shmem_internal_lock_guards_free(void);
+
+static inline void
+shmem_internal_lock_enter(long *lockp) {
+    /* Guards use a local mutex to prevent concurrent requests on the same lock */
+    if (shmem_internal_thread_level > SHMEM_THREAD_FUNNELED)
+        shmem_internal_lock_guard_enter(lockp);
+}
+
+
+static inline int
+shmem_internal_lock_test_enter(long *lockp) {
+    /* Guards use a local mutex to prevent concurrent requests on the same lock */
+    if (shmem_internal_thread_level > SHMEM_THREAD_FUNNELED)
+        return shmem_internal_lock_guard_test_enter(lockp);
+    else
+        return 0;
+}
+
+
+static inline void
+shmem_internal_lock_exit(long *lockp) {
+    if (shmem_internal_thread_level > SHMEM_THREAD_FUNNELED)
+        shmem_internal_lock_guard_exit(lockp);
+}
 
 
 static inline void
@@ -65,6 +95,8 @@ shmem_internal_clear_lock(long *lockp)
         shmem_internal_mswap(SHMEM_CTX_DEFAULT, &(lock->data), &sig, &curr, &sig, sizeof(int), NEXT(lock->data) - 1, SHM_INTERNAL_INT);
         shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
     }
+
+    shmem_internal_lock_exit(lockp);
 }
 
 
@@ -73,6 +105,8 @@ shmem_internal_set_lock(long *lockp)
 {
     lock_t *lock = (lock_t*) lockp;
     int curr, zero = 0, me = shmem_internal_my_pe + 1, next_mask = NEXT_MASK;
+
+    shmem_internal_lock_enter(lockp);
 
     /* initialize my elements to zero */
     shmem_internal_put_small(SHMEM_CTX_DEFAULT, &(lock->data), &zero, sizeof(zero), shmem_internal_my_pe);
@@ -109,6 +143,9 @@ shmem_internal_test_lock(long *lockp)
     lock_t *lock = (lock_t*) lockp;
     int curr, me = shmem_internal_my_pe + 1, zero = 0;
 
+    if (shmem_internal_lock_test_enter(lockp))
+        return 1;
+
     /* initialize my elements to zero */
     shmem_internal_put_small(SHMEM_CTX_DEFAULT, &(lock->data), &zero, sizeof(zero), shmem_internal_my_pe);
     shmem_internal_quiet(SHMEM_CTX_DEFAULT);
@@ -120,6 +157,9 @@ shmem_internal_test_lock(long *lockp)
         shmem_internal_membar_load();
         return 0;
     }
+
+    shmem_internal_lock_exit(lockp);
+
     return 1;
 }
 

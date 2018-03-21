@@ -29,6 +29,7 @@
 #include "shmem_internal.h"
 #include "shmem_collectives.h"
 #include "shmem_comm.h"
+#include "shmem_lock.h"
 #include "runtime.h"
 #include "build_info.h"
 
@@ -63,6 +64,7 @@ int shmem_internal_thread_level;
 
 #ifdef ENABLE_THREADS
 shmem_internal_mutex_t shmem_internal_mutex_alloc;
+shmem_internal_mutex_t shmem_internal_mutex_lock_guards;
 #endif
 
 #ifdef USE_ON_NODE_COMMS
@@ -98,7 +100,9 @@ shmem_internal_shutdown(void)
     shmem_transport_cma_fini();
 #endif
 
+    shmem_internal_lock_guards_free();
     SHMEM_MUTEX_DESTROY(shmem_internal_mutex_alloc);
+    SHMEM_MUTEX_DESTROY(shmem_internal_mutex_lock_guards);
 
     shmem_internal_symmetric_fini();
     shmem_runtime_fini();
@@ -145,6 +149,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
     /* set up threading */
     SHMEM_MUTEX_INIT(shmem_internal_mutex_alloc);
+    SHMEM_MUTEX_INIT(shmem_internal_mutex_lock_guards);
 #ifdef ENABLE_THREADS
     shmem_internal_thread_level = tl_requested;
     *tl_provided = tl_requested;
