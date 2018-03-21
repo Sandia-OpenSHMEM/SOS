@@ -13,7 +13,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.4.0], [https://github.com/Sandia-OpenSHMEM/SOS])
+AC_INIT([Sandia OpenSHMEM], [1.4.0], [https://github.com/Sandia-OpenSHMEM/SOS/issues], [sos], [https://github.com/Sandia-OpenSHMEM/SOS])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -72,6 +72,11 @@ AS_IF([test "$enable_completion_polling" = "yes"],
       [AC_DEFINE([ENABLE_COMPLETION_POLLING], [1], [Enable polling for local/remote completions])
        AC_DEFINE([DEFAULT_POLL_LIMIT], [-1], [Poll limit for local/remote completions])],
       [AC_DEFINE([DEFAULT_POLL_LIMIT], [0], [Poll limit for local/remote completions])])
+
+AC_ARG_ENABLE([manual-progress],
+    [AC_HELP_STRING([--enable-manual-progress],
+                    [Enable intermittent progress calls inside transport layer (default:disabled)])])
+AS_IF([test "$enable_manual_progress" = "yes"], [AC_DEFINE([ENABLE_MANUAL_PROGRESS], [1], [Enable manual progress])])
 
 AC_ARG_ENABLE([nonblocking-fence],
     [AC_HELP_STRING([--enable-nonblocking-fence],
@@ -220,6 +225,8 @@ AC_ARG_WITH([oshrun-launcher],
 AC_ARG_ENABLE([memcpy],
     [AC_HELP_STRING([--enable-memcpy],
                     [Use memcpy to perform local put/get operations (default:disabled)])])
+
+PKG_INSTALLDIR()
 
 dnl check for programs
 
@@ -731,6 +738,7 @@ AC_CONFIG_FILES([Makefile
   mpp/shmemx_c_func.h4
   mpp/shmemx.h4
   src/Makefile
+  src/sos.pc
   test/Makefile
   test/unit/Makefile
   test/performance/Makefile

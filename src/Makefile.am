@@ -130,6 +130,7 @@ libsma_la_SOURCES += \
 	runtime-pmix.c
 endif
 
+pkgconfig_DATA = sos.pc
 
 bin_SCRIPTS = oshcc oshrun
 CLEANFILES += oshcc oshrun

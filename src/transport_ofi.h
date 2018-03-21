@@ -32,8 +32,9 @@
 #include <sys/types.h>
 
 
+#define ENABLE_TARGET_CNTR (!defined(ENABLE_HARD_POLLING) || defined(ENABLE_MANUAL_PROGRESS))
 
-#ifndef ENABLE_HARD_POLLING
+#if ENABLE_TARGET_CNTR
 extern struct fid_cntr*                 shmem_transport_ofi_target_cntrfd;
 #endif
 #ifndef ENABLE_MR_SCALABLE
@@ -51,6 +52,8 @@ extern size_t                           shmem_transport_ofi_max_buffered_send;
 extern size_t                           shmem_transport_ofi_max_msg_size;
 extern size_t                           shmem_transport_ofi_bounce_buffer_size;
 extern long                             shmem_transport_ofi_max_bounce_buffers;
+
+extern pthread_mutex_t                  shmem_transport_ofi_progress_lock;
 
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -308,6 +311,21 @@ extern struct fid_ep* shmem_transport_ofi_target_ep;
             shmem_free_list_unlock(ctx->bounce_buffers);                        \
     } while (0)
 
+static inline
+void shmem_transport_probe(void) {
+#if defined(ENABLE_MANUAL_PROGRESS)
+#  ifdef USE_THREAD_COMPLETION
+    if (0 == pthread_mutex_trylock(&shmem_transport_ofi_progress_lock)) {
+#  endif
+        fi_cntr_read(shmem_transport_ofi_target_cntrfd);
+#  ifdef USE_THREAD_COMPLETION
+        pthread_mutex_unlock(&shmem_transport_ofi_progress_lock);
+    }
+#  endif
+#endif
+    return;
+}
+
 int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx);
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx);
 
@@ -412,6 +430,8 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
         success = fi_cntr_read(ctx->put_cntr);
         fail = fi_cntr_readerr(ctx->put_cntr);
         cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
+
+        shmem_transport_probe();
 
         if (success < cnt && fail == 0) {
             SPINLOCK_BODY();
@@ -713,6 +733,8 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
         success = fi_cntr_read(ctx->get_cntr);
         fail = fi_cntr_readerr(ctx->get_cntr);
         cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr);
+
+        shmem_transport_probe();
 
         if (success < cnt && fail == 0) {
             SPINLOCK_BODY();
