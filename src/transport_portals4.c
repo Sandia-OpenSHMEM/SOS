@@ -118,7 +118,6 @@ shmem_internal_mutex_t shmem_internal_mutex_ptl4_ctx;
 shmem_internal_mutex_t shmem_internal_mutex_ptl4_pt_state;
 shmem_internal_mutex_t shmem_internal_mutex_ptl4_frag;
 shmem_internal_mutex_t shmem_internal_mutex_ptl4_event_slots;
-shmem_internal_mutex_t shmem_internal_mutex_ptl4_nb_fence;
 #endif
 
 static shmem_transport_ctx_t** shmem_transport_portals4_contexts = NULL;
@@ -386,7 +385,6 @@ shmem_transport_init(void)
     SHMEM_MUTEX_INIT(shmem_internal_mutex_ptl4_pt_state);
     SHMEM_MUTEX_INIT(shmem_internal_mutex_ptl4_frag);
     SHMEM_MUTEX_INIT(shmem_internal_mutex_ptl4_event_slots);
-    SHMEM_MUTEX_INIT(shmem_internal_mutex_ptl4_nb_fence);
 
     shmem_transport_portals4_bounce_buffer_size = shmem_internal_params.BOUNCE_SIZE;
     shmem_transport_portals4_bounce_buffers =
@@ -772,7 +770,6 @@ shmem_transport_fini(void)
     SHMEM_MUTEX_DESTROY(shmem_internal_mutex_ptl4_pt_state);
     SHMEM_MUTEX_DESTROY(shmem_internal_mutex_ptl4_frag);
     SHMEM_MUTEX_DESTROY(shmem_internal_mutex_ptl4_event_slots);
-    SHMEM_MUTEX_DESTROY(shmem_internal_mutex_ptl4_nb_fence);
 
     return 0;
 }

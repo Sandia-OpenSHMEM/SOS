@@ -110,7 +110,6 @@ extern shmem_internal_mutex_t shmem_internal_mutex_ptl4_ctx;
 extern shmem_internal_mutex_t shmem_internal_mutex_ptl4_pt_state;
 extern shmem_internal_mutex_t shmem_internal_mutex_ptl4_frag;
 extern shmem_internal_mutex_t shmem_internal_mutex_ptl4_event_slots;
-extern shmem_internal_mutex_t shmem_internal_mutex_ptl4_nb_fence;
 #endif
 
 #define SHMEM_TRANSPORT_PORTALS4_TYPE_BOUNCE  0x01
