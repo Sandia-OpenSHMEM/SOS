@@ -105,16 +105,11 @@ extern int shmem_transport_portals4_total_data_ordering;
 extern int shmem_transport_portals4_long_pending;
 #endif
 
-#ifdef ENABLE_NONBLOCKING_FENCE
-extern int shmem_transport_portals4_fence_pending;
-#endif
-
 #ifdef ENABLE_THREADS
 extern shmem_internal_mutex_t shmem_internal_mutex_ptl4_ctx;
 extern shmem_internal_mutex_t shmem_internal_mutex_ptl4_pt_state;
 extern shmem_internal_mutex_t shmem_internal_mutex_ptl4_frag;
 extern shmem_internal_mutex_t shmem_internal_mutex_ptl4_event_slots;
-extern shmem_internal_mutex_t shmem_internal_mutex_ptl4_nb_fence;
 #endif
 
 #define SHMEM_TRANSPORT_PORTALS4_TYPE_BOUNCE  0x01
@@ -327,51 +322,13 @@ shmem_transport_fence(shmem_transport_ctx_t* ctx)
     int ret = 0;
 
     if (0 == PORTALS4_TOTAL_DATA_ORDERING) {
-#ifdef ENABLE_NONBLOCKING_FENCE
-        /* synchronize the atomic cache, if there is one */
-        PtlAtomicSync();
-
-        /* non-blocking fence.  Always mark and return */
-        SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_nb_fence);
-        shmem_transport_portals4_fence_pending = 1;
-        SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_nb_fence);
-#else
         ret = shmem_transport_quiet(ctx);
-#endif
     }
 #if WANT_TOTAL_DATA_ORDERING != 0
     else if (0 != shmem_transport_portals4_long_pending) {
-#ifdef ENABLE_NONBLOCKING_FENCE
-        /* non-blocking fence.  Always mark and return */
-        SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_nb_fence);
-        shmem_transport_portals4_fence_pending = 1;
-        SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_nb_fence);
-#else
         ret = shmem_transport_quiet(ctx);
-#endif
         shmem_transport_portals4_long_pending = 0;
     }
-#endif
-
-    return ret;
-}
-
-
-/* internal call: call at the start of all communication calls to deal with delayed fence */
-static inline
-int
-shmem_transport_portals4_fence_complete(void)
-{
-    int ret = 0;
-
-#ifdef ENABLE_NONBLOCKING_FENCE
-    /* If a fence is pending, complete */
-    SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_nb_fence);
-    if (0 != shmem_transport_portals4_fence_pending) {
-        ret = shmem_transport_quiet(ctx);
-        shmem_transport_portals4_fence_pending = 0;
-    }
-    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_nb_fence);
 #endif
 
     return ret;
@@ -446,7 +403,6 @@ shmem_transport_put_small(shmem_transport_ctx_t* ctx, void *target, const void *
 
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
-    shmem_transport_portals4_fence_complete();
     shmem_internal_atomic_inc(&ctx->pending_put_cntr);
 
     ret = PtlPut(ctx->put_volatile_md,
@@ -480,8 +436,6 @@ shmem_transport_portals4_put_nb_internal(shmem_transport_ctx_t* ctx, void *targe
 #else
     PORTALS4_GET_REMOTE_ACCESS_TWOPT(target, pt, offset, data_pt, heap_pt);
 #endif
-
-    shmem_transport_portals4_fence_complete();
 
     if (len <= shmem_transport_portals4_max_volatile_size) {
         shmem_internal_atomic_inc(&ctx->pending_put_cntr);
@@ -601,7 +555,6 @@ shmem_transport_portals4_put_nbi_internal(shmem_transport_ctx_t* ctx, void *targ
     PORTALS4_GET_REMOTE_ACCESS_TWOPT(target, pt, offset, data_pt, heap_pt);
 #endif
 
-    shmem_transport_portals4_fence_complete();
     shmem_internal_atomic_inc(&ctx->pending_put_cntr);
 
     if (len <= shmem_transport_portals4_max_volatile_size) {
@@ -802,7 +755,6 @@ shmem_transport_swap(shmem_transport_ctx_t* ctx, void *target, const void *sourc
     shmem_internal_assert(len <= sizeof(long double _Complex));
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
-    shmem_transport_portals4_fence_complete();
     shmem_internal_atomic_inc(&ctx->pending_get_cntr);
 
     /* note: No ack is generated on the ct associated with the
@@ -843,7 +795,6 @@ shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
     shmem_internal_assert(len <= sizeof(long double _Complex));
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
-    shmem_transport_portals4_fence_complete();
     shmem_internal_atomic_inc(&ctx->pending_get_cntr);
 
     /* note: No ack is generated on the ct associated with the
@@ -884,7 +835,6 @@ shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
     shmem_internal_assert(len <= sizeof(long double _Complex));
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
-    shmem_transport_portals4_fence_complete();
     shmem_internal_atomic_inc(&ctx->pending_get_cntr);
 
     /* note: No ack is generated on the ct associated with the
@@ -918,14 +868,11 @@ shmem_transport_atomic_small(shmem_transport_ctx_t* ctx, void *target, const voi
     long offset;
     ptl_process_t peer;
 
-    shmem_transport_portals4_fence_complete();
-
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
 
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
-    shmem_transport_portals4_fence_complete();
     shmem_internal_atomic_inc(&ctx->pending_put_cntr);
 
     ret = PtlAtomic(ctx->put_volatile_md,
@@ -956,12 +903,8 @@ shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *
 
     shmem_internal_assert(completion != NULL);
 
-    shmem_transport_portals4_fence_complete();
-
     peer.rank = pe;
     PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
-
-    shmem_transport_portals4_fence_complete();
 
     if (len <= shmem_transport_portals4_max_volatile_size) {
         shmem_internal_atomic_inc(&ctx->pending_put_cntr);
@@ -1091,7 +1034,6 @@ shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target, const voi
     shmem_internal_assert(len <= shmem_transport_portals4_max_fetch_atomic_size);
     shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
 
-    shmem_transport_portals4_fence_complete();
     shmem_internal_atomic_inc(&ctx->pending_get_cntr);
 
     /* note: No ack is generated on the ct associated with the
