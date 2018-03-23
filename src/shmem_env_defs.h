@@ -90,8 +90,10 @@ SHMEM_INTERNAL_ENV_DEF(OFI_RX_POLL_LIMIT, long, DEFAULT_POLL_LIMIT, SHMEM_INTERN
                        "Get completion poll limit")
 SHMEM_INTERNAL_ENV_DEF(OFI_STX_MAX, long, 1, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Maximum number of STX contexts per PE")
-SHMEM_INTERNAL_ENV_DEF(OFI_STX_AUTO_PARTITION, bool, false, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
-                       "Automatically partition the STX pool evenly across PEs on each host")
+SHMEM_INTERNAL_ENV_DEF(OFI_STX_NODE_MAX, long, -1, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Maximum number of STX contexts per compute node")
+SHMEM_INTERNAL_ENV_DEF(OFI_STX_AUTO, bool, false, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Automatically partition the STX pool evenly across PEs on each compute node")
 SHMEM_INTERNAL_ENV_DEF(OFI_STX_THRESHOLD, long, 1, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Maximum number of shared contexts per STX before allocating a new STX resource")
 SHMEM_INTERNAL_ENV_DEF(OFI_STX_ALLOCATOR, string, "round-robin", SHMEM_INTERNAL_ENV_CAT_TRANSPORT,

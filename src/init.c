@@ -299,6 +299,15 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     memset(shmem_internal_location_array, -1, shmem_internal_num_pes);
 #endif
 
+    /* get hostname for shmem_getnodename */
+    if (gethostname(shmem_internal_my_hostname,
+                    sizeof(shmem_internal_my_hostname))) {
+        snprintf(shmem_internal_my_hostname,
+                    sizeof(shmem_internal_my_hostname),
+                    "ERR: gethostname '%s'?",
+                    shmem_util_strerror(errno, errmsg, 256));
+    }
+
     /* Initialize transport devices */
     ret = shmem_transport_init();
     if (0 != ret) {
@@ -361,15 +370,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
     atexit(shmem_internal_shutdown_atexit);
     shmem_internal_initialized = 1;
-
-    /* get hostname for shmem_getnodename */
-    if (gethostname(shmem_internal_my_hostname,
-                    sizeof(shmem_internal_my_hostname))) {
-        snprintf(shmem_internal_my_hostname,
-                    sizeof(shmem_internal_my_hostname),
-                    "ERR: gethostname '%s'?",
-                    shmem_util_strerror(errno, errmsg, 256));
-    }
 
     /* finish up */
 #ifndef USE_PMIX

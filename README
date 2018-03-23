@@ -225,16 +225,28 @@ options.
         random.
 
     SHMEM_OFI_STX_THRESHOLD (default: 1)
-       Number of contexts that must be allocated to all shared STXs before
-       another shared STX can be allocated.  This threshold can be increased to
-       reduce the number of shared STXs and increase the number of STXs
-       available for private use (i.e., with contexts that enable the
-       SHMEM_CTX_PRIVATE option).
+        Number of contexts that must be allocated to all shared STXs before
+        another shared STX can be allocated.  This threshold can be increased
+        to reduce the number of shared STXs and increase the number of STXs
+        available for private use (i.e., with contexts that enable the
+        SHMEM_CTX_PRIVATE option).
 
     SHMEM_OFI_STX_DISABLE_PRIVATE (default: off)
-       Disable STX privatization. Enabling this may improve load balance across
-       transmit resources, especially in scenarios where the number of contexts
-       exceeds the number of STXs.
+        Disable STX privatization. Enabling this may improve load balance
+        across transmit resources, especially in scenarios where the number of
+        contexts exceeds the number of STXs.
+
+    SHMEM_OFI_STX_AUTO (default: off)
+        Automatically determine an appropriate value for the number of STXs per
+        compute node, and evenly partition them across PEs on the same node. A
+        compute node is determined by its unique hostname, and the number of
+        STXs available on a compute node is provided by the libfabric library.
+
+    SHMEM_OFI_STX_NODE_MAX (default: auto)
+        When setting SHMEM_OFI_STX_AUTO, set the maximum number of sharable
+        transmit contexts (STXs) per compute node (i.e. per unique hostname).
+        Evenly partition this number of contexts across PEs on the same node.
+
 
   Debugging Environment variables:
 
