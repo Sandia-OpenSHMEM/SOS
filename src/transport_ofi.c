@@ -329,6 +329,7 @@ typedef enum stx_allocator_t stx_allocator_t;
 static stx_allocator_t shmem_transport_ofi_stx_allocator;
 
 static long shmem_transport_ofi_stx_max;
+static long shmem_transport_ofi_tx_ctx_cnt;
 static long shmem_transport_ofi_stx_threshold;
 
 struct shmem_transport_ofi_stx_t {
@@ -1093,6 +1094,7 @@ int populate_av(void)
     return 0;
 }
 
+
 static inline
 int allocate_fabric_resources(struct fabric_info *info)
 {
@@ -1252,6 +1254,8 @@ int query_for_fabric(struct fabric_info *info)
 #ifdef ENABLE_MR_RMA_EVENT
     shmem_transport_ofi_mr_rma_event = (info->p_info->domain_attr->mr_mode & FI_MR_RMA_EVENT) != 0;
 #endif
+
+    shmem_transport_ofi_tx_ctx_cnt = info->fabrics->domain_attr->tx_ctx_cnt;
 
     DEBUG_MSG("OFI provider: %s, fabric: %s, domain: %s\n",
               info->p_info->fabric_attr->prov_name,
@@ -1429,8 +1433,42 @@ int shmem_transport_init(void)
                            shmem_internal_params.OFI_STX_MAX);
         }
         shmem_transport_ofi_stx_max = 1;
+    } else if (shmem_internal_params.OFI_STX_AUTO_PARTITION) {
+
+        /* Note: This hostname check is very similar to what is done in the
+         * publish/populate av routines, so may want to do it only once. */
+        #ifdef MAXHOSTNAMELEN
+        size_t max_hostname_len = MAXHOSTNAMELEN;
+        #else
+        size_t max_hostname_len = HOST_NAME_MAX;
+        #endif
+        char nodename[max_hostname_len];
+        int  num_on_node = 0;
+
+        ret = shmem_runtime_put("nodename", shmem_internal_nodename(), max_hostname_len);
+        OFI_CHECK_RETURN_STR(ret, "shmem_runtime_put nodename failed");
+
+        shmem_runtime_exchange();
+
+        for (i = 0; i < shmem_internal_num_pes; i++) {
+            shmem_runtime_get(i, "nodename", nodename, max_hostname_len);
+            if (strncmp(shmem_internal_nodename(), nodename, max_hostname_len) == 0) {
+                num_on_node++;
+            }
+        }
+
+        /* Paritition TX resources evenly across node-local PEs */
+        shmem_transport_ofi_stx_max = shmem_transport_ofi_tx_ctx_cnt / num_on_node;
+        int remainder = shmem_transport_ofi_tx_ctx_cnt % num_on_node;
+        int node_pe = shmem_internal_my_pe % shmem_internal_num_pes;
+        if (remainder > 0 && ((node_pe % num_on_node) < remainder)) {
+            shmem_transport_ofi_stx_max++;
+        }
+
     } else {
+
         shmem_transport_ofi_stx_max = shmem_internal_params.OFI_STX_MAX;
+
     }
     shmem_transport_ofi_stx_threshold = shmem_internal_params.OFI_STX_THRESHOLD;
 
