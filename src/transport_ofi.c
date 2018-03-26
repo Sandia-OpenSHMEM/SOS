@@ -90,20 +90,10 @@ size_t                          shmem_transport_ofi_addrlen;
 int                             shmem_transport_ofi_mr_rma_event;
 #endif
 fi_addr_t                       *addr_table;
-#ifdef USE_ON_NODE_COMMS
-#define EPHOSTNAMELEN  _POSIX_HOST_NAME_MAX + 1
-static char                     myephostname[EPHOSTNAMELEN];
-#endif
 #ifdef ENABLE_THREADS
 shmem_internal_mutex_t          shmem_transport_ofi_lock;
 pthread_mutex_t                 shmem_transport_ofi_progress_lock = PTHREAD_MUTEX_INITIALIZER;
 #endif /* ENABLE_THREADS */
-
-#ifdef MAXHOSTNAMELEN
-static size_t max_hostname_len = MAXHOSTNAMELEN;
-#else
-static size_t max_hostname_len = HOST_NAME_MAX;
-#endif
 
 
 /* Need a syscall to gettid() because glibc doesn't provide a wrapper
@@ -1027,13 +1017,10 @@ int publish_av_info(struct fabric_info *info)
     size_t epnamelen = sizeof(epname);
 
 #ifdef USE_ON_NODE_COMMS
-    if (gethostname(myephostname, (EPHOSTNAMELEN - 1)) != 0)
-        RAISE_ERROR_MSG("gethostname error: %s\n", strerror(errno));
-
-    myephostname[EPHOSTNAMELEN-1] = '\0';
-
-    ret = shmem_runtime_put("fi_ephostname", myephostname, EPHOSTNAMELEN);
-    OFI_CHECK_RETURN_STR(ret, "shmem_runtime_put fi_ephostname failed");
+    if (!shmem_internal_params.OFI_STX_AUTO) {
+        ret = shmem_runtime_put("nodename", shmem_internal_nodename(), strlen(shmem_internal_nodename())+1);
+        OFI_CHECK_RETURN_STR(ret, "shmem_runtime_put nodename failed");
+    }
 #endif
 
     ret = fi_getname((fid_t)shmem_transport_ofi_target_ep, epname, &epnamelen);
@@ -1060,7 +1047,7 @@ int populate_av(void)
     char   *alladdrs = NULL;
 #ifdef USE_ON_NODE_COMMS
     int    num_on_node = 0;
-    char   ephostname[EPHOSTNAMELEN];
+    char   nodename[SHMEM_INTERNAL_MAX_HOSTNAME_LEN];
 #endif
 
     alladdrs = malloc(shmem_internal_num_pes * shmem_transport_ofi_addrlen);
@@ -1074,12 +1061,14 @@ int populate_av(void)
         shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen);
 
 #ifdef USE_ON_NODE_COMMS
-        shmem_runtime_get(i, "fi_ephostname", ephostname, EPHOSTNAMELEN);
-        if (strncmp(myephostname, ephostname, EPHOSTNAMELEN) == 0) {
-            SHMEM_SET_RANK_SAME_NODE(i, num_on_node++);
-            if (num_on_node > 255) {
-                RAISE_WARN_STR("Number of local ranks exceeds limit of 255");
-                return 1;
+        if (!shmem_internal_params.OFI_STX_AUTO) {
+            shmem_runtime_get(i, "nodename", nodename, SHMEM_INTERNAL_MAX_HOSTNAME_LEN);
+            if (strncmp(shmem_internal_nodename(), nodename, strlen(shmem_internal_nodename())) == 0) {
+                SHMEM_SET_RANK_SAME_NODE(i, num_on_node++);
+                if (num_on_node > 255) {
+                    RAISE_WARN_STR("Number of local ranks exceeds limit of 255");
+                    return 1;
+                }
             }
         }
 #endif
@@ -1517,15 +1506,20 @@ int shmem_transport_startup(void)
 {
     int ret;
     int i;
-    char nodename[max_hostname_len];
+    char nodename[SHMEM_INTERNAL_MAX_HOSTNAME_LEN];
     int  num_on_node = 0;
 
     if (shmem_internal_params.OFI_STX_AUTO) {
         for (i = 0; i < shmem_internal_num_pes; i++) {
-            shmem_runtime_get(i, "nodename", nodename, max_hostname_len);
-            printf("GOT nodename %s\n", nodename);
+            shmem_runtime_get(i, "nodename", nodename, SHMEM_INTERNAL_MAX_HOSTNAME_LEN);
             if (strncmp(shmem_internal_nodename(), nodename, strlen(shmem_internal_nodename())) == 0) {
-                num_on_node++;
+                SHMEM_SET_RANK_SAME_NODE(i, num_on_node++);
+#ifdef USE_ON_NODE_COMMS
+                if (num_on_node > 255) {
+                    RAISE_WARN_STR("Number of local ranks exceeds limit of 255");
+                    return 1;
+                }
+#endif
             }
         }
 

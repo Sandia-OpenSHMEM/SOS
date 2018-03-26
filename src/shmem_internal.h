@@ -43,6 +43,12 @@ extern long shmem_internal_data_length;
 #define SHMEM_INTERNAL_HEAP_OVERHEAD (1024*1024)
 #define SHMEM_INTERNAL_DIAG_STRLEN 1024
 
+#ifdef MAXHOSTNAMELEN
+#define SHMEM_INTERNAL_MAX_HOSTNAME_LEN MAXHOSTNAMELEN
+#else
+#define SHMEM_INTERNAL_MAX_HOSTNAME_LEN HOST_NAME_MAX
+#endif
+
 /* Note: must be accompanied by shmem_internal_my_pe in arguments */
 #define RAISE_PE_PREFIX "[%04d]        "
 

@@ -25,13 +25,13 @@
 #include "shmem.h"
 #include "shmemx.h"
 
-#ifdef USE_ON_NODE_COMMS
 extern char *shmem_internal_location_array;
 #define SHMEM_SET_RANK_SAME_NODE(pe, node_rank)         \
     do {                                                \
         shmem_internal_location_array[pe] = node_rank;  \
     } while (0)
 
+#ifdef USE_ON_NODE_COMMS
 #define SHMEM_GET_RANK_SAME_NODE(pe) (shmem_internal_location_array[pe])
 #elif defined(USE_MEMCPY)
 #define SHMEM_GET_RANK_SAME_NODE(pe) ((pe) == shmem_internal_my_pe ? 0 : -1)

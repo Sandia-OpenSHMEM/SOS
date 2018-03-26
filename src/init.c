@@ -65,15 +65,9 @@ int shmem_internal_thread_level;
 shmem_internal_mutex_t shmem_internal_mutex_alloc;
 #endif
 
-#ifdef USE_ON_NODE_COMMS
 char *shmem_internal_location_array = NULL;
-#endif
 
-#ifdef MAXHOSTNAMELEN
-static char shmem_internal_my_hostname[MAXHOSTNAMELEN];
-#else
-static char shmem_internal_my_hostname[HOST_NAME_MAX];
-#endif
+static char shmem_internal_my_hostname[SHMEM_INTERNAL_MAX_HOSTNAME_LEN];
 
 static char *shmem_internal_thread_level_str[4] = { "SINGLE", "FUNNELED",
                                                     "SERIALIZED", "MULTIPLE" };
