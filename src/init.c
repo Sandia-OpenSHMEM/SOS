@@ -285,12 +285,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
               shmem_internal_heap_base, shmem_internal_heap_length,
               shmem_internal_data_base, shmem_internal_data_length);
 
-#ifdef USE_ON_NODE_COMMS
-    ret = shmem_node_util_init();
-
-    if (ret) goto cleanup;
-#endif
-
     /* get hostname for shmem_getnodename */
     if (gethostname(shmem_internal_my_hostname,
                     sizeof(shmem_internal_my_hostname))) {
@@ -299,6 +293,11 @@ shmem_internal_init(int tl_requested, int *tl_provided)
                     "ERR: gethostname '%s'?",
                     shmem_util_strerror(errno, errmsg, 256));
     }
+
+#ifdef USE_ON_NODE_COMMS
+    ret = shmem_node_util_init();
+    if (ret) goto cleanup;
+#endif
 
     /* Initialize transport devices */
     ret = shmem_transport_init();

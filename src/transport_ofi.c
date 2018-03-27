@@ -1041,7 +1041,6 @@ int populate_av(void)
     char   *alladdrs = NULL;
 #ifdef USE_ON_NODE_COMMS
     int    num_on_node = 0;
-    char   nodename[SHMEM_INTERNAL_MAX_HOSTNAME_LEN];
 #endif
 
     alladdrs = malloc(shmem_internal_num_pes * shmem_transport_ofi_addrlen);
@@ -1081,7 +1080,6 @@ int populate_av(void)
 
     return 0;
 }
-
 
 static inline
 int allocate_fabric_resources(struct fabric_info *info)
@@ -1432,15 +1430,10 @@ int shmem_transport_init(void)
         }
         shmem_transport_ofi_stx_max = 1;
     } else if (shmem_internal_params.OFI_STX_AUTO) {
-
-        if (!shmem_node_util_is_initialized()) {
-            ret = shmem_node_util_init();
-        }
-
+        ret = shmem_node_util_init();
+        if (ret != 0) return ret;
     } else {
-
         shmem_transport_ofi_stx_max = shmem_internal_params.OFI_STX_MAX;
-
     }
     shmem_transport_ofi_stx_threshold = shmem_internal_params.OFI_STX_THRESHOLD;
 
@@ -1538,7 +1531,6 @@ int shmem_transport_startup(void)
     }
 
     /* STX allocation for the default context */
-
     shmem_transport_ofi_stx_allocate(&shmem_transport_ctx_default);
 
     ret = bind_enable_cntr_ep_resources(&shmem_transport_ctx_default);

@@ -9,19 +9,9 @@
 static int node_util_is_initialized = 0;
 static char *shmem_internal_location_array = NULL;
 
-inline
-int shmem_node_util_is_initialized(void) {
-    if (node_util_is_initialized) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
 
 int shmem_node_util_init(void) {
     int ret;
-
-    printf("HELLO NODE UTIL!\n");
 
     if (!node_util_is_initialized) {
         shmem_internal_location_array = malloc(sizeof(char) * shmem_internal_num_pes);
@@ -35,6 +25,7 @@ int shmem_node_util_init(void) {
         ret = shmem_runtime_put("nodename", shmem_internal_nodename(), strlen(shmem_internal_nodename())+1);
         if (ret !=0) {
             RAISE_ERROR_MSG("shmem_node_util_init failed during nodename store to KVS: (%d)", ret);
+            return ret;
         }
 
         node_util_is_initialized = 1;

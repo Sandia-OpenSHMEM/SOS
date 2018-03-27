@@ -25,8 +25,6 @@
 #define SHMEM_INTERNAL_MAX_HOSTNAME_LEN HOST_NAME_MAX
 #endif
 
-static char *shmem_internal_location_array;
-
 int shmem_node_util_is_initialized(void);
 
 int shmem_node_util_init(void);
