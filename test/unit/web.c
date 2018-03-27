@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
 
     srand(1+me);
 
-    n_threads = 4 * n_pes;
+    n_threads = 4;
     channels = shmem_malloc(n_threads*sizeof(channel));
     memset(channels,0,n_threads*sizeof(channel));
 
