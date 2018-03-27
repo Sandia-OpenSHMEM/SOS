@@ -44,7 +44,7 @@ shmem_internal_put_small(shmem_ctx_t ctx, void *target, const void *source, size
 
     shmem_internal_assert(len > 0);
 
-    if (-1 != (node_rank = shmem_node_util_get_rank_same_node(pe))) {
+    if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
 #if USE_MEMCPY
         memcpy(target, source, len);
 #elif USE_XPMEM
@@ -69,7 +69,7 @@ shmem_internal_put_nb(shmem_ctx_t ctx, void *target, const void *source, size_t 
 
     if (len == 0) return;
 
-    if (-1 != (node_rank = shmem_node_util_get_rank_same_node(pe))) {
+    if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
 #if USE_MEMCPY
         memcpy(target, source, len);
 #elif USE_XPMEM
@@ -96,7 +96,7 @@ shmem_internal_put_nbi(shmem_ctx_t ctx, void *target, const void *source, size_t
 
     if (len == 0) return;
 
-    if (-1 != (node_rank = shmem_node_util_get_rank_same_node(pe))) {
+    if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
 #if USE_MEMCPY
         memcpy(target, source, len);
 #elif USE_XPMEM
@@ -144,7 +144,7 @@ shmem_internal_get(shmem_ctx_t ctx, void *target, const void *source, size_t len
 
     if (len == 0) return;
 
-    if (-1 != (node_rank = shmem_node_util_get_rank_same_node(pe))) {
+    if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
 #if USE_MEMCPY
         memcpy(target, source, len);
 #elif USE_XPMEM

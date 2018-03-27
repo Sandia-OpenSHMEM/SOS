@@ -64,7 +64,7 @@ shmem_transport_cma_startup(void)
     pmi_cma_data_t cma_data;
 
     for (i = 0 ; i < shmem_internal_num_pes; ++i) {
-        if (-1 != shmem_node_util_get_rank_same_node(i)) {
+        if (-1 != SHMEM_GET_RANK_SAME_NODE(i)) {
             num_on_node++;
         }
     }
@@ -80,7 +80,7 @@ shmem_transport_cma_startup(void)
 
     /* get local peer pids */
     for (i = 0 ; i < shmem_internal_num_pes; ++i) {
-        peer_num = shmem_node_util_get_rank_same_node(i);
+        peer_num = SHMEM_GET_RANK_SAME_NODE(i);
         if (-1 == peer_num) continue;
 
         ret = shmem_runtime_get(i, "cma-procid", &cma_data,

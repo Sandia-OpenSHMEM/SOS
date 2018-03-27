@@ -6,8 +6,9 @@
 #include "shmem_node_util.h"
 
 
+char *shmem_internal_location_array = NULL;
+
 static int node_util_is_initialized = 0;
-static char *shmem_internal_location_array = NULL;
 
 
 int shmem_node_util_init(void) {
@@ -37,12 +38,14 @@ int shmem_node_util_init(void) {
 }
 
 
+inline
 void shmem_node_util_set_node_rank(int pe, int node_rank) {
 
     shmem_internal_location_array[pe] = node_rank;
     return;
 }
 
+inline
 int shmem_node_util_get_rank_same_node(int pe) {
 
 #ifdef USE_ON_NODE_COMMS
