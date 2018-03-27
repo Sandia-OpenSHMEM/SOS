@@ -29,6 +29,7 @@
 #include "shmem_internal.h"
 #include "shmem_collectives.h"
 #include "shmem_comm.h"
+#include "shmem_node_util.h"
 #include "runtime.h"
 #include "build_info.h"
 
@@ -64,8 +65,6 @@ int shmem_internal_thread_level;
 #ifdef ENABLE_THREADS
 shmem_internal_mutex_t shmem_internal_mutex_alloc;
 #endif
-
-char *shmem_internal_location_array = NULL;
 
 static char shmem_internal_my_hostname[SHMEM_INTERNAL_MAX_HOSTNAME_LEN];
 
@@ -287,10 +286,9 @@ shmem_internal_init(int tl_requested, int *tl_provided)
               shmem_internal_data_base, shmem_internal_data_length);
 
 #ifdef USE_ON_NODE_COMMS
-    shmem_internal_location_array = malloc(sizeof(char) * shmem_internal_num_pes);
-    if (NULL == shmem_internal_location_array) goto cleanup;
+    ret = shmem_node_util_init();
 
-    memset(shmem_internal_location_array, -1, shmem_internal_num_pes);
+    if (ret) goto cleanup;
 #endif
 
     /* get hostname for shmem_getnodename */

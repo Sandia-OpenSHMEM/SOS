@@ -40,6 +40,7 @@
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"
+#include "shmem_node_util.h"
 #include "transport_ofi.h"
 #include <unistd.h>
 #include "runtime.h"
@@ -1016,13 +1017,6 @@ int publish_av_info(struct fabric_info *info)
     char   epname[128];
     size_t epnamelen = sizeof(epname);
 
-#ifdef USE_ON_NODE_COMMS
-    if (!shmem_internal_params.OFI_STX_AUTO) {
-        ret = shmem_runtime_put("nodename", shmem_internal_nodename(), strlen(shmem_internal_nodename())+1);
-        OFI_CHECK_RETURN_STR(ret, "shmem_runtime_put nodename failed");
-    }
-#endif
-
     ret = fi_getname((fid_t)shmem_transport_ofi_target_ep, epname, &epnamelen);
     if (ret != 0 || (epnamelen > sizeof(epname))) {
         RAISE_WARN_STR("fi_getname failed");
@@ -1059,20 +1053,18 @@ int populate_av(void)
     for (i = 0; i < shmem_internal_num_pes; i++) {
         char *addr_ptr = alladdrs + i * shmem_transport_ofi_addrlen;
         shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen);
+    }
 
 #ifdef USE_ON_NODE_COMMS
-        if (!shmem_internal_params.OFI_STX_AUTO) {
-            shmem_runtime_get(i, "nodename", nodename, SHMEM_INTERNAL_MAX_HOSTNAME_LEN);
-            if (strncmp(shmem_internal_nodename(), nodename, strlen(shmem_internal_nodename())) == 0) {
-                SHMEM_SET_RANK_SAME_NODE(i, num_on_node++);
-                if (num_on_node > 255) {
-                    RAISE_WARN_STR("Number of local ranks exceeds limit of 255");
-                    return 1;
-                }
-            }
+        num_on_node = shmem_node_util_count_local_pes();
+        if (num_on_node <= 0) {
+            RAISE_WARN_STR("Failed to find any node-local PEs");
+            return 1;
+        } else if (num_on_node > 255) {
+            RAISE_WARN_STR("Number of local ranks exceeds limit of 255");
+            return 1;
         }
 #endif
-    }
 
     ret = fi_av_insert(shmem_transport_ofi_avfd,
                        alladdrs,
@@ -1441,10 +1433,9 @@ int shmem_transport_init(void)
         shmem_transport_ofi_stx_max = 1;
     } else if (shmem_internal_params.OFI_STX_AUTO) {
 
-        /* Note: This hostname is very similar to what is stored in the
-         * publish/populate av routines, so may want to do it only once. */
-        ret = shmem_runtime_put("nodename", shmem_internal_nodename(), strlen(shmem_internal_nodename())+1);
-        OFI_CHECK_RETURN_STR(ret, "shmem_runtime_put nodename failed");
+        if (!shmem_node_util_is_initialized()) {
+            ret = shmem_node_util_init();
+        }
 
     } else {
 
@@ -1506,21 +1497,14 @@ int shmem_transport_startup(void)
 {
     int ret;
     int i;
-    char nodename[SHMEM_INTERNAL_MAX_HOSTNAME_LEN];
     int  num_on_node = 0;
 
     if (shmem_internal_params.OFI_STX_AUTO) {
-        for (i = 0; i < shmem_internal_num_pes; i++) {
-            shmem_runtime_get(i, "nodename", nodename, SHMEM_INTERNAL_MAX_HOSTNAME_LEN);
-            if (strncmp(shmem_internal_nodename(), nodename, strlen(shmem_internal_nodename())) == 0) {
-                SHMEM_SET_RANK_SAME_NODE(i, num_on_node++);
-#ifdef USE_ON_NODE_COMMS
-                if (num_on_node > 255) {
-                    RAISE_WARN_STR("Number of local ranks exceeds limit of 255");
-                    return 1;
-                }
-#endif
-            }
+
+        num_on_node = shmem_node_util_count_local_pes();
+        if (num_on_node <= 0) {
+            RAISE_ERROR_STR("Failed to find any node-local PEs");
+            return 1;
         }
 
         /* Paritition TX resources evenly across node-local PEs */

@@ -39,6 +39,8 @@ libsma_la_SOURCES = \
 	shmem_accessibility.h \
 	shmem_remote_pointer.h \
 	shmem_lock.h \
+	shmem_node_util.h \
+	shmem_node_util.c \
 	malloc.c \
 	init.c \
 	collectives.c \

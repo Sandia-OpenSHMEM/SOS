@@ -30,6 +30,7 @@
 #include "shmemx.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"
+#include "shmem_node_util.h"
 #include "runtime.h"
 
 int8_t shmem_transport_portals4_pt_state[SHMEM_TRANSPORT_PORTALS4_NUM_PTS] = {
@@ -514,7 +515,7 @@ shmem_transport_startup(void)
 
         ret = shmem_runtime_get(peer, "portals4-bases", bases, sizeof(uint64_t) * 2);
         if (0 != ret) {
-            RETURN_ERROR_MSG("runtime_put failed: %d\n", ret);
+            RETURN_ERROR_MSG("runtime_get failed: %d\n", ret);
             return ret;
         }
 
@@ -558,7 +559,7 @@ shmem_transport_startup(void)
 #ifdef USE_ON_NODE_COMMS
         /* update the connectivity map... */
         if (desired[i].phys.nid == my_id.phys.nid) {
-            SHMEM_SET_RANK_SAME_NODE(i, num_on_node++);
+            shmem_node_util_set_node_rank(i, num_on_node++);
             if (num_on_node > 255) {
                 RETURN_ERROR_STR("Too many local ranks");
                 goto cleanup;
