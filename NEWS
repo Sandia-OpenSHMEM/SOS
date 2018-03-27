@@ -2,6 +2,35 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.4.1rc1
+---------
+- Added multi-threaded implementations of the shmem_perf_suite throughput
+  benchmarks, which make use of OpenSHMEM contexts and OpenMP.
+- Modified the test suite to enable building and running external to the SOS
+  repository (see https://github.com/openshmem-org/tests-sos).
+- Provided a pkg-config file for Sandia OpenSHMEM named 'sos'.
+- Added the SHMEM_OFI_STX_DISABLE_PRIVATE mode which disables STX
+  privatization, potentially improving load balance across transmit resources.
+- SHMEM_OFI_STX_MAX default value reduced to 1 to avoid resource exhaustion
+  with some providers.
+- Improved the portability of SOS's error-reporting utilities.
+- Introduced support for the shmem_query_thread routine.
+- Added an optional probe routine to assist OFI transport progress (see
+  --enable-manual-progress), which may improve the performance of pending
+  communication operations for some providers (notably, PSM2).
+- Added the shmemx_register_gettid function, which allows users to pass a
+  function pointer for setting custom thread IDs.
+- Add check for ASLR when remote virtual addressing optimization is enabled.
+- Added the --disable-aslr-check options to disable the check for address space
+  layout randomization.
+- Added a unit test to validate the memory barriers in various SOS
+  synchronization routines.
+- Multiple bugfixes in the unit tests, performance suite, Portals finalization,
+  OFI STX management, the SOS simple build script, the default poll limit, and
+  more.
+- Fix incorrect SHMEM_MINOR_VERSION value.
+
+
 v1.4.0
 ------
 - Support for OpenSHMEM 1.4 specification.
