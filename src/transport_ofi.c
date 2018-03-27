@@ -1507,6 +1507,11 @@ int shmem_transport_startup(void)
         if (remainder > 0 && ((node_pe % num_on_node) < remainder)) {
             shmem_transport_ofi_stx_max++;
         }
+
+        /* When running more PEs than available STXs, must assign each PE at least 1 */
+        if (shmem_transport_ofi_stx_max <=0) {
+            shmem_transport_ofi_stx_max = 1;
+        }
     }
 
     /* Allocate STX array with max length */
@@ -1537,12 +1542,6 @@ int shmem_transport_startup(void)
     OFI_CHECK_RETURN_MSG(ret, "context bind/enable CNTR endpoint failed (%s)\n", fi_strerror(errno));
 
     struct fabric_info* info = &shmem_transport_ofi_info;
-    info->p_info->ep_attr->tx_ctx_cnt = FI_SHARED_CONTEXT;
-    info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | FI_ATOMICS;
-    info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
-    info->p_info->mode = 0;
-    info->p_info->tx_attr->mode = 0;
-    info->p_info->rx_attr->mode = 0;
 
     if (shmem_transport_ctx_default.options & SHMEMX_CTX_BOUNCE_BUFFER &&
         shmem_transport_ofi_bounce_buffer_size > 0 &&
