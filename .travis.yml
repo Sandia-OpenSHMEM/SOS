@@ -383,6 +383,27 @@ script:
     - oshrun -np 4 ./SHMEM/Synch_p2p/p2p 10 1000 1000
     - oshrun -np 4 ./SHMEM/Transpose/transpose 10 1000
     - make clean
+    ###
+    ### Tarball creation and test
+    ###
+    - cd $SOS_SRC
+    - make clean
+    - ./configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple
+    - make dist
+    - tar zxvf sos-*.tar.gz
+    - cd sos-*
+    - ./autogen.sh
+    - mkdir build
+    - cd build
+    - ../configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple
+    - make check
+    ###
+    ### Test RPM Build
+    ###
+    - cd $SOS_SRC
+    - ./configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple
+    - make dist
+    - rpmbuild -ta ./sos-*.tar.gz --define "configargs --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple"
 after_script:
     - >
       if [ "$CC" = "icc" ]; then
