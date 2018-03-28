@@ -101,13 +101,7 @@ check_PROGRAMS = \
 
 if ENABLE_PROFILING
 check_PROGRAMS += \
-	pcontrol \
 	rma_coverage_pshmem
-endif
-
-if USE_PORTALS4
-check_PROGRAMS += \
-	 shmem_ct
 endif
 
 if HAVE_CXX
@@ -151,11 +145,6 @@ check_PROGRAMS += \
     web \
     thread_wait \
     query_thread_funneled 
-
-if SHMEMX_TESTS
-check_PROGRAMS += \
-    gettid_register
-endif
 endif
 
 if HAVE_OPENMP
@@ -200,12 +189,6 @@ mt_a2a_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 mt_contention_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 mt_contention_CFLAGS = $(PTHREAD_CFLAGS)
 mt_contention_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
-
-if SHMEMX_TESTS
-gettid_register_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
-gettid_register_CFLAGS = $(PTHREAD_CFLAGS)
-gettid_register_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
-endif
 
 mt_membar_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 mt_membar_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)
