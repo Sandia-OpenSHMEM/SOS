@@ -11,4 +11,4 @@
 # information, see the LICENSE file in the top level directory of the
 # distribution.
 
-SUBDIRS = unit performance apps
+SUBDIRS = unit shmemx performance apps
