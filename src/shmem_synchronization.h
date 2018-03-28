@@ -30,6 +30,11 @@ shmem_internal_quiet(shmem_ctx_t ctx)
     if (0 != ret) { RAISE_ERROR(ret); }
 
     shmem_internal_membar();
+
+    /* Transport level memory flush is required to make memory 
+     * changes (i.e. subsequent coherent load operations 
+     * performed via the shmem_ptr API, the result of atomics 
+     * that targeted the local process) visible */
     shmem_transport_syncmem();
 }
 
@@ -43,7 +48,9 @@ shmem_internal_fence(shmem_ctx_t ctx)
     if (0 != ret) { RAISE_ERROR(ret); }
 
     shmem_internal_membar_store();
-    shmem_transport_syncmem();
+
+    /* Since fence does not guarantee any memory visibility, 
+     * transport level memory flush is not required here. */
 }
 
 
