@@ -1,7 +1,7 @@
 %{!?configargs: %global configargs %{nil}}
 %{!?testdir: %global testdir %{buildroot}%{_datadir}/%{name}-%{version}/tests}
 
-Name: sandia-openshmem
+Name: sos
 Version: @VERSION@
 Release: 1%{?dist}
 Summary: Sandia OpenSHMEM.
