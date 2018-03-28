@@ -96,7 +96,6 @@ shmem_internal_mutex_t          shmem_transport_ofi_lock;
 pthread_mutex_t                 shmem_transport_ofi_progress_lock = PTHREAD_MUTEX_INITIALIZER;
 #endif /* ENABLE_THREADS */
 
-
 /* Need a syscall to gettid() because glibc doesn't provide a wrapper
  * (see gettid manpage in the NOTES section): */
 static inline
@@ -1509,7 +1508,7 @@ int shmem_transport_startup(void)
         }
 
         /* When running more PEs than available STXs, must assign each PE at least 1 */
-        if (shmem_transport_ofi_stx_max <=0) {
+        if (shmem_transport_ofi_stx_max <= 0) {
             shmem_transport_ofi_stx_max = 1;
         }
     }

@@ -243,9 +243,11 @@ options.
         STXs available on a compute node is provided by the libfabric library.
 
     SHMEM_OFI_STX_NODE_MAX (default: auto)
-        When setting SHMEM_OFI_STX_AUTO, set the maximum number of sharable
-        transmit contexts (STXs) per compute node (i.e. per unique hostname).
-        Evenly partition this number of contexts across PEs on the same node.
+        When SHMEM_OFI_STX_AUTO is enabled, this value manually sets the
+        maximum number of STXs per compute node (instead of using the value
+        provided by libfabric).  These STXs are evenly partitioned across PEs
+        that reside on the same compute node.  If SHMEM_OFI_STX_AUTO is off,
+        then SHMEM_OFI_STX_NODE_MAX has no effect.
 
 
   Debugging Environment variables:
