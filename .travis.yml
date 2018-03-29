@@ -71,7 +71,7 @@ addons:
     apt:
         packages:
             - gfortran
-            - rpmbuild
+            - rpm
 
 before_install:
     ## Set up the environment
