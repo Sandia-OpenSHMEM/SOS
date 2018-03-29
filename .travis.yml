@@ -412,7 +412,7 @@ script:
           cd $SOS_SRC
           ./configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple
           make dist
-          #rpmbuild -ta ./sos-*.tar.gz --define "configargs --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple"
+          rpmbuild -ta ./sos-*.tar.gz --define "configargs --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple"
       fi
 after_script:
     - >
