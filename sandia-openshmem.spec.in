@@ -1,7 +1,7 @@
 %{!?configargs: %global configargs %{nil}}
 %{!?testdir: %global testdir %{buildroot}%{_datadir}/%{name}-%{version}/tests}
 
-Name: sandia-openshmem
+Name: sos
 Version: @VERSION@
 Release: 1%{?dist}
 Summary: Sandia OpenSHMEM.
@@ -47,6 +47,8 @@ rm -f %{buildroot}%{_libdir}/*.la
 # Prepare tests
 install -d %{testdir}/unit
 install test/unit/.libs/* %{testdir}/unit
+install -d %{testdir}/shmemx
+install test/shmemx/.libs/* %{testdir}/shmemx
 install -d %{testdir}/apps
 install test/apps/.libs/* %{testdir}/apps
 install -d %{testdir}/performance/shmem_perf_suite
@@ -64,6 +66,7 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 %{_bindir}/oshrun
 %{_libdir}/lib*.so.*
+%{_libdir}/pkgconfig/*.pc
 %doc LICENSE README NEWS
 
 %files devel
@@ -71,6 +74,7 @@ rm -rf %{buildroot}
 %{_bindir}/*
 %{_libdir}/lib*.so
 %{_libdir}/*.a
+%{_libdir}/pkgconfig/*.pc
 %{_includedir}/*
 %{_mandir}/man[1-3]/*
 
