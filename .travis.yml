@@ -400,8 +400,9 @@ script:
           ./autogen.sh
           mkdir build
           cd build
-          ../configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple
-          make check
+          ../configure --with-ofi=$TRAVIS_INSTALL/libfabric/ $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
+          make $TRAVIS_PAR_MAKE check TESTS=
+          make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2" check
       fi
 after_script:
     - >
