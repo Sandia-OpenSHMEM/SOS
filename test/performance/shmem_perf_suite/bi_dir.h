@@ -31,6 +31,7 @@ void static inline bi_bw_put(int len, perf_metrics_t *metric_info)
     int dest = partner_node(*metric_info);
     int i = 0, j = 0;
     static int check_once = 0;
+    static int fin = -1;
 
     if (!check_once) {
         int status = check_hostname_validation(*metric_info);
@@ -67,11 +68,16 @@ void static inline bi_bw_put(int len, perf_metrics_t *metric_info)
         shmem_quiet();
     }
 
-    shmem_barrier_all();
     if (streaming_node(*metric_info)) {
+        shmem_int_p(&fin, 1, dest);
+        shmem_int_wait_until(&fin, SHMEM_CMP_EQ, 0);
         end = perf_shmemx_wtime();
         calc_and_print_results((end - start), len, *metric_info);
+    } else {
+        shmem_int_wait_until(&fin, SHMEM_CMP_EQ, 1);
+        shmem_int_p(&fin, 0, dest);
     }
+
 }
 
 void static inline bi_bw_get(int len, perf_metrics_t *metric_info)
@@ -80,6 +86,7 @@ void static inline bi_bw_get(int len, perf_metrics_t *metric_info)
     int dest = partner_node(*metric_info);
     int i = 0, j = 0;
     static int check_once = 0;
+    static int fin = -1;
 
     if (!check_once) {
         int status = check_hostname_validation(*metric_info);
@@ -126,10 +133,14 @@ void static inline bi_bw_get(int len, perf_metrics_t *metric_info)
 #endif
     } 
 
-    shmem_barrier_all();
     if (streaming_node(*metric_info)) {
+        shmem_int_p(&fin, 1, dest);
+        shmem_int_wait_until(&fin, SHMEM_CMP_EQ, 0);
         end = perf_shmemx_wtime();
         calc_and_print_results((end - start), len, *metric_info);
+    } else {
+        shmem_int_wait_until(&fin, SHMEM_CMP_EQ, 1);
+        shmem_int_p(&fin, 0, dest);
     }
 }
 

@@ -36,7 +36,7 @@
 #include <time.h>
 #include <stdint.h>
 
-#include <limits.h>
+#include <bits/local_lim.h>
 
 #define ONE 1
 

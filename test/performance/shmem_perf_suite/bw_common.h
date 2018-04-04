@@ -98,6 +98,7 @@ typedef struct perf_metrics {
     bw_style bwstyle;
     int thread_safety;
     int nthreads;
+    int individual_report;
 } perf_metrics_t;
 
 long red_psync[SHMEM_REDUCE_SYNC_SIZE];
@@ -124,6 +125,7 @@ void static data_set_defaults(perf_metrics_t * data) {
     data->bwstyle = STYLE_RMA;
     data->thread_safety = SHMEM_THREAD_SINGLE;
     data->nthreads = 1;
+    data->individual_report = -1;
 }
 
 static int error_checking_init_target_usage(perf_metrics_t *metric_info) {
@@ -242,7 +244,7 @@ static int command_line_arg_check(int argc, char *argv[],
     extern char *optarg;
 
     /* check command line args */
-    while ((ch = getopt(argc, argv, "e:s:n:w:p:r:l:kbvtC:T:")) != EOF) {
+    while ((ch = getopt(argc, argv, "e:s:n:w:p:r:l:kbivtC:T:")) != EOF) {
         switch (ch) {
         case 's':
             metric_info->start_len = strtoul(optarg, (char **)NULL, 0);
@@ -322,6 +324,9 @@ static int command_line_arg_check(int argc, char *argv[],
             break;
         case 'T':
             metric_info->nthreads = atoi(optarg);
+            break;
+        case 'i':
+            metric_info->individual_report = 1;
             break;
         default:
             error = true;
@@ -520,6 +525,7 @@ void static inline calc_and_print_results(double total_t, int len,
     double pe_bw_avg = 0.0, pe_mr_avg = 0.0;
     int nred_elements = 1;
     static double pwrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
+    static double pe_time, pe_time_max = 0.0;
 
     PE_set_used_adjustments(&nPEs, &stride, &start_pe, metric_info);
 
@@ -541,10 +547,34 @@ void static inline calc_and_print_results(double total_t, int len,
     /* base case: will be overwritten by collective if num_pes > 2 */
     pe_bw_sum = bw;
 
-    if(nPEs >= 2)
-        shmem_double_sum_to_all(&pe_bw_sum, &bw, nred_elements, start_pe,
+    if (metric_info.individual_report == 1) {
+        printf("Individual bandwith for PE %d is %10.2f\n", metric_info.my_node, pe_bw_sum);
+    }
+    
+    pe_time = total_t;
+    shmem_barrier(start_pe, stride, nPEs, red_psync);
+    if (nPEs >= 2) {
+        shmem_double_max_to_all(&pe_time_max, &pe_time, nred_elements, start_pe,
                                 stride, nPEs, pwrk,
                                 red_psync);
+    }
+
+    /* calculating bandwidth based on the highest time taken across all PEs */
+    if (pe_time_max > 0 ) {
+#ifdef ENABLE_OPENMP
+        bw = (len * metric_info.midpt / 1.0e6 * metric_info.window_size * metric_info.trials *
+                (double)metric_info.nthreads) / (pe_time_max / 1.0e6);
+#else
+        bw = (len * metric_info.midpt / 1.0e6 * metric_info.window_size * metric_info.trials) /
+                (pe_time_max / 1.0e6);
+#endif
+    }
+
+    /* 2x as many messages/bytes at once for bi-directional */
+    if(metric_info.type == BI_DIR)
+        bw *= 2.0;
+
+    pe_bw_sum = bw;
 
     /* aggregate bw since bw op pairs are communicating simultaneously */
     if(metric_info.my_node == start_pe) {
@@ -786,9 +816,10 @@ static inline int check_hostname_validation(perf_metrics_t my_info) {
 
     int hostname_status = -1;
     int hostname_size = (HOST_NAME_MAX % 4 == 0) ? HOST_NAME_MAX : HOST_NAME_MAX + (4 - HOST_NAME_MAX % 4);
+    int i,j;
 
     static long pSync_collect[SHMEM_COLLECT_SYNC_SIZE];
-    for (int i = 0; i < SHMEM_COLLECT_SYNC_SIZE; i++)
+    for (i = 0; i < SHMEM_COLLECT_SYNC_SIZE; i++)
         pSync_collect[i] = SHMEM_SYNC_VALUE;
 
     char *hostname = (char *) shmem_malloc (hostname_size * sizeof(char));
@@ -805,9 +836,9 @@ static inline int check_hostname_validation(perf_metrics_t my_info) {
 
     char *streaming_node = malloc (hostname_size * sizeof(char));
     char *target_node = malloc (hostname_size * sizeof(char));
-    for (int i = 0; i < my_info.num_pes; i++) {
+    for (i = 0; i < my_info.num_pes; i++) {
         char *temp = malloc (hostname_size * sizeof(char));
-        for (int j = 0; j < hostname_size; j++) {
+        for (j = 0; j < hostname_size; j++) {
             temp[j] = dest[i * hostname_size + j];
         }
         if (i == 0) {
