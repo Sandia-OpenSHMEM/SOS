@@ -36,6 +36,8 @@
 #include <time.h>
 #include <stdint.h>
 
+#include <limits.h>
+
 #define ONE 1
 
 /* return microseconds */

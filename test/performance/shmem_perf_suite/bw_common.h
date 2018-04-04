@@ -781,3 +781,57 @@ void static inline uni_dir_bw_main(int argc, char *argv[], bw_style bwstyl) {
     if (ret != -1)
         bw_finalize();
 } /*main() */
+
+static inline int check_hostname_validation(perf_metrics_t my_info) {
+
+    int hostname_status = -1;
+    int hostname_size = (HOST_NAME_MAX % 4 == 0) ? HOST_NAME_MAX : HOST_NAME_MAX + (4 - HOST_NAME_MAX % 4);
+
+    static long pSync_collect[SHMEM_COLLECT_SYNC_SIZE];
+    for (int i = 0; i < SHMEM_COLLECT_SYNC_SIZE; i++)
+        pSync_collect[i] = SHMEM_SYNC_VALUE;
+
+    char *hostname = (char *) shmem_malloc (hostname_size * sizeof(char));
+    char *dest = (char *) shmem_malloc (my_info.num_pes * hostname_size * sizeof(char));
+
+    hostname_status = gethostname(hostname, hostname_size);
+    if (hostname_status == -1) {
+        fprintf(stderr, "gethostname returned -1. Exiting.\n");
+        return -1;
+    }
+    shmem_barrier_all();
+
+    shmem_fcollect32(dest, hostname, hostname_size/4, 0, 0, my_info.num_pes, pSync_collect);
+
+    char *streaming_node = malloc (hostname_size * sizeof(char));
+    char *target_node = malloc (hostname_size * sizeof(char));
+    for (int i = 0; i < my_info.num_pes; i++) {
+        char *temp = malloc (hostname_size * sizeof(char));
+        for (int j = 0; j < hostname_size; j++) {
+            temp[j] = dest[i * hostname_size + j];
+        }
+        if (i == 0) {
+            streaming_node = temp;
+        } else if (i == my_info.midpt) {
+            target_node = temp;
+        } else if (i > 0 && i < my_info.midpt) {
+            if (strcmp(streaming_node, temp) != 0) {
+                fprintf(stderr, "PE %d on %s is a streaming node but not placed on %s\n", my_info.my_node, temp, streaming_node);
+                return -1;
+            } 
+        } else if (i > my_info.midpt && i < my_info.num_pes) {
+            if (strcmp(target_node, temp) != 0) {
+                fprintf(stderr, "PE %d on %s is a target node but not placed on %s\n", my_info.my_node, temp, target_node);
+                return -1;
+            }
+        } else {
+           fprintf(stderr, "Wrong PE %d and node %s combination\n", my_info.my_node, temp);
+           return -1;
+        }
+    }
+    if (strcmp(streaming_node, target_node) == 0) {
+        fprintf(stderr, "Warning: senders and receivers are running on the same node %s\n", streaming_node);
+    }
+
+    return 0;
+}

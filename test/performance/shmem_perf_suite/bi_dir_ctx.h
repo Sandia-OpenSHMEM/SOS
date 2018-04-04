@@ -34,6 +34,13 @@ void static inline bi_bw_ctx (int len, perf_metrics_t *metric_info)
     char *src = aligned_buffer_alloc(metric_info->nthreads * len);
     char *dst = aligned_buffer_alloc(metric_info->nthreads * len);
     assert(src && dst);
+    static int check_once = 0;
+
+    if (!check_once) {
+        int status = check_hostname_validation(*metric_info);
+        if (status == -1) return;
+        check_once++;
+    }
 
     shmem_barrier_all();
 

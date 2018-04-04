@@ -30,6 +30,13 @@ void static inline bi_bw_put(int len, perf_metrics_t *metric_info)
     double start = 0.0, end = 0.0;
     int dest = partner_node(*metric_info);
     int i = 0, j = 0;
+    static int check_once = 0;
+
+    if (!check_once) {
+        int status = check_hostname_validation(*metric_info);
+        if (status == -1) return;
+        check_once++;
+    }
 
     shmem_barrier_all();
 
@@ -72,6 +79,13 @@ void static inline bi_bw_get(int len, perf_metrics_t *metric_info)
     double start = 0.0, end = 0.0;
     int dest = partner_node(*metric_info);
     int i = 0, j = 0;
+    static int check_once = 0;
+
+    if (!check_once) {
+        int status = check_hostname_validation(*metric_info);
+        if (status == -1) return;
+        check_once++;
+    }
 
     shmem_barrier_all();
 
