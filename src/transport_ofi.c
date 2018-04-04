@@ -1585,6 +1585,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
     }
 
     if (ctx->stx_idx >= 0) {
+        SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
         if (shmem_transport_ofi_is_private(ctx->options)) {
             shmem_transport_ofi_stx_kvs_t *e;
             HASH_FIND(hh, shmem_transport_ofi_stx_kvs, &ctx->tid,
@@ -1603,8 +1604,12 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
             }
         } else {
             shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt--;
-            shmem_internal_assert(!shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private);
+            if (shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private) {
+                SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
+                RAISE_ERROR_STR("Destroyed a ctx with an inconsistent is_private field");
+            }
         }
+        SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
     }
 
     if (ctx->put_cntr) {
