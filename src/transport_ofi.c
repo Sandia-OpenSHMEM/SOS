@@ -1054,7 +1054,7 @@ int populate_av(void)
     }
 
 #ifdef USE_ON_NODE_COMMS
-        num_on_node = shmem_node_util_count_local_pes();
+        num_on_node = shmem_node_util_startup();
         if (num_on_node <= 0) {
             RAISE_WARN_STR("Failed to find any node-local PEs");
             return 1;
@@ -1348,38 +1348,33 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
             ctx->tid = shmem_transport_ofi_gettid();
     }
 
-    /* STX allocation deferred to shmem_transport_startup for default context */
-    if (ctx->id != SHMEM_TRANSPORT_CTX_DEFAULT_ID) {
+    shmem_transport_ofi_stx_allocate(ctx);
 
-        shmem_transport_ofi_stx_allocate(ctx);
-
-        ret = bind_enable_cntr_ep_resources(ctx);
-        OFI_CHECK_RETURN_MSG(ret, "context bind/enable CNTR endpoint failed (%s)\n", fi_strerror(errno));
+    ret = bind_enable_cntr_ep_resources(ctx);
+    OFI_CHECK_RETURN_MSG(ret, "context bind/enable CNTR endpoint failed (%s)\n", fi_strerror(errno));
 
 
-        if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER &&
-            shmem_transport_ofi_bounce_buffer_size > 0 &&
-            shmem_transport_ofi_max_bounce_buffers > 0)
-        {
-            info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
-            ret = fi_endpoint(shmem_transport_ofi_domainfd,
-                              info->p_info, &ctx->cq_ep, NULL);
-            OFI_CHECK_RETURN_MSG(ret, "cq_ep creation failed (%s)\n", fi_strerror(errno));
+    if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER &&
+        shmem_transport_ofi_bounce_buffer_size > 0 &&
+        shmem_transport_ofi_max_bounce_buffers > 0)
+    {
+        info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
+        ret = fi_endpoint(shmem_transport_ofi_domainfd,
+                          info->p_info, &ctx->cq_ep, NULL);
+        OFI_CHECK_RETURN_MSG(ret, "cq_ep creation failed (%s)\n", fi_strerror(errno));
 
-            ret = bind_enable_cq_ep_resources(ctx);
-            OFI_CHECK_RETURN_MSG(ret, "context bind/enable CQ endpoint failed (%s)\n", fi_strerror(errno));
+        ret = bind_enable_cq_ep_resources(ctx);
+        OFI_CHECK_RETURN_MSG(ret, "context bind/enable CQ endpoint failed (%s)\n", fi_strerror(errno));
 
-            ctx->bounce_buffers =
-                shmem_free_list_init(sizeof(shmem_transport_ofi_bounce_buffer_t) +
-                                     shmem_transport_ofi_bounce_buffer_size,
-                                     init_bounce_buffer);
-        }
-        else {
-            ctx->options &= ~SHMEMX_CTX_BOUNCE_BUFFER;
-            ctx->cq_ep = NULL;
-            ctx->bounce_buffers = NULL;
-        }
-
+        ctx->bounce_buffers =
+            shmem_free_list_init(sizeof(shmem_transport_ofi_bounce_buffer_t) +
+                                 shmem_transport_ofi_bounce_buffer_size,
+                                 init_bounce_buffer);
+    }
+    else {
+        ctx->options &= ~SHMEMX_CTX_BOUNCE_BUFFER;
+        ctx->cq_ep = NULL;
+        ctx->bounce_buffers = NULL;
     }
 
     return 0;
@@ -1467,16 +1462,10 @@ int shmem_transport_init(void)
 
     shmem_transport_ctx_default.options = SHMEMX_CTX_BOUNCE_BUFFER;
 
-    ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, SHMEM_TRANSPORT_CTX_DEFAULT_ID);
-    if (ret != 0) return ret;
-
     ret = shmem_transport_ofi_target_ep_init();
     if (ret != 0) return ret;
 
     ret = publish_mr_info();
-    if (ret != 0) return ret;
-
-    ret = atomic_limitations_check();
     if (ret != 0) return ret;
 
     ret = publish_av_info(&shmem_transport_ofi_info);
@@ -1493,7 +1482,10 @@ int shmem_transport_startup(void)
 
     if (shmem_internal_params.OFI_STX_AUTO) {
 
-        num_on_node = shmem_node_util_count_local_pes();
+        ret = shmem_node_util_startup();
+        if (ret != 0) return ret;
+
+        num_on_node = shmem_node_util_n_local_pes();
         if (num_on_node <= 0) {
             RAISE_ERROR_STR("Failed to find any node-local PEs");
             return 1;
@@ -1534,37 +1526,11 @@ int shmem_transport_startup(void)
             shmem_transport_ctx_default.tid = shmem_transport_ofi_gettid();
     }
 
-    /* STX allocation for the default context */
-    shmem_transport_ofi_stx_allocate(&shmem_transport_ctx_default);
+    ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, SHMEM_TRANSPORT_CTX_DEFAULT_ID);
+    if (ret != 0) return ret;
 
-    ret = bind_enable_cntr_ep_resources(&shmem_transport_ctx_default);
-    OFI_CHECK_RETURN_MSG(ret, "context bind/enable CNTR endpoint failed (%s)\n", fi_strerror(errno));
-
-    struct fabric_info* info = &shmem_transport_ofi_info;
-
-    if (shmem_transport_ctx_default.options & SHMEMX_CTX_BOUNCE_BUFFER &&
-        shmem_transport_ofi_bounce_buffer_size > 0 &&
-        shmem_transport_ofi_max_bounce_buffers > 0)
-    {
-        info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
-        ret = fi_endpoint(shmem_transport_ofi_domainfd,
-                          info->p_info, &shmem_transport_ctx_default.cq_ep, NULL);
-        OFI_CHECK_RETURN_MSG(ret, "cq_ep creation failed (%s)\n", fi_strerror(errno));
-
-        ret = bind_enable_cq_ep_resources(&shmem_transport_ctx_default);
-        OFI_CHECK_RETURN_MSG(ret, "context bind/enable CQ endpoint failed (%s)\n", fi_strerror(errno));
-
-        shmem_transport_ctx_default.bounce_buffers =
-            shmem_free_list_init(sizeof(shmem_transport_ofi_bounce_buffer_t) +
-                                 shmem_transport_ofi_bounce_buffer_size,
-                                 init_bounce_buffer);
-    }
-    else {
-        shmem_transport_ctx_default.options &= ~SHMEMX_CTX_BOUNCE_BUFFER;
-        shmem_transport_ctx_default.cq_ep = NULL;
-        shmem_transport_ctx_default.bounce_buffers = NULL;
-    }
-
+    ret = atomic_limitations_check();
+    if (ret != 0) return ret;
 
     ret = populate_mr_tables();
     if (ret != 0) return ret;
@@ -1747,6 +1713,9 @@ int shmem_transport_fini(void)
     }
     free(shmem_transport_ofi_stx_pool);
 
+    if (shmem_internal_params.OFI_STX_AUTO) {
+        shmem_node_util_fini();
+    }
 
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));

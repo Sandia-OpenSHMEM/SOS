@@ -406,7 +406,6 @@ void shmem_internal_start_pes(int npes);
 void shmem_internal_init(int tl_requested, int *tl_provided);
 void shmem_internal_finalize(void);
 void shmem_internal_global_exit(int status) SHMEM_ATTRIBUTE_NORETURN;
-char *shmem_internal_nodename(void);
 
 int shmem_internal_symmetric_init(void);
 int shmem_internal_symmetric_fini(void);

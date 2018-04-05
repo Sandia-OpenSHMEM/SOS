@@ -1,31 +1,41 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <unistd.h>
 
 #include "shmem_internal.h"
 #include "shmem_node_util.h"
 
 
-char *shmem_internal_location_array = NULL;
+int *shmem_internal_location_array = NULL;
 
 static int node_util_is_initialized = 0;
+static char my_hostname[SHMEM_INTERNAL_MAX_HOSTNAME_LEN];
+static int n_local_pes = 0;
 
-
-int shmem_node_util_init(void) {
+int shmem_node_util_init(void)
+{
     int ret;
+    char errmsg[256];
 
     if (!node_util_is_initialized) {
-        shmem_internal_location_array = malloc(sizeof(char) * shmem_internal_num_pes);
+        if (gethostname(my_hostname, SHMEM_INTERNAL_MAX_HOSTNAME_LEN)) {
+            RETURN_ERROR_MSG("gethostname failed '%s'", shmem_util_strerror(errno, errmsg, 256));
+            return errno;
+        }
+
+        shmem_internal_location_array = malloc(sizeof(int) * shmem_internal_num_pes);
         if (NULL == shmem_internal_location_array) {
-            RAISE_ERROR_STR("Error: out of memory when allocating node_util location array");
+            RETURN_ERROR_STR("Error: out of memory when allocating node_util location array");
             return 1;
         }
 
         memset(shmem_internal_location_array, -1, shmem_internal_num_pes);
 
-        ret = shmem_runtime_put("nodename", shmem_internal_nodename(), strlen(shmem_internal_nodename())+1);
+        ret = shmem_runtime_put("nodename", my_hostname, strlen(my_hostname)+1);
         if (ret !=0) {
-            RAISE_ERROR_MSG("shmem_node_util_init failed during nodename store to KVS: (%d)", ret);
+            RETURN_ERROR_MSG("shmem_node_util_init failed during nodename store to KVS: (%d)", ret);
             return ret;
         }
 
@@ -38,55 +48,44 @@ int shmem_node_util_init(void) {
 }
 
 
-inline
-void shmem_node_util_set_node_rank(int pe, int node_rank) {
-
-    shmem_internal_location_array[pe] = node_rank;
+void shmem_node_util_fini(void)
+{
+    free(shmem_internal_location_array);
     return;
 }
 
-inline
-int shmem_node_util_get_rank_same_node(int pe) {
 
-#ifdef USE_ON_NODE_COMMS
-    return shmem_internal_location_array[pe];
-#elif defined(USE_MEMCPY)
-    return pe == shmem_internal_my_pe ? 0 : -1;
-#else
-    return -1;
-#endif
-
+char* shmem_node_util_nodename(void)
+{
+    return my_hostname;
 }
 
-int shmem_node_util_pe_on_same_node(int pe) {
-    char nodename[SHMEM_INTERNAL_MAX_HOSTNAME_LEN];
 
-    shmem_runtime_get(pe, "nodename", nodename, SHMEM_INTERNAL_MAX_HOSTNAME_LEN);
-    if (strncmp(shmem_internal_nodename(), nodename, strlen(shmem_internal_nodename())) == 0) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
-int shmem_node_util_count_local_pes(void) {
-    int i;
+/* This function should only be called after the shmem_runtime KVS has synchronized */
+int shmem_node_util_startup(void)
+{
+    int ret, i;
     char nodename[SHMEM_INTERNAL_MAX_HOSTNAME_LEN];
-    int num_on_node = 0;
 
     for (i = 0; i < shmem_internal_num_pes; i++) {
-        shmem_runtime_get(i, "nodename", nodename, SHMEM_INTERNAL_MAX_HOSTNAME_LEN);
-        if (strncmp(shmem_internal_nodename(), nodename, strlen(shmem_internal_nodename())) == 0) {
-            shmem_node_util_set_node_rank(i, num_on_node++);
+        ret = shmem_runtime_get(i, "nodename", nodename, SHMEM_INTERNAL_MAX_HOSTNAME_LEN);
+        if (ret != 0) {
+            RETURN_ERROR_MSG("shmem_node_util_startup failed during nodename read from KVS: (%d)", ret);
+            return ret;
+        }
+        if (strncmp(shmem_node_util_nodename(), nodename, strlen(shmem_node_util_nodename())) == 0) {
+            shmem_node_util_set_node_rank(i, n_local_pes++);
 #ifdef USE_ON_NODE_COMMS
-            if (num_on_node > 255) {
-                RAISE_WARN_STR("Number of local ranks exceeds limit of 255");
-                return -1;
+            if (n_local_pes > SHMEM_INTERNAL_MAX_NPES_PER_NODE) {
+                RAISE_WARN_MSG("Number of local ranks exceeds limit of %d", SHMEM_INTERNAL_MAX_PES_PER_NODE);
             }
 #endif
         }
     }
 
-    return num_on_node;
+    return 0;
+}
 
+int shmem_node_util_n_local_pes() {
+    return n_local_pes;
 }

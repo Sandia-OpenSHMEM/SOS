@@ -21,8 +21,6 @@
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
-#include <errno.h>
-#include <unistd.h>
 
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
@@ -83,6 +81,10 @@ shmem_internal_shutdown(void)
     shmem_internal_finalized = 1;
     shmem_transport_fini();
 
+#ifdef USE_ON_NODE_COMMS
+    shmem_node_util_fini();
+#endif
+
 #ifdef USE_XPMEM
     shmem_transport_xpmem_fini();
 #endif
@@ -124,7 +126,6 @@ void
 shmem_internal_init(int tl_requested, int *tl_provided)
 {
     int ret;
-    char errmsg[256];
 
     int runtime_initialized   = 0;
     int transport_initialized = 0;
@@ -284,13 +285,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
               shmem_internal_heap_base, shmem_internal_heap_length,
               shmem_internal_data_base, shmem_internal_data_length);
 
-    /* get hostname for shmem_getnodename */
-    if (gethostname(shmem_internal_my_hostname,
-                    sizeof(shmem_internal_my_hostname))) {
-        RAISE_ERROR_MSG("gethostname failed '%s'",
-                    shmem_util_strerror(errno, errmsg, 256));
-    }
-
 #ifdef USE_ON_NODE_COMMS
     ret = shmem_node_util_init();
     if (ret) goto cleanup;
@@ -387,13 +381,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         shmem_runtime_fini();
     }
     abort();
-}
-
-
-char *
-shmem_internal_nodename(void)
-{
-    return shmem_internal_my_hostname;
 }
 
 
