@@ -74,7 +74,7 @@ int shmem_node_util_startup(void)
             return ret;
         }
         if (strncmp(shmem_node_util_nodename(), nodename, strlen(shmem_node_util_nodename())) == 0) {
-            shmem_node_util_set_node_rank(i, n_local_pes++);
+            shmem_node_util_set_local_rank(i, n_local_pes++);
 #ifdef USE_ON_NODE_COMMS
             if (n_local_pes > SHMEM_INTERNAL_MAX_NPES_PER_NODE) {
                 RAISE_WARN_MSG("Number of local ranks exceeds limit of %d", SHMEM_INTERNAL_MAX_NPES_PER_NODE);
