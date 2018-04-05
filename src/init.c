@@ -66,7 +66,6 @@ int shmem_internal_thread_level;
 shmem_internal_mutex_t shmem_internal_mutex_alloc;
 #endif
 
-static char shmem_internal_my_hostname[SHMEM_INTERNAL_MAX_HOSTNAME_LEN];
 
 static char *shmem_internal_thread_level_str[4] = { "SINGLE", "FUNNELED",
                                                     "SERIALIZED", "MULTIPLE" };
@@ -288,9 +287,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     /* get hostname for shmem_getnodename */
     if (gethostname(shmem_internal_my_hostname,
                     sizeof(shmem_internal_my_hostname))) {
-        snprintf(shmem_internal_my_hostname,
-                    sizeof(shmem_internal_my_hostname),
-                    "ERR: gethostname '%s'?",
+        RAISE_ERROR_MSG("gethostname failed '%s'",
                     shmem_util_strerror(errno, errmsg, 256));
     }
 

@@ -24,6 +24,7 @@
 #else
 #define SHMEM_INTERNAL_MAX_HOSTNAME_LEN HOST_NAME_MAX
 #endif
+extern char shmem_internal_my_hostname[SHMEM_INTERNAL_MAX_HOSTNAME_LEN];
 
 extern char *shmem_internal_location_array;
 #define SHMEM_SET_RANK_SAME_NODE(pe, node_rank)         \
