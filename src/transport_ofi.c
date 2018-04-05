@@ -1038,9 +1038,6 @@ int populate_av(void)
 {
     int    i, ret = 0;
     char   *alladdrs = NULL;
-#ifdef USE_ON_NODE_COMMS
-    int    num_on_node = 0;
-#endif
 
     alladdrs = malloc(shmem_internal_num_pes * shmem_transport_ofi_addrlen);
     if (alladdrs == NULL) {
@@ -1052,17 +1049,6 @@ int populate_av(void)
         char *addr_ptr = alladdrs + i * shmem_transport_ofi_addrlen;
         shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen);
     }
-
-#ifdef USE_ON_NODE_COMMS
-        num_on_node = shmem_node_util_startup();
-        if (num_on_node <= 0) {
-            RAISE_WARN_STR("Failed to find any node-local PEs");
-            return 1;
-        } else if (num_on_node > 255) {
-            RAISE_WARN_STR("Number of local ranks exceeds limit of 255");
-            return 1;
-        }
-#endif
 
     ret = fi_av_insert(shmem_transport_ofi_avfd,
                        alladdrs,
@@ -1537,6 +1523,17 @@ int shmem_transport_startup(void)
 
     ret = populate_av();
     if (ret != 0) return ret;
+
+#ifdef USE_ON_NODE_COMMS
+    ret = shmem_node_util_startup();
+    if (ret != 0) return ret;
+
+    num_on_node = shmem_node_util_n_local_pes();
+    if (num_on_node <= 0) {
+        RETURN_ERROR_STR("Failed to find any node-local PEs");
+        return 1;
+    }
+#endif
 
     return 0;
 }
