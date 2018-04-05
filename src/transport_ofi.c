@@ -1487,7 +1487,7 @@ int shmem_transport_startup(void)
 
         num_on_node = shmem_node_util_n_local_pes();
         if (num_on_node <= 0) {
-            RAISE_ERROR_STR("Failed to find any node-local PEs");
+            RETURN_ERROR_STR("Failed to find any node-local PEs");
             return 1;
         }
 
