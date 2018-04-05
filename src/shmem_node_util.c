@@ -77,7 +77,7 @@ int shmem_node_util_startup(void)
             shmem_node_util_set_node_rank(i, n_local_pes++);
 #ifdef USE_ON_NODE_COMMS
             if (n_local_pes > SHMEM_INTERNAL_MAX_NPES_PER_NODE) {
-                RAISE_WARN_MSG("Number of local ranks exceeds limit of %d", SHMEM_INTERNAL_MAX_PES_PER_NODE);
+                RAISE_WARN_MSG("Number of local ranks exceeds limit of %d", SHMEM_INTERNAL_MAX_NPES_PER_NODE);
             }
 #endif
         }

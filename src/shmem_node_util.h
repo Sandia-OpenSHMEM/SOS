@@ -25,7 +25,7 @@
 #define SHMEM_INTERNAL_MAX_HOSTNAME_LEN HOST_NAME_MAX
 #endif
 
-#define SHMEM_INTERNAL_MAX_PES_PER_NODE 255
+#define SHMEM_INTERNAL_MAX_NPES_PER_NODE 255
 
 extern int *shmem_internal_location_array;
 
