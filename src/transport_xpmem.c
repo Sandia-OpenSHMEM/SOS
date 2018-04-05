@@ -96,7 +96,7 @@ shmem_transport_xpmem_startup(void)
     struct xpmem_addr addr;
 
     for (i = 0 ; i < shmem_internal_num_pes; ++i) {
-        if (-1 != SHMEM_GET_RANK_SAME_NODE(i)) {
+        if (-1 != shmem_node_util_local_rank(i)) {
             num_on_node++;
         }
     }
@@ -108,7 +108,7 @@ shmem_transport_xpmem_startup(void)
 
     /* get local peer info and map into our address space ... */
     for (i = 0 ; i < shmem_internal_num_pes; ++i) {
-        peer_num = SHMEM_GET_RANK_SAME_NODE(i);
+        peer_num = shmem_node_util_local_rank(i);
         if (-1 == peer_num) continue;
 
         if (shmem_internal_my_pe == i) {
@@ -178,7 +178,7 @@ shmem_transport_xpmem_fini(void)
 
     if (NULL != shmem_transport_xpmem_peers) {
         for (i = 0 ; i < shmem_internal_num_pes; ++i) {
-            peer_num = SHMEM_GET_RANK_SAME_NODE(i);
+            peer_num = shmem_node_util_local_rank(i);
             if (-1 == peer_num) continue;
             if (shmem_internal_my_pe == i) continue;
 
