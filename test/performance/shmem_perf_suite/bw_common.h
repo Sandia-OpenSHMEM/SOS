@@ -527,7 +527,7 @@ void static inline PE_set_used_adjustments(int *nPEs, int *stride, int *start_pe
 }
 
 
-void static inline calc_and_print_results(double total_t, int len,
+void static inline calc_and_print_results(double end_t, double start_t, int len,
                             perf_metrics_t metric_info)
 {
     int stride = 0, start_pe = 0, nPEs = 0;
@@ -535,7 +535,8 @@ void static inline calc_and_print_results(double total_t, int len,
     double pe_bw_avg = 0.0, pe_mr_avg = 0.0;
     int nred_elements = 1;
     static double pwrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
-    static double pe_time, pe_time_max = 0.0;
+    static double pe_time_start, pe_time_end, end_time_max = 0.0, start_time_min = 0.0;
+    double total_t = 0.0, total_t_max = 0.0;
 
     PE_set_used_adjustments(&nPEs, &stride, &start_pe, metric_info);
 
@@ -543,7 +544,8 @@ void static inline calc_and_print_results(double total_t, int len,
     if(metric_info.type == BI_DIR)
         len *= 2.0;
 
-    if (total_t > 0 ) {
+    if (end_t > 0 && start_t > 0 && (end_t - start_t) > 0) {
+        total_t = end_t - start_t;
 #ifdef ENABLE_OPENMP
         bw = (len / 1.0e6 * metric_info.window_size * metric_info.trials *
                 (double)metric_info.nthreads) / (total_t / 1.0e6);
@@ -552,7 +554,8 @@ void static inline calc_and_print_results(double total_t, int len,
                 (total_t / 1.0e6);
 #endif
     } else {
-        fprintf(stderr, "Incorrect time measured from bandwidth test");
+        fprintf(stderr, "Incorrect time measured from bandwidth test: "
+                        "start = %lf, end = %lf\n", start_t, end_t);
     }
 
     /* base case: will be overwritten by collective if num_pes > 2 */
@@ -563,26 +566,35 @@ void static inline calc_and_print_results(double total_t, int len,
                 metric_info.my_node, pe_bw_sum);
     }
     
-    pe_time = total_t;
+    pe_time_start = start_t;
+    pe_time_end = end_t;
     shmem_barrier(start_pe, stride, nPEs, red_psync);
     if (nPEs >= 2) {
-        shmem_double_max_to_all(&pe_time_max, &pe_time, nred_elements, 
+        shmem_double_min_to_all(&start_time_min, &pe_time_start, nred_elements,
+                                start_pe, stride, nPEs, pwrk,
+                                red_psync);
+        shmem_double_max_to_all(&end_time_max, &pe_time_end, nred_elements, 
                                 start_pe, stride, nPEs, pwrk,
                                 red_psync);
     }
 
-    /* calculating bandwidth based on the highest time taken across all PEs */
-    if (pe_time_max > 0 ) {
+    /* calculating bandwidth based on the highest time duration across all PEs */
+    if (end_time_max > 0 && start_time_min > 0 && 
+       (end_time_max - start_time_min) > 0) {
+
+        total_t_max = (end_time_max - start_time_min);
 #ifdef ENABLE_OPENMP
         bw = (len * metric_info.midpt / 1.0e6 * metric_info.window_size * 
               metric_info.trials * (double)metric_info.nthreads) / 
-              (pe_time_max / 1.0e6);
+              (total_t_max / 1.0e6);
 #else
         bw = (len * metric_info.midpt / 1.0e6 * metric_info.window_size * 
-              metric_info.trials) / (pe_time_max / 1.0e6);
+              metric_info.trials) / (total_t_max / 1.0e6);
 #endif
     } else {
-        fprintf(stderr, "Incorrect max. time measured from bandwidth test");
+        fprintf(stderr, "Incorrect time measured from bandwidth test: "
+                        "start_min = %lf, end_max = %lf\n", 
+                         start_time_min, end_time_max);
     } 
 
     pe_bw_sum = bw;

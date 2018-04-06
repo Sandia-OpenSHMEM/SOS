@@ -107,7 +107,7 @@ void static inline uni_bw_ctx(int len, perf_metrics_t *metric_info,
     shmem_barrier_all();
     if (streaming_node) {
         end = perf_shmemx_wtime();
-        calc_and_print_results((end - start), len, *metric_info);
+        calc_and_print_results(end, start, len, *metric_info);
     }
 
     shmem_barrier_all();
