@@ -95,11 +95,7 @@ shmem_transport_xpmem_startup(void)
     struct share_info_t info;
     struct xpmem_addr addr;
 
-    for (i = 0 ; i < shmem_internal_num_pes; ++i) {
-        if (-1 != shmem_node_util_local_rank(i)) {
-            num_on_node++;
-        }
-    }
+    num_on_node = shmem_node_util_n_local_pes();
 
     /* allocate space for local peers */
     shmem_transport_xpmem_peers = calloc(num_on_node,

@@ -63,17 +63,6 @@ shmem_transport_cma_startup(void)
     int i, ret, peer_num, num_on_node = 0;
     pmi_cma_data_t cma_data;
 
-    for (i = 0 ; i < shmem_internal_num_pes; ++i) {
-        if (-1 != shmem_node_util_local_rank(i)) {
-            num_on_node++;
-        }
-    }
-
-    if (num_on_node > 255) {
-        RETURN_ERROR_STR("Too many local ranks for CMA transport");
-        return 1;
-    }
-
     /* allocate space for local peers */
     shmem_transport_cma_peers = calloc(num_on_node, sizeof(pid_t));
     if (NULL == shmem_transport_cma_peers) return 1;

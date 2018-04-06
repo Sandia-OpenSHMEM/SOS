@@ -322,6 +322,14 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         goto cleanup;
     }
 
+#ifdef USE_ON_NODE_COMMS
+    ret = shmem_node_util_startup();
+    if (ret != 0) {
+        RETURN_ERROR_MSG("node_util startup failed (%d)\n", ret);
+        goto cleanup;
+    }
+#endif
+
     /* finish transport initialization after information sharing. */
     ret = shmem_transport_startup();
     if (0 != ret) {

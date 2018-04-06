@@ -1524,17 +1524,6 @@ int shmem_transport_startup(void)
     ret = populate_av();
     if (ret != 0) return ret;
 
-#ifdef USE_ON_NODE_COMMS
-    ret = shmem_node_util_startup();
-    if (ret != 0) return ret;
-
-    num_on_node = shmem_node_util_n_local_pes();
-    if (num_on_node <= 0) {
-        RETURN_ERROR_STR("Failed to find any node-local PEs");
-        return 1;
-    }
-#endif
-
     return 0;
 }
 

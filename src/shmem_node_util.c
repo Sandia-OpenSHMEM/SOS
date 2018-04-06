@@ -75,13 +75,17 @@ int shmem_node_util_startup(void)
         }
         if (strncmp(shmem_node_util_nodename(), nodename, strlen(shmem_node_util_nodename())) == 0) {
             shmem_node_util_set_local_rank(i, n_local_pes++);
-#ifdef USE_ON_NODE_COMMS
-            if (n_local_pes > SHMEM_INTERNAL_MAX_NPES_PER_NODE) {
-                RAISE_WARN_MSG("Number of local ranks exceeds limit of %d", SHMEM_INTERNAL_MAX_NPES_PER_NODE);
-            }
-#endif
         }
     }
+#ifdef USE_ON_NODE_COMMS
+    if (n_local_pes > SHMEM_INTERNAL_MAX_NPES_PER_NODE) {
+        RETURN_ERROR_MSG("Number of local ranks exceeds limit of %d", SHMEM_INTERNAL_MAX_NPES_PER_NODE);
+        return 1;
+    } else if (n_local_pes <= 0) {
+        RETURN_ERROR_STR("Failed to find any node-local PEs");
+        return 1;
+    }
+#endif
 
     return 0;
 }
