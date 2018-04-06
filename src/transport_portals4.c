@@ -559,7 +559,7 @@ shmem_transport_startup(void)
 #ifdef USE_ON_NODE_COMMS
         /* update the connectivity map... */
         if (desired[i].phys.nid == my_id.phys.nid) {
-            shmem_node_util_set_node_rank(i, num_on_node++);
+            shmem_node_util_set_local_rank(i, num_on_node++);
             if (num_on_node > 255) {
                 RETURN_ERROR_STR("Too many local ranks");
                 goto cleanup;
