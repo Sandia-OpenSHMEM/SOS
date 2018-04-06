@@ -206,6 +206,16 @@ int static inline streaming_node(perf_metrics_t my_info)
     }
 }
 
+static int inline is_streaming_node(perf_metrics_t my_info, int node)
+{
+    if(my_info.cstyle == COMM_PAIRWISE) {
+        return (node < my_info.szinitiator);
+    } else {
+        assert(my_info.cstyle == COMM_INCAST);
+        return true;
+    }
+}
+
 int static inline target_node(perf_metrics_t my_info)
 {
     return (my_info.my_node >= my_info.midpt &&
@@ -529,8 +539,11 @@ void static inline calc_and_print_results(double total_t, int len,
 
     PE_set_used_adjustments(&nPEs, &stride, &start_pe, metric_info);
 
-    if (total_t > 0 ) {
+    /* 2x as many messages at once for bi-directional */
+    if(metric_info.type == BI_DIR)
+        len *= 2.0;
 
+    if (total_t > 0 ) {
 #ifdef ENABLE_OPENMP
         bw = (len / 1.0e6 * metric_info.window_size * metric_info.trials *
                 (double)metric_info.nthreads) / (total_t / 1.0e6);
@@ -538,41 +551,39 @@ void static inline calc_and_print_results(double total_t, int len,
         bw = (len / 1.0e6 * metric_info.window_size * metric_info.trials) /
                 (total_t / 1.0e6);
 #endif
+    } else {
+        fprintf(stderr, "Incorrect time measured from bandwidth test");
     }
-
-    /* 2x as many messages/bytes at once for bi-directional */
-    if(metric_info.type == BI_DIR)
-        bw *= 2.0;
 
     /* base case: will be overwritten by collective if num_pes > 2 */
     pe_bw_sum = bw;
 
     if (metric_info.individual_report == 1) {
-        printf("Individual bandwith for PE %d is %10.2f\n", metric_info.my_node, pe_bw_sum);
+        printf("Individual bandwith for PE %d is %10.2f\n", 
+                metric_info.my_node, pe_bw_sum);
     }
     
     pe_time = total_t;
     shmem_barrier(start_pe, stride, nPEs, red_psync);
     if (nPEs >= 2) {
-        shmem_double_max_to_all(&pe_time_max, &pe_time, nred_elements, start_pe,
-                                stride, nPEs, pwrk,
+        shmem_double_max_to_all(&pe_time_max, &pe_time, nred_elements, 
+                                start_pe, stride, nPEs, pwrk,
                                 red_psync);
     }
 
     /* calculating bandwidth based on the highest time taken across all PEs */
     if (pe_time_max > 0 ) {
 #ifdef ENABLE_OPENMP
-        bw = (len * metric_info.midpt / 1.0e6 * metric_info.window_size * metric_info.trials *
-                (double)metric_info.nthreads) / (pe_time_max / 1.0e6);
+        bw = (len * metric_info.midpt / 1.0e6 * metric_info.window_size * 
+              metric_info.trials * (double)metric_info.nthreads) / 
+              (pe_time_max / 1.0e6);
 #else
-        bw = (len * metric_info.midpt / 1.0e6 * metric_info.window_size * metric_info.trials) /
-                (pe_time_max / 1.0e6);
+        bw = (len * metric_info.midpt / 1.0e6 * metric_info.window_size * 
+              metric_info.trials) / (pe_time_max / 1.0e6);
 #endif
-    }
-
-    /* 2x as many messages/bytes at once for bi-directional */
-    if(metric_info.type == BI_DIR)
-        bw *= 2.0;
+    } else {
+        fprintf(stderr, "Incorrect max. time measured from bandwidth test");
+    } 
 
     pe_bw_sum = bw;
 
@@ -815,8 +826,9 @@ void static inline uni_dir_bw_main(int argc, char *argv[], bw_style bwstyl) {
 static inline int check_hostname_validation(perf_metrics_t my_info) {
 
     int hostname_status = -1;
-    int hostname_size = (HOST_NAME_MAX % 4 == 0) ? HOST_NAME_MAX : HOST_NAME_MAX + (4 - HOST_NAME_MAX % 4);
-    int i,j;
+    int hostname_size = (HOST_NAME_MAX % 4 == 0) ? HOST_NAME_MAX : 
+                         HOST_NAME_MAX + (4 - HOST_NAME_MAX % 4);
+    int i, errors = 0;
 
     static long pSync_collect[SHMEM_COLLECT_SYNC_SIZE];
     for (i = 0; i < SHMEM_COLLECT_SYNC_SIZE; i++)
@@ -826,43 +838,48 @@ static inline int check_hostname_validation(perf_metrics_t my_info) {
     char *dest = (char *) shmem_malloc (my_info.num_pes * hostname_size * sizeof(char));
 
     hostname_status = gethostname(hostname, hostname_size);
-    if (hostname_status == -1) {
-        fprintf(stderr, "gethostname returned -1. Exiting.\n");
+    if (hostname_status != 0) {
+        fprintf(stderr, "gethostname failed (%d)\n", hostname_status);
         return -1;
     }
     shmem_barrier_all();
 
     shmem_fcollect32(dest, hostname, hostname_size/4, 0, 0, my_info.num_pes, pSync_collect);
 
-    char *streaming_node = malloc (hostname_size * sizeof(char));
-    char *target_node = malloc (hostname_size * sizeof(char));
+    char *snode_name = NULL;
+    char *tnode_name = NULL;
     for (i = 0; i < my_info.num_pes; i++) {
-        char *temp = malloc (hostname_size * sizeof(char));
-        for (j = 0; j < hostname_size; j++) {
-            temp[j] = dest[i * hostname_size + j];
-        }
-        if (i == 0) {
-            streaming_node = temp;
-        } else if (i == my_info.midpt) {
-            target_node = temp;
-        } else if (i > 0 && i < my_info.midpt) {
-            if (strcmp(streaming_node, temp) != 0) {
-                fprintf(stderr, "PE %d on %s is a streaming node but not placed on %s\n", my_info.my_node, temp, streaming_node);
-                return -1;
-            } 
-        } else if (i > my_info.midpt && i < my_info.num_pes) {
-            if (strcmp(target_node, temp) != 0) {
-                fprintf(stderr, "PE %d on %s is a target node but not placed on %s\n", my_info.my_node, temp, target_node);
-                return -1;
+        char *curr_name = &dest[i * hostname_size];
+
+        if (is_streaming_node(my_info, i)) {
+            if (snode_name == NULL) {
+                snode_name = curr_name;
+            }
+
+            if (strcmp(snode_name, curr_name) != 0) {
+                fprintf(stderr, "PE %d on %s is a streaming node " 
+                                "but not placed on %s\n", i, curr_name, snode_name);
+                errors++;
             }
         } else {
-           fprintf(stderr, "Wrong PE %d and node %s combination\n", my_info.my_node, temp);
-           return -1;
+            if (tnode_name == NULL) {
+                tnode_name = curr_name;
+            }
+
+            if (strcmp(tnode_name, curr_name) != 0) {
+                fprintf(stderr, "PE %d on %s is a target node "
+                                "but not placed on %s\n", i, curr_name, tnode_name);
+                errors++;
+            }
         }
     }
-    if (strcmp(streaming_node, target_node) == 0) {
-        fprintf(stderr, "Warning: senders and receivers are running on the same node %s\n", streaming_node);
+    if (strcmp(snode_name, tnode_name) == 0) {
+        fprintf(stderr, "Warning: senders and receivers are running on the "
+                        "same node %s\n", snode_name);
     }
 
-    return 0;
+    shmem_free(dest);
+    shmem_free(hostname);
+
+    return errors;
 }
