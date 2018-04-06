@@ -496,14 +496,10 @@ int
 shmem_transport_startup(void)
 {
     int ret, i;
-    ptl_process_t *desired = NULL;
+    ptl_process_t *pe_map = NULL;
     ptl_md_t md;
     ptl_le_t le;
     ptl_uid_t uid = PTL_UID_ANY;
-    ptl_process_t my_id;
-#ifdef USE_ON_NODE_COMMS
-    int num_on_node = 0;
-#endif
 
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
     /* Make sure the heap and data bases are actually symmetric */
@@ -536,41 +532,25 @@ shmem_transport_startup(void)
     }
 #endif
 
-    desired = malloc(sizeof(ptl_process_t) * shmem_internal_num_pes);
-    if (NULL == desired) {
+    pe_map = malloc(sizeof(ptl_process_t) * shmem_internal_num_pes);
+    if (NULL == pe_map) {
         ret = 1;
-        goto cleanup;
-    }
-
-    ret = PtlGetPhysId(shmem_transport_portals4_ni_h, &my_id);
-    if (PTL_OK != ret) {
-        RETURN_ERROR_MSG("PtlGetPhysId failed: %d\n", ret);
         goto cleanup;
     }
 
     for (i = 0 ; i < shmem_internal_num_pes; ++i) {
         ret = shmem_runtime_get(i, "portals4-procid",
-                                &desired[i], sizeof(ptl_process_t));
+                                &pe_map[i], sizeof(ptl_process_t));
         if (0 != ret) {
             RETURN_ERROR_MSG("runtime_get failed: %d\n", ret);
             goto cleanup;
         }
 
-#ifdef USE_ON_NODE_COMMS
-        /* update the connectivity map... */
-        if (desired[i].phys.nid == my_id.phys.nid) {
-            shmem_node_util_set_local_rank(i, num_on_node++);
-            if (num_on_node > 255) {
-                RETURN_ERROR_STR("Too many local ranks");
-                goto cleanup;
-            }
-        }
-#endif
     }
 
     ret = PtlSetMap(shmem_transport_portals4_ni_h,
                     shmem_internal_num_pes,
-                    desired);
+                    pe_map);
     if (PTL_OK != ret && PTL_IGNORED != ret) {
         RETURN_ERROR_MSG("PtlSetMap failed: %d\n", ret);
         goto cleanup;
@@ -733,7 +713,7 @@ shmem_transport_startup(void)
                                    SHMEM_TRANSPORT_CTX_DEFAULT_ID);
 
  cleanup:
-    if (NULL != desired) free(desired);
+    if (NULL != pe_map) free(pe_map);
     return ret;
 }
 
