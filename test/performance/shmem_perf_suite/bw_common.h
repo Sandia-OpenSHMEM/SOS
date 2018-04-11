@@ -364,6 +364,7 @@ static int command_line_arg_check(int argc, char *argv[],
                     "[-w window size - iterations between completion, cannot use with -t] \n"
                     "[-k (kilobytes/second)] [-b (bytes/second)] \n"
                     "[-v (validate data stream)] \n"
+                    "[-i (turn on individual bandwidth reporting)] \n"
                     "[-t output data for target side (default is initiator,"
                     " only use with put_bw),\n cannot be used in conjunction "
                     "with validate, special sizes used, \ntrials"
@@ -838,10 +839,13 @@ void static inline uni_dir_bw_main(int argc, char *argv[], bw_style bwstyl) {
 static inline int check_hostname_validation(perf_metrics_t my_info) {
 
     int hostname_status = -1;
-    int hostname_size = (HOST_NAME_MAX % 4 == 0) ? HOST_NAME_MAX : 
-                         HOST_NAME_MAX + (4 - HOST_NAME_MAX % 4);
+
+    /* hostname_size should be a length divisible by 4 */
+    int hostname_size = (MAX_HOSTNAME_LEN % 4 == 0) ? MAX_HOSTNAME_LEN : 
+                         MAX_HOSTNAME_LEN + (4 - MAX_HOSTNAME_LEN % 4);
     int i, errors = 0;
 
+    /* pSync for fcollect of hostnames */
     static long pSync_collect[SHMEM_COLLECT_SYNC_SIZE];
     for (i = 0; i < SHMEM_COLLECT_SYNC_SIZE; i++)
         pSync_collect[i] = SHMEM_SYNC_VALUE;
@@ -856,6 +860,7 @@ static inline int check_hostname_validation(perf_metrics_t my_info) {
     }
     shmem_barrier_all();
 
+    /* nelems needs to be updated based on 32-bit API */
     shmem_fcollect32(dest, hostname, hostname_size/4, 0, 0, my_info.num_pes, pSync_collect);
 
     char *snode_name = NULL;
@@ -868,7 +873,7 @@ static inline int check_hostname_validation(perf_metrics_t my_info) {
                 snode_name = curr_name;
             }
 
-            if (strcmp(snode_name, curr_name) != 0) {
+            if (strncmp(snode_name, curr_name, hostname_size) != 0) {
                 fprintf(stderr, "PE %d on %s is a streaming node " 
                                 "but not placed on %s\n", i, curr_name, snode_name);
                 errors++;
@@ -878,14 +883,14 @@ static inline int check_hostname_validation(perf_metrics_t my_info) {
                 tnode_name = curr_name;
             }
 
-            if (strcmp(tnode_name, curr_name) != 0) {
+            if (strncmp(tnode_name, curr_name, hostname_size) != 0) {
                 fprintf(stderr, "PE %d on %s is a target node "
                                 "but not placed on %s\n", i, curr_name, tnode_name);
                 errors++;
             }
         }
     }
-    if (strcmp(snode_name, tnode_name) == 0) {
+    if (strncmp(snode_name, tnode_name, hostname_size) == 0) {
         fprintf(stderr, "Warning: senders and receivers are running on the "
                         "same node %s\n", snode_name);
     }

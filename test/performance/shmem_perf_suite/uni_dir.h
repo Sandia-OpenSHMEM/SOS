@@ -38,8 +38,8 @@ void static inline uni_bw_put(int len, perf_metrics_t *metric_info)
     if (!check_once) {
         /* check to see whether sender and receiver are the same process */
         if (dest == metric_info->my_node) {
-            fprintf(stderr, "Sender and receiver are the same process (%d)\n", dest);
-            return;
+            fprintf(stderr, "Warning: Sender and receiver are the same process (%d)\n", 
+                             dest);
         }
         /* hostname validation for all sender and receiver processes */
         int status = check_hostname_validation(*metric_info);
@@ -102,8 +102,8 @@ void static inline uni_bw_get(int len, perf_metrics_t *metric_info)
     if (!check_once) {
         /* check to see whether sender and receiver are the same process */
         if (dest == metric_info->my_node) {
-            fprintf(stderr, "Sender and receiver are the same process (%d)\n", dest);
-            return;
+            fprintf(stderr, "Warning: Sender and receiver are the same process (%d)\n", 
+                             dest);
         }
         /* hostname validation for all sender and receiver processes */
         int status = check_hostname_validation(*metric_info);
