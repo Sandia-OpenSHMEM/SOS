@@ -170,12 +170,12 @@ static int data_runtime_update(perf_metrics_t *data) {
 static const char * dt_names [] = { "int", "long", "longlong" };
 
 void static bi_dir_data_init(perf_metrics_t * data) {
-    data->bw_type = "Bi-directional Bandwidth";
+    data->bw_type = "Bi-dir";
     data->type = BI_DIR;
 }
 
 void static uni_dir_data_init(perf_metrics_t * data) {
-    data->bw_type = "Uni-directional Bandwidth";
+    data->bw_type = "Uni-dir";
     data->type = UNI_DIR;
 }
 
@@ -427,54 +427,60 @@ static void inline thread_safety_validation_check(perf_metrics_t *metric_info) {
 }
 
 void static print_atomic_results_header(perf_metrics_t metric_info) {
-    printf("\nResults for %d PEs %lu trials with window size %lu ",
-            metric_info.num_pes, metric_info.trials, metric_info.window_size);
+    printf("\nSandia OpenSHMEM Performance Suite\n");
+    printf("==================================\n");
+    printf("Total Number of PEs:    %10d\n", metric_info.num_pes);
+    printf("Iteration count:        %10lu\n", metric_info.trials);
+    printf("Window size:            %10lu\n", metric_info.window_size);
+    printf("Bandwidth test type:    %10s\n", metric_info.bw_type);
 
     if (metric_info.cstyle == COMM_INCAST) {
-        printf("using incast communication style\n");
+        printf("Communication style:        INCAST\n");
     } else {
         assert(metric_info.cstyle == COMM_PAIRWISE);
-        printf("using pairwise communication style\n");
+        printf("Communication style:      PAIRWISE\n");
     }
 
-    printf("\nOperation           %s           "
-            "Message Rate%17sLatency\n", metric_info.bw_type, " ");
+    printf("\nOperation%15sBandwidth%15sMessage Rate%15sLatency\n", 
+            " ", " ", " ");
 
     if (metric_info.unit == MB) {
-        printf("%19s in megabytes per second"," ");
+        printf("%19s in mbytes/sec"," ");
     } else if (metric_info.unit == KB) {
-        printf("%19s in kilobytes per second", " ");
+        printf("%19s in kbytes/sec", " ");
     } else {
-        printf("%19s in bytes per second", " ");
+        printf("%20s in bytes/sec", " ");
     }
 
-    printf("         in Million ops/second%8sin microseconds\n", " ");
-
-    /* hack */
-    printf("shmem_add\n");
+    printf("%15s in Mops/sec%15s  in us\n", " ", " ");
 }
 
 void static print_results_header(perf_metrics_t metric_info) {
-    printf("\nResults for %d PEs %lu trials with window size %lu "
-            "max message size %lu with multiple of %lu increments, "
-            "\ntargeting %d remote PEs initiated from %d PEs", metric_info.num_pes,
-            metric_info.trials, metric_info.window_size, metric_info.max_len,
-            metric_info.size_inc, metric_info.sztarget, metric_info.szinitiator);
-    printf(", thread safety %s (%d threads)\n",
-            thread_safety_str(&metric_info), metric_info.nthreads);
-    printf("\nLength           %s           "
-            "Message Rate\n", metric_info.bw_type);
+    printf("\nSandia OpenSHMEM Performance Suite\n");
+    printf("==================================\n");
+    printf("Total Number of PEs:    %10d\n", metric_info.num_pes);
+    printf("Number of source PEs:   %10d\n", metric_info.szinitiator);
+    printf("Number of target PEs:   %10d\n", metric_info.sztarget);
+    printf("Iteration count:        %10lu\n", metric_info.trials);
+    printf("Window size:            %10lu\n", metric_info.window_size);
+    printf("Maximum message size:   %10lu\n", metric_info.max_len);
+    printf("Number of threads:      %10d\n", metric_info.nthreads);
+    printf("Thread safety:          %10s\n", thread_safety_str(&metric_info));
+    printf("Bandwidth test type:    %10s\n", metric_info.bw_type);
 
-    printf("in bytes         ");
+    printf("\nMessage Size%15sBandwidth%15sMessage Rate\n", 
+           " ", " ");
+
+    printf("%4sin bytes", " ");
     if (metric_info.unit == MB) {
-        printf("in megabytes per second");
+        printf("%11sin mbytes/sec", " ");
     } else if (metric_info.unit == KB) {
-        printf("in kilobytes per second");
+        printf("%11sin kbytes/sec", " ");
     } else {
-        printf("in bytes per second");
+        printf("%12sin bytes/sec", " ");
     }
 
-    printf("         in messages/seconds\n");
+    printf("%16sin msgs/sec\n", " ");
 }
 
 void static print_data_results(double bw, double mr, perf_metrics_t data,
@@ -490,10 +496,10 @@ void static print_data_results(double bw, double mr, perf_metrics_t data,
     }
 
     if (data.bwstyle == STYLE_ATOMIC) {
-        printf("%-10s       ", dt_names[atomic_type_index]);
+        printf("%-10s", dt_names[atomic_type_index]);
         atomic_type_index = (atomic_type_index + 1) % ATOMICS_N_DTs;
     } else
-        printf("%9d       ", len);
+        printf("%2s%10d", " ", len);
 
     if(data.unit == KB) {
         bw = bw * 1.0e3;
@@ -502,10 +508,10 @@ void static print_data_results(double bw, double mr, perf_metrics_t data,
     }
 
     if (data.bwstyle == STYLE_ATOMIC) {
-        printf("%5s%10.2f                        %10.2f%14s%10.2f\n", " ", bw,
-                 mr/1.0e6, " ", total_t/(data.trials * data.window_size));
+        printf("%13s%10.2f%15s%12.2f%12s%10.2f\n", " ", bw, " ", 
+                mr/1.0e6, " ", total_t/(data.trials * data.window_size));
     } else
-        printf("%10.2f                          %10.2f\n", bw, mr);
+        printf("%14s%10.2f%15s%12.2f\n", " ", bw, " ", mr);
 }
 
 
@@ -563,7 +569,7 @@ void static inline calc_and_print_results(double end_t, double start_t, int len,
     pe_bw_sum = bw;
 
     if (metric_info.individual_report == 1) {
-        printf("Individual bandwith for PE %d is %10.2f\n", 
+        printf("Individual bandwith for PE %6d is %10.2f\n", 
                 metric_info.my_node, pe_bw_sum);
     }
     

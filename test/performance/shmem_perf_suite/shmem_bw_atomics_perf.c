@@ -154,7 +154,7 @@ static inline void bw_set_metric_info_len(perf_metrics_t *metric_info)
     atomic_op_type op_type = OP_ADD;
 
     for(op_type = OP_ADD; op_type < SIZE_OF_OP; op_type++) {
-        if(metric_info->my_node == 0 && op_type != OP_ADD)
+        if(metric_info->my_node == 0) 
             printf("\nshmem_%s\n", op_names[op_type]);
 
         metric_info->start_len = atomic_sizes[0];
