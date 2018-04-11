@@ -263,6 +263,10 @@ static int command_line_arg_check(int argc, char *argv[],
                 fprintf(stderr, "Error: start_length must be a power of two\n");
                 error = true;
             }
+            if (metric_info->start_len > INT_MAX) {
+                fprintf(stderr, "Error: start_length is out of integer range\n");
+                error = true;
+            }
             break;
         case 'e':
             metric_info->max_len = strtoul(optarg, (char **)NULL, 0);
@@ -274,6 +278,10 @@ static int command_line_arg_check(int argc, char *argv[],
                 fprintf(stderr, "Error: end_length (%ld) must be >= "
                         "start_length (%ld)\n", metric_info->max_len,
                         metric_info->start_len);
+                error = true;
+            }
+            if (metric_info->max_len > INT_MAX) {
+                fprintf(stderr, "Error: end_length is out of integer range\n");
                 error = true;
             }
             break;
@@ -544,20 +552,21 @@ void static inline calc_and_print_results(double end_t, double start_t, int len,
     static double pwrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
     static double pe_time_start, pe_time_end, end_time_max = 0.0, start_time_min = 0.0;
     double total_t = 0.0, total_t_max = 0.0;
+    int multiplier = 1;
 
     PE_set_used_adjustments(&nPEs, &stride, &start_pe, metric_info);
 
     /* 2x as many messages at once for bi-directional */
     if(metric_info.type == BI_DIR)
-        len *= 2.0;
+        multiplier = 2;
 
     if (end_t > 0 && start_t > 0 && (end_t - start_t) > 0) {
         total_t = end_t - start_t;
 #ifdef ENABLE_OPENMP
-        bw = (len / 1.0e6 * metric_info.window_size * metric_info.trials *
-                (double)metric_info.nthreads) / (total_t / 1.0e6);
+        bw = ((double) len * (double) multiplier / 1.0e6 * metric_info.window_size * metric_info.trials *
+                (double) metric_info.nthreads) / (total_t / 1.0e6);
 #else
-        bw = (len / 1.0e6 * metric_info.window_size * metric_info.trials) /
+        bw = ((double) len * (double) multiplier / 1.0e6 * metric_info.window_size * metric_info.trials) /
                 (total_t / 1.0e6);
 #endif
     } else {
@@ -591,11 +600,11 @@ void static inline calc_and_print_results(double end_t, double start_t, int len,
 
         total_t_max = (end_time_max - start_time_min);
 #ifdef ENABLE_OPENMP
-        bw = (len * metric_info.midpt / 1.0e6 * metric_info.window_size * 
-              metric_info.trials * (double)metric_info.nthreads) / 
+        bw = ((double) len * (double) multiplier * (double) metric_info.midpt / 1.0e6 * metric_info.window_size * 
+              metric_info.trials * (double) metric_info.nthreads) / 
               (total_t_max / 1.0e6);
 #else
-        bw = (len * metric_info.midpt / 1.0e6 * metric_info.window_size * 
+        bw = ((double) len * (double) multiplier * (double) metric_info.midpt / 1.0e6 * metric_info.window_size * 
               metric_info.trials) / (total_t_max / 1.0e6);
 #endif
     } else {
