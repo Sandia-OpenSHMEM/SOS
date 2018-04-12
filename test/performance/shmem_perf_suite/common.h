@@ -36,6 +36,15 @@
 #include <time.h>
 #include <stdint.h>
 
+#include <limits.h>
+#include <sys/param.h>
+
+#ifdef MAXHOSTNAMELEN
+#define MAX_HOSTNAME_LEN MAXHOSTNAMELEN
+#else
+#define MAX_HOSTNAME_LEN HOST_NAME_MAX
+#endif
+
 #define ONE 1
 
 /* return microseconds */

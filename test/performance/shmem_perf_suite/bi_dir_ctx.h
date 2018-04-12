@@ -34,6 +34,19 @@ void static inline bi_bw_ctx (int len, perf_metrics_t *metric_info)
     char *src = aligned_buffer_alloc(metric_info->nthreads * len);
     char *dst = aligned_buffer_alloc(metric_info->nthreads * len);
     assert(src && dst);
+    static int check_once = 0;
+
+    if (!check_once) {
+        /* check to see whether sender and receiver are the same process */
+        if (dest == metric_info->my_node) {
+            fprintf(stderr, "Warning: Sender and receiver are the same process (%d)\n", 
+                             dest);
+        }
+        /* hostname validation for all sender and receiver processes */
+        int status = check_hostname_validation(*metric_info);
+        if (status != 0) return;
+        check_once++;
+    }
 
     shmem_barrier_all();
 
@@ -111,7 +124,7 @@ void static inline bi_bw_ctx (int len, perf_metrics_t *metric_info)
     shmem_barrier_all();
     if (streaming_node(*metric_info)) {
         end = perf_shmemx_wtime();
-        calc_and_print_results((end - start), len, *metric_info);
+        calc_and_print_results(end, start, len, *metric_info);
     }
 
     shmem_barrier_all();

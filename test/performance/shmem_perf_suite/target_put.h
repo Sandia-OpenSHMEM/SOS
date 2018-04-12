@@ -120,7 +120,7 @@ void static inline target_data_uni_bw(int len, perf_metrics_t metric_info)
     shmem_barrier_all();
     if (snode || target_node(metric_info)) {
         end = perf_shmemx_wtime();
-        calc_and_print_results((end - start), len, metric_info);
+        calc_and_print_results(end, start, len, metric_info);
     }
     free(my_PE_partners);
 }

@@ -98,6 +98,7 @@ typedef struct perf_metrics {
     bw_style bwstyle;
     int thread_safety;
     int nthreads;
+    int individual_report;
 } perf_metrics_t;
 
 long red_psync[SHMEM_REDUCE_SYNC_SIZE];
@@ -124,6 +125,7 @@ void static data_set_defaults(perf_metrics_t * data) {
     data->bwstyle = STYLE_RMA;
     data->thread_safety = SHMEM_THREAD_SINGLE;
     data->nthreads = 1;
+    data->individual_report = -1;
 }
 
 static int error_checking_init_target_usage(perf_metrics_t *metric_info) {
@@ -168,12 +170,12 @@ static int data_runtime_update(perf_metrics_t *data) {
 static const char * dt_names [] = { "int", "long", "longlong" };
 
 void static bi_dir_data_init(perf_metrics_t * data) {
-    data->bw_type = "Bi-directional Bandwidth";
+    data->bw_type = "Bi-dir";
     data->type = BI_DIR;
 }
 
 void static uni_dir_data_init(perf_metrics_t * data) {
-    data->bw_type = "Uni-directional Bandwidth";
+    data->bw_type = "Uni-dir";
     data->type = UNI_DIR;
 }
 
@@ -198,6 +200,16 @@ int static inline streaming_node(perf_metrics_t my_info)
 {
     if(my_info.cstyle == COMM_PAIRWISE) {
         return (my_info.my_node < my_info.szinitiator);
+    } else {
+        assert(my_info.cstyle == COMM_INCAST);
+        return true;
+    }
+}
+
+static int inline is_streaming_node(perf_metrics_t my_info, int node)
+{
+    if(my_info.cstyle == COMM_PAIRWISE) {
+        return (node < my_info.szinitiator);
     } else {
         assert(my_info.cstyle == COMM_INCAST);
         return true;
@@ -242,13 +254,17 @@ static int command_line_arg_check(int argc, char *argv[],
     extern char *optarg;
 
     /* check command line args */
-    while ((ch = getopt(argc, argv, "e:s:n:w:p:r:l:kbvtC:T:")) != EOF) {
+    while ((ch = getopt(argc, argv, "e:s:n:w:p:r:l:kbivtC:T:")) != EOF) {
         switch (ch) {
         case 's':
             metric_info->start_len = strtoul(optarg, (char **)NULL, 0);
             if ( metric_info->start_len < 1 ) metric_info->start_len = 1;
             if(!is_pow_of_2(metric_info->start_len)) {
                 fprintf(stderr, "Error: start_length must be a power of two\n");
+                error = true;
+            }
+            if (metric_info->start_len > INT_MAX) {
+                fprintf(stderr, "Error: start_length is out of integer range\n");
                 error = true;
             }
             break;
@@ -262,6 +278,10 @@ static int command_line_arg_check(int argc, char *argv[],
                 fprintf(stderr, "Error: end_length (%ld) must be >= "
                         "start_length (%ld)\n", metric_info->max_len,
                         metric_info->start_len);
+                error = true;
+            }
+            if (metric_info->max_len > INT_MAX) {
+                fprintf(stderr, "Error: end_length is out of integer range\n");
                 error = true;
             }
             break;
@@ -323,6 +343,9 @@ static int command_line_arg_check(int argc, char *argv[],
         case 'T':
             metric_info->nthreads = atoi(optarg);
             break;
+        case 'i':
+            metric_info->individual_report = 1;
+            break;
         default:
             error = true;
             break;
@@ -349,6 +372,7 @@ static int command_line_arg_check(int argc, char *argv[],
                     "[-w window size - iterations between completion, cannot use with -t] \n"
                     "[-k (kilobytes/second)] [-b (bytes/second)] \n"
                     "[-v (validate data stream)] \n"
+                    "[-i (turn on individual bandwidth reporting)] \n"
                     "[-t output data for target side (default is initiator,"
                     " only use with put_bw),\n cannot be used in conjunction "
                     "with validate, special sizes used, \ntrials"
@@ -411,54 +435,60 @@ static void inline thread_safety_validation_check(perf_metrics_t *metric_info) {
 }
 
 void static print_atomic_results_header(perf_metrics_t metric_info) {
-    printf("\nResults for %d PEs %lu trials with window size %lu ",
-            metric_info.num_pes, metric_info.trials, metric_info.window_size);
+    printf("\nSandia OpenSHMEM Performance Suite\n");
+    printf("==================================\n");
+    printf("Total Number of PEs:    %10d\n", metric_info.num_pes);
+    printf("Iteration count:        %10lu\n", metric_info.trials);
+    printf("Window size:            %10lu\n", metric_info.window_size);
+    printf("Bandwidth test type:    %10s\n", metric_info.bw_type);
 
     if (metric_info.cstyle == COMM_INCAST) {
-        printf("using incast communication style\n");
+        printf("Communication style:        INCAST\n");
     } else {
         assert(metric_info.cstyle == COMM_PAIRWISE);
-        printf("using pairwise communication style\n");
+        printf("Communication style:      PAIRWISE\n");
     }
 
-    printf("\nOperation           %s           "
-            "Message Rate%17sLatency\n", metric_info.bw_type, " ");
+    printf("\nOperation%15sBandwidth%15sMessage Rate%15sLatency\n", 
+            " ", " ", " ");
 
     if (metric_info.unit == MB) {
-        printf("%19s in megabytes per second"," ");
+        printf("%19s in mbytes/sec"," ");
     } else if (metric_info.unit == KB) {
-        printf("%19s in kilobytes per second", " ");
+        printf("%19s in kbytes/sec", " ");
     } else {
-        printf("%19s in bytes per second", " ");
+        printf("%20s in bytes/sec", " ");
     }
 
-    printf("         in Million ops/second%8sin microseconds\n", " ");
-
-    /* hack */
-    printf("shmem_add\n");
+    printf("%15s in Mops/sec%15s  in us\n", " ", " ");
 }
 
 void static print_results_header(perf_metrics_t metric_info) {
-    printf("\nResults for %d PEs %lu trials with window size %lu "
-            "max message size %lu with multiple of %lu increments, "
-            "\ntargeting %d remote PEs initiated from %d PEs", metric_info.num_pes,
-            metric_info.trials, metric_info.window_size, metric_info.max_len,
-            metric_info.size_inc, metric_info.sztarget, metric_info.szinitiator);
-    printf(", thread safety %s (%d threads)\n",
-            thread_safety_str(&metric_info), metric_info.nthreads);
-    printf("\nLength           %s           "
-            "Message Rate\n", metric_info.bw_type);
+    printf("\nSandia OpenSHMEM Performance Suite\n");
+    printf("==================================\n");
+    printf("Total Number of PEs:    %10d\n", metric_info.num_pes);
+    printf("Number of source PEs:   %10d\n", metric_info.szinitiator);
+    printf("Number of target PEs:   %10d\n", metric_info.sztarget);
+    printf("Iteration count:        %10lu\n", metric_info.trials);
+    printf("Window size:            %10lu\n", metric_info.window_size);
+    printf("Maximum message size:   %10lu\n", metric_info.max_len);
+    printf("Number of threads:      %10d\n", metric_info.nthreads);
+    printf("Thread safety:          %10s\n", thread_safety_str(&metric_info));
+    printf("Bandwidth test type:    %10s\n", metric_info.bw_type);
 
-    printf("in bytes         ");
+    printf("\nMessage Size%15sBandwidth%15sMessage Rate\n", 
+           " ", " ");
+
+    printf("%4sin bytes", " ");
     if (metric_info.unit == MB) {
-        printf("in megabytes per second");
+        printf("%11sin mbytes/sec", " ");
     } else if (metric_info.unit == KB) {
-        printf("in kilobytes per second");
+        printf("%11sin kbytes/sec", " ");
     } else {
-        printf("in bytes per second");
+        printf("%12sin bytes/sec", " ");
     }
 
-    printf("         in messages/seconds\n");
+    printf("%16sin msgs/sec\n", " ");
 }
 
 void static print_data_results(double bw, double mr, perf_metrics_t data,
@@ -474,10 +504,10 @@ void static print_data_results(double bw, double mr, perf_metrics_t data,
     }
 
     if (data.bwstyle == STYLE_ATOMIC) {
-        printf("%-10s       ", dt_names[atomic_type_index]);
+        printf("%-10s", dt_names[atomic_type_index]);
         atomic_type_index = (atomic_type_index + 1) % ATOMICS_N_DTs;
     } else
-        printf("%9d       ", len);
+        printf("%2s%10d", " ", len);
 
     if(data.unit == KB) {
         bw = bw * 1.0e3;
@@ -486,10 +516,10 @@ void static print_data_results(double bw, double mr, perf_metrics_t data,
     }
 
     if (data.bwstyle == STYLE_ATOMIC) {
-        printf("%5s%10.2f                        %10.2f%14s%10.2f\n", " ", bw,
-                 mr/1.0e6, " ", total_t/(data.trials * data.window_size));
+        printf("%13s%10.2f%15s%12.2f%12s%10.2f\n", " ", bw, " ", 
+                mr/1.0e6, " ", total_t/(data.trials * data.window_size));
     } else
-        printf("%10.2f                          %10.2f\n", bw, mr);
+        printf("%14s%10.2f%15s%12.2f\n", " ", bw, " ", mr);
 }
 
 
@@ -512,7 +542,7 @@ void static inline PE_set_used_adjustments(int *nPEs, int *stride, int *start_pe
 }
 
 
-void static inline calc_and_print_results(double total_t, int len,
+void static inline calc_and_print_results(double end_t, double start_t, int len,
                             perf_metrics_t metric_info)
 {
     int stride = 0, start_pe = 0, nPEs = 0;
@@ -520,31 +550,70 @@ void static inline calc_and_print_results(double total_t, int len,
     double pe_bw_avg = 0.0, pe_mr_avg = 0.0;
     int nred_elements = 1;
     static double pwrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
+    static double pe_time_start, pe_time_end, end_time_max = 0.0, start_time_min = 0.0;
+    double total_t = 0.0, total_t_max = 0.0;
+    int multiplier = 1;
 
     PE_set_used_adjustments(&nPEs, &stride, &start_pe, metric_info);
 
-    if (total_t > 0 ) {
+    /* 2x as many messages at once for bi-directional */
+    if(metric_info.type == BI_DIR)
+        multiplier = 2;
 
+    if (end_t > 0 && start_t > 0 && (end_t - start_t) > 0) {
+        total_t = end_t - start_t;
 #ifdef ENABLE_OPENMP
-        bw = (len / 1.0e6 * metric_info.window_size * metric_info.trials *
-                (double)metric_info.nthreads) / (total_t / 1.0e6);
+        bw = ((double) len * (double) multiplier / 1.0e6 * metric_info.window_size * metric_info.trials *
+                (double) metric_info.nthreads) / (total_t / 1.0e6);
 #else
-        bw = (len / 1.0e6 * metric_info.window_size * metric_info.trials) /
+        bw = ((double) len * (double) multiplier / 1.0e6 * metric_info.window_size * metric_info.trials) /
                 (total_t / 1.0e6);
 #endif
+    } else {
+        fprintf(stderr, "Incorrect time measured from bandwidth test: "
+                        "start = %lf, end = %lf\n", start_t, end_t);
     }
-
-    /* 2x as many messages/bytes at once for bi-directional */
-    if(metric_info.type == BI_DIR)
-        bw *= 2.0;
 
     /* base case: will be overwritten by collective if num_pes > 2 */
     pe_bw_sum = bw;
 
-    if(nPEs >= 2)
-        shmem_double_sum_to_all(&pe_bw_sum, &bw, nred_elements, start_pe,
-                                stride, nPEs, pwrk,
+    if (metric_info.individual_report == 1) {
+        printf("Individual bandwith for PE %6d is %10.2f\n", 
+                metric_info.my_node, pe_bw_sum);
+    }
+    
+    pe_time_start = start_t;
+    pe_time_end = end_t;
+    shmem_barrier(start_pe, stride, nPEs, red_psync);
+    if (nPEs >= 2) {
+        shmem_double_min_to_all(&start_time_min, &pe_time_start, nred_elements,
+                                start_pe, stride, nPEs, pwrk,
                                 red_psync);
+        shmem_double_max_to_all(&end_time_max, &pe_time_end, nred_elements, 
+                                start_pe, stride, nPEs, pwrk,
+                                red_psync);
+    }
+
+    /* calculating bandwidth based on the highest time duration across all PEs */
+    if (end_time_max > 0 && start_time_min > 0 && 
+       (end_time_max - start_time_min) > 0) {
+
+        total_t_max = (end_time_max - start_time_min);
+#ifdef ENABLE_OPENMP
+        bw = ((double) len * (double) multiplier * (double) metric_info.midpt / 1.0e6 * metric_info.window_size * 
+              metric_info.trials * (double) metric_info.nthreads) / 
+              (total_t_max / 1.0e6);
+#else
+        bw = ((double) len * (double) multiplier * (double) metric_info.midpt / 1.0e6 * metric_info.window_size * 
+              metric_info.trials) / (total_t_max / 1.0e6);
+#endif
+    } else {
+        fprintf(stderr, "Incorrect time measured from bandwidth test: "
+                        "start_min = %lf, end_max = %lf\n", 
+                         start_time_min, end_time_max);
+    } 
+
+    pe_bw_sum = bw;
 
     /* aggregate bw since bw op pairs are communicating simultaneously */
     if(metric_info.my_node == start_pe) {
@@ -781,3 +850,68 @@ void static inline uni_dir_bw_main(int argc, char *argv[], bw_style bwstyl) {
     if (ret != -1)
         bw_finalize();
 } /*main() */
+
+static inline int check_hostname_validation(perf_metrics_t my_info) {
+
+    int hostname_status = -1;
+
+    /* hostname_size should be a length divisible by 4 */
+    int hostname_size = (MAX_HOSTNAME_LEN % 4 == 0) ? MAX_HOSTNAME_LEN : 
+                         MAX_HOSTNAME_LEN + (4 - MAX_HOSTNAME_LEN % 4);
+    int i, errors = 0;
+
+    /* pSync for fcollect of hostnames */
+    static long pSync_collect[SHMEM_COLLECT_SYNC_SIZE];
+    for (i = 0; i < SHMEM_COLLECT_SYNC_SIZE; i++)
+        pSync_collect[i] = SHMEM_SYNC_VALUE;
+
+    char *hostname = (char *) shmem_malloc (hostname_size * sizeof(char));
+    char *dest = (char *) shmem_malloc (my_info.num_pes * hostname_size * sizeof(char));
+
+    hostname_status = gethostname(hostname, hostname_size);
+    if (hostname_status != 0) {
+        fprintf(stderr, "gethostname failed (%d)\n", hostname_status);
+        return -1;
+    }
+    shmem_barrier_all();
+
+    /* nelems needs to be updated based on 32-bit API */
+    shmem_fcollect32(dest, hostname, hostname_size/4, 0, 0, my_info.num_pes, pSync_collect);
+
+    char *snode_name = NULL;
+    char *tnode_name = NULL;
+    for (i = 0; i < my_info.num_pes; i++) {
+        char *curr_name = &dest[i * hostname_size];
+
+        if (is_streaming_node(my_info, i)) {
+            if (snode_name == NULL) {
+                snode_name = curr_name;
+            }
+
+            if (strncmp(snode_name, curr_name, hostname_size) != 0) {
+                fprintf(stderr, "PE %d on %s is a streaming node " 
+                                "but not placed on %s\n", i, curr_name, snode_name);
+                errors++;
+            }
+        } else {
+            if (tnode_name == NULL) {
+                tnode_name = curr_name;
+            }
+
+            if (strncmp(tnode_name, curr_name, hostname_size) != 0) {
+                fprintf(stderr, "PE %d on %s is a target node "
+                                "but not placed on %s\n", i, curr_name, tnode_name);
+                errors++;
+            }
+        }
+    }
+    if (strncmp(snode_name, tnode_name, hostname_size) == 0) {
+        fprintf(stderr, "Warning: senders and receivers are running on the "
+                        "same node %s\n", snode_name);
+    }
+
+    shmem_free(dest);
+    shmem_free(hostname);
+
+    return errors;
+}
