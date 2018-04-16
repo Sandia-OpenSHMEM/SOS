@@ -1703,8 +1703,10 @@ int shmem_transport_fini(void)
         shmem_node_util_fini();
     }
 
+#if ENABLE_TARGET_CNTR
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));
+#endif
 
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     ret = fi_close(&shmem_transport_ofi_target_mrfd->fid);

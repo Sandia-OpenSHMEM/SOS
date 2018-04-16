@@ -41,7 +41,9 @@ int shmem_node_util_init(void)
 
         node_util_is_initialized = 1;
     } else {
-        RAISE_WARN_STR("Attemping to initialize shmem_node_util more than once");
+        if (shmem_internal_params.DEBUG) {
+            DEBUG_STR("Initialized shmem_node_util more than once");
+        }
     }
 
     return 0;

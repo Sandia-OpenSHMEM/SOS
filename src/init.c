@@ -81,15 +81,15 @@ shmem_internal_shutdown(void)
     shmem_internal_finalized = 1;
     shmem_transport_fini();
 
-#ifdef USE_ON_NODE_COMMS
-    shmem_node_util_fini();
-#endif
-
 #ifdef USE_XPMEM
     shmem_transport_xpmem_fini();
 #endif
 #ifdef USE_CMA
     shmem_transport_cma_fini();
+#endif
+
+#ifdef USE_ON_NODE_COMMS
+    shmem_node_util_fini();
 #endif
 
     SHMEM_MUTEX_DESTROY(shmem_internal_mutex_alloc);

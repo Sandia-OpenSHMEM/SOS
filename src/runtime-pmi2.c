@@ -70,11 +70,13 @@ decode(const char *inval, void *outval, int outvallen)
     int i;
     char *ret = (char*) outval;
 
-    if (outvallen != strlen(inval) / 2) {
+    size_t outlen = strlen(inval) / 2;
+
+    if (outvallen < outlen) {
         return 1;
     }
 
-    for (i = 0 ; i < outvallen ; ++i) {
+    for (i = 0 ; i < outlen; ++i) {
         if (*inval >= '0' && *inval <= '9') {
             ret[i] = *inval - '0';
         } else {
