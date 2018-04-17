@@ -126,13 +126,13 @@ endif
 
 if HAVE_FORTRAN
 check_PROGRAMS += \
-     hello_f \
-     shmem_info_f
+     hello_f
 
 if !HAVE_LONG_FORTRAN_HEADER
 check_PROGRAMS += \
      complex_reductions_f \
-     set_fetch_f
+     set_fetch_f \
+     shmem_info_f
 endif
 endif
 

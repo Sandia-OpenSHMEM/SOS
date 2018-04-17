@@ -309,6 +309,7 @@ int
 SHMEMRandomAccess(void)
 {
   int64_t i;
+  uint64_t i_u;
   static int64_t NumErrors, GlbNumErrors;
 
   int NumProcs, MyProc;
@@ -435,8 +436,8 @@ SHMEMRandomAccess(void)
   }
 
   /* Initialize main table */
-  for (i=0; i<LocalTableSize; i++)
-    HPCC_Table[i] = i + GlobalStartMyProc;
+  for (i_u=0; i_u<LocalTableSize; i_u++)
+    HPCC_Table[i_u] = i_u + GlobalStartMyProc;
 
   shmem_barrier_all();
 
@@ -487,8 +488,8 @@ SHMEMRandomAccess(void)
               1);
 
   NumErrors = 0;
-  for (i=0; i<LocalTableSize; i++){
-    if (HPCC_Table[i] != i + GlobalStartMyProc)
+  for (i_u=0; i_u<LocalTableSize; i_u++){
+    if (HPCC_Table[i_u] != i_u + GlobalStartMyProc)
       NumErrors++;
   }
 

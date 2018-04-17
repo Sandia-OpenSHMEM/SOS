@@ -30,7 +30,7 @@ long_element_round_trip_latency_get(perf_metrics_t data)
 {
     double start = 0.0;
     double end = 0.0;
-    int dest = 1, i = 0;
+    int dest = 1;
     int partner_pe = partner_node(data.my_node);
     *data.target = data.my_node;
 
@@ -42,6 +42,7 @@ long_element_round_trip_latency_get(perf_metrics_t data)
     shmem_barrier_all();
 
     if (data.my_node == GET_IO_NODE) {
+        unsigned int i;
         for (i = 0; i < data.trials + data.warmup; i++) {
             if(i == data.warmup)
                 start = perf_shmemx_wtime();
@@ -66,7 +67,8 @@ long_element_round_trip_latency_put(perf_metrics_t data)
     double start = 0.0;
     double end = 0.0;
     long tmp;
-    int dest = (data.my_node + 1) % data.npes, i = 0;
+    int dest = (data.my_node + 1) % data.npes;
+    unsigned int i;
     tmp = *data.target = INIT_VALUE;
 
     if (data.my_node == PUT_IO_NODE) {

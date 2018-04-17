@@ -29,6 +29,7 @@ program shmem_info
     include 'shmem.fh'
 
     integer me, major_ver, minor_ver
+    integer shmem_my_pe
     character (len=SHMEM_MAX_NAME_LEN) lib_name
 
     call shmem_init()
