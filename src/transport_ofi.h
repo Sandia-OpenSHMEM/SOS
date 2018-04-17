@@ -385,7 +385,7 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_transport_ctx_t
 
     SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
 
-    shmem_internal_assert(shmem_transport_ofi_max_bounce_size > 0);
+    shmem_internal_assert(shmem_transport_ofi_max_bounce_buffers > 0);
 
     while (ctx->bounce_buffers->nalloc >= (uint64_t) shmem_transport_ofi_max_bounce_buffers) {
         shmem_transport_ofi_drain_cq(ctx);
