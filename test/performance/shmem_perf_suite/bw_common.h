@@ -907,6 +907,12 @@ static inline int check_hostname_validation(perf_metrics_t my_info) {
             }
         }
     }
+
+    if (snode_name == NULL || tnode_name == NULL) {
+        fprintf(stderr, "Error: no streaming or target node\n");
+        return -1;
+    }
+
     if (strncmp(snode_name, tnode_name, hostname_size) == 0) {
         fprintf(stderr, "Warning: senders and receivers are running on the "
                         "same node %s\n", snode_name);
