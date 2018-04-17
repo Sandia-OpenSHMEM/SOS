@@ -594,6 +594,9 @@ void static inline calc_and_print_results(double end_t, double start_t, int len,
         shmem_double_max_to_all(&end_time_max, &pe_time_end, nred_elements, 
                                 start_pe, stride, nPEs, pwrk,
                                 red_psync);
+    } else if (nPEs == 1) {
+        start_time_min = pe_time_start;
+        end_time_max = pe_time_end;
     }
 
     /* calculating bandwidth based on the highest time duration across all PEs */
