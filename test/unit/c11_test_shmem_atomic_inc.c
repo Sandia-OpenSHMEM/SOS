@@ -70,7 +70,7 @@ enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
           break;                                                        \
         case FINC:                                                      \
           old = DEPRECATED_FINC(&remote, i);                            \
-          if (old > npes) {                                             \
+          if (old > (TYPE) npes) {                                      \
             printf("PE %i error inconsistent value of old (%s, %s)\n",  \
                    mype, #OP, #TYPE);                                   \
             rc = EXIT_FAILURE;                                          \
@@ -78,7 +78,7 @@ enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
           break;                                                        \
         case ATOMIC_FETCH_INC:                                          \
           old = shmem_atomic_fetch_inc(&remote, i);                     \
-          if (old > npes) {                                             \
+          if (old > (TYPE) npes) {                                      \
             printf("PE %i error inconsistent value of old (%s, %s)\n",  \
                    mype, #OP, #TYPE);                                   \
             rc = EXIT_FAILURE;                                          \
@@ -86,7 +86,7 @@ enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
           break;                                                        \
         case CTX_ATOMIC_FETCH_INC:                                      \
           old = shmem_atomic_fetch_inc(SHMEM_CTX_DEFAULT, &remote, i);  \
-          if (old > npes) {                                             \
+          if (old > (TYPE) npes) {                                      \
             printf("PE %i error inconsistent value of old (%s, %s)\n",  \
                    mype, #OP, #TYPE);                                   \
             rc = EXIT_FAILURE;                                          \

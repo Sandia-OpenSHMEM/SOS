@@ -29,7 +29,7 @@
 void static inline uni_bw_put(int len, perf_metrics_t *metric_info)
 {
     double start = 0.0, end = 0.0;
-    int i = 0, j = 0;
+    unsigned long int i = 0, j = 0;
     int dest = partner_node(*metric_info);
     int snode = (metric_info->num_pes != 1)? streaming_node(*metric_info) : true;
     static int check_once = 0;
@@ -93,7 +93,7 @@ void static inline uni_bw_put(int len, perf_metrics_t *metric_info)
 void static inline uni_bw_get(int len, perf_metrics_t *metric_info)
 {
     double start = 0.0, end = 0.0;
-    int i = 0, j = 0;
+    unsigned long int i = 0, j = 0;
     int dest = partner_node(*metric_info);
     int snode = (metric_info->num_pes != 1)? streaming_node(*metric_info) : true;
     static int check_once = 0;

@@ -29,7 +29,7 @@ void static inline bi_bw_put(int len, perf_metrics_t *metric_info)
 {
     double start = 0.0, end = 0.0;
     int dest = partner_node(*metric_info);
-    int i = 0, j = 0;
+    unsigned long int i = 0, j = 0;
     static int check_once = 0;
     static int fin = -1;
 
@@ -90,7 +90,7 @@ void static inline bi_bw_get(int len, perf_metrics_t *metric_info)
 {
     double start = 0.0, end = 0.0;
     int dest = partner_node(*metric_info);
-    int i = 0, j = 0;
+    unsigned long int i = 0, j = 0;
     static int check_once = 0;
     static int fin = -1;
 

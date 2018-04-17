@@ -30,6 +30,7 @@
  * SOFTWARE.
  */
 
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -47,7 +48,7 @@ enum op { OR = 0, CTX_OR, FETCH_OR, CTX_FETCH_OR };
   do {                                                                  \
     static TYPE remote = (TYPE)0;                                       \
     TYPE old = (TYPE)0;                                                 \
-    if (npes-1 > sizeof(TYPE)) break; /* Avoid overflow */              \
+    if ((size_t) npes-1 > sizeof(TYPE)) break; /* Avoid overflow */     \
     for (int i = 0; i < npes; i++)                                      \
       switch (OP) {                                                     \
         case OR:                                                        \

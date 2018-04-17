@@ -635,7 +635,7 @@ static void validate_atomics(perf_metrics_t m_info) {
     int snode = streaming_node(m_info);
     int * my_buf = (int *)m_info.dest;
     bw_type tbw = m_info.type;
-    unsigned int expected_val = 0;
+    int expected_val = 0;
     unsigned int ppe_exp_val = ((m_info.trials + m_info.warmup) * m_info.window_size
                                 * ATOMICS_N_DTs * ATOMICS_N_OPs) + m_info.my_node;
 
@@ -669,7 +669,8 @@ static void validate_atomics(perf_metrics_t m_info) {
 extern void bi_dir_bw(int len, perf_metrics_t *metric_info);
 
 void static inline bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
-    int len = 0, partner_pe = partner_node(metric_info);
+    int partner_pe = partner_node(metric_info);
+    unsigned long int len;
 
     if(metric_info.my_node == 0) {
         if (metric_info.bwstyle == STYLE_ATOMIC)
@@ -707,7 +708,8 @@ void static inline bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
 extern void uni_dir_bw(int len, perf_metrics_t *metric_info);
 
 void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
-    int len = 0, partner_pe = partner_node(metric_info);
+    int partner_pe = partner_node(metric_info);
+    unsigned long int len = 0;
 
     if(metric_info.my_node == 0) {
         if (metric_info.bwstyle == STYLE_ATOMIC)
