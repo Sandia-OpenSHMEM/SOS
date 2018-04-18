@@ -4,14 +4,16 @@ Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
 v1.4.1
 ------
-- This full release includes all updates from the first release candidate,
-  which are listed below.
-- Fixed various minor bugs and issues from the release candidate.
-- Created a multi-threaded lock unit test with an accompanying library for
-  doing thread-safe locking with OpenSHMEM.
-- Improved the resilience an useability of the shmem_perf_suite throughput
-  benchmarks.
-- Eliminated all extra warnings when building SOS with '-Wall -Wextra'.
+- This full release includes the changes listed below for v1.4.1rc1 and the
+  following additional changes.
+- Improved the fidelity of throughput measurements in the performance testing
+  suite.
+- Added check to performance suite to verify that source and target processes
+  are located on different nodes.
+- Fixed threading synchronization race in context destruction.
+- Added a multi-threaded lock unit test with an accompanying library for
+  thread-safe usage of OpenSHMEM locks.
+- Additional minor code cleanups and bugfixes (see git log for details).
 
 
 v1.4.1rc1
