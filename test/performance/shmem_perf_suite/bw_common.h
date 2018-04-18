@@ -102,6 +102,7 @@ typedef struct perf_metrics {
 } perf_metrics_t;
 
 long red_psync[SHMEM_REDUCE_SYNC_SIZE];
+long bar_psync[SHMEM_BARRIER_SYNC_SIZE];
 
 /*default settings if no input is provided */
 void static data_set_defaults(perf_metrics_t * data) {
@@ -584,14 +585,18 @@ void static inline calc_and_print_results(double end_t, double start_t, int len,
     
     pe_time_start = start_t;
     pe_time_end = end_t;
-    shmem_barrier(start_pe, stride, nPEs, red_psync);
+    shmem_barrier(start_pe, stride, nPEs, bar_psync);
     if (nPEs >= 2) {
         shmem_double_min_to_all(&start_time_min, &pe_time_start, nred_elements,
                                 start_pe, stride, nPEs, pwrk,
                                 red_psync);
+        shmem_barrier(start_pe, stride, nPEs, bar_psync);
         shmem_double_max_to_all(&end_time_max, &pe_time_end, nred_elements, 
                                 start_pe, stride, nPEs, pwrk,
                                 red_psync);
+    } else if (nPEs == 1) {
+        start_time_min = pe_time_start;
+        end_time_max = pe_time_end;
     }
 
     /* calculating bandwidth based on the highest time duration across all PEs */
@@ -771,8 +776,11 @@ static inline int bw_init_data_stream(perf_metrics_t *metric_info,
     metric_info->sztarget = metric_info->midpt;
     metric_info->szinitiator = metric_info->midpt;
 
-    for(i = 0; i < SHMEM_REDUCE_MIN_WRKDATA_SIZE; i++)
+    for(i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++)
         red_psync[i] = SHMEM_SYNC_VALUE;
+
+    for(i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
+        bar_psync[i] = SHMEM_SYNC_VALUE;
 
     if (only_even_PEs_check(metric_info->my_node, metric_info->num_pes) != 0) {
         return -2;
