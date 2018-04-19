@@ -941,7 +941,7 @@ shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *
 
         memcpy(buff->data, source, len);
 
-        shmem_internal_atomic_inc(&ctx->pending_put_cntr);
+        shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_event_cntr);
         ret = PtlAtomic(shmem_transport_portals4_put_event_md_h,
                         (ptl_size_t) buff->data,
                         len,
