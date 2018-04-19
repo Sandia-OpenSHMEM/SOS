@@ -50,7 +50,7 @@ void static inline bi_bw_ctx (int len, perf_metrics_t *metric_info)
 
     shmem_barrier_all();
 
-#pragma omp parallel default(none) firstprivate(len, dest) private(j) \
+#pragma omp parallel default(none) firstprivate(len, dest) private(i, j) \
     shared(metric_info, src, dst, start, end) num_threads(metric_info->nthreads)
     {
         const int thread_id = omp_get_thread_num();
