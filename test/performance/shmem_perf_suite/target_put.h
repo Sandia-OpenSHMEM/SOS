@@ -73,7 +73,8 @@ int static inline *get_initiators_partners(perf_metrics_t my_info, int num_partn
 void static inline target_data_uni_bw(int len, perf_metrics_t metric_info)
 {
     double start = 0.0, end = 0.0;
-    int i = 0, j = 0;
+    int i = 0;
+    unsigned long int j = 0;
     int snode = (metric_info.num_pes != 1)? streaming_node(metric_info) : true;
     int num_partners = get_num_partners(metric_info);
     static int completion_signal = 0;
@@ -120,7 +121,7 @@ void static inline target_data_uni_bw(int len, perf_metrics_t metric_info)
     shmem_barrier_all();
     if (snode || target_node(metric_info)) {
         end = perf_shmemx_wtime();
-        calc_and_print_results((end - start), len, metric_info);
+        calc_and_print_results(end, start, len, metric_info);
     }
     free(my_PE_partners);
 }

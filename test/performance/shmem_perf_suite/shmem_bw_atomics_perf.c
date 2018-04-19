@@ -42,7 +42,7 @@
 #define uni_bw(len, metric_info, snode, NAME, TYPE, op)               \
     do {                                                                       \
         double start = 0.0, end = 0.0;                                         \
-        int i = 0, j = 0, num_itr = metric_info->trials + metric_info->warmup; \
+        unsigned long int i = 0, j = 0, num_itr = metric_info->trials + metric_info->warmup; \
         int dest = partner_node(*metric_info);                                 \
         shmem_barrier_all();                                                   \
                                                                                \
@@ -125,7 +125,7 @@
                                                 for atomics\n", op);           \
                 break;                                                         \
             }                                                                  \
-            calc_and_print_results((end - start), len, *metric_info);          \
+            calc_and_print_results(end, start, len, *metric_info);          \
         }                                                                      \
     } while(0)
 
@@ -154,7 +154,7 @@ static inline void bw_set_metric_info_len(perf_metrics_t *metric_info)
     atomic_op_type op_type = OP_ADD;
 
     for(op_type = OP_ADD; op_type < SIZE_OF_OP; op_type++) {
-        if(metric_info->my_node == 0 && op_type != OP_ADD)
+        if(metric_info->my_node == 0) 
             printf("\nshmem_%s\n", op_names[op_type]);
 
         metric_info->start_len = atomic_sizes[0];

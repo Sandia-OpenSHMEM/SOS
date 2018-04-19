@@ -32,7 +32,11 @@
 #include <sys/types.h>
 
 
-#define ENABLE_TARGET_CNTR (!defined(ENABLE_HARD_POLLING) || defined(ENABLE_MANUAL_PROGRESS))
+#if !defined(ENABLE_HARD_POLLING) || defined(ENABLE_MANUAL_PROGRESS)
+#define ENABLE_TARGET_CNTR 1
+#else
+#define ENABLE_TARGET_CNTR 0
+#endif
 
 #if ENABLE_TARGET_CNTR
 extern struct fid_cntr*                 shmem_transport_ofi_target_cntrfd;
@@ -381,7 +385,9 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_transport_ctx_t
 
     SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
 
-    while (ctx->bounce_buffers->nalloc >= shmem_transport_ofi_max_bounce_buffers) {
+    shmem_internal_assert(shmem_transport_ofi_max_bounce_buffers > 0);
+
+    while (ctx->bounce_buffers->nalloc >= (uint64_t) shmem_transport_ofi_max_bounce_buffers) {
         shmem_transport_ofi_drain_cq(ctx);
     }
 
@@ -1198,6 +1204,13 @@ void shmem_transport_received_cntr_wait(uint64_t ge_val)
 #else
     RAISE_ERROR_STR("OFI transport configured for hard polling");
 #endif
+}
+
+static inline
+void shmem_transport_syncmem(void)
+{
+    // TODO: libfabric does not yet have an analog to PtlAtomicSync() in Portals4, so the OFI 
+    // transport routine will be a nop until an API is provided.
 }
 
 #endif /* TRANSPORT_OFI_H */

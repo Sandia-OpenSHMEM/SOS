@@ -305,4 +305,10 @@ void shmem_transport_received_cntr_wait(uint64_t ge_val)
     RAISE_ERROR_STR("No remote peers");
 }
 
+static inline
+void shmem_transport_syncmem(void)
+{
+    return;
+}
+
 #endif /* TRANSPORT_NONE_H */

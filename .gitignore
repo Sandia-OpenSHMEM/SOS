@@ -15,6 +15,7 @@ config.h.in
 config.h.in~
 config.log
 config.status
+config.lt
 configure
 libtool
 libfabric.spec
@@ -40,6 +41,8 @@ mpp/shmemx.h4
 mpp/pshmem.h4
 mpp/shmemx.fh
 mpp/shmemx.h
+mpp/shmem_c_func.h4
+mpp/shmemx_c_func.h4
 sandia-openshmem.spec
 src/oshCC
 src/oshc++
@@ -52,7 +55,14 @@ src/collectives_f.c
 src/data_c.c
 src/data_f.c
 src/synchronization_c.c
+src/build_info.h
+src/sos.pc
+bindings/generate_bind_c11_extras
+bindings/generate_bind_cxx_extras
+bindings/shmem_bind_c11_extras.m4
+bindings/shmem_bind_cxx_extras.m4
 test/unit/.Tpo
+man/Makefile.am
 *.log
 *.trs
 

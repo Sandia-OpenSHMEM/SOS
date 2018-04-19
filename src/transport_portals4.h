@@ -265,7 +265,9 @@ int shmem_transport_fini(void);
 
 static inline void shmem_transport_get_wait(shmem_transport_ctx_t*);
 
-static inline void shmem_transport_probe(void){ return; }
+static inline void shmem_transport_probe(void) {
+    return;
+}
 
 static inline
 int
@@ -274,9 +276,6 @@ shmem_transport_quiet(shmem_transport_ctx_t* ctx)
     int ret;
     ptl_ct_event_t ct;
     uint64_t cnt, cnt_new;
-
-    /* synchronize the atomic cache, if there is one */
-    PtlAtomicSync();
 
     /* wait for completion of all pending NB get events */
     shmem_transport_get_wait(ctx);
@@ -333,7 +332,6 @@ shmem_transport_fence(shmem_transport_ctx_t* ctx)
 
     return ret;
 }
-
 
 static inline
 void
@@ -943,7 +941,7 @@ shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *
 
         memcpy(buff->data, source, len);
 
-        shmem_internal_atomic_inc(&ctx->pending_put_cntr);
+        shmem_internal_atomic_inc(&shmem_transport_portals4_pending_put_event_cntr);
         ret = PtlAtomic(shmem_transport_portals4_put_event_md_h,
                         (ptl_size_t) buff->data,
                         len,
@@ -1310,4 +1308,10 @@ void shmem_transport_received_cntr_wait(uint64_t ge_val)
 #endif
 }
 
-#endif
+static inline
+void shmem_transport_syncmem(void)
+{
+    PtlAtomicSync();
+}
+
+#endif /* TRANSPORT_PORTALS_H */

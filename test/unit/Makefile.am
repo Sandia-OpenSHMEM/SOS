@@ -101,13 +101,7 @@ check_PROGRAMS = \
 
 if ENABLE_PROFILING
 check_PROGRAMS += \
-	pcontrol \
 	rma_coverage_pshmem
-endif
-
-if USE_PORTALS4
-check_PROGRAMS += \
-	 shmem_ct
 endif
 
 if HAVE_CXX
@@ -132,13 +126,13 @@ endif
 
 if HAVE_FORTRAN
 check_PROGRAMS += \
-     hello_f \
-     shmem_info_f
+     hello_f
 
 if !HAVE_LONG_FORTRAN_HEADER
 check_PROGRAMS += \
      complex_reductions_f \
-     set_fetch_f
+     set_fetch_f \
+     shmem_info_f
 endif
 endif
 
@@ -147,15 +141,11 @@ check_PROGRAMS += \
     mt_a2a \
     mt_contention \
     mt_membar \
+    mt_lock_test \
     threading \
     web \
     thread_wait \
     query_thread_funneled 
-
-if SHMEMX_TESTS
-check_PROGRAMS += \
-    gettid_register
-endif
 endif
 
 if HAVE_OPENMP
@@ -172,11 +162,11 @@ AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
 
 if EXTERNAL_TESTS
 bin_PROGRAMS = $(check_PROGRAMS)
-AM_CPPFLAGS =
+AM_CPPFLAGS = -I$(top_srcdir)/test/include
 AM_FCFLAGS =
 LDADD =
 else
-AM_CPPFLAGS = -I$(top_builddir)/mpp
+AM_CPPFLAGS = -I$(top_builddir)/mpp -I$(top_srcdir)/test/include
 AM_FCFLAGS = -I$(top_builddir)/mpp
 LDADD = $(top_builddir)/src/libsma.la
 endif
@@ -201,11 +191,10 @@ mt_contention_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 mt_contention_CFLAGS = $(PTHREAD_CFLAGS)
 mt_contention_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
-if SHMEMX_TESTS
-gettid_register_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
-gettid_register_CFLAGS = $(PTHREAD_CFLAGS)
-gettid_register_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
-endif
+mt_lock_test_SOURCES = mt_lock_test.c mt_lock.c mt_lock.h
+mt_lock_test_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
+mt_lock_test_CFLAGS = $(PTHREAD_CFLAGS)
+mt_lock_test_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 mt_membar_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 mt_membar_CFLAGS = -I$(top_srcdir)/test/unit $(PTHREAD_CFLAGS)

@@ -38,7 +38,9 @@ noinst_HEADERS = \
 	int_element_latency.h \
 	bw_common.h \
 	uni_dir.h \
+	uni_dir_ctx.h \
 	bi_dir.h \
+	bi_dir_ctx.h \
 	target_put.h
 
 if ENABLE_LENGTHY_TESTS

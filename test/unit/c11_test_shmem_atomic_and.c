@@ -30,6 +30,7 @@
  * SOFTWARE.
  */
 
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -51,7 +52,7 @@ enum op { AND = 0, CTX_AND, FETCH_AND, CTX_FETCH_AND };
     const int mype = shmem_my_pe();                                     \
     const int npes = shmem_n_pes();                                     \
     TYPE old = (TYPE)0;                                                 \
-    if (npes-1 > sizeof(TYPE)) break; /* Avoid overflow */              \
+    if ((size_t) npes-1 > sizeof(TYPE)) break; /* Avoid overflow */     \
     for (int i = 0; i < npes; i++)                                      \
       switch (OP) {                                                     \
         case AND:                                                       \

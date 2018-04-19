@@ -76,7 +76,7 @@ enum op { CSWAP = 0, ATOMIC_COMPARE_SWAP, CTX_ATOMIC_COMPARE_SWAP };
              mype, #OP, #TYPE);                                         \
       rc = EXIT_FAILURE;                                                \
     }                                                                   \
-    if (old != npes) {                                                  \
+    if (old != (TYPE) npes) {                                           \
       printf("PE %i error inconsistent value of old (%s, %s)\n",        \
              mype, #OP, #TYPE);                                         \
       rc = EXIT_FAILURE;                                                \

@@ -13,7 +13,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.4.0], [https://github.com/Sandia-OpenSHMEM/SOS/issues], [sos], [https://github.com/Sandia-OpenSHMEM/SOS])
+AC_INIT([Sandia OpenSHMEM], [1.4.1], [https://github.com/Sandia-OpenSHMEM/SOS/issues], [sos], [https://github.com/Sandia-OpenSHMEM/SOS])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -735,6 +735,8 @@ AC_CONFIG_FILES([Makefile
   src/sos.pc
   test/Makefile
   test/unit/Makefile
+  test/shmemx/Makefile
+  test/include/Makefile
   test/performance/Makefile
   test/performance/shmem_perf_suite/Makefile
   test/performance/tests/Makefile

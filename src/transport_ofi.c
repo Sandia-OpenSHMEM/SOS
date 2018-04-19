@@ -1532,7 +1532,7 @@ int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
     SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
 
     int ret;
-    int id;
+    size_t id;
 
     /* Look for an open slot in the contexts array */
     for (id = 0; id < shmem_transport_ofi_contexts_len; id++)
@@ -1542,7 +1542,7 @@ int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
     if (id >= shmem_transport_ofi_contexts_len) {
         id = shmem_transport_ofi_contexts_len;
 
-        ssize_t i = shmem_transport_ofi_contexts_len;
+        size_t i = shmem_transport_ofi_contexts_len;
         shmem_transport_ofi_contexts_len += shmem_transport_ofi_grow_size;
         shmem_transport_ofi_contexts = realloc(shmem_transport_ofi_contexts,
                shmem_transport_ofi_contexts_len * sizeof(shmem_transport_ctx_t*));
@@ -1602,6 +1602,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
     }
 
     if (ctx->stx_idx >= 0) {
+        SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
         if (shmem_transport_ofi_is_private(ctx->options)) {
             shmem_transport_ofi_stx_kvs_t *e;
             HASH_FIND(hh, shmem_transport_ofi_stx_kvs, &ctx->tid,
@@ -1620,8 +1621,12 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
             }
         } else {
             shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt--;
-            shmem_internal_assert(!shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private);
+            if (shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private) {
+                SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
+                RAISE_ERROR_STR("Destroyed a ctx with an inconsistent is_private field");
+            }
         }
+        SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
     }
 
     if (ctx->put_cntr) {
@@ -1657,14 +1662,13 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 int shmem_transport_fini(void)
 {
     int ret;
-    size_t i;
     shmem_transport_ofi_stx_kvs_t* e;
     int stx_len = 0;
 
     /* Free all shareable contexts.  This performs a quiet on each context,
      * ensuring all operations have completed before proceeding with shutdown. */
 
-    for (i = 0; i < shmem_transport_ofi_contexts_len; ++i) {
+    for (size_t i = 0; i < shmem_transport_ofi_contexts_len; ++i) {
         if (shmem_transport_ofi_contexts[i]) {
             if (shmem_transport_ofi_is_private(shmem_transport_ofi_contexts[i]->options))
                 RAISE_WARN_MSG("Shutting down with unfreed private context (%zd)\n", i);
@@ -1689,7 +1693,7 @@ int shmem_transport_fini(void)
         RAISE_WARN_MSG("Key/value store contained %d unfreed private contexts\n", stx_len);
     }
 
-    for (i = 0; i < shmem_transport_ofi_stx_max; ++i) {
+    for (long i = 0; i < shmem_transport_ofi_stx_max; ++i) {
         if (shmem_transport_ofi_stx_pool[i].ref_cnt != 0)
             RAISE_WARN_MSG("Closing a %s STX (%zu) with nonzero ref. count (%ld)\n",
                            shmem_transport_ofi_stx_pool[i].is_private ? "private" : "shared",

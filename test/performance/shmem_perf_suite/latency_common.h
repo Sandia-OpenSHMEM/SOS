@@ -153,7 +153,7 @@ extern void int_element_latency(perf_metrics_t data);
 extern void streaming_latency(int len, perf_metrics_t *data);
 
 void static inline  multi_size_latency(perf_metrics_t data, char *argv[]) {
-    int len;
+    unsigned int len;
     int partner_pe = partner_node(data.my_node);
 
     for (len = data.start_len; len <= data.max_len; len *= data.inc) {

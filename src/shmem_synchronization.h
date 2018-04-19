@@ -30,6 +30,12 @@ shmem_internal_quiet(shmem_ctx_t ctx)
     if (0 != ret) { RAISE_ERROR(ret); }
 
     shmem_internal_membar();
+
+    /* Transport level memory flush is required to make memory 
+     * changes (i.e. subsequent coherent load operations 
+     * performed via the shmem_ptr API, the result of atomics 
+     * that targeted the local process) visible */
+    shmem_transport_syncmem();
 }
 
 
@@ -42,6 +48,9 @@ shmem_internal_fence(shmem_ctx_t ctx)
     if (0 != ret) { RAISE_ERROR(ret); }
 
     shmem_internal_membar_store();
+
+    /* Since fence does not guarantee any memory visibility, 
+     * transport level memory flush is not required here. */
 }
 
 
@@ -124,11 +133,13 @@ shmem_internal_fence(shmem_ctx_t ctx)
 #define SHMEM_WAIT(var, value) do {                                     \
         SHMEM_WAIT_POLL(var, value);                                    \
         shmem_internal_membar_load();                                   \
+        shmem_transport_syncmem();                                      \
     } while (0)
 
 #define SHMEM_WAIT_UNTIL(var, cond, value) do {                         \
         SHMEM_WAIT_UNTIL_POLL(var, cond, value);                        \
         shmem_internal_membar_load();                                   \
+        shmem_transport_syncmem();                                      \
     } while (0) 
 
 #else
@@ -139,6 +150,7 @@ shmem_internal_fence(shmem_ctx_t ctx)
             SHMEM_WAIT_POLL(var, value);                                \
         }                                                               \
         shmem_internal_membar_load();                                   \
+        shmem_transport_syncmem();                                      \
     } while (0)
 
 #define SHMEM_WAIT_UNTIL(var, cond, value) do {                         \
@@ -148,6 +160,7 @@ shmem_internal_fence(shmem_ctx_t ctx)
             SHMEM_WAIT_UNTIL_POLL(var, cond, value);                    \
         }                                                               \
         shmem_internal_membar_load();                                   \
+        shmem_transport_syncmem();                                      \
     } while (0)
 #endif /* HARD_POLLING */
 

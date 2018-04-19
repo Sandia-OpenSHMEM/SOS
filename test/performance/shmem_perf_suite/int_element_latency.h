@@ -30,7 +30,7 @@ int_p_latency(perf_metrics_t data)
 {
     double start = 0.0;
     double end = 0.0;
-    int i = 0;
+    unsigned int i = 0;
 
     if (data.my_node == PUT_IO_NODE) {
         printf("\nStream shmem_int_p results:\n");
@@ -65,7 +65,7 @@ int_g_latency(perf_metrics_t data)
 {
     double start = 0.0;
     double end = 0.0;
-    int i = 0;
+    unsigned int i = 0;
     int rtnd = -1;
 
     if (data.my_node == GET_IO_NODE) {
