@@ -265,7 +265,9 @@ int shmem_transport_fini(void);
 
 static inline void shmem_transport_get_wait(shmem_transport_ctx_t*);
 
-static inline void shmem_transport_probe(void){ return; };
+static inline void shmem_transport_probe(void) {
+    return;
+}
 
 static inline
 int

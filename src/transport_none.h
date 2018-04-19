@@ -85,7 +85,7 @@ void
 shmem_transport_probe(void)
 {
     return;
-};
+}
 
 static inline
 int

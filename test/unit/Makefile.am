@@ -192,7 +192,7 @@ mt_contention_CFLAGS = $(PTHREAD_CFLAGS)
 mt_contention_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 mt_lock_test_SOURCES = mt_lock_test.c mt_lock.c mt_lock.h
-mt_lock_test_LDFLAGS = $(PTHREAD_LIBS)
+mt_lock_test_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 mt_lock_test_CFLAGS = $(PTHREAD_CFLAGS)
 mt_lock_test_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
