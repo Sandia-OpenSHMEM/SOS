@@ -30,7 +30,7 @@ void static inline bi_bw_ctx (int len, perf_metrics_t *metric_info)
 {
     double start = 0.0, end = 0.0;
     int dest = partner_node(*metric_info);
-    int j = 0;
+    unsigned long int i, j;
     char *src = aligned_buffer_alloc(metric_info->nthreads * len);
     char *dst = aligned_buffer_alloc(metric_info->nthreads * len);
     assert(src && dst);
@@ -53,7 +53,6 @@ void static inline bi_bw_ctx (int len, perf_metrics_t *metric_info)
 #pragma omp parallel default(none) firstprivate(len, dest) private(j) \
     shared(metric_info, src, dst, start, end) num_threads(metric_info->nthreads)
     {
-        int i;
         const int thread_id = omp_get_thread_num();
         shmem_ctx_t ctx;
         shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
@@ -73,10 +72,9 @@ void static inline bi_bw_ctx (int len, perf_metrics_t *metric_info)
 
     shmem_barrier_all();
     if (streaming_node(*metric_info)) {
-#pragma omp parallel default(none) firstprivate(len, dest) private(j) \
+#pragma omp parallel default(none) firstprivate(len, dest) private(i, j) \
         shared(metric_info, src, dst, start, end) num_threads(metric_info->nthreads)
         {
-            int i;
             const int thread_id = omp_get_thread_num();
             shmem_ctx_t ctx;
             shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
@@ -99,10 +97,9 @@ void static inline bi_bw_ctx (int len, perf_metrics_t *metric_info)
             shmem_ctx_destroy(ctx);
         }
     } else {
-#pragma omp parallel default(none) firstprivate(len, dest) private(j) \
+#pragma omp parallel default(none) firstprivate(len, dest) private(i, j) \
         shared(metric_info, src, dst, start, end) num_threads(metric_info->nthreads)
         {
-            int i;
             const int thread_id = omp_get_thread_num();
             shmem_ctx_t ctx;
             shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
