@@ -25,8 +25,8 @@
  * SOFTWARE.
  */
 
-void static inline
-long_element_round_trip_latency_get(perf_metrics_t data)
+static inline
+void long_element_round_trip_latency_get(perf_metrics_t data)
 {
     double start = 0.0;
     double end = 0.0;
@@ -61,8 +61,8 @@ long_element_round_trip_latency_get(perf_metrics_t data)
     }
 } /*gauge small get pathway round trip latency*/
 
-void static inline
-long_element_round_trip_latency_put(perf_metrics_t data)
+static inline
+void long_element_round_trip_latency_put(perf_metrics_t data)
 {
     double start = 0.0;
     double end = 0.0;

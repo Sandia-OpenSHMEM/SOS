@@ -158,7 +158,7 @@ FUNC_OP_CREATE(int8, int8_t, xor, shmem_internal_xor_op)
         }                                                                                 \
         break;
 
-void static inline shmem_internal_reduce_local(shm_internal_op_t op,
+static inline void shmem_internal_reduce_local(shm_internal_op_t op,
                                 shm_internal_datatype_t datatype, int count,
                                 void *in, void *inout) {
     switch(datatype) {

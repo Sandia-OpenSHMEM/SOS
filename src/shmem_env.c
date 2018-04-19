@@ -30,10 +30,10 @@
 struct shmem_internal_params_s shmem_internal_params;
 
 /* atol() + optional scaled suffix recognition: 1K, 2M, 3G, 1T */
-static long
+static shmem_internal_env_size
 atol_scaled(char *s)
 {
-    long val;
+    shmem_internal_env_size val;
     char *e;
     errno = 0;
 

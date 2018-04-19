@@ -26,7 +26,7 @@
 */
 
 
-void static inline bi_bw_ctx (int len, perf_metrics_t *metric_info)
+static inline void bi_bw_ctx (int len, perf_metrics_t *metric_info)
 {
     double start = 0.0, end = 0.0;
     int dest = partner_node(*metric_info);

@@ -25,8 +25,8 @@
  * SOFTWARE.
  */
 
-void static inline
-int_p_latency(perf_metrics_t data)
+static inline
+void int_p_latency(perf_metrics_t data)
 {
     double start = 0.0;
     double end = 0.0;
@@ -60,8 +60,8 @@ int_p_latency(perf_metrics_t data)
 
 } /* latency/bw for one-way trip */
 
-void static inline
-int_g_latency(perf_metrics_t data)
+static inline
+void int_g_latency(perf_metrics_t data)
 {
     double start = 0.0;
     double end = 0.0;

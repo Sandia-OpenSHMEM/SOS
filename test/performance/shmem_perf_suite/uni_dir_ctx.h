@@ -26,8 +26,8 @@
 */
 
 
-void static inline uni_bw_ctx(int len, perf_metrics_t *metric_info,
-        int streaming_node)
+static inline void uni_bw_ctx(int len, perf_metrics_t *metric_info,
+                              int streaming_node)
 {
     double start = 0.0, end = 0.0;
     int j = 0;
