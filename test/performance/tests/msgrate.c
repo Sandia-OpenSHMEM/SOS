@@ -299,9 +299,9 @@ main(int argc, char *argv[])
     shmem_barrier_all();
 
     /* broadcast results */
-    printf("%d: psync: 0x%lu\n", rank, (unsigned long) bcast_pSync);
     shmem_broadcast32(&start_err, &start_err, 1, 0, 0, 0, world_size, bcast_pSync);
     if (0 != start_err) {
+        shmem_finalize();
         exit(start_err);
     }
     shmem_barrier_all();
