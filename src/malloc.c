@@ -557,6 +557,8 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
         ABORT;                                                          \
     } while (0)
 
+/* Mutexes are handled at the SOS level */
+#define USE_LOCKS 0
 /* END SHMEM CHANGES */
 
 /* Version identifier to allow people to support multiple versions */
