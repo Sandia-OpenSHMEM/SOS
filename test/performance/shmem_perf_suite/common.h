@@ -123,7 +123,7 @@ static void aligned_buffer_free(char * ptr_aligned)
 #endif
 }
 
-int static inline is_divisible_by_4(int num)
+static inline int is_divisible_by_4(int num)
 {
     assert(num >= 0);
     assert(sizeof(int) == 4);
@@ -131,7 +131,7 @@ int static inline is_divisible_by_4(int num)
 }
 
 /*to be a power of 2 must only have 1 set bit*/
-int static inline is_pow_of_2(unsigned int num)
+static inline int is_pow_of_2(unsigned int num)
 {
     /*move first set bit all the way to right*/
     while(num && !((num >>=1 ) & 1));
@@ -140,7 +140,7 @@ int static inline is_pow_of_2(unsigned int num)
     return ((num == 1 || num == 0)? true : false);
 }
 
-void static init_array(char * const buf, int len, int my_pe_num)
+static void init_array(char * const buf, int len, int my_pe_num)
 {
     int i = 0;
     int array_size = len / sizeof(int);
@@ -153,7 +153,7 @@ void static init_array(char * const buf, int len, int my_pe_num)
 
 }
 
-void static inline validate_recv(char * buf, int len, int partner_pe)
+static inline void validate_recv(char * buf, int len, int partner_pe)
 {
     int i = 0;
     int array_size = len / sizeof(int);

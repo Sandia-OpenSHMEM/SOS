@@ -48,7 +48,7 @@ typedef struct perf_metrics {
    char * src, *dest;
 } perf_metrics_t;
 
-void static data_init(perf_metrics_t * data) {
+static void data_init(perf_metrics_t * data) {
    data->start_len = START_LEN;
    data->max_len = MAX_MSG_SIZE;
    data->inc = INC;
@@ -62,13 +62,13 @@ void static data_init(perf_metrics_t * data) {
    data->dest = NULL;
 }
 
-void static inline print_results_header(void) {
+static inline void print_results_header(void) {
    printf("\nLength                  Latency                       \n");
    printf("in bytes            in micro seconds              \n");
 }
 
 /*not storing results, only outputing it*/
-void static inline calc_and_print_results(double start, double end, int len,
+static inline void calc_and_print_results(double start, double end, int len,
                                          perf_metrics_t data) {
     double latency = 0.0;
     latency = (end - start) / data.trials;
@@ -76,12 +76,12 @@ void static inline calc_and_print_results(double start, double end, int len,
     printf("%9d           %8.2f             \n", len, latency);
 }
 
-int static inline partner_node(int my_node)
+static inline int partner_node(int my_node)
 {
     return ((my_node % 2 == 0) ? (my_node + 1) : (my_node - 1));
 }
 
-void static inline command_line_arg_check(int argc, char *argv[],
+static inline void command_line_arg_check(int argc, char *argv[],
                             perf_metrics_t *metric_info) {
     int ch, error = false;
     extern char *optarg;
@@ -126,7 +126,7 @@ void static inline command_line_arg_check(int argc, char *argv[],
     }
 }
 
-void static inline only_two_PEs_check(int my_node, int num_pes) {
+static inline void only_two_PEs_check(int my_node, int num_pes) {
     if (num_pes != 2) {
         if (my_node == 0) {
             fprintf(stderr, "2-nodes only test\n");
@@ -152,7 +152,7 @@ extern void int_element_latency(perf_metrics_t data);
  *  that has been initialized to my_node number */
 extern void streaming_latency(int len, perf_metrics_t *data);
 
-void static inline  multi_size_latency(perf_metrics_t data, char *argv[]) {
+static inline void multi_size_latency(perf_metrics_t data, char *argv[]) {
     unsigned int len;
     int partner_pe = partner_node(data.my_node);
 
@@ -177,7 +177,7 @@ void static inline  multi_size_latency(perf_metrics_t data, char *argv[]) {
 /*                   INIT and teardown of resources           */
 /**************************************************************/
 
-void static inline latency_init_resources(int argc, char *argv[],
+static inline void latency_init_resources(int argc, char *argv[],
                                           perf_metrics_t *data) {
 #ifndef VERSION_1_0
     shmem_init();
@@ -204,7 +204,7 @@ void static inline latency_init_resources(int argc, char *argv[],
 #endif
 }
 
-void static inline latency_free_resources(perf_metrics_t *data) {
+static inline void latency_free_resources(perf_metrics_t *data) {
     shmem_barrier_all();
 
 #ifndef VERSION_1_0
@@ -219,7 +219,7 @@ void static inline latency_free_resources(perf_metrics_t *data) {
 #endif
 }
 
-void static inline latency_main(int argc, char *argv[]) {
+static inline void latency_main(int argc, char *argv[]) {
     perf_metrics_t data;
 
     latency_init_resources(argc, argv, &data);
