@@ -146,9 +146,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     *tl_provided = SHMEM_THREAD_SINGLE;
 #endif
 
-    /* Parse environment variables into shmem_internal_params */
-    shmem_internal_parse_env();
-
     ret = shmem_runtime_init();
     if (0 != ret) {
         fprintf(stderr, "ERROR: runtime init failed: %d\n", ret);
@@ -157,6 +154,9 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     runtime_initialized = 1;
     shmem_internal_my_pe = shmem_runtime_get_rank();
     shmem_internal_num_pes = shmem_runtime_get_size();
+
+    /* Parse environment variables into shmem_internal_params */
+    shmem_internal_parse_env();
 
     /* Ensure that the vendor string will not cause an overflow in user code */
     if (sizeof(SHMEM_VENDOR_STRING) > SHMEM_MAX_NAME_LEN) {

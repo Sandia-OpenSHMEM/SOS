@@ -72,9 +72,9 @@ encode(const void *inval, int invallen, char *outval, int outvallen)
 
 
 static int
-decode(const char *inval, void *outval, int outvallen)
+decode(const char *inval, void *outval, size_t outvallen)
 {
-    int i;
+    size_t i;
     char *ret = (char*) outval;
 
     size_t outlen = strlen(inval) / 2;

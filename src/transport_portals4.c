@@ -223,7 +223,8 @@ cleanup:
 int
 shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
 {
-    int ret, id;
+    int ret;
+    size_t id;
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_ctx);
 
@@ -235,7 +236,7 @@ shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
     if (id >= shmem_transport_portals4_contexts_len) {
         id = shmem_transport_portals4_contexts_len;
 
-        ssize_t i = shmem_transport_portals4_contexts_len;
+        size_t i = shmem_transport_portals4_contexts_len;
         shmem_transport_portals4_contexts_len += shmem_transport_portals4_grow_size;
         shmem_transport_portals4_contexts = realloc(shmem_transport_portals4_contexts,
                shmem_transport_portals4_contexts_len * sizeof(shmem_transport_ctx_t*));
@@ -721,7 +722,7 @@ shmem_transport_startup(void)
 int
 shmem_transport_fini(void)
 {
-    int i;
+    size_t i;
 
     /* synchronize the atomic cache, if there is one */
     shmem_transport_syncmem();
@@ -732,7 +733,7 @@ shmem_transport_fini(void)
     for (i = 0; i < shmem_transport_portals4_contexts_len; ++i) {
         if (shmem_transport_portals4_contexts[i]) {
             if (shmem_transport_portals4_contexts[i]->options & SHMEM_CTX_PRIVATE)
-                RAISE_WARN_MSG("Shutting down with unfreed private context (%d)\n", i);
+                RAISE_WARN_MSG("Shutting down with unfreed private context (%zu)\n", i);
             shmem_transport_quiet(shmem_transport_portals4_contexts[i]);
             shmem_transport_ctx_destroy(shmem_transport_portals4_contexts[i]);
         }
