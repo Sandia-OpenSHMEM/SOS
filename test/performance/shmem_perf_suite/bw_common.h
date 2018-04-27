@@ -105,7 +105,7 @@ long red_psync[SHMEM_REDUCE_SYNC_SIZE];
 long bar_psync[SHMEM_BARRIER_SYNC_SIZE];
 
 /*default settings if no input is provided */
-void static data_set_defaults(perf_metrics_t * data) {
+static void data_set_defaults(perf_metrics_t * data) {
     data->start_len = START_LEN;
     data->max_len = MAX_MSG_SIZE;
     data->size_inc = INC;
@@ -170,18 +170,18 @@ static int data_runtime_update(perf_metrics_t *data) {
 
 static const char * dt_names [] = { "int", "long", "longlong" };
 
-void static bi_dir_data_init(perf_metrics_t * data) {
+static void bi_dir_data_init(perf_metrics_t * data) {
     data->bw_type = "Bi-dir";
     data->type = BI_DIR;
 }
 
-void static uni_dir_data_init(perf_metrics_t * data) {
+static void uni_dir_data_init(perf_metrics_t * data) {
     data->bw_type = "Uni-dir";
     data->type = UNI_DIR;
 }
 
 
-int static inline partner_node(perf_metrics_t my_info)
+static inline int partner_node(perf_metrics_t my_info)
 {
     if(my_info.num_pes == 1)
         return 0;
@@ -197,7 +197,7 @@ int static inline partner_node(perf_metrics_t my_info)
     }
 }
 
-int static inline streaming_node(perf_metrics_t my_info)
+static inline int streaming_node(perf_metrics_t my_info)
 {
     if(my_info.cstyle == COMM_PAIRWISE) {
         return (my_info.my_node < my_info.szinitiator);
@@ -207,7 +207,7 @@ int static inline streaming_node(perf_metrics_t my_info)
     }
 }
 
-static int inline is_streaming_node(perf_metrics_t my_info, int node)
+static inline int is_streaming_node(perf_metrics_t my_info, int node)
 {
     if(my_info.cstyle == COMM_PAIRWISE) {
         return (node < my_info.szinitiator);
@@ -217,14 +217,14 @@ static int inline is_streaming_node(perf_metrics_t my_info, int node)
     }
 }
 
-int static inline target_node(perf_metrics_t my_info)
+static inline int target_node(perf_metrics_t my_info)
 {
     return (my_info.my_node >= my_info.midpt &&
         (my_info.my_node < (my_info.midpt + my_info.sztarget)));
 }
 
 /* put/get bw use opposite streaming/validate nodes */
-red_PE_set static inline validation_set(perf_metrics_t my_info, int *nPEs)
+static inline red_PE_set validation_set(perf_metrics_t my_info, int *nPEs)
 {
     if(my_info.cstyle == COMM_PAIRWISE) {
         if(streaming_node(my_info)) {
@@ -419,7 +419,7 @@ static const char *thread_safety_str(perf_metrics_t *metric_info) {
     }
 }
 
-static void inline thread_safety_validation_check(perf_metrics_t *metric_info) {
+static inline void thread_safety_validation_check(perf_metrics_t *metric_info) {
     if (metric_info->nthreads == 1)
         return;
     else {
@@ -435,7 +435,7 @@ static void inline thread_safety_validation_check(perf_metrics_t *metric_info) {
     }
 }
 
-void static print_atomic_results_header(perf_metrics_t metric_info) {
+static void print_atomic_results_header(perf_metrics_t metric_info) {
     printf("\nSandia OpenSHMEM Performance Suite\n");
     printf("==================================\n");
     printf("Total Number of PEs:    %10d\n", metric_info.num_pes);
@@ -464,7 +464,7 @@ void static print_atomic_results_header(perf_metrics_t metric_info) {
     printf("%15s in Mops/sec%15s  in us\n", " ", " ");
 }
 
-void static print_results_header(perf_metrics_t metric_info) {
+static void print_results_header(perf_metrics_t metric_info) {
     printf("\nSandia OpenSHMEM Performance Suite\n");
     printf("==================================\n");
     printf("Total Number of PEs:    %10d\n", metric_info.num_pes);
@@ -492,7 +492,7 @@ void static print_results_header(perf_metrics_t metric_info) {
     printf("%16sin msgs/sec\n", " ");
 }
 
-void static print_data_results(double bw, double mr, perf_metrics_t data,
+static void print_data_results(double bw, double mr, perf_metrics_t data,
                             int len, double total_t) {
     static int atomic_type_index = 0;
 
@@ -526,7 +526,7 @@ void static print_data_results(double bw, double mr, perf_metrics_t data,
 
 /* reduction to collect performance results from PE set
     then start_pe will print results --- assumes num_pes is even */
-void static inline PE_set_used_adjustments(int *nPEs, int *stride, int *start_pe,
+static inline void PE_set_used_adjustments(int *nPEs, int *stride, int *start_pe,
                                             perf_metrics_t my_info)
 {
     red_PE_set PE_set = validation_set(my_info, nPEs);
@@ -543,7 +543,7 @@ void static inline PE_set_used_adjustments(int *nPEs, int *stride, int *start_pe
 }
 
 
-void static inline calc_and_print_results(double end_t, double start_t, int len,
+static inline void calc_and_print_results(double end_t, double start_t, int len,
                             perf_metrics_t metric_info)
 {
     int stride = 0, start_pe = 0, nPEs = 0;
@@ -628,7 +628,7 @@ void static inline calc_and_print_results(double end_t, double start_t, int len,
     }
 }
 
-void static inline large_message_metric_chg(perf_metrics_t *metric_info, int len) {
+static inline void large_message_metric_chg(perf_metrics_t *metric_info, int len) {
     if(len > LARGE_MESSAGE_SIZE) {
         metric_info->window_size = WINDOW_SIZE_LARGE;
         metric_info->trials = TRIALS_LARGE;
@@ -673,7 +673,7 @@ static void validate_atomics(perf_metrics_t m_info) {
  * NOTE: post function validation assumptions, data isn't flushed pre/post */
 extern void bi_dir_bw(int len, perf_metrics_t *metric_info);
 
-void static inline bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
+static inline void bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
     int partner_pe = partner_node(metric_info);
     unsigned long int len;
 
@@ -712,7 +712,7 @@ void static inline bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
  * NOTE: post function validation assumptions, data isn't flushed pre/post */
 extern void uni_dir_bw(int len, perf_metrics_t *metric_info);
 
-void static inline uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
+static inline void uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
     int partner_pe = partner_node(metric_info);
     unsigned long int len = 0;
 
@@ -818,20 +818,20 @@ static inline int uni_dir_init(perf_metrics_t *metric_info, int argc,
         return ret;
 }
 
-void static inline bw_data_free(perf_metrics_t *metric_info) {
+static inline void bw_data_free(perf_metrics_t *metric_info) {
     shmem_barrier_all();
 
     aligned_buffer_free(metric_info->src);
     aligned_buffer_free(metric_info->dest);
 }
 
-static void inline bw_finalize(void) {
+static inline void bw_finalize(void) {
 #ifndef VERSION_1_0
     shmem_finalize();
 #endif
 }
 
-void static inline bi_dir_bw_main(int argc, char *argv[]) {
+static inline void bi_dir_bw_main(int argc, char *argv[]) {
 
     perf_metrics_t metric_info;
 
@@ -846,7 +846,7 @@ void static inline bi_dir_bw_main(int argc, char *argv[]) {
         bw_finalize(); 
 } /*main() */
 
-void static inline uni_dir_bw_main(int argc, char *argv[], bw_style bwstyl) {
+static inline void uni_dir_bw_main(int argc, char *argv[], bw_style bwstyl) {
 
     perf_metrics_t metric_info;
 

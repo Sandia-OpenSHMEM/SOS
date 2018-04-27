@@ -26,7 +26,7 @@
  */
 #include <target_put.h>
 
-void static inline uni_bw_put(int len, perf_metrics_t *metric_info)
+static inline void uni_bw_put(int len, perf_metrics_t *metric_info)
 {
     double start = 0.0, end = 0.0;
     unsigned long int i = 0, j = 0;
@@ -90,7 +90,7 @@ void static inline uni_bw_put(int len, perf_metrics_t *metric_info)
     }
 }
 
-void static inline uni_bw_get(int len, perf_metrics_t *metric_info)
+static inline void uni_bw_get(int len, perf_metrics_t *metric_info)
 {
     double start = 0.0, end = 0.0;
     unsigned long int i = 0, j = 0;
