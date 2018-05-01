@@ -16,16 +16,7 @@
 #ifndef SHMEM_NODE_UTIL_H
 #define SHMEM_NODE_UTIL_H
 
-#include <limits.h>
-#include <sys/param.h>
-
-#ifdef MAXHOSTNAMELEN
-#define SHMEM_INTERNAL_MAX_HOSTNAME_LEN MAXHOSTNAMELEN
-#else
-#define SHMEM_INTERNAL_MAX_HOSTNAME_LEN HOST_NAME_MAX
-#endif
-
-#define SHMEM_INTERNAL_MAX_NPES_PER_NODE 255
+#include "transport.h"
 
 extern int *shmem_internal_location_array;
 
@@ -35,11 +26,11 @@ int shmem_node_util_init(void);
 
 void shmem_node_util_fini(void);
 
-char* shmem_node_util_nodename(void);
-
 int shmem_node_util_startup(void);
 
 int shmem_node_util_n_local_pes(void);
+
+shmem_transport_addr_t shmem_node_util_get_addr(int);
 
 static inline
 int shmem_node_util_local_rank(int pe)

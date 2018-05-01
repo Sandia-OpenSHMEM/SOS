@@ -135,7 +135,7 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
     return tid;
 }
 
-struct fabric_info shmem_transport_ofi_info = {0};
+static struct fabric_info shmem_transport_ofi_info = {0};
 
 static shmem_transport_ctx_t** shmem_transport_ofi_contexts = NULL;
 static size_t shmem_transport_ofi_contexts_len = 0;
@@ -552,6 +552,19 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
 
     return;
 }
+
+
+shmem_transport_addr_t shmem_transport_get_local_addr(void)
+{
+    shmem_transport_addr_t addr;
+
+    void *addr_ptr = shmem_transport_ofi_info.fabrics->src_addr;
+    addr.addrlen = shmem_transport_ofi_info.fabrics->src_addrlen;
+    memcpy(addr.addr, addr_ptr, addr.addrlen);
+
+    return addr;
+}
+
 
 #define OFI_MAJOR_VERSION 1
 #ifdef ENABLE_MR_RMA_EVENT
@@ -1472,10 +1485,6 @@ int shmem_transport_startup(void)
         if (ret != 0) return ret;
 
         num_on_node = shmem_node_util_n_local_pes();
-        if (num_on_node <= 0) {
-            RETURN_ERROR_STR("Failed to find any node-local PEs");
-            return 1;
-        }
 
         /* Paritition TX resources evenly across node-local PEs */
         shmem_transport_ofi_stx_max = shmem_transport_ofi_tx_ctx_cnt / num_on_node;
@@ -1488,14 +1497,18 @@ int shmem_transport_startup(void)
         /* When running more PEs than available STXs, must assign each PE at least 1 */
         if (shmem_transport_ofi_stx_max <= 0) {
             shmem_transport_ofi_stx_max = 1;
+            RAISE_WARN_MSG("Need at least 1 STX per PE, but detected %ld available STXs for %d PEs\n",
+                           shmem_transport_ofi_tx_ctx_cnt, num_on_node);
         }
+
+        DEBUG_MSG("PE %d auto-set STX max to %ld\n", shmem_internal_my_pe, shmem_transport_ofi_stx_max);
     }
 
     /* Allocate STX array with max length */
     shmem_transport_ofi_stx_pool = malloc(shmem_transport_ofi_stx_max *
                                           sizeof(shmem_transport_ofi_stx_t));
     if (shmem_transport_ofi_stx_pool == NULL) {
-        RAISE_ERROR_STR("Error: out of memory when allocating OFI STX pool");
+        RAISE_ERROR_STR("Out of memory when allocating OFI STX pool");
     }
 
     for (i = 0; i < shmem_transport_ofi_stx_max; i++) {
@@ -1504,12 +1517,6 @@ int shmem_transport_startup(void)
         OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
         shmem_transport_ofi_stx_pool[i].ref_cnt = 0;
         shmem_transport_ofi_stx_pool[i].is_private = 0;
-    }
-
-    /* Allocate STX from the pool for the default context */
-    if (shmem_internal_thread_level > SHMEM_THREAD_FUNNELED &&
-        shmem_transport_ofi_is_private(shmem_transport_ctx_default.options)) {
-            shmem_transport_ctx_default.tid = shmem_transport_ofi_gettid();
     }
 
     ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, SHMEM_TRANSPORT_CTX_DEFAULT_ID);
@@ -1551,14 +1558,14 @@ int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
             shmem_transport_ofi_contexts[i] = NULL;
 
         if (shmem_transport_ofi_contexts == NULL) {
-            RAISE_ERROR_STR("Error: out of memory when allocating OFI ctx array");
+            RAISE_ERROR_STR("Out of memory when allocating OFI ctx array");
         }
     }
 
     shmem_transport_ctx_t *ctxp = malloc(sizeof(shmem_transport_ctx_t));
 
     if (ctxp == NULL) {
-        RAISE_ERROR_STR("Error: out of memory when allocating OFI ctx object");
+        RAISE_ERROR_STR("Out of memory when allocating OFI ctx object");
     }
 
     memset(ctxp, 0, sizeof(shmem_transport_ctx_t));

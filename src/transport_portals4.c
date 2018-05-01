@@ -30,8 +30,8 @@
 #include "shmemx.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"
-#include "shmem_node_util.h"
 #include "runtime.h"
+#include "shmem_node_util.h"
 
 int8_t shmem_transport_portals4_pt_state[SHMEM_TRANSPORT_PORTALS4_NUM_PTS] = {
     /*  0 */ PT_FREE,
@@ -466,12 +466,14 @@ shmem_transport_init(void)
         return ret;
     }
 
+#ifndef USE_ON_NODE_COMMS
     /* Share information */
     ret = shmem_runtime_put("portals4-procid", &my_id, sizeof(my_id));
     if (0 != ret) {
         RETURN_ERROR_MSG("runtime_put failed: %d\n", ret);
         return ret;
     }
+#endif
 
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
     /* Make sure the heap and data bases are actually symmetric */
@@ -540,13 +542,17 @@ shmem_transport_startup(void)
     }
 
     for (i = 0 ; i < shmem_internal_num_pes; ++i) {
+#ifdef USE_ON_NODE_COMMS
+        shmem_transport_addr_t addr = shmem_node_util_get_addr(i);
+        memcpy(&pe_map[i], &addr.ptl_addr, sizeof(ptl_process_t));
+#else
         ret = shmem_runtime_get(i, "portals4-procid",
                                 &pe_map[i], sizeof(ptl_process_t));
         if (0 != ret) {
             RETURN_ERROR_MSG("runtime_get failed: %d\n", ret);
             goto cleanup;
         }
-
+#endif
     }
 
     ret = PtlSetMap(shmem_transport_portals4_ni_h,

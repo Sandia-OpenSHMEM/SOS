@@ -56,8 +56,10 @@ typedef int shm_internal_op_t;
 typedef int shmem_transport_ct_t;
 
 struct shmem_transport_ctx_t{ int dummy; };
-
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
+
+struct shmem_transport_addr_t { char addr; };
+typedef struct shmem_transport_addr_t shmem_transport_addr_t;
 
 static inline
 int
@@ -86,6 +88,14 @@ shmem_transport_probe(void)
 {
     return;
 }
+
+static inline
+shmem_transport_addr_t shmem_transport_get_local_addr(void)
+{
+    shmem_transport_addr_t addr = {0};
+    return addr;
+}
+
 
 static inline
 int

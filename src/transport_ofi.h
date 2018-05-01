@@ -251,6 +251,13 @@ struct shmem_internal_tid
     } val;
 };
 
+struct shmem_transport_addr_t {
+    size_t addrlen;
+    char addr[SHMEM_INTERNAL_MAX_HOSTNAME_LEN];
+};
+
+typedef struct shmem_transport_addr_t shmem_transport_addr_t;
+
 struct shmem_transport_ctx_t {
     int                             id;
 #ifdef USE_CTX_LOCK
@@ -316,7 +323,8 @@ extern struct fid_ep* shmem_transport_ofi_target_ep;
     } while (0)
 
 static inline
-void shmem_transport_probe(void) {
+void shmem_transport_probe(void)
+{
 #if defined(ENABLE_MANUAL_PROGRESS)
 #  ifdef USE_THREAD_COMPLETION
     if (0 == pthread_mutex_trylock(&shmem_transport_ofi_progress_lock)) {
@@ -329,6 +337,8 @@ void shmem_transport_probe(void) {
 #endif
     return;
 }
+
+shmem_transport_addr_t shmem_transport_get_local_addr(void);
 
 int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx);
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx);

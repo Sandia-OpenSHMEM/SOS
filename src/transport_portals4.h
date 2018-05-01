@@ -150,6 +150,11 @@ struct shmem_transport_ct_t {
 };
 typedef struct shmem_transport_ct_t shmem_transport_ct_t;
 
+struct shmem_transport_addr_t {
+    ptl_process_t ptl_addr;
+};
+typedef struct shmem_transport_addr_t shmem_transport_addr_t;
+
 struct shmem_transport_ctx_t {
     int id;
     long options;
@@ -268,6 +273,18 @@ static inline void shmem_transport_get_wait(shmem_transport_ctx_t*);
 static inline void shmem_transport_probe(void) {
     return;
 }
+
+static inline
+shmem_transport_addr_t shmem_transport_get_local_addr(void)
+{
+    shmem_transport_addr_t addr;
+    int ret = PtlGetPhysId(shmem_transport_portals4_ni_h, &addr.ptl_addr);
+    if (PTL_OK != ret) {
+        RAISE_ERROR_MSG("PtlGetPhysId failed: %d\n", ret);
+    }
+    return addr;
+}
+
 
 static inline
 int

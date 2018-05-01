@@ -285,11 +285,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
               shmem_internal_heap_base, shmem_internal_heap_length,
               shmem_internal_data_base, shmem_internal_data_length);
 
-#ifdef USE_ON_NODE_COMMS
-    ret = shmem_node_util_init();
-    if (ret) goto cleanup;
-#endif
-
     /* Initialize transport devices */
     ret = shmem_transport_init();
     if (0 != ret) {
@@ -297,6 +292,12 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         goto cleanup;
     }
     transport_initialized = 1;
+
+#ifdef USE_ON_NODE_COMMS
+    ret = shmem_node_util_init();
+    if (ret) goto cleanup;
+#endif
+
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_init();
     if (0 != ret) {
