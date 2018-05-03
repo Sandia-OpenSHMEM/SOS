@@ -31,12 +31,12 @@ void long_element_round_trip_latency_get(perf_metrics_t data)
     double start = 0.0;
     double end = 0.0;
     int dest = 1;
-    int partner_pe = partner_node(data.my_node);
+    int partner_pe = partner_node(data);
     *data.target = data.my_node;
 
     if (data.my_node == GET_IO_NODE) {
         printf("\nshmem_long_g results:\n");
-        print_results_header();
+        print_latency_header(data);
     }
 
     shmem_barrier_all();
@@ -67,13 +67,13 @@ void long_element_round_trip_latency_put(perf_metrics_t data)
     double start = 0.0;
     double end = 0.0;
     long tmp;
-    int dest = (data.my_node + 1) % data.npes;
+    int dest = (data.my_node + 1) % data.num_pes;
     unsigned int i;
     tmp = *data.target = INIT_VALUE;
 
     if (data.my_node == PUT_IO_NODE) {
         printf("\nPing-Pong shmem_long_p results:\n");
-        print_results_header();
+        print_latency_header(data);
     }
 
     shmem_barrier_all();
@@ -89,7 +89,7 @@ void long_element_round_trip_latency_put(perf_metrics_t data)
         }
         end = perf_shmemx_wtime();
 
-        data.trials = data.trials*2; /*output half to get single round trip time*/
+        data.trials = data.trials * 2; /*output half to get single round trip time*/
         calc_and_print_results(start, end, sizeof(long), data);
 
    } else {
@@ -100,4 +100,4 @@ void long_element_round_trip_latency_put(perf_metrics_t data)
         }
    }
 
-} /*gauge small put pathway round trip latency*/
+} /* gauge small put pathway round trip latency */

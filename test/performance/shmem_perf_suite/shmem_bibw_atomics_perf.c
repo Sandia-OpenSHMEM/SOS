@@ -152,7 +152,7 @@ static inline void bw_set_metric_info_len(perf_metrics_t *metric_info)
                                         sizeof(long long)};
     int snode = streaming_node(*metric_info);
     atomic_op_type op_type = OP_ADD;
-    metric_info->type = BI_DIR;
+    metric_info->b_type = BI_DIR;
     metric_info->bwstyle = STYLE_ATOMIC;
 
     for(op_type = OP_ADD; op_type < SIZE_OF_OP; op_type++) {

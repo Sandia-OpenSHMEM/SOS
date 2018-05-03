@@ -51,13 +51,17 @@ int main(int argc, char *argv[])
 void
 long_element_round_trip_latency(perf_metrics_t data)
 {
+#ifndef USE_NONBLOCKING_API
     long_element_round_trip_latency_put(data);
+#endif
 }
 
 void
 int_element_latency(perf_metrics_t data)
 {
+#ifndef USE_NONBLOCKING_API
     int_p_latency(data);
+#endif
 }
 
 void
@@ -66,14 +70,6 @@ streaming_latency(int len, perf_metrics_t *data)
     double start = 0.0;
     double end = 0.0;
     unsigned long int i = 0;
-    static int print_once = 0;
-    if(!print_once && data->my_node == PUT_IO_NODE) {
-        printf("\nStreaming results for %d trials each of length %d through %d in"\
-              " powers of %d\n", data->trials, data->start_len,
-              data->max_len, data->inc);
-        print_results_header();
-        print_once++;
-    }
 
     /*puts to zero to match gets validation scheme*/
     if (data->my_node == 1) {
@@ -82,7 +78,11 @@ streaming_latency(int len, perf_metrics_t *data)
             if(i == data->warmup)
                 start = perf_shmemx_wtime();
 
+#ifdef USE_NONBLOCKING_API
+            shmem_putmem_nbi(data->dest, data->src, len, 0);
+#else
             shmem_putmem(data->dest, data->src, len, 0);
+#endif
             shmem_quiet();
 
         }

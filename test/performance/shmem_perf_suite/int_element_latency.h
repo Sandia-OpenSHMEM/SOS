@@ -34,10 +34,10 @@ void int_p_latency(perf_metrics_t data)
 
     if (data.my_node == PUT_IO_NODE) {
         printf("\nStream shmem_int_p results:\n");
-        print_results_header();
+        print_latency_header(data);
     }
 
-    /*puts to zero to match gets validation scheme*/
+    /* puts to zero to match gets validation scheme */
     if (data.my_node == PUT_IO_NODE) {
 
         for (i = 0; i < data.trials + data.warmup; i++) {
@@ -56,7 +56,7 @@ void int_p_latency(perf_metrics_t data)
     shmem_barrier_all();
 
     if((data.my_node == 0) && data.validate)
-        validate_recv(data.dest, sizeof(int), partner_node(data.my_node));
+        validate_recv(data.dest, sizeof(int), partner_node(data));
 
 } /* latency/bw for one-way trip */
 
@@ -70,7 +70,7 @@ void int_g_latency(perf_metrics_t data)
 
     if (data.my_node == GET_IO_NODE) {
         printf("\nStream shmem_int_g results:\n");
-        print_results_header();
+        print_latency_header(data);
     }
 
     if (data.my_node == GET_IO_NODE) {
@@ -89,5 +89,5 @@ void int_g_latency(perf_metrics_t data)
     shmem_barrier_all();
 
     if((data.my_node == 0) && data.validate)
-        validate_recv((char*) &rtnd, sizeof(int), partner_node(data.my_node));
+        validate_recv((char*) &rtnd, sizeof(int), partner_node(data));
 }

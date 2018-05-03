@@ -31,57 +31,31 @@
 #define GET_IO_NODE !PUT_IO_NODE
 #define INIT_VALUE 1
 
-#define MAX_MSG_SIZE (1<<23)
-#define START_LEN 1
-
-#define INC 2
-#define TRIALS 100
-#define WARMUP 10
-
-typedef struct perf_metrics {
-   unsigned int start_len, max_len;
-   unsigned int inc, trials;
-   unsigned int warmup;
-   int validate;
-   int my_node, npes;
-   long * target;
-   char * src, *dest;
-} perf_metrics_t;
-
-static void data_init(perf_metrics_t * data) {
-   data->start_len = START_LEN;
-   data->max_len = MAX_MSG_SIZE;
-   data->inc = INC;
-   data->trials = TRIALS;
-   data->warmup = WARMUP; /*number of initial iterations to skip*/
-   data->validate = false;
-   data->my_node = shmem_my_pe();
-   data->npes = shmem_n_pes();
-   data->target = NULL;
-   data->src = NULL;
-   data->dest = NULL;
+static 
+void init_metrics(perf_metrics_t *metric_info) {
+    metric_info->t_type = LAT;
+    set_metric_defaults(metric_info);
+    metric_info->target = NULL;
 }
 
-static inline void print_results_header(void) {
-   printf("\nLength                  Latency                       \n");
-   printf("in bytes            in micro seconds              \n");
+static inline 
+void print_latency_header(perf_metrics_t metric_info) {
+    printf("\nMessage Size%15sLatency\n", " ");
+    printf("%4sin bytes%17sin us\n", " ", " ");
 }
 
-/*not storing results, only outputing it*/
-static inline void calc_and_print_results(double start, double end, int len,
+/* calculation and printing of the latency */
+static inline 
+void calc_and_print_results(double start, double end, int len,
                                          perf_metrics_t data) {
     double latency = 0.0;
     latency = (end - start) / data.trials;
 
-    printf("%9d           %8.2f             \n", len, latency);
+    printf("%2s%10d%12s%10.2f\n", " ", len, " ", latency);
 }
 
-static inline int partner_node(int my_node)
-{
-    return ((my_node % 2 == 0) ? (my_node + 1) : (my_node - 1));
-}
-
-static inline void command_line_arg_check(int argc, char *argv[],
+static inline 
+int command_line_arg_check(int argc, char *argv[],
                             perf_metrics_t *metric_info) {
     int ch, error = false;
     extern char *optarg;
@@ -90,18 +64,41 @@ static inline void command_line_arg_check(int argc, char *argv[],
     while ((ch = getopt(argc, argv, "e:s:n:v")) != EOF) {
         switch (ch) {
         case 's':
-            metric_info->start_len = strtol(optarg, (char **)NULL, 0);
+            metric_info->start_len = strtoul(optarg, (char **)NULL, 0);
             if ( metric_info->start_len < 1 ) metric_info->start_len = 1;
-            if(!is_pow_of_2(metric_info->start_len)) error = true;
+            if(!is_pow_of_2(metric_info->start_len)) {
+                fprintf(stderr, "Error: start_length must be a power of two\n");
+                error = true;
+            }
+            if (metric_info->start_len > INT_MAX) {
+                fprintf(stderr, "Error: start_length is out of integer range\n");
+                error = true;
+            }
             break;
         case 'e':
-            metric_info->max_len = strtol(optarg, (char **)NULL, 0);
-            if(!is_pow_of_2(metric_info->max_len)) error = true;
-            if(metric_info->max_len < metric_info->start_len) error = true;
+            metric_info->max_len = strtoul(optarg, (char **)NULL, 0);
+            if(!is_pow_of_2(metric_info->max_len)) {
+                fprintf(stderr, "Error: end_length must be a power of two\n");
+                error = true;
+            }
+            if(metric_info->max_len < metric_info->start_len) {
+                fprintf(stderr, "Error: end_length (%ld) must be >= "
+                        "start_length (%ld)\n", metric_info->max_len,
+                        metric_info->start_len);
+                error = true;
+            }
+            if (metric_info->max_len > INT_MAX) {
+                fprintf(stderr, "Error: end_length is out of integer range\n");
+                error = true;
+            }
             break;
         case 'n':
-            metric_info->trials = strtol(optarg, (char **)NULL, 0);
-            if(metric_info->trials <= (metric_info->warmup*2)) error = true;
+            metric_info->trials = strtoul(optarg, (char **)NULL, 0);
+            if(metric_info->trials < (metric_info->warmup * 2)) {
+                fprintf(stderr, "Error: trials (%ld) must be >= 2*warmup "
+                        "(%ld)\n", metric_info->trials, metric_info->warmup * 2);
+                error = true;
+            }
             break;
         case 'v':
             metric_info->validate = true;
@@ -119,23 +116,10 @@ static inline void command_line_arg_check(int argc, char *argv[],
                     "[-n trials (must be greater than 20)] "\
                     "[-v (validate results)]\n");
         }
-#ifndef VERSION_1_0
-        shmem_finalize();
-#endif
-        exit (-1);
+        return -1;
     }
-}
 
-static inline void only_two_PEs_check(int my_node, int num_pes) {
-    if (num_pes != 2) {
-        if (my_node == 0) {
-            fprintf(stderr, "2-nodes only test\n");
-        }
-#ifndef VERSION_1_0
-        shmem_finalize();
-#endif
-        exit(77);
-    }
+    return 0;
 }
 
 /**************************************************************/
@@ -152,17 +136,18 @@ extern void int_element_latency(perf_metrics_t data);
  *  that has been initialized to my_node number */
 extern void streaming_latency(int len, perf_metrics_t *data);
 
-static inline void multi_size_latency(perf_metrics_t data, char *argv[]) {
+static inline 
+void multi_size_latency(perf_metrics_t data, char *argv[]) {
     unsigned int len;
-    int partner_pe = partner_node(data.my_node);
+    int partner_pe = partner_node(data);
 
-    for (len = data.start_len; len <= data.max_len; len *= data.inc) {
+    if (data.my_node == 0) {
+        print_latency_header(data);
+    }
 
-        shmem_barrier_all();
-
+    for (len = data.start_len; len <= data.max_len; len *= data.size_inc) {
+        large_message_metric_chg(&data, len);
         streaming_latency(len, &data);
-
-        shmem_barrier_all();
     }
 
     shmem_barrier_all();
@@ -177,58 +162,87 @@ static inline void multi_size_latency(perf_metrics_t data, char *argv[]) {
 /*                   INIT and teardown of resources           */
 /**************************************************************/
 
-static inline void latency_init_resources(int argc, char *argv[],
-                                          perf_metrics_t *data) {
+static inline 
+int latency_init_resources(int argc, char *argv[],
+                           perf_metrics_t *metric_info) {
+    init_metrics(metric_info);
+    int ret = command_line_arg_check(argc, argv, metric_info);
+    if (ret != 0) {
+        return ret;
+    }
+
 #ifndef VERSION_1_0
-    shmem_init();
+    int tl;
+    shmem_init_thread(metric_info->thread_safety, &tl);
+    if(tl != metric_info->thread_safety) {
+        fprintf(stderr,"Could not initialize with requested thread "
+                "level %d: got %d\n", metric_info->thread_safety, tl);
+        return -2;
+    }
 #else
     start_pes(0);
 #endif
 
-    data_init(data);
+    update_metrics(metric_info);
+    if (error_checking_init_target_usage(metric_info) == -1)
+        return -2;
+    thread_safety_validation_check(metric_info);
 
-    only_two_PEs_check(data->my_node, data->npes);
+    if(only_even_PEs_check(metric_info->my_node, metric_info->num_pes) != 0) {
+        return -2;
+    }
 
-    command_line_arg_check(argc, argv, data);
+    metric_info->src = aligned_buffer_alloc(metric_info->max_len);
+    init_array(metric_info->src, metric_info->max_len, metric_info->my_node);
 
-    data->src = aligned_buffer_alloc(data->max_len);
-    init_array(data->src, data->max_len, data->my_node);
-
-    data->dest = aligned_buffer_alloc(data->max_len);
-    init_array(data->dest, data->max_len, data->my_node);
+    metric_info->dest = aligned_buffer_alloc(metric_info->max_len);
+    init_array(metric_info->dest, metric_info->max_len, metric_info->my_node);
 
 #ifndef VERSION_1_0
-    data->target = shmem_malloc(sizeof(long));
+    metric_info->target = shmem_malloc(sizeof(long));
 #else
-    data->target = shmalloc(sizeof(long));
+    metric_info->target = shmalloc(sizeof(long));
 #endif
+
+    return 0;
 }
 
-static inline void latency_free_resources(perf_metrics_t *data) {
+static inline 
+void latency_free_resources(perf_metrics_t *metric_info) {
     shmem_barrier_all();
 
 #ifndef VERSION_1_0
-    shmem_free(data->target);
+    shmem_free(metric_info->target);
 #else
-    shfree(data->target);
+    shfree(metric_info->target);
 #endif
-    aligned_buffer_free(data->src);
-    aligned_buffer_free(data->dest);
+    aligned_buffer_free(metric_info->src);
+    aligned_buffer_free(metric_info->dest);
+}
+
+static inline 
+void latency_finalize(void) {
 #ifndef VERSION_1_0
     shmem_finalize();
 #endif
 }
 
-static inline void latency_main(int argc, char *argv[]) {
-    perf_metrics_t data;
+static inline 
+void latency_main(int argc, char *argv[]) {
+    perf_metrics_t metric_info;
 
-    latency_init_resources(argc, argv, &data);
+    int ret = latency_init_resources(argc, argv, &metric_info);
 
-    long_element_round_trip_latency(data);
-
-    int_element_latency(data);
-
-    multi_size_latency(data, argv);
-
-    latency_free_resources(&data);
+    if (ret == 0) {
+        if (metric_info.my_node == 0) {
+            print_header(metric_info);
+        }
+        long_element_round_trip_latency(metric_info);
+        int_element_latency(metric_info);
+        multi_size_latency(metric_info, argv);
+        latency_free_resources(&metric_info);
+    }
+    if (ret != -1) {
+        latency_finalize();
+    }
 }
