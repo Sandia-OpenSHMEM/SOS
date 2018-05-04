@@ -878,6 +878,11 @@ static inline int check_hostname_validation(perf_metrics_t my_info) {
     char *hostname = (char *) shmem_malloc (hostname_size * sizeof(char));
     char *dest = (char *) shmem_malloc (my_info.num_pes * hostname_size * sizeof(char));
 
+    if (hostname == NULL || dest == NULL) {
+        fprintf(stderr, "shmem_malloc failed to allocate for hostname strings\n");
+        return -1;
+    }
+
     hostname_status = gethostname(hostname, hostname_size);
     if (hostname_status != 0) {
         fprintf(stderr, "gethostname failed (%d)\n", hostname_status);
