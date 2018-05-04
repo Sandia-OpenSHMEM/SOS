@@ -46,7 +46,13 @@ pthread_key_t key;
 static uint64_t my_gettid(void) {
     uint64_t tid_val = 0;
 
-    tid_val = * (uint64_t*) pthread_getspecific(key);
+    void* ret =  pthread_getspecific(key);
+    if (ret != NULL)
+        tid_val = * (uint64_t*) ret;
+    else  {
+        printf("Calling pthread_getspecific(key) returned NULL\n");
+        shmem_global_exit(3);
+    }
 
     return tid_val;
 }

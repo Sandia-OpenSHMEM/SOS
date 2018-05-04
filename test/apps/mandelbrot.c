@@ -193,8 +193,8 @@ static void *thread_worker(void *arg) {
     // Malloc local (non-symmetric) buffers
     pixels[0] = malloc(sizeof(int)*job_points);
     pixels[1] = malloc(sizeof(int)*job_points);
-    pe_mask = malloc(sizeof(int)*npes);
-    pe_ct_max = malloc(sizeof(int)*npes);
+    pe_mask = calloc(npes, sizeof(int));
+    pe_ct_max = calloc(npes, sizeof(int));
 
     if (NULL == pixels[0] || NULL == pixels[1] || NULL == pe_mask || NULL == pe_ct_max) {
         printf("%d, %d: Error, thread malloc failed\n", me, tid);
