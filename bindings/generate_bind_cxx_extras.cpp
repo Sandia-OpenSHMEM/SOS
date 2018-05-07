@@ -104,12 +104,12 @@
 
 int main(int argc, char **argv)
 {
-    char timestr[100];
+    char timestr[100] = "unknown time";
     time_t curtime = time(NULL);
     struct tm *t = localtime(&curtime);
 
     if (t != NULL) {
-        strftime(timestr, sizeof(timestr)-1, "%m-%d-%Y %H:%M", t);
+        strftime(timestr, sizeof(timestr), "%m-%d-%Y %H:%M", t);
     } else {
         strcpy(timestr, "unknown time");
     }
