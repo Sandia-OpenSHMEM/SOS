@@ -158,7 +158,11 @@ void set_metric_defaults(perf_metrics_t *metric_info) {
     metric_info->src = NULL;
     metric_info->dest = NULL;
 
+#if defined(ENABLE_THREADS)
     metric_info->thread_safety = SHMEM_THREAD_SINGLE;
+#else
+    metric_info->thread_safety = 0;
+#endif
     metric_info->nthreads = 1;
 
     metric_info->validate = false;

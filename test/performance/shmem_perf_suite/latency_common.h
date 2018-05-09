@@ -132,6 +132,7 @@ int latency_init_resources(int argc, char *argv[],
     }
 
 #ifndef VERSION_1_0
+#if defined(ENABLE_THREADS)
     int tl;
     shmem_init_thread(metric_info->thread_safety, &tl);
     if(tl != metric_info->thread_safety) {
@@ -139,6 +140,9 @@ int latency_init_resources(int argc, char *argv[],
                 "level %d: got %d\n", metric_info->thread_safety, tl);
         return -2;
     }
+#else
+    shmem_init();
+#endif
 #else
     start_pes(0);
 #endif

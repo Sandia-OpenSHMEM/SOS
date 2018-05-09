@@ -351,6 +351,7 @@ int bw_init_data_stream(perf_metrics_t *metric_info,
     }
 
 #ifndef VERSION_1_0
+#if defined(ENABLE_THREADS)
     int tl;
     shmem_init_thread(metric_info->thread_safety, &tl);
     if(tl != metric_info->thread_safety) {
@@ -358,6 +359,9 @@ int bw_init_data_stream(perf_metrics_t *metric_info,
                 "level %d: got %d\n", metric_info->thread_safety, tl);
         return -2;
     }
+#else
+    shmem_init();
+#endif
 #else
     start_pes(0);
 #endif
