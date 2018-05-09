@@ -27,8 +27,6 @@
 
 #include <common.h>
 
-#define PUT_IO_NODE 1
-#define GET_IO_NODE !PUT_IO_NODE
 #define INIT_VALUE 1
 
 static 
@@ -36,6 +34,7 @@ void init_metrics(perf_metrics_t *metric_info) {
     metric_info->t_type = LAT;
     set_metric_defaults(metric_info);
     metric_info->target = NULL;
+    metric_info->cstyle = COMM_PAIRWISE;
 }
 
 static inline 
@@ -47,79 +46,40 @@ void print_latency_header(perf_metrics_t metric_info) {
 /* calculation and printing of the latency */
 static inline 
 void calc_and_print_results(double start, double end, int len,
-                                         perf_metrics_t data) {
-    double latency = 0.0;
-    latency = (end - start) / data.trials;
+                            perf_metrics_t metric_info) {
+    int stride = 0, start_pe = 0, nPEs = 0;
+    int nred_elements = 1;
+    static double latency = 0.0, avg_latency = 0.0;
+    static double pwrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
+    
+    PE_set_used_adjustments(&nPEs, &stride, &start_pe, metric_info);
 
-    printf("%2s%10d%12s%10.2f\n", " ", len, " ", latency);
-}
-
-static inline 
-int command_line_arg_check(int argc, char *argv[],
-                            perf_metrics_t *metric_info) {
-    int ch, error = false;
-    extern char *optarg;
-
-    /* check command line args */
-    while ((ch = getopt(argc, argv, "e:s:n:v")) != EOF) {
-        switch (ch) {
-        case 's':
-            metric_info->start_len = strtoul(optarg, (char **)NULL, 0);
-            if ( metric_info->start_len < 1 ) metric_info->start_len = 1;
-            if(!is_pow_of_2(metric_info->start_len)) {
-                fprintf(stderr, "Error: start_length must be a power of two\n");
-                error = true;
-            }
-            if (metric_info->start_len > INT_MAX) {
-                fprintf(stderr, "Error: start_length is out of integer range\n");
-                error = true;
-            }
-            break;
-        case 'e':
-            metric_info->max_len = strtoul(optarg, (char **)NULL, 0);
-            if(!is_pow_of_2(metric_info->max_len)) {
-                fprintf(stderr, "Error: end_length must be a power of two\n");
-                error = true;
-            }
-            if(metric_info->max_len < metric_info->start_len) {
-                fprintf(stderr, "Error: end_length (%ld) must be >= "
-                        "start_length (%ld)\n", metric_info->max_len,
-                        metric_info->start_len);
-                error = true;
-            }
-            if (metric_info->max_len > INT_MAX) {
-                fprintf(stderr, "Error: end_length is out of integer range\n");
-                error = true;
-            }
-            break;
-        case 'n':
-            metric_info->trials = strtoul(optarg, (char **)NULL, 0);
-            if(metric_info->trials < (metric_info->warmup * 2)) {
-                fprintf(stderr, "Error: trials (%ld) must be >= 2*warmup "
-                        "(%ld)\n", metric_info->trials, metric_info->warmup * 2);
-                error = true;
-            }
-            break;
-        case 'v':
-            metric_info->validate = true;
-            break;
-        default:
-            error = true;
-            break;
-        }
+    if (end > 0 && start > 0 && (end - start) > 0) {
+        latency = (end - start) / metric_info.trials;
+    } else {
+        fprintf(stderr, "Incorrect time measured from latency test: "
+                        "start = %lf, end = %lf\n", start, end);
     }
 
-    if (error) {
-        if (metric_info->my_node == 0) {
-            fprintf(stderr, "Usage: [-s start_length] [-e end_length] "\
-                    ": lengths must be a power of two \n " \
-                    "[-n trials (must be greater than 20)] "\
-                    "[-v (validate results)]\n");
-        }
-        return -1;
+    if (metric_info.individual_report == 1) {
+        printf("Individual latency for PE %6d is %10.2f\n",
+                metric_info.my_node, latency);
+    }
+    shmem_barrier(start_pe, stride, nPEs, bar_psync);
+
+    if (nPEs >= 2) {
+        shmem_double_sum_to_all(&avg_latency, &latency, 
+                                nred_elements, start_pe, stride,
+                                nPEs, pwrk, red_psync);
+        avg_latency /= nPEs;
+    } else {
+        avg_latency = latency;
     }
 
-    return 0;
+    if (metric_info.my_node == 0) {
+        printf("%2s%10d%12s%10.2f\n", " ", len, " ", avg_latency);
+    }
+
 }
 
 /**************************************************************/
@@ -186,7 +146,10 @@ int latency_init_resources(int argc, char *argv[],
     update_metrics(metric_info);
     if (error_checking_init_target_usage(metric_info) == -1)
         return -2;
+#if defined(ENABLE_THREADS)
     thread_safety_validation_check(metric_info);
+#endif
+    init_psync_arrays();
 
     if(only_even_PEs_check(metric_info->my_node, metric_info->num_pes) != 0) {
         return -2;

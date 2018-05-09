@@ -92,3 +92,5 @@ shmem_bibw_put_ctx_perf_CFLAGS = $(AM_OPENMP_CFLAGS)
 
 shmem_bibw_put_ctx_perf_nb_SOURCES = shmem_bibw_put_ctx_perf.c
 shmem_bibw_put_ctx_perf_nb_CFLAGS = $(AM_OPENMP_CFLAGS) -DUSE_NONBLOCKING_API
+
+AM_CPPFLAGS += -DENABLE_THREADS
