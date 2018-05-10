@@ -367,9 +367,13 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t *metric_info) 
             break;
         case 'k':
             metric_info->unit = KB;
+            if (metric_info->t_type != BW)
+                error = true;
             break;
         case 'b':
             metric_info->unit = B;
+            if (metric_info->t_type != BW)
+                error = true;
             break;
         case 'v':
             metric_info->validate = true;
@@ -378,14 +382,24 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t *metric_info) 
             break;
         case 'w':
             metric_info->window_size = strtoul(optarg, (char **)NULL, 0);
-            if(metric_info->t_type == BW && metric_info->target_data) 
+            if (metric_info->t_type != BW) {
                 error = true;
+            } else {
+                if (metric_info->target_data) {
+                    error = true;
+                }
+            }
             break;
         case 't':
             metric_info->target_data = true;
             metric_info->window_size = 1;
-            if(metric_info->t_type == BW && metric_info->validate) 
+            if (metric_info->t_type != BW) {
                 error = true;
+            } else {
+                if (metric_info->validate) {
+                    error = true;
+                }
+            }
             break;
         case 'r':
             metric_info->sztarget = strtoul(optarg, (char **)NULL, 0);

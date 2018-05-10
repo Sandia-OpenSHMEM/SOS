@@ -26,6 +26,9 @@
  */
 
 #include <common.h>
+#ifdef ENABLE_OPENMP
+#include <omp.h>
+#endif
 
 #define INIT_VALUE 1
 
@@ -76,7 +79,7 @@ void calc_and_print_results(double start, double end, int len,
         avg_latency = latency;
     }
 
-    if (metric_info.my_node == 0) {
+    if (metric_info.my_node == start_pe) {
         printf("%2s%10d%12s%10.2f\n", " ", len, " ", avg_latency);
     }
 
@@ -213,3 +216,22 @@ void latency_main(int argc, char *argv[]) {
         latency_finalize();
     }
 }
+
+static inline
+void latency_main_ctx(int argc, char *argv[]) {
+    perf_metrics_t metric_info;
+
+    int ret = latency_init_resources(argc, argv, &metric_info);
+
+    if (ret == 0) {
+        if (metric_info.my_node == 0) {
+            print_header(metric_info);
+        }
+        multi_size_latency(metric_info, argv);
+        latency_free_resources(&metric_info);
+    }
+    if (ret != -1) {
+        latency_finalize();
+    }
+}
+

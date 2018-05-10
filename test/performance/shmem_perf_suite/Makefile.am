@@ -28,7 +28,11 @@ check_PROGRAMS += \
 	shmem_bw_put_ctx_perf \
 	shmem_bw_put_ctx_perf_nb \
 	shmem_bibw_put_ctx_perf \
-	shmem_bibw_put_ctx_perf_nb
+	shmem_bibw_put_ctx_perf_nb \
+	shmem_latency_put_ctx_perf \
+	shmem_latency_put_ctx_perf_nb \
+	shmem_latency_get_ctx_perf \
+	shmem_latency_get_ctx_perf_nb 
 endif
 
 noinst_HEADERS = \
@@ -41,7 +45,8 @@ noinst_HEADERS = \
 	uni_dir_ctx.h \
 	bi_dir.h \
 	bi_dir_ctx.h \
-	target_put.h
+	target_put.h \
+	latency_ctx.h
 
 if ENABLE_LENGTHY_TESTS
 TESTS = $(check_PROGRAMS)
@@ -92,5 +97,15 @@ shmem_bibw_put_ctx_perf_CFLAGS = $(AM_OPENMP_CFLAGS)
 
 shmem_bibw_put_ctx_perf_nb_SOURCES = shmem_bibw_put_ctx_perf.c
 shmem_bibw_put_ctx_perf_nb_CFLAGS = $(AM_OPENMP_CFLAGS) -DUSE_NONBLOCKING_API
+
+shmem_latency_put_ctx_perf_CFLAGS = $(AM_OPENMP_CFLAGS)
+
+shmem_latency_put_ctx_perf_nb_SOURCES = shmem_latency_put_ctx_perf.c
+shmem_latency_put_ctx_perf_nb_CFLAGS = $(AM_OPENMP_CFLAGS) -DUSE_NONBLOCKING_API
+
+shmem_latency_get_ctx_perf_CFLAGS = $(AM_OPENMP_CFLAGS)
+
+shmem_latency_get_ctx_perf_nb_SOURCES = shmem_latency_get_ctx_perf.c
+shmem_latency_get_ctx_perf_nb_CFLAGS = $(AM_OPENMP_CFLAGS) -DUSE_NONBLOCKING_API
 
 AM_CPPFLAGS += -DENABLE_THREADS
