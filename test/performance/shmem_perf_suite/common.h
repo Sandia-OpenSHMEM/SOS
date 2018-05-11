@@ -314,7 +314,7 @@ void validate_recv(char *buf, int len, int partner_pe) {
 
 static
 int command_line_arg_check(int argc, char *argv[], perf_metrics_t *metric_info) {
-    int ch, error = false;
+    int ch, errors = 0;
     extern char *optarg;
 
     /* check command line args */
@@ -325,28 +325,28 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t *metric_info) 
             if ( metric_info->start_len < 1 ) metric_info->start_len = 1;
             if(!is_pow_of_2(metric_info->start_len)) {
                 fprintf(stderr, "Error: start_length must be a power of two\n");
-                error = true;
+                errors++;
             }
             if (metric_info->start_len > INT_MAX) {
                 fprintf(stderr, "Error: start_length is out of integer range\n");
-                error = true;
+                errors++;
             }
             break;
         case 'e':
             metric_info->max_len = strtoul(optarg, (char **)NULL, 0);
             if(!is_pow_of_2(metric_info->max_len)) {
                 fprintf(stderr, "Error: end_length must be a power of two\n");
-                error = true;
+                errors++;
             }
             if(metric_info->max_len < metric_info->start_len) {
                 fprintf(stderr, "Error: end_length (%ld) must be >= "
                         "start_length (%ld)\n", metric_info->max_len,
                         metric_info->start_len);
-                error = true;
+                errors++;
             }
             if (metric_info->max_len > INT_MAX) {
                 fprintf(stderr, "Error: end_length is out of integer range\n");
-                error = true;
+                errors++;
             }
             break;
         case 'n':
@@ -354,7 +354,7 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t *metric_info) 
             if(metric_info->trials < (metric_info->warmup * 2)) {
                 fprintf(stderr, "Error: trials (%ld) must be >= 2*warmup "
                         "(%ld)\n", metric_info->trials, metric_info->warmup * 2);
-                error = true;
+                errors++;
             }
             break;
         case 'p':
@@ -362,31 +362,31 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t *metric_info) 
             if(metric_info->warmup > (metric_info->trials/2)) {
                 fprintf(stderr, "Error: warmup (%ld) must be <= trials/2 "
                         "(%ld)\n", metric_info->warmup, metric_info->trials/2);
-                error = true;
+                errors++;
             }
             break;
         case 'k':
             metric_info->unit = KB;
             if (metric_info->t_type != BW)
-                error = true;
+                errors++;
             break;
         case 'b':
             metric_info->unit = B;
             if (metric_info->t_type != BW)
-                error = true;
+                errors++;
             break;
         case 'v':
             metric_info->validate = true;
             if(metric_info->t_type == BW && metric_info->target_data) 
-                error = true;
+                errors++;
             break;
         case 'w':
             metric_info->window_size = strtoul(optarg, (char **)NULL, 0);
             if (metric_info->t_type != BW) {
-                error = true;
+                errors++;
             } else {
                 if (metric_info->target_data) {
-                    error = true;
+                    errors++;
                 }
             }
             break;
@@ -394,10 +394,10 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t *metric_info) 
             metric_info->target_data = true;
             metric_info->window_size = 1;
             if (metric_info->t_type != BW) {
-                error = true;
+                errors++;
             } else {
                 if (metric_info->validate) {
-                    error = true;
+                    errors++;
                 }
             }
             break;
@@ -419,7 +419,7 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t *metric_info) 
                 metric_info->thread_safety = SHMEM_THREAD_MULTIPLE;
             } else {
                 fprintf(stderr, "Invalid threading level: \"%s\"\n", optarg);
-                error = true;
+                errors++;
             }
 #else
             fprintf(stderr, "ENABLE_THREADS not defined. "
@@ -434,7 +434,7 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t *metric_info) 
             metric_info->individual_report = 1;
             break;
         default:
-            error = true;
+            errors++;
             break;
         }
     }
@@ -446,33 +446,41 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t *metric_info) 
             ((metric_info->trials + metric_info->warmup) * TARGET_SZ_MIN)) ||
             (metric_info->max_len <
             ((metric_info->trials + metric_info->warmup) * TARGET_SZ_MAX))) {
-                error = true;
+                errors++;
             }
     }
 
-    if (error) {
-        if (metric_info->my_node == 0) {
-            fprintf(stderr, "Usage: \n[-s start_length] [-e end_length] "
-                    ": lengths should be a power of two \n"
-                    "[-n trials (must be greater than 2*warmup (default: x => 100))] \n"
-                    "[-p warm-up (see trials for value restriction)] \n"
-                    "[-w window size - iterations between completion, cannot use with -t] \n"
-                    "[-k (kilobytes/second)] [-b (bytes/second)] \n"
-                    "[-v (validate data stream)] \n"
-                    "[-i (turn on individual bandwidth reporting)] \n"
-                    "[-t output data for target side (default is initiator,"
-                    " only use with put_bw),\n cannot be used in conjunction "
-                    "with validate, special sizes used, \ntrials"
-                    " + warmup * sizes (8/4KB) <= max length \n"
-                    "[-r number of nodes at target, use only with -t] \n"
-                    "[-l number of nodes at initiator, use only with -t, "
-                    "l/r cannot be used together] \n"
-                    "[-C thread-safety-config: SINGLE, FUNNELED, SERIALIZED, or MULTIPLE] \n"
-                    "[-T num-threads] \n");
-        }
-        return -1;
-    }
-    return 0;
+    return errors;
+}
+
+static inline
+void print_usage(int errors) {
+    fprintf(stderr, "\nNumber of errors in the command line: %d\n", errors);
+    fprintf(stderr, "\nUsage: <benchmark executable> [OPTION]\n" 
+           " -s START_MSG_SIZE           Smallest message size. Must be power of 2\n"
+           " -e END_MSG_SIZE             Largest message size. Must be power of 2\n"
+           " -p WARMUP                   Number of warmup iterations\n"
+           " -n TRIALS                   Number of trial iterations. Must be at\n"
+           "                             least twice of WARMUP\n"
+           " -w WINDOW_SIZE              Window size for streaming. Cannot be used\n"
+           "                             in conjunction with -t. Specific to band-\n"
+           "                             -width experiments\n"
+           " -k                          Setting bandwidth metric to kbytes/second\n"
+           " -b                          Setting bandwidth metric to bytes/second\n"
+           " -v                          Turning on validation of data\n"
+           " -i                          Turning on individual process reporting\n"
+           " -t                          Output data for target side (default is \n"
+           "                             initiator, only use with Put Bandwidth),\n"
+           "                             cannot be used in conjunction with \n"
+           "                             validate, special sizes used, trials + \n"
+           "                             warmup * sizes (8/4KB) <= max length \n"
+           " -r TARGET_SIZE              Number of target nodes, use only with -t\n"
+           " -l SOURCE_SIZE              Number of initiator nodes, use only with \n"
+           "                             -t; -l and -r cannot be used together\n"
+           " -T THREADS                  Number of threads\n"
+           " -C THREAD_LEVEL             SHMEM thread level. Possible values: \n"
+           "                             SINGLE, FUNNELED, SERIALIZED, MULTIPLE \n"
+           );
 }
 
 

@@ -346,9 +346,6 @@ int bw_init_data_stream(perf_metrics_t *metric_info,
 
     init_metrics(metric_info);
     int ret = command_line_arg_check(argc, argv, metric_info);
-    if (ret != 0) {
-        return -1;
-    }
 
 #ifndef VERSION_1_0
 #if defined(ENABLE_THREADS)
@@ -357,7 +354,7 @@ int bw_init_data_stream(perf_metrics_t *metric_info,
     if(tl != metric_info->thread_safety) {
         fprintf(stderr,"Could not initialize with requested thread "
                 "level %d: got %d\n", metric_info->thread_safety, tl);
-        return -2;
+        return -1;
     }
 #else
     shmem_init();
@@ -367,15 +364,23 @@ int bw_init_data_stream(perf_metrics_t *metric_info,
 #endif
 
     update_metrics(metric_info);
+
+    if (ret) {
+        if (metric_info->my_node == 0) {
+            print_usage(ret);
+        }
+        return -1;
+    }
+
     if (error_checking_init_target_usage(metric_info) == -1)
-        return -2;
+        return -1;
 #if defined(ENABLE_THREADS)
     thread_safety_validation_check(metric_info);
 #endif
     init_psync_arrays();
 
     if(only_even_PEs_check(metric_info->my_node, metric_info->num_pes) != 0) {
-        return -2;
+        return -1;
     }
 
     metric_info->src = aligned_buffer_alloc(metric_info->max_len);
@@ -438,8 +443,7 @@ void bi_dir_bw_main(int argc, char *argv[]) {
         bw_data_free(&metric_info);
     }
 
-    if (ret != -1)
-        bw_finalize(); 
+    bw_finalize(); 
 } 
 
 static inline 
@@ -454,6 +458,5 @@ void uni_dir_bw_main(int argc, char *argv[], bw_style bwstyl) {
         bw_data_free(&metric_info);
     }
 
-    if (ret != -1)
-        bw_finalize();
+    bw_finalize();
 } 
