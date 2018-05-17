@@ -287,6 +287,7 @@ int allocate_endpoints(struct fabric_info *info)
 {
 
     int ret = 0;
+    uint64_t caps = info->p_info->caps;
 
     /* ------------------------------------ */
     /*         Allocate Endpoints           */
@@ -303,8 +304,14 @@ int allocate_endpoints(struct fabric_info *info)
         return ret;
     }
 
+    /* Disable RMA target capabilities on cntr EP */
+    info->p_info->caps &= ~(FI_REMOTE_READ | FI_REMOTE_WRITE);
+
     ret = fi_endpoint(shmem_transport_ofi_domainfd,
                       info->p_info, &shmem_transport_ofi_cntr_epfd, NULL);
+
+    info->p_info->caps = caps;
+
     if (ret!=0) {
         RAISE_WARN_STR("cntr_epfd creation failed");
         return ret;
