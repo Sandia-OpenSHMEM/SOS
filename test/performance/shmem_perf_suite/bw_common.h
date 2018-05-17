@@ -586,39 +586,48 @@ static inline void calc_and_print_results(double end_t, double start_t, int len,
     pe_time_start = start_t;
     pe_time_end = end_t;
     shmem_barrier(start_pe, stride, nPEs, bar_psync);
-    if (nPEs >= 2) {
-        shmem_double_min_to_all(&start_time_min, &pe_time_start, nred_elements,
+    if (metric_info.bwstyle != STYLE_ATOMIC) {
+        if (nPEs >= 2) {
+            shmem_double_min_to_all(&start_time_min, &pe_time_start, nred_elements,
                                 start_pe, stride, nPEs, pwrk,
                                 red_psync);
-        shmem_barrier(start_pe, stride, nPEs, bar_psync);
-        shmem_double_max_to_all(&end_time_max, &pe_time_end, nred_elements, 
+            shmem_barrier(start_pe, stride, nPEs, bar_psync);
+            shmem_double_max_to_all(&end_time_max, &pe_time_end, nred_elements, 
                                 start_pe, stride, nPEs, pwrk,
                                 red_psync);
-    } else if (nPEs == 1) {
-        start_time_min = pe_time_start;
-        end_time_max = pe_time_end;
-    }
+        } else if (nPEs == 1) {
+            start_time_min = pe_time_start;
+            end_time_max = pe_time_end;
+        }
 
-    /* calculating bandwidth based on the highest time duration across all PEs */
-    if (end_time_max > 0 && start_time_min > 0 && 
-       (end_time_max - start_time_min) > 0) {
+        /* calculating bandwidth based on the highest time duration across all PEs */
+        if (end_time_max > 0 && start_time_min > 0 && 
+           (end_time_max - start_time_min) > 0) {
 
-        total_t_max = (end_time_max - start_time_min);
+            total_t_max = (end_time_max - start_time_min);
 #ifdef ENABLE_OPENMP
-        bw = ((double) len * (double) multiplier * (double) metric_info.midpt / 1.0e6 * metric_info.window_size * 
-              metric_info.trials * (double) metric_info.nthreads) / 
-              (total_t_max / 1.0e6);
+            bw = ((double) len * (double) multiplier * (double) metric_info.midpt / 1.0e6 * metric_info.window_size * 
+                  metric_info.trials * (double) metric_info.nthreads) / 
+                  (total_t_max / 1.0e6);
 #else
-        bw = ((double) len * (double) multiplier * (double) metric_info.midpt / 1.0e6 * metric_info.window_size * 
-              metric_info.trials) / (total_t_max / 1.0e6);
+            bw = ((double) len * (double) multiplier * (double) metric_info.midpt / 1.0e6 * metric_info.window_size * 
+                  metric_info.trials) / (total_t_max / 1.0e6);
 #endif
-    } else {
-        fprintf(stderr, "Incorrect time measured from bandwidth test: "
+        } else {
+            fprintf(stderr, "Incorrect time measured from bandwidth test: "
                         "start_min = %lf, end_max = %lf\n", 
                          start_time_min, end_time_max);
-    } 
-
-    pe_bw_sum = bw;
+        } 
+        pe_bw_sum = bw;
+    } else {
+        if (nPEs >= 2) {
+            shmem_double_sum_to_all(&pe_bw_sum, &bw, nred_elements,
+                                start_pe, stride, nPEs, pwrk,
+                                red_psync);
+        } else if (nPEs == 1) {
+            pe_bw_sum = bw;
+        }
+    }
 
     /* aggregate bw since bw op pairs are communicating simultaneously */
     if(metric_info.my_node == start_pe) {
