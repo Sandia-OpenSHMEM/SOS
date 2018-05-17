@@ -35,9 +35,16 @@ include(shmem_bind_c.m4)dnl
 extern "C" {
 #endif
 
+/* The profiling interfaces should always be declared for the special cases in
+ * the OpenSHMEM API (i.e. functions whose names conflict with the generic
+ * bindings) */
+#define SHMEM_DECLARE_SPECIAL_CASES 1
+
 define(`SHPRE', `p')dnl
 include(shmem_c_func.h4)dnl
 include(shmemx_c_func.h4)dnl
+
+#undef SHMEM_DECLARE_SPECIAL_CASES
 
 #ifdef __cplusplus
 } /* extern "C" */
