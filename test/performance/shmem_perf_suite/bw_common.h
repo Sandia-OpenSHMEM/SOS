@@ -579,14 +579,14 @@ static inline void calc_and_print_results(double end_t, double start_t, int len,
     pe_bw_sum = bw;
 
     if (metric_info.individual_report == 1) {
-        printf("Individual bandwith for PE %6d is %10.2f\n", 
-                metric_info.my_node, pe_bw_sum);
+        printf("Individual bandwith for PE %6d is %10.2f start = %lf, end = %lf\n", 
+                metric_info.my_node, pe_bw_sum, start_t, end_t);
     }
     
     pe_time_start = start_t;
     pe_time_end = end_t;
     shmem_barrier(start_pe, stride, nPEs, bar_psync);
-    if (metric_info.bwstyle != STYLE_ATOMIC) {
+    if (metric_info.cstyle != COMM_INCAST) {
         if (nPEs >= 2) {
             shmem_double_min_to_all(&start_time_min, &pe_time_start, nred_elements,
                                 start_pe, stride, nPEs, pwrk,
@@ -806,9 +806,10 @@ static inline int bw_init_data_stream(perf_metrics_t *metric_info,
 
 
 static inline int bi_dir_init(perf_metrics_t *metric_info, int argc,
-                                char *argv[]) {
+                                char *argv[], bw_style bwstyl) {
     int ret = bw_init_data_stream(metric_info, argc, argv);
     if (ret == 0) {
+        metric_info->bwstyle = bwstyl;
         bi_dir_data_init(metric_info);
         return 0;
     } else 
@@ -840,11 +841,11 @@ static inline void bw_finalize(void) {
 #endif
 }
 
-static inline void bi_dir_bw_main(int argc, char *argv[]) {
+static inline void bi_dir_bw_main(int argc, char *argv[], bw_style bwstyl) {
 
     perf_metrics_t metric_info;
 
-    int ret = bi_dir_init(&metric_info, argc, argv);
+    int ret = bi_dir_init(&metric_info, argc, argv, bwstyl);
 
     if (ret == 0) {
         bi_dir_bw_test_and_output(metric_info);
