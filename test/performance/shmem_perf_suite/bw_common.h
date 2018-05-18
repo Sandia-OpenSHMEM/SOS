@@ -579,8 +579,8 @@ static inline void calc_and_print_results(double end_t, double start_t, int len,
     pe_bw_sum = bw;
 
     if (metric_info.individual_report == 1) {
-        printf("Individual bandwith for PE %6d is %10.2f start = %lf, end = %lf\n", 
-                metric_info.my_node, pe_bw_sum, start_t, end_t);
+        printf("Individual bandwith for PE %6d is %10.2f\n", 
+                metric_info.my_node, pe_bw_sum);
     }
     
     pe_time_start = start_t;
