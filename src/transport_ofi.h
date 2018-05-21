@@ -1213,4 +1213,24 @@ void shmem_transport_syncmem(void)
     // transport routine will be a nop until an API is provided.
 }
 
+static inline
+uint64_t shmem_transport_get_pending_put_cntr(shmem_transport_ctx_t *ctx)
+{
+    uint64_t cnt = 0;
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+    return cnt;
+}
+
+static inline
+uint64_t shmem_transport_get_pending_get_cntr(shmem_transport_ctx_t *ctx)
+{
+    uint64_t cnt = 0;
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr);
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+    return cnt;
+}
+
 #endif /* TRANSPORT_OFI_H */
