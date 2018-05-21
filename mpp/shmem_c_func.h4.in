@@ -62,6 +62,9 @@ SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_ctx_destroy(shmem_ctx_t ctx);
 /* Performance Counter Query Routines */
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_pcntr_get_pending_put(shmem_ctx_t ctx, uint64_t *cntr_value);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_pcntr_get_pending_get(shmem_ctx_t ctx, uint64_t *cntr_value);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_pcntr_get_fi_put(shmem_ctx_t ctx, uint64_t *cntr_value);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_pcntr_get_fi_get(shmem_ctx_t ctx, uint64_t *cntr_value);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_pcntr_get_fi_target(shmem_ctx_t ctx, uint64_t *cntr_value);
 
 /* RMA: Elemental Data Put Routines */
 define(`SHMEM_C_P',

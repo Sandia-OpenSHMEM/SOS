@@ -311,4 +311,16 @@ void shmem_transport_syncmem(void)
     return;
 }
 
+static inline
+uint64_t shmem_transport_get_pending_put_cntr(shmem_transport_ctx_t *ctx)
+{
+    return -1;
+}
+
+static inline
+uint64_t shmem_transport_get_pending_get_cntr(shmem_transport_ctx_t *ctx)
+{
+    return -1;
+}
+
 #endif /* TRANSPORT_NONE_H */

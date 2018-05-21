@@ -1233,4 +1233,26 @@ uint64_t shmem_transport_get_pending_get_cntr(shmem_transport_ctx_t *ctx)
     return cnt;
 }
 
+static inline
+uint64_t shmem_transport_get_fi_put_cntr(shmem_transport_ctx_t *ctx)
+{
+    return fi_cntr_read(ctx->put_cntr);
+}
+
+static inline
+uint64_t shmem_transport_get_fi_get_cntr(shmem_transport_ctx_t *ctx)
+{
+    return fi_cntr_read(ctx->get_cntr);
+}
+
+static inline
+uint64_t shmem_transport_get_fi_target_cntr(shmem_transport_ctx_t *ctx)
+{
+#if ENABLE_TARGET_CNTR
+    return fi_cntr_read(shmem_transport_ofi_target_cntrfd);
+#else
+    return -1;
+#endif
+}
+
 #endif /* TRANSPORT_OFI_H */
