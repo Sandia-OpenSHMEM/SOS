@@ -223,7 +223,7 @@ SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_CTX_ATOMIC_SWAP')
 /* Special case, only enabled when C++ and C11 bindings are disabled */
 #if ( !defined(__cplusplus) && \
       !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L) ) || \
-    defined(SHMEM_INTERNAL_INCLUDE)
+    defined(SHMEM_INTERNAL_INCLUDE) || defined(SHMEM_DECLARE_SPECIAL_CASES)
 SHMEM_FUNCTION_ATTRIBUTES long SHPRE()shmem_swap(long *target, long value, int pe);
 #endif
 
@@ -448,7 +448,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_C_WAIT_UNTIL')
 /* Special case, only enabled when C++ and C11 bindings are disabled */
 #if ( !defined(__cplusplus) && \
       !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L) ) || \
-    defined(SHMEM_INTERNAL_INCLUDE)
+    defined(SHMEM_INTERNAL_INCLUDE) || defined(SHMEM_DECLARE_SPECIAL_CASES)
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_wait_until(long *ivar, int cmp, long value);
 #endif
 
