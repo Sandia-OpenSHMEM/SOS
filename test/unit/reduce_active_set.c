@@ -58,7 +58,7 @@ int main(void)
 
     for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++) {
         max_psync[i] = SHMEM_SYNC_VALUE;
-        max_psync[i] = SHMEM_SYNC_VALUE;
+        mix_psync[i] = SHMEM_SYNC_VALUE;
     }
 
     if (me == 0)
