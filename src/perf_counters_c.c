@@ -13,13 +13,10 @@
  *
  */
 
-#include "config.h"
-
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "transport.h"
-#include "shmem_synchronization.h"
 
 #ifdef ENABLE_PROFILING
 #include "pshmem.h"
@@ -29,6 +26,15 @@
 
 #pragma weak shmem_pcntr_get_pending_get = pshmem_pcntr_get_pending_get
 #define shmem_pcntr_get_pending_get pshmem_pcntr_get_pending_get
+
+#pragma weak shmem_pcntr_get_fi_put = pshmem_pcntr_get_fi_put
+#define shmem_pcntr_get_fi_put pshmem_pcntr_get_fi_put
+
+#pragma weak shmem_pcntr_get_fi_get = pshmem_pcntr_get_fi_get
+#define shmem_pcntr_get_fi_get pshmem_pcntr_get_fi_get
+
+#pragma weak shmem_pcntr_get_fi_target = pshmem_pcntr_get_fi_target
+#define shmem_pcntr_get_fi_target pshmem_pcntr_get_fi_target
 
 #endif /* ENABLE_PROFILING */
 

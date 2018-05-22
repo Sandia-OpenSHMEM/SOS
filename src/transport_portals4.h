@@ -1326,4 +1326,22 @@ uint64_t shmem_transport_get_pending_get_cntr(shmem_transport_ctx_t *ctx)
     return -1;
 }
 
+static inline
+uint64_t shmem_transport_get_fi_put_cntr(shmem_transport_ctx_t *ctx)
+{
+    return -1;
+}
+
+static inline
+uint64_t shmem_transport_get_fi_get_cntr(shmem_transport_ctx_t *ctx)
+{
+    return -1;
+}
+
+static inline
+uint64_t shmem_transport_get_fi_target_cntr(shmem_transport_ctx_t *ctx)
+{
+    return -1;
+}
+
 #endif /* TRANSPORT_PORTALS_H */
