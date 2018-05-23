@@ -49,7 +49,7 @@ void int_p_latency(perf_metrics_t metric_info)
 
     if (metric_info.my_node == 0) {
         printf("\nshmem_int_p results:\n");
-        print_latency_header(metric_info);
+        print_latency_header();
     }
     shmem_barrier_all();
 
@@ -101,7 +101,7 @@ void int_g_latency(perf_metrics_t metric_info)
 
     if (metric_info.my_node == 0) {
         printf("\nshmem_int_g results:\n");
-        print_latency_header(metric_info);
+        print_latency_header();
     }
     shmem_barrier_all();
 

@@ -48,5 +48,5 @@ int main(int argc, char *argv[])
 void
 uni_dir_bw(int len, perf_metrics_t *metric_info)
 {
-    uni_bw_ctx(len, metric_info, !streaming_node(*metric_info));
+    uni_bw_ctx(len, metric_info, streaming_node(*metric_info));
 }

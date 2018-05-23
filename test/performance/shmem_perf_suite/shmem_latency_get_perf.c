@@ -42,7 +42,7 @@
 int main(int argc, char *argv[])
 {
 
-    latency_main(argc, argv);
+    latency_main(argc, argv, STYLE_GET);
 
     return 0;
 }  /* end of main() */

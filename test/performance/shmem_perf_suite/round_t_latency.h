@@ -49,7 +49,7 @@ void long_element_round_trip_latency_get(perf_metrics_t metric_info)
 
     if (metric_info.my_node == 0) {
         printf("shmem_long_g results:\n");
-        print_latency_header(metric_info);
+        print_latency_header();
     }
 
     shmem_barrier_all();
@@ -100,7 +100,7 @@ void long_element_round_trip_latency_put(perf_metrics_t metric_info)
 
     if (metric_info.my_node == 0) {
         printf("Ping-Pong shmem_long_p results:\n");
-        print_latency_header(metric_info);
+        print_latency_header();
     }
 
     shmem_barrier_all();

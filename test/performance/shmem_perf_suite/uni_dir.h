@@ -55,6 +55,7 @@ static inline void uni_bw_put(int len, perf_metrics_t *metric_info)
     shmem_barrier_all();
 
     if (snode) {
+    printf("PE %d", metric_info->my_node);
         for (i = 0; i < metric_info->warmup; i++) {
             for(j = 0; j < metric_info->window_size; j++) {
 #ifdef USE_NONBLOCKING_API

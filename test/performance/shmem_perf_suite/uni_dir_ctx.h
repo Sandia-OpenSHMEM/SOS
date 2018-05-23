@@ -51,6 +51,7 @@ void uni_bw_ctx(int len, perf_metrics_t *metric_info, int streaming_node)
     shmem_barrier_all();
 
     if (streaming_node) {
+    printf("PE %d", metric_info->my_node);
 #pragma omp parallel default(none) firstprivate(len, dest) private(i, j) \
 shared(metric_info, src, dst, start, end) num_threads(metric_info->nthreads)
         {

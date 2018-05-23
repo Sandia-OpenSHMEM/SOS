@@ -42,7 +42,7 @@ void init_metrics(perf_metrics_t *metric_info) {
     metric_info->unit = MB;
     metric_info->target_data = false;
     metric_info->cstyle = COMM_PAIRWISE;
-    metric_info->bwstyle = STYLE_RMA;
+    metric_info->opstyle = STYLE_RMA;
 }
 
 static 
@@ -118,7 +118,7 @@ void print_data_results(double bw, double mr, perf_metrics_t data,
         }
     }
 
-    if (data.bwstyle == STYLE_ATOMIC) {
+    if (data.opstyle == STYLE_ATOMIC) {
         printf("%-10s", dt_names[atomic_type_index]);
         atomic_type_index = (atomic_type_index + 1) % ATOMICS_N_DTs;
     } else
@@ -130,7 +130,7 @@ void print_data_results(double bw, double mr, perf_metrics_t data,
         bw = bw * 1.0e6;
     }
 
-    if (data.bwstyle == STYLE_ATOMIC) {
+    if (data.opstyle == STYLE_ATOMIC) {
         printf("%13s%10.2f%15s%12.2f%12s%10.2f\n", " ", bw, " ", 
                 mr/1.0e6, " ", total_t/(data.trials * data.window_size));
     } else
@@ -269,7 +269,7 @@ void bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
     unsigned long int len;
 
     if(metric_info.my_node == 0) {
-        if (metric_info.bwstyle == STYLE_ATOMIC)
+        if (metric_info.opstyle == STYLE_ATOMIC)
             print_atomic_header(metric_info);
         else
             print_bw_header(metric_info);
@@ -286,7 +286,7 @@ void bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
     shmem_barrier_all();
 
     if(metric_info.validate) {
-        if(metric_info.bwstyle != STYLE_ATOMIC) {
+        if(metric_info.opstyle != STYLE_ATOMIC) {
             validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
         } else {
             validate_atomics(metric_info);
@@ -309,7 +309,7 @@ void uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
     unsigned long int len = 0;
 
     if(metric_info.my_node == 0) {
-        if (metric_info.bwstyle == STYLE_ATOMIC)
+        if (metric_info.opstyle == STYLE_ATOMIC)
             print_atomic_header(metric_info);
         else
             print_bw_header(metric_info);
@@ -326,10 +326,10 @@ void uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
     shmem_barrier_all();
 
     if(metric_info.validate) {
-        if((streaming_node(metric_info) && metric_info.bwstyle == STYLE_GET) ||
-            (target_node(metric_info) && metric_info.bwstyle == STYLE_PUT)) {
+        if((streaming_node(metric_info) && metric_info.opstyle == STYLE_GET) ||
+            (target_node(metric_info) && metric_info.opstyle == STYLE_PUT)) {
             validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
-        } else if(metric_info.bwstyle == STYLE_ATOMIC) {
+        } else if(metric_info.opstyle == STYLE_ATOMIC) {
             validate_atomics(metric_info);
         }
     }
@@ -405,11 +405,11 @@ int bi_dir_init(perf_metrics_t *metric_info, int argc, char *argv[]) {
 
 static inline 
 int uni_dir_init(perf_metrics_t *metric_info, int argc,
-                 char *argv[], bw_style bwstyl) {
+                 char *argv[], op_style opstyle) {
     int ret = bw_init_data_stream(metric_info, argc, argv);
     if (ret == 0) {
         /* uni-dir validate needs to know if its a put or get */
-        metric_info->bwstyle = bwstyl;
+        metric_info->opstyle = opstyle;
         update_bw_type(metric_info, UNI_DIR);
         return 0;
     } else 
@@ -447,11 +447,11 @@ void bi_dir_bw_main(int argc, char *argv[]) {
 } 
 
 static inline 
-void uni_dir_bw_main(int argc, char *argv[], bw_style bwstyl) {
+void uni_dir_bw_main(int argc, char *argv[], op_style opstyle) {
 
     perf_metrics_t metric_info;
 
-    int ret = uni_dir_init(&metric_info, argc, argv, bwstyl);
+    int ret = uni_dir_init(&metric_info, argc, argv, opstyle);
 
     if (ret == 0) {
         uni_dir_bw_test_and_output(metric_info);

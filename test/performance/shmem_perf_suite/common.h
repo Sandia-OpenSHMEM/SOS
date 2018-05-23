@@ -87,7 +87,7 @@ typedef enum {
     STYLE_GET,
     STYLE_RMA,
     STYLE_ATOMIC
-} bw_style;
+} op_style;
 
 typedef enum {
     FIRST_HALF,
@@ -114,6 +114,7 @@ typedef struct perf_metrics {
     unsigned long int window_size, warmup;
     int my_node, num_pes, sztarget, szinitiator, midpt;
     char *src, *dest;
+    op_style opstyle;
 
     /* parameters for threaded tests */
     int nthreads;
@@ -124,7 +125,6 @@ typedef struct perf_metrics {
     const char *bw_type_str;
     bw_type b_type;
     comm_style cstyle;
-    bw_style bwstyle;
     int target_data;
 
     /* parameters specific to latency tests */

@@ -38,10 +38,11 @@ void init_metrics(perf_metrics_t *metric_info) {
     set_metric_defaults(metric_info);
     metric_info->target = NULL;
     metric_info->cstyle = COMM_PAIRWISE;
+    metric_info->opstyle = STYLE_RMA;
 }
 
 static inline 
-void print_latency_header(perf_metrics_t metric_info) {
+void print_latency_header(void) {
     printf("\nMessage Size%15sLatency\n", " ");
     printf("%4sin bytes%17sin us\n", " ", " ");
 }
@@ -105,7 +106,7 @@ void multi_size_latency(perf_metrics_t data, char *argv[]) {
     int partner_pe = partner_node(data);
 
     if (data.my_node == 0) {
-        print_latency_header(data);
+        print_latency_header();
     }
 
     for (len = data.start_len; len <= data.max_len; len *= data.size_inc) {
@@ -116,8 +117,8 @@ void multi_size_latency(perf_metrics_t data, char *argv[]) {
     shmem_barrier_all();
 
     if (data.validate) {
-        if((streaming_node(data) && data.bwstyle == STYLE_GET) ||
-            (target_node(data) && data.bwstyle == STYLE_PUT))
+        if((streaming_node(data) && data.opstyle == STYLE_GET) ||
+            (target_node(data) && data.opstyle == STYLE_PUT))
             validate_recv(data.dest, data.max_len, partner_pe);
     }
 }
@@ -206,10 +207,11 @@ void latency_finalize(void) {
 }
 
 static inline 
-void latency_main(int argc, char *argv[]) {
+void latency_main(int argc, char *argv[], op_style opstyle) {
     perf_metrics_t metric_info;
 
     int ret = latency_init_resources(argc, argv, &metric_info);
+    metric_info.opstyle = opstyle;
 
     if (ret == 0) {
         if (metric_info.my_node == 0) {
@@ -225,10 +227,11 @@ void latency_main(int argc, char *argv[]) {
 }
 
 static inline
-void latency_main_ctx(int argc, char *argv[]) {
+void latency_main_ctx(int argc, char *argv[], op_style opstyle) {
     perf_metrics_t metric_info;
 
     int ret = latency_init_resources(argc, argv, &metric_info);
+    metric_info.opstyle = opstyle;
 
     if (ret == 0) {
         if (metric_info.my_node == 0) {

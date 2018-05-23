@@ -40,7 +40,7 @@
 
 int main(int argc, char *argv[])
 {
-    latency_main_ctx(argc, argv);
+    latency_main_ctx(argc, argv, STYLE_PUT);
 
     return 0;
 }
@@ -48,5 +48,5 @@ int main(int argc, char *argv[])
 void
 streaming_latency(int len, perf_metrics_t *metric_info)
 {
-    streaming_put_latency_ctx(len, metric_info, !streaming_node(*metric_info));
+    streaming_put_latency_ctx(len, metric_info, streaming_node(*metric_info));
 }
