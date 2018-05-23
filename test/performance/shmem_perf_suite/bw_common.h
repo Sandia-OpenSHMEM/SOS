@@ -383,11 +383,11 @@ int bw_init_data_stream(perf_metrics_t *metric_info,
         return -1;
     }
 
-    metric_info->src = aligned_buffer_alloc(metric_info->max_len);
-    init_array(metric_info->src, metric_info->max_len, metric_info->my_node);
+    metric_info->src = aligned_buffer_alloc(metric_info->max_len * metric_info->nthreads);
+    init_array(metric_info->src, metric_info->max_len * metric_info->nthreads, metric_info->my_node);
 
-    metric_info->dest = aligned_buffer_alloc(metric_info->max_len);
-    init_array(metric_info->dest, metric_info->max_len, metric_info->my_node);
+    metric_info->dest = aligned_buffer_alloc(metric_info->max_len * metric_info->nthreads);
+    init_array(metric_info->dest, metric_info->max_len * metric_info->nthreads, metric_info->my_node);
 
     return 0;
 }

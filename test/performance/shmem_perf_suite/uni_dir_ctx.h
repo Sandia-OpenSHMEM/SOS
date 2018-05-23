@@ -31,9 +31,6 @@ void uni_bw_ctx(int len, perf_metrics_t *metric_info, int streaming_node)
     double start = 0.0, end = 0.0;
     unsigned long int i, j;
     int dest = partner_node(*metric_info);
-    char *src = aligned_buffer_alloc(metric_info->nthreads * len);
-    char *dst = aligned_buffer_alloc(metric_info->nthreads * len);
-    assert(src && dst);
     static int check_once = 0;
 
     if (!check_once) {
@@ -51,9 +48,8 @@ void uni_bw_ctx(int len, perf_metrics_t *metric_info, int streaming_node)
     shmem_barrier_all();
 
     if (streaming_node) {
-    printf("PE %d", metric_info->my_node);
 #pragma omp parallel default(none) firstprivate(len, dest) private(i, j) \
-shared(metric_info, src, dst, start, end) num_threads(metric_info->nthreads)
+shared(metric_info, start, end) num_threads(metric_info->nthreads)
         {
             const int thread_id = omp_get_thread_num();
             shmem_ctx_t ctx;
@@ -62,11 +58,11 @@ shared(metric_info, src, dst, start, end) num_threads(metric_info->nthreads)
             for (i = 0; i < metric_info->warmup; i++) {
                 for (j = 0; j < metric_info->window_size; j++) {
 #ifdef USE_NONBLOCKING_API
-                    shmem_ctx_putmem_nbi(ctx, dst + thread_id * len, 
-                                         src + thread_id * len, len, dest);
+                    shmem_ctx_putmem_nbi(ctx, metric_info->dest + thread_id * len, 
+                                         metric_info->src + thread_id * len, len, dest);
 #else
-                    shmem_ctx_putmem(ctx, dst + thread_id * len, 
-                                     src + thread_id * len, len, dest);
+                    shmem_ctx_putmem(ctx, metric_info->dest + thread_id * len, 
+                                     metric_info->src + thread_id * len, len, dest);
 #endif
                 }
                 shmem_ctx_quiet(ctx);
@@ -78,7 +74,7 @@ shared(metric_info, src, dst, start, end) num_threads(metric_info->nthreads)
     shmem_barrier_all();
     if (streaming_node) {
 #pragma omp parallel default(none) firstprivate(len, dest) private(i, j) \
-shared(metric_info, src, dst, start, end) num_threads(metric_info->nthreads)
+shared(metric_info, start, end) num_threads(metric_info->nthreads)
         {
             const int thread_id = omp_get_thread_num();
             shmem_ctx_t ctx;
@@ -93,11 +89,11 @@ shared(metric_info, src, dst, start, end) num_threads(metric_info->nthreads)
             for (i = 0; i < metric_info->trials; i++) {
                 for (j = 0; j < metric_info->window_size; j++) {
 #ifdef USE_NONBLOCKING_API
-                    shmem_ctx_putmem_nbi(ctx, dst + thread_id * len, 
-                                         src + thread_id * len, len, dest);
+                    shmem_ctx_putmem_nbi(ctx, metric_info->dest + thread_id * len, 
+                                         metric_info->src + thread_id * len, len, dest);
 #else
-                    shmem_ctx_putmem(ctx, dst + thread_id * len, 
-                                     src + thread_id * len, len, dest);
+                    shmem_ctx_putmem(ctx, metric_info->dest + thread_id * len, 
+                                     metric_info->src + thread_id * len, len, dest);
 #endif
                 }
                 shmem_ctx_quiet(ctx);
@@ -113,8 +109,4 @@ shared(metric_info, src, dst, start, end) num_threads(metric_info->nthreads)
     }
 
     shmem_barrier_all();
-
-    aligned_buffer_free(src);
-    aligned_buffer_free(dst);
-
 }
