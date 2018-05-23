@@ -23,6 +23,7 @@ include(shmem_bind_c.m4)dnl
 #define SHMEMX_H
 
 #include <stddef.h>
+#include <shmem.h>
 
 #define HAVE_SHMEMX_WTIME
 

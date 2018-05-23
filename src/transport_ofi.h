@@ -1236,23 +1236,40 @@ uint64_t shmem_transport_get_pending_get_cntr(shmem_transport_ctx_t *ctx)
 static inline
 uint64_t shmem_transport_get_fi_put_cntr(shmem_transport_ctx_t *ctx)
 {
-    return fi_cntr_read(ctx->put_cntr);
+    uint64_t cnt = 0;
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    cnt = fi_cntr_read(ctx->put_cntr);
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+    return cnt;
 }
 
 static inline
 uint64_t shmem_transport_get_fi_get_cntr(shmem_transport_ctx_t *ctx)
 {
-    return fi_cntr_read(ctx->get_cntr);
+    uint64_t cnt = 0;
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    cnt = fi_cntr_read(ctx->get_cntr);
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+    return cnt;
 }
 
 static inline
 uint64_t shmem_transport_get_fi_target_cntr(shmem_transport_ctx_t *ctx)
 {
+    uint64_t cnt = 0;
 #if ENABLE_TARGET_CNTR
-    return fi_cntr_read(shmem_transport_ofi_target_cntrfd);
+#  ifdef USE_THREAD_COMPLETION
+    if (0 == pthread_mutex_lock(&shmem_transport_ofi_progress_lock)) {
+#  endif
+        cnt = fi_cntr_read(shmem_transport_ofi_target_cntrfd);
+#  ifdef USE_THREAD_COMPLETION
+        pthread_mutex_unlock(&shmem_transport_ofi_progress_lock);
+    }
+#  endif
 #else
-    return -1;
+    cnt = -1;
 #endif
+    return cnt;
 }
 
 #endif /* TRANSPORT_OFI_H */

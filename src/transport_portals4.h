@@ -1317,25 +1317,43 @@ void shmem_transport_syncmem(void)
 static inline
 uint64_t shmem_transport_get_pending_put_cntr(shmem_transport_ctx_t *ctx)
 {
-    return -1;
+    uint64_t cnt = 0;
+    cnt = shmem_internal_atomic_read(&shmem_transport_portals4_pending_put_event_cntr);
+    cnt += shmem_internal_atomic_read(ctx->pending_put_cntr);
+    return cnt;
 }
 
 static inline
 uint64_t shmem_transport_get_pending_get_cntr(shmem_transport_ctx_t *ctx)
 {
-    return -1;
+    uint64_t cnt = 0;
+    cnt = shmem_internal_atomic_read(&shmem_transport_portals4_pending_get_event_cntr);
+    cnt += shmem_internal_atomic_read(ctx->pending_get_cntr);
+    return cnt;
 }
 
 static inline
 uint64_t shmem_transport_get_fi_put_cntr(shmem_transport_ctx_t *ctx)
 {
-    return -1;
+    int ret;
+    ptl_ct_event_t ev;
+
+    ret = PtlCTGet(ctx->put_ct, &ev);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+
+    return ev.success;
 }
 
 static inline
 uint64_t shmem_transport_get_fi_get_cntr(shmem_transport_ctx_t *ctx)
 {
-    return -1;
+    int ret;
+    ptl_ct_event_t ev;
+
+    ret = PtlCTGet(ctx->get_ct, &ev);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+
+    return ev.success;
 }
 
 static inline
