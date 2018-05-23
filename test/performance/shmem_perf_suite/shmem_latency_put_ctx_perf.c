@@ -31,7 +31,6 @@
 **
 **  -in micro seconds
 **
-**NOTE: this test assumes correctness of reduction algorithm
 */
 
 #define ENABLE_OPENMP

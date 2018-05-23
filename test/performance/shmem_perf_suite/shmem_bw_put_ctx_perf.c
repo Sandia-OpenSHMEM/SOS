@@ -31,7 +31,6 @@
 **
 **  -by default megabytes/second results
 **
-**NOTE: this test assumes correctness of reduction algorithm
 */
 
 #define ENABLE_OPENMP

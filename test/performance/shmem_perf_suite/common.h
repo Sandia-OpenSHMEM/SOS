@@ -266,9 +266,9 @@ static void aligned_buffer_free(char * ptr_aligned)
 
 static inline 
 int is_divisible_by_4(int num) {
-    assert(num >= 0);
-    assert(sizeof(int) == 4);
-    return (!(num & 0x00000003));
+    if (num < 0)
+        shmem_global_exit(1);
+    return (num % 4 == 0);
 }
 
 /*to be a power of 2 must only have 1 set bit*/
@@ -422,7 +422,7 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t *metric_info) 
                 errors++;
             }
 #else
-            fprintf(stderr, "ENABLE_THREADS not defined. "
+            fprintf(stderr, "Threading support disabled. "
                             "Ignoring threading level: \"%s\"\n", optarg);
             metric_info->thread_safety = 0;
 #endif
