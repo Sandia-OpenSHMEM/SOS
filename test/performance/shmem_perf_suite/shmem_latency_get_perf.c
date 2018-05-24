@@ -42,7 +42,7 @@
 int main(int argc, char *argv[])
 {
 
-    latency_main(argc, argv);
+    latency_main(argc, argv, STYLE_GET);
 
     return 0;
 }  /* end of main() */
@@ -51,40 +51,56 @@ int main(int argc, char *argv[])
 void
 long_element_round_trip_latency(perf_metrics_t data)
 {
+#ifndef USE_NONBLOCKING_API
     long_element_round_trip_latency_get(data);
+#endif
 }
 
 void
 int_element_latency(perf_metrics_t data)
 {
+#ifndef USE_NONBLOCKING_API
     int_g_latency(data);
+#endif
 }
 
 void
-streaming_latency(int len, perf_metrics_t *data)
+streaming_latency(int len, perf_metrics_t *metric_info)
 {
     double start = 0.0;
     double end = 0.0;
     unsigned long int i = 0;
-    static int print_once = 0;
-    if(!print_once && data->my_node == GET_IO_NODE) {
-        printf("\nStreaming results for %d trials each of length %d through %d in"\
-              " powers of %d\n", data->trials, data->start_len,
-              data->max_len, data->inc);
-        print_results_header();
-        print_once++;
+    int dest = partner_node(*metric_info);
+    int receiver = (metric_info->num_pes != 1) ? streaming_node(*metric_info) : true;
+    static int check_once = 0;
+
+    if (!check_once) {
+        /* check to see whether sender and receiver are the same process */
+        if (dest == metric_info->my_node) {
+            fprintf(stderr, "Warning: Sender and receiver are the same process (%d)\n",
+                             dest);
+        }
+        /* hostname validation for all sender and receiver processes */
+        int status = check_hostname_validation(*metric_info);
+        if (status != 0) return;
+        check_once++;
     }
 
-    if (data->my_node == 0) {
+    shmem_barrier_all();
+    if (receiver) {
 
-        for (i = 0; i < data->trials + data->warmup; i++) {
-            if(i == data->warmup)
+        for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
+            if(i == metric_info->warmup)
                 start = perf_shmemx_wtime();
-
-            shmem_getmem(data->dest, data->src, len, 1);
+#ifdef USE_NONBLOCKING_API
+            shmem_getmem_nbi(metric_info->dest, metric_info->src, len, dest);
+            shmem_quiet();
+#else
+            shmem_getmem(metric_info->dest, metric_info->src, len, dest);
+#endif
         }
         end = perf_shmemx_wtime();
 
-        calc_and_print_results(start, end, len, *data);
+        calc_and_print_results(start, end, len, *metric_info);
     }
 } /* latency/bw for one-way trip */

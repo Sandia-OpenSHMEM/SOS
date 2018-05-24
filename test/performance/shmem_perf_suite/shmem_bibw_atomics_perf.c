@@ -33,7 +33,6 @@
 **
 **  -by default megabytes/second results
 **
-**NOTE: this test assumes correctness of reduction algorithm
 */
 
 #include <bw_common.h>
@@ -170,7 +169,7 @@ static inline void bw_set_metric_info_len(perf_metrics_t *metric_info)
                                         sizeof(long long)};
     int snode = streaming_node(*metric_info);
     atomic_op_type op_type = OP_ADD;
-    metric_info->type = BI_DIR;
+    metric_info->b_type = BI_DIR;
 
     for(op_type = OP_ADD; op_type < SIZE_OF_OP; op_type++) {
         if(metric_info->my_node == 0 && op_type != OP_ADD)
