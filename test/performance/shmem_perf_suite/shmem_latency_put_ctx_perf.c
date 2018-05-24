@@ -2,11 +2,11 @@
  *  Copyright (c) 2018 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
- *      Redistribution and use in source and binary forms, with or
- *      without modification, are permitted provided that the following
- *      conditions are met:
+ * *	Redistribution and use in source and binary forms, with or
+ *	without modification, are permitted provided that the following
+ *	conditions are met:
  *
- *      - Redistributions of source code must retain the above
+ *	- Redistributions of source code must retain the above
  *        copyright notice, this list of conditions and the following
  *        disclaimer.
  *
@@ -23,30 +23,30 @@
  * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- */
-
-/*
 **
-**  This is a bandwidth centric test for put: back-to-back message rate
+**  This is a latency test for put.
 **
-**  Features of Test: bi-direction bandwidth
+**  Features of Test: latency using contexts driven by
+**  multiple threads.
 **
-**  -by default megabytes/second results
+**  -in micro seconds
 **
 */
 
-#include <bw_common.h>
-#include <bi_dir.h>
+#define ENABLE_OPENMP
+
+#include <latency_common.h>
+#include <latency_ctx.h>
 
 int main(int argc, char *argv[])
 {
-    bi_dir_bw_main(argc, argv);
+    latency_main_ctx(argc, argv, STYLE_PUT);
 
     return 0;
 }
 
 void
-bi_dir_bw(int len, perf_metrics_t *metric_info)
+streaming_latency(int len, perf_metrics_t *metric_info)
 {
-    bi_bw_put(len, metric_info);
+    streaming_put_latency_ctx(len, metric_info, streaming_node(*metric_info));
 }
