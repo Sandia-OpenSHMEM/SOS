@@ -235,19 +235,19 @@ void calc_and_print_results(double end_t, double start_t, int len,
     }
 }
 
-static void validate_atomics(perf_metrics_t m_info) {
+static int validate_atomics(perf_metrics_t m_info) {
     int snode = streaming_node(m_info);
     int * my_buf = (int *)m_info.dest;
     bw_type tbw = m_info.b_type;
-    int expected_val = 0;
+    int expected_val = 0, errors = 0;
     unsigned int ppe_exp_val = ((m_info.trials + m_info.warmup) * m_info.window_size
                                 * ATOMICS_N_DTs * ATOMICS_N_OPs) + m_info.my_node;
 
-    if(m_info.cstyle == COMM_INCAST) {
-        if(tbw == BI_DIR)
+    if (m_info.cstyle == COMM_INCAST) {
+        if (tbw == BI_DIR) 
             printf("WARNING: This use-case is not currently well defined\n");
 
-        if(m_info.my_node == 0) {
+        if (m_info.my_node == 0) {
             expected_val = ppe_exp_val * m_info.num_pes;
         } else
             expected_val = m_info.my_node;
@@ -256,11 +256,15 @@ static void validate_atomics(perf_metrics_t m_info) {
         expected_val = ppe_exp_val;
     }
 
-    if((!snode && tbw == UNI_DIR) || tbw == BI_DIR) {
-        if(my_buf[0] != expected_val)
-            printf("validation error for PE %d: %d != %d \n", m_info.my_node, my_buf[0],
+    if ((!snode && tbw == UNI_DIR) || tbw == BI_DIR) {
+        if(my_buf[0] != expected_val) {
+            printf("Validation error for PE %d: %d != %d \n", m_info.my_node, my_buf[0],
                     expected_val);
+            errors++;
+        }
     }
+
+    return errors;
 }
 
 /**************************************************************/
@@ -294,12 +298,15 @@ void bi_dir_bw_test_and_output(perf_metrics_t metric_info) {
 
     shmem_barrier_all();
 
-    if(metric_info.validate) {
-        if(metric_info.opstyle != STYLE_ATOMIC) {
-            validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
+    if (metric_info.validate) {
+        int errors = -1;
+        if (metric_info.opstyle != STYLE_ATOMIC) {
+            errors = validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
         } else {
-            validate_atomics(metric_info);
+            errors = validate_atomics(metric_info);
         }
+        if (errors >= 0) 
+            printf("Validation complete (%d errors)\n", errors);
     }
 }
 
@@ -334,13 +341,16 @@ void uni_dir_bw_test_and_output(perf_metrics_t metric_info) {
 
     shmem_barrier_all();
 
-    if(metric_info.validate) {
-        if((streaming_node(metric_info) && metric_info.opstyle == STYLE_GET) ||
+    if (metric_info.validate) {
+        int errors = -1;
+        if ((streaming_node(metric_info) && metric_info.opstyle == STYLE_GET) ||
             (target_node(metric_info) && metric_info.opstyle == STYLE_PUT)) {
-            validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
-        } else if(metric_info.opstyle == STYLE_ATOMIC) {
-            validate_atomics(metric_info);
+            errors = validate_recv(metric_info.dest, metric_info.max_len, partner_pe);
+        } else if (metric_info.opstyle == STYLE_ATOMIC) {
+            errors = validate_atomics(metric_info);
         }
+        if (errors >= 0) 
+            printf("Validation complete (%d errors)\n", errors);
     }
 }
 
@@ -402,8 +412,9 @@ int bw_init_data_stream(perf_metrics_t *metric_info,
 }
 
 
-static inline int bi_dir_init(perf_metrics_t *metric_info, int argc,
-                                char *argv[], op_style opstyle) {
+static inline 
+int bi_dir_init(perf_metrics_t *metric_info, int argc,
+                char *argv[], op_style opstyle) {
     int ret = bw_init_data_stream(metric_info, argc, argv);
     if (ret == 0) {
         metric_info->opstyle = opstyle;
