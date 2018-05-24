@@ -62,7 +62,7 @@ start_pes(int npes)
 void SHMEM_FUNCTION_ATTRIBUTES
 shmem_init(void)
 {
-    int tl_provided;
+    int tl_provided;    
 
     if (shmem_internal_initialized) {
         RAISE_ERROR_STR("attempt to reinitialize library");
