@@ -53,11 +53,9 @@
 void SHMEM_FUNCTION_ATTRIBUTES
 start_pes(int npes)
 {
-    if (shmem_internal_initialized) {
-        RAISE_ERROR_STR("attempt to reinitialize library");
+    if (!shmem_internal_initialized) {
+        shmem_internal_start_pes(npes);
     }
-
-    shmem_internal_start_pes(npes);
 }
 
 
