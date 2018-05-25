@@ -1572,6 +1572,25 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 {
     int ret;
 
+    if(shmem_internal_params.DEBUG) {
+        SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+        SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
+        DEBUG_MSG("id = %d, options = %#0lx, stx_idx = %d\n"
+                  RAISE_PE_PREFIX "pending_put_cntr = %9"PRIu64", completed_put_cntr = %9"PRIu64"\n"
+                  RAISE_PE_PREFIX "pending_get_cntr = %9"PRIu64", completed_get_cntr = %9"PRIu64"\n"
+                  RAISE_PE_PREFIX "pending_bb_cntr  = %9"PRIu64", completed_bb_cntr  = %9"PRIu64"\n",
+                  ctx->id, (unsigned long) ctx->options, ctx->stx_idx,
+                  shmem_internal_my_pe,
+                  SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr), fi_cntr_read(ctx->put_cntr),
+                  shmem_internal_my_pe,
+                  SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr), fi_cntr_read(ctx->get_cntr),
+                  shmem_internal_my_pe,
+                  ctx->pending_bb_cntr, ctx->completed_bb_cntr
+                 );
+        SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
+        SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+    }
+
     if (ctx->cntr_ep) {
         ret = fi_close(&ctx->cntr_ep->fid);
         OFI_CHECK_ERROR_MSG(ret, "Context CNTR endpoint close failed (%s)\n", fi_strerror(errno));
