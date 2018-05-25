@@ -167,9 +167,9 @@ static inline void bw_set_metric_info_len(perf_metrics_t *metric_info)
 {
     unsigned int atomic_sizes[ATOMICS_N_DTs] = {sizeof(int), sizeof(long),
                                         sizeof(long long)};
+    metric_info->b_type = BI_DIR;
     int snode = streaming_node(*metric_info);
     atomic_op_type op_type = OP_ADD;
-    metric_info->b_type = BI_DIR;
 
     for(op_type = OP_ADD; op_type < SIZE_OF_OP; op_type++) {
         if(metric_info->my_node == 0 && op_type != OP_ADD)
