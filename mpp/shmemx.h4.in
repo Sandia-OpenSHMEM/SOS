@@ -33,6 +33,6 @@ define(`SHPRE', `')dnl
 include(shmemx_c_func.h4)dnl
 
 /* Option to enable bounce buffering on a given context */
-#define SHMEMX_CTX_BOUNCE_BUFFER  (1<<31)
+#define SHMEMX_CTX_BOUNCE_BUFFER  (1l<<31)
 
 #endif /* SHMEMX_H */
