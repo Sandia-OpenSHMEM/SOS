@@ -314,31 +314,31 @@ void shmem_transport_syncmem(void)
 static inline
 uint64_t shmem_transport_get_pending_put_cntr(shmem_transport_ctx_t *ctx)
 {
-    return -1;
+    return 0;
 }
 
 static inline
 uint64_t shmem_transport_get_pending_get_cntr(shmem_transport_ctx_t *ctx)
 {
-    return -1;
+    return 0;
 }
 
 static inline
 uint64_t shmem_transport_get_fi_put_cntr(shmem_transport_ctx_t *ctx)
 {
-    return -1;
+    return 0;
 }
 
 static inline
 uint64_t shmem_transport_get_fi_get_cntr(shmem_transport_ctx_t *ctx)
 {
-    return -1;
+    return 0;
 }
 
 static inline
 uint64_t shmem_transport_get_fi_target_cntr(shmem_transport_ctx_t *ctx)
 {
-    return -1;
+    return 0;
 }
 
 #endif /* TRANSPORT_NONE_H */

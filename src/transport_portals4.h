@@ -1314,34 +1314,21 @@ void shmem_transport_syncmem(void)
     PtlAtomicSync();
 }
 
-#ifdef ENABLE_THREADS
-#define SHMEM_TRANSPORT_PTL4_CNTR_LOCK(ctx) SHMEM_MUTEX_LOCK(ctx) 
-#define SHMEM_TRANSPORT_PTL4_CNTR_UNLOCK(ctx) SHMEM_MUTEX_UNLOCK(ctx)
-#define SHMEM_TRANSPORT_PTL4_CNTR_READ(cntr) *(cntr) 
-#else 
-#define SHMEM_TRANSPORT_PTL4_CNTR_LOCK(ctx) 
-#define SHMEM_TRANSPORT_PTL4_CNTR_UNLOCK(ctx) 
-#define SHMEM_TRANSPORT_PTL4_CNTR_READ(cntr) shmem_internal_atomic_read(cntr) 
-#endif
-
 static inline
 uint64_t shmem_transport_get_pending_put_cntr(shmem_transport_ctx_t *ctx)
 {
     uint64_t cnt = 0;
-    SHMEM_TRANSPORT_PTL4_CNTR_LOCK(shmem_internal_mutex_ptl4_ctx);
-    cnt = SHMEM_TRANSPORT_PTL4_CNTR_READ(&shmem_transport_portals4_pending_put_event_cntr);
-    cnt += SHMEM_TRANSPORT_PTL4_CNTR_READ(&ctx->pending_put_cntr);
-    SHMEM_TRANSPORT_PTL4_CNTR_UNLOCK(shmem_internal_mutex_ptl4_ctx);
+    if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
+        cnt = shmem_internal_atomic_read(&shmem_transport_portals4_pending_put_event_cntr);
+    }
+    cnt += shmem_internal_atomic_read(&ctx->pending_put_cntr);
     return cnt;
 }
 
 static inline
 uint64_t shmem_transport_get_pending_get_cntr(shmem_transport_ctx_t *ctx)
 {
-    uint64_t cnt = 0;
-    SHMEM_TRANSPORT_PTL4_CNTR_LOCK(shmem_internal_mutex_ptl4_ctx);
-    cnt = SHMEM_TRANSPORT_PTL4_CNTR_READ(&ctx->pending_get_cntr);
-    SHMEM_TRANSPORT_PTL4_CNTR_UNLOCK(shmem_internal_mutex_ptl4_ctx);
+    uint64_t cnt = shmem_internal_atomic_read(&ctx->pending_get_cntr);
     return cnt;
 }
 
@@ -1351,12 +1338,16 @@ uint64_t shmem_transport_get_fi_put_cntr(shmem_transport_ctx_t *ctx)
     int ret;
     ptl_ct_event_t ev;
 
-    SHMEM_TRANSPORT_PTL4_CNTR_LOCK(shmem_internal_mutex_ptl4_ctx);
     ret = PtlCTGet(ctx->put_ct, &ev);
-    SHMEM_TRANSPORT_PTL4_CNTR_UNLOCK(shmem_internal_mutex_ptl4_ctx);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 
-    return (uint64_t) ev.success;
+    uint64_t cnt = ev.success;
+    if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
+        ret = PtlCTGet(shmem_transport_portals4_put_event_ct_h, &ev);
+        if (PTL_OK != ret) { RAISE_ERROR(ret); }
+        cnt += ev.success;
+    }
+    return cnt;
 }
 
 static inline
@@ -1365,9 +1356,7 @@ uint64_t shmem_transport_get_fi_get_cntr(shmem_transport_ctx_t *ctx)
     int ret;
     ptl_ct_event_t ev;
 
-    SHMEM_TRANSPORT_PTL4_CNTR_LOCK(shmem_internal_mutex_ptl4_ctx);
     ret = PtlCTGet(ctx->get_ct, &ev);
-    SHMEM_TRANSPORT_PTL4_CNTR_UNLOCK(shmem_internal_mutex_ptl4_ctx);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 
     return (uint64_t) ev.success;
@@ -1385,7 +1374,7 @@ uint64_t shmem_transport_get_fi_target_cntr(shmem_transport_ctx_t *ctx)
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
     return (uint64_t) ev.success;
 #else
-    return (uint64_t) -1;
+    return 0;
 #endif
 }
 

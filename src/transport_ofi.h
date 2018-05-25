@@ -1216,7 +1216,7 @@ void shmem_transport_syncmem(void)
 static inline
 uint64_t shmem_transport_get_pending_put_cntr(shmem_transport_ctx_t *ctx)
 {
-    uint64_t cnt = 0;
+    uint64_t cnt;
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
@@ -1226,7 +1226,7 @@ uint64_t shmem_transport_get_pending_put_cntr(shmem_transport_ctx_t *ctx)
 static inline
 uint64_t shmem_transport_get_pending_get_cntr(shmem_transport_ctx_t *ctx)
 {
-    uint64_t cnt = 0;
+    uint64_t cnt;
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr);
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
@@ -1236,7 +1236,7 @@ uint64_t shmem_transport_get_pending_get_cntr(shmem_transport_ctx_t *ctx)
 static inline
 uint64_t shmem_transport_get_fi_put_cntr(shmem_transport_ctx_t *ctx)
 {
-    uint64_t cnt = 0;
+    uint64_t cnt;
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     cnt = fi_cntr_read(ctx->put_cntr);
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
@@ -1246,7 +1246,7 @@ uint64_t shmem_transport_get_fi_put_cntr(shmem_transport_ctx_t *ctx)
 static inline
 uint64_t shmem_transport_get_fi_get_cntr(shmem_transport_ctx_t *ctx)
 {
-    uint64_t cnt = 0;
+    uint64_t cnt;
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     cnt = fi_cntr_read(ctx->get_cntr);
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
@@ -1267,7 +1267,7 @@ uint64_t shmem_transport_get_fi_target_cntr(shmem_transport_ctx_t *ctx)
     }
 #  endif
 #else
-    cnt = -1;
+    cnt = 0;
 #endif
     return cnt;
 }

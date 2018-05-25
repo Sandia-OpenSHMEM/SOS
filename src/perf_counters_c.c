@@ -4,7 +4,7 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2017 Intel Corporation. All rights reserved.
+ * Copyright (c) 2018 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -13,8 +13,6 @@
  *
  */
 
-#define SHMEM_INTERNAL_INCLUDE
-#include "shmem.h"
 #include "shmem_internal.h"
 #include "transport.h"
 
@@ -55,7 +53,7 @@ shmemx_pcntr_get_pending_get(shmem_ctx_t ctx, uint64_t *cntr_value)
 }
 
 void SHMEM_FUNCTION_ATTRIBUTES 
-shmemx_pcntr_get_fi_put(shmem_ctx_t ctx, uint64_t *cntr_value)
+shmemx_pcntr_get_completed_put(shmem_ctx_t ctx, uint64_t *cntr_value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     *cntr_value = shmem_transport_get_fi_put_cntr((shmem_transport_ctx_t *) ctx);
@@ -63,7 +61,7 @@ shmemx_pcntr_get_fi_put(shmem_ctx_t ctx, uint64_t *cntr_value)
 }
 
 void SHMEM_FUNCTION_ATTRIBUTES 
-shmemx_pcntr_get_fi_get(shmem_ctx_t ctx, uint64_t *cntr_value)
+shmemx_pcntr_get_completed_get(shmem_ctx_t ctx, uint64_t *cntr_value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     *cntr_value = shmem_transport_get_fi_get_cntr((shmem_transport_ctx_t *) ctx);
@@ -71,7 +69,7 @@ shmemx_pcntr_get_fi_get(shmem_ctx_t ctx, uint64_t *cntr_value)
 }
 
 void SHMEM_FUNCTION_ATTRIBUTES
-shmemx_pcntr_get_fi_target(shmem_ctx_t ctx, uint64_t *cntr_value)
+shmemx_pcntr_get_completed_target(shmem_ctx_t ctx, uint64_t *cntr_value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     *cntr_value = shmem_transport_get_fi_target_cntr((shmem_transport_ctx_t *) ctx);
