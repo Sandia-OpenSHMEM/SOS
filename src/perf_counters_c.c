@@ -19,20 +19,20 @@
 #ifdef ENABLE_PROFILING
 #include "pshmem.h"
 
-#pragma weak shmem_pcntr_get_pending_put = pshmem_pcntr_get_pending_put
-#define shmem_pcntr_get_pending_put pshmem_pcntr_get_pending_put
+#pragma weak shmemx_pcntr_get_pending_put = pshmemx_pcntr_get_pending_put
+#define shmemx_pcntr_get_pending_put pshmemx_pcntr_get_pending_put
 
-#pragma weak shmem_pcntr_get_pending_get = pshmem_pcntr_get_pending_get
-#define shmem_pcntr_get_pending_get pshmem_pcntr_get_pending_get
+#pragma weak shmemx_pcntr_get_pending_get = pshmemx_pcntr_get_pending_get
+#define shmemx_pcntr_get_pending_get pshmemx_pcntr_get_pending_get
 
-#pragma weak shmem_pcntr_get_fi_put = pshmem_pcntr_get_fi_put
-#define shmem_pcntr_get_fi_put pshmem_pcntr_get_fi_put
+#pragma weak shmemx_pcntr_get_completed_put = pshmemx_pcntr_get_completed_put
+#define shmemx_pcntr_get_completed_put pshmemx_pcntr_get_completed_put
 
-#pragma weak shmem_pcntr_get_fi_get = pshmem_pcntr_get_fi_get
-#define shmem_pcntr_get_fi_get pshmem_pcntr_get_fi_get
+#pragma weak shmemx_pcntr_get_completed_get = pshmemx_pcntr_get_completed_get
+#define shmemx_pcntr_get_completed_get pshmemx_pcntr_get_completed_get
 
-#pragma weak shmem_pcntr_get_fi_target = pshmem_pcntr_get_fi_target
-#define shmem_pcntr_get_fi_target pshmem_pcntr_get_fi_target
+#pragma weak shmemx_pcntr_get_completed_target = pshmemx_pcntr_get_completed_target
+#define shmemx_pcntr_get_completed_target pshmemx_pcntr_get_completed_target
 
 #endif /* ENABLE_PROFILING */
 
