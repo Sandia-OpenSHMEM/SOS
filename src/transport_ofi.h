@@ -270,6 +270,9 @@ struct shmem_transport_ctx_t {
     shmem_internal_atomic_uint64_t  pending_put_cntr;
     shmem_internal_atomic_uint64_t  pending_get_cntr;
 #endif
+    /* These counters are protected by the BB lock */
+    uint64_t                        pending_bb_cntr;
+    uint64_t                        completed_bb_cntr;
     shmem_free_list_t              *bounce_buffers;
     int                             stx_idx;
     struct shmem_internal_tid       tid;
@@ -361,6 +364,7 @@ void shmem_transport_ofi_drain_cq(shmem_transport_ctx_t *ctx)
             if (SHMEM_TRANSPORT_OFI_TYPE_BOUNCE == frag->mytype) {
                 shmem_free_list_free(ctx->bounce_buffers,
                                      (shmem_transport_ofi_bounce_buffer_t *) frag);
+                ctx->completed_bb_cntr++;
             } else {
                 RAISE_ERROR_STR("Unrecognized completion object");
             }
@@ -392,6 +396,7 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_transport_ctx_t
     }
 
     buff = (shmem_transport_ofi_bounce_buffer_t*) shmem_free_list_alloc(ctx->bounce_buffers);
+    ctx->pending_bb_cntr++;
 
     SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
 
