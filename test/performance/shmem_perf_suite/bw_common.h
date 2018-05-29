@@ -370,6 +370,12 @@ int bw_init_data_stream(perf_metrics_t *metric_info,
             print_usage(ret);
         }
         return -1;
+    } else {
+        if (metric_info->num_pes < 2) {
+            fprintf(stderr, "This test requires at least two processes.\n");
+            print_usage(1);
+            return -1;
+        }
     }
 
     if (error_checking_init_target_usage(metric_info) == -1)
