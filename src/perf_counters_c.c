@@ -40,7 +40,7 @@ void SHMEM_FUNCTION_ATTRIBUTES
 shmemx_pcntr_get_pending_put(shmem_ctx_t ctx, uint64_t *cntr_value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    *cntr_value = shmem_transport_get_pending_put_cntr((shmem_transport_ctx_t *) ctx);
+    *cntr_value = shmem_transport_pcntr_get_pending_put((shmem_transport_ctx_t *) ctx);
     return;
 }
 
@@ -48,7 +48,7 @@ void SHMEM_FUNCTION_ATTRIBUTES
 shmemx_pcntr_get_pending_get(shmem_ctx_t ctx, uint64_t *cntr_value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    *cntr_value = shmem_transport_get_pending_get_cntr((shmem_transport_ctx_t *) ctx);
+    *cntr_value = shmem_transport_pcntr_get_pending_get((shmem_transport_ctx_t *) ctx);
     return;
 }
 
@@ -56,7 +56,7 @@ void SHMEM_FUNCTION_ATTRIBUTES
 shmemx_pcntr_get_completed_put(shmem_ctx_t ctx, uint64_t *cntr_value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    *cntr_value = shmem_transport_get_fi_put_cntr((shmem_transport_ctx_t *) ctx);
+    *cntr_value = shmem_transport_pcntr_get_completed_put((shmem_transport_ctx_t *) ctx);
     return;
 }
 
@@ -64,7 +64,7 @@ void SHMEM_FUNCTION_ATTRIBUTES
 shmemx_pcntr_get_completed_get(shmem_ctx_t ctx, uint64_t *cntr_value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    *cntr_value = shmem_transport_get_fi_get_cntr((shmem_transport_ctx_t *) ctx);
+    *cntr_value = shmem_transport_pcntr_get_completed_get((shmem_transport_ctx_t *) ctx);
     return;
 }
 
@@ -72,7 +72,7 @@ void SHMEM_FUNCTION_ATTRIBUTES
 shmemx_pcntr_get_completed_target(shmem_ctx_t ctx, uint64_t *cntr_value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    *cntr_value = shmem_transport_get_fi_target_cntr((shmem_transport_ctx_t *) ctx);
+    *cntr_value = shmem_transport_pcntr_get_completed_target((shmem_transport_ctx_t *) ctx);
     return;
 }
 
