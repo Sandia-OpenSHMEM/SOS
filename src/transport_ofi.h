@@ -1218,4 +1218,63 @@ void shmem_transport_syncmem(void)
     // transport routine will be a nop until an API is provided.
 }
 
+static inline
+uint64_t shmem_transport_pcntr_get_pending_put(shmem_transport_ctx_t *ctx)
+{
+    uint64_t cnt;
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+    return cnt;
+}
+
+static inline
+uint64_t shmem_transport_pcntr_get_pending_get(shmem_transport_ctx_t *ctx)
+{
+    uint64_t cnt;
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr);
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+    return cnt;
+}
+
+static inline
+uint64_t shmem_transport_pcntr_get_completed_put(shmem_transport_ctx_t *ctx)
+{
+    uint64_t cnt;
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    cnt = fi_cntr_read(ctx->put_cntr);
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+    return cnt;
+}
+
+static inline
+uint64_t shmem_transport_pcntr_get_completed_get(shmem_transport_ctx_t *ctx)
+{
+    uint64_t cnt;
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    cnt = fi_cntr_read(ctx->get_cntr);
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+    return cnt;
+}
+
+static inline
+uint64_t shmem_transport_pcntr_get_completed_target(shmem_transport_ctx_t *ctx)
+{
+    uint64_t cnt = 0;
+#if ENABLE_TARGET_CNTR
+#  ifdef USE_THREAD_COMPLETION
+    if (0 == pthread_mutex_lock(&shmem_transport_ofi_progress_lock)) {
+#  endif
+        cnt = fi_cntr_read(shmem_transport_ofi_target_cntrfd);
+#  ifdef USE_THREAD_COMPLETION
+        pthread_mutex_unlock(&shmem_transport_ofi_progress_lock);
+    }
+#  endif
+#else
+    cnt = 0;
+#endif
+    return cnt;
+}
+
 #endif /* TRANSPORT_OFI_H */
