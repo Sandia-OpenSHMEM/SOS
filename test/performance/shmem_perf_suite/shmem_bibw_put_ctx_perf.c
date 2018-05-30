@@ -42,7 +42,7 @@
 
 int main(int argc, char *argv[])
 {
-    bi_dir_bw_main(argc, argv);
+    bi_dir_bw_main(argc, argv, STYLE_PUT);
 
     return 0;
 }

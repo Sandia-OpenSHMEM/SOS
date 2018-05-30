@@ -41,90 +41,140 @@
 #define uni_bw(len, metric_info, snode, NAME, TYPE, op)               \
     do {                                                                       \
         double start = 0.0, end = 0.0;                                         \
-        unsigned long int i = 0, j = 0, num_itr = metric_info->trials + metric_info->warmup; \
+        unsigned long int i = 0, j = 0;                                        \
         int dest = partner_node(*metric_info);                                 \
         shmem_barrier_all();                                                   \
                                                                                \
-        if(snode) {                                                   \
-            switch(op) {                                                       \
-                case OP_ADD:                                                   \
-                    for(i = 0; i < num_itr; i++) {                             \
-                        if(i == metric_info->warmup)                           \
-                            start = perf_shmemx_wtime();                       \
-                                                                               \
+        switch(op) {                                                           \
+            case OP_ADD:                                                       \
+                if(snode) {                                                    \
+                    for(i = 0; i < metric_info->warmup; i++) {                 \
                         for(j = 0; j < metric_info->window_size; j++)          \
                             shmem_##NAME##_atomic_add(                         \
                                 (TYPE *)(metric_info->dest), ONE, dest);       \
                                                                                \
                         shmem_quiet();                                         \
+                    }                                                          \
+                }                                                              \
+                shmem_barrier_all();                                           \
+                if(snode) {                                                    \
+                    start = perf_shmemx_wtime();                               \
+                    for(i = 0; i < metric_info->trials; i++) {                 \
+                        for(j = 0; j < metric_info->window_size; j++)          \
+                            shmem_##NAME##_atomic_add(                         \
+                                (TYPE *)(metric_info->dest), ONE, dest);       \
                                                                                \
+                        shmem_quiet();                                         \
                     }                                                          \
                     end = perf_shmemx_wtime();                                 \
-                break;                                                         \
-                case OP_INC:                                                   \
-                    for(i = 0; i < num_itr; i++) {                             \
-                        if(i == metric_info->warmup)                           \
-                            start = perf_shmemx_wtime();                       \
-                                                                               \
+                }                                                              \
+            break;                                                             \
+            case OP_INC:                                                       \
+                if(snode) {                                                    \
+                    for(i = 0; i < metric_info->warmup; i++) {                 \
                         for(j = 0; j < metric_info->window_size; j++)          \
                             shmem_##NAME##_atomic_inc(                         \
                                 (TYPE *)(metric_info->dest), dest);            \
                                                                                \
                         shmem_quiet();                                         \
+                    }                                                          \
+                }                                                              \
+                shmem_barrier_all();                                           \
+                if(snode) {                                                    \
+                    start = perf_shmemx_wtime();                               \
+                    for(i = 0; i < metric_info->trials; i++) {                 \
+                        for(j = 0; j < metric_info->window_size; j++)          \
+                            shmem_##NAME##_atomic_inc(                         \
+                                (TYPE *)(metric_info->dest), dest);            \
                                                                                \
+                        shmem_quiet();                                         \
                     }                                                          \
                     end = perf_shmemx_wtime();                                 \
-                break;                                                         \
-                case OP_FADD:                                                  \
-                    for(i = 0; i < num_itr; i++) {                             \
-                        if(i == metric_info->warmup)                           \
-                            start = perf_shmemx_wtime();                       \
-                                                                               \
+                }                                                              \
+            break;                                                             \
+            case OP_FADD:                                                      \
+                if(snode) {                                                    \
+                    for(i = 0; i < metric_info->warmup; i++) {                 \
+                        for(j = 0; j < metric_info->window_size; j++)          \
+                            shmem_##NAME##_atomic_fetch_add(                   \
+                                (TYPE *)(metric_info->dest), ONE, dest);       \
+                    }                                                          \
+                }                                                              \
+                shmem_barrier_all();                                           \
+                if(snode) {                                                    \
+                    start = perf_shmemx_wtime();                               \
+                    for(i = 0; i < metric_info->trials; i++) {                 \
                         for(j = 0; j < metric_info->window_size; j++)          \
                             shmem_##NAME##_atomic_fetch_add(                   \
                                 (TYPE *)(metric_info->dest), ONE, dest);       \
                     }                                                          \
                     end = perf_shmemx_wtime();                                 \
-                break;                                                         \
-                case OP_FINC:                                                  \
-                    for(i = 0; i < num_itr; i++) {                             \
-                        if(i == metric_info->warmup)                           \
-                            start = perf_shmemx_wtime();                       \
-                                                                               \
+                }                                                              \
+            break;                                                             \
+            case OP_FINC:                                                      \
+                if(snode) {                                                    \
+                    for(i = 0; i < metric_info->warmup; i++) {                 \
+                        for(j = 0; j < metric_info->window_size; j++)          \
+                            shmem_##NAME##_atomic_fetch_inc(                   \
+                                (TYPE *)(metric_info->dest), dest);            \
+                    }                                                          \
+                }                                                              \
+                shmem_barrier_all();                                           \
+                if(snode) {                                                    \
+                    start = perf_shmemx_wtime();                               \
+                    for(i = 0; i < metric_info->trials; i++) {                 \
                         for(j = 0; j < metric_info->window_size; j++)          \
                             shmem_##NAME##_atomic_fetch_inc(                   \
                                 (TYPE *)(metric_info->dest), dest);            \
                     }                                                          \
                     end = perf_shmemx_wtime();                                 \
-                break;                                                         \
-                case OP_SWAP:                                                  \
-                    for(i = 0; i < num_itr; i++) {                             \
-                        if(i == metric_info->warmup)                           \
-                            start = perf_shmemx_wtime();                       \
-                                                                               \
+                }                                                              \
+            break;                                                             \
+            case OP_SWAP:                                                      \
+                if(snode) {                                                    \
+                    for(i = 0; i < metric_info->warmup; i++) {                 \
+                        for(j = 0; j < metric_info->window_size; j++)          \
+                            shmem_##NAME##_atomic_swap(                        \
+                                (TYPE *)(metric_info->src), ONE, dest);        \
+                    }                                                          \
+                }                                                              \
+                shmem_barrier_all();                                           \
+                if(snode) {                                                    \
+                    start = perf_shmemx_wtime();                               \
+                    for(i = 0; i < metric_info->trials; i++) {                 \
                         for(j = 0; j < metric_info->window_size; j++)          \
                             shmem_##NAME##_atomic_swap(                        \
                                 (TYPE *)(metric_info->src), ONE, dest);        \
                     }                                                          \
                     end = perf_shmemx_wtime();                                 \
-                break;                                                         \
-                case OP_CSWAP:                                                 \
-                    for(i = 0; i < num_itr; i++) {                             \
-                        if(i == metric_info->warmup)                           \
-                            start = perf_shmemx_wtime();                       \
-                                                                               \
+                }                                                              \
+            break;                                                             \
+            case OP_CSWAP:                                                     \
+                if(snode) {                                                    \
+                    for(i = 0; i < metric_info->warmup; i++) {                 \
+                        for(j = 0; j < metric_info->window_size; j++)          \
+                            shmem_##NAME##_atomic_compare_swap(                \
+                                (TYPE *)(metric_info->src), dest, ONE, dest);  \
+                    }                                                          \
+                }                                                              \
+                shmem_barrier_all();                                           \
+                if(snode) {                                                    \
+                    start = perf_shmemx_wtime();                               \
+                    for(i = 0; i < metric_info->trials; i++) {                 \
                         for(j = 0; j < metric_info->window_size; j++)          \
                             shmem_##NAME##_atomic_compare_swap(                \
                                 (TYPE *)(metric_info->src), dest, ONE, dest);  \
                     }                                                          \
                     end = perf_shmemx_wtime();                                 \
-                break;                                                         \
-                default:                                                       \
-                    fprintf(stderr, "Error %d not a valid op case              \
+                }                                                              \
+            break;                                                             \
+            default:                                                           \
+                fprintf(stderr, "Error %d not a valid op case                  \
                                                 for atomics\n", op);           \
-                break;                                                         \
-            }                                                                  \
-            calc_and_print_results(end, start, len, *metric_info);          \
+            break;                                                             \
+        }                                                                      \
+        if(snode) {                                                            \
+            calc_and_print_results(end, start, len, *metric_info);             \
         }                                                                      \
     } while(0)
 
@@ -147,7 +197,6 @@ static inline void bw_set_metric_info_len(perf_metrics_t *metric_info)
 {
     unsigned int atomic_sizes[ATOMICS_N_DTs] = {sizeof(int), sizeof(long),
                                         sizeof(long long)};
-    metric_info->cstyle = ATOMIC_COMM_STYLE;
     metric_info->b_type = UNI_DIR;
     int snode = streaming_node(*metric_info);
     atomic_op_type op_type = OP_ADD;
