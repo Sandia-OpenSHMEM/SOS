@@ -40,7 +40,7 @@
 
 int main(int argc, char *argv[])
 {
-    bi_dir_bw_main(argc,argv);
+    bi_dir_bw_main(argc, argv, STYLE_GET);
 
     return 0;
 }  /* end of main() */

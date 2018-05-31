@@ -117,9 +117,13 @@ void multi_size_latency(perf_metrics_t data, char *argv[]) {
     shmem_barrier_all();
 
     if (data.validate) {
-        if((streaming_node(data) && data.opstyle == STYLE_GET) ||
+        int errors = -1;
+        if ((streaming_node(data) && data.opstyle == STYLE_GET) ||
             (target_node(data) && data.opstyle == STYLE_PUT))
-            validate_recv(data.dest, data.max_len, partner_pe);
+            errors = validate_recv(data.dest, data.max_len, partner_pe);
+        
+        if (errors >= 0)
+            printf("Validation complete (%d errors)\n", errors);
     }
 }
 

@@ -294,18 +294,24 @@ void init_array(const char *buf, int len, int my_pe_num) {
 }
 
 static inline 
-void validate_recv(char *buf, int len, int partner_pe) {
+int validate_recv(char *buf, int len, int partner_pe) {
     int i = 0;
     int array_size = len / sizeof(int);
     int *ibuf = (int *)buf;
+    int errors = 0;
 
     assert(is_divisible_by_4(len));
 
-    for(i = 0; i < array_size; i++) {
-        if(ibuf[i] != partner_pe)
-            printf("validation error at index %d: %d != %d \n", i, ibuf[i],
-                    partner_pe);
+    for (i = 0; i < array_size; i++) {
+        if (ibuf[i] != partner_pe) {
+            errors++;
+        }
     }
+    if (errors > 0) {
+        printf("Validation error: stored_value = %d, expected value = %d\n", 
+                                  ibuf[0], partner_pe);
+    }
+    return errors;
 }
 
 /**************************************************************/
