@@ -36,7 +36,7 @@ static int rank = -1;
 static int size = 0;
 static char *kvs_name, *kvs_key, *kvs_value;
 static int max_name_len, max_key_len, max_val_len;
-static int PMI_Enabled_Flag = 0;
+static int PMI_enabled_flag = 0;
 
 #define SINGLETON_KEY_LEN 128
 #define SINGLETON_VAL_LEN 256
@@ -105,18 +105,16 @@ int
 shmem_runtime_init(void)
 {
     int initialized;
-
     if (PMI_SUCCESS != PMI_Initialized(&initialized)) {
         return 1;
     }
-
     if (!initialized) {
         if (PMI_SUCCESS != PMI_Init(&initialized)) {
             
             return 2;
         }
         else{
-            PMI_Enabled_Flag = 1;
+            PMI_enabled_flag = 1;
         }
     }
 
@@ -166,10 +164,11 @@ shmem_runtime_init(void)
 int
 shmem_runtime_fini(void)
 {
-    if(PMI_Enabled_Flag == 1){
+    if(PMI_enabled_flag){
         PMI_Finalize();
-        PMI_Enabled_Flag = 0;
+        PMI_enabled_flag = 0;
     }
+
 
     return 0;
 }
@@ -232,6 +231,7 @@ shmem_runtime_exchange(void)
 int
 shmem_runtime_put(char *key, void *value, size_t valuelen)
 {
+    printf("size; %i\n", size);
     snprintf(kvs_key, max_key_len, "shmem-%lu-%s", (long unsigned) rank, key);
     if (0 != encode(value, valuelen, kvs_value, max_val_len)) {
         return 1;
