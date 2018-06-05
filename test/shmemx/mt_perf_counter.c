@@ -30,7 +30,6 @@
 */
 
 #include <stdio.h>
-#include <assert.h>
 #include <pthread.h>
 #include <shmemx.h>
 #include <unistd.h>
@@ -46,8 +45,17 @@
 int me, npes;
 char *src_array, *dest_array;
 uint64_t c_put, c_get, p_put, p_get, target;
+shmem_ctx_t *active_contexts[T];
+int extra_ctx_count = 0;
 
 pthread_barrier_t fencebar;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static void add_ctx_to_collect(shmem_ctx_t *ctx) {
+    pthread_mutex_lock(&mutex);
+    active_contexts[extra_ctx_count++] = ctx;
+    pthread_mutex_unlock(&mutex);
+}
 
 static void * thread_main(void *arg) {
     int tid = *(int *) arg;
@@ -58,6 +66,7 @@ static void * thread_main(void *arg) {
 
     shmem_ctx_t ctx;
     shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
+    add_ctx_to_collect(&ctx);
 
     for (i = 0; i < ITER; i++) {
         for (j = 0; j < WINDOW; j++) {
@@ -84,10 +93,16 @@ static void collect(shmem_ctx_t ctx) {
 }
 
 static void *collector_main(void *arg) {
-    int i;
+    int i, j;
 
     for (i = 0; i < ITER; i++) {
         collect(SHMEM_CTX_DEFAULT);
+
+        pthread_mutex_lock(&mutex);
+        for (j = 0; j < extra_ctx_count; j++) {
+            collect(*active_contexts[j]);
+        }
+        pthread_mutex_unlock(&mutex);
     }
 
     return NULL;
@@ -126,19 +141,19 @@ int main(int argc, char **argv) {
     for (i = 0; i < T; i++) {
         t_arg[i] = i;
         err = pthread_create(&shmem_threads[i], NULL, thread_main, (void *) &t_arg[i]);
-        assert(0 == err);
+        if (err) { shmem_global_exit(err); }
     }
 
     err = pthread_create(&collector, NULL, collector_main, NULL);
-    assert(0 == err);
+    if (err) { shmem_global_exit(err); }
 
     for (i = 0; i < T; i++) {
         err = pthread_join(shmem_threads[i], NULL);
-        assert(0 == err);
+        if (err) { shmem_global_exit(err); }
     }
 
     err = pthread_join(collector, NULL);
-    assert(0 == err);
+    if (err) { shmem_global_exit(err); }
 
     pthread_barrier_destroy(&fencebar);    
 
