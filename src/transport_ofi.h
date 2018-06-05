@@ -1226,9 +1226,11 @@ uint64_t shmem_transport_pcntr_get_pending_put(shmem_transport_ctx_t *ctx)
     cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 
-    SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
-    cnt += ctx->pending_bb_cntr;
-    SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
+    if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
+        SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
+        cnt += ctx->pending_bb_cntr;
+        SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
+    }
     return cnt;
 }
 
@@ -1250,9 +1252,11 @@ uint64_t shmem_transport_pcntr_get_completed_put(shmem_transport_ctx_t *ctx)
     cnt = fi_cntr_read(ctx->put_cntr);
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 
-    SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
-    cnt += ctx->completed_bb_cntr;
-    SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
+    if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
+        SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
+        cnt += ctx->completed_bb_cntr;
+        SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
+    }
     return cnt;
 }
 
