@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
     pthread_barrier_init(&fencebar, NULL, T);
 
     if (me == 0) {
-        printf("Starting multi-threaded test on %d PEs, %d threads/PE\n", npes, T);
+        printf("Performance counter API test with  multiple threads %d PEs, %d threads/PE\n", npes, T);
     }
 
     for (i = 0; i < T; i++) {
@@ -142,7 +142,14 @@ int main(int argc, char **argv) {
 
     pthread_barrier_destroy(&fencebar);    
 
-    shmem_barrier_all(); 
+    shmem_barrier_all();
+    printf("Final value of the performance counters: \n"
+           "Completed Put = %10ld\n"
+           "Completed Get = %10ld\n"
+           "Pending Put   = %10ld\n"
+           "Pending Get   = %10ld\n"
+           "Target        = %10ld\n"
+           , c_put, c_get, p_put, p_get, target); 
 
     shmem_finalize();
     return 0;
