@@ -51,9 +51,17 @@ int extra_ctx_count = 0;
 pthread_barrier_t fencebar;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static void add_ctx_to_collect(shmem_ctx_t *ctx) {
+static void collect(shmem_ctx_t ctx) {
+    shmemx_pcntr_get_completed_put(ctx, &c_put);
+    shmemx_pcntr_get_completed_get(ctx, &c_get);
+    shmemx_pcntr_get_completed_target(ctx, &target);
+    shmemx_pcntr_get_pending_put(ctx, &p_put);
+    shmemx_pcntr_get_pending_get(ctx, &p_get);
+}
+
+static void locked_collect(shmem_ctx_t *ctx) {
     pthread_mutex_lock(&mutex);
-    active_contexts[extra_ctx_count++] = ctx;
+    collect(*ctx);
     pthread_mutex_unlock(&mutex);
 }
 
@@ -66,12 +74,12 @@ static void * thread_main(void *arg) {
 
     shmem_ctx_t ctx;
     shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
-    add_ctx_to_collect(&ctx);
 
     for (i = 0; i < ITER; i++) {
         for (j = 0; j < WINDOW; j++) {
             shmem_ctx_putmem_nbi(ctx, dest_array + tid * LENGTH, 
                                  src_array + tid * LENGTH, LENGTH, partner);
+            locked_collect(&ctx);
         }
         shmem_ctx_quiet(ctx);
     }
@@ -84,24 +92,12 @@ static void * thread_main(void *arg) {
     return NULL;
 }
 
-static void collect(shmem_ctx_t ctx) {
-    shmemx_pcntr_get_completed_put(ctx, &c_put);
-    shmemx_pcntr_get_completed_get(ctx, &c_get);
-    shmemx_pcntr_get_completed_target(ctx, &target);
-    shmemx_pcntr_get_pending_put(ctx, &p_put);
-    shmemx_pcntr_get_pending_get(ctx, &p_get);
-}
-
 static void *collector_main(void *arg) {
-    int i, j;
+    int i;
 
     for (i = 0; i < ITER; i++) {
-        collect(SHMEM_CTX_DEFAULT);
-
         pthread_mutex_lock(&mutex);
-        for (j = 0; j < extra_ctx_count; j++) {
-            collect(*active_contexts[j]);
-        }
+        collect(SHMEM_CTX_DEFAULT);
         pthread_mutex_unlock(&mutex);
     }
 
