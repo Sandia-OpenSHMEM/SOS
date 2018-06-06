@@ -45,8 +45,6 @@
 int me, npes;
 char *src_array, *dest_array;
 uint64_t c_put, c_get, p_put, p_get, target;
-shmem_ctx_t *active_contexts[T];
-int extra_ctx_count = 0;
 
 pthread_barrier_t fencebar;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
