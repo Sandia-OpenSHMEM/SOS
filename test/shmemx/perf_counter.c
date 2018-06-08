@@ -25,19 +25,12 @@
  * SOFTWARE.
  */
 
-/* Multi-threaded tests for validation of memory barrier implemented in 
- * different synchronization routines.
+/* Single-threaded test for validation of performance counter APIs
 */
 
 #include <stdio.h>
-#include <pthread.h>
 #include <shmemx.h>
-#include <unistd.h>
 
-/* For systems without the PThread barrier API (e.g. MacOS) */
-#include "pthread_barrier.h"
-
-#define T 2
 #define ITER 100
 #define WINDOW 64
 #define LENGTH 1024
@@ -45,9 +38,6 @@
 int me, npes;
 char *src_array, *dest_array;
 uint64_t c_put, c_get, p_put, p_get, target;
-
-pthread_barrier_t fencebar;
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void collect(shmem_ctx_t ctx) {
     shmemx_pcntr_get_completed_put(ctx, &c_put);
@@ -57,14 +47,7 @@ static void collect(shmem_ctx_t ctx) {
     shmemx_pcntr_get_pending_get(ctx, &p_get);
 }
 
-static void locked_collect(shmem_ctx_t *ctx) {
-    pthread_mutex_lock(&mutex);
-    collect(*ctx);
-    pthread_mutex_unlock(&mutex);
-}
-
-static void * thread_main(void *arg) {
-    int tid = *(int *) arg;
+static void put_and_progress_check(void) { 
     int i, j;
     int partner = ((npes % 2 == 0) ? (me % 2 == 0 ? me + 1 : me - 1) : 
                                      (me % 2 != 0 ? me - 1 : 
@@ -75,82 +58,31 @@ static void * thread_main(void *arg) {
 
     for (i = 0; i < ITER; i++) {
         for (j = 0; j < WINDOW; j++) {
-            shmem_ctx_putmem_nbi(ctx, dest_array + tid * LENGTH, 
-                                 src_array + tid * LENGTH, LENGTH, partner);
-            locked_collect(&ctx);
+            shmem_ctx_putmem_nbi(ctx, dest_array, src_array, LENGTH, partner);
+            collect(ctx);
         }
         shmem_ctx_quiet(ctx);
     }
 
     shmem_ctx_destroy(ctx);
-
-    pthread_barrier_wait(&fencebar);
-    if (0 == tid) shmem_barrier_all();
-
-    return NULL;
-}
-
-static void *collector_main(void *arg) {
-    int i;
-
-    for (i = 0; i < ITER; i++) {
-        pthread_mutex_lock(&mutex);
-        collect(SHMEM_CTX_DEFAULT);
-        pthread_mutex_unlock(&mutex);
-    }
-
-    return NULL;
+    return;
 }
 
 int main(int argc, char **argv) {
-    int tl, i, ret, err;
-    pthread_t shmem_threads[T], collector;
-    int t_arg[T];
-    unsigned long alignment = getpagesize();
 
-    ret = shmem_init_thread(SHMEM_THREAD_MULTIPLE, &tl);
-
-    if (tl != SHMEM_THREAD_MULTIPLE || ret != 0) {
-        printf("Init failed (requested thread level %d, got %d, ret %d)\n", 
-               SHMEM_THREAD_MULTIPLE, tl, ret);
-        if (ret == 0) {
-            shmem_global_exit(1);
-        } else {
-            return ret;
-        }
-    }
+    shmem_init();
 
     me = shmem_my_pe();
     npes = shmem_n_pes();
 
-    src_array = shmem_align(alignment, T * LENGTH);
-    dest_array = shmem_align(alignment, T * LENGTH);
-
-    pthread_barrier_init(&fencebar, NULL, T);
+    src_array = shmem_malloc(LENGTH);
+    dest_array = shmem_malloc(LENGTH);
 
     if (me == 0) {
-        printf("Performance counter API test with  multiple threads %d PEs, %d threads/PE\n", npes, T);
+        printf("Performance counter API test with %d PEs\n", npes);
     }
 
-    for (i = 0; i < T; i++) {
-        t_arg[i] = i;
-        err = pthread_create(&shmem_threads[i], NULL, thread_main, (void *) &t_arg[i]);
-        if (err) { shmem_global_exit(err); }
-    }
-
-    err = pthread_create(&collector, NULL, collector_main, NULL);
-    if (err) { shmem_global_exit(err); }
-
-    for (i = 0; i < T; i++) {
-        err = pthread_join(shmem_threads[i], NULL);
-        if (err) { shmem_global_exit(err); }
-    }
-
-    err = pthread_join(collector, NULL);
-    if (err) { shmem_global_exit(err); }
-
-    pthread_barrier_destroy(&fencebar);    
-
+    put_and_progress_check();
     shmem_barrier_all();
     printf("Final value of the performance counters: \n"
            "Completed Put = %10ld\n"
@@ -159,6 +91,9 @@ int main(int argc, char **argv) {
            "Pending Get   = %10ld\n"
            "Target        = %10ld\n"
            , c_put, c_get, p_put, p_get, target); 
+
+    shmem_free(dest_array);
+    shmem_free(src_array);
 
     shmem_finalize();
     return 0;

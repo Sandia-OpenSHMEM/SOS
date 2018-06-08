@@ -27,7 +27,7 @@ if HAVE_PTHREADS
 if SHMEMX_TESTS
 check_PROGRAMS += \
 	gettid_register \
-	mt_perf_counter
+	perf_counter
 endif
 endif
 
@@ -57,8 +57,4 @@ if SHMEMX_TESTS
 gettid_register_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 gettid_register_CFLAGS = $(PTHREAD_CFLAGS)
 gettid_register_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
-
-mt_perf_counter_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
-mt_perf_counter_CFLAGS = -I$(top_srcdir)/test/include $(PTHREAD_CFLAGS)
-mt_perf_counter_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 endif
