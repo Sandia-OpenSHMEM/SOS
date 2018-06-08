@@ -1378,4 +1378,14 @@ uint64_t shmem_transport_pcntr_get_completed_target(shmem_transport_ctx_t *ctx)
 #endif
 }
 
+static inline
+void shmem_transport_pcntr_get_all(shmem_transport_ctx_t *ctx, shmem_pcntr_t *pcntr)
+{
+    pcntr->pending_put = shmem_transport_pcntr_get_pending_put(ctx); 
+    pcntr->pending_get = shmem_transport_pcntr_get_pending_get(ctx); 
+    pcntr->completed_put = shmem_transport_pcntr_get_completed_put(ctx); 
+    pcntr->completed_get = shmem_transport_pcntr_get_completed_get(ctx); 
+    pcntr->target = shmem_transport_pcntr_get_completed_target(ctx); 
+}
+
 #endif /* TRANSPORT_PORTALS_H */

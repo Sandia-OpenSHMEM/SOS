@@ -54,6 +54,7 @@ static void put_and_progress_check(void) {
                                      (me == npes - 1) ? me : me + 1));
 
     shmem_ctx_t ctx;
+    shmem_pcntr_t pcntr;
     shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
 
     for (i = 0; i < ITER; i++) {
@@ -64,7 +65,18 @@ static void put_and_progress_check(void) {
         shmem_ctx_quiet(ctx);
     }
 
+    shmemx_pcntr_get_all(ctx, &pcntr);
     shmem_ctx_destroy(ctx);
+
+    printf("Value observed of the performance counters from combined API: \n"
+           "Completed Put = %10ld\n"
+           "Completed Get = %10ld\n"
+           "Pending Put   = %10ld\n"
+           "Pending Get   = %10ld\n"
+           "Target        = %10ld\n"
+           , pcntr.completed_put, pcntr.completed_get, pcntr.pending_put, 
+           pcntr.pending_get, pcntr.target);
+
     return;
 }
 
@@ -84,7 +96,7 @@ int main(int argc, char **argv) {
 
     put_and_progress_check();
     shmem_barrier_all();
-    printf("Final value of the performance counters: \n"
+    printf("Final value observed of the performance counters from individual APIs: \n"
            "Completed Put = %10ld\n"
            "Completed Get = %10ld\n"
            "Pending Put   = %10ld\n"

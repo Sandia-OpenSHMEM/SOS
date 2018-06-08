@@ -76,3 +76,11 @@ shmemx_pcntr_get_completed_target(shmem_ctx_t ctx, uint64_t *cntr_value)
     return;
 }
 
+void SHMEM_FUNCTION_ATTRIBUTES
+shmemx_pcntr_get_all(shmem_ctx_t ctx, shmem_pcntr_t *pcntr)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    shmem_transport_pcntr_get_all((shmem_transport_ctx_t *) ctx, pcntr);
+    return;
+}
+
