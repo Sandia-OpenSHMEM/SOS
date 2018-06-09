@@ -182,7 +182,7 @@ rma_coverage_pshmem_CFLAGS = -DTEST_PSHMEM
 query_thread_funneled_SOURCES = query_thread.c
 query_thread_funneled_CFLAGS = -DENABLE_THREADS
 
-mt_a2a_SOURCES = mt_a2a.c pthread_barrier.h
+mt_a2a_SOURCES = mt_a2a.c
 mt_a2a_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 mt_a2a_CFLAGS = -I$(top_srcdir)/test/include $(PTHREAD_CFLAGS)
 mt_a2a_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
