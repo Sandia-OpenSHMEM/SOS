@@ -39,3 +39,69 @@ SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcntr_get_completed_read(shmem_ctx_
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcntr_get_completed_target(uint64_t *cntr_value);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcntr_get_all(shmem_ctx_t ctx, shmemx_pcntr_t *pcntr);
 
+/* Nonblocking swap operations, proposed for OpenSHMEM 1.5 */
+define(`SHMEM_C_ATOMIC_SWAP_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_$1_atomic_swap_nbi($2 *fetch, $2 *dest, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_ATOMIC_SWAP_NBI')
+
+define(`SHMEM_C_CTX_ATOMIC_SWAP_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ctx_$1_atomic_swap_nbi(shmem_ctx_t ctx, $2 *fetch, $2 *dest, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_CTX_ATOMIC_SWAP_NBI')
+
+define(`SHMEM_C_ATOMIC_COMPARE_SWAP_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_$1_atomic_compare_swap_nbi($2 *fetch, $2 *dest, $2 cond, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_ATOMIC_COMPARE_SWAP_NBI')
+
+define(`SHMEM_C_CTX_ATOMIC_COMPARE_SWAP_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ctx_$1_atomic_compare_swap_nbi(shmem_ctx_t ctx, $2 *fetch, $2 *dest, $2 cond, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_CTX_ATOMIC_COMPARE_SWAP_NBI')
+
+/* Nonblocking fetching AMOs, proposed for OpenSHMEM 1.5 */
+define(`SHMEM_C_ATOMIC_FETCH_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_$1_atomic_fetch_nbi($2 *fetch, const $2 *target, int pe)')dnl
+SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_ATOMIC_FETCH_NBI')
+
+define(`SHMEM_C_CTX_ATOMIC_FETCH_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ctx_$1_atomic_fetch_nbi(shmem_ctx_t ctx, $2 *fetch, const $2 *target, int pe)')dnl
+SHMEM_DECLARE_FOR_EXTENDED_AMO(`SHMEM_C_CTX_ATOMIC_FETCH_NBI')
+
+define(`SHMEM_C_ATOMIC_FETCH_INC_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_$1_atomic_fetch_inc_nbi($2 *fetch, $2 *target, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_ATOMIC_FETCH_INC_NBI')
+
+define(`SHMEM_C_CTX_ATOMIC_FETCH_INC_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ctx_$1_atomic_fetch_inc_nbi(shmem_ctx_t ctx, $2 *fetch, $2 *target, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_CTX_ATOMIC_FETCH_INC_NBI')
+
+define(`SHMEM_C_ATOMIC_FETCH_ADD_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_$1_atomic_fetch_add_nbi($2 *fetch, $2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_ATOMIC_FETCH_ADD_NBI')
+
+define(`SHMEM_C_CTX_ATOMIC_FETCH_ADD_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ctx_$1_atomic_fetch_add_nbi(shmem_ctx_t ctx, $2 *fetch, $2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_AMO(`SHMEM_C_CTX_ATOMIC_FETCH_ADD_NBI')
+
+define(`SHMEM_C_FETCH_XOR_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_$1_atomic_fetch_xor_nbi($2 *fetch, $2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_FETCH_XOR_NBI')
+
+define(`SHMEM_C_CTX_FETCH_XOR_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ctx_$1_atomic_fetch_xor_nbi(shmem_ctx_t ctx, $2 *fetch, $2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_CTX_FETCH_XOR_NBI')
+
+define(`SHMEM_C_FETCH_AND_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_$1_atomic_fetch_and_nbi($2 *fetch, $2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_FETCH_AND_NBI')
+
+define(`SHMEM_C_CTX_FETCH_AND_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ctx_$1_atomic_fetch_and_nbi(shmem_ctx_t ctx, $2 *fetch, $2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_CTX_FETCH_AND_NBI')
+
+define(`SHMEM_C_FETCH_OR_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_$1_atomic_fetch_or_nbi($2 *fetch, $2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_FETCH_OR_NBI')
+
+define(`SHMEM_C_CTX_FETCH_OR_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ctx_$1_atomic_fetch_or_nbi(shmem_ctx_t ctx, $2 *fetch, $2 *target, $2 value, int pe)')dnl
+SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_CTX_FETCH_OR_NBI')
+

@@ -488,6 +488,8 @@ int shmem_transport_fence(shmem_transport_ctx_t* ctx)
      * non-fetching atomics to be completed in order to ensure ordering. */
     shmem_transport_put_quiet(ctx);
 #endif
+    /* Complete fetching ops; needed to support nonblocking fetch-atomics */
+    shmem_transport_get_wait(ctx);
 
     return 0;
 }
@@ -776,43 +778,6 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
 
 
 static inline
-void shmem_transport_swap(shmem_transport_ctx_t* ctx, void *target, const void *source, void *dest,
-                          size_t len, int pe, int datatype)
-{
-    int ret = 0;
-    uint64_t dst = (uint64_t) pe;
-    uint64_t polled = 0;
-    uint64_t key;
-    uint8_t *addr;
-
-    shmem_transport_ofi_get_mr(target, pe, &addr, &key);
-
-    shmem_internal_assert(len <= sizeof(double _Complex));
-    shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
-
-    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
-    SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
-
-    do {
-        ret = fi_fetch_atomic(ctx->cntr_ep,
-                              source,
-                              1,
-                              NULL,
-                              dest,
-                              NULL,
-                              GET_DEST(dst),
-                              (uint64_t) addr,
-                              key,
-                              datatype,
-                              FI_ATOMIC_WRITE,
-                              NULL);
-    } while (try_again(ctx, ret, &polled));
-    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
-
-}
-
-
-static inline
 void shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void *source, void *dest,
                            const void *operand, size_t len, int pe, int datatype)
 {
@@ -845,6 +810,56 @@ void shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void 
                                 datatype,
                                 FI_CSWAP,
                                 NULL);
+    } while (try_again(ctx, ret, &polled));
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+}
+
+
+static inline
+void shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target, const
+                               void *source, void *dest, const void *operand,
+                               size_t len, int pe, int datatype)
+{
+    int ret = 0;
+    uint64_t dst = (uint64_t) pe;
+    uint64_t polled = 0;
+    uint64_t key;
+    uint8_t *addr;
+
+    shmem_transport_ofi_get_mr(target, pe, &addr, &key);
+    shmem_internal_assert(len <= sizeof(double _Complex));
+    shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
+
+    struct fi_ioc resultv = { .addr = dest, .count = 1 };
+    const struct fi_ioc sourcev = { .addr = (void *) source, .count = 1 };
+    const struct fi_ioc comparev = { .addr = (void *) operand, .count = 1 };
+    const struct fi_rma_ioc rmav= { .addr = (uint64_t) addr, .count = 1, .key = key };
+    const struct fi_msg_atomic msg = {
+                                 .msg_iov       = &sourcev,
+                                 .desc          = NULL,
+                                 .iov_count     = 1,
+                                 .addr          = GET_DEST(dst),
+                                 .rma_iov       = &rmav,
+                                 .rma_iov_count = 1,
+                                 .datatype      = datatype,
+                                 .op            = FI_CSWAP,
+                                 .context       = NULL,
+                                 .data          = 0
+                               };
+
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
+
+    do {
+        ret = fi_compare_atomicmsg(ctx->cntr_ep,
+                                   &msg,
+                                   &comparev,
+                                   NULL,
+                                   1,
+                                   &resultv,
+                                   NULL,
+                                   1,
+                                   FI_INJECT);
     } while (try_again(ctx, ret, &polled));
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
@@ -889,8 +904,8 @@ void shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void 
 
 
 static inline
-void shmem_transport_atomic_scalar(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
-                                  int pe, int op, int datatype)
+void shmem_transport_atomic(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
+                            int pe, int op, int datatype)
 {
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
@@ -920,74 +935,9 @@ void shmem_transport_atomic_scalar(shmem_transport_ctx_t* ctx, void *target, con
 
 
 static inline
-void shmem_transport_atomic_set(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
-                                int pe, int datatype)
-{
-    int ret = 0;
-    uint64_t dst = (uint64_t) pe;
-    uint64_t polled = 0;
-    uint64_t key;
-    uint8_t *addr;
-
-    shmem_transport_ofi_get_mr(target, pe, &addr, &key);
-
-    shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
-
-    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
-    SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
-    do {
-        ret = fi_inject_atomic(ctx->cntr_ep,
-                               source,
-                               1,
-                               GET_DEST(dst),
-                               (uint64_t) addr,
-                               key,
-                               datatype,
-                               FI_ATOMIC_WRITE);
-    } while (try_again(ctx, ret, &polled));
-    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
-}
-
-
-static inline
-void shmem_transport_atomic_fetch(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
-                                  int pe, int datatype)
-{
-    int ret = 0;
-    uint64_t dst = (uint64_t) pe;
-    uint64_t polled = 0;
-    uint64_t key;
-    uint8_t *addr;
-
-    shmem_transport_ofi_get_mr(source, pe, &addr, &key);
-
-    shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
-
-    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
-    SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
-
-    do {
-        ret = fi_fetch_atomic(ctx->cntr_ep,
-                              NULL,
-                              1,
-                              NULL,
-                              (void *) target,
-                              NULL,
-                              GET_DEST(dst),
-                              (uint64_t) addr,
-                              key,
-                              datatype,
-                              FI_ATOMIC_READ,
-                              NULL);
-    } while (try_again(ctx, ret, &polled));
-    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
-}
-
-
-static inline
-void shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *source,
-                               size_t full_len, int pe, int op, int datatype,
-                               long *completion)
+void shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const void *source,
+                             size_t full_len, int pe, int op, int datatype,
+                             long *completion)
 {
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
@@ -1084,7 +1034,8 @@ void shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const v
 
 
 static inline
-void shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target, const void *source, void *dest,
+void shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target,
+                                  const void *source, void *dest,
                                   size_t len, int pe, int op, int datatype)
 {
     int ret = 0;
@@ -1116,6 +1067,95 @@ void shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target, cons
                               NULL);
     } while (try_again(ctx, ret, &polled));
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+}
+
+
+/* Note: Both non-NBI and NBI versions of fetching atomic routines are
+ * nonblocking.  The NBI routines buffer (i.e. inject) the source argument and
+ * the non-NBI operations do not. */
+static inline
+void shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target,
+                                      const void *source, void *dest,
+                                      size_t len, int pe, int op, int datatype)
+{
+    int ret = 0;
+    uint64_t dst = (uint64_t) pe;
+    uint64_t polled = 0;
+    uint64_t key;
+    uint8_t *addr;
+
+    shmem_transport_ofi_get_mr(target, pe, &addr, &key);
+    shmem_internal_assert(len <= sizeof(double _Complex));
+    shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
+
+    struct fi_ioc resultv = { .addr = dest, .count = 1 };
+    const struct fi_ioc sourcev = { .addr = (void *) source, .count = 1 };
+    const struct fi_rma_ioc rmav= { .addr = (uint64_t) addr, .count = 1, .key = key };
+    const struct fi_msg_atomic msg = {
+                                 .msg_iov       = &sourcev,
+                                 .desc          = NULL,
+                                 .iov_count     = 1,
+                                 .addr          = GET_DEST(dst),
+                                 .rma_iov       = &rmav,
+                                 .rma_iov_count = 1,
+                                 .datatype      = datatype,
+                                 .op            = op,
+                                 .context       = NULL,
+                                 .data          = 0
+                               };
+
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
+
+    do {
+        ret = fi_fetch_atomicmsg(ctx->cntr_ep,
+                                 &msg,
+                                 &resultv,
+                                 NULL,
+                                 1,
+                                 FI_INJECT);
+    } while (try_again(ctx, ret, &polled));
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+}
+
+
+static inline
+void shmem_transport_swap(shmem_transport_ctx_t* ctx, void *target,
+                          const void *source, void *dest,
+                          size_t len, int pe, int datatype)
+{
+    shmem_transport_fetch_atomic(ctx, target, source, dest, len, pe,
+                                 FI_ATOMIC_WRITE, datatype);
+}
+
+
+static inline
+void shmem_transport_swap_nbi(shmem_transport_ctx_t* ctx, void *target,
+                              const void *source, void *dest, size_t len,
+                              int pe, int datatype)
+{
+    shmem_transport_fetch_atomic_nbi(ctx, target, source, dest, len, pe,
+                                     FI_ATOMIC_WRITE, datatype);
+}
+
+
+static inline
+void shmem_transport_atomic_set(shmem_transport_ctx_t* ctx, void *target,
+                                const void *source, size_t len, int pe,
+                                int datatype)
+{
+    shmem_transport_atomic(ctx, target, source, len, pe, FI_ATOMIC_WRITE,
+                           datatype);
+}
+
+
+static inline
+void shmem_transport_atomic_fetch(shmem_transport_ctx_t* ctx, void *target,
+                                  const void *source, size_t len, int pe,
+                                  int datatype)
+{
+    shmem_transport_fetch_atomic(ctx, (void *) source, (const void *) NULL,
+                                 target, len, pe, FI_ATOMIC_READ, datatype);
 }
 
 

@@ -858,8 +858,8 @@ shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
 
 static inline
 void
-shmem_transport_atomic_scalar(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
-                             int pe, ptl_op_t op, ptl_datatype_t datatype)
+shmem_transport_atomic(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
+                       int pe, ptl_op_t op, ptl_datatype_t datatype)
 {
     int ret;
     ptl_pt_index_t pt;
@@ -891,8 +891,8 @@ shmem_transport_atomic_scalar(shmem_transport_ctx_t* ctx, void *target, const vo
 
 static inline
 void
-shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len, int pe,
-                          ptl_op_t op, ptl_datatype_t datatype, long *completion)
+shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len, int pe,
+                        ptl_op_t op, ptl_datatype_t datatype, long *completion)
 {
     int ret;
     ptl_pt_index_t pt;

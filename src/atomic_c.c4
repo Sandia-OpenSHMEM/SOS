@@ -161,12 +161,12 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_AND')
 
 define(`SHMEM_PROF_DEF_FETCH_AND',
 `#pragma weak shmem_$1_atomic_fetch_and = pshmem_$1_atomic_fetch_and
-#define shmem_$1_atomic_fetch_and pshmem_$1_atomic_fetch_and ')dnl
+#define shmem_$1_atomic_fetch_and pshmem_$1_atomic_fetch_and')dnl
 SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_FETCH_AND')
 
 define(`SHMEM_PROF_DEF_CTX_FETCH_AND',
 `#pragma weak shmem_ctx_$1_atomic_fetch_and = pshmem_ctx_$1_atomic_fetch_and
-#define shmem_ctx_$1_atomic_fetch_and pshmem_ctx_$1_atomic_fetch_and ')dnl
+#define shmem_ctx_$1_atomic_fetch_and pshmem_ctx_$1_atomic_fetch_and')dnl
 SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_AND')
 
 define(`SHMEM_PROF_DEF_OR',
@@ -256,6 +256,7 @@ shmem_swap(long *target, long value, int pe)
 #endif
 
 
+
 #define SHMEM_DEF_CSWAP(STYPE,TYPE,ITYPE)                               \
     TYPE SHMEM_FUNCTION_ATTRIBUTES                                      \
     SHMEM_FUNC_PROTOTYPE(STYPE, cswap, TYPE *target, TYPE cond,         \
@@ -293,8 +294,8 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
-        shmem_internal_atomic_scalar(ctx, target, &tmp, sizeof(TYPE),   \
-                                     pe, SHM_INTERNAL_SUM, ITYPE);      \
+        shmem_internal_atomic(ctx, target, &tmp, sizeof(TYPE),          \
+                              pe, SHM_INTERNAL_SUM, ITYPE);             \
     }
 
 
@@ -335,8 +336,8 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
                                                                         \
-        shmem_internal_atomic_scalar(ctx, target, &value, sizeof(TYPE), \
-                                    pe, SHM_INTERNAL_SUM, ITYPE);       \
+        shmem_internal_atomic(ctx, target, &value, sizeof(TYPE),        \
+                              pe, SHM_INTERNAL_SUM, ITYPE);             \
     }
 
 
@@ -408,8 +409,8 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
                                                                         \
-        shmem_internal_atomic_scalar(ctx, target, &value, sizeof(TYPE), \
-                                    pe, SHM_INTERNAL_BXOR, ITYPE);      \
+        shmem_internal_atomic(ctx, target, &value, sizeof(TYPE),        \
+                              pe, SHM_INTERNAL_BXOR, ITYPE);            \
     }
 
 
@@ -420,8 +421,8 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
                                                                         \
-        shmem_internal_atomic_scalar(ctx, target, &value, sizeof(TYPE), \
-                                    pe, SHM_INTERNAL_BAND, ITYPE);      \
+        shmem_internal_atomic(ctx, target, &value, sizeof(TYPE),        \
+                              pe, SHM_INTERNAL_BAND, ITYPE);            \
     }
 
 
@@ -432,8 +433,8 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
                                                                         \
-        shmem_internal_atomic_scalar(ctx, target, &value, sizeof(TYPE), \
-                                    pe, SHM_INTERNAL_BOR, ITYPE);       \
+        shmem_internal_atomic(ctx, target, &value, sizeof(TYPE),        \
+                              pe, SHM_INTERNAL_BOR, ITYPE);             \
     }
 
 
@@ -541,3 +542,5 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_FETCH_OR)
 SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_OR)
 SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_FETCH_XOR)
 SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_XOR)
+
+#undef SHMEM_FUNC_PROTOTYPE
