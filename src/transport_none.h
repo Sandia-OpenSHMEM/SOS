@@ -121,7 +121,7 @@ shmem_transport_fence(shmem_transport_ctx_t* ctx)
 
 static inline
 void
-shmem_transport_put_small(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len, int pe)
+shmem_transport_put_scalar(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len, int pe)
 {
     RAISE_ERROR_STR("No path to peer");
 }

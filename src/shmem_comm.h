@@ -51,7 +51,7 @@ extern char *shmem_internal_location_array;
 
 static inline
 void
-shmem_internal_put_small(shmem_ctx_t ctx, void *target, const void *source, size_t len, int pe)
+shmem_internal_put_scalar(shmem_ctx_t ctx, void *target, const void *source, size_t len, int pe)
 {
     int node_rank;
 
@@ -68,7 +68,7 @@ shmem_internal_put_small(shmem_ctx_t ctx, void *target, const void *source, size
         RAISE_ERROR_STR("No path to peer");
 #endif
     } else {
-        shmem_transport_put_small((shmem_transport_ctx_t *)ctx, target, source, len, pe);
+        shmem_transport_put_scalar((shmem_transport_ctx_t *)ctx, target, source, len, pe);
     }
 }
 

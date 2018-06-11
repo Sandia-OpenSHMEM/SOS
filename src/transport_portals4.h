@@ -389,7 +389,7 @@ shmem_transport_portals4_drain_eq(void)
 
 static inline
 void
-shmem_transport_put_small(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len, int pe)
+shmem_transport_put_scalar(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len, int pe)
 {
     int ret;
     ptl_process_t peer;
@@ -1061,7 +1061,7 @@ shmem_transport_atomic_set(shmem_transport_ctx_t* ctx, void *target, const void 
 {
     shmem_internal_assert(len <= shmem_transport_portals4_max_atomic_size);
 
-    shmem_transport_put_small(ctx, target, source, len, pe);
+    shmem_transport_put_scalar(ctx, target, source, len, pe);
 }
 
 
