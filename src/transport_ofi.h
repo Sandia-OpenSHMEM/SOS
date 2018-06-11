@@ -1294,14 +1294,19 @@ void shmem_transport_pcntr_get_all(shmem_transport_ctx_t *ctx, shmem_pcntr_t *pc
 {
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
 
+    pcntr->completed_put = fi_cntr_read(ctx->put_cntr);
+    if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
+        SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
+        pcntr->completed_put += ctx->completed_bb_cntr;
+        SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
+    }
+    pcntr->completed_get = fi_cntr_read(ctx->get_cntr);
+
     pcntr->pending_put = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
     pcntr->pending_get = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr);
-    pcntr->completed_put = fi_cntr_read(ctx->put_cntr);
-    pcntr->completed_get = fi_cntr_read(ctx->get_cntr);
     if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
         SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
         pcntr->pending_put += ctx->pending_bb_cntr;
-        pcntr->completed_put += ctx->completed_bb_cntr;
         SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
     }
 
