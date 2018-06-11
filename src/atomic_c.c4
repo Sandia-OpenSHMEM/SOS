@@ -293,8 +293,8 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
-        shmem_internal_atomic_small(ctx, target, &tmp, sizeof(TYPE), pe,\
-                                    SHM_INTERNAL_SUM, ITYPE);           \
+        shmem_internal_atomic_scalar(ctx, target, &tmp, sizeof(TYPE),   \
+                                     pe, SHM_INTERNAL_SUM, ITYPE);      \
     }
 
 
@@ -335,7 +335,7 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
                                                                         \
-        shmem_internal_atomic_small(ctx, target, &value, sizeof(TYPE),  \
+        shmem_internal_atomic_scalar(ctx, target, &value, sizeof(TYPE), \
                                     pe, SHM_INTERNAL_SUM, ITYPE);       \
     }
 
@@ -408,7 +408,7 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
                                                                         \
-        shmem_internal_atomic_small(ctx, target, &value, sizeof(TYPE),  \
+        shmem_internal_atomic_scalar(ctx, target, &value, sizeof(TYPE), \
                                     pe, SHM_INTERNAL_BXOR, ITYPE);      \
     }
 
@@ -420,7 +420,7 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
                                                                         \
-        shmem_internal_atomic_small(ctx, target, &value, sizeof(TYPE),  \
+        shmem_internal_atomic_scalar(ctx, target, &value, sizeof(TYPE), \
                                     pe, SHM_INTERNAL_BAND, ITYPE);      \
     }
 
@@ -432,7 +432,7 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
                                                                         \
-        shmem_internal_atomic_small(ctx, target, &value, sizeof(TYPE),  \
+        shmem_internal_atomic_scalar(ctx, target, &value, sizeof(TYPE), \
                                     pe, SHM_INTERNAL_BOR, ITYPE);       \
     }
 

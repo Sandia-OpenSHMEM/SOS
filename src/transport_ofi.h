@@ -889,7 +889,7 @@ void shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void 
 
 
 static inline
-void shmem_transport_atomic_small(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
+void shmem_transport_atomic_scalar(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
                                   int pe, int op, int datatype)
 {
     int ret = 0;

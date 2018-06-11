@@ -271,7 +271,7 @@ shmem_internal_sync_linear(int PE_start, int logPE_stride, int PE_size, long *pS
 
     } else {
         /* send message to root */
-        shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one), PE_start,
+        shmem_internal_atomic_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one), PE_start,
                                     SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
 
         /* wait for ack down psync tree */
@@ -324,7 +324,7 @@ shmem_internal_sync_tree(int PE_start, int logPE_stride, int PE_size, long *pSyn
 
             /* Send acks down to children */
             for (i = 0 ; i < num_children ; ++i) {
-                shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one),
+                shmem_internal_atomic_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one),
                                             children[i],
                                             SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
             }
@@ -333,7 +333,7 @@ shmem_internal_sync_tree(int PE_start, int logPE_stride, int PE_size, long *pSyn
             /* Middle of the tree */
 
             /* send ack to parent */
-            shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one),
+            shmem_internal_atomic_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one),
                                         parent, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
 
             /* wait for ack from parent */
@@ -346,7 +346,7 @@ shmem_internal_sync_tree(int PE_start, int logPE_stride, int PE_size, long *pSyn
 
             /* Send acks down to children */
             for (i = 0 ; i < num_children ; ++i) {
-                shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one),
+                shmem_internal_atomic_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one),
                                             children[i],
                                             SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
             }
@@ -356,7 +356,7 @@ shmem_internal_sync_tree(int PE_start, int logPE_stride, int PE_size, long *pSyn
         /* Leaf node */
 
         /* send message up psync tree */
-        shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one), parent,
+        shmem_internal_atomic_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one), parent,
                                     SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
 
         /* wait for ack down psync tree */
@@ -392,7 +392,7 @@ shmem_internal_sync_dissem(int PE_start, int logPE_stride, int PE_size, long *pS
         to = ((coll_rank + distance) % PE_size);
         to = PE_start + (to * stride);
 
-        shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, &pSync_ints[i], &one, sizeof(int),
+        shmem_internal_atomic_scalar(SHMEM_CTX_DEFAULT, &pSync_ints[i], &one, sizeof(int),
                                     to,
                                     SHM_INTERNAL_SUM, SHM_INTERNAL_INT);
 
@@ -403,7 +403,7 @@ shmem_internal_sync_dissem(int PE_start, int logPE_stride, int PE_size, long *pS
         shmem_internal_assert(pSync_ints[i] < 3);
 
         /* this slot is no longer used, so subtract off results now */
-        shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, &pSync_ints[i], &neg_one, sizeof(int),
+        shmem_internal_atomic_scalar(SHMEM_CTX_DEFAULT, &pSync_ints[i], &neg_one, sizeof(int),
                                     shmem_internal_my_pe,
                                     SHM_INTERNAL_SUM, SHM_INTERNAL_INT);
     }
@@ -472,7 +472,7 @@ shmem_internal_bcast_linear(void *target, const void *source, size_t len,
 
         if (1 == complete) {
             /* send ack back to root */
-            shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one),
+            shmem_internal_atomic_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one),
                                         real_root,
                                         SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
         }
@@ -518,7 +518,7 @@ shmem_internal_bcast_tree(void *target, const void *source, size_t len,
 
             /* if complete, send ack */
             if (1 == complete) {
-                shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one),
+                shmem_internal_atomic_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one),
                                             parent,
                                             SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
             }
@@ -558,7 +558,7 @@ shmem_internal_bcast_tree(void *target, const void *source, size_t len,
 
         /* if complete, send ack */
         if (1 == complete) {
-            shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one),
+            shmem_internal_atomic_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one),
                                         parent,
                                         SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
         }
@@ -629,7 +629,7 @@ shmem_internal_op_to_all_linear(void *target, const void *source, int count, int
         shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
 
-        shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one), PE_start, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
+        shmem_internal_atomic_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one), PE_start, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
     }
 
     /* broadcast out */
@@ -712,7 +712,7 @@ shmem_internal_op_to_all_tree(void *target, const void *source, int count, int t
         shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
 
-        shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one), parent, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
+        shmem_internal_atomic_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one), parent, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
     }
 
     /* broadcast out */
@@ -950,7 +950,7 @@ shmem_internal_fcollect_linear(void *target, const void *source, size_t len,
         if (source != target) memcpy(target, source, len);
 
         /* send completion update */
-        shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, pSync, &tmp, sizeof(long), PE_start, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
+        shmem_internal_atomic_scalar(SHMEM_CTX_DEFAULT, pSync, &tmp, sizeof(long), PE_start, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
 
         /* wait for N updates */
         SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, PE_size);
@@ -970,7 +970,7 @@ shmem_internal_fcollect_linear(void *target, const void *source, size_t len,
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
 
         /* send completion update */
-        shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, pSync, &tmp, sizeof(long), PE_start, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
+        shmem_internal_atomic_scalar(SHMEM_CTX_DEFAULT, pSync, &tmp, sizeof(long), PE_start, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
     }
 
     shmem_internal_bcast(target, target, len * PE_size, 0, PE_start, logPE_stride,
@@ -1022,7 +1022,7 @@ shmem_internal_fcollect_ring(void *target, const void *source, size_t len,
            only ever sent to next_proc and there's a shmem_fence
            between successive calls to the put above.  So a rolling
            counter is safe here. */
-        shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(long), next_proc, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
+        shmem_internal_atomic_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(long), next_proc, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
 
         /* wait for completion for this round */
         SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_GE, i);
@@ -1081,14 +1081,14 @@ shmem_internal_fcollect_recdbl(void *target, const void *source, size_t len,
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
 
         /* mark completion for this round */
-        shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, &pSync_ints[i], &one, sizeof(int),
+        shmem_internal_atomic_scalar(SHMEM_CTX_DEFAULT, &pSync_ints[i], &one, sizeof(int),
                                     real_peer,
                                     SHM_INTERNAL_SUM, SHM_INTERNAL_INT);
 
         SHMEM_WAIT_UNTIL(&pSync_ints[i], SHMEM_CMP_NE, 0);
 
         /* this slot is no longer used, so subtract off results now */
-        shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, &pSync_ints[i], &neg_one, sizeof(int),
+        shmem_internal_atomic_scalar(SHMEM_CTX_DEFAULT, &pSync_ints[i], &neg_one, sizeof(int),
                                     shmem_internal_my_pe,
                                     SHM_INTERNAL_SUM, SHM_INTERNAL_INT);
 

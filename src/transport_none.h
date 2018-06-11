@@ -192,7 +192,7 @@ shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
 
 static inline
 void
-shmem_transport_atomic_small(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
+shmem_transport_atomic_scalar(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
                              int pe, shm_internal_op_t op, shm_internal_datatype_t datatype)
 {
     RAISE_ERROR_STR("No path to peer");
