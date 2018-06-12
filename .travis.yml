@@ -70,6 +70,8 @@ addons:
         packages:
             - gfortran
             - rpm
+            ## Cargo is required by the PRK build system
+            - cargo
 
 before_install:
     ## Set up the environment
