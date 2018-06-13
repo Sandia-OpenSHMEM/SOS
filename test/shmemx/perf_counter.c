@@ -54,7 +54,7 @@ static void put_and_progress_check(void) {
                                      (me == npes - 1) ? me : me + 1));
 
     shmem_ctx_t ctx;
-    shmem_pcntr_t pcntr;
+    shmemx_pcntr_t pcntr;
     shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
 
     for (i = 0; i < ITER; i++) {
@@ -68,6 +68,9 @@ static void put_and_progress_check(void) {
     shmemx_pcntr_get_all(ctx, &pcntr);
     shmem_ctx_destroy(ctx);
 
+    /* Report the counter values observed through get_all API after the loop 
+     * completion. Except the target counter, other counter values should 
+     * reflect the final expected value */
     printf("Value observed of the performance counters from combined API: \n"
            "Completed Put = %10ld\n"
            "Completed Get = %10ld\n"
@@ -96,6 +99,11 @@ int main(int argc, char **argv) {
 
     put_and_progress_check();
     shmem_barrier_all();
+
+    /* Report the counter values observed through single parameter APIs in 
+     * the final iteration. The values reported here may be less than the actual
+     * final value as they are captured before the barrier one counter at a time 
+     * */
     printf("Final value observed of the performance counters from individual APIs: \n"
            "Completed Put = %10ld\n"
            "Completed Get = %10ld\n"

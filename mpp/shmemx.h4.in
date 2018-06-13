@@ -37,7 +37,7 @@ typedef struct {
     uint64_t completed_put;
     uint64_t completed_get;
     uint64_t target;
-} shmem_pcntr_t;
+} shmemx_pcntr_t;
 
 define(`SHPRE', `')dnl
 include(shmemx_c_func.h4)dnl

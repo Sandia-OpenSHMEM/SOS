@@ -342,7 +342,7 @@ uint64_t shmem_transport_pcntr_get_completed_target(shmem_transport_ctx_t *ctx)
 }
 
 static inline
-void shmem_transport_pcntr_get_all(shmem_transport_ctx_t *ctx, shmem_pcntr_t *pcntr)
+void shmem_transport_pcntr_get_all(shmem_transport_ctx_t *ctx, shmemx_pcntr_t *pcntr)
 {
     return;
 }
