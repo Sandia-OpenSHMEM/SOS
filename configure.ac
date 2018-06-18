@@ -374,14 +374,23 @@ AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
       ])
 
 AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
-			[build and run shmem-pmi support])])
-AS_IF([test "$enable_pmi_simple" = "yes"],
+              [build and run shmem-pmi support])])
+AC_ARG_ENABLE([pmi-mpi], [AC_HELP_STRING([--enable-pmi-mpi],
+              [Use MPI for process management])])
+
+AS_IF([test "$enable_pmi_simple" = "yes" -o "$enable_pmi_mpi" = "yes"],
      [TEST_RUNNER='$(abs_top_builddir)/src/oshrun -n $(NPROCS)'],
      [OPAL_CHECK_PMI(pmi_type)])
+
 AS_IF([test "$opal_external_pmix_version_found" = 1],
      [pmi_CPPFLAGS="$opal_external_pmix_CPPFLAGS"
       pmi_LDFLAGS="$opal_external_pmix_LDFLAGS"
       pmi_LIBS="$opal_external_pmix_LIBS"])
+
+AS_IF([test "$enable_pmi_simple" = "yes" -a "$enable_pmi_mpi" = "yes"],
+      [AC_MSG_ERROR([Cannot enable both simple PMI and MPI-PMI])])
+
+AM_CONDITIONAL([USE_PMI_MPI], [test "$enable_pmi_mpi" = "yes"])
 AM_CONDITIONAL([USE_PMI_SIMPLE], [test "$enable_pmi_simple" = "yes"])
 AM_CONDITIONAL([USE_PMI2], [test "$pmi_type" = "pmi2"])
 AM_CONDITIONAL([USE_PMIX], [test "$opal_external_pmix_version_found" = 1])
@@ -748,7 +757,7 @@ fi
 
 AC_OUTPUT
 
-AS_IF([test "$enable_pmi_simple" != "yes" -a "$opal_external_pmix_version_found" != 1 -a "$ompi_check_pmi_happy" != "yes" -a -z "$pmi_type"],
+AS_IF([test "$enable_pmi_mpi" != "yes" -a "$enable_pmi_simple" != "yes" -a "$opal_external_pmix_version_found" != 1 -a "$ompi_check_pmi_happy" != "yes" -a -z "$pmi_type"],
          [AC_MSG_WARN([No PMI found, if build fails consider --enable-pmi-simple or --with-pmi])])
 
 AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
