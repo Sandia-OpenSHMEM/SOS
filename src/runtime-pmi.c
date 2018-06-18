@@ -231,7 +231,6 @@ shmem_runtime_exchange(void)
 int
 shmem_runtime_put(char *key, void *value, size_t valuelen)
 {
-    printf("size; %i\n", size);
     snprintf(kvs_key, max_key_len, "shmem-%lu-%s", (long unsigned) rank, key);
     if (0 != encode(value, valuelen, kvs_value, max_val_len)) {
         return 1;
