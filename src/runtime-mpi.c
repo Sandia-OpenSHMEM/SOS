@@ -113,14 +113,14 @@ shmem_runtime_init(void)
         }
     }
     if(MPI_SUCCESS != MPI_Comm_dup(MPI_COMM_WORLD, &SHMEM_RUNTIME_WORLD)){
-    	return 13;
+    	return 3;
     }
     if (MPI_SUCCESS !=  MPI_Comm_rank(SHMEM_RUNTIME_WORLD, &rank)) {
-        return 3;
+        return 4;
     }
 
     if (MPI_SUCCESS != MPI_Comm_size(SHMEM_RUNTIME_WORLD, &size)) {
-        return 4;
+        return 5;
     }
 
     if (size > 1) { 
@@ -131,7 +131,10 @@ shmem_runtime_init(void)
 
         //WARN: THIS ASSUMES THAT YOU CAN ONLY HAVE 10 KEY VALUE PAIRS
         container = (char**) malloc(sizeof(char) * max_name_len * size * 2 * 10);
+        if(NULL == container) return 6;
         my_table = (char**) malloc(sizeof(char) * max_name_len * 2 * 10);
+        if(NULL == my_table) return 7;
+
     }
     else {
         /* Use a local KVS for singleton runs */
@@ -142,10 +145,10 @@ shmem_runtime_init(void)
     }
 
     kvs_key = (char*) malloc(max_key_len);
-    if (NULL == kvs_key) return 10;
+    if (NULL == kvs_key) return 8;
 
     kvs_value = (char*) malloc(max_val_len);
-    if (NULL == kvs_value) return 11;
+    if (NULL == kvs_value) return 9;
 
     return 0;
 }
@@ -156,6 +159,7 @@ shmem_runtime_fini(void)
     int finalized = 0;
     MPI_Finalized(&finalized);
     if(!finalized){
+        free(container);
         MPI_Finalize();
     }
     return 0;
@@ -196,7 +200,7 @@ shmem_runtime_get_size(void)
 }
 
 int
-shmem_runtime_exchange(void) //this does the allgather and swaps the info between PE's
+shmem_runtime_exchange(void)
 {
     /* Use singleton KVS for single process jobs */
     if (size == 1){
@@ -205,29 +209,15 @@ shmem_runtime_exchange(void) //this does the allgather and swaps the info betwee
     
     for(int i = 0; i < length; i++)
     {
-        char* recv_buf = (char*)malloc(max_val_len * sizeof(char) * size);
+        *(container + i) = (char*)malloc(max_val_len * sizeof(char) * size);
 
-        if (MPI_SUCCESS != MPI_Allgather(*(my_table+i), max_val_len, MPI_CHAR, recv_buf, max_val_len, MPI_CHAR, SHMEM_RUNTIME_WORLD)) {
-                return 2;   
+        if (MPI_SUCCESS != MPI_Allgather(*(my_table+i), max_val_len, MPI_CHAR, *(container + i), max_val_len, MPI_CHAR, SHMEM_RUNTIME_WORLD)) {
+            return 2;   
         }
         if (MPI_SUCCESS != MPI_Barrier(SHMEM_RUNTIME_WORLD)) {
             return 6;
-        }
-        for(int j = 0; j < size; j++){
-            *(container + j + i * size) = (recv_buf + j * max_val_len);
-        }
-        if (MPI_SUCCESS != MPI_Barrier(SHMEM_RUNTIME_WORLD)) {
-            return 6;
-        }
-        if(rank == 0)
-        {
-            printf("length: %i, size: %i: values of container: \n", length, size);
-            for(int i = 0; i < length * size; i++){
-                printf("i: %i: %s\n", i, *(container + i));
-            }
         }
     }
-
     return 0;
 }
 
@@ -247,10 +237,14 @@ shmem_runtime_put(char *key, void *value, size_t valuelen)
         strncpy(e->val, kvs_value, max_val_len);
         HASH_ADD_STR(singleton_kvs, key, e);
     } else {
-        *(my_table + length) = key;
-        length++;
-        *(my_table + length) = kvs_value;
-        length++;
+        if(length < 20){
+            *(my_table + length) = key;
+            length++;
+            *(my_table + length) = kvs_value;
+            length++;
+        } else {
+            return 20;
+        }
     }
 
     return 0;
@@ -268,11 +262,9 @@ shmem_runtime_get(int pe, char *key, void *value, size_t valuelen)
         kvs_value = e->val;
     }
     else {
-        for(int i = pe; i < length * size; i += size*2){
-            int cmp = strcmp(key, *(container+i));
-            //printf("i: %i, comparing %s and %s: cmp: %i\n",i, key, *(container + i), cmp);
-            if(cmp == 0){
-                kvs_value = *(container + i + size);
+        for(int i = 0; i < 2 * length; i += 2){
+            if(strcmp(key, (*(container+i) + pe * max_val_len)) == 0){
+                kvs_value = (*(container+i + 1) + pe * max_val_len);
                 break;
             }
         }
