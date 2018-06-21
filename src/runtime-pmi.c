@@ -110,7 +110,6 @@ shmem_runtime_init(void)
     }
     if (!initialized) {
         if (PMI_SUCCESS != PMI_Init(&initialized)) {
-            
             return 2;
         }
         else{
@@ -168,7 +167,6 @@ shmem_runtime_fini(void)
         PMI_Finalize();
         PMI_enabled_flag = 0;
     }
-
 
     return 0;
 }

@@ -91,7 +91,6 @@ shmem_internal_shutdown(void)
     shmem_internal_finalized = 1;
     shmem_transport_fini();
 
-
 #ifdef USE_XPMEM
     shmem_transport_xpmem_fini();
 #endif
