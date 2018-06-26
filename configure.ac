@@ -158,6 +158,10 @@ AC_ARG_ENABLE([cxx],
     [AC_HELP_STRING([--disable-cxx],
                     [Disable building the C++ bindings (default: enabled)])])
 
+AC_ARG_ENABLE([c11-checks],
+    [AC_HELP_STRING([--disable-c11-checks],
+                    [Disable build-time type checks for C11 bindings (default: enabled)])])
+
 AC_ARG_ENABLE([libtool-wrapper],
   [AS_HELP_STRING([--disable-libtool-wrapper],
     [Disable use of libtool executable wrappers for tests (default: enabled)])])
@@ -263,7 +267,7 @@ AS_IF([test "$shmem_cv_c11_works" = "no"],
       CFLAGS="-std=gnu11 $ORIG_CFLAGS"]
       )
 AC_LANG_POP([C])
-AM_CONDITIONAL([HAVE_C11], [test "$shmem_cv_c11_works" = "yes"])
+AM_CONDITIONAL([HAVE_C11], [test "$shmem_cv_c11_works" = "yes" -a "$enable_c11_checks" != "no"])
 # end gnu11/gnu99 check
 
 
@@ -754,7 +758,7 @@ AS_IF([test "$enable_pmi_simple" != "yes" -a "$opal_external_pmix_version_found"
 AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
       [AC_MSG_WARN([No transport found])])
 
-AS_IF([test "$shmem_cv_c11_works" != "yes"],
+AS_IF([test "$shmem_cv_c11_works" != "yes" -o "$enable_c11_checks" == "no"],
       [AC_MSG_WARN([C compiler does not support _Generic, unabled to verify and test C11 bindings])])
 
 AS_IF([test "$enable_cxx" == "no"],
