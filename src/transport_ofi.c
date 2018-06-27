@@ -1163,7 +1163,7 @@ int query_for_fabric(struct fabric_info *info)
 #ifdef ENABLE_MR_SCALABLE
     domain_attr.mr_mode       = FI_MR_SCALABLE; /* VA space-doesn't have to be pre-allocated */
 #  if !defined(ENABLE_HARD_POLLING) && defined(ENABLE_MR_RMA_EVENT)
-    domain_attr.mr_mode      |= FI_MR_RMA_EVENT; /* can support RMA_EVENT on MR */
+    domain_attr.mr_mode       = FI_MR_RMA_EVENT; /* can support RMA_EVENT on MR */
 #  endif
 #else
     domain_attr.mr_mode       = FI_MR_BASIC; /* VA space is pre-allocated */
