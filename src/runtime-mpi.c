@@ -32,23 +32,6 @@ typedef struct {
 
 singleton_kvs_t *singleton_kvs = NULL;
 
-typedef struct {
-    char* key;
-    char* value;
-} key_value_pair;
-
-key_value_pair* 
-newKVP(int size){
-    key_value_pair* toRet = (key_value_pair*)malloc(sizeof(key_value_pair));
-    toRet->key = (char*)malloc(sizeof(char) * size);
-    toRet->value = (char*)malloc(sizeof(char) * size);
-
-    return toRet;
-}
-
-key_value_pair** my_kvp_table;
-
-
 static int
 encode(const void *inval, int invallen, char *outval, int outvallen)
 {
