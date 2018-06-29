@@ -11,14 +11,16 @@
 #include "shmem_internal.h"
 #include "uthash.h"
 
+#define MAX_KV_COUNT 10
+
 
 static int rank = -1;
 static int size = 0;
 static char *kvs_name, *kvs_key, *kvs_value;
 static int max_name_len, max_key_len, max_val_len;
-static MPI_Group SHMEM_RUNTIME_WORLD;
-static char** container;
-static char** my_table;
+static MPI_Comm SHMEM_RUNTIME_WORLD;
+static char** kv_store_all;
+static char** kv_store_me;
 static int length = 0;
 
 #define SINGLETON_KEY_LEN 128
@@ -108,15 +110,15 @@ shmem_runtime_init(void)
 
     if (size > 1) { 
 
-    	max_name_len = MPI_MAX_OBJECT_NAME;
-        max_key_len = MPI_MAX_OBJECT_NAME;
-        max_val_len = MPI_MAX_OBJECT_NAME;
+    	max_name_len = 128;
+        max_key_len = 128;
+        max_val_len = 128;
 
         //WARN: THIS ASSUMES THAT YOU CAN ONLY HAVE 10 KEY VALUE PAIRS
-        container = (char**) malloc(sizeof(char) * max_name_len * size * 2 * 10);
-        if(NULL == container) return 6;
-        my_table = (char**) malloc(sizeof(char) * max_name_len * 2 * 10);
-        if(NULL == my_table) return 7;
+        kv_store_all = (char**) malloc(sizeof(char*) * MAX_KV_COUNT * 2); 
+        if(NULL == kv_store_all) return 6; //rename
+        kv_store_me = (char**) malloc(sizeof(char*) * MAX_KV_COUNT * 2);
+        if(NULL == kv_store_me) return 7; //rename
 
     }
     else {
@@ -142,9 +144,11 @@ shmem_runtime_fini(void)
     int finalized = 0;
     MPI_Finalized(&finalized);
     if(!finalized){
-        free(container);
         MPI_Finalize();
     }
+    free(kv_store_all);
+    free(kv_store_me);
+
     return 0;
 }
 
@@ -192,9 +196,9 @@ shmem_runtime_exchange(void)
     
     for(int i = 0; i < length; i++)
     {
-        *(container + i) = (char*)malloc(max_val_len * sizeof(char) * size);
+        *(kv_store_all + i) = (char*)malloc(max_val_len * sizeof(char) * size);
 
-        if (MPI_SUCCESS != MPI_Allgather(*(my_table+i), max_val_len, MPI_CHAR, *(container + i), max_val_len, MPI_CHAR, SHMEM_RUNTIME_WORLD)) {
+        if (MPI_SUCCESS != MPI_Allgather(*(kv_store_me+i), max_val_len, MPI_CHAR, *(kv_store_all + i), max_val_len, MPI_CHAR, SHMEM_RUNTIME_WORLD)) {
             return 2;   
         }
         if (MPI_SUCCESS != MPI_Barrier(SHMEM_RUNTIME_WORLD)) {
@@ -221,9 +225,9 @@ shmem_runtime_put(char *key, void *value, size_t valuelen)
         HASH_ADD_STR(singleton_kvs, key, e);
     } else {
         if(length < 20){
-            *(my_table + length) = key;
+            *(kv_store_me + length) = key;
             length++;
-            *(my_table + length) = kvs_value;
+            *(kv_store_me + length) = kvs_value;
             length++;
         } else {
             return 20;
@@ -246,8 +250,8 @@ shmem_runtime_get(int pe, char *key, void *value, size_t valuelen)
     }
     else {
         for(int i = 0; i < 2 * length; i += 2){
-            if(strcmp(key, (*(container+i) + pe * max_val_len)) == 0){
-                kvs_value = (*(container+i + 1) + pe * max_val_len);
+            if(strcmp(key, (*(kv_store_all+i) + pe * max_val_len)) == 0){
+                kvs_value = (*(kv_store_all+i + 1) + pe * max_val_len);
                 break;
             }
         }
