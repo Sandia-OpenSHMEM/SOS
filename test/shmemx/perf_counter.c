@@ -42,7 +42,7 @@ uint64_t c_put, c_get, p_put, p_get, target;
 static void collect(shmem_ctx_t ctx) {
     shmemx_pcntr_get_completed_put(ctx, &c_put);
     shmemx_pcntr_get_completed_get(ctx, &c_get);
-    shmemx_pcntr_get_completed_target(ctx, &target);
+    shmemx_pcntr_get_completed_target(&target);
     shmemx_pcntr_get_pending_put(ctx, &p_put);
     shmemx_pcntr_get_pending_get(ctx, &p_get);
 }
