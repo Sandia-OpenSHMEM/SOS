@@ -1271,7 +1271,7 @@ uint64_t shmem_transport_pcntr_get_completed_get(shmem_transport_ctx_t *ctx)
 }
 
 static inline
-uint64_t shmem_transport_pcntr_get_completed_target(shmem_transport_ctx_t *ctx)
+uint64_t shmem_transport_pcntr_get_completed_target(void)
 {
     uint64_t cnt = 0;
 #if ENABLE_TARGET_CNTR
@@ -1309,7 +1309,7 @@ void shmem_transport_pcntr_get_all(shmem_transport_ctx_t *ctx, shmemx_pcntr_t *p
     pcntr->pending_get = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr);
 
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
-    pcntr->target = shmem_transport_pcntr_get_completed_target(ctx);
+    pcntr->target = shmem_transport_pcntr_get_completed_target();
 }
 
 #endif /* TRANSPORT_OFI_H */
