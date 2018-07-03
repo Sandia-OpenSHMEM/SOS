@@ -758,8 +758,11 @@ AS_IF([test "$enable_pmi_simple" != "yes" -a "$opal_external_pmix_version_found"
 AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
       [AC_MSG_WARN([No transport found])])
 
-AS_IF([test "$shmem_cv_c11_works" != "yes" -o "$enable_c11_checks" == "no"],
+AS_IF([test "$shmem_cv_c11_works" != "yes"],
       [AC_MSG_WARN([C compiler does not support _Generic, unabled to verify and test C11 bindings])])
+
+AS_IF([test "$enable_c11_checks" == "no"],
+      [AC_MSG_WARN([C11 _Generic type checks disabled, not verifying type coverage of C11 bindings])])
 
 AS_IF([test "$enable_cxx" == "no"],
       [AC_MSG_WARN([No C++ compiler or C++ disabled, unabled to verify and test C++ bindings])])
