@@ -192,17 +192,22 @@ AS_IF([test "$enable_long_fortran_header" = "yes"], [FORTRAN_LONG_HEADER=" "], [
 AC_SUBST([FORTRAN_LONG_HEADER])
 AM_CONDITIONAL([HAVE_LONG_FORTRAN_HEADER], [test "$enable_long_fortran_header" = "yes"])
 
-AC_ARG_ENABLE([mr-scalable],
-    [AC_HELP_STRING([--disable-mr-scalable],
-                    [Disable the use of scalable memory regions in the OFI transport.  Required by some providers. (default: enabled)])])
-AS_IF([test "$enable_mr_scalable" != "no"],
-      [AC_DEFINE([ENABLE_MR_SCALABLE], [1], [If defined, the OFI transport will use FI_MR_SCALABLE.  Otherwise, FI_MR_BASIC is used.])])
+AC_ARG_WITH([ofi-mr],
+    [AC_HELP_STRING([--with-ofi-mr],
+                    [OFI memory registration mode: basic, scalable, or rma-event (default: scalable)])])
 
-AC_ARG_ENABLE([mr-rma-event],
-    [AC_HELP_STRING([--enable-mr-rma-event],
-                    [Enable FI_MR_RMA_EVENT memory registration support in OFI transport.  Required by some providers. (default: disabled)])])
-AS_IF([test "$enable_mr_rma_event" = "yes"],
-      [AC_DEFINE([ENABLE_MR_RMA_EVENT], [1], [If defined, the OFI transport will enable support for FI_MR_RMA_EVENT.])])
+AS_IF([test -z "$with_ofi_mr"], [with_ofi_mr="scalable"])
+
+AS_CASE([$with_ofi_mr],
+        [basic],
+            [],
+        [scalable],
+            [AC_DEFINE([ENABLE_MR_SCALABLE], [1], [If defined, the OFI transport will use FI_MR_SCALABLE])],
+        [rma*event],
+            [AC_DEFINE([ENABLE_MR_RMA_EVENT], [1], [If defined, the OFI transport will use FI_MR_RMA_EVENT])
+             AC_DEFINE([ENABLE_MR_SCALABLE], [1], [If defined, the OFI transport will use FI_MR_SCALABLE])],
+        [AC_MSG_ERROR([Invalid OFI memory registration mode: $with_ofi_mr])])
+
 
 AC_ARG_ENABLE([av-map],
     [AC_HELP_STRING([--enable-av-map],
@@ -801,3 +806,33 @@ echo "  XPMEM:          $transport_xpmem"
 echo "  CMA:            $transport_cma"
 echo "  memcpy:         $transport_memcpy"
 echo ""
+echo "Global Options:"
+if test "$enable_remote_virtual_addressing" = "yes"; then
+    echo "  Remote VA:      yes"
+else
+    echo "  Remote VA:      no"
+fi
+if test "$enable_threads" != "no"; then
+    echo "  Thread support: yes"
+else
+    echo "  Thread support: no"
+fi
+if test "$enable_error_checking" != "yes"; then
+    echo "  Error checking: no"
+else
+    echo "  Error checking: yes"
+fi
+echo ""
+
+if test "$transport_ofi" = "yes"; then
+    echo "OFI Transport:"
+    echo "  Memory reg.:    $with_ofi_mr"
+
+    if test "$enable_av_map" = "yes"; then
+        echo "  Addr. vector:   map"
+    else
+        echo "  Addr. vector:   table"
+    fi
+
+    echo ""
+fi
