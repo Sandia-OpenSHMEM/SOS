@@ -92,9 +92,33 @@ shmem_runtime_init(void)
         return 1;
     }
     if (!initialized) {
-        if (MPI_SUCCESS != MPI_Init(NULL, NULL)) {
-            
-            return 2;
+        if(getenv("MPI_THREAD_LEVEL") == NULL){
+            if (MPI_SUCCESS != MPI_Init(NULL, NULL)) {
+                return 2;
+            }
+        }
+        else{
+            int provided = 0;
+            char* thread_level = getenv("MPI_THREAD_LEVEL");
+            int int_thread_level = 0;
+            if(strcmp(thread_level, "MPI_THREAD_SINGLE") == 0){
+                int_thread_level = MPI_THREAD_SINGLE;
+            }
+            else if(strcmp(thread_level, "MPI_THREAD_FUNNELED") == 0){
+                int_thread_level   = MPI_THREAD_FUNNELED;
+            }
+            else if(strcmp(thread_level, "MPI_THREAD_SERIALIZED") == 0){
+                int_thread_level = MPI_THREAD_SERIALIZED;
+            }
+            else if(strcmp(thread_level, "MPI_THREAD_MULTIPLE") == 0){
+                int_thread_level = MPI_THREAD_MULTIPLE;
+            }
+            else{
+                return 16;
+            }
+            if(MPI_SUCCESS != MPI_Init_thread(NULL, NULL, int_thread_level, &provided)){
+                return 2;
+            }
         }
     }
     if(MPI_SUCCESS != MPI_Comm_dup(MPI_COMM_WORLD, &SHMEM_RUNTIME_WORLD)){
