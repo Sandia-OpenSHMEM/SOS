@@ -1260,9 +1260,13 @@ int query_for_fabric(struct fabric_info *info)
     shmem_transport_ofi_mr_rma_event = (info->p_info->domain_attr->mr_mode & FI_MR_RMA_EVENT) != 0;
 #endif
 
-    DEBUG_MSG("OFI provider: %s, fabric: %s, domain: %s\n",
+    DEBUG_MSG("OFI provider: %s, fabric: %s, domain: %s\n"
+              RAISE_PE_PREFIX "max_inject: %zd, max_msg: %zd\n",
               info->p_info->fabric_attr->prov_name,
-              info->p_info->fabric_attr->name, info->p_info->domain_attr->name);
+              info->p_info->fabric_attr->name, info->p_info->domain_attr->name,
+              shmem_internal_my_pe,
+              shmem_transport_ofi_max_buffered_send,
+              shmem_transport_ofi_max_msg_size);
 
     return ret;
 }
