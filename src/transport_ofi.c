@@ -1111,6 +1111,13 @@ int allocate_fabric_resources(struct fabric_info *info)
               FI_MAJOR(info->p_info->fabric_attr->prov_version),
               FI_MINOR(info->p_info->fabric_attr->prov_version));
 
+    if (FI_MAJOR_VERSION != FI_MAJOR(fi_version()) ||
+        FI_MINOR_VERSION != FI_MINOR(fi_version())) {
+        RAISE_WARN_MSG("OFI version mismatch: built %"PRIu32".%"PRIu32", cur. %"PRIu32".%"PRIu32"\n",
+                       FI_MAJOR_VERSION, FI_MINOR_VERSION,
+                       FI_MAJOR(fi_version()), FI_MINOR(fi_version()));
+    }
+
     /* access domain: define communication resource limits/boundary within
      * fabric domain */
     ret = fi_domain(shmem_transport_ofi_fabfd, info->p_info,
