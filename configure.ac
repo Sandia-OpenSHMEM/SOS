@@ -79,14 +79,14 @@ AS_IF([test "$enable_manual_progress" = "yes"],
       [AC_DEFINE([ENABLE_MANUAL_PROGRESS], [1], [Enable manual progress])
        AC_DEFINE([DEFAULT_POLL_LIMIT], [-1], [Poll limit for local/remote completions])])
 
-AC_ARG_WITH([total-data-ordering],
-    [AC_HELP_STRING([--with-total-data-ordering],
+AC_ARG_ENABLE([total-data-ordering],
+    [AC_HELP_STRING([--enable-total-data-ordering],
        [Configure handling of total data ordering option.  "no" or "never" to build with the assumption total data ordering will never be available.  "yes" or "always" to build with the assumption total data ordering will always be available (if not, applications will abort in start_pes()).  "check" to build with no assumptions, which may lead to a slight performance decrease on high performance networks.  (default: disabled)])])
-AS_CASE([x$with_total_data_ordering],
+AS_CASE([x$enable_total_data_ordering],
   [xyes|xalways], [ordering=1; msg="assume always available"],
   [xno|xnever|x], [ordering=0; msg="assume never available"],
   [xcheck], [ordering=2; msg="runtime check"],
-  [AC_MSG_ERROR([Unknown ordering requirement $with_total_data_ordering])])
+  [AC_MSG_ERROR([Unknown ordering requirement $enable_total_data_ordering])])
 AC_DEFINE_UNQUOTED([WANT_TOTAL_DATA_ORDERING], [$ordering], [0 if never check for total data ordering, 1 if always assume total data ordering, 2 to check])
 AC_MSG_CHECKING([For total data ordering behavior])
 AC_MSG_RESULT([$msg])
