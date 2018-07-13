@@ -192,13 +192,13 @@ AS_IF([test "$enable_long_fortran_header" = "yes"], [FORTRAN_LONG_HEADER=" "], [
 AC_SUBST([FORTRAN_LONG_HEADER])
 AM_CONDITIONAL([HAVE_LONG_FORTRAN_HEADER], [test "$enable_long_fortran_header" = "yes"])
 
-AC_ARG_WITH([ofi-mr],
-    [AC_HELP_STRING([--with-ofi-mr],
+AC_ARG_ENABLE([ofi-mr],
+    [AC_HELP_STRING([--enable-ofi-mr=MODE],
                     [OFI memory registration mode: basic, scalable, or rma-event (default: scalable)])])
 
-AS_IF([test -z "$with_ofi_mr"], [with_ofi_mr="scalable"])
+AS_IF([test -z "$enable_ofi_mr"], [enable_ofi_mr="scalable"])
 
-AS_CASE([$with_ofi_mr],
+AS_CASE([$enable_ofi_mr],
         [basic],
             [],
         [scalable],
@@ -206,7 +206,7 @@ AS_CASE([$with_ofi_mr],
         [rma*event],
             [AC_DEFINE([ENABLE_MR_RMA_EVENT], [1], [If defined, the OFI transport will use FI_MR_RMA_EVENT])
              AC_DEFINE([ENABLE_MR_SCALABLE], [1], [If defined, the OFI transport will use FI_MR_SCALABLE])],
-        [AC_MSG_ERROR([Invalid OFI memory registration mode: $with_ofi_mr])])
+        [AC_MSG_ERROR([Invalid OFI memory registration mode: $enable_ofi_mr])])
 
 
 AC_ARG_ENABLE([av-map],
@@ -829,7 +829,7 @@ echo ""
 
 if test "$transport_ofi" = "yes"; then
     echo "OFI Transport:"
-    echo "  Memory reg.:    $with_ofi_mr"
+    echo "  Memory reg.:    $enable_ofi_mr"
 
     if test "$enable_av_map" = "yes"; then
         echo "  Addr. vector:   map"
