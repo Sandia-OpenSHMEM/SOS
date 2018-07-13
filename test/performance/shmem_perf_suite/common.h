@@ -106,6 +106,25 @@ typedef enum {
     MB
 } bw_units;
 
+typedef enum {
+    OP_FETCH,
+    OP_SET,
+    OP_CSWAP,
+    OP_SWAP,
+    OP_FINC,
+    OP_INC,
+    OP_FADD,
+    OP_ADD,
+    OP_FAND,
+    OP_AND,
+    OP_FOR,
+    OP_OR,
+    OP_FXOR,
+    OP_XOR,
+    SIZE_OF_OP
+} atomic_op_type;
+
+
 typedef struct perf_metrics {
     /* common parameters */
     test_type t_type;
