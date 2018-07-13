@@ -111,7 +111,7 @@ void print_data_results(double bw, double mr, perf_metrics_t data,
     static int atomic_type_index = 0;
 
     if(data.target_data) {
-        if(data.my_node < data.midpt) {
+        if(data.my_node < data.szinitiator) {
             printf("initiator:\n");
         } else  {
             printf("target:\n");
@@ -183,7 +183,7 @@ void calc_and_print_results(double end_t, double start_t, int len,
     pe_time_start = start_t;
     pe_time_end = end_t;
     shmem_barrier(start_pe, stride, nPEs, bar_psync);
-    if (metric_info.cstyle != COMM_INCAST) {
+    if (metric_info.cstyle != COMM_INCAST && !metric_info.target_data) {
         if (nPEs >= 2) {
             shmem_double_min_to_all(&start_time_min, &pe_time_start, nred_elements,
                                 start_pe, stride, nPEs, pwrk,

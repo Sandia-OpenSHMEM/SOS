@@ -398,7 +398,6 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t *metric_info) 
             break;
         case 't':
             metric_info->target_data = true;
-            metric_info->window_size = 1;
             if (metric_info->t_type != BW) {
                 errors++;
             } else {
@@ -408,10 +407,14 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t *metric_info) 
             }
             break;
         case 'r':
-            metric_info->sztarget = strtoul(optarg, (char **)NULL, 0);
+            if (metric_info->szinitiator == -1) {
+                metric_info->sztarget = strtoul(optarg, (char **)NULL, 0);
+            } 
             break;
         case 'l':
-            metric_info->szinitiator = strtoul(optarg, (char **)NULL, 0);
+            if (metric_info->sztarget == -1) {
+                metric_info->szinitiator = strtoul(optarg, (char **)NULL, 0);
+            }
             break;
         case 'C':
 #if defined(ENABLE_THREADS)
@@ -480,9 +483,10 @@ void print_usage(int errors) {
            "                             cannot be used in conjunction with \n"
            "                             validate, special sizes used, trials + \n"
            "                             warmup * sizes (8/4KB) <= max length \n"
-           " -r TARGET_SIZE              Number of target nodes, use only with -t\n"
-           " -l SOURCE_SIZE              Number of initiator nodes, use only with \n"
-           "                             -t; -l and -r cannot be used together\n"
+           " -r TARGET_SIZE              Number of target nodes, use only with -t;\n"
+           "                             ignored if -l is used already \n"
+           " -l SOURCE_SIZE              Number of initiator nodes, use only with\n"
+           "                             -t; ignored if -r is used already\n"
            " -T THREADS                  Number of threads\n"
            " -C THREAD_LEVEL             SHMEM thread level. Possible values: \n"
            "                             SINGLE, FUNNELED, SERIALIZED, MULTIPLE \n"
@@ -540,10 +544,12 @@ int only_even_PEs_check(int my_node, int num_pes) {
         return 0;
 }
 
+
+/* Returns partner node; Assumes only one partner */
 static inline 
 int partner_node(perf_metrics_t my_info)
 {
-    if(my_info.num_pes == 1)
+    if (my_info.num_pes == 1)
         return 0;
 
     if (my_info.t_type == BW) {
@@ -578,8 +584,8 @@ int streaming_node(perf_metrics_t my_info)
 static inline
 int target_node(perf_metrics_t my_info)
 {
-    return (my_info.my_node >= my_info.midpt &&
-        (my_info.my_node < (my_info.midpt + my_info.sztarget)));
+    return (my_info.my_node >= my_info.szinitiator &&
+        (my_info.my_node < (my_info.szinitiator + my_info.sztarget)));
 }
 
 static inline 
@@ -679,32 +685,32 @@ int error_checking_init_target_usage(perf_metrics_t *metric_info) {
     int error = false;
     assert(metric_info->midpt > 0);
 
-    if(metric_info->sztarget != -1 && metric_info->szinitiator != -1)
-        error = true; /* can't use them together  */
-
-    if(metric_info->sztarget != -1) {
-        if(metric_info->sztarget < 1 ||
-           metric_info->sztarget > metric_info->midpt ||
-           !metric_info->target_data) {
+    if (metric_info->sztarget != -1 && metric_info->szinitiator != -1 && 
+        metric_info->sztarget + metric_info->szinitiator != metric_info->num_pes) {
+        error = true; 
+    } else if (metric_info->sztarget != -1 && metric_info->szinitiator == -1) {
+        if (metric_info->sztarget < 1 ||
+            metric_info->sztarget >= metric_info->num_pes ||
+            !metric_info->target_data) {
             error = true;
+        } else {
+            metric_info->szinitiator = metric_info->num_pes - metric_info->sztarget;
         }
-    } else {
-        metric_info->sztarget = metric_info->midpt;
-    }
-
-    if(metric_info->szinitiator != -1) {
-        if(metric_info->szinitiator < 1 ||
-           metric_info->szinitiator > metric_info->midpt ||
-           !metric_info->target_data) {
+    } else if (metric_info->sztarget == -1 && metric_info->szinitiator != -1) {
+        if( metric_info->szinitiator < 1 ||
+            metric_info->szinitiator >= metric_info->num_pes ||
+            !metric_info->target_data) {
             error = true;
+        } else {
+            metric_info->sztarget = metric_info->num_pes - metric_info->szinitiator;
         }
     } else {
         metric_info->szinitiator = metric_info->midpt;
+        metric_info->sztarget = metric_info->midpt;
     }
 
     if(error) {
-        fprintf(stderr, "Invalid usage of command line arg -r/-l,"
-                        " use --help for info\n");
+        fprintf(stderr, "Invalid usage of command line arg -r/-l\n");
         return -1;
     }
     return 0;
@@ -754,7 +760,7 @@ void PE_set_used_adjustments(int *nPEs, int *stride, int *start_pe,
     }
     else {
         assert(PE_set == SECOND_HALF);
-        *start_pe = my_info.midpt;
+        *start_pe = my_info.szinitiator;
     }
 
     *stride = 0; /* back to back PEs */
