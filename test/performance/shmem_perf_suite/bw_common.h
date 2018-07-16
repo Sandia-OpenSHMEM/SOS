@@ -110,14 +110,6 @@ void print_data_results(double bw, double mr, perf_metrics_t data,
                             int len, double total_t) {
     static int atomic_type_index = 0;
 
-    if(data.target_data) {
-        if(data.my_node < data.szinitiator) {
-            printf("initiator:\n");
-        } else  {
-            printf("target:\n");
-        }
-    }
-
     if (data.opstyle == STYLE_ATOMIC) {
         printf("%-10s", dt_names[atomic_type_index]);
         atomic_type_index = (atomic_type_index + 1) % ATOMICS_N_DTs;
@@ -131,10 +123,20 @@ void print_data_results(double bw, double mr, perf_metrics_t data,
     }
 
     if (data.opstyle == STYLE_ATOMIC) {
-        printf("%13s%10.2f%15s%12.2f%12s%10.2f\n", " ", bw, " ", 
+        printf("%13s%10.2f%15s%12.2f%12s%10.2f", " ", bw, " ", 
                 mr/1.0e6, " ", total_t/(data.trials * data.window_size));
     } else
-        printf("%14s%10.2f%15s%12.2f\n", " ", bw, " ", mr);
+        printf("%14s%10.2f%15s%12.2f", " ", bw, " ", mr);
+
+    if(data.target_data) {
+        if(data.my_node < data.szinitiator) {
+            printf("%2sInitiator", " ");
+        } else  {
+            printf("%2sTarget", " ");
+        }
+    }
+
+    printf("\n");
 }
 
 static inline 

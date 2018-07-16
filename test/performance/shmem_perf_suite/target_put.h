@@ -139,12 +139,4 @@ static inline void target_data_uni_bw(int len, perf_metrics_t metric_info)
 static inline void target_bw_itr(int len, perf_metrics_t *metric_info)
 {
     target_data_uni_bw(len, *metric_info);
-
-    metric_info->start_len = TARGET_SZ_MAX;
-    len = TARGET_SZ_MAX;
-
-    target_data_uni_bw(len, *metric_info);
-
-    /* stopping upper layer from iterating, we are done */
-    metric_info->max_len = TARGET_SZ_MIN;
 }

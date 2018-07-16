@@ -99,6 +99,11 @@ static inline void uni_bw_get(int len, perf_metrics_t *metric_info)
     static int check_once = 0;
     static int fin = -1;
 
+    if(metric_info->target_data) {
+        target_bw_itr(len, metric_info);
+        return;
+    }
+
     if (!check_once) {
         /* check to see whether sender and receiver are the same process */
         if (dest == metric_info->my_node) {
@@ -109,11 +114,6 @@ static inline void uni_bw_get(int len, perf_metrics_t *metric_info)
         int status = check_hostname_validation(*metric_info);
         if (status != 0) return;
         check_once++;
-    }
-
-    if(metric_info->target_data) {
-        target_bw_itr(len, metric_info);
-        return;
     }
 
     shmem_barrier_all();

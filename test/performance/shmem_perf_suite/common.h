@@ -448,17 +448,6 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t *metric_info) 
         }
     }
 
-    /* filling in 8/4KB chunks into array alloc'd to max_len */
-    if(metric_info->t_type == BW && metric_info->target_data) {
-        metric_info->start_len = TARGET_SZ_MIN;
-        if((metric_info->max_len <
-            ((metric_info->trials + metric_info->warmup) * TARGET_SZ_MIN)) ||
-            (metric_info->max_len <
-            ((metric_info->trials + metric_info->warmup) * TARGET_SZ_MAX))) {
-                errors++;
-            }
-    }
-
     return errors;
 }
 
