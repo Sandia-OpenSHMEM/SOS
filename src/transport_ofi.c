@@ -373,11 +373,11 @@ int shmem_transport_ofi_is_private(long options) {
 
 static int rand_pool_num_attempts;
 static unsigned int rand_pool_seed;
-static int last_choice = 0;
+static int rand_pool_prev_choice = 0;
 
 static inline
 void shmem_transport_ofi_stx_rand_init(void) {
-    rand_pool_seed = shmem_internal_my_pe+1;
+    rand_pool_seed = shmem_internal_my_pe;
     return;
 }
 
@@ -394,7 +394,7 @@ int shmem_transport_ofi_stx_rand_next(long threshold) {
     /* Fill STX's up to the threshold before picking another random STX */
     if (rand_pool_num_attempts == 0 && threshold != -1) {
         rand_pool_num_attempts++;
-        return last_choice;
+        return rand_pool_prev_choice;
     }
 
     /* Choose an STX index from the unselected subset */
@@ -456,7 +456,7 @@ int shmem_transport_ofi_stx_search_shared(long threshold)
                     (shmem_transport_ofi_stx_pool[i].ref_cnt <= threshold || threshold == -1) &&
                     !shmem_transport_ofi_stx_pool[i].is_private) {
                     stx_idx = i;
-                    last_choice = stx_idx;
+                    rand_pool_prev_choice = stx_idx;
                     rr_start_idx = (i + 1) % shmem_transport_ofi_stx_max;
                     break;
                 }
