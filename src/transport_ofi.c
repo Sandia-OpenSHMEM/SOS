@@ -371,53 +371,42 @@ int shmem_transport_ofi_is_private(long options) {
     }
 }
 
-/* This uses a slightly modified version of the Fisher-Yates shuffle algorithm
- * (or Knuth Shuffle).  It selects a random element from the so-far
- * unselected subset of the STX pool.  The top_idx should be reset before each
- * new search to ensure that all entries are visited. */
-static int *rand_pool_indices;
-static int rand_pool_top_idx;
+static int rand_pool_num_attempts;
+static unsigned int rand_pool_seed;
+static int last_choice = 0;
 
 static inline
 void shmem_transport_ofi_stx_rand_init(void) {
-    rand_pool_indices = malloc(shmem_transport_ofi_stx_max * sizeof(int));
-
-    if (rand_pool_indices == NULL)
-        RAISE_ERROR_STR("out of memory initializing random STX allocator");
-
-    for (int i = 0; i < shmem_transport_ofi_stx_max; i++)
-        rand_pool_indices[i] = i;
-
-    rand_pool_top_idx = shmem_transport_ofi_stx_max - 1;
-
+    rand_pool_seed = shmem_internal_my_pe+1;
     return;
 }
 
 static inline
 void shmem_transport_ofi_stx_rand_restart(void) {
-    rand_pool_top_idx = shmem_transport_ofi_stx_max - 1;
+    rand_pool_num_attempts = 0;
 }
 
 static inline
-int shmem_transport_ofi_stx_rand_next(void) {
+int shmem_transport_ofi_stx_rand_next(long threshold) {
     /* Iterator is empty and should be restarted */
-    if (rand_pool_top_idx < 0) return -1;
+    if (rand_pool_num_attempts > shmem_transport_ofi_stx_max) return -1;
+
+    /* Fill STX's up to the threshold before picking another random STX */
+    if (rand_pool_num_attempts == 0 && threshold != -1) {
+        rand_pool_num_attempts++;
+        return last_choice;
+    }
 
     /* Choose an STX index from the unselected subset */
-    int choice = rand() % (rand_pool_top_idx + 1);
+    int choice = rand_r(&rand_pool_seed) % (shmem_transport_ofi_stx_max);
 
-    /* Swap the value at the chosen index with the value at the top index */
-    int tmp = rand_pool_indices[choice];
-    rand_pool_indices[choice] = rand_pool_indices[rand_pool_top_idx];
-    rand_pool_indices[rand_pool_top_idx] = tmp;
+    rand_pool_num_attempts++;
 
-    rand_pool_top_idx--;
-    return tmp;
+    return choice;
 }
 
 static inline
 void shmem_transport_ofi_stx_rand_fini(void) {
-    free(rand_pool_indices);
     return;
 }
 
@@ -462,11 +451,12 @@ int shmem_transport_ofi_stx_search_shared(long threshold)
 
         case RANDOM:
             shmem_transport_ofi_stx_rand_restart();
-            while ((i = shmem_transport_ofi_stx_rand_next()) >= 0) {
+            while ((i = shmem_transport_ofi_stx_rand_next(threshold)) >= 0) {
                 if (shmem_transport_ofi_stx_pool[i].ref_cnt > 0 &&
                     (shmem_transport_ofi_stx_pool[i].ref_cnt <= threshold || threshold == -1) &&
                     !shmem_transport_ofi_stx_pool[i].is_private) {
                     stx_idx = i;
+                    last_choice = stx_idx;
                     rr_start_idx = (i + 1) % shmem_transport_ofi_stx_max;
                     break;
                 }
@@ -1571,6 +1561,20 @@ int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 {
     int ret;
+
+    //if(shmem_internal_params.DEBUG) {
+    //        SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    //        DEBUG_MSG("id = %d, options = %#0lx, stx_idx = %d\n"
+    //                         RAISE_PE_PREFIX "pending_put_cntr = %9"PRIu64", completed_put_cntr = %9"PRIu64"\n"
+    //                         RAISE_PE_PREFIX "pending_get_cntr = %9"PRIu64", completed_get_cntr = %9"PRIu64"\n",
+    //                         ctx->id, (unsigned long) ctx->options, ctx->stx_idx,
+    //                         shmem_internal_my_pe,
+    //                         SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr), fi_cntr_read(ctx->put_cntr),
+    //                         shmem_internal_my_pe,
+    //                         SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr), fi_cntr_read(ctx->get_cntr)
+    //                        );
+    //        SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+    //}
 
     if (ctx->cntr_ep) {
         ret = fi_close(&ctx->cntr_ep->fid);
