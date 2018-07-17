@@ -1314,4 +1314,78 @@ void shmem_transport_syncmem(void)
     PtlAtomicSync();
 }
 
+static inline
+uint64_t shmem_transport_pcntr_get_pending_put(shmem_transport_ctx_t *ctx)
+{
+    uint64_t cnt = 0;
+    if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
+        cnt = shmem_internal_atomic_read(&shmem_transport_portals4_pending_put_event_cntr);
+    }
+    cnt += shmem_internal_atomic_read(&ctx->pending_put_cntr);
+    return cnt;
+}
+
+static inline
+uint64_t shmem_transport_pcntr_get_pending_get(shmem_transport_ctx_t *ctx)
+{
+    uint64_t cnt = shmem_internal_atomic_read(&ctx->pending_get_cntr);
+    return cnt;
+}
+
+static inline
+uint64_t shmem_transport_pcntr_get_completed_put(shmem_transport_ctx_t *ctx)
+{
+    int ret;
+    ptl_ct_event_t ev;
+
+    ret = PtlCTGet(ctx->put_ct, &ev);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+
+    uint64_t cnt = ev.success;
+    if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
+        ret = PtlCTGet(shmem_transport_portals4_put_event_ct_h, &ev);
+        if (PTL_OK != ret) { RAISE_ERROR(ret); }
+        cnt += ev.success;
+    }
+    return cnt;
+}
+
+static inline
+uint64_t shmem_transport_pcntr_get_completed_get(shmem_transport_ctx_t *ctx)
+{
+    int ret;
+    ptl_ct_event_t ev;
+
+    ret = PtlCTGet(ctx->get_ct, &ev);
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+
+    return (uint64_t) ev.success;
+}
+
+static inline
+uint64_t shmem_transport_pcntr_get_completed_target(void)
+{
+#ifndef ENABLE_HARD_POLLING
+    int ret;
+    ptl_ct_event_t ev;
+
+    ret = PtlCTGet(shmem_transport_portals4_target_ct_h, &ev);
+
+    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+    return (uint64_t) ev.success;
+#else
+    return 0;
+#endif
+}
+
+static inline
+void shmem_transport_pcntr_get_all(shmem_transport_ctx_t *ctx, shmemx_pcntr_t *pcntr)
+{
+    pcntr->pending_get = shmem_transport_pcntr_get_pending_get(ctx); 
+    pcntr->completed_get = shmem_transport_pcntr_get_completed_get(ctx); 
+    pcntr->pending_put = shmem_transport_pcntr_get_pending_put(ctx); 
+    pcntr->completed_put = shmem_transport_pcntr_get_completed_put(ctx); 
+    pcntr->target = shmem_transport_pcntr_get_completed_target(); 
+}
+
 #endif /* TRANSPORT_PORTALS_H */

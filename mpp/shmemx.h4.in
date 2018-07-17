@@ -23,16 +23,26 @@ include(shmem_bind_c.m4)dnl
 #define SHMEMX_H
 
 #include <stddef.h>
+#include <shmem.h>
 
 #define HAVE_SHMEMX_WTIME
 
 /* Counting puts */
 typedef char * shmemx_ct_t;
 
+/* Counter */
+typedef struct {
+    uint64_t pending_put;
+    uint64_t pending_get;
+    uint64_t completed_put;
+    uint64_t completed_get;
+    uint64_t target;
+} shmemx_pcntr_t;
+
 define(`SHPRE', `')dnl
 include(shmemx_c_func.h4)dnl
 
 /* Option to enable bounce buffering on a given context */
-#define SHMEMX_CTX_BOUNCE_BUFFER  (1<<31)
+#define SHMEMX_CTX_BOUNCE_BUFFER  (1l<<31)
 
 #endif /* SHMEMX_H */

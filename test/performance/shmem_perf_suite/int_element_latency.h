@@ -25,69 +25,101 @@
  * SOFTWARE.
  */
 
-void static inline
-int_p_latency(perf_metrics_t data)
+static inline
+void int_p_latency(perf_metrics_t metric_info)
 {
     double start = 0.0;
     double end = 0.0;
     unsigned int i = 0;
+    int dest = partner_node(metric_info);
+    int sender = (metric_info.num_pes != 1) ? streaming_node(metric_info) : true;
+    static int check_once = 0;
 
-    if (data.my_node == PUT_IO_NODE) {
-        printf("\nStream shmem_int_p results:\n");
-        print_results_header();
+    if (!check_once) {
+        /* check to see whether sender and receiver are the same process */
+        if (dest == metric_info.my_node) {
+            fprintf(stderr, "Warning: Sender and receiver are the same process (%d)\n",
+                             dest);
+        }
+        /* hostname validation for all sender and receiver processes */
+        int status = check_hostname_validation(metric_info);
+        if (status != 0) return;
+        check_once++;
     }
 
-    /*puts to zero to match gets validation scheme*/
-    if (data.my_node == PUT_IO_NODE) {
+    if (metric_info.my_node == 0) {
+        printf("\nshmem_int_p results:\n");
+        print_latency_header();
+    }
+    shmem_barrier_all();
 
-        for (i = 0; i < data.trials + data.warmup; i++) {
-            if(i == data.warmup)
+    /* puts to zero to match gets validation scheme */
+    if (sender) {
+
+        for (i = 0; i < metric_info.trials + metric_info.warmup; i++) {
+            if(i == metric_info.warmup)
                 start = perf_shmemx_wtime();
 
-            shmem_int_p((int*) data.dest, data.my_node, 0);
+            shmem_int_p((int*) metric_info.dest, metric_info.my_node, dest);
             shmem_quiet();
 
         }
         end = perf_shmemx_wtime();
 
-        calc_and_print_results(start, end, sizeof(int), data);
+        calc_and_print_results(start, end, sizeof(int), metric_info);
     }
 
     shmem_barrier_all();
 
-    if((data.my_node == 0) && data.validate)
-        validate_recv(data.dest, sizeof(int), partner_node(data.my_node));
+    if(!sender && metric_info.validate)
+        validate_recv(metric_info.dest, sizeof(int), dest);
 
 } /* latency/bw for one-way trip */
 
-void static inline
-int_g_latency(perf_metrics_t data)
+static inline
+void int_g_latency(perf_metrics_t metric_info)
 {
     double start = 0.0;
     double end = 0.0;
     unsigned int i = 0;
     int rtnd = -1;
+    int dest = partner_node(metric_info);
+    int receiver = (metric_info.num_pes != 1) ? streaming_node(metric_info) : true;
+    static int check_once = 0;
 
-    if (data.my_node == GET_IO_NODE) {
-        printf("\nStream shmem_int_g results:\n");
-        print_results_header();
+    if (!check_once) {
+        /* check to see whether sender and receiver are the same process */
+        if (dest == metric_info.my_node) {
+            fprintf(stderr, "Warning: Sender and receiver are the same process (%d)\n",
+                             dest);
+        }
+        /* hostname validation for all sender and receiver processes */
+        int status = check_hostname_validation(metric_info);
+        if (status != 0) return;
+        check_once++;
     }
 
-    if (data.my_node == GET_IO_NODE) {
+    if (metric_info.my_node == 0) {
+        printf("\nshmem_int_g results:\n");
+        print_latency_header();
+    }
+    shmem_barrier_all();
 
-        for (i = 0; i < data.trials + data.warmup; i++) {
-            if(i == data.warmup)
+    if (receiver) {
+
+        for (i = 0; i < metric_info.trials + metric_info.warmup; i++) {
+            if(i == metric_info.warmup)
                 start = perf_shmemx_wtime();
 
-            rtnd = shmem_int_g((int*) data.src, 1);
+            rtnd = shmem_int_g((int*) metric_info.src, dest);
         }
         end = perf_shmemx_wtime();
 
-        calc_and_print_results(start, end, sizeof(int), data);
+        calc_and_print_results(start, end, sizeof(int), metric_info);
     }
 
     shmem_barrier_all();
 
-    if((data.my_node == 0) && data.validate)
-        validate_recv((char*) &rtnd, sizeof(int), partner_node(data.my_node));
+    if(receiver && metric_info.validate)
+        validate_recv((char*) &rtnd, sizeof(int), dest);
 }

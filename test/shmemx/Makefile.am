@@ -26,7 +26,8 @@ endif
 if HAVE_PTHREADS
 if SHMEMX_TESTS
 check_PROGRAMS += \
-	gettid_register
+	gettid_register \
+	perf_counter
 endif
 endif
 

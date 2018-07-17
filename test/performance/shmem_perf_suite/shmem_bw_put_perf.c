@@ -33,7 +33,6 @@
 **
 **  -by default megabytes/second results
 **
-**NOTE: this test assumes correctness of reduction algorithm
 */
 #include <bw_common.h>
 #include <uni_dir.h>

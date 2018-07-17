@@ -12,4 +12,5 @@
 # distribution.
 
 noinst_HEADERS = \
-	uthash.h
+	uthash.h \
+	pthread_barrier.h

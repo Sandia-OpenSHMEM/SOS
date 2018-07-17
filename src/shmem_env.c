@@ -30,17 +30,19 @@
 struct shmem_internal_params_s shmem_internal_params;
 
 /* atol() + optional scaled suffix recognition: 1K, 2M, 3G, 1T */
-static long
+static shmem_internal_env_size
 atol_scaled(char *s)
 {
-    long val;
+    long val_l;
+    shmem_internal_env_size val;
     char *e;
     errno = 0;
 
-    val = strtol(s,&e,0);
-    if(errno != 0 || e == s) {
-        shmem_runtime_abort(1, "env var conversion");
+    val_l = strtol(s,&e,0);
+    if (errno != 0 || e == s || val_l < 0) {
+        RAISE_ERROR_MSG("Environment variable conversion failed (%s)\n", s);
     }
+    val = (shmem_internal_env_size) val_l;
     if (e == NULL || *e =='\0')
         return val;
 
@@ -65,9 +67,8 @@ errchk_atol(char *s)
     errno = 0;
 
     val = strtol(s,&e,0);
-    if(errno != 0) {
-        perror("env var conversion");
-        exit(1);
+    if (errno != 0 || e == s) {
+        RAISE_ERROR_MSG("Environment variable conversion failed (%s)\n", s);
     }
 
     return val;
@@ -81,7 +82,7 @@ shmem_internal_getenv(const char* name)
 
     ret = asprintf(&env_name, "SHMEM_%s", name);
     if (ret < 0) {
-        RAISE_ERROR(ret);
+        RAISE_ERROR_MSG("Error in asprintf: SHMEM_%s\n", name);
     }
     env_value = getenv(env_name);
     free(env_name);
@@ -91,7 +92,7 @@ shmem_internal_getenv(const char* name)
 
     ret = asprintf(&env_name, "SMA_%s", name);
     if (ret < 0) {
-        RAISE_ERROR(ret);
+        RAISE_ERROR_MSG("Error in asprintf: SMA_%s\n", name);
     }
     env_value = getenv(env_name);
     free(env_name);
