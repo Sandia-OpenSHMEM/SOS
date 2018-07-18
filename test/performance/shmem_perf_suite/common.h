@@ -407,14 +407,10 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t *metric_info) 
             }
             break;
         case 'r':
-            if (metric_info->szinitiator == -1) {
-                metric_info->sztarget = strtoul(optarg, (char **)NULL, 0);
-            } 
+            metric_info->sztarget = strtoul(optarg, (char **)NULL, 0);
             break;
         case 'l':
-            if (metric_info->sztarget == -1) {
-                metric_info->szinitiator = strtoul(optarg, (char **)NULL, 0);
-            }
+            metric_info->szinitiator = strtoul(optarg, (char **)NULL, 0);
             break;
         case 'C':
 #if defined(ENABLE_THREADS)
@@ -473,9 +469,8 @@ void print_usage(int errors) {
            "                             validate, special sizes used, trials + \n"
            "                             warmup * sizes (8/4KB) <= max length \n"
            " -r TARGET_SIZE              Number of target nodes, use only with -t;\n"
-           "                             ignored if -l is used already \n"
            " -l SOURCE_SIZE              Number of initiator nodes, use only with\n"
-           "                             -t; ignored if -r is used already\n"
+           "                             -t\n"
            " -T THREADS                  Number of threads\n"
            " -C THREAD_LEVEL             SHMEM thread level. Possible values: \n"
            "                             SINGLE, FUNNELED, SERIALIZED, MULTIPLE \n"
@@ -573,8 +568,8 @@ int streaming_node(perf_metrics_t my_info)
 static inline
 int target_node(perf_metrics_t my_info)
 {
-    return (my_info.my_node >= my_info.szinitiator &&
-        (my_info.my_node < (my_info.szinitiator + my_info.sztarget)));
+    return (my_info.my_node >= my_info.midpt &&
+        (my_info.my_node < (my_info.midpt + my_info.sztarget)));
 }
 
 static inline 
@@ -674,24 +669,22 @@ int error_checking_init_target_usage(perf_metrics_t *metric_info) {
     int error = false;
     assert(metric_info->midpt > 0);
 
-    if (metric_info->sztarget != -1 && metric_info->szinitiator != -1 && 
-        metric_info->sztarget + metric_info->szinitiator != metric_info->num_pes) {
-        error = true; 
+    if (metric_info->sztarget != -1 && metric_info->szinitiator != -1) { 
     } else if (metric_info->sztarget != -1 && metric_info->szinitiator == -1) {
         if (metric_info->sztarget < 1 ||
-            metric_info->sztarget >= metric_info->num_pes ||
+            metric_info->sztarget > metric_info->midpt ||
             !metric_info->target_data) {
             error = true;
         } else {
-            metric_info->szinitiator = metric_info->num_pes - metric_info->sztarget;
+            metric_info->szinitiator = metric_info->midpt;
         }
     } else if (metric_info->sztarget == -1 && metric_info->szinitiator != -1) {
         if( metric_info->szinitiator < 1 ||
-            metric_info->szinitiator >= metric_info->num_pes ||
+            metric_info->szinitiator > metric_info->midpt ||
             !metric_info->target_data) {
             error = true;
         } else {
-            metric_info->sztarget = metric_info->num_pes - metric_info->szinitiator;
+            metric_info->sztarget = metric_info->midpt;
         }
     } else {
         metric_info->szinitiator = metric_info->midpt;
@@ -749,7 +742,7 @@ void PE_set_used_adjustments(int *nPEs, int *stride, int *start_pe,
     }
     else {
         assert(PE_set == SECOND_HALF);
-        *start_pe = my_info.szinitiator;
+        *start_pe = my_info.midpt;
     }
 
     *stride = 0; /* back to back PEs */

@@ -26,18 +26,25 @@
  */
 
 static inline int get_size_of_side(perf_metrics_t my_info) {
-    if(my_info.my_node < my_info.szinitiator)
+    if(my_info.my_node < my_info.midpt)
         return my_info.szinitiator;
     else
         return my_info.sztarget;
 }
 
+static inline int get_size_of_other_side(perf_metrics_t my_info) {
+    if(my_info.my_node < my_info.midpt)
+        return my_info.sztarget;
+    else
+        return my_info.szinitiator;
+}
+
 static inline int get_num_partners(perf_metrics_t my_info, int snode) {
     int unused_PEs = 0, num_partners = 0;
     int active_PEs = get_size_of_side(my_info);
-    int other_side = my_info.num_pes - active_PEs;
+    int other_side = get_size_of_other_side(my_info);
 
-    if(active_PEs >= my_info.midpt) 
+    if(active_PEs >= other_side) 
         return 1;
 
     num_partners = other_side / active_PEs;
@@ -47,7 +54,7 @@ static inline int get_num_partners(perf_metrics_t my_info, int snode) {
         if((my_info.my_node % active_PEs) < unused_PEs)
             num_partners++;
     } else {
-        if(((my_info.my_node - my_info.szinitiator) % active_PEs) < unused_PEs)
+        if(((my_info.my_node - my_info.midpt) % active_PEs) < unused_PEs)
             num_partners++;
     }
 
@@ -68,7 +75,7 @@ static inline int *get_initiators_partners(perf_metrics_t my_info, int num_partn
     assert(partner_nodes);
 
     for(i = 0; i < num_partners; i++) {
-        partner_nodes[i] = ((node_to_shadow % my_info.sztarget) + my_info.szinitiator);
+        partner_nodes[i] = ((node_to_shadow % my_info.sztarget) + my_info.midpt);
         node_to_shadow += my_info.szinitiator;
     }
 
