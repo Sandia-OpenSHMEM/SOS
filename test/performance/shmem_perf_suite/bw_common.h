@@ -140,7 +140,7 @@ void print_data_results(double bw, double mr, perf_metrics_t data,
 }
 
 static inline 
-void calc_and_print_results(double end_t, double start_t, int len,
+void calc_and_print_results(double end_t, double start_t, int len, int count, 
                             perf_metrics_t metric_info) {
     int stride = 0, start_pe = 0, nPEs = 0;
     static double pe_bw_sum, bw = 0.0; /*must be symmetric for reduction*/
@@ -161,11 +161,11 @@ void calc_and_print_results(double end_t, double start_t, int len,
     if (end_t > 0 && start_t > 0 && (end_t - start_t) > 0) {
         total_t = end_t - start_t;
 #ifdef ENABLE_OPENMP
-        bw = ((double) len * (double) multiplier / 1.0e6 * 
+        bw = ((double) len * (double) count * (double) multiplier / 1.0e6 * 
              metric_info.window_size * metric_info.trials *
              (double) metric_info.nthreads) / (total_t / 1.0e6);
 #else
-        bw = ((double) len * (double) multiplier / 1.0e6 * 
+        bw = ((double) len * (double) count * (double) multiplier / 1.0e6 * 
              metric_info.window_size * metric_info.trials) /
              (total_t / 1.0e6);
 #endif
@@ -185,7 +185,7 @@ void calc_and_print_results(double end_t, double start_t, int len,
     pe_time_start = start_t;
     pe_time_end = end_t;
     shmem_barrier(start_pe, stride, nPEs, bar_psync);
-    if (metric_info.cstyle != COMM_INCAST && !metric_info.target_data) {
+    if (metric_info.cstyle != COMM_INCAST && !metric_info.target_data) { 
         if (nPEs >= 2) {
             shmem_double_min_to_all(&start_time_min, &pe_time_start, nred_elements,
                                 start_pe, stride, nPEs, pwrk,
@@ -205,11 +205,11 @@ void calc_and_print_results(double end_t, double start_t, int len,
 
             total_t_max = (end_time_max - start_time_min);
 #ifdef ENABLE_OPENMP
-            bw = ((double) len * (double) multiplier * (double) metric_info.midpt / 
+            bw = ((double) len * (double) count * (double) multiplier * (double) nPEs / 
                  1.0e6 * metric_info.window_size * metric_info.trials * 
                  (double) metric_info.nthreads) / (total_t_max / 1.0e6);
 #else
-            bw = ((double) len * (double) multiplier * (double) metric_info.midpt / 
+            bw = ((double) len * (double) count * (double) multiplier * (double) nPEs / 
                  1.0e6 * metric_info.window_size * metric_info.trials) / 
                  (total_t_max / 1.0e6);
 #endif
