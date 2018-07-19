@@ -187,6 +187,12 @@ AS_IF([test "$enable_long_fortran_header" = "yes"], [FORTRAN_LONG_HEADER=" "], [
 AC_SUBST([FORTRAN_LONG_HEADER])
 AM_CONDITIONAL([HAVE_LONG_FORTRAN_HEADER], [test "$enable_long_fortran_header" = "yes"])
 
+AC_ARG_ENABLE([rpm-prefix],
+    [AC_HELP_STRING([--enable-rpm-prefix],
+                    [Generate RPM spec file that supports an alternate installation prefix (default:disabled)])])
+AS_IF([test "$enable_rpm_prefix" = "yes"], [SOS_RPM_PREFIXED=""], [SOS_RPM_PREFIXED="# DISABLED: "])
+AC_SUBST([SOS_RPM_PREFIXED])
+
 AC_ARG_ENABLE([mr-scalable],
     [AC_HELP_STRING([--disable-mr-scalable],
                     [Disable the use of scalable memory regions in the OFI transport.  Required by some providers. (default: enabled)])])
