@@ -6,7 +6,7 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: sos
+Name: sandia-openshmem
 Description: @PACKAGE_NAME@
 URL: @PACKAGE_URL@
 Version: @VERSION@
