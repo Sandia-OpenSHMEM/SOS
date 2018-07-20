@@ -20,6 +20,8 @@
 
 #if defined(__i386__) || defined(__x86_64__)
 # define SPINLOCK_BODY() do { __asm__ __volatile__ ("pause" ::: "memory"); } while (0)
+#elif defined(__aarch64__)
+# define SPINLOCK_BODY() do { __asm__ __volatile__ ("dsb ld" ::: "memory"); } while (0)
 #else
 # define SPINLOCK_BODY() do { __asm__ __volatile__ ("" ::: "memory"); } while (0)
 #endif
