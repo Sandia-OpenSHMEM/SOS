@@ -1063,7 +1063,6 @@ int populate_av(void)
     }
 
     for (i = 0; i < shmem_internal_num_pes; i++) {
-        printf("transport_ofi loop: %i\n", i);
         char *addr_ptr = alladdrs + i * shmem_transport_ofi_addrlen;
         int toCheck = shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen); //TODO Ask Jim about having this check implemented
         printf("Sanity: %i\n", toCheck);
@@ -1086,14 +1085,10 @@ int populate_av(void)
                        addr_table,
                        0,
                        NULL);
-    // printf("ret: %i, internal_pes: %i\n", ret, shmem_internal_num_pes);
-    // printf("addr_table: %i", addr_table);
     if (ret != shmem_internal_num_pes) {
         RAISE_WARN_STR("av insert failed");
         return ret;
     }
-
-    printf("fi_av_insert success\n");
 
     free(alladdrs);
 
