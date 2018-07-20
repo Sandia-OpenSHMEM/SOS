@@ -1064,11 +1064,18 @@ int populate_av(void)
 
     for (i = 0; i < shmem_internal_num_pes; i++) {
         char *addr_ptr = alladdrs + i * shmem_transport_ofi_addrlen;
-        int toCheck = shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen); //TODO Ask Jim about having this check implemented
-        printf("Sanity: %i\n", toCheck);
+        int err = shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen); //TODO Ask Jim about having this check implemented
+        if(err != 0){
+            RAISE_WARN_STR("Runtime get failed");
+        }
 
 #ifdef USE_ON_NODE_COMMS
         shmem_runtime_get(i, "fi_ephostname", ephostname, EPHOSTNAMELEN);
+  
+        if(err != 0){
+            RAISE_WARN_STR("Runtime get failed");
+        }
+  
         if (strncmp(myephostname, ephostname, EPHOSTNAMELEN) == 0) {
             SHMEM_SET_RANK_SAME_NODE(i, num_on_node++);
             if (num_on_node > 255) {
