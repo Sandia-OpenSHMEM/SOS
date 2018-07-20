@@ -4,84 +4,30 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "mpi.h"
+#include <mpi.h>
 
 
 #include "runtime.h"
 #include "shmem_internal.h"
+#include "shmem_env.h"
 #include "uthash.h"
 
-#define MAX_KV_COUNT 10
-
+#define MAX_KV_COUNT 20
+#define MAX_KV_LENGTH 64
 
 static int rank = -1;
 static int size = 0;
-static char *kvs_name, *kvs_key, *kvs_value;
-static int max_name_len, max_key_len, max_val_len;
 static MPI_Comm SHMEM_RUNTIME_WORLD;
-static char** kv_store_all;
-static char** kv_store_me;
 static int length = 0;
+static int to_finalize = 0;
 
-#define SINGLETON_KEY_LEN 128
-#define SINGLETON_VAL_LEN 256
+char* kv_store_me;
+char* kv_store_all;
 
-typedef struct {
-    char key[SINGLETON_KEY_LEN];
-    char val[SINGLETON_VAL_LEN];
-    UT_hash_handle hh;
-} singleton_kvs_t;
-
-singleton_kvs_t *singleton_kvs = NULL;
-
-static int
-encode(const void *inval, int invallen, char *outval, int outvallen)
+char* 
+kv_index(char* kv_set, int index)
 {
-    static unsigned char encodings[] = {
-        '0','1','2','3','4','5','6','7', 
-        '8','9','a','b','c','d','e','f' };
-    int i;
-
-    if (invallen * 2 + 1 > outvallen) {
-        return 1;
-    }
-
-    for (i = 0; i < invallen; i++) {
-        outval[2 * i] = encodings[((unsigned char *)inval)[i] & 0xf];
-        outval[2 * i + 1] = encodings[((unsigned char *)inval)[i] >> 4];
-    }
-
-    outval[invallen * 2] = '\0';
-
-    return 0;
-}
-
-static int
-decode(const char *inval, void *outval, size_t outvallen)
-{
-    size_t i;
-    char *ret = (char*) outval;
-
-    if (outvallen != strlen(inval) / 2) {
-        return 1;
-    }
-
-    for (i = 0 ; i < outvallen ; ++i) {
-        if (*inval >= '0' && *inval <= '9') {
-            ret[i] = *inval - '0';
-        } else {
-            ret[i] = *inval - 'a' + 10;
-        }
-        inval++;
-        if (*inval >= '0' && *inval <= '9') {
-            ret[i] |= ((*inval - '0') << 4);
-        } else {
-            ret[i] |= ((*inval - 'a' + 10) << 4);
-        }
-        inval++;
-    }
-
-    return 0;
+    return kv_set + index * MAX_KV_LENGTH;
 }
 
 int
@@ -92,73 +38,32 @@ shmem_runtime_init(void)
         return 1;
     }
     if (!initialized) {
-        if(getenv("MPI_THREAD_LEVEL") == NULL){
-            if (MPI_SUCCESS != MPI_Init(NULL, NULL)) {
-                return 2;
-            }
+        int provided = 0;
+        if(MPI_SUCCESS != MPI_Init_thread(NULL, NULL, shmem_internal_params.SHMEM_MPI_THREAD_LEVEL, &provided)){
+            return 4;
         }
-        else{
-            int provided = 0;
-            char* thread_level = getenv("MPI_THREAD_LEVEL");
-            int int_thread_level = 0;
-            if(strcmp(thread_level, "MPI_THREAD_SINGLE") == 0){
-                int_thread_level = MPI_THREAD_SINGLE;
-            }
-            else if(strcmp(thread_level, "MPI_THREAD_FUNNELED") == 0){
-                int_thread_level   = MPI_THREAD_FUNNELED;
-            }
-            else if(strcmp(thread_level, "MPI_THREAD_SERIALIZED") == 0){
-                int_thread_level = MPI_THREAD_SERIALIZED;
-            }
-            else if(strcmp(thread_level, "MPI_THREAD_MULTIPLE") == 0){
-                int_thread_level = MPI_THREAD_MULTIPLE;
-            }
-            else{
-                return 16;
-            }
-            if(MPI_SUCCESS != MPI_Init_thread(NULL, NULL, int_thread_level, &provided)){
-                return 2;
-            }
+        if(provided != shmem_internal_params.SHMEM_MPI_THREAD_LEVEL){
+            return -1;
         }
+        to_finalize = 1;
     }
     if(MPI_SUCCESS != MPI_Comm_dup(MPI_COMM_WORLD, &SHMEM_RUNTIME_WORLD)){
-    	return 3;
+    	return 5;
     }
     if (MPI_SUCCESS !=  MPI_Comm_rank(SHMEM_RUNTIME_WORLD, &rank)) {
-        return 4;
+        return 6;
     }
 
     if (MPI_SUCCESS != MPI_Comm_size(SHMEM_RUNTIME_WORLD, &size)) {
-        return 5;
+        return 7;
     }
 
-    if (size > 1) { 
-
-    	max_name_len = 128;
-        max_key_len = 128;
-        max_val_len = 128;
-
-        //WARN: THIS ASSUMES THAT YOU CAN ONLY HAVE 10 KEY VALUE PAIRS
-        kv_store_all = (char**) malloc(sizeof(char*) * MAX_KV_COUNT * 2); 
-        if(NULL == kv_store_all) return 6; //rename
-        kv_store_me = (char**) malloc(sizeof(char*) * MAX_KV_COUNT * 2);
-        if(NULL == kv_store_me) return 7; //rename
-
+    kv_store_me = (char*)malloc(MAX_KV_COUNT * sizeof(char)* MAX_KV_LENGTH);
+    
+    if(NULL == kv_store_me){
+        return 8;
     }
-    else {
-        /* Use a local KVS for singleton runs */
-        max_key_len = SINGLETON_KEY_LEN;
-        max_val_len = SINGLETON_VAL_LEN;
-        kvs_name = NULL;
-        max_name_len = 0;
-    }
-
-    kvs_key = (char*) malloc(max_key_len);
-    if (NULL == kvs_key) return 8;
-
-    kvs_value = (char*) malloc(max_val_len);
-    if (NULL == kvs_value) return 9;
-
+    
     return 0;
 }
 
@@ -167,11 +72,14 @@ shmem_runtime_fini(void)
 {
     int finalized = 0;
     MPI_Finalized(&finalized);
-    if(!finalized){
+    if(!finalized && to_finalize){
         MPI_Finalize();
     }
+
     free(kv_store_all);
-    free(kv_store_me);
+    if(size != 1){
+        free(kv_store_me);
+    }
 
     return 0;
 }
@@ -213,21 +121,24 @@ shmem_runtime_get_size(void)
 int
 shmem_runtime_exchange(void)
 {
-    /* Use singleton KVS for single process jobs */
     if (size == 1){
+        kv_store_all = kv_store_me;
         return 0;
     }
-    
-    for(int i = 0; i < length; i++)
-    {
-        *(kv_store_all + i) = (char*)malloc(max_val_len * sizeof(char) * size);
 
-        if (MPI_SUCCESS != MPI_Allgather(*(kv_store_me+i), max_val_len, MPI_CHAR, *(kv_store_all + i), max_val_len, MPI_CHAR, SHMEM_RUNTIME_WORLD)) {
-            return 2;   
-        }
-        if (MPI_SUCCESS != MPI_Barrier(SHMEM_RUNTIME_WORLD)) {
-            return 6;
-        }
+    int chunkSize = length * sizeof(char) * MAX_KV_LENGTH;
+    
+    kv_store_all = (char*)malloc(chunkSize * size);
+    
+    if(NULL == kv_store_all){
+        return 9;
+    }
+
+    if (MPI_SUCCESS != MPI_Allgather(kv_store_me, chunkSize, MPI_CHAR, kv_store_all, chunkSize, MPI_CHAR, SHMEM_RUNTIME_WORLD)) {
+        return 10;   
+    }
+    if (MPI_SUCCESS != MPI_Barrier(SHMEM_RUNTIME_WORLD)) {
+        return 11;
     }
     return 0;
 }
@@ -236,26 +147,15 @@ shmem_runtime_exchange(void)
 int 
 shmem_runtime_put(char *key, void *value, size_t valuelen)
 {
-    snprintf(kvs_key, max_key_len, "shmem-%lu-%s", (long unsigned) rank, key);
-    if (0 != encode(value, valuelen, kvs_value, max_val_len)) {
-        return 1;
-    }
+    if(length < MAX_KV_COUNT){
 
-    if (size == 1) {
-        singleton_kvs_t *e = malloc(sizeof(singleton_kvs_t));
-        if (e == NULL) return 3;
-        strncpy(e->key, kvs_key, max_key_len);
-        strncpy(e->val, kvs_value, max_val_len);
-        HASH_ADD_STR(singleton_kvs, key, e);
+        memcpy(kv_index(kv_store_me, length), key, MAX_KV_LENGTH);
+        length++;
+        memcpy(kv_index(kv_store_me, length), value, MAX_KV_LENGTH);
+        length++;
+
     } else {
-        if(length < 20){
-            *(kv_store_me + length) = key;
-            length++;
-            *(kv_store_me + length) = kvs_value;
-            length++;
-        } else {
-            return 20;
-        }
+        return MAX_KV_COUNT;
     }
 
     return 0;
@@ -264,25 +164,20 @@ shmem_runtime_put(char *key, void *value, size_t valuelen)
 int
 shmem_runtime_get(int pe, char *key, void *value, size_t valuelen)
 {
-	snprintf(kvs_key, max_key_len, "shmem-%lu-%s", (long unsigned) pe, key);
-    if (size == 1) {
-        singleton_kvs_t *e;
-        HASH_FIND_STR(singleton_kvs, kvs_key, e);
-        if (e == NULL)
-            return 3;
-        kvs_value = e->val;
-    }
-    else {
-        for(int i = 0; i < 2 * length; i += 2){
-            if(strcmp(key, (*(kv_store_all+i) + pe * max_val_len)) == 0){
-                kvs_value = (*(kv_store_all+i + 1) + pe * max_val_len);
-                break;
-            }
+    int flag = 0;
+    for(int i = pe * length; i < length * size; i+= 2){
+        if(strcmp(kv_index(kv_store_all, i), key) == 0){
+            memcpy(value, kv_index(kv_store_all, i+1), valuelen);
+            flag = 1;
+            break;
         }
     }
-    if (0 != decode(kvs_value, value, valuelen)) {
-        return 2;
+    if(0 == flag){
+        return 12;
     }
+
+    MPI_Barrier(SHMEM_RUNTIME_WORLD);
+    
     return 0;
 }
 

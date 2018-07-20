@@ -4,7 +4,7 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2017 Intel Corporation. All rights reserved.
+ * Copyright (c) 2018 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -97,3 +97,6 @@ SHMEM_INTERNAL_ENV_DEF(OFI_STX_ALLOCATOR, string, "round-robin", SHMEM_INTERNAL_
 SHMEM_INTERNAL_ENV_DEF(OFI_STX_DISABLE_PRIVATE, bool, false, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Disallow private contexts from having exclusive STX access")
 #endif
+
+SHMEM_INTERNAL_ENV_DEF(SHMEM_MPI_THREAD_LEVEL, long, 0, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Flag to determine the threading level for MPI when used as the proccess manager");

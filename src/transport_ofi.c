@@ -1037,6 +1037,7 @@ int publish_av_info(struct fabric_info *info)
     ret = shmem_runtime_put("fi_epname", epname, epnamelen);
     OFI_CHECK_RETURN_STR(ret, "shmem_runtime_put fi_epname failed");
 
+
     /* Note: we assume that the length of an address is the same for all
      * endpoints.  This is safe for most HPC systems, but could be incorrect in
      * a heterogeneous context. */
@@ -1063,10 +1064,18 @@ int populate_av(void)
 
     for (i = 0; i < shmem_internal_num_pes; i++) {
         char *addr_ptr = alladdrs + i * shmem_transport_ofi_addrlen;
-        shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen);
+        int err = shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen); //TODO Ask Jim about having this check implemented
+        if(err != 0){
+            RAISE_WARN_STR("Runtime get failed");
+        }
 
 #ifdef USE_ON_NODE_COMMS
         shmem_runtime_get(i, "fi_ephostname", ephostname, EPHOSTNAMELEN);
+  
+        if(err != 0){
+            RAISE_WARN_STR("Runtime get failed");
+        }
+  
         if (strncmp(myephostname, ephostname, EPHOSTNAMELEN) == 0) {
             SHMEM_SET_RANK_SAME_NODE(i, num_on_node++);
             if (num_on_node > 255) {
