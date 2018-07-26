@@ -1363,7 +1363,7 @@ uint64_t shmem_transport_pcntr_get_completed_get(shmem_transport_ctx_t *ctx)
 }
 
 static inline
-uint64_t shmem_transport_pcntr_get_completed_target(shmem_transport_ctx_t *ctx)
+uint64_t shmem_transport_pcntr_get_completed_target(void)
 {
 #ifndef ENABLE_HARD_POLLING
     int ret;
@@ -1376,6 +1376,16 @@ uint64_t shmem_transport_pcntr_get_completed_target(shmem_transport_ctx_t *ctx)
 #else
     return 0;
 #endif
+}
+
+static inline
+void shmem_transport_pcntr_get_all(shmem_transport_ctx_t *ctx, shmemx_pcntr_t *pcntr)
+{
+    pcntr->pending_get = shmem_transport_pcntr_get_pending_get(ctx); 
+    pcntr->completed_get = shmem_transport_pcntr_get_completed_get(ctx); 
+    pcntr->pending_put = shmem_transport_pcntr_get_pending_put(ctx); 
+    pcntr->completed_put = shmem_transport_pcntr_get_completed_put(ctx); 
+    pcntr->target = shmem_transport_pcntr_get_completed_target(); 
 }
 
 #endif /* TRANSPORT_PORTALS_H */

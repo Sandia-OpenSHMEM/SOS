@@ -13,10 +13,10 @@
 set -e
 
 if [ -z "$SOS_VERSION" ] ; then
-    SOS_VERSION="v1.4.0"
+    SOS_VERSION="v1.4.1"
 fi
 if [ -z "$OFI_VERSION" ] ; then
-    OFI_VERSION="v1.5.3"
+    OFI_VERSION="v1.6.1"
 fi
 
 HYDRA_URL="http://www.mpich.org/static/downloads/3.2.1/hydra-3.2.1.tar.gz"
@@ -38,15 +38,15 @@ if [ ! -d $BUILD_DIR ] ; then
     exit 1
 fi
 
+if [ ! -d $INSTALL_DIR ] ; then
+    echo "Can't access install directory '$INSTALL_DIR'"
+    exit 1
+fi
+
 if [[ $INSTALL_DIR != "/"* ]] ; then
     pushd $INSTALL_DIR > /dev/null
     INSTALL_DIR=$PWD
     popd > /dev/null
-fi
-
-if [ ! -d $INSTALL_DIR ] ; then
-    echo "Can't access install directory '$INSTALL_DIR'"
-    exit 1
 fi
 
 if [ -z "$SOS_CONFIG_OPTS" ] ; then

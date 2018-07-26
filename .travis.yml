@@ -77,6 +77,8 @@ addons:
             - gfortran
             - rpm
             - mpich
+            - cargo
+
 
 before_install:
     ## Set up the environment

@@ -69,14 +69,15 @@ AC_ARG_ENABLE([completion-polling],
     [AC_HELP_STRING([--enable-completion-polling],
                     [Enable polling in quiet, fence, and local completion operations (default:disabled)])])
 AS_IF([test "$enable_completion_polling" = "yes"],
-      [AC_DEFINE([ENABLE_COMPLETION_POLLING], [1], [Enable polling for local/remote completions])
-       AC_DEFINE([DEFAULT_POLL_LIMIT], [-1], [Poll limit for local/remote completions])],
+      [AC_DEFINE([DEFAULT_POLL_LIMIT], [-1], [Poll limit for local/remote completions])],
       [AC_DEFINE([DEFAULT_POLL_LIMIT], [0], [Poll limit for local/remote completions])])
 
 AC_ARG_ENABLE([manual-progress],
     [AC_HELP_STRING([--enable-manual-progress],
                     [Enable intermittent progress calls inside transport layer (default:disabled)])])
-AS_IF([test "$enable_manual_progress" = "yes"], [AC_DEFINE([ENABLE_MANUAL_PROGRESS], [1], [Enable manual progress])])
+AS_IF([test "$enable_manual_progress" = "yes"],
+      [AC_DEFINE([ENABLE_MANUAL_PROGRESS], [1], [Enable manual progress])
+       AC_DEFINE([DEFAULT_POLL_LIMIT], [-1], [Poll limit for local/remote completions])])
 
 AC_ARG_WITH([total-data-ordering],
     [AC_HELP_STRING([--with-total-data-ordering],
@@ -157,6 +158,10 @@ AC_ARG_ENABLE([fortran],
 AC_ARG_ENABLE([cxx],
     [AC_HELP_STRING([--disable-cxx],
                     [Disable building the C++ bindings (default: enabled)])])
+
+AC_ARG_ENABLE([c11-checks],
+    [AC_HELP_STRING([--disable-c11-checks],
+                    [Disable build-time type checks for C11 bindings (default: enabled)])])
 
 AC_ARG_ENABLE([libtool-wrapper],
   [AS_HELP_STRING([--disable-libtool-wrapper],
@@ -263,7 +268,7 @@ AS_IF([test "$shmem_cv_c11_works" = "no"],
       CFLAGS="-std=gnu11 $ORIG_CFLAGS"]
       )
 AC_LANG_POP([C])
-AM_CONDITIONAL([HAVE_C11], [test "$shmem_cv_c11_works" = "yes"])
+AM_CONDITIONAL([HAVE_C11], [test "$shmem_cv_c11_works" = "yes" -a "$enable_c11_checks" != "no"])
 # end gnu11/gnu99 check
 
 
@@ -765,6 +770,9 @@ AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$t
 
 AS_IF([test "$shmem_cv_c11_works" != "yes"],
       [AC_MSG_WARN([C compiler does not support _Generic, unabled to verify and test C11 bindings])])
+
+AS_IF([test "$enable_c11_checks" == "no"],
+      [AC_MSG_WARN([C11 _Generic type checks disabled, not verifying type coverage of C11 bindings])])
 
 AS_IF([test "$enable_cxx" == "no"],
       [AC_MSG_WARN([No C++ compiler or C++ disabled, unabled to verify and test C++ bindings])])

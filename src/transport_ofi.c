@@ -1120,6 +1120,13 @@ int allocate_fabric_resources(struct fabric_info *info)
               FI_MAJOR(info->p_info->fabric_attr->prov_version),
               FI_MINOR(info->p_info->fabric_attr->prov_version));
 
+    if (FI_MAJOR_VERSION != FI_MAJOR(fi_version()) ||
+        FI_MINOR_VERSION != FI_MINOR(fi_version())) {
+        RAISE_WARN_MSG("OFI version mismatch: built %"PRIu32".%"PRIu32", cur. %"PRIu32".%"PRIu32"\n",
+                       FI_MAJOR_VERSION, FI_MINOR_VERSION,
+                       FI_MAJOR(fi_version()), FI_MINOR(fi_version()));
+    }
+
     /* access domain: define communication resource limits/boundary within
      * fabric domain */
     ret = fi_domain(shmem_transport_ofi_fabfd, info->p_info,
@@ -1172,7 +1179,7 @@ int query_for_fabric(struct fabric_info *info)
 #ifdef ENABLE_MR_SCALABLE
     domain_attr.mr_mode       = FI_MR_SCALABLE; /* VA space-doesn't have to be pre-allocated */
 #  if !defined(ENABLE_HARD_POLLING) && defined(ENABLE_MR_RMA_EVENT)
-    domain_attr.mr_mode      |= FI_MR_RMA_EVENT; /* can support RMA_EVENT on MR */
+    domain_attr.mr_mode       = FI_MR_RMA_EVENT; /* can support RMA_EVENT on MR */
 #  endif
 #else
     domain_attr.mr_mode       = FI_MR_BASIC; /* VA space is pre-allocated */
@@ -1262,9 +1269,13 @@ int query_for_fabric(struct fabric_info *info)
     shmem_transport_ofi_mr_rma_event = (info->p_info->domain_attr->mr_mode & FI_MR_RMA_EVENT) != 0;
 #endif
 
-    DEBUG_MSG("OFI provider: %s, fabric: %s, domain: %s\n",
+    DEBUG_MSG("OFI provider: %s, fabric: %s, domain: %s\n"
+              RAISE_PE_PREFIX "max_inject: %zd, max_msg: %zd\n",
               info->p_info->fabric_attr->prov_name,
-              info->p_info->fabric_attr->name, info->p_info->domain_attr->name);
+              info->p_info->fabric_attr->name, info->p_info->domain_attr->name,
+              shmem_internal_my_pe,
+              shmem_transport_ofi_max_buffered_send,
+              shmem_transport_ofi_max_msg_size);
 
     return ret;
 }
