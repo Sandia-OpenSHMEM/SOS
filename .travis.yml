@@ -74,6 +74,7 @@ addons:
         packages:
             - gfortran
             - rpm
+            - mpich
 
 before_install:
     ## Set up the environment
@@ -86,7 +87,6 @@ before_install:
     ## Disable security protection so CMA will work
     - sudo sysctl -w kernel.yama.ptrace_scope=0
     - sudo sysctl -w kernel.randomize_va_space=0
-
     ## Run the icc installation script:
     - >
       if [ "$CC" = "icc" ]; then
@@ -104,7 +104,6 @@ before_install:
               exit 0
           fi
       fi
-
     ## Build libev
     - cd $TRAVIS_SRC
     - wget http://dist.schmorp.de/libev/Attic/libev-4.22.tar.gz
