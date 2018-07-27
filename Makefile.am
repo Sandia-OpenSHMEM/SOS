@@ -13,7 +13,8 @@
 
 ACLOCAL_AMFLAGS = -I config
 
-EXTRA_DIST = README NEWS LICENSE sandia-openshmem.spec autogen.sh pmi-simple man
+EXTRA_DIST = sandia-openshmem.spec autogen.sh pmi-simple man
+dist_doc_DATA = README NEWS LICENSE
 
 SUBDIRS = bindings man mpp pmi-simple src test
 
