@@ -4,13 +4,13 @@ language: c
 dist: trusty
 compiler:
     #- clang
-    - gcc
-    - icc
+    # - gcc
+    # - icc
     - mpicc
 env:
     global:
         - TRAVIS_PAR_MAKE="-j 4"
-        - SOS_GLOBAL_BUILD_OPTS="--enable-picky --enable-pmi-simple"
+        - SOS_GLOBAL_BUILD_OPTS="--enable-picky --enable-pmi-mpi"
         - FCFLAGS="-fcray-pointer"
         #- PTL_IFACE_NAME=venet0
         - PTL_IFACE_NAME=lo
@@ -86,13 +86,6 @@ before_install:
     ## Disable security protection so CMA will work
     - sudo sysctl -w kernel.yama.ptrace_scope=0
     - sudo sysctl -w kernel.randomize_va_space=0
-
-    - >
-      if ["$CC = "mpicc"]
-        CC=mpicc
-        SOS_GLOBAL_BUILD_OPTS="--enable-picky --enable-pmi-pmi"
-        SOS_DISABLE_FORTRAN=1
-      fi
 
     ## Run the icc installation script:
     - >
