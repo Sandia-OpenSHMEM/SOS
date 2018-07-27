@@ -86,6 +86,14 @@ before_install:
     ## Disable security protection so CMA will work
     - sudo sysctl -w kernel.yama.ptrace_scope=0
     - sudo sysctl -w kernel.randomize_va_space=0
+
+    - >
+      if ["$CC = "mpicc"]
+        CC=mpicc
+        SOS_GLOBAL_BUILD_OPTS="--enable-picky --enable-pmi-pmi"
+        SOS_DISABLE_FORTRAN=1
+      fi
+
     ## Run the icc installation script:
     - >
       if [ "$CC" = "icc" ]; then
@@ -102,11 +110,6 @@ before_install:
               echo "Cannot test Intel compiler on a fork.  Exiting now."
               exit 0
           fi
-      fi
-      if ["$CC = "mpicc"]
-        CC=mpicc
-        SOS_GLOBAL_BUILD_OPTS="--enable-picky --enable-pmi-pmi"
-        SOS_DISABLE_FORTRAN=1
       fi
 
     ## Build libev
