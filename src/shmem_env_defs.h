@@ -99,4 +99,4 @@ SHMEM_INTERNAL_ENV_DEF(OFI_STX_DISABLE_PRIVATE, bool, false, SHMEM_INTERNAL_ENV_
 #endif
 
 SHMEM_INTERNAL_ENV_DEF(SHMEM_MPI_THREAD_LEVEL, long, 0, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
-                       "Flag to determine the threading level for MPI when used as the proccess manager");
+                       "Flag to determine the threading level for MPI when used as the proccess manager")

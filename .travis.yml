@@ -24,7 +24,7 @@ env:
         - SOS_BUILD_OPTS="--disable-mr-scalable --enable-av-map --disable-cxx --enable-memcpy --enable-pmi-simple"
         - >
           SOS_DISABLE_FORTRAN=1
-          SOS_BUILD_OPTS="--enable-pmi-mpi"
+          SOS_BUILD_OPTS="--enable-pmi-mpi CC=mpicc"
         - >
           SOS_DISABLE_FORTRAN=1
           SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing --disable-aslr-check --enable-pmi-simple"
