@@ -68,7 +68,7 @@ Options to configure include:
                           shmem_fence() to the next put-like call,
                           which can help improve overlap in some
                           cases.
-  --with-total-data-ordering=<yes|no|check>
+  --enable-total-data-ordering=<yes|no|check>
                           If a network supports total data ordering
                           (that is, ordering guarantees to two
                           different addresses on the same target
