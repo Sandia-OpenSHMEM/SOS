@@ -34,6 +34,9 @@
 #pragma weak shmemx_pcntr_get_completed_target = pshmemx_pcntr_get_completed_target
 #define shmemx_pcntr_get_completed_target pshmemx_pcntr_get_completed_target
 
+#pragma weak shmemx_pcntr_get_all = pshmemx_pcntr_get_all
+#define shmemx_pcntr_get_all pshmemx_pcntr_get_all
+
 #endif /* ENABLE_PROFILING */
 
 void SHMEM_FUNCTION_ATTRIBUTES 
@@ -69,10 +72,18 @@ shmemx_pcntr_get_completed_get(shmem_ctx_t ctx, uint64_t *cntr_value)
 }
 
 void SHMEM_FUNCTION_ATTRIBUTES
-shmemx_pcntr_get_completed_target(shmem_ctx_t ctx, uint64_t *cntr_value)
+shmemx_pcntr_get_completed_target(uint64_t *cntr_value)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
-    *cntr_value = shmem_transport_pcntr_get_completed_target((shmem_transport_ctx_t *) ctx);
+    *cntr_value = shmem_transport_pcntr_get_completed_target();
+    return;
+}
+
+void SHMEM_FUNCTION_ATTRIBUTES
+shmemx_pcntr_get_all(shmem_ctx_t ctx, shmemx_pcntr_t *pcntr)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    shmem_transport_pcntr_get_all((shmem_transport_ctx_t *) ctx, pcntr);
     return;
 }
 

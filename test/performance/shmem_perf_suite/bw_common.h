@@ -31,7 +31,7 @@
 #include <omp.h>
 #endif
 
-static const char * dt_names [] = { "int", "long", "longlong" };
+static const char * dt_names [] = { "uint", "ulong", "ulonglong" };
 
 /*default settings if no input is provided */
 static 
