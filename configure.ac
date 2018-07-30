@@ -13,7 +13,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.4.1], [https://github.com/Sandia-OpenSHMEM/SOS/issues], [sos], [https://github.com/Sandia-OpenSHMEM/SOS])
+AC_INIT([Sandia OpenSHMEM], [1.4.1], [https://github.com/Sandia-OpenSHMEM/SOS/issues], [sandia-openshmem], [https://github.com/Sandia-OpenSHMEM/SOS])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -208,6 +208,11 @@ AS_CASE([$enable_ofi_mr],
              AC_DEFINE([ENABLE_MR_SCALABLE], [1], [If defined, the OFI transport will use FI_MR_SCALABLE])],
         [AC_MSG_ERROR([Invalid OFI memory registration mode: $enable_ofi_mr])])
 
+AC_ARG_ENABLE([rpm-prefix],
+    [AC_HELP_STRING([--enable-rpm-prefix],
+                    [Generate RPM spec file that supports an alternate installation prefix (default:disabled)])])
+AS_IF([test "$enable_rpm_prefix" = "yes"], [SOS_RPM_PREFIXED=""], [SOS_RPM_PREFIXED="# DISABLED: "])
+AC_SUBST([SOS_RPM_PREFIXED])
 
 AC_ARG_ENABLE([av-map],
     [AC_HELP_STRING([--enable-av-map],
@@ -745,7 +750,7 @@ AC_CONFIG_FILES([Makefile
   mpp/shmemx_c_func.h4
   mpp/shmemx.h4
   src/Makefile
-  src/sos.pc
+  src/sandia-openshmem.pc
   test/Makefile
   test/unit/Makefile
   test/shmemx/Makefile

@@ -130,7 +130,7 @@ libsma_la_SOURCES += \
 	runtime-pmix.c
 endif
 
-pkgconfig_DATA = sos.pc
+pkgconfig_DATA = sandia-openshmem.pc
 
 bin_SCRIPTS = oshcc oshrun
 CLEANFILES += oshcc oshrun

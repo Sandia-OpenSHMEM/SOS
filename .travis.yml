@@ -393,11 +393,16 @@ script:
     - >
       if [ ! -z "$SOS_CHECK_TARBALL_RPM" ]; then
           cd $SOS_SRC
+          ./configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple --enable-rpm-prefix
+          make dist
+          rpmbuild -ta ./sandia-openshmem-*.tar.gz --define "configargs --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple" --define "_prefix /usr/shmem"
+          make clean
           ./configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple
           make dist
-          rpmbuild -ta ./sos-*.tar.gz --define "configargs --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple"
-          tar zxvf sos-*.tar.gz
-          cd sos-*
+          rpmbuild -ta ./sandia-openshmem-*.tar.gz --define "configargs --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple"
+          # Sanity check distribution tarball
+          tar zxvf sandia-openshmem-*.tar.gz
+          cd sandia-openshmem-*
           ./autogen.sh
           mkdir build
           cd build
