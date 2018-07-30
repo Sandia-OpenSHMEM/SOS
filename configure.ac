@@ -203,7 +203,7 @@ AS_CASE([$enable_ofi_mr],
             [],
         [scalable],
             [AC_DEFINE([ENABLE_MR_SCALABLE], [1], [If defined, the OFI transport will use FI_MR_SCALABLE])],
-        [rma*event],
+        [rma?event],
             [AC_DEFINE([ENABLE_MR_RMA_EVENT], [1], [If defined, the OFI transport will use FI_MR_RMA_EVENT])
              AC_DEFINE([ENABLE_MR_SCALABLE], [1], [If defined, the OFI transport will use FI_MR_SCALABLE])],
         [AC_MSG_ERROR([Invalid OFI memory registration mode: $enable_ofi_mr])])
