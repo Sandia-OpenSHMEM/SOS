@@ -24,9 +24,7 @@ env:
         - SOS_BUILD_OPTS="--disable-mr-scalable --enable-av-map --disable-cxx --enable-memcpy --enable-pmi-simple"
         - >
           SOS_DISABLE_FORTRAN=1
-          SOS_ENABLE_ERROR_TESTS=1
-          SOS_BUILD_OPTS="--enable-error-checking --enable-pmi-mpi"
-          CC=mpicc
+          SOS_BUILD_OPTS="--enable-pmi-mpi CC=mpicc"
         - >
           SOS_DISABLE_FORTRAN=1
           SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing --disable-aslr-check --enable-pmi-simple"
@@ -67,6 +65,7 @@ env:
           SHMEM_OFI_STX_MAX=8 SHMEM_OFI_STX_ALLOCATOR=random
         - >
           SOS_CHECK_TARBALL_RPM=1
+          SOS_BUILD_OPTS=--enable-pmi-simple
 os:
     - linux
 
@@ -77,8 +76,6 @@ addons:
             - rpm
             - mpich
             - cargo
-
-
 before_install:
     ## Set up the environment
     - mkdir $HOME/travis

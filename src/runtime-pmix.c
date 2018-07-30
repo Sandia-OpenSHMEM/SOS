@@ -35,6 +35,8 @@
 static pmix_proc_t myproc;
 static size_t size;
 
+int pmix_enabled_flag = 0;
+
 int
 shmem_runtime_init(void)
 {
@@ -49,6 +51,9 @@ shmem_runtime_init(void)
         if (PMIX_SUCCESS != (rc = PMIx_Init(&myproc, NULL, 0))) {
             RETURN_ERROR_MSG_PREINIT("PMIx_Init failed (%d)\n", rc);
             return rc;
+        } 
+        else{
+            pmix_initialized = 1;
         }
     }
 
@@ -73,7 +78,7 @@ shmem_runtime_fini(void)
 {
     pmix_status_t rc;
 
-    if (PMIX_SUCCESS != (rc = PMIx_Finalize(NULL, 0))) {
+    if (pmix_enabled_flag && PMIX_SUCCESS != (rc = PMIx_Finalize(NULL, 0))) {
         RETURN_ERROR_MSG_PREINIT("PMIx_Finalize failed (%d)\n", rc);
         return rc;
     }
