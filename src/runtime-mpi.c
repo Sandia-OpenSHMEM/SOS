@@ -1,3 +1,18 @@
+/* -*- C -*-
+ *
+ * Copyright 2011 Sandia Corporation. Under the terms of Contract
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
+ * retains certain rights in this software.
+ *
+ * Copyright (c) 2018 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
+ * This file is part of the Sandia OpenSHMEM software package. For license
+ * information, see the LICENSE file in the top level directory of the
+ * distribution.
+ *
+ */
+
 
 #include "config.h"
 
@@ -5,7 +20,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <mpi.h>
-
 
 #include "runtime.h"
 #include "shmem_internal.h"
@@ -47,7 +61,7 @@ shmem_runtime_init(void)
         }
         to_finalize = 1;
     }
-    if(MPI_SUCCESS != MPI_Comm_dup(MPI_COMM_WORLD, &SHMEM_RUNTIME_WORLD)){
+    if (MPI_SUCCESS != MPI_Comm_dup(MPI_COMM_WORLD, &SHMEM_RUNTIME_WORLD)){
     	return 5;
     }
     if (MPI_SUCCESS !=  MPI_Comm_rank(SHMEM_RUNTIME_WORLD, &rank)) {
@@ -60,7 +74,7 @@ shmem_runtime_init(void)
 
     kv_store_me = (char*)malloc(MAX_KV_COUNT * sizeof(char)* MAX_KV_LENGTH);
     
-    if(NULL == kv_store_me){
+    if (NULL == kv_store_me){
         return 8;
     }
     
@@ -72,12 +86,12 @@ shmem_runtime_fini(void)
 {
     int finalized = 0;
     MPI_Finalized(&finalized);
-    if(!finalized && to_finalize){
+    if (!finalized && to_finalize){
         MPI_Finalize();
     }
 
     free(kv_store_all);
-    if(size != 1){
+    if (size != 1){
         free(kv_store_me);
     }
 
@@ -104,13 +118,11 @@ shmem_runtime_abort(int exit_code, const char msg[])
     abort();
 }
 
-
 int
 shmem_runtime_get_rank(void)
 {
     return rank;
 }
-
 
 int
 shmem_runtime_get_size(void)
@@ -130,7 +142,7 @@ shmem_runtime_exchange(void)
     
     kv_store_all = (char*)malloc(chunkSize * size);
     
-    if(NULL == kv_store_all){
+    if (NULL == kv_store_all){
         return 9;
     }
 
@@ -143,18 +155,16 @@ shmem_runtime_exchange(void)
     return 0;
 }
 
-
 int 
 shmem_runtime_put(char *key, void *value, size_t valuelen)
 {
-    if(length < MAX_KV_COUNT){
-
+    if (length < MAX_KV_COUNT){
         memcpy(kv_index(kv_store_me, length), key, MAX_KV_LENGTH);
         length++;
         memcpy(kv_index(kv_store_me, length), value, MAX_KV_LENGTH);
         length++;
-
-    } else {
+    } 
+    else {
         return MAX_KV_COUNT;
     }
 
@@ -165,18 +175,16 @@ int
 shmem_runtime_get(int pe, char *key, void *value, size_t valuelen)
 {
     int flag = 0;
-    for(int i = pe * length; i < length * size; i+= 2){
-        if(strcmp(kv_index(kv_store_all, i), key) == 0){
+    for (int i = pe * length; i < length * size; i+= 2){
+        if (strcmp(kv_index(kv_store_all, i), key) == 0){
             memcpy(value, kv_index(kv_store_all, i+1), valuelen);
             flag = 1;
             break;
         }
     }
-    if(0 == flag){
+    if (0 == flag){
         return 12;
     }
-
-    MPI_Barrier(SHMEM_RUNTIME_WORLD);
     
     return 0;
 }
