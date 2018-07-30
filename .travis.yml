@@ -88,7 +88,7 @@ before_install:
       if [ "$CC" = "icc" ]; then
           if [ "$TRAVIS_REPO_SLUG" = "Sandia-OpenSHMEM/SOS" -a \
                "$TRAVIS_PULL_REQUEST" = "false" ]; then
-              ./scripts/install-icc.sh --components icc,ifort
+              ./scripts/travis/install-icc.sh --components icc,ifort
               source ~/.bashrc
               CC=icc
               CXX=icpc
@@ -301,7 +301,7 @@ script:
     - export CUSTOM_SHMEM_DIR=$TRAVIS_INSTALL/sandia-shmem-ofi
     - export PATH=$CUSTOM_SHMEM_DIR/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
     - export CRAY_TESTS_DIR=$TRAVIS_SRC/tests-cray
-    - $SOS_SRC/scripts/cray_tests.sh
+    - $SOS_SRC/scripts/travis/cray_tests.sh
 
     ###
     ### Run the Mellanox test suite (OFI)
