@@ -51,15 +51,15 @@
 #define MAX_MSG_SIZE (1<<23)
 #define START_LEN 1
 #define INC 2
-#define TRIALS 500
+#define TRIALS 1000
 #define WINDOW_SIZE 64
-#define WARMUP 50
+#define WARMUP 100
 
 /* constants for experiments with large message sizes */
 #define TRIALS_LARGE  100
 #define WINDOW_SIZE_LARGE 64
 #define WARMUP_LARGE  10
-#define LARGE_MESSAGE_SIZE  8192
+#define LARGE_MESSAGE_SIZE  65536
 
 #define TARGET_SZ_MIN 8
 #define TARGET_SZ_MAX 4096
@@ -126,6 +126,7 @@ typedef struct perf_metrics {
     bw_type b_type;
     comm_style cstyle;
     int target_data;
+    int num_partners;
 
     /* parameters specific to latency tests */
     long *target;
@@ -157,6 +158,8 @@ void set_metric_defaults(perf_metrics_t *metric_info) {
 
     metric_info->src = NULL;
     metric_info->dest = NULL;
+
+    metric_info->num_partners = 1;
 
 #if defined(ENABLE_THREADS)
     metric_info->thread_safety = SHMEM_THREAD_SINGLE;

@@ -93,6 +93,7 @@ static inline void target_data_uni_bw(int len, perf_metrics_t metric_info)
     int *my_PE_partners = (snode ?
         get_initiators_partners(metric_info, num_partners): NULL);
 
+    metric_info.num_partners = num_partners;
     shmem_barrier_all();
     if (target_node(metric_info)) {
         shmem_int_wait_until(&completion_signal, SHMEM_CMP_EQ, num_partners);
@@ -134,10 +135,9 @@ static inline void target_data_uni_bw(int len, perf_metrics_t metric_info)
         }
     }
 
-    //shmem_barrier_all();
     if (snode || target_node(metric_info)) {
         end = perf_shmemx_wtime();
-        calc_and_print_results(end, start, len, num_partners, metric_info);
+        calc_and_print_results(end, start, len, metric_info);
     }
     completion_signal = 0;
     free(my_PE_partners);

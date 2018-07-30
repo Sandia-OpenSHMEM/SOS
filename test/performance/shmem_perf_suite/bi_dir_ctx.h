@@ -124,7 +124,7 @@ shared(metric_info, start, end) num_threads(metric_info->nthreads)
     shmem_barrier_all();
     if (streaming_node(*metric_info)) {
         end = perf_shmemx_wtime();
-        calc_and_print_results(end, start, len, 1, *metric_info);
+        calc_and_print_results(end, start, len, *metric_info);
     }
 
     shmem_barrier_all();
