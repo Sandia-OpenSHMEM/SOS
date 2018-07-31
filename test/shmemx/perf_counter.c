@@ -29,6 +29,8 @@
 */
 
 #include <stdio.h>
+#include <inttypes.h>
+#include <shmem.h>
 #include <shmemx.h>
 
 #define ITER 100
@@ -72,12 +74,12 @@ static void put_and_progress_check(void) {
      * completion. Except the target counter, other counter values should 
      * reflect the final expected value */
     printf("Value observed of the performance counters from combined API: \n"
-           "Completed Put = %10ld\n"
-           "Completed Get = %10ld\n"
-           "Pending Put   = %10ld\n"
-           "Pending Get   = %10ld\n"
-           "Target        = %10ld\n"
-           , pcntr.completed_put, pcntr.completed_get, pcntr.pending_put, 
+           "Completed Put = %10"PRIu64"\n"
+           "Completed Get = %10"PRIu64"\n"
+           "Pending Put   = %10"PRIu64"\n"
+           "Pending Get   = %10"PRIu64"\n"
+           "Target        = %10"PRIu64"\n"
+           , pcntr.completed_put, pcntr.completed_get, pcntr.pending_put,
            pcntr.pending_get, pcntr.target);
 
     return;
@@ -105,12 +107,12 @@ int main(int argc, char **argv) {
      * final value as they are captured before the barrier one counter at a time 
      * */
     printf("Final value observed of the performance counters from individual APIs: \n"
-           "Completed Put = %10ld\n"
-           "Completed Get = %10ld\n"
-           "Pending Put   = %10ld\n"
-           "Pending Get   = %10ld\n"
-           "Target        = %10ld\n"
-           , c_put, c_get, p_put, p_get, target); 
+           "Completed Put = %10"PRIu64"\n"
+           "Completed Get = %10"PRIu64"\n"
+           "Pending Put   = %10"PRIu64"\n"
+           "Pending Get   = %10"PRIu64"\n"
+           "Target        = %10"PRIu64"\n"
+           , c_put, c_get, p_put, p_get, target);
 
     shmem_free(dest_array);
     shmem_free(src_array);
