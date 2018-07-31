@@ -49,10 +49,10 @@ static void collect(shmem_ctx_t ctx) {
     shmemx_pcntr_get_pending_get(ctx, &p_get);
 }
 
-static void put_and_progress_check(void) { 
+static void put_and_progress_check(void) {
     int i, j;
-    int partner = ((npes % 2 == 0) ? (me % 2 == 0 ? me + 1 : me - 1) : 
-                                     (me % 2 != 0 ? me - 1 : 
+    int partner = ((npes % 2 == 0) ? (me % 2 == 0 ? me + 1 : me - 1) :
+                                     (me % 2 != 0 ? me - 1 :
                                      (me == npes - 1) ? me : me + 1));
 
     shmem_ctx_t ctx;
@@ -70,8 +70,8 @@ static void put_and_progress_check(void) {
     shmemx_pcntr_get_all(ctx, &pcntr);
     shmem_ctx_destroy(ctx);
 
-    /* Report the counter values observed through get_all API after the loop 
-     * completion. Except the target counter, other counter values should 
+    /* Report the counter values observed through get_all API after the loop
+     * completion. Except the target counter, other counter values should
      * reflect the final expected value */
     printf("Value observed of the performance counters from combined API: \n"
            "Completed Put = %10"PRIu64"\n"
@@ -102,9 +102,9 @@ int main(int argc, char **argv) {
     put_and_progress_check();
     shmem_barrier_all();
 
-    /* Report the counter values observed through single parameter APIs in 
+    /* Report the counter values observed through single parameter APIs in
      * the final iteration. The values reported here may be less than the actual
-     * final value as they are captured before the barrier one counter at a time 
+     * final value as they are captured before the barrier one counter at a time
      * */
     printf("Final value observed of the performance counters from individual APIs: \n"
            "Completed Put = %10"PRIu64"\n"
