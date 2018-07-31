@@ -324,7 +324,6 @@ SHMEMRandomAccess(void)
   double TotalMem;
   static int sAbort, rAbort;
 
-  uint64_t NumUpdates_Default; /* Number of updates to table (suggested: 4x number of table entries) */
   uint64_t NumUpdates;  /* actual number of updates to table - may be smaller than
                        * NumUpdates_Default due to execution time bounds */
   uint64_t ProcNumUpdates; /* number of updates per processor */
