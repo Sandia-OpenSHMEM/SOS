@@ -26,13 +26,13 @@
 #include "shmem_env.h"
 #include "uthash.h"
 
-#define MAX_KV_COUNT 20
+#define MAX_KV_COUNT 20 //if more key/values are needed for future features, change this here (should be 2 * the number of keys)
 #define MAX_KV_LENGTH 64
 
 static int rank = -1;
 static int size = 0;
 static MPI_Comm SHMEM_RUNTIME_WORLD;
-static int length = 0;
+static int kv_length = 0;
 static int to_finalize = 0;
 
 char* kv_store_me;
@@ -138,7 +138,7 @@ shmem_runtime_exchange(void)
         return 0;
     }
 
-    int chunkSize = length * sizeof(char) * MAX_KV_LENGTH;
+    int chunkSize = kv_length * sizeof(char) * MAX_KV_LENGTH;
     
     kv_store_all = (char*)malloc(chunkSize * size);
     
@@ -158,11 +158,11 @@ shmem_runtime_exchange(void)
 int 
 shmem_runtime_put(char *key, void *value, size_t valuelen)
 {
-    if (length < MAX_KV_COUNT){
-        memcpy(kv_index(kv_store_me, length), key, MAX_KV_LENGTH);
-        length++;
-        memcpy(kv_index(kv_store_me, length), value, MAX_KV_LENGTH);
-        length++;
+    if (kv_length < MAX_KV_COUNT){
+        memcpy(kv_index(kv_store_me, kv_length), key, MAX_KV_LENGTH);
+        kv_length++;
+        memcpy(kv_index(kv_store_me, kv_length), value, MAX_KV_LENGTH);
+        kv_length++;
     } 
     else {
         return MAX_KV_COUNT;
@@ -175,7 +175,7 @@ int
 shmem_runtime_get(int pe, char *key, void *value, size_t valuelen)
 {
     int flag = 0;
-    for (int i = pe * length; i < length * size; i+= 2){
+    for (int i = pe * kv_length; i < kv_length * size; i+= 2){
         if (strcmp(kv_index(kv_store_all, i), key) == 0){
             memcpy(value, kv_index(kv_store_all, i+1), valuelen);
             flag = 1;
@@ -192,5 +192,5 @@ shmem_runtime_get(int pe, char *key, void *value, size_t valuelen)
 void
 shmem_runtime_barrier(void)
 {
-    MPI_Barrier(SHMEM_RUNTIME_WORLD);
+    MPI_Barrier(SHMEM_RUNTIME_WORLD); //if not finalized, call barrier??
 }
