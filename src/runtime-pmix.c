@@ -53,7 +53,7 @@ shmem_runtime_init(void)
             return rc;
         } 
         else{
-            pmix_initialized = 1;
+            pmix_enabled_flag = 1;
         }
     }
 
