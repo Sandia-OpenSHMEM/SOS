@@ -53,7 +53,7 @@ shmem_runtime_init(void)
     }
     if (!initialized) {
 
-        if (strcmp(shmem_internal_params.SHMEM_MPI_THREAD_LEVEL, "MPI_THREAD_SINGLE") == 0){
+        if (shmem_internal_params.SHMEM_MPI_THREAD_LEVEL == 0 || strcmp(shmem_internal_params.SHMEM_MPI_THREAD_LEVEL, "MPI_THREAD_SINGLE") == 0){
             mpi_thread_level = MPI_THREAD_SINGLE;
         }
         else if (strcmp(shmem_internal_params.SHMEM_MPI_THREAD_LEVEL, "MPI_THREAD_FUNNELED") == 0){
@@ -80,7 +80,7 @@ shmem_runtime_init(void)
     if (MPI_SUCCESS != MPI_Comm_dup(MPI_COMM_WORLD, &SHMEM_RUNTIME_WORLD)){
     	return 5;
     }
-    if (MPI_SUCCESS !=  MPI_Comm_rank(SHMEM_RUNTIME_WORLD, &rank)) {
+    if (MPI_SUCCESS != MPI_Comm_rank(SHMEM_RUNTIME_WORLD, &rank)) {
         return 6;
     }
 
