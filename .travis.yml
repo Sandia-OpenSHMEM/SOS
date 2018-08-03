@@ -174,7 +174,6 @@ before_install:
     - cd $TRAVIS_INSTALL
     - wget http://gdurl.com/P5og -O openmpi-v3.0.x.deb
     - sudo dpkg -i openmpi-v3.0.x.deb
-    - which mpicc
 install:
     - cd $SOS_SRC
     - ./autogen.sh
