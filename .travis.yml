@@ -21,7 +21,8 @@ env:
         - secure: "luxfwDy26Pva+A58T/vPP7+Zek4rBEbpB2TpdXuLdIu/MJ2laoUkaZj/ouT6YgdSxUoiyLUlGIzLnByxnrVgWqYELsWHiV9hzsXZCNfgQDdUHV8UITCqSYVcd5WGNoVdC0QohKuIj47y6bP5ttcv1sIfpV74ztPJZE1dbb2QzgvWcIKWN8Abj55364ZnIidW7ErYLrAiKlBzSxZXCKiKD6qOUbpOBN8yuzaX9diXYJViest7iBC+BfwzXO8Shuouh6QrQhJ1T4oG6u6YJn17fnOwXKJCdkeQYr/E8ka4JRf8vZm7CNO1YdwNhtGtFNEzTJaP2XFLAQGCB9vffCxcqRbpWv+lpsFRsH+eiF/zp/xKGr5qzB9sPUxNANJyhphXK0VfIqDan7nz9di99NFBEF94Jl33E+KODTCAeHb6+a7yboR5B4BalM4jXKrcn/2A4pYrk45YF5IdLLOEvzTaOyVSgHoNIzXRZvHEL2AeYuvz5qLukzMB+QClbA1EeCBNyokuXK/TemeTvveXpQpCaVKNQ8zp/v30u8eiaV8R/dFa2evlJ6kwSaeXlXpXifeXd5Px0x6HF4FT9HLOtPVQ3rZXyfL2Eh92egu15GiTqMNkdVlVGUC20+iddLjtbPqRnVw0WnZkekh62A6rGuT4cTfAbZ2GVPD+IMqzokO1IGg="
     matrix:
         - SOS_BUILD_OPTS="--enable-pmi-simple"
-        - SOS_BUILD_OPTS="--disable-mr-scalable --enable-av-map --disable-cxx --enable-memcpy --enable-pmi-simple"
+        - SOS_BUILD_OPTS="--enable-ofi-mr=basic --enable-av-map --disable-cxx --enable-memcpy --enable-pmi-simple"
+
         - >
           SOS_DISABLE_FORTRAN=1
           SOS_BUILD_OPTS="--enable-pmi-mpi CC=mpicc"
@@ -32,7 +33,7 @@ env:
           SOS_ENABLE_ERROR_TESTS=1 SHMEM_SYMMETRIC_HEAP_USE_MALLOC=1
           SOS_BUILD_OPTS="--disable-threads --enable-error-checking --enable-pmi-simple"
         - >
-          SOS_BUILD_OPTS="--with-cma --enable-error-checking --enable-profiling --disable-mr-scalable --enable-av-map --enable-remote-virtual-addressing --enable-pmi-simple"
+          SOS_BUILD_OPTS="--with-cma --enable-error-checking --enable-profiling --enable-ofi-mr=basic --enable-av-map --enable-remote-virtual-addressing --enable-pmi-simple"
         - >
           SOS_ENABLE_ERROR_TESTS=1
           SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SHMEM_BOUNCE_SIZE=0
@@ -92,7 +93,7 @@ before_install:
       if [ "$CC" = "icc" ]; then
           if [ "$TRAVIS_REPO_SLUG" = "Sandia-OpenSHMEM/SOS" -a \
                "$TRAVIS_PULL_REQUEST" = "false" ]; then
-              ./scripts/install-icc.sh --components icc,ifort
+              ./scripts/travis/install-icc.sh --components icc,ifort
               source ~/.bashrc
               CC=icc
               CXX=icpc
@@ -305,7 +306,7 @@ script:
     - export CUSTOM_SHMEM_DIR=$TRAVIS_INSTALL/sandia-shmem-ofi
     - export PATH=$CUSTOM_SHMEM_DIR/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
     - export CRAY_TESTS_DIR=$TRAVIS_SRC/tests-cray
-    - $SOS_SRC/scripts/cray_tests.sh
+    - $SOS_SRC/scripts/travis/cray_tests.sh
 
     ###
     ### Run the Mellanox test suite (OFI)
@@ -397,11 +398,16 @@ script:
     - >
       if [ ! -z "$SOS_CHECK_TARBALL_RPM" ]; then
           cd $SOS_SRC
+          ./configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple --enable-rpm-prefix
+          make dist
+          rpmbuild -ta ./sandia-openshmem-*.tar.gz --define "configargs --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple" --define "_prefix /usr/shmem"
+          make clean
           ./configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple
           make dist
-          rpmbuild -ta ./sos-*.tar.gz --define "configargs --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple"
-          tar zxvf sos-*.tar.gz
-          cd sos-*
+          rpmbuild -ta ./sandia-openshmem-*.tar.gz --define "configargs --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple"
+          # Sanity check distribution tarball
+          tar zxvf sandia-openshmem-*.tar.gz
+          cd sandia-openshmem-*
           ./autogen.sh
           mkdir build
           cd build

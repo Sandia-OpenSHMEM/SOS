@@ -178,7 +178,7 @@
 #define ZERO64B 0LL
 
 uint64_t TotalMemOpt = 8192;
-int NumUpdatesOpt = 0; /* FIXME: This option is ignored */
+int NumUpdatesOpt = 0;
 double SHMEMGUPs;
 double SHMEMRandomAccess_ErrorsFraction;
 double SHMEMRandomAccess_time;
@@ -421,9 +421,13 @@ SHMEMRandomAccess(void)
       HPCC_PELock[i] = 0;
 
   /* Default number of global updates to table: 4x number of table entries */
-  NumUpdates_Default = 4 * TableSize;
-  ProcNumUpdates = 4 * LocalTableSize;
-  NumUpdates = NumUpdates_Default;
+  if (NumUpdatesOpt == 0) {
+     ProcNumUpdates = 4 * LocalTableSize;
+     NumUpdates = 4 * TableSize;
+  } else {
+     ProcNumUpdates = NumUpdatesOpt;
+     NumUpdates = NumUpdatesOpt * NumProcs;
+  }
 
   if (MyProc == 0) {
     fprintf( outFile, "Running on %d processors\n", NumProcs);
@@ -432,7 +436,7 @@ SHMEMRandomAccess(void)
     fprintf( outFile, "PE Main table size = (2^%" PRIu64 ")/%d  = %" PRIu64 " words/PE MAX\n",
              logTableSize, NumProcs, LocalTableSize);
 
-    fprintf( outFile, "Default number of updates (RECOMMENDED) = %" PRIu64 "\n", NumUpdates_Default);
+    fprintf( outFile, "Total number of updates = %" PRIu64 "\n", NumUpdates);
   }
 
   /* Initialize main table */
