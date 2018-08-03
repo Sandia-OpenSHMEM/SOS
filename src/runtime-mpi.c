@@ -47,16 +47,32 @@ kv_index(char* kv_set, int index)
 int
 shmem_runtime_init(void)
 {
-    int initialized;
+    int initialized, mpi_thread_level, provided;
     if (MPI_SUCCESS != MPI_Initialized(&initialized)) {
         return 1;
     }
     if (!initialized) {
-        int provided = 0;
-        if(MPI_SUCCESS != MPI_Init_thread(NULL, NULL, shmem_internal_params.SHMEM_MPI_THREAD_LEVEL, &provided)){
+
+        if (strcmp(shmem_internal_params.SHMEM_MPI_THREAD_LEVEL, "MPI_THREAD_SINGLE") == 0){
+            mpi_thread_level = MPI_THREAD_SINGLE;
+        }
+        else if (strcmp(shmem_internal_params.SHMEM_MPI_THREAD_LEVEL, "MPI_THREAD_FUNNELED") == 0){
+            mpi_thread_level = MPI_THREAD_FUNNELED;
+        }
+        else if (strcmp(shmem_internal_params.SHMEM_MPI_THREAD_LEVEL, "MPI_THREAD_SERIALIZED") == 0){
+            mpi_thread_level = MPI_THREAD_SERIALIZED;
+        }
+        else if (strcmp(shmem_internal_params.SHMEM_MPI_THREAD_LEVEL, "MPI_THREAD_MULTIPLE") == 0){
+            mpi_thread_level = MPI_THREAD_MULTIPLE;
+        }
+        else{
+            return -2;
+        }
+  
+        if (MPI_SUCCESS != MPI_Init_thread(NULL, NULL, mpi_thread_level, &provided)){
             return 4;
         }
-        if(provided != shmem_internal_params.SHMEM_MPI_THREAD_LEVEL){
+        if (provided != mpi_thread_level){
             return -1;
         }
         to_finalize = 1;
@@ -106,9 +122,10 @@ shmem_runtime_abort(int exit_code, const char msg[])
     if (shmem_internal_params.TRAP_ON_ABORT)
         __builtin_trap();
 #endif
+    
+    fprintf(stderr, "%s\n", msg);
 
     if (size == 1) {
-        fprintf(stderr, "%s\n", msg);
         exit(exit_code);
     }
 
