@@ -65,6 +65,7 @@ env:
           SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple"
           SHMEM_OFI_STX_MAX=8 SHMEM_OFI_STX_ALLOCATOR=random
         - >
+          SOS_BUILD_OPTS="--enable-pmi-simple"
           SOS_CHECK_TARBALL_RPM=1
 os:
     - linux
@@ -128,7 +129,7 @@ before_install:
     - make $TRAVIS_PAR_MAKE
     - make install
     ## Build Hydra
-    - cd $TRAVIS_SRC
+    - cd $TRAVIS_SRC  
     - wget http://www.mpich.org/static/downloads/3.2/hydra-3.2.tar.gz
     - tar xvzf hydra-3.2.tar.gz
     - cd hydra-3.2/
