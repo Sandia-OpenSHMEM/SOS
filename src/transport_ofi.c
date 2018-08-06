@@ -1069,7 +1069,7 @@ int populate_av(void)
         }
 
 #ifdef USE_ON_NODE_COMMS
-        err shmem_runtime_get(i, "fi_ephostname", ephostname, EPHOSTNAMELEN);
+        err = shmem_runtime_get(i, "fi_ephostname", ephostname, EPHOSTNAMELEN);
   
         if (err != 0){
             RAISE_ERROR_STR("Runtime get failed");
