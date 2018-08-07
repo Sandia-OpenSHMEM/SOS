@@ -1518,7 +1518,7 @@ int shmem_transport_init(void)
 
 int shmem_transport_startup(void)
 {
-    int ret;
+    int ret = 0;
 
     ret = populate_mr_tables();
     if (ret != 0) return ret;
