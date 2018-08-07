@@ -130,7 +130,7 @@ void print_data_results(double bw, double mr, perf_metrics_t data,
 
     if(data.target_data) {
         if(data.my_node < data.szinitiator) {
-            printf("%2sInitiator", " ");
+            printf("%2sIniter", " ");
         } else  {
             printf("%2sTarget", " ");
         }
@@ -178,8 +178,13 @@ void calc_and_print_results(double end_t, double start_t, int len,
     pe_bw_sum = bw;
 
     if (metric_info.individual_report == 1) {
-        printf("Individual bandwith for PE %6d is %10.2f\n", 
+        if (metric_info.my_node < metric_info.midpt) {
+            printf("Individual bandwith for PE %6d (initer) is %10.2f\n", 
                 metric_info.my_node, pe_bw_sum);
+        } else {
+            printf("Individual bandwith for PE %6d (target) is %10.2f\n", 
+                metric_info.my_node, pe_bw_sum);
+        }
     }
     
     pe_time_start = start_t;
@@ -204,18 +209,13 @@ void calc_and_print_results(double end_t, double start_t, int len,
            (end_time_max - start_time_min) > 0) {
 
             total_t_max = (end_time_max - start_time_min);
-            int PEs_on_other_side = 0;
-            if (start_pe == 0) {
-                PEs_on_other_side = metric_info.sztarget;
-            } else {
-                PEs_on_other_side = metric_info.szinitiator;
-            }
+            int total_transfers = MAX(metric_info.szinitiator, metric_info.sztarget);
 #ifdef ENABLE_OPENMP
-            bw = ((double) len * (double) multiplier * (double) PEs_on_other_side / 
+            bw = ((double) len * (double) multiplier * (double) total_transfers / 
                  1.0e6 * metric_info.window_size * metric_info.trials * 
                  (double) metric_info.nthreads) / (total_t_max / 1.0e6);
 #else
-            bw = ((double) len * (double) multiplier * (double) PEs_on_other_side / 
+            bw = ((double) len * (double) multiplier * (double) total_transfers / 
                  1.0e6 * metric_info.window_size * metric_info.trials) / 
                  (total_t_max / 1.0e6);
 #endif

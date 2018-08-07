@@ -45,6 +45,10 @@
 #define MAX_HOSTNAME_LEN HOST_NAME_MAX
 #endif
 
+#ifndef MAX
+#define MAX(A,B)   (((A)>(B)) ? (A) : (B))
+#endif
+
 #define ONE 1
 
 /* constants for experiments */
@@ -672,8 +676,7 @@ int error_checking_init_target_usage(perf_metrics_t *metric_info) {
     int error = false;
     assert(metric_info->midpt > 0);
 
-    if (metric_info->sztarget != -1 && metric_info->szinitiator != -1) { 
-    } else if (metric_info->sztarget != -1 && metric_info->szinitiator == -1) {
+    if (metric_info->sztarget != -1 && metric_info->szinitiator == -1) {
         if (metric_info->sztarget < 1 ||
             metric_info->sztarget > metric_info->midpt ||
             !metric_info->target_data) {
@@ -689,12 +692,16 @@ int error_checking_init_target_usage(perf_metrics_t *metric_info) {
         } else {
             metric_info->sztarget = metric_info->midpt;
         }
-    } else {
+    } else if (metric_info->sztarget == -1 && metric_info->szinitiator == -1) {
         metric_info->szinitiator = metric_info->midpt;
         metric_info->sztarget = metric_info->midpt;
+    } else {
+        if (!metric_info->target_data) {
+            error = true;
+        }
     }
 
-    if(error) {
+    if (error) {
         fprintf(stderr, "Invalid usage of command line arg -r/-l\n");
         return -1;
     }
