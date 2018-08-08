@@ -98,6 +98,7 @@ SHMEM_INTERNAL_ENV_DEF(OFI_STX_DISABLE_PRIVATE, bool, false, SHMEM_INTERNAL_ENV_
                        "Disallow private contexts from having exclusive STX access")
 #endif
 
-//ifdef
+//#ifdef USE_PMI_MPI
 SHMEM_INTERNAL_ENV_DEF(SHMEM_MPI_THREAD_LEVEL, string, "MPI_THREAD_SINGLE", SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Flag to determine the threading level for MPI when used as the proccess manager")
+//#endif

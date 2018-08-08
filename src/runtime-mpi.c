@@ -38,7 +38,7 @@ static int to_finalize = 0;
 char* kv_store_me;
 char* kv_store_all;
 
-char* 
+static char* 
 kv_index(char* kv_set, int index)
 {
     return kv_set + index * MAX_KV_LENGTH;
@@ -129,9 +129,10 @@ shmem_runtime_abort(int exit_code, const char msg[])
         exit(exit_code);
     }
 
-    MPI_Abort(SHMEM_RUNTIME_WORLD, exit_code);
+    int ret = MPI_Abort(SHMEM_RUNTIME_WORLD, exit_code);
 
-    /* MPI_Abort should not return */
+    printf("ret: %i", ret);
+
     abort();
 }
 
@@ -165,9 +166,6 @@ shmem_runtime_exchange(void)
 
     if (MPI_SUCCESS != MPI_Allgather(kv_store_me, chunkSize, MPI_CHAR, kv_store_all, chunkSize, MPI_CHAR, SHMEM_RUNTIME_WORLD)) {
         return 10;   
-    }
-    if (MPI_SUCCESS != MPI_Barrier(SHMEM_RUNTIME_WORLD)) {
-        return 11;
     }
     return 0;
 }
