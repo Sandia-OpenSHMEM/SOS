@@ -26,7 +26,9 @@
 #include "shmem_env.h"
 #include "uthash.h"
 
-#define MAX_KV_COUNT 20 //if more key/values are needed for future features, change this here (should be 2 * the number of keys)
+/*if more key/values are needed for future features, change 
+this here (should be 2 * the number of keys)*/
+#define MAX_KV_COUNT 20
 #define MAX_KV_LENGTH 64
 
 static int rank = -1;
@@ -207,5 +209,5 @@ shmem_runtime_get(int pe, char *key, void *value, size_t valuelen)
 void
 shmem_runtime_barrier(void)
 {
-    MPI_Barrier(SHMEM_RUNTIME_WORLD); //if not finalized, call barrier??
+    MPI_Barrier(SHMEM_RUNTIME_WORLD);
 }

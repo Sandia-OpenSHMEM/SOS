@@ -405,6 +405,9 @@ AS_IF([test "$opal_external_pmix_version_found" = 1],
 AS_IF([test "$enable_pmi_simple" = "yes" -a "$enable_pmi_mpi" = "yes"],
       [AC_MSG_ERROR([Cannot enable both simple PMI and MPI-PMI])])
 
+AS_IF([test "$enable_pmi_mpi" = "yes"],
+      [AC_DEFINE([ENABLE_PMI_MPI], [1], [Enable argument checking])])
+
 AM_CONDITIONAL([USE_PMI_MPI], [test "$enable_pmi_mpi" = "yes"])
 AM_CONDITIONAL([USE_PMI_SIMPLE], [test "$enable_pmi_simple" = "yes"])
 AM_CONDITIONAL([USE_PMI2], [test "$pmi_type" = "pmi2"])

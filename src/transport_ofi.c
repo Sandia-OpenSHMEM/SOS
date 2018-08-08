@@ -1063,7 +1063,7 @@ int populate_av(void)
 
     for (i = 0; i < shmem_internal_num_pes; i++) {
         char *addr_ptr = alladdrs + i * shmem_transport_ofi_addrlen;
-        err = shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen); //TODO Ask Jim about having this check implemented
+        err = shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen);
         if (err != 0){
             RAISE_ERROR_STR("Runtime get failed");
         }
