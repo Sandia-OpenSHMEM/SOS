@@ -59,6 +59,7 @@ addons:
     apt:
         packages:
             - gfortran
+            - cargo
 
 before_install:
     ## Set up the environment
