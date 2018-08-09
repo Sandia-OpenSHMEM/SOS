@@ -152,8 +152,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
 #ifdef HAVE_SCHED_GETAFFINITY
     cpu_set_t my_set;
-    CPU_ZERO(&my_set);
-    char cores_str[2048];
     int core_count = 0;
 #endif
 
@@ -307,18 +305,26 @@ shmem_internal_init(int tl_requested, int *tl_provided)
               shmem_internal_data_base, shmem_internal_data_length);
 
 #ifdef HAVE_SCHED_GETAFFINITY
-    ret = sched_getaffinity(0, sizeof(my_set), &my_set);
+    if (shmem_internal_params.DEBUG) {
+        CPU_ZERO(&my_set);
 
-    strcpy(cores_str," ");
-    for (int i = 0; i < CPU_SETSIZE; i++) {
-        if (CPU_ISSET(i, &my_set)) {
-            core_count++;
-            char cpunum[3];
-            sprintf(cpunum, "%d ", i);
-            strcat(cores_str, cpunum);
+        ret = sched_getaffinity(0, sizeof(my_set), &my_set);
+
+        if (ret == 0) {
+            char *cores_str = malloc(sizeof(char) * CPU_SETSIZE * 5 + 2);
+            strcpy(cores_str," ");
+            for (int i = 0; i < CPU_SETSIZE; i++) {
+                if (CPU_ISSET(i, &my_set)) {
+                    core_count++;
+                    char cpunum[5];
+                    sprintf(cpunum, "%d ", i);
+                    strcat(cores_str, cpunum);
+                }
+            }
+            DEBUG_MSG("affinity to %d processor cores: {%s}\n", core_count, cores_str);
+            free(cores_str);
         }
     }
-    DEBUG_MSG("affinity to %d processor cores: {%s}\n", core_count, cores_str);
 #endif
 
 #ifdef USE_ON_NODE_COMMS
