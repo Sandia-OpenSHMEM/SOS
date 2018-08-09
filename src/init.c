@@ -15,6 +15,13 @@
 
 #include "config.h"
 
+#ifdef HAVE_SCHED_GETAFFINITY
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <sched.h>
+#endif
+
 #include <stdlib.h>
 #include <sys/time.h>
 #include <sys/param.h>
@@ -141,6 +148,13 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 #endif
 #ifdef USE_CMA
     int cma_initialized       = 0;
+#endif
+
+#ifdef HAVE_SCHED_GETAFFINITY
+    cpu_set_t my_set;
+    CPU_ZERO(&my_set);
+    char cores_str[2048];
+    int core_count = 0;
 #endif
 
     /* set up threading */
@@ -291,6 +305,21 @@ shmem_internal_init(int tl_requested, int *tl_provided)
               shmem_internal_my_pe,
               shmem_internal_heap_base, shmem_internal_heap_length,
               shmem_internal_data_base, shmem_internal_data_length);
+
+#ifdef HAVE_SCHED_GETAFFINITY
+    ret = sched_getaffinity(0, sizeof(my_set), &my_set);
+
+    strcpy(cores_str," ");
+    for (int i = 0; i < CPU_SETSIZE; i++) {
+        if (CPU_ISSET(i, &my_set)) {
+            core_count++;
+            char cpunum[3];
+            sprintf(cpunum, "%d ", i);
+            strcat(cores_str, cpunum);
+        }
+    }
+    DEBUG_MSG("affinity to %d processor cores: {%s}\n", core_count, cores_str);
+#endif
 
 #ifdef USE_ON_NODE_COMMS
     shmem_internal_location_array = malloc(sizeof(char) * shmem_internal_num_pes);
