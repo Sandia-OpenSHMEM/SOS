@@ -110,14 +110,6 @@ void print_data_results(double bw, double mr, perf_metrics_t data,
                             int len, double total_t) {
     static int atomic_type_index = 0;
 
-    if(data.target_data) {
-        if(data.my_node < data.midpt) {
-            printf("initiator:\n");
-        } else  {
-            printf("target:\n");
-        }
-    }
-
     if (data.opstyle == STYLE_ATOMIC) {
         printf("%-10s", dt_names[atomic_type_index]);
         atomic_type_index = (atomic_type_index + 1) % ATOMICS_N_DTs;
@@ -131,14 +123,24 @@ void print_data_results(double bw, double mr, perf_metrics_t data,
     }
 
     if (data.opstyle == STYLE_ATOMIC) {
-        printf("%13s%10.2f%15s%12.2f%12s%10.2f\n", " ", bw, " ", 
+        printf("%13s%10.2f%15s%12.2f%12s%10.2f", " ", bw, " ", 
                 mr/1.0e6, " ", total_t/(data.trials * data.window_size));
     } else
-        printf("%14s%10.2f%15s%12.2f\n", " ", bw, " ", mr);
+        printf("%14s%10.2f%15s%12.2f", " ", bw, " ", mr);
+
+    if(data.target_data) {
+        if(data.my_node < data.szinitiator) {
+            printf("%2sIniter", " ");
+        } else  {
+            printf("%2sTarget", " ");
+        }
+    }
+
+    printf("\n");
 }
 
 static inline 
-void calc_and_print_results(double end_t, double start_t, int len,
+void calc_and_print_results(double end_t, double start_t, int len, 
                             perf_metrics_t metric_info) {
     int stride = 0, start_pe = 0, nPEs = 0;
     static double pe_bw_sum, bw = 0.0; /*must be symmetric for reduction*/
@@ -159,11 +161,11 @@ void calc_and_print_results(double end_t, double start_t, int len,
     if (end_t > 0 && start_t > 0 && (end_t - start_t) > 0) {
         total_t = end_t - start_t;
 #ifdef ENABLE_OPENMP
-        bw = ((double) len * (double) multiplier / 1.0e6 * 
+        bw = ((double) len * (double) metric_info.num_partners * (double) multiplier / 1.0e6 * 
              metric_info.window_size * metric_info.trials *
              (double) metric_info.nthreads) / (total_t / 1.0e6);
 #else
-        bw = ((double) len * (double) multiplier / 1.0e6 * 
+        bw = ((double) len * (double) metric_info.num_partners * (double) multiplier / 1.0e6 * 
              metric_info.window_size * metric_info.trials) /
              (total_t / 1.0e6);
 #endif
@@ -176,14 +178,19 @@ void calc_and_print_results(double end_t, double start_t, int len,
     pe_bw_sum = bw;
 
     if (metric_info.individual_report == 1) {
-        printf("Individual bandwith for PE %6d is %10.2f\n", 
+        if (metric_info.my_node < metric_info.midpt) {
+            printf("Individual bandwith for PE %6d (initer) is %10.2f\n", 
                 metric_info.my_node, pe_bw_sum);
+        } else {
+            printf("Individual bandwith for PE %6d (target) is %10.2f\n", 
+                metric_info.my_node, pe_bw_sum);
+        }
     }
     
     pe_time_start = start_t;
     pe_time_end = end_t;
     shmem_barrier(start_pe, stride, nPEs, bar_psync);
-    if (metric_info.cstyle != COMM_INCAST) {
+    if (metric_info.cstyle != COMM_INCAST) {  
         if (nPEs >= 2) {
             shmem_double_min_to_all(&start_time_min, &pe_time_start, nred_elements,
                                 start_pe, stride, nPEs, pwrk,
@@ -202,12 +209,13 @@ void calc_and_print_results(double end_t, double start_t, int len,
            (end_time_max - start_time_min) > 0) {
 
             total_t_max = (end_time_max - start_time_min);
+            int total_transfers = MAX(metric_info.szinitiator, metric_info.sztarget);
 #ifdef ENABLE_OPENMP
-            bw = ((double) len * (double) multiplier * (double) metric_info.midpt / 
+            bw = ((double) len * (double) multiplier * (double) total_transfers / 
                  1.0e6 * metric_info.window_size * metric_info.trials * 
                  (double) metric_info.nthreads) / (total_t_max / 1.0e6);
 #else
-            bw = ((double) len * (double) multiplier * (double) metric_info.midpt / 
+            bw = ((double) len * (double) multiplier * (double) total_transfers / 
                  1.0e6 * metric_info.window_size * metric_info.trials) / 
                  (total_t_max / 1.0e6);
 #endif
