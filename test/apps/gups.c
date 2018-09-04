@@ -324,8 +324,7 @@ SHMEMRandomAccess(void)
   double TotalMem;
   static int sAbort, rAbort;
 
-  uint64_t NumUpdates;  /* actual number of updates to table - may be smaller than
-                       * NumUpdates_Default due to execution time bounds */
+  uint64_t NumUpdates; /* total number of updates to table */
   uint64_t ProcNumUpdates; /* number of updates per processor */
 
   static long pSync_bcast[SHMEM_BCAST_SYNC_SIZE];
