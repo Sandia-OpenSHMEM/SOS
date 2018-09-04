@@ -59,7 +59,8 @@ libsma_la_SOURCES = \
 	shmem_env.h \
 	shmem_env_defs.h \
 	contexts_c.c \
-	contexts.c
+	contexts.c \
+	perf_counters_c.c
 
 nodist_libsma_la_SOURCES = \
 	$(GEN_BINDINGS)
@@ -131,7 +132,7 @@ libsma_la_SOURCES += \
 	runtime-pmix.c
 endif
 
-pkgconfig_DATA = sos.pc
+pkgconfig_DATA = sandia-openshmem.pc
 
 bin_SCRIPTS = oshcc oshrun
 CLEANFILES += oshcc oshrun

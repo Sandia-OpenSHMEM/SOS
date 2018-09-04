@@ -277,6 +277,9 @@ struct shmem_transport_ctx_t {
     shmem_internal_atomic_uint64_t  pending_put_cntr;
     shmem_internal_atomic_uint64_t  pending_get_cntr;
 #endif
+    /* These counters are protected by the BB lock */
+    uint64_t                        pending_bb_cntr;
+    uint64_t                        completed_bb_cntr;
     shmem_free_list_t              *bounce_buffers;
     int                             stx_idx;
     struct shmem_internal_tid       tid;
@@ -371,6 +374,7 @@ void shmem_transport_ofi_drain_cq(shmem_transport_ctx_t *ctx)
             if (SHMEM_TRANSPORT_OFI_TYPE_BOUNCE == frag->mytype) {
                 shmem_free_list_free(ctx->bounce_buffers,
                                      (shmem_transport_ofi_bounce_buffer_t *) frag);
+                ctx->completed_bb_cntr++;
             } else {
                 RAISE_ERROR_STR("Unrecognized completion object");
             }
@@ -402,6 +406,7 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_transport_ctx_t
     }
 
     buff = (shmem_transport_ofi_bounce_buffer_t*) shmem_free_list_alloc(ctx->bounce_buffers);
+    ctx->pending_bb_cntr++;
 
     SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
 
@@ -1221,6 +1226,100 @@ void shmem_transport_syncmem(void)
 {
     // TODO: libfabric does not yet have an analog to PtlAtomicSync() in Portals4, so the OFI 
     // transport routine will be a nop until an API is provided.
+}
+
+static inline
+uint64_t shmem_transport_pcntr_get_pending_put(shmem_transport_ctx_t *ctx)
+{
+    uint64_t cnt;
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+
+    if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
+        SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
+        cnt += ctx->pending_bb_cntr;
+        SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
+    }
+    return cnt;
+}
+
+static inline
+uint64_t shmem_transport_pcntr_get_pending_get(shmem_transport_ctx_t *ctx)
+{
+    uint64_t cnt;
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr);
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+    return cnt;
+}
+
+static inline
+uint64_t shmem_transport_pcntr_get_completed_put(shmem_transport_ctx_t *ctx)
+{
+    uint64_t cnt;
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    cnt = fi_cntr_read(ctx->put_cntr);
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+
+    if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
+        SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
+        cnt += ctx->completed_bb_cntr;
+        SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
+    }
+    return cnt;
+}
+
+static inline
+uint64_t shmem_transport_pcntr_get_completed_get(shmem_transport_ctx_t *ctx)
+{
+    uint64_t cnt;
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    cnt = fi_cntr_read(ctx->get_cntr);
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+    return cnt;
+}
+
+static inline
+uint64_t shmem_transport_pcntr_get_completed_target(void)
+{
+    uint64_t cnt = 0;
+#if ENABLE_TARGET_CNTR
+#  ifdef USE_THREAD_COMPLETION
+    if (0 == pthread_mutex_lock(&shmem_transport_ofi_progress_lock)) {
+#  endif
+        cnt = fi_cntr_read(shmem_transport_ofi_target_cntrfd);
+#  ifdef USE_THREAD_COMPLETION
+        pthread_mutex_unlock(&shmem_transport_ofi_progress_lock);
+    }
+#  endif
+#else
+    cnt = 0;
+#endif
+    return cnt;
+}
+
+static inline
+void shmem_transport_pcntr_get_all(shmem_transport_ctx_t *ctx, shmemx_pcntr_t *pcntr)
+{
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    pcntr->completed_put = 0;
+    pcntr->pending_put = 0;
+
+    if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
+        SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
+        pcntr->completed_put = ctx->completed_bb_cntr;
+        pcntr->pending_put = ctx->pending_bb_cntr;
+        SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
+    }
+    pcntr->completed_put += fi_cntr_read(ctx->put_cntr);
+    pcntr->completed_get = fi_cntr_read(ctx->get_cntr);
+
+    pcntr->pending_put += SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
+    pcntr->pending_get = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr);
+
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+    pcntr->target = shmem_transport_pcntr_get_completed_target();
 }
 
 #endif /* TRANSPORT_OFI_H */

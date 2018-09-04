@@ -35,6 +35,11 @@ static inline void uni_bw_put(int len, perf_metrics_t *metric_info)
     static int check_once = 0;
     static int fin = -1;
 
+    if(metric_info->target_data) {
+        target_bw_itr(len, metric_info);
+        return;
+    }
+
     if (!check_once) {
         /* check to see whether sender and receiver are the same process */
         if (dest == metric_info->my_node) {
@@ -45,11 +50,6 @@ static inline void uni_bw_put(int len, perf_metrics_t *metric_info)
         int status = check_hostname_validation(*metric_info);
         if (status != 0) return;
         check_once++;
-    }
-
-    if(metric_info->target_data) {
-        target_bw_itr(len, metric_info);
-        return;
     }
 
     shmem_barrier_all();
@@ -95,9 +95,14 @@ static inline void uni_bw_get(int len, perf_metrics_t *metric_info)
     double start = 0.0, end = 0.0;
     unsigned long int i = 0, j = 0;
     int dest = partner_node(*metric_info);
-    int snode = (metric_info->num_pes != 1)? streaming_node(*metric_info) : true;
+    int snode = (metric_info->num_pes != 1) ? streaming_node(*metric_info) : true;
     static int check_once = 0;
     static int fin = -1;
+
+    if(metric_info->target_data) {
+        target_bw_itr(len, metric_info);
+        return;
+    }
 
     if (!check_once) {
         /* check to see whether sender and receiver are the same process */
@@ -109,11 +114,6 @@ static inline void uni_bw_get(int len, perf_metrics_t *metric_info)
         int status = check_hostname_validation(*metric_info);
         if (status != 0) return;
         check_once++;
-    }
-
-    if(metric_info->target_data) {
-        target_bw_itr(len, metric_info);
-        return;
     }
 
     shmem_barrier_all();

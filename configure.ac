@@ -13,7 +13,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.4.1], [https://github.com/Sandia-OpenSHMEM/SOS/issues], [sos], [https://github.com/Sandia-OpenSHMEM/SOS])
+AC_INIT([Sandia OpenSHMEM], [1.4.1], [https://github.com/Sandia-OpenSHMEM/SOS/issues], [sandia-openshmem], [https://github.com/Sandia-OpenSHMEM/SOS])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -69,23 +69,24 @@ AC_ARG_ENABLE([completion-polling],
     [AC_HELP_STRING([--enable-completion-polling],
                     [Enable polling in quiet, fence, and local completion operations (default:disabled)])])
 AS_IF([test "$enable_completion_polling" = "yes"],
-      [AC_DEFINE([ENABLE_COMPLETION_POLLING], [1], [Enable polling for local/remote completions])
-       AC_DEFINE([DEFAULT_POLL_LIMIT], [-1], [Poll limit for local/remote completions])],
+      [AC_DEFINE([DEFAULT_POLL_LIMIT], [-1], [Poll limit for local/remote completions])],
       [AC_DEFINE([DEFAULT_POLL_LIMIT], [0], [Poll limit for local/remote completions])])
 
 AC_ARG_ENABLE([manual-progress],
     [AC_HELP_STRING([--enable-manual-progress],
                     [Enable intermittent progress calls inside transport layer (default:disabled)])])
-AS_IF([test "$enable_manual_progress" = "yes"], [AC_DEFINE([ENABLE_MANUAL_PROGRESS], [1], [Enable manual progress])])
+AS_IF([test "$enable_manual_progress" = "yes"],
+      [AC_DEFINE([ENABLE_MANUAL_PROGRESS], [1], [Enable manual progress])
+       AC_DEFINE([DEFAULT_POLL_LIMIT], [-1], [Poll limit for local/remote completions])])
 
-AC_ARG_WITH([total-data-ordering],
-    [AC_HELP_STRING([--with-total-data-ordering],
+AC_ARG_ENABLE([total-data-ordering],
+    [AC_HELP_STRING([--enable-total-data-ordering],
        [Configure handling of total data ordering option.  "no" or "never" to build with the assumption total data ordering will never be available.  "yes" or "always" to build with the assumption total data ordering will always be available (if not, applications will abort in start_pes()).  "check" to build with no assumptions, which may lead to a slight performance decrease on high performance networks.  (default: disabled)])])
-AS_CASE([x$with_total_data_ordering],
+AS_CASE([x$enable_total_data_ordering],
   [xyes|xalways], [ordering=1; msg="assume always available"],
   [xno|xnever|x], [ordering=0; msg="assume never available"],
   [xcheck], [ordering=2; msg="runtime check"],
-  [AC_MSG_ERROR([Unknown ordering requirement $with_total_data_ordering])])
+  [AC_MSG_ERROR([Unknown ordering requirement $enable_total_data_ordering])])
 AC_DEFINE_UNQUOTED([WANT_TOTAL_DATA_ORDERING], [$ordering], [0 if never check for total data ordering, 1 if always assume total data ordering, 2 to check])
 AC_MSG_CHECKING([For total data ordering behavior])
 AC_MSG_RESULT([$msg])
@@ -158,6 +159,10 @@ AC_ARG_ENABLE([cxx],
     [AC_HELP_STRING([--disable-cxx],
                     [Disable building the C++ bindings (default: enabled)])])
 
+AC_ARG_ENABLE([c11-checks],
+    [AC_HELP_STRING([--disable-c11-checks],
+                    [Disable build-time type checks for C11 bindings (default: enabled)])])
+
 AC_ARG_ENABLE([libtool-wrapper],
   [AS_HELP_STRING([--disable-libtool-wrapper],
     [Disable use of libtool executable wrappers for tests (default: enabled)])])
@@ -187,17 +192,27 @@ AS_IF([test "$enable_long_fortran_header" = "yes"], [FORTRAN_LONG_HEADER=" "], [
 AC_SUBST([FORTRAN_LONG_HEADER])
 AM_CONDITIONAL([HAVE_LONG_FORTRAN_HEADER], [test "$enable_long_fortran_header" = "yes"])
 
-AC_ARG_ENABLE([mr-scalable],
-    [AC_HELP_STRING([--disable-mr-scalable],
-                    [Disable the use of scalable memory regions in the OFI transport.  Required by some providers. (default: enabled)])])
-AS_IF([test "$enable_mr_scalable" != "no"],
-      [AC_DEFINE([ENABLE_MR_SCALABLE], [1], [If defined, the OFI transport will use FI_MR_SCALABLE.  Otherwise, FI_MR_BASIC is used.])])
+AC_ARG_ENABLE([ofi-mr],
+    [AC_HELP_STRING([--enable-ofi-mr=MODE],
+                    [OFI memory registration mode: basic, scalable, or rma-event (default: scalable)])])
 
-AC_ARG_ENABLE([mr-rma-event],
-    [AC_HELP_STRING([--enable-mr-rma-event],
-                    [Enable FI_MR_RMA_EVENT memory registration support in OFI transport.  Required by some providers. (default: disabled)])])
-AS_IF([test "$enable_mr_rma_event" = "yes"],
-      [AC_DEFINE([ENABLE_MR_RMA_EVENT], [1], [If defined, the OFI transport will enable support for FI_MR_RMA_EVENT.])])
+AS_IF([test -z "$enable_ofi_mr"], [enable_ofi_mr="scalable"])
+
+AS_CASE([$enable_ofi_mr],
+        [basic],
+            [],
+        [scalable],
+            [AC_DEFINE([ENABLE_MR_SCALABLE], [1], [If defined, the OFI transport will use FI_MR_SCALABLE])],
+        [rma?event],
+            [AC_DEFINE([ENABLE_MR_RMA_EVENT], [1], [If defined, the OFI transport will use FI_MR_RMA_EVENT])
+             AC_DEFINE([ENABLE_MR_SCALABLE], [1], [If defined, the OFI transport will use FI_MR_SCALABLE])],
+        [AC_MSG_ERROR([Invalid OFI memory registration mode: $enable_ofi_mr])])
+
+AC_ARG_ENABLE([rpm-prefix],
+    [AC_HELP_STRING([--enable-rpm-prefix],
+                    [Generate RPM spec file that supports an alternate installation prefix (default:disabled)])])
+AS_IF([test "$enable_rpm_prefix" = "yes"], [SOS_RPM_PREFIXED=""], [SOS_RPM_PREFIXED="# DISABLED: "])
+AC_SUBST([SOS_RPM_PREFIXED])
 
 AC_ARG_ENABLE([av-map],
     [AC_HELP_STRING([--enable-av-map],
@@ -263,7 +278,7 @@ AS_IF([test "$shmem_cv_c11_works" = "no"],
       CFLAGS="-std=gnu11 $ORIG_CFLAGS"]
       )
 AC_LANG_POP([C])
-AM_CONDITIONAL([HAVE_C11], [test "$shmem_cv_c11_works" = "yes"])
+AM_CONDITIONAL([HAVE_C11], [test "$shmem_cv_c11_works" = "yes" -a "$enable_c11_checks" != "no"])
 # end gnu11/gnu99 check
 
 
@@ -655,6 +670,9 @@ fi
 if test -n "$with_pmi" -a "$with_pmi" != "no" -a "$with_pmi" != "yes" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-pmi=${with_pmi}"
 fi
+if test "$enable_pmi_simple" = "yes" ; then
+  DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --enable-pmi-simple"
+fi
 if test -n "$FCFLAGS" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS FCFLAGS=\"$FCFLAGS\""
 fi
@@ -732,7 +750,7 @@ AC_CONFIG_FILES([Makefile
   mpp/shmemx_c_func.h4
   mpp/shmemx.h4
   src/Makefile
-  src/sos.pc
+  src/sandia-openshmem.pc
   test/Makefile
   test/unit/Makefile
   test/shmemx/Makefile
@@ -756,6 +774,9 @@ AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$t
 
 AS_IF([test "$shmem_cv_c11_works" != "yes"],
       [AC_MSG_WARN([C compiler does not support _Generic, unabled to verify and test C11 bindings])])
+
+AS_IF([test "$enable_c11_checks" == "no"],
+      [AC_MSG_WARN([C11 _Generic type checks disabled, not verifying type coverage of C11 bindings])])
 
 AS_IF([test "$enable_cxx" == "no"],
       [AC_MSG_WARN([No C++ compiler or C++ disabled, unabled to verify and test C++ bindings])])
@@ -793,3 +814,33 @@ echo "  XPMEM:          $transport_xpmem"
 echo "  CMA:            $transport_cma"
 echo "  memcpy:         $transport_memcpy"
 echo ""
+echo "Global Options:"
+if test "$enable_remote_virtual_addressing" = "yes"; then
+    echo "  Remote VA:      yes"
+else
+    echo "  Remote VA:      no"
+fi
+if test "$enable_threads" != "no"; then
+    echo "  Thread support: yes"
+else
+    echo "  Thread support: no"
+fi
+if test "$enable_error_checking" != "yes"; then
+    echo "  Error checking: no"
+else
+    echo "  Error checking: yes"
+fi
+echo ""
+
+if test "$transport_ofi" = "yes"; then
+    echo "OFI Transport:"
+    echo "  Memory reg.:    $enable_ofi_mr"
+
+    if test "$enable_av_map" = "yes"; then
+        echo "  Addr. vector:   map"
+    else
+        echo "  Addr. vector:   table"
+    fi
+
+    echo ""
+fi
