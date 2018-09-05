@@ -42,11 +42,11 @@ char *src_array, *dest_array;
 uint64_t c_put, c_get, p_put, p_get, target;
 
 static void collect(shmem_ctx_t ctx) {
-    shmemx_pcntr_get_completed_put(ctx, &c_put);
-    shmemx_pcntr_get_completed_get(ctx, &c_get);
+    shmemx_pcntr_get_completed_write(ctx, &c_put);
+    shmemx_pcntr_get_completed_read(ctx, &c_get);
     shmemx_pcntr_get_completed_target(&target);
-    shmemx_pcntr_get_pending_put(ctx, &p_put);
-    shmemx_pcntr_get_pending_get(ctx, &p_get);
+    shmemx_pcntr_get_issued_write(ctx, &p_put);
+    shmemx_pcntr_get_issued_read(ctx, &p_get);
 }
 
 static void put_and_progress_check(void) {
@@ -76,8 +76,8 @@ static void put_and_progress_check(void) {
     printf("Value observed of the performance counters from combined API: \n"
            "Completed Put = %10"PRIu64"\n"
            "Completed Get = %10"PRIu64"\n"
-           "Pending Put   = %10"PRIu64"\n"
-           "Pending Get   = %10"PRIu64"\n"
+           "Issued Put    = %10"PRIu64"\n"
+           "Issued Get    = %10"PRIu64"\n"
            "Target        = %10"PRIu64"\n"
            , pcntr.completed_put, pcntr.completed_get, pcntr.pending_put,
            pcntr.pending_get, pcntr.target);
@@ -109,8 +109,8 @@ int main(int argc, char **argv) {
     printf("Final value observed of the performance counters from individual APIs: \n"
            "Completed Put = %10"PRIu64"\n"
            "Completed Get = %10"PRIu64"\n"
-           "Pending Put   = %10"PRIu64"\n"
-           "Pending Get   = %10"PRIu64"\n"
+           "Issued Put    = %10"PRIu64"\n"
+           "Issued Get    = %10"PRIu64"\n"
            "Target        = %10"PRIu64"\n"
            , c_put, c_get, p_put, p_get, target);
 
