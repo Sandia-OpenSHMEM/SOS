@@ -1058,7 +1058,7 @@ int populate_av(void)
     alladdrs = malloc(shmem_internal_num_pes * shmem_transport_ofi_addrlen);
     if (alladdrs == NULL) {
         RAISE_WARN_STR("Out of memory allocating 'alladdrs'");
-        return ret;
+        return 1;
     }
 
     for (i = 0; i < shmem_internal_num_pes; i++) {
