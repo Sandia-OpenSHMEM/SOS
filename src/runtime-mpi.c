@@ -109,6 +109,9 @@ shmem_runtime_fini(void)
 {
     int ret = MPI_SUCCESS;
     int finalized = 0;
+
+    MPI_Comm_free(&SHMEM_RUNTIME_WORLD);
+
     MPI_Finalized(&finalized);
 
     if (initialized_mpi) {
