@@ -35,8 +35,6 @@
 static pmix_proc_t myproc;
 static size_t size;
 
-int pmix_enabled_flag = 0;
-
 int
 shmem_runtime_init(void)
 {
@@ -45,16 +43,9 @@ shmem_runtime_init(void)
     proc.rank = PMIX_RANK_WILDCARD;
     pmix_value_t *val;
 
-    int initialized = PMIx_Initialized();
-
-    if (!initialized) {
-        if (PMIX_SUCCESS != (rc = PMIx_Init(&myproc, NULL, 0))) {
-            RETURN_ERROR_MSG_PREINIT("PMIx_Init failed (%d)\n", rc);
-            return rc;
-        } 
-        else{
-            pmix_enabled_flag = 1;
-        }
+    if (PMIX_SUCCESS != (rc = PMIx_Init(&myproc, NULL, 0))) {
+        RETURN_ERROR_MSG_PREINIT("PMIx_Init failed (%d)\n", rc);
+        return rc;
     }
 
     (void)strncpy(proc.nspace, myproc.nspace, PMIX_MAX_NSLEN);
@@ -78,7 +69,7 @@ shmem_runtime_fini(void)
 {
     pmix_status_t rc;
 
-    if (pmix_enabled_flag && PMIX_SUCCESS != (rc = PMIx_Finalize(NULL, 0))) {
+    if (PMIX_SUCCESS != (rc = PMIx_Finalize(NULL, 0))) {
         RETURN_ERROR_MSG_PREINIT("PMIx_Finalize failed (%d)\n", rc);
         return rc;
     }
