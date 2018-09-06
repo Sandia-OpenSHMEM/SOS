@@ -313,12 +313,11 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         if (ret == 0) {
             char *cores_str = malloc(sizeof(char) * CPU_SETSIZE * 5 + 2);
             strcpy(cores_str," ");
+            size_t off = 1; /* start after " " */
             for (int i = 0; i < CPU_SETSIZE; i++) {
                 if (CPU_ISSET(i, &my_set)) {
                     core_count++;
-                    char cpunum[5];
-                    sprintf(cpunum, "%d ", i);
-                    strcat(cores_str, cpunum);
+                    off += snprintf(cores_str+off, CPU_SETSIZE*5+2-off, "%d ", i);
                 }
             }
             DEBUG_MSG("affinity to %d processor cores: {%s}\n", core_count, cores_str);

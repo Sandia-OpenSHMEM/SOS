@@ -9,7 +9,7 @@ AC_DEFUN([CHECK_SCHED_GETAFFINITY], [
 #define _GNU_SOURCE
 #include <sched.h>
 cpu_set_t my_set;
-int main() {CPU_ZERO(&my_set); sched_getaffinity(0, sizeof(my_set), &my_set);}
+int main() {CPU_ZERO(&my_set); sched_getaffinity(0, sizeof(my_set), &my_set); return 0;}
 ]])],
        [sched_getaffinity_happy="yes"],
        [sched_getaffinity_happy="no"])
