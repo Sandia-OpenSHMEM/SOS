@@ -40,7 +40,7 @@ static int rank = -1;
 static int size = 0;
 static char *kvs_name, *kvs_key, *kvs_value;
 static int max_name_len, max_key_len, max_val_len;
-static int PMI2_enabled_flag = 0;
+static int initialized_pmi = 0;
 
 static int
 encode(const void *inval, int invallen, char *outval, int outvallen)
@@ -103,8 +103,8 @@ shmem_runtime_init(void)
         if (PMI2_SUCCESS != PMI2_Init(&spawned, &size, &rank, &appnum)) {
             return 2;
         }
-        else{
-            PMI2_enabled_flag = 1;
+        else {
+            initialized_pmi = 1;
         }
     }
 
@@ -131,9 +131,9 @@ shmem_runtime_init(void)
 int
 shmem_runtime_fini(void)
 {
-    if(PMI2_enabled_flag == 1){
+    if (initialized_pmi == 1) {
         PMI2_Finalize();
-        PMI2_enabled_flag = 0;
+        initialized_pmi = 0;
     }
     return 0;
 }

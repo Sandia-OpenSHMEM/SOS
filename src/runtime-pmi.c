@@ -36,7 +36,7 @@ static int rank = -1;
 static int size = 0;
 static char *kvs_name, *kvs_key, *kvs_value;
 static int max_name_len, max_key_len, max_val_len;
-static int PMI_enabled_flag = 0;
+static int initialized_pmi = 0;
 
 #define SINGLETON_KEY_LEN 128
 #define SINGLETON_VAL_LEN 256
@@ -105,15 +105,17 @@ int
 shmem_runtime_init(void)
 {
     int initialized;
+
     if (PMI_SUCCESS != PMI_Initialized(&initialized)) {
         return 1;
     }
+
     if (!initialized) {
         if (PMI_SUCCESS != PMI_Init(&initialized)) {
             return 2;
         }
-        else{
-            PMI_enabled_flag = 1;
+        else {
+            initialized_pmi = 1;
         }
     }
 
@@ -163,9 +165,9 @@ shmem_runtime_init(void)
 int
 shmem_runtime_fini(void)
 {
-    if(PMI_enabled_flag){
+    if (initialized_pmi) {
         PMI_Finalize();
-        PMI_enabled_flag = 0;
+        initialized_pmi = 0;
     }
 
     return 0;

@@ -389,7 +389,7 @@ AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
       ])
 
 AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
-              [build and run shmem-pmi support])])
+              [Use MPICH simple PMI-1 library for process management])])
 AC_ARG_ENABLE([pmi-mpi], [AC_HELP_STRING([--enable-pmi-mpi],
               [Use MPI for process management])])
 

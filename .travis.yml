@@ -76,7 +76,7 @@ addons:
             - gfortran
             - rpm
             - mpich
-            - libmpich-dev  
+            - libmpich-dev
             - cargo
 before_install:
     ## Set up the environment
@@ -122,14 +122,14 @@ before_install:
     - make install
     ## Build libfabric
     - cd $TRAVIS_SRC
-    - git clone --depth 10 https://github.com/ofiwg/libfabric.git libfabric
-    - cd libfabric  
+    - git clone -b v1.6.x --depth 10 https://github.com/ofiwg/libfabric.git libfabric
+    - cd libfabric
     - ./autogen.sh
     - ./configure --prefix=$TRAVIS_INSTALL/libfabric
     - make $TRAVIS_PAR_MAKE
     - make install
     ## Build Hydra
-    - cd $TRAVIS_SRC  
+    - cd $TRAVIS_SRC
     - wget http://www.mpich.org/static/downloads/3.2/hydra-3.2.tar.gz
     - tar xvzf hydra-3.2.tar.gz
     - cd hydra-3.2/
@@ -149,7 +149,7 @@ before_install:
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ParRes/ISx.git ISx
     ## Fetch PRK
-    - cd $TRAVIS_SRC  
+    - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ParRes/Kernels.git PRK
     - echo -e "SHMEMCC=oshcc -std=c99\nSHMEMTOP=$$TRAVIS_INSTALL\n" > PRK/common/make.defs
     ## Build Libevent
@@ -172,7 +172,7 @@ before_install:
     #- cd ompi
     #- ./autogen.pl
     #- ./configure --prefix=$PWD/install --with-libevent=$TRAVIS_SRC/libevent-2.0.22-stable/install --with-pmix=$TRAVIS_SRC/pmix/install && make clean all install
-    ## Download and install OpenMPI RPM 
+    ## Download and install OpenMPI RPM
     - cd $TRAVIS_INSTALL
     - wget http://gdurl.com/P5og -O openmpi-v3.0.x.deb
     - sudo dpkg -i openmpi-v3.0.x.deb
@@ -227,7 +227,6 @@ script:
     - cd ofi-build
     - export PATH=$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
     - ../configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --prefix=$TRAVIS_INSTALL/sandia-shmem-ofi $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
-    - head config.log
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
     - make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2" check
