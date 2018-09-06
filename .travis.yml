@@ -13,7 +13,8 @@ env:
         - FCFLAGS="-fcray-pointer"
         #- PTL_IFACE_NAME=venet0
         - PTL_IFACE_NAME=lo
-        - FI_LOG_LEVEL=warn
+        ## Enabling FI logging may break UH testing harness
+        #- FI_LOG_LEVEL=warn
         - SHMEM_OFI_USE_PROVIDER=sockets
         - SHMEM_INFO=1
         - SOS_ENABLE_ERROR_TESTS=0
