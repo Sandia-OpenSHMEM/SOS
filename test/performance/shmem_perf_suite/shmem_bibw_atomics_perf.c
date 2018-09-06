@@ -273,7 +273,7 @@
                 break;                                                     \
         }                                                                  \
             if(snode)                                                      \
-                calc_and_print_results(end, start, len, *metric_info);  \
+                calc_and_print_results(end, start, len, *metric_info);     \
     } while(0)
 
 
