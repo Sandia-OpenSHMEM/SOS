@@ -88,13 +88,12 @@ shmem_runtime_init(void)
     if (MPI_SUCCESS != MPI_Comm_dup(MPI_COMM_WORLD, &SHMEM_RUNTIME_WORLD)) {
         return 5;
     }
-    if (MPI_SUCCESS != MPI_Comm_rank(SHMEM_RUNTIME_WORLD, &rank)) {
+    if (MPI_SUCCESS != MPI_Comm_set_errhandler(SHMEM_RUNTIME_WORLD, MPI_ERRORS_ARE_FATAL)) {
         return 6;
     }
 
-    if (MPI_SUCCESS != MPI_Comm_size(SHMEM_RUNTIME_WORLD, &size)) {
-        return 7;
-    }
+    MPI_Comm_rank(SHMEM_RUNTIME_WORLD, &rank);
+    MPI_Comm_size(SHMEM_RUNTIME_WORLD, &size);
 
     kv_store_me = (char*)malloc(MAX_KV_COUNT * sizeof(char)* MAX_KV_LENGTH);
 
@@ -179,11 +178,9 @@ shmem_runtime_exchange(void)
         return 1;
     }
 
-    if (MPI_SUCCESS != MPI_Allgather(kv_store_me, chunkSize, MPI_CHAR,
-                                     kv_store_all, chunkSize, MPI_CHAR,
-                                     SHMEM_RUNTIME_WORLD)) {
-        return 2;
-    }
+    MPI_Allgather(kv_store_me, chunkSize, MPI_CHAR, kv_store_all, chunkSize,
+                  MPI_CHAR, SHMEM_RUNTIME_WORLD);
+
     return 0;
 }
 
