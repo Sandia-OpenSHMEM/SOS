@@ -158,7 +158,7 @@ options.
 
     SHMEM_BARRIERS_FLUSH (default: off)
         If defined, standard output (stdout) and error (stderr) streams 
-        will be flushed at the end of each barrier operation.
+        will be flushed at the beginning of each barrier operation.
 
     SHMEM_CMA_PUT_MAX (default: 8192)
         '--with-cma', shmem put lengths <= CMA_PUT_MAX use process_vm_writev();
