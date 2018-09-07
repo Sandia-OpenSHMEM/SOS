@@ -72,7 +72,7 @@ shmem_internal_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)
                         shmem_internal_barrier_type);
     }
 
-    if (shmem_internal_params.FLUSH_STREAM_ON_BARRIER) {
+    if (shmem_internal_params.BARRIERS_FLUSH) {
         fflush(stdout);
         fflush(stderr);
     }

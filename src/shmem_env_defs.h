@@ -65,7 +65,7 @@ SHMEM_INTERNAL_ENV_DEF(COLLECT_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CAT
                        "Algorithm for collect.  Options are auto, linear")
 SHMEM_INTERNAL_ENV_DEF(FCOLLECT_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
                        "Algorithm for fcollect.  Options are auto, linear, ring, recdbl")
-SHMEM_INTERNAL_ENV_DEF(FLUSH_STREAM_ON_BARRIER, bool, false, SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
+SHMEM_INTERNAL_ENV_DEF(BARRIERS_FLUSH, bool, false, SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
                         "Flush stdout and stderr on barrier")
 
 #ifdef USE_CMA
