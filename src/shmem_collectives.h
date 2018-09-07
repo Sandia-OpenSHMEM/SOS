@@ -48,6 +48,11 @@ static inline
 void
 shmem_internal_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
+    if (shmem_internal_params.BARRIERS_FLUSH) {
+        fflush(stdout);
+        fflush(stderr);
+    }
+
     if (PE_size == 1) return;
 
     switch (shmem_internal_barrier_type) {
@@ -70,11 +75,6 @@ shmem_internal_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)
     default:
         RAISE_ERROR_MSG("Illegal barrier/sync type (%d)\n",
                         shmem_internal_barrier_type);
-    }
-
-    if (shmem_internal_params.BARRIERS_FLUSH) {
-        fflush(stdout);
-        fflush(stderr);
     }
 }
 
