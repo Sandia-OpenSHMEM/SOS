@@ -170,12 +170,20 @@ before_install:
     #- cd $TRAVIS_INSTALL
     #- wget http://gdurl.com/P5og -O openmpi-v3.0.x.deb
     #- sudo dpkg -i openmpi-v3.0.x.deb
+    ## Download and install hwloc (required for prrte)
+    - cd $TRAVIS_SRC
+    - git clone --depth 10 --single-branch -b v1.11 https://github.com/open-mpi/hwloc.git hwloc
+    - cd hwloc
+    - ./autogen.sh
+    - ./configure --prefix=$PWD/install
+    - make clean all install 
     ## Download and install PRRTE
     - cd $TRAVIS_SRC
-    - git clone --depth 10 --single-branch https://github.com/pmix/prrte.git
+    - git clone --depth 10 --single-branch https://github.com/pmix/prrte.git prrte
     - cd prrte
     - ./autogen.pl
-    - ./configure --prefix=$PWD/install --with-libevent=$TRAVIS_SRC/libevent-2.0.22-stable/install --with-pmix=$TRAVIS_SRC/pmix/install && make clean all install
+    - ./configure --prefix=$PWD/install --with-libevent=$TRAVIS_SRC/libevent-2.0.22-stable/install --with-pmix=$TRAVIS_SRC/pmix/install --with-hwloc=$TRAVIS_SRC/hwloc/install
+    - make clean all install
 install:
     - cd $SOS_SRC
     - ./autogen.sh
