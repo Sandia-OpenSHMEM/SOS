@@ -1048,7 +1048,7 @@ int publish_av_info(struct fabric_info *info)
 static inline
 int populate_av(void)
 {
-    int    i, ret = 0;
+    int    i, ret, err = 0;
     char   *alladdrs = NULL;
 #ifdef USE_ON_NODE_COMMS
     int    num_on_node = 0;
@@ -1058,15 +1058,23 @@ int populate_av(void)
     alladdrs = malloc(shmem_internal_num_pes * shmem_transport_ofi_addrlen);
     if (alladdrs == NULL) {
         RAISE_WARN_STR("Out of memory allocating 'alladdrs'");
-        return ret;
+        return 1;
     }
 
     for (i = 0; i < shmem_internal_num_pes; i++) {
         char *addr_ptr = alladdrs + i * shmem_transport_ofi_addrlen;
-        shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen);
+        err = shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen);
+        if (err != 0) {
+            RAISE_ERROR_STR("Runtime get of 'fi_epname' failed");
+        }
 
 #ifdef USE_ON_NODE_COMMS
-        shmem_runtime_get(i, "fi_ephostname", ephostname, EPHOSTNAMELEN);
+        err = shmem_runtime_get(i, "fi_ephostname", ephostname, EPHOSTNAMELEN);
+
+        if (err != 0) {
+            RAISE_ERROR_STR("Runtime get of 'fi_ephostname' failed");
+        }
+
         if (strncmp(myephostname, ephostname, EPHOSTNAMELEN) == 0) {
             SHMEM_SET_RANK_SAME_NODE(i, num_on_node++);
             if (num_on_node > 255) {
