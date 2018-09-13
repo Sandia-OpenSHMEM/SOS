@@ -663,7 +663,7 @@ int allocate_recv_cntr_mr(void)
 
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, 0, UINT64_MAX,
-                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, flags,
+                    FI_REMOTE_WRITE | FI_REMOTE_READ, 0, 0ULL, flags,
                     &shmem_transport_ofi_target_mrfd, NULL);
     OFI_CHECK_RETURN_STR(ret, "target memory (all) registration failed");
 
@@ -671,11 +671,11 @@ int allocate_recv_cntr_mr(void)
 #if ENABLE_TARGET_CNTR
     ret = fi_mr_bind(shmem_transport_ofi_target_mrfd,
                      &shmem_transport_ofi_target_cntrfd->fid,
-                     FI_REMOTE_WRITE | FI_REMOTE_READ);
+                     FI_REMOTE_WRITE);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to MR failed");
 
     ret = fi_ep_bind(shmem_transport_ofi_target_ep,
-                     &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE | FI_REMOTE_READ);
+                     &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to EP failed");
 
 #ifdef ENABLE_MR_RMA_EVENT
@@ -692,13 +692,13 @@ int allocate_recv_cntr_mr(void)
      * the provider. */
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_heap_base,
                     shmem_internal_heap_length,
-                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 1ULL, flags,
+                    FI_REMOTE_WRITE | FI_REMOTE_READ, 0, 1ULL, flags,
                     &shmem_transport_ofi_target_heap_mrfd, NULL);
     OFI_CHECK_RETURN_STR(ret, "target memory (heap) registration failed");
 
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_data_base,
                     shmem_internal_data_length,
-                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, flags,
+                    FI_REMOTE_WRITE | FI_REMOTE_READ, 0, 0ULL, flags,
                     &shmem_transport_ofi_target_data_mrfd, NULL);
     OFI_CHECK_RETURN_STR(ret, "target memory (data) registration failed");
 
@@ -706,16 +706,16 @@ int allocate_recv_cntr_mr(void)
 #if ENABLE_TARGET_CNTR
     ret = fi_mr_bind(shmem_transport_ofi_target_heap_mrfd,
                      &shmem_transport_ofi_target_cntrfd->fid,
-                     FI_REMOTE_WRITE | FI_REMOTE_READ);
+                     FI_REMOTE_WRITE);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to heap MR failed");
 
     ret = fi_mr_bind(shmem_transport_ofi_target_data_mrfd,
                      &shmem_transport_ofi_target_cntrfd->fid,
-                     FI_REMOTE_WRITE | FI_REMOTE_READ);
+                     FI_REMOTE_WRITE);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to data MR failed");
 
     ret = fi_ep_bind(shmem_transport_ofi_target_ep,
-                     &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE | FI_REMOTE_READ);
+                     &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to EP failed");
 
 #ifdef ENABLE_MR_RMA_EVENT
@@ -1285,7 +1285,7 @@ static int shmem_transport_ofi_target_ep_init(void)
 
     struct fabric_info* info = &shmem_transport_ofi_info;
     info->p_info->ep_attr->tx_ctx_cnt = 0;
-    info->p_info->caps = FI_RMA | FI_ATOMICS | FI_REMOTE_READ | FI_REMOTE_WRITE;
+    info->p_info->caps = FI_RMA | FI_ATOMICS | FI_REMOTE_WRITE | FI_REMOTE_READ;
     info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
     info->p_info->mode = 0;
     info->p_info->tx_attr->mode = 0;
