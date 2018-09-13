@@ -427,6 +427,19 @@ int shmem_transport_ofi_stx_search_unused(void)
 }
 
 static inline
+int shmem_transport_ofi_stx_threshold_cmp(int idx, long threshold) {
+    /* Increasing the threshold by 1 on the default ctx balances better */
+    if (idx == 0 && threshold != -1) {
+        threshold += 1;
+    }
+    if (shmem_transport_ofi_stx_pool[idx].ref_cnt <= threshold) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+static inline
 int shmem_transport_ofi_stx_search_shared(long threshold)
 {
     static int rr_start_idx = 0;
@@ -437,7 +450,7 @@ int shmem_transport_ofi_stx_search_shared(long threshold)
             i = rr_start_idx;
             for (count = 0; count < shmem_transport_ofi_stx_max; count++) {
                 if (shmem_transport_ofi_stx_pool[i].ref_cnt > 0 &&
-                    (shmem_transport_ofi_stx_pool[i].ref_cnt <= threshold || threshold == -1) &&
+                    (shmem_transport_ofi_stx_threshold_cmp(i, threshold) || threshold == -1) &&
                     !shmem_transport_ofi_stx_pool[i].is_private) {
                     stx_idx = i;
                     rr_start_idx = (i + 1) % shmem_transport_ofi_stx_max;
@@ -453,7 +466,7 @@ int shmem_transport_ofi_stx_search_shared(long threshold)
             shmem_transport_ofi_stx_rand_restart();
             while ((i = shmem_transport_ofi_stx_rand_next(threshold)) >= 0) {
                 if (shmem_transport_ofi_stx_pool[i].ref_cnt > 0 &&
-                    (shmem_transport_ofi_stx_pool[i].ref_cnt <= threshold || threshold == -1) &&
+                    (shmem_transport_ofi_stx_threshold_cmp(i, threshold) || threshold == -1) &&
                     !shmem_transport_ofi_stx_pool[i].is_private) {
                     stx_idx = i;
                     rand_pool_prev_choice = stx_idx;
