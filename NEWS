@@ -2,7 +2,7 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
-v1.4.2
+v1.4.2rc1
 ------
 - Added support for using MPI as the process manager, via --enable-pmi-mpi.
 - Added option to flush stdout/stderr during barrier operations, enabled via
