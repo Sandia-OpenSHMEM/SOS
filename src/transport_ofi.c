@@ -674,11 +674,11 @@ int allocate_recv_cntr_mr(void)
 #if ENABLE_TARGET_CNTR
     ret = fi_mr_bind(shmem_transport_ofi_target_mrfd,
                      &shmem_transport_ofi_target_cntrfd->fid,
-                     FI_REMOTE_WRITE | FI_REMOTE_READ);
+                     FI_REMOTE_WRITE);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to MR failed");
 
     ret = fi_ep_bind(shmem_transport_ofi_target_ep,
-                     &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE | FI_REMOTE_READ);
+                     &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to EP failed");
 
 #ifdef ENABLE_MR_RMA_EVENT
@@ -709,16 +709,16 @@ int allocate_recv_cntr_mr(void)
 #if ENABLE_TARGET_CNTR
     ret = fi_mr_bind(shmem_transport_ofi_target_heap_mrfd,
                      &shmem_transport_ofi_target_cntrfd->fid,
-                     FI_REMOTE_WRITE | FI_REMOTE_READ);
+                     FI_REMOTE_WRITE);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to heap MR failed");
 
     ret = fi_mr_bind(shmem_transport_ofi_target_data_mrfd,
                      &shmem_transport_ofi_target_cntrfd->fid,
-                     FI_REMOTE_WRITE | FI_REMOTE_READ);
+                     FI_REMOTE_WRITE);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to data MR failed");
 
     ret = fi_ep_bind(shmem_transport_ofi_target_ep,
-                     &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE | FI_REMOTE_READ);
+                     &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to EP failed");
 
 #ifdef ENABLE_MR_RMA_EVENT
@@ -1051,7 +1051,7 @@ int publish_av_info(struct fabric_info *info)
 static inline
 int populate_av(void)
 {
-    int    i, ret = 0;
+    int    i, ret, err = 0;
     char   *alladdrs = NULL;
 #ifdef USE_ON_NODE_COMMS
     int    num_on_node = 0;
@@ -1061,15 +1061,23 @@ int populate_av(void)
     alladdrs = malloc(shmem_internal_num_pes * shmem_transport_ofi_addrlen);
     if (alladdrs == NULL) {
         RAISE_WARN_STR("Out of memory allocating 'alladdrs'");
-        return ret;
+        return 1;
     }
 
     for (i = 0; i < shmem_internal_num_pes; i++) {
         char *addr_ptr = alladdrs + i * shmem_transport_ofi_addrlen;
-        shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen);
+        err = shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen);
+        if (err != 0) {
+            RAISE_ERROR_STR("Runtime get of 'fi_epname' failed");
+        }
 
 #ifdef USE_ON_NODE_COMMS
-        shmem_runtime_get(i, "fi_ephostname", ephostname, EPHOSTNAMELEN);
+        err = shmem_runtime_get(i, "fi_ephostname", ephostname, EPHOSTNAMELEN);
+
+        if (err != 0) {
+            RAISE_ERROR_STR("Runtime get of 'fi_ephostname' failed");
+        }
+
         if (strncmp(myephostname, ephostname, EPHOSTNAMELEN) == 0) {
             SHMEM_SET_RANK_SAME_NODE(i, num_on_node++);
             if (num_on_node > 255) {
@@ -1411,7 +1419,7 @@ int shmem_transport_init(void)
 
     if (shmem_internal_params.OFI_PROVIDER_provided)
         shmem_transport_ofi_info.prov_name = shmem_internal_params.OFI_PROVIDER;
-    if (shmem_internal_params.OFI_USE_PROVIDER_provided)
+    else if (shmem_internal_params.OFI_USE_PROVIDER_provided)
         shmem_transport_ofi_info.prov_name = shmem_internal_params.OFI_USE_PROVIDER;
     else
         shmem_transport_ofi_info.prov_name = NULL;

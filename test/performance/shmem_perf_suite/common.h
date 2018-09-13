@@ -45,21 +45,25 @@
 #define MAX_HOSTNAME_LEN HOST_NAME_MAX
 #endif
 
+#ifndef MAX
+#define MAX(A,B)   (((A)>(B)) ? (A) : (B))
+#endif
+
 #define ONE 1
 
 /* constants for experiments */
 #define MAX_MSG_SIZE (1<<23)
 #define START_LEN 1
 #define INC 2
-#define TRIALS 500
+#define TRIALS 1000
 #define WINDOW_SIZE 64
-#define WARMUP 50
+#define WARMUP 100
 
 /* constants for experiments with large message sizes */
 #define TRIALS_LARGE  100
 #define WINDOW_SIZE_LARGE 64
 #define WARMUP_LARGE  10
-#define LARGE_MESSAGE_SIZE  8192
+#define LARGE_MESSAGE_SIZE  65536
 
 #define TARGET_SZ_MIN 8
 #define TARGET_SZ_MAX 4096
@@ -145,6 +149,7 @@ typedef struct perf_metrics {
     bw_type b_type;
     comm_style cstyle;
     int target_data;
+    int num_partners;
 
     /* parameters specific to latency tests */
     long *target;
@@ -176,6 +181,8 @@ void set_metric_defaults(perf_metrics_t *metric_info) {
 
     metric_info->src = NULL;
     metric_info->dest = NULL;
+
+    metric_info->num_partners = 1;
 
 #if defined(ENABLE_THREADS)
     metric_info->thread_safety = SHMEM_THREAD_SINGLE;
@@ -417,7 +424,6 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t *metric_info) 
             break;
         case 't':
             metric_info->target_data = true;
-            metric_info->window_size = 1;
             if (metric_info->t_type != BW) {
                 errors++;
             } else {
@@ -464,17 +470,6 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t *metric_info) 
         }
     }
 
-    /* filling in 8/4KB chunks into array alloc'd to max_len */
-    if(metric_info->t_type == BW && metric_info->target_data) {
-        metric_info->start_len = TARGET_SZ_MIN;
-        if((metric_info->max_len <
-            ((metric_info->trials + metric_info->warmup) * TARGET_SZ_MIN)) ||
-            (metric_info->max_len <
-            ((metric_info->trials + metric_info->warmup) * TARGET_SZ_MAX))) {
-                errors++;
-            }
-    }
-
     return errors;
 }
 
@@ -499,9 +494,9 @@ void print_usage(int errors) {
            "                             cannot be used in conjunction with \n"
            "                             validate, special sizes used, trials + \n"
            "                             warmup * sizes (8/4KB) <= max length \n"
-           " -r TARGET_SIZE              Number of target nodes, use only with -t\n"
-           " -l SOURCE_SIZE              Number of initiator nodes, use only with \n"
-           "                             -t; -l and -r cannot be used together\n"
+           " -r TARGET_SIZE              Number of target nodes, use only with -t;\n"
+           " -l SOURCE_SIZE              Number of initiator nodes, use only with\n"
+           "                             -t\n"
            " -T THREADS                  Number of threads\n"
            " -C THREAD_LEVEL             SHMEM thread level. Possible values: \n"
            "                             SINGLE, FUNNELED, SERIALIZED, MULTIPLE \n"
@@ -559,10 +554,12 @@ int only_even_PEs_check(int my_node, int num_pes) {
         return 0;
 }
 
+
+/* Returns partner node; Assumes only one partner */
 static inline 
 int partner_node(perf_metrics_t my_info)
 {
-    if(my_info.num_pes == 1)
+    if (my_info.num_pes == 1)
         return 0;
 
     if (my_info.t_type == BW) {
@@ -698,32 +695,33 @@ int error_checking_init_target_usage(perf_metrics_t *metric_info) {
     int error = false;
     assert(metric_info->midpt > 0);
 
-    if(metric_info->sztarget != -1 && metric_info->szinitiator != -1)
-        error = true; /* can't use them together  */
-
-    if(metric_info->sztarget != -1) {
-        if(metric_info->sztarget < 1 ||
-           metric_info->sztarget > metric_info->midpt ||
-           !metric_info->target_data) {
+    if (metric_info->sztarget != -1 && metric_info->szinitiator == -1) {
+        if (metric_info->sztarget < 1 ||
+            metric_info->sztarget > metric_info->midpt ||
+            !metric_info->target_data) {
             error = true;
+        } else {
+            metric_info->szinitiator = metric_info->midpt;
         }
-    } else {
-        metric_info->sztarget = metric_info->midpt;
-    }
-
-    if(metric_info->szinitiator != -1) {
-        if(metric_info->szinitiator < 1 ||
-           metric_info->szinitiator > metric_info->midpt ||
-           !metric_info->target_data) {
+    } else if (metric_info->sztarget == -1 && metric_info->szinitiator != -1) {
+        if( metric_info->szinitiator < 1 ||
+            metric_info->szinitiator > metric_info->midpt ||
+            !metric_info->target_data) {
             error = true;
+        } else {
+            metric_info->sztarget = metric_info->midpt;
         }
-    } else {
+    } else if (metric_info->sztarget == -1 && metric_info->szinitiator == -1) {
         metric_info->szinitiator = metric_info->midpt;
+        metric_info->sztarget = metric_info->midpt;
+    } else {
+        if (!metric_info->target_data) {
+            error = true;
+        }
     }
 
-    if(error) {
-        fprintf(stderr, "Invalid usage of command line arg -r/-l,"
-                        " use --help for info\n");
+    if (error) {
+        fprintf(stderr, "Invalid usage of command line arg -r/-l\n");
         return -1;
     }
     return 0;

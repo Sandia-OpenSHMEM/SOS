@@ -68,7 +68,7 @@ Options to configure include:
                           shmem_fence() to the next put-like call,
                           which can help improve overlap in some
                           cases.
-  --with-total-data-ordering=<yes|no|check>
+  --enable-total-data-ordering=<yes|no|check>
                           If a network supports total data ordering
                           (that is, ordering guarantees to two
                           different addresses on the same target
@@ -155,6 +155,10 @@ options.
         Options are: auto, linear, ring, recdbl.  Note that recursive
         doubling (recdbl) will fall back to ring if the PE set is not a
         power of two in size.
+
+    SHMEM_BARRIERS_FLUSH (default: off)
+        If defined, standard output (stdout) and error (stderr) streams 
+        will be flushed at the beginning of each barrier operation.
 
     SHMEM_CMA_PUT_MAX (default: 8192)
         '--with-cma', shmem put lengths <= CMA_PUT_MAX use process_vm_writev();

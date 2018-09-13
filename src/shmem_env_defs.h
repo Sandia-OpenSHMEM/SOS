@@ -4,7 +4,7 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2017 Intel Corporation. All rights reserved.
+ * Copyright (c) 2018 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -65,6 +65,8 @@ SHMEM_INTERNAL_ENV_DEF(COLLECT_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CAT
                        "Algorithm for collect.  Options are auto, linear")
 SHMEM_INTERNAL_ENV_DEF(FCOLLECT_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
                        "Algorithm for fcollect.  Options are auto, linear, ring, recdbl")
+SHMEM_INTERNAL_ENV_DEF(BARRIERS_FLUSH, bool, false, SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
+                        "Flush stdout and stderr on barrier")
 
 #ifdef USE_CMA
 SHMEM_INTERNAL_ENV_DEF(CMA_PUT_MAX, size, 8*1024, SHMEM_INTERNAL_ENV_CAT_INTRANODE,
@@ -96,4 +98,9 @@ SHMEM_INTERNAL_ENV_DEF(OFI_STX_ALLOCATOR, string, "round-robin", SHMEM_INTERNAL_
                        "Algorithm for allocating STX resources to contexts")
 SHMEM_INTERNAL_ENV_DEF(OFI_STX_DISABLE_PRIVATE, bool, false, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Disallow private contexts from having exclusive STX access")
+#endif
+
+#ifdef ENABLE_PMI_MPI
+SHMEM_INTERNAL_ENV_DEF(MPI_THREAD_LEVEL, string, "MPI_THREAD_SINGLE", SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Specify the MPI threading level when MPI is used as the process manager")
 #endif

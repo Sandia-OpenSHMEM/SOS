@@ -120,6 +120,11 @@ libsma_la_SOURCES += \
 	runtime-pmi.c
 endif
 
+if USE_PMI_MPI
+libsma_la_SOURCES += \
+	runtime-mpi.c
+endif
+
 if USE_PMI2
 libsma_la_SOURCES += \
 	runtime-pmi2.c
@@ -130,7 +135,7 @@ libsma_la_SOURCES += \
 	runtime-pmix.c
 endif
 
-pkgconfig_DATA = sos.pc
+pkgconfig_DATA = sandia-openshmem.pc
 
 bin_SCRIPTS = oshcc oshrun
 CLEANFILES += oshcc oshrun

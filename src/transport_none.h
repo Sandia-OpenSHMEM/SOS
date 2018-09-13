@@ -312,25 +312,25 @@ void shmem_transport_syncmem(void)
 }
 
 static inline
-uint64_t shmem_transport_pcntr_get_pending_put(shmem_transport_ctx_t *ctx)
+uint64_t shmem_transport_pcntr_get_issued_write(shmem_transport_ctx_t *ctx)
 {
     return 0;
 }
 
 static inline
-uint64_t shmem_transport_pcntr_get_pending_get(shmem_transport_ctx_t *ctx)
+uint64_t shmem_transport_pcntr_get_issued_read(shmem_transport_ctx_t *ctx)
 {
     return 0;
 }
 
 static inline
-uint64_t shmem_transport_pcntr_get_completed_put(shmem_transport_ctx_t *ctx)
+uint64_t shmem_transport_pcntr_get_completed_write(shmem_transport_ctx_t *ctx)
 {
     return 0;
 }
 
 static inline
-uint64_t shmem_transport_pcntr_get_completed_get(shmem_transport_ctx_t *ctx)
+uint64_t shmem_transport_pcntr_get_completed_read(shmem_transport_ctx_t *ctx)
 {
     return 0;
 }
