@@ -1593,7 +1593,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 
     if(shmem_internal_params.DEBUG) {
         SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
-        SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
+        if (ctx->cq_ep) SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
         DEBUG_MSG("id = %d, options = %#0lx, stx_idx = %d\n"
                   RAISE_PE_PREFIX "pending_put_cntr = %9"PRIu64", completed_put_cntr = %9"PRIu64"\n"
                   RAISE_PE_PREFIX "pending_get_cntr = %9"PRIu64", completed_get_cntr = %9"PRIu64"\n"
@@ -1606,7 +1606,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
                   shmem_internal_my_pe,
                   ctx->pending_bb_cntr, ctx->completed_bb_cntr
                  );
-        SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
+        if (ctx->cq_ep) SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
     }
 

@@ -308,6 +308,7 @@ extern struct fid_ep* shmem_transport_ofi_target_ep;
 
 #define SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx)                                    \
     do {                                                                        \
+        shmem_internal_assert(ctx->cq_ep != NULL);                              \
         if (!((ctx)->options & (SHMEM_CTX_PRIVATE | SHMEM_CTX_SERIALIZED)))     \
             shmem_free_list_lock(ctx->bounce_buffers);                          \
     } while (0)
