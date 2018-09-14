@@ -371,42 +371,11 @@ int shmem_transport_ofi_is_private(long options) {
     }
 }
 
-static int rand_pool_num_attempts;
 static unsigned int rand_pool_seed;
-static int rand_pool_prev_choice = 0;
 
 static inline
 void shmem_transport_ofi_stx_rand_init(void) {
     rand_pool_seed = shmem_internal_my_pe;
-    return;
-}
-
-static inline
-void shmem_transport_ofi_stx_rand_restart(void) {
-    rand_pool_num_attempts = 0;
-}
-
-static inline
-int shmem_transport_ofi_stx_rand_next(long threshold) {
-    /* Iterator is empty and should be restarted */
-    if (rand_pool_num_attempts > shmem_transport_ofi_stx_max) return -1;
-
-    /* Fill STX's up to the threshold before picking another random STX */
-    if (rand_pool_num_attempts == 0 && threshold != -1) {
-        rand_pool_num_attempts++;
-        return rand_pool_prev_choice;
-    }
-
-    /* Choose an STX index from the unselected subset */
-    int choice = rand_r(&rand_pool_seed) % (shmem_transport_ofi_stx_max);
-
-    rand_pool_num_attempts++;
-
-    return choice;
-}
-
-static inline
-void shmem_transport_ofi_stx_rand_fini(void) {
     return;
 }
 
@@ -426,18 +395,6 @@ int shmem_transport_ofi_stx_search_unused(void)
     return stx_idx;
 }
 
-static inline
-int shmem_transport_ofi_stx_threshold_cmp(int idx, long threshold) {
-    /* Increasing the threshold by 1 on the default ctx balances better */
-    if (idx == 0 && threshold != -1) {
-        threshold += 1;
-    }
-    if (shmem_transport_ofi_stx_pool[idx].ref_cnt <= threshold) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
 
 static inline
 int shmem_transport_ofi_stx_search_shared(long threshold)
@@ -450,7 +407,7 @@ int shmem_transport_ofi_stx_search_shared(long threshold)
             i = rr_start_idx;
             for (count = 0; count < shmem_transport_ofi_stx_max; count++) {
                 if (shmem_transport_ofi_stx_pool[i].ref_cnt > 0 &&
-                    (shmem_transport_ofi_stx_threshold_cmp(i, threshold) || threshold == -1) &&
+                    (shmem_transport_ofi_stx_pool[i].ref_cnt <= threshold || threshold == -1) &&
                     !shmem_transport_ofi_stx_pool[i].is_private) {
                     stx_idx = i;
                     rr_start_idx = (i + 1) % shmem_transport_ofi_stx_max;
@@ -463,16 +420,25 @@ int shmem_transport_ofi_stx_search_shared(long threshold)
             break;
 
         case RANDOM:
-            shmem_transport_ofi_stx_rand_restart();
-            while ((i = shmem_transport_ofi_stx_rand_next(threshold)) >= 0) {
+            for (i = count = 0; i < shmem_transport_ofi_stx_max; i++) {
                 if (shmem_transport_ofi_stx_pool[i].ref_cnt > 0 &&
-                    (shmem_transport_ofi_stx_threshold_cmp(i, threshold) || threshold == -1) &&
-                    !shmem_transport_ofi_stx_pool[i].is_private) {
-                    stx_idx = i;
-                    rand_pool_prev_choice = stx_idx;
-                    rr_start_idx = (i + 1) % shmem_transport_ofi_stx_max;
-                    break;
+                    (shmem_transport_ofi_stx_pool[i].ref_cnt <= threshold || threshold == -1) &&
+                    !shmem_transport_ofi_stx_pool[i].is_private)
+                {
+                    ++count;
                 }
+            }
+
+            if (count == 0)
+                break;
+
+            /* Probe at random until we select an available STX */
+            else {
+                do {
+                    stx_idx = (int) (rand_r(&rand_pool_seed) / (RAND_MAX + 1.0) * shmem_transport_ofi_stx_max);
+                } while (!(shmem_transport_ofi_stx_pool[stx_idx].ref_cnt > 0 &&
+                           (shmem_transport_ofi_stx_pool[stx_idx].ref_cnt <= threshold || threshold == -1) &&
+                           !shmem_transport_ofi_stx_pool[stx_idx].is_private));
             }
 
             break;
@@ -1447,7 +1413,7 @@ int shmem_transport_init(void)
          shmem_internal_params.OFI_STX_MAX > 1) {
         if (shmem_internal_params.OFI_STX_MAX_provided) {
             /* We need only 1 STX per PE with SHMEM_THREAD_SINGLE or SHMEM_THREAD_FUNNELED */
-            RAISE_WARN_MSG("Ignoring invalid STX max setting '%ld'; using 1 STX in single-threaded mode",
+            RAISE_WARN_MSG("Ignoring invalid STX max setting '%ld'; using 1 STX in single-threaded mode\n",
                            shmem_internal_params.OFI_STX_MAX);
         }
         shmem_transport_ofi_stx_max = 1;
@@ -1759,16 +1725,6 @@ int shmem_transport_fini(void)
 #ifdef USE_AV_MAP
     free(addr_table);
 #endif
-    switch (shmem_transport_ofi_stx_allocator) {
-        case ROUNDROBIN:
-            break;
-        case RANDOM:
-            shmem_transport_ofi_stx_rand_fini();
-            break;
-        default:
-            RAISE_ERROR_MSG("Invalid STX allocator (%d)\n",
-                            shmem_transport_ofi_stx_allocator);
-    }
 
     fi_freeinfo(shmem_transport_ofi_info.fabrics);
 
