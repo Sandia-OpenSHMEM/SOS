@@ -50,7 +50,7 @@ void print_latency_header(void) {
 /* calculation and printing of the latency */
 static inline 
 void calc_and_print_results(double start, double end, int len,
-                            perf_metrics_t metric_info) {
+                            perf_metrics_t *metric_info) {
     int stride = 0, start_pe = 0, nPEs = 0;
     int nred_elements = 1;
     static double latency = 0.0, avg_latency = 0.0;
@@ -59,15 +59,15 @@ void calc_and_print_results(double start, double end, int len,
     PE_set_used_adjustments(&nPEs, &stride, &start_pe, metric_info);
 
     if (end > 0 && start > 0 && (end - start) > 0) {
-        latency = (end - start) / metric_info.trials;
+        latency = (end - start) / metric_info->trials;
     } else {
         fprintf(stderr, "Incorrect time measured from latency test: "
                         "start = %lf, end = %lf\n", start, end);
     }
 
-    if (metric_info.individual_report == 1) {
+    if (metric_info->individual_report == 1) {
         printf("Individual latency for PE %6d is %10.2f\n",
-                metric_info.my_node, latency);
+                metric_info->my_node, latency);
     }
     shmem_barrier(start_pe, stride, nPEs, bar_psync);
 
@@ -80,7 +80,7 @@ void calc_and_print_results(double start, double end, int len,
         avg_latency = latency;
     }
 
-    if (metric_info.my_node == start_pe) {
+    if (metric_info->my_node == start_pe) {
         printf("%2s%10d%12s%10.2f\n", " ", len, " ", avg_latency);
     }
 
@@ -92,35 +92,35 @@ void calc_and_print_results(double start, double end, int len,
 
 /*have single symmetric long element "target" from perf_metrics_t
  *  that needs to be initialized in function*/
-extern void long_element_round_trip_latency(perf_metrics_t data);
+extern void long_element_round_trip_latency(perf_metrics_t *data);
 
-extern void int_element_latency(perf_metrics_t data);
+extern void int_element_latency(perf_metrics_t *data);
 
 /*have symmetric buffers src/dest from perf_metrics_t
  *  that has been initialized to my_node number */
 extern void streaming_latency(int len, perf_metrics_t *data);
 
 static inline 
-void multi_size_latency(perf_metrics_t data, char *argv[]) {
+void multi_size_latency(perf_metrics_t *data, char *argv[]) {
     unsigned int len;
     int partner_pe = partner_node(data);
 
-    if (data.my_node == 0) {
+    if (data->my_node == 0) {
         print_latency_header();
     }
 
-    for (len = data.start_len; len <= data.max_len; len *= data.size_inc) {
-        large_message_metric_chg(&data, len);
-        streaming_latency(len, &data);
+    for (len = data->start_len; len <= data->max_len; len *= data->size_inc) {
+        large_message_metric_chg(data, len);
+        streaming_latency(len, data);
     }
 
     shmem_barrier_all();
 
-    if (data.validate) {
+    if (data->validate) {
         int errors = -1;
-        if ((streaming_node(data) && data.opstyle == STYLE_GET) ||
-            (target_node(data) && data.opstyle == STYLE_PUT))
-            errors = validate_recv(data.dest, data.max_len, partner_pe);
+        if ((streaming_node(data) && data->opstyle == STYLE_GET) ||
+            (target_node(data) && data->opstyle == STYLE_PUT))
+            errors = validate_recv(data->dest, data->max_len, partner_pe);
         
         if (errors >= 0)
             printf("Validation complete (%d errors)\n", errors);
@@ -225,11 +225,11 @@ void latency_main(int argc, char *argv[], op_style opstyle) {
 
     if (ret == 0) {
         if (metric_info.my_node == 0) {
-            print_header(metric_info);
+            print_header(&metric_info);
         }
-        long_element_round_trip_latency(metric_info);
-        int_element_latency(metric_info);
-        multi_size_latency(metric_info, argv);
+        long_element_round_trip_latency(&metric_info);
+        int_element_latency(&metric_info);
+        multi_size_latency(&metric_info, argv);
         latency_free_resources(&metric_info);
     }
 
@@ -245,9 +245,9 @@ void latency_main_ctx(int argc, char *argv[], op_style opstyle) {
 
     if (ret == 0) {
         if (metric_info.my_node == 0) {
-            print_header(metric_info);
+            print_header(&metric_info);
         }
-        multi_size_latency(metric_info, argv);
+        multi_size_latency(&metric_info, argv);
         latency_free_resources(&metric_info);
     }
 

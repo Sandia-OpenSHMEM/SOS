@@ -557,60 +557,60 @@ int only_even_PEs_check(int my_node, int num_pes) {
 
 /* Returns partner node; Assumes only one partner */
 static inline 
-int partner_node(perf_metrics_t my_info)
+int partner_node(perf_metrics_t *my_info)
 {
-    if (my_info.num_pes == 1)
+    if (my_info->num_pes == 1)
         return 0;
 
-    if (my_info.t_type == BW) {
-        if(my_info.cstyle == COMM_PAIRWISE) {
-            int pairs = my_info.midpt;
+    if (my_info->t_type == BW) {
+        if(my_info->cstyle == COMM_PAIRWISE) {
+            int pairs = my_info->midpt;
 
-            return (my_info.my_node < pairs ? (my_info.my_node + pairs) :
-                   (my_info.my_node - pairs));
+            return (my_info->my_node < pairs ? (my_info->my_node + pairs) :
+                   (my_info->my_node - pairs));
         } else {
-            assert(my_info.cstyle == COMM_INCAST);
+            assert(my_info->cstyle == COMM_INCAST);
             return INCAST_PE;
         }
     } else {
-        int pairs = my_info.midpt;
+        int pairs = my_info->midpt;
 
-        return (my_info.my_node < pairs ? (my_info.my_node + pairs) :
-               (my_info.my_node - pairs));
+        return (my_info->my_node < pairs ? (my_info->my_node + pairs) :
+               (my_info->my_node - pairs));
     }
 }
 
 static inline
-int streaming_node(perf_metrics_t my_info)
+int streaming_node(perf_metrics_t *my_info)
 {
-    if(my_info.cstyle == COMM_PAIRWISE) {
-        return (my_info.my_node < my_info.szinitiator);
+    if(my_info->cstyle == COMM_PAIRWISE) {
+        return (my_info->my_node < my_info->szinitiator);
     } else {
-        assert(my_info.cstyle == COMM_INCAST);
+        assert(my_info->cstyle == COMM_INCAST);
         return true;
     }
 }
 
 static inline
-int target_node(perf_metrics_t my_info)
+int target_node(perf_metrics_t *my_info)
 {
-    return (my_info.my_node >= my_info.midpt &&
-        (my_info.my_node < (my_info.midpt + my_info.sztarget)));
+    return (my_info->my_node >= my_info->midpt &&
+        (my_info->my_node < (my_info->midpt + my_info->sztarget)));
 }
 
 static inline 
-int is_streaming_node(perf_metrics_t my_info, int node)
+int is_streaming_node(perf_metrics_t *my_info, int node)
 {
-    if(my_info.cstyle == COMM_PAIRWISE) {
-        return (node < my_info.szinitiator);
+    if (my_info->cstyle == COMM_PAIRWISE) {
+        return (node < my_info->szinitiator);
     } else {
-        assert(my_info.cstyle == COMM_INCAST);
+        assert(my_info->cstyle == COMM_INCAST);
         return true;
     }
 }
 
 static inline
-int check_hostname_validation(perf_metrics_t my_info) {
+int check_hostname_validation(perf_metrics_t *my_info) {
 
     int hostname_status = -1;
 
@@ -625,7 +625,7 @@ int check_hostname_validation(perf_metrics_t my_info) {
         pSync_collect[i] = SHMEM_SYNC_VALUE;
 
     char *hostname = (char *) shmem_malloc (hostname_size * sizeof(char));
-    char *dest = (char *) shmem_malloc (my_info.num_pes * hostname_size * 
+    char *dest = (char *) shmem_malloc (my_info->num_pes * hostname_size * 
                                         sizeof(char));
 
     if (hostname == NULL || dest == NULL) {
@@ -641,12 +641,12 @@ int check_hostname_validation(perf_metrics_t my_info) {
     shmem_barrier_all();
 
     /* nelems needs to be updated based on 32-bit API */
-    shmem_fcollect32(dest, hostname, hostname_size/4, 0, 0, my_info.num_pes, 
+    shmem_fcollect32(dest, hostname, hostname_size/4, 0, 0, my_info->num_pes, 
                      pSync_collect);
 
     char *snode_name = NULL;
     char *tnode_name = NULL;
-    for (i = 0; i < my_info.num_pes; i++) {
+    for (i = 0; i < my_info->num_pes; i++) {
         char *curr_name = &dest[i * hostname_size];
 
         if (is_streaming_node(my_info, i)) {
@@ -738,14 +738,14 @@ void large_message_metric_chg(perf_metrics_t *metric_info, int len) {
 
 /* put/get bw use opposite streaming/validate nodes */
 static inline
-red_PE_set validation_set(perf_metrics_t my_info, int *nPEs)
+red_PE_set validation_set(perf_metrics_t *my_info, int *nPEs)
 {
-    if(my_info.cstyle == COMM_PAIRWISE) {
+    if(my_info->cstyle == COMM_PAIRWISE) {
         if(streaming_node(my_info)) {
-            *nPEs = my_info.szinitiator;
+            *nPEs = my_info->szinitiator;
             return FIRST_HALF;
         } else if(target_node(my_info)) {
-            *nPEs = my_info.sztarget;
+            *nPEs = my_info->sztarget;
             return SECOND_HALF;
         } else {
             fprintf(stderr, "Warning: you are getting data from a node that "
@@ -753,8 +753,8 @@ red_PE_set validation_set(perf_metrics_t my_info, int *nPEs)
             return 0;
         }
     } else {
-        assert(my_info.cstyle == COMM_INCAST);
-        *nPEs = my_info.num_pes;
+        assert(my_info->cstyle == COMM_INCAST);
+        *nPEs = my_info->num_pes;
         return FULL_SET;
     }
 }
@@ -763,7 +763,7 @@ red_PE_set validation_set(perf_metrics_t my_info, int *nPEs)
  * then start_pe will print results --- assumes num_pes is even */
 static inline
 void PE_set_used_adjustments(int *nPEs, int *stride, int *start_pe,
-                             perf_metrics_t my_info) {
+                             perf_metrics_t *my_info) {
     red_PE_set PE_set = validation_set(my_info, nPEs);
 
     if(PE_set == FIRST_HALF || PE_set == FULL_SET) {
@@ -771,25 +771,25 @@ void PE_set_used_adjustments(int *nPEs, int *stride, int *start_pe,
     }
     else {
         assert(PE_set == SECOND_HALF);
-        *start_pe = my_info.midpt;
+        *start_pe = my_info->midpt;
     }
 
     *stride = 0; /* back to back PEs */
 }
 
 static
-void print_header(perf_metrics_t metric_info) {
+void print_header(perf_metrics_t *metric_info) {
     printf("\n%20sSandia OpenSHMEM Performance Suite%20s\n", " ", " ");
     printf("%20s==================================%20s\n", " ", " ");
     printf("Total Number of PEs:    %10d%6sWindow size:            %10lu\n", 
-            metric_info.num_pes, " ", metric_info.window_size);
+            metric_info->num_pes, " ", metric_info->window_size);
     printf("Number of source PEs:   %10d%6sMaximum message size:   %10lu\n", 
-            metric_info.szinitiator, " ", metric_info.max_len);
+            metric_info->szinitiator, " ", metric_info->max_len);
     printf("Number of target PEs:   %10d%6sNumber of threads:      %10d\n", 
-            metric_info.sztarget, " ", metric_info.nthreads);
-    printf("Iteration count:        %10lu%6s", metric_info.trials, " ");
+            metric_info->sztarget, " ", metric_info->nthreads);
+    printf("Iteration count:        %10lu%6s", metric_info->trials, " ");
 #if defined(ENABLE_THREADS)
-    printf("Thread safety:          %10s\n", thread_safety_str(&metric_info));
+    printf("Thread safety:          %10s\n", thread_safety_str(metric_info));
 #endif
     printf("\n");
 }

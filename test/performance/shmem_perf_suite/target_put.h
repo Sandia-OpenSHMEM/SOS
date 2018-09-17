@@ -25,21 +25,21 @@
  * SOFTWARE.
  */
 
-static inline int get_size_of_side(perf_metrics_t my_info) {
-    if(my_info.my_node < my_info.midpt)
-        return my_info.szinitiator;
+static inline int get_size_of_side(perf_metrics_t *my_info) {
+    if(my_info->my_node < my_info->midpt)
+        return my_info->szinitiator;
     else
-        return my_info.sztarget;
+        return my_info->sztarget;
 }
 
-static inline int get_size_of_other_side(perf_metrics_t my_info) {
-    if(my_info.my_node < my_info.midpt)
-        return my_info.sztarget;
+static inline int get_size_of_other_side(perf_metrics_t *my_info) {
+    if(my_info->my_node < my_info->midpt)
+        return my_info->sztarget;
     else
-        return my_info.szinitiator;
+        return my_info->szinitiator;
 }
 
-static inline int get_num_partners(perf_metrics_t my_info, int snode) {
+static inline int get_num_partners(perf_metrics_t *my_info, int snode) {
     int unused_PEs = 0, num_partners = 0;
     int active_PEs = get_size_of_side(my_info);
     int other_side = get_size_of_other_side(my_info);
@@ -51,10 +51,10 @@ static inline int get_num_partners(perf_metrics_t my_info, int snode) {
     unused_PEs = other_side % active_PEs;
 
     if (snode) {
-        if((my_info.my_node % active_PEs) < unused_PEs)
+        if((my_info->my_node % active_PEs) < unused_PEs)
             num_partners++;
     } else {
-        if(((my_info.my_node - my_info.midpt) % active_PEs) < unused_PEs)
+        if(((my_info->my_node - my_info->midpt) % active_PEs) < unused_PEs)
             num_partners++;
     }
 
@@ -62,12 +62,12 @@ static inline int get_num_partners(perf_metrics_t my_info, int snode) {
 }
 
 /* target only needs to know num of partners */
-static inline int *get_initiators_partners(perf_metrics_t my_info, int num_partners) {
-    int node_to_shadow = my_info.my_node;
+static inline int *get_initiators_partners(perf_metrics_t *my_info, int num_partners) {
+    int node_to_shadow = my_info->my_node;
     int i = 0;
     int *partner_nodes = NULL;
 
-    assert(my_info.cstyle == COMM_PAIRWISE && !target_node(my_info));
+    assert(my_info->cstyle == COMM_PAIRWISE && !target_node(my_info));
     if(num_partners < 1)
         return partner_nodes;
 
@@ -75,36 +75,36 @@ static inline int *get_initiators_partners(perf_metrics_t my_info, int num_partn
     assert(partner_nodes);
 
     for(i = 0; i < num_partners; i++) {
-        partner_nodes[i] = ((node_to_shadow % my_info.sztarget) + my_info.midpt);
-        node_to_shadow += my_info.szinitiator;
+        partner_nodes[i] = ((node_to_shadow % my_info->sztarget) + my_info->midpt);
+        node_to_shadow += my_info->szinitiator;
     }
 
     return partner_nodes;
 }
 
-static inline void target_data_uni_bw(int len, perf_metrics_t metric_info)
+static inline void target_data_uni_bw(int len, perf_metrics_t *metric_info)
 {
     double start = 0.0, end = 0.0;
     int i = 0;
     unsigned long int j, k;
-    int snode = (metric_info.num_pes != 1)? streaming_node(metric_info) : true;
+    int snode = (metric_info->num_pes != 1)? streaming_node(metric_info) : true;
     int num_partners = get_num_partners(metric_info, snode);
     static int completion_signal = 0;
     int *my_PE_partners = (snode ?
         get_initiators_partners(metric_info, num_partners): NULL);
 
-    metric_info.num_partners = num_partners;
+    metric_info->num_partners = num_partners;
     shmem_barrier_all();
     if (target_node(metric_info)) {
         shmem_int_wait_until(&completion_signal, SHMEM_CMP_EQ, num_partners);
     } else if (snode) {
         for (i = 0; i < num_partners; i++) {
-            for(j = 0; j < metric_info.warmup; j++) {
-                for(k = 0; k < metric_info.window_size; k++) {
+            for(j = 0; j < metric_info->warmup; j++) {
+                for(k = 0; k < metric_info->window_size; k++) {
 #ifdef USE_NONBLOCKING_API
-                    shmem_putmem_nbi(metric_info.dest, metric_info.src, len, my_PE_partners[i]);
+                    shmem_putmem_nbi(metric_info->dest, metric_info->src, len, my_PE_partners[i]);
 #else
-                    shmem_putmem(metric_info.dest, metric_info.src, len, my_PE_partners[i]);
+                    shmem_putmem(metric_info->dest, metric_info->src, len, my_PE_partners[i]);
 #endif
                 }
                 shmem_quiet();
@@ -121,12 +121,12 @@ static inline void target_data_uni_bw(int len, perf_metrics_t metric_info)
         shmem_int_wait_until(&completion_signal, SHMEM_CMP_EQ, num_partners);
     } else if (snode) {
         for (i = 0; i < num_partners; i++) {
-            for(j = 0; j < metric_info.trials; j++) {
-                for(k = 0; k < metric_info.window_size; k++) {
+            for(j = 0; j < metric_info->trials; j++) {
+                for(k = 0; k < metric_info->window_size; k++) {
 #ifdef USE_NONBLOCKING_API
-                    shmem_putmem_nbi(metric_info.dest, metric_info.src, len, my_PE_partners[i]);
+                    shmem_putmem_nbi(metric_info->dest, metric_info->src, len, my_PE_partners[i]);
 #else
-                    shmem_putmem(metric_info.dest, metric_info.src, len, my_PE_partners[i]);
+                    shmem_putmem(metric_info->dest, metric_info->src, len, my_PE_partners[i]);
 #endif
                 }
                 shmem_quiet();
@@ -145,5 +145,5 @@ static inline void target_data_uni_bw(int len, perf_metrics_t metric_info)
 
 static inline void target_bw_itr(int len, perf_metrics_t *metric_info)
 {
-    target_data_uni_bw(len, *metric_info);
+    target_data_uni_bw(len, metric_info);
 }

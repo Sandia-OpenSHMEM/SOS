@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 
 
 void
-long_element_round_trip_latency(perf_metrics_t data)
+long_element_round_trip_latency(perf_metrics_t *data)
 {
 #ifndef USE_NONBLOCKING_API
     long_element_round_trip_latency_put(data);
@@ -57,7 +57,7 @@ long_element_round_trip_latency(perf_metrics_t data)
 }
 
 void
-int_element_latency(perf_metrics_t data)
+int_element_latency(perf_metrics_t *data)
 {
 #ifndef USE_NONBLOCKING_API
     int_p_latency(data);
@@ -70,8 +70,8 @@ streaming_latency(int len, perf_metrics_t *metric_info)
     double start = 0.0;
     double end = 0.0;
     unsigned long int i = 0;
-    int dest = partner_node(*metric_info);
-    int sender = (metric_info->num_pes != 1) ? streaming_node(*metric_info) : true;
+    int dest = partner_node(metric_info);
+    int sender = (metric_info->num_pes != 1) ? streaming_node(metric_info) : true;
     static int check_once = 0;
 
     if (!check_once) {
@@ -81,7 +81,7 @@ streaming_latency(int len, perf_metrics_t *metric_info)
                              dest);
         }
         /* hostname validation for all sender and receiver processes */
-        int status = check_hostname_validation(*metric_info);
+        int status = check_hostname_validation(metric_info);
         if (status != 0) return;
         check_once++;
     }
@@ -103,6 +103,6 @@ streaming_latency(int len, perf_metrics_t *metric_info)
         }
         end = perf_shmemx_wtime();
 
-        calc_and_print_results(start, end, len, *metric_info);
+        calc_and_print_results(start, end, len, metric_info);
     }
 } /* latency/bw for one-way trip */
