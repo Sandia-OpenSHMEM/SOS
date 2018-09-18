@@ -129,6 +129,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
     int runtime_initialized   = 0;
     int transport_initialized = 0;
+    int node_util_initialized = 0;
 #ifdef USE_XPMEM
     int xpmem_initialized     = 0;
 #endif
@@ -295,7 +296,11 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
 #ifdef USE_ON_NODE_COMMS
     ret = shmem_node_util_init();
-    if (ret) goto cleanup;
+    if (0 != ret) {
+        RETURN_ERROR_MSG("Node utility init failed (%d)\n", ret);
+        goto cleanup;
+    }
+    node_util_initialized = 1;
 #endif
 
 #ifdef USE_XPMEM
@@ -371,6 +376,10 @@ shmem_internal_init(int tl_requested, int *tl_provided)
  cleanup:
     if (transport_initialized) {
         shmem_transport_fini();
+    }
+
+    if (node_util_initialized) {
+        shmem_node_util_fini();
     }
 
 #ifdef USE_XPMEM

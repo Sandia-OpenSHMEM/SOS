@@ -253,7 +253,7 @@ struct shmem_internal_tid
 
 struct shmem_transport_addr_t {
     size_t addrlen;
-    char addr[SHMEM_INTERNAL_MAX_HOSTNAME_LEN];
+    void *addr;
 };
 
 typedef struct shmem_transport_addr_t shmem_transport_addr_t;
@@ -342,6 +342,7 @@ void shmem_transport_probe(void)
 }
 
 shmem_transport_addr_t shmem_transport_get_local_addr(void);
+int shmem_transport_same_node(shmem_transport_addr_t*, shmem_transport_addr_t*);
 
 int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx);
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx);

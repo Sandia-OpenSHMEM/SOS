@@ -543,8 +543,7 @@ shmem_transport_startup(void)
 
     for (i = 0 ; i < shmem_internal_num_pes; ++i) {
 #ifdef USE_ON_NODE_COMMS
-        shmem_transport_addr_t addr = shmem_node_util_get_addr(i);
-        memcpy(&pe_map[i], &addr.ptl_addr, sizeof(ptl_process_t));
+        shmem_node_util_get_addr(i, &pe_map[i]);
 #else
         ret = shmem_runtime_get(i, "portals4-procid",
                                 &pe_map[i], sizeof(ptl_process_t));

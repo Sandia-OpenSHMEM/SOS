@@ -16,6 +16,8 @@
 #ifndef TRANSPORT_NONE_H
 #define TRANSPORT_NONE_H
 
+#include <unistd.h>
+#include <string.h>
 #include "shmem_internal.h"
 
 /* Datatypes */
@@ -58,13 +60,18 @@ typedef int shmem_transport_ct_t;
 struct shmem_transport_ctx_t{ int dummy; };
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
 
-struct shmem_transport_addr_t { char addr; };
+struct shmem_transport_addr_t {
+    size_t addrlen;
+    char* addr;
+};
 typedef struct shmem_transport_addr_t shmem_transport_addr_t;
+static shmem_transport_addr_t shmem_transport_addr;
 
 static inline
 int
 shmem_transport_init(void)
 {
+    shmem_transport_addr.addr = malloc(SHMEM_INTERNAL_MAX_HOSTNAME_LEN * sizeof(char));
     return 0;
 }
 
@@ -79,6 +86,7 @@ static inline
 int
 shmem_transport_fini(void)
 {
+    free(shmem_transport_addr.addr);
     return 0;
 }
 
@@ -92,10 +100,26 @@ shmem_transport_probe(void)
 static inline
 shmem_transport_addr_t shmem_transport_get_local_addr(void)
 {
-    shmem_transport_addr_t addr = {0};
-    return addr;
+
+    gethostname(shmem_transport_addr.addr, SHMEM_INTERNAL_MAX_HOSTNAME_LEN);
+
+    /* gethostname() doesn't guarantee null-termination if truncation occurs */
+    shmem_transport_addr.addr[SHMEM_INTERNAL_MAX_HOSTNAME_LEN - 1] = '\0';
+    shmem_transport_addr.addrlen = strlen(shmem_transport_addr.addr);
+
+    return shmem_transport_addr;
 }
 
+static inline
+int shmem_transport_same_node(shmem_transport_addr_t *a1, shmem_transport_addr_t *a2)
+{
+    if (a1->addrlen == a2->addrlen &&
+        memcmp(a1->addr, a2->addr, a1->addrlen) == 0) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
 
 static inline
 int

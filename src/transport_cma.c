@@ -60,8 +60,10 @@ shmem_transport_cma_init(void)
 int
 shmem_transport_cma_startup(void)
 {
-    int i, ret, peer_num, num_on_node = 0;
+    int i, ret, peer_num, num_on_node;
     pmi_cma_data_t cma_data;
+
+    num_on_node = shmem_node_util_n_local_pes();
 
     /* allocate space for local peers */
     shmem_transport_cma_peers = calloc(num_on_node, sizeof(pid_t));

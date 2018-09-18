@@ -326,7 +326,6 @@ typedef enum stx_allocator_t stx_allocator_t;
 static stx_allocator_t shmem_transport_ofi_stx_allocator;
 
 static long shmem_transport_ofi_stx_max;
-static long shmem_transport_ofi_tx_ctx_cnt;
 static long shmem_transport_ofi_stx_threshold;
 
 struct shmem_transport_ofi_stx_t {
@@ -558,11 +557,19 @@ shmem_transport_addr_t shmem_transport_get_local_addr(void)
 {
     shmem_transport_addr_t addr;
 
-    void *addr_ptr = shmem_transport_ofi_info.fabrics->src_addr;
+    addr.addr = shmem_transport_ofi_info.fabrics->src_addr;
     addr.addrlen = shmem_transport_ofi_info.fabrics->src_addrlen;
-    memcpy(addr.addr, addr_ptr, addr.addrlen);
 
     return addr;
+}
+
+int shmem_transport_same_node(shmem_transport_addr_t *a1, shmem_transport_addr_t *a2) {
+    if (a1->addrlen == a2->addrlen &&
+        memcmp(a1->addr, a2->addr, a1->addrlen) == 0) {
+        return 1;
+    } else {
+        return 0;
+    }
 }
 
 
@@ -1246,12 +1253,6 @@ int query_for_fabric(struct fabric_info *info)
     shmem_transport_ofi_mr_rma_event = (info->p_info->domain_attr->mr_mode & FI_MR_RMA_EVENT) != 0;
 #endif
 
-    if (shmem_internal_params.OFI_STX_NODE_MAX == -1) {
-        shmem_transport_ofi_tx_ctx_cnt = info->fabrics->domain_attr->tx_ctx_cnt;
-    } else {
-        shmem_transport_ofi_tx_ctx_cnt = shmem_internal_params.OFI_STX_NODE_MAX;
-    }
-
     DEBUG_MSG("OFI provider: %s, fabric: %s, domain: %s\n"
               RAISE_PE_PREFIX "max_inject: %zd, max_msg: %zd\n",
               info->p_info->fabric_attr->prov_name,
@@ -1489,8 +1490,19 @@ int shmem_transport_startup(void)
     int ret;
     int i;
     int  num_on_node = 0;
+    long ofi_tx_ctx_cnt;
 
     if (shmem_internal_params.OFI_STX_AUTO) {
+
+        if (shmem_internal_params.OFI_STX_NODE_MAX_provided) {
+            if (shmem_internal_params.OFI_STX_NODE_MAX_provided > 0) {
+                ofi_tx_ctx_cnt = shmem_internal_params.OFI_STX_NODE_MAX;
+            } else {
+                RAISE_ERROR_STR("OFI_STX_NODE_MAX must be greater than zero");
+            }
+        } else {
+            ofi_tx_ctx_cnt = shmem_transport_ofi_info.fabrics->domain_attr->tx_ctx_cnt;
+        }
 
         ret = shmem_node_util_startup();
         if (ret != 0) return ret;
@@ -1498,8 +1510,8 @@ int shmem_transport_startup(void)
         num_on_node = shmem_node_util_n_local_pes();
 
         /* Paritition TX resources evenly across node-local PEs */
-        shmem_transport_ofi_stx_max = shmem_transport_ofi_tx_ctx_cnt / num_on_node;
-        int remainder = shmem_transport_ofi_tx_ctx_cnt % num_on_node;
+        shmem_transport_ofi_stx_max = ofi_tx_ctx_cnt / num_on_node;
+        int remainder = ofi_tx_ctx_cnt % num_on_node;
         int node_pe = shmem_internal_my_pe % shmem_internal_num_pes;
         if (remainder > 0 && ((node_pe % num_on_node) < remainder)) {
             shmem_transport_ofi_stx_max++;
@@ -1509,7 +1521,7 @@ int shmem_transport_startup(void)
         if (shmem_transport_ofi_stx_max <= 0) {
             shmem_transport_ofi_stx_max = 1;
             RAISE_WARN_MSG("Need at least 1 STX per PE, but detected %ld available STXs for %d PEs\n",
-                           shmem_transport_ofi_tx_ctx_cnt, num_on_node);
+                           ofi_tx_ctx_cnt, num_on_node);
         }
 
         DEBUG_MSG("PE %d auto-set STX max to %ld\n", shmem_internal_my_pe, shmem_transport_ofi_stx_max);
