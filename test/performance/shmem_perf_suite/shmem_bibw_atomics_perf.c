@@ -284,7 +284,7 @@ static const char * atomic_op_names [] = { "fetch", "set", "cswap", "swap", "fin
                                            "fxor", "xor" };
 
 
-static inline void bw_set_metric_info_len(perf_metrics_t *metric_info)
+static inline void bw_set_metric_info_len(perf_metrics_t * const metric_info)
 {
     unsigned int atomic_sizes[ATOMICS_N_DTs] = {sizeof(unsigned int), sizeof(unsigned long),
                                         sizeof(unsigned long long)};
@@ -321,7 +321,7 @@ static inline void bw_set_metric_info_len(perf_metrics_t *metric_info)
     }
 }
 
-void bi_dir_bw(int len, perf_metrics_t *metric_info)
+void bi_dir_bw(int len, perf_metrics_t * const metric_info)
 {
     bw_set_metric_info_len(metric_info);
 }

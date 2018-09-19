@@ -26,7 +26,7 @@
  */
 
 static inline
-void int_p_latency(perf_metrics_t *metric_info)
+void int_p_latency(perf_metrics_t * const metric_info)
 {
     double start = 0.0;
     double end = 0.0;
@@ -77,7 +77,7 @@ void int_p_latency(perf_metrics_t *metric_info)
 } /* latency/bw for one-way trip */
 
 static inline
-void int_g_latency(perf_metrics_t *metric_info)
+void int_g_latency(perf_metrics_t * const metric_info)
 {
     double start = 0.0;
     double end = 0.0;

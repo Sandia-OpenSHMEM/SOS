@@ -25,21 +25,21 @@
  * SOFTWARE.
  */
 
-static inline int get_size_of_side(perf_metrics_t *my_info) {
+static inline int get_size_of_side(const perf_metrics_t * const my_info) {
     if(my_info->my_node < my_info->midpt)
         return my_info->szinitiator;
     else
         return my_info->sztarget;
 }
 
-static inline int get_size_of_other_side(perf_metrics_t *my_info) {
+static inline int get_size_of_other_side(const perf_metrics_t * const my_info) {
     if(my_info->my_node < my_info->midpt)
         return my_info->sztarget;
     else
         return my_info->szinitiator;
 }
 
-static inline int get_num_partners(perf_metrics_t *my_info, int snode) {
+static inline int get_num_partners(perf_metrics_t * const my_info, int snode) {
     int unused_PEs = 0, num_partners = 0;
     int active_PEs = get_size_of_side(my_info);
     int other_side = get_size_of_other_side(my_info);
@@ -62,7 +62,7 @@ static inline int get_num_partners(perf_metrics_t *my_info, int snode) {
 }
 
 /* target only needs to know num of partners */
-static inline int *get_initiators_partners(perf_metrics_t *my_info, int num_partners) {
+static inline int *get_initiators_partners(const perf_metrics_t * const my_info, int num_partners) {
     int node_to_shadow = my_info->my_node;
     int i = 0;
     int *partner_nodes = NULL;
@@ -82,7 +82,7 @@ static inline int *get_initiators_partners(perf_metrics_t *my_info, int num_part
     return partner_nodes;
 }
 
-static inline void target_data_uni_bw(int len, perf_metrics_t *metric_info)
+static inline void target_data_uni_bw(int len, perf_metrics_t * const metric_info)
 {
     double start = 0.0, end = 0.0;
     int i = 0;
@@ -143,7 +143,7 @@ static inline void target_data_uni_bw(int len, perf_metrics_t *metric_info)
     free(my_PE_partners);
 }
 
-static inline void target_bw_itr(int len, perf_metrics_t *metric_info)
+static inline void target_bw_itr(int len, perf_metrics_t * const metric_info)
 {
     target_data_uni_bw(len, metric_info);
 }

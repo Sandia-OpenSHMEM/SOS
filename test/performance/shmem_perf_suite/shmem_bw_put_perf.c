@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 }
 
 void
-uni_dir_bw(int len, perf_metrics_t *metric_info)
+uni_dir_bw(int len, perf_metrics_t * const metric_info)
 {
     uni_bw_put(len, metric_info);
 }

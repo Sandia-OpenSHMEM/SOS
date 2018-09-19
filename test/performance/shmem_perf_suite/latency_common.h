@@ -33,7 +33,7 @@
 #define INIT_VALUE 1
 
 static 
-void init_metrics(perf_metrics_t *metric_info) {
+void init_metrics(perf_metrics_t * const metric_info) {
     metric_info->t_type = LAT;
     set_metric_defaults(metric_info);
     metric_info->target = NULL;
@@ -50,7 +50,7 @@ void print_latency_header(void) {
 /* calculation and printing of the latency */
 static inline 
 void calc_and_print_results(double start, double end, int len,
-                            perf_metrics_t *metric_info) {
+                            perf_metrics_t * const metric_info) {
     int stride = 0, start_pe = 0, nPEs = 0;
     int nred_elements = 1;
     static double latency = 0.0, avg_latency = 0.0;
@@ -101,7 +101,7 @@ extern void int_element_latency(perf_metrics_t *data);
 extern void streaming_latency(int len, perf_metrics_t *data);
 
 static inline 
-void multi_size_latency(perf_metrics_t *data, char *argv[]) {
+void multi_size_latency(perf_metrics_t * const data, char *argv[]) {
     unsigned int len;
     int partner_pe = partner_node(data);
 
@@ -135,7 +135,7 @@ void multi_size_latency(perf_metrics_t *data, char *argv[]) {
 
 static inline 
 int latency_init_resources(int argc, char *argv[],
-                           perf_metrics_t *metric_info) {
+                           perf_metrics_t * const metric_info) {
     init_metrics(metric_info);
     int ret = command_line_arg_check(argc, argv, metric_info);
 
@@ -197,7 +197,7 @@ int latency_init_resources(int argc, char *argv[],
 }
 
 static inline 
-void latency_free_resources(perf_metrics_t *metric_info) {
+void latency_free_resources(const perf_metrics_t * const metric_info) {
     shmem_barrier_all();
 
 #ifndef VERSION_1_0

@@ -345,7 +345,7 @@ int validate_recv(char *buf, int len, int partner_pe) {
 /**************************************************************/
 
 static
-int command_line_arg_check(int argc, char *argv[], perf_metrics_t *metric_info) {
+int command_line_arg_check(int argc, char *argv[], perf_metrics_t * const metric_info) {
     int ch, errors = 0;
     extern char *optarg;
 
@@ -506,7 +506,7 @@ void print_usage(int errors) {
 
 #if defined(ENABLE_THREADS)
 static 
-const char *thread_safety_str(perf_metrics_t *metric_info) {
+const char *thread_safety_str(perf_metrics_t * const metric_info) {
     if (metric_info->thread_safety == SHMEM_THREAD_SINGLE) {
         return "SINGLE";
     } else if (metric_info->thread_safety == SHMEM_THREAD_FUNNELED) {
@@ -524,7 +524,7 @@ const char *thread_safety_str(perf_metrics_t *metric_info) {
 }
 
 static inline 
-void thread_safety_validation_check(perf_metrics_t *metric_info) {
+void thread_safety_validation_check(perf_metrics_t * const metric_info) {
     if (metric_info->nthreads == 1)
         return;
     else {
@@ -557,7 +557,7 @@ int only_even_PEs_check(int my_node, int num_pes) {
 
 /* Returns partner node; Assumes only one partner */
 static inline 
-int partner_node(perf_metrics_t *my_info)
+int partner_node(const perf_metrics_t * const my_info)
 {
     if (my_info->num_pes == 1)
         return 0;
@@ -581,7 +581,7 @@ int partner_node(perf_metrics_t *my_info)
 }
 
 static inline
-int streaming_node(perf_metrics_t *my_info)
+int streaming_node(const perf_metrics_t * const my_info)
 {
     if(my_info->cstyle == COMM_PAIRWISE) {
         return (my_info->my_node < my_info->szinitiator);
@@ -592,14 +592,14 @@ int streaming_node(perf_metrics_t *my_info)
 }
 
 static inline
-int target_node(perf_metrics_t *my_info)
+int target_node(const perf_metrics_t * const my_info)
 {
     return (my_info->my_node >= my_info->midpt &&
         (my_info->my_node < (my_info->midpt + my_info->sztarget)));
 }
 
 static inline 
-int is_streaming_node(perf_metrics_t *my_info, int node)
+int is_streaming_node(const perf_metrics_t * const my_info, int node)
 {
     if (my_info->cstyle == COMM_PAIRWISE) {
         return (node < my_info->szinitiator);
@@ -610,7 +610,7 @@ int is_streaming_node(perf_metrics_t *my_info, int node)
 }
 
 static inline
-int check_hostname_validation(perf_metrics_t *my_info) {
+int check_hostname_validation(const perf_metrics_t * const my_info) {
 
     int hostname_status = -1;
 
@@ -691,7 +691,7 @@ int check_hostname_validation(perf_metrics_t *my_info) {
 }
 
 static
-int error_checking_init_target_usage(perf_metrics_t *metric_info) {
+int error_checking_init_target_usage(perf_metrics_t * const metric_info) {
     int error = false;
     assert(metric_info->midpt > 0);
 
@@ -728,7 +728,7 @@ int error_checking_init_target_usage(perf_metrics_t *metric_info) {
 }
 
 static inline
-void large_message_metric_chg(perf_metrics_t *metric_info, int len) {
+void large_message_metric_chg(perf_metrics_t * const metric_info, int len) {
     if(len > LARGE_MESSAGE_SIZE) {
         metric_info->window_size = WINDOW_SIZE_LARGE;
         metric_info->trials = TRIALS_LARGE;
@@ -738,7 +738,7 @@ void large_message_metric_chg(perf_metrics_t *metric_info, int len) {
 
 /* put/get bw use opposite streaming/validate nodes */
 static inline
-red_PE_set validation_set(perf_metrics_t *my_info, int *nPEs)
+red_PE_set validation_set(perf_metrics_t * const my_info, int *nPEs)
 {
     if(my_info->cstyle == COMM_PAIRWISE) {
         if(streaming_node(my_info)) {
@@ -763,7 +763,7 @@ red_PE_set validation_set(perf_metrics_t *my_info, int *nPEs)
  * then start_pe will print results --- assumes num_pes is even */
 static inline
 void PE_set_used_adjustments(int *nPEs, int *stride, int *start_pe,
-                             perf_metrics_t *my_info) {
+                             perf_metrics_t * const my_info) {
     red_PE_set PE_set = validation_set(my_info, nPEs);
 
     if(PE_set == FIRST_HALF || PE_set == FULL_SET) {
@@ -778,7 +778,7 @@ void PE_set_used_adjustments(int *nPEs, int *stride, int *start_pe,
 }
 
 static
-void print_header(perf_metrics_t *metric_info) {
+void print_header(perf_metrics_t * const metric_info) {
     printf("\n%20sSandia OpenSHMEM Performance Suite%20s\n", " ", " ");
     printf("%20s==================================%20s\n", " ", " ");
     printf("Total Number of PEs:    %10d%6sWindow size:            %10lu\n", 

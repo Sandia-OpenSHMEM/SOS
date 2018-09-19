@@ -25,7 +25,7 @@
  * SOFTWARE.
  */
 
-static inline void bi_bw_put(int len, perf_metrics_t *metric_info)
+static inline void bi_bw_put(int len, perf_metrics_t * const metric_info)
 {
     double start = 0.0, end = 0.0;
     int dest = partner_node(metric_info);
@@ -86,7 +86,7 @@ static inline void bi_bw_put(int len, perf_metrics_t *metric_info)
 
 }
 
-static inline void bi_bw_get(int len, perf_metrics_t *metric_info)
+static inline void bi_bw_get(int len, perf_metrics_t * const metric_info)
 {
     double start = 0.0, end = 0.0;
     int dest = partner_node(metric_info);

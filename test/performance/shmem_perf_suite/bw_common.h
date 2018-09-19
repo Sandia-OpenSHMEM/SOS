@@ -61,7 +61,7 @@ void update_bw_type(perf_metrics_t *data, int b_type) {
 /**************************************************************/
 
 static 
-void print_atomic_header(perf_metrics_t *metric_info) {
+void print_atomic_header(perf_metrics_t * const metric_info) {
     print_header(metric_info);
     printf("\n\nBandwidth test type:    %10s\n", metric_info->bw_type_str);
 
@@ -87,7 +87,7 @@ void print_atomic_header(perf_metrics_t *metric_info) {
 }
 
 static 
-void print_bw_header(perf_metrics_t *metric_info) {
+void print_bw_header(perf_metrics_t * const metric_info) {
     print_header(metric_info);
     printf("\n\nBandwidth test type:    %10s\n", metric_info->bw_type_str);
 
@@ -106,7 +106,7 @@ void print_bw_header(perf_metrics_t *metric_info) {
 }
 
 static 
-void print_data_results(double bw, double mr, perf_metrics_t *data,
+void print_data_results(double bw, double mr, const perf_metrics_t * const data,
                             int len, double total_t) {
     static int atomic_type_index = 0;
 
@@ -141,7 +141,7 @@ void print_data_results(double bw, double mr, perf_metrics_t *data,
 
 static inline 
 void calc_and_print_results(double end_t, double start_t, int len, 
-                            perf_metrics_t *metric_info) {
+                            perf_metrics_t * const metric_info) {
     int stride = 0, start_pe = 0, nPEs = 0;
     static double pe_bw_sum, bw = 0.0; /*must be symmetric for reduction*/
     double pe_bw_avg = 0.0, pe_mr_avg = 0.0;
@@ -243,7 +243,7 @@ void calc_and_print_results(double end_t, double start_t, int len,
     }
 }
 
-static int validate_atomics(perf_metrics_t *m_info) {
+static int validate_atomics(perf_metrics_t * const m_info) {
     int snode = streaming_node(m_info);
     int * my_buf = (int *)m_info->dest;
     bw_type tbw = m_info->b_type;
@@ -285,7 +285,7 @@ static int validate_atomics(perf_metrics_t *m_info) {
 extern void bi_dir_bw(int len, perf_metrics_t *metric_info);
 
 static inline 
-void bi_dir_bw_test_and_output(perf_metrics_t *metric_info) {
+void bi_dir_bw_test_and_output(perf_metrics_t * const metric_info) {
     int partner_pe = partner_node(metric_info);
     unsigned long int len;
 
@@ -328,7 +328,7 @@ void bi_dir_bw_test_and_output(perf_metrics_t *metric_info) {
 extern void uni_dir_bw(int len, perf_metrics_t *metric_info);
 
 static inline 
-void uni_dir_bw_test_and_output(perf_metrics_t *metric_info) {
+void uni_dir_bw_test_and_output(perf_metrics_t * const metric_info) {
     int partner_pe = partner_node(metric_info);
     unsigned long int len = 0;
 
@@ -368,7 +368,7 @@ void uni_dir_bw_test_and_output(perf_metrics_t *metric_info) {
 
 /* create and init (with my_PE_num) two symmetric arrays on the heap */
 static inline 
-int bw_init_data_stream(perf_metrics_t *metric_info,
+int bw_init_data_stream(perf_metrics_t * const metric_info,
                         int argc, char *argv[]) {
 
     init_metrics(metric_info);
@@ -427,7 +427,7 @@ int bw_init_data_stream(perf_metrics_t *metric_info,
 
 
 static inline 
-int bi_dir_init(perf_metrics_t *metric_info, int argc,
+int bi_dir_init(perf_metrics_t * const metric_info, int argc,
                 char *argv[], op_style opstyle) {
     int ret = bw_init_data_stream(metric_info, argc, argv);
     if (ret == 0) {
@@ -439,7 +439,7 @@ int bi_dir_init(perf_metrics_t *metric_info, int argc,
 }
 
 static inline 
-int uni_dir_init(perf_metrics_t *metric_info, int argc,
+int uni_dir_init(perf_metrics_t * const metric_info, int argc,
                  char *argv[], op_style opstyle) {
     int ret = bw_init_data_stream(metric_info, argc, argv);
     if (ret == 0) {
@@ -452,7 +452,7 @@ int uni_dir_init(perf_metrics_t *metric_info, int argc,
 }
 
 static inline 
-void bw_data_free(perf_metrics_t *metric_info) {
+void bw_data_free(const perf_metrics_t * const metric_info) {
     shmem_barrier_all();
 
     aligned_buffer_free(metric_info->src);

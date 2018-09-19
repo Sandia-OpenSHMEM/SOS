@@ -26,7 +26,7 @@
  */
 
 static inline
-void long_element_round_trip_latency_get(perf_metrics_t *metric_info)
+void long_element_round_trip_latency_get(perf_metrics_t * const metric_info)
 {
     double start = 0.0;
     double end = 0.0;
@@ -75,7 +75,7 @@ void long_element_round_trip_latency_get(perf_metrics_t *metric_info)
 } /*gauge small get pathway round trip latency*/
 
 static inline
-void long_element_round_trip_latency_put(perf_metrics_t *metric_info)
+void long_element_round_trip_latency_put(perf_metrics_t * const metric_info)
 {
     double start = 0.0;
     double end = 0.0;
