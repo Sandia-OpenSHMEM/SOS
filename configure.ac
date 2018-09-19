@@ -13,7 +13,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.4.1], [https://github.com/Sandia-OpenSHMEM/SOS/issues], [sandia-openshmem], [https://github.com/Sandia-OpenSHMEM/SOS])
+AC_INIT([Sandia OpenSHMEM], [1.4.2rc1], [https://github.com/Sandia-OpenSHMEM/SOS/issues], [sandia-openshmem], [https://github.com/Sandia-OpenSHMEM/SOS])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -312,6 +312,9 @@ AC_CACHE_SAVE
 AC_SEARCH_LIBS([clock_gettime], [rt],
                [AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [define if clock_gettime is available]) ])
 
+CHECK_SCHED_GETAFFINITY(
+    [AC_DEFINE([HAVE_SCHED_GETAFFINITY], [1], [define if sched_getaffinity is available])], [])
+
 dnl check for libraries
 
 OMPI_CHECK_PORTALS4([portals4],
@@ -389,14 +392,26 @@ AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
       ])
 
 AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
-			[build and run shmem-pmi support])])
-AS_IF([test "$enable_pmi_simple" = "yes"],
+              [Use MPICH simple PMI-1 library for process management])])
+AC_ARG_ENABLE([pmi-mpi], [AC_HELP_STRING([--enable-pmi-mpi],
+              [Use MPI for process management])])
+
+AS_IF([test "$enable_pmi_simple" = "yes" -o "$enable_pmi_mpi" = "yes"],
      [TEST_RUNNER='$(abs_top_builddir)/src/oshrun -n $(NPROCS)'],
      [OPAL_CHECK_PMI(pmi_type)])
+
 AS_IF([test "$opal_external_pmix_version_found" = 1],
      [pmi_CPPFLAGS="$opal_external_pmix_CPPFLAGS"
       pmi_LDFLAGS="$opal_external_pmix_LDFLAGS"
       pmi_LIBS="$opal_external_pmix_LIBS"])
+
+AS_IF([test "$enable_pmi_simple" = "yes" -a "$enable_pmi_mpi" = "yes"],
+      [AC_MSG_ERROR([Cannot enable both simple PMI and MPI-PMI])])
+
+AS_IF([test "$enable_pmi_mpi" = "yes"],
+      [AC_DEFINE([ENABLE_PMI_MPI], [1], [Enable argument checking])])
+
+AM_CONDITIONAL([USE_PMI_MPI], [test "$enable_pmi_mpi" = "yes"])
 AM_CONDITIONAL([USE_PMI_SIMPLE], [test "$enable_pmi_simple" = "yes"])
 AM_CONDITIONAL([USE_PMI2], [test "$pmi_type" = "pmi2"])
 AM_CONDITIONAL([USE_PMIX], [test "$opal_external_pmix_version_found" = 1])
@@ -766,7 +781,7 @@ fi
 
 AC_OUTPUT
 
-AS_IF([test "$enable_pmi_simple" != "yes" -a "$opal_external_pmix_version_found" != 1 -a "$ompi_check_pmi_happy" != "yes" -a -z "$pmi_type"],
+AS_IF([test "$enable_pmi_mpi" != "yes" -a "$enable_pmi_simple" != "yes" -a "$opal_external_pmix_version_found" != 1 -a "$ompi_check_pmi_happy" != "yes" -a -z "$pmi_type"],
          [AC_MSG_WARN([No PMI found, if build fails consider --enable-pmi-simple or --with-pmi])])
 
 AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],

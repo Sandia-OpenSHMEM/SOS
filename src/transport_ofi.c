@@ -689,12 +689,8 @@ int allocate_recv_cntr_mr(void)
 #if ENABLE_TARGET_CNTR
     ret = fi_mr_bind(shmem_transport_ofi_target_mrfd,
                      &shmem_transport_ofi_target_cntrfd->fid,
-                     FI_REMOTE_WRITE | FI_REMOTE_READ);
+                     FI_REMOTE_WRITE);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to MR failed");
-
-    ret = fi_ep_bind(shmem_transport_ofi_target_ep,
-                     &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE | FI_REMOTE_READ);
-    OFI_CHECK_RETURN_STR(ret, "target CNTR binding to EP failed");
 
 #ifdef ENABLE_MR_RMA_EVENT
     if (shmem_transport_ofi_mr_rma_event) {
@@ -724,17 +720,13 @@ int allocate_recv_cntr_mr(void)
 #if ENABLE_TARGET_CNTR
     ret = fi_mr_bind(shmem_transport_ofi_target_heap_mrfd,
                      &shmem_transport_ofi_target_cntrfd->fid,
-                     FI_REMOTE_WRITE | FI_REMOTE_READ);
+                     FI_REMOTE_WRITE);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to heap MR failed");
 
     ret = fi_mr_bind(shmem_transport_ofi_target_data_mrfd,
                      &shmem_transport_ofi_target_cntrfd->fid,
-                     FI_REMOTE_WRITE | FI_REMOTE_READ);
+                     FI_REMOTE_WRITE);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to data MR failed");
-
-    ret = fi_ep_bind(shmem_transport_ofi_target_ep,
-                     &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE | FI_REMOTE_READ);
-    OFI_CHECK_RETURN_STR(ret, "target CNTR binding to EP failed");
 
 #ifdef ENABLE_MR_RMA_EVENT
     if (shmem_transport_ofi_mr_rma_event) {
@@ -1056,18 +1048,21 @@ int publish_av_info(struct fabric_info *info)
 static inline
 int populate_av(void)
 {
-    int    i, ret = 0;
+    int    i, ret, err = 0;
     char   *alladdrs = NULL;
 
     alladdrs = malloc(shmem_internal_num_pes * shmem_transport_ofi_addrlen);
     if (alladdrs == NULL) {
         RAISE_WARN_STR("Out of memory allocating 'alladdrs'");
-        return ret;
+        return 1;
     }
 
     for (i = 0; i < shmem_internal_num_pes; i++) {
         char *addr_ptr = alladdrs + i * shmem_transport_ofi_addrlen;
-        shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen);
+        err = shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen);
+        if (err != 0) {
+            RAISE_ERROR_STR("Runtime get of 'fi_epname' failed");
+        }
     }
 
     ret = fi_av_insert(shmem_transport_ofi_avfd,
@@ -1271,6 +1266,9 @@ static int shmem_transport_ofi_target_ep_init(void)
     struct fabric_info* info = &shmem_transport_ofi_info;
     info->p_info->ep_attr->tx_ctx_cnt = 0;
     info->p_info->caps = FI_RMA | FI_ATOMICS | FI_REMOTE_READ | FI_REMOTE_WRITE;
+#if ENABLE_TARGET_CNTR
+    info->p_info->caps |= FI_RMA_EVENT;
+#endif
     info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
     info->p_info->mode = 0;
     info->p_info->tx_attr->mode = 0;
@@ -1621,7 +1619,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 
     if(shmem_internal_params.DEBUG) {
         SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
-        SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
+        if (ctx->cq_ep) SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
         DEBUG_MSG("id = %d, options = %#0lx, stx_idx = %d\n"
                   RAISE_PE_PREFIX "pending_put_cntr = %9"PRIu64", completed_put_cntr = %9"PRIu64"\n"
                   RAISE_PE_PREFIX "pending_get_cntr = %9"PRIu64", completed_get_cntr = %9"PRIu64"\n"
@@ -1634,7 +1632,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
                   shmem_internal_my_pe,
                   ctx->pending_bb_cntr, ctx->completed_bb_cntr
                  );
-        SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
+        if (ctx->cq_ep) SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
     }
 

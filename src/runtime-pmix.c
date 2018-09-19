@@ -43,13 +43,9 @@ shmem_runtime_init(void)
     proc.rank = PMIX_RANK_WILDCARD;
     pmix_value_t *val;
 
-    int initialized = PMIx_Initialized();
-
-    if (!initialized) {
-        if (PMIX_SUCCESS != (rc = PMIx_Init(&myproc, NULL, 0))) {
-            RETURN_ERROR_MSG_PREINIT("PMIx_Init failed (%d)\n", rc);
-            return rc;
-        }
+    if (PMIX_SUCCESS != (rc = PMIx_Init(&myproc, NULL, 0))) {
+        RETURN_ERROR_MSG_PREINIT("PMIx_Init failed (%d)\n", rc);
+        return rc;
     }
 
     (void)strncpy(proc.nspace, myproc.nspace, PMIX_MAX_NSLEN);
