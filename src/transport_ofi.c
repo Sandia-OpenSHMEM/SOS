@@ -674,10 +674,6 @@ int allocate_recv_cntr_mr(void)
                      FI_REMOTE_WRITE);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to MR failed");
 
-    ret = fi_ep_bind(shmem_transport_ofi_target_ep,
-                     &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE);
-    OFI_CHECK_RETURN_STR(ret, "target CNTR binding to EP failed");
-
 #ifdef ENABLE_MR_RMA_EVENT
     if (shmem_transport_ofi_mr_rma_event) {
         ret = fi_mr_enable(shmem_transport_ofi_target_mrfd);
@@ -713,10 +709,6 @@ int allocate_recv_cntr_mr(void)
                      &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_WRITE);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to data MR failed");
-
-    ret = fi_ep_bind(shmem_transport_ofi_target_ep,
-                     &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE);
-    OFI_CHECK_RETURN_STR(ret, "target CNTR binding to EP failed");
 
 #ifdef ENABLE_MR_RMA_EVENT
     if (shmem_transport_ofi_mr_rma_event) {
@@ -1286,6 +1278,9 @@ static int shmem_transport_ofi_target_ep_init(void)
     struct fabric_info* info = &shmem_transport_ofi_info;
     info->p_info->ep_attr->tx_ctx_cnt = 0;
     info->p_info->caps = FI_RMA | FI_ATOMICS | FI_REMOTE_READ | FI_REMOTE_WRITE;
+#if ENABLE_TARGET_CNTR
+    info->p_info->caps |= FI_RMA_EVENT;
+#endif
     info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
     info->p_info->mode = 0;
     info->p_info->tx_attr->mode = 0;
