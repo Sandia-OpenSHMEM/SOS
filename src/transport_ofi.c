@@ -1277,7 +1277,10 @@ static int shmem_transport_ofi_target_ep_init(void)
 
     struct fabric_info* info = &shmem_transport_ofi_info;
     info->p_info->ep_attr->tx_ctx_cnt = 0;
-    info->p_info->caps = FI_RMA | FI_ATOMICS | FI_REMOTE_READ | FI_REMOTE_WRITE | FI_RMA_EVENT;
+    info->p_info->caps = FI_RMA | FI_ATOMICS | FI_REMOTE_READ | FI_REMOTE_WRITE;
+#if ENABLE_TARGET_CNTR
+    info->p_info->caps |= FI_RMA_EVENT;
+#endif
     info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
     info->p_info->mode = 0;
     info->p_info->tx_attr->mode = 0;
