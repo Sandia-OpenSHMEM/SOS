@@ -426,6 +426,7 @@ int shmem_transport_ofi_stx_search_shared(long threshold)
                     !shmem_transport_ofi_stx_pool[i].is_private)
                 {
                     ++count;
+                    break;
                 }
             }
 
