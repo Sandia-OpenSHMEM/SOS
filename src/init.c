@@ -320,13 +320,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     }
 #endif
 
-#ifdef USE_ON_NODE_COMMS
-    shmem_internal_location_array = malloc(sizeof(char) * shmem_internal_num_pes);
-    if (NULL == shmem_internal_location_array) goto cleanup;
-
-    memset(shmem_internal_location_array, -1, shmem_internal_num_pes);
-#endif
-
     /* Initialize transport devices */
     ret = shmem_transport_init();
     if (0 != ret) {
