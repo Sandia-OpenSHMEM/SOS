@@ -572,6 +572,17 @@ int shmem_transport_same_node(shmem_transport_addr_t *a1, shmem_transport_addr_t
     }
 }
 
+int shmem_transport_needs_node_util() {
+#ifdef USE_ON_NODE_COMMS
+    return 1;
+#else
+    if (shmem_internal_params.OFI_STX_AUTO)
+        return 1;
+    else
+        return 0;
+#endif
+}
+
 
 #define OFI_MAJOR_VERSION 1
 #ifdef ENABLE_MR_RMA_EVENT
@@ -1432,9 +1443,6 @@ int shmem_transport_init(void)
                            shmem_internal_params.OFI_STX_MAX);
         }
         shmem_transport_ofi_stx_max = 1;
-    } else if (shmem_internal_params.OFI_STX_AUTO) {
-        ret = shmem_node_util_init();
-        if (ret != 0) return ret;
     } else {
         shmem_transport_ofi_stx_max = shmem_internal_params.OFI_STX_MAX;
     }
@@ -1501,9 +1509,6 @@ int shmem_transport_startup(void)
         } else {
             ofi_tx_ctx_cnt = shmem_transport_ofi_info.fabrics->domain_attr->tx_ctx_cnt;
         }
-
-        ret = shmem_node_util_startup();
-        if (ret != 0) return ret;
 
         num_on_node = shmem_node_util_n_local_pes();
 
@@ -1749,10 +1754,6 @@ int shmem_transport_fini(void)
         OFI_CHECK_ERROR_MSG(ret, "STX context close failed (%s)\n", fi_strerror(errno));
     }
     free(shmem_transport_ofi_stx_pool);
-
-    if (shmem_internal_params.OFI_STX_AUTO) {
-        shmem_node_util_fini();
-    }
 
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));

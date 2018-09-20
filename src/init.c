@@ -95,9 +95,9 @@ shmem_internal_shutdown(void)
     shmem_transport_cma_fini();
 #endif
 
-#ifdef USE_ON_NODE_COMMS
-    shmem_node_util_fini();
-#endif
+    if (shmem_transport_needs_node_util()) {
+        shmem_node_util_fini();
+    }
 
     SHMEM_MUTEX_DESTROY(shmem_internal_mutex_alloc);
 
@@ -328,14 +328,14 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     }
     transport_initialized = 1;
 
-#ifdef USE_ON_NODE_COMMS
-    ret = shmem_node_util_init();
-    if (0 != ret) {
-        RETURN_ERROR_MSG("Node utility init failed (%d)\n", ret);
-        goto cleanup;
+    if (shmem_transport_needs_node_util()) {
+        ret = shmem_node_util_init();
+        if (0 != ret) {
+            RETURN_ERROR_MSG("Node utility init failed (%d)\n", ret);
+            goto cleanup;
+        }
+        node_util_initialized = 1;
     }
-    node_util_initialized = 1;
-#endif
 
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_init();
@@ -362,13 +362,13 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         goto cleanup;
     }
 
-#ifdef USE_ON_NODE_COMMS
-    ret = shmem_node_util_startup();
-    if (ret != 0) {
-        RETURN_ERROR_MSG("node_util startup failed (%d)\n", ret);
-        goto cleanup;
+    if (shmem_transport_needs_node_util()) {
+        ret = shmem_node_util_startup();
+        if (0 != ret) {
+            RETURN_ERROR_MSG("Node utility startup failed (%d)\n", ret);
+            goto cleanup;
+        }
     }
-#endif
 
     /* finish transport initialization after information sharing. */
     ret = shmem_transport_startup();

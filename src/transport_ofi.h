@@ -342,6 +342,7 @@ void shmem_transport_probe(void)
     return;
 }
 
+int shmem_transport_needs_node_util(void);
 shmem_transport_addr_t shmem_transport_get_local_addr(void);
 int shmem_transport_same_node(shmem_transport_addr_t*, shmem_transport_addr_t*);
 

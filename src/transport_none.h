@@ -98,6 +98,16 @@ shmem_transport_probe(void)
 }
 
 static inline
+int shmem_transport_needs_node_util(void)
+{
+#ifdef USE_ON_NODE_COMMS
+    return 1;
+#else
+    return 0;
+#endif
+}
+
+static inline
 shmem_transport_addr_t shmem_transport_get_local_addr(void)
 {
 
