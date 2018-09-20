@@ -371,53 +371,11 @@ int shmem_transport_ofi_is_private(long options) {
     }
 }
 
-/* This uses a slightly modified version of the Fisher-Yates shuffle algorithm
- * (or Knuth Shuffle).  It selects a random element from the so-far
- * unselected subset of the STX pool.  The top_idx should be reset before each
- * new search to ensure that all entries are visited. */
-static int *rand_pool_indices;
-static int rand_pool_top_idx;
+static unsigned int rand_pool_seed;
 
 static inline
 void shmem_transport_ofi_stx_rand_init(void) {
-    rand_pool_indices = malloc(shmem_transport_ofi_stx_max * sizeof(int));
-
-    if (rand_pool_indices == NULL)
-        RAISE_ERROR_STR("out of memory initializing random STX allocator");
-
-    for (int i = 0; i < shmem_transport_ofi_stx_max; i++)
-        rand_pool_indices[i] = i;
-
-    rand_pool_top_idx = shmem_transport_ofi_stx_max - 1;
-
-    return;
-}
-
-static inline
-void shmem_transport_ofi_stx_rand_restart(void) {
-    rand_pool_top_idx = shmem_transport_ofi_stx_max - 1;
-}
-
-static inline
-int shmem_transport_ofi_stx_rand_next(void) {
-    /* Iterator is empty and should be restarted */
-    if (rand_pool_top_idx < 0) return -1;
-
-    /* Choose an STX index from the unselected subset */
-    int choice = rand() % (rand_pool_top_idx + 1);
-
-    /* Swap the value at the chosen index with the value at the top index */
-    int tmp = rand_pool_indices[choice];
-    rand_pool_indices[choice] = rand_pool_indices[rand_pool_top_idx];
-    rand_pool_indices[rand_pool_top_idx] = tmp;
-
-    rand_pool_top_idx--;
-    return tmp;
-}
-
-static inline
-void shmem_transport_ofi_stx_rand_fini(void) {
-    free(rand_pool_indices);
+    rand_pool_seed = shmem_internal_my_pe;
     return;
 }
 
@@ -436,6 +394,7 @@ int shmem_transport_ofi_stx_search_unused(void)
 
     return stx_idx;
 }
+
 
 static inline
 int shmem_transport_ofi_stx_search_shared(long threshold)
@@ -461,15 +420,26 @@ int shmem_transport_ofi_stx_search_shared(long threshold)
             break;
 
         case RANDOM:
-            shmem_transport_ofi_stx_rand_restart();
-            while ((i = shmem_transport_ofi_stx_rand_next()) >= 0) {
+            for (i = count = 0; i < shmem_transport_ofi_stx_max; i++) {
                 if (shmem_transport_ofi_stx_pool[i].ref_cnt > 0 &&
                     (shmem_transport_ofi_stx_pool[i].ref_cnt <= threshold || threshold == -1) &&
-                    !shmem_transport_ofi_stx_pool[i].is_private) {
-                    stx_idx = i;
-                    rr_start_idx = (i + 1) % shmem_transport_ofi_stx_max;
+                    !shmem_transport_ofi_stx_pool[i].is_private)
+                {
+                    ++count;
                     break;
                 }
+            }
+
+            if (count == 0)
+                break;
+
+            /* Probe at random until we select an available STX */
+            else {
+                do {
+                    stx_idx = (int) (rand_r(&rand_pool_seed) / (RAND_MAX + 1.0) * shmem_transport_ofi_stx_max);
+                } while (!(shmem_transport_ofi_stx_pool[stx_idx].ref_cnt > 0 &&
+                           (shmem_transport_ofi_stx_pool[stx_idx].ref_cnt <= threshold || threshold == -1) &&
+                           !shmem_transport_ofi_stx_pool[stx_idx].is_private));
             }
 
             break;
@@ -1439,7 +1409,7 @@ int shmem_transport_init(void)
          shmem_internal_params.OFI_STX_MAX > 1) {
         if (shmem_internal_params.OFI_STX_MAX_provided) {
             /* We need only 1 STX per PE with SHMEM_THREAD_SINGLE or SHMEM_THREAD_FUNNELED */
-            RAISE_WARN_MSG("Ignoring invalid STX max setting '%ld'; using 1 STX in single-threaded mode",
+            RAISE_WARN_MSG("Ignoring invalid STX max setting '%ld'; using 1 STX in single-threaded mode\n",
                            shmem_internal_params.OFI_STX_MAX);
         }
         shmem_transport_ofi_stx_max = 1;
@@ -1751,16 +1721,6 @@ int shmem_transport_fini(void)
 #ifdef USE_AV_MAP
     free(addr_table);
 #endif
-    switch (shmem_transport_ofi_stx_allocator) {
-        case ROUNDROBIN:
-            break;
-        case RANDOM:
-            shmem_transport_ofi_stx_rand_fini();
-            break;
-        default:
-            RAISE_ERROR_MSG("Invalid STX allocator (%d)\n",
-                            shmem_transport_ofi_stx_allocator);
-    }
 
     fi_freeinfo(shmem_transport_ofi_info.fabrics);
 
