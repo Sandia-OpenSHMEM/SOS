@@ -82,6 +82,10 @@ int shmem_node_util_startup(void)
     shmem_transport_addr_t addr_cmp = {0};
     size_t addr_len;
 
+    /* TODO: the following shouldn't be needed, but I see memory corruption here with
+     * Portals+CMA immediately after shmem_runtime_exchange when using simple PMI */
+    addr = shmem_transport_get_local_addr();
+
     if (node_util_is_initialized) {
         if (!node_util_is_started) {
             for (i = 0; i < shmem_internal_num_pes; i++) {
