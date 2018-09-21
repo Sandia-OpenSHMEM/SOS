@@ -65,7 +65,7 @@ struct shmem_transport_addr_t {
     char* addr;
 };
 typedef struct shmem_transport_addr_t shmem_transport_addr_t;
-static shmem_transport_addr_t shmem_transport_addr;
+shmem_transport_addr_t shmem_transport_addr;
 
 static inline
 int
