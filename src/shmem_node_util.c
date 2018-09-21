@@ -93,6 +93,10 @@ int shmem_node_util_startup(void)
 
                 addr_cmp.addrlen = addr_len;
                 addr_cmp.addr = malloc(addr_len);
+                if (addr_cmp.addr == NULL) {
+                    RETURN_ERROR_STR("Out of memory when allocating node_util address");
+                    return 1;
+                }
                 ret = shmem_runtime_get(i, "nodename", addr_cmp.addr, addr_len);
                 if (ret != 0) {
                     RETURN_ERROR_MSG("Failed during nodename read from KVS: (%d)", ret);

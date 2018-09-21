@@ -68,10 +68,25 @@ typedef struct shmem_transport_addr_t shmem_transport_addr_t;
 shmem_transport_addr_t shmem_transport_addr;
 
 static inline
+int shmem_transport_needs_node_util(void)
+{
+#ifdef USE_ON_NODE_COMMS
+    return 1;
+#else
+    return 0;
+#endif
+}
+
+static inline
 int
 shmem_transport_init(void)
 {
-    shmem_transport_addr.addr = malloc(SHMEM_INTERNAL_MAX_HOSTNAME_LEN * sizeof(char));
+    if (shmem_transport_needs_node_util())
+        shmem_transport_addr.addr = malloc(SHMEM_INTERNAL_MAX_HOSTNAME_LEN * sizeof(char));
+    if (NULL == shmem_transport_addr.addr) {
+        RETURN_ERROR_STR("Out of memory when allocating hostname addr");
+        return 1;
+    }
     return 0;
 }
 
@@ -95,16 +110,6 @@ void
 shmem_transport_probe(void)
 {
     return;
-}
-
-static inline
-int shmem_transport_needs_node_util(void)
-{
-#ifdef USE_ON_NODE_COMMS
-    return 1;
-#else
-    return 0;
-#endif
 }
 
 static inline
