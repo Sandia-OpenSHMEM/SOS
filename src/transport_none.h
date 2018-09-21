@@ -117,7 +117,10 @@ static inline
 shmem_transport_addr_t shmem_transport_get_local_addr(void)
 {
 
-    gethostname(shmem_transport_addr.addr, SHMEM_INTERNAL_MAX_HOSTNAME_LEN);
+    int ret = gethostname(shmem_transport_addr.addr, SHMEM_INTERNAL_MAX_HOSTNAME_LEN);
+    if (ret != 0) {
+        RAISE_ERROR_MSG("gethostname failed (%d)", ret);
+    }
 
     /* gethostname() doesn't guarantee null-termination if truncation occurs */
     shmem_transport_addr.addr[SHMEM_INTERNAL_MAX_HOSTNAME_LEN - 1] = '\0';

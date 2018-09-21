@@ -148,7 +148,7 @@ void shmem_node_util_get_addr(int pe, void **dest_buf)
             if (ret != 0) {
                 RAISE_ERROR_MSG("Get nodename from KVS failed: (%d)", ret);
             }
-            dest_buf = &addr.addr;
+            *dest_buf = &addr.addr;
         } else {
             RAISE_ERROR_STR("Node utility has not started");
         }
