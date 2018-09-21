@@ -81,11 +81,12 @@ static inline
 int
 shmem_transport_init(void)
 {
-    if (shmem_transport_needs_node_util())
+    if (shmem_transport_needs_node_util()) {
         shmem_transport_addr.addr = malloc(SHMEM_INTERNAL_MAX_HOSTNAME_LEN * sizeof(char));
-    if (NULL == shmem_transport_addr.addr) {
-        RETURN_ERROR_STR("Out of memory when allocating hostname addr");
-        return 1;
+        if (NULL == shmem_transport_addr.addr) {
+            RETURN_ERROR_STR("Out of memory when allocating hostname addr");
+            return 1;
+        }
     }
     return 0;
 }
