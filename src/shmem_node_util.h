@@ -30,7 +30,7 @@ int shmem_node_util_startup(void);
 
 int shmem_node_util_n_local_pes(void);
 
-void shmem_node_util_get_addr(int, void*);
+void shmem_node_util_get_addr(int, void**);
 
 static inline
 int shmem_node_util_local_rank(int pe)

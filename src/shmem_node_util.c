@@ -134,13 +134,13 @@ int shmem_node_util_n_local_pes()
 }
 
 /* Store 'addr' field of shmem_transport_addr_t into 'dest_buf' */
-void shmem_node_util_get_addr(int pe, void *dest_buf)
+void shmem_node_util_get_addr(int pe, void **dest_buf)
 {
     int ret;
     shmem_transport_addr_t addr;
 
     if (pe == shmem_internal_my_pe) {
-        dest_buf = shmem_transport_get_local_addr().addr;
+        *dest_buf = shmem_transport_get_local_addr().addr;
         return;
     } else {
         if (node_util_is_started) {

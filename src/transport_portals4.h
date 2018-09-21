@@ -151,7 +151,6 @@ struct shmem_transport_ct_t {
 typedef struct shmem_transport_ct_t shmem_transport_ct_t;
 
 struct shmem_transport_addr_t {
-    ptl_process_t ptl_addr;
     size_t addrlen;
     void *addr;
 };
@@ -290,21 +289,27 @@ static inline
 shmem_transport_addr_t shmem_transport_get_local_addr(void)
 {
     shmem_transport_addr_t addr;
+    ptl_process_t ptl_addr;
 
-    int ret = PtlGetPhysId(shmem_transport_portals4_ni_h, &addr.ptl_addr);
+    int ret = PtlGetPhysId(shmem_transport_portals4_ni_h, &ptl_addr);
     if (PTL_OK != ret) {
         RAISE_ERROR_MSG("PtlGetPhysId failed: %d\n", ret);
     }
 
-    addr.addrlen = sizeof(addr.ptl_addr);
-    addr.addr = &addr.ptl_addr;
+    addr.addrlen = sizeof(ptl_addr);
+    addr.addr = &ptl_addr;
 
     return addr;
 }
 
 static inline
 int shmem_transport_same_node(const shmem_transport_addr_t *a1, const shmem_transport_addr_t *a2) {
-    if (a1->ptl_addr.phys.nid == a2->ptl_addr.phys.nid) {
+    ptl_process_t *ptl_addr1, *ptl_addr2;
+
+    ptl_addr1 = (ptl_process_t *) a1->addr;
+    ptl_addr2 = (ptl_process_t *) a2->addr;
+
+    if (ptl_addr1->phys.nid == ptl_addr2->phys.nid) {
         return 1;
     } else {
         return 0;
