@@ -198,6 +198,7 @@ script:
     - cd no-transport-build
     - export PATH=$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
     - ../configure --prefix=$TRAVIS_INSTALL/sandia-shmem-none --without-ofi --without-portals4 $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
+    - sync
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
     - make install
@@ -210,6 +211,7 @@ script:
     - cd cma-build
     - export PATH=$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
     - ../configure --prefix=$TRAVIS_INSTALL/sandia-shmem-cma --with-cma $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
+    - sync
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
     - make install
@@ -222,6 +224,7 @@ script:
     - cd portals4-build
     - export PATH=$TRAVIS_INSTALL/hydra/bin:$TRAVIS_INSTALL/portals4/bin:$BASE_PATH
     - ../configure --with-portals4=$TRAVIS_INSTALL/portals4/ --prefix=$TRAVIS_INSTALL/sandia-shmem-portals4 $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
+    - sync
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
     #- make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2 timeout 10" check
@@ -235,6 +238,7 @@ script:
     - cd ofi-build
     - export PATH=$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
     - ../configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --prefix=$TRAVIS_INSTALL/sandia-shmem-ofi $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
+    - sync
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
     - make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2" check
@@ -247,6 +251,7 @@ script:
     - cd ompi-build
     - export PATH=/opt/openmpi/gitclone/bin:$BASE_PATH
     - ../configure --prefix=$PWD/install --with-ofi=$TRAVIS_INSTALL/libfabric --with-pmix=$TRAVIS_SRC/pmix/install
+    - sync
     - make $TRAVIS_PAR_MAKE
     - echo "localhost slots=4" > /tmp/hostfile.txt
     - make VERBOSE=1 TEST_RUNNER="mpiexec --hostfile /tmp/hostfile.txt -np 4" check
