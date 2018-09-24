@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 }
 
 void
-bi_dir_bw(int len, perf_metrics_t *metric_info)
+bi_dir_bw(int len, perf_metrics_t * const metric_info)
 {
     bi_bw_ctx(len, metric_info);
 }

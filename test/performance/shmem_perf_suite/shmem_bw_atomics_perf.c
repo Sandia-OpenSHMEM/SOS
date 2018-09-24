@@ -42,7 +42,7 @@
     do {                                                                       \
         double start = 0.0, end = 0.0;                                         \
         unsigned long int i = 0, j = 0;                                        \
-        int dest = partner_node(*metric_info);                                 \
+        int dest = partner_node(metric_info);                                 \
         shmem_barrier_all();                                                   \
                                                                                \
         switch(op) {                                                           \
@@ -342,7 +342,7 @@
             break;                                                             \
         }                                                                      \
         if(snode) {                                                            \
-            calc_and_print_results(end, start, len, *metric_info);             \
+            calc_and_print_results(end, start, len, metric_info);             \
         }                                                                      \
     } while(0)
 
@@ -353,12 +353,12 @@ static const char * atomic_op_names [] = { "fetch", "set", "cswap", "swap", "fin
                                            "fxor", "xor" };
 
 
-static inline void bw_set_metric_info_len(perf_metrics_t *metric_info)
+static inline void bw_set_metric_info_len(perf_metrics_t * const metric_info)
 {
     unsigned int atomic_sizes[ATOMICS_N_DTs] = {sizeof(unsigned int), sizeof(unsigned long),
                                         sizeof(unsigned long long)};
     metric_info->b_type = UNI_DIR;
-    int snode = streaming_node(*metric_info);
+    int snode = streaming_node(metric_info);
     atomic_op_type op_type = OP_FETCH;
 
     for(op_type = OP_FETCH; op_type < SIZE_OF_OP; op_type++) {
@@ -391,7 +391,7 @@ static inline void bw_set_metric_info_len(perf_metrics_t *metric_info)
     }
 }
 
-void uni_dir_bw(int len, perf_metrics_t *metric_info)
+void uni_dir_bw(int len, perf_metrics_t * const metric_info)
 {
     bw_set_metric_info_len(metric_info);
 }
