@@ -1461,6 +1461,15 @@ int shmem_transport_init(void)
     shmem_transport_ofi_put_poll_limit = shmem_internal_params.OFI_TX_POLL_LIMIT;
     shmem_transport_ofi_get_poll_limit = shmem_internal_params.OFI_RX_POLL_LIMIT;
 
+#ifdef USE_CTX_LOCK
+    /* In multithreaded mode, force completion polling so that threads yield
+     * the lock during put/get completion operations */
+    if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE) {
+        shmem_transport_ofi_put_poll_limit = -1;
+        shmem_transport_ofi_get_poll_limit = -1;
+    }
+#endif
+
     shmem_transport_ctx_default.options = SHMEMX_CTX_BOUNCE_BUFFER;
 
     ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, SHMEM_TRANSPORT_CTX_DEFAULT_ID);
