@@ -20,6 +20,10 @@ v1.4.2rc1
 - Updated perf. suite tests to improve bandwidth reporting and improve coverage
   over atomic operations.
 - Updated manual progress to automatically enable completion polling.
+- Updated target counter binding in OFI to comply with libfabric requirements.
+- Fixed invalid locking in context destroy debug message when bounce buffering
+  is not enabled on the context.
+- Simplified the OFI random STX allocator.
 
 v1.4.1
 ------
