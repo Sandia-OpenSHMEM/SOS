@@ -1463,10 +1463,13 @@ int shmem_transport_init(void)
 
 #ifdef USE_CTX_LOCK
     /* In multithreaded mode, force completion polling so that threads yield
-     * the lock during put/get completion operations */
+     * the lock during put/get completion operations.  User can still override
+     * (get blocking behavior) by setting the env vars. */
     if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE) {
-        shmem_transport_ofi_put_poll_limit = -1;
-        shmem_transport_ofi_get_poll_limit = -1;
+        if (!shmem_internal_params.OFI_TX_POLL_LIMIT_provided)
+            shmem_transport_ofi_put_poll_limit = -1;
+        if (!shmem_internal_params.OFI_RX_POLL_LIMIT_provided)
+            shmem_transport_ofi_get_poll_limit = -1;
     }
 #endif
 
