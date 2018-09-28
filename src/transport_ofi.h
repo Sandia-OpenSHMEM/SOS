@@ -446,7 +446,9 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
         shmem_transport_probe();
 
         if (success < cnt && fail == 0) {
+            SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
             SPINLOCK_BODY();
+            SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
         } else if (fail) {
             RAISE_ERROR_MSG("Operations completed in error (%" PRIu64 ")\n", fail);
         } else {
@@ -749,7 +751,9 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
         shmem_transport_probe();
 
         if (success < cnt && fail == 0) {
+            SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
             SPINLOCK_BODY();
+            SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
         } else if (fail) {
             RAISE_ERROR_MSG("Operations completed in error (%" PRIu64 ")\n", fail);
         } else {
