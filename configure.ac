@@ -126,12 +126,12 @@ AM_CONDITIONAL([HAVE_OPENMP], [test "$enable_threads" != "no" -a "$enable_openmp
 
 AC_ARG_ENABLE([pthread-mutexes],
     [AC_HELP_STRING([--enable-pthread-mutexes],
-                    [Use pthread mutexes instead of spinlocks (used in conjunction with --enable-threads) (default:disabled)])])
+                    [Use pthread mutexes instead of internal queueing locks (default:disabled)])])
 AS_IF([test "$enable_pthread_mutexes" = "yes"], [AC_DEFINE([ENABLE_PTHREAD_MUTEX], [1], [Enable pthread mutexes])])
 
 AC_ARG_ENABLE([thread-completion],
     [AC_HELP_STRING([--enable-thread-completion],
-        [Support SHMEM_THREAD_MULTIPLE using FI_THREAD_COMPLETION thread safety model instead of FI_THREAD_SAFE (default: disabled)])])
+        [Support SHMEM_THREAD_MULTIPLE in OFI transport using FI_THREAD_COMPLETION thread safety model instead of FI_THREAD_SAFE (default: disabled)])])
 
 AC_ARG_ENABLE([remote-virtual-addressing],
     [AC_HELP_STRING([--enable-remote-virtual-addressing],
@@ -148,7 +148,7 @@ AS_IF([test "$enable_aslr_check" = "no"],
 
 AC_ARG_ENABLE([lengthy-tests],
     [AC_HELP_STRING([--enable-lengthy-tests],
-                    [Enable long running tests in the test suite (default: disabled)])])
+                    [Execute long running tests as part of "make check" (default: disabled)])])
 AM_CONDITIONAL([ENABLE_LENGTHY_TESTS], [test "$enable_lengthy_tests" = "yes"])
 
 AC_ARG_ENABLE([fortran],
