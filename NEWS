@@ -2,8 +2,13 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
-v1.4.2rc1
+v1.4.2
 ------
+- Improved performance when using OFI thread completion model, by releasing the
+  context lock when blocked in quiet/fence operations.
+
+v1.4.2rc1
+---------
 - Added support for using MPI as the process manager, via --enable-pmi-mpi.
 - Added option to flush stdout/stderr during barrier operations, enabled via
   SHMEM_BARRIERS_FLUSH environment variable.
