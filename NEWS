@@ -4,6 +4,8 @@ Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
 v1.4.2
 ------
+- This full release includes the changes listed below for v1.4.2rc1 and the
+  following additional change.
 - Improved performance when using OFI thread completion model, by releasing the
   context lock when blocked in quiet/fence operations.
 
