@@ -782,10 +782,10 @@ fi
 AC_OUTPUT
 
 AS_IF([test "$enable_pmi_mpi" != "yes" -a "$enable_pmi_simple" != "yes" -a "$opal_external_pmix_version_found" != 1 -a "$ompi_check_pmi_happy" != "yes" -a -z "$pmi_type"],
-         [AC_MSG_ERROR([No PMI client interface was configured])])
+         [AC_MSG_ERROR([No PMI client interface was configured, consider --enable-pmi-simple or --with-pmi])])
 
 AS_IF([test "$transport_portals4" != "yes" -a "$transport_ofi" != "yes"],
-      [AC_MSG_WARN([No transport found, resulting library be unable to exchange messages])])
+      [AC_MSG_WARN([No transport found, resulting library will be unable to exchange messages])])
 
 AS_IF([test "$shmem_cv_c11_works" != "yes"],
       [AC_MSG_WARN([C compiler does not support _Generic, unabled to verify and test C11 bindings])])
