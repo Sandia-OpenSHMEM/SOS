@@ -413,6 +413,7 @@ AS_IF([test "$enable_pmi_mpi" = "yes"],
 
 AM_CONDITIONAL([USE_PMI_MPI], [test "$enable_pmi_mpi" = "yes"])
 AM_CONDITIONAL([USE_PMI_SIMPLE], [test "$enable_pmi_simple" = "yes"])
+AM_CONDITIONAL([USE_PMI1], [test "$pmi_type" = "pmi1"])
 AM_CONDITIONAL([USE_PMI2], [test "$pmi_type" = "pmi2"])
 AM_CONDITIONAL([USE_PMIX], [test "$opal_external_pmix_version_found" = 1])
 

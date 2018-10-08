@@ -125,6 +125,11 @@ libsma_la_SOURCES += \
 	runtime-mpi.c
 endif
 
+if USE_PMI1
+libsma_la_SOURCES += \
+	runtime-pmi.c
+endif
+
 if USE_PMI2
 libsma_la_SOURCES += \
 	runtime-pmi2.c
