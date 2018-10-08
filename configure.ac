@@ -782,10 +782,10 @@ fi
 AC_OUTPUT
 
 AS_IF([test "$enable_pmi_mpi" != "yes" -a "$enable_pmi_simple" != "yes" -a "$opal_external_pmix_version_found" != 1 -a "$ompi_check_pmi_happy" != "yes" -a -z "$pmi_type"],
-         [AC_MSG_WARN([No PMI found, if build fails consider --enable-pmi-simple or --with-pmi])])
+         [AC_MSG_ERROR([No PMI client interface was configured])])
 
-AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
-      [AC_MSG_WARN([No transport found])])
+AS_IF([test "$transport_portals4" != "yes" -a "$transport_ofi" != "yes"],
+      [AC_MSG_WARN([No transport found, resulting library be unable to exchange messages])])
 
 AS_IF([test "$shmem_cv_c11_works" != "yes"],
       [AC_MSG_WARN([C compiler does not support _Generic, unabled to verify and test C11 bindings])])
@@ -825,9 +825,11 @@ echo ""
 echo "Transports:"
 echo "  Portals 4:      $transport_portals4"
 echo "  OFI:            $transport_ofi"
+echo ""
+echo "On Node Communication:"
 echo "  XPMEM:          $transport_xpmem"
 echo "  CMA:            $transport_cma"
-echo "  memcpy:         $transport_memcpy"
+echo "  memcpy (self):  $transport_memcpy"
 echo ""
 echo "Global Options:"
 if test "$enable_remote_virtual_addressing" = "yes"; then
