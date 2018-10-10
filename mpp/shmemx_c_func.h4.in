@@ -39,3 +39,26 @@ SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcntr_get_completed_read(shmem_ctx_
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcntr_get_completed_target(uint64_t *cntr_value);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcntr_get_all(shmem_ctx_t ctx, shmemx_pcntr_t *pcntr);
 
+define(`SHMEM_C_WAIT_UNTIL_ALL',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_$1_wait_until_all($2 *vars, size_t nelems, int cmp, $2 value);')dnl
+SHMEM_BIND_C_SYNC(`SHMEM_C_WAIT_UNTIL_ALL')
+
+define(`SHMEM_C_WAIT_UNTIL_ANY',
+`SHMEM_FUNCTION_ATTRIBUTES size_t SHPRE()shmemx_$1_wait_until_any($2 *vars, size_t nelems, int * restrict status, int cmp, $2 value);')dnl
+SHMEM_BIND_C_SYNC(`SHMEM_C_WAIT_UNTIL_ANY')
+
+/* Special case, only enabled when C++ and C11 bindings are disabled */
+#if ( !defined(__cplusplus) && \
+      !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L) ) || \
+    defined(SHMEM_INTERNAL_INCLUDE) || defined(SHMEM_DECLARE_SPECIAL_CASES)
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_wait_until_all(long *ivars, size_t nelems, int cmp, long value);
+SHMEM_FUNCTION_ATTRIBUTES size_t SHPRE()shmemx_wait_until_any(long *ivars, size_t nelems, int * restrict status, int cmp, long value);
+#endif
+
+define(`SHMEM_C_TEST_ALL',
+`SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_$1_test_all($2 *vars, size_t nelems, int cmp, $2 value);')dnl
+SHMEM_BIND_C_SYNC(`SHMEM_C_TEST_ALL')
+
+define(`SHMEM_C_TEST_ANY',
+`SHMEM_FUNCTION_ATTRIBUTES size_t SHPRE()shmemx_$1_test_any($2 *vars, size_t nelems, int * restrict status, int cmp, $2 value);')dnl
+SHMEM_BIND_C_SYNC(`SHMEM_C_TEST_ANY')

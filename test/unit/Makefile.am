@@ -96,7 +96,11 @@ check_PROGRAMS = \
 	sync-size \
 	shmem_ctx_pipelined_reduce \
 	many-ctx \
-	shmem_test
+	shmem_test \
+	shmem_wait_until_all \
+	shmem_wait_until_any \
+	shmem_test_all \
+	shmem_test_any
 
 # Temporarily disabled: Global exit test tends to fail with MPI-PMI
 if !USE_PMI_MPI

@@ -101,6 +101,20 @@ shmem_internal_fence(shmem_ctx_t ctx)
         }                                                \
     } while(0)
 
+#define SHMEM_WAIT_UNTIL_POLL_LIMIT(var, cond, value)    \
+    do {                                                 \
+        int cmpret;                                      \
+        int poll_cntr = 100;                             \
+                                                         \
+        COMP(cond, *(var), value, cmpret);               \
+        while (!cmpret && poll_cntr) {                   \
+            shmem_transport_probe();                     \
+            SPINLOCK_BODY();                             \
+            COMP(cond, *(var), value, cmpret);           \
+            poll_cntr--;                                 \
+        }                                                \
+    } while(0)
+
 #define SHMEM_WAIT_BLOCK(var, value)                                    \
     do {                                                                \
         uint64_t target_cntr;                                           \
@@ -129,6 +143,23 @@ shmem_internal_fence(shmem_ctx_t ctx)
         }                                                               \
     } while(0)
 
+#define SHMEM_WAIT_UNTIL_BLOCK_LIMIT(var, cond, value)                  \
+    do {                                                                \
+        uint64_t target_cntr;                                           \
+        int cmpret;                                                     \
+        int poll_cntr = 10;                                             \
+                                                                        \
+        COMP(cond, *(var), value, cmpret);                              \
+        while (!cmpret && poll_cntr) {                                  \
+            target_cntr = shmem_transport_received_cntr_get();          \
+            COMPILER_FENCE();                                           \
+            COMP(cond, *(var), value, cmpret);                          \
+            if (cmpret) break;                                          \
+            shmem_transport_received_cntr_wait(target_cntr + 1);        \
+            COMP(cond, *(var), value, cmpret);                          \
+        }                                                               \
+    } while(0)
+
 #if defined(ENABLE_HARD_POLLING)
 #define SHMEM_WAIT(var, value) do {                                     \
         SHMEM_WAIT_POLL(var, value);                                    \
@@ -141,6 +172,49 @@ shmem_internal_fence(shmem_ctx_t ctx)
         shmem_internal_membar_load();                                   \
         shmem_transport_syncmem();                                      \
     } while (0) 
+
+#define SHMEM_WAIT_UNTIL_ALL(vars, nelems, cond, value) do {            \
+        for (int i = 0; i < nelems; i++) {                              \
+            SHMEM_WAIT_UNTIL_POLL(&vars[i] cond, value);                \
+        }                                                               \
+        shmem_internal_membar_load();                                   \
+        shmem_transport_syncmem();                                      \
+    } while (0)
+
+#define SHMEM_WAIT_UNTIL_ANY(vars, nelems, status, cond, value, ret) do {    \
+        ret = 0;                                                             \
+        int i = 0;                                                           \
+        size_t idx = 0;                                                      \
+        if (status) {                                                        \
+            for (i = 0; i < nelems; i++) {                                   \
+                if (!status[i]) {                                            \
+                    idx = i;                                                 \
+                    break;                                                   \
+                }                                                            \
+            }                                                                \
+        }                                                                    \
+        COMP(cond, vars[idx], value, ret);                                   \
+        if (i == nelems) {                                                   \
+            ret = SIZE_MAX;                                                  \
+        }                                                                    \
+        while (!ret) {                                                       \
+            SHMEM_WAIT_UNTIL_POLL_LIMIT(&vars[idx % nelems], cond, value);   \
+            COMP(cond, vars[idx], value, ret);                               \
+            if (ret) break;                                                  \
+            for (i = idx+1; i < nelems; i++) {                               \
+                if (status && !status[i%nelems]) {                           \
+                    idx = i % nelems;                                        \
+                    break;                                                   \
+                }                                                            \
+            }                                                                \
+        }                                                                    \
+        if (ret != SIZE_MAX) {                                               \
+            status[idx] = 1;                                                 \
+            ret = idx;                                                       \
+        }                                                                    \
+        shmem_internal_membar_load();                                        \
+        shmem_transport_syncmem();                                           \
+    } while (0)
 
 #else
 #define SHMEM_WAIT(var, value) do {                                     \
@@ -162,6 +236,56 @@ shmem_internal_fence(shmem_ctx_t ctx)
         shmem_internal_membar_load();                                   \
         shmem_transport_syncmem();                                      \
     } while (0)
+
+#define SHMEM_WAIT_UNTIL_ALL(vars, nelems, cond, value) do {            \
+        if (shmem_internal_thread_level == SHMEM_THREAD_SINGLE) {       \
+            for (int i = 0; i < nelems; i++) {                          \
+                SHMEM_WAIT_UNTIL_BLOCK(&vars[i], cond, value);          \
+            }                                                           \
+        } else {                                                        \
+            for (int i = 0; i < nelems; i++) {                          \
+                SHMEM_WAIT_UNTIL_POLL(&vars[i], cond, value);           \
+            }                                                           \
+        }                                                               \
+        shmem_internal_membar_load();                                   \
+        shmem_transport_syncmem();                                      \
+    } while (0)
+
+#define SHMEM_WAIT_UNTIL_ANY(vars, nelems, status, cond, value, ret) do {    \
+        ret = 0;                                                             \
+        int i = 0;                                                           \
+        size_t idx = 0;                                                      \
+        if (status) {                                                        \
+            for (i = 0; i < nelems; i++) {                                   \
+                if (!status[i]) {                                            \
+                    idx = i;                                                 \
+                    break;                                                   \
+                }                                                            \
+            }                                                                \
+        }                                                                    \
+        COMP(cond, vars[idx], value, ret);                                   \
+        if (i == nelems) {                                                   \
+            ret = SIZE_MAX;                                                  \
+        }                                                                    \
+        while (!ret) {                                                       \
+            SHMEM_WAIT_UNTIL_BLOCK_LIMIT(&vars[idx % nelems], cond, value);  \
+            COMP(cond, vars[idx], value, ret);                               \
+            if (ret) break;                                                  \
+            for (i = idx+1; i < nelems; i++) {                               \
+                if (status && !status[i%nelems]) {                           \
+                    idx = i % nelems;                                        \
+                    break;                                                   \
+                }                                                            \
+            }                                                                \
+        }                                                                    \
+        if (ret != SIZE_MAX) {                                               \
+            status[idx] = 1;                                                 \
+            ret = idx;                                                       \
+        }                                                                    \
+        shmem_internal_membar_load();                                        \
+        shmem_transport_syncmem();                                           \
+    } while (0)
+
 #endif /* HARD_POLLING */
 
 #endif

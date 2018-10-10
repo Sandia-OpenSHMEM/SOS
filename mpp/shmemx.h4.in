@@ -19,11 +19,17 @@ dnl vi: set ft=m4
  */
 
 include(shmem_bind_c.m4)dnl
+include(shmem_bind_c11.m4)dnl
+include(shmem_bind_cxx.m4)dnl
 #ifndef SHMEMX_H
 #define SHMEMX_H
 
 #include <stddef.h>
 #include <shmem.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define HAVE_SHMEMX_WTIME
 
@@ -44,5 +50,68 @@ include(shmemx_c_func.h4)dnl
 
 /* Option to enable bounce buffering on a given context */
 #define SHMEMX_CTX_BOUNCE_BUFFER  (1l<<31)
+
+/* C++ overloaded declarations */
+#ifdef __cplusplus
+} /* extern "C" */
+
+#if __cplusplus >= 201402L
+#define SHMEM_CXX_ATTRIBUTE_DEPRECATED [[deprecated]]
+#else
+#define SHMEM_CXX_ATTRIBUTE_DEPRECATED
+#endif
+
+define(`SHMEM_CXX_WAIT_UNTIL_ALL',
+`static inline void shmemx_wait_until_all($2 *ivars, size_t nelems, int cmp, $2 cmp_value) {
+    shmemx_$1_wait_until_all(ivars, nelems, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_ALL')
+
+define(`SHMEM_CXX_WAIT_UNTIL_ANY',
+`static inline size_t shmemx_wait_until_any($2 *ivars, size_t nelems, int * restrict status, int cmp, $2 cmp_value) {
+    shmemx_$1_wait_until_any(ivars, nelems, status, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_ANY')
+
+define(`SHMEM_CXX_TEST_ALL',
+`static inline int shmemx_test_all($2 *ivars, size_t nelems, int cmp, $2 cmp_value) {
+    return shmemx_$1_test_all(ivars, nelems, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_ALL')
+
+define(`SHMEM_CXX_TEST_ANY',
+`static inline size_t shmemx_test_any($2 *ivars, size_t nelems, int * restrict status, int cmp, $2 cmp_value) {
+    return shmemx_$1_test_any(ivars, nelems, status, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_ANY')
+
+/* C11 Generic Macros */
+#elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
+
+define(`SHMEM_C11_GEN_WAIT_UNTIL_ALL', `        $2*: shmemx_$1_wait_until_all')dnl
+#define shmemx_wait_until_all(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_WAIT_UNTIL_ALL', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_WAIT_UNTIL_ANY', `        $2*: shmemx_$1_wait_until_any')dnl
+#define shmemx_wait_until_any(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_WAIT_UNTIL_ANY', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_TEST_ALL', `        $2*: shmemx_$1_test_all')dnl
+#define shmemx_test_all(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_TEST_ALL', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_TEST_ANY', `        $2*: shmemx_$1_test_any')dnl
+#define shmemx_test_any(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_TEST_ANY', `, \') \
+    )(__VA_ARGS__)
+
+#endif /* C11 */
 
 #endif /* SHMEMX_H */
