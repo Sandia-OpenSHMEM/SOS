@@ -34,6 +34,7 @@ if HAVE_PTHREADS
 check_PROGRAMS += \
 	gettid_register
 endif
+endif SHMEMX_TESTS
 
 TESTS = $(check_PROGRAMS)
 
