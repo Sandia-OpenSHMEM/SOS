@@ -5,7 +5,7 @@ dnl vi: set ft=m4
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2017 Intel Corporation. All rights reserved.
+ * Copyright (c) 2018 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -125,7 +125,6 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
         shmem_internal_swap_nbi(ctx, target, &value, fetch,     \
                                 sizeof(TYPE), pe, ITYPE);       \
     }
-
 
 
 #define SHMEM_DEF_COMPARE_SWAP_NBI(STYPE,TYPE,ITYPE)                    \

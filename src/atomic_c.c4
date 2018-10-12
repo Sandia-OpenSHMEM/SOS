@@ -256,7 +256,6 @@ shmem_swap(long *target, long value, int pe)
 #endif
 
 
-
 #define SHMEM_DEF_CSWAP(STYPE,TYPE,ITYPE)                               \
     TYPE SHMEM_FUNCTION_ATTRIBUTES                                      \
     SHMEM_FUNC_PROTOTYPE(STYPE, cswap, TYPE *target, TYPE cond,         \
