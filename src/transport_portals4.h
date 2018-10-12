@@ -778,6 +778,17 @@ shmem_transport_swap(shmem_transport_ctx_t* ctx, void *target, const void *sourc
 
 static inline
 void
+shmem_transport_swap_nbi(shmem_transport_ctx_t* ctx, void *target,
+                         const void *source, void *dest, size_t len,
+                         int pe, ptl_datatype_t datatype)
+{
+    /* transport_swap already buffers the source argument */
+    shmem_transport_swap(ctx, target, source, dest, len, pe, datatype);
+}
+
+
+static inline
+void
 shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void *source, void *dest,
                       const void *operand, size_t len, int pe,
                       ptl_datatype_t datatype)
@@ -813,6 +824,18 @@ shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
                   PTL_CSWAP,
                   datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
+}
+
+
+static inline
+void
+shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target,
+                          const void *source, void *dest,
+                          const void *operand, size_t len, int pe,
+                          ptl_datatype_t datatype)
+{
+    /* transport_cswap already buffers the source and operand arguments */
+    shmem_transport_cswap(ctx, target, source, dest, operand, len, pe, datatype);
 }
 
 
@@ -1051,6 +1074,18 @@ shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target, const voi
                          op,
                          datatype);
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
+}
+
+
+static inline
+void
+shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target,
+                                 const void *source, void *dest,
+                                 size_t len, int pe, ptl_op_t op,
+                                 ptl_datatype_t datatype)
+{
+    /* transport_fetch_atomic already buffers the source argument */
+    shmem_transport_fetch_atomic(ctx, target, source, dest, len, pe, op, datatype);
 }
 
 
