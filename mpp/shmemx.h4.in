@@ -73,6 +73,12 @@ define(`SHMEM_CXX_WAIT_UNTIL_ANY',
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_ANY')
 
+define(`SHMEM_CXX_WAIT_UNTIL_SOME',
+`static inline size_t shmemx_wait_until_some($2 *ivars, size_t nelems, size_t * restrict indices, int * restrict status, int cmp, $2 cmp_value) {
+    shmemx_$1_wait_until_some(ivars, nelems, indices, status, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_SOME')
+
 define(`SHMEM_CXX_TEST_ALL',
 `static inline int shmemx_test_all($2 *ivars, size_t nelems, int cmp, $2 cmp_value) {
     return shmemx_$1_test_all(ivars, nelems, cmp, cmp_value);
@@ -98,6 +104,12 @@ define(`SHMEM_C11_GEN_WAIT_UNTIL_ANY', `        $2*: shmemx_$1_wait_until_any')d
 #define shmemx_wait_until_any(...) \
     _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_WAIT_UNTIL_ANY', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_WAIT_UNTIL_SOME', `        $2*: shmemx_$1_wait_until_SOME')dnl
+#define shmemx_wait_until_SOME(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_WAIT_UNTIL_SOME', `, \') \
     )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_TEST_ALL', `        $2*: shmemx_$1_test_all')dnl

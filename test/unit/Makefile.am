@@ -99,6 +99,7 @@ check_PROGRAMS = \
 	shmem_test \
 	shmem_wait_until_all \
 	shmem_wait_until_any \
+	shmem_wait_until_some \
 	shmem_test_all \
 	shmem_test_any
 

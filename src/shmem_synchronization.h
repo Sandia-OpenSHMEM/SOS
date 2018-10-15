@@ -216,6 +216,34 @@ shmem_internal_fence(shmem_ctx_t ctx)
         shmem_transport_syncmem();                                           \
     } while (0)
 
+#define SHMEM_WAIT_UNTIL_SOME(vars, nelems, indices, status, cond, value, ret) do {  \
+        ret = 0;                                                                     \
+        size_t i = 0, ncompleted = 0, no_wait_len = 0;                               \
+        while (ncompleted == 0) {                                                    \
+            for (i = 0; i < nelems; i++) {                                           \
+                if (status) {                                                        \
+                    if (!status[i]) {                                                \
+                        SHMEM_WAIT_UNTIL_POLL_LIMIT(&vars[i], cond, value);          \
+                        COMP(cond, vars[i], value, ret);                             \
+                        if (ret) {                                                   \
+                            indices[ncompleted++] = i;                               \
+                            status[i] = 1;                                           \
+                        }                                                            \
+                    } else {                                                         \
+                        no_wait_len++;                                               \
+                    }                                                                \
+                }                                                                    \
+            }                                                                        \
+            if (no_wait_len == nelems) {                                             \
+                ncompleted = 0;                                                      \
+                break;                                                               \
+            }                                                                        \
+        }                                                                            \
+        ret = ncompleted;                                                            \
+        shmem_internal_membar_load();                                                \
+        shmem_transport_syncmem();                                                   \
+    } while (0)
+
 #else
 #define SHMEM_WAIT(var, value) do {                                     \
         if (shmem_internal_thread_level == SHMEM_THREAD_SINGLE) {       \
@@ -284,6 +312,34 @@ shmem_internal_fence(shmem_ctx_t ctx)
         }                                                                    \
         shmem_internal_membar_load();                                        \
         shmem_transport_syncmem();                                           \
+    } while (0)
+
+#define SHMEM_WAIT_UNTIL_SOME(vars, nelems, indices, status, cond, value, ret) do {  \
+        ret = 0;                                                                     \
+        size_t i = 0, ncompleted = 0, no_wait_len = 0;                               \
+        while (ncompleted == 0) {                                                    \
+            for (i = 0; i < nelems; i++) {                                           \
+                if (status) {                                                        \
+                    if (!status[i]) {                                                \
+                        SHMEM_WAIT_UNTIL_BLOCK_LIMIT(&vars[i], cond, value);         \
+                        COMP(cond, vars[i], value, ret);                             \
+                        if (ret) {                                                   \
+                            indices[ncompleted++] = i;                               \
+                            status[i] = 1;                                           \
+                        }                                                            \
+                    } else {                                                         \
+                        no_wait_len++;                                               \
+                    }                                                                \
+                }                                                                    \
+            }                                                                        \
+            if (no_wait_len == nelems) {                                             \
+                ncompleted = 0;                                                      \
+                break;                                                               \
+            }                                                                        \
+        }                                                                            \
+        ret = ncompleted;                                                            \
+        shmem_internal_membar_load();                                                \
+        shmem_transport_syncmem();                                                   \
     } while (0)
 
 #endif /* HARD_POLLING */
