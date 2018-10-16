@@ -54,16 +54,16 @@ int main(void)
       my_data[i] = mype*N + i;
 
   for (int i = 0; i < npes; i++)
-      shmem_put_nbi(&all_data[mype*N], my_data, N, i);
+      shmem_int_put_nbi(&all_data[mype*N], my_data, N, i);
 
   shmem_fence();
 
   for (int i = 0; i < npes; i++)
-      shmem_p(&flags[mype], 1, i);
+      shmem_int_p(&flags[mype], 1, i);
   
   size_t completed_idx;
   for (int i = 0; i < npes; i++) {
-      completed_idx = shmemx_wait_until_any(flags, npes, status, SHMEM_CMP_NE, 0);
+      completed_idx = shmemx_int_wait_until_any(flags, npes, status, SHMEM_CMP_NE, 0);
       for (int j = 0; j < N; j++)
           total_sum += all_data[completed_idx * N + j];
   }

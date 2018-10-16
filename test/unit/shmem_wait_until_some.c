@@ -24,12 +24,12 @@ int main(void)
       my_data[i] = mype*N + i;
 
   for (int i = 0; i < npes; i++)
-      shmem_put_nbi(&all_data[mype*N], my_data, N, i);
+      shmem_int_put_nbi(&all_data[mype*N], my_data, N, i);
 
   shmem_fence();
 
   for (int i = 0; i < npes; i++)
-      shmem_p(&flags[mype], 1, i);
+      shmem_int_p(&flags[mype], 1, i);
   
   size_t ncompleted;
   while ((ncompleted = shmemx_int_wait_until_some(flags, npes, indices,

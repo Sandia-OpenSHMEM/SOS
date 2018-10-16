@@ -44,12 +44,12 @@ int main(void)
   int *processed = calloc(npes, sizeof(int));
  
   for (int i = 0; i < npes; i++)
-      shmem_p(&flags[mype], 1, i);
+      shmem_int_p(&flags[mype], 1, i);
  
   int ncompleted = 0, completed_idx;
  
   while (ncompleted < npes) {
-      completed_idx = shmemx_test_any(flags, npes, status, SHMEM_CMP_EQ, 1);
+      completed_idx = shmemx_int_test_any(flags, npes, status, SHMEM_CMP_EQ, 1);
       if (completed_idx != SIZE_MAX && !processed[completed_idx]) {
           ncompleted++;
           processed[completed_idx] = 1;

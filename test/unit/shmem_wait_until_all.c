@@ -42,9 +42,9 @@ int main(void)
     int *flags = shmem_calloc(npes, sizeof(int));
 
     for (int i = 0; i < npes; i++)
-        shmem_p(&flags[mype], 1, i);
+        shmem_int_p(&flags[mype], 1, i);
     
-    shmemx_wait_until_all(flags, npes, SHMEM_CMP_EQ, 1);
+    shmemx_int_wait_until_all(flags, npes, SHMEM_CMP_EQ, 1);
 
     shmem_free(flags);
     shmem_finalize();
