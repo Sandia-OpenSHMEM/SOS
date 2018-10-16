@@ -91,6 +91,12 @@ define(`SHMEM_CXX_TEST_ANY',
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_ANY')
 
+define(`SHMEM_CXX_TEST_SOME',
+`static inline size_t shmemx_test_some($2 *ivars, size_t nelems, size_t * restrict indices, int * restrict status, int cmp, $2 cmp_value) {
+    return shmemx_$1_test_some(ivars, nelems, indices, status, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_SOME')
+
 /* C11 Generic Macros */
 #elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
 
@@ -122,6 +128,12 @@ define(`SHMEM_C11_GEN_TEST_ANY', `        $2*: shmemx_$1_test_any')dnl
 #define shmemx_test_any(...) \
     _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
 SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_TEST_ANY', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_TEST_SOME', `        $2*: shmemx_$1_test_some')dnl
+#define shmemx_test_some(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_TEST_SOME', `, \') \
     )(__VA_ARGS__)
 
 #endif /* C11 */
