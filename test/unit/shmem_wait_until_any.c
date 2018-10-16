@@ -32,7 +32,6 @@
 #include <shmem.h>
 #include <shmemx.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 #define N 100
 
@@ -66,6 +65,12 @@ int main(void)
       completed_idx = shmemx_int_wait_until_any(flags, npes, status, SHMEM_CMP_NE, 0);
       for (int j = 0; j < N; j++)
           total_sum += all_data[completed_idx * N + j];
+  }
+
+    /* check result */
+  int M = N * npes - 1;
+  if (total_sum != M * (M + 1) / 2) {
+      shmem_global_exit(1);
   }
 
   shmem_finalize();

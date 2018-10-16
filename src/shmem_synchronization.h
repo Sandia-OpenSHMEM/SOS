@@ -142,8 +142,7 @@ shmem_internal_fence(shmem_ctx_t ctx)
         shmem_transport_syncmem();                                      \
     } while (0) 
 
-#else /* !defined(ENABLE_HARD_POLLING) */
-
+#else
 #define SHMEM_WAIT(var, value) do {                                     \
         if (shmem_internal_thread_level == SHMEM_THREAD_SINGLE) {       \
             SHMEM_WAIT_BLOCK(var, value);                               \
@@ -163,7 +162,6 @@ shmem_internal_fence(shmem_ctx_t ctx)
         shmem_internal_membar_load();                                   \
         shmem_transport_syncmem();                                      \
     } while (0)
-
 #endif /* HARD_POLLING */
 
 #endif

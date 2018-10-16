@@ -55,12 +55,6 @@ include(shmemx_c_func.h4)dnl
 #ifdef __cplusplus
 } /* extern "C" */
 
-#if __cplusplus >= 201402L
-#define SHMEM_CXX_ATTRIBUTE_DEPRECATED [[deprecated]]
-#else
-#define SHMEM_CXX_ATTRIBUTE_DEPRECATED
-#endif
-
 define(`SHMEM_CXX_WAIT_UNTIL_ALL',
 `static inline void shmemx_wait_until_all($2 *ivars, size_t nelems, int cmp, $2 cmp_value) {
     shmemx_$1_wait_until_all(ivars, nelems, cmp, cmp_value);

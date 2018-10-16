@@ -29,7 +29,6 @@
  *
  */
 
-#include <stdio.h>
 #include <shmem.h>
 #include <shmemx.h>
 
