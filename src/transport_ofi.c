@@ -542,30 +542,6 @@ void init_bounce_buffer(shmem_free_list_item_t *item)
 
 
 static inline
-int bind_enable_cq_ep_resources(shmem_transport_ctx_t *ctx)
-{
-    int ret = 0;
-
-    /* Attach the shared context */
-    ret = fi_ep_bind(ctx->cq_ep, &shmem_transport_ofi_stx_pool[ctx->stx_idx].stx->fid, 0);
-    OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to CQ endpoint failed");
-
-    /* Attach CQ for obtaining completions for buffered puts */
-    ret = fi_ep_bind(ctx->cq_ep, &ctx->cq->fid, FI_SEND);
-    OFI_CHECK_RETURN_STR(ret, "fi_ep_bind CQ to CQ endpoint failed");
-
-    /* Attach the address vector */
-    ret = fi_ep_bind(ctx->cq_ep, &shmem_transport_ofi_avfd->fid, 0);
-    OFI_CHECK_RETURN_STR(ret, "fi_ep_bind AV to CQ endpoint failed");
-
-    ret = fi_enable(ctx->cq_ep);
-    OFI_CHECK_RETURN_STR(ret, "fi_enable on CQ endpoint failed");
-
-    return ret;
-}
-
-
-static inline
 int bind_enable_cntr_ep_resources(shmem_transport_ctx_t *ctx)
 {
     int ret = 0;
@@ -1347,14 +1323,6 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
         shmem_transport_ofi_bounce_buffer_size > 0 &&
         shmem_transport_ofi_max_bounce_buffers > 0)
     {
-        info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
-        ret = fi_endpoint(shmem_transport_ofi_domainfd,
-                          info->p_info, &ctx->cq_ep, NULL);
-        OFI_CHECK_RETURN_MSG(ret, "cq_ep creation failed (%s)\n", fi_strerror(errno));
-
-        ret = bind_enable_cq_ep_resources(ctx);
-        OFI_CHECK_RETURN_MSG(ret, "context bind/enable CQ endpoint failed (%s)\n", fi_strerror(errno));
-
         ctx->bounce_buffers =
             shmem_free_list_init(sizeof(shmem_transport_ofi_bounce_buffer_t) +
                                  shmem_transport_ofi_bounce_buffer_size,
@@ -1362,7 +1330,6 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     }
     else {
         ctx->options &= ~SHMEMX_CTX_BOUNCE_BUFFER;
-        ctx->cq_ep = NULL;
         ctx->bounce_buffers = NULL;
     }
 
@@ -1570,7 +1537,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 
     if(shmem_internal_params.DEBUG) {
         SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
-        if (ctx->cq_ep) SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
+        if (ctx->bounce_buffers) SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
         DEBUG_MSG("id = %d, options = %#0lx, stx_idx = %d\n"
                   RAISE_PE_PREFIX "pending_put_cntr = %9"PRIu64", completed_put_cntr = %9"PRIu64"\n"
                   RAISE_PE_PREFIX "pending_get_cntr = %9"PRIu64", completed_get_cntr = %9"PRIu64"\n"
@@ -1583,7 +1550,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
                   shmem_internal_my_pe,
                   ctx->pending_bb_cntr, ctx->completed_bb_cntr
                  );
-        if (ctx->cq_ep) SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
+        if (ctx->bounce_buffers) SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
     }
 
@@ -1592,10 +1559,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         OFI_CHECK_ERROR_MSG(ret, "Context CNTR endpoint close failed (%s)\n", fi_strerror(errno));
     }
 
-    if (ctx->cq_ep) {
-        ret = fi_close(&ctx->cq_ep->fid);
-        OFI_CHECK_ERROR_MSG(ret, "Context CQ EP close failed (%s)\n", fi_strerror(errno));
-
+    if (ctx->bounce_buffers) {
         shmem_free_list_destroy(ctx->bounce_buffers);
     }
 

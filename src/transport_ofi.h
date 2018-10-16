@@ -14,6 +14,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/uio.h>
 #include <rdma/fabric.h>
 #include <rdma/fi_errno.h>
 #include <rdma/fi_domain.h>
@@ -308,7 +309,7 @@ extern struct fid_ep* shmem_transport_ofi_target_ep;
 
 #define SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx)                                    \
     do {                                                                        \
-        shmem_internal_assert(ctx->cq_ep != NULL);                              \
+        shmem_internal_assert(ctx->bounce_buffers != NULL);                     \
         if (!((ctx)->options & (SHMEM_CTX_PRIVATE | SHMEM_CTX_SERIALIZED)))     \
             shmem_free_list_lock(ctx->bounce_buffers);                          \
     } while (0)
@@ -417,7 +418,7 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
 
     /* Wait for bounce buffered operations to complete */
-    if (ctx->cq_ep) {
+    if (ctx->bounce_buffers) {
         SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
 
         while (ctx->bounce_buffers->nalloc > 0) {
@@ -501,7 +502,7 @@ int try_again(shmem_transport_ctx_t *ctx, const int ret, uint64_t *polled) {
 
     if (ret) {
         if (ret == -FI_EAGAIN) {
-            if (ctx->cq_ep) {
+            if (ctx->bounce_buffers) {
                 SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
                 shmem_transport_ofi_drain_cq(ctx);
                 SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
@@ -623,20 +624,30 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
 
         shmem_transport_put_small(ctx, target, source, len, pe);
 
-    } else if (len <= shmem_transport_ofi_bounce_buffer_size && ctx->cq_ep) {
+    } else if (len <= shmem_transport_ofi_bounce_buffer_size && ctx->bounce_buffers) {
 
         SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+        SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
         shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
         shmem_transport_ofi_bounce_buffer_t *buff =
             create_bounce_buffer(ctx, source, len);
         polled = 0;
 
+        const struct iovec      msg_iov = { .iov_base = buff->data, .iov_len = len };
+        const struct fi_rma_iov rma_iov = { .addr = (uint64_t) addr, .len = len, .key = key };
+        const struct fi_msg_rma msg     = {
+                                            .msg_iov       = &msg_iov,
+                                            .desc          = NULL,
+                                            .iov_count     = 1,
+                                            .addr          = GET_DEST(dst),
+                                            .rma_iov       = &rma_iov,
+                                            .rma_iov_count = 1,
+                                            .context       = buff,
+                                            .data          = 0
+                                          };
         do {
-            ret = fi_write(ctx->cq_ep,
-                           buff->data, len, NULL,
-                           GET_DEST(dst), (uint64_t) addr,
-                           key, buff);
+            ret = fi_writemsg(ctx->cntr_ep, &msg, FI_COMPLETION);
         } while (try_again(ctx, ret, &polled));
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 
@@ -1032,24 +1043,30 @@ void shmem_transport_atomic_nb(shmem_transport_ctx_t* ctx, void *target, const v
 
     } else if (full_len <=
                MIN(shmem_transport_ofi_bounce_buffer_size, max_atomic_size) &&
-               ctx->cq_ep) {
+               ctx->bounce_buffers) {
 
         shmem_transport_ofi_bounce_buffer_t *buff =
             create_bounce_buffer(ctx, source, full_len);
 
         polled = 0;
+        SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
 
+        const struct fi_ioc        msg_iov = { .addr = buff->data, .count = len };
+        const struct fi_rma_ioc    rma_iov = { .addr = (uint64_t) addr, .count = len, .key = key };
+        const struct fi_msg_atomic msg     = {
+                                               .msg_iov       = &msg_iov,
+                                               .desc          = NULL,
+                                               .iov_count     = 1,
+                                               .addr          = GET_DEST(dst),
+                                               .rma_iov       = &rma_iov,
+                                               .rma_iov_count = 1,
+                                               .datatype      = datatype,
+                                               .op            = op,
+                                               .context       = buff,
+                                               .data          = 0
+                                             };
         do {
-            ret = fi_atomic(ctx->cq_ep,
-                            buff->data,
-                            len,
-                            NULL,
-                            GET_DEST(dst),
-                            (uint64_t) addr,
-                            key,
-                            datatype,
-                            op,
-                            buff);
+            ret = fi_atomicmsg(ctx->cntr_ep, &msg, FI_COMPLETION);
         } while (try_again(ctx, ret, &polled));
 
     } else {
