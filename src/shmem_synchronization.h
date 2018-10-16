@@ -142,20 +142,6 @@ shmem_internal_fence(shmem_ctx_t ctx)
         shmem_transport_syncmem();                                      \
     } while (0) 
 
-#define SHMEM_WAIT_UNTIL_THROTTLE(var, cond, value)      \
-    do {                                                 \
-        int cmpret;                                      \
-        int poll_cntr = 100;                             \
-                                                         \
-        COMP(cond, *(var), value, cmpret);               \
-        while (!cmpret && poll_cntr) {                   \
-            shmem_transport_probe();                     \
-            SPINLOCK_BODY();                             \
-            COMP(cond, *(var), value, cmpret);           \
-            poll_cntr--;                                 \
-        }                                                \
-    } while(0)
-
 #else /* !defined(ENABLE_HARD_POLLING) */
 
 #define SHMEM_WAIT(var, value) do {                                     \
@@ -177,23 +163,6 @@ shmem_internal_fence(shmem_ctx_t ctx)
         shmem_internal_membar_load();                                   \
         shmem_transport_syncmem();                                      \
     } while (0)
-
-#define SHMEM_WAIT_UNTIL_THROTTLE(var, cond, value)                     \
-    do {                                                                \
-        uint64_t target_cntr;                                           \
-        int cmpret;                                                     \
-        int poll_cntr = 10;                                             \
-                                                                        \
-        COMP(cond, *(var), value, cmpret);                              \
-        while (!cmpret && poll_cntr) {                                  \
-            target_cntr = shmem_transport_received_cntr_get();          \
-            COMPILER_FENCE();                                           \
-            COMP(cond, *(var), value, cmpret);                          \
-            if (cmpret) break;                                          \
-            shmem_transport_received_cntr_wait(target_cntr + 1);        \
-            COMP(cond, *(var), value, cmpret);                          \
-        }                                                               \
-    } while(0)
 
 #endif /* HARD_POLLING */
 
