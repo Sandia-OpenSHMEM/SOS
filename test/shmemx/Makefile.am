@@ -17,7 +17,9 @@ check_PROGRAMS = \
 	shmemx_wait_until_some \
 	shmemx_test_all \
 	shmemx_test_any \
-	shmemx_test_some
+	shmemx_test_some \
+	c11_test_shmemx_wait_until \
+	c11_test_shmemx_test
 
 if ENABLE_PROFILING
 check_PROGRAMS += \
