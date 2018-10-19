@@ -806,7 +806,7 @@ void shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void 
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
 
     do {
-        ret = fi_compare_atomic(ctx->cntr_ep,
+        ret = fi_compare_atomic(ctx->ep,
                                 source,
                                 1,
                                 NULL,
@@ -861,7 +861,7 @@ void shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target, const
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
 
     do {
-        ret = fi_compare_atomicmsg(ctx->cntr_ep,
+        ret = fi_compare_atomicmsg(ctx->ep,
                                    &msg,
                                    &comparev,
                                    NULL,
@@ -883,7 +883,7 @@ void shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void 
     uint64_t dst = (uint64_t) pe;
     uint64_t polled = 0;
     uint64_t key;
- cntr_cntr_   uint8_t *addr;
+    uint8_t *addr;
 
     shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
@@ -1124,7 +1124,7 @@ void shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target,
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
 
     do {
-        ret = fi_fetch_atomicmsg(ctx->cntr_ep,
+        ret = fi_fetch_atomicmsg(ctx->ep,
                                  &msg,
                                  &resultv,
                                  NULL,
