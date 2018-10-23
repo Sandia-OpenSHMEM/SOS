@@ -13,7 +13,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.4.1], [https://github.com/Sandia-OpenSHMEM/SOS/issues], [sandia-openshmem], [https://github.com/Sandia-OpenSHMEM/SOS])
+AC_INIT([Sandia OpenSHMEM], [1.4.2], [https://github.com/Sandia-OpenSHMEM/SOS/issues], [sandia-openshmem], [https://github.com/Sandia-OpenSHMEM/SOS])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -126,12 +126,12 @@ AM_CONDITIONAL([HAVE_OPENMP], [test "$enable_threads" != "no" -a "$enable_openmp
 
 AC_ARG_ENABLE([pthread-mutexes],
     [AC_HELP_STRING([--enable-pthread-mutexes],
-                    [Use pthread mutexes instead of spinlocks (used in conjunction with --enable-threads) (default:disabled)])])
+                    [Use pthread mutexes instead of internal queueing locks (default:disabled)])])
 AS_IF([test "$enable_pthread_mutexes" = "yes"], [AC_DEFINE([ENABLE_PTHREAD_MUTEX], [1], [Enable pthread mutexes])])
 
 AC_ARG_ENABLE([thread-completion],
     [AC_HELP_STRING([--enable-thread-completion],
-        [Support SHMEM_THREAD_MULTIPLE using FI_THREAD_COMPLETION thread safety model instead of FI_THREAD_SAFE (default: disabled)])])
+        [Support SHMEM_THREAD_MULTIPLE in OFI transport using FI_THREAD_COMPLETION thread safety model instead of FI_THREAD_SAFE (default: disabled)])])
 
 AC_ARG_ENABLE([remote-virtual-addressing],
     [AC_HELP_STRING([--enable-remote-virtual-addressing],
@@ -148,7 +148,7 @@ AS_IF([test "$enable_aslr_check" = "no"],
 
 AC_ARG_ENABLE([lengthy-tests],
     [AC_HELP_STRING([--enable-lengthy-tests],
-                    [Enable long running tests in the test suite (default: disabled)])])
+                    [Execute long running tests as part of "make check" (default: disabled)])])
 AM_CONDITIONAL([ENABLE_LENGTHY_TESTS], [test "$enable_lengthy_tests" = "yes"])
 
 AC_ARG_ENABLE([fortran],
@@ -392,15 +392,28 @@ AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
       ])
 
 AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
-			[build and run shmem-pmi support])])
-AS_IF([test "$enable_pmi_simple" = "yes"],
+              [Use MPICH simple PMI-1 library for process management])])
+AC_ARG_ENABLE([pmi-mpi], [AC_HELP_STRING([--enable-pmi-mpi],
+              [Use MPI for process management])])
+
+AS_IF([test "$enable_pmi_simple" = "yes" -o "$enable_pmi_mpi" = "yes"],
      [TEST_RUNNER='$(abs_top_builddir)/src/oshrun -n $(NPROCS)'],
      [OPAL_CHECK_PMI(pmi_type)])
+
 AS_IF([test "$opal_external_pmix_version_found" = 1],
      [pmi_CPPFLAGS="$opal_external_pmix_CPPFLAGS"
       pmi_LDFLAGS="$opal_external_pmix_LDFLAGS"
       pmi_LIBS="$opal_external_pmix_LIBS"])
+
+AS_IF([test "$enable_pmi_simple" = "yes" -a "$enable_pmi_mpi" = "yes"],
+      [AC_MSG_ERROR([Cannot enable both simple PMI and MPI-PMI])])
+
+AS_IF([test "$enable_pmi_mpi" = "yes"],
+      [AC_DEFINE([ENABLE_PMI_MPI], [1], [Enable argument checking])])
+
+AM_CONDITIONAL([USE_PMI_MPI], [test "$enable_pmi_mpi" = "yes"])
 AM_CONDITIONAL([USE_PMI_SIMPLE], [test "$enable_pmi_simple" = "yes"])
+AM_CONDITIONAL([USE_PMI1], [test "$pmi_type" = "pmi1"])
 AM_CONDITIONAL([USE_PMI2], [test "$pmi_type" = "pmi2"])
 AM_CONDITIONAL([USE_PMIX], [test "$opal_external_pmix_version_found" = 1])
 
@@ -769,11 +782,11 @@ fi
 
 AC_OUTPUT
 
-AS_IF([test "$enable_pmi_simple" != "yes" -a "$opal_external_pmix_version_found" != 1 -a "$ompi_check_pmi_happy" != "yes" -a -z "$pmi_type"],
-         [AC_MSG_WARN([No PMI found, if build fails consider --enable-pmi-simple or --with-pmi])])
+AS_IF([test "$enable_pmi_mpi" != "yes" -a "$enable_pmi_simple" != "yes" -a "$opal_external_pmix_version_found" != 1 -a "$ompi_check_pmi_happy" != "yes" -a -z "$pmi_type"],
+         [AC_MSG_ERROR([No PMI client interface was configured, consider --enable-pmi-simple or --with-pmi])])
 
-AS_IF([test "$transport_portals4" != "yes" -a "$transport_xpmem" != "yes" -a "$transport_cma" != "yes" -a "$transport_ofi" != "yes"],
-      [AC_MSG_WARN([No transport found])])
+AS_IF([test "$transport_portals4" != "yes" -a "$transport_ofi" != "yes"],
+      [AC_MSG_WARN([No transport found, resulting library will be unable to exchange messages])])
 
 AS_IF([test "$shmem_cv_c11_works" != "yes"],
       [AC_MSG_WARN([C compiler does not support _Generic, unabled to verify and test C11 bindings])])
@@ -813,9 +826,11 @@ echo ""
 echo "Transports:"
 echo "  Portals 4:      $transport_portals4"
 echo "  OFI:            $transport_ofi"
+echo ""
+echo "On Node Communication:"
 echo "  XPMEM:          $transport_xpmem"
 echo "  CMA:            $transport_cma"
-echo "  memcpy:         $transport_memcpy"
+echo "  memcpy (self):  $transport_memcpy"
 echo ""
 echo "Global Options:"
 if test "$enable_remote_virtual_addressing" = "yes"; then

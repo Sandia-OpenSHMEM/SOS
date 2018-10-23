@@ -178,7 +178,7 @@
 #define ZERO64B 0LL
 
 uint64_t TotalMemOpt = 8192;
-int NumUpdatesOpt = 0;
+uint64_t NumUpdatesOpt = 0;
 double SHMEMGUPs;
 double SHMEMRandomAccess_ErrorsFraction;
 double SHMEMRandomAccess_time;

@@ -40,6 +40,7 @@ static int rank = -1;
 static int size = 0;
 static char *kvs_name, *kvs_key, *kvs_value;
 static int max_name_len, max_key_len, max_val_len;
+static int initialized_pmi = 0;
 
 static int
 encode(const void *inval, int invallen, char *outval, int outvallen)
@@ -102,6 +103,9 @@ shmem_runtime_init(void)
         if (PMI2_SUCCESS != PMI2_Init(&spawned, &size, &rank, &appnum)) {
             return 2;
         }
+        else {
+            initialized_pmi = 1;
+        }
     }
 
     max_name_len = PMI2_MAX_VALLEN;
@@ -127,7 +131,10 @@ shmem_runtime_init(void)
 int
 shmem_runtime_fini(void)
 {
-    PMI2_Finalize();
+    if (initialized_pmi == 1) {
+        PMI2_Finalize();
+        initialized_pmi = 0;
+    }
     return 0;
 }
 

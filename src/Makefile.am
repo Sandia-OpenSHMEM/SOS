@@ -118,17 +118,27 @@ if USE_PMI_SIMPLE
 AM_CPPFLAGS += -I$(top_srcdir)/pmi-simple
 libsma_la_SOURCES += \
 	runtime-pmi.c
-endif
-
+else
+if USE_PMI_MPI
+libsma_la_SOURCES += \
+	runtime-mpi.c
+else
+if USE_PMI1
+libsma_la_SOURCES += \
+	runtime-pmi.c
+else
 if USE_PMI2
 libsma_la_SOURCES += \
 	runtime-pmi2.c
-endif
-
+else
 if USE_PMIX
 libsma_la_SOURCES += \
 	runtime-pmix.c
-endif
+endif USE_PMIX
+endif !USE_PMI2
+endif !USE_PMI1
+endif !USE_PMI_MPI
+endif !USE_PMI_SIMPLE
 
 pkgconfig_DATA = sandia-openshmem.pc
 

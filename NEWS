@@ -2,6 +2,36 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.4.2
+------
+- This full release includes the changes listed below for v1.4.2rc1 and the
+  following additional change.
+- Improved performance when using OFI thread completion model, by releasing the
+  context lock when blocked in quiet/fence operations.
+
+v1.4.2rc1
+---------
+- Added support for using MPI as the process manager, via --enable-pmi-mpi.
+- Added option to flush stdout/stderr during barrier operations, enabled via
+  SHMEM_BARRIERS_FLUSH environment variable.
+- Added PE affinity information to debugging output, enabled via SHMEM_DEBUG
+  environment variable.
+- Fixed issue with SHMEM_OFI_PROVIDER environment variable being unrecognized.
+- Added experimental performance counters API extension (see shmemx.h)
+- Added --enable-ofi-mr={basic,scalable,rma-event} and removed --with-ofi-mr,
+  --disable-mr-scalable, and --enable-mr-rma-event.
+- Renamed --with-total-data-ordering configuration flag to
+  --enable-total-data-ordering.
+- Added multithreaded lock unit test to demonstrate the use of hierarchical
+  locking to enable multithreaded usage of OpenSHMEM locks.
+- Updated perf. suite tests to improve bandwidth reporting and improve coverage
+  over atomic operations.
+- Updated manual progress to automatically enable completion polling.
+- Updated target counter binding in OFI to comply with libfabric requirements.
+- Fixed invalid locking in context destroy debug message when bounce buffering
+  is not enabled on the context.
+- Simplified the OFI random STX allocator.
+
 v1.4.1
 ------
 - This full release includes the changes listed below for v1.4.1rc1 and the
