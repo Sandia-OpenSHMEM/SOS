@@ -107,8 +107,8 @@ SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_PUT_NBI_SIZE')
         SHMEM_ERR_CHECK_NULL(source, len);                              \
                                                                         \
         for ( ; len > 0 ; --len) {                                      \
-            shmem_internal_put_small(SHMEM_CTX_DEFAULT, target, source, \
-            SIZE, *pe);                                                 \
+            shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, target,        \
+                                      source, SIZE, *pe);               \
             target += (*tst * SIZE);                                    \
             source += (*sst * SIZE);                                    \
         }                                                               \

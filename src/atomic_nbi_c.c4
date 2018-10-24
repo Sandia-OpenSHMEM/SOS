@@ -1,0 +1,259 @@
+dnl vi: set ft=m4
+/* -*- C -*-
+ *
+ * Copyright 2011 Sandia Corporation. Under the terms of Contract
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
+ * retains certain rights in this software.
+ *
+ * Copyright (c) 2018 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
+ * This file is part of the Sandia OpenSHMEM software package. For license
+ * information, see the LICENSE file in the top level directory of the
+ * distribution.
+ *
+ */
+
+/*
+ * This is a generated file, do not edit directly.
+ */
+
+include(shmem_bind_c.m4)dnl
+#include "config.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define SHMEM_INTERNAL_INCLUDE
+#include "shmem.h"
+#include "shmem_internal.h"
+#include "shmem_comm.h"
+
+#ifdef ENABLE_PROFILING
+#include "pshmem.h"
+
+define(`SHMEM_PROF_DEF_ATOMIC_SWAP_NBI',
+`#pragma weak shmemx_$1_atomic_swap_nbi = pshmemx_$1_atomic_swap_nbi
+#define shmemx_$1_atomic_swap_nbi pshmemx_$1_atomic_swap_nbi')dnl
+SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_ATOMIC_SWAP_NBI')
+
+define(`SHMEM_PROF_DEF_CTX_ATOMIC_SWAP_NBI',
+`#pragma weak shmemx_ctx_$1_atomic_swap_nbi = pshmemx_ctx_$1_atomic_swap_nbi
+#define shmemx_ctx_$1_atomic_swap_nbi pshmemx_ctx_$1_atomic_swap_nbi')dnl
+SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_CTX_ATOMIC_SWAP_NBI')
+
+define(`SHMEM_PROF_DEF_ATOMIC_COMPARE_SWAP_NBI',
+`#pragma weak shmemx_$1_atomic_compare_swap_nbi = pshmemx_$1_atomic_compare_swap_nbi
+#define shmemx_$1_atomic_compare_swap_nbi pshmemx_$1_atomic_compare_swap_nbi')dnl
+SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_ATOMIC_COMPARE_SWAP_NBI')
+
+define(`SHMEM_PROF_DEF_CTX_ATOMIC_COMPARE_SWAP_NBI',
+`#pragma weak shmemx_ctx_$1_atomic_compare_swap_nbi = pshmemx_ctx_$1_atomic_compare_swap_nbi
+#define shmemx_ctx_$1_atomic_compare_swap_nbi pshmemx_ctx_$1_atomic_compare_swap_nbi')dnl
+SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_CTX_ATOMIC_COMPARE_SWAP_NBI')
+
+define(`SHMEM_PROF_DEF_ATOMIC_FETCH_INC_NBI',
+`#pragma weak shmemx_$1_atomic_fetch_inc_nbi = pshmemx_$1_atomic_fetch_inc_nbi
+#define shmemx_$1_atomic_fetch_inc_nbi pshmemx_$1_atomic_fetch_inc_nbi')dnl
+SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_ATOMIC_FETCH_INC_NBI')
+
+define(`SHMEM_PROF_DEF_CTX_ATOMIC_FETCH_INC_NBI',
+`#pragma weak shmemx_ctx_$1_atomic_fetch_inc_nbi = pshmemx_ctx_$1_atomic_fetch_inc_nbi
+#define shmemx_ctx_$1_atomic_fetch_inc_nbi pshmemx_ctx_$1_atomic_fetch_inc_nbi')dnl
+SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_CTX_ATOMIC_FETCH_INC_NBI')
+
+define(`SHMEM_PROF_DEF_ATOMIC_FETCH_ADD_NBI',
+`#pragma weak shmemx_$1_atomic_fetch_add_nbi = pshmemx_$1_atomic_fetch_add_nbi
+#define shmemx_$1_atomic_fetch_add_nbi pshmemx_$1_atomic_fetch_add_nbi')dnl
+SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_ATOMIC_FETCH_ADD_NBI')
+
+define(`SHMEM_PROF_DEF_CTX_ATOMIC_FETCH_ADD_NBI',
+`#pragma weak shmemx_ctx_$1_atomic_fetch_add_nbi = pshmemx_ctx_$1_atomic_fetch_add_nbi
+#define shmemx_ctx_$1_atomic_fetch_add_nbi pshmemx_ctx_$1_atomic_fetch_add_nbi')dnl
+SHMEM_DEFINE_FOR_AMO(`SHMEM_PROF_DEF_CTX_ATOMIC_FETCH_ADD_NBI')
+
+define(`SHMEM_PROF_DEF_ATOMIC_FETCH_NBI',
+`#pragma weak shmemx_$1_atomic_fetch_nbi = pshmemx_$1_atomic_fetch_nbi
+#define shmemx_$1_atomic_fetch_nbi pshmemx_$1_atomic_fetch_nbi')dnl
+SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_ATOMIC_FETCH_NBI')
+
+define(`SHMEM_PROF_DEF_CTX_ATOMIC_FETCH_NBI',
+`#pragma weak shmemx_ctx_$1_atomic_fetch_nbi = pshmemx_ctx_$1_atomic_fetch_nbi
+#define shmemx_ctx_$1_atomic_fetch_nbi pshmemx_ctx_$1_atomic_fetch_nbi')dnl
+SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_CTX_ATOMIC_FETCH_NBI')
+
+define(`SHMEM_PROF_DEF_FETCH_AND_NBI',
+`#pragma weak shmemx_$1_atomic_fetch_and_nbi = pshmemx_$1_atomic_fetch_and_nbi
+#define shmemx_$1_atomic_fetch_and_nbi pshmemx_$1_atomic_fetch_and_nbi')dnl
+SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_FETCH_AND_NBI')
+
+define(`SHMEM_PROF_DEF_CTX_FETCH_AND_NBI',
+`#pragma weak shmemx_ctx_$1_atomic_fetch_and_nbi = pshmemx_ctx_$1_atomic_fetch_and_nbi
+#define shmemx_ctx_$1_atomic_fetch_and_nbi pshmemx_ctx_$1_atomic_fetch_and_nbi')dnl
+SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_AND_NBI')
+
+define(`SHMEM_PROF_DEF_FETCH_OR_NBI',
+`#pragma weak shmemx_$1_atomic_fetch_or_nbi = pshmemx_$1_atomic_fetch_or_nbi
+#define shmemx_$1_atomic_fetch_or_nbi pshmemx_$1_atomic_fetch_or_nbi')dnl
+SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_FETCH_OR_NBI')
+
+define(`SHMEM_PROF_DEF_CTX_FETCH_OR_NBI',
+`#pragma weak shmemx_ctx_$1_atomic_fetch_or_nbi = pshmemx_ctx_$1_atomic_fetch_or_nbi
+#define shmemx_ctx_$1_atomic_fetch_or_nbi pshmemx_ctx_$1_atomic_fetch_or_nbi')dnl
+SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_OR_NBI')
+
+define(`SHMEM_PROF_DEF_FETCH_XOR_NBI',
+`#pragma weak shmemx_$1_atomic_fetch_xor_nbi = pshmemx_$1_atomic_fetch_xor_nbi
+#define shmemx_$1_atomic_fetch_xor_nbi pshmemx_$1_atomic_fetch_xor_nbi')dnl
+SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_FETCH_XOR_NBI')
+
+define(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI',
+`#pragma weak shmemx_ctx_$1_atomic_fetch_xor_nbi = pshmemx_ctx_$1_atomic_fetch_xor_nbi
+#define shmemx_ctx_$1_atomic_fetch_xor_nbi pshmemx_ctx_$1_atomic_fetch_xor_nbi')dnl
+SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
+
+#endif /* ENABLE_PROFILING */
+
+
+#define SHMEM_DEF_SWAP_NBI(STYPE,TYPE,ITYPE)                    \
+    void SHMEM_FUNCTION_ATTRIBUTES                              \
+    SHMEMX_FUNC_PROTOTYPE(STYPE, swap_nbi, TYPE *fetch,         \
+                         TYPE *target, TYPE value, int pe)      \
+        SHMEM_ERR_CHECK_INITIALIZED();                          \
+        SHMEM_ERR_CHECK_PE(pe);                                 \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));        \
+        shmem_internal_swap_nbi(ctx, target, &value, fetch,     \
+                                sizeof(TYPE), pe, ITYPE);       \
+    }
+
+
+#define SHMEM_DEF_COMPARE_SWAP_NBI(STYPE,TYPE,ITYPE)                    \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    SHMEMX_FUNC_PROTOTYPE(STYPE, compare_swap_nbi, TYPE *fetch,         \
+                         TYPE *target, TYPE cond, TYPE value, int pe)   \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
+        shmem_internal_cswap_nbi(ctx, target, &value, fetch, &cond,     \
+                             sizeof(TYPE), pe, ITYPE);                  \
+    }
+
+
+#define SHMEM_DEF_FETCH_INC_NBI(STYPE,TYPE,ITYPE)                       \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    SHMEMX_FUNC_PROTOTYPE(STYPE, fetch_inc_nbi, TYPE *fetch,            \
+                         TYPE *target, int pe)                          \
+        TYPE tmp = 1;                                                   \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
+        shmem_internal_fetch_atomic_nbi(ctx, target, &tmp, fetch,       \
+                                    sizeof(TYPE), pe, SHM_INTERNAL_SUM, \
+                                    ITYPE);                             \
+    }
+
+
+#define SHMEM_DEF_FETCH_ADD_NBI(STYPE,TYPE,ITYPE)                       \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    SHMEMX_FUNC_PROTOTYPE(STYPE, fetch_add_nbi, TYPE *fetch,            \
+                          TYPE *target, TYPE value, int pe)             \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
+        shmem_internal_fetch_atomic_nbi(ctx, target, &value, fetch,     \
+                                        sizeof(TYPE), pe,               \
+                                        SHM_INTERNAL_SUM, ITYPE);       \
+    }
+
+
+#define SHMEM_DEF_FETCH_NBI(STYPE,TYPE,ITYPE)                           \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    SHMEMX_FUNC_PROTOTYPE(STYPE, fetch_nbi, TYPE *fetch,                \
+                         const TYPE *source, int pe)                    \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof(TYPE));                \
+        shmem_internal_atomic_fetch(ctx, fetch, (void *) source,        \
+                                    sizeof(TYPE), pe, ITYPE);           \
+    }
+
+
+#define SHMEM_DEF_FETCH_XOR_NBI(STYPE,TYPE,ITYPE)                       \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    SHMEMX_FUNC_PROTOTYPE(STYPE, fetch_xor_nbi, TYPE *fetch,            \
+                         TYPE *target, TYPE value, int pe)              \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
+        shmem_internal_fetch_atomic_nbi(ctx, target, &value, fetch,     \
+                                    sizeof(TYPE), pe, SHM_INTERNAL_BXOR,\
+                                    ITYPE);                             \
+    }
+
+
+#define SHMEM_DEF_FETCH_AND_NBI(STYPE,TYPE,ITYPE)                       \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    SHMEMX_FUNC_PROTOTYPE(STYPE, fetch_and_nbi, TYPE *fetch,            \
+                         TYPE *target, TYPE value, int pe)              \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
+        shmem_internal_fetch_atomic_nbi(ctx, target, &value, fetch,     \
+                                    sizeof(TYPE), pe, SHM_INTERNAL_BAND,\
+                                    ITYPE);                             \
+    }
+
+
+#define SHMEM_DEF_FETCH_OR_NBI(STYPE,TYPE,ITYPE)                        \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    SHMEMX_FUNC_PROTOTYPE(STYPE, fetch_or_nbi, TYPE *fetch, TYPE *target,\
+                         TYPE value, int pe)                            \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
+        shmem_internal_fetch_atomic_nbi(ctx, target, &value, fetch,     \
+                                    sizeof(TYPE), pe, SHM_INTERNAL_BOR, \
+                                    ITYPE);                             \
+    }
+
+/* Function prototype for v1.4 routines with the default context: */
+#define SHMEM_FUNC_PROTOTYPE(TYPE, OP, ...)         \
+  shmem_##TYPE##_atomic_##OP(__VA_ARGS__) {         \
+  const shmem_ctx_t ctx = SHMEM_CTX_DEFAULT;
+
+/* Function prototype for routines with the default context: */
+#define SHMEMX_FUNC_PROTOTYPE(TYPE, OP, ...)        \
+  shmemx_##TYPE##_atomic_##OP(__VA_ARGS__) {        \
+  const shmem_ctx_t ctx = SHMEM_CTX_DEFAULT;
+
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_FETCH_NBI)
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_COMPARE_SWAP_NBI)
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_SWAP_NBI)
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_FETCH_INC_NBI)
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_FETCH_ADD_NBI)
+SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_FETCH_AND_NBI)
+SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_FETCH_OR_NBI)
+SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_FETCH_XOR_NBI)
+
+#undef SHMEM_FUNC_PROTOTYPE
+#undef SHMEMX_FUNC_PROTOTYPE
+
+/* Function prototype for v1.4 routines with contexts: */
+#define SHMEM_FUNC_PROTOTYPE(TYPE, OP, ...)                           \
+  shmem_ctx_##TYPE##_atomic_##OP(shmem_ctx_t ctx, __VA_ARGS__) {      \
+
+/* Function prototype for v1.4 routines with contexts: */
+#define SHMEMX_FUNC_PROTOTYPE(TYPE, OP, ...)                          \
+  shmemx_ctx_##TYPE##_atomic_##OP(shmem_ctx_t ctx, __VA_ARGS__) {     \
+
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_FETCH_NBI)
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_COMPARE_SWAP_NBI)
+SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_SWAP_NBI)
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_FETCH_INC_NBI)
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_FETCH_ADD_NBI)
+SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_FETCH_AND_NBI)
+SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_FETCH_OR_NBI)
+SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_FETCH_XOR_NBI)
+
+#undef SHMEM_FUNC_PROTOTYPE
+#undef SHMEMX_FUNC_PROTOTYPE

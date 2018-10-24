@@ -312,6 +312,8 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
         if (ret == 0) {
             char *cores_str = malloc(sizeof(char) * CPU_SETSIZE * 5 + 2);
+            if (NULL == cores_str) goto cleanup;
+
             strcpy(cores_str," ");
             size_t off = 1; /* start after " " */
             for (int i = 0; i < CPU_SETSIZE; i++) {
