@@ -297,8 +297,8 @@ FC_SHMEM_INT4_ADD(int32_t *target,
     SHMEM_ERR_CHECK_PE(*pe);
     SHMEM_ERR_CHECK_SYMMETRIC(target, 4);
 
-    shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, target, value, 4,
-                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32);
+    shmem_internal_atomic(SHMEM_CTX_DEFAULT, target, value, 4,
+                          *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32);
 }
 
 
@@ -316,8 +316,8 @@ FC_SHMEM_INT8_ADD(int64_t *target,
     SHMEM_ERR_CHECK_PE(*pe);
     SHMEM_ERR_CHECK_SYMMETRIC(target, 8);
 
-    shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, target, value, 8,
-                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64);
+    shmem_internal_atomic(SHMEM_CTX_DEFAULT, target, value, 8,
+                          *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64);
 }
 
 
@@ -335,8 +335,8 @@ FC_SHMEM_INT4_INC(int32_t *target,
     SHMEM_ERR_CHECK_PE(*pe);
     SHMEM_ERR_CHECK_SYMMETRIC(target, 4);
 
-    shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, target, &tmp, 4,
-                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32);
+    shmem_internal_atomic(SHMEM_CTX_DEFAULT, target, &tmp, 4,
+                          *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32);
 }
 
 
@@ -354,8 +354,8 @@ FC_SHMEM_INT8_INC(int64_t *target,
     SHMEM_ERR_CHECK_PE(*pe);
     SHMEM_ERR_CHECK_SYMMETRIC(target, 8);
 
-    shmem_internal_atomic_small(SHMEM_CTX_DEFAULT, target, &tmp, 8,
-                                 *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64);
+    shmem_internal_atomic(SHMEM_CTX_DEFAULT, target, &tmp, 8,
+                          *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64);
 }
 
 

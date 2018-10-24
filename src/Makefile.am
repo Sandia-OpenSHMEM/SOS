@@ -15,6 +15,7 @@ AM_CPPFLAGS = -I$(top_builddir)/mpp
 
 GEN_BINDINGS = \
 	atomic_c.c \
+	atomic_nbi_c.c \
 	collectives_c.c \
 	data_c.c \
 	synchronization_c.c
@@ -160,6 +161,7 @@ endif
 EXTRA_DIST = shmem_compiler_script.in \
              shmem_launcher_script.in \
              atomic_c.c4              \
+             atomic_nbi_c.c4          \
              collectives_c.c4         \
              collectives_f.c4         \
              data_c.c4                \
