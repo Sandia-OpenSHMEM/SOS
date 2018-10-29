@@ -32,7 +32,6 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <shmem.h>
 
@@ -95,7 +94,7 @@ enum op { FETCH = 0, ATOMIC_FETCH, CTX_ATOMIC_FETCH, ATOMIC_FETCH_NBI,
              "TEST_SHMEM_FETCH(%s, %s)\n", mype, #OP, #TYPE);   \
       rc = EXIT_FAILURE;                                        \
     }                                                           \
-  } while (false)
+  } while (0)
 
 #else
 #define TEST_SHMEM_FETCH(OP, TYPE)

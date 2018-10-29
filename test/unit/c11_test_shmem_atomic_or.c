@@ -33,7 +33,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <shmem.h>
 
@@ -121,7 +120,7 @@ enum op { OR = 0, CTX_OR, FETCH_OR, CTX_FETCH_OR, FETCH_OR_NBI,
               mype, #OP, #TYPE);                                        \
       rc = EXIT_FAILURE;                                                \
     }                                                                   \
-  } while (false)
+  } while (0)
 
 #else
 #define TEST_SHMEM_OR(OP, TYPE)

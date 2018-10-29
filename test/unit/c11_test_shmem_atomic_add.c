@@ -32,7 +32,6 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <shmem.h>
 
@@ -132,7 +131,7 @@ enum op { ADD = 0, ATOMIC_ADD, CTX_ATOMIC_ADD, FADD, ATOMIC_FETCH_ADD,
              mype, #OP, #TYPE);                                         \
       rc = EXIT_FAILURE;                                                \
     }                                                                   \
-  } while (false)
+  } while (0)
 
 #else
 #define TEST_SHMEM_ADD(OP, TYPE)

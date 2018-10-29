@@ -171,36 +171,42 @@ SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_FETCH_XOR_NBI')
 define(`SHMEM_C11_GEN_WAIT_UNTIL_ALL', `        $2*: shmemx_$1_wait_until_all')dnl
 #define shmemx_wait_until_all(...) \
     _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
 SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_WAIT_UNTIL_ALL', `, \') \
     )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_WAIT_UNTIL_ANY', `        $2*: shmemx_$1_wait_until_any')dnl
 #define shmemx_wait_until_any(...) \
     _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
 SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_WAIT_UNTIL_ANY', `, \') \
     )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_WAIT_UNTIL_SOME', `        $2*: shmemx_$1_wait_until_some')dnl
 #define shmemx_wait_until_some(...) \
     _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
 SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_WAIT_UNTIL_SOME', `, \') \
     )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_TEST_ALL', `        $2*: shmemx_$1_test_all')dnl
 #define shmemx_test_all(...) \
     _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
 SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_TEST_ALL', `, \') \
     )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_TEST_ANY', `        $2*: shmemx_$1_test_any')dnl
 #define shmemx_test_any(...) \
     _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
 SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_TEST_ANY', `, \') \
     )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_TEST_SOME', `        $2*: shmemx_$1_test_some')dnl
 #define shmemx_test_some(...) \
     _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
 SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_TEST_SOME', `, \') \
     )(__VA_ARGS__)
 

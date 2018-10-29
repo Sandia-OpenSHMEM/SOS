@@ -32,7 +32,6 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <shmem.h>
 #include <shmemx.h>
@@ -51,7 +50,7 @@
              "TEST_SHMEM_WAIT_UNTIL_ALL(%s)\n", mype, #TYPE);                \
       rc = EXIT_FAILURE;                                                     \
     }                                                                        \
-  } while (false)
+  } while (0)
 
 #define TEST_SHMEM_WAIT_UNTIL_ANY(TYPE)                                      \
   do {                                                                       \
@@ -66,7 +65,7 @@
              "TEST_SHMEM_WAIT_UNTIL_ANY(%s)\n", mype, #TYPE);                \
       rc = EXIT_FAILURE;                                                     \
     }                                                                        \
-  } while (false)
+  } while (0)
 
 #define TEST_SHMEM_WAIT_UNTIL_SOME(TYPE)                                     \
   do {                                                                       \
@@ -82,7 +81,7 @@
              "TEST_SHMEM_WAIT_UNTIL_SOME(%s)\n", mype, #TYPE);               \
       rc = EXIT_FAILURE;                                                     \
     }                                                                        \
-  } while (false)
+  } while (0)
 
 #else
 #define TEST_SHMEM_WAIT_UNTIL_ALL(TYPE)

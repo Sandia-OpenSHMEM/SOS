@@ -32,7 +32,6 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <shmem.h>
 
@@ -104,7 +103,7 @@ enum op { CSWAP = 0, ATOMIC_COMPARE_SWAP, CTX_ATOMIC_COMPARE_SWAP,
              mype, #OP, #TYPE);                                         \
       rc = EXIT_FAILURE;                                                \
     }                                                                   \
-  } while (false)
+  } while (0)
 
 #else
 #define TEST_SHMEM_CSWAP(OP, TYPE)

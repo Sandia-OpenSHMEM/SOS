@@ -42,7 +42,7 @@ int main(void)
 
     for (int i = 0; i < npes; i++)
         shmem_int_p(&flags[mype], 1, i);
-    
+
     shmemx_int_wait_until_all(flags, npes, SHMEM_CMP_EQ, 1);
 
     shmem_free(flags);

@@ -32,7 +32,6 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <shmem.h>
 
@@ -80,7 +79,7 @@ enum op { PUT = 0, IPUT, PUT_NBI };
                #OP, (int)(USE_CTX), #TYPE);                     \
         rc = EXIT_FAILURE;                                      \
       }                                                         \
-  } while (false)
+  } while (0)
 
 #else
 #define TEST_SHMEM_PUT(OP, USE_CTX, TYPE)
