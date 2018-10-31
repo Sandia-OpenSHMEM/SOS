@@ -546,24 +546,26 @@ int bind_enable_ep_resources(shmem_transport_ctx_t *ctx)
 {
     int ret = 0;
 
-    /* Attach the shared context */
     ret = fi_ep_bind(ctx->ep, &shmem_transport_ofi_stx_pool[ctx->stx_idx].stx->fid, 0);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to endpoint failed");
 
-    /* Attach counter for obtaining put completions */
+    /* Put counter captures completions for non-fetching operations (put,
+     * atomic, etc.) */
     ret = fi_ep_bind(ctx->ep, &ctx->put_cntr->fid, FI_WRITE);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind put CNTR to endpoint failed");
 
-    /* Attach counter for obtaining get completions */
+    /* Get counter captures completions for fetching operations (get,
+     * fetch-atomic, etc.) */
     ret = fi_ep_bind(ctx->ep, &ctx->get_cntr->fid, FI_READ);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind get CNTR to endpoint failed");
 
-    /* Attach CQ for error handling */
+    /* In addition to incrementing the put counter, bounce buffered puts and
+     * non-fetching AMOs generate a CQ event that is used to reclaim the buffer
+     * (pointer is returned in event context) after the operation completes. */
     ret = fi_ep_bind(ctx->ep, &ctx->cq->fid,
                      FI_SELECTIVE_COMPLETION | FI_TRANSMIT);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind CQ to endpoint failed");
 
-    /* Attach the address vector */
     ret = fi_ep_bind(ctx->ep, &shmem_transport_ofi_avfd->fid, 0);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind AV to endpoint failed");
 

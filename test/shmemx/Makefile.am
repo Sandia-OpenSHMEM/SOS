@@ -23,13 +23,18 @@ check_PROGRAMS += \
 	shmem_ct
 endif
 
-if HAVE_PTHREADS
 if SHMEMX_TESTS
+
 check_PROGRAMS += \
-	gettid_register \
-	perf_counter
+	perf_counter \
+	fadd_nbi \
+	atomic_nbi
+
+if HAVE_PTHREADS
+check_PROGRAMS += \
+	gettid_register
 endif
-endif
+endif SHMEMX_TESTS
 
 TESTS = $(check_PROGRAMS)
 
@@ -40,11 +45,11 @@ AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
 
 if EXTERNAL_TESTS
 bin_PROGRAMS = $(check_PROGRAMS)
-AM_CPPFLAGS =
+AM_CPPFLAGS = -I$(top_srcdir)/test/include
 AM_FCFLAGS =
 LDADD =
 else
-AM_CPPFLAGS = -I$(top_builddir)/mpp
+AM_CPPFLAGS = -I$(top_builddir)/mpp -I$(top_srcdir)/test/include
 AM_FCFLAGS = -I$(top_builddir)/mpp
 LDADD = $(top_builddir)/src/libsma.la
 endif
@@ -57,4 +62,5 @@ if SHMEMX_TESTS
 gettid_register_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 gettid_register_CFLAGS = $(PTHREAD_CFLAGS)
 gettid_register_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
+
 endif

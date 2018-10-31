@@ -51,7 +51,7 @@ extern char *shmem_internal_location_array;
 
 static inline
 void
-shmem_internal_put_small(shmem_ctx_t ctx, void *target, const void *source, size_t len, int pe)
+shmem_internal_put_scalar(shmem_ctx_t ctx, void *target, const void *source, size_t len, int pe)
 {
     int node_rank;
 
@@ -68,7 +68,7 @@ shmem_internal_put_small(shmem_ctx_t ctx, void *target, const void *source, size
         RAISE_ERROR_STR("No path to peer");
 #endif
     } else {
-        shmem_transport_put_small((shmem_transport_ctx_t *)ctx, target, source, len, pe);
+        shmem_transport_put_scalar((shmem_transport_ctx_t *)ctx, target, source, len, pe);
     }
 }
 
@@ -208,12 +208,38 @@ shmem_internal_swap(shmem_ctx_t ctx, void *target, void *source, void *dest, siz
 
 static inline
 void
+shmem_internal_swap_nbi(shmem_ctx_t ctx, void *target, void *source,
+                        void *dest, size_t len, int pe,
+                        shm_internal_datatype_t datatype)
+{
+    shmem_internal_assert(len > 0);
+
+    shmem_transport_swap_nbi((shmem_transport_ctx_t *)ctx, target, source,
+                             dest, len, pe, datatype);
+}
+
+
+static inline
+void
 shmem_internal_cswap(shmem_ctx_t ctx, void *target, void *source, void *dest, void *operand, size_t len,
                     int pe, shm_internal_datatype_t datatype)
 {
     shmem_internal_assert(len > 0);
 
     shmem_transport_cswap((shmem_transport_ctx_t *)ctx, target, source, dest, operand, len, pe, datatype);
+}
+
+
+static inline
+void
+shmem_internal_cswap_nbi(shmem_ctx_t ctx, void *target, void *source,
+                         void *dest, void *operand, size_t len, int pe,
+                         shm_internal_datatype_t datatype)
+{
+    shmem_internal_assert(len > 0);
+
+    shmem_transport_cswap_nbi((shmem_transport_ctx_t *)ctx, target, source,
+                              dest, operand, len, pe, datatype);
 }
 
 
@@ -230,13 +256,13 @@ shmem_internal_mswap(shmem_ctx_t ctx, void *target, void *source, void *dest, vo
 
 static inline
 void
-shmem_internal_atomic_small(shmem_ctx_t ctx, void *target, const void *source, size_t len,
-                            int pe, shm_internal_op_t op,
-                            shm_internal_datatype_t datatype)
+shmem_internal_atomic(shmem_ctx_t ctx, void *target, const void *source, size_t len,
+                      int pe, shm_internal_op_t op, shm_internal_datatype_t datatype)
 {
     shmem_internal_assert(len > 0);
 
-    shmem_transport_atomic_small((shmem_transport_ctx_t *)ctx, target, source, len, pe, op, datatype);
+    shmem_transport_atomic((shmem_transport_ctx_t *)ctx, target, source, len,
+                           pe, op, datatype);
 }
 
 
@@ -264,13 +290,14 @@ shmem_internal_atomic_set(shmem_ctx_t ctx, void *target, const void *source, siz
 
 static inline
 void
-shmem_internal_atomic_nb(shmem_ctx_t ctx, void *target, const void *source, size_t len,
-                         int pe, shm_internal_op_t op,
-                         shm_internal_datatype_t datatype, long *completion)
+shmem_internal_atomicv(shmem_ctx_t ctx, void *target, const void *source,
+                       size_t len, int pe, shm_internal_op_t op,
+                       shm_internal_datatype_t datatype, long *completion)
 {
     shmem_internal_assert(len > 0);
 
-    shmem_transport_atomic_nb((shmem_transport_ctx_t *)ctx, target, source, len, pe, op, datatype, completion);
+    shmem_transport_atomicv((shmem_transport_ctx_t *)ctx, target, source, len,
+                            pe, op, datatype, completion);
 }
 
 
@@ -284,6 +311,19 @@ shmem_internal_fetch_atomic(shmem_ctx_t ctx, void *target, void *source, void *d
     shmem_internal_assert(len > 0);
 
     shmem_transport_fetch_atomic((shmem_transport_ctx_t *)ctx, target, source, dest, len, pe, op, datatype);
+}
+
+
+static inline
+void
+shmem_internal_fetch_atomic_nbi(shmem_ctx_t ctx, void *target, void *source,
+                                void *dest, size_t len, int pe,
+                                shm_internal_op_t op, shm_internal_datatype_t datatype)
+{
+    shmem_internal_assert(len > 0);
+
+    shmem_transport_fetch_atomic_nbi((shmem_transport_ctx_t *)ctx, target,
+                                     source, dest, len, pe, op, datatype);
 }
 
 
