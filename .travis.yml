@@ -192,7 +192,7 @@ before_install:
     - git clone --depth 10 https://github.com/pmix/prrte.git prrte
     - cd prrte
     - ./autogen.pl
-    - ./configure --prefix=$PWD/install --with-libevent=$TRAVIS_SRC/libevent-2.0.22-stable/install --with-pmix=$TRAVIS_SRC/pmix/install --with-hwloc=$TRAVIS_SRC/hwloc/install
+    - ./configure --prefix=$PWD/install --with-libevent=$TRAVIS_SRC/libevent-2.0.22-stable/install --with-pmix=$TRAVIS_SRC/pmix/install --with-hwloc=$TRAVIS_SRC/hwloc-2.0.2/install
     - make clean all install
     ## Download and install OpenMPI RPM
     #- cd $TRAVIS_INSTALL
