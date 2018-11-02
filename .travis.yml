@@ -55,6 +55,7 @@ env:
           SOS_ENABLE_ERROR_TESTS=1
           SHMEM_BARRIER_ALGORITHM=dissem SHMEM_REDUCE_ALGORITHM=recdbl SHMEM_FCOLLECT_ALGORITHM=recdbl
           SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple"
+          SHMEM_OFI_STX_AUTO=1
         - >
           SOS_ENABLE_ERROR_TESTS=1
           SHMEM_FCOLLECT_ALGORITHM=ring
@@ -145,7 +146,7 @@ before_install:
     - git clone --depth 10 https://github.com/openshmem-org/tests-cray.git tests-cray
     # Fetch Mellanox Tests
     - cd $TRAVIS_SRC
-    - git clone --depth 10 https://github.com/openshmem-org/tests-mellanox.git tests-mellanox
+    - git clone -b pr/shmem_test_fix --depth 10 https://github.com/davidozog/tests-mellanox.git tests-mellanox
     ## Fetch ISx
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ParRes/ISx.git ISx

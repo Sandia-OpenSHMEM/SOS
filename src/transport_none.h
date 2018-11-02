@@ -16,6 +16,8 @@
 #ifndef TRANSPORT_NONE_H
 #define TRANSPORT_NONE_H
 
+#include <unistd.h>
+#include <string.h>
 #include "shmem_internal.h"
 
 /* Datatypes */
@@ -56,8 +58,17 @@ typedef int shm_internal_op_t;
 typedef int shmem_transport_ct_t;
 
 struct shmem_transport_ctx_t{ int dummy; };
-
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
+
+static inline
+int shmem_transport_needs_node_util(void)
+{
+#ifdef USE_ON_NODE_COMMS
+    return 1;
+#else
+    return 0;
+#endif
+}
 
 static inline
 int

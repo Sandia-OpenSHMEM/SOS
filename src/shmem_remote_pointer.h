@@ -17,6 +17,7 @@
 #define SHMEM_REMOTE_POINTER_H
 
 #include "shmem_comm.h"
+#include "shmem_node_util.h"
 
 
 static inline void *
@@ -25,7 +26,7 @@ shmem_internal_ptr(const void *target, int pe)
     int node_rank;
 
     // Only if regular load/stores are used to implement put/get!
-    if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
+    if (-1 != (node_rank = shmem_runtime_get_local_rank(pe))) {
 #if USE_XPMEM
         return shmem_transport_xpmem_ptr(target, pe, node_rank);
 #else

@@ -30,6 +30,7 @@
 
 #include "runtime.h"
 #include "shmem_internal.h"
+#include "shmem_node_util.h"
 #include "uthash.h"
 
 static int rank = -1;
@@ -37,6 +38,8 @@ static int size = 0;
 static char *kvs_name, *kvs_key, *kvs_value;
 static int max_name_len, max_key_len, max_val_len;
 static int initialized_pmi = 0;
+static int initialized_node_util = 0;
+static uint32_t local_size = 0;
 
 #define SINGLETON_KEY_LEN 128
 #define SINGLETON_VAL_LEN 256
@@ -78,11 +81,13 @@ decode(const char *inval, void *outval, size_t outvallen)
     size_t i;
     char *ret = (char*) outval;
 
-    if (outvallen != strlen(inval) / 2) {
+    size_t outlen = strlen(inval) / 2;
+
+    if (outvallen < outlen) {
         return 1;
     }
 
-    for (i = 0 ; i < outvallen ; ++i) {
+    for (i = 0 ; i < outlen; ++i) {
         if (*inval >= '0' && *inval <= '9') {
             ret[i] = *inval - '0';
         } else {
@@ -165,6 +170,10 @@ shmem_runtime_init(void)
 int
 shmem_runtime_fini(void)
 {
+    if (initialized_node_util) {
+        shmem_node_util_fini();
+    }
+
     if (initialized_pmi) {
         PMI_Finalize();
         initialized_pmi = 0;
@@ -203,6 +212,17 @@ shmem_runtime_get_rank(void)
 
 
 int
+shmem_runtime_get_local_rank(int pe)
+{
+    if (size == 1) {
+        return 0;
+    } else {
+        return shmem_node_util_get_local_rank(pe);
+    }
+}
+
+
+int
 shmem_runtime_get_size(void)
 {
     return size;
@@ -210,11 +230,31 @@ shmem_runtime_get_size(void)
 
 
 int
-shmem_runtime_exchange(void)
+shmem_runtime_get_local_size(void)
 {
+    return local_size;
+}
+
+
+int
+shmem_runtime_exchange(int need_node_util)
+{
+    int ret;
+
     /* Use singleton KVS for single process jobs */
-    if (size == 1)
+    if (size == 1) {
+        local_size = 1;
         return 0;
+    }
+
+    if (need_node_util) {
+        ret = shmem_node_util_init();
+        if (ret != 0) {
+            RAISE_ERROR_MSG("Node utility init failed (%d)", ret);
+        } else {
+            initialized_node_util = 1;
+        }
+    }
 
     if (PMI_SUCCESS != PMI_KVS_Commit(kvs_name)) {
         return 5;
@@ -222,6 +262,14 @@ shmem_runtime_exchange(void)
 
     if (PMI_SUCCESS != PMI_Barrier()) {
         return 6;
+    }
+
+    if (need_node_util) {
+        ret = shmem_node_util_startup();
+        if (0 != ret) {
+            RETURN_ERROR_MSG("Node utility startup failed (%d)\n", ret);
+        }
+        local_size = shmem_node_util_get_local_n_pes();
     }
 
     return 0;

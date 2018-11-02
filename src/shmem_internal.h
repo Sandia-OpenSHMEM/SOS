@@ -21,6 +21,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
+#include <limits.h>
+#include <sys/param.h>
 
 #include "shmemx.h"
 #include "runtime.h"
@@ -42,6 +44,12 @@ extern long shmem_internal_data_length;
 
 #define SHMEM_INTERNAL_HEAP_OVERHEAD (1024*1024)
 #define SHMEM_INTERNAL_DIAG_STRLEN 1024
+
+#ifdef MAXHOSTNAMELEN
+#define SHMEM_INTERNAL_MAX_HOSTNAME_LEN MAXHOSTNAMELEN
+#else
+#define SHMEM_INTERNAL_MAX_HOSTNAME_LEN HOST_NAME_MAX
+#endif
 
 /* Note: must be accompanied by shmem_internal_my_pe in arguments */
 #define RAISE_PE_PREFIX "[%04d]        "
@@ -406,7 +414,6 @@ void shmem_internal_start_pes(int npes);
 void shmem_internal_init(int tl_requested, int *tl_provided);
 void shmem_internal_finalize(void);
 void shmem_internal_global_exit(int status) SHMEM_ATTRIBUTE_NORETURN;
-char *shmem_internal_nodename(void);
 
 int shmem_internal_symmetric_init(void);
 int shmem_internal_symmetric_fini(void);

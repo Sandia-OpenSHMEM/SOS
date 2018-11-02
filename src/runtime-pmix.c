@@ -34,6 +34,7 @@
 
 static pmix_proc_t myproc;
 static size_t size;
+static uint32_t local_size;
 
 int
 shmem_runtime_init(void)
@@ -54,8 +55,7 @@ shmem_runtime_init(void)
     if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_JOB_SIZE, NULL, 0, &val))) {
         size = val->data.uint32;
         PMIX_VALUE_RELEASE(val);
-    }
-    else {
+    } else {
         RETURN_ERROR_MSG_PREINIT("Size is not properly initiated (%d)\n", rc);
         return rc;
     }
@@ -106,11 +106,41 @@ shmem_runtime_get_rank(void)
     return myproc.rank;
 }
 
-
 int
 shmem_runtime_get_size(void)
 {
     return size;
+}
+
+int
+shmem_runtime_get_local_rank(int pe)
+{
+#ifdef USE_ON_NODE_COMMS
+    pmix_status_t rc;
+    pmix_proc_t proc;
+    pmix_value_t *val;
+    uint16_t local_rank;
+
+    (void)strncpy(proc.nspace, myproc.nspace, PMIX_MAX_NSLEN);
+    proc.rank = myproc.rank;
+    if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_LOCAL_RANK, NULL, 0, &val))) {
+        local_rank = val->data.uint16;
+        PMIX_VALUE_RELEASE(val);
+    } else {
+        RETURN_ERROR_MSG_PREINIT("PMIX_LOCAL_RANK is not properly initiated (%d) on PE %d\n", rc, pe);
+    }
+    return local_rank;
+#elif defined(USE_MEMCPY)
+    return pe == myproc.rank ? 0 : -1;
+#else
+    return -1;
+#endif
+}
+
+int
+shmem_runtime_get_local_size(void)
+{
+    return local_size;
 }
 
 // static void opcbfunc(pmix_status_t status, void *cbdata)
@@ -122,12 +152,26 @@ shmem_runtime_get_size(void)
 // }
 
 int
-shmem_runtime_exchange(void)
+shmem_runtime_exchange(int need_node_util)
 {
     pmix_status_t rc;
     pmix_info_t info;
     bool wantit=true;
+    pmix_proc_t proc;
+    pmix_value_t *val;
     //bool active = true;
+
+    if (need_node_util) {
+        (void)strncpy(proc.nspace, myproc.nspace, PMIX_MAX_NSLEN);
+        proc.rank = PMIX_RANK_WILDCARD;
+
+        if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_LOCAL_SIZE, NULL, 0, &val))) {
+            local_size = val->data.uint32;
+            PMIX_VALUE_RELEASE(val);
+        } else {
+            RETURN_ERROR_MSG_PREINIT("PMIX_LOCAL_SIZE is not properly initiated (%d)\n", rc);
+        }
+    }
 
     /* commit any values we "put" */
     if (PMIX_SUCCESS != (rc = PMIx_Commit())) {

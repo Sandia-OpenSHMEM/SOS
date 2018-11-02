@@ -25,8 +25,10 @@ void shmem_runtime_abort(int exit_code, const char msg[]) SHMEM_ATTRIBUTE_NORETU
 
 int shmem_runtime_get_rank(void);
 int shmem_runtime_get_size(void);
+int shmem_runtime_get_local_rank(int pe);
+int shmem_runtime_get_local_size(void);
 
-int shmem_runtime_exchange(void);
+int shmem_runtime_exchange(int need_node_util);
 int shmem_runtime_put(char *key, void *value, size_t valuelen);
 int shmem_runtime_get(int pe, char *key, void *value, size_t valuelen);
 

@@ -28,8 +28,6 @@
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
-#include <errno.h>
-#include <unistd.h>
 
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
@@ -72,15 +70,6 @@ int shmem_internal_thread_level;
 shmem_internal_mutex_t shmem_internal_mutex_alloc;
 #endif
 
-#ifdef USE_ON_NODE_COMMS
-char *shmem_internal_location_array = NULL;
-#endif
-
-#ifdef MAXHOSTNAMELEN
-static char shmem_internal_my_hostname[MAXHOSTNAMELEN];
-#else
-static char shmem_internal_my_hostname[HOST_NAME_MAX];
-#endif
 
 static char *shmem_internal_thread_level_str[4] = { "SINGLE", "FUNNELED",
                                                     "SERIALIZED", "MULTIPLE" };
@@ -139,7 +128,6 @@ void
 shmem_internal_init(int tl_requested, int *tl_provided)
 {
     int ret;
-    char errmsg[256];
 
     int runtime_initialized   = 0;
     int transport_initialized = 0;
@@ -328,13 +316,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     }
 #endif
 
-#ifdef USE_ON_NODE_COMMS
-    shmem_internal_location_array = malloc(sizeof(char) * shmem_internal_num_pes);
-    if (NULL == shmem_internal_location_array) goto cleanup;
-
-    memset(shmem_internal_location_array, -1, shmem_internal_num_pes);
-#endif
-
     /* Initialize transport devices */
     ret = shmem_transport_init();
     if (0 != ret) {
@@ -342,6 +323,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         goto cleanup;
     }
     transport_initialized = 1;
+
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_init();
     if (0 != ret) {
@@ -361,7 +343,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 #endif
 
     /* exchange information */
-    ret = shmem_runtime_exchange();
+    ret = shmem_runtime_exchange(shmem_transport_needs_node_util());
     if (0 != ret) {
         RETURN_ERROR_MSG("Runtime exchange failed (%d)\n", ret);
         goto cleanup;
@@ -398,15 +380,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     atexit(shmem_internal_shutdown_atexit);
     shmem_internal_initialized = 1;
 
-    /* get hostname for shmem_getnodename */
-    if (gethostname(shmem_internal_my_hostname,
-                    sizeof(shmem_internal_my_hostname))) {
-        snprintf(shmem_internal_my_hostname,
-                    sizeof(shmem_internal_my_hostname),
-                    "ERR: gethostname '%s'?",
-                    shmem_util_strerror(errno, errmsg, 256));
-    }
-
     /* finish up */
 #ifndef USE_PMIX
     shmem_runtime_barrier();
@@ -435,13 +408,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         shmem_runtime_fini();
     }
     abort();
-}
-
-
-char *
-shmem_internal_nodename(void)
-{
-    return shmem_internal_my_hostname;
 }
 
 

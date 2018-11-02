@@ -40,6 +40,7 @@
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"
+#include "shmem_node_util.h"
 #include "transport_ofi.h"
 #include <unistd.h>
 #include "runtime.h"
@@ -90,10 +91,6 @@ size_t                          shmem_transport_ofi_addrlen;
 int                             shmem_transport_ofi_mr_rma_event;
 #endif
 fi_addr_t                       *addr_table;
-#ifdef USE_ON_NODE_COMMS
-#define EPHOSTNAMELEN  _POSIX_HOST_NAME_MAX + 1
-static char                     myephostname[EPHOSTNAMELEN];
-#endif
 #ifdef ENABLE_THREADS
 shmem_internal_mutex_t          shmem_transport_ofi_lock;
 pthread_mutex_t                 shmem_transport_ofi_progress_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -138,7 +135,7 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
     return tid;
 }
 
-struct fabric_info shmem_transport_ofi_info = {0};
+static struct fabric_info shmem_transport_ofi_info = {0};
 
 static shmem_transport_ctx_t** shmem_transport_ofi_contexts = NULL;
 static size_t shmem_transport_ofi_contexts_len = 0;
@@ -524,6 +521,19 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
 
     return;
 }
+
+
+int shmem_transport_needs_node_util() {
+#ifdef USE_ON_NODE_COMMS
+    return 1;
+#else
+    if (shmem_internal_params.OFI_STX_AUTO)
+        return 1;
+    else
+        return 0;
+#endif
+}
+
 
 #define OFI_MAJOR_VERSION 1
 #ifdef ENABLE_MR_RMA_EVENT
@@ -958,16 +968,6 @@ int publish_av_info(struct fabric_info *info)
     char   epname[128];
     size_t epnamelen = sizeof(epname);
 
-#ifdef USE_ON_NODE_COMMS
-    if (gethostname(myephostname, (EPHOSTNAMELEN - 1)) != 0)
-        RAISE_ERROR_MSG("gethostname error: %s\n", strerror(errno));
-
-    myephostname[EPHOSTNAMELEN-1] = '\0';
-
-    ret = shmem_runtime_put("fi_ephostname", myephostname, EPHOSTNAMELEN);
-    OFI_CHECK_RETURN_STR(ret, "shmem_runtime_put fi_ephostname failed");
-#endif
-
     ret = fi_getname((fid_t)shmem_transport_ofi_target_ep, epname, &epnamelen);
     if (ret != 0 || (epnamelen > sizeof(epname))) {
         RAISE_WARN_STR("fi_getname failed");
@@ -990,10 +990,6 @@ int populate_av(void)
 {
     int    i, ret, err = 0;
     char   *alladdrs = NULL;
-#ifdef USE_ON_NODE_COMMS
-    int    num_on_node = 0;
-    char   ephostname[EPHOSTNAMELEN];
-#endif
 
     alladdrs = malloc(shmem_internal_num_pes * shmem_transport_ofi_addrlen);
     if (alladdrs == NULL) {
@@ -1007,22 +1003,6 @@ int populate_av(void)
         if (err != 0) {
             RAISE_ERROR_STR("Runtime get of 'fi_epname' failed");
         }
-
-#ifdef USE_ON_NODE_COMMS
-        err = shmem_runtime_get(i, "fi_ephostname", ephostname, EPHOSTNAMELEN);
-
-        if (err != 0) {
-            RAISE_ERROR_STR("Runtime get of 'fi_ephostname' failed");
-        }
-
-        if (strncmp(myephostname, ephostname, EPHOSTNAMELEN) == 0) {
-            SHMEM_SET_RANK_SAME_NODE(i, num_on_node++);
-            if (num_on_node > 255) {
-                RAISE_WARN_STR("Number of local ranks exceeds limit of 255");
-                return 1;
-            }
-        }
-#endif
     }
 
     ret = fi_av_insert(shmem_transport_ofi_avfd,
@@ -1342,7 +1322,6 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 int shmem_transport_init(void)
 {
     int ret = 0;
-    int i;
 
     SHMEM_MUTEX_INIT(shmem_transport_ofi_lock);
 
@@ -1399,20 +1378,6 @@ int shmem_transport_init(void)
         shmem_transport_ofi_stx_allocator = ROUNDROBIN;
     }
 
-    /* Allocate STX array with max length */
-    shmem_transport_ofi_stx_pool = malloc(shmem_transport_ofi_stx_max *
-                                          sizeof(shmem_transport_ofi_stx_t));
-    if (shmem_transport_ofi_stx_pool == NULL) {
-        RAISE_ERROR_STR("Error: out of memory when allocating OFI STX pool");
-    }
-
-    for (i = 0; i < shmem_transport_ofi_stx_max; i++) {
-        ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL,
-                             &shmem_transport_ofi_stx_pool[i].stx, NULL);
-        OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
-        shmem_transport_ofi_stx_pool[i].ref_cnt = 0;
-        shmem_transport_ofi_stx_pool[i].is_private = 0;
-    }
 
     /* The current bounce buffering implementation is only compatible with
      * providers that don't require FI_CONTEXT */
@@ -1444,16 +1409,10 @@ int shmem_transport_init(void)
 
     shmem_transport_ctx_default.options = SHMEMX_CTX_BOUNCE_BUFFER;
 
-    ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, SHMEM_TRANSPORT_CTX_DEFAULT_ID);
-    if (ret != 0) return ret;
-
     ret = shmem_transport_ofi_target_ep_init();
     if (ret != 0) return ret;
 
     ret = publish_mr_info();
-    if (ret != 0) return ret;
-
-    ret = atomic_limitations_check();
     if (ret != 0) return ret;
 
     ret = publish_av_info(&shmem_transport_ofi_info);
@@ -1465,6 +1424,62 @@ int shmem_transport_init(void)
 int shmem_transport_startup(void)
 {
     int ret;
+    int i;
+    int  num_on_node = 0;
+    long ofi_tx_ctx_cnt;
+
+    if (shmem_internal_params.OFI_STX_AUTO) {
+
+        if (shmem_internal_params.OFI_STX_NODE_MAX_provided) {
+            if (shmem_internal_params.OFI_STX_NODE_MAX_provided > 0) {
+                ofi_tx_ctx_cnt = shmem_internal_params.OFI_STX_NODE_MAX;
+            } else {
+                RAISE_ERROR_STR("OFI_STX_NODE_MAX must be greater than zero");
+            }
+        } else {
+            ofi_tx_ctx_cnt = shmem_transport_ofi_info.fabrics->domain_attr->tx_ctx_cnt;
+        }
+
+        num_on_node = shmem_runtime_get_local_size();
+
+        /* Paritition TX resources evenly across node-local PEs */
+        shmem_transport_ofi_stx_max = ofi_tx_ctx_cnt / num_on_node;
+        int remainder = ofi_tx_ctx_cnt % num_on_node;
+        int node_pe = shmem_internal_my_pe % shmem_internal_num_pes;
+        if (remainder > 0 && ((node_pe % num_on_node) < remainder)) {
+            shmem_transport_ofi_stx_max++;
+        }
+
+        /* When running more PEs than available STXs, must assign each PE at least 1 */
+        if (shmem_transport_ofi_stx_max <= 0) {
+            shmem_transport_ofi_stx_max = 1;
+            RAISE_WARN_MSG("Need at least 1 STX per PE, but detected %ld available STXs for %d PEs\n",
+                           ofi_tx_ctx_cnt, num_on_node);
+        }
+
+        DEBUG_MSG("PE %d auto-set STX max to %ld\n", shmem_internal_my_pe, shmem_transport_ofi_stx_max);
+    }
+
+    /* Allocate STX array with max length */
+    shmem_transport_ofi_stx_pool = malloc(shmem_transport_ofi_stx_max *
+                                          sizeof(shmem_transport_ofi_stx_t));
+    if (shmem_transport_ofi_stx_pool == NULL) {
+        RAISE_ERROR_STR("Out of memory when allocating OFI STX pool");
+    }
+
+    for (i = 0; i < shmem_transport_ofi_stx_max; i++) {
+        ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL,
+                             &shmem_transport_ofi_stx_pool[i].stx, NULL);
+        OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
+        shmem_transport_ofi_stx_pool[i].ref_cnt = 0;
+        shmem_transport_ofi_stx_pool[i].is_private = 0;
+    }
+
+    ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, SHMEM_TRANSPORT_CTX_DEFAULT_ID);
+    if (ret != 0) return ret;
+
+    ret = atomic_limitations_check();
+    if (ret != 0) return ret;
 
     ret = populate_mr_tables();
     if (ret != 0) return ret;
@@ -1499,14 +1514,14 @@ int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
             shmem_transport_ofi_contexts[i] = NULL;
 
         if (shmem_transport_ofi_contexts == NULL) {
-            RAISE_ERROR_STR("Error: out of memory when allocating OFI ctx array");
+            RAISE_ERROR_STR("Out of memory when allocating OFI ctx array");
         }
     }
 
     shmem_transport_ctx_t *ctxp = malloc(sizeof(shmem_transport_ctx_t));
 
     if (ctxp == NULL) {
-        RAISE_ERROR_STR("Error: out of memory when allocating OFI ctx object");
+        RAISE_ERROR_STR("Out of memory when allocating OFI ctx object");
     }
 
     memset(ctxp, 0, sizeof(shmem_transport_ctx_t));
@@ -1666,7 +1681,6 @@ int shmem_transport_fini(void)
         OFI_CHECK_ERROR_MSG(ret, "STX context close failed (%s)\n", fi_strerror(errno));
     }
     free(shmem_transport_ofi_stx_pool);
-
 
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));

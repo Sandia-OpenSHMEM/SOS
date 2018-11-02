@@ -23,6 +23,7 @@
 
 #include "runtime.h"
 #include "shmem_internal.h"
+#include "shmem_node_util.h"
 #include "shmem_env.h"
 #include "uthash.h"
 
@@ -32,10 +33,14 @@
 #define MAX_KV_LENGTH 64
 
 static int rank = -1;
+static int local_rank = 0;
 static int size = 0;
-static MPI_Comm SHMEM_RUNTIME_WORLD;
+static MPI_Comm SHMEM_RUNTIME_WORLD, SHMEM_RUNTIME_SHARED;
 static int kv_length = 0;
 static int initialized_mpi = 0;
+static int initialized_node_util = 0;
+static int local_size = 0;
+static int *local_ranks;
 
 char* kv_store_me;
 char* kv_store_all;
@@ -110,6 +115,11 @@ shmem_runtime_fini(void)
     int ret = MPI_SUCCESS;
     int finalized = 0;
 
+    if (initialized_node_util) {
+        MPI_Comm_free(&SHMEM_RUNTIME_SHARED);
+        free(local_ranks);
+    }
+
     MPI_Comm_free(&SHMEM_RUNTIME_WORLD);
 
     MPI_Finalized(&finalized);
@@ -160,17 +170,70 @@ shmem_runtime_get_rank(void)
 }
 
 int
+shmem_runtime_get_local_rank(int pe)
+{
+    if (size == 1) {
+        return 0;
+    }
+#ifdef USE_ON_NODE_COMMS
+    if (local_ranks[pe] != MPI_UNDEFINED) {
+        return local_ranks[pe];
+    } else {
+        return -1;
+    }
+#elif defined(USE_MEMCPY)
+    return pe == rank ? 0 : -1;
+#else
+    return -1;
+#endif
+}
+
+int
 shmem_runtime_get_size(void)
 {
     return size;
 }
 
 int
-shmem_runtime_exchange(void)
+shmem_runtime_get_local_size(void)
+{
+    return local_size;
+}
+
+int
+shmem_runtime_exchange(int need_node_util)
 {
     if (size == 1) {
+        local_size = 1;
         kv_store_all = kv_store_me;
         return 0;
+    }
+
+    if (need_node_util) {
+        MPI_Group world_group, local_group;
+
+        MPI_Comm_split_type(SHMEM_RUNTIME_WORLD, MPI_COMM_TYPE_SHARED, rank, MPI_INFO_NULL, &SHMEM_RUNTIME_SHARED);
+
+        MPI_Comm_rank(SHMEM_RUNTIME_SHARED, &local_rank);
+        MPI_Comm_size(SHMEM_RUNTIME_SHARED, &local_size);
+
+        MPI_Comm_group(SHMEM_RUNTIME_WORLD, &world_group);
+        MPI_Comm_group(SHMEM_RUNTIME_SHARED, &local_group);
+
+        int *world_ranks = malloc(size * sizeof(int));
+        local_ranks = malloc(size * sizeof(int));
+
+        for (int i=0; i<size; i++) {
+            world_ranks[i] = i;
+        }
+
+        MPI_Group_translate_ranks(world_group, size, world_ranks, local_group, local_ranks);
+
+        MPI_Group_free(&world_group);
+        MPI_Group_free(&local_group);
+        free(world_ranks);
+
+        initialized_node_util = 1;
     }
 
     int chunkSize = kv_length * sizeof(char) * MAX_KV_LENGTH;
