@@ -239,6 +239,8 @@ shmem_runtime_put(char *key, void *value, size_t valuelen)
     if (size == 1) {
         singleton_kvs_t *e = malloc(sizeof(singleton_kvs_t));
         if (e == NULL) return 3;
+        shmem_internal_assertp(max_key_len <= SINGLETON_KEY_LEN);
+        shmem_internal_assertp(max_val_len <= SINGLETON_VAL_LEN);
         strncpy(e->key, kvs_key, max_key_len);
         strncpy(e->val, kvs_value, max_val_len);
         HASH_ADD_STR(singleton_kvs, key, e);
