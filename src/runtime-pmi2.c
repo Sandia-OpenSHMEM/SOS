@@ -195,6 +195,8 @@ shmem_runtime_get_local_size(void)
 int
 shmem_runtime_exchange(int need_node_util)
 {
+    int ret;
+
     if (need_node_util) {
         ret = shmem_node_util_init();
         if (ret != 0) {
