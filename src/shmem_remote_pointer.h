@@ -17,7 +17,6 @@
 #define SHMEM_REMOTE_POINTER_H
 
 #include "shmem_comm.h"
-#include "shmem_node_util.h"
 
 
 static inline void *

@@ -34,7 +34,7 @@
 
 static pmix_proc_t myproc;
 static size_t size;
-static uint32_t local_size;
+static uint32_t local_size = 1;
 
 int
 shmem_runtime_init(void)

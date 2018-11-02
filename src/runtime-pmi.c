@@ -39,7 +39,7 @@ static char *kvs_name, *kvs_key, *kvs_value;
 static int max_name_len, max_key_len, max_val_len;
 static int initialized_pmi = 0;
 static int initialized_node_util = 0;
-static uint32_t local_size = 0;
+static uint32_t local_size = 1;
 
 #define SINGLETON_KEY_LEN 128
 #define SINGLETON_VAL_LEN 256

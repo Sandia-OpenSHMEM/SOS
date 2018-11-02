@@ -270,16 +270,6 @@ static inline void shmem_transport_probe(void) {
 }
 
 static inline
-int shmem_transport_needs_node_util(void)
-{
-#ifdef USE_ON_NODE_COMMS
-    return 1;
-#else
-    return 0;
-#endif
-}
-
-static inline
 int
 shmem_transport_quiet(shmem_transport_ctx_t* ctx)
 {

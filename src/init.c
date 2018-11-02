@@ -343,7 +343,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 #endif
 
     /* exchange information */
-    ret = shmem_runtime_exchange(shmem_transport_needs_node_util());
+    ret = shmem_runtime_exchange(shmem_internal_need_node_util());
     if (0 != ret) {
         RETURN_ERROR_MSG("Runtime exchange failed (%d)\n", ret);
         goto cleanup;

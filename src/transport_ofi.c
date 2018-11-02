@@ -40,7 +40,6 @@
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"
-#include "shmem_node_util.h"
 #include "transport_ofi.h"
 #include <unistd.h>
 #include "runtime.h"
@@ -521,19 +520,6 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
 
     return;
 }
-
-
-int shmem_transport_needs_node_util() {
-#ifdef USE_ON_NODE_COMMS
-    return 1;
-#else
-    if (shmem_internal_params.OFI_STX_AUTO)
-        return 1;
-    else
-        return 0;
-#endif
-}
-
 
 #define OFI_MAJOR_VERSION 1
 #ifdef ENABLE_MR_RMA_EVENT

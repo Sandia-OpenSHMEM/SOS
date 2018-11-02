@@ -43,7 +43,7 @@ static char *kvs_name, *kvs_key, *kvs_value;
 static int max_name_len, max_key_len, max_val_len;
 static int initialized_pmi = 0;
 static int initialized_node_util = 0;
-static uint32_t local_size;
+static uint32_t local_size = 1;
 
 static int
 encode(const void *inval, int invallen, char *outval, int outvallen)

@@ -70,9 +70,7 @@ int shmem_node_util_init(void)
 
         node_util_is_initialized = 1;
     } else {
-        if (shmem_internal_params.DEBUG) {
-            RAISE_WARN_STR("Initialized node utility more than once");
-        }
+        RAISE_WARN_STR("Initialized node utility more than once");
     }
 
     return 0;
@@ -119,9 +117,7 @@ int shmem_node_util_startup(void)
             shmem_internal_assert(n_local_pes > 0);
             node_util_is_started = 1;
         } else {
-            if (shmem_internal_params.DEBUG) {
-                RAISE_WARN_STR("Called node utility startup routine more than once");
-            }
+            RAISE_WARN_STR("Called node utility startup routine more than once");
         }
     } else {
         RAISE_ERROR_STR("Node utility has not initialized");

@@ -39,7 +39,7 @@ static MPI_Comm SHMEM_RUNTIME_WORLD, SHMEM_RUNTIME_SHARED;
 static int kv_length = 0;
 static int initialized_mpi = 0;
 static int initialized_node_util = 0;
-static int local_size = 0;
+static int local_size = 1;
 static int *local_ranks;
 
 char* kv_store_me;
