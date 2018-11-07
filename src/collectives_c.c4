@@ -5,7 +5,7 @@ dnl vi: set ft=m4
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * Copyright (c) 2017 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -39,6 +39,11 @@ include(shmem_bind_c.m4)dnl
 #define shmem_barrier_all pshmem_barrier_all
 #pragma weak shmem_barrier = pshmem_barrier
 #define shmem_barrier pshmem_barrier
+
+#pragma weak shmem_sync_all = pshmem_sync_all
+#define shmem_sync_all pshmem_sync_all
+#pragma weak shmem_sync = pshmem_sync
+#define shmem_sync pshmem_sync
 
 define(`SHMEM_PROF_DEF_TO_ALL',
 `#pragma weak shmem_$1_$4_to_all = pshmem_$1_$4_to_all
@@ -87,7 +92,7 @@ SHMEM_BIND_C_COLL_CMPLX(`SHMEM_PROF_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 
 #endif /* ENABLE_PROFILING */
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_barrier_all(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -96,7 +101,7 @@ shmem_barrier_all(void)
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -107,8 +112,29 @@ shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 }
 
 
+void SHMEM_FUNCTION_ATTRIBUTES
+shmem_sync_all(void)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_sync_all();
+}
+
+
+void SHMEM_FUNCTION_ATTRIBUTES
+shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
+    SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_BARRIER_SYNC_SIZE);
+
+    shmem_internal_sync(PE_start, logPE_stride, PE_size, pSync);
+}
+
+
 #define SHMEM_DEF_TO_ALL(STYPE,TYPE,ITYPE,SOP,IOP)                      \
-    void shmem_##STYPE##_##SOP##_to_all(TYPE *target,                   \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    shmem_##STYPE##_##SOP##_to_all(TYPE *target,                        \
                                        const TYPE *source, int nreduce, \
                                        int PE_start, int logPE_stride,  \
                                        int PE_size, TYPE *pWrk,         \
@@ -144,7 +170,7 @@ SHMEM_BIND_C_COLL_INTS(`SHMEM_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 SHMEM_BIND_C_COLL_FLOATS(`SHMEM_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 SHMEM_BIND_C_COLL_CMPLX(`SHMEM_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_broadcast32(void *target, const void *source, size_t nlong,
                   int PE_root, int PE_start, int logPE_stride, int PE_size,
                   long *pSync)
@@ -152,7 +178,6 @@ shmem_broadcast32(void *target, const void *source, size_t nlong,
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(PE_root);
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-    SHMEM_ERR_CHECK_NON_NEGATIVE(nlong);
     SHMEM_ERR_CHECK_SYMMETRIC(target, nlong * 4);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nlong * 4);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_BCAST_SYNC_SIZE);
@@ -163,7 +188,7 @@ shmem_broadcast32(void *target, const void *source, size_t nlong,
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_broadcast64(void *target, const void *source, size_t nlong,
                   int PE_root, int PE_start, int logPE_stride, int PE_size,
                   long *pSync)
@@ -171,7 +196,6 @@ shmem_broadcast64(void *target, const void *source, size_t nlong,
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(PE_root);
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-    SHMEM_ERR_CHECK_NON_NEGATIVE(nlong);
     SHMEM_ERR_CHECK_SYMMETRIC(target, nlong * 8);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nlong * 8);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_BCAST_SYNC_SIZE);
@@ -182,13 +206,12 @@ shmem_broadcast64(void *target, const void *source, size_t nlong,
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_collect32(void *target, const void *source, size_t nlong,
                 int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-    SHMEM_ERR_CHECK_NON_NEGATIVE(nlong);
     SHMEM_ERR_CHECK_SYMMETRIC(target, nlong * 4);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nlong * 4);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_COLLECT_SYNC_SIZE);
@@ -198,13 +221,12 @@ shmem_collect32(void *target, const void *source, size_t nlong,
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_collect64(void *target, const void *source, size_t nlong,
                 int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-    SHMEM_ERR_CHECK_NON_NEGATIVE(nlong);
     SHMEM_ERR_CHECK_SYMMETRIC(target, nlong * 8);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nlong * 8);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_COLLECT_SYNC_SIZE);
@@ -214,13 +236,12 @@ shmem_collect64(void *target, const void *source, size_t nlong,
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_fcollect32(void *target, const void *source, size_t nlong,
                  int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-    SHMEM_ERR_CHECK_NON_NEGATIVE(nlong);
     SHMEM_ERR_CHECK_SYMMETRIC(target, nlong * 4);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nlong * 4);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_COLLECT_SYNC_SIZE);
@@ -230,13 +251,12 @@ shmem_fcollect32(void *target, const void *source, size_t nlong,
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_fcollect64(void *target, const void *source, size_t nlong,
                  int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-    SHMEM_ERR_CHECK_NON_NEGATIVE(nlong);
     SHMEM_ERR_CHECK_SYMMETRIC(target, nlong * 8);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nlong * 8);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_COLLECT_SYNC_SIZE);
@@ -246,13 +266,12 @@ shmem_fcollect64(void *target, const void *source, size_t nlong,
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_alltoall32(void *dest, const void *source, size_t nelems, int PE_start,
                  int logPE_stride, int PE_size, long *pSync)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
     SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems * 4);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nelems * 4);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_ALLTOALL_SYNC_SIZE);
@@ -262,13 +281,12 @@ shmem_alltoall32(void *dest, const void *source, size_t nelems, int PE_start,
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_alltoall64(void *dest, const void *source, size_t nelems, int PE_start,
                  int logPE_stride, int PE_size, long *pSync)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
     SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems * 8);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nelems * 8);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_ALLTOALL_SYNC_SIZE);
@@ -278,7 +296,7 @@ shmem_alltoall64(void *dest, const void *source, size_t nelems, int PE_start,
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_alltoalls32(void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,
                   size_t nelems, int PE_start, int logPE_stride, int PE_size,
                   long *pSync)
@@ -287,7 +305,6 @@ shmem_alltoalls32(void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,
     SHMEM_ERR_CHECK_POSITIVE(sst);
     SHMEM_ERR_CHECK_POSITIVE(dst);
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size);
-    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
     SHMEM_ERR_CHECK_SYMMETRIC(dest, 4 * ((nelems-1) * dst + 1));
     SHMEM_ERR_CHECK_SYMMETRIC(source, 4 * ((nelems-1) * sst + 1));
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_ALLTOALL_SYNC_SIZE);
@@ -297,7 +314,7 @@ shmem_alltoalls32(void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_alltoalls64(void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,
                   size_t nelems, int PE_start, int logPE_stride, int PE_size,
                   long *pSync)
@@ -309,7 +326,6 @@ shmem_alltoalls64(void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,
     SHMEM_ERR_CHECK_SYMMETRIC(dest, 8 * ((nelems-1) * dst + 1));
     SHMEM_ERR_CHECK_SYMMETRIC(source, 8 * ((nelems-1) * sst + 1));
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_ALLTOALL_SYNC_SIZE);
-    SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);
 
     shmem_internal_alltoalls(dest, source, dst, sst, 8, nelems, PE_start,
                              logPE_stride, PE_size, pSync);

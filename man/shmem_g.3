@@ -1,0 +1,232 @@
+.TH SHMEM_G 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_g \- 
+Copies one data item from a remote PE
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C11:
+
+.B TYPE
+.B shmem\_g(const
+.B TYPE
+.IB "*source" ,
+.B int
+.I pe
+.B );
+
+
+
+.B TYPE
+.B shmem\_g(shmem_ctx_t
+.IB "ctx" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the standard RMA types specified by Table 1.
+./ sectionStart
+.SS C/C++:
+
+.B TYPE
+.B shmem\_TYPENAME\_g(const
+.B TYPE
+.IB "*source" ,
+.B int
+.I pe
+.B );
+
+
+
+.B TYPE
+.B shmem\_ctx\_TYPENAME\_g(shmem_ctx_t
+.IB "ctx" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the standard RMA types and has a corresponding TYPENAME specified by Table 1.
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I ctx
+- The context on which to perform the operation.
+When this argument is not provided, the operation is performed on
+SHMEM\_CTX\_DEFAULT.
+
+
+.BR "IN " -
+.I source
+- The remotely accessible array element or scalar data object.
+
+
+.BR "IN " -
+.I pe
+- The number of the remote PE on which 
+.I source
+resides.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+These routines provide a very low latency get capability for single elements
+of most basic types. 
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+Returns a single element of type specified in the synopsis.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+None.
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.SS Examples
+
+
+
+The following 
+.B shmem\_g
+example is for C[11] programs:
+
+.nf
+#include <stdio.h>
+#include <shmem.h>
+
+int main(void)
+{
+  long y = -1;
+  static long x = 10101;
+  shmem_init();
+  int me = shmem_my_pe();
+  int npes = shmem_n_pes();
+  if (me == 0)
+     y = shmem_g(&x, npes-1);
+  printf("%d: y = %ld\\n", me, y);
+  shmem_finalize();
+  return 0;
+}
+.fi
+
+
+
+
+.SS Table 1:
+Standard RMA Types and Names
+.TP 25
+.B \TYPE
+.B \TYPENAME
+.TP
+float
+float
+.TP
+double
+double
+.TP
+long double
+longdouble
+.TP
+char
+char
+.TP
+signed char
+schar
+.TP
+short
+short
+.TP
+int
+int
+.TP
+long
+long
+.TP
+long long
+longlong
+.TP
+unsigned char
+uchar
+.TP
+unsigned short
+ushort
+.TP
+unsigned int
+uint
+.TP
+unsigned long
+ulong
+.TP
+unsigned long long
+ulonglong
+.TP
+int8\_t
+int8
+.TP
+int16\_t
+int16
+.TP
+int32\_t
+int32
+.TP
+int64\_t
+int64
+.TP
+uint8\_t
+uint8
+.TP
+uint16\_t
+uint16
+.TP
+uint32\_t
+uint32
+.TP
+uint64\_t
+uint64
+.TP
+size\_t
+size
+.TP
+ptrdiff\_t
+ptrdiff

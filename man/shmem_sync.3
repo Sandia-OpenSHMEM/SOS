@@ -1,0 +1,227 @@
+.TH SHMEM_SYNC 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_sync \- 
+Performs all operations described in the 
+.B shmem\_sync\_all
+interface
+but with respect to a subset of PEs defined by the active set.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B void
+.B shmem\_sync(int
+.IB "PE_start" ,
+.B int
+.IB "logPE_stride" ,
+.B int
+.IB "PE_size" ,
+.B long
+.I *pSync
+.B );
+
+
+
+./ sectionEnd
+
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I PE\_start
+- The lowest PE number of the active set of
+PEs. 
+.I PE\_start
+must be of type integer.
+
+
+.BR "IN " -
+.I logPE\_stride
+- The log (base 2) of the stride between
+consecutive PE numbers in the active set. 
+.I logPE\_stride
+must be
+of type integer.
+
+
+.BR "IN " -
+.I PE\_size
+- The number of PEs in the active set.
+.I PE\_size
+must be of type integer.
+
+
+.BR "IN " -
+.I pSync
+- A symmetric work array. In  C/C++, 
+.I pSync
+must be
+of type long and size SHMEM\_BARRIER\_SYNC\_SIZE. Every element of
+this array must be initialized to SHMEM\_SYNC\_VALUE before any of the
+PEs in the active set enter 
+.B shmem\_sync
+the first time.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+.B shmem\_sync
+is a collective synchronization routine over an
+active set. Control returns from 
+.B shmem\_sync
+after all PEs in
+the active set (specified by 
+.I PE\_start
+, 
+.I logPE\_stride
+, and
+.I PE\_size
+) have called 
+.BR "shmem\_sync" .
+
+
+As with all OpenSHMEM collective routines, each of these routines assumes
+that only PEs in the active set call the routine. If a PE not in
+the active set calls an OpenSHMEM collective routine, the behavior is undefined.
+
+The values of arguments 
+.I PE\_start
+, 
+.I logPE\_stride
+, and
+.I PE\_size
+must be equal on all PEs in the active set. The same
+work array must be passed in 
+.I pSync
+to all PEs in the active set.
+
+In contrast with the 
+.B shmem\_barrier
+routine, 
+.B shmem\_sync
+only
+ensures completion and visibility of previously issued memory stores and does not ensure
+completion of remote memory updates issued via OpenSHMEM routines.
+
+The same 
+.I pSync
+array may be reused on consecutive calls to
+.B shmem\_sync
+if the same active set is used.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+None.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+If the 
+.I pSync
+array is initialized at run time, another method of
+synchronization (e.g., 
+.B shmem\_sync\_all
+) must be used before
+the initial use of that 
+.I pSync
+array by 
+.BR "shmem\_sync" .
+
+
+If the active set does not change, 
+.B shmem\_sync
+can be called
+repeatedly with the same 
+.I pSync
+array. No additional synchronization
+beyond that implied by 
+.B shmem\_sync
+itself is necessary in this case.
+
+The 
+.B shmem\_sync
+routine can be used to portably ensure that
+memory access operations observe remote updates in the order enforced by the
+initiator PEs, provided that the initiator PE ensures completion of remote
+updates with a call to 
+.B shmem\_quiet
+prior to the call to the
+.B shmem\_sync
+routine.
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.SS Examples
+
+
+
+The following 
+.B shmem\_sync\_all
+and 
+.B shmem\_sync
+example is
+for C[11] programs:
+
+.nf
+#include <stdio.h>
+#include <shmem.h>
+
+int main(void)
+{
+  static int x = 10101;
+  static long pSync[SHMEM_BARRIER_SYNC_SIZE];
+
+  shmem_init();
+  int me = shmem_my_pe();
+  int npes = shmem_n_pes();
+
+  for (int i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
+     pSync[i] = SHMEM_SYNC_VALUE;
+
+  shmem_sync_all();
+
+  if (me % 2 == 0) {
+     /* put to next even PE in a circular fashion */
+     shmem_p(&x, 4, (me + 2) % npes);
+     /* synchronize all even pes */
+     shmem_quiet();
+     shmem_sync(0, 1, (npes / 2 + npes % 2), pSync);
+  }
+  printf("%d: x = %d\\n", me, x);
+  shmem_finalize();
+  return 0;
+}
+.fi
+
+
+
+
+

@@ -94,7 +94,7 @@ usage (void)
             "    -v == Verbose output\n"
             "    -h == help.\n");
     }
-    exit (1);
+    shmem_global_exit(1);
 }
 
 int
@@ -139,10 +139,6 @@ target_data_good( DataType *data, int elements, int id, int lineno )
                 shmem_my_pe(), lineno, j, k+id, data[j] );
 
             for(rc=0,k=1; rc < elements; rc++,k++) {
-#if 0
-                if ( k % 5 == 0 )
-                    printf("\ndata[%d] ",rc);
-#endif
                 printf("%ld ",data[rc]);
             }
             rc = 1;
@@ -173,6 +169,12 @@ main(int argc, char **argv)
     me = shmem_my_pe();
     nProcs = shmem_n_pes();
     workers = nProcs - 1;
+
+    if (nProcs <= 1) {
+        fprintf(stderr, "ERR - Requires > 1 PEs\n");
+        shmem_finalize();
+        return 0;
+    }
 
     while ((c = getopt (argc, argv, "hmrvdD")) != -1)
         switch (c)
@@ -241,7 +243,7 @@ main(int argc, char **argv)
         if (!results)
         {
             perror ("Failed results memory allocation");
-            exit (1);
+            shmem_global_exit(1);
         }
         prev_sz = rc;
 
@@ -266,7 +268,7 @@ main(int argc, char **argv)
 
         if (! source) {
             perror ("Failed source memory allocation");
-            exit (1);
+            shmem_global_exit(1);
         }
         if (Debug > 3)
             printf("shmem_malloc() source %p (%d bytes)\n",(void*)source,rc);
@@ -285,7 +287,7 @@ main(int argc, char **argv)
 
         if ( ! target ) {
             perror ("Failed target memory allocation");
-            exit (1);
+            shmem_global_exit(1);
         }
         memset(target, 0, rc);
         if (Debug > 3)

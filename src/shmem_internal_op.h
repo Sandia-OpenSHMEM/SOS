@@ -4,7 +4,7 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * Copyright (c) 2017 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * Copyright (c) 2013 Mellanox Technologies, Inc. All rights reserved.
@@ -47,11 +47,11 @@ FUNC_OP_CREATE(long_double, long double, min, shmem_internal_min_op)
 FUNC_OP_CREATE(long_double, long double, sum, shmem_internal_sum_op)
 FUNC_OP_CREATE(long_double, long double, prod, shmem_internal_prod_op)
 
-FUNC_OP_CREATE(double_complex, double complex, sum, shmem_internal_sum_op)
-FUNC_OP_CREATE(double_complex, double complex, prod, shmem_internal_prod_op)
+FUNC_OP_CREATE(double_complex, double _Complex, sum, shmem_internal_sum_op)
+FUNC_OP_CREATE(double_complex, double _Complex, prod, shmem_internal_prod_op)
 
-FUNC_OP_CREATE(float_complex, float complex, sum, shmem_internal_sum_op)
-FUNC_OP_CREATE(float_complex, float complex, prod, shmem_internal_prod_op)
+FUNC_OP_CREATE(float_complex, float _Complex, sum, shmem_internal_sum_op)
+FUNC_OP_CREATE(float_complex, float _Complex, prod, shmem_internal_prod_op)
 
 FUNC_OP_CREATE(double, double, max, shmem_internal_max_op)
 FUNC_OP_CREATE(double, double, min, shmem_internal_min_op)
@@ -158,23 +158,22 @@ FUNC_OP_CREATE(int8, int8_t, xor, shmem_internal_xor_op)
         }                                                                                 \
         break;
 
-void static inline shmem_internal_reduce_local(shm_internal_op_t op,
+static inline void shmem_internal_reduce_local(shm_internal_op_t op,
                                 shm_internal_datatype_t datatype, int count,
                                 void *in, void *inout) {
     switch(datatype) {
         REDUCE_LOCAL_DTYPE_CASE_FP(SHM_INTERNAL_LONG_DOUBLE, long_double, long double);
         REDUCE_LOCAL_DTYPE_CASE_FP(SHM_INTERNAL_DOUBLE, double, double);
         REDUCE_LOCAL_DTYPE_CASE_FP(SHM_INTERNAL_FLOAT, float, float);
-        REDUCE_LOCAL_DTYPE_CASE_CPLX(SHM_INTERNAL_DOUBLE_COMPLEX, double_complex, double complex);
-        REDUCE_LOCAL_DTYPE_CASE_CPLX(SHM_INTERNAL_FLOAT_COMPLEX, float_complex, float complex);
+        REDUCE_LOCAL_DTYPE_CASE_CPLX(SHM_INTERNAL_DOUBLE_COMPLEX, double_complex, double _Complex);
+        REDUCE_LOCAL_DTYPE_CASE_CPLX(SHM_INTERNAL_FLOAT_COMPLEX, float_complex, float _Complex);
         REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_INT64, int64, int64_t);
         REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_INT32, int32, int32_t);
         REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_SHORT, short, short);
         REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_SIGNED_BYTE, int8, int8_t);
 
         default:
-            printf("invalid data type (%d)", (int) datatype);
-            RAISE_ERROR_STR("invalid data type");
+            RAISE_ERROR_MSG("invalid data type (%d)", (int) datatype);
     }
 }
 

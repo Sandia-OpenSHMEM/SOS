@@ -1,0 +1,256 @@
+.TH SHMEM_ATOMIC_FETCH 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_atomic_fetch \- 
+Atomically fetches the value of a remote data object.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C11:
+
+.B TYPE
+.B shmem\_atomic\_fetch(const
+.B TYPE
+.IB "*source" ,
+.B int
+.I pe
+.B );
+
+
+
+.B TYPE
+.B shmem\_atomic\_fetch(shmem_ctx_t
+.IB "ctx" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the extended AMO types specified by
+Table 3.
+./ sectionStart
+.SS C/C++:
+
+.B TYPE
+.B shmem\_TYPENAME\_atomic\_fetch(const
+.B TYPE
+.IB "*source" ,
+.B int
+.I pe
+.B );
+
+
+
+.B TYPE
+.B shmem\_ctx\_TYPENAME\_atomic\_fetch(shmem_ctx_t
+.IB "ctx" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the extended AMO types and has a corresponding
+TYPENAME specified by Table 3.
+
+
+./ sectionStart
+.B ***************DEPRECATED***************
+./ sectionEnd
+
+./ sectionStart
+.SS C11:
+
+.B TYPE
+.B shmem\_fetch(const
+.B TYPE
+.IB "*source" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of \{float, double, int,
+long, long long\}.
+./ sectionStart
+.SS C/C++:
+
+.B TYPE
+.B shmem\_TYPENAME\_fetch(const
+.B TYPE
+.IB "*source" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of \{float, double, int,
+long, long long\} and has a corresponding
+TYPENAME specified by Table 3.
+
+./ sectionStart
+.B ****************************************
+./ sectionEnd
+
+./ sectionStart
+
+.B ***************DEPRECATED***************
+.SS Fortran:
+
+.nf
+
+.BR "INTEGER " "pe"
+.BR "INTEGER*4 " "SHMEM_INT4_FETCH, ires_i4"
+ires\_i4 = SHMEM\_INT4\_FETCH(source, pe)
+.BR "INTEGER*8 " "SHMEM_INT8_FETCH, ires_i8"
+ires\_i8 = SHMEM\_INT8\_FETCH(source, pe)
+.BR "REAL*4 " "SHMEM_REAL4_FETCH, res_r4"
+res\_r4 = SHMEM\_REAL4\_FETCH(source, pe)
+.BR "REAL*8 " "SHMEM_REAL8_FETCH, res_r8"
+res\_r8 = SHMEM\_REAL8\_FETCH(source, pe)
+
+.fi
+.B ****************************************
+
+./ sectionEnd
+
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I ctx
+- The context on which to perform the operation.
+When this argument is not provided, the operation is performed on
+SHMEM\_CTX\_DEFAULT.
+
+
+.BR "IN " -
+.I source
+- The remotely accessible data object to be fetched from
+the remote PE.
+
+
+.BR "IN " -
+.I pe
+- An integer that indicates the PE number from which
+.I source
+is to be fetched.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+.B shmem\_atomic\_fetch
+performs an atomic fetch operation.
+It returns the contents of the 
+.I source
+as an atomic operation.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+The contents at the 
+.I source
+address on the remote PE.
+The data type of the return value is the same as the type of
+the remote data object.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+None.
+
+./ sectionEnd
+
+
+
+
+.SS Table 3:
+Extended AMO Types and Names
+.TP 25
+.B \TYPE
+.B \TYPENAME
+.TP
+float
+float
+.TP
+double
+double
+.TP
+int
+int
+.TP
+long
+long
+.TP
+long long
+longlong
+.TP
+unsigned int
+uint
+.TP
+unsigned long
+ulong
+.TP
+unsigned long long
+ulonglong
+.TP
+int32\_t
+int32
+.TP
+int64\_t
+int64
+.TP
+uint32\_t
+uint32
+.TP
+uint64\_t
+uint64
+.TP
+size\_t
+size
+.TP
+ptrdiff\_t
+ptrdiff

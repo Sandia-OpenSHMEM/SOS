@@ -4,7 +4,7 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * Copyright (c) 2017 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -16,10 +16,22 @@
 #ifndef SHMEM_DECL_H
 #define SHMEM_DECL_H
 
-#ifdef HAVE_FUNC_ATTRIBUTE_NORETURN
-#define __shmem_attribute_noreturn__ __attribute__ ((noreturn))
+#ifdef OPAL_HAVE_ATTRIBUTE_NORETURN
+#define SHMEM_ATTRIBUTE_NORETURN __attribute__ ((noreturn))
 #else
-#define __shmem_attribute_noreturn__
+#define SHMEM_ATTRIBUTE_NORETURN
+#endif
+
+#ifndef SHMEM_ATTRIBUTE_VISIBILITY
+#   if defined(OPAL_C_HAVE_VISIBILITY) && (OPAL_C_HAVE_VISIBILITY == 1)
+#       define SHMEM_ATTRIBUTE_VISIBILITY __attribute__((visibility("default")))
+#   else
+#       define SHMEM_ATTRIBUTE_VISIBILITY
+#   endif
+#endif
+
+#ifndef SHMEM_FUNCTION_ATTRIBUTES
+#    define SHMEM_FUNCTION_ATTRIBUTES SHMEM_ATTRIBUTE_VISIBILITY
 #endif
 
 #endif /* SHMEM_DECL_H */

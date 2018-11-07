@@ -4,7 +4,7 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * Copyright (c) 2017 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -32,7 +32,7 @@ typedef enum coll_type_t coll_type_t;
 extern char *coll_type_str[];
 
 extern long *shmem_internal_barrier_all_psync;
-extern int shmem_internal_tree_crossover;
+extern long *shmem_internal_sync_all_psync;
 
 extern coll_type_t shmem_internal_barrier_type;
 extern coll_type_t shmem_internal_bcast_type;
@@ -40,35 +40,59 @@ extern coll_type_t shmem_internal_reduce_type;
 extern coll_type_t shmem_internal_collect_type;
 extern coll_type_t shmem_internal_fcollect_type;
 
-void shmem_internal_barrier_linear(int PE_start, int logPE_stride, int PE_size, long *pSync);
-void shmem_internal_barrier_tree(int PE_start, int logPE_stride, int PE_size, long *pSync);
-void shmem_internal_barrier_dissem(int PE_start, int logPE_stride, int PE_size, long *pSync);
+void shmem_internal_sync_linear(int PE_start, int logPE_stride, int PE_size, long *pSync);
+void shmem_internal_sync_tree(int PE_start, int logPE_stride, int PE_size, long *pSync);
+void shmem_internal_sync_dissem(int PE_start, int logPE_stride, int PE_size, long *pSync);
+
+static inline
+void
+shmem_internal_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)
+{
+    if (shmem_internal_params.BARRIERS_FLUSH) {
+        fflush(stdout);
+        fflush(stderr);
+    }
+
+    if (PE_size == 1) return;
+
+    switch (shmem_internal_barrier_type) {
+    case AUTO:
+        if (PE_size < shmem_internal_params.COLL_CROSSOVER) {
+            shmem_internal_sync_linear(PE_start, logPE_stride, PE_size, pSync);
+        } else {
+            shmem_internal_sync_tree(PE_start, logPE_stride, PE_size, pSync);
+        }
+        break;
+    case LINEAR:
+        shmem_internal_sync_linear(PE_start, logPE_stride, PE_size, pSync);
+        break;
+    case TREE:
+        shmem_internal_sync_tree(PE_start, logPE_stride, PE_size, pSync);
+        break;
+    case DISSEM:
+        shmem_internal_sync_dissem(PE_start, logPE_stride, PE_size, pSync);
+        break;
+    default:
+        RAISE_ERROR_MSG("Illegal barrier/sync type (%d)\n",
+                        shmem_internal_barrier_type);
+    }
+}
+
+
+static inline
+void
+shmem_internal_sync_all(void)
+{
+    shmem_internal_sync(0, 0, shmem_internal_num_pes, shmem_internal_sync_all_psync);
+}
+
 
 static inline
 void
 shmem_internal_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
-    switch (shmem_internal_barrier_type) {
-    case AUTO:
-        if (PE_size < shmem_internal_tree_crossover) {
-            shmem_internal_barrier_linear(PE_start, logPE_stride, PE_size, pSync);
-        } else {
-            shmem_internal_barrier_tree(PE_start, logPE_stride, PE_size, pSync);
-        }
-        break;
-    case LINEAR:
-        shmem_internal_barrier_linear(PE_start, logPE_stride, PE_size, pSync);
-        break;
-    case TREE:
-        shmem_internal_barrier_tree(PE_start, logPE_stride, PE_size, pSync);
-        break;
-    case DISSEM:
-        shmem_internal_barrier_dissem(PE_start, logPE_stride, PE_size, pSync);
-        break;
-    default:
-        fprintf(stderr, "[%03d] Illegal barrier type %d\n",
-                shmem_internal_my_pe, shmem_internal_barrier_type);
-    }
+    shmem_internal_quiet(SHMEM_CTX_DEFAULT);
+    shmem_internal_sync(PE_start, logPE_stride, PE_size, pSync);
 }
 
 
@@ -76,7 +100,8 @@ static inline
 void
 shmem_internal_barrier_all(void)
 {
-    shmem_internal_barrier(0, 0, shmem_internal_num_pes, shmem_internal_barrier_all_psync);
+    shmem_internal_quiet(SHMEM_CTX_DEFAULT);
+    shmem_internal_sync(0, 0, shmem_internal_num_pes, shmem_internal_barrier_all_psync);
 }
 
 
@@ -95,7 +120,7 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
 {
     switch (shmem_internal_bcast_type) {
     case AUTO:
-        if (PE_size < shmem_internal_tree_crossover) {
+        if (PE_size < shmem_internal_params.COLL_CROSSOVER) {
             shmem_internal_bcast_linear(target, source, len, PE_root, PE_start,
                                         logPE_stride, PE_size, pSync, complete);
         } else {
@@ -112,8 +137,8 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
                                   logPE_stride, PE_size, pSync, complete);
         break;
     default:
-        fprintf(stderr, "[%03d] Illegal broadcast type %d\n",
-                shmem_internal_my_pe, shmem_internal_bcast_type);
+        RAISE_ERROR_MSG("Illegal broadcast type (%d)\n",
+                        shmem_internal_bcast_type);
     }
 }
 
@@ -143,7 +168,7 @@ shmem_internal_op_to_all(void *target, const void *source, int count,
     switch (shmem_internal_reduce_type) {
         case AUTO:
             if (shmem_transport_atomic_supported(op, datatype)) {
-                if (PE_size < shmem_internal_tree_crossover) {
+                if (PE_size < shmem_internal_params.COLL_CROSSOVER) {
                     shmem_internal_op_to_all_linear(target, source, count, type_size,
                                                     PE_start, logPE_stride, PE_size,
                                                     pWrk, pSync, op, datatype);
@@ -186,9 +211,9 @@ shmem_internal_op_to_all(void *target, const void *source, int count,
                                                PE_start, logPE_stride, PE_size,
                                                pWrk, pSync, op, datatype);
             break;
-    default:
-        fprintf(stderr, "[%03d] Illegal reduction type %d\n",
-                shmem_internal_my_pe, shmem_internal_reduce_type);
+        default:
+            RAISE_ERROR_MSG("Illegal reduction type (%d)\n",
+                            shmem_internal_reduce_type);
     }
 }
 
@@ -211,8 +236,8 @@ shmem_internal_collect(void *target, const void *source, size_t len,
                                       PE_size, pSync);
         break;
     default:
-        fprintf(stderr, "[%03d] Illegal collect type %d\n",
-                shmem_internal_my_pe, shmem_internal_collect_type);
+        RAISE_ERROR_MSG("Illegal collect type (%d)\n",
+                        shmem_internal_collect_type);
     }
 }
 
@@ -252,8 +277,8 @@ shmem_internal_fcollect(void *target, const void *source, size_t len,
         }
         break;
     default:
-        fprintf(stderr, "[%03d] Illegal fcollect type %d\n",
-                shmem_internal_my_pe, shmem_internal_fcollect_type);
+        RAISE_ERROR_MSG("Illegal fcollect type (%d)\n",
+                        shmem_internal_fcollect_type);
     }
 }
 

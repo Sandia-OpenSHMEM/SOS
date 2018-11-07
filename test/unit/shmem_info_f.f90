@@ -1,5 +1,5 @@
 !
-!   Copyright (c) 2015 Intel Corporation. All rights reserved.
+!   Copyright (c) 2017 Intel Corporation. All rights reserved.
 !   This software is available to you under the BSD license below:
 !
 !       Redistribution and use in source and binary forms, with or
@@ -29,6 +29,7 @@ program shmem_info
     include 'shmem.fh'
 
     integer me, major_ver, minor_ver
+    integer shmem_my_pe
     character (len=SHMEM_MAX_NAME_LEN) lib_name
 
     call shmem_init()

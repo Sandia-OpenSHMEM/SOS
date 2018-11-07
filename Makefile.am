@@ -4,7 +4,7 @@
 # DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
 # retains certain rights in this software.
 #
-# Copyright (c) 2016 Intel Corporation. All rights reserved.
+# Copyright (c) 2017 Intel Corporation. All rights reserved.
 # This software is available to you under the BSD license.
 #
 # This file is part of the Sandia OpenSHMEM software package. For license
@@ -13,7 +13,9 @@
 
 ACLOCAL_AMFLAGS = -I config
 
-EXTRA_DIST = README NEWS LICENSE sandia-openshmem.spec pmi-simple
+EXTRA_DIST = sandia-openshmem.spec autogen.sh pmi-simple man
+dist_doc_DATA = README NEWS LICENSE
 
-SUBDIRS = mpp pmi-simple src test
+SUBDIRS = bindings man mpp pmi-simple src test
+
 

@@ -33,7 +33,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+#include <sys/time.h>
 #include <getopt.h>
 #include <string.h>
 #include <assert.h>
@@ -43,6 +43,14 @@
 
 static int atoi_scaled(char *s);
 static void usage(char *pgm);
+
+#ifndef HAVE_SHMEMX_WTIME
+static double shmemx_wtime(void) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (double) tv.tv_sec + (double) tv.tv_usec / 1000000.0;
+}
+#endif /* HAVE_SHMEMX_WTIME */
 
 int Verbose=0;
 int Serialize;
@@ -119,14 +127,26 @@ main(int argc, char **argv)
 
     ps_cnt *= SHMEM_BCAST_SYNC_SIZE;
     pSync = shmem_malloc( ps_cnt * sizeof(long) );
+    if (!pSync) {
+        fprintf(stderr, "ERR - null pSync pointer\n");
+        shmem_global_exit(1);
+    }
 
     for (i = 0; i < ps_cnt; i++) {
       pSync[i] = SHMEM_SYNC_VALUE;
     }
 
     source = (int *) shmem_malloc( elements * sizeof(*source) );
+    if (!source) {
+        fprintf(stderr, "ERR - null source pointer\n");
+        shmem_global_exit(1);
+    }
 
     target = (int *) shmem_malloc( elements * sizeof(*target) );
+    if (!target) {
+        fprintf(stderr, "ERR - null target pointer\n");
+        shmem_global_exit(1);
+    }
     for (i = 0; i < elements; i += 1) {
         source[i] = i + 1;
         target[i] = -90;

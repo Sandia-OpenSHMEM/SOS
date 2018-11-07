@@ -1,0 +1,254 @@
+.TH SHMEM_P 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_p \- 
+Copies one data item to a remote PE.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C11:
+
+.B void
+.B shmem\_p(TYPE
+.IB "*dest" ,
+.B TYPE
+.IB "value" ,
+.B int
+.I pe
+.B );
+
+
+
+.B void
+.B shmem\_p(shmem_ctx_t
+.IB "ctx" ,
+.B TYPE
+.IB "*dest" ,
+.B TYPE
+.IB "value" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the standard RMA types specified by Table 1.
+./ sectionStart
+.SS C/C++:
+
+.B void
+.B shmem\_TYPENAME\_p(TYPE
+.IB "*dest" ,
+.B TYPE
+.IB "value" ,
+.B int
+.I pe
+.B );
+
+
+
+.B void
+.B shmem\_ctx\_TYPENAME\_p(shmem_ctx_t
+.IB "ctx" ,
+.B TYPE
+.IB "*dest" ,
+.B TYPE
+.IB "value" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the standard RMA types and has a corresponding TYPENAME specified by Table 1.
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I ctx
+- The context on which to perform the operation.
+When this argument is not provided, the operation is performed on
+SHMEM\_CTX\_DEFAULT.
+
+
+.BR "OUT " -
+.I dest
+- The remotely accessible array element or scalar data object
+which will receive the data on the remote PE.
+
+
+.BR "IN " -
+.I value
+- The value to be transferred to 
+.I dest
+on the
+remote PE.
+
+
+.BR "IN " -
+.I pe
+- The number of the remote PE.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+These routines provide a very low latency put capability for single elements of
+most basic types.
+
+As with 
+.BR "shmem\_put" ,
+these routines start the remote transfer and may
+return before the data is delivered to the remote PE. Use
+.B shmem\_quiet
+to force completion of all remote PUT transfers.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+None.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+None.
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.SS Examples
+
+
+
+The following example uses 
+.B shmem\_p
+in a C[11] program.
+
+.nf
+#include <stdio.h>
+#include <math.h>
+#include <shmem.h>
+
+int main(void)
+{
+  const double e = 2.71828182;
+  const double epsilon = 0.00000001;
+  static double f = 3.1415927;
+  shmem_init();
+  int me = shmem_my_pe();
+  if (me == 0)
+     shmem_p(&f, e, 1);
+  shmem_barrier_all();
+  if (me == 1)
+     printf("%s\\n", (fabs(f - e) < epsilon) ? "OK" : "FAIL");
+  shmem_finalize();
+  return 0;
+}
+.fi
+
+
+
+
+
+.SS Table 1:
+Standard RMA Types and Names
+.TP 25
+.B \TYPE
+.B \TYPENAME
+.TP
+float
+float
+.TP
+double
+double
+.TP
+long double
+longdouble
+.TP
+char
+char
+.TP
+signed char
+schar
+.TP
+short
+short
+.TP
+int
+int
+.TP
+long
+long
+.TP
+long long
+longlong
+.TP
+unsigned char
+uchar
+.TP
+unsigned short
+ushort
+.TP
+unsigned int
+uint
+.TP
+unsigned long
+ulong
+.TP
+unsigned long long
+ulonglong
+.TP
+int8\_t
+int8
+.TP
+int16\_t
+int16
+.TP
+int32\_t
+int32
+.TP
+int64\_t
+int64
+.TP
+uint8\_t
+uint8
+.TP
+uint16\_t
+uint16
+.TP
+uint32\_t
+uint32
+.TP
+uint64\_t
+uint64
+.TP
+size\_t
+size
+.TP
+ptrdiff\_t
+ptrdiff

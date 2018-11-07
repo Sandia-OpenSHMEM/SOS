@@ -1,0 +1,124 @@
+.TH SHMEM_ADDR_ACCESSIBLE 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_addr_accessible \- 
+Determines whether an address is accessible via OpenSHMEM data transfer
+routines from the specified remote PE.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B int
+.B shmem\_addr\_accessible(const
+.B void
+.IB "*addr" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+
+./ sectionStart
+
+.B ***************DEPRECATED***************
+.SS Fortran:
+
+.nf
+
+.BR "LOGICAL " "LOG, SHMEM_ADDR_ACCESSIBLE"
+.BR "INTEGER " "pe"
+LOG = SHMEM\_ADDR\_ACCESSIBLE(addr, pe)
+
+.fi
+.B ****************************************
+
+./ sectionEnd
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I addr
+- Data object on the local PE.
+
+
+.BR "IN " -
+.I pe
+- Integer id of a remote PE.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+.B shmem\_addr\_accessible
+is a query routine that indicates whether a local
+address is accessible via OpenSHMEM routines from the specified remote PE. 
+
+This routine verifies that the data object is symmetric and accessible with
+respect to a remote PE via OpenSHMEM data transfer routines. The
+specified address 
+.I addr
+is a data object on the local PE. 
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+C/C++: The return value is 1 if 
+.I addr
+is a symmetric data object
+and accessible via OpenSHMEM routines from the specified remote PE;
+otherwise, it is 0.
+
+Fortran: The return value is .TRUE. if 
+.I addr
+is a symmetric data
+object and accessible via OpenSHMEM routines from the specified remote PE;
+otherwise, it is .FALSE..
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+This routine may be particularly useful for hybrid programming with other
+communication libraries (such as MPI) or parallel languages. For
+example, when an MPI job uses Multiple Program Multiple Data (MPMD) mode, multiple executable
+MPI programs may use OpenSHMEM routines. In such cases, static
+memory, such as a Fortran common block or C global variable, is
+symmetric between processes running from the same executable file, but is
+not symmetric between processes running from different executable files.
+Data allocated from the symmetric heap (
+.B shmem\_malloc
+or
+.B shpalloc
+) is symmetric across the same or different executable
+files.
+
+./ sectionEnd
+
+
+
+

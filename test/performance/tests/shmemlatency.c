@@ -40,6 +40,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/time.h>
 #include <shmem.h>
 #include <shmemx.h>
 
@@ -49,6 +50,14 @@
 #define FALSE (0)
 
 void doit(int len, double *latency, double *bandwidth);
+
+#ifndef HAVE_SHMEMX_WTIME
+static double shmemx_wtime(void) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (double) tv.tv_sec + (double) tv.tv_usec / 1000000.0;
+}
+#endif /* HAVE_SHMEMX_WTIME */
 
 double aligned_buf[SIZE/sizeof(double)];
 
@@ -208,7 +217,7 @@ doit(int len, double *latency, double *bandwidth)
 
         shmem_putmem( buf, buf, len, 1 );
 
-        shmem_wait( (long *)&buf[len-1], (long)0 );
+        shmem_long_wait_until( (long *)&buf[len-1], SHMEM_CMP_NE, (long)0 );
 
         end = shmemx_wtime();
 
@@ -222,7 +231,7 @@ doit(int len, double *latency, double *bandwidth)
 
     } else {
 
-        shmem_wait( (long *)&buf[len-1], (long)1 );
+        shmem_long_wait_until( (long *)&buf[len-1], SHMEM_CMP_NE, (long)1 );
 
         buf[len-1] = (char)1;
 

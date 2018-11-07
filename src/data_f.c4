@@ -5,7 +5,7 @@ dnl vi: set ft=m4
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * Copyright (c) 2017 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -32,7 +32,8 @@ include(shmem_bind_f.m4)dnl
 
 
 #define SHMEM_DEF_FC_PUT(FUNCNAME, SIZE)                                \
-    void FUNCNAME(void *target, void *source, fortran_integer_t *len,   \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *target, void *source, fortran_integer_t *len,        \
                   fortran_integer_t *pe);                               \
     void FUNCNAME(void *target, void *source, fortran_integer_t *len,   \
                   fortran_integer_t *pe)                                \
@@ -45,9 +46,9 @@ include(shmem_bind_f.m4)dnl
         SHMEM_ERR_CHECK_SYMMETRIC(target, SIZE * *len);                 \
         SHMEM_ERR_CHECK_NULL(source, *len);                             \
                                                                         \
-        shmem_internal_put_nb(target, source, SIZE * *len, *pe,         \
-                              &completion);                             \
-        shmem_internal_put_wait(&completion);                           \
+        shmem_internal_put_nb(SHMEM_CTX_DEFAULT, target, source,        \
+                              SIZE * *len, *pe, &completion);           \
+        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);        \
     }
 
 define(`SHMEM_WRAP_FC_PUT',
@@ -60,7 +61,8 @@ SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_PUT_SIZE')
 
 
 #define SHMEM_DEF_FC_PUT_NBI(FUNCNAME, SIZE)                            \
-    void FUNCNAME(void *target, void *source, fortran_integer_t *nelems,\
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *target, void *source, fortran_integer_t *nelems,     \
                   fortran_integer_t *pe);                               \
     void FUNCNAME(void *target, void *source, fortran_integer_t *nelems,\
                   fortran_integer_t *pe)                                \
@@ -71,7 +73,8 @@ SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_PUT_SIZE')
         SHMEM_ERR_CHECK_SYMMETRIC(target, SIZE * *nelems);              \
         SHMEM_ERR_CHECK_NULL(source, *nelems);                          \
                                                                         \
-        shmem_internal_put_nbi(target, source, SIZE * *nelems, *pe);    \
+        shmem_internal_put_nbi(SHMEM_CTX_DEFAULT, target, source,       \
+        SIZE * *nelems, *pe);                                           \
     }
 
 define(`SHMEM_WRAP_FC_PUT_NBI',
@@ -83,7 +86,8 @@ SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_PUT_NBI')
 SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_PUT_NBI_SIZE')
 
 #define SHMEM_DEF_FC_IPUT(FUNCNAME, SIZE)                               \
-    void FUNCNAME(void *targetp, void *sourcep,                         \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *targetp, void *sourcep,                              \
                   fortran_integer_t *tst, fortran_integer_t *sst,       \
                   fortran_integer_t *lenp, fortran_integer_t *pe);      \
     void FUNCNAME(void *targetp, void *sourcep,                         \
@@ -103,7 +107,8 @@ SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_PUT_NBI_SIZE')
         SHMEM_ERR_CHECK_NULL(source, len);                              \
                                                                         \
         for ( ; len > 0 ; --len) {                                      \
-            shmem_internal_put_small(target, source, SIZE, *pe);        \
+            shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, target,        \
+                                      source, SIZE, *pe);               \
             target += (*tst * SIZE);                                    \
             source += (*sst * SIZE);                                    \
         }                                                               \
@@ -118,7 +123,8 @@ SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_IPUT')
 SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_IPUT_SIZE')
 
 #define SHMEM_DEF_FC_GET(FUNCNAME, SIZE)                                \
-    void FUNCNAME(void *target, void *source, fortran_integer_t *len,   \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *target, void *source, fortran_integer_t *len,        \
                   fortran_integer_t *pe);                               \
     void FUNCNAME(void *target, void *source, fortran_integer_t *len,   \
                   fortran_integer_t *pe)                                \
@@ -129,8 +135,9 @@ SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_IPUT_SIZE')
         SHMEM_ERR_CHECK_SYMMETRIC(source, SIZE * *len);                 \
         SHMEM_ERR_CHECK_NULL(target, *len);                             \
                                                                         \
-        shmem_internal_get(target, source, SIZE * *len, *pe);           \
-        shmem_internal_get_wait();                                      \
+        shmem_internal_get(SHMEM_CTX_DEFAULT, target, source,           \
+                           SIZE * *len, *pe);                           \
+        shmem_internal_get_wait(SHMEM_CTX_DEFAULT);                     \
     }
 
 define(`SHMEM_WRAP_FC_GET',
@@ -142,7 +149,8 @@ SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_GET')
 SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_GET_SIZE')
 
 #define SHMEM_DEF_FC_GET_NBI(FUNCNAME, SIZE)                            \
-    void FUNCNAME(void *target, void *source, fortran_integer_t *nelems,\
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *target, void *source, fortran_integer_t *nelems,     \
                   fortran_integer_t *pe);                               \
     void FUNCNAME(void *target, void *source, fortran_integer_t *nelems,\
                   fortran_integer_t *pe)                                \
@@ -152,7 +160,8 @@ SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_GET_SIZE')
         SHMEM_ERR_CHECK_SYMMETRIC(source, SIZE * *nelems);              \
         SHMEM_ERR_CHECK_NULL(target, *nelems);                          \
                                                                         \
-        shmem_internal_get(target, source, SIZE * *nelems, *pe);        \
+        shmem_internal_get(SHMEM_CTX_DEFAULT, target, source,           \
+                           SIZE * *nelems, *pe);                        \
     }
 
 define(`SHMEM_WRAP_FC_GET_NBI',
@@ -164,7 +173,8 @@ SHMEM_BIND_F_RMA(`SHMEM_WRAP_FC_GET_NBI')
 SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_GET_NBI_SIZE')
 
 #define SHMEM_DEF_FC_IGET(FUNCNAME, SIZE)                               \
-    void FUNCNAME(void *targetp, void *sourcep,                         \
+    void SHMEM_FUNCTION_ATTRIBUTES                                      \
+    FUNCNAME(void *targetp, void *sourcep,                              \
                   fortran_integer_t *tst, fortran_integer_t *sst,       \
                   fortran_integer_t *lenp, fortran_integer_t *pe);      \
     void FUNCNAME(void *targetp, void *sourcep,                         \
@@ -184,11 +194,12 @@ SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_GET_NBI_SIZE')
         SHMEM_ERR_CHECK_NULL(target, len);                              \
                                                                         \
         for ( ; len > 0 ; --len ) {                                     \
-            shmem_internal_get(target, source, SIZE, *pe);              \
+            shmem_internal_get(SHMEM_CTX_DEFAULT, target, source, SIZE, \
+                               *pe);                                    \
             target += (*tst * SIZE);                                    \
             source += (*sst * SIZE);                                    \
         }                                                               \
-        shmem_internal_get_wait();                                      \
+        shmem_internal_get_wait(SHMEM_CTX_DEFAULT);                     \
     }
 
 define(`SHMEM_WRAP_FC_IGET',

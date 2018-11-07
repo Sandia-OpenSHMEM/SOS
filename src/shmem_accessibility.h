@@ -4,7 +4,7 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * Copyright (c) 2017 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -32,11 +32,11 @@ shmem_internal_addr_accessible(const void *addr, int pe)
         return 0;
     }
 
-    if ((char*) addr > (char*) shmem_internal_heap_base &&
+    if ((char*) addr >= (char*) shmem_internal_heap_base &&
         (char*) addr < (char*) shmem_internal_heap_base + shmem_internal_heap_length) {
         return 1;
     }
-    if ((char*) addr > (char*) shmem_internal_data_base &&
+    if ((char*) addr >= (char*) shmem_internal_data_base &&
         (char*) addr < (char*) shmem_internal_data_base + shmem_internal_data_length) {
         return 1;
     }

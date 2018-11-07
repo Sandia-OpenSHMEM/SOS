@@ -4,7 +4,7 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * Copyright (c) 2017 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -25,6 +25,8 @@
 #include "shmemx.h"
 #include "runtime.h"
 #include "config.h"
+#include "shmem_env.h"
+#include "shmem_decl.h"
 
 extern int shmem_internal_my_pe;
 extern int shmem_internal_num_pes;
@@ -32,67 +34,101 @@ extern int shmem_internal_num_pes;
 extern int shmem_internal_initialized;
 extern int shmem_internal_finalized;
 extern int shmem_internal_thread_level;
-extern int shmem_internal_debug;
-extern int shmem_internal_trap_on_abort;
 
 extern void *shmem_internal_heap_base;
 extern long shmem_internal_heap_length;
 extern void *shmem_internal_data_base;
 extern long shmem_internal_data_length;
-extern int shmem_internal_heap_use_huge_pages;
-extern long shmem_internal_heap_huge_page_size;
+
+#define SHMEM_INTERNAL_HEAP_OVERHEAD (1024*1024)
+#define SHMEM_INTERNAL_DIAG_STRLEN 1024
+
+/* Note: must be accompanied by shmem_internal_my_pe in arguments */
+#define RAISE_PE_PREFIX "[%04d]        "
+
 
 #define RAISE_WARN(ret)                                                 \
     do {                                                                \
-        fprintf(stderr, "[%03d] WARN: %s:%d return code %d\n",         \
-                shmem_internal_my_pe, __FILE__, __LINE__, (int) ret);   \
+        fprintf(stderr, "[%04d] WARN:  %s:%d %s, return code %d\n",     \
+                shmem_internal_my_pe, __FILE__, __LINE__, __func__,     \
+                (int) ret);                                             \
     } while (0)
 
 
 #define RAISE_ERROR(ret)                                                \
     do {                                                                \
-        fprintf(stderr, "[%03d] ERROR: %s:%d return code %d\n",         \
-                shmem_internal_my_pe, __FILE__, __LINE__, (int) ret);   \
+        fprintf(stderr, "[%04d] ERROR: %s:%d %s, return code %d\n",     \
+                shmem_internal_my_pe, __FILE__, __LINE__, __func__,     \
+                (int) ret);                                             \
         shmem_runtime_abort(1, PACKAGE_NAME " exited in error");        \
+    } while (0)
+
+
+#define RETURN_ERROR_STR(str)                                           \
+    do {                                                                \
+        fprintf(stderr, "[%04d] ERROR: %s:%d: %s\n"                     \
+                RAISE_PE_PREFIX "%s\n",                                 \
+                shmem_internal_my_pe, __FILE__, __LINE__, __func__,     \
+                shmem_internal_my_pe, str);                             \
     } while (0)
 
 
 #define RAISE_ERROR_STR(str)                                            \
     do {                                                                \
-        fprintf(stderr, "[%03d] ERROR: %s:%d: %s\n",                    \
-                shmem_internal_my_pe, __FILE__, __LINE__, str);         \
+        RETURN_ERROR_STR(str);                                          \
         shmem_runtime_abort(1, PACKAGE_NAME " exited in error");        \
     } while (0)
 
 
 #define RAISE_WARN_STR(str)                                             \
     do {                                                                \
-        fprintf(stderr, "[%03d] WARN: %s:%d: %s\n",                    \
-                shmem_internal_my_pe, __FILE__, __LINE__, str);         \
+        fprintf(stderr, "[%04d] WARN:  %s:%d: %s\n"                     \
+                RAISE_PE_PREFIX "%s\n",                                 \
+                shmem_internal_my_pe, __FILE__, __LINE__, __func__,     \
+                shmem_internal_my_pe, str);                             \
+    } while (0)
+
+
+#define RETURN_ERROR_MSG(...)                                           \
+    do {                                                                \
+        char str[SHMEM_INTERNAL_DIAG_STRLEN];                           \
+        size_t off;                                                     \
+        off = snprintf(str, sizeof(str), "[%04d] ERROR: %s:%d: %s\n",   \
+                       shmem_internal_my_pe, __FILE__, __LINE__, __func__); \
+        off+= snprintf(str+off, sizeof(str)-off, RAISE_PE_PREFIX,       \
+                       shmem_internal_my_pe);                           \
+        off+= snprintf(str+off, sizeof(str)-off, __VA_ARGS__);          \
+        fprintf(stderr, "%s", str);                                     \
     } while (0)
 
 
 #define RAISE_ERROR_MSG(...)                                            \
     do {                                                                \
-        char str[256];                                                  \
-        size_t off;                                                     \
-        off = snprintf(str, sizeof(str), "[%03d] ERROR: %s:%d:\n",      \
-                       shmem_internal_my_pe, __FILE__, __LINE__);       \
-        off+= snprintf(str+off, sizeof(str)-off, "[%03d]        ",      \
-                       shmem_internal_my_pe);                           \
-        off+= snprintf(str+off, sizeof(str)-off, __VA_ARGS__);          \
-        fprintf(stderr, "%s", str);                                     \
+        RETURN_ERROR_MSG(__VA_ARGS__);                                  \
         shmem_runtime_abort(1, PACKAGE_NAME " exited in error");        \
     } while (0)
 
 
 #define RAISE_WARN_MSG(...)                                             \
     do {                                                                \
-        char str[256];                                                  \
+        char str[SHMEM_INTERNAL_DIAG_STRLEN];                           \
         size_t off;                                                     \
-        off = snprintf(str, sizeof(str), "[%03d] WARN: %s:%d:\n",       \
-                       shmem_internal_my_pe, __FILE__, __LINE__);       \
-        off+= snprintf(str+off, sizeof(str)-off, "[%03d]       ",       \
+        off = snprintf(str, sizeof(str), "[%04d] WARN:  %s:%d: %s\n",   \
+                       shmem_internal_my_pe, __FILE__, __LINE__, __func__); \
+        off+= snprintf(str+off, sizeof(str)-off, RAISE_PE_PREFIX,       \
+                       shmem_internal_my_pe);                           \
+        off+= snprintf(str+off, sizeof(str)-off, __VA_ARGS__);          \
+        fprintf(stderr, "%s", str);                                     \
+    } while (0)
+
+
+#define RETURN_ERROR_MSG_PREINIT(...)                                   \
+    do {                                                                \
+        char str[SHMEM_INTERNAL_DIAG_STRLEN];                           \
+        size_t off;                                                     \
+        off = snprintf(str, sizeof(str), "[????] ERROR: %s:%d: %s\n",   \
+                       __FILE__, __LINE__, __func__);                   \
+        off+= snprintf(str+off, sizeof(str)-off, RAISE_PE_PREFIX,       \
                        shmem_internal_my_pe);                           \
         off+= snprintf(str+off, sizeof(str)-off, __VA_ARGS__);          \
         fprintf(stderr, "%s", str);                                     \
@@ -101,21 +137,23 @@ extern long shmem_internal_heap_huge_page_size;
 
 #define DEBUG_STR(str)                                                  \
     do {                                                                \
-        if(shmem_internal_debug) {                                      \
-            fprintf(stderr, "[%03d] DEBUG: %s:%d: %s\n",                \
-                    shmem_internal_my_pe, __FILE__, __LINE__, str);     \
+        if(shmem_internal_params.DEBUG) {                               \
+            fprintf(stderr, "[%04d] DEBUG: %s:%d: %s\n"                 \
+                    RAISE_PE_PREFIX "%s\n",                             \
+                    shmem_internal_my_pe, __FILE__, __LINE__, __func__, \
+                    shmem_internal_my_pe, str);                         \
         }                                                               \
     } while(0)
 
 #define DEBUG_MSG(...)                                                  \
     do {                                                                \
-        if(shmem_internal_debug) {                                      \
-            char str[256];                                              \
+        if(shmem_internal_params.DEBUG) {                               \
+            char str[SHMEM_INTERNAL_DIAG_STRLEN];                       \
             size_t off;                                                 \
-            off = snprintf(str, sizeof(str), "[%03d] DEBUG: %s:%d: %s\n", \
+            off = snprintf(str, sizeof(str), "[%04d] DEBUG: %s:%d: %s\n", \
                            shmem_internal_my_pe, __FILE__, __LINE__,    \
                            __func__);                                   \
-            off+= snprintf(str+off, sizeof(str)-off, "[%03d]        ",  \
+            off+= snprintf(str+off, sizeof(str)-off, RAISE_PE_PREFIX,   \
                            shmem_internal_my_pe);                       \
             off+= snprintf(str+off, sizeof(str)-off, __VA_ARGS__);      \
             fprintf(stderr, "%s", str);                                 \
@@ -273,17 +311,19 @@ extern long shmem_internal_heap_huge_page_size;
  * Assertions are not compiled unless ENABLE_ERROR_CHECKING is defined.  The
  * "persistent" assertion, shmem_internal_assertp is always compiled.
  */
-#define shmem_internal_assert_fail(file_, line_, cond_)                 \
+#define shmem_internal_assert_fail(file_, line_, func_, cond_)          \
     do {                                                                \
-        fprintf(stderr, "[%03d] Assertion Failed: %s:%d: %s\n",         \
-                shmem_internal_my_pe, file_, line_, cond_);             \
+        fprintf(stderr, "[%04d] Assertion Failed: %s:%d: %s\n"          \
+                        "[%04d]                   %s\n",                \
+                shmem_internal_my_pe, file_, line_, __func__,           \
+                shmem_internal_my_pe, cond_);                           \
         shmem_runtime_abort(1, PACKAGE_NAME " exited in error");        \
     } while (0)
 
 #define shmem_internal_assertp(cond)                                    \
     do {                                                                \
         if (!(cond)) {                                                  \
-            shmem_internal_assert_fail(__FILE__, __LINE__, #cond);      \
+            shmem_internal_assert_fail(__FILE__, __LINE__, __func__, #cond); \
         }                                                               \
     } while (0)
 
@@ -291,7 +331,7 @@ extern long shmem_internal_heap_huge_page_size;
 #define shmem_internal_assert(cond)                                     \
     do {                                                                \
         if (!(cond)) {                                                  \
-            shmem_internal_assert_fail(__FILE__, __LINE__, #cond);      \
+            shmem_internal_assert_fail(__FILE__, __LINE__, __func__, #cond); \
         }                                                               \
     } while (0)
 #else
@@ -307,22 +347,22 @@ typedef pthread_mutex_t shmem_internal_mutex_t;
 
 #   define SHMEM_MUTEX_INIT(_mutex)                                     \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
-            pthread_mutex_init(&_mutex, NULL); \
+        if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE)       \
+            pthread_mutex_init(&_mutex, NULL);                          \
     } while (0)
 #   define SHMEM_MUTEX_DESTROY(_mutex)                                  \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE)       \
             pthread_mutex_destroy(&_mutex);                             \
     } while (0)
 #   define SHMEM_MUTEX_LOCK(_mutex)                                     \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE)       \
             pthread_mutex_lock(&_mutex);                                \
     } while (0)
 #   define SHMEM_MUTEX_UNLOCK(_mutex)                                   \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE)       \
             pthread_mutex_unlock(&_mutex);                              \
     } while (0)
 
@@ -332,22 +372,22 @@ typedef shmem_spinlock_t shmem_internal_mutex_t;
 
 #   define SHMEM_MUTEX_INIT(_mutex)                                     \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE)       \
             shmem_spinlock_init(&_mutex);                               \
     } while (0)
 #   define SHMEM_MUTEX_DESTROY(_mutex)                                  \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE)       \
             shmem_spinlock_fini(&_mutex);                               \
     } while (0)
 #   define SHMEM_MUTEX_LOCK(_mutex)                                     \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE)       \
             shmem_spinlock_lock(&_mutex);                               \
     } while (0)
 #   define SHMEM_MUTEX_UNLOCK(_mutex)                                   \
     do {                                                                \
-        if (shmem_internal_thread_level > SHMEMX_THREAD_SINGLE)          \
+        if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE)       \
             shmem_spinlock_unlock(&_mutex);                             \
     } while (0)
 
@@ -360,19 +400,17 @@ extern shmem_internal_mutex_t shmem_internal_mutex_alloc;
 #   define SHMEM_MUTEX_DESTROY(_mutex)
 #   define SHMEM_MUTEX_LOCK(_mutex)
 #   define SHMEM_MUTEX_UNLOCK(_mutex)
-
 #endif /* ENABLE_THREADS */
 
 void shmem_internal_start_pes(int npes);
 void shmem_internal_init(int tl_requested, int *tl_provided);
 void shmem_internal_finalize(void);
-void shmem_internal_global_exit(int status);
+void shmem_internal_global_exit(int status) SHMEM_ATTRIBUTE_NORETURN;
 char *shmem_internal_nodename(void);
 
-int shmem_internal_symmetric_init(size_t requested_length, int use_malloc);
+int shmem_internal_symmetric_init(void);
 int shmem_internal_symmetric_fini(void);
-int shmem_internal_collectives_init(int requested_crossover,
-                                    int requested_radix);
+int shmem_internal_collectives_init(void);
 
 /* internal allocation, without a barrier */
 void *shmem_internal_shmalloc(size_t size);
@@ -396,11 +434,14 @@ static inline double shmem_internal_wtime(void) {
 }
 
 /* Utility functions */
-long shmem_util_getenv_long(const char* name, int is_sized, long default_value);
-char *shmem_util_getenv_str(const char* name);
+char *shmem_util_wrap(const char *str, const size_t wraplen, const char *indent);
+char *shmem_util_strerror(int errnum, char *buf, size_t buflen);
 
 #ifndef MAX
 #define MAX(A,B) (A) > (B) ? (A) : (B)
 #endif
+
+extern uint64_t (*shmem_internal_gettid_fn)(void);
+extern void shmem_internal_register_gettid(uint64_t (*gettid_fn)(void));
 
 #endif

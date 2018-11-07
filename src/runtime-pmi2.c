@@ -4,7 +4,7 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * Copyright (c) 2017 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -40,6 +40,7 @@ static int rank = -1;
 static int size = 0;
 static char *kvs_name, *kvs_key, *kvs_value;
 static int max_name_len, max_key_len, max_val_len;
+static int initialized_pmi = 0;
 
 static int
 encode(const void *inval, int invallen, char *outval, int outvallen)
@@ -102,6 +103,9 @@ shmem_runtime_init(void)
         if (PMI2_SUCCESS != PMI2_Init(&spawned, &size, &rank, &appnum)) {
             return 2;
         }
+        else {
+            initialized_pmi = 1;
+        }
     }
 
     max_name_len = PMI2_MAX_VALLEN;
@@ -127,7 +131,10 @@ shmem_runtime_init(void)
 int
 shmem_runtime_fini(void)
 {
-    PMI2_Finalize();
+    if (initialized_pmi == 1) {
+        PMI2_Finalize();
+        initialized_pmi = 0;
+    }
     return 0;
 }
 
@@ -137,7 +144,7 @@ shmem_runtime_abort(int exit_code, const char msg[])
 {
 
 #ifdef HAVE___BUILTIN_TRAP
-    if (shmem_internal_trap_on_abort)
+    if (shmem_internal_params.TRAP_ON_ABORT)
         __builtin_trap();
 #endif
 

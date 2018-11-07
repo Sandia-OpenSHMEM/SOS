@@ -4,7 +4,7 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * Copyright (c) 2017 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -36,6 +36,7 @@ static int rank = -1;
 static int size = 0;
 static char *kvs_name, *kvs_key, *kvs_value;
 static int max_name_len, max_key_len, max_val_len;
+static int initialized_pmi = 0;
 
 #define SINGLETON_KEY_LEN 128
 #define SINGLETON_VAL_LEN 256
@@ -72,9 +73,9 @@ encode(const void *inval, int invallen, char *outval, int outvallen)
 
 
 static int
-decode(const char *inval, void *outval, int outvallen)
+decode(const char *inval, void *outval, size_t outvallen)
 {
-    int i;
+    size_t i;
     char *ret = (char*) outval;
 
     if (outvallen != strlen(inval) / 2) {
@@ -112,6 +113,9 @@ shmem_runtime_init(void)
     if (!initialized) {
         if (PMI_SUCCESS != PMI_Init(&initialized)) {
             return 2;
+        }
+        else {
+            initialized_pmi = 1;
         }
     }
 
@@ -161,7 +165,10 @@ shmem_runtime_init(void)
 int
 shmem_runtime_fini(void)
 {
-    PMI_Finalize();
+    if (initialized_pmi) {
+        PMI_Finalize();
+        initialized_pmi = 0;
+    }
 
     return 0;
 }
@@ -172,7 +179,7 @@ shmem_runtime_abort(int exit_code, const char msg[])
 {
 
 #ifdef HAVE___BUILTIN_TRAP
-    if (shmem_internal_trap_on_abort)
+    if (shmem_internal_params.TRAP_ON_ABORT)
         __builtin_trap();
 #endif
 
@@ -214,7 +221,7 @@ shmem_runtime_exchange(void)
     }
 
     if (PMI_SUCCESS != PMI_Barrier()) {
-        return 5;
+        return 6;
     }
 
     return 0;
@@ -232,6 +239,8 @@ shmem_runtime_put(char *key, void *value, size_t valuelen)
     if (size == 1) {
         singleton_kvs_t *e = malloc(sizeof(singleton_kvs_t));
         if (e == NULL) return 3;
+        shmem_internal_assertp(max_key_len <= SINGLETON_KEY_LEN);
+        shmem_internal_assertp(max_val_len <= SINGLETON_VAL_LEN);
         strncpy(e->key, kvs_key, max_key_len);
         strncpy(e->val, kvs_value, max_val_len);
         HASH_ADD_STR(singleton_kvs, key, e);

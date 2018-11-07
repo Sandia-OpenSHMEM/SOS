@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2018 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -42,52 +42,67 @@
 
 int main(int argc, char *argv[])
 {
-    latency_main(argc, argv);
+    latency_main(argc, argv, STYLE_PUT);
 
     return 0;
 }  /* end of main() */
 
 
 void
-long_element_round_trip_latency(perf_metrics_t data)
+long_element_round_trip_latency(perf_metrics_t * const data)
 {
+#ifndef USE_NONBLOCKING_API
     long_element_round_trip_latency_put(data);
+#endif
 }
 
 void
-int_element_latency(perf_metrics_t data)
+int_element_latency(perf_metrics_t * const data)
 {
+#ifndef USE_NONBLOCKING_API
     int_p_latency(data);
+#endif
 }
 
 void
-streaming_latency(int len, perf_metrics_t *data)
+streaming_latency(int len, perf_metrics_t * const metric_info)
 {
     double start = 0.0;
     double end = 0.0;
-    int i = 0;
-    static int print_once = 0;
-    if(!print_once && data->my_node == PUT_IO_NODE) {
-        printf("\nStreaming results for %d trials each of length %d through %d in"\
-              " powers of %d\n", data->trials, data->start_len,
-              data->max_len, data->inc);
-        print_results_header();
-        print_once++;
+    unsigned long int i = 0;
+    int dest = partner_node(metric_info);
+    int sender = (metric_info->num_pes != 1) ? streaming_node(metric_info) : true;
+    static int check_once = 0;
+
+    if (!check_once) {
+        /* check to see whether sender and receiver are the same process */
+        if (dest == metric_info->my_node) {
+            fprintf(stderr, "Warning: Sender and receiver are the same process (%d)\n",
+                             dest);
+        }
+        /* hostname validation for all sender and receiver processes */
+        int status = check_hostname_validation(metric_info);
+        if (status != 0) return;
+        check_once++;
     }
 
+    shmem_barrier_all();
     /*puts to zero to match gets validation scheme*/
-    if (data->my_node == 1) {
-
-        for (i = 0; i < data->trials + data->warmup; i++) {
-            if(i == data->warmup)
+    if (sender) {
+        for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
+            if(i == metric_info->warmup)
                 start = perf_shmemx_wtime();
 
-            shmem_putmem(data->dest, data->src, len, 0);
+#ifdef USE_NONBLOCKING_API
+            shmem_putmem_nbi(metric_info->dest, metric_info->src, len, dest);
+#else
+            shmem_putmem(metric_info->dest, metric_info->src, len, dest);
+#endif
             shmem_quiet();
 
         }
         end = perf_shmemx_wtime();
 
-        calc_and_print_results(start, end, len, *data);
+        calc_and_print_results(start, end, len, metric_info);
     }
 } /* latency/bw for one-way trip */

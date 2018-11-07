@@ -4,7 +4,7 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * Copyright (c) 2017 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -22,7 +22,7 @@
 
 
 #define FC_START_PES FC_FUNC_(start_pes, START_PES)
-void FC_START_PES(fortran_integer_t *npes);
+void SHMEM_FUNCTION_ATTRIBUTES FC_START_PES(fortran_integer_t *npes);
 void
 FC_START_PES(fortran_integer_t *npes)
 {
@@ -35,7 +35,7 @@ FC_START_PES(fortran_integer_t *npes)
 
 
 #define FC_SHMEM_INIT FC_FUNC_(shmem_init, SHMEM_INIT)
-void FC_SHMEM_INIT(void);
+void SHMEM_FUNCTION_ATTRIBUTES FC_SHMEM_INIT(void);
 void
 FC_SHMEM_INIT(void)
 {
@@ -45,12 +45,12 @@ FC_SHMEM_INIT(void)
         RAISE_ERROR_STR("attempt to reinitialize library");
     }
 
-    shmem_internal_init(SHMEMX_THREAD_SINGLE, &tl_provided);
+    shmem_internal_init(SHMEM_THREAD_SINGLE, &tl_provided);
 }
 
 
 #define FC_SHMEM_GLOBAL_EXIT FC_FUNC_(shmem_global_exit, SHMEM_GLOBAL_EXIT)
-void FC_SHMEM_GLOBAL_EXIT(fortran_integer_t *status);
+void SHMEM_FUNCTION_ATTRIBUTES FC_SHMEM_GLOBAL_EXIT(fortran_integer_t *status);
 void
 FC_SHMEM_GLOBAL_EXIT(fortran_integer_t *status)
 {
@@ -61,7 +61,7 @@ FC_SHMEM_GLOBAL_EXIT(fortran_integer_t *status)
 
 
 #define FC_SHMEM_FINALIZE FC_FUNC_(shmem_finalize, SHMEM_FINALIZE)
-void FC_SHMEM_FINALIZE(void);
+void SHMEM_FUNCTION_ATTRIBUTES FC_SHMEM_FINALIZE(void);
 void
 FC_SHMEM_FINALIZE(void)
 {
@@ -72,7 +72,7 @@ FC_SHMEM_FINALIZE(void)
 
 
 #define FC_SHMEM_INFO_GET_VERSION FC_FUNC_(shmem_info_get_version, SHMEM_INFO_GET_VERSION)
-void FC_SHMEM_INFO_GET_VERSION(fortran_integer_t *major, fortran_integer_t *minor);
+void SHMEM_FUNCTION_ATTRIBUTES FC_SHMEM_INFO_GET_VERSION(fortran_integer_t *major, fortran_integer_t *minor);
 void
 FC_SHMEM_INFO_GET_VERSION(fortran_integer_t *major, fortran_integer_t *minor)
 {
@@ -84,7 +84,7 @@ FC_SHMEM_INFO_GET_VERSION(fortran_integer_t *major, fortran_integer_t *minor)
 
 
 #define FC_SHMEM_INFO_GET_NAME FC_FUNC_(shmem_info_get_name, SHMEM_INFO_GET_NAME)
-void FC_SHMEM_INFO_GET_NAME(char *name, int32_t name_len);
+void SHMEM_FUNCTION_ATTRIBUTES FC_SHMEM_INFO_GET_NAME(char *name, int32_t name_len);
 void
 FC_SHMEM_INFO_GET_NAME(char *name, int32_t name_len)
 {

@@ -4,7 +4,7 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * Copyright (c) 2017 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -33,8 +33,8 @@
 #pragma weak shmemx_nodename = pshmemx_nodename
 #define shmemx_nodename pshmemx_nodename
 
-#pragma weak shmemx_init_thread = pshmemx_init_thread
-#define shmemx_init_thread pshmemx_init_thread
+#pragma weak shmem_init_thread = pshmem_init_thread
+#define shmem_init_thread pshmem_init_thread
 
 #pragma weak shmem_finalize = pshmem_finalize
 #define shmem_finalize pshmem_finalize
@@ -45,20 +45,21 @@
 #pragma weak shmem_info_get_name = pshmem_info_get_name
 #define shmem_info_get_name pshmem_info_get_name
 
+#pragma weak shmem_query_thread = pshmem_query_thread
+#define shmem_query_thread pshmem_query_thread
+
 #endif /* ENABLE_PROFILING */
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 start_pes(int npes)
 {
-    if (shmem_internal_initialized) {
-        RAISE_ERROR_STR("attempt to reinitialize library");
+    if (!shmem_internal_initialized) {
+        shmem_internal_start_pes(npes);
     }
-
-    shmem_internal_start_pes(npes);
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_init(void)
 {
     int tl_provided;
@@ -67,11 +68,11 @@ shmem_init(void)
         RAISE_ERROR_STR("attempt to reinitialize library");
     }
 
-    shmem_internal_init(SHMEMX_THREAD_SINGLE, &tl_provided);
+    shmem_internal_init(SHMEM_THREAD_SINGLE, &tl_provided);
 }
 
 
-char *
+char SHMEM_FUNCTION_ATTRIBUTES *
 shmemx_nodename(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -80,18 +81,28 @@ shmemx_nodename(void)
 }
 
 
-void
-shmemx_init_thread(int tl_requested, int *tl_provided)
+int SHMEM_FUNCTION_ATTRIBUTES
+shmem_init_thread(int tl_requested, int *tl_provided)
 {
     if (shmem_internal_initialized) {
         RAISE_ERROR_STR("attempt to reinitialize library");
     }
 
     shmem_internal_init(tl_requested, tl_provided);
+    return 0;
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
+shmem_query_thread(int *provided)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    *provided = shmem_internal_thread_level;
+}
+
+
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_global_exit(int status)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -100,7 +111,7 @@ shmem_global_exit(int status)
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_finalize(void)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -109,7 +120,7 @@ shmem_finalize(void)
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_info_get_version(int *major, int *minor)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -119,7 +130,7 @@ shmem_info_get_version(int *major, int *minor)
 }
 
 
-void
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_info_get_name(char *name)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -127,3 +138,4 @@ shmem_info_get_name(char *name)
     strncpy(name, SHMEM_VENDOR_STRING, SHMEM_MAX_NAME_LEN);
     name[SHMEM_MAX_NAME_LEN-1] = '\0'; /* Ensure string is null terminated */
 }
+

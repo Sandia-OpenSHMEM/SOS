@@ -1,0 +1,121 @@
+.TH SHMEM_N_PES 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_n_pes \- 
+Returns the number of PEs running in a program.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B int
+.B shmem\_n\_pes(void)
+
+
+./ sectionEnd
+
+
+
+./ sectionStart
+
+.B ***************DEPRECATED***************
+.SS Fortran:
+
+.nf
+
+.BR "INTEGER " "SHMEM_N_PES, N_PES"
+N_PES = SHMEM\_N\_PES()
+
+.fi
+.B ****************************************
+
+./ sectionEnd
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.B None.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+The routine returns the number of PEs running in the program.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+Integer - Number of PEs running in the OpenSHMEM program.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+As of OpenSHMEM[1.2] the use of 
+.B \_num\_pes
+has been
+deprecated. Although OpenSHMEM libraries are required to support the call,
+users are encouraged to use 
+.B shmem\_n\_pes
+instead. The behavior and
+signature of the routine 
+.B shmem\_n\_pes
+remains unchanged from the
+deprecated 
+.B \_num\_pes
+version.
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.SS Examples
+
+
+
+The following 
+.B shmem\_my\_pe
+and 
+.B shmem\_n\_pes
+example is for
+C/C++ programs:
+
+.nf
+#include <stdio.h>
+#include <shmem.h>
+
+int main(void)
+{
+  shmem_init();
+  int me = shmem_my_pe();
+  int npes = shmem_n_pes();
+  printf("I am #%d of %d PEs executing this program\\n", me, npes);
+  shmem_finalize();
+  return 0;
+}
+.fi
+
+
+
+
+

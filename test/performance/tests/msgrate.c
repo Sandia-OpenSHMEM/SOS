@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 /* configuration parameters - setable by command line arguments */
 int npeers = 6;
@@ -80,7 +81,13 @@ cache_invalidate(void)
 static inline double
 timer(void)
 {
+#ifdef HAVE_SHMEMX_WTIME
     return shmemx_wtime();
+#else
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (double) tv.tv_sec + (double) tv.tv_usec / 1000000.0;
+#endif /* HAVE_SHMEMX_WTIME */
 }
 
 
@@ -135,7 +142,7 @@ test_one_way(void)
                 shmem_barrier(0, 0, pe_size, barrier_pSync);
 
                 tmp = timer();
-                shmem_short_wait((short*) (recv_buf + (nbytes * (nmsgs - 1))), 0);
+                shmem_short_wait_until((short*) (recv_buf + (nbytes * (nmsgs - 1))), SHMEM_CMP_NE, 0);
                 total += (timer() - tmp);
                 memset(recv_buf, 0, npeers * nmsgs * nbytes);
             }
@@ -180,7 +187,7 @@ test_prepost(void)
             }
         }
         shmem_quiet();
-        shmem_short_wait((short*) (recv_buf + (nbytes * ((nmsgs - 1) + (npeers - 1) * nmsgs))), 0);
+        shmem_short_wait_until((short*) (recv_buf + (nbytes * ((nmsgs - 1) + (npeers - 1) * nmsgs))), SHMEM_CMP_NE, 0);
         total += (timer() - tmp);
         memset(recv_buf, 0, npeers * nmsgs * nbytes);
     }
@@ -292,9 +299,9 @@ main(int argc, char *argv[])
     shmem_barrier_all();
 
     /* broadcast results */
-    printf("%d: psync: 0x%lu\n", rank, (unsigned long) bcast_pSync);
     shmem_broadcast32(&start_err, &start_err, 1, 0, 0, 0, world_size, bcast_pSync);
     if (0 != start_err) {
+        shmem_finalize();
         exit(start_err);
     }
     shmem_barrier_all();

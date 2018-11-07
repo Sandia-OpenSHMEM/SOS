@@ -1,0 +1,157 @@
+.TH SHMEM_INIT 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_init \- 
+A collective operation that allocates and initializes the resources used by
+the OpenSHMEM library.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B void
+.B shmem\_init(void)
+
+
+./ sectionEnd
+
+
+
+./ sectionStart
+
+.B ***************DEPRECATED***************
+.SS Fortran:
+
+.nf
+
+.BR "CALL " "SHMEM\_INIT()"
+
+.fi
+.B ****************************************
+
+./ sectionEnd
+
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.B None.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+.B shmem\_init
+allocates and initializes resources used by the OpenSHMEM
+library. It is a collective operation that all PEs must call before any
+other OpenSHMEM routine may be called. At the end of the OpenSHMEM program
+which it initialized, the call to 
+.B shmem\_init
+must be matched with a
+call to 
+.BR "shmem\_finalize" .
+After the first call to 
+.BR "shmem\_init" ,
+a
+subsequent call to 
+.B shmem\_init
+or 
+.B shmem\_init\_thread
+in the
+same program results in undefined behavior.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+None.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+As of OpenSHMEM[1.2], the use of 
+.B start\_pes
+has been
+deprecated and calls to it should be replaced with calls to 
+.BR "shmem\_init" .
+While support for
+.B start\_pes
+is still required in OpenSHMEM libraries, users are
+encouraged to use 
+.BR "shmem\_init" .
+An important difference between
+.B shmem\_init
+and 
+.B start\_pes
+is that multiple calls to
+.B shmem\_init
+within a program results in undefined behavior, while in the
+case of 
+.BR "start\_pes" ,
+any subsequent calls to 
+.B start\_pes
+after the
+first one results in a no-op.
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.SS Examples
+
+
+
+The following 
+.B shmem\_init
+example is for C[11] programs: 
+
+.nf
+#include <stdio.h>
+#include <shmem.h>
+
+int main(void) {
+   static int targ = 0;
+
+   shmem_init();
+   int me = shmem_my_pe();
+   int receiver = 1 % shmem_n_pes();
+
+   if (me == 0) {
+       int src = 33;
+       shmem_put(&targ, &src, 1, receiver);
+   }
+
+   shmem_barrier_all(); /* Synchronizes sender and receiver */
+
+   if (me == receiver)
+       printf("PE %d targ=%d (expect 33)\\n", me, targ);
+
+   shmem_finalize();
+   return 0;
+}
+.fi
+
+
+
+
+

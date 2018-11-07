@@ -1,0 +1,170 @@
+.TH SHMEM_CACHE 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_cache \- 
+Controls data cache utilities.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+
+
+./ sectionStart
+.B ***************DEPRECATED***************
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B void
+.B shmem\_clear\_cache\_inv(void)
+
+
+.B void
+.B shmem\_set\_cache\_inv(void)
+
+
+.B void
+.B shmem\_clear\_cache\_line\_inv(void
+.I *dest
+.B );
+
+
+
+.B void
+.B shmem\_set\_cache\_line\_inv(void
+.I *dest
+.B );
+
+
+
+.B void
+.B shmem\_udcflush(void)
+
+
+.B void
+.B shmem\_udcflush\_line(void
+.I *dest
+.B );
+
+
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.B ****************************************
+./ sectionEnd
+
+
+% N.B., The DeprecateBlock environment is not necessary here
+% because the entire Fortran API is deprecated.
+./ sectionStart
+
+.B ***************DEPRECATED***************
+.SS Fortran:
+
+.nf
+
+.BR "CALL " "SHMEM\_CLEAR\_CACHE\_INV"
+.BR "CALL " "SHMEM\_SET\_CACHE\_INV"
+.BR "CALL " "SHMEM\_SET\_CACHE\_LINE\_INV(dest)"
+.BR "CALL " "SHMEM\_UDCFLUSH"
+.BR "CALL " "SHMEM\_UDCFLUSH\_LINE(dest)"
+
+.fi
+.B ****************************************
+
+./ sectionEnd
+
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I dest
+- A data object that is local to the PE. 
+.I dest
+can be of any noncharacter type. When using Fortran, it can be of any
+kind.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+.B shmem\_set\_cache\_inv
+enables automatic cache coherency mode.
+
+
+.B shmem\_set\_cache\_line\_inv
+enables automatic cache coherency mode for
+the cache line associated with the address of 
+.I dest
+only.
+
+
+.B shmem\_clear\_cache\_inv
+disables automatic cache coherency mode
+previously enabled by 
+.B shmem\_set\_cache\ \_inv
+or
+.BR "shmem\_set\_cache\_line\_inv" .
+
+
+
+.B shmem\_udcflush
+makes the entire user data cache coherent.
+
+
+.B shmem\_udcflush\_line
+makes coherent the cache line that corresponds with
+the address specified by 
+.IR "dest" .
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+None.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+These routines have been retained for improved backward compatibility with
+legacy architectures. They are not required to be supported by implementing
+them as 
+.I no-ops
+and where used, they may have no effect on cache line
+states.
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.SS Examples
+
+
+None.
+
+
+
+

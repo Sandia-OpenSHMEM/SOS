@@ -1,0 +1,18 @@
+## Sandia OpenSHMEM package metadata
+## Requires pkg-config 0.28 or later
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: sandia-openshmem
+Description: @PACKAGE_NAME@
+URL: @PACKAGE_URL@
+Version: @VERSION@
+Libs: -L${libdir} @WRAPPER_COMPILER_EXTRA_LDFLAGS@ -lsma @WRAPPER_COMPILER_EXTRA_LIBS@
+Cflags: -I${includedir}
+
+cxxflags=-I${includedir}
+fflags=-I${includedir}
+fcflags=-I${includedir}

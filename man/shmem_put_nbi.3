@@ -1,0 +1,461 @@
+.TH SHMEM_PUT_NBI 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_put_nbi \- 
+The nonblocking put routines provide a method for copying data
+from a contiguous local data object to a data object on a specified PE. 
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C11:
+
+.B void
+.B shmem\_put\_nbi(TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.B int
+.I pe
+.B );
+
+
+
+.B void
+.B shmem\_put\_nbi(shmem_ctx_t
+.IB "ctx" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the standard RMA types specified by Table 1.
+./ sectionStart
+.SS C/C++:
+
+.B void
+.B shmem\_TYPENAME\_put\_nbi(TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.B int
+.I pe
+.B );
+
+
+
+.B void
+.B shmem\_ctx\_TYPENAME\_put\_nbi(shmem_ctx_t
+.IB "ctx" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the standard RMA types and has a corresponding TYPENAME specified by Table 1.
+./ sectionStart
+
+.B void
+.B shmem\_putSIZE\_nbi(void
+.IB "*dest" ,
+.B const
+.B void
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.B int
+.I pe
+.B );
+
+
+
+.B void
+.B shmem\_ctx\_putSIZE\_nbi(shmem_ctx_t
+.IB "ctx" ,
+.B void
+.IB "*dest" ,
+.B const
+.B void
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+where SIZE is one of 8, 16, 32, 64, 128.
+./ sectionStart
+
+.B void
+.B shmem\_putmem\_nbi(void
+.IB "*dest" ,
+.B const
+.B void
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.B int
+.I pe
+.B );
+
+
+
+.B void
+.B shmem\_ctx\_putmem\_nbi(shmem_ctx_t
+.IB "ctx" ,
+.B void
+.IB "*dest" ,
+.B const
+.B void
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.B int
+.I pe
+.B );
+
+
+
+./ sectionEnd
+
+
+
+./ sectionStart
+
+.B ***************DEPRECATED***************
+.SS Fortran:
+
+.nf
+
+.BR "CALL " "SHMEM\_CHARACTER\_PUT\_NBI(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_COMPLEX\_PUT\_NBI(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_DOUBLE\_PUT\_NBI(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_INTEGER\_PUT\_NBI(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_LOGICAL\_PUT\_NBI(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_PUT4\_NBI(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_PUT8\_NBI(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_PUT32\_NBI(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_PUT64\_NBI(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_PUT128\_NBI(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_PUTMEM\_NBI(dest, source, nelems, pe)"
+.BR "CALL " "SHMEM\_REAL\_PUT\_NBI(dest, source, nelems, pe)"
+
+.fi
+.B ****************************************
+
+./ sectionEnd
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I ctx
+- The context on which to perform the operation.
+When this argument is not provided, the operation is performed on
+SHMEM\_CTX\_DEFAULT.
+
+
+.BR "OUT " -
+.I dest
+- Data object to be updated on the remote PE. This
+data object must be remotely accessible.
+
+
+.BR "IN " -
+.I source
+- Data object containing the data to be copied.
+
+
+.BR "IN " -
+.I nelems
+- Number of elements in the 
+.I dest
+and 
+.I source
+arrays. 
+.I nelems
+must be of type 
+.I size\_t
+for C. When using
+Fortran, it must be a constant, variable, or array element of default
+integer type.
+
+
+.BR "IN " -
+.I pe
+- PE number of the remote PE. 
+.I pe
+must be
+of type integer. When using Fortran, it must be a constant, variable,
+or array element of default integer type.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+The routines return after posting the operation. The operation is considered 
+complete after a subsequent call to 
+.BR "shmem\_quiet" .
+At the completion of 
+.BR "shmem\_quiet" ,
+the data has been copied into the 
+.I "dest"
+array
+on the destination PE.
+The delivery of data words into the data object on the
+destination PE may occur in any order.
+Furthermore, two successive put
+routines may deliver data out of order unless a call to 
+.B shmem\_fence
+is
+introduced between the two calls. 
+
+./ sectionEnd
+
+
+
+./ sectionStart
+
+The 
+.I "dest"
+and 
+.I "source"
+data objects must conform to certain typing
+constraints, which are as follows:
+.TP 25
+Routine
+Data type of 
+.I dest
+and 
+.I source
+
+./ sectionEnd
+
+
+./ sectionStart
+.TP 25
+shmem\_putmem\_nbi
+Fortran: Any noncharacter type. C: Any data type. nelems is scaled in bytes.
+./ sectionEnd
+
+
+./ sectionStart
+.TP 25
+shmem\_put4\_nbi, shmem\_put32\_nbi
+Any noncharacter type that has a storage size equal to 32 bits.
+./ sectionEnd
+
+
+./ sectionStart
+.TP 25
+shmem\_put8\_nbi
+C: Any noncharacter type that has a storage size equal to 8 bits.
+./ sectionEnd
+
+
+
+./ sectionStart
+Fortran: Any noncharacter type that has a storage size equal to 64 bits.
+./ sectionEnd
+
+
+./ sectionStart
+.TP 25
+shmem\_put64\_nbi
+Any noncharacter type that has a storage size equal to 64 bits.
+./ sectionEnd
+
+
+./ sectionStart
+.TP 25
+shmem\_put128\_nbi
+Any noncharacter type that has a storage size equal to 128 bits.
+./ sectionEnd
+
+
+./ sectionStart
+.TP 25
+SHMEM\_CHARACTER\_PUT\_NBI
+Elements of type character. 
+.I nelems
+is the number of characters to transfer. The actual character lengths of the 
+.I "source"
+and 
+.I "dest"
+variables are ignored. 
+./ sectionEnd
+
+
+./ sectionStart
+.TP 25
+SHMEM\_COMPLEX\_PUT\_NBI
+Elements of type complex of default size.
+./ sectionEnd
+
+
+./ sectionStart
+.TP 25
+SHMEM\_DOUBLE\_PUT\_NBI
+Elements of type double precision. 
+./ sectionEnd
+
+
+./ sectionStart
+.TP 25
+SHMEM\_INTEGER\_PUT\_NBI
+Elements of type integer.
+./ sectionEnd
+
+
+./ sectionStart
+.TP 25
+SHMEM\_LOGICAL\_PUT\_NBI
+Elements of type logical.
+./ sectionEnd
+
+
+./ sectionStart
+.TP 25
+SHMEM\_REAL\_PUT\_NBI
+Elements of type real.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+None.
+
+./ sectionEnd
+
+./ sectionStart
+
+.SS API Notes
+None.
+./ sectionEnd
+
+
+
+
+.SS Table 1:
+Standard RMA Types and Names
+.TP 25
+.B \TYPE
+.B \TYPENAME
+.TP
+float
+float
+.TP
+double
+double
+.TP
+long double
+longdouble
+.TP
+char
+char
+.TP
+signed char
+schar
+.TP
+short
+short
+.TP
+int
+int
+.TP
+long
+long
+.TP
+long long
+longlong
+.TP
+unsigned char
+uchar
+.TP
+unsigned short
+ushort
+.TP
+unsigned int
+uint
+.TP
+unsigned long
+ulong
+.TP
+unsigned long long
+ulonglong
+.TP
+int8\_t
+int8
+.TP
+int16\_t
+int16
+.TP
+int32\_t
+int32
+.TP
+int64\_t
+int64
+.TP
+uint8\_t
+uint8
+.TP
+uint16\_t
+uint16
+.TP
+uint32\_t
+uint32
+.TP
+uint64\_t
+uint64
+.TP
+size\_t
+size
+.TP
+ptrdiff\_t
+ptrdiff

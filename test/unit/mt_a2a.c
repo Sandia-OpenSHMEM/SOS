@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2017 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -34,9 +34,10 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <pthread.h>
-#include <pthread_barrier.h>
 #include <shmem.h>
-#include <shmemx.h>
+
+/* For systems without the PThread barrier API (e.g. MacOS) */
+#include "pthread_barrier.h"
 
 #define T 8
 
@@ -56,7 +57,7 @@ static void * thread_main(void *arg) {
     /* TEST CONCURRENT ATOMICS */
     val = me;
     for (i = 1; i <= npes; i++)
-        shmem_int_add(&dest[tid], val, (me + i) % npes);
+        shmem_int_atomic_add(&dest[tid], val, (me + i) % npes);
 
     /* Ensure that fence does not overlap with communication calls */
     pthread_barrier_wait(&fencebar);
@@ -64,7 +65,7 @@ static void * thread_main(void *arg) {
     pthread_barrier_wait(&fencebar);
 
     for (i = 1; i <= npes; i++)
-        shmem_int_inc(&flag[tid], (me + i) % npes);
+        shmem_int_atomic_inc(&flag[tid], (me + i) % npes);
 
     shmem_int_wait_until(&flag[tid], SHMEM_CMP_EQ, npes);
 
@@ -78,6 +79,7 @@ static void * thread_main(void *arg) {
         pthread_mutex_unlock(&mutex);
     }
 
+    pthread_barrier_wait(&fencebar);
     if (0 == tid) shmem_barrier_all();
     pthread_barrier_wait(&fencebar);
 
@@ -112,17 +114,21 @@ static void * thread_main(void *arg) {
 
 
 int main(int argc, char **argv) {
-    int tl, i;
+    int tl, i, ret;
     pthread_t threads[T];
     int       t_arg[T];
 
-    shmemx_init_thread(SHMEMX_THREAD_MULTIPLE, &tl);
+    ret = shmem_init_thread(SHMEM_THREAD_MULTIPLE, &tl);
 
-    /* If OpenSHMEM doesn't support multithreading, exit gracefully */
-    if (SHMEMX_THREAD_MULTIPLE != tl) {
-        printf("Warning: Exiting because threading is disabled, tested nothing\n");
-        shmem_finalize();
-        return 0;
+    if (tl != SHMEM_THREAD_MULTIPLE || ret != 0) {
+        printf("Init failed (requested thread level %d, got %d, ret %d)\n",
+               SHMEM_THREAD_MULTIPLE, tl, ret);
+
+        if (ret == 0) {
+            shmem_global_exit(1);
+        } else {
+            return ret;
+        }
     }
 
     me = shmem_my_pe();

@@ -4,7 +4,7 @@
 # DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
 # retains certain rights in this software.
 #
-# Copyright (c) 2016 Intel Corporation. All rights reserved.
+# Copyright (c) 2017 Intel Corporation. All rights reserved.
 # This software is available to you under the BSD license.
 #
 # This file is part of the Sandia OpenSHMEM software package. For license
@@ -22,9 +22,16 @@ endif
 NPROCS ?= 2
 LOG_COMPILER = $(TEST_RUNNER)
 
-AM_CPPFLAGS = -I$(top_builddir)/mpp
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
+
+if EXTERNAL_TESTS
+bin_PROGRAMS = $(check_PROGRAMS)
+AM_CPPFLAGS =
+LDADD =
+else
+AM_CPPFLAGS = -I$(top_builddir)/mpp
 LDADD = $(top_builddir)/src/libsma.la
+endif
 
 if USE_PMI_SIMPLE
 LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la

@@ -68,6 +68,12 @@ main(int argc, char* argv[])
         return 0;
     }
 
+    if (sizeof(long) != 8) {
+        printf("Test assumes 64-bit long (%zd)\n", sizeof(long));
+        shmem_global_exit(1);
+        return 0;
+    }
+
     if ((pgm=strrchr(argv[0],'/'))) {
         pgm++;
     } else {

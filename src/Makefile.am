@@ -4,7 +4,7 @@
 # DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
 # retains certain rights in this software.
 #
-# Copyright (c) 2016 Intel Corporation. All rights reserved.
+# Copyright (c) 2017 Intel Corporation. All rights reserved.
 # This software is available to you under the BSD license.
 #
 # This file is part of the Sandia OpenSHMEM software package. For license
@@ -15,6 +15,7 @@ AM_CPPFLAGS = -I$(top_builddir)/mpp
 
 GEN_BINDINGS = \
 	atomic_c.c \
+	atomic_nbi_c.c \
 	collectives_c.c \
 	data_c.c \
 	synchronization_c.c
@@ -52,7 +53,13 @@ libsma_la_SOURCES = \
 	transport.h \
 	util.c \
 	uthash.h \
-	shmem_decl.h
+	shmem_decl.h \
+	shmem_env.c \
+	shmem_env.h \
+	shmem_env_defs.h \
+	contexts_c.c \
+	contexts.c \
+	perf_counters_c.c
 
 nodist_libsma_la_SOURCES = \
 	$(GEN_BINDINGS)
@@ -88,6 +95,14 @@ libsma_la_SOURCES += \
 	transport_ofi.c
 endif
 
+if !USE_PORTALS4
+if !USE_OFI
+libsma_la_SOURCES += \
+	transport_none.c \
+	transport_none.h
+endif
+endif
+
 if USE_XPMEM
 libsma_la_SOURCES += \
 	transport_xpmem.h \
@@ -102,16 +117,31 @@ endif
 
 if USE_PMI_SIMPLE
 AM_CPPFLAGS += -I$(top_srcdir)/pmi-simple
-endif
-
+libsma_la_SOURCES += \
+	runtime-pmi.c
+else
+if USE_PMI_MPI
+libsma_la_SOURCES += \
+	runtime-mpi.c
+else
+if USE_PMI1
+libsma_la_SOURCES += \
+	runtime-pmi.c
+else
 if USE_PMI2
 libsma_la_SOURCES += \
 	runtime-pmi2.c
 else
+if USE_PMIX
 libsma_la_SOURCES += \
-	runtime-pmi.c
-endif
+	runtime-pmix.c
+endif USE_PMIX
+endif !USE_PMI2
+endif !USE_PMI1
+endif !USE_PMI_MPI
+endif !USE_PMI_SIMPLE
 
+pkgconfig_DATA = sandia-openshmem.pc
 
 bin_SCRIPTS = oshcc oshrun
 CLEANFILES += oshcc oshrun
@@ -131,13 +161,12 @@ endif
 EXTRA_DIST = shmem_compiler_script.in \
              shmem_launcher_script.in \
              atomic_c.c4              \
+             atomic_nbi_c.c4          \
              collectives_c.c4         \
              collectives_f.c4         \
              data_c.c4                \
              data_f.c4                \
-             synchronization_c.c4     \
-             shmem_bind_c.m4          \
-             shmem_bind_f.m4
+             synchronization_c.c4
 
 do_subst = sed -e 's|[@]PERL[@]|$(PERL)|g' \
                -e 's|[@]WRAPPER_COMPILER_CC[@]|$(WRAPPER_COMPILER_CC)|g' \
@@ -147,6 +176,8 @@ do_subst = sed -e 's|[@]PERL[@]|$(PERL)|g' \
                -e 's|[@]WRAPPER_COMPILER_LIBDIR[@]|$(libdir)|g' \
                -e 's|[@]WRAPPER_COMPILER_EXTRA_LDFLAGS[@]|$(WRAPPER_COMPILER_EXTRA_LDFLAGS)|g' \
                -e 's|[@]WRAPPER_COMPILER_EXTRA_LIBS[@]|$(WRAPPER_COMPILER_EXTRA_LIBS)|g'
+
+do_subst_launcher = sed -e 's|[@]WRAPPER_SEARCH_LAUNCHERS[@]|$(WRAPPER_SEARCH_LAUNCHERS)|g' 
 
 AM_V_SED = $(am__v_SED_@AM_V@)
 am__v_SED_ = $(am__v_SED_@AM_DEFAULT_V@)
@@ -180,10 +211,10 @@ oshfort: shmem_compiler_script.in Makefile
 	@chmod +x oshfort
 
 oshrun: shmem_launcher_script.in Makefile
-	$(AM_V_SED) cp $(srcdir)/shmem_launcher_script.in oshrun
+	$(AM_V_SED)$(do_subst_launcher) < $(srcdir)/shmem_launcher_script.in > oshrun
 	@chmod +x oshrun
 
 SUFFIXES = .c4
 
-.c4.c: shmem_bind_c.m4 shmem_bind_f.m4
-	$(AM_V_GEN) $(M4) -I$(top_srcdir)/src $< > $@
+.c4.c: $(top_srcdir)/bindings/shmem_bind_c.m4 $(top_srcdir)/bindings/shmem_bind_f.m4
+	$(AM_V_GEN) $(M4) -I$(top_srcdir)/bindings -I$(top_builddir)/bindings $< > $@

@@ -29,18 +29,27 @@
  * SOFTWARE.
  */
 
-/* long_finc neighbor - Perf test shmem_atomic_finc(); */
+/* long_finc neighbor - Perf test shmem_atomic_fetch_inc(); */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
 #include <assert.h>
+#include <sys/time.h>
 
 #include <shmem.h>
 #include <shmemx.h>
 
 #define LOOPS 25000
+
+#ifndef HAVE_SHMEMX_WTIME
+static double shmemx_wtime(void) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (double) tv.tv_sec + (double) tv.tv_usec / 1000000.0;
+}
+#endif /* HAVE_SHMEMX_WTIME */
 
 int Verbose;
 double elapsed;
@@ -62,6 +71,14 @@ int main( int argc, char *argv[])
     my_pe = shmem_my_pe();
     npes = shmem_n_pes();
 
+    if (loops <= 0) {
+        if (my_pe == 0)
+            printf("Error: loops must be greater than 0\n");
+
+        shmem_finalize();
+        return 1;
+    }
+
     data = shmem_malloc(data_sz);
     if (!data) {
         fprintf(stderr,"[%d] shmem_malloc(%ld) failure? %d\n",
@@ -76,7 +93,7 @@ int main( int argc, char *argv[])
     start_time = shmemx_wtime();
     for(j=0,elapsed=0.0; j < loops; j++) {
         start_time = shmemx_wtime();
-        lval = shmem_long_finc( (void*)&data[1], neighbor );
+        lval = shmem_long_atomic_fetch_inc( (void*)&data[1], neighbor );
         elapsed += shmemx_wtime() - start_time;
         if (lval != (long) j) {
             fprintf(stderr,"[%d] Test: FAIL previous val %ld != %d Exit.\n",
@@ -100,8 +117,8 @@ int main( int argc, char *argv[])
     if (my_pe == 0 ) {
         if (rc == 0 && Verbose)
             fprintf(stderr,"[%d] finc neighbor: PASSED.\n",my_pe);
-        fprintf(stderr,"[%d] %d loops of shmem_long_finc() in %6.4f secs\n"
-                "  %2.6f usecs per shmem_long_finc()\n",
+        fprintf(stderr,"[%d] %d loops of shmem_long_atomic_fetch_inc() in %6.4f secs\n"
+                "  %2.6f usecs per shmem_long_atomic_fetch_inc()\n",
                     my_pe,loops,elapsed,((elapsed*100000.0)/(double)loops));
     }
     shmem_free(data);

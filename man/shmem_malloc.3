@@ -1,0 +1,277 @@
+.TH SHMEM_MALLOC 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_malloc \- 
+Collective symmetric heap memory management routines.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B void
+.B *shmem\_malloc(size_t
+.I size
+.B );
+
+
+
+.B void
+.B shmem\_free(void
+.I *ptr
+.B );
+
+
+
+.B void
+.B *shmem\_realloc(void
+.IB "*ptr" ,
+.B size_t
+.I size
+.B );
+
+
+
+.B void
+.B *shmem\_align(size_t
+.IB "alignment" ,
+.B size_t
+.I size
+.B );
+
+
+
+./ sectionEnd
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I size
+- The size, in bytes, of a block to be
+allocated from the symmetric heap. This argument is of type 
+.I size\_t
+
+
+
+.BR "IN " -
+.I ptr
+- Points to a block within the symmetric heap.
+
+
+.BR "IN " -
+.I alignment
+- Byte alignment of the block allocated from the
+symmetric heap.
+./ sectionEnd
+
+
+
+./ sectionStart
+
+.SS API Description
+
+The 
+.BR "shmem\_malloc" ,
+.BR "shmem\_free" ,
+.BR "shmem\_realloc" ,
+and
+.B shmem\_align
+routines are collective operations that require
+participation by all PEs.
+
+The 
+.B shmem\_malloc
+routine returns a pointer to a block of at least
+.I size
+bytes suitably aligned for any use. This space is allocated from the
+symmetric heap (in contrast to 
+.BR "malloc" ,
+which allocates from the private
+heap).
+
+The 
+.B shmem\_align
+routine allocates a block in the symmetric heap that has
+a byte alignment specified by the 
+.I alignment
+argument.
+
+The 
+.B shmem\_free
+routine causes the block to which 
+.I ptr
+points to be
+deallocated, that is, made available for further allocation. If 
+.I ptr
+is a
+null pointer, no action occurs.
+
+The 
+.B shmem\_realloc
+routine changes the size of the block to which
+.I ptr
+points to the size (in bytes) specified by 
+.IR "size" .
+The contents
+of the block are unchanged up to the lesser of the new and old sizes. If the new
+size is larger, the newly allocated portion of the block is
+uninitialized. If 
+.I ptr
+is a null pointer, the
+.B shmem\_realloc
+routine behaves like the 
+.B shmem\_malloc
+routine for
+the specified size. If 
+.I size
+is 0 and 
+.I ptr
+is not a
+null pointer, the block to which it points is freed. If the space cannot
+be allocated, the block to which 
+.I ptr
+points is unchanged.
+
+The 
+.BR "shmem\_malloc" ,
+.BR "shmem\_align" ,
+.BR "shmem\_free" ,
+and 
+.B shmem\_realloc
+routines
+are provided so that multiple PEs in a program can allocate symmetric,
+remotely accessible memory blocks. These memory blocks can then be used with
+OpenSHMEM communication routines. Each of these routines includes at least one
+call to a procedure that is semantically equivalent to 
+.B shmem\_barrier\_all
+:
+.B shmem\_malloc
+and 
+.B shmem\_align
+call a
+barrier on exit; 
+.B shmem\_free
+calls a barrier on entry; and
+.B shmem\_realloc
+may call barriers on both entry and exit, depending on
+whether an existing allocation is modified and whether new memory is allocated.
+This ensures that all
+PEs participate in the memory allocation, and that the memory on other
+PEs can be used as soon as the local PE returns.
+The implicit barriers performed by these routines quiet the
+default context. It is the user's responsibility to ensure that no
+communication operations involving the given memory block are pending on
+other contexts prior to calling
+the 
+.B shmem\_free
+and 
+.B shmem\_realloc
+routines.
+The user is also
+responsible for calling these routines with identical argument(s) on all
+PEs; if differing 
+.I ptr
+, 
+.I size
+, or 
+.I alignment
+arguments are used, the behavior of the call
+and any subsequent OpenSHMEM calls is undefined.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+The 
+.B shmem\_malloc
+routine returns a pointer to the allocated space;
+otherwise, it returns a null pointer.
+
+The 
+.B shmem\_free
+routine returns no value.
+
+The 
+.B shmem\_realloc
+routine returns a pointer to the allocated space
+(which may have moved); otherwise, it returns a null pointer.
+
+The 
+.B shmem\_align
+routine returns an aligned pointer to the allocated
+space; otherwise, it returns a null pointer.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+As of OpenSHMEM[1.2] the use of 
+.BR "shmalloc" ,
+.BR "shmemalign" ,
+.BR "shfree" ,
+and 
+.B shrealloc
+has been deprecated. Although OpenSHMEM
+libraries are required to support the calls, users are encouraged to use
+.BR "shmem\_malloc" ,
+.BR "shmem\_align" ,
+.BR "shmem\_free" ,
+and
+.B shmem\_realloc
+instead. The behavior and signature of the routines
+remains unchanged from the deprecated versions.
+
+The total size of the symmetric heap is determined at job startup. One can
+specify the size of the heap using the 
+.I SHMEM\_SYMMETRIC\_SIZE
+environment
+variable (where available).
+
+The 
+.BR "shmem\_malloc" ,
+.BR "shmem\_free" ,
+and 
+.B shmem\_realloc
+routines
+differ from the private heap allocation routines in that all PEs in a
+program must call them (a barrier is used to ensure this).
+
+./ sectionEnd
+		
+
+./ sectionStart
+
+.SS Note to Implementors
+
+The symmetric heap allocation routines always return a pointer to corresponding
+symmetric objects across all PEs. The OpenSHMEM specification does not
+require that the virtual addresses are equal across all PEs. Nevertheless,
+the implementation must avoid costly address translation operations in the
+communication path, including O(N) memory translation tables,
+where N is the number of PEs. In order to avoid address translations, the
+implementation may re-map the allocated block of memory based on agreed virtual
+address. Additionally, some operating systems provide an option to disable
+virtual address randomization, which enables predictable allocation of virtual
+memory addresses.
+
+./ sectionEnd
+
+
+
+

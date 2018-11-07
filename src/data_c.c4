@@ -207,7 +207,7 @@ SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_CTX_IGET_N')
     SHMEM_ERR_CHECK_INITIALIZED();                             \
     SHMEM_ERR_CHECK_PE(pe);                                    \
     SHMEM_ERR_CHECK_SYMMETRIC(addr, sizeof(TYPE));             \
-    shmem_internal_put_small(ctx, addr, &value, sizeof(TYPE),  \
+    shmem_internal_put_scalar(ctx, addr, &value, sizeof(TYPE), \
                              pe);                              \
   }
 
@@ -353,7 +353,7 @@ SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_CTX_IGET_N')
     SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE) * ((nelems-1) * tst + 1)); \
     SHMEM_ERR_CHECK_NULL(source, nelems);                     \
     for ( ; nelems > 0 ; --nelems) {                          \
-      shmem_internal_put_small(ctx, target, source,           \
+      shmem_internal_put_scalar(ctx, target, source,          \
                                sizeof(TYPE), pe);             \
       target += tst;                                          \
       source += sst;                                          \
@@ -373,7 +373,7 @@ SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_CTX_IGET_N')
     SHMEM_ERR_CHECK_SYMMETRIC(target, SIZE * ((nelems-1) * tst + 1)); \
     SHMEM_ERR_CHECK_NULL(source, nelems);                    \
     for ( ; nelems > 0 ; --nelems) {                         \
-      shmem_internal_put_small(ctx, target, source, (SIZE),  \
+      shmem_internal_put_scalar(ctx, target, source, (SIZE), \
                                pe);                          \
       target = (uint8_t*)target + tst*(SIZE);                \
       source = (uint8_t*)source + sst*(SIZE);                \

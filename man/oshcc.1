@@ -1,0 +1,26 @@
+.TH OSHCC 1 "OpenSHMEM Library Documentation"
+.SH NAME
+oshcc - Compiles and links OpenSHMEM programs written in C
+.SH DESCRIPTION
+This command can be used to compile and link OpenSHMEM programs written in C.
+It provides the options and any special libraries that are needed to compile and link OpenSHMEM programs.
+
+It is important to use this command, particularly when linking programs, as it provides the necessary libraries.
+
+usage: oshcc [oshcc_options] [compiler_arguments]
+.SH COMMAND LINE ARGUMENTS
+.TP 8
+.B --help
+- Display this information
+.TP
+.B -showme | -show
+- Print the command that would be run without executing it
+.TP
+.B -E | -M
+- Disable compilation and linking
+.TP
+.B -S
+- Disable linking
+.TP
+.B -c
+- Compile and assemble. Disable link

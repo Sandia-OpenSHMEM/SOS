@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2018 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -25,77 +25,103 @@
  * SOFTWARE.
  */
 
-void static inline
-long_element_round_trip_latency_get(perf_metrics_t data)
+static inline
+void long_element_round_trip_latency_get(perf_metrics_t * const metric_info)
 {
     double start = 0.0;
     double end = 0.0;
-    int dest = 1, i = 0;
-    int partner_pe = partner_node(data.my_node);
-    *data.target = data.my_node;
+    int dest = partner_node(metric_info);
+    int receiver = (metric_info->num_pes != 1) ? streaming_node(metric_info) : true;
+    *metric_info->target = metric_info->my_node;
+    static int check_once = 0;
 
-    if (data.my_node == GET_IO_NODE) {
-        printf("\nshmem_long_g results:\n");
-        print_results_header();
+    if (!check_once) {
+        /* check to see whether sender and receiver are the same process */
+        if (dest == metric_info->my_node) {
+            fprintf(stderr, "Warning: Sender and receiver are the same process (%d)\n",
+                             dest);
+        }
+        /* hostname validation for all sender and receiver processes */
+        int status = check_hostname_validation(metric_info);
+        if (status != 0) return;
+        check_once++;
+    }
+
+    if (metric_info->my_node == 0) {
+        printf("shmem_long_g results:\n");
+        print_latency_header();
     }
 
     shmem_barrier_all();
 
-    if (data.my_node == GET_IO_NODE) {
-        for (i = 0; i < data.trials + data.warmup; i++) {
-            if(i == data.warmup)
+    if (receiver) {
+        unsigned int i;
+        for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
+            if(i == metric_info->warmup)
                 start = perf_shmemx_wtime();
 
-            *data.target = shmem_long_g(data.target, dest);
+            *metric_info->target = shmem_long_g(metric_info->target, dest);
         }
         end = perf_shmemx_wtime();
 
-        calc_and_print_results(start, end, sizeof(long), data);
+        calc_and_print_results(start, end, sizeof(long), metric_info);
 
-        if(data.validate) {
-            if(*data.target != partner_pe)
+        if(metric_info->validate) {
+            if(*metric_info->target != dest)
                 printf("validation error shmem_long_g target = %ld != %d\n",
-                        *data.target, partner_pe);
+                        *metric_info->target, dest);
         }
     }
 } /*gauge small get pathway round trip latency*/
 
-void static inline
-long_element_round_trip_latency_put(perf_metrics_t data)
+static inline
+void long_element_round_trip_latency_put(perf_metrics_t * const metric_info)
 {
     double start = 0.0;
     double end = 0.0;
     long tmp;
-    int dest = (data.my_node + 1) % data.npes, i = 0;
-    tmp = *data.target = INIT_VALUE;
+    int dest = partner_node(metric_info);
+    int sender = (metric_info->num_pes != 1) ? streaming_node(metric_info) : true;
+    unsigned int i;
+    tmp = *metric_info->target = INIT_VALUE;
+    static int check_once = 0;
 
-    if (data.my_node == PUT_IO_NODE) {
-        printf("\nPing-Pong shmem_long_p results:\n");
-        print_results_header();
+    if (!check_once) {
+        /* check to see whether sender and receiver are the same process */
+        if (dest == metric_info->my_node) {
+            fprintf(stderr, "Warning: Sender and receiver are the same process (%d)\n",
+                             dest);
+        }
+        /* hostname validation for all sender and receiver processes */
+        int status = check_hostname_validation(metric_info);
+        if (status != 0) return;
+        check_once++;
+    }
+
+    if (metric_info->my_node == 0) {
+        printf("Ping-Pong shmem_long_p results:\n");
+        print_latency_header();
     }
 
     shmem_barrier_all();
 
-    if (data.my_node == PUT_IO_NODE) {
-        for (i = 0; i < data.trials + data.warmup; i++) {
-            if(i == data.warmup)
+    if (sender) {
+        for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
+            if(i == metric_info->warmup)
                 start = perf_shmemx_wtime();
 
-            shmem_long_p(data.target, ++tmp, dest);
-
-            shmem_long_wait_until(data.target, SHMEM_CMP_EQ, tmp);
+            shmem_long_p(metric_info->target, ++tmp, dest);
+            shmem_long_wait_until(metric_info->target, SHMEM_CMP_EQ, tmp);
         }
         end = perf_shmemx_wtime();
-
-        data.trials = data.trials*2; /*output half to get single round trip time*/
-        calc_and_print_results(start, end, sizeof(long), data);
+        metric_info->trials = metric_info->trials * 2; /*output half to get single round trip time*/
+        calc_and_print_results(start, end, sizeof(long), metric_info);
 
    } else {
-        for (i = 0; i < data.trials + data.warmup; i++) {
-            shmem_long_wait_until(data.target, SHMEM_CMP_EQ, ++tmp);
-
-            shmem_long_p(data.target, tmp, dest);
+        for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
+            shmem_long_wait_until(metric_info->target, SHMEM_CMP_EQ, ++tmp);
+            shmem_long_p(metric_info->target, tmp, dest);
         }
    }
 
-} /*gauge small put pathway round trip latency*/
+} /* gauge small put pathway round trip latency */

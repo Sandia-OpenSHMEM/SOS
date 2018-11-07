@@ -11,7 +11,7 @@
 # information, see the LICENSE file in the top level directory of the
 # distribution.
 
-AM_CPPFLAGS= -I$(top_builddir)/../src
+AM_CPPFLAGS= -I$(top_srcdir)/src
 
 if USE_PMI_SIMPLE
 lib_LTLIBRARIES = libpmi_simple.la

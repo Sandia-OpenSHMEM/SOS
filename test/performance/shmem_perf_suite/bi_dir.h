@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2018 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -25,34 +25,134 @@
  * SOFTWARE.
  */
 
-void static inline bi_bw(int len, perf_metrics_t *metric_info)
+static inline void bi_bw_put(int len, perf_metrics_t * const metric_info)
 {
     double start = 0.0, end = 0.0;
-    int dest = partner_node(*metric_info);
-    int i = 0, j = 0;
+    int dest = partner_node(metric_info);
+    unsigned long int i = 0, j = 0;
+    static int check_once = 0;
+    static int fin = -1;
+
+    if (!check_once) {
+        /* check to see whether sender and receiver are the same process */
+        if (dest == metric_info->my_node) {
+            fprintf(stderr, "Warning: Sender and receiver are the same process (%d)\n", 
+                             dest);
+        }
+        /* hostname validation for all sender and receiver processes */
+        int status = check_hostname_validation(metric_info);
+        if (status != 0) return;
+        check_once++;
+    }
 
     shmem_barrier_all();
 
-    if (streaming_node(*metric_info)) {
-        for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
-            if(i == metric_info->warmup)
-                start = perf_shmemx_wtime();
-
-            for(j = 0; j < metric_info->window_size; j++)
-                shmem_putmem(metric_info->dest, metric_info->src, len, dest);
-
-            shmem_quiet();
+    for (i = 0; i < metric_info->warmup; i++) {
+        for(j = 0; j < metric_info->window_size; j++) {
+#ifdef USE_NONBLOCKING_API
+            shmem_putmem_nbi(metric_info->dest, metric_info->src, len, dest);
+#else
+            shmem_putmem(metric_info->dest, metric_info->src, len, dest);
+#endif
         }
+        shmem_quiet();
+    }
+
+    shmem_barrier_all();
+    if (streaming_node(metric_info)) {
+        start = perf_shmemx_wtime();
+    }
+
+    for (i = 0; i < metric_info->trials; i++) {
+        for(j = 0; j < metric_info->window_size; j++) {
+#ifdef USE_NONBLOCKING_API
+            shmem_putmem_nbi(metric_info->dest, metric_info->src, len, dest);
+#else
+            shmem_putmem(metric_info->dest, metric_info->src, len, dest);
+#endif
+        }
+        shmem_quiet();
+    }
+
+    if (streaming_node(metric_info)) {
+        shmem_int_p(&fin, 1, dest);
+        shmem_int_wait_until(&fin, SHMEM_CMP_EQ, 0);
         end = perf_shmemx_wtime();
-
-        calc_and_print_results((end - start), len, *metric_info);
-
+        calc_and_print_results(end, start, len, metric_info);
     } else {
-        for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
-            for(j = 0; j < metric_info->window_size; j++)
-                shmem_putmem(metric_info->dest, metric_info->src, len, dest);
+        shmem_int_wait_until(&fin, SHMEM_CMP_EQ, 1);
+        shmem_int_p(&fin, 0, dest);
+    }
 
-            shmem_quiet();
+}
+
+static inline void bi_bw_get(int len, perf_metrics_t * const metric_info)
+{
+    double start = 0.0, end = 0.0;
+    int dest = partner_node(metric_info);
+    unsigned long int i = 0, j = 0;
+    static int check_once = 0;
+    static int fin = -1;
+
+    if (!check_once) {
+        /* check to see whether sender and receiver are the same process */
+        if (dest == metric_info->my_node) {
+            fprintf(stderr, "Warning: Sender and receiver are the same process (%d)\n", 
+                             dest);
         }
+        /* hostname validation for all sender and receiver processes */
+        int status = check_hostname_validation(metric_info);
+        if (status != 0) return;
+        check_once++;
+    }
+
+    shmem_barrier_all();
+
+    for (i = 0; i < metric_info->warmup; i++) {
+        for(j = 0; j < metric_info->window_size; j++) {
+		/* Choosing to skip quiet for both blocking and non-blocking getmem
+                 * as this sequence of operation (writing to the same location) is 
+                 * currently undefined by the OpenSHMEM Spec. */ 
+#ifdef USE_NONBLOCKING_API
+            shmem_getmem_nbi(metric_info->dest, metric_info->src, len, dest);
+#else
+            shmem_getmem(metric_info->dest, metric_info->src, len, dest);
+#endif
+        }
+#ifdef USE_NONBLOCKING_API
+        shmem_quiet();
+#endif
+    }
+
+    shmem_barrier_all();
+    if (streaming_node(metric_info)) {
+        start = perf_shmemx_wtime();
+    }
+
+    for (i = 0; i < metric_info->trials; i++) {
+        for(j = 0; j < metric_info->window_size; j++) {
+                /* Choosing to skip quiet for both blocking and non-blocking getmem
+                 * as this sequence of operation (writing to the same location) is
+                 * currently undefined by the OpenSHMEM Spec. */
+#ifdef USE_NONBLOCKING_API
+            shmem_getmem_nbi(metric_info->dest, metric_info->src, len, dest);
+#else
+            shmem_getmem(metric_info->dest, metric_info->src, len, dest);
+#endif
+        }
+#ifdef USE_NONBLOCKING_API
+        shmem_quiet();
+#endif
+    } 
+
+    if (streaming_node(metric_info)) {
+        shmem_int_p(&fin, 1, dest);
+        shmem_int_wait_until(&fin, SHMEM_CMP_EQ, 0);
+        end = perf_shmemx_wtime();
+        calc_and_print_results(end, start, len, metric_info);
+    } else {
+        shmem_int_wait_until(&fin, SHMEM_CMP_EQ, 1);
+        shmem_int_p(&fin, 0, dest);
     }
 }
+

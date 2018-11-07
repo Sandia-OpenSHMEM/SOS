@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2018 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -33,7 +33,6 @@
 **
 **  -by default megabytes/second results
 **
-**NOTE: this test assumes correctness of reduction algorithm
 */
 
 #include <bw_common.h>
@@ -41,13 +40,13 @@
 
 int main(int argc, char *argv[])
 {
-    bi_dir_bw_main(argc, argv);
+    bi_dir_bw_main(argc, argv, STYLE_PUT);
 
     return 0;
 }
 
 void
-bi_dir_bw(int len, perf_metrics_t *metric_info)
+bi_dir_bw(int len, perf_metrics_t * const metric_info)
 {
-    bi_bw(len, metric_info);
+    bi_bw_put(len, metric_info);
 }

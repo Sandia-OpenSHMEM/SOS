@@ -19,22 +19,221 @@ dnl vi: set ft=m4
  */
 
 include(shmem_bind_c.m4)dnl
+include(shmem_bind_c11.m4)dnl
+include(shmem_bind_cxx.m4)dnl
 #ifndef SHMEMX_H
 #define SHMEMX_H
 
 #include <stddef.h>
+#include <shmem.h>
 
-#define SHMEMX_THREAD_SINGLE     0
-#define SHMEMX_THREAD_FUNNELED   1
-#define SHMEMX_THREAD_SERIALIZED 2
-#define SHMEMX_THREAD_MULTIPLE   3
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define HAVE_SHMEMX_WTIME
 
 /* Counting puts */
 typedef char * shmemx_ct_t;
 
+/* Counter */
+typedef struct {
+    uint64_t pending_put;
+    uint64_t pending_get;
+    uint64_t completed_put;
+    uint64_t completed_get;
+    uint64_t target;
+} shmemx_pcntr_t;
+
 define(`SHPRE', `')dnl
-include(shmemx_c_func.m4)dnl
+include(shmemx_c_func.h4)dnl
+
+/* Option to enable bounce buffering on a given context */
+#define SHMEMX_CTX_BOUNCE_BUFFER  (1l<<31)
+
+/* C++ overloaded declarations */
+#ifdef __cplusplus
+} /* extern "C" */
+
+define(`SHMEM_CXX_ATOMIC_SWAP',
+`static inline void shmemx_atomic_swap_nbi($2 *fetch, $2 *target, $2 value, int pe) {
+    shmemx_$1_atomic_swap_nbi(fetch, target, value, pe);
+}
+static inline void shmemx_atomic_swap_nbi(shmem_ctx_t ctx, $2 *fetch, $2 *target, $2 value, int pe) {
+    shmemx_ctx_$1_atomic_swap_nbi(ctx, fetch, target, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_EXTENDED_AMO(`SHMEM_CXX_ATOMIC_SWAP')
+
+define(`SHMEM_CXX_ATOMIC_COMPARE_SWAP',
+`static inline void shmemx_atomic_compare_swap_nbi($2 *fetch, $2 *target, $2 cond, $2 value, int pe) {
+    shmemx_$1_atomic_compare_swap_nbi(fetch, target, cond, value, pe);
+}
+static inline void shmemx_atomic_compare_swap_nbi(shmem_ctx_t ctx, $2 *fetch, $2 *target, $2 cond, $2 value, int pe) {
+    shmemx_ctx_$1_atomic_compare_swap_nbi(ctx, fetch, target, cond, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_ATOMIC_COMPARE_SWAP')
+
+define(`SHMEM_CXX_ATOMIC_FETCH_NBI',
+`static inline void shmemx_atomic_fetch_nbi($2 *fetch, const $2 *target, int pe) {
+    shmemx_$1_atomic_fetch_nbi(fetch, target, pe);
+}
+static inline void shmemx_atomic_fetch_nbi(shmem_ctx_t ctx, $2 *fetch, const $2 *target, int pe) {
+    shmemx_ctx_$1_atomic_fetch_nbi(ctx, fetch, target, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_EXTENDED_AMO(`SHMEM_CXX_ATOMIC_FETCH_NBI')
+
+define(`SHMEM_CXX_ATOMIC_FETCH_INC_NBI',
+`static inline void shmemx_atomic_fetch_inc_nbi($2 *fetch, $2 *target, int pe) {
+    shmemx_$1_atomic_fetch_inc_nbi(fetch, target, pe);
+}
+static inline void shmemx_atomic_fetch_inc_nbi(shmem_ctx_t ctx, $2 *fetch, $2 *target, int pe) {
+    shmemx_ctx_$1_atomic_fetch_inc_nbi(ctx, fetch, target, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_AMO(`SHMEM_CXX_ATOMIC_FETCH_INC_NBI')
+
+define(`SHMEMX_CXX_ATOMIC_FETCH_ADD_NBI',
+`static inline void shmemx_atomic_fetch_add_nbi($2 *fetch, $2 *target, $2 value, int pe) {
+    shmemx_$1_atomic_fetch_add_nbi(fetch, target, value, pe);
+}
+static inline void shmemx_atomic_fetch_add_nbi(shmem_ctx_t ctx, $2 *fetch, $2 *target, $2 value, int pe) {
+    shmemx_ctx_$1_atomic_fetch_add_nbi(ctx, fetch, target, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_AMO(`SHMEMX_CXX_ATOMIC_FETCH_ADD_NBI')
+
+define(`SHMEM_CXX_ATOMIC_FETCH_AND_NBI',
+`static inline void shmemx_atomic_fetch_and_nbi($2 *fetch, $2 *dest, $2 value, int pe) {
+    shmemx_$1_atomic_fetch_and_nbi(fetch, dest, value, pe);
+}
+static inline void shmemx_atomic_fetch_and_nbi(shmem_ctx_t ctx, $2 *fetch, $2 *dest, $2 value, int pe) {
+    shmemx_ctx_$1_atomic_fetch_and_nbi(ctx, fetch, dest, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_FETCH_AND_NBI')
+
+define(`SHMEM_CXX_ATOMIC_FETCH_OR_NBI',
+`static inline void shmemx_atomic_fetch_or_nbi($2 *fetch, $2 *dest, $2 value, int pe) {
+    shmemx_$1_atomic_fetch_or_nbi(fetch, dest, value, pe);
+}
+static inline void shmemx_atomic_fetch_or_nbi(shmem_ctx_t ctx, $2 *fetch, $2 *dest, $2 value, int pe) {
+    shmemx_ctx_$1_atomic_fetch_or_nbi(ctx, fetch, dest, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_FETCH_OR_NBI')
+
+define(`SHMEM_CXX_ATOMIC_FETCH_XOR_NBI',
+`static inline void shmemx_atomic_fetch_xor_nbi($2 *fetch, $2 *dest, $2 value, int pe) {
+    shmemx_$1_atomic_fetch_xor_nbi(fetch, dest, value, pe);
+}
+static inline void shmemx_atomic_fetch_xor_nbi(shmem_ctx_t ctx, $2 *fetch, $2 *dest, $2 value, int pe) {
+    shmemx_ctx_$1_atomic_fetch_xor_nbi(ctx, fetch, dest, value, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_FETCH_XOR_NBI')
+
+
+/* C11 Generic Macros */
+#elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
+
+/* Nonblocking fetching AMOs */
+
+define(`SHMEM_C11_GEN_ATOMIC_SWAP_NBI', `        $2*: shmemx_$1_atomic_swap_nbi')dnl
+define(`SHMEM_CTX_C11_GEN_ATOMIC_SWAP_NBI', `            $2*: shmemx_ctx_$1_atomic_swap_nbi')dnl
+#define shmemx_atomic_swap_nbi(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+        shmem_ctx_t: \
+        _Generic(SHMEM_C11_TYPE_EVAL_PTR_OR_SCALAR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_CTX_C11_GEN_ATOMIC_SWAP_NBI', `, \'), \
+            default: shmem_ctx_c11_generic_selection_failed \
+        ), \
+SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_ATOMIC_SWAP_NBI', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_ATOMIC_COMPARE_SWAP_NBI', `        $2*: shmemx_$1_atomic_compare_swap_nbi')dnl
+define(`SHMEM_CTX_C11_GEN_ATOMIC_COMPARE_SWAP_NBI', `            $2*: shmemx_ctx_$1_atomic_compare_swap_nbi')dnl
+#define shmemx_atomic_compare_swap_nbi(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+        shmem_ctx_t: \
+        _Generic(SHMEM_C11_TYPE_EVAL_PTR_OR_SCALAR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_AMO(`SHMEM_CTX_C11_GEN_ATOMIC_COMPARE_SWAP_NBI', `, \'), \
+            default: shmem_ctx_c11_generic_selection_failed \
+        ), \
+SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_ATOMIC_COMPARE_SWAP_NBI', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_ATOMIC_FETCH_NBI', `        $2*: shmemx_$1_atomic_fetch_nbi')dnl
+define(`SHMEM_C11_GEN_ATOMIC_FETCH_CONST_NBI', `        const $2*: shmemx_$1_atomic_fetch_nbi')dnl
+define(`SHMEM_CTX_C11_GEN_ATOMIC_FETCH_NBI', `            $2*: shmemx_ctx_$1_atomic_fetch_nbi')dnl
+define(`SHMEM_CTX_C11_GEN_ATOMIC_FETCH_CONST_NBI', `            const $2*: shmemx_ctx_$1_atomic_fetch_nbi')dnl
+#define shmemx_atomic_fetch_nbi(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+        shmem_ctx_t: \
+        _Generic(SHMEM_C11_TYPE_EVAL_PTR_OR_SCALAR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_CTX_C11_GEN_ATOMIC_FETCH_NBI', `, \'), \
+SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_CTX_C11_GEN_ATOMIC_FETCH_CONST_NBI', `, \'), \
+            default: shmem_ctx_c11_generic_selection_failed \
+        ), \
+SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_ATOMIC_FETCH_NBI', `, \'), \
+SHMEM_BIND_C11_EXTENDED_AMO(`SHMEM_C11_GEN_ATOMIC_FETCH_CONST_NBI', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEMX_C11_GEN_ATOMIC_FETCH_ADD_NBI', `        $2*: shmemx_$1_atomic_fetch_add_nbi')dnl
+define(`SHMEMX_CTX_C11_GEN_ATOMIC_FETCH_ADD_NBI', `            $2*: shmemx_ctx_$1_atomic_fetch_add_nbi')dnl
+#define shmemx_atomic_fetch_add_nbi(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+        shmem_ctx_t: \
+        _Generic(SHMEM_C11_TYPE_EVAL_PTR_OR_SCALAR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_AMO(`SHMEMX_CTX_C11_GEN_ATOMIC_FETCH_ADD_NBI', `, \'), \
+            default: shmem_ctx_c11_generic_selection_failed \
+        ), \
+SHMEM_BIND_C11_AMO(`SHMEMX_C11_GEN_ATOMIC_FETCH_ADD_NBI', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_ATOMIC_FETCH_INC_NBI', `        $2*: shmemx_$1_atomic_fetch_inc_nbi')dnl
+define(`SHMEM_CTX_C11_GEN_ATOMIC_FETCH_INC_NBI', `            $2*: shmemx_ctx_$1_atomic_fetch_inc_nbi')dnl
+#define shmemx_atomic_fetch_inc_nbi(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+        shmem_ctx_t: \
+        _Generic(SHMEM_C11_TYPE_EVAL_PTR_OR_SCALAR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_AMO(`SHMEM_CTX_C11_GEN_ATOMIC_FETCH_INC_NBI', `, \'), \
+            default: shmem_ctx_c11_generic_selection_failed \
+        ), \
+SHMEM_BIND_C11_AMO(`SHMEM_C11_GEN_ATOMIC_FETCH_INC_NBI', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_FETCH_AND_NBI', `        $2*: shmemx_$1_atomic_fetch_and_nbi')dnl
+define(`SHMEM_CTX_C11_GEN_FETCH_AND_NBI', `            $2*: shmemx_ctx_$1_atomic_fetch_and_nbi')dnl
+#define shmemx_atomic_fetch_and_nbi(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+        shmem_ctx_t: \
+        _Generic(SHMEM_C11_TYPE_EVAL_PTR_OR_SCALAR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_CTX_C11_GEN_FETCH_AND_NBI', `, \'), \
+            default: shmem_ctx_c11_generic_selection_failed \
+        ), \
+SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_C11_GEN_FETCH_AND_NBI', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_FETCH_OR_NBI', `        $2*: shmemx_$1_atomic_fetch_or_nbi')dnl
+define(`SHMEM_CTX_C11_GEN_FETCH_OR_NBI', `            $2*: shmemx_ctx_$1_atomic_fetch_or_nbi')dnl
+#define shmemx_atomic_fetch_or_nbi(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+        shmem_ctx_t: \
+        _Generic(SHMEM_C11_TYPE_EVAL_PTR_OR_SCALAR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_CTX_C11_GEN_FETCH_OR_NBI', `, \'), \
+            default: shmem_ctx_c11_generic_selection_failed \
+        ), \
+SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_C11_GEN_FETCH_OR_NBI', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_FETCH_XOR_NBI', `        $2*: shmemx_$1_atomic_fetch_xor_nbi')dnl
+define(`SHMEM_CTX_C11_GEN_FETCH_XOR_NBI', `            $2*: shmemx_ctx_$1_atomic_fetch_xor_nbi')dnl
+#define shmemx_atomic_fetch_xor_nbi(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+        shmem_ctx_t: \
+        _Generic(SHMEM_C11_TYPE_EVAL_PTR_OR_SCALAR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_CTX_C11_GEN_FETCH_XOR_NBI', `, \'), \
+            default: shmem_ctx_c11_generic_selection_failed \
+        ), \
+SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_C11_GEN_FETCH_XOR_NBI', `, \') \
+    )(__VA_ARGS__)
+
+
+#endif /* C11 */
 
 #endif /* SHMEMX_H */

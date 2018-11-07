@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2017 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -154,10 +154,10 @@ static inline void atomic_inc(int me, int iterations, int T)
 
     if (me == 0) {
         for (i = 0; i < iterations; i++) {
-            shmem_int_inc(&target[T], 1);
+            shmem_int_atomic_inc(&target[T], 1);
             shmem_fence();
         }
-        shmem_int_inc(&target[T], 1);
+        shmem_int_atomic_inc(&target[T], 1);
 
         if (debug)
             printf("PE 0 done with operation\n");
@@ -184,10 +184,10 @@ static inline void atomic_add(int me, int iterations, int T)
 
     if (me == 1) {
         for (i = 0; i < iterations; i++) {
-            shmem_int_add(&target[T], 1, 0);
+            shmem_int_atomic_add(&target[T], 1, 0);
             shmem_fence();
         }
-        shmem_int_add(&target[T], 1, 0);
+        shmem_int_atomic_add(&target[T], 1, 0);
 
         if (debug)
             printf("PE 1 done with operation\n");
@@ -217,7 +217,7 @@ static inline void swaptest(int me, int iterations, int T, int S, int P)
 
     if (me == 0) {
         for (i = 0; i < iterations; i++)
-            source[S] = shmem_int_swap(&target[T], source[S], 1);
+            source[S] = shmem_int_atomic_swap(&target[T], source[S], 1);
 
         shmem_int_p(&sync_pes[P], i, 1);
 
@@ -265,17 +265,17 @@ static inline void cswaptest(int me, int iterations, int T, int S, int P)
         pre_op_check(__func__, source[S], iterations, 1);
 
         for (i = 0; i < iterations; i++)
-            source[S] = shmem_int_cswap(&(target[T]), i, (i+1), 0);
+            source[S] = shmem_int_atomic_compare_swap(&(target[T]), i, (i+1), 0);
 
         shmem_int_p(&sync_pes[P], i, 0);
 
-        post_op_check("cswap", source[S], (iterations-1), 1);
+        post_op_check("compare_swap", source[S], (iterations-1), 1);
 
     } else {
         wait_until(&sync_pes[P], iterations, 0);
 
         if (target[T] != iterations) {
-            fprintf(stderr, "cswap ERR: PE 1 target = %d != %d\n",
+            fprintf(stderr, "compare_swap ERR: PE 1 target = %d != %d\n",
                     target[T], iterations);
             shmem_global_exit(EXIT_FAILURE);
         }
@@ -305,12 +305,12 @@ static inline void fetchatomic_add(int me, int iterations, int T, int S)
         }
 
         for (i = 0; i < iterations; i++) {
-            source[S] = shmem_int_fadd(&target[T], 1, 1);
+            source[S] = shmem_int_atomic_fetch_add(&target[T], 1, 1);
             shmem_fence();
         }
-        source[S] = shmem_int_fadd(&target[T], 1, 1);
+        source[S] = shmem_int_atomic_fetch_add(&target[T], 1, 1);
 
-        post_op_check("fadd", source[S], iterations, 0);
+        post_op_check("fetch_add", source[S], iterations, 0);
 
     } else
         wait_until(&target[T], (iterations+1), 1);
@@ -339,17 +339,17 @@ static inline void fetchatomic_inc(int me, int iterations, int T, int S)
         }
 
         for (i = 0; i < iterations; i++) {
-            source[S] = shmem_int_finc(&target[T], 0);
+            source[S] = shmem_int_atomic_fetch_inc(&target[T], 0);
             shmem_fence();
         }
 
-        post_op_check("finc", source[S], (iterations-1), 1);
+        post_op_check("fetch_inc", source[S], (iterations-1), 1);
     } else
         wait_until(&target[T], iterations, 0);
 
     if (verbose) {
         if (me == 1)
-            printf("SHMEM int_finc finished\n");
+            printf("SHMEM %s finished\n", __func__);
     }
 
 }

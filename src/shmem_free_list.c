@@ -4,7 +4,7 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2016 Intel Corporation. All rights reserved.
+ * Copyright (c) 2017 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -33,6 +33,7 @@ shmem_free_list_init(unsigned int element_size,
 
     fl->element_size = element_size;
     fl->init_fn = init_fn;
+    fl->nalloc = 0;
     SHMEM_MUTEX_INIT(fl->lock);
     ret = shmem_free_list_more(fl);
     if (0 != ret) {
