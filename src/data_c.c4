@@ -93,7 +93,7 @@ SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_PUT_N_NBI')
 SHMEM_PROF_DEF_PUT_N_NBI(`mem')
 
 define(`SHMEM_PROF_DEF_CTX_PUT_N_NBI',
-`#pragma weak shmem_ctx__put$1_nbi = pshmem_ctx_put$1_nbi
+`#pragma weak shmem_ctx_put$1_nbi = pshmem_ctx_put$1_nbi
 #define shmem_ctx_put$1_nbi pshmem_ctx_put$1_nbi')dnl
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_CTX_PUT_N_NBI')
 SHMEM_PROF_DEF_CTX_PUT_N_NBI(`mem')
