@@ -19,6 +19,10 @@
 #include "config.h"
 #include "shmem_decl.h"
 
+#ifdef USE_BT
+#include "backtrace.h"
+#endif
+
 int shmem_runtime_init(void);
 int shmem_runtime_fini(void);
 void shmem_runtime_abort(int exit_code, const char msg[]) SHMEM_ATTRIBUTE_NORETURN ;

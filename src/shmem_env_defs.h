@@ -104,3 +104,8 @@ SHMEM_INTERNAL_ENV_DEF(OFI_STX_DISABLE_PRIVATE, bool, false, SHMEM_INTERNAL_ENV_
 SHMEM_INTERNAL_ENV_DEF(MPI_THREAD_LEVEL, string, "MPI_THREAD_SINGLE", SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Specify the MPI threading level when MPI is used as the process manager")
 #endif
+
+#ifdef USE_BT
+SHMEM_INTERNAL_ENV_DEF(BACKTRACE_METHOD, string, "execinfo", SHMEM_INTERNAL_ENV_CAT_OTHER, 
+                       "Specify the mechanism to use for backtracing on failure")
+#endif
