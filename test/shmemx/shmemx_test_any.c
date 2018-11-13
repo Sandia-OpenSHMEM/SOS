@@ -32,7 +32,7 @@
 #include <shmem.h>
 #include <shmemx.h>
 #include <stdlib.h>
- 
+
 int main(void)
 {
     shmem_init();
@@ -57,12 +57,18 @@ int main(void)
         }
     }
 
+    /* Check the flags array */
+    for (int i = 0; i < npes; i++) {
+        if (flags[i] != 1)
+            shmem_global_exit(1);
+    }
+
     /* Sanity check case with NULL status array */
     completed_idx = shmemx_int_test_any(flags, npes, NULL, SHMEM_CMP_EQ, 1);
 
-    if (completed_idx == SIZE_MAX || completed_idx >= npes)
+    if (completed_idx >= npes)
         shmem_global_exit(2);
- 
+
     free(status);
     shmem_free(flags);
     shmem_finalize();

@@ -39,6 +39,12 @@ int main(void)
         }
     }
 
+    /* Check the flags array */
+    for (int i = 0; i < npes; i++) {
+        if (flags[i] != 1)
+            shmem_global_exit(0);
+    }
+
     /* check result */
     int M = N * npes - 1;
     if (total_sum != M * (M + 1) / 2) {
@@ -48,7 +54,7 @@ int main(void)
     /* Sanity check the case with NULL status array */
     ncompleted = shmemx_int_wait_until_some(flags, npes, indices, NULL, SHMEM_CMP_EQ, 1);
 
-    if (ncompleted == 0 || ncompleted > npes)
+    if (ncompleted != npes)
         shmem_global_exit(2);
 
     shmem_finalize();

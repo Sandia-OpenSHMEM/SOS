@@ -67,6 +67,12 @@ int main(void)
             total_sum += all_data[completed_idx * N + j];
     }
 
+    /* Check the flags array */
+    for (int i = 0; i < npes; i++) {
+        if (flags[i] != 1)
+            shmem_global_exit(0);
+    }
+
     /* check result */
     int M = N * npes - 1;
     if (total_sum != M * (M + 1) / 2) {
@@ -76,7 +82,7 @@ int main(void)
     /* Sanity check the case with NULL status array */
     completed_idx = shmemx_int_wait_until_any(flags, npes, NULL, SHMEM_CMP_EQ, 1);
 
-    if (completed_idx == SIZE_MAX || completed_idx >= npes)
+    if (completed_idx >= npes)
         shmem_global_exit(2);
 
     shmem_finalize();

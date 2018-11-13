@@ -190,6 +190,9 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL')
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
         size_t i;                                                                              \
+                                                                                               \
+        if (nelems == 0) return;                                                               \
+                                                                                               \
         for (i = 0; i < nelems; i++) SHMEM_INTERNAL_WAIT_UNTIL(&vars[i], cond, value);         \
                                                                                                \
         shmem_internal_membar_load();                                                          \
@@ -208,28 +211,32 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ALL')
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
-        size_t cmpret = 0, i = 0, found_idx = SIZE_MAX, wait_set_len = 0;                      \
+        size_t cmpret = 0, i = 0, found_idx = SIZE_MAX, num_ignored = 0;                       \
                                                                                                \
         if (status) {                                                                          \
             for (i = 0; i < nelems; i++) {                                                     \
-                if (status[i]) wait_set_len++;                                                 \
+                if (status[i]) num_ignored++;                                                  \
             }                                                                                  \
         }                                                                                      \
-        if (nelems == 0 || wait_set_len == nelems)                                             \
+        if (nelems == 0 || num_ignored == nelems)                                              \
             return SIZE_MAX;                                                                   \
                                                                                                \
+        unsigned int rand_seed = shmem_internal_my_pe;                                         \
+        size_t start_idx = rand_r(&rand_seed) / (RAND_MAX + 1.0) * nelems;                     \
+                                                                                               \
         while (!cmpret) {                                                                      \
-            for (i = 0; i < nelems; i++) {                                                     \
-                if (status == NULL || (status && !status[i])) {                                \
-                    COMP(cond, vars[i], value, cmpret);                                        \
-                }                                                                              \
-                if (cmpret) {                                                                  \
-                    if (status) status[i] = 1;                                                 \
-                    found_idx = i;                                                             \
-                    break;                                                                     \
+            for (i = start_idx; i < start_idx + nelems; i++) {                                 \
+                size_t idx = i % nelems;                                                       \
+                if (status == NULL || !status[idx]) {                                          \
+                    COMP(cond, vars[idx], value, cmpret);                                      \
+                    if (cmpret) {                                                              \
+                        if (status) status[idx] = 1;                                           \
+                        found_idx = idx;                                                       \
+                        break;                                                                 \
+                    }                                                                          \
                 }                                                                              \
             }                                                                                  \
-            shmem_transport_probe();                                                           \
+            if (!cmpret) shmem_transport_probe();                                              \
         }                                                                                      \
                                                                                                \
         shmem_internal_membar_load();                                                          \
@@ -249,28 +256,28 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ANY')
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
-        size_t cmpret = 0, i = 0, ncompleted = 0, wait_set_len = 0;                            \
+        size_t cmpret = 0, i = 0, ncompleted = 0, num_ignored = 0;                             \
                                                                                                \
         if (status) {                                                                          \
             for (i = 0; i < nelems; i++) {                                                     \
-                if (status[i]) wait_set_len++;                                                 \
+                if (status[i]) num_ignored++;                                                  \
             }                                                                                  \
         }                                                                                      \
-        if (nelems == 0 || wait_set_len == nelems)                                             \
+        if (nelems == 0 || num_ignored == nelems)                                              \
             return 0;                                                                          \
                                                                                                \
         while (ncompleted == 0) {                                                              \
             for (i = 0; i < nelems; i++) {                                                     \
-                if (status == NULL || (status && !status[i])) {                                \
+                if (status == NULL || !status[i]) {                                            \
                     COMP(cond, vars[i], value, cmpret);                                        \
-                }                                                                              \
-                if (cmpret) {                                                                  \
-                    if (status) status[i] = 1;                                                 \
-                    indices[ncompleted++] = i;                                                 \
-                    cmpret = 0;                                                                \
+                    if (cmpret) {                                                              \
+                        if (status) status[i] = 1;                                             \
+                        indices[ncompleted++] = i;                                             \
+                        cmpret = 0;                                                            \
+                    }                                                                          \
                 }                                                                              \
             }                                                                                  \
-            shmem_transport_probe();                                                           \
+            if (!cmpret) shmem_transport_probe();                                              \
         }                                                                                      \
         shmem_internal_membar_load();                                                          \
         shmem_transport_syncmem();                                                             \
@@ -308,6 +315,8 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST')
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
+        if (nelems == 0) return 1;                                                             \
+                                                                                               \
         for (int i = 0; i < nelems; i++) {                                                     \
             COMP(cond, vars[i], value, cmpret);                                                \
             if (cmpret) ncompleted++;                                                          \
@@ -333,15 +342,20 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ALL')
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
         size_t found_idx = SIZE_MAX, i = 0;                                                    \
-        for (i = 0; i < nelems; i++) {                                                         \
+        unsigned int rand_seed = shmem_internal_my_pe;                                         \
+        size_t start_idx = rand_r(&rand_seed) / (RAND_MAX + 1.0) * nelems;                     \
+                                                                                               \
+        for (i = start_idx; i < start_idx + nelems; i++) {                                     \
             size_t cmpret = 0;                                                                 \
-            if (status == NULL || (status && !status[i]))                                      \
-                COMP(cond, vars[i], value, cmpret);                                            \
-            if (cmpret) {                                                                      \
-                if (status) status[i] = 1;                                                     \
-                found_idx = i;                                                                 \
-                break;                                                                         \
-            }                                                                                  \
+            size_t idx = i % nelems;                                                           \
+            if (status == NULL || !status[idx]) {                                              \
+                COMP(cond, vars[idx], value, cmpret);                                          \
+                if (cmpret) {                                                                  \
+                    if (status) status[idx] = 1;                                               \
+                    found_idx = idx;                                                           \
+                    break;                                                                     \
+                }                                                                              \
+             }                                                                                 \
         }                                                                                      \
         if (found_idx != SIZE_MAX)                                                             \
             shmem_internal_membar_load();                                                      \
@@ -361,24 +375,24 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ANY')
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
-        size_t cmpret = 0, i = 0, ncompleted = 0, wait_set_len = 0;                            \
+        size_t cmpret = 0, i = 0, ncompleted = 0, num_ignored = 0;                             \
                                                                                                \
         if (status) {                                                                          \
             for (i = 0; i < nelems; i++) {                                                     \
-                if (status[i]) wait_set_len++;                                                 \
+                if (status[i]) num_ignored++;                                                  \
             }                                                                                  \
         }                                                                                      \
-        if (nelems == 0 || wait_set_len == nelems)                                             \
+        if (nelems == 0 || num_ignored == nelems)                                              \
             return 0;                                                                          \
                                                                                                \
         for (i = 0; i < nelems; i++) {                                                         \
             if (status == NULL || !status[i]) {                                                \
                 COMP(cond, vars[i], value, cmpret);                                            \
-            }                                                                                  \
-            if (cmpret) {                                                                      \
-                if (status) status[i] = 1;                                                     \
-                indices[ncompleted++] = i;                                                     \
-                cmpret = 0;                                                                    \
+                if (cmpret) {                                                                  \
+                    if (status) status[i] = 1;                                                 \
+                    indices[ncompleted++] = i;                                                 \
+                    cmpret = 0;                                                                \
+                }                                                                              \
             }                                                                                  \
         }                                                                                      \
         shmem_internal_membar_load();                                                          \

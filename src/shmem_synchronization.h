@@ -129,18 +129,6 @@ shmem_internal_fence(shmem_ctx_t ctx)
         }                                                               \
     } while(0)
 
-#define SHMEM_WAIT(var, value) do {                                     \
-        SHMEM_INTERNAL_WAIT_UNTIL(var, SHMEM_CMP_NE, value);            \
-        shmem_internal_membar_load();                                   \
-        shmem_transport_syncmem();                                      \
-    } while (0)
-
-#define SHMEM_WAIT_UNTIL(var, cond, value) do {                         \
-        SHMEM_INTERNAL_WAIT_UNTIL(var, cond, value);                    \
-        shmem_internal_membar_load();                                   \
-        shmem_transport_syncmem();                                      \
-    } while (0) 
-
 #if defined(ENABLE_HARD_POLLING)
 #define SHMEM_INTERNAL_WAIT_UNTIL(var, cond, value)                     \
     SHMEM_WAIT_UNTIL_POLL(var, cond, value)
@@ -152,5 +140,17 @@ shmem_internal_fence(shmem_ctx_t ctx)
         SHMEM_WAIT_UNTIL_POLL(var, cond, value);                        \
     }
 #endif
+
+#define SHMEM_WAIT(var, value) do {                                     \
+        SHMEM_INTERNAL_WAIT_UNTIL(var, SHMEM_CMP_NE, value);            \
+        shmem_internal_membar_load();                                   \
+        shmem_transport_syncmem();                                      \
+    } while (0)
+
+#define SHMEM_WAIT_UNTIL(var, cond, value) do {                         \
+        SHMEM_INTERNAL_WAIT_UNTIL(var, cond, value);                    \
+        shmem_internal_membar_load();                                   \
+        shmem_transport_syncmem();                                      \
+    } while (0)
 
 #endif
