@@ -111,7 +111,10 @@ endif
 
 if HAVE_CXX
 check_PROGRAMS += \
-	cxx_test_shmem_complex \
+	cxx_test_shmem_complex
+
+if SHMEMX_TESTS
+check_PROGRAMS += \
 	cxx_test_shmem_g \
 	cxx_test_shmem_get \
 	cxx_test_shmem_p \
@@ -127,6 +130,7 @@ check_PROGRAMS += \
 	cxx_test_shmem_atomic_cswap \
 	cxx_test_shmem_wait_until \
 	cxx_test_shmem_test
+endif
 endif
 
 if HAVE_FORTRAN
