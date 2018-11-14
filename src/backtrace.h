@@ -22,8 +22,10 @@
 #include <stdlib.h>
 #include "shmem_env.h"
 
+/* Backtrace through execinfo */
 #if defined(USE_BT_EXECINFO)
 #include <execinfo.h>
+/* Maximum total number of backtraces */
 #define MAX_BT_SIZE 1024
 
 static inline 
@@ -43,7 +45,9 @@ void backtrace_execinfo(void) {
 
 #endif
 
+/* Backtrace through gdb */
 #if defined(USE_BT_GDB)
+/* Maximum path size for gdb command file */
 #define MAX_BT_PATHSIZE 1024
 
 #ifndef MIN
@@ -55,7 +59,7 @@ static const char *bt_tmpdir = "/tmp";
 
 static inline
 int bt_mkstemp(char *filename, int limit) {
-    const char template[] = "/sos_XXXXXX";
+    const char template[] = "/sos_XXXXXX"; /* Last six chars must be "X" for a unique name */
     char *p;
     int len;
 
@@ -130,7 +134,8 @@ void backtrace_gdb(void) {
     int rc;
     rc = create_command_file(filename);
     if (rc != 0) {
-        fprintf(stderr, "Error in creating gdb input file %s with error %d\n", filename, rc);
+        fprintf(stderr, "Error in creating gdb input file %s with error code %d\n", 
+                         filename, rc);
         (void)unlink(filename); 
         return;
     }
@@ -144,9 +149,9 @@ void backtrace_gdb(void) {
 
     rc = system_execute(cmd);
     if (rc < 0) {
-        fprintf(stderr, "Error in executing gdb\n");
-        (void)unlink(filename); 
+        fprintf(stderr, "Error in executing gdb command file %s\n", filename);
     }
+    (void)unlink(filename); 
 }
 #endif
 
