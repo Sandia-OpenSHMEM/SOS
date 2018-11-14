@@ -182,6 +182,29 @@ define(`SHMEM_PROF_DEF_CTX_IGET_N',
 #define shmem_ctx_iget$1 pshmem_ctx_iget$1')dnl
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_CTX_IGET_N')
 
+/* Blocking put with signal */
+define(`SHMEM_PROF_DEF_PUT_SIGNAL',
+`#pragma weak shmemx_$1_put_signal = pshmemx_$1_put_signal
+#define shmemx_$1_put_signal pshmemx_$1_put_signal')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_PUT_SIGNAL')
+
+define(`SHMEM_PROF_DEF_CTX_PUT_SIGNAL',
+`#pragma weak shmemx_ctx_$1_put_signal = pshmemx_ctx_$1_put_signal
+#define shmemx_ctx_$1_put_signal pshmemx_ctx_$1_put_signal')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_CTX_PUT_SIGNAL')
+
+define(`SHMEM_PROF_DEF_PUT_N_SIGNAL',
+`#pragma weak shmemx_put$1_signal = pshmemx_put$1_signal
+#define shmemx_put$1_signal pshmemx_put$1_signal')dnl
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_PUT_N_SIGNAL')
+SHMEM_PROF_DEF_PUT_N_SIGNAL(`mem')
+
+define(`SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL',
+`#pragma weak shmemx_ctx_put$1_signal = pshmemx_ctx_put$1_signal
+#define shmemx_ctx_put$1_signal pshmemx_ctx_put$1_signal')dnl
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL')
+SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL(`mem')
+
 #pragma weak shmemx_putmem_ct = pshmemx_putmem_ct
 #define shmemx_putmem_ct pshmemx_putmem_ct
 #pragma weak shmemx_getmem_ct = pshmemx_getmem_ct
@@ -422,9 +445,50 @@ SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_CTX_IGET_N')
     shmem_internal_get_wait(ctx);                         \
   }
 
+#define SHMEM_DEF_PUT_SIGNAL(STYPE,TYPE)                                \
+  void SHMEM_FUNCTION_ATTRIBUTES                                        \
+  SHMEMX_FUNC_PROTOTYPE(STYPE##_put_signal, TYPE *target,               \
+                       const TYPE *source, size_t nelems,               \
+                       uint64_t *sig_addr, uint64_t signal, int pe)     \
+    long completion = 0;                                                \
+    SHMEM_ERR_CHECK_INITIALIZED();                                      \
+    SHMEM_ERR_CHECK_PE(pe);                                             \
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE) * nelems);           \
+    SHMEM_ERR_CHECK_NULL(source, nelems);                               \
+    shmem_internal_put_nb(ctx, target, source,                          \
+                          sizeof(TYPE) * nelems, pe,                    \
+                          &completion);                                 \
+    shmem_internal_put_wait(ctx, &completion);                          \
+    shmem_internal_put_scalar(ctx, sig_addr, &signal,                   \
+                               sizeof(uint64_t), pe);                   \
+  }
+
+
+#define SHMEM_DEF_PUT_N_SIGNAL(NAME,SIZE)                               \
+  void SHMEM_FUNCTION_ATTRIBUTES                                        \
+  SHMEMX_FUNC_PROTOTYPE(put##NAME##_signal, void *target,               \
+                       const void *source, size_t nelems,               \
+                       uint64_t *sig_addr, uint64_t signal, int pe)     \
+    long completion = 0;                                                \
+    SHMEM_ERR_CHECK_INITIALIZED();                                      \
+    SHMEM_ERR_CHECK_PE(pe);                                             \
+    SHMEM_ERR_CHECK_SYMMETRIC(target, (SIZE) * nelems);                 \
+    SHMEM_ERR_CHECK_NULL(source, nelems);                               \
+    shmem_internal_put_nb(ctx, target, source, (SIZE) * nelems,         \
+                          pe, &completion);                             \
+    shmem_internal_put_wait(ctx, &completion);                          \
+    shmem_internal_put_scalar(ctx, sig_addr, &signal,                   \
+                               sizeof(uint64_t), pe);                   \
+  }
+
+
 /* Function prototype for standard routines with the default context: */
 #define SHMEM_FUNC_PROTOTYPE(FUNCNAME,  ...)        \
   shmem_##FUNCNAME(__VA_ARGS__) {                   \
+  const shmem_ctx_t ctx = SHMEM_CTX_DEFAULT;
+
+#define SHMEMX_FUNC_PROTOTYPE(FUNCNAME,  ...)        \
+  shmemx_##FUNCNAME(__VA_ARGS__) {                   \
   const shmem_ctx_t ctx = SHMEM_CTX_DEFAULT;
 
 SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_P')
@@ -446,10 +510,18 @@ SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_IPUT_N')
 SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_IGET')
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_IGET_N')
 
+SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_PUT_SIGNAL')
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_PUT_N_SIGNAL')
+SHMEM_DEF_PUT_N_SIGNAL(`mem', `1')
+
 #undef SHMEM_FUNC_PROTOTYPE
+#undef SHMEMX_FUNC_PROTOTYPE
 
 #define SHMEM_FUNC_PROTOTYPE(FUNCNAME,  ...)        \
   shmem_ctx_##FUNCNAME(shmem_ctx_t ctx, __VA_ARGS__) {
+
+#define SHMEMX_FUNC_PROTOTYPE(FUNCNAME,  ...)        \
+  shmemx_ctx_##FUNCNAME(shmem_ctx_t ctx, __VA_ARGS__) {
 
 SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_P')
 SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_G')
@@ -469,6 +541,10 @@ SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_IPUT')
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_IPUT_N')
 SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_IGET')
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_IGET_N')
+
+SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_PUT_SIGNAL')
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_PUT_N_SIGNAL')
+SHMEM_DEF_PUT_N_SIGNAL(`mem', `1')
 
 void SHMEM_FUNCTION_ATTRIBUTES
 shmemx_getmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t nelems, int pe)
