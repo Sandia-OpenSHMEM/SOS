@@ -82,6 +82,7 @@ check_PROGRAMS = \
 	c11_test_shmem_test \
 	get_nbi \
 	put_nbi \
+	put_signal \
 	rma_coverage \
 	collect \
 	repeated_barriers \
