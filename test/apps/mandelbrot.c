@@ -431,10 +431,15 @@ int main(int argc, char** argv) {
         int err;
         t_arg[i].tid = i;
         if (1 == use_contexts) {
-            shmem_ctx_create(0, &t_arg[i].ctx[0]);
+            // Attempt to create the contexts.  If creation fails, fall back to
+            // the default context
+            err = shmem_ctx_create(0, &t_arg[i].ctx[0]);
+            if (err) t_arg[i].ctx[0] = SHMEM_CTX_DEFAULT;
 
-            if (use_pipelining)
-                shmem_ctx_create(0, &t_arg[i].ctx[1]);
+            if (use_pipelining) {
+                err = shmem_ctx_create(0, &t_arg[i].ctx[1]);
+                if (err) t_arg[i].ctx[1] = SHMEM_CTX_DEFAULT;
+            }
             else
                 t_arg[i].ctx[1] = t_arg[i].ctx[0];
         }
@@ -496,14 +501,12 @@ int main(int argc, char** argv) {
     }
 
     // Cleanup
-    if (use_contexts) {
-        for (i = 0; i < num_threads; i++)
+    for (i = 0; i < num_threads; i++) {
+        if (t_arg[i].ctx[0] != SHMEM_CTX_DEFAULT)
             shmem_ctx_destroy(t_arg[i].ctx[0]);
 
-        if (use_pipelining) {
-            for (i = 0; i < num_threads; i++)
-                shmem_ctx_destroy(t_arg[i].ctx[1]);
-        }
+        if (t_arg[i].ctx[1] != SHMEM_CTX_DEFAULT)
+            shmem_ctx_destroy(t_arg[i].ctx[1]);
     }
 
     pthread_barrier_destroy(&fencebar);
