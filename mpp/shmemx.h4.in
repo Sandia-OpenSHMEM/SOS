@@ -139,6 +139,17 @@ static inline void shmemx_put_signal(shmem_ctx_t ctx, $2* dest, const $2* source
 }')dnl
 SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_PUT_SIGNAL')
 
+/* Non-blocking put with signal */
+define(`SHMEM_CXX_PUT_SIGNAL_NBI',
+`static inline void shmemx_put_signal_nbi($2* dest, const $2* source,
+                             size_t nelems, uint64_t *sig_addr, uint64_t signal, int pe) {
+    shmemx_$1_put_signal_nbi(dest, source, nelems, sig_addr, signal, pe);
+}
+static inline void shmemx_put_signal_nbi(shmem_ctx_t ctx, $2* dest, const $2* source,
+                             size_t nelems, uint64_t *sig_addr, uint64_t signal, int pe) {
+    shmemx_ctx_$1_put_signal_nbi(ctx, dest, source, nelems, sig_addr, signal, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_PUT_SIGNAL_NBI')
 
 /* C11 Generic Macros */
 #elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
@@ -255,6 +266,18 @@ define(`SHMEM_CTX_C11_GEN_PUT_SIGNAL', `            $2*: shmemx_ctx_$1_put_signa
 SHMEM_BIND_C11_RMA(`SHMEM_CTX_C11_GEN_PUT_SIGNAL', `, \') \
         ), \
 SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_PUT_SIGNAL', `, \') \
+    )(__VA_ARGS__)
+
+/* Non-blocking put with signal */
+define(`SHMEM_C11_GEN_PUT_SIGNAL_NBI', `        $2*: shmemx_$1_put_signal_nbi')dnl
+define(`SHMEM_CTX_C11_GEN_PUT_SIGNAL_NBI', `            $2*: shmemx_ctx_$1_put_signal_nbi')dnl
+#define shmemx_put_signal_nbi(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+        shmem_ctx_t: \
+        _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_RMA(`SHMEM_CTX_C11_GEN_PUT_SIGNAL_NBI', `, \') \
+        ), \
+SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_PUT_SIGNAL_NBI', `, \') \
     )(__VA_ARGS__)
 
 #endif /* C11 */
