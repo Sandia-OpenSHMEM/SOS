@@ -51,7 +51,9 @@ int main(void) {
 
     int ret_0 = shmem_ctx_create(0, &ctx[0]);
     int ret_1 = shmem_ctx_create(0, &ctx[1]);
-    if (ret_0 || ret_1) shmem_global_exit(1);
+
+    if (ret_0) ctx[0] = SHMEM_CTX_DEFAULT;
+    if (ret_1) ctx[1] = SHMEM_CTX_DEFAULT;
 
     for (i = 0; i < LEN; i++) {
         in_buf[i] = me; out_buf[i] = 0;
