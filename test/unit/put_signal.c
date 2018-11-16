@@ -40,7 +40,7 @@
 
 #define MSG_SZ 10
 
-int main(int argc, char*argv[])
+int main(int argc, char *argv[])
 {
     long source[MSG_SZ];
     long *target;
@@ -71,9 +71,9 @@ int main(int argc, char*argv[])
         for (i = 0; i < npes; i++) {
             shmemx_long_put_signal(target, source, MSG_SZ, &sig_addr, 1, i);
         }
-    } else {
-        shmem_wait_until(&sig_addr, SHMEM_CMP_EQ, 1);
-    }
+    } 
+
+    shmem_wait_until(&sig_addr, SHMEM_CMP_EQ, 1);
 
     for (i = 0; i < MSG_SZ; i++) {
         if (target[i] != source[i]) {
