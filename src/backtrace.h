@@ -37,13 +37,15 @@ void backtrace_execinfo(void) {
     size = backtrace(btaddr, MAX_BT_SIZE); 
     fnnames = backtrace_symbols(btaddr, size);
 
-    for (i = 0; i < size; i++) 
-        fprintf(stderr, "%s\n", fnnames[i]); 
+    if (fnnames) {
+        for (i = 0; i < size; i++) 
+            fprintf(stderr, "%s\n", fnnames[i]); 
 
-    free(fnnames);  
+        free(fnnames);  
+    }
 }
 
-#endif
+#endif /* USE_BT_EXECINFO */
 
 /* Backtrace through gdb */
 #if defined(USE_BT_GDB)
@@ -153,7 +155,8 @@ void backtrace_gdb(void) {
     }
     (void)unlink(filename); 
 }
-#endif
+
+#endif /* USE_BT_GDB */
 
 static inline
 void collect_backtrace(void) {

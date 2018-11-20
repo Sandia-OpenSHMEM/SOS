@@ -441,6 +441,7 @@ AS_IF([test "$enable_backtrace" = "yes"], [
   elif test "$ac_cv_func_backtrace" = "yes" && test -z "$GDB_PATH"; then
     use_bt_option="execinfo"
     AC_DEFINE([USE_BT_EXECINFO], [1], [Execinfo library calls for backtrace])
+    CFLAGS="$CFLAGS -rdynamic"
   elif test "$ac_cv_func_backtrace" != "yes" && test -n "$GDB_PATH"; then
     use_bt_option="gdb"
     AC_DEFINE([USE_BT_GDB], [1], [gdb for backtrace])
@@ -448,8 +449,8 @@ AS_IF([test "$enable_backtrace" = "yes"], [
     use_bt_option="execinfo, gdb"
     AC_DEFINE([USE_BT_EXECINFO], [1], [Execinfo library calls for backtrace])
     AC_DEFINE([USE_BT_GDB], [1], [gdb for backtrace])
+    CFLAGS="$CFLAGS -rdynamic"
   fi
-  CFLAGS="$CFLAGS -rdynamic"
 ])
 
 dnl check for header files
