@@ -11,6 +11,9 @@
 # information, see the LICENSE file in the top level directory of the
 # distribution.
 
+tests: all-am
+	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS)
+
 check_PROGRAMS = \
 	hello \
 	pi \
@@ -182,10 +185,9 @@ else
 AM_CPPFLAGS = -I$(top_builddir)/mpp -I$(top_srcdir)/test/include
 AM_FCFLAGS = -I$(top_builddir)/mpp
 LDADD = $(top_builddir)/src/libsma.la
-endif
-
 if USE_PMI_SIMPLE
 LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
+endif
 endif
 
 # C Tests with special flags

@@ -245,7 +245,6 @@ AC_C_INLINE
 AC_PROG_CXX dnl required even with --disable-cxx due to automake conditionals
 m4_ifdef([AM_PROG_AR],[AM_PROG_AR])
 AC_PATH_PROG([PERL],[perl])
-AM_CONDITIONAL([EXTERNAL_TESTS], [false])
 AM_CONDITIONAL([SHMEMX_TESTS], [true])
 
 dnl C++ bindings require std::is_same, which is part of C++11
@@ -390,6 +389,11 @@ AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
       [AC_DEFINE([USE_ON_NODE_COMMS], [1], [Define if any on-node comm transport is available])
        AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
       ])
+
+AC_ARG_ENABLE([external-tests], [AC_HELP_STRING([--enable-external-tests],
+              [Build tests using external SHMEM infrastructure (default: disabled)]),
+              [], [enable_external_tests=no]])
+AM_CONDITIONAL([EXTERNAL_TESTS], [test "$enable_external_tests" = "yes"])
 
 AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
               [Use MPICH simple PMI-1 library for process management])])
