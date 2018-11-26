@@ -26,9 +26,8 @@
  */
 
 /* 
- * Validate shmem_put_signal operation through blocking API
- * It mimics the broadcast operation through a ring-based algorithm 
- * using shmem_put_signal.
+ * Validate put_signal operation through non-blocking API
+ * PE 0 uses shmem_put_signal_nbi to send data and signal across all PES
 */
 
 #include <stdio.h>
@@ -45,7 +44,7 @@ int main(int argc, char *argv[])
 {
     long source[MSG_SZ];
     long *target;
-    int me, npes, dest, i;
+    int me, npes, i;
     int errors = 0;
 
     static uint64_t sig_addr = 0;
@@ -54,7 +53,6 @@ int main(int argc, char *argv[])
 
     me = shmem_my_pe();
     npes = shmem_n_pes();
-    dest = (me + 1) % npes;
 
     for (i = 0; i < MSG_SZ; i++)
         source[i] = i;
@@ -66,12 +64,12 @@ int main(int argc, char *argv[])
     }
 
     if (me == 0) {
-        shmemx_long_put_signal(target, source, MSG_SZ, &sig_addr, 1, dest);
-        shmem_wait_until(&sig_addr, SHMEM_CMP_EQ, 1);
-    } else {
-        shmem_wait_until(&sig_addr, SHMEM_CMP_EQ, 1);
-        shmemx_long_put_signal(target, target, MSG_SZ, &sig_addr, 1, dest);
-    }
+        for (i = 0; i < npes; i++) {
+            shmemx_long_put_signal_nbi(target, source, MSG_SZ, &sig_addr, 1, i);
+        }
+    } 
+
+    shmem_wait_until(&sig_addr, SHMEM_CMP_EQ, 1);
 
     for (i = 0; i < MSG_SZ; i++) {
         if (target[i] != source[i]) {
