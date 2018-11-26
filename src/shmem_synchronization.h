@@ -20,7 +20,6 @@
 #include "shmem_comm.h"
 #include "transport.h"
 
-
 static inline void
 shmem_internal_quiet(shmem_ctx_t ctx)
 {
@@ -52,7 +51,6 @@ shmem_internal_fence(shmem_ctx_t ctx)
     /* Since fence does not guarantee any memory visibility, 
      * transport level memory flush is not required here. */
 }
-
 
 #define COMP(type, a, b, ret)                            \
     do {                                                 \
