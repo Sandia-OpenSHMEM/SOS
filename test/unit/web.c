@@ -191,7 +191,7 @@ int main(int argc, char* argv[]) {
     for(i = 0; i < NUM_CONTEXTS; ++i) {
       ctx_is_safe[i] = (i >= NUM_UNSAFE_CTX);
       err = shmem_ctx_create(ctx_is_safe[i] ? 0 : SHMEM_CTX_SERIALIZED,&contexts[i]);
-      CHECK_ERROR(err,"Failed to create ctx %d\n",i);
+      if (err) contexts[i] = SHMEM_CTX_DEFAULT;
     }
 
     shmem_barrier_all();
@@ -212,7 +212,7 @@ int main(int argc, char* argv[]) {
 
     for(i = 0; i < NUM_CONTEXTS; ++i) {
       shmem_ctx_quiet(contexts[i]);
-      shmem_ctx_destroy(contexts[i]);
+      if (contexts[i] != SHMEM_CTX_DEFAULT) shmem_ctx_destroy(contexts[i]);
       int err;
       err = pthread_mutex_destroy(&ctx_locks[i]);
       CHECK_ASSERT(!err);
