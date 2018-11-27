@@ -68,7 +68,7 @@ int main(void)
     int *found = calloc(npes, sizeof(int));
 
     while (ncompleted < npes) {
-        int idx = shmemx_test_any(flags, npes, NULL, SHMEM_CMP_EQ, 1);
+        int idx = shmemx_int_test_any(flags, npes, NULL, SHMEM_CMP_EQ, 1);
         if (found[idx] == 0) {
             found[idx] = 1;
             ncompleted++;
