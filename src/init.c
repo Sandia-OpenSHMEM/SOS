@@ -35,7 +35,6 @@
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_collectives.h"
-#include "shmem_synchronization.h"
 #include "shmem_comm.h"
 #include "runtime.h"
 #include "build_info.h"

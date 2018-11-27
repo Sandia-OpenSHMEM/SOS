@@ -63,12 +63,32 @@ int main(void)
             shmem_global_exit(1);
     }
 
+    /* Sanity check of shmem_test_any's fairness */
+    ncompleted = 0;
+    int *found = calloc(npes, sizeof(int));
+
+    while (ncompleted < npes) {
+        int idx = shmemx_test_any(flags, npes, NULL, SHMEM_CMP_EQ, 1);
+        if (found[idx] == 0) {
+            found[idx] = 1;
+            ncompleted++;
+        }
+    }
+
+    for (int i = 0; i < npes; i++) {
+        if (found[i] != 1) {
+            shmem_global_exit(2);
+        }
+    }
+
     /* Sanity check case with NULL status array */
     completed_idx = shmemx_int_test_any(flags, npes, NULL, SHMEM_CMP_EQ, 1);
 
     if (completed_idx >= npes)
-        shmem_global_exit(2);
+        shmem_global_exit(3);
 
+
+    free(found);
     free(status);
     shmem_free(flags);
     shmem_finalize();

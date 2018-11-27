@@ -226,8 +226,8 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ALL')
         SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_rand_r);                                       \
                                                                                                \
         while (!cmpret) {                                                                      \
-            for (i = start_idx; i < start_idx + nelems; i++) {                                 \
-                size_t idx = i % nelems;                                                       \
+            for (i = 0; i < nelems; i++) {                                                     \
+                size_t idx = (i + start_idx) % nelems;                                         \
                 if (status == NULL || !status[idx]) {                                          \
                     COMP(cond, vars[idx], value, cmpret);                                      \
                     if (cmpret) {                                                              \
@@ -349,9 +349,9 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ALL')
         size_t start_idx = rand_r(&shmem_internal_rand_seed) / (RAND_MAX + 1.0) * nelems;      \
         SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_rand_r);                                       \
                                                                                                \
-        for (i = start_idx; i < start_idx + nelems; i++) {                                     \
+        for (i = 0; i < nelems; i++) {                                                         \
             size_t cmpret = 0;                                                                 \
-            size_t idx = i % nelems;                                                           \
+            size_t idx = (i + start_idx) % nelems;                                             \
             if (status == NULL || !status[idx]) {                                              \
                 COMP(cond, vars[idx], value, cmpret);                                          \
                 if (cmpret) {                                                                  \
