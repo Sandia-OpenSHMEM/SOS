@@ -29,7 +29,7 @@ include(shmem_bind_c.m4)dnl
 #include "shmem.h"
 #include "shmemx.h"
 #include "shmem_internal.h"
-#include "shmem_comm.h"
+#include "shmem_synchronization.h"
 
 #ifdef ENABLE_PROFILING
 #include "pshmem.h"
@@ -515,6 +515,8 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_NULL(source, nelems);                               \
     shmem_internal_put_nbi(ctx, target, source,                         \
                            sizeof(TYPE) * nelems, pe);                  \
+    /* TODO: Uncertainity in terms of the memory model; Need to be fixed later. */ \
+    shmem_internal_fence(ctx);                                          \
     shmem_internal_put_nbi(ctx, sig_addr, &signal,                      \
                            sizeof(uint64_t), pe);                       \
   }
@@ -531,6 +533,8 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_NULL(source, nelems);                               \
     shmem_internal_put_nbi(ctx, target, source, (SIZE) * nelems,        \
                            pe);                                         \
+    /* TODO: Uncertainity in terms of the memory model; Need to be fixed later. */ \
+    shmem_internal_fence(ctx);                                          \
     shmem_internal_put_nbi(ctx, sig_addr, &signal,                      \
                            sizeof(uint64_t), pe);                       \
   }
