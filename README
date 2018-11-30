@@ -249,7 +249,7 @@ options.
         If defined, generate a trap when aborting an OpenSHMEM program.  This
         can be used to interface with a debugger or generate core files.
 
-    SHMEM_BACKTRACE_METHOD (default: execinfo)
-        Can be used to choose the backtracing mechanism. By default, it uses 
-        the Linux library "execinfo" to generate the traces. Other possible 
-        value can be "gdb".
+    SHMEM_BACKTRACE_METHOD (default: auto)
+        Can be used to choose the backtracing mechanism. By default, it chooses  
+        any one of the available options between Linux library, execinfo and 
+        external debugging tool, gdb.  

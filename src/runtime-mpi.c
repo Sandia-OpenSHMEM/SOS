@@ -140,9 +140,7 @@ shmem_runtime_abort(int exit_code, const char msg[])
         __builtin_trap();
 #endif
 
-#ifdef USE_BT
     collect_backtrace();
-#endif
 
     fprintf(stderr, "%s\n", msg);
 

@@ -192,6 +192,14 @@ void collect_backtrace(void) {
 #else
         fprintf(stderr, "Backtrace support through gdb is not available.\n");
 #endif
+    } else if (0 == strcmp(method, "auto")) {
+#if defined(USE_BT_EXECINFO)
+        backtrace_execinfo();
+#elif defined(USE_BT_GDB)
+        backtrace_gdb();
+#else
+        fprintf(stderr, "Backtrace support is not available.\n");        
+#endif
     } else {
         fprintf(stderr, "Ignoring bad user input for backtrace method %s. Choosing execinfo.\n",
                        method);

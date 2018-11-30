@@ -148,9 +148,7 @@ shmem_runtime_abort(int exit_code, const char msg[])
         __builtin_trap();
 #endif
 
-#ifdef USE_BT
     collect_backtrace();
-#endif
 
     PMI2_Abort(exit_code, msg);
 

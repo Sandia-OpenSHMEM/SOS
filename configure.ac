@@ -418,44 +418,41 @@ AM_CONDITIONAL([USE_PMI2], [test "$pmi_type" = "pmi2"])
 AM_CONDITIONAL([USE_PMIX], [test "$opal_external_pmix_version_found" = 1])
 
 # Backtrace
-AC_ARG_ENABLE([backtrace],
-    [AC_HELP_STRING([--enable-backtrace],
-                    [Support backtrace, via library calls (execinfo.h) or debugger tools (gdb) (default:disabled)])])
+## execinfo
+AC_CHECK_HEADERS(execinfo.h)
+bt_execinfo="no"
+if test "$ac_cv_header_execinfo_h" = "yes" ; then
+  AC_SEARCH_LIBS(backtrace, execinfo) 
+  AC_CHECK_FUNCS(backtrace backtrace_symbols)
+  if test "$ac_cv_func_backtrace" = "yes" && test "$ac_cv_func_backtrace_symbols" = "yes"; then
+    bt_execinfo="yes"
+  fi
+fi
 
-AS_IF([test "$enable_backtrace" = "yes"], [
-  AC_DEFINE([USE_BT], [1], [Use of backtrace for debugging in failure])
-  AC_CHECK_HEADERS(execinfo.h)
-  bt_execinfo="no"
-  if test "$ac_cv_header_execinfo_h" = "yes" ; then
-    AC_SEARCH_LIBS(backtrace, execinfo) 
-    AC_CHECK_FUNCS(backtrace backtrace_symbols)
-    if test "$ac_cv_func_backtrace" = "yes" && test "$ac_cv_func_backtrace_symbols" = "yes"; then
-        bt_execinfo="yes"
-    fi
-  fi
-  AC_PATH_PROGS(GDB_PATH, $GDB gdb, , /usr/bin:${PATH})
-  if test -n "$GDB_PATH"; then
-    AC_DEFINE_UNQUOTED(GDB_PATH,"$GDB_PATH")
-  else
-    AC_DEFINE([GDB_PATH], [""], [Path to gdb location])
-  fi
-  if test "$bt_execinfo" != "yes" && test -z "$GDB_PATH"; then
-    use_bt_option="N/A"
-    AC_MSG_ERROR(Backtrace cannot be provided as support for execinfo and gdb is not found in the system)
-  elif test "$bt_execinfo" = "yes" && test -z "$GDB_PATH"; then
-    use_bt_option="execinfo"
-    AC_DEFINE([USE_BT_EXECINFO], [1], [Execinfo library calls for backtrace])
-    CFLAGS="$CFLAGS -rdynamic"
-  elif test "$bt_execinfo" != "yes" && test -n "$GDB_PATH"; then
-    use_bt_option="gdb"
-    AC_DEFINE([USE_BT_GDB], [1], [gdb for backtrace])
-  else
-    use_bt_option="execinfo, gdb"
-    AC_DEFINE([USE_BT_EXECINFO], [1], [Execinfo library calls for backtrace])
-    AC_DEFINE([USE_BT_GDB], [1], [gdb for backtrace])
-    CFLAGS="$CFLAGS -rdynamic"
-  fi
-])
+## gdb
+AC_PATH_PROGS(GDB_PATH, $GDB gdb, , /usr/bin:${PATH})
+if test -n "$GDB_PATH"; then
+  AC_DEFINE_UNQUOTED(GDB_PATH,"$GDB_PATH")
+else
+  AC_DEFINE([GDB_PATH], [""], [Path to gdb location])
+fi
+
+if test "$bt_execinfo" != "yes" && test -z "$GDB_PATH"; then
+  use_bt_option="N/A"
+  AC_MSG_ERROR(Backtrace cannot be provided as support for execinfo and gdb is not found in the system)
+elif test "$bt_execinfo" = "yes" && test -z "$GDB_PATH"; then
+  use_bt_option="execinfo"
+  AC_DEFINE([USE_BT_EXECINFO], [1], [Execinfo library calls for backtrace])
+  CFLAGS="$CFLAGS -rdynamic"
+elif test "$bt_execinfo" != "yes" && test -n "$GDB_PATH"; then
+  use_bt_option="gdb"
+  AC_DEFINE([USE_BT_GDB], [1], [gdb for backtrace])
+else
+  use_bt_option="execinfo, gdb"
+  AC_DEFINE([USE_BT_EXECINFO], [1], [Execinfo library calls for backtrace])
+  AC_DEFINE([USE_BT_GDB], [1], [gdb for backtrace])
+  CFLAGS="$CFLAGS -rdynamic"
+fi
 
 dnl check for header files
 AC_CHECK_HEADERS([fnmatch.h])
@@ -903,7 +900,5 @@ if test "$transport_ofi" = "yes"; then
     echo ""
 fi
 
-if test "$enable_backtrace" = "yes"; then
-    echo "Backtrace:        $use_bt_option"
-    echo ""
-fi
+echo "Backtrace:        $use_bt_option"
+echo ""

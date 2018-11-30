@@ -87,9 +87,7 @@ shmem_runtime_abort(int exit_code, const char msg[])
         __builtin_trap();
 #endif
 
-#ifdef USE_BT
     collect_backtrace();
-#endif
 
     pmix_status_t rc;
 
