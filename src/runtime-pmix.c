@@ -36,6 +36,7 @@ static pmix_proc_t myproc;
 static size_t size;
 static uint32_t local_size = 0;
 static uint32_t local_rank = -1;
+static int *local_ranks;
 
 int
 shmem_runtime_init(void)
@@ -69,6 +70,8 @@ int
 shmem_runtime_fini(void)
 {
     pmix_status_t rc;
+
+    free(local_ranks);
 
     if (PMIX_SUCCESS != (rc = PMIx_Finalize(NULL, 0))) {
         RETURN_ERROR_MSG_PREINIT("PMIx_Finalize failed (%d)\n", rc);
@@ -116,13 +119,24 @@ shmem_runtime_get_size(void)
 int
 shmem_runtime_get_local_rank(int pe)
 {
-    return local_rank;
+#ifdef USE_ON_NODE_COMMS
+    shmem_internal_assert(pe < shmem_internal_num_pes && pe >= 0);
+    return local_ranks[pe];
+#elif defined(USE_MEMCPY)
+    return pe == myproc.rank ? 0 : -1;
+#else
+    return -1;
+#endif
 }
 
 int
 shmem_runtime_get_local_size(void)
 {
+#ifdef USE_MEMCPY
+    return 1;
+#else
     return local_size;
+#endif
 }
 
 // static void opcbfunc(pmix_status_t status, void *cbdata)
@@ -139,15 +153,14 @@ shmem_runtime_exchange(int need_node_util)
     pmix_status_t rc;
     pmix_info_t info;
     bool wantit=true;
-    pmix_proc_t proc;
     //bool active = true;
 
     if (need_node_util) {
+        pmix_proc_t proc;
+        pmix_value_t *val;
+
         strncpy(proc.nspace, myproc.nspace, PMIX_MAX_NSLEN);
         proc.rank = PMIX_RANK_WILDCARD;
-
-#ifdef USE_ON_NODE_COMMS
-        pmix_value_t *val;
 
         if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_LOCAL_SIZE, NULL, 0, &val))) {
             local_size = val->data.uint32;
@@ -156,20 +169,32 @@ shmem_runtime_exchange(int need_node_util)
             RETURN_ERROR_MSG_PREINIT("PMIX_LOCAL_SIZE is not properly initiated (%d)\n", rc);
         }
 
+        local_ranks = (int *)malloc(shmem_internal_num_pes * sizeof(int));
+
+        if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_LOCAL_PEERS, NULL, 0, &val))) {
+           char *local_peers_str = strdup(val->data.string);
+           PMIX_VALUE_RELEASE(val);
+
+           char *ptr = strtok(local_peers_str, ",");
+           for (int i = 0; i < local_size; i++) {
+              int idx = strtoul(ptr, NULL, 10);
+              shmem_internal_assert(idx < shmem_internal_num_pes && idx >= 0);
+              local_ranks[idx] = i;
+              ptr = strtok(NULL, ",");
+           }
+           shmem_internal_assert(ptr == NULL);
+           free(local_peers_str);
+        } else {
+           RETURN_ERROR_MSG_PREINIT("PMIX_LOCAL_PEERS is not properly initiated (%d)\n", rc);
+        }
+
         proc.rank = myproc.rank;
         if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_LOCAL_RANK, NULL, 0, &val))) {
             local_rank = val->data.uint16;
             PMIX_VALUE_RELEASE(val);
         } else {
-            RETURN_ERROR_MSG_PREINIT("PMIX_LOCAL_RANK is not properly initiated (%d) on PE %d\n", rc, pe);
+            RETURN_ERROR_MSG_PREINIT("PMIX_LOCAL_RANK is not properly initiated (%d)\n", rc);
         }
-#elif defined(USE_MEMCPY)
-        local_rank = 0;
-        local_size = 1;
-#else
-        local_rank = -1;
-        local_size = 0;
-#endif
     }
 
     /* commit any values we "put" */

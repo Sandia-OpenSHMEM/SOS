@@ -130,5 +130,9 @@ int shmem_node_util_startup(void)
 
 int shmem_node_util_get_local_n_pes()
 {
+#ifdef USE_MEMCPY
+    return 1;
+#else
     return n_local_pes;
+#endif
 }
