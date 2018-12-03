@@ -36,7 +36,9 @@ if SHMEMX_TESTS
 check_PROGRAMS += \
 	perf_counter \
 	fadd_nbi \
-	atomic_nbi
+	atomic_nbi \
+	put_signal \
+	put_signal_nbi
 
 if HAVE_PTHREADS
 check_PROGRAMS += \

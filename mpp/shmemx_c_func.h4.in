@@ -130,3 +130,41 @@ define(`SHMEM_C_CTX_FETCH_OR_NBI',
 `SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ctx_$1_atomic_fetch_or_nbi(shmem_ctx_t ctx, $2 *fetch, $2 *target, $2 value, int pe)')dnl
 SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_CTX_FETCH_OR_NBI')
 
+/* Blocking put with signal */
+define(`SHMEM_C_PUT_SIGNAL',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_$1_put_signal($2 *target, const $2 *source, size_t nelems, uint64_t *sig_addr, uint64_t signal, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_PUT_SIGNAL')
+
+define(`SHMEM_C_CTX_PUT_SIGNAL',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ctx_$1_put_signal(shmem_ctx_t ctx, $2 *target, const $2 *source, size_t nelems, uint64_t *sig_addr, uint64_t signal, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_CTX_PUT_SIGNAL')
+
+define(`SHMEM_C_PUT_N_SIGNAL',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_put$1_signal(void* target, const void *source, size_t nelems, uint64_t *sig_addr, uint64_t signal, int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_PUT_N_SIGNAL')
+SHMEM_C_PUT_N_SIGNAL(mem,1);
+
+define(`SHMEM_C_CTX_PUT_N_SIGNAL',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ctx_put$1_signal(shmem_ctx_t ctx, void* target, const void *source, size_t nelems, uint64_t *sig_addr, uint64_t signal, int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_CTX_PUT_N_SIGNAL')
+SHMEM_C_CTX_PUT_N_SIGNAL(mem,1);
+
+/* Non-blocking put with signal */
+define(`SHMEM_C_PUT_SIGNAL_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_$1_put_signal_nbi($2 *target, const $2 *source, size_t nelems, uint64_t *sig_addr, uint64_t signal, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_PUT_SIGNAL_NBI')
+
+define(`SHMEM_C_CTX_PUT_SIGNAL_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ctx_$1_put_signal_nbi(shmem_ctx_t ctx, $2 *target, const $2 *source, size_t nelems, uint64_t *sig_addr, uint64_t signal, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_CTX_PUT_SIGNAL_NBI')
+
+define(`SHMEM_C_PUT_N_SIGNAL_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_put$1_signal_nbi(void* target, const void *source, size_t nelems, uint64_t *sig_addr, uint64_t signal, int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_PUT_N_SIGNAL_NBI')
+SHMEM_C_PUT_N_SIGNAL_NBI(mem,1);
+
+define(`SHMEM_C_CTX_PUT_N_SIGNAL_NBI',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ctx_put$1_signal_nbi(shmem_ctx_t ctx, void* target, const void *source, size_t nelems, uint64_t *sig_addr, uint64_t signal, int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_CTX_PUT_N_SIGNAL_NBI')
+SHMEM_C_CTX_PUT_N_SIGNAL_NBI(mem,1);
+
