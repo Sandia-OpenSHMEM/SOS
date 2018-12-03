@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2018 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -25,46 +25,60 @@
  * SOFTWARE.
  */
 
-#include <shmem.h>
+/* 
+ * Validate put_signal operation through non-blocking API
+ * PE 0 uses shmem_put_signal_nbi to send data and signal across all PES
+*/
+
 #include <stdio.h>
-#include <stdlib.h>
+#include <shmem.h>
+#include <string.h>
 
-#define NUM_CTX 32
+#include <shmemx.h>
 
-long data = 0;
+#define MSG_SZ 10
 
-int main(int argc, char **argv) {
+int main(int argc, char *argv[])
+{
+    long source[MSG_SZ];
+    long *target;
     int me, npes, i;
     int errors = 0;
-    shmem_ctx_t ctx[NUM_CTX];
+
+    static uint64_t sig_addr = 0;
 
     shmem_init();
 
     me = shmem_my_pe();
     npes = shmem_n_pes();
 
-    for (i = 0; i < NUM_CTX; i++) {
-        int err = shmem_ctx_create(0, &ctx[i]);
+    for (i = 0; i < MSG_SZ; i++)
+        source[i] = i;
 
-        if (err) {
-            printf("%d: Warning, could not create context %d (%d)\n", me, i, err);
-            ctx[i] = SHMEM_CTX_DEFAULT;
+    target = (long *) shmem_calloc(MSG_SZ, sizeof(long));
+    if (!target) {
+        fprintf(stderr, "Failed to allocate target pointer\n");
+        shmem_global_exit(1);
+    }
+
+    if (me == 0) {
+        for (i = 0; i < npes; i++) {
+            shmemx_long_put_signal_nbi(target, source, MSG_SZ, &sig_addr, 1, i);
         }
-    }
+    } 
 
-    for (i = 0; i < NUM_CTX; i++)
-        shmem_ctx_long_atomic_inc(ctx[i], &data, (me+1) % npes);
+    shmem_wait_until(&sig_addr, SHMEM_CMP_EQ, 1);
 
-    for (i = 0; i < NUM_CTX; i++)
-        shmem_ctx_quiet(ctx[i]);
-
-    shmem_sync_all();
-
-    if (data != NUM_CTX) {
-        printf("%d: error expected %d, got %ld\n", me, NUM_CTX, data);
-        ++errors;
-    }
-
+    for (i = 0; i < MSG_SZ; i++) {
+        if (target[i] != source[i]) {
+            fprintf(stderr, "%10d: target[%d] = %ld not matching %ld\n",
+                    me, i, target[i], source[i]);
+            errors++;
+        }
+    } 
+    
+    shmem_free(target);
     shmem_finalize();
+
     return errors;
-}
+} 

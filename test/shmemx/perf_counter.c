@@ -50,14 +50,18 @@ static void collect(shmem_ctx_t ctx) {
 }
 
 static void put_and_progress_check(void) {
-    int i, j;
+    int i, j, ret;
     int partner = ((npes % 2 == 0) ? (me % 2 == 0 ? me + 1 : me - 1) :
                                      (me % 2 != 0 ? me - 1 :
                                      (me == npes - 1) ? me : me + 1));
 
     shmem_ctx_t ctx;
     shmemx_pcntr_t pcntr;
-    shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
+    ret = shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
+    if (ret) {
+        printf("Error creating context (%d)\n", ret);
+        shmem_global_exit(1);
+    }
 
     for (i = 0; i < ITER; i++) {
         for (j = 0; j < WINDOW; j++) {
