@@ -34,8 +34,8 @@
 
 static pmix_proc_t myproc;
 static size_t size;
-static uint32_t local_size = 0;
-static uint32_t local_rank = -1;
+static uint32_t local_rank = 0;
+static uint32_t local_size = 1;
 static int *local_ranks;
 
 int
@@ -119,24 +119,14 @@ shmem_runtime_get_size(void)
 int
 shmem_runtime_get_local_rank(int pe)
 {
-#ifdef USE_ON_NODE_COMMS
-    shmem_internal_assert(pe < shmem_internal_num_pes && pe >= 0);
+    shmem_internal_assert(pe < size && pe >= 0);
     return local_ranks[pe];
-#elif defined(USE_MEMCPY)
-    return pe == myproc.rank ? 0 : -1;
-#else
-    return -1;
-#endif
 }
 
 int
 shmem_runtime_get_local_size(void)
 {
-#ifdef USE_MEMCPY
-    return 1;
-#else
     return local_size;
-#endif
 }
 
 // static void opcbfunc(pmix_status_t status, void *cbdata)
@@ -169,7 +159,11 @@ shmem_runtime_exchange(int need_node_util)
             RETURN_ERROR_MSG_PREINIT("PMIX_LOCAL_SIZE is not properly initiated (%d)\n", rc);
         }
 
-        local_ranks = (int *)malloc(shmem_internal_num_pes * sizeof(int));
+        local_ranks = (int *)malloc(size * sizeof(int));
+
+        for (int i = 0; i < size; i++) {
+            local_ranks[i] = -1;
+        }
 
         if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_LOCAL_PEERS, NULL, 0, &val))) {
            char *local_peers_str = strdup(val->data.string);

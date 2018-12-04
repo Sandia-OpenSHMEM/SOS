@@ -33,12 +33,12 @@
 #define MAX_KV_LENGTH 64
 
 static int rank = -1;
-static int local_rank = 0;
 static int size = 0;
 static MPI_Comm SHMEM_RUNTIME_WORLD, SHMEM_RUNTIME_SHARED;
 static int kv_length = 0;
 static int initialized_mpi = 0;
 static int initialized_node_util = 0;
+static int local_rank = 0;
 static int local_size = 1;
 static int *local_ranks;
 
@@ -170,28 +170,20 @@ shmem_runtime_get_rank(void)
 }
 
 int
+shmem_runtime_get_size(void)
+{
+    return size;
+}
+
+int
 shmem_runtime_get_local_rank(int pe)
 {
-    if (size == 1) {
-        return 0;
-    }
-#ifdef USE_ON_NODE_COMMS
+    shmem_internal_assert(pe < size && pe >= 0);
     if (local_ranks[pe] != MPI_UNDEFINED) {
         return local_ranks[pe];
     } else {
         return -1;
     }
-#elif defined(USE_MEMCPY)
-    return pe == rank ? 0 : -1;
-#else
-    return -1;
-#endif
-}
-
-int
-shmem_runtime_get_size(void)
-{
-    return size;
 }
 
 int

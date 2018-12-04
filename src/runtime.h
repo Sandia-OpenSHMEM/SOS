@@ -25,8 +25,38 @@ void shmem_runtime_abort(int exit_code, const char msg[]) SHMEM_ATTRIBUTE_NORETU
 
 int shmem_runtime_get_rank(void);
 int shmem_runtime_get_size(void);
+
+/* "local" rank and size do not depend on the comms method used (i.e., the
+ * rank and size are independent of USE_ON_NODE_COMMS and USE_MEMCPY).  */
 int shmem_runtime_get_local_rank(int pe);
 int shmem_runtime_get_local_size(void);
+
+/* "node" rank and size depend on which comms method is used.  */
+static inline
+int
+shmem_runtime_get_node_rank(int pe)
+{
+#ifdef USE_ON_NODE_COMMS
+    shmem_runtime_get_local_rank(pe);
+#elif defined(USE_MEMCPY)
+    return pe == myproc.rank ? 0 : -1;
+#else
+    return -1;
+#endif
+}
+
+static inline
+int
+shmem_runtime_get_node_size(void)
+{
+#ifdef USE_ON_NODE_COMMS
+    return shmem_runtime_get_local_size();
+#elif defined(USE_MEMCPY)
+    return 1;
+#else
+    return 0;
+#endif
+}
 
 int shmem_runtime_exchange(int need_node_util);
 int shmem_runtime_put(char *key, void *value, size_t valuelen);

@@ -18,7 +18,6 @@
 #include <string.h>
 #include <errno.h>
 
-#include "shmem_internal.h"
 #include "shmem_node_util.h"
 
 int *shmem_internal_location_array = NULL;
@@ -128,11 +127,7 @@ int shmem_node_util_startup(void)
 }
 
 
-int shmem_node_util_get_local_n_pes()
+int shmem_node_util_get_local_size()
 {
-#ifdef USE_MEMCPY
-    return 1;
-#else
     return n_local_pes;
-#endif
 }

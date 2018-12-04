@@ -43,7 +43,7 @@ shmem_internal_put_scalar(shmem_ctx_t ctx, void *target, const void *source, siz
 
     shmem_internal_assert(len > 0);
 
-    if (-1 != (node_rank = shmem_runtime_get_local_rank(pe))) {
+    if (-1 != (node_rank = shmem_runtime_get_node_rank(pe))) {
 #if USE_MEMCPY
         memcpy(target, source, len);
 #elif USE_XPMEM
@@ -68,7 +68,7 @@ shmem_internal_put_nb(shmem_ctx_t ctx, void *target, const void *source, size_t 
 
     if (len == 0) return;
 
-    if (-1 != (node_rank = shmem_runtime_get_local_rank(pe))) {
+    if (-1 != (node_rank = shmem_runtime_get_node_rank(pe))) {
 #if USE_MEMCPY
         memcpy(target, source, len);
 #elif USE_XPMEM
@@ -95,7 +95,7 @@ shmem_internal_put_nbi(shmem_ctx_t ctx, void *target, const void *source, size_t
 
     if (len == 0) return;
 
-    if (-1 != (node_rank = shmem_runtime_get_local_rank(pe))) {
+    if (-1 != (node_rank = shmem_runtime_get_node_rank(pe))) {
 #if USE_MEMCPY
         memcpy(target, source, len);
 #elif USE_XPMEM
@@ -143,7 +143,7 @@ shmem_internal_get(shmem_ctx_t ctx, void *target, const void *source, size_t len
 
     if (len == 0) return;
 
-    if (-1 != (node_rank = shmem_runtime_get_local_rank(pe))) {
+    if (-1 != (node_rank = shmem_runtime_get_node_rank(pe))) {
 #if USE_MEMCPY
         memcpy(target, source, len);
 #elif USE_XPMEM

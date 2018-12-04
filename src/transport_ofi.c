@@ -1411,7 +1411,7 @@ int shmem_transport_startup(void)
 {
     int ret;
     int i;
-    int  num_on_node = 0;
+    int num_on_node;
     long ofi_tx_ctx_cnt;
 
     if (shmem_internal_params.OFI_STX_AUTO) {

@@ -17,6 +17,7 @@
 #define SHMEM_NODE_UTIL_H
 
 #include <unistd.h>
+#include "shmem_internal.h"
 #include "transport.h"
 
 extern int *shmem_internal_location_array;
@@ -29,7 +30,7 @@ void shmem_node_util_fini(void);
 
 int shmem_node_util_startup(void);
 
-int shmem_node_util_get_local_n_pes(void);
+int shmem_node_util_get_local_size(void);
 
 struct shmem_node_util_addr_t {
     size_t addrlen;
@@ -67,13 +68,8 @@ int shmem_node_util_gethostname(char *hostname)
 static inline
 int shmem_node_util_get_local_rank(int pe)
 {
-#ifdef USE_ON_NODE_COMMS
+    shmem_internal_assert(pe < shmem_internal_num_pes && pe >= 0);
     return shmem_internal_location_array[pe];
-#elif defined(USE_MEMCPY)
-    return pe == shmem_internal_my_pe ? 0 : -1;
-#else
-    return -1;
-#endif
 }
 
 static inline

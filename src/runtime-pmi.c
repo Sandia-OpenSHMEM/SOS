@@ -212,20 +212,16 @@ shmem_runtime_get_rank(void)
 
 
 int
-shmem_runtime_get_local_rank(int pe)
+shmem_runtime_get_size(void)
 {
-    if (size == 1) {
-        return 0;
-    } else {
-        return shmem_node_util_get_local_rank(pe);
-    }
+    return size;
 }
 
 
 int
-shmem_runtime_get_size(void)
+shmem_runtime_get_local_rank(int pe)
 {
-    return size;
+    return shmem_node_util_get_local_rank(pe);
 }
 
 
@@ -269,7 +265,7 @@ shmem_runtime_exchange(int need_node_util)
         if (0 != ret) {
             RETURN_ERROR_MSG("Node utility startup failed (%d)\n", ret);
         }
-        local_size = shmem_node_util_get_local_n_pes();
+        local_size = shmem_node_util_get_local_size();
     }
 
     return 0;
