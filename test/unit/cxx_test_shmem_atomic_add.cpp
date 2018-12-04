@@ -36,8 +36,12 @@
 #include <stdio.h>
 #include <shmem.h>
 
+#ifdef ENABLE_SHMEMX_TESTS
+#include <shmemx.h>
+#endif
+
 enum op { ADD = 0, ATOMIC_ADD, CTX_ATOMIC_ADD, FADD, ATOMIC_FETCH_ADD,
-          CTX_ATOMIC_FETCH_ADD };
+          CTX_ATOMIC_FETCH_ADD, ATOMIC_FETCH_ADD_NBI, CTX_ATOMIC_FETCH_ADD_NBI };
 
 #ifdef ENABLE_DEPRECATED_TESTS
 #define DEPRECATED_ADD(TYPENAME, ...) shmem_##TYPENAME##_add(__VA_ARGS__)
@@ -45,6 +49,32 @@ enum op { ADD = 0, ATOMIC_ADD, CTX_ATOMIC_ADD, FADD, ATOMIC_FETCH_ADD,
 #else
 #define DEPRECATED_ADD(TYPENAME, ...) shmem_##TYPENAME##_atomic_add(__VA_ARGS__)
 #define DEPRECATED_FADD(TYPENAME, ...) shmem_##TYPENAME##_atomic_fetch_add(__VA_ARGS__)
+#endif
+
+#ifdef ENABLE_SHMEMX_TESTS
+#define SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)                        \
+        case ATOMIC_FETCH_ADD_NBI:                                      \
+          shmemx_##TYPENAME##_atomic_fetch_add_nbi(&old, &remote,       \
+                                                  (TYPE)(mype + 1), i); \
+          shmem_quiet();                                                \
+          if (old > (TYPE)(npes * (npes + 1) / 2)) {                    \
+            printf("PE %i error inconsistent value of old (%s, %s)\n",  \
+                   mype, #OP, #TYPE);                                   \
+            rc = EXIT_FAILURE;                                          \
+          }                                                             \
+          break;                                                        \
+        case CTX_ATOMIC_FETCH_ADD_NBI:                                  \
+          shmemx_ctx_##TYPENAME##_atomic_fetch_add_nbi(SHMEM_CTX_DEFAULT,\
+                                    &old, &remote, (TYPE)(mype + 1), i);\
+          shmem_quiet();                                                \
+          if (old > (TYPE)(npes * (npes + 1) / 2)) {                    \
+            printf("PE %i error inconsistent value of old (%s, %s)\n",  \
+                   mype, #OP, #TYPE);                                   \
+            rc = EXIT_FAILURE;                                          \
+          }                                                             \
+          break;
+#else
+#define SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)
 #endif
 
 #define TEST_SHMEM_ADD(OP, TYPE, TYPENAME)                              \
@@ -93,6 +123,7 @@ enum op { ADD = 0, ATOMIC_ADD, CTX_ATOMIC_ADD, FADD, ATOMIC_FETCH_ADD,
             rc = EXIT_FAILURE;                                          \
           }                                                             \
           break;                                                        \
+        SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)                        \
         default:                                                        \
           printf("Invalid operation (%d)\n", OP);                       \
           shmem_global_exit(1);                                         \
@@ -190,6 +221,34 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_ADD(CTX_ATOMIC_FETCH_ADD, uint64_t, uint64);
   TEST_SHMEM_ADD(CTX_ATOMIC_FETCH_ADD, size_t, size);
   TEST_SHMEM_ADD(CTX_ATOMIC_FETCH_ADD, ptrdiff_t, ptrdiff);
+
+#ifdef ENABLE_SHMEMX_TESTS
+  TEST_SHMEM_ADD(ATOMIC_FETCH_ADD_NBI, int, int);
+  TEST_SHMEM_ADD(ATOMIC_FETCH_ADD_NBI, long, long);
+  TEST_SHMEM_ADD(ATOMIC_FETCH_ADD_NBI, long long, longlong);
+  TEST_SHMEM_ADD(ATOMIC_FETCH_ADD_NBI, unsigned int, uint);
+  TEST_SHMEM_ADD(ATOMIC_FETCH_ADD_NBI, unsigned long, ulong);
+  TEST_SHMEM_ADD(ATOMIC_FETCH_ADD_NBI, unsigned long long, ulonglong);
+  TEST_SHMEM_ADD(ATOMIC_FETCH_ADD_NBI, int32_t, int32);
+  TEST_SHMEM_ADD(ATOMIC_FETCH_ADD_NBI, int64_t, int64);
+  TEST_SHMEM_ADD(ATOMIC_FETCH_ADD_NBI, uint32_t, uint32);
+  TEST_SHMEM_ADD(ATOMIC_FETCH_ADD_NBI, uint64_t, uint64);
+  TEST_SHMEM_ADD(ATOMIC_FETCH_ADD_NBI, size_t, size);
+  TEST_SHMEM_ADD(ATOMIC_FETCH_ADD_NBI, ptrdiff_t, ptrdiff);
+
+  TEST_SHMEM_ADD(CTX_ATOMIC_FETCH_ADD_NBI, int, int);
+  TEST_SHMEM_ADD(CTX_ATOMIC_FETCH_ADD_NBI, long, long);
+  TEST_SHMEM_ADD(CTX_ATOMIC_FETCH_ADD_NBI, long long, longlong);
+  TEST_SHMEM_ADD(CTX_ATOMIC_FETCH_ADD_NBI, unsigned int, uint);
+  TEST_SHMEM_ADD(CTX_ATOMIC_FETCH_ADD_NBI, unsigned long, ulong);
+  TEST_SHMEM_ADD(CTX_ATOMIC_FETCH_ADD_NBI, unsigned long long, ulonglong);
+  TEST_SHMEM_ADD(CTX_ATOMIC_FETCH_ADD_NBI, int32_t, int32);
+  TEST_SHMEM_ADD(CTX_ATOMIC_FETCH_ADD_NBI, int64_t, int64);
+  TEST_SHMEM_ADD(CTX_ATOMIC_FETCH_ADD_NBI, uint32_t, uint32);
+  TEST_SHMEM_ADD(CTX_ATOMIC_FETCH_ADD_NBI, uint64_t, uint64);
+  TEST_SHMEM_ADD(CTX_ATOMIC_FETCH_ADD_NBI, size_t, size);
+  TEST_SHMEM_ADD(CTX_ATOMIC_FETCH_ADD_NBI, ptrdiff_t, ptrdiff);
+#endif
 
   shmem_finalize();
   return rc;

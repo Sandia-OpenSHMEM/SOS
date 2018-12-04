@@ -165,10 +165,6 @@ LOG_COMPILER = $(TEST_RUNNER)
 
 AM_LDFLAGS = $(LIBTOOL_WRAPPER_LDFLAGS)
 
-if SHMEMX_TESTS
-AM_CFLAGS = -DENABLE_SHMEMX_TESTS
-endif
-
 if EXTERNAL_TESTS
 bin_PROGRAMS = $(check_PROGRAMS)
 AM_CPPFLAGS = -I$(top_srcdir)/test/include
@@ -182,6 +178,11 @@ endif
 
 if USE_PMI_SIMPLE
 LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
+endif
+
+if SHMEMX_TESTS
+AM_CFLAGS = -DENABLE_SHMEMX_TESTS
+AM_CPPFLAGS += -DENABLE_SHMEMX_TESTS
 endif
 
 # C Tests with special flags

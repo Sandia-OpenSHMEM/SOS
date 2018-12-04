@@ -36,12 +36,31 @@
 #include <stdio.h>
 #include <shmem.h>
 
-enum op { SWAP = 0, ATOMIC_SWAP, CTX_ATOMIC_SWAP };
+#ifdef ENABLE_SHMEMX_TESTS
+#include <shmemx.h>
+#endif
+
+enum op { SWAP = 0, ATOMIC_SWAP, CTX_ATOMIC_SWAP, ATOMIC_SWAP_NBI,
+          CTX_ATOMIC_SWAP_NBI };
 
 #ifdef ENABLE_DEPRECATED_TESTS
 #define DEPRECATED_SWAP(TYPENAME, ...) shmem_##TYPENAME##_swap(__VA_ARGS__)
 #else
 #define DEPRECATED_SWAP(TYPENAME, ...) shmem_##TYPENAME##_atomic_swap(__VA_ARGS__)
+#endif
+
+#ifdef ENABLE_SHMEMX_TESTS
+#define SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)                        \
+        case ATOMIC_SWAP_NBI:                                           \
+            shmemx_##TYPENAME##_atomic_swap_nbi(&old, &remote,          \
+                                   (TYPE)mype, (mype + 1) % npes);      \
+            break;                                                      \
+        case CTX_ATOMIC_SWAP_NBI:                                       \
+            shmemx_ctx_##TYPENAME##_atomic_swap_nbi(SHMEM_CTX_DEFAULT,  \
+                         &old, &remote, (TYPE)mype, (mype + 1) % npes); \
+            break;
+#else
+#define SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)
 #endif
 
 #define TEST_SHMEM_SWAP(OP, TYPE, TYPENAME)                             \
@@ -65,6 +84,7 @@ enum op { SWAP = 0, ATOMIC_SWAP, CTX_ATOMIC_SWAP };
             old = shmem_ctx_##TYPENAME##_atomic_swap(SHMEM_CTX_DEFAULT, \
                            &remote, (TYPE)mype, (mype + 1) % npes);     \
             break;                                                      \
+        SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)                        \
         default:                                                        \
           printf("invalid operation (%d)\n", OP);                       \
           shmem_global_exit(1);                                         \
@@ -134,6 +154,38 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_SWAP(CTX_ATOMIC_SWAP, uint64_t, uint64);
   TEST_SHMEM_SWAP(CTX_ATOMIC_SWAP, size_t, size);
   TEST_SHMEM_SWAP(CTX_ATOMIC_SWAP, ptrdiff_t, ptrdiff);
+
+#ifdef ENABLE_SHMEMX_TESTS
+  TEST_SHMEM_SWAP(ATOMIC_SWAP_NBI, float, float);
+  TEST_SHMEM_SWAP(ATOMIC_SWAP_NBI, double, double);
+  TEST_SHMEM_SWAP(ATOMIC_SWAP_NBI, int, int);
+  TEST_SHMEM_SWAP(ATOMIC_SWAP_NBI, long, long);
+  TEST_SHMEM_SWAP(ATOMIC_SWAP_NBI, long long, longlong);
+  TEST_SHMEM_SWAP(ATOMIC_SWAP_NBI, unsigned int, uint);
+  TEST_SHMEM_SWAP(ATOMIC_SWAP_NBI, unsigned long, ulong);
+  TEST_SHMEM_SWAP(ATOMIC_SWAP_NBI, unsigned long long, ulonglong);
+  TEST_SHMEM_SWAP(ATOMIC_SWAP_NBI, int32_t, int32);
+  TEST_SHMEM_SWAP(ATOMIC_SWAP_NBI, int64_t, int64);
+  TEST_SHMEM_SWAP(ATOMIC_SWAP_NBI, uint32_t, uint32);
+  TEST_SHMEM_SWAP(ATOMIC_SWAP_NBI, uint64_t, uint64);
+  TEST_SHMEM_SWAP(ATOMIC_SWAP_NBI, size_t, size);
+  TEST_SHMEM_SWAP(ATOMIC_SWAP_NBI, ptrdiff_t, ptrdiff);
+
+  TEST_SHMEM_SWAP(CTX_ATOMIC_SWAP_NBI, float, float);
+  TEST_SHMEM_SWAP(CTX_ATOMIC_SWAP_NBI, double, double);
+  TEST_SHMEM_SWAP(CTX_ATOMIC_SWAP_NBI, int, int);
+  TEST_SHMEM_SWAP(CTX_ATOMIC_SWAP_NBI, long, long);
+  TEST_SHMEM_SWAP(CTX_ATOMIC_SWAP_NBI, long long, longlong);
+  TEST_SHMEM_SWAP(CTX_ATOMIC_SWAP_NBI, unsigned int, uint);
+  TEST_SHMEM_SWAP(CTX_ATOMIC_SWAP_NBI, unsigned long, ulong);
+  TEST_SHMEM_SWAP(CTX_ATOMIC_SWAP_NBI, unsigned long long, ulonglong);
+  TEST_SHMEM_SWAP(CTX_ATOMIC_SWAP_NBI, int32_t, int32);
+  TEST_SHMEM_SWAP(CTX_ATOMIC_SWAP_NBI, int64_t, int64);
+  TEST_SHMEM_SWAP(CTX_ATOMIC_SWAP_NBI, uint32_t, uint32);
+  TEST_SHMEM_SWAP(CTX_ATOMIC_SWAP_NBI, uint64_t, uint64);
+  TEST_SHMEM_SWAP(CTX_ATOMIC_SWAP_NBI, size_t, size);
+  TEST_SHMEM_SWAP(CTX_ATOMIC_SWAP_NBI, ptrdiff_t, ptrdiff);
+#endif
 
   shmem_finalize();
   return rc;
