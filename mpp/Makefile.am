@@ -14,6 +14,7 @@
 # shmem.h should appear in BOTH $(includedir)/shmem.h and $(includedir)/mpp/shmem.h!
 
 EXTRA_DIST = shmem.h4.in  \
+             shmem-def.h4.in \
              shmemx.h4.in \
              pshmem.h4.in \
              shmem.fh.in  \
@@ -23,11 +24,11 @@ EXTRA_DIST = shmem.h4.in  \
 
 mppdir = $(includedir)/mpp
 
-nodist_mpp_HEADERS = shmem.h shmemx.h
-nodist_include_HEADERS = shmem.h shmemx.h
+nodist_mpp_HEADERS = shmem.h shmemx.h shmem-def.h
+nodist_include_HEADERS = shmem.h shmemx.h shmem-def.h
 
-BUILT_SOURCES = shmem.h shmemx.h
-CLEANFILES += shmem.h shmemx.h
+BUILT_SOURCES = shmem.h shmemx.h shmem-def.h
+CLEANFILES += shmem.h shmemx.h shmem-def.h
 
 if ENABLE_PROFILING
 nodist_mpp_HEADERS += pshmem.h

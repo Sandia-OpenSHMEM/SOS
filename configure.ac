@@ -762,6 +762,7 @@ AC_CONFIG_FILES([Makefile
   mpp/shmem.fh
   mpp/shmemx.fh
   mpp/shmem.h4
+  mpp/shmem-def.h4
   mpp/shmem_c_func.h4
   mpp/shmemx_c_func.h4
   mpp/shmemx.h4
