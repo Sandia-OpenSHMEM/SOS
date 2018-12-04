@@ -105,5 +105,8 @@ SHMEM_INTERNAL_ENV_DEF(MPI_THREAD_LEVEL, string, "MPI_THREAD_SINGLE", SHMEM_INTE
                        "Specify the MPI threading level when MPI is used as the process manager")
 #endif
 
-SHMEM_INTERNAL_ENV_DEF(BACKTRACE_METHOD, string, "auto", SHMEM_INTERNAL_ENV_CAT_OTHER, 
+SHMEM_INTERNAL_ENV_DEF(BACKTRACE, string, "", SHMEM_INTERNAL_ENV_CAT_OTHER, 
                        "Specify the mechanism to use for backtracing on failure")
+SHMEM_INTERNAL_ENV_DEF(BACKTRACE_PATH, string, "", SHMEM_INTERNAL_ENV_CAT_OTHER,
+                       "Specify the path to the debugger used for backtrace")
+

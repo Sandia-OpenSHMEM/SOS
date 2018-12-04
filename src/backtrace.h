@@ -150,7 +150,13 @@ void backtrace_gdb(void) {
     const char fmt[] = "%s -nx -batch -x %s '%s' %d";
     static char cmd[sizeof(fmt) + 3 * MAX_BT_PATHSIZE];
     char filename[MAX_BT_PATHSIZE];
-    const char *gdb = (access(GDB_PATH, X_OK) ? "gdb" : GDB_PATH);
+    char *gdb = NULL;
+    char *backtrace_path = shmem_internal_params.BACKTRACE_PATH;
+    if (0 == strcmp(backtrace_path, "")) {
+        gdb = (access(GDB_PATH, X_OK) ? "gdb" : GDB_PATH);
+    } else {
+        gdb = (access(backtrace_path, X_OK) ? "gdb" : backtrace_path);
+    }
     int rc;
     rc = create_command_file(filename);
     if (rc != 0) {
@@ -178,7 +184,7 @@ void backtrace_gdb(void) {
 
 static inline
 void collect_backtrace(void) {
-    char *method = shmem_internal_params.BACKTRACE_METHOD;
+    char *method = shmem_internal_params.BACKTRACE;
 
     if (0 == strcmp(method, "execinfo")) {
 #if defined(USE_BT_EXECINFO)
@@ -200,6 +206,8 @@ void collect_backtrace(void) {
 #else
         fprintf(stderr, "Backtrace support is not available.\n");        
 #endif
+    } else if (0 == strcmp(method, "")) {
+        fprintf(stderr, "Backtrace support is not enabled. Set SHMEM_BACKTRACE to auto, execinfo, or gdb to enable.\n");        
     } else {
         fprintf(stderr, "Ignoring bad user input for backtrace method %s. Choosing execinfo.\n",
                        method);
