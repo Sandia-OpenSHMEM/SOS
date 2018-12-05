@@ -68,7 +68,8 @@ int shmem_node_util_gethostname(char *hostname)
 static inline
 int shmem_node_util_get_local_rank(int pe)
 {
-    shmem_internal_assert(pe < shmem_internal_num_pes && pe >= 0);
+    shmem_internal_assert(pe < shmem_internal_num_pes && pe >= 0 &&
+                          shmem_node_util_get_local_size() > 0);
     return shmem_internal_location_array[pe];
 }
 

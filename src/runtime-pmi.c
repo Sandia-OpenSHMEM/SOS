@@ -221,7 +221,11 @@ shmem_runtime_get_size(void)
 int
 shmem_runtime_get_local_rank(int pe)
 {
-    return shmem_node_util_get_local_rank(pe);
+    if (size == 1) {
+        return 0;
+    } else {
+        return shmem_node_util_get_local_rank(pe);
+    }
 }
 
 

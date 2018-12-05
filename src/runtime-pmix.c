@@ -119,7 +119,7 @@ shmem_runtime_get_size(void)
 int
 shmem_runtime_get_local_rank(int pe)
 {
-    shmem_internal_assert(pe < size && pe >= 0);
+    shmem_internal_assert(size > 0 && pe < size && pe >= 0);
     return local_ranks[pe];
 }
 
