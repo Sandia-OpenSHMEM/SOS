@@ -211,7 +211,8 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ALL')
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
-        size_t cmpret = 0, i = 0, found_idx = SIZE_MAX, num_ignored = 0;                       \
+        size_t i = 0, found_idx = SIZE_MAX, num_ignored = 0;                                   \
+        int cmpret = 0;                                                                        \
                                                                                                \
         if (status) {                                                                          \
             for (i = 0; i < nelems; i++) {                                                     \
@@ -222,7 +223,8 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ALL')
             return SIZE_MAX;                                                                   \
                                                                                                \
         SHMEM_MUTEX_LOCK(shmem_internal_mutex_rand_r);                                         \
-        size_t start_idx = rand_r(&shmem_internal_rand_seed) / (RAND_MAX + 1.0) * nelems;      \
+        size_t start_idx = (size_t) (rand_r(&shmem_internal_rand_seed) /                       \
+                                        (RAND_MAX + 1.0) * (double) nelems);                   \
         SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_rand_r);                                       \
                                                                                                \
         while (!cmpret) {                                                                      \
@@ -268,7 +270,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ANY')
             return 0;                                                                          \
                                                                                                \
         while (ncompleted == 0) {                                                              \
-            size_t cmpret = 0;                                                                 \
+            int cmpret = 0;                                                                    \
             for (i = 0; i < nelems; i++) {                                                     \
                 if (status == NULL || !status[i]) {                                            \
                     COMP(cond, vars[i], value, cmpret);                                        \
@@ -346,11 +348,12 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ALL')
                                                                                                \
         size_t found_idx = SIZE_MAX, i = 0;                                                    \
         SHMEM_MUTEX_LOCK(shmem_internal_mutex_rand_r);                                         \
-        size_t start_idx = rand_r(&shmem_internal_rand_seed) / (RAND_MAX + 1.0) * nelems;      \
+        size_t start_idx = (size_t) (rand_r(&shmem_internal_rand_seed) /                       \
+                                        (RAND_MAX + 1.0) * (double) nelems);                   \
         SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_rand_r);                                       \
                                                                                                \
         for (i = 0; i < nelems; i++) {                                                         \
-            size_t cmpret = 0;                                                                 \
+            int cmpret = 0;                                                                    \
             size_t idx = (i + start_idx) % nelems;                                             \
             if (status == NULL || !status[idx]) {                                              \
                 COMP(cond, vars[idx], value, cmpret);                                          \
@@ -391,7 +394,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ANY')
                                                                                                \
         for (i = 0; i < nelems; i++) {                                                         \
             if (status == NULL || !status[i]) {                                                \
-                size_t cmpret;                                                                 \
+                int cmpret;                                                                    \
                 COMP(cond, vars[i], value, cmpret);                                            \
                 if (cmpret) {                                                                  \
                     if (status) status[i] = 1;                                                 \
