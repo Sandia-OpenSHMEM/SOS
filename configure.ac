@@ -440,7 +440,11 @@ fi
 if test "$bt_execinfo" = "yes"; then
   use_bt_option="$use_bt_option execinfo"
   AC_DEFINE([USE_BT_EXECINFO], [1], [Execinfo library calls for backtrace])
-  CFLAGS="$CFLAGS -rdynamic"
+  case $host_os in
+      linux*)
+           CFLAGS="$CFLAGS -rdynamic"
+           ;;
+   esac
 fi
 if test -n "$GDB_PATH"; then
   use_bt_option="$use_bt_option gdb"
