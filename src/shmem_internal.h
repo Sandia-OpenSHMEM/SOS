@@ -437,6 +437,9 @@ static inline double shmem_internal_wtime(void) {
 char *shmem_util_wrap(const char *str, const size_t wraplen, const char *indent);
 char *shmem_util_strerror(int errnum, char *buf, size_t buflen);
 
+/* Backtrace functions */
+void shmem_util_backtrace(void); 
+
 #ifndef MAX
 #define MAX(A,B) (A) > (B) ? (A) : (B)
 #endif

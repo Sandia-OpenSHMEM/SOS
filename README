@@ -250,9 +250,9 @@ options.
         can be used to interface with a debugger or generate core files.
 
     SHMEM_BACKTRACE (default: <empty>)
-        Can be used to choose the backtracing mechanism. User can set this with 
-        any one of the available options among Linux library, execinfo and 
-        external debugging tool, gdb, or auto.
+        Can be used to choose the backtracing mechanism. Default value is NULL 
+        for which no backtrace information is provided upon failure. User can set 
+        this with any one of these available options: execinfo, gdb, auto. 
 
     SHMEM_BACKTRACE_PATH (default: <empty>)
         Can be used to provide a custom path for debugger tool (gdb) used for 

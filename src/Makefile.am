@@ -60,7 +60,7 @@ libsma_la_SOURCES = \
 	contexts_c.c \
 	contexts.c \
 	perf_counters_c.c \
-	backtrace.h
+	backtrace.c
 
 nodist_libsma_la_SOURCES = \
 	$(GEN_BINDINGS)

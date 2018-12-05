@@ -422,6 +422,7 @@ AM_CONDITIONAL([USE_PMIX], [test "$opal_external_pmix_version_found" = 1])
 AC_CHECK_HEADERS(execinfo.h)
 bt_execinfo="no"
 if test "$ac_cv_header_execinfo_h" = "yes" ; then
+  AC_SEARCH_LIBS(backtrace, execinfo)
   AC_CHECK_FUNCS(backtrace backtrace_symbols)
   if test "$ac_cv_func_backtrace" = "yes" && test "$ac_cv_func_backtrace_symbols" = "yes"; then
     bt_execinfo="yes"
