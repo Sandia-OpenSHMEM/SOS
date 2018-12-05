@@ -53,14 +53,14 @@ void backtrace_execinfo(void) {
     size_t size, i;
     char **fnnames = NULL;
 
-    size = backtrace(btaddr, MAX_BT_SIZE); 
+    size = backtrace(btaddr, MAX_BT_SIZE);
     fnnames = backtrace_symbols(btaddr, size);
 
     if (fnnames) {
-        for (i = 0; i < size; i++) 
-            fprintf(stderr, "%s\n", fnnames[i]); 
+        for (i = 0; i < size; i++)
+            fprintf(stderr, "%s\n", fnnames[i]);
 
-        free(fnnames);  
+        free(fnnames);
     }
 }
 
@@ -122,16 +122,16 @@ int create_command_file(char *filename) {
     }
 
     len = strlen(filename);
-    if (len != write(tmpfd, filename, len)) { 
+    if (len != write(tmpfd, filename, len)) {
         return -3;
     }
 
     len = sizeof(commands) - 1;
-    if (len != write(tmpfd, commands, len)) { 
+    if (len != write(tmpfd, commands, len)) {
         return -4;
     }
 
-    if (0 != close(tmpfd)) { 
+    if (0 != close(tmpfd)) {
         return -5;
     }
 
@@ -158,7 +158,7 @@ void backtrace_gdb(void) {
         if (!access(backtrace_path, X_OK)) {
             gdb = backtrace_path;
         } else {
-            RAISE_WARN_MSG("Ignoring user provided backtrace path %s because of permission error\n", 
+            RAISE_WARN_MSG("Ignoring user provided backtrace path %s because of permission error\n",
                            backtrace_path);
             gdb = "gdb";
         }
@@ -166,16 +166,16 @@ void backtrace_gdb(void) {
     int rc;
     rc = create_command_file(filename);
     if (rc != 0) {
-        RETURN_ERROR_MSG("Error in creating gdb input file %s with error code %d\n", 
+        RETURN_ERROR_MSG("Error in creating gdb input file %s with error code %d\n",
                          filename, rc);
-        (void)unlink(filename); 
+        (void)unlink(filename);
         return;
     }
 
     rc = snprintf(cmd, sizeof(cmd), fmt, gdb, filename, (int)getpid());
     if ((rc < 0) || (rc >= sizeof(cmd))) {
         RETURN_ERROR_MSG("Error in writing gdb commands to file %s\n", filename);
-        (void)unlink(filename); 
+        (void)unlink(filename);
         return;
     }
 
@@ -183,7 +183,7 @@ void backtrace_gdb(void) {
     if (rc < 0) {
         RETURN_ERROR_MSG("Error in executing gdb command file %s\n", filename);
     }
-    (void)unlink(filename); 
+    (void)unlink(filename);
 }
 
 #endif /* USE_BT_GDB */
@@ -209,10 +209,10 @@ void shmem_util_backtrace(void) {
 #elif defined(USE_BT_GDB)
         backtrace_gdb();
 #else
-        RAISE_WARN_STR("Backtrace support is not available.");        
+        RAISE_WARN_STR("Backtrace support is not available.");
 #endif
     } else if (0 == strcmp(method, "")) {
-        RAISE_WARN_STR("Backtrace support is not enabled. See SHMEM_BACKTRACE for additional details.");        
+        RAISE_WARN_STR("Backtrace support is not enabled. See SHMEM_BACKTRACE for additional details.");
     } else {
         RAISE_WARN_MSG("Ignoring bad user input for backtrace method %s. Choosing execinfo.\n",
                        method);
