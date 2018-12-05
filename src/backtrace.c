@@ -158,7 +158,7 @@ void backtrace_gdb(void) {
         if (!access(backtrace_path, X_OK)) {
             gdb = backtrace_path;
         } else {
-            RAISE_WARN_MSG("Ignoring user provided backtrace path %s because of permission error\n",
+            RAISE_WARN_MSG("Invalid or inaccessible path to gdb '%s'.\n",
                            backtrace_path);
             gdb = "gdb";
         }
@@ -166,7 +166,7 @@ void backtrace_gdb(void) {
     int rc;
     rc = create_command_file(filename);
     if (rc != 0) {
-        RETURN_ERROR_MSG("Error in creating gdb input file %s with error code %d\n",
+        RETURN_ERROR_MSG("Error creating gdb input file %s with error code %d\n",
                          filename, rc);
         (void)unlink(filename);
         return;
@@ -174,14 +174,14 @@ void backtrace_gdb(void) {
 
     rc = snprintf(cmd, sizeof(cmd), fmt, gdb, filename, (int)getpid());
     if ((rc < 0) || (rc >= sizeof(cmd))) {
-        RETURN_ERROR_MSG("Error in writing gdb commands to file %s\n", filename);
+        RETURN_ERROR_MSG("Error writing gdb commands to file %s\n", filename);
         (void)unlink(filename);
         return;
     }
 
     rc = system_execute(cmd);
     if (rc < 0) {
-        RETURN_ERROR_MSG("Error in executing gdb command file %s\n", filename);
+        RETURN_ERROR_MSG("Error executing gdb command file %s\n", filename);
     }
     (void)unlink(filename);
 }
@@ -212,14 +212,16 @@ void shmem_util_backtrace(void) {
         RAISE_WARN_STR("Backtrace support is not available.");
 #endif
     } else if (0 == strcmp(method, "")) {
-        RAISE_WARN_STR("Backtrace support is not enabled. See SHMEM_BACKTRACE for additional details.");
+        /* disabled */
     } else {
-        RAISE_WARN_MSG("Ignoring bad user input for backtrace method %s. Choosing execinfo.\n",
+        RAISE_WARN_MSG("Ignoring invalid backtrace method '%s'.\n",
                        method);
 #if defined(USE_BT_EXECINFO)
         backtrace_execinfo();
+#elif defined(USE_BT_GDB)
+        backtrace_gdb();
 #else
-        RAISE_WARN_STR("Backtrace support through execinfo is not available.");
+        RAISE_WARN_STR("Backtrace support is not available.");
 #endif
     }
 }

@@ -451,7 +451,7 @@ if test -n "$GDB_PATH"; then
   AC_DEFINE([USE_BT_GDB], [1], [gdb for backtrace])
 fi
 if test -z "$use_bt_option"; then
-  use_bt_option="not available"
+  use_bt_option=" not available"
 fi
 
 dnl check for header files

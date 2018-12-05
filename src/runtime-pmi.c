@@ -178,12 +178,12 @@ void
 shmem_runtime_abort(int exit_code, const char msg[])
 {
 
+    shmem_util_backtrace();
+
 #ifdef HAVE___BUILTIN_TRAP
     if (shmem_internal_params.TRAP_ON_ABORT)
         __builtin_trap();
 #endif
-
-    shmem_util_backtrace();
 
     if (size == 1) {
         fprintf(stderr, "%s\n", msg);
