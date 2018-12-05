@@ -41,81 +41,79 @@
 #include <shmemx.h>
 #endif
 
-enum op { AND = 0, CTX_AND, FETCH_AND, CTX_FETCH_AND, FETCH_AND_NBI,
-          CTX_FETCH_AND_NBI };
+enum op { XOR = 0, CTX_XOR, FETCH_XOR, CTX_FETCH_XOR, FETCH_XOR_NBI,
+          CTX_FETCH_XOR_NBI };
 
-/* Initially, remote = 111...b.  Each PE performs an atomic AND where the
- * PEth bit of the input value is set to 0 and all other bits are set to 1.
+/* Initially, remote = 111...b.  Each PE performs an atomic XOR where the
+ * PEth bit of the input value is set to 1 and all other bits are set to 0.
  * The result has the NPES least significant bits cleared, 111...000...b.
  */
 
 #ifdef ENABLE_SHMEMX_TESTS
-#define SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)                        \
-        case FETCH_AND_NBI:                                             \
-          shmemx_##TYPENAME##_atomic_fetch_and_nbi(&old, &remote,       \
-                                      ~(TYPE)(1LLU << mype), i);        \
+#define SHMEMX_NBI_OPS_CASES(OP, TYPE)                                  \
+        case FETCH_XOR_NBI:                                             \
+          shmemx_atomic_fetch_xor_nbi(&old, &remote,                    \
+                                      (TYPE)(1LLU << mype), i);         \
           shmem_quiet();                                                \
-          if ((old & (TYPE)(1LLU << mype)) == 0) {                      \
+          if (((old ^ (TYPE)(1LLU << mype)) & (TYPE)(1LLU << mype)) != 0) { \
             printf("PE %i error inconsistent value of old (%s, %s)\n",  \
                    mype, #OP, #TYPE);                                   \
             rc = EXIT_FAILURE;                                          \
           }                                                             \
           break;                                                        \
-        case CTX_FETCH_AND_NBI:                                         \
-          shmemx_ctx_##TYPENAME##_atomic_fetch_and_nbi(SHMEM_CTX_DEFAULT,\
-                  &old, &remote, ~(TYPE)(1LLU << mype), i);             \
+        case CTX_FETCH_XOR_NBI:                                         \
+          shmemx_atomic_fetch_xor_nbi(SHMEM_CTX_DEFAULT, &old, &remote, \
+                                      (TYPE)(1LLU << mype), i);         \
           shmem_quiet();                                                \
-          if ((old & (TYPE)(1LLU << mype)) == 0) {                      \
+          if (((old ^ (TYPE)(1LLU << mype)) & (TYPE)(1LLU << mype)) != 0) { \
             printf("PE %i error inconsistent value of old (%s, %s)\n",  \
                    mype, #OP, #TYPE);                                   \
             rc = EXIT_FAILURE;                                          \
           }                                                             \
           break;
 #else
-#define SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)
+#define SHMEMX_NBI_OPS_CASES(OP, TYPE)
 #endif
 
-#define TEST_SHMEM_AND(OP, TYPE, TYPENAME)                              \
+#define TEST_SHMEM_XOR(OP, TYPE)                                        \
   do {                                                                  \
     static TYPE remote = ~(TYPE)0;                                      \
-    TYPE old = (TYPE)0;                                                 \
+    const int mype = shmem_my_pe();                                     \
+    const int npes = shmem_n_pes();                                     \
+    TYPE old;                                                           \
     if ((size_t) npes-1 > sizeof(TYPE)) break; /* Avoid overflow */     \
     for (int i = 0; i < npes; i++)                                      \
       switch (OP) {                                                     \
-        case AND:                                                       \
-          shmem_##TYPENAME##_atomic_and(&remote,                        \
-                                    ~(TYPE)(1LLU << mype), i);          \
+        case XOR:                                                       \
+          shmem_atomic_xor(&remote, (TYPE)(1LLU << mype), i);           \
           break;                                                        \
-        case CTX_AND:                                                   \
-          shmem_ctx_##TYPENAME##_atomic_and(SHMEM_CTX_DEFAULT, &remote, \
-                                             ~(TYPE)(1LLU << mype), i); \
+        case CTX_XOR:                                                   \
+          shmem_atomic_xor(SHMEM_CTX_DEFAULT, &remote, (TYPE)(1LLU << mype), i); \
           break;                                                        \
-        case FETCH_AND:                                                 \
-          old = shmem_##TYPENAME##_atomic_fetch_and(&remote,            \
-                                             ~(TYPE)(1LLU << mype), i); \
-          if ((old & (TYPE)(1LLU << mype)) == 0) {                      \
+        case FETCH_XOR:                                                 \
+          old = shmem_atomic_fetch_xor(&remote, (TYPE)(1LLU << mype), i); \
+          if (((old ^ (TYPE)(1LLU << mype)) & (TYPE)(1LLU << mype)) != 0) { \
             printf("PE %i error inconsistent value of old (%s, %s)\n",  \
                    mype, #OP, #TYPE);                                   \
             rc = EXIT_FAILURE;                                          \
           }                                                             \
           break;                                                        \
-        case CTX_FETCH_AND:                                             \
-          old = shmem_ctx_##TYPENAME##_atomic_fetch_and(                \
-                 SHMEM_CTX_DEFAULT, &remote, ~(TYPE)(1LLU << mype), i); \
-          if ((old & (TYPE)(1LLU << mype)) == 0) {                      \
+        case CTX_FETCH_XOR:                                             \
+          old = shmem_atomic_fetch_xor(SHMEM_CTX_DEFAULT, &remote, (TYPE)(1LLU << mype), i); \
+          if (((old ^ (TYPE)(1LLU << mype)) & (TYPE)(1LLU << mype)) != 0) { \
             printf("PE %i error inconsistent value of old (%s, %s)\n",  \
                    mype, #OP, #TYPE);                                   \
             rc = EXIT_FAILURE;                                          \
           }                                                             \
           break;                                                        \
-        SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)                        \
+        SHMEMX_NBI_OPS_CASES(OP, TYPE)                                  \
         default:                                                        \
           printf("Invalid operation (%d)\n", OP);                       \
           shmem_global_exit(1);                                         \
       }                                                                 \
     shmem_barrier_all();                                                \
     if (remote != ~(TYPE)((1LLU << npes) - 1LLU)) {                     \
-      printf("PE %i observed error with TEST_SHMEM_AND(%s, %s)\n",      \
+      printf("PE %i observed error with TEST_SHMEM_XOR(%s, %s)\n",      \
               mype, #OP, #TYPE);                                        \
       rc = EXIT_FAILURE;                                                \
     }                                                                   \
@@ -125,59 +123,57 @@ enum op { AND = 0, CTX_AND, FETCH_AND, CTX_FETCH_AND, FETCH_AND_NBI,
 int main(int argc, char* argv[]) {
   shmem_init();
 
-  const int mype = shmem_my_pe();
-  const int npes = shmem_n_pes();
-
   int rc = EXIT_SUCCESS;
-  TEST_SHMEM_AND(AND, unsigned int, uint);
-  TEST_SHMEM_AND(AND, unsigned long, ulong);
-  TEST_SHMEM_AND(AND, unsigned long long, ulonglong);
-  TEST_SHMEM_AND(AND, int32_t, int32);
-  TEST_SHMEM_AND(AND, int64_t, int64);
-  TEST_SHMEM_AND(AND, uint32_t, uint32);
-  TEST_SHMEM_AND(AND, uint64_t, uint64);
+  TEST_SHMEM_XOR(XOR, unsigned int);
+  TEST_SHMEM_XOR(XOR, unsigned long);
+  TEST_SHMEM_XOR(XOR, unsigned long long);
+  TEST_SHMEM_XOR(XOR, int32_t);
+  TEST_SHMEM_XOR(XOR, int64_t);
+  TEST_SHMEM_XOR(XOR, uint32_t);
+  TEST_SHMEM_XOR(XOR, uint64_t);
 
-  TEST_SHMEM_AND(CTX_AND, unsigned int, uint);
-  TEST_SHMEM_AND(CTX_AND, unsigned long, ulong);
-  TEST_SHMEM_AND(CTX_AND, unsigned long long, ulonglong);
-  TEST_SHMEM_AND(CTX_AND, int32_t, int32);
-  TEST_SHMEM_AND(CTX_AND, int64_t, int64);
-  TEST_SHMEM_AND(CTX_AND, uint32_t, uint32);
-  TEST_SHMEM_AND(CTX_AND, uint64_t, uint64);
+  TEST_SHMEM_XOR(CTX_XOR, unsigned int);
+  TEST_SHMEM_XOR(CTX_XOR, unsigned long);
+  TEST_SHMEM_XOR(CTX_XOR, unsigned long long);
+  TEST_SHMEM_XOR(CTX_XOR, int32_t);
+  TEST_SHMEM_XOR(CTX_XOR, int64_t);
+  TEST_SHMEM_XOR(CTX_XOR, uint32_t);
+  TEST_SHMEM_XOR(CTX_XOR, uint64_t);
 
-  TEST_SHMEM_AND(FETCH_AND, unsigned int, uint);
-  TEST_SHMEM_AND(FETCH_AND, unsigned long, ulong);
-  TEST_SHMEM_AND(FETCH_AND, unsigned long long, ulonglong);
-  TEST_SHMEM_AND(FETCH_AND, int32_t, int32);
-  TEST_SHMEM_AND(FETCH_AND, int64_t, int64);
-  TEST_SHMEM_AND(FETCH_AND, uint32_t, uint32);
-  TEST_SHMEM_AND(FETCH_AND, uint64_t, uint64);
+  TEST_SHMEM_XOR(FETCH_XOR, unsigned int);
+  TEST_SHMEM_XOR(FETCH_XOR, unsigned long);
+  TEST_SHMEM_XOR(FETCH_XOR, unsigned long long);
+  TEST_SHMEM_XOR(FETCH_XOR, int32_t);
+  TEST_SHMEM_XOR(FETCH_XOR, int64_t);
+  TEST_SHMEM_XOR(FETCH_XOR, uint32_t);
+  TEST_SHMEM_XOR(FETCH_XOR, uint64_t);
 
-  TEST_SHMEM_AND(CTX_FETCH_AND, unsigned int, uint);
-  TEST_SHMEM_AND(CTX_FETCH_AND, unsigned long, ulong);
-  TEST_SHMEM_AND(CTX_FETCH_AND, unsigned long long, ulonglong);
-  TEST_SHMEM_AND(CTX_FETCH_AND, int32_t, int32);
-  TEST_SHMEM_AND(CTX_FETCH_AND, int64_t, int64);
-  TEST_SHMEM_AND(CTX_FETCH_AND, uint32_t, uint32);
-  TEST_SHMEM_AND(CTX_FETCH_AND, uint64_t, uint64);
+  TEST_SHMEM_XOR(CTX_FETCH_XOR, unsigned int);
+  TEST_SHMEM_XOR(CTX_FETCH_XOR, unsigned long);
+  TEST_SHMEM_XOR(CTX_FETCH_XOR, unsigned long long);
+  TEST_SHMEM_XOR(CTX_FETCH_XOR, int32_t);
+  TEST_SHMEM_XOR(CTX_FETCH_XOR, int64_t);
+  TEST_SHMEM_XOR(CTX_FETCH_XOR, uint32_t);
+  TEST_SHMEM_XOR(CTX_FETCH_XOR, uint64_t);
 
 #ifdef ENABLE_SHMEMX_TESTS
-  TEST_SHMEM_AND(FETCH_AND_NBI, unsigned int, uint);
-  TEST_SHMEM_AND(FETCH_AND_NBI, unsigned long, ulong);
-  TEST_SHMEM_AND(FETCH_AND_NBI, unsigned long long, ulonglong);
-  TEST_SHMEM_AND(FETCH_AND_NBI, int32_t, int32);
-  TEST_SHMEM_AND(FETCH_AND_NBI, int64_t, int64);
-  TEST_SHMEM_AND(FETCH_AND_NBI, uint32_t, uint32);
-  TEST_SHMEM_AND(FETCH_AND_NBI, uint64_t, uint64);
+  TEST_SHMEM_XOR(FETCH_XOR_NBI, unsigned int);
+  TEST_SHMEM_XOR(FETCH_XOR_NBI, unsigned long);
+  TEST_SHMEM_XOR(FETCH_XOR_NBI, unsigned long long);
+  TEST_SHMEM_XOR(FETCH_XOR_NBI, int32_t);
+  TEST_SHMEM_XOR(FETCH_XOR_NBI, int64_t);
+  TEST_SHMEM_XOR(FETCH_XOR_NBI, uint32_t);
+  TEST_SHMEM_XOR(FETCH_XOR_NBI, uint64_t);
 
-  TEST_SHMEM_AND(CTX_FETCH_AND_NBI, unsigned int, uint);
-  TEST_SHMEM_AND(CTX_FETCH_AND_NBI, unsigned long, ulong);
-  TEST_SHMEM_AND(CTX_FETCH_AND_NBI, unsigned long long, ulonglong);
-  TEST_SHMEM_AND(CTX_FETCH_AND_NBI, int32_t, int32);
-  TEST_SHMEM_AND(CTX_FETCH_AND_NBI, int64_t, int64);
-  TEST_SHMEM_AND(CTX_FETCH_AND_NBI, uint32_t, uint32);
-  TEST_SHMEM_AND(CTX_FETCH_AND_NBI, uint64_t, uint64);
+  TEST_SHMEM_XOR(CTX_FETCH_XOR_NBI, unsigned int);
+  TEST_SHMEM_XOR(CTX_FETCH_XOR_NBI, unsigned long);
+  TEST_SHMEM_XOR(CTX_FETCH_XOR_NBI, unsigned long long);
+  TEST_SHMEM_XOR(CTX_FETCH_XOR_NBI, int32_t);
+  TEST_SHMEM_XOR(CTX_FETCH_XOR_NBI, int64_t);
+  TEST_SHMEM_XOR(CTX_FETCH_XOR_NBI, uint32_t);
+  TEST_SHMEM_XOR(CTX_FETCH_XOR_NBI, uint64_t);
 #endif
+
   shmem_finalize();
   return rc;
 }

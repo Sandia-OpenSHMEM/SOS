@@ -39,28 +39,25 @@
 enum op { SET = 0, ATOMIC_SET, CTX_ATOMIC_SET };
 
 #ifdef ENABLE_DEPRECATED_TESTS
-#define DEPRECATED_SET(TYPENAME, ...) shmem_##TYPENAME##_set(__VA_ARGS__)
+#define DEPRECATED_SET shmem_set
 #else
-#define DEPRECATED_SET(TYPENAME, ...) shmem_##TYPENAME##_atomic_set(__VA_ARGS__)
+#define DEPRECATED_SET shmem_atomic_set
 #endif
 
-#define TEST_SHMEM_SET(OP, TYPE, TYPENAME)              \
+#define TEST_SHMEM_SET(OP, TYPE)                        \
   do {                                                  \
     static TYPE remote;                                 \
     const int mype = shmem_my_pe();                     \
     const int npes = shmem_n_pes();                     \
     switch (OP) {                                       \
       case SET:                                         \
-        DEPRECATED_SET(TYPENAME, &remote, (TYPE)mype,   \
-                                    (mype + 1) % npes); \
+        DEPRECATED_SET(&remote, (TYPE)mype, (mype + 1) % npes); \
         break;                                          \
       case ATOMIC_SET:                                  \
-        shmem_##TYPENAME##_atomic_set(&remote,          \
-                        (TYPE)mype, (mype + 1) % npes); \
+        shmem_atomic_set(&remote, (TYPE)mype, (mype + 1) % npes); \
         break;                                          \
       case CTX_ATOMIC_SET:                              \
-        shmem_ctx_##TYPENAME##_atomic_set(SHMEM_CTX_DEFAULT,\
-               &remote, (TYPE)mype, (mype + 1) % npes); \
+        shmem_atomic_set(SHMEM_CTX_DEFAULT, &remote, (TYPE)mype, (mype + 1) % npes); \
         break;                                          \
       default:                                          \
         printf("Invalid operation (%d)\n", OP);         \
@@ -81,51 +78,51 @@ int main(int argc, char* argv[]) {
   int rc = EXIT_SUCCESS;
 
 #ifdef ENABLE_DEPRECATED_TESTS
-  TEST_SHMEM_SET(SET, float, float);
-  TEST_SHMEM_SET(SET, double, double);
-  TEST_SHMEM_SET(SET, int, int);
-  TEST_SHMEM_SET(SET, long, long);
-  TEST_SHMEM_SET(SET, long long, longlong);
-  TEST_SHMEM_SET(SET, unsigned int, uint);
-  TEST_SHMEM_SET(SET, unsigned long, ulong);
-  TEST_SHMEM_SET(SET, unsigned long long, ulonglong);
-  TEST_SHMEM_SET(SET, int32_t, int32);
-  TEST_SHMEM_SET(SET, int64_t, int64);
-  TEST_SHMEM_SET(SET, uint32_t, uint32);
-  TEST_SHMEM_SET(SET, uint64_t, uint64);
-  TEST_SHMEM_SET(SET, size_t, size);
-  TEST_SHMEM_SET(SET, ptrdiff_t, ptrdiff);
+  TEST_SHMEM_SET(SET, float);
+  TEST_SHMEM_SET(SET, double);
+  TEST_SHMEM_SET(SET, int);
+  TEST_SHMEM_SET(SET, long);
+  TEST_SHMEM_SET(SET, long long);
+  TEST_SHMEM_SET(SET, unsigned int);
+  TEST_SHMEM_SET(SET, unsigned long);
+  TEST_SHMEM_SET(SET, unsigned long long);
+  TEST_SHMEM_SET(SET, int32_t);
+  TEST_SHMEM_SET(SET, int64_t);
+  TEST_SHMEM_SET(SET, uint32_t);
+  TEST_SHMEM_SET(SET, uint64_t);
+  TEST_SHMEM_SET(SET, size_t);
+  TEST_SHMEM_SET(SET, ptrdiff_t);
 #endif /* ENABLE_DEPRECATED_TESTS */
 
-  TEST_SHMEM_SET(ATOMIC_SET, float, float);
-  TEST_SHMEM_SET(ATOMIC_SET, double, double);
-  TEST_SHMEM_SET(ATOMIC_SET, int, int);
-  TEST_SHMEM_SET(ATOMIC_SET, long, long);
-  TEST_SHMEM_SET(ATOMIC_SET, long long, longlong);
-  TEST_SHMEM_SET(ATOMIC_SET, unsigned int, uint);
-  TEST_SHMEM_SET(ATOMIC_SET, unsigned long, ulong);
-  TEST_SHMEM_SET(ATOMIC_SET, unsigned long long, ulonglong);
-  TEST_SHMEM_SET(ATOMIC_SET, int32_t, int32);
-  TEST_SHMEM_SET(ATOMIC_SET, int64_t, int64);
-  TEST_SHMEM_SET(ATOMIC_SET, uint32_t, uint32);
-  TEST_SHMEM_SET(ATOMIC_SET, uint64_t, uint64);
-  TEST_SHMEM_SET(ATOMIC_SET, size_t, size);
-  TEST_SHMEM_SET(ATOMIC_SET, ptrdiff_t, ptrdiff);
+  TEST_SHMEM_SET(ATOMIC_SET, float);
+  TEST_SHMEM_SET(ATOMIC_SET, double);
+  TEST_SHMEM_SET(ATOMIC_SET, int);
+  TEST_SHMEM_SET(ATOMIC_SET, long);
+  TEST_SHMEM_SET(ATOMIC_SET, long long);
+  TEST_SHMEM_SET(ATOMIC_SET, unsigned int);
+  TEST_SHMEM_SET(ATOMIC_SET, unsigned long);
+  TEST_SHMEM_SET(ATOMIC_SET, unsigned long long);
+  TEST_SHMEM_SET(ATOMIC_SET, int32_t);
+  TEST_SHMEM_SET(ATOMIC_SET, int64_t);
+  TEST_SHMEM_SET(ATOMIC_SET, uint32_t);
+  TEST_SHMEM_SET(ATOMIC_SET, uint64_t);
+  TEST_SHMEM_SET(ATOMIC_SET, size_t);
+  TEST_SHMEM_SET(ATOMIC_SET, ptrdiff_t);
 
-  TEST_SHMEM_SET(CTX_ATOMIC_SET, float, float);
-  TEST_SHMEM_SET(CTX_ATOMIC_SET, double, double);
-  TEST_SHMEM_SET(CTX_ATOMIC_SET, int, int);
-  TEST_SHMEM_SET(CTX_ATOMIC_SET, long, long);
-  TEST_SHMEM_SET(CTX_ATOMIC_SET, long long, longlong);
-  TEST_SHMEM_SET(CTX_ATOMIC_SET, unsigned int, uint);
-  TEST_SHMEM_SET(CTX_ATOMIC_SET, unsigned long, ulong);
-  TEST_SHMEM_SET(CTX_ATOMIC_SET, unsigned long long, ulonglong);
-  TEST_SHMEM_SET(CTX_ATOMIC_SET, int32_t, int32);
-  TEST_SHMEM_SET(CTX_ATOMIC_SET, int64_t, int64);
-  TEST_SHMEM_SET(CTX_ATOMIC_SET, uint32_t, uint32);
-  TEST_SHMEM_SET(CTX_ATOMIC_SET, uint64_t, uint64);
-  TEST_SHMEM_SET(CTX_ATOMIC_SET, size_t, size);
-  TEST_SHMEM_SET(CTX_ATOMIC_SET, ptrdiff_t, ptrdiff);
+  TEST_SHMEM_SET(CTX_ATOMIC_SET, float);
+  TEST_SHMEM_SET(CTX_ATOMIC_SET, double);
+  TEST_SHMEM_SET(CTX_ATOMIC_SET, int);
+  TEST_SHMEM_SET(CTX_ATOMIC_SET, long);
+  TEST_SHMEM_SET(CTX_ATOMIC_SET, long long);
+  TEST_SHMEM_SET(CTX_ATOMIC_SET, unsigned int);
+  TEST_SHMEM_SET(CTX_ATOMIC_SET, unsigned long);
+  TEST_SHMEM_SET(CTX_ATOMIC_SET, unsigned long long);
+  TEST_SHMEM_SET(CTX_ATOMIC_SET, int32_t);
+  TEST_SHMEM_SET(CTX_ATOMIC_SET, int64_t);
+  TEST_SHMEM_SET(CTX_ATOMIC_SET, uint32_t);
+  TEST_SHMEM_SET(CTX_ATOMIC_SET, uint64_t);
+  TEST_SHMEM_SET(CTX_ATOMIC_SET, size_t);
+  TEST_SHMEM_SET(CTX_ATOMIC_SET, ptrdiff_t);
 
   shmem_finalize();
   return rc;

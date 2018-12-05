@@ -50,9 +50,9 @@ enum op { OR = 0, CTX_OR, FETCH_OR, CTX_FETCH_OR, FETCH_OR_NBI,
  */
 
 #ifdef ENABLE_SHMEMX_TESTS
-#define SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)                        \
+#define SHMEMX_NBI_OPS_CASES(OP, TYPE)                                  \
         case FETCH_OR_NBI:                                              \
-          shmemx_##TYPENAME##_atomic_fetch_or_nbi(&old, &remote,        \
+          shmemx_atomic_fetch_or_nbi(&old, &remote,                     \
                                      (TYPE)(1LLU << mype), i);          \
           shmem_quiet();                                                \
           if ((old & (TYPE)(1LLU << mype)) != 0) {                      \
@@ -62,8 +62,8 @@ enum op { OR = 0, CTX_OR, FETCH_OR, CTX_FETCH_OR, FETCH_OR_NBI,
           }                                                             \
           break;                                                        \
         case CTX_FETCH_OR_NBI:                                          \
-          shmemx_ctx_##TYPENAME##_atomic_fetch_or_nbi(SHMEM_CTX_DEFAULT,\
-                               &old, &remote, (TYPE)(1LLU << mype), i); \
+          shmemx_atomic_fetch_or_nbi(SHMEM_CTX_DEFAULT, &old, &remote,  \
+                                     (TYPE)(1LLU << mype), i);          \
           shmem_quiet();                                                \
           if ((old & (TYPE)(1LLU << mype)) != 0) {                      \
             printf("PE %i error inconsistent value of old (%s, %s)\n",  \
@@ -72,27 +72,27 @@ enum op { OR = 0, CTX_OR, FETCH_OR, CTX_FETCH_OR, FETCH_OR_NBI,
           }                                                             \
           break;
 #else
-#define SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)
+#define SHMEMX_NBI_OPS_CASES(OP, TYPE)
 #endif
 
-#define TEST_SHMEM_OR(OP, TYPE, TYPENAME)                               \
+#define TEST_SHMEM_OR(OP, TYPE)                                         \
   do {                                                                  \
     static TYPE remote = (TYPE)0;                                       \
+    const int mype = shmem_my_pe();                                     \
+    const int npes = shmem_n_pes();                                     \
     TYPE old = (TYPE)0;                                                 \
     if ((size_t) npes-1 > sizeof(TYPE)) break; /* Avoid overflow */     \
     for (int i = 0; i < npes; i++)                                      \
       switch (OP) {                                                     \
         case OR:                                                        \
-          shmem_##TYPENAME##_atomic_or(&remote,                         \
-                                   (TYPE)(1LLU << mype), i);            \
+          shmem_atomic_or(&remote, (TYPE)(1LLU << mype), i);            \
           break;                                                        \
         case CTX_OR:                                                    \
-          shmem_ctx_##TYPENAME##_atomic_or(SHMEM_CTX_DEFAULT, &remote,  \
-                                              (TYPE)(1LLU << mype), i); \
+          shmem_atomic_or(SHMEM_CTX_DEFAULT, &remote,                   \
+                          (TYPE)(1LLU << mype), i);                     \
           break;                                                        \
         case FETCH_OR:                                                  \
-          old = shmem_##TYPENAME##_atomic_fetch_or(&remote,             \
-                                               (TYPE)(1LLU << mype), i);\
+          old = shmem_atomic_fetch_or(&remote, (TYPE)(1LLU << mype), i);\
           if ((old & (TYPE)(1LLU << mype)) != 0) {                      \
             printf("PE %i error inconsistent value of old (%s, %s)\n",  \
                    mype, #OP, #TYPE);                                   \
@@ -100,15 +100,15 @@ enum op { OR = 0, CTX_OR, FETCH_OR, CTX_FETCH_OR, FETCH_OR_NBI,
           }                                                             \
           break;                                                        \
         case CTX_FETCH_OR:                                              \
-          old = shmem_ctx_##TYPENAME##_atomic_fetch_or(                 \
-                  SHMEM_CTX_DEFAULT, &remote, (TYPE)(1LLU << mype), i); \
+          old = shmem_atomic_fetch_or(SHMEM_CTX_DEFAULT, &remote,       \
+                                      (TYPE)(1LLU << mype), i);         \
           if ((old & (TYPE)(1LLU << mype)) != 0) {                      \
             printf("PE %i error inconsistent value of old (%s, %s)\n",  \
                    mype, #OP, #TYPE);                                   \
             rc = EXIT_FAILURE;                                          \
           }                                                             \
           break;                                                        \
-        SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)                        \
+          SHMEMX_NBI_OPS_CASES(OP, TYPE)                                \
         default:                                                        \
           printf("Invalid operation (%d)\n", OP);                       \
           shmem_global_exit(1);                                         \
@@ -125,58 +125,55 @@ enum op { OR = 0, CTX_OR, FETCH_OR, CTX_FETCH_OR, FETCH_OR_NBI,
 int main(int argc, char* argv[]) {
   shmem_init();
 
-  const int mype = shmem_my_pe();
-  const int npes = shmem_n_pes();
-
   int rc = EXIT_SUCCESS;
-  TEST_SHMEM_OR(OR, unsigned int, uint);
-  TEST_SHMEM_OR(OR, unsigned long, ulong);
-  TEST_SHMEM_OR(OR, unsigned long long, ulonglong);
-  TEST_SHMEM_OR(OR, int32_t, int32);
-  TEST_SHMEM_OR(OR, int64_t, int64);
-  TEST_SHMEM_OR(OR, uint32_t, uint32);
-  TEST_SHMEM_OR(OR, uint64_t, uint64);
+  TEST_SHMEM_OR(OR, unsigned int);
+  TEST_SHMEM_OR(OR, unsigned long);
+  TEST_SHMEM_OR(OR, unsigned long long);
+  TEST_SHMEM_OR(OR, int32_t);
+  TEST_SHMEM_OR(OR, int64_t);
+  TEST_SHMEM_OR(OR, uint32_t);
+  TEST_SHMEM_OR(OR, uint64_t);
 
-  TEST_SHMEM_OR(CTX_OR, unsigned int, uint);
-  TEST_SHMEM_OR(CTX_OR, unsigned long, ulong);
-  TEST_SHMEM_OR(CTX_OR, unsigned long long, ulonglong);
-  TEST_SHMEM_OR(CTX_OR, int32_t, int32);
-  TEST_SHMEM_OR(CTX_OR, int64_t, int64);
-  TEST_SHMEM_OR(CTX_OR, uint32_t, uint32);
-  TEST_SHMEM_OR(CTX_OR, uint64_t, uint64);
+  TEST_SHMEM_OR(CTX_OR, unsigned int);
+  TEST_SHMEM_OR(CTX_OR, unsigned long);
+  TEST_SHMEM_OR(CTX_OR, unsigned long long);
+  TEST_SHMEM_OR(CTX_OR, int32_t);
+  TEST_SHMEM_OR(CTX_OR, int64_t);
+  TEST_SHMEM_OR(CTX_OR, uint32_t);
+  TEST_SHMEM_OR(CTX_OR, uint64_t);
 
-  TEST_SHMEM_OR(FETCH_OR, unsigned int, uint);
-  TEST_SHMEM_OR(FETCH_OR, unsigned long, ulong);
-  TEST_SHMEM_OR(FETCH_OR, unsigned long long, ulonglong);
-  TEST_SHMEM_OR(FETCH_OR, int32_t, int32);
-  TEST_SHMEM_OR(FETCH_OR, int64_t, int64);
-  TEST_SHMEM_OR(FETCH_OR, uint32_t, uint32);
-  TEST_SHMEM_OR(FETCH_OR, uint64_t, uint64);
+  TEST_SHMEM_OR(FETCH_OR, unsigned int);
+  TEST_SHMEM_OR(FETCH_OR, unsigned long);
+  TEST_SHMEM_OR(FETCH_OR, unsigned long long);
+  TEST_SHMEM_OR(FETCH_OR, int32_t);
+  TEST_SHMEM_OR(FETCH_OR, int64_t);
+  TEST_SHMEM_OR(FETCH_OR, uint32_t);
+  TEST_SHMEM_OR(FETCH_OR, uint64_t);
 
-  TEST_SHMEM_OR(CTX_FETCH_OR, unsigned int, uint);
-  TEST_SHMEM_OR(CTX_FETCH_OR, unsigned long, ulong);
-  TEST_SHMEM_OR(CTX_FETCH_OR, unsigned long long, ulonglong);
-  TEST_SHMEM_OR(CTX_FETCH_OR, int32_t, int32);
-  TEST_SHMEM_OR(CTX_FETCH_OR, int64_t, int64);
-  TEST_SHMEM_OR(CTX_FETCH_OR, uint32_t, uint32);
-  TEST_SHMEM_OR(CTX_FETCH_OR, uint64_t, uint64);
+  TEST_SHMEM_OR(CTX_FETCH_OR, unsigned int);
+  TEST_SHMEM_OR(CTX_FETCH_OR, unsigned long);
+  TEST_SHMEM_OR(CTX_FETCH_OR, unsigned long long);
+  TEST_SHMEM_OR(CTX_FETCH_OR, int32_t);
+  TEST_SHMEM_OR(CTX_FETCH_OR, int64_t);
+  TEST_SHMEM_OR(CTX_FETCH_OR, uint32_t);
+  TEST_SHMEM_OR(CTX_FETCH_OR, uint64_t);
 
 #ifdef ENABLE_SHMEMX_TESTS
-  TEST_SHMEM_OR(FETCH_OR_NBI, unsigned int, uint);
-  TEST_SHMEM_OR(FETCH_OR_NBI, unsigned long, ulong);
-  TEST_SHMEM_OR(FETCH_OR_NBI, unsigned long long, ulonglong);
-  TEST_SHMEM_OR(FETCH_OR_NBI, int32_t, int32);
-  TEST_SHMEM_OR(FETCH_OR_NBI, int64_t, int64);
-  TEST_SHMEM_OR(FETCH_OR_NBI, uint32_t, uint32);
-  TEST_SHMEM_OR(FETCH_OR_NBI, uint64_t, uint64);
+  TEST_SHMEM_OR(FETCH_OR_NBI, unsigned int);
+  TEST_SHMEM_OR(FETCH_OR_NBI, unsigned long);
+  TEST_SHMEM_OR(FETCH_OR_NBI, unsigned long long);
+  TEST_SHMEM_OR(FETCH_OR_NBI, int32_t);
+  TEST_SHMEM_OR(FETCH_OR_NBI, int64_t);
+  TEST_SHMEM_OR(FETCH_OR_NBI, uint32_t);
+  TEST_SHMEM_OR(FETCH_OR_NBI, uint64_t);
 
-  TEST_SHMEM_OR(CTX_FETCH_OR_NBI, unsigned int, uint);
-  TEST_SHMEM_OR(CTX_FETCH_OR_NBI, unsigned long, ulong);
-  TEST_SHMEM_OR(CTX_FETCH_OR_NBI, unsigned long long, ulonglong);
-  TEST_SHMEM_OR(CTX_FETCH_OR_NBI, int32_t, int32);
-  TEST_SHMEM_OR(CTX_FETCH_OR_NBI, int64_t, int64);
-  TEST_SHMEM_OR(CTX_FETCH_OR_NBI, uint32_t, uint32);
-  TEST_SHMEM_OR(CTX_FETCH_OR_NBI, uint64_t, uint64);
+  TEST_SHMEM_OR(CTX_FETCH_OR_NBI, unsigned int);
+  TEST_SHMEM_OR(CTX_FETCH_OR_NBI, unsigned long);
+  TEST_SHMEM_OR(CTX_FETCH_OR_NBI, unsigned long long);
+  TEST_SHMEM_OR(CTX_FETCH_OR_NBI, int32_t);
+  TEST_SHMEM_OR(CTX_FETCH_OR_NBI, int64_t);
+  TEST_SHMEM_OR(CTX_FETCH_OR_NBI, uint32_t);
+  TEST_SHMEM_OR(CTX_FETCH_OR_NBI, uint64_t);
 #endif
 
   shmem_finalize();
