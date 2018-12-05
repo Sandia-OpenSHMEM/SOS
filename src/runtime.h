@@ -39,7 +39,7 @@ shmem_runtime_get_node_rank(int pe)
 #ifdef USE_ON_NODE_COMMS
     return shmem_runtime_get_local_rank(pe);
 #elif defined(USE_MEMCPY)
-    return pe == myproc.rank ? 0 : -1;
+    return pe == shmem_runtime_get_rank() ? 0 : -1;
 #else
     return -1;
 #endif
