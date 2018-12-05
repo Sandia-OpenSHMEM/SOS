@@ -205,7 +205,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ALL')
 #define SHMEM_DEF_WAIT_UNTIL_ANY(STYPE,TYPE)                                                   \
     size_t SHMEM_FUNCTION_ATTRIBUTES                                                           \
     shmemx_##STYPE##_wait_until_any(TYPE *vars, size_t nelems,                                 \
-                                    int * restrict status, int cond, TYPE value)               \
+                                    int *status, int cond, TYPE value)                         \
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
@@ -252,8 +252,8 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ANY')
 
 #define SHMEM_DEF_WAIT_UNTIL_SOME(STYPE,TYPE)                                                  \
     size_t SHMEM_FUNCTION_ATTRIBUTES                                                           \
-    shmemx_##STYPE##_wait_until_some(TYPE *vars, size_t nelems, size_t * restrict indices,     \
-                                     int * restrict status, int cond, TYPE value)              \
+    shmemx_##STYPE##_wait_until_some(TYPE *vars, size_t nelems, size_t *indices,               \
+                                     int *status, int cond, TYPE value)                        \
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
@@ -339,7 +339,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ALL')
 
 #define SHMEM_DEF_TEST_ANY(STYPE,TYPE)                                                         \
     size_t SHMEM_FUNCTION_ATTRIBUTES                                                           \
-    shmemx_##STYPE##_test_any(TYPE *vars, size_t nelems, int * restrict status,                \
+    shmemx_##STYPE##_test_any(TYPE *vars, size_t nelems, int *status,                          \
                               int cond, TYPE value)                                            \
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
@@ -375,8 +375,8 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ANY')
 
 #define SHMEM_DEF_TEST_SOME(STYPE,TYPE)                                                        \
     size_t SHMEM_FUNCTION_ATTRIBUTES                                                           \
-    shmemx_##STYPE##_test_some(TYPE *vars, size_t nelems, size_t * restrict indices,           \
-                               int * restrict status, int cond, TYPE value)                    \
+    shmemx_##STYPE##_test_some(TYPE *vars, size_t nelems, size_t *indices,                     \
+                               int *status, int cond, TYPE value)                              \
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
