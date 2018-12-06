@@ -63,13 +63,13 @@ SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_ALL')
 
 define(`SHMEM_CXX_WAIT_UNTIL_ANY',
 `static inline size_t shmemx_wait_until_any($2 *ivars, size_t nelems, int *status, int cmp, $2 cmp_value) {
-    shmemx_$1_wait_until_any(ivars, nelems, status, cmp, cmp_value);
+    return shmemx_$1_wait_until_any(ivars, nelems, status, cmp, cmp_value);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_ANY')
 
 define(`SHMEM_CXX_WAIT_UNTIL_SOME',
 `static inline size_t shmemx_wait_until_some($2 *ivars, size_t nelems, size_t *indices, int *status, int cmp, $2 cmp_value) {
-    shmemx_$1_wait_until_some(ivars, nelems, indices, status, cmp, cmp_value);
+    return shmemx_$1_wait_until_some(ivars, nelems, indices, status, cmp, cmp_value);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_SOME')
 
