@@ -66,8 +66,6 @@ void backtrace_execinfo(void) {
 
 #endif /* USE_BT_EXECINFO */
 
-/* Backtrace through gdb */
-#if defined(USE_BT_GDB)
 /* Maximum path size for gdb command file */
 #define MAX_BT_PATHSIZE 1024
 
@@ -150,8 +148,12 @@ void backtrace_gdb(void) {
     const char fmt[] = "%s -nx -batch -x %s -p %d";
     static char cmd[sizeof(fmt) + 3 * MAX_BT_PATHSIZE];
     char filename[MAX_BT_PATHSIZE];
-    const char *gdb = (access(GDB_PATH, X_OK) ? "gdb" : GDB_PATH);
     int rc;
+#ifdef GDB_PATH
+    const char *gdb = (access(GDB_PATH, X_OK) ? "gdb" : GDB_PATH);
+#else
+    const char *gdb = "gdb";
+#endif
 
     rc = create_command_file(filename);
     if (rc != 0) {
@@ -169,13 +171,12 @@ void backtrace_gdb(void) {
     }
 
     rc = system_execute(cmd);
-    if (rc < 0) {
-        RETURN_ERROR_MSG("Error executing gdb command file %s\n", filename);
+    if (rc != 0) {
+        RETURN_ERROR_MSG("Error generating backtrace using gdb (%d)\n", rc);
     }
     (void)unlink(filename);
 }
 
-#endif /* USE_BT_GDB */
 
 void shmem_util_backtrace(void) {
     char *method = shmem_internal_params.BACKTRACE;
@@ -187,24 +188,13 @@ void shmem_util_backtrace(void) {
         RAISE_WARN_STR("Backtrace support through execinfo is not available.");
 #endif
     } else if (0 == strcmp(method, "gdb")) {
-#if defined(USE_BT_GDB)
         backtrace_gdb();
-#else
-        RAISE_WARN_STR("Backtrace support through gdb is not available.");
-#endif
-    } else if (0 == strcmp(method, "auto")) {
-#if defined(USE_BT_EXECINFO)
-        backtrace_execinfo();
-#elif defined(USE_BT_GDB)
-        backtrace_gdb();
-#else
-        RAISE_WARN_STR("Backtrace support is not available.");
-#endif
     } else if (0 == strcmp(method, "")) {
         /* disabled */
     } else {
-        RAISE_WARN_MSG("Ignoring invalid backtrace method '%s'.\n",
-                       method);
+        if (0 != strcmp(method, "auto"))
+            RAISE_WARN_MSG("Ignoring invalid backtrace method '%s'.\n", method);
+
 #if defined(USE_BT_EXECINFO)
         backtrace_execinfo();
 #elif defined(USE_BT_GDB)

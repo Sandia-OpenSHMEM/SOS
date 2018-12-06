@@ -432,9 +432,7 @@ fi
 ## gdb
 AC_PATH_PROGS(GDB_PATH, $GDB gdb, , /usr/bin:${PATH})
 if test -n "$GDB_PATH"; then
-  AC_DEFINE_UNQUOTED(GDB_PATH,"$GDB_PATH")
-else
-  AC_DEFINE([GDB_PATH], [""], [Path to gdb location])
+  AC_DEFINE_UNQUOTED(GDB_PATH, "$GDB_PATH", [Path to GNU debugger])
 fi
 
 if test "$bt_execinfo" = "yes"; then
