@@ -165,6 +165,7 @@ shmem_runtime_exchange(int need_node_util)
             local_ranks[i] = -1;
         }
 
+        /* Note: PMIX_LOCAL_PROCS should be available in the near future (would avoid parsing) */
         if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_LOCAL_PEERS, NULL, 0, &val))) {
            char *local_peers_str = strdup(val->data.string);
            PMIX_VALUE_RELEASE(val);
