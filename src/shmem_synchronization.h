@@ -20,7 +20,6 @@
 #include "shmem_comm.h"
 #include "transport.h"
 
-
 static inline void
 shmem_internal_quiet(shmem_ctx_t ctx)
 {
@@ -52,7 +51,6 @@ shmem_internal_fence(shmem_ctx_t ctx)
     /* Since fence does not guarantee any memory visibility, 
      * transport level memory flush is not required here. */
 }
-
 
 #define COMP(type, a, b, ret)                            \
     do {                                                 \
@@ -130,38 +128,27 @@ shmem_internal_fence(shmem_ctx_t ctx)
     } while(0)
 
 #if defined(ENABLE_HARD_POLLING)
-#define SHMEM_WAIT(var, value) do {                                     \
-        SHMEM_WAIT_POLL(var, value);                                    \
-        shmem_internal_membar_load();                                   \
-        shmem_transport_syncmem();                                      \
-    } while (0)
-
-#define SHMEM_WAIT_UNTIL(var, cond, value) do {                         \
-        SHMEM_WAIT_UNTIL_POLL(var, cond, value);                        \
-        shmem_internal_membar_load();                                   \
-        shmem_transport_syncmem();                                      \
-    } while (0) 
-
+#define SHMEM_INTERNAL_WAIT_UNTIL(var, cond, value)                     \
+    SHMEM_WAIT_UNTIL_POLL(var, cond, value)
 #else
+#define SHMEM_INTERNAL_WAIT_UNTIL(var, cond, value)                     \
+    if (shmem_internal_thread_level == SHMEM_THREAD_SINGLE) {           \
+        SHMEM_WAIT_UNTIL_BLOCK(var, cond, value);                       \
+    } else {                                                            \
+        SHMEM_WAIT_UNTIL_POLL(var, cond, value);                        \
+    }
+#endif
+
 #define SHMEM_WAIT(var, value) do {                                     \
-        if (shmem_internal_thread_level == SHMEM_THREAD_SINGLE) {       \
-            SHMEM_WAIT_BLOCK(var, value);                               \
-        } else {                                                        \
-            SHMEM_WAIT_POLL(var, value);                                \
-        }                                                               \
+        SHMEM_INTERNAL_WAIT_UNTIL(var, SHMEM_CMP_NE, value);            \
         shmem_internal_membar_load();                                   \
         shmem_transport_syncmem();                                      \
     } while (0)
 
 #define SHMEM_WAIT_UNTIL(var, cond, value) do {                         \
-        if (shmem_internal_thread_level == SHMEM_THREAD_SINGLE) {       \
-            SHMEM_WAIT_UNTIL_BLOCK(var, cond, value);                   \
-        } else {                                                        \
-            SHMEM_WAIT_UNTIL_POLL(var, cond, value);                    \
-        }                                                               \
+        SHMEM_INTERNAL_WAIT_UNTIL(var, cond, value);                    \
         shmem_internal_membar_load();                                   \
         shmem_transport_syncmem();                                      \
     } while (0)
-#endif /* HARD_POLLING */
 
 #endif

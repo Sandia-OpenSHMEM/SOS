@@ -66,13 +66,39 @@ int shmem_internal_global_exit_called = 0;
 
 int shmem_internal_thread_level;
 
+unsigned int shmem_internal_rand_seed;
+
 #ifdef ENABLE_THREADS
 shmem_internal_mutex_t shmem_internal_mutex_alloc;
+shmem_internal_mutex_t shmem_internal_mutex_rand_r;
 #endif
-
 
 static char *shmem_internal_thread_level_str[4] = { "SINGLE", "FUNNELED",
                                                     "SERIALIZED", "MULTIPLE" };
+
+static void
+shmem_internal_randr_init(void)
+{
+    shmem_internal_rand_seed = shmem_internal_my_pe;
+
+#ifdef ENABLE_THREADS
+    SHMEM_MUTEX_INIT(shmem_internal_mutex_rand_r);
+#endif
+
+    return;
+}
+
+static void
+shmem_internal_randr_fini(void)
+{
+
+#ifdef ENABLE_THREADS
+    SHMEM_MUTEX_DESTROY(shmem_internal_mutex_rand_r);
+#endif
+
+    return;
+}
+
 
 static void
 shmem_internal_shutdown(void)
@@ -95,6 +121,8 @@ shmem_internal_shutdown(void)
 #endif
 
     SHMEM_MUTEX_DESTROY(shmem_internal_mutex_alloc);
+
+    shmem_internal_randr_fini();
 
     shmem_internal_symmetric_fini();
     shmem_runtime_fini();
@@ -137,6 +165,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 #ifdef USE_CMA
     int cma_initialized       = 0;
 #endif
+    int randr_initialized     = 0;
 
 #ifdef HAVE_SCHED_GETAFFINITY
     cpu_set_t my_set;
@@ -377,6 +406,9 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         goto cleanup;
     }
 
+    shmem_internal_randr_init();
+    randr_initialized = 1;
+
     atexit(shmem_internal_shutdown_atexit);
     shmem_internal_initialized = 1;
 
@@ -401,6 +433,11 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         shmem_transport_cma_fini();
     }
 #endif
+
+    if (randr_initialized) {
+        shmem_internal_randr_fini();
+    }
+
     if (NULL != shmem_internal_data_base) {
         shmem_internal_symmetric_fini();
     }

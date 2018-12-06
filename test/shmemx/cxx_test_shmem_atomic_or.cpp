@@ -33,14 +33,13 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <shmem.h>
 
 #ifdef ENABLE_SHMEMX_TESTS
 #include <shmemx.h>
 #endif
-
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 
 enum op { OR = 0, CTX_OR, FETCH_OR, CTX_FETCH_OR, FETCH_OR_NBI,
           CTX_FETCH_OR_NBI };
@@ -120,12 +119,8 @@ enum op { OR = 0, CTX_OR, FETCH_OR, CTX_FETCH_OR, FETCH_OR_NBI,
               mype, #OP, #TYPE);                                        \
       rc = EXIT_FAILURE;                                                \
     }                                                                   \
-  } while (0)
+  } while (false)
 
-#else
-#define TEST_SHMEM_OR(OP, TYPE)
-
-#endif
 
 int main(int argc, char* argv[]) {
   shmem_init();

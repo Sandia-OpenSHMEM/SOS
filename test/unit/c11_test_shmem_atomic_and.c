@@ -33,7 +33,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <shmem.h>
 
@@ -119,7 +118,7 @@ enum op { AND = 0, CTX_AND, FETCH_AND, CTX_FETCH_AND, FETCH_AND_NBI,
               mype, #OP, #TYPE);                                        \
       rc = EXIT_FAILURE;                                                \
     }                                                                   \
-  } while (false)
+  } while (0)
 
 #else
 #define TEST_SHMEM_AND(OP, TYPE)

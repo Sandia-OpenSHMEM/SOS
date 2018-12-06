@@ -32,7 +32,6 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <shmem.h>
 
@@ -56,7 +55,7 @@
              (int)(USE_CTX), #TYPE);                    \
       rc = EXIT_FAILURE;                                \
     }                                                   \
-  } while (false)
+  } while (0)
 
 #else
 #define TEST_SHMEM_G(USE_CTX, TYPE)

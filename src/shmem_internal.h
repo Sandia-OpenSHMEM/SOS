@@ -42,6 +42,8 @@ extern long shmem_internal_heap_length;
 extern void *shmem_internal_data_base;
 extern long shmem_internal_data_length;
 
+extern unsigned int shmem_internal_rand_seed;
+
 #define SHMEM_INTERNAL_HEAP_OVERHEAD (1024*1024)
 #define SHMEM_INTERNAL_DIAG_STRLEN 1024
 
@@ -402,6 +404,7 @@ typedef shmem_spinlock_t shmem_internal_mutex_t;
 #   endif /* ENABLE_PTHREAD_MUTEX */
 
 extern shmem_internal_mutex_t shmem_internal_mutex_alloc;
+extern shmem_internal_mutex_t shmem_internal_mutex_rand_r;
 
 #else
 #   define SHMEM_MUTEX_INIT(_mutex)

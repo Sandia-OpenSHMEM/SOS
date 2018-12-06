@@ -55,6 +55,42 @@ include(shmemx_c_func.h4)dnl
 #ifdef __cplusplus
 } /* extern "C" */
 
+define(`SHMEM_CXX_WAIT_UNTIL_ALL',
+`static inline void shmemx_wait_until_all($2 *ivars, size_t nelems, int cmp, $2 cmp_value) {
+    shmemx_$1_wait_until_all(ivars, nelems, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_ALL')
+
+define(`SHMEM_CXX_WAIT_UNTIL_ANY',
+`static inline size_t shmemx_wait_until_any($2 *ivars, size_t nelems, int *status, int cmp, $2 cmp_value) {
+    shmemx_$1_wait_until_any(ivars, nelems, status, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_ANY')
+
+define(`SHMEM_CXX_WAIT_UNTIL_SOME',
+`static inline size_t shmemx_wait_until_some($2 *ivars, size_t nelems, size_t *indices, int *status, int cmp, $2 cmp_value) {
+    shmemx_$1_wait_until_some(ivars, nelems, indices, status, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_SOME')
+
+define(`SHMEM_CXX_TEST_ALL',
+`static inline int shmemx_test_all($2 *ivars, size_t nelems, int cmp, $2 cmp_value) {
+    return shmemx_$1_test_all(ivars, nelems, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_ALL')
+
+define(`SHMEM_CXX_TEST_ANY',
+`static inline size_t shmemx_test_any($2 *ivars, size_t nelems, int *status, int cmp, $2 cmp_value) {
+    return shmemx_$1_test_any(ivars, nelems, status, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_ANY')
+
+define(`SHMEM_CXX_TEST_SOME',
+`static inline size_t shmemx_test_some($2 *ivars, size_t nelems, size_t *indices, int *status, int cmp, $2 cmp_value) {
+    return shmemx_$1_test_some(ivars, nelems, indices, status, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_SOME')
+
 define(`SHMEM_CXX_ATOMIC_SWAP',
 `static inline void shmemx_atomic_swap_nbi($2 *fetch, $2 *target, $2 value, int pe) {
     shmemx_$1_atomic_swap_nbi(fetch, target, value, pe);
@@ -154,8 +190,50 @@ SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_PUT_SIGNAL_NBI')
 /* C11 Generic Macros */
 #elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
 
-/* Nonblocking fetching AMOs */
+/* Wait_until and test any/all/some point-to-point API */
+define(`SHMEM_C11_GEN_WAIT_UNTIL_ALL', `        $2*: shmemx_$1_wait_until_all')dnl
+#define shmemx_wait_until_all(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_WAIT_UNTIL_ALL', `, \') \
+    )(__VA_ARGS__)
 
+define(`SHMEM_C11_GEN_WAIT_UNTIL_ANY', `        $2*: shmemx_$1_wait_until_any')dnl
+#define shmemx_wait_until_any(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_WAIT_UNTIL_ANY', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_WAIT_UNTIL_SOME', `        $2*: shmemx_$1_wait_until_some')dnl
+#define shmemx_wait_until_some(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_WAIT_UNTIL_SOME', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_TEST_ALL', `        $2*: shmemx_$1_test_all')dnl
+#define shmemx_test_all(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_TEST_ALL', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_TEST_ANY', `        $2*: shmemx_$1_test_any')dnl
+#define shmemx_test_any(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_TEST_ANY', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_TEST_SOME', `        $2*: shmemx_$1_test_some')dnl
+#define shmemx_test_some(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_TEST_SOME', `, \') \
+    )(__VA_ARGS__)
+
+/* Nonblocking fetching AMOs */
 define(`SHMEM_C11_GEN_ATOMIC_SWAP_NBI', `        $2*: shmemx_$1_atomic_swap_nbi')dnl
 define(`SHMEM_CTX_C11_GEN_ATOMIC_SWAP_NBI', `            $2*: shmemx_ctx_$1_atomic_swap_nbi')dnl
 #define shmemx_atomic_swap_nbi(...) \

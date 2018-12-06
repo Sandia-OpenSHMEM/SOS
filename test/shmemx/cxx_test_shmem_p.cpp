@@ -32,10 +32,9 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <shmem.h>
-
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 
 #define TEST_SHMEM_P(USE_CTX, TYPE)                     \
   do {                                                  \
@@ -53,12 +52,7 @@
              (int)(USE_CTX), #TYPE);                    \
       rc = EXIT_FAILURE;                                \
     }                                                   \
-  } while (0)
-
-#else
-#define TEST_SHMEM_P(USE_CTX, TYPE)
-
-#endif
+  } while (false)
 
 int main(int argc, char* argv[]) {
   shmem_init();

@@ -32,10 +32,9 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <shmem.h>
-
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 
 enum op { GET = 0, IGET, GET_NBI };
 
@@ -79,12 +78,7 @@ enum op { GET = 0, IGET, GET_NBI };
                (int)(USE_CTX), #TYPE);                          \
         rc = EXIT_FAILURE;                                      \
       }                                                         \
-  } while (0)
-
-#else
-#define TEST_SHMEM_GET(OP, USE_CTX, TYPE)
-
-#endif
+  } while (false)
 
 int main(int argc, char* argv[]) {
   shmem_init();

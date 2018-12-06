@@ -38,7 +38,7 @@
 
 enum op { GET = 0, IGET, GET_NBI };
 
-#define TEST_SHMEM_GET(OP, USE_CTX, TYPE)                       \
+#define TEST_SHMEM_GET(OP, USE_CTX, TYPE, TYPENAME)             \
   do {                                                          \
     static TYPE remote[10];                                     \
     const int mype = shmem_my_pe();                             \
@@ -50,21 +50,27 @@ enum op { GET = 0, IGET, GET_NBI };
     switch (OP) {                                               \
       case GET:                                                 \
         if (USE_CTX)                                            \
-          shmem_get(SHMEM_CTX_DEFAULT, local, remote, 10, (mype + 1) % npes); \
+          shmem_ctx_##TYPENAME##_get(SHMEM_CTX_DEFAULT, local,  \
+                                remote, 10, (mype + 1) % npes); \
         else                                                    \
-          shmem_get(local, remote, 10, (mype + 1) % npes);      \
+          shmem_##TYPENAME##_get(local, remote, 10,             \
+                                       (mype + 1) % npes);      \
         break;                                                  \
       case IGET:                                                \
         if (USE_CTX)                                            \
-          shmem_iget(SHMEM_CTX_DEFAULT, local, remote, 1, 1, 10, (mype + 1) % npes); \
+          shmem_ctx_##TYPENAME##_iget(SHMEM_CTX_DEFAULT, local, \
+                          remote, 1, 1, 10, (mype + 1) % npes); \
         else                                                    \
-          shmem_iget(local, remote, 1, 1, 10, (mype + 1) % npes); \
+          shmem_##TYPENAME##_iget(local, remote, 1, 1, 10,      \
+                                            (mype + 1) % npes); \
         break;                                                  \
       case GET_NBI:                                             \
         if (USE_CTX)                                            \
-          shmem_get_nbi(SHMEM_CTX_DEFAULT, local, remote, 10, (mype + 1) % npes); \
+          shmem_ctx_##TYPENAME##_get_nbi(SHMEM_CTX_DEFAULT,     \
+                         local, remote, 10, (mype + 1) % npes); \
         else                                                    \
-          shmem_get_nbi(local, remote, 10, (mype + 1) % npes);  \
+          shmem_##TYPENAME##_get_nbi(local, remote, 10,         \
+                                           (mype + 1) % npes);  \
         shmem_quiet();                                          \
         break;                                                  \
       default:                                                  \
@@ -84,155 +90,156 @@ int main(int argc, char* argv[]) {
   shmem_init();
 
   int rc = EXIT_SUCCESS;
-  TEST_SHMEM_GET(GET, 0, float);
-  TEST_SHMEM_GET(GET, 0, double);
-  TEST_SHMEM_GET(GET, 0, long double);
-  TEST_SHMEM_GET(GET, 0, char);
-  TEST_SHMEM_GET(GET, 0, signed char);
-  TEST_SHMEM_GET(GET, 0, short);
-  TEST_SHMEM_GET(GET, 0, int);
-  TEST_SHMEM_GET(GET, 0, long);
-  TEST_SHMEM_GET(GET, 0, long long);
-  TEST_SHMEM_GET(GET, 0, unsigned char);
-  TEST_SHMEM_GET(GET, 0, unsigned short);
-  TEST_SHMEM_GET(GET, 0, unsigned int);
-  TEST_SHMEM_GET(GET, 0, unsigned long);
-  TEST_SHMEM_GET(GET, 0, unsigned long long);
-  TEST_SHMEM_GET(GET, 0, int8_t);
-  TEST_SHMEM_GET(GET, 0, int16_t);
-  TEST_SHMEM_GET(GET, 0, int32_t);
-  TEST_SHMEM_GET(GET, 0, int64_t);
-  TEST_SHMEM_GET(GET, 0, uint8_t);
-  TEST_SHMEM_GET(GET, 0, uint16_t);
-  TEST_SHMEM_GET(GET, 0, uint32_t);
-  TEST_SHMEM_GET(GET, 0, uint64_t);
-  TEST_SHMEM_GET(GET, 0, size_t);
-  TEST_SHMEM_GET(GET, 0, ptrdiff_t);
 
-  TEST_SHMEM_GET(GET, 1, float);
-  TEST_SHMEM_GET(GET, 1, double);
-  TEST_SHMEM_GET(GET, 1, long double);
-  TEST_SHMEM_GET(GET, 1, char);
-  TEST_SHMEM_GET(GET, 1, signed char);
-  TEST_SHMEM_GET(GET, 1, short);
-  TEST_SHMEM_GET(GET, 1, int);
-  TEST_SHMEM_GET(GET, 1, long);
-  TEST_SHMEM_GET(GET, 1, long long);
-  TEST_SHMEM_GET(GET, 1, unsigned char);
-  TEST_SHMEM_GET(GET, 1, unsigned short);
-  TEST_SHMEM_GET(GET, 1, unsigned int);
-  TEST_SHMEM_GET(GET, 1, unsigned long);
-  TEST_SHMEM_GET(GET, 1, unsigned long long);
-  TEST_SHMEM_GET(GET, 1, int8_t);
-  TEST_SHMEM_GET(GET, 1, int16_t);
-  TEST_SHMEM_GET(GET, 1, int32_t);
-  TEST_SHMEM_GET(GET, 1, int64_t);
-  TEST_SHMEM_GET(GET, 1, uint8_t);
-  TEST_SHMEM_GET(GET, 1, uint16_t);
-  TEST_SHMEM_GET(GET, 1, uint32_t);
-  TEST_SHMEM_GET(GET, 1, uint64_t);
-  TEST_SHMEM_GET(GET, 1, size_t);
-  TEST_SHMEM_GET(GET, 1, ptrdiff_t);
+  TEST_SHMEM_GET(GET, 0, float, float);
+  TEST_SHMEM_GET(GET, 0, double, double);
+  TEST_SHMEM_GET(GET, 0, long double, longdouble);
+  TEST_SHMEM_GET(GET, 0, char, char);
+  TEST_SHMEM_GET(GET, 0, signed char, schar);
+  TEST_SHMEM_GET(GET, 0, short, short);
+  TEST_SHMEM_GET(GET, 0, int, int);
+  TEST_SHMEM_GET(GET, 0, long, long);
+  TEST_SHMEM_GET(GET, 0, long long, longlong);
+  TEST_SHMEM_GET(GET, 0, unsigned char, uchar);
+  TEST_SHMEM_GET(GET, 0, unsigned short, ushort);
+  TEST_SHMEM_GET(GET, 0, unsigned int, uint);
+  TEST_SHMEM_GET(GET, 0, unsigned long, ulong);
+  TEST_SHMEM_GET(GET, 0, unsigned long long, ulonglong);
+  TEST_SHMEM_GET(GET, 0, int8_t, int8);
+  TEST_SHMEM_GET(GET, 0, int16_t, int16);
+  TEST_SHMEM_GET(GET, 0, int32_t, int32);
+  TEST_SHMEM_GET(GET, 0, int64_t, int64);
+  TEST_SHMEM_GET(GET, 0, uint8_t, uint8);
+  TEST_SHMEM_GET(GET, 0, uint16_t, uint16);
+  TEST_SHMEM_GET(GET, 0, uint32_t, uint32);
+  TEST_SHMEM_GET(GET, 0, uint64_t, uint64);
+  TEST_SHMEM_GET(GET, 0, size_t, size);
+  TEST_SHMEM_GET(GET, 0, ptrdiff_t, ptrdiff);
 
-  TEST_SHMEM_GET(IGET, 0, float);
-  TEST_SHMEM_GET(IGET, 0, double);
-  TEST_SHMEM_GET(IGET, 0, long double);
-  TEST_SHMEM_GET(IGET, 0, char);
-  TEST_SHMEM_GET(IGET, 0, signed char);
-  TEST_SHMEM_GET(IGET, 0, short);
-  TEST_SHMEM_GET(IGET, 0, int);
-  TEST_SHMEM_GET(IGET, 0, long);
-  TEST_SHMEM_GET(IGET, 0, long long);
-  TEST_SHMEM_GET(IGET, 0, unsigned char);
-  TEST_SHMEM_GET(IGET, 0, unsigned short);
-  TEST_SHMEM_GET(IGET, 0, unsigned int);
-  TEST_SHMEM_GET(IGET, 0, unsigned long);
-  TEST_SHMEM_GET(IGET, 0, unsigned long long);
-  TEST_SHMEM_GET(IGET, 0, int8_t);
-  TEST_SHMEM_GET(IGET, 0, int16_t);
-  TEST_SHMEM_GET(IGET, 0, int32_t);
-  TEST_SHMEM_GET(IGET, 0, int64_t);
-  TEST_SHMEM_GET(IGET, 0, uint8_t);
-  TEST_SHMEM_GET(IGET, 0, uint16_t);
-  TEST_SHMEM_GET(IGET, 0, uint32_t);
-  TEST_SHMEM_GET(IGET, 0, uint64_t);
-  TEST_SHMEM_GET(IGET, 0, size_t);
-  TEST_SHMEM_GET(IGET, 0, ptrdiff_t);
+  TEST_SHMEM_GET(GET, 1, float, float);
+  TEST_SHMEM_GET(GET, 1, double, double);
+  TEST_SHMEM_GET(GET, 1, long double, longdouble);
+  TEST_SHMEM_GET(GET, 1, char, char);
+  TEST_SHMEM_GET(GET, 1, signed char, schar);
+  TEST_SHMEM_GET(GET, 1, short, short);
+  TEST_SHMEM_GET(GET, 1, int, int);
+  TEST_SHMEM_GET(GET, 1, long, long);
+  TEST_SHMEM_GET(GET, 1, long long, longlong);
+  TEST_SHMEM_GET(GET, 1, unsigned char, uchar);
+  TEST_SHMEM_GET(GET, 1, unsigned short, ushort);
+  TEST_SHMEM_GET(GET, 1, unsigned int, uint);
+  TEST_SHMEM_GET(GET, 1, unsigned long, ulong);
+  TEST_SHMEM_GET(GET, 1, unsigned long long, ulonglong);
+  TEST_SHMEM_GET(GET, 1, int8_t, int8);
+  TEST_SHMEM_GET(GET, 1, int16_t, int16);
+  TEST_SHMEM_GET(GET, 1, int32_t, int32);
+  TEST_SHMEM_GET(GET, 1, int64_t, int64);
+  TEST_SHMEM_GET(GET, 1, uint8_t, uint8);
+  TEST_SHMEM_GET(GET, 1, uint16_t, uint16);
+  TEST_SHMEM_GET(GET, 1, uint32_t, uint32);
+  TEST_SHMEM_GET(GET, 1, uint64_t, uint64);
+  TEST_SHMEM_GET(GET, 1, size_t, size);
+  TEST_SHMEM_GET(GET, 1, ptrdiff_t, ptrdiff);
 
-  TEST_SHMEM_GET(IGET, 1, float);
-  TEST_SHMEM_GET(IGET, 1, double);
-  TEST_SHMEM_GET(IGET, 1, long double);
-  TEST_SHMEM_GET(IGET, 1, char);
-  TEST_SHMEM_GET(IGET, 1, signed char);
-  TEST_SHMEM_GET(IGET, 1, short);
-  TEST_SHMEM_GET(IGET, 1, int);
-  TEST_SHMEM_GET(IGET, 1, long);
-  TEST_SHMEM_GET(IGET, 1, long long);
-  TEST_SHMEM_GET(IGET, 1, unsigned char);
-  TEST_SHMEM_GET(IGET, 1, unsigned short);
-  TEST_SHMEM_GET(IGET, 1, unsigned int);
-  TEST_SHMEM_GET(IGET, 1, unsigned long);
-  TEST_SHMEM_GET(IGET, 1, unsigned long long);
-  TEST_SHMEM_GET(IGET, 1, int8_t);
-  TEST_SHMEM_GET(IGET, 1, int16_t);
-  TEST_SHMEM_GET(IGET, 1, int32_t);
-  TEST_SHMEM_GET(IGET, 1, int64_t);
-  TEST_SHMEM_GET(IGET, 1, uint8_t);
-  TEST_SHMEM_GET(IGET, 1, uint16_t);
-  TEST_SHMEM_GET(IGET, 1, uint32_t);
-  TEST_SHMEM_GET(IGET, 1, uint64_t);
-  TEST_SHMEM_GET(IGET, 1, size_t);
-  TEST_SHMEM_GET(IGET, 1, ptrdiff_t);
+  TEST_SHMEM_GET(IGET, 0, float, float);
+  TEST_SHMEM_GET(IGET, 0, double, double);
+  TEST_SHMEM_GET(IGET, 0, long double, longdouble);
+  TEST_SHMEM_GET(IGET, 0, char, char);
+  TEST_SHMEM_GET(IGET, 0, signed char, schar);
+  TEST_SHMEM_GET(IGET, 0, short, short);
+  TEST_SHMEM_GET(IGET, 0, int, int);
+  TEST_SHMEM_GET(IGET, 0, long, long);
+  TEST_SHMEM_GET(IGET, 0, long long, longlong);
+  TEST_SHMEM_GET(IGET, 0, unsigned char, uchar);
+  TEST_SHMEM_GET(IGET, 0, unsigned short, ushort);
+  TEST_SHMEM_GET(IGET, 0, unsigned int, uint);
+  TEST_SHMEM_GET(IGET, 0, unsigned long, ulong);
+  TEST_SHMEM_GET(IGET, 0, unsigned long long, ulonglong);
+  TEST_SHMEM_GET(IGET, 0, int8_t, int8);
+  TEST_SHMEM_GET(IGET, 0, int16_t, int16);
+  TEST_SHMEM_GET(IGET, 0, int32_t, int32);
+  TEST_SHMEM_GET(IGET, 0, int64_t, int64);
+  TEST_SHMEM_GET(IGET, 0, uint8_t, uint8);
+  TEST_SHMEM_GET(IGET, 0, uint16_t, uint16);
+  TEST_SHMEM_GET(IGET, 0, uint32_t, uint32);
+  TEST_SHMEM_GET(IGET, 0, uint64_t, uint64);
+  TEST_SHMEM_GET(IGET, 0, size_t, size);
+  TEST_SHMEM_GET(IGET, 0, ptrdiff_t, ptrdiff);
 
-  TEST_SHMEM_GET(GET_NBI, 0, float);
-  TEST_SHMEM_GET(GET_NBI, 0, double);
-  TEST_SHMEM_GET(GET_NBI, 0, long double);
-  TEST_SHMEM_GET(GET_NBI, 0, char);
-  TEST_SHMEM_GET(GET_NBI, 0, signed char);
-  TEST_SHMEM_GET(GET_NBI, 0, short);
-  TEST_SHMEM_GET(GET_NBI, 0, int);
-  TEST_SHMEM_GET(GET_NBI, 0, long);
-  TEST_SHMEM_GET(GET_NBI, 0, long long);
-  TEST_SHMEM_GET(GET_NBI, 0, unsigned char);
-  TEST_SHMEM_GET(GET_NBI, 0, unsigned short);
-  TEST_SHMEM_GET(GET_NBI, 0, unsigned int);
-  TEST_SHMEM_GET(GET_NBI, 0, unsigned long);
-  TEST_SHMEM_GET(GET_NBI, 0, unsigned long long);
-  TEST_SHMEM_GET(GET_NBI, 0, int8_t);
-  TEST_SHMEM_GET(GET_NBI, 0, int16_t);
-  TEST_SHMEM_GET(GET_NBI, 0, int32_t);
-  TEST_SHMEM_GET(GET_NBI, 0, int64_t);
-  TEST_SHMEM_GET(GET_NBI, 0, uint8_t);
-  TEST_SHMEM_GET(GET_NBI, 0, uint16_t);
-  TEST_SHMEM_GET(GET_NBI, 0, uint32_t);
-  TEST_SHMEM_GET(GET_NBI, 0, uint64_t);
-  TEST_SHMEM_GET(GET_NBI, 0, size_t);
-  TEST_SHMEM_GET(GET_NBI, 0, ptrdiff_t);
+  TEST_SHMEM_GET(IGET, 1, float, float);
+  TEST_SHMEM_GET(IGET, 1, double, double);
+  TEST_SHMEM_GET(IGET, 1, long double, longdouble);
+  TEST_SHMEM_GET(IGET, 1, char, char);
+  TEST_SHMEM_GET(IGET, 1, signed char, schar);
+  TEST_SHMEM_GET(IGET, 1, short, short);
+  TEST_SHMEM_GET(IGET, 1, int, int);
+  TEST_SHMEM_GET(IGET, 1, long, long);
+  TEST_SHMEM_GET(IGET, 1, long long, longlong);
+  TEST_SHMEM_GET(IGET, 1, unsigned char, uchar);
+  TEST_SHMEM_GET(IGET, 1, unsigned short, ushort);
+  TEST_SHMEM_GET(IGET, 1, unsigned int, uint);
+  TEST_SHMEM_GET(IGET, 1, unsigned long, ulong);
+  TEST_SHMEM_GET(IGET, 1, unsigned long long, ulonglong);
+  TEST_SHMEM_GET(IGET, 1, int8_t, int8);
+  TEST_SHMEM_GET(IGET, 1, int16_t, int16);
+  TEST_SHMEM_GET(IGET, 1, int32_t, int32);
+  TEST_SHMEM_GET(IGET, 1, int64_t, int64);
+  TEST_SHMEM_GET(IGET, 1, uint8_t, uint8);
+  TEST_SHMEM_GET(IGET, 1, uint16_t, uint16);
+  TEST_SHMEM_GET(IGET, 1, uint32_t, uint32);
+  TEST_SHMEM_GET(IGET, 1, uint64_t, uint64);
+  TEST_SHMEM_GET(IGET, 1, size_t, size);
+  TEST_SHMEM_GET(IGET, 1, ptrdiff_t, ptrdiff);
 
-  TEST_SHMEM_GET(GET_NBI, 1, float);
-  TEST_SHMEM_GET(GET_NBI, 1, double);
-  TEST_SHMEM_GET(GET_NBI, 1, long double);
-  TEST_SHMEM_GET(GET_NBI, 1, char);
-  TEST_SHMEM_GET(GET_NBI, 1, signed char);
-  TEST_SHMEM_GET(GET_NBI, 1, short);
-  TEST_SHMEM_GET(GET_NBI, 1, int);
-  TEST_SHMEM_GET(GET_NBI, 1, long);
-  TEST_SHMEM_GET(GET_NBI, 1, long long);
-  TEST_SHMEM_GET(GET_NBI, 1, unsigned char);
-  TEST_SHMEM_GET(GET_NBI, 1, unsigned short);
-  TEST_SHMEM_GET(GET_NBI, 1, unsigned int);
-  TEST_SHMEM_GET(GET_NBI, 1, unsigned long);
-  TEST_SHMEM_GET(GET_NBI, 1, unsigned long long);
-  TEST_SHMEM_GET(GET_NBI, 1, int8_t);
-  TEST_SHMEM_GET(GET_NBI, 1, int16_t);
-  TEST_SHMEM_GET(GET_NBI, 1, int32_t);
-  TEST_SHMEM_GET(GET_NBI, 1, int64_t);
-  TEST_SHMEM_GET(GET_NBI, 1, uint8_t);
-  TEST_SHMEM_GET(GET_NBI, 1, uint16_t);
-  TEST_SHMEM_GET(GET_NBI, 1, uint32_t);
-  TEST_SHMEM_GET(GET_NBI, 1, uint64_t);
-  TEST_SHMEM_GET(GET_NBI, 1, size_t);
-  TEST_SHMEM_GET(GET_NBI, 1, ptrdiff_t);
+  TEST_SHMEM_GET(GET_NBI, 0, float, float);
+  TEST_SHMEM_GET(GET_NBI, 0, double, double);
+  TEST_SHMEM_GET(GET_NBI, 0, long double, longdouble);
+  TEST_SHMEM_GET(GET_NBI, 0, char, char);
+  TEST_SHMEM_GET(GET_NBI, 0, signed char, schar);
+  TEST_SHMEM_GET(GET_NBI, 0, short, short);
+  TEST_SHMEM_GET(GET_NBI, 0, int, int);
+  TEST_SHMEM_GET(GET_NBI, 0, long, long);
+  TEST_SHMEM_GET(GET_NBI, 0, long long, longlong);
+  TEST_SHMEM_GET(GET_NBI, 0, unsigned char, uchar);
+  TEST_SHMEM_GET(GET_NBI, 0, unsigned short, ushort);
+  TEST_SHMEM_GET(GET_NBI, 0, unsigned int, uint);
+  TEST_SHMEM_GET(GET_NBI, 0, unsigned long, ulong);
+  TEST_SHMEM_GET(GET_NBI, 0, unsigned long long, ulonglong);
+  TEST_SHMEM_GET(GET_NBI, 0, int8_t, int8);
+  TEST_SHMEM_GET(GET_NBI, 0, int16_t, int16);
+  TEST_SHMEM_GET(GET_NBI, 0, int32_t, int32);
+  TEST_SHMEM_GET(GET_NBI, 0, int64_t, int64);
+  TEST_SHMEM_GET(GET_NBI, 0, uint8_t, uint8);
+  TEST_SHMEM_GET(GET_NBI, 0, uint16_t, uint16);
+  TEST_SHMEM_GET(GET_NBI, 0, uint32_t, uint32);
+  TEST_SHMEM_GET(GET_NBI, 0, uint64_t, uint64);
+  TEST_SHMEM_GET(GET_NBI, 0, size_t, size);
+  TEST_SHMEM_GET(GET_NBI, 0, ptrdiff_t, ptrdiff);
+
+  TEST_SHMEM_GET(GET_NBI, 1, float, float);
+  TEST_SHMEM_GET(GET_NBI, 1, double, double);
+  TEST_SHMEM_GET(GET_NBI, 1, long double, longdouble);
+  TEST_SHMEM_GET(GET_NBI, 1, char, char);
+  TEST_SHMEM_GET(GET_NBI, 1, signed char, schar);
+  TEST_SHMEM_GET(GET_NBI, 1, short, short);
+  TEST_SHMEM_GET(GET_NBI, 1, int, int);
+  TEST_SHMEM_GET(GET_NBI, 1, long, long);
+  TEST_SHMEM_GET(GET_NBI, 1, long long, longlong);
+  TEST_SHMEM_GET(GET_NBI, 1, unsigned char, uchar);
+  TEST_SHMEM_GET(GET_NBI, 1, unsigned short, ushort);
+  TEST_SHMEM_GET(GET_NBI, 1, unsigned int, uint);
+  TEST_SHMEM_GET(GET_NBI, 1, unsigned long, ulong);
+  TEST_SHMEM_GET(GET_NBI, 1, unsigned long long, ulonglong);
+  TEST_SHMEM_GET(GET_NBI, 1, int8_t, int8);
+  TEST_SHMEM_GET(GET_NBI, 1, int16_t, int16);
+  TEST_SHMEM_GET(GET_NBI, 1, int32_t, int32);
+  TEST_SHMEM_GET(GET_NBI, 1, int64_t, int64);
+  TEST_SHMEM_GET(GET_NBI, 1, uint8_t, uint8);
+  TEST_SHMEM_GET(GET_NBI, 1, uint16_t, uint16);
+  TEST_SHMEM_GET(GET_NBI, 1, uint32_t, uint32);
+  TEST_SHMEM_GET(GET_NBI, 1, uint64_t, uint64);
+  TEST_SHMEM_GET(GET_NBI, 1, size_t, size);
+  TEST_SHMEM_GET(GET_NBI, 1, ptrdiff_t, ptrdiff);
 
   shmem_finalize();
   return rc;
