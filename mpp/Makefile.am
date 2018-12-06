@@ -13,14 +13,14 @@
 
 # shmem.h should appear in BOTH $(includedir)/shmem.h and $(includedir)/mpp/shmem.h!
 
-EXTRA_DIST = shmem.h4.in  \
+EXTRA_DIST = shmem.h4 \
              shmem-def.h4.in \
-             shmemx.h4.in \
-             pshmem.h4.in \
-             shmem.fh.in  \
+             shmemx.h4 \
+             pshmem.h4 \
+             shmem.fh.in \
              shmemx.fh.in \
-             shmem_c_func.h4.in \
-             shmemx_c_func.h4.in
+             shmem_c_func.h4 \
+             shmemx_c_func.h4
 
 mppdir = $(includedir)/mpp
 
@@ -55,5 +55,5 @@ BINDINGS_GEN = \
             $(top_builddir)/bindings/shmem_bind_c11_extras.m4 \
             $(top_builddir)/bindings/shmem_bind_cxx_extras.m4
 
-.h4.h: shmem_c_func.h4 shmemx_c_func.h4 $(BINDINGS_GEN)
-	$(AM_V_GEN) $(M4) -I$(top_srcdir)/bindings -I$(top_builddir)/bindings $< > $@
+.h4.h: $(BINDINGS_GEN)
+	$(AM_V_GEN) $(M4) -I$(top_srcdir)/bindings -I$(top_builddir)/bindings -I$(top_srcdir)/mpp $< > $@
