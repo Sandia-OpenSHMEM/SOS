@@ -49,6 +49,8 @@ endif
 SUFFIXES = .h4
 
 BINDINGS_GEN = \
+            $(top_srcdir)/mpp/shmem_c_func.h4 \
+            $(top_srcdir)/mpp/shmemx_c_func.h4 \
             $(top_srcdir)/bindings/shmem_bind_c.m4 \
             $(top_srcdir)/bindings/shmem_bind_c11.m4 \
             $(top_srcdir)/bindings/shmem_bind_cxx.m4 \
