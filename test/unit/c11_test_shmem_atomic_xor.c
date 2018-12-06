@@ -33,7 +33,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <shmem.h>
 
@@ -119,7 +118,7 @@ enum op { XOR = 0, CTX_XOR, FETCH_XOR, CTX_FETCH_XOR, FETCH_XOR_NBI,
               mype, #OP, #TYPE);                                        \
       rc = EXIT_FAILURE;                                                \
     }                                                                   \
-  } while (false)
+  } while (0)
 
 #else
 #define TEST_SHMEM_XOR(OP, TYPE)

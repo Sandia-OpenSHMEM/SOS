@@ -58,10 +58,40 @@ define(`SHMEM_PROF_DEF_WAIT_UNTIL',
 #define shmem_$1_wait_until pshmem_$1_wait_until')dnl
 SHMEM_BIND_C_SYNC(`SHMEM_PROF_DEF_WAIT_UNTIL')
 
+define(`SHMEM_PROF_DEF_WAIT_UNTIL_ALL',
+`#pragma weak shmemx_$1_wait_until_all = pshmemx_$1_wait_until_all
+#define shmemx_$1_wait_until_all pshmemx_$1_wait_until_all')dnl
+SHMEM_BIND_C_SYNC(`SHMEM_PROF_DEF_WAIT_UNTIL_ALL')
+
+define(`SHMEM_PROF_DEF_WAIT_UNTIL_ANY',
+`#pragma weak shmemx_$1_wait_until_any = pshmemx_$1_wait_until_any
+#define shmemx_$1_wait_until_any pshmemx_$1_wait_until_any')dnl
+SHMEM_BIND_C_SYNC(`SHMEM_PROF_DEF_WAIT_UNTIL_ANY')
+
+define(`SHMEM_PROF_DEF_WAIT_UNTIL_SOME',
+`#pragma weak shmemx_$1_wait_until_some = pshmemx_$1_wait_until_some
+#define shmemx_$1_wait_until_some pshmemx_$1_wait_until_some')dnl
+SHMEM_BIND_C_SYNC(`SHMEM_PROF_DEF_WAIT_UNTIL_SOME')
+
 define(`SHMEM_PROF_DEF_TEST',
 `#pragma weak shmem_$1_test = pshmem_$1_test
 #define shmem_$1_test pshmem_$1_test')dnl
 SHMEM_BIND_C_SYNC(`SHMEM_PROF_DEF_TEST')
+
+define(`SHMEM_PROF_DEF_TEST_ALL',
+`#pragma weak shmemx_$1_test_all = pshmemx_$1_test_all
+#define shmemx_$1_test_all pshmemx_$1_test_all')dnl
+SHMEM_BIND_C_SYNC(`SHMEM_PROF_DEF_TEST_ALL')
+
+define(`SHMEM_PROF_DEF_TEST_ANY',
+`#pragma weak shmemx_$1_test_any = pshmemx_$1_test_any
+#define shmemx_$1_test_any pshmemx_$1_test_any')dnl
+SHMEM_BIND_C_SYNC(`SHMEM_PROF_DEF_TEST_ANY')
+
+define(`SHMEM_PROF_DEF_TEST_SOME',
+`#pragma weak shmemx_$1_test_some = pshmemx_$1_test_some
+#define shmemx_$1_test_some pshmemx_$1_test_some')dnl
+SHMEM_BIND_C_SYNC(`SHMEM_PROF_DEF_TEST_SOME')
 
 #endif /* ENABLE_PROFILING */
 
@@ -101,6 +131,8 @@ shmem_ctx_fence(shmem_ctx_t ctx)
 }
 
 
+/* The untyped shmem_wait and shmem_wait_until routines
+ * are ignored when using C11 generic bindings. */
 void SHMEM_FUNCTION_ATTRIBUTES
 shmem_wait(long *ivar, long cmp_value)
 {
@@ -134,6 +166,7 @@ shmem_wait_until(long *ivar, int cmp, long value)
 
 SHMEM_BIND_C_WAIT(`SHMEM_DEF_WAIT')
 
+
 #define SHMEM_DEF_WAIT_UNTIL(STYPE,TYPE)                                                       \
     void SHMEM_FUNCTION_ATTRIBUTES                                                             \
     shmem_##STYPE##_wait_until(TYPE *var, int cond, TYPE value)                                \
@@ -146,6 +179,117 @@ SHMEM_BIND_C_WAIT(`SHMEM_DEF_WAIT')
     }
 
 SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL')
+
+
+#define SHMEM_DEF_WAIT_UNTIL_ALL(STYPE,TYPE)                                                   \
+    void SHMEM_FUNCTION_ATTRIBUTES                                                             \
+    shmemx_##STYPE##_wait_until_all(TYPE *vars, size_t nelems, int cond, TYPE value)           \
+    {                                                                                          \
+        SHMEM_ERR_CHECK_INITIALIZED();                                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
+        SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
+                                                                                               \
+        size_t i;                                                                              \
+                                                                                               \
+        if (nelems == 0) return;                                                               \
+                                                                                               \
+        for (i = 0; i < nelems; i++) SHMEM_INTERNAL_WAIT_UNTIL(&vars[i], cond, value);         \
+                                                                                               \
+        shmem_internal_membar_load();                                                          \
+        shmem_transport_syncmem();                                                             \
+    }
+
+SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ALL')
+
+
+#define SHMEM_DEF_WAIT_UNTIL_ANY(STYPE,TYPE)                                                   \
+    size_t SHMEM_FUNCTION_ATTRIBUTES                                                           \
+    shmemx_##STYPE##_wait_until_any(TYPE *vars, size_t nelems,                                 \
+                                    int *status, int cond, TYPE value)                         \
+    {                                                                                          \
+        SHMEM_ERR_CHECK_INITIALIZED();                                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
+        SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
+                                                                                               \
+        size_t i = 0, found_idx = SIZE_MAX, num_ignored = 0;                                   \
+        int cmpret = 0;                                                                        \
+                                                                                               \
+        if (status) {                                                                          \
+            for (i = 0; i < nelems; i++) {                                                     \
+                if (status[i]) num_ignored++;                                                  \
+            }                                                                                  \
+        }                                                                                      \
+        if (nelems == 0 || num_ignored == nelems)                                              \
+            return SIZE_MAX;                                                                   \
+                                                                                               \
+        SHMEM_MUTEX_LOCK(shmem_internal_mutex_rand_r);                                         \
+        size_t start_idx = (size_t) (rand_r(&shmem_internal_rand_seed) /                       \
+                                        (RAND_MAX + 1.0) * (double) nelems);                   \
+        SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_rand_r);                                       \
+                                                                                               \
+        while (!cmpret) {                                                                      \
+            for (i = 0; i < nelems; i++) {                                                     \
+                size_t idx = (i + start_idx) % nelems;                                         \
+                if (status == NULL || !status[idx]) {                                          \
+                    COMP(cond, vars[idx], value, cmpret);                                      \
+                    if (cmpret) {                                                              \
+                        if (status) status[idx] = 1;                                           \
+                        found_idx = idx;                                                       \
+                        break;                                                                 \
+                    }                                                                          \
+                }                                                                              \
+            }                                                                                  \
+            if (!cmpret) shmem_transport_probe();                                              \
+        }                                                                                      \
+                                                                                               \
+        shmem_internal_membar_load();                                                          \
+        shmem_transport_syncmem();                                                             \
+        return found_idx;                                                                      \
+    }
+
+SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ANY')
+
+
+#define SHMEM_DEF_WAIT_UNTIL_SOME(STYPE,TYPE)                                                  \
+    size_t SHMEM_FUNCTION_ATTRIBUTES                                                           \
+    shmemx_##STYPE##_wait_until_some(TYPE *vars, size_t nelems, size_t *indices,               \
+                                     int *status, int cond, TYPE value)                        \
+    {                                                                                          \
+        SHMEM_ERR_CHECK_INITIALIZED();                                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
+        SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
+                                                                                               \
+        size_t i = 0, ncompleted = 0, num_ignored = 0;                                         \
+                                                                                               \
+        if (status) {                                                                          \
+            for (i = 0; i < nelems; i++) {                                                     \
+                if (status[i]) num_ignored++;                                                  \
+            }                                                                                  \
+        }                                                                                      \
+        if (nelems == 0 || num_ignored == nelems)                                              \
+            return 0;                                                                          \
+                                                                                               \
+        while (ncompleted == 0) {                                                              \
+            int cmpret = 0;                                                                    \
+            for (i = 0; i < nelems; i++) {                                                     \
+                if (status == NULL || !status[i]) {                                            \
+                    COMP(cond, vars[i], value, cmpret);                                        \
+                    if (cmpret) {                                                              \
+                        if (status) status[i] = 1;                                             \
+                        indices[ncompleted++] = i;                                             \
+                        cmpret = 0;                                                            \
+                    }                                                                          \
+                }                                                                              \
+            }                                                                                  \
+            if (!cmpret) shmem_transport_probe();                                              \
+        }                                                                                      \
+        shmem_internal_membar_load();                                                          \
+        shmem_transport_syncmem();                                                             \
+        return ncompleted;                                                                     \
+    }
+
+SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_SOME')
+
 
 #define SHMEM_DEF_TEST(STYPE,TYPE)                                                             \
     int SHMEM_FUNCTION_ATTRIBUTES                                                              \
@@ -164,3 +308,104 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL')
     }
 
 SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST')
+
+
+#define SHMEM_DEF_TEST_ALL(STYPE,TYPE)                                                         \
+    int SHMEM_FUNCTION_ATTRIBUTES                                                              \
+    shmemx_##STYPE##_test_all(TYPE *vars, size_t nelems, int cond, TYPE value)                 \
+    {                                                                                          \
+        int ncompleted = 0;                                                                    \
+        SHMEM_ERR_CHECK_INITIALIZED();                                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
+        SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
+                                                                                               \
+        if (nelems == 0) return 1;                                                             \
+                                                                                               \
+        for (int i = 0; i < nelems; i++) {                                                     \
+            int cmpret;                                                                        \
+            COMP(cond, vars[i], value, cmpret);                                                \
+            if (cmpret) ncompleted++;                                                          \
+        }                                                                                      \
+        if (ncompleted == nelems) {                                                            \
+            shmem_internal_membar_load();                                                      \
+            return 1;                                                                          \
+        } else {                                                                               \
+            return 0;                                                                          \
+        }                                                                                      \
+    }
+
+SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ALL')
+
+
+#define SHMEM_DEF_TEST_ANY(STYPE,TYPE)                                                         \
+    size_t SHMEM_FUNCTION_ATTRIBUTES                                                           \
+    shmemx_##STYPE##_test_any(TYPE *vars, size_t nelems, int *status,                          \
+                              int cond, TYPE value)                                            \
+    {                                                                                          \
+        SHMEM_ERR_CHECK_INITIALIZED();                                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
+        SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
+                                                                                               \
+        size_t found_idx = SIZE_MAX, i = 0;                                                    \
+        SHMEM_MUTEX_LOCK(shmem_internal_mutex_rand_r);                                         \
+        size_t start_idx = (size_t) (rand_r(&shmem_internal_rand_seed) /                       \
+                                        (RAND_MAX + 1.0) * (double) nelems);                   \
+        SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_rand_r);                                       \
+                                                                                               \
+        for (i = 0; i < nelems; i++) {                                                         \
+            int cmpret = 0;                                                                    \
+            size_t idx = (i + start_idx) % nelems;                                             \
+            if (status == NULL || !status[idx]) {                                              \
+                COMP(cond, vars[idx], value, cmpret);                                          \
+                if (cmpret) {                                                                  \
+                    if (status) status[idx] = 1;                                               \
+                    found_idx = idx;                                                           \
+                    break;                                                                     \
+                }                                                                              \
+             }                                                                                 \
+        }                                                                                      \
+        if (found_idx != SIZE_MAX)                                                             \
+            shmem_internal_membar_load();                                                      \
+                                                                                               \
+        return found_idx;                                                                      \
+    }
+
+SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ANY')
+
+
+#define SHMEM_DEF_TEST_SOME(STYPE,TYPE)                                                        \
+    size_t SHMEM_FUNCTION_ATTRIBUTES                                                           \
+    shmemx_##STYPE##_test_some(TYPE *vars, size_t nelems, size_t *indices,                     \
+                               int *status, int cond, TYPE value)                              \
+    {                                                                                          \
+        SHMEM_ERR_CHECK_INITIALIZED();                                                         \
+        SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
+        SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
+                                                                                               \
+        size_t i = 0, ncompleted = 0, num_ignored = 0;                                         \
+                                                                                               \
+        if (status) {                                                                          \
+            for (i = 0; i < nelems; i++) {                                                     \
+                if (status[i]) num_ignored++;                                                  \
+            }                                                                                  \
+        }                                                                                      \
+        if (nelems == 0 || num_ignored == nelems)                                              \
+            return 0;                                                                          \
+                                                                                               \
+        for (i = 0; i < nelems; i++) {                                                         \
+            if (status == NULL || !status[i]) {                                                \
+                int cmpret;                                                                    \
+                COMP(cond, vars[i], value, cmpret);                                            \
+                if (cmpret) {                                                                  \
+                    if (status) status[i] = 1;                                                 \
+                    indices[ncompleted++] = i;                                                 \
+                    cmpret = 0;                                                                \
+                }                                                                              \
+            }                                                                                  \
+        }                                                                                      \
+        shmem_internal_membar_load();                                                          \
+        shmem_transport_syncmem();                                                             \
+        return ncompleted;                                                                     \
+    }
+
+SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_SOME')

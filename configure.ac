@@ -789,16 +789,16 @@ AS_IF([test "$transport_portals4" != "yes" -a "$transport_ofi" != "yes"],
       [AC_MSG_WARN([No transport found, resulting library will be unable to exchange messages])])
 
 AS_IF([test "$shmem_cv_c11_works" != "yes"],
-      [AC_MSG_WARN([C compiler does not support _Generic, unabled to verify and test C11 bindings])])
+      [AC_MSG_WARN([C compiler does not support _Generic, unable to verify and test C11 bindings])])
 
 AS_IF([test "$enable_c11_checks" == "no"],
       [AC_MSG_WARN([C11 _Generic type checks disabled, not verifying type coverage of C11 bindings])])
 
 AS_IF([test "$enable_cxx" == "no"],
-      [AC_MSG_WARN([No C++ compiler or C++ disabled, unabled to verify and test C++ bindings])])
+      [AC_MSG_WARN([No C++ compiler or C++ disabled, unable to verify and test C++ bindings])])
 
 AS_IF([test "$enable_fortran" == "no"],
-      [AC_MSG_WARN([No Fortran compiler or Fortran disabled, unabled to test Fortran bindings])])
+      [AC_MSG_WARN([No Fortran compiler or Fortran disabled, unable to test Fortran bindings])])
 
 AS_IF([test "$enable_fortran" != "no"],
       [AC_MSG_WARN([Fortran bindings have been deprecated as of OpenSHMEM v1.4])])

@@ -32,7 +32,6 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <shmem.h>
 
@@ -50,7 +49,7 @@
              "TEST_SHMEM_TEST(%s)\n", mype, #TYPE);     \
       rc = EXIT_FAILURE;                                \
     }                                                   \
-  } while (false)
+  } while (0)
 
 #else
 #define TEST_SHMEM_TEST(TYPE)
