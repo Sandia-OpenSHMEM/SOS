@@ -253,7 +253,3 @@ options.
         Can be used to choose the backtracing mechanism. Default value is NULL 
         for which no backtrace information is provided upon failure. User can set 
         this with any one of these available options: execinfo, gdb, auto. 
-
-    SHMEM_BACKTRACE_PATH (default: <empty>)
-        Can be used to provide a custom path for debugger tool (gdb) used for 
-        backtrace.   

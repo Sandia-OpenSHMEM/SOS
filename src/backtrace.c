@@ -150,20 +150,9 @@ void backtrace_gdb(void) {
     const char fmt[] = "%s -nx -batch -x %s -p %d";
     static char cmd[sizeof(fmt) + 3 * MAX_BT_PATHSIZE];
     char filename[MAX_BT_PATHSIZE];
-    char *gdb = NULL;
-    char *backtrace_path = shmem_internal_params.BACKTRACE_PATH;
-    if (!shmem_internal_params.BACKTRACE_PATH_provided) {
-        gdb = (access(GDB_PATH, X_OK) ? "gdb" : GDB_PATH);
-    } else {
-        if (!access(backtrace_path, X_OK)) {
-            gdb = backtrace_path;
-        } else {
-            RAISE_WARN_MSG("Invalid or inaccessible path to gdb '%s'.\n",
-                           backtrace_path);
-            gdb = "gdb";
-        }
-    }
+    const char *gdb = (access(GDB_PATH, X_OK) ? "gdb" : GDB_PATH);
     int rc;
+
     rc = create_command_file(filename);
     if (rc != 0) {
         RETURN_ERROR_MSG("Error creating gdb input file %s with error code %d\n",
