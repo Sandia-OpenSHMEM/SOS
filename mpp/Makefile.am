@@ -14,7 +14,7 @@
 # shmem.h should appear in BOTH $(includedir)/shmem.h and $(includedir)/mpp/shmem.h!
 
 EXTRA_DIST = shmem.h4 \
-             shmem-def.h4.in \
+             shmem-def.h.in \
              shmemx.h4 \
              pshmem.h4 \
              shmem.fh.in \

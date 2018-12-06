@@ -761,7 +761,7 @@ AC_CONFIG_FILES([Makefile
   mpp/Makefile
   mpp/shmem.fh
   mpp/shmemx.fh
-  mpp/shmem-def.h4
+  mpp/shmem-def.h
   src/Makefile
   src/sandia-openshmem.pc
   test/Makefile
