@@ -45,11 +45,11 @@ define(`SHMEM_C_WAIT_UNTIL_ALL',
 SHMEM_BIND_C_SYNC(`SHMEM_C_WAIT_UNTIL_ALL')
 
 define(`SHMEM_C_WAIT_UNTIL_ANY',
-`SHMEM_FUNCTION_ATTRIBUTES size_t SHPRE()shmemx_$1_wait_until_any($2 *vars, size_t nelems, int * restrict status, int cmp, $2 value);')dnl
+`SHMEM_FUNCTION_ATTRIBUTES size_t SHPRE()shmemx_$1_wait_until_any($2 *vars, size_t nelems, int *status, int cmp, $2 value);')dnl
 SHMEM_BIND_C_SYNC(`SHMEM_C_WAIT_UNTIL_ANY')
 
 define(`SHMEM_C_WAIT_UNTIL_SOME',
-`SHMEM_FUNCTION_ATTRIBUTES size_t SHPRE()shmemx_$1_wait_until_some($2 *vars, size_t nelems, size_t * restrict indices, int * restrict status, int cmp, $2 value);')dnl
+`SHMEM_FUNCTION_ATTRIBUTES size_t SHPRE()shmemx_$1_wait_until_some($2 *vars, size_t nelems, size_t *indices, int *status, int cmp, $2 value);')dnl
 SHMEM_BIND_C_SYNC(`SHMEM_C_WAIT_UNTIL_SOME')
 
 define(`SHMEM_C_TEST_ALL',
@@ -57,11 +57,11 @@ define(`SHMEM_C_TEST_ALL',
 SHMEM_BIND_C_SYNC(`SHMEM_C_TEST_ALL')
 
 define(`SHMEM_C_TEST_ANY',
-`SHMEM_FUNCTION_ATTRIBUTES size_t SHPRE()shmemx_$1_test_any($2 *vars, size_t nelems, int * restrict status, int cmp, $2 value);')dnl
+`SHMEM_FUNCTION_ATTRIBUTES size_t SHPRE()shmemx_$1_test_any($2 *vars, size_t nelems, int *status, int cmp, $2 value);')dnl
 SHMEM_BIND_C_SYNC(`SHMEM_C_TEST_ANY')
 
 define(`SHMEM_C_TEST_SOME',
-`SHMEM_FUNCTION_ATTRIBUTES size_t SHPRE()shmemx_$1_test_some($2 *vars, size_t nelems, size_t * restrict indices, int * restrict status, int cmp, $2 value);')dnl
+`SHMEM_FUNCTION_ATTRIBUTES size_t SHPRE()shmemx_$1_test_some($2 *vars, size_t nelems, size_t *indices, int *status, int cmp, $2 value);')dnl
 SHMEM_BIND_C_SYNC(`SHMEM_C_TEST_SOME')
 
 /* Nonblocking swap operations, proposed for OpenSHMEM 1.5 */
