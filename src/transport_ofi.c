@@ -1348,7 +1348,14 @@ int shmem_transport_init(void)
         }
         shmem_transport_ofi_stx_max = 1;
     } else {
-        shmem_transport_ofi_stx_max = shmem_internal_params.OFI_STX_MAX;
+        if (shmem_internal_params.OFI_STX_MAX_provided &&
+            shmem_internal_params.OFI_STX_MAX <= 0) {
+            RAISE_WARN_MSG("Ignoring non-positive OFI_STX_MAX value '%ld', enabling OFI_STX_AUTO\n",
+                           shmem_internal_params.OFI_STX_MAX);
+            shmem_internal_params.OFI_STX_AUTO = 1;
+        } else {
+            shmem_transport_ofi_stx_max = shmem_internal_params.OFI_STX_MAX;
+        }
     }
     shmem_transport_ofi_stx_threshold = shmem_internal_params.OFI_STX_THRESHOLD;
 
