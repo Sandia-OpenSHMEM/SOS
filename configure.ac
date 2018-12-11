@@ -417,6 +417,41 @@ AM_CONDITIONAL([USE_PMI1], [test "$pmi_type" = "pmi1"])
 AM_CONDITIONAL([USE_PMI2], [test "$pmi_type" = "pmi2"])
 AM_CONDITIONAL([USE_PMIX], [test "$opal_external_pmix_version_found" = 1])
 
+# Backtrace
+## execinfo
+AC_CHECK_HEADERS(execinfo.h)
+bt_execinfo="no"
+if test "$ac_cv_header_execinfo_h" = "yes" ; then
+  AC_SEARCH_LIBS(backtrace, execinfo)
+  AC_CHECK_FUNCS(backtrace backtrace_symbols)
+  if test "$ac_cv_func_backtrace" = "yes" && test "$ac_cv_func_backtrace_symbols" = "yes"; then
+    bt_execinfo="yes"
+  fi
+fi
+
+## gdb
+AC_PATH_PROGS(GDB_PATH, $GDB gdb, , /usr/bin:${PATH})
+if test -n "$GDB_PATH"; then
+  AC_DEFINE_UNQUOTED(GDB_PATH, "$GDB_PATH", [Path to GNU debugger])
+fi
+
+if test "$bt_execinfo" = "yes"; then
+  use_bt_option="$use_bt_option execinfo"
+  AC_DEFINE([USE_BT_EXECINFO], [1], [Execinfo library calls for backtrace])
+  case $host_os in
+      linux*)
+           CFLAGS="$CFLAGS -rdynamic"
+           ;;
+   esac
+fi
+if test -n "$GDB_PATH"; then
+  use_bt_option="$use_bt_option gdb"
+  AC_DEFINE([USE_BT_GDB], [1], [gdb for backtrace])
+fi
+if test -z "$use_bt_option"; then
+  use_bt_option=" not available"
+fi
+
 dnl check for header files
 AC_CHECK_HEADERS([fnmatch.h])
 AS_IF([test "$enable_pmi_simple" = "yes"],
@@ -862,3 +897,6 @@ if test "$transport_ofi" = "yes"; then
 
     echo ""
 fi
+
+echo "Backtrace:       $use_bt_option"
+echo ""

@@ -59,7 +59,8 @@ libsma_la_SOURCES = \
 	shmem_env_defs.h \
 	contexts_c.c \
 	contexts.c \
-	perf_counters_c.c
+	perf_counters_c.c \
+	backtrace.c
 
 nodist_libsma_la_SOURCES = \
 	$(GEN_BINDINGS)

@@ -248,3 +248,8 @@ options.
     SHMEM_TRAP_ON_ABORT (default: off)
         If defined, generate a trap when aborting an OpenSHMEM program.  This
         can be used to interface with a debugger or generate core files.
+
+    SHMEM_BACKTRACE (default: <empty>)
+        Can be used to choose the backtracing mechanism. Default value is NULL 
+        for which no backtrace information is provided upon failure. User can set 
+        this with any one of these available options: execinfo, gdb, auto. 
