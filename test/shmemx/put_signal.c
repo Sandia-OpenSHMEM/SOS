@@ -65,9 +65,17 @@ int main(int argc, char *argv[])
 
     if (me == 0) {
         shmemx_long_put_signal(target, source, MSG_SZ, &sig_addr, 1, dest);
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
         shmem_wait_until(&sig_addr, SHMEM_CMP_EQ, 1);
+#else
+        shmem_uint64_wait_until(&sig_addr, SHMEM_CMP_EQ, 1);
+#endif
     } else {
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
         shmem_wait_until(&sig_addr, SHMEM_CMP_EQ, 1);
+#else
+        shmem_uint64_wait_until(&sig_addr, SHMEM_CMP_EQ, 1);
+#endif
         shmemx_long_put_signal(target, target, MSG_SZ, &sig_addr, 1, dest);
     }
 
