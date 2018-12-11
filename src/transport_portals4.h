@@ -645,7 +645,7 @@ shmem_transport_put_ct_nb(shmem_transport_ct_t *ct, void *target, const void *so
 
 static inline
 void shmem_transport_put_signal(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
-                                uint64_t *sig_addr, uint64_t signal, int pe)
+                                uint64_t *sig_addr, uint64_t signal, int pe, long *completion)
 {
 }
 

@@ -660,8 +660,134 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
 
 static inline
 void shmem_transport_put_signal(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
-                                uint64_t *sig_addr, uint64_t signal, int pe) 
+                                uint64_t *sig_addr, uint64_t signal, int pe, long *completion) 
 {
+    int ret = 0;
+    uint64_t dst = (uint64_t) pe;
+    uint64_t polled = 0;
+    uint64_t key;
+    uint8_t *addr;
+    
+    shmem_transport_ofi_get_mr(target, pe, &addr, &key);
+
+    if (len <= shmem_transport_ofi_max_buffered_send) {
+        uint8_t *src_buf = (uint8_t *) source;
+
+        SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+        SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
+
+        const struct iovec msg_iov = {
+                                       .iov_base = src_buf,
+                                       .iov_len = len
+                                     };
+        const struct fi_rma_iov rma_iov = {
+                                            .addr = (uint64_t) addr,
+                                            .len = len,
+                                            .key = key
+                                          };
+        const struct fi_msg_rma msg = {
+                                        .msg_iov = &msg_iov,
+                                        .desc = NULL,
+                                        .iov_count = 1,
+                                        .addr = GET_DEST(dst),
+                                        .rma_iov = &rma_iov,
+                                        .rma_iov_count = 1,
+                                        .context = src_buf,
+                                        .data = 0
+                                      };
+
+        do {
+            ret = fi_writemsg(ctx->ep, &msg, FI_DELIVERY_COMPLETE);
+        } while (try_again(ctx, ret, &polled));
+
+        SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+    } else {
+        uint8_t *frag_source = (uint8_t *) source;
+        uint64_t frag_target = (uint64_t) addr;
+        size_t frag_len = len;
+
+        struct iovec msg_iov = {
+                                 .iov_base = frag_source,
+                                 .iov_len = frag_len
+                               };
+        struct fi_rma_iov rma_iov = {
+                                      .addr = frag_target,
+                                      .len = frag_len,
+                                      .key = key
+                                    };
+        struct fi_msg_rma msg = {
+                                  .msg_iov = &msg_iov,
+                                  .desc = NULL,
+                                  .iov_count = 1,
+                                  .addr = GET_DEST(dst),
+                                  .rma_iov = &rma_iov,
+                                  .rma_iov_count = 1,
+                                  .context = frag_source,
+                                  .data = 0
+                                };
+
+        SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+        while (frag_source < (((uint8_t *) source) + len)) {
+            frag_len = MIN(shmem_transport_ofi_max_msg_size, 
+                          (size_t) (((uint8_t *) source) + len - frag_source));
+            polled = 0;
+
+            msg_iov.iov_base = frag_source;
+            msg_iov.iov_len = frag_len;
+
+            rma_iov.addr = frag_target;
+            rma_iov.len = frag_len;
+
+            msg.msg_iov = &msg_iov;
+            msg.rma_iov = &rma_iov;
+            msg.context = frag_source;
+            
+            SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
+
+            do {
+                ret = fi_writemsg(ctx->ep, &msg, FI_DELIVERY_COMPLETE);
+            } while (try_again(ctx, ret, &polled));
+
+            frag_source += frag_len;
+            frag_target += frag_len;
+        }
+        SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+        if ((*completion) != -1) (*completion)++;
+    }
+
+    /* Transmit the signal */
+    shmem_transport_ofi_get_mr(sig_addr, pe, &addr, &key);
+    polled = 0;
+    ret = 0;
+
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
+
+    const struct iovec msg_iov_signal = {
+                                          .iov_base = (uint8_t *) &signal,
+                                          .iov_len = sizeof(uint64_t)
+                                        };
+    const struct fi_rma_iov rma_iov_signal = {
+                                               .addr = (uint64_t) addr,
+                                               .len = sizeof(uint64_t),
+                                               .key = key
+                                             };
+    const struct fi_msg_rma msg_signal = {
+                                           .msg_iov = &msg_iov_signal,
+                                           .desc = NULL,
+                                           .iov_count = 1,
+                                           .addr = GET_DEST(dst),
+                                           .rma_iov = &rma_iov_signal,
+                                           .rma_iov_count = 1,
+                                           .context = (uint8_t *) &signal,
+                                           .data = 0
+                                         };
+
+    do {
+        ret = fi_writemsg(ctx->ep, &msg_signal, FI_DELIVERY_COMPLETE | FI_FENCE | FI_INJECT);
+    } while (try_again(ctx, ret, &polled));
+
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
 
 /* compatibility with Portals transport */

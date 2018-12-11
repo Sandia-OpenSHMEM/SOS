@@ -104,7 +104,7 @@ shmem_internal_put_nb(shmem_ctx_t ctx, void *target, const void *source, size_t 
 static inline
 void
 shmem_internal_put_signal(shmem_ctx_t ctx, void *target, const void *source, size_t len, 
-                          uint64_t *sig_addr, uint64_t signal, int pe)
+                          uint64_t *sig_addr, uint64_t signal, int pe, long *completion)
 {
     int node_rank;
 
@@ -122,7 +122,7 @@ shmem_internal_put_signal(shmem_ctx_t ctx, void *target, const void *source, siz
         shmem_internal_put_scalar(ctx, sig_addr, &signal, sizeof(uint64_t), pe);
 #elif USE_CMA
         if (len > shmem_internal_params.CMA_PUT_MAX) {
-            shmem_transport_put_signal((shmem_transport_ctx_t *)ctx, target, source, len, sig_addr, signal, pe);
+            shmem_transport_put_signal((shmem_transport_ctx_t *)ctx, target, source, len, sig_addr, signal, pe, completion);
         } else {
             shmem_transport_cma_put(target, source, len, pe, node_rank);
             shmem_internal_put_scalar(ctx, sig_addr, &signal, sizeof(uint64_t), pe);
@@ -131,7 +131,7 @@ shmem_internal_put_signal(shmem_ctx_t ctx, void *target, const void *source, siz
         RAISE_ERROR_STR("No path to peer");
 #endif
     } else {
-        shmem_transport_put_signal((shmem_transport_ctx_t *) ctx, target, source, len, sig_addr, signal, pe);
+        shmem_transport_put_signal((shmem_transport_ctx_t *) ctx, target, source, len, sig_addr, signal, pe, completion);
     }
 }
 
