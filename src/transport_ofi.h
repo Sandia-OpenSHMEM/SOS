@@ -660,14 +660,14 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
 
 static inline
 void shmem_transport_put_signal(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
-                                uint64_t *sig_addr, uint64_t signal, int pe, long *completion) 
+                                uint64_t *sig_addr, uint64_t signal, int pe, long *completion)
 {
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
     uint64_t polled = 0;
     uint64_t key;
     uint8_t *addr;
-    
+
     shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
     if (len <= shmem_transport_ofi_max_buffered_send) {
@@ -741,7 +741,7 @@ void shmem_transport_put_signal(shmem_transport_ctx_t* ctx, void *target, const 
             msg.msg_iov = &msg_iov;
             msg.rma_iov = &rma_iov;
             msg.context = frag_source;
-            
+
             SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
 
             do {
