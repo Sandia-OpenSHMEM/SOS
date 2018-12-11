@@ -32,14 +32,13 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <shmem.h>
 
 #ifdef ENABLE_SHMEMX_TESTS
 #include <shmemx.h>
 #endif
-
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 
 enum op { CSWAP = 0, ATOMIC_COMPARE_SWAP, CTX_ATOMIC_COMPARE_SWAP,
           ATOMIC_COMPARE_SWAP_NBI, CTX_ATOMIC_COMPARE_SWAP_NBI };
@@ -103,12 +102,8 @@ enum op { CSWAP = 0, ATOMIC_COMPARE_SWAP, CTX_ATOMIC_COMPARE_SWAP,
              mype, #OP, #TYPE);                                         \
       rc = EXIT_FAILURE;                                                \
     }                                                                   \
-  } while (0)
+  } while (false)
 
-#else
-#define TEST_SHMEM_CSWAP(OP, TYPE)
-
-#endif
 
 int main(int argc, char* argv[]) {
   shmem_init();

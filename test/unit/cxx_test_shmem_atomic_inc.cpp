@@ -45,17 +45,17 @@ enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
           CTX_ATOMIC_FETCH_INC_NBI };
 
 #ifdef ENABLE_DEPRECATED_TESTS
-#define DEPRECATED_INC shmem_inc
-#define DEPRECATED_FINC shmem_finc
+#define DEPRECATED_INC(TYPENAME,...) shmem_##TYPENAME##_inc(__VA_ARGS__)
+#define DEPRECATED_FINC(TYPENAME,...) shmem_##TYPENAME##_finc(__VA_ARGS__)
 #else
-#define DEPRECATED_INC shmem_atomic_inc
-#define DEPRECATED_FINC shmem_atomic_fetch_inc
+#define DEPRECATED_INC(TYPENAME,...) shmem_##TYPENAME##_atomic_inc(__VA_ARGS__)
+#define DEPRECATED_FINC(TYPENAME,...) shmem_##TYPENAME##_atomic_fetch_inc(__VA_ARGS__)
 #endif
 
 #ifdef ENABLE_SHMEMX_TESTS
-#define SHMEMX_NBI_OPS_CASES(OP, TYPE)                                  \
+#define SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)                        \
         case ATOMIC_FETCH_INC_NBI:                                      \
-          shmemx_atomic_fetch_inc_nbi(&old, &remote, i);                \
+          shmemx_##TYPENAME##_atomic_fetch_inc_nbi(&old, &remote, i);   \
           shmem_quiet();                                                \
           if (old > (TYPE) npes) {                                      \
             printf("PE %i error inconsistent value of old (%s, %s)\n",  \
@@ -64,7 +64,8 @@ enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
           }                                                             \
           break;                                                        \
         case CTX_ATOMIC_FETCH_INC_NBI:                                  \
-          shmemx_atomic_fetch_inc_nbi(SHMEM_CTX_DEFAULT, &old, &remote, i); \
+          shmemx_ctx_##TYPENAME##_atomic_fetch_inc_nbi(SHMEM_CTX_DEFAULT,\
+                                                     &old, &remote, i); \
           shmem_quiet();                                                \
           if (old > (TYPE) npes) {                                      \
             printf("PE %i error inconsistent value of old (%s, %s)\n",  \
@@ -73,10 +74,10 @@ enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
           }                                                             \
           break;
 #else
-#define SHMEMX_NBI_OPS_CASES(OP, TYPE)
+#define SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)
 #endif
 
-#define TEST_SHMEM_INC(OP, TYPE)                                        \
+#define TEST_SHMEM_INC(OP, TYPE, TYPENAME)                              \
   do {                                                                  \
     static TYPE remote = (TYPE)0;                                       \
     TYPE old;                                                           \
@@ -87,16 +88,17 @@ enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
     for (int i = 0; i < npes; i++)                                      \
       switch (OP) {                                                     \
         case INC:                                                       \
-          DEPRECATED_INC(&remote, i);                                   \
+          DEPRECATED_INC(TYPENAME, &remote, i);                         \
           break;                                                        \
         case ATOMIC_INC:                                                \
-          shmem_atomic_inc(&remote, i);                                 \
+          shmem_##TYPENAME##_atomic_inc(&remote, i);                    \
           break;                                                        \
         case CTX_ATOMIC_INC:                                            \
-          shmem_atomic_inc(SHMEM_CTX_DEFAULT, &remote, i);              \
+          shmem_ctx_##TYPENAME##_atomic_inc(SHMEM_CTX_DEFAULT,          \
+                                                           &remote, i); \
           break;                                                        \
         case FINC:                                                      \
-          old = DEPRECATED_FINC(&remote, i);                            \
+          old = DEPRECATED_FINC(TYPENAME, &remote, i);                  \
           if (old > (TYPE) npes) {                                      \
             printf("PE %i error inconsistent value of old (%s, %s)\n",  \
                    mype, #OP, #TYPE);                                   \
@@ -104,7 +106,7 @@ enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
           }                                                             \
           break;                                                        \
         case ATOMIC_FETCH_INC:                                          \
-          old = shmem_atomic_fetch_inc(&remote, i);                     \
+          old = shmem_##TYPENAME##_atomic_fetch_inc(&remote, i);        \
           if (old > (TYPE) npes) {                                      \
             printf("PE %i error inconsistent value of old (%s, %s)\n",  \
                    mype, #OP, #TYPE);                                   \
@@ -112,14 +114,15 @@ enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
           }                                                             \
           break;                                                        \
         case CTX_ATOMIC_FETCH_INC:                                      \
-          old = shmem_atomic_fetch_inc(SHMEM_CTX_DEFAULT, &remote, i);  \
+          old = shmem_ctx_##TYPENAME##_atomic_fetch_inc(                \
+                                       SHMEM_CTX_DEFAULT, &remote, i);  \
           if (old > (TYPE) npes) {                                      \
             printf("PE %i error inconsistent value of old (%s, %s)\n",  \
                    mype, #OP, #TYPE);                                   \
             rc = EXIT_FAILURE;                                          \
           }                                                             \
           break;                                                        \
-        SHMEMX_NBI_OPS_CASES(OP, TYPE)                                  \
+        SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)                        \
         default:                                                        \
           printf("Invalid operation (%d)\n", OP);                       \
           shmem_global_exit(1);                                         \
@@ -139,111 +142,111 @@ int main(int argc, char* argv[]) {
   int rc = EXIT_SUCCESS;
 
 #ifdef ENABLE_DEPRECATED_TESTS
-  TEST_SHMEM_INC(INC, int);
-  TEST_SHMEM_INC(INC, long);
-  TEST_SHMEM_INC(INC, long long);
-  TEST_SHMEM_INC(INC, unsigned int);
-  TEST_SHMEM_INC(INC, unsigned long);
-  TEST_SHMEM_INC(INC, unsigned long long);
-  TEST_SHMEM_INC(INC, int32_t);
-  TEST_SHMEM_INC(INC, int64_t);
-  TEST_SHMEM_INC(INC, uint32_t);
-  TEST_SHMEM_INC(INC, uint64_t);
-  TEST_SHMEM_INC(INC, size_t);
-  TEST_SHMEM_INC(INC, ptrdiff_t);
+  TEST_SHMEM_INC(INC, int, int);
+  TEST_SHMEM_INC(INC, long, long);
+  TEST_SHMEM_INC(INC, long long, longlong);
+  TEST_SHMEM_INC(INC, unsigned int, uint);
+  TEST_SHMEM_INC(INC, unsigned long, ulong);
+  TEST_SHMEM_INC(INC, unsigned long long, ulonglong);
+  TEST_SHMEM_INC(INC, int32_t, int32);
+  TEST_SHMEM_INC(INC, int64_t, int64);
+  TEST_SHMEM_INC(INC, uint32_t, uint32);
+  TEST_SHMEM_INC(INC, uint64_t, uint64);
+  TEST_SHMEM_INC(INC, size_t, size);
+  TEST_SHMEM_INC(INC, ptrdiff_t, ptrdiff);
 #endif /* ENABLE_DEPRECATED_TESTS */
 
-  TEST_SHMEM_INC(ATOMIC_INC, int);
-  TEST_SHMEM_INC(ATOMIC_INC, long);
-  TEST_SHMEM_INC(ATOMIC_INC, long long);
-  TEST_SHMEM_INC(ATOMIC_INC, unsigned int);
-  TEST_SHMEM_INC(ATOMIC_INC, unsigned long);
-  TEST_SHMEM_INC(ATOMIC_INC, unsigned long long);
-  TEST_SHMEM_INC(ATOMIC_INC, int32_t);
-  TEST_SHMEM_INC(ATOMIC_INC, int64_t);
-  TEST_SHMEM_INC(ATOMIC_INC, uint32_t);
-  TEST_SHMEM_INC(ATOMIC_INC, uint64_t);
-  TEST_SHMEM_INC(ATOMIC_INC, size_t);
-  TEST_SHMEM_INC(ATOMIC_INC, ptrdiff_t);
+  TEST_SHMEM_INC(ATOMIC_INC, int, int);
+  TEST_SHMEM_INC(ATOMIC_INC, long, long);
+  TEST_SHMEM_INC(ATOMIC_INC, long long, longlong);
+  TEST_SHMEM_INC(ATOMIC_INC, unsigned int, uint);
+  TEST_SHMEM_INC(ATOMIC_INC, unsigned long, ulong);
+  TEST_SHMEM_INC(ATOMIC_INC, unsigned long long, ulonglong);
+  TEST_SHMEM_INC(ATOMIC_INC, int32_t, int32);
+  TEST_SHMEM_INC(ATOMIC_INC, int64_t, int64);
+  TEST_SHMEM_INC(ATOMIC_INC, uint32_t, uint32);
+  TEST_SHMEM_INC(ATOMIC_INC, uint64_t, uint64);
+  TEST_SHMEM_INC(ATOMIC_INC, size_t, size);
+  TEST_SHMEM_INC(ATOMIC_INC, ptrdiff_t, ptrdiff);
 
-  TEST_SHMEM_INC(CTX_ATOMIC_INC, int);
-  TEST_SHMEM_INC(CTX_ATOMIC_INC, long);
-  TEST_SHMEM_INC(CTX_ATOMIC_INC, long long);
-  TEST_SHMEM_INC(CTX_ATOMIC_INC, unsigned int);
-  TEST_SHMEM_INC(CTX_ATOMIC_INC, unsigned long);
-  TEST_SHMEM_INC(CTX_ATOMIC_INC, unsigned long long);
-  TEST_SHMEM_INC(CTX_ATOMIC_INC, int32_t);
-  TEST_SHMEM_INC(CTX_ATOMIC_INC, int64_t);
-  TEST_SHMEM_INC(CTX_ATOMIC_INC, uint32_t);
-  TEST_SHMEM_INC(CTX_ATOMIC_INC, uint64_t);
-  TEST_SHMEM_INC(CTX_ATOMIC_INC, size_t);
-  TEST_SHMEM_INC(CTX_ATOMIC_INC, ptrdiff_t);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, int, int);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, long, long);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, long long, longlong);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, unsigned int, uint);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, unsigned long, ulong);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, unsigned long long, ulonglong);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, int32_t, int32);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, int64_t, int64);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, uint32_t, uint32);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, uint64_t, uint64);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, size_t, size);
+  TEST_SHMEM_INC(CTX_ATOMIC_INC, ptrdiff_t, ptrdiff);
 
-  TEST_SHMEM_INC(FINC, int);
-  TEST_SHMEM_INC(FINC, long);
-  TEST_SHMEM_INC(FINC, long long);
-  TEST_SHMEM_INC(FINC, unsigned int);
-  TEST_SHMEM_INC(FINC, unsigned long);
-  TEST_SHMEM_INC(FINC, unsigned long long);
-  TEST_SHMEM_INC(FINC, int32_t);
-  TEST_SHMEM_INC(FINC, int64_t);
-  TEST_SHMEM_INC(FINC, uint32_t);
-  TEST_SHMEM_INC(FINC, uint64_t);
-  TEST_SHMEM_INC(FINC, size_t);
-  TEST_SHMEM_INC(FINC, ptrdiff_t);
+  TEST_SHMEM_INC(FINC, int, int);
+  TEST_SHMEM_INC(FINC, long, long);
+  TEST_SHMEM_INC(FINC, long long, longlong);
+  TEST_SHMEM_INC(FINC, unsigned int, uint);
+  TEST_SHMEM_INC(FINC, unsigned long, ulong);
+  TEST_SHMEM_INC(FINC, unsigned long long, ulonglong);
+  TEST_SHMEM_INC(FINC, int32_t, int32);
+  TEST_SHMEM_INC(FINC, int64_t, int64);
+  TEST_SHMEM_INC(FINC, uint32_t, uint32);
+  TEST_SHMEM_INC(FINC, uint64_t, uint64);
+  TEST_SHMEM_INC(FINC, size_t, size);
+  TEST_SHMEM_INC(FINC, ptrdiff_t, ptrdiff);
 
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC, int);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC, long);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC, long long);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC, unsigned int);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC, unsigned long);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC, unsigned long long);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC, int32_t);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC, int64_t);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC, uint32_t);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC, uint64_t);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC, size_t);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC, ptrdiff_t);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC, int, int);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC, long, long);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC, long long, longlong);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC, unsigned int, uint);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC, unsigned long, ulong);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC, unsigned long long, ulonglong);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC, int32_t, int32);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC, int64_t, int64);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC, uint32_t, uint32);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC, uint64_t, uint64);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC, size_t, size);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC, ptrdiff_t, ptrdiff);
 
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, int);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, long);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, long long);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, unsigned int);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, unsigned long);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, unsigned long long);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, int32_t);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, int64_t);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, uint32_t);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, uint64_t);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, size_t);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, ptrdiff_t);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, int, int);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, long, long);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, long long, longlong);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, unsigned int, uint);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, unsigned long, ulong);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, unsigned long long, ulonglong);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, int32_t, int32);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, int64_t, int64);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, uint32_t, uint32);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, uint64_t, uint64);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, size_t, size);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, ptrdiff_t, ptrdiff);
 
 #ifdef ENABLE_SHMEMX_TESTS
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, int);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, long);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, long long);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, unsigned int);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, unsigned long);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, unsigned long long);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, int32_t);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, int64_t);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, uint32_t);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, uint64_t);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, size_t);
-  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, ptrdiff_t);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, int, int);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, long, long);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, long long, longlong);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, unsigned int, uint);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, unsigned long, ulong);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, unsigned long long, ulonglong);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, int32_t, int32);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, int64_t, int64);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, uint32_t, uint32);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, uint64_t, uint64);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, size_t, size);
+  TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, ptrdiff_t, ptrdiff);
 
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, int);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, long);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, long long);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, unsigned int);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, unsigned long);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, unsigned long long);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, int32_t);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, int64_t);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, uint32_t);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, uint64_t);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, size_t);
-  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, ptrdiff_t);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, int, int);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, long, long);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, long long, longlong);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, unsigned int, uint);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, unsigned long, ulong);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, unsigned long long, ulonglong);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, int32_t, int32);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, int64_t, int64);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, uint32_t, uint32);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, uint64_t, uint64);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, size_t, size);
+  TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, ptrdiff_t, ptrdiff);
 #endif
 
   shmem_finalize();

@@ -32,10 +32,9 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <shmem.h>
-
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 
 enum op { SET = 0, ATOMIC_SET, CTX_ATOMIC_SET };
 
@@ -70,12 +69,8 @@ enum op { SET = 0, ATOMIC_SET, CTX_ATOMIC_SET };
              "TEST_SHMEM_SET(%s, %s)\n", mype, #OP, #TYPE); \
       rc = EXIT_FAILURE;                                \
     }                                                   \
-  } while (0)
+  } while (false)
 
-#else
-#define TEST_SHMEM_SET(OP, TYPE)
-
-#endif
 
 int main(int argc, char* argv[]) {
   shmem_init();

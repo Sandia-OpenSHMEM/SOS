@@ -36,15 +36,13 @@
 #include <stdio.h>
 #include <shmem.h>
 
-#define TEST_SHMEM_WAIT_UNTIL(TYPE, TYPENAME)           \
+#define TEST_SHMEM_WAIT_UNTIL(TYPE)                     \
   do {                                                  \
     static TYPE remote = 0;                             \
     const int mype = shmem_my_pe();                     \
     const int npes = shmem_n_pes();                     \
-    shmem_##TYPENAME##_p(&remote, (TYPE)mype+1,         \
-                                   (mype + 1) % npes);  \
-    shmem_##TYPENAME##_wait_until(&remote,              \
-                              SHMEM_CMP_NE, 0);         \
+    shmem_p(&remote, (TYPE)mype+1, (mype + 1) % npes);  \
+    shmem_wait_until(&remote, SHMEM_CMP_NE, 0);         \
     if (remote != (TYPE)((mype + npes - 1) % npes)+1) { \
       printf("PE %i received incorrect value with "     \
              "TEST_SHMEM_WAIT_UNTIL(%s)\n", mype, #TYPE); \
@@ -56,20 +54,20 @@ int main(int argc, char* argv[]) {
   shmem_init();
 
   int rc = EXIT_SUCCESS;
-  TEST_SHMEM_WAIT_UNTIL(short, short);
-  TEST_SHMEM_WAIT_UNTIL(int, int);
-  TEST_SHMEM_WAIT_UNTIL(long, long);
-  TEST_SHMEM_WAIT_UNTIL(long long, longlong);
-  TEST_SHMEM_WAIT_UNTIL(unsigned short, ushort);
-  TEST_SHMEM_WAIT_UNTIL(unsigned int, uint);
-  TEST_SHMEM_WAIT_UNTIL(unsigned long, ulong);
-  TEST_SHMEM_WAIT_UNTIL(unsigned long long, ulonglong);
-  TEST_SHMEM_WAIT_UNTIL(int32_t, int32);
-  TEST_SHMEM_WAIT_UNTIL(int64_t, int64);
-  TEST_SHMEM_WAIT_UNTIL(uint32_t, uint32);
-  TEST_SHMEM_WAIT_UNTIL(uint64_t, uint64);
-  TEST_SHMEM_WAIT_UNTIL(size_t, size);
-  TEST_SHMEM_WAIT_UNTIL(ptrdiff_t, ptrdiff);
+  TEST_SHMEM_WAIT_UNTIL(short);
+  TEST_SHMEM_WAIT_UNTIL(int);
+  TEST_SHMEM_WAIT_UNTIL(long);
+  TEST_SHMEM_WAIT_UNTIL(long long);
+  TEST_SHMEM_WAIT_UNTIL(unsigned short);
+  TEST_SHMEM_WAIT_UNTIL(unsigned int);
+  TEST_SHMEM_WAIT_UNTIL(unsigned long);
+  TEST_SHMEM_WAIT_UNTIL(unsigned long long);
+  TEST_SHMEM_WAIT_UNTIL(int32_t);
+  TEST_SHMEM_WAIT_UNTIL(int64_t);
+  TEST_SHMEM_WAIT_UNTIL(uint32_t);
+  TEST_SHMEM_WAIT_UNTIL(uint64_t);
+  TEST_SHMEM_WAIT_UNTIL(size_t);
+  TEST_SHMEM_WAIT_UNTIL(ptrdiff_t);
 
   shmem_finalize();
   return rc;

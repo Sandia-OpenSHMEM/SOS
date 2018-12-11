@@ -32,14 +32,13 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <shmem.h>
 
 #ifdef ENABLE_SHMEMX_TESTS
 #include <shmemx.h>
 #endif
-
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 
 enum op { ADD = 0, ATOMIC_ADD, CTX_ATOMIC_ADD, FADD, ATOMIC_FETCH_ADD,
           CTX_ATOMIC_FETCH_ADD, ATOMIC_FETCH_ADD_NBI, CTX_ATOMIC_FETCH_ADD_NBI };
@@ -131,12 +130,8 @@ enum op { ADD = 0, ATOMIC_ADD, CTX_ATOMIC_ADD, FADD, ATOMIC_FETCH_ADD,
              mype, #OP, #TYPE);                                         \
       rc = EXIT_FAILURE;                                                \
     }                                                                   \
-  } while (0)
+  } while (false)
 
-#else
-#define TEST_SHMEM_ADD(OP, TYPE)
-
-#endif
 
 int main(int argc, char* argv[]) {
   shmem_init();

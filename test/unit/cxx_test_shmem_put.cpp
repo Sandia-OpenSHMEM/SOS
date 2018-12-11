@@ -38,7 +38,7 @@
 
 enum op { PUT = 0, IPUT, PUT_NBI };
 
-#define TEST_SHMEM_PUT(OP, USE_CTX, TYPE)                       \
+#define TEST_SHMEM_PUT(OP, USE_CTX, TYPE, TYPENAME)             \
   do {                                                          \
     static TYPE remote[10];                                     \
     const int mype = shmem_my_pe();                             \
@@ -49,21 +49,27 @@ enum op { PUT = 0, IPUT, PUT_NBI };
     switch (OP) {                                               \
       case PUT:                                                 \
         if (USE_CTX)                                            \
-          shmem_put(SHMEM_CTX_DEFAULT, remote, local, 10, (mype + 1) % npes); \
+          shmem_ctx_##TYPENAME##_put(SHMEM_CTX_DEFAULT, remote, \
+                                 local, 10, (mype + 1) % npes); \
         else                                                    \
-          shmem_put(remote, local, 10, (mype + 1) % npes);      \
+          shmem_##TYPENAME##_put(remote, local, 10,             \
+                                       (mype + 1) % npes);      \
         break;                                                  \
       case IPUT:                                                \
         if (USE_CTX)                                            \
-          shmem_iput(SHMEM_CTX_DEFAULT, remote, local, 1, 1, 10, (mype + 1) % npes); \
+          shmem_ctx_##TYPENAME##_iput(SHMEM_CTX_DEFAULT, remote,\
+                           local, 1, 1, 10, (mype + 1) % npes); \
         else                                                    \
-          shmem_iput(remote, local, 1, 1, 10, (mype + 1) % npes); \
+          shmem_##TYPENAME##_iput(remote, local, 1, 1, 10,      \
+                                            (mype + 1) % npes); \
         break;                                                  \
       case PUT_NBI:                                             \
         if (USE_CTX)                                            \
-          shmem_put_nbi(SHMEM_CTX_DEFAULT, remote, local, 10, (mype + 1) % npes); \
+          shmem_ctx_##TYPENAME##_put_nbi(SHMEM_CTX_DEFAULT,     \
+                         remote, local, 10, (mype + 1) % npes); \
         else                                                    \
-          shmem_put_nbi(remote, local, 10, (mype + 1) % npes); \
+          shmem_##TYPENAME##_put_nbi(remote, local, 10,         \
+                                            (mype + 1) % npes); \
         shmem_quiet();                                          \
         break;                                                  \
       default:                                                  \
@@ -84,155 +90,155 @@ int main(int argc, char* argv[]) {
   shmem_init();
 
   int rc = EXIT_SUCCESS;
-  TEST_SHMEM_PUT(PUT, 0, float);
-  TEST_SHMEM_PUT(PUT, 0, double);
-  TEST_SHMEM_PUT(PUT, 0, long double);
-  TEST_SHMEM_PUT(PUT, 0, char);
-  TEST_SHMEM_PUT(PUT, 0, signed char);
-  TEST_SHMEM_PUT(PUT, 0, short);
-  TEST_SHMEM_PUT(PUT, 0, int);
-  TEST_SHMEM_PUT(PUT, 0, long);
-  TEST_SHMEM_PUT(PUT, 0, long long);
-  TEST_SHMEM_PUT(PUT, 0, unsigned char);
-  TEST_SHMEM_PUT(PUT, 0, unsigned short);
-  TEST_SHMEM_PUT(PUT, 0, unsigned int);
-  TEST_SHMEM_PUT(PUT, 0, unsigned long);
-  TEST_SHMEM_PUT(PUT, 0, unsigned long long);
-  TEST_SHMEM_PUT(PUT, 0, int8_t);
-  TEST_SHMEM_PUT(PUT, 0, int16_t);
-  TEST_SHMEM_PUT(PUT, 0, int32_t);
-  TEST_SHMEM_PUT(PUT, 0, int64_t);
-  TEST_SHMEM_PUT(PUT, 0, uint8_t);
-  TEST_SHMEM_PUT(PUT, 0, uint16_t);
-  TEST_SHMEM_PUT(PUT, 0, uint32_t);
-  TEST_SHMEM_PUT(PUT, 0, uint64_t);
-  TEST_SHMEM_PUT(PUT, 0, size_t);
-  TEST_SHMEM_PUT(PUT, 0, ptrdiff_t);
+  TEST_SHMEM_PUT(PUT, 0, float, float);
+  TEST_SHMEM_PUT(PUT, 0, double, double);
+  TEST_SHMEM_PUT(PUT, 0, long double, longdouble);
+  TEST_SHMEM_PUT(PUT, 0, char, char);
+  TEST_SHMEM_PUT(PUT, 0, signed char, schar);
+  TEST_SHMEM_PUT(PUT, 0, short, short);
+  TEST_SHMEM_PUT(PUT, 0, int, int);
+  TEST_SHMEM_PUT(PUT, 0, long, long);
+  TEST_SHMEM_PUT(PUT, 0, long long, longlong);
+  TEST_SHMEM_PUT(PUT, 0, unsigned char, uchar);
+  TEST_SHMEM_PUT(PUT, 0, unsigned short, ushort);
+  TEST_SHMEM_PUT(PUT, 0, unsigned int, uint);
+  TEST_SHMEM_PUT(PUT, 0, unsigned long, ulong);
+  TEST_SHMEM_PUT(PUT, 0, unsigned long long, ulonglong);
+  TEST_SHMEM_PUT(PUT, 0, int8_t, int8);
+  TEST_SHMEM_PUT(PUT, 0, int16_t, int16);
+  TEST_SHMEM_PUT(PUT, 0, int32_t, int32);
+  TEST_SHMEM_PUT(PUT, 0, int64_t, int64);
+  TEST_SHMEM_PUT(PUT, 0, uint8_t, uint8);
+  TEST_SHMEM_PUT(PUT, 0, uint16_t, uint16);
+  TEST_SHMEM_PUT(PUT, 0, uint32_t, uint32);
+  TEST_SHMEM_PUT(PUT, 0, uint64_t, uint64);
+  TEST_SHMEM_PUT(PUT, 0, size_t, size);
+  TEST_SHMEM_PUT(PUT, 0, ptrdiff_t, ptrdiff);
 
-  TEST_SHMEM_PUT(PUT, 1, float);
-  TEST_SHMEM_PUT(PUT, 1, double);
-  TEST_SHMEM_PUT(PUT, 1, long double);
-  TEST_SHMEM_PUT(PUT, 1, char);
-  TEST_SHMEM_PUT(PUT, 1, signed char);
-  TEST_SHMEM_PUT(PUT, 1, short);
-  TEST_SHMEM_PUT(PUT, 1, int);
-  TEST_SHMEM_PUT(PUT, 1, long);
-  TEST_SHMEM_PUT(PUT, 1, long long);
-  TEST_SHMEM_PUT(PUT, 1, unsigned char);
-  TEST_SHMEM_PUT(PUT, 1, unsigned short);
-  TEST_SHMEM_PUT(PUT, 1, unsigned int);
-  TEST_SHMEM_PUT(PUT, 1, unsigned long);
-  TEST_SHMEM_PUT(PUT, 1, unsigned long long);
-  TEST_SHMEM_PUT(PUT, 1, int8_t);
-  TEST_SHMEM_PUT(PUT, 1, int16_t);
-  TEST_SHMEM_PUT(PUT, 1, int32_t);
-  TEST_SHMEM_PUT(PUT, 1, int64_t);
-  TEST_SHMEM_PUT(PUT, 1, uint8_t);
-  TEST_SHMEM_PUT(PUT, 1, uint16_t);
-  TEST_SHMEM_PUT(PUT, 1, uint32_t);
-  TEST_SHMEM_PUT(PUT, 1, uint64_t);
-  TEST_SHMEM_PUT(PUT, 1, size_t);
-  TEST_SHMEM_PUT(PUT, 1, ptrdiff_t);
+  TEST_SHMEM_PUT(PUT, 1, float, float);
+  TEST_SHMEM_PUT(PUT, 1, double, double);
+  TEST_SHMEM_PUT(PUT, 1, long double, longdouble);
+  TEST_SHMEM_PUT(PUT, 1, char, char);
+  TEST_SHMEM_PUT(PUT, 1, signed char, schar);
+  TEST_SHMEM_PUT(PUT, 1, short, short);
+  TEST_SHMEM_PUT(PUT, 1, int, int);
+  TEST_SHMEM_PUT(PUT, 1, long, long);
+  TEST_SHMEM_PUT(PUT, 1, long long, longlong);
+  TEST_SHMEM_PUT(PUT, 1, unsigned char, uchar);
+  TEST_SHMEM_PUT(PUT, 1, unsigned short, ushort);
+  TEST_SHMEM_PUT(PUT, 1, unsigned int, uint);
+  TEST_SHMEM_PUT(PUT, 1, unsigned long, ulong);
+  TEST_SHMEM_PUT(PUT, 1, unsigned long long, ulonglong);
+  TEST_SHMEM_PUT(PUT, 1, int8_t, int8);
+  TEST_SHMEM_PUT(PUT, 1, int16_t, int16);
+  TEST_SHMEM_PUT(PUT, 1, int32_t, int32);
+  TEST_SHMEM_PUT(PUT, 1, int64_t, int64);
+  TEST_SHMEM_PUT(PUT, 1, uint8_t, uint8);
+  TEST_SHMEM_PUT(PUT, 1, uint16_t, uint16);
+  TEST_SHMEM_PUT(PUT, 1, uint32_t, uint32);
+  TEST_SHMEM_PUT(PUT, 1, uint64_t, uint64);
+  TEST_SHMEM_PUT(PUT, 1, size_t, size);
+  TEST_SHMEM_PUT(PUT, 1, ptrdiff_t, ptrdiff);
 
-  TEST_SHMEM_PUT(IPUT, 0, float);
-  TEST_SHMEM_PUT(IPUT, 0, double);
-  TEST_SHMEM_PUT(IPUT, 0, long double);
-  TEST_SHMEM_PUT(IPUT, 0, char);
-  TEST_SHMEM_PUT(IPUT, 0, signed char);
-  TEST_SHMEM_PUT(IPUT, 0, short);
-  TEST_SHMEM_PUT(IPUT, 0, int);
-  TEST_SHMEM_PUT(IPUT, 0, long);
-  TEST_SHMEM_PUT(IPUT, 0, long long);
-  TEST_SHMEM_PUT(IPUT, 0, unsigned char);
-  TEST_SHMEM_PUT(IPUT, 0, unsigned short);
-  TEST_SHMEM_PUT(IPUT, 0, unsigned int);
-  TEST_SHMEM_PUT(IPUT, 0, unsigned long);
-  TEST_SHMEM_PUT(IPUT, 0, unsigned long long);
-  TEST_SHMEM_PUT(IPUT, 0, int8_t);
-  TEST_SHMEM_PUT(IPUT, 0, int16_t);
-  TEST_SHMEM_PUT(IPUT, 0, int32_t);
-  TEST_SHMEM_PUT(IPUT, 0, int64_t);
-  TEST_SHMEM_PUT(IPUT, 0, uint8_t);
-  TEST_SHMEM_PUT(IPUT, 0, uint16_t);
-  TEST_SHMEM_PUT(IPUT, 0, uint32_t);
-  TEST_SHMEM_PUT(IPUT, 0, uint64_t);
-  TEST_SHMEM_PUT(IPUT, 0, size_t);
-  TEST_SHMEM_PUT(IPUT, 0, ptrdiff_t);
+  TEST_SHMEM_PUT(IPUT, 0, float, float);
+  TEST_SHMEM_PUT(IPUT, 0, double, double);
+  TEST_SHMEM_PUT(IPUT, 0, long double, longdouble);
+  TEST_SHMEM_PUT(IPUT, 0, char, char);
+  TEST_SHMEM_PUT(IPUT, 0, signed char, schar);
+  TEST_SHMEM_PUT(IPUT, 0, short, short);
+  TEST_SHMEM_PUT(IPUT, 0, int, int);
+  TEST_SHMEM_PUT(IPUT, 0, long, long);
+  TEST_SHMEM_PUT(IPUT, 0, long long, longlong);
+  TEST_SHMEM_PUT(IPUT, 0, unsigned char, uchar);
+  TEST_SHMEM_PUT(IPUT, 0, unsigned short, ushort);
+  TEST_SHMEM_PUT(IPUT, 0, unsigned int, uint);
+  TEST_SHMEM_PUT(IPUT, 0, unsigned long, ulong);
+  TEST_SHMEM_PUT(IPUT, 0, unsigned long long, ulonglong);
+  TEST_SHMEM_PUT(IPUT, 0, int8_t, int8);
+  TEST_SHMEM_PUT(IPUT, 0, int16_t, int16);
+  TEST_SHMEM_PUT(IPUT, 0, int32_t, int32);
+  TEST_SHMEM_PUT(IPUT, 0, int64_t, int64);
+  TEST_SHMEM_PUT(IPUT, 0, uint8_t, uint8);
+  TEST_SHMEM_PUT(IPUT, 0, uint16_t, uint16);
+  TEST_SHMEM_PUT(IPUT, 0, uint32_t, uint32);
+  TEST_SHMEM_PUT(IPUT, 0, uint64_t, uint64);
+  TEST_SHMEM_PUT(IPUT, 0, size_t, size);
+  TEST_SHMEM_PUT(IPUT, 0, ptrdiff_t, ptrdiff);
 
-  TEST_SHMEM_PUT(IPUT, 1, float);
-  TEST_SHMEM_PUT(IPUT, 1, double);
-  TEST_SHMEM_PUT(IPUT, 1, long double);
-  TEST_SHMEM_PUT(IPUT, 1, char);
-  TEST_SHMEM_PUT(IPUT, 1, signed char);
-  TEST_SHMEM_PUT(IPUT, 1, short);
-  TEST_SHMEM_PUT(IPUT, 1, int);
-  TEST_SHMEM_PUT(IPUT, 1, long);
-  TEST_SHMEM_PUT(IPUT, 1, long long);
-  TEST_SHMEM_PUT(IPUT, 1, unsigned char);
-  TEST_SHMEM_PUT(IPUT, 1, unsigned short);
-  TEST_SHMEM_PUT(IPUT, 1, unsigned int);
-  TEST_SHMEM_PUT(IPUT, 1, unsigned long);
-  TEST_SHMEM_PUT(IPUT, 1, unsigned long long);
-  TEST_SHMEM_PUT(IPUT, 1, int8_t);
-  TEST_SHMEM_PUT(IPUT, 1, int16_t);
-  TEST_SHMEM_PUT(IPUT, 1, int32_t);
-  TEST_SHMEM_PUT(IPUT, 1, int64_t);
-  TEST_SHMEM_PUT(IPUT, 1, uint8_t);
-  TEST_SHMEM_PUT(IPUT, 1, uint16_t);
-  TEST_SHMEM_PUT(IPUT, 1, uint32_t);
-  TEST_SHMEM_PUT(IPUT, 1, uint64_t);
-  TEST_SHMEM_PUT(IPUT, 1, size_t);
-  TEST_SHMEM_PUT(IPUT, 1, ptrdiff_t);
+  TEST_SHMEM_PUT(IPUT, 1, float, float);
+  TEST_SHMEM_PUT(IPUT, 1, double, double);
+  TEST_SHMEM_PUT(IPUT, 1, long double, longdouble);
+  TEST_SHMEM_PUT(IPUT, 1, char, char);
+  TEST_SHMEM_PUT(IPUT, 1, signed char, schar);
+  TEST_SHMEM_PUT(IPUT, 1, short, short);
+  TEST_SHMEM_PUT(IPUT, 1, int, int);
+  TEST_SHMEM_PUT(IPUT, 1, long, long);
+  TEST_SHMEM_PUT(IPUT, 1, long long, longlong);
+  TEST_SHMEM_PUT(IPUT, 1, unsigned char, uchar);
+  TEST_SHMEM_PUT(IPUT, 1, unsigned short, ushort);
+  TEST_SHMEM_PUT(IPUT, 1, unsigned int, uint);
+  TEST_SHMEM_PUT(IPUT, 1, unsigned long, ulong);
+  TEST_SHMEM_PUT(IPUT, 1, unsigned long long, ulonglong);
+  TEST_SHMEM_PUT(IPUT, 1, int8_t, int8);
+  TEST_SHMEM_PUT(IPUT, 1, int16_t, int16);
+  TEST_SHMEM_PUT(IPUT, 1, int32_t, int32);
+  TEST_SHMEM_PUT(IPUT, 1, int64_t, int64);
+  TEST_SHMEM_PUT(IPUT, 1, uint8_t, uint8);
+  TEST_SHMEM_PUT(IPUT, 1, uint16_t, uint16);
+  TEST_SHMEM_PUT(IPUT, 1, uint32_t, uint32);
+  TEST_SHMEM_PUT(IPUT, 1, uint64_t, uint64);
+  TEST_SHMEM_PUT(IPUT, 1, size_t, size);
+  TEST_SHMEM_PUT(IPUT, 1, ptrdiff_t, ptrdiff);
 
-  TEST_SHMEM_PUT(PUT_NBI, 0, float);
-  TEST_SHMEM_PUT(PUT_NBI, 0, double);
-  TEST_SHMEM_PUT(PUT_NBI, 0, long double);
-  TEST_SHMEM_PUT(PUT_NBI, 0, char);
-  TEST_SHMEM_PUT(PUT_NBI, 0, signed char);
-  TEST_SHMEM_PUT(PUT_NBI, 0, short);
-  TEST_SHMEM_PUT(PUT_NBI, 0, int);
-  TEST_SHMEM_PUT(PUT_NBI, 0, long);
-  TEST_SHMEM_PUT(PUT_NBI, 0, long long);
-  TEST_SHMEM_PUT(PUT_NBI, 0, unsigned char);
-  TEST_SHMEM_PUT(PUT_NBI, 0, unsigned short);
-  TEST_SHMEM_PUT(PUT_NBI, 0, unsigned int);
-  TEST_SHMEM_PUT(PUT_NBI, 0, unsigned long);
-  TEST_SHMEM_PUT(PUT_NBI, 0, unsigned long long);
-  TEST_SHMEM_PUT(PUT_NBI, 0, int8_t);
-  TEST_SHMEM_PUT(PUT_NBI, 0, int16_t);
-  TEST_SHMEM_PUT(PUT_NBI, 0, int32_t);
-  TEST_SHMEM_PUT(PUT_NBI, 0, int64_t);
-  TEST_SHMEM_PUT(PUT_NBI, 0, uint8_t);
-  TEST_SHMEM_PUT(PUT_NBI, 0, uint16_t);
-  TEST_SHMEM_PUT(PUT_NBI, 0, uint32_t);
-  TEST_SHMEM_PUT(PUT_NBI, 0, uint64_t);
-  TEST_SHMEM_PUT(PUT_NBI, 0, size_t);
-  TEST_SHMEM_PUT(PUT_NBI, 0, ptrdiff_t);
+  TEST_SHMEM_PUT(PUT_NBI, 0, float, float);
+  TEST_SHMEM_PUT(PUT_NBI, 0, double, double);
+  TEST_SHMEM_PUT(PUT_NBI, 0, long double, longdouble);
+  TEST_SHMEM_PUT(PUT_NBI, 0, char, char);
+  TEST_SHMEM_PUT(PUT_NBI, 0, signed char, schar);
+  TEST_SHMEM_PUT(PUT_NBI, 0, short, short);
+  TEST_SHMEM_PUT(PUT_NBI, 0, int, int);
+  TEST_SHMEM_PUT(PUT_NBI, 0, long, long);
+  TEST_SHMEM_PUT(PUT_NBI, 0, long long, longlong);
+  TEST_SHMEM_PUT(PUT_NBI, 0, unsigned char, uchar);
+  TEST_SHMEM_PUT(PUT_NBI, 0, unsigned short, ushort);
+  TEST_SHMEM_PUT(PUT_NBI, 0, unsigned int, uint);
+  TEST_SHMEM_PUT(PUT_NBI, 0, unsigned long, ulong);
+  TEST_SHMEM_PUT(PUT_NBI, 0, unsigned long long, ulonglong);
+  TEST_SHMEM_PUT(PUT_NBI, 0, int8_t, int8);
+  TEST_SHMEM_PUT(PUT_NBI, 0, int16_t, int16);
+  TEST_SHMEM_PUT(PUT_NBI, 0, int32_t, int32);
+  TEST_SHMEM_PUT(PUT_NBI, 0, int64_t, int64);
+  TEST_SHMEM_PUT(PUT_NBI, 0, uint8_t, uint8);
+  TEST_SHMEM_PUT(PUT_NBI, 0, uint16_t, uint16);
+  TEST_SHMEM_PUT(PUT_NBI, 0, uint32_t, uint32);
+  TEST_SHMEM_PUT(PUT_NBI, 0, uint64_t, uint64);
+  TEST_SHMEM_PUT(PUT_NBI, 0, size_t, size);
+  TEST_SHMEM_PUT(PUT_NBI, 0, ptrdiff_t, ptrdiff);
 
-  TEST_SHMEM_PUT(PUT_NBI, 1, float);
-  TEST_SHMEM_PUT(PUT_NBI, 1, double);
-  TEST_SHMEM_PUT(PUT_NBI, 1, long double);
-  TEST_SHMEM_PUT(PUT_NBI, 1, char);
-  TEST_SHMEM_PUT(PUT_NBI, 1, signed char);
-  TEST_SHMEM_PUT(PUT_NBI, 1, short);
-  TEST_SHMEM_PUT(PUT_NBI, 1, int);
-  TEST_SHMEM_PUT(PUT_NBI, 1, long);
-  TEST_SHMEM_PUT(PUT_NBI, 1, long long);
-  TEST_SHMEM_PUT(PUT_NBI, 1, unsigned char);
-  TEST_SHMEM_PUT(PUT_NBI, 1, unsigned short);
-  TEST_SHMEM_PUT(PUT_NBI, 1, unsigned int);
-  TEST_SHMEM_PUT(PUT_NBI, 1, unsigned long);
-  TEST_SHMEM_PUT(PUT_NBI, 1, unsigned long long);
-  TEST_SHMEM_PUT(PUT_NBI, 1, int8_t);
-  TEST_SHMEM_PUT(PUT_NBI, 1, int16_t);
-  TEST_SHMEM_PUT(PUT_NBI, 1, int32_t);
-  TEST_SHMEM_PUT(PUT_NBI, 1, int64_t);
-  TEST_SHMEM_PUT(PUT_NBI, 1, uint8_t);
-  TEST_SHMEM_PUT(PUT_NBI, 1, uint16_t);
-  TEST_SHMEM_PUT(PUT_NBI, 1, uint32_t);
-  TEST_SHMEM_PUT(PUT_NBI, 1, uint64_t);
-  TEST_SHMEM_PUT(PUT_NBI, 1, size_t);
-  TEST_SHMEM_PUT(PUT_NBI, 1, ptrdiff_t);
+  TEST_SHMEM_PUT(PUT_NBI, 1, float, float);
+  TEST_SHMEM_PUT(PUT_NBI, 1, double, double);
+  TEST_SHMEM_PUT(PUT_NBI, 1, long double, longdouble);
+  TEST_SHMEM_PUT(PUT_NBI, 1, char, char);
+  TEST_SHMEM_PUT(PUT_NBI, 1, signed char, schar);
+  TEST_SHMEM_PUT(PUT_NBI, 1, short, short);
+  TEST_SHMEM_PUT(PUT_NBI, 1, int, int);
+  TEST_SHMEM_PUT(PUT_NBI, 1, long, long);
+  TEST_SHMEM_PUT(PUT_NBI, 1, long long, longlong);
+  TEST_SHMEM_PUT(PUT_NBI, 1, unsigned char, uchar);
+  TEST_SHMEM_PUT(PUT_NBI, 1, unsigned short, ushort);
+  TEST_SHMEM_PUT(PUT_NBI, 1, unsigned int, uint);
+  TEST_SHMEM_PUT(PUT_NBI, 1, unsigned long, ulong);
+  TEST_SHMEM_PUT(PUT_NBI, 1, unsigned long long, ulonglong);
+  TEST_SHMEM_PUT(PUT_NBI, 1, int8_t, int8);
+  TEST_SHMEM_PUT(PUT_NBI, 1, int16_t, int16);
+  TEST_SHMEM_PUT(PUT_NBI, 1, int32_t, int32);
+  TEST_SHMEM_PUT(PUT_NBI, 1, int64_t, int64);
+  TEST_SHMEM_PUT(PUT_NBI, 1, uint8_t, uint8);
+  TEST_SHMEM_PUT(PUT_NBI, 1, uint16_t, uint16);
+  TEST_SHMEM_PUT(PUT_NBI, 1, uint32_t, uint32);
+  TEST_SHMEM_PUT(PUT_NBI, 1, uint64_t, uint64);
+  TEST_SHMEM_PUT(PUT_NBI, 1, size_t, size);
+  TEST_SHMEM_PUT(PUT_NBI, 1, ptrdiff_t, ptrdiff);
 
   shmem_finalize();
   return rc;
