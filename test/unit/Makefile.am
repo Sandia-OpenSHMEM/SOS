@@ -171,7 +171,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/test/include
 AM_FCFLAGS =
 LDADD =
 else
-AM_CPPFLAGS = -I$(top_builddir)/mpp -I$(top_srcdir)/test/include
+AM_CPPFLAGS = -I$(top_builddir)/mpp -I$(top_srcdir)/mpp -I$(top_srcdir)/test/include
 AM_FCFLAGS = -I$(top_builddir)/mpp
 LDADD = $(top_builddir)/src/libsma.la
 endif
@@ -194,7 +194,7 @@ query_thread_funneled_CFLAGS = -DENABLE_THREADS
 
 mt_a2a_SOURCES = mt_a2a.c
 mt_a2a_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
-mt_a2a_CFLAGS = -I$(top_srcdir)/test/include $(PTHREAD_CFLAGS)
+mt_a2a_CFLAGS = $(PTHREAD_CFLAGS)
 mt_a2a_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 mt_contention_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
@@ -207,11 +207,11 @@ mt_lock_test_CFLAGS = $(PTHREAD_CFLAGS)
 mt_lock_test_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 mt_membar_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
-mt_membar_CFLAGS = -I$(top_srcdir)/test/include $(PTHREAD_CFLAGS)
+mt_membar_CFLAGS = $(PTHREAD_CFLAGS)
 mt_membar_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 threading_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
-threading_CFLAGS = -I$(top_srcdir)/test/include $(PTHREAD_CFLAGS)
+threading_CFLAGS = $(PTHREAD_CFLAGS)
 threading_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 web_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)

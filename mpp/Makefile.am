@@ -22,6 +22,9 @@ EXTRA_DIST = shmem.h4 \
              shmem_c_func.h4 \
              shmemx_c_func.h4
 
+include_HEADERS = shmemx-def.h
+mpp_HEADERS = shmemx-def.h
+
 mppdir = $(includedir)/mpp
 
 nodist_mpp_HEADERS = shmem.h shmemx.h shmem-def.h
