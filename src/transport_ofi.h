@@ -648,7 +648,7 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
                                             .data          = 0
                                           };
         do {
-            ret = fi_writemsg(ctx->ep, &msg, FI_COMPLETION);
+            ret = fi_writemsg(ctx->ep, &msg, FI_COMPLETION | FI_DELIVERY_COMPLETE);
         } while (try_again(ctx, ret, &polled));
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 
