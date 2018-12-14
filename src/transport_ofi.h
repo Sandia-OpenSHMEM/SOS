@@ -648,7 +648,7 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
                                             .data          = 0
                                           };
         do {
-            ret = fi_writemsg(ctx->ep, &msg, FI_COMPLETION);
+            ret = fi_writemsg(ctx->ep, &msg, FI_COMPLETION | FI_DELIVERY_COMPLETE);
         } while (try_again(ctx, ret, &polled));
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 
@@ -869,7 +869,8 @@ void shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target, const
                                    &resultv,
                                    NULL,
                                    1,
-                                   FI_INJECT);
+                                   FI_INJECT);  /* FI_DELIVERY_COMPLETE is not required as 
+                                                   it is implied for fetch atomicmsgs */
     } while (try_again(ctx, ret, &polled));
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
@@ -1015,7 +1016,7 @@ void shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const voi
                                                .data          = 0
                                              };
         do {
-            ret = fi_atomicmsg(ctx->ep, &msg, FI_COMPLETION);
+            ret = fi_atomicmsg(ctx->ep, &msg, FI_COMPLETION | FI_DELIVERY_COMPLETE);
         } while (try_again(ctx, ret, &polled));
 
     } else {
@@ -1129,7 +1130,8 @@ void shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target,
                                  &resultv,
                                  NULL,
                                  1,
-                                 FI_INJECT);
+                                 FI_INJECT); /* FI_DELIVERY_COMPLETE is not required as it's 
+                                                implied for fetch atomicmsgs */
     } while (try_again(ctx, ret, &polled));
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
