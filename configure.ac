@@ -796,10 +796,7 @@ AC_CONFIG_FILES([Makefile
   mpp/Makefile
   mpp/shmem.fh
   mpp/shmemx.fh
-  mpp/shmem.h4
-  mpp/shmem_c_func.h4
-  mpp/shmemx_c_func.h4
-  mpp/shmemx.h4
+  mpp/shmem-def.h
   src/Makefile
   src/sandia-openshmem.pc
   test/Makefile
@@ -810,10 +807,6 @@ AC_CONFIG_FILES([Makefile
   test/performance/shmem_perf_suite/Makefile
   test/performance/tests/Makefile
   test/apps/Makefile])
-
-if test "$enable_profiling" = "yes"; then
-    AC_CONFIG_FILES([mpp/pshmem.h4])
-fi
 
 AC_OUTPUT
 

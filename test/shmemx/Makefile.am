@@ -80,7 +80,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/test/include
 AM_FCFLAGS =
 LDADD =
 else
-AM_CPPFLAGS = -I$(top_builddir)/mpp -I$(top_srcdir)/test/include
+AM_CPPFLAGS = -I$(top_builddir)/mpp -I$(top_srcdir)/mpp -I$(top_srcdir)/test/include
 AM_FCFLAGS = -I$(top_builddir)/mpp
 LDADD = $(top_builddir)/src/libsma.la
 endif
