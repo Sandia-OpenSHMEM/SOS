@@ -362,7 +362,8 @@ shmem_internal_init(int tl_requested, int *tl_provided)
             if (off < sizeof(cores_str)-1)
                 off += snprintf(cores_str+off, sizeof(cores_str)-off, "}");
 
-            cores_str_wrap = shmem_util_wrap(cores_str, 72, "              ");
+            cores_str_wrap = shmem_util_wrap(cores_str, SHMEM_INTERNAL_DIAG_WRAPLEN,
+                                             RAISE_PREFIX);
             DEBUG_MSG("%s\n", cores_str_wrap);
             free(cores_str_wrap);
         }

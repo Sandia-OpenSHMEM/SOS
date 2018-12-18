@@ -44,9 +44,11 @@ extern unsigned int shmem_internal_rand_seed;
 
 #define SHMEM_INTERNAL_HEAP_OVERHEAD (1024*1024)
 #define SHMEM_INTERNAL_DIAG_STRLEN 1024
+#define SHMEM_INTERNAL_DIAG_WRAPLEN 72
 
 /* Note: must be accompanied by shmem_internal_my_pe in arguments */
 #define RAISE_PE_PREFIX "[%04d]        "
+#define RAISE_PREFIX    "              "
 
 
 #define RAISE_WARN(ret)                                                 \
