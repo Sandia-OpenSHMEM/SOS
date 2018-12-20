@@ -762,28 +762,30 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
 
-    const struct iovec msg_iov_signal = {
-                                          .iov_base = (uint8_t *) &signal,
-                                          .iov_len = sizeof(uint64_t)
+    const struct fi_ioc msg_iov_signal = {
+                                          .addr = (uint8_t *) &signal,
+                                          .count = 1
                                         };
-    const struct fi_rma_iov rma_iov_signal = {
+    const struct fi_rma_ioc rma_iov_signal = {
                                                .addr = (uint64_t) addr,
-                                               .len = sizeof(uint64_t),
+                                               .count = 1,
                                                .key = key
                                              };
-    const struct fi_msg_rma msg_signal = {
+    const struct fi_msg_atomic msg_signal = {
                                            .msg_iov = &msg_iov_signal,
                                            .desc = NULL,
                                            .iov_count = 1,
                                            .addr = GET_DEST(dst),
                                            .rma_iov = &rma_iov_signal,
                                            .rma_iov_count = 1,
+                                           .datatype = FI_UINT64,
+                                           .op = FI_ATOMIC_WRITE,
                                            .context = (uint8_t *) &signal,
                                            .data = 0
                                          };
 
     do {
-        ret = fi_writemsg(ctx->ep, &msg_signal, FI_DELIVERY_COMPLETE | FI_FENCE | FI_INJECT);
+        ret = fi_atomicmsg(ctx->ep, &msg_signal, FI_DELIVERY_COMPLETE | FI_FENCE | FI_INJECT);
     } while (try_again(ctx, ret, &polled));
 
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
