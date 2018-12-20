@@ -644,27 +644,12 @@ shmem_transport_put_ct_nb(shmem_transport_ct_t *ct, void *target, const void *so
 }
 
 static inline
-void shmem_transport_put_signal(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
-                                uint64_t *sig_addr, uint64_t signal, int pe, long *completion)
+void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
+                                    uint64_t *sig_addr, uint64_t signal, int pe)
 {
-    if ((*completion) != -1) {
-#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-        shmem_transport_portals4_put_nb_internal(ctx, target, source, len, pe,
-                                                 completion,
-                                                 shmem_transport_portals4_pt,
-                                                 -1);
-#else
-        shmem_transport_portals4_put_nb_internal(ctx, target, source, len, pe,
-                                                 completion,
-                                                 shmem_transport_portals4_data_pt,
-                                                 shmem_transport_portals4_heap_pt);
-#endif
-        shmem_transport_put_scalar(ctx, sig_addr, &signal, sizeof(uint64_t), pe);
-    } else {
-        shmem_transport_put_nbi(ctx, target, source, len, pe);
-        shmem_transport_fence(ctx);
-        shmem_transport_put_scalar(ctx, sig_addr, &signal, sizeof(uint64_t), pe);
-    }
+    shmem_transport_put_nbi(ctx, target, source, len, pe);
+    shmem_transport_fence(ctx);
+    shmem_transport_put_scalar(ctx, sig_addr, &signal, sizeof(uint64_t), pe);
 }
 
 

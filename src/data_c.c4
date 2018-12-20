@@ -478,10 +478,12 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_PE(pe);                                             \
     SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE) * nelems);           \
     SHMEM_ERR_CHECK_NULL(source, nelems);                               \
-    shmem_internal_put_signal(ctx, target, source,                      \
-                              sizeof(TYPE) * nelems, sig_addr,          \
-                              signal, pe, &completion);                 \
+    shmem_internal_put_nb(ctx, target, source,                          \
+                          sizeof(TYPE) * nelems, pe,                    \
+                          &completion);                                 \
     shmem_internal_put_wait(ctx, &completion);                          \
+    shmem_internal_put_scalar(ctx, sig_addr, &signal,                   \
+                              sizeof(uint64_t), pe);                    \
   }
 
 
@@ -495,9 +497,11 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_PE(pe);                                             \
     SHMEM_ERR_CHECK_SYMMETRIC(target, (SIZE) * nelems);                 \
     SHMEM_ERR_CHECK_NULL(source, nelems);                               \
-    shmem_internal_put_signal(ctx, target, source, (SIZE) * nelems,     \
-                              sig_addr, signal, pe, &completion);       \
+    shmem_internal_put_nb(ctx, target, source, (SIZE) * nelems,         \
+                          pe, &completion);                             \
     shmem_internal_put_wait(ctx, &completion);                          \
+    shmem_internal_put_scalar(ctx, sig_addr, &signal,                   \
+                              sizeof(uint64_t), pe);                    \
   }
 
 #define SHMEM_DEF_PUT_SIGNAL_NBI(STYPE,TYPE)                            \
@@ -505,14 +509,13 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
   SHMEMX_FUNC_PROTOTYPE(STYPE##_put_signal_nbi, TYPE *target,           \
                         const TYPE *source, size_t nelems,              \
                         uint64_t *sig_addr, uint64_t signal, int pe)    \
-    long completion = -1;                                               \
     SHMEM_ERR_CHECK_INITIALIZED();                                      \
     SHMEM_ERR_CHECK_PE(pe);                                             \
     SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE) * nelems);           \
     SHMEM_ERR_CHECK_NULL(source, nelems);                               \
-    shmem_internal_put_signal(ctx, target, source,                      \
-                              sizeof(TYPE) * nelems, sig_addr,          \
-                              signal, pe, &completion);                 \
+    shmem_internal_put_signal_nbi(ctx, target, source,                  \
+                                  sizeof(TYPE) * nelems, sig_addr,      \
+                                  signal, pe);                          \
   }
 
 
@@ -521,13 +524,12 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
   SHMEMX_FUNC_PROTOTYPE(put##NAME##_signal_nbi, void *target,           \
                         const void *source, size_t nelems,              \
                         uint64_t *sig_addr, uint64_t signal, int pe)    \
-    long completion = -1;                                               \
     SHMEM_ERR_CHECK_INITIALIZED();                                      \
     SHMEM_ERR_CHECK_PE(pe);                                             \
     SHMEM_ERR_CHECK_SYMMETRIC(target, (SIZE) * nelems);                 \
     SHMEM_ERR_CHECK_NULL(source, nelems);                               \
-    shmem_internal_put_signal(ctx, target, source, (SIZE) * nelems,     \
-                              sig_addr, signal, pe, &completion);       \
+    shmem_internal_put_signal_nbi(ctx, target, source, (SIZE) * nelems, \
+                                  sig_addr, signal, pe);                \
   }
 
 

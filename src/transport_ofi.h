@@ -659,8 +659,8 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
 }
 
 static inline
-void shmem_transport_put_signal(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
-                                uint64_t *sig_addr, uint64_t signal, int pe, long *completion)
+void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
+                                    uint64_t *sig_addr, uint64_t signal, int pe)
 {
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
@@ -752,7 +752,6 @@ void shmem_transport_put_signal(shmem_transport_ctx_t* ctx, void *target, const 
             frag_target += frag_len;
         }
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
-        if ((*completion) != -1) (*completion)++;
     }
 
     /* Transmit the signal */

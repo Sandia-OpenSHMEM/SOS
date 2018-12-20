@@ -136,8 +136,8 @@ shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void *sou
 
 static inline
 void
-shmem_transport_put_signal(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
-                           uint64_t *sig_addr, uint64_t signal, int pe, long *completion)
+shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
+                               uint64_t *sig_addr, uint64_t signal, int pe)
 {
     RAISE_ERROR_STR("No path to peer");
 }
