@@ -1,8 +1,7 @@
 # ![SOS logo](https://raw.githubusercontent.com/davidozog/sandia-shmem/pr/readme_markdown/extra/SOS.png) Sandia OpenSHMEM ![SOS logo](https://raw.githubusercontent.com/davidozog/sandia-shmem/pr/readme_markdown/extra/SOS.png)
 <!-- TODO: update davidozog/pr/readme_markdown -> Sandia-OpenSHMEM/SOS -->
-
-Travis Status: [![Build Status](https://travis-ci.org/Sandia-OpenSHMEM/SOS.svg?branch=master)](https://travis-ci.org/Sandia-OpenSHMEM/SOS)
-Coverity Status: [![Coverity Scan Build Status](https://scan.coverity.com/projects/9375/badge.svg)](https://scan.coverity.com/projects/9375)
+[![Build Status](https://travis-ci.org/Sandia-OpenSHMEM/SOS.svg?branch=master)](https://travis-ci.org/Sandia-OpenSHMEM/SOS)
+[![Coverity Scan Build Status](https://scan.coverity.com/projects/9375/badge.svg)](https://scan.coverity.com/projects/9375)
 
 ## About
 
@@ -13,7 +12,7 @@ Please refer to the [`tests-sos` repository](https://github.com/openshmem-org/te
 to download only the unit tests and the performance test suite that are
 included with Sandia OpenSHMEM.
 
-This `README.md` file is formatted with Markdown.  The [human-readable file is located
+This README file is formatted with Markdown.  The [human-readable README file is located
 here](https://github.com/Sandia-OpenSHMEM/SOS/blob/master/README).
 
 The following sections briefly describe how to build Sandia OpenSHMEM and the
