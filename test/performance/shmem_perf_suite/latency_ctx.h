@@ -53,7 +53,13 @@ shared(metric_info, start, end) num_threads(metric_info->nthreads)
         {
             const int thread_id = omp_get_thread_num();
             shmem_ctx_t ctx;
-            shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
+            int err = shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
+
+            if (err) {
+                printf("PE %d, Thr. %d: Error, context creation failed\n",
+                       metric_info->my_node, thread_id);
+                shmem_global_exit(1);
+            }
 
             for (i = 0; i < metric_info->warmup; i++) {
 #ifdef USE_NONBLOCKING_API
@@ -76,7 +82,13 @@ shared(metric_info, start, end) num_threads(metric_info->nthreads)
         {
             const int thread_id = omp_get_thread_num();
             shmem_ctx_t ctx;
-            shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
+            int err = shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
+
+            if (err) {
+                printf("PE %d, Thr. %d: Error, context creation failed\n",
+                       metric_info->my_node, thread_id);
+                shmem_global_exit(1);
+            }
 
 #pragma omp barrier
 #pragma omp master
@@ -135,7 +147,13 @@ shared(metric_info, start, end) num_threads(metric_info->nthreads)
         {
             const int thread_id = omp_get_thread_num();
             shmem_ctx_t ctx;
-            shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
+            int err = shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
+
+            if (err) {
+                printf("PE %d, Thr. %d: Error, context creation failed\n",
+                       metric_info->my_node, thread_id);
+                shmem_global_exit(1);
+            }
 
             for (i = 0; i < metric_info->warmup; i++) {
 #ifdef USE_NONBLOCKING_API
@@ -158,7 +176,13 @@ shared(metric_info, start, end) num_threads(metric_info->nthreads)
         {
             const int thread_id = omp_get_thread_num();
             shmem_ctx_t ctx;
-            shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
+            int err = shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
+
+            if (err) {
+                printf("PE %d, Thr. %d: Error, context creation failed\n",
+                       metric_info->my_node, thread_id);
+                shmem_global_exit(1);
+            }
 
 #pragma omp barrier
 #pragma omp master

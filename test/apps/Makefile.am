@@ -42,10 +42,10 @@ endif
 
 if EXTERNAL_TESTS
 bin_PROGRAMS = $(check_PROGRAMS)
-AM_CPPFLAGS =
+AM_CPPFLAGS = -I$(top_srcdir)/test/include
 LDADD =
 else
-AM_CPPFLAGS = -I$(top_builddir)/mpp
+AM_CPPFLAGS = -I$(top_builddir)/mpp -I$(top_srcdir)/mpp -I$(top_srcdir)/test/include
 LDADD = $(top_builddir)/src/libsma.la
 endif
 
@@ -54,5 +54,5 @@ LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
 endif
 
 mandelbrot_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
-mandelbrot_CFLAGS = -I$(top_srcdir)/test/include $(PTHREAD_CFLAGS)
+mandelbrot_CFLAGS = $(PTHREAD_CFLAGS)
 mandelbrot_LDADD = $(LDADD) $(PTHREAD_CFLAGS)

@@ -2,7 +2,7 @@
 
 #export CUSTOM_SHMEM_DIR="<SOS_INSTALL_DIRECTORY>"
 #export CRAY_TESTS_DIR="<CRAY_TESTS_SRC_DIRECTORY"
-export CC=oshcc
+export CC="oshcc -std=c99"
 export CXX=oshCC
 export FTN=oshfort
 export LAUNCHER=oshrun

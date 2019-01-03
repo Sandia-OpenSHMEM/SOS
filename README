@@ -6,16 +6,25 @@ Sandia OpenSHMEM
 Sandia OpenSHMEM is an implementation of the OpenSHMEM specification over
 Portals 4.0, the Open Fabrics Interface (OFI), and XPMEM.
 
+Please refer to the "tests-sos" repository (https://github.com/openshmem-org/tests-sos)
+to download only the unit tests and the performance test suite that are
+included with Sandia OpenSHMEM.
+
 * Building
 
-The Sandia OpenSHMEM implementation utilizes the Autoconf/Automake/Libtool
-build system.  The standard GNU configure script and make system is used, as
-follows:
+The Sandia OpenSHMEM implementation utilizes the GNU Autoconf/Automake/Libtool
+tools to generate a configure script.  If the `configure` file is not present
+(e.g. after downloading the repository for the first time), generate it
+by running:
 
-  % ./configure <options>
-  % make
-  % make check
-  % make install
+  $ ./autogen.sh
+
+Once the configure file exists, run:
+
+  $ ./configure <options>
+  $ make
+  $ make check
+  $ make install
 
 The "make check" step is not strictly necessary, but is a good idea.  Make
 check utilizes the TEST_RUNNER and NPROCS make variables, which can be used to
@@ -248,3 +257,8 @@ options.
     SHMEM_TRAP_ON_ABORT (default: off)
         If defined, generate a trap when aborting an OpenSHMEM program.  This
         can be used to interface with a debugger or generate core files.
+
+    SHMEM_BACKTRACE (default: <empty>)
+        Can be used to choose the backtracing mechanism. Default value is NULL 
+        for which no backtrace information is provided upon failure. User can set 
+        this with any one of these available options: execinfo, gdb, auto. 

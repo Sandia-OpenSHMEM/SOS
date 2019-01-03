@@ -69,8 +69,8 @@ int main(void) {
         int ret = shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
 
         if (ret != 0) {
-            printf("%d: Error creating context (%d)\n", me, ret);
-            shmem_global_exit(2);
+            printf("%d: Warning, unable to create context (%d)\n", me, ret);
+            ctx = SHMEM_CTX_DEFAULT;
         }
 
         /* Process tasks on all PEs, starting with the local PE.  After
@@ -86,7 +86,7 @@ int main(void) {
             task_pe = (task_pe + 1) % npes;
         }
 
-        shmem_ctx_destroy(ctx);
+        if (ctx != SHMEM_CTX_DEFAULT) shmem_ctx_destroy(ctx);
     }
 
     shmem_long_sum_to_all(&total_done, &tasks_done, 1, 0, 0, npes, pwrk, psync);

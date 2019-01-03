@@ -11,7 +11,7 @@
 # information, see the LICENSE file in the top level directory of the
 # distribution.
 
-AM_CPPFLAGS = -I$(top_builddir)/mpp
+AM_CPPFLAGS = -I$(top_builddir)/mpp -I$(top_srcdir)/mpp
 
 GEN_BINDINGS = \
 	atomic_c.c \
@@ -59,7 +59,8 @@ libsma_la_SOURCES = \
 	shmem_env_defs.h \
 	contexts_c.c \
 	contexts.c \
-	perf_counters_c.c
+	perf_counters_c.c \
+	backtrace.c
 
 nodist_libsma_la_SOURCES = \
 	$(GEN_BINDINGS)

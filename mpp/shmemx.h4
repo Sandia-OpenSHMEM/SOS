@@ -25,25 +25,13 @@ include(shmem_bind_cxx.m4)dnl
 #define SHMEMX_H
 
 #include <stddef.h>
-#include <shmem.h>
+#include <stdint.h>
+#include <shmem-def.h>
+#include <shmemx-def.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define HAVE_SHMEMX_WTIME
-
-/* Counting puts */
-typedef char * shmemx_ct_t;
-
-/* Counter */
-typedef struct {
-    uint64_t pending_put;
-    uint64_t pending_get;
-    uint64_t completed_put;
-    uint64_t completed_get;
-    uint64_t target;
-} shmemx_pcntr_t;
 
 define(`SHPRE', `')dnl
 include(shmemx_c_func.h4)dnl
@@ -54,6 +42,42 @@ include(shmemx_c_func.h4)dnl
 /* C++ overloaded declarations */
 #ifdef __cplusplus
 } /* extern "C" */
+
+define(`SHMEM_CXX_WAIT_UNTIL_ALL',
+`static inline void shmemx_wait_until_all($2 *ivars, size_t nelems, int cmp, $2 cmp_value) {
+    shmemx_$1_wait_until_all(ivars, nelems, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_ALL')
+
+define(`SHMEM_CXX_WAIT_UNTIL_ANY',
+`static inline size_t shmemx_wait_until_any($2 *ivars, size_t nelems, int *status, int cmp, $2 cmp_value) {
+    return shmemx_$1_wait_until_any(ivars, nelems, status, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_ANY')
+
+define(`SHMEM_CXX_WAIT_UNTIL_SOME',
+`static inline size_t shmemx_wait_until_some($2 *ivars, size_t nelems, size_t *indices, int *status, int cmp, $2 cmp_value) {
+    return shmemx_$1_wait_until_some(ivars, nelems, indices, status, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_SOME')
+
+define(`SHMEM_CXX_TEST_ALL',
+`static inline int shmemx_test_all($2 *ivars, size_t nelems, int cmp, $2 cmp_value) {
+    return shmemx_$1_test_all(ivars, nelems, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_ALL')
+
+define(`SHMEM_CXX_TEST_ANY',
+`static inline size_t shmemx_test_any($2 *ivars, size_t nelems, int *status, int cmp, $2 cmp_value) {
+    return shmemx_$1_test_any(ivars, nelems, status, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_ANY')
+
+define(`SHMEM_CXX_TEST_SOME',
+`static inline size_t shmemx_test_some($2 *ivars, size_t nelems, size_t *indices, int *status, int cmp, $2 cmp_value) {
+    return shmemx_$1_test_some(ivars, nelems, indices, status, cmp, cmp_value);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_SOME')
 
 define(`SHMEM_CXX_ATOMIC_SWAP',
 `static inline void shmemx_atomic_swap_nbi($2 *fetch, $2 *target, $2 value, int pe) {
@@ -127,12 +151,77 @@ static inline void shmemx_atomic_fetch_xor_nbi(shmem_ctx_t ctx, $2 *fetch, $2 *d
 }')dnl
 SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_FETCH_XOR_NBI')
 
+/* Blocking put with signal */
+define(`SHMEM_CXX_PUT_SIGNAL',
+`static inline void shmemx_put_signal($2* dest, const $2* source,
+                             size_t nelems, uint64_t *sig_addr, uint64_t signal, int pe) {
+    shmemx_$1_put_signal(dest, source, nelems, sig_addr, signal, pe);
+}
+static inline void shmemx_put_signal(shmem_ctx_t ctx, $2* dest, const $2* source,
+                             size_t nelems, uint64_t *sig_addr, uint64_t signal, int pe) {
+    shmemx_ctx_$1_put_signal(ctx, dest, source, nelems, sig_addr, signal, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_PUT_SIGNAL')
+
+/* Non-blocking put with signal */
+define(`SHMEM_CXX_PUT_SIGNAL_NBI',
+`static inline void shmemx_put_signal_nbi($2* dest, const $2* source,
+                             size_t nelems, uint64_t *sig_addr, uint64_t signal, int pe) {
+    shmemx_$1_put_signal_nbi(dest, source, nelems, sig_addr, signal, pe);
+}
+static inline void shmemx_put_signal_nbi(shmem_ctx_t ctx, $2* dest, const $2* source,
+                             size_t nelems, uint64_t *sig_addr, uint64_t signal, int pe) {
+    shmemx_ctx_$1_put_signal_nbi(ctx, dest, source, nelems, sig_addr, signal, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_PUT_SIGNAL_NBI')
 
 /* C11 Generic Macros */
 #elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
 
-/* Nonblocking fetching AMOs */
+/* Wait_until and test any/all/some point-to-point API */
+define(`SHMEM_C11_GEN_WAIT_UNTIL_ALL', `        $2*: shmemx_$1_wait_until_all')dnl
+#define shmemx_wait_until_all(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_WAIT_UNTIL_ALL', `, \') \
+    )(__VA_ARGS__)
 
+define(`SHMEM_C11_GEN_WAIT_UNTIL_ANY', `        $2*: shmemx_$1_wait_until_any')dnl
+#define shmemx_wait_until_any(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_WAIT_UNTIL_ANY', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_WAIT_UNTIL_SOME', `        $2*: shmemx_$1_wait_until_some')dnl
+#define shmemx_wait_until_some(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_WAIT_UNTIL_SOME', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_TEST_ALL', `        $2*: shmemx_$1_test_all')dnl
+#define shmemx_test_all(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_TEST_ALL', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_TEST_ANY', `        $2*: shmemx_$1_test_any')dnl
+#define shmemx_test_any(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_TEST_ANY', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_TEST_SOME', `        $2*: shmemx_$1_test_some')dnl
+#define shmemx_test_some(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
+SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_TEST_SOME', `, \') \
+    )(__VA_ARGS__)
+
+/* Nonblocking fetching AMOs */
 define(`SHMEM_C11_GEN_ATOMIC_SWAP_NBI', `        $2*: shmemx_$1_atomic_swap_nbi')dnl
 define(`SHMEM_CTX_C11_GEN_ATOMIC_SWAP_NBI', `            $2*: shmemx_ctx_$1_atomic_swap_nbi')dnl
 #define shmemx_atomic_swap_nbi(...) \
@@ -233,6 +322,31 @@ SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_CTX_C11_GEN_FETCH_XOR_NBI', `, \'), \
 SHMEM_BIND_C11_BITWISE_AMO(`SHMEM_C11_GEN_FETCH_XOR_NBI', `, \') \
     )(__VA_ARGS__)
 
+/* Blocking put with signal */
+define(`SHMEM_C11_GEN_PUT_SIGNAL', `        $2*: shmemx_$1_put_signal')dnl
+define(`SHMEM_CTX_C11_GEN_PUT_SIGNAL', `            $2*: shmemx_ctx_$1_put_signal')dnl
+#define shmemx_put_signal(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+        shmem_ctx_t: \
+        _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_RMA(`SHMEM_CTX_C11_GEN_PUT_SIGNAL', `, \') \
+            default: shmem_ctx_c11_generic_selection_failed \
+        ), \
+SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_PUT_SIGNAL', `, \') \
+    )(__VA_ARGS__)
+
+/* Non-blocking put with signal */
+define(`SHMEM_C11_GEN_PUT_SIGNAL_NBI', `        $2*: shmemx_$1_put_signal_nbi')dnl
+define(`SHMEM_CTX_C11_GEN_PUT_SIGNAL_NBI', `            $2*: shmemx_ctx_$1_put_signal_nbi')dnl
+#define shmemx_put_signal_nbi(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+        shmem_ctx_t: \
+        _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_RMA(`SHMEM_CTX_C11_GEN_PUT_SIGNAL_NBI', `, \') \
+            default: shmem_ctx_c11_generic_selection_failed \
+        ), \
+SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_PUT_SIGNAL_NBI', `, \') \
+    )(__VA_ARGS__)
 
 #endif /* C11 */
 

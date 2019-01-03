@@ -47,8 +47,8 @@ int main(int argc, char **argv) {
         int err = shmem_ctx_create(0, &ctx[i]);
 
         if (err) {
-            printf("%d: Error creating context %d (%d)\n", me, i, err);
-            shmem_global_exit(1);
+            printf("%d: Warning, could not create context %d (%d)\n", me, i, err);
+            ctx[i] = SHMEM_CTX_DEFAULT;
         }
     }
 

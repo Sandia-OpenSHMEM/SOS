@@ -13,7 +13,7 @@
 # Copyright (c) 2009-2015 Cisco Systems, Inc.  All rights reserved.
 # Copyright (c) 2011-2016 Los Alamos National Security, LLC. All rights
 #                         reserved.
-# Copyright (c) 2014      Intel, Inc. All rights reserved.
+# Copyright (c) 2014-2018 Intel, Inc.  All rights reserved.
 # Copyright (c) 2014      Research Organization for Information Science
 #                         and Technology (RIST). All rights reserved.
 # $COPYRIGHT$
@@ -307,7 +307,11 @@ AC_DEFUN([OPAL_CHECK_PMIX],[
                  [AC_MSG_CHECKING([version 4x])
                   AC_PREPROC_IFELSE([AC_LANG_PROGRAM([
                                                       #include <pmix_version.h>
+<<<<<<< HEAD
                                                       #if (PMIX_VERSION_MAJOR != 4L)
+=======
+                                                      #if (PMIX_VERSION_MAJOR < 4L)
+>>>>>>> upstream/master
                                                       #error "not version 4"
                                                       #endif
                                                       ], [])],

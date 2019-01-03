@@ -40,11 +40,15 @@ extern long shmem_internal_heap_length;
 extern void *shmem_internal_data_base;
 extern long shmem_internal_data_length;
 
+extern unsigned int shmem_internal_rand_seed;
+
 #define SHMEM_INTERNAL_HEAP_OVERHEAD (1024*1024)
 #define SHMEM_INTERNAL_DIAG_STRLEN 1024
+#define SHMEM_INTERNAL_DIAG_WRAPLEN 72
 
 /* Note: must be accompanied by shmem_internal_my_pe in arguments */
 #define RAISE_PE_PREFIX "[%04d]        "
+#define RAISE_PREFIX    "              "
 
 
 #define RAISE_WARN(ret)                                                 \
@@ -394,6 +398,7 @@ typedef shmem_spinlock_t shmem_internal_mutex_t;
 #   endif /* ENABLE_PTHREAD_MUTEX */
 
 extern shmem_internal_mutex_t shmem_internal_mutex_alloc;
+extern shmem_internal_mutex_t shmem_internal_mutex_rand_r;
 
 #else
 #   define SHMEM_MUTEX_INIT(_mutex)
@@ -436,6 +441,9 @@ static inline double shmem_internal_wtime(void) {
 /* Utility functions */
 char *shmem_util_wrap(const char *str, const size_t wraplen, const char *indent);
 char *shmem_util_strerror(int errnum, char *buf, size_t buflen);
+
+/* Backtrace functions */
+void shmem_util_backtrace(void); 
 
 #ifndef MAX
 #define MAX(A,B) (A) > (B) ? (A) : (B)

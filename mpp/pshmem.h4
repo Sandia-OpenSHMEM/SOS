@@ -22,8 +22,8 @@ include(shmem_bind_c.m4)dnl
 #ifndef PSHMEM_H
 #define PSHMEM_H
 
-#include <shmem.h>
-#include <shmemx.h>
+#include <shmem-def.h>
+#include <shmemx-def.h>
 #include <stddef.h>
 #include <complex.h>
 

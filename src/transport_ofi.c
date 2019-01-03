@@ -1209,7 +1209,7 @@ int query_for_fabric(struct fabric_info *info)
 #endif
 
     DEBUG_MSG("OFI provider: %s, fabric: %s, domain: %s\n"
-              RAISE_PE_PREFIX "max_inject: %zd, max_msg: %zd\n",
+              RAISE_PE_PREFIX "max_inject: %zu, max_msg: %zu\n",
               info->p_info->fabric_attr->prov_name,
               info->p_info->fabric_attr->name, info->p_info->domain_attr->name,
               shmem_internal_my_pe,
@@ -1635,7 +1635,7 @@ int shmem_transport_fini(void)
     for (size_t i = 0; i < shmem_transport_ofi_contexts_len; ++i) {
         if (shmem_transport_ofi_contexts[i]) {
             if (shmem_transport_ofi_is_private(shmem_transport_ofi_contexts[i]->options))
-                RAISE_WARN_MSG("Shutting down with unfreed private context (%zd)\n", i);
+                RAISE_WARN_MSG("Shutting down with unfreed private context (%zu)\n", i);
             shmem_transport_quiet(shmem_transport_ofi_contexts[i]);
             shmem_transport_ctx_destroy(shmem_transport_ofi_contexts[i]);
         }

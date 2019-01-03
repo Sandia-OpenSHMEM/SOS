@@ -36,13 +36,15 @@
 #include <stdio.h>
 #include <shmem.h>
 
-#define TEST_SHMEM_TEST(TYPE)                           \
+#define TEST_SHMEM_TEST(TYPE, TYPENAME)                 \
   do {                                                  \
     static TYPE remote = 0;                             \
     const int mype = shmem_my_pe();                     \
     const int npes = shmem_n_pes();                     \
-    shmem_p(&remote, (TYPE)mype+1, (mype + 1) % npes);  \
-    while (!shmem_test(&remote, SHMEM_CMP_NE, 0)) ;     \
+    shmem_##TYPENAME##_p(&remote, (TYPE)mype+1,         \
+                                   (mype + 1) % npes);  \
+    while (!shmem_##TYPENAME##_test(&remote,            \
+                                SHMEM_CMP_NE, 0)) ;     \
     if (remote != (TYPE)((mype + npes - 1) % npes)+1) { \
       printf("PE %i received incorrect value with "     \
              "TEST_SHMEM_TEST(%s)\n", mype, #TYPE);     \
@@ -54,20 +56,20 @@ int main(int argc, char* argv[]) {
   shmem_init();
 
   int rc = EXIT_SUCCESS;
-  TEST_SHMEM_TEST(short);
-  TEST_SHMEM_TEST(int);
-  TEST_SHMEM_TEST(long);
-  TEST_SHMEM_TEST(long long);
-  TEST_SHMEM_TEST(unsigned short);
-  TEST_SHMEM_TEST(unsigned int);
-  TEST_SHMEM_TEST(unsigned long);
-  TEST_SHMEM_TEST(unsigned long long);
-  TEST_SHMEM_TEST(int32_t);
-  TEST_SHMEM_TEST(int64_t);
-  TEST_SHMEM_TEST(uint32_t);
-  TEST_SHMEM_TEST(uint64_t);
-  TEST_SHMEM_TEST(size_t);
-  TEST_SHMEM_TEST(ptrdiff_t);
+  TEST_SHMEM_TEST(short, short);
+  TEST_SHMEM_TEST(int, int);
+  TEST_SHMEM_TEST(long, long);
+  TEST_SHMEM_TEST(long long, longlong);
+  TEST_SHMEM_TEST(unsigned short, ushort);
+  TEST_SHMEM_TEST(unsigned int, uint);
+  TEST_SHMEM_TEST(unsigned long, ulong);
+  TEST_SHMEM_TEST(unsigned long long, ulonglong);
+  TEST_SHMEM_TEST(int32_t, int32);
+  TEST_SHMEM_TEST(int64_t, int64);
+  TEST_SHMEM_TEST(uint32_t, uint32);
+  TEST_SHMEM_TEST(uint64_t, uint64);
+  TEST_SHMEM_TEST(size_t, size);
+  TEST_SHMEM_TEST(ptrdiff_t, ptrdiff);
 
   shmem_finalize();
   return rc;
