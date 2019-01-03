@@ -334,7 +334,7 @@ script:
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:get
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:put
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:barrier
-    #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:static
+    - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:static
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:heap
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:fence
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=coll
