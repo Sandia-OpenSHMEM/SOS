@@ -163,7 +163,7 @@ before_install:
     - make clean all install
     ## Build PMIx
     - cd $TRAVIS_SRC
-    - git clone --depth 10 --single-branch -b v3.1 https://github.com/pmix/pmix pmix
+    - git clone --depth 10 https://github.com/pmix/pmix pmix
     - cd pmix
     - ./autogen.pl
     - ./configure --prefix=$PWD/install --with-libevent=$TRAVIS_SRC/libevent-2.0.22-stable/install --with-devel-headers --disable-visibility && make clean all install
@@ -254,17 +254,19 @@ script:
     - make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2" check
     - make install
     ###
-    ### Build and check with ORTE (Open MPI's launcher)
+    ### Build and check with PRRTE
     ###
     - cd $SOS_SRC
-    - mkdir ompi-build
-    - cd ompi-build
-    - export PATH=/opt/openmpi/gitclone/bin:$BASE_PATH
-    - ../configure --prefix=$PWD/install --with-ofi=$TRAVIS_INSTALL/libfabric --with-pmix=$TRAVIS_SRC/pmix/install
+    - mkdir prrte-build
+    - cd prrte-build
+    - ../configure --prefix=$PWD/install --with-ofi=$TRAVIS_INSTALL/libfabric --with-pmix=$TRAVIS_SRC/pmix/install --with-oshrun-launcher=$TRAVIS_SRC/prrte/install/bin/prun
     - make $TRAVIS_PAR_MAKE
-    - echo "localhost slots=4" > /tmp/hostfile.txt
-    - make VERBOSE=1 TEST_RUNNER="mpiexec --hostfile /tmp/hostfile.txt -np 4" check
+    #- echo "localhost slots=4" > /tmp/hostfile.txt
+    - $TRAVIS_SRC/prrte/install/bin/prte --system-server &
+    - sleep 5
+    - make VERBOSE=1 TEST_RUNNER="oshrun -np 4" check
     - make install
+    - $TRAVIS_SRC/prrte/install/bin/prun --terminate
     ###
     ### Run the UH test suite (Portals)
     ###
