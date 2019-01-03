@@ -307,11 +307,7 @@ AC_DEFUN([OPAL_CHECK_PMIX],[
                  [AC_MSG_CHECKING([version 4x])
                   AC_PREPROC_IFELSE([AC_LANG_PROGRAM([
                                                       #include <pmix_version.h>
-<<<<<<< HEAD
-                                                      #if (PMIX_VERSION_MAJOR != 4L)
-=======
                                                       #if (PMIX_VERSION_MAJOR < 4L)
->>>>>>> upstream/master
                                                       #error "not version 4"
                                                       #endif
                                                       ], [])],
