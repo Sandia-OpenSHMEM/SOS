@@ -183,11 +183,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 #endif
     int randr_initialized     = 0;
 
-#ifdef HAVE_SCHED_GETAFFINITY
-    cpu_set_t my_set;
-    int core_count = 0;
-#endif
-
     /* set up threading */
     SHMEM_MUTEX_INIT(shmem_internal_mutex_alloc);
 #ifdef ENABLE_THREADS
@@ -339,24 +334,38 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
 #ifdef HAVE_SCHED_GETAFFINITY
     if (shmem_internal_params.DEBUG) {
+        cpu_set_t my_set;
+
         CPU_ZERO(&my_set);
 
         ret = sched_getaffinity(0, sizeof(my_set), &my_set);
 
         if (ret == 0) {
-            char *cores_str = malloc(sizeof(char) * CPU_SETSIZE * 5 + 2);
-            if (NULL == cores_str) goto cleanup;
+            char cores_str[SHMEM_INTERNAL_DIAG_STRLEN];
+            char *cores_str_wrap;
+            int core_count = 0;
 
-            strcpy(cores_str," ");
-            size_t off = 1; /* start after " " */
+            for (int i = 0; i < CPU_SETSIZE; i++) {
+                if (CPU_ISSET(i, &my_set))
+                    core_count++;
+            }
+
+            size_t off = snprintf(cores_str, sizeof(cores_str),
+                                  "Affinity to %d processor cores: { ", core_count);
+
             for (int i = 0; i < CPU_SETSIZE; i++) {
                 if (CPU_ISSET(i, &my_set)) {
-                    core_count++;
-                    off += snprintf(cores_str+off, CPU_SETSIZE*5+2-off, "%d ", i);
+                    off += snprintf(cores_str+off, sizeof(cores_str)-off, "%d ", i);
+                    if (off >= sizeof(cores_str)) break;
                 }
             }
-            DEBUG_MSG("affinity to %d processor cores: {%s}\n", core_count, cores_str);
-            free(cores_str);
+            if (off < sizeof(cores_str)-1)
+                off += snprintf(cores_str+off, sizeof(cores_str)-off, "}");
+
+            cores_str_wrap = shmem_util_wrap(cores_str, SHMEM_INTERNAL_DIAG_WRAPLEN,
+                                             RAISE_PREFIX);
+            DEBUG_MSG("%s\n", cores_str_wrap);
+            free(cores_str_wrap);
         }
     }
 #endif
