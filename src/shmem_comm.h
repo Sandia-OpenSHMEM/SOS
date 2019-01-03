@@ -119,12 +119,14 @@ shmem_internal_put_signal_nbi(shmem_ctx_t ctx, void *target, const void *source,
         *sig_addr = signal;
 #elif USE_XPMEM
         shmem_transport_xpmem_put(target, source, len, pe, node_rank);
+        shmem_internal_membar_store(); /* Memory fence to ensure target PE observes stores in the correct order */
         shmem_transport_xpmem_put(sig_addr, &signal, sizeof(uint64_t), pe, node_rank);
 #elif USE_CMA
         if (len > shmem_internal_params.CMA_PUT_MAX) {
             shmem_transport_put_signal_nbi((shmem_transport_ctx_t *)ctx, target, source, len, sig_addr, signal, pe);
         } else {
             shmem_transport_cma_put(target, source, len, pe, node_rank);
+            shmem_internal_membar_store(); /* Memory fence to ensure target PE observes stores in the correct order */
             shmem_transport_cma_put(sig_addr, &signal, sizeof(uint64_t), pe, node_rank);
         }
 #else
