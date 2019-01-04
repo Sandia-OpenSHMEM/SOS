@@ -264,7 +264,7 @@ script:
     #- echo "localhost slots=4" > /tmp/hostfile.txt
     - $TRAVIS_SRC/prrte/install/bin/prte --system-server &
     - sleep 5
-    - make VERBOSE=1 TEST_RUNNER="oshrun -np 4" check
+    - make VERBOSE=1 TEST_RUNNER="$TRAVIS_SRC/prrte/install/bin/prun -np 4" check
     - make install
     - $TRAVIS_SRC/prrte/install/bin/prun --terminate
     ###
