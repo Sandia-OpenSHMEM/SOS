@@ -25,6 +25,8 @@
 #include "shmem.h"
 #include "shmemx.h"
 
+#include "shmem_atomic.h"
+
 #ifdef USE_ON_NODE_COMMS
 extern char *shmem_internal_location_array;
 #define SHMEM_SET_RANK_SAME_NODE(pe, node_rank)         \
