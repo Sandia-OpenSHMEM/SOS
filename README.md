@@ -1,6 +1,5 @@
-# ![SOS logo](https://raw.githubusercontent.com/davidozog/sandia-shmem/pr/readme_markdown/extra/SOS.png) Sandia OpenSHMEM ![SOS logo](https://raw.githubusercontent.com/davidozog/sandia-shmem/pr/readme_markdown/extra/SOS.png)
-<!-- TODO: update davidozog/pr/readme_markdown -> Sandia-OpenSHMEM/SOS -->
-[![GitHub version](https://badge.fury.io/gh/Sandia-OpenSHMEM%2FSOS.svg)](https://badge.fury.io/gh/Sandia-OpenSHMEM%2FSOS)
+# ![SOS logo](https://raw.githubusercontent.com/Sandia-OpenSHMEM/SOS/master/extra/SOS.png) Sandia OpenSHMEM ![SOS logo](https://raw.githubusercontent.com/Sandia-OpenSHMEM/SOS/master/extra/SOS.png)
+[![SOS release version](https://img.shields.io/github/release/Sandia-OpenSHMEM/SOS.svg)](https://github.com/Sandia-OpenSHMEM/SOS/releases/latest)
 [![Build Status](https://travis-ci.org/Sandia-OpenSHMEM/SOS.svg?branch=master)](https://travis-ci.org/Sandia-OpenSHMEM/SOS)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/9375/badge.svg)](https://scan.coverity.com/projects/9375)
 
