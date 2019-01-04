@@ -260,7 +260,7 @@ script:
     - mkdir prrte-build
     - cd prrte-build
     - ../configure --prefix=$PWD/install --with-ofi=$TRAVIS_INSTALL/libfabric --with-pmix=$TRAVIS_SRC/pmix/install --with-oshrun-launcher=$TRAVIS_SRC/prrte/install/bin/prun
-    - make $TRAVIS_PAR_MAKE
+    - make $TRAVIS_PAR_MAKE check TESTS=
     #- echo "localhost slots=4" > /tmp/hostfile.txt
     - $TRAVIS_SRC/prrte/install/bin/prte --system-server &
     - sleep 5
