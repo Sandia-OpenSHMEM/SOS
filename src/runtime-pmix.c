@@ -91,6 +91,8 @@ shmem_runtime_abort(int exit_code, const char msg[])
         __builtin_trap();
 #endif
 
+    shmem_util_backtrace();
+
     pmix_status_t rc;
 
     if (PMIX_SUCCESS != (rc = PMIx_Abort(exit_code, msg, NULL, 0))) {

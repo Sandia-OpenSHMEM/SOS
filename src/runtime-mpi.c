@@ -150,6 +150,8 @@ shmem_runtime_abort(int exit_code, const char msg[])
         __builtin_trap();
 #endif
 
+    shmem_util_backtrace();
+
     fprintf(stderr, "%s\n", msg);
 
     if (size == 1) {

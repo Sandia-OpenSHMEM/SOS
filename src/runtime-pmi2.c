@@ -155,6 +155,8 @@ shmem_runtime_abort(int exit_code, const char msg[])
         __builtin_trap();
 #endif
 
+    shmem_util_backtrace();
+
     PMI2_Abort(exit_code, msg);
 
     /* PMI_Abort should not return */

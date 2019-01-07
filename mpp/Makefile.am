@@ -13,21 +13,25 @@
 
 # shmem.h should appear in BOTH $(includedir)/shmem.h and $(includedir)/mpp/shmem.h!
 
-EXTRA_DIST = shmem.h4.in  \
-             shmemx.h4.in \
-             pshmem.h4.in \
-             shmem.fh.in  \
+EXTRA_DIST = shmem.h4 \
+             shmem-def.h.in \
+             shmemx.h4 \
+             pshmem.h4 \
+             shmem.fh.in \
              shmemx.fh.in \
-             shmem_c_func.h4.in \
-             shmemx_c_func.h4.in
+             shmem_c_func.h4 \
+             shmemx_c_func.h4
+
+include_HEADERS = shmemx-def.h
+mpp_HEADERS = shmemx-def.h
 
 mppdir = $(includedir)/mpp
 
-nodist_mpp_HEADERS = shmem.h shmemx.h
-nodist_include_HEADERS = shmem.h shmemx.h
+nodist_mpp_HEADERS = shmem.h shmemx.h shmem-def.h
+nodist_include_HEADERS = shmem.h shmemx.h shmem-def.h
 
-BUILT_SOURCES = shmem.h shmemx.h
-CLEANFILES += shmem.h shmemx.h
+BUILT_SOURCES = shmem.h shmemx.h shmem-def.h
+CLEANFILES += shmem.h shmemx.h shmem-def.h
 
 if ENABLE_PROFILING
 nodist_mpp_HEADERS += pshmem.h
@@ -48,11 +52,13 @@ endif
 SUFFIXES = .h4
 
 BINDINGS_GEN = \
+            $(top_srcdir)/mpp/shmem_c_func.h4 \
+            $(top_srcdir)/mpp/shmemx_c_func.h4 \
             $(top_srcdir)/bindings/shmem_bind_c.m4 \
             $(top_srcdir)/bindings/shmem_bind_c11.m4 \
             $(top_srcdir)/bindings/shmem_bind_cxx.m4 \
             $(top_builddir)/bindings/shmem_bind_c11_extras.m4 \
             $(top_builddir)/bindings/shmem_bind_cxx_extras.m4
 
-.h4.h: shmem_c_func.h4 shmemx_c_func.h4 $(BINDINGS_GEN)
-	$(AM_V_GEN) $(M4) -I$(top_srcdir)/bindings -I$(top_builddir)/bindings $< > $@
+.h4.h: $(BINDINGS_GEN)
+	$(AM_V_GEN) $(M4) -I$(top_srcdir)/bindings -I$(top_builddir)/bindings -I$(top_srcdir)/mpp $< > $@
