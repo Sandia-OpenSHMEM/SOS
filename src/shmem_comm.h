@@ -99,7 +99,7 @@ shmem_internal_put_signal_nbi(shmem_ctx_t ctx, void *target, const void *source,
         return;
     }
 
-    if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
+    if (-1 != (node_rank = shmem_runtime_get_node_rank(pe))) {
 #if USE_MEMCPY
         memcpy(target, source, len);
         *sig_addr = signal;
