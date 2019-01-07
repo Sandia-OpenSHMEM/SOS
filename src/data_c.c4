@@ -513,12 +513,9 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_PE(pe);                                             \
     SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE) * nelems);           \
     SHMEM_ERR_CHECK_NULL(source, nelems);                               \
-    shmem_internal_put_nbi(ctx, target, source,                         \
-                           sizeof(TYPE) * nelems, pe);                  \
-    /* TODO: Uncertainity in terms of the memory model; Need to be fixed later. */ \
-    shmem_internal_fence(ctx);                                          \
-    shmem_internal_put_nbi(ctx, sig_addr, &signal,                      \
-                           sizeof(uint64_t), pe);                       \
+    shmem_internal_put_signal_nbi(ctx, target, source,                  \
+                                  sizeof(TYPE) * nelems, sig_addr,      \
+                                  signal, pe);                          \
   }
 
 
@@ -531,12 +528,8 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_PE(pe);                                             \
     SHMEM_ERR_CHECK_SYMMETRIC(target, (SIZE) * nelems);                 \
     SHMEM_ERR_CHECK_NULL(source, nelems);                               \
-    shmem_internal_put_nbi(ctx, target, source, (SIZE) * nelems,        \
-                           pe);                                         \
-    /* TODO: Uncertainity in terms of the memory model; Need to be fixed later. */ \
-    shmem_internal_fence(ctx);                                          \
-    shmem_internal_put_nbi(ctx, sig_addr, &signal,                      \
-                           sizeof(uint64_t), pe);                       \
+    shmem_internal_put_signal_nbi(ctx, target, source, (SIZE) * nelems, \
+                                  sig_addr, signal, pe);                \
   }
 
 

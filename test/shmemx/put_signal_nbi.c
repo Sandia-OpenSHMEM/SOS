@@ -67,7 +67,11 @@ int main(int argc, char *argv[])
         }
     } 
 
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
     shmem_wait_until(&sig_addr, SHMEM_CMP_EQ, 1);
+#else
+    shmem_uint64_wait_until(&sig_addr, SHMEM_CMP_EQ, 1);
+#endif
 
     for (i = 0; i < MSG_SZ; i++) {
         if (target[i] != source[i]) {
