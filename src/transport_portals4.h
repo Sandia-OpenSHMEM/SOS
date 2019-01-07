@@ -643,6 +643,17 @@ shmem_transport_put_ct_nb(shmem_transport_ct_t *ct, void *target, const void *so
 #endif
 }
 
+static inline
+void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
+                                    uint64_t *sig_addr, uint64_t signal, int pe)
+{
+    /* FIXME: Need to optimize non-blocking put with signal for Portals. Current implementation below keeps  
+     * the "fence" in between data and signal put */
+    shmem_transport_put_nbi(ctx, target, source, len, pe);
+    shmem_transport_fence(ctx);
+    shmem_transport_put_scalar(ctx, sig_addr, &signal, sizeof(uint64_t), pe);
+}
+
 
 static inline
 void
