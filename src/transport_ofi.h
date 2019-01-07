@@ -697,7 +697,7 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
                                       };
 
         do {
-            ret = fi_writemsg(ctx->ep, &msg, FI_DELIVERY_COMPLETE);
+            ret = fi_writemsg(ctx->ep, &msg, FI_DELIVERY_COMPLETE | FI_INJECT);
         } while (try_again(ctx, ret, &polled));
 
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
@@ -785,6 +785,8 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
                                          };
 
     do {
+        /* FI_FENCE assures completion of one or more (for fragmentation) prior puts through 
+         * signal delivery */
         ret = fi_atomicmsg(ctx->ep, &msg_signal, FI_DELIVERY_COMPLETE | FI_FENCE | FI_INJECT);
     } while (try_again(ctx, ret, &polled));
 
