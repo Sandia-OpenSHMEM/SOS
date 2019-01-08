@@ -1418,24 +1418,18 @@ int shmem_transport_startup(void)
 {
     int ret;
     int i;
-    int num_on_node;
-    long ofi_tx_ctx_cnt;
 
     if (shmem_internal_params.OFI_STX_AUTO) {
 
-        if (shmem_internal_params.OFI_STX_NODE_MAX_provided) {
-            if (shmem_internal_params.OFI_STX_NODE_MAX_provided > 0) {
-                ofi_tx_ctx_cnt = shmem_internal_params.OFI_STX_NODE_MAX;
-            } else {
-                RAISE_ERROR_STR("OFI_STX_NODE_MAX must be greater than zero");
-            }
-        } else {
-            ofi_tx_ctx_cnt = shmem_transport_ofi_info.fabrics->domain_attr->tx_ctx_cnt;
-        }
-
-        num_on_node = shmem_runtime_get_local_size();
+        long ofi_tx_ctx_cnt = shmem_transport_ofi_info.fabrics->domain_attr->tx_ctx_cnt;
+        int num_on_node = shmem_runtime_get_local_size();
 
         /* Paritition TX resources evenly across node-local PEs */
+        /* Note: we assume that the domain reports the same tx_ctx_cnt for
+         * every PE on the node.  We also assume that the resource reported
+         * should be divided equally among all PEs.  These assumptions may not
+         * be valid in all cases, for example when the provider has already
+         * partitioned resources or when a node has multiple NICs. */
         shmem_transport_ofi_stx_max = ofi_tx_ctx_cnt / num_on_node;
         int remainder = ofi_tx_ctx_cnt % num_on_node;
         int node_pe = shmem_internal_my_pe % shmem_internal_num_pes;

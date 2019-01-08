@@ -255,13 +255,6 @@ options.
         compute node is determined by its unique hostname, and the number of
         STXs available on a compute node is provided by the libfabric library.
 
-    SHMEM_OFI_STX_NODE_MAX (default: auto)
-        When SHMEM_OFI_STX_AUTO is enabled, this value manually sets the
-        maximum number of STXs per compute node (instead of using the value
-        provided by libfabric).  These STXs are evenly partitioned across PEs
-        that reside on the same compute node.  If SHMEM_OFI_STX_AUTO is off,
-        then SHMEM_OFI_STX_NODE_MAX has no effect.
-
 
   Debugging Environment variables:
 
