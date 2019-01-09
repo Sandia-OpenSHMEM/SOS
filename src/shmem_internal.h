@@ -48,12 +48,6 @@ extern unsigned int shmem_internal_rand_seed;
 #define SHMEM_INTERNAL_DIAG_STRLEN 1024
 #define SHMEM_INTERNAL_DIAG_WRAPLEN 72
 
-#ifdef MAXHOSTNAMELEN
-#define SHMEM_INTERNAL_MAX_HOSTNAME_LEN MAXHOSTNAMELEN
-#else
-#define SHMEM_INTERNAL_MAX_HOSTNAME_LEN HOST_NAME_MAX
-#endif
-
 /* Note: must be accompanied by shmem_internal_my_pe in arguments */
 #define RAISE_PE_PREFIX "[%04d]        "
 #define RAISE_PREFIX    "              "
@@ -428,6 +422,29 @@ int shmem_internal_collectives_init(void);
 void *shmem_internal_shmalloc(size_t size);
 void* shmem_internal_get_next(intptr_t incr);
 
+/* Query PEs reachable using shared memory */
+static inline int shmem_internal_get_shr_rank(int pe)
+{
+#ifdef USE_ON_NODE_COMMS
+    return shmem_runtime_get_local_rank(pe);
+#elif defined(USE_MEMCPY)
+    return pe == shmem_runtime_get_rank() ? 0 : -1;
+#else
+    return -1;
+#endif
+}
+
+static inline int shmem_internal_get_shr_size(void)
+{
+#ifdef USE_ON_NODE_COMMS
+    return shmem_runtime_get_local_size();
+#elif defined(USE_MEMCPY)
+    return 1;
+#else
+    return 0;
+#endif
+}
+
 static inline double shmem_internal_wtime(void) {
     double wtime = 0.0;
 
@@ -458,21 +475,5 @@ void shmem_util_backtrace(void);
 
 extern uint64_t (*shmem_internal_gettid_fn)(void);
 extern void shmem_internal_register_gettid(uint64_t (*gettid_fn)(void));
-
-static inline
-int shmem_internal_need_node_util(void)
-{
-#if USE_ON_NODE_COMMS
-    return 1;
-#elif USE_OFI
-    if (shmem_internal_params.OFI_STX_AUTO)
-        return 1;
-    else
-        return 0;
-#else
-    return 0;
-#endif
-}
-
 
 #endif

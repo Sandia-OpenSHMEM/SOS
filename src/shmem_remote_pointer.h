@@ -25,7 +25,7 @@ shmem_internal_ptr(const void *target, int pe)
     int node_rank;
 
     // Only if regular load/stores are used to implement put/get!
-    if (-1 != (node_rank = shmem_runtime_get_node_rank(pe))) {
+    if (-1 != (node_rank = shmem_internal_get_shr_rank(pe))) {
 #if USE_XPMEM
         return shmem_transport_xpmem_ptr(target, pe, node_rank);
 #else

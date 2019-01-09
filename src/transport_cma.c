@@ -62,7 +62,7 @@ shmem_transport_cma_startup(void)
     int i, ret, peer_num, num_on_node;
     pmi_cma_data_t cma_data;
 
-    num_on_node = shmem_runtime_get_node_size();
+    num_on_node = shmem_runtime_get_local_size();
 
     /* allocate space for local peers */
     shmem_transport_cma_peers = calloc(num_on_node, sizeof(pid_t));
@@ -70,7 +70,7 @@ shmem_transport_cma_startup(void)
 
     /* get local peer pids */
     for (i = 0 ; i < shmem_internal_num_pes; ++i) {
-        peer_num = shmem_runtime_get_node_rank(i);
+        peer_num = shmem_runtime_get_local_rank(i);
         if (-1 == peer_num) continue;
 
         ret = shmem_runtime_get(i, "cma-procid", &cma_data,

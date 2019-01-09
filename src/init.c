@@ -166,6 +166,10 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     int cma_initialized       = 0;
 #endif
     int randr_initialized     = 0;
+    int enable_local_ranks    = 0;
+
+    /* Parse environment variables into shmem_internal_params */
+    shmem_internal_parse_env();
 
     /* set up threading */
     SHMEM_MUTEX_INIT(shmem_internal_mutex_alloc);
@@ -177,7 +181,13 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     *tl_provided = SHMEM_THREAD_SINGLE;
 #endif
 
-    ret = shmem_runtime_init();
+#if USE_ON_NODE_COMMS
+    enable_local_ranks = 1;
+#elif USE_OFI
+    enable_local_ranks = (shmem_internal_params.OFI_STX_AUTO) ? 1 : 0;
+#endif
+
+    ret = shmem_runtime_init(enable_local_ranks);
     if (0 != ret) {
         fprintf(stderr, "ERROR: runtime init failed: %d\n", ret);
         goto cleanup;
@@ -185,9 +195,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     runtime_initialized = 1;
     shmem_internal_my_pe = shmem_runtime_get_rank();
     shmem_internal_num_pes = shmem_runtime_get_size();
-
-    /* Parse environment variables into shmem_internal_params */
-    shmem_internal_parse_env();
 
     /* Ensure that the vendor string will not cause an overflow in user code */
     if (sizeof(SHMEM_VENDOR_STRING) > SHMEM_MAX_NAME_LEN) {
@@ -381,11 +388,17 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 #endif
 
     /* exchange information */
-    ret = shmem_runtime_exchange(shmem_internal_need_node_util());
+    ret = shmem_runtime_exchange();
     if (0 != ret) {
         RETURN_ERROR_MSG("Runtime exchange failed (%d)\n", ret);
         goto cleanup;
     }
+
+    DEBUG_MSG("Local rank=%d, Num. local=%d, Shr. rank=%d, Num. shr=%d\n",
+              enable_local_ranks ? shmem_runtime_get_local_rank(shmem_internal_my_pe) : 0,
+              enable_local_ranks ? shmem_runtime_get_local_size() : 1,
+              shmem_internal_get_shr_rank(shmem_internal_my_pe),
+              shmem_internal_get_shr_size());
 
     /* finish transport initialization after information sharing. */
     ret = shmem_transport_startup();
