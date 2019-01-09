@@ -177,7 +177,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     *tl_provided = SHMEM_THREAD_SINGLE;
 #endif
 
-    ret = shmem_runtime_init();
+    ret = shmem_runtime_init(shmem_internal_need_node_util());
     if (0 != ret) {
         fprintf(stderr, "ERROR: runtime init failed: %d\n", ret);
         goto cleanup;
@@ -381,7 +381,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 #endif
 
     /* exchange information */
-    ret = shmem_runtime_exchange(shmem_internal_need_node_util());
+    ret = shmem_runtime_exchange();
     if (0 != ret) {
         RETURN_ERROR_MSG("Runtime exchange failed (%d)\n", ret);
         goto cleanup;

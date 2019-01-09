@@ -35,15 +35,13 @@
 
 #include "runtime.h"
 #include "shmem_internal.h"
-#include "shmem_node_util.h"
 
 static int rank = -1;
-static int size = 0;
+static int size = 0, local_size = 0;
 static char *kvs_name, *kvs_key, *kvs_value;
 static int max_name_len, max_key_len, max_val_len;
 static int initialized_pmi = 0;
-static int initialized_node_util = 0;
-static uint32_t local_size = 1;
+static int *location_array = NULL;
 
 static int
 encode(const void *inval, int invallen, char *outval, int outvallen)
@@ -98,7 +96,7 @@ decode(const char *inval, void *outval, int outvallen)
 
 
 int
-shmem_runtime_init(void)
+shmem_runtime_init(int enable_topo)
 {
     int spawned, appnum;
 
@@ -127,6 +125,11 @@ shmem_runtime_init(void)
         return 7;
     }
 
+    if (enable_topo) {
+        location_array = malloc(sizeof(int) * size);
+        if (NULL == location_array) return 8;
+    }
+
     return 0;
 }
 
@@ -134,8 +137,8 @@ shmem_runtime_init(void)
 int
 shmem_runtime_fini(void)
 {
-    if (initialized_node_util) {
-        shmem_node_util_fini();
+    if (location_array) {
+        free(location_array);
     }
 
     if (initialized_pmi == 1) {
@@ -181,7 +184,7 @@ shmem_runtime_get_size(void)
 int
 shmem_runtime_get_local_rank(int pe)
 {
-    return shmem_node_util_get_local_rank(pe);
+    return location_array[pe];
 }
 
 
@@ -193,16 +196,15 @@ shmem_runtime_get_local_size(void)
 
 
 int
-shmem_runtime_exchange(int need_node_util)
+shmem_runtime_exchange(void)
 {
     int ret;
 
-    if (need_node_util) {
-        ret = shmem_node_util_init();
+    if (location_array) {
+        ret = shmem_runtime_util_put_hostname();
         if (ret != 0) {
-            RAISE_ERROR_MSG("Node utility init failed (%d)", ret);
-        } else {
-            initialized_node_util = 1;
+            RETURN_ERROR_MSG("KVS hostname put (%d)", ret);
+            return 4;
         }
     }
 
@@ -210,12 +212,12 @@ shmem_runtime_exchange(int need_node_util)
         return 5;
     }
 
-    if (need_node_util) {
-        ret = shmem_node_util_startup();
+    if (location_array) {
+        ret = shmem_runtime_util_populate_local(location_array, size, &local_size);
         if (0 != ret) {
-            RETURN_ERROR_MSG("Node utility startup failed (%d)\n", ret);
+            RETURN_ERROR_MSG("Topology mapping failed (%d)\n", ret);
+            return 7;
         }
-        local_size = shmem_node_util_get_local_size();
     }
 
     return 0;

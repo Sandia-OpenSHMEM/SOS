@@ -32,6 +32,7 @@ libsma_la_SOURCES = \
 	shmem_free_list.c \
 	shmem_atomic.h \
 	runtime.h \
+	runtime_util.c \
 	shmem_internal.h \
 	shmem_internal_op.h \
 	shmem_comm.h \
@@ -40,8 +41,6 @@ libsma_la_SOURCES = \
 	shmem_accessibility.h \
 	shmem_remote_pointer.h \
 	shmem_lock.h \
-	shmem_node_util.h \
-	shmem_node_util.c \
 	malloc.c \
 	init.c \
 	collectives.c \

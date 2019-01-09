@@ -428,6 +428,29 @@ int shmem_internal_collectives_init(void);
 void *shmem_internal_shmalloc(size_t size);
 void* shmem_internal_get_next(intptr_t incr);
 
+/* Query PEs reachable using shared memory */
+static inline int shmem_internal_get_shr_rank(int pe)
+{
+#ifdef USE_ON_NODE_COMMS
+    return shmem_runtime_get_local_rank(pe);
+#elif defined(USE_MEMCPY)
+    return pe == shmem_runtime_get_rank() ? 0 : -1;
+#else
+    return -1;
+#endif
+}
+
+static inline int shmem_internal_get_shr_size(void)
+{
+#ifdef USE_ON_NODE_COMMS
+    return shmem_runtime_get_local_size();
+#elif defined(USE_MEMCPY)
+    return 1;
+#else
+    return 0;
+#endif
+}
+
 static inline double shmem_internal_wtime(void) {
     double wtime = 0.0;
 

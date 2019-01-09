@@ -35,11 +35,10 @@
 static pmix_proc_t myproc;
 static size_t size;
 static uint32_t local_rank = 0;
-static uint32_t local_size = 1;
-static int *local_ranks;
+static int *local_ranks = NULL;
 
 int
-shmem_runtime_init(void)
+shmem_runtime_init(int enable_topo)
 {
     pmix_status_t rc;
     pmix_proc_t proc;
@@ -62,6 +61,14 @@ shmem_runtime_init(void)
         return rc;
     }
 
+    if (enable_topo) {
+        local_ranks = (int *)malloc(size * sizeof(int));
+        if (NULL == local_ranks) {
+            RETURN_ERROR_MSG_PREINIT("Out of memory allocating local_ranks\n");
+            return 1;
+        }
+    }
+
     return PMIX_SUCCESS;
 }
 
@@ -71,7 +78,8 @@ shmem_runtime_fini(void)
 {
     pmix_status_t rc;
 
-    free(local_ranks);
+    if (local_ranks)
+        free(local_ranks);
 
     if (PMIX_SUCCESS != (rc = PMIx_Finalize(NULL, 0))) {
         RETURN_ERROR_MSG_PREINIT("PMIx_Finalize failed (%d)\n", rc);
@@ -125,12 +133,6 @@ shmem_runtime_get_local_rank(int pe)
     return local_ranks[pe];
 }
 
-int
-shmem_runtime_get_local_size(void)
-{
-    return local_size;
-}
-
 // static void opcbfunc(pmix_status_t status, void *cbdata)
 // {
 //     bool *active = (bool*)cbdata;
@@ -140,14 +142,15 @@ shmem_runtime_get_local_size(void)
 // }
 
 int
-shmem_runtime_exchange(int need_node_util)
+shmem_runtime_exchange(void)
 {
     pmix_status_t rc;
     pmix_info_t info;
+    uint32_t local_size = -1;
     bool wantit=true;
     //bool active = true;
 
-    if (need_node_util) {
+    if (local_ranks) {
         pmix_proc_t proc;
         pmix_value_t *val;
 

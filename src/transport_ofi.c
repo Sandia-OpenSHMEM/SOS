@@ -1352,6 +1352,7 @@ int shmem_transport_init(void)
             shmem_internal_params.OFI_STX_MAX <= 0) {
             RAISE_WARN_MSG("Ignoring non-positive OFI_STX_MAX value '%ld', enabling OFI_STX_AUTO\n",
                            shmem_internal_params.OFI_STX_MAX);
+            /* FIXME: Setting auto here could be bad ... better to set 1 or error? */
             shmem_internal_params.OFI_STX_AUTO = 1;
         } else {
             shmem_transport_ofi_stx_max = shmem_internal_params.OFI_STX_MAX;
@@ -1424,6 +1425,11 @@ int shmem_transport_startup(void)
         long ofi_tx_ctx_cnt = shmem_transport_ofi_info.fabrics->domain_attr->tx_ctx_cnt;
         int num_on_node = shmem_runtime_get_local_size();
 
+        if (shmem_internal_params.OFI_STX_MAX_provided) {
+            RAISE_WARN_MSG("Auto-setting STX_MAX; ignoring provided STX_MAX value '%ld'\n",
+                           shmem_internal_params.OFI_STX_MAX);
+        }
+
         /* Paritition TX resources evenly across node-local PEs */
         /* Note: we assume that the domain reports the same tx_ctx_cnt for
          * every PE on the node.  We also assume that the resource reported
@@ -1444,7 +1450,7 @@ int shmem_transport_startup(void)
                            ofi_tx_ctx_cnt, num_on_node);
         }
 
-        DEBUG_MSG("PE %d auto-set STX max to %ld\n", shmem_internal_my_pe, shmem_transport_ofi_stx_max);
+        DEBUG_MSG("Auto-set STX max to %ld\n", shmem_transport_ofi_stx_max);
     }
 
     /* Allocate STX array with max length */
