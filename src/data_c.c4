@@ -482,6 +482,7 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                           sizeof(TYPE) * nelems, pe,                    \
                           &completion);                                 \
     shmem_internal_put_wait(ctx, &completion);                          \
+    shmem_internal_fence(ctx);                                          \
     shmem_internal_put_scalar(ctx, sig_addr, &signal,                   \
                               sizeof(uint64_t), pe);                    \
   }
@@ -500,6 +501,7 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     shmem_internal_put_nb(ctx, target, source, (SIZE) * nelems,         \
                           pe, &completion);                             \
     shmem_internal_put_wait(ctx, &completion);                          \
+    shmem_internal_fence(ctx);                                          \
     shmem_internal_put_scalar(ctx, sig_addr, &signal,                   \
                               sizeof(uint64_t), pe);                    \
   }
