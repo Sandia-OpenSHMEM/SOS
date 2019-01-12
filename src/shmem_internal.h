@@ -482,20 +482,4 @@ void shmem_util_backtrace(void);
 extern uint64_t (*shmem_internal_gettid_fn)(void);
 extern void shmem_internal_register_gettid(uint64_t (*gettid_fn)(void));
 
-static inline
-int shmem_internal_need_node_util(void)
-{
-#if USE_ON_NODE_COMMS
-    return 1;
-#elif USE_OFI
-    if (shmem_internal_params.OFI_STX_AUTO)
-        return 1;
-    else
-        return 0;
-#else
-    return 0;
-#endif
-}
-
-
 #endif

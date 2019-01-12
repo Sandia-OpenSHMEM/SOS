@@ -19,7 +19,7 @@
 #include "config.h"
 #include "shmem_decl.h"
 
-int shmem_runtime_init(int enable_topo);
+int shmem_runtime_init(int enable_local_ranks);
 int shmem_runtime_fini(void);
 void shmem_runtime_abort(int exit_code, const char msg[]) SHMEM_ATTRIBUTE_NORETURN ;
 

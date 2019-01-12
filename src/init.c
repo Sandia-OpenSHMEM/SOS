@@ -166,6 +166,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     int cma_initialized       = 0;
 #endif
     int randr_initialized     = 0;
+    int enable_local_ranks    = 0;
 
     /* set up threading */
     SHMEM_MUTEX_INIT(shmem_internal_mutex_alloc);
@@ -177,7 +178,13 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     *tl_provided = SHMEM_THREAD_SINGLE;
 #endif
 
-    ret = shmem_runtime_init(shmem_internal_need_node_util());
+#if USE_ON_NODE_COMMS
+    enable_local_ranks = 1;
+#elif USE_OFI
+    enable_local_ranks = (shmem_internal_params.OFI_STX_AUTO) ? 1 : 0;
+#endif
+
+    ret = shmem_runtime_init(enable_local_ranks);
     if (0 != ret) {
         fprintf(stderr, "ERROR: runtime init failed: %d\n", ret);
         goto cleanup;

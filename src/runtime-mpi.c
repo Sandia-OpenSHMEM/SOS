@@ -49,7 +49,7 @@ kv_index(char* kv_set, int index)
 }
 
 int
-shmem_runtime_init(int enable_topo)
+shmem_runtime_init(int enable_local_ranks)
 {
     int initialized, mpi_thread_level, provided;
     if (MPI_SUCCESS != MPI_Initialized(&initialized)) {
@@ -100,7 +100,7 @@ shmem_runtime_init(int enable_topo)
     kv_store_me = (char*)malloc(MAX_KV_COUNT * sizeof(char)* MAX_KV_LENGTH);
     if (NULL == kv_store_me) return 8;
 
-    if (enable_topo) {
+    if (enable_local_ranks) {
         local_ranks = malloc(size * sizeof(int));
         if (NULL == local_ranks) return 8;
     }

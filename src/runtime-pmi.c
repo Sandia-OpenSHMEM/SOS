@@ -103,7 +103,7 @@ decode(const char *inval, void *outval, size_t outvallen)
 
 
 int
-shmem_runtime_init(int enable_topo)
+shmem_runtime_init(int enable_local_ranks)
 {
     int initialized;
 
@@ -145,7 +145,7 @@ shmem_runtime_init(int enable_topo)
             return 9;
         }
 
-        if (enable_topo) {
+        if (enable_local_ranks) {
             location_array = malloc(sizeof(int) * size);
             if (NULL == location_array) return 10;
         }
@@ -272,7 +272,7 @@ shmem_runtime_exchange(void)
     if (location_array) {
         ret = shmem_runtime_util_populate_local(location_array, size, &local_size);
         if (0 != ret) {
-            RETURN_ERROR_MSG("Topology mapping failed (%d)\n", ret);
+            RETURN_ERROR_MSG("Local PE mapping failed (%d)\n", ret);
             return 7;
         }
     }

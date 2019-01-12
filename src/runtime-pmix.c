@@ -38,7 +38,7 @@ static uint32_t local_rank = 0;
 static int *local_ranks = NULL;
 
 int
-shmem_runtime_init(int enable_topo)
+shmem_runtime_init(int enable_local_ranks)
 {
     pmix_status_t rc;
     pmix_proc_t proc;
@@ -61,7 +61,7 @@ shmem_runtime_init(int enable_topo)
         return rc;
     }
 
-    if (enable_topo) {
+    if (enable_local_ranks) {
         local_ranks = (int *)malloc(size * sizeof(int));
         if (NULL == local_ranks) {
             RETURN_ERROR_MSG_PREINIT("Out of memory allocating local_ranks\n");
