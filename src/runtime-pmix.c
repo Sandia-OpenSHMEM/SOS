@@ -133,6 +133,12 @@ shmem_runtime_get_local_rank(int pe)
     return local_ranks[pe];
 }
 
+int
+shmem_runtime_get_local_rank(void)
+{
+    return local_size;
+}
+
 // static void opcbfunc(pmix_status_t status, void *cbdata)
 // {
 //     bool *active = (bool*)cbdata;
