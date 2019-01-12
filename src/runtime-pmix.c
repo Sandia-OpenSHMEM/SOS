@@ -134,7 +134,7 @@ shmem_runtime_get_local_rank(int pe)
 }
 
 int
-shmem_runtime_get_local_rank(void)
+shmem_runtime_get_local_size(void)
 {
     return local_size;
 }
