@@ -33,7 +33,7 @@
 #include "uthash.h"
 
 static int rank = -1;
-static int size = 0, local_size = 0;
+static int size = 0, local_size = -1;
 static char *kvs_name, *kvs_key, *kvs_value;
 static int max_name_len, max_key_len, max_val_len;
 static int initialized_pmi = 0;

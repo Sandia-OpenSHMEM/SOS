@@ -102,7 +102,7 @@ int shmem_runtime_util_populate_local(int *location_array, int size, int *local_
     }
 
     if (n_local_pes < 1 || n_local_pes > size) {
-        RETURN_ERROR_MSG("Invalid local size (%d)\n", *local_size);
+        RETURN_ERROR_MSG("Invalid local size (%d)\n", n_local_pes);
         return 1;
     }
 

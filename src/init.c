@@ -168,6 +168,9 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     int randr_initialized     = 0;
     int enable_local_ranks    = 0;
 
+    /* Parse environment variables into shmem_internal_params */
+    shmem_internal_parse_env();
+
     /* set up threading */
     SHMEM_MUTEX_INIT(shmem_internal_mutex_alloc);
 #ifdef ENABLE_THREADS
@@ -192,9 +195,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     runtime_initialized = 1;
     shmem_internal_my_pe = shmem_runtime_get_rank();
     shmem_internal_num_pes = shmem_runtime_get_size();
-
-    /* Parse environment variables into shmem_internal_params */
-    shmem_internal_parse_env();
 
     /* Ensure that the vendor string will not cause an overflow in user code */
     if (sizeof(SHMEM_VENDOR_STRING) > SHMEM_MAX_NAME_LEN) {
@@ -393,6 +393,12 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         RETURN_ERROR_MSG("Runtime exchange failed (%d)\n", ret);
         goto cleanup;
     }
+
+    DEBUG_MSG("Local rank=%d, Num. local=%d, Shr. rank=%d, Num. shr=%d\n",
+              enable_local_ranks ? shmem_runtime_get_local_rank(shmem_internal_my_pe) : 0,
+              enable_local_ranks ? shmem_runtime_get_local_size() : 1,
+              shmem_internal_get_shr_rank(shmem_internal_my_pe),
+              shmem_internal_get_shr_size());
 
     /* finish transport initialization after information sharing. */
     ret = shmem_transport_startup();
