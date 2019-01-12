@@ -1430,6 +1430,9 @@ int shmem_transport_startup(void)
                            shmem_internal_params.OFI_STX_MAX);
         }
 
+        if (num_on_node <= 0)
+            RAISE_ERROR_MSG("Invalid number of TX contexts (%d)\n", num_on_node);
+
         /* Paritition TX resources evenly across node-local PEs */
         /* Note: we assume that the domain reports the same tx_ctx_cnt for
          * every PE on the node.  We also assume that the resource reported
@@ -1442,6 +1445,9 @@ int shmem_transport_startup(void)
         if (remainder > 0 && ((node_pe % num_on_node) < remainder)) {
             shmem_transport_ofi_stx_max++;
         }
+
+        if (shmem_transport_ofi_stx_max <= 0)
+            RAISE_ERROR_MSG("Not enough TX contexts (%d)\n", num_on_node);
 
         /* When running more PEs than available STXs, must assign each PE at least 1 */
         if (shmem_transport_ofi_stx_max <= 0) {
