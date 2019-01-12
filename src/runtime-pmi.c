@@ -33,7 +33,7 @@
 #include "uthash.h"
 
 static int rank = -1;
-static int size = 0, local_size = -1;
+static int size = 0, local_size = 0;
 static char *kvs_name, *kvs_key, *kvs_value;
 static int max_name_len, max_key_len, max_val_len;
 static int initialized_pmi = 0;
@@ -249,9 +249,8 @@ shmem_runtime_exchange(void)
     int ret;
 
     /* Use singleton KVS for single process jobs */
-    if (size == 1) {
+    if (size == 1)
         return 0;
-    }
 
     if (location_array) {
         ret = shmem_runtime_util_put_hostname();

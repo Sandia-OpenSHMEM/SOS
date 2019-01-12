@@ -56,7 +56,8 @@ shmem_runtime_init(int enable_local_ranks)
     if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_JOB_SIZE, NULL, 0, &val))) {
         size = val->data.uint32;
         PMIX_VALUE_RELEASE(val);
-    } else {
+    }
+    else {
         RETURN_ERROR_MSG_PREINIT("Size is not properly initiated (%d)\n", rc);
         return rc;
     }
@@ -113,12 +114,12 @@ shmem_runtime_abort(int exit_code, const char msg[])
 }
 
 
-
 int
 shmem_runtime_get_rank(void)
 {
     return myproc.rank;
 }
+
 
 int
 shmem_runtime_get_size(void)
@@ -126,12 +127,14 @@ shmem_runtime_get_size(void)
     return size;
 }
 
+
 int
 shmem_runtime_get_local_rank(int pe)
 {
     shmem_internal_assert(size > 0 && pe < size && pe >= 0);
     return local_ranks[pe];
 }
+
 
 int
 shmem_runtime_get_local_size(void)
