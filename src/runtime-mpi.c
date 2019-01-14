@@ -100,7 +100,7 @@ shmem_runtime_init(int enable_local_ranks)
     kv_store_me = (char*)malloc(MAX_KV_COUNT * sizeof(char)* MAX_KV_LENGTH);
     if (NULL == kv_store_me) return 8;
 
-    if (enable_local_ranks) {
+    if (size > 1 && enable_local_ranks) {
         local_ranks = malloc(size * sizeof(int));
         if (NULL == local_ranks) return 8;
     }
@@ -195,7 +195,7 @@ int
 shmem_runtime_get_local_size(void)
 {
     if (size == 1) {
-        return 0;
+        return 1;
     }
 
     return local_size;
