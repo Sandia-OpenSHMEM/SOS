@@ -76,10 +76,10 @@ void backtrace_execinfo(void) {
 static const char *bt_tmpdir = "/tmp";
 
 static
-int bt_mkstemp(char *filename, int limit) {
+int bt_mkstemp(char *filename, size_t limit) {
     const char template[] = "/sos_XXXXXX"; /* Last six chars must be "X" for a unique name */
     char *p;
-    int len;
+    size_t len;
 
     len = strlen(bt_tmpdir);
     len = MIN(len, limit - 1);
@@ -164,7 +164,7 @@ void backtrace_gdb(void) {
     }
 
     rc = snprintf(cmd, sizeof(cmd), fmt, gdb, filename, (int)getpid());
-    if ((rc < 0) || (rc >= sizeof(cmd))) {
+    if ((rc < 0) || ((size_t) rc >= sizeof(cmd))) {
         RETURN_ERROR_MSG("Error writing gdb commands to file %s\n", filename);
         (void)unlink(filename);
         return;

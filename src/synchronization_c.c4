@@ -314,14 +314,14 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST')
     int SHMEM_FUNCTION_ATTRIBUTES                                                              \
     shmemx_##STYPE##_test_all(TYPE *vars, size_t nelems, int cond, TYPE value)                 \
     {                                                                                          \
-        int ncompleted = 0;                                                                    \
+        size_t ncompleted = 0;                                                                 \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
         if (nelems == 0) return 1;                                                             \
                                                                                                \
-        for (int i = 0; i < nelems; i++) {                                                     \
+        for (size_t i = 0; i < nelems; i++) {                                                  \
             int cmpret;                                                                        \
             COMP(cond, vars[i], value, cmpret);                                                \
             if (cmpret) ncompleted++;                                                          \
