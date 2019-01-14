@@ -18,34 +18,32 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include "shmem_internal.h"
 #include "runtime.h"
 
-int shmem_runtime_util_gethostname(char *hostname)
-{
-    int ret = gethostname(hostname, SHMEM_INTERNAL_MAX_HOSTNAME_LEN);
-    if (ret != 0) {
-        RETURN_ERROR_MSG("gethostname failed (%d)", ret);
-        return ret;
-    }
-    /* gethostname() doesn't guarantee null-termination if truncation occurs */
-    hostname[SHMEM_INTERNAL_MAX_HOSTNAME_LEN - 1] = '\0';
-    return ret;
-}
+#ifdef MAXHOSTNAMELEN
+#define MAX_HOSTNAME_LEN MAXHOSTNAMELEN
+#else
+#define MAX_HOSTNAME_LEN HOST_NAME_MAX
+#endif
 
 
 /* Put the hostname into the runtime KVS */
 int shmem_runtime_util_put_hostname(void)
 {
-    char hostname[SHMEM_INTERNAL_MAX_HOSTNAME_LEN];
+    char hostname[MAX_HOSTNAME_LEN+1];
     int ret;
 
-    ret = shmem_runtime_util_gethostname(hostname);
+    ret = gethostname(hostname, MAX_HOSTNAME_LEN);
     if (ret != 0) {
-        RETURN_ERROR_MSG("Hostname query failed (%d)", ret);
+        RETURN_ERROR_MSG("gethostname failed (%d)", ret);
         return ret;
     }
+
+    /* gethostname() doesn't guarantee null-termination, add NIL */
+    hostname[MAX_HOSTNAME_LEN] = '\0';
 
     size_t hostname_len = strlen(hostname);
 
@@ -70,16 +68,19 @@ int shmem_runtime_util_put_hostname(void)
 int shmem_runtime_util_populate_local(int *location_array, int size, int *local_size)
 {
     int ret, i, n_local_pes = 0;
-    char hostname[SHMEM_INTERNAL_MAX_HOSTNAME_LEN];
+    char hostname[MAX_HOSTNAME_LEN+1];
 
-    ret = shmem_runtime_util_gethostname(hostname);
+    ret = gethostname(hostname, MAX_HOSTNAME_LEN);
     if (ret != 0) {
-        RETURN_ERROR_MSG("Hostname query failed (%d)", ret);
+        RETURN_ERROR_MSG("gethostname failed (%d)", ret);
         return ret;
     }
 
+    /* gethostname() doesn't guarantee null-termination, add NIL */
+    hostname[MAX_HOSTNAME_LEN] = '\0';
+
     for (i = 0; i < size; i++) {
-        char peer_hostname[SHMEM_INTERNAL_MAX_HOSTNAME_LEN];
+        char peer_hostname[MAX_HOSTNAME_LEN+1];
         size_t hlen;
 
         ret = shmem_runtime_get(i, "hostname_len", &hlen, sizeof(size_t));

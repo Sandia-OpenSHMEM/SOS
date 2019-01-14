@@ -48,12 +48,6 @@ extern unsigned int shmem_internal_rand_seed;
 #define SHMEM_INTERNAL_DIAG_STRLEN 1024
 #define SHMEM_INTERNAL_DIAG_WRAPLEN 72
 
-#ifdef MAXHOSTNAMELEN
-#define SHMEM_INTERNAL_MAX_HOSTNAME_LEN MAXHOSTNAMELEN
-#else
-#define SHMEM_INTERNAL_MAX_HOSTNAME_LEN HOST_NAME_MAX
-#endif
-
 /* Note: must be accompanied by shmem_internal_my_pe in arguments */
 #define RAISE_PE_PREFIX "[%04d]        "
 #define RAISE_PREFIX    "              "

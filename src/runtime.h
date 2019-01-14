@@ -38,7 +38,6 @@ int shmem_runtime_get(int pe, char *key, void *value, size_t valuelen);
 void shmem_runtime_barrier(void);
 
 /* Utility functions used to implement the runtime layer */
-int shmem_runtime_util_gethostname(char *hostname);
 int shmem_runtime_util_put_hostname(void);
 int shmem_runtime_util_populate_local(int *location_array, int size, int *local_size);
 
