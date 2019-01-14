@@ -108,7 +108,7 @@ static int find_hugepage_dir(size_t page_size, char **directory)
 
         path = mntent->mnt_dir;
         if (statfs(path, &pg_size) == 0) {
-            if (pg_size.f_bsize == page_size) {
+            if ((size_t) pg_size.f_bsize == page_size) {
                 *directory = strdup(path);
                 ret = 0;
                 break;
