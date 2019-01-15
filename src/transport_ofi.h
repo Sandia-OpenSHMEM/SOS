@@ -754,6 +754,15 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
     }
 
+    uint64_t flags_signal = FI_DELIVERY_COMPLETE | FI_INJECT;
+#ifndef USE_FI_FENCE /* FI_FENCE is not enabled by user. Using transport layer fence instead */
+    shmem_transport_fence(ctx);
+#else
+    /* FI_FENCE assures completion of one or more (for fragmentation) prior puts through
+     * signal delivery */
+    flags_signal |= FI_FENCE;
+#endif 
+
     /* Transmit the signal */
     shmem_transport_ofi_get_mr(sig_addr, pe, &addr, &key);
     polled = 0;
@@ -785,9 +794,7 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
                                          };
 
     do {
-        /* FI_FENCE assures completion of one or more (for fragmentation) prior puts through 
-         * signal delivery */
-        ret = fi_atomicmsg(ctx->ep, &msg_signal, FI_DELIVERY_COMPLETE | FI_FENCE | FI_INJECT);
+        ret = fi_atomicmsg(ctx->ep, &msg_signal, flags_signal);
     } while (try_again(ctx, ret, &polled));
 
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
