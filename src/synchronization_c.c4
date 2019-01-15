@@ -191,7 +191,10 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL')
                                                                                                \
         size_t i;                                                                              \
                                                                                                \
-        if (nelems == 0) return;                                                               \
+        if (nelems == 0) {                                                                     \
+            shmem_transport_probe();                                                           \
+            return;                                                                            \
+        }                                                                                      \
                                                                                                \
         for (i = 0; i < nelems; i++) SHMEM_INTERNAL_WAIT_UNTIL(&vars[i], cond, value);         \
                                                                                                \
@@ -219,8 +222,10 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ALL')
                 if (status[i]) num_ignored++;                                                  \
             }                                                                                  \
         }                                                                                      \
-        if (nelems == 0 || num_ignored == nelems)                                              \
+        if (nelems == 0 || num_ignored == nelems) {                                            \
+            shmem_transport_probe();                                                           \
             return SIZE_MAX;                                                                   \
+        }                                                                                      \
                                                                                                \
         SHMEM_MUTEX_LOCK(shmem_internal_mutex_rand_r);                                         \
         size_t start_idx = (size_t) (rand_r(&shmem_internal_rand_seed) /                       \
