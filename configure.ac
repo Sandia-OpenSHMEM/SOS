@@ -235,6 +235,13 @@ AC_ARG_ENABLE([memcpy],
     [AC_HELP_STRING([--enable-memcpy],
                     [Use memcpy to perform local put/get operations (default:disabled)])])
 
+AC_ARG_ENABLE([ofi-fence],
+    [AC_HELP_STRING([--enable-ofi-fence],
+                    [Use FI_FENCE feature to optimize put-with-signal operations. (default: disabled)])])
+AS_IF([test "$enable_ofi_fence" = "yes"],
+      [AC_DEFINE([USE_FI_FENCE], [1], [If defined, the OFI transport will use FI_FENCE. Otherwise, transport layer fence is used.])])
+
+
 PKG_INSTALLDIR()
 
 dnl check for programs

@@ -1112,6 +1112,11 @@ int query_for_fabric(struct fabric_info *info)
 #if ENABLE_TARGET_CNTR
     hints.caps |= FI_RMA_EVENT; /* want to use remote counters */
 #endif /* ENABLE_TARGET_CNTR */
+#ifdef USE_FI_FENCE
+    hints.caps |= FI_FENCE;     /* request fence capability; FI_FENCE adds 
+                                   ordering semantics to fi_atomicmsg
+                                   for put with signal implementation */
+#endif
     hints.addr_format         = FI_FORMAT_UNSPEC;
     domain_attr.data_progress = FI_PROGRESS_AUTO;
     domain_attr.resource_mgmt = FI_RM_ENABLED;
