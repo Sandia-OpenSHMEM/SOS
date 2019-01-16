@@ -174,7 +174,7 @@ before_install:
     - git clone --depth 10 https://github.com/pmix/pmix pmix
     - cd pmix
     - ./autogen.pl
-    - ./configure --prefix=$TRAVIS_INSTALL/pmix --with-libevent=$TRAVIS_INSTALL/libevent
+    - ./configure --prefix=$TRAVIS_INSTALL/pmix --with-libevent=$TRAVIS_INSTALL/libevent --with-platform=optimized
     - make install
     ## Build PRRTE
     - cd $TRAVIS_SRC
