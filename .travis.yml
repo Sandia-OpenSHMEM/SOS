@@ -164,6 +164,7 @@ before_install:
     - ./configure --prefix=$TRAVIS_INSTALL/libevent
     - make install
     ## Build hwloc
+    - cd $TRAVIS_SRC
     - wget https://download.open-mpi.org/release/hwloc/v2.0/hwloc-2.0.3.tar.gz
     - tar xvzf hwloc-2.0.3.tar.gz
     - cd hwloc-2.0.3
