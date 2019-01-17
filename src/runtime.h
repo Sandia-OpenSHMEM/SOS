@@ -41,4 +41,6 @@ void shmem_runtime_barrier(void);
 int shmem_runtime_util_put_hostname(void);
 int shmem_runtime_util_populate_local(int *location_array, int size, int *local_size);
 
+int shmem_runtime_util_encode(const void *inval, int invallen, char *outval, int outvallen);
+int shmem_runtime_util_decode(const char *inval, void *outval, size_t outvallen);
 #endif

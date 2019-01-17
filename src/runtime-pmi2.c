@@ -43,57 +43,6 @@ static int max_name_len, max_key_len, max_val_len;
 static int initialized_pmi = 0;
 static int *location_array = NULL;
 
-static int
-encode(const void *inval, int invallen, char *outval, int outvallen)
-{
-    static unsigned char encodings[] = {
-        '0','1','2','3','4','5','6','7', \
-        '8','9','a','b','c','d','e','f' };
-    int i;
-
-    if (invallen * 2 + 1 > outvallen) {
-        return 1;
-    }
-
-    for (i = 0; i < invallen; i++) {
-        outval[2 * i] = encodings[((unsigned char *)inval)[i] & 0xf];
-        outval[2 * i + 1] = encodings[((unsigned char *)inval)[i] >> 4];
-    }
-
-    outval[invallen * 2] = '\0';
-
-    return 0;
-}
-
-
-static int
-decode(const char *inval, void *outval, int outvallen)
-{
-    int i;
-    char *ret = (char*) outval;
-
-    if (outvallen != strlen(inval) / 2) {
-        return 1;
-    }
-
-    for (i = 0 ; i < outvallen ; ++i) {
-        if (*inval >= '0' && *inval <= '9') {
-            ret[i] = *inval - '0';
-        } else {
-            ret[i] = *inval - 'a' + 10;
-        }
-        inval++;
-        if (*inval >= '0' && *inval <= '9') {
-            ret[i] |= ((*inval - '0') << 4);
-        } else {
-            ret[i] |= ((*inval - 'a' + 10) << 4);
-        }
-        inval++;
-    }
-
-    return 0;
-}
-
 
 int
 shmem_runtime_init(int enable_local_ranks)
@@ -228,7 +177,8 @@ int
 shmem_runtime_put(char *key, void *value, size_t valuelen)
 {
     snprintf(kvs_key, max_key_len, "shmem-%lu-%s", (long unsigned) rank, key);
-    if (0 != encode(value, valuelen, kvs_value, max_val_len)) {
+    if (0 != shmem_runtime_util_encode(value, valuelen, kvs_value,
+                                       max_val_len)) {
         return 1;
     }
     if (PMI2_SUCCESS != PMI2_KVS_Put(kvs_key, kvs_value)) {
@@ -248,7 +198,7 @@ shmem_runtime_get(int pe, char *key, void *value, size_t valuelen)
                                      kvs_key, kvs_value, max_val_len, &len)) {
         return 1;
     }
-    if (0 != decode(kvs_value, value, valuelen)) {
+    if (0 != shmem_runtime_util_decode(kvs_value, value, valuelen)) {
         return 2;
     }
 
