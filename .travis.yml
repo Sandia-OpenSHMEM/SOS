@@ -237,7 +237,7 @@ script:
     - ../configure --prefix=$PWD/install --with-ofi=$TRAVIS_INSTALL/libfabric --with-pmix=$TRAVIS_INSTALL/pmix
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
-    - prte &
+    - prte --daemonize
     - make VERBOSE=1 TEST_RUNNER="prun -host localhost -oversubscribe -np 2" check
     - prun -terminate
     - make install
