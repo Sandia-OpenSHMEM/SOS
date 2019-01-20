@@ -79,6 +79,8 @@ addons:
             - mpich
             - libmpich-dev
             - cargo
+            - libevent-dev
+            - libhwloc-dev
 before_install:
     ## Set up the environment
     - mkdir $HOME/travis
@@ -155,13 +157,6 @@ before_install:
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ParRes/Kernels.git PRK
     - echo -e "SHMEMCC=oshcc -std=c99\nSHMEMTOP=$$TRAVIS_INSTALL\n" > PRK/common/make.defs
-    ## Build hwloc
-    - cd $TRAVIS_SRC
-    - wget https://download.open-mpi.org/release/hwloc/v2.0/hwloc-2.0.3.tar.gz
-    - tar xvzf hwloc-2.0.3.tar.gz
-    - cd hwloc-2.0.3
-    - ./configure --prefix=$TRAVIS_INSTALL/hwloc
-    - make install
     ## Build PMIx
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/pmix/pmix pmix
@@ -174,7 +169,7 @@ before_install:
     - git clone --depth 10 https://github.com/pmix/prrte prrte
     - cd prrte
     - ./autogen.pl
-    - ./configure --prefix=$TRAVIS_INSTALL/prrte --with-pmix=$TRAVIS_INSTALL/pmix --with-hwloc=$TRAVIS_INSTALL/hwloc --without-slurm
+    - ./configure --prefix=$TRAVIS_INSTALL/prrte --with-pmix=$TRAVIS_INSTALL/pmix --without-slurm
     - make install
 
 install:
