@@ -239,7 +239,7 @@ script:
     - make $TRAVIS_PAR_MAKE check TESTS=
     - prte &
     - make VERBOSE=1 TEST_RUNNER="prun -host localhost -oversubscribe -np 2" check
-    - killall prte
+    - prun -terminate
     - make install
     ###
     ### Run the UH test suite (Portals)
