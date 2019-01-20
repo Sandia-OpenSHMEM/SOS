@@ -155,14 +155,6 @@ before_install:
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/ParRes/Kernels.git PRK
     - echo -e "SHMEMCC=oshcc -std=c99\nSHMEMTOP=$$TRAVIS_INSTALL\n" > PRK/common/make.defs
-    ## Build Libevent
-    - cd $TRAVIS_SRC
-    - wget https://github.com/libevent/libevent/releases/download/release-2.1.8-stable/libevent-2.1.8-stable.tar.gz
-    - tar -xzvf libevent-2.1.8-stable.tar.gz
-    - cd libevent-2.1.8-stable
-    - ./autogen.sh
-    - ./configure --prefix=$TRAVIS_INSTALL/libevent
-    - make install
     ## Build hwloc
     - cd $TRAVIS_SRC
     - wget https://download.open-mpi.org/release/hwloc/v2.0/hwloc-2.0.3.tar.gz
@@ -175,14 +167,14 @@ before_install:
     - git clone --depth 10 https://github.com/pmix/pmix pmix
     - cd pmix
     - ./autogen.pl
-    - ./configure --prefix=$TRAVIS_INSTALL/pmix --with-libevent=$TRAVIS_INSTALL/libevent --with-platform=optimized
+    - ./configure --prefix=$TRAVIS_INSTALL/pmix --with-platform=optimized
     - make install
     ## Build PRRTE
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/pmix/prrte prrte
     - cd prrte
     - ./autogen.pl
-    - ./configure --prefix=$TRAVIS_INSTALL/prrte --with-pmix=$TRAVIS_INSTALL/pmix --with-libevent=$TRAVIS_INSTALL/libevent --with-hwloc=$TRAVIS_INSTALL/hwloc --without-slurm
+    - ./configure --prefix=$TRAVIS_INSTALL/prrte --with-pmix=$TRAVIS_INSTALL/pmix --with-hwloc=$TRAVIS_INSTALL/hwloc --without-slurm
     - make install
 
 install:
