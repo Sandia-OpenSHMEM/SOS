@@ -38,7 +38,7 @@ env:
         - >
           SOS_ENABLE_ERROR_TESTS=1
           SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SHMEM_BOUNCE_SIZE=0
-          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple"
+          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple --enable-ofi-fence"
         - >
           SOS_ENABLE_ERROR_TESTS=1
           SHMEM_BARRIER_ALGORITHM=auto SHMEM_BCAST_ALGORITHM=auto SHMEM_REDUCE_ALGORITHM=auto SHMEM_COLLECT_ALGORITHM=auto SHMEM_FCOLLECT_ALGORITHM=auto
@@ -112,7 +112,9 @@ before_install:
     - cd $TRAVIS_SRC
     - wget http://dist.schmorp.de/libev/Attic/libev-4.22.tar.gz
     - tar -xzvf libev-4.22.tar.gz
-    - cd libev-4.22 && ./configure --prefix=$TRAVIS_INSTALL/libev && make && make install
+    - cd libev-4.22
+    - ./configure --prefix=$TRAVIS_INSTALL/libev
+    - make install
     ## Build Portals 4
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/regrant/portals4.git portals4
@@ -156,28 +158,34 @@ before_install:
     - echo -e "SHMEMCC=oshcc -std=c99\nSHMEMTOP=$$TRAVIS_INSTALL\n" > PRK/common/make.defs
     ## Build Libevent
     - cd $TRAVIS_SRC
-    - wget https://github.com/libevent/libevent/releases/download/release-2.0.22-stable/libevent-2.0.22-stable.tar.gz
-    - tar -xzvf libevent-2.0.22-stable.tar.gz
-    - cd libevent-2.0.22-stable
+    - wget https://github.com/libevent/libevent/releases/download/release-2.1.8-stable/libevent-2.1.8-stable.tar.gz
+    - tar -xzvf libevent-2.1.8-stable.tar.gz
+    - cd libevent-2.1.8-stable
     - ./autogen.sh
-    - ./configure --prefix=$PWD/install
-    - make clean all install
+    - ./configure --prefix=$TRAVIS_INSTALL/libevent
+    - make install
+    ## Build hwloc
+    - cd $TRAVIS_SRC
+    - wget https://download.open-mpi.org/release/hwloc/v2.0/hwloc-2.0.3.tar.gz
+    - tar xvzf hwloc-2.0.3.tar.gz
+    - cd hwloc-2.0.3
+    - ./configure --prefix=$TRAVIS_INSTALL/hwloc
+    - make install
     ## Build PMIx
     - cd $TRAVIS_SRC
-    - git clone --depth 10 --single-branch -b v2.0 https://github.com/pmix/pmix pmix
+    - git clone --depth 10 https://github.com/pmix/pmix pmix
     - cd pmix
     - ./autogen.pl
-    - ./configure --prefix=$PWD/install --with-libevent=$TRAVIS_SRC/libevent-2.0.22-stable/install --with-devel-headers --disable-visibility && make clean all install
-    ## Build OMPI from source (takes too long, so removed in favor of RPM install below)
-    #- cd $TRAVIS_SRC
-    #- git clone --depth 10 --single-branch -b v3.0.x https://github.com/open-mpi/ompi.git ompi
-    #- cd ompi
-    #- ./autogen.pl
-    #- ./configure --prefix=$PWD/install --with-libevent=$TRAVIS_SRC/libevent-2.0.22-stable/install --with-pmix=$TRAVIS_SRC/pmix/install && make clean all install
-    ## Download and install OpenMPI RPM
-    - cd $TRAVIS_INSTALL
-    - wget http://gdurl.com/P5og -O openmpi-v3.0.x.deb
-    - sudo dpkg -i openmpi-v3.0.x.deb
+    - ./configure --prefix=$TRAVIS_INSTALL/pmix --with-libevent=$TRAVIS_INSTALL/libevent --with-platform=optimized
+    - make install
+    ## Build PRRTE
+    - cd $TRAVIS_SRC
+    - git clone --depth 10 https://github.com/pmix/prrte prrte
+    - cd prrte
+    - ./autogen.pl
+    - ./configure --prefix=$TRAVIS_INSTALL/prrte --with-pmix=$TRAVIS_INSTALL/pmix --with-libevent=$TRAVIS_INSTALL/libevent --with-hwloc=$TRAVIS_INSTALL/hwloc --without-slurm
+    - make install
+
 install:
     - cd $SOS_SRC
     - ./autogen.sh
@@ -234,16 +242,18 @@ script:
     - make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2" check
     - make install
     ###
-    ### Build and check with ORTE (Open MPI's launcher)
+    ### Build and check with PMIx
     ###
     - cd $SOS_SRC
-    - mkdir ompi-build
-    - cd ompi-build
-    - export PATH=/opt/openmpi/gitclone/bin:$BASE_PATH
-    - ../configure --prefix=$PWD/install --with-ofi=$TRAVIS_INSTALL/libfabric --with-pmix=$TRAVIS_SRC/pmix/install
+    - mkdir pmix-build
+    - cd pmix-build
+    - export PATH=$TRAVIS_INSTALL/prrte/bin:$BASE_PATH
+    - ../configure --prefix=$PWD/install --with-ofi=$TRAVIS_INSTALL/libfabric --with-pmix=$TRAVIS_INSTALL/pmix
     - make $TRAVIS_PAR_MAKE
-    - echo "localhost slots=4" > /tmp/hostfile.txt
-    - make VERBOSE=1 TEST_RUNNER="mpiexec --hostfile /tmp/hostfile.txt -np 4" check
+    - make $TRAVIS_PAR_MAKE check TESTS=
+    - prte &
+    - make VERBOSE=1 TEST_RUNNER="prun -host localhost -oversubscribe -np 2" check
+    - killall prte
     - make install
     ###
     ### Run the UH test suite (Portals)

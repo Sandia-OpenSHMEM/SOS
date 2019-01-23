@@ -13,7 +13,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.4.2], [https://github.com/Sandia-OpenSHMEM/SOS/issues], [sandia-openshmem], [https://github.com/Sandia-OpenSHMEM/SOS])
+AC_INIT([Sandia OpenSHMEM], [1.4.3rc1], [https://github.com/Sandia-OpenSHMEM/SOS/issues], [sandia-openshmem], [https://github.com/Sandia-OpenSHMEM/SOS])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -234,6 +234,13 @@ AC_ARG_WITH([oshrun-launcher],
 AC_ARG_ENABLE([memcpy],
     [AC_HELP_STRING([--enable-memcpy],
                     [Use memcpy to perform local put/get operations (default:disabled)])])
+
+AC_ARG_ENABLE([ofi-fence],
+    [AC_HELP_STRING([--enable-ofi-fence],
+                    [Use FI_FENCE feature to optimize put-with-signal operations. (default: disabled)])])
+AS_IF([test "$enable_ofi_fence" = "yes"],
+      [AC_DEFINE([USE_FI_FENCE], [1], [If defined, the OFI transport will use FI_FENCE. Otherwise, transport layer fence is used.])])
+
 
 PKG_INSTALLDIR()
 
