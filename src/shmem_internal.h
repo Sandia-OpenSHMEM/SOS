@@ -426,7 +426,7 @@ void* shmem_internal_get_next(intptr_t incr);
 static inline int shmem_internal_get_shr_rank(int pe)
 {
 #ifdef USE_ON_NODE_COMMS
-    return shmem_runtime_get_local_rank(pe);
+    return shmem_runtime_get_node_rank(pe);
 #elif defined(USE_MEMCPY)
     return pe == shmem_runtime_get_rank() ? 0 : -1;
 #else
@@ -437,7 +437,7 @@ static inline int shmem_internal_get_shr_rank(int pe)
 static inline int shmem_internal_get_shr_size(void)
 {
 #ifdef USE_ON_NODE_COMMS
-    return shmem_runtime_get_local_size();
+    return shmem_runtime_get_node_size();
 #elif defined(USE_MEMCPY)
     return 1;
 #else

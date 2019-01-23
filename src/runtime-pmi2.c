@@ -37,7 +37,7 @@
 #include "shmem_internal.h"
 
 static int rank = -1;
-static int size = 0, local_size = 0;
+static int size = 0, node_size = 0;
 static char *kvs_name, *kvs_key, *kvs_value;
 static int max_name_len, max_key_len, max_val_len;
 static int initialized_pmi = 0;
@@ -45,7 +45,7 @@ static int *location_array = NULL;
 
 
 int
-shmem_runtime_init(int enable_local_ranks)
+shmem_runtime_init(int enable_node_ranks)
 {
     int spawned, appnum;
 
@@ -74,7 +74,7 @@ shmem_runtime_init(int enable_local_ranks)
         return 7;
     }
 
-    if (enable_local_ranks) {
+    if (enable_node_ranks) {
         location_array = malloc(sizeof(int) * size);
         if (NULL == location_array) return 8;
     }
@@ -131,16 +131,16 @@ shmem_runtime_get_size(void)
 
 
 int
-shmem_runtime_get_local_rank(int pe)
+shmem_runtime_get_node_rank(int pe)
 {
     return location_array[pe];
 }
 
 
 int
-shmem_runtime_get_local_size(void)
+shmem_runtime_get_node_size(void)
 {
-    return local_size;
+    return node_size;
 }
 
 
@@ -162,9 +162,9 @@ shmem_runtime_exchange(void)
     }
 
     if (location_array) {
-        ret = shmem_runtime_util_populate_local(location_array, size, &local_size);
+        ret = shmem_runtime_util_populate_node(location_array, size, &node_size);
         if (0 != ret) {
-            RETURN_ERROR_MSG("Local PE mapping failed (%d)\n", ret);
+            RETURN_ERROR_MSG("Node PE mapping failed (%d)\n", ret);
             return 7;
         }
     }

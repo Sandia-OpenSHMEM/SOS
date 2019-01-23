@@ -118,9 +118,9 @@ int shmem_runtime_util_put_hostname(void)
 
 /* Populate the topology array.  This function should only be called after
  * shmem_runtime_util_put_hostname and a subsequent runtime exchange. */
-int shmem_runtime_util_populate_local(int *location_array, int size, int *local_size)
+int shmem_runtime_util_populate_node(int *location_array, int size, int *node_size)
 {
-    int ret, i, n_local_pes = 0;
+    int ret, i, n_node_pes = 0;
     char hostname[MAX_HOSTNAME_LEN+1];
 
     ret = gethostname(hostname, MAX_HOSTNAME_LEN);
@@ -148,19 +148,19 @@ int shmem_runtime_util_populate_local(int *location_array, int size, int *local_
             return ret;
         }
         if (strncmp(hostname, peer_hostname, hlen) == 0) {
-            location_array[i] = n_local_pes;
-            n_local_pes++;
+            location_array[i] = n_node_pes;
+            n_node_pes++;
         }
         else
             location_array[i] = -1;
     }
 
-    if (n_local_pes < 1 || n_local_pes > size) {
-        RETURN_ERROR_MSG("Invalid local size (%d)\n", n_local_pes);
+    if (n_node_pes < 1 || n_node_pes > size) {
+        RETURN_ERROR_MSG("Invalid node size (%d)\n", n_node_pes);
         return 1;
     }
 
-    *local_size = n_local_pes;
+    *node_size = n_node_pes;
 
     return 0;
 }

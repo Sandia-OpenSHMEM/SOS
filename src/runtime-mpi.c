@@ -36,8 +36,8 @@ static int size = 0;
 static MPI_Comm SHMEM_RUNTIME_WORLD, SHMEM_RUNTIME_SHARED;
 static int kv_length = 0;
 static int initialized_mpi = 0;
-static int local_rank, local_size;
-static int *local_ranks;
+static int node_rank, node_size;
+static int *node_ranks;
 
 char* kv_store_me;
 char* kv_store_all;
@@ -49,7 +49,7 @@ kv_index(char* kv_set, int index)
 }
 
 int
-shmem_runtime_init(int enable_local_ranks)
+shmem_runtime_init(int enable_node_ranks)
 {
     int initialized, mpi_thread_level, provided;
     if (MPI_SUCCESS != MPI_Initialized(&initialized)) {
@@ -100,9 +100,9 @@ shmem_runtime_init(int enable_local_ranks)
     kv_store_me = (char*)malloc(MAX_KV_COUNT * sizeof(char)* MAX_KV_LENGTH);
     if (NULL == kv_store_me) return 8;
 
-    if (size > 1 && enable_local_ranks) {
-        local_ranks = malloc(size * sizeof(int));
-        if (NULL == local_ranks) return 8;
+    if (size > 1 && enable_node_ranks) {
+        node_ranks = malloc(size * sizeof(int));
+        if (NULL == node_ranks) return 8;
     }
 
     return 0;
@@ -114,9 +114,9 @@ shmem_runtime_fini(void)
     int ret = MPI_SUCCESS;
     int finalized = 0;
 
-    if (local_ranks) {
+    if (node_ranks) {
         MPI_Comm_free(&SHMEM_RUNTIME_SHARED);
-        free(local_ranks);
+        free(node_ranks);
     }
 
     MPI_Comm_free(&SHMEM_RUNTIME_WORLD);
@@ -177,28 +177,28 @@ shmem_runtime_get_size(void)
 }
 
 int
-shmem_runtime_get_local_rank(int pe)
+shmem_runtime_get_node_rank(int pe)
 {
     if (size == 1) {
         return 0;
     }
 
     shmem_internal_assert(size > 0 && pe < size && pe >= 0);
-    if (local_ranks[pe] != MPI_UNDEFINED) {
-        return local_ranks[pe];
+    if (node_ranks[pe] != MPI_UNDEFINED) {
+        return node_ranks[pe];
     } else {
         return -1;
     }
 }
 
 int
-shmem_runtime_get_local_size(void)
+shmem_runtime_get_node_size(void)
 {
     if (size == 1) {
         return 1;
     }
 
-    return local_size;
+    return node_size;
 }
 
 int
@@ -209,16 +209,16 @@ shmem_runtime_exchange(void)
         return 0;
     }
 
-    if (local_ranks) {
-        MPI_Group world_group, local_group;
+    if (node_ranks) {
+        MPI_Group world_group, node_group;
 
         MPI_Comm_split_type(SHMEM_RUNTIME_WORLD, MPI_COMM_TYPE_SHARED, rank, MPI_INFO_NULL, &SHMEM_RUNTIME_SHARED);
 
-        MPI_Comm_rank(SHMEM_RUNTIME_SHARED, &local_rank);
-        MPI_Comm_size(SHMEM_RUNTIME_SHARED, &local_size);
+        MPI_Comm_rank(SHMEM_RUNTIME_SHARED, &node_rank);
+        MPI_Comm_size(SHMEM_RUNTIME_SHARED, &node_size);
 
         MPI_Comm_group(SHMEM_RUNTIME_WORLD, &world_group);
-        MPI_Comm_group(SHMEM_RUNTIME_SHARED, &local_group);
+        MPI_Comm_group(SHMEM_RUNTIME_SHARED, &node_group);
 
         int *world_ranks = malloc(size * sizeof(int));
 
@@ -226,10 +226,10 @@ shmem_runtime_exchange(void)
             world_ranks[i] = i;
         }
 
-        MPI_Group_translate_ranks(world_group, size, world_ranks, local_group, local_ranks);
+        MPI_Group_translate_ranks(world_group, size, world_ranks, node_group, node_ranks);
 
         MPI_Group_free(&world_group);
-        MPI_Group_free(&local_group);
+        MPI_Group_free(&node_group);
         free(world_ranks);
     }
 

@@ -166,7 +166,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     int cma_initialized       = 0;
 #endif
     int randr_initialized     = 0;
-    int enable_local_ranks    = 0;
+    int enable_node_ranks     = 0;
 
     /* Parse environment variables into shmem_internal_params */
     shmem_internal_parse_env();
@@ -182,12 +182,12 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 #endif
 
 #if USE_ON_NODE_COMMS
-    enable_local_ranks = 1;
+    enable_node_ranks = 1;
 #elif USE_OFI
-    enable_local_ranks = (shmem_internal_params.OFI_STX_AUTO) ? 1 : 0;
+    enable_node_ranks = (shmem_internal_params.OFI_STX_AUTO) ? 1 : 0;
 #endif
 
-    ret = shmem_runtime_init(enable_local_ranks);
+    ret = shmem_runtime_init(enable_node_ranks);
     if (0 != ret) {
         fprintf(stderr, "ERROR: runtime init failed: %d\n", ret);
         goto cleanup;
@@ -395,8 +395,8 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     }
 
     DEBUG_MSG("Local rank=%d, Num. local=%d, Shr. rank=%d, Num. shr=%d\n",
-              enable_local_ranks ? shmem_runtime_get_local_rank(shmem_internal_my_pe) : 0,
-              enable_local_ranks ? shmem_runtime_get_local_size() : 1,
+              enable_node_ranks ? shmem_runtime_get_node_rank(shmem_internal_my_pe) : 0,
+              enable_node_ranks ? shmem_runtime_get_node_size() : 1,
               shmem_internal_get_shr_rank(shmem_internal_my_pe),
               shmem_internal_get_shr_size());
 

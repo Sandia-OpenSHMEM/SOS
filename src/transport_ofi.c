@@ -1428,7 +1428,7 @@ int shmem_transport_startup(void)
     if (shmem_internal_params.OFI_STX_AUTO) {
 
         long ofi_tx_ctx_cnt = shmem_transport_ofi_info.fabrics->domain_attr->tx_ctx_cnt;
-        int num_on_node = shmem_runtime_get_local_size();
+        int num_on_node = shmem_runtime_get_node_size();
 
         if (shmem_internal_params.OFI_STX_MAX_provided) {
             RAISE_WARN_MSG("Auto-setting STX_MAX; ignoring provided STX_MAX value '%ld'\n",

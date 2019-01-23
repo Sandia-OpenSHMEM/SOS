@@ -33,12 +33,12 @@
 #include "uthash.h"
 
 static pmix_proc_t myproc;
-static size_t size, local_size;
-static uint32_t local_rank = 0;
-static int *local_ranks = NULL;
+static size_t size, node_size;
+static uint32_t node_rank = 0;
+static int *node_ranks = NULL;
 
 int
-shmem_runtime_init(int enable_local_ranks)
+shmem_runtime_init(int enable_node_ranks)
 {
     pmix_status_t rc;
     pmix_proc_t proc;
@@ -62,10 +62,10 @@ shmem_runtime_init(int enable_local_ranks)
         return rc;
     }
 
-    if (enable_local_ranks) {
-        local_ranks = (int *)malloc(size * sizeof(int));
-        if (NULL == local_ranks) {
-            RETURN_ERROR_MSG_PREINIT("Out of memory allocating local_ranks\n");
+    if (enable_node_ranks) {
+        node_ranks = (int *)malloc(size * sizeof(int));
+        if (NULL == node_ranks) {
+            RETURN_ERROR_MSG_PREINIT("Out of memory allocating node_ranks\n");
             return 1;
         }
     }
@@ -79,8 +79,8 @@ shmem_runtime_fini(void)
 {
     pmix_status_t rc;
 
-    if (local_ranks)
-        free(local_ranks);
+    if (node_ranks)
+        free(node_ranks);
 
     if (PMIX_SUCCESS != (rc = PMIx_Finalize(NULL, 0))) {
         RETURN_ERROR_MSG_PREINIT("PMIx_Finalize failed (%d)\n", rc);
@@ -129,17 +129,17 @@ shmem_runtime_get_size(void)
 
 
 int
-shmem_runtime_get_local_rank(int pe)
+shmem_runtime_get_node_rank(int pe)
 {
     shmem_internal_assert(size > 0 && pe < size && pe >= 0);
-    return local_ranks[pe];
+    return node_ranks[pe];
 }
 
 
 int
-shmem_runtime_get_local_size(void)
+shmem_runtime_get_node_size(void)
 {
-    return (int) local_size;
+    return (int) node_size;
 }
 
 // static void opcbfunc(pmix_status_t status, void *cbdata)
@@ -158,7 +158,7 @@ shmem_runtime_exchange(void)
     bool wantit=true;
     //bool active = true;
 
-    if (local_ranks) {
+    if (node_ranks) {
         pmix_proc_t proc;
         pmix_value_t *val;
 
@@ -166,16 +166,16 @@ shmem_runtime_exchange(void)
         proc.rank = PMIX_RANK_WILDCARD;
 
         if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_LOCAL_SIZE, NULL, 0, &val))) {
-            local_size = (size_t) val->data.uint32;
+            node_size = (size_t) val->data.uint32;
             PMIX_VALUE_RELEASE(val);
         } else {
             RETURN_ERROR_MSG_PREINIT("PMIX_LOCAL_SIZE is not properly initiated (%d)\n", rc);
         }
 
-        local_ranks = (int *)malloc(size * sizeof(int));
+        node_ranks = (int *)malloc(size * sizeof(int));
 
         for (int i = 0; i < size; i++) {
-            local_ranks[i] = -1;
+            node_ranks[i] = -1;
         }
 
         /* Note: PMIX_LOCAL_PROCS should be available in the near future (would avoid parsing) */
@@ -184,10 +184,10 @@ shmem_runtime_exchange(void)
            PMIX_VALUE_RELEASE(val);
 
            char *ptr = strtok(local_peers_str, ",");
-           for (int i = 0; i < local_size; i++) {
+           for (int i = 0; i < node_size; i++) {
               int idx = strtoul(ptr, NULL, 10);
               shmem_internal_assert(idx < shmem_internal_num_pes && idx >= 0);
-              local_ranks[idx] = i;
+              node_ranks[idx] = i;
               ptr = strtok(NULL, ",");
            }
            shmem_internal_assert(ptr == NULL);
@@ -198,7 +198,7 @@ shmem_runtime_exchange(void)
 
         proc.rank = myproc.rank;
         if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_LOCAL_RANK, NULL, 0, &val))) {
-            local_rank = val->data.uint16;
+            node_rank = val->data.uint16;
             PMIX_VALUE_RELEASE(val);
         } else {
             RETURN_ERROR_MSG_PREINIT("PMIX_LOCAL_RANK is not properly initiated (%d)\n", rc);
