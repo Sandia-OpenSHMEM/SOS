@@ -1355,10 +1355,8 @@ int shmem_transport_init(void)
     } else {
         if (shmem_internal_params.OFI_STX_MAX_provided &&
             shmem_internal_params.OFI_STX_MAX <= 0) {
-            RAISE_WARN_MSG("Ignoring non-positive OFI_STX_MAX value '%ld', enabling OFI_STX_AUTO\n",
-                           shmem_internal_params.OFI_STX_MAX);
-            /* FIXME: Setting auto here could be bad ... better to set 1 or error? */
-            shmem_internal_params.OFI_STX_AUTO = 1;
+            RAISE_ERROR_MSG("Invalid OFI_STX_MAX value '%ld'\n",
+                            shmem_internal_params.OFI_STX_MAX);
         } else {
             shmem_transport_ofi_stx_max = shmem_internal_params.OFI_STX_MAX;
         }
