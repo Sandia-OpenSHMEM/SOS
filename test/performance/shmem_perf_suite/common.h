@@ -112,18 +112,18 @@ typedef enum {
 
 typedef enum {
     OP_FETCH,
-    OP_SET,
     OP_CSWAP,
     OP_SWAP,
     OP_FINC,
-    OP_INC,
     OP_FADD,
-    OP_ADD,
     OP_FAND,
-    OP_AND,
     OP_FOR,
-    OP_OR,
     OP_FXOR,
+    OP_SET,
+    OP_INC,
+    OP_ADD,
+    OP_AND,
+    OP_OR,
     OP_XOR,
     SIZE_OF_OP
 } atomic_op_type;
