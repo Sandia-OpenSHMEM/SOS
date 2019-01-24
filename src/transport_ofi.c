@@ -1433,8 +1433,8 @@ int shmem_transport_startup(void)
                            shmem_internal_params.OFI_STX_MAX);
         }
 
-        if (num_on_node <= 0)
-            RAISE_ERROR_MSG("Invalid number of TX contexts (%d)\n", num_on_node);
+        if (ofi_tx_ctx_cnt <= 0)
+            RAISE_ERROR_MSG("Invalid number of TX contexts (%ld)\n", ofi_tx_ctx_cnt);
 
         /* Paritition TX resources evenly across node-local PEs */
         /* Note: we assume that the domain reports the same tx_ctx_cnt for
