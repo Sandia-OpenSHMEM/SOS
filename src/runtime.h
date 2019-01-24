@@ -26,8 +26,9 @@ void shmem_runtime_abort(int exit_code, const char msg[]) SHMEM_ATTRIBUTE_NORETU
 int shmem_runtime_get_rank(void);
 int shmem_runtime_get_size(void);
 
-/* Note: "node" rank indicates topology only and should not be used to
- * determine whether the PE is reachable via shared memory (see node utils). */
+/* Note: "node" API queries for PEs are on the caller's node.  Being on the
+ * same node does not guarantee that a given PE is reachable via shared memory
+ * (use shmem_internal_get_shr_rank/size for such queries). */
 int shmem_runtime_get_node_rank(int pe);
 int shmem_runtime_get_node_size(void);
 

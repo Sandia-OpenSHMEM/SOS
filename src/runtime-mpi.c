@@ -36,7 +36,7 @@ static int size = 0;
 static MPI_Comm SHMEM_RUNTIME_WORLD, SHMEM_RUNTIME_SHARED;
 static int kv_length = 0;
 static int initialized_mpi = 0;
-static int node_rank, node_size;
+static int node_size;
 static int *node_ranks;
 
 char* kv_store_me;
@@ -214,7 +214,6 @@ shmem_runtime_exchange(void)
 
         MPI_Comm_split_type(SHMEM_RUNTIME_WORLD, MPI_COMM_TYPE_SHARED, rank, MPI_INFO_NULL, &SHMEM_RUNTIME_SHARED);
 
-        MPI_Comm_rank(SHMEM_RUNTIME_SHARED, &node_rank);
         MPI_Comm_size(SHMEM_RUNTIME_SHARED, &node_size);
 
         MPI_Comm_group(SHMEM_RUNTIME_WORLD, &world_group);

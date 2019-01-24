@@ -33,8 +33,8 @@
 #include "uthash.h"
 
 static pmix_proc_t myproc;
-static size_t size, node_size;
-static uint32_t node_rank = 0;
+static size_t size;
+static uint32_t node_size = 0;
 static int *node_ranks = NULL;
 
 int
@@ -131,7 +131,7 @@ shmem_runtime_get_size(void)
 int
 shmem_runtime_get_node_rank(int pe)
 {
-    shmem_internal_assert(size > 0 && pe < size && pe >= 0);
+    shmem_internal_assert(pe < size && pe >= 0);
     return node_ranks[pe];
 }
 
@@ -166,7 +166,7 @@ shmem_runtime_exchange(void)
         proc.rank = PMIX_RANK_WILDCARD;
 
         if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_LOCAL_SIZE, NULL, 0, &val))) {
-            node_size = (size_t) val->data.uint32;
+            node_size = val->data.uint32;
             PMIX_VALUE_RELEASE(val);
         } else {
             RETURN_ERROR_MSG_PREINIT("PMIX_LOCAL_SIZE is not properly initiated (%d)\n", rc);
@@ -194,14 +194,6 @@ shmem_runtime_exchange(void)
            free(local_peers_str);
         } else {
            RETURN_ERROR_MSG_PREINIT("PMIX_LOCAL_PEERS is not properly initiated (%d)\n", rc);
-        }
-
-        proc.rank = myproc.rank;
-        if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_LOCAL_RANK, NULL, 0, &val))) {
-            node_rank = val->data.uint16;
-            PMIX_VALUE_RELEASE(val);
-        } else {
-            RETURN_ERROR_MSG_PREINIT("PMIX_LOCAL_RANK is not properly initiated (%d)\n", rc);
         }
     }
 
