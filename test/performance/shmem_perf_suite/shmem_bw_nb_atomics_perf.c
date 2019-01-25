@@ -240,7 +240,7 @@ static inline void bw_set_metric_info_len(perf_metrics_t * const metric_info)
     int snode = streaming_node(metric_info);
     atomic_op_type op_type = OP_FETCH;
 
-    for(op_type = OP_FETCH; op_type < OP_FXOR; op_type++) {
+    for(op_type = OP_FETCH; op_type <= OP_FXOR; op_type++) {
         if(metric_info->my_node == 0) { 
             printf("\nshmemx_%s\n", atomic_op_names[op_type]);
             printf("-----------\n");
