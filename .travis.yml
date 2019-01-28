@@ -1,7 +1,6 @@
 sudo: required
-dist: trusty
+dist: xenial
 language: c
-dist: trusty
 compiler:
     #- clang
     - gcc
@@ -276,11 +275,6 @@ script:
     - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/tests-uh
-    # MPICH 3.0.4 (included with Ubuntu Trusty in Travis) has an MPI_Abort bug that affects global_exit over pmi-mpi:
-    - >
-      if [[ $SOS_BUILD_OPTS = *"--enable-pmi-mpi"* ]]; then
-          rm feature_tests/C/test_shmem_global_exit.c
-      fi
     - make $TRAVIS_PAR_MAKE C_feature_tests
     - make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
     # Check for failures in the C tests
