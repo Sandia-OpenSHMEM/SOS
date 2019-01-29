@@ -168,6 +168,8 @@ shmem_runtime_exchange(void)
         if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_LOCAL_SIZE, NULL, 0, &val))) {
             node_size = val->data.uint32;
             PMIX_VALUE_RELEASE(val);
+            if (node_size <= 0)
+                RETURN_ERROR_MSG_PREINIT("Invalid PMIX_LOCAL_SIZE (%d)\n", node_size);
         } else {
             RETURN_ERROR_MSG_PREINIT("PMIX_LOCAL_SIZE is not properly initiated (%d)\n", rc);
         }
