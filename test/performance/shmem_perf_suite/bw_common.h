@@ -140,7 +140,7 @@ void print_data_results(double bw, double mr, const perf_metrics_t * const data,
 }
 
 static inline 
-void calc_and_print_results(double end_t, double start_t, int len, 
+void calc_and_print_results(double end_t, double start_t, int len,  
                             perf_metrics_t * const metric_info) {
     int stride = 0, start_pe = 0, nPEs = 0;
     static double pe_bw_sum, bw = 0.0; /*must be symmetric for reduction*/
@@ -287,21 +287,27 @@ extern void bi_dir_bw(int len, perf_metrics_t *metric_info);
 static inline 
 void bi_dir_bw_test_and_output(perf_metrics_t * const metric_info) {
     int partner_pe = partner_node(metric_info);
-    unsigned long int len;
+    unsigned long int len = 0;
 
     if(metric_info->my_node == 0) {
-        if (metric_info->opstyle == STYLE_ATOMIC)
+        if (metric_info->opstyle == STYLE_ATOMIC) {
+            metric_info->max_len = sizeof(unsigned long long);
             print_atomic_header(metric_info);
+        }
         else
             print_bw_header(metric_info);
     }
 
-    for (len = metric_info->start_len; len <= metric_info->max_len;
-        len *= metric_info->size_inc) {
-
-        large_message_metric_chg(metric_info, len);
-
+    if (metric_info->opstyle == STYLE_ATOMIC) {
         bi_dir_bw(len, metric_info);
+    } else {
+        for (len = metric_info->start_len; len <= metric_info->max_len;
+             len *= metric_info->size_inc) {
+
+            large_message_metric_chg(metric_info, len);
+
+            bi_dir_bw(len, metric_info);
+        }
     }
 
     shmem_barrier_all();
@@ -333,18 +339,24 @@ void uni_dir_bw_test_and_output(perf_metrics_t * const metric_info) {
     unsigned long int len = 0;
 
     if(metric_info->my_node == 0) {
-        if (metric_info->opstyle == STYLE_ATOMIC)
+        if (metric_info->opstyle == STYLE_ATOMIC) {
+            metric_info->max_len = sizeof(unsigned long long);
             print_atomic_header(metric_info);
+        }
         else
             print_bw_header(metric_info);
     }
 
-    for (len = metric_info->start_len; len <= metric_info->max_len;
-        len *= metric_info->size_inc) {
-
-        large_message_metric_chg(metric_info, len);
-
+    if (metric_info->opstyle == STYLE_ATOMIC) {
         uni_dir_bw(len, metric_info);
+    } else {
+        for (len = metric_info->start_len; len <= metric_info->max_len;
+             len *= metric_info->size_inc) {
+
+            large_message_metric_chg(metric_info, len);
+
+            uni_dir_bw(len, metric_info);
+        }
     }
 
     shmem_barrier_all();

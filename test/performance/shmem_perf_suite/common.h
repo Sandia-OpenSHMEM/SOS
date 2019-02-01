@@ -125,9 +125,11 @@ typedef enum {
     OP_AND,
     OP_OR,
     OP_XOR,
-    SIZE_OF_OP
 } atomic_op_type;
 
+#define FIRST_FETCH_OP OP_FETCH
+#define LAST_FETCH_OP OP_FXOR
+#define LAST_OP OP_XOR
 
 typedef struct perf_metrics {
     /* common parameters */

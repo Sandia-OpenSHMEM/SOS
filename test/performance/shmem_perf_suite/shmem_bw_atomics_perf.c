@@ -38,11 +38,12 @@
 
 #define ATOMIC_COMM_STYLE COMM_INCAST
 
-#define uni_bw(len, metric_info, snode, NAME, TYPE, op)                        \
+#define uni_bw(metric_info, NAME, TYPE, op)                        \
     do {                                                                       \
         double start = 0.0, end = 0.0;                                         \
         unsigned long int i = 0, j = 0;                                        \
-        int dest = partner_node(metric_info);                                 \
+        int snode = streaming_node(metric_info);                               \
+        int dest = partner_node(metric_info);                                  \
         shmem_barrier_all();                                                   \
                                                                                \
         switch(op) {                                                           \
@@ -342,11 +343,9 @@
             break;                                                             \
         }                                                                      \
         if(snode) {                                                            \
-            calc_and_print_results(end, start, len, metric_info);             \
+            calc_and_print_results(end, start, metric_info->start_len, metric_info);             \
         }                                                                      \
     } while(0)
-
-#define NUM_INC 100
 
 static const char * atomic_op_names [] = { "fetch", "cswap", "swap", "finc", 
                                            "fadd", "fand", "for", 
@@ -356,39 +355,31 @@ static const char * atomic_op_names [] = { "fetch", "cswap", "swap", "finc",
 
 static inline void bw_set_metric_info_len(perf_metrics_t * const metric_info)
 {
-    unsigned int atomic_sizes[ATOMICS_N_DTs] = {sizeof(unsigned int), sizeof(unsigned long),
-                                        sizeof(unsigned long long)};
-    metric_info->b_type = UNI_DIR;
-    int snode = streaming_node(metric_info);
-    atomic_op_type op_type = OP_FETCH;
+    atomic_op_type op_type;
 
-    for(op_type = OP_FETCH; op_type < SIZE_OF_OP; op_type++) {
+    for(op_type = FIRST_FETCH_OP; op_type <= LAST_OP; op_type++) {
         if(metric_info->my_node == 0) { 
             printf("\nshmem_%s\n", atomic_op_names[op_type]);
             printf("-----------\n");
         }
 
-        metric_info->start_len = atomic_sizes[0];
-        metric_info->max_len = atomic_sizes[0];
-        metric_info->size_inc = NUM_INC;
+        metric_info->start_len = sizeof(unsigned int);
 
         shmem_barrier_all();
 
-        uni_bw(atomic_sizes[0], metric_info, snode, uint, unsigned int, op_type);
+        uni_bw(metric_info, uint, unsigned int, op_type);
 
-        metric_info->start_len = atomic_sizes[1];
-        metric_info->max_len = atomic_sizes[1];
-
-        shmem_barrier_all();
-
-        uni_bw(atomic_sizes[1], metric_info, snode, ulong, unsigned long, op_type);
-
-        metric_info->start_len = atomic_sizes[2];
-        metric_info->max_len = atomic_sizes[2];
+        metric_info->start_len = sizeof(unsigned long);
 
         shmem_barrier_all();
 
-        uni_bw(atomic_sizes[2], metric_info, snode, ulonglong, unsigned long long, op_type);
+        uni_bw(metric_info, ulong, unsigned long, op_type);
+
+        metric_info->start_len = sizeof(unsigned long long);
+
+        shmem_barrier_all();
+
+        uni_bw(metric_info, ulonglong, unsigned long long, op_type);
     }
 }
 
