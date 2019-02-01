@@ -200,22 +200,17 @@ static inline void bw_set_metric_info_len(perf_metrics_t * const metric_info)
             printf("\nshmemx_%s\n", atomic_op_names[op_type]);
             printf("-----------\n");
         }
+
         metric_info->start_len = sizeof(unsigned int);
-
         shmem_barrier_all();
-
         bi_bw(metric_info, uint, unsigned int, op_type);
 
         metric_info->start_len = sizeof(unsigned long);
-
         shmem_barrier_all();
-
         bi_bw(metric_info, ulong, unsigned long, op_type);
 
         metric_info->start_len = sizeof(unsigned long long);
-
         shmem_barrier_all();
-
         bi_bw(metric_info, ulonglong, unsigned long long, op_type);
     }
 }

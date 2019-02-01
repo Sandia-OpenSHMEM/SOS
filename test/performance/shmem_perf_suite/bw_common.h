@@ -140,7 +140,7 @@ void print_data_results(double bw, double mr, const perf_metrics_t * const data,
 }
 
 static inline 
-void calc_and_print_results(double end_t, double start_t, int len,  
+void calc_and_print_results(double end_t, double start_t, int len, 
                             perf_metrics_t * const metric_info) {
     int stride = 0, start_pe = 0, nPEs = 0;
     static double pe_bw_sum, bw = 0.0; /*must be symmetric for reduction*/
