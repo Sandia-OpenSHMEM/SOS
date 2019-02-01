@@ -185,8 +185,6 @@
     } while(0)
 
 
-#define NUM_INC 100
-
 static const char * atomic_op_names [] = { "fetch", "cswap", "swap", "finc",
                                            "fadd", "fand", "for",
                                            "fxor" };

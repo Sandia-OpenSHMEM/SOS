@@ -36,8 +36,6 @@
 */
 #include <bw_common.h>
 
-#define ATOMIC_COMM_STYLE COMM_INCAST
-
 #define uni_bw(metric_info, NAME, TYPE, op)                        \
     do {                                                                       \
         double start = 0.0, end = 0.0;                                         \
