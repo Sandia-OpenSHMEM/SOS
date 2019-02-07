@@ -81,6 +81,7 @@ addons:
             - cargo
             - libevent-dev
             - libhwloc-dev
+            - libev-dev
 before_install:
     ## Set up the environment
     - mkdir $HOME/travis
@@ -109,19 +110,12 @@ before_install:
               exit 0
           fi
       fi
-    ## Build libev
-    - cd $TRAVIS_SRC
-    - wget http://dist.schmorp.de/libev/Attic/libev-4.22.tar.gz
-    - tar -xzvf libev-4.22.tar.gz
-    - cd libev-4.22
-    - ./configure --prefix=$TRAVIS_INSTALL/libev
-    - make install
     ## Build Portals 4
     - cd $TRAVIS_SRC
     - git clone --depth 10 https://github.com/regrant/portals4.git portals4
     - cd portals4
     - ./autogen.sh
-    - ./configure --prefix=$TRAVIS_INSTALL/portals4/ --with-ev=$TRAVIS_INSTALL/libev --enable-zero-mrs --enable-reliable-udp --disable-pmi-from-portals
+    - ./configure --prefix=$TRAVIS_INSTALL/portals4/ --enable-zero-mrs --enable-reliable-udp --disable-pmi-from-portals
     # JSD: --enable-transport-shmem removed; it was causing tests to hang
     - make $TRAVIS_PAR_MAKE
     - make install
@@ -131,14 +125,6 @@ before_install:
     - cd libfabric
     - ./autogen.sh
     - ./configure --prefix=$TRAVIS_INSTALL/libfabric
-    - make $TRAVIS_PAR_MAKE
-    - make install
-    ## Build Hydra
-    - cd $TRAVIS_SRC
-    - wget http://www.mpich.org/static/downloads/3.2/hydra-3.2.tar.gz
-    - tar xvzf hydra-3.2.tar.gz
-    - cd hydra-3.2/
-    - ./configure --prefix=$TRAVIS_INSTALL/hydra
     - make $TRAVIS_PAR_MAKE
     - make install
     ## Fetch UH Tests
@@ -184,7 +170,7 @@ script:
     - cd $SOS_SRC
     - mkdir no-transport-build
     - cd no-transport-build
-    - export PATH=$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export PATH=$BASE_PATH
     - ../configure --prefix=$TRAVIS_INSTALL/sandia-shmem-none --without-ofi --without-portals4 $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
@@ -196,7 +182,7 @@ script:
     - cd $SOS_SRC
     - mkdir portals4-build
     - cd portals4-build
-    - export PATH=$TRAVIS_INSTALL/hydra/bin:$TRAVIS_INSTALL/portals4/bin:$BASE_PATH
+    - export PATH=$TRAVIS_INSTALL/portals4/bin:$BASE_PATH
     - ../configure --with-portals4=$TRAVIS_INSTALL/portals4/ --prefix=$TRAVIS_INSTALL/sandia-shmem-portals4 $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
@@ -209,7 +195,7 @@ script:
     - cd $SOS_SRC
     - mkdir ofi-build
     - cd ofi-build
-    - export PATH=$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export PATH=$BASE_PATH
     - ../configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --prefix=$TRAVIS_INSTALL/sandia-shmem-ofi $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
@@ -232,7 +218,7 @@ script:
     ###
     ### Run the UH test suite (Portals)
     ###
-    - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$BASE_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/tests-uh
     - make $TRAVIS_PAR_MAKE C_feature_tests
@@ -261,7 +247,7 @@ script:
     ###
     ### Run the UH test suite (OFI)
     ###
-    - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$BASE_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/tests-uh
     - make $TRAVIS_PAR_MAKE C_feature_tests
@@ -291,14 +277,14 @@ script:
     ### Run the Cray test suite (OFI)
     ###
     - export CUSTOM_SHMEM_DIR=$TRAVIS_INSTALL/sandia-shmem-ofi
-    - export PATH=$CUSTOM_SHMEM_DIR/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export PATH=$CUSTOM_SHMEM_DIR/bin:$BASE_PATH
     - export CRAY_TESTS_DIR=$TRAVIS_SRC/tests-cray
     - $SOS_SRC/scripts/travis/cray_tests.sh
 
     ###
     ### Run the Mellanox test suite (OFI)
     ###
-    - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$BASE_PATH
     - export MELLANOX_TESTS_DIR=$TRAVIS_SRC/tests-mellanox
     - cd $MELLANOX_TESTS_DIR/verifier
     - ./autogen.sh
@@ -343,7 +329,7 @@ script:
     ###
     ### Run ISx (Portals)
     ###
-    - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$BASE_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/ISx/SHMEM
     - make CC=oshcc LDLIBS=-lm
@@ -351,7 +337,7 @@ script:
     ###
     ### Run ISx (OFI)
     ###
-    - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$BASE_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/ISx/SHMEM
     - make CC=oshcc LDLIBS=-lm
@@ -363,7 +349,7 @@ script:
     ###
     ### Run PRK (Portals)
     ###
-    - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$BASE_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/PRK
     - make allshmem
@@ -371,7 +357,7 @@ script:
     ###
     ### Run PRK (OFI)
     ###
-    - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$TRAVIS_INSTALL/hydra/bin:$BASE_PATH
+    - export PATH=$TRAVIS_INSTALL/sandia-shmem-ofi/bin:$BASE_PATH
     - export OSHRUN_LAUNCHER="mpiexec.hydra"
     - cd $TRAVIS_SRC/PRK
     - make allshmem
