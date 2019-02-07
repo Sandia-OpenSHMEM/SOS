@@ -217,6 +217,11 @@ script:
     - prun -terminate
     - make install
     ###
+    ### CMA in Travis is too slow.  Disable it for the remaining tests.
+    ###
+    - SHMEM_CMA_PUT_MAX=0
+    - SHMEM_CMA_GET_MAX=0
+    ###
     ### Run the UH test suite (Portals)
     ###
     - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$BASE_PATH
