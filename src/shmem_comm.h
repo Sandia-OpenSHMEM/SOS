@@ -25,6 +25,8 @@
 #include "shmem.h"
 #include "shmemx.h"
 
+#include "shmem_atomic.h"
+
 #include "transport.h"
 
 #ifdef USE_XPMEM
