@@ -73,7 +73,7 @@ extern "C" {
 #define SHMEM_THREAD_MULTIPLE   3
 
 /* Contexts */
-typedef struct { int dummy; } * shmem_ctx_t;
+typedef struct shmem_impl_ctx_t { int dummy; } * shmem_ctx_t;
 
 #if SHMEM_HAVE_ATTRIBUTE_VISIBILITY == 1
   __attribute__((visibility("default"))) extern shmem_ctx_t SHMEM_CTX_DEFAULT;
