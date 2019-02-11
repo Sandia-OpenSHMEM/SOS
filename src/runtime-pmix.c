@@ -49,7 +49,7 @@ shmem_runtime_init(void)
         return rc;
     }
 
-    (void)strncpy(proc.nspace, myproc.nspace, PMIX_MAX_NSLEN+1);
+    PMIX_LOAD_NSPACE(proc.nspace, myproc.nspace);
     proc.rank = PMIX_RANK_WILDCARD;
 
     if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_JOB_SIZE, NULL, 0, &val))) {
@@ -188,7 +188,7 @@ shmem_runtime_get(int pe, char *key, void *value, size_t valuelen)
     memset(value, 0, valuelen);
 
     /* setup the ID of the proc whose info we are getting */
-    (void)strncpy(proc.nspace, myproc.nspace, PMIX_MAX_NSLEN+1);
+    PMIX_LOAD_NSPACE(proc.nspace, myproc.nspace);
 
     shmem_internal_assert(pe >= 0);
     proc.rank = (uint32_t) pe;
