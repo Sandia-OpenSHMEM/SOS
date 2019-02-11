@@ -7,6 +7,7 @@ compiler:
     - icc
 env:
     global:
+        - CFLAGS="-O3"
         - TRAVIS_PAR_MAKE="-j 4"
         - SOS_GLOBAL_BUILD_OPTS="--enable-picky"
         - FCFLAGS="-fcray-pointer"
