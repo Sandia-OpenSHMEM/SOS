@@ -188,7 +188,7 @@ static inline void bw_set_metric_info_len(perf_metrics_t * const metric_info)
 {
     atomic_op_type op_type;
 
-    for (op_type = FIRST_FETCH_OP; op_type <= LAST_OP; op_type++) {
+    for (op_type = FIRST_FETCH_OP; op_type < LAST_OP; op_type++) {
         if(metric_info->my_node == 0) {
             printf("\nshmemx_%s\n", atomic_op_name[op_type]);
             printf("-----------\n");

@@ -128,7 +128,6 @@ typedef enum {
     LAST_OP
 } atomic_op_type;
 
-#define FIRST_OP OP_SET
 #define FIRST_FETCH_OP OP_FETCH
 
 const char *atomic_op_name[] = { "set", "inc", "add", "and",
