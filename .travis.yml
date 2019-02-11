@@ -33,6 +33,7 @@ env:
           SOS_ENABLE_ERROR_TESTS=1 SHMEM_SYMMETRIC_HEAP_USE_MALLOC=1
           SOS_BUILD_OPTS="--disable-threads --enable-error-checking --enable-pmi-simple"
         - >
+          SOS_DISABLE_FORTRAN=1
           SHMEM_CMA_PUT_MAX=4 SHMEM_CMA_GET_MAX=4
           SOS_BUILD_OPTS="--with-cma --enable-error-checking --enable-profiling --enable-ofi-mr=basic --enable-av-map --enable-remote-virtual-addressing --enable-pmi-simple"
         - >
@@ -223,32 +224,32 @@ script:
     ###
     ### Run the UH test suite (Portals)
     ###
-    - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$BASE_PATH
-    - export OSHRUN_LAUNCHER="mpiexec.hydra"
-    - cd $TRAVIS_SRC/tests-uh
-    - make $TRAVIS_PAR_MAKE C_feature_tests
+    #- export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$BASE_PATH
+    #- export OSHRUN_LAUNCHER="mpiexec.hydra"
+    #- cd $TRAVIS_SRC/tests-uh
+    #- make $TRAVIS_PAR_MAKE C_feature_tests
     #- make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
     # Check for failures in the C tests
     #- if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-c-feature-tests.log; then false; else true; fi
-    - >
-      if [ -z "$SOS_DISABLE_FORTRAN" ]; then
-          make F_feature_tests;
-          if false && [ $? -eq 0 ]; then
-              make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log;
-              # Check for failures in the Fortran tests
-              if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi;
-          fi;
-      fi
-    - >
-      if [ -z "$SOS_DISABLE_FORTRAN" ]; then
-          make F_error_tests;
-          if false && [ $? -eq 0 -a $SOS_ENABLE_ERROR_TESTS -eq 1 ]; then
-              make F_error_tests-run 2>&1 | tee uh-tests-f-error-tests.log;
-              # Check for failures in the Fortran tests
-              if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-error-tests.log; then false; else true; fi;
-          fi;
-      fi
-    - make clean
+    #- >
+    #  if [ -z "$SOS_DISABLE_FORTRAN" ]; then
+    #      make F_feature_tests;
+    #      if false && [ $? -eq 0 ]; then
+    #          make F_feature_tests-run 2>&1 | tee uh-tests-f-feature-tests.log;
+    #          # Check for failures in the Fortran tests
+    #          if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-feature-tests.log; then false; else true; fi;
+    #      fi;
+    #  fi
+    #- >
+    #  if [ -z "$SOS_DISABLE_FORTRAN" ]; then
+    #      make F_error_tests;
+    #      if false && [ $? -eq 0 -a $SOS_ENABLE_ERROR_TESTS -eq 1 ]; then
+    #          make F_error_tests-run 2>&1 | tee uh-tests-f-error-tests.log;
+    #          # Check for failures in the Fortran tests
+    #          if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-error-tests.log; then false; else true; fi;
+    #      fi;
+    #  fi
+    #- make clean
     ###
     ### Run the UH test suite (OFI)
     ###
@@ -334,11 +335,11 @@ script:
     ###
     ### Run ISx (Portals)
     ###
-    - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$BASE_PATH
-    - export OSHRUN_LAUNCHER="mpiexec.hydra"
-    - cd $TRAVIS_SRC/ISx/SHMEM
-    - make CC=oshcc LDLIBS=-lm
-    - make clean
+    #- export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$BASE_PATH
+    #- export OSHRUN_LAUNCHER="mpiexec.hydra"
+    #- cd $TRAVIS_SRC/ISx/SHMEM
+    #- make CC=oshcc LDLIBS=-lm
+    #- make clean
     ###
     ### Run ISx (OFI)
     ###
@@ -354,11 +355,11 @@ script:
     ###
     ### Run PRK (Portals)
     ###
-    - export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$BASE_PATH
-    - export OSHRUN_LAUNCHER="mpiexec.hydra"
-    - cd $TRAVIS_SRC/PRK
-    - make allshmem
-    - make clean
+    #- export PATH=$TRAVIS_INSTALL/portals4/bin:$TRAVIS_INSTALL/sandia-shmem-portals4/bin:$BASE_PATH
+    #- export OSHRUN_LAUNCHER="mpiexec.hydra"
+    #- cd $TRAVIS_SRC/PRK
+    #- make allshmem
+    #- make clean
     ###
     ### Run PRK (OFI)
     ###
