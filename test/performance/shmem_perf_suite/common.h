@@ -111,6 +111,12 @@ typedef enum {
 } bw_units;
 
 typedef enum {
+    OP_SET,
+    OP_INC,
+    OP_ADD,
+    OP_AND,
+    OP_OR,
+    OP_XOR,
     OP_FETCH,
     OP_CSWAP,
     OP_SWAP,
@@ -119,17 +125,16 @@ typedef enum {
     OP_FAND,
     OP_FOR,
     OP_FXOR,
-    OP_SET,
-    OP_INC,
-    OP_ADD,
-    OP_AND,
-    OP_OR,
-    OP_XOR,
+    LAST_OP
 } atomic_op_type;
 
+#define FIRST_OP OP_SET
 #define FIRST_FETCH_OP OP_FETCH
-#define LAST_FETCH_OP OP_FXOR
-#define LAST_OP OP_XOR
+
+const char *atomic_op_name[] = { "set", "inc", "add", "and",
+                                 "or", "xor", 
+                                 "fetch", "cswap", "swap", "finc",
+                                 "fadd", "fand", "for", "fxor" };
 
 typedef struct perf_metrics {
     /* common parameters */
