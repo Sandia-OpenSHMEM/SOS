@@ -35,6 +35,12 @@ check_PROGRAMS += \
 	shmem_latency_get_ctx_perf_nb 
 endif
 
+if SHMEMX_TESTS
+check_PROGRAMS += \
+        shmem_bw_nb_atomics_perf \
+        shmem_bibw_nb_atomics_perf
+endif
+
 noinst_HEADERS = \
 	common.h \
 	latency_common.h \
