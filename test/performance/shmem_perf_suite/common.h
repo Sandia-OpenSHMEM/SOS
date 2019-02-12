@@ -111,7 +111,7 @@ typedef enum {
 } bw_units;
 
 typedef enum {
-    OP_SET,
+    OP_SET = 0,
     OP_INC,
     OP_ADD,
     OP_AND,
