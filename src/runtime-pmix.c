@@ -21,6 +21,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #if defined(PMI_PORTALS4)
 #include <portals4/pmi.h>
@@ -33,7 +34,7 @@
 #include "uthash.h"
 
 static pmix_proc_t myproc;
-static size_t size;
+static uint32_t size;
 
 int
 shmem_runtime_init(void)
@@ -48,7 +49,7 @@ shmem_runtime_init(void)
         return rc;
     }
 
-    (void)strncpy(proc.nspace, myproc.nspace, PMIX_MAX_NSLEN);
+    PMIX_LOAD_NSPACE(proc.nspace, myproc.nspace);
     proc.rank = PMIX_RANK_WILDCARD;
 
     if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_JOB_SIZE, NULL, 0, &val))) {
@@ -105,14 +106,14 @@ shmem_runtime_abort(int exit_code, const char msg[])
 int
 shmem_runtime_get_rank(void)
 {
-    return myproc.rank;
+    return (int) myproc.rank;
 }
 
 
 int
 shmem_runtime_get_size(void)
 {
-    return size;
+    return (int) size;
 }
 
 // static void opcbfunc(pmix_status_t status, void *cbdata)
@@ -187,8 +188,10 @@ shmem_runtime_get(int pe, char *key, void *value, size_t valuelen)
     memset(value, 0, valuelen);
 
     /* setup the ID of the proc whose info we are getting */
-    (void)strncpy(proc.nspace, myproc.nspace, PMIX_MAX_NSLEN);
-    proc.rank = pe;
+    PMIX_LOAD_NSPACE(proc.nspace, myproc.nspace);
+
+    shmem_internal_assert(pe >= 0);
+    proc.rank = (uint32_t) pe;
 
     rc = PMIx_Get(&proc, key, NULL, 0, &val);
 
