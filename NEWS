@@ -2,12 +2,20 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.4.3
+------
+- Added NBI atomics support to performance suite benchmarks.
+- Fixed shmem_ctx_t type compatibility with C++ and older C compilers.
+
 v1.4.3rc1
 ---------
 - Added proposed OpenSHMEM put-with-signal routines to shmemx interaces.
 - Added proposed OpenSHMEM wait/test-any/some/all to shmemx interfaces.
 - Added proposed OpenSHMEM nonblocking fetching atomic operations to shmemx
   interfaces.
+- Added proposed OpenSHMEM SHMEM_CTX_INVALID constant to shmemx interfaces.
+- Added put-with-signal optimization that uses the FI_FENCE capability (see
+  --enable-ofi-fence for details).
 - Added support for backtrace printing when SOS aborts (see SHMEM_BACKTRACE
   environment variable for details).
 - OFI transport merged cntr and cq endpoints, improving resource utilization.

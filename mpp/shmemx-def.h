@@ -2,6 +2,7 @@
 #define SHMEMX_DEF_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,6 +21,8 @@ typedef struct {
     uint64_t completed_get;
     uint64_t target;
 } shmemx_pcntr_t;
+
+#define SHMEMX_CTX_INVALID NULL
 
 #ifdef __cplusplus
 }

@@ -22,10 +22,10 @@ include(shmem_bind_c.m4)dnl
 #ifndef PSHMEM_H
 #define PSHMEM_H
 
-#include <shmem-def.h>
-#include <shmemx-def.h>
 #include <stddef.h>
 #include <complex.h>
+#include <shmem-def.h>
+#include <shmemx-def.h>
 
 #ifdef __cplusplus
 #ifndef complex
