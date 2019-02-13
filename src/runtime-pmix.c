@@ -163,7 +163,7 @@ shmem_runtime_exchange(void)
         pmix_proc_t proc;
         pmix_value_t *val;
 
-        strncpy(proc.nspace, myproc.nspace, PMIX_MAX_NSLEN);
+        PMIX_LOAD_NSPACE(proc.nspace, myproc.nspace);
         proc.rank = PMIX_RANK_WILDCARD;
 
         if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_LOCAL_SIZE, NULL, 0, &val))) {

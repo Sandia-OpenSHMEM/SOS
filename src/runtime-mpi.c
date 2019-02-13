@@ -179,11 +179,12 @@ shmem_runtime_get_size(void)
 int
 shmem_runtime_get_node_rank(int pe)
 {
+    shmem_internal_assert(pe < size && pe >= 0);
+
     if (size == 1) {
         return 0;
     }
 
-    shmem_internal_assert(size > 0 && pe < size && pe >= 0);
     if (node_ranks[pe] != MPI_UNDEFINED) {
         return node_ranks[pe];
     } else {
