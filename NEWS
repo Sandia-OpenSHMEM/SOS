@@ -2,6 +2,11 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.4.3
+------
+- Added NBI atomics support to performance suite benchmarks.
+- Fixed shmem_ctx_t type compatibility with C++ and older C compilers.
+
 v1.4.3rc1
 ---------
 - Added proposed OpenSHMEM put-with-signal routines to shmemx interaces.
