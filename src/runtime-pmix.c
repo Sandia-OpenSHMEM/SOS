@@ -21,6 +21,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #if defined(PMI_PORTALS4)
 #include <portals4/pmi.h>
@@ -33,10 +34,12 @@
 #include "uthash.h"
 
 static pmix_proc_t myproc;
-static size_t size;
+static uint32_t size;
+static uint32_t node_size = 0;
+static int *node_ranks = NULL;
 
 int
-shmem_runtime_init(void)
+shmem_runtime_init(int enable_node_ranks)
 {
     pmix_status_t rc;
     pmix_proc_t proc;
@@ -48,7 +51,7 @@ shmem_runtime_init(void)
         return rc;
     }
 
-    (void)strncpy(proc.nspace, myproc.nspace, PMIX_MAX_NSLEN);
+    PMIX_LOAD_NSPACE(proc.nspace, myproc.nspace);
     proc.rank = PMIX_RANK_WILDCARD;
 
     if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_JOB_SIZE, NULL, 0, &val))) {
@@ -60,6 +63,14 @@ shmem_runtime_init(void)
         return rc;
     }
 
+    if (enable_node_ranks) {
+        node_ranks = (int *)malloc(size * sizeof(int));
+        if (NULL == node_ranks) {
+            RETURN_ERROR_MSG_PREINIT("Out of memory allocating node_ranks\n");
+            return 1;
+        }
+    }
+
     return PMIX_SUCCESS;
 }
 
@@ -68,6 +79,9 @@ int
 shmem_runtime_fini(void)
 {
     pmix_status_t rc;
+
+    if (node_ranks)
+        free(node_ranks);
 
     if (PMIX_SUCCESS != (rc = PMIx_Finalize(NULL, 0))) {
         RETURN_ERROR_MSG_PREINIT("PMIx_Finalize failed (%d)\n", rc);
@@ -101,18 +115,32 @@ shmem_runtime_abort(int exit_code, const char msg[])
 }
 
 
-
 int
 shmem_runtime_get_rank(void)
 {
-    return myproc.rank;
+    return (int) myproc.rank;
 }
 
 
 int
 shmem_runtime_get_size(void)
 {
-    return size;
+    return (int) size;
+}
+
+
+int
+shmem_runtime_get_node_rank(int pe)
+{
+    shmem_internal_assert(pe < size && pe >= 0);
+    return node_ranks[pe];
+}
+
+
+int
+shmem_runtime_get_node_size(void)
+{
+    return (int) node_size;
 }
 
 // static void opcbfunc(pmix_status_t status, void *cbdata)
@@ -130,6 +158,47 @@ shmem_runtime_exchange(void)
     pmix_info_t info;
     bool wantit=true;
     //bool active = true;
+
+    if (node_ranks) {
+        pmix_proc_t proc;
+        pmix_value_t *val;
+
+        PMIX_LOAD_NSPACE(proc.nspace, myproc.nspace);
+        proc.rank = PMIX_RANK_WILDCARD;
+
+        if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_LOCAL_SIZE, NULL, 0, &val))) {
+            node_size = val->data.uint32;
+            PMIX_VALUE_RELEASE(val);
+            if (node_size <= 0)
+                RETURN_ERROR_MSG_PREINIT("Invalid PMIX_LOCAL_SIZE (%d)\n", node_size);
+        } else {
+            RETURN_ERROR_MSG_PREINIT("PMIX_LOCAL_SIZE is not properly initiated (%d)\n", rc);
+        }
+
+        node_ranks = (int *)malloc(size * sizeof(int));
+
+        for (int i = 0; i < size; i++) {
+            node_ranks[i] = -1;
+        }
+
+        /* Note: PMIX_LOCAL_PROCS should be available in the near future (would avoid parsing) */
+        if (PMIX_SUCCESS == (rc = PMIx_Get(&proc, PMIX_LOCAL_PEERS, NULL, 0, &val))) {
+           char *local_peers_str = strdup(val->data.string);
+           PMIX_VALUE_RELEASE(val);
+
+           char *ptr = strtok(local_peers_str, ",");
+           for (int i = 0; i < node_size; i++) {
+              int idx = strtoul(ptr, NULL, 10);
+              shmem_internal_assert(idx < shmem_internal_num_pes && idx >= 0);
+              node_ranks[idx] = i;
+              ptr = strtok(NULL, ",");
+           }
+           shmem_internal_assert(ptr == NULL);
+           free(local_peers_str);
+        } else {
+           RETURN_ERROR_MSG_PREINIT("PMIX_LOCAL_PEERS is not properly initiated (%d)\n", rc);
+        }
+    }
 
     /* commit any values we "put" */
     if (PMIX_SUCCESS != (rc = PMIx_Commit())) {
@@ -187,8 +256,10 @@ shmem_runtime_get(int pe, char *key, void *value, size_t valuelen)
     memset(value, 0, valuelen);
 
     /* setup the ID of the proc whose info we are getting */
-    (void)strncpy(proc.nspace, myproc.nspace, PMIX_MAX_NSLEN);
-    proc.rank = pe;
+    PMIX_LOAD_NSPACE(proc.nspace, myproc.nspace);
+
+    shmem_internal_assert(pe >= 0);
+    proc.rank = (uint32_t) pe;
 
     rc = PMIx_Get(&proc, key, NULL, 0, &val);
 

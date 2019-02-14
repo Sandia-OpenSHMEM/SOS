@@ -27,20 +27,6 @@
 
 #include "shmem_atomic.h"
 
-#ifdef USE_ON_NODE_COMMS
-extern char *shmem_internal_location_array;
-#define SHMEM_SET_RANK_SAME_NODE(pe, node_rank)         \
-    do {                                                \
-        shmem_internal_location_array[pe] = node_rank;  \
-    } while (0)
-
-#define SHMEM_GET_RANK_SAME_NODE(pe) (shmem_internal_location_array[pe])
-#elif defined(USE_MEMCPY)
-#define SHMEM_GET_RANK_SAME_NODE(pe) ((pe) == shmem_internal_my_pe ? 0 : -1)
-#else
-#define SHMEM_GET_RANK_SAME_NODE(pe) (-1)
-#endif
-
 #include "transport.h"
 
 #ifdef USE_XPMEM
@@ -59,7 +45,7 @@ shmem_internal_put_scalar(shmem_ctx_t ctx, void *target, const void *source, siz
 
     shmem_internal_assert(len > 0);
 
-    if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
+    if (-1 != (node_rank = shmem_internal_get_shr_rank(pe))) {
 #if USE_MEMCPY
         memcpy(target, source, len);
 #elif USE_XPMEM
@@ -84,7 +70,7 @@ shmem_internal_put_nb(shmem_ctx_t ctx, void *target, const void *source, size_t 
 
     if (len == 0) return;
 
-    if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
+    if (-1 != (node_rank = shmem_internal_get_shr_rank(pe))) {
 #if USE_MEMCPY
         memcpy(target, source, len);
 #elif USE_XPMEM
@@ -115,7 +101,7 @@ shmem_internal_put_signal_nbi(shmem_ctx_t ctx, void *target, const void *source,
         return;
     }
 
-    if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
+    if (-1 != (node_rank = shmem_internal_get_shr_rank(pe))) {
 #if USE_MEMCPY
         memcpy(target, source, len);
         *sig_addr = signal;
@@ -147,7 +133,7 @@ shmem_internal_put_nbi(shmem_ctx_t ctx, void *target, const void *source, size_t
 
     if (len == 0) return;
 
-    if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
+    if (-1 != (node_rank = shmem_internal_get_shr_rank(pe))) {
 #if USE_MEMCPY
         memcpy(target, source, len);
 #elif USE_XPMEM
@@ -195,7 +181,7 @@ shmem_internal_get(shmem_ctx_t ctx, void *target, const void *source, size_t len
 
     if (len == 0) return;
 
-    if (-1 != (node_rank = SHMEM_GET_RANK_SAME_NODE(pe))) {
+    if (-1 != (node_rank = shmem_internal_get_shr_rank(pe))) {
 #if USE_MEMCPY
         memcpy(target, source, len);
 #elif USE_XPMEM

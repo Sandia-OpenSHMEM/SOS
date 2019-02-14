@@ -33,9 +33,11 @@
 
 static int rank = -1;
 static int size = 0;
-static MPI_Comm SHMEM_RUNTIME_WORLD;
+static MPI_Comm SHMEM_RUNTIME_WORLD, SHMEM_RUNTIME_SHARED;
 static int kv_length = 0;
 static int initialized_mpi = 0;
+static int node_size;
+static int *node_ranks;
 
 char* kv_store_me;
 char* kv_store_all;
@@ -47,7 +49,7 @@ kv_index(char* kv_set, int index)
 }
 
 int
-shmem_runtime_init(void)
+shmem_runtime_init(int enable_node_ranks)
 {
     int initialized, mpi_thread_level, provided;
     if (MPI_SUCCESS != MPI_Initialized(&initialized)) {
@@ -96,9 +98,11 @@ shmem_runtime_init(void)
     MPI_Comm_size(SHMEM_RUNTIME_WORLD, &size);
 
     kv_store_me = (char*)malloc(MAX_KV_COUNT * sizeof(char)* MAX_KV_LENGTH);
+    if (NULL == kv_store_me) return 8;
 
-    if (NULL == kv_store_me) {
-        return 8;
+    if (size > 1 && enable_node_ranks) {
+        node_ranks = malloc(size * sizeof(int));
+        if (NULL == node_ranks) return 8;
     }
 
     return 0;
@@ -109,6 +113,11 @@ shmem_runtime_fini(void)
 {
     int ret = MPI_SUCCESS;
     int finalized = 0;
+
+    if (node_ranks) {
+        MPI_Comm_free(&SHMEM_RUNTIME_SHARED);
+        free(node_ranks);
+    }
 
     MPI_Comm_free(&SHMEM_RUNTIME_WORLD);
 
@@ -168,11 +177,60 @@ shmem_runtime_get_size(void)
 }
 
 int
+shmem_runtime_get_node_rank(int pe)
+{
+    shmem_internal_assert(pe < size && pe >= 0);
+
+    if (size == 1) {
+        return 0;
+    }
+
+    if (node_ranks[pe] != MPI_UNDEFINED) {
+        return node_ranks[pe];
+    } else {
+        return -1;
+    }
+}
+
+int
+shmem_runtime_get_node_size(void)
+{
+    if (size == 1) {
+        return 1;
+    }
+
+    return node_size;
+}
+
+int
 shmem_runtime_exchange(void)
 {
     if (size == 1) {
         kv_store_all = kv_store_me;
         return 0;
+    }
+
+    if (node_ranks) {
+        MPI_Group world_group, node_group;
+
+        MPI_Comm_split_type(SHMEM_RUNTIME_WORLD, MPI_COMM_TYPE_SHARED, rank, MPI_INFO_NULL, &SHMEM_RUNTIME_SHARED);
+
+        MPI_Comm_size(SHMEM_RUNTIME_SHARED, &node_size);
+
+        MPI_Comm_group(SHMEM_RUNTIME_WORLD, &world_group);
+        MPI_Comm_group(SHMEM_RUNTIME_SHARED, &node_group);
+
+        int *world_ranks = malloc(size * sizeof(int));
+
+        for (int i=0; i<size; i++) {
+            world_ranks[i] = i;
+        }
+
+        MPI_Group_translate_ranks(world_group, size, world_ranks, node_group, node_ranks);
+
+        MPI_Group_free(&world_group);
+        MPI_Group_free(&node_group);
+        free(world_ranks);
     }
 
     int chunkSize = kv_length * sizeof(char) * MAX_KV_LENGTH;
