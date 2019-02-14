@@ -37,65 +37,15 @@
 #include "shmem_internal.h"
 
 static int rank = -1;
-static int size = 0;
+static int size = 0, node_size = 0;
 static char *kvs_name, *kvs_key, *kvs_value;
 static int max_name_len, max_key_len, max_val_len;
 static int initialized_pmi = 0;
-
-static int
-encode(const void *inval, int invallen, char *outval, int outvallen)
-{
-    static unsigned char encodings[] = {
-        '0','1','2','3','4','5','6','7', \
-        '8','9','a','b','c','d','e','f' };
-    int i;
-
-    if (invallen * 2 + 1 > outvallen) {
-        return 1;
-    }
-
-    for (i = 0; i < invallen; i++) {
-        outval[2 * i] = encodings[((unsigned char *)inval)[i] & 0xf];
-        outval[2 * i + 1] = encodings[((unsigned char *)inval)[i] >> 4];
-    }
-
-    outval[invallen * 2] = '\0';
-
-    return 0;
-}
-
-
-static int
-decode(const char *inval, void *outval, int outvallen)
-{
-    int i;
-    char *ret = (char*) outval;
-
-    if (outvallen != strlen(inval) / 2) {
-        return 1;
-    }
-
-    for (i = 0 ; i < outvallen ; ++i) {
-        if (*inval >= '0' && *inval <= '9') {
-            ret[i] = *inval - '0';
-        } else {
-            ret[i] = *inval - 'a' + 10;
-        }
-        inval++;
-        if (*inval >= '0' && *inval <= '9') {
-            ret[i] |= ((*inval - '0') << 4);
-        } else {
-            ret[i] |= ((*inval - 'a' + 10) << 4);
-        }
-        inval++;
-    }
-
-    return 0;
-}
+static int *location_array = NULL;
 
 
 int
-shmem_runtime_init(void)
+shmem_runtime_init(int enable_node_ranks)
 {
     int spawned, appnum;
 
@@ -124,6 +74,11 @@ shmem_runtime_init(void)
         return 7;
     }
 
+    if (enable_node_ranks) {
+        location_array = malloc(sizeof(int) * size);
+        if (NULL == location_array) return 8;
+    }
+
     return 0;
 }
 
@@ -131,6 +86,10 @@ shmem_runtime_init(void)
 int
 shmem_runtime_fini(void)
 {
+    if (location_array) {
+        free(location_array);
+    }
+
     if (initialized_pmi == 1) {
         PMI2_Finalize();
         initialized_pmi = 0;
@@ -172,11 +131,45 @@ shmem_runtime_get_size(void)
 
 
 int
+shmem_runtime_get_node_rank(int pe)
+{
+    shmem_internal_assert(pe < size && pe >= 0);
+    return location_array[pe];
+}
+
+
+int
+shmem_runtime_get_node_size(void)
+{
+    return node_size;
+}
+
+
+int
 shmem_runtime_exchange(void)
 {
+    int ret;
+
+    if (location_array) {
+        ret = shmem_runtime_util_put_hostname();
+        if (ret != 0) {
+            RETURN_ERROR_MSG("KVS hostname put (%d)", ret);
+            return 4;
+        }
+    }
+
     if (PMI2_SUCCESS != PMI2_KVS_Fence()) {
         return 5;
     }
+
+    if (location_array) {
+        ret = shmem_runtime_util_populate_node(location_array, size, &node_size);
+        if (0 != ret) {
+            RETURN_ERROR_MSG("Node PE mapping failed (%d)\n", ret);
+            return 7;
+        }
+    }
+
     return 0;
 }
 
@@ -185,7 +178,8 @@ int
 shmem_runtime_put(char *key, void *value, size_t valuelen)
 {
     snprintf(kvs_key, max_key_len, "shmem-%lu-%s", (long unsigned) rank, key);
-    if (0 != encode(value, valuelen, kvs_value, max_val_len)) {
+    if (0 != shmem_runtime_util_encode(value, valuelen, kvs_value,
+                                       max_val_len)) {
         return 1;
     }
     if (PMI2_SUCCESS != PMI2_KVS_Put(kvs_key, kvs_value)) {
@@ -205,7 +199,7 @@ shmem_runtime_get(int pe, char *key, void *value, size_t valuelen)
                                      kvs_key, kvs_value, max_val_len, &len)) {
         return 1;
     }
-    if (0 != decode(kvs_value, value, valuelen)) {
+    if (0 != shmem_runtime_util_decode(kvs_value, value, valuelen)) {
         return 2;
     }
 

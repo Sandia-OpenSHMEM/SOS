@@ -32,6 +32,7 @@ libsma_la_SOURCES = \
 	shmem_free_list.c \
 	shmem_atomic.h \
 	runtime.h \
+	runtime_util.c \
 	shmem_internal.h \
 	shmem_internal_op.h \
 	shmem_comm.h \

@@ -30,9 +30,6 @@
 #pragma weak shmem_init = pshmem_init
 #define shmem_init pshmem_init
 
-#pragma weak shmemx_nodename = pshmemx_nodename
-#define shmemx_nodename pshmemx_nodename
-
 #pragma weak shmem_init_thread = pshmem_init_thread
 #define shmem_init_thread pshmem_init_thread
 
@@ -69,15 +66,6 @@ shmem_init(void)
     }
 
     shmem_internal_init(SHMEM_THREAD_SINGLE, &tl_provided);
-}
-
-
-char SHMEM_FUNCTION_ATTRIBUTES *
-shmemx_nodename(void)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    return shmem_internal_nodename();
 }
 
 

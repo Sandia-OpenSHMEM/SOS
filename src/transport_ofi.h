@@ -320,7 +320,8 @@ extern struct fid_ep* shmem_transport_ofi_target_ep;
     } while (0)
 
 static inline
-void shmem_transport_probe(void) {
+void shmem_transport_probe(void)
+{
 #if defined(ENABLE_MANUAL_PROGRESS)
 #  ifdef USE_THREAD_COMPLETION
     if (0 == pthread_mutex_trylock(&shmem_transport_ofi_progress_lock)) {

@@ -55,6 +55,7 @@ env:
           SOS_ENABLE_ERROR_TESTS=1
           SHMEM_BARRIER_ALGORITHM=dissem SHMEM_REDUCE_ALGORITHM=recdbl SHMEM_FCOLLECT_ALGORITHM=recdbl
           SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple"
+          SHMEM_OFI_STX_AUTO=1
         - >
           SOS_ENABLE_ERROR_TESTS=1
           SHMEM_FCOLLECT_ALGORITHM=ring
