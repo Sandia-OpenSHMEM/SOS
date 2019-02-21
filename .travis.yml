@@ -303,7 +303,6 @@ script:
               if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-error-tests.log; then false; else true; fi;
           fi;
       fi
-    - make clean
     ###
     ### Run the Cray test suite
     ###
@@ -318,7 +317,6 @@ script:
     - cd $MELLANOX_TESTS_DIR/verifier
     - ./autogen.sh
     - ./configure --prefix=$PWD/install CFLAGS=" -Wno-deprecated -Wno-deprecated-declarations -std=gnu99 -O3" LDFLAGS="-lpthread" CC=oshcc --disable-mpi --enable-quick-tests --enable-active-sets --disable-error
-    - make clean
     - make install
     - make oshmem_test
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=atomic
@@ -353,7 +351,6 @@ script:
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=nbi
     ## tests opal_progress() function, which SOS does not have:
     #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=misc
-    - make clean
     ###
     ### Run ISx
     ###
@@ -364,7 +361,6 @@ script:
     - oshrun -np 4 -env SHMEM_SYMMETRIC_SIZE '4G' ./bin/isx.strong 134217728 output_strong
     - oshrun -np 4 -env SHMEM_SYMMETRIC_SIZE '4G' ./bin/isx.weak 33554432 output_weak
     - oshrun -np 4 -env SHMEM_SYMMETRIC_SIZE '4G' ./bin/isx.weak_iso 33554432 output_weak_iso
-    - make clean
     ###
     ### Run PRK
     ###
@@ -374,7 +370,6 @@ script:
     - oshrun -np 4 ./SHMEM/Stencil/stencil 100 1000
     - oshrun -np 4 ./SHMEM/Synch_p2p/p2p 10 1000 1000
     - oshrun -np 4 ./SHMEM/Transpose/transpose 10 1000
-    - make clean
     ###
     ### Tarball and RPM build check
     ###
