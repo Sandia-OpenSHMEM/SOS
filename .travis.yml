@@ -32,7 +32,7 @@ env:
         - >
           SOS_PM="prun -host localhost -oversubscribe" SOS_PM_PRE="prte --daemonize" SOS_PM_POST="prun -terminate"
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
-          SOS_BUILD_OPTS="--with-pmix=$TRAVIS_INSTALL/pmix --with-oshrun-launcher='$SOS_PM'"
+          SOS_BUILD_OPTS="--with-pmix=$TRAVIS_INSTALL/pmix"
         - >
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--disable-cxx --enable-memcpy --enable-pmi-simple"
@@ -66,7 +66,7 @@ env:
         - >
           SOS_PM="prun -host localhost -oversubscribe" SOS_PM_PRE="prte --daemonize" SOS_PM_POST="prun -terminate"
           SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
-          SOS_BUILD_OPTS="--with-pmix=$TRAVIS_INSTALL/pmix --with-oshrun-launcher='$SOS_PM'"
+          SOS_BUILD_OPTS="--with-pmix=$TRAVIS_INSTALL/pmix"
         - >
           SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
           SOS_BUILD_OPTS="--enable-ofi-mr=basic --enable-av-map --disable-cxx --enable-memcpy --enable-pmi-simple"
@@ -230,6 +230,7 @@ before_install:
         ./autogen.pl
         ./configure --prefix=$TRAVIS_INSTALL/prrte --with-pmix=$TRAVIS_INSTALL/pmix --without-slurm
         make install
+        export PATH=$TRAVIS_INSTALL/prrte/bin:$PATH
       fi
 
 install:
