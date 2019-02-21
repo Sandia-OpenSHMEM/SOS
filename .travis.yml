@@ -265,7 +265,7 @@ script:
       if [[ $SOS_TRANSPORT_OPTS = *"with-ofi"* ]]; then
         make VERBOSE=1 TEST_RUNNER="$SOS_PM -np 2" check
       else
-        $SOS_PM -np 1 test/unit/hello
+        eval $SOS_PM -v -np 1 test/unit/hello
       fi
     - $SOS_PM_POST
     - make install
