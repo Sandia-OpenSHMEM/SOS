@@ -19,6 +19,9 @@ env:
         - SHMEM_INFO=1
         - SOS_ENABLE_ERROR_TESTS=0
         - TRAVIS_INSTALL=$HOME/travis/install
+        - SOS_PM=mpiexec.hydra
+        - SOS_PM_PRE=true
+        - SOS_PM_POST=true
         ## An encrypted value for INTEL_SERIAL_NUMBER:
         - secure: "luxfwDy26Pva+A58T/vPP7+Zek4rBEbpB2TpdXuLdIu/MJ2laoUkaZj/ouT6YgdSxUoiyLUlGIzLnByxnrVgWqYELsWHiV9hzsXZCNfgQDdUHV8UITCqSYVcd5WGNoVdC0QohKuIj47y6bP5ttcv1sIfpV74ztPJZE1dbb2QzgvWcIKWN8Abj55364ZnIidW7ErYLrAiKlBzSxZXCKiKD6qOUbpOBN8yuzaX9diXYJViest7iBC+BfwzXO8Shuouh6QrQhJ1T4oG6u6YJn17fnOwXKJCdkeQYr/E8ka4JRf8vZm7CNO1YdwNhtGtFNEzTJaP2XFLAQGCB9vffCxcqRbpWv+lpsFRsH+eiF/zp/xKGr5qzB9sPUxNANJyhphXK0VfIqDan7nz9di99NFBEF94Jl33E+KODTCAeHb6+a7yboR5B4BalM4jXKrcn/2A4pYrk45YF5IdLLOEvzTaOyVSgHoNIzXRZvHEL2AeYuvz5qLukzMB+QClbA1EeCBNyokuXK/TemeTvveXpQpCaVKNQ8zp/v30u8eiaV8R/dFa2evlJ6kwSaeXlXpXifeXd5Px0x6HF4FT9HLOtPVQ3rZXyfL2Eh92egu15GiTqMNkdVlVGUC20+iddLjtbPqRnVw0WnZkekh62A6rGuT4cTfAbZ2GVPD+IMqzokO1IGg="
     matrix:
@@ -26,6 +29,10 @@ env:
         - >
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--enable-pmi-simple"
+        - >
+          SOS_PM="prun -host localhost -oversubscribe" SOS_PM_PRE="prte --daemonize" SOS_PM_POST="prun -terminate"
+          SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
+          SOS_BUILD_OPTS="--with-pmix=$TRAVIS_INSTALL/pmix --with-oshrun-launcher='$SOS_PM'"
         - >
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--disable-cxx --enable-memcpy --enable-pmi-simple"
@@ -56,6 +63,10 @@ env:
         - >
           SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
           SOS_BUILD_OPTS="--enable-pmi-simple"
+        - >
+          SOS_PM="prun -host localhost -oversubscribe" SOS_PM_PRE="prte --daemonize" SOS_PM_POST="prun -terminate"
+          SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
+          SOS_BUILD_OPTS="--with-pmix=$TRAVIS_INSTALL/pmix --with-oshrun-launcher='$SOS_PM'"
         - >
           SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
           SOS_BUILD_OPTS="--enable-ofi-mr=basic --enable-av-map --disable-cxx --enable-memcpy --enable-pmi-simple"
@@ -201,19 +212,25 @@ before_install:
     - git clone --depth 10 https://github.com/ParRes/Kernels.git PRK
     - echo -e "SHMEMCC=oshcc -std=c99\nSHMEMTOP=$$TRAVIS_INSTALL\n" > PRK/common/make.defs
     ## Build PMIx
-    - cd $TRAVIS_SRC
-    - git clone --depth 10 https://github.com/pmix/pmix pmix
-    - cd pmix
-    - ./autogen.pl
-    - ./configure --prefix=$TRAVIS_INSTALL/pmix --with-platform=optimized
-    - make install
+    - >
+      if [[ $SOS_BUILD_OPTS = *"with-pmix"* ]]; then
+        cd $TRAVIS_SRC
+        git clone --depth 10 https://github.com/pmix/pmix pmix
+        cd pmix
+        ./autogen.pl
+        ./configure --prefix=$TRAVIS_INSTALL/pmix --with-platform=optimized
+        make install
+      fi
     ## Build PRRTE
-    - cd $TRAVIS_SRC
-    - git clone --depth 10 https://github.com/pmix/prrte prrte
-    - cd prrte
-    - ./autogen.pl
-    - ./configure --prefix=$TRAVIS_INSTALL/prrte --with-pmix=$TRAVIS_INSTALL/pmix --without-slurm
-    - make install
+    - >
+      if [[ $SOS_BUILD_OPTS = *"with-pmix"* ]]; then
+        cd $TRAVIS_SRC
+        git clone --depth 10 https://github.com/pmix/prrte prrte
+        cd prrte
+        ./autogen.pl
+        ./configure --prefix=$TRAVIS_INSTALL/prrte --with-pmix=$TRAVIS_INSTALL/pmix --without-slurm
+        make install
+      fi
 
 install:
     - cd $SOS_SRC
@@ -230,7 +247,9 @@ script:
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
     - make install
-    - mpiexec -np 1 test/unit/hello
+    - $SOS_PM_PRE
+    - $SOS_PM -np 1 test/unit/hello
+    - $SOS_PM_POST
     ###
     ### Build and check with transport
     ###
@@ -240,33 +259,16 @@ script:
     - ../configure --prefix=$TRAVIS_INSTALL/sos $SOS_TRANSPORT_OPTS $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
+    - $SOS_PM_PRE
     - >
       if [[ $SOS_TRANSPORT_OPTS = *"with-ofi"* ]]; then
-        make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2" check
+        make VERBOSE=1 TEST_RUNNER="$SOS_PM -np 2" check
       else
-        mpiexec -np 1 test/unit/hello
+        $SOS_PM -np 1 test/unit/hello
       fi
+    - $SOS_PM_POST
     - make install
     - export PATH=$TRAVIS_INSTALL/sos/bin:$PATH
-    ###
-    ### Build and check with PMIx
-    ###
-    - cd $SOS_SRC
-    - mkdir pmix-build
-    - cd pmix-build
-    - export PATH=$TRAVIS_INSTALL/prrte/bin:$PATH
-    - ../configure --prefix=$PWD/install $SOS_TRANSPORT_OPTS $SOS_GLOBAL_OPTS --with-pmix=$TRAVIS_INSTALL/pmix
-    - make $TRAVIS_PAR_MAKE
-    - make $TRAVIS_PAR_MAKE check TESTS=
-    - prte --daemonize
-    - >
-      if [[ $SOS_TRANSPORT_OPTS = *"with-ofi"* ]]; then
-        make VERBOSE=1 TEST_RUNNER="prun -host localhost -oversubscribe -np 2" check
-      else
-        prun -host localhost -np 1 test/unit/hello
-      fi
-    - prun -terminate
-    - make install
     ###
     ### Portals builds stop here
     ###
@@ -279,9 +281,10 @@ script:
     ###
     ### Run the UH test suite
     ###
-    - export OSHRUN_LAUNCHER="mpiexec.hydra"
+    - export OSHRUN_LAUNCHER="$SOS_PM"
     - cd $TRAVIS_SRC/tests-uh
     - make $TRAVIS_PAR_MAKE C_feature_tests
+    - $SOS_PM_PRE
     - make C_feature_tests-run 2>&1 | tee uh-tests-c-feature-tests.log
     # Check for failures in the C tests
     - if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-c-feature-tests.log; then false; else true; fi
@@ -303,12 +306,15 @@ script:
               if grep "^(test_[0-9]\+) Running.*Failed$" uh-tests-f-error-tests.log; then false; else true; fi;
           fi;
       fi
+    - $SOS_PM_POST
     ###
     ### Run the Cray test suite
     ###
     - export CUSTOM_SHMEM_DIR=$TRAVIS_INSTALL/sos
     - export CRAY_TESTS_DIR=$TRAVIS_SRC/tests-cray
+    - $SOS_PM_PRE
     - $SOS_SRC/scripts/travis/cray_tests.sh
+    - $SOS_PM_POST
 
     ###
     ### Run the Mellanox test suite
@@ -319,6 +325,7 @@ script:
     - ./configure --prefix=$PWD/install CFLAGS=" -Wno-deprecated -Wno-deprecated-declarations -std=gnu99 -O3" LDFLAGS="-lpthread" CC=oshcc --disable-mpi --enable-quick-tests --enable-active-sets --disable-error
     - make install
     - make oshmem_test
+    - $SOS_PM_PRE
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=atomic
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:start
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=basic:whoami
@@ -351,25 +358,30 @@ script:
     - oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=nbi
     ## tests opal_progress() function, which SOS does not have:
     #- oshrun -np 4 $PWD/install/bin/oshmem_test exec --task=misc
+    - $SOS_PM_POST
     ###
     ### Run ISx
     ###
-    - export OSHRUN_LAUNCHER="mpiexec.hydra"
+    - export OSHRUN_LAUNCHER="$SOS_PM"
     - cd $TRAVIS_SRC/ISx/SHMEM
     - make CC=oshcc LDLIBS=-lm
     # Note: This SHMEM_SYMMETRIC_SIZE setting may exceed the memory available in the CI testing environment
+    - $SOS_PM_PRE
     - oshrun -np 4 -env SHMEM_SYMMETRIC_SIZE '4G' ./bin/isx.strong 134217728 output_strong
     - oshrun -np 4 -env SHMEM_SYMMETRIC_SIZE '4G' ./bin/isx.weak 33554432 output_weak
     - oshrun -np 4 -env SHMEM_SYMMETRIC_SIZE '4G' ./bin/isx.weak_iso 33554432 output_weak_iso
+    - $SOS_PM_POST
     ###
     ### Run PRK
     ###
-    - export OSHRUN_LAUNCHER="mpiexec.hydra"
+    - export OSHRUN_LAUNCHER="$SOS_PM"
     - cd $TRAVIS_SRC/PRK
     - make allshmem
+    - $SOS_PM_PRE
     - oshrun -np 4 ./SHMEM/Stencil/stencil 100 1000
     - oshrun -np 4 ./SHMEM/Synch_p2p/p2p 10 1000 1000
     - oshrun -np 4 ./SHMEM/Transpose/transpose 10 1000
+    - $SOS_PM_POST
     ###
     ### Tarball and RPM build check
     ###
@@ -391,7 +403,9 @@ script:
           cd build
           ../configure --with-ofi=$TRAVIS_INSTALL/libfabric/ $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
           make $TRAVIS_PAR_MAKE check TESTS=
-          make VERBOSE=1 TEST_RUNNER="mpiexec.hydra -np 2" check
+          $SOS_PM_PRE
+          make VERBOSE=1 TEST_RUNNER="$SOS_PM -np 2" check
+          $SOS_PM_POST
       fi
 after_script:
     - >
