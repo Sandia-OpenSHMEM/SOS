@@ -368,10 +368,12 @@ script:
     - make CC=oshcc LDLIBS=-lm
     # Note: This SHMEM_SYMMETRIC_SIZE setting may exceed the memory available in the CI testing environment
     - $SOS_PM_PRE
-    - oshrun -np 4 -env SHMEM_SYMMETRIC_SIZE '4G' ./bin/isx.strong 134217728 output_strong
-    - oshrun -np 4 -env SHMEM_SYMMETRIC_SIZE '4G' ./bin/isx.weak 33554432 output_weak
-    - oshrun -np 4 -env SHMEM_SYMMETRIC_SIZE '4G' ./bin/isx.weak_iso 33554432 output_weak_iso
+    - export SHMEM_SYMMETRIC_SIZE=4G
+    - oshrun -np 4 ./bin/isx.strong 134217728 output_strong
+    - oshrun -np 4 ./bin/isx.weak 33554432 output_weak
+    - oshrun -np 4 ./bin/isx.weak_iso 33554432 output_weak_iso
     - $SOS_PM_POST
+    - unset SHMEM_SYMMETRIC_SIZE
     ###
     ### Run PRK
     ###
