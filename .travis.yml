@@ -226,7 +226,7 @@ script:
     - cd $SOS_SRC
     - mkdir no-transport-build
     - cd no-transport-build
-    - ../configure --prefix=$TRAVIS_INSTALL/sandia-shmem-none --without-ofi --without-portals4 $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
+    - ../configure --prefix=$TRAVIS_INSTALL/sos-none --without-ofi --without-portals4 $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
     - make install
@@ -255,17 +255,22 @@ script:
     - mkdir pmix-build
     - cd pmix-build
     - export PATH=$TRAVIS_INSTALL/prrte/bin:$PATH
-    - ../configure --prefix=$PWD/install --with-ofi=$TRAVIS_INSTALL/libfabric --with-pmix=$TRAVIS_INSTALL/pmix
+    - ../configure --prefix=$PWD/install $SOS_TRANSPORT_OPTS $SOS_GLOBAL_OPTS --with-pmix=$TRAVIS_INSTALL/pmix
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
     - prte --daemonize
-    - make VERBOSE=1 TEST_RUNNER="prun -host localhost -oversubscribe -np 2" check
+    - >
+      if [[ $SOS_TRANSPORT_OPTS = *"with-ofi"* ]]; then
+        make VERBOSE=1 TEST_RUNNER="prun -host localhost -oversubscribe -np 2" check
+      else
+        prun -host localhost -np 1 test/unit/hello
+      fi
     - prun -terminate
     - make install
     ###
     ### Portals builds stop here
     ###
-    - if [[ $SOS_TRANSPORT_OPTS = *"with-portals4"* ]]; then travis_terminate 0; fi
+    - if [[ $SOS_TRANSPORT_OPTS = *"with-portals4"* ]]; then travis_terminate $TRAVIS_TEST_RESULT; fi
     ###
     ### CMA in Travis is too slow.  Disable it for the remaining tests.
     ###
