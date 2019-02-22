@@ -33,32 +33,32 @@ env:
           SOS_PM_CMD="prun -host localhost -oversubscribe" SOS_PM_PRE_CMD="prte --daemonize" SOS_PM_POST_CMD="prun -terminate"
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--with-pmix=$TRAVIS_INSTALL/pmix"
-        - >
-          SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
-          SOS_BUILD_OPTS="--disable-cxx --enable-memcpy --enable-pmi-simple"
-        - >
-          SOS_DISABLE_FORTRAN=1
-          SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
-          SOS_BUILD_OPTS="--enable-pmi-mpi CC=mpicc"
-        - >
-          SOS_DISABLE_FORTRAN=1
-          SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
-          SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing --disable-aslr-check --enable-pmi-simple"
-        - >
-          SOS_ENABLE_ERROR_TESTS=1 SHMEM_SYMMETRIC_HEAP_USE_MALLOC=1
-          SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/" 
-          SOS_BUILD_OPTS="--disable-threads --enable-error-checking --enable-pmi-simple"
-        - >
-          SOS_DISABLE_FORTRAN=1
-          SHMEM_CMA_PUT_MAX=4 SHMEM_CMA_GET_MAX=4
-          SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/" 
-          SOS_BUILD_OPTS="--with-cma --enable-error-checking --enable-profiling --enable-remote-virtual-addressing --enable-pmi-simple"
-        - >
-          SOS_ENABLE_ERROR_TESTS=1
-          SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SHMEM_BOUNCE_SIZE=0
-          SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/" 
-          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple --enable-ofi-fence"
-
+#       - >
+#         SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
+#         SOS_BUILD_OPTS="--disable-cxx --enable-memcpy --enable-pmi-simple"
+#       - >
+#         SOS_DISABLE_FORTRAN=1
+#         SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
+#         SOS_BUILD_OPTS="--enable-pmi-mpi CC=mpicc"
+#       - >
+#         SOS_DISABLE_FORTRAN=1
+#         SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
+#         SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing --disable-aslr-check --enable-pmi-simple"
+#       - >
+#         SOS_ENABLE_ERROR_TESTS=1 SHMEM_SYMMETRIC_HEAP_USE_MALLOC=1
+#         SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/" 
+#         SOS_BUILD_OPTS="--disable-threads --enable-error-checking --enable-pmi-simple"
+#       - >
+#         SOS_DISABLE_FORTRAN=1
+#         SHMEM_CMA_PUT_MAX=4 SHMEM_CMA_GET_MAX=4
+#         SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/" 
+#         SOS_BUILD_OPTS="--with-cma --enable-error-checking --enable-profiling --enable-remote-virtual-addressing --enable-pmi-simple"
+#       - >
+#         SOS_ENABLE_ERROR_TESTS=1
+#         SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SHMEM_BOUNCE_SIZE=0
+#         SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/" 
+#         SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple --enable-ofi-fence"
+#
         ## OFI Builds
         - >
           SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
@@ -67,68 +67,68 @@ env:
           SOS_PM_CMD="prun -host localhost -oversubscribe" SOS_PM_PRE_CMD="prte --daemonize" SOS_PM_POST_CMD="prun -terminate"
           SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
           SOS_BUILD_OPTS="--with-pmix=$TRAVIS_INSTALL/pmix"
-        - >
-          SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
-          SOS_BUILD_OPTS="--enable-ofi-mr=basic --enable-av-map --disable-cxx --enable-memcpy --enable-pmi-simple"
-        - >
-          SOS_DISABLE_FORTRAN=1
-          SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
-          SOS_BUILD_OPTS="--enable-pmi-mpi CC=mpicc"
-        - >
-          SOS_DISABLE_FORTRAN=1
-          SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
-          SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing --disable-aslr-check --enable-pmi-simple"
-        - >
-          SOS_ENABLE_ERROR_TESTS=1 SHMEM_SYMMETRIC_HEAP_USE_MALLOC=1
-          SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
-          SOS_BUILD_OPTS="--disable-threads --enable-error-checking --enable-pmi-simple"
-        - >
-          SOS_DISABLE_FORTRAN=1
-          SHMEM_CMA_PUT_MAX=4 SHMEM_CMA_GET_MAX=4
-          SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
-          SOS_BUILD_OPTS="--with-cma --enable-error-checking --enable-profiling --enable-ofi-mr=basic --enable-av-map --enable-remote-virtual-addressing --enable-pmi-simple"
-        - >
-          SOS_ENABLE_ERROR_TESTS=1
-          SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SHMEM_BOUNCE_SIZE=0
-          SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
-          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple --enable-ofi-fence"
-        - >
-          SOS_ENABLE_ERROR_TESTS=1
-          SHMEM_BARRIER_ALGORITHM=auto SHMEM_BCAST_ALGORITHM=auto SHMEM_REDUCE_ALGORITHM=auto SHMEM_COLLECT_ALGORITHM=auto SHMEM_FCOLLECT_ALGORITHM=auto
-          SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
-          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-thread-completion --enable-pmi-simple"
-        - >
-          SOS_ENABLE_ERROR_TESTS=1
-          SHMEM_BARRIER_ALGORITHM=linear SHMEM_BCAST_ALGORITHM=linear SHMEM_REDUCE_ALGORITHM=linear SHMEM_COLLECT_ALGORITHM=linear SHMEM_FCOLLECT_ALGORITHM=linear
-          SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
-          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple"
-        - >
-          SOS_ENABLE_ERROR_TESTS=1
-          SHMEM_BARRIER_ALGORITHM=tree SHMEM_BCAST_ALGORITHM=tree SHMEM_REDUCE_ALGORITHM=tree
-          SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
-          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple"
-        - >
-          SOS_ENABLE_ERROR_TESTS=1
-          SHMEM_BARRIER_ALGORITHM=dissem SHMEM_REDUCE_ALGORITHM=recdbl SHMEM_FCOLLECT_ALGORITHM=recdbl
-          SHMEM_OFI_STX_AUTO=1
-          SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
-          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple"
-        - >
-          SOS_ENABLE_ERROR_TESTS=1
-          SHMEM_FCOLLECT_ALGORITHM=ring
-          SHMEM_OFI_TX_POLL_LIMIT=1 SHMEM_OFI_RX_POLL_LIMIT=1
-          SHMEM_OFI_STX_THRESHOLD=1024
-          SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
-          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple"
-        - >
-          SOS_ENABLE_ERROR_TESTS=1
-          SHMEM_OFI_STX_MAX=8 SHMEM_OFI_STX_ALLOCATOR=random
-          SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
-          SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple"
-        - >
-          SOS_CHECK_TARBALL_RPM=1
-          SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
-          SOS_BUILD_OPTS="--enable-pmi-simple"
+#       - >
+#         SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
+#         SOS_BUILD_OPTS="--enable-ofi-mr=basic --enable-av-map --disable-cxx --enable-memcpy --enable-pmi-simple"
+#       - >
+#         SOS_DISABLE_FORTRAN=1
+#         SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
+#         SOS_BUILD_OPTS="--enable-pmi-mpi CC=mpicc"
+#       - >
+#         SOS_DISABLE_FORTRAN=1
+#         SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
+#         SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing --disable-aslr-check --enable-pmi-simple"
+#       - >
+#         SOS_ENABLE_ERROR_TESTS=1 SHMEM_SYMMETRIC_HEAP_USE_MALLOC=1
+#         SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
+#         SOS_BUILD_OPTS="--disable-threads --enable-error-checking --enable-pmi-simple"
+#       - >
+#         SOS_DISABLE_FORTRAN=1
+#         SHMEM_CMA_PUT_MAX=4 SHMEM_CMA_GET_MAX=4
+#         SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
+#         SOS_BUILD_OPTS="--with-cma --enable-error-checking --enable-profiling --enable-ofi-mr=basic --enable-av-map --enable-remote-virtual-addressing --enable-pmi-simple"
+#       - >
+#         SOS_ENABLE_ERROR_TESTS=1
+#         SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SHMEM_BOUNCE_SIZE=0
+#         SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
+#         SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple --enable-ofi-fence"
+#       - >
+#         SOS_ENABLE_ERROR_TESTS=1
+#         SHMEM_BARRIER_ALGORITHM=auto SHMEM_BCAST_ALGORITHM=auto SHMEM_REDUCE_ALGORITHM=auto SHMEM_COLLECT_ALGORITHM=auto SHMEM_FCOLLECT_ALGORITHM=auto
+#         SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
+#         SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-thread-completion --enable-pmi-simple"
+#       - >
+#         SOS_ENABLE_ERROR_TESTS=1
+#         SHMEM_BARRIER_ALGORITHM=linear SHMEM_BCAST_ALGORITHM=linear SHMEM_REDUCE_ALGORITHM=linear SHMEM_COLLECT_ALGORITHM=linear SHMEM_FCOLLECT_ALGORITHM=linear
+#         SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
+#         SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple"
+#       - >
+#         SOS_ENABLE_ERROR_TESTS=1
+#         SHMEM_BARRIER_ALGORITHM=tree SHMEM_BCAST_ALGORITHM=tree SHMEM_REDUCE_ALGORITHM=tree
+#         SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
+#         SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple"
+#       - >
+#         SOS_ENABLE_ERROR_TESTS=1
+#         SHMEM_BARRIER_ALGORITHM=dissem SHMEM_REDUCE_ALGORITHM=recdbl SHMEM_FCOLLECT_ALGORITHM=recdbl
+#         SHMEM_OFI_STX_AUTO=1
+#         SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
+#         SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple"
+#       - >
+#         SOS_ENABLE_ERROR_TESTS=1
+#         SHMEM_FCOLLECT_ALGORITHM=ring
+#         SHMEM_OFI_TX_POLL_LIMIT=1 SHMEM_OFI_RX_POLL_LIMIT=1
+#         SHMEM_OFI_STX_THRESHOLD=1024
+#         SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
+#         SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple"
+#       - >
+#         SOS_ENABLE_ERROR_TESTS=1
+#         SHMEM_OFI_STX_MAX=8 SHMEM_OFI_STX_ALLOCATOR=random
+#         SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
+#         SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple"
+#       - >
+#         SOS_CHECK_TARBALL_RPM=1
+#         SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
+#         SOS_BUILD_OPTS="--enable-pmi-simple"
 
 os:
     - linux
@@ -260,6 +260,9 @@ script:
     - ../configure --prefix=$TRAVIS_INSTALL/sos $SOS_TRANSPORT_OPTS $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
     - make $TRAVIS_PAR_MAKE
     - make $TRAVIS_PAR_MAKE check TESTS=
+    - export SHMEM_DEBUG=1
+    - export PTL_DEBUG=1
+    - export PTL_LOG_LEVEL=3
     - $SOS_PM_PRE_CMD
     - >
       if [[ $SOS_TRANSPORT_OPTS = *"with-ofi"* ]]; then
@@ -268,6 +271,9 @@ script:
         $SOS_PM_CMD -v -np 1 test/unit/hello
       fi
     - $SOS_PM_POST_CMD
+    - unset SHMEM_DEBUG
+    - unset PTL_DEBUG
+    - unset PTL_LOG_LEVEL
     - make install
     - export PATH=$TRAVIS_INSTALL/sos/bin:$PATH
     ###
