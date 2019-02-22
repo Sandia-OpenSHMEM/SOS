@@ -167,7 +167,7 @@ before_install:
               SOS_ENABLE_ERROR_TESTS=0
           else
               echo "Cannot test Intel compiler on a fork.  Exiting now."
-              exit 0
+              travis_terminate 0
           fi
       fi
     ## Build Portals 4
