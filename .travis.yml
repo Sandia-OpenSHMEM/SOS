@@ -46,16 +46,19 @@ env:
           SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing --disable-aslr-check --enable-pmi-simple"
         - >
           SOS_ENABLE_ERROR_TESTS=1 SHMEM_SYMMETRIC_HEAP_USE_MALLOC=1
-          SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/" 
+          SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--disable-threads --enable-error-checking --enable-pmi-simple"
         - >
           SOS_DISABLE_FORTRAN=1
-          SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/" 
+          SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--with-cma --enable-error-checking --enable-profiling --enable-remote-virtual-addressing --enable-pmi-simple"
+        - >
+          SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
+          SOS_BUILD_OPTS="--with-xpmem=$TRAVIS_INSTALL/xpmem --enable-error-checking --enable-pmi-simple"
         - >
           SOS_ENABLE_ERROR_TESTS=1
           SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SHMEM_BOUNCE_SIZE=0
-          SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/" 
+          SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple --enable-ofi-fence"
 
         ## OFI Builds
@@ -85,6 +88,9 @@ env:
           SOS_DISABLE_FORTRAN=1
           SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
           SOS_BUILD_OPTS="--with-cma --enable-error-checking --enable-profiling --enable-ofi-mr=basic --enable-av-map --enable-remote-virtual-addressing --enable-pmi-simple"
+        - >
+          SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
+          SOS_BUILD_OPTS="--with-xpmem=$TRAVIS_INSTALL/xpmem --enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple"
         - >
           SOS_ENABLE_ERROR_TESTS=1
           SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SHMEM_BOUNCE_SIZE=0
@@ -153,6 +159,9 @@ before_install:
     ## Disable security protection so CMA will work
     - sudo sysctl -w kernel.yama.ptrace_scope=0
     - sudo sysctl -w kernel.randomize_va_space=0
+    ## Intall Linux headers (may not be same as linux-gcp package)
+    - uname -a
+    - sudo apt-get install linux-headers-`uname -r`
     ## Run the icc installation script:
     - >
       if [ "$CC" = "icc" ]; then
@@ -192,6 +201,20 @@ before_install:
         ./configure --prefix=$TRAVIS_INSTALL/libfabric
         make $TRAVIS_PAR_MAKE
         make install
+      fi
+    ## Build XPMEM
+    - >
+      if [[ $SOS_BUILD_OPTS = *"with-xpmem"* ]]; then
+        cd $TRAVIS_SRC
+        git clone --depth 10 https://github.com/hjelmn/xpmem.git
+        cd xpmem
+        ./autogen.sh
+        ./configure --prefix=$TRAVIS_INSTALL/xpmem
+        make $TRAVIS_PAR_MAKE
+        make install
+        ln -s $TRAVIS_INSTALL/xpmem/lib $TRAVIS_INSTALL/xpmem/lib64
+        sudo insmod $TRAVIS_INSTALL/xpmem/lib/modules/`uname -r`/xpmem.ko
+        sudo chown `whoami` /dev/xpmem
       fi
     ## Fetch UH Tests
     - cd $TRAVIS_SRC
