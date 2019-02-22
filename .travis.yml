@@ -264,12 +264,13 @@ script:
     - export PTL_DEBUG=1
     - export PTL_LOG_LEVEL=3
     - $SOS_PM_PRE_CMD
-    - >
-      if [[ $SOS_TRANSPORT_OPTS = *"with-ofi"* ]]; then
-        make VERBOSE=1 TEST_RUNNER="$SOS_PM_CMD -np 2" check
-      else
-        $SOS_PM_CMD -v -np 1 test/unit/hello
-      fi
+    #- >
+    #  if [[ $SOS_TRANSPORT_OPTS = *"with-ofi"* ]]; then
+    #    make VERBOSE=1 TEST_RUNNER="$SOS_PM_CMD -np 2" check
+    #  else
+    #    $SOS_PM_CMD -v -np 1 test/unit/hello
+    #  fi
+    - $SOS_PM_CMD -v -np 1 test/unit/hello
     - $SOS_PM_POST_CMD
     - unset SHMEM_DEBUG
     - unset PTL_DEBUG
