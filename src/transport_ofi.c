@@ -333,7 +333,7 @@ struct shmem_transport_ofi_stx_t {
     int               is_private;
 };
 typedef struct shmem_transport_ofi_stx_t shmem_transport_ofi_stx_t;
-static shmem_transport_ofi_stx_t* shmem_transport_ofi_stx_pool;
+static shmem_transport_ofi_stx_t* shmem_transport_ofi_stx_pool = NULL;
 
 struct shmem_transport_ofi_stx_kvs_t {
     int                         stx_idx;
@@ -345,7 +345,7 @@ static shmem_transport_ofi_stx_kvs_t* shmem_transport_ofi_stx_kvs = NULL;
 
 #define SHMEM_TRANSPORT_OFI_DUMP_STX()                                                          \
     do {                                                                                        \
-        char stx_str[256];                                                                      \
+        char stx_str[256] = "";                                                                 \
         int i, offset;                                                                          \
                                                                                                 \
         for (i = offset = 0; i < shmem_transport_ofi_stx_max; i++)                              \
@@ -452,9 +452,11 @@ int shmem_transport_ofi_stx_search_shared(long threshold)
 static inline
 void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
 {
-    /* SHMEM contexts that are private to the same thread (i.e. have
-     * SHMEM_CTX_PRIVATE option set) share the same STX.  */
-    if (shmem_transport_ofi_is_private(ctx->options)) {
+    if (shmem_transport_ofi_stx_max == 0) {
+        ctx->stx_idx = -1;
+    } else if (shmem_transport_ofi_is_private(ctx->options)) {
+        /* SHMEM contexts that are private to the same thread (i.e. have
+         * SHMEM_CTX_PRIVATE option set) share the same STX.  */
 
         shmem_transport_ofi_stx_kvs_t *f;
         HASH_FIND(hh, shmem_transport_ofi_stx_kvs,
@@ -542,8 +544,11 @@ int bind_enable_ep_resources(shmem_transport_ctx_t *ctx)
 {
     int ret = 0;
 
-    ret = fi_ep_bind(ctx->ep, &shmem_transport_ofi_stx_pool[ctx->stx_idx].stx->fid, 0);
-    OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to endpoint failed");
+    /* If using SOS-managed STXs, bind the STX */
+    if (ctx->stx_idx >= 0) {
+        ret = fi_ep_bind(ctx->ep, &shmem_transport_ofi_stx_pool[ctx->stx_idx].stx->fid, 0);
+        OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to endpoint failed");
+    }
 
     /* Put counter captures completions for non-fetching operations (put,
      * atomic, etc.) */
@@ -1113,7 +1118,7 @@ int query_for_fabric(struct fabric_info *info)
 
     hints.domain_attr         = &domain_attr;
     ep_attr.type              = FI_EP_RDM; /* reliable connectionless */
-    ep_attr.tx_ctx_cnt        = FI_SHARED_CONTEXT;
+    ep_attr.tx_ctx_cnt        = 0;
     hints.fabric_attr         = &fabric_attr;
     tx_attr.op_flags          = FI_DELIVERY_COMPLETE;
     tx_attr.inject_size       = shmem_transport_ofi_max_buffered_send; /* require provider to support this as a min */
@@ -1166,6 +1171,11 @@ int query_for_fabric(struct fabric_info *info)
         return 1;
     }
 
+    /* Check if the domain supports STXs */
+    if (info->p_info->domain_attr->max_ep_stx_ctx == 0) {
+        shmem_transport_ofi_stx_max = 0;
+    }
+
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     /* Only use a single MR, no keys required */
     info->p_info->domain_attr->mr_key_size = 0;
@@ -1181,12 +1191,13 @@ int query_for_fabric(struct fabric_info *info)
 #endif
 
     DEBUG_MSG("OFI provider: %s, fabric: %s, domain: %s\n"
-              RAISE_PE_PREFIX "max_inject: %zu, max_msg: %zu\n",
+              RAISE_PE_PREFIX "max_inject: %zu, max_msg: %zu stx: %s\n",
               info->p_info->fabric_attr->prov_name,
               info->p_info->fabric_attr->name, info->p_info->domain_attr->name,
               shmem_internal_my_pe,
               shmem_transport_ofi_max_buffered_send,
-              shmem_transport_ofi_max_msg_size);
+              shmem_transport_ofi_max_msg_size,
+              info->p_info->domain_attr->max_ep_stx_ctx == 0 ? "no" : "yes");
 
     return ret;
 }
@@ -1251,7 +1262,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     cq_attr.format = FI_CQ_FORMAT_CONTEXT;
 
     struct fabric_info* info = &shmem_transport_ofi_info;
-    info->p_info->ep_attr->tx_ctx_cnt = FI_SHARED_CONTEXT;
+    info->p_info->ep_attr->tx_ctx_cnt = shmem_transport_ofi_stx_max > 0 ? FI_SHARED_CONTEXT : 0;
     info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | FI_ATOMICS;
     info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
     info->p_info->mode = 0;
@@ -1336,33 +1347,30 @@ int shmem_transport_init(void)
     else
         shmem_transport_ofi_info.domain_name = NULL;
 
+    /* Check STX resource settings */
+    if ((shmem_internal_thread_level == SHMEM_THREAD_SINGLE ||
+         shmem_internal_thread_level == SHMEM_THREAD_FUNNELED ) &&
+         shmem_internal_params.OFI_STX_MAX > 1) {
+        if (shmem_internal_params.OFI_STX_MAX_provided) {
+            /* We need only 1 STX per PE with SHMEM_THREAD_SINGLE or SHMEM_THREAD_FUNNELED */
+            RAISE_WARN_MSG("Ignoring STX max setting '%ld'; using 1 STX in single-threaded mode\n",
+                           shmem_internal_params.OFI_STX_MAX);
+        }
+        shmem_transport_ofi_stx_max = 1;
+    } else {
+        if (shmem_internal_params.OFI_STX_MAX < 0) {
+            RAISE_ERROR_MSG("Invalid OFI_STX_MAX value '%ld'\n",
+                            shmem_internal_params.OFI_STX_MAX);
+        }
+        shmem_transport_ofi_stx_max = shmem_internal_params.OFI_STX_MAX;
+    }
+    shmem_transport_ofi_stx_threshold = shmem_internal_params.OFI_STX_THRESHOLD;
 
     ret = query_for_fabric(&shmem_transport_ofi_info);
     if (ret != 0) return ret;
 
     ret = allocate_fabric_resources(&shmem_transport_ofi_info);
     if (ret != 0) return ret;
-
-    /* STX max settings */
-    if ((shmem_internal_thread_level == SHMEM_THREAD_SINGLE ||
-         shmem_internal_thread_level == SHMEM_THREAD_FUNNELED ) &&
-         shmem_internal_params.OFI_STX_MAX > 1) {
-        if (shmem_internal_params.OFI_STX_MAX_provided) {
-            /* We need only 1 STX per PE with SHMEM_THREAD_SINGLE or SHMEM_THREAD_FUNNELED */
-            RAISE_WARN_MSG("Ignoring invalid STX max setting '%ld'; using 1 STX in single-threaded mode\n",
-                           shmem_internal_params.OFI_STX_MAX);
-        }
-        shmem_transport_ofi_stx_max = 1;
-    } else {
-        if (shmem_internal_params.OFI_STX_MAX_provided &&
-            shmem_internal_params.OFI_STX_MAX <= 0) {
-            RAISE_ERROR_MSG("Invalid OFI_STX_MAX value '%ld'\n",
-                            shmem_internal_params.OFI_STX_MAX);
-        } else {
-            shmem_transport_ofi_stx_max = shmem_internal_params.OFI_STX_MAX;
-        }
-    }
-    shmem_transport_ofi_stx_threshold = shmem_internal_params.OFI_STX_THRESHOLD;
 
     /* STX sharing settings */
     char *type = shmem_internal_params.OFI_STX_ALLOCATOR;
@@ -1424,7 +1432,10 @@ int shmem_transport_startup(void)
     int ret;
     int i;
 
-    if (shmem_internal_params.OFI_STX_AUTO) {
+    if (shmem_internal_params.OFI_STX_AUTO && shmem_transport_ofi_stx_max == 0) {
+        RAISE_WARN_STR("STXs disabled, ignoring request for automatic STX management");
+    }
+    else if (shmem_internal_params.OFI_STX_AUTO) {
 
         long ofi_tx_ctx_cnt = shmem_transport_ofi_info.fabrics->domain_attr->tx_ctx_cnt;
         int num_on_node = shmem_runtime_get_node_size();
@@ -1464,10 +1475,12 @@ int shmem_transport_startup(void)
     }
 
     /* Allocate STX array with max length */
-    shmem_transport_ofi_stx_pool = malloc(shmem_transport_ofi_stx_max *
-                                          sizeof(shmem_transport_ofi_stx_t));
-    if (shmem_transport_ofi_stx_pool == NULL) {
-        RAISE_ERROR_STR("Out of memory when allocating OFI STX pool");
+    if (shmem_transport_ofi_stx_max > 0) {
+        shmem_transport_ofi_stx_pool = malloc(shmem_transport_ofi_stx_max *
+                                              sizeof(shmem_transport_ofi_stx_t));
+        if (shmem_transport_ofi_stx_pool == NULL) {
+            RAISE_ERROR_STR("Out of memory when allocating OFI STX pool");
+        }
     }
 
     for (i = 0; i < shmem_transport_ofi_stx_max; i++) {
@@ -1683,7 +1696,7 @@ int shmem_transport_fini(void)
         ret = fi_close(&shmem_transport_ofi_stx_pool[i].stx->fid);
         OFI_CHECK_ERROR_MSG(ret, "STX context close failed (%s)\n", fi_strerror(errno));
     }
-    free(shmem_transport_ofi_stx_pool);
+    if (shmem_transport_ofi_stx_pool) free(shmem_transport_ofi_stx_pool);
 
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));
