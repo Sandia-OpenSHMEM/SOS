@@ -154,14 +154,10 @@ before_install:
     - mkdir $HOME/travis
     - mkdir $HOME/travis/src
     - mkdir $HOME/travis/install
-    - export SOS_SRC=$PWD
     - export TRAVIS_SRC=$HOME/travis/src
     ## Disable security protection so CMA will work
     - sudo sysctl -w kernel.yama.ptrace_scope=0
     - sudo sysctl -w kernel.randomize_va_space=0
-    ## Intall Linux headers (may not be same as linux-gcp package)
-    - uname -a
-    - sudo apt-get install linux-headers-`uname -r`
     ## Run the icc installation script:
     - >
       if [ "$CC" = "icc" ]; then
@@ -205,6 +201,10 @@ before_install:
     ## Build XPMEM
     - >
       if [[ $SOS_BUILD_OPTS = *"with-xpmem"* ]]; then
+        ## Intall Linux headers (may not be same as linux-gcp package, so has to be scripted)
+        uname -a
+        sudo apt-get install linux-headers-`uname -r`
+        ## Install XPMEM
         cd $TRAVIS_SRC
         git clone --depth 10 https://github.com/hjelmn/xpmem.git
         cd xpmem
@@ -212,7 +212,9 @@ before_install:
         ./configure --prefix=$TRAVIS_INSTALL/xpmem
         make $TRAVIS_PAR_MAKE
         make install
+        ## Hack to get SOS to see the XPMEM library
         ln -s $TRAVIS_INSTALL/xpmem/lib $TRAVIS_INSTALL/xpmem/lib64
+        ## Install the module and allow Travis to use it
         sudo insmod $TRAVIS_INSTALL/xpmem/lib/modules/`uname -r`/xpmem.ko
         sudo chown `whoami` /dev/xpmem
       fi
@@ -255,14 +257,14 @@ before_install:
       fi
 
 install:
-    - cd $SOS_SRC
+    - cd $TRAVIS_BUILD_DIR
     - ./autogen.sh
 
 script:
     ###
     ### Build without transport
     ###
-    - cd $SOS_SRC
+    - cd $TRAVIS_BUILD_DIR
     - mkdir no-transport-build
     - cd no-transport-build
     - ../configure --prefix=$TRAVIS_INSTALL/sos-none --without-ofi --without-portals4 $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
@@ -275,7 +277,7 @@ script:
     ###
     ### Build and check with transport
     ###
-    - cd $SOS_SRC
+    - cd $TRAVIS_BUILD_DIR
     - mkdir sos-build
     - cd sos-build
     - ../configure --prefix=$TRAVIS_INSTALL/sos $SOS_TRANSPORT_OPTS $SOS_GLOBAL_BUILD_OPTS $SOS_BUILD_OPTS
@@ -330,7 +332,7 @@ script:
     - export CUSTOM_SHMEM_DIR=$TRAVIS_INSTALL/sos
     - export CRAY_TESTS_DIR=$TRAVIS_SRC/tests-cray
     - $SOS_PM_PRE
-    - $SOS_SRC/scripts/travis/cray_tests.sh
+    - $TRAVIS_BUILD_DIR/scripts/travis/cray_tests.sh
     - $SOS_PM_POST
 
     ###
@@ -405,7 +407,7 @@ script:
     ###
     - >
       if [ ! -z "$SOS_CHECK_TARBALL_RPM" ]; then
-          cd $SOS_SRC
+          cd $TRAVIS_BUILD_DIR
           ./configure --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple --enable-rpm-prefix
           make dist
           rpmbuild -ta ./sandia-openshmem-*.tar.gz --define "configargs --with-ofi=$TRAVIS_INSTALL/libfabric/ --enable-pmi-simple" --define "_prefix /usr/shmem"
