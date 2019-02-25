@@ -64,7 +64,7 @@ int main(void) {
     shmem_barrier_all();
 
     if (target < 0 || target >= npes) {
-        printf("%d: Invalid target (%ld) in NBI swap test\n", me, result[i]);
+        printf("%d: Invalid target (%ld) in NBI swap test\n", me, target);
         ++errors;
     }
 
@@ -103,7 +103,7 @@ int main(void) {
     shmem_barrier_all();
 
     if (target != npes-1) {
-        printf("%d: Invalid target (%ld) in NBI cswap test\n", me, result[i]);
+        printf("%d: Invalid target (%ld) in NBI cswap test\n", me, target);
         ++errors;
     }
 
