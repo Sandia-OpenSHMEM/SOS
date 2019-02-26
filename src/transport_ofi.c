@@ -1113,6 +1113,7 @@ int query_for_fabric(struct fabric_info *info)
 
     hints.domain_attr         = &domain_attr;
     ep_attr.type              = FI_EP_RDM; /* reliable connectionless */
+    ep_attr.tx_ctx_cnt        = FI_SHARED_CONTEXT;
     hints.fabric_attr         = &fabric_attr;
     tx_attr.op_flags          = FI_DELIVERY_COMPLETE;
     tx_attr.inject_size       = shmem_transport_ofi_max_buffered_send; /* require provider to support this as a min */
