@@ -1079,12 +1079,12 @@ int query_for_fabric(struct fabric_info *info)
 
     hints.caps   = FI_RMA |     /* request rma capability
                                    implies FI_READ/WRITE FI_REMOTE_READ/WRITE */
-        FI_ATOMICS;  /* request atomics capability */
+                   FI_ATOMIC;  /* request atomics capability */
 #if ENABLE_TARGET_CNTR
     hints.caps |= FI_RMA_EVENT; /* want to use remote counters */
 #endif /* ENABLE_TARGET_CNTR */
 #ifdef USE_FI_FENCE
-    hints.caps |= FI_FENCE;     /* request fence capability; FI_FENCE adds 
+    hints.caps |= FI_FENCE;     /* request fence capability; FI_FENCE adds
                                    ordering semantics to fi_atomicmsg
                                    for put with signal implementation */
 #endif
@@ -1126,7 +1126,7 @@ int query_for_fabric(struct fabric_info *info)
     hints.rx_attr             = NULL;
     hints.ep_attr             = &ep_attr;
 
-    /* find fabric provider to use that is able to support RMA and ATOMICS */
+    /* find fabric provider to use that is able to support RMA and ATOMIC */
     ret = fi_getinfo( FI_VERSION(OFI_MAJOR_VERSION, OFI_MINOR_VERSION),
                       NULL, NULL, 0, &hints, &(info->fabrics));
 
@@ -1208,7 +1208,7 @@ static int shmem_transport_ofi_target_ep_init(void)
 
     struct fabric_info* info = &shmem_transport_ofi_info;
     info->p_info->ep_attr->tx_ctx_cnt = 0;
-    info->p_info->caps = FI_RMA | FI_ATOMICS | FI_REMOTE_READ | FI_REMOTE_WRITE;
+    info->p_info->caps = FI_RMA | FI_ATOMIC | FI_REMOTE_READ | FI_REMOTE_WRITE;
 #if ENABLE_TARGET_CNTR
     info->p_info->caps |= FI_RMA_EVENT;
 #endif
@@ -1263,7 +1263,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 
     struct fabric_info* info = &shmem_transport_ofi_info;
     info->p_info->ep_attr->tx_ctx_cnt = shmem_transport_ofi_stx_max > 0 ? FI_SHARED_CONTEXT : 0;
-    info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | FI_ATOMICS;
+    info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | FI_ATOMIC;
     info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
     info->p_info->mode = 0;
     info->p_info->tx_attr->mode = 0;
