@@ -58,6 +58,7 @@ struct fid_fabric*              shmem_transport_ofi_fabfd;
 struct fid_domain*              shmem_transport_ofi_domainfd;
 struct fid_av*                  shmem_transport_ofi_avfd;
 struct fid_ep*                  shmem_transport_ofi_target_ep;
+struct fid_cq*                  shmem_transport_ofi_target_cq;
 #if ENABLE_TARGET_CNTR
 struct fid_cntr*                shmem_transport_ofi_target_cntrfd;
 #endif
@@ -1232,6 +1233,16 @@ static int shmem_transport_ofi_target_ep_init(void)
     ret = allocate_recv_cntr_mr();
     if (ret != 0) return ret;
 
+     struct fi_cq_attr cq_attr = {0};
+
+     ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr,
+                      &shmem_transport_ofi_target_cq, NULL);
+     OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(errno));
+
+     ret = fi_ep_bind(shmem_transport_ofi_target_ep,
+                      &shmem_transport_ofi_target_cq->fid, FI_TRANSMIT|FI_RECV);
+     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind CQ to target endpoint failed");
+
     ret = fi_enable(shmem_transport_ofi_target_ep);
     OFI_CHECK_RETURN_STR(ret, "fi_enable on target endpoint failed");
 
@@ -1266,6 +1277,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     cq_attr.format = FI_CQ_FORMAT_CONTEXT;
 
     struct fabric_info* info = &shmem_transport_ofi_info;
+
     info->p_info->ep_attr->tx_ctx_cnt = shmem_transport_ofi_stx_max > 0 ? FI_SHARED_CONTEXT : 0;
     info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | FI_ATOMIC;
     info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
@@ -1704,6 +1716,9 @@ int shmem_transport_fini(void)
 
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));
+
+    ret = fi_close(&shmem_transport_ofi_target_cq->fid);
+    OFI_CHECK_ERROR_MSG(ret, "Target CQ close failed (%s)\n", fi_strerror(errno));
 
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     ret = fi_close(&shmem_transport_ofi_target_mrfd->fid);

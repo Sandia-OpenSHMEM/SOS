@@ -33,7 +33,7 @@
 #include <sys/types.h>
 
 
-#if !defined(ENABLE_HARD_POLLING) || defined(ENABLE_MANUAL_PROGRESS)
+#if !defined(ENABLE_HARD_POLLING)
 #define ENABLE_TARGET_CNTR 1
 #else
 #define ENABLE_TARGET_CNTR 0
@@ -41,6 +41,8 @@
 
 #if ENABLE_TARGET_CNTR
 extern struct fid_cntr*                 shmem_transport_ofi_target_cntrfd;
+#else
+extern struct fid_cq*                   shmem_transport_ofi_target_cq;
 #endif
 #ifndef ENABLE_MR_SCALABLE
 extern uint64_t*                        shmem_transport_ofi_target_heap_keys;
@@ -326,12 +328,20 @@ void shmem_transport_probe(void)
 #  ifdef USE_THREAD_COMPLETION
     if (0 == pthread_mutex_trylock(&shmem_transport_ofi_progress_lock)) {
 #  endif
+#  if ENABLE_TARGET_CNTR
         fi_cntr_read(shmem_transport_ofi_target_cntrfd);
+#  else
+        struct fi_cq_entry buf;
+        int ret = fi_cq_read(shmem_transport_ofi_target_cq, &buf, 1);
+        if (ret == 1)
+            RAISE_WARN_STR("Unexpected event");
+#  endif
 #  ifdef USE_THREAD_COMPLETION
         pthread_mutex_unlock(&shmem_transport_ofi_progress_lock);
     }
 #  endif
 #endif
+
     return;
 }
 
@@ -521,6 +531,8 @@ int try_again(shmem_transport_ctx_t *ctx, const int ret, uint64_t *polled) {
                     RAISE_ERROR_MSG("Error reading from CQ (%zd)\n", ret);
                 }
             }
+
+            shmem_transport_probe();
 
             (*polled)++;
 
