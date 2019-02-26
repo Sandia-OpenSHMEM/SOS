@@ -18,7 +18,8 @@ env:
         - SHMEM_INFO=1
         - SOS_ENABLE_ERROR_TESTS=0
         - TRAVIS_INSTALL=$HOME/travis/install
-        - SOS_PM=mpiexec.hydra
+        ## Use full path to avoid picking up Intel MPI launcher
+        - SOS_PM=/usr/bin/mpiexec.hydra
         - SOS_PM_PRE=true
         - SOS_PM_POST=true
         ## An encrypted value for INTEL_SERIAL_NUMBER:
