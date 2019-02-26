@@ -567,8 +567,15 @@ int bind_enable_ep_resources(shmem_transport_ctx_t *ctx)
     /* In addition to incrementing the put counter, bounce buffered puts and
      * non-fetching AMOs generate a CQ event that is used to reclaim the buffer
      * (pointer is returned in event context) after the operation completes. */
+
+    /* Note: The CQ is bound with FI_RECV even though no receive capabilities
+     * are enabled on this EP.  FI_RECV is required to drive progress for this
+     * EP using the CQ.  When manual progress is disabled, FI_RECV can be
+     * removed below.  However, there aren't currently any cases where removing
+     * FI_RECV significantly improves performance or resource usage.  */
+
     ret = fi_ep_bind(ctx->ep, &ctx->cq->fid,
-                     FI_SELECTIVE_COMPLETION | FI_TRANSMIT);
+                     FI_SELECTIVE_COMPLETION | FI_TRANSMIT | FI_RECV);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind CQ to endpoint failed");
 
     ret = fi_ep_bind(ctx->ep, &shmem_transport_ofi_avfd->fid, 0);
@@ -1240,7 +1247,7 @@ static int shmem_transport_ofi_target_ep_init(void)
      OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(errno));
 
      ret = fi_ep_bind(shmem_transport_ofi_target_ep,
-                      &shmem_transport_ofi_target_cq->fid, FI_TRANSMIT|FI_RECV);
+                      &shmem_transport_ofi_target_cq->fid, FI_RECV);
      OFI_CHECK_RETURN_STR(ret, "fi_ep_bind CQ to target endpoint failed");
 
     ret = fi_enable(shmem_transport_ofi_target_ep);
