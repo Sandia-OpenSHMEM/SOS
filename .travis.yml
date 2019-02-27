@@ -237,17 +237,14 @@ before_install:
     - echo -e "SHMEMCC=oshcc -std=c99\nSHMEMTOP=$$TRAVIS_INSTALL\n" > PRK/common/make.defs
     ## Build PMIx
     - >
-      if [[ $SOS_BUILD_OPTS = *"with-pmix"* ]]; then
         cd $TRAVIS_SRC
         git clone --depth 10 https://github.com/pmix/pmix pmix
         cd pmix
         ./autogen.pl
         ./configure --prefix=$TRAVIS_INSTALL/pmix --with-platform=optimized
         make install
-      fi
     ## Build PRRTE
     - >
-      if [[ $SOS_BUILD_OPTS = *"with-pmix"* ]]; then
         cd $TRAVIS_SRC
         git clone --depth 10 https://github.com/pmix/prrte prrte
         cd prrte
@@ -255,7 +252,6 @@ before_install:
         ./configure --prefix=$TRAVIS_INSTALL/prrte --with-pmix=$TRAVIS_INSTALL/pmix --without-slurm
         make install
         export PATH=$TRAVIS_INSTALL/prrte/bin:$PATH
-      fi
 
 install:
     - cd $TRAVIS_BUILD_DIR
