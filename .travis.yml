@@ -146,6 +146,7 @@ addons:
             - cargo
             - libhwloc-dev
             - libev-dev
+            - libev-libevent-dev
 
 before_install:
     ## Set up the environment
