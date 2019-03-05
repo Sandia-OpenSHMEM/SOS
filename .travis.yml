@@ -28,11 +28,10 @@ env:
         - >
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--enable-pmi-simple"
-       ## Portals4/PMIx not currently working because of libev/libevent symbols clash
-       # - >
-       #   SOS_PM="prun -host localhost -oversubscribe" SOS_PM_PRE="prte --daemonize" SOS_PM_POST="prun -terminate"
-       #   SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
-       #   SOS_BUILD_OPTS="--with-pmix=$TRAVIS_INSTALL/pmix"
+        - >
+          SOS_PM="prun -host localhost -oversubscribe" SOS_PM_PRE="prte --daemonize" SOS_PM_POST="prun -terminate"
+          SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
+          SOS_BUILD_OPTS="--with-pmix=$TRAVIS_INSTALL/pmix"
         - >
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--disable-cxx --enable-memcpy --enable-pmi-simple"
@@ -145,9 +144,9 @@ addons:
             - mpich
             - libmpich-dev
             - cargo
-            - libevent-dev
             - libhwloc-dev
             - libev-dev
+            - libev-libevent-dev
 
 before_install:
     ## Set up the environment
@@ -241,7 +240,7 @@ before_install:
         git clone --depth 10 https://github.com/pmix/pmix pmix
         cd pmix
         ./autogen.pl
-        ./configure --prefix=$TRAVIS_INSTALL/pmix --with-platform=optimized
+        ./configure --prefix=$TRAVIS_INSTALL/pmix --with-platform=optimized --with-libev
         make install
       fi
     ## Build PRRTE
@@ -251,7 +250,7 @@ before_install:
         git clone --depth 10 https://github.com/pmix/prrte prrte
         cd prrte
         ./autogen.pl
-        ./configure --prefix=$TRAVIS_INSTALL/prrte --with-pmix=$TRAVIS_INSTALL/pmix --without-slurm
+        ./configure --prefix=$TRAVIS_INSTALL/prrte --with-pmix=$TRAVIS_INSTALL/pmix --without-slurm --with-libev
         make install
         export PATH=$TRAVIS_INSTALL/prrte/bin:$PATH
       fi
