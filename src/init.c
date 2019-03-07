@@ -367,7 +367,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         RETURN_ERROR_MSG("Transport init failed (%d)\n", ret);
         goto cleanup;
     }
-    transport_initialized = 1;
 
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_init();
@@ -375,7 +374,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         RETURN_ERROR_MSG("XPMEM init failed (%d)\n", ret);
         goto cleanup;
     }
-    xpmem_initialized = 1;
 #endif
 
 #ifdef USE_CMA
@@ -384,7 +382,6 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         RETURN_ERROR_MSG("CMA init failed (%d)\n", ret);
         goto cleanup;
     }
-    cma_initialized = 1;
 #endif
 
     /* exchange information */
@@ -406,6 +403,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         RETURN_ERROR_MSG("Transport startup failed (%d)\n", ret);
         goto cleanup;
     }
+    transport_initialized = 1;
 
 #ifdef USE_XPMEM
     ret = shmem_transport_xpmem_startup();
@@ -413,6 +411,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         RETURN_ERROR_MSG("XPMEM startup failed (%d)\n", ret);
         goto cleanup;
     }
+    xpmem_initialized = 1;
 #endif
 #ifdef USE_CMA
     ret = shmem_transport_cma_startup();
@@ -420,6 +419,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         RETURN_ERROR_MSG("CMA startup failed (%d)\n", ret);
         goto cleanup;
     }
+    cma_initialized = 1;
 #endif
 
     ret = shmem_internal_collectives_init();
