@@ -328,14 +328,10 @@ void shmem_transport_probe(void)
 #  ifdef USE_THREAD_COMPLETION
     if (0 == pthread_mutex_trylock(&shmem_transport_ofi_progress_lock)) {
 #  endif
-#  if ENABLE_TARGET_CNTR
-        fi_cntr_read(shmem_transport_ofi_target_cntrfd);
-#  else
         struct fi_cq_entry buf;
         int ret = fi_cq_read(shmem_transport_ofi_target_cq, &buf, 1);
         if (ret == 1)
             RAISE_WARN_STR("Unexpected event");
-#  endif
 #  ifdef USE_THREAD_COMPLETION
         pthread_mutex_unlock(&shmem_transport_ofi_progress_lock);
     }
