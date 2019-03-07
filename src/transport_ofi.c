@@ -478,7 +478,7 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
             stx_idx = shmem_transport_ofi_stx_search_unused();
 
             /* Couldn't get new STX, assign a shared one */
-            /* Note: shared STX allocation is always successful */
+            /* Note: When stx_max > 0, shared STX allocation is always successful */
             if (stx_idx < 0) {
                 DEBUG_STR("private STX unavailable, falling back to STX sharing");
                 is_unused = 0;
