@@ -343,19 +343,22 @@ struct shmem_transport_ofi_stx_kvs_t {
 typedef struct shmem_transport_ofi_stx_kvs_t shmem_transport_ofi_stx_kvs_t;
 static shmem_transport_ofi_stx_kvs_t* shmem_transport_ofi_stx_kvs = NULL;
 
-#define SHMEM_TRANSPORT_OFI_DUMP_STX()                                                          \
-    do {                                                                                        \
-        char stx_str[256] = "";                                                                 \
-        int i, offset;                                                                          \
-                                                                                                \
-        for (i = offset = 0; i < shmem_transport_ofi_stx_max; i++)                              \
-            offset += snprintf(stx_str+offset, 256-offset,                                      \
-                               (i == shmem_transport_ofi_stx_max-1) ? "%ld%s" : "%ld%s ",       \
-                               shmem_transport_ofi_stx_pool[i].ref_cnt,                         \
-                               shmem_transport_ofi_stx_pool[i].is_private ? "P" : "S");         \
-                                                                                                \
-        DEBUG_MSG("STX[%ld] = [ %s ]\n", shmem_transport_ofi_stx_max, stx_str);                 \
-    } while (0)
+static inline
+void shmem_transport_ofi_dump_stx(void) {
+    char stx_str[256];
+    int i, offset;
+
+    if (shmem_transport_ofi_stx_max == 0)
+        return;
+
+    for (i = offset = 0; i < shmem_transport_ofi_stx_max; i++)
+        offset += snprintf(stx_str+offset, 256-offset,
+                           (i == shmem_transport_ofi_stx_max-1) ? "%ld%s" : "%ld%s ",
+                           shmem_transport_ofi_stx_pool[i].ref_cnt,
+                           shmem_transport_ofi_stx_pool[i].is_private ? "P" : "S");
+
+    DEBUG_MSG("STX[%ld] = [ %s ]\n", shmem_transport_ofi_stx_max, stx_str);
+}
 
 static inline
 int shmem_transport_ofi_is_private(long options) {
@@ -518,7 +521,7 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
         shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt++;
     }
 
-    SHMEM_TRANSPORT_OFI_DUMP_STX();
+    shmem_transport_ofi_dump_stx();
 
     return;
 }
@@ -1191,13 +1194,14 @@ int query_for_fabric(struct fabric_info *info)
 #endif
 
     DEBUG_MSG("OFI provider: %s, fabric: %s, domain: %s\n"
-              RAISE_PE_PREFIX "max_inject: %zu, max_msg: %zu stx: %s\n",
+              RAISE_PE_PREFIX "max_inject: %zu, max_msg: %zu, stx: %s, stx_max: %ld\n",
               info->p_info->fabric_attr->prov_name,
               info->p_info->fabric_attr->name, info->p_info->domain_attr->name,
               shmem_internal_my_pe,
               shmem_transport_ofi_max_buffered_send,
               shmem_transport_ofi_max_msg_size,
-              info->p_info->domain_attr->max_ep_stx_ctx == 0 ? "no" : "yes");
+              info->p_info->domain_attr->max_ep_stx_ctx == 0 ? "no" : "yes",
+              shmem_transport_ofi_stx_max);
 
     return ret;
 }
