@@ -26,36 +26,41 @@ env:
     matrix:
         ## Portals Builds
         - >
+          SOS_DISABLE_EXTERNAL_TESTS=1
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--enable-pmi-simple"
         - >
+          SOS_DISABLE_EXTERNAL_TESTS=1
           SOS_PM="prun -host localhost -oversubscribe" SOS_PM_PRE="prte --daemonize" SOS_PM_POST="prun -terminate"
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--with-pmix=$TRAVIS_INSTALL/pmix"
         - >
+          SOS_DISABLE_EXTERNAL_TESTS=1
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--disable-cxx --enable-memcpy --enable-pmi-simple"
         - >
-          SOS_DISABLE_FORTRAN=1
+          SOS_DISABLE_EXTERNAL_TESTS=1
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--enable-pmi-mpi CC=mpicc"
         - >
-          SOS_DISABLE_FORTRAN=1
+          SOS_DISABLE_EXTERNAL_TESTS=1 SOS_DISABLE_FORTRAN=1
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--disable-fortran --enable-error-checking --enable-remote-virtual-addressing --disable-aslr-check --enable-pmi-simple"
         - >
+          SOS_DISABLE_EXTERNAL_TESTS=1
           SOS_ENABLE_ERROR_TESTS=1 SHMEM_SYMMETRIC_HEAP_USE_MALLOC=1
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--disable-threads --enable-error-checking --enable-pmi-simple"
         - >
-          SOS_DISABLE_FORTRAN=1
+          SOS_DISABLE_EXTERNAL_TESTS=1
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--with-cma --enable-error-checking --enable-profiling --enable-remote-virtual-addressing --enable-pmi-simple"
         - >
+          SOS_DISABLE_EXTERNAL_TESTS=1
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--with-xpmem=$TRAVIS_INSTALL/xpmem --enable-error-checking --enable-pmi-simple"
         - >
-          SOS_ENABLE_ERROR_TESTS=1
+          SOS_DISABLE_EXTERNAL_TESTS=1 SOS_ENABLE_ERROR_TESTS=1
           SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SHMEM_BOUNCE_SIZE=0
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple --enable-ofi-fence"
@@ -112,7 +117,7 @@ env:
           SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
           SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple --enable-manual-progress"
         - >
-          SOS_ENABLE_ERROR_TESTS=1
+          SOS_DISABLE_EXTERNAL_TESTS=1 SOS_ENABLE_ERROR_TESTS=1
           SHMEM_BARRIER_ALGORITHM=dissem SHMEM_REDUCE_ALGORITHM=recdbl SHMEM_FCOLLECT_ALGORITHM=recdbl
           SHMEM_OFI_STX_AUTO=1
           SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
@@ -296,7 +301,7 @@ script:
     ###
     ### Portals builds stop here
     ###
-    - if [[ $SOS_TRANSPORT_OPTS = *"with-portals4"* ]]; then travis_terminate $TRAVIS_TEST_RESULT; fi
+    - if [ -n "SOS_DISABLE_EXTERNAL_TESTS" ]; then travis_terminate $TRAVIS_TEST_RESULT; fi
     ###
     ### Run the UH test suite
     ###
