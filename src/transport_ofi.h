@@ -41,7 +41,8 @@
 
 #if ENABLE_TARGET_CNTR
 extern struct fid_cntr*                 shmem_transport_ofi_target_cntrfd;
-#else
+#endif
+#if ENABLE_MANUAL_PROGRESS
 extern struct fid_cq*                   shmem_transport_ofi_target_cq;
 #endif
 #ifndef ENABLE_MR_SCALABLE
