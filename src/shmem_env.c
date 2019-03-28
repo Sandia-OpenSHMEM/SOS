@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <errno.h>
+#include <math.h>
 
 #include "shmem_env.h"
 #include "shmem_internal.h"
@@ -31,31 +32,44 @@ struct shmem_internal_params_s shmem_internal_params;
 
 /* atol() + optional scaled suffix recognition: 1K, 2M, 3G, 1T */
 static shmem_internal_env_size
-atol_scaled(char *s)
+atol_scaled(char *str)
 {
-    long val_l;
-    shmem_internal_env_size val;
-    char *e;
-    errno = 0;
+    int scale, n;
+    double p = -1.0;
+    char f;
 
-    val_l = strtol(s,&e,0);
-    if (errno != 0 || e == s || val_l < 0) {
-        RAISE_ERROR_MSG("Environment variable conversion failed (%s)\n", s);
+    n = sscanf(str, "%lf%c", &p, &f);
+
+    if (n == 2) {
+        switch (f) {
+            case 'k':
+            case 'K':
+                scale = 10;
+                break;
+            case 'm':
+            case 'M':
+                scale = 20;
+                break;
+            case 'g':
+            case 'G':
+                scale = 30;
+                break;
+            case 't':
+            case 'T':
+                scale = 40;
+                break;
+            default:
+                RAISE_ERROR_MSG("Environment variable conversion failed (%s)\n", str);
+                return 0;
+        }
     }
-    val = (shmem_internal_env_size) val_l;
-    if (e == NULL || *e =='\0')
-        return val;
+    else if (p < 0) {
+        RAISE_ERROR_MSG("Environment variable conversion failed (%s)\n", str);
+        return 0;
+    } else
+        scale = 0;
 
-    if (*e == 'K' || *e == 'k')
-        val *= 1024L;
-    else if (*e == 'M' || *e == 'm')
-        val *= 1024L*1024L;
-    else if (*e == 'G' || *e == 'g')
-        val *= 1024L*1024L*1024L;
-    else if (*e == 'T' || *e == 't')
-        val *= 1024L*1024L*1024L*1024L;
-
-    return val;
+    return (shmem_internal_env_size) ceil(p * (1lu << scale));
 }
 
 

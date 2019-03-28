@@ -322,6 +322,8 @@ AC_SEARCH_LIBS([clock_gettime], [rt],
 CHECK_SCHED_GETAFFINITY(
     [AC_DEFINE([HAVE_SCHED_GETAFFINITY], [1], [define if sched_getaffinity is available])], [])
 
+AC_SEARCH_LIBS([ceil], [m], [], AC_MSG_ERROR([unable to find ceil() function]))
+
 dnl check for libraries
 
 OMPI_CHECK_PORTALS4([portals4],
