@@ -22,6 +22,23 @@ typedef struct {
     uint64_t target;
 } shmemx_pcntr_t;
 
+/* Teams */
+typedef struct shmem_impl_team_t {
+    int teamid;
+} * shmemx_team_t;
+
+typedef struct {
+    int num_contexts;
+} shmemx_team_config_t;
+
+#if SHMEM_HAVE_ATTRIBUTE_VISIBILITY == 1
+    __attribute__((visibility("default"))) extern shmemx_team_t SHMEMX_TEAM_WORLD;
+#else
+    extern shmemx_team_t SHMEMX_TEAM_WORLD;
+#endif
+
+#define SHMEMX_TEAM_NULL NULL
+
 #define SHMEMX_CTX_INVALID NULL
 
 #ifdef __cplusplus
