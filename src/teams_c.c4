@@ -53,7 +53,7 @@ int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_split_strided(shmemx_team_t parent_tea
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    return shmem_internal_team_split_strided(parent_team, PE_start, PE_stride, PE_size, config, config_mask, new_team);
+    return shmem_internal_team_split_strided((shmem_internal_team_t *)parent_team, PE_start, PE_stride, PE_size, config, config_mask, (shmem_internal_team_t **)new_team);
 }
 
 

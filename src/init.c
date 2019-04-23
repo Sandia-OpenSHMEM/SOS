@@ -36,6 +36,7 @@
 #include "shmem_comm.h"
 #include "runtime.h"
 #include "build_info.h"
+#include "shmem_team.h"
 
 #if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING) && defined(__linux__)
 #include <sys/personality.h>
@@ -425,6 +426,12 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     ret = shmem_internal_collectives_init();
     if (ret != 0) {
         RETURN_ERROR_MSG("Initialization of collectives failed (%d)\n", ret);
+        goto cleanup;
+    }
+
+    ret = shmem_internal_teams_init();
+    if (ret != 0) {
+        RETURN_ERROR_MSG("Initialization of teams failed (%d)\n", ret);
         goto cleanup;
     }
 
