@@ -125,6 +125,8 @@ shmem_internal_shutdown(void)
 
     shmem_internal_randr_fini();
 
+    shmem_internal_teams_fini();
+
     shmem_internal_symmetric_fini();
     shmem_runtime_fini();
 }
@@ -167,6 +169,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     int cma_initialized       = 0;
 #endif
     int randr_initialized     = 0;
+    int teams_initialized     = 0;
     int enable_node_ranks     = 0;
 
     /* Parse environment variables into shmem_internal_params */
@@ -434,6 +437,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         RETURN_ERROR_MSG("Initialization of teams failed (%d)\n", ret);
         goto cleanup;
     }
+    teams_initialized = 1;
 
     shmem_internal_randr_init();
     randr_initialized = 1;
@@ -465,6 +469,10 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
     if (randr_initialized) {
         shmem_internal_randr_fini();
+    }
+
+    if (teams_initialized) {
+        shmem_internal_teams_fini();
     }
 
     if (NULL != shmem_internal_data_base) {

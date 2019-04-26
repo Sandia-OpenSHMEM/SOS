@@ -20,11 +20,15 @@ int main(int argc, char *argv[])
     rank   = shmem_my_pe();
     npes   = shmem_n_pes();
 
+    if (npes < 2) {
+        shmem_global_exit(1);
+    }
+
     ret = shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 2, npes / 2, config, 0,
                              &new_team);
 
     if (ret != 0) {
-        shmem_global_exit(1);
+        shmem_global_exit(2);
     }
 
     if (new_team != SHMEMX_TEAM_NULL) {
@@ -32,10 +36,8 @@ int main(int argc, char *argv[])
         t_pe   = shmemx_team_my_pe(new_team);
 
         if ((rank % 2 != 0) || (rank / 2 != t_pe) || (npes / 2 != t_size)) {
-            shmem_global_exit(2);
+            shmem_global_exit(3);
         }
-    } else {
-        shmem_global_exit(3);
     }
 
     shmem_finalize();

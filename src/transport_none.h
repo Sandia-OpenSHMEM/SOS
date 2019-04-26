@@ -379,12 +379,4 @@ void shmem_transport_pcntr_get_all(shmem_transport_ctx_t *ctx, shmemx_pcntr_t *p
     return;
 }
 
-static inline
-int shmem_internal_team_split_strided(shmemx_team_t parent_team, int PE_start, int PE_stride,
-                                      int PE_size, shmemx_team_config_t *config, long config_mask,
-                                      shmemx_team_t *new_team)
-{
-    return 0;
-}
-
 #endif /* TRANSPORT_NONE_H */

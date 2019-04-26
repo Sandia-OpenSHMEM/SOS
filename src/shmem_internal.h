@@ -423,7 +423,8 @@ void *shmem_internal_shmalloc(size_t size);
 void* shmem_internal_get_next(intptr_t incr);
 
 /* Query PEs reachable using shared memory */
-static inline int shmem_internal_get_shr_rank(int pe)
+static inline
+int shmem_internal_get_shr_rank(int pe)
 {
 #ifdef USE_ON_NODE_COMMS
     return shmem_runtime_get_node_rank(pe);
@@ -434,7 +435,8 @@ static inline int shmem_internal_get_shr_rank(int pe)
 #endif
 }
 
-static inline int shmem_internal_get_shr_size(void)
+static inline
+int shmem_internal_get_shr_size(void)
 {
 #ifdef USE_ON_NODE_COMMS
     return shmem_runtime_get_node_size();
@@ -445,7 +447,9 @@ static inline int shmem_internal_get_shr_size(void)
 #endif
 }
 
-static inline double shmem_internal_wtime(void) {
+static inline
+double shmem_internal_wtime(void)
+{
     double wtime = 0.0;
 
 #ifdef HAVE_CLOCK_GETTIME
@@ -475,5 +479,56 @@ void shmem_util_backtrace(void);
 
 extern uint64_t (*shmem_internal_gettid_fn)(void);
 extern void shmem_internal_register_gettid(uint64_t (*gettid_fn)(void));
+
+static inline
+void shmem_internal_print_bits(void const * const ptr, size_t const size)
+{
+    unsigned char *bytes = (unsigned char*) ptr;
+    unsigned char bit_val;
+
+    /* TODO: does this work with big-endian? */
+    for (int i = size-1; i >= 0; i--) {
+        for (int j = CHAR_BIT-1; j >= 0; j--) {
+            bit_val = (bytes[i] >> j) & 1;
+            printf("%u", bit_val);
+        }
+    }
+    printf("\n");
+}
+
+static inline
+size_t shmem_internal_1st_nonzero_bit(void const * const ptr, size_t const size)
+{
+    unsigned char *bytes = (unsigned char*) ptr;
+    unsigned char bit_val;
+
+    /* TODO: does this work with big-endian? */
+    for(size_t i = 0; i <= size-1; i++) {
+        for (size_t j = 0; j < CHAR_BIT; j++) {
+            bit_val = (bytes[i] >> j) & 1;
+            if (bit_val == 1)
+                return i * CHAR_BIT + j;
+        }
+    }
+
+    return -1;
+}
+
+static inline
+int shmem_internal_pe_in_active_set(int test_pe, int PE_start, int PE_stride, int PE_size, int *my_pe)
+{
+    /* return 1 if test_pe is in the active set, and set my_pe to the PE index within this set */
+    if (PE_start < 0 || test_pe < PE_start)
+        return 0;
+
+    int in_set = (test_pe - PE_start) % PE_stride;
+    int n = (test_pe - PE_start) / PE_stride;
+    if (in_set || n >= PE_size)
+        return 0;
+    else {
+        *my_pe = n;
+        return 1;
+    }
+}
 
 #endif

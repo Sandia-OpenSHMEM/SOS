@@ -18,7 +18,6 @@
 
 #include <stdbool.h>
 #include <stddef.h>
-#include "config.h"
 
 typedef long   shmem_internal_env_long;
 typedef size_t shmem_internal_env_size;

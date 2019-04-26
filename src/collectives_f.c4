@@ -66,7 +66,7 @@ FC_SHMEM_BARRIER(fortran_integer_t *PE_start,
     /* SHMEM_BARRIER_SYNC_SIZE is defined to allow this cast */
     pSync_c = (long*) pSync;
 
-    shmem_internal_barrier(*PE_start, *logPE_stride, *PE_size, pSync_c);
+    shmem_internal_barrier(*PE_start, (1 << *logPE_stride), *PE_size, pSync_c);
 }
 
 
@@ -103,8 +103,8 @@ FC_SHMEM_BARRIER(fortran_integer_t *PE_start,
         pSync_c = (long*) pSync;                                        \
                                                                         \
         shmem_internal_op_to_all(target, source, *nreduce, SIZE,        \
-                                 *PE_start, *logPE_stride, *PE_size,    \
-                                 pWrk, pSync_c, IOP, ITYPE);            \
+                                 *PE_start, (1 << *logPE_stride), *PE_size, \
+                                 pWrk, pSync_c, IOP, ITYPE);                \
     }
 
 define(`SHMEM_WRAP_TO_ALL',
@@ -155,7 +155,7 @@ SHMEM_BIND_F_COLL_COMPS(`SHMEM_WRAP_TO_ALL', `prod', `SHM_INTERNAL_PROD')
         pSync_c = (long*) pSync;                                        \
                                                                         \
         shmem_internal_collect(target, source, *nelems * SIZE, *PE_start, \
-                               *logPE_stride, *PE_size, pSync_c);       \
+                               (1 << *logPE_stride), *PE_size, pSync_c);  \
     }
 
 define(`SHMEM_WRAP_COLLECT',
@@ -190,7 +190,7 @@ SHMEM_BIND_F_COLL_SIZES(`SHMEM_WRAP_COLLECT')
         pSync_c = (long*) pSync;                                        \
                                                                         \
         shmem_internal_fcollect(target, source, *nelems * SIZE, *PE_start, \
-                               *logPE_stride, *PE_size, pSync_c);       \
+                               (1 << *logPE_stride), *PE_size, pSync_c);   \
     }
 
 define(`SHMEM_WRAP_FCOLLECT',
@@ -228,8 +228,8 @@ SHMEM_BIND_F_COLL_SIZES(`SHMEM_WRAP_FCOLLECT')
         pSync_c = (long*) pSync;                                        \
                                                                         \
         shmem_internal_bcast(target, source, *nelems * SIZE,            \
-                         *PE_root, *PE_start, *logPE_stride, *PE_size,  \
-                         pSync_c, 1);                                   \
+                         *PE_root, *PE_start, (1 << *logPE_stride),     \
+                         *PE_size, pSync_c, 1);                         \
     }
 
 define(`SHMEM_WRAP_BROADCAST',
@@ -267,7 +267,7 @@ FC_SHMEM_ALLTOALL32(void *target,
     pSync_c = (long*) pSync;
 
     shmem_internal_alltoall(target, source, *nelems * 4, *PE_start,
-                            *logPE_stride, *PE_size, pSync_c);
+                            (1 << *logPE_stride), *PE_size, pSync_c);
 }
 
 
@@ -301,7 +301,7 @@ FC_SHMEM_ALLTOALL64(void *target,
     pSync_c = (long*) pSync;
 
     shmem_internal_alltoall(target, source, *nelems * 8, *PE_start,
-                            *logPE_stride, *PE_size, pSync_c);
+                            (1 << *logPE_stride), *PE_size, pSync_c);
 }
 
 
@@ -341,7 +341,7 @@ FC_SHMEM_ALLTOALLS32(void *target,
     pSync_c = (long*) pSync;
 
     shmem_internal_alltoalls(target, source, *dst, *sst, 4, *nelems,
-                             *PE_start, *logPE_stride, *PE_size, pSync_c);
+                             *PE_start, (1 << *logPE_stride), *PE_size, pSync_c);
 }
 
 
@@ -381,5 +381,5 @@ FC_SHMEM_ALLTOALLS64(void *target,
     pSync_c = (long*) pSync;
 
     shmem_internal_alltoalls(target, source, *dst, *sst, 8, *nelems,
-                             *PE_start, *logPE_stride, *PE_size, pSync_c);
+                             *PE_start, (1 << *logPE_stride), *PE_size, pSync_c);
 }

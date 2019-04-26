@@ -64,6 +64,7 @@ libsma_la_SOURCES = \
 	contexts.c \
 	perf_counters_c.c \
 	backtrace.c \
+	shmem_team.c \
 	shmem_team.h
 
 nodist_libsma_la_SOURCES = \
