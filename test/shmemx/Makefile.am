@@ -19,6 +19,7 @@ check_PROGRAMS = \
 	shmemx_test_any \
 	shmemx_test_some \
 	shmemx_team_split_strided \
+	shmemx_team_translate \
 	c11_test_shmemx_wait_until \
 	c11_test_shmemx_test
 
