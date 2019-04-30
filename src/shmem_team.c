@@ -32,18 +32,15 @@ static int num_teams = 0;
 int shmem_internal_teams_init(void)
 {
 
-    shmem_internal_team_t *team_world = calloc(1, sizeof(shmem_internal_team_t));
+    shmem_internal_team_world.team_id       = ++num_teams;
+    shmem_internal_team_world.psync_idx     = 0;
+    shmem_internal_team_world.start         = 0;
+    shmem_internal_team_world.stride        = 1;
+    shmem_internal_team_world.size          = shmem_internal_num_pes;
+    shmem_internal_team_world.config_mask   = 0;
+    memset(&shmem_internal_team_world.config, 0, sizeof(shmemx_team_config_t));
 
-    team_world->team_id       = ++num_teams;
-    //team_world->parent_team   = team_world;
-    team_world->psync_idx     = 0;
-    team_world->start         = 0;
-    team_world->stride        = 1;
-    team_world->size          = shmem_internal_num_pes;
-    team_world->config_mask   = 0;
-    memset(&team_world->config, 0, sizeof(shmemx_team_config_t));
-
-    SHMEMX_TEAM_WORLD = (shmemx_team_t) team_world;
+    SHMEMX_TEAM_WORLD = (shmemx_team_t) &shmem_internal_team_world;
 
     /* Allocate pSync pool, each with the maximum possible size requirement */
     const long max_teams = shmem_internal_params.TEAMS_MAX;
@@ -118,13 +115,36 @@ void shmem_internal_team_get_config(shmemx_team_t team, shmemx_team_config_t *co
 
 int shmem_internal_team_translate_pe(shmemx_team_t src_team, int src_pe, shmemx_team_t dest_team)
 {
-    return -1;
+    int src_pe_world, dest_pe;
+
+    if (src_team == SHMEMX_TEAM_NULL || dest_team == SHMEMX_TEAM_NULL)
+        return -1;
+
+    shmem_internal_team_t *team_dest = (shmem_internal_team_t *) dest_team;
+    shmem_internal_team_t *team_src  = (shmem_internal_team_t *) src_team;
+
+    if (src_pe > team_src->size)
+        return -1;
+
+    src_pe_world = team_src->start + src_pe * team_src->stride;
+
+    if (src_pe_world < team_src->start || src_pe_world >= shmem_internal_num_pes)
+        return -1;
+
+    shmem_internal_pe_in_active_set(src_pe_world, team_dest->start, team_dest->stride,
+                                    team_dest->size, &dest_pe);
+
+    return dest_pe;
 }
 
 int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE_start, int PE_stride,
                                       int PE_size, shmemx_team_config_t *config, long config_mask,
                                       shmem_internal_team_t **new_team)
 {
+
+    if (PE_size <= 0 || PE_stride < 1 || PE_start < 0)
+        return -1;
+
     *new_team = SHMEMX_TEAM_NULL;
 
     shmem_internal_team_t *myteam = calloc(1, sizeof(shmem_internal_team_t));

@@ -515,18 +515,20 @@ size_t shmem_internal_1st_nonzero_bit(void const * const ptr, size_t const size)
 }
 
 static inline
-int shmem_internal_pe_in_active_set(int test_pe, int PE_start, int PE_stride, int PE_size, int *my_pe)
+int shmem_internal_pe_in_active_set(int global_pe, int PE_start, int PE_stride, int PE_size, int *local_pe)
 {
-    /* return 1 if test_pe is in the active set, and set my_pe to the PE index within this set */
-    if (PE_start < 0 || test_pe < PE_start)
+    /* Return true if `global_pe` is in the given active set (return 0
+     * otherwise), and set `local_pe` to the PE index within this set */
+
+    if (global_pe < PE_start)
         return 0;
 
-    int in_set = (test_pe - PE_start) % PE_stride;
-    int n = (test_pe - PE_start) / PE_stride;
+    int in_set = (global_pe - PE_start) % PE_stride;
+    int n = (global_pe - PE_start) / PE_stride;
     if (in_set || n >= PE_size)
         return 0;
     else {
-        *my_pe = n;
+        *local_pe = n;
         return 1;
     }
 }

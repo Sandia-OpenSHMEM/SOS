@@ -30,14 +30,14 @@ int main(int argc, char *argv[])
 
     t_pe     = shmemx_team_my_pe(new_team);
     t_global = shmemx_team_translate_pe(new_team, t_pe, SHMEMX_TEAM_WORLD);
-    printf("(%d) team PE = %d, t_global = %d\n", rank, t_pe, t_global);
 
     if (new_team != SHMEMX_TEAM_NULL) {
-        t_pe     = shmemx_team_my_pe(new_team);
-        t_global = shmemx_team_translate_pe(new_team, t_pe, SHMEMX_TEAM_WORLD);
-
         if (t_global != rank) {
             shmem_global_exit(2);
+        }
+    } else {
+        if (t_global != -1) {
+            shmem_global_exit(3);
         }
     }
 

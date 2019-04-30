@@ -31,14 +31,19 @@ int main(int argc, char *argv[])
         shmem_global_exit(2);
     }
 
-    if (new_team != SHMEMX_TEAM_NULL) {
-        t_size = shmemx_team_n_pes(new_team);
-        t_pe   = shmemx_team_my_pe(new_team);
+    t_size = shmemx_team_n_pes(new_team);
+    t_pe   = shmemx_team_my_pe(new_team);
 
+    if (new_team != SHMEMX_TEAM_NULL) {
         if ((rank % 2 != 0) || (rank / 2 != t_pe) || (npes / 2 != t_size)) {
             shmem_global_exit(3);
         }
+    } else {
+        if ((rank % 2 == 0) || (t_pe != -1) || (t_size != -1)) {
+            shmem_global_exit(4);
+        }
     }
+
 
     shmem_finalize();
     return 0;
