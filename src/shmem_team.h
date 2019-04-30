@@ -41,22 +41,22 @@ int shmem_internal_team_my_pe(shmemx_team_t team);
 
 int shmem_internal_team_n_pes(shmemx_team_t team);
 
-void shmemx_internal_team_get_config(shmemx_team_t team, shmemx_team_config_t *config);
+void shmem_internal_team_get_config(shmemx_team_t team, shmemx_team_config_t *config);
 
-int shmemx_internal_team_translate_pe(shmemx_team_t src_team, int src_pe, shmemx_team_t dest_team);
+int shmem_internal_team_translate_pe(shmemx_team_t src_team, int src_pe, shmemx_team_t dest_team);
 
 int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE_start, int PE_stride,
                                       int PE_size, shmemx_team_config_t *config, long config_mask,
                                       shmem_internal_team_t **new_team);
 
-int shmemx_internal_team_split_2d(shmemx_team_t parent_team, int xrange,
+int shmem_internal_team_split_2d(shmemx_team_t parent_team, int xrange,
                                   shmemx_team_config_t *xaxis_config, long xaxis_mask, shmemx_team_t *xaxis_team,
                                   shmemx_team_config_t *yaxis_config, long yaxis_mask, shmemx_team_t *yaxis_team);
 
-int shmemx_internal_team_destroy(shmemx_team_t *team);
+int shmem_internal_team_destroy(shmemx_team_t *team);
 
-int shmemx_internal_team_create_ctx(shmemx_team_t team, long options, shmem_ctx_t *ctx);
+int shmem_internal_team_create_ctx(shmemx_team_t team, long options, shmem_ctx_t *ctx);
 
-int shmemx_internal_ctx_get_team(shmem_ctx_t ctx, shmemx_team_t *team);
+int shmem_internal_ctx_get_team(shmem_ctx_t ctx, shmemx_team_t *team);
 
 #endif

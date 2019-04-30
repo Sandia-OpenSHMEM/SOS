@@ -39,14 +39,14 @@ void SHMEM_FUNCTION_ATTRIBUTES shmemx_team_get_config(shmemx_team_t team, shmemx
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    shmemx_internal_team_get_config(team, config);
+    shmem_internal_team_get_config(team, config);
 }
 
 int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_translate_pe(shmemx_team_t src_team, int src_pe, shmemx_team_t dest_team)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    return shmemx_team_translate_pe(src_team, src_pe, dest_team);
+    return shmem_internal_team_translate_pe(src_team, src_pe, dest_team);
 }
 
 int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_split_strided(shmemx_team_t parent_team, int PE_start, int PE_stride, int PE_size, shmemx_team_config_t *config, long config_mask, shmemx_team_t *new_team)
@@ -61,26 +61,26 @@ int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_split_2d(shmemx_team_t parent_team, in
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    return shmemx_team_split_2d(parent_team, xrange, xaxis_config, xaxis_mask, xaxis_team, yaxis_config, yaxis_mask, yaxis_team);
+    return shmem_internal_team_split_2d(parent_team, xrange, xaxis_config, xaxis_mask, xaxis_team, yaxis_config, yaxis_mask, yaxis_team);
 }
 
 int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_destroy(shmemx_team_t *team)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    return shmemx_team_destroy(team);
+    return shmem_internal_team_destroy(team);
 }
 
 int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_create_ctx(shmemx_team_t team, long options, shmem_ctx_t *ctx)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    return shmemx_team_create_ctx(team, options, ctx);
+    return shmem_internal_team_create_ctx(team, options, ctx);
 }
 
 int SHMEM_FUNCTION_ATTRIBUTES shmemx_ctx_get_team(shmem_ctx_t ctx, shmemx_team_t *team)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    return shmemx_ctx_get_team(ctx, team);
+    return shmem_internal_ctx_get_team(ctx, team);
 }
