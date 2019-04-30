@@ -181,8 +181,6 @@ void backtrace_gdb(void) {
 void shmem_util_backtrace(void) {
     char *method = shmem_internal_params.BACKTRACE;
 
-    if (!method) return;
-
     if (0 == strcmp(method, "execinfo")) {
 #if defined(USE_BT_EXECINFO)
         backtrace_execinfo();
