@@ -301,7 +301,7 @@ static void printUsage(void) {
     printf("USAGE: mandelbrot [options]\n");
     printf("                  -t <num_threads> number of worker threads (def: 1)\n");
     printf("                  -w <width>       width of the mandelbrot domain (def: 2048)\n");
-    printf("                  -w <height>      height of the mandelbrot domain (def: 2048)\n");
+    printf("                  -h <height>      height of the mandelbrot domain (def: 2048)\n");
     printf("                  -j <job_points>  load balancing granularity (def: 128)\n");
     printf("                  -o               output image mandelbrot.pgm (def: off)\n");
     printf("                  -c               use OpenSHMEM contexts (def: off)\n");
