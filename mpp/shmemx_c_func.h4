@@ -185,3 +185,5 @@ SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_team_destroy(shmemx_team_t *team);
 SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_team_create_ctx(shmemx_team_t team, long options, shmem_ctx_t *ctx);
 
 SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_ctx_get_team(shmem_ctx_t ctx, shmemx_team_t *team);
+
+SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_team_sync(shmemx_team_t team);

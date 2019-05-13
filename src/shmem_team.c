@@ -29,6 +29,9 @@ static uint64_t *shmem_internal_psync_pool_reserved;
 
 static int num_teams = 0;
 
+
+/* Team Management Routines */
+
 int shmem_internal_teams_init(void)
 {
 
@@ -80,7 +83,7 @@ void shmem_internal_teams_fini(void)
     return;
 }
 
-int shmem_internal_team_my_pe(shmemx_team_t team)
+int shmem_internal_team_my_pe(shmem_internal_team_t *team)
 {
     if (team == SHMEMX_TEAM_NULL)
         return -1;
@@ -100,7 +103,7 @@ int shmem_internal_team_my_pe(shmemx_team_t team)
     */
 }
 
-int shmem_internal_team_n_pes(shmemx_team_t team)
+int shmem_internal_team_n_pes(shmem_internal_team_t *team)
 {
     if (team == SHMEMX_TEAM_NULL)
         return -1;
@@ -108,20 +111,22 @@ int shmem_internal_team_n_pes(shmemx_team_t team)
         return ((shmem_internal_team_t *)team)->size;
 }
 
-void shmem_internal_team_get_config(shmemx_team_t team, shmemx_team_config_t *config)
+void shmem_internal_team_get_config(shmem_internal_team_t *team, shmemx_team_config_t *config)
 {
+    shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;
+    *config = myteam->config;
     return;
 }
 
-int shmem_internal_team_translate_pe(shmemx_team_t src_team, int src_pe, shmemx_team_t dest_team)
+int shmem_internal_team_translate_pe(shmem_internal_team_t *src_team, int src_pe, shmem_internal_team_t *dest_team)
 {
     int src_pe_world, dest_pe;
 
     if (src_team == SHMEMX_TEAM_NULL || dest_team == SHMEMX_TEAM_NULL)
         return -1;
 
-    shmem_internal_team_t *team_dest = (shmem_internal_team_t *) dest_team;
-    shmem_internal_team_t *team_src  = (shmem_internal_team_t *) src_team;
+    shmem_internal_team_t *team_dest = (shmem_internal_team_t *)dest_team;
+    shmem_internal_team_t *team_src  = (shmem_internal_team_t *)src_team;
 
     if (src_pe > team_src->size)
         return -1;
@@ -184,22 +189,43 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
     return 0;
 }
 
-int shmem_internal_team_split_2d(shmemx_team_t parent_team, int xrange, shmemx_team_config_t *xaxis_config, long xaxis_mask, shmemx_team_t *xaxis_team, shmemx_team_config_t *yaxis_config, long yaxis_mask, shmemx_team_t *yaxis_team)
+int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange, shmemx_team_config_t *xaxis_config, long xaxis_mask, shmem_internal_team_t **xaxis_team, shmemx_team_config_t *yaxis_config, long yaxis_mask, shmem_internal_team_t **yaxis_team)
+{
+
+    return -1;
+}
+
+int shmem_internal_team_destroy(shmem_internal_team_t **team)
+{
+    free(team);
+    return 1;
+}
+
+int shmem_internal_team_create_ctx(shmem_internal_team_t *team, long options, shmem_ctx_t *ctx)
+{
+    int ret = shmem_transport_ctx_create(options, (shmem_transport_ctx_t **) ctx);
+
+    SHMEM_ERR_CHECK_NULL(ctx, 0);
+
+    shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;
+
+    myteam->config.num_contexts++;
+
+    //TODO: assign this context to the team...
+
+   return ret;
+}
+
+int shmem_internal_ctx_get_team(shmem_ctx_t ctx, shmem_internal_team_t **team)
 {
     return -1;
 }
 
-int shmem_internal_team_destroy(shmemx_team_t *team)
-{
-    return -1;
-}
 
-int shmem_internal_team_create_ctx(shmemx_team_t team, long options, shmem_ctx_t *ctx)
-{
-    return -1;
-}
 
-int shmem_internal_ctx_get_team(shmem_ctx_t ctx, shmemx_team_t *team)
+/* Team Collective Routines */
+
+int shmem_internal_team_sync(shmem_internal_team_t *team)
 {
     return -1;
 }
