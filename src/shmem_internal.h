@@ -523,12 +523,13 @@ int shmem_internal_pe_in_active_set(int global_pe, int PE_start, int PE_stride, 
     if (global_pe < PE_start)
         return 0;
 
-    int in_set = (global_pe - PE_start) % PE_stride;
+    int outside_set = (global_pe - PE_start) % PE_stride;
     int n = (global_pe - PE_start) / PE_stride;
-    if (in_set || n >= PE_size)
+    if (outside_set || n >= PE_size)
         return 0;
     else {
-        *local_pe = n;
+        if (local_pe)
+            *local_pe = n;
         return 1;
     }
 }
