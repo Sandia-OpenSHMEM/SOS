@@ -120,7 +120,8 @@ void shmem_internal_team_get_config(shmem_internal_team_t *team, shmemx_team_con
     return;
 }
 
-int shmem_internal_team_translate_pe(shmem_internal_team_t *src_team, int src_pe, shmem_internal_team_t *dest_team)
+int shmem_internal_team_translate_pe(shmem_internal_team_t *src_team, int src_pe,
+                                     shmem_internal_team_t *dest_team)
 {
     int src_pe_world, dest_pe;
 
@@ -188,77 +189,63 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
         *new_team = myteam;
     }
 
-    const long max_teams = shmem_internal_params.TEAMS_MAX;
-    shmem_internal_barrier(parent_team->start, parent_team->stride, parent_team->size,
-                           &shmem_internal_psync_pool[(max_teams + parent_team->psync_idx) * SHMEM_SYNC_SIZE]);
-
+    //const long max_teams = shmem_internal_params.TEAMS_MAX;
+    //shmem_internal_barrier(parent_team->start, parent_team->stride, parent_team->size,
+    //                       &shmem_internal_psync_pool[(max_teams +
+    //                           parent_team->psync_idx) * SHMEM_SYNC_SIZE]);
     return 0;
 }
 
-int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange, shmemx_team_config_t *xaxis_config, long xaxis_mask, shmem_internal_team_t **xaxis_team, shmemx_team_config_t *yaxis_config, long yaxis_mask, shmem_internal_team_t **yaxis_team)
+int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
+                                 shmemx_team_config_t *xaxis_config, long xaxis_mask,
+                                 shmem_internal_team_t **xaxis_team, shmemx_team_config_t *yaxis_config,
+                                 long yaxis_mask, shmem_internal_team_t **yaxis_team)
 {
     const int parent_start = parent_team->start;
     const int parent_stride = parent_team->stride;
     const int parent_size = parent_team->size;
-    int num_xmembers, num_ymembers, start, ret;
 
+    int start = parent_start;
     int num_xteams = ceil( parent_size / (float)xrange );
     int num_yteams = xrange;
-
-    //printf("(%d) num xteams = %d\n", shmem_internal_my_pe, num_xteams);
-    //printf("(%d) num yteams = %d\n", shmem_internal_my_pe, num_yteams);
-
-    start = parent_start;
+    int ret = 0;
 
     for (int i = 0; i < num_xteams; i++) {
+	int xsize = (i == num_xteams - 1 && parent_size % xrange) ? parent_size % xrange : xrange;
 
-	//num_xmembers = (i == num_xteams - 1) ? parent_size % xrange : xrange;
-	num_xmembers = (i == num_xteams - 1 && parent_size % xrange) ? parent_size % xrange : xrange;
-
-        if (shmem_internal_pe_in_active_set(shmem_internal_my_pe, start, parent_stride, num_xmembers, NULL)) {
-            //printf("(%d) Xteam #%d, start=%d, parent_stride=%d, parent_size=%d\n", shmem_internal_my_pe, i, start, parent_stride, num_xmembers);
-            ret = shmem_internal_team_split_strided(parent_team, start, parent_stride, num_xmembers, xaxis_config, xaxis_mask, xaxis_team);
-
+        if (shmem_internal_pe_in_active_set(shmem_internal_my_pe, start,
+                                            parent_stride, xsize, NULL)) {
+            ret = shmem_internal_team_split_strided(parent_team, start, parent_stride,
+                                            xsize, xaxis_config, xaxis_mask, xaxis_team);
             if (ret) {
                 RAISE_ERROR_STR("x-axis 2D strided split failed");
             }
         }
         start += xrange * parent_stride;
-        //printf("(%d) X new start = %d\n", shmem_internal_my_pe, start);
     }
 
     start = parent_start;
 
     for (int i = 0; i < num_yteams; i++) {
-
         int remainder = parent_size % xrange;
         int yrange = parent_size / xrange;
+        int ysize = (remainder && i < remainder) ? yrange + 1 : yrange;
 
-        if (remainder && i < remainder)
-            num_ymembers = yrange + 1;
-        else
-            num_ymembers = yrange;
-
-        //printf("(%d) ymembers =%d\n", shmem_internal_my_pe, num_ymembers);
-
-        if (shmem_internal_pe_in_active_set(shmem_internal_my_pe, start, xrange*parent_stride, num_ymembers, NULL)) {
-            //printf("(%d) Yteam #%d, start=%d, parent_stride=%d, parent_size=%d\n", shmem_internal_my_pe, i, start, xrange*parent_stride, num_ymembers);
-            ret = shmem_internal_team_split_strided(parent_team, start, xrange*parent_stride, num_ymembers, yaxis_config, yaxis_mask, yaxis_team);
-
+        if (shmem_internal_pe_in_active_set(shmem_internal_my_pe, start,
+                                            xrange*parent_stride, ysize, NULL)) {
+            ret = shmem_internal_team_split_strided(parent_team, start, xrange*parent_stride,
+                                            ysize, yaxis_config, yaxis_mask, yaxis_team);
             if (ret) {
                 RAISE_ERROR_STR("y-axis 2D strided split failed");
             }
         }
         start += parent_stride;
-        //printf("(%d) Y new start = %d\n", shmem_internal_my_pe, start);
     }
 
-    //printf("(%d) All done.\n", shmem_internal_my_pe);
-
-    const long max_teams = shmem_internal_params.TEAMS_MAX;
-    shmem_internal_barrier(parent_start, parent_stride, parent_size,
-                           &shmem_internal_psync_pool[(max_teams + parent_team->psync_idx) * SHMEM_SYNC_SIZE]);
-
+    //const long max_teams = shmem_internal_params.TEAMS_MAX;
+    //shmem_internal_barrier(parent_start, parent_stride, parent_size,
+    //                       &shmem_internal_psync_pool[(max_teams +
+    //                           parent_team->psync_idx) *SHMEM_SYNC_SIZE]);
     return 0;
 }
 
