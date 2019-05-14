@@ -194,22 +194,32 @@ extern unsigned int shmem_internal_rand_seed;
         }                                                               \
     } while (0)
 
-#define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size)                                     \
+#define SHMEM_ERR_CHECK_ACTIVE_SET_LINEAR(PE_start, PE_stride, PE_size)                                 \
     do {                                                                                                \
-        int shmem_err_check_active_stride = 1 << logPE_stride;                                          \
-        if (PE_start < 0 || logPE_stride < 0 || PE_size < 0 ||                                          \
-            PE_start + (PE_size - 1) * shmem_err_check_active_stride > shmem_internal_num_pes) {        \
-            fprintf(stderr, "ERROR: %s(): Invalid active set (PE_start = %d, logPE_stride = %d, PE_size = %d)\n", \
-                    __func__, PE_start, logPE_stride, PE_size);                                         \
+        if (PE_start < 0 || PE_stride < 1 || PE_size < 0 ||                                             \
+            PE_start + (PE_size - 1) * PE_stride > shmem_internal_num_pes) {                            \
+            fprintf(stderr, "ERROR: %s(): Invalid active set (PE_start = %d, PE_stride = %d, PE_size = %d)\n", \
+                    __func__, PE_start, PE_stride, PE_size);                                            \
             shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                                  \
         }                                                                                               \
         if (! (shmem_internal_my_pe >= PE_start &&                                                      \
-               shmem_internal_my_pe <= PE_start + (PE_size-1) * shmem_err_check_active_stride &&        \
-               (shmem_internal_my_pe - PE_start) % shmem_err_check_active_stride == 0)) {               \
+               shmem_internal_my_pe <= PE_start + (PE_size-1) * PE_stride &&                            \
+               (shmem_internal_my_pe - PE_start) % PE_stride == 0)) {                                   \
             fprintf(stderr, "ERROR: %s(): Calling PE (%d) is not a member of the active set\n",         \
                     __func__, shmem_internal_my_pe);                                                    \
             shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                                  \
         }                                                                                               \
+    } while (0)
+
+#define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size)                                     \
+    do {                                                                                                \
+        SHMEM_ERR_CHECK_ACTIVE_SET_LINEAR(PE_start, (1 << logPE_stride), PE_size);                      \
+    } while (0)
+
+#define SHMEM_ERR_CHECK_TEAM_SET(team)                                                                  \
+    do {                                                                                                \
+        shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;                                  \
+        SHMEM_ERR_CHECK_ACTIVE_SET_LINEAR(myteam->start, myteam->stride, myteam->size);                 \
     } while (0)
 
 #define SHMEM_ERR_CHECK_PE(pe)                                          \
@@ -302,6 +312,8 @@ extern unsigned int shmem_internal_rand_seed;
 #define SHMEM_ERR_CHECK_POSITIVE(arg)
 #define SHMEM_ERR_CHECK_NON_NEGATIVE(arg)
 #define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size)
+#define SHMEM_ERR_CHECK_TEAM_SET(team)
+#define SHMEM_ERR_CHECK_ACTIVE_SET_LINEAR(PE_start, PE_stride, PE_size)
 #define SHMEM_ERR_CHECK_PE(pe)
 #define SHMEM_ERR_CHECK_SYMMETRIC(ptr, len)
 #define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr)

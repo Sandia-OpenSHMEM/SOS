@@ -85,13 +85,3 @@ int SHMEM_FUNCTION_ATTRIBUTES shmemx_ctx_get_team(shmem_ctx_t ctx, shmemx_team_t
 
     return shmem_internal_ctx_get_team(ctx, (shmem_internal_team_t **)team);
 }
-
-
-/* Team Collective Routines */
-
-int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_sync(shmemx_team_t team)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-
-    return shmem_internal_team_sync((shmem_internal_team_t *)team);
-}

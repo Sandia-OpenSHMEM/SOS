@@ -21,6 +21,7 @@ check_PROGRAMS = \
 	shmemx_team_split_strided \
 	shmemx_team_split_2D \
 	shmemx_team_translate \
+	shmemx_team_sync \
 	c11_test_shmemx_wait_until \
 	c11_test_shmemx_test
 

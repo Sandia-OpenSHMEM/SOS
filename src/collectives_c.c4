@@ -31,6 +31,7 @@ include(shmem_bind_c.m4)dnl
 #include "shmem_internal.h"
 #include "shmem_comm.h"
 #include "shmem_collectives.h"
+#include "shmem_team.h"
 
 #ifdef ENABLE_PROFILING
 #include "pshmem.h"
@@ -120,8 +121,7 @@ shmem_sync_all(void)
     shmem_internal_sync_all();
 }
 
-
-void SHMEM_FUNCTION_ATTRIBUTES
+void SHMEM_FUNCTION_ATTRIBUTES SHMEM_ATTRIBUTE_DEPRECATED
 shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
@@ -131,6 +131,30 @@ shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)
     shmem_internal_sync(PE_start, (1 << logPE_stride), PE_size, pSync);
 }
 
+/* Team-based Collective Routines */
+
+int SHMEM_FUNCTION_ATTRIBUTES
+shmemx_sync(shmemx_team_t team)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_TEAM_SET(team);
+
+    shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;
+    const long max_teams = shmem_internal_params.TEAMS_MAX;
+    shmem_internal_sync(myteam->start, myteam->stride, myteam->size,
+                        &shmem_internal_psync_pool[(max_teams +
+                            myteam->psync_idx) * SHMEM_SYNC_SIZE]);
+    return 0;
+}
+
+int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_sync(shmemx_team_t team)
+{
+
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_TEAM_SET(team);
+
+    return shmem_internal_team_sync((shmem_internal_team_t *)team);
+}
 
 #define SHMEM_DEF_TO_ALL(STYPE,TYPE,ITYPE,SOP,IOP)                      \
     void SHMEM_FUNCTION_ATTRIBUTES                                      \
