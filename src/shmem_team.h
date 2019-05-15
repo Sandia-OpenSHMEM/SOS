@@ -63,9 +63,4 @@ int shmem_internal_team_create_ctx(shmem_internal_team_t *team, long options, sh
 
 int shmem_internal_ctx_get_team(shmem_ctx_t ctx, shmem_internal_team_t **team);
 
-
-/* Team Collective Routines */
-
-int shmem_internal_team_sync(shmem_internal_team_t *team);
-
 #endif

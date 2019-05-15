@@ -188,3 +188,8 @@ SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_ctx_get_team(shmem_ctx_t ctx, shmemx
 
 SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_sync(shmemx_team_t team);
 SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_team_sync(shmemx_team_t team);
+
+/* Team Collective Routines */
+define(`SHMEM_C_BCAST',
+`SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_$1_broadcast(shmemx_team_t team, $2 *dest, const $2 *source, size_t nelems, int PE_root)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_BCAST')

@@ -245,7 +245,7 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
     //const long max_teams = shmem_internal_params.TEAMS_MAX;
     //shmem_internal_barrier(parent_start, parent_stride, parent_size,
     //                       &shmem_internal_psync_pool[(max_teams +
-    //                           parent_team->psync_idx) *SHMEM_SYNC_SIZE]);
+    //                           parent_team->psync_idx) * SHMEM_SYNC_SIZE]);
     return 0;
 }
 
@@ -271,15 +271,6 @@ int shmem_internal_team_create_ctx(shmem_internal_team_t *team, long options, sh
 }
 
 int shmem_internal_ctx_get_team(shmem_ctx_t ctx, shmem_internal_team_t **team)
-{
-    return -1;
-}
-
-
-
-/* Team Collective Routines */
-
-int shmem_internal_team_sync(shmem_internal_team_t *team)
 {
     return -1;
 }

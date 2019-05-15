@@ -66,6 +66,12 @@ SHMEM_BIND_C_COLL_INTS(`SHMEM_PROF_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 SHMEM_BIND_C_COLL_FLOATS(`SHMEM_PROF_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 SHMEM_BIND_C_COLL_CMPLX(`SHMEM_PROF_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 
+define(`SHMEM_PROF_DEF_BCAST',
+`#pragma weak shmemx_$1_broadcast = pshmem_$1_broadcast
+#define shmemx_$1_broadcast pshmem_$1_broadcast')dnl
+dnl
+SHMEM_BIND_C_RMA(`SHMEM_PROF_DEF_BCAST')
+
 #pragma weak shmem_broadcast32 = pshmem_broadcast32
 #define shmem_broadcast32 pshmem_broadcast32
 #pragma weak shmem_broadcast64 = pshmem_broadcast64
@@ -153,7 +159,12 @@ int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_sync(shmemx_team_t team)
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_TEAM_SET(team);
 
-    return shmem_internal_team_sync((shmem_internal_team_t *)team);
+    shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;
+    const long max_teams = shmem_internal_params.TEAMS_MAX;
+    shmem_internal_sync(myteam->start, myteam->stride, myteam->size,
+                        &shmem_internal_psync_pool[(max_teams +
+                            myteam->psync_idx) * SHMEM_SYNC_SIZE]);
+    return 0;
 }
 
 #define SHMEM_DEF_TO_ALL(STYPE,TYPE,ITYPE,SOP,IOP)                      \
@@ -229,6 +240,30 @@ shmem_broadcast64(void *target, const void *source, size_t nlong,
                          pSync, 1);
 }
 
+#define SHMEM_DEF_BCAST(STYPE,TYPE)                                     \
+    int SHMEM_FUNCTION_ATTRIBUTES                                       \
+    shmemx_##STYPE##_broadcast(shmemx_team_t team, TYPE *dest,          \
+                              const TYPE *source, size_t nelems,        \
+                              int PE_root)                              \
+    {                                                                   \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(PE_root);                                    \
+        SHMEM_ERR_CHECK_TEAM_SET(team);                                 \
+        SHMEM_ERR_CHECK_NON_NEGATIVE(nelems);                           \
+        SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems * sizeof(TYPE));         \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, nelems * sizeof(TYPE));       \
+                                                                        \
+        shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;  \
+        const long max_teams = shmem_internal_params.TEAMS_MAX;         \
+        shmem_internal_bcast(dest, source, nelems * sizeof(TYPE),       \
+                             PE_root, myteam->start, myteam->stride,    \
+                             myteam->size,                              \
+                             &shmem_internal_psync_pool[(max_teams +    \
+                             myteam->psync_idx) * SHMEM_SYNC_SIZE], 1); \
+        return 0;                                                       \
+    }
+
+SHMEM_BIND_C_RMA(`SHMEM_DEF_BCAST')
 
 void SHMEM_FUNCTION_ATTRIBUTES
 shmem_collect32(void *target, const void *source, size_t nlong,

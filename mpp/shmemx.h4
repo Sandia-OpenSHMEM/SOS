@@ -175,6 +175,14 @@ static inline void shmemx_put_signal_nbi(shmem_ctx_t ctx, $2* dest, const $2* so
 }')dnl
 SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_PUT_SIGNAL_NBI')
 
+/* Team Collective Routines */
+define(`SHMEM_CXX_BCAST',
+`static inline int shmemx_broadcast(shmemx_team_t team, $2* dest, const $2* source,
+                                    size_t nelems, int PE_root) {
+    return shmemx_$1_broadcast(team, dest, source, nelems, PE_root);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_BCAST')
+
 /* C11 Generic Macros */
 #elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
 
@@ -346,6 +354,14 @@ SHMEM_BIND_C11_RMA(`SHMEM_CTX_C11_GEN_PUT_SIGNAL_NBI', `, \') \
             default: shmem_ctx_c11_generic_selection_failed \
         ), \
 SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_PUT_SIGNAL_NBI', `, \') \
+    )(__VA_ARGS__)
+
+/* Team Collective Routines */
+define(`SHMEM_C11_GEN_BCAST', `        $2*: shmemx_$1_broadcast')dnl
+#define shmemx_broadcast(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
+SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_BCAST', `, \') \
     )(__VA_ARGS__)
 
 #endif /* C11 */
