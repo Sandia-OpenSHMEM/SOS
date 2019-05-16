@@ -12,8 +12,8 @@ int main(void)
   int npes = shmem_n_pes();
 
   if (npes < (xdim*ydim)) {
-    printf ("Not enough PEs to create 4x3xN layout\n");
-    shmem_global_exit(1);
+    fprintf(stderr, "Not enough PEs to create 4x3xN layout\n");
+    shmem_global_exit(0);
   }
 
   int zdim = (npes / (xdim*ydim)) + ( ((npes % (xdim*ydim)) > 0) ? 1 : 0 );

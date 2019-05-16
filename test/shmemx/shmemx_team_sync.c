@@ -17,7 +17,8 @@ int main(void)
    int odd_npes = npes % 2;
 
    if (npes < 3) {
-       shmem_global_exit(1);
+       fprintf(stderr, "Not enough PEs, please run at least 3\n");
+       shmem_global_exit(0);
    }
 
    shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 2, npes / 2, config, 0,
