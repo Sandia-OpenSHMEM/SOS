@@ -67,13 +67,13 @@ SHMEM_BIND_C_COLL_FLOATS(`SHMEM_PROF_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 SHMEM_BIND_C_COLL_CMPLX(`SHMEM_PROF_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 
 define(`SHMEM_PROF_DEF_BCAST',
-`#pragma weak shmemx_$1_broadcast = pshmem_$1_broadcast
-#define shmemx_$1_broadcast pshmem_$1_broadcast')dnl
+`#pragma weak shmemx_$1_broadcast = pshmemx_$1_broadcast
+#define shmemx_$1_broadcast pshmemx_$1_broadcast')dnl
 dnl
-SHMEM_BIND_C_RMA(`SHMEM_PROF_DEF_BCAST')
+SHMEM_BIND_C_COLLECTIVES(`SHMEM_PROF_DEF_BCAST')
 
-#pragma weak shmemx_broadcastmem = pshmem_broadcastmem
-#define shmemx_broadcastmem = pshmem_broadcastmem
+#pragma weak shmemx_broadcastmem = pshmemx_broadcastmem
+#define shmemx_broadcastmem pshmemx_broadcastmem
 
 #pragma weak shmem_broadcast32 = pshmem_broadcast32
 #define shmem_broadcast32 pshmem_broadcast32
@@ -86,13 +86,13 @@ SHMEM_BIND_C_RMA(`SHMEM_PROF_DEF_BCAST')
 #define shmem_collect64 pshmem_collect64
 
 define(`SHMEM_PROF_DEF_COLLECT',
-`#pragma weak shmemx_$1_collect = pshmem_$1_collect
-#define shmemx_$1_collect pshmem_$1_collect')dnl
+`#pragma weak shmemx_$1_collect = pshmemx_$1_collect
+#define shmemx_$1_collect pshmemx_$1_collect')dnl
 dnl
-SHMEM_BIND_C_RMA(`SHMEM_PROF_DEF_COLLECT')
+SHMEM_BIND_C_COLLECTIVES(`SHMEM_PROF_DEF_COLLECT')
 
-#pragma weak shmemx_collectmem = pshmem_collectmem
-#define shmemx_collectmem = pshmem_collectmem
+#pragma weak shmemx_collectmem = pshmemx_collectmem
+#define shmemx_collectmem pshmemx_collectmem
 
 #pragma weak shmem_fcollect32 = pshmem_fcollect32
 #define shmem_fcollect32 pshmem_fcollect32
@@ -100,13 +100,13 @@ SHMEM_BIND_C_RMA(`SHMEM_PROF_DEF_COLLECT')
 #define shmem_fcollect64 pshmem_fcollect64
 
 define(`SHMEM_PROF_DEF_FCOLLECT',
-`#pragma weak shmemx_$1_fcollect = pshmem_$1_fcollect
-#define shmemx_$1_fcollect pshmem_$1_fcollect')dnl
+`#pragma weak shmemx_$1_fcollect = pshmemx_$1_fcollect
+#define shmemx_$1_fcollect pshmemx_$1_fcollect')dnl
 dnl
-SHMEM_BIND_C_RMA(`SHMEM_PROF_DEF_FCOLLECT')
+SHMEM_BIND_C_COLLECTIVES(`SHMEM_PROF_DEF_FCOLLECT')
 
-#pragma weak shmemx_fcollectmem = pshmem_fcollectmem
-#define shmemx_fcollectmem = pshmem_fcollectmem
+#pragma weak shmemx_fcollectmem = pshmemx_fcollectmem
+#define shmemx_fcollectmem pshmemx_fcollectmem
 
 #pragma weak shmem_alltoall32 = pshmem_alltoall32
 #define shmem_alltoall32 pshmem_alltoall32
@@ -114,13 +114,13 @@ SHMEM_BIND_C_RMA(`SHMEM_PROF_DEF_FCOLLECT')
 #define shmem_alltoall64 pshmem_alltoall64
 
 define(`SHMEM_PROF_DEF_ALLTOALL',
-`#pragma weak shmemx_$1_alltoall = pshmem_$1_alltoall
-#define shmemx_$1_alltoall pshmem_$1_alltoall')dnl
+`#pragma weak shmemx_$1_alltoall = pshmemx_$1_alltoall
+#define shmemx_$1_alltoall pshmemx_$1_alltoall')dnl
 dnl
-SHMEM_BIND_C_RMA(`SHMEM_PROF_DEF_ALLTOALL')
+SHMEM_BIND_C_COLLECTIVES(`SHMEM_PROF_DEF_ALLTOALL')
 
-#pragma weak shmemx_alltoallmem = pshmem_alltoallmem
-#define shmemx_alltoallmem = pshmem_alltoallmem
+#pragma weak shmemx_alltoallmem = pshmemx_alltoallmem
+#define shmemx_alltoallmem pshmemx_alltoallmem
 
 #pragma weak shmem_alltoalls32 = pshmem_alltoalls32
 #define shmem_alltoalls32 pshmem_alltoalls32
@@ -128,13 +128,13 @@ SHMEM_BIND_C_RMA(`SHMEM_PROF_DEF_ALLTOALL')
 #define shmem_alltoalls64 pshmem_alltoalls64
 
 define(`SHMEM_PROF_DEF_ALLTOALLS',
-`#pragma weak shmemx_$1_alltoalls = pshmem_$1_alltoalls
-#define shmemx_$1_alltoalls pshmem_$1_alltoalls')dnl
+`#pragma weak shmemx_$1_alltoalls = pshmemx_$1_alltoalls
+#define shmemx_$1_alltoalls pshmemx_$1_alltoalls')dnl
 dnl
-SHMEM_BIND_C_RMA(`SHMEM_PROF_DEF_ALLTOALLS')
+SHMEM_BIND_C_COLLECTIVES(`SHMEM_PROF_DEF_ALLTOALLS')
 
-#pragma weak shmemx_alltoallsmem = pshmem_alltoallsmem
-#define shmemx_alltoallsmem = pshmem_alltoallsmem
+#pragma weak shmemx_alltoallsmem = pshmemx_alltoallsmem
+#define shmemx_alltoallsmem pshmemx_alltoallsmem
 
 #endif /* ENABLE_PROFILING */
 
@@ -320,7 +320,7 @@ shmemx_broadcastmem(shmemx_team_t team, void *dest, const void *source,
         return 0;                                                       \
     }
 
-SHMEM_BIND_C_RMA(`SHMEM_DEF_BCAST')
+SHMEM_BIND_C_COLLECTIVES(`SHMEM_DEF_BCAST')
 
 void SHMEM_FUNCTION_ATTRIBUTES
 shmem_collect32(void *target, const void *source, size_t nlong,
@@ -371,7 +371,7 @@ shmem_collect64(void *target, const void *source, size_t nlong,
         return 0;                                                      \
     }
 
-SHMEM_BIND_C_RMA(`SHMEM_DEF_COLLECT')
+SHMEM_BIND_C_COLLECTIVES(`SHMEM_DEF_COLLECT')
 
 int SHMEM_FUNCTION_ATTRIBUTES
 shmemx_collectmem(shmemx_team_t team, void *dest, const void *source,
@@ -440,7 +440,7 @@ shmem_fcollect64(void *target, const void *source, size_t nlong,
         return 0;                                                       \
     }
 
-SHMEM_BIND_C_RMA(`SHMEM_DEF_FCOLLECT')
+SHMEM_BIND_C_COLLECTIVES(`SHMEM_DEF_FCOLLECT')
 
 int SHMEM_FUNCTION_ATTRIBUTES
 shmemx_fcollectmem(shmemx_team_t team, void *dest, const void *source,
@@ -509,7 +509,7 @@ shmem_alltoall64(void *dest, const void *source, size_t nelems, int PE_start,
         return 0;                                                      \
     }
 
-SHMEM_BIND_C_RMA(`SHMEM_DEF_ALLTOALL')
+SHMEM_BIND_C_COLLECTIVES(`SHMEM_DEF_ALLTOALL')
 
 int SHMEM_FUNCTION_ATTRIBUTES
 shmemx_alltoallmem(shmemx_team_t team, void *dest, const void *source,
@@ -586,7 +586,7 @@ shmem_alltoalls64(void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,
         return 0;                                                            \
     }
 
-SHMEM_BIND_C_RMA(`SHMEM_DEF_ALLTOALLS')
+SHMEM_BIND_C_COLLECTIVES(`SHMEM_DEF_ALLTOALLS')
 
 int SHMEM_FUNCTION_ATTRIBUTES
 shmemx_alltoallsmem(shmemx_team_t team, void *dest, const void *source,
