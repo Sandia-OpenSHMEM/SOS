@@ -193,3 +193,29 @@ SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_team_sync(shmemx_team_t team);
 define(`SHMEM_C_BCAST',
 `SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_$1_broadcast(shmemx_team_t team, $2 *dest, const $2 *source, size_t nelems, int PE_root)')dnl
 SHMEM_DECLARE_FOR_RMA(`SHMEM_C_BCAST')
+
+SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_broadcastmem(shmemx_team_t team, void *dest, const void *source, size_t nelems, int PE_root);
+
+define(`SHMEM_C_COLLECT',
+`SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_$1_collect(shmemx_team_t team, $2 *dest, const $2 *source, size_t nelems)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_COLLECT')
+
+define(`SHMEM_C_FCOLLECT',
+`SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_$1_fcollect(shmemx_team_t team, $2 *dest, const $2 *source, size_t nelems)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_FCOLLECT')
+
+SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_collectmem(shmemx_team_t team, void *dest, const void *source, size_t nelems);
+
+SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_fcollectmem(shmemx_team_t team, void *dest, const void *source, size_t nelems);
+
+define(`SHMEM_C_ALLTOALL',
+`SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_$1_alltoall(shmemx_team_t team, $2 *dest, const $2 *source, size_t nelems)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_ALLTOALL')
+
+define(`SHMEM_C_ALLTOALLS',
+`SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_$1_alltoalls(shmemx_team_t team, $2 *dest, const $2 *source, ptrdiff_t dst, ptrdiff_t sst, size_t nelems)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_ALLTOALLS')
+
+SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_alltoallmem(shmemx_team_t team, void *dest, const void *source, size_t nelems);
+
+SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_alltoallsmem(shmemx_team_t team, void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst, size_t nelems);

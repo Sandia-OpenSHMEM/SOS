@@ -183,6 +183,34 @@ define(`SHMEM_CXX_BCAST',
 }')dnl
 SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_BCAST')
 
+define(`SHMEM_CXX_COLLECT',
+`static inline int shmemx_collect(shmemx_team_t team, $2* dest, const $2* source,
+                                  size_t nelems) {
+    return shmemx_$1_collect(team, dest, source, nelems);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_COLLECT')
+
+define(`SHMEM_CXX_FCOLLECT',
+`static inline int shmemx_fcollect(shmemx_team_t team, $2* dest, const $2* source,
+                                   size_t nelems) {
+    return shmemx_$1_fcollect(team, dest, source, nelems);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_FCOLLECT')
+
+define(`SHMEM_CXX_ALLTOALL',
+`static inline int shmemx_alltoall(shmemx_team_t team, $2* dest, const $2* source,
+                                   size_t nelems) {
+    return shmemx_$1_alltoall(team, dest, source, nelems);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_ALLTOALL')
+
+define(`SHMEM_CXX_ALLTOALLS',
+`static inline int shmemx_alltoalls(shmemx_team_t team, $2* dest, const $2* source,
+                                    ptrdiff_t dst, ptrdiff_t sst, size_t nelems) {
+    return shmemx_$1_alltoalls(team, dest, source, dst, sst, nelems);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_ALLTOALLS')
+
 /* C11 Generic Macros */
 #elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
 
@@ -362,6 +390,34 @@ define(`SHMEM_C11_GEN_BCAST', `        $2*: shmemx_$1_broadcast')dnl
     _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
              default: shmem_ctx_c11_generic_selection_failed, \
 SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_BCAST', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_COLLECT', `        $2*: shmemx_$1_collect')dnl
+#define shmemx_collect(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
+SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_COLLECT', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_FCOLLECT', `        $2*: shmemx_$1_fcollect')dnl
+#define shmemx_fcollect(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
+SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_FCOLLECT', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_ALLTOALL', `        $2*: shmemx_$1_alltoall')dnl
+#define shmemx_alltoall(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
+SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_ALLTOALL', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_ALLTOALLS', `        $2*: shmemx_$1_alltoalls')dnl
+#define shmemx_alltoalls(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+             default: shmem_ctx_c11_generic_selection_failed, \
+SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_ALLTOALLS', `, \') \
     )(__VA_ARGS__)
 
 #endif /* C11 */

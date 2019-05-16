@@ -204,10 +204,10 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
     const int parent_start = parent_team->start;
     const int parent_stride = parent_team->stride;
     const int parent_size = parent_team->size;
+    const int num_xteams = ceil( parent_size / (float)xrange );
+    const int num_yteams = xrange;
 
     int start = parent_start;
-    int num_xteams = ceil( parent_size / (float)xrange );
-    int num_yteams = xrange;
     int ret = 0;
 
     for (int i = 0; i < num_xteams; i++) {

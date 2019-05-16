@@ -30,9 +30,6 @@ int main(void)
    shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 3, npes / 3 + odd_npes,
                              config, 0, &threes_team);
 
-   int my_pe_twos = shmemx_team_my_pe(twos_team);
-   int my_pe_threes = shmemx_team_my_pe(threes_team);
-
    if (twos_team != SHMEMX_TEAM_NULL) {
       /* put the value 2 to the next team member in a circular fashion */
       shmem_p(&x, 2, (me + 2) % npes);
