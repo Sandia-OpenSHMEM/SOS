@@ -1573,6 +1573,8 @@ int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
     ctxp->stx_idx = -1;
     ctxp->options = options;
 
+    ctxp->team = &shmem_internal_team_world;
+
     ret = shmem_transport_ofi_ctx_init(ctxp, id);
 
     if (ret) {

@@ -261,16 +261,19 @@ int shmem_internal_team_create_ctx(shmem_internal_team_t *team, long options, sh
 
     SHMEM_ERR_CHECK_NULL(ctx, 0);
 
-    shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;
+    // TODO assert num_contexts is less than the number of contexts on this team.
+    //shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;
+    //myteam->config.num_contexts;
 
-    myteam->config.num_contexts++;
-
-    //TODO: assign this context to the team...
+    shmem_transport_ctx_t **ctxp = (shmem_transport_ctx_t **)ctx;
+    (*ctxp)->team = team;
 
    return ret;
 }
 
 int shmem_internal_ctx_get_team(shmem_ctx_t ctx, shmem_internal_team_t **team)
 {
-    return -1;
+    shmem_transport_ctx_t *ctxp = (shmem_transport_ctx_t *)ctx;
+    *team = ctxp->team;
+    return 0;
 }

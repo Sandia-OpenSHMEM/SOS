@@ -30,6 +30,7 @@
 #include "shmem_free_list.h"
 #include "shmem_internal.h"
 #include "shmem_atomic.h"
+#include "shmem_team.h"
 #include <sys/types.h>
 
 
@@ -279,6 +280,7 @@ struct shmem_transport_ctx_t {
     shmem_free_list_t              *bounce_buffers;
     int                             stx_idx;
     struct shmem_internal_tid       tid;
+    struct shmem_internal_team_t   *team;
 };
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;

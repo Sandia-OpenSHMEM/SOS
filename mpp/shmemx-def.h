@@ -41,6 +41,8 @@ typedef struct {
 
 #define SHMEMX_CTX_INVALID NULL
 
+#define SHMEMX_TEAM_NUM_CONTEXTS       (1l<<0)
+
 #ifdef __cplusplus
 }
 #endif
