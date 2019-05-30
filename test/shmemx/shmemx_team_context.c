@@ -9,6 +9,10 @@
 
 int isum, ival2, ival3;
 
+int my_ctx_translate_pe(shmem_ctx_t, int, shmem_ctx_t);
+shmem_ctx_t my_team_create_ctx(shmemx_team_t);
+void my_send_to_neighbor(shmem_ctx_t, int *);
+
 int my_ctx_translate_pe(shmem_ctx_t src_ctx, int src_pe, shmem_ctx_t dest_ctx)
 {
   if (src_ctx == SHMEMX_CTX_INVALID) {
@@ -62,7 +66,7 @@ int main()
 
   int npes = shmem_n_pes();
   isum = 0;
-  
+
   shmemx_team_t team_2s, team_3s;
   shmem_ctx_t ctx_2s, ctx_3s;
   shmemx_team_config_t conf;
@@ -73,26 +77,6 @@ int main()
       fprintf(stderr, "Not enough PEs, please run at least 4\n");
       shmem_global_exit(0);
   }
-
-{
-  int i = 0;
-  char hostname[256];
-  gethostname(hostname, sizeof(hostname));
-  system("rm gdb.[0-9]*");
-
-  shmem_barrier_all();
-
-  char filename[64];
-  sprintf(filename, "gdb.%d", getpid());
-  FILE *fp = fopen(filename, "w");
-  fprintf( fp, "%d", getpid() );
-  fclose(fp);
-  printf("PID %d on %s ready for attach\n", getpid(), hostname);
-
-  fflush(stdout);
-  while (0 == i)
-      sleep(1);
-}
 
   // Create team with PEs numbered 0, 2, 4, ...
   shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 2, npes / 2, &conf, cmask, &team_2s);
@@ -111,7 +95,7 @@ int main()
   my_send_to_neighbor(ctx_3s, &ival3);
 
   // Quiet all contexts and synchronize all PEs to complete the data transfers
-  shmem_ctx_quiet(ctx_2s);  
+  shmem_ctx_quiet(ctx_2s);
   shmem_ctx_quiet(ctx_3s);
   shmemx_team_sync(SHMEMX_TEAM_WORLD);
 
@@ -127,7 +111,7 @@ int main()
       shmem_ctx_int_atomic_add(ctx_2s, &isum, ival2 + ival3, _pe4_of_3s_in_2s);
     }
   }
-  
+
   // Quiet the context and synchronize PEs to complete the operation
   shmem_ctx_quiet(ctx_2s);
   shmemx_team_sync(SHMEMX_TEAM_WORLD);

@@ -1514,6 +1514,8 @@ int shmem_transport_startup(void)
         shmem_transport_ofi_stx_pool[i].is_private = 0;
     }
 
+    shmem_transport_ctx_default.team = &shmem_internal_team_world;
+
     ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, SHMEM_TRANSPORT_CTX_DEFAULT_ID);
     if (ret != 0) return ret;
 
@@ -1592,6 +1594,9 @@ int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 {
     int ret;
+
+    if (ctx == SHMEMX_CTX_INVALID)
+        return;
 
     if(shmem_internal_params.DEBUG) {
         SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
