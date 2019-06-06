@@ -169,7 +169,8 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     int enable_node_ranks     = 0;
 
     /* Parse environment variables into shmem_internal_params */
-    shmem_internal_parse_env();
+    ret = shmem_internal_parse_env();
+    if (ret) goto cleanup;
 
     /* set up threading */
     SHMEM_MUTEX_INIT(shmem_internal_mutex_alloc);
