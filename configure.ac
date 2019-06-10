@@ -482,6 +482,8 @@ SHMEM_FIND_INT_TYPE([long], [$transport])
 SHMEM_FIND_INT_TYPE([long long], [$transport])
 SHMEM_FIND_INT_TYPE([ptrdiff_t], [$transport])
 
+SHMEM_FIND_UINT_TYPE([unsigned char], [$transport])
+SHMEM_FIND_UINT_TYPE([unsigned short], [$transport])
 SHMEM_FIND_UINT_TYPE([unsigned int], [$transport])
 SHMEM_FIND_UINT_TYPE([unsigned long], [$transport])
 SHMEM_FIND_UINT_TYPE([unsigned long long], [$transport])

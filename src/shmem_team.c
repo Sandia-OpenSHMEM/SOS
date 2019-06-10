@@ -66,7 +66,7 @@ int shmem_internal_teams_init(void)
     if (max_teams > (sizeof(uint64_t) * CHAR_BIT)) {
         RAISE_ERROR_MSG("Requested %ld teams, but only %zu are supported\n",
                          max_teams, sizeof(uint64_t) * CHAR_BIT);
-        /* TODO: more bits (using a bit array)... */
+        /* TODO: support more than 64 bits (using a bit array)... */
     }
 
     shmem_internal_psync_pool_reserved = shmem_internal_shmalloc(sizeof(uint64_t));
@@ -176,23 +176,23 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
                                  &shmem_internal_psync_pool[parent_team->psync_idx*SHMEM_SYNC_SIZE],
                                  SHM_INTERNAL_BAND, SHM_INTERNAL_UINT64);
 
-        //printf("reserved bits: ");
-        //shmem_internal_print_bits(shmem_internal_psync_pool_reserved, sizeof(long));
-
         /* Select the least signficant nonzero bit, which corresponds to an available pSync. */
-        myteam->psync_idx = shmem_internal_1st_nonzero_bit(shmem_internal_psync_pool_reserved, sizeof(long));
+        myteam->psync_idx = shmem_internal_1st_nonzero_bit(shmem_internal_psync_pool_reserved, sizeof(uint64_t));
         if (myteam->psync_idx == -1) {
             RAISE_ERROR_MSG("No more teams available (max = %ld), try increasing SHMEM_TEAMS_MAX\n",
                             shmem_internal_params.TEAMS_MAX);
         }
 
+        /* Set the selected psync bit to 0 */
+        *shmem_internal_psync_pool_reserved ^= (uint64_t)1 << myteam->psync_idx;
+
         *new_team = myteam;
     }
 
-    //const long max_teams = shmem_internal_params.TEAMS_MAX;
-    //shmem_internal_barrier(parent_team->start, parent_team->stride, parent_team->size,
-    //                       &shmem_internal_psync_pool[(max_teams +
-    //                           parent_team->psync_idx) * SHMEM_SYNC_SIZE]);
+    const long max_teams = shmem_internal_params.TEAMS_MAX;
+    shmem_internal_barrier(parent_team->start, parent_team->stride, parent_team->size,
+                           &shmem_internal_psync_pool[(max_teams +
+                               parent_team->psync_idx) * SHMEM_SYNC_SIZE]);
     return 0;
 }
 
@@ -242,17 +242,26 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
         start += parent_stride;
     }
 
-    //const long max_teams = shmem_internal_params.TEAMS_MAX;
-    //shmem_internal_barrier(parent_start, parent_stride, parent_size,
-    //                       &shmem_internal_psync_pool[(max_teams +
-    //                           parent_team->psync_idx) * SHMEM_SYNC_SIZE]);
+    const long max_teams = shmem_internal_params.TEAMS_MAX;
+    shmem_internal_barrier(parent_start, parent_stride, parent_size,
+                           &shmem_internal_psync_pool[(max_teams +
+                               parent_team->psync_idx) * SHMEM_SYNC_SIZE]);
     return 0;
 }
 
 int shmem_internal_team_destroy(shmem_internal_team_t **team)
 {
+
+    if ((*shmem_internal_psync_pool_reserved >> (*team)->psync_idx) & (uint64_t)1) {
+        RAISE_WARN_STR("Destroying a team without an active pSync");
+    } else {
+        /* Set the the psync bit back to 1 */
+        *shmem_internal_psync_pool_reserved ^= (uint64_t)1 << (*team)->psync_idx;
+    }
+
     free(*team);
-    return 1;
+
+    return 0;
 }
 
 int shmem_internal_team_create_ctx(shmem_internal_team_t *team, long options, shmem_ctx_t *ctx)

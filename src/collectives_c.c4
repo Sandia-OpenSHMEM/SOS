@@ -228,6 +228,32 @@ int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_sync(shmemx_team_t team)
                                  pWrk, pSync, IOP, ITYPE);              \
     }
 
+#define SHMEM_DEF_REDUCE(STYPE,TYPE,ITYPE,SOP,IOP)                      \
+    int SHMEM_FUNCTION_ATTRIBUTES                                       \
+    shmemx_##STYPE##_##SOP##_reduce(shmemx_team_t team, TYPE *dest,     \
+                                       const TYPE *source,              \
+                                       size_t nreduce)                  \
+    {                                                                   \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_TEAM_SET(team);                                 \
+        SHMEM_ERR_CHECK_NON_NEGATIVE(nreduce);                          \
+        SHMEM_ERR_CHECK_SYMMETRIC(dest, sizeof(TYPE)*nreduce);          \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof(TYPE)*nreduce);        \
+        size_t pwrk_len = MAX(nreduce/2 + 1, SHMEM_REDUCE_MIN_WRKDATA_SIZE); \
+        printf("pwrk_len is %zu\n", pwrk_len);                          \
+        TYPE *pWrk = shmem_internal_shmalloc(sizeof(TYPE) * SHMEM_BARRIER_SYNC_SIZE); \
+        if (NULL == pWrk) shmem_global_exit(-1);        \
+                                                                        \
+        shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;  \
+        const long max_teams = shmem_internal_params.TEAMS_MAX;         \
+        shmem_internal_op_to_all(dest, source, nreduce, sizeof(TYPE),   \
+                         myteam->start, myteam->stride, myteam->size,   \
+                         pWrk, &shmem_internal_psync_pool[(max_teams +  \
+                         myteam->psync_idx) * SHMEM_SYNC_SIZE], IOP,    \
+                         ITYPE);                                        \
+        return 0;                                                       \
+    }
+
 SHMEM_BIND_C_COLL_INTS(`SHMEM_DEF_TO_ALL', `and', `SHM_INTERNAL_BAND')
 SHMEM_BIND_C_COLL_INTS(`SHMEM_DEF_TO_ALL', `or', `SHM_INTERNAL_BOR')
 SHMEM_BIND_C_COLL_INTS(`SHMEM_DEF_TO_ALL', `xor', `SHM_INTERNAL_BXOR')
@@ -243,6 +269,12 @@ SHMEM_BIND_C_COLL_CMPLX(`SHMEM_DEF_TO_ALL', `sum', `SHM_INTERNAL_SUM')
 SHMEM_BIND_C_COLL_INTS(`SHMEM_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 SHMEM_BIND_C_COLL_FLOATS(`SHMEM_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 SHMEM_BIND_C_COLL_CMPLX(`SHMEM_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
+
+SHMEM_BIND_C_COLL_AND_OR_XOR(`SHMEM_DEF_REDUCE', `and', `SHM_INTERNAL_BAND')
+SHMEM_BIND_C_COLL_SUM_PROD(`SHMEM_DEF_REDUCE', `sum', `SHM_INTERNAL_SUM')
+SHMEM_BIND_C_COLL_SUM_PROD(`SHMEM_DEF_REDUCE', `prod', `SHM_INTERNAL_PROD')
+SHMEM_BIND_C_COLL_MIN_MAX(`SHMEM_DEF_REDUCE', `min', `SHM_INTERNAL_MIN')
+SHMEM_BIND_C_COLL_MIN_MAX(`SHMEM_DEF_REDUCE', `max', `SHM_INTERNAL_MAX')
 
 void SHMEM_FUNCTION_ATTRIBUTES
 shmem_broadcast32(void *target, const void *source, size_t nlong,

@@ -25,6 +25,7 @@ check_PROGRAMS = \
 	shmemx_team_sync \
 	shmemx_team_broadcast \
 	shmemx_team_collect \
+	shmemx_reduce \
 	shmemx_team_alltoall \
 	shmemx_team_alltoalls \
 	c11_test_shmemx_wait_until \

@@ -204,8 +204,12 @@ typedef enum fi_op       shm_internal_op_t;
 #define SHM_INTERNAL_PTRDIFF_T       DTYPE_PTRDIFF_T
 #define SHM_INTERNAL_INT32           FI_INT32
 #define SHM_INTERNAL_INT64           FI_INT64
+#define SHM_INTERNAL_UINT8           FI_UINT8
+#define SHM_INTERNAL_UINT16          FI_UINT16
 #define SHM_INTERNAL_UINT32          FI_UINT32
 #define SHM_INTERNAL_UINT64          FI_UINT64
+#define SHM_INTERNAL_UCHAR           DTYPE_UNSIGNED_CHAR
+#define SHM_INTERNAL_USHORT          DTYPE_UNSIGNED_SHORT
 
 /* Operations */
 #define SHM_INTERNAL_BAND            FI_BAND

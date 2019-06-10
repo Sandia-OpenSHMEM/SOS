@@ -2,6 +2,10 @@
 #include <shmem.h>
 #include <shmemx.h>
 
+#include <sys/types.h>
+#include <unistd.h>
+#include <stdlib.h>
+
 int main(void)
 {
   int xdim = 3;
@@ -18,6 +22,7 @@ int main(void)
 
   int zdim = (npes / (xdim*ydim)) + ( ((npes % (xdim*ydim)) > 0) ? 1 : 0 );
   shmemx_team_t xteam, yzteam, yteam, zteam;
+
 
   shmemx_team_split_2d(SHMEMX_TEAM_WORLD, xdim, NULL, 0, &xteam, NULL, 0, &yzteam);
   // No synchronization is needed between these split operations
