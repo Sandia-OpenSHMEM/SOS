@@ -145,14 +145,16 @@ shmem_internal_shutdown_atexit(void)
 void
 shmem_internal_start_pes(int npes)
 {
-    int tl_provided;
+    int ret, tl_provided;
 
     shmem_internal_initialized_with_start_pes = 1;
-    shmem_internal_init(SHMEM_THREAD_SINGLE, &tl_provided);
+    ret = shmem_internal_init(SHMEM_THREAD_SINGLE, &tl_provided);
+
+    if (ret) abort();
 }
 
 
-void
+int
 shmem_internal_init(int tl_requested, int *tl_provided)
 {
     int ret;
@@ -169,7 +171,8 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     int enable_node_ranks     = 0;
 
     /* Parse environment variables into shmem_internal_params */
-    shmem_internal_parse_env();
+    ret = shmem_internal_parse_env();
+    if (ret) return ret;
 
     /* set up threading */
     SHMEM_MUTEX_INIT(shmem_internal_mutex_alloc);
@@ -438,7 +441,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 #ifndef USE_PMIX
     shmem_runtime_barrier();
 #endif
-    return;
+    return 0;
 
  cleanup:
     if (transport_initialized) {

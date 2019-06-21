@@ -59,25 +59,27 @@ start_pes(int npes)
 void SHMEM_FUNCTION_ATTRIBUTES
 shmem_init(void)
 {
-    int tl_provided;
+    int tl_provided, ret;
 
     if (shmem_internal_initialized) {
         RAISE_ERROR_STR("attempt to reinitialize library");
     }
 
-    shmem_internal_init(SHMEM_THREAD_SINGLE, &tl_provided);
+    ret = shmem_internal_init(SHMEM_THREAD_SINGLE, &tl_provided);
+    if (ret) abort();
 }
 
 
 int SHMEM_FUNCTION_ATTRIBUTES
 shmem_init_thread(int tl_requested, int *tl_provided)
 {
+    int ret;
     if (shmem_internal_initialized) {
         RAISE_ERROR_STR("attempt to reinitialize library");
     }
 
-    shmem_internal_init(tl_requested, tl_provided);
-    return 0;
+    ret = shmem_internal_init(tl_requested, tl_provided);
+    return ret;
 }
 
 
