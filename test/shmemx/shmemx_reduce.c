@@ -27,11 +27,11 @@ int main(void)
   int npes = shmem_n_pes();
   size_t num = 32;
 
-  long *values = shmem_malloc(num * sizeof(int));
-  long *sums = shmem_malloc(num * sizeof(int));
+  long *values = shmem_malloc(num * sizeof(long));
+  long *sums = shmem_malloc(num * sizeof(long));
 
-  unsigned char *valid_me = shmem_malloc(num * sizeof(int));
-  unsigned char *valid_all = shmem_malloc(num * sizeof(int));
+  unsigned char *valid_me = shmem_malloc(num * sizeof(unsigned char));
+  unsigned char *valid_all = shmem_malloc(num * sizeof(unsigned char));
 
   values[0] = recv_a_value((unsigned)me, npes);
   valid_me[0] = is_valid(values[0], npes);
@@ -62,5 +62,6 @@ int main(void)
       printf ("[%d] = invalid on one or more pe\n", i);
     }
   }
+  shmem_finalize();
 }
   
