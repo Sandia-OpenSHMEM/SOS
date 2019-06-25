@@ -60,7 +60,7 @@ void my_send_to_neighbor(shmem_ctx_t ctx, int *val)
 
 
 
-int main()
+int main(int argc, char** argv)
 {
   shmem_init();
 

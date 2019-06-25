@@ -28,6 +28,7 @@ include(shmem_bind_c.m4)dnl
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"
+#include "shmem_team.h"
 
 #ifdef ENABLE_PROFILING
 #include "pshmem.h"

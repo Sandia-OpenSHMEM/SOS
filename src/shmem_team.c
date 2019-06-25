@@ -301,3 +301,4 @@ int shmem_internal_ctx_get_team(shmem_ctx_t ctx, shmem_internal_team_t **team)
     *team = ctxp->team;
     return 0;
 }
+

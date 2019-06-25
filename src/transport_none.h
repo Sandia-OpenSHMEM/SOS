@@ -39,8 +39,12 @@
 #define SHM_INTERNAL_ULONG_LONG      DTYPE_UNSIGNED_LONG_LONG
 #define SHM_INTERNAL_SIZE_T          DTYPE_SIZE_T
 #define SHM_INTERNAL_PTRDIFF_T       DTYPE_PTRDIFF_T
+#define SHM_INTERNAL_UINT8           -11
+#define SHM_INTERNAL_UINT16          -12
 #define SHM_INTERNAL_UINT32          -13
 #define SHM_INTERNAL_UINT64          -14
+#define SHM_INTERNAL_UCHAR           DTYPE_UNSIGNED_CHAR
+#define SHM_INTERNAL_USHORT          DTYPE_UNSIGNED_SHORT
 
 /* Operations */
 #define SHM_INTERNAL_BAND            -1
@@ -55,7 +59,8 @@ typedef int shm_internal_datatype_t;
 typedef int shm_internal_op_t;
 typedef int shmem_transport_ct_t;
 
-struct shmem_transport_ctx_t{ int dummy; };
+struct shmem_transport_ctx_t{ int dummy;
+                              struct shmem_internal_team_t *team;};
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
 

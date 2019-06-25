@@ -55,8 +55,12 @@ typedef ptl_op_t shm_internal_op_t;
 #define SHM_INTERNAL_PTRDIFF_T       DTYPE_PTRDIFF_T
 #define SHM_INTERNAL_INT32           PTL_INT32_T
 #define SHM_INTERNAL_INT64           PTL_INT64_T
+#define SHM_INTERNAL_UINT8           PTL_UINT8_T
+#define SHM_INTERNAL_UINT16          PTL_UINT16_T
 #define SHM_INTERNAL_UINT32          PTL_UINT32_T
 #define SHM_INTERNAL_UINT64          PTL_UINT64_T
+#define SHM_INTERNAL_UCHAR           DTYPE_UNSIGNED_CHAR
+#define SHM_INTERNAL_USHORT          DTYPE_UNSIGNED_SHORT
 
 #define SHM_INTERNAL_BAND PTL_BAND
 #define SHM_INTERNAL_BOR PTL_BOR
@@ -164,6 +168,7 @@ struct shmem_transport_ctx_t {
      * event arrival.  This race can cause early exit from quiet. */
     shmem_internal_atomic_uint64_t pending_put_cntr;
     shmem_internal_atomic_uint64_t pending_get_cntr;
+    struct shmem_internal_team_t   *team;
 };
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
