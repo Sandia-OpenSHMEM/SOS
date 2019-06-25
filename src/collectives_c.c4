@@ -239,8 +239,6 @@ int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_sync(shmemx_team_t team)
         SHMEM_ERR_CHECK_NON_NEGATIVE(nreduce);                          \
         SHMEM_ERR_CHECK_SYMMETRIC(dest, sizeof(TYPE)*nreduce);          \
         SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof(TYPE)*nreduce);        \
-        size_t pwrk_len = MAX(nreduce/2 + 1, SHMEM_REDUCE_MIN_WRKDATA_SIZE); \
-        printf("pwrk_len is %zu\n", pwrk_len);                          \
         TYPE *pWrk = shmem_internal_shmalloc(sizeof(TYPE) * SHMEM_BARRIER_SYNC_SIZE); \
         if (NULL == pWrk) shmem_global_exit(-1);        \
                                                                         \

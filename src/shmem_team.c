@@ -27,7 +27,8 @@ shmemx_team_t SHMEMX_TEAM_WORLD = (shmemx_team_t) &shmem_internal_team_world;
 
 
 long *shmem_internal_psync_pool;
-static uint64_t *shmem_internal_psync_pool_reserved;
+static uint64_t *psync_pool_avail;
+static uint64_t *psync_pool_avail_reduced;
 
 static int num_teams = 0;
 
@@ -69,10 +70,11 @@ int shmem_internal_teams_init(void)
         /* TODO: support more than 64 bits (using a bit array)... */
     }
 
-    shmem_internal_psync_pool_reserved = shmem_internal_shmalloc(sizeof(uint64_t));
+    psync_pool_avail = shmem_internal_shmalloc(sizeof(uint64_t));
+    psync_pool_avail_reduced = shmem_internal_shmalloc(sizeof(uint64_t));
 
     /* Set all bits to 1 (except the 1st bit for SHMEM_TEAM_WORLD) */
-    *shmem_internal_psync_pool_reserved = ~((uint64_t)0) << 1;
+    *psync_pool_avail = ~((uint64_t)0) << 1;
 
     return 0;
 }
@@ -81,7 +83,8 @@ void shmem_internal_teams_fini(void)
 {
     //TODO: why does this seg fault?
     //shmem_free(shmem_internal_psync_pool);
-    //shmem_free(shmem_internal_psync_pool_reserved);
+    //shmem_free(psync_pool_avail);
+    //shmem_free(psync_pool_avail_reduced);
     return;
 }
 
@@ -123,7 +126,7 @@ void shmem_internal_team_get_config(shmem_internal_team_t *team, shmemx_team_con
 int shmem_internal_team_translate_pe(shmem_internal_team_t *src_team, int src_pe,
                                      shmem_internal_team_t *dest_team)
 {
-    int src_pe_world, dest_pe;
+    int src_pe_world, dest_pe = -1;
 
     if (src_team == SHMEMX_TEAM_NULL || dest_team == SHMEMX_TEAM_NULL)
         return -1;
@@ -150,10 +153,14 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
                                       shmem_internal_team_t **new_team)
 {
 
+    *new_team = SHMEMX_TEAM_NULL;
+
     if (PE_size <= 0 || PE_stride < 1 || PE_start < 0)
         return -1;
 
-    *new_team = SHMEMX_TEAM_NULL;
+    if (parent_team == SHMEMX_TEAM_NULL) {
+        return 0;
+    }
 
     shmem_internal_team_t *myteam = calloc(1, sizeof(shmem_internal_team_t));
 
@@ -170,21 +177,21 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
                                         PE_size, &myteam->my_pe)) {
         //TODO: will we need a pool of pWrk arrays?
 
-        shmem_internal_op_to_all(shmem_internal_psync_pool_reserved,
-                                 shmem_internal_psync_pool_reserved, 1, sizeof(uint64_t),
+        shmem_internal_op_to_all(psync_pool_avail_reduced,
+                                 psync_pool_avail, 1, sizeof(uint64_t),
                                  PE_start, PE_stride, PE_size, NULL,
                                  &shmem_internal_psync_pool[parent_team->psync_idx*SHMEM_SYNC_SIZE],
                                  SHM_INTERNAL_BAND, SHM_INTERNAL_UINT64);
 
         /* Select the least signficant nonzero bit, which corresponds to an available pSync. */
-        myteam->psync_idx = shmem_internal_1st_nonzero_bit(shmem_internal_psync_pool_reserved, sizeof(uint64_t));
+        myteam->psync_idx = shmem_internal_1st_nonzero_bit(psync_pool_avail_reduced, sizeof(uint64_t));
         if (myteam->psync_idx == -1) {
             RAISE_ERROR_MSG("No more teams available (max = %ld), try increasing SHMEM_TEAMS_MAX\n",
                             shmem_internal_params.TEAMS_MAX);
         }
 
         /* Set the selected psync bit to 0 */
-        *shmem_internal_psync_pool_reserved ^= (uint64_t)1 << myteam->psync_idx;
+        *psync_pool_avail ^= (uint64_t)1 << myteam->psync_idx;
 
         *new_team = myteam;
     }
@@ -252,11 +259,19 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
 int shmem_internal_team_destroy(shmem_internal_team_t **team)
 {
 
-    if ((*shmem_internal_psync_pool_reserved >> (*team)->psync_idx) & (uint64_t)1) {
+    if (*team == SHMEMX_TEAM_NULL) {
+        return -1;
+    } else if ((*psync_pool_avail >> (*team)->psync_idx) & (uint64_t)1) {
         RAISE_WARN_STR("Destroying a team without an active pSync");
     } else {
+        const long max_teams = shmem_internal_params.TEAMS_MAX;
+        /* Is it necessary to reset the psync values? */
+        for (size_t i = 0; i < SHMEM_SYNC_SIZE; i++) {
+            shmem_internal_psync_pool[(*team)->psync_idx * SHMEM_SYNC_SIZE + i] = SHMEM_SYNC_VALUE;
+            shmem_internal_psync_pool[((*team)->psync_idx + max_teams) * SHMEM_SYNC_SIZE + i] = SHMEM_SYNC_VALUE;
+        }
         /* Set the the psync bit back to 1 */
-        *shmem_internal_psync_pool_reserved ^= (uint64_t)1 << (*team)->psync_idx;
+        *psync_pool_avail ^= (uint64_t)1 << (*team)->psync_idx;
     }
 
     free(*team);
