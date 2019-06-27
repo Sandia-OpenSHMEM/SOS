@@ -1600,9 +1600,11 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
                   RAISE_PE_PREFIX "pending_bb_cntr  = %9"PRIu64", completed_bb_cntr  = %9"PRIu64"\n",
                   ctx->id, (unsigned long) ctx->options, ctx->stx_idx,
                   shmem_internal_my_pe,
-                  SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr), fi_cntr_read(ctx->put_cntr),
+                  SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr),
+                  ctx->put_cntr ? fi_cntr_read(ctx->put_cntr) : 0,
                   shmem_internal_my_pe,
-                  SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr), fi_cntr_read(ctx->get_cntr),
+                  SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr),
+                  ctx->get_cntr ? fi_cntr_read(ctx->get_cntr) : 0,
                   shmem_internal_my_pe,
                   ctx->pending_bb_cntr, ctx->completed_bb_cntr
                  );
