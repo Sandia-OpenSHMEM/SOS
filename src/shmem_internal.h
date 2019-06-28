@@ -432,6 +432,7 @@ int shmem_internal_collectives_init(void);
 
 /* internal allocation, without a barrier */
 void *shmem_internal_shmalloc(size_t size);
+void shmem_internal_free(void *ptr);
 void* shmem_internal_get_next(intptr_t incr);
 
 /* Query PEs reachable using shared memory */

@@ -33,8 +33,10 @@ typedef struct {
 
 #if SHMEM_HAVE_ATTRIBUTE_VISIBILITY == 1
     __attribute__((visibility("default"))) extern shmemx_team_t SHMEMX_TEAM_WORLD;
+    __attribute__((visibility("default"))) extern shmemx_team_t SHMEMX_TEAM_SHARED;
 #else
     extern shmemx_team_t SHMEMX_TEAM_WORLD;
+    extern shmemx_team_t SHMEMX_TEAM_SHARED;
 #endif
 
 #define SHMEMX_TEAM_NULL NULL

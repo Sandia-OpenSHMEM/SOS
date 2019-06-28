@@ -185,10 +185,9 @@ shmemx_sync(shmemx_team_t team)
     SHMEM_ERR_CHECK_TEAM_SET(team);
 
     shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;
-    const long max_teams = shmem_internal_params.TEAMS_MAX;
-    size_t psync_idx = (max_teams + myteam->psync_idx) * SHMEM_SYNC_SIZE;
+    size_t psync_idx = myteam->psync_idx * SHMEM_SYNC_SIZE;
     shmem_internal_sync(myteam->start, myteam->stride, myteam->size,
-                        &shmem_internal_psync_pool[psync_idx]);
+                        &shmem_internal_psync_barrier_pool[psync_idx]);
     return 0;
 }
 
@@ -199,10 +198,9 @@ int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_sync(shmemx_team_t team)
     SHMEM_ERR_CHECK_TEAM_SET(team);
 
     shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;
-    const long max_teams = shmem_internal_params.TEAMS_MAX;
-    size_t psync_idx = (max_teams + myteam->psync_idx) * SHMEM_SYNC_SIZE;
+    size_t psync_idx = myteam->psync_idx * SHMEM_SYNC_SIZE;
     shmem_internal_sync(myteam->start, myteam->stride, myteam->size,
-                        &shmem_internal_psync_pool[psync_idx]);
+                        &shmem_internal_psync_barrier_pool[psync_idx]);
     return 0;
 }
 

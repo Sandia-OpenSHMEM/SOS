@@ -307,6 +307,7 @@ shmem_calloc(size_t count, size_t size)
     return ret;
 }
 
+
 void SHMEM_FUNCTION_ATTRIBUTES
 shmem_free(void *ptr)
 {
@@ -319,6 +320,17 @@ shmem_free(void *ptr)
 
     /* It's fine to call dlfree with NULL, but better to avoid unnecessarily
      * taking the mutex in the threaded case. */
+    if (ptr != NULL) {
+        SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
+        dlfree(ptr);
+        SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
+    }
+}
+
+
+void SHMEM_FUNCTION_ATTRIBUTES
+shmem_internal_free(void *ptr)
+{
     if (ptr != NULL) {
         SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
         dlfree(ptr);

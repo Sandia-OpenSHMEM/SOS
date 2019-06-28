@@ -32,8 +32,10 @@ struct shmem_internal_team_t {
 typedef struct shmem_internal_team_t shmem_internal_team_t;
 
 extern shmem_internal_team_t shmem_internal_team_world;
+extern shmem_internal_team_t shmem_internal_team_shared;
 
 extern long *shmem_internal_psync_pool;
+extern long *shmem_internal_psync_barrier_pool;
 
 /* Team Management Routines */
 
