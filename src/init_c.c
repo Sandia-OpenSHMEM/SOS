@@ -45,6 +45,9 @@
 #pragma weak shmem_query_thread = pshmem_query_thread
 #define shmem_query_thread pshmem_query_thread
 
+#pragma weak shmem_global_exit = pshmem_global_exit
+#define shmem_global_exit pshmem_global_exit
+
 #endif /* ENABLE_PROFILING */
 
 void SHMEM_FUNCTION_ATTRIBUTES
