@@ -299,6 +299,17 @@ script:
     - make install
     - export PATH=$TRAVIS_INSTALL/sos/bin:$PATH
     ###
+    ### Check for missing pshmem symbols
+    ###
+    - >
+      if [[ $SOS_TRANSPORT_OPTS = *"enable-profiling"* ]]; then
+        missing_pshmem=$( nm src/.libs/libsma.so | grep shmem_ | grep -v -e shmem_internal -e shmem_transport -e shmem_free_list -e shmem_runtime -e shmem_util -e shmem_spinlock -e '_$' | sed -e 's/.* . //' -e 's/^pshmem_/shmem_/' | sort | uniq -u )
+        if [ -n "$missing_pshmem" ]; then
+          echo -ne "Missing profiling symbols:\n$missing_pshmem\n" ; false;
+          else true;
+        fi;
+      fi
+    ###
     ### Portals builds stop here
     ###
     - if [ -n "SOS_DISABLE_EXTERNAL_TESTS" ]; then travis_terminate $TRAVIS_TEST_RESULT; fi
