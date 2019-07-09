@@ -65,36 +65,45 @@ int shmem_internal_teams_init(void)
         shmem_internal_team_shared.start         = shmem_internal_my_pe;
         shmem_internal_team_shared.stride        = 1;
         shmem_internal_team_shared.size          = 1;
-    } else { /* Search for on-node peer PEs */
-        int *peers = malloc(shmem_runtime_get_node_size() * sizeof(int));
-        int num_peers = 0;
-
-        for (size_t i = 0; i < shmem_internal_num_pes; i++) {
-            if (shmem_runtime_get_node_rank(i) != -1) {
-                peers[num_peers++] = i;
-                DEBUG_MSG("(%d) peer => %zu\n", shmem_internal_my_pe, i);
-            }
-        }
-        shmem_internal_assert(num_peers = shmem_runtime_get_node_size());
-
-        /* Detect on-node stride, and check that it's consistent */
+    } else { /* Search for on-node peer PEs while checking for a constant stride */
+        shmem_internal_team_shared.stride = 1;
+        int first_peer, found_first_peer = 0;
         int stride = 1;
-        if (num_peers > 1) {
-            stride = peers[1] - peers[0];
-            for (size_t i = 1; i < num_peers-2; i++) {
-                int check_stride = peers[i+1] - peers[i];
-                if (stride != check_stride) {
-                    RAISE_ERROR_STR("Detected non-uniform stride amongst node-local PEs\n");
+        int pe = 0;
+
+        while (pe < shmem_internal_num_pes) {
+            first_peer = shmem_runtime_get_node_rank(pe);
+            if (first_peer != -1) {
+                if (!found_first_peer) {
+                    found_first_peer = 1;
+                    shmem_internal_team_shared.start = pe;
                 }
+                while (pe + stride < shmem_internal_num_pes) {
+                    int next_peer_found = 0;
+                    int next_peer = shmem_runtime_get_node_rank(pe + stride);
+                    if (next_peer != -1) {
+                        if (!next_peer_found) {
+                            next_peer_found = 1;
+                            shmem_internal_team_shared.stride = stride;
+                        } else if (next_peer - first_peer != stride) {
+                            RAISE_WARN_STR("Detected non-uniform stride across on-node PEs");
+                            return -1;
+                        }
+                        first_peer = pe;
+                        pe += stride;
+                    } else if (!next_peer_found) {
+                        stride += 1;
+                    }
+                }
+                pe += stride;
+            } else if (!found_first_peer) {
+                pe += 1;
             }
         }
-        free(peers);
-
-        DEBUG_MSG("(%d) Node stride is %d\n", shmem_internal_my_pe, stride);
-
-        shmem_internal_team_shared.start         = peers[0];
-        shmem_internal_team_shared.stride        = stride;
-        shmem_internal_team_shared.size          = shmem_runtime_get_node_size();
+        shmem_internal_team_shared.size = shmem_runtime_get_node_size();
+        DEBUG_MSG("SHMEM_TEAM_SHARED: start=%d, stride=%d, size=%d\n",
+                  shmem_internal_team_shared.start, shmem_internal_team_shared.stride,
+                  shmem_internal_team_shared.size);
     }
 
     /* Allocate pSync pool, each with the maximum possible size requirement */

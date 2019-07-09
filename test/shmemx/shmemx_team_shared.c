@@ -3,25 +3,24 @@
 #include <shmem.h>
 #include <shmemx.h>
 
-#include <sys/types.h>
-#include <unistd.h>
-
 
 int main(void)
 {
-    static int dest[10];
+    static long lock = 0;
 
     shmem_init();
     int me = shmem_my_pe();
     int npes = shmem_n_pes();
 
     int team_shared_npes = shmemx_team_n_pes(SHMEMX_TEAM_SHARED);
-    int team_shared_me   = shmemx_team_my_pe(SHMEMX_TEAM_SHARED);
 
     int *peers = malloc(team_shared_npes * sizeof(int));
     size_t num_peers = 0;
 
-    /* Who are my team members on SHEMX_TEAM_SHARED? */
+    /* Print the team members on SHMEMX_TEAM_SHARED */
+    /* Use a lock for cleaner output */
+    shmem_set_lock(&lock);
+
     printf("[PE: %d] TEAM_SHARED peers: { ", me);
     for (int i = 0; i < npes; i++) {
         if (shmemx_team_translate_pe(SHMEMX_TEAM_WORLD, i,
@@ -32,6 +31,10 @@ int main(void)
     }
 
     printf("} (num_peers: %zu)\n", num_peers);
+
+    fflush(NULL);
+
+    shmem_clear_lock(&lock);
 
     if (num_peers != team_shared_npes) {
         shmem_global_exit(1);
