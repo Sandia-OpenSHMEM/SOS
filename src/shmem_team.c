@@ -79,11 +79,11 @@ int shmem_internal_teams_init(void)
                     shmem_internal_team_shared.start = pe;
                 }
                 while (pe + stride < shmem_internal_num_pes) {
-                    int next_peer_found = 0;
+                    int found_next_peer = 0;
                     int next_peer = shmem_runtime_get_node_rank(pe + stride);
                     if (next_peer != -1) {
-                        if (!next_peer_found) {
-                            next_peer_found = 1;
+                        if (!found_next_peer) {
+                            found_next_peer = 1;
                             shmem_internal_team_shared.stride = stride;
                         } else if (next_peer - first_peer != stride) {
                             RAISE_WARN_STR("Detected non-uniform stride across on-node PEs");
@@ -91,7 +91,7 @@ int shmem_internal_teams_init(void)
                         }
                         first_peer = pe;
                         pe += stride;
-                    } else if (!next_peer_found) {
+                    } else if (!found_next_peer) {
                         stride += 1;
                     }
                 }

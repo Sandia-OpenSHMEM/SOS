@@ -238,7 +238,7 @@ int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_sync(shmemx_team_t team)
         SHMEM_ERR_CHECK_SYMMETRIC(dest, sizeof(TYPE)*nreduce);          \
         SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof(TYPE)*nreduce);        \
         TYPE *pWrk = shmem_internal_shmalloc(sizeof(TYPE) *             \
-                                             SHMEM_BARRIER_SYNC_SIZE);  \
+                    MAX(nreduce/2 + 1, SHMEM_REDUCE_MIN_WRKDATA_SIZE)); \
         if (NULL == pWrk) shmem_global_exit(-1);                        \
                                                                         \
         shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;  \
@@ -246,6 +246,7 @@ int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_sync(shmemx_team_t team)
         shmem_internal_op_to_all(dest, source, nreduce, sizeof(TYPE),   \
                    myteam->start, myteam->stride, myteam->size, pWrk,   \
                    &shmem_internal_psync_pool[psync_idx], IOP, ITYPE);  \
+        shmem_internal_free(pWrk);                                      \
         return 0;                                                       \
     }
 SHMEM_BIND_C_COLL_INTS(`SHMEM_DEF_TO_ALL', `and', `SHM_INTERNAL_BAND')
