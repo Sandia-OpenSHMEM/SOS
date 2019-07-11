@@ -303,7 +303,7 @@ script:
     ###
     - >
       if [[ $SOS_TRANSPORT_OPTS = *"enable-profiling"* ]]; then
-      missing_pshmem=$( nm src/.libs/libsma.so | grep shmem_ | grep -v -e shmem_internal -e shmem_transport -e shmem_free_list -e shmem_runtime -e shmem_util -e shmem_spinlock -e shmem_op -e '_$' | sed -e 's/^.* . //' | perl -e 'while (<>) { if (/^p/) { $h{substr $_,1} -= 1; } else { $h{$_} += 1 } } for $k (keys %h) { if ($h{$k}) { print $k; ++$f; } } die "Missing profiling symbols" unless $f == 0;' )
+        missing_pshmem=$( nm src/.libs/libsma.so | grep shmem_ | grep -v -e shmem_internal -e shmem_transport -e shmem_free_list -e shmem_runtime -e shmem_util -e shmem_spinlock -e '_$' | sed -e 's/.* . //' -e 's/^pshmem_/shmem_/' | sort | uniq -u )
         if [ -n "$missing_pshmem" ]; then
           echo -ne "Missing profiling symbols:\n$missing_pshmem\n" ; false;
           else true;
