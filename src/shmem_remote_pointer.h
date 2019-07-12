@@ -29,7 +29,10 @@ shmem_internal_ptr(const void *target, int pe)
 #if USE_XPMEM
         return shmem_transport_xpmem_ptr(target, pe, node_rank);
 #else
-        return NULL;
+        if (pe == shmem_internal_my_pe)
+            return (void *) target;
+        else
+            return NULL;
 #endif
     } else {
         return NULL;
