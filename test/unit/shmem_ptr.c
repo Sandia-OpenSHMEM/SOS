@@ -30,7 +30,7 @@
 #include <shmem.h>
 
 int main(void) {
-    int i, errors = 0;
+    int i, n, errors = 0;
     int me, npes;
 
     static int shr_data = -1;
@@ -50,11 +50,12 @@ int main(void) {
 
     /* Check shmem_ptr on data segment */
 
-    for (i = 0; i < npes; i++) {
+    for (i = n = 0; i < npes; i++) {
         int * ptr = (int *) shmem_ptr(&shr_data, i);
 
         if (ptr != NULL) {
             int shr_peer = *ptr;
+            ++n;
 
             if (shr_peer != i) {
                 printf("%2d: Error, shr_data(%d) = %d, expected %d\n", me, i, shr_peer, i);
@@ -67,13 +68,18 @@ int main(void) {
         }
     }
 
+    printf("%2d: Found %d data segment peer(s)\n", me, n);
+    fflush(NULL);
+    shmem_barrier_all();
+
     /* Check shmem_ptr on heap segment */
 
-    for (i = 0; i < npes; i++) {
+    for (i = n = 0; i < npes; i++) {
         int * ptr = (int *) shmem_ptr(shr_heap, i);
 
         if (ptr != NULL) {
             int shr_peer = *ptr;
+            ++n;
 
             if (shr_peer != i) {
                 printf("%2d: Error, shr_heap(%d) = %d, expected %d\n", me, i, shr_peer, i);
@@ -85,6 +91,8 @@ int main(void) {
                 errors++;
         }
     }
+
+    printf("%2d: Found %d heap segment peer(s)\n", me, n);
 
     shmem_finalize();
 
