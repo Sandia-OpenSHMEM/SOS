@@ -26,7 +26,6 @@
  */
 
 #include <stdio.h>
-#include <stdint.h>
 #include <shmem.h>
 
 int main(void) {
