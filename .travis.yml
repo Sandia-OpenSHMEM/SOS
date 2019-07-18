@@ -243,7 +243,7 @@ before_install:
     - >
       if [[ $SOS_BUILD_OPTS = *"with-pmix"* ]]; then
         cd $TRAVIS_SRC
-        git clone -b v3.1.3 --depth 10 https://github.com/pmix/pmix pmix
+        git clone --depth 10 https://github.com/pmix/pmix pmix
         cd pmix
         ./autogen.pl
         ./configure --prefix=$TRAVIS_INSTALL/pmix --with-platform=optimized --with-libev
