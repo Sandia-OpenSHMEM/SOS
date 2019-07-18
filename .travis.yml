@@ -253,7 +253,7 @@ before_install:
     - >
       if [[ $SOS_BUILD_OPTS = *"with-pmix"* ]]; then
         cd $TRAVIS_SRC
-        git clone --depth 10 https://github.com/pmix/prrte prrte
+        git clone -b v1.0.0 --depth 10 https://github.com/pmix/prrte prrte
         cd prrte
         ./autogen.pl
         ./configure --prefix=$TRAVIS_INSTALL/prrte --with-pmix=$TRAVIS_INSTALL/pmix --without-slurm --with-libev
