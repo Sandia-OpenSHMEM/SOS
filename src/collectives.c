@@ -646,7 +646,6 @@ shmem_internal_op_to_all_ring(void *target, const void *source, int count, int t
     int stride = 1 << logPE_stride;
     int group_rank = (shmem_internal_my_pe - PE_start) / stride;
     long zero = 0, one = 1;
-    long completion = 0;
 
     int peer = PE_start + ((group_rank + 1) % PE_size) * stride;
 
@@ -686,14 +685,12 @@ shmem_internal_op_to_all_ring(void *target, const void *source, int count, int t
                                  chunk_in * chunk_in_count * type_size :
                                  (chunk_in * chunk_in_count + count % PE_size) * type_size;
 
-        shmem_internal_put_nb(SHMEM_CTX_DEFAULT,
-                              ((uint8_t *) target) + chunk_out_disp,
-                              i == 0 ?
-                                  ((uint8_t *) source) + chunk_out_disp :
-                                  ((uint8_t *) target) + chunk_out_disp,
-                              chunk_out_count * type_size,
-                              peer, &completion);
-        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
+        shmem_internal_put_nbi(SHMEM_CTX_DEFAULT,
+                               ((uint8_t *) target) + chunk_out_disp,
+                               i == 0 ?
+                                   ((uint8_t *) source) + chunk_out_disp :
+                                   ((uint8_t *) target) + chunk_out_disp,
+                               chunk_out_count * type_size, peer);
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
         shmem_internal_atomic(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one),
                               peer, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
@@ -723,12 +720,10 @@ shmem_internal_op_to_all_ring(void *target, const void *source, int count, int t
                                  chunk_out * chunk_out_count * type_size :
                                  (chunk_out * chunk_out_count + count % PE_size) * type_size;
 
-        shmem_internal_put_nb(SHMEM_CTX_DEFAULT,
-                              ((uint8_t *) target) + chunk_out_disp,
-                              ((uint8_t *) target) + chunk_out_disp,
-                              chunk_out_count * type_size,
-                              peer, &completion);
-        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
+        shmem_internal_put_nbi(SHMEM_CTX_DEFAULT,
+                               ((uint8_t *) target) + chunk_out_disp,
+                               ((uint8_t *) target) + chunk_out_disp,
+                               chunk_out_count * type_size, peer);
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
         shmem_internal_atomic(SHMEM_CTX_DEFAULT, pSync+1, &one, sizeof(one),
                               peer, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
