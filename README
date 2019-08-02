@@ -128,6 +128,10 @@ options.
         For num_pes < SHMEM_COLL_CROSSOVER, collective algorithms are
         serial instead of tree based.
 
+    SHMEM_COLL_SIZE_CROSSOVER (default: 16kiB)
+        For size < SHMEM_COLL_SIZE_CROSSOVER, collective algorithms are
+        optimized for latency, rather than bandwidth.
+
     SHMEM_COLL_RADIX (default: 4)
         Controls the width of the n-ary tree for collectives, such that each
         node will fanout-send to a max of approximately SHMEM_COLL_RADIX

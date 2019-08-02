@@ -182,9 +182,14 @@ shmem_internal_op_to_all(void *target, const void *source, int count,
                                                   pWrk, pSync, op, datatype);
                 }
             } else {
-                shmem_internal_op_to_all_recdbl_sw(target, source, count, type_size,
-                                                   PE_start, logPE_stride, PE_size,
-                                                   pWrk, pSync, op, datatype);
+                if (count * type_size < shmem_internal_params.COLL_SIZE_CROSSOVER)
+                    shmem_internal_op_to_all_recdbl_sw(target, source, count, type_size,
+                                                       PE_start, logPE_stride, PE_size,
+                                                       pWrk, pSync, op, datatype);
+                else
+                    shmem_internal_op_to_all_ring(target, source, count, type_size,
+                                                  PE_start, logPE_stride, PE_size,
+                                                  pWrk, pSync, op, datatype);
             }
 
             break;
