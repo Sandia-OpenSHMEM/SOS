@@ -124,6 +124,11 @@ env:
           SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple --enable-manual-progress --enable-hard-polling"
         - >
           SOS_ENABLE_ERROR_TESTS=1
+          SHMEM_REDUCE_ALGORITHM=ring
+          SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
+          SOS_BUILD_OPTS="--enable-error-checking --enable-pmi-simple"
+        - >
+          SOS_ENABLE_ERROR_TESTS=1
           SHMEM_FCOLLECT_ALGORITHM=ring
           SHMEM_OFI_TX_POLL_LIMIT=1 SHMEM_OFI_RX_POLL_LIMIT=1
           SHMEM_OFI_STX_THRESHOLD=1024
