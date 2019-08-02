@@ -634,6 +634,9 @@ shmem_internal_op_to_all_linear(void *target, const void *source, int count, int
 }
 
 
+#define chunk_count(id_, count_, npes_) \
+    (count_)/(npes_) + ((id_) < (count_) % (_npes))
+
 void
 shmem_internal_op_to_all_ring(void *target, const void *source, int count, int type_size,
                               int PE_start, int logPE_stride, int PE_size,
@@ -646,12 +649,16 @@ shmem_internal_op_to_all_ring(void *target, const void *source, int count, int t
     long completion = 0;
 
     int peer = PE_start + ((group_rank + 1) % PE_size) * stride;
-    size_t chunk_count = count/PE_size; /* FIXME: cases were count % PE_size > 0 */
 
     /* One slot for reduce-scatter and another for the allgather */
     shmem_internal_assert(SHMEM_REDUCE_SYNC_SIZE >= 2);
 
     if (count == 0) return;
+
+    if (PE_size == 1) {
+        memcpy(target, source, count*type_size);
+        return;
+    }
 
     /* Perform reduce-scatter:
      *
@@ -665,12 +672,26 @@ shmem_internal_op_to_all_ring(void *target, const void *source, int count, int t
         int chunk_in  = (group_rank - i - 1 + PE_size) % PE_size;
         int chunk_out = (group_rank - i + PE_size) % PE_size;
 
+        /* Evenly distribute extra elements across first count % PE_size chunks */
+        size_t chunk_in_extra  = chunk_in  < count % PE_size;
+        size_t chunk_out_extra = chunk_out < count % PE_size;
+        size_t chunk_in_count  = count/PE_size + chunk_in_extra;
+        size_t chunk_out_count = count/PE_size + chunk_out_extra;
+
+        /* Account for extra elements in the displacement */
+        size_t chunk_out_disp  = chunk_out_extra ?
+                                 chunk_out * chunk_out_count * type_size :
+                                 (chunk_out * chunk_out_count + count % PE_size) * type_size;
+        size_t chunk_in_disp   = chunk_in_extra ?
+                                 chunk_in * chunk_in_count * type_size :
+                                 (chunk_in * chunk_in_count + count % PE_size) * type_size;
+
         shmem_internal_put_nb(SHMEM_CTX_DEFAULT,
-                              ((uint8_t *) target) + chunk_out * chunk_count * type_size,
+                              ((uint8_t *) target) + chunk_out_disp,
                               i == 0 ?
-                              ((uint8_t *) source) + chunk_out * chunk_count * type_size :
-                              ((uint8_t *) target) + chunk_out * chunk_count * type_size,
-                              chunk_count * type_size,
+                                  ((uint8_t *) source) + chunk_out_disp :
+                                  ((uint8_t *) target) + chunk_out_disp,
+                              chunk_out_count * type_size,
                               peer, &completion);
         shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
@@ -680,9 +701,9 @@ shmem_internal_op_to_all_ring(void *target, const void *source, int count, int t
         /* Wait for chunk */
         SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_GE, i+1);
 
-        shmem_internal_reduce_local(op, datatype, chunk_count,
-                                    ((uint8_t *) source) + chunk_in * chunk_count * type_size,
-                                    ((uint8_t *) target) + chunk_in * chunk_count * type_size);
+        shmem_internal_reduce_local(op, datatype, chunk_in_count,
+                                    ((uint8_t *) source) + chunk_in_disp,
+                                    ((uint8_t *) target) + chunk_in_disp);
     }
 
     /* Reset reduce-scatter pSync */
@@ -696,11 +717,16 @@ shmem_internal_op_to_all_ring(void *target, const void *source, int count, int t
      */
     for (int i = 0; i < PE_size - 1; i++) {
         int chunk_out = (group_rank + 1 - i + PE_size) % PE_size;
+        size_t chunk_out_extra = chunk_out < count % PE_size;
+        size_t chunk_out_count = count/PE_size + chunk_out_extra;
+        size_t chunk_out_disp  = chunk_out_extra ?
+                                 chunk_out * chunk_out_count * type_size :
+                                 (chunk_out * chunk_out_count + count % PE_size) * type_size;
 
         shmem_internal_put_nb(SHMEM_CTX_DEFAULT,
-                              ((uint8_t *) target) + chunk_out * chunk_count * type_size,
-                              ((uint8_t *) target) + chunk_out * chunk_count * type_size,
-                              chunk_count * type_size,
+                              ((uint8_t *) target) + chunk_out_disp,
+                              ((uint8_t *) target) + chunk_out_disp,
+                              chunk_out_count * type_size,
                               peer, &completion);
         shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
