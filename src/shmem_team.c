@@ -29,13 +29,35 @@ shmemx_team_t SHMEMX_TEAM_WORLD = (shmemx_team_t) &shmem_internal_team_world;
 shmem_internal_team_t shmem_internal_team_shared;
 shmemx_team_t SHMEMX_TEAM_SHARED = (shmemx_team_t) &shmem_internal_team_shared;
 
+shmem_internal_team_t shmem_internal_team_host;
+shmemx_team_t SHMEMX_TEAM_HOST = (shmemx_team_t) &shmem_internal_team_host;
+
+shmem_internal_team_t shmem_internal_team_leaders;
+shmemx_team_t SHMEMX_TEAM_LEADERS = (shmemx_team_t) &shmem_internal_team_leaders;
+
 long *shmem_internal_psync_pool;
 long *shmem_internal_psync_barrier_pool;
 static uint64_t *psync_pool_avail;
 static uint64_t *psync_pool_avail_reduced;
 
-static int num_teams = 0;
 
+static inline
+int check_stride(int pe, int *start, int *stride, int *size)
+{
+    if (*start < 0) {
+        *start = pe;
+        (*size)++;
+    } else if (*stride < 0) {
+        *stride = pe - *start;
+        (*size)++;
+    } else if ((pe - *start) % *stride != 0) {
+        RAISE_WARN_STR("Detected non-uniform stride across on-node PEs");
+        return -1;
+    } else {
+        (*size)++;
+    }
+    return 0;
+}
 
 /* Team Management Routines */
 
@@ -43,24 +65,33 @@ int shmem_internal_teams_init(void)
 {
 
     /* Initialize SHMEM_TEAM_WORLD */
-    shmem_internal_team_world.team_id       = num_teams;
-    shmem_internal_team_world.psync_idx     = num_teams++;
-    shmem_internal_team_world.start         = 0;
-    shmem_internal_team_world.stride        = 1;
-    shmem_internal_team_world.size          = shmem_internal_num_pes;
-    shmem_internal_team_world.my_pe         = shmem_internal_my_pe;
-    shmem_internal_team_world.config_mask   = 0;
+    shmem_internal_team_world.psync_idx      = 0;
+    shmem_internal_team_world.start          = 0;
+    shmem_internal_team_world.stride         = 1;
+    shmem_internal_team_world.size           = shmem_internal_num_pes;
+    shmem_internal_team_world.my_pe          = shmem_internal_my_pe;
+    shmem_internal_team_world.config_mask    = 0;
     memset(&shmem_internal_team_world.config, 0, sizeof(shmemx_team_config_t));
     SHMEMX_TEAM_WORLD = (shmemx_team_t) &shmem_internal_team_world;
 
-    /* Initialize SHMEM_TEAM_SHARED */
-    shmem_internal_team_shared.team_id       = num_teams;
-    shmem_internal_team_shared.psync_idx     = num_teams++;
+    /* Initialize SHMEM_TEAM_SHARED and SHMEMX_TEAM_HOST */
+    shmem_internal_team_shared.psync_idx     = 1;
     shmem_internal_team_shared.my_pe         = shmem_internal_my_pe;
     shmem_internal_team_shared.config_mask   = 0;
     memset(&shmem_internal_team_shared.config, 0, sizeof(shmemx_team_config_t));
     SHMEMX_TEAM_SHARED = (shmemx_team_t) &shmem_internal_team_shared;
 
+    shmem_internal_team_host.psync_idx       = 2;
+    shmem_internal_team_host.my_pe           = shmem_internal_my_pe;
+    shmem_internal_team_host.config_mask     = 0;
+    memset(&shmem_internal_team_host.config, 0, sizeof(shmemx_team_config_t));
+    SHMEMX_TEAM_HOST = (shmemx_team_t) &shmem_internal_team_host;
+
+    shmem_internal_team_leaders.psync_idx    = 3;
+    shmem_internal_team_leaders.my_pe        = shmem_internal_my_pe;
+    shmem_internal_team_leaders.config_mask  = 0;
+    memset(&shmem_internal_team_leaders.config, 0, sizeof(shmemx_team_config_t));
+    SHMEMX_TEAM_LEADERS = (shmemx_team_t) &shmem_internal_team_leaders;
     /* If disabled, SHMEM_TEAM_SHARED only contains this (self) PE */
     if (shmem_internal_params.DISABLE_TEAM_SHARED) {
         shmem_internal_team_shared.start         = shmem_internal_my_pe;
@@ -68,23 +99,13 @@ int shmem_internal_teams_init(void)
         shmem_internal_team_shared.size          = 1;
     } else { /* Search for on-node peer PEs while checking for a consistent stride */
         int start = -1, stride = -1, size = 0;
-        void *ret_ptr;
 
         for (int pe = 0; pe < shmem_internal_num_pes; pe++) {
-            ret_ptr = shmem_internal_ptr(shmem_internal_heap_base, pe);
+            void *ret_ptr = shmem_internal_ptr(shmem_internal_heap_base, pe);
             if (ret_ptr == NULL) continue;
-            if (start < 0) {
-                start = pe;
-                size++;
-            } else if (stride < 0) {
-                stride = pe - start;
-                size++;
-            } else if ((pe - start) % stride != 0) {
-                RAISE_WARN_STR("Detected non-uniform stride across on-node PEs");
-                return -1;
-            } else {
-                size++;
-            }
+
+            int ret = check_stride(pe, &start, &stride, &size);
+            if (ret < 0) return ret;
         }
         shmem_internal_assert(size > 0 && size <= shmem_runtime_get_node_size());
 
@@ -95,6 +116,41 @@ int shmem_internal_teams_init(void)
         DEBUG_MSG("SHMEM_TEAM_SHARED: start=%d, stride=%d, size=%d\n",
                   shmem_internal_team_shared.start, shmem_internal_team_shared.stride,
                   shmem_internal_team_shared.size);
+    }
+
+    int start = -1, stride = -1, size = 0;
+
+    for (int pe = 0; pe < shmem_internal_num_pes; pe++) {
+
+        int ret = shmem_runtime_get_node_rank(pe);
+        if (ret < 0) continue;
+
+        ret = check_stride(pe, &start, &stride, &size);
+        if (ret < 0) return ret;
+    }
+    shmem_internal_assert(size > 0 && size == shmem_runtime_get_node_size());
+
+    shmem_internal_team_host.start = start;
+    shmem_internal_team_host.stride = (stride == -1) ? 1 : stride;
+    shmem_internal_team_host.size = size;
+
+    DEBUG_MSG("SHMEMX_TEAM_HOST: start=%d, stride=%d, size=%d\n",
+              shmem_internal_team_host.start, shmem_internal_team_host.stride,
+              shmem_internal_team_host.size);
+
+    /* Initialize SHMEM_TEAM_LEADERS */
+    /* FIXME: Assumes 0,1,...,N PE ordering, but what about round robin or arbitrary ordering? */
+    if (shmem_internal_pe_in_active_set(shmem_internal_my_pe, 0, shmem_runtime_get_node_size(),
+                                    shmem_internal_num_pes / shmem_runtime_get_node_size(), NULL)) {
+        shmem_internal_team_leaders.start = 0;
+        shmem_internal_team_leaders.stride = shmem_runtime_get_node_size();
+        shmem_internal_team_leaders.size = shmem_internal_num_pes / shmem_runtime_get_node_size();
+
+        DEBUG_MSG("SHMEMX_TEAM_LEADERS: start=%d, stride=%d, size=%d\n",
+                  shmem_internal_team_leaders.start, shmem_internal_team_leaders.stride,
+                  shmem_internal_team_leaders.size);
+    } else {
+        SHMEMX_TEAM_LEADERS = SHMEMX_TEAM_NULL;
     }
 
     /* Allocate pSync pool, each with the maximum possible size requirement */
@@ -126,16 +182,23 @@ int shmem_internal_teams_init(void)
     psync_pool_avail = shmem_internal_shmalloc(2 * sizeof(uint64_t));
     psync_pool_avail_reduced = &psync_pool_avail[1];
 
-    /* Set all bits to 1 (except the 1st bit for SHMEM_TEAM_WORLD) */
-    *psync_pool_avail = ~((uint64_t)0) << 1;
+    /* Set all bits to 1 (except the 1st bit for SHMEM_TEAM_WORLD and
+                                 the 2nd bit for SHMEM_TEAM_SHARED)
+                                 the 3rd bit for SHMEM_TEAM_HOST)
+                                 the 4th bit for SHMEM_TEAM_LEADERS) */
+    *psync_pool_avail = ~((uint64_t)0) << 4;
 
     return 0;
 }
 
 void shmem_internal_teams_fini(void)
 {
+    /* TODO: destroy all undestroyed teams */
+
+
     shmem_internal_free(shmem_internal_psync_pool);
     shmem_internal_free(psync_pool_avail);
+
     return;
 }
 
@@ -215,7 +278,6 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 
     shmem_internal_team_t *myteam = calloc(1, sizeof(shmem_internal_team_t));
 
-    myteam->team_id     = ++num_teams;
     myteam->start       = PE_start;
     myteam->stride      = PE_stride;
     myteam->size        = PE_size;

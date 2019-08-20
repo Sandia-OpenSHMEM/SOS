@@ -12,19 +12,19 @@ int main(void)
     int me = shmem_my_pe();
     int npes = shmem_n_pes();
 
-    int team_shared_npes = shmemx_team_n_pes(SHMEMX_TEAM_SHARED);
+    int team_shared_npes = shmemx_team_n_pes(SHMEMX_TEAM_HOST);
 
     int *peers = malloc(team_shared_npes * sizeof(int));
     size_t num_peers = 0;
 
-    /* Print the team members on SHMEMX_TEAM_SHARED */
+    /* Print the team members on SHMEMX_TEAM_HOST */
     /* Use a lock for cleaner output */
     shmem_set_lock(&lock);
 
-    printf("[PE: %d] TEAM_SHARED peers: { ", me);
+    printf("[PE: %d] TEAM_HOST peers: { ", me);
     for (int i = 0; i < npes; i++) {
         if (shmemx_team_translate_pe(SHMEMX_TEAM_WORLD, i,
-                                     SHMEMX_TEAM_SHARED) != -1) {
+                                     SHMEMX_TEAM_HOST) != -1) {
             peers[num_peers++] = i;
             printf("%d ", i);
         }

@@ -22,7 +22,6 @@
 
 
 struct shmem_internal_team_t {
-    int                   team_id;
     int                   my_pe;
     size_t                psync_idx;
     int                   start, stride, size;
