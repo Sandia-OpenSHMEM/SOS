@@ -253,7 +253,7 @@ before_install:
     - >
       if [[ $SOS_BUILD_OPTS = *"with-pmix"* ]]; then
         cd $TRAVIS_SRC
-        git clone --depth 10 https://github.com/pmix/prrte prrte
+        git clone -b v1.0.0 --depth 10 https://github.com/pmix/prrte prrte
         cd prrte
         ./autogen.pl
         ./configure --prefix=$TRAVIS_INSTALL/prrte --with-pmix=$TRAVIS_INSTALL/pmix --without-slurm --with-libev
@@ -298,6 +298,17 @@ script:
     - $SOS_PM_POST
     - make install
     - export PATH=$TRAVIS_INSTALL/sos/bin:$PATH
+    ###
+    ### Check for missing pshmem symbols
+    ###
+    - >
+      if [[ $SOS_TRANSPORT_OPTS = *"enable-profiling"* ]]; then
+        missing_pshmem=$( nm src/.libs/libsma.so | grep shmem_ | grep -v -e shmem_internal -e shmem_transport -e shmem_free_list -e shmem_runtime -e shmem_util -e shmem_spinlock -e shmem_op -e '_$' | sed -e 's/^.*shmem_/shmem_/' | sort | uniq -u )
+        if [ -n "$missing_pshmem" ]; then
+          echo -ne "Missing profiling symbols:\n$missing_pshmem\n" ; false;
+          else true;
+        fi;
+      fi
     ###
     ### Portals builds stop here
     ###

@@ -89,8 +89,8 @@ long sumL2_ICM = 0;
 pthread_barrier_t fencebar;
 
 // Parameters set on the command-line
-int use_contexts = 1;
-int use_pipelining = 1;
+int use_contexts = 0;
+int use_pipelining = 0;
 int use_blocking = 0;
 
 static long getTime(void)
@@ -301,11 +301,11 @@ static void printUsage(void) {
     printf("USAGE: mandelbrot [options]\n");
     printf("                  -t <num_threads> number of worker threads (def: 1)\n");
     printf("                  -w <width>       width of the mandelbrot domain (def: 2048)\n");
-    printf("                  -w <height>      height of the mandelbrot domain (def: 2048)\n");
+    printf("                  -h <height>      height of the mandelbrot domain (def: 2048)\n");
     printf("                  -j <job_points>  load balancing granularity (def: 128)\n");
     printf("                  -o               output image mandelbrot.pgm (def: off)\n");
-    printf("                  -c               use OpenSHMEM contexts (def: on)\n");
-    printf("                  -p               enable pipelining (implies -c) (def: on)\n");
+    printf("                  -c               use OpenSHMEM contexts (def: off)\n");
+    printf("                  -p               enable pipelining (implies -c) (def: off)\n");
     printf("                  -b               use blocking communication (def: off)\n");
     printf("                  -?               prints this message\n");
 }
@@ -505,8 +505,10 @@ int main(int argc, char** argv) {
         if (t_arg[i].ctx[0] != SHMEM_CTX_DEFAULT)
             shmem_ctx_destroy(t_arg[i].ctx[0]);
 
-        if (t_arg[i].ctx[1] != SHMEM_CTX_DEFAULT)
-            shmem_ctx_destroy(t_arg[i].ctx[1]);
+        if (use_pipelining) {
+            if (t_arg[i].ctx[1] != SHMEM_CTX_DEFAULT)
+                shmem_ctx_destroy(t_arg[i].ctx[1]);
+        }
     }
 
     pthread_barrier_destroy(&fencebar);

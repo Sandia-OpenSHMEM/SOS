@@ -49,8 +49,9 @@ extern unsigned int shmem_internal_rand_seed;
 #define SHMEM_INTERNAL_DIAG_WRAPLEN 72
 
 /* Note: must be accompanied by shmem_internal_my_pe in arguments */
-#define RAISE_PE_PREFIX "[%04d]        "
-#define RAISE_PREFIX    "              "
+#define RAISE_PE_PREFIX      "[%04d]        "
+#define RAISE_PREINIT_PREFIX "[????]        "
+#define RAISE_PREFIX         "              "
 
 
 #define RAISE_WARN(ret)                                                 \
@@ -134,8 +135,7 @@ extern unsigned int shmem_internal_rand_seed;
         size_t off;                                                     \
         off = snprintf(str, sizeof(str), "[????] ERROR: %s:%d: %s\n",   \
                        __FILE__, __LINE__, __func__);                   \
-        off+= snprintf(str+off, sizeof(str)-off, RAISE_PE_PREFIX,       \
-                       shmem_internal_my_pe);                           \
+        off+= snprintf(str+off, sizeof(str)-off, RAISE_PREINIT_PREFIX); \
         off+= snprintf(str+off, sizeof(str)-off, __VA_ARGS__);          \
         fprintf(stderr, "%s", str);                                     \
     } while (0)
@@ -422,7 +422,7 @@ extern shmem_internal_mutex_t shmem_internal_mutex_rand_r;
 #endif /* ENABLE_THREADS */
 
 void shmem_internal_start_pes(int npes);
-void shmem_internal_init(int tl_requested, int *tl_provided);
+int  shmem_internal_init(int tl_requested, int *tl_provided);
 void shmem_internal_finalize(void);
 void shmem_internal_global_exit(int status) SHMEM_ATTRIBUTE_NORETURN;
 
