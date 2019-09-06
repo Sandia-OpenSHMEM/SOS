@@ -184,8 +184,8 @@ int shmem_internal_teams_init(void)
 
     /* Set all bits to 1 (except the 1st bit for SHMEM_TEAM_WORLD and
                                  the 2nd bit for SHMEM_TEAM_SHARED)
-                                 the 3rd bit for SHMEM_TEAM_HOST)
-                                 the 4th bit for SHMEM_TEAM_LEADERS) */
+                                 the 3rd bit for SHMEMX_TEAM_HOST)
+                                 the 4th bit for SHMEMX_TEAM_LEADERS) */
     *psync_pool_avail = ~((uint64_t)0) << 4;
 
     return 0;
