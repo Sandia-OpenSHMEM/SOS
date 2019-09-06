@@ -150,7 +150,7 @@ int shmem_internal_teams_init(void)
                   shmem_internal_team_leaders.start, shmem_internal_team_leaders.stride,
                   shmem_internal_team_leaders.size);
     } else {
-        SHMEMX_TEAM_LEADERS = SHMEMX_TEAM_NULL;
+        SHMEMX_TEAM_LEADERS = SHMEMX_TEAM_INVALID;
     }
 
     /* Allocate pSync pool, each with the maximum possible size requirement */
@@ -204,7 +204,7 @@ void shmem_internal_teams_fini(void)
 
 int shmem_internal_team_my_pe(shmem_internal_team_t *team)
 {
-    if (team == SHMEMX_TEAM_NULL)
+    if (team == SHMEMX_TEAM_INVALID)
         return -1;
     else
         return ((shmem_internal_team_t *)team)->my_pe;
@@ -224,7 +224,7 @@ int shmem_internal_team_my_pe(shmem_internal_team_t *team)
 
 int shmem_internal_team_n_pes(shmem_internal_team_t *team)
 {
-    if (team == SHMEMX_TEAM_NULL)
+    if (team == SHMEMX_TEAM_INVALID)
         return -1;
     else
         return ((shmem_internal_team_t *)team)->size;
@@ -242,7 +242,7 @@ int shmem_internal_team_translate_pe(shmem_internal_team_t *src_team, int src_pe
 {
     int src_pe_world, dest_pe = -1;
 
-    if (src_team == SHMEMX_TEAM_NULL || dest_team == SHMEMX_TEAM_NULL)
+    if (src_team == SHMEMX_TEAM_INVALID || dest_team == SHMEMX_TEAM_INVALID)
         return -1;
 
     shmem_internal_team_t *team_dest = (shmem_internal_team_t *)dest_team;
@@ -267,12 +267,12 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
                                       shmem_internal_team_t **new_team)
 {
 
-    *new_team = SHMEMX_TEAM_NULL;
+    *new_team = SHMEMX_TEAM_INVALID;
 
     if (PE_size <= 0 || PE_stride < 1 || PE_start < 0)
         return -1;
 
-    if (parent_team == SHMEMX_TEAM_NULL) {
+    if (parent_team == SHMEMX_TEAM_INVALID) {
         return 0;
     }
 
@@ -368,7 +368,7 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
 int shmem_internal_team_destroy(shmem_internal_team_t **team)
 {
 
-    if (*team == SHMEMX_TEAM_NULL) {
+    if (*team == SHMEMX_TEAM_INVALID) {
         return -1;
     } else if ((*psync_pool_avail >> (*team)->psync_idx) & (uint64_t)1) {
         RAISE_WARN_STR("Destroying a team without an active pSync");

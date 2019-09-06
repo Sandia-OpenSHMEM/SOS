@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     t_pe     = shmemx_team_my_pe(new_team);
     t_global = shmemx_team_translate_pe(new_team, t_pe, SHMEMX_TEAM_WORLD);
 
-    if (new_team != SHMEMX_TEAM_NULL) {
+    if (new_team != SHMEMX_TEAM_INVALID) {
         if (t_global != rank) {
             shmem_global_exit(2);
         }

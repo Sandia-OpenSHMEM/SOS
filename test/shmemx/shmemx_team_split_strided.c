@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     t_size = shmemx_team_n_pes(new_team);
     t_pe   = shmemx_team_my_pe(new_team);
 
-    if (new_team != SHMEMX_TEAM_NULL) {
+    if (new_team != SHMEMX_TEAM_INVALID) {
         if ((rank % 2 != 0) || (rank / 2 != t_pe) || (npes / 2 != t_size)) {
             shmem_global_exit(3);
         }

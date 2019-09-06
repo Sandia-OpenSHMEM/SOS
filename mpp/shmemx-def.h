@@ -43,7 +43,7 @@ typedef struct {
     extern shmemx_team_t SHMEMX_TEAM_LEADERS;
 #endif
 
-#define SHMEMX_TEAM_NULL NULL
+#define SHMEMX_TEAM_INVALID NULL
 
 #define SHMEMX_CTX_INVALID NULL
 
