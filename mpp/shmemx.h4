@@ -446,7 +446,6 @@ define(`SHMEM_C11_GEN_FCOLLECT', `        $2*: shmemx_$1_fcollect')dnl
 SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_FCOLLECT', `, \') \
     )(__VA_ARGS__)
 
-// TODO: can I pass `and', `or', `xor' to a C11 macro?
 define(`SHMEM_C11_GEN_AND_REDUCE', `        $2*: shmemx_$1_and_reduce')dnl
 #define shmemx_and_reduce(...) \
     _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \

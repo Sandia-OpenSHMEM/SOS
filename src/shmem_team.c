@@ -23,6 +23,12 @@
 
 #include <math.h>
 
+#define SHMEMX_TEAM_WORLD_INDEX   0
+#define SHMEMX_TEAM_SHARED_INDEX  1
+#define SHMEMX_TEAM_HOST_INDEX    2
+#define SHMEMX_TEAM_LEADERS_INDEX 3
+#define NUM_PREDEFINED_TEAMS      4
+
 shmem_internal_team_t shmem_internal_team_world;
 shmemx_team_t SHMEMX_TEAM_WORLD = (shmemx_team_t) &shmem_internal_team_world;
 
@@ -65,7 +71,7 @@ int shmem_internal_teams_init(void)
 {
 
     /* Initialize SHMEM_TEAM_WORLD */
-    shmem_internal_team_world.psync_idx      = 0;
+    shmem_internal_team_world.psync_idx      = SHMEMX_TEAM_WORLD_INDEX;
     shmem_internal_team_world.start          = 0;
     shmem_internal_team_world.stride         = 1;
     shmem_internal_team_world.size           = shmem_internal_num_pes;
@@ -75,19 +81,19 @@ int shmem_internal_teams_init(void)
     SHMEMX_TEAM_WORLD = (shmemx_team_t) &shmem_internal_team_world;
 
     /* Initialize SHMEM_TEAM_SHARED and SHMEMX_TEAM_HOST */
-    shmem_internal_team_shared.psync_idx     = 1;
+    shmem_internal_team_shared.psync_idx     = SHMEMX_TEAM_SHARED_INDEX;
     shmem_internal_team_shared.my_pe         = shmem_internal_my_pe;
     shmem_internal_team_shared.config_mask   = 0;
     memset(&shmem_internal_team_shared.config, 0, sizeof(shmemx_team_config_t));
     SHMEMX_TEAM_SHARED = (shmemx_team_t) &shmem_internal_team_shared;
 
-    shmem_internal_team_host.psync_idx       = 2;
+    shmem_internal_team_host.psync_idx       = SHMEMX_TEAM_HOST_INDEX;
     shmem_internal_team_host.my_pe           = shmem_internal_my_pe;
     shmem_internal_team_host.config_mask     = 0;
     memset(&shmem_internal_team_host.config, 0, sizeof(shmemx_team_config_t));
     SHMEMX_TEAM_HOST = (shmemx_team_t) &shmem_internal_team_host;
 
-    shmem_internal_team_leaders.psync_idx    = 3;
+    shmem_internal_team_leaders.psync_idx    = SHMEMX_TEAM_LEADERS_INDEX;
     shmem_internal_team_leaders.my_pe        = shmem_internal_my_pe;
     shmem_internal_team_leaders.config_mask  = 0;
     memset(&shmem_internal_team_leaders.config, 0, sizeof(shmemx_team_config_t));
@@ -186,7 +192,7 @@ int shmem_internal_teams_init(void)
                                  the 2nd bit for SHMEM_TEAM_SHARED)
                                  the 3rd bit for SHMEMX_TEAM_HOST)
                                  the 4th bit for SHMEMX_TEAM_LEADERS) */
-    *psync_pool_avail = ~((uint64_t)0) << 4;
+    *psync_pool_avail = ~((uint64_t)0) << NUM_PREDEFINED_TEAMS;
 
     return 0;
 }

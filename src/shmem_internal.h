@@ -436,8 +436,7 @@ void shmem_internal_free(void *ptr);
 void* shmem_internal_get_next(intptr_t incr);
 
 /* Query PEs reachable using shared memory */
-static inline
-int shmem_internal_get_shr_rank(int pe)
+static inline int shmem_internal_get_shr_rank(int pe)
 {
 #ifdef USE_ON_NODE_COMMS
     return shmem_runtime_get_node_rank(pe);
@@ -448,8 +447,7 @@ int shmem_internal_get_shr_rank(int pe)
 #endif
 }
 
-static inline
-int shmem_internal_get_shr_size(void)
+static inline int shmem_internal_get_shr_size(void)
 {
 #ifdef USE_ON_NODE_COMMS
     return shmem_runtime_get_node_size();
@@ -460,8 +458,7 @@ int shmem_internal_get_shr_size(void)
 #endif
 }
 
-static inline
-double shmem_internal_wtime(void)
+static inline double shmem_internal_wtime(void)
 {
     double wtime = 0.0;
 
@@ -531,7 +528,11 @@ static inline
 int shmem_internal_pe_in_active_set(int global_pe, int PE_start, int PE_stride, int PE_size, int *local_pe)
 {
     /* Return true if `global_pe` is in the given active set (return 0
-     * otherwise), and set `local_pe` to the PE index within this set */
+     * otherwise), and set `local_pe` to the PE index within this set (-1 if
+     * the PE is not in the set) */
+
+    if (local_pe)
+        *local_pe = -1;
 
     if (global_pe < PE_start)
         return 0;
