@@ -20,7 +20,6 @@ check_PROGRAMS = \
 	max_reduction \
 	big_reduction \
 	to_all \
-	sum_to_all \
 	strided_put \
 	barrier \
 	bcast \
