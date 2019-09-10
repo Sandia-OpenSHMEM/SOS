@@ -148,9 +148,9 @@ void shmem_internal_op_to_all_linear(void *target, const void *source, int count
                                      void *pWrk, long *pSync,
                                      shm_internal_op_t op, shm_internal_datatype_t datatype);
 void shmem_internal_op_to_all_ring(void *target, const void *source, int count, int type_size,
-                                     int PE_start, int logPE_stride, int PE_size,
-                                     void *pWrk, long *pSync,
-                                     shm_internal_op_t op, shm_internal_datatype_t datatype);
+                                   int PE_start, int logPE_stride, int PE_size,
+                                   void *pWrk, long *pSync,
+                                   shm_internal_op_t op, shm_internal_datatype_t datatype);
 void shmem_internal_op_to_all_tree(void *target, const void *source, int count, int type_size,
                                    int PE_start, int logPE_stride, int PE_size,
                                    void *pWrk, long *pSync,
@@ -169,6 +169,8 @@ shmem_internal_op_to_all(void *target, const void *source, int count,
                          shm_internal_op_t op,
                          shm_internal_datatype_t datatype)
 {
+    shmem_internal_assert(type_size > 0);
+
     switch (shmem_internal_reduce_type) {
         case AUTO:
             if (shmem_transport_atomic_supported(op, datatype)) {

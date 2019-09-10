@@ -54,7 +54,7 @@ SHMEM_INTERNAL_ENV_DEF(TRAP_ON_ABORT, bool, false, SHMEM_INTERNAL_ENV_CAT_OTHER,
 SHMEM_INTERNAL_ENV_DEF(COLL_CROSSOVER, long, 4, SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
                        "Crossover between linear and tree collectives (num. PEs)")
 SHMEM_INTERNAL_ENV_DEF(COLL_SIZE_CROSSOVER, size, 16384, SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
-                       "Crossover between linear and tree collectives (msg. size)")
+                       "Crossover between latency and bandwidth optimized collectives (msg. size)")
 SHMEM_INTERNAL_ENV_DEF(COLL_RADIX, long, 4, SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
                        "Radix for tree-based collectives")
 SHMEM_INTERNAL_ENV_DEF(BARRIER_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
