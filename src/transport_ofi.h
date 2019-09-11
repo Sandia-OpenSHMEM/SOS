@@ -201,8 +201,6 @@ typedef enum fi_op       shm_internal_op_t;
 #define SHM_INTERNAL_ULONG_LONG      DTYPE_UNSIGNED_LONG_LONG
 #define SHM_INTERNAL_SIZE_T          DTYPE_SIZE_T
 #define SHM_INTERNAL_PTRDIFF_T       DTYPE_PTRDIFF_T
-#define SHM_INTERNAL_INT32           FI_INT32
-#define SHM_INTERNAL_INT64           FI_INT64
 #define SHM_INTERNAL_UINT32          FI_UINT32
 #define SHM_INTERNAL_UINT64          FI_UINT64
 
