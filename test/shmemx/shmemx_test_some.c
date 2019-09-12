@@ -79,20 +79,20 @@ int main(void)
     /* Check the flags array */
     for (int i = 0; i < npes; i++) {
         if (flags[i] != 1)
-            shmem_global_exit(0);
+            shmem_global_exit(1);
     }
 
     /* check result */
     int M = N * npes - 1;
     if (total_sum != M * (M + 1) / 2) {
-        shmem_global_exit(1);
+        shmem_global_exit(2);
     }
 
     /* Sanity check case with NULL status array */
     ncompleted = shmemx_int_test_some(flags, npes, indices, NULL, SHMEM_CMP_EQ, 1);
 
     if (ncompleted != npes)
-        shmem_global_exit(2);
+        shmem_global_exit(3);
 
     shmem_finalize();
     return 0;
