@@ -54,7 +54,7 @@ shmem_ctx_destroy(shmem_ctx_t ctx)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    if (ctx == NULL)
+    if (ctx == SHMEMX_CTX_INVALID)
         return;
 
     if (ctx == SHMEM_CTX_DEFAULT) {
