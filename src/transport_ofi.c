@@ -495,7 +495,7 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
 
             if (is_unused) {
                 stx->is_private = 1;
-                shmem_transport_ofi_stx_kvs_t *e = malloc(sizeof(shmem_transport_ofi_stx_kvs_t));
+                shmem_transport_ofi_stx_kvs_t *e = calloc(1, sizeof(shmem_transport_ofi_stx_kvs_t));
                 if (e == NULL) {
                     RAISE_ERROR_STR("out of memory when allocating STX KVS entry");
                 }
