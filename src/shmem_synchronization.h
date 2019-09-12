@@ -25,6 +25,9 @@ shmem_internal_quiet(shmem_ctx_t ctx)
 {
     int ret;
 
+    if (ctx == NULL)
+        return;
+
     ret = shmem_transport_quiet((shmem_transport_ctx_t *)ctx);
     if (0 != ret) { RAISE_ERROR(ret); }
 
@@ -42,6 +45,9 @@ static inline void
 shmem_internal_fence(shmem_ctx_t ctx)
 {
     int ret;
+
+    if (ctx == NULL)
+        return;
 
     ret = shmem_transport_fence((shmem_transport_ctx_t *)ctx);
     if (0 != ret) { RAISE_ERROR(ret); }
