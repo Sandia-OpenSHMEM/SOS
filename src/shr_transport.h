@@ -93,7 +93,11 @@ static inline int
 shmem_shr_transport_use_atomic(shmem_ctx_t ctx, void *target, const void *source,
                                size_t len, int pe, shm_internal_datatype_t datatype)
 {
+#if USE_SHR_ATOMICS
+    return -1 != shmem_internal_get_shr_rank(pe);
+#else
     return 0;
+#endif
 }
 
 
@@ -184,7 +188,52 @@ shmem_shr_transport_swap(shmem_ctx_t ctx, void *target, void *source,
                          void *dest, size_t len, int pe,
                          shm_internal_datatype_t datatype)
 {
+#if USE_SHR_ATOMICS
+    int noderank = shmem_internal_get_shr_rank(pe);
+    char *remote_ptr;
+
+    XPMEM_GET_REMOTE_ACCESS(target, noderank, remote_ptr);
+
+    if (noderank == -1)
+        RAISE_ERROR_MSG("No shared memory path to peer %d\n", pe);
+
+   switch (datatype) {
+       case SHM_INTERNAL_INT:
+           {
+               __atomic_exchange((int *)remote_ptr, (int *)source, (int *)dest, __ATOMIC_SEQ_CST);
+           }
+           break;
+       case SHM_INTERNAL_LONG:
+           {
+               __atomic_exchange((long *)remote_ptr, (long *)source, (long *)dest, __ATOMIC_SEQ_CST);
+           }
+           break;
+       case SHM_INTERNAL_UINT:
+           {
+               __atomic_exchange((unsigned int *)remote_ptr, (unsigned int *)source, (unsigned int *)dest, __ATOMIC_SEQ_CST);
+           }
+           break;
+       case SHM_INTERNAL_ULONG:
+           {
+               __atomic_exchange((unsigned long *)remote_ptr, (unsigned long *)source, (unsigned long *)dest, __ATOMIC_SEQ_CST);
+           }
+           break;
+       case SHM_INTERNAL_FLOAT:
+           {
+               __atomic_exchange((float *)remote_ptr, (float *)source, (float *)dest, __ATOMIC_SEQ_CST);
+           }
+           break;
+       case SHM_INTERNAL_DOUBLE:
+           {
+               __atomic_exchange((double *)remote_ptr, (double *)source, (double *)dest, __ATOMIC_SEQ_CST);
+           }
+           break;
+       default:
+           RAISE_ERROR_MSG("Unsupported datatype dtype=%d\n", datatype);
+   }
+#else
     RAISE_ERROR_STR("No path to peer");
+#endif
 }
 
 
@@ -194,7 +243,64 @@ shmem_shr_transport_cswap(shmem_ctx_t ctx, void *target, void *source,
                           void *dest, void *operand, size_t len,
                           int pe, shm_internal_datatype_t datatype)
 {
+#if USE_SHR_ATOMICS
+    int noderank = shmem_internal_get_shr_rank(pe);
+    char *remote_ptr;
+
+    XPMEM_GET_REMOTE_ACCESS(target, noderank, remote_ptr);
+
+    if (noderank == -1)
+        RAISE_ERROR_MSG("No shared memory path to peer %d\n", pe);
+
+   switch (datatype) {
+       case SHM_INTERNAL_INT:
+           {
+               bool done = false;
+
+               while (!done) {
+                   int v = __atomic_load_n((int *)remote_ptr, __ATOMIC_SEQ_CST);
+                   if (v == *(int*)operand) {
+                       done = __atomic_compare_exchange((int *)remote_ptr,
+                                                        (int *)operand,
+                                                        (int *)source,
+                                                        false,
+                                                        __ATOMIC_SEQ_CST,
+                                                        __ATOMIC_SEQ_CST);
+                   } else {
+                       /* Compare failed */
+                       done = true;
+                   }
+                   *(int *)dest = v;
+               }
+           }
+           break;
+       case SHM_INTERNAL_LONG:
+           {
+               bool done = false;
+
+               while (!done) {
+                   long v = __atomic_load_n((long *)remote_ptr, __ATOMIC_SEQ_CST);
+                   if (v == *(long*)operand) {
+                       done = __atomic_compare_exchange((long *)remote_ptr,
+                                                        (long *)operand,
+                                                        (long *)source,
+                                                        false,
+                                                        __ATOMIC_SEQ_CST,
+                                                        __ATOMIC_SEQ_CST);
+                   } else {
+                       /* Compare failed */
+                       done = true;
+                   }
+                   *(long *)dest = v;
+               }
+           }
+           break;
+       default:
+           RAISE_ERROR_MSG("Unsupported datatype dtype=%d\n", datatype);
+   }
+#else
     RAISE_ERROR_STR("No path to peer");
+#endif
 }
 
 
@@ -204,7 +310,11 @@ shmem_shr_transport_mswap(shmem_ctx_t ctx, void *target, void *source,
                           void *dest, void *mask, size_t len,
                           int pe, shm_internal_datatype_t datatype)
 {
+#if USE_SHR_ATOMICS
     RAISE_ERROR_STR("No path to peer");
+#else
+    RAISE_ERROR_STR("No path to peer");
+#endif
 }
 
 
@@ -214,7 +324,38 @@ shmem_shr_transport_atomic(shmem_ctx_t ctx, void *target, const void *source,
                            size_t len, int pe, shm_internal_op_t op,
                            shm_internal_datatype_t datatype)
 {
+#if USE_SHR_ATOMICS
+    int noderank = shmem_internal_get_shr_rank(pe);
+    char *remote_ptr;
+
+    XPMEM_GET_REMOTE_ACCESS(target, noderank, remote_ptr);
+
+    if (noderank == -1)
+        RAISE_ERROR_MSG("No shared memory path to peer %d\n", pe);
+
+    switch (op) {
+    case SHM_INTERNAL_SUM:
+        switch (datatype) {
+            case SHM_INTERNAL_INT:
+                {
+                    __atomic_fetch_add((int *)remote_ptr, *((int *)source), __ATOMIC_SEQ_CST);
+                }
+                break;
+            case SHM_INTERNAL_LONG:
+                {
+                    __atomic_fetch_add((long *)remote_ptr, *((long *)source), __ATOMIC_SEQ_CST); /* FIXME: ACQ_REL */
+                }
+                break;
+            default:
+                RAISE_ERROR_MSG("Unsupported datatype op=%d, dtype=%d\n", op, datatype);
+        }
+        break;
+    default:
+        RAISE_ERROR_MSG("Unsupported atomic operation %d\n", op);
+    }
+#else
     RAISE_ERROR_STR("No path to peer");
+#endif
 }
 
 
@@ -224,7 +365,11 @@ shmem_shr_transport_atomic_fetch(shmem_ctx_t ctx, void *target,
                                  const void *source, size_t len,
                                  int pe, shm_internal_datatype_t datatype)
 {
+#if USE_SHR_ATOMICS
     RAISE_ERROR_STR("No path to peer");
+#else
+    RAISE_ERROR_STR("No path to peer");
+#endif
 }
 
 
@@ -234,7 +379,11 @@ shmem_shr_transport_atomic_set(shmem_ctx_t ctx, void *target,
                                const void *source, size_t len,
                                int pe, shm_internal_datatype_t datatype)
 {
+#if USE_SHR_ATOMICS
     RAISE_ERROR_STR("No path to peer");
+#else
+    RAISE_ERROR_STR("No path to peer");
+#endif
 }
 
 
@@ -244,7 +393,11 @@ shmem_shr_transport_atomicv(shmem_ctx_t ctx, void *target, const void *source,
                             size_t len, int pe, shm_internal_op_t op,
                             shm_internal_datatype_t datatype)
 {
+#if USE_SHR_ATOMICS
     RAISE_ERROR_STR("No path to peer");
+#else
+    RAISE_ERROR_STR("No path to peer");
+#endif
 }
 
 
@@ -255,7 +408,38 @@ shmem_shr_transport_fetch_atomic(shmem_ctx_t ctx, void *target, void *source,
                                  shm_internal_op_t op,
                                  shm_internal_datatype_t datatype)
 {
+#if USE_SHR_ATOMICS
+    int noderank = shmem_internal_get_shr_rank(pe);
+    char *remote_ptr;
+
+    XPMEM_GET_REMOTE_ACCESS(target, noderank, remote_ptr);
+
+    if (noderank == -1)
+        RAISE_ERROR_MSG("No shared memory path to peer %d\n", pe);
+
+    switch (op) {
+    case SHM_INTERNAL_SUM:
+        switch (datatype) {
+            case SHM_INTERNAL_INT:
+                {
+                    *(int *)dest = __atomic_fetch_add((int *)remote_ptr, *((int *)source), __ATOMIC_SEQ_CST);
+                }
+                break;
+            case SHM_INTERNAL_LONG:
+                {
+                    *(int *)dest = __atomic_fetch_add((long *)remote_ptr, *((long *)source), __ATOMIC_SEQ_CST); /* FIXME: ACQ_REL */
+                }
+                break;
+            default:
+                RAISE_ERROR_MSG("Unsupported datatype op=%d, dtype=%d\n", op, datatype);
+        }
+        break;
+    default:
+        RAISE_ERROR_MSG("Unsupported atomic operation %d\n", op);
+    }
+#else
     RAISE_ERROR_STR("No path to peer");
+#endif
 }
 
 #endif /* SHR_TRANSPORT_H */

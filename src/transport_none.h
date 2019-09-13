@@ -146,7 +146,7 @@ static inline
 void
 shmem_transport_put_wait(shmem_transport_ctx_t* ctx, long *completion)
 {
-    RAISE_ERROR_STR("No path to peer");
+    /* No op */
 }
 
 static inline
@@ -168,7 +168,7 @@ static inline
 void
 shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
 {
-    RAISE_ERROR_STR("No path to peer");
+    /* Nop */
 }
 
 
