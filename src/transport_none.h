@@ -94,7 +94,7 @@ shmem_transport_probe(void)
 
 static inline
 int
-shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
+shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options, shmem_transport_ctx_t **ctx)
 {
     *ctx = NULL;
     return 0;

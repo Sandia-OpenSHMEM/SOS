@@ -348,7 +348,7 @@ void shmem_transport_probe(void)
     return;
 }
 
-int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx);
+int shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options, shmem_transport_ctx_t **ctx);
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx);
 
 int shmem_transport_init(void);

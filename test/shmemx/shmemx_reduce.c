@@ -14,7 +14,7 @@ long recv_a_value(unsigned seed, int npes) {
 
 /* Validate the value we recieved */
 unsigned char is_valid(long value, int npes) {
-  if (value == (npes-1))
+  if (value > (npes-1))
     return 0;
   return 1;
 }
@@ -64,4 +64,3 @@ int main(void)
   }
   shmem_finalize();
 }
-  

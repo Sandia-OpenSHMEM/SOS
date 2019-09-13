@@ -24,7 +24,7 @@ typedef struct {
 
 /* Teams */
 typedef struct shmem_impl_team_t {
-    int teamid;
+    int dummy;
 } * shmemx_team_t;
 
 typedef struct {

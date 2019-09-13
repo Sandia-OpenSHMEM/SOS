@@ -20,6 +20,7 @@
 #include "shmem_internal.h"
 #include "transport.h"
 #include "shmem_synchronization.h"
+#include "shmem_team.h"
 
 #ifdef ENABLE_PROFILING
 #include "pshmem.h"
@@ -41,7 +42,7 @@ shmem_ctx_create(long options, shmem_ctx_t *ctx)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    int ret = shmem_transport_ctx_create(options, (shmem_transport_ctx_t **) ctx);
+    int ret = shmem_transport_ctx_create(&shmem_internal_team_world, options, (shmem_transport_ctx_t **) ctx);
 
     SHMEM_ERR_CHECK_NULL(ctx, 0);
 

@@ -269,7 +269,7 @@ int shmem_internal_team_translate_pe(shmem_internal_team_t *src_team, int src_pe
 }
 
 int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE_start, int PE_stride,
-                                      int PE_size, shmemx_team_config_t *config, long config_mask,
+                                      int PE_size, const shmemx_team_config_t *config, long config_mask,
                                       shmem_internal_team_t **new_team)
 {
 
@@ -321,8 +321,8 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 }
 
 int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
-                                 shmemx_team_config_t *xaxis_config, long xaxis_mask,
-                                 shmem_internal_team_t **xaxis_team, shmemx_team_config_t *yaxis_config,
+                                 const shmemx_team_config_t *xaxis_config, long xaxis_mask,
+                                 shmem_internal_team_t **xaxis_team, const shmemx_team_config_t *yaxis_config,
                                  long yaxis_mask, shmem_internal_team_t **yaxis_team)
 {
     const int parent_start = parent_team->start;
@@ -388,6 +388,14 @@ int shmem_internal_team_destroy(shmem_internal_team_t **team)
         *psync_pool_avail ^= (uint64_t)1 << (*team)->psync_idx;
     }
 
+    /* Destroy all undestroyed contexts on this team */
+    for (size_t i = 0; i < (*team)->contexts_len; i++) {
+        if ((*team)->contexts[i] != NULL) {
+            shmem_transport_ctx_destroy((*team)->contexts[i]);
+        }
+        free((*team)->contexts);
+    }
+
     free(*team);
 
     return 0;
@@ -395,18 +403,9 @@ int shmem_internal_team_destroy(shmem_internal_team_t **team)
 
 int shmem_internal_team_create_ctx(shmem_internal_team_t *team, long options, shmem_ctx_t *ctx)
 {
-    int ret = shmem_transport_ctx_create(options, (shmem_transport_ctx_t **) ctx);
-
+    int ret = shmem_transport_ctx_create(team, options, (shmem_transport_ctx_t **) ctx);
     SHMEM_ERR_CHECK_NULL(ctx, 0);
-
-    // TODO assert num_contexts is less than the number of contexts on this team.
-    //shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;
-    //myteam->config.num_contexts;
-
-    shmem_transport_ctx_t **ctxp = (shmem_transport_ctx_t **)ctx;
-    (*ctxp)->team = team;
-
-   return ret;
+    return ret;
 }
 
 int shmem_internal_ctx_get_team(shmem_ctx_t ctx, shmem_internal_team_t **team)

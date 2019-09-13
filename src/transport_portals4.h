@@ -25,6 +25,7 @@
 #include "shmem_free_list.h"
 #include "shmem_internal.h"
 #include "shmem_atomic.h"
+#include "shmem_team.h"
 
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -173,7 +174,7 @@ struct shmem_transport_ctx_t {
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
 extern shmem_transport_ctx_t shmem_transport_ctx_default;
-int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx);
+int shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options, shmem_transport_ctx_t **ctx);
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx);
 
 /*
