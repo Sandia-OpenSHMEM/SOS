@@ -36,7 +36,7 @@ shmem_internal_put_scalar(shmem_ctx_t ctx, void *target, const void *source, siz
 {
     shmem_internal_assert(len > 0);
 
-    if (shmem_shr_transport_use_shr_write(ctx, target, source, len, pe)) {
+    if (shmem_shr_transport_use_write(ctx, target, source, len, pe)) {
         shmem_shr_transport_put_scalar(ctx, target, source, len, pe);
     } else {
         shmem_transport_put_scalar((shmem_transport_ctx_t *)ctx, target, source, len, pe);
@@ -51,7 +51,7 @@ shmem_internal_put_nb(shmem_ctx_t ctx, void *target, const void *source, size_t 
 {
     if (len == 0) return;
 
-    if (shmem_shr_transport_use_shr_write(ctx, target, source, len, pe)) {
+    if (shmem_shr_transport_use_write(ctx, target, source, len, pe)) {
         shmem_shr_transport_put(ctx, target, source, len, pe);
     } else {
         shmem_transport_put_nb((shmem_transport_ctx_t *)ctx, target, source, len, pe, completion);
@@ -68,7 +68,7 @@ shmem_internal_put_signal_nbi(shmem_ctx_t ctx, void *target, const void *source,
         return;
     }
 
-    if (shmem_shr_transport_use_shr_write(ctx, target, source, len, pe)) {
+    if (shmem_shr_transport_use_write(ctx, target, source, len, pe)) {
         shmem_shr_transport_put_signal(ctx, target, source, len, sig_addr, signal, pe);
     } else {
         shmem_transport_put_signal_nbi((shmem_transport_ctx_t *) ctx, target, source, len, sig_addr, signal, pe);
@@ -81,7 +81,7 @@ shmem_internal_put_nbi(shmem_ctx_t ctx, void *target, const void *source, size_t
 {
     if (len == 0) return;
 
-    if (shmem_shr_transport_use_shr_write(ctx, target, source, len, pe)) {
+    if (shmem_shr_transport_use_write(ctx, target, source, len, pe)) {
         shmem_shr_transport_put(ctx, target, source, len, pe);
     } else {
         shmem_transport_put_nbi((shmem_transport_ctx_t *)ctx, target, source, len, pe);
@@ -115,7 +115,7 @@ shmem_internal_get(shmem_ctx_t ctx, void *target, const void *source, size_t len
 {
     if (len == 0) return;
 
-    if (shmem_shr_transport_use_shr_read(ctx, target, source, len, pe)) {
+    if (shmem_shr_transport_use_read(ctx, target, source, len, pe)) {
         shmem_shr_transport_get(ctx, target, source, len, pe);
     } else {
         shmem_transport_get((shmem_transport_ctx_t *)ctx, target, source, len, pe);
@@ -148,7 +148,11 @@ shmem_internal_swap(shmem_ctx_t ctx, void *target, void *source, void *dest, siz
 {
     shmem_internal_assert(len > 0);
 
-    shmem_transport_swap((shmem_transport_ctx_t *)ctx, target, source, dest, len, pe, datatype);
+    if (shmem_shr_transport_use_atomic(ctx, target, source, len, pe, datatype)) {
+        shmem_shr_transport_swap(ctx, target, source, dest, len, pe, datatype);
+    } else {
+        shmem_transport_swap((shmem_transport_ctx_t *)ctx, target, source, dest, len, pe, datatype);
+    }
 }
 
 
@@ -160,8 +164,12 @@ shmem_internal_swap_nbi(shmem_ctx_t ctx, void *target, void *source,
 {
     shmem_internal_assert(len > 0);
 
-    shmem_transport_swap_nbi((shmem_transport_ctx_t *)ctx, target, source,
-                             dest, len, pe, datatype);
+    if (shmem_shr_transport_use_atomic(ctx, target, source, len, pe, datatype)) {
+        shmem_shr_transport_swap(ctx, target, source, dest, len, pe, datatype);
+    } else {
+        shmem_transport_swap_nbi((shmem_transport_ctx_t *)ctx, target, source,
+                                 dest, len, pe, datatype);
+    }
 }
 
 
@@ -172,7 +180,12 @@ shmem_internal_cswap(shmem_ctx_t ctx, void *target, void *source, void *dest, vo
 {
     shmem_internal_assert(len > 0);
 
-    shmem_transport_cswap((shmem_transport_ctx_t *)ctx, target, source, dest, operand, len, pe, datatype);
+    if (shmem_shr_transport_use_atomic(ctx, target, source, len, pe, datatype)) {
+        shmem_shr_transport_cswap(ctx, target, source, dest, operand, len, pe, datatype);
+    } else {
+        shmem_transport_cswap((shmem_transport_ctx_t *)ctx, target, source,
+                              dest, operand, len, pe, datatype);
+    }
 }
 
 
@@ -184,8 +197,12 @@ shmem_internal_cswap_nbi(shmem_ctx_t ctx, void *target, void *source,
 {
     shmem_internal_assert(len > 0);
 
-    shmem_transport_cswap_nbi((shmem_transport_ctx_t *)ctx, target, source,
-                              dest, operand, len, pe, datatype);
+    if (shmem_shr_transport_use_atomic(ctx, target, source, len, pe, datatype)) {
+        shmem_shr_transport_cswap(ctx, target, source, dest, operand, len, pe, datatype);
+    } else {
+        shmem_transport_cswap_nbi((shmem_transport_ctx_t *)ctx, target, source,
+                                  dest, operand, len, pe, datatype);
+    }
 }
 
 
@@ -196,7 +213,12 @@ shmem_internal_mswap(shmem_ctx_t ctx, void *target, void *source, void *dest, vo
 {
     shmem_internal_assert(len > 0);
 
-    shmem_transport_mswap((shmem_transport_ctx_t *)ctx, target, source, dest, mask, len, pe, datatype);
+    if (shmem_shr_transport_use_atomic(ctx, target, source, len, pe, datatype)) {
+        shmem_shr_transport_mswap(ctx, target, source, dest, mask, len, pe, datatype);
+    } else {
+        shmem_transport_mswap((shmem_transport_ctx_t *)ctx, target, source,
+                              dest, mask, len, pe, datatype);
+    }
 }
 
 
@@ -207,8 +229,12 @@ shmem_internal_atomic(shmem_ctx_t ctx, void *target, const void *source, size_t 
 {
     shmem_internal_assert(len > 0);
 
-    shmem_transport_atomic((shmem_transport_ctx_t *)ctx, target, source, len,
-                           pe, op, datatype);
+    if (shmem_shr_transport_use_atomic(ctx, target, source, len, pe, datatype)) {
+        shmem_shr_transport_atomic(ctx, target, source, len, pe, op, datatype);
+    } else {
+        shmem_transport_atomic((shmem_transport_ctx_t *)ctx, target, source,
+                               len, pe, op, datatype);
+    }
 }
 
 
@@ -219,7 +245,12 @@ shmem_internal_atomic_fetch(shmem_ctx_t ctx, void *target, const void *source, s
 {
     shmem_internal_assert(len > 0);
 
-    shmem_transport_atomic_fetch((shmem_transport_ctx_t *)ctx, target, source, len, pe, datatype);
+    if (shmem_shr_transport_use_atomic(ctx, target, source, len, pe, datatype)) {
+        shmem_shr_transport_atomic_fetch(ctx, target, source, len, pe, datatype);
+    } else {
+        shmem_transport_atomic_fetch((shmem_transport_ctx_t *)ctx, target,
+                                     source, len, pe, datatype);
+    }
 }
 
 
@@ -230,7 +261,12 @@ shmem_internal_atomic_set(shmem_ctx_t ctx, void *target, const void *source, siz
 {
     shmem_internal_assert(len > 0);
 
-    shmem_transport_atomic_set((shmem_transport_ctx_t *)ctx, target, source, len, pe, datatype);
+    if (shmem_shr_transport_use_atomic(ctx, target, source, len, pe, datatype)) {
+        shmem_shr_transport_atomic_set(ctx, target, source, len, pe, datatype);
+    } else {
+        shmem_transport_atomic_set((shmem_transport_ctx_t *)ctx, target,
+                                   source, len, pe, datatype);
+    }
 }
 
 
@@ -242,8 +278,12 @@ shmem_internal_atomicv(shmem_ctx_t ctx, void *target, const void *source,
 {
     shmem_internal_assert(len > 0);
 
-    shmem_transport_atomicv((shmem_transport_ctx_t *)ctx, target, source, len,
-                            pe, op, datatype, completion);
+    if (shmem_shr_transport_use_atomic(ctx, target, source, len, pe, datatype)) {
+        shmem_shr_transport_atomicv(ctx, target, source, len, pe, op, datatype);
+    } else {
+        shmem_transport_atomicv((shmem_transport_ctx_t *)ctx, target, source, len,
+                                pe, op, datatype, completion);
+    }
 }
 
 
@@ -256,7 +296,13 @@ shmem_internal_fetch_atomic(shmem_ctx_t ctx, void *target, void *source, void *d
 {
     shmem_internal_assert(len > 0);
 
-    shmem_transport_fetch_atomic((shmem_transport_ctx_t *)ctx, target, source, dest, len, pe, op, datatype);
+    if (shmem_shr_transport_use_atomic(ctx, target, source, len, pe, datatype)) {
+        shmem_shr_transport_fetch_atomic(ctx, target, source, dest, len, pe,
+                                         op, datatype);
+    } else {
+        shmem_transport_fetch_atomic((shmem_transport_ctx_t *)ctx, target,
+                                     source, dest, len, pe, op, datatype);
+    }
 }
 
 
@@ -268,8 +314,13 @@ shmem_internal_fetch_atomic_nbi(shmem_ctx_t ctx, void *target, void *source,
 {
     shmem_internal_assert(len > 0);
 
-    shmem_transport_fetch_atomic_nbi((shmem_transport_ctx_t *)ctx, target,
-                                     source, dest, len, pe, op, datatype);
+    if (shmem_shr_transport_use_atomic(ctx, target, source, len, pe, datatype)) {
+        shmem_shr_transport_fetch_atomic(ctx, target, source, dest, len, pe,
+                                         op, datatype);
+    } else {
+        shmem_transport_fetch_atomic_nbi((shmem_transport_ctx_t *)ctx, target,
+                                         source, dest, len, pe, op, datatype);
+    }
 }
 
 
