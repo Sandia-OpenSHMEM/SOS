@@ -41,6 +41,7 @@ shmemx_team_t SHMEMX_TEAM_HOST = (shmemx_team_t) &shmem_internal_team_host;
 shmem_internal_team_t shmem_internal_team_leaders;
 shmemx_team_t SHMEMX_TEAM_LEADERS = (shmemx_team_t) &shmem_internal_team_leaders;
 
+shmem_internal_team_t **shmem_internal_team_pool;
 long *shmem_internal_psync_pool;
 long *shmem_internal_psync_barrier_pool;
 static uint64_t *psync_pool_avail;
@@ -77,6 +78,7 @@ int shmem_internal_teams_init(void)
     shmem_internal_team_world.size           = shmem_internal_num_pes;
     shmem_internal_team_world.my_pe          = shmem_internal_my_pe;
     shmem_internal_team_world.config_mask    = 0;
+    shmem_internal_team_world.contexts_len   = 0;
     memset(&shmem_internal_team_world.config, 0, sizeof(shmemx_team_config_t));
     SHMEMX_TEAM_WORLD = (shmemx_team_t) &shmem_internal_team_world;
 
@@ -84,18 +86,21 @@ int shmem_internal_teams_init(void)
     shmem_internal_team_shared.psync_idx     = SHMEMX_TEAM_SHARED_INDEX;
     shmem_internal_team_shared.my_pe         = shmem_internal_my_pe;
     shmem_internal_team_shared.config_mask   = 0;
+    shmem_internal_team_shared.contexts_len  = 0;
     memset(&shmem_internal_team_shared.config, 0, sizeof(shmemx_team_config_t));
     SHMEMX_TEAM_SHARED = (shmemx_team_t) &shmem_internal_team_shared;
 
     shmem_internal_team_host.psync_idx       = SHMEMX_TEAM_HOST_INDEX;
     shmem_internal_team_host.my_pe           = shmem_internal_my_pe;
     shmem_internal_team_host.config_mask     = 0;
+    shmem_internal_team_host.contexts_len    = 0;
     memset(&shmem_internal_team_host.config, 0, sizeof(shmemx_team_config_t));
     SHMEMX_TEAM_HOST = (shmemx_team_t) &shmem_internal_team_host;
 
     shmem_internal_team_leaders.psync_idx    = SHMEMX_TEAM_LEADERS_INDEX;
     shmem_internal_team_leaders.my_pe        = shmem_internal_my_pe;
     shmem_internal_team_leaders.config_mask  = 0;
+    shmem_internal_team_leaders.contexts_len = 0;
     memset(&shmem_internal_team_leaders.config, 0, sizeof(shmemx_team_config_t));
     SHMEMX_TEAM_LEADERS = (shmemx_team_t) &shmem_internal_team_leaders;
     /* If disabled, SHMEM_TEAM_SHARED only contains this (self) PE */
@@ -159,9 +164,11 @@ int shmem_internal_teams_init(void)
         SHMEMX_TEAM_LEADERS = SHMEMX_TEAM_INVALID;
     }
 
-    /* Allocate pSync pool, each with the maximum possible size requirement */
     const long max_teams = shmem_internal_params.TEAMS_MAX;
 
+    shmem_internal_team_pool = malloc(max_teams * sizeof(shmem_internal_team_t*));
+
+    /* Allocate pSync pool, each with the maximum possible size requirement */
     /* Create two pSyncs per team for back-to-back collectives.
      * Array organization:
      *
@@ -188,20 +195,33 @@ int shmem_internal_teams_init(void)
     psync_pool_avail = shmem_internal_shmalloc(2 * sizeof(uint64_t));
     psync_pool_avail_reduced = &psync_pool_avail[1];
 
-    /* Set all bits to 1 (except the 1st bit for SHMEM_TEAM_WORLD and
-                                 the 2nd bit for SHMEM_TEAM_SHARED)
-                                 the 3rd bit for SHMEMX_TEAM_HOST)
-                                 the 4th bit for SHMEMX_TEAM_LEADERS) */
+    /* Set all psync bits to 1 (except the 1st bit for SHMEM_TEAM_WORLD and
+                                the 2nd bit for SHMEM_TEAM_SHARED)
+                                the 3rd bit for SHMEMX_TEAM_HOST)
+                                the 4th bit for SHMEMX_TEAM_LEADERS) */
     *psync_pool_avail = ~((uint64_t)0) << NUM_PREDEFINED_TEAMS;
+
+    shmem_internal_team_pool[0] = &shmem_internal_team_world;
+    shmem_internal_team_pool[1] = &shmem_internal_team_shared;
+    shmem_internal_team_pool[2] = &shmem_internal_team_host;
+    shmem_internal_team_pool[3] = &shmem_internal_team_leaders;
+
+    for (size_t i = NUM_PREDEFINED_TEAMS; i < max_teams; i++) {
+        shmem_internal_team_pool[i] = NULL;
+    }
 
     return 0;
 }
 
 void shmem_internal_teams_fini(void)
 {
-    /* TODO: destroy all undestroyed teams */
+    /* Destroy all undestroyed teams */
+    for (size_t i = 0; i < shmem_internal_params.TEAMS_MAX; i++) {
+        if (shmem_internal_team_pool[i] != NULL)
+            shmem_internal_team_destroy(&shmem_internal_team_pool[i]);
+    }
 
-
+    free(shmem_internal_team_pool);
     shmem_internal_free(shmem_internal_psync_pool);
     shmem_internal_free(psync_pool_avail);
 
@@ -291,6 +311,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
         myteam->config      = *config;
         myteam->config_mask = config_mask;
     }
+    myteam->contexts_len = 0;
 
     if (shmem_internal_pe_in_active_set(shmem_internal_my_pe, PE_start, PE_stride,
                                         PE_size, &myteam->my_pe)) {
@@ -374,7 +395,9 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
 int shmem_internal_team_destroy(shmem_internal_team_t **team)
 {
 
-    if (*team == SHMEMX_TEAM_INVALID) {
+    if (*team == SHMEMX_TEAM_INVALID || *team == &shmem_internal_team_world ||
+        *team == &shmem_internal_team_shared || *team == &shmem_internal_team_host ||
+        *team == &shmem_internal_team_leaders) {
         return -1;
     } else if ((*psync_pool_avail >> (*team)->psync_idx) & (uint64_t)1) {
         RAISE_WARN_STR("Destroying a team without an active pSync");
@@ -388,15 +411,18 @@ int shmem_internal_team_destroy(shmem_internal_team_t **team)
         *psync_pool_avail ^= (uint64_t)1 << (*team)->psync_idx;
     }
 
-    /* Destroy all undestroyed contexts on this team */
+    /* Destroy all undestroyed shareable contexts on this team */
     for (size_t i = 0; i < (*team)->contexts_len; i++) {
         if ((*team)->contexts[i] != NULL) {
-            shmem_transport_ctx_destroy((*team)->contexts[i]);
+            if ((*team)->contexts[i]->options & SHMEM_CTX_PRIVATE)
+                RAISE_WARN_MSG("Shutting down with unfreed private context (%zu)\n", i);
+            shmem_transport_quiet((*team)->contexts[i]);
+            shmem_transport_ctx_destroy(shmem_internal_team_world.contexts[i]);
         }
-        free((*team)->contexts);
     }
-
+    free((*team)->contexts);
     free(*team);
+    shmem_internal_team_pool[(*team)->psync_idx] = NULL;
 
     return 0;
 }
