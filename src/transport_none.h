@@ -60,6 +60,7 @@ typedef int shm_internal_op_t;
 typedef int shmem_transport_ct_t;
 
 struct shmem_transport_ctx_t{ int dummy;
+                              long options;
                               struct shmem_internal_team_t *team;};
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;

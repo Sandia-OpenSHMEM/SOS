@@ -334,6 +334,8 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
         *psync_pool_avail ^= (uint64_t)1 << myteam->psync_idx;
 
         *new_team = myteam;
+
+        shmem_internal_team_pool[myteam->psync_idx] = *new_team;
     }
 
     shmem_internal_barrier(parent_team->start, parent_team->stride, parent_team->size,
