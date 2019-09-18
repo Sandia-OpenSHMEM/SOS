@@ -13,7 +13,7 @@
 set -e
 
 if [ -z "$SOS_VERSION" ] ; then
-    SOS_VERSION="v1.4.3"
+    SOS_VERSION="v1.4.4"
 fi
 if [ -z "$OFI_VERSION" ] ; then
     OFI_VERSION="v1.7.0"

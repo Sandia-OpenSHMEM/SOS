@@ -2,6 +2,34 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.4.4
+------
+- Experimental support for RXM/Verbs provider stack with libfabric 1.8.
+  Requires --enable-hard-polling and --enable-ofi-mr=basic build flags.  The
+  FI_MR_CACHE_MAX_COUNT=0 environment variable should be set when threading is
+  used.  Depending on the libfabric build, SHMEM_OFI_PROVIDER="verbs;ofi_rxm"
+  may also need to be set to select the provider.
+- Updated unit tests and performance test suite to properly handle failed
+  context creation.
+- Updated OFI transport to support providers that do not support the
+  FI_SHARED_CONTEXT TX attribute (STX) on endpoints.
+- Updated OFI transport to bind a CQ to the target EP (required by some
+  providers) and poll the target CQ when driving manual progress.  As a result,
+  manual progress no longer requries a target-side counter and can be used in
+  conjunction with hard polling.
+- Added support for decimal values in the SHMEM_SYMMETRIC_SIZE environment
+  variable (e.g., 1.5G).
+- Updated shmem_init_thread routine to return an error when library
+  initialization fails (e.g., due to invalid SHMEM_SYMMETRIC_SIZE value).
+- Fixed argument/context handling in Mandelbrot example program.
+- Improved handling of context creation failure.
+- Added missing pshmem_global_exit symbol to profiling interfaces.
+- Updated shmem_ptr to return a pointer for the local process, even when
+  inter-PE shared memory is not enabled.
+- Updated fence, quiet, and context destroy to perform no operation for
+  SHMEMX_CTX_INVALID.
+- Additional bugfixes and improvement (see git log for details).
+
 v1.4.3
 ------
 - Added NBI atomics support to performance suite benchmarks.
