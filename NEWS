@@ -6,9 +6,13 @@ v1.4.4
 ------
 - Experimental support for RXM/Verbs provider stack with libfabric 1.8.
   Requires --enable-hard-polling and --enable-ofi-mr=basic build flags.  The
-  FI_MR_CACHE_MAX_COUNT=0 environment variable should be set when threading is
-  used.  Depending on the libfabric build, SHMEM_OFI_PROVIDER="verbs;ofi_rxm"
-  may also need to be set to select the provider.
+  FI_MR_CACHE_MAX_COUNT environment variable should be set to 0 when threading
+  is used.  Depending on the libfabric build, setting
+  SHMEM_OFI_PROVIDER="verbs;ofi_rxm" may be necessary to select the provider.
+- Rewrite of node-level detection/management to enable improvements in on-node
+  communication and resource management.
+- Added SHMEM_OFI_STX_AUTO environment variable to enable automatic
+  partitioning of STX resources on node.  See README for details.
 - Updated unit tests and performance test suite to properly handle failed
   context creation.
 - Updated OFI transport to support providers that do not support the
