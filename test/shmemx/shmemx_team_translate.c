@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
 {
     int                  rank, npes;
     int                  t_pe;
-    int 		 t_global;
+    int                  t_global;
     shmemx_team_t        new_team;
     shmemx_team_config_t *config;
 
@@ -22,7 +22,9 @@ int main(int argc, char *argv[])
     npes   = shmem_n_pes();
 
     if (npes < 2) {
-        shmem_global_exit(1);
+        fprintf(stderr, "ERR - Requires > 1 PEs\n");
+        shmem_finalize();
+        return 0;
     }
 
     shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 2, npes / 2, config, 0,

@@ -21,7 +21,9 @@ int main(int argc, char *argv[])
     npes   = shmem_n_pes();
 
     if (npes < 2) {
-        shmem_global_exit(1);
+        fprintf(stderr, "ERR - Requires at least 2 PEs\n");
+        shmem_finalize();
+        return 0;
     }
 
     ret = shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 2, npes / 2, config, 0,

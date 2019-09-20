@@ -74,8 +74,9 @@ int main(int argc, char** argv)
   long cmask = SHMEMX_TEAM_NUM_CONTEXTS;
 
   if (npes < 4) {
-      fprintf(stderr, "Not enough PEs, please run at least 4\n");
-      shmem_global_exit(0);
+      fprintf(stderr, "ERR - Requires at least 4 PEs\n");
+      shmem_finalize();
+      return 0;
   }
 
   // Create team with PEs numbered 0, 2, 4, ...
