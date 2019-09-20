@@ -197,6 +197,8 @@ shmem_internal_collectives_init(void)
             shmem_internal_reduce_type = AUTO;
         } else if (0 == strcmp(type, "linear")) {
             shmem_internal_reduce_type = LINEAR;
+        } else if (0 == strcmp(type, "ring")) {
+            shmem_internal_reduce_type = RING;
         } else if (0 == strcmp(type, "tree")) {
             shmem_internal_reduce_type = TREE;
         } else if (0 == strcmp(type, "recdbl")) {
@@ -623,6 +625,109 @@ shmem_internal_op_to_all_linear(void *target, const void *source, int count, int
     /* broadcast out */
     shmem_internal_bcast(target, target, count * type_size, 0,
                          PE_start, PE_stride, PE_size, pSync + 2, 0);
+}
+
+
+#define chunk_count(id_, count_, npes_) \
+    (count_)/(npes_) + ((id_) < (count_) % (_npes))
+
+void
+shmem_internal_op_to_all_ring(void *target, const void *source, int count, int type_size,
+                              int PE_start, int PE_stride, int PE_size,
+                              void *pWrk, long *pSync,
+                              shm_internal_op_t op, shm_internal_datatype_t datatype)
+{
+    int group_rank = (shmem_internal_my_pe - PE_start) / PE_stride;
+    long zero = 0, one = 1;
+
+    int peer = PE_start + ((group_rank + 1) % PE_size) * PE_stride;
+
+    /* One slot for reduce-scatter and another for the allgather */
+    shmem_internal_assert(SHMEM_REDUCE_SYNC_SIZE >= 2);
+
+    if (count == 0) return;
+
+    if (PE_size == 1) {
+        memcpy(target, source, count*type_size);
+        return;
+    }
+
+    /* Perform reduce-scatter:
+     *
+     * The source buffer is divided into PE_size chunks.  PEs send data to the
+     * right around the ring, starting with the chunk index equal to the PE id
+     * and decreasing.  For example, with 4 PEs, PE 0 sends chunks 0, 3, 2 and
+     * PE 1 sends chunks 1, 0, 3.  At the end, each PE has the reduced chunk
+     * corresponding to its PE id + 1.
+     */
+    for (int i = 0; i < PE_size - 1; i++) {
+        int chunk_in  = (group_rank - i - 1 + PE_size) % PE_size;
+        int chunk_out = (group_rank - i + PE_size) % PE_size;
+
+        /* Evenly distribute extra elements across first count % PE_size chunks */
+        size_t chunk_in_extra  = chunk_in  < count % PE_size;
+        size_t chunk_out_extra = chunk_out < count % PE_size;
+        size_t chunk_in_count  = count/PE_size + chunk_in_extra;
+        size_t chunk_out_count = count/PE_size + chunk_out_extra;
+
+        /* Account for extra elements in the displacement */
+        size_t chunk_out_disp  = chunk_out_extra ?
+                                 chunk_out * chunk_out_count * type_size :
+                                 (chunk_out * chunk_out_count + count % PE_size) * type_size;
+        size_t chunk_in_disp   = chunk_in_extra ?
+                                 chunk_in * chunk_in_count * type_size :
+                                 (chunk_in * chunk_in_count + count % PE_size) * type_size;
+
+        shmem_internal_put_nbi(SHMEM_CTX_DEFAULT,
+                               ((uint8_t *) target) + chunk_out_disp,
+                               i == 0 ?
+                                   ((uint8_t *) source) + chunk_out_disp :
+                                   ((uint8_t *) target) + chunk_out_disp,
+                               chunk_out_count * type_size, peer);
+        shmem_internal_fence(SHMEM_CTX_DEFAULT);
+        shmem_internal_atomic(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one),
+                              peer, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
+
+        /* Wait for chunk */
+        SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_GE, i+1);
+
+        shmem_internal_reduce_local(op, datatype, chunk_in_count,
+                                    ((uint8_t *) source) + chunk_in_disp,
+                                    ((uint8_t *) target) + chunk_in_disp);
+    }
+
+    /* Reset reduce-scatter pSync */
+    shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &zero, sizeof(zero), shmem_internal_my_pe);
+    SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, 0);
+
+    /* Perform all-gather:
+     *
+     * Initially, each PE has the reduced chunk for PE id + 1.  Forward chunks
+     * around the ring until all PEs have all chunks.
+     */
+    for (int i = 0; i < PE_size - 1; i++) {
+        int chunk_out = (group_rank + 1 - i + PE_size) % PE_size;
+        size_t chunk_out_extra = chunk_out < count % PE_size;
+        size_t chunk_out_count = count/PE_size + chunk_out_extra;
+        size_t chunk_out_disp  = chunk_out_extra ?
+                                 chunk_out * chunk_out_count * type_size :
+                                 (chunk_out * chunk_out_count + count % PE_size) * type_size;
+
+        shmem_internal_put_nbi(SHMEM_CTX_DEFAULT,
+                               ((uint8_t *) target) + chunk_out_disp,
+                               ((uint8_t *) target) + chunk_out_disp,
+                               chunk_out_count * type_size, peer);
+        shmem_internal_fence(SHMEM_CTX_DEFAULT);
+        shmem_internal_atomic(SHMEM_CTX_DEFAULT, pSync+1, &one, sizeof(one),
+                              peer, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
+
+        /* Wait for chunk */
+        SHMEM_WAIT_UNTIL(pSync+1, SHMEM_CMP_GE, i+1);
+    }
+
+    /* reset pSync */
+    shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync+1, &zero, sizeof(zero), shmem_internal_my_pe);
+    SHMEM_WAIT_UNTIL(pSync+1, SHMEM_CMP_EQ, 0);
 }
 
 
