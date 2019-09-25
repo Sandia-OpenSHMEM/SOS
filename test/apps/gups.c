@@ -273,8 +273,6 @@ UpdateTable(uint64_t *Table,
   uint64_t remote_val;
 #endif
 
-  shmem_barrier_all();
-
   /* setup: should not really be part of this timed routine */
   ran = starts(4*GlobalStartMyProc);
 
@@ -300,9 +298,6 @@ UpdateTable(uint64_t *Table,
 #endif
       if (use_lock) shmem_clear_lock(&HPCC_PELock[remote_pe]);
   }
-
-  shmem_barrier_all();
-
 }
 
 int
@@ -445,6 +440,7 @@ SHMEMRandomAccess(void)
 
   RealTime = -RTSEC();
 
+  shmem_barrier_all();
   UpdateTable(HPCC_Table,
               TableSize,
               MinLocalTableSize,
@@ -481,6 +477,7 @@ SHMEMRandomAccess(void)
 
   RealTime = -RTSEC();
 
+  shmem_barrier_all();
   UpdateTable(HPCC_Table,
               TableSize,
               MinLocalTableSize,
@@ -489,6 +486,7 @@ SHMEMRandomAccess(void)
               ProcNumUpdates,
               1);
 
+  shmem_barrier_all();
   NumErrors = 0;
   for (i_u=0; i_u<LocalTableSize; i_u++){
     if (HPCC_Table[i_u] != i_u + GlobalStartMyProc)
