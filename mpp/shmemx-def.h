@@ -34,13 +34,9 @@ typedef struct {
 #if SHMEM_HAVE_ATTRIBUTE_VISIBILITY == 1
     __attribute__((visibility("default"))) extern shmemx_team_t SHMEMX_TEAM_WORLD;
     __attribute__((visibility("default"))) extern shmemx_team_t SHMEMX_TEAM_SHARED;
-    __attribute__((visibility("default"))) extern shmemx_team_t SHMEMX_TEAM_HOST;
-    __attribute__((visibility("default"))) extern shmemx_team_t SHMEMX_TEAM_LEADERS;
 #else
     extern shmemx_team_t SHMEMX_TEAM_WORLD;
     extern shmemx_team_t SHMEMX_TEAM_SHARED;
-    extern shmemx_team_t SHMEMX_TEAM_HOST;
-    extern shmemx_team_t SHMEMX_TEAM_LEADERS;
 #endif
 
 #define SHMEMX_TEAM_INVALID NULL

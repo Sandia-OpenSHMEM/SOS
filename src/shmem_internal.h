@@ -491,28 +491,45 @@ extern uint64_t (*shmem_internal_gettid_fn)(void);
 extern void shmem_internal_register_gettid(uint64_t (*gettid_fn)(void));
 
 static inline
-void shmem_internal_print_bits(void const * const ptr, size_t const size)
+void shmem_internal_bit_set(void * const ptr, size_t const size, size_t const index)
 {
-    unsigned char *bytes = (unsigned char*) ptr;
-    unsigned char bit_val;
 
-    /* TODO: does this work with big-endian? */
-    for (int i = size-1; i >= 0; i--) {
-        for (int j = CHAR_BIT-1; j >= 0; j--) {
-            bit_val = (bytes[i] >> j) & 1;
-            printf("%u", bit_val);
-        }
+    unsigned char *bytes = (unsigned char*) ptr;
+
+    if (size < 0 || (index > size * CHAR_BIT)){
+        RAISE_WARN_STR("Setting a bit out of range");
+        return;
     }
-    printf("\n");
+
+    size_t which_byte = index / size;
+    bytes[which_byte] |= (1UL << (index % CHAR_BIT));
+
+    return;
 }
 
 static inline
-size_t shmem_internal_1st_nonzero_bit(void const * const ptr, size_t const size)
+void shmem_internal_bit_clear(void * const ptr, size_t const size, size_t const index)
+{
+
+    unsigned char *bytes = (unsigned char*) ptr;
+
+    if (size < 0 || (index >= size * CHAR_BIT)){
+        RAISE_WARN_STR("Clearing a bit out of range");
+        return;
+    }
+
+    size_t which_byte = index / size;
+    bytes[which_byte] &= ~(1UL << (index % CHAR_BIT));
+
+    return;
+}
+
+static inline
+size_t shmem_internal_bit_1st_nonzero(void const * const ptr, size_t const size)
 {
     unsigned char *bytes = (unsigned char*) ptr;
     unsigned char bit_val;
 
-    /* TODO: does this work with big-endian? */
     for(size_t i = 0; i <= size-1; i++) {
         for (size_t j = 0; j < CHAR_BIT; j++) {
             bit_val = (bytes[i] >> j) & 1;
