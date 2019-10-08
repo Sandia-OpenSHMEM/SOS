@@ -648,15 +648,32 @@ shmem_internal_op_to_all_ring(void *target, const void *source, int count, int t
     long zero = 0, one = 1;
 
     int peer = PE_start + ((group_rank + 1) % PE_size) * stride;
+    int free_source = 0;
 
     /* One slot for reduce-scatter and another for the allgather */
-    shmem_internal_assert(SHMEM_REDUCE_SYNC_SIZE >= 2);
+    shmem_internal_assert(SHMEM_REDUCE_SYNC_SIZE >= 2 + SHMEM_BARRIER_SYNC_SIZE);
 
     if (count == 0) return;
 
     if (PE_size == 1) {
-        memcpy(target, source, count*type_size);
+        if (target != source)
+            memcpy(target, source, count*type_size);
         return;
+    }
+
+    /* In-place reduction: copy source data to a temporary buffer so we can use
+     * the symmetric buffer to accumulate reduced data. */
+    if (target == source) {
+        void *tmp = malloc(count * type_size);
+
+        if (NULL == tmp)
+            RAISE_ERROR_MSG("Unable to allocate %db temporary buffer\n", count*type_size);
+
+        memcpy(tmp, target, count*type_size);
+        free_source = 1;
+        source = tmp;
+
+        shmem_internal_sync(PE_start, logPE_stride, PE_size, pSync + 2);
     }
 
     /* Perform reduce-scatter:
@@ -735,6 +752,9 @@ shmem_internal_op_to_all_ring(void *target, const void *source, int count, int t
     /* reset pSync */
     shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync+1, &zero, sizeof(zero), shmem_internal_my_pe);
     SHMEM_WAIT_UNTIL(pSync+1, SHMEM_CMP_EQ, 0);
+
+    if (free_source)
+        free((void *)source);
 }
 
 
