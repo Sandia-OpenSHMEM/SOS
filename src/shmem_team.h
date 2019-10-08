@@ -19,8 +19,8 @@
 
 struct shmem_internal_team_t {
     int                            my_pe;
-    size_t                         psync_idx;
     int                            start, stride, size;
+    size_t                         psync_idx;
     shmemx_team_config_t           config;
     long                           config_mask;
     size_t                         contexts_len;

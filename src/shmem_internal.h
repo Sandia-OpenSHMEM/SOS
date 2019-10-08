@@ -497,7 +497,7 @@ void shmem_internal_bit_set(void * const ptr, size_t const size, size_t const in
     unsigned char *bytes = (unsigned char*) ptr;
 
     if (size < 0 || (index > size * CHAR_BIT)){
-        RAISE_WARN_STR("Setting a bit out of range");
+        RAISE_ERROR_STR("Setting a bit out of range");
         return;
     }
 
@@ -514,7 +514,7 @@ void shmem_internal_bit_clear(void * const ptr, size_t const size, size_t const 
     unsigned char *bytes = (unsigned char*) ptr;
 
     if (size < 0 || (index >= size * CHAR_BIT)){
-        RAISE_WARN_STR("Clearing a bit out of range");
+        RAISE_ERROR_STR("Clearing a bit out of range");
         return;
     }
 
