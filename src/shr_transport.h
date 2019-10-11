@@ -255,44 +255,34 @@ shmem_shr_transport_cswap(shmem_ctx_t ctx, void *target, void *source,
     switch (datatype) {
         case SHM_INTERNAL_INT:
             {
-                bool done = false;
-
-                while (!done) {
-                    int v = __atomic_load_n((int *)remote_ptr, __ATOMIC_SEQ_CST);
-                    if (v == *(int*)operand) {
-                        done = __atomic_compare_exchange((int *)remote_ptr,
-                                                         (int *)operand,
+                int expected = *(int *)operand;
+                bool swapped = __atomic_compare_exchange((int *)remote_ptr,
+                                                         &expected,
                                                          (int *)source,
                                                          false,
                                                          __ATOMIC_SEQ_CST,
                                                          __ATOMIC_SEQ_CST);
-                    } else {
-                        /* Compare failed */
-                        done = true;
-                    }
-                    *(int *)dest = v;
-                }
+                if (swapped)
+                    *(int *)dest = *(int *)operand;
+                else
+                    *(int *)dest = expected;
+
             }
             break;
         case SHM_INTERNAL_LONG:
             {
-                bool done = false;
-
-                while (!done) {
-                    long v = __atomic_load_n((long *)remote_ptr, __ATOMIC_SEQ_CST);
-                    if (v == *(long*)operand) {
-                        done = __atomic_compare_exchange((long *)remote_ptr,
-                                                         (long *)operand,
+                long expected = *(long *)operand;
+                bool swapped = __atomic_compare_exchange((long *)remote_ptr,
+                                                         &expected,
                                                          (long *)source,
                                                          false,
                                                          __ATOMIC_SEQ_CST,
                                                          __ATOMIC_SEQ_CST);
-                    } else {
-                        /* Compare failed */
-                        done = true;
-                    }
-                    *(long *)dest = v;
-                }
+                if (swapped)
+                    *(long *)dest = *(long *)operand;
+                else
+                    *(long *)dest = expected;
+
             }
             break;
         default:
@@ -313,6 +303,7 @@ shmem_shr_transport_mswap(shmem_ctx_t ctx, void *target, void *source,
 #if USE_SHR_ATOMICS
     int noderank = shmem_internal_get_shr_rank(pe);
     char *remote_ptr;
+    bool done = false;
 
     if (noderank == -1)
         RAISE_ERROR_MSG("No shared memory path to peer %d\n", pe);
@@ -320,15 +311,11 @@ shmem_shr_transport_mswap(shmem_ctx_t ctx, void *target, void *source,
     XPMEM_GET_REMOTE_ACCESS(target, noderank, remote_ptr);
 
     switch (datatype) {
-        bool done = false;
-
         case SHM_INTERNAL_INT:
             while (!done) {
                 int v = __atomic_load_n((int *)remote_ptr, __ATOMIC_SEQ_CST);
 
                 int new = ((unsigned int) v & !*(unsigned int *)mask) | (*(unsigned int *)source & *(unsigned int *)mask);
-
-                printf("%d: Swap (%d, %p) %x -> %x\n", shmem_internal_my_pe, pe, target, (unsigned int)v, (unsigned int)new);
 
                 done = __atomic_compare_exchange((int *)remote_ptr,
                                                  &v,
@@ -396,7 +383,38 @@ shmem_shr_transport_atomic_fetch(shmem_ctx_t ctx, void *target,
                                  int pe, shm_internal_datatype_t datatype)
 {
 #if USE_SHR_ATOMICS
-    RAISE_ERROR_STR("No path to peer");
+    int noderank = shmem_internal_get_shr_rank(pe);
+    char *remote_ptr;
+
+    if (noderank == -1)
+        RAISE_ERROR_MSG("No shared memory path to peer %d\n", pe);
+
+    XPMEM_GET_REMOTE_ACCESS(source, noderank, remote_ptr);
+
+    switch (datatype) {
+        case SHM_INTERNAL_INT:
+            {
+                __atomic_load((int *)remote_ptr, (int *)target, __ATOMIC_SEQ_CST);
+            }
+            break;
+        case SHM_INTERNAL_LONG:
+            {
+                __atomic_load((long *)remote_ptr, (long *)target, __ATOMIC_SEQ_CST); /* FIXME: ACQ_REL */
+            }
+            break;
+        case SHM_INTERNAL_FLOAT:
+            {
+                __atomic_load((float *)remote_ptr, (float *)target, __ATOMIC_SEQ_CST); /* FIXME: ACQ_REL */
+            }
+            break;
+        case SHM_INTERNAL_DOUBLE:
+            {
+                __atomic_load((double *)remote_ptr, (double *)target, __ATOMIC_SEQ_CST); /* FIXME: ACQ_REL */
+            }
+            break;
+        default:
+            RAISE_ERROR_MSG("Unsupported datatype dtype=%d\n", datatype);
+    }
 #else
     RAISE_ERROR_STR("No path to peer");
 #endif
@@ -410,7 +428,38 @@ shmem_shr_transport_atomic_set(shmem_ctx_t ctx, void *target,
                                int pe, shm_internal_datatype_t datatype)
 {
 #if USE_SHR_ATOMICS
-    RAISE_ERROR_STR("No path to peer");
+    int noderank = shmem_internal_get_shr_rank(pe);
+    char *remote_ptr;
+
+    if (noderank == -1)
+        RAISE_ERROR_MSG("No shared memory path to peer %d\n", pe);
+
+    XPMEM_GET_REMOTE_ACCESS(target, noderank, remote_ptr);
+
+    switch (datatype) {
+        case SHM_INTERNAL_INT:
+            {
+                __atomic_store((int *)remote_ptr, (int *)source, __ATOMIC_SEQ_CST);
+            }
+            break;
+        case SHM_INTERNAL_LONG:
+            {
+                __atomic_store((long *)remote_ptr, (long *)source, __ATOMIC_SEQ_CST); /* FIXME: ACQ_REL */
+            }
+            break;
+        case SHM_INTERNAL_FLOAT:
+            {
+                __atomic_store((float *)remote_ptr, (float *)source, __ATOMIC_SEQ_CST); /* FIXME: ACQ_REL */
+            }
+            break;
+        case SHM_INTERNAL_DOUBLE:
+            {
+                __atomic_store((double *)remote_ptr, (double *)source, __ATOMIC_SEQ_CST); /* FIXME: ACQ_REL */
+            }
+            break;
+        default:
+            RAISE_ERROR_MSG("Unsupported datatype dtype=%d\n", datatype);
+    }
 #else
     RAISE_ERROR_STR("No path to peer");
 #endif
