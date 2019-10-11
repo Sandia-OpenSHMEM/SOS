@@ -125,7 +125,7 @@ shmem_internal_shutdown(void)
 
     shmem_internal_randr_fini();
 
-    shmem_internal_teams_fini();
+    shmem_internal_team_fini();
 
     shmem_internal_symmetric_fini();
     shmem_runtime_fini();
@@ -438,7 +438,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         goto cleanup;
     }
 
-    ret = shmem_internal_teams_init();
+    ret = shmem_internal_team_init();
     if (ret != 0) {
         RETURN_ERROR_MSG("Initialization of teams failed (%d)\n", ret);
         goto cleanup;
@@ -478,7 +478,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     }
 
     if (teams_initialized) {
-        shmem_internal_teams_fini();
+        shmem_internal_team_fini();
     }
 
     if (NULL != shmem_internal_data_base) {

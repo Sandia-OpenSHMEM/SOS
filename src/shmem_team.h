@@ -16,11 +16,14 @@
 #include "transport.h"
 #include "uthash.h"
 
+#define N_PSYNCS_PER_TEAM   2
+#define PSYNC_CHUNK_SIZE    N_PSYNCS_PER_TEAM * SHMEM_SYNC_SIZE
 
 struct shmem_internal_team_t {
     int                            my_pe;
     int                            start, stride, size;
     size_t                         psync_idx;
+    int                            psync_avail[N_PSYNCS_PER_TEAM];
     shmemx_team_config_t           config;
     long                           config_mask;
     size_t                         contexts_len;
@@ -36,9 +39,9 @@ extern long *shmem_internal_psync_barrier_pool;
 
 /* Team Management Routines */
 
-int shmem_internal_teams_init(void);
+int shmem_internal_team_init(void);
 
-void shmem_internal_teams_fini(void);
+void shmem_internal_team_fini(void);
 
 int shmem_internal_team_my_pe(shmem_internal_team_t *team);
 
@@ -62,11 +65,14 @@ int shmem_internal_team_create_ctx(shmem_internal_team_t *team, long options, sh
 
 int shmem_internal_ctx_get_team(shmem_ctx_t ctx, shmem_internal_team_t **team);
 
+size_t shmem_internal_team_choose_psync(shmem_internal_team_t *team);
+
+void shmem_internal_team_release_psync(shmem_internal_team_t *team, size_t psync);
+
 static inline
 int shmem_internal_team_pe(shmem_internal_team_t *team, int pe)
 {
     return team->start + team->stride * pe;
 }
-
 
 #endif
