@@ -53,7 +53,11 @@ shmem_internal_clear_lock(long *lockp)
     if (curr != shmem_internal_my_pe + 1) {
         /* wait for next part of the data block to be non-zero */
         for (;;) {
-            lock_t lock_cur = *lock;
+            lock_t lock_cur;
+
+            shmem_internal_atomic_fetch(SHMEM_CTX_DEFAULT, &lock_cur, lockp,
+                                        sizeof(long), shmem_internal_my_pe,
+                                        SHM_INTERNAL_LONG);
 
             if (NEXT(lock_cur.data) != 0)
                 break;
@@ -87,7 +91,11 @@ shmem_internal_set_lock(long *lockp)
         shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
         /* now wait for the signal part of data to be non-zero */
         for (;;) {
-            lock_t lock_cur = *lock;
+            lock_t lock_cur;
+
+            shmem_internal_atomic_fetch(SHMEM_CTX_DEFAULT, &lock_cur, lockp,
+                                        sizeof(long), shmem_internal_my_pe,
+                                        SHM_INTERNAL_LONG);
 
             if (SIGNAL(lock_cur.data) != 0)
                 break;
