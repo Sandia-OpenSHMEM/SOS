@@ -222,8 +222,6 @@ before_install:
         ./configure --prefix=$TRAVIS_INSTALL/xpmem
         make $TRAVIS_PAR_MAKE
         make install
-        ## Hack to get SOS to see the XPMEM library
-        ln -s $TRAVIS_INSTALL/xpmem/lib $TRAVIS_INSTALL/xpmem/lib64
         ## Install the module and allow Travis to use it
         sudo insmod $TRAVIS_INSTALL/xpmem/lib/modules/`uname -r`/xpmem.ko
         sudo chown `whoami` /dev/xpmem

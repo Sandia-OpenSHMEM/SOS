@@ -154,7 +154,7 @@ options.
     SHMEM_REDUCE_ALGORITHM (default: auto)
         Algorithm to use for reductions.  Default is to auto-select (which
         may result in different algorithms being used for different 
-        PE sets).  Options are: auto, linear, tree, recdbl.
+        PE sets).  Options are: auto, linear, tree, recdbl, ring.
 
     SHMEM_COLLECT_ALGORITHM (default: auto)
         Algorithm to use for allgathers.  Default is to auto-select (which
