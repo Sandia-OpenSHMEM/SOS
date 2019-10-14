@@ -29,6 +29,7 @@ check_PROGRAMS = \
 	shmemx_team_alltoall \
 	shmemx_team_alltoalls \
 	shmemx_team_shared \
+	shmemx_team_b2b_collectives \
 	c11_test_shmemx_wait_until \
 	c11_test_shmemx_test
 
