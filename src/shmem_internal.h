@@ -493,13 +493,9 @@ extern void shmem_internal_register_gettid(uint64_t (*gettid_fn)(void));
 static inline
 void shmem_internal_bit_set(void * const ptr, size_t const size, size_t const index)
 {
+    shmem_internal_assert(size > 0 && (index < size * CHAR_BIT));
 
     unsigned char *bytes = (unsigned char*) ptr;
-
-    if (size < 0 || (index > size * CHAR_BIT)){
-        RAISE_ERROR_STR("Setting a bit out of range");
-        return;
-    }
 
     size_t which_byte = index / size;
     bytes[which_byte] |= (1UL << (index % CHAR_BIT));
@@ -510,13 +506,9 @@ void shmem_internal_bit_set(void * const ptr, size_t const size, size_t const in
 static inline
 void shmem_internal_bit_clear(void * const ptr, size_t const size, size_t const index)
 {
+    shmem_internal_assert(size > 0 && (index < size * CHAR_BIT));
 
     unsigned char *bytes = (unsigned char*) ptr;
-
-    if (size < 0 || (index >= size * CHAR_BIT)){
-        RAISE_ERROR_STR("Clearing a bit out of range");
-        return;
-    }
 
     size_t which_byte = index / size;
     bytes[which_byte] &= ~(1UL << (index % CHAR_BIT));

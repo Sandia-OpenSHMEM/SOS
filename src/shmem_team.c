@@ -393,30 +393,44 @@ int shmem_internal_ctx_get_team(shmem_ctx_t ctx, shmem_internal_team_t **team)
     return 0;
 }
 
-size_t shmem_internal_team_choose_psync(shmem_internal_team_t *team)
+size_t shmem_internal_team_choose_psync(shmem_internal_team_t *team, shmem_internal_team_op_t op)
 {
-    for (int i = 0; i < N_PSYNCS_PER_TEAM; i++) {
-        if (team->psync_avail[i]) {
-            team->psync_avail[i] = 0;
-            return (team->psync_idx + i) * PSYNC_CHUNK_SIZE;
-        }
+    switch (op) {
+        case SYNC:
+            return team->psync_idx * PSYNC_CHUNK_SIZE;
+
+        default:
+            for (int i = 0; i < N_PSYNCS_PER_TEAM; i++) {
+                if (team->psync_avail[i]) {
+                    team->psync_avail[i] = 0;
+                    return (team->psync_idx + i) * PSYNC_CHUNK_SIZE;
+                }
+            }
+
+            size_t psync = team->psync_idx * PSYNC_CHUNK_SIZE;
+            shmem_internal_sync(team->start, team->stride, team->size,
+                                &shmem_internal_psync_barrier_pool[psync]);
+
+            for (int i = 0; i < N_PSYNCS_PER_TEAM; i++) {
+                team->psync_avail[i] = 1;
+            }
+            team->psync_avail[0] = 0;
+
+            return psync;
     }
-
-    size_t psync = team->psync_idx * PSYNC_CHUNK_SIZE;
-    shmem_internal_sync(team->start, team->stride, team->size,
-                        &shmem_internal_psync_barrier_pool[psync]);
-
-    for (int i = 0; i < N_PSYNCS_PER_TEAM; i++) {
-        team->psync_avail[i] = 1;
-    }
-    team->psync_avail[0] = 0;
-
-    return psync;
 }
 
-void shmem_internal_team_release_psync(shmem_internal_team_t *team, size_t psync)
+void shmem_internal_team_release_psyncs(shmem_internal_team_t *team, size_t psync, shmem_internal_team_op_t op)
 {
-    size_t slot = (psync == 0 ? 0 : (team->psync_idx * PSYNC_CHUNK_SIZE) / psync);
-    team->psync_avail[slot] = 1;
+    switch (op) {
+        case SYNC:
+            for (size_t i = 0; i < N_PSYNCS_PER_TEAM; i++) {
+                team->psync_avail[i] = 1;
+            }
+            break;
+        default:
+            break;
+    }
+
     return;
 }

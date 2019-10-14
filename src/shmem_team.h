@@ -37,6 +37,15 @@ extern shmem_internal_team_t shmem_internal_team_shared;
 extern long *shmem_internal_psync_pool;
 extern long *shmem_internal_psync_barrier_pool;
 
+enum shmem_internal_team_op_t {
+    SYNC = 0,
+    BCAST,
+    REDUCE,
+    COLLECT,
+    ALLTOALL
+};
+typedef enum shmem_internal_team_op_t shmem_internal_team_op_t;
+
 /* Team Management Routines */
 
 int shmem_internal_team_init(void);
@@ -65,9 +74,9 @@ int shmem_internal_team_create_ctx(shmem_internal_team_t *team, long options, sh
 
 int shmem_internal_ctx_get_team(shmem_ctx_t ctx, shmem_internal_team_t **team);
 
-size_t shmem_internal_team_choose_psync(shmem_internal_team_t *team);
+size_t shmem_internal_team_choose_psync(shmem_internal_team_t *team, shmem_internal_team_op_t op);
 
-void shmem_internal_team_release_psync(shmem_internal_team_t *team, size_t psync);
+void shmem_internal_team_release_psyncs(shmem_internal_team_t *team, size_t psync, shmem_internal_team_op_t op);
 
 static inline
 int shmem_internal_team_pe(shmem_internal_team_t *team, int pe)
