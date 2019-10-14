@@ -89,9 +89,13 @@ shmem_shr_transport_use_read(shmem_ctx_t ctx, void *target, const void *source,
 }
 
 
+/* Each OpenSHMEM AMO has only one symmetric pointer.  Check whether shared
+ * transport AMOs are in use with respect to the given symmetric target
+ * pointer and datatype. For a given datatype, all atomic operations must
+ * use the same transport; therefore, op is not needed in this check. */
 static inline int
-shmem_shr_transport_use_atomic(shmem_ctx_t ctx, void *target, const void *source,
-                               size_t len, int pe, shm_internal_datatype_t datatype)
+shmem_shr_transport_use_atomic(shmem_ctx_t ctx, void *target, size_t len,
+                               int pe, shm_internal_datatype_t datatype)
 {
 #if USE_SHR_ATOMICS
     return -1 != shmem_internal_get_shr_rank(pe);
