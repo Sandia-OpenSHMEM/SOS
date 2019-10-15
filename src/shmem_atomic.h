@@ -158,31 +158,31 @@ shmem_internal_membar_store(void) {
 
 #include <stdint.h>
 
-typedef uint64_t shmem_internal_atomic_uint64_t;
+typedef uint64_t shmem_internal_cntr_t;
 
 static inline
 void
-shmem_internal_atomic_write(shmem_internal_atomic_uint64_t *ptr, uint64_t value) {
+shmem_internal_cntr_write(shmem_internal_cntr_t *ptr, uint64_t value) {
     __atomic_store_n(ptr, value, __ATOMIC_RELEASE);
     return;
 }
 
 static inline
 uint64_t
-shmem_internal_atomic_read(shmem_internal_atomic_uint64_t *val) {
+shmem_internal_cntr_read(shmem_internal_cntr_t *val) {
     return __atomic_load_n(val, __ATOMIC_ACQUIRE);
 }
 
 static inline
 void
-shmem_internal_atomic_inc(shmem_internal_atomic_uint64_t *val) {
+shmem_internal_cntr_inc(shmem_internal_cntr_t *val) {
     __atomic_fetch_add(val, 1, __ATOMIC_RELEASE);
     return;
 }
 
 static inline
 void
-shmem_internal_atomic_dec(shmem_internal_atomic_uint64_t *val) {
+shmem_internal_cntr_dec(shmem_internal_cntr_t *val) {
     __atomic_fetch_sub(val, 1, __ATOMIC_RELEASE);
     return;
 }
@@ -191,31 +191,31 @@ shmem_internal_atomic_dec(shmem_internal_atomic_uint64_t *val) {
 
 #include <stdatomic.h>
 
-typedef atomic_uint_fast64_t shmem_internal_atomic_uint64_t;
+typedef atomic_uint_fast64_t shmem_internal_cntr_t;
 
 static inline
 void
-shmem_internal_atomic_write(shmem_internal_atomic_uint64_t *ptr, uint64_t value) {
+shmem_internal_cntr_write(shmem_internal_cntr_t *ptr, uint64_t value) {
     atomic_store(ptr, value);
     return;
 }
 
 static inline
 uint64_t
-shmem_internal_atomic_read(shmem_internal_atomic_uint64_t *val) {
+shmem_internal_cntr_read(shmem_internal_cntr_t *val) {
     return (uint64_t)atomic_load(val);
 }
 
 static inline
 void
-shmem_internal_atomic_inc(shmem_internal_atomic_uint64_t *val) {
+shmem_internal_cntr_inc(shmem_internal_cntr_t *val) {
     atomic_fetch_add(val, 1);
     return;
 }
 
 static inline
 void
-shmem_internal_atomic_dec(shmem_internal_atomic_uint64_t *val) {
+shmem_internal_cntr_dec(shmem_internal_cntr_t *val) {
     atomic_fetch_sub(val, 1);
     return;
 }
@@ -223,31 +223,31 @@ shmem_internal_atomic_dec(shmem_internal_atomic_uint64_t *val) {
 
 #  else /* !define( ENABLE_THREADS ) */
 
-typedef uint64_t shmem_internal_atomic_uint64_t;
+typedef uint64_t shmem_internal_cntr_t;
 
 static inline
 void
-shmem_internal_atomic_write(shmem_internal_atomic_uint64_t *ptr, uint64_t value) {
+shmem_internal_cntr_write(shmem_internal_cntr_t *ptr, uint64_t value) {
     *ptr = value;
     return;
 }
 
 static inline
 uint64_t
-shmem_internal_atomic_read(shmem_internal_atomic_uint64_t *val) {
+shmem_internal_cntr_read(shmem_internal_cntr_t *val) {
     return *val;
 }
 
 static inline
 void
-shmem_internal_atomic_inc(shmem_internal_atomic_uint64_t *val) {
+shmem_internal_cntr_inc(shmem_internal_cntr_t *val) {
     *val = *val+1;
     return;
 }
 
 static inline
 void
-shmem_internal_atomic_dec(shmem_internal_atomic_uint64_t *val) {
+shmem_internal_cntr_dec(shmem_internal_cntr_t *val) {
     *val = *val-1;
     return;
 }

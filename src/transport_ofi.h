@@ -268,8 +268,8 @@ struct shmem_transport_ctx_t {
     uint64_t                        pending_put_cntr;
     uint64_t                        pending_get_cntr;
 #else
-    shmem_internal_atomic_uint64_t  pending_put_cntr;
-    shmem_internal_atomic_uint64_t  pending_get_cntr;
+    shmem_internal_cntr_t           pending_put_cntr;
+    shmem_internal_cntr_t           pending_get_cntr;
 #endif
     /* These counters are protected by the BB lock */
     uint64_t                        pending_bb_cntr;
@@ -303,8 +303,8 @@ extern struct fid_ep* shmem_transport_ofi_target_ep;
 #else
 #define SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx)
 #define SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx)
-#define SHMEM_TRANSPORT_OFI_CNTR_READ(cntr) shmem_internal_atomic_read(cntr)
-#define SHMEM_TRANSPORT_OFI_CNTR_INC(cntr) shmem_internal_atomic_inc(cntr)
+#define SHMEM_TRANSPORT_OFI_CNTR_READ(cntr) shmem_internal_cntr_read(cntr)
+#define SHMEM_TRANSPORT_OFI_CNTR_INC(cntr) shmem_internal_cntr_inc(cntr)
 #endif /* USE_CTX_LOCK */
 
 #define SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx)                                    \
