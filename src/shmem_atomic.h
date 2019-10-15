@@ -47,8 +47,8 @@
 /* Spinlocks */
 
 struct shmem_spinlock_t {
-    long enter;
-    long exit;
+    unsigned long enter;
+    unsigned long exit;
 };
 typedef struct shmem_spinlock_t shmem_spinlock_t;
 
