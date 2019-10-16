@@ -61,11 +61,11 @@ int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_split_2d(shmemx_team_t parent_team, in
     return shmem_internal_team_split_2d((shmem_internal_team_t *)parent_team, xrange, xaxis_config, xaxis_mask, (shmem_internal_team_t **)xaxis_team, yaxis_config, yaxis_mask, (shmem_internal_team_t **)yaxis_team);
 }
 
-int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_destroy(shmemx_team_t *team)
+int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_destroy(shmemx_team_t team)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    return shmem_internal_team_destroy((shmem_internal_team_t **)team);
+    return shmem_internal_team_destroy((shmem_internal_team_t *)team);
 }
 
 int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_create_ctx(shmemx_team_t team, long options, shmem_ctx_t *ctx)

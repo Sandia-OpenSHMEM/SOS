@@ -31,7 +31,7 @@ int main(void)
   shmemx_team_split_2d(yzteam, ydim, NULL, 0, &yteam, NULL, 0, &zteam);
 
   // We don't need the yzteam anymore
-  shmemx_team_destroy(&yzteam);
+  shmemx_team_destroy(yzteam);
 
   int my_x = shmemx_team_my_pe(xteam);
   int my_y = shmemx_team_my_pe(yteam);

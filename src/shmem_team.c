@@ -171,7 +171,7 @@ void shmem_internal_team_fini(void)
     /* Destroy all undestroyed teams */
     for (size_t i = 0; i < shmem_internal_params.TEAMS_MAX; i++) {
         if (shmem_internal_team_pool[i] != NULL)
-            shmem_internal_team_destroy(&shmem_internal_team_pool[i]);
+            shmem_internal_team_destroy(shmem_internal_team_pool[i]);
     }
 
     free(shmem_internal_team_pool);
@@ -347,34 +347,34 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
     return 0;
 }
 
-int shmem_internal_team_destroy(shmem_internal_team_t **team)
+int shmem_internal_team_destroy(shmem_internal_team_t *team)
 {
 
-    if (*team == SHMEMX_TEAM_INVALID || *team == &shmem_internal_team_world ||
-        *team == &shmem_internal_team_shared) {
+    if (team == SHMEMX_TEAM_INVALID || team == &shmem_internal_team_world ||
+        team == &shmem_internal_team_shared) {
         return -1;
-    } else if ((*psync_pool_avail >> (*team)->psync_idx) & (uint64_t)1) {
+    } else if ((*psync_pool_avail >> team->psync_idx) & (uint64_t)1) {
         RAISE_WARN_STR("Destroying a team without an active pSync");
     } else {
         for (size_t i = 0; i < PSYNC_CHUNK_SIZE; i++) {
-            shmem_internal_psync_pool[(*team)->psync_idx * PSYNC_CHUNK_SIZE+ i] = SHMEM_SYNC_VALUE;
-            shmem_internal_psync_barrier_pool[(*team)->psync_idx * PSYNC_CHUNK_SIZE + i] = SHMEM_SYNC_VALUE;
+            shmem_internal_psync_pool[team->psync_idx * PSYNC_CHUNK_SIZE+ i] = SHMEM_SYNC_VALUE;
+            shmem_internal_psync_barrier_pool[team->psync_idx * PSYNC_CHUNK_SIZE + i] = SHMEM_SYNC_VALUE;
         }
-        shmem_internal_bit_set(psync_pool_avail, sizeof(uint64_t), (*team)->psync_idx);
+        shmem_internal_bit_set(psync_pool_avail, sizeof(uint64_t), team->psync_idx);
     }
 
     /* Destroy all undestroyed shareable contexts on this team */
-    for (size_t i = 0; i < (*team)->contexts_len; i++) {
-        if ((*team)->contexts[i] != NULL) {
-            if ((*team)->contexts[i]->options & SHMEM_CTX_PRIVATE)
+    for (size_t i = 0; i < team->contexts_len; i++) {
+        if (team->contexts[i] != NULL) {
+            if (team->contexts[i]->options & SHMEM_CTX_PRIVATE)
                 RAISE_WARN_MSG("Shutting down with unfreed private context (%zu)\n", i);
-            shmem_transport_quiet((*team)->contexts[i]);
+            shmem_transport_quiet(team->contexts[i]);
             shmem_transport_ctx_destroy(shmem_internal_team_world.contexts[i]);
         }
     }
-    free((*team)->contexts);
-    free(*team);
-    shmem_internal_team_pool[(*team)->psync_idx] = NULL;
+    free(team->contexts);
+    free(team);
+    shmem_internal_team_pool[team->psync_idx] = NULL;
 
     return 0;
 }

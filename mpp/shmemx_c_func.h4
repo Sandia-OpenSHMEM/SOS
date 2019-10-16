@@ -180,7 +180,7 @@ SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_team_split_strided(shmemx_team_t par
 
 SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_team_split_2d(shmemx_team_t parent_team, int xrange, shmemx_team_config_t *xaxis_config, long xaxis_mask, shmemx_team_t *xaxis_team, shmemx_team_config_t *yaxis_config, long yaxis_mask, shmemx_team_t *yaxis_team);
 
-SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_team_destroy(shmemx_team_t *team);
+SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_team_destroy(shmemx_team_t team);
 
 SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_team_create_ctx(shmemx_team_t team, long options, shmem_ctx_t *ctx);
 

@@ -123,10 +123,10 @@ int main(int argc, char** argv)
 
   // Destroy contexts before teams
   shmem_ctx_destroy(ctx_2s);
-  shmemx_team_destroy(&team_2s);
+  shmemx_team_destroy(team_2s);
 
   shmem_ctx_destroy(ctx_3s);
-  shmemx_team_destroy(&team_3s);
+  shmemx_team_destroy(team_3s);
 
   shmem_finalize();
 }
