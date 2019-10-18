@@ -34,6 +34,12 @@ long *shmem_internal_psync_barrier_pool;
 static uint64_t *psync_pool_avail;
 static uint64_t *psync_pool_avail_reduced;
 
+shmem_internal_team_op_t shmem_internal_team_sync_type     = SYNC;
+shmem_internal_team_op_t shmem_internal_team_bcast_type    = BCAST;
+shmem_internal_team_op_t shmem_internal_team_reduce_type   = REDUCE;
+shmem_internal_team_op_t shmem_internal_team_collect_type  = COLLECT;
+shmem_internal_team_op_t shmem_internal_team_alltoall_type = ALLTOALL;
+
 static inline
 int check_stride(int pe, int *start, int *stride, int *size)
 {
@@ -245,16 +251,21 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 
     *new_team = SHMEMX_TEAM_INVALID;
 
-    if (PE_size <= 0 || PE_stride < 1 || PE_start < 0)
-        return -1;
-
     if (parent_team == SHMEMX_TEAM_INVALID) {
+        return 0;
+    }
+
+    int global_PE_start = shmem_internal_team_pe(parent_team, PE_start);
+    int global_PE_end   = shmem_internal_team_pe(parent_team, PE_start + PE_stride * (PE_size -1 ));
+
+    if (PE_size <= 0 || PE_stride < 1 || global_PE_start >= shmem_internal_num_pes ||
+        global_PE_end >= shmem_internal_num_pes) {
         return 0;
     }
 
     shmem_internal_team_t *myteam = calloc(1, sizeof(shmem_internal_team_t));
 
-    myteam->start       = PE_start;
+    myteam->start       = global_PE_start;
     myteam->stride      = PE_stride;
     myteam->size        = PE_size;
     if (config) {
@@ -263,15 +274,19 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
     }
     myteam->contexts_len = 0;
 
-    if (shmem_internal_pe_in_active_set(shmem_internal_my_pe, PE_start, PE_stride,
+    if (shmem_internal_pe_in_active_set(shmem_internal_my_pe, myteam->start, PE_stride,
                                         PE_size, &myteam->my_pe)) {
         //TODO: will we need a pool of pWrk arrays?
 
+        size_t psync = shmem_internal_team_choose_psync(parent_team, shmem_internal_team_reduce_type);
+
         shmem_internal_op_to_all(psync_pool_avail_reduced,
                                  psync_pool_avail, 1, sizeof(uint64_t),
-                                 PE_start, PE_stride, PE_size, NULL,
-                                 &shmem_internal_psync_pool[parent_team->psync_idx*SHMEM_SYNC_SIZE],
+                                 myteam->start, PE_stride, PE_size, NULL,
+                                 &shmem_internal_psync_pool[psync],
                                  SHM_INTERNAL_BAND, SHM_INTERNAL_UINT64);
+
+        shmem_internal_team_release_psyncs(parent_team, psync, shmem_internal_team_reduce_type);
 
         /* Select the least signficant nonzero bit, which corresponds to an available pSync. */
         myteam->psync_idx = shmem_internal_bit_1st_nonzero(psync_pool_avail_reduced, sizeof(uint64_t));
@@ -291,8 +306,13 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
         shmem_internal_team_pool[myteam->psync_idx] = *new_team;
     }
 
+    size_t psync = shmem_internal_team_choose_psync(parent_team, shmem_internal_team_sync_type);
+
     shmem_internal_barrier(parent_team->start, parent_team->stride, parent_team->size,
-                           &shmem_internal_psync_barrier_pool[parent_team->psync_idx * SHMEM_SYNC_SIZE]);
+                           &shmem_internal_psync_barrier_pool[psync]);
+
+    shmem_internal_team_release_psyncs(parent_team, psync, shmem_internal_team_sync_type);
+
     return 0;
 }
 
@@ -342,8 +362,13 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
         start += parent_stride;
     }
 
+    size_t psync = shmem_internal_team_choose_psync(parent_team, shmem_internal_team_sync_type);
+
     shmem_internal_barrier(parent_start, parent_stride, parent_size,
-                           &shmem_internal_psync_pool[parent_team->psync_idx * SHMEM_SYNC_SIZE]);
+                           &shmem_internal_psync_barrier_pool[psync]);
+
+    shmem_internal_team_release_psyncs(parent_team, psync, shmem_internal_team_sync_type);
+
     return 0;
 }
 

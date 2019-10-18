@@ -46,6 +46,12 @@ enum shmem_internal_team_op_t {
 };
 typedef enum shmem_internal_team_op_t shmem_internal_team_op_t;
 
+extern shmem_internal_team_op_t shmem_internal_team_sync_type;
+extern shmem_internal_team_op_t shmem_internal_team_bcast_type;
+extern shmem_internal_team_op_t shmem_internal_team_reduce_type;
+extern shmem_internal_team_op_t shmem_internal_team_collect_type;
+extern shmem_internal_team_op_t shmem_internal_team_alltoall_type;
+
 /* Team Management Routines */
 
 int shmem_internal_team_init(void);

@@ -138,12 +138,6 @@ SHMEM_BIND_C_COLLECTIVES(`SHMEM_PROF_DEF_ALLTOALLS')
 
 #endif /* ENABLE_PROFILING */
 
-shmem_internal_team_op_t shmem_internal_team_sync_type     = SYNC;
-shmem_internal_team_op_t shmem_internal_team_bcast_type    = BCAST;
-shmem_internal_team_op_t shmem_internal_team_reduce_type   = REDUCE;
-shmem_internal_team_op_t shmem_internal_team_collect_type  = COLLECT;
-shmem_internal_team_op_t shmem_internal_team_alltoall_type = ALLTOALL;
-
 void SHMEM_FUNCTION_ATTRIBUTES
 shmem_barrier_all(void)
 {
