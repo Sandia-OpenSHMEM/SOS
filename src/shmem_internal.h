@@ -194,7 +194,7 @@ extern unsigned int shmem_internal_rand_seed;
         }                                                               \
     } while (0)
 
-#define SHMEM_ERR_CHECK_ACTIVE_SET_LINEAR(PE_start, PE_stride, PE_size)                                 \
+#define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, PE_stride, PE_size)                                        \
     do {                                                                                                \
         if (PE_start < 0 || PE_stride < 1 || PE_size < 0 ||                                             \
             PE_start + (PE_size - 1) * PE_stride > shmem_internal_num_pes) {                            \
@@ -211,15 +211,13 @@ extern unsigned int shmem_internal_rand_seed;
         }                                                                                               \
     } while (0)
 
-#define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size)                                     \
+#define SHMEM_ERR_CHECK_TEAM_VALID(team)                                                                \
     do {                                                                                                \
-        SHMEM_ERR_CHECK_ACTIVE_SET_LINEAR(PE_start, (1 << logPE_stride), PE_size);                      \
-    } while (0)
-
-#define SHMEM_ERR_CHECK_TEAM_SET(team)                                                                  \
-    do {                                                                                                \
-        shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;                                  \
-        SHMEM_ERR_CHECK_ACTIVE_SET_LINEAR(myteam->start, myteam->stride, myteam->size);                 \
+        if (team == SHMEMX_TEAM_INVALID) {                                                              \
+            fprintf(stderr, "ERROR: %s(): Invalid team unexpected on PE %d\n",                          \
+                    __func__, shmem_internal_my_pe);                                                    \
+            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                                  \
+        }                                                                                               \
     } while (0)
 
 #define SHMEM_ERR_CHECK_PE(pe)                                          \
@@ -311,9 +309,8 @@ extern unsigned int shmem_internal_rand_seed;
 #define SHMEM_ERR_CHECK_INITIALIZED()
 #define SHMEM_ERR_CHECK_POSITIVE(arg)
 #define SHMEM_ERR_CHECK_NON_NEGATIVE(arg)
-#define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size)
-#define SHMEM_ERR_CHECK_TEAM_SET(team)
-#define SHMEM_ERR_CHECK_ACTIVE_SET_LINEAR(PE_start, PE_stride, PE_size)
+#define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, PE_stride, PE_size)
+#define SHMEM_ERR_CHECK_TEAM_VALID(team)
 #define SHMEM_ERR_CHECK_PE(pe)
 #define SHMEM_ERR_CHECK_SYMMETRIC(ptr, len)
 #define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr)
