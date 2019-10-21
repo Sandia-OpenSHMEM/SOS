@@ -256,7 +256,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
     }
 
     int global_PE_start = shmem_internal_team_pe(parent_team, PE_start);
-    int global_PE_end   = shmem_internal_team_pe(parent_team, PE_start + PE_stride * (PE_size -1 ));
+    int global_PE_end   = global_PE_start + PE_stride * (PE_size -1);
 
     if (PE_size <= 0 || PE_stride < 1 || global_PE_start >= shmem_internal_num_pes ||
         global_PE_end >= shmem_internal_num_pes) {
