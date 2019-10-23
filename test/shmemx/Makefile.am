@@ -11,15 +11,9 @@
 # information, see the LICENSE file in the top level directory of the
 # distribution.
 
-check_PROGRAMS = \
-	shmemx_wait_until_all \
-	shmemx_wait_until_any \
-	shmemx_wait_until_some \
-	shmemx_test_all \
-	shmemx_test_any \
-	shmemx_test_some \
-	c11_test_shmemx_wait_until \
-	c11_test_shmemx_test
+check_PROGRAMS =
+
+if SHMEMX_TESTS
 
 if ENABLE_PROFILING
 check_PROGRAMS += \
@@ -31,23 +25,27 @@ check_PROGRAMS += \
 	shmem_ct
 endif
 
-if SHMEMX_TESTS
-
 check_PROGRAMS += \
 	perf_counter \
 	fadd_nbi \
 	atomic_nbi \
 	put_signal \
-	put_signal_nbi
+	put_signal_nbi \
+	shmemx_wait_until_all \
+	shmemx_wait_until_any \
+	shmemx_wait_until_some \
+	shmemx_test_all \
+	shmemx_test_any \
+	shmemx_test_some \
+	c11_test_shmemx_wait_until \
+	c11_test_shmemx_test
 
 if HAVE_PTHREADS
 check_PROGRAMS += \
 	gettid_register
 endif
-endif SHMEMX_TESTS
 
 if HAVE_CXX
-if SHMEMX_TESTS
 check_PROGRAMS += \
 	cxx_test_shmem_g \
 	cxx_test_shmem_get \
@@ -65,7 +63,8 @@ check_PROGRAMS += \
 	cxx_test_shmem_wait_until \
 	cxx_test_shmem_test
 endif
-endif
+
+endif SHMEMX_TESTS
 
 TESTS = $(check_PROGRAMS)
 
@@ -90,10 +89,14 @@ LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
 endif
 
 if SHMEMX_TESTS
+
+if HAVE_PTHREADS
 gettid_register_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 gettid_register_CFLAGS = $(PTHREAD_CFLAGS)
 gettid_register_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
+endif
 
+if HAVE_CXX
 AM_CPPFLAGS += -DENABLE_SHMEMX_TESTS
 
 # C++ Tests
@@ -112,5 +115,6 @@ cxx_test_shmem_atomic_swap_SOURCES = cxx_test_shmem_atomic_swap.cpp
 cxx_test_shmem_atomic_cswap_SOURCES = cxx_test_shmem_atomic_cswap.cpp
 cxx_test_shmem_wait_until_SOURCES = cxx_test_shmem_wait_until.cpp
 cxx_test_shmem_test_SOURCES = cxx_test_shmem_test.cpp
-
 endif
+
+endif SHMEMX_TESTS
