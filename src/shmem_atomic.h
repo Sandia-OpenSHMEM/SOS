@@ -66,11 +66,10 @@ static inline
 void
 shmem_spinlock_lock(shmem_spinlock_t *lock)
 {
-    long val = __atomic_fetch_add(&lock->enter, 1, __ATOMIC_ACQUIRE);
-    while (val != __atomic_load_n(&lock->exit, __ATOMIC_RELAXED)) {
+    long val = __atomic_fetch_add(&lock->enter, 1, __ATOMIC_ACQ_REL);
+    while (val != __atomic_load_n(&lock->exit, __ATOMIC_ACQUIRE)) {
         SPINLOCK_BODY();
     }
-    __atomic_thread_fence(__ATOMIC_ACQUIRE);
 }
 
 
