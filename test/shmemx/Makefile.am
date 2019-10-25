@@ -34,7 +34,8 @@ check_PROGRAMS = \
 	shmemx_team_b2b_collectives \
 	c11_test_shmemx_wait_until \
 	c11_test_shmemx_test \
-	c11_shmemx_team_collective_types
+	c11_shmemx_team_collective_types \
+	c11_shmemx_team_reduce
 
 if ENABLE_PROFILING
 check_PROGRAMS += \

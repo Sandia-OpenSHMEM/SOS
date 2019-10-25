@@ -159,7 +159,7 @@ $1(float,      float,              `SHM_INTERNAL_FLOAT',          `$2', `$3')
 $1(double,     double,             `SHM_INTERNAL_DOUBLE',         `$2', `$3')
 $1(longdouble, long double,        `SHM_INTERNAL_LONG_DOUBLE',    `$2', `$3')
 $1(complexd,   double _Complex,    `SHM_INTERNAL_DOUBLE_COMPLEX', `$2', `$3')
-$1(complexf,   float _Complex,     `SHM_INTERNAL_DOUBLE_COMPLEX', `$2', `$3')')dnl
+$1(complexf,   float _Complex,     `SHM_INTERNAL_FLOAT_COMPLEX',  `$2', `$3')')dnl
 dnl
 define(`SHMEM_BIND_C_COLL_FLOATS', dnl args: macro_name, op_name, op_const
 `$1(float,    float,         `SHM_INTERNAL_FLOAT',         `$2', `$3')

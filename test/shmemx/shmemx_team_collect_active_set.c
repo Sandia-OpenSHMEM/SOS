@@ -78,7 +78,7 @@ int main(void)
 
         if (new_team != SHMEMX_TEAM_INVALID) {
 
-            shmemx_collect(new_team, dst, src, me);
+            shmemx_int64_collect(new_team, dst, src, me);
 
             /* Validate destination buffer data */
             for (j = 0; j < npes - i; j++) {

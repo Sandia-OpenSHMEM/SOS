@@ -146,7 +146,8 @@ int main(int argc, char* argv[]) {
   const int npes = shmem_n_pes();
 
   if (npes > MAX_NPES) {
-      fprintf(stderr, "ERR - Requires at least %d PEs\n", MAX_NPES);
+      if (mype == 0)
+          fprintf(stderr, "ERR - Requires at least %d PEs\n", MAX_NPES);
       shmem_finalize();
       return 0;
   }
