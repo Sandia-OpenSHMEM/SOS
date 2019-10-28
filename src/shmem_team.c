@@ -260,7 +260,8 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 
     if (PE_size <= 0 || PE_stride < 1 || global_PE_start >= shmem_internal_num_pes ||
         global_PE_end >= shmem_internal_num_pes) {
-        return 0;
+        RAISE_WARN_STR("Invalid start, stride, or size in team_split operation");
+        return -1;
     }
 
     shmem_internal_team_t *myteam = calloc(1, sizeof(shmem_internal_team_t));
@@ -290,20 +291,20 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 
         /* Select the least signficant nonzero bit, which corresponds to an available pSync. */
         myteam->psync_idx = shmem_internal_bit_1st_nonzero(psync_pool_avail_reduced, sizeof(uint64_t));
-        if (myteam->psync_idx == -1) {
-            RAISE_ERROR_MSG("No more teams available (max = %ld), try increasing SHMEM_TEAMS_MAX\n",
+        if (myteam->psync_idx == -1 || myteam->psync_idx >= shmem_internal_params.TEAMS_MAX) {
+            RAISE_WARN_MSG("No more teams available (max = %ld), try increasing SHMEM_TEAMS_MAX\n",
                             shmem_internal_params.TEAMS_MAX);
+        } else {
+            /* Set the selected psync bit to 0, reserving that slot */
+            shmem_internal_bit_clear(psync_pool_avail, sizeof(uint64_t), myteam->psync_idx);
+
+            for (size_t i = 0; i < N_PSYNCS_PER_TEAM; i++)
+                myteam->psync_avail[i] = 1;
+
+            *new_team = myteam;
+
+            shmem_internal_team_pool[myteam->psync_idx] = *new_team;
         }
-
-        /* Set the selected psync bit to 0, reserving that slot */
-        shmem_internal_bit_clear(psync_pool_avail, sizeof(uint64_t), myteam->psync_idx);
-
-        for (size_t i = 0; i < N_PSYNCS_PER_TEAM; i++)
-            myteam->psync_avail[i] = 1;
-
-        *new_team = myteam;
-
-        shmem_internal_team_pool[myteam->psync_idx] = *new_team;
     }
 
     size_t psync = shmem_internal_team_choose_psync(parent_team, shmem_internal_team_sync_type);
@@ -313,7 +314,10 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 
     shmem_internal_team_release_psyncs(parent_team, psync, shmem_internal_team_sync_type);
 
-    return 0;
+    if (myteam->psync_idx == -1)
+        return -2;
+    else
+        return 0;
 }
 
 int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
