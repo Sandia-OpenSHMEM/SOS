@@ -154,8 +154,6 @@ int main(int argc, char **argv)
     GEN_AMO_ASSOC(uint64,   uint64_t,    SHM_INTERNAL_UINT64, EXTENDED_AMO);
     GEN_AMO_ASSOC(size,       size_t,    SHM_INTERNAL_SIZE_T, EXTENDED_AMO);
     GEN_AMO_ASSOC(ptrdiff, ptrdiff_t, SHM_INTERNAL_PTRDIFF_T, EXTENDED_AMO);
-    GEN_AMO_ASSOC(float,       float,     SHM_INTERNAL_FLOAT, EXTENDED_AMO);
-    GEN_AMO_ASSOC(double,     double,    SHM_INTERNAL_DOUBLE, EXTENDED_AMO);
     printf("')dnl\n");
 
     printf("define(`SHMEM_BIND_C11_BITWISE_AMO_EXTRAS',\n`");
