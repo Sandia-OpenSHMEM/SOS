@@ -208,17 +208,5 @@ int main(int argc, char **argv)
     GEN_ASSOC(ptrdiff, ptrdiff_t, SYNC);
     printf("')dnl\n");
 
-    printf("define(`SHMEM_BIND_C11_COLL_MIN_MAX_EXTRAS',\n`");
-    GEN_ASSOC(float, float, COLL_MIN_MAX);
-    GEN_ASSOC(double, double, COLL_MIN_MAX);
-    GEN_ASSOC(longdouble, long double, COLL_MIN_MAX);
-    printf("')dnl\n");
-
-    printf("define(`SHMEM_BIND_C11_COLL_SUM_PROD_EXTRAS',\n`");
-    GEN_ASSOC(float, float, COLL_SUM_PROD);
-    GEN_ASSOC(double, double, COLL_SUM_PROD);
-    GEN_ASSOC(longdouble, long double, COLL_SUM_PROD);
-    printf("')dnl\n");
-
     return 0;
 }
