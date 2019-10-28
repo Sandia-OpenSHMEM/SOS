@@ -13,8 +13,6 @@
 
 check_PROGRAMS =
 
-if SHMEMX_TESTS
-
 if ENABLE_PROFILING
 check_PROGRAMS += \
 	pcontrol
@@ -24,6 +22,8 @@ if USE_PORTALS4
 check_PROGRAMS += \
 	shmem_ct
 endif
+
+if SHMEMX_TESTS
 
 check_PROGRAMS += \
 	perf_counter \
@@ -44,8 +44,10 @@ if HAVE_PTHREADS
 check_PROGRAMS += \
 	gettid_register
 endif
+endif SHMEMX_TESTS
 
 if HAVE_CXX
+if SHMEMX_TESTS
 check_PROGRAMS += \
 	cxx_test_shmem_g \
 	cxx_test_shmem_get \
@@ -63,8 +65,7 @@ check_PROGRAMS += \
 	cxx_test_shmem_wait_until \
 	cxx_test_shmem_test
 endif
-
-endif SHMEMX_TESTS
+endif
 
 TESTS = $(check_PROGRAMS)
 
@@ -89,14 +90,10 @@ LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
 endif
 
 if SHMEMX_TESTS
-
-if HAVE_PTHREADS
 gettid_register_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 gettid_register_CFLAGS = $(PTHREAD_CFLAGS)
 gettid_register_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
-endif
 
-if HAVE_CXX
 AM_CPPFLAGS += -DENABLE_SHMEMX_TESTS
 
 # C++ Tests
@@ -115,6 +112,5 @@ cxx_test_shmem_atomic_swap_SOURCES = cxx_test_shmem_atomic_swap.cpp
 cxx_test_shmem_atomic_cswap_SOURCES = cxx_test_shmem_atomic_cswap.cpp
 cxx_test_shmem_wait_until_SOURCES = cxx_test_shmem_wait_until.cpp
 cxx_test_shmem_test_SOURCES = cxx_test_shmem_test.cpp
-endif
 
-endif SHMEMX_TESTS
+endif
