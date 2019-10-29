@@ -78,7 +78,6 @@ $1(longlong,  long long,          `SHM_INTERNAL_LONG_LONG')$2
 $1(ulonglong, unsigned long long, `SHM_INTERNAL_ULONG_LONG')')dnl
 dnl
 define(`SHMEM_BIND_C11_COLL_MIN_MAX', dnl args: macro_name, op_name, op_const
-SHMEM_BIND_C11_COLL_MIN_MAX_EXTRAS($1,$2)dnl
 `$1(short,     short,              `SHM_INTERNAL_SHORT')$2
 $1(ushort,     unsigned short,     `SHM_INTERNAL_USHORT')$2
 $1(int,        int,                `SHM_INTERNAL_INT')$2
@@ -92,7 +91,6 @@ $1(double,     double,             `SHM_INTERNAL_DOUBLE')$2
 $1(longdouble, long double,        `SHM_INTERNAL_LONG_DOUBLE')')dnl
 dnl
 define(`SHMEM_BIND_C11_COLL_SUM_PROD', dnl args: macro_name, op_name, op_const
-SHMEM_BIND_C11_COLL_SUM_PROD_EXTRAS($1,$2)dnl
 `$1(short,     short,              `SHM_INTERNAL_SHORT')$2
 $1(ushort,     unsigned short,     `SHM_INTERNAL_USHORT')$2
 $1(int,        int,                `SHM_INTERNAL_INT')$2
