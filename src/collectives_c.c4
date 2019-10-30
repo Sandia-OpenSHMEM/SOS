@@ -188,7 +188,7 @@ shmemx_sync(shmemx_team_t team)
     size_t psync = shmem_internal_team_choose_psync(myteam,
                         shmem_internal_team_sync_type);
     shmem_internal_sync(myteam->start, myteam->stride, myteam->size,
-                        &shmem_internal_psync_barrier_pool[psync]);
+                        &shmem_internal_psync_pool[psync]);
     shmem_internal_team_release_psyncs(myteam, psync,
                         shmem_internal_team_sync_type);
     return 0;
@@ -204,7 +204,7 @@ int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_sync(shmemx_team_t team)
     size_t psync = shmem_internal_team_choose_psync(myteam,
                         shmem_internal_team_sync_type);
     shmem_internal_sync(myteam->start, myteam->stride, myteam->size,
-                        &shmem_internal_psync_barrier_pool[psync]);
+                        &shmem_internal_psync_pool[psync]);
     shmem_internal_team_release_psyncs(myteam, psync,
                         shmem_internal_team_sync_type);
     return 0;

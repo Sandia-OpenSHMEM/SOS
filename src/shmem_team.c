@@ -30,9 +30,9 @@ shmemx_team_t SHMEMX_TEAM_SHARED = (shmemx_team_t) &shmem_internal_team_shared;
 
 shmem_internal_team_t **shmem_internal_team_pool;
 long *shmem_internal_psync_pool;
-long *shmem_internal_psync_barrier_pool;
 static uint64_t *psync_pool_avail;
 static uint64_t *psync_pool_avail_reduced;
+long psync_pool_sync_start;
 
 shmem_internal_team_op_t shmem_internal_team_sync_type     = SYNC;
 shmem_internal_team_op_t shmem_internal_team_bcast_type    = BCAST;
@@ -144,9 +144,6 @@ int shmem_internal_team_init(void)
         shmem_internal_psync_pool[i] = SHMEM_SYNC_VALUE;
     }
 
-    /* Convenience pointer to the group-3 pSync array (for barriers and syncs): */
-    shmem_internal_psync_barrier_pool = &shmem_internal_psync_pool[PSYNC_CHUNK_SIZE * max_teams];
-
     if (max_teams > (sizeof(uint64_t) * CHAR_BIT)) {
         RAISE_ERROR_MSG("Requested %ld teams, but only %zu are supported\n",
                          max_teams, sizeof(uint64_t) * CHAR_BIT);
@@ -155,6 +152,7 @@ int shmem_internal_team_init(void)
 
     psync_pool_avail = shmem_internal_shmalloc(2 * sizeof(uint64_t));
     psync_pool_avail_reduced = &psync_pool_avail[1];
+    psync_pool_sync_start = shmem_internal_params.TEAMS_MAX * PSYNC_CHUNK_SIZE;
 
     /* Initialize the psync bits to 1, making all slots available: */
     *psync_pool_avail = ~((uint64_t)0);
@@ -310,7 +308,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
     size_t psync = shmem_internal_team_choose_psync(parent_team, shmem_internal_team_sync_type);
 
     shmem_internal_barrier(parent_team->start, parent_team->stride, parent_team->size,
-                           &shmem_internal_psync_barrier_pool[psync]);
+                           &shmem_internal_psync_pool[psync]);
 
     shmem_internal_team_release_psyncs(parent_team, psync, shmem_internal_team_sync_type);
 
@@ -369,7 +367,7 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
     size_t psync = shmem_internal_team_choose_psync(parent_team, shmem_internal_team_sync_type);
 
     shmem_internal_barrier(parent_start, parent_stride, parent_size,
-                           &shmem_internal_psync_barrier_pool[psync]);
+                           &shmem_internal_psync_pool[psync]);
 
     shmem_internal_team_release_psyncs(parent_team, psync, shmem_internal_team_sync_type);
 
@@ -387,7 +385,9 @@ int shmem_internal_team_destroy(shmem_internal_team_t *team)
     } else {
         for (size_t i = 0; i < PSYNC_CHUNK_SIZE; i++) {
             shmem_internal_psync_pool[team->psync_idx * PSYNC_CHUNK_SIZE+ i] = SHMEM_SYNC_VALUE;
-            shmem_internal_psync_barrier_pool[team->psync_idx * PSYNC_CHUNK_SIZE + i] = SHMEM_SYNC_VALUE;
+        }
+        for (size_t i = 0; i < SHMEM_SYNC_SIZE; i++) {
+            shmem_internal_psync_pool[psync_pool_sync_start + team->psync_idx * SHMEM_SYNC_SIZE + i] = SHMEM_SYNC_VALUE;
         }
         shmem_internal_bit_set(psync_pool_avail, sizeof(uint64_t), team->psync_idx);
     }
@@ -424,9 +424,10 @@ int shmem_internal_ctx_get_team(shmem_ctx_t ctx, shmem_internal_team_t **team)
 
 size_t shmem_internal_team_choose_psync(shmem_internal_team_t *team, shmem_internal_team_op_t op)
 {
+
     switch (op) {
         case SYNC:
-            return team->psync_idx * PSYNC_CHUNK_SIZE;
+            return psync_pool_sync_start + team->psync_idx * SHMEM_SYNC_SIZE;
 
         default:
             for (int i = 0; i < N_PSYNCS_PER_TEAM; i++) {
@@ -436,9 +437,9 @@ size_t shmem_internal_team_choose_psync(shmem_internal_team_t *team, shmem_inter
                 }
             }
 
-            size_t psync = team->psync_idx * PSYNC_CHUNK_SIZE;
+            size_t psync = psync_pool_sync_start + team->psync_idx * SHMEM_SYNC_SIZE;
             shmem_internal_sync(team->start, team->stride, team->size,
-                                &shmem_internal_psync_barrier_pool[psync]);
+                                &shmem_internal_psync_pool[psync]);
 
             for (int i = 0; i < N_PSYNCS_PER_TEAM; i++) {
                 team->psync_avail[i] = 1;
