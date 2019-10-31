@@ -274,10 +274,10 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
         myteam->config_mask = config_mask;
     }
     myteam->contexts_len = 0;
+    myteam->psync_idx = 0;
 
     if (shmem_internal_pe_in_active_set(shmem_internal_my_pe, myteam->start, PE_stride,
                                         PE_size, &myteam->my_pe)) {
-        //TODO: will we need a pool of pWrk arrays?
 
         size_t psync = shmem_internal_team_choose_psync(parent_team, shmem_internal_team_reduce_type);
 
@@ -291,9 +291,10 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 
         /* Select the least signficant nonzero bit, which corresponds to an available pSync. */
         myteam->psync_idx = shmem_internal_bit_1st_nonzero(psync_pool_avail_reduced, sizeof(uint64_t));
-        if (myteam->psync_idx == -1 || myteam->psync_idx >= shmem_internal_params.TEAMS_MAX) {
+        if (myteam->psync_idx = -1 || myteam->psync_idx >= shmem_internal_params.TEAMS_MAX) {
             RAISE_WARN_MSG("No more teams available (max = %ld), try increasing SHMEM_TEAMS_MAX\n",
                             shmem_internal_params.TEAMS_MAX);
+            myteam->psync_idx = -1;
         } else {
             /* Set the selected psync bit to 0, reserving that slot */
             shmem_internal_bit_clear(psync_pool_avail, sizeof(uint64_t), myteam->psync_idx);
@@ -315,7 +316,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
     shmem_internal_team_release_psyncs(parent_team, psync, shmem_internal_team_sync_type);
 
     if (myteam->psync_idx == -1)
-        return -2;
+        return -1;
     else
         return 0;
 }
