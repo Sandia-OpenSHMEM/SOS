@@ -291,7 +291,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 
         /* Select the least signficant nonzero bit, which corresponds to an available pSync. */
         myteam->psync_idx = shmem_internal_bit_1st_nonzero(psync_pool_avail_reduced, sizeof(uint64_t));
-        if (myteam->psync_idx = -1 || myteam->psync_idx >= shmem_internal_params.TEAMS_MAX) {
+        if (myteam->psync_idx == -1 || myteam->psync_idx >= shmem_internal_params.TEAMS_MAX) {
             RAISE_WARN_MSG("No more teams available (max = %ld), try increasing SHMEM_TEAMS_MAX\n",
                             shmem_internal_params.TEAMS_MAX);
             myteam->psync_idx = -1;

@@ -48,7 +48,7 @@ enum op { and = 0, or, xor, max, min, sum, prod };
 const double FLOATING_POINT_TOLERANCE = 1e-6;
 
 #define REDUCTION(OP) \
-  { #OP, ret = shmemx_##OP##_reduce(SHMEMX_TEAM_WORLD, dest, src, npes); }
+  { ret = shmemx_##OP##_reduce(SHMEMX_TEAM_WORLD, dest, src, npes); }
 
 #define is_floating_point(X) _Generic((X), \
               float: true, \
@@ -99,6 +99,7 @@ const double FLOATING_POINT_TOLERANCE = 1e-6;
     static TYPE dest[MAX_NPES];                                                \
     int ret;                                                                   \
     TYPE type_var;                                                             \
+    bool floating_point_val = is_floating_point(type_var);                     \
                                                                                \
     INIT_SRC_BUFFER(TYPE);                                                     \
                                                                                \
@@ -123,25 +124,25 @@ const double FLOATING_POINT_TOLERANCE = 1e-6;
           CHECK_DEST_BUFFER(OP, TYPE, (TYPE)(npes % 2 ? 1ULL : 0ULL));         \
           break;                                                               \
       case max:                                                                \
-          if (is_floating_point(type_var))                                     \
+          if (floating_point_val)                                              \
               CHECK_DEST_BUFFER_FP(OP, TYPE, 1ULL, FLOATING_POINT_TOLERANCE);  \
           else                                                                 \
               CHECK_DEST_BUFFER(OP, TYPE, 1ULL);                               \
           break;                                                               \
       case min:                                                                \
-          if (is_floating_point(type_var))                                     \
+          if (floating_point_val)                                              \
               CHECK_DEST_BUFFER_FP(OP, TYPE, 1ULL, FLOATING_POINT_TOLERANCE);  \
           else                                                                 \
               CHECK_DEST_BUFFER(OP, TYPE, 1ULL);                               \
           break;                                                               \
       case sum:                                                                \
-          if (is_floating_point(type_var))                                     \
+          if (floating_point_val)                                              \
               CHECK_DEST_BUFFER_FP(OP, TYPE, npes, FLOATING_POINT_TOLERANCE);  \
           else                                                                 \
               CHECK_DEST_BUFFER(OP, TYPE, npes);                               \
           break;                                                               \
       case prod:                                                               \
-          if (is_floating_point(type_var))                                     \
+          if (floating_point_val)                                              \
               CHECK_DEST_BUFFER_FP(OP, TYPE, 1ULL, FLOATING_POINT_TOLERANCE);  \
           else                                                                 \
               CHECK_DEST_BUFFER(OP, TYPE, 1ULL);                               \
