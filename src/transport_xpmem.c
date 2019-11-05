@@ -20,6 +20,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <xpmem.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
@@ -103,6 +105,8 @@ shmem_transport_xpmem_init(void)
     size_t len;
     int ret;
     char errmsg[256];
+    char key_prefix[MPIDI_OFI_SHMGR_NAME_MAXLEN-10];
+    char key[MPIDI_OFI_SHMGR_NAME_MAXLEN];
 
     /* setup data region */
     base = FIND_BASE(shmem_internal_data_base, page_size);
@@ -117,9 +121,17 @@ shmem_transport_xpmem_init(void)
     my_info.data_len = len;
 
     /* setup heap region */
+    // Halit - trying mmap instead of XPMEM
     base = FIND_BASE(shmem_internal_heap_base, page_size);
-    len = FIND_LEN(shmem_internal_heap_base, shmem_internal_heap_length, page_size);
-    my_info.heap_seg = xpmem_make(base, len, XPMEM_PERMIT_MODE, (void*)0666);
+    len  = FIND_LEN(shmem_internal_heap_base, shmem_internal_heap_length, page_size);
+    shm_create_key(key_prefix, MPIDI_OFI_SHMGR_NAME_MAXLEN-10, shmem_internal_my_pe, 2);
+    snprintf(key, MPIDI_OFI_SHMGR_NAME_MAXLEN, "%s-heap", key_prefix);
+    void*myaddr = shm_create_region(base, key, len);
+    my_info.heap_seg = 0; 
+    //((int*)myaddr)[0] = 12*(shmem_internal_my_pe+1);
+    //printf("shmem_transport_xpmem_startup\n");
+    //shmem_runtime_barrier();
+    
     if (-1 == my_info.heap_seg) {
         RETURN_ERROR_MSG("xpmem_make failed: %s\n",
                          shmem_util_strerror(errno, errmsg, 256));
@@ -127,6 +139,7 @@ shmem_transport_xpmem_init(void)
     }
     my_info.heap_off = (char*) shmem_internal_heap_base - (char*) base;
     my_info.heap_len = len;
+    
 
     ret = shmem_runtime_put("xpmem-segids", &my_info, sizeof(struct share_info_t));
     if (0 != ret) {
@@ -145,6 +158,7 @@ shmem_transport_xpmem_startup(void)
     char errmsg[256];
     struct share_info_t info;
     struct xpmem_addr addr;
+    long page_size = sysconf(_SC_PAGESIZE);
 
     num_on_node = shmem_runtime_get_node_size();
 
@@ -169,17 +183,22 @@ shmem_transport_xpmem_startup(void)
                 RETURN_ERROR_MSG("runtime_get failed: %d\n", ret);
                 return 1;
             }
+            
+            char key_prefix[MPIDI_OFI_SHMGR_NAME_MAXLEN-10];
+            char key[MPIDI_OFI_SHMGR_NAME_MAXLEN];
+            int len = 0; 
 
             shmem_transport_xpmem_peers[peer_num].data_apid =
                 xpmem_get(info.data_seg, XPMEM_RDWR, XPMEM_PERMIT_MODE, (void*)0666);
+
             if (shmem_transport_xpmem_peers[peer_num].data_apid < 0) {
                 RETURN_ERROR_MSG("could not get data apid: %s\n",
                                  shmem_util_strerror(errno, errmsg, 256));
                 return 1;
             }
-
             addr.apid = shmem_transport_xpmem_peers[peer_num].data_apid;
             addr.offset = 0;
+
 
             shmem_transport_xpmem_peers[peer_num].data_attach_ptr =
                 xpmem_attach(addr, info.data_len, NULL);
@@ -191,19 +210,16 @@ shmem_transport_xpmem_startup(void)
             shmem_transport_xpmem_peers[peer_num].data_ptr =
                 (char*) shmem_transport_xpmem_peers[peer_num].data_attach_ptr + info.data_off;
 
-            shmem_transport_xpmem_peers[peer_num].heap_apid =
-                xpmem_get(info.heap_seg, XPMEM_RDWR, XPMEM_PERMIT_MODE, (void*)0666);
-            if (shmem_transport_xpmem_peers[peer_num].heap_apid < 0) {
-                RETURN_ERROR_MSG("could not get heap apid: %s\n",
-                                 shmem_util_strerror(errno, errmsg, 256));
-                return 1;
-            }
 
             addr.apid = shmem_transport_xpmem_peers[peer_num].heap_apid;
             addr.offset = 0;
+            
+            // Halit attach to neighbors
+            len  = FIND_LEN(shmem_internal_heap_base, shmem_internal_heap_length, page_size);
+            shm_create_key(key_prefix, MPIDI_OFI_SHMGR_NAME_MAXLEN-10, i, 2);
+            snprintf(key, MPIDI_OFI_SHMGR_NAME_MAXLEN, "%s-heap", key_prefix);
+            shmem_transport_xpmem_peers[peer_num].heap_attach_ptr = shm_attach_region(NULL, key, len);
 
-            shmem_transport_xpmem_peers[peer_num].heap_attach_ptr =
-                xpmem_attach(addr, info.heap_len, NULL);
             if ((size_t) shmem_transport_xpmem_peers[peer_num].heap_ptr == XPMEM_MAXADDR_SIZE) {
                 RETURN_ERROR_MSG("could not get data segment: %s\n",
                                  shmem_util_strerror(errno, errmsg, 256));
@@ -211,6 +227,7 @@ shmem_transport_xpmem_startup(void)
             }
             shmem_transport_xpmem_peers[peer_num].heap_ptr =
                 (char*) shmem_transport_xpmem_peers[peer_num].heap_attach_ptr + info.heap_off;
+            //printf("PE[%d] reads data from PE[%d]: %d\n", shmem_internal_my_pe, peer_num, ((int*) shmem_transport_xpmem_peers[peer_num].heap_ptr)[0]);
         }
     }
 
@@ -248,13 +265,13 @@ shmem_transport_xpmem_fini(void)
         free(shmem_transport_xpmem_peers);
     }
 
-    if (0 != my_info.data_seg) {
+    /*if (0 != my_info.data_seg) {
         xpmem_remove(my_info.data_seg);
     }
-    /*
+
     if (0 != my_info.heap_seg) {
         xpmem_remove(my_info.heap_seg);
-    }
+    }*/
 
     return 0;
 }
