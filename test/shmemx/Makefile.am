@@ -11,31 +11,7 @@
 # information, see the LICENSE file in the top level directory of the
 # distribution.
 
-check_PROGRAMS = \
-	shmemx_wait_until_all \
-	shmemx_wait_until_any \
-	shmemx_wait_until_some \
-	shmemx_test_all \
-	shmemx_test_any \
-	shmemx_test_some \
-	shmemx_team_split_strided \
-	shmemx_team_split_2D \
-	shmemx_team_translate \
-	shmemx_team_reuse_teams \
-	shmemx_team_context \
-	shmemx_team_sync \
-	shmemx_team_broadcast \
-	shmemx_team_collect \
-	shmemx_team_collect_active_set \
-	shmemx_reduce \
-	shmemx_team_alltoall \
-	shmemx_team_alltoalls \
-	shmemx_team_shared \
-	shmemx_team_b2b_collectives \
-	c11_test_shmemx_wait_until \
-	c11_test_shmemx_test \
-	c11_shmemx_team_collective_types \
-	c11_shmemx_team_reduce
+check_PROGRAMS =
 
 if ENABLE_PROFILING
 check_PROGRAMS += \
@@ -54,7 +30,31 @@ check_PROGRAMS += \
 	fadd_nbi \
 	atomic_nbi \
 	put_signal \
-	put_signal_nbi
+	put_signal_nbi \
+	shmemx_wait_until_all \
+	shmemx_wait_until_any \
+	shmemx_wait_until_some \
+	shmemx_test_all \
+	shmemx_test_any \
+	shmemx_test_some \
+	c11_test_shmemx_wait_until \
+	c11_test_shmemx_test \
+	shmemx_team_split_strided \
+	shmemx_team_split_2D \
+	shmemx_team_translate \
+	shmemx_team_reuse_teams \
+	shmemx_team_context \
+	shmemx_team_sync \
+	shmemx_team_broadcast \
+	shmemx_team_collect \
+	shmemx_team_collect_active_set \
+	shmemx_reduce \
+	shmemx_team_alltoall \
+	shmemx_team_alltoalls \
+	shmemx_team_shared \
+	shmemx_team_b2b_collectives \
+	c11_shmemx_team_collective_types \
+	c11_shmemx_team_reduce
 
 if HAVE_PTHREADS
 check_PROGRAMS += \
