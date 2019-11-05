@@ -92,7 +92,7 @@ shmem_spinlock_fini(shmem_spinlock_t *lock)
 
 #if (defined(__STDC_NO_ATOMICS__) || !defined(HAVE_STDATOMIC_H))
 
-/* The full memory barrier is used in cases where global ordering is requred,
+/* The full memory barrier is used in cases where global ordering is required,
  * and thus requires sequential consistency.  For example, PE 0 performs
  * updates followed by a quiet.  PE 1 observes PE 0's updates and informs PE 2
  * that PE 0's updates are available.  PE 2 must also see PE 0's updates.
