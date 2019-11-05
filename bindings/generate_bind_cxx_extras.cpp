@@ -83,35 +83,6 @@
            COMPARE_TYPES(unsigned long, CTYPE)      \
            COMPARE_TYPES(unsigned long long, CTYPE) \
 
-/* Note: Mirrors SHMEM_BIND_C11_COLL_MIN_MAX */
-#define NEED_COLL_MIN_MAX_ASSOC(CTYPE)              \
-           COMPARE_TYPES_FIRST(short, CTYPE)        \
-           COMPARE_TYPES(int, CTYPE)                \
-           COMPARE_TYPES(long, CTYPE)               \
-           COMPARE_TYPES(long long, CTYPE)          \
-           COMPARE_TYPES(unsigned short, CTYPE)     \
-           COMPARE_TYPES(unsigned int, CTYPE)       \
-           COMPARE_TYPES(unsigned long, CTYPE)      \
-           COMPARE_TYPES(unsigned long long, CTYPE) \
-           COMPARE_TYPES(float, CTYPE) \
-           COMPARE_TYPES(double, CTYPE) \
-           COMPARE_TYPES(long double, CTYPE) \
-
-/* Note: Mirrors SHMEM_BIND_C11_COLL_SUM_PROD */
-#define NEED_COLL_SUM_PROD_ASSOC(CTYPE)             \
-           COMPARE_TYPES_FIRST(short, CTYPE)        \
-           COMPARE_TYPES(int, CTYPE)                \
-           COMPARE_TYPES(long, CTYPE)               \
-           COMPARE_TYPES(long long, CTYPE)          \
-           COMPARE_TYPES(unsigned short, CTYPE)     \
-           COMPARE_TYPES(unsigned int, CTYPE)       \
-           COMPARE_TYPES(unsigned long, CTYPE)      \
-           COMPARE_TYPES(unsigned long long, CTYPE) \
-           COMPARE_TYPES(float, CTYPE)              \
-           COMPARE_TYPES(double, CTYPE)             \
-           COMPARE_TYPES(long double, CTYPE)        \
-           COMPARE_TYPES(double _Complex, CTYPE)    \
-           COMPARE_TYPES(float _Complex, CTYPE)     \
 
 #define GEN_ASSOC(TYPENAME, CTYPE, TYPE_CLASS)                  \
   do {                                                          \
@@ -173,8 +144,6 @@ int main(int argc, char **argv)
     GEN_AMO_ASSOC(uint64,   uint64_t,    SHM_INTERNAL_UINT64, EXTENDED_AMO);
     GEN_AMO_ASSOC(size,       size_t,    SHM_INTERNAL_SIZE_T, EXTENDED_AMO);
     GEN_AMO_ASSOC(ptrdiff, ptrdiff_t, SHM_INTERNAL_PTRDIFF_T, EXTENDED_AMO);
-    GEN_AMO_ASSOC(float,       float,     SHM_INTERNAL_FLOAT, EXTENDED_AMO);
-    GEN_AMO_ASSOC(double,     double,    SHM_INTERNAL_DOUBLE, EXTENDED_AMO);
     printf("')dnl\n");
 
     printf("define(`SHMEM_BIND_CXX_BITWISE_AMO_EXTRAS',\n`");
@@ -189,18 +158,6 @@ int main(int argc, char **argv)
     GEN_ASSOC(uint64,   uint64_t, SYNC);
     GEN_ASSOC(size,       size_t, SYNC);
     GEN_ASSOC(ptrdiff, ptrdiff_t, SYNC);
-    printf("')dnl\n");
-
-    printf("define(`SHMEM_BIND_CXX_COLL_MIN_MAX_EXTRAS',\n`");
-    GEN_ASSOC(float, float, COLL_MIN_MAX);
-    GEN_ASSOC(double, double, COLL_MIN_MAX);
-    GEN_ASSOC(longdouble, long double, COLL_MIN_MAX);
-    printf("')dnl\n");
-
-    printf("define(`SHMEM_BIND_CXX_COLL_SUM_PROD_EXTRAS',\n`");
-    GEN_ASSOC(float, float, COLL_SUM_PROD);
-    GEN_ASSOC(double, double, COLL_SUM_PROD);
-    GEN_ASSOC(longdouble, long double, COLL_SUM_PROD);
     printf("')dnl\n");
 
     return 0;

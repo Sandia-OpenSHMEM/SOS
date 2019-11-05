@@ -90,40 +90,6 @@
            unsigned long long: 0, \
            default: 1)
 
-/* Note: Mirrors SHMEM_BIND_C11_COLL_MIN_MAX */
-#define NEED_COLL_MIN_MAX_ASSOC(VAL) \
-  _Generic((VAL),                 \
-           short: 0,              \
-           int: 0,                \
-           long: 0,               \
-           long long: 0,          \
-           unsigned short: 0,     \
-           unsigned int: 0,       \
-           unsigned long: 0,      \
-           unsigned long long: 0, \
-           float: 0,              \
-           double : 0,            \
-           long double : 0,       \
-           default: 1)
-
-/* Note: Mirrors SHMEM_BIND_C11_COLL_SUM_PROD */
-#define NEED_COLL_SUM_PROD_ASSOC(VAL) \
-  _Generic((VAL),                 \
-           short: 0,              \
-           int: 0,                \
-           long: 0,               \
-           long long: 0,          \
-           unsigned short: 0,     \
-           unsigned int: 0,       \
-           unsigned long: 0,      \
-           unsigned long long: 0, \
-           float: 0,              \
-           double : 0,            \
-           long double : 0,       \
-           double _Complex: 0,    \
-           float _Complex: 0,     \
-           default: 1)
-
 #else
 /* Compiler does not support C11 _Generic */
 #define NEED_RMA_ASSOC(VAL) 0
@@ -131,8 +97,6 @@
 #define NEED_EXTENDED_AMO_ASSOC(VAL) 0
 #define NEED_BITWISE_AMO_ASSOC(VAL) 0
 #define NEED_SYNC_ASSOC(VAL) 0
-#define NEED_COLL_MIN_MAX_ASSOC(VAL) 0
-#define NEED_COLL_SUM_PROD_ASSOC(VAL) 0
 
 #endif
 
@@ -190,8 +154,6 @@ int main(int argc, char **argv)
     GEN_AMO_ASSOC(uint64,   uint64_t,    SHM_INTERNAL_UINT64, EXTENDED_AMO);
     GEN_AMO_ASSOC(size,       size_t,    SHM_INTERNAL_SIZE_T, EXTENDED_AMO);
     GEN_AMO_ASSOC(ptrdiff, ptrdiff_t, SHM_INTERNAL_PTRDIFF_T, EXTENDED_AMO);
-    GEN_AMO_ASSOC(float,       float,     SHM_INTERNAL_FLOAT, EXTENDED_AMO);
-    GEN_AMO_ASSOC(double,     double,    SHM_INTERNAL_DOUBLE, EXTENDED_AMO);
     printf("')dnl\n");
 
     printf("define(`SHMEM_BIND_C11_BITWISE_AMO_EXTRAS',\n`");
