@@ -90,8 +90,6 @@ shmem_spinlock_fini(shmem_spinlock_t *lock)
 }
 
 
-#if (defined(__STDC_NO_ATOMICS__) || !defined(HAVE_STDATOMIC_H))
-
 /* The full memory barrier is used in cases where global ordering is required,
  * and thus requires sequential consistency.  For example, PE 0 performs
  * updates followed by a quiet.  PE 1 observes PE 0's updates and informs PE 2
@@ -107,7 +105,7 @@ shmem_internal_membar(void) {
 
 static inline
 void
-shmem_internal_membar_load(void) {
+shmem_internal_membar_release(void) {
     if (SHMEM_INTERNAL_NEED_MEMBAR)
         __atomic_thread_fence(__ATOMIC_RELEASE);
     return;
@@ -115,44 +113,15 @@ shmem_internal_membar_load(void) {
 
 static inline
 void
-shmem_internal_membar_store(void) {
+shmem_internal_membar_acquire(void) {
     if (SHMEM_INTERNAL_NEED_MEMBAR)
         __atomic_thread_fence(__ATOMIC_ACQUIRE);
     return;
 }
 
-#else
-#include <stdatomic.h>
-
-static inline
-void
-shmem_internal_membar(void) {
-    if (SHMEM_INTERNAL_NEED_MEMBAR)
-        atomic_thread_fence(memory_order_seq_cst);
-    return;
-}
-
-static inline
-void
-shmem_internal_membar_load(void) {
-    if (SHMEM_INTERNAL_NEED_MEMBAR)
-        atomic_thread_fence(memory_order_acquire);
-    return;
-}
-
-static inline
-void
-shmem_internal_membar_store(void) {
-    if (SHMEM_INTERNAL_NEED_MEMBAR)
-        atomic_thread_fence(memory_order_release);
-    return;
-}
-
-#endif
 
 /* Atomics */
 #  ifdef ENABLE_THREADS
-
 #    if (defined(__STDC_NO_ATOMICS__) || !defined(HAVE_STDATOMIC_H))
 
 #include <stdint.h>
@@ -186,7 +155,7 @@ shmem_internal_cntr_dec(shmem_internal_cntr_t *val) {
     return;
 }
 
-#    else
+#    else /* HAVE_STDATOMIC_H */
 
 #include <stdatomic.h>
 
@@ -218,8 +187,8 @@ shmem_internal_cntr_dec(shmem_internal_cntr_t *val) {
     atomic_fetch_sub(val, 1);
     return;
 }
-#    endif
 
+#    endif
 #  else /* !define( ENABLE_THREADS ) */
 
 typedef uint64_t shmem_internal_cntr_t;

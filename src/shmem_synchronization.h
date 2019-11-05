@@ -52,7 +52,7 @@ shmem_internal_fence(shmem_ctx_t ctx)
     ret = shmem_transport_fence((shmem_transport_ctx_t *)ctx);
     if (0 != ret) { RAISE_ERROR(ret); }
 
-    shmem_internal_membar_store();
+    shmem_internal_membar_release();
 
     /* Since fence does not guarantee any memory visibility, 
      * transport level memory flush is not required here. */
@@ -147,13 +147,13 @@ shmem_internal_fence(shmem_ctx_t ctx)
 
 #define SHMEM_WAIT(var, value) do {                                     \
         SHMEM_INTERNAL_WAIT_UNTIL(var, SHMEM_CMP_NE, value);            \
-        shmem_internal_membar_load();                                   \
+        shmem_internal_membar_acquire();                                \
         shmem_transport_syncmem();                                      \
     } while (0)
 
 #define SHMEM_WAIT_UNTIL(var, cond, value) do {                         \
         SHMEM_INTERNAL_WAIT_UNTIL(var, cond, value);                    \
-        shmem_internal_membar_load();                                   \
+        shmem_internal_membar_acquire();                                \
         shmem_transport_syncmem();                                      \
     } while (0)
 

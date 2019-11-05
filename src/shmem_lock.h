@@ -95,14 +95,14 @@ shmem_internal_set_lock(long *lockp)
             SHMEM_WAIT(&(lock->data), lock_cur.data);
         }
     } else {
-        /* Lock was acquired immediately without calling SHMEM_WAIT, 
-         * which provides memory ordering. Therefore, issuing a load 
+        /* Lock was acquired immediately without calling SHMEM_WAIT,
+         * which provides memory ordering. Therefore, issuing an acquire
          * fence to ensure memory ordering. */
-        shmem_internal_membar_load();
+        shmem_internal_membar_acquire();
         /* Transport level memory flush is required to make memory
-         * changes (i.e. operations performed within a previous 
+         * changes (i.e. operations performed within a previous
          * critical section) visible */
-        shmem_transport_syncmem();                                                         \
+        shmem_transport_syncmem();
     }
 }
 
@@ -121,11 +121,14 @@ shmem_internal_test_lock(long *lockp)
     shmem_internal_cswap(SHMEM_CTX_DEFAULT, &(lock->last), &me, &curr, &zero, sizeof(int), 0, SHM_INTERNAL_INT);
     shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
     if (0 == curr) {
-        shmem_internal_membar_load();
+        /* Lock was acquired immediately without calling SHMEM_WAIT,
+         * which provides memory ordering. Therefore, issuing an acquire
+         * fence to ensure memory ordering. */
+        shmem_internal_membar_acquire();
         /* Transport level memory flush is required to make memory
          * changes (i.e. operations performed within a previous
          * critical section) visible */
-        shmem_transport_syncmem();                                                         \
+        shmem_transport_syncmem();
         return 0;
     }
     return 1;

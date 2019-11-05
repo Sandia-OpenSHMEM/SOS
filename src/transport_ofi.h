@@ -1427,8 +1427,10 @@ void shmem_transport_received_cntr_wait(uint64_t ge_val)
 static inline
 void shmem_transport_syncmem(void)
 {
-    // TODO: libfabric does not yet have an analog to PtlAtomicSync() in Portals4, so the OFI 
-    // transport routine will be a nop until an API is provided.
+    /* TODO: libfabric does not yet have an analog to PtlAtomicSync() in
+     * Portals4, so the OFI transport routine will be a nop until an API is
+     * provided.
+     */
 }
 
 static inline
