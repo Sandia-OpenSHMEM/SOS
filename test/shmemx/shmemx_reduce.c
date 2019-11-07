@@ -1,3 +1,8 @@
+/*
+ *  This test program is derived from an example program in the
+ *  OpenSHMEM specification.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <shmem.h>
@@ -44,15 +49,8 @@ int main(void)
   /* Wait for all PEs to initialize reductions arrays */
   shmemx_sync(SHMEMX_TEAM_WORLD);
 
-//#if __STDC_VERSION__ >= 201112
-//  /* C11 generic interface */
-//  shmemx_and_reduce(SHMEMX_TEAM_WORLD, valid_all, valid_me, num);
-//  shmemx_sum_reduce(SHMEMX_TEAM_WORLD, sums, values, num);
-//#else
-  /* C/C++ interface without generic support */
   shmemx_uchar_and_reduce(SHMEMX_TEAM_WORLD, valid_all, valid_me, num);
   shmemx_long_sum_reduce(SHMEMX_TEAM_WORLD, sums, values, num);
-//#endif
 
   for (int i=0; i < num; i++) {
     if (valid_all[i]) {

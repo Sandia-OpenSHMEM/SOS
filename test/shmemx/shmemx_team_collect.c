@@ -1,3 +1,8 @@
+/*
+ *  This test program is derived from an example program in the
+ *  OpenSHMEM specification.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <shmem.h>
@@ -32,6 +37,11 @@ int main(void)
       printf(", %d", dest[i]);
    printf("\n");
    shmem_clear_lock(&lock);
+
+   for (int i = 0; i < total_nelem; i++)
+       if (dest[i] != i)
+           shmem_global_exit(1);
+
    shmem_finalize();
    return 0;
 }

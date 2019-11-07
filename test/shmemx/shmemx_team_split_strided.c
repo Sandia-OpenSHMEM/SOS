@@ -1,6 +1,6 @@
 /*
- * OpenSHMEM shmem_team_split_strided example to create a team of all even
- * ranked PEs from SHMEMX_TEAM_WORLD
+ *  This test program is derived from an example program in the
+ *  OpenSHMEM specification.
  */
 
 #include <shmem.h>

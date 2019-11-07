@@ -150,7 +150,6 @@ int shmem_internal_team_init(void)
     if (max_teams > (sizeof(uint64_t) * CHAR_BIT)) {
         RAISE_ERROR_MSG("Requested %ld teams, but only %zu are supported\n",
                          max_teams, sizeof(uint64_t) * CHAR_BIT);
-        /* TODO: support more than 64 bits (using a bit array)... */
     }
 
     psync_pool_avail = shmem_internal_shmalloc(2 * sizeof(uint64_t));
@@ -193,18 +192,6 @@ int shmem_internal_team_my_pe(shmem_internal_team_t *team)
         return -1;
     else
         return ((shmem_internal_team_t *)team)->my_pe;
-
-    /* NOTE: could calculate this instead...
-    shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;
-
-    int in_set = (shmem_internal_my_pe - myteam->start) % myteam->stride;
-    int n = (shmem_internal_my_pe - myteam->start) / myteam->stride;
-    if (in_set || n >= myteam->size)
-        return -1;
-    else {
-        return n;
-    }
-    */
 }
 
 int shmem_internal_team_n_pes(shmem_internal_team_t *team)
@@ -427,6 +414,10 @@ int shmem_internal_ctx_get_team(shmem_ctx_t ctx, shmem_internal_team_t **team)
 
 size_t shmem_internal_team_choose_psync(shmem_internal_team_t *team, shmem_internal_team_op_t op)
 {
+/* Returns the appropriate index into the psync_pool given a team and collective
+ * operation type.  Be sure to index into 'shmem_internal_psync_barrier_pool'
+ * when passing a SYNC op, and index into 'shmem_internal_psync_pool' when passing a
+ * BCAST, REDUCE, COLLECT, or ALLTOALL op (FIXME). */
 
     switch (op) {
         case SYNC:

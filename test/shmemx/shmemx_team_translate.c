@@ -1,7 +1,6 @@
 /*
- * OpenSHMEM shmem_team_translate example to verify the team formed by even
- * ranked PEs from SHMEM_TEAM_WORLD using the team created from
- * shmem_team_split_stride operation
+ *  This test program is derived from an example program in the
+ *  OpenSHMEM specification.
  */
 
 #include <shmem.h>

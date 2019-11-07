@@ -1,10 +1,10 @@
+/*
+ *  This test program is derived from an example program in the
+ *  OpenSHMEM specification.
+ */
+
 #include <shmem.h>
 #include <shmemx.h>
-#include <stdio.h>
-
-#include <sys/types.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include <stdio.h>
 
 int isum, ival2, ival3;

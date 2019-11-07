@@ -193,7 +193,6 @@ options.
     SHMEM_DISABLE_ASLR_CHECK (default: on)
         Disable runtime checks for address space layout randomization (ASLR).
 
-
   OFI Transport Environment variables:
 
     SHMEM_OFI_PROVIDER (default: auto)
@@ -263,8 +262,8 @@ options.
   Team Environment variables:
 
     SHMEM_TEAMS_MAX (default: 10)
-        Sets the maximum number of available teams per PE.  The maximum
-        supported value is 64.
+        Sets the maximum number of available teams per PE, including the
+        predefined teams.  The maximum supported value is 64.
 
     SHMEM_DISABLE_TEAM_SHARED (default: off)
         If defined, disables the predefined team, SHMEM_TEAM_SHARED.

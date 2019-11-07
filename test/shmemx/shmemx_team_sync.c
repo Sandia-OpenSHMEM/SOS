@@ -1,3 +1,8 @@
+/*
+ *  This test program is derived from an example program in the
+ *  OpenSHMEM specification.
+ */
+
 #include <stdio.h>
 #include <shmem.h>
 #include <shmemx.h>

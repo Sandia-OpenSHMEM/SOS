@@ -307,7 +307,6 @@ shmem_calloc(size_t count, size_t size)
     return ret;
 }
 
-
 void SHMEM_FUNCTION_ATTRIBUTES
 shmem_free(void *ptr)
 {
