@@ -147,13 +147,13 @@ shmem_internal_fence(shmem_ctx_t ctx)
 
 #define SHMEM_WAIT(var, value) do {                                     \
         SHMEM_INTERNAL_WAIT_UNTIL(var, SHMEM_CMP_NE, value);            \
-        shmem_internal_membar_acquire();                                \
+        shmem_internal_membar_acq_rel();                                \
         shmem_transport_syncmem();                                      \
     } while (0)
 
 #define SHMEM_WAIT_UNTIL(var, cond, value) do {                         \
         SHMEM_INTERNAL_WAIT_UNTIL(var, cond, value);                    \
-        shmem_internal_membar_acquire();                                \
+        shmem_internal_membar_acq_rel();                                \
         shmem_transport_syncmem();                                      \
     } while (0)
 

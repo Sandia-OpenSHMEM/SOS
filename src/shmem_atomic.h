@@ -120,6 +120,15 @@ shmem_internal_membar_acquire(void) {
 }
 
 
+static inline
+void
+shmem_internal_membar_acq_rel(void) {
+    if (SHMEM_INTERNAL_NEED_MEMBAR)
+        __atomic_thread_fence(__ATOMIC_ACQ_REL);
+    return;
+}
+
+
 /* Atomics */
 #  ifdef ENABLE_THREADS
 #    if (defined(__STDC_NO_ATOMICS__) || !defined(HAVE_STDATOMIC_H))
