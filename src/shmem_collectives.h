@@ -76,6 +76,10 @@ shmem_internal_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)
         RAISE_ERROR_MSG("Illegal barrier/sync type (%d)\n",
                         shmem_internal_barrier_type);
     }
+
+    /* Ensure remote updates are visible in memory */
+    shmem_internal_membar_acquire();
+    shmem_transport_syncmem();
 }
 
 
