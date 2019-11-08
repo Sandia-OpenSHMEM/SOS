@@ -33,32 +33,6 @@ $1(uint64,     uint64_t)$2
 $1(size,       size_t)$2
 $1(ptrdiff,    ptrdiff_t)')dnl
 dnl
-define(`SHMEM_BIND_C_COLLECTIVES', dnl args: macro_name, end
-`$1(float,      float)$2
-$1(double,     double)$2
-$1(longdouble, long double)$2
-$1(char,       char)$2
-$1(schar,      signed char)$2
-$1(short,      short)$2
-$1(int,        int)$2
-$1(long,       long)$2
-$1(longlong,   long long)$2
-$1(uchar,      unsigned char)$2
-$1(ushort,     unsigned short)$2
-$1(uint,       unsigned int)$2
-$1(ulong,      unsigned long)$2
-$1(ulonglong,  unsigned long long)$2
-$1(int8,       int8_t)$2
-$1(int16,      int16_t)$2
-$1(int32,      int32_t)$2
-$1(int64,      int64_t)$2
-$1(uint8,      uint8_t)$2
-$1(uint16,     uint16_t)$2
-$1(uint32,     uint32_t)$2
-$1(uint64,     uint64_t)$2
-$1(size,       size_t)$2
-$1(ptrdiff,    ptrdiff_t)')dnl
-dnl
 define(`SHMEM_BIND_C_SIZES', dnl args: macro_name, end
 `$1(8,          1)$2
 $1(16,         2)$2
@@ -175,14 +149,12 @@ define(`SHMEM_DECLARE_FOR_AMO', `SHMEM_BIND_C_AMO(`$1',`;');')dnl
 define(`SHMEM_DECLARE_FOR_SIZES', `SHMEM_BIND_C_SIZES(`$1',`;');')dnl
 define(`SHMEM_DECLARE_FOR_EXTENDED_AMO', `SHMEM_BIND_C_EXTENDED_AMO(`$1',`;');')dnl
 define(`SHMEM_DECLARE_FOR_BITWISE_AMO', `SHMEM_BIND_C_BITWISE_AMO(`$1',`;');')dnl
-define(`SHMEM_DECLARE_FOR_COLLECTIVES', `SHMEM_BIND_C_COLLECTIVES(`$1',`;');')dnl
 dnl
 define(`SHMEM_DEFINE_FOR_RMA', `SHMEM_BIND_C_RMA(`$1')')dnl
 define(`SHMEM_DEFINE_FOR_AMO', `SHMEM_BIND_C_AMO(`$1')')dnl
 define(`SHMEM_DEFINE_FOR_SIZES', `SHMEM_BIND_C_SIZES(`$1')')dnl
 define(`SHMEM_DEFINE_FOR_EXTENDED_AMO', `SHMEM_BIND_C_EXTENDED_AMO(`$1')')dnl
 define(`SHMEM_DEFINE_FOR_BITWISE_AMO', `SHMEM_BIND_C_BITWISE_AMO(`$1')')dnl
-define(`SHMEM_DEFINE_FOR_COLLECTIVES', `SHMEM_BIND_C_COLLECTIVES(`$1')')dnl
 dnl
 define(`SH_PAD',
 `substr(`                    ', 1, eval(len(`$1')+len(`$2')))')dnl

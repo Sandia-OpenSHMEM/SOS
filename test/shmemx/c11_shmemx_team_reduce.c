@@ -98,8 +98,7 @@ const double FLOATING_POINT_TOLERANCE = 1e-6;
     static TYPE src[MAX_NPES];                                                 \
     static TYPE dest[MAX_NPES];                                                \
     int ret;                                                                   \
-    TYPE type_var;                                                             \
-    bool floating_point_val = is_floating_point(type_var);                     \
+    const bool floating_point_val = is_floating_point((TYPE)0);                \
                                                                                \
     INIT_SRC_BUFFER(TYPE);                                                     \
                                                                                \
@@ -158,7 +157,7 @@ const double FLOATING_POINT_TOLERANCE = 1e-6;
 #endif
 
 
-int main(int argc, char* argv[]) {
+int main(void) {
 
     shmem_init();
 

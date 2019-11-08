@@ -137,7 +137,7 @@ enum op { BCAST = 0, COLLECT, FCOLLECT, ALLTOALL, ALLTOALLS };
 
 #endif
 
-int main(int argc, char* argv[]) {
+int main(void) {
   shmem_init();
 
   int rc = EXIT_SUCCESS;
