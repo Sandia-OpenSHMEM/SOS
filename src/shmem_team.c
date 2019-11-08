@@ -86,8 +86,7 @@ int shmem_internal_team_init(void)
         shmem_internal_team_shared.psync_avail[i] = 1;
     SHMEMX_TEAM_SHARED = (shmemx_team_t) &shmem_internal_team_shared;
 
-    /* If disabled, SHMEM_TEAM_SHARED only contains this (self) PE */
-    if (shmem_internal_params.DISABLE_TEAM_SHARED) {
+    if (shmem_internal_params.TEAM_SHARED_ONLY_SELF) {
         shmem_internal_team_shared.start         = shmem_internal_my_pe;
         shmem_internal_team_shared.stride        = 1;
         shmem_internal_team_shared.size          = 1;
@@ -124,7 +123,7 @@ int shmem_internal_team_init(void)
     }
     shmem_internal_assert(size > 0 && size == shmem_runtime_get_node_size());
 
-    const long max_teams = shmem_internal_params.TEAMS_MAX;
+    const unsigned long max_teams = shmem_internal_params.TEAMS_MAX;
 
     shmem_internal_team_pool = malloc(max_teams * sizeof(shmem_internal_team_t*));
 
@@ -140,7 +139,7 @@ int shmem_internal_team_init(void)
     shmem_internal_psync_pool = shmem_internal_shmalloc(sizeof(long) * psync_len);
     if (NULL == shmem_internal_psync_pool) return -1;
 
-    for (size_t i = 0; i < psync_len; i++) {
+    for (long i = 0; i < psync_len; i++) {
         shmem_internal_psync_pool[i] = SHMEM_SYNC_VALUE;
     }
 
@@ -174,7 +173,7 @@ int shmem_internal_team_init(void)
 void shmem_internal_team_fini(void)
 {
     /* Destroy all undestroyed teams */
-    for (size_t i = 0; i < shmem_internal_params.TEAMS_MAX; i++) {
+    for (long i = 0; i < shmem_internal_params.TEAMS_MAX; i++) {
         if (shmem_internal_team_pool[i] != NULL)
             shmem_internal_team_destroy(shmem_internal_team_pool[i]);
     }
@@ -274,7 +273,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
                                  &shmem_internal_psync_pool[psync],
                                  SHM_INTERNAL_BAND, SHM_INTERNAL_UINT64);
 
-        shmem_internal_team_release_psyncs(parent_team, psync, shmem_internal_team_reduce_type);
+        shmem_internal_team_release_psyncs(parent_team, shmem_internal_team_reduce_type);
 
         /* Select the least signficant nonzero bit, which corresponds to an available pSync. */
         myteam->psync_idx = shmem_internal_bit_1st_nonzero(psync_pool_avail_reduced, sizeof(uint64_t));
@@ -300,7 +299,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
     shmem_internal_barrier(parent_team->start, parent_team->stride, parent_team->size,
                            &shmem_internal_psync_barrier_pool[psync]);
 
-    shmem_internal_team_release_psyncs(parent_team, psync, shmem_internal_team_sync_type);
+    shmem_internal_team_release_psyncs(parent_team, shmem_internal_team_sync_type);
 
     if (myteam->psync_idx == -1)
         return -1;
@@ -359,7 +358,7 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
     shmem_internal_barrier(parent_start, parent_stride, parent_size,
                            &shmem_internal_psync_barrier_pool[psync]);
 
-    shmem_internal_team_release_psyncs(parent_team, psync, shmem_internal_team_sync_type);
+    shmem_internal_team_release_psyncs(parent_team, shmem_internal_team_sync_type);
 
     return 0;
 }
@@ -444,7 +443,7 @@ size_t shmem_internal_team_choose_psync(shmem_internal_team_t *team, shmem_inter
     }
 }
 
-void shmem_internal_team_release_psyncs(shmem_internal_team_t *team, size_t psync, shmem_internal_team_op_t op)
+void shmem_internal_team_release_psyncs(shmem_internal_team_t *team, shmem_internal_team_op_t op)
 {
     switch (op) {
         case SYNC:

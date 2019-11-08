@@ -194,7 +194,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     enable_node_ranks = (shmem_internal_params.OFI_STX_AUTO) ? 1 : 0;
 #endif
 
-    if (!shmem_internal_params.DISABLE_TEAM_SHARED)
+    if (!shmem_internal_params.TEAM_SHARED_ONLY_SELF)
         enable_node_ranks = 1;
 
     ret = shmem_runtime_init(enable_node_ranks);

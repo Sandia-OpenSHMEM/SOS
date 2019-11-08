@@ -189,8 +189,7 @@ shmemx_sync(shmemx_team_t team)
                         shmem_internal_team_sync_type);
     shmem_internal_sync(myteam->start, myteam->stride, myteam->size,
                         &shmem_internal_psync_barrier_pool[psync]);
-    shmem_internal_team_release_psyncs(myteam, psync,
-                        shmem_internal_team_sync_type);
+    shmem_internal_team_release_psyncs(myteam, shmem_internal_team_sync_type);
     return 0;
 }
 
@@ -205,8 +204,7 @@ int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_sync(shmemx_team_t team)
                         shmem_internal_team_sync_type);
     shmem_internal_sync(myteam->start, myteam->stride, myteam->size,
                         &shmem_internal_psync_barrier_pool[psync]);
-    shmem_internal_team_release_psyncs(myteam, psync,
-                        shmem_internal_team_sync_type);
+    shmem_internal_team_release_psyncs(myteam, shmem_internal_team_sync_type);
     return 0;
 }
 
@@ -252,7 +250,7 @@ int SHMEM_FUNCTION_ATTRIBUTES shmemx_team_sync(shmemx_team_t team)
         shmem_internal_op_to_all(dest, source, nreduce, sizeof(TYPE),   \
                    myteam->start, myteam->stride, myteam->size, pWrk,   \
                    &shmem_internal_psync_pool[psync], IOP, ITYPE);      \
-        shmem_internal_team_release_psyncs(myteam, psync,               \
+        shmem_internal_team_release_psyncs(myteam,                      \
                    shmem_internal_team_reduce_type);                    \
         return 0;                                                       \
     }
@@ -331,8 +329,7 @@ shmemx_broadcastmem(shmemx_team_t team, void *dest, const void *source,
     shmem_internal_bcast(dest, source, nelems, PE_root, myteam->start,
                          myteam->stride, myteam->size,
                          &shmem_internal_psync_pool[psync], 1);
-    shmem_internal_team_release_psyncs(myteam, psync,
-                         shmem_internal_team_bcast_type);
+    shmem_internal_team_release_psyncs(myteam, shmem_internal_team_bcast_type);
     return 0;
 }
 
@@ -355,7 +352,7 @@ shmemx_broadcastmem(shmemx_team_t team, void *dest, const void *source,
                              PE_root, myteam->start, myteam->stride,    \
                              myteam->size,                              \
                              &shmem_internal_psync_pool[psync], 1);     \
-        shmem_internal_team_release_psyncs(myteam, psync,               \
+        shmem_internal_team_release_psyncs(myteam,                      \
                              shmem_internal_team_bcast_type);           \
         return 0;                                                       \
     }
@@ -408,7 +405,7 @@ shmem_collect64(void *target, const void *source, size_t nlong,
                                myteam->start, myteam->stride,          \
                                myteam->size,                           \
                                &shmem_internal_psync_pool[psync]);     \
-        shmem_internal_team_release_psyncs(myteam, psync,              \
+        shmem_internal_team_release_psyncs(myteam,                     \
                                shmem_internal_team_collect_type);      \
         return 0;                                                      \
     }
@@ -430,8 +427,7 @@ shmemx_collectmem(shmemx_team_t team, void *dest, const void *source,
     shmem_internal_collect(dest, source, nelems, myteam->start,
                            myteam->stride, myteam->size,
                            &shmem_internal_psync_pool[psync]);
-    shmem_internal_team_release_psyncs(myteam, psync,
-                           shmem_internal_team_collect_type);
+    shmem_internal_team_release_psyncs(myteam, shmem_internal_team_collect_type);
     return 0;
 }
 
@@ -481,7 +477,7 @@ shmem_fcollect64(void *target, const void *source, size_t nlong,
                                 myteam->start, myteam->stride,          \
                                 myteam->size,                           \
                                 &shmem_internal_psync_pool[psync]);     \
-        shmem_internal_team_release_psyncs(myteam, psync,               \
+        shmem_internal_team_release_psyncs(myteam,                      \
                                 shmem_internal_team_collect_type);      \
         return 0;                                                       \
     }
@@ -503,8 +499,7 @@ shmemx_fcollectmem(shmemx_team_t team, void *dest, const void *source,
     shmem_internal_fcollect(dest, source, nelems, myteam->start,
                             myteam->stride, myteam->size,
                             &shmem_internal_psync_pool[psync]);
-    shmem_internal_team_release_psyncs(myteam, psync,
-                            shmem_internal_team_collect_type);
+    shmem_internal_team_release_psyncs(myteam, shmem_internal_team_collect_type);
     return 0;
 }
 
@@ -554,7 +549,7 @@ shmem_alltoall64(void *dest, const void *source, size_t nelems, int PE_start,
                                myteam->start, myteam->stride,          \
                                myteam->size,                           \
                                &shmem_internal_psync_pool[psync]);     \
-        shmem_internal_team_release_psyncs(myteam, psync,              \
+        shmem_internal_team_release_psyncs(myteam,                     \
                                shmem_internal_team_alltoall_type);     \
         return 0;                                                      \
     }
@@ -576,8 +571,7 @@ shmemx_alltoallmem(shmemx_team_t team, void *dest, const void *source,
     shmem_internal_alltoall(dest, source, nelems, myteam->start,
                             myteam->stride, myteam->size,
                             &shmem_internal_psync_pool[psync]);
-    shmem_internal_team_release_psyncs(myteam, psync,
-                           shmem_internal_team_alltoall_type);
+    shmem_internal_team_release_psyncs(myteam, shmem_internal_team_alltoall_type);
     return 0;
 }
 
@@ -635,7 +629,7 @@ shmem_alltoalls64(void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,
                                  nelems, myteam->start, myteam->stride,      \
                                  myteam->size,                               \
                                  &shmem_internal_psync_pool[psync]);         \
-        shmem_internal_team_release_psyncs(myteam, psync,                    \
+        shmem_internal_team_release_psyncs(myteam,                           \
                                  shmem_internal_team_alltoall_type);         \
         return 0;                                                            \
     }
@@ -657,7 +651,6 @@ shmemx_alltoallsmem(shmemx_team_t team, void *dest, const void *source,
     shmem_internal_alltoalls(dest, source, dst, sst, 1, nelems,
                              myteam->start, myteam->stride, myteam->size,
                              &shmem_internal_psync_pool[psync]);
-    shmem_internal_team_release_psyncs(myteam, psync,
-                             shmem_internal_team_alltoall_type);
+    shmem_internal_team_release_psyncs(myteam, shmem_internal_team_alltoall_type);
     return 0;
 }

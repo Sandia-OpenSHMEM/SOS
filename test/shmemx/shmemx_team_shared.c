@@ -42,7 +42,7 @@ int main(void)
     int team_shared_npes = shmemx_team_n_pes(SHMEMX_TEAM_SHARED);
 
     int *peers = malloc(team_shared_npes * sizeof(int));
-    size_t num_peers = 0;
+    int num_peers = 0;
 
     /* Print the team members on SHMEMX_TEAM_SHARED */
     /* Use a lock for cleaner output */
@@ -57,7 +57,7 @@ int main(void)
         }
     }
 
-    printf("} (num_peers: %zu)\n", num_peers);
+    printf("} (num_peers: %d)\n", num_peers);
 
     fflush(NULL);
 

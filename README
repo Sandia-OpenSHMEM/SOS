@@ -265,8 +265,9 @@ options.
         Sets the maximum number of available teams per PE, including the
         predefined teams.  The maximum supported value is 64.
 
-    SHMEM_DISABLE_TEAM_SHARED (default: off)
-        If defined, disables the predefined team, SHMEM_TEAM_SHARED.
+    SHMEM_TEAM_SHARED_ONLY_SELF (default: off)
+        If defined, the predefined team, SHMEM_TEAM_SHARED, will only include
+        the self PE.
 
   Debugging Environment variables:
 
