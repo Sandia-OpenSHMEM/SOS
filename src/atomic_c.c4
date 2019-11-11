@@ -527,8 +527,7 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_XOR)
 /* Function prototype for v1.4 routines with contexts: */
 #define SHMEM_FUNC_PROTOTYPE(TYPE, OP, ...)                           \
   shmem_ctx_##TYPE##_atomic_##OP(shmem_ctx_t ctx, __VA_ARGS__) {      \
-  shmem_transport_ctx_t *ctxp = (shmem_transport_ctx_t *)ctx;         \
-  pe = shmem_internal_team_pe(ctxp->team, pe);
+  pe = shmem_internal_team_pe(((shmem_transport_ctx_t *) ctx)->team, pe);
 
 SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_FETCH)
 SHMEM_DEFINE_FOR_EXTENDED_AMO(SHMEM_DEF_SET)

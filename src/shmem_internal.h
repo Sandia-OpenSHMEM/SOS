@@ -197,13 +197,13 @@ extern unsigned int shmem_internal_rand_seed;
 #define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, PE_stride, PE_size)                                        \
     do {                                                                                                \
         if (PE_start < 0 || PE_stride < 1 || PE_size < 0 ||                                             \
-            PE_start + (PE_size - 1) * PE_stride > shmem_internal_num_pes) {                            \
+            PE_start + ((PE_size - 1) * PE_stride) > shmem_internal_num_pes) {                          \
             fprintf(stderr, "ERROR: %s(): Invalid active set (PE_start = %d, PE_stride = %d, PE_size = %d)\n", \
                     __func__, PE_start, PE_stride, PE_size);                                            \
             shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                                  \
         }                                                                                               \
         if (! (shmem_internal_my_pe >= PE_start &&                                                      \
-               shmem_internal_my_pe <= PE_start + (PE_size-1) * PE_stride &&                            \
+               shmem_internal_my_pe <= PE_start + ((PE_size-1) * PE_stride) &&                          \
                (shmem_internal_my_pe - PE_start) % PE_stride == 0)) {                                   \
             fprintf(stderr, "ERROR: %s(): Calling PE (%d) is not a member of the active set\n",         \
                     __func__, shmem_internal_my_pe);                                                    \
@@ -214,9 +214,7 @@ extern unsigned int shmem_internal_rand_seed;
 #define SHMEM_ERR_CHECK_TEAM_VALID(team)                                                                \
     do {                                                                                                \
         if (team == SHMEMX_TEAM_INVALID) {                                                              \
-            fprintf(stderr, "ERROR: %s(): Invalid team unexpected on PE %d\n",                          \
-                    __func__, shmem_internal_my_pe);                                                    \
-            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                                  \
+            RAISE_ERROR_STR("Invalid team argument");                                                   \
         }                                                                                               \
     } while (0)
 
@@ -488,7 +486,7 @@ extern uint64_t (*shmem_internal_gettid_fn)(void);
 extern void shmem_internal_register_gettid(uint64_t (*gettid_fn)(void));
 
 static inline
-void shmem_internal_bit_set(void * const ptr, size_t const size, size_t const index)
+void shmem_internal_bit_set(void * ptr, size_t size, size_t index)
 {
     shmem_internal_assert(size > 0 && (index < size * CHAR_BIT));
 
@@ -501,7 +499,7 @@ void shmem_internal_bit_set(void * const ptr, size_t const size, size_t const in
 }
 
 static inline
-void shmem_internal_bit_clear(void * const ptr, size_t const size, size_t const index)
+void shmem_internal_bit_clear(void * ptr, size_t size, size_t index)
 {
     shmem_internal_assert(size > 0 && (index < size * CHAR_BIT));
 
@@ -514,28 +512,28 @@ void shmem_internal_bit_clear(void * const ptr, size_t const size, size_t const 
 }
 
 static inline
-size_t shmem_internal_bit_1st_nonzero(void const * const ptr, size_t const size)
+size_t shmem_internal_bit_1st_nonzero(const void *ptr, const size_t size)
 {
     unsigned char *bytes = (unsigned char*) ptr;
-    unsigned char bit_val;
 
-    for(size_t i = 0; i <= size-1; i++) {
-        for (size_t j = 0; j < CHAR_BIT; j++) {
-            bit_val = (bytes[i] >> j) & 1;
-            if (bit_val == 1)
-                return i * CHAR_BIT + j;
+    /* The following ignores endianess: */
+    for(size_t i = 0; i < size; i++) {
+        unsigned char bit_val = bytes[i];
+        for (size_t j = 0; bit_val && j < CHAR_BIT; j++) {
+            if (bit_val & 1) return i * CHAR_BIT + j;
+            bit_val >>= 1;
         }
     }
 
     return -1;
 }
 
+/* Return true if `global_pe` is in the given active set (return 0 otherwise), and
+ * and set `local_pe` to the PE index within this set (-1 if the PE is not in the set)
+ * */
 static inline
 int shmem_internal_pe_in_active_set(int global_pe, int PE_start, int PE_stride, int PE_size, int *local_pe)
 {
-    /* Return true if `global_pe` is in the given active set (return 0
-     * otherwise), and set `local_pe` to the PE index within this set (-1 if
-     * the PE is not in the set) */
 
     if (local_pe)
         *local_pe = -1;
@@ -543,9 +541,8 @@ int shmem_internal_pe_in_active_set(int global_pe, int PE_start, int PE_stride, 
     if (global_pe < PE_start)
         return 0;
 
-    int outside_set = (global_pe - PE_start) % PE_stride;
     int n = (global_pe - PE_start) / PE_stride;
-    if (outside_set || n >= PE_size)
+    if (global_pe < PE_start || (global_pe - PE_start) % PE_stride || n >= PE_size)
         return 0;
     else {
         if (local_pe)

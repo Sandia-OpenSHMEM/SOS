@@ -226,7 +226,7 @@ shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options, shm
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_ctx);
 
     if (team == NULL)
-        team = &shmem_internal_team_world;
+        RAISE_ERROR_STR("Context creation occured on a NULL team");
 
     /* Look for an open slot in the contexts array */
     for (id = 0; id < team->contexts_len; id++)
