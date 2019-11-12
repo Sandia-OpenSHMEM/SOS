@@ -226,8 +226,8 @@ int shmem_internal_team_translate_pe(shmem_internal_team_t *src_team, int src_pe
     if (src_pe_world < src_team->start || src_pe_world >= shmem_internal_num_pes)
         return -1;
 
-    shmem_internal_pe_in_active_set(src_pe_world, dest_team->start, dest_team->stride,
-                                    dest_team->size, &dest_pe);
+    dest_pe = shmem_internal_pe_in_active_set(src_pe_world, dest_team->start, dest_team->stride,
+                                              dest_team->size);
 
     return dest_pe;
 }
@@ -264,8 +264,9 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
     myteam->contexts_len = 0;
     myteam->psync_idx = 0;
 
-    if (shmem_internal_pe_in_active_set(shmem_internal_my_pe, myteam->start, PE_stride,
-                                        PE_size, &myteam->my_pe)) {
+    myteam->my_pe = shmem_internal_pe_in_active_set(shmem_internal_my_pe, myteam->start, PE_stride, PE_size);
+
+    if (myteam->my_pe != -1) {
 
         size_t psync = shmem_internal_team_choose_psync(parent_team, shmem_internal_team_reduce_type);
 
@@ -326,8 +327,7 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
     for (int i = 0; i < num_xteams; i++) {
 	int xsize = (i == num_xteams - 1 && parent_size % xrange) ? parent_size % xrange : xrange;
 
-        if (shmem_internal_pe_in_active_set(shmem_internal_my_pe, start,
-                                            parent_stride, xsize, NULL)) {
+        if (shmem_internal_pe_in_active_set(shmem_internal_my_pe, start, parent_stride, xsize) != -1) {
             ret = shmem_internal_team_split_strided(parent_team, start, parent_stride,
                                             xsize, xaxis_config, xaxis_mask, xaxis_team);
             if (ret) {
@@ -344,8 +344,7 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
         int yrange = parent_size / xrange;
         int ysize = (remainder && i < remainder) ? yrange + 1 : yrange;
 
-        if (shmem_internal_pe_in_active_set(shmem_internal_my_pe, start,
-                                            xrange*parent_stride, ysize, NULL)) {
+        if (shmem_internal_pe_in_active_set(shmem_internal_my_pe, start, xrange*parent_stride, ysize) != -1) {
             ret = shmem_internal_team_split_strided(parent_team, start, xrange*parent_stride,
                                             ysize, yaxis_config, yaxis_mask, yaxis_team);
             if (ret) {

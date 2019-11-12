@@ -486,39 +486,33 @@ extern uint64_t (*shmem_internal_gettid_fn)(void);
 extern void shmem_internal_register_gettid(uint64_t (*gettid_fn)(void));
 
 static inline
-void shmem_internal_bit_set(void * ptr, size_t size, size_t index)
+void shmem_internal_bit_set(unsigned char *ptr, size_t size, size_t index)
 {
     shmem_internal_assert(size > 0 && (index < size * CHAR_BIT));
 
-    unsigned char *bytes = (unsigned char*) ptr;
-
     size_t which_byte = index / size;
-    bytes[which_byte] |= (1UL << (index % CHAR_BIT));
+    ptr[which_byte] |= (1 << (index % CHAR_BIT));
 
     return;
 }
 
 static inline
-void shmem_internal_bit_clear(void * ptr, size_t size, size_t index)
+void shmem_internal_bit_clear(unsigned char *ptr, size_t size, size_t index)
 {
     shmem_internal_assert(size > 0 && (index < size * CHAR_BIT));
 
-    unsigned char *bytes = (unsigned char*) ptr;
-
     size_t which_byte = index / size;
-    bytes[which_byte] &= ~(1UL << (index % CHAR_BIT));
+    ptr[which_byte] &= ~(1 << (index % CHAR_BIT));
 
     return;
 }
 
 static inline
-size_t shmem_internal_bit_1st_nonzero(const void *ptr, const size_t size)
+size_t shmem_internal_bit_1st_nonzero(const unsigned char *ptr, const size_t size)
 {
-    unsigned char *bytes = (unsigned char*) ptr;
-
     /* The following ignores endianess: */
     for(size_t i = 0; i < size; i++) {
-        unsigned char bit_val = bytes[i];
+        unsigned char bit_val = ptr[i];
         for (size_t j = 0; bit_val && j < CHAR_BIT; j++) {
             if (bit_val & 1) return i * CHAR_BIT + j;
             bit_val >>= 1;
@@ -528,26 +522,16 @@ size_t shmem_internal_bit_1st_nonzero(const void *ptr, const size_t size)
     return -1;
 }
 
-/* Return true if `global_pe` is in the given active set (return 0 otherwise), and
- * and set `local_pe` to the PE index within this set (-1 if the PE is not in the set)
- * */
+/* Return -1 if `global_pe` is in the given active set (return 0 otherwise).
+ * If `global_pe` is in the active set, return the PE index within this set. */
 static inline
-int shmem_internal_pe_in_active_set(int global_pe, int PE_start, int PE_stride, int PE_size, int *local_pe)
+int shmem_internal_pe_in_active_set(int global_pe, int PE_start, int PE_stride, int PE_size)
 {
-
-    if (local_pe)
-        *local_pe = -1;
-
-    if (global_pe < PE_start)
-        return 0;
-
     int n = (global_pe - PE_start) / PE_stride;
     if (global_pe < PE_start || (global_pe - PE_start) % PE_stride || n >= PE_size)
-        return 0;
+        return -1;
     else {
-        if (local_pe)
-            *local_pe = n;
-        return 1;
+        return n;
     }
 }
 
