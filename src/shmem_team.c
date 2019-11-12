@@ -123,8 +123,7 @@ int shmem_internal_team_init(void)
     }
     shmem_internal_assert(size > 0 && size == shmem_runtime_get_node_size());
 
-    const unsigned long max_teams = (shmem_internal_params.TEAMS_MAX_provided ?
-                                     shmem_internal_params.TEAMS_MAX : TEAMS_MAX_CONFIG);
+    const unsigned long max_teams = shmem_internal_params.TEAMS_MAX;
 
     shmem_internal_team_pool = malloc(max_teams * sizeof(shmem_internal_team_t*));
 
