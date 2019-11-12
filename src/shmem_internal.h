@@ -196,15 +196,15 @@ extern unsigned int shmem_internal_rand_seed;
 
 #define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, PE_stride, PE_size)                                        \
     do {                                                                                                \
-        if (PE_start < 0 || PE_stride < 1 || PE_size < 0 ||                                             \
-            PE_start + ((PE_size - 1) * PE_stride) > shmem_internal_num_pes) {                          \
+        if (PE_start < 0 || (PE_stride) < 1 || PE_size < 0 ||                                           \
+            PE_start + ((PE_size - 1) * (PE_stride)) > shmem_internal_num_pes) {                        \
             fprintf(stderr, "ERROR: %s(): Invalid active set (PE_start = %d, PE_stride = %d, PE_size = %d)\n", \
-                    __func__, PE_start, PE_stride, PE_size);                                            \
+                    __func__, PE_start, (PE_stride), PE_size);                                          \
             shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                                  \
         }                                                                                               \
         if (! (shmem_internal_my_pe >= PE_start &&                                                      \
-               shmem_internal_my_pe <= PE_start + ((PE_size-1) * PE_stride) &&                          \
-               (shmem_internal_my_pe - PE_start) % PE_stride == 0)) {                                   \
+               shmem_internal_my_pe <= PE_start + ((PE_size-1) * (PE_stride)) &&                        \
+               (shmem_internal_my_pe - PE_start) % (PE_stride) == 0)) {                                 \
             fprintf(stderr, "ERROR: %s(): Calling PE (%d) is not a member of the active set\n",         \
                     __func__, shmem_internal_my_pe);                                                    \
             shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                                  \

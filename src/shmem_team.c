@@ -31,8 +31,8 @@ shmemx_team_t SHMEMX_TEAM_SHARED = (shmemx_team_t) &shmem_internal_team_shared;
 shmem_internal_team_t **shmem_internal_team_pool;
 long *shmem_internal_psync_pool;
 long *shmem_internal_psync_barrier_pool;
-static uint64_t *psync_pool_avail;
-static uint64_t *psync_pool_avail_reduced;
+static unsigned char *psync_pool_avail;
+static unsigned char *psync_pool_avail_reduced;
 
 shmem_internal_team_op_t shmem_internal_team_sync_type     = SYNC;
 shmem_internal_team_op_t shmem_internal_team_bcast_type    = BCAST;
@@ -146,20 +146,22 @@ int shmem_internal_team_init(void)
     /* Convenience pointer to the group-3 pSync array (for barriers and syncs): */
     shmem_internal_psync_barrier_pool = &shmem_internal_psync_pool[PSYNC_CHUNK_SIZE * max_teams];
 
-    if (max_teams > (sizeof(uint64_t) * CHAR_BIT)) {
-        RAISE_ERROR_MSG("Requested %ld teams, but only %zu are supported\n",
-                         max_teams, sizeof(uint64_t) * CHAR_BIT);
+    if (max_teams > N_PSYNC_BYTES * CHAR_BIT) {
+        RAISE_ERROR_MSG("Requested %ld teams, but only %d are supported\n",
+                         max_teams, N_PSYNC_BYTES * CHAR_BIT);
     }
 
-    psync_pool_avail = shmem_internal_shmalloc(2 * sizeof(uint64_t));
-    psync_pool_avail_reduced = &psync_pool_avail[1];
+    psync_pool_avail = shmem_internal_shmalloc(2 * N_PSYNC_BYTES);
+    psync_pool_avail_reduced = &psync_pool_avail[N_PSYNC_BYTES];
 
     /* Initialize the psync bits to 1, making all slots available: */
-    *psync_pool_avail = ~((uint64_t)0);
+    for (size_t i = 0; i < N_PSYNC_BYTES; i++) {
+        psync_pool_avail[i] = ~0;
+    }
 
     /* Set the bits for SHMEM_TEAM_WORLD and SHMEM_TEAM_SHARED to 0: */
-    shmem_internal_bit_clear(psync_pool_avail, sizeof(uint64_t), SHMEMX_TEAM_WORLD_INDEX);
-    shmem_internal_bit_clear(psync_pool_avail, sizeof(uint64_t), SHMEMX_TEAM_SHARED_INDEX);
+    shmem_internal_bit_clear(psync_pool_avail, N_PSYNC_BYTES, SHMEMX_TEAM_WORLD_INDEX);
+    shmem_internal_bit_clear(psync_pool_avail, N_PSYNC_BYTES, SHMEMX_TEAM_SHARED_INDEX);
 
     for (size_t i = 0; i < max_teams; i++) {
         shmem_internal_team_pool[i] = NULL;
@@ -268,22 +270,22 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
         size_t psync = shmem_internal_team_choose_psync(parent_team, shmem_internal_team_reduce_type);
 
         shmem_internal_op_to_all(psync_pool_avail_reduced,
-                                 psync_pool_avail, 1, sizeof(uint64_t),
+                                 psync_pool_avail, N_PSYNC_BYTES, 1,
                                  myteam->start, PE_stride, PE_size, NULL,
                                  &shmem_internal_psync_pool[psync],
-                                 SHM_INTERNAL_BAND, SHM_INTERNAL_UINT64);
+                                 SHM_INTERNAL_BAND, SHM_INTERNAL_UCHAR);
 
         shmem_internal_team_release_psyncs(parent_team, shmem_internal_team_reduce_type);
 
         /* Select the least signficant nonzero bit, which corresponds to an available pSync. */
-        myteam->psync_idx = shmem_internal_bit_1st_nonzero(psync_pool_avail_reduced, sizeof(uint64_t));
+        myteam->psync_idx = shmem_internal_bit_1st_nonzero(psync_pool_avail_reduced, N_PSYNC_BYTES);
         if (myteam->psync_idx == -1 || myteam->psync_idx >= shmem_internal_params.TEAMS_MAX) {
             RAISE_WARN_MSG("No more teams available (max = %ld), try increasing SHMEM_TEAMS_MAX\n",
                             shmem_internal_params.TEAMS_MAX);
             myteam->psync_idx = -1;
         } else {
             /* Set the selected psync bit to 0, reserving that slot */
-            shmem_internal_bit_clear(psync_pool_avail, sizeof(uint64_t), myteam->psync_idx);
+            shmem_internal_bit_clear(psync_pool_avail, N_PSYNC_BYTES, myteam->psync_idx);
 
             for (size_t i = 0; i < N_PSYNCS_PER_TEAM; i++)
                 myteam->psync_avail[i] = 1;
@@ -369,7 +371,7 @@ int shmem_internal_team_destroy(shmem_internal_team_t *team)
     if (team == SHMEMX_TEAM_INVALID || team == &shmem_internal_team_world ||
         team == &shmem_internal_team_shared) {
         return -1;
-    } else if ((*psync_pool_avail >> team->psync_idx) & (uint64_t)1) {
+    } else if ((psync_pool_avail[team->psync_idx / CHAR_BIT] >> team->psync_idx) & 1) {
         RAISE_WARN_STR("Destroying a team without an active pSync");
     } else {
         for (size_t i = 0; i < PSYNC_CHUNK_SIZE; i++) {
@@ -378,7 +380,7 @@ int shmem_internal_team_destroy(shmem_internal_team_t *team)
         for (size_t i = 0; i < SHMEM_SYNC_SIZE; i++) {
             shmem_internal_psync_barrier_pool[team->psync_idx * SHMEM_SYNC_SIZE + i] = SHMEM_SYNC_VALUE;
         }
-        shmem_internal_bit_set(psync_pool_avail, sizeof(uint64_t), team->psync_idx);
+        shmem_internal_bit_set(psync_pool_avail, N_PSYNC_BYTES, team->psync_idx);
     }
 
     /* Destroy all undestroyed shareable contexts on this team */

@@ -17,6 +17,7 @@
 #include "uthash.h"
 
 #define N_PSYNCS_PER_TEAM   2
+#define N_PSYNC_BYTES       8
 #define PSYNC_CHUNK_SIZE    N_PSYNCS_PER_TEAM * SHMEM_SYNC_SIZE
 
 struct shmem_internal_team_t {
