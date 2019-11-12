@@ -78,7 +78,7 @@ shmem_internal_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)
     }
 
     /* Ensure remote updates are visible in memory */
-    shmem_internal_membar_acquire();
+    shmem_internal_membar_acq_rel();
     shmem_transport_syncmem();
 }
 
