@@ -208,6 +208,14 @@ AS_CASE([$enable_ofi_mr],
              AC_DEFINE([ENABLE_MR_SCALABLE], [1], [If defined, the OFI transport will use FI_MR_SCALABLE])],
         [AC_MSG_ERROR([Invalid OFI memory registration mode: $enable_ofi_mr])])
 
+AC_ARG_ENABLE([max-teams],
+    [AC_HELP_STRING([--enable-max-teams=NUMBER],
+                    [Default value for the maximum number of teams allowed (default: 10)])])
+
+AS_IF([test -z "$enable_max_teams"],
+      [AC_DEFINE([TEAMS_MAX_CONFIG], [10], [Maximum number of teams (default)])],
+      [AC_DEFINE_UNQUOTED([TEAMS_MAX_CONFIG], [$enable_max_teams], [Maximum number of teams (custom)])])
+
 AC_ARG_ENABLE([rpm-prefix],
     [AC_HELP_STRING([--enable-rpm-prefix],
                     [Generate RPM spec file that supports an alternate installation prefix (default:disabled)])])
