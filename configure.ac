@@ -213,8 +213,8 @@ AC_ARG_ENABLE([max-teams],
                     [Default value for the maximum number of teams allowed (default: 10)])])
 
 AS_IF([test -z "$enable_max_teams"],
-      [AC_DEFINE([TEAMS_MAX_CONFIG], [10], [Maximum number of teams (default)])],
-      [AC_DEFINE_UNQUOTED([TEAMS_MAX_CONFIG], [$enable_max_teams], [Maximum number of teams (custom)])])
+      [AC_DEFINE([DEFAULT_TEAMS_MAX], [10], [Maximum number of teams (default)])],
+      [AC_DEFINE_UNQUOTED([DEFAULT_TEAMS_MAX], [$enable_max_teams], [Maximum number of teams (custom)])])
 
 AC_ARG_ENABLE([rpm-prefix],
     [AC_HELP_STRING([--enable-rpm-prefix],

@@ -34,11 +34,6 @@ long *shmem_internal_psync_barrier_pool;
 static unsigned char *psync_pool_avail;
 static unsigned char *psync_pool_avail_reduced;
 
-shmem_internal_team_op_t shmem_internal_team_sync_type     = SYNC;
-shmem_internal_team_op_t shmem_internal_team_bcast_type    = BCAST;
-shmem_internal_team_op_t shmem_internal_team_reduce_type   = REDUCE;
-shmem_internal_team_op_t shmem_internal_team_collect_type  = COLLECT;
-shmem_internal_team_op_t shmem_internal_team_alltoall_type = ALLTOALL;
 
 static inline
 int check_stride(int pe, int *start, int *stride, int *size)
@@ -268,7 +263,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 
     if (myteam->my_pe != -1) {
 
-        size_t psync = shmem_internal_team_choose_psync(parent_team, shmem_internal_team_reduce_type);
+        size_t psync = shmem_internal_team_choose_psync(parent_team, REDUCE);
 
         shmem_internal_op_to_all(psync_pool_avail_reduced,
                                  psync_pool_avail, N_PSYNC_BYTES, 1,
@@ -276,7 +271,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
                                  &shmem_internal_psync_pool[psync],
                                  SHM_INTERNAL_BAND, SHM_INTERNAL_UCHAR);
 
-        shmem_internal_team_release_psyncs(parent_team, shmem_internal_team_reduce_type);
+        shmem_internal_team_release_psyncs(parent_team, REDUCE);
 
         /* Select the least signficant nonzero bit, which corresponds to an available pSync. */
         myteam->psync_idx = shmem_internal_bit_1st_nonzero(psync_pool_avail_reduced, N_PSYNC_BYTES);
@@ -297,12 +292,12 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
         }
     }
 
-    size_t psync = shmem_internal_team_choose_psync(parent_team, shmem_internal_team_sync_type);
+    size_t psync = shmem_internal_team_choose_psync(parent_team, SYNC);
 
     shmem_internal_barrier(parent_team->start, parent_team->stride, parent_team->size,
                            &shmem_internal_psync_barrier_pool[psync]);
 
-    shmem_internal_team_release_psyncs(parent_team, shmem_internal_team_sync_type);
+    shmem_internal_team_release_psyncs(parent_team, SYNC);
 
     if (myteam->psync_idx == -1)
         return -1;
@@ -354,12 +349,12 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
         start += parent_stride;
     }
 
-    size_t psync = shmem_internal_team_choose_psync(parent_team, shmem_internal_team_sync_type);
+    size_t psync = shmem_internal_team_choose_psync(parent_team, SYNC);
 
     shmem_internal_barrier(parent_start, parent_stride, parent_size,
                            &shmem_internal_psync_barrier_pool[psync]);
 
-    shmem_internal_team_release_psyncs(parent_team, shmem_internal_team_sync_type);
+    shmem_internal_team_release_psyncs(parent_team, SYNC);
 
     return 0;
 }
