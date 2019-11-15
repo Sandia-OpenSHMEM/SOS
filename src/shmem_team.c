@@ -371,10 +371,8 @@ int shmem_internal_team_destroy(shmem_internal_team_t *team)
     return 0;
 }
 
-/* Returns the appropriate index into the psync_pool given a team and collective
- * operation type.  Be sure to index into 'shmem_internal_psync_barrier_pool'
- * when passing a SYNC op, and index into 'shmem_internal_psync_pool' when passing a
- * BCAST, REDUCE, COLLECT, or ALLTOALL op (FIXME). */
+/* Returns a psync from the given team that can be safely used for the
+ * specified collective operation. */
 long * shmem_internal_team_choose_psync(shmem_internal_team_t *team, shmem_internal_team_op_t op)
 {
 
