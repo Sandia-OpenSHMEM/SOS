@@ -522,7 +522,7 @@ size_t shmem_internal_bit_1st_nonzero(const unsigned char *ptr, const size_t siz
     return -1;
 }
 
-/* Return -1 if `global_pe` is in the given active set (return 0 otherwise).
+/* Return -1 if `global_pe` is not in the given active set.
  * If `global_pe` is in the active set, return the PE index within this set. */
 static inline
 int shmem_internal_pe_in_active_set(int global_pe, int PE_start, int PE_stride, int PE_size)

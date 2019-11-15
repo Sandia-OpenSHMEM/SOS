@@ -17,8 +17,6 @@
 #include "uthash.h"
 
 #define N_PSYNCS_PER_TEAM   2
-#define N_PSYNC_BYTES       8
-#define PSYNC_CHUNK_SIZE    N_PSYNCS_PER_TEAM * SHMEM_SYNC_SIZE
 
 struct shmem_internal_team_t {
     int                            my_pe;
@@ -34,9 +32,6 @@ typedef struct shmem_internal_team_t shmem_internal_team_t;
 
 extern shmem_internal_team_t shmem_internal_team_world;
 extern shmem_internal_team_t shmem_internal_team_shared;
-
-extern long *shmem_internal_psync_pool;
-extern long *shmem_internal_psync_barrier_pool;
 
 enum shmem_internal_team_op_t {
     SYNC = 0,
@@ -75,7 +70,7 @@ int shmem_internal_team_create_ctx(shmem_internal_team_t *team, long options, sh
 
 int shmem_internal_ctx_get_team(shmem_ctx_t ctx, shmem_internal_team_t **team);
 
-size_t shmem_internal_team_choose_psync(shmem_internal_team_t *team, shmem_internal_team_op_t op);
+long * shmem_internal_team_choose_psync(shmem_internal_team_t *team, shmem_internal_team_op_t op);
 
 void shmem_internal_team_release_psyncs(shmem_internal_team_t *team, shmem_internal_team_op_t op);
 

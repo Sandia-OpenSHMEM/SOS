@@ -42,9 +42,7 @@
         error_check(&errors, &total_errors, NAME, me);                          \
     } while (0)
 
-void error_check(int *, int *, char *, int);
-
-void error_check(int *errors, int *total_errors, char *routine, int me) {
+static void error_check(int *errors, int *total_errors, char *routine, int me) {
     if (*errors == 0) {
         if (me == 0) printf("passed.\n");
     } else {
