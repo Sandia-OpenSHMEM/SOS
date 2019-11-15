@@ -41,7 +41,7 @@ int main(void)
   values[0] = recv_a_value((unsigned)me, npes);
   valid_me[0] = is_valid(values[0], npes);
 
-  for (int i=1; i < num; i++) {
+  for (size_t i=1; i < num; i++) {
     values[i] = recv_a_value((unsigned)values[i-1], npes);
     valid_me[i] = is_valid(values[i], npes);
   }
@@ -52,12 +52,12 @@ int main(void)
   shmemx_uchar_and_reduce(SHMEMX_TEAM_WORLD, valid_all, valid_me, num);
   shmemx_long_sum_reduce(SHMEMX_TEAM_WORLD, sums, values, num);
 
-  for (int i=0; i < num; i++) {
+  for (size_t i=0; i < num; i++) {
     if (valid_all[i]) {
-      printf ("[%d] = %ld\n", i, sums[i]);
+      printf ("[%zu] = %ld\n", i, sums[i]);
     }
     else {
-      printf ("[%d] = invalid on one or more pe\n", i);
+      printf ("[%zu] = invalid on one or more pe\n", i);
     }
   }
   shmem_finalize();
