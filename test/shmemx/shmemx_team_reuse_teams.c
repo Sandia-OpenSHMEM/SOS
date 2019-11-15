@@ -26,8 +26,6 @@
  */
 
 #include <stdio.h>
-#include <stdint.h>
-#include <inttypes.h>
 #include <shmem.h>
 #include <shmemx.h>
 
@@ -35,7 +33,7 @@
 int main(void)
 {
     int i, me, npes;
-    int ret = 0;
+    int ret = 0, errors = 0;
 
     shmem_init();
 
@@ -46,28 +44,27 @@ int main(void)
         printf("Reuse teams test\n");
 
     shmemx_team_t old_team, new_team;
-    ret += shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 1, npes, NULL, 0, &old_team);
+    ret = shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 1, npes, NULL, 0, &old_team);
+    if (ret) ++errors;
 
     /* A total of npes-1 iterations are performed, where the active set in iteration i
      * includes PEs i..npes-1.  The size of the team decreases by 1 each iteration.  */
     for (i = 1; i < npes; i++) {
 
         if (me == i) {
-            printf("%d: creating new team (start, stride, size): %d, %d, %d\n", me,
+            printf("%3d: creating new team (start, stride, size): %3d, %3d, %3d\n", me,
                 shmemx_team_translate_pe(old_team, 1, SHMEMX_TEAM_WORLD), 1, shmemx_team_n_pes(old_team)-1);
         }
 
-        ret += shmemx_team_split_strided(old_team, 1, 1, shmemx_team_n_pes(old_team)-1, NULL, 0, &new_team);
+        ret = shmemx_team_split_strided(old_team, 1, 1, shmemx_team_n_pes(old_team)-1, NULL, 0, &new_team);
+        if (ret) ++errors;
 
         shmemx_team_destroy(old_team);
-
-        /* Duplicate new_team by reusing the old_team object. */
-        ret += shmemx_team_split_strided(new_team, 0, 1, shmemx_team_n_pes(new_team), NULL, 0, &old_team);
-
-        shmemx_team_destroy(new_team);
+        old_team = new_team;
     }
 
+    shmemx_team_destroy(old_team);
     shmem_finalize();
 
-    return ret != 0;
+    return errors != 0;
 }
