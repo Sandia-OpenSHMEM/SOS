@@ -108,14 +108,10 @@ int main(void)
             shmemx_sync(new_team);
         }
 
-        shmemx_team_destroy(old_team);
-
-        /* Duplicate new_team by reusing the old_team object. */
-        shmemx_team_split_strided(new_team, 0, 1, shmemx_team_n_pes(new_team), NULL, 0, &old_team);
-
-        shmemx_team_destroy(new_team);
+        old_team = new_team;
     }
 
+    shmemx_team_destroy(old_team);
     shmem_finalize();
 
     return errors != 0;
