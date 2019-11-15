@@ -186,29 +186,6 @@ void shmem_internal_team_fini(void)
     return;
 }
 
-int shmem_internal_team_my_pe(shmem_internal_team_t *team)
-{
-    if (team == SHMEMX_TEAM_INVALID)
-        return -1;
-    else
-        return ((shmem_internal_team_t *)team)->my_pe;
-}
-
-int shmem_internal_team_n_pes(shmem_internal_team_t *team)
-{
-    if (team == SHMEMX_TEAM_INVALID)
-        return -1;
-    else
-        return ((shmem_internal_team_t *)team)->size;
-}
-
-void shmem_internal_team_get_config(shmem_internal_team_t *team, shmemx_team_config_t *config)
-{
-    shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;
-    *config = myteam->config;
-    return;
-}
-
 int shmem_internal_team_translate_pe(shmem_internal_team_t *src_team, int src_pe,
                                      shmem_internal_team_t *dest_team)
 {
@@ -391,20 +368,6 @@ int shmem_internal_team_destroy(shmem_internal_team_t *team)
     free(team);
     shmem_internal_team_pool[team->psync_idx] = NULL;
 
-    return 0;
-}
-
-int shmem_internal_team_create_ctx(shmem_internal_team_t *team, long options, shmem_ctx_t *ctx)
-{
-    int ret = shmem_transport_ctx_create(team, options, (shmem_transport_ctx_t **) ctx);
-    SHMEM_ERR_CHECK_NULL(ctx, 0);
-    return ret;
-}
-
-int shmem_internal_ctx_get_team(shmem_ctx_t ctx, shmem_internal_team_t **team)
-{
-    shmem_transport_ctx_t *ctxp = (shmem_transport_ctx_t *)ctx;
-    *team = ctxp->team;
     return 0;
 }
 
