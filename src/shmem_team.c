@@ -110,18 +110,6 @@ int shmem_internal_team_init(void)
                   shmem_internal_team_shared.size);
     }
 
-    int start = -1, stride = -1, size = 0;
-
-    for (int pe = 0; pe < shmem_internal_num_pes; pe++) {
-
-        int ret = shmem_runtime_get_node_rank(pe);
-        if (ret < 0) continue;
-
-        ret = check_stride(pe, &start, &stride, &size);
-        if (ret < 0) return ret;
-    }
-    shmem_internal_assert(size > 0 && size == shmem_runtime_get_node_size());
-
     const unsigned long max_teams = shmem_internal_params.TEAMS_MAX;
 
     shmem_internal_team_pool = malloc(max_teams * sizeof(shmem_internal_team_t*));
