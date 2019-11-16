@@ -49,7 +49,8 @@ int check_stride(int pe, int *start, int *stride, int *size)
         *stride = pe - *start;
         (*size)++;
     } else if ((pe - *start) % *stride != 0) {
-        RAISE_WARN_STR("Detected non-uniform stride across on-node PEs");
+        RAISE_WARN_MSG("Detected non-uniform stride inserting PE %d into <%d, %d, %d>\n",
+                       pe, *start, *stride, *size);
         return -1;
     } else {
         (*size)++;
@@ -99,7 +100,7 @@ int shmem_internal_team_init(void)
             int ret = check_stride(pe, &start, &stride, &size);
             if (ret < 0) return ret;
         }
-        shmem_internal_assert(size > 0 && size <= shmem_runtime_get_node_size());
+        shmem_internal_assertp(size > 0 && size <= shmem_runtime_get_node_size());
 
         shmem_internal_team_shared.start = start;
         shmem_internal_team_shared.stride = (stride == -1) ? 1 : stride;
@@ -109,18 +110,6 @@ int shmem_internal_team_init(void)
                   shmem_internal_team_shared.start, shmem_internal_team_shared.stride,
                   shmem_internal_team_shared.size);
     }
-
-    int start = -1, stride = -1, size = 0;
-
-    for (int pe = 0; pe < shmem_internal_num_pes; pe++) {
-
-        int ret = shmem_runtime_get_node_rank(pe);
-        if (ret < 0) continue;
-
-        ret = check_stride(pe, &start, &stride, &size);
-        if (ret < 0) return ret;
-    }
-    shmem_internal_assert(size > 0 && size == shmem_runtime_get_node_size());
 
     const unsigned long max_teams = shmem_internal_params.TEAMS_MAX;
 
@@ -222,9 +211,19 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
     int global_PE_start = shmem_internal_team_pe(parent_team, PE_start);
     int global_PE_end   = global_PE_start + PE_stride * (PE_size -1);
 
-    if (PE_size <= 0 || PE_stride < 1 || global_PE_start >= shmem_internal_num_pes ||
+    if (PE_start < 0 || PE_start >= parent_team->size ||
+        PE_size <= 0 || PE_size > parent_team->size   ||
+        PE_stride < 1) {
+        RAISE_WARN_MSG("Invalid <start, stride, size>: child <%d, %d, %d>, parent <%d, %d, %d>\n",
+                       PE_start, PE_stride, PE_size,
+                       parent_team->start, parent_team->stride, parent_team->size);
+        return -1;
+    }
+
+    if (global_PE_start >= shmem_internal_num_pes ||
         global_PE_end >= shmem_internal_num_pes) {
-        RAISE_WARN_STR("Invalid start, stride, or size in team_split operation");
+        RAISE_WARN_MSG("Starting PE (%d) or ending PE (%d) is invalid\n",
+                       global_PE_start, global_PE_end);
         return -1;
     }
 
@@ -299,13 +298,13 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
     int ret = 0;
 
     for (int i = 0; i < num_xteams; i++) {
-	int xsize = (i == num_xteams - 1 && parent_size % xrange) ? parent_size % xrange : xrange;
+        int xsize = (i == num_xteams - 1 && parent_size % xrange) ? parent_size % xrange : xrange;
 
         if (shmem_internal_pe_in_active_set(shmem_internal_my_pe, start, parent_stride, xsize) != -1) {
             ret = shmem_internal_team_split_strided(parent_team, start, parent_stride,
                                             xsize, xaxis_config, xaxis_mask, xaxis_team);
             if (ret) {
-                RAISE_ERROR_STR("x-axis 2D strided split failed");
+                RAISE_ERROR_MSG("Creation of x-axis team %d of %d failed\n", i, num_xteams);
             }
         }
         start += xrange * parent_stride;
@@ -322,7 +321,7 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
             ret = shmem_internal_team_split_strided(parent_team, start, xrange*parent_stride,
                                             ysize, yaxis_config, yaxis_mask, yaxis_team);
             if (ret) {
-                RAISE_ERROR_STR("y-axis 2D strided split failed");
+                RAISE_ERROR_MSG("Creation of y-axis team %d of %d failed\n", i, num_yteams);
             }
         }
         start += parent_stride;
