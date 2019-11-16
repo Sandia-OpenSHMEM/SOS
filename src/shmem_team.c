@@ -99,7 +99,7 @@ int shmem_internal_team_init(void)
             int ret = check_stride(pe, &start, &stride, &size);
             if (ret < 0) return ret;
         }
-        shmem_internal_assert(size > 0 && size <= shmem_runtime_get_node_size());
+        shmem_internal_assertp(size > 0 && size <= shmem_runtime_get_node_size());
 
         shmem_internal_team_shared.start = start;
         shmem_internal_team_shared.stride = (stride == -1) ? 1 : stride;
