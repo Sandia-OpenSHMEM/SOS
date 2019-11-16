@@ -169,8 +169,7 @@ int main(void) {
     if (npes > MAX_NPES) {
         if (mype == 0)
             fprintf(stderr, "ERR - Requires less than %d PEs\n", MAX_NPES);
-        shmem_finalize();
-        return 0;
+        shmem_global_exit(1);
     }
 
     TEST_SHMEM_REDUCE(and, unsigned char);

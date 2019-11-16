@@ -485,10 +485,8 @@ static inline
 int shmem_transport_quiet(shmem_transport_ctx_t* ctx)
 {
 
-    if (ctx != SHMEMX_CTX_INVALID) {
-        shmem_transport_put_quiet(ctx);
-        shmem_transport_get_wait(ctx);
-    }
+    shmem_transport_put_quiet(ctx);
+    shmem_transport_get_wait(ctx);
 
     return 0;
 }

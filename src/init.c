@@ -112,6 +112,9 @@ shmem_internal_shutdown(void)
     shmem_internal_barrier_all();
 
     shmem_internal_finalized = 1;
+
+    shmem_internal_team_fini();
+
     shmem_transport_fini();
 
 #ifdef USE_XPMEM
@@ -124,8 +127,6 @@ shmem_internal_shutdown(void)
     SHMEM_MUTEX_DESTROY(shmem_internal_mutex_alloc);
 
     shmem_internal_randr_fini();
-
-    shmem_internal_team_fini();
 
     shmem_internal_symmetric_fini();
     shmem_runtime_fini();

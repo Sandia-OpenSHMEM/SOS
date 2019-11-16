@@ -263,7 +263,8 @@ options.
 
     SHMEM_TEAMS_MAX (default: 10)
         Sets the maximum number of available teams per PE, including the
-        predefined teams.  The maximum supported value is 64.
+        predefined teams.  The maximum supported value is 64.  The value must
+        be the same across all PEs in SHMEM_TEAM_WORLD.
 
     SHMEM_TEAM_SHARED_ONLY_SELF (default: off)
         If defined, the predefined team, SHMEM_TEAM_SHARED, will only include

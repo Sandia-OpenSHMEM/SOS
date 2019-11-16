@@ -223,10 +223,10 @@ shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options, shm
     int ret;
     size_t id;
 
-    SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_ctx);
-
     if (team == NULL)
         RAISE_ERROR_STR("Context creation occured on a NULL team");
+
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_ctx);
 
     /* Look for an open slot in the contexts array */
     for (id = 0; id < team->contexts_len; id++)
@@ -240,12 +240,12 @@ shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options, shm
         team->contexts_len += shmem_transport_portals4_grow_size;
         team->contexts = realloc(team->contexts, team->contexts_len * sizeof(shmem_transport_ctx_t*));
 
-        for ( ; i < team->contexts_len; i++)
-            team->contexts[i] = NULL;
-
         if (team->contexts == NULL) {
             RAISE_ERROR_STR("Error: out of memory when allocating ctx array");
         }
+
+        for ( ; i < team->contexts_len; i++)
+            team->contexts[i] = NULL;
     }
 
     *ctx = malloc(sizeof(shmem_transport_ctx_t));

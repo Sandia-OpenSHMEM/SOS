@@ -108,7 +108,6 @@ shmemx_team_create_ctx(shmemx_team_t team, long options, shmem_ctx_t *ctx)
 
     int ret = shmem_transport_ctx_create((shmem_internal_team_t *) team,
                                          options, (shmem_transport_ctx_t **) ctx);
-    SHMEM_ERR_CHECK_NULL(ctx, 0);
     return ret;
 }
 

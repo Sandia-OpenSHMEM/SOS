@@ -427,8 +427,20 @@ int shmem_internal_collectives_init(void);
 
 /* internal allocation, without a barrier */
 void *shmem_internal_shmalloc(size_t size);
-void shmem_internal_free(void *ptr);
 void* shmem_internal_get_next(intptr_t incr);
+
+void  dlfree(void*);
+
+static inline void shmem_internal_free(void *ptr)
+{
+    /* It's fine to call dlfree with NULL, but better to avoid unnecessarily
+     * taking the mutex in the threaded case. */
+    if (ptr != NULL) {
+        SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
+        dlfree(ptr);
+        SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
+    }
+}
 
 /* Query PEs reachable using shared memory */
 static inline int shmem_internal_get_shr_rank(int pe)
@@ -505,6 +517,12 @@ void shmem_internal_bit_clear(unsigned char *ptr, size_t size, size_t index)
     ptr[which_byte] &= ~(1 << (index % CHAR_BIT));
 
     return;
+}
+
+static inline
+unsigned char shmem_internal_bit_fetch(unsigned char *ptr, size_t index)
+{
+    return (ptr[index / CHAR_BIT] >> index) & 1;
 }
 
 static inline

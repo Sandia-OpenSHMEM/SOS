@@ -13,13 +13,13 @@ int main(void)
    static long lock = 0;
 
    shmem_init();
-   int me = shmem_my_pe();
-   int npes = shmem_n_pes();
-   int my_nelem = me + 1; /* linearly increasing number of elements with PE */
+   int me          = shmem_my_pe();
+   int npes        = shmem_n_pes();
+   int my_nelem    = me + 1; /* linearly increasing number of elements with PE */
    int total_nelem = (npes * (npes + 1)) / 2;
 
-   int* source = (int*) shmem_malloc(npes*sizeof(int)); /* symmetric alloc */
-   int* dest = (int*) shmem_malloc(total_nelem*sizeof(int));
+   int *source = (int *)shmem_malloc(npes * sizeof(int)); /* symmetric alloc */
+   int *dest   = (int *)shmem_malloc(total_nelem * sizeof(int));
 
    for (int i = 0; i < my_nelem; i++)
       source[i] = (me * (me + 1)) / 2 + i;
