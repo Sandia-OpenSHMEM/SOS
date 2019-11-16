@@ -1692,20 +1692,6 @@ int shmem_transport_fini(void)
     shmem_transport_ofi_stx_kvs_t* e;
     int stx_len = 0;
 
-    /* Free all shareable contexts.  This performs a quiet on each context,
-     * ensuring all operations have completed before proceeding with shutdown. */
-
-    for (size_t i = 0; i < shmem_internal_team_world.contexts_len; ++i) {
-        if (shmem_internal_team_world.contexts[i]) {
-            if (shmem_transport_ofi_is_private(shmem_internal_team_world.contexts[i]->options))
-                RAISE_WARN_MSG("Shutting down with unfreed private context (%zu)\n", i);
-            shmem_transport_quiet(shmem_internal_team_world.contexts[i]);
-            shmem_transport_ctx_destroy(shmem_internal_team_world.contexts[i]);
-        }
-    }
-
-    if (shmem_internal_team_world.contexts) free(shmem_internal_team_world.contexts);
-
     shmem_transport_quiet(&shmem_transport_ctx_default);
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
 

@@ -349,8 +349,7 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
 int shmem_internal_team_destroy(shmem_internal_team_t *team)
 {
 
-    if (team == SHMEMX_TEAM_INVALID || team == &shmem_internal_team_world ||
-        team == &shmem_internal_team_shared) {
+    if (team == SHMEMX_TEAM_INVALID) {
         return -1;
     } else if (shmem_internal_bit_fetch(psync_pool_avail, team->psync_idx)) {
         RAISE_ERROR_STR("Destroying a team without an active pSync");
@@ -369,7 +368,10 @@ int shmem_internal_team_destroy(shmem_internal_team_t *team)
     }
     shmem_internal_team_pool[team->psync_idx] = NULL;
     free(team->contexts);
-    free(team);
+
+    if (team != &shmem_internal_team_world && team != &shmem_internal_team_shared) {
+        free(team);
+    }
 
     return 0;
 }

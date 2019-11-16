@@ -429,7 +429,7 @@ int shmem_internal_collectives_init(void);
 void *shmem_internal_shmalloc(size_t size);
 void* shmem_internal_get_next(intptr_t incr);
 
-void  dlfree(void*);
+void dlfree(void*);
 
 static inline void shmem_internal_free(void *ptr)
 {
