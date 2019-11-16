@@ -727,20 +727,6 @@ shmem_transport_fini(void)
     /* synchronize the atomic cache, if there is one */
     shmem_transport_syncmem();
 
-    /* Free all contexts on the world team.  This performs a quiet on each context,
-     * ensuring all operations have completed before proceeding with shutdown. */
-
-    for (size_t i = 0; i < shmem_internal_team_world.contexts_len; ++i) {
-        if (shmem_internal_team_world.contexts[i]) {
-            if (shmem_internal_team_world.contexts[i]->options & SHMEM_CTX_PRIVATE)
-                RAISE_WARN_MSG("Shutting down with unfreed private context (%zu)\n", i);
-            shmem_transport_quiet(shmem_internal_team_world.contexts[i]);
-            shmem_transport_ctx_destroy(shmem_internal_team_world.contexts[i]);
-        }
-    }
-
-    if (shmem_internal_team_world.contexts) free(shmem_internal_team_world.contexts);
-
     shmem_transport_quiet(&shmem_transport_ctx_default);
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
 
