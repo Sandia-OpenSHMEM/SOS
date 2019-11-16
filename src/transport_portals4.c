@@ -713,6 +713,8 @@ shmem_transport_startup(void)
                                    SHMEMX_CTX_BOUNCE_BUFFER,
                                    SHMEM_TRANSPORT_CTX_DEFAULT_ID);
 
+    shmem_transport_ctx_default.team = &shmem_internal_team_world;
+
  cleanup:
     if (NULL != pe_map) free(pe_map);
     return ret;
