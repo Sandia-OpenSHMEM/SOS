@@ -253,6 +253,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 
         myteam = calloc(1, sizeof(shmem_internal_team_t));
 
+        myteam->my_pe       = my_pe;
         myteam->start       = global_PE_start;
         myteam->stride      = PE_stride;
         myteam->size        = PE_size;
