@@ -566,7 +566,7 @@ shmem_internal_bcast_tree(void *target, const void *source, size_t len,
  *
  *****************************************/
 void
-shmem_internal_op_to_all_linear(void *target, const void *source, int count, int type_size,
+shmem_internal_op_to_all_linear(void *target, const void *source, size_t count, size_t type_size,
                                 int PE_start, int PE_stride, int PE_size,
                                 void *pWrk, long *pSync,
                                 shm_internal_op_t op, shm_internal_datatype_t datatype)
@@ -632,7 +632,7 @@ shmem_internal_op_to_all_linear(void *target, const void *source, int count, int
     (count_)/(npes_) + ((id_) < (count_) % (_npes))
 
 void
-shmem_internal_op_to_all_ring(void *target, const void *source, int count, int type_size,
+shmem_internal_op_to_all_ring(void *target, const void *source, size_t count, size_t type_size,
                               int PE_start, int PE_stride, int PE_size,
                               void *pWrk, long *pSync,
                               shm_internal_op_t op, shm_internal_datatype_t datatype)
@@ -660,7 +660,7 @@ shmem_internal_op_to_all_ring(void *target, const void *source, int count, int t
         void *tmp = malloc(count * type_size);
 
         if (NULL == tmp)
-            RAISE_ERROR_MSG("Unable to allocate %db temporary buffer\n", count*type_size);
+            RAISE_ERROR_MSG("Unable to allocate %zub temporary buffer\n", count*type_size);
 
         memcpy(tmp, target, count*type_size);
         free_source = 1;
@@ -678,8 +678,8 @@ shmem_internal_op_to_all_ring(void *target, const void *source, int count, int t
      * corresponding to its PE id + 1.
      */
     for (int i = 0; i < PE_size - 1; i++) {
-        int chunk_in  = (group_rank - i - 1 + PE_size) % PE_size;
-        int chunk_out = (group_rank - i + PE_size) % PE_size;
+        size_t chunk_in  = (group_rank - i - 1 + PE_size) % PE_size;
+        size_t chunk_out = (group_rank - i + PE_size) % PE_size;
 
         /* Evenly distribute extra elements across first count % PE_size chunks */
         size_t chunk_in_extra  = chunk_in  < count % PE_size;
@@ -723,7 +723,7 @@ shmem_internal_op_to_all_ring(void *target, const void *source, int count, int t
      * around the ring until all PEs have all chunks.
      */
     for (int i = 0; i < PE_size - 1; i++) {
-        int chunk_out = (group_rank + 1 - i + PE_size) % PE_size;
+        size_t chunk_out = (group_rank + 1 - i + PE_size) % PE_size;
         size_t chunk_out_extra = chunk_out < count % PE_size;
         size_t chunk_out_count = count/PE_size + chunk_out_extra;
         size_t chunk_out_disp  = chunk_out_extra ?
@@ -752,7 +752,7 @@ shmem_internal_op_to_all_ring(void *target, const void *source, int count, int t
 
 
 void
-shmem_internal_op_to_all_tree(void *target, const void *source, int count, int type_size,
+shmem_internal_op_to_all_tree(void *target, const void *source, size_t count, size_t type_size,
                               int PE_start, int PE_stride, int PE_size,
                               void *pWrk, long *pSync,
                               shm_internal_op_t op, shm_internal_datatype_t datatype)
@@ -835,7 +835,7 @@ shmem_internal_op_to_all_tree(void *target, const void *source, int count, int t
 
 
 void
-shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, int count, int type_size,
+shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, size_t count, size_t type_size,
                                    int PE_start, int PE_stride, int PE_size,
                                    void *pWrk, long *pSync,
                                    shm_internal_op_t op, shm_internal_datatype_t datatype)
@@ -843,7 +843,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, int count, 
     int my_id = ((shmem_internal_my_pe - PE_start) / PE_stride);
     int log2_proc = 1, pow2_proc = 2;
     int i = PE_size >> 1;
-    int wrk_size = type_size*count;
+    size_t wrk_size = type_size*count;
     void * const current_target = malloc(wrk_size);
     long completion = 0;
     long * pSync_extra_peer = pSync + SHMEM_REDUCE_SYNC_SIZE - 2;
@@ -875,7 +875,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, int count, 
     if (current_target)
         memcpy(current_target, (void *) source, wrk_size);
     else
-        RAISE_ERROR_MSG("Failed to allocate current_target (count=%d, type_size=%d, size=%dB)\n",
+        RAISE_ERROR_MSG("Failed to allocate current_target (count=%zu, type_size=%zu, size=%zuB)\n",
                         count, type_size, wrk_size);
 
     /* Algorithm: reduce N number of PE's into a power of two recursive

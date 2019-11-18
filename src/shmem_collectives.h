@@ -143,28 +143,28 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
 }
 
 
-void shmem_internal_op_to_all_linear(void *target, const void *source, int count, int type_size,
+void shmem_internal_op_to_all_linear(void *target, const void *source, size_t count, size_t type_size,
                                      int PE_start, int PE_stride, int PE_size,
                                      void *pWrk, long *pSync,
                                      shm_internal_op_t op, shm_internal_datatype_t datatype);
-void shmem_internal_op_to_all_ring(void *target, const void *source, int count, int type_size,
+void shmem_internal_op_to_all_ring(void *target, const void *source, size_t count, size_t type_size,
                                    int PE_start, int PE_stride, int PE_size,
                                    void *pWrk, long *pSync,
                                    shm_internal_op_t op, shm_internal_datatype_t datatype);
-void shmem_internal_op_to_all_tree(void *target, const void *source, int count, int type_size,
+void shmem_internal_op_to_all_tree(void *target, const void *source, size_t count, size_t type_size,
                                    int PE_start, int PE_stride, int PE_size,
                                    void *pWrk, long *pSync,
                                    shm_internal_op_t op, shm_internal_datatype_t datatype);
 
-void shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, int count, int type_size,
+void shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, size_t count, size_t type_size,
                                    int PE_start, int PE_stride, int PE_size,
                                    void *pWrk, long *pSync,
                                    shm_internal_op_t op, shm_internal_datatype_t datatype);
 
 static inline
 void
-shmem_internal_op_to_all(void *target, const void *source, int count,
-                         int type_size, int PE_start, int PE_stride,
+shmem_internal_op_to_all(void *target, const void *source, size_t count,
+                         size_t type_size, int PE_start, int PE_stride,
                          int PE_size, void *pWrk, long *pSync,
                          shm_internal_op_t op,
                          shm_internal_datatype_t datatype)
