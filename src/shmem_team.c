@@ -290,8 +290,8 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
     shmem_internal_team_release_psyncs(parent_team, SYNC);
 
     if (my_pe >= 0 && myteam != NULL && myteam->psync_idx == -1)
-        RAISE_ERROR_MSG("Team split strided failed on PE %d: child <%d, %d, %d>, parent <%d, %d, %d>\n",
-                         shmem_internal_my_pe, global_PE_start, PE_stride, PE_size,
+        RAISE_ERROR_MSG("Team split strided failed: child <%d, %d, %d>, parent <%d, %d, %d>\n",
+                         global_PE_start, PE_stride, PE_size,
                          parent_team->start, parent_team->stride, parent_team->size);
     else
         return 0;
