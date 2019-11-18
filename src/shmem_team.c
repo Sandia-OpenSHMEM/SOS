@@ -164,8 +164,9 @@ int shmem_internal_team_init(void)
     psync_pool_avail_reduced = &psync_pool_avail[N_PSYNC_BYTES];
 
     /* Initialize the psync bits to 1, making all slots available: */
-    for (size_t i = 0; i < N_PSYNC_BYTES; i++) {
-        psync_pool_avail[i] = ~0;
+    memset(psync_pool_avail, 0, 2 * N_PSYNC_BYTES);
+    for (size_t i = 0; i < (size_t) shmem_internal_params.TEAMS_MAX; i++) {
+        shmem_internal_bit_set(psync_pool_avail, N_PSYNC_BYTES, i);
     }
 
     /* Set the bits for SHMEM_TEAM_WORLD and SHMEM_TEAM_SHARED to 0: */
