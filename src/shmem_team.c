@@ -249,6 +249,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
     shmem_internal_team_t *myteam = NULL;
 
     if (my_pe != -1) {
+        char bit_str[SHMEM_INTERNAL_DIAG_STRLEN];
 
         myteam = calloc(1, sizeof(shmem_internal_team_t));
 
@@ -270,8 +271,18 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
         /* We cannot release the psync here, because this reduction may not
          * have been performed on the entire parent team. */
 
+        shmem_internal_bit_to_string(bit_str, SHMEM_INTERNAL_DIAG_STRLEN,
+                                     psync_pool_avail_reduced, N_PSYNC_BYTES);
+        DEBUG_MSG("My pSyncs  [ %s ]\n", bit_str);
+
         /* Select the least signficant nonzero bit, which corresponds to an available pSync. */
         myteam->psync_idx = shmem_internal_bit_1st_nonzero(psync_pool_avail_reduced, N_PSYNC_BYTES);
+
+        shmem_internal_bit_to_string(bit_str, SHMEM_INTERNAL_DIAG_STRLEN,
+                                     psync_pool_avail_reduced, N_PSYNC_BYTES);
+        DEBUG_MSG("All pSyncs [ %s ], allocated %d\n", bit_str,
+                  myteam->psync_idx);
+
         if (myteam->psync_idx == -1 || myteam->psync_idx >= shmem_internal_params.TEAMS_MAX) {
             RAISE_WARN_MSG("No more teams available (max = %ld), try increasing SHMEM_TEAMS_MAX\n",
                             shmem_internal_params.TEAMS_MAX);

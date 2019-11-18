@@ -540,6 +540,27 @@ size_t shmem_internal_bit_1st_nonzero(const unsigned char *ptr, const size_t siz
     return -1;
 }
 
+/* Create a bit string of the format AAAAAAAA.BBBBBBBB into str for the byte
+ * array passed via ptr. */
+static inline
+void shmem_internal_bit_to_string(char *str, size_t str_size,
+                                  unsigned char *ptr, size_t ptr_size)
+{
+    size_t off = 0;
+
+    for (size_t i = 0; i < ptr_size; i++) {
+        for (size_t j = 0; j < CHAR_BIT; j++) {
+            off += snprintf(str+off, str_size-off, "%s",
+                            (ptr[i] & (1 << (CHAR_BIT-1-j))) ? "1" : "0");
+            if (off >= str_size) return;
+        }
+        if (i < ptr_size - 1) {
+            off += snprintf(str+off, str_size-off, ".");
+            if (off >= str_size) return;
+        }
+    }
+}
+
 /* Return -1 if `global_pe` is not in the given active set.
  * If `global_pe` is in the active set, return the PE index within this set. */
 static inline
