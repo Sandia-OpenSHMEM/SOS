@@ -45,6 +45,8 @@ int main(void)
       shmemx_sync(twos_team);
    }
 
+   shmemx_sync(SHMEMX_TEAM_WORLD);
+
    if (threes_team != SHMEMX_TEAM_INVALID) {
       /* put the value 3 to the next team member in a circular fashion */
       shmem_p(&x, 3, shmemx_team_translate_pe(threes_team, (my_pe_threes + 1) %
@@ -53,11 +55,11 @@ int main(void)
       shmemx_sync(threes_team);
    }
 
-   if (me && me % 3 == 0 && x != 3) {
-      shmem_global_exit(3);
+   if (me && me % 3 == 0) {
+      if (x != 3) shmem_global_exit(3);
    }
-   else if (me && me % 2 == 0 && x != 2) {
-      shmem_global_exit(2);
+   else if (me && me % 2 == 0) {
+      if (x != 2) shmem_global_exit(2);
    }
    else if (x != 10101)  {
       shmem_global_exit(1);
