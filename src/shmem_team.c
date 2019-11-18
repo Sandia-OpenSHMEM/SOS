@@ -19,8 +19,9 @@
 
 #include <math.h>
 
-#define SHMEMX_TEAM_WORLD_INDEX   0
-#define SHMEMX_TEAM_SHARED_INDEX  1
+#define SHMEM_TEAM_WORLD_INDEX   0
+#define SHMEM_TEAM_SHARED_INDEX  1
+#define SHMEM_TEAMS_MIN          2
 
 #define N_PSYNC_BYTES             8
 #define PSYNC_CHUNK_SIZE          (N_PSYNCS_PER_TEAM * SHMEM_SYNC_SIZE)
@@ -69,7 +70,7 @@ int shmem_internal_team_init(void)
 {
 
     /* Initialize SHMEM_TEAM_WORLD */
-    shmem_internal_team_world.psync_idx      = SHMEMX_TEAM_WORLD_INDEX;
+    shmem_internal_team_world.psync_idx      = SHMEM_TEAM_WORLD_INDEX;
     shmem_internal_team_world.start          = 0;
     shmem_internal_team_world.stride         = 1;
     shmem_internal_team_world.size           = shmem_internal_num_pes;
@@ -82,7 +83,7 @@ int shmem_internal_team_init(void)
     SHMEMX_TEAM_WORLD = (shmemx_team_t) &shmem_internal_team_world;
 
     /* Initialize SHMEM_TEAM_SHARED */
-    shmem_internal_team_shared.psync_idx     = SHMEMX_TEAM_SHARED_INDEX;
+    shmem_internal_team_shared.psync_idx     = SHMEM_TEAM_SHARED_INDEX;
     shmem_internal_team_shared.my_pe         = shmem_internal_my_pe;
     shmem_internal_team_shared.config_mask   = 0;
     shmem_internal_team_shared.contexts_len  = 0;
@@ -122,9 +123,13 @@ int shmem_internal_team_init(void)
     }
 
     if (shmem_internal_params.TEAMS_MAX > N_PSYNC_BYTES * CHAR_BIT) {
-        RAISE_ERROR_MSG("Requested %ld teams, but only %d are supported\n",
+        RETURN_ERROR_MSG("Requested %ld teams, but only %d are supported\n",
                          shmem_internal_params.TEAMS_MAX, N_PSYNC_BYTES * CHAR_BIT);
+        return 1;
     }
+
+    if (shmem_internal_params.TEAMS_MAX < SHMEM_TEAMS_MIN)
+        shmem_internal_params.TEAMS_MAX = SHMEM_TEAMS_MIN;
 
     shmem_internal_team_pool = malloc(shmem_internal_params.TEAMS_MAX *
                                       sizeof(shmem_internal_team_t*));
@@ -132,8 +137,8 @@ int shmem_internal_team_init(void)
     for (long i = 0; i < shmem_internal_params.TEAMS_MAX; i++) {
         shmem_internal_team_pool[i] = NULL;
     }
-    shmem_internal_team_pool[SHMEMX_TEAM_WORLD_INDEX] = &shmem_internal_team_world;
-    shmem_internal_team_pool[SHMEMX_TEAM_SHARED_INDEX] = &shmem_internal_team_shared;
+    shmem_internal_team_pool[SHMEM_TEAM_WORLD_INDEX] = &shmem_internal_team_world;
+    shmem_internal_team_pool[SHMEM_TEAM_SHARED_INDEX] = &shmem_internal_team_shared;
 
     /* Allocate pSync pool, each with the maximum possible size requirement */
     /* Create two pSyncs per team for back-to-back collectives and one for barriers.
@@ -164,8 +169,8 @@ int shmem_internal_team_init(void)
     }
 
     /* Set the bits for SHMEM_TEAM_WORLD and SHMEM_TEAM_SHARED to 0: */
-    shmem_internal_bit_clear(psync_pool_avail, N_PSYNC_BYTES, SHMEMX_TEAM_WORLD_INDEX);
-    shmem_internal_bit_clear(psync_pool_avail, N_PSYNC_BYTES, SHMEMX_TEAM_SHARED_INDEX);
+    shmem_internal_bit_clear(psync_pool_avail, N_PSYNC_BYTES, SHMEM_TEAM_WORLD_INDEX);
+    shmem_internal_bit_clear(psync_pool_avail, N_PSYNC_BYTES, SHMEM_TEAM_SHARED_INDEX);
 
     return 0;
 }
