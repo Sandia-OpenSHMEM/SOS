@@ -137,8 +137,6 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
 
 static struct fabric_info shmem_transport_ofi_info = {0};
 
-static shmem_transport_ctx_t** shmem_transport_ofi_contexts = NULL;
-static size_t shmem_transport_ofi_contexts_len = 0;
 static size_t shmem_transport_ofi_grow_size = 128;
 
 #define SHMEM_TRANSPORT_CTX_DEFAULT_ID -1
@@ -1514,6 +1512,8 @@ int shmem_transport_startup(void)
         shmem_transport_ofi_stx_pool[i].is_private = 0;
     }
 
+    shmem_transport_ctx_default.team = &shmem_internal_team_world;
+
     ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, SHMEM_TRANSPORT_CTX_DEFAULT_ID);
     if (ret != 0) return ret;
 
@@ -1529,32 +1529,34 @@ int shmem_transport_startup(void)
     return 0;
 }
 
-int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
+int shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options, shmem_transport_ctx_t **ctx)
 {
-    SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
-
     int ret;
     size_t id;
 
+    if (team == NULL)
+        RAISE_ERROR_STR("Context creation occured on a NULL team");
+
+    SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
+
     /* Look for an open slot in the contexts array */
-    for (id = 0; id < shmem_transport_ofi_contexts_len; id++)
-        if (shmem_transport_ofi_contexts[id] == NULL) break;
+    for (id = 0; id < team->contexts_len; id++)
+        if (team->contexts[id] == NULL) break;
 
     /* If none found, grow the array */
-    if (id >= shmem_transport_ofi_contexts_len) {
-        id = shmem_transport_ofi_contexts_len;
+    if (id >= team->contexts_len) {
+        id = team->contexts_len;
 
-        size_t i = shmem_transport_ofi_contexts_len;
-        shmem_transport_ofi_contexts_len += shmem_transport_ofi_grow_size;
-        shmem_transport_ofi_contexts = realloc(shmem_transport_ofi_contexts,
-               shmem_transport_ofi_contexts_len * sizeof(shmem_transport_ctx_t*));
+        size_t i = team->contexts_len;
+        team->contexts_len += shmem_transport_ofi_grow_size;
+        team->contexts = realloc(team->contexts, team->contexts_len * sizeof(shmem_transport_ctx_t*));
 
-        for ( ; i < shmem_transport_ofi_contexts_len; i++)
-            shmem_transport_ofi_contexts[i] = NULL;
-
-        if (shmem_transport_ofi_contexts == NULL) {
+        if (team->contexts == NULL) {
             RAISE_ERROR_STR("Out of memory when allocating OFI ctx array");
         }
+
+        for ( ; i < team->contexts_len; i++)
+            team->contexts[i] = NULL;
     }
 
     shmem_transport_ctx_t *ctxp = malloc(sizeof(shmem_transport_ctx_t));
@@ -1573,12 +1575,14 @@ int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
     ctxp->stx_idx = -1;
     ctxp->options = options;
 
+    ctxp->team = team;
+
     ret = shmem_transport_ofi_ctx_init(ctxp, id);
 
     if (ret) {
         shmem_transport_ctx_destroy(ctxp);
     } else {
-        shmem_transport_ofi_contexts[id] = ctxp;
+        team->contexts[id] = ctxp;
         *ctx = ctxp;
     }
 
@@ -1590,6 +1594,9 @@ int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 {
     int ret;
+
+    if (ctx == NULL)
+        return;
 
     if(shmem_internal_params.DEBUG) {
         SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
@@ -1670,7 +1677,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 
     if (ctx->id >= 0) {
         SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
-        shmem_transport_ofi_contexts[ctx->id] = NULL;
+        ctx->team->contexts[ctx->id] = NULL;
         SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
         free(ctx);
     }
@@ -1685,20 +1692,8 @@ int shmem_transport_fini(void)
     shmem_transport_ofi_stx_kvs_t* e;
     int stx_len = 0;
 
-    /* Free all shareable contexts.  This performs a quiet on each context,
-     * ensuring all operations have completed before proceeding with shutdown. */
-
-    for (size_t i = 0; i < shmem_transport_ofi_contexts_len; ++i) {
-        if (shmem_transport_ofi_contexts[i]) {
-            if (shmem_transport_ofi_is_private(shmem_transport_ofi_contexts[i]->options))
-                RAISE_WARN_MSG("Shutting down with unfreed private context (%zu)\n", i);
-            shmem_transport_quiet(shmem_transport_ofi_contexts[i]);
-            shmem_transport_ctx_destroy(shmem_transport_ofi_contexts[i]);
-        }
-    }
-
-    if (shmem_transport_ofi_contexts) free(shmem_transport_ofi_contexts);
-
+    /* The default context is not inserted into the list of contexts on
+     * SHMEM_TEAM_WORLD, so it must be destroyed here */
     shmem_transport_quiet(&shmem_transport_ctx_default);
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
 

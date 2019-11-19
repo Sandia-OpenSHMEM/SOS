@@ -259,6 +259,16 @@ options.
         compute node is determined by its unique hostname, and the number of
         STXs available on a compute node is provided by the libfabric library.
 
+  Team Environment variables:
+
+    SHMEM_TEAMS_MAX (default: 10)
+        Sets the maximum number of available teams per PE, including the
+        predefined teams.  The maximum supported value is 64.  The value must
+        be the same across all PEs in SHMEM_TEAM_WORLD.
+
+    SHMEM_TEAM_SHARED_ONLY_SELF (default: off)
+        If defined, the predefined team, SHMEM_TEAM_SHARED, will only include
+        the self PE.
 
   Debugging Environment variables:
 

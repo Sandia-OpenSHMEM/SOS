@@ -96,6 +96,45 @@ $1(int,      int,           `SHM_INTERNAL_INT',           `$2', `$3')
 $1(long,     long,          `SHM_INTERNAL_LONG',          `$2', `$3')
 $1(longlong, long long,     `SHM_INTERNAL_LONG_LONG',     `$2', `$3')')dnl
 dnl
+define(`SHMEM_BIND_C_COLL_AND_OR_XOR', dnl args: macro_name, op_name, op_const
+`$1(uchar,    unsigned char,      `SHM_INTERNAL_UCHAR',      `$2', `$3')
+$1(short,     short,              `SHM_INTERNAL_SHORT',      `$2', `$3')
+$1(ushort,    unsigned short,     `SHM_INTERNAL_USHORT',     `$2', `$3')
+$1(int,       int,                `SHM_INTERNAL_INT',        `$2', `$3')
+$1(uint,      unsigned int,       `SHM_INTERNAL_UINT',       `$2', `$3')
+$1(long,      long,               `SHM_INTERNAL_LONG',       `$2', `$3')
+$1(ulong,     unsigned long,      `SHM_INTERNAL_ULONG',      `$2', `$3')
+$1(longlong,  long long,          `SHM_INTERNAL_LONG_LONG',  `$2', `$3')
+$1(ulonglong, unsigned long long, `SHM_INTERNAL_ULONG_LONG', `$2', `$3')')dnl
+dnl
+define(`SHMEM_BIND_C_COLL_MIN_MAX', dnl args: macro_name, op_name, op_const
+`$1(short,     short,              `SHM_INTERNAL_SHORT',       `$2', `$3')
+$1(ushort,     unsigned short,     `SHM_INTERNAL_USHORT',      `$2', `$3')
+$1(int,        int,                `SHM_INTERNAL_INT',         `$2', `$3')
+$1(uint,       unsigned int,       `SHM_INTERNAL_UINT',        `$2', `$3')
+$1(long,       long,               `SHM_INTERNAL_LONG',        `$2', `$3')
+$1(ulong,      unsigned long,      `SHM_INTERNAL_ULONG',       `$2', `$3')
+$1(longlong,   long long,          `SHM_INTERNAL_LONG_LONG',   `$2', `$3')
+$1(ulonglong,  unsigned long long, `SHM_INTERNAL_ULONG_LONG',  `$2', `$3')
+$1(float,      float,              `SHM_INTERNAL_FLOAT',       `$2', `$3')
+$1(double,     double,             `SHM_INTERNAL_DOUBLE',      `$2', `$3')
+$1(longdouble, long double,        `SHM_INTERNAL_LONG_DOUBLE', `$2', `$3')')dnl
+dnl
+define(`SHMEM_BIND_C_COLL_SUM_PROD', dnl args: macro_name, op_name, op_const
+`$1(short,     short,              `SHM_INTERNAL_SHORT',          `$2', `$3')
+$1(ushort,     unsigned short,     `SHM_INTERNAL_USHORT',         `$2', `$3')
+$1(int,        int,                `SHM_INTERNAL_INT',            `$2', `$3')
+$1(uint,       unsigned int,       `SHM_INTERNAL_UINT',           `$2', `$3')
+$1(long,       long,               `SHM_INTERNAL_LONG',           `$2', `$3')
+$1(ulong,      unsigned long,      `SHM_INTERNAL_ULONG',          `$2', `$3')
+$1(longlong,   long long,          `SHM_INTERNAL_LONG_LONG',      `$2', `$3')
+$1(ulonglong,  unsigned long long, `SHM_INTERNAL_ULONG_LONG',     `$2', `$3')
+$1(float,      float,              `SHM_INTERNAL_FLOAT',          `$2', `$3')
+$1(double,     double,             `SHM_INTERNAL_DOUBLE',         `$2', `$3')
+$1(longdouble, long double,        `SHM_INTERNAL_LONG_DOUBLE',    `$2', `$3')
+$1(complexd,   double _Complex,    `SHM_INTERNAL_DOUBLE_COMPLEX', `$2', `$3')
+$1(complexf,   float _Complex,     `SHM_INTERNAL_FLOAT_COMPLEX',  `$2', `$3')')dnl
+dnl
 define(`SHMEM_BIND_C_COLL_FLOATS', dnl args: macro_name, op_name, op_const
 `$1(float,    float,         `SHM_INTERNAL_FLOAT',         `$2', `$3')
 $1(double,   double,        `SHM_INTERNAL_DOUBLE',        `$2', `$3')

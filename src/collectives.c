@@ -94,13 +94,12 @@ shmem_internal_build_kary_tree(int radix, int PE_start, int stride,
 
 /* Circulator iterator for PE active sets */
 static inline int
-shmem_internal_circular_iter_next(int curr, int PE_start, int logPE_stride, int PE_size)
+shmem_internal_circular_iter_next(int curr, int PE_start, int PE_stride, int PE_size)
 {
-    const int stride = 1 << logPE_stride;
-    const int last = PE_start + (stride * (PE_size - 1));
+    const int last = PE_start + (PE_stride * (PE_size - 1));
     int next;
 
-    next = curr + stride;
+    next = curr + PE_stride;
     if (next > last)
         next = PE_start;
 
@@ -245,10 +244,9 @@ shmem_internal_collectives_init(void)
  *
  *****************************************/
 void
-shmem_internal_sync_linear(int PE_start, int logPE_stride, int PE_size, long *pSync)
+shmem_internal_sync_linear(int PE_start, int PE_stride, int PE_size, long *pSync)
 {
     long zero = 0, one = 1;
-    int stride = 1 << logPE_stride;
 
     /* need 1 slot */
     shmem_internal_assert(SHMEM_BARRIER_SYNC_SIZE >= 1);
@@ -265,9 +263,9 @@ shmem_internal_sync_linear(int PE_start, int logPE_stride, int PE_size, long *pS
         SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, 0);
 
         /* Send acks down psync tree */
-        for (pe = PE_start + stride, i = 1 ;
+        for (pe = PE_start + PE_stride, i = 1 ;
              i < PE_size ;
-             i++, pe += stride) {
+             i++, pe += PE_stride) {
             shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one), pe);
         }
 
@@ -289,10 +287,9 @@ shmem_internal_sync_linear(int PE_start, int logPE_stride, int PE_size, long *pS
 
 
 void
-shmem_internal_sync_tree(int PE_start, int logPE_stride, int PE_size, long *pSync)
+shmem_internal_sync_tree(int PE_start, int PE_stride, int PE_size, long *pSync)
 {
     long zero = 0, one = 1;
-    int stride = 1 << logPE_stride;
     int parent, num_children, *children;
 
     /* need 1 slot */
@@ -305,7 +302,7 @@ shmem_internal_sync_tree(int PE_start, int logPE_stride, int PE_size, long *pSyn
         children = full_tree_children;
     } else {
         children = alloca(sizeof(int) * tree_radix);
-        shmem_internal_build_kary_tree(tree_radix, PE_start, stride, PE_size,
+        shmem_internal_build_kary_tree(tree_radix, PE_start, PE_stride, PE_size,
                                        0, &parent, &num_children, children);
     }
 
@@ -371,12 +368,11 @@ shmem_internal_sync_tree(int PE_start, int logPE_stride, int PE_size, long *pSyn
 
 
 void
-shmem_internal_sync_dissem(int PE_start, int logPE_stride, int PE_size, long *pSync)
+shmem_internal_sync_dissem(int PE_start, int PE_stride, int PE_size, long *pSync)
 {
     int one = 1, neg_one = -1;
-    int stride = 1 << logPE_stride;
     int distance, to, i;
-    int coll_rank = (shmem_internal_my_pe - PE_start) / stride;
+    int coll_rank = (shmem_internal_my_pe - PE_start) / PE_stride;
     int *pSync_ints = (int*) pSync;
 
     /* need log2(num_procs) int slots.  max_num_procs is
@@ -390,7 +386,7 @@ shmem_internal_sync_dissem(int PE_start, int logPE_stride, int PE_size, long *pS
 
     for (i = 0, distance = 1 ; distance < PE_size ; ++i, distance <<= 1) {
         to = ((coll_rank + distance) % PE_size);
-        to = PE_start + (to * stride);
+        to = PE_start + (to * PE_stride);
 
         shmem_internal_atomic(SHMEM_CTX_DEFAULT, &pSync_ints[i], &one, sizeof(int),
                               to, SHM_INTERNAL_SUM, SHM_INTERNAL_INT);
@@ -418,12 +414,11 @@ shmem_internal_sync_dissem(int PE_start, int logPE_stride, int PE_size, long *pS
  *****************************************/
 void
 shmem_internal_bcast_linear(void *target, const void *source, size_t len,
-                            int PE_root, int PE_start, int logPE_stride, int PE_size,
+                            int PE_root, int PE_start, int PE_stride, int PE_size,
                             long *pSync, int complete)
 {
     long zero = 0, one = 1;
-    int stride = 1 << logPE_stride;
-    int real_root = PE_start + PE_root * stride;
+    int real_root = PE_start + PE_root * PE_stride;
     long completion = 0;
 
     /* need 1 slot */
@@ -435,7 +430,7 @@ shmem_internal_bcast_linear(void *target, const void *source, size_t len,
         int i, pe;
 
         /* send data to all peers */
-        for (pe = PE_start,i=0; i < PE_size; pe += stride, i++) {
+        for (pe = PE_start,i=0; i < PE_size; pe += PE_stride, i++) {
             if (pe == shmem_internal_my_pe) continue;
             shmem_internal_put_nb(SHMEM_CTX_DEFAULT, target, source, len, pe, &completion);
         }
@@ -444,7 +439,7 @@ shmem_internal_bcast_linear(void *target, const void *source, size_t len,
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
 
         /* send completion ack to all peers */
-        for (pe = PE_start,i=0; i < PE_size; pe += stride, i++) {
+        for (pe = PE_start,i=0; i < PE_size; pe += PE_stride, i++) {
             if (pe == shmem_internal_my_pe) continue;
             shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(long), pe);
         }
@@ -479,11 +474,10 @@ shmem_internal_bcast_linear(void *target, const void *source, size_t len,
 
 void
 shmem_internal_bcast_tree(void *target, const void *source, size_t len,
-                          int PE_root, int PE_start, int logPE_stride, int PE_size,
+                          int PE_root, int PE_start, int PE_stride, int PE_size,
                           long *pSync, int complete)
 {
     long zero = 0, one = 1;
-    int stride = 1 << logPE_stride;
     long completion = 0;
     int parent, num_children, *children;
     const void *send_buf = source;
@@ -500,7 +494,7 @@ shmem_internal_bcast_tree(void *target, const void *source, size_t len,
         children = full_tree_children;
     } else {
         children = alloca(sizeof(int) * tree_radix);
-        shmem_internal_build_kary_tree(tree_radix, PE_start, stride, PE_size,
+        shmem_internal_build_kary_tree(tree_radix, PE_start, PE_stride, PE_size,
                                        PE_root, &parent, &num_children, children);
     }
 
@@ -572,12 +566,12 @@ shmem_internal_bcast_tree(void *target, const void *source, size_t len,
  *
  *****************************************/
 void
-shmem_internal_op_to_all_linear(void *target, const void *source, int count, int type_size,
-                                int PE_start, int logPE_stride, int PE_size,
+shmem_internal_op_to_all_linear(void *target, const void *source, size_t count, size_t type_size,
+                                int PE_start, int PE_stride, int PE_size,
                                 void *pWrk, long *pSync,
                                 shm_internal_op_t op, shm_internal_datatype_t datatype)
 {
-    int stride = 1 << logPE_stride;
+
     long zero = 0, one = 1;
     long completion = 0;
 
@@ -597,9 +591,9 @@ shmem_internal_op_to_all_linear(void *target, const void *source, int count, int
         shmem_internal_quiet(SHMEM_CTX_DEFAULT);
 
         /* let everyone know that it's safe to send to us */
-        for (pe = PE_start + stride, i = 1 ;
+        for (pe = PE_start + PE_stride, i = 1 ;
              i < PE_size ;
-             i++, pe += stride) {
+             i++, pe += PE_stride) {
             shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one), pe);
         }
 
@@ -629,8 +623,8 @@ shmem_internal_op_to_all_linear(void *target, const void *source, int count, int
     }
 
     /* broadcast out */
-    shmem_internal_bcast(target, target, count * type_size, 0, PE_start,
-                         logPE_stride, PE_size, pSync + 2, 0);
+    shmem_internal_bcast(target, target, count * type_size, 0,
+                         PE_start, PE_stride, PE_size, pSync + 2, 0);
 }
 
 
@@ -638,16 +632,15 @@ shmem_internal_op_to_all_linear(void *target, const void *source, int count, int
     (count_)/(npes_) + ((id_) < (count_) % (_npes))
 
 void
-shmem_internal_op_to_all_ring(void *target, const void *source, int count, int type_size,
-                              int PE_start, int logPE_stride, int PE_size,
+shmem_internal_op_to_all_ring(void *target, const void *source, size_t count, size_t type_size,
+                              int PE_start, int PE_stride, int PE_size,
                               void *pWrk, long *pSync,
                               shm_internal_op_t op, shm_internal_datatype_t datatype)
 {
-    int stride = 1 << logPE_stride;
-    int group_rank = (shmem_internal_my_pe - PE_start) / stride;
+    int group_rank = (shmem_internal_my_pe - PE_start) / PE_stride;
     long zero = 0, one = 1;
 
-    int peer = PE_start + ((group_rank + 1) % PE_size) * stride;
+    int peer = PE_start + ((group_rank + 1) % PE_size) * PE_stride;
     int free_source = 0;
 
     /* One slot for reduce-scatter and another for the allgather */
@@ -667,13 +660,13 @@ shmem_internal_op_to_all_ring(void *target, const void *source, int count, int t
         void *tmp = malloc(count * type_size);
 
         if (NULL == tmp)
-            RAISE_ERROR_MSG("Unable to allocate %db temporary buffer\n", count*type_size);
+            RAISE_ERROR_MSG("Unable to allocate %zub temporary buffer\n", count*type_size);
 
         memcpy(tmp, target, count*type_size);
         free_source = 1;
         source = tmp;
 
-        shmem_internal_sync(PE_start, logPE_stride, PE_size, pSync + 2);
+        shmem_internal_sync(PE_start, PE_stride, PE_size, pSync + 2);
     }
 
     /* Perform reduce-scatter:
@@ -685,8 +678,8 @@ shmem_internal_op_to_all_ring(void *target, const void *source, int count, int t
      * corresponding to its PE id + 1.
      */
     for (int i = 0; i < PE_size - 1; i++) {
-        int chunk_in  = (group_rank - i - 1 + PE_size) % PE_size;
-        int chunk_out = (group_rank - i + PE_size) % PE_size;
+        size_t chunk_in  = (group_rank - i - 1 + PE_size) % PE_size;
+        size_t chunk_out = (group_rank - i + PE_size) % PE_size;
 
         /* Evenly distribute extra elements across first count % PE_size chunks */
         size_t chunk_in_extra  = chunk_in  < count % PE_size;
@@ -730,7 +723,7 @@ shmem_internal_op_to_all_ring(void *target, const void *source, int count, int t
      * around the ring until all PEs have all chunks.
      */
     for (int i = 0; i < PE_size - 1; i++) {
-        int chunk_out = (group_rank + 1 - i + PE_size) % PE_size;
+        size_t chunk_out = (group_rank + 1 - i + PE_size) % PE_size;
         size_t chunk_out_extra = chunk_out < count % PE_size;
         size_t chunk_out_count = count/PE_size + chunk_out_extra;
         size_t chunk_out_disp  = chunk_out_extra ?
@@ -759,12 +752,11 @@ shmem_internal_op_to_all_ring(void *target, const void *source, int count, int t
 
 
 void
-shmem_internal_op_to_all_tree(void *target, const void *source, int count, int type_size,
-                              int PE_start, int logPE_stride, int PE_size,
+shmem_internal_op_to_all_tree(void *target, const void *source, size_t count, size_t type_size,
+                              int PE_start, int PE_stride, int PE_size,
                               void *pWrk, long *pSync,
                               shm_internal_op_t op, shm_internal_datatype_t datatype)
 {
-    int stride = 1 << logPE_stride;
     long zero = 0, one = 1;
     long completion = 0;
     int parent, num_children, *children;
@@ -788,7 +780,7 @@ shmem_internal_op_to_all_tree(void *target, const void *source, int count, int t
         children = full_tree_children;
     } else {
         children = alloca(sizeof(int) * tree_radix);
-        shmem_internal_build_kary_tree(tree_radix, PE_start, stride, PE_size,
+        shmem_internal_build_kary_tree(tree_radix, PE_start, PE_stride, PE_size,
                                        0, &parent, &num_children, children);
     }
 
@@ -838,21 +830,20 @@ shmem_internal_op_to_all_tree(void *target, const void *source, int count, int t
 
     /* broadcast out */
     shmem_internal_bcast(target, target, count * type_size, 0, PE_start,
-                         logPE_stride, PE_size, pSync + 2, 0);
+                         PE_stride, PE_size, pSync + 2, 0);
 }
 
 
 void
-shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, int count, int type_size,
-                                   int PE_start, int logPE_stride, int PE_size,
+shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, size_t count, size_t type_size,
+                                   int PE_start, int PE_stride, int PE_size,
                                    void *pWrk, long *pSync,
                                    shm_internal_op_t op, shm_internal_datatype_t datatype)
 {
-    int stride = 1 << logPE_stride;
-    int my_id = ((shmem_internal_my_pe - PE_start) / stride);
+    int my_id = ((shmem_internal_my_pe - PE_start) / PE_stride);
     int log2_proc = 1, pow2_proc = 2;
     int i = PE_size >> 1;
-    int wrk_size = type_size*count;
+    size_t wrk_size = type_size*count;
     void * const current_target = malloc(wrk_size);
     long completion = 0;
     long * pSync_extra_peer = pSync + SHMEM_REDUCE_SYNC_SIZE - 2;
@@ -884,7 +875,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, int count, 
     if (current_target)
         memcpy(current_target, (void *) source, wrk_size);
     else
-        RAISE_ERROR_MSG("Failed to allocate current_target (count=%d, type_size=%d, size=%dB)\n",
+        RAISE_ERROR_MSG("Failed to allocate current_target (count=%zu, type_size=%zu, size=%zuB)\n",
                         count, type_size, wrk_size);
 
     /* Algorithm: reduce N number of PE's into a power of two recursive
@@ -899,7 +890,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, int count, 
     /* extra peer exchange: grab information from extra_peer so its part of
      * pairwise exchange */
     if (my_id >= pow2_proc) {
-        int peer = (my_id - pow2_proc) * stride + PE_start;
+        int peer = (my_id - pow2_proc) * PE_stride + PE_start;
 
         /* Wait for target ready, required when source and target overlap */
         SHMEM_WAIT_UNTIL(pSync_extra_peer, SHMEM_CMP_EQ, ps_target_ready);
@@ -914,7 +905,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, int count, 
 
     } else {
         if (my_id < PE_size - pow2_proc) {
-            int peer = (my_id + pow2_proc) * stride + PE_start;
+            int peer = (my_id + pow2_proc) * PE_stride + PE_start;
             shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync_extra_peer, &ps_target_ready, sizeof(long), peer);
 
             SHMEM_WAIT_UNTIL(pSync_extra_peer, SHMEM_CMP_EQ, ps_data_ready);
@@ -927,7 +918,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, int count, 
 
         for (i = 0; i < log2_proc; i++) {
             long *step_psync = &pSync[i];
-            int peer = (my_id ^ (1 << i)) * stride + PE_start;
+            int peer = (my_id ^ (1 << i)) * PE_stride + PE_start;
 
             if (shmem_internal_my_pe < peer) {
                 shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, step_psync, &ps_target_ready,
@@ -960,7 +951,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, int count, 
 
         /* update extra peer with the final result from the pairwise exchange */
         if (my_id < PE_size - pow2_proc) {
-            int peer = (my_id + pow2_proc) * stride + PE_start;
+            int peer = (my_id + pow2_proc) * PE_stride + PE_start;
 
             shmem_internal_put_nb(SHMEM_CTX_DEFAULT, target, current_target, wrk_size,
                                   peer, &completion);
@@ -987,9 +978,8 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, int count, 
  *****************************************/
 void
 shmem_internal_collect_linear(void *target, const void *source, size_t len,
-                              int PE_start, int logPE_stride, int PE_size, long *pSync)
+                              int PE_start, int PE_stride, int PE_size, long *pSync)
 {
-    int stride = 1 << logPE_stride;
     size_t my_offset;
     long tmp[2];
     int peer, start_pe, i;
@@ -997,8 +987,8 @@ shmem_internal_collect_linear(void *target, const void *source, size_t len,
     /* Need 2 for lengths and barrier for completion */
     shmem_internal_assert(SHMEM_COLLECT_SYNC_SIZE >= 2 + SHMEM_BARRIER_SYNC_SIZE);
 
-    DEBUG_MSG("target=%p, source=%p, len=%zd, PE_Start=%d, logPE_stride=%d, PE_size=%d, pSync=%p\n",
-              target, source, len, PE_start, logPE_stride, PE_size, (void*) pSync);
+    DEBUG_MSG("target=%p, source=%p, len=%zd, PE_Start=%d, PE_stride=%d, PE_size=%d, pSync=%p\n",
+              target, source, len, PE_start, PE_stride, PE_size, (void*) pSync);
 
     if (PE_size == 1) {
         if (target != source) memcpy(target, source, len);
@@ -1010,7 +1000,7 @@ shmem_internal_collect_linear(void *target, const void *source, size_t len,
         my_offset = 0;
         tmp[0] = (long) len; /* FIXME: Potential truncation of size_t into long */
         tmp[1] = 1; /* FIXME: Packing flag with data relies on byte ordering */
-        shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, tmp, 2 * sizeof(long), PE_start + stride);
+        shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, tmp, 2 * sizeof(long), PE_start + PE_stride);
     }
     else {
         /* wait for send data */
@@ -1018,17 +1008,17 @@ shmem_internal_collect_linear(void *target, const void *source, size_t len,
         my_offset = pSync[0];
 
         /* Not the last guy, so send offset to next PE */
-        if (shmem_internal_my_pe < PE_start + stride * (PE_size - 1)) {
+        if (shmem_internal_my_pe < PE_start + PE_stride * (PE_size - 1)) {
             tmp[0] = (long) (my_offset + len);
             tmp[1] = 1;
             shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, tmp, 2 * sizeof(long),
-                                     shmem_internal_my_pe + stride);
+                                     shmem_internal_my_pe + PE_stride);
         }
     }
 
     /* Send data round-robin, ending with my PE */
     start_pe = shmem_internal_circular_iter_next(shmem_internal_my_pe,
-                                                 PE_start, logPE_stride,
+                                                 PE_start, PE_stride,
                                                  PE_size);
     peer = start_pe;
     do {
@@ -1036,11 +1026,11 @@ shmem_internal_collect_linear(void *target, const void *source, size_t len,
             shmem_internal_put_nbi(SHMEM_CTX_DEFAULT, ((uint8_t *) target) + my_offset, source,
                                   len, peer);
         }
-        peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
+        peer = shmem_internal_circular_iter_next(peer, PE_start, PE_stride,
                                                  PE_size);
     } while (peer != start_pe);
 
-    shmem_internal_barrier(PE_start, logPE_stride, PE_size, &pSync[2]);
+    shmem_internal_barrier(PE_start, PE_stride, PE_size, &pSync[2]);
 
     pSync[0] = SHMEM_SYNC_VALUE;
     pSync[1] = SHMEM_SYNC_VALUE;
@@ -1057,10 +1047,9 @@ shmem_internal_collect_linear(void *target, const void *source, size_t len,
  *****************************************/
 void
 shmem_internal_fcollect_linear(void *target, const void *source, size_t len,
-                               int PE_start, int logPE_stride, int PE_size, long *pSync)
+                               int PE_start, int PE_stride, int PE_size, long *pSync)
 {
     long tmp = 1;
-    int stride = 1 << logPE_stride;
     long completion = 0;
 
     /* need 1 slot, plus bcast */
@@ -1083,7 +1072,7 @@ shmem_internal_fcollect_linear(void *target, const void *source, size_t len,
         SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, 0);
     } else {
         /* Push data into the target */
-        size_t offset = ((shmem_internal_my_pe - PE_start) / stride) * len;
+        size_t offset = ((shmem_internal_my_pe - PE_start) / PE_stride) * len;
         shmem_internal_put_nb(SHMEM_CTX_DEFAULT, (char*) target + offset, source, len, PE_start,
                               &completion);
         shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
@@ -1096,7 +1085,7 @@ shmem_internal_fcollect_linear(void *target, const void *source, size_t len,
                               PE_start, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
     }
 
-    shmem_internal_bcast(target, target, len * PE_size, 0, PE_start, logPE_stride,
+    shmem_internal_bcast(target, target, len * PE_size, 0, PE_start, PE_stride,
                          PE_size, pSync + 1, 0);
 }
 
@@ -1110,14 +1099,13 @@ shmem_internal_fcollect_linear(void *target, const void *source, size_t len,
  */
 void
 shmem_internal_fcollect_ring(void *target, const void *source, size_t len,
-                             int PE_start, int logPE_stride, int PE_size, long *pSync)
+                             int PE_start, int PE_stride, int PE_size, long *pSync)
 {
-    int stride = 1 << logPE_stride;
     int i;
     /* my_id is the index in a theoretical 0...N-1 array of
        participating tasks */
-    int my_id = ((shmem_internal_my_pe - PE_start) / stride);
-    int next_proc = PE_start + ((my_id + 1) % PE_size) * stride;
+    int my_id = ((shmem_internal_my_pe - PE_start) / PE_stride);
+    int next_proc = PE_start + ((my_id + 1) % PE_size) * PE_stride;
     long completion = 0;
     long zero = 0, one = 1;
 
@@ -1167,10 +1155,9 @@ shmem_internal_fcollect_ring(void *target, const void *source, size_t len,
  */
 void
 shmem_internal_fcollect_recdbl(void *target, const void *source, size_t len,
-                               int PE_start, int logPE_stride, int PE_size, long *pSync)
+                               int PE_start, int PE_stride, int PE_size, long *pSync)
 {
-    int stride = 1 << logPE_stride;
-    int my_id = ((shmem_internal_my_pe - PE_start) / stride);
+    int my_id = ((shmem_internal_my_pe - PE_start) / PE_stride);
     int i;
     long completion = 0;
     size_t curr_offset;
@@ -1196,7 +1183,7 @@ shmem_internal_fcollect_recdbl(void *target, const void *source, size_t len,
 
     for (i = 0, distance = 0x1 ; distance < PE_size ; i++, distance <<= 1) {
         int peer = my_id ^ distance;
-        int real_peer = PE_start + (peer * stride);
+        int real_peer = PE_start + (peer * PE_stride);
 
         /* send data to peer */
         shmem_internal_put_nb(SHMEM_CTX_DEFAULT, (char*) target + curr_offset, (char*) target + curr_offset,
@@ -1225,10 +1212,9 @@ shmem_internal_fcollect_recdbl(void *target, const void *source, size_t len,
 
 void
 shmem_internal_alltoall(void *dest, const void *source, size_t len,
-                        int PE_start, int logPE_stride, int PE_size, long *pSync)
+                        int PE_start, int PE_stride, int PE_size, long *pSync)
 {
-    const int stride = 1 << logPE_stride;
-    const int my_as_rank = (shmem_internal_my_pe - PE_start) / stride;
+    const int my_as_rank = (shmem_internal_my_pe - PE_start) / PE_stride;
     const void *dest_ptr = (uint8_t *) dest + my_as_rank * len;
     int peer, start_pe, i;
 
@@ -1239,19 +1225,19 @@ shmem_internal_alltoall(void *dest, const void *source, size_t len,
 
     /* Send data round-robin, ending with my PE */
     start_pe = shmem_internal_circular_iter_next(shmem_internal_my_pe,
-                                                 PE_start, logPE_stride,
+                                                 PE_start, PE_stride,
                                                  PE_size);
     peer = start_pe;
     do {
-        int peer_as_rank = (peer - PE_start) / stride; /* Peer's index in active set */
+        int peer_as_rank = (peer - PE_start) / PE_stride; /* Peer's index in active set */
 
         shmem_internal_put_nbi(SHMEM_CTX_DEFAULT, (void *) dest_ptr, (uint8_t *) source + peer_as_rank * len,
                               len, peer);
-        peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
+        peer = shmem_internal_circular_iter_next(peer, PE_start, PE_stride,
                                                  PE_size);
     } while (peer != start_pe);
 
-    shmem_internal_barrier(PE_start, logPE_stride, PE_size, pSync);
+    shmem_internal_barrier(PE_start, PE_stride, PE_size, pSync);
 
     for (i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
         pSync[i] = SHMEM_SYNC_VALUE;
@@ -1261,10 +1247,9 @@ shmem_internal_alltoall(void *dest, const void *source, size_t len,
 void
 shmem_internal_alltoalls(void *dest, const void *source, ptrdiff_t dst,
                          ptrdiff_t sst, size_t elem_size, size_t nelems,
-                         int PE_start, int logPE_stride, int PE_size, long *pSync)
+                         int PE_start, int PE_stride, int PE_size, long *pSync)
 {
-    const int stride = 1 << logPE_stride;
-    const int my_as_rank = (shmem_internal_my_pe - PE_start) / stride;
+    const int my_as_rank = (shmem_internal_my_pe - PE_start) / PE_stride;
     const void *dest_base = (uint8_t *) dest + my_as_rank * nelems * dst * elem_size;
     int peer, start_pe, i;
 
@@ -1283,12 +1268,12 @@ shmem_internal_alltoalls(void *dest, const void *source, ptrdiff_t dst,
 
     /* Send data round-robin, ending with my PE */
     start_pe = shmem_internal_circular_iter_next(shmem_internal_my_pe,
-                                                 PE_start, logPE_stride,
+                                                 PE_start, PE_stride,
                                                  PE_size);
     peer = start_pe;
     do {
         size_t i;
-        int peer_as_rank    = (peer - PE_start) / stride; /* Peer's index in active set */
+        int peer_as_rank    = (peer - PE_start) / PE_stride; /* Peer's index in active set */
         uint8_t *dest_ptr   = (uint8_t *) dest_base;
         uint8_t *source_ptr = (uint8_t *) source + peer_as_rank * nelems * sst * elem_size;
 
@@ -1299,11 +1284,11 @@ shmem_internal_alltoalls(void *dest, const void *source, ptrdiff_t dst,
             source_ptr += sst * elem_size;
             dest_ptr   += dst * elem_size;
         }
-        peer = shmem_internal_circular_iter_next(peer, PE_start, logPE_stride,
+        peer = shmem_internal_circular_iter_next(peer, PE_start, PE_stride,
                                                  PE_size);
     } while (peer != start_pe);
 
-    shmem_internal_barrier(PE_start, logPE_stride, PE_size, pSync);
+    shmem_internal_barrier(PE_start, PE_stride, PE_size, pSync);
 
     for (i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
         pSync[i] = SHMEM_SYNC_VALUE;

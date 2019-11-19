@@ -38,7 +38,20 @@ check_PROGRAMS += \
 	shmemx_test_any \
 	shmemx_test_some \
 	c11_test_shmemx_wait_until \
-	c11_test_shmemx_test
+	c11_test_shmemx_test \
+	shmemx_team_split_strided \
+	shmemx_team_translate \
+	shmemx_team_reuse_teams \
+	shmemx_team_sync \
+	shmemx_team_broadcast \
+	shmemx_team_collect \
+	shmemx_team_collect_active_set \
+	shmemx_team_alltoall \
+	shmemx_team_alltoalls \
+	shmemx_team_shared \
+	shmemx_team_b2b_collectives \
+	c11_shmemx_team_collective_types \
+	c11_shmemx_team_reduce
 
 if HAVE_PTHREADS
 check_PROGRAMS += \
