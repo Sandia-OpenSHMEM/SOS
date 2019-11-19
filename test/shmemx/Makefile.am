@@ -40,12 +40,15 @@ check_PROGRAMS += \
 	c11_test_shmemx_wait_until \
 	c11_test_shmemx_test \
 	shmemx_team_split_strided \
+	shmemx_team_split_2D \
 	shmemx_team_translate \
 	shmemx_team_reuse_teams \
+	shmemx_team_context \
 	shmemx_team_sync \
 	shmemx_team_broadcast \
 	shmemx_team_collect \
 	shmemx_team_collect_active_set \
+	shmemx_reduce \
 	shmemx_team_alltoall \
 	shmemx_team_alltoalls \
 	shmemx_team_shared \
