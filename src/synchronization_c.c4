@@ -198,7 +198,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL')
                                                                                                \
         for (i = 0; i < nelems; i++) SHMEM_INTERNAL_WAIT_UNTIL(&vars[i], cond, value);         \
                                                                                                \
-        shmem_internal_membar_load();                                                          \
+        shmem_internal_membar_acq_rel();                                                       \
         shmem_transport_syncmem();                                                             \
     }
 
@@ -247,7 +247,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ALL')
             if (!cmpret) shmem_transport_probe();                                              \
         }                                                                                      \
                                                                                                \
-        shmem_internal_membar_load();                                                          \
+        shmem_internal_membar_acq_rel();                                                       \
         shmem_transport_syncmem();                                                             \
         return found_idx;                                                                      \
     }
@@ -290,7 +290,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ANY')
             }                                                                                  \
             if (!cmpret) shmem_transport_probe();                                              \
         }                                                                                      \
-        shmem_internal_membar_load();                                                          \
+        shmem_internal_membar_acq_rel();                                                       \
         shmem_transport_syncmem();                                                             \
         return ncompleted;                                                                     \
     }
@@ -309,7 +309,8 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_SOME')
                                                                                                \
         COMP(cond, *(var), value, cmpret);                                                     \
         if (cmpret) {                                                                          \
-            shmem_internal_membar_load();                                                      \
+            shmem_internal_membar_acq_rel();                                                   \
+            shmem_transport_syncmem();                                                         \
         } else {                                                                               \
             shmem_transport_probe();                                                           \
         }                                                                                      \
@@ -339,7 +340,8 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST')
             if (cmpret) ncompleted++;                                                          \
         }                                                                                      \
         if (ncompleted == nelems) {                                                            \
-            shmem_internal_membar_load();                                                      \
+            shmem_internal_membar_acq_rel();                                                   \
+            shmem_transport_syncmem();                                                         \
             return 1;                                                                          \
         } else {                                                                               \
             shmem_transport_probe();                                                           \
@@ -377,9 +379,10 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ALL')
                 }                                                                              \
              }                                                                                 \
         }                                                                                      \
-        if (found_idx != SIZE_MAX)                                                             \
-            shmem_internal_membar_load();                                                      \
-        else                                                                                   \
+        if (found_idx != SIZE_MAX) {                                                           \
+            shmem_internal_membar_acq_rel();                                                   \
+            shmem_transport_syncmem();                                                         \
+        } else                                                                                 \
             shmem_transport_probe();                                                           \
                                                                                                \
         return found_idx;                                                                      \
@@ -421,7 +424,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ANY')
             }                                                                                  \
         }                                                                                      \
         if (!cmpret) shmem_transport_probe();                                                  \
-        shmem_internal_membar_load();                                                          \
+        shmem_internal_membar_acq_rel();                                                       \
         shmem_transport_syncmem();                                                             \
         return ncompleted;                                                                     \
     }

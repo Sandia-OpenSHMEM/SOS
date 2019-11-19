@@ -74,7 +74,7 @@ int8_t shmem_transport_portals4_pt_state[SHMEM_TRANSPORT_PORTALS4_NUM_PTS] = {
 ptl_handle_ni_t shmem_transport_portals4_ni_h = PTL_INVALID_HANDLE;
 ptl_handle_md_t shmem_transport_portals4_put_event_md_h = PTL_INVALID_HANDLE;
 ptl_handle_ct_t shmem_transport_portals4_put_event_ct_h = PTL_INVALID_HANDLE;
-shmem_internal_atomic_uint64_t shmem_transport_portals4_pending_put_event_cntr;
+shmem_internal_cntr_t shmem_transport_portals4_pending_put_event_cntr;
 #if ENABLE_REMOTE_VIRTUAL_ADDRESSING
 ptl_handle_le_t shmem_transport_portals4_le_h = PTL_INVALID_HANDLE;
 #else
@@ -138,8 +138,8 @@ shmem_transport_ctx_init(shmem_transport_ctx_t *ctx, long options, int id)
     ctx->get_md = PTL_INVALID_HANDLE;
     ctx->put_ct = PTL_INVALID_HANDLE;
     ctx->get_ct = PTL_INVALID_HANDLE;
-    shmem_internal_atomic_write(&ctx->pending_put_cntr, 0);
-    shmem_internal_atomic_write(&ctx->pending_get_cntr, 0);
+    shmem_internal_cntr_write(&ctx->pending_put_cntr, 0);
+    shmem_internal_cntr_write(&ctx->pending_get_cntr, 0);
 
     /* Allocate put completion tracking resources */
     ret = PtlCTAlloc(shmem_transport_portals4_ni_h, &ctx->put_ct);
@@ -256,7 +256,7 @@ shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options, shm
 
     memset(*ctx, 0, sizeof(shmem_transport_ctx_t));
 
-    shmem_internal_atomic_write(&shmem_transport_portals4_pending_put_event_cntr, 0);
+    shmem_internal_cntr_write(&shmem_transport_portals4_pending_put_event_cntr, 0);
     ret = shmem_transport_ctx_init(*ctx, options, id);
 
     if (ret) {
