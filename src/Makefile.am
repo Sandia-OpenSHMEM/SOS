@@ -18,7 +18,9 @@ GEN_BINDINGS = \
 	atomic_nbi_c.c \
 	collectives_c.c \
 	data_c.c \
-	synchronization_c.c
+	synchronization_c.c \
+	teams_c.c
+
 
 if HAVE_FORTRAN
 GEN_BINDINGS += \
@@ -61,7 +63,9 @@ libsma_la_SOURCES = \
 	contexts_c.c \
 	contexts.c \
 	perf_counters_c.c \
-	backtrace.c
+	backtrace.c \
+	shmem_team.c \
+	shmem_team.h
 
 nodist_libsma_la_SOURCES = \
 	$(GEN_BINDINGS)
@@ -168,7 +172,8 @@ EXTRA_DIST = shmem_compiler_script.in \
              collectives_f.c4         \
              data_c.c4                \
              data_f.c4                \
-             synchronization_c.c4
+             synchronization_c.c4     \
+             teams_c.c4
 
 do_subst = sed -e 's|[@]PERL[@]|$(PERL)|g' \
                -e 's|[@]WRAPPER_COMPILER_CC[@]|$(WRAPPER_COMPILER_CC)|g' \

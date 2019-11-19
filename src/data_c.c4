@@ -30,6 +30,7 @@ include(shmem_bind_c.m4)dnl
 #include "shmemx.h"
 #include "shmem_internal.h"
 #include "shmem_synchronization.h"
+#include "shmem_team.h"
 
 #ifdef ENABLE_PROFILING
 #include "pshmem.h"
@@ -573,11 +574,13 @@ SHMEM_DEF_PUT_N_SIGNAL_NBI(`mem', `1')
 #undef SHMEM_FUNC_PROTOTYPE
 #undef SHMEMX_FUNC_PROTOTYPE
 
-#define SHMEM_FUNC_PROTOTYPE(FUNCNAME,  ...)        \
-  shmem_ctx_##FUNCNAME(shmem_ctx_t ctx, __VA_ARGS__) {
+#define SHMEM_FUNC_PROTOTYPE(FUNCNAME,  ...)                 \
+  shmem_ctx_##FUNCNAME(shmem_ctx_t ctx, __VA_ARGS__) {       \
+  pe = shmem_internal_team_pe(((shmem_transport_ctx_t *) ctx)->team, pe);
 
-#define SHMEMX_FUNC_PROTOTYPE(FUNCNAME,  ...)        \
-  shmemx_ctx_##FUNCNAME(shmem_ctx_t ctx, __VA_ARGS__) {
+#define SHMEMX_FUNC_PROTOTYPE(FUNCNAME,  ...)                \
+  shmemx_ctx_##FUNCNAME(shmem_ctx_t ctx, __VA_ARGS__) {      \
+  pe = shmem_internal_team_pe(((shmem_transport_ctx_t *) ctx)->team, pe);
 
 SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_P')
 SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_G')

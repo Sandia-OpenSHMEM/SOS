@@ -175,6 +175,77 @@ static inline void shmemx_put_signal_nbi(shmem_ctx_t ctx, $2* dest, const $2* so
 }')dnl
 SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_PUT_SIGNAL_NBI')
 
+/* Team Collective Routines */
+define(`SHMEM_CXX_BCAST',
+`static inline int shmemx_broadcast(shmemx_team_t team, $2* dest, const $2* source,
+                                   size_t nelems, int PE_root) {
+    return shmemx_$1_broadcast(team, dest, source, nelems, PE_root);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_BCAST')
+
+define(`SHMEM_CXX_COLLECT',
+`static inline int shmemx_collect(shmemx_team_t team, $2* dest, const $2* source,
+                                 size_t nelems) {
+    return shmemx_$1_collect(team, dest, source, nelems);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_COLLECT')
+
+define(`SHMEM_CXX_FCOLLECT',
+`static inline int shmemx_fcollect(shmemx_team_t team, $2* dest, const $2* source,
+                                  size_t nelems) {
+    return shmemx_$1_fcollect(team, dest, source, nelems);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_FCOLLECT')
+
+define(`SHMEM_CXX_AND_REDUCE',
+`static inline int shmemx_and_reduce(shmemx_team_t team, $2* dest, const $2* source,
+                                    size_t nreduce) {
+    return shmemx_$1_and_reduce(team, dest, source, nreduce);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_COLL_AND_OR_XOR(`SHMEM_CXX_AND_REDUCE')
+
+define(`SHMEM_CXX_MIN_REDUCE',
+`static inline int shmemx_min_reduce(shmemx_team_t team, $2* dest, const $2* source,
+                                    size_t nreduce) {
+    return shmemx_$1_min_reduce(team, dest, source, nreduce);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_COLL_MIN_MAX(`SHMEM_CXX_MIN_REDUCE')
+
+define(`SHMEM_CXX_MAX_REDUCE',
+`static inline int shmemx_max_reduce(shmemx_team_t team, $2* dest, const $2* source,
+                                    size_t nreduce) {
+    return shmemx_$1_max_reduce(team, dest, source, nreduce);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_COLL_MIN_MAX(`SHMEM_CXX_MAX_REDUCE')
+
+define(`SHMEM_CXX_SUM_REDUCE',
+`static inline int shmemx_sum_reduce(shmemx_team_t team, $2* dest, const $2* source,
+                                    size_t nreduce) {
+    return shmemx_$1_sum_reduce(team, dest, source, nreduce);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_COLL_SUM_PROD(`SHMEM_CXX_SUM_REDUCE')
+
+define(`SHMEM_CXX_PROD_REDUCE',
+`static inline int shmemx_prod_reduce(shmemx_team_t team, $2* dest, const $2* source,
+                                     size_t nreduce) {
+    return shmemx_$1_prod_reduce(team, dest, source, nreduce);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_COLL_SUM_PROD(`SHMEM_CXX_PROD_REDUCE')
+
+define(`SHMEM_CXX_ALLTOALL',
+`static inline int shmemx_alltoall(shmemx_team_t team, $2* dest, const $2* source,
+                                  size_t nelems) {
+    return shmemx_$1_alltoall(team, dest, source, nelems);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_ALLTOALL')
+
+define(`SHMEM_CXX_ALLTOALLS',
+`static inline int shmemx_alltoalls(shmemx_team_t team, $2* dest, const $2* source,
+                                   ptrdiff_t dst, ptrdiff_t sst, size_t nelems) {
+    return shmemx_$1_alltoalls(team, dest, source, dst, sst, nelems);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_ALLTOALLS')
+
 /* C11 Generic Macros */
 #elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
 
@@ -346,6 +417,79 @@ SHMEM_BIND_C11_RMA(`SHMEM_CTX_C11_GEN_PUT_SIGNAL_NBI', `, \') \
             default: shmem_ctx_c11_generic_selection_failed \
         ), \
 SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_PUT_SIGNAL_NBI', `, \') \
+    )(__VA_ARGS__)
+
+/* Team Collective Routines */
+define(`SHMEM_C11_GEN_BCAST', `        $2*: shmemx_$1_broadcast')dnl
+#define shmemx_broadcast(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_BCAST', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_COLLECT', `        $2*: shmemx_$1_collect')dnl
+#define shmemx_collect(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_COLLECT', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_FCOLLECT', `        $2*: shmemx_$1_fcollect')dnl
+#define shmemx_fcollect(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_FCOLLECT', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_AND_REDUCE', `        $2*: shmemx_$1_and_reduce')dnl
+#define shmemx_and_reduce(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_COLL_AND_OR_XOR(`SHMEM_C11_GEN_AND_REDUCE', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_OR_REDUCE', `        $2*: shmemx_$1_or_reduce')dnl
+#define shmemx_or_reduce(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_COLL_AND_OR_XOR(`SHMEM_C11_GEN_OR_REDUCE', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_XOR_REDUCE', `        $2*: shmemx_$1_xor_reduce')dnl
+#define shmemx_xor_reduce(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_COLL_AND_OR_XOR(`SHMEM_C11_GEN_XOR_REDUCE', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_MIN_REDUCE', `        $2*: shmemx_$1_min_reduce')dnl
+#define shmemx_min_reduce(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_COLL_MIN_MAX(`SHMEM_C11_GEN_MIN_REDUCE', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_MAX_REDUCE', `        $2*: shmemx_$1_max_reduce')dnl
+#define shmemx_max_reduce(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_COLL_MIN_MAX(`SHMEM_C11_GEN_MAX_REDUCE', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_SUM_REDUCE', `        $2*: shmemx_$1_sum_reduce')dnl
+#define shmemx_sum_reduce(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_COLL_SUM_PROD(`SHMEM_C11_GEN_SUM_REDUCE', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_PROD_REDUCE', `        $2*: shmemx_$1_prod_reduce')dnl
+#define shmemx_prod_reduce(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_COLL_SUM_PROD(`SHMEM_C11_GEN_PROD_REDUCE', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_ALLTOALL', `        $2*: shmemx_$1_alltoall')dnl
+#define shmemx_alltoall(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_ALLTOALL', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_ALLTOALLS', `        $2*: shmemx_$1_alltoalls')dnl
+#define shmemx_alltoalls(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_ALLTOALLS', `, \') \
     )(__VA_ARGS__)
 
 #endif /* C11 */
