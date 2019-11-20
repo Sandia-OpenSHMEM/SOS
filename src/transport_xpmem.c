@@ -27,6 +27,58 @@
 #include "shmem_comm.h"
 #include "runtime.h"
 
+
+#define MPIDI_OFI_SHMGR_NAME_MAXLEN (128)
+#define MPIDI_OFI_SHMGR_NAME_PREFIX "/sos_shm_colls_area"
+
+void shm_create_key(char *key, size_t max_size, unsigned pe, size_t num) {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  long long ticks = num; 
+  snprintf(key, max_size,
+      "%s-%u-%llX", MPIDI_OFI_SHMGR_NAME_PREFIX, pe, ticks);
+}
+
+void *shm_create_region(char* base, const char *key, int shm_size) {
+  if(shm_size==0) return NULL;
+
+  int fd = shm_open(key, O_RDWR | O_CREAT | O_TRUNC, 0666);
+  if(fd == -1) {
+    fprintf(stderr, "COLL_comm_init error shm_open with errno(%d)\n",errno);
+    exit(0);
+  }
+
+  if(ftruncate(fd, shm_size) == -1) {
+    fprintf(stderr, "COLL_comm_init error ftruncate\n");
+    exit(0);
+  }
+
+  void *shm_base_addr = mmap(base, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
+  if(MAP_FAILED == shm_base_addr) {
+    fprintf(stderr, "COLL_comm_init error mmap %s  size %d\n", key, shm_size);
+    exit(0);
+  }
+
+  return shm_base_addr;
+}
+
+void *shm_attach_region(char* base, const char *key, int shm_size) {
+  if(shm_size==0) return NULL;
+
+  int fd = shm_open(key, O_RDWR, 0);
+  if(fd == -1) {
+    fprintf(stderr, "COLL_comm_init error shm_open\n");
+    exit(0);
+  }
+  void *shm_base_addr = mmap(NULL, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  if(MAP_FAILED == shm_base_addr) {
+    fprintf(stderr, "COLL_comm_init error mmap 2 %s  size %d\n", key, shm_size);
+    exit(0);
+  }
+  return shm_base_addr;
+}
+
+
 struct share_info_t {
     xpmem_segid_t data_seg;
     size_t data_len;
@@ -184,14 +236,14 @@ shmem_transport_xpmem_fini(void)
             if (0 != shmem_transport_xpmem_peers[peer_num].data_apid) {
                 xpmem_release(shmem_transport_xpmem_peers[peer_num].data_apid);
             }
-
+            /*
             if (NULL != shmem_transport_xpmem_peers[peer_num].heap_ptr) {
                 xpmem_detach(shmem_transport_xpmem_peers[peer_num].heap_attach_ptr);
             }
 
             if (0 != shmem_transport_xpmem_peers[peer_num].heap_apid) {
                 xpmem_release(shmem_transport_xpmem_peers[peer_num].heap_apid);
-            }
+            }*/
         }
         free(shmem_transport_xpmem_peers);
     }
@@ -199,6 +251,7 @@ shmem_transport_xpmem_fini(void)
     if (0 != my_info.data_seg) {
         xpmem_remove(my_info.data_seg);
     }
+    /*
     if (0 != my_info.heap_seg) {
         xpmem_remove(my_info.heap_seg);
     }

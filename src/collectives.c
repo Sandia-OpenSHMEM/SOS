@@ -677,7 +677,8 @@ shmem_internal_op_to_all_ring(void *target, const void *source, size_t count, si
      * PE 1 sends chunks 1, 0, 3.  At the end, each PE has the reduced chunk
      * corresponding to its PE id + 1.
      */
-    for (int i = 0; i < PE_size - 1; i++) {
+    int i = 0;
+    for (i = 0; i < PE_size - 1; i++) {
         size_t chunk_in  = (group_rank - i - 1 + PE_size) % PE_size;
         size_t chunk_out = (group_rank - i + PE_size) % PE_size;
 
@@ -722,7 +723,7 @@ shmem_internal_op_to_all_ring(void *target, const void *source, size_t count, si
      * Initially, each PE has the reduced chunk for PE id + 1.  Forward chunks
      * around the ring until all PEs have all chunks.
      */
-    for (int i = 0; i < PE_size - 1; i++) {
+    for (i = 0; i < PE_size - 1; i++) {
         size_t chunk_out = (group_rank + 1 - i + PE_size) % PE_size;
         size_t chunk_out_extra = chunk_out < count % PE_size;
         size_t chunk_out_count = count/PE_size + chunk_out_extra;
