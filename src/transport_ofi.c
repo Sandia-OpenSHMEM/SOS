@@ -2142,6 +2142,7 @@ int shmem_transport_fini(void)
     int ret;
     shmem_transport_ofi_stx_kvs_t* e;
     int stx_len = 0;
+    long i = 0;
 
     /* The default context is not inserted into the list of contexts on
      * SHMEM_TEAM_WORLD, so it must be destroyed here */
@@ -2158,8 +2159,8 @@ int shmem_transport_fini(void)
     if (stx_len > 0) {
         RAISE_WARN_MSG("Key/value store contained %d unfreed private contexts\n", stx_len);
     }
-
-    for (long i = 0; i < shmem_transport_ofi_stx_max; ++i) {
+    
+    for (i = 0; i < shmem_transport_ofi_stx_max; ++i) {
         if (shmem_transport_ofi_stx_pool[i].ref_cnt != 0)
             RAISE_WARN_MSG("Closing a %s STX (%zu) with nonzero ref. count (%ld)\n",
                            shmem_transport_ofi_stx_pool[i].is_private ? "private" : "shared",
