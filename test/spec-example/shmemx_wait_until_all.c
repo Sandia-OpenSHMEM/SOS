@@ -39,11 +39,12 @@ int main(void)
     int npes = shmem_n_pes();
 
     int *flags = shmem_calloc(npes, sizeof(int));
+    int *status = NULL;
 
     for (int i = 0; i < npes; i++)
-        shmem_int_p(&flags[mype], 1, i);
+        shmem_atomic_set(&flags[mype], 1, i);
 
-    shmemx_int_wait_until_all(flags, npes, SHMEM_CMP_EQ, 1);
+    shmemx_wait_until_all(flags, npes, status, SHMEM_CMP_EQ, 1);
 
     /* Check the flags array */
     for (int i = 0; i < npes; i++) {

@@ -31,6 +31,7 @@ check_PROGRAMS += \
 	atomic_nbi \
 	put_signal \
 	put_signal_nbi \
+	shmemx_test_all \
 	c11_test_shmemx_wait_until \
 	c11_test_shmemx_test \
 	shmemx_team_reuse_teams \
