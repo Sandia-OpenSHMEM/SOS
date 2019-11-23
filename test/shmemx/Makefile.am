@@ -24,7 +24,6 @@ check_PROGRAMS += \
 endif
 
 if SHMEMX_TESTS
-
 check_PROGRAMS += \
 	perf_counter \
 	fadd_nbi \
