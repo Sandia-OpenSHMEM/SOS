@@ -39,7 +39,7 @@ SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcntr_get_all(shmem_ctx_t ctx, shme
 
 /* Wait_until and test any/all/some point-to-point API, proposed for OpenSHMEM 1.5 */
 define(`SHMEM_C_WAIT_UNTIL_ALL',
-`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_$1_wait_until_all($2 *vars, size_t nelems, int cmp, $2 value);')dnl
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_$1_wait_until_all($2 *vars, size_t nelems, int *status, int cmp, $2 value);')dnl
 SHMEM_BIND_C_SYNC(`SHMEM_C_WAIT_UNTIL_ALL')
 
 define(`SHMEM_C_WAIT_UNTIL_ANY',

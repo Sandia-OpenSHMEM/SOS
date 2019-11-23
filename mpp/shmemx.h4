@@ -44,8 +44,8 @@ include(shmemx_c_func.h4)dnl
 } /* extern "C" */
 
 define(`SHMEM_CXX_WAIT_UNTIL_ALL',
-`static inline void shmemx_wait_until_all($2 *ivars, size_t nelems, int cmp, $2 cmp_value) {
-    shmemx_$1_wait_until_all(ivars, nelems, cmp, cmp_value);
+`static inline void shmemx_wait_until_all($2 *ivars, size_t nelems, int *status, int cmp, $2 cmp_value) {
+    shmemx_$1_wait_until_all(ivars, nelems, status, cmp, cmp_value);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_ALL')
 
