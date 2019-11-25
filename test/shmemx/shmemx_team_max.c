@@ -38,7 +38,7 @@ int main(void)
 {
     int me, npes, i;
     int team_count = 0;
-    int team_size=0;
+    int j=0;
 
     shmem_init();
 
@@ -47,28 +47,23 @@ int main(void)
 
     shmemx_team_t new_team[NUM_TEAMS];
 
-    i = 0;
-    while(i < 9) {
-        
-        team_size = i+1;
-        team_size = team_size % npes;
-        if(team_size == 0){
-            i++;
-            continue;
-        }
+    for(i=0; i < 10; i++) {
 
-        ret = shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 1, team_size, NULL, 0, &new_team[i]);
+        ret = shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 1, (i+1)%npes, NULL, 0, &new_team[i]);
  
         shmemx_sync(SHMEMX_TEAM_WORLD);
         shmemx_int_and_reduce(SHMEMX_TEAM_WORLD, &dest_ret, &ret, 1);
  
 
         if(ret !=0){
-            printf("ERROR: Max Teams limit reached. Try to destroy some teams!!\n");
+            if(i == j)
+                break;
+            shmemx_team_destroy(new_team[j]);
+            ret = shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 1, (i+1)%npes, NULL, 0, &new_team[i]);
+            j++;
         }else {
             team_count++;
         }
-        i++;
 
     }
     
