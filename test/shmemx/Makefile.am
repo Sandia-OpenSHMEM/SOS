@@ -41,6 +41,7 @@ check_PROGRAMS += \
 	c11_test_shmemx_test \
 	shmemx_team_split_strided \
 	shmemx_team_translate \
+	shmemx_team_translate_2 \
 	shmemx_team_reuse_teams \
 	shmemx_team_sync \
 	shmemx_team_broadcast \
