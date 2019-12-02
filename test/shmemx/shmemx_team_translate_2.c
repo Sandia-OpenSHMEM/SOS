@@ -8,9 +8,9 @@
 #include <shmemx.h>
 #include <stdio.h>
 
-int main(int argc, char *argv[])
+int main(void)
 {
-    int                  my_pe, npes;
+    int                  my_pe, npes, errors = 0;
     int                  t_pe_2, t_pe_3, t_pe_2_to_3, t_pe_3_to_2;
     shmemx_team_t        team_2s;
     shmemx_team_t        team_3s;
@@ -18,18 +18,12 @@ int main(int argc, char *argv[])
 
     shmem_init();
     config = NULL;
-    my_pe   = shmem_my_pe();
+    my_pe  = shmem_my_pe();
     npes   = shmem_n_pes();
 
-    if (npes < 4) {
-        fprintf(stderr, "ERR - Requires > 3 PEs\n");
-        shmem_finalize();
-        return 0;
-    }
-
-    shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 2, (npes/2)+1, config, 0,
+    shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 2, ((npes-1)/2)+1, config, 0,
                              &team_2s);
-    shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 3, (npes/3)+1, config, 0,
+    shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 3, ((npes-1)/3)+1, config, 0,
                              &team_3s);
 
     t_pe_3 = shmemx_team_my_pe(team_3s);
@@ -37,24 +31,32 @@ int main(int argc, char *argv[])
     t_pe_3_to_2 = shmemx_team_translate_pe(team_3s, t_pe_3, team_2s);
     t_pe_2_to_3 = shmemx_team_translate_pe(team_2s, t_pe_2, team_3s);
 
-    if(my_pe != 0){
-        if(my_pe % 2 == 0 && my_pe % 3 == 0 && my_pe != 0){
-            if(t_pe_3 == -1 || t_pe_2 == -1){
-                printf("ERROR: Unexpected behavior from SHMEMX_TEAM_TRANSLATE_PE\n");
-            }
-        } else if(my_pe % 2 == 0 && my_pe != 0){
-            if(t_pe_3 != -1 || t_pe_2_to_3 != -1){
-                printf("ERROR: Unexpected behavior from SHMEMX_TEAM_TRANSLATE_PE\n");
-            }
-        } else if(my_pe != 0){
-            if(t_pe_2 != -1 || t_pe_3_to_2 != -1){
-                printf("ERROR: Unexpected behavior from SHMEMX_TEAM_TRANSLATE_PE\n"); 
-            }
-
+    if (my_pe % 2 == 0 && my_pe % 3 == 0) {
+        if (t_pe_2 == -1 || t_pe_3 == -1 || t_pe_2_to_3 == -1 || t_pe_3_to_2 == -1) {
+            printf("ERROR: PE %d, t_pe_2=%d, t_pe_3=%d, t_pe_3_to_2=%d, t_pe_2_to_3=%d\n",
+                   my_pe, t_pe_2, t_pe_3, t_pe_3_to_2, t_pe_2_to_3);
+            ++errors;
+        }
+    } else if (my_pe % 2 == 0) {
+        if (t_pe_2 == -1 || t_pe_3 != -1 || t_pe_2_to_3 != -1 || t_pe_3_to_2 != -1) {
+            printf("ERROR: PE %d, t_pe_2=%d, t_pe_3=%d, t_pe_3_to_2=%d, t_pe_2_to_3=%d\n",
+                   my_pe, t_pe_2, t_pe_3, t_pe_3_to_2, t_pe_2_to_3);
+            ++errors;
+        }
+    } else if (my_pe % 3 == 0){
+        if (t_pe_2 != -1 || t_pe_3 == -1 || t_pe_2_to_3 != -1 || t_pe_3_to_2 != -1) {
+            printf("ERROR: PE %d, t_pe_2=%d, t_pe_3=%d, t_pe_3_to_2=%d, t_pe_2_to_3=%d\n",
+                   my_pe, t_pe_2, t_pe_3, t_pe_3_to_2, t_pe_2_to_3);
+            ++errors;
+        }
+    } else {
+        if (t_pe_2 != -1 || t_pe_3 != -1 || t_pe_2_to_3 != -1 || t_pe_3_to_2 != -1) {
+            printf("ERROR: PE %d, t_pe_2=%d, t_pe_3=%d, t_pe_3_to_2=%d, t_pe_2_to_3=%d\n",
+                   my_pe, t_pe_2, t_pe_3, t_pe_3_to_2, t_pe_2_to_3);
+            ++errors;
         }
     }
-    
 
     shmem_finalize();
-    return 0;
+    return errors != 0;
 }
