@@ -36,9 +36,8 @@ int dest_ret = 0;
 
 int main(void)
 {
-    int me, npes, i;
+    int me, npes, i, j;
     int team_count = 0;
-    int j=0;
 
     shmem_init();
 
@@ -47,26 +46,33 @@ int main(void)
 
     shmemx_team_t new_team[NUM_TEAMS];
 
-    for(i=0; i < 10; i++) {
+    for (i = j = 0; i < NUM_TEAMS; ) {
+        ret = shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 1, 1 + i % npes,
+                                        NULL, 0, &new_team[i]);
 
-        ret = shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 1, (i+1)%npes, NULL, 0, &new_team[i]);
- 
+        /* Wait for all PEs to fill in ret before starting the reduction */
         shmemx_sync(SHMEMX_TEAM_WORLD);
         shmemx_int_and_reduce(SHMEMX_TEAM_WORLD, &dest_ret, &ret, 1);
- 
 
-        if(ret !=0){
-            if(i == j)
+        /* If success was not global, free a team and retry */
+        if (dest_ret != 0) {
+            /* FIXME: The team is currently leaked in the case below */
+            if (ret == 0)
+                printf("%d: Local success and global failure on iteration %d\n",
+                       me, i);
+
+            /* No more teams to free */
+            if (i == j)
                 break;
+
             shmemx_team_destroy(new_team[j]);
-            ret = shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 1, (i+1)%npes, NULL, 0, &new_team[i]);
             j++;
-        }else {
+        } else {
+            i++;
             team_count++;
         }
-
     }
-    
+
     printf("The number of teams created for PE %d is : %d\n", me, team_count);
 
     shmem_finalize();
