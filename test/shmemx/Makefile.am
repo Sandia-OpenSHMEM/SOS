@@ -52,7 +52,8 @@ check_PROGRAMS += \
 	shmemx_team_shared \
 	shmemx_team_b2b_collectives \
 	c11_shmemx_team_collective_types \
-	c11_shmemx_team_reduce
+	c11_shmemx_team_reduce \
+	shmemx_team_max
 
 if HAVE_PTHREADS
 check_PROGRAMS += \
