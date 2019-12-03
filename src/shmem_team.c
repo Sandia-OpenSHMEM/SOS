@@ -287,7 +287,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
         if (myteam->psync_idx == -1 || myteam->psync_idx >= shmem_internal_params.TEAMS_MAX) {
             RAISE_WARN_MSG("No more teams available (max = %ld), try increasing SHMEM_TEAMS_MAX\n",
                             shmem_internal_params.TEAMS_MAX);
-            /* No psync is available, but must call barrier across parent team before returning. */
+            /* No psync was available, but must call barrier across parent team before returning. */
             myteam->psync_idx = -1;
         } else {
             /* Set the selected psync bit to 0, reserving that slot */
@@ -302,13 +302,15 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
         }
     }
 
+    /* This barrier on the parent team eliminates problematic race conditions
+     * during psync allocation between back-to-back team creations. */
     psync = shmem_internal_team_choose_psync(parent_team, SYNC);
 
     shmem_internal_barrier(parent_team->start, parent_team->stride, parent_team->size, psync);
 
     shmem_internal_team_release_psyncs(parent_team, SYNC);
 
-    /* If no team was available, print some team triplet info and return -1. */
+    /* If no team was available, print some team triplet info and return nonzero. */
     if (my_pe >= 0 && myteam != NULL && myteam->psync_idx == -1) {
         RAISE_WARN_MSG("Team split strided failed: child <%d, %d, %d>, parent <%d, %d, %d>\n",
                         global_PE_start, PE_stride, PE_size,
