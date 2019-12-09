@@ -526,11 +526,7 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
 }
 
 #define OFI_MAJOR_VERSION 1
-#ifdef ENABLE_MR_RMA_EVENT
 #define OFI_MINOR_VERSION 5
-#else
-#define OFI_MINOR_VERSION 0
-#endif
 
 static
 void init_bounce_buffer(shmem_free_list_item_t *item)
@@ -1101,12 +1097,14 @@ int query_for_fabric(struct fabric_info *info)
     domain_attr.data_progress = FI_PROGRESS_AUTO;
     domain_attr.resource_mgmt = FI_RM_ENABLED;
 #ifdef ENABLE_MR_SCALABLE
-    domain_attr.mr_mode       = FI_MR_SCALABLE; /* VA space-doesn't have to be pre-allocated */
+                                /* Scalable, offset-based addressing, formerly FI_MR_SCALABLE */
+    domain_attr.mr_mode       = 0;
 #  if !defined(ENABLE_HARD_POLLING) && defined(ENABLE_MR_RMA_EVENT)
     domain_attr.mr_mode       = FI_MR_RMA_EVENT; /* can support RMA_EVENT on MR */
 #  endif
 #else
-    domain_attr.mr_mode       = FI_MR_BASIC; /* VA space is pre-allocated */
+                                /* Portable, absolute addressing, formerly FI_MR_BASIC */
+    domain_attr.mr_mode       = FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY;
 #endif
 #if !defined(ENABLE_MR_SCALABLE) || !defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     domain_attr.mr_key_size   = 1; /* Heap and data use different MR keys, need
