@@ -74,7 +74,9 @@ struct fid_mr*                  shmem_transport_ofi_target_heap_mrfd;
 struct fid_mr*                  shmem_transport_ofi_target_data_mrfd;
 uint64_t*                       shmem_transport_ofi_target_heap_keys;
 uint64_t*                       shmem_transport_ofi_target_data_keys;
-#ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+int                             shmem_transport_ofi_use_absolute_address;
+#else
 uint8_t**                       shmem_transport_ofi_target_heap_addrs;
 uint8_t**                       shmem_transport_ofi_target_data_addrs;
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
@@ -708,7 +710,12 @@ int publish_mr_info(void)
         }
     }
 
-#ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_VIRT_ADDR)
+        shmem_transport_ofi_use_absolute_address = 1;
+    else
+        shmem_transport_ofi_use_absolute_address = 0;
+#else /* !ENABLE_REMOTE_VIRTUAL_ADDRESSING */
     {
         int err;
         void *heap_base, *data_base;
