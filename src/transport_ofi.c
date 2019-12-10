@@ -1178,6 +1178,12 @@ int query_for_fabric(struct fabric_info *info)
         return 1;
     }
 
+    if (info->p_info->domain_attr->mr_mode != domain_attr.mr_mode) {
+        RAISE_WARN_MSG("MR mode mismatch (requested 0x%x, received 0x%x)\n",
+                       domain_attr.mr_mode, info->p_info->domain_attr->mr_mode);
+        return 1;
+    }
+
     /* Check if the domain supports STXs */
     if (info->p_info->domain_attr->max_ep_stx_ctx == 0) {
         shmem_transport_ofi_stx_max = 0;
