@@ -57,9 +57,11 @@ int main(void)
         /* If success was not global, free a team and retry */
         if (dest_ret != 0) {
             /* FIXME: The team is currently leaked in the case below */
-            if (ret == 0)
+            if (ret == 0) {
                 printf("%d: Local success and global failure on iteration %d\n",
                        me, i);
+                shmem_global_exit(1);
+            }
 
             /* No more teams to free */
             if (i == j)
