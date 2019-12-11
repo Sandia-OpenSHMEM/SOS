@@ -273,8 +273,8 @@ struct shmem_transport_ctx_t {
     uint64_t                        pending_put_cntr;
     uint64_t                        pending_get_cntr;
 #else
-    shmem_internal_atomic_uint64_t  pending_put_cntr;
-    shmem_internal_atomic_uint64_t  pending_get_cntr;
+    shmem_internal_cntr_t           pending_put_cntr;
+    shmem_internal_cntr_t           pending_get_cntr;
 #endif
     /* These counters are protected by the BB lock */
     uint64_t                        pending_bb_cntr;
@@ -309,8 +309,8 @@ extern struct fid_ep* shmem_transport_ofi_target_ep;
 #else
 #define SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx)
 #define SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx)
-#define SHMEM_TRANSPORT_OFI_CNTR_READ(cntr) shmem_internal_atomic_read(cntr)
-#define SHMEM_TRANSPORT_OFI_CNTR_INC(cntr) shmem_internal_atomic_inc(cntr)
+#define SHMEM_TRANSPORT_OFI_CNTR_READ(cntr) shmem_internal_cntr_read(cntr)
+#define SHMEM_TRANSPORT_OFI_CNTR_INC(cntr) shmem_internal_cntr_inc(cntr)
 #endif /* USE_CTX_LOCK */
 
 #define SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx)                                    \
@@ -1433,8 +1433,10 @@ void shmem_transport_received_cntr_wait(uint64_t ge_val)
 static inline
 void shmem_transport_syncmem(void)
 {
-    // TODO: libfabric does not yet have an analog to PtlAtomicSync() in Portals4, so the OFI 
-    // transport routine will be a nop until an API is provided.
+    /* TODO: libfabric does not yet have an analog to PtlAtomicSync() in
+     * Portals4, so the OFI transport routine will be a nop until an API is
+     * provided.
+     */
 }
 
 static inline
