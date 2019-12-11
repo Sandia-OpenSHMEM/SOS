@@ -54,17 +54,17 @@ int main(void)
         my_data[i] = mype*N + i;
 
     for (int i = 0; i < npes; i++)
-        shmem_put_nbi(&all_data[mype*N], my_data, N, i);
+        shmem_int_put_nbi(&all_data[mype*N], my_data, N, i);
 
     shmem_fence();
 
     for (int i = 0; i < npes; i++)
-        shmem_atomic_set(&flags[mype], 1, i);
+        shmem_int_atomic_set(&flags[mype], 1, i);
 
     int ncompleted = 0;
 
     while (ncompleted < npes) {
-        int ntested = shmemx_test_some(flags, npes, indices, status, SHMEM_CMP_NE, 0);
+        int ntested = shmemx_int_test_some(flags, npes, indices, status, SHMEM_CMP_NE, 0);
         if (ntested > 0) {
             for (int i = 0; i < ntested; i++) {
                 for (int j = 0; j < N; j++) {

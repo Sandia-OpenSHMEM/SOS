@@ -23,15 +23,15 @@ int main(void)
         my_data[i] = mype*N + i;
 
     for (int i = 0; i < npes; i++)
-        shmem_put_nbi(&all_data[mype*N], my_data, N, i);
+        shmem_int_put_nbi(&all_data[mype*N], my_data, N, i);
 
     shmem_fence();
 
     for (int i = 0; i < npes; i++)
-        shmem_atomic_set(&flags[mype], 1, i);
+        shmem_int_atomic_set(&flags[mype], 1, i);
 
     size_t ncompleted;
-    while ((ncompleted = shmemx_wait_until_some(flags, npes, indices,
+    while ((ncompleted = shmemx_int_wait_until_some(flags, npes, indices,
                                                 status, SHMEM_CMP_NE, 0))) {
         for (size_t i = 0; i < ncompleted; i++) {
             for (size_t j = 0; j < N; j++) {
@@ -54,7 +54,7 @@ int main(void)
     }
 
     /* Sanity check the case with NULL status array */
-    ncompleted = shmemx_wait_until_some(flags, npes, indices, NULL, SHMEM_CMP_EQ, 1);
+    ncompleted = shmemx_int_wait_until_some(flags, npes, indices, NULL, SHMEM_CMP_EQ, 1);
 
     if (ncompleted != npes)
         shmem_global_exit(3);
