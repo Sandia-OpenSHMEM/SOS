@@ -163,6 +163,7 @@ int shmem_internal_team_init(void)
                                                          shmem_internal_params.TEAMS_MAX];
 
     psync_pool_avail = shmem_internal_shmalloc(2 * N_PSYNC_BYTES);
+    if (NULL == psync_pool_avail) return -1;
     psync_pool_avail_reduced = &psync_pool_avail[N_PSYNC_BYTES];
 
     /* Initialize the psync bits to 1, making all slots available: */
@@ -177,6 +178,7 @@ int shmem_internal_team_init(void)
 
     /* Initialize an integer used to agree on an equal return value across PEs in team creation: */
     team_ret_val = shmem_internal_shmalloc(sizeof(int) * 2);
+    if (NULL == team_ret_val) return -1;
     team_ret_val_reduced = &team_ret_val[1];
 
     return 0;
@@ -325,7 +327,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 
     shmem_internal_op_to_all(team_ret_val_reduced, team_ret_val, 1, sizeof(int),
                              parent_team->start, parent_team->stride, parent_team->size, NULL,
-                             psync, SHM_INTERNAL_BOR, SHM_INTERNAL_INT);
+                             psync, SHM_INTERNAL_MAX, SHM_INTERNAL_INT);
 
     shmem_internal_team_release_psyncs(parent_team, REDUCE);
 
