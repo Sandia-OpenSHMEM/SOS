@@ -47,7 +47,6 @@ int main(void)
     int *all_data = shmem_malloc(N * npes * sizeof(int));
 
     int *flags = shmem_calloc(npes, sizeof(int));
-    size_t *indices = calloc(npes, sizeof(size_t));
     int *status = calloc(npes, sizeof(int));
 
     for (int i = 0; i < N; i++)
@@ -59,21 +58,15 @@ int main(void)
     shmem_fence();
 
     for (int i = 0; i < npes; i++)
-        shmem_int_p(&flags[mype], 1, i);
+        shmem_int_atomic_set(&flags[mype], 1, i);
 
-    int ncompleted = 0;
-
-    while (ncompleted < npes) {
-        int ntested = shmemx_int_test_some(flags, npes, indices, status, SHMEM_CMP_NE, 0);
-        if (ntested > 0) {
-            for (int i = 0; i < ntested; i++) {
-                for (int j = 0; j < N; j++)
-                    total_sum += all_data[indices[i]*N + j];
-            }
-            ncompleted += ntested;
-        } else {
-            /* Overlap some computation here */
+    size_t completed_idx;
+    for (int i = 0; i < npes; i++) {
+        completed_idx = shmemx_int_wait_until_any(flags, npes, status, SHMEM_CMP_NE, 0);
+        for (int j = 0; j < N; j++) {
+            total_sum += all_data[completed_idx * N + j];
         }
+        status[completed_idx] = 1;
     }
 
     /* Check the flags array */
@@ -88,10 +81,10 @@ int main(void)
         shmem_global_exit(2);
     }
 
-    /* Sanity check case with NULL status array */
-    ncompleted = shmemx_int_test_some(flags, npes, indices, NULL, SHMEM_CMP_EQ, 1);
+    /* Sanity check the case with NULL status array */
+    completed_idx = shmemx_int_wait_until_any(flags, npes, NULL, SHMEM_CMP_EQ, 1);
 
-    if (ncompleted != npes)
+    if (completed_idx >= npes)
         shmem_global_exit(3);
 
     shmem_finalize();

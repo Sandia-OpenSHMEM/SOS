@@ -95,7 +95,6 @@ check_PROGRAMS = \
 	self_collectives \
 	zero_comm \
 	sync-size \
-	shmem_ctx_pipelined_reduce \
 	many-ctx \
 	shmem_test \
 	shmem_ptr
@@ -153,11 +152,6 @@ check_PROGRAMS += \
     web \
     thread_wait \
     query_thread_funneled 
-endif
-
-if HAVE_OPENMP
-check_PROGRAMS += \
-    shmem_ctx
 endif
 
 TESTS = $(check_PROGRAMS)
@@ -223,8 +217,6 @@ web_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 thread_wait_LDFLAGS = $(AM_LDFLAGS) $(PTHREAD_LIBS)
 thread_wait_CFLAGS = $(PTHREAD_CFLAGS)
 thread_wait_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
-
-shmem_ctx_CFLAGS = $(AM_OPENMP_CFLAGS)
 
 # Fortran Tests (only .c tests use automatic _SOURCES)
 hello_f_SOURCES = hello_f.f90
