@@ -127,7 +127,7 @@ int shmem_internal_team_init(void)
     if (shmem_internal_params.TEAMS_MAX > N_PSYNC_BYTES * CHAR_BIT) {
         RETURN_ERROR_MSG("Requested %ld teams, but only %d are supported\n",
                          shmem_internal_params.TEAMS_MAX, N_PSYNC_BYTES * CHAR_BIT);
-        return 1;
+        goto cleanup;
     }
 
     if (shmem_internal_params.TEAMS_MAX < SHMEM_TEAMS_MIN)
@@ -152,7 +152,7 @@ int shmem_internal_team_init(void)
      * */
     long psync_len = shmem_internal_params.TEAMS_MAX * (PSYNC_CHUNK_SIZE + SHMEM_SYNC_SIZE);
     shmem_internal_psync_pool = shmem_internal_shmalloc(sizeof(long) * psync_len);
-    if (NULL == shmem_internal_psync_pool) return -1;
+    if (NULL == shmem_internal_psync_pool) goto cleanup;
 
     for (long i = 0; i < psync_len; i++) {
         shmem_internal_psync_pool[i] = SHMEM_SYNC_VALUE;
@@ -163,7 +163,7 @@ int shmem_internal_team_init(void)
                                                          shmem_internal_params.TEAMS_MAX];
 
     psync_pool_avail = shmem_internal_shmalloc(2 * N_PSYNC_BYTES);
-    if (NULL == psync_pool_avail) return -1;
+    if (NULL == psync_pool_avail) goto cleanup;
     psync_pool_avail_reduced = &psync_pool_avail[N_PSYNC_BYTES];
 
     /* Initialize the psync bits to 1, making all slots available: */
@@ -178,10 +178,30 @@ int shmem_internal_team_init(void)
 
     /* Initialize an integer used to agree on an equal return value across PEs in team creation: */
     team_ret_val = shmem_internal_shmalloc(sizeof(int) * 2);
-    if (NULL == team_ret_val) return -1;
+    if (NULL == team_ret_val) goto cleanup;
     team_ret_val_reduced = &team_ret_val[1];
 
     return 0;
+
+cleanup:
+    if (shmem_internal_team_pool) {
+        free(shmem_internal_team_pool);
+        shmem_internal_team_pool = NULL;
+    }
+    if (shmem_internal_psync_pool) {
+        shmem_internal_free(shmem_internal_psync_pool);
+        shmem_internal_team_pool = NULL;
+    }
+    if (psync_pool_avail) {
+        shmem_internal_free(psync_pool_avail);
+        shmem_internal_team_pool = NULL;
+    }
+    if (team_ret_val) {
+        shmem_internal_free(team_ret_val);
+        shmem_internal_team_pool = NULL;
+    }
+
+    return -1;
 }
 
 void shmem_internal_team_fini(void)
