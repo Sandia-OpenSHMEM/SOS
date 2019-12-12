@@ -39,6 +39,8 @@ long *shmem_internal_psync_barrier_pool;
 static unsigned char *psync_pool_avail;
 static unsigned char *psync_pool_avail_reduced;
 
+static int *team_ret_val;
+static int *team_ret_val_reduced;
 
 /* Checks whether a PE has a consistent stride given (start, stride, size).
  * This function is useful within a loop across PE IDs, and sets 'start',
@@ -125,7 +127,7 @@ int shmem_internal_team_init(void)
     if (shmem_internal_params.TEAMS_MAX > N_PSYNC_BYTES * CHAR_BIT) {
         RETURN_ERROR_MSG("Requested %ld teams, but only %d are supported\n",
                          shmem_internal_params.TEAMS_MAX, N_PSYNC_BYTES * CHAR_BIT);
-        return 1;
+        goto cleanup;
     }
 
     if (shmem_internal_params.TEAMS_MAX < SHMEM_TEAMS_MIN)
@@ -150,7 +152,7 @@ int shmem_internal_team_init(void)
      * */
     long psync_len = shmem_internal_params.TEAMS_MAX * (PSYNC_CHUNK_SIZE + SHMEM_SYNC_SIZE);
     shmem_internal_psync_pool = shmem_internal_shmalloc(sizeof(long) * psync_len);
-    if (NULL == shmem_internal_psync_pool) return -1;
+    if (NULL == shmem_internal_psync_pool) goto cleanup;
 
     for (long i = 0; i < psync_len; i++) {
         shmem_internal_psync_pool[i] = SHMEM_SYNC_VALUE;
@@ -161,6 +163,7 @@ int shmem_internal_team_init(void)
                                                          shmem_internal_params.TEAMS_MAX];
 
     psync_pool_avail = shmem_internal_shmalloc(2 * N_PSYNC_BYTES);
+    if (NULL == psync_pool_avail) goto cleanup;
     psync_pool_avail_reduced = &psync_pool_avail[N_PSYNC_BYTES];
 
     /* Initialize the psync bits to 1, making all slots available: */
@@ -173,7 +176,32 @@ int shmem_internal_team_init(void)
     shmem_internal_bit_clear(psync_pool_avail, N_PSYNC_BYTES, SHMEM_TEAM_WORLD_INDEX);
     shmem_internal_bit_clear(psync_pool_avail, N_PSYNC_BYTES, SHMEM_TEAM_SHARED_INDEX);
 
+    /* Initialize an integer used to agree on an equal return value across PEs in team creation: */
+    team_ret_val = shmem_internal_shmalloc(sizeof(int) * 2);
+    if (NULL == team_ret_val) goto cleanup;
+    team_ret_val_reduced = &team_ret_val[1];
+
     return 0;
+
+cleanup:
+    if (shmem_internal_team_pool) {
+        free(shmem_internal_team_pool);
+        shmem_internal_team_pool = NULL;
+    }
+    if (shmem_internal_psync_pool) {
+        shmem_internal_free(shmem_internal_psync_pool);
+        shmem_internal_team_pool = NULL;
+    }
+    if (psync_pool_avail) {
+        shmem_internal_free(psync_pool_avail);
+        shmem_internal_team_pool = NULL;
+    }
+    if (team_ret_val) {
+        shmem_internal_free(team_ret_val);
+        shmem_internal_team_pool = NULL;
+    }
+
+    return -1;
 }
 
 void shmem_internal_team_fini(void)
@@ -187,6 +215,7 @@ void shmem_internal_team_fini(void)
     free(shmem_internal_team_pool);
     shmem_internal_free(shmem_internal_psync_pool);
     shmem_internal_free(psync_pool_avail);
+    shmem_internal_free(team_ret_val);
 
     return;
 }
@@ -247,6 +276,8 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 
     long *psync = shmem_internal_team_choose_psync(parent_team, REDUCE);
     shmem_internal_team_t *myteam = NULL;
+    *team_ret_val = 0;
+    *team_ret_val_reduced = 0;
 
     if (my_pe != -1) {
         char bit_str[SHMEM_INTERNAL_DIAG_STRLEN];
@@ -289,6 +320,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
                             shmem_internal_params.TEAMS_MAX);
             /* No psync was available, but must call barrier across parent team before returning. */
             myteam->psync_idx = -1;
+            *team_ret_val = 1;
         } else {
             /* Set the selected psync bit to 0, reserving that slot */
             shmem_internal_bit_clear(psync_pool_avail, N_PSYNC_BYTES, myteam->psync_idx);
@@ -310,15 +342,22 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 
     shmem_internal_team_release_psyncs(parent_team, SYNC);
 
+    /* This OR reduction assures all PEs return the same value.  */
+    psync = shmem_internal_team_choose_psync(parent_team, REDUCE);
+
+    shmem_internal_op_to_all(team_ret_val_reduced, team_ret_val, 1, sizeof(int),
+                             parent_team->start, parent_team->stride, parent_team->size, NULL,
+                             psync, SHM_INTERNAL_MAX, SHM_INTERNAL_INT);
+
+    shmem_internal_team_release_psyncs(parent_team, REDUCE);
+
     /* If no team was available, print some team triplet info and return nonzero. */
     if (my_pe >= 0 && myteam != NULL && myteam->psync_idx == -1) {
         RAISE_WARN_MSG("Team split strided failed: child <%d, %d, %d>, parent <%d, %d, %d>\n",
                         global_PE_start, PE_stride, PE_size,
                         parent_team->start, parent_team->stride, parent_team->size);
-        return -1;
-    } else {
-        return 0;
     }
+    return *team_ret_val_reduced;
 }
 
 int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
