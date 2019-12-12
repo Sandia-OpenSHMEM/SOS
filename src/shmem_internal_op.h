@@ -87,6 +87,30 @@ FUNC_OP_CREATE(short, short, and, shmem_internal_and_op)
 FUNC_OP_CREATE(short, short, or, shmem_internal_or_op)
 FUNC_OP_CREATE(short, short, xor, shmem_internal_xor_op)
 
+FUNC_OP_CREATE(ushort, unsigned short, max, shmem_internal_max_op)
+FUNC_OP_CREATE(ushort, unsigned short, min, shmem_internal_min_op)
+FUNC_OP_CREATE(ushort, unsigned short, sum, shmem_internal_sum_op)
+FUNC_OP_CREATE(ushort, unsigned short, prod, shmem_internal_prod_op)
+FUNC_OP_CREATE(ushort, unsigned short, and, shmem_internal_and_op)
+FUNC_OP_CREATE(ushort, unsigned short, or, shmem_internal_or_op)
+FUNC_OP_CREATE(ushort, unsigned short, xor, shmem_internal_xor_op)
+
+FUNC_OP_CREATE(uint, unsigned int, max, shmem_internal_max_op)
+FUNC_OP_CREATE(uint, unsigned int, min, shmem_internal_min_op)
+FUNC_OP_CREATE(uint, unsigned int, sum, shmem_internal_sum_op)
+FUNC_OP_CREATE(uint, unsigned int, prod, shmem_internal_prod_op)
+FUNC_OP_CREATE(uint, unsigned int, and, shmem_internal_and_op)
+FUNC_OP_CREATE(uint, unsigned int, or, shmem_internal_or_op)
+FUNC_OP_CREATE(uint, unsigned int, xor, shmem_internal_xor_op)
+
+FUNC_OP_CREATE(ulong, unsigned long, max, shmem_internal_max_op)
+FUNC_OP_CREATE(ulong, unsigned long, min, shmem_internal_min_op)
+FUNC_OP_CREATE(ulong, unsigned long, sum, shmem_internal_sum_op)
+FUNC_OP_CREATE(ulong, unsigned long, prod, shmem_internal_prod_op)
+FUNC_OP_CREATE(ulong, unsigned long, and, shmem_internal_and_op)
+FUNC_OP_CREATE(ulong, unsigned long, or, shmem_internal_or_op)
+FUNC_OP_CREATE(ulong, unsigned long, xor, shmem_internal_xor_op)
+
 FUNC_OP_CREATE(int8, int8_t, max, shmem_internal_max_op)
 FUNC_OP_CREATE(int8, int8_t, min, shmem_internal_min_op)
 FUNC_OP_CREATE(int8, int8_t, sum, shmem_internal_sum_op)
@@ -94,6 +118,10 @@ FUNC_OP_CREATE(int8, int8_t, prod, shmem_internal_prod_op)
 FUNC_OP_CREATE(int8, int8_t, and, shmem_internal_and_op)
 FUNC_OP_CREATE(int8, int8_t, or, shmem_internal_or_op)
 FUNC_OP_CREATE(int8, int8_t, xor, shmem_internal_xor_op)
+
+FUNC_OP_CREATE(uchar, unsigned char, and, shmem_internal_and_op)
+FUNC_OP_CREATE(uchar, unsigned char, or, shmem_internal_or_op)
+FUNC_OP_CREATE(uchar, unsigned char, xor, shmem_internal_xor_op)
 
 #define REDUCE_LOCAL_DTYPE_CASE_FP(dtype, dtype_name, c_type)                             \
     case dtype:                                                                           \
@@ -158,6 +186,23 @@ FUNC_OP_CREATE(int8, int8_t, xor, shmem_internal_xor_op)
         }                                                                                 \
         break;
 
+#define REDUCE_LOCAL_DTYPE_CASE_AND_OR_XOR(dtype, dtype_name, c_type)                     \
+    case dtype:                                                                           \
+        switch(op) {                                                                      \
+            case SHM_INTERNAL_BAND:                                                       \
+                shmem_op_##dtype_name##_and_func((c_type *) in, (c_type *) inout, count); \
+                break;                                                                    \
+            case SHM_INTERNAL_BOR:                                                        \
+                shmem_op_##dtype_name##_or_func((c_type *) in, (c_type *) inout, count);  \
+                break;                                                                    \
+            case SHM_INTERNAL_BXOR:                                                       \
+                shmem_op_##dtype_name##_xor_func((c_type *) in, (c_type *) inout, count); \
+                break;                                                                    \
+            default:                                                                      \
+                RAISE_ERROR_STR("unsupported reduction on " # c_type);                    \
+        }                                                                                 \
+        break;
+
 static inline void shmem_internal_reduce_local(shm_internal_op_t op,
                                 shm_internal_datatype_t datatype, int count,
                                 void *in, void *inout) {
@@ -170,7 +215,11 @@ static inline void shmem_internal_reduce_local(shm_internal_op_t op,
         REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_INT64, int64, int64_t);
         REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_INT32, int32, int32_t);
         REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_SHORT, short, short);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_USHORT, ushort, unsigned short);
         REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_SIGNED_BYTE, int8, int8_t);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_UINT, uint, unsigned int);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_ULONG, ulong, unsigned long);
+        REDUCE_LOCAL_DTYPE_CASE_AND_OR_XOR(SHM_INTERNAL_UCHAR, uchar, unsigned char);
 
         default:
             RAISE_ERROR_MSG("invalid data type (%d)", (int) datatype);

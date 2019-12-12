@@ -36,6 +36,7 @@
 #include "shmem_comm.h"
 #include "runtime.h"
 #include "build_info.h"
+#include "shmem_team.h"
 
 #if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING) && defined(__linux__)
 #include <sys/personality.h>
@@ -111,6 +112,9 @@ shmem_internal_shutdown(void)
     shmem_internal_barrier_all();
 
     shmem_internal_finalized = 1;
+
+    shmem_internal_team_fini();
+
     shmem_transport_fini();
 
     shmem_shr_transport_fini();
@@ -158,6 +162,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     int transport_initialized = 0;
     int shr_initialized       = 0;
     int randr_initialized     = 0;
+    int teams_initialized     = 0;
     int enable_node_ranks     = 0;
 
     /* Parse environment variables into shmem_internal_params */
@@ -179,6 +184,9 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 #elif USE_OFI
     enable_node_ranks = (shmem_internal_params.OFI_STX_AUTO) ? 1 : 0;
 #endif
+
+    if (!shmem_internal_params.TEAM_SHARED_ONLY_SELF)
+        enable_node_ranks = 1;
 
     ret = shmem_runtime_init(enable_node_ranks);
     if (0 != ret) {
@@ -401,6 +409,13 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         goto cleanup;
     }
 
+    ret = shmem_internal_team_init();
+    if (ret != 0) {
+        RETURN_ERROR_MSG("Initialization of teams failed (%d)\n", ret);
+        goto cleanup;
+    }
+    teams_initialized = 1;
+
     shmem_internal_randr_init();
     randr_initialized = 1;
 
@@ -424,6 +439,10 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
     if (randr_initialized) {
         shmem_internal_randr_fini();
+    }
+
+    if (teams_initialized) {
+        shmem_internal_team_fini();
     }
 
     if (NULL != shmem_internal_data_base) {

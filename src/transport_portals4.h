@@ -25,6 +25,7 @@
 #include "shmem_free_list.h"
 #include "shmem_internal.h"
 #include "shmem_atomic.h"
+#include "shmem_team.h"
 
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -53,8 +54,12 @@ typedef ptl_op_t shm_internal_op_t;
 #define SHM_INTERNAL_ULONG_LONG      DTYPE_UNSIGNED_LONG_LONG
 #define SHM_INTERNAL_SIZE_T          DTYPE_SIZE_T
 #define SHM_INTERNAL_PTRDIFF_T       DTYPE_PTRDIFF_T
+#define SHM_INTERNAL_UINT8           PTL_UINT8_T
+#define SHM_INTERNAL_UINT16          PTL_UINT16_T
 #define SHM_INTERNAL_UINT32          PTL_UINT32_T
 #define SHM_INTERNAL_UINT64          PTL_UINT64_T
+#define SHM_INTERNAL_UCHAR           DTYPE_UNSIGNED_CHAR
+#define SHM_INTERNAL_USHORT          DTYPE_UNSIGNED_SHORT
 
 #define SHM_INTERNAL_BAND PTL_BAND
 #define SHM_INTERNAL_BOR PTL_BOR
@@ -162,11 +167,12 @@ struct shmem_transport_ctx_t {
      * event arrival.  This race can cause early exit from quiet. */
     shmem_internal_cntr_t pending_put_cntr;
     shmem_internal_cntr_t pending_get_cntr;
+    struct shmem_internal_team_t   *team;
 };
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
 extern shmem_transport_ctx_t shmem_transport_ctx_default;
-int shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx);
+int shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options, shmem_transport_ctx_t **ctx);
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx);
 
 /*

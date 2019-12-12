@@ -70,6 +70,11 @@ SHMEM_INTERNAL_ENV_DEF(FCOLLECT_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CA
 SHMEM_INTERNAL_ENV_DEF(BARRIERS_FLUSH, bool, false, SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
                         "Flush stdout and stderr on barrier")
 
+SHMEM_INTERNAL_ENV_DEF(TEAMS_MAX, long, DEFAULT_TEAMS_MAX, SHMEM_INTERNAL_ENV_CAT_OTHER,
+                       "Maximum number of teams per PE")
+SHMEM_INTERNAL_ENV_DEF(TEAM_SHARED_ONLY_SELF, bool, false, SHMEM_INTERNAL_ENV_CAT_OTHER,
+                       "Include only the self PE in SHMEM_TEAM_SHARED")
+
 #ifdef USE_CMA
 SHMEM_INTERNAL_ENV_DEF(CMA_PUT_MAX, size, 8*1024, SHMEM_INTERNAL_ENV_CAT_INTRANODE,
                        "Size below which to use CMA for puts")

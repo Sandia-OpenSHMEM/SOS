@@ -194,21 +194,27 @@ extern unsigned int shmem_internal_rand_seed;
         }                                                               \
     } while (0)
 
-#define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size)                                     \
+#define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, PE_stride, PE_size)                                        \
     do {                                                                                                \
-        int shmem_err_check_active_stride = 1 << logPE_stride;                                          \
-        if (PE_start < 0 || logPE_stride < 0 || PE_size < 0 ||                                          \
-            PE_start + (PE_size - 1) * shmem_err_check_active_stride > shmem_internal_num_pes) {        \
-            fprintf(stderr, "ERROR: %s(): Invalid active set (PE_start = %d, logPE_stride = %d, PE_size = %d)\n", \
-                    __func__, PE_start, logPE_stride, PE_size);                                         \
+        if (PE_start < 0 || (PE_stride) < 1 || PE_size < 0 ||                                           \
+            PE_start + ((PE_size - 1) * (PE_stride)) > shmem_internal_num_pes) {                        \
+            fprintf(stderr, "ERROR: %s(): Invalid active set (PE_start = %d, PE_stride = %d, PE_size = %d)\n", \
+                    __func__, PE_start, (PE_stride), PE_size);                                          \
             shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                                  \
         }                                                                                               \
         if (! (shmem_internal_my_pe >= PE_start &&                                                      \
-               shmem_internal_my_pe <= PE_start + (PE_size-1) * shmem_err_check_active_stride &&        \
-               (shmem_internal_my_pe - PE_start) % shmem_err_check_active_stride == 0)) {               \
+               shmem_internal_my_pe <= PE_start + ((PE_size-1) * (PE_stride)) &&                        \
+               (shmem_internal_my_pe - PE_start) % (PE_stride) == 0)) {                                 \
             fprintf(stderr, "ERROR: %s(): Calling PE (%d) is not a member of the active set\n",         \
                     __func__, shmem_internal_my_pe);                                                    \
             shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                                  \
+        }                                                                                               \
+    } while (0)
+
+#define SHMEM_ERR_CHECK_TEAM_VALID(team)                                                                \
+    do {                                                                                                \
+        if (team == SHMEMX_TEAM_INVALID) {                                                              \
+            RAISE_ERROR_STR("Invalid team argument");                                                   \
         }                                                                                               \
     } while (0)
 
@@ -301,7 +307,8 @@ extern unsigned int shmem_internal_rand_seed;
 #define SHMEM_ERR_CHECK_INITIALIZED()
 #define SHMEM_ERR_CHECK_POSITIVE(arg)
 #define SHMEM_ERR_CHECK_NON_NEGATIVE(arg)
-#define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, logPE_stride, PE_size)
+#define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, PE_stride, PE_size)
+#define SHMEM_ERR_CHECK_TEAM_VALID(team)
 #define SHMEM_ERR_CHECK_PE(pe)
 #define SHMEM_ERR_CHECK_SYMMETRIC(ptr, len)
 #define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr)
@@ -422,6 +429,19 @@ int shmem_internal_collectives_init(void);
 void *shmem_internal_shmalloc(size_t size);
 void* shmem_internal_get_next(intptr_t incr);
 
+void dlfree(void*);
+
+static inline void shmem_internal_free(void *ptr)
+{
+    /* It's fine to call dlfree with NULL, but better to avoid unnecessarily
+     * taking the mutex in the threaded case. */
+    if (ptr != NULL) {
+        SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
+        dlfree(ptr);
+        SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
+    }
+}
+
 /* Query PEs reachable using shared memory */
 static inline int shmem_internal_get_shr_rank(int pe)
 {
@@ -445,7 +465,8 @@ static inline int shmem_internal_get_shr_size(void)
 #endif
 }
 
-static inline double shmem_internal_wtime(void) {
+static inline double shmem_internal_wtime(void)
+{
     double wtime = 0.0;
 
 #ifdef HAVE_CLOCK_GETTIME
@@ -475,5 +496,82 @@ void shmem_util_backtrace(void);
 
 extern uint64_t (*shmem_internal_gettid_fn)(void);
 extern void shmem_internal_register_gettid(uint64_t (*gettid_fn)(void));
+
+static inline
+void shmem_internal_bit_set(unsigned char *ptr, size_t size, size_t index)
+{
+    shmem_internal_assert(size > 0 && (index < size * CHAR_BIT));
+
+    size_t which_byte = index / size;
+    ptr[which_byte] |= (1 << (index % CHAR_BIT));
+
+    return;
+}
+
+static inline
+void shmem_internal_bit_clear(unsigned char *ptr, size_t size, size_t index)
+{
+    shmem_internal_assert(size > 0 && (index < size * CHAR_BIT));
+
+    size_t which_byte = index / size;
+    ptr[which_byte] &= ~(1 << (index % CHAR_BIT));
+
+    return;
+}
+
+static inline
+unsigned char shmem_internal_bit_fetch(unsigned char *ptr, size_t index)
+{
+    return (ptr[index / CHAR_BIT] >> index) & 1;
+}
+
+static inline
+size_t shmem_internal_bit_1st_nonzero(const unsigned char *ptr, const size_t size)
+{
+    /* The following ignores endianess: */
+    for(size_t i = 0; i < size; i++) {
+        unsigned char bit_val = ptr[i];
+        for (size_t j = 0; bit_val && j < CHAR_BIT; j++) {
+            if (bit_val & 1) return i * CHAR_BIT + j;
+            bit_val >>= 1;
+        }
+    }
+
+    return -1;
+}
+
+/* Create a bit string of the format AAAAAAAA.BBBBBBBB into str for the byte
+ * array passed via ptr. */
+static inline
+void shmem_internal_bit_to_string(char *str, size_t str_size,
+                                  unsigned char *ptr, size_t ptr_size)
+{
+    size_t off = 0;
+
+    for (size_t i = 0; i < ptr_size; i++) {
+        for (size_t j = 0; j < CHAR_BIT; j++) {
+            off += snprintf(str+off, str_size-off, "%s",
+                            (ptr[i] & (1 << (CHAR_BIT-1-j))) ? "1" : "0");
+            if (off >= str_size) return;
+        }
+        if (i < ptr_size - 1) {
+            off += snprintf(str+off, str_size-off, ".");
+            if (off >= str_size) return;
+        }
+    }
+}
+
+/* Return -1 if `global_pe` is not in the given active set.
+ * If `global_pe` is in the active set, return the PE index within this set. */
+static inline
+int shmem_internal_pe_in_active_set(int global_pe, int PE_start, int PE_stride, int PE_size)
+{
+    int n = (global_pe - PE_start) / PE_stride;
+    if (global_pe < PE_start || (global_pe - PE_start) % PE_stride || n >= PE_size)
+        return -1;
+    else {
+        return n;
+    }
+}
 
 #endif

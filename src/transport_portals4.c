@@ -120,8 +120,6 @@ shmem_internal_mutex_t shmem_internal_mutex_ptl4_frag;
 shmem_internal_mutex_t shmem_internal_mutex_ptl4_event_slots;
 #endif
 
-static shmem_transport_ctx_t** shmem_transport_portals4_contexts = NULL;
-static size_t shmem_transport_portals4_contexts_len = 0;
 static size_t shmem_transport_portals4_grow_size = 128;
 
 #define SHMEM_TRANSPORT_CTX_DEFAULT_ID -1
@@ -220,32 +218,34 @@ cleanup:
 }
 
 int
-shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
+shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options, shmem_transport_ctx_t **ctx)
 {
     int ret;
     size_t id;
 
+    if (team == NULL)
+        RAISE_ERROR_STR("Context creation occured on a NULL team");
+
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_ctx);
 
     /* Look for an open slot in the contexts array */
-    for (id = 0; id < shmem_transport_portals4_contexts_len; id++)
-        if (shmem_transport_portals4_contexts[id] == NULL) break;
+    for (id = 0; id < team->contexts_len; id++)
+        if (team->contexts[id] == NULL) break;
 
     /* If none found, grow the array */
-    if (id >= shmem_transport_portals4_contexts_len) {
-        id = shmem_transport_portals4_contexts_len;
+    if (id >= team->contexts_len) {
+        id = team->contexts_len;
 
-        size_t i = shmem_transport_portals4_contexts_len;
-        shmem_transport_portals4_contexts_len += shmem_transport_portals4_grow_size;
-        shmem_transport_portals4_contexts = realloc(shmem_transport_portals4_contexts,
-               shmem_transport_portals4_contexts_len * sizeof(shmem_transport_ctx_t*));
+        size_t i = team->contexts_len;
+        team->contexts_len += shmem_transport_portals4_grow_size;
+        team->contexts = realloc(team->contexts, team->contexts_len * sizeof(shmem_transport_ctx_t*));
 
-        for ( ; i < shmem_transport_portals4_contexts_len; i++)
-            shmem_transport_portals4_contexts[i] = NULL;
-
-        if (shmem_transport_portals4_contexts == NULL) {
+        if (team->contexts == NULL) {
             RAISE_ERROR_STR("Error: out of memory when allocating ctx array");
         }
+
+        for ( ; i < team->contexts_len; i++)
+            team->contexts[i] = NULL;
     }
 
     *ctx = malloc(sizeof(shmem_transport_ctx_t));
@@ -263,8 +263,10 @@ shmem_transport_ctx_create(long options, shmem_transport_ctx_t **ctx)
         free(*ctx);
         *ctx = NULL;
     } else {
-        shmem_transport_portals4_contexts[id] = *ctx;
+        team->contexts[id] = *ctx;
     }
+
+    (*ctx)->team = team;
 
     SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_ctx);
 
@@ -282,7 +284,7 @@ shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 
     if (ctx->id >= 0) {
         SHMEM_MUTEX_LOCK(shmem_internal_mutex_ptl4_ctx);
-        shmem_transport_portals4_contexts[ctx->id] = NULL;
+        ctx->team->contexts[ctx->id] = NULL;
         SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_ptl4_ctx);
         free(ctx);
     }
@@ -711,6 +713,8 @@ shmem_transport_startup(void)
                                    SHMEMX_CTX_BOUNCE_BUFFER,
                                    SHMEM_TRANSPORT_CTX_DEFAULT_ID);
 
+    shmem_transport_ctx_default.team = &shmem_internal_team_world;
+
  cleanup:
     if (NULL != pe_map) free(pe_map);
     return ret;
@@ -720,26 +724,11 @@ shmem_transport_startup(void)
 int
 shmem_transport_fini(void)
 {
-    size_t i;
-
     /* synchronize the atomic cache, if there is one */
     shmem_transport_syncmem();
 
-    /* Free all contexts.  This performs a quiet on each context, ensuring all
-     * operations have completed before proceeding with shutdown. */
-
-    for (i = 0; i < shmem_transport_portals4_contexts_len; ++i) {
-        if (shmem_transport_portals4_contexts[i]) {
-            if (shmem_transport_portals4_contexts[i]->options & SHMEM_CTX_PRIVATE)
-                RAISE_WARN_MSG("Shutting down with unfreed private context (%zu)\n", i);
-            shmem_transport_quiet(shmem_transport_portals4_contexts[i]);
-            shmem_transport_ctx_destroy(shmem_transport_portals4_contexts[i]);
-        }
-    }
-
-    if (shmem_transport_portals4_contexts)
-        free(shmem_transport_portals4_contexts);
-
+    /* The default context is not inserted into the list of contexts on
+     * SHMEM_TEAM_WORLD, so it must be destroyed here */
     shmem_transport_quiet(&shmem_transport_ctx_default);
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
 
