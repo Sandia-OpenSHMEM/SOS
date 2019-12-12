@@ -165,15 +165,15 @@ shmem_shr_transport_put_signal(shmem_ctx_t ctx, void *target,
 #elif USE_XPMEM
     shmem_transport_xpmem_put(target, source, len, pe,
                               shmem_internal_get_shr_rank(pe));
-    shmem_internal_membar_store(); /* Memory fence to ensure target PE observes
-                                      stores in the correct order */
+    shmem_internal_membar_acq_rel(); /* Memory fence to ensure target PE observes
+                                        stores in the correct order */
     shmem_transport_xpmem_put(sig_addr, &signal, sizeof(uint64_t), pe,
                               shmem_internal_get_shr_rank(pe));
 #elif USE_CMA
     shmem_transport_cma_put(target, source, len, pe,
                             shmem_internal_get_shr_rank(pe));
-    shmem_internal_membar_store(); /* Memory fence to ensure target PE observes
-                                      stores in the correct order */
+    shmem_internal_membar_acq_rel(); /* Memory fence to ensure target PE observes
+                                        stores in the correct order */
     shmem_transport_cma_put(sig_addr, &signal, sizeof(uint64_t), pe,
                             shmem_internal_get_shr_rank(pe));
 #else
@@ -207,7 +207,7 @@ shmem_shr_transport_swap(shmem_ctx_t ctx, void *target, void *source,
 {
 #if USE_SHR_ATOMICS
     int noderank = shmem_internal_get_shr_rank(pe);
-    char *remote_ptr;
+    void *remote_ptr;
 
     if (noderank == -1)
         RAISE_ERROR_MSG("No shared memory path to peer %d\n", pe);
@@ -262,7 +262,7 @@ shmem_shr_transport_cswap(shmem_ctx_t ctx, void *target, void *source,
 {
 #if USE_SHR_ATOMICS
     int noderank = shmem_internal_get_shr_rank(pe);
-    char *remote_ptr;
+    void *remote_ptr;
 
     if (noderank == -1)
         RAISE_ERROR_MSG("No shared memory path to peer %d\n", pe);
@@ -319,7 +319,7 @@ shmem_shr_transport_mswap(shmem_ctx_t ctx, void *target, void *source,
 {
 #if USE_SHR_ATOMICS
     int noderank = shmem_internal_get_shr_rank(pe);
-    char *remote_ptr;
+    void *remote_ptr;
     bool done = false;
 
     if (noderank == -1)
@@ -360,7 +360,7 @@ shmem_shr_transport_atomic(shmem_ctx_t ctx, void *target, const void *source,
 {
 #if USE_SHR_ATOMICS
     int noderank = shmem_internal_get_shr_rank(pe);
-    char *remote_ptr;
+    void *remote_ptr;
 
     if (noderank == -1)
         RAISE_ERROR_MSG("No shared memory path to peer %d\n", pe);
@@ -401,12 +401,12 @@ shmem_shr_transport_atomic_fetch(shmem_ctx_t ctx, void *target,
 {
 #if USE_SHR_ATOMICS
     int noderank = shmem_internal_get_shr_rank(pe);
-    char *remote_ptr;
+    void *remote_ptr;
 
     if (noderank == -1)
         RAISE_ERROR_MSG("No shared memory path to peer %d\n", pe);
 
-    shmem_shr_transport_ptr(source, noderank, &remote_ptr);
+    shmem_shr_transport_ptr((void *)source, noderank, &remote_ptr);
 
     switch (datatype) {
         case SHM_INTERNAL_INT:
@@ -446,7 +446,7 @@ shmem_shr_transport_atomic_set(shmem_ctx_t ctx, void *target,
 {
 #if USE_SHR_ATOMICS
     int noderank = shmem_internal_get_shr_rank(pe);
-    char *remote_ptr;
+    void *remote_ptr;
 
     if (noderank == -1)
         RAISE_ERROR_MSG("No shared memory path to peer %d\n", pe);
@@ -506,7 +506,7 @@ shmem_shr_transport_fetch_atomic(shmem_ctx_t ctx, void *target, void *source,
 {
 #if USE_SHR_ATOMICS
     int noderank = shmem_internal_get_shr_rank(pe);
-    char *remote_ptr;
+    void *remote_ptr;
 
     if (noderank == -1)
         RAISE_ERROR_MSG("No shared memory path to peer %d\n", pe);
