@@ -32,6 +32,56 @@
 #include "shmem_comm.h"
 #include "runtime.h"
 
+/* Temporarily redefine SHM_INTERNAL integer types to their Portals
+ * counterparts to translate the DTYPE_* types (defined by autoconf according
+ * to system ABI) into Portals types in the table below */
+#define SHM_INTERNAL_INT8   PTL_INT8_T
+#define SHM_INTERNAL_INT16  PTL_INT16_T
+#define SHM_INTERNAL_INT32  PTL_INT32_T
+#define SHM_INTERNAL_INT64  PTL_INT64_T
+#define SHM_INTERNAL_UINT8  PTL_UINT8_T
+#define SHM_INTERNAL_UINT16 PTL_UINT16_T
+#define SHM_INTERNAL_UINT32 PTL_UINT32_T
+#define SHM_INTERNAL_UINT64 PTL_UINT64_T
+
+int shmem_transport_dtype_table[] = {
+    PTL_INT8_T,               /* SHM_INTERNAL_SIGNED_BYTE    */
+    DTYPE_SHORT,              /* SHM_INTERNAL_SHORT          */
+    DTYPE_INT,                /* SHM_INTERNAL_INT            */
+    DTYPE_LONG,               /* SHM_INTERNAL_LONG           */
+    DTYPE_LONG_LONG,          /* SHM_INTERNAL_LONG_LONG      */
+    DTYPE_FORTRAN_INTEGER,    /* SHM_INTERNAL_FORTRAN_INT    */
+    PTL_INT8_T,               /* SHM_INTERNAL_INT8           */
+    PTL_INT16_T,              /* SHM_INTERNAL_INT16          */
+    PTL_INT32_T,              /* SHM_INTERNAL_INT32          */
+    PTL_INT64_T,              /* SHM_INTERNAL_INT64          */
+    DTYPE_PTRDIFF_T,          /* SHM_INTERNAL_PTRDIFF_T      */
+    DTYPE_UNSIGNED_CHAR,      /* SHM_INTERNAL_UCHAR          */
+    DTYPE_UNSIGNED_SHORT,     /* SHM_INTERNAL_USHORT         */
+    DTYPE_UNSIGNED_INT,       /* SHM_INTERNAL_UINT           */
+    DTYPE_UNSIGNED_LONG,      /* SHM_INTERNAL_ULONG          */
+    DTYPE_UNSIGNED_LONG_LONG, /* SHM_INTERNAL_ULONG_LONG     */
+    PTL_UINT8_T,              /* SHM_INTERNAL_UINT8          */
+    PTL_UINT16_T,             /* SHM_INTERNAL_UINT16         */
+    PTL_UINT32_T,             /* SHM_INTERNAL_UINT32         */
+    PTL_UINT64_T,             /* SHM_INTERNAL_UINT64         */
+    DTYPE_SIZE_T,             /* SHM_INTERNAL_SIZE_T         */
+    FI_FLOAT,                 /* SHM_INTERNAL_FLOAT          */
+    FI_DOUBLE,                /* SHM_INTERNAL_DOUBLE         */
+    FI_LONG_DOUBLE,           /* SHM_INTERNAL_LONG_DOUBLE    */
+    FI_FLOAT_COMPLEX,         /* SHM_INTERNAL_FLOAT_COMPLEX  */
+    FI_DOUBLE_COMPLEX         /* SHM_INTERNAL_DOUBLE_COMPLEX */
+};
+
+#undef SHM_INTERNAL_INT8
+#undef SHM_INTERNAL_INT16
+#undef SHM_INTERNAL_INT32
+#undef SHM_INTERNAL_INT64
+#undef SHM_INTERNAL_UINT8
+#undef SHM_INTERNAL_UINT16
+#undef SHM_INTERNAL_UINT32
+#undef SHM_INTERNAL_UINT64
+
 int8_t shmem_transport_portals4_pt_state[SHMEM_TRANSPORT_PORTALS4_NUM_PTS] = {
     /*  0 */ PT_FREE,
     /*  1 */ PT_FREE,

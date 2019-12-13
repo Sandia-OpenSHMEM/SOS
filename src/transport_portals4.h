@@ -61,6 +61,10 @@ typedef ptl_op_t shm_internal_op_t;
 #define SHM_INTERNAL_UCHAR           DTYPE_UNSIGNED_CHAR
 #define SHM_INTERNAL_USHORT          DTYPE_UNSIGNED_SHORT
 
+extern int shmem_transport_dtype_table[];
+
+#define SHMEM_TRANSPORT_DTYPE(DTYPE) shmem_transport_dtype_table[(DTYPE)]
+
 #define SHM_INTERNAL_BAND PTL_BAND
 #define SHM_INTERNAL_BOR PTL_BOR
 #define SHM_INTERNAL_BXOR PTL_BXOR
@@ -786,7 +790,7 @@ shmem_transport_swap(shmem_transport_ctx_t* ctx, void *target, const void *sourc
                   0,
                   NULL,
                   PTL_SWAP,
-                  datatype);
+                  SHMEM_TRANSPORT_DATATYPE(datatype));
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 }
 
@@ -837,7 +841,7 @@ shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
                   0,
                   operand,
                   PTL_CSWAP,
-                  datatype);
+                  SHMEM_TRANSPORT_DATATYPE(datatype));
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 }
 
@@ -889,7 +893,7 @@ shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
                   0,
                   mask,
                   PTL_MSWAP,
-                  datatype);
+                  SHMEM_TRANSPORT_DATATYPE(datatype));
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 }
 
@@ -922,7 +926,7 @@ shmem_transport_atomic(shmem_transport_ctx_t* ctx, void *target, const void *sou
                     NULL,
                     0,
                     op,
-                    datatype);
+                    SHMEM_TRANSPORT_DATATYPE(datatype));
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 }
 
@@ -955,7 +959,7 @@ shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const void *so
                         NULL,
                         0,
                         op,
-                        datatype);
+                        SHMEM_TRANSPORT_DATATYPE(datatype));
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
 
     } else if (len <= MIN(shmem_transport_portals4_bounce_buffer_size,
@@ -991,7 +995,7 @@ shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const void *so
                         buff,
                         0,
                         op,
-                        datatype);
+                        SHMEM_TRANSPORT_DATATYPE(datatype));
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
 #if WANT_TOTAL_DATA_ORDERING != 0
         shmem_transport_portals4_long_pending = 1;
@@ -1039,7 +1043,7 @@ shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const void *so
                             long_frag,
                             0,
                             op,
-                            datatype);
+                            SHMEM_TRANSPORT_DATATYPE(datatype));
             if (PTL_OK != ret) { RAISE_ERROR(ret); }
             (*(long_frag->completion))++;
             long_frag->reference++;
@@ -1087,7 +1091,7 @@ shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target, const voi
                          NULL,
                          0,
                          op,
-                         datatype);
+                         SHMEM_TRANSPORT_DATATYPE(datatype));
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 }
 
