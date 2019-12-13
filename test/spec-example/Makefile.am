@@ -27,13 +27,13 @@ check_PROGRAMS += \
 	shmemx_test_any \
 	shmemx_test_some \
 	shmemx_team_split_strided \
-	shmemx_team_split_2D \
+	shmem_team_split_2D \
 	shmemx_team_translate \
-	shmemx_team_context \
+	shmem_team_context \
 	shmemx_team_sync \
 	shmemx_team_broadcast \
 	shmemx_team_collect \
-	shmemx_reduce \
+	shmem_reduce_example \
 	shmemx_team_alltoall \
 	shmemx_team_alltoalls
 
