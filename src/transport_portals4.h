@@ -31,39 +31,10 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #endif
 
-typedef ptl_datatype_t shm_internal_datatype_t;
-typedef ptl_op_t shm_internal_op_t;
-#define SHM_INTERNAL_FLOAT PTL_FLOAT
-#define SHM_INTERNAL_DOUBLE PTL_DOUBLE
-#define SHM_INTERNAL_LONG_DOUBLE PTL_LONG_DOUBLE
-#define SHM_INTERNAL_FLOAT_COMPLEX PTL_FLOAT_COMPLEX
-#define SHM_INTERNAL_DOUBLE_COMPLEX PTL_DOUBLE_COMPLEX
-
-#define SHM_INTERNAL_SIGNED_BYTE     PTL_INT8_T
-#define SHM_INTERNAL_INT8            PTL_INT8_T
-#define SHM_INTERNAL_INT16           PTL_INT16_T
-#define SHM_INTERNAL_INT32           PTL_INT32_T
-#define SHM_INTERNAL_INT64           PTL_INT64_T
-#define SHM_INTERNAL_SHORT           DTYPE_SHORT
-#define SHM_INTERNAL_INT             DTYPE_INT
-#define SHM_INTERNAL_LONG            DTYPE_LONG
-#define SHM_INTERNAL_LONG_LONG       DTYPE_LONG_LONG
-#define SHM_INTERNAL_FORTRAN_INTEGER DTYPE_FORTRAN_INTEGER
-#define SHM_INTERNAL_UINT            DTYPE_UNSIGNED_INT
-#define SHM_INTERNAL_ULONG           DTYPE_UNSIGNED_LONG
-#define SHM_INTERNAL_ULONG_LONG      DTYPE_UNSIGNED_LONG_LONG
-#define SHM_INTERNAL_SIZE_T          DTYPE_SIZE_T
-#define SHM_INTERNAL_PTRDIFF_T       DTYPE_PTRDIFF_T
-#define SHM_INTERNAL_UINT8           PTL_UINT8_T
-#define SHM_INTERNAL_UINT16          PTL_UINT16_T
-#define SHM_INTERNAL_UINT32          PTL_UINT32_T
-#define SHM_INTERNAL_UINT64          PTL_UINT64_T
-#define SHM_INTERNAL_UCHAR           DTYPE_UNSIGNED_CHAR
-#define SHM_INTERNAL_USHORT          DTYPE_UNSIGNED_SHORT
-
 extern int shmem_transport_dtype_table[];
-
 #define SHMEM_TRANSPORT_DTYPE(DTYPE) shmem_transport_dtype_table[(DTYPE)]
+
+typedef ptl_op_t shm_internal_op_t;
 
 #define SHM_INTERNAL_BAND PTL_BAND
 #define SHM_INTERNAL_BOR PTL_BOR
@@ -790,7 +761,7 @@ shmem_transport_swap(shmem_transport_ctx_t* ctx, void *target, const void *sourc
                   0,
                   NULL,
                   PTL_SWAP,
-                  SHMEM_TRANSPORT_DATATYPE(datatype));
+                  SHMEM_TRANSPORT_DTYPE(datatype));
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 }
 
@@ -841,7 +812,7 @@ shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
                   0,
                   operand,
                   PTL_CSWAP,
-                  SHMEM_TRANSPORT_DATATYPE(datatype));
+                  SHMEM_TRANSPORT_DTYPE(datatype));
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 }
 
@@ -893,7 +864,7 @@ shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
                   0,
                   mask,
                   PTL_MSWAP,
-                  SHMEM_TRANSPORT_DATATYPE(datatype));
+                  SHMEM_TRANSPORT_DTYPE(datatype));
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 }
 
@@ -926,7 +897,7 @@ shmem_transport_atomic(shmem_transport_ctx_t* ctx, void *target, const void *sou
                     NULL,
                     0,
                     op,
-                    SHMEM_TRANSPORT_DATATYPE(datatype));
+                    SHMEM_TRANSPORT_DTYPE(datatype));
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 }
 
@@ -959,7 +930,7 @@ shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const void *so
                         NULL,
                         0,
                         op,
-                        SHMEM_TRANSPORT_DATATYPE(datatype));
+                        SHMEM_TRANSPORT_DTYPE(datatype));
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
 
     } else if (len <= MIN(shmem_transport_portals4_bounce_buffer_size,
@@ -995,7 +966,7 @@ shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const void *so
                         buff,
                         0,
                         op,
-                        SHMEM_TRANSPORT_DATATYPE(datatype));
+                        SHMEM_TRANSPORT_DTYPE(datatype));
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
 #if WANT_TOTAL_DATA_ORDERING != 0
         shmem_transport_portals4_long_pending = 1;
@@ -1043,7 +1014,7 @@ shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const void *so
                             long_frag,
                             0,
                             op,
-                            SHMEM_TRANSPORT_DATATYPE(datatype));
+                            SHMEM_TRANSPORT_DTYPE(datatype));
             if (PTL_OK != ret) { RAISE_ERROR(ret); }
             (*(long_frag->completion))++;
             long_frag->reference++;
@@ -1091,7 +1062,7 @@ shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target, const voi
                          NULL,
                          0,
                          op,
-                         SHMEM_TRANSPORT_DATATYPE(datatype));
+                         SHMEM_TRANSPORT_DTYPE(datatype));
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 }
 

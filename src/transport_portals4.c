@@ -66,11 +66,11 @@ int shmem_transport_dtype_table[] = {
     PTL_UINT32_T,             /* SHM_INTERNAL_UINT32         */
     PTL_UINT64_T,             /* SHM_INTERNAL_UINT64         */
     DTYPE_SIZE_T,             /* SHM_INTERNAL_SIZE_T         */
-    FI_FLOAT,                 /* SHM_INTERNAL_FLOAT          */
-    FI_DOUBLE,                /* SHM_INTERNAL_DOUBLE         */
-    FI_LONG_DOUBLE,           /* SHM_INTERNAL_LONG_DOUBLE    */
-    FI_FLOAT_COMPLEX,         /* SHM_INTERNAL_FLOAT_COMPLEX  */
-    FI_DOUBLE_COMPLEX         /* SHM_INTERNAL_DOUBLE_COMPLEX */
+    PTL_FLOAT,                /* SHM_INTERNAL_FLOAT          */
+    PTL_DOUBLE,               /* SHM_INTERNAL_DOUBLE         */
+    PTL_LONG_DOUBLE,          /* SHM_INTERNAL_LONG_DOUBLE    */
+    PTL_FLOAT_COMPLEX,        /* SHM_INTERNAL_FLOAT_COMPLEX  */
+    PTL_DOUBLE_COMPLEX        /* SHM_INTERNAL_DOUBLE_COMPLEX */
 };
 
 #undef SHM_INTERNAL_INT8
