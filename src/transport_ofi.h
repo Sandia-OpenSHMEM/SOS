@@ -49,9 +49,11 @@ extern struct fid_cq*                   shmem_transport_ofi_target_cq;
 #ifndef ENABLE_MR_SCALABLE
 extern uint64_t*                        shmem_transport_ofi_target_heap_keys;
 extern uint64_t*                        shmem_transport_ofi_target_data_keys;
-#ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-extern uint8_t**                       shmem_transport_ofi_target_heap_addrs;
-extern uint8_t**                       shmem_transport_ofi_target_data_addrs;
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+extern int                              shmem_transport_ofi_use_absolute_address;
+#else
+extern uint8_t**                        shmem_transport_ofi_target_heap_addrs;
+extern uint8_t**                        shmem_transport_ofi_target_data_addrs;
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 #endif /* ENABLE_MR_SCALABLE */
 extern uint64_t                         shmem_transport_ofi_max_poll;
@@ -152,7 +154,10 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
         (uint8_t*) addr < (uint8_t*) shmem_internal_data_base + shmem_internal_data_length) {
         *key = shmem_transport_ofi_target_data_keys[dest_pe];
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-        *mr_addr = (uint8_t *) addr;
+        if (shmem_transport_ofi_use_absolute_address)
+            *mr_addr = (uint8_t *) addr;
+        else
+            *mr_addr = (void *) ((uint8_t *) addr - (uint8_t *) shmem_internal_data_base);
 #else
         *mr_addr = shmem_transport_ofi_target_data_addrs[dest_pe] +
             ((uint8_t *) addr - (uint8_t *) shmem_internal_data_base);
@@ -163,7 +168,10 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
              (uint8_t*) addr < (uint8_t*) shmem_internal_heap_base + shmem_internal_heap_length) {
         *key = shmem_transport_ofi_target_heap_keys[dest_pe];
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-        *mr_addr = (uint8_t *) addr;
+        if (shmem_transport_ofi_use_absolute_address)
+            *mr_addr = (uint8_t *) addr;
+        else
+            *mr_addr = (void *) ((uint8_t *) addr - (uint8_t *) shmem_internal_heap_base);
 #else
         *mr_addr = shmem_transport_ofi_target_heap_addrs[dest_pe] +
             ((uint8_t *) addr - (uint8_t *) shmem_internal_heap_base);
