@@ -56,7 +56,7 @@ int main(void)
     /* Sanity check the case with NULL status array */
     ncompleted = shmemx_int_wait_until_some(flags, npes, indices, NULL, SHMEM_CMP_EQ, 1);
 
-    if (ncompleted != npes)
+    if (ncompleted != (size_t)npes)
         shmem_global_exit(3);
 
     shmem_finalize();
