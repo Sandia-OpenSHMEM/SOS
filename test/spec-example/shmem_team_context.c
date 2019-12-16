@@ -10,10 +10,10 @@
 
 int main(void)
 {
-  static int sum = 0, val_2, val_3;
-  shmemx_team_t team_2, team_3;
-  shmem_ctx_t ctx_2, ctx_3;
-  shmemx_team_config_t conf;
+  static int            sum = 0, val_2, val_3;
+  shmemx_team_t         team_2, team_3;
+  shmem_ctx_t           ctx_2, ctx_3;
+  shmemx_team_config_t  conf;
 
   shmem_init();
 
@@ -29,16 +29,12 @@ int main(void)
   shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 3, (npes + 2) / 3, &conf, cmask, &team_3);
 
   /* Create a context on team_2. */
-  if (team_2 != SHMEMX_TEAM_INVALID) {
-      int ret = shmemx_team_create_ctx(team_2, 0, &ctx_2);
-      if (ret != 0) ctx_2 = SHMEMX_CTX_INVALID;
-  }
+  int ret = shmemx_team_create_ctx(team_2, 0, &ctx_2);
+  if (ret != 0) ctx_2 = SHMEMX_CTX_INVALID;
 
   /* Create a context on team_3. */
-  if (team_3 != SHMEMX_TEAM_INVALID) {
-      int ret = shmemx_team_create_ctx(team_3, 0, &ctx_3);
-      if (ret != 0) ctx_3 = SHMEMX_CTX_INVALID;
-  }
+  ret = shmemx_team_create_ctx(team_3, 0, &ctx_3);
+  if (ret != 0) ctx_3 = SHMEMX_CTX_INVALID;
 
   /* Within each team, put my PE number to my neighbor in a ring-based manner. */
   if (ctx_2 != SHMEMX_CTX_INVALID) {
