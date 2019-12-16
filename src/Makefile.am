@@ -67,14 +67,13 @@ libsma_la_SOURCES = \
 	shmem_team.c \
 	shmem_team.h
 
-nodist_libsma_la_SOURCES = \
-	$(GEN_BINDINGS)
-
 BUILT_SOURCES = $(GEN_BINDINGS) \
-		build_info.h
+		build_info.h \
+		shr_transport.h
 
-CLEANFILES += $(GEN_BINDINGS) \
-		build_info.h
+nodist_libsma_la_SOURCES = $(BUILT_SOURCES)
+
+CLEANFILES += $(BUILT_SOURCES)
 
 if HAVE_FORTRAN
 libsma_la_SOURCES += \
@@ -173,7 +172,8 @@ EXTRA_DIST = shmem_compiler_script.in \
              data_c.c4                \
              data_f.c4                \
              synchronization_c.c4     \
-             teams_c.c4
+             teams_c.c4               \
+             shr_transport.h4
 
 do_subst = sed -e 's|[@]PERL[@]|$(PERL)|g' \
                -e 's|[@]WRAPPER_COMPILER_CC[@]|$(WRAPPER_COMPILER_CC)|g' \
@@ -221,7 +221,10 @@ oshrun: shmem_launcher_script.in Makefile
 	$(AM_V_SED)$(do_subst_launcher) < $(srcdir)/shmem_launcher_script.in > oshrun
 	@chmod +x oshrun
 
-SUFFIXES = .c4
+SUFFIXES = .c4 .h4
 
 .c4.c: $(top_srcdir)/bindings/shmem_bind_c.m4 $(top_srcdir)/bindings/shmem_bind_f.m4
+	$(AM_V_GEN) $(M4) -I$(top_srcdir)/bindings -I$(top_builddir)/bindings $< > $@
+
+.h4.h: $(top_srcdir)/bindings/shmem_bind_c.m4 $(top_srcdir)/bindings/shmem_bind_f.m4
 	$(AM_V_GEN) $(M4) -I$(top_srcdir)/bindings -I$(top_builddir)/bindings $< > $@
