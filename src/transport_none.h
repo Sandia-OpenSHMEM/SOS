@@ -17,6 +17,7 @@
 #define TRANSPORT_NONE_H
 
 #include "shmem_internal.h"
+#include "transport.h"
 
 
 /* Operations */
@@ -28,7 +29,7 @@ enum shm_internal_op_t {
     SHM_INTERNAL_MAX,
     SHM_INTERNAL_SUM,
     SHM_INTERNAL_PROD
-}
+};
 
 typedef enum shm_internal_op_t shm_internal_op_t;
 typedef int shmem_transport_ct_t;
