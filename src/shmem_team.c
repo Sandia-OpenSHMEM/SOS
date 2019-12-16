@@ -371,21 +371,26 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
     const int num_xteams = ceil( parent_size / (float)xrange );
     const int num_yteams = xrange;
 
-    int start = parent_start;
+    int start = 0;
     int ret = 0;
+
+    shmem_internal_team_t *my_xteam, *my_yteam;
 
     for (int i = 0; i < num_xteams; i++) {
         int xsize = (i == num_xteams - 1 && parent_size % xrange) ? parent_size % xrange : xrange;
 
         ret = shmem_internal_team_split_strided(parent_team, start, parent_stride,
-                                                xsize, xaxis_config, xaxis_mask, xaxis_team);
+                                                xsize, xaxis_config, xaxis_mask, &my_xteam);
         if (ret) {
-            RAISE_ERROR_MSG("Creation of x-axis team %d of %d failed\n", i, num_xteams);
+            RAISE_ERROR_MSG("Creation of x-axis team %d of %d failed\n", i+1, num_xteams);
         }
-        start += xrange * parent_stride;
+        start += xrange;
+
+        if (my_xteam != SHMEMX_TEAM_INVALID)
+            *xaxis_team = my_xteam;
     }
 
-    start = parent_start;
+    start = 0;
 
     for (int i = 0; i < num_yteams; i++) {
         int remainder = parent_size % xrange;
@@ -393,11 +398,14 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
         int ysize = (remainder && i < remainder) ? yrange + 1 : yrange;
 
         ret = shmem_internal_team_split_strided(parent_team, start, xrange*parent_stride,
-                                        ysize, yaxis_config, yaxis_mask, yaxis_team);
+                                        ysize, yaxis_config, yaxis_mask, &my_yteam);
         if (ret) {
-            RAISE_ERROR_MSG("Creation of y-axis team %d of %d failed\n", i, num_yteams);
+            RAISE_ERROR_MSG("Creation of y-axis team %d of %d failed\n", i+1, num_yteams);
         }
-        start += parent_stride;
+        start += 1;
+
+        if (my_yteam != SHMEMX_TEAM_INVALID)
+            *yaxis_team = my_yteam;
     }
 
     long *psync = shmem_internal_team_choose_psync(parent_team, SYNC);
