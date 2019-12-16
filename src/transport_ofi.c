@@ -741,7 +741,7 @@ int publish_mr_info(void)
         }
     }
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
-#endif /* ENABLE_MR_SCALABLE */
+#endif /* !ENABLE_MR_SCALABLE */
 
     return 0;
 }
@@ -819,7 +819,7 @@ int populate_mr_tables(void)
         }
     }
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
-#endif /* ENABLE_MR_SCALABLE */
+#endif /* !ENABLE_MR_SCALABLE */
 
     return 0;
 }
