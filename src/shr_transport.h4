@@ -323,7 +323,7 @@ shmem_shr_transport_mswap(shmem_ctx_t ctx, void *target, void *source,
             while (!done) {
                 int v = __atomic_load_n((int *)remote_ptr, __ATOMIC_SEQ_CST);
 
-                int new = ((unsigned int) v & !*(unsigned int *)mask) | (*(unsigned int *)source & *(unsigned int *)mask);
+                int new = ((unsigned int) v & ~*(unsigned int *)mask) | (*(unsigned int *)source & *(unsigned int *)mask);
 
                 done = __atomic_compare_exchange((int *)remote_ptr,
                                                  &v,
