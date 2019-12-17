@@ -358,26 +358,67 @@ shmem_shr_transport_atomic(shmem_ctx_t ctx, void *target, const void *source,
 
     shmem_shr_transport_ptr(target, noderank, &remote_ptr);
 
+#define SHMEM_DEF_BAND_OP(STYPE,TYPE,ITYPE)                                                     \
+                case ITYPE:                                                                     \
+                    __atomic_fetch_and((TYPE *)remote_ptr, *((TYPE *)source), __ATOMIC_SEQ_CST);\
+                    break;
+
+#define SHMEM_DEF_BOR_OP(STYPE,TYPE,ITYPE)                                                      \
+                case ITYPE:                                                                     \
+                    __atomic_fetch_or((TYPE *)remote_ptr, *((TYPE *)source), __ATOMIC_SEQ_CST); \
+                    break;
+
+#define SHMEM_DEF_BXOR_OP(STYPE,TYPE,ITYPE)                                                     \
+                case ITYPE:                                                                     \
+                    __atomic_fetch_xor((TYPE *)remote_ptr, *((TYPE *)source), __ATOMIC_SEQ_CST);\
+                    break;
+
+#define SHMEM_DEF_SUM_OP(STYPE,TYPE,ITYPE)                                                      \
+                case ITYPE:                                                                     \
+                    __atomic_fetch_add((TYPE *)remote_ptr, *((TYPE *)source), __ATOMIC_SEQ_CST);\
+                    break;
+
     switch (op) {
-    case SHM_INTERNAL_SUM:
-        switch (datatype) {
-            case SHM_INTERNAL_INT:
-                {
-                    __atomic_fetch_add((int *)remote_ptr, *((int *)source), __ATOMIC_SEQ_CST);
-                }
-                break;
-            case SHM_INTERNAL_LONG:
-                {
-                    __atomic_fetch_add((long *)remote_ptr, *((long *)source), __ATOMIC_SEQ_CST); /* FIXME: ACQ_REL */
-                }
-                break;
-            default:
-                RAISE_ERROR_MSG("Unsupported datatype op=%d, dtype=%d\n", op, datatype);
-        }
-        break;
-    default:
-        RAISE_ERROR_MSG("Unsupported atomic operation %d\n", op);
+        case SHM_INTERNAL_BAND:
+            switch(datatype) {
+SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_BAND_OP)
+                default:
+                    RAISE_ERROR_MSG("Unsupported datatype op=%d, dtype=%d\n", op, datatype);
+            }
+            break;
+        case SHM_INTERNAL_BOR:
+            switch(datatype) {
+SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_BOR_OP)
+                default:
+                    RAISE_ERROR_MSG("Unsupported datatype op=%d, dtype=%d\n", op, datatype);
+            }
+            break;
+        case SHM_INTERNAL_BXOR:
+            switch(datatype) {
+SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_BXOR_OP)
+                default:
+                    RAISE_ERROR_MSG("Unsupported datatype op=%d, dtype=%d\n", op, datatype);
+            }
+            break;
+        case SHM_INTERNAL_SUM:
+            switch(datatype) {
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_SUM_OP)
+                default:
+                    RAISE_ERROR_MSG("Unsupported datatype op=%d, dtype=%d\n", op, datatype);
+            }
+            break;
+        case SHM_INTERNAL_PROD:
+        case SHM_INTERNAL_MIN:
+        case SHM_INTERNAL_MAX:
+        default:
+            RAISE_ERROR_MSG("Unsupported op op=%d, dtype=%d\n", op, datatype);
     }
+
+#undef SHMEM_DEF_BAND_OP
+#undef SHMEM_DEF_BOR_OP
+#undef SHMEM_DEF_BXOR_OP
+#undef SHMEM_DEF_SUM_OP
+
 #else
     RAISE_ERROR_STR("No path to peer");
 #endif
@@ -480,26 +521,71 @@ shmem_shr_transport_fetch_atomic(shmem_ctx_t ctx, void *target, void *source,
 
     shmem_shr_transport_ptr(target, noderank, &remote_ptr);
 
+#define SHMEM_DEF_BAND_OP(STYPE,TYPE,ITYPE)                                                     \
+                case ITYPE:                                                                     \
+                    *(TYPE *)dest = __atomic_fetch_and((TYPE *)remote_ptr, *((TYPE *)source),   \
+                                                       __ATOMIC_SEQ_CST);                       \
+                    break;
+
+#define SHMEM_DEF_BOR_OP(STYPE,TYPE,ITYPE)                                                      \
+                case ITYPE:                                                                     \
+                    *(TYPE *)dest = __atomic_fetch_or((TYPE *)remote_ptr, *((TYPE *)source),    \
+                                                      __ATOMIC_SEQ_CST);                        \
+                    break;
+
+#define SHMEM_DEF_BXOR_OP(STYPE,TYPE,ITYPE)                                                     \
+                case ITYPE:                                                                     \
+                    *(TYPE *)dest = __atomic_fetch_xor((TYPE *)remote_ptr, *((TYPE *)source),   \
+                                                       __ATOMIC_SEQ_CST);                       \
+                    break;
+
+#define SHMEM_DEF_SUM_OP(STYPE,TYPE,ITYPE)                                                      \
+                case ITYPE:                                                                     \
+                    *(TYPE *)dest = __atomic_fetch_add((TYPE *)remote_ptr, *((TYPE *)source),   \
+                                                       __ATOMIC_SEQ_CST);                       \
+                    break;
+
     switch (op) {
-    case SHM_INTERNAL_SUM:
-        switch (datatype) {
-            case SHM_INTERNAL_INT:
-                {
-                    *(int *)dest = __atomic_fetch_add((int *)remote_ptr, *((int *)source), __ATOMIC_SEQ_CST);
-                }
-                break;
-            case SHM_INTERNAL_LONG:
-                {
-                    *(long *)dest = __atomic_fetch_add((long *)remote_ptr, *((long *)source), __ATOMIC_SEQ_CST); /* FIXME: ACQ_REL */
-                }
-                break;
-            default:
-                RAISE_ERROR_MSG("Unsupported datatype op=%d, dtype=%d\n", op, datatype);
-        }
-        break;
-    default:
-        RAISE_ERROR_MSG("Unsupported atomic operation %d\n", op);
+        case SHM_INTERNAL_BAND:
+            switch(datatype) {
+SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_BAND_OP)
+                default:
+                    RAISE_ERROR_MSG("Unsupported datatype op=%d, dtype=%d\n", op, datatype);
+            }
+            break;
+        case SHM_INTERNAL_BOR:
+            switch(datatype) {
+SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_BOR_OP)
+                default:
+                    RAISE_ERROR_MSG("Unsupported datatype op=%d, dtype=%d\n", op, datatype);
+            }
+            break;
+        case SHM_INTERNAL_BXOR:
+            switch(datatype) {
+SHMEM_DEFINE_FOR_BITWISE_AMO(SHMEM_DEF_BXOR_OP)
+                default:
+                    RAISE_ERROR_MSG("Unsupported datatype op=%d, dtype=%d\n", op, datatype);
+            }
+            break;
+        case SHM_INTERNAL_SUM:
+            switch(datatype) {
+SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_SUM_OP)
+                default:
+                    RAISE_ERROR_MSG("Unsupported datatype op=%d, dtype=%d\n", op, datatype);
+            }
+            break;
+        case SHM_INTERNAL_PROD:
+        case SHM_INTERNAL_MIN:
+        case SHM_INTERNAL_MAX:
+        default:
+            RAISE_ERROR_MSG("Unsupported op op=%d, dtype=%d\n", op, datatype);
     }
+
+#undef SHMEM_DEF_BAND_OP
+#undef SHMEM_DEF_BOR_OP
+#undef SHMEM_DEF_BXOR_OP
+#undef SHMEM_DEF_SUM_OP
+
 #else
     RAISE_ERROR_STR("No path to peer");
 #endif
