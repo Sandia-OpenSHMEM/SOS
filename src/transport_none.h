@@ -40,12 +40,7 @@ struct shmem_transport_ctx_t {
 };
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
 
-static inline
-int
-shmem_transport_init(void)
-{
-    return 0;
-}
+int shmem_transport_init(void);
 
 static inline
 int
@@ -73,7 +68,7 @@ int
 shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options, shmem_transport_ctx_t **ctx)
 {
     *ctx = NULL;
-    return 0;
+    return 1;
 }
 
 static inline
