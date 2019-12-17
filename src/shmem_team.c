@@ -426,7 +426,7 @@ int shmem_internal_team_destroy(shmem_internal_team_t *team)
             if (team->contexts[i]->options & SHMEM_CTX_PRIVATE)
                 RAISE_WARN_MSG("Destroying team with unfreed private context (%zu)\n", i);
             shmem_transport_quiet(team->contexts[i]);
-            shmem_transport_ctx_destroy(shmem_internal_team_world.contexts[i]);
+            shmem_transport_ctx_destroy(team->contexts[i]);
         }
     }
     shmem_internal_team_pool[team->psync_idx] = NULL;
