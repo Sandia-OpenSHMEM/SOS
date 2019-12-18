@@ -373,10 +373,10 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
 
     int start = 0;
     int ret = 0;
-
-    shmem_internal_team_t *my_xteam, *my_yteam;
+    *xaxis_team = SHMEMX_TEAM_INVALID;
 
     for (int i = 0; i < num_xteams; i++) {
+        shmem_internal_team_t *my_xteam;
         int xsize = (i == num_xteams - 1 && parent_size % xrange) ? parent_size % xrange : xrange;
 
         ret = shmem_internal_team_split_strided(parent_team, start, parent_stride,
@@ -386,13 +386,17 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
         }
         start += xrange;
 
-        if (my_xteam != SHMEMX_TEAM_INVALID)
+        if (my_xteam != SHMEMX_TEAM_INVALID) {
+            shmem_internal_assert(*xaxis_team == SHMEMX_TEAM_INVALID);
             *xaxis_team = my_xteam;
+        }
     }
 
     start = 0;
+    *yaxis_team = SHMEMX_TEAM_INVALID;
 
     for (int i = 0; i < num_yteams; i++) {
+        shmem_internal_team_t *my_yteam;
         int remainder = parent_size % xrange;
         int yrange = parent_size / xrange;
         int ysize = (remainder && i < remainder) ? yrange + 1 : yrange;
@@ -404,8 +408,10 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
         }
         start += 1;
 
-        if (my_yteam != SHMEMX_TEAM_INVALID)
+        if (my_yteam != SHMEMX_TEAM_INVALID) {
+            shmem_internal_assert(*yaxis_team == SHMEMX_TEAM_INVALID);
             *yaxis_team = my_yteam;
+        }
     }
 
     long *psync = shmem_internal_team_choose_psync(parent_team, SYNC);
