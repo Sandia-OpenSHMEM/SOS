@@ -15,7 +15,7 @@ dnl vi: set ft=m4
  */
 
 include(shmem_bind_c.m4)dnl
-#
+
 #ifndef SHR_TRANSPORT_H
 #define SHR_TRANSPORT_H
 
@@ -279,6 +279,7 @@ shmem_shr_transport_cswap(shmem_ctx_t ctx, void *target, void *source,
                 if (swapped)                                                    \
                     *(TYPE *)dest = *(TYPE *)operand;                           \
                 else                                                            \
+                    /* expected contains the value of remote_ptr */             \
                     *(TYPE *)dest = expected;                                   \
             }                                                                   \
             break;
@@ -317,7 +318,8 @@ shmem_shr_transport_mswap(shmem_ctx_t ctx, void *target, void *source,
             while (!done) {
                 int v = __atomic_load_n((int *)remote_ptr, __ATOMIC_SEQ_CST);
 
-                int new = ((unsigned int) v & ~*(unsigned int *)mask) | (*(unsigned int *)source & *(unsigned int *)mask);
+                int new = ((unsigned int) v & ~*(unsigned int *)mask) |
+                          (*(unsigned int *)source & *(unsigned int *)mask);
 
                 done = __atomic_compare_exchange((int *)remote_ptr,
                                                  &v,
