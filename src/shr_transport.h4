@@ -1,11 +1,7 @@
 dnl vi: set ft=m4
 /* -*- C -*-
  *
- * Copyright 2011 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
- * retains certain rights in this software.
- *
- * Copyright (c) 2017 Intel Corporation. All rights reserved.
+ * Copyright (c) 2019 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -238,10 +234,8 @@ shmem_shr_transport_swap(shmem_ctx_t ctx, void *target, void *source,
 
 #define SHMEM_DEF_SWAP(STYPE,TYPE,ITYPE)                                \
         case ITYPE:                                                     \
-            {                                                           \
                 __atomic_exchange((TYPE *)remote_ptr, (TYPE *)source,   \
                                   (TYPE *)dest, __ATOMIC_SEQ_CST);      \
-            }                                                           \
             break;
 
     switch (datatype) {
@@ -335,7 +329,7 @@ shmem_shr_transport_mswap(shmem_ctx_t ctx, void *target, void *source,
             }
             break;
         default:
-            RAISE_ERROR_STR("No path to peer");
+            RAISE_ERROR_MSG("Unsupported datatype dtype=%d\n", datatype);
     }
 #else
     RAISE_ERROR_STR("No path to peer");
@@ -407,6 +401,8 @@ SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_SUM_OP)
                     RAISE_ERROR_MSG("Unsupported datatype op=%d, dtype=%d\n", op, datatype);
             }
             break;
+        /* Note: The following ops are only used by AMO reductions, which are
+         * presently disabled when shared memory AMOs are enabled. */
         case SHM_INTERNAL_PROD:
         case SHM_INTERNAL_MIN:
         case SHM_INTERNAL_MAX:
@@ -574,6 +570,8 @@ SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_SUM_OP)
                     RAISE_ERROR_MSG("Unsupported datatype op=%d, dtype=%d\n", op, datatype);
             }
             break;
+        /* Note: The following ops are only used by AMO reductions, which are
+         * presently disabled when shared memory AMOs are enabled. */
         case SHM_INTERNAL_PROD:
         case SHM_INTERNAL_MIN:
         case SHM_INTERNAL_MAX:

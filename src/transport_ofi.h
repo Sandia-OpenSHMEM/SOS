@@ -1318,6 +1318,10 @@ static inline
 int shmem_transport_atomic_supported(shm_internal_op_t op,
                                      shm_internal_datatype_t datatype)
 {
+#ifdef USE_SHR_ATOMICS
+    /* FIXME: Force shared memory atomics build to use software reductions */
+    return 0;
+#else
     size_t size = 0;
 
     /* NOTE-MT: It's not clear from the OFI documentation whether this mutex is
@@ -1330,6 +1334,7 @@ int shmem_transport_atomic_supported(shm_internal_op_t op,
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(&shmem_transport_ctx_default);
 
     return !(ret != 0 || size == 0);
+#endif
 }
 
 

@@ -1104,7 +1104,12 @@ shmem_transport_atomic_fetch(shmem_transport_ctx_t* ctx, void *target, const voi
 static inline
 int shmem_transport_atomic_supported(ptl_op_t op, ptl_datatype_t datatype)
 {
+#ifdef USE_SHR_ATOMICS
+    /* FIXME: Force shared memory atomics build to use software reductions */
+    return 0;
+#else
     return 1;
+#endif
 }
 
 
