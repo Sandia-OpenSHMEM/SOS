@@ -6,24 +6,32 @@
 #include <stdio.h>
 #include <shmem.h>
 #include <shmemx.h>
+#include <math.h>
+
+/* Find x and y such that x * y == npes and abs(x - y) is minimized. */
+void find_x_and_y_dims(int npes, int *x, int *y) {
+    for(int divider = ceil(sqrt(npes)); divider >= 1; divider--)
+        if (npes % divider == 0) {
+            *x = divider;
+            *y = npes / divider;
+            return;
+        }
+}
 
 int main(void)
 {
-  int xdim = 3;
-  int ydim = 4;
+  int xdim, ydim;
 
   shmem_init();
   int pe = shmem_my_pe();
   int npes = shmem_n_pes();
 
-  if (npes < (xdim*ydim)) {
-    fprintf(stderr, "Not enough PEs to create 4x3xN layout\n");
-    shmem_global_exit(1);
-  }
+  find_x_and_y_dims(npes, &ydim, &xdim);
+
+  if (shmem_my_pe() == 0) printf("xdim = %d, ydim = %d\n", xdim, ydim);
 
   int zdim = (npes / (xdim*ydim)) + ( ((npes % (xdim*ydim)) > 0) ? 1 : 0 );
   shmemx_team_t xteam, yzteam, yteam, zteam;
-
 
   shmemx_team_split_2d(SHMEMX_TEAM_WORLD, xdim, NULL, 0, &xteam, NULL, 0, &yzteam);
   // No synchronization is needed between these split operations
