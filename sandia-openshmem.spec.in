@@ -51,6 +51,8 @@ install -d %{testdir}/unit
 install test/unit/.libs/* %{testdir}/unit
 install -d %{testdir}/shmemx
 install test/shmemx/.libs/* %{testdir}/shmemx
+install -d %{testdir}/spec-example
+install test/spec-example/.libs/* %{testdir}/spec-example
 install -d %{testdir}/apps
 install test/apps/.libs/* %{testdir}/apps
 install -d %{testdir}/performance/shmem_perf_suite

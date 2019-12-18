@@ -74,7 +74,9 @@ struct fid_mr*                  shmem_transport_ofi_target_heap_mrfd;
 struct fid_mr*                  shmem_transport_ofi_target_data_mrfd;
 uint64_t*                       shmem_transport_ofi_target_heap_keys;
 uint64_t*                       shmem_transport_ofi_target_data_keys;
-#ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+int                             shmem_transport_ofi_use_absolute_address;
+#else
 uint8_t**                       shmem_transport_ofi_target_heap_addrs;
 uint8_t**                       shmem_transport_ofi_target_data_addrs;
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
@@ -560,11 +562,7 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
 }
 
 #define OFI_MAJOR_VERSION 1
-#ifdef ENABLE_MR_RMA_EVENT
 #define OFI_MINOR_VERSION 5
-#else
-#define OFI_MINOR_VERSION 0
-#endif
 
 static
 void init_bounce_buffer(shmem_free_list_item_t *item)
@@ -725,8 +723,13 @@ int publish_mr_info(void)
         int err;
         uint64_t heap_key, data_key;
 
-        heap_key = fi_mr_key(shmem_transport_ofi_target_heap_mrfd);
-        data_key = fi_mr_key(shmem_transport_ofi_target_data_mrfd);
+        if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_PROV_KEY) {
+            heap_key = fi_mr_key(shmem_transport_ofi_target_heap_mrfd);
+            data_key = fi_mr_key(shmem_transport_ofi_target_data_mrfd);
+        } else {
+            heap_key = 1ULL;
+            data_key = 0ULL;
+        }
 
         err = shmem_runtime_put("fi_heap_key", &heap_key, sizeof(uint64_t));
         if (err) {
@@ -741,23 +744,38 @@ int publish_mr_info(void)
         }
     }
 
-#ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_VIRT_ADDR)
+        shmem_transport_ofi_use_absolute_address = 1;
+    else
+        shmem_transport_ofi_use_absolute_address = 0;
+#else /* !ENABLE_REMOTE_VIRTUAL_ADDRESSING */
     {
         int err;
-        err = shmem_runtime_put("fi_heap_addr", &shmem_internal_heap_base, sizeof(uint8_t*));
+        void *heap_base, *data_base;
+
+        if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_VIRT_ADDR) {
+            heap_base = shmem_internal_heap_base;
+            data_base = shmem_internal_data_base;
+        } else {
+            heap_base = (void *) 0;
+            data_base = (void *) 0;
+        }
+
+        err = shmem_runtime_put("fi_heap_addr", &heap_base, sizeof(uint8_t*));
         if (err) {
             RAISE_WARN_STR("Put of heap address to runtime KVS failed");
             return 1;
         }
 
-        err = shmem_runtime_put("fi_data_addr", &shmem_internal_data_base, sizeof(uint8_t*));
+        err = shmem_runtime_put("fi_data_addr", &data_base, sizeof(uint8_t*));
         if (err) {
             RAISE_WARN_STR("Put of data segment address to runtime KVS failed");
             return 1;
         }
     }
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
-#endif /* ENABLE_MR_SCALABLE */
+#endif /* !ENABLE_MR_SCALABLE */
 
     return 0;
 }
@@ -835,7 +853,7 @@ int populate_mr_tables(void)
         }
     }
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
-#endif /* ENABLE_MR_SCALABLE */
+#endif /* !ENABLE_MR_SCALABLE */
 
     return 0;
 }
@@ -1138,12 +1156,14 @@ int query_for_fabric(struct fabric_info *info)
     domain_attr.data_progress = FI_PROGRESS_AUTO;
     domain_attr.resource_mgmt = FI_RM_ENABLED;
 #ifdef ENABLE_MR_SCALABLE
-    domain_attr.mr_mode       = FI_MR_SCALABLE; /* VA space-doesn't have to be pre-allocated */
+                                /* Scalable, offset-based addressing, formerly FI_MR_SCALABLE */
+    domain_attr.mr_mode       = 0;
 #  if !defined(ENABLE_HARD_POLLING) && defined(ENABLE_MR_RMA_EVENT)
     domain_attr.mr_mode       = FI_MR_RMA_EVENT; /* can support RMA_EVENT on MR */
 #  endif
 #else
-    domain_attr.mr_mode       = FI_MR_BASIC; /* VA space is pre-allocated */
+                                /* Portable, absolute addressing, formerly FI_MR_BASIC */
+    domain_attr.mr_mode       = FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY;
 #endif
 #if !defined(ENABLE_MR_SCALABLE) || !defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     domain_attr.mr_key_size   = 1; /* Heap and data use different MR keys, need
@@ -1226,8 +1246,12 @@ int query_for_fabric(struct fabric_info *info)
     /* Only use a single MR, no keys required */
     info->p_info->domain_attr->mr_key_size = 0;
 #else
-    /* Heap and data use different MR keys, need at least 1 byte */
-    info->p_info->domain_attr->mr_key_size = 1;
+    /* Heap and data use different MR keys, need at least 1 byte of key space
+     * if using provider selected keys */
+    if (info->p_info->domain_attr->mr_mode & FI_MR_PROV_KEY)
+        info->p_info->domain_attr->mr_key_size = 1;
+    else
+        info->p_info->domain_attr->mr_key_size = 0;
 #endif
 
     shmem_internal_assertp(info->p_info->tx_attr->inject_size >= shmem_transport_ofi_max_buffered_send);
@@ -1236,10 +1260,11 @@ int query_for_fabric(struct fabric_info *info)
     shmem_transport_ofi_mr_rma_event = (info->p_info->domain_attr->mr_mode & FI_MR_RMA_EVENT) != 0;
 #endif
 
-    DEBUG_MSG("OFI provider: %s, fabric: %s, domain: %s\n"
+    DEBUG_MSG("OFI provider: %s, fabric: %s, domain: %s, mr_mode: 0x%x\n"
               RAISE_PE_PREFIX "max_inject: %zu, max_msg: %zu, stx: %s, stx_max: %ld\n",
               info->p_info->fabric_attr->prov_name,
               info->p_info->fabric_attr->name, info->p_info->domain_attr->name,
+              info->p_info->domain_attr->mr_mode,
               shmem_internal_my_pe,
               shmem_transport_ofi_max_buffered_send,
               shmem_transport_ofi_max_msg_size,

@@ -28,14 +28,16 @@ int main(void)
     shmem_fence();
 
     for (int i = 0; i < npes; i++)
-        shmem_int_p(&flags[mype], 1, i);
+        shmem_int_atomic_set(&flags[mype], 1, i);
 
     size_t ncompleted;
     while ((ncompleted = shmemx_int_wait_until_some(flags, npes, indices,
-                                                    status, SHMEM_CMP_NE, 0))) {
+                                                status, SHMEM_CMP_NE, 0))) {
         for (size_t i = 0; i < ncompleted; i++) {
-            for (size_t j = 0; j < N; j++)
+            for (size_t j = 0; j < N; j++) {
                 total_sum += all_data[indices[i]*N + j];
+            }
+            status[indices[i]] = 1;
         }
     }
 
@@ -54,7 +56,7 @@ int main(void)
     /* Sanity check the case with NULL status array */
     ncompleted = shmemx_int_wait_until_some(flags, npes, indices, NULL, SHMEM_CMP_EQ, 1);
 
-    if (ncompleted != npes)
+    if (ncompleted != (size_t)npes)
         shmem_global_exit(3);
 
     shmem_finalize();

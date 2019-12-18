@@ -44,37 +44,37 @@ include(shmemx_c_func.h4)dnl
 } /* extern "C" */
 
 define(`SHMEM_CXX_WAIT_UNTIL_ALL',
-`static inline void shmemx_wait_until_all($2 *ivars, size_t nelems, int cmp, $2 cmp_value) {
-    shmemx_$1_wait_until_all(ivars, nelems, cmp, cmp_value);
+`static inline void shmemx_wait_until_all($2 *ivars, size_t nelems, const int *status, int cmp, $2 cmp_value) {
+    shmemx_$1_wait_until_all(ivars, nelems, status, cmp, cmp_value);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_ALL')
 
 define(`SHMEM_CXX_WAIT_UNTIL_ANY',
-`static inline size_t shmemx_wait_until_any($2 *ivars, size_t nelems, int *status, int cmp, $2 cmp_value) {
+`static inline size_t shmemx_wait_until_any($2 *ivars, size_t nelems, const int *status, int cmp, $2 cmp_value) {
     return shmemx_$1_wait_until_any(ivars, nelems, status, cmp, cmp_value);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_ANY')
 
 define(`SHMEM_CXX_WAIT_UNTIL_SOME',
-`static inline size_t shmemx_wait_until_some($2 *ivars, size_t nelems, size_t *indices, int *status, int cmp, $2 cmp_value) {
+`static inline size_t shmemx_wait_until_some($2 *ivars, size_t nelems, size_t *indices, const int *status, int cmp, $2 cmp_value) {
     return shmemx_$1_wait_until_some(ivars, nelems, indices, status, cmp, cmp_value);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_SOME')
 
 define(`SHMEM_CXX_TEST_ALL',
-`static inline int shmemx_test_all($2 *ivars, size_t nelems, int cmp, $2 cmp_value) {
-    return shmemx_$1_test_all(ivars, nelems, cmp, cmp_value);
+`static inline int shmemx_test_all($2 *ivars, size_t nelems, const int *status, int cmp, $2 cmp_value) {
+    return shmemx_$1_test_all(ivars, nelems, status, cmp, cmp_value);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_ALL')
 
 define(`SHMEM_CXX_TEST_ANY',
-`static inline size_t shmemx_test_any($2 *ivars, size_t nelems, int *status, int cmp, $2 cmp_value) {
+`static inline size_t shmemx_test_any($2 *ivars, size_t nelems, const int *status, int cmp, $2 cmp_value) {
     return shmemx_$1_test_any(ivars, nelems, status, cmp, cmp_value);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_ANY')
 
 define(`SHMEM_CXX_TEST_SOME',
-`static inline size_t shmemx_test_some($2 *ivars, size_t nelems, size_t *indices, int *status, int cmp, $2 cmp_value) {
+`static inline size_t shmemx_test_some($2 *ivars, size_t nelems, size_t *indices, const int *status, int cmp, $2 cmp_value) {
     return shmemx_$1_test_some(ivars, nelems, indices, status, cmp, cmp_value);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_SOME')

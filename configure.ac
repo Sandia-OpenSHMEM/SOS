@@ -827,6 +827,7 @@ AC_CONFIG_FILES([Makefile
   test/Makefile
   test/unit/Makefile
   test/shmemx/Makefile
+  test/spec-example/Makefile
   test/include/Makefile
   test/performance/Makefile
   test/performance/shmem_perf_suite/Makefile
