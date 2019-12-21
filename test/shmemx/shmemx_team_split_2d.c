@@ -29,15 +29,18 @@
 #include <shmem.h>
 #include <shmemx.h>
 
-static int check_2d(shmemx_team_t team, int xdim) {
-    int me = shmemx_team_my_pe(team);
+static int check_2d(shmemx_team_t parent_team, int xdim) {
+    int me = shmemx_team_my_pe(parent_team);
 
-    shmemx_team_t xteam, yteam;
+    shmemx_team_t xteam = SHMEMX_TEAM_INVALID;
+    shmemx_team_t yteam = SHMEMX_TEAM_INVALID;
 
-    int ret = shmemx_team_split_2d(team, xdim, NULL, 0, &xteam, NULL, 0, &yteam);
+    int ret = shmemx_team_split_2d(parent_team, xdim, NULL, 0, &xteam, NULL, 0, &yteam);
     int errors = 0;
 
     if (ret == 0) {
+        int me_x = shmemx_team_my_pe(xteam);
+        int me_y = shmemx_team_my_pe(yteam);
         int npes_x = shmemx_team_n_pes(xteam);
         int npes_y = shmemx_team_n_pes(yteam);
 
@@ -46,53 +49,84 @@ static int check_2d(shmemx_team_t team, int xdim) {
             ++errors;
         }
 
-        /* Try converting the PE ids from xteam and yteam to global indices and
-         * compare with the expected indices */
+        /* Try converting the PE ids from xteam and yteam to parent and global
+         * PE indices and compare with the expected indices */
         for (int i = 0; i < npes_x; i++) {
-            int pe_g       = shmemx_team_translate_pe(xteam, i, SHMEMX_TEAM_WORLD);
-            int expected_g = shmemx_team_translate_pe(team, me/xdim * xdim + i, SHMEMX_TEAM_WORLD);
+            int expected_parent = me_y * xdim + i; /* row (fixed) + column */
+            int pe_parent       = shmemx_team_translate_pe(xteam, i, parent_team);
+            int pe_world        = shmemx_team_translate_pe(xteam, i, SHMEMX_TEAM_WORLD);
+            int expected_world  = shmemx_team_translate_pe(parent_team, expected_parent, SHMEMX_TEAM_WORLD);
 
-            if (pe_g != expected_g) {
-                printf("%d: xteam pe %d expected %d, got %d\n", me, i, pe_g, expected_g);
+            if (expected_parent != pe_parent) {
+                printf("%d: xteam[%d] expected parent PE id %d, got %d\n",
+                        me, i, expected_parent, pe_parent);
+                errors++;
+            }
+
+            if (expected_world != pe_world) {
+                printf("%d: xteam[%d] expected world PE id %d, got %d\n",
+                        me, i, expected_world, pe_world);
                 errors++;
             }
         }
 
         for (int i = 0; i < npes_y; i++) {
-            int pe_g = shmemx_team_translate_pe(yteam, i, SHMEMX_TEAM_WORLD);
-            int expected_g = shmemx_team_translate_pe(team, me % xdim + i * xdim, SHMEMX_TEAM_WORLD);
+            int expected_parent = i * xdim + me_x; /* row + column (fixed) */
+            int pe_parent       = shmemx_team_translate_pe(yteam, i, parent_team);
+            int pe_world        = shmemx_team_translate_pe(yteam, i, SHMEMX_TEAM_WORLD);
+            int expected_world  = shmemx_team_translate_pe(parent_team, expected_parent, SHMEMX_TEAM_WORLD);
 
-            if (pe_g != expected_g) {
-                printf("%d: yteam pe %d expected %d, got %d\n", me, i, pe_g, expected_g);
+            if (expected_parent != pe_parent) {
+                printf("%d: yteam[%d] expected parent PE id %d, got %d\n",
+                        me, i, expected_parent, pe_parent);
+                errors++;
+            }
+
+            if (expected_world != pe_world) {
+                printf("%d: yteam[%d] expected world PE id %d, got %d\n",
+                        me, i, expected_world, pe_world);
                 errors++;
             }
         }
-
-        shmemx_team_destroy(xteam);
-        shmemx_team_destroy(yteam);
     }
+    else {
+        printf("%d: 2d split failed\n", shmem_my_pe());
+    }
+
+    if (xteam != SHMEMX_TEAM_INVALID)
+        shmemx_team_destroy(xteam);
+    if (yteam != SHMEMX_TEAM_INVALID)
+        shmemx_team_destroy(yteam);
 
     return errors != 0;
 }
 
 int main(void) {
-    int errors = 0, npes, ret;
+    int errors = 0, me, npes, ret;
     shmemx_team_t even_team;
 
     shmem_init();
 
+    me   = shmem_my_pe();
     npes = shmem_n_pes();
+
+    if (me == 0) printf("Performing 2d split test on SHMEM_TEAM_WORLD\n");
 
     errors += check_2d(SHMEMX_TEAM_WORLD, 1);
     errors += check_2d(SHMEMX_TEAM_WORLD, 2);
     errors += check_2d(SHMEMX_TEAM_WORLD, 3);
 
-    ret = shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 2, npes/2 + 1, NULL, 0, &even_team);
+    ret = shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 2, (npes-1)/2 + 1,
+                                    NULL, 0, &even_team);
 
     if (ret == 0) {
+        if (me == 0) printf("Performing 2d split test on even team\n");
+
         errors += check_2d(even_team, 1);
         errors += check_2d(even_team, 2);
         errors += check_2d(even_team, 3);
+    } else {
+        if (me == 0) printf("Unable to create even team\n");
     }
 
     shmem_finalize();
