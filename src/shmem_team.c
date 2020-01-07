@@ -249,7 +249,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
     *new_team = SHMEMX_TEAM_INVALID;
 
     if (parent_team == SHMEMX_TEAM_INVALID) {
-        return 0;
+        return 1;
     }
 
     int global_PE_start = shmem_internal_team_pe(parent_team, PE_start);
@@ -365,6 +365,17 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
                                  shmem_internal_team_t **xaxis_team, const shmemx_team_config_t *yaxis_config,
                                  long yaxis_mask, shmem_internal_team_t **yaxis_team)
 {
+    *xaxis_team = SHMEMX_TEAM_INVALID;
+    *yaxis_team = SHMEMX_TEAM_INVALID;
+
+    if (parent_team == SHMEMX_TEAM_INVALID) {
+        return 1;
+    }
+
+    if (xrange > parent_team->size) {
+        xrange = parent_team->size;
+    }
+
     const int parent_start = parent_team->start;
     const int parent_stride = parent_team->stride;
     const int parent_size = parent_team->size;
@@ -373,7 +384,6 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
 
     int start = 0;
     int ret = 0;
-    *xaxis_team = SHMEMX_TEAM_INVALID;
 
     for (int i = 0; i < num_xteams; i++) {
         shmem_internal_team_t *my_xteam;
@@ -393,7 +403,6 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
     }
 
     start = 0;
-    *yaxis_team = SHMEMX_TEAM_INVALID;
 
     for (int i = 0; i < num_yteams; i++) {
         shmem_internal_team_t *my_yteam;
