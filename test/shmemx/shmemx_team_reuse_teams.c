@@ -57,7 +57,7 @@ int main(void)
         }
 
         ret = shmemx_team_split_strided(old_team, 1, 1, shmemx_team_n_pes(old_team)-1, NULL, 0, &new_team);
-        if (ret) ++errors;
+        if (old_team != SHMEMX_TEAM_INVALID && ret) ++errors;
 
         shmemx_team_destroy(old_team);
         old_team = new_team;
