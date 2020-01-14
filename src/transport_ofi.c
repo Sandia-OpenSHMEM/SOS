@@ -877,7 +877,7 @@ int atomicvalid_rtncheck(int ret, int atomic_size,
 }
 
 static inline
-int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[], int OPS[],
+int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT, int *OPS,
                       atomic_support_lv atomic_sup)
 {
     int i, j;
@@ -899,8 +899,8 @@ int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[], int OPS[],
 }
 
 static inline
-int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
-                              int OPS[], atomic_support_lv atomic_sup)
+int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT,
+                              int *OPS, atomic_support_lv atomic_sup)
 {
     int i, j;
     size_t atomic_size;
@@ -921,7 +921,7 @@ int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
 }
 
 static inline
-int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[], int OPS[],
+int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT, int *OPS,
                             atomic_support_lv atomic_sup)
 {
     int i, j;
