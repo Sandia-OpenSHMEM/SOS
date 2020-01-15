@@ -186,38 +186,14 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
 }
 #endif
 
-typedef enum fi_datatype shm_internal_datatype_t;
-typedef enum fi_op       shm_internal_op_t;
-
 /* Datatypes */
-#define SHM_INTERNAL_FLOAT           FI_FLOAT
-#define SHM_INTERNAL_DOUBLE          FI_DOUBLE
-#define SHM_INTERNAL_LONG_DOUBLE     FI_LONG_DOUBLE
-#define SHM_INTERNAL_FLOAT_COMPLEX   FI_FLOAT_COMPLEX
-#define SHM_INTERNAL_DOUBLE_COMPLEX  FI_DOUBLE_COMPLEX
-#define SHM_INTERNAL_SIGNED_BYTE     FI_INT8
-#define SHM_INTERNAL_INT8            FI_INT8
-#define SHM_INTERNAL_INT16           FI_INT16
-#define SHM_INTERNAL_INT32           FI_INT32
-#define SHM_INTERNAL_INT64           FI_INT64
-#define SHM_INTERNAL_SHORT           DTYPE_SHORT
-#define SHM_INTERNAL_INT             DTYPE_INT
-#define SHM_INTERNAL_LONG            DTYPE_LONG
-#define SHM_INTERNAL_LONG_LONG       DTYPE_LONG_LONG
-#define SHM_INTERNAL_FORTRAN_INTEGER DTYPE_FORTRAN_INTEGER
-#define SHM_INTERNAL_UINT            DTYPE_UNSIGNED_INT
-#define SHM_INTERNAL_ULONG           DTYPE_UNSIGNED_LONG
-#define SHM_INTERNAL_ULONG_LONG      DTYPE_UNSIGNED_LONG_LONG
-#define SHM_INTERNAL_SIZE_T          DTYPE_SIZE_T
-#define SHM_INTERNAL_PTRDIFF_T       DTYPE_PTRDIFF_T
-#define SHM_INTERNAL_UINT8           FI_UINT8
-#define SHM_INTERNAL_UINT16          FI_UINT16
-#define SHM_INTERNAL_UINT32          FI_UINT32
-#define SHM_INTERNAL_UINT64          FI_UINT64
-#define SHM_INTERNAL_UCHAR           DTYPE_UNSIGNED_CHAR
-#define SHM_INTERNAL_USHORT          DTYPE_UNSIGNED_SHORT
+extern int shmem_transport_dtype_table[];
+
+#define SHMEM_TRANSPORT_DTYPE(DTYPE) shmem_transport_dtype_table[(DTYPE)]
 
 /* Operations */
+typedef enum fi_op       shm_internal_op_t;
+
 #define SHM_INTERNAL_BAND            FI_BAND
 #define SHM_INTERNAL_BOR             FI_BOR
 #define SHM_INTERNAL_BXOR            FI_BXOR
@@ -964,7 +940,7 @@ void shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void 
     shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
     shmem_internal_assert(len <= sizeof(double _Complex));
-    shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
+    shmem_internal_assert(SHMEM_Dtsize[SHMEM_TRANSPORT_DTYPE(datatype)] == len);
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
@@ -981,7 +957,7 @@ void shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void 
                                 GET_DEST(dst),
                                 (uint64_t) addr,
                                 key,
-                                datatype,
+                                SHMEM_TRANSPORT_DTYPE(datatype),
                                 FI_CSWAP,
                                 NULL);
     } while (try_again(ctx, ret, &polled));
@@ -1002,7 +978,7 @@ void shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target, const
 
     shmem_transport_ofi_get_mr(target, pe, &addr, &key);
     shmem_internal_assert(len <= sizeof(double _Complex));
-    shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
+    shmem_internal_assert(SHMEM_Dtsize[SHMEM_TRANSPORT_DTYPE(datatype)] == len);
 
     struct fi_ioc resultv = { .addr = dest, .count = 1 };
     const struct fi_ioc sourcev = { .addr = (void *) source, .count = 1 };
@@ -1015,7 +991,7 @@ void shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target, const
                                  .addr          = GET_DEST(dst),
                                  .rma_iov       = &rmav,
                                  .rma_iov_count = 1,
-                                 .datatype      = datatype,
+                                 .datatype      = SHMEM_TRANSPORT_DTYPE(datatype),
                                  .op            = FI_CSWAP,
                                  .context       = NULL,
                                  .data          = 0
@@ -1053,7 +1029,7 @@ void shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void 
     shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
     shmem_internal_assert(len <= sizeof(double _Complex));
-    shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
+    shmem_internal_assert(SHMEM_Dtsize[SHMEM_TRANSPORT_DTYPE(datatype)] == len);
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
@@ -1070,7 +1046,7 @@ void shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void 
                                 GET_DEST(dst),
                                 (uint64_t) addr,
                                 key,
-                                datatype,
+                                SHMEM_TRANSPORT_DTYPE(datatype),
                                 FI_MSWAP,
                                 NULL);
     } while (try_again(ctx, ret, &polled));
@@ -1090,7 +1066,7 @@ void shmem_transport_atomic(shmem_transport_ctx_t* ctx, void *target, const void
 
     shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
-    shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
+    shmem_internal_assert(SHMEM_Dtsize[SHMEM_TRANSPORT_DTYPE(datatype)] == len);
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
@@ -1102,7 +1078,7 @@ void shmem_transport_atomic(shmem_transport_ctx_t* ctx, void *target, const void
                                GET_DEST(dst),
                                (uint64_t) addr,
                                key,
-                               datatype,
+                               SHMEM_TRANSPORT_DTYPE(datatype),
                                op);
     } while (try_again(ctx, ret, &polled));
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
@@ -1116,18 +1092,19 @@ void shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const voi
 {
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
-    size_t len = full_len/SHMEM_Dtsize[datatype];
+    int dt = SHMEM_TRANSPORT_DTYPE(datatype);
+    size_t len = full_len/SHMEM_Dtsize[dt];
     uint64_t polled = 0;
     uint64_t key;
     uint8_t *addr;
     size_t max_atomic_size = 0;
 
-    shmem_internal_assert(SHMEM_Dtsize[datatype] * len == full_len);
+    shmem_internal_assert(SHMEM_Dtsize[dt] * len == full_len);
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
-    ret = fi_atomicvalid(ctx->ep, datatype, op,
+    ret = fi_atomicvalid(ctx->ep, dt, op,
                          &max_atomic_size);
-    max_atomic_size = max_atomic_size * SHMEM_Dtsize[datatype];
+    max_atomic_size = max_atomic_size * SHMEM_Dtsize[dt];
     if (max_atomic_size > shmem_transport_ofi_max_msg_size
         || ret || max_atomic_size == 0) {
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
@@ -1151,7 +1128,7 @@ void shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const voi
                                    GET_DEST(dst),
                                    (uint64_t) addr,
                                    key,
-                                   datatype,
+                                   dt,
                                    op);
         } while (try_again(ctx, ret, &polled));
 
@@ -1174,7 +1151,7 @@ void shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const voi
                                                .addr          = GET_DEST(dst),
                                                .rma_iov       = &rma_iov,
                                                .rma_iov_count = 1,
-                                               .datatype      = datatype,
+                                               .datatype      = dt,
                                                .op            = op,
                                                .context       = buff,
                                                .data          = 0
@@ -1189,20 +1166,20 @@ void shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const voi
         while (sent < len) {
 
             size_t chunksize = MIN((len-sent),
-                                   (max_atomic_size/SHMEM_Dtsize[datatype]));
+                                   (max_atomic_size/SHMEM_Dtsize[dt]));
             polled = 0;
             SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
             do {
                 ret = fi_atomic(ctx->ep,
                                 (void *)((char *)source +
-                                         (sent*SHMEM_Dtsize[datatype])),
+                                         (sent*SHMEM_Dtsize[dt])),
                                 chunksize,
                                 NULL,
                                 GET_DEST(dst),
                                 ((uint64_t) addr +
-                                 (sent*SHMEM_Dtsize[datatype])),
+                                 (sent*SHMEM_Dtsize[dt])),
                                 key,
-                                datatype,
+                                dt,
                                 op,
                                 NULL);
             } while (try_again(ctx, ret, &polled));
@@ -1228,7 +1205,7 @@ void shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target,
     shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
     shmem_internal_assert(len <= sizeof(double _Complex));
-    shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
+    shmem_internal_assert(SHMEM_Dtsize[SHMEM_TRANSPORT_DTYPE(datatype)] == len);
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
@@ -1243,7 +1220,7 @@ void shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target,
                               GET_DEST(dst),
                               (uint64_t) addr,
                               key,
-                              datatype,
+                              SHMEM_TRANSPORT_DTYPE(datatype),
                               op,
                               NULL);
     } while (try_again(ctx, ret, &polled));
@@ -1267,7 +1244,7 @@ void shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target,
 
     shmem_transport_ofi_get_mr(target, pe, &addr, &key);
     shmem_internal_assert(len <= sizeof(double _Complex));
-    shmem_internal_assert(SHMEM_Dtsize[datatype] == len);
+    shmem_internal_assert(SHMEM_Dtsize[SHMEM_TRANSPORT_DTYPE(datatype)] == len);
 
     struct fi_ioc resultv = { .addr = dest, .count = 1 };
     const struct fi_ioc sourcev = { .addr = (void *) source, .count = 1 };
@@ -1279,7 +1256,7 @@ void shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target,
                                  .addr          = GET_DEST(dst),
                                  .rma_iov       = &rmav,
                                  .rma_iov_count = 1,
-                                 .datatype      = datatype,
+                                 .datatype      = SHMEM_TRANSPORT_DTYPE(datatype),
                                  .op            = op,
                                  .context       = NULL,
                                  .data          = 0
@@ -1349,6 +1326,10 @@ static inline
 int shmem_transport_atomic_supported(shm_internal_op_t op,
                                      shm_internal_datatype_t datatype)
 {
+#ifdef USE_SHR_ATOMICS
+    /* FIXME: Force shared memory atomics build to use software reductions */
+    return 0;
+#else
     size_t size = 0;
 
     /* NOTE-MT: It's not clear from the OFI documentation whether this mutex is
@@ -1356,10 +1337,12 @@ int shmem_transport_atomic_supported(shm_internal_op_t op,
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(&shmem_transport_ctx_default);
     int ret = fi_atomicvalid(shmem_transport_ctx_default.ep,
-                             datatype, op, &size);
+                             SHMEM_TRANSPORT_DTYPE(datatype),
+                             op, &size);
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(&shmem_transport_ctx_default);
 
     return !(ret != 0 || size == 0);
+#endif
 }
 
 

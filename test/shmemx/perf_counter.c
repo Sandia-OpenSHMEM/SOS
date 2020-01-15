@@ -60,7 +60,7 @@ static void put_and_progress_check(void) {
     ret = shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
     if (ret) {
         printf("Error creating context (%d)\n", ret);
-        shmem_global_exit(1);
+        ctx = SHMEM_CTX_DEFAULT;
     }
 
     for (i = 0; i < ITER; i++) {
@@ -72,7 +72,8 @@ static void put_and_progress_check(void) {
     }
 
     shmemx_pcntr_get_all(ctx, &pcntr);
-    shmem_ctx_destroy(ctx);
+    if (ctx != SHMEM_CTX_DEFAULT)
+        shmem_ctx_destroy(ctx);
 
     /* Report the counter values observed through get_all API after the loop
      * completion. Except the target counter, other counter values should
