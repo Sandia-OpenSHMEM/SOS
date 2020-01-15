@@ -1,3 +1,4 @@
+
 /* -*- C -*-
  *
  * Copyright 2011 Sandia Corporation. Under the terms of Contract
@@ -17,59 +18,30 @@
 #define TRANSPORT_NONE_H
 
 #include "shmem_internal.h"
+#include "transport.h"
 
-/* Datatypes */
-#define SHM_INTERNAL_FLOAT           -1
-#define SHM_INTERNAL_DOUBLE          -2
-#define SHM_INTERNAL_LONG_DOUBLE     -3
-#define SHM_INTERNAL_FLOAT_COMPLEX   -4
-#define SHM_INTERNAL_DOUBLE_COMPLEX  -5
-#define SHM_INTERNAL_SIGNED_BYTE     -6
-#define SHM_INTERNAL_INT8            -7
-#define SHM_INTERNAL_INT16           -8
-#define SHM_INTERNAL_INT32           -9
-#define SHM_INTERNAL_INT64           -10
-#define SHM_INTERNAL_SHORT           DTYPE_SHORT
-#define SHM_INTERNAL_INT             DTYPE_INT
-#define SHM_INTERNAL_LONG            DTYPE_LONG
-#define SHM_INTERNAL_LONG_LONG       DTYPE_LONG_LONG
-#define SHM_INTERNAL_FORTRAN_INTEGER DTYPE_FORTRAN_INTEGER
-#define SHM_INTERNAL_UINT            DTYPE_UNSIGNED_INT
-#define SHM_INTERNAL_ULONG           DTYPE_UNSIGNED_LONG
-#define SHM_INTERNAL_ULONG_LONG      DTYPE_UNSIGNED_LONG_LONG
-#define SHM_INTERNAL_SIZE_T          DTYPE_SIZE_T
-#define SHM_INTERNAL_PTRDIFF_T       DTYPE_PTRDIFF_T
-#define SHM_INTERNAL_UINT8           -11
-#define SHM_INTERNAL_UINT16          -12
-#define SHM_INTERNAL_UINT32          -13
-#define SHM_INTERNAL_UINT64          -14
-#define SHM_INTERNAL_UCHAR           DTYPE_UNSIGNED_CHAR
-#define SHM_INTERNAL_USHORT          DTYPE_UNSIGNED_SHORT
 
 /* Operations */
-#define SHM_INTERNAL_BAND            -1
-#define SHM_INTERNAL_BOR             -2
-#define SHM_INTERNAL_BXOR            -3
-#define SHM_INTERNAL_MIN             -4
-#define SHM_INTERNAL_MAX             -5
-#define SHM_INTERNAL_SUM             -6
-#define SHM_INTERNAL_PROD            -7
+enum shm_internal_op_t {
+    SHM_INTERNAL_BAND,
+    SHM_INTERNAL_BOR,
+    SHM_INTERNAL_BXOR,
+    SHM_INTERNAL_MIN,
+    SHM_INTERNAL_MAX,
+    SHM_INTERNAL_SUM,
+    SHM_INTERNAL_PROD
+};
 
-typedef int shm_internal_datatype_t;
-typedef int shm_internal_op_t;
+typedef enum shm_internal_op_t shm_internal_op_t;
 typedef int shmem_transport_ct_t;
 
-struct shmem_transport_ctx_t{ long options;
-                              struct shmem_internal_team_t *team;};
-
+struct shmem_transport_ctx_t {
+    long options;
+    struct shmem_internal_team_t *team;
+};
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
 
-static inline
-int
-shmem_transport_init(void)
-{
-    return 0;
-}
+int shmem_transport_init(void);
 
 static inline
 int
@@ -96,7 +68,17 @@ static inline
 int
 shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options, shmem_transport_ctx_t **ctx)
 {
-    *ctx = NULL;
+    if (team == SHMEMX_TEAM_INVALID)
+        return 1;
+
+    *ctx = malloc(sizeof(shmem_transport_ctx_t));
+
+    if (*ctx == NULL)
+        return 1;
+
+    (*ctx)->team = team;
+    (*ctx)->options = 0;
+
     return 0;
 }
 
@@ -104,9 +86,13 @@ static inline
 void
 shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 {
-    if (ctx != NULL) {
-        RAISE_ERROR_STR("Invalid context handle");
-    }
+    if (ctx == SHMEMX_CTX_INVALID)
+        return;
+    else if (ctx == (shmem_transport_ctx_t *) SHMEM_CTX_DEFAULT)
+        RAISE_ERROR_STR("Cannot destroy SHMEM_CTX_DEFAULT");
+    else
+        free(ctx);
+
     return;
 }
 
@@ -151,7 +137,7 @@ static inline
 void
 shmem_transport_put_wait(shmem_transport_ctx_t* ctx, long *completion)
 {
-    RAISE_ERROR_STR("No path to peer");
+    /* No op */
 }
 
 static inline
@@ -173,7 +159,7 @@ static inline
 void
 shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
 {
-    RAISE_ERROR_STR("No path to peer");
+    /* Nop */
 }
 
 

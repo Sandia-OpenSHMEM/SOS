@@ -98,6 +98,56 @@ shmem_internal_mutex_t          shmem_transport_ofi_lock;
 pthread_mutex_t                 shmem_transport_ofi_progress_lock = PTHREAD_MUTEX_INITIALIZER;
 #endif /* ENABLE_THREADS */
 
+/* Temporarily redefine SHM_INTERNAL integer types to their FI counterparts to
+ * translate the DTYPE_* types (defined by autoconf according to system ABI)
+ * into FI types in the table below */
+#define SHM_INTERNAL_INT8   FI_INT8
+#define SHM_INTERNAL_INT16  FI_INT16
+#define SHM_INTERNAL_INT32  FI_INT32
+#define SHM_INTERNAL_INT64  FI_INT64
+#define SHM_INTERNAL_UINT8  FI_UINT8
+#define SHM_INTERNAL_UINT16 FI_UINT16
+#define SHM_INTERNAL_UINT32 FI_UINT32
+#define SHM_INTERNAL_UINT64 FI_UINT64
+
+int shmem_transport_dtype_table[] = {
+    FI_INT8,                  /* SHM_INTERNAL_SIGNED_BYTE    */
+    DTYPE_SHORT,              /* SHM_INTERNAL_SHORT          */
+    DTYPE_INT,                /* SHM_INTERNAL_INT            */
+    DTYPE_LONG,               /* SHM_INTERNAL_LONG           */
+    DTYPE_LONG_LONG,          /* SHM_INTERNAL_LONG_LONG      */
+    DTYPE_FORTRAN_INTEGER,    /* SHM_INTERNAL_FORTRAN_INT    */
+    FI_INT8,                  /* SHM_INTERNAL_INT8           */
+    FI_INT16,                 /* SHM_INTERNAL_INT16          */
+    FI_INT32,                 /* SHM_INTERNAL_INT32          */
+    FI_INT64,                 /* SHM_INTERNAL_INT64          */
+    DTYPE_PTRDIFF_T,          /* SHM_INTERNAL_PTRDIFF_T      */
+    DTYPE_UNSIGNED_CHAR,      /* SHM_INTERNAL_UCHAR          */
+    DTYPE_UNSIGNED_SHORT,     /* SHM_INTERNAL_USHORT         */
+    DTYPE_UNSIGNED_INT,       /* SHM_INTERNAL_UINT           */
+    DTYPE_UNSIGNED_LONG,      /* SHM_INTERNAL_ULONG          */
+    DTYPE_UNSIGNED_LONG_LONG, /* SHM_INTERNAL_ULONG_LONG     */
+    FI_UINT8,                 /* SHM_INTERNAL_UINT8          */
+    FI_UINT16,                /* SHM_INTERNAL_UINT16         */
+    FI_UINT32,                /* SHM_INTERNAL_UINT32         */
+    FI_UINT64,                /* SHM_INTERNAL_UINT64         */
+    DTYPE_SIZE_T,             /* SHM_INTERNAL_SIZE_T         */
+    FI_FLOAT,                 /* SHM_INTERNAL_FLOAT          */
+    FI_DOUBLE,                /* SHM_INTERNAL_DOUBLE         */
+    FI_LONG_DOUBLE,           /* SHM_INTERNAL_LONG_DOUBLE    */
+    FI_FLOAT_COMPLEX,         /* SHM_INTERNAL_FLOAT_COMPLEX  */
+    FI_DOUBLE_COMPLEX         /* SHM_INTERNAL_DOUBLE_COMPLEX */
+};
+
+#undef SHM_INTERNAL_INT8
+#undef SHM_INTERNAL_INT16
+#undef SHM_INTERNAL_INT32
+#undef SHM_INTERNAL_INT64
+#undef SHM_INTERNAL_UINT8
+#undef SHM_INTERNAL_UINT16
+#undef SHM_INTERNAL_UINT32
+#undef SHM_INTERNAL_UINT64
+
 /* Need a syscall to gettid() because glibc doesn't provide a wrapper
  * (see gettid manpage in the NOTES section): */
 static inline
@@ -206,24 +256,20 @@ static inline void init_ofi_tables(void)
 /* Cover OpenSHMEM atomics API */
 
 #define SIZEOF_AMO_DT 5
-static int DT_AMO_STANDARD[]=
-{
+static int DT_AMO_STANDARD[] = {
     SHM_INTERNAL_INT, SHM_INTERNAL_LONG, SHM_INTERNAL_LONG_LONG,
     SHM_INTERNAL_INT32, SHM_INTERNAL_INT64
 };
 #define SIZEOF_AMO_OPS 1
-static int AMO_STANDARD_OPS[]=
-{
+static int AMO_STANDARD_OPS[] = {
     SHM_INTERNAL_SUM
 };
 #define SIZEOF_AMO_FOPS 1
-static int FETCH_AMO_STANDARD_OPS[]=
-{
+static int FETCH_AMO_STANDARD_OPS[] = {
     SHM_INTERNAL_SUM
 };
 #define SIZEOF_AMO_COPS 1
-static int COMPARE_AMO_STANDARD_OPS[]=
-{
+static int COMPARE_AMO_STANDARD_OPS[] = {
     FI_CSWAP
 };
 
@@ -233,85 +279,73 @@ static int COMPARE_AMO_STANDARD_OPS[]=
 #else
 #define SIZEOF_AMO_EX_DT 7
 #endif
-static int DT_AMO_EXTENDED[]=
-{
+static int DT_AMO_EXTENDED[] = {
     SHM_INTERNAL_FLOAT, SHM_INTERNAL_DOUBLE, SHM_INTERNAL_INT, SHM_INTERNAL_LONG,
     SHM_INTERNAL_LONG_LONG, SHM_INTERNAL_INT32, SHM_INTERNAL_INT64,
     SHM_INTERNAL_FORTRAN_INTEGER
 };
 #define SIZEOF_AMO_EX_OPS 1
-static int AMO_EXTENDED_OPS[]=
-{
+static int AMO_EXTENDED_OPS[] = {
     FI_ATOMIC_WRITE
 };
 #define SIZEOF_AMO_EX_FOPS 2
-static int FETCH_AMO_EXTENDED_OPS[]=
-{
+static int FETCH_AMO_EXTENDED_OPS[] = {
     FI_ATOMIC_WRITE, FI_ATOMIC_READ
 };
 
 
 /* Cover one-sided implementation of reduction */
-
 #define SIZEOF_RED_DT 6
-static int DT_REDUCE_BITWISE[]=
-{
+static int DT_REDUCE_BITWISE[] = {
     SHM_INTERNAL_SHORT, SHM_INTERNAL_INT, SHM_INTERNAL_LONG,
     SHM_INTERNAL_LONG_LONG, SHM_INTERNAL_INT32, SHM_INTERNAL_INT64
 };
 #define SIZEOF_RED_OPS 3
-static int REDUCE_BITWISE_OPS[]=
-{
+static int REDUCE_BITWISE_OPS[] = {
     SHM_INTERNAL_BAND, SHM_INTERNAL_BOR, SHM_INTERNAL_BXOR
 };
 
 
 #define SIZEOF_REDC_DT 9
-static int DT_REDUCE_COMPARE[]=
-{
+static int DT_REDUCE_COMPARE[] = {
     SHM_INTERNAL_FLOAT, SHM_INTERNAL_DOUBLE, SHM_INTERNAL_SHORT,
     SHM_INTERNAL_INT, SHM_INTERNAL_LONG, SHM_INTERNAL_LONG_LONG,
     SHM_INTERNAL_INT32, SHM_INTERNAL_INT64, SHM_INTERNAL_LONG_DOUBLE
 };
 #define SIZEOF_REDC_OPS 2
-static int REDUCE_COMPARE_OPS[]=
-{
+static int REDUCE_COMPARE_OPS[] = {
     SHM_INTERNAL_MAX, SHM_INTERNAL_MIN
 };
 
 
 #define SIZEOF_REDA_DT 11
-static int DT_REDUCE_ARITH[]=
-{
+static int DT_REDUCE_ARITH[] = {
     SHM_INTERNAL_FLOAT, SHM_INTERNAL_DOUBLE, SHM_INTERNAL_FLOAT_COMPLEX,
     SHM_INTERNAL_DOUBLE_COMPLEX, SHM_INTERNAL_SHORT, SHM_INTERNAL_INT,
     SHM_INTERNAL_LONG, SHM_INTERNAL_LONG_LONG, SHM_INTERNAL_INT32,
     SHM_INTERNAL_INT64, SHM_INTERNAL_LONG_DOUBLE
 };
 #define SIZEOF_REDA_OPS 2
-static int REDUCE_ARITH_OPS[]=
-{
+static int REDUCE_ARITH_OPS[] = {
     SHM_INTERNAL_SUM, SHM_INTERNAL_PROD
 };
 
 /* Internal to SHMEM implementation atomic requirement */
 /* Locking implementation requirement */
 #define SIZEOF_INTERNAL_REQ_DT 1
-static int DT_INTERNAL_REQ[]=
-{
+static int DT_INTERNAL_REQ[] = {
     SHM_INTERNAL_INT
 };
 #define SIZEOF_INTERNAL_REQ_OPS 1
-static int INTERNAL_REQ_OPS[]=
-{
+static int INTERNAL_REQ_OPS[] = {
     FI_MSWAP
 };
 
-typedef enum{
+typedef enum {
     ATOMIC_NO_SUPPORT,
     ATOMIC_WARNINGS,
     ATOMIC_SOFT_SUPPORT,
-}atomic_support_lv;
+} atomic_support_lv;
 
 
 /* default CQ depth */
@@ -828,7 +862,7 @@ int populate_mr_tables(void)
 static inline
 int atomicvalid_rtncheck(int ret, int atomic_size,
                          atomic_support_lv atomic_sup,
-                         char strOP[], char strDT[])
+                         char *strOP, char *strDT)
 {
     if ((ret != 0 || atomic_size == 0) && atomic_sup != ATOMIC_SOFT_SUPPORT) {
         RAISE_WARN_MSG("Provider does not support atomic '%s' "
@@ -843,19 +877,20 @@ int atomicvalid_rtncheck(int ret, int atomic_size,
 }
 
 static inline
-int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[], int OPS[],
+int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT, int *OPS,
                       atomic_support_lv atomic_sup)
 {
-    int i, j, ret = 0;
+    int i, j;
     size_t atomic_size;
 
-    for(i=0; i<DT_MAX; i++) {
-        for(j=0; j<OPS_MAX; j++) {
-            ret = fi_atomicvalid(shmem_transport_ctx_default.ep, DT[i],
-                                 OPS[j], &atomic_size);
+    for (i = 0; i < DT_MAX; i++) {
+        for (j = 0; j < OPS_MAX; j++) {
+            int dt = SHMEM_TRANSPORT_DTYPE(DT[i]);
+            int ret = fi_atomicvalid(shmem_transport_ctx_default.ep,
+                                     dt, OPS[j], &atomic_size);
             if (atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                                      SHMEM_OpName[OPS[j]],
-                                     SHMEM_DtName[DT[i]]))
+                                     SHMEM_DtName[dt]))
                 return ret;
         }
     }
@@ -864,19 +899,20 @@ int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[], int OPS[],
 }
 
 static inline
-int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
-                              int OPS[], atomic_support_lv atomic_sup)
+int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT,
+                              int *OPS, atomic_support_lv atomic_sup)
 {
-    int i, j, ret = 0;
+    int i, j;
     size_t atomic_size;
 
-    for(i=0; i<DT_MAX; i++) {
-        for(j=0; j<OPS_MAX; j++) {
-            ret = fi_compare_atomicvalid(shmem_transport_ctx_default.ep, DT[i],
-                                         OPS[j], &atomic_size);
+    for (i = 0; i < DT_MAX; i++) {
+        for (j = 0; j < OPS_MAX; j++) {
+            int dt = SHMEM_TRANSPORT_DTYPE(DT[i]);
+            int ret = fi_compare_atomicvalid(shmem_transport_ctx_default.ep,
+                                             dt, OPS[j], &atomic_size);
             if (atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                                      SHMEM_OpName[OPS[j]],
-                                     SHMEM_DtName[DT[i]]))
+                                     SHMEM_DtName[dt]))
                 return ret;
         }
     }
@@ -885,19 +921,20 @@ int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[],
 }
 
 static inline
-int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int DT[], int OPS[],
+int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT, int *OPS,
                             atomic_support_lv atomic_sup)
 {
-    int i, j, ret = 0;
+    int i, j;
     size_t atomic_size;
 
-    for(i=0; i<DT_MAX; i++) {
-        for(j=0; j<OPS_MAX; j++) {
-            ret = fi_fetch_atomicvalid(shmem_transport_ctx_default.ep, DT[i],
-                                       OPS[j], &atomic_size);
+    for (i = 0; i < DT_MAX; i++) {
+        for (j = 0; j < OPS_MAX; j++) {
+            int dt = SHMEM_TRANSPORT_DTYPE(DT[i]);
+            int ret = fi_fetch_atomicvalid(shmem_transport_ctx_default.ep,
+                                           dt, OPS[j], &atomic_size);
             if (atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                                      SHMEM_OpName[OPS[j]],
-                                     SHMEM_DtName[DT[i]]))
+                                     SHMEM_DtName[dt]))
                 return ret;
         }
     }

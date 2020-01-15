@@ -68,7 +68,7 @@ static void * thread_main(void *arg) {
     ret = shmem_ctx_create(SHMEM_CTX_PRIVATE, &ctx);
     if (ret != 0) {
         printf("Error creating context (%d)\n", ret);
-        shmem_global_exit(2);
+        ctx = SHMEM_CTX_DEFAULT;
     }
 
     for (i = 1; i <= npes; i++)
@@ -76,7 +76,8 @@ static void * thread_main(void *arg) {
 
     shmem_quiet();
 
-    shmem_ctx_destroy(ctx);
+    if (ctx != SHMEM_CTX_DEFAULT)
+        shmem_ctx_destroy(ctx);
 
     return NULL;
 }

@@ -249,6 +249,12 @@ AC_ARG_ENABLE([ofi-fence],
 AS_IF([test "$enable_ofi_fence" = "yes"],
       [AC_DEFINE([USE_FI_FENCE], [1], [If defined, the OFI transport will use FI_FENCE. Otherwise, transport layer fence is used.])])
 
+AC_ARG_ENABLE([shr-atomics],
+    [AC_HELP_STRING([--enable-shr-atomics],
+                    [Enable shared memory atomic operations. (default: disabled)])])
+AS_IF([test "$enable_shr_atomics" = "yes"],
+      [AC_DEFINE([USE_SHR_ATOMICS], [1], [If defined, the shared memory layer will perform processor atomics.])])
+
 
 PKG_INSTALLDIR()
 
