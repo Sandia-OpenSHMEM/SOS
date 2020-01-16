@@ -345,7 +345,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ANY')
             for (i = 0; i < nelems; i++) {                                                     \
                 size_t idx = (i + start_idx) % nelems;                                         \
                 if (status == NULL || !status[idx]) {                                          \
-                    SHMEM_TEST_VECTOR(cond, &vars[idx], &values[idx], cmpret);                        \
+                    SHMEM_TEST(cond, &vars[idx], &values[idx], cmpret);                        \
                     if (cmpret) {                                                              \
                         found_idx = idx;                                                       \
                         break;                                                                 \
@@ -430,7 +430,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_SOME')
             int cmpret = 0;                                                                    \
             for (i = 0; i < nelems; i++) {                                                     \
                 if (status == NULL || !status[i]) {                                            \
-                    SHMEM_TEST_VECTOR(cond, &vars[i], &values[i], cmpret);                            \
+                    SHMEM_TEST(cond, &vars[i], &values[i], cmpret);                            \
                     if (cmpret) {                                                              \
                         indices[ncompleted++] = i;                                             \
                         cmpret = 0;                                                            \
@@ -536,7 +536,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ALL')
         for (i = 0; i < nelems; i++) {                                                         \
             if (status == NULL || !status[i]) {                                                \
                 int cmpret;                                                                    \
-                SHMEM_TEST_VECTOR(cond, &vars[i], &values[i], cmpret);                                \
+                SHMEM_TEST(cond, &vars[i], &values[i], cmpret);                                \
                 if (cmpret) ncompleted++;                                                      \
             }                                                                                  \
         }                                                                                      \
@@ -610,7 +610,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ANY')
             int cmpret = 0;                                                                    \
             size_t idx = (i + start_idx) % nelems;                                             \
             if (status == NULL || !status[idx]) {                                              \
-                SHMEM_TEST_VECTOR(cond, &vars[idx], &values[idx], cmpret);                            \
+                SHMEM_TEST(cond, &vars[idx], &values[idx], cmpret);                            \
                 if (cmpret) {                                                                  \
                     found_idx = idx;                                                           \
                     break;                                                                     \
@@ -693,7 +693,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_SOME')
         int cmpret = 0;                                                                        \
         for (i = 0; i < nelems; i++) {                                                         \
             if (status == NULL || !status[i]) {                                                \
-                SHMEM_TEST_VECTOR(cond, &vars[i], &values[i], cmpret);                                \
+                SHMEM_TEST(cond, &vars[i], &values[i], cmpret);                                \
                 if (cmpret) {                                                                  \
                     indices[ncompleted++] = i;                                                 \
                     cmpret = 0;                                                                \
