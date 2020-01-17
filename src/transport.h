@@ -54,6 +54,9 @@ typedef enum shm_internal_datatype_t shm_internal_datatype_t;
 #elif defined (USE_OFI)
 #include "transport_ofi.h"
 
+#elif defined (USE_UCX)
+#include "transport_ucx.h"
+
 #else /* No transport */
 #include "transport_none.h"
 

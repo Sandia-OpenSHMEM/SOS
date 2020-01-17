@@ -348,6 +348,10 @@ OPAL_CHECK_OFI([ofi],
     [transport_ofi="yes"],
     [transport_ofi="no"])
 
+# FIXME: Temporary hack
+AC_DEFINE([USE_UCX], [1], [Enable UCX transport])
+transport_ucx="yes"
+
 # If both OFI and portals4 requested, user needs to choose one:
 if test -n "$with_ofi" -a "$with_ofi" != "no" -a -n "$with_portals4" -a "$with_portals4" != "no" ; then
     AC_MSG_ERROR([Cannot choose both OFI and portals4 transports, see --help for details])
@@ -367,6 +371,7 @@ else
     transport_portals4="no"
     AC_MSG_WARN([Neither OFI nor portals4 transport requested])
 fi
+AM_CONDITIONAL([USE_UCX], [test "$transport_ucx" = "yes"])
 AM_CONDITIONAL([USE_OFI], [test "$transport_ofi" = "yes"])
 AM_CONDITIONAL([USE_PORTALS4], [test "$transport_portals4" = "yes"])
 
