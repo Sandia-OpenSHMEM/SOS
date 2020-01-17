@@ -40,7 +40,7 @@ static int initialized_pmi = 0;
 static int *location_array = NULL;
 
 #define SINGLETON_KEY_LEN 128
-#define SINGLETON_VAL_LEN 256
+#define SINGLETON_VAL_LEN 1024
 
 typedef struct {
     char key[SINGLETON_KEY_LEN];
