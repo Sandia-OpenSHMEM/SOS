@@ -235,7 +235,7 @@ shmem_shr_transport_swap(shmem_ctx_t ctx, void *target, void *source,
 #define SHMEM_DEF_SWAP(STYPE,TYPE,ITYPE)                                \
         case ITYPE:                                                     \
                 __atomic_exchange((TYPE *)remote_ptr, (TYPE *)source,   \
-                                  (TYPE *)dest, __ATOMIC_SEQ_CST);      \
+                                  (TYPE *)dest, __ATOMIC_ACQ_REL);      \
             break;
 
     switch (datatype) {
@@ -274,8 +274,8 @@ shmem_shr_transport_cswap(shmem_ctx_t ctx, void *target, void *source,
                                                          &expected,             \
                                                          (TYPE *)source,        \
                                                          false,                 \
-                                                         __ATOMIC_SEQ_CST,      \
-                                                         __ATOMIC_SEQ_CST);     \
+                                                         __ATOMIC_ACQ_REL,      \
+                                                         __ATOMIC_ACQUIRE);     \
                 if (swapped)                                                    \
                     *(TYPE *)dest = *(TYPE *)operand;                           \
                 else                                                            \
@@ -316,7 +316,7 @@ shmem_shr_transport_mswap(shmem_ctx_t ctx, void *target, void *source,
     switch (datatype) {
         case SHM_INTERNAL_INT:
             while (!done) {
-                int v = __atomic_load_n((int *)remote_ptr, __ATOMIC_SEQ_CST);
+                int v = __atomic_load_n((int *)remote_ptr, __ATOMIC_ACQUIRE);
 
                 int new = ((unsigned int) v & ~*(unsigned int *)mask) |
                           (*(unsigned int *)source & *(unsigned int *)mask);
@@ -325,8 +325,8 @@ shmem_shr_transport_mswap(shmem_ctx_t ctx, void *target, void *source,
                                                  &v,
                                                  &new,
                                                  false,
-                                                 __ATOMIC_SEQ_CST,
-                                                 __ATOMIC_SEQ_CST);
+                                                 __ATOMIC_ACQ_REL,
+                                                 __ATOMIC_ACQUIRE);
                 *(int *)dest = v;
             }
             break;
@@ -356,22 +356,22 @@ shmem_shr_transport_atomic(shmem_ctx_t ctx, void *target, const void *source,
 
 #define SHMEM_DEF_BAND_OP(STYPE,TYPE,ITYPE)                                                     \
                 case ITYPE:                                                                     \
-                    __atomic_fetch_and((TYPE *)remote_ptr, *((TYPE *)source), __ATOMIC_SEQ_CST);\
+                    __atomic_fetch_and((TYPE *)remote_ptr, *((TYPE *)source), __ATOMIC_RELEASE);\
                     break;
 
 #define SHMEM_DEF_BOR_OP(STYPE,TYPE,ITYPE)                                                      \
                 case ITYPE:                                                                     \
-                    __atomic_fetch_or((TYPE *)remote_ptr, *((TYPE *)source), __ATOMIC_SEQ_CST); \
+                    __atomic_fetch_or((TYPE *)remote_ptr, *((TYPE *)source), __ATOMIC_RELEASE); \
                     break;
 
 #define SHMEM_DEF_BXOR_OP(STYPE,TYPE,ITYPE)                                                     \
                 case ITYPE:                                                                     \
-                    __atomic_fetch_xor((TYPE *)remote_ptr, *((TYPE *)source), __ATOMIC_SEQ_CST);\
+                    __atomic_fetch_xor((TYPE *)remote_ptr, *((TYPE *)source), __ATOMIC_RELEASE);\
                     break;
 
 #define SHMEM_DEF_SUM_OP(STYPE,TYPE,ITYPE)                                                      \
                 case ITYPE:                                                                     \
-                    __atomic_fetch_add((TYPE *)remote_ptr, *((TYPE *)source), __ATOMIC_SEQ_CST);\
+                    __atomic_fetch_add((TYPE *)remote_ptr, *((TYPE *)source), __ATOMIC_RELEASE);\
                     break;
 
     switch (op) {
@@ -440,7 +440,7 @@ shmem_shr_transport_atomic_fetch(shmem_ctx_t ctx, void *target,
 
 #define SHMEM_DEF_FETCH(STYPE,TYPE,ITYPE)                                       \
         case ITYPE:                                                             \
-            __atomic_load((TYPE *)remote_ptr, (TYPE *)target, __ATOMIC_SEQ_CST);\
+            __atomic_load((TYPE *)remote_ptr, (TYPE *)target, __ATOMIC_ACQUIRE);\
             break;
 
     switch (datatype) {
@@ -473,7 +473,7 @@ shmem_shr_transport_atomic_set(shmem_ctx_t ctx, void *target,
 
 #define SHMEM_DEF_SET(STYPE,TYPE,ITYPE)                                                 \
         case ITYPE:                                                                     \
-            __atomic_store((TYPE *)remote_ptr, (TYPE *)source, __ATOMIC_SEQ_CST);       \
+            __atomic_store((TYPE *)remote_ptr, (TYPE *)source, __ATOMIC_RELEASE);       \
             break;
 
     switch (datatype) {
@@ -522,25 +522,25 @@ shmem_shr_transport_fetch_atomic(shmem_ctx_t ctx, void *target, void *source,
 #define SHMEM_DEF_BAND_OP(STYPE,TYPE,ITYPE)                                                     \
                 case ITYPE:                                                                     \
                     *(TYPE *)dest = __atomic_fetch_and((TYPE *)remote_ptr, *((TYPE *)source),   \
-                                                       __ATOMIC_SEQ_CST);                       \
+                                                       __ATOMIC_ACQ_REL);                       \
                     break;
 
 #define SHMEM_DEF_BOR_OP(STYPE,TYPE,ITYPE)                                                      \
                 case ITYPE:                                                                     \
                     *(TYPE *)dest = __atomic_fetch_or((TYPE *)remote_ptr, *((TYPE *)source),    \
-                                                      __ATOMIC_SEQ_CST);                        \
+                                                      __ATOMIC_ACQ_REL);                        \
                     break;
 
 #define SHMEM_DEF_BXOR_OP(STYPE,TYPE,ITYPE)                                                     \
                 case ITYPE:                                                                     \
                     *(TYPE *)dest = __atomic_fetch_xor((TYPE *)remote_ptr, *((TYPE *)source),   \
-                                                       __ATOMIC_SEQ_CST);                       \
+                                                       __ATOMIC_ACQ_REL);                       \
                     break;
 
 #define SHMEM_DEF_SUM_OP(STYPE,TYPE,ITYPE)                                                      \
                 case ITYPE:                                                                     \
                     *(TYPE *)dest = __atomic_fetch_add((TYPE *)remote_ptr, *((TYPE *)source),   \
-                                                       __ATOMIC_SEQ_CST);                       \
+                                                       __ATOMIC_ACQ_REL);                       \
                     break;
 
     switch (op) {
