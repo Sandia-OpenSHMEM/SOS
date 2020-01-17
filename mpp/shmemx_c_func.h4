@@ -55,11 +55,11 @@ define(`SHMEM_C_WAIT_UNTIL_ALL_VECTOR',
 SHMEM_BIND_C_SYNC(`SHMEM_C_WAIT_UNTIL_ALL_VECTOR')
 
 define(`SHMEM_C_WAIT_UNTIL_ANY_VECTOR',
-`SHMEM_FUNCTION_ATTRIBUTES size_t SHPRE()shmemx_$1_wait_until_any_vector($2 *vars, size_t nelems, int *status, int cmp, $2 *values);')dnl
+`SHMEM_FUNCTION_ATTRIBUTES size_t SHPRE()shmemx_$1_wait_until_any_vector($2 *vars, size_t nelems, const int *status, int cmp, $2 *values);')dnl
 SHMEM_BIND_C_SYNC(`SHMEM_C_WAIT_UNTIL_ANY_VECTOR')
 
 define(`SHMEM_C_WAIT_UNTIL_SOME_VECTOR',
-`SHMEM_FUNCTION_ATTRIBUTES size_t SHPRE()shmemx_$1_wait_until_some_vector($2 *vars, size_t nelems, size_t *indices, int *status, int cmp, $2 *values);')dnl
+`SHMEM_FUNCTION_ATTRIBUTES size_t SHPRE()shmemx_$1_wait_until_some_vector($2 *vars, size_t nelems, size_t *indices, const int *status, int cmp, $2 *values);')dnl
 SHMEM_BIND_C_SYNC(`SHMEM_C_WAIT_UNTIL_SOME_VECTOR')
 
 define(`SHMEM_C_TEST_ALL',
