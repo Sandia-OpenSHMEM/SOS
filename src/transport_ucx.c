@@ -42,10 +42,24 @@ int shmem_transport_init(void)
     status = ucp_init(&params, shmem_transport_ucp_config, &shmem_transport_ucp_ctx);
     UCX_CHECK_STATUS(status);
 
-    /* FIXME: Currently only supporting THREAD_SINGLE */
-    shmem_internal_assertp(shmem_internal_thread_level == SHMEM_THREAD_SINGLE);
     worker_params.field_mask  = UCP_WORKER_PARAM_FIELD_THREAD_MODE;
-    worker_params.thread_mode = UCS_THREAD_MODE_SINGLE;
+
+    switch (shmem_internal_thread_level) {
+        case SHMEM_THREAD_SINGLE:
+            worker_params.thread_mode = UCS_THREAD_MODE_SINGLE;
+            break;
+        case SHMEM_THREAD_FUNNELED:
+            worker_params.thread_mode = UCS_THREAD_MODE_SERIALIZED;
+            break;
+        case SHMEM_THREAD_SERIALIZED:
+            worker_params.thread_mode = UCS_THREAD_MODE_SERIALIZED;
+            break;
+        case SHMEM_THREAD_MULTIPLE:
+            worker_params.thread_mode = UCS_THREAD_MODE_MULTI;
+            break;
+        default:
+            RAISE_ERROR_MSG("Invalid thread level (%d)\n", shmem_internal_thread_level);
+    }
 
     status = ucp_worker_create(shmem_transport_ucp_ctx, &worker_params,
                                &shmem_transport_ucp_worker);
