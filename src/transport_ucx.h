@@ -1,4 +1,3 @@
-
 /* -*- C -*-
  *
  * Copyright (c) 2020 NVidia Corporation.
@@ -293,20 +292,57 @@ void
 shmem_transport_atomic(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
                        int pe, shm_internal_op_t op, shm_internal_datatype_t datatype)
 {
-    if (datatype == SHM_INTERNAL_LONG && op == SHM_INTERNAL_SUM) {
-        uint8_t *remote_addr;
-        ucp_rkey_h rkey;
-        ucs_status_t status;
+    uint8_t *remote_addr;
+    ucp_rkey_h rkey;
+    ucs_status_t status;
+    ucp_atomic_post_op_t ucx_op;
+    uint64_t value;
 
-        shmem_transport_ucx_get_mr(target, pe, &remote_addr, &rkey);
+    shmem_transport_ucx_get_mr(target, pe, &remote_addr, &rkey);
 
-        status = ucp_atomic_post(shmem_transport_peers[pe].ep, UCP_ATOMIC_POST_OP_ADD,
-                                 *(long*)source, sizeof(long), (uint64_t) remote_addr, rkey);
-        UCX_CHECK_STATUS_INPROGRESS(status);
+    /* XXX: This could be a lookup table instead of a switch statement */
+    switch (op) {
+        case SHM_INTERNAL_BAND:
+            ucx_op = UCP_ATOMIC_POST_OP_AND;
+            break;
+        case SHM_INTERNAL_BOR:
+            ucx_op = UCP_ATOMIC_POST_OP_OR;
+            break;
+        case SHM_INTERNAL_BXOR:
+            ucx_op = UCP_ATOMIC_POST_OP_XOR;
+            break;
+        case SHM_INTERNAL_SUM:
+            ucx_op = UCP_ATOMIC_POST_OP_ADD;
+            break;
+        /* Note: The following ops are only used by AMO reductions, which are
+         * presently unsupported in the UCX transport. */
+        case SHM_INTERNAL_PROD:
+        case SHM_INTERNAL_MIN:
+        case SHM_INTERNAL_MAX:
+        default:
+            RAISE_ERROR_MSG("Unsupported op op=%d\n", op);
     }
-    else {
-        RAISE_ERROR_STR("No path to peer");
+
+    switch (len) {
+        case 1:
+            value = (uint64_t)*(uint8_t*)source;
+            break;
+        case 2:
+            value = (uint64_t)*(uint16_t*)source;
+            break;
+        case 4:
+            value = (uint64_t)*(uint32_t*)source;
+            break;
+        case 8:
+            value = (uint64_t)*(uint64_t*)source;
+            break;
+        default:
+            RAISE_ERROR_MSG("Unsupported datatype len=%zu\n", len);
     }
+
+    status = ucp_atomic_post(shmem_transport_peers[pe].ep, ucx_op,
+                             value, len, (uint64_t) remote_addr, rkey);
+    UCX_CHECK_STATUS_INPROGRESS(status);
 }
 
 static inline
