@@ -349,31 +349,55 @@ OPAL_CHECK_OFI([ofi],
     [transport_ofi="no"])
 
 # FIXME: Temporary hack
-AC_DEFINE([USE_UCX], [1], [Enable UCX transport])
-transport_ucx="yes"
+AC_ARG_WITH([ucx],
+    [AC_HELP_STRING([--with-ucx],
+                    [Enable the UCX transport. (default: disabled)])])
 
-# If both OFI and portals4 requested, user needs to choose one:
-if test -n "$with_ofi" -a "$with_ofi" != "no" -a -n "$with_portals4" -a "$with_portals4" != "no" ; then
-    AC_MSG_ERROR([Cannot choose both OFI and portals4 transports, see --help for details])
-# Check which was requested, OFI or portals4:
+num_transports=""
+if test -n "$with_portals4" -a "$with_portals4" != "no" ; then
+    num_transports="x$num_transports"
+fi
+if test -n "$with_ofi" -a "$with_ofi" != "no" ; then
+    num_transports="x$num_transports"
+fi
+if test -n "$with_ucx" -a "$with_ucx" != "no" ; then
+    num_transports="x$num_transports"
+    transport_ucx="yes"
+fi
+
+if test -n "$num_transports" -a "$num_transports" != "x" ; then
+    AC_MSG_ERROR([Cannot select more than one transport, see --help for details])
+fi
+
+if test -n "$with_portals4" -a "$with_portals4" != "no" ; then
+    transport="portals4"
+    AC_DEFINE([USE_PORTALS4], [1], [Define if Portals 4 transport active])
 elif test -n "$with_ofi" -a "$with_ofi" != "no" ; then
     transport="ofi"
-    transport_portals4="no"
     AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
-elif test -n "$with_portals4" -a "$with_portals4" != "no" ; then
-    transport="portals4"
-    transport_ofi="no"
-    AC_DEFINE([USE_PORTALS4], [1], [Define if Portals 4 transport active])
-# If neither, set transport to "none" and print a warning:
+elif test -n "$with_ucx" -a "$with_ucx" != "no" ; then
+    transport="ucx"
+    transport_ucx="yes"
+    # FIXME: Temporary hack until UCX is wired into the build system properly
+    if test "$with_ucx" != "yes" ; then
+        CFLAGS="$CFLAGS -I$with_ucx/include"
+        LDFLAGS="$LDFLAGS -L$with_ucx/lib -lucs -lucp"
+    else
+        LDFLAGS="$LDFLAGS -lucs -lucp"
+    fi
+    AC_DEFINE([USE_UCX], [1], [Define if UCX transport active])
+    AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
 else
     transport="none"
-    transport_ofi="no"
     transport_portals4="no"
+    transport_ofi="no"
+    transport_ucx="no"
     AC_MSG_WARN([Neither OFI nor portals4 transport requested])
 fi
-AM_CONDITIONAL([USE_UCX], [test "$transport_ucx" = "yes"])
-AM_CONDITIONAL([USE_OFI], [test "$transport_ofi" = "yes"])
+
 AM_CONDITIONAL([USE_PORTALS4], [test "$transport_portals4" = "yes"])
+AM_CONDITIONAL([USE_OFI], [test "$transport_ofi" = "yes"])
+AM_CONDITIONAL([USE_UCX], [test "$transport_ucx" = "yes"])
 
 SANDIA_CHECK_XPMEM(
     [transport_xpmem="yes"],
@@ -844,7 +868,7 @@ AC_OUTPUT
 AS_IF([test "$enable_pmi_mpi" != "yes" -a "$enable_pmi_simple" != "yes" -a "$opal_external_pmix_version_found" != 1 -a "$ompi_check_pmi_happy" != "yes" -a -z "$pmi_type"],
          [AC_MSG_ERROR([No PMI client interface was configured, consider --enable-pmi-simple or --with-pmi])])
 
-AS_IF([test "$transport_portals4" != "yes" -a "$transport_ofi" != "yes"],
+AS_IF([test -z "$num_transports"],
       [AC_MSG_WARN([No transport found, resulting library will be unable to exchange messages])])
 
 AS_IF([test "$shmem_cv_c11_works" != "yes"],
@@ -880,6 +904,7 @@ echo ""
 echo "Transports:"
 echo "  Portals 4:      $transport_portals4"
 echo "  OFI:            $transport_ofi"
+echo "  UCX:            $transport_ucx"
 echo ""
 echo "On Node Communication:"
 echo "  XPMEM:          $transport_xpmem"
