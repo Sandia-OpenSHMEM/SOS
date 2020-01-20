@@ -28,6 +28,21 @@ ucp_mem_h     shmem_transport_ucp_mem_heap;
 
 shmem_transport_peer_t *shmem_transport_peers;
 
+/* Tables to translate between SHM_INTERNAL and UCP ops */
+ucp_atomic_post_op_t shmem_transport_ucx_post_op[] = {
+    UCP_ATOMIC_POST_OP_AND,
+    UCP_ATOMIC_POST_OP_OR,
+    UCP_ATOMIC_POST_OP_XOR,
+    UCP_ATOMIC_POST_OP_ADD
+};
+
+ucp_atomic_fetch_op_t shmem_transport_ucx_fetch_op[] = {
+    UCP_ATOMIC_FETCH_OP_FAND,
+    UCP_ATOMIC_FETCH_OP_FOR,
+    UCP_ATOMIC_FETCH_OP_FXOR,
+    UCP_ATOMIC_FETCH_OP_FADD
+};
+
 void shmem_transport_recv_cb_nop(void *request, ucs_status_t status) {
     return;
 }
@@ -156,6 +171,9 @@ int shmem_transport_startup(void)
                                    sizeof(shmem_transport_peer_t));
 
     /* Build connection table to each peer */
+    /* FIXME: Currently, we create connections to each peer during startup.
+     * Would it be better to create endpoints on-demand? And is there a limit
+     * to how many we can have? */
     for (i = 0; i < shmem_internal_num_pes; i++) {
         ucs_status_t status;
         ucp_ep_params_t params;

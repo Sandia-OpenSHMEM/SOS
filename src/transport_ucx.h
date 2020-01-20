@@ -23,11 +23,19 @@ enum shm_internal_op_t {
     SHM_INTERNAL_BAND,
     SHM_INTERNAL_BOR,
     SHM_INTERNAL_BXOR,
+    SHM_INTERNAL_SUM,
     SHM_INTERNAL_MIN,
     SHM_INTERNAL_MAX,
-    SHM_INTERNAL_SUM,
     SHM_INTERNAL_PROD
 };
+
+/* The last op supported by the transport layer atomics. Additional ops/types
+ * can be implemented to support reductions and are enabled via the
+ * shmem_transport_atomic_supported routine below. */
+#define SHMEM_TRANSPORT_UCX_OP_LAST SHM_INTERNAL_SUM
+
+extern ucp_atomic_post_op_t shmem_transport_ucx_post_op[];
+extern ucp_atomic_fetch_op_t shmem_transport_ucx_fetch_op[];
 
 typedef enum shm_internal_op_t shm_internal_op_t;
 typedef int shmem_transport_ct_t;
@@ -50,6 +58,13 @@ typedef struct {
 extern shmem_transport_peer_t *shmem_transport_peers;
 extern ucp_worker_h shmem_transport_ucp_worker;
 
+/* FIXME: Is this the right thing to do with callbacks? */
+void shmem_transport_recv_cb_nop(void *request, ucs_status_t status);
+
+int shmem_transport_init(void);
+int shmem_transport_startup(void);
+int shmem_transport_fini(void);
+
 #define UCX_CHECK_STATUS(status)                                                        \
     do {                                                                                \
         if (status != UCS_OK) {                                                         \
@@ -66,18 +81,19 @@ extern ucp_worker_h shmem_transport_ucp_worker;
 
 static inline
 ucs_status_t shmem_transport_ucx_complete_op(ucs_status_ptr_t req) {
-    ucp_worker_progress(shmem_transport_ucp_worker);
-
-    if (req == NULL)
+    if (req == NULL) {
+        /* All calls to complete_op must generate progress to avoid deadlock
+         * in application-level polling loops */
+        ucp_worker_progress(shmem_transport_ucp_worker);
         return UCS_OK;
-    else if (UCS_PTR_IS_ERR(req))
+    } else if (UCS_PTR_IS_ERR(req)) {
         return UCS_PTR_STATUS(req);
-    else {
-        ucs_status_t status = ucp_request_check_status(req);
-        while (status == UCS_INPROGRESS) {
+    } else {
+        ucs_status_t status;
+        do {
             ucp_worker_progress(shmem_transport_ucp_worker);
             status = ucp_request_check_status(req);
-        }
+        } while (status == UCS_INPROGRESS);
         ucp_request_release(req);
         return status;
     }
@@ -94,13 +110,6 @@ ucs_status_t shmem_transport_ucx_release_op(ucs_status_ptr_t req) {
         return UCS_INPROGRESS;
     }
 }
-
-/* FIXME: Is this the right thing to do with callbacks? */
-void shmem_transport_recv_cb_nop(void *request, ucs_status_t status);
-
-int shmem_transport_init(void);
-int shmem_transport_startup(void);
-int shmem_transport_fini(void);
 
 static inline
 void shmem_transport_ucx_get_mr(const void *addr, int dest_pe,
@@ -198,7 +207,10 @@ shmem_transport_put_scalar(shmem_transport_ctx_t* ctx, void *target, const void 
 
     shmem_transport_ucx_get_mr(target, pe, &remote_addr, &rkey);
 
-    /* FIXME: This needs to be a buffered put. Use bb here? */
+    /* FIXME: SHMEM expects scalar puts to be buffered. Use bb here? Seems a
+     * bit of an extra challenge because of races in the requests interface.
+     * Perhaps easiest to fall back on using quiet to reclaim bb space when
+     * exhausted. */
     status = ucp_put_nbi(shmem_transport_peers[pe].ep, source, len, (uint64_t) remote_addr, rkey);
     UCX_CHECK_STATUS_INPROGRESS(status);
 
@@ -221,12 +233,11 @@ shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void *sou
     shmem_transport_ucx_get_mr(target, pe, &remote_addr, &rkey);
 
     /* FIXME: Could use ucp_put_nb here to take advantage of the completion flag */
-    /* The completion flag would need to either be (1) allocated by UCX as part
-     * of the request, or (2) a pointer in the request that is assigned the
-     * completion value here. Case (2) is also what we would need in order to
-     * reclaim bounce buffers. How would you set a field in a request like this
-     * in a way that is async safe (assuming other threads are also generating
-     * progress)? */
+    /* Since the middleware allocates the flag, we would want to include a
+     * pointer in the request object. This is also what we would need in order
+     * to reclaim bounce buffers. Not clear how to set a field in a request like
+     * this in a way that is async safe (assuming other threads are also
+     * generating progress). */
     status = ucp_put_nbi(shmem_transport_peers[pe].ep, source, len, (uint64_t) remote_addr, rkey);
     UCX_CHECK_STATUS_INPROGRESS(status);
 }
@@ -458,33 +469,11 @@ shmem_transport_atomic(shmem_transport_ctx_t* ctx, void *target, const void *sou
     uint8_t *remote_addr;
     ucp_rkey_h rkey;
     ucs_status_t status;
-    ucp_atomic_post_op_t ucx_op;
     uint64_t value;
 
     shmem_transport_ucx_get_mr(target, pe, &remote_addr, &rkey);
 
-    /* XXX: This could be a lookup table instead of a switch statement */
-    switch (op) {
-        case SHM_INTERNAL_BAND:
-            ucx_op = UCP_ATOMIC_POST_OP_AND;
-            break;
-        case SHM_INTERNAL_BOR:
-            ucx_op = UCP_ATOMIC_POST_OP_OR;
-            break;
-        case SHM_INTERNAL_BXOR:
-            ucx_op = UCP_ATOMIC_POST_OP_XOR;
-            break;
-        case SHM_INTERNAL_SUM:
-            ucx_op = UCP_ATOMIC_POST_OP_ADD;
-            break;
-        /* Note: The following ops are only used by AMO reductions, which are
-         * presently unsupported in the UCX transport. */
-        case SHM_INTERNAL_PROD:
-        case SHM_INTERNAL_MIN:
-        case SHM_INTERNAL_MAX:
-        default:
-            RAISE_ERROR_MSG("Unsupported op op=%d\n", op);
-    }
+    shmem_internal_assert(op <= SHMEM_TRANSPORT_UCX_OP_LAST);
 
     switch (len) {
         case 1:
@@ -503,7 +492,7 @@ shmem_transport_atomic(shmem_transport_ctx_t* ctx, void *target, const void *sou
             RAISE_ERROR_MSG("Unsupported datatype len=%zu\n", len);
     }
 
-    status = ucp_atomic_post(shmem_transport_peers[pe].ep, ucx_op,
+    status = ucp_atomic_post(shmem_transport_peers[pe].ep, shmem_transport_ucx_post_op[op],
                              value, len, (uint64_t) remote_addr, rkey);
     UCX_CHECK_STATUS_INPROGRESS(status);
 }
@@ -513,6 +502,8 @@ void
 shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
                         int pe, shm_internal_op_t op, shm_internal_datatype_t datatype, long *completion)
 {
+    /* Used only by reductions, currently redirected to softwre reductions via
+     * the shmem_transport_atomic_supported query below. */
     RAISE_ERROR_STR("Unsupported operation");
 }
 
@@ -524,28 +515,11 @@ shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target, const voi
     uint8_t *remote_addr;
     ucp_rkey_h rkey;
     ucs_status_ptr_t pstatus;
-    ucp_atomic_post_op_t ucx_op;
     uint64_t value;
 
     shmem_transport_ucx_get_mr(target, pe, &remote_addr, &rkey);
 
-    /* XXX: This could be a lookup table instead of a switch statement */
-    switch (op) {
-        case SHM_INTERNAL_BAND:
-            ucx_op = UCP_ATOMIC_FETCH_OP_FAND;
-            break;
-        case SHM_INTERNAL_BOR:
-            ucx_op = UCP_ATOMIC_FETCH_OP_FOR;
-            break;
-        case SHM_INTERNAL_BXOR:
-            ucx_op = UCP_ATOMIC_FETCH_OP_FXOR;
-            break;
-        case SHM_INTERNAL_SUM:
-            ucx_op = UCP_ATOMIC_FETCH_OP_FADD;
-            break;
-        default:
-            RAISE_ERROR_MSG("Unsupported op op=%d\n", op);
-    }
+    shmem_internal_assert(op <= SHMEM_TRANSPORT_UCX_OP_LAST);
 
     switch (len) {
         case 1:
@@ -564,7 +538,8 @@ shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target, const voi
             RAISE_ERROR_MSG("Unsupported datatype len=%zu\n", len);
     }
 
-    pstatus = ucp_atomic_fetch_nb(shmem_transport_peers[pe].ep, ucx_op, value,
+    pstatus = ucp_atomic_fetch_nb(shmem_transport_peers[pe].ep,
+                                  shmem_transport_ucx_fetch_op[op], value,
                                   dest, len, (uint64_t) remote_addr, rkey,
                                   &shmem_transport_recv_cb_nop);
 
@@ -582,28 +557,11 @@ shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target, const
     uint8_t *remote_addr;
     ucp_rkey_h rkey;
     ucs_status_ptr_t pstatus;
-    ucp_atomic_post_op_t ucx_op;
     uint64_t value;
 
     shmem_transport_ucx_get_mr(target, pe, &remote_addr, &rkey);
 
-    /* XXX: This could be a lookup table instead of a switch statement */
-    switch (op) {
-        case SHM_INTERNAL_BAND:
-            ucx_op = UCP_ATOMIC_FETCH_OP_FAND;
-            break;
-        case SHM_INTERNAL_BOR:
-            ucx_op = UCP_ATOMIC_FETCH_OP_FOR;
-            break;
-        case SHM_INTERNAL_BXOR:
-            ucx_op = UCP_ATOMIC_FETCH_OP_FXOR;
-            break;
-        case SHM_INTERNAL_SUM:
-            ucx_op = UCP_ATOMIC_FETCH_OP_FADD;
-            break;
-        default:
-            RAISE_ERROR_MSG("Unsupported op op=%d\n", op);
-    }
+    shmem_internal_assert(op <= SHMEM_TRANSPORT_UCX_OP_LAST);
 
     switch (len) {
         case 1:
@@ -622,7 +580,8 @@ shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target, const
             RAISE_ERROR_MSG("Unsupported datatype len=%zu\n", len);
     }
 
-    pstatus = ucp_atomic_fetch_nb(shmem_transport_peers[pe].ep, ucx_op, value,
+    pstatus = ucp_atomic_fetch_nb(shmem_transport_peers[pe].ep,
+                                  shmem_transport_ucx_fetch_op[op], value,
                                   dest, len, (uint64_t) remote_addr, rkey,
                                   &shmem_transport_recv_cb_nop);
 
