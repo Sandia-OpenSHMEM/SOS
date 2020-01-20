@@ -28,6 +28,10 @@ ucp_mem_h     shmem_transport_ucp_mem_heap;
 
 shmem_transport_peer_t *shmem_transport_peers;
 
+void shmem_transport_recv_cb_nop(void *request, ucs_status_t status) {
+    return;
+}
+
 int shmem_transport_init(void)
 {
     ucs_status_t status;
@@ -178,6 +182,7 @@ int shmem_transport_startup(void)
         if (rkey == NULL) RAISE_ERROR_MSG("Out of memory, allocating rkey buffer (len = %zu)\n", rkey_len);
         ret = shmem_runtime_get(i, "data_rkey", rkey, rkey_len);
         if (ret) RAISE_ERROR_MSG("Runtime get of UCX data rkey failed (PE %d, ret %d)\n", i, ret);
+        /* XXX: Why is an EP needed to unpack the rkey, but not to pack it or register memory? */
         status = ucp_ep_rkey_unpack(shmem_transport_peers[i].ep, rkey, &shmem_transport_peers[i].data_rkey);
         UCX_CHECK_STATUS(status);
         free(rkey);
@@ -214,8 +219,9 @@ int shmem_transport_fini(void)
     for (i = 0; i < shmem_internal_num_pes; i++) {
         ucp_rkey_destroy(shmem_transport_peers[i].data_rkey);
         ucp_rkey_destroy(shmem_transport_peers[i].heap_rkey);
-        ucs_status_ptr_t status = ucp_ep_close_nb(shmem_transport_peers[i].ep, UCP_EP_CLOSE_MODE_FLUSH);
-        /* FIXME: What to do with the status pointer? */
+        ucs_status_ptr_t pstatus = ucp_ep_close_nb(shmem_transport_peers[i].ep,
+                                                   UCP_EP_CLOSE_MODE_FLUSH);
+        shmem_transport_ucx_complete_op(pstatus);
         free(shmem_transport_peers[i].addr);
     }
 
