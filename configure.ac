@@ -348,10 +348,9 @@ OPAL_CHECK_OFI([ofi],
     [transport_ofi="yes"],
     [transport_ofi="no"])
 
-# FIXME: Temporary hack
-AC_ARG_WITH([ucx],
-    [AC_HELP_STRING([--with-ucx],
-                    [Enable the UCX transport. (default: disabled)])])
+OMPI_CHECK_UCX([ucx],
+    [transport_ucx="yes"],
+    [transport_ucx="no"])
 
 num_transports=""
 if test -n "$with_portals4" -a "$with_portals4" != "no" ; then
@@ -362,7 +361,6 @@ if test -n "$with_ofi" -a "$with_ofi" != "no" ; then
 fi
 if test -n "$with_ucx" -a "$with_ucx" != "no" ; then
     num_transports="x$num_transports"
-    transport_ucx="yes"
 fi
 
 if test -n "$num_transports" -a "$num_transports" != "x" ; then
@@ -377,14 +375,6 @@ elif test -n "$with_ofi" -a "$with_ofi" != "no" ; then
     AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
 elif test -n "$with_ucx" -a "$with_ucx" != "no" ; then
     transport="ucx"
-    transport_ucx="yes"
-    # FIXME: Temporary hack until UCX is wired into the build system properly
-    if test "$with_ucx" != "yes" ; then
-        CFLAGS="$CFLAGS -I$with_ucx/include"
-        LDFLAGS="$LDFLAGS -L$with_ucx/lib -lucs -lucp"
-    else
-        LDFLAGS="$LDFLAGS -lucs -lucp"
-    fi
     AC_DEFINE([USE_UCX], [1], [Define if UCX transport active])
     AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
 else
@@ -392,7 +382,7 @@ else
     transport_portals4="no"
     transport_ofi="no"
     transport_ucx="no"
-    AC_MSG_WARN([Neither OFI nor portals4 transport requested])
+    AC_MSG_WARN([No transport requested])
 fi
 
 AM_CONDITIONAL([USE_PORTALS4], [test "$transport_portals4" = "yes"])
@@ -810,6 +800,14 @@ if test "$transport_ofi" = "yes" ; then
     LIBS="$LIBS $ofi_LIBS"
     WRAPPER_COMPILER_EXTRA_LDFLAGS="$ofi_LDFLAGS"
     WRAPPER_COMPILER_EXTRA_LIBS="$ofi_LIBS"
+fi
+
+if test "$transport_ucx" = "yes" ; then
+    CPPFLAGS="$CPPFLAGS $ucx_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $ucx_LDFLAGS"
+    LIBS="$LIBS $ucx_LIBS"
+    WRAPPER_COMPILER_EXTRA_LDFLAGS="$ucx_LDFLAGS"
+    WRAPPER_COMPILER_EXTRA_LIBS="$ucx_LIBS"
 fi
 
 if test "$transport_xpmem" = "yes" ; then
