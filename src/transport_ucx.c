@@ -54,7 +54,7 @@ static int shmem_transport_ucx_progress_thread_enabled = 1;
 
 static void * shmem_transport_ucx_progress_thread_func(void *arg)
 {
-    while (shmem_transport_ucx_progress_thread_enabled) {
+    while (__atomic_load_n(&shmem_transport_ucx_progress_thread_enabled, __ATOMIC_ACQUIRE)) {
         ucp_worker_progress(shmem_transport_ucp_worker);
         usleep(shmem_internal_params.PROGRESS_INTERVAL);
     }
@@ -259,7 +259,7 @@ int shmem_transport_fini(void)
     int i;
     void *progress_out;
 
-    shmem_transport_ucx_progress_thread_enabled = 0;
+    __atomic_store_n(&shmem_transport_ucx_progress_thread_enabled, 0, __ATOMIC_RELEASE);
     pthread_join(shmem_transport_ucx_progress_thread, &progress_out);
 
     /* Clean up contexts */
