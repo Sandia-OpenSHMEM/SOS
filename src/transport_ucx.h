@@ -50,8 +50,9 @@ typedef struct {
     size_t         addr_len;
     ucp_address_t *addr;
     ucp_ep_h       ep;
-    /* FIXME: Add remote global addressing optimization */
+#ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
     uint8_t       *data_base, *heap_base;
+#endif
     ucp_rkey_h     data_rkey, heap_rkey;
 } shmem_transport_peer_t;
 
@@ -118,15 +119,22 @@ void shmem_transport_ucx_get_mr(const void *addr, int dest_pe,
         (uint8_t*) addr < (uint8_t*) shmem_internal_data_base + shmem_internal_data_length) {
 
         *rkey = shmem_transport_peers[dest_pe].data_rkey;
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+        *remote_addr = (uint8_t *) addr;
+#else
         *remote_addr = (uint8_t*) (((uint8_t *) addr - (uint8_t *) shmem_internal_data_base) +
                        shmem_transport_peers[dest_pe].data_base);
-
+#endif
     } else if ((void*) addr >= shmem_internal_heap_base &&
                (uint8_t*) addr < (uint8_t*) shmem_internal_heap_base + shmem_internal_heap_length) {
 
         *rkey = shmem_transport_peers[dest_pe].heap_rkey;
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+        *remote_addr = (uint8_t *) addr;
+#else
         *remote_addr = (uint8_t*) (((uint8_t *) addr - (uint8_t *) shmem_internal_heap_base) +
                        shmem_transport_peers[dest_pe].heap_base);
+#endif
     } else {
         RAISE_ERROR_MSG("address (%p) outside of symmetric areas\n", addr);
     }

@@ -129,11 +129,13 @@ int shmem_transport_init(void)
         if (ret) RAISE_ERROR_STR("Runtime put of UCX data segment rkey");
         ucp_rkey_buffer_release(rkey);
 
+#ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
         ret = shmem_runtime_put("data_base", &shmem_internal_data_base, sizeof(uint8_t*));
         if (ret) {
             RAISE_WARN_STR("Put of data segment address to runtime KVS failed");
             return 1;
         }
+#endif
 
         /* Heap segment */
         params.address = shmem_internal_heap_base;
@@ -149,11 +151,13 @@ int shmem_transport_init(void)
         if (ret) RAISE_ERROR_STR("Runtime put of UCX heap segment rkey");
         ucp_rkey_buffer_release(rkey);
 
+#ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
         ret = shmem_runtime_put("heap_base", &shmem_internal_heap_base, sizeof(uint8_t*));
         if (ret) {
             RAISE_WARN_STR("Put of heap address to runtime KVS failed");
             return 1;
         }
+#endif
     }
 
     /* Configure the default context */
@@ -215,11 +219,13 @@ int shmem_transport_startup(void)
         UCX_CHECK_STATUS(status);
         free(rkey);
 
+#ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
         ret = shmem_runtime_get(i, "data_base", &shmem_transport_peers[i].data_base, sizeof(void*));
         if (ret) RAISE_ERROR_MSG("Runtime get of UCX data base address failed (PE %d, ret %d)\n", i, ret);
 
         ret = shmem_runtime_get(i, "heap_base", &shmem_transport_peers[i].heap_base, sizeof(void*));
         if (ret) RAISE_ERROR_MSG("Runtime get of UCX heap base address failed (PE %d, ret %d)\n", i, ret);
+#endif
     }
 
     return 0;
