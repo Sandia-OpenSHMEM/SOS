@@ -8,7 +8,9 @@
  *
  */
 
+#include <unistd.h>
 #include <string.h>
+#include <pthread.h>
 #include "transport_ucx.h"
 #include "shmem.h"
 #include "shmem_team.h"
@@ -47,6 +49,19 @@ void shmem_transport_recv_cb_nop(void *request, ucs_status_t status) {
     return;
 }
 
+static pthread_t shmem_transport_ucx_progress_thread;
+static int shmem_transport_ucx_progress_thread_enabled = 1;
+
+static void * shmem_transport_ucx_progress_thread_func(void *arg)
+{
+    while (shmem_transport_ucx_progress_thread_enabled) {
+        ucp_worker_progress(shmem_transport_ucp_worker);
+        usleep(shmem_internal_params.PROGRESS_INTERVAL);
+    }
+
+    return NULL;
+}
+
 int shmem_transport_init(void)
 {
     ucs_status_t status;
@@ -79,6 +94,9 @@ int shmem_transport_init(void)
         default:
             RAISE_ERROR_MSG("Invalid thread level (%d)\n", shmem_internal_thread_level);
     }
+
+    if (shmem_internal_params.PROGRESS_INTERVAL > 0)
+        worker_params.thread_mode = UCS_THREAD_MODE_MULTI;
 
     status = ucp_worker_create(shmem_transport_ucp_ctx, &worker_params,
                                &shmem_transport_ucp_worker);
@@ -228,6 +246,10 @@ int shmem_transport_startup(void)
 #endif
     }
 
+    if (shmem_internal_params.PROGRESS_INTERVAL > 0)
+        pthread_create(&shmem_transport_ucx_progress_thread, NULL,
+                       &shmem_transport_ucx_progress_thread_func, NULL);
+
     return 0;
 }
 
@@ -235,6 +257,10 @@ int shmem_transport_fini(void)
 {
     ucs_status_t status;
     int i;
+    void *progress_out;
+
+    shmem_transport_ucx_progress_thread_enabled = 0;
+    pthread_join(shmem_transport_ucx_progress_thread, &progress_out);
 
     /* Clean up contexts */
     shmem_transport_quiet(&shmem_transport_ctx_default);

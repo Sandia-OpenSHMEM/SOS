@@ -250,8 +250,10 @@ shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void *sou
     status = ucp_put_nbi(shmem_transport_peers[pe].ep, source, len, (uint64_t) remote_addr, rkey);
     UCX_CHECK_STATUS_INPROGRESS(status);
     */
-    /* FIXME: Completing the put immediately works around a progress-related
-     * deadlock in the bigput test. Progress thread would be a better solution. */
+    /* FIXME: Completing the put immediately works around a deadlock in the
+     * bigput test. Unsure of the cause for deadlock; I had assumed it was
+     * progress-related. However, the progress thread seems to make it worse.
+     * */
     ucs_status_ptr_t pstatus = ucp_put_nb(shmem_transport_peers[pe].ep, source,
                                           len, (uint64_t) remote_addr, rkey,
                                           &shmem_transport_recv_cb_nop);
