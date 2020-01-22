@@ -157,9 +157,9 @@ int main(void)
     TEST_SHMEM_TEST_ANY(size_t);
     TEST_SHMEM_TEST_ANY(ptrdiff_t);
 
-    //TEST_SHMEM_TEST_SOME(short);
+    TEST_SHMEM_TEST_SOME(short);
     TEST_SHMEM_TEST_SOME(int);
-    /*TEST_SHMEM_TEST_SOME(long);
+    TEST_SHMEM_TEST_SOME(long);
     TEST_SHMEM_TEST_SOME(long long);
     TEST_SHMEM_TEST_SOME(unsigned short);
     TEST_SHMEM_TEST_SOME(unsigned int);
@@ -170,7 +170,7 @@ int main(void)
     TEST_SHMEM_TEST_SOME(uint32_t);
     TEST_SHMEM_TEST_SOME(uint64_t);
     TEST_SHMEM_TEST_SOME(size_t);
-    TEST_SHMEM_TEST_SOME(ptrdiff_t);*/
+    TEST_SHMEM_TEST_SOME(ptrdiff_t);
 
 
     shmem_finalize();
