@@ -246,8 +246,17 @@ shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void *sou
      * to reclaim bounce buffers. Not clear how to set a field in a request like
      * this in a way that is async safe (assuming other threads are also
      * generating progress). */
+    /*
     status = ucp_put_nbi(shmem_transport_peers[pe].ep, source, len, (uint64_t) remote_addr, rkey);
     UCX_CHECK_STATUS_INPROGRESS(status);
+    */
+    /* FIXME: Completing the put immediately works around a progress-related
+     * deadlock in the bigput test. Progress thread would be a better solution. */
+    ucs_status_ptr_t pstatus = ucp_put_nb(shmem_transport_peers[pe].ep, source,
+                                          len, (uint64_t) remote_addr, rkey,
+                                          &shmem_transport_recv_cb_nop);
+    status = shmem_transport_ucx_complete_op(pstatus);
+    UCX_CHECK_STATUS(status);
 }
 
 static inline
@@ -675,6 +684,7 @@ shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
     if (len != 4)
         RAISE_ERROR_STR("Unsupported datatype");
 
+    /* FIXME: Emulate MSWAP, since it is not exposed by UCX */
     while (!done) {
         uint32_t v;
 
