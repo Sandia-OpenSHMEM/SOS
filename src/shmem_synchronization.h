@@ -93,8 +93,6 @@ shmem_internal_fence(shmem_ctx_t ctx)
 
 #define SHMEM_TEST(type, a, b, ret) COMP(type, SYNC_LOAD(a), b, ret)
 
-#define SHMEM_TEST_VECTOR(type, a, b, ret) COMP(type, SYNC_LOAD(a), SYNC_LOAD(b), ret)
-
 #define SHMEM_WAIT_POLL(var, value)                      \
     do {                                                 \
         while (SYNC_LOAD(var) == value) {                \
