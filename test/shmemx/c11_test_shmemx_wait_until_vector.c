@@ -12,14 +12,14 @@
         const int npes = shmem_n_pes();                                                                              \
         TYPE *ivars = shmem_calloc(npes, sizeof(TYPE));                                                              \
         int *status = calloc(npes, sizeof(int));                                                                     \
-        TYPE *cmp_values = malloc(npes *sizeof(TYPE));                                                               \
+        TYPE *cmp_values = malloc(npes * sizeof(TYPE));                                                              \
                                                                                                                      \
         size_t i = 0;                                                                                                \
         int expected_sum = 0;                                                                                        \
         int total_sum = 0;                                                                                           \
                                                                                                                      \
         for(i = 0; i<npes; i++){                                                                                     \
-            shmem_p(&ivars[my_pe], (TYPE)my_pe, i);                                                                  \
+            shmem_atomic_set(&ivars[my_pe], (TYPE)my_pe, i);                                                         \
             cmp_values[i] = i;                                                                                       \
         }                                                                                                            \
                                                                                                                      \
@@ -41,14 +41,14 @@
         const int npes = shmem_n_pes();                                                                              \
         TYPE *ivars = shmem_calloc(npes, sizeof(TYPE));                                                              \
         int *status = calloc(npes, sizeof(int));                                                                     \
-        TYPE *cmp_values = malloc(npes *sizeof(TYPE));                                                               \
+        TYPE *cmp_values = malloc(npes * sizeof(TYPE));                                                              \
                                                                                                                      \
         size_t i = 0;                                                                                                \
         int expected_sum = 0;                                                                                        \
         int total_sum = 0;                                                                                           \
                                                                                                                      \
         for(i = 0; i<npes; i++){                                                                                     \
-            shmem_p(&ivars[my_pe], (TYPE)my_pe, i);                                                                  \
+            shmem_atomic_set(&ivars[my_pe], (TYPE)my_pe, i);                                                         \
             cmp_values[i] = i;                                                                                       \
         }                                                                                                            \
                                                                                                                      \
@@ -74,16 +74,16 @@
         const int npes = shmem_n_pes();                                                                              \
         TYPE *ivars = shmem_calloc(npes, sizeof(TYPE));                                                              \
         int *status = calloc(npes, sizeof(int));                                                                     \
-        TYPE *cmp_values = malloc(npes *sizeof(TYPE));                                                               \
+        TYPE *cmp_values = malloc(npes * sizeof(TYPE));                                                              \
                                                                                                                      \
-        size_t *indices  = malloc(npes *sizeof(size_t));                                                             \
+        size_t *indices  = malloc(npes * sizeof(size_t));                                                            \
                                                                                                                      \
         size_t i = 0;                                                                                                \
         int expected_sum = 0;                                                                                        \
         int total_sum = 0;                                                                                           \
                                                                                                                      \
         for(i = 0; i<npes; i++){                                                                                     \
-            shmem_p(&ivars[my_pe], (TYPE)my_pe, i);                                                                  \
+            shmem_atomic_set(&ivars[my_pe], (TYPE)my_pe, i);                                                         \
             cmp_values[i] = i;                                                                                       \
         }                                                                                                            \
                                                                                                                      \
@@ -120,11 +120,9 @@ int main(void)
     shmem_init();
 
     int rc = EXIT_SUCCESS;
-    TEST_SHMEM_WAIT_UNTIL_ALL(short);
     TEST_SHMEM_WAIT_UNTIL_ALL(int);
     TEST_SHMEM_WAIT_UNTIL_ALL(long);
     TEST_SHMEM_WAIT_UNTIL_ALL(long long);
-    TEST_SHMEM_WAIT_UNTIL_ALL(unsigned short);
     TEST_SHMEM_WAIT_UNTIL_ALL(unsigned int);
     TEST_SHMEM_WAIT_UNTIL_ALL(unsigned long);
     TEST_SHMEM_WAIT_UNTIL_ALL(unsigned long long);
@@ -135,11 +133,9 @@ int main(void)
     TEST_SHMEM_WAIT_UNTIL_ALL(size_t);
     TEST_SHMEM_WAIT_UNTIL_ALL(ptrdiff_t);
 
-    TEST_SHMEM_WAIT_UNTIL_ANY(short);
     TEST_SHMEM_WAIT_UNTIL_ANY(int);
     TEST_SHMEM_WAIT_UNTIL_ANY(long);
     TEST_SHMEM_WAIT_UNTIL_ANY(long long);
-    TEST_SHMEM_WAIT_UNTIL_ANY(unsigned short);
     TEST_SHMEM_WAIT_UNTIL_ANY(unsigned int);
     TEST_SHMEM_WAIT_UNTIL_ANY(unsigned long);
     TEST_SHMEM_WAIT_UNTIL_ANY(unsigned long long);
@@ -150,11 +146,9 @@ int main(void)
     TEST_SHMEM_WAIT_UNTIL_ANY(size_t);
     TEST_SHMEM_WAIT_UNTIL_ANY(ptrdiff_t);
 
-    TEST_SHMEM_WAIT_UNTIL_SOME(short);
     TEST_SHMEM_WAIT_UNTIL_SOME(int);
     TEST_SHMEM_WAIT_UNTIL_SOME(long);
     TEST_SHMEM_WAIT_UNTIL_SOME(long long);
-    TEST_SHMEM_WAIT_UNTIL_SOME(unsigned short);
     TEST_SHMEM_WAIT_UNTIL_SOME(unsigned int);
     TEST_SHMEM_WAIT_UNTIL_SOME(unsigned long);
     TEST_SHMEM_WAIT_UNTIL_SOME(unsigned long long);
