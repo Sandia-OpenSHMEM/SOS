@@ -86,7 +86,7 @@ shmem_internal_fence(shmem_ctx_t ctx)
     } while(0)
 
 #ifdef USE_SHR_ATOMICS
-#define SYNC_LOAD(var) __atomic_load_n(var, __ATOMIC_SEQ_CST)
+#define SYNC_LOAD(var) __atomic_load_n(var, __ATOMIC_ACQUIRE)
 #else
 #define SYNC_LOAD(var) *(var)
 #endif
