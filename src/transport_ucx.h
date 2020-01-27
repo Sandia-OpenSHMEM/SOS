@@ -59,8 +59,13 @@ typedef struct {
 extern shmem_transport_peer_t *shmem_transport_peers;
 extern ucp_worker_h shmem_transport_ucp_worker;
 
-/* FIXME: Is this the right thing to do with callbacks? */
-void shmem_transport_recv_cb_nop(void *request, ucs_status_t status);
+void shmem_transport_ucx_cb_nop(void *request, ucs_status_t status);
+void shmem_transport_ucx_cb_complete(void *request, ucs_status_t status);
+
+typedef struct {
+    uint64_t       valid;
+    void          *ptr;
+} shmem_transport_ucx_req_t;
 
 int shmem_transport_init(void);
 int shmem_transport_startup(void);
@@ -107,7 +112,24 @@ ucs_status_t shmem_transport_ucx_release_op(ucs_status_ptr_t req) {
     else if (UCS_PTR_IS_ERR(req))
         return UCS_PTR_STATUS(req);
     else {
-        ucp_request_release(req);
+        ucp_request_free(req);
+        return UCS_INPROGRESS;
+    }
+}
+
+static inline
+ucs_status_t shmem_transport_ucx_post_cb_op(ucs_status_ptr_t req, void *completion) {
+    if (req == NULL) {
+        __atomic_store_n((long*)completion, 1, __ATOMIC_RELEASE);
+        return UCS_OK;
+    } else if (UCS_PTR_IS_ERR(req))
+        return UCS_PTR_STATUS(req);
+    else {
+        shmem_transport_ucx_req_t *preq = (shmem_transport_ucx_req_t *) req;
+        preq->ptr = completion; /* FIXME: Use an atomic store here? */
+        /* The valid field is used to eliminate a race between the caller and a
+         * separate progress thread */
+        __atomic_store_n(&preq->valid, 1, __ATOMIC_RELEASE);
         return UCS_INPROGRESS;
     }
 }
@@ -240,32 +262,19 @@ shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void *sou
 
     shmem_transport_ucx_get_mr(target, pe, &remote_addr, &rkey);
 
-    /* FIXME: Could use ucp_put_nb here to take advantage of the completion flag */
-    /* Since the middleware allocates the flag, we would want to include a
-     * pointer in the request object. This is also what we would need in order
-     * to reclaim bounce buffers. Not clear how to set a field in a request like
-     * this in a way that is async safe (assuming other threads are also
-     * generating progress). */
-    /*
-    status = ucp_put_nbi(shmem_transport_peers[pe].ep, source, len, (uint64_t) remote_addr, rkey);
-    UCX_CHECK_STATUS_INPROGRESS(status);
-    */
-    /* FIXME: Completing the put immediately works around a deadlock in the
-     * bigput test. Unsure of the cause for deadlock; I had assumed it was
-     * progress-related. However, the progress thread seems to make it worse.
-     * */
     ucs_status_ptr_t pstatus = ucp_put_nb(shmem_transport_peers[pe].ep, source,
                                           len, (uint64_t) remote_addr, rkey,
-                                          &shmem_transport_recv_cb_nop);
-    status = shmem_transport_ucx_complete_op(pstatus);
-    UCX_CHECK_STATUS(status);
+                                          &shmem_transport_ucx_cb_complete);
+    status = shmem_transport_ucx_post_cb_op(pstatus, completion);
+    UCX_CHECK_STATUS_INPROGRESS(status);
 }
 
 static inline
 void
 shmem_transport_put_wait(shmem_transport_ctx_t* ctx, long *completion)
 {
-    shmem_transport_quiet(ctx);
+    while (0 == __atomic_load_n(completion, __ATOMIC_ACQUIRE))
+        ucp_worker_progress(shmem_transport_ucp_worker);
 }
 
 static inline
@@ -347,7 +356,7 @@ shmem_transport_swap(shmem_transport_ctx_t* ctx, void *target, const void *sourc
 
     pstatus = ucp_atomic_fetch_nb(shmem_transport_peers[pe].ep, UCP_ATOMIC_FETCH_OP_SWAP, value,
                                   dest, len, (uint64_t) remote_addr, rkey,
-                                  &shmem_transport_recv_cb_nop);
+                                  &shmem_transport_ucx_cb_nop);
 
     /* Result buffer is on the stack, needs to be completed immediately */
     /* FIXME: Do we need to complete the op here, or will get_wait do the job? */
@@ -386,7 +395,7 @@ shmem_transport_swap_nbi(shmem_transport_ctx_t* ctx, void *target, const void *s
 
     pstatus = ucp_atomic_fetch_nb(shmem_transport_peers[pe].ep, UCP_ATOMIC_FETCH_OP_SWAP, value,
                                   dest, len, (uint64_t) remote_addr, rkey,
-                                  &shmem_transport_recv_cb_nop);
+                                  &shmem_transport_ucx_cb_nop);
 
     /* Manual progress to avoid deadlock for application-level polling */
     shmem_transport_probe();
@@ -429,7 +438,7 @@ shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
 
     pstatus = ucp_atomic_fetch_nb(shmem_transport_peers[pe].ep, UCP_ATOMIC_FETCH_OP_CSWAP,
                                   value, dest, len, (uint64_t) remote_addr, rkey,
-                                  &shmem_transport_recv_cb_nop);
+                                  &shmem_transport_ucx_cb_nop);
 
     /* Result buffer is on the stack, needs to be completed immediately */
     /* FIXME: Do we need to complete the op here, or will get_wait do the job? */
@@ -471,7 +480,7 @@ shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target, const void *
 
     pstatus = ucp_atomic_fetch_nb(shmem_transport_peers[pe].ep, UCP_ATOMIC_FETCH_OP_CSWAP,
                                   value, dest, len, (uint64_t) remote_addr, rkey,
-                                  &shmem_transport_recv_cb_nop);
+                                  &shmem_transport_ucx_cb_nop);
 
     /* Manual progress to avoid deadlock for application-level polling */
     shmem_transport_probe();
@@ -560,7 +569,7 @@ shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target, const voi
     pstatus = ucp_atomic_fetch_nb(shmem_transport_peers[pe].ep,
                                   shmem_transport_ucx_fetch_op[op], value,
                                   dest, len, (uint64_t) remote_addr, rkey,
-                                  &shmem_transport_recv_cb_nop);
+                                  &shmem_transport_ucx_cb_nop);
 
     /* Result buffer is on the stack, needs to be completed immediately */
     /* FIXME: Do we need to complete the op here, or will get_wait do the job? */
@@ -602,7 +611,7 @@ shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target, const
     pstatus = ucp_atomic_fetch_nb(shmem_transport_peers[pe].ep,
                                   shmem_transport_ucx_fetch_op[op], value,
                                   dest, len, (uint64_t) remote_addr, rkey,
-                                  &shmem_transport_recv_cb_nop);
+                                  &shmem_transport_ucx_cb_nop);
 
     /* Manual progress to avoid deadlock for application-level polling */
     shmem_transport_probe();
@@ -624,7 +633,7 @@ shmem_transport_atomic_fetch(shmem_transport_ctx_t* ctx, void *target, const voi
 
     pstatus = ucp_atomic_fetch_nb(shmem_transport_peers[pe].ep, UCP_ATOMIC_FETCH_OP_FADD, 0,
                                   target, len, (uint64_t) remote_addr, rkey,
-                                  &shmem_transport_recv_cb_nop);
+                                  &shmem_transport_ucx_cb_nop);
 
     /* FIXME: Need to block here? */
     ucs_status_t status = shmem_transport_ucx_complete_op(pstatus);
@@ -663,7 +672,7 @@ shmem_transport_atomic_set(shmem_transport_ctx_t* ctx, void *target, const void 
 
     pstatus = ucp_atomic_fetch_nb(shmem_transport_peers[pe].ep, UCP_ATOMIC_FETCH_OP_SWAP, value,
                                   &dest, len, (uint64_t) remote_addr, rkey,
-                                  &shmem_transport_recv_cb_nop);
+                                  &shmem_transport_ucx_cb_nop);
 
     /* Result buffer is on the stack, needs to be completed immediately */
     /* FIXME: Do we need to complete the op here, or will get_wait do the job? */

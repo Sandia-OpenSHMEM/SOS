@@ -45,8 +45,28 @@ ucp_atomic_fetch_op_t shmem_transport_ucx_fetch_op[] = {
     UCP_ATOMIC_FETCH_OP_FADD
 };
 
-void shmem_transport_recv_cb_nop(void *request, ucs_status_t status) {
+void shmem_transport_ucx_cb_nop(void *request, ucs_status_t status) {
     return;
+}
+
+void shmem_transport_ucx_cb_complete(void *request, ucs_status_t status) {
+    shmem_transport_ucx_req_t *shreq = (shmem_transport_ucx_req_t *) request;
+
+    if (status != UCS_OK)
+        RAISE_ERROR_STR("Error while completing operation");
+
+    /* Wait for ptr field to become valid */
+    while (0 == __atomic_load_n(&shreq->valid, __ATOMIC_ACQUIRE)) ;
+
+    __atomic_store_n((long*)shreq->ptr, 1, __ATOMIC_RELEASE);
+    /* FIXME: Need to free the request here? */
+    return;
+}
+
+static void shmem_transport_ucx_cb_init(void *request) {
+    shmem_transport_ucx_req_t *shreq = (shmem_transport_ucx_req_t *) request;
+    shreq->ptr = NULL; /* FIXME: Atomic? */
+    __atomic_store_n(&shreq->valid, 0, __ATOMIC_RELEASE);
 }
 
 static pthread_t shmem_transport_ucx_progress_thread;
@@ -68,8 +88,10 @@ int shmem_transport_init(void)
     ucp_params_t params;
     ucp_worker_params_t worker_params;
 
-    params.field_mask = UCP_PARAM_FIELD_FEATURES;
+    params.field_mask = UCP_PARAM_FIELD_FEATURES | UCP_PARAM_FIELD_REQUEST_SIZE;
     params.features   = UCP_FEATURE_RMA | UCP_FEATURE_AMO32 | UCP_FEATURE_AMO64;
+    params.request_size = sizeof(shmem_transport_ucx_req_t);
+    params.request_init = &shmem_transport_ucx_cb_init;
 
     status = ucp_config_read(NULL, NULL, &shmem_transport_ucp_config);
     UCX_CHECK_STATUS(status);
