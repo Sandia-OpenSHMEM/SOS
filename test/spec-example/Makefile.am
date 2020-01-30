@@ -24,6 +24,7 @@ check_PROGRAMS += \
 	shmemx_wait_until_all \
 	shmemx_wait_until_any \
 	shmemx_wait_until_some \
+	shmemx_wait_until_any_vector \
 	shmemx_test_any \
 	shmemx_test_some \
 	shmemx_team_split_strided \
