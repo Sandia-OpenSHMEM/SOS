@@ -623,18 +623,6 @@ shmem_transport_put_ct_nb(shmem_transport_ct_t *ct, void *target, const void *so
 }
 
 static inline
-void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
-                                    uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)
-{
-    /* FIXME: Need to optimize non-blocking put with signal for Portals. Current implementation below keeps  
-     * the "fence" in between data and signal put */
-    shmem_transport_put_nbi(ctx, target, source, len, pe);
-    shmem_transport_fence(ctx);
-    shmem_transport_put_scalar(ctx, sig_addr, &signal, sizeof(uint64_t), pe);
-}
-
-
-static inline
 void
 shmem_transport_put_wait(shmem_transport_ctx_t* ctx, long *completion)
 {
@@ -1112,6 +1100,19 @@ int shmem_transport_atomic_supported(ptl_op_t op, ptl_datatype_t datatype)
 #endif
 }
 
+static inline
+void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
+                                    uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)
+{
+    /* FIXME: Need to optimize non-blocking put with signal for Portals. Current implementation below keeps
+ *      * the "fence" in between data and signal put */
+    shmem_transport_put_nbi(ctx, target, source, len, pe);
+    shmem_transport_fence(ctx);
+    if (sig_op == SHMEM_SIGNAL_ADD)
+        shmem_transport_atomic(ctx, sig_addr, &signal, sizeof(uint64_t), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
+    else
+        shmem_transport_put_scalar(ctx, sig_addr, &signal, sizeof(uint64_t), pe);
+}
 
 static inline
 void shmem_transport_portals4_ct_attach(ptl_handle_ct_t ptl_ct, void *seg_base,
