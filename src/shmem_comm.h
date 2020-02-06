@@ -64,7 +64,12 @@ shmem_internal_put_signal_nbi(shmem_ctx_t ctx, void *target, const void *source,
                               uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)
 {
     if (len == 0) {
-        shmem_internal_put_scalar(ctx, sig_addr, &signal, sizeof(uint64_t), pe);
+        if (sig_op == SHMEM_SIGNAL_ADD)
+            shmem_internal_atomic(ctx, sig_addr, &signal, sizeof(uint64_t),
+                                  pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
+        else
+            shmem_internal_atomic_set(ctx, sig_addr, &signal, sizeof(uint64_t), pe,
+                                      SHM_INTERNAL_UINT64);
         return;
     }
 

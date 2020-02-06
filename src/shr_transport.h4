@@ -188,7 +188,7 @@ shmem_shr_transport_put_signal(shmem_ctx_t ctx, void *target,
                                         stores in the correct order */
     uint64_t old_signal_val = 0;
     if (sig_op == SHMEM_SIGNAL_ADD) {
-        shmem_transport_xpmem_get(&old_signal_val, sig_addr, len, pe,
+        shmem_transport_xpmem_get(&old_signal_val, sig_addr, sizeof(uint64_t), pe,
                                   shmem_internal_get_shr_rank(pe));
         signal += old_signal_val;
     }
@@ -201,7 +201,7 @@ shmem_shr_transport_put_signal(shmem_ctx_t ctx, void *target,
                                         stores in the correct order */
     uint64_t old_signal_val = 0;
     if (sig_op == SHMEM_SIGNAL_ADD) {
-        shmem_transport_cma_get(&old_signal_val, sig_addr, len, pe,
+        shmem_transport_cma_get(&old_signal_val, sig_addr, sizeof(uint64_t), pe,
                                 shmem_internal_get_shr_rank(pe));
         signal += old_signal_val;
     }
