@@ -84,6 +84,9 @@ typedef struct shmem_impl_ctx_t { int dummy; } * shmem_ctx_t;
 #define SHMEM_CTX_SERIALIZED    (1l<<1)
 #define SHMEM_CTX_NOSTORE       (1l<<2)
 
+#define SHMEM_SIGNAL_SET	0
+#define SHMEM_SIGNAL_ADD	1
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
