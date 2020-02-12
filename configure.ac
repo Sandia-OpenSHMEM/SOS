@@ -414,6 +414,10 @@ AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
        AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
       ])
 
+if test "$enable_shr_atomics" = "no" -a "$transport_xpmem" = "yes" -a "$transport_ofi" = "no" -a "$transport_portals4" = "no" ; then
+    AC_DEFINE([USE_SHR_ATOMICS], [1], [If defined, the shared memory layer will perform processor atomics.])
+fi
+
 AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
               [Use MPICH simple PMI-1 library for process management])])
 AC_ARG_ENABLE([pmi-mpi], [AC_HELP_STRING([--enable-pmi-mpi],
