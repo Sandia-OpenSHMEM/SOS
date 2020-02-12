@@ -251,7 +251,7 @@ AS_IF([test "$enable_ofi_fence" = "yes"],
 
 AC_ARG_ENABLE([shr-atomics],
     [AC_HELP_STRING([--enable-shr-atomics],
-                    [Enable shared memory atomic operations. (default: disabled)])])
+                    [Enable shared memory atomic operations. (default: auto)])])
 AS_IF([test "$enable_shr_atomics" = "yes"],
       [AC_DEFINE([USE_SHR_ATOMICS], [1], [If defined, the shared memory layer will perform processor atomics.])])
 
@@ -414,7 +414,7 @@ AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
        AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
       ])
 
-if test "$enable_shr_atomics" = "no" -a "$transport_xpmem" = "yes" -a "$transport_ofi" = "no" -a "$transport_portals4" = "no" ; then
+if test "$enable_shr_atomics" != "no" -a "$transport_xpmem" = "yes" -a "$transport_ofi" = "no" -a "$transport_portals4" = "no" ; then
     AC_DEFINE([USE_SHR_ATOMICS], [1], [If defined, the shared memory layer will perform processor atomics.])
 fi
 
