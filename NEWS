@@ -18,7 +18,7 @@ v1.4.5
 - Updated the utility atomics (spinlocks and counters) to use __atomic built-in
   functions rather than the deprecated __sync builtins.
 - Removed redundant shmem_barrier_all from the GUPS example application.
-- Moved examples taken from the OpenSHMEM specification to the
+- Moved unit tests derived from OpenSHMEM specification examples to the
   test/spec-example directory.
 
 v1.4.4
