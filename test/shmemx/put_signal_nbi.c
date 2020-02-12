@@ -91,14 +91,14 @@ int main(int argc, char *argv[])
     shmem_barrier_all();
     if (me == 0) {
         for (i = 0; i < npes; i++) {
-            shmemx_long_put_signal_nbi(target, source, MSG_SZ, &sig_addr, i, SHMEM_SIGNAL_ADD, i);
+            shmemx_long_put_signal_nbi(target, source, MSG_SZ, &sig_addr, i + 1, SHMEM_SIGNAL_ADD, i);
         }
     }
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-    shmem_wait_until(&sig_addr, SHMEM_CMP_EQ, me);
+    shmem_wait_until(&sig_addr, SHMEM_CMP_EQ, me + 1);
 #else
-    shmem_uint64_wait_until(&sig_addr, SHMEM_CMP_EQ, me);
+    shmem_uint64_wait_until(&sig_addr, SHMEM_CMP_EQ, me + 1);
 #endif
 
     for (i = 0; i < MSG_SZ; i++) {
