@@ -486,7 +486,7 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                           &completion);                                 \
     shmem_internal_put_wait(ctx, &completion);                          \
     shmem_internal_fence(ctx);                                          \
-    if (sig_op == SHMEM_SIGNAL_ADD)                                     \
+    if (sig_op == SHMEMX_SIGNAL_ADD)                                     \
         shmem_internal_atomic(ctx, sig_addr, &signal, sizeof(uint64_t), \
                               pe, SHM_INTERNAL_SUM,                     \
                               SHM_INTERNAL_UINT64);                     \
@@ -513,7 +513,7 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                           pe, &completion);                             \
     shmem_internal_put_wait(ctx, &completion);                          \
     shmem_internal_fence(ctx);                                          \
-    if (sig_op == SHMEM_SIGNAL_ADD)                                     \
+    if (sig_op == SHMEMX_SIGNAL_ADD)                                     \
         shmem_internal_atomic(ctx, sig_addr, &signal, sizeof(uint64_t), \
                               pe, SHM_INTERNAL_SUM,                     \
                               SHM_INTERNAL_UINT64);                     \

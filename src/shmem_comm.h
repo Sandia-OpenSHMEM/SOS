@@ -64,7 +64,7 @@ shmem_internal_put_signal_nbi(shmem_ctx_t ctx, void *target, const void *source,
                               uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)
 {
     if (len == 0) {
-        if (sig_op == SHMEM_SIGNAL_ADD)
+        if (sig_op == SHMEMX_SIGNAL_ADD)
             shmem_transport_atomic((shmem_transport_ctx_t *) ctx, sig_addr, &signal, sizeof(uint64_t),
                                    pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
         else

@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
     }
 
     if (me == 0) {
-        shmemx_long_put_signal(target, source, MSG_SZ, &sig_addr, 1, SHMEM_SIGNAL_SET, dest);
+        shmemx_long_put_signal(target, source, MSG_SZ, &sig_addr, 1, SHMEMX_SIGNAL_SET, dest);
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
         shmem_wait_until(&sig_addr, SHMEM_CMP_EQ, 1);
 #else
@@ -76,12 +76,12 @@ int main(int argc, char *argv[])
 #else
         shmem_uint64_wait_until(&sig_addr, SHMEM_CMP_EQ, 1);
 #endif
-        shmemx_long_put_signal(target, target, MSG_SZ, &sig_addr, 1, SHMEM_SIGNAL_SET, dest);
+        shmemx_long_put_signal(target, target, MSG_SZ, &sig_addr, 1, SHMEMX_SIGNAL_SET, dest);
     }
 
     for (i = 0; i < MSG_SZ; i++) {
         if (target[i] != source[i]) {
-            fprintf(stderr, "%10d: target[%d] = %ld not matching %ld\n",
+            fprintf(stderr, "%10d: target[%d] = %ld not matching %ld with SHMEMX_SIGNAL_SET\n",
                     me, i, target[i], source[i]);
             errors++;
         }
@@ -93,30 +93,28 @@ int main(int argc, char *argv[])
         target[i] = 0;
 
     sig_addr = 0;
-    int local_counter = 0;
+    int one = 1;
 
     shmem_barrier_all();
     if (me == 0) {
-        shmemx_long_put_signal(target, source, MSG_SZ, &sig_addr, 1, SHMEM_SIGNAL_ADD, dest);
-        local_counter++;
+        shmemx_long_put_signal(target, source, MSG_SZ, &sig_addr, one, SHMEMX_SIGNAL_ADD, dest);
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-        shmem_wait_until(&sig_addr, SHMEM_CMP_EQ, local_counter);
+        shmem_wait_until(&sig_addr, SHMEM_CMP_EQ, one);
 #else
-        shmem_uint64_wait_until(&sig_addr, SHMEM_CMP_EQ, local_counter);
+        shmem_uint64_wait_until(&sig_addr, SHMEM_CMP_EQ, one);
 #endif
     } else {
-        local_counter++;
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-        shmem_wait_until(&sig_addr, SHMEM_CMP_EQ, local_counter);
+        shmem_wait_until(&sig_addr, SHMEM_CMP_EQ, one);
 #else
-        shmem_uint64_wait_until(&sig_addr, SHMEM_CMP_EQ, local_counter);
+        shmem_uint64_wait_until(&sig_addr, SHMEM_CMP_EQ, one);
 #endif
-        shmemx_long_put_signal(target, target, MSG_SZ, &sig_addr, 1, SHMEM_SIGNAL_ADD, dest);
+        shmemx_long_put_signal(target, target, MSG_SZ, &sig_addr, one, SHMEMX_SIGNAL_ADD, dest);
     }
 
     for (i = 0; i < MSG_SZ; i++) {
         if (target[i] != source[i]) {
-            fprintf(stderr, "%10d: target[%d] = %ld not matching %ld\n",
+            fprintf(stderr, "%10d: target[%d] = %ld not matching %ld with SHMEMX_SIGNAL_ADD\n",
                     me, i, target[i], source[i]);
             errors++;
         }

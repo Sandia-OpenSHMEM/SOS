@@ -1108,10 +1108,10 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
  *      * the "fence" in between data and signal put */
     shmem_transport_put_nbi(ctx, target, source, len, pe);
     shmem_transport_fence(ctx);
-    if (sig_op == SHMEM_SIGNAL_ADD)
+    if (sig_op == SHMEMX_SIGNAL_ADD)
         shmem_transport_atomic(ctx, sig_addr, &signal, sizeof(uint64_t), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
     else
-        shmem_transport_put_scalar(ctx, sig_addr, &signal, sizeof(uint64_t), pe);
+        shmem_transport_atomic_set(ctx, sig_addr, &signal, sizeof(uint64_t), pe, SHM_INTERNAL_UINT64);
 }
 
 static inline

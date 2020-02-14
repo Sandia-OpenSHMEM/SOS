@@ -306,8 +306,8 @@ extern unsigned int shmem_internal_rand_seed;
 #define SHMEM_ERR_CHECK_SIG_OP(op)                                                      \
     do {                                                                                \
         switch(op) {                                                                    \
-            case SHMEM_SIGNAL_SET:                                                      \
-            case SHMEM_SIGNAL_ADD:                                                      \
+            case SHMEMX_SIGNAL_SET:                                                      \
+            case SHMEMX_SIGNAL_ADD:                                                      \
                 break;                                                                  \
             default:                                                                    \
                 fprintf(stderr, "ERROR: %s(): Argument \"%s\", "                        \
