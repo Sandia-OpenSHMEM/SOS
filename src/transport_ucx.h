@@ -647,7 +647,11 @@ shmem_transport_atomic_set(shmem_transport_ctx_t* ctx, void *target, const void 
     ucp_rkey_h rkey;
     ucs_status_ptr_t pstatus;
     uint64_t value;
-    uint64_t dest;
+
+    /* XXX: Set is implemented as swap, so dest is thrown away. Allocate dest
+     * as a static rather than on the stack to avoid needing to block on
+     * completion before returning. */
+    static uint64_t dest;
 
     shmem_transport_ucx_get_mr(target, pe, &remote_addr, &rkey);
 
@@ -672,10 +676,8 @@ shmem_transport_atomic_set(shmem_transport_ctx_t* ctx, void *target, const void 
                                   &dest, len, (uint64_t) remote_addr, rkey,
                                   &shmem_transport_ucx_cb_nop);
 
-    /* Result buffer is on the stack, needs to be completed immediately */
-    /* FIXME: Do we need to complete the op here, or will get_wait do the job? */
-    ucs_status_t status = shmem_transport_ucx_complete_op(pstatus);
-    UCX_CHECK_STATUS(status);
+    ucs_status_t status = shmem_transport_ucx_release_op(pstatus);
+    UCX_CHECK_STATUS_INPROGRESS(status);
 }
 
 static inline
@@ -693,7 +695,7 @@ shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
     if (len != 4)
         RAISE_ERROR_STR("Unsupported datatype");
 
-    /* FIXME: Emulate MSWAP, since it is not exposed by UCX */
+    /* XXX: Emulate MSWAP, since it is not exposed by UCX */
     while (!done) {
         uint32_t v;
 
