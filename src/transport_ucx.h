@@ -178,6 +178,11 @@ static inline
 int
 shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options, shmem_transport_ctx_t **ctx)
 {
+    /* FIXME: Contexts are not optimized yet. We could create a separate set of
+     * EPs for each context (or team), and/or we could use completion callbacks
+     * to implement completion counters at the SOS level to enable separate
+     * completion tracking per context. */
+
     if (team == SHMEMX_TEAM_INVALID)
         return 1;
 
