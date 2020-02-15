@@ -240,18 +240,13 @@ shmem_transport_put_scalar(shmem_transport_ctx_t* ctx, void *target, const void 
 
     shmem_transport_ucx_get_mr(target, pe, &remote_addr, &rkey);
 
-    /* FIXME: SHMEM expects scalar puts to be buffered. Use bb here? Seems a
-     * bit of an extra challenge because of races in the requests interface.
-     * Perhaps easiest to fall back on using quiet to reclaim bb space when
-     * exhausted. */
     status = ucp_put_nbi(shmem_transport_peers[pe].ep, source, len, (uint64_t) remote_addr, rkey);
     UCX_CHECK_STATUS_INPROGRESS(status);
 
-    /* FIXME: Remove when buffered */
-    if (status != UCS_OK) {
-        shmem_internal_assert(status == UCS_INPROGRESS);
+    /* SOS expects scalar puts to complete locally. Use ucp_put_nbi in the hope
+     * scalar puts are buffered/inlined and fix via quieting if not. */
+    if (status != UCS_OK)
         shmem_transport_quiet(ctx);
-    }
 }
 
 static inline
