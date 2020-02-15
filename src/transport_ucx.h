@@ -126,10 +126,15 @@ ucs_status_t shmem_transport_ucx_post_cb_op(ucs_status_ptr_t req, void *completi
         return UCS_PTR_STATUS(req);
     else {
         shmem_transport_ucx_req_t *preq = (shmem_transport_ucx_req_t *) req;
-        preq->ptr = completion; /* FIXME: Use an atomic store here? */
-        /* The valid field is used to eliminate a race between the caller and a
-         * separate progress thread */
+
+        /* Populate the request and set the valid flag. The valid flag resolves
+         * a race with the completion callback, which could occur in a separate
+         * thread. */
+        preq->ptr = completion;
         __atomic_store_n(&preq->valid, 1, __ATOMIC_RELEASE);
+
+        /* Request is released instead of freed because we expect a completion callback */
+        ucp_request_release(req);
         return UCS_INPROGRESS;
     }
 }
@@ -166,8 +171,6 @@ static inline
 void
 shmem_transport_probe(void)
 {
-    /* FIXME: Requires hard polling, manual progress, and likely separate
-     * progress thread to meed progress requirements */
     ucp_worker_progress(shmem_transport_ucp_worker);
 }
 

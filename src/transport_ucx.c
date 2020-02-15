@@ -55,17 +55,18 @@ void shmem_transport_ucx_cb_complete(void *request, ucs_status_t status) {
     if (status != UCS_OK)
         RAISE_ERROR_STR("Error while completing operation");
 
-    /* Wait for ptr field to become valid */
+    /* Completion handler can run before the application has populated the
+     * request. Wait for ptr field to become valid. */
     while (0 == __atomic_load_n(&shreq->valid, __ATOMIC_ACQUIRE)) ;
 
     __atomic_store_n((long*)shreq->ptr, 1, __ATOMIC_RELEASE);
-    /* FIXME: Need to free the request here? */
     return;
 }
 
 static void shmem_transport_ucx_cb_init(void *request) {
     shmem_transport_ucx_req_t *shreq = (shmem_transport_ucx_req_t *) request;
-    shreq->ptr = NULL; /* FIXME: Atomic? */
+    shreq->ptr = NULL;
+    /* Use atomic store to synchronize with completion callback */
     __atomic_store_n(&shreq->valid, 0, __ATOMIC_RELEASE);
 }
 
@@ -215,9 +216,6 @@ int shmem_transport_startup(void)
                                    sizeof(shmem_transport_peer_t));
 
     /* Build connection table to each peer */
-    /* FIXME: Currently, we create connections to each peer during startup.
-     * Would it be better to create endpoints on-demand? And is there a limit
-     * to how many we can have? */
     for (i = 0; i < shmem_internal_num_pes; i++) {
         ucs_status_t status;
         ucp_ep_params_t params;
@@ -244,7 +242,6 @@ int shmem_transport_startup(void)
         if (rkey == NULL) RAISE_ERROR_MSG("Out of memory, allocating rkey buffer (len = %zu)\n", rkey_len);
         ret = shmem_runtime_get(i, "data_rkey", rkey, rkey_len);
         if (ret) RAISE_ERROR_MSG("Runtime get of UCX data rkey failed (PE %d, ret %d)\n", i, ret);
-        /* XXX: Why is an EP needed to unpack the rkey, but not to pack it or register memory? */
         status = ucp_ep_rkey_unpack(shmem_transport_peers[i].ep, rkey, &shmem_transport_peers[i].data_rkey);
         UCX_CHECK_STATUS(status);
         free(rkey);
