@@ -244,7 +244,9 @@ shmem_transport_put_scalar(shmem_transport_ctx_t* ctx, void *target, const void 
     UCX_CHECK_STATUS_INPROGRESS(status);
 
     /* SOS expects scalar puts to complete locally. Use ucp_put_nbi in the hope
-     * scalar puts are buffered/inlined and fix via quieting if not. */
+     * scalar puts are buffered/inlined and fix via quieting if not. If UCX
+     * isn't providing immediate remote completion, ucp_put_nb may be more
+     * efficient than ucp_put_nbi + quiet */
     if (status != UCS_OK)
         shmem_transport_quiet(ctx);
 }
@@ -304,22 +306,24 @@ static inline
 void
 shmem_transport_get(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len, int pe)
 {
-    ucs_status_t status;
+    ucs_status_ptr_t pstatus;
     ucp_rkey_h rkey;
     uint8_t *remote_addr;
 
     shmem_transport_ucx_get_mr(source, pe, &remote_addr, &rkey);
 
-    status = ucp_get_nbi(shmem_transport_peers[pe].ep, target, len, (uint64_t) remote_addr, rkey);
-    UCX_CHECK_STATUS_INPROGRESS(status);
+    pstatus = ucp_get_nb(shmem_transport_peers[pe].ep, target, len,
+                         (uint64_t) remote_addr, rkey, &shmem_transport_ucx_cb_nop);
+
+    ucs_status_t status = shmem_transport_ucx_complete_op(pstatus);
+    UCX_CHECK_STATUS(status);
 }
 
 static inline
 void
 shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
 {
-    /* FIXME: If we complete ops in place, we might be able to make this a no-op */
-    shmem_transport_quiet(ctx);
+    /* Blocking fetching ops are completed in place, so this is a nop */
 }
 
 
@@ -356,8 +360,6 @@ shmem_transport_swap(shmem_transport_ctx_t* ctx, void *target, const void *sourc
                                   dest, len, (uint64_t) remote_addr, rkey,
                                   &shmem_transport_ucx_cb_nop);
 
-    /* Result buffer is on the stack, needs to be completed immediately */
-    /* FIXME: Do we need to complete the op here, or will get_wait do the job? */
     ucs_status_t status = shmem_transport_ucx_complete_op(pstatus);
     UCX_CHECK_STATUS(status);
 }
@@ -438,8 +440,6 @@ shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
                                   value, dest, len, (uint64_t) remote_addr, rkey,
                                   &shmem_transport_ucx_cb_nop);
 
-    /* Result buffer is on the stack, needs to be completed immediately */
-    /* FIXME: Do we need to complete the op here, or will get_wait do the job? */
     ucs_status_t status = shmem_transport_ucx_complete_op(pstatus);
     UCX_CHECK_STATUS(status);
 }
@@ -569,8 +569,6 @@ shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target, const voi
                                   dest, len, (uint64_t) remote_addr, rkey,
                                   &shmem_transport_ucx_cb_nop);
 
-    /* Result buffer is on the stack, needs to be completed immediately */
-    /* FIXME: Do we need to complete the op here, or will get_wait do the job? */
     ucs_status_t status = shmem_transport_ucx_complete_op(pstatus);
     UCX_CHECK_STATUS(status);
 }
@@ -633,7 +631,6 @@ shmem_transport_atomic_fetch(shmem_transport_ctx_t* ctx, void *target, const voi
                                   target, len, (uint64_t) remote_addr, rkey,
                                   &shmem_transport_ucx_cb_nop);
 
-    /* FIXME: Need to block here? */
     ucs_status_t status = shmem_transport_ucx_complete_op(pstatus);
     UCX_CHECK_STATUS(status);
 }
