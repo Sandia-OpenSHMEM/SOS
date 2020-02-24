@@ -71,7 +71,7 @@
             rc = EXIT_FAILURE;                                                                                       \
         }                                                                                                            \
                                                                                                                      \
-    } while(0)                                                                                                       
+    } while(0)
 
 #define TEST_SHMEM_TEST_SOME(TYPE)                                                                                   \
     do{                                                                                                              \
@@ -110,7 +110,7 @@
             rc = EXIT_FAILURE;                                                                                       \
         }                                                                                                            \
                                                                                                                      \
-    } while(0)                                                                                                       
+    } while(0)
 
 
 #else
@@ -123,7 +123,7 @@
 
 int main(void)
 {
-   
+
     shmem_init();
 
     int rc = EXIT_SUCCESS;
@@ -168,7 +168,6 @@ int main(void)
 
 
     shmem_finalize();
-    return rc;    
-
+    return rc;
 
 }
