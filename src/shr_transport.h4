@@ -27,7 +27,6 @@ include(shmem_bind_c.m4)dnl
 #include "transport_cma.h"
 #endif
 
-
 static inline int
 shmem_shr_transport_init(void)
 {
@@ -165,34 +164,6 @@ shmem_shr_transport_put(shmem_ctx_t ctx, void *target, const void *source,
                               shmem_internal_get_shr_rank(pe));
 #elif USE_CMA
     shmem_transport_cma_put(target, source, len, pe,
-                            shmem_internal_get_shr_rank(pe));
-#else
-    RAISE_ERROR_STR("No path to peer");
-#endif
-}
-
-
-static inline void
-shmem_shr_transport_put_signal(shmem_ctx_t ctx, void *target,
-                               const void *source, size_t len,
-                               uint64_t *sig_addr, uint64_t signal, int pe)
-{
-#if USE_MEMCPY
-    memcpy(target, source, len);
-    *sig_addr = signal;
-#elif USE_XPMEM
-    shmem_transport_xpmem_put(target, source, len, pe,
-                              shmem_internal_get_shr_rank(pe));
-    shmem_internal_membar_acq_rel(); /* Memory fence to ensure target PE observes
-                                        stores in the correct order */
-    shmem_transport_xpmem_put(sig_addr, &signal, sizeof(uint64_t), pe,
-                              shmem_internal_get_shr_rank(pe));
-#elif USE_CMA
-    shmem_transport_cma_put(target, source, len, pe,
-                            shmem_internal_get_shr_rank(pe));
-    shmem_internal_membar_acq_rel(); /* Memory fence to ensure target PE observes
-                                        stores in the correct order */
-    shmem_transport_cma_put(sig_addr, &signal, sizeof(uint64_t), pe,
                             shmem_internal_get_shr_rank(pe));
 #else
     RAISE_ERROR_STR("No path to peer");
@@ -586,6 +557,53 @@ SHMEM_DEFINE_FOR_AMO(SHMEM_DEF_SUM_OP)
 #undef SHMEM_DEF_BXOR_OP
 #undef SHMEM_DEF_SUM_OP
 
+#else
+    RAISE_ERROR_STR("No path to peer");
+#endif
+}
+
+
+static inline void
+shmem_shr_transport_put_signal(shmem_ctx_t ctx, void *target,
+                               const void *source, size_t len,
+                               uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)
+{
+#if USE_MEMCPY
+    memcpy(target, source, len);
+    if (sig_op == SHMEMX_SIGNAL_ADD) *sig_addr += signal;
+    else *sig_addr = signal;
+#elif USE_XPMEM
+    shmem_transport_xpmem_put(target, source, len, pe,
+                              shmem_internal_get_shr_rank(pe));
+    shmem_internal_membar_acq_rel(); /* Memory fence to ensure target PE observes
+                                        stores in the correct order */
+#if USE_SHR_ATOMICS 
+    if (sig_op == SHMEMX_SIGNAL_ADD)
+        shmem_shr_transport_atomic(ctx, sig_addr, &signal, sizeof(uint64_t),
+                                   pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
+    else
+        shmem_shr_transport_atomic_set(ctx, sig_addr, &signal, sizeof(uint64_t),
+                                       pe, SHM_INTERNAL_UINT64);
+#else
+    if (sig_op == SHMEMX_SIGNAL_ADD)
+        shmem_transport_atomic((shmem_transport_ctx_t *) ctx, sig_addr, &signal, sizeof(uint64_t),
+                               pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
+    else
+        shmem_transport_atomic_set((shmem_transport_ctx_t *) ctx, sig_addr, &signal,
+                                   sizeof(uint64_t), pe, SHM_INTERNAL_UINT64);
+#endif
+#elif USE_CMA
+    shmem_transport_cma_put(target, source, len, pe,
+                            shmem_internal_get_shr_rank(pe));
+    shmem_internal_membar_acq_rel(); /* Memory fence to ensure target PE observes
+                                        stores in the correct order */
+    /* Using network atomics as CMA does not support atomic operations */
+    if (sig_op == SHMEMX_SIGNAL_ADD)
+        shmem_transport_atomic((shmem_transport_ctx_t *) ctx, sig_addr, &signal, sizeof(uint64_t),
+                               pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
+    else
+        shmem_transport_atomic_set((shmem_transport_ctx_t *) ctx, sig_addr, &signal,
+                                   sizeof(uint64_t), pe, SHM_INTERNAL_UINT64);
 #else
     RAISE_ERROR_STR("No path to peer");
 #endif

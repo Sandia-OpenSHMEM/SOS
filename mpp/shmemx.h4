@@ -190,24 +190,24 @@ SHMEM_CXX_DEFINE_FOR_BITWISE_AMO(`SHMEM_CXX_ATOMIC_FETCH_XOR_NBI')
 /* Blocking put with signal */
 define(`SHMEM_CXX_PUT_SIGNAL',
 `static inline void shmemx_put_signal($2* dest, const $2* source,
-                             size_t nelems, uint64_t *sig_addr, uint64_t signal, int pe) {
-    shmemx_$1_put_signal(dest, source, nelems, sig_addr, signal, pe);
+                             size_t nelems, uint64_t *sig_addr, uint64_t signal, int sig_op, int pe) {
+    shmemx_$1_put_signal(dest, source, nelems, sig_addr, signal, sig_op, pe);
 }
 static inline void shmemx_put_signal(shmem_ctx_t ctx, $2* dest, const $2* source,
-                             size_t nelems, uint64_t *sig_addr, uint64_t signal, int pe) {
-    shmemx_ctx_$1_put_signal(ctx, dest, source, nelems, sig_addr, signal, pe);
+                             size_t nelems, uint64_t *sig_addr, uint64_t signal, int sig_op, int pe) {
+    shmemx_ctx_$1_put_signal(ctx, dest, source, nelems, sig_addr, signal, sig_op, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_PUT_SIGNAL')
 
 /* Non-blocking put with signal */
 define(`SHMEM_CXX_PUT_SIGNAL_NBI',
 `static inline void shmemx_put_signal_nbi($2* dest, const $2* source,
-                             size_t nelems, uint64_t *sig_addr, uint64_t signal, int pe) {
-    shmemx_$1_put_signal_nbi(dest, source, nelems, sig_addr, signal, pe);
+                             size_t nelems, uint64_t *sig_addr, uint64_t signal, int sig_op, int pe) {
+    shmemx_$1_put_signal_nbi(dest, source, nelems, sig_addr, signal, sig_op, pe);
 }
 static inline void shmemx_put_signal_nbi(shmem_ctx_t ctx, $2* dest, const $2* source,
-                             size_t nelems, uint64_t *sig_addr, uint64_t signal, int pe) {
-    shmemx_ctx_$1_put_signal_nbi(ctx, dest, source, nelems, sig_addr, signal, pe);
+                             size_t nelems, uint64_t *sig_addr, uint64_t signal, int sig_op, int pe) {
+    shmemx_ctx_$1_put_signal_nbi(ctx, dest, source, nelems, sig_addr, signal, sig_op, pe);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_PUT_SIGNAL_NBI')
 
