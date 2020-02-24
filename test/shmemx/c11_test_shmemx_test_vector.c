@@ -14,7 +14,7 @@
         int *status = calloc(npes, sizeof(int));                                                                     \
         TYPE *cmp_values = malloc(npes * sizeof(TYPE));                                                              \
                                                                                                                      \
-        size_t i = 0;                                                                                                \
+        int i = 0;                                                                                                   \
         int expected_sum = 0;                                                                                        \
         int total_sum = 0;                                                                                           \
                                                                                                                      \
@@ -46,7 +46,7 @@
         int *status = calloc(npes, sizeof(int));                                                                     \
         TYPE *cmp_values = malloc(npes * sizeof(TYPE));                                                              \
                                                                                                                      \
-        size_t i = 0;                                                                                                \
+        int i = 0;                                                                                                   \
         int expected_sum = 0;                                                                                        \
         int total_sum = 0;                                                                                           \
                                                                                                                      \
@@ -57,9 +57,9 @@
                                                                                                                      \
         expected_sum = (npes-1) * npes / 2;                                                                          \
                                                                                                                      \
-        size_t ncompleted = 0;                                                                                       \
+        int ncompleted = 0;                                                                                          \
         while(ncompleted < npes){                                                                                    \
-            int ndone = shmemx_test_any_vector(ivars, npes, status, SHMEM_CMP_EQ, cmp_values);                       \
+            size_t ndone = shmemx_test_any_vector(ivars, npes, status, SHMEM_CMP_EQ, cmp_values);                    \
             if (ndone != SIZE_MAX){                                                                                  \
                 status[ndone] = 1;                                                                                   \
                 total_sum += ivars[ndone];                                                                           \
@@ -71,7 +71,7 @@
             rc = EXIT_FAILURE;                                                                                       \
         }                                                                                                            \
                                                                                                                      \
-    } while(0)                                                                                                       
+    } while(0)
 
 #define TEST_SHMEM_TEST_SOME(TYPE)                                                                                   \
     do{                                                                                                              \
@@ -83,7 +83,7 @@
                                                                                                                      \
         size_t *indices  = malloc(npes * sizeof(size_t));                                                            \
                                                                                                                      \
-        size_t i = 0;                                                                                                \
+        int i = 0;                                                                                                   \
         int expected_sum = 0;                                                                                        \
         int total_sum = 0;                                                                                           \
                                                                                                                      \
@@ -94,13 +94,13 @@
                                                                                                                      \
         expected_sum = (npes-1) * npes / 2;                                                                          \
                                                                                                                      \
-        size_t ncompleted = 0;                                                                                       \
+        int ncompleted = 0;                                                                                          \
         while(ncompleted < npes){                                                                                    \
-            int ndone = shmemx_test_some_vector(ivars, npes, indices, status, SHMEM_CMP_EQ, cmp_values);             \
+            size_t ndone = shmemx_test_some_vector(ivars, npes, indices, status, SHMEM_CMP_EQ, cmp_values);          \
             if(ndone != 0){                                                                                          \
-                for(i = 0; i < ndone; i++){                                                                          \
-                    total_sum += ivars[indices[i]];                                                                  \
-                    status[indices[i]] = 1;                                                                          \
+                for(size_t j = 0; j < ndone; j++){                                                                   \
+                    total_sum += ivars[indices[j]];                                                                  \
+                    status[indices[j]] = 1;                                                                          \
                 }                                                                                                    \
                 ncompleted += ndone;                                                                                 \
             }                                                                                                        \
@@ -110,7 +110,7 @@
             rc = EXIT_FAILURE;                                                                                       \
         }                                                                                                            \
                                                                                                                      \
-    } while(0)                                                                                                       
+    } while(0)
 
 
 #else
@@ -123,7 +123,7 @@
 
 int main(void)
 {
-   
+
     shmem_init();
 
     int rc = EXIT_SUCCESS;
@@ -168,7 +168,6 @@ int main(void)
 
 
     shmem_finalize();
-    return rc;    
-
+    return rc;
 
 }
