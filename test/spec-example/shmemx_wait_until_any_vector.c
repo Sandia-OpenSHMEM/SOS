@@ -49,8 +49,8 @@ int main(void)
 
     /* All odd PEs put 2 and all even PEs put 1 */
     for (int i = 0; i < npes; i++) {
-        shmem_atomic_set(&ivars[mype], mype % 2 + 1, i);
-        
+        shmem_int_atomic_set(&ivars[mype], mype % 2 + 1, i);
+
         /* Set cmp_values to the expected values coming from each PE */
         cmp_values[i] = i % 2 + 1;
     }
