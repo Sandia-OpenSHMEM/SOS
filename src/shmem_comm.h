@@ -61,17 +61,22 @@ shmem_internal_put_nb(shmem_ctx_t ctx, void *target, const void *source, size_t 
 static inline
 void
 shmem_internal_put_signal_nbi(shmem_ctx_t ctx, void *target, const void *source, size_t len,
-                              uint64_t *sig_addr, uint64_t signal, int pe)
+                              uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)
 {
     if (len == 0) {
-        shmem_internal_put_scalar(ctx, sig_addr, &signal, sizeof(uint64_t), pe);
+        if (sig_op == SHMEMX_SIGNAL_ADD)
+            shmem_transport_atomic((shmem_transport_ctx_t *) ctx, sig_addr, &signal, sizeof(uint64_t),
+                                   pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
+        else
+            shmem_transport_atomic_set((shmem_transport_ctx_t *) ctx, sig_addr, &signal,
+                                      sizeof(uint64_t), pe, SHM_INTERNAL_UINT64);
         return;
     }
 
     if (shmem_shr_transport_use_write(ctx, target, source, len, pe)) {
-        shmem_shr_transport_put_signal(ctx, target, source, len, sig_addr, signal, pe);
+        shmem_shr_transport_put_signal(ctx, target, source, len, sig_addr, signal, sig_op, pe);
     } else {
-        shmem_transport_put_signal_nbi((shmem_transport_ctx_t *) ctx, target, source, len, sig_addr, signal, pe);
+        shmem_transport_put_signal_nbi((shmem_transport_ctx_t *) ctx, target, source, len, sig_addr, signal, sig_op, pe);
     }
 }
 

@@ -658,7 +658,7 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
 
 static inline
 void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
-                                    uint64_t *sig_addr, uint64_t signal, int pe)
+                                    uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)
 {
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
@@ -765,6 +765,7 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
     shmem_transport_ofi_get_mr(sig_addr, pe, &addr, &key);
     polled = 0;
     ret = 0;
+    int atomic_op = (sig_op == SHMEMX_SIGNAL_ADD) ? FI_SUM : FI_ATOMIC_WRITE;
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
@@ -786,7 +787,7 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
                                            .rma_iov = &rma_iov_signal,
                                            .rma_iov_count = 1,
                                            .datatype = FI_UINT64,
-                                           .op = FI_ATOMIC_WRITE,
+                                           .op = atomic_op,
                                            .context = (uint8_t *) &signal,
                                            .data = 0
                                          };
