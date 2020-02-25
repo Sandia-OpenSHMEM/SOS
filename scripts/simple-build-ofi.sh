@@ -13,10 +13,10 @@
 set -e
 
 if [ -z "$SOS_VERSION" ] ; then
-    SOS_VERSION="v1.4.4"
+    SOS_VERSION="v1.4.5"
 fi
 if [ -z "$OFI_VERSION" ] ; then
-    OFI_VERSION="v1.7.0"
+    OFI_VERSION="v1.8.1"
 fi
 
 HYDRA_URL="http://www.mpich.org/static/downloads/3.2.1/hydra-3.2.1.tar.gz"
