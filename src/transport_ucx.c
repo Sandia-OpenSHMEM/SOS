@@ -88,6 +88,7 @@ int shmem_transport_init(void)
     ucs_status_t status;
     ucp_params_t params;
     ucp_worker_params_t worker_params;
+    ucp_worker_attr_t worker_attr;
 
     params.field_mask = UCP_PARAM_FIELD_FEATURES | UCP_PARAM_FIELD_REQUEST_SIZE;
     params.features   = UCP_FEATURE_RMA | UCP_FEATURE_AMO32 | UCP_FEATURE_AMO64;
@@ -124,6 +125,29 @@ int shmem_transport_init(void)
     status = ucp_worker_create(shmem_transport_ucp_ctx, &worker_params,
                                &shmem_transport_ucp_worker);
     UCX_CHECK_STATUS(status);
+
+    worker_attr.field_mask = UCP_WORKER_ATTR_FIELD_THREAD_MODE;
+    status = ucp_worker_query(shmem_transport_ucp_worker, &worker_attr);
+    UCX_CHECK_STATUS(status);
+
+    DEBUG_MSG("UCX thread mode %d, requested %d\n",
+              worker_attr.thread_mode, worker_params.thread_mode);
+
+    /* Note: UCX must be configured with --enable-mt for multithreaded usage */
+    if (worker_attr.thread_mode == UCS_THREAD_MODE_SINGLE) {
+        if (shmem_internal_thread_level != SHMEM_THREAD_SINGLE)
+            RAISE_ERROR_MSG("SHMEM threading requested, "
+                            "but UCX threading support not available\n");
+        if (shmem_internal_params.PROGRESS_INTERVAL_provided &&
+            shmem_internal_params.PROGRESS_INTERVAL > 0)
+            RAISE_ERROR_MSG("Requested progress thread, "
+                            "but UCX threading support not available\n");
+        else {
+            DEBUG_MSG("UCX threading support not available, "
+                      "auto-disabling progress thread\n");
+            shmem_internal_params.PROGRESS_INTERVAL = 0;
+        }
+    }
 
     /* Publish addressing info to be exchanged by runtime layer */
     {
