@@ -19,6 +19,14 @@
 #include <ucp/api/ucp_def.h>
 #include <ucp/api/ucp.h>
 
+/* On multi-rail systems, the address size can exceed what PMI is able to
+ * handle in a single KVS entry. Large addresses are spread out across multiple
+ * KVS entries according to the RUNTIME_ADDR_CHUNK size. The size below was
+ * chosen for compatibility with the Hydra process manager. */
+#define RUNTIME_ADDR_CHUNK 400
+
+#define MIN(a,b) (((a)<(b))?(a):(b))
+
 shmem_transport_ctx_t shmem_transport_ctx_default;
 shmem_ctx_t SHMEM_CTX_DEFAULT = (shmem_ctx_t) &shmem_transport_ctx_default;
 
@@ -152,17 +160,35 @@ int shmem_transport_init(void)
     /* Publish addressing info to be exchanged by runtime layer */
     {
         ucp_address_t *addr;
+        uint8_t *addr_bytes;
         size_t len;
         int ret;
 
         status = ucp_worker_get_address(shmem_transport_ucp_worker, &addr, &len);
         UCX_CHECK_STATUS(status);
 
+        /* Limit the X in "addrX" to a range of printable ASCII characters */
+        if (len > 'z' - '0' * RUNTIME_ADDR_CHUNK)
+            RAISE_ERROR_MSG("UCX address too large (length %zu, chunk %d)\n", len, RUNTIME_ADDR_CHUNK);
+
         ret = shmem_runtime_put("addr_len", &len, sizeof(size_t));
         if (ret) RAISE_ERROR_MSG("Runtime put of UCX address length failed (length %zu)\n", len);
 
-        ret = shmem_runtime_put("addr", addr, len);
-        if (ret) RAISE_ERROR_MSG("Runtime put of UCX address failed (length %zu)\n", len);
+        addr_bytes = (uint8_t*) addr;
+
+        for (size_t chunk = 0; chunk < len; chunk += RUNTIME_ADDR_CHUNK) {
+            char key[6] = "addrX";
+            size_t chunk_idx = 4;
+
+            key[chunk_idx] = '0' + chunk/RUNTIME_ADDR_CHUNK;
+
+            ret = shmem_runtime_put(key, addr_bytes+chunk, MIN(len-chunk, RUNTIME_ADDR_CHUNK));
+
+            if (ret) {
+                RAISE_ERROR_MSG("Runtime put of UCX address chunk %zu failed (chunk %d)\n",
+                                chunk/RUNTIME_ADDR_CHUNK, RUNTIME_ADDR_CHUNK);
+            }
+        }
 
         ucp_worker_release_address(shmem_transport_ucp_worker, addr);
     }
@@ -245,14 +271,29 @@ int shmem_transport_startup(void)
         ucp_ep_params_t params;
         size_t rkey_len;
         void *rkey;
+        uint8_t *addr_bytes;
+        size_t len;
 
         ret = shmem_runtime_get(i, "addr_len", &shmem_transport_peers[i].addr_len, sizeof(size_t));
         if (ret) RAISE_ERROR_MSG("Runtime get of UCX address length failed (PE %d, ret %d)\n", i, ret);
 
-        shmem_transport_peers[i].addr = malloc(shmem_transport_peers[i].addr_len);
-        ret = shmem_runtime_get(i, "addr", shmem_transport_peers[i].addr,
-                                shmem_transport_peers[i].addr_len);
-        if (ret) RAISE_ERROR_MSG("Runtime get of UCX address failed (PE %d, ret %d)\n", i, ret);
+        len = shmem_transport_peers[i].addr_len;
+        shmem_transport_peers[i].addr = malloc(len);
+        addr_bytes = (uint8_t*) shmem_transport_peers[i].addr;
+
+        for (size_t chunk = 0; chunk < len; chunk += RUNTIME_ADDR_CHUNK) {
+            char key[6] = "addrX";
+            size_t chunk_idx = 4;
+
+            key[chunk_idx] = '0' + chunk/RUNTIME_ADDR_CHUNK;
+
+            ret = shmem_runtime_get(i, key, addr_bytes+chunk, MIN(len-chunk, RUNTIME_ADDR_CHUNK));
+
+            if (ret) {
+                RAISE_ERROR_MSG("Runtime get of UCX address chunk %zu failed (chunk %d)\n",
+                                chunk/RUNTIME_ADDR_CHUNK, RUNTIME_ADDR_CHUNK);
+            }
+        }
 
         params.field_mask = UCP_EP_PARAM_FIELD_REMOTE_ADDRESS;
         params.address    = shmem_transport_peers[i].addr;
