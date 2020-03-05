@@ -294,7 +294,7 @@ before_install:
         git clone --depth 10 https://github.com/pmix/pmix pmix
         cd pmix
         ./autogen.pl
-        ./configure --prefix=$TRAVIS_INSTALL/pmix --with-platform=optimized --with-libev
+        ./configure --prefix=$TRAVIS_INSTALL/pmix --disable-debug --with-libev CFLAGS=-O3
         make install
       fi
     ## Build PRRTE

@@ -13,7 +13,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.4.4], [https://github.com/Sandia-OpenSHMEM/SOS/issues], [sandia-openshmem], [https://github.com/Sandia-OpenSHMEM/SOS])
+AC_INIT([Sandia OpenSHMEM], [1.4.5], [https://github.com/Sandia-OpenSHMEM/SOS/issues], [sandia-openshmem], [https://github.com/Sandia-OpenSHMEM/SOS])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -251,7 +251,7 @@ AS_IF([test "$enable_ofi_fence" = "yes"],
 
 AC_ARG_ENABLE([shr-atomics],
     [AC_HELP_STRING([--enable-shr-atomics],
-                    [Enable shared memory atomic operations. (default: disabled)])])
+                    [Enable shared memory atomic operations. (default: auto)])])
 AS_IF([test "$enable_shr_atomics" = "yes"],
       [AC_DEFINE([USE_SHR_ATOMICS], [1], [If defined, the shared memory layer will perform processor atomics.])])
 
@@ -432,6 +432,10 @@ AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
       [AC_DEFINE([USE_ON_NODE_COMMS], [1], [Define if any on-node comm transport is available])
        AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
       ])
+
+if test "$enable_shr_atomics" != "no" -a "$transport_xpmem" = "yes" -a "$transport_ofi" = "no" -a "$transport_portals4" = "no" ; then
+    AC_DEFINE([USE_SHR_ATOMICS], [1], [If defined, the shared memory layer will perform processor atomics.])
+fi
 
 AC_ARG_ENABLE([pmi-simple], [AC_HELP_STRING([--enable-pmi-simple],
               [Use MPICH simple PMI-1 library for process management])])
