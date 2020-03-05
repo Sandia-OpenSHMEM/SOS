@@ -303,6 +303,20 @@ extern unsigned int shmem_internal_rand_seed;
         }                                                                               \
     } while (0)
 
+#define SHMEM_ERR_CHECK_SIG_OP(op)                                                      \
+    do {                                                                                \
+        switch(op) {                                                                    \
+            case SHMEMX_SIGNAL_SET:                                                      \
+            case SHMEMX_SIGNAL_ADD:                                                      \
+                break;                                                                  \
+            default:                                                                    \
+                fprintf(stderr, "ERROR: %s(): Argument \"%s\", "                        \
+                                "invalid atomic operation for signal (%d)\n",           \
+                        __func__, #op, (int) (op));                                     \
+                shmem_runtime_abort(100, PACKAGE_NAME " exited in error");              \
+        }                                                                               \
+    } while (0)
+
 #else
 #define SHMEM_ERR_CHECK_INITIALIZED()
 #define SHMEM_ERR_CHECK_POSITIVE(arg)
@@ -314,6 +328,7 @@ extern unsigned int shmem_internal_rand_seed;
 #define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr)
 #define SHMEM_ERR_CHECK_NULL(ptr, nelems)
 #define SHMEM_ERR_CHECK_CMP_OP(op)
+#define SHMEM_ERR_CHECK_SIG_OP(op)                                                      \
 
 #endif /* ENABLE_ERROR_CHECKING */
 

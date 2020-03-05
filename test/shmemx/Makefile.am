@@ -33,6 +33,8 @@ check_PROGRAMS += \
 	shmemx_test_all \
 	c11_test_shmemx_wait_until \
 	c11_test_shmemx_test \
+	c11_test_shmemx_wait_until_vector\
+	c11_test_shmemx_test_vector\
 	shmemx_team_split_2d \
 	shmemx_team_translate_2 \
 	shmemx_team_reuse_teams \

@@ -2,6 +2,27 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.4.5
+------
+- Added a complete OpenSHMEM teams API to the shmemx interfaces.
+- Added the OpenSHMEM wait/test vector API to the shmemx interfaces.
+- Added support for shared memory atomic operations with the appropriate
+  acquire/release memory ordering where required.  This feature requires
+  the --enable-shr-transport build flag.
+- Improved experimental support for the RXM/Verbs provider stack with
+  libfabric 1.8 and newer.
+- Updated SOS to use the new OFI memory registration mode flags instead of
+  the deprecated FI_MR_SCALABLE/FI_MR_BASIC modes.
+- Updated the wait/test any/all/some "status" array semantics to reflect
+  recent changes to the OpenSHMEM specification.
+- Added a memory sync before returning from barriers to ensure shared memory
+  updates and remote updates cached in the NIC are visible in memory.
+- Updated the utility atomics (spinlocks and counters) to use __atomic built-in
+  functions rather than the deprecated __sync builtins.
+- Removed redundant shmem_barrier_all from the GUPS example application.
+- Moved unit tests derived from OpenSHMEM specification examples to the
+  test/spec-example directory.
+
 v1.4.4
 ------
 - Experimental support for RXM/Verbs provider stack with libfabric 1.8.
