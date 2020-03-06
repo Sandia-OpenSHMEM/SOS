@@ -299,16 +299,6 @@ shmem_transport_put_nbi(shmem_transport_ctx_t* ctx, void *target, const void *so
 
 static inline
 void
-shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
-                               uint64_t *sig_addr, uint64_t signal, int pe)
-{
-    shmem_transport_put_nbi(ctx, target, source, len, pe);
-    shmem_transport_fence(ctx);
-    shmem_transport_put_scalar(ctx, sig_addr, &signal, sizeof(uint64_t), pe);
-}
-
-static inline
-void
 shmem_transport_get(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len, int pe)
 {
     ucs_status_ptr_t pstatus;
@@ -724,6 +714,26 @@ static inline
 void shmem_transport_syncmem(void)
 {
     return;
+}
+
+static inline
+void
+shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
+                               uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)
+{
+    shmem_transport_put_nbi(ctx, target, source, len, pe);
+    shmem_transport_fence(ctx);
+    switch (sig_op) {
+        case SHMEMX_SIGNAL_ADD:
+            shmem_transport_atomic(ctx, sig_addr, &signal, 8, pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
+            break;
+        case SHMEMX_SIGNAL_SET:
+            shmem_transport_atomic_set(ctx, sig_addr, &signal, 8, pe, SHM_INTERNAL_UINT64);
+            break;
+        default:
+            RAISE_ERROR_MSG("Unsupported operation (%d)\n", sig_op);
+    }
+    shmem_transport_put_scalar(ctx, sig_addr, &signal, sizeof(uint64_t), pe);
 }
 
 /*** Functions below are not supported ***/
