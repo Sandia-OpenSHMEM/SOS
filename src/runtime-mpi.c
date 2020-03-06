@@ -250,7 +250,7 @@ shmem_runtime_exchange(void)
 int
 shmem_runtime_put(char *key, void *value, size_t valuelen)
 {
-    if (kv_length < MAX_KV_COUNT) {
+    if (kv_length < MAX_KV_COUNT && valuelen < MAX_KV_LENGTH) {
         memcpy(kv_index(kv_store_me, kv_length), key, MAX_KV_LENGTH);
         kv_length++;
         memcpy(kv_index(kv_store_me, kv_length), value, MAX_KV_LENGTH);
