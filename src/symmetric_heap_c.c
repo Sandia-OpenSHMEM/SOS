@@ -294,9 +294,11 @@ shmem_malloc(size_t size)
 void SHMEM_FUNCTION_ATTRIBUTES *
 shmem_calloc(size_t count, size_t size)
 {
-    void *ret;
+    void *ret = NULL;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+
+    if (size == 0 || count == 0) return ret;
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     ret = dlcalloc(count, size);
