@@ -227,6 +227,15 @@ extern unsigned int shmem_internal_rand_seed;
         }                                                               \
     } while (0)
 
+#define SHMEM_ERR_CHECK_CTX(ctx)                                          \
+    do {                                                                  \
+        if (ctx == SHMEMX_CTX_INVALID) {                                  \
+            fprintf(stderr, "ERROR: %s(): ctx argument is invalid\n",     \
+                    __func__);                                            \
+            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");    \
+        }                                                                 \
+    } while (0)
+
 #define SHMEM_ERR_CHECK_SYMMETRIC(ptr_in, len)                                          \
     do {                                                                                \
         const void *ptr_base = (void*)(ptr_in);                                         \
@@ -324,6 +333,7 @@ extern unsigned int shmem_internal_rand_seed;
 #define SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, PE_stride, PE_size)
 #define SHMEM_ERR_CHECK_TEAM_VALID(team)
 #define SHMEM_ERR_CHECK_PE(pe)
+#define SHMEM_ERR_CHECK_CTX(ctx)
 #define SHMEM_ERR_CHECK_SYMMETRIC(ptr, len)
 #define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr)
 #define SHMEM_ERR_CHECK_NULL(ptr, nelems)
