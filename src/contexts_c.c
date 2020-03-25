@@ -44,7 +44,7 @@ shmem_ctx_create(long options, shmem_ctx_t *ctx)
 
     int ret = shmem_transport_ctx_create(&shmem_internal_team_world, options, (shmem_transport_ctx_t **) ctx);
 
-    SHMEM_ERR_CHECK_NULL(ctx, 0);
+    if (0 != ret) *ctx = SHMEMX_CTX_INVALID;
 
     return ret;
 }
