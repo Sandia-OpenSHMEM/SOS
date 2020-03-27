@@ -332,7 +332,7 @@ shmem_realloc(void *ptr, size_t size)
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    if (size == 0) return ptr;
+    if (size == 0 && ptr == NULL) return ptr;
     if (ptr != NULL) {
       SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr);
     }
