@@ -278,9 +278,11 @@ shmem_internal_shmalloc(size_t size)
 void SHMEM_FUNCTION_ATTRIBUTES *
 shmem_malloc(size_t size)
 {
-    void *ret;
+    void *ret = NULL;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+
+    if (size == 0) return ret;
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     ret = dlmalloc(size);
@@ -329,6 +331,8 @@ shmem_realloc(void *ptr, size_t size)
     void *ret;
 
     SHMEM_ERR_CHECK_INITIALIZED();
+
+    if (size == 0) return ptr;
     if (ptr != NULL) {
       SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr);
     }
@@ -353,10 +357,11 @@ shmem_realloc(void *ptr, size_t size)
 void SHMEM_FUNCTION_ATTRIBUTES *
 shmem_align(size_t alignment, size_t size)
 {
-    void *ret;
+    void *ret = NULL;
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
+    if (size == 0) return ret;
     if (alignment == 0)
         return NULL;
 
