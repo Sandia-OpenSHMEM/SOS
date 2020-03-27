@@ -64,6 +64,9 @@
 #pragma weak shfree = pshfree
 #define shfree pshfree
 
+#pragma weak shmemx_malloc_with_hints = pshmem_malloc_with_hints
+#define shmemx_malloc_with_hints pshmem_malloc_with_hints
+
 #endif /* ENABLE_PROFILING */
 
 static char *shmem_internal_heap_curr = NULL;
@@ -395,4 +398,23 @@ void SHMEM_FUNCTION_ATTRIBUTES * shrealloc(void *ptr, size_t size)
 void SHMEM_FUNCTION_ATTRIBUTES * shmemalign(size_t alignment, size_t size)
 {
     return shmem_align(alignment, size);
+}
+
+
+void SHMEM_FUNCTION_ATTRIBUTES *
+shmemx_malloc_with_hints(size_t size, long hints)
+{
+    void *ret = NULL;
+
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    if (size == 0) return ret;
+
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
+    ret = dlmalloc(size);
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
+
+    shmem_internal_barrier_all();
+
+    return ret;
 }
