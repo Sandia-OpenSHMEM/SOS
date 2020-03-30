@@ -1,6 +1,7 @@
 /* -*- C -*-
  *
- * Copyright (c) 2020 NVidia Corporation.
+ * Copyright (c) 2020 NVidia Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
  * information, see the LICENSE file in the top level directory of the
@@ -86,18 +87,25 @@ int shmem_transport_fini(void);
     } while (0)
 
 static inline
+void
+shmem_transport_probe(void)
+{
+    ucp_worker_progress(shmem_transport_ucp_worker);
+}
+
+static inline
 ucs_status_t shmem_transport_ucx_complete_op(ucs_status_ptr_t req) {
     if (req == NULL) {
         /* All calls to complete_op must generate progress to avoid deadlock
          * in application-level polling loops */
-        ucp_worker_progress(shmem_transport_ucp_worker);
+        shmem_transport_probe();
         return UCS_OK;
     } else if (UCS_PTR_IS_ERR(req)) {
         return UCS_PTR_STATUS(req);
     } else {
         ucs_status_t status;
         do {
-            ucp_worker_progress(shmem_transport_ucp_worker);
+            shmem_transport_probe();
             status = ucp_request_check_status(req);
         } while (status == UCS_INPROGRESS);
         ucp_request_release(req);
@@ -168,13 +176,6 @@ void shmem_transport_ucx_get_mr(const void *addr, int dest_pe,
 }
 
 static inline
-void
-shmem_transport_probe(void)
-{
-    ucp_worker_progress(shmem_transport_ucp_worker);
-}
-
-static inline
 int
 shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options, shmem_transport_ctx_t **ctx)
 {
@@ -183,7 +184,7 @@ shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options, shm
      * to implement completion counters at the SOS level to enable separate
      * completion tracking per context. */
 
-    if (team == SHMEMX_TEAM_INVALID)
+    if (team == NULL)
         return 1;
 
     *ctx = malloc(sizeof(shmem_transport_ctx_t));
@@ -201,7 +202,7 @@ static inline
 void
 shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 {
-    if (ctx == SHMEMX_CTX_INVALID)
+    if (ctx == NULL)
         return;
     else if (ctx == (shmem_transport_ctx_t *) SHMEM_CTX_DEFAULT)
         RAISE_ERROR_STR("Cannot destroy SHMEM_CTX_DEFAULT");
@@ -279,7 +280,7 @@ void
 shmem_transport_put_wait(shmem_transport_ctx_t* ctx, long *completion)
 {
     while (0 == __atomic_load_n(completion, __ATOMIC_ACQUIRE))
-        ucp_worker_progress(shmem_transport_ucp_worker);
+        shmem_transport_probe();
 }
 
 static inline
@@ -336,16 +337,16 @@ shmem_transport_swap(shmem_transport_ctx_t* ctx, void *target, const void *sourc
 
     switch (len) {
         case 1:
-            value = (uint64_t)*(uint8_t*)source;
+            value = (uint64_t) *(uint8_t*)source;
             break;
         case 2:
-            value = (uint64_t)*(uint16_t*)source;
+            value = (uint64_t) *(uint16_t*)source;
             break;
         case 4:
-            value = (uint64_t)*(uint32_t*)source;
+            value = (uint64_t) *(uint32_t*)source;
             break;
         case 8:
-            value = (uint64_t)*(uint64_t*)source;
+            value = (uint64_t) *(uint64_t*)source;
             break;
         default:
             RAISE_ERROR_MSG("Unsupported datatype len=%zu\n", len);
@@ -373,16 +374,16 @@ shmem_transport_swap_nbi(shmem_transport_ctx_t* ctx, void *target, const void *s
 
     switch (len) {
         case 1:
-            value = (uint64_t)*(uint8_t*)source;
+            value = (uint64_t) *(uint8_t*)source;
             break;
         case 2:
-            value = (uint64_t)*(uint16_t*)source;
+            value = (uint64_t) *(uint16_t*)source;
             break;
         case 4:
-            value = (uint64_t)*(uint32_t*)source;
+            value = (uint64_t) *(uint32_t*)source;
             break;
         case 8:
-            value = (uint64_t)*(uint64_t*)source;
+            value = (uint64_t) *(uint64_t*)source;
             break;
         default:
             RAISE_ERROR_MSG("Unsupported datatype len=%zu\n", len);
@@ -416,16 +417,16 @@ shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
 
     switch (len) {
         case 1:
-            value = (uint64_t)*(uint8_t*)operand;
+            value = (uint64_t) *(uint8_t*)operand;
             break;
         case 2:
-            value = (uint64_t)*(uint16_t*)operand;
+            value = (uint64_t) *(uint16_t*)operand;
             break;
         case 4:
-            value = (uint64_t)*(uint32_t*)operand;
+            value = (uint64_t) *(uint32_t*)operand;
             break;
         case 8:
-            value = (uint64_t)*(uint64_t*)operand;
+            value = (uint64_t) *(uint64_t*)operand;
             break;
         default:
             RAISE_ERROR_MSG("Unsupported datatype len=%zu\n", len);
@@ -456,16 +457,16 @@ shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target, const void *
 
     switch (len) {
         case 1:
-            value = (uint64_t)*(uint8_t*)operand;
+            value = (uint64_t) *(uint8_t*)operand;
             break;
         case 2:
-            value = (uint64_t)*(uint16_t*)operand;
+            value = (uint64_t) *(uint16_t*)operand;
             break;
         case 4:
-            value = (uint64_t)*(uint32_t*)operand;
+            value = (uint64_t) *(uint32_t*)operand;
             break;
         case 8:
-            value = (uint64_t)*(uint64_t*)operand;
+            value = (uint64_t) *(uint64_t*)operand;
             break;
         default:
             RAISE_ERROR_MSG("Unsupported datatype len=%zu\n", len);
@@ -498,16 +499,16 @@ shmem_transport_atomic(shmem_transport_ctx_t* ctx, void *target, const void *sou
 
     switch (len) {
         case 1:
-            value = (uint64_t)*(uint8_t*)source;
+            value = (uint64_t) *(uint8_t*)source;
             break;
         case 2:
-            value = (uint64_t)*(uint16_t*)source;
+            value = (uint64_t) *(uint16_t*)source;
             break;
         case 4:
-            value = (uint64_t)*(uint32_t*)source;
+            value = (uint64_t) *(uint32_t*)source;
             break;
         case 8:
-            value = (uint64_t)*(uint64_t*)source;
+            value = (uint64_t) *(uint64_t*)source;
             break;
         default:
             RAISE_ERROR_MSG("Unsupported datatype len=%zu\n", len);
@@ -544,16 +545,16 @@ shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target, const voi
 
     switch (len) {
         case 1:
-            value = (uint64_t)*(uint8_t*)source;
+            value = (uint64_t) *(uint8_t*)source;
             break;
         case 2:
-            value = (uint64_t)*(uint16_t*)source;
+            value = (uint64_t) *(uint16_t*)source;
             break;
         case 4:
-            value = (uint64_t)*(uint32_t*)source;
+            value = (uint64_t) *(uint32_t*)source;
             break;
         case 8:
-            value = (uint64_t)*(uint64_t*)source;
+            value = (uint64_t) *(uint64_t*)source;
             break;
         default:
             RAISE_ERROR_MSG("Unsupported datatype len=%zu\n", len);
@@ -584,16 +585,16 @@ shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target, const
 
     switch (len) {
         case 1:
-            value = (uint64_t)*(uint8_t*)source;
+            value = (uint64_t) *(uint8_t*)source;
             break;
         case 2:
-            value = (uint64_t)*(uint16_t*)source;
+            value = (uint64_t) *(uint16_t*)source;
             break;
         case 4:
-            value = (uint64_t)*(uint32_t*)source;
+            value = (uint64_t) *(uint32_t*)source;
             break;
         case 8:
-            value = (uint64_t)*(uint64_t*)source;
+            value = (uint64_t) *(uint64_t*)source;
             break;
         default:
             RAISE_ERROR_MSG("Unsupported datatype len=%zu\n", len);
@@ -649,16 +650,16 @@ shmem_transport_atomic_set(shmem_transport_ctx_t* ctx, void *target, const void 
 
     switch (len) {
         case 1:
-            value = (uint64_t)*(uint8_t*)source;
+            value = (uint64_t) *(uint8_t*)source;
             break;
         case 2:
-            value = (uint64_t)*(uint16_t*)source;
+            value = (uint64_t) *(uint16_t*)source;
             break;
         case 4:
-            value = (uint64_t)*(uint32_t*)source;
+            value = (uint64_t) *(uint32_t*)source;
             break;
         case 8:
-            value = (uint64_t)*(uint64_t*)source;
+            value = (uint64_t) *(uint64_t*)source;
             break;
         default:
             RAISE_ERROR_MSG("Unsupported datatype len=%zu\n", len);

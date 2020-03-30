@@ -1,6 +1,7 @@
 /* -*- C -*-
  *
- * Copyright (c) 2020 NVidia Corporation.
+ * Copyright (c) 2020 NVidia Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
  * information, see the LICENSE file in the top level directory of the
@@ -84,7 +85,7 @@ static int shmem_transport_ucx_progress_thread_enabled = 1;
 static void * shmem_transport_ucx_progress_thread_func(void *arg)
 {
     while (__atomic_load_n(&shmem_transport_ucx_progress_thread_enabled, __ATOMIC_ACQUIRE)) {
-        ucp_worker_progress(shmem_transport_ucp_worker);
+        shmem_transport_probe();
         usleep(shmem_internal_params.PROGRESS_INTERVAL);
     }
 
@@ -343,8 +344,10 @@ int shmem_transport_fini(void)
     int i;
     void *progress_out;
 
-    __atomic_store_n(&shmem_transport_ucx_progress_thread_enabled, 0, __ATOMIC_RELEASE);
-    pthread_join(shmem_transport_ucx_progress_thread, &progress_out);
+    if (shmem_internal_params.PROGRESS_INTERVAL > 0) {
+        __atomic_store_n(&shmem_transport_ucx_progress_thread_enabled, 0, __ATOMIC_RELEASE);
+        pthread_join(shmem_transport_ucx_progress_thread, &progress_out);
+    }
 
     /* Clean up contexts */
     shmem_transport_quiet(&shmem_transport_ctx_default);
@@ -358,6 +361,8 @@ int shmem_transport_fini(void)
         shmem_transport_ucx_complete_op(pstatus);
         free(shmem_transport_peers[i].addr);
     }
+
+    free(shmem_transport_peers);
 
     /* Unmap memory and shut down UCX */
     status = ucp_mem_unmap(shmem_transport_ucp_ctx, shmem_transport_ucp_mem_data);
