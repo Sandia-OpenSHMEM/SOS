@@ -433,7 +433,14 @@ AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
        AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
       ])
 
-if test "$enable_shr_atomics" != "no" -a "$transport_xpmem" = "yes" -a "$transport_ofi" = "no" -a "$transport_portals4" = "no" ; then
+if test "$enable_shr_atomics" = "yes"; then
+    transport_shr_atomics="yes"
+else
+    transport_shr_atomics="no"
+fi
+
+if test "$enable_shr_atomics" != "no" -a "$transport" = "none"; then
+    transport_shr_atomics="yes"
     AC_DEFINE([USE_SHR_ATOMICS], [1], [If defined, the shared memory layer will perform processor atomics.])
 fi
 
@@ -912,6 +919,7 @@ echo "On Node Communication:"
 echo "  XPMEM:          $transport_xpmem"
 echo "  CMA:            $transport_cma"
 echo "  memcpy (self):  $transport_memcpy"
+echo "  Shr. atomics:   $transport_shr_atomics"
 echo ""
 echo "Global Options:"
 if test "$enable_remote_virtual_addressing" = "yes"; then
