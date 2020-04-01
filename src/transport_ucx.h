@@ -185,7 +185,7 @@ shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options, shm
      * completion tracking per context. */
 
     if (team == NULL)
-        return 1;
+        RAISE_ERROR_STR("Context creation occured on a NULL team");
 
     *ctx = malloc(sizeof(shmem_transport_ctx_t));
 
@@ -726,10 +726,12 @@ shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, const v
     shmem_transport_fence(ctx);
     switch (sig_op) {
         case SHMEMX_SIGNAL_ADD:
-            shmem_transport_atomic(ctx, sig_addr, &signal, 8, pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
+            shmem_transport_atomic(ctx, sig_addr, &signal, sizeof(uint64_t),
+                                   pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
             break;
         case SHMEMX_SIGNAL_SET:
-            shmem_transport_atomic_set(ctx, sig_addr, &signal, 8, pe, SHM_INTERNAL_UINT64);
+            shmem_transport_atomic_set(ctx, sig_addr, &signal, sizeof(uint64_t),
+                                       pe, SHM_INTERNAL_UINT64);
             break;
         default:
             RAISE_ERROR_MSG("Unsupported operation (%d)\n", sig_op);
