@@ -439,7 +439,7 @@ else
     transport_shr_atomics="no"
 fi
 
-if test "$enable_shr_atomics" != "no" -a "$transport" = "none"; then
+if test "$enable_shr_atomics" != "no" -a "$transport_xpmem" = "yes" -a "$transport" = "none"; then
     transport_shr_atomics="yes"
     AC_DEFINE([USE_SHR_ATOMICS], [1], [If defined, the shared memory layer will perform processor atomics.])
 fi
