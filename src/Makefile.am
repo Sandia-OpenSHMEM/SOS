@@ -100,11 +100,19 @@ libsma_la_SOURCES += \
 	transport_ofi.c
 endif
 
+if USE_UCX
+libsma_la_SOURCES += \
+	transport_ucx.h \
+	transport_ucx.c
+endif
+
 if !USE_PORTALS4
 if !USE_OFI
+if !USE_UCX
 libsma_la_SOURCES += \
 	transport_none.c \
 	transport_none.h
+endif
 endif
 endif
 

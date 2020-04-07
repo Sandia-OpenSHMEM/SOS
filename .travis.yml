@@ -158,6 +158,26 @@ env:
           SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
           SOS_BUILD_OPTS="--enable-pmi-simple"
 
+        ## UCX Builds
+        - >
+          SOS_TRANSPORT_OPTS="--with-ucx=$TRAVIS_INSTALL/ucx/"
+          SOS_BUILD_OPTS="--enable-pmi-simple"
+        - >
+          SOS_PM="prun -host localhost -oversubscribe" SOS_PM_PRE="prte --daemonize" SOS_PM_POST="prun -terminate"
+          SOS_TRANSPORT_OPTS="--with-ucx=$TRAVIS_INSTALL/ucx/"
+          SOS_BUILD_OPTS="--with-pmix=$TRAVIS_INSTALL/pmix"
+        - >
+          SOS_DISABLE_FORTRAN=1
+          SOS_TRANSPORT_OPTS="--with-ucx=$TRAVIS_INSTALL/ucx/"
+          SOS_BUILD_OPTS="--enable-pmi-mpi CC=mpicc"
+        - >
+          SOS_DISABLE_FORTRAN=1
+          SOS_TRANSPORT_OPTS="--with-ucx=$TRAVIS_INSTALL/ucx/"
+          SOS_BUILD_OPTS="--with-cma --enable-error-checking --enable-profiling --enable-pmi-simple"
+        - >
+          SOS_TRANSPORT_OPTS="--with-ucx=$TRAVIS_INSTALL/ucx/"
+          SOS_BUILD_OPTS="--with-xpmem=$TRAVIS_INSTALL/xpmem --enable-error-checking --enable-pmi-simple"
+
 os:
     - linux
 
@@ -219,6 +239,17 @@ before_install:
         cd libfabric
         ./autogen.sh
         ./configure --prefix=$TRAVIS_INSTALL/libfabric
+        make $TRAVIS_PAR_MAKE
+        make install
+      fi
+    ## Build UCX
+    - >
+      if [[ $SOS_TRANSPORT_OPTS = *"with-ucx"* ]]; then
+        cd $TRAVIS_SRC
+        git clone -b v1.7.0 --depth 10 https://github.com/openucx/ucx.git
+        cd ucx
+        ./autogen.sh
+        ./configure --prefix=$TRAVIS_INSTALL/ucx --enable-mt --disable-numa
         make $TRAVIS_PAR_MAKE
         make install
       fi
