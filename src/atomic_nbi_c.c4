@@ -122,6 +122,7 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
                          TYPE *target, TYPE value, int pe)      \
         SHMEM_ERR_CHECK_INITIALIZED();                          \
         SHMEM_ERR_CHECK_PE(pe);                                 \
+        SHMEM_ERR_CHECK_CTX(ctx);                               \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));        \
         shmem_internal_swap_nbi(ctx, target, &value, fetch,     \
                                 sizeof(TYPE), pe, ITYPE);       \
@@ -134,6 +135,7 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
                          TYPE *target, TYPE cond, TYPE value, int pe)   \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
         shmem_internal_cswap_nbi(ctx, target, &value, fetch, &cond,     \
                              sizeof(TYPE), pe, ITYPE);                  \
@@ -147,6 +149,7 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
         TYPE tmp = 1;                                                   \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
         shmem_internal_fetch_atomic_nbi(ctx, target, &tmp, fetch,       \
                                     sizeof(TYPE), pe, SHM_INTERNAL_SUM, \
@@ -160,6 +163,7 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
                           TYPE *target, TYPE value, int pe)             \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
         shmem_internal_fetch_atomic_nbi(ctx, target, &value, fetch,     \
                                         sizeof(TYPE), pe,               \
@@ -173,6 +177,7 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
                          const TYPE *source, int pe)                    \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof(TYPE));                \
         shmem_internal_atomic_fetch(ctx, fetch, (void *) source,        \
                                     sizeof(TYPE), pe, ITYPE);           \
@@ -185,6 +190,7 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
                          TYPE *target, TYPE value, int pe)              \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
         shmem_internal_fetch_atomic_nbi(ctx, target, &value, fetch,     \
                                     sizeof(TYPE), pe, SHM_INTERNAL_BXOR,\
@@ -198,6 +204,7 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
                          TYPE *target, TYPE value, int pe)              \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
         shmem_internal_fetch_atomic_nbi(ctx, target, &value, fetch,     \
                                     sizeof(TYPE), pe, SHM_INTERNAL_BAND,\
@@ -211,6 +218,7 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
                          TYPE value, int pe)                            \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
+        SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
         shmem_internal_fetch_atomic_nbi(ctx, target, &value, fetch,     \
                                     sizeof(TYPE), pe, SHM_INTERNAL_BOR, \
