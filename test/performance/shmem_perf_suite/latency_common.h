@@ -143,7 +143,7 @@ int latency_init_resources(int argc, char *argv[],
 #if defined(ENABLE_THREADS)
     int tl;
     shmem_init_thread(metric_info->thread_safety, &tl);
-    if(tl != metric_info->thread_safety) {
+    if(tl < metric_info->thread_safety) {
         fprintf(stderr,"Could not initialize with requested thread "
                 "level %d: got %d\n", metric_info->thread_safety, tl);
         return -1;
