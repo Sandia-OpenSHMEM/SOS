@@ -249,7 +249,7 @@ before_install:
         git clone -b v1.7.0 --depth 10 https://github.com/openucx/ucx.git
         cd ucx
         ./autogen.sh
-        ./configure --prefix=$TRAVIS_INSTALL/ucx --enable-mt --disable-numa
+        ./configure --prefix=$TRAVIS_INSTALL/ucx --enable-mt --disable-numa --without-java
         make $TRAVIS_PAR_MAKE
         make install
       fi
