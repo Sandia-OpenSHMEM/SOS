@@ -3,8 +3,8 @@
  *  OpenSHMEM specification.
  */
 
-#include <shmem.h>
 #include <shmemx.h>
+#include <shmem.h>
 #include <stdio.h>
 
 
@@ -17,24 +17,42 @@ int main(void)
 
   shmem_init();
 
-  int npes  = shmem_n_pes();
-  int my_pe = shmem_my_pe();
+  int npes = shmem_n_pes();
+  int mype = shmem_my_pe();
   conf.num_contexts = 1;
   long cmask = SHMEMX_TEAM_NUM_CONTEXTS;
 
   /* Create team_2 with PEs numbered 0, 2, 4, ... */
-  shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 2, (npes + 1) / 2, &conf, cmask, &team_2);
+  int ret = shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 2, (npes + 1) / 2, &conf, cmask, &team_2);
+
+  if (ret != 0) {
+      printf("%d: Error creating team team_2 (%d)\n", mype, ret);
+      shmem_global_exit(ret);
+  }
 
   /* Create team_3 with PEs numbered 0, 3, 6, ... */
-  shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 3, (npes + 2) / 3, &conf, cmask, &team_3);
+  ret = shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 3, (npes + 2) / 3, &conf, cmask, &team_3);
+
+  if (ret != 0) {
+      printf("%d: Error creating team team_3 (%d)\n", mype, ret);
+      shmem_global_exit(ret);
+  }
 
   /* Create a context on team_2. */
-  int ret = shmemx_team_create_ctx(team_2, 0, &ctx_2);
-  if (ret != 0) ctx_2 = SHMEMX_CTX_INVALID;
+  ret = shmemx_team_create_ctx(team_2, 0, &ctx_2);
+
+  if (ret != 0 && team_2 != SHMEMX_TEAM_INVALID) {
+      printf("%d: Error creating context ctx_2 (%d)\n", mype, ret);
+      shmem_global_exit(ret);
+  }
 
   /* Create a context on team_3. */
   ret = shmemx_team_create_ctx(team_3, 0, &ctx_3);
-  if (ret != 0) ctx_3 = SHMEMX_CTX_INVALID;
+
+  if (ret != 0 && team_3 != SHMEMX_TEAM_INVALID) {
+      printf("%d: Error creating context ctx_3 (%d)\n", mype, ret);
+      shmem_global_exit(ret);
+  }
 
   /* Within each team, put my PE number to my neighbor in a ring-based manner. */
   if (ctx_2 != SHMEMX_CTX_INVALID) {
@@ -61,7 +79,7 @@ int main(void)
   shmemx_team_sync(SHMEMX_TEAM_WORLD);
 
   /* Validate the result. */
-  if (shmem_my_pe() == 0) {
+  if (mype == 0) {
       int vsum = 0;
       for (int i = 0; i < npes; i ++) {
           if (i % 2 == 0 && i % 3 == 0) {
@@ -85,4 +103,5 @@ int main(void)
   shmemx_team_destroy(team_3);
 
   shmem_finalize();
+  return 0;
 }

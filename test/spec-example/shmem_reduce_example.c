@@ -3,59 +3,51 @@
  *  OpenSHMEM specification.
  */
 
+#include <shmemx.h>
+#include <shmem.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <shmem.h>
-#include <shmemx.h>
 
-/* As if we receive some value from external source */
-static long recv_a_value(unsigned seed, int npes) {
-  srand(seed);
-  return rand() % npes;
-}
+#define NELEMS 32
 
-/* Validate the value we recieved */
-static unsigned char is_valid(long value, int npes) {
-  if (value > (npes-1))
-    return 0;
-  return 1;
-}
-
-int main(void)
-{
-
+int main(void) {
   shmem_init();
-  int me = shmem_my_pe();
+  int mype = shmem_my_pe();
   int npes = shmem_n_pes();
-  size_t num = 32;
 
-  long *values = shmem_malloc(num * sizeof(long));
-  long *sums = shmem_malloc(num * sizeof(long));
+  int *values = shmem_malloc(NELEMS * sizeof(int));
 
-  unsigned char *valid_me = shmem_malloc(num * sizeof(unsigned char));
-  unsigned char *valid_all = shmem_malloc(num * sizeof(unsigned char));
+  unsigned char *value_is_maximal     = shmem_malloc(NELEMS * sizeof(unsigned char));
+  unsigned char *value_is_maximal_all = shmem_malloc(NELEMS * sizeof(unsigned char));
 
-  values[0] = recv_a_value((unsigned)me, npes);
-  valid_me[0] = is_valid(values[0], npes);
+  static int maximal_values_count = 0;
+  static int maximal_values_total;
 
-  for (int i=1; i < num; i++) {
-    values[i] = recv_a_value((unsigned)values[i-1], npes);
-    valid_me[i] = is_valid(values[i], npes);
+  srand((unsigned)mype);
+
+  for (int i = 0; i < NELEMS; i++) {
+    values[i] = rand() % npes;
+
+    /* Track and count instances of maximal values (i.e., values equal to (npes-1)) */
+    value_is_maximal[i] = (values[i] == (npes - 1)) ? 1 : 0;
+    maximal_values_count += value_is_maximal[i];
   }
 
   /* Wait for all PEs to initialize reductions arrays */
   shmemx_sync(SHMEMX_TEAM_WORLD);
 
-  shmemx_and_reduce(SHMEMX_TEAM_WORLD, valid_all, valid_me, num);
-  shmemx_sum_reduce(SHMEMX_TEAM_WORLD, sums, values, num);
+  shmemx_or_reduce(SHMEMX_TEAM_WORLD, value_is_maximal_all, value_is_maximal, NELEMS);
+  shmemx_sum_reduce(SHMEMX_TEAM_WORLD, &maximal_values_total, &maximal_values_count, 1);
 
-  for (int i=0; i < num; i++) {
-    if (valid_all[i]) {
-      printf ("[%d] = %ld\n", i, sums[i]);
+  if (mype == 0) {
+    printf("Found %d maximal random numbers across all PEs.\n", maximal_values_total);
+    printf("A maximal number occured (at least once) at the following indices:\n");
+    for (int i = 0; i < NELEMS; i++) {
+      if (value_is_maximal_all[i] == 1) {
+        printf("%d ", i);
+      }
     }
-    else {
-      printf ("[%d] = invalid on one or more pe\n", i);
-    }
+    printf("\n");
   }
 
   shmem_finalize();
