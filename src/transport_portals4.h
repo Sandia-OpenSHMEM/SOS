@@ -31,35 +31,10 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #endif
 
-typedef ptl_datatype_t shm_internal_datatype_t;
-typedef ptl_op_t shm_internal_op_t;
-#define SHM_INTERNAL_FLOAT PTL_FLOAT
-#define SHM_INTERNAL_DOUBLE PTL_DOUBLE
-#define SHM_INTERNAL_LONG_DOUBLE PTL_LONG_DOUBLE
-#define SHM_INTERNAL_FLOAT_COMPLEX PTL_FLOAT_COMPLEX
-#define SHM_INTERNAL_DOUBLE_COMPLEX PTL_DOUBLE_COMPLEX
+extern int shmem_transport_dtype_table[];
+#define SHMEM_TRANSPORT_DTYPE(DTYPE) shmem_transport_dtype_table[(DTYPE)]
 
-#define SHM_INTERNAL_SIGNED_BYTE     PTL_INT8_T
-#define SHM_INTERNAL_INT8            PTL_INT8_T
-#define SHM_INTERNAL_INT16           PTL_INT16_T
-#define SHM_INTERNAL_INT32           PTL_INT32_T
-#define SHM_INTERNAL_INT64           PTL_INT64_T
-#define SHM_INTERNAL_SHORT           DTYPE_SHORT
-#define SHM_INTERNAL_INT             DTYPE_INT
-#define SHM_INTERNAL_LONG            DTYPE_LONG
-#define SHM_INTERNAL_LONG_LONG       DTYPE_LONG_LONG
-#define SHM_INTERNAL_FORTRAN_INTEGER DTYPE_FORTRAN_INTEGER
-#define SHM_INTERNAL_UINT            DTYPE_UNSIGNED_INT
-#define SHM_INTERNAL_ULONG           DTYPE_UNSIGNED_LONG
-#define SHM_INTERNAL_ULONG_LONG      DTYPE_UNSIGNED_LONG_LONG
-#define SHM_INTERNAL_SIZE_T          DTYPE_SIZE_T
-#define SHM_INTERNAL_PTRDIFF_T       DTYPE_PTRDIFF_T
-#define SHM_INTERNAL_UINT8           PTL_UINT8_T
-#define SHM_INTERNAL_UINT16          PTL_UINT16_T
-#define SHM_INTERNAL_UINT32          PTL_UINT32_T
-#define SHM_INTERNAL_UINT64          PTL_UINT64_T
-#define SHM_INTERNAL_UCHAR           DTYPE_UNSIGNED_CHAR
-#define SHM_INTERNAL_USHORT          DTYPE_UNSIGNED_SHORT
+typedef ptl_op_t shm_internal_op_t;
 
 #define SHM_INTERNAL_BAND PTL_BAND
 #define SHM_INTERNAL_BOR PTL_BOR
@@ -648,18 +623,6 @@ shmem_transport_put_ct_nb(shmem_transport_ct_t *ct, void *target, const void *so
 }
 
 static inline
-void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
-                                    uint64_t *sig_addr, uint64_t signal, int pe)
-{
-    /* FIXME: Need to optimize non-blocking put with signal for Portals. Current implementation below keeps  
-     * the "fence" in between data and signal put */
-    shmem_transport_put_nbi(ctx, target, source, len, pe);
-    shmem_transport_fence(ctx);
-    shmem_transport_put_scalar(ctx, sig_addr, &signal, sizeof(uint64_t), pe);
-}
-
-
-static inline
 void
 shmem_transport_put_wait(shmem_transport_ctx_t* ctx, long *completion)
 {
@@ -786,7 +749,7 @@ shmem_transport_swap(shmem_transport_ctx_t* ctx, void *target, const void *sourc
                   0,
                   NULL,
                   PTL_SWAP,
-                  datatype);
+                  SHMEM_TRANSPORT_DTYPE(datatype));
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 }
 
@@ -837,7 +800,7 @@ shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
                   0,
                   operand,
                   PTL_CSWAP,
-                  datatype);
+                  SHMEM_TRANSPORT_DTYPE(datatype));
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 }
 
@@ -889,7 +852,7 @@ shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
                   0,
                   mask,
                   PTL_MSWAP,
-                  datatype);
+                  SHMEM_TRANSPORT_DTYPE(datatype));
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 }
 
@@ -922,7 +885,7 @@ shmem_transport_atomic(shmem_transport_ctx_t* ctx, void *target, const void *sou
                     NULL,
                     0,
                     op,
-                    datatype);
+                    SHMEM_TRANSPORT_DTYPE(datatype));
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 }
 
@@ -955,7 +918,7 @@ shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const void *so
                         NULL,
                         0,
                         op,
-                        datatype);
+                        SHMEM_TRANSPORT_DTYPE(datatype));
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
 
     } else if (len <= MIN(shmem_transport_portals4_bounce_buffer_size,
@@ -991,7 +954,7 @@ shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const void *so
                         buff,
                         0,
                         op,
-                        datatype);
+                        SHMEM_TRANSPORT_DTYPE(datatype));
         if (PTL_OK != ret) { RAISE_ERROR(ret); }
 #if WANT_TOTAL_DATA_ORDERING != 0
         shmem_transport_portals4_long_pending = 1;
@@ -1039,7 +1002,7 @@ shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const void *so
                             long_frag,
                             0,
                             op,
-                            datatype);
+                            SHMEM_TRANSPORT_DTYPE(datatype));
             if (PTL_OK != ret) { RAISE_ERROR(ret); }
             (*(long_frag->completion))++;
             long_frag->reference++;
@@ -1087,7 +1050,7 @@ shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target, const voi
                          NULL,
                          0,
                          op,
-                         datatype);
+                         SHMEM_TRANSPORT_DTYPE(datatype));
     if (PTL_OK != ret) { RAISE_ERROR(ret); }
 }
 
@@ -1129,9 +1092,27 @@ shmem_transport_atomic_fetch(shmem_transport_ctx_t* ctx, void *target, const voi
 static inline
 int shmem_transport_atomic_supported(ptl_op_t op, ptl_datatype_t datatype)
 {
+#ifdef USE_SHR_ATOMICS
+    /* FIXME: Force shared memory atomics build to use software reductions */
+    return 0;
+#else
     return 1;
+#endif
 }
 
+static inline
+void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
+                                    uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)
+{
+    /* FIXME: Need to optimize non-blocking put with signal for Portals. Current implementation below keeps
+ *      * the "fence" in between data and signal put */
+    shmem_transport_put_nbi(ctx, target, source, len, pe);
+    shmem_transport_fence(ctx);
+    if (sig_op == SHMEMX_SIGNAL_ADD)
+        shmem_transport_atomic(ctx, sig_addr, &signal, sizeof(uint64_t), pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
+    else
+        shmem_transport_atomic_set(ctx, sig_addr, &signal, sizeof(uint64_t), pe, SHM_INTERNAL_UINT64);
+}
 
 static inline
 void shmem_transport_portals4_ct_attach(ptl_handle_ct_t ptl_ct, void *seg_base,

@@ -203,6 +203,8 @@ printf("\nNetwork transport: %s\n",
        "OFI"
 #elif defined(USE_PORTALS4)
        "Portals 4"
+#elif defined(USE_UCX)
+       "UCX"
 #else
        "none"
 #endif

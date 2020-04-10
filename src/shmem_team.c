@@ -249,7 +249,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
     *new_team = SHMEMX_TEAM_INVALID;
 
     if (parent_team == SHMEMX_TEAM_INVALID) {
-        return 0;
+        return 1;
     }
 
     int global_PE_start = shmem_internal_team_pe(parent_team, PE_start);
@@ -365,39 +365,62 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
                                  shmem_internal_team_t **xaxis_team, const shmemx_team_config_t *yaxis_config,
                                  long yaxis_mask, shmem_internal_team_t **yaxis_team)
 {
+    *xaxis_team = SHMEMX_TEAM_INVALID;
+    *yaxis_team = SHMEMX_TEAM_INVALID;
+
+    if (parent_team == SHMEMX_TEAM_INVALID) {
+        return 1;
+    }
+
+    if (xrange > parent_team->size) {
+        xrange = parent_team->size;
+    }
+
     const int parent_start = parent_team->start;
     const int parent_stride = parent_team->stride;
     const int parent_size = parent_team->size;
     const int num_xteams = ceil( parent_size / (float)xrange );
     const int num_yteams = xrange;
 
-    int start = parent_start;
+    int start = 0;
     int ret = 0;
 
     for (int i = 0; i < num_xteams; i++) {
+        shmem_internal_team_t *my_xteam;
         int xsize = (i == num_xteams - 1 && parent_size % xrange) ? parent_size % xrange : xrange;
 
         ret = shmem_internal_team_split_strided(parent_team, start, parent_stride,
-                                                xsize, xaxis_config, xaxis_mask, xaxis_team);
+                                                xsize, xaxis_config, xaxis_mask, &my_xteam);
         if (ret) {
-            RAISE_ERROR_MSG("Creation of x-axis team %d of %d failed\n", i, num_xteams);
+            RAISE_ERROR_MSG("Creation of x-axis team %d of %d failed\n", i+1, num_xteams);
         }
-        start += xrange * parent_stride;
+        start += xrange;
+
+        if (my_xteam != SHMEMX_TEAM_INVALID) {
+            shmem_internal_assert(*xaxis_team == SHMEMX_TEAM_INVALID);
+            *xaxis_team = my_xteam;
+        }
     }
 
-    start = parent_start;
+    start = 0;
 
     for (int i = 0; i < num_yteams; i++) {
+        shmem_internal_team_t *my_yteam;
         int remainder = parent_size % xrange;
         int yrange = parent_size / xrange;
         int ysize = (remainder && i < remainder) ? yrange + 1 : yrange;
 
         ret = shmem_internal_team_split_strided(parent_team, start, xrange*parent_stride,
-                                        ysize, yaxis_config, yaxis_mask, yaxis_team);
+                                        ysize, yaxis_config, yaxis_mask, &my_yteam);
         if (ret) {
-            RAISE_ERROR_MSG("Creation of y-axis team %d of %d failed\n", i, num_yteams);
+            RAISE_ERROR_MSG("Creation of y-axis team %d of %d failed\n", i+1, num_yteams);
         }
-        start += parent_stride;
+        start += 1;
+
+        if (my_yteam != SHMEMX_TEAM_INVALID) {
+            shmem_internal_assert(*yaxis_team == SHMEMX_TEAM_INVALID);
+            *yaxis_team = my_yteam;
+        }
     }
 
     long *psync = shmem_internal_team_choose_psync(parent_team, SYNC);
@@ -426,7 +449,7 @@ int shmem_internal_team_destroy(shmem_internal_team_t *team)
             if (team->contexts[i]->options & SHMEM_CTX_PRIVATE)
                 RAISE_WARN_MSG("Destroying team with unfreed private context (%zu)\n", i);
             shmem_transport_quiet(team->contexts[i]);
-            shmem_transport_ctx_destroy(shmem_internal_team_world.contexts[i]);
+            shmem_transport_ctx_destroy(team->contexts[i]);
         }
     }
     shmem_internal_team_pool[team->psync_idx] = NULL;

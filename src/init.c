@@ -117,12 +117,7 @@ shmem_internal_shutdown(void)
 
     shmem_transport_fini();
 
-#ifdef USE_XPMEM
-    shmem_transport_xpmem_fini();
-#endif
-#ifdef USE_CMA
-    shmem_transport_cma_fini();
-#endif
+    shmem_shr_transport_fini();
 
     SHMEM_MUTEX_DESTROY(shmem_internal_mutex_alloc);
 
@@ -165,12 +160,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
     int runtime_initialized   = 0;
     int transport_initialized = 0;
-#ifdef USE_XPMEM
-    int xpmem_initialized     = 0;
-#endif
-#ifdef USE_CMA
-    int cma_initialized       = 0;
-#endif
+    int shr_initialized       = 0;
     int randr_initialized     = 0;
     int teams_initialized     = 0;
     int enable_node_ranks     = 0;
@@ -379,21 +369,11 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         goto cleanup;
     }
 
-#ifdef USE_XPMEM
-    ret = shmem_transport_xpmem_init();
+    ret = shmem_shr_transport_init();
     if (0 != ret) {
-        RETURN_ERROR_MSG("XPMEM init failed (%d)\n", ret);
+        RETURN_ERROR_MSG("Shared memory transport init failed (%d)\n", ret);
         goto cleanup;
     }
-#endif
-
-#ifdef USE_CMA
-    ret = shmem_transport_cma_init();
-    if (0 != ret) {
-        RETURN_ERROR_MSG("CMA init failed (%d)\n", ret);
-        goto cleanup;
-    }
-#endif
 
     /* exchange information */
     ret = shmem_runtime_exchange();
@@ -416,22 +396,12 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     }
     transport_initialized = 1;
 
-#ifdef USE_XPMEM
-    ret = shmem_transport_xpmem_startup();
+    ret = shmem_shr_transport_startup();
     if (0 != ret) {
-        RETURN_ERROR_MSG("XPMEM startup failed (%d)\n", ret);
+        RETURN_ERROR_MSG("Shared memory transport startup failed (%d)\n", ret);
         goto cleanup;
     }
-    xpmem_initialized = 1;
-#endif
-#ifdef USE_CMA
-    ret = shmem_transport_cma_startup();
-    if (0 != ret) {
-        RETURN_ERROR_MSG("CMA startup failed (%d)\n", ret);
-        goto cleanup;
-    }
-    cma_initialized = 1;
-#endif
+    shr_initialized = 1;
 
     ret = shmem_internal_collectives_init();
     if (ret != 0) {
@@ -463,16 +433,9 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         shmem_transport_fini();
     }
 
-#ifdef USE_XPMEM
-    if (xpmem_initialized) {
-        shmem_transport_xpmem_fini();
+    if (shr_initialized) {
+        shmem_shr_transport_fini();
     }
-#endif
-#ifdef USE_CMA
-    if (cma_initialized) {
-        shmem_transport_cma_fini();
-    }
-#endif
 
     if (randr_initialized) {
         shmem_internal_randr_fini();
