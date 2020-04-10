@@ -45,6 +45,9 @@ typedef struct {
 
 #define SHMEMX_TEAM_NUM_CONTEXTS       (1l<<0)
 
+#define SHMEMX_SIGNAL_SET        0
+#define SHMEMX_SIGNAL_ADD        1
+
 #ifdef __cplusplus
 }
 #endif

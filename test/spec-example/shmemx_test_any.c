@@ -85,7 +85,7 @@ int main(void)
     /* Sanity check case with NULL status array */
     completed_idx = shmemx_int_test_any(flags, npes, NULL, SHMEM_CMP_EQ, 1);
 
-    if (completed_idx >= npes)
+    if (completed_idx >= (size_t)npes)
         shmem_global_exit(3);
 
 

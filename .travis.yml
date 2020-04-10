@@ -24,6 +24,13 @@ env:
         ## An encrypted value for INTEL_SERIAL_NUMBER:
         - secure: "luxfwDy26Pva+A58T/vPP7+Zek4rBEbpB2TpdXuLdIu/MJ2laoUkaZj/ouT6YgdSxUoiyLUlGIzLnByxnrVgWqYELsWHiV9hzsXZCNfgQDdUHV8UITCqSYVcd5WGNoVdC0QohKuIj47y6bP5ttcv1sIfpV74ztPJZE1dbb2QzgvWcIKWN8Abj55364ZnIidW7ErYLrAiKlBzSxZXCKiKD6qOUbpOBN8yuzaX9diXYJViest7iBC+BfwzXO8Shuouh6QrQhJ1T4oG6u6YJn17fnOwXKJCdkeQYr/E8ka4JRf8vZm7CNO1YdwNhtGtFNEzTJaP2XFLAQGCB9vffCxcqRbpWv+lpsFRsH+eiF/zp/xKGr5qzB9sPUxNANJyhphXK0VfIqDan7nz9di99NFBEF94Jl33E+KODTCAeHb6+a7yboR5B4BalM4jXKrcn/2A4pYrk45YF5IdLLOEvzTaOyVSgHoNIzXRZvHEL2AeYuvz5qLukzMB+QClbA1EeCBNyokuXK/TemeTvveXpQpCaVKNQ8zp/v30u8eiaV8R/dFa2evlJ6kwSaeXlXpXifeXd5Px0x6HF4FT9HLOtPVQ3rZXyfL2Eh92egu15GiTqMNkdVlVGUC20+iddLjtbPqRnVw0WnZkekh62A6rGuT4cTfAbZ2GVPD+IMqzokO1IGg="
     matrix:
+        ## Shared Memory Builds
+        - >
+          SOS_TRANSPORT_OPTS=""
+          SOS_BUILD_OPTS="--with-xpmem=$TRAVIS_INSTALL/xpmem --enable-shr-atomics --enable-error-checking --enable-pmi-simple"
+        - >
+          SOS_TRANSPORT_OPTS=""
+          SOS_BUILD_OPTS="--with-xpmem=$TRAVIS_INSTALL/xpmem --enable-shr-atomics --enable-error-checking --enable-pmi-simple --enable-profiling"
         ## Portals Builds
         - >
           SOS_DISABLE_EXTERNAL_TESTS=1
@@ -60,6 +67,10 @@ env:
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--with-xpmem=$TRAVIS_INSTALL/xpmem --enable-error-checking --enable-pmi-simple"
         - >
+          SOS_DISABLE_EXTERNAL_TESTS=1
+          SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
+          SOS_BUILD_OPTS="--with-xpmem=$TRAVIS_INSTALL/xpmem --enable-shr-atomics --enable-error-checking --enable-pmi-simple"
+        - >
           SOS_DISABLE_EXTERNAL_TESTS=1 SOS_ENABLE_ERROR_TESTS=1
           SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SHMEM_BOUNCE_SIZE=0
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
@@ -95,6 +106,9 @@ env:
         - >
           SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
           SOS_BUILD_OPTS="--with-xpmem=$TRAVIS_INSTALL/xpmem --enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple"
+        - >
+          SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
+          SOS_BUILD_OPTS="--with-xpmem=$TRAVIS_INSTALL/xpmem --enable-shr-atomics --enable-error-checking --enable-pmi-simple"
         - >
           SOS_ENABLE_ERROR_TESTS=1
           SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SHMEM_BOUNCE_SIZE=0
@@ -143,6 +157,26 @@ env:
           SOS_CHECK_TARBALL_RPM=1
           SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
           SOS_BUILD_OPTS="--enable-pmi-simple"
+
+        ## UCX Builds
+        - >
+          SOS_TRANSPORT_OPTS="--with-ucx=$TRAVIS_INSTALL/ucx/"
+          SOS_BUILD_OPTS="--enable-pmi-simple"
+        - >
+          SOS_PM="prun -host localhost -oversubscribe" SOS_PM_PRE="prte --daemonize" SOS_PM_POST="prun -terminate"
+          SOS_TRANSPORT_OPTS="--with-ucx=$TRAVIS_INSTALL/ucx/"
+          SOS_BUILD_OPTS="--with-pmix=$TRAVIS_INSTALL/pmix"
+        - >
+          SOS_DISABLE_FORTRAN=1
+          SOS_TRANSPORT_OPTS="--with-ucx=$TRAVIS_INSTALL/ucx/"
+          SOS_BUILD_OPTS="--enable-pmi-mpi CC=mpicc"
+        - >
+          SOS_DISABLE_FORTRAN=1
+          SOS_TRANSPORT_OPTS="--with-ucx=$TRAVIS_INSTALL/ucx/"
+          SOS_BUILD_OPTS="--with-cma --enable-error-checking --enable-profiling --enable-pmi-simple"
+        - >
+          SOS_TRANSPORT_OPTS="--with-ucx=$TRAVIS_INSTALL/ucx/"
+          SOS_BUILD_OPTS="--with-xpmem=$TRAVIS_INSTALL/xpmem --enable-error-checking --enable-pmi-simple"
 
 os:
     - linux
@@ -208,6 +242,17 @@ before_install:
         make $TRAVIS_PAR_MAKE
         make install
       fi
+    ## Build UCX
+    - >
+      if [[ $SOS_TRANSPORT_OPTS = *"with-ucx"* ]]; then
+        cd $TRAVIS_SRC
+        git clone -b v1.7.0 --depth 10 https://github.com/openucx/ucx.git
+        cd ucx
+        ./autogen.sh
+        ./configure --prefix=$TRAVIS_INSTALL/ucx --enable-mt --disable-numa
+        make $TRAVIS_PAR_MAKE
+        make install
+      fi
     ## Build XPMEM
     - >
       if [[ $SOS_BUILD_OPTS = *"with-xpmem"* ]]; then
@@ -249,7 +294,7 @@ before_install:
         git clone --depth 10 https://github.com/pmix/pmix pmix
         cd pmix
         ./autogen.pl
-        ./configure --prefix=$TRAVIS_INSTALL/pmix --with-platform=optimized --with-libev
+        ./configure --prefix=$TRAVIS_INSTALL/pmix --disable-debug --with-libev CFLAGS=-O3
         make install
       fi
     ## Build PRRTE

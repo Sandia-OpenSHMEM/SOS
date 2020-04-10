@@ -390,7 +390,7 @@ int bw_init_data_stream(perf_metrics_t * const metric_info,
 #if defined(ENABLE_THREADS)
     int tl;
     shmem_init_thread(metric_info->thread_safety, &tl);
-    if(tl != metric_info->thread_safety) {
+    if(tl < metric_info->thread_safety) {
         fprintf(stderr,"Could not initialize with requested thread "
                 "level %d: got %d\n", metric_info->thread_safety, tl);
         return -1;

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2018 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -23,48 +23,51 @@
  * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ *
+ * This test is derived from an example provided in the OpenSHMEM 1.4
+ * specification.  Additional copyrights may apply.
+ *
  */
 
-#include <stdio.h>
 #include <shmem.h>
 #include <shmemx.h>
+#include <stdlib.h>
 
+#define N 100
 
 int main(void)
 {
-    int i, me, npes;
-    int ret = 0, errors = 0;
+    int total_sum = 0;
 
     shmem_init();
+    int mype = shmem_my_pe();
+    int npes = shmem_n_pes();
 
-    me = shmem_my_pe();
-    npes = shmem_n_pes();
+    int *ivars = shmem_calloc(npes, sizeof(int));
+    int *status = calloc(npes, sizeof(int));
+    int *cmp_values = malloc(npes * sizeof(int));
 
-    if (me == 0)
-        printf("Reuse teams test\n");
+    /* All odd PEs put 2 and all even PEs put 1 */
+    for (int i = 0; i < npes; i++) {
+        shmem_int_atomic_set(&ivars[mype], mype % 2 + 1, i);
 
-    shmemx_team_t old_team, new_team;
-    ret = shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 1, npes, NULL, 0, &old_team);
-    if (ret) ++errors;
-
-    /* A total of npes-1 iterations are performed, where the active set in iteration i
-     * includes PEs i..npes-1.  The size of the team decreases by 1 each iteration.  */
-    for (i = 1; i < npes; i++) {
-
-        if (me == i) {
-            printf("%3d: creating new team (start, stride, size): %3d, %3d, %3d\n", me,
-                shmemx_team_translate_pe(old_team, 1, SHMEMX_TEAM_WORLD), 1, shmemx_team_n_pes(old_team)-1);
-        }
-
-        ret = shmemx_team_split_strided(old_team, 1, 1, shmemx_team_n_pes(old_team)-1, NULL, 0, &new_team);
-        if (old_team != SHMEMX_TEAM_INVALID && ret) ++errors;
-
-        shmemx_team_destroy(old_team);
-        old_team = new_team;
+        /* Set cmp_values to the expected values coming from each PE */
+        cmp_values[i] = i % 2 + 1;
     }
 
-    shmemx_team_destroy(old_team);
-    shmem_finalize();
+    size_t completed_idx;
+    for (int i = 0; i < npes; i++) {
+        completed_idx = shmemx_int_wait_until_any_vector(ivars, npes, status, SHMEM_CMP_EQ, cmp_values);
+        status[completed_idx] = 1;
+        total_sum += ivars[completed_idx];
+    }
 
-    return errors != 0;
+    /* check the result */
+    int correct_result = npes + npes / 2;
+    if (total_sum != correct_result) {
+        shmem_global_exit(1);
+    }
+
+    shmem_finalize();
+    return 0;
 }
