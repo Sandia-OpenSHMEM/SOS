@@ -410,6 +410,11 @@ shmemx_malloc_with_hints(size_t size, long hints)
 
     if (size == 0) return ret;
 
+    // Check for valid hints
+    if(hints != 0 && hints != SHMEMX_MALLOC_ATOMICS_REMOTE && hints!= SHMEMX_MALLOC_SIGNAL_REMOTE){
+        RAISE_WARN_STR("Invalid hint for shmem_malloc_with_hints. Valid hints are 0, SHMEMX_MALLOC_ATOMICS_REMOTE and SHMEMX_MALLOC_SIGNAL_REMOTE");
+    }
+
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     ret = dlmalloc(size);
     SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
