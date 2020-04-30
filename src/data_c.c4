@@ -243,6 +243,8 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
 #define shmemx_ct_set pshmemx_ct_set
 #pragma weak shmemx_ct_wait = pshmemx_ct_wait
 #define shmemx_ct_wait pshmemx_ct_wait
+#pragma weak shmemx_signal_fetch = pshmemx_signal_fetch
+#define shmemx_signal_fetch pshmemx_signal_fetch
 
 #endif /* ENABLE_PROFILING */
 
@@ -645,6 +647,20 @@ SHMEM_DEF_PUT_N_SIGNAL(`mem', `1')
 SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_PUT_SIGNAL_NBI')
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_PUT_N_SIGNAL_NBI')
 SHMEM_DEF_PUT_N_SIGNAL_NBI(`mem', `1')
+
+uint64_t SHMEM_FUNCTION_ATTRIBUTES
+shmemx_signal_fetch(const uint64_t* sig_addr)
+{
+    uint64_t val;
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_SYMMETRIC(sig_addr, sizeof(uint64_t));
+
+    shmem_internal_atomic_fetch(SHMEM_CTX_DEFAULT, &val, (void *) sig_addr, 
+                                sizeof(uint64_t), shmem_internal_my_pe,
+                                SHM_INTERNAL_UINT64);
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+    return val;
+}
 
 void SHMEM_FUNCTION_ATTRIBUTES
 shmemx_getmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t nelems, int pe)
