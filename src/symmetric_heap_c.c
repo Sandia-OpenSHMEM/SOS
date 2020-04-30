@@ -411,7 +411,8 @@ shmemx_malloc_with_hints(size_t size, long hints)
     if (size == 0) return ret;
 
     // Check for valid hints
-    if(hints != 0 && hints != SHMEMX_MALLOC_ATOMICS_REMOTE && hints!= SHMEMX_MALLOC_SIGNAL_REMOTE){
+    //if(hints != 0 && hints != SHMEMX_MALLOC_ATOMICS_REMOTE && hints!= SHMEMX_MALLOC_SIGNAL_REMOTE){
+    if(hints >= SHMEMX_MALLOC_MAX_HINTS) {
         RAISE_WARN_STR("Invalid hint for shmem_malloc_with_hints. Valid hints are 0, SHMEMX_MALLOC_ATOMICS_REMOTE and SHMEMX_MALLOC_SIGNAL_REMOTE");
     }
 
