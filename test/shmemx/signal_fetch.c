@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2018 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2020 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
     }
 
     uint64_t sig_value = shmemx_signal_fetch(&sig_addr);
-    while (sig_value != ((npes * (npes - 1)) / 2)) {
+    while (sig_value != (uint64_t) ((npes * (npes - 1)) / 2)) {
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
         shmem_wait_until(&sig_addr, SHMEM_CMP_NE, 0);
 #else
