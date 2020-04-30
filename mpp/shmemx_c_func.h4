@@ -191,6 +191,8 @@ define(`SHMEM_C_CTX_PUT_N_SIGNAL_NBI',
 SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_CTX_PUT_N_SIGNAL_NBI')
 SHMEM_C_CTX_PUT_N_SIGNAL_NBI(mem,1);
 
+/* Signal fetch */
+SHMEM_FUNCTION_ATTRIBUTES uint64_t SHPRE()shmemx_signal_fetch(const uint64_t *sig_addr);
 
 /* Team Management Routines */
 SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_team_my_pe(shmemx_team_t team);
