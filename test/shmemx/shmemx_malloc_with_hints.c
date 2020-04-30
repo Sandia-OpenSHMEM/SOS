@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2020 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -34,18 +34,19 @@
 #define MAX(a,b) ((a) > (b)) ? a : b
 #define WRK_SIZE MAX(N/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE)
 
-#define NO_TESTS 4
+#define NO_TESTS 5
+
+#define SHMEMX_MALLOC_INVALID_HINT 1l<<3
 
 long pSync[SHMEM_ALLTOALL_SYNC_SIZE];
 int pWrk[WRK_SIZE];
 
 
-int *dst, *src;
-
 int sumtoall_with_malloc_hint(long hint, int mype, int npes)
 {
     int failed = 0;
     int i;
+    int *dst, *src;
 
     if (mype == 0)
         printf("Sum reduction operation started\n");
@@ -53,7 +54,7 @@ int sumtoall_with_malloc_hint(long hint, int mype, int npes)
     dst = (int *)shmemx_malloc_with_hints(N * sizeof(*dst), hint);
     src = (int *)shmemx_malloc_with_hints(N * sizeof(*src), hint);
 
-    for (i = 0; i < npes; i++) {
+    for (i = 0; i < N; i++) {
         src[i] = mype;
         dst[i] = -1;
     }
@@ -72,15 +73,12 @@ int sumtoall_with_malloc_hint(long hint, int mype, int npes)
         }
     }
 
-    if (failed)
-        return 0;
-    return 1;
+    return (!failed);
 }
 
 
 int main(int argc, char **argv) {
     int npes, i, mype;
-    long malloc_hint;
     int passed = 0;
     int fail = 0;
 
@@ -92,14 +90,16 @@ int main(int argc, char **argv) {
     for (i = 0; i < SHMEM_ALLTOALL_SYNC_SIZE; i++)
         pSync[i] = SHMEM_SYNC_VALUE;
 
-    passed = sumtoall_with_malloc_hint(malloc_hint, mype, npes);
-    passed += sumtoall_with_malloc_hint(malloc_hint, mype, npes);
-    passed += sumtoall_with_malloc_hint(malloc_hint, mype, npes);
-    passed += sumtoall_with_malloc_hint(malloc_hint, mype, npes);
+    passed = sumtoall_with_malloc_hint(0, mype, npes);
+    passed += sumtoall_with_malloc_hint(SHMEMX_MALLOC_ATOMICS_REMOTE, mype, npes);
+    passed += sumtoall_with_malloc_hint(SHMEMX_MALLOC_SIGNAL_REMOTE, mype, npes);
+    passed += sumtoall_with_malloc_hint(SHMEMX_MALLOC_ATOMICS_REMOTE | SHMEMX_MALLOC_SIGNAL_REMOTE, mype, npes);
+    passed += sumtoall_with_malloc_hint(SHMEMX_MALLOC_INVALID_HINT, mype, npes);
+
 
     fail = NO_TESTS - passed;
 
-    if(mype==0){
+    if(mype == 0){
         if (passed != NO_TESTS)
             printf("%d out of %d tests passed\n", fail, NO_TESTS);
         else
