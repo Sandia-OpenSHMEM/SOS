@@ -62,8 +62,8 @@ int sumtoall_with_malloc_hint(long hint, int mype, int npes)
     shmem_barrier_all();
     shmem_int_sum_to_all(dst, src, N, 0, 0, npes, pWrk, pSync);
 
-    if(mype == 0){
-        for (i = 0; i < npes; i++) {
+    if (mype == 0) {
+        for (i = 0; i < N; i++) {
             int expected;
             expected = npes * (npes-1)/2;
             if (dst[i] != expected) {
@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
 
     fail = NO_TESTS - passed;
 
-    if(mype == 0){
+    if (mype == 0) {
         if (passed != NO_TESTS)
             printf("%d out of %d tests passed\n", fail, NO_TESTS);
         else
