@@ -249,7 +249,6 @@ shmem_swap(long *target, long value, int pe)
 
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(pe);
-    SHMEM_ERR_CHECK_CTX(ctx);
     SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(long));
 
     shmem_internal_swap(SHMEM_CTX_DEFAULT, target, &value, &newval, sizeof(long), pe, SHM_INTERNAL_LONG);
