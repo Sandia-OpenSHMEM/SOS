@@ -64,8 +64,8 @@
 #pragma weak shfree = pshfree
 #define shfree pshfree
 
-#pragma weak shmemx_malloc_with_hints = pshmem_malloc_with_hints
-#define shmemx_malloc_with_hints pshmem_malloc_with_hints
+#pragma weak shmemx_malloc_with_hints = pshmemx_malloc_with_hints
+#define shmemx_malloc_with_hints pshmemx_malloc_with_hints
 
 #endif /* ENABLE_PROFILING */
 
