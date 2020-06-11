@@ -45,6 +45,10 @@ typedef struct {
 
 #define SHMEMX_TEAM_NUM_CONTEXTS       (1l<<0)
 
+#define SHMEMX_MALLOC_ATOMICS_REMOTE   (1l<<0)
+#define SHMEMX_MALLOC_SIGNAL_REMOTE    (1l<<1)
+#define SHMEMX_MALLOC_MAX_HINTS        ((1l<<2) - 1)    
+
 #define SHMEMX_SIGNAL_SET        0
 #define SHMEMX_SIGNAL_ADD        1
 
