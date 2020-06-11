@@ -17,6 +17,7 @@ dnl
 SHMEM_FUNCTION_ATTRIBUTES double SHPRE()shmemx_wtime(void);
 SHMEM_FUNCTION_ATTRIBUTES char* SHPRE()shmemx_nodename(void);
 
+SHMEM_FUNCTION_ATTRIBUTES uint64_t SHPRE()shmemx_signal_fetch(const uint64_t* sig_addr);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_getmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_putmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ct_create(shmemx_ct_t *ct);
