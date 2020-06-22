@@ -64,8 +64,8 @@
 #pragma weak shfree = pshfree
 #define shfree pshfree
 
-#pragma weak shmemx_malloc_with_hints = pshmemx_malloc_with_hints
-#define shmemx_malloc_with_hints pshmemx_malloc_with_hints
+#pragma weak shmem_malloc_with_hints = pshmem_malloc_with_hints
+#define shmem_malloc_with_hints pshmem_malloc_with_hints
 
 #endif /* ENABLE_PROFILING */
 
@@ -409,7 +409,7 @@ void SHMEM_FUNCTION_ATTRIBUTES * shmemalign(size_t alignment, size_t size)
 
 
 void SHMEM_FUNCTION_ATTRIBUTES *
-shmemx_malloc_with_hints(size_t size, long hints)
+shmem_malloc_with_hints(size_t size, long hints)
 {
     void *ret = NULL;
 
@@ -418,7 +418,7 @@ shmemx_malloc_with_hints(size_t size, long hints)
     if (size == 0) return ret;
 
     // Check for valid hints
-    if(hints > SHMEMX_MALLOC_MAX_HINTS || hints < 0) {
+    if(hints > SHMEM_MALLOC_MAX_HINTS || hints < 0) {
         RAISE_WARN_MSG("Ignoring invalid hint for shmem_malloc_with_hints(%ld)\n", hints);
     }
 

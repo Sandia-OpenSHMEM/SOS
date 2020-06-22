@@ -24,7 +24,7 @@
         }                                                                                                            \
                                                                                                                      \
         expected_sum = (npes-1) * npes / 2;                                                                          \
-        shmemx_wait_until_all_vector(ivars, npes, status, SHMEM_CMP_EQ, cmp_values);                                 \
+        shmem_wait_until_all_vector(ivars, npes, status, SHMEM_CMP_EQ, cmp_values);                                 \
                                                                                                                      \
         for(i = 0; i<npes; i++){                                                                                     \
             total_sum += ivars[i];                                                                                   \
@@ -56,7 +56,7 @@
                                                                                                                      \
         int ncompleted = 0;                                                                                          \
         while(ncompleted < npes){                                                                                    \
-            size_t ndone = shmemx_wait_until_any_vector(ivars, npes, status, SHMEM_CMP_EQ, cmp_values);              \
+            size_t ndone = shmem_wait_until_any_vector(ivars, npes, status, SHMEM_CMP_EQ, cmp_values);              \
             status[ndone] = 1;                                                                                       \
             total_sum += ivars[ndone];                                                                               \
             ncompleted++;                                                                                            \
@@ -91,7 +91,7 @@
                                                                                                                      \
         int ncompleted = 0;                                                                                          \
         while(ncompleted < npes){                                                                                    \
-            size_t ndone = shmemx_wait_until_some_vector(ivars, npes, indices, status, SHMEM_CMP_EQ, cmp_values);    \
+            size_t ndone = shmem_wait_until_some_vector(ivars, npes, indices, status, SHMEM_CMP_EQ, cmp_values);    \
             for(size_t j = 0; j < ndone; j++){                                                                       \
                 total_sum += ivars[indices[j]];                                                                      \
                 status[indices[j]] = 1;                                                                              \
