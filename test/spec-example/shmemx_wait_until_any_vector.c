@@ -57,7 +57,7 @@ int main(void)
 
     size_t completed_idx;
     for (int i = 0; i < npes; i++) {
-        completed_idx = shmemx_int_wait_until_any_vector(ivars, npes, status, SHMEM_CMP_EQ, cmp_values);
+        completed_idx = shmem_int_wait_until_any_vector(ivars, npes, status, SHMEM_CMP_EQ, cmp_values);
         status[completed_idx] = 1;
         total_sum += ivars[completed_idx];
     }

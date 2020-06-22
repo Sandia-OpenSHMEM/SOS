@@ -36,7 +36,7 @@
 
 #define NUM_TESTS 5
 
-#define SHMEMX_MALLOC_INVALID_HINT ~(SHMEMX_MALLOC_ATOMICS_REMOTE)
+#define SHMEM_MALLOC_INVALID_HINT ~(SHMEM_MALLOC_ATOMICS_REMOTE)
 
 long pSync[SHMEM_ALLTOALL_SYNC_SIZE];
 int pWrk[WRK_SIZE];
@@ -51,8 +51,8 @@ int sumtoall_with_malloc_hint(long hint, int mype, int npes)
     if (mype == 0)
         printf("Sum reduction operation started\n");
 
-    dst = (int *)shmemx_malloc_with_hints(N * sizeof(*dst), hint);
-    src = (int *)shmemx_malloc_with_hints(N * sizeof(*src), hint);
+    dst = (int *)shmem_malloc_with_hints(N * sizeof(*dst), hint);
+    src = (int *)shmem_malloc_with_hints(N * sizeof(*src), hint);
 
     for (i = 0; i < N; i++) {
         src[i] = mype;
@@ -91,10 +91,10 @@ int main(int argc, char **argv) {
         pSync[i] = SHMEM_SYNC_VALUE;
 
     passed = sumtoall_with_malloc_hint(0, mype, npes);
-    passed += sumtoall_with_malloc_hint(SHMEMX_MALLOC_ATOMICS_REMOTE, mype, npes);
-    passed += sumtoall_with_malloc_hint(SHMEMX_MALLOC_SIGNAL_REMOTE, mype, npes);
-    passed += sumtoall_with_malloc_hint(SHMEMX_MALLOC_ATOMICS_REMOTE | SHMEMX_MALLOC_SIGNAL_REMOTE, mype, npes);
-    passed += sumtoall_with_malloc_hint(SHMEMX_MALLOC_INVALID_HINT, mype, npes);
+    passed += sumtoall_with_malloc_hint(SHMEM_MALLOC_ATOMICS_REMOTE, mype, npes);
+    passed += sumtoall_with_malloc_hint(SHMEM_MALLOC_SIGNAL_REMOTE, mype, npes);
+    passed += sumtoall_with_malloc_hint(SHMEM_MALLOC_ATOMICS_REMOTE | SHMEM_MALLOC_SIGNAL_REMOTE, mype, npes);
+    passed += sumtoall_with_malloc_hint(SHMEM_MALLOC_INVALID_HINT, mype, npes);
 
 
     fail = NUM_TESTS - passed;

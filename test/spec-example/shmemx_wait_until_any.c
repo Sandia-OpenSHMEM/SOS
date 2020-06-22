@@ -62,7 +62,7 @@ int main(void)
 
     size_t completed_idx;
     for (int i = 0; i < npes; i++) {
-        completed_idx = shmemx_int_wait_until_any(flags, npes, status, SHMEM_CMP_NE, 0);
+        completed_idx = shmem_int_wait_until_any(flags, npes, status, SHMEM_CMP_NE, 0);
         for (int j = 0; j < N; j++) {
             total_sum += all_data[completed_idx * N + j];
         }
@@ -82,7 +82,7 @@ int main(void)
     }
 
     /* Sanity check the case with NULL status array */
-    completed_idx = shmemx_int_wait_until_any(flags, npes, NULL, SHMEM_CMP_EQ, 1);
+    completed_idx = shmem_int_wait_until_any(flags, npes, NULL, SHMEM_CMP_EQ, 1);
 
     if (completed_idx >= (size_t)npes)
         shmem_global_exit(3);
