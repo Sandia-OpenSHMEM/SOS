@@ -28,10 +28,10 @@
 
 
 shmem_internal_team_t shmem_internal_team_world;
-shmemx_team_t SHMEMX_TEAM_WORLD = (shmemx_team_t) &shmem_internal_team_world;
+shmem_team_t SHMEM_TEAM_WORLD = (shmem_team_t) &shmem_internal_team_world;
 
 shmem_internal_team_t shmem_internal_team_shared;
-shmemx_team_t SHMEMX_TEAM_SHARED = (shmemx_team_t) &shmem_internal_team_shared;
+shmem_team_t SHMEM_TEAM_SHARED = (shmem_team_t) &shmem_internal_team_shared;
 
 shmem_internal_team_t **shmem_internal_team_pool;
 long *shmem_internal_psync_pool;
@@ -79,20 +79,20 @@ int shmem_internal_team_init(void)
     shmem_internal_team_world.my_pe          = shmem_internal_my_pe;
     shmem_internal_team_world.config_mask    = 0;
     shmem_internal_team_world.contexts_len   = 0;
-    memset(&shmem_internal_team_world.config, 0, sizeof(shmemx_team_config_t));
+    memset(&shmem_internal_team_world.config, 0, sizeof(shmem_team_config_t));
     for (size_t i = 0; i < N_PSYNCS_PER_TEAM; i++)
         shmem_internal_team_world.psync_avail[i] = 1;
-    SHMEMX_TEAM_WORLD = (shmemx_team_t) &shmem_internal_team_world;
+    SHMEM_TEAM_WORLD = (shmem_team_t) &shmem_internal_team_world;
 
     /* Initialize SHMEM_TEAM_SHARED */
     shmem_internal_team_shared.psync_idx     = SHMEM_TEAM_SHARED_INDEX;
     shmem_internal_team_shared.my_pe         = shmem_internal_my_pe;
     shmem_internal_team_shared.config_mask   = 0;
     shmem_internal_team_shared.contexts_len  = 0;
-    memset(&shmem_internal_team_shared.config, 0, sizeof(shmemx_team_config_t));
+    memset(&shmem_internal_team_shared.config, 0, sizeof(shmem_team_config_t));
     for (size_t i = 0; i < N_PSYNCS_PER_TEAM; i++)
         shmem_internal_team_shared.psync_avail[i] = 1;
-    SHMEMX_TEAM_SHARED = (shmemx_team_t) &shmem_internal_team_shared;
+    SHMEM_TEAM_SHARED = (shmem_team_t) &shmem_internal_team_shared;
 
     if (shmem_internal_params.TEAM_SHARED_ONLY_SELF) {
         shmem_internal_team_shared.start         = shmem_internal_my_pe;
@@ -225,7 +225,7 @@ int shmem_internal_team_translate_pe(shmem_internal_team_t *src_team, int src_pe
 {
     int src_pe_world, dest_pe = -1;
 
-    if (src_team == SHMEMX_TEAM_INVALID || dest_team == SHMEMX_TEAM_INVALID)
+    if (src_team == SHMEM_TEAM_INVALID || dest_team == SHMEM_TEAM_INVALID)
         return -1;
 
     if (src_pe > src_team->size)
@@ -242,13 +242,13 @@ int shmem_internal_team_translate_pe(shmem_internal_team_t *src_team, int src_pe
 }
 
 int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE_start, int PE_stride,
-                                      int PE_size, const shmemx_team_config_t *config, long config_mask,
+                                      int PE_size, const shmem_team_config_t *config, long config_mask,
                                       shmem_internal_team_t **new_team)
 {
 
-    *new_team = SHMEMX_TEAM_INVALID;
+    *new_team = SHMEM_TEAM_INVALID;
 
-    if (parent_team == SHMEMX_TEAM_INVALID) {
+    if (parent_team == SHMEM_TEAM_INVALID) {
         return 1;
     }
 
@@ -361,14 +361,14 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 }
 
 int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
-                                 const shmemx_team_config_t *xaxis_config, long xaxis_mask,
-                                 shmem_internal_team_t **xaxis_team, const shmemx_team_config_t *yaxis_config,
+                                 const shmem_team_config_t *xaxis_config, long xaxis_mask,
+                                 shmem_internal_team_t **xaxis_team, const shmem_team_config_t *yaxis_config,
                                  long yaxis_mask, shmem_internal_team_t **yaxis_team)
 {
-    *xaxis_team = SHMEMX_TEAM_INVALID;
-    *yaxis_team = SHMEMX_TEAM_INVALID;
+    *xaxis_team = SHMEM_TEAM_INVALID;
+    *yaxis_team = SHMEM_TEAM_INVALID;
 
-    if (parent_team == SHMEMX_TEAM_INVALID) {
+    if (parent_team == SHMEM_TEAM_INVALID) {
         return 1;
     }
 
@@ -396,8 +396,8 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
         }
         start += xrange;
 
-        if (my_xteam != SHMEMX_TEAM_INVALID) {
-            shmem_internal_assert(*xaxis_team == SHMEMX_TEAM_INVALID);
+        if (my_xteam != SHMEM_TEAM_INVALID) {
+            shmem_internal_assert(*xaxis_team == SHMEM_TEAM_INVALID);
             *xaxis_team = my_xteam;
         }
     }
@@ -417,8 +417,8 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
         }
         start += 1;
 
-        if (my_yteam != SHMEMX_TEAM_INVALID) {
-            shmem_internal_assert(*yaxis_team == SHMEMX_TEAM_INVALID);
+        if (my_yteam != SHMEM_TEAM_INVALID) {
+            shmem_internal_assert(*yaxis_team == SHMEM_TEAM_INVALID);
             *yaxis_team = my_yteam;
         }
     }
@@ -435,7 +435,7 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
 int shmem_internal_team_destroy(shmem_internal_team_t *team)
 {
 
-    if (team == SHMEMX_TEAM_INVALID) {
+    if (team == SHMEM_TEAM_INVALID) {
         return -1;
     } else if (shmem_internal_bit_fetch(psync_pool_avail, team->psync_idx)) {
         RAISE_ERROR_STR("Destroying a team without an active pSync");

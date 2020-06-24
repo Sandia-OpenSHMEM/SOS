@@ -68,12 +68,12 @@ int main(void)
         src[i] = me;
     }
 
-    TEST_B2B_COLLECTIVE("broadcast", shmemx_long_broadcast, SHMEMX_TEAM_WORLD, dest, src, NELEMS, 0);
-    TEST_B2B_COLLECTIVE("reduce", shmemx_long_sum_reduce, SHMEMX_TEAM_WORLD, dest, src, NELEMS);
-    TEST_B2B_COLLECTIVE("collect", shmemx_long_collect, SHMEMX_TEAM_WORLD, dest, src, NELEMS);
-    TEST_B2B_COLLECTIVE("fcollect", shmemx_long_fcollect, SHMEMX_TEAM_WORLD, dest, src, NELEMS);
-    TEST_B2B_COLLECTIVE("alltoall", shmemx_long_alltoall, SHMEMX_TEAM_WORLD, dest, src, NELEMS);
-    TEST_B2B_COLLECTIVE("alltoalls", shmemx_long_alltoalls, SHMEMX_TEAM_WORLD, dest, src, 1, 1, NELEMS);
+    TEST_B2B_COLLECTIVE("broadcast", shmem_long_broadcast, SHMEM_TEAM_WORLD, dest, src, NELEMS, 0);
+    TEST_B2B_COLLECTIVE("reduce", shmem_long_sum_reduce, SHMEM_TEAM_WORLD, dest, src, NELEMS);
+    TEST_B2B_COLLECTIVE("collect", shmem_long_collect, SHMEM_TEAM_WORLD, dest, src, NELEMS);
+    TEST_B2B_COLLECTIVE("fcollect", shmem_long_fcollect, SHMEM_TEAM_WORLD, dest, src, NELEMS);
+    TEST_B2B_COLLECTIVE("alltoall", shmem_long_alltoall, SHMEM_TEAM_WORLD, dest, src, NELEMS);
+    TEST_B2B_COLLECTIVE("alltoalls", shmem_long_alltoalls, SHMEM_TEAM_WORLD, dest, src, 1, 1, NELEMS);
 
     shmem_finalize();
     return total_errors;

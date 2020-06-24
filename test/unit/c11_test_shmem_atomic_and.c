@@ -51,9 +51,9 @@ enum op { AND = 0, CTX_AND, FETCH_AND, CTX_FETCH_AND, FETCH_AND_NBI,
  */
 
 #ifdef ENABLE_SHMEMX_TESTS
-#define SHMEMX_NBI_OPS_CASES(OP, TYPE)                                  \
+#define SHMEM_NBI_OPS_CASES(OP, TYPE)                                   \
         case FETCH_AND_NBI:                                             \
-          shmemx_atomic_fetch_and_nbi(&old, &remote,                    \
+          shmem_atomic_fetch_and_nbi(&old, &remote,                     \
                                       ~(TYPE)(1LLU << mype), i);        \
           shmem_quiet();                                                \
           if ((old & (TYPE)(1LLU << mype)) == 0) {                      \
@@ -63,7 +63,7 @@ enum op { AND = 0, CTX_AND, FETCH_AND, CTX_FETCH_AND, FETCH_AND_NBI,
           }                                                             \
           break;                                                        \
         case CTX_FETCH_AND_NBI:                                         \
-          shmemx_atomic_fetch_and_nbi(SHMEM_CTX_DEFAULT, &old, &remote, \
+          shmem_atomic_fetch_and_nbi(SHMEM_CTX_DEFAULT, &old, &remote,  \
                                  ~(TYPE)(1LLU << mype), i);             \
           shmem_quiet();                                                \
           if ((old & (TYPE)(1LLU << mype)) == 0) {                      \
@@ -73,7 +73,7 @@ enum op { AND = 0, CTX_AND, FETCH_AND, CTX_FETCH_AND, FETCH_AND_NBI,
           }                                                             \
           break;
 #else
-#define SHMEMX_NBI_OPS_CASES(OP, TYPE)
+#define SHMEM_NBI_OPS_CASES(OP, TYPE)
 #endif
 
 #define TEST_SHMEM_AND(OP, TYPE)                                        \
@@ -107,7 +107,7 @@ enum op { AND = 0, CTX_AND, FETCH_AND, CTX_FETCH_AND, FETCH_AND_NBI,
             rc = EXIT_FAILURE;                                          \
           }                                                             \
           break;                                                        \
-        SHMEMX_NBI_OPS_CASES(OP, TYPE)                                  \
+        SHMEM_NBI_OPS_CASES(OP, TYPE)                                   \
         default:                                                        \
           printf("Invalid operation (%d)\n", OP);                       \
           shmem_global_exit(1);                                         \

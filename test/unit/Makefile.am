@@ -79,7 +79,11 @@ check_PROGRAMS = \
 	c11_test_shmem_atomic_swap \
 	c11_test_shmem_atomic_cswap \
 	c11_test_shmem_wait_until \
+	c11_test_shmem_wait_until_vector \
+	c11_shmem_wait_until_all_any_some \
 	c11_test_shmem_test \
+	c11_shmem_test_vector \
+	c11_shmem_test_all_any_some \
 	get_nbi \
 	put_nbi \
 	rma_coverage \
@@ -97,7 +101,11 @@ check_PROGRAMS = \
 	sync-size \
 	many-ctx \
 	shmem_test \
-	shmem_ptr
+	shmem_ptr \
+	shmem_malloc_with_hints \
+	put_signal \
+	put_signal_nbi
+
 
 # Temporarily disabled: Global exit test tends to fail with MPI-PMI
 if !USE_PMI_MPI
@@ -127,7 +135,8 @@ check_PROGRAMS += \
 	cxx_test_shmem_atomic_swap \
 	cxx_test_shmem_atomic_cswap \
 	cxx_test_shmem_wait_until \
-	cxx_test_shmem_test
+	cxx_test_shmem_test \
+	cxx_shmem_test_all
 endif
 
 if HAVE_FORTRAN

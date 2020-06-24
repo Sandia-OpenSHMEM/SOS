@@ -48,7 +48,7 @@ enum op { and = 0, or, xor, max, min, sum, prod };
 const double FLOATING_POINT_TOLERANCE = 1e-6;
 
 #define REDUCTION(OP) \
-  do { ret = shmemx_##OP##_reduce(SHMEMX_TEAM_WORLD, dest, src, npes); } while (0)
+  do { ret = shmem_##OP##_reduce(SHMEM_TEAM_WORLD, dest, src, npes); } while (0)
 
 #define is_floating_point(X) _Generic((X), \
               float: true, \

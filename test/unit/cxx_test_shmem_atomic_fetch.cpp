@@ -50,19 +50,19 @@ enum op { FETCH = 0, ATOMIC_FETCH, CTX_ATOMIC_FETCH, ATOMIC_FETCH_NBI,
 #endif
 
 #ifdef ENABLE_SHMEMX_TESTS
-#define SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)                \
+#define SHMEM_NBI_OPS_CASES(OP, TYPE, TYPENAME)                 \
       case ATOMIC_FETCH_NBI:                                    \
-        shmemx_##TYPENAME##_atomic_fetch_nbi(&val, &remote,     \
+        shmem_##TYPENAME##_atomic_fetch_nbi(&val, &remote,      \
                                 (mype + 1) % npes);             \
         shmem_quiet();                                          \
         break;                                                  \
       case CTX_ATOMIC_FETCH_NBI:                                \
-        shmemx_ctx_##TYPENAME##_atomic_fetch_nbi(SHMEM_CTX_DEFAULT,\
+        shmem_ctx_##TYPENAME##_atomic_fetch_nbi(SHMEM_CTX_DEFAULT,\
                           &val, &remote, (mype + 1) % npes);    \
         shmem_quiet();                                          \
         break;
 #else
-#define SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)
+#define SHMEM_NBI_OPS_CASES(OP, TYPE, TYPENAME)
 #endif
 
 #define TEST_SHMEM_FETCH(OP, TYPE, TYPENAME)                    \
@@ -86,7 +86,7 @@ enum op { FETCH = 0, ATOMIC_FETCH, CTX_ATOMIC_FETCH, ATOMIC_FETCH_NBI,
         val = shmem_ctx_##TYPENAME##_atomic_fetch(              \
                 SHMEM_CTX_DEFAULT, &remote, (mype + 1) % npes); \
         break;                                                  \
-      SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)                  \
+      SHMEM_NBI_OPS_CASES(OP, TYPE, TYPENAME)                   \
       default:                                                  \
         printf("Invalid operation (%d)\n", OP);                 \
         shmem_global_exit(1);                                   \

@@ -31,6 +31,7 @@
 
 #include <shmem.h>
 #include <shmemx.h>
+#include <stdlib.h>
 
 int main(void)
 {
@@ -39,18 +40,57 @@ int main(void)
     int npes = shmem_n_pes();
 
     int *flags = shmem_calloc(npes, sizeof(int));
-    int *status = NULL;
+    int *status = calloc(npes, sizeof(int));
 
     for (int i = 0; i < npes; i++)
-        shmem_int_p(&flags[mype], 1, i);
+        shmem_int_atomic_set(&flags[mype], 1, i);
 
-    while (!shmemx_int_test_all(flags, npes, status, SHMEM_CMP_EQ, 1));
+    int ncompleted = 0;
+    size_t completed_idx;
+
+    while (ncompleted < npes) {
+        completed_idx = shmem_int_test_any(flags, npes, status, SHMEM_CMP_EQ, 1);
+        if (completed_idx != SIZE_MAX) {
+            ncompleted++;
+            status[completed_idx] = 1;
+        } else {
+            /* Overlap some computation here */
+        }
+    }
 
     /* Check the flags array */
     for (int i = 0; i < npes; i++) {
         if (flags[i] != 1)
             shmem_global_exit(1);
     }
+
+    /* Sanity check of shmem_test_any's fairness */
+    ncompleted = 0;
+    int *found = calloc(npes, sizeof(int));
+
+    while (ncompleted < npes) {
+        int idx = shmem_int_test_any(flags, npes, NULL, SHMEM_CMP_EQ, 1);
+        if (found[idx] == 0) {
+            found[idx] = 1;
+            ncompleted++;
+        }
+    }
+
+    for (int i = 0; i < npes; i++) {
+        if (found[i] != 1) {
+            shmem_global_exit(2);
+        }
+    }
+
+    /* Sanity check case with NULL status array */
+    completed_idx = shmem_int_test_any(flags, npes, NULL, SHMEM_CMP_EQ, 1);
+
+    if (completed_idx >= (size_t)npes)
+        shmem_global_exit(3);
+
+
+    free(found);
+    free(status);
     shmem_free(flags);
     shmem_finalize();
     return 0;

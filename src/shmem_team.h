@@ -23,7 +23,7 @@ struct shmem_internal_team_t {
     int                            start, stride, size;
     int                            psync_idx;
     int                            psync_avail[N_PSYNCS_PER_TEAM];
-    shmemx_team_config_t           config;
+    shmem_team_config_t           config;
     long                           config_mask;
     size_t                         contexts_len;
     struct shmem_transport_ctx_t **contexts;
@@ -52,17 +52,17 @@ int shmem_internal_team_my_pe(shmem_internal_team_t *team);
 
 int shmem_internal_team_n_pes(shmem_internal_team_t *team);
 
-void shmem_internal_team_get_config(shmem_internal_team_t *team, shmemx_team_config_t *config);
+void shmem_internal_team_get_config(shmem_internal_team_t *team, shmem_team_config_t *config);
 
 int shmem_internal_team_translate_pe(shmem_internal_team_t *src_team, int src_pe, shmem_internal_team_t *dest_team);
 
 int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE_start, int PE_stride,
-                                      int PE_size, const shmemx_team_config_t *config, long config_mask,
+                                      int PE_size, const shmem_team_config_t *config, long config_mask,
                                       shmem_internal_team_t **new_team);
 
 int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
-                                 const shmemx_team_config_t *xaxis_config, long xaxis_mask, shmem_internal_team_t **xaxis_team,
-                                 const shmemx_team_config_t *yaxis_config, long yaxis_mask, shmem_internal_team_t **yaxis_team);
+                                 const shmem_team_config_t *xaxis_config, long xaxis_mask, shmem_internal_team_t **xaxis_team,
+                                 const shmem_team_config_t *yaxis_config, long yaxis_mask, shmem_internal_team_t **yaxis_team);
 
 int shmem_internal_team_destroy(shmem_internal_team_t *team);
 

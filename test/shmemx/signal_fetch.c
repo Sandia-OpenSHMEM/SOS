@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 
     shmem_barrier_all();
     for (i = 0; i < npes; i++) {
-        shmemx_long_put_signal(target, source, MSG_SZ, &sig_addr, me, SHMEMX_SIGNAL_ADD, i);
+        shmem_long_put_signal(target, source, MSG_SZ, &sig_addr, me, SHMEM_SIGNAL_ADD, i);
     }
 
     uint64_t sig_value = shmemx_signal_fetch(&sig_addr);
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 
     for (i = 0; i < MSG_SZ; i++) {
         if (target[i] != source[i]) {
-            fprintf(stderr, "%10d: target[%d] = %ld not matching %ld with SHMEMX_SIGNAL_ADD\n",
+            fprintf(stderr, "%10d: target[%d] = %ld not matching %ld with SHMEM_SIGNAL_ADD\n",
                     me, i, target[i], source[i]);
             errors++;
         }

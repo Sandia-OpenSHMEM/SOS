@@ -43,8 +43,8 @@ int main(void)
     if (me == 0)
         printf("Reuse teams test\n");
 
-    shmemx_team_t old_team, new_team;
-    ret = shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 1, npes, NULL, 0, &old_team);
+    shmem_team_t old_team, new_team;
+    ret = shmem_team_split_strided(SHMEM_TEAM_WORLD, 0, 1, npes, NULL, 0, &old_team);
     if (ret) ++errors;
 
     /* A total of npes-1 iterations are performed, where the active set in iteration i
@@ -53,17 +53,17 @@ int main(void)
 
         if (me == i) {
             printf("%3d: creating new team (start, stride, size): %3d, %3d, %3d\n", me,
-                shmemx_team_translate_pe(old_team, 1, SHMEMX_TEAM_WORLD), 1, shmemx_team_n_pes(old_team)-1);
+                shmem_team_translate_pe(old_team, 1, SHMEM_TEAM_WORLD), 1, shmem_team_n_pes(old_team)-1);
         }
 
-        ret = shmemx_team_split_strided(old_team, 1, 1, shmemx_team_n_pes(old_team)-1, NULL, 0, &new_team);
-        if (old_team != SHMEMX_TEAM_INVALID && ret) ++errors;
+        ret = shmem_team_split_strided(old_team, 1, 1, shmem_team_n_pes(old_team)-1, NULL, 0, &new_team);
+        if (old_team != SHMEM_TEAM_INVALID && ret) ++errors;
 
-        shmemx_team_destroy(old_team);
+        shmem_team_destroy(old_team);
         old_team = new_team;
     }
 
-    shmemx_team_destroy(old_team);
+    shmem_team_destroy(old_team);
     shmem_finalize();
 
     return errors != 0;

@@ -45,7 +45,7 @@
     const int npes = shmem_n_pes();                                            \
     int status = 0;                                                            \
     shmem_p(&remote, (TYPE)mype+1, (mype + 1) % npes);                         \
-    while (!shmemx_test_all(&remote, 1, &status, SHMEM_CMP_NE, 0)) ;           \
+    while (!shmem_test_all(&remote, 1, &status, SHMEM_CMP_NE, 0)) ;           \
     if (remote != (TYPE)((mype + npes - 1) % npes)+1) {                        \
       printf("PE %i received incorrect value with "                            \
              "TEST_SHMEM_TEST_ALL(%s)\n", mype, #TYPE);                        \
@@ -60,7 +60,7 @@
     const int npes = shmem_n_pes();                                            \
     int status = 0;                                                            \
     shmem_p(&remote, (TYPE)mype+1, (mype + 1) % npes);                         \
-    while (shmemx_test_any(&remote, 1, &status, SHMEM_CMP_NE, 0) == SIZE_MAX); \
+    while (shmem_test_any(&remote, 1, &status, SHMEM_CMP_NE, 0) == SIZE_MAX); \
     if (remote != (TYPE)((mype + npes - 1) % npes)+1) {                        \
       printf("PE %i received incorrect value with "                            \
              "TEST_SHMEM_TEST_ANY(%s)\n", mype, #TYPE);                        \
@@ -76,7 +76,7 @@
     int status = 0;                                                            \
     size_t indices;                                                            \
     shmem_p(&remote, (TYPE)mype+1, (mype + 1) % npes);                         \
-    while (!shmemx_test_some(&remote, 1, &indices, &status, SHMEM_CMP_NE, 0)); \
+    while (!shmem_test_some(&remote, 1, &indices, &status, SHMEM_CMP_NE, 0)); \
     if (remote != (TYPE)((mype + npes - 1) % npes)+1) {                        \
       printf("PE %i received incorrect value with "                            \
              "TEST_SHMEM_TEST_SOME(%s)\n", mype, #TYPE);                       \

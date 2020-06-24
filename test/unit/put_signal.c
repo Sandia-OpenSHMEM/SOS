@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
     }
 
     if (me == 0) {
-        shmemx_long_put_signal(target, source, MSG_SZ, &sig_addr, 1, SHMEMX_SIGNAL_SET, dest);
+        shmem_long_put_signal(target, source, MSG_SZ, &sig_addr, 1, SHMEM_SIGNAL_SET, dest);
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
         shmem_wait_until(&sig_addr, SHMEM_CMP_EQ, 1);
 #else
@@ -76,12 +76,12 @@ int main(int argc, char *argv[])
 #else
         shmem_uint64_wait_until(&sig_addr, SHMEM_CMP_EQ, 1);
 #endif
-        shmemx_long_put_signal(target, target, MSG_SZ, &sig_addr, 1, SHMEMX_SIGNAL_SET, dest);
+        shmem_long_put_signal(target, target, MSG_SZ, &sig_addr, 1, SHMEM_SIGNAL_SET, dest);
     }
 
     for (i = 0; i < MSG_SZ; i++) {
         if (target[i] != source[i]) {
-            fprintf(stderr, "%10d: target[%d] = %ld not matching %ld with SHMEMX_SIGNAL_SET\n",
+            fprintf(stderr, "%10d: target[%d] = %ld not matching %ld with SHMEM_SIGNAL_SET\n",
                     me, i, target[i], source[i]);
             errors++;
         }
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 
     shmem_barrier_all();
     if (me == 0) {
-        shmemx_long_put_signal(target, source, MSG_SZ, &sig_addr, one, SHMEMX_SIGNAL_ADD, dest);
+        shmem_long_put_signal(target, source, MSG_SZ, &sig_addr, one, SHMEM_SIGNAL_ADD, dest);
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
         shmem_wait_until(&sig_addr, SHMEM_CMP_EQ, one);
 #else
@@ -109,12 +109,12 @@ int main(int argc, char *argv[])
 #else
         shmem_uint64_wait_until(&sig_addr, SHMEM_CMP_EQ, one);
 #endif
-        shmemx_long_put_signal(target, target, MSG_SZ, &sig_addr, one, SHMEMX_SIGNAL_ADD, dest);
+        shmem_long_put_signal(target, target, MSG_SZ, &sig_addr, one, SHMEM_SIGNAL_ADD, dest);
     }
 
     for (i = 0; i < MSG_SZ; i++) {
         if (target[i] != source[i]) {
-            fprintf(stderr, "%10d: target[%d] = %ld not matching %ld with SHMEMX_SIGNAL_ADD\n",
+            fprintf(stderr, "%10d: target[%d] = %ld not matching %ld with SHMEM_SIGNAL_ADD\n",
                     me, i, target[i], source[i]);
             errors++;
         }

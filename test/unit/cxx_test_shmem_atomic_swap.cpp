@@ -50,17 +50,17 @@ enum op { SWAP = 0, ATOMIC_SWAP, CTX_ATOMIC_SWAP, ATOMIC_SWAP_NBI,
 #endif
 
 #ifdef ENABLE_SHMEMX_TESTS
-#define SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)                        \
+#define SHMEM_NBI_OPS_CASES(OP, TYPE, TYPENAME)                         \
         case ATOMIC_SWAP_NBI:                                           \
-            shmemx_##TYPENAME##_atomic_swap_nbi(&old, &remote,          \
+            shmem_##TYPENAME##_atomic_swap_nbi(&old, &remote,           \
                                    (TYPE)mype, (mype + 1) % npes);      \
             break;                                                      \
         case CTX_ATOMIC_SWAP_NBI:                                       \
-            shmemx_ctx_##TYPENAME##_atomic_swap_nbi(SHMEM_CTX_DEFAULT,  \
+            shmem_ctx_##TYPENAME##_atomic_swap_nbi(SHMEM_CTX_DEFAULT,   \
                          &old, &remote, (TYPE)mype, (mype + 1) % npes); \
             break;
 #else
-#define SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)
+#define SHMEM_NBI_OPS_CASES(OP, TYPE, TYPENAME)
 #endif
 
 #define TEST_SHMEM_SWAP(OP, TYPE, TYPENAME)                             \
@@ -84,7 +84,7 @@ enum op { SWAP = 0, ATOMIC_SWAP, CTX_ATOMIC_SWAP, ATOMIC_SWAP_NBI,
             old = shmem_ctx_##TYPENAME##_atomic_swap(SHMEM_CTX_DEFAULT, \
                            &remote, (TYPE)mype, (mype + 1) % npes);     \
             break;                                                      \
-        SHMEMX_NBI_OPS_CASES(OP, TYPE, TYPENAME)                        \
+        SHMEM_NBI_OPS_CASES(OP, TYPE, TYPENAME)                         \
         default:                                                        \
           printf("invalid operation (%d)\n", OP);                       \
           shmem_global_exit(1);                                         \

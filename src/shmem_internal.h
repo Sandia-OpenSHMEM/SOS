@@ -213,7 +213,7 @@ extern unsigned int shmem_internal_rand_seed;
 
 #define SHMEM_ERR_CHECK_TEAM_VALID(team)                                                                \
     do {                                                                                                \
-        if (team == SHMEMX_TEAM_INVALID) {                                                              \
+        if (team == SHMEM_TEAM_INVALID) {                                                              \
             RAISE_ERROR_STR("Invalid team argument");                                                   \
         }                                                                                               \
     } while (0)
@@ -229,7 +229,7 @@ extern unsigned int shmem_internal_rand_seed;
 
 #define SHMEM_ERR_CHECK_CTX(ctx)                                          \
     do {                                                                  \
-        if (ctx == SHMEMX_CTX_INVALID) {                                  \
+        if (ctx == SHMEM_CTX_INVALID) {                                  \
             fprintf(stderr, "ERROR: %s(): ctx argument is invalid\n",     \
                     __func__);                                            \
             shmem_runtime_abort(100, PACKAGE_NAME " exited in error");    \
@@ -315,8 +315,8 @@ extern unsigned int shmem_internal_rand_seed;
 #define SHMEM_ERR_CHECK_SIG_OP(op)                                                      \
     do {                                                                                \
         switch(op) {                                                                    \
-            case SHMEMX_SIGNAL_SET:                                                      \
-            case SHMEMX_SIGNAL_ADD:                                                      \
+            case SHMEM_SIGNAL_SET:                                                      \
+            case SHMEM_SIGNAL_ADD:                                                      \
                 break;                                                                  \
             default:                                                                    \
                 fprintf(stderr, "ERROR: %s(): Argument \"%s\", "                        \

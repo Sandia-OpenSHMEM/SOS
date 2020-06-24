@@ -55,7 +55,7 @@ int main(void) {
     /* Loop until we observe 'npes' values that are congruent to 'me' mod N */
     for (int ncompleted = 0; ncompleted < npes; ) {
         for (i = 0; i < npes; i++)
-            shmemx_long_atomic_swap_nbi(&result[i], &target, me, i);
+            shmem_long_atomic_swap_nbi(&result[i], &target, me, i);
         shmem_quiet();
         for (i = 0; i < npes; i++)
             if (me % N == result[i] % N) ++ncompleted;
@@ -90,7 +90,7 @@ int main(void) {
         /* Attempt to increment each PE not already incremented by me */
         for (i = 0; i < npes; i++)
             if (result[i] != me-1)
-                shmemx_long_atomic_compare_swap_nbi(&result[i], &target, me-1, me, i);
+                shmem_long_atomic_compare_swap_nbi(&result[i], &target, me-1, me, i);
 
         shmem_quiet();
 

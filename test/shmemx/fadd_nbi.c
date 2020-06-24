@@ -73,7 +73,7 @@ int main(void) {
     t = shmemx_wtime();
 
     for (i = 0; i < npes; i++) {
-        shmemx_long_atomic_fetch_add_nbi(&out[i], &ctr, 1, i);
+        shmem_long_atomic_fetch_add_nbi(&out[i], &ctr, 1, i);
     }
 
     shmem_barrier_all();
