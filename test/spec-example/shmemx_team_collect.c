@@ -27,9 +27,9 @@ int main(void)
       dest[i] = -9999;
 
    /* Wait for all PEs to initialize source/dest: */
-   shmemx_team_sync(SHMEMX_TEAM_WORLD);
+   shmem_team_sync(SHMEM_TEAM_WORLD);
 
-   shmemx_int_collect(SHMEMX_TEAM_WORLD, dest, source, my_nelem);
+   shmem_int_collect(SHMEM_TEAM_WORLD, dest, source, my_nelem);
 
    shmem_set_lock(&lock); /* Lock prevents interleaving printfs */
    printf("%d: %d", me, dest[0]);

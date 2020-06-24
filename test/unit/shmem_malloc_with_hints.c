@@ -28,7 +28,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <shmem.h>
-#include <shmemx.h>
 
 #define N 128
 #define MAX(a,b) ((a) > (b)) ? a : b

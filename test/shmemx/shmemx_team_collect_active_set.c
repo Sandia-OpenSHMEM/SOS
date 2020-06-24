@@ -62,8 +62,8 @@ int main(void)
     if (me == 0)
         printf("Shrinking team size test\n");
 
-    shmemx_team_t old_team, new_team;
-    shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 1, npes, NULL, 0, &old_team);
+    shmem_team_t old_team, new_team;
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, 0, 1, npes, NULL, 0, &old_team);
 
     /* A total of npes-1 tests are performed, where the active set in each test
      * includes PEs i..npes-1, and each PE contributes PE ID elements.  The size
@@ -73,13 +73,14 @@ int main(void)
         int idx = 0;
 
         if (me == i)
-            printf(" + team size %d\n", shmemx_team_n_pes(old_team)-1);
+            printf(" + team size %d\n", shmem_team_n_pes(old_team)-1);
 
-        shmemx_team_split_strided(old_team, 1, 1, shmemx_team_n_pes(old_team)-1, NULL, 0, &new_team);
+        shmem_team_split_strided(old_team, 1, 1, shmem_team_n_pes(old_team)-1, NULL, 0, &new_team);
 
-        if (new_team != SHMEMX_TEAM_INVALID) {
+        if (new_team != SHMEM_TEAM_INVALID) {
 
-            shmemx_int64_collect(new_team, dst, src, me);
+
+            shmem_int64_collect(new_team, dst, src, me);
 
             /* Validate destination buffer data */
             for (j = 0; j < npes - i; j++) {
@@ -111,7 +112,7 @@ int main(void)
         old_team = new_team;
     }
 
-    shmemx_team_destroy(old_team);
+    shmem_team_destroy(old_team);
     shmem_finalize();
 
     return errors != 0;

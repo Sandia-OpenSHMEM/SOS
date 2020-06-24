@@ -26,10 +26,10 @@ int main(void)
       }
    }
    /* wait for all PEs to initialize source/dest */
-   shmemx_team_sync(SHMEMX_TEAM_WORLD);
+   shmem_team_sync(SHMEM_TEAM_WORLD);
 
    /* alltoall on all PES */
-   shmemx_int64_alltoall(SHMEMX_TEAM_WORLD, dest, source, count);
+   shmem_int64_alltoall(SHMEM_TEAM_WORLD, dest, source, count);
 
    /* verify results */
    for (int pe = 0; pe < npes; pe++) {

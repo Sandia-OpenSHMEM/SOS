@@ -72,6 +72,10 @@ extern "C" {
 #define SHMEM_THREAD_SERIALIZED 2
 #define SHMEM_THREAD_MULTIPLE   3
 
+#define SHMEM_MALLOC_ATOMICS_REMOTE   (1l<<0)
+#define SHMEM_MALLOC_SIGNAL_REMOTE    (1l<<1)
+#define SHMEM_MALLOC_MAX_HINTS        ((1l<<2) - 1)    
+
 /* Contexts */
 typedef struct shmem_impl_ctx_t { int dummy; } * shmem_ctx_t;
 
@@ -83,6 +87,35 @@ typedef struct shmem_impl_ctx_t { int dummy; } * shmem_ctx_t;
 #define SHMEM_CTX_PRIVATE       (1l<<0)
 #define SHMEM_CTX_SERIALIZED    (1l<<1)
 #define SHMEM_CTX_NOSTORE       (1l<<2)
+
+/* Teams */
+
+typedef struct shmem_impl_team_t {
+    int dummy;
+} * shmem_team_t;
+
+typedef struct {
+    int num_contexts;
+} shmem_team_config_t;
+
+#if SHMEM_HAVE_ATTRIBUTE_VISIBILITY == 1
+    __attribute__((visibility("default"))) extern shmem_team_t SHMEM_TEAM_WORLD;
+    __attribute__((visibility("default"))) extern shmem_team_t SHMEM_TEAM_SHARED;
+#else
+    extern shmem_team_t SHMEM_TEAM_WORLD;
+    extern shmem_team_t SHMEM_TEAM_SHARED;
+#endif
+
+#define SHMEM_TEAM_INVALID NULL
+
+#define SHMEM_CTX_INVALID NULL
+
+#define SHMEM_TEAM_NUM_CONTEXTS       (1l<<0)
+
+#define SHMEM_SIGNAL_SET        0
+#define SHMEM_SIGNAL_ADD        1
+/* ---------------------------------------------------------------------------*/
+
 
 #ifdef __cplusplus
 } /* extern "C" */

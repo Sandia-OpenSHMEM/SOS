@@ -44,15 +44,15 @@ int main(void)
     me = shmem_my_pe();
     npes = shmem_n_pes();
 
-    shmemx_team_t new_team[NUM_TEAMS];
+    shmem_team_t new_team[NUM_TEAMS];
 
     for (i = j = 0; i < NUM_TEAMS; ) {
-        ret = shmemx_team_split_strided(SHMEMX_TEAM_WORLD, 0, 1, 1 + i % npes,
+        ret = shmem_team_split_strided(SHMEM_TEAM_WORLD, 0, 1, 1 + i % npes,
                                         NULL, 0, &new_team[i]);
 
         /* Wait for all PEs to fill in ret before starting the reduction */
-        shmemx_sync(SHMEMX_TEAM_WORLD);
-        shmemx_int_and_reduce(SHMEMX_TEAM_WORLD, &dest_ret, &ret, 1);
+        shmemx_sync(SHMEM_TEAM_WORLD);
+        shmem_int_and_reduce(SHMEM_TEAM_WORLD, &dest_ret, &ret, 1);
 
         /* If success was not global, free a team and retry */
         if (dest_ret != 0) {
@@ -66,7 +66,7 @@ int main(void)
             if (i == j)
                 break;
 
-            shmemx_team_destroy(new_team[j]);
+            shmem_team_destroy(new_team[j]);
             j++;
         } else {
             i++;

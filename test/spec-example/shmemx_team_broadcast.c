@@ -19,7 +19,7 @@ int main(void)
       for (int i = 0; i < 4; i++)
          source[i] = i;
 
-   shmemx_long_broadcast(SHMEMX_TEAM_WORLD, dest, source, 4, 0);
+   shmem_long_broadcast(SHMEM_TEAM_WORLD, dest, source, 4, 0);
 
    printf("%d: %ld, %ld, %ld, %ld\n", me, dest[0], dest[1], dest[2], dest[3]);
 
