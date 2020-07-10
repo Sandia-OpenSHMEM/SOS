@@ -65,14 +65,14 @@ int main(int argc, char *argv[])
         shmem_long_put_signal(target, source, MSG_SZ, &sig_addr, me, SHMEM_SIGNAL_ADD, i);
     }
 
-    uint64_t sig_value = shmemx_signal_fetch(&sig_addr);
+    uint64_t sig_value = shmem_signal_fetch(&sig_addr);
     while (sig_value != (uint64_t) ((npes * (npes - 1)) / 2)) {
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
         shmem_wait_until(&sig_addr, SHMEM_CMP_NE, 0);
 #else
         shmem_uint64_wait_until(&sig_addr, SHMEM_CMP_NE, 0);
 #endif
-        sig_value = shmemx_signal_fetch(&sig_addr);
+        sig_value = shmem_signal_fetch(&sig_addr);
     }
 
     for (i = 0; i < MSG_SZ; i++) {

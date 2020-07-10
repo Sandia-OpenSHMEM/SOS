@@ -104,8 +104,8 @@ check_PROGRAMS = \
 	shmem_ptr \
 	shmem_malloc_with_hints \
 	put_signal \
-	put_signal_nbi
-
+	put_signal_nbi \
+	signal_fetch
 
 # Temporarily disabled: Global exit test tends to fail with MPI-PMI
 if !USE_PMI_MPI

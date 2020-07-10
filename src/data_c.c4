@@ -243,8 +243,8 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
 #define shmemx_ct_set pshmemx_ct_set
 #pragma weak shmemx_ct_wait = pshmemx_ct_wait
 #define shmemx_ct_wait pshmemx_ct_wait
-#pragma weak shmemx_signal_fetch = pshmemx_signal_fetch
-#define shmemx_signal_fetch pshmemx_signal_fetch
+#pragma weak shmem_signal_fetch = pshmem_signal_fetch
+#define shmem_signal_fetch pshmem_signal_fetch
 
 #endif /* ENABLE_PROFILING */
 
@@ -649,7 +649,7 @@ SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_PUT_N_SIGNAL_NBI')
 SHMEM_DEF_PUT_N_SIGNAL_NBI(`mem', `1')
 
 uint64_t SHMEM_FUNCTION_ATTRIBUTES
-shmemx_signal_fetch(const uint64_t* sig_addr)
+shmem_signal_fetch(const uint64_t* sig_addr)
 {
     uint64_t val;
     SHMEM_ERR_CHECK_INITIALIZED();
