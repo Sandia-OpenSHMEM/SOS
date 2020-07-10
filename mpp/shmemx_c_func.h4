@@ -37,9 +37,6 @@ SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcntr_get_completed_read(shmem_ctx_
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcntr_get_completed_target(uint64_t *cntr_value);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcntr_get_all(shmem_ctx_t ctx, shmemx_pcntr_t *pcntr);
 
-/* Signal fetch */
-SHMEM_FUNCTION_ATTRIBUTES uint64_t SHPRE()shmemx_signal_fetch(const uint64_t *sig_addr);
-
 /* Team Collective Routines */
 
 SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_sync(shmem_team_t team);

@@ -697,3 +697,6 @@ SHMEM_BIND_C_COLL_MIN_MAX(`SHMEM_C_REDUCE', `max')
 SHMEM_BIND_C_COLL_SUM_PROD(`SHMEM_C_REDUCE', `sum')
 
 SHMEM_BIND_C_COLL_SUM_PROD(`SHMEM_C_REDUCE', `prod')
+
+/* Signal Fetch */
+SHMEM_FUNCTION_ATTRIBUTES uint64_t SHPRE()shmem_signal_fetch(const uint64_t *sig_addr);

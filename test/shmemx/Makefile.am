@@ -28,7 +28,6 @@ check_PROGRAMS += \
 	perf_counter \
 	fadd_nbi \
 	atomic_nbi \
-	signal_fetch \
 	shmemx_team_split_2d \
 	shmemx_team_translate_2 \
 	shmemx_team_reuse_teams \
