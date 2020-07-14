@@ -213,7 +213,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL')
 
 #define SHMEM_DEF_WAIT_UNTIL_ALL(STYPE,TYPE)                                                   \
     void SHMEM_FUNCTION_ATTRIBUTES                                                             \
-    shmem_##STYPE##_wait_until_all(TYPE *vars, size_t nelems,                                 \
+    shmem_##STYPE##_wait_until_all(TYPE *vars, size_t nelems,                                  \
                                     const int *status, int cond, TYPE value)                   \
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
@@ -247,7 +247,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ALL')
 
 #define SHMEM_DEF_WAIT_UNTIL_ALL_VECTOR(STYPE,TYPE)                                            \
     void SHMEM_FUNCTION_ATTRIBUTES                                                             \
-    shmem_##STYPE##_wait_until_all_vector(TYPE *vars, size_t nelems,                          \
+    shmem_##STYPE##_wait_until_all_vector(TYPE *vars, size_t nelems,                           \
                                            const int *status, int cond, TYPE *values)          \
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
@@ -282,7 +282,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ALL_VECTOR')
 
 #define SHMEM_DEF_WAIT_UNTIL_ANY(STYPE,TYPE)                                                   \
     size_t SHMEM_FUNCTION_ATTRIBUTES                                                           \
-    shmem_##STYPE##_wait_until_any(TYPE *vars, size_t nelems,                                 \
+    shmem_##STYPE##_wait_until_any(TYPE *vars, size_t nelems,                                  \
                                     const int *status, int cond, TYPE value)                   \
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
@@ -331,7 +331,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ANY')
 
 #define SHMEM_DEF_WAIT_UNTIL_ANY_VECTOR(STYPE,TYPE)                                            \
     size_t SHMEM_FUNCTION_ATTRIBUTES                                                           \
-    shmem_##STYPE##_wait_until_any_vector(TYPE *vars, size_t nelems,                          \
+    shmem_##STYPE##_wait_until_any_vector(TYPE *vars, size_t nelems,                           \
                                     const int *status, int cond, TYPE *values)                 \
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
@@ -380,7 +380,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ANY_VECTOR')
 
 #define SHMEM_DEF_WAIT_UNTIL_SOME(STYPE,TYPE)                                                  \
     size_t SHMEM_FUNCTION_ATTRIBUTES                                                           \
-    shmem_##STYPE##_wait_until_some(TYPE *vars, size_t nelems, size_t *indices,               \
+    shmem_##STYPE##_wait_until_some(TYPE *vars, size_t nelems, size_t *indices,                \
                                      const int *status, int cond, TYPE value)                  \
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
@@ -422,7 +422,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_SOME')
 
 #define SHMEM_DEF_WAIT_UNTIL_SOME_VECTOR(STYPE,TYPE)                                           \
     size_t SHMEM_FUNCTION_ATTRIBUTES                                                           \
-    shmem_##STYPE##_wait_until_some_vector(TYPE *vars, size_t nelems, size_t *indices,        \
+    shmem_##STYPE##_wait_until_some_vector(TYPE *vars, size_t nelems, size_t *indices,         \
                                      const int *status, int cond, TYPE *values)                \
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
@@ -486,7 +486,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST')
 
 #define SHMEM_DEF_TEST_ALL(STYPE,TYPE)                                                         \
     int SHMEM_FUNCTION_ATTRIBUTES                                                              \
-    shmem_##STYPE##_test_all(TYPE *vars, size_t nelems, const int *status, int cond,          \
+    shmem_##STYPE##_test_all(TYPE *vars, size_t nelems, const int *status, int cond,           \
                               TYPE value)                                                      \
     {                                                                                          \
         size_t ncompleted = 0;                                                                 \
@@ -528,7 +528,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ALL')
 
 #define SHMEM_DEF_TEST_ALL_VECTOR(STYPE,TYPE)                                                  \
     int SHMEM_FUNCTION_ATTRIBUTES                                                              \
-    shmem_##STYPE##_test_all_vector(TYPE *vars, size_t nelems, const int *status, int cond,   \
+    shmem_##STYPE##_test_all_vector(TYPE *vars, size_t nelems, const int *status, int cond,    \
                               TYPE *values)                                                    \
     {                                                                                          \
         size_t ncompleted = 0;                                                                 \
@@ -570,7 +570,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ALL_VECTOR')
 
 #define SHMEM_DEF_TEST_ANY(STYPE,TYPE)                                                         \
     size_t SHMEM_FUNCTION_ATTRIBUTES                                                           \
-    shmem_##STYPE##_test_any(TYPE *vars, size_t nelems, const int *status,                    \
+    shmem_##STYPE##_test_any(TYPE *vars, size_t nelems, const int *status,                     \
                               int cond, TYPE value)                                            \
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
@@ -608,7 +608,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ANY')
 
 #define SHMEM_DEF_TEST_ANY_VECTOR(STYPE,TYPE)                                                  \
     size_t SHMEM_FUNCTION_ATTRIBUTES                                                           \
-    shmem_##STYPE##_test_any_vector(TYPE *vars, size_t nelems, const int *status,             \
+    shmem_##STYPE##_test_any_vector(TYPE *vars, size_t nelems, const int *status,              \
                               int cond, TYPE *values)                                          \
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
@@ -646,7 +646,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ANY_VECTOR')
 
 #define SHMEM_DEF_TEST_SOME(STYPE,TYPE)                                                        \
     size_t SHMEM_FUNCTION_ATTRIBUTES                                                           \
-    shmem_##STYPE##_test_some(TYPE *vars, size_t nelems, size_t *indices,                     \
+    shmem_##STYPE##_test_some(TYPE *vars, size_t nelems, size_t *indices,                      \
                                const int *status, int cond, TYPE value)                        \
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
@@ -686,7 +686,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_SOME')
 
 #define SHMEM_DEF_TEST_SOME_VECTOR(STYPE,TYPE)                                                 \
     size_t SHMEM_FUNCTION_ATTRIBUTES                                                           \
-    shmem_##STYPE##_test_some_vector(TYPE *vars, size_t nelems, size_t *indices,              \
+    shmem_##STYPE##_test_some_vector(TYPE *vars, size_t nelems, size_t *indices,               \
                                const int *status, int cond, TYPE *values)                      \
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \

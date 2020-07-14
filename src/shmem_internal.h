@@ -213,7 +213,7 @@ extern unsigned int shmem_internal_rand_seed;
 
 #define SHMEM_ERR_CHECK_TEAM_VALID(team)                                                                \
     do {                                                                                                \
-        if (team == SHMEM_TEAM_INVALID) {                                                              \
+        if (team == SHMEM_TEAM_INVALID) {                                                               \
             RAISE_ERROR_STR("Invalid team argument");                                                   \
         }                                                                                               \
     } while (0)
@@ -229,7 +229,7 @@ extern unsigned int shmem_internal_rand_seed;
 
 #define SHMEM_ERR_CHECK_CTX(ctx)                                          \
     do {                                                                  \
-        if (ctx == SHMEM_CTX_INVALID) {                                  \
+        if (ctx == SHMEM_CTX_INVALID) {                                   \
             fprintf(stderr, "ERROR: %s(): ctx argument is invalid\n",     \
                     __func__);                                            \
             shmem_runtime_abort(100, PACKAGE_NAME " exited in error");    \
