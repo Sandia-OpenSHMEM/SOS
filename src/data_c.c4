@@ -487,7 +487,7 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
 
 #define SHMEM_DEF_PUT_SIGNAL(STYPE,TYPE)                                \
   void SHMEM_FUNCTION_ATTRIBUTES                                        \
-  SHMEM_FUNC_PROTOTYPE(STYPE##_put_signal, TYPE *target,               \
+  SHMEM_FUNC_PROTOTYPE(STYPE##_put_signal, TYPE *target,                \
                         const TYPE *source, size_t nelems,              \
                         uint64_t *sig_addr, uint64_t signal,            \
                         int sig_op, int pe)                             \
@@ -516,7 +516,7 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
 
 #define SHMEM_DEF_PUT_N_SIGNAL(NAME,SIZE)                               \
   void SHMEM_FUNCTION_ATTRIBUTES                                        \
-  SHMEM_FUNC_PROTOTYPE(put##NAME##_signal, void *target,               \
+  SHMEM_FUNC_PROTOTYPE(put##NAME##_signal, void *target,                \
                         const void *source, size_t nelems,              \
                         uint64_t *sig_addr, uint64_t signal,            \
                         int sig_op, int pe)                             \
@@ -543,7 +543,7 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
 
 #define SHMEM_DEF_PUT_SIGNAL_NBI(STYPE,TYPE)                            \
   void SHMEM_FUNCTION_ATTRIBUTES                                        \
-  SHMEM_FUNC_PROTOTYPE(STYPE##_put_signal_nbi, TYPE *target,           \
+  SHMEM_FUNC_PROTOTYPE(STYPE##_put_signal_nbi, TYPE *target,            \
                         const TYPE *source, size_t nelems,              \
                         uint64_t *sig_addr, uint64_t signal,            \
                         int sig_op, int pe)                             \
@@ -561,7 +561,7 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
 
 #define SHMEM_DEF_PUT_N_SIGNAL_NBI(NAME,SIZE)                           \
   void SHMEM_FUNCTION_ATTRIBUTES                                        \
-  SHMEM_FUNC_PROTOTYPE(put##NAME##_signal_nbi, void *target,           \
+  SHMEM_FUNC_PROTOTYPE(put##NAME##_signal_nbi, void *target,            \
                         const void *source, size_t nelems,              \
                         uint64_t *sig_addr, uint64_t signal,            \
                         int sig_op, int pe)                             \

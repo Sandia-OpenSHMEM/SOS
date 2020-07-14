@@ -53,19 +53,19 @@ enum op { BCAST = 0, COLLECT, FCOLLECT, ALLTOALL, ALLTOALLS };
                                                                           \
     switch (OP) {                                                         \
       case BCAST:                                                         \
-        shmem_broadcast(SHMEM_TEAM_WORLD, dest, src, MAX_NPES, npes-1); \
+        shmem_broadcast(SHMEM_TEAM_WORLD, dest, src, MAX_NPES, npes-1);   \
         break;                                                            \
       case COLLECT:                                                       \
-        shmem_collect(SHMEM_TEAM_WORLD, dest, src, MAX_NPES);           \
+        shmem_collect(SHMEM_TEAM_WORLD, dest, src, MAX_NPES);             \
         break;                                                            \
       case FCOLLECT:                                                      \
-        shmem_fcollect(SHMEM_TEAM_WORLD, dest, src, MAX_NPES);          \
+        shmem_fcollect(SHMEM_TEAM_WORLD, dest, src, MAX_NPES);            \
         break;                                                            \
       case ALLTOALL:                                                      \
-        shmem_alltoall(SHMEM_TEAM_WORLD, dest, src, 1);                 \
+        shmem_alltoall(SHMEM_TEAM_WORLD, dest, src, 1);                   \
         break;                                                            \
       case ALLTOALLS:                                                     \
-        shmem_alltoalls(SHMEM_TEAM_WORLD, dest, src, 1, 1, 1);          \
+        shmem_alltoalls(SHMEM_TEAM_WORLD, dest, src, 1, 1, 1);            \
         break;                                                            \
       default:                                                            \
         printf("Invalid operation (%d)\n", OP);                           \

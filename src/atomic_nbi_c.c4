@@ -159,7 +159,7 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
 
 #define SHMEM_DEF_FETCH_ADD_NBI(STYPE,TYPE,ITYPE)                       \
     void SHMEM_FUNCTION_ATTRIBUTES                                      \
-    SHMEM_FUNC_PROTOTYPE(STYPE, fetch_add_nbi, TYPE *fetch,            \
+    SHMEM_FUNC_PROTOTYPE(STYPE, fetch_add_nbi, TYPE *fetch,             \
                           TYPE *target, TYPE value, int pe)             \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
@@ -186,7 +186,7 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
 
 #define SHMEM_DEF_FETCH_XOR_NBI(STYPE,TYPE,ITYPE)                       \
     void SHMEM_FUNCTION_ATTRIBUTES                                      \
-    SHMEM_FUNC_PROTOTYPE(STYPE, fetch_xor_nbi, TYPE *fetch,            \
+    SHMEM_FUNC_PROTOTYPE(STYPE, fetch_xor_nbi, TYPE *fetch,             \
                          TYPE *target, TYPE value, int pe)              \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \
@@ -200,7 +200,7 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
 
 #define SHMEM_DEF_FETCH_AND_NBI(STYPE,TYPE,ITYPE)                       \
     void SHMEM_FUNCTION_ATTRIBUTES                                      \
-    SHMEM_FUNC_PROTOTYPE(STYPE, fetch_and_nbi, TYPE *fetch,            \
+    SHMEM_FUNC_PROTOTYPE(STYPE, fetch_and_nbi, TYPE *fetch,             \
                          TYPE *target, TYPE value, int pe)              \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
         SHMEM_ERR_CHECK_PE(pe);                                         \

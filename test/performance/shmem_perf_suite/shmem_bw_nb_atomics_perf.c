@@ -50,7 +50,7 @@
                 if(snode) {                                                    \
                     for(i = 0; i < metric_info->warmup; i++) {                 \
                         for(j = 0; j < metric_info->window_size; j++)          \
-                            shmem_##NAME##_atomic_fetch_nbi((TYPE *) &fetch,  \
+                            shmem_##NAME##_atomic_fetch_nbi((TYPE *) &fetch,   \
                                 (TYPE *)(metric_info->dest), dest);            \
                         shmem_quiet();                                         \
                     }                                                          \
@@ -60,7 +60,7 @@
                     start = perf_shmemx_wtime();                               \
                     for(i = 0; i < metric_info->trials; i++) {                 \
                         for(j = 0; j < metric_info->window_size; j++)          \
-                            shmem_##NAME##_atomic_fetch_nbi((TYPE *) &fetch,  \
+                            shmem_##NAME##_atomic_fetch_nbi((TYPE *) &fetch,   \
                                 (TYPE *)(metric_info->dest), dest);            \
                         shmem_quiet();                                         \
                     }                                                          \
@@ -176,7 +176,7 @@
                 if(snode) {                                                    \
                     for(i = 0; i < metric_info->warmup; i++) {                 \
                         for(j = 0; j < metric_info->window_size; j++)          \
-                            shmem_##NAME##_atomic_swap_nbi((TYPE *) &fetch,   \
+                            shmem_##NAME##_atomic_swap_nbi((TYPE *) &fetch,    \
                                 (TYPE *)(metric_info->src), ONE, dest);        \
                         shmem_quiet();                                         \
                     }                                                          \
@@ -186,7 +186,7 @@
                     start = perf_shmemx_wtime();                               \
                     for(i = 0; i < metric_info->trials; i++) {                 \
                         for(j = 0; j < metric_info->window_size; j++)          \
-                            shmem_##NAME##_atomic_swap_nbi((TYPE *) &fetch,   \
+                            shmem_##NAME##_atomic_swap_nbi((TYPE *) &fetch,    \
                                 (TYPE *)(metric_info->src), ONE, dest);        \
                         shmem_quiet();                                         \
                     }                                                          \
