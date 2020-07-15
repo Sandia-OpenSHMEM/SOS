@@ -34,7 +34,7 @@ int main(void) {
   }
 
   /* Wait for all PEs to initialize reductions arrays */
-  shmemx_sync(SHMEM_TEAM_WORLD);
+  shmem_sync(SHMEM_TEAM_WORLD);
 
   shmem_or_reduce(SHMEM_TEAM_WORLD, value_is_maximal_all, value_is_maximal, NELEMS);
   shmem_sum_reduce(SHMEM_TEAM_WORLD, &maximal_values_total, &maximal_values_count, 1);
