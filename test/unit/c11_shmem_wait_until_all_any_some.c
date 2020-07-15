@@ -45,7 +45,7 @@
     const int npes = shmem_n_pes();                                          \
     int status = 0;                                                          \
     shmem_p(&remote, (TYPE)mype+1, (mype + 1) % npes);                       \
-    shmem_wait_until_all(&remote, 1, &status, SHMEM_CMP_NE, 0);             \
+    shmem_wait_until_all(&remote, 1, &status, SHMEM_CMP_NE, 0);              \
     if (remote != (TYPE)((mype + npes - 1) % npes)+1) {                      \
       printf("PE %i received incorrect value with "                          \
              "TEST_SHMEM_WAIT_UNTIL_ALL(%s)\n", mype, #TYPE);                \
@@ -60,7 +60,7 @@
     const int npes = shmem_n_pes();                                          \
     int status = 0;                                                          \
     shmem_p(&remote, (TYPE)mype+1, (mype + 1) % npes);                       \
-    shmem_wait_until_any(&remote, 1, &status, SHMEM_CMP_NE, 0);             \
+    shmem_wait_until_any(&remote, 1, &status, SHMEM_CMP_NE, 0);              \
     if (remote != (TYPE)((mype + npes - 1) % npes)+1) {                      \
       printf("PE %i received incorrect value with "                          \
              "TEST_SHMEM_WAIT_UNTIL_ANY(%s)\n", mype, #TYPE);                \
@@ -76,7 +76,7 @@
     int status = 0;                                                          \
     size_t indices;                                                          \
     shmem_p(&remote, (TYPE)mype+1, (mype + 1) % npes);                       \
-    shmem_wait_until_some(&remote, 1, &indices, &status, SHMEM_CMP_NE, 0);  \
+    shmem_wait_until_some(&remote, 1, &indices, &status, SHMEM_CMP_NE, 0);   \
     if (remote != (TYPE)((mype + npes - 1) % npes)+1) {                      \
       printf("PE %i received incorrect value with "                          \
              "TEST_SHMEM_WAIT_UNTIL_SOME(%s)\n", mype, #TYPE);               \
