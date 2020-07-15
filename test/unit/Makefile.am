@@ -84,8 +84,8 @@ check_PROGRAMS = \
 	c11_test_shmem_test \
 	c11_shmem_test_vector \
 	c11_shmem_test_all_any_some \
-	c11_shmem_team_collective_types.c \
-	c11_shmem_team_reduce.c \
+	c11_shmem_team_collective_types \
+	c11_shmem_team_reduce \
 	get_nbi \
 	put_nbi \
 	rma_coverage \
@@ -108,13 +108,13 @@ check_PROGRAMS = \
 	put_signal \
 	put_signal_nbi \
 	signal_fetch \
-	shmem_team_b2b_collectives.c \
-	shmem_team_collect_active_set.c \
-	shmem_team_max.c \
-	shmem_team_reuse_teams.c \
-	shmem_team_shared.c \
-	shmem_team_split_2d.c \
-	shmem_team_translate.c
+	shmem_team_b2b_collectives \
+	shmem_team_collect_active_set \
+	shmem_team_max \
+	shmem_team_reuse_teams \
+	shmem_team_shared \
+	shmem_team_split_2d \
+	shmem_team_translate
 
 # Temporarily disabled: Global exit test tends to fail with MPI-PMI
 if !USE_PMI_MPI
