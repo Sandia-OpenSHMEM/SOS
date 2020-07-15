@@ -567,6 +567,10 @@ define(`SHMEM_CXX_TEST_SOME_VECTOR',
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_SOME_VECTOR')
 
+static inline SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_sync(shmem_team_t team) {
+    return shmem_team_sync(team);
+}
+
 /* C11 Generic Macros */
 #elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
 
@@ -1208,6 +1212,13 @@ define(`SHMEM_C11_GEN_TEST_SOME_VECTOR', `        $2*: shmem_$1_test_some_vector
     _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
              default: shmem_ctx_c11_generic_selection_failed, \
 SHMEM_BIND_C11_SYNC(`SHMEM_C11_GEN_TEST_SOME_VECTOR', `, \') \
+    )(__VA_ARGS__)
+
+/* shmem_sync */
+#define shmem_sync(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR_OR_SCALAR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+        shmem_team_t: shmem_team_sync, \
+        int: shmem_sync \
     )(__VA_ARGS__)
 
 #endif /* C11 */

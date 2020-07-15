@@ -74,7 +74,7 @@ extern "C" {
 
 #define SHMEM_MALLOC_ATOMICS_REMOTE   (1l<<0)
 #define SHMEM_MALLOC_SIGNAL_REMOTE    (1l<<1)
-#define SHMEM_MALLOC_MAX_HINTS        ((1l<<2) - 1)    
+#define SHMEM_MALLOC_MAX_HINTS        ((1l<<2) - 1)
 
 /* Contexts */
 typedef struct shmem_impl_ctx_t { int dummy; } * shmem_ctx_t;
