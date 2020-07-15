@@ -51,7 +51,7 @@ int main(void)
                                         NULL, 0, &new_team[i]);
 
         /* Wait for all PEs to fill in ret before starting the reduction */
-        shmemx_sync(SHMEM_TEAM_WORLD);
+        shmem_sync(SHMEM_TEAM_WORLD);
         shmem_int_and_reduce(SHMEM_TEAM_WORLD, &dest_ret, &ret, 1);
 
         /* If success was not global, free a team and retry */

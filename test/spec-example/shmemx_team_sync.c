@@ -42,17 +42,17 @@ int main(void)
       shmem_p(&x, 2, shmem_team_translate_pe(twos_team, (my_pe_twos + 1) %
                                               npes_twos, SHMEM_TEAM_WORLD));
       shmem_quiet();
-      shmemx_sync(twos_team);
+      shmem_sync(twos_team);
    }
 
-   shmemx_sync(SHMEM_TEAM_WORLD);
+   shmem_sync(SHMEM_TEAM_WORLD);
 
    if (threes_team != SHMEM_TEAM_INVALID) {
       /* put the value 3 to the next team member in a circular fashion */
       shmem_p(&x, 3, shmem_team_translate_pe(threes_team, (my_pe_threes + 1) %
                                               npes_threes, SHMEM_TEAM_WORLD));
       shmem_quiet();
-      shmemx_sync(threes_team);
+      shmem_sync(threes_team);
    }
 
    if (me && me % 3 == 0) {
