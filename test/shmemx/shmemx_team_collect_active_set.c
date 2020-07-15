@@ -106,7 +106,7 @@ int main(void)
             for (j = 0; j < MAX_NPES*MAX_NPES; j++)
                 dst[j] = -1;
 
-            shmemx_sync(new_team);
+            shmem_sync(new_team);
         }
 
         old_team = new_team;

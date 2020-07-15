@@ -179,19 +179,6 @@ shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)
 /* Team-based Collective Routines */
 
 int SHMEM_FUNCTION_ATTRIBUTES
-shmemx_sync(shmem_team_t team)
-{
-    SHMEM_ERR_CHECK_INITIALIZED();
-    SHMEM_ERR_CHECK_TEAM_VALID(team);
-
-    shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;
-    long *psync = shmem_internal_team_choose_psync(myteam, SYNC);
-    shmem_internal_sync(myteam->start, myteam->stride, myteam->size, psync);
-    shmem_internal_team_release_psyncs(myteam, SYNC);
-    return 0;
-}
-
-int SHMEM_FUNCTION_ATTRIBUTES
 shmem_team_sync(shmem_team_t team)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
