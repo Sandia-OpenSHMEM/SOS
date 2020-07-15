@@ -216,7 +216,7 @@ shmem_team_sync(shmem_team_t team)
 
 #define SHMEM_DEF_REDUCE(STYPE,TYPE,ITYPE,SOP,IOP)                      \
     int SHMEM_FUNCTION_ATTRIBUTES                                       \
-    shmem_##STYPE##_##SOP##_reduce(shmem_team_t team, TYPE *dest,     \
+    shmem_##STYPE##_##SOP##_reduce(shmem_team_t team, TYPE *dest,       \
                                        const TYPE *source,              \
                                        size_t nreduce)                  \
     {                                                                   \
@@ -314,7 +314,7 @@ shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
 
 #define SHMEM_DEF_BCAST(STYPE,TYPE)                                     \
     int SHMEM_FUNCTION_ATTRIBUTES                                       \
-    shmem_##STYPE##_broadcast(shmem_team_t team, TYPE *dest,          \
+    shmem_##STYPE##_broadcast(shmem_team_t team, TYPE *dest,            \
                               const TYPE *source, size_t nelems,        \
                               int PE_root)                              \
     {                                                                   \
@@ -366,7 +366,7 @@ shmem_collect64(void *target, const void *source, size_t nlong,
 
 #define SHMEM_DEF_COLLECT(STYPE,TYPE)                                  \
     int SHMEM_FUNCTION_ATTRIBUTES                                      \
-    shmem_##STYPE##_collect(shmem_team_t team, TYPE *dest,           \
+    shmem_##STYPE##_collect(shmem_team_t team, TYPE *dest,             \
                              const TYPE *source, size_t nelems)        \
     {                                                                  \
         SHMEM_ERR_CHECK_INITIALIZED();                                 \
@@ -434,7 +434,7 @@ shmem_fcollect64(void *target, const void *source, size_t nlong,
 
 #define SHMEM_DEF_FCOLLECT(STYPE,TYPE)                                  \
     int SHMEM_FUNCTION_ATTRIBUTES                                       \
-    shmem_##STYPE##_fcollect(shmem_team_t team, TYPE *dest,           \
+    shmem_##STYPE##_fcollect(shmem_team_t team, TYPE *dest,             \
                               const TYPE *source, size_t nelems)        \
     {                                                                   \
         SHMEM_ERR_CHECK_INITIALIZED();                                  \
@@ -502,7 +502,7 @@ shmem_alltoall64(void *dest, const void *source, size_t nelems, int PE_start,
 
 #define SHMEM_DEF_ALLTOALL(STYPE,TYPE)                                 \
     int SHMEM_FUNCTION_ATTRIBUTES                                      \
-    shmem_##STYPE##_alltoall(shmem_team_t team, TYPE *dest,           \
+    shmem_##STYPE##_alltoall(shmem_team_t team, TYPE *dest,            \
                              const TYPE *source, size_t nelems)        \
     {                                                                  \
         SHMEM_ERR_CHECK_INITIALIZED();                                 \
@@ -577,7 +577,7 @@ shmem_alltoalls64(void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,
 
 #define SHMEM_DEF_ALLTOALLS(STYPE,TYPE)                                      \
     int SHMEM_FUNCTION_ATTRIBUTES                                            \
-    shmem_##STYPE##_alltoalls(shmem_team_t team, TYPE *dest,               \
+    shmem_##STYPE##_alltoalls(shmem_team_t team, TYPE *dest,                 \
                                const TYPE *source, ptrdiff_t dst,            \
                                ptrdiff_t sst, size_t nelems)                 \
     {                                                                        \
