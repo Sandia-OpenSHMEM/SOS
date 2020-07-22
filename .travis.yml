@@ -360,7 +360,7 @@ script:
     ###
     ### Portals builds stop here
     ###
-    - if [ -n "SOS_DISABLE_EXTERNAL_TESTS" ]; then travis_terminate $TRAVIS_TEST_RESULT; fi
+    - if [ -n "$SOS_DISABLE_EXTERNAL_TESTS" ]; then travis_terminate $TRAVIS_TEST_RESULT; fi
     ###
     ### Run the UH test suite
     ###
