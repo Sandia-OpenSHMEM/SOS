@@ -567,7 +567,7 @@ define(`SHMEM_CXX_TEST_SOME_VECTOR',
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_SOME_VECTOR')
 
-static inline SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_sync(shmem_team_t team) {
+static inline int SHPRE()shmem_sync(shmem_team_t team) {
     return shmem_team_sync(team);
 }
 

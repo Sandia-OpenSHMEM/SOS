@@ -41,7 +41,7 @@ long pSync[SHMEM_ALLTOALL_SYNC_SIZE];
 int pWrk[WRK_SIZE];
 
 
-int sumtoall_with_malloc_hint(long hint, int mype, int npes)
+static int sumtoall_with_malloc_hint(long hint, int mype, int npes)
 {
     int failed = 0;
     int i;
