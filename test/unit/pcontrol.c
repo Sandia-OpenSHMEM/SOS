@@ -39,10 +39,10 @@ main(int argc, char* argv[], char *envp[])
 {
     shmem_init();
 
-    shmemx_pcontrol(1, "Region 1");
+    shmem_pcontrol(1, "Region 1");
     shmem_barrier_all();
 
-    shmemx_pcontrol(1, "Region 2");
+    shmem_pcontrol(1, "Region 2");
     shmem_barrier_all();
 
     shmem_finalize();
