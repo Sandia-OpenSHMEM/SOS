@@ -124,7 +124,8 @@ endif
 
 if ENABLE_PROFILING
 check_PROGRAMS += \
-	rma_coverage_pshmem
+	rma_coverage_pshmem \
+	pcontrol
 endif
 
 if HAVE_CXX

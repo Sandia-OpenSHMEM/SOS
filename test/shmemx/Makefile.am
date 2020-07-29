@@ -13,11 +13,6 @@
 
 check_PROGRAMS =
 
-if ENABLE_PROFILING
-check_PROGRAMS += \
-	pcontrol
-endif
-
 if USE_PORTALS4
 check_PROGRAMS += \
 	shmem_ct
