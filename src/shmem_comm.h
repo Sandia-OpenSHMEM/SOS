@@ -49,10 +49,8 @@ void
 shmem_internal_put_nb(shmem_ctx_t ctx, void *target, const void *source, size_t len, int pe,
                       long *completion)
 {
-    if (len == 0) {
-        *completion = 1;
+    if (len == 0)
         return;
-    }
 
     if (shmem_shr_transport_use_write(ctx, target, source, len, pe)) {
         shmem_shr_transport_put(ctx, target, source, len, pe);

@@ -128,7 +128,7 @@ ucs_status_t shmem_transport_ucx_release_op(ucs_status_ptr_t req) {
 static inline
 ucs_status_t shmem_transport_ucx_post_cb_op(ucs_status_ptr_t req, void *completion) {
     if (req == NULL) {
-        __atomic_store_n((long*)completion, 1, __ATOMIC_RELEASE);
+        __atomic_store_n((long*)completion, 0, __ATOMIC_RELEASE);
         return UCS_OK;
     } else if (UCS_PTR_IS_ERR(req))
         return UCS_PTR_STATUS(req);
@@ -279,7 +279,7 @@ static inline
 void
 shmem_transport_put_wait(shmem_transport_ctx_t* ctx, long *completion)
 {
-    while (0 == __atomic_load_n(completion, __ATOMIC_ACQUIRE))
+    while (__atomic_load_n(completion, __ATOMIC_ACQUIRE) > 0)
         shmem_transport_probe();
 }
 
