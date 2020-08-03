@@ -355,31 +355,39 @@ OMPI_CHECK_UCX([ucx],
 num_transports=""
 if test -n "$with_portals4" -a "$with_portals4" != "no" ; then
     num_transports="x$num_transports"
+fi
+if test -n "$with_ofi" -a "$with_ofi" != "no" ; then
+    num_transports="x$num_transports"
+fi
+if test -n "$with_ucx" -a "$with_ucx" != "no" ; then
+    num_transports="x$num_transports"
+fi
+
+if test -n "$num_transports" -a "$num_transports" != "x" ; then
+    AC_MSG_ERROR([Cannot select more than one transport, see --help for details])
+fi
+
+if test -n "$with_portals4" -a "$with_portals4" != "no" ; then
     transport="portals4"
     transport_ofi="no"
     transport_ucx="no"
     AC_DEFINE([USE_PORTALS4], [1], [Define if Portals 4 transport active])
-fi
-if test -n "$with_ofi" -a "$with_ofi" != "no" ; then
-    num_transports="x$num_transports"
+elif test -n "$with_ofi" -a "$with_ofi" != "no" ; then
     transport="ofi"
     transport_portals="no"
     transport_ucx="no"
     AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
-fi
-if test -n "$with_ucx" -a "$with_ucx" != "no" ; then
-    num_transports="x$num_transports"
+elif test -n "$with_ucx" -a "$with_ucx" != "no" ; then
     transport="ucx"
     transport_ofi="no"
     transport_portals="no"
     AC_DEFINE([USE_UCX], [1], [Define if UCX transport active])
     AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
-fi
-
-if test -n "$num_transports" -a "$num_transports" != "x" ; then
-    AC_MSG_ERROR([Cannot select more than one transport, see --help for details])
 else
     transport="none"
+    transport_portals4="no"
+    transport_ofi="no"
+    transport_ucx="no"
     AC_MSG_WARN([No transport requested])
 fi
 
