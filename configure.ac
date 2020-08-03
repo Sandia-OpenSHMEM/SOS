@@ -378,11 +378,8 @@ fi
 
 if test -n "$num_transports" -a "$num_transports" != "x" ; then
     AC_MSG_ERROR([Cannot select more than one transport, see --help for details])
-elif test -z "$num_transports" ; then
+else
     transport="none"
-    transport_ofi="no"
-    transport_portals="no"
-    transport_ucx="no"
     AC_MSG_WARN([No transport requested])
 fi
 
