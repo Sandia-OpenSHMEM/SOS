@@ -369,12 +369,18 @@ fi
 
 if test -n "$with_portals4" -a "$with_portals4" != "no" ; then
     transport="portals4"
+    transport_ofi="no"
+    transport_ucx="no"
     AC_DEFINE([USE_PORTALS4], [1], [Define if Portals 4 transport active])
 elif test -n "$with_ofi" -a "$with_ofi" != "no" ; then
     transport="ofi"
+    transport_portals="no"
+    transport_ucx="no"
     AC_DEFINE([USE_OFI], [1], [Define if OFI transport active])
 elif test -n "$with_ucx" -a "$with_ucx" != "no" ; then
     transport="ucx"
+    transport_ofi="no"
+    transport_portals="no"
     AC_DEFINE([USE_UCX], [1], [Define if UCX transport active])
     AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
 else
