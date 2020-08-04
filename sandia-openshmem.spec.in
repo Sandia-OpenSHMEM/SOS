@@ -1,5 +1,6 @@
 %{!?configargs: %global configargs %{nil}}
 %{!?testdir: %global testdir %{buildroot}%{_datadir}/%{name}-%{version}/tests}
+%define debug_package %{nil}
 
 Name: sandia-openshmem
 Version: @VERSION@
