@@ -121,14 +121,14 @@ env:
           SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
           SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple"
         - >
-          SOS_ENABLE_ERROR_TESTS=1
-          SHMEM_BARRIER_ALGORITHM=dissem SHMEM_BCAST_ALGORITHM=tree SHMEM_REDUCE_ALGORITHM=tree
+          SOS_DISABLE_EXTERNAL_TESTS=1 SOS_ENABLE_ERROR_TESTS=1
+          SHMEM_BARRIER_ALGORITHM=tree SHMEM_BCAST_ALGORITHM=tree SHMEM_REDUCE_ALGORITHM=tree
           SHMEM_OFI_STX_MAX=0
           SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
           SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple --enable-manual-progress"
         - >
           SOS_DISABLE_EXTERNAL_TESTS=1 SOS_ENABLE_ERROR_TESTS=1
-          SHMEM_BARRIER_ALGORITHM=tree SHMEM_REDUCE_ALGORITHM=recdbl SHMEM_FCOLLECT_ALGORITHM=recdbl
+          SHMEM_BARRIER_ALGORITHM=dissem SHMEM_REDUCE_ALGORITHM=recdbl SHMEM_FCOLLECT_ALGORITHM=recdbl
           SHMEM_OFI_STX_AUTO=1
           SOS_TRANSPORT_OPTS="--with-ofi=$TRAVIS_INSTALL/libfabric/"
           SOS_BUILD_OPTS="--enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple --enable-manual-progress --enable-hard-polling"
