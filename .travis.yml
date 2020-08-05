@@ -36,6 +36,12 @@ env:
           SOS_DISABLE_EXTERNAL_TESTS=1
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--enable-pmi-simple"
+        ## FIXME - Portals requires libev, but PMIx/PRRTE is not working with libev on Xenial (currently using libevent-2.1.10 instead)
+        #- >
+        #  SOS_DISABLE_EXTERNAL_TESTS=1
+        #  SOS_PM="prun -host localhost -oversubscribe" SOS_PM_PRE="prte --daemonize" SOS_PM_POST="prun -terminate"
+        #  SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
+        #  SOS_BUILD_OPTS="--with-pmix=$TRAVIS_INSTALL/pmix"
         - >
           SOS_DISABLE_EXTERNAL_TESTS=1
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
@@ -301,6 +307,7 @@ before_install:
       if [[ $SOS_BUILD_OPTS = *"with-pmix"* ]]; then
         cd $TRAVIS_SRC
         git clone --depth 10 https://github.com/pmix/pmix pmix
+        # Checkout a stable configuration for dist:xenial (FIXME: use a tag compatible with PRRTE when available)
         git checkout e4a27268
         cd pmix
         ./autogen.pl
@@ -312,6 +319,7 @@ before_install:
       if [[ $SOS_BUILD_OPTS = *"with-pmix"* ]]; then
         cd $TRAVIS_SRC
         git clone --depth 10 https://github.com/pmix/prrte prrte
+        # Checkout a stable configuration for dist:xenial (FIXME: use a tag when available)
         git checkout 40ae55bc
         cd prrte
         ./autogen.pl
