@@ -156,6 +156,7 @@ env:
 
         ## UCX Builds
         - >
+          SOS_DISABLE_EXTERNAL_TESTS=1
           SOS_TRANSPORT_OPTS="--with-ucx=$TRAVIS_INSTALL/ucx/"
           SOS_BUILD_OPTS="--enable-pmi-simple"
         - >
@@ -164,14 +165,17 @@ env:
           SOS_TRANSPORT_OPTS="--with-ucx=$TRAVIS_INSTALL/ucx/"
           SOS_BUILD_OPTS="--with-pmix=$TRAVIS_INSTALL/pmix"
         - >
+          SOS_DISABLE_EXTERNAL_TESTS=1
           SOS_DISABLE_FORTRAN=1
           SOS_TRANSPORT_OPTS="--with-ucx=$TRAVIS_INSTALL/ucx/"
           SOS_BUILD_OPTS="--enable-pmi-mpi CC=mpicc"
         - >
+          SOS_DISABLE_EXTERNAL_TESTS=1
           SOS_DISABLE_FORTRAN=1
           SOS_TRANSPORT_OPTS="--with-ucx=$TRAVIS_INSTALL/ucx/"
           SOS_BUILD_OPTS="--with-cma --enable-error-checking --enable-profiling --enable-pmi-simple"
         - >
+          SOS_DISABLE_EXTERNAL_TESTS=1
           SOS_TRANSPORT_OPTS="--with-ucx=$TRAVIS_INSTALL/ucx/"
           SOS_BUILD_OPTS="--with-xpmem=$TRAVIS_INSTALL/xpmem --enable-error-checking --enable-pmi-simple"
 
