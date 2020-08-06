@@ -33,8 +33,6 @@
 #include <shmem.h>
 #include <string.h>
 
-#include <shmemx.h>
-
 #define MSG_SZ 10
 
 int main(int argc, char *argv[])

@@ -27,7 +27,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <shmem.h>
-#include <shmemx.h>
 
 #define NITERS 100
 #define NELEMS 10

@@ -34,7 +34,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <shmem.h>
-#include <shmemx.h>
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 

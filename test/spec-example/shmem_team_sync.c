@@ -5,7 +5,6 @@
 
 #include <stdio.h>
 #include <shmem.h>
-#include <shmemx.h>
 
 #if !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
 #define shmem_p shmem_int_p

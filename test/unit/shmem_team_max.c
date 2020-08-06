@@ -27,7 +27,6 @@
 
 #include <stdio.h>
 #include <shmem.h>
-#include <shmemx.h>
 
 #define NUM_TEAMS 64
 

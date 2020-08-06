@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <shmem.h>
-#include <shmemx.h>
 
 int main(void)
 {
