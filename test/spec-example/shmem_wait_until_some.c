@@ -1,5 +1,4 @@
 #include <shmem.h>
-#include <shmemx.h>
 #include <stdlib.h>
 
 #define N 100

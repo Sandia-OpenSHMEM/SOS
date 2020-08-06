@@ -3,7 +3,6 @@
  *  OpenSHMEM specification.
  */
 
-#include <shmemx.h>
 #include <shmem.h>
 #include <stdio.h>
 

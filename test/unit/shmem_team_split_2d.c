@@ -27,7 +27,6 @@
 
 #include <stdio.h>
 #include <shmem.h>
-#include <shmemx.h>
 
 static int check_2d(shmem_team_t parent_team, int xdim) {
     int me = shmem_team_my_pe(parent_team);

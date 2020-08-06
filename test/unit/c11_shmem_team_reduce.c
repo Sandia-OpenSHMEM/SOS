@@ -37,7 +37,6 @@
 #include <math.h>
 #include <stdbool.h>
 #include <shmem.h>
-#include <shmemx.h>
 
 #define MAX_NPES 32
 
