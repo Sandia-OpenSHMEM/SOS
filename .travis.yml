@@ -38,6 +38,11 @@ env:
           SOS_BUILD_OPTS="--enable-pmi-simple"
         - >
           SOS_DISABLE_EXTERNAL_TESTS=1
+          SOS_PM="prun" SOS_PM_PRE="prte --daemonize --host localhost:4" SOS_PM_POST="pterm"
+          SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
+          SOS_BUILD_OPTS="--with-pmix=$TRAVIS_INSTALL/pmix"
+        - >
+          SOS_DISABLE_EXTERNAL_TESTS=1
           SOS_TRANSPORT_OPTS="--with-portals4=$TRAVIS_INSTALL/portals4/"
           SOS_BUILD_OPTS="--disable-cxx --enable-memcpy --enable-pmi-simple"
         - >
@@ -231,6 +236,9 @@ before_install:
         # JSD: --enable-transport-shmem removed; it was causing tests to hang
         make $TRAVIS_PAR_MAKE
         make install
+        if [[ $SOS_BUILD_OPTS = *"with-pmix"* ]]; then
+          export SOS_BUILD_STATIC_OPTS="--disable-shared --enable-static"
+        fi
       fi
     ## Build libfabric
     - >
@@ -301,10 +309,11 @@ before_install:
       if [[ $SOS_BUILD_OPTS = *"with-pmix"* ]]; then
         cd $TRAVIS_SRC
         git clone --depth 10 https://github.com/pmix/pmix pmix
+        # Checkout a stable configuration for dist:xenial (FIXME: use a tag compatible with PRRTE when available)
         git checkout e4a27268
         cd pmix
         ./autogen.pl
-        ./configure --prefix=$TRAVIS_INSTALL/pmix --with-libevent=$TRAVIS_SRC/libevent-2.1.10-stable/install --disable-debug CFLAGS=-O3
+        ./configure --prefix=$TRAVIS_INSTALL/pmix --with-libevent=$TRAVIS_SRC/libevent-2.1.10-stable/install --without-libev --disable-debug CFLAGS=-O3 $SOS_BUILD_STATIC_OPTS
         make install
       fi
     ## Build PRRTE
@@ -312,12 +321,20 @@ before_install:
       if [[ $SOS_BUILD_OPTS = *"with-pmix"* ]]; then
         cd $TRAVIS_SRC
         git clone --depth 10 https://github.com/pmix/prrte prrte
+        # Checkout a stable configuration for dist:xenial (FIXME: use a tag when available)
         git checkout 40ae55bc
         cd prrte
         ./autogen.pl
-        ./configure --prefix=$TRAVIS_INSTALL/prrte --with-pmix=$TRAVIS_INSTALL/pmix --without-slurm --with-libevent=$TRAVIS_SRC/libevent-2.1.10-stable/install
+        ./configure --prefix=$TRAVIS_INSTALL/prrte --with-pmix=$TRAVIS_INSTALL/pmix --without-slurm --with-libevent=$TRAVIS_SRC/libevent-2.1.10-stable/install --without-libev $SOS_BUILD_STATIC_OPTS
         make install
         export PATH=$TRAVIS_INSTALL/prrte/bin:$PATH
+      fi
+    ## If Portals+PRRTE, rebuild PMIx (FIXME after resolving PRRTE w/ libev issues)
+    - >
+      if [[ $SOS_BUILD_OPTS = *"with-pmix"* ]] && [[ $SOS_BUILD_OPTS = *"with-portals4"* ]]; then
+        cd $TRAVIS_SRC/pmix
+        ./configure --prefix=$TRAVIS_INSTALL/pmix --without-libevent --with-libev --disable-debug CFLAGS=-O3
+        make install
       fi
 
 
