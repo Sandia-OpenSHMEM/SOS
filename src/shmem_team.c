@@ -190,15 +190,15 @@ cleanup:
     }
     if (shmem_internal_psync_pool) {
         shmem_internal_free(shmem_internal_psync_pool);
-        shmem_internal_team_pool = NULL;
+        shmem_internal_psync_pool = NULL;
     }
     if (psync_pool_avail) {
         shmem_internal_free(psync_pool_avail);
-        shmem_internal_team_pool = NULL;
+        psync_pool_avail = NULL;
     }
     if (team_ret_val) {
         shmem_internal_free(team_ret_val);
-        shmem_internal_team_pool = NULL;
+        team_ret_val = NULL;
     }
 
     return -1;
@@ -333,6 +333,8 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
             shmem_internal_team_pool[myteam->psync_idx] = *new_team;
         }
     }
+
+    shmem_internal_team_release_psyncs(parent_team, REDUCE);
 
     /* This barrier on the parent team eliminates problematic race conditions
      * during psync allocation between back-to-back team creations. */
