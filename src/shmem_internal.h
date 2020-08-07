@@ -537,7 +537,7 @@ void shmem_internal_bit_clear(unsigned char *ptr, size_t size, size_t index)
 static inline
 unsigned char shmem_internal_bit_fetch(unsigned char *ptr, size_t index)
 {
-    return (ptr[index / CHAR_BIT] >> index) & 1;
+    return (ptr[index / CHAR_BIT] >> (index % CHAR_BIT)) & 1;
 }
 
 static inline
