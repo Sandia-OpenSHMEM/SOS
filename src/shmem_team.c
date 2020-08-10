@@ -481,6 +481,10 @@ long * shmem_internal_team_choose_psync(shmem_internal_team_t *team, shmem_inter
                 }
             }
 
+            /* No psync is available, so we must quiesce communication across all psyncs on this team. */
+            /* Currently, all collectives on all teams are done on the default context. */
+            shmem_internal_quiet(SHMEM_CTX_DEFAULT);
+
             size_t psync = team->psync_idx * SHMEM_SYNC_SIZE;
             shmem_internal_sync(team->start, team->stride, team->size,
                                 &shmem_internal_psync_barrier_pool[psync]);
