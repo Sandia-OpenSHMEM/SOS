@@ -527,7 +527,7 @@ void shmem_internal_bit_set(unsigned char *ptr, size_t size, size_t index)
 {
     shmem_internal_assert(size > 0 && (index < size * CHAR_BIT));
 
-    size_t which_byte = index / size;
+    size_t which_byte = index / CHAR_BIT;
     ptr[which_byte] |= (1 << (index % CHAR_BIT));
 
     return;
@@ -538,16 +538,19 @@ void shmem_internal_bit_clear(unsigned char *ptr, size_t size, size_t index)
 {
     shmem_internal_assert(size > 0 && (index < size * CHAR_BIT));
 
-    size_t which_byte = index / size;
+    size_t which_byte = index / CHAR_BIT;
     ptr[which_byte] &= ~(1 << (index % CHAR_BIT));
 
     return;
 }
 
 static inline
-unsigned char shmem_internal_bit_fetch(unsigned char *ptr, size_t index)
+unsigned char shmem_internal_bit_fetch(unsigned char *ptr, size_t size, size_t index)
 {
-    return (ptr[index / CHAR_BIT] >> (index % CHAR_BIT)) & 1;
+    shmem_internal_assert(size > 0 && (index < size * CHAR_BIT));
+
+    size_t which_byte = index / CHAR_BIT;
+    return (ptr[which_byte] >> (index % CHAR_BIT)) & 1;
 }
 
 static inline

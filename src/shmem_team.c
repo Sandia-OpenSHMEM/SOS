@@ -439,7 +439,7 @@ int shmem_internal_team_destroy(shmem_internal_team_t *team)
 
     if (team == SHMEMX_TEAM_INVALID) {
         return -1;
-    } else if (shmem_internal_bit_fetch(psync_pool_avail, team->psync_idx)) {
+    } else if (shmem_internal_bit_fetch(psync_pool_avail, N_PSYNC_BYTES, team->psync_idx)) {
         RAISE_ERROR_STR("Destroying a team without an active pSync");
     } else {
         shmem_internal_bit_set(psync_pool_avail, N_PSYNC_BYTES, team->psync_idx);
