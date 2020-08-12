@@ -342,7 +342,7 @@ script:
     - make $TRAVIS_PAR_MAKE check TESTS=
     - $SOS_PM_PRE
     - >
-      if [[ $SOS_TRANSPORT_OPTS = *"with-ofi"* ]]; then
+      if [[ $SOS_TRANSPORT_OPTS = *"with-ofi"* ]] || [[ $SOS_TRANSPORT_OPTS = *"with-ucx" ]]; then
         make VERBOSE=1 TEST_RUNNER="$SOS_PM -np 2" check
       else
         $SOS_PM -np 1 test/unit/hello
