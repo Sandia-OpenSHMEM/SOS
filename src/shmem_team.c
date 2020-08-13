@@ -190,15 +190,15 @@ cleanup:
     }
     if (shmem_internal_psync_pool) {
         shmem_internal_free(shmem_internal_psync_pool);
-        shmem_internal_team_pool = NULL;
+        shmem_internal_psync_pool = NULL;
     }
     if (psync_pool_avail) {
         shmem_internal_free(psync_pool_avail);
-        shmem_internal_team_pool = NULL;
+        psync_pool_avail = NULL;
     }
     if (team_ret_val) {
         shmem_internal_free(team_ret_val);
-        shmem_internal_team_pool = NULL;
+        team_ret_val = NULL;
     }
 
     return -1;
@@ -334,6 +334,8 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
         }
     }
 
+    shmem_internal_team_release_psyncs(parent_team, REDUCE);
+
     /* This barrier on the parent team eliminates problematic race conditions
      * during psync allocation between back-to-back team creations. */
     psync = shmem_internal_team_choose_psync(parent_team, SYNC);
@@ -437,7 +439,7 @@ int shmem_internal_team_destroy(shmem_internal_team_t *team)
 
     if (team == SHMEMX_TEAM_INVALID) {
         return -1;
-    } else if (shmem_internal_bit_fetch(psync_pool_avail, team->psync_idx)) {
+    } else if (shmem_internal_bit_fetch(psync_pool_avail, N_PSYNC_BYTES, team->psync_idx)) {
         RAISE_ERROR_STR("Destroying a team without an active pSync");
     } else {
         shmem_internal_bit_set(psync_pool_avail, N_PSYNC_BYTES, team->psync_idx);
@@ -478,6 +480,10 @@ long * shmem_internal_team_choose_psync(shmem_internal_team_t *team, shmem_inter
                     return &shmem_internal_psync_pool[(team->psync_idx + i) * PSYNC_CHUNK_SIZE];
                 }
             }
+
+            /* No psync is available, so we must quiesce communication across all psyncs on this team. */
+            /* Currently, all collectives on all teams are done on the default context. */
+            shmem_internal_quiet(SHMEM_CTX_DEFAULT);
 
             size_t psync = team->psync_idx * SHMEM_SYNC_SIZE;
             shmem_internal_sync(team->start, team->stride, team->size,
