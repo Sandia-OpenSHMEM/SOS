@@ -12,7 +12,6 @@
 #ifndef SHMEM_TEAM_H
 #define SHMEM_TEAM_H
 
-#include "shmemx.h"
 #include "transport.h"
 #include "uthash.h"
 

@@ -12,7 +12,6 @@
 
 #include "config.h"
 
-#include "shmemx.h"
 #include "shmem_team.h"
 #include "shmem_collectives.h"
 #include "shmem_remote_pointer.h"
