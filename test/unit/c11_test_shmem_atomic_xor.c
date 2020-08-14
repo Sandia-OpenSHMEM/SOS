@@ -36,10 +36,6 @@
 #include <stdio.h>
 #include <shmem.h>
 
-#ifdef ENABLE_SHMEMX_TESTS
-#include <shmemx.h>
-#endif
-
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 
 enum op { XOR = 0, CTX_XOR, FETCH_XOR, CTX_FETCH_XOR, FETCH_XOR_NBI,
@@ -50,7 +46,6 @@ enum op { XOR = 0, CTX_XOR, FETCH_XOR, CTX_FETCH_XOR, FETCH_XOR_NBI,
  * The result has the NPES least significant bits cleared, 111...000...b.
  */
 
-#ifdef ENABLE_SHMEMX_TESTS
 #define SHMEM_NBI_OPS_CASES(OP, TYPE)                                   \
         case FETCH_XOR_NBI:                                             \
           shmem_atomic_fetch_xor_nbi(&old, &remote,                     \
@@ -72,9 +67,6 @@ enum op { XOR = 0, CTX_XOR, FETCH_XOR, CTX_FETCH_XOR, FETCH_XOR_NBI,
             rc = EXIT_FAILURE;                                          \
           }                                                             \
           break;
-#else
-#define SHMEM_NBI_OPS_CASES(OP, TYPE)
-#endif
 
 #define TEST_SHMEM_XOR(OP, TYPE)                                        \
   do {                                                                  \
@@ -161,7 +153,6 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_XOR(CTX_FETCH_XOR, uint32_t);
   TEST_SHMEM_XOR(CTX_FETCH_XOR, uint64_t);
 
-#ifdef ENABLE_SHMEMX_TESTS
   TEST_SHMEM_XOR(FETCH_XOR_NBI, unsigned int);
   TEST_SHMEM_XOR(FETCH_XOR_NBI, unsigned long);
   TEST_SHMEM_XOR(FETCH_XOR_NBI, unsigned long long);
@@ -177,7 +168,6 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_XOR(CTX_FETCH_XOR_NBI, int64_t);
   TEST_SHMEM_XOR(CTX_FETCH_XOR_NBI, uint32_t);
   TEST_SHMEM_XOR(CTX_FETCH_XOR_NBI, uint64_t);
-#endif
 
   shmem_finalize();
   return rc;

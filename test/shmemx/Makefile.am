@@ -21,8 +21,7 @@ endif
 if SHMEMX_TESTS
 check_PROGRAMS += \
 	perf_counter \
-	fadd_nbi \
-	atomic_nbi 
+	fadd_nbi
 
 if HAVE_PTHREADS
 check_PROGRAMS += \

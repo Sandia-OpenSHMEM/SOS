@@ -25,7 +25,6 @@
  * SOFTWARE.
  */
 
-#include <shmemx.h>
 #include <common.h>
 #ifdef ENABLE_OPENMP
 #include <omp.h>
