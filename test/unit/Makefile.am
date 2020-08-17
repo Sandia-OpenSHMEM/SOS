@@ -115,7 +115,8 @@ check_PROGRAMS = \
 	shmem_team_shared \
 	shmem_team_split_2d \
 	shmem_team_translate \
-	atomic_nbi
+	atomic_nbi \
+	fadd_nbi
 
 # Temporarily disabled: Global exit test tends to fail with MPI-PMI
 if !USE_PMI_MPI

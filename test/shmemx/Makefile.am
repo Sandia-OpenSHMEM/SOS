@@ -20,8 +20,7 @@ endif
 
 if SHMEMX_TESTS
 check_PROGRAMS += \
-	perf_counter \
-	fadd_nbi
+	perf_counter
 
 if HAVE_PTHREADS
 check_PROGRAMS += \
