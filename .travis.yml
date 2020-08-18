@@ -255,7 +255,7 @@ before_install:
     - >
       if [[ $SOS_TRANSPORT_OPTS = *"with-ucx"* ]]; then
         cd $TRAVIS_SRC
-        git clone -b v1.7.0 --depth 10 https://github.com/openucx/ucx.git
+        git clone -b v1.8.1 --depth 10 https://github.com/openucx/ucx.git
         cd ucx
         ./autogen.sh
         ./configure --prefix=$TRAVIS_INSTALL/ucx --enable-mt --disable-numa
