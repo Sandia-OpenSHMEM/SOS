@@ -21,22 +21,22 @@ endif
 
 if SHMEMX_TESTS
 check_PROGRAMS += \
-	shmemx_wait_until_all \
-	shmemx_wait_until_any \
-	shmemx_wait_until_some \
-	shmemx_wait_until_any_vector \
-	shmemx_test_any \
-	shmemx_test_some \
-	shmemx_team_split_strided \
+	shmem_wait_until_all \
+	shmem_wait_until_any \
+	shmem_wait_until_some \
+	shmem_wait_until_any_vector \
+	shmem_test_any \
+	shmem_test_some \
+	shmem_team_split_strided \
 	shmem_team_split_2D \
-	shmemx_team_translate \
+	shmem_team_translate \
 	shmem_team_context \
-	shmemx_team_sync \
-	shmemx_team_broadcast \
-	shmemx_team_collect \
+	shmem_team_sync \
+	shmem_team_broadcast \
+	shmem_team_collect \
 	shmem_reduce_example \
-	shmemx_team_alltoall \
-	shmemx_team_alltoalls
+	shmem_team_alltoall \
+	shmem_team_alltoalls
 
 endif SHMEMX_TESTS
 

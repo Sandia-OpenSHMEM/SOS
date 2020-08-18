@@ -68,7 +68,7 @@ static inline
 int
 shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options, shmem_transport_ctx_t **ctx)
 {
-    if (team == SHMEMX_TEAM_INVALID)
+    if (team == SHMEM_TEAM_INVALID)
         return 1;
 
     *ctx = malloc(sizeof(shmem_transport_ctx_t));
@@ -86,7 +86,7 @@ static inline
 void
 shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 {
-    if (ctx == SHMEMX_CTX_INVALID)
+    if (ctx == SHMEM_CTX_INVALID)
         return;
     else if (ctx == (shmem_transport_ctx_t *) SHMEM_CTX_DEFAULT)
         RAISE_ERROR_STR("Cannot destroy SHMEM_CTX_DEFAULT");

@@ -3,7 +3,6 @@
  *  OpenSHMEM specification.
  */
 
-#include <shmemx.h>
 #include <shmem.h>
 #include <stdio.h>
 #include <math.h>
@@ -30,7 +29,9 @@ static void find_xyz_dims(int npes, int *x, int *y, int *z) {
 }
 
 int main(void) {
-  int xdim, ydim, zdim;
+  int xdim = 1;
+  int ydim = 1;
+  int zdim = 1;
 
   shmem_init();
   int mype = shmem_my_pe();
@@ -40,18 +41,18 @@ int main(void) {
 
   if (shmem_my_pe() == 0) printf("xdim = %d, ydim = %d, zdim = %d\n", xdim, ydim, zdim);
 
-  shmemx_team_t xteam, yzteam, yteam, zteam;
+  shmem_team_t xteam, yzteam, yteam, zteam;
 
-  shmemx_team_split_2d(SHMEMX_TEAM_WORLD, xdim, NULL, 0, &xteam, NULL, 0, &yzteam);
+  shmem_team_split_2d(SHMEM_TEAM_WORLD, xdim, NULL, 0, &xteam, NULL, 0, &yzteam);
   // yzteam is immediately ready to be used in collectives
-  shmemx_team_split_2d(yzteam, ydim, NULL, 0, &yteam, NULL, 0, &zteam);
+  shmem_team_split_2d(yzteam, ydim, NULL, 0, &yteam, NULL, 0, &zteam);
 
   // We don't need the yzteam anymore
-  shmemx_team_destroy(yzteam);
+  shmem_team_destroy(yzteam);
 
-  int my_x = shmemx_team_my_pe(xteam);
-  int my_y = shmemx_team_my_pe(yteam);
-  int my_z = shmemx_team_my_pe(zteam);
+  int my_x = shmem_team_my_pe(xteam);
+  int my_y = shmem_team_my_pe(yteam);
+  int my_z = shmem_team_my_pe(zteam);
 
   for (int zdx = 0; zdx < zdim; zdx++) {
     for (int ydx = 0; ydx < ydim; ydx++) {
@@ -59,7 +60,7 @@ int main(void) {
         if ((my_x == xdx) && (my_y == ydx) && (my_z == zdx)) {
           printf("(%d, %d, %d) is mype = %d\n", my_x, my_y, my_z, mype);
         }
-        shmemx_team_sync(SHMEMX_TEAM_WORLD);
+        shmem_team_sync(SHMEM_TEAM_WORLD);
       }
     }
   }

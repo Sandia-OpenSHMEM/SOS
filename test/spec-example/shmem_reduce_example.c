@@ -3,7 +3,6 @@
  *  OpenSHMEM specification.
  */
 
-#include <shmemx.h>
 #include <shmem.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,10 +33,10 @@ int main(void) {
   }
 
   /* Wait for all PEs to initialize reductions arrays */
-  shmemx_sync(SHMEMX_TEAM_WORLD);
+  shmem_sync(SHMEM_TEAM_WORLD);
 
-  shmemx_or_reduce(SHMEMX_TEAM_WORLD, value_is_maximal_all, value_is_maximal, NELEMS);
-  shmemx_sum_reduce(SHMEMX_TEAM_WORLD, &maximal_values_total, &maximal_values_count, 1);
+  shmem_or_reduce(SHMEM_TEAM_WORLD, value_is_maximal_all, value_is_maximal, NELEMS);
+  shmem_sum_reduce(SHMEM_TEAM_WORLD, &maximal_values_total, &maximal_values_count, 1);
 
   if (mype == 0) {
     printf("Found %d maximal random numbers across all PEs.\n", maximal_values_total);

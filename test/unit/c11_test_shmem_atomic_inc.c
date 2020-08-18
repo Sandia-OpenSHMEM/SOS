@@ -35,10 +35,6 @@
 #include <stdio.h>
 #include <shmem.h>
 
-#ifdef ENABLE_SHMEMX_TESTS
-#include <shmemx.h>
-#endif
-
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 
 enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
@@ -53,10 +49,9 @@ enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
 #define DEPRECATED_FINC shmem_atomic_fetch_inc
 #endif
 
-#ifdef ENABLE_SHMEMX_TESTS
-#define SHMEMX_NBI_OPS_CASES(OP, TYPE)                                  \
+#define SHMEM_NBI_OPS_CASES(OP, TYPE)                                   \
         case ATOMIC_FETCH_INC_NBI:                                      \
-          shmemx_atomic_fetch_inc_nbi(&old, &remote, i);                \
+          shmem_atomic_fetch_inc_nbi(&old, &remote, i);                 \
           shmem_quiet();                                                \
           if (old > (TYPE) npes) {                                      \
             printf("PE %i error inconsistent value of old (%s, %s)\n",  \
@@ -65,7 +60,7 @@ enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
           }                                                             \
           break;                                                        \
         case CTX_ATOMIC_FETCH_INC_NBI:                                  \
-          shmemx_atomic_fetch_inc_nbi(SHMEM_CTX_DEFAULT, &old, &remote, i); \
+          shmem_atomic_fetch_inc_nbi(SHMEM_CTX_DEFAULT, &old, &remote, i); \
           shmem_quiet();                                                \
           if (old > (TYPE) npes) {                                      \
             printf("PE %i error inconsistent value of old (%s, %s)\n",  \
@@ -73,9 +68,6 @@ enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
             rc = EXIT_FAILURE;                                          \
           }                                                             \
           break;
-#else
-#define SHMEMX_NBI_OPS_CASES(OP, TYPE)
-#endif
 
 #define TEST_SHMEM_INC(OP, TYPE)                                        \
   do {                                                                  \
@@ -120,7 +112,7 @@ enum op { INC = 0, ATOMIC_INC, CTX_ATOMIC_INC, FINC, ATOMIC_FETCH_INC,
             rc = EXIT_FAILURE;                                          \
           }                                                             \
           break;                                                        \
-        SHMEMX_NBI_OPS_CASES(OP, TYPE)                                  \
+        SHMEM_NBI_OPS_CASES(OP, TYPE)                                   \
         default:                                                        \
           printf("Invalid operation (%d)\n", OP);                       \
           shmem_global_exit(1);                                         \
@@ -223,7 +215,6 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, size_t);
   TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC, ptrdiff_t);
 
-#ifdef ENABLE_SHMEMX_TESTS
   TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, int);
   TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, long);
   TEST_SHMEM_INC(ATOMIC_FETCH_INC_NBI, long long);
@@ -249,7 +240,6 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, uint64_t);
   TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, size_t);
   TEST_SHMEM_INC(CTX_ATOMIC_FETCH_INC_NBI, ptrdiff_t);
-#endif
 
   shmem_finalize();
   return rc;
