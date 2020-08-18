@@ -29,10 +29,9 @@ static void find_xyz_dims(int npes, int *x, int *y, int *z) {
 }
 
 int main(void) {
-  //int xdim, ydim, zdim;
-  int xdim = 0;
-  int ydim = 0;
-  int zdim = 0;
+  int xdim = 1;
+  int ydim = 1;
+  int zdim = 1;
 
   shmem_init();
   int mype = shmem_my_pe();
