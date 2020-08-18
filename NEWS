@@ -16,6 +16,8 @@ v1.5.0rc1
 - Added support for UCX transport
 - Added shmem_malloc_with_hints. Currently, no hint values are supported.
 - Added shmem_signal_fetch
+- Multiple bugfixes, including in teams resource management, put completion
+  logic, and configure issues when multiple transports are detected.
 
 v1.4.5
 ------
