@@ -4,9 +4,17 @@ Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
 v1.5.0rc1
 ---------
-- Renamed all OpenSHMEM v1.5 interfaces from "shmemx" to "shmem" and moved all unit tests accordingly
-- Added support for UCX Transport
-- Added shmem_malloc_with_hints(though no hints supported yet)
+- Support for OpenSHMEM v1.5 specification
+- New features include: a teams API and teams-based collectives,
+  put-with-signal routines, nonblocking atomic routines, multiple-element
+  wait/test vector comparison routines, shmem_malloc_with_hints, and a
+  profiling interface.  See OpenSHMEM 1.5 Specification, Annex G for details.
+- Deprecations include: active-set-based library constants and collective
+  routines, shmem_barrier, and short/unsigned short variants for
+  shmem_wait_until and shmem_test.  See OpenSHMEM 1.5 Specification, Annex F
+  for details.
+- Added support for UCX transport
+- Added shmem_malloc_with_hints. Currently, no hint values are supported.
 - Added shmem_signal_fetch
 
 v1.4.5
