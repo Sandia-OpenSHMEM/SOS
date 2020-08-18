@@ -41,8 +41,8 @@
 #pragma weak shmemx_wtime = pshmemx_wtime
 #define shmemx_wtime pshmemx_wtime
 
-#pragma weak shmemx_pcontrol = pshmemx_pcontrol
-#define shmemx_pcontrol pshmemx_pcontrol
+#pragma weak shmem_pcontrol = pshmem_pcontrol
+#define shmem_pcontrol pshmem_pcontrol
 
 #endif /* ENABLE_PROFILING */
 
@@ -93,7 +93,7 @@ shmemx_wtime(void)
 
 
 void SHMEM_FUNCTION_ATTRIBUTES
-shmemx_pcontrol(int level, ...)
+shmem_pcontrol(int level, ...)
 {
     return;
 }

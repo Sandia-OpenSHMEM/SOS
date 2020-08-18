@@ -36,10 +36,6 @@
 #include <stdio.h>
 #include <shmem.h>
 
-#ifdef ENABLE_SHMEMX_TESTS
-#include <shmemx.h>
-#endif
-
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 
 enum op { OR = 0, CTX_OR, FETCH_OR, CTX_FETCH_OR, FETCH_OR_NBI,
@@ -50,10 +46,9 @@ enum op { OR = 0, CTX_OR, FETCH_OR, CTX_FETCH_OR, FETCH_OR_NBI,
  * The result has the NPES least significant bits set, 000...111...b.
  */
 
-#ifdef ENABLE_SHMEMX_TESTS
-#define SHMEMX_NBI_OPS_CASES(OP, TYPE)                                  \
+#define SHMEM_NBI_OPS_CASES(OP, TYPE)                                   \
         case FETCH_OR_NBI:                                              \
-          shmemx_atomic_fetch_or_nbi(&old, &remote,                     \
+          shmem_atomic_fetch_or_nbi(&old, &remote,                      \
                                      (TYPE)(1LLU << mype), i);          \
           shmem_quiet();                                                \
           if ((old & (TYPE)(1LLU << mype)) != 0) {                      \
@@ -63,7 +58,7 @@ enum op { OR = 0, CTX_OR, FETCH_OR, CTX_FETCH_OR, FETCH_OR_NBI,
           }                                                             \
           break;                                                        \
         case CTX_FETCH_OR_NBI:                                          \
-          shmemx_atomic_fetch_or_nbi(SHMEM_CTX_DEFAULT, &old, &remote,  \
+          shmem_atomic_fetch_or_nbi(SHMEM_CTX_DEFAULT, &old, &remote,   \
                                      (TYPE)(1LLU << mype), i);          \
           shmem_quiet();                                                \
           if ((old & (TYPE)(1LLU << mype)) != 0) {                      \
@@ -72,9 +67,6 @@ enum op { OR = 0, CTX_OR, FETCH_OR, CTX_FETCH_OR, FETCH_OR_NBI,
             rc = EXIT_FAILURE;                                          \
           }                                                             \
           break;
-#else
-#define SHMEMX_NBI_OPS_CASES(OP, TYPE)
-#endif
 
 #define TEST_SHMEM_OR(OP, TYPE)                                         \
   do {                                                                  \
@@ -109,7 +101,7 @@ enum op { OR = 0, CTX_OR, FETCH_OR, CTX_FETCH_OR, FETCH_OR_NBI,
             rc = EXIT_FAILURE;                                          \
           }                                                             \
           break;                                                        \
-          SHMEMX_NBI_OPS_CASES(OP, TYPE)                                \
+          SHMEM_NBI_OPS_CASES(OP, TYPE)                                 \
         default:                                                        \
           printf("Invalid operation (%d)\n", OP);                       \
           shmem_global_exit(1);                                         \
@@ -163,7 +155,6 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_OR(CTX_FETCH_OR, uint32_t);
   TEST_SHMEM_OR(CTX_FETCH_OR, uint64_t);
 
-#ifdef ENABLE_SHMEMX_TESTS
   TEST_SHMEM_OR(FETCH_OR_NBI, unsigned int);
   TEST_SHMEM_OR(FETCH_OR_NBI, unsigned long);
   TEST_SHMEM_OR(FETCH_OR_NBI, unsigned long long);
@@ -179,7 +170,6 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_OR(CTX_FETCH_OR_NBI, int64_t);
   TEST_SHMEM_OR(CTX_FETCH_OR_NBI, uint32_t);
   TEST_SHMEM_OR(CTX_FETCH_OR_NBI, uint64_t);
-#endif
 
   shmem_finalize();
   return rc;

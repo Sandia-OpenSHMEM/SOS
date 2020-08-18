@@ -21,7 +21,9 @@ check_PROGRAMS = \
 	shmem_bibw_get_perf \
 	shmem_bibw_get_perf_nb \
 	shmem_bw_atomics_perf \
-	shmem_bibw_atomics_perf
+	shmem_bibw_atomics_perf \
+	shmem_bw_nb_atomics_perf \
+	shmem_bibw_nb_atomics_perf
 
 if HAVE_OPENMP
 check_PROGRAMS += \
@@ -33,12 +35,6 @@ check_PROGRAMS += \
 	shmem_latency_put_ctx_perf_nb \
 	shmem_latency_get_ctx_perf \
 	shmem_latency_get_ctx_perf_nb 
-endif
-
-if SHMEMX_TESTS
-check_PROGRAMS += \
-        shmem_bw_nb_atomics_perf \
-        shmem_bibw_nb_atomics_perf
 endif
 
 noinst_HEADERS = \
