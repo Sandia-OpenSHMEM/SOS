@@ -2,6 +2,23 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.5.0rc1
+---------
+- Support for OpenSHMEM v1.5 specification
+- New features include: a teams API and teams-based collectives,
+  put-with-signal routines, nonblocking atomic routines, multiple-element
+  wait/test vector comparison routines, shmem_malloc_with_hints, and a
+  profiling interface.  See OpenSHMEM 1.5 Specification, Annex G for details.
+- Deprecations include: active-set-based library constants and collective
+  routines, shmem_barrier, and short/unsigned short variants for
+  shmem_wait_until and shmem_test.  See OpenSHMEM 1.5 Specification, Annex F
+  for details.
+- Added support for UCX transport
+- Added shmem_malloc_with_hints. Currently, no hint values are supported.
+- Added shmem_signal_fetch
+- Multiple bugfixes, including in teams resource management, put completion
+  logic, and configure issues when multiple transports are detected.
+
 v1.4.5
 ------
 - Added a complete OpenSHMEM teams API to the shmemx interfaces.
@@ -129,7 +146,6 @@ v1.4.1
   thread-safe usage of OpenSHMEM locks.
 - Additional minor code cleanups and bugfixes (see git log for details).
 
-
 v1.4.1rc1
 ---------
 - Added multi-threaded implementations of the shmem_perf_suite throughput
@@ -157,7 +173,6 @@ v1.4.1rc1
   OFI STX management, the SOS simple build script, the default poll limit, and
   more.
 - Fix incorrect SHMEM_MINOR_VERSION value.
-
 
 v1.4.0
 ------
