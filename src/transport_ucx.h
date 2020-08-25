@@ -230,7 +230,13 @@ shmem_transport_fence(shmem_transport_ctx_t* ctx)
 {
     ucs_status_t status;
 
+#if defined(USE_CMA) || (defined(USE_XPMEM) && !defined(USE_SHR_ATOMICS))
+    /* Put/get use shared memory and atomics use UCX. Flush to resolve a race
+     * across transports. */
+    status = ucp_worker_flush(shmem_transport_ucp_worker);
+#else
     status = ucp_worker_fence(shmem_transport_ucp_worker);
+#endif
     UCX_CHECK_STATUS(status);
 
     return 0;
