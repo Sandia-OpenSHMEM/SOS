@@ -105,7 +105,11 @@ int main(void)
             for (j = 0; j < MAX_NPES*MAX_NPES; j++)
                 dst[j] = -1;
 
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
             shmem_sync(new_team);
+#else
+            shmem_team_sync(new_team);
+#endif
         }
 
         old_team = new_team;
