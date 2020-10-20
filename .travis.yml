@@ -237,7 +237,7 @@ before_install:
         make $TRAVIS_PAR_MAKE
         make install
         ## Install the module and allow Travis to use it
-        sudo insmod $TRAVIS_INSTALL/xpmem/lib/modules/`uname -r`/xpmem.ko
+        sudo insmod $TRAVIS_INSTALL/xpmem/lib/modules/`uname -r`/kernel/xpmem/xpmem.ko
         sudo chown `whoami` /dev/xpmem
       fi
     ## Fetch UH Tests
