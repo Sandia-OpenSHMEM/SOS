@@ -11,6 +11,7 @@ Ensures ordering of delivery of operations on symmetric data objects.
 .SS C/C++:
 .B void
 .B shmem\_fence(void)
+
 .B void
 .B shmem\_ctx\_fence(shmem_ctx_t
 .I ctx
@@ -99,7 +100,7 @@ the threading environment.
 .SS Examples
 The following example uses 
 .B shmem\_fence
-in a C[11] program: 
+in a C11 program: 
 .nf
 #include <shmem.h>
 #include <stdio.h>
