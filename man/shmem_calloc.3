@@ -50,7 +50,8 @@ Allocate a zeroed block of symmetric memory.
 
 The 
 .B shmem\_calloc
-routine is a collective operation that allocates a
+routine is a collective operation
+on the world team that allocates a
 region of remotely-accessible
 memory for an array of 
 .I count
@@ -79,10 +80,15 @@ all PEs calling
 otherwise, the behavior is
 undefined.
 
-The 
+When 
+.I count
+or 
+.I size
+is 0, the 
 .B shmem\_calloc
-routine calls a procedure that is semantically
-equivalent to 
+routine
+returns without performing a barrier. Otherwise, this
+routine calls a procedure that is semantically equivalent to
 .B shmem\_barrier\_all
 on exit.
 
@@ -97,15 +103,6 @@ The
 .B shmem\_calloc
 routine returns a pointer to the lowest byte
 address of the allocated space; otherwise, it returns a null pointer.
-
-./ sectionEnd
-
-
-./ sectionStart
-
-.SS API Notes
-
-None.
 
 ./ sectionEnd
 

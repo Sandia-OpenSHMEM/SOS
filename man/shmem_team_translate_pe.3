@@ -1,0 +1,164 @@
+.TH SHMEM_TEAM_TRANSLATE_PE 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_team_translate_pe \- 
+Translate a given PE number from one team to the corresponding
+PE number in another team.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B int
+.B shmem\_team\_translate\_pe(shmem_team_t
+.IB "src_team" ,
+.B int
+.IB "src_pe" ,
+.I shmem_team_t
+.I dest_team
+.B );
+
+
+
+./ sectionEnd
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I src\_team
+- An OpenSHMEM team handle.
+
+
+.BR "IN " -
+.I src\_pe
+- A PE number in 
+.IR "src\_team" .
+
+
+
+.BR "IN " -
+.I dest\_team
+- An OpenSHMEM team handle.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+The 
+.B shmem\_team\_translate\_pe
+routine will translate a given PE number
+in one team into the corresponding PE number in another team.
+Specifically, given the 
+.I src\_pe
+in 
+.I src\_team
+, this routine returns that
+PE's number in 
+.IR "dest\_team" .
+If 
+.I src\_pe
+is not a member of both
+.I src\_team
+and 
+.I dest\_team
+, a value of -1 is returned.
+
+If at least one of 
+.I src\_team
+and 
+.I dest\_team
+compares equal
+to SHMEM\_TEAM\_INVALID, then -1 is returned.
+If either of the 
+.I src\_team
+or 
+.I dest\_team
+handles are
+otherwise invalid, the behavior is undefined.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+The specified PE's number in the 
+.I dest\_team
+, or a value of -1 if any
+team handle arguments are invalid or the 
+.I src\_pe
+is not in both the source and destination teams.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+If \LibHandleRef{SHMEM\_TEAM\_WORLD} is provided as the
+.I dest\_team
+parameter, this routine acts as a global PE
+number translator and will return the corresponding
+\LibHandleRef{SHMEM\_TEAM\_WORLD} number.
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.SS Examples
+
+
+
+The following example demonstrates the use of the team PE
+number translation routine. The program makes a new team of all
+of the even number PEs in the world team. Then, all PEs
+in the new team acquire their PE number in the new team
+and translate it to the PE number in the world team.
+
+.nf
+#include <shmem.h>
+#include <stddef.h>
+
+int main(void) {
+ shmem_init();
+ shmem_team_config_t *config = NULL;
+ int mype = shmem_my_pe();
+ int npes = shmem_n_pes();
+
+ shmem_team_t new_team;
+ shmem_team_split_strided(SHMEM_TEAM_WORLD, 0, 2, (npes + 1) / 2, config, 0, &new_team);
+
+ if (new_team != SHMEM_TEAM_INVALID) {
+   int team_mype = shmem_team_my_pe(new_team);
+   int global_mype = shmem_team_translate_pe(new_team, team_mype, SHMEM_TEAM_WORLD);
+
+   if (global_mype != mype) {
+     shmem_global_exit(1);
+   }
+ }
+
+ shmem_finalize();
+ return 0;
+}
+.fi
+
+
+
+
+

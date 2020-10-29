@@ -3,7 +3,7 @@
 .SH NAME
 shmem_collect \- 
 Concatenates blocks of data from multiple PEs to an array in every
-PE.
+PE participating in the collective routine.
 
 ./ sectionEnd
 
@@ -12,8 +12,121 @@ PE.
 .SH   SYNOPSIS
 ./ sectionEnd
 
+
+./ sectionStart
+.SS C11:
+
+.B int
+.B shmem\_collect(shmem_team_t
+.IB "team" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.I nelems
+.B );
+
+
+
+.B int
+.B shmem\_fcollect(shmem_team_t
+.IB "team" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.I nelems
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the standard RMA types specified by Table 1.
 ./ sectionStart
 .SS C/C++:
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.B int
+.B shmem\_TYPENAME\_collect(shmem_team_t
+.IB "team" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.I nelems
+.B );
+
+
+
+.B int
+.B shmem\_TYPENAME\_fcollect(shmem_team_t
+.IB "team" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.I nelems
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the standard RMA types and has a corresponding TYPENAME specified by Table 1.
+./ sectionStart
+
+.B int
+.B shmem\_collectmem(shmem_team_t
+.IB "team" ,
+.B void
+.IB "*dest" ,
+.B const
+.B void
+.IB "*source" ,
+.B size_t
+.I nelems
+.B );
+
+
+
+.B int
+.B shmem\_fcollectmem(shmem_team_t
+.IB "team" ,
+.B void
+.IB "*dest" ,
+.B const
+.B void
+.IB "*source" ,
+.B size_t
+.I nelems
+.B );
+
+
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.B ***************DEPRECATED***************
+./ sectionEnd
+
+./ sectionStart
 
 .B void
 .B shmem\_collect32(void
@@ -100,125 +213,85 @@ PE.
 
 
 ./ sectionStart
-
-.B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "INTEGER " "nelems"
-.BR "INTEGER " "PE_start, logPE_stride, PE_size"
-.BR "INTEGER " "pSync(SHMEM_COLLECT_SYNC_SIZE)"
-.BR "CALL " "SHMEM\_COLLECT4(dest, source, nelems, PE_start, logPE_stride, PE_size, pSync)"
-.BR "CALL " "SHMEM\_COLLECT8(dest, source, nelems, PE_start, logPE_stride, PE_size, pSync)"
-.BR "CALL " "SHMEM\_COLLECT32(dest, source, nelems, PE_start, logPE_stride, PE_size, pSync)"
-.BR "CALL " "SHMEM\_COLLECT64(dest, source, nelems, PE_start, logPE_stride, PE_size, pSync)"
-.BR "CALL " "SHMEM\_FCOLLECT4(dest, source, nelems, PE_start, logPE_stride, PE_size, pSync)"
-.BR "CALL " "SHMEM\_FCOLLECT8(dest, source, nelems, PE_start, logPE_stride, PE_size, pSync)"
-.BR "CALL " "SHMEM\_FCOLLECT32(dest, source, nelems, PE_start, logPE_stride, PE_size, pSync)"
-.BR "CALL " "SHMEM\_FCOLLECT64(dest, source, nelems, PE_start, logPE_stride, PE_size, pSync)"
-
-.fi
 .B ****************************************
-
 ./ sectionEnd
-
-
-
-
 
 ./ sectionStart
 
 .SH DESCRIPTION
 .SS Arguments
+.BR "IN " -
+.I team
+- A valid OpenSHMEM team handle.%
+
+
+
 .BR "OUT " -
 .I dest
-- A symmetric array. The 
-.I "dest"
-argument must be large enough
+- Symmetric address of an array large enough
 to accept the concatenation of the 
 .I "source"
-arrays on all participating PEs. The data
-types are as follows: For 
-.BR "shmem\_collect8" ,
-.BR "shmem\_collect64" ,
-.BR "shmem\_fcollect8" ,
-and 
-.BR "shmem\_fcollect64" ,
-any data type with an
-element size of 64 bits. Fortran derived types, Fortran character type,
-and  C/C++ structures are not permitted. For 
-.BR "shmem\_collect4" ,
-.BR "shmem\_collect32" ,
-.BR "shmem\_fcollect4" ,
-and 
-.BR "shmem\_fcollect32" ,
-any data type with an element size of 32 bits. Fortran derived
-types, Fortran character type, and  C/C++ structures are not permitted.
+arrays on all participating PEs.
+The type of 
+.I "dest"
+should match that implied in the SYNOPSIS section.
 
 
 .BR "IN " -
 .I source
-- A symmetric data object that can be of any type permissible
-for the 
-.I "dest"
-argument.
+- Symmetric address of the source data object.
+The type of 
+.I "source"
+should match that implied in the SYNOPSIS section.
 
 
 .BR "IN " -
 .I nelems
-- The number of elements in the 
+- 
+The number of elements in 
 .I "source"
-array. 
-.I nelems
-must be of type 
-.I size\_t
-for C. When using Fortran, it must be
-a default integer value.
+array.
+For 
+.BR "shmem\_[f]collectmem" ,
+elements are bytes;
+for 
+.B shmem\_[f]collect\{32,64\
+}, elements are 4 or 8 bytes,
+respectively.
+
+
+
+./ sectionStart
+.B ***************DEPRECATED***************
+./ sectionEnd
+
 
 
 .BR "IN " -
 .I PE\_start
 - The lowest PE number of the active set of
-PEs. 
-.I PE\_start
-must be of type integer. When using Fortran,
-it must be a default integer value.
+PEs.
 
 
 .BR "IN " -
 .I logPE\_stride
 - The log (base 2) of the stride between
-consecutive PE numbers in the active set. 
-.I logPE\_stride
-must be of
-type integer. When using Fortran, it must be a default integer value.
+consecutive PE numbers in the active set.
 
 
 .BR "IN " -
 .I PE\_size
-- The number of PEs in the active set. 
-.I PE\_size
-must be of type integer. When using Fortran, it must be a default
-integer value.
+- The number of PEs in the active set.
 
 
 .BR "IN " -
 .I pSync
 - 
-A symmetric work array of size SHMEM\_COLLECT\_SYNC\_SIZE.
-In  C/C++, 
-.I pSync
-must be an array of elements of type long.
-In Fortran, 
-.I pSync
-must be an array of elements of default integer type.
-Every element of this array must be initialized with the value
-SHMEM\_SYNC\_VALUE before any of the PEs in the active set
-enter 
-.B shmem\_collect
-or 
-.BR "shmem\_fcollect" .
+Symmetric address of a work array of size at least SHMEM\_COLLECT\_SYNC\_SIZE.
+
+./ sectionStart
+.B ****************************************
+./ sectionEnd
 
 ./ sectionEnd
 
@@ -231,31 +304,45 @@ OpenSHMEM
 .B collect
 and 
 .B fcollect
-routines concatenate 
+routines perform a collective
+operation to concatenate 
 .I nelems
-64-bit or 32-bit data items from the 
+data items from the 
 .I "source"
 array into the
 .I "dest"
-array, over the set of PEs defined by 
-.I PE\_start
-,
-.I log2PE\_stride
-, and 
-.I PE\_size
-, in processor number order. The
-resultant 
+array, over an OpenSHMEM team or active set
+in processor number order. The resultant 
 .I "dest"
-array contains the contribution from PE 
+array contains the contribution from
+PEs as follows:
+
+
+.IP
+
+
+\(bu For an active set, the data from PE 
 .I PE\_start
-first, then the contribution from PE 
+is first, then the
+contribution from PE 
 .I PE\_start
 + 
 .I PE\_stride
-second, and so on. The collected result is written to the 
+second, and so on.
+
+\(bu For a team, the data from PE number 0 in the team is first, then the
+contribution from PE 1 in the team, and so on.
+
+.RE
+
+The collected result is written to the 
 .I "dest"
-array for all
-PEs in the active set.
+array for all PEs
+that participate in the operation. The same 
+.I "dest"
+and 
+.I "source"
+arrays must be passed by all PEs that participate in the operation.
 
 The 
 .B fcollect
@@ -269,7 +356,23 @@ routines allow
 to
 vary from PE to PE.
 
-As with all OpenSHMEM collective routines, each of these routines assumes that
+Team-based collect routines operate over all PEs in the provided team argument. All
+PEs in the provided team must participate in the operation.
+If 
+.I team
+compares equal to SHMEM\_TEAM\_INVALID or is
+otherwise invalid, the behavior is undefined.
+
+Active-set-based collective routines operate over all PEs in the active set
+defined by the 
+.I PE\_start
+, 
+.I logPE\_stride
+, 
+.I PE\_size
+triplet.
+As with all active-set-based collective routines,
+each of these routines assumes that
 only PEs in the active set call the routine. If a PE not in the
 active set and calls this collective routine, the behavior is undefined.
 
@@ -279,25 +382,28 @@ The values of arguments
 .I logPE\_stride
 , and 
 .I PE\_size
-must be the same value on all PEs in the active set. The same 
-.I "dest"
-and 
-.I "source"
-arrays and the same 
+must be the same value on all PEs in the active set. The same
 .I pSync
-work array must be passed by all PEs in the
-active set.
+work array must be passed by all PEs in the active set.
 
 Upon return from a collective routine, the following are true for the local
-PE: The 
+PE:
+
+.IP
+
+
+\(bu The 
 .I "dest"
 array is updated and the 
 .I "source"
 array may be safely reused. 
-The values in the 
+
+\(bu For active-set-based collective routines, the values in the 
 .I pSync
 array are
 restored to the original values.
+
+.RE
 
 ./ sectionEnd
 
@@ -306,7 +412,7 @@ restored to the original values.
 
 .SS Return Values
 
-None.
+Zero on successful local completion. Nonzero otherwise.
 
 ./ sectionEnd
 
@@ -314,35 +420,6 @@ None.
 ./ sectionStart
 
 .SS API Notes
-
-All OpenSHMEM collective routines reset the values in 
-.I pSync
-before they
-return, so a particular 
-.I pSync
-buffer need only be initialized the first
-time it is used.
-
-The user must ensure that the 
-.I pSync
-array is not being updated on any PE
-in the active set while any of the PEs participate in processing of an
-OpenSHMEM collective routine. Be careful to avoid these situations: If the
-.I pSync
-array is initialized at run time, some type of synchronization is
-needed to ensure that all PEs in the working set have initialized
-.I pSync
-before any of them enter an OpenSHMEM routine called with the
-.I pSync
-synchronization array. A 
-.I pSync
-array can be reused on a
-subsequent OpenSHMEM collective routine only if none of the PEs in the
-active set are still processing a prior OpenSHMEM collective routine call
-that used the same 
-.I pSync
-array. In general, this may be ensured only by
-doing some type of synchronization. 
 
 The collective routines operate on active PE sets that have a
 non-power-of-two 
@@ -366,63 +443,121 @@ The following
 example is for  C/C++ programs:
 
 .nf
+#include <shmem.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <shmem.h>
 
-int main(void)
-{
-  static long lock = 0;
-  static long pSync[SHMEM_COLLECT_SYNC_SIZE];
-  for (int i = 0; i < SHMEM_COLLECT_SYNC_SIZE; i++)
-     pSync[i] = SHMEM_SYNC_VALUE;
+int main(void) {
+ static long lock = 0;
 
-  shmem_init();
-  int me = shmem_my_pe();
-  int npes = shmem_n_pes();
-  int my_nelem = me + 1; /* linearly increasing number of elements with PE */
-  int total_nelem = (npes * (npes + 1)) / 2;
+ shmem_init();
+ int mype = shmem_my_pe();
+ int npes = shmem_n_pes();
+ int my_nelem = mype + 1; /* linearly increasing number of elements with PE */
+ int total_nelem = (npes * (npes + 1)) / 2;
 
-  int* source = (int*) shmem_malloc(npes*sizeof(int)); /* symmetric alloc */
-  int* dest = (int*) shmem_malloc(total_nelem*sizeof(int));
+ int *source = (int *)shmem_malloc(npes * sizeof(int)); /* symmetric alloc */
+ int *dest = (int *)shmem_malloc(total_nelem * sizeof(int));
 
-  for (int i = 0; i < my_nelem; i++)
-     source[i] = (me * (me + 1)) / 2 + i;
-  for (int i = 0; i < total_nelem; i++)
-     dest[i] = -9999;
+ for (int i = 0; i < my_nelem; i++)
+   source[i] = (mype * (mype + 1)) / 2 + i;
+ for (int i = 0; i < total_nelem; i++)
+   dest[i] = -9999;
 
-  shmem_barrier_all(); /* Wait for all PEs to update source/dest */
+ /* Wait for all PEs to initialize source/dest: */
+ shmem_team_sync(SHMEM_TEAM_WORLD);
 
-  shmem_collect32(dest, source, my_nelem, 0, 0, npes, pSync);
+ shmem_int_collect(SHMEM_TEAM_WORLD, dest, source, my_nelem);
 
-  shmem_set_lock(&lock); /* Lock prevents interleaving printfs */
-  printf("%d: %d", me, dest[0]);
-  for (int i = 1; i < total_nelem; i++)
-     printf(", %d", dest[i]);
-  printf("\\n");
-  shmem_clear_lock(&lock);
-  shmem_finalize();
-  return 0;
+ shmem_set_lock(&lock); /* Lock prevents interleaving printfs */
+ printf("%d: %d", mype, dest[0]);
+ for (int i = 1; i < total_nelem; i++)
+   printf(", %d", dest[i]);
+ printf("\\n");
+ shmem_clear_lock(&lock);
+ shmem_finalize();
+ return 0;
 }
 .fi
 
 
 
-The following 
-.B SHMEM\_COLLECT
-example is for Fortran programs:
-
-.nf
-INCLUDE "shmem.fh"
-
-INTEGER PSYNC(SHMEM_COLLECT_SYNC_SIZE)
-DATA PSYNC /SHMEM_COLLECT_SYNC_SIZE*SHMEM_SYNC_VALUE/
-
-CALL SHMEM_COLLECT4(DEST, SOURCE, 64, PE_START, LOGPE_STRIDE,
-&  PE_SIZE, PSYNC)
-.fi
 
 
-
-
-
+.SS Table 1:
+Standard RMA Types and Names
+.TP 25
+.B \TYPE
+.B \TYPENAME
+.TP
+float
+float
+.TP
+double
+double
+.TP
+long double
+longdouble
+.TP
+char
+char
+.TP
+signed char
+schar
+.TP
+short
+short
+.TP
+int
+int
+.TP
+long
+long
+.TP
+long long
+longlong
+.TP
+unsigned char
+uchar
+.TP
+unsigned short
+ushort
+.TP
+unsigned int
+uint
+.TP
+unsigned long
+ulong
+.TP
+unsigned long long
+ulonglong
+.TP
+int8\_t
+int8
+.TP
+int16\_t
+int16
+.TP
+int32\_t
+int32
+.TP
+int64\_t
+int64
+.TP
+uint8\_t
+uint8
+.TP
+uint16\_t
+uint16
+.TP
+uint32\_t
+uint32
+.TP
+uint64\_t
+uint64
+.TP
+size\_t
+size
+.TP
+ptrdiff\_t
+ptrdiff

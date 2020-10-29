@@ -26,24 +26,6 @@ routines.
 
 
 
-./ sectionStart
-
-.B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "LOGICAL " "LOG, SHMEM_PE_ACCESSIBLE"
-.BR "INTEGER " "pe"
-LOG = SHMEM_PE_ACCESSIBLE(pe)
-
-.fi
-.B ****************************************
-
-./ sectionEnd
-
-
-
 
 ./ sectionStart
 
@@ -76,11 +58,8 @@ which may reside in either static memory or the symmetric heap, is available.
 
 .SS Return Values
 
-C/C++: The return value is 1 if the specified PE is a valid remote PE
+The return value is 1 if the specified PE is a valid remote PE
 for OpenSHMEM routines; otherwise, it is 0.
-
-Fortran: The return value is .TRUE. if the specified PE is a valid
-remote PE for OpenSHMEM routines; otherwise, it is .FALSE..
 
 ./ sectionEnd
 

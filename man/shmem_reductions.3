@@ -4,1248 +4,469 @@
 shmem_reductions \- 
 The following functions perform reduction operations across all
 PEs in a set of PEs.
-
 ./ sectionEnd
-
-
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
-
-
-.SH AND
-Performs a bitwise AND reduction across a set of PEs.
+.SS AND Performs a bitwise AND reduction across a set of PEs.
+./ sectionStart
+.SS C11:
+.B int
+.B shmem\_and\_reduce(shmem_team_t
+.IB "team" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.I nreduce
+.B );
+./ sectionEnd
+where \TYPE{} is one of the integer types supported for the AND operation as specified by Table 10.
 ./ sectionStart
 .SS C/C++:
-
-.B void
-.B shmem\_short\_and\_to\_all(short
-.IB "*dest" ,
-.B const
-.B short
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B short
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_int\_and\_to\_all(int
-.IB "*dest" ,
-.B const
-.B int
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B int
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_long\_and\_to\_all(long
-.IB "*dest" ,
-.B const
-.B long
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B long
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_longlong\_and\_to\_all(long
-.B long
-.IB "*dest" ,
-.B const
-.B long
-.B long
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B long
-.B long
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
 ./ sectionEnd
-
-
-
+./ sectionStart
+.B int
+.B shmem\_TYPENAME\_and\_reduce(shmem_team_t
+.IB "team" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.I nreduce
+.B );
+./ sectionEnd
 ./ sectionStart
 
 .B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "CALL " "SHMEM\_INT4\_AND\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_INT8\_AND\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-
-.fi
+./ sectionEnd
+./ sectionStart
+.B void
+.B shmem\_TYPENAME\_and\_to\_all(TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B int
+.IB "nreduce" ,
+.B int
+.IB "PE_start" ,
+.B int
+.IB "logPE_stride" ,
+.B int
+.IB "PE_size" ,
+.B TYPE
+.IB "*pWrk" ,
+.B long
+.I *pSync
+.B );
+./ sectionEnd
+./ sectionStart
 .B ****************************************
 
 ./ sectionEnd
-
-
-.SH MAX
-Performs a maximum-value reduction across a set of PEs.
+where TYPE is one of the integer types supported for the AND operation and has a corresponding TYPENAME as specified by Table 11.
+.SS OR Performs a bitwise OR reduction across a set of PEs.
+./ sectionStart
+.SS C11:
+.B int
+.B shmem\_or\_reduce(shmem_team_t
+.IB "team" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.I nreduce
+.B );
+./ sectionEnd
+where TYPE is one of the integer types supported for the OR operation as specified by Table 10.
 ./ sectionStart
 .SS C/C++:
-
-.B void
-.B shmem\_short\_max\_to\_all(short
-.IB "*dest" ,
-.B const
-.B short
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B short
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_int\_max\_to\_all(int
-.IB "*dest" ,
-.B const
-.B int
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B int
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_double\_max\_to\_all(double
-.IB "*dest" ,
-.B const
-.I double
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.I double
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_float\_max\_to\_all(float
-.IB "*dest" ,
-.B const
-.I float
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.I float
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_long\_max\_to\_all(long
-.IB "*dest" ,
-.B const
-.B long
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B long
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_longdouble\_max\_to\_all(long
-.I double
-.IB "*dest" ,
-.B const
-.B long
-.I double
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B long
-.I double
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_longlong\_max\_to\_all(long
-.B long
-.IB "*dest" ,
-.B const
-.B long
-.B long
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B long
-.B long
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
 ./ sectionEnd
-
-
-
+./ sectionStart
+.B int
+.B shmem\_TYPENAME\_or\_reduce(shmem_team_t
+.IB "team" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.I nreduce
+.B );
+./ sectionEnd
 ./ sectionStart
 
 .B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "CALL " "SHMEM\_INT4\_MAX\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_INT8\_MAX\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_REAL4\_MAX\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_REAL8\_MAX\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_REAL16\_MAX\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-
-.fi
+./ sectionEnd
+./ sectionStart
+.B void
+.B shmem\_TYPENAME\_or\_to\_all(TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B int
+.IB "nreduce" ,
+.B int
+.IB "PE_start" ,
+.B int
+.IB "logPE_stride" ,
+.B int
+.IB "PE_size" ,
+.B TYPE
+.IB "*pWrk" ,
+.B long
+.I *pSync
+.B );
+./ sectionEnd
+./ sectionStart
 .B ****************************************
 
 ./ sectionEnd
-
-
-.SH MIN
-Performs a minimum-value reduction across a set of PEs.
+where TYPE is one of the integer types supported for the OR operation and has a corresponding TYPENAME as specified by Table 11.
+.SS XOR Performs a bitwise XOR reduction across a set of PEs.
+./ sectionStart
+.SS C11:
+.B int
+.B shmem\_xor\_reduce(shmem_team_t
+.IB "team" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.I nreduce
+.B );
+./ sectionEnd
+where TYPE is one of the integer types supported for the XOR operation as specified by Table 10.
 ./ sectionStart
 .SS C/C++:
-
-.B void
-.B shmem\_short\_min\_to\_all(short
-.IB "*dest" ,
-.B const
-.B short
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B short
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_int\_min\_to\_all(int
-.IB "*dest" ,
-.B const
-.B int
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B int
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_double\_min\_to\_all(double
-.IB "*dest" ,
-.B const
-.I double
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.I double
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_float\_min\_to\_all(float
-.IB "*dest" ,
-.B const
-.I float
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.I float
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_long\_min\_to\_all(long
-.IB "*dest" ,
-.B const
-.B long
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B long
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_longdouble\_min\_to\_all(long
-.I double
-.IB "*dest" ,
-.B const
-.B long
-.I double
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B long
-.I double
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_longlong\_min\_to\_all(long
-.B long
-.IB "*dest" ,
-.B const
-.B long
-.B long
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B long
-.B long
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
 ./ sectionEnd
-
-
-
+./ sectionStart
+.B int
+.B shmem\_TYPENAME\_xor\_reduce(shmem_team_t
+.IB "team" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.I nreduce
+.B );
+./ sectionEnd
 ./ sectionStart
 
 .B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "CALL " "SHMEM\_INT4\_MIN\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_INT8\_MIN\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_REAL4\_MIN\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_REAL8\_MIN\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_REAL16\_MIN\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-
-.fi
+./ sectionEnd
+./ sectionStart
+.B void
+.B shmem\_TYPENAME\_xor\_to\_all(TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B int
+.IB "nreduce" ,
+.B int
+.IB "PE_start" ,
+.B int
+.IB "logPE_stride" ,
+.B int
+.IB "PE_size" ,
+.B TYPE
+.IB "*pWrk" ,
+.B long
+.I *pSync
+.B );
+./ sectionEnd
+./ sectionStart
 .B ****************************************
 
 ./ sectionEnd
-
-
-.SH SUM
-Performs a sum reduction across a set of PEs.
+where TYPE is one of the integer types supported for the XOR operation and has a corresponding TYPENAME as specified by Table 11.
+.SS MAX Performs a maximum-value reduction across a set of PEs.
+./ sectionStart
+.SS C11:
+.B int
+.B shmem\_max\_reduce(shmem_team_t
+.IB "team" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.I nreduce
+.B );
+./ sectionEnd
+where TYPE is one of the integer or real types supported for the MAX operation as specified by Table 10.
 ./ sectionStart
 .SS C/C++:
-
-.B void
-.B shmem\_complexd\_sum\_to\_all(double
-.I _Complex
-.IB "*dest" ,
-.B const
-.I double
-.I _Complex
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.I double
-.I _Complex
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_complexf\_sum\_to\_all(float
-.I _Complex
-.IB "*dest" ,
-.B const
-.I float
-.I _Complex
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.I float
-.I _Complex
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_short\_sum\_to\_all(short
-.IB "*dest" ,
-.B const
-.B short
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B short
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_int\_sum\_to\_all(int
-.IB "*dest" ,
-.B const
-.B int
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B int
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_double\_sum\_to\_all(double
-.IB "*dest" ,
-.B const
-.I double
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.I double
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_float\_sum\_to\_all(float
-.IB "*dest" ,
-.B const
-.I float
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.I float
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_long\_sum\_to\_all(long
-.IB "*dest" ,
-.B const
-.B long
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.IB "PE_size" ,
-.B long
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_longdouble\_sum\_to\_all(long
-.I double
-.IB "*dest" ,
-.B const
-.B long
-.I double
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B long
-.I double
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_longlong\_sum\_to\_all(long
-.B long
-.IB "*dest" ,
-.B const
-.B long
-.B long
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B long
-.B long
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
 ./ sectionEnd
-
-
-
+./ sectionStart
+.B int
+.B shmem\_TYPENAME\_max\_reduce(shmem_team_t
+.IB "team" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.I nreduce
+.B );
+./ sectionEnd
 ./ sectionStart
 
 .B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "CALL " "SHMEM\_COMP4\_SUM\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_COMP8\_SUM\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_INT4\_SUM\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_INT8\_SUM\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_REAL4\_SUM\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_REAL8\_SUM\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_REAL16\_SUM\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-
-.fi
+./ sectionEnd
+./ sectionStart
+.B void
+.B shmem\_TYPENAME\_max\_to\_all(TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B int
+.IB "nreduce" ,
+.B int
+.IB "PE_start" ,
+.B int
+.IB "logPE_stride" ,
+.B int
+.IB "PE_size" ,
+.B TYPE
+.IB "*pWrk" ,
+.B long
+.I *pSync
+.B );
+./ sectionEnd
+./ sectionStart
 .B ****************************************
 
 ./ sectionEnd
-
-
-.SH PROD
-Performs a product reduction across a set of PEs.
+where TYPE is one of the integer or real types supported for the MAX operation and has a corresponding TYPENAME as specified by Table 11.
+.SS MIN Performs a minimum-value reduction across a set of PEs.
+./ sectionStart
+.SS C11:
+.B int
+.B shmem\_min\_reduce(shmem_team_t
+.IB "team" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.I nreduce
+.B );
+./ sectionEnd
+where TYPE is one of the integer or real types supported for the MIN operation as specified by Table 10.
 ./ sectionStart
 .SS C/C++:
-
-.B void
-.B shmem\_complexd\_prod\_to\_all(double
-.I _Complex
-.IB "*dest" ,
-.B const
-.I double
-.I _Complex
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.I double
-.I _Complex
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_complexf\_prod\_to\_all(float
-.I _Complex
-.IB "*dest" ,
-.B const
-.I float
-.I _Complex
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.I float
-.I _Complex
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_short\_prod\_to\_all(short
-.IB "*dest" ,
-.B const
-.B short
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B short
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_int\_prod\_to\_all(int
-.IB "*dest" ,
-.B const
-.B int
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B int
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_double\_prod\_to\_all(double
-.IB "*dest" ,
-.B const
-.I double
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.I double
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_float\_prod\_to\_all(float
-.IB "*dest" ,
-.B const
-.I float
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.I float
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_long\_prod\_to\_all(long
-.IB "*dest" ,
-.B const
-.B long
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B long
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_longdouble\_prod\_to\_all(long
-.I double
-.IB "*dest" ,
-.B const
-.B long
-.I double
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B long
-.I double
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_longlong\_prod\_to\_all(long
-.B long
-.IB "*dest" ,
-.B const
-.B long
-.B long
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B long
-.B long
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
 ./ sectionEnd
-
-
-
+./ sectionStart
+.B int
+.B shmem\_TYPENAME\_min\_reduce(shmem_team_t
+.IB "team" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.I nreduce
+.B );
+./ sectionEnd
 ./ sectionStart
 
 .B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "CALL " "SHMEM\_COMP4\_PROD\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_COMP8\_PROD\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_INT4\_PROD\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_INT8\_PROD\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_REAL4\_PROD\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_REAL8\_PROD\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_REAL16\_PROD\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-
-.fi
+./ sectionEnd
+./ sectionStart
+.B void
+.B shmem\_TYPENAME\_min\_to\_all(TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B int
+.IB "nreduce" ,
+.B int
+.IB "PE_start" ,
+.B int
+.IB "logPE_stride" ,
+.B int
+.IB "PE_size" ,
+.B TYPE
+.IB "*pWrk" ,
+.B long
+.I *pSync
+.B );
+./ sectionEnd
+./ sectionStart
 .B ****************************************
 
 ./ sectionEnd
-
-
-.SH OR
-Performs a bitwise OR reduction across a set of PEs.
+where TYPE is one of the integer or real types supported for the MIN operation and has a corresponding TYPENAME as specified by Table 11.
+.SS SUM Performs a sum reduction across a set of PEs.
+./ sectionStart
+.SS C11:
+.B int
+.B shmem\_sum\_reduce(shmem_team_t
+.IB "team" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.I nreduce
+.B );
+./ sectionEnd
+where TYPE is one of the integer, real, or complex types supported for the SUM operation as specified by Table 10.
 ./ sectionStart
 .SS C/C++:
-
-.B void
-.B shmem\_short\_or\_to\_all(short
-.IB "*dest" ,
-.B const
-.B short
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B short
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_int\_or\_to\_all(int
-.IB "*dest" ,
-.B const
-.B int
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B int
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_long\_or\_to\_all(long
-.IB "*dest" ,
-.B const
-.B long
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B long
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_longlong\_or\_to\_all(long
-.B long
-.IB "*dest" ,
-.B const
-.B long
-.B long
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B long
-.B long
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
 ./ sectionEnd
-
-
-
+./ sectionStart
+.B int
+.B shmem\_TYPENAME\_sum\_reduce(shmem_team_t
+.IB "team" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.I nreduce
+.B );
+./ sectionEnd
 ./ sectionStart
 
 .B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "CALL " "SHMEM\_INT4\_OR\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_INT8\_OR\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-
-.fi
+./ sectionEnd
+./ sectionStart
+.B void
+.B shmem\_TYPENAME\_sum\_to\_all(TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B int
+.IB "nreduce" ,
+.B int
+.IB "PE_start" ,
+.B int
+.IB "logPE_stride" ,
+.B int
+.IB "PE_size" ,
+.B TYPE
+.IB "*pWrk" ,
+.B long
+.I *pSync
+.B );
+./ sectionEnd
+./ sectionStart
 .B ****************************************
 
 ./ sectionEnd
-
-
-.SH XOR
-Performs a bitwise exclusive OR (XOR) reduction across a set of PEs.
+where TYPE is one of the integer, real, or complex types supported for the SUM operation and has a corresponding TYPENAME as specified by Table 11.
+.SS PROD Performs a product reduction across a set of PEs.
+./ sectionStart
+.SS C11:
+.B int
+.B shmem\_prod\_reduce(shmem_team_t
+.IB "team" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.I nreduce
+.B );
+./ sectionEnd
+where TYPE is one of the integer, real, or complex types supported for the PROD operation as specified by Table 10.
 ./ sectionStart
 .SS C/C++:
-
-.B void
-.B shmem\_short\_xor\_to\_all(short
-.IB "*dest" ,
-.B const
-.B short
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B short
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_int\_xor\_to\_all(int
-.IB "*dest" ,
-.B const
-.B int
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B int
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_long\_xor\_to\_all(long
-.IB "*dest" ,
-.B const
-.B long
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B long
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
-.B void
-.B shmem\_longlong\_xor\_to\_all(long
-.B long
-.IB "*dest" ,
-.B const
-.B long
-.B long
-.IB "*source" ,
-.B int
-.IB "nreduce" ,
-.B int
-.IB "PE_start" ,
-.B int
-.IB "logPE_stride" ,
-.B int
-.IB "PE_size" ,
-.B long
-.B long
-.IB "*pWrk" ,
-.B long
-.I *pSync
-.B );
-
-
-
 ./ sectionEnd
-
-
-
+./ sectionStart
+.B int
+.B shmem\_TYPENAME\_prod\_reduce(shmem_team_t
+.IB "team" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.I nreduce
+.B );
+./ sectionEnd
 ./ sectionStart
 
 .B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "CALL " "SHMEM\_INT4\_XOR\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-.BR "CALL " "SHMEM\_INT8\_XOR\_TO\_ALL(dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync)"
-
-.fi
+./ sectionEnd
+./ sectionStart
+.B void
+.B shmem\_TYPENAME\_prod\_to\_all(TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B int
+.IB "nreduce" ,
+.B int
+.IB "PE_start" ,
+.B int
+.IB "logPE_stride" ,
+.B int
+.IB "PE_size" ,
+.B TYPE
+.IB "*pWrk" ,
+.B long
+.I *pSync
+.B );
+./ sectionEnd
+./ sectionStart
 .B ****************************************
 
 ./ sectionEnd
-
-
-
-
-
+where TYPE is one of the integer, real, or complex types supported for the PROD operation and has a corresponding TYPENAME as specified by Table 11.
 ./ sectionStart
-
 .SH DESCRIPTION
 .SS Arguments
+.BR "IN " -
+.I team
+- The team over which to perform the operation.%
 .BR "OUT " -
 .I dest
-- A symmetric array, of length 
+- Symmetric address of an array, of length 
 .I nreduce
 elements, to
-receive the result of the reduction routines. The data type of 
+receive the result of the reduction routines.
+The type of 
 .I "dest"
-varies
-with the version of the reduction routine being called. When calling from
-C/C++, refer to the SYNOPSIS section for data type information.
-
+should match that implied in the SYNOPSIS section.
 
 .BR "IN " -
 .I source
--  A symmetric array, of length 
+- Symmetric address of an array, of length 
 .I nreduce
 elements, that
-contains one element for each separate reduction routine. The 
+contains one element for each separate reduction routine.
+The type of 
 .I "source"
-argument must have the same data type as 
-.IR "dest" .
-
-
+should match that implied in the SYNOPSIS section.
 
 .BR "IN " -
 .I nreduce
@@ -1253,661 +474,282 @@ argument must have the same data type as
 .I "dest"
 and 
 .I "source"
-arrays. 
+arrays. In teams based API calls, 
 .I nreduce
-must be of type integer. When using Fortran, it
-must be a default integer value.
+must be of type size\_t.
+In deprecated active-set based API calls,
+.I nreduce
+must be of type integer.
+./ sectionStart
 
+.B ***************DEPRECATED***************
+./ sectionEnd
 
 .BR "IN " -
 .I PE\_start
 - The lowest PE number of the active set of
-PEs. 
-.I PE\_start
-must be of type integer. When using Fortran,
-it must be a default integer value.
-
+PEs.
 
 .BR "IN " -
 .I logPE\_stride
 - The log (base 2) of the stride between consecutive
-PE numbers in the active set. 
-.I logPE\_stride
-must be of type integer.
-When using Fortran, it must be a default integer value.
-
+PE numbers in the active set.
 
 .BR "IN " -
 .I PE\_size
 - The number of PEs in the active set.
-.I PE\_size
-must be of type integer. When using Fortran, it must be a
-default integer value.
-
 
 .BR "IN " -
 .I pWrk
 - 
-A symmetric work array of size at least
+Symmetric address of a work array of size at least
 max(
 .I nreduce
 /2 + 1, SHMEM\_REDUCE\_MIN\_WRKDATA\_SIZE)
 elements.
 
-
 .BR "IN " -
 .I pSync
 - 
-A symmetric work array of size SHMEM\_REDUCE\_SYNC\_SIZE.
-In  C/C++, 
-.I pSync
-must be an array of elements of type long.
-In Fortran, 
-.I pSync
-must be an array of elements of default integer type.
-Every element of this array must be initialized with the value
-SHMEM\_SYNC\_VALUE before any of the PEs in the active set
-enter the reduction routine.
-./ sectionEnd
-
-
+Symmetric address of a work array of size at least SHMEM\_REDUCE\_SYNC\_SIZE.
 ./ sectionStart
 
-.SS API Description
+.B ****************************************
 
-OpenSHMEM reduction routines compute one or more reductions across symmetric
+./ sectionEnd
+./ sectionEnd
+./ sectionStart
+.SS API Description
+OpenSHMEM reduction routines are collective routines over an active set or
+existing OpenSHMEM team that compute one or more reductions across symmetric
 arrays on multiple PEs. A reduction performs an associative binary routine
 across a set of values.
-
 The 
 .I nreduce
 argument determines the number of separate reductions to
 perform. The 
 .I "source"
-array on all PEs in the active set provides one
-element for each reduction. The results of the reductions are placed in the
+array on all PEs participating in the reduction
+provides one element for each reduction. The results of the reductions are placed in the
 .I "dest"
-array on all PEs in the active set. The active set is defined
-by the 
+array on all PEs participating in the reduction.
+The 
+.I "source"
+and 
+.I "dest"
+arguments must either be the same symmetric
+address, or two different symmetric addresses corresponding to buffers that
+do not overlap in memory. That is, they must be completely overlapping or
+completely disjoint.
+Team-based reduction routines operate over all PEs in the provided team argument. All
+PEs in the provided team must participate in the reduction.
+If 
+.I team
+compares equal to SHMEM\_TEAM\_INVALID or is
+otherwise invalid, the behavior is undefined.
+Active-set-based sync routines operate over all PEs in the active set
+defined by the 
 .I PE\_start
 , 
 .I logPE\_stride
 , 
 .I PE\_size
 triplet.
-
-The 
-.I "source"
-and 
-.I "dest"
-arrays may be the same array, but they may not be
-overlapping arrays.
-
-As with all OpenSHMEM collective routines, each of these routines assumes
+As with all active set-based collective routines,
+each of these routines assumes
 that only PEs in the active set call the routine. If a PE not in
-the active set calls an OpenSHMEM collective routine, the behavior is undefined.
-
+the active set calls an active set-based collective routine,
+the behavior is undefined.
 The values of arguments 
 .I nreduce
 , 
 .I PE\_start
 , 
 .I logPE\_stride
-, and
-.I PE\_size
-must be equal on all PEs in the active set. The same 
-.I "dest"
+,
 and 
-.I "source"
-arrays, and the same 
+.I PE\_size
+must be equal on all PEs in the active set.
+The same 
 .I pWrk
 and 
 .I pSync
-work arrays, must
-be passed to all PEs in the active set.
-
-Before any PE calls a reduction routine,
-the following conditions must be ensured:
-
+work arrays must be passed to all
+PEs in the active set.
+Before any PE calls a reduction routine, the following conditions must be ensured:
 .IP
-
-
 \(bu The 
+.I "dest"
+array on all PEs participating in the reduction
+is ready to accept the results of the 
+.IR "reduction" .
+.IP
+\(bu If using active-set-based routines, the
 .I pWrk
 and 
 .I pSync
 arrays on all PEs in the
 active set are not still in use from a prior call to a collective
 OpenSHMEM routine.
-
-\(bu The 
-.I "dest"
-array on all PEs in the active set is ready
-to accept the results of the 
-.IR "reduction" .
-.
-
-.RE
 Otherwise, the behavior is undefined.
-
 Upon return from a reduction routine, the following are true for the local
-PE: The 
+PE:
+.IP
+\(bu The 
 .I "dest"
 array is updated and the 
 .I "source"
 array may be safely reused.
-The values in the 
+.IP
+\(bu If using active-set-based routines,
+the values in the 
 .I pSync
-array are
-restored to the original values.
-
-
+array are restored to the original values.
+.P
 The complex-typed interfaces are only provided for sum and product reductions.
 When the C translation environment does not support complex types
 (That is, under C language standards prior to C[99] or under C[11]
 when \_\_STDC\_NO\_COMPLEX\_\_ is defined to 1), an OpenSHMEM
 implementation is not required to provide support for these
 complex-typed interfaces.
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
-.B ***************DEPRECATED***************
-./ sectionEnd
-
-./ sectionStart
-
-When calling from Fortran, the 
-.I "dest"
-date types are as follows:
-
-.TP 25
-Routine
-Data type
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_int8\_and\_to\_all
-Integer, with an element size of 8 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_int4\_and\_to\_all
-Integer, with an element size of 4 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_comp8\_max\_to\_all
-Complex, with an element size equal to two 8-byte real values.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_int4\_max\_to\_all
-Integer, with an element size of 4 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_int8\_max\_to\_all
-Integer, with an element size of 8 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_real4\_max\_to\_all
-Real, with an element size of 4 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_real16\_max\_to\_all
-Real, with an element size of 16 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_int4\_min\_to\_all
-Integer, with an element size of 4 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_int8\_min\_to\_all
-Integer, with an element size of 8 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_real4\_min\_to\_all
-Real, with an element size of 4 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_real8\_min\_to\_all
-Real, with an element size of 8 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_real16\_min\_to\_all
-Real,with an element size of 16 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_comp4\_sum\_to\_all
-Complex, with an element size equal to two 4-byte real values.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_comp8\_sum\_to\_all
-Complex, with an element size equal to two 8-byte real values.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_int4\_sum\_to\_all
-Integer, with an element size of 4 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_int8\_sum\_to\_all
-Integer, with an element size of 8 bytes..
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_real4\_sum\_to\_all
-Real, with an element size of 4 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_real8\_sum\_to\_all
-Real, with an element size of 8 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_real16\_sum\_to\_all
-Real, with an element size of 16 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_comp4\_prod\_to\_all
-Complex, with an element size equal to two 4-byte real values.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_comp8\_prod\_to\_all
-Complex, with an element size equal to two 8-byte real values.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_int4\_prod\_to\_all
-Integer, with an element size of 4 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_int8\_prod\_to\_all
-Integer, with an element size of 8 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_real4\_prod\_to\_all
-Real, with an element size of 4 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_real8\_prod\_to\_all
-Real, with an element size of 8 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_real16\_prod\_to\_all
-Real, with an element size of 16 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_int8\_or\_to\_all
-Integer, with an element size of 8 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_int4\_or\_to\_all
-Integer, with an element size of 4 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_int8\_xor\_to\_all
-Integer, with an element size of 8 bytes.
-./ sectionEnd
-
-
-./ sectionStart
-.TP 25
-shmem\_int4\_xor\_to\_all
-Integer, with an element size of 4 bytes.
-./ sectionEnd
-
-
-
-./ sectionStart
-.RE
-.B ****************************************
-./ sectionEnd
-
-./ sectionStart
-
 .SS Return Values
-
-None.
-
+Zero on successful local completion. Nonzero otherwise.
 ./ sectionEnd
-
-
-./ sectionStart
-
-.SS API Notes
-
-All OpenSHMEM reduction routines reset the values in 
-.I pSync
-before they
-return, so a particular 
-.I pSync
-buffer need only be initialized the first
-time it is used. The user must ensure that the 
-.I pSync
-array is not being updated on any PE
-in the active set while any of the PEs participate in processing of an
-OpenSHMEM reduction routine. Be careful to avoid the following situations: If
-the 
-.I pSync
-array is initialized at run time, some type of synchronization
-is needed to ensure that all PEs in the working set have initialized
-.I pSync
-before any of them enter an OpenSHMEM routine called with the
-.I pSync
-synchronization array. A 
-.I pSync
-or 
-.I pWrk
-array can be
-reused in a subsequent reduction routine call only if none of the PEs in
-the active set are still processing a prior reduction routine call that used
-the same 
-.I pSync
-or 
-.I pWrk
-arrays. In general, this can be assured only
-by doing some type of synchronization.
-
-./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Examples
-
-
-
-This Fortran reduction example statically initializes the 
-.I pSync
-array
-and finds the logical 
-.I AND
-of the integer variable 
-.I FOO
-across all
-even PEs.
-
+In the following C[11] example, each PE intializes an array of
+random integers with values between $0$ and $npes-1$, inclusively. An OR
+reduction then tracks the array indices where maximal values occur (maximal
+values equal $npes - 1$), and a SUM reduction counts the total number of
+maximal values across all PEs.
 .nf
-INCLUDE "shmem.fh"
+#include <shmem.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-INTEGER PSYNC(SHMEM_REDUCE_SYNC_SIZE)
-DATA PSYNC /SHMEM_REDUCE_SYNC_SIZE*SHMEM_SYNC_VALUE/
-PARAMETER (NR=1)
-INTEGER*4 PWRK(MAX(NR/2+1,SHMEM_REDUCE_MIN_WRKDATA_SIZE))
-INTEGER FOO, FOOAND
-SAVE FOO, FOOAND, PWRK
-INTRINSIC SHMEM_MY_PE()
+#define NELEMS 32
 
-FOO = SHMEM_MY_PE()
-IF ( MOD(SHMEM_MY_PE() .EQ. 0) THEN
-   IF ( MOD(SHMEM_N_PES()(),2) .EQ. 0) THEN
-      CALL SHMEM_INT8_AND_TO_ALL(FOOAND, FOO, NR, 0, 1, NPES/2, &
-	 PWRK, PSYNC)
-   ELSE
-      CALL SHMEM_INT8_AND_TO_ALL(FOOAND, FOO, NR, 0, 1, NPES/2+1, &
-	 PWRK, PSYNC)
-  
-   ENDIF
-   PRINT*,'Result on PE ',SHMEM_MY_PE(),' is ',FOOAND
-ENDIF
+int main(void) {
+ shmem_init();
+ int mype = shmem_my_pe();
+ int npes = shmem_n_pes();
+
+ int *values = shmem_malloc(NELEMS * sizeof(int));
+
+ unsigned char *value_is_maximal     = shmem_malloc(NELEMS * sizeof(unsigned char));
+ unsigned char *value_is_maximal_all = shmem_malloc(NELEMS * sizeof(unsigned char));
+
+ static int maximal_values_count = 0;
+ static int maximal_values_total;
+
+ srand((unsigned)mype);
+
+ for (int i = 0; i < NELEMS; i++) {
+   values[i] = rand() % npes;
+
+   /* Track and count instances of maximal values (i.e., values equal to (npes-1)) */
+   value_is_maximal[i] = (values[i] == (npes - 1)) ? 1 : 0;
+   maximal_values_count += value_is_maximal[i];
+ }
+
+ /* Wait for all PEs to initialize reductions arrays */
+ shmem_sync(SHMEM_TEAM_WORLD);
+
+ shmem_or_reduce(SHMEM_TEAM_WORLD, value_is_maximal_all, value_is_maximal, NELEMS);
+ shmem_sum_reduce(SHMEM_TEAM_WORLD, &maximal_values_total, &maximal_values_count, 1);
+
+ if (mype == 0) {
+   printf("Found %d maximal random numbers across all PEs.\\n", maximal_values_total);
+   printf("A maximal number occured (at least once) at the following indices:\\n");
+   for (int i = 0; i < NELEMS; i++) {
+     if (value_is_maximal_all[i] == 1) {
+       printf("%d ", i);
+     }
+   }
+   printf("\\n");
+ }
+
+ shmem_finalize();
+ return 0;
+}
 .fi
-
-
-
-This Fortran example statically initializes the 
-.I pSync
-array and finds
-the 
-.I maximum
-value of real variable 
-.I FOO
-across all even PEs.
-
-.nf
-INCLUDE "shmem.fh"
-
-INTEGER PSYNC(SHMEM_REDUCE_SYNC_SIZE)
-DATA PSYNC /SHMEM_REDUCE_SYNC_SIZE*SHMEM_SYNC_VALUE/
-PARAMETER (NR=1)
-REAL FOO, FOOMAX, PWRK(MAX(NR/2+1,SHMEM_REDUCE_MIN_WRKDATA_SIZE))
-COMMON /COM/ FOO, FOOMAX, PWRK
-INTRINSIC SHMEM_MY_PE()
-
-IF ( MOD(SHMEM_MY_PE() .EQ. 0) THEN
-      CALL SHMEM_REAL8_MAX_TO_ALL(FOOMAX, FOO, NR, 0, 1, N$PES/2,
-&	 PWRK, PSYNC)
-      PRINT*,'Result on PE ',SHMEM_MY_PE(),' is ',FOOMAX
-ENDIF
-
-.fi
-
-
-
-This Fortran example statically initializes the 
-.I pSync
-array and finds
-the 
-.I minimum
-value of real variable 
-.I FOO
-across all the even
-PEs.
-
-.nf
-INCLUDE "shmem.fh"
-
-INTEGER PSYNC(SHMEM_REDUCE_SYNC_SIZE)
-DATA PSYNC /SHMEM_REDUCE_SYNC_SIZE*SHMEM_SYNC_VALUE/
-PARAMETER (NR=1)
-REAL FOO, FOOMIN, PWRK(MAX(NR/2+1,SHMEM_REDUCE_MIN_WRKDATA_SIZE))
-COMMON /COM/ FOO, FOOMIN, PWRK
-INTRINSIC SHMEM_MY_PE()
-
-IF ( MOD(SHMEM_MY_PE() .EQ. 0) THEN
-      CALL SHMEM_REAL8_MIN_TO_ALL(FOOMIN, FOO, NR, 0, 1, N$PES/2,
-&	 PWRK, PSYNC)
-      PRINT*,'Result on PE ',SHMEM_MY_PE(),' is ',FOOMIN
-ENDIF
-.fi
-
-
-
-This Fortran example statically initializes the 
-.I pSync
-array and finds
-the 
-.I sum
-of the real variable 
-.I FOO
-across all even PEs.
-
-.nf
-INCLUDE "shmem.fh"
-
-INTEGER PSYNC(SHMEM_REDUCE_SYNC_SIZE)
-DATA PSYNC /SHMEM_REDUCE_SYNC_SIZE*SHMEM_SYNC_VALUE/
-PARAMETER (NR=1)
-REAL FOO, FOOSUM, PWRK(MAX(NR/2+1,SHMEM_REDUCE_MIN_WRKDATA_SIZE))
-COMMON /COM/ FOO, FOOSUM, PWRK
-INTRINSIC SHMEM_MY_PE()
-
-IF ( MOD(SHMEM_MY_PE() .EQ. 0) THEN
-      CALL SHMEM_INT4_SUM_TO_ALL(FOOSUM, FOO, NR, 0, 1, N$PES/2,
-&	 PWRK, PSYNC)
-      PRINT*,'Result on PE ',SHMEM_MY_PE(),' is ',FOOSUM
-ENDIF
-.fi
-
-
-
-This Fortran example statically initializes the 
-.I pSync
-array and finds
-the 
-.I product
-of the real variable 
-.I FOO
-across all the even PEs.
-
-.nf
-INCLUDE "shmem.fh"
-
-INTEGER PSYNC(SHMEM_REDUCE_SYNC_SIZE)
-DATA PSYNC /SHMEM_REDUCE_SYNC_SIZE*SHMEM_SYNC_VALUE/
-PARAMETER (NR=1)
-REAL FOO, FOOPROD, PWRK(MAX(NR/2+1,SHMEM_REDUCE_MIN_WRKDATA_SIZE))
-COMMON /COM/ FOO, FOOPROD, PWRK
-INTRINSIC SHMEM_MY_PE()
-
-IF ( MOD(SHMEM_MY_PE() .EQ. 0) THEN
-       CALL SHMEM_COMP8_PROD_TO_ALL(FOOPROD, FOO, NR, 0, 1, N$PES/2,
-&	 PWRK, PSYNC)
-       PRINT*,'Result on PE ',SHMEM_MY_PE(),' is ',FOOPROD
-ENDIF
-.fi
-
-
-
-This Fortran example statically initializes the 
-.I pSync
-array and finds
-the logical 
-.I OR
-of the integer variable 
-.I FOO
-across all even
-PEs.
-
-.nf
-INCLUDE "shmem.fh"
-
-INTEGER PSYNC(SHMEM_REDUCE_SYNC_SIZE)
-DATA PSYNC /SHMEM_REDUCE_SYNC_SIZE*SHMEM_SYNC_VALUE/
-PARAMETER (NR=1)
-REAL PWRK(MAX(NR/2+1,SHMEM_REDUCE_MIN_WRKDATA_SIZE))
-INTEGER FOO, FOOOR
-COMMON /COM/ FOO, FOOOR, PWRK
-INTRINSIC SHMEM_MY_PE()
-
-IF ( MOD(SHMEM_MY_PE() .EQ. 0) THEN
-       CALL SHMEM_INT8_OR_TO_ALL(FOOOR, FOO, NR, 0, 1, N$PES/2,
-&	 PWRK, PSYNC)
-       PRINT*,'Result on PE ',SHMEM_MY_PE(),' is ',FOOOR
-ENDIF
-.fi
-
-
-
-This Fortran example statically initializes the 
-.I pSync
-array and
-computes the exclusive 
-.I XOR
-of variable 
-.I FOO
-across all even
-PEs.
-
-.nf
-INCLUDE "shmem.fh"
-
-INTEGER PSYNC(SHMEM_REDUCE_SYNC_SIZE)
-DATA PSYNC /SHMEM_REDUCE_SYNC_SIZE*SHMEM_SYNC_VALUE/
-PARAMETER (NR=1)
-REAL FOO, FOOXOR, PWRK(MAX(NR/2+1,SHMEM_REDUCE_MIN_WRKDATA_SIZE))
-COMMON /COM/ FOO, FOOXOR, PWRK
-INTRINSIC SHMEM_MY_PE()
-
-IF ( MOD(SHMEM_MY_PE() .EQ. 0) THEN
-      CALL SHMEM_REAL8_XOR_TO_ALL(FOOXOR, FOO, NR, 0, 1, N$PES/2,
-&	 PWRK, PSYNC)
-      PRINT*,'Result on PE ',SHMEM_MY_PE(),' is ',FOOXOR
-ENDIF
-.fi
-
-
-
-
-
+.SS Table 10
+Reduction Types, Names, and Supporting Operations for Team-Based Reductions:
+.TP
+.B | \TYPE | \TYPENAME | Operations Supporting \TYPE |
+.TP
+| char | char | MAX, MIN, SUM, PROD |
+.TP
+| signed char | schar | MAX, MIN, SUM, PROD |
+.TP
+| short | short | MAX, MIN, SUM, PROD |
+.TP
+| int | int | MAX, MIN, SUM, PROD |
+.TP
+| long | long | MAX, MIN, SUM, PROD |
+.TP
+| long long | longlong | MAX, MIN, SUM, PROD |
+.TP
+| ptrdiff\_t | ptrdiff | MAX, MIN, SUM, PROD |
+.TP
+| unsigned char | uchar | AND, OR, XOR MAX, MIN, SUM, PROD |
+.TP
+| unsigned short | ushort | AND, OR, XOR MAX, MIN, SUM, PROD |
+.TP
+| unsigned int | uint | AND, OR, XOR MAX, MIN, SUM, PROD |
+.TP
+| unsigned long | ulong | AND, OR, XOR MAX, MIN, SUM, PROD |
+.TP
+| unsigned long long | ulonglong | AND, OR, XOR MAX, MIN, SUM, PROD |
+.TP
+| int8\_t | int8 | AND, OR, XOR MAX, MIN, SUM, PROD |
+.TP
+| int16\_t | int16 | AND, OR, XOR MAX, MIN, SUM, PROD |
+.TP
+| int32\_t | int32 | AND, OR, XOR MAX, MIN, SUM, PROD |
+.TP
+| int64\_t | int64 | AND, OR, XOR MAX, MIN, SUM, PROD |
+.TP
+| uint8\_t | uint8 | AND, OR, XOR MAX, MIN, SUM, PROD |
+.TP
+| uint16\_t | uint16 | AND, OR, XOR MAX, MIN, SUM, PROD |
+.TP
+| uint32\_t | uint32 | AND, OR, XOR MAX, MIN, SUM, PROD |
+.TP
+| uint64\_t | uint64 | AND, OR, XOR MAX, MIN, SUM, PROD |
+.TP
+| size\_t | size | AND, OR, XOR MAX, MIN, SUM, PROD |
+.TP
+| float | float | MAX, MIN, SUM, PROD |
+.TP
+| double | double | MAX, MIN, SUM, PROD |
+.TP
+| long double | longdouble | MAX, MIN, SUM, PROD |
+.TP
+| double \_Complex | complexd | SUM, PROD |
+.TP
+| float \_Complex | complexf | SUM, PROD |
+.SS Table 11
+Reduction Types, Names, and Supporting Operations for Active-Set-Based Reductions:
+.TP
+.B | \TYPE | \TYPENAME | Operations Supporting \TYPE |
+.TP
+| short | short | AND, OR, XOR MAX, MIN, SUM, PROD |
+.TP
+| int | int | AND, OR, XOR MAX, MIN, SUM, PROD |
+.TP
+| long | long | AND, OR, XOR MAX, MIN, SUM, PROD |
+.TP
+| long long | longlong | AND, OR, XOR MAX, MIN, SUM, PROD |
+.TP
+| float | float | MAX, MIN, SUM, PROD |
+.TP
+| double | double | MAX, MIN, SUM, PROD |
+.TP
+| long double | longdouble | MAX, MIN, SUM, PROD |
+.TP
+| double \_Complex | complexd | SUM, PROD |
+.TP
+| float \_Complex | complexf | SUM, PROD |

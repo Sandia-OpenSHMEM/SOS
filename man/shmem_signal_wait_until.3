@@ -1,0 +1,83 @@
+.TH SHMEM_SIGNAL_WAIT_UNTIL 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_signal_wait_until \- 
+Wait for a variable on the local PE to change from a signaling
+operation.
+./ sectionEnd
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+./ sectionStart
+.SS C/C++:
+.B uint64_t
+.B shmem\_signal\_wait\_until(uint64_t
+.IB "*sig_addr" ,
+.B int
+.IB "cmp" ,
+.I uint64_t
+.I cmp_value
+.B );
+./ sectionEnd
+./ sectionStart
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I sig\_addr
+- Local address of the source signal variable.
+
+.BR "IN " -
+.I cmp
+- The comparison operator that compares 
+.I sig\_addr
+with
+.IR "cmp\_value" .
+
+.BR "IN " -
+.I cmp\_value
+- The value against which the object pointed to
+by 
+.I sig\_addr
+will be compared.
+./ sectionEnd
+./ sectionStart
+.SS API Description
+.B shmem\_signal\_wait\_until
+operation blocks until the value contained
+in the signal data object, 
+.I sig\_addr
+, at the calling PE satisfies
+the wait condition. In an OpenSHMEM program with single-threaded or
+multithreaded PEs, the 
+.I sig\_addr
+object at the calling PE is
+expected only to be updated as a signal, through the signaling operations
+available in
+.I shmem\_put\_signal
+and
+.I shmem\_put\_signal\_nbi.
+This routine can be used to implement point-to-point synchronization between
+PEs or between threads within the same PE. A call to this routine
+blocks until the value of 
+.I sig\_addr
+at the calling PE satisfies
+the wait condition specified by the comparison operator, 
+.I cmp
+, and
+comparison value, 
+.IR "cmp\_value" .
+Implementations must ensure that 
+.B shmem\_signal\_wait\_until
+do not
+return before the update of the memory indicated by 
+.I sig\_addr
+is
+fully complete.
+./ sectionEnd
+./ sectionStart
+.SS Return Values
+Return the contents of the signal data object, 
+.I sig\_addr
+, at the
+calling PE that satisfies the wait condition.
+./ sectionEnd

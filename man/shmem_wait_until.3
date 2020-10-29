@@ -1,1 +1,352 @@
-.so shmem_wait.3
+.TH SHMEM_WAIT_UNTIL 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_wait_until \- 
+Wait for a variable on the local PE to change.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C11:
+
+.B void
+.B shmem\_wait\_until(TYPE
+.IB "*ivar" ,
+.B int
+.IB "cmp" ,
+.B TYPE
+.I cmp_value
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the standard AMO types specified by
+Table 6,
+
+./ sectionStart
+.B ***************DEPRECATED***************
+./ sectionEnd
+
+or TYPE is one of \{short, unsigned short\}.
+
+./ sectionStart
+.B ****************************************
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B void
+.B shmem\_TYPENAME\_wait\_until(TYPE
+.IB "*ivar" ,
+.B int
+.IB "cmp" ,
+.B TYPE
+.I cmp_value
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the standard AMO types and has a
+corresponding TYPENAME specified by Table 6,
+
+./ sectionStart
+.B ***************DEPRECATED***************
+./ sectionEnd
+
+or TYPE is one of \{short, unsigned short\} and
+has a corresponding TYPENAME specified by Table 12.
+
+./ sectionStart
+.B ****************************************
+./ sectionEnd
+
+
+
+./ sectionStart
+.B ***************DEPRECATED***************
+./ sectionEnd
+
+./ sectionStart
+
+.B void
+.B shmem\_wait\_until(long
+.IB "*ivar" ,
+.B int
+.IB "cmp" ,
+.B long
+.I cmp_value
+.B );
+
+
+
+.B void
+.B shmem\_wait(long
+.IB "*ivar" ,
+.B long
+.I cmp_value
+.B );
+
+
+
+.B void
+.B shmem\_TYPENAME\_wait(TYPE
+.IB "*ivar" ,
+.B TYPE
+.I cmp_value
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of \{short, int, long,
+long long\} and has a corresponding TYPENAME specified by
+Table 12.
+
+./ sectionStart
+.B ****************************************
+./ sectionEnd
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I ivar
+- Symmetric address of a remotely accessible data object.
+The type of 
+.I ivar
+should match that implied in the SYNOPSIS section.
+
+
+.BR "IN " -
+.I cmp
+- The compare operator that compares 
+.I ivar
+with
+.IR "cmp\_value" .
+
+
+
+.BR "IN " -
+.I cmp\_value
+- The value to be compared with 
+.IR "ivar" .
+The type of 
+.I cmp\_value
+should match that implied in the SYNOPSIS section.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+The 
+.B shmem\_wait
+and 
+.B shmem\_wait\_until
+operations block until
+the value contained in the symmetric data object, 
+.I ivar
+, at the
+calling PE satisfies the wait condition. The 
+.I ivar
+object at the
+calling PE may be updated by an AMO performed by a thread located
+within the calling PE or within another PE.
+
+These routines can be used to implement point-to-point synchronization
+between PEs or between threads within the same PE. A call to
+.B shmem\_wait
+blocks until the value of
+.I ivar
+at the calling PE is not equal to 
+.IR "cmp\_value" .
+A call
+to 
+.B shmem\_wait\_until
+blocks until the value of 
+.I ivar
+at the
+calling PE satisfies the wait condition specified by the comparison
+operator, 
+.I cmp
+, and comparison value, 
+.IR "cmp\_value" .
+
+
+Implementations must ensure that 
+.B shmem\_wait
+and
+.B shmem\_wait\_until
+do not return before the update of the memory
+indicated by 
+.I ivar
+is fully complete.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+None
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+As of OpenSHMEM[1.4], the 
+.B shmem\_wait
+routine is deprecated;
+however, 
+.B shmem\_wait
+is equivalent to 
+.B shmem\_wait\_until
+where 
+.I cmp
+is SHMEM\_CMP\_NE.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Note to Implementors
+
+Some platforms may allow wait operations to efficiently poll or block on an
+update to 
+.IR "ivar" .
+On others, an atomic read operation may be needed to
+observe updates to 
+.IR "ivar" .
+On platforms where atomic read operations
+incur high overhead, implementations may be able to reduce the number of
+atomic reads performed by using non-atomic reads of 
+.I ivar
+to wait for a
+change to occur, followed by an atomic read operation to fetch the updated
+value until the synchronization condition is satisfied.
+
+./ sectionEnd
+
+
+
+
+.SS Table 6:
+Standard AMO Types and Names
+.TP 25
+.B \TYPE
+.B \TYPENAME
+.TP
+int
+int
+.TP
+long
+long
+.TP
+long long
+longlong
+.TP
+unsigned int
+uint
+.TP
+unsigned long
+ulong
+.TP
+unsigned long long
+ulonglong
+.TP
+int32\_t
+int32
+.TP
+int64\_t
+int64
+.TP
+uint32\_t
+uint32
+.TP
+uint64\_t
+uint64
+.TP
+size\_t
+size
+.TP
+ptrdiff\_t
+ptrdiff
+
+.TP
+./ sectionStart
+.B ***************DEPRECATED***************
+./ sectionEnd
+
+.SS Table 12:
+Point-to-Point Synchronization Types and Names
+.TP 25
+.B \TYPE
+.B \TYPENAME
+.TP
+short
+short
+.TP
+int
+int
+.TP
+long
+long
+.TP
+long long
+longlong
+.TP
+unsigned short
+ushort
+.TP
+unsigned int
+uint
+.TP
+unsigned long
+ulong
+.TP
+unsigned long long
+ulonglong
+.TP
+int32\_t
+int32
+.TP
+int64\_t
+int64
+.TP
+uint32\_t
+uint32
+.TP
+uint64\_t
+uint64
+.TP
+size\_t
+size
+.TP
+ptrdiff\_t
+ptrdiff
+
+.TP
+./ sectionStart
+.B ****************************************
+./ sectionEnd
