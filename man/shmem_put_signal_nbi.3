@@ -180,11 +180,13 @@ where SIZE is one of 8, 16, 32, 64, 128.
 ./ sectionStart
 .SH DESCRIPTION
 .SS Arguments
+
 .BR "IN " -
 .I ctx
 - A context handle specifying the context on which to
 perform the operation. When this argument is not provided, the operation is
 performed on the default context.
+
 .BR "OUT " -
 .I dest
 - Symmetric address of the data object to be updated
@@ -192,6 +194,7 @@ on the remote PE.
 The type of 
 .I "dest"
 should match that implied in the SYNOPSIS section.
+
 .BR "IN " -
 .I source
 - Local address of data object containing the data
@@ -199,6 +202,7 @@ to be copied.
 The type of 
 .I "source"
 should match that implied in the SYNOPSIS section.
+
 .BR "IN " -
 .I nelems
 - Number of elements in the 
@@ -210,22 +214,26 @@ arrays. For
 and
 .BR "shmem\_ctx\_putmem\_signal\_nbi" ,
 elements are bytes.
+
 .BR "OUT " -
 .I sig\_addr
 - Symmetric address of the signal data object to
 be updated on the remote PE as a signal.
+
 .BR "IN " -
 .I signal
 - Unsigned 64-bit value that is used for updating the
 remote 
 .I sig\_addr
 signal data object.
+
 .BR "IN " -
 .I sig\_op
 - Signal operator that represents the type of update
 to be performed on the remote 
 .I sig\_addr
 signal data object.
+
 .BR "IN " -
 .I pe
 - PE number of the remote PE.

@@ -12,6 +12,7 @@ issued by a PE.
 .SS C/C++:
 .B void
 .B shmem\_quiet(void)
+
 .B void
 .B shmem\_ctx\_quiet(shmem_ctx_t
 .I ctx
@@ -111,7 +112,7 @@ can be called by the target PE to guarantee ordering of its memory accesses.
 .SS Examples
 The following example uses 
 .B shmem\_quiet
-in a C[11] program: 
+in a C11 program: 
 .nf
 #include <shmem.h>
 #include <stdio.h>

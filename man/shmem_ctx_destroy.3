@@ -89,7 +89,7 @@ destroyed by the thread that created it.
 
 
 The following example demonstrates the use of contexts in a multithreaded
-C[11] program that uses OpenMP for threading. This example shows the
+C11 program that uses OpenMP for threading. This example shows the
 shared counter load balancing method and illustrates the use of contexts
 for thread isolation.
 
@@ -156,7 +156,7 @@ int main(void) {
 
 
 The following example demonstrates the use of contexts in a
-single-threaded C[11] program that performs a summation reduction where
+single-threaded C11 program that performs a summation reduction where
 the data contained in the 
 .I in\_buf
 arrays on all PEs is reduced into
@@ -235,7 +235,7 @@ int main(void) {
 
 
 The following example demonstrates the use of SHMEM\_CTX\_INVALID
-in a C[11] program that uses thread-local storage to provide each
+in a C11 program that uses thread-local storage to provide each
 thread an implicit context handle via a ``library'' put routine without
 explicit management of the context handle from ``user'' code.
 

@@ -23,6 +23,7 @@ PEs in a set of PEs.
 .I nreduce
 .B );
 ./ sectionEnd
+
 where \TYPE{} is one of the integer types supported for the AND operation as specified by Table 10.
 ./ sectionStart
 .SS C/C++:
@@ -445,9 +446,11 @@ where TYPE is one of the integer, real, or complex types supported for the PROD 
 ./ sectionStart
 .SH DESCRIPTION
 .SS Arguments
+
 .BR "IN " -
 .I team
 - The team over which to perform the operation.%
+
 .BR "OUT " -
 .I dest
 - Symmetric address of an array, of length 
@@ -608,7 +611,7 @@ array are restored to the original values.
 .P
 The complex-typed interfaces are only provided for sum and product reductions.
 When the C translation environment does not support complex types
-(That is, under C language standards prior to C[99] or under C[11]
+(That is, under C language standards prior to C99 or under C11
 when \_\_STDC\_NO\_COMPLEX\_\_ is defined to 1), an OpenSHMEM
 implementation is not required to provide support for these
 complex-typed interfaces.
@@ -619,7 +622,7 @@ Zero on successful local completion. Nonzero otherwise.
 ./ sectionEnd
 ./ sectionStart
 .SS Examples
-In the following C[11] example, each PE intializes an array of
+In the following C11 example, each PE intializes an array of
 random integers with values between $0$ and $npes-1$, inclusively. An OR
 reduction then tracks the array indices where maximal values occur (maximal
 values equal $npes - 1$), and a SUM reduction counts the total number of
