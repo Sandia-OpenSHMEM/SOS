@@ -24,22 +24,6 @@ updates and remote memory updates on the default context are completed.
 
 
 
-./ sectionStart
-
-.B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "CALL " "SHMEM\_BARRIER\_ALL"
-
-.fi
-.B ****************************************
-
-./ sectionEnd
-
-
-
 
 
 ./ sectionStart
@@ -56,12 +40,13 @@ updates and remote memory updates on the default context are completed.
 
 The 
 .B shmem\_barrier\_all
-routine registers the arrival of a PE at
-a barrier. Barriers are a mechanism for synchronizing all PEs at
-once. This routine blocks the PE until all PEs have called
+routine
+is a mechanism for synchronizing all PEs in the world team at
+once. This routine blocks the calling PE until all PEs have called
 .BR "shmem\_barrier\_all" .
 In a multithreaded OpenSHMEM
-program, only the calling thread is blocked.
+program, only the calling thread is blocked, however,
+it may not be called concurrently by multiple threads in the same PE.
 
 Prior to synchronizing with other PEs, 
 .B shmem\_barrier\_all
@@ -93,6 +78,15 @@ None.
 
 The 
 .B shmem\_barrier\_all
+routine is equivalent to calling
+.B shmem\_ctx\_quiet
+on the default context followed by
+calling 
+.B shmem\_team\_sync
+on the world team.
+
+The 
+.B shmem\_barrier\_all
 routine can be used to
 portably ensure that memory access operations observe remote updates in the order
 enforced by initiator PEs.
@@ -117,25 +111,24 @@ The following
 example is for C[11] programs:
 
 .nf
-#include <stdio.h>
 #include <shmem.h>
+#include <stdio.h>
 
-int main(void)
-{
-  static int x = 1010;
+int main(void) {
+ static int x = 1010;
 
-  shmem_init();
-  int me = shmem_my_pe();
-  int npes = shmem_n_pes();
+ shmem_init();
+ int mype = shmem_my_pe();
+ int npes = shmem_n_pes();
 
-  /* put to next  PE in a circular fashion */
-  shmem_p(&x, 4, (me + 1) % npes);
+ /* put to next  PE in a circular fashion */
+ shmem_p(&x, 4, (mype + 1) % npes);
 
-  /* synchronize all PEs */
-  shmem_barrier_all();
-  printf("%d: x = %d\\n", me, x);
-  shmem_finalize();
-  return 0;
+ /* synchronize all PEs */
+ shmem_barrier_all();
+ printf("%d: x = %d\\n", mype, x);
+ shmem_finalize();
+ return 0;
 }
 .fi
 

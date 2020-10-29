@@ -2,107 +2,70 @@
 ./ sectionStart
 .SH NAME
 shmem_fence \- 
-Assures ordering of delivery of PUT, AMO, memory store, and nonblocking PUT routines
-to symmetric data objects.
-
+Ensures ordering of delivery of operations on symmetric data objects.
 ./ sectionEnd
-
-
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
-
 ./ sectionStart
 .SS C/C++:
-
 .B void
 .B shmem\_fence(void)
-
-
 .B void
 .B shmem\_ctx\_fence(shmem_ctx_t
 .I ctx
 .B );
-
-
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
-
-.B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "CALL " "SHMEM\_FENCE"
-
-.fi
-.B ****************************************
-
-./ sectionEnd
-
-
-
-
-./ sectionStart
-
 .SH DESCRIPTION
 .SS Arguments
 .BR "IN " -
 .I ctx
-- The context on which to perform the operation.
+- A context handle specifying the context on which to perform the operation.
 When this argument is not provided, the operation is performed on
-SHMEM\_CTX\_DEFAULT.
+the default context.
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Description
-
-This routine assures ordering of delivery of PUT, AMO, memory store, and nonblocking PUT
-routines to symmetric data objects. All PUT, AMO, memory store, and nonblocking PUT
-routines to symmetric data objects issued to a particular remote PE 
-on the given context prior
+This routine ensures ordering of delivery of operations on symmetric data
+objects.
+Table 14 lists the operations that are ordered
+by the 
+.B shmem\_fence
+routine.
+All operations on symmetric data objects issued to a particular
+PE on the given context prior
 to the call to 
 .B shmem\_fence
 are guaranteed to be delivered before any
-subsequent PUT, AMO, memory store, and nonblocking PUT routines to symmetric data
+subsequent operations on symmetric data
 objects to the same PE. 
 .B shmem\_fence
 guarantees order of delivery,
-not completion. It does not guarantee order of delivery of nonblocking GET routines.
-
+not completion. It does not guarantee order of delivery of nonblocking
+GET or values fetched by nonblocking AMO routines.
+If 
+.I ctx
+has the value SHMEM\_CTX\_INVALID, no operation is
+performed.
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS Return Values
-
 None.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Notes
-
 .B shmem\_fence
 only provides per-PE ordering guarantees and does not
-guarantee completion of delivery. 
+guarantee completion of delivery.
 .B shmem\_fence
-also does not have an effect on the ordering between memory 
+also does not have an effect on the ordering between memory
 accesses issued by the target PE. 
 .BR "shmem\_wait\_until" ,
 .BR "shmem\_test" ,
 .BR "shmem\_barrier" ,
 .B shmem\_barrier\_all
-routines can be called by the target PE to guarantee 
+routines can be called by the target PE to guarantee
 ordering of its memory accesses.
 There is a subtle difference between
 .B shmem\_fence
@@ -110,20 +73,17 @@ and
 .BR "shmem\_quiet" ,
 in that, 
 .B shmem\_quiet
-guarantees completion of PUT, AMO, memory store, and nonblocking PUT routines to
+guarantees completion of all operations on
 symmetric data objects which makes the updates visible to all other
-PEs. 
-
+PEs.
 The 
 .B shmem\_quiet
-routine should be called if completion of PUT,
-AMO, memory store, and nonblocking PUT routines to symmetric data objects is desired
-when multiple remote PEs are involved.
-
+routine should be called if completion of operations
+on symmetric data objects is desired
+when multiple PEs are involved.
 In an OpenSHMEM program with multithreaded PEs, it is the
 user's responsibility to ensure ordering between operations issued by the threads
-in a PE that target symmetric memory (e.g. PUT, AMO, memory stores,
-and nonblocking routines) and calls by threads in that PE to
+in a PE that target symmetric memory and calls by threads in that PE to
 .BR "shmem\_fence" .
 The 
 .B shmem\_fence
@@ -134,46 +94,36 @@ not the thread calling
 the update must be made visible to the
 calling thread according to the rules of the memory model associated with
 the threading environment.
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Examples
-
-
-
 The following example uses 
 .B shmem\_fence
 in a C[11] program: 
-
 .nf
-#include <stdio.h>
 #include <shmem.h>
+#include <stdio.h>
 
-int main(void)
-{
-  int src = 99;
-  long source[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-  static long dest[10];
-  static int targ;
-  shmem_init();
-  int me = shmem_my_pe();
-  if (me == 0) {
-     shmem_put(dest, source, 10, 1); /* put1 */
-     shmem_put(dest, source, 10, 2); /* put2 */
-     shmem_fence();
-     shmem_put(&targ, &src, 1, 1); /* put3 */
-     shmem_put(&targ, &src, 1, 2); /* put4 */
-  }
-  shmem_barrier_all();  /* sync sender and receiver */
-  printf("dest[0] on PE %d is %ld\\n", me, dest[0]);
-  shmem_finalize();
-  return 0;
+int main(void) {
+ int src = 99;
+ long source[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+ static long dest[10];
+ static int targ;
+ shmem_init();
+ int mype = shmem_my_pe();
+ if (mype == 0) {
+   shmem_put(dest, source, 10, 1); /* put1 */
+   shmem_put(dest, source, 10, 2); /* put2 */
+   shmem_fence();
+   shmem_put(&targ, &src, 1, 1); /* put3 */
+   shmem_put(&targ, &src, 1, 2); /* put4 */
+ }
+ shmem_barrier_all(); /* sync sender and receiver */
+ printf("dest[0] on PE %d is %ld\\n", mype, dest[0]);
+ shmem_finalize();
+ return 0;
 }
 .fi
-
 .I Put1
 will be ordered to be delivered before 
 .I put3
@@ -181,8 +131,36 @@ and
 .I put2
 will be ordered to be delivered before 
 .IR "put4" .
-
-
-
-
-
+.SS Table 14
+List of operations affected by OpenSHMEM Memory Ordering routines
+.TP 32
+.B Operations
+.B Fence
+.B Quiet
+.TP
+Memory Store
+X     X
+.TP 
+Blocking Put
+X     X
+.TP 
+Blocking Get
+.TP 
+Blocking AMO
+X     X
+.TP 
+Blocking put-with-signal
+X     X
+.TP 
+Nonblocking Put
+X     X
+.TP 
+Nonblocking Get
+X
+.TP 
+Nonblocking AMO
+X     X
+.TP 
+Nonblocking put-with-signal
+X     X
+.TP 

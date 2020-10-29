@@ -1,0 +1,310 @@
+.TH SHMEM_WAIT_UNTIL_SOME_VECTOR 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_wait_until_some_vector \- 
+Wait on an array of variables on the local PE until at least one
+variable meets the its specified wait condition.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C11:
+
+.B size_t
+.B shmem\_wait\_until\_some\_vector(TYPE
+.IB "*ivars" ,
+.B size_t
+.IB "nelems" ,
+.B size_t
+.IB "*indices" ,
+.B const
+.B int
+.IB "*status" ,
+.B int
+.IB "cmp" ,
+.B TYPE
+.I *cmp_values
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the standard AMO types specified by
+Table 6.
+./ sectionStart
+.SS C/C++:
+
+.B size_t
+.B shmem\_TYPENAME\_wait\_until\_some\_vector(TYPE
+.IB "*ivars" ,
+.B size_t
+.IB "nelems" ,
+.B size_t
+.IB "*indices" ,
+.B const
+.B int
+.IB "*status" ,
+.B int
+.IB "cmp" ,
+.B TYPE
+.I *cmp_values
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the standard AMO types and has a
+corresponding TYPENAME specified by Table 6.
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I ivars
+- Symmetric address of an array of remotely accessible data
+objects.
+The type of 
+.I ivars
+should match that implied in the SYNOPSIS section.
+
+
+.BR "IN " -
+.I nelems
+- The number of elements in the 
+.I ivars
+array.
+
+
+.BR "OUT " -
+.I indices
+- Local address of an array of indices of length at least
+.I nelems
+into 
+.I ivars
+that satisfied the wait condition.
+
+
+.BR "IN " -
+.I status
+- Local address of an optional mask array of length 
+.I nelems
+that indicates which elements in 
+.I ivars
+are excluded from the wait set.
+
+
+.BR "IN " -
+.I cmp
+- A comparison operator from Table 13 that
+compares elements of 
+.I ivars
+with elements of 
+.IR "cmp\_values" .
+
+
+
+.BR "IN " -
+.I cmp\_values
+- Local address of an array of length 
+.I nelems
+containing values to be compared with the respective objects in 
+.IR "ivars" .
+The type of 
+.I cmp\_values
+should match that implied in the SYNOPSIS section.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+The 
+.B shmem\_wait\_until\_some\_vector
+routine waits until
+at least one entry in the wait set specified by 
+.I ivars
+and
+.I status
+satisfies the wait condition at the calling PE.
+The 
+.I ivars
+objects at the calling PE may be updated by an
+AMO performed by a thread located within the calling PE or within
+another PE.
+This routine compares each element of the 
+.I ivars
+array in the
+wait set with each respective value in 
+.I cmp\_values
+according to the
+comparison operator 
+.I cmp
+at the calling PE. This routine tests
+all elements of 
+.I ivars
+in the wait set at least once, and the order in
+which the elements are waited upon is unspecified.
+
+Upon return, the 
+.I indices
+array contains the indices of at least one
+element in the wait set that satisfied the wait condition during the call
+to 
+.BR "shmem\_wait\_until\_some\_vector" .
+The return value of
+.B shmem\_wait\_until\_some\_vector
+is equal to the total
+number of these satisfied elements. For a given return value N, the
+first N elements of the 
+.I indices
+array contain those unique indices
+that satisfied the wait condition. These first N elements of
+.I indices
+may be unordered with respect to the corresponding indices of
+.IR "ivars" .
+The array pointed to by 
+.I indices
+must be at least
+.I nelems
+long. If an entry i in 
+.I ivars
+within the wait set
+satisfies the wait condition, a series of calls to
+.B shmem\_wait\_until\_some\_vector
+must eventually include
+i in the 
+.I indices
+array.
+
+The optional 
+.I status
+is a mask array of length 
+.I nelems
+where each
+element corresponds to the respective element in 
+.I ivars
+and indicates
+whether the element is excluded from the wait set. Elements of
+.I status
+set to 0 will be included in the wait set, and elements set to
+a nonzero value will be ignored. If all elements in 
+.I status
+are nonzero or
+.I nelems
+is 0, the wait set is empty and this routine returns 0.
+If 
+.I status
+is a null pointer, it is ignored
+and all elements in 
+.I ivars
+are included in the wait set. The
+.I ivars
+, 
+.I indices
+, and 
+.I status
+arrays must not overlap in
+memory.
+
+Implementations must ensure that 
+.B shmem\_wait\_until\_some\_vector
+does not return before the update of the memory indicated by 
+.I ivars
+is
+fully complete.
+
+./ sectionEnd
+
+
+
+./ sectionStart
+
+.SS Return Values
+
+.B shmem\_wait\_until\_some\_vector
+returns the number of
+indices returned in the 
+.I indices
+array. If the wait set is empty, this
+routine returns 0.
+
+./ sectionEnd
+
+
+
+
+.SS Table 6:
+Standard AMO Types and Names
+.TP 25
+.B \TYPE
+.B \TYPENAME
+.TP
+int
+int
+.TP
+long
+long
+.TP
+long long
+longlong
+.TP
+unsigned int
+uint
+.TP
+unsigned long
+ulong
+.TP
+unsigned long long
+ulonglong
+.TP
+int32\_t
+int32
+.TP
+int64\_t
+int64
+.TP
+uint32\_t
+uint32
+.TP
+uint64\_t
+uint64
+.TP
+size\_t
+size
+.TP
+ptrdiff\_t
+ptrdiff
+
+.SS Table 13:
+Point-to-Point Comparison Constants
+.TP 25
+.B Constant Name
+.B Comparison
+.TP
+SHMEM_CMP_EQ
+Equal
+.TP
+SHMEM_CMP_NE
+Not equal
+.TP
+SHMEM_CMP_GT
+Greater than
+.TP
+SHMEM_CMP_GE
+Greater than or equal to
+.TP
+SHMEM_CMP_LT
+Less than
+.TP
+SHMEM_CMP_LE
+Less than or equal to

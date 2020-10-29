@@ -1,0 +1,268 @@
+.TH SHMEM_TEST_ALL 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_test_all \- 
+Indicate whether all variables within an array of variables on the local PE meet a specified test condition.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C11:
+
+.B int
+.B shmem\_test\_all(TYPE
+.IB "*ivars" ,
+.B size_t
+.IB "nelems" ,
+.B const
+.B int
+.IB "*status" ,
+.B int
+.IB "cmp" ,
+.B TYPE
+.I cmp_value
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the standard AMO types specified by
+Table 6.
+./ sectionStart
+.SS C/C++:
+
+.B int
+.B shmem\_TYPENAME\_test\_all(TYPE
+.IB "*ivars" ,
+.B size_t
+.IB "nelems" ,
+.B const
+.B int
+.IB "*status" ,
+.B int
+.IB "cmp" ,
+.B TYPE
+.I cmp_value
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the standard AMO types and has a
+corresponding TYPENAME specified by Table 6.
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I ivars
+- Symmetric address of an array of remotely accessible data
+objects.
+The type of 
+.I ivars
+should match that implied in the SYNOPSIS section.
+
+
+.BR "IN " -
+.I nelems
+- The number of elements in the 
+.I ivars
+array.
+
+
+.BR "IN " -
+.I status
+- Local address of an optional mask array of length 
+.I nelems
+that indicates which elements in 
+.I ivars
+are excluded from the test set.
+
+
+.BR "IN " -
+.I cmp
+- A comparison operator from Table 13
+that compares elements of 
+.I ivars
+with 
+.IR "cmp\_value" .
+
+
+
+.BR "IN " -
+.I cmp\_value
+- The value to be compared with the objects
+pointed to by 
+.IR "ivars" .
+The type of 
+.I cmp\_value
+should match that implied in the SYNOPSIS section.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+The 
+.B shmem\_test\_all
+routine indicates whether all entries in the
+test set specified by 
+.I ivars
+and 
+.I status
+have satisfied the test
+condition at the calling PE. The 
+.I ivars
+objects at the calling
+PE may be updated by an AMO performed by a thread located within
+the calling PE or within another PE.
+This routine does not block and returns zero if
+not all entries in 
+.I ivars
+satisfied the test condition.
+This routine compares each element of the 
+.I ivars
+array in the
+test set with the value 
+.I cmp\_value
+according to the comparison
+operator 
+.I cmp
+at the calling PE.
+
+If 
+.I nelems
+is 0, the test set is empty and this routine returns 1.
+
+The optional 
+.I status
+is a mask array of length 
+.I nelems
+where each element
+corresponds to the respective element in 
+.I ivars
+and indicates whether
+the element is excluded from the test set. Elements of 
+.I status
+set to
+0 will be included in the test set, and elements set to a nonzero value will be ignored. If all elements
+in 
+.I status
+are nonzero or 
+.I nelems
+is 0, the test set is empty
+and this routine returns 0. If 
+.I status
+is a null pointer, it is
+ignored and all elements in 
+.I ivars
+are included in the test set. The
+.I ivars
+, 
+.I indices
+, and 
+.I status
+arrays must not overlap in
+memory.
+
+Implementations must ensure that 
+.B shmem\_test\_all
+does not return 1
+before the update of the memory indicated by 
+.I ivars
+is fully complete.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+.B shmem\_test\_all
+returns 1 if all variables in 
+.I ivars
+satisfy the test condition or if 
+.I nelems
+is 0, otherwise this routine returns 0.
+
+./ sectionEnd
+
+
+
+
+.SS Table 6:
+Standard AMO Types and Names
+.TP 25
+.B \TYPE
+.B \TYPENAME
+.TP
+int
+int
+.TP
+long
+long
+.TP
+long long
+longlong
+.TP
+unsigned int
+uint
+.TP
+unsigned long
+ulong
+.TP
+unsigned long long
+ulonglong
+.TP
+int32\_t
+int32
+.TP
+int64\_t
+int64
+.TP
+uint32\_t
+uint32
+.TP
+uint64\_t
+uint64
+.TP
+size\_t
+size
+.TP
+ptrdiff\_t
+ptrdiff
+
+.SS Table 13:
+Point-to-Point Comparison Constants
+.TP 25
+.B Constant Name
+.B Comparison
+.TP
+SHMEM_CMP_EQ
+Equal
+.TP
+SHMEM_CMP_NE
+Not equal
+.TP
+SHMEM_CMP_GT
+Greater than
+.TP
+SHMEM_CMP_GE
+Greater than or equal to
+.TP
+SHMEM_CMP_LT
+Less than
+.TP
+SHMEM_CMP_LE
+Less than or equal to

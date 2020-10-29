@@ -1,0 +1,257 @@
+.TH SHMEM_WAIT_UNTIL_ALL_VECTOR 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_wait_until_all_vector \- 
+Wait on an array of variables on the local PE until all variables meet
+the specified wait conditions.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C11:
+
+.B void
+.B shmem\_wait\_until\_all\_vector(TYPE
+.IB "*ivars" ,
+.B size_t
+.IB "nelems" ,
+.B const
+.B int
+.IB "*status" ,
+.B int
+.IB "cmp" ,
+.B TYPE
+.I *cmp_values
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the standard AMO types specified by
+Table 6.
+./ sectionStart
+.SS C/C++:
+
+.B void
+.B shmem\_TYPENAME\_wait\_until\_all\_vector(TYPE
+.IB "*ivars" ,
+.B size_t
+.IB "nelems" ,
+.B const
+.B int
+.IB "*status" ,
+.B int
+.IB "cmp" ,
+.B TYPE
+.I *cmp_values
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the standard AMO types and has a
+corresponding TYPENAME specified by Table 6.
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I ivars
+- Symmetric address of an array of remotely accessible data
+objects.
+The type of 
+.I ivars
+should match that implied in the SYNOPSIS section.
+
+
+.BR "IN " -
+.I nelems
+- The number of elements in the 
+.I ivars
+array.
+
+
+.BR "IN " -
+.I status
+- Local address of an optional mask array of length 
+.I nelems
+that indicates which elements in 
+.I ivars
+are excluded from the wait set.
+
+
+.BR "IN " -
+.I cmp
+- A comparison operator from Table 13 that
+compares elements of 
+.I ivars
+with elements of 
+.IR "cmp\_values" .
+
+
+
+.BR "IN " -
+.I cmp\_values
+- Local address of an array of length 
+.I nelems
+containing values to be compared with the respective objects in 
+.IR "ivars" .
+The type of 
+.I cmp\_values
+should match that implied in the SYNOPSIS section.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+The 
+.B shmem\_wait\_until\_all\_vector
+routine waits until all entries
+in the wait set specified by 
+.I ivars
+and 
+.I status
+have satisfied
+the wait conditions at the calling PE. The 
+.I ivars
+objects at the calling PE may be updated by an AMO performed by a
+thread located within the calling PE or within another PE.
+If 
+.I nelems
+is
+0, the wait set is empty and this routine returns immediately.
+This routine compares each element of the 
+.I ivars
+array in the
+wait set with each respective value in 
+.I cmp\_values
+according to the
+comparison operator 
+.I cmp
+at the calling PE.
+
+The optional 
+.I status
+is a mask array of length 
+.I nelems
+where each
+element corresponds to the respective element in 
+.I ivars
+and indicates
+whether the element is excluded from the wait set. Elements of
+.I status
+set to 0 will be included in the wait set, and elements set to
+a nonzero value will be ignored. If all elements in 
+.I status
+are nonzero or
+.I nelems
+is 0, the wait set is empty and this routine returns
+immediately. If 
+.I status
+is a null pointer, it is ignored and all
+elements in 
+.I ivars
+are included in the wait set. The 
+.I ivars
+and
+.I status
+arrays must not overlap in memory.
+
+Implementations must ensure that 
+.B shmem\_wait\_until\_all\_vector
+does not return before the update of the memory indicated by 
+.I ivars
+is
+fully complete.
+
+./ sectionEnd
+
+
+
+./ sectionStart
+
+.SS Return Values
+
+None.
+
+./ sectionEnd
+
+
+
+
+.SS Table 6:
+Standard AMO Types and Names
+.TP 25
+.B \TYPE
+.B \TYPENAME
+.TP
+int
+int
+.TP
+long
+long
+.TP
+long long
+longlong
+.TP
+unsigned int
+uint
+.TP
+unsigned long
+ulong
+.TP
+unsigned long long
+ulonglong
+.TP
+int32\_t
+int32
+.TP
+int64\_t
+int64
+.TP
+uint32\_t
+uint32
+.TP
+uint64\_t
+uint64
+.TP
+size\_t
+size
+.TP
+ptrdiff\_t
+ptrdiff
+
+.SS Table 13:
+Point-to-Point Comparison Constants
+.TP 25
+.B Constant Name
+.B Comparison
+.TP
+SHMEM_CMP_EQ
+Equal
+.TP
+SHMEM_CMP_NE
+Not equal
+.TP
+SHMEM_CMP_GT
+Greater than
+.TP
+SHMEM_CMP_GE
+Greater than or equal to
+.TP
+SHMEM_CMP_LT
+Less than
+.TP
+SHMEM_CMP_LE
+Less than or equal to

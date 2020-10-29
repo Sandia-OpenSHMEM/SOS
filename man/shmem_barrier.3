@@ -1,4 +1,9 @@
 .TH SHMEM_BARRIER 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+
+./ sectionStart
+.B ***************DEPRECATED***************
+./ sectionEnd
+
 ./ sectionStart
 .SH NAME
 shmem_barrier \- 
@@ -34,24 +39,6 @@ but with respect to a subset of PEs defined by the active set.
 
 
 
-./ sectionStart
-
-.B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "INTEGER " "PE_start, logPE_stride, PE_size"
-.BR "INTEGER " "pSync(SHMEM_BARRIER_SYNC_SIZE)"
-.BR "CALL " "SHMEM\_BARRIER(PE_start, logPE_stride, PE_size, pSync)"
-
-.fi
-.B ****************************************
-
-./ sectionEnd
-
-
-
 
 
 ./ sectionStart
@@ -61,43 +48,23 @@ but with respect to a subset of PEs defined by the active set.
 .BR "IN " -
 .I PE\_start
 - The lowest PE number of the active set of PEs.
-.I PE\_start
-must be of type integer. When using Fortran, it must be
-a default integer value.
 
 
 .BR "IN " -
 .I logPE\_stride
 - The log (base 2) of the stride between consecutive
-PE numbers in the active set. 
-.I logPE\_stride
-must be of type integer.
-When using Fortran, it must be a default integer value.
+PE numbers in the active set.
 
 
 .BR "IN " -
 .I PE\_size
-- The number of PEs in the active set. 
-.I PE\_size
-must be of type integer. When using Fortran, it must be a default
-integer value.
+- The number of PEs in the active set.
 
 
 .BR "IN " -
 .I pSync
 - 
-A symmetric work array of size SHMEM\_BARRIER\_SYNC\_SIZE.
-In  C/C++, 
-.I pSync
-must be an array of elements of type long.
-In Fortran, 
-.I pSync
-must be an array of elements of default integer type.
-Every element
-of this array must be initialized to SHMEM\_SYNC\_VALUE before any of
-the PEs in the active set enter 
-.B shmem\_barrier
-the first time.
+Symmetric address of a work array of size at least SHMEM\_BARRIER\_SYNC\_SIZE.
 ./ sectionEnd
 
 
@@ -163,25 +130,18 @@ None.
 
 .SS API Notes
 
-If the 
-.I pSync
-array is initialized at the run time, all
-PEs must be synchronized before the first call to 
+As of OpenSHMEM[1.5], 
 .B shmem\_barrier
-(e.g., by 
-.B shmem\_barrier\_all
-) to ensure the array has been initialized
-by all PEs before it is used.
-
-If the active set does not change, 
-.B shmem\_barrier
-can be called
-repeatedly with the same 
-.I pSync
-array. No additional synchronization
-beyond that implied by 
-.B shmem\_barrier
-itself is necessary in this case.
+has been deprecated.
+No team-based barrier is provided by OpenSHMEM, as a team may have any
+number of communication contexts associated with the team.
+Applications seeking such an idiom should call
+.B shmem\_ctx\_quiet
+on the desired communication context,
+followed by a call to 
+.B shmem\_team\_sync
+on the desired
+team.
 
 The 
 .B shmem\_barrier
@@ -207,33 +167,37 @@ additional contexts.
 The following barrier example is for C[11] programs:
 
 .nf
-#include <stdio.h>
 #include <shmem.h>
+#include <stdio.h>
 
-int main(void)
-{
-  static int x = 10101;
-  static long pSync[SHMEM_BARRIER_SYNC_SIZE];
-  for (int i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
-     pSync[i] = SHMEM_SYNC_VALUE;
+int main(void) {
+ static int x = 10101;
+ static long pSync[SHMEM_BARRIER_SYNC_SIZE];
+ for (int i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
+   pSync[i] = SHMEM_SYNC_VALUE;
 
-  shmem_init();
-  int me = shmem_my_pe();
-  int npes = shmem_n_pes();
+ shmem_init();
+ int mype = shmem_my_pe();
+ int npes = shmem_n_pes();
 
-  if (me % 2 == 0) {
-     /* put to next even PE in a circular fashion */
-     shmem_p(&x, 4, (me + 2) % npes);
-     /* synchronize all even pes */
-     shmem_barrier(0, 1, (npes / 2 + npes % 2), pSync);
-  }
-  printf("%d: x = %d\\n", me, x);
-  shmem_finalize();
-  return 0;
+ if (mype % 2 == 0) {
+   /* put to next even PE in a circular fashion */
+   shmem_p(&x, 4, (mype + 2) % npes);
+   /* synchronize all even pes */
+   shmem_barrier(0, 1, (npes / 2 + npes % 2), pSync);
+ }
+ printf("%d: x = %d\\n", mype, x);
+ shmem_finalize();
+ return 0;
 }
 .fi
 
 
 
 
+
+
+./ sectionStart
+.B ****************************************
+./ sectionEnd
 

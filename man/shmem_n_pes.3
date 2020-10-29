@@ -22,23 +22,6 @@ Returns the number of PEs running in a program.
 
 
 
-./ sectionStart
-
-.B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "INTEGER " "SHMEM_N_PES, N_PES"
-N_PES = SHMEM\_N\_PES()
-
-.fi
-.B ****************************************
-
-./ sectionEnd
-
-
-
 
 ./ sectionStart
 
@@ -101,17 +84,16 @@ example is for
 C/C++ programs:
 
 .nf
-#include <stdio.h>
 #include <shmem.h>
+#include <stdio.h>
 
-int main(void)
-{
-  shmem_init();
-  int me = shmem_my_pe();
-  int npes = shmem_n_pes();
-  printf("I am #%d of %d PEs executing this program\\n", me, npes);
-  shmem_finalize();
-  return 0;
+int main(void) {
+ shmem_init();
+ int mype = shmem_my_pe();
+ int npes = shmem_n_pes();
+ printf("I am #%d of %d PEs executing this program\\n", mype, npes);
+ shmem_finalize();
+ return 0;
 }
 .fi
 

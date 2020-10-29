@@ -1,7 +1,7 @@
 .TH START_PES 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
 ./ sectionStart
 .SH NAME
-start_pes \-  
+start_pes \- 
 Called at the beginning of an OpenSHMEM program to initialize the execution
 environment. This routine is deprecated and is provided for backwards
 compatibility. Implementations must include it, and the routine should
@@ -37,23 +37,6 @@ function properly and may notify the user about deprecation of its use.
 ./ sectionStart
 .B ****************************************
 ./ sectionEnd
-
-./ sectionStart
-
-.B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "CALL " "START\_PES(npes)"
-
-.fi
-.B ****************************************
-
-./ sectionEnd
-
-
-
 
 ./ sectionStart
 
@@ -130,41 +113,6 @@ or
 instead.
 
 ./ sectionEnd
-
-
-
-
-./ sectionStart
-.SS Examples
-
-
-
-This is a simple program that calls 
-.B start\_pes
-:
-
-.nf
-PROGRAM PUT
-INCLUDE "shmem.fh"
-
-INTEGER TARG, SRC, RECEIVER, BAR
-COMMON /T/ TARG
-PARAMETER (RECEIVER=1)
-CALL START_PES(0)
-
-IF (SHMEM_MY_PE() .EQ. 0) THEN
-   SRC = 33
-   CALL SHMEM_INTEGER_PUT(TARG, SRC, 1, RECEIVER)
-ENDIF
-
-CALL SHMEM_BARRIER_ALL           ! SYNCHRONIZES SENDER AND RECEIVER
-
-IF (SHMEM_MY_PE() .EQ. RECEIVER) THEN
-   PRINT*,'PE ', SHMEM_MY_PE(),' TARG=',TARG,' (expect 33)'
-ENDIF
-END
-.fi
-
 
 
 
