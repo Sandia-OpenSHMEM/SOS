@@ -26,23 +26,6 @@ with the library constant SHMEM\_VENDOR\_STRING.
 
 
 
-./ sectionStart
-
-.B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "CHARACTER " "*(*)NAME"
-.BR "CALL " "SHMEM\_INFO\_GET\_NAME(NAME)"
-
-.fi
-.B ****************************************
-
-./ sectionEnd
-
-
-
 
 ./ sectionStart
 
@@ -67,9 +50,7 @@ SHMEM\_MAX\_NAME\_LEN. The implementation copies the vendor defined
 string of size at most SHMEM\_MAX\_NAME\_LEN to 
 .IR "name" .
 In
-C/C++, the string is terminated by a null character. In Fortran,
-the string of size less than SHMEM\_MAX\_NAME\_LEN is padded with
-blank characters up to size SHMEM\_MAX\_NAME\_LEN. If the
+C/C++, the string is terminated by a null character. If the
 .I name
 memory buffer is provided with size less than
 SHMEM\_MAX\_NAME\_LEN, behavior is undefined. For a given library
@@ -83,16 +64,7 @@ constant SHMEM\_VENDOR\_STRING.
 
 .SS Return Values
 
-None. 
-
-./ sectionEnd
-
-
-./ sectionStart
-
-.SS API Notes
-
-None. 
+None.
 
 ./ sectionEnd
 

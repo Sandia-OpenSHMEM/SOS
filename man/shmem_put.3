@@ -4,17 +4,12 @@
 shmem_put \- 
 The put routines provide a method for copying data from a contiguous local
 data object to a data object on a specified PE.
-
 ./ sectionEnd
-
-
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
-
 ./ sectionStart
 .SS C11:
-
 .B void
 .B shmem\_put(TYPE
 .IB "*dest" ,
@@ -26,8 +21,6 @@ data object to a data object on a specified PE.
 .B int
 .I pe
 .B );
-
-
 
 .B void
 .B shmem\_put(shmem_ctx_t
@@ -42,16 +35,11 @@ data object to a data object on a specified PE.
 .B int
 .I pe
 .B );
-
-
-
 ./ sectionEnd
-
 
 where TYPE is one of the standard RMA types specified by Table 1.
 ./ sectionStart
 .SS C/C++:
-
 .B void
 .B shmem\_TYPENAME\_put(TYPE
 .IB "*dest" ,
@@ -63,8 +51,6 @@ where TYPE is one of the standard RMA types specified by Table 1.
 .B int
 .I pe
 .B );
-
-
 
 .B void
 .B shmem\_ctx\_TYPENAME\_put(shmem_ctx_t
@@ -79,11 +65,7 @@ where TYPE is one of the standard RMA types specified by Table 1.
 .B int
 .I pe
 .B );
-
-
-
 ./ sectionEnd
-
 
 where TYPE is one of the standard RMA types and has a corresponding TYPENAME specified by Table 1.
 ./ sectionStart
@@ -100,8 +82,6 @@ where TYPE is one of the standard RMA types and has a corresponding TYPENAME spe
 .I pe
 .B );
 
-
-
 .B void
 .B shmem\_ctx\_putSIZE(shmem_ctx_t
 .IB "ctx" ,
@@ -115,16 +95,12 @@ where TYPE is one of the standard RMA types and has a corresponding TYPENAME spe
 .B int
 .I pe
 .B );
-
-
-
 ./ sectionEnd
-
 
 where SIZE is one of 8, 16, 32, 64, 128.
 ./ sectionStart
-
 .B void
+
 .B shmem\_putmem(void
 .IB "*dest" ,
 .B const
@@ -135,8 +111,6 @@ where SIZE is one of 8, 16, 32, 64, 128.
 .B int
 .I pe
 .B );
-
-
 
 .B void
 .B shmem\_ctx\_putmem(shmem_ctx_t
@@ -151,20 +125,12 @@ where SIZE is one of 8, 16, 32, 64, 128.
 .B int
 .I pe
 .B );
-
-
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 
 .B ***************DEPRECATED***************
 .SS Fortran:
-
 .nf
-
 .BR "CALL " "SHMEM\_CHARACTER\_PUT(dest, source, nelems, pe)"
 .BR "CALL " "SHMEM\_COMPLEX\_PUT(dest, source, nelems, pe)"
 .BR "CALL " "SHMEM\_DOUBLE\_PUT(dest, source, nelems, pe)"
@@ -177,17 +143,10 @@ where SIZE is one of 8, 16, 32, 64, 128.
 .BR "CALL " "SHMEM\_PUT128(dest, source, nelems, pe)"
 .BR "CALL " "SHMEM\_PUTMEM(dest, source, nelems, pe)"
 .BR "CALL " "SHMEM\_REAL\_PUT(dest, source, nelems, pe)"
-
 .fi
 .B ****************************************
-
 ./ sectionEnd
-
-
-
-
 ./ sectionStart
-
 .SH DESCRIPTION
 .SS Arguments
 .BR "IN " -
@@ -196,17 +155,14 @@ where SIZE is one of 8, 16, 32, 64, 128.
 When this argument is not provided, the operation is performed on
 SHMEM\_CTX\_DEFAULT.
 
-
 .BR "OUT " -
 .I dest
 - Data object to be updated on the remote PE. This
 data object must be remotely accessible.
 
-
 .BR "IN " -
 .I source
 - Data object containing the data to be copied.
-
 
 .BR "IN " -
 .I nelems
@@ -222,7 +178,6 @@ for C. When using
 Fortran, it must be a constant, variable, or array element of default
 integer type.
 
-
 .BR "IN " -
 .I pe
 - PE number of the remote PE. 
@@ -231,12 +186,8 @@ must be
 of type integer. When using Fortran, it must be a constant, variable,
 or array element of default integer type.
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Description
-
 The routines return after the data has been copied out of the 
 .I "source"
 array
@@ -246,13 +197,8 @@ routines may deliver data out of order unless a call to
 .B shmem\_fence
 is
 introduced between the two calls. 
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
-
 The 
 .I "dest"
 and 
@@ -265,51 +211,35 @@ Data type of
 .I dest
 and 
 .I source
-
 ./ sectionEnd
-
-
 ./ sectionStart
 .TP 25
 shmem\_putmem
 Fortran: Any noncharacter type. C: Any data type. nelems is scaled in bytes.
 ./ sectionEnd
-
-
 ./ sectionStart
 .TP 25
 shmem\_put4, shmem\_put32
 Any noncharacter type that has a storage size equal to 32 bits.
 ./ sectionEnd
-
-
 ./ sectionStart
 .TP 25
 shmem\_put8
 C: Any noncharacter type that has a storage size equal to 8 bits.
 ./ sectionEnd
-
-
-
 ./ sectionStart
 Fortran: Any noncharacter type that has a storage size equal to 64 bits.
 ./ sectionEnd
-
-
 ./ sectionStart
 .TP 25
 shmem\_put64
 Any noncharacter type that has a storage size equal to 64 bits.
 ./ sectionEnd
-
-
 ./ sectionStart
 .TP 25
 shmem\_put128
 Any noncharacter type that has a storage size equal to 128 bits.
 ./ sectionEnd
-
-
 ./ sectionStart
 .TP 25
 SHMEM\_CHARACTER\_PUT
@@ -321,55 +251,37 @@ and
 .I "dest"
 variables are ignored. 
 ./ sectionEnd
-
-
 ./ sectionStart
 .TP 25
 SHMEM\_COMPLEX\_PUT
 Elements of type complex of default size.
 ./ sectionEnd
-
-
 ./ sectionStart
 .TP 25
 SHMEM\_DOUBLE\_PUT
 Elements of type double precision. 
 ./ sectionEnd
-
-
 ./ sectionStart
 .TP 25
 SHMEM\_INTEGER\_PUT
 Elements of type integer.
 ./ sectionEnd
-
-
 ./ sectionStart
 .TP 25
 SHMEM\_LOGICAL\_PUT
 Elements of type logical.
 ./ sectionEnd
-
-
 ./ sectionStart
 .TP 25
 SHMEM\_REAL\_PUT
 Elements of type real.
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS Return Values
-
 None.
-
 ./ sectionEnd
-
 ./ sectionStart
-
 .SS API Notes
-
 When using Fortran, data types must be of default size. For example,
 a real variable must be declared as REAL, REAL*4, or
 REAL(KIND=KIND(1.0)).
@@ -382,20 +294,12 @@ or
 .B SHMEM\_PUT64
 should
 be used in its place.
-
 ./ sectionEnd
-
-
-
 ./ sectionStart
 .SS Examples
-
-
-
 The following 
 .B shmem\_put
 example is for C[11] programs:
-
 .nf
 #include <stdio.h>
 #include <shmem.h>
@@ -414,10 +318,6 @@ int main(void)
   return 0;
 }
 .fi
-
-
-
-
 .SS Table 1:
 Standard RMA Types and Names
 .TP 25

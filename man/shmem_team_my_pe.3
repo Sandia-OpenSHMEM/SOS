@@ -1,0 +1,85 @@
+.TH SHMEM_TEAM_MY_PE 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_team_my_pe \- 
+Returns the number of the calling PE within a specified team.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B int
+.B shmem\_team\_my\_pe(shmem_team_t
+.I team
+.B );
+
+
+
+./ sectionEnd
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I team
+- An OpenSHMEM team handle.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+When 
+.I team
+specifies a valid team, the
+.B shmem\_team\_my\_pe
+routine returns the number of the calling
+PE within the specified team.
+The number is an integer between 0 and N-1 for a team containing N PEs.
+Each member of the team has a unique number.
+
+If 
+.I team
+compares equal to SHMEM\_TEAM\_INVALID,
+then the value -1 is returned.
+If 
+.I team
+is otherwise invalid, the behavior is undefined.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+The number of the calling PE within the specified team, or the
+value -1 if the team handle compares equal to
+SHMEM\_TEAM\_INVALID.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Notes
+
+For the world team, this routine will return the same value as
+.BR "shmem\_my\_pe" .
+
+./ sectionEnd
+
+
+
+

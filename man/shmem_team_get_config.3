@@ -1,0 +1,94 @@
+.TH SHMEM_TEAM_GET_CONFIG 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_team_get_config \- 
+Return the configuration parameters of a given team
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B int
+.B shmem\_team\_get\_config(shmem_team_t
+.IB "team" ,
+.B long
+.IB "config_mask" ,
+.I shmem_team_config_t
+.I *config
+.B );
+
+
+
+./ sectionEnd
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I team
+- An OpenSHMEM team handle.
+
+
+.BR "IN " -
+.I config\_mask
+- 
+The bitwise mask representing the set of configuration parameters to fetch from the given team.
+
+
+
+.BR "OUT " -
+.I config
+- 
+A pointer to the configuration parameters for the given team.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+.B shmem\_team\_get\_config
+returns through the 
+.I config
+argument
+the configuration parameters as described by the mask, which were assigned according
+to input configuration parameters when the team was created.
+
+If 
+.I team
+compares equal to SHMEM\_TEAM\_INVALID,
+then no operation is performed.
+If 
+.I team
+is otherwise invalid, the behavior is undefined.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+If 
+.I team
+does not compare equal to
+SHMEM\_TEAM\_INVALID, then
+.B shmem\_team\_get\_config
+returns 0;
+otherwise, it returns nonzero.
+
+./ sectionEnd
+
+
+
+

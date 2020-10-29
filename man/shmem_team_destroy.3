@@ -1,0 +1,83 @@
+.TH SHMEM_TEAM_DESTROY 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_team_destroy \- 
+Destroy an existing team.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B void
+.B shmem\_team\_destroy(shmem_team_t
+.I team
+.B );
+
+
+
+./ sectionEnd
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I team
+- An OpenSHMEM team handle.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+
+The 
+.B shmem\_team\_destroy
+routine is a collective operation that
+destroys the team referenced by the team handle argument 
+.IR "team" .
+Upon return, the referenced team is invalid.
+
+This routine destroys all shareable contexts created from the
+referenced team. The user is responsible for destroying all contexts
+created from this team with the SHMEM\_CTX\_PRIVATE option
+enabled prior to calling this routine; otherwise, the behavior is
+undefined.
+
+If 
+.I team
+compares equal to SHMEM\_TEAM\_WORLD or any other
+predefined team, the behavior is undefined.
+
+If 
+.I team
+compares equal to SHMEM\_TEAM\_INVALID,
+then no operation is performed.
+If 
+.I team
+is otherwise invalid, the behavior is undefined.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+None.
+
+./ sectionEnd
+
+
+
+

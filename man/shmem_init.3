@@ -23,23 +23,6 @@ the OpenSHMEM library.
 
 
 
-./ sectionStart
-
-.B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "CALL " "SHMEM\_INIT()"
-
-.fi
-.B ****************************************
-
-./ sectionEnd
-
-
-
-
 
 ./ sectionStart
 
@@ -93,10 +76,10 @@ As of OpenSHMEM[1.2], the use of
 has been
 deprecated and calls to it should be replaced with calls to 
 .BR "shmem\_init" .
-While support for
+While support for 
 .B start\_pes
-is still required in OpenSHMEM libraries, users are
-encouraged to use 
+is still required in OpenSHMEM libraries,
+users are encouraged to use 
 .BR "shmem\_init" .
 An important difference between
 .B shmem\_init
@@ -123,31 +106,31 @@ first one results in a no-op.
 
 The following 
 .B shmem\_init
-example is for C[11] programs: 
+example is for C[11] programs:
 
 .nf
-#include <stdio.h>
 #include <shmem.h>
+#include <stdio.h>
 
 int main(void) {
-   static int targ = 0;
+ static int targ = 0;
 
-   shmem_init();
-   int me = shmem_my_pe();
-   int receiver = 1 % shmem_n_pes();
+ shmem_init();
+ int mype = shmem_my_pe();
+ int receiver = 1 % shmem_n_pes();
 
-   if (me == 0) {
-       int src = 33;
-       shmem_put(&targ, &src, 1, receiver);
-   }
+ if (mype == 0) {
+   int src = 33;
+   shmem_put(&targ, &src, 1, receiver);
+ }
 
-   shmem_barrier_all(); /* Synchronizes sender and receiver */
+ shmem_barrier_all(); /* Synchronizes sender and receiver */
 
-   if (me == receiver)
-       printf("PE %d targ=%d (expect 33)\\n", me, targ);
+ if (mype == receiver)
+   printf("PE %d targ=%d (expect 33)\\n", mype, targ);
 
-   shmem_finalize();
-   return 0;
+ shmem_finalize();
+ return 0;
 }
 .fi
 

@@ -40,23 +40,6 @@ A routine that allows any PE to force termination of an entire program.
 
 
 
-./ sectionStart
-
-.B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "INTEGER " "STATUS"
-.BR "CALL " "SHMEM\_GLOBAL\_EXIT(status)"
-
-.fi
-.B ****************************************
-
-./ sectionEnd
-
-
-
 
 ./ sectionStart
 
@@ -82,7 +65,7 @@ it results in the immediate notification to all
 PEs to terminate. 
 .B shmem\_global\_exit
 flushes I/O and releases
-resources in accordance with  C/C++/Fortran language requirements for normal
+resources in accordance with  C/C++ language requirements for normal
 program termination. If more than one PE calls
 .BR "shmem\_global\_exit" ,
 then the exit status returned to the environment
@@ -122,10 +105,10 @@ Since
 is a non-collective
 routine, there is no implied synchronization, and all PEs must
 terminate regardless of their current execution state. While I/O must be
-flushed for standard language I/O calls from  C/C++/Fortran, it is
+flushed for standard language I/O calls from  C/C++, it is
 implementation dependent as to how I/O done by other means (e.g., third
 party I/O libraries) is handled. Similarly, resources are released
-according to  C/C++/Fortran standard language requirements, but this may not
+according to  C/C++ standard language requirements, but this may not
 include all resources allocated for the OpenSHMEM program. However, a
 quality implementation will make a best effort to flush all I/O and clean
 up all resources.
@@ -142,21 +125,20 @@ up all resources.
 
 
 .nf
+#include <shmem.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <shmem.h> 
 
-int main(void)
-{
-  shmem_init();
-  int me = shmem_my_pe();
-  if (me == 0) {
-     FILE *fp = fopen("input.txt", "r"); 
-     if (fp == NULL) {  /* Input file required by program is not available */
-        shmem_global_exit(EXIT_FAILURE);
-     }
-     /* do something with the file */
-     fclose(fp);
+int main(void) {
+ shmem_init();
+ int mype = shmem_my_pe();
+ if (mype == 0) {
+   FILE *fp = fopen("input.txt", "r");
+   if (fp == NULL) { /* Input file required by program is not available */
+     shmem_global_exit(EXIT_FAILURE);
+   }
+   /* do something with the file */
+   fclose(fp);
  }
  shmem_finalize();
  return 0;

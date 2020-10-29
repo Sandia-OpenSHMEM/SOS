@@ -2,50 +2,31 @@
 ./ sectionStart
 .SH NAME
 shmem_sync_all \- 
-Registers the arrival of a PE at a barrier and suspends PE
-execution until all other PEs arrive at the barrier.
-
+Registers the arrival of a PE at a synchronization point and suspends
+execution until all other PEs in the world team arrive at the synchronization point.
+For multithreaded programs, execution is suspended
+as specified by the OpenSHMEM threading model.
 ./ sectionEnd
-
-
 ./ sectionStart
 .SH   SYNOPSIS
 ./ sectionEnd
-
 ./ sectionStart
 .SS C/C++:
-
 .B void
 .B shmem\_sync\_all(void)
-
-
 ./ sectionEnd
-
-
-
-
-
 ./ sectionStart
-
 .SH DESCRIPTION
 .SS Arguments
 .B None.
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Description
-
-The 
-.B shmem\_sync\_all
-routine registers the arrival of a PE at a
-barrier. Barriers are a fast mechanism for synchronizing all PEs at
-once. This routine blocks the PE until all PEs have called
+This routine blocks the calling PE until all PEs in the
+world team have called 
 .BR "shmem\_sync\_all" .
-In a multithreaded OpenSHMEM
-program, only the calling thread is blocked.
-
+In a multithreaded OpenSHMEM program, only the calling thread is
+blocked.
 In contrast with the 
 .B shmem\_barrier\_all
 routine,
@@ -53,36 +34,16 @@ routine,
 only ensures completion and visibility of previously issued memory
 stores and does not ensure completion of remote memory updates issued via
 OpenSHMEM routines.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS Return Values
-
 None.
-
 ./ sectionEnd
-
-
 ./ sectionStart
-
 .SS API Notes
-
 The 
 .B shmem\_sync\_all
-routine can be used to portably ensure that
-memory access operations observe remote updates in the order enforced by the
-initiator PEs, provided that the initiator PE ensures completion of remote
-updates with a call to 
-.B shmem\_quiet
-prior to the call to the
-.B shmem\_sync\_all
-routine.
-
+routine is equivalent to calling
+.B shmem\_team\_sync
+on the world team.
 ./ sectionEnd
-
-
-
-

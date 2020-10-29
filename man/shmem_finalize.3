@@ -24,22 +24,6 @@ entire program.
 
 
 
-./ sectionStart
-
-.B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "CALL " "SHMEM\_FINALIZE()"
-
-.fi
-.B ****************************************
-
-./ sectionEnd
-
-
-
 
 ./ sectionStart
 
@@ -68,7 +52,9 @@ to ensure that pending
 communications are completed and that no resources are released until all
 PEs have entered 
 .BR "shmem\_finalize" .
-This routine destroys all shareable contexts. The user is
+This routine destroys all teams created by the OpenSHMEM program.
+As a result, all shareable contexts are destroyed.
+The user is
 responsible for destroying all contexts with the
 SHMEM\_CTX\_PRIVATE option enabled prior to calling this routine;
 otherwise, the behavior is undefined.
@@ -127,25 +113,24 @@ by all PEs.
 The following finalize example is for C[11] programs:
 
 .nf
+#include <shmem.h>
 #include <stdio.h>
-#include <shmem.h> 
 
-int main(void)
-{
-  static long x = 10101;
-  long y = -1;
+int main(void) {
+ static long x = 10101;
+ long y = -1;
 
-  shmem_init();
-  int me = shmem_my_pe();
-  int npes = shmem_n_pes();
+ shmem_init();
+ int mype = shmem_my_pe();
+ int npes = shmem_n_pes();
 
-  if (me == 0)
-     y = shmem_g(&x, npes-1);
+ if (mype == 0)
+   y = shmem_g(&x, npes - 1);
 
-  printf("%d: y = %ld\\n", me, y); 
+ printf("%d: y = %ld\\n", mype, y);
 
-  shmem_finalize();  
-  return 0;
+ shmem_finalize();
+ return 0;
 }
 .fi
 

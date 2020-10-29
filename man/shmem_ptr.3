@@ -28,25 +28,6 @@ Returns a local pointer to a symmetric data object on the specified PE.
 
 
 
-./ sectionStart
-
-.B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "POINTER " "(PTR, POINTEE)"
-.BR "INTEGER " "pe"
-PTR = SHMEM\_PTR(dest, pe)
-
-.fi
-.B ****************************************
-
-./ sectionEnd
-
-
-
-
 
 ./ sectionStart
 
@@ -54,7 +35,8 @@ PTR = SHMEM\_PTR(dest, pe)
 .SS Arguments
 .BR "IN " -
 .I dest
-- The symmetric data object to be referenced.
+- The symmetric address of the remotely accessible data
+object to be referenced.
 
 
 .BR "IN " -
@@ -62,8 +44,7 @@ PTR = SHMEM\_PTR(dest, pe)
 - An integer that indicates the PE number on which 
 .I "dest"
 is to
-be accessed. When using Fortran, it must be a default
-integer value.
+be accessed.
 ./ sectionEnd
 
 
@@ -74,8 +55,16 @@ integer value.
 .B shmem\_ptr
 returns an address that may be used to directly reference
 .I "dest"
-on the specified PE. This address can be assigned to a pointer.
-After that, ordinary loads and stores to this remote address may be performed.
+on the specified PE. This address can be assigned to a
+pointer. After that, ordinary loads and stores to 
+.I "dest"
+may be
+performed. The address returned by 
+.B shmem\_ptr
+is a local address to
+a remotely accessible data object. Providing this address to an argument of
+an OpenSHMEM routine that requires a symmetric address results in
+undefined behavior.
 
 The 
 .B shmem\_ptr
@@ -94,10 +83,11 @@ or
 
 .SS Return Values
 
-The address of the 
+A local pointer to the remotely accessible 
 .I "dest"
-data object is returned when it is accessible
-using memory loads and stores. Otherwise, a null pointer is returned.
+data object is returned
+when it can be accessed using memory loads and stores. Otherwise, a null
+pointer is returned.
 
 ./ sectionEnd
 
@@ -121,72 +111,34 @@ symmetric data object on the calling PE.
 
 
 
-This Fortran program calls 
+In the following C[11] example, PE 0 uses the 
 .B shmem\_ptr
-and then PE 0 writes to
-the 
-.I BIGD
-array on PE 1: 
+routine to query a pointer and directly access the 
+.I dest
+array on
+PE 1:
 
 .nf
-PROGRAM REMOTEWRITE
-INCLUDE "shmem.fh"
-
-INTEGER BIGD(100)
-SAVE BIGD
-
-INTEGER POINTEE(*)
-POINTER (PTR,POINTEE)
-
-CALL SHMEM_INIT()
-
-
-IF (SHMEM_MY_PE() .EQ. 0) THEN
-  ! initialize PE 1's BIGD array
-  PTR = SHMEM_PTR(BIGD, 1)     ! get address of PE 1's BIGD
-                               !   array
-  DO I=1,100
-       POINTEE(I) = I
-  ENDDO
-ENDIF
-
-CALL SHMEM_BARRIER_ALL
-
-IF (SHMEM_MY_PE() .EQ. 1) THEN
-  PRINT*,'BIGD on PE 1 is: '
-  PRINT*,BIGD
-ENDIF
-END
-
-.fi
-
-
-
-This is the equivalent program written in C[11]:
-
-.nf
-#include <stdio.h>
 #include <shmem.h>
+#include <stdio.h>
 
-int main(void) 
-{
-  static int dest[4];
-  shmem_init();
-  int me = shmem_my_pe();
-  if (me == 0) { /* initialize PE 1's dest array */
-     int* ptr = shmem_ptr(dest, 1);
-     if (ptr == NULL)
-        printf("can't use pointer to directly access PE 1's dest array\\n");
-     else
-        for (int i = 0; i < 4; i++)
-           *ptr++ = i + 1;
-  }
-  shmem_barrier_all();
-  if (me == 1)
-     printf("PE 1 dest: %d, %d, %d, %d\\n",
-        dest[0], dest[1], dest[2], dest[3]);
-  shmem_finalize();
-  return 0;
+int main(void) {
+ static int dest[4];
+ shmem_init();
+ int mype = shmem_my_pe();
+ if (mype == 0) { /* initialize PE 1's dest array */
+   int *ptr = shmem_ptr(dest, 1);
+   if (ptr == NULL)
+     printf("can't use pointer to directly access PE 1's dest array\\n");
+   else
+     for (int i = 0; i < 4; i++)
+       *ptr++ = i + 1;
+ }
+ shmem_barrier_all();
+ if (mype == 1)
+   printf("PE 1 dest: %d, %d, %d, %d\\n", dest[0], dest[1], dest[2], dest[3]);
+ shmem_finalize();
+ return 0;
 }
 .fi
 

@@ -2,7 +2,7 @@
 ./ sectionStart
 .SH NAME
 shmem_test \- 
-Test whether a variable on the local PE has changed.
+Indicate whether a variable on the local PE meets the specified condition.
 
 ./ sectionEnd
 
@@ -28,8 +28,19 @@ Test whether a variable on the local PE has changed.
 ./ sectionEnd
 
 
-where TYPE is one of the point-to-point synchronization types specified by
-Table 5.
+where TYPE is one of the standard AMO types specified by
+Table 6,
+
+./ sectionStart
+.B ***************DEPRECATED***************
+./ sectionEnd
+
+or TYPE is one of \{short, unsigned short\}.
+
+./ sectionStart
+.B ****************************************
+./ sectionEnd
+
 ./ sectionStart
 .SS C/C++:
 
@@ -47,15 +58,30 @@ Table 5.
 ./ sectionEnd
 
 
-where TYPE is one of the point-to-point synchronization types and has a
-corresponding TYPENAME specified by Table 5.
+where TYPE is one of the standard AMO types and has a
+corresponding TYPENAME specified by Table 2,
+
+./ sectionStart
+.B ***************DEPRECATED***************
+./ sectionEnd
+
+or TYPE is one of \{short, unsigned short\} and
+has a corresponding TYPENAME specified by Table 12.
+
+./ sectionStart
+.B ****************************************
+./ sectionEnd
+
 ./ sectionStart
 
 .SH DESCRIPTION
 .SS Arguments
-.BR "OUT " -
+.BR "IN " -
 .I ivar
-- A pointer to a remotely accessible data object.
+- Symmetric address of a remotely accessible data object.
+The type of 
+.I ivar
+should match that implied in the SYNOPSIS section.
 
 
 .BR "IN " -
@@ -73,6 +99,9 @@ with
 by 
 .I ivar
 will be compared.
+The type of 
+.I cmp\_value
+should match that implied in the SYNOPSIS section.
 ./ sectionEnd
 
 
@@ -89,6 +118,18 @@ with the value
 according to the
 comparison operator 
 .IR "cmp" .
+The 
+.I ivar
+object at the
+calling PE may be updated by an AMO performed by a thread located
+within the calling PE or within another PE.
+
+Implementations must ensure that 
+.B shmem\_test
+does not return 1 before
+the update of the memory indicated by 
+.I ivar
+is fully complete.
 
 ./ sectionEnd
 
@@ -106,16 +147,7 @@ with the value
 according to the
 comparison operator 
 .I cmp
-evalutes to true; otherwise, it returns 0.
-
-./ sectionEnd
-
-
-./ sectionStart
-
-.SS API Notes
-
-None.
+evaluates to true; otherwise, it returns 0.
 
 ./ sectionEnd
 
@@ -132,31 +164,28 @@ wait on an array of symmetric objects and return the index of an
 element that satisfies the specified condition.
 
 .nf
-#include <stdio.h>
 #include <shmem.h>
+#include <stdio.h>
 
-int user_wait_any(long *ivar, int count, int cmp, long value)
-{
+int user_wait_any(long *ivar, int count, int cmp, long value) {
  int idx = 0;
  while (!shmem_test(&ivar[idx], cmp, value))
    idx = (idx + 1) % count;
  return idx;
 }
 
-int main(void)
-{
+int main(void) {
  shmem_init();
  const int mype = shmem_my_pe();
  const int npes = shmem_n_pes();
 
  long *wait_vars = shmem_calloc(npes, sizeof(long));
- if (mype == 0)
- {
+ if (mype == 0) {
    int who = user_wait_any(wait_vars, npes, SHMEM_CMP_NE, 0);
    printf("PE %d observed first update from PE %d\\n", mype, who);
  }
  else
-   shmem_p(&wait_vars[mype], mype, 0);
+   shmem_atomic_set(&wait_vars[mype], mype, 0);
 
  shmem_free(wait_vars);
  shmem_finalize();
@@ -167,7 +196,54 @@ int main(void)
 
 
 
-.SS Table 5:
+.SS Table 6:
+Standard AMO Types and Names
+.TP 25
+.B \TYPE
+.B \TYPENAME
+.TP
+int
+int
+.TP
+long
+long
+.TP
+long long
+longlong
+.TP
+unsigned int
+uint
+.TP
+unsigned long
+ulong
+.TP
+unsigned long long
+ulonglong
+.TP
+int32\_t
+int32
+.TP
+int64\_t
+int64
+.TP
+uint32\_t
+uint32
+.TP
+uint64\_t
+uint64
+.TP
+size\_t
+size
+.TP
+ptrdiff\_t
+ptrdiff
+
+.TP
+./ sectionStart
+.B ***************DEPRECATED***************
+./ sectionEnd
+
+.SS Table 12:
 Point-to-Point Synchronization Types and Names
 .TP 25
 .B \TYPE
@@ -214,3 +290,8 @@ size
 .TP
 ptrdiff\_t
 ptrdiff
+
+.TP
+./ sectionStart
+.B ****************************************
+./ sectionEnd

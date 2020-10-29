@@ -38,25 +38,6 @@ Releases, locks, and tests a mutual exclusion memory lock.
 
 
 
-./ sectionStart
-
-.B ***************DEPRECATED***************
-.SS Fortran:
-
-.nf
-
-.BR "INTEGER " "lock, SHMEM_TEST_LOCK"
-.BR "CALL " "SHMEM\_CLEAR\_LOCK(lock)"
-.BR "CALL " "SHMEM\_SET\_LOCK(lock)"
-I = SHMEM\_TEST\_LOCK(lock)
-
-.fi
-.B ****************************************
-
-./ sectionEnd
-
-
-
 
 ./ sectionStart
 
@@ -64,12 +45,9 @@ I = SHMEM\_TEST\_LOCK(lock)
 .SS Arguments
 .BR "IN " -
 .I lock
-- A symmetric data object that is a scalar variable or an array
+- Symmetric address of data object that is a scalar variable or an array
 of length 1. This data object must be set to 0 on all
-PEs prior to the first use. 
-.I lock
-must be of type long.
-When using Fortran, it must be of default kind.
+PEs prior to the first use.
 ./ sectionEnd
 
 
@@ -79,22 +57,34 @@ When using Fortran, it must be of default kind.
 
 The 
 .B shmem\_set\_lock
-routine sets a mutual exclusion lock after waiting
-for the lock to be freed by any other PE currently holding the lock.
-Waiting PEs are assured of getting the lock in a first-come, first-served
-manner. The 
-.B shmem\_clear\_lock
-routine releases a lock previously set
-by 
-.B shmem\_set\_lock
-after ensuring that all local and remote stores
-initiated in the critical region are complete. The 
+routine sets a mutual exclusion lock after
+waiting for the lock to be freed by any other PE currently holding
+the lock. Waiting PEs are guaranteed to set the lock in a
+first-come, first-served manner. The 
 .B shmem\_test\_lock
-routine sets a mutual exclusion lock only if it is currently cleared. By using
-this routine, a PE can avoid blocking on a set lock. If the lock is
-currently set, the routine returns without waiting. These routines are
-appropriate for protecting a critical region from simultaneous update by
-multiple PEs.
+routine sets
+a mutual exclusion lock only if it is currently cleared. By using this
+routine, a PE can avoid blocking on a set lock. If the lock is
+currently set, the routine returns without waiting. The
+.B shmem\_clear\_lock
+routine releases a lock previously set by
+.B shmem\_set\_lock
+or 
+.B shmem\_test\_lock
+after performing a
+quiet operation on the default context to ensure that all symmetric memory
+accesses that occurred during the critical region are complete. These
+routines are appropriate for protecting a critical region from simultaneous
+update by multiple PEs.
+
+The OpenSHMEM lock API provides a non-reentrant mutex. Thus, a call to
+.B shmem\_set\_lock
+or 
+.B shmem\_test\_lock
+when the calling PE
+already holds the given lock will result in undefined behavior. In a
+multithreaded OpenSHMEM program, the user must ensure that such calls do
+not occur.
 
 ./ sectionEnd
 
@@ -117,10 +107,17 @@ waiting to set the lock.
 
 .SS API Notes
 
-Please refer to the subsection on the Memory Model for the definition of the term "remotely accessible".
-The lock variable should always be initialized to zero and accessed only by the OpenSHMEM locking
-API. Changing the value of the lock variable by other means without using
-the OpenSHMEM API, can lead to undefined behavior.
+The lock variable must be initialized to zero before any PE performs an
+OpenSHMEM lock operation on the given variable. Accessing an in-use lock
+variable using any method other than the OpenSHMEM lock API (e.g, using
+local load/store, RMA, or AMO operations) results in undefined behavior.
+
+Calls to 
+.B shmem\_ctx\_quiet
+can be performed prior to calling the
+.B shmem\_clear\_lock
+routine to ensure completion of operations issued
+on additional contexts.
 
 ./ sectionEnd
 
@@ -136,24 +133,22 @@ The following example uses
 in a C[11] program.
 
 .nf
-#include <stdio.h>
 #include <shmem.h>
+#include <stdio.h>
 
-int main(void)
-{
-  static long lock = 0;
-  static int count = 0;
-  shmem_init();
-  int me = shmem_my_pe();
-  shmem_set_lock(&lock);
-  int val = shmem_g(&count, 0); /* get count value on PE 0 */
-  printf("%d: count is %d\\n", me, val);
-  val++; /* incrementing and updating count on PE 0 */
-  shmem_p(&count, val, 0);
-  shmem_quiet();
-  shmem_clear_lock(&lock);
-  shmem_finalize();
-  return 0;
+int main(void) {
+ static long lock = 0;
+ static int count = 0;
+ shmem_init();
+ int mype = shmem_my_pe();
+ shmem_set_lock(&lock);
+ int val = shmem_g(&count, 0); /* get count value on PE 0 */
+ printf("%d: count is %d\\n", mype, val);
+ val++; /* incrementing and updating count on PE 0 */
+ shmem_p(&count, val, 0);
+ shmem_clear_lock(&lock); /* ensures count update completes before clearing the lock */
+ shmem_finalize();
+ return 0;
 }
 .fi
 

@@ -1,0 +1,42 @@
+.TH SHMEM_SIGNAL_FETCH 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_signal_fetch \- 
+Fetches the signal update on a local data object.
+./ sectionEnd
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+./ sectionStart
+.SS C/C++:
+.B uint64_t
+.B shmem\_signal\_fetch(const
+.I uint64_t
+.I *sig_addr
+.B );
+./ sectionEnd
+./ sectionStart
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I sig\_addr
+- Local address of the remotely accessible signal variable.
+./ sectionEnd
+./ sectionStart
+.SS API Description
+.B shmem\_signal\_fetch
+performs a fetch operation and returns the
+contents of the 
+.I sig\_addr
+signal data object. Access to
+.I sig\_addr
+signal object at the calling PE is expected to satisfy
+the atomicity guarantees as described in the OpenSHMEM specification v1.5.
+./ sectionEnd
+./ sectionStart
+.SS Return Values
+Returns the contents of the signal data object, 
+.I sig\_addr
+, at the
+calling PE.
+./ sectionEnd

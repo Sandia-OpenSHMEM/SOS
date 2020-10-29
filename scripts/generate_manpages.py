@@ -23,6 +23,7 @@ boldWordsF = {"INTEGER", "CALL", "POINTER", "LOGICAL", "INTEGER*4",
                 "INTEGER*8", "REAL*4", "REAL*8", "CHARACTER"}
 sizes = ["8", "16", "32", "64", "128"]
 
+
 def writePageHeader(functionName):
     """
     Write the page header for the man page. Takes in the form of:
@@ -313,6 +314,8 @@ def retReplacements(tex):
     """
 
     startOfText = tex.find("\\apireturnvalues{")
+    if (startOfText == -1):
+        return tex
     endOfText = findMatchingBrace(tex, tex.find("{", startOfText))
     sectionText = cleanText(tex[startOfText:endOfText])
     tex = tex[:startOfText] + \
@@ -336,6 +339,8 @@ def notesReplacements(tex):
     """
 
     startOfText = tex.find("\\apinotes{")
+    if (startOfText == -1):
+        return tex
     endOfText = findMatchingBrace(tex, tex.find("{", startOfText))
     sectionText = cleanText(tex[startOfText:endOfText])
     tex = tex[:startOfText] + \
@@ -647,8 +652,7 @@ def refTextReplacements(tex):
     The function will return the processed string with an indication array of 
     which tables are to be appended to the end of the man page. 
     """
-
-    tables = [0, 0, 0, 0, 0]
+    tables = [0] * 10
     last = 0
     while(tex.find("./ sectionEnd", last) > 0):
         firstEnd = tex.find("./ sectionEnd", last)
@@ -673,6 +677,21 @@ def refTextReplacements(tex):
             if (tex.find("\\ref{p2psynctypes}") != -1):
                 sectionText = sectionText.replace("\\ref{p2psynctypes}", "5")
                 tables[4] = 1
+            if (tex.find("\\ref{p2p-consts}") != -1):
+                sectionText = sectionText.replace("\\ref{p2p-consts}", "6")
+                tables[5] = 1
+            if (tex.find("\\ref{mem-order}") != -1):
+                sectionText = sectionText.replace("\\ref{mem-order}", "7")
+                tables[6] = 1
+            if (tex.find("\\ref{usagehints}") != -1):
+                sectionText = sectionText.replace("\\ref{usagehints}", "8")
+                tables[7] = 1
+            if (tex.find("\\ref{teamreducetypes}") != -1):
+                sectionText = sectionText.replace("\\ref{teamreducetypes}", "9")
+                tables[8] = 1
+            if (tex.find("\\ref{asetreducetypes}") != -1):
+                sectionText = sectionText.replace("\\ref{asetreducetypes}", "10")
+                tables[9] = 1
 
             sectionText = sectionText.replace("~", " ")
             tex = tex[:firstEnd + len("./ sectionEnd\n")] + "\n\n" + \
@@ -1331,6 +1350,21 @@ def convertFile(functionName, directory, gen_dir, build_fortran=False):
         tex = tex + t
     if (tables[4]):
         (t, typenames) = addRefTable(5, directory)
+        tex = tex + t
+    if (tables[5]):
+        (t, typenames) = addRefTable(6, directory)
+        tex = tex + t
+    if (tables[6]):
+        (t, typenames) = addRefTable(7, directory)
+        tex = tex + t
+    if (tables[7]):
+        (t, typenames) = addRefTable(8, directory)
+        tex = tex + t
+    if (tables[8]):
+        (t, typenames) = addRefTable(9, directory)
+        tex = tex + t
+    if (tables[9]):
+        (t, typenames) = addRefTable(10, directory)
         tex = tex + t
     tex = tex.replace("\\begin{apidefinition}", "")
     tex = tex.replace("\\end{apidefinition}", "")

@@ -1,0 +1,383 @@
+.TH SHMEM_PUT_SIGNAL_NBI 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_put_signal_nbi \- 
+The nonblocking 
+.I put-with-signal
+routines provide a method for copying data
+from a contiguous local data object to a data object on a specified PE
+and subsequently updating a remote flag to signal completion.
+./ sectionEnd
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+./ sectionStart
+.SS C11:
+.B void
+.B shmem\_put\_signal\_nbi(TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.I uint64_t
+.IB "*sig_addr" ,
+.I uint64_t
+.IB "signal" ,
+.B int
+.IB "sig_op" ,
+.B int
+.I pe
+.B );
+
+.B void
+.B shmem\_put\_signal\_nbi(shmem_ctx_t
+.IB "ctx" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.I uint64_t
+.IB "*sig_addr" ,
+.I uint64_t
+.IB "signal" ,
+.B int
+.IB "sig_op" ,
+.B int
+.I pe
+.B );
+./ sectionEnd
+
+where TYPE is one of the standard RMA types specified by Table 1.
+./ sectionStart
+.SS C/C++:
+.B void
+.B shmem\_TYPENAME\_put\_signal\_nbi(TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.I uint64_t
+.IB "*sig_addr" ,
+.I uint64_t
+.IB "signal" ,
+.B int
+.IB "sig_op" ,
+.B int
+.I pe
+.B );
+
+.B void
+.B shmem\_ctx\_TYPENAME\_put\_signal\_nbi(shmem_ctx_t
+.IB "ctx" ,
+.B TYPE
+.IB "*dest" ,
+.B const
+.B TYPE
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.I uint64_t
+.IB "*sig_addr" ,
+.I uint64_t
+.IB "signal" ,
+.B int
+.IB "sig_op" ,
+.B int
+.I pe
+.B );
+./ sectionEnd
+
+where TYPE is one of the standard RMA types and has a corresponding TYPENAME specified by Table 1.
+./ sectionStart
+
+.B void
+.B shmem\_putSIZE\_signal\_nbi(void
+.IB "*dest" ,
+.B const
+.B void
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.I uint64_t
+.IB "*sig_addr" ,
+.I uint64_t
+.IB "signal" ,
+.B int
+.IB "sig_op" ,
+.B int
+.I pe
+.B );
+
+.B void
+.B shmem\_ctx\_putSIZE\_signal\_nbi(shmem_ctx_t
+.IB "ctx" ,
+.B void
+.IB "*dest" ,
+.B const
+.B void
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.I uint64_t
+.IB "*sig_addr" ,
+.I uint64_t
+.IB "signal" ,
+.B int
+.IB "sig_op" ,
+.B int
+.I pe
+.B );
+./ sectionEnd
+
+where SIZE is one of 8, 16, 32, 64, 128.
+./ sectionStart
+
+.B void
+.B shmem\_putmem\_signal\_nbi(void
+.IB "*dest" ,
+.B const
+.B void
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.I uint64_t
+.IB "*sig_addr" ,
+.I uint64_t
+.IB "signal" ,
+.B int
+.IB "sig_op" ,
+.B int
+.I pe
+.B );
+
+.B void
+.B shmem\_ctx\_putmem\_signal\_nbi(shmem_ctx_t
+.IB "ctx" ,
+.B void
+.IB "*dest" ,
+.B const
+.B void
+.IB "*source" ,
+.B size_t
+.IB "nelems" ,
+.I uint64_t
+.IB "*sig_addr" ,
+.I uint64_t
+.IB "signal" ,
+.B int
+.IB "sig_op" ,
+.B int
+.I pe
+.B );
+./ sectionEnd
+./ sectionStart
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I ctx
+- A context handle specifying the context on which to
+perform the operation. When this argument is not provided, the operation is
+performed on the default context.
+.BR "OUT " -
+.I dest
+- Symmetric address of the data object to be updated
+on the remote PE.
+The type of 
+.I "dest"
+should match that implied in the SYNOPSIS section.
+.BR "IN " -
+.I source
+- Local address of data object containing the data
+to be copied.
+The type of 
+.I "source"
+should match that implied in the SYNOPSIS section.
+.BR "IN " -
+.I nelems
+- Number of elements in the 
+.I "dest"
+and 
+.I "source"
+arrays. For 
+.B shmem\_putmem\_signal\_nbi
+and
+.BR "shmem\_ctx\_putmem\_signal\_nbi" ,
+elements are bytes.
+.BR "OUT " -
+.I sig\_addr
+- Symmetric address of the signal data object to
+be updated on the remote PE as a signal.
+.BR "IN " -
+.I signal
+- Unsigned 64-bit value that is used for updating the
+remote 
+.I sig\_addr
+signal data object.
+.BR "IN " -
+.I sig\_op
+- Signal operator that represents the type of update
+to be performed on the remote 
+.I sig\_addr
+signal data object.
+.BR "IN " -
+.I pe
+- PE number of the remote PE.
+./ sectionEnd
+./ sectionStart
+.SS API Description
+The nonblocking 
+.I put-with-signal
+routines provide a method for copying data
+from a contiguous local data object to a data object on a specified PE
+and subsequently updating a remote flag to signal completion.
+The routines return after initiating the operation. The operation is considered
+complete after a subsequent call to 
+.BR "shmem\_quiet" .
+At the completion
+of 
+.BR "shmem\_quiet" ,
+the data has been copied out of the 
+.I "source"
+array
+on the local PE and delivered into the 
+.I "dest"
+array on the destination
+PE.
+The delivery of 
+.I signal
+flag on the remote PE indicates only the
+delivery of its corresponding 
+.I "dest"
+data words into the data object on the
+remote PE. Furthermore, two successive nonblocking 
+.I put-with-signal
+routines, or a nonblocking 
+.I put-with-signal
+routine with another data
+transfer may deliver data out of order unless a call to 
+.B shmem\_fence
+is introduced between the two calls.
+The 
+.I sig\_op
+signal operator determines the type of update to be
+performed on the remote 
+.I sig\_addr
+signal data object.
+An update to the 
+.I sig\_addr
+signal data object through a nonblocking
+.I put-with-signal
+routine completes as if performed atomically.
+The following options can be used as a signal operator.
+.TP
+SHMEM_SIGNAL_SET: An update to signal data object is an atomic set operation. It writes an unsigned 64-bit value as a signal into the signal data object on a remote PE as an atomic operation.
+.TP
+SHMEM_SIGNAL_ADD: An update to signal data object is an atomic add operation. It adds an unsigned 64-bit value as a signal into the signal data object on a remote PE as an atomic operation.
+./ sectionEnd
+./ sectionStart
+.SS Return Values
+None.
+./ sectionEnd
+./ sectionStart
+.SS API Notes
+The 
+.I "dest"
+and 
+.I sig\_addr
+data objects must both be remotely
+accessible. The 
+.I sig\_addr
+and 
+.I "dest"
+could be of different kinds,
+for example, one could be a global/static C variable and the other could
+be allocated on the symmetric heap.
+.I sig\_addr
+and 
+.I "dest"
+may not be overlapping in memory.
+./ sectionEnd
+.SS Table 1:
+Standard RMA Types and Names
+.TP 25
+.B \TYPE
+.B \TYPENAME
+.TP
+float
+float
+.TP
+double
+double
+.TP
+long double
+longdouble
+.TP
+char
+char
+.TP
+signed char
+schar
+.TP
+short
+short
+.TP
+int
+int
+.TP
+long
+long
+.TP
+long long
+longlong
+.TP
+unsigned char
+uchar
+.TP
+unsigned short
+ushort
+.TP
+unsigned int
+uint
+.TP
+unsigned long
+ulong
+.TP
+unsigned long long
+ulonglong
+.TP
+int8\_t
+int8
+.TP
+int16\_t
+int16
+.TP
+int32\_t
+int32
+.TP
+int64\_t
+int64
+.TP
+uint8\_t
+uint8
+.TP
+uint16\_t
+uint16
+.TP
+uint32\_t
+uint32
+.TP
+uint64\_t
+uint64
+.TP
+size\_t
+size
+.TP
+ptrdiff\_t
+ptrdiff

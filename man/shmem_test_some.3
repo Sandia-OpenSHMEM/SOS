@@ -1,0 +1,395 @@
+.TH SHMEM_TEST_SOME 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_test_some \- 
+Indicate whether at least one variable within an array of variables on the local PE meets a specified test condition.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C11:
+
+.B size_t
+.B shmem\_test\_some(TYPE
+.IB "*ivars" ,
+.B size_t
+.IB "nelems" ,
+.B size_t
+.IB "*indices" ,
+.B const
+.B int
+.IB "*status" ,
+.B int
+.IB "cmp" ,
+.B TYPE
+.I cmp_value
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the standard AMO types specified by
+Table 6.
+./ sectionStart
+.SS C/C++:
+
+.B size_t
+.B shmem\_TYPENAME\_test\_some(TYPE
+.IB "*ivars" ,
+.B size_t
+.IB "nelems" ,
+.B size_t
+.IB "*indices" ,
+.B const
+.B int
+.IB "*status" ,
+.B int
+.IB "cmp" ,
+.B TYPE
+.I cmp_value
+.B );
+
+
+
+./ sectionEnd
+
+
+where TYPE is one of the standard AMO types and has a
+corresponding TYPENAME specified by Table 6.
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I ivars
+- Symmetric address of an array of remotely accessible data
+objects.
+The type of 
+.I ivars
+should match that implied in the SYNOPSIS section.
+
+
+.BR "IN " -
+.I nelems
+- The number of elements in the 
+.I ivars
+array.
+
+
+.BR "OUT " -
+.I indices
+- Local address of an array of indices of length at least
+.I nelems
+into 
+.I ivars
+that satisfied the test condition.
+
+
+.BR "IN " -
+.I status
+- Local address of an optional mask array of length 
+.I nelems
+that indicates which elements in 
+.I ivars
+are excluded from the test set.
+
+
+.BR "IN " -
+.I cmp
+- A comparison operator from Table 13
+that compares elements of 
+.I ivars
+with 
+.IR "cmp\_value" .
+
+
+
+.BR "IN " -
+.I cmp\_value
+- The value to be compared with the objects
+pointed to by 
+.IR "ivars" .
+The type of 
+.I cmp\_value
+should match that implied in the SYNOPSIS section.
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+The 
+.B shmem\_test\_some
+routine indicates whether at least one entry
+in the test set specified by 
+.I ivars
+and 
+.I status
+satisfies the
+test condition at the calling PE. The 
+.I ivars
+objects at the
+calling PE may be updated by an AMO performed by a thread located
+within the calling PE or within another PE.
+This routine does not block and returns zero if
+no entries in 
+.I ivars
+satisfied the test condition.
+This routine compares each element of the 
+.I ivars
+array in the
+test set with the value 
+.I cmp\_value
+according to the comparison
+operator 
+.I cmp
+at the calling PE.
+This routine tests all elements of 
+.I ivars
+in the
+test set at least once, and the order in which the elements are tested is
+unspecified. If an entry i in 
+.I ivars
+within the test set satisfies
+the test condition, a series of calls to 
+.B shmem\_test\_some
+must
+eventually return i.
+
+Upon return, the 
+.I indices
+array contains the indices of the elements
+in the test set that satisfied the test condition during the call to
+.BR "shmem\_test\_some" .
+The return value of 
+.B shmem\_test\_some
+is
+equal to the total number of these satisfied elements. If the return value
+is N, then the first N elements of the 
+.I indices
+array contain
+those unique indices that satisfied the test condition.
+These first N elements of 
+.I indices
+may be unordered with respect to
+the corresponding indices of 
+.IR "ivars" .
+The array pointed
+to by 
+.I indices
+must be at least 
+.I nelems
+long.
+If an entry i in 
+.I ivars
+within the test set satisfies the test
+condition, a series of calls to 
+.B shmem\_test\_some
+must eventually
+include i in the 
+.I indices
+array.
+
+The optional 
+.I status
+is a mask array of length 
+.I nelems
+where each element
+corresponds to the respective element in 
+.I ivars
+and indicates whether
+the element is excluded from the test set. Elements of 
+.I status
+set to
+0 will be included in the test set, and elements set to a nonzero value will be ignored. If all
+elements in 
+.I status
+are nonzero or 
+.I nelems
+is 0, the test set is
+empty and this routine returns 0. If 
+.I status
+is a null pointer, it is ignored and all
+elements in 
+.I ivars
+are included in the test set. The 
+.I ivars
+,
+.I indices
+, and 
+.I status
+arrays must not overlap in memory.
+
+Implementations must ensure that 
+.B shmem\_test\_some
+does not return
+indices before the updates of the memory indicated by the corresponding
+.I ivars
+elements are fully complete.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+.B shmem\_test\_some
+returns the number of indices returned in
+the 
+.I indices
+array. If the test set is empty, this routine returns 0.
+
+./ sectionEnd
+
+
+
+./ sectionStart
+.SS Examples
+
+
+The following C[11] example demonstrates the use of
+.B shmem\_test\_some
+to process a simple all-to-all transfer of $N$
+data elements via a sum reduction, while potentially overlapping
+communication with computation. This pattern is similar to the
+.B shmem\_test\_any
+example above, but each while loop iteration may
+process more than one data item.
+
+.nf
+#include <shmem.h>
+#include <stdlib.h>
+
+#define N 100
+
+int main(void) {
+ int total_sum = 0;
+
+ shmem_init();
+ int mype = shmem_my_pe();
+ int npes = shmem_n_pes();
+
+ int *my_data = malloc(N * sizeof(int));
+ int *all_data = shmem_malloc(N * npes * sizeof(int));
+
+ int *flags = shmem_calloc(npes, sizeof(int));
+ size_t *indices = calloc(npes, sizeof(size_t));
+ int *status = calloc(npes, sizeof(int));
+
+ for (int i = 0; i < N; i++)
+   my_data[i] = mype * N + i;
+
+ for (int i = 0; i < npes; i++)
+   shmem_put_nbi(&all_data[mype * N], my_data, N, i);
+
+ shmem_fence();
+
+ for (int i = 0; i < npes; i++)
+   shmem_atomic_set(&flags[mype], 1, i);
+
+ int ncompleted = 0;
+
+ while (ncompleted < npes) {
+   int ntested = shmem_test_some(flags, npes, indices, status, SHMEM_CMP_NE, 0);
+   if (ntested > 0) {
+     for (int i = 0; i < ntested; i++) {
+       for (int j = 0; j < N; j++) {
+         total_sum += all_data[indices[i] * N + j];
+       }
+       status[indices[i]] = 1;
+     }
+     ncompleted += ntested;
+   }
+   else {
+     /* Overlap some computation here */
+   }
+ }
+
+ /* check the result */
+ int M = N * npes - 1;
+ if (total_sum != M * (M + 1) / 2) {
+   shmem_global_exit(1);
+ }
+
+ shmem_finalize();
+ return 0;
+}
+.fi
+
+
+
+
+.SS Table 2:
+Standard AMO Types and Names
+.TP 25
+.B \TYPE
+.B \TYPENAME
+.TP
+int
+int
+.TP
+long
+long
+.TP
+long long
+longlong
+.TP
+unsigned int
+uint
+.TP
+unsigned long
+ulong
+.TP
+unsigned long long
+ulonglong
+.TP
+int32\_t
+int32
+.TP
+int64\_t
+int64
+.TP
+uint32\_t
+uint32
+.TP
+uint64\_t
+uint64
+.TP
+size\_t
+size
+.TP
+ptrdiff\_t
+ptrdiff
+
+.SS Table 13:
+Point-to-Point Comparison Constants
+.TP 25
+.B Constant Name
+.B Comparison
+.TP
+SHMEM_CMP_EQ
+Equal
+.TP
+SHMEM_CMP_NE
+Not equal
+.TP
+SHMEM_CMP_GT
+Greater than
+.TP
+SHMEM_CMP_GE
+Greater than or equal to
+.TP
+SHMEM_CMP_LT
+Less than
+.TP
+SHMEM_CMP_LE
+Less than or equal to

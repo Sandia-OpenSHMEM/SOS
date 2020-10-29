@@ -1,0 +1,99 @@
+.TH SHMEM_CTX_GET_TEAM 3 "Open Source Software Solutions, Inc." "OpenSHMEM Library Documentation"
+./ sectionStart
+.SH NAME
+shmem_ctx_get_team \- 
+Retrieve the team associated with the communication context.
+
+./ sectionEnd
+
+
+./ sectionStart
+.SH   SYNOPSIS
+./ sectionEnd
+
+./ sectionStart
+.SS C/C++:
+
+.B int
+.B shmem\_ctx\_get\_team(shmem_ctx_t
+.IB "ctx" ,
+.I shmem_team_t
+.I *team
+.B );
+
+
+
+./ sectionEnd
+
+
+
+
+./ sectionStart
+
+.SH DESCRIPTION
+.SS Arguments
+.BR "IN " -
+.I ctx
+- 
+A handle to a communication context.
+
+
+
+.BR "OUT " -
+.I team
+- 
+A pointer to a handle to the associated PE team.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS API Description
+
+The 
+.B shmem\_ctx\_get\_team
+routine returns a handle to the
+team associated with the specified communication context 
+.IR "ctx" .
+The team handle is returned through the pointer argument 
+.IR "team" .
+
+
+If 
+.I ctx
+is the default context or one created by a call to
+.BR "shmem\_ctx\_create" ,
+.I team
+is assigned the handle value
+\LibHandleRef{SHMEM\_TEAM\_WORLD}.
+
+If 
+.I ctx
+compares equal to SHMEM\_CTX\_INVALID,
+then 
+.I team
+is assigned the value
+SHMEM\_TEAM\_INVALID and a nonzero value is returned.
+If 
+.I ctx
+is otherwise invalid, the behavior is undefined.
+
+If 
+.I team
+is a null pointer, the behavior is undefined.
+
+./ sectionEnd
+
+
+./ sectionStart
+
+.SS Return Values
+
+Zero on success; otherwise, nonzero.
+
+./ sectionEnd
+
+
+
+

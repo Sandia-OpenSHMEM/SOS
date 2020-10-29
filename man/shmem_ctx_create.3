@@ -55,62 +55,36 @@ The
 routine creates a new communication context
 and returns its handle through the 
 .I ctx
-argument. If the context was
-created successfully, a value of zero is returned; otherwise, a nonzero
-value is returned. An unsuccessful context
+argument.
+This context is created from the world team;
+however, the context creation operation is not collective.
+If the context was
+created successfully, a value of zero is returned
+and the context handle pointed to by 
+.I ctx
+specifies a valid context;
+otherwise, a nonzero value is returned and 
+.I ctx
+is set to
+SHMEM\_CTX\_INVALID.
+An unsuccessful context
 creation call is not treated as an error and the OpenSHMEM library remains
 in a correct state. The creation call can be reattempted with different
 options or after additional resources become available.
 
-By default, contexts are {\em shareable} and, when it is allowed by the
-threading model provided by the OpenSHMEM library, they can be used concurrently by
-multiple threads within the PE where they were created.
-%
-The following options can be supplied during context creation to restrict
-this usage model and enable performance optimizations. When using a given
-context, the application must comply with the requirements of all options
-set on that context; otherwise, the behavior is undefined.
-No options are enabled on the default context.
-
-
-./ sectionStart
-.TP 25
-SHMEM\_CTX\_SERIALIZED
-The given context is shareable; however, it will not be used by multiple threads concurrently. When the SHMEM\_CTX\_SERIALIZED option is set, the user must ensure that operations involving the given context are serialized by the application.
-./ sectionEnd
-
-
-
-./ sectionStart
-.TP 25
-SHMEM\_CTX\_PRIVATE
-The given context will be used only by the thread that created it.
-./ sectionEnd
-
-
-
-./ sectionStart
-.TP 25
-SHMEM\_CTX\_NOSTORE
-Quiet and fence operations performed on the given context are not required to enforce completion and ordering of memory store operations. When ordering of store operations is needed, the application must perform a synchronization operation on a context without the SHMEM\_CTX\_NOSTORE option enabled.
-./ sectionEnd
-
+All OpenSHMEM routines that operate on this context will do so with
+respect to the associated PE team.
+That is, all point-to-point routines operating on this context will use
+team-relative PE numbering.
 
 ./ sectionEnd
+
+
 ./ sectionStart
 
 .SS Return Values
 
 Zero on success and nonzero otherwise.
-
-./ sectionEnd
-
-
-./ sectionStart
-
-.SS API Notes
-
-None.
 
 ./ sectionEnd
 
