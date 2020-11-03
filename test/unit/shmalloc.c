@@ -193,14 +193,16 @@ main(int argc, char **argv)
 
         result_sz = (nProcs-1) * (nWords * sizeof(DataType));
         result = (DataType *)shmem_malloc(result_sz);
-        if (! result)
-        {
-            perror ("Failed result memory allocation");
-            shmem_finalize();
-            exit (1);
+        if (result_sz != 0) {
+            if (! result)
+            {
+                perror ("Failed result memory allocation");
+                shmem_finalize();
+                exit (1);
+            }
+            for(dp=result; dp < &result[(result_sz/sizeof(DataType))];)
+                *dp++ = 1;
         }
-        for(dp=result; dp < &result[(result_sz/sizeof(DataType))];)
-            *dp++ = 1;
 
 
         target_sz = nWords * sizeof(DataType);
