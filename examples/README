@@ -1,0 +1,8 @@
+Build all examples using "make" or "make all".
+
+To build examples individually, enter "make" followed by the filename (omitting the
+file extension)
+
+To remove all the executables run "make clean"
+
+The Licensing information can be found in the "LICENSE.txt"
