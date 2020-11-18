@@ -48,7 +48,6 @@ main(int argc, char* argv[], char *envp[])
     shmem_sum_reduce(SHMEM_TEAM_WORLD, &total, &total, 1);
 
     if(me == 0) {
-
         double approx_pi = 4.0*inside/(double)total;
         printf("Pi from %llu points on %d PEs: %lf\n",total,myshmem_n_pes,approx_pi);
     }
