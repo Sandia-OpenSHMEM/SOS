@@ -46,6 +46,9 @@ include(shmem_bind_c.m4)dnl
 #pragma weak shmem_sync = pshmem_sync
 #define shmem_sync pshmem_sync
 
+#pragma weak shmem_team_sync = pshmem_team_sync
+#define shmem_team_sync pshmem_team_sync
+
 define(`SHMEM_PROF_DEF_TO_ALL',
 `#pragma weak shmem_$1_$4_to_all = pshmem_$1_$4_to_all
 #define shmem_$1_$4_to_all pshmem_$1_$4_to_all')dnl
@@ -65,6 +68,18 @@ SHMEM_BIND_C_COLL_CMPLX(`SHMEM_PROF_DEF_TO_ALL', `sum', `SHM_INTERNAL_SUM')
 SHMEM_BIND_C_COLL_INTS(`SHMEM_PROF_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 SHMEM_BIND_C_COLL_FLOATS(`SHMEM_PROF_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
 SHMEM_BIND_C_COLL_CMPLX(`SHMEM_PROF_DEF_TO_ALL', `prod', `SHM_INTERNAL_PROD')
+
+define(`SHMEM_PROF_DEF_REDUCE',
+`#pragma weak shmem_$1_$4_reduce = pshmem_$1_$4_reduce
+#define shmem_$1_$4_reduce pshmem_$1_$4_reduce')dnl
+dnl
+SHMEM_BIND_C_COLL_AND_OR_XOR(`SHMEM_PROF_DEF_REDUCE', `and', `SHM_INTERNAL_BAND')
+SHMEM_BIND_C_COLL_AND_OR_XOR(`SHMEM_PROF_DEF_REDUCE', `or', `SHM_INTERNAL_BOR')
+SHMEM_BIND_C_COLL_AND_OR_XOR(`SHMEM_PROF_DEF_REDUCE', `xor', `SHM_INTERNAL_BXOR')
+SHMEM_BIND_C_COLL_SUM_PROD(`SHMEM_PROF_DEF_REDUCE', `sum', `SHM_INTERNAL_SUM')
+SHMEM_BIND_C_COLL_SUM_PROD(`SHMEM_PROF_DEF_REDUCE', `prod', `SHM_INTERNAL_PROD')
+SHMEM_BIND_C_COLL_MIN_MAX(`SHMEM_PROF_DEF_REDUCE', `min', `SHM_INTERNAL_MIN')
+SHMEM_BIND_C_COLL_MIN_MAX(`SHMEM_PROF_DEF_REDUCE', `max', `SHM_INTERNAL_MAX')
 
 define(`SHMEM_PROF_DEF_BCAST',
 `#pragma weak shmem_$1_broadcast = pshmem_$1_broadcast

@@ -16,6 +16,38 @@
 
 #include "shmem_team.h"
 
+#ifdef ENABLE_PROFILING
+#include "pshmem.h"
+
+#pragma weak shmem_team_my_pe = pshmem_team_my_pe
+#define shmem_team_my_pe pshmem_team_my_pe
+
+#pragma weak shmem_team_n_pes = pshmem_team_n_pes
+#define shmem_team_n_pes pshmem_team_n_pes
+
+#pragma weak shmem_team_get_config = pshmem_team_get_config
+#define shmem_team_get_config pshmem_team_get_config
+
+#pragma weak shmem_team_translate_pe = pshmem_team_translate_pe
+#define shmem_team_translate_pe pshmem_team_translate_pe
+
+#pragma weak shmem_team_split_strided = pshmem_team_split_strided
+#define shmem_team_split_strided pshmem_team_split_strided
+
+#pragma weak shmem_team_split_2d = pshmem_team_split_2d
+#define shmem_team_split_2d pshmem_team_split_2d
+
+#pragma weak shmem_team_destroy = pshmem_team_destroy
+#define shmem_team_destroy pshmem_team_destroy
+
+#pragma weak shmem_team_create_ctx = pshmem_team_create_ctx
+#define shmem_team_create_ctx pshmem_team_create_ctx
+
+#pragma weak shmem_ctx_get_team = pshmem_ctx_get_team
+#define shmem_ctx_get_team pshmem_ctx_get_team
+
+#endif /* ENABLE_PROFILING */
+
 /* Team Managment Routines */
 
 int SHMEM_FUNCTION_ATTRIBUTES
