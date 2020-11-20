@@ -1,9 +1,6 @@
 #include <shmem.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
-#include <time.h>
-#include <math.h>
 
 #define NUM_POINTS 10000
 
@@ -49,7 +46,7 @@ main(int argc, char* argv[], char *envp[])
 
     if(me == 0) {
         double approx_pi = 4.0*inside/(double)total;
-        printf("Pi from %llu points on %d PEs: %lf\n",total,myshmem_n_pes,approx_pi);
+        printf("Pi from %llu points on %d PEs: %lf\n", total,myshmem_n_pes, approx_pi);
     }
 
     shmem_finalize();

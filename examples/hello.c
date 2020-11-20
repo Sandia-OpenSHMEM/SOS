@@ -1,6 +1,5 @@
 #include <shmem.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 int
 main(int argc, char* argv[], char *envp[])
@@ -20,7 +19,7 @@ main(int argc, char* argv[], char *envp[])
     */
     me = shmem_my_pe();
 
-    printf("Hello World from %d of %d\n",me,myshmem_n_pes);
+    printf("Hello World from %d of %d\n", me, myshmem_n_pes);
 
     shmem_finalize();
 

@@ -1,9 +1,6 @@
 #include <shmem.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
-#include <time.h>
-#include <math.h>
 
 #define NUM_POINTS 10000
 
@@ -42,7 +39,8 @@ main(int argc, char* argv[], char *envp[])
     shmem_barrier_all();
 
     if(me == 0) {
-        for(int i = 1; i < myshmem_n_pes; ++i) {
+        int i;
+        for(i = 1; i < myshmem_n_pes; ++i) {
             long long remoteInside,remoteTotal;
             shmem_longlong_get(&remoteInside,&inside,1,i);
             shmem_longlong_get(&remoteTotal,&total,1,i);
@@ -52,7 +50,7 @@ main(int argc, char* argv[], char *envp[])
 
         double approx_pi = 4.0*inside/(double)total;
 
-        printf("Pi from %llu points on %d PEs: %lf\n",total,myshmem_n_pes,approx_pi);
+        printf("Pi from %llu points on %d PEs: %lf\n", total, myshmem_n_pes, approx_pi);
     }
 
     shmem_finalize();
