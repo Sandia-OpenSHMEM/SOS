@@ -87,7 +87,7 @@ main(int argc, char* argv[], char *envp[])
         }
 
         if (NULL == getenv("MAKELEVEL")) {
-            printf("Pi from %llu points on %d PEs: %lf\n",total,myshmem_n_pes,approx_pi);
+            printf("Pi from %llu points on %d PEs: %lf\n", total, myshmem_n_pes, approx_pi);
         }
     }
 

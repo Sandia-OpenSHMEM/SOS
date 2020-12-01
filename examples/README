@@ -1,0 +1,23 @@
+Build all examples using "make" or "make all"
+
+To build examples individually, use "make" followed by the filename (omitting the
+file extension). For example, to build the hello world program, use "make hello"
+
+To remove all the executables, run "make clean"
+
+Requirments to build and run the examples:
+  * Have the SOS installation "bin" directory set in the environment PATH
+  * Have a compatible process launcher (e.g. Hydra version 3.2) set in the
+    environment PATH
+    * By invoking the run script, "oshrun", it will pick up the chosen process
+      launcher.
+  * An example of setting the environment PATH on bash:
+    $ export PATH=<path-to-SOS-install>/bin:<path-to-hydra-install>/bin:$PATH
+
+The hello world example can be run with 4 processes, as below: 
+  oshrun -n 4 ./hello
+
+For more detailed information visit the Getting Started Guide:
+  https://github.com/Sandia-OpenSHMEM/SOS/wiki/Getting-Started-Guide
+
+The Licensing information can be found in the "LICENSE" file

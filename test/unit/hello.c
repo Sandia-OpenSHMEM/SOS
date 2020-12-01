@@ -52,7 +52,7 @@ main(int argc, char* argv[], char *envp[])
     me = shmem_my_pe();
 
     if (NULL == getenv("MAKELEVEL")) {
-        printf("Hello World from %d of %d\n",me,myshmem_n_pes);
+        printf("Hello World from %d of %d\n", me, myshmem_n_pes);
     }
 
     shmem_finalize();
