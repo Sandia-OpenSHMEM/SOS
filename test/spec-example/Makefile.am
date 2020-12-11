@@ -36,7 +36,7 @@ endif
 if HAVE_C11
 check_PROGRAMS += \
     shmem_team_sync \
-    shmem_reduce_example \
+    shmem_reduce_example
 endif
 
 TESTS = $(check_PROGRAMS)
