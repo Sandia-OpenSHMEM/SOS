@@ -145,6 +145,10 @@ typedef struct perf_metrics {
     char *src, *dest;
     op_style opstyle;
 
+    float trials_multiplier; /* adjust trials value through env var
+                              * SOS_TRIALS_MULTIPLIER. Invalid for
+                              * user inputs*/
+
     /* parameters for threaded tests */
     int nthreads;
     int thread_safety;
@@ -172,10 +176,16 @@ long bar_psync[SHMEM_BARRIER_SYNC_SIZE];
 /* default settings with no input provided */
 static inline 
 void set_metric_defaults(perf_metrics_t *metric_info) {
+    char *val = NULL;
+    metric_info->trials_multiplier = 1.0; /* Default 1 */
+    val = getenv("SOS_TRIALS_MULTIPLIER");
+    if (val && strlen(val))
+        metric_info->trials_multiplier = atof(val);
+
     metric_info->start_len = START_LEN;
     metric_info->max_len = MAX_MSG_SIZE;
     metric_info->size_inc = INC;
-    metric_info->trials = TRIALS;
+    metric_info->trials = TRIALS * metric_info->trials_multiplier;
     metric_info->window_size = WINDOW_SIZE; /*back-to-back msg stream*/
     metric_info->warmup = WARMUP; /*number of initial iterations to skip*/
 
@@ -737,7 +747,7 @@ static inline
 void large_message_metric_chg(perf_metrics_t * const metric_info, int len) {
     if(len > LARGE_MESSAGE_SIZE) {
         metric_info->window_size = WINDOW_SIZE_LARGE;
-        metric_info->trials = TRIALS_LARGE;
+        metric_info->trials = TRIALS_LARGE * metric_info->trials_multiplier;
         metric_info->warmup = WARMUP_LARGE;
     }
 }
