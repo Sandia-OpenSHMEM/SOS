@@ -41,12 +41,17 @@ Notes for Users:
         -e : end length (power of two) DEFAULT: 8MB
         -s : start length (power of two) DEFAULT: 1B
         -n : number of trials (must be greater than 20 (warmup size)) DEFAULT: 100
+        -m : scale the number of trials by a floating point multiplier DEFAULT: 1.0
         -v : validate input stream used for performance data (off by default)
         BW only:
             -k : output in KB
             -b : output in B
             -T : number of threads, DEFAULT: 1
             -C : thread level (SINGLE, FUNNELED, SERIALIZED, MULTIPLE), DEFAULT: SINGLE
+
+    Environment Variables:
+        SHMEM_PERF_SUITE_TRIALS_MULTIPLIER : Scale the number of trials by a floating
+                                             point multiplier.
 
 Notes for performance tests developers:
     overall model:
