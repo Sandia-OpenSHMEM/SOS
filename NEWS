@@ -2,6 +2,19 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.5.0
+------
+- This full release includes the changes listed below for v1.5.0rc1 and the
+  following additional changes.
+- Added a multiplier for scaling the number of trial iterations in performance
+  test suite benchmarks, configurable by environment variable,
+  SHMEM_PERF_SUITE_TRIALS_MULTIPLIER.
+- Added {SOS base}/examples directory with simple OpenSHMEM example programs
+  and instructions on how to build and run those.
+- With the recent fixes in libfabric 1.11.x, RXM/Verbs provider support does
+  not require setting the FI_MR_CACHE_MAX_COUNT environment variable to 0
+  when threading is used.
+
 v1.5.0rc1
 ---------
 - Support for OpenSHMEM v1.5 specification
