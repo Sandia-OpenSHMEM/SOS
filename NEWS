@@ -14,6 +14,9 @@ v1.5.0
 - With the recent fixes in libfabric 1.11.x, RXM/Verbs provider support does
   not require setting the FI_MR_CACHE_MAX_COUNT environment variable to 0
   when threading is used.
+- Additional bugfixes, including profiling symbols for some team-based
+  collectives, support for C99 compilation, and unit test failures
+  with single PE.
 
 v1.5.0rc1
 ---------
