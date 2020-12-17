@@ -131,7 +131,7 @@ typedef enum {
 #define FIRST_FETCH_OP OP_FETCH
 
 const char *atomic_op_name[] = { "set", "inc", "add", "and",
-                                 "or", "xor", 
+                                 "or", "xor",
                                  "fetch", "cswap", "swap", "finc",
                                  "fadd", "fand", "for", "fxor" };
 
@@ -144,6 +144,9 @@ typedef struct perf_metrics {
     int my_node, num_pes, sztarget, szinitiator, midpt;
     char *src, *dest;
     op_style opstyle;
+
+    float trials_multiplier; /* adjust trials value through env var
+                              * SHMEM_PERF_SUITE_TRIALS_MULTIPLIER. */
 
     /* parameters for threaded tests */
     int nthreads;
@@ -170,12 +173,18 @@ long red_psync[SHMEM_REDUCE_SYNC_SIZE];
 long bar_psync[SHMEM_BARRIER_SYNC_SIZE];
 
 /* default settings with no input provided */
-static inline 
+static inline
 void set_metric_defaults(perf_metrics_t *metric_info) {
+    char *val = NULL;
+    metric_info->trials_multiplier = 1.0; /* Default 1 */
+    val = getenv("SHMEM_PERF_SUITE_TRIALS_MULTIPLIER");
+    if (val && strlen(val))
+        metric_info->trials_multiplier = atof(val);
+
     metric_info->start_len = START_LEN;
     metric_info->max_len = MAX_MSG_SIZE;
     metric_info->size_inc = INC;
-    metric_info->trials = TRIALS;
+    metric_info->trials = TRIALS * metric_info->trials_multiplier;
     metric_info->window_size = WINDOW_SIZE; /*back-to-back msg stream*/
     metric_info->warmup = WARMUP; /*number of initial iterations to skip*/
 
@@ -202,7 +211,7 @@ void set_metric_defaults(perf_metrics_t *metric_info) {
 }
 
 /* update metrics after shmem init */
-static inline 
+static inline
 void update_metrics(perf_metrics_t *metric_info) {
     metric_info->my_node = shmem_my_pe();
     metric_info->num_pes = shmem_n_pes();
@@ -296,7 +305,7 @@ static void aligned_buffer_free(char * ptr_aligned)
 #endif
 }
 
-static inline 
+static inline
 int is_divisible_by_4(int num) {
     if (num < 0)
         shmem_global_exit(1);
@@ -304,7 +313,7 @@ int is_divisible_by_4(int num) {
 }
 
 /*to be a power of 2 must only have 1 set bit*/
-static inline 
+static inline
 int is_pow_of_2(unsigned int num) {
     /*move first set bit all the way to right*/
     while(num && !((num >>=1 ) & 1));
@@ -313,7 +322,7 @@ int is_pow_of_2(unsigned int num) {
     return ((num == 1 || num == 0) ? true : false);
 }
 
-static 
+static
 void init_array(const char *buf, int len, int my_pe_num) {
     int i = 0;
     int array_size = len / sizeof(int);
@@ -325,7 +334,7 @@ void init_array(const char *buf, int len, int my_pe_num) {
         ibuf[i] = my_pe_num;
 }
 
-static inline 
+static inline
 int validate_recv(char *buf, int len, int partner_pe) {
     int i = 0;
     int array_size = len / sizeof(int);
@@ -340,7 +349,7 @@ int validate_recv(char *buf, int len, int partner_pe) {
         }
     }
     if (errors > 0) {
-        printf("Validation error: stored_value = %d, expected value = %d\n", 
+        printf("Validation error: stored_value = %d, expected value = %d\n",
                                   ibuf[0], partner_pe);
     }
     return errors;
@@ -356,7 +365,7 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t * const metric
     extern char *optarg;
 
     /* check command line args */
-    while ((ch = getopt(argc, argv, "e:s:n:w:p:r:l:kbivtC:T:")) != EOF) {
+    while ((ch = getopt(argc, argv, "e:s:n:m:w:p:r:l:kbivtC:T:")) != EOF) {
         switch (ch) {
         case 's':
             metric_info->start_len = strtoul(optarg, (char **)NULL, 0);
@@ -395,6 +404,17 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t * const metric
                 errors++;
             }
             break;
+        case 'm':
+            metric_info->trials_multiplier = strtod(optarg, (char **)NULL);
+            if(metric_info->trials * metric_info->trials_multiplier <
+                (metric_info->warmup * 2)) {
+                fprintf(stderr, "Error: trials * trials_multiplier (%ld) must be >= 2*warmup (%ld)\n",
+                        (unsigned long int)(metric_info->trials * metric_info->trials_multiplier),
+                        metric_info->warmup * 2);
+                errors++;
+            }
+            metric_info->trials *= metric_info->trials_multiplier;
+            break;
         case 'p':
             metric_info->warmup = strtoul(optarg, (char **)NULL, 0);
             if(metric_info->warmup > (metric_info->trials/2)) {
@@ -415,7 +435,7 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t * const metric
             break;
         case 'v':
             metric_info->validate = true;
-            if(metric_info->t_type == BW && metric_info->target_data) 
+            if(metric_info->t_type == BW && metric_info->target_data)
                 errors++;
             break;
         case 'w':
@@ -482,12 +502,14 @@ int command_line_arg_check(int argc, char *argv[], perf_metrics_t * const metric
 static inline
 void print_usage(int errors) {
     fprintf(stderr, "\nNumber of errors in the command line: %d\n", errors);
-    fprintf(stderr, "\nUsage: <benchmark executable> [OPTION]\n" 
+    fprintf(stderr, "\nUsage: <benchmark executable> [OPTION]\n"
            " -s START_MSG_SIZE           Smallest message size. Must be power of 2\n"
            " -e END_MSG_SIZE             Largest message size. Must be power of 2\n"
            " -p WARMUP                   Number of warmup iterations\n"
            " -n TRIALS                   Number of trial iterations. Must be at\n"
            "                             least twice of WARMUP\n"
+           " -m TRIALS_MULTIPLIER        Scale the TRIALS value by a floating\n"
+           "                             point multiplier.  Must be greater than 0.\n"
            " -w WINDOW_SIZE              Window size for streaming. Cannot be used\n"
            "                             in conjunction with -t. Specific to band-\n"
            "                             -width experiments\n"
@@ -511,7 +533,7 @@ void print_usage(int errors) {
 
 
 #if defined(ENABLE_THREADS)
-static 
+static
 const char *thread_safety_str(perf_metrics_t * const metric_info) {
     if (metric_info->thread_safety == SHMEM_THREAD_SINGLE) {
         return "SINGLE";
@@ -522,14 +544,14 @@ const char *thread_safety_str(perf_metrics_t * const metric_info) {
     } else if (metric_info->thread_safety == SHMEM_THREAD_MULTIPLE) {
         return "MULTIPLE";
     } else {
-        fprintf(stderr, "Unexpected thread safety value: %d. " 
+        fprintf(stderr, "Unexpected thread safety value: %d. "
                         "Setting it to SINGLE\n", metric_info->thread_safety);
         metric_info->thread_safety = SHMEM_THREAD_SINGLE;
         return "SINGLE";
     }
 }
 
-static inline 
+static inline
 void thread_safety_validation_check(perf_metrics_t * const metric_info) {
     if (metric_info->nthreads == 1)
         return;
@@ -538,7 +560,7 @@ void thread_safety_validation_check(perf_metrics_t * const metric_info) {
             if(metric_info->my_node == 0) {
                 fprintf(stderr, "Warning: argument \"-T %d\" is ignored"
                                 " because of the thread level specified."
-                                " Switching to single thread with thread" 
+                                " Switching to single thread with thread"
                                 " safety %s\n", metric_info->nthreads,
                                   thread_safety_str(metric_info));
             }
@@ -549,7 +571,7 @@ void thread_safety_validation_check(perf_metrics_t * const metric_info) {
 }
 #endif
 
-static inline 
+static inline
 int only_even_PEs_check(int my_node, int num_pes) {
     if (num_pes % 2 != 0) {
         if (my_node == 0) {
@@ -562,7 +584,7 @@ int only_even_PEs_check(int my_node, int num_pes) {
 
 
 /* Returns partner node; Assumes only one partner */
-static inline 
+static inline
 int partner_node(const perf_metrics_t * const my_info)
 {
     if (my_info->num_pes == 1)
@@ -604,7 +626,7 @@ int target_node(const perf_metrics_t * const my_info)
         (my_info->my_node < (my_info->midpt + my_info->sztarget)));
 }
 
-static inline 
+static inline
 int is_streaming_node(const perf_metrics_t * const my_info, int node)
 {
     if (my_info->cstyle == COMM_PAIRWISE) {
@@ -631,7 +653,7 @@ int check_hostname_validation(const perf_metrics_t * const my_info) {
         pSync_collect[i] = SHMEM_SYNC_VALUE;
 
     char *hostname = (char *) shmem_malloc (hostname_size * sizeof(char));
-    char *dest = (char *) shmem_malloc (my_info->num_pes * hostname_size * 
+    char *dest = (char *) shmem_malloc (my_info->num_pes * hostname_size *
                                         sizeof(char));
 
     if (hostname == NULL || dest == NULL) {
@@ -647,7 +669,7 @@ int check_hostname_validation(const perf_metrics_t * const my_info) {
     shmem_barrier_all();
 
     /* nelems needs to be updated based on 32-bit API */
-    shmem_fcollect32(dest, hostname, hostname_size/4, 0, 0, my_info->num_pes, 
+    shmem_fcollect32(dest, hostname, hostname_size/4, 0, 0, my_info->num_pes,
                      pSync_collect);
 
     char *snode_name = NULL;
@@ -662,7 +684,7 @@ int check_hostname_validation(const perf_metrics_t * const my_info) {
 
             if (strncmp(snode_name, curr_name, hostname_size) != 0) {
                 fprintf(stderr, "PE %d on %s is a streaming node "
-                                "but not placed on %s\n", i, curr_name, 
+                                "but not placed on %s\n", i, curr_name,
                                  snode_name);
                 errors++;
             }
@@ -673,7 +695,7 @@ int check_hostname_validation(const perf_metrics_t * const my_info) {
 
             if (strncmp(tnode_name, curr_name, hostname_size) != 0) {
                 fprintf(stderr, "PE %d on %s is a target node "
-                                "but not placed on %s\n", i, curr_name, 
+                                "but not placed on %s\n", i, curr_name,
                                  tnode_name);
                 errors++;
             }
@@ -737,7 +759,7 @@ static inline
 void large_message_metric_chg(perf_metrics_t * const metric_info, int len) {
     if(len > LARGE_MESSAGE_SIZE) {
         metric_info->window_size = WINDOW_SIZE_LARGE;
-        metric_info->trials = TRIALS_LARGE;
+        metric_info->trials = TRIALS_LARGE * metric_info->trials_multiplier;
         metric_info->warmup = WARMUP_LARGE;
     }
 }
@@ -787,11 +809,11 @@ static
 void print_header(perf_metrics_t * const metric_info) {
     printf("\n%20sSandia OpenSHMEM Performance Suite%20s\n", " ", " ");
     printf("%20s==================================%20s\n", " ", " ");
-    printf("Total Number of PEs:    %10d%6sWindow size:            %10lu\n", 
+    printf("Total Number of PEs:    %10d%6sWindow size:            %10lu\n",
             metric_info->num_pes, " ", metric_info->window_size);
-    printf("Number of source PEs:   %10d%6sMaximum message size:   %10lu\n", 
+    printf("Number of source PEs:   %10d%6sMaximum message size:   %10lu\n",
             metric_info->szinitiator, " ", metric_info->max_len);
-    printf("Number of target PEs:   %10d%6sNumber of threads:      %10d\n", 
+    printf("Number of target PEs:   %10d%6sNumber of threads:      %10d\n",
             metric_info->sztarget, " ", metric_info->nthreads);
     printf("Iteration count:        %10lu%6s", metric_info->trials, " ");
 #if defined(ENABLE_THREADS)
