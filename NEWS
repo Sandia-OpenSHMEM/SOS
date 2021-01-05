@@ -2,6 +2,13 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.4.x
+------
+- This branch is based on v1.4.5 with various cherry-picked commits useful for
+  testing the OpenSHMEM v1.4 APIs (cherry-picks include: teams bug fixes,
+  Travis testing updates, higher thread levels allowed in test, support for
+  shmem_perf_suite trial multipler, etc).
+
 v1.4.5
 ------
 - Added a complete OpenSHMEM teams API to the shmemx interfaces.
