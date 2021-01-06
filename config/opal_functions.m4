@@ -3,7 +3,7 @@ dnl
 dnl Copyright (c) 2004-2005 The Trustees of Indiana University and Indiana
 dnl                         University Research and Technology
 dnl                         Corporation.  All rights reserved.
-dnl Copyright (c) 2004-2005 The University of Tennessee and The University
+dnl Copyright (c) 2004-2018 The University of Tennessee and The University
 dnl                         of Tennessee Research Foundation.  All rights
 dnl                         reserved.
 dnl Copyright (c) 2004-2005 High Performance Computing Center Stuttgart,
@@ -12,9 +12,9 @@ dnl Copyright (c) 2004-2005 The Regents of the University of California.
 dnl                         All rights reserved.
 dnl Copyright (c) 2007      Sun Microsystems, Inc.  All rights reserved.
 dnl Copyright (c) 2009      Oak Ridge National Labs.  All rights reserved.
-dnl Copyright (c) 2009-2015 Cisco Systems, Inc.  All rights reserved.
+dnl Copyright (c) 2009-2020 Cisco Systems, Inc.  All rights reserved.
 dnl Copyright (c) 2014      Intel, Inc. All rights reserved.
-dnl Copyright (c) 2015-2016 Research Organization for Information Science
+dnl Copyright (c) 2015-2017 Research Organization for Information Science
 dnl                         and Technology (RIST). All rights reserved.
 dnl
 dnl $COPYRIGHT$
@@ -42,7 +42,7 @@ dnl
 AC_DEFUN([OPAL_CONFIGURE_SETUP],[
 
 # Some helper script functions.  Unfortunately, we cannot use $1 kinds
-# of arugments here because of the m4 substitution.  So we have to set
+# of arguments here because of the m4 substitution.  So we have to set
 # special variable names before invoking the function.  :-\
 
 opal_show_title() {
@@ -94,9 +94,15 @@ EOF
 # Save some stats about this build
 #
 
-OPAL_CONFIGURE_USER="`whoami`"
-OPAL_CONFIGURE_HOST="`hostname | head -n 1`"
-OPAL_CONFIGURE_DATE="`date`"
+OPAL_CONFIGURE_USER="${USER:-`whoami`}"
+OPAL_CONFIGURE_HOST="${HOSTNAME:-`(hostname || uname -n) 2> /dev/null | sed 1q`}"
+# Note: it's ok to use $srcdir here because this macro is called at
+# the very beginning of configure.ac:
+#
+# a) before $OMPI_TOP_SRCDIR is set, and
+# b) from the top-level build directory (i.e., so $srcdir actually
+#    points to the top source directory)
+OPAL_CONFIGURE_DATE="`$srcdir/config/getdate.sh`"
 
 OPAL_LIBNL_SANITY_INIT
 
@@ -112,14 +118,6 @@ dnl #######################################################################
 dnl #######################################################################
 
 AC_DEFUN([OPAL_BASIC_SETUP],[
-#
-# Save some stats about this build
-#
-
-OPAL_CONFIGURE_USER="`whoami`"
-OPAL_CONFIGURE_HOST="`hostname | head -n 1`"
-OPAL_CONFIGURE_DATE="`date`"
-
 #
 # Make automake clean emacs ~ files for "make clean"
 #
@@ -322,7 +320,7 @@ dnl #######################################################################
 # OPAL_APPEND_UNIQ(variable, new_argument)
 # ----------------------------------------
 # Append new_argument to variable if not already in variable.  This assumes a
-# space seperated list.
+# space separated list.
 #
 # This could probably be made more efficient :(.
 AC_DEFUN([OPAL_APPEND_UNIQ], [
@@ -384,7 +382,7 @@ AC_DEFUN([OPAL_FLAGS_UNIQ],[
 
         # Check for special cases where we do want to allow repeated
         # arguments (per
-        # http://www.open-mpi.org/community/lists/devel/2012/08/11362.php
+        # https://www.open-mpi.org/community/lists/devel/2012/08/11362.php
         # and
         # https://github.com/open-mpi/ompi/issues/324).
 
@@ -453,7 +451,7 @@ dnl #######################################################################
 # - the argument does not begin with -I, -L, or -l, or
 # - the argument begins with -I, -L, or -l, and it's not already in variable
 #
-# This macro assumes a space seperated list.
+# This macro assumes a space separated list.
 AC_DEFUN([OPAL_FLAGS_APPEND_UNIQ], [
     OPAL_VAR_SCOPE_PUSH([opal_tmp opal_append])
 
@@ -506,7 +504,7 @@ dnl #######################################################################
 dnl #######################################################################
 dnl #######################################################################
 
-# Declare some variables; use OPAL_VAR_SCOPE_END to ensure that they
+# Declare some variables; use OPAL_VAR_SCOPE_POP to ensure that they
 # are cleaned up / undefined.
 AC_DEFUN([OPAL_VAR_SCOPE_PUSH],[
 
@@ -524,7 +522,7 @@ AC_DEFUN([OPAL_VAR_SCOPE_PUSH],[
         eval $opal_str
 
         if test "x$opal_str" != "x"; then
-            AC_MSG_WARN([Found configure shell variable clash!])
+            AC_MSG_WARN([Found configure shell variable clash at line $LINENO!])
             AC_MSG_WARN([[OPAL_VAR_SCOPE_PUSH] called on "$opal_var",])
             AC_MSG_WARN([but it is already defined with value "$opal_str"])
             AC_MSG_WARN([This usually indicates an error in configure.])
@@ -649,7 +647,7 @@ AC_DEFUN([OPAL_COMPUTE_MAX_VALUE], [
                     overflow=1
                 fi
             else
-                # stil negative.  Time to give up.
+                # still negative.  Time to give up.
                 overflow=1
             fi
             opal_num_bits=0
