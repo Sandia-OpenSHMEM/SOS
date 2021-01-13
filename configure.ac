@@ -344,7 +344,9 @@ OMPI_CHECK_PORTALS4([portals4],
     [transport_portals4="yes"],
     [transport_portals4="no"])
 
-OPAL_CHECK_OFI([ofi],
+OPAL_CHECK_OFI
+
+AS_IF([test "$opal_ofi_happy" = "yes"],
     [transport_ofi="yes"],
     [transport_ofi="no"])
 
@@ -812,11 +814,11 @@ if test "$transport_portals4" = "yes" ; then
 fi
 
 if test "$transport_ofi" = "yes" ; then
-    CPPFLAGS="$CPPFLAGS $ofi_CPPFLAGS"
-    LDFLAGS="$LDFLAGS $ofi_LDFLAGS"
-    LIBS="$LIBS $ofi_LIBS"
-    WRAPPER_COMPILER_EXTRA_LDFLAGS="$ofi_LDFLAGS"
-    WRAPPER_COMPILER_EXTRA_LIBS="$ofi_LIBS"
+    CPPFLAGS="$CPPFLAGS $opal_ofi_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $opal_ofi_LDFLAGS"
+    LIBS="$LIBS $opal_ofi_LIBS"
+    WRAPPER_COMPILER_EXTRA_LDFLAGS="$opal_ofi_LDFLAGS"
+    WRAPPER_COMPILER_EXTRA_LIBS="$opal_ofi_LIBS"
 fi
 
 if test "$transport_ucx" = "yes" ; then
