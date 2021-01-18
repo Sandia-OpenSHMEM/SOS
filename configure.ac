@@ -459,7 +459,7 @@ AC_ARG_ENABLE([pmi-mpi], [AC_HELP_STRING([--enable-pmi-mpi],
 
 AS_IF([test "$enable_pmi_simple" = "yes" -o "$enable_pmi_mpi" = "yes"],
      [TEST_RUNNER='$(abs_top_builddir)/src/oshrun -n $(NPROCS)'],
-     [OPAL_CHECK_PMI(pmi_type)])
+     [OPAL_CHECK_PMIX(pmi_type)])
 
 AS_IF([test "$opal_external_pmix_version_found" = 1],
      [pmi_CPPFLAGS="$opal_external_pmix_CPPFLAGS"
