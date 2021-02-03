@@ -37,7 +37,7 @@
 
 #define SHMEM_MALLOC_INVALID_HINT ~(SHMEM_MALLOC_ATOMICS_REMOTE)
 
-long pSync[SHMEM_ALLTOALL_SYNC_SIZE];
+long pSync[SHMEM_REDUCE_SYNC_SIZE];
 int pWrk[WRK_SIZE];
 
 
@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
     npes = shmem_n_pes();
     mype = shmem_my_pe();
 
-    for (i = 0; i < SHMEM_ALLTOALL_SYNC_SIZE; i++)
+    for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++)
         pSync[i] = SHMEM_SYNC_VALUE;
 
     passed = sumtoall_with_malloc_hint(0, mype, npes);
