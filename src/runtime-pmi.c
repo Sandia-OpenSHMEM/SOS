@@ -274,7 +274,7 @@ shmem_runtime_get(int pe, char *key, void *value, size_t valuelen)
         HASH_FIND_STR(singleton_kvs, kvs_key, e);
         if (e == NULL)
             return 3;
-        *kvs_value = *(e->val);
+        strncpy(kvs_value, e->val, max_val_len);
     }
     else {
         if (PMI_SUCCESS != PMI_KVS_Get(kvs_name, kvs_key, kvs_value, max_val_len)) {
