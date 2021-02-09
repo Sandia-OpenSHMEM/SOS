@@ -130,10 +130,6 @@ AC_DEFUN([OMPI_CHECK_UCX],[
                                  [AC_DEFINE([HAVE_UCP_WORKER_ADDRESS_FLAGS], [1],
                                             [have worker address attribute])], [],
                                  [#include <ucp/api/ucp.h>])
-                  AC_CHECK_DECLS([UCP_ATTR_FIELD_MEMORY_TYPES],
-                                 [AC_DEFINE([HAVE_UCP_ATTR_MEMORY_TYPES], [1],
-                                            [have memory types attribute])], [],
-                                 [#include <ucp/api/ucp.h>])
                   AC_CHECK_DECLS([ucp_tag_send_nbx,
                                   ucp_tag_send_sync_nbx,
                                   ucp_tag_recv_nbx],
@@ -150,9 +146,11 @@ AC_DEFUN([OMPI_CHECK_UCX],[
           [$1_CPPFLAGS="[$]$1_CPPFLAGS $ompi_check_ucx_CPPFLAGS"
            $1_LDFLAGS="[$]$1_LDFLAGS $ompi_check_ucx_LDFLAGS"
            $1_LIBS="[$]$1_LIBS $ompi_check_ucx_LIBS"
+           AC_DEFINE([HAVE_UCX], [1], [have ucx])
            $2],
           [AS_IF([test ! -z "$with_ucx" && test "$with_ucx" != "no"],
                  [AC_MSG_ERROR([UCX support requested but not found.  Aborting])])
+           AC_DEFINE([HAVE_UCX], [0], [have ucx])
            $3])
 
     OPAL_VAR_SCOPE_POP
