@@ -734,7 +734,6 @@ shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, const v
         default:
             RAISE_ERROR_MSG("Unsupported operation (%d)\n", sig_op);
     }
-    shmem_transport_put_scalar(ctx, sig_addr, &signal, sizeof(uint64_t), pe);
 }
 
 /*** Functions below are not supported ***/
