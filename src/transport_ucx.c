@@ -58,25 +58,12 @@ void shmem_transport_ucx_cb_nop(void *request, ucs_status_t status) {
     return;
 }
 
-void shmem_transport_ucx_cb_complete(void *request, ucs_status_t status) {
-    shmem_transport_ucx_req_t *shreq = (shmem_transport_ucx_req_t *) request;
-
+void shmem_transport_ucx_cb_complete(void *request, ucs_status_t status, void *user_data) {
     if (status != UCS_OK)
         RAISE_ERROR_STR("Error while completing operation");
 
-    /* Completion handler can run before the application has populated the
-     * request. Wait for ptr field to become valid. */
-    while (0 == __atomic_load_n(&shreq->valid, __ATOMIC_ACQUIRE)) ;
-
-    __atomic_store_n((long*)shreq->ptr, 1, __ATOMIC_RELEASE);
+    __atomic_store_n((long*)user_data, 1, __ATOMIC_RELEASE);
     return;
-}
-
-static void shmem_transport_ucx_cb_init(void *request) {
-    shmem_transport_ucx_req_t *shreq = (shmem_transport_ucx_req_t *) request;
-    shreq->ptr = NULL;
-    /* Use atomic store to synchronize with completion callback */
-    __atomic_store_n(&shreq->valid, 0, __ATOMIC_RELEASE);
 }
 
 static pthread_t shmem_transport_ucx_progress_thread;
@@ -100,10 +87,8 @@ int shmem_transport_init(void)
     ucp_worker_attr_t worker_attr;
     ucs_thread_mode_t requested;
 
-    params.field_mask = UCP_PARAM_FIELD_FEATURES | UCP_PARAM_FIELD_REQUEST_SIZE;
+    params.field_mask = UCP_PARAM_FIELD_FEATURES;
     params.features   = UCP_FEATURE_RMA | UCP_FEATURE_AMO32 | UCP_FEATURE_AMO64;
-    params.request_size = sizeof(shmem_transport_ucx_req_t);
-    params.request_init = &shmem_transport_ucx_cb_init;
 
     status = ucp_config_read(NULL, NULL, &shmem_transport_ucp_config);
     UCX_CHECK_STATUS(status);
