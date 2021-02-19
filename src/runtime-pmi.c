@@ -119,17 +119,10 @@ shmem_runtime_init(int enable_node_ranks)
 int
 shmem_runtime_fini(void)
 {
-    if (location_array) {
-        free(location_array);
-    }
-
-    if (kvs_key) {
-        free(kvs_key);
-    }
-
-    if (kvs_value) {
-        free(kvs_value);
-    }
+    free(location_array);
+    free(kvs_name);
+    free(kvs_key);
+    free(kvs_value);
 
     if (initialized_pmi) {
         PMI_Finalize();
