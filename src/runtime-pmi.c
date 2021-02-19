@@ -119,9 +119,10 @@ shmem_runtime_init(int enable_node_ranks)
 int
 shmem_runtime_fini(void)
 {
-    if (location_array) {
-        free(location_array);
-    }
+    free(location_array);
+    free(kvs_name);
+    free(kvs_key);
+    free(kvs_value);
 
     if (initialized_pmi) {
         PMI_Finalize();
@@ -266,7 +267,7 @@ shmem_runtime_get(int pe, char *key, void *value, size_t valuelen)
         HASH_FIND_STR(singleton_kvs, kvs_key, e);
         if (e == NULL)
             return 3;
-        kvs_value = e->val;
+        strncpy(kvs_value, e->val, max_val_len);
     }
     else {
         if (PMI_SUCCESS != PMI_KVS_Get(kvs_name, kvs_key, kvs_value, max_val_len)) {
