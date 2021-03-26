@@ -12,15 +12,7 @@
 # distribution.
 
 check_PROGRAMS = \
-        shmem_ctx_pipelined_reduce
-
-if HAVE_OPENMP
-check_PROGRAMS += \
-    shmem_ctx
-endif
-
-if SHMEMX_TESTS
-check_PROGRAMS += \
+        shmem_ctx_pipelined_reduce \
 	shmem_wait_until_all \
 	shmem_wait_until_any \
 	shmem_wait_until_some \
@@ -31,14 +23,21 @@ check_PROGRAMS += \
 	shmem_team_split_2D \
 	shmem_team_translate \
 	shmem_team_context \
-	shmem_team_sync \
 	shmem_team_broadcast \
 	shmem_team_collect \
-	shmem_reduce_example \
 	shmem_team_alltoall \
 	shmem_team_alltoalls
 
-endif SHMEMX_TESTS
+if HAVE_OPENMP
+check_PROGRAMS += \
+    shmem_ctx
+endif
+
+if HAVE_C11
+check_PROGRAMS += \
+    shmem_team_sync \
+    shmem_reduce_example
+endif
 
 TESTS = $(check_PROGRAMS)
 
@@ -60,10 +59,6 @@ endif
 
 if USE_PMI_SIMPLE
 LDADD += $(top_builddir)/pmi-simple/libpmi_simple.la
-endif
-
-if SHMEMX_TESTS
-AM_CPPFLAGS += -DENABLE_SHMEMX_TESTS
 endif
 
 shmem_ctx_CFLAGS = $(AM_OPENMP_CFLAGS)

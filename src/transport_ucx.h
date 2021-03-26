@@ -61,12 +61,7 @@ extern shmem_transport_peer_t *shmem_transport_peers;
 extern ucp_worker_h shmem_transport_ucp_worker;
 
 void shmem_transport_ucx_cb_nop(void *request, ucs_status_t status);
-void shmem_transport_ucx_cb_complete(void *request, ucs_status_t status);
-
-typedef struct {
-    uint64_t       valid;
-    void          *ptr;
-} shmem_transport_ucx_req_t;
+void shmem_transport_ucx_cb_complete(void *request, ucs_status_t status, void *user_data);
 
 int shmem_transport_init(void);
 int shmem_transport_startup(void);
@@ -108,7 +103,7 @@ ucs_status_t shmem_transport_ucx_complete_op(ucs_status_ptr_t req) {
             shmem_transport_probe();
             status = ucp_request_check_status(req);
         } while (status == UCS_INPROGRESS);
-        ucp_request_release(req);
+        ucp_request_free(req);
         return status;
     }
 }
@@ -130,19 +125,10 @@ ucs_status_t shmem_transport_ucx_post_cb_op(ucs_status_ptr_t req, void *completi
     if (req == NULL) {
         __atomic_store_n((long*)completion, 0, __ATOMIC_RELEASE);
         return UCS_OK;
-    } else if (UCS_PTR_IS_ERR(req))
+    } else if (UCS_PTR_IS_ERR(req)) {
         return UCS_PTR_STATUS(req);
-    else {
-        shmem_transport_ucx_req_t *preq = (shmem_transport_ucx_req_t *) req;
-
-        /* Populate the request and set the valid flag. The valid flag resolves
-         * a race with the completion callback, which could occur in a separate
-         * thread. */
-        preq->ptr = completion;
-        __atomic_store_n(&preq->valid, 1, __ATOMIC_RELEASE);
-
-        /* Request is released instead of freed because we expect a completion callback */
-        ucp_request_release(req);
+    } else {
+        ucp_request_free(req);
         return UCS_INPROGRESS;
     }
 }
@@ -272,11 +258,17 @@ shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void *sou
     ucp_rkey_h rkey;
     uint8_t *remote_addr;
 
+    ucp_request_param_t param = {
+        .op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_USER_DATA,
+        .cb.send      = &shmem_transport_ucx_cb_complete,
+        .user_data    = completion
+    };
+
     shmem_transport_ucx_get_mr(target, pe, &remote_addr, &rkey);
 
-    ucs_status_ptr_t pstatus = ucp_put_nb(shmem_transport_peers[pe].ep, source,
-                                          len, (uint64_t) remote_addr, rkey,
-                                          &shmem_transport_ucx_cb_complete);
+    ucs_status_ptr_t pstatus = ucp_put_nbx(shmem_transport_peers[pe].ep, source,
+                                           len, (uint64_t) remote_addr, rkey, &param);
+
     status = shmem_transport_ucx_post_cb_op(pstatus, completion);
     UCX_CHECK_STATUS_INPROGRESS(status);
 }
@@ -742,7 +734,6 @@ shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, const v
         default:
             RAISE_ERROR_MSG("Unsupported operation (%d)\n", sig_op);
     }
-    shmem_transport_put_scalar(ctx, sig_addr, &signal, sizeof(uint64_t), pe);
 }
 
 /*** Functions below are not supported ***/

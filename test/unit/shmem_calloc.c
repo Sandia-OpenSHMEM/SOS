@@ -191,8 +191,15 @@ main(int argc, char **argv)
 
     for(l=0; l < loops; l++) {
 
-        result_sz = (nProcs-1) * (nWords * sizeof(DataType));
-        result = (DataType *)shmem_calloc((nProcs-1)*nWords, sizeof(DataType));
+        result = (DataType *)shmem_calloc(0, sizeof(DataType));
+        if (result != NULL) {
+            perror ("Zero-length memory allocation has non-null result");
+            shmem_finalize();
+            exit (1);
+        }
+
+        result_sz = nProcs * (nWords * sizeof(DataType));
+        result = (DataType *)shmem_calloc(nProcs * nWords, sizeof(DataType));
         if (! result)
         {
             perror ("Failed result memory allocation");
