@@ -17,11 +17,11 @@ A structure type representing team configuration arguments
 .B typedef
 .B struct
 .I {
+
 .B int
 .I num_contexts
 
-
-.B shmem_team_config_t
+.I } shmem_team_config_t
 
 
 ./ sectionEnd
@@ -52,8 +52,11 @@ in existance at any given time. It is not a guaruntee that N
 calls to 
 .B shmem\_team\_create\_ctx
 will succeed.
-See Section~\ref{sec:ctx} for more on communication contexts and
-Section~\ref{subsec:shmem_team_create_ctx} for team-based context creation.
+See
+.B shmem\_ctx\_create
+for more on communication contexts and
+.B shmem\_team\_create\_ctx
+for team-based context creation.
 
 When using the configuration structure to create teams, a mask parameter
 controls which fields may be accessed by the OpenSHMEM library.
@@ -71,7 +74,11 @@ parameters.
 ./ sectionStart
 .TP 25
 SHMEM\_TEAM\_NUM\_CONTEXTS
-The team should be created using the value of the .I num\_contexts member of the configuration parameter .I config as a requirement. 
+The team should be created using the value of the
+.I num\_contexts
+member of the configuration parameter
+.I config
+as a requirement. 
 ./ sectionEnd
 
 
@@ -84,80 +91,3 @@ By default, no contexts can be created on a new team
 
 
 ./ sectionEnd
-
-
-
-./ sectionStart
-
-.SH DESCRIPTION
-.SS Arguments
-.BR "Csynopsis " -
-.I 
-int num_contexts;
-
-- Csynopsis
-
-
-None.
-./ sectionEnd
-
-
-A team configuration object is provided as an argument to
-.B shmem\_team\_split\_*
-routines.
-It specifies the requested capabilities of the team to be
-created.
-
-The 
-.I num\_contexts
-member specifies the total number of simultaneously
-existing contexts that the program requests to create from this team.
-These contexts may be created in any number of threads. Successful
-creation of a team configured with 
-.I num\_contexts
-of N means
-that the implementation will make a best effort to reserve enough
-resources to support N contexts created from the team
-in existance at any given time. It is not a guaruntee that N
-calls to 
-.B shmem\_team\_create\_ctx
-will succeed.
-See Section \ref{sec:ctx} for more on communication contexts and
-Section \ref{subsec:shmem_team_create_ctx} for team-based context creation.
-
-When using the configuration structure to create teams, a mask parameter
-controls which fields may be accessed by the OpenSHMEM library.
-Any configuration parameter value that is not indicated in the mask will be
-ignored, and the default value will be used instead.
-Therefore, a program must only set the fields for which it does not want the default value.
-
-A configuration mask is created through a bitwise OR operation of the
-following library constants.
-A configuration mask value of 0 indicates that the team
-should be created with the default values for all configuration
-parameters.
-./ sectionStart
-.TP 25
-SHMEM\_TEAM\_NUM\_CONTEXTS
-The team should be created using the value of the 
-.I num\_contexts
-member of the configuration parameter 
-.I config
-as a requirement. 
-./ sectionEnd
-
-
-The default values for configuration parameters are:
-./ sectionStart
-.TP 25
-
-.I num\_contexts
-= 0
-By default, no contexts can be created on a new team 
-./ sectionEnd
-
-
-}
-
-
-

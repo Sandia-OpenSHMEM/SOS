@@ -56,7 +56,7 @@ and the parent team size.
 .BR "IN " -
 .I parent\_team
 - A valid OpenSHMEM team. Any predefined teams, such as
-\LibHandleRef{SHMEM\_TEAM\_WORLD}, may be used, or any team created by the user.
+SHMEM\_TEAM\_WORLD, may be used, or any team created by the user.
 
 
 
@@ -71,8 +71,7 @@ elements in the first dimension.
 .I xaxis\_config
 - 
 A pointer to the configuration parameters for the new 
-.I x
--axis team.
+x-axis team.
 
 
 
@@ -90,8 +89,7 @@ from
 .I xaxis\_team
 - A new PE team handle representing a PE
 subset consisting of all the PEs that have the same coordinate along the 
-.I y
--axis
+y-axis
 as the calling PE.
 
 
@@ -100,8 +98,7 @@ as the calling PE.
 .I yaxis\_config
 - 
 A pointer to the configuration parameters for the new 
-.I y
--axis team.
+y-axis team.
 
 
 
@@ -119,8 +116,7 @@ from
 .I yaxis\_team
 - A new PE team handle representing a PE
 subset consisting of all the PEs that have the same coordinate along the 
-.I x
--axis
+x-axis
 as the calling PE.
 ./ sectionEnd
 
@@ -133,20 +129,15 @@ The
 .B shmem\_team\_split\_2d
 routine is a collective operation. It returns two
 new teams to the calling PE by splitting an existing parent team into subsets based on a
-2D Cartesian space. The user provides the size of the 
-.I x
+2D Cartesian space. The user provides the size of the x
 dimension, which is then
-used to derive the size of the 
-.I y
+used to derive the size of the y
 dimension based on the size of the parent team.
-The size of the 
-.I y
-dimension will be equal to \lceil N \div xrange \rceil, where
-.I N
+The size of the y
+dimension will be equal to ceil( N / xrange ), where N
 is the size of the parent team. In other words,
-xrange \times yrange \geq N, so that every PE in the parent team has a
-unique 
-.I (x,y)
+xrange * yrange >= N, so that every PE in the parent team has a
+unique (x,y)
 location in the 2D Cartesian space. The resulting 
 .I xaxis\_team
 and 
@@ -154,7 +145,7 @@ and
 correspond to the calling PE's row and column, respectively, in the
 2D Cartesian space.
 
-The mapping of PE number to coordinates is (x, y) = ( pe \mod xrange, \lfloor pe \div xrange \rfloor ),
+The mapping of PE number to coordinates is (x, y) = ( pe % xrange, floor(pe / xrange) ),
 where pe is the PE number in the parent team. For example, if xrange = 3,
 then the first 3 PEs in the parent team will form the first
 .I xteam
@@ -167,29 +158,25 @@ Thus, after the split operation, each of the new
 .I xteam
 s will contain all PEs that
 have the same coordinate along the 
-.I y
--axis as the calling PE. Each of the
+y-axis as the calling PE. Each of the
 new 
 .I yteam
 s will contain all PEs with the same coordinate along the
-.I x
--axis as the calling PE.
+x-axis as the calling PE.
 
 The PEs are numbered in the new teams based on the coordinate of the
 PE along the given axis. As a result,
-the value returned by 
+the value returned by
 .B shmem\_team\_my\_pe(
 .I xteam
 )
 is the
-.I x
--coordinate and the value returned by 
+x-coordinate and the value returned by
 .B shmem\_team\_my\_pe(
 .I yteam
 )
 is the 
-.I y
--coordinate of the calling PE.
+y-coordinate of the calling PE.
 
 Any valid OpenSHMEM team can be used as the parent team. This routine must be
 called by all PEs in the parent team. The value of 
@@ -212,14 +199,14 @@ and
 .I yaxis\_config
 arguments specify team
 configuration parameters for the 
-.I x
-- and 
-.I y
--axis teams, respectively.
-These parameters are described in Section~\ref{subsec:shmem_team_config_t}.
+x- and y-axis teams, respectively.
+These parameters are described in
+.B shmem_team_config_t.
 All PEs that will be in the same resultant team must specify the same
 configuration parameters.
-The PEs in the parent team \emph{do not} have to all provide the same
+The PEs in the parent team
+.I do not
+have to all provide the same
 parameters for new teams.
 
 The 
@@ -234,8 +221,9 @@ and
 , respectively.
 A mask value of 0 indicates that the team
 should be created with the default values for all configuration parameters.
-See Section~\ref{subsec:shmem_team_config_t} for field mask names and
-default configuration parameters.
+See
+.B shmem_team_config_t
+for field mask names and default configuration parameters.
 
 If 
 .I parent\_team
@@ -308,24 +296,6 @@ s. The columns are the
 .I yteam
 s.
 
-\begin{center}
-\begin{tabular}{|l|l|l|l|}
-\hline
-& yteam & yteam & yteam 
-
-& x=0 & x=1 & x=2 
-\hline
-xteam, y=0 & 0 & 1 & 2 
-\hline
-xteam, y=1 & 3 & 4 & 5 
-\hline
-xteam, y=2 & 6 & 7 & 8 
-\hline
-xteam, y=3 & 9 
-
-\cline{0-1}
-\end{tabular}
-\end{center}
 
 It would be legal, for example, if PEs 0, 3, 6, 9 specified a different value
 for 
@@ -333,7 +303,7 @@ for
 than all of the other PEs, as long as the configuration parameters match
 for all PEs in each of the new teams.
 
-See the description of team handles and predefined teams in Section~\ref{subsec:team}
+See the description of team handles and predefined teams
 for more information about team handle semantics and usage.
 
 ./ sectionEnd
@@ -415,7 +385,7 @@ int main(void) {
 }
 .fi
 
-The example above splits \LibHandleRef{SHMEM\_TEAM\_WORLD into a 3D team
+The example above splits SHMEM\_TEAM\_WORLD into a 3D team
 with dimensions 
 .I xdim
 , 
@@ -429,42 +399,11 @@ and
 .BR "find\_xyz\_dims" .
 When running with 12 PEs, the dimensions
 are 3x2x2, respectively, and the first split of
-\LibHandleRef{SHMEM\_TEAM\_WORLD} results in 4 
+SHMEM\_TEAM\_WORLD results in 4
 .I xteams
 and 3
 .I yzteams
-:
-
-\begin{center}
-\begin{tabular}{|l|l|l|l|l|}
-\hline
-\multicolumn{2}{|c|}{} & \multicolumn{3}{c|}{
-.I yzteam
-} \\ \cline{3-5}
-\multicolumn{2}{|c|}{} & 
-.I x
-= 0 & 
-.I x
-= 1 & 
-.I x
-= 2 \\ \hline
-\multirow{4}{*}{
-.I xteam
-} & 
-.I yz
-= 0 & 0 & 1 & 2 \\ \cline{2-5}
-& 
-.I yz
-= 1 & 3 & 4 & 5 \\ \cline{2-5}
-& 
-.I yz
-= 2 & 6 & 7 & 8 \\ \cline{2-5}
-& 
-.I yz
-= 3 & 9 & 10 & 11 \\ \cline{2-5}
-\cline{0-2}
-\end{tabular}
-\end{center}
+.
 
 The second split of 
 .I yzteam
@@ -476,31 +415,8 @@ for
 .I yteams
 and 2 
 .I zteams
-:
+.
 
-
-\begin{center}
-\begin{tabular}{|l|l|l|l|}
-\hline
-\multicolumn{2}{|c|}{} & \multicolumn{2}{c|}{
-.I zteam
-} \\ \cline{3-4}
-\multicolumn{2}{|c|}{} & 
-.I y
-= 0 & 
-.I y
-= 1 \\ \hline
-\multirow{2}{*}{
-.I yteam
-} & 
-.I z
-= 0 & 0 & 3 \\ \cline{2-4}
-& 
-.I z
-= 1 & 6 & 9 \\
-\cline{0-3}
-\end{tabular}
-\end{center}
 
 The second split of 
 .I yzteam
@@ -513,30 +429,7 @@ for
 .I yteams
 and 2 
 .I zteams
-:
-
-\begin{center}
-\begin{tabular}{|l|l|l|l|}
-\hline
-\multicolumn{2}{|c|}{} & \multicolumn{2}{c|}{
-.I zteam
-} \\ \cline{3-4}
-\multicolumn{2}{|c|}{} & 
-.I y
-= 0 & 
-.I y
-= 1 \\ \hline
-\multirow{2}{*}{
-.I yteam
-} & 
-.I z
-= 0 & 1 & 4 \\ \cline{2-4}
-& 
-.I z
-= 1 & 7 & 10 \\
-\cline{0-3}
-\end{tabular}
-\end{center}
+.
 
 The second split of 
 .I yzteam
@@ -549,35 +442,11 @@ for
 .I yteams
 and 2 
 .I zteams
-:
-
-\begin{center}
-\begin{tabular}{|l|l|l|l|}
-\hline
-\multicolumn{2}{|c|}{} & \multicolumn{2}{c|}{
-.I zteam
-} \\ \cline{3-4}
-\multicolumn{2}{|c|}{} & 
-.I y
-= 0 & 
-.I y
-= 1 \\ \hline
-\multirow{2}{*}{
-.I yteam
-} & 
-.I z
-= 0 & 2 & 5 \\ \cline{2-4}
-& 
-.I z
-= 1 & 8 & 11 \\
-\cline{0-3}
-\end{tabular}
-\end{center}
+.
 
 The final number of teams for each dimension are:
 
 .IP
-
 
 \(bu 4 
 .I xteams
@@ -609,28 +478,24 @@ varies.
 .I z
 varies.
 
-.RE
+.RS -1
 
-The expected output with 12 PEs is: \\
-\begin{small}
-\texttt{
-xdim = 3, ydim = 2, zdim = 2 \\
-(0, 0, 0) is mype = 0 \\
-(1, 0, 0) is mype = 1 \\
-(2, 0, 0) is mype = 2 \\
-(0, 1, 0) is mype = 3 \\
-(1, 1, 0) is mype = 4 \\
-(2, 1, 0) is mype = 5 \\
-(0, 0, 1) is mype = 6 \\
-(1, 0, 1) is mype = 7 \\
-(2, 0, 1) is mype = 8 \\
-(0, 1, 1) is mype = 9 \\
-(1, 1, 1) is mype = 10 \\
-(2, 1, 1) is mype = 11 \\
-}
-\end{small}
-}
+The expected output with 12 PEs is:
 
+.IP
 
-
-
+.nf
+xdim = 3, ydim = 2, zdim = 2
+(0, 0, 0) is mype = 0
+(1, 0, 0) is mype = 1
+(2, 0, 0) is mype = 2
+(0, 1, 0) is mype = 3
+(1, 1, 0) is mype = 4
+(2, 1, 0) is mype = 5
+(0, 0, 1) is mype = 6
+(1, 0, 1) is mype = 7
+(2, 0, 1) is mype = 8
+(0, 1, 1) is mype = 9
+(1, 1, 1) is mype = 10
+(2, 1, 1) is mype = 11
+.fi

@@ -122,14 +122,10 @@ where the PE subset of the resulting team is defined by the triplet of arguments
 .I size
 ).
 A valid triplet is one such that:
-\begin{equation*}
-start + stride \cdot i \in \mathbb{Z}_{N-1}
-\;
-\forall
-\;
-i \in \mathbb{Z}_{size-1}
-\end{equation*}
-where \mathbb{Z} is the set of natural numbers (0, 1, \dots), N is the
+
+start + stride * i is in Z{N-1} forall i \in Z{size-1}
+
+where Z{n} is the set of natural numbers (0, 1, ..., n), N is the
 number of PEs in the parent team and size is a positive number indicating
 the number of PEs in the new team. The index i specifies the number of
 the given PE in the new team. Thus, PEs in the new team remain in the same
@@ -158,7 +154,7 @@ assigned to SHMEM\_TEAM\_INVALID.
 will return zero to all
 PEs in the parent team.
 
-.RE
+.RS -1
 
 If the new team cannot be created or an invalid PE triplet is provided,
 then 
@@ -171,7 +167,8 @@ PEs in the parent team.
 The 
 .I config
 argument specifies team configuration parameters, which are
-described in Section~\ref{subsec:shmem_team_config_t}.
+described in
+.B shmem_team_config_t.
 
 The 
 .I config\_mask
@@ -182,7 +179,9 @@ A
 .I config\_mask
 value of 0 indicates that the team
 should be created with the default values for all configuration parameters.
-See Section~\ref{subsec:shmem_team_config_t} for field mask names and
+See
+.B shmem_team_config_t
+for field mask names and
 default configuration parameters.
 
 If 
@@ -224,8 +223,8 @@ active set collective operations only permits strides that are a power of two.
 Arbitrary strides allow a greater number of PE subsets to be expressed
 and can support a broader range of usage models.
 
-See the description of team handles and predefined teams in
-Section~\ref{subsec:team} for more information about team handle semantics and usage.
+See the description of team handles and predefined teams
+for more information about team handle semantics and usage.
 
 ./ sectionEnd
 
