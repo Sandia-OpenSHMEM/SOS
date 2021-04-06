@@ -438,36 +438,36 @@ SHMEM_BIND_C_COLL_CMPLX(`SHMEM_C_TO_ALL', `prod')
 
 /* COLL: Collect Routines */
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_collect32(void *target, const void *source, size_t nlong,
-                     int PE_start, int logPE_stride, int PE_size, long *pSync);
+                     int PE_start, int logPE_stride, int PE_size, long *pSync) SHMEM_ATTRIBUTE_DEPRECATED;
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_collect64(void *target, const void *source, size_t nlong,
-                     int PE_start, int logPE_stride, int PE_size, long *pSync);
+                     int PE_start, int logPE_stride, int PE_size, long *pSync) SHMEM_ATTRIBUTE_DEPRECATED;
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_fcollect32(void *target, const void *source, size_t nlong,
                       int PE_start, int logPE_stride, int PE_size,
-                      long *pSync);
+                      long *pSync) SHMEM_ATTRIBUTE_DEPRECATED;
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_fcollect64(void *target, const void *source, size_t nlong,
                       int PE_start, int logPE_stride, int PE_size,
-                      long *pSync);
+                      long *pSync) SHMEM_ATTRIBUTE_DEPRECATED;
 
 /* COLL: Broadcast Routines */
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_broadcast32(void *target, const void *source, size_t nlong,
                        int PE_root, int PE_start, int logPE_stride,
-                       int PE_size, long *pSync);
+                       int PE_size, long *pSync) SHMEM_ATTRIBUTE_DEPRECATED;
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_broadcast64(void *target, const void *source, size_t nlong,
                        int PE_root, int PE_start, int logPE_stride,
-                       int PE_size, long *pSync);
+                       int PE_size, long *pSync) SHMEM_ATTRIBUTE_DEPRECATED;
 
 /* COLL: All-to-All routines */
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_alltoall32(void *dest, const void *source, size_t nelems, int PE_start,
-                      int logPE_stride, int PE_size, long *pSync);
+                      int logPE_stride, int PE_size, long *pSync) SHMEM_ATTRIBUTE_DEPRECATED;
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_alltoall64(void *dest, const void *source, size_t nelems, int PE_start,
-                      int logPE_stride, int PE_size, long *pSync);
+                      int logPE_stride, int PE_size, long *pSync) SHMEM_ATTRIBUTE_DEPRECATED;
 
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_alltoalls32(void *dest, const void *source, ptrdiff_t dst,
                        ptrdiff_t sst, size_t nelems, int PE_start,
-                       int logPE_stride, int PE_size, long *pSync);
+                       int logPE_stride, int PE_size, long *pSync) SHMEM_ATTRIBUTE_DEPRECATED;
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_alltoalls64(void *dest, const void *source, ptrdiff_t dst,
                        ptrdiff_t sst, size_t nelems, int PE_start,
-                       int logPE_stride, int PE_size, long *pSync);
+                       int logPE_stride, int PE_size, long *pSync) SHMEM_ATTRIBUTE_DEPRECATED;
 
 /* Point-to-Point Synchronization Routines */
 define(`SHMEM_C_WAIT',
