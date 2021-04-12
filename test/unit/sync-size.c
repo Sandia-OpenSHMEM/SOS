@@ -77,9 +77,9 @@ int main(int argc, char* argv[]) {
     /* Broadcast */
 
     if (long_is_32)
-        shmem_broadcast32(dst, src, N, 0, 0, 0, npes, pSync);
+        shmem_long_broadcast(SHMEM_TEAM_WORLD, dst, src, N, 0);
     else
-        shmem_broadcast64(dst, src, N, 0, 0, 0, npes, pSync);
+        shmem_long_broadcast(SHMEM_TEAM_WORLD, dst, src, N, 0);
 
     for (i = 0; i < N && me > 0; i++) {
         if (dst[i] != 0) {
