@@ -86,7 +86,7 @@ int main(void)
         if (me == i)
             printf(" + active set size %d\n", npes-i);
 
-        shmem_collect64(dst, src, me, i, 0, npes-i, collect_psync);
+        shmem_long_collect(SHMEM_TEAM_WORLD, dst, src, me);
 
         /* Validate destination buffer data */
         for (j = 0; j < npes - i; j++) {

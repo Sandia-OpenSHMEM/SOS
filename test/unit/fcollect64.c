@@ -193,7 +193,7 @@ main(int argc, char* argv[])
 
         shmem_barrier_all();
 
-        shmem_fcollect64(dst,src,nWords,0,0,num_pes,pSync);
+        shmem_long_fcollect(SHMEM_TEAM_WORLD, dst,src,nWords);
 
         // Expect dst to be consecuative integers 0 ... (nLongs*num_pes)-1
         for(j=0; j < (nWords*num_pes); j++) {

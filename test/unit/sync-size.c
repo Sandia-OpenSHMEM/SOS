@@ -76,10 +76,7 @@ int main(int argc, char* argv[]) {
 
     /* Broadcast */
 
-    if (long_is_32)
-        shmem_long_broadcast(SHMEM_TEAM_WORLD, dst, src, N, 0);
-    else
-        shmem_long_broadcast(SHMEM_TEAM_WORLD, dst, src, N, 0);
+    shmem_long_broadcast(SHMEM_TEAM_WORLD, dst, src, N, 0);
 
     for (i = 0; i < N && me > 0; i++) {
         if (dst[i] != 0) {
@@ -94,10 +91,7 @@ int main(int argc, char* argv[]) {
 
     long *dst_all = shmem_malloc(npes * N * sizeof(long));
 
-    if (long_is_32)
-        shmem_fcollect32(dst_all, src, N, 0, 0, npes, pSync);
-    else
-        shmem_fcollect64(dst_all, src, N, 0, 0, npes, pSync);
+    shmem_long_fcollect(SHMEM_TEAM_WORLD, dst_all, src, N);
 
     for (i = 0; i < npes; i++) {
         for (j = 0; j < N; j++) {

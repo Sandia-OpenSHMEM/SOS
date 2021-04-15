@@ -65,7 +65,7 @@ static void alltoall_test(int32_t *out, int32_t *in, int pe_start, int pe_stride
     shmem_barrier_all();
 
     if (is_active(me, pe_start, pe_stride, pe_size))
-        shmem_alltoall32(out, in, 1, pe_start, pe_stride, pe_size, pSync);
+        shmem_int_alltoall(SHMEM_TEAM_WORLD, out, in, 1);
 
     for (i = 0; i < npes; i++) {
         int expected;

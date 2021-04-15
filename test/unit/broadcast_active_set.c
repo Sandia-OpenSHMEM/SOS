@@ -77,7 +77,7 @@ int main(void)
         if (me == i)
             printf(" + active set size %d\n", npes-i);
 
-        shmem_broadcast64(dst, src, NELEM, 0, i, 0, npes-i, bcast_psync);
+        shmem_long_broadcast(SHMEM_TEAM_WORLD, dst, src, NELEM, 0);
 
         /* Validate broadcasted data */
         for (j = 0; j < NELEM; j++) {
@@ -109,7 +109,7 @@ int main(void)
         if (me == i)
             printf(" + root %d\n", i);
 
-        shmem_broadcast64(dst, src, NELEM, i, 0, 0, npes, bcast_psync);
+        shmem_long_broadcast(SHMEM_TEAM_WORLD, dst, src, NELEM, i);
 
         /* Validate broadcasted data */
         for (j = 0; j < NELEM; j++) {
