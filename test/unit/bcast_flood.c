@@ -163,7 +163,7 @@ main(int argc, char **argv)
 
         start_time = shmemx_wtime();
 
-        shmem_broadcast32(target, source, elements, 0, 0, 0, npes, &pSync[ps]);
+        shmem_int_broadcast(SHMEM_TEAM_WORLD, target, source, elements, 0);
 
         if (Serialize) shmem_barrier_all();
 
