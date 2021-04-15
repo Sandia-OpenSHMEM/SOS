@@ -83,36 +83,36 @@ int main(void) {
     if (me == 0) printf(" + broadcast\n");
 
     in_32 = me; out_32 = -1;
-    shmem_broadcast32(&in_32, &out_32, 1, 0, me, 0, 1, bcast_psync);
-    CHECK("shmem_broadcast32", -1, out_32);
+    shmem_int_broadcast(SHMEM_TEAM_WORLD, &in_32, &out_32, 1, 0);
+    CHECK("shmem_int_broadcast", -1, out_32);
     shmem_barrier_all();
 
     in_64 = me; out_64 = -1;
-    shmem_broadcast64(&in_64, &out_64, 1, 0, me, 0, 1, bcast_psync);
-    CHECK("shmem_broadcast64", -1, out_64);
+    shmem_long_broadcast(SHMEM_TEAM_WORLD, &in_64, &out_64, 1, 0);
+    CHECK("shmem_long_broadcast", -1, out_64);
     shmem_barrier_all();
 
     /* Collect */
     if (me == 0) printf(" + collect\n");
 
     in_32 = me; out_32 = -1;
-    shmem_fcollect32(&in_32, &out_32, 1, me, 0, 1, collect_psync);
-    CHECK("shmem_fcollect32", in_32, out_32);
+    shmem_int_fcollect(SHMEM_TEAM_WORLD, &in_32, &out_32, 1);
+    CHECK("shmem_int_fcollect", in_32, out_32);
     shmem_barrier_all();
 
     in_64 = me; out_64 = -1;
-    shmem_fcollect64(&in_64, &out_64, 1, me, 0, 1, collect_psync);
-    CHECK("shmem_fcollect64", in_64, out_64);
+    shmem_long_fcollect(SHMEM_TEAM_WORLD, &in_64, &out_64, 1);
+    CHECK("shmem_long_fcollect", in_64, out_64);
     shmem_barrier_all();
 
     in_32 = me; out_32 = -1;
-    shmem_collect32(&in_32, &out_32, 1, me, 0, 1, collect_psync);
-    CHECK("shmem_collect32", in_32, out_32);
+    shmem_int_collect(SHMEM_TEAM_WORLD, &in_32, &out_32, 1);
+    CHECK("shmem_int_collect", in_32, out_32);
     shmem_barrier_all();
 
     in_64 = me; out_64 = -1;
-    shmem_collect64(&in_64, &out_64, 1, me, 0, 1, collect_psync);
-    CHECK("shmem_collect64", in_64, out_64);
+    shmem_long_collect(SHMEM_TEAM_WORLD, &in_64, &out_64, 1);
+    CHECK("shmem_long_collect", in_64, out_64);
     shmem_barrier_all();
 
     /* Reduction */
@@ -157,23 +157,23 @@ int main(void) {
     if (me == 0) printf(" + all-to-all\n");
 
     in_32 = me; out_32 = -1;
-    shmem_alltoall32(&in_32, &out_32, 1, me, 0, 1, alltoall_psync);
-    CHECK("shmem_alltoall32", in_32, out_32);
+    shmem_int_alltoall(SHMEM_TEAM_WORLD, &in_32, &out_32, 1);
+    CHECK("shmem_int_alltoall", in_32, out_32);
     shmem_barrier_all();
 
     in_64 = me; out_64 = -1;
-    shmem_alltoall64(&in_64, &out_64, 1, me, 0, 1, alltoall_psync);
-    CHECK("shmem_alltoall64", in_64, out_64);
+    shmem_long_alltoall(SHMEM_TEAM_WORLD, &in_64, &out_64, 1);
+    CHECK("shmem_long_alltoall", in_64, out_64);
     shmem_barrier_all();
 
     in_32 = me; out_32 = -1;
-    shmem_alltoalls32(&in_32, &out_32, 1, 1, 1, me, 0, 1, alltoalls_psync);
-    CHECK("shmem_alltoalls32", in_32, out_32);
+    shmem_int_alltoalls(SHMEM_TEAM_WORLD, &in_32, &out_32, 1, 1, 1);
+    CHECK("shmem_int_alltoalls", in_32, out_32);
     shmem_barrier_all();
 
     in_64 = me; out_64 = -1;
-    shmem_alltoalls64(&in_64, &out_64, 1, 1, 1, me, 0, 1, alltoalls_psync);
-    CHECK("shmem_alltoalls64", in_64, out_64);
+    shmem_long_alltoalls(SHMEM_TEAM_WORLD, &in_64, &out_64, 1, 1, 1);
+    CHECK("shmem_long_alltoalls", in_64, out_64);
     shmem_barrier_all();
 
     if (me == 0) printf("Done\n");

@@ -67,20 +67,20 @@ int main(void) {
     if (me == 0) printf("Testing zero length collectives\n");
 
     if (me == 0) printf(" + broadcast\n");
-    shmem_broadcast32(NULL, NULL, 0, 0, 0, 0, npes, bcast_psync);
+    shmem_int_broadcast(SHMEM_TEAM_WORLD, NULL, NULL, 0, 0);
     shmem_barrier_all();
-    shmem_broadcast64(NULL, NULL, 0, 0, 0, 0, npes, bcast_psync);
+    shmem_long_broadcast(SHMEM_TEAM_WORLD, NULL, NULL, 0, 0);
     shmem_barrier_all();
 
     if (me == 0) printf(" + collect\n");
-    shmem_fcollect32(NULL, NULL, 0, 0, 0, npes, collect_psync);
+    shmem_int_fcollect(SHMEM_TEAM_WORLD, NULL, NULL, 0);
     shmem_barrier_all();
-    shmem_fcollect64(NULL, NULL, 0, 0, 0, npes, collect_psync);
+    shmem_long_fcollect(SHMEM_TEAM_WORLD, NULL, NULL, 0);
     shmem_barrier_all();
 
-    shmem_collect32(NULL, NULL, 0, 0, 0, npes, collect_psync);
+    shmem_int_collect(SHMEM_TEAM_WORLD, NULL, NULL, 0);
     shmem_barrier_all();
-    shmem_collect64(NULL, NULL, 0, 0, 0, npes, collect_psync);
+    shmem_long_collect(SHMEM_TEAM_WORLD, NULL, NULL, 0);
     shmem_barrier_all();
 
     if (me == 0) printf(" + reduction\n");
@@ -100,14 +100,14 @@ int main(void) {
     shmem_barrier_all();
 
     if (me == 0) printf(" + all-to-all\n");
-    shmem_alltoall32(NULL, NULL, 0, 0, 0, npes, alltoall_psync);
+    shmem_int_alltoall(SHMEM_TEAM_WORLD, NULL, NULL, 0);
     shmem_barrier_all();
-    shmem_alltoall64(NULL, NULL, 0, 0, 0, npes, alltoall_psync);
+    shmem_long_alltoall(SHMEM_TEAM_WORLD, NULL, NULL, 0);
     shmem_barrier_all();
 
-    shmem_alltoalls32(NULL, NULL, 1, 1, 0, 0, 0, npes, alltoalls_psync);
+    shmem_int_alltoalls(SHMEM_TEAM_WORLD, NULL, NULL, 1, 1, 0);
     shmem_barrier_all();
-    shmem_alltoalls64(NULL, NULL, 1, 1, 0, 0, 0, npes, alltoalls_psync);
+    shmem_long_alltoalls(SHMEM_TEAM_WORLD, NULL, NULL, 1, 1, 0);
 
     if (me == 0) printf("Done\n");
 
