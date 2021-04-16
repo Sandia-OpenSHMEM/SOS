@@ -647,11 +647,6 @@ int check_hostname_validation(const perf_metrics_t * const my_info) {
                          MAX_HOSTNAME_LEN + (4 - MAX_HOSTNAME_LEN % 4);
     int i, errors = 0;
 
-    /* pSync for fcollect of hostnames */
-    static long pSync_collect[SHMEM_COLLECT_SYNC_SIZE];
-    for (i = 0; i < SHMEM_COLLECT_SYNC_SIZE; i++)
-        pSync_collect[i] = SHMEM_SYNC_VALUE;
-
     char *hostname = (char *) shmem_malloc (hostname_size * sizeof(char));
     char *dest = (char *) shmem_malloc (my_info->num_pes * hostname_size *
                                         sizeof(char));
@@ -669,8 +664,7 @@ int check_hostname_validation(const perf_metrics_t * const my_info) {
     shmem_barrier_all();
 
     /* nelems needs to be updated based on 32-bit API */
-    shmem_fcollect32(dest, hostname, hostname_size/4, 0, 0, my_info->num_pes,
-                     pSync_collect);
+    shmem_char_fcollect(SHMEM_TEAM_WORLD, dest, hostname, hostname_size/4);
 
     char *snode_name = NULL;
     char *tnode_name = NULL;
