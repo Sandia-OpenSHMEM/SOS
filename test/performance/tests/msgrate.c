@@ -299,23 +299,23 @@ main(int argc, char *argv[])
     shmem_barrier_all();
 
     /* broadcast results */
-    shmem_broadcast32(&start_err, &start_err, 1, 0, 0, 0, world_size, bcast_pSync);
+    shmem_int_broadcast(SHMEM_TEAM_WORLD, &start_err, &start_err, 1, 0);
     if (0 != start_err) {
         shmem_finalize();
         exit(start_err);
     }
     shmem_barrier_all();
-    shmem_broadcast32(&npeers, &npeers, 1, 0, 0, 0, world_size, bcast_pSync);
+    shmem_int_broadcast(SHMEM_TEAM_WORLD, &npeers, &npeers, 1, 0);
     shmem_barrier_all();
-    shmem_broadcast32(&niters, &niters, 1, 0, 0, 0, world_size, bcast_pSync);
+    shmem_int_broadcast(SHMEM_TEAM_WORLD, &niters, &niters, 1, 0);
     shmem_barrier_all();
-    shmem_broadcast32(&nmsgs, &nmsgs, 1, 0, 0, 0, world_size, bcast_pSync);
+    shmem_int_broadcast(SHMEM_TEAM_WORLD, &nmsgs, &nmsgs, 1, 0);
     shmem_barrier_all();
-    shmem_broadcast32(&nbytes, &nbytes, 1, 0, 0, 0, world_size, bcast_pSync);
+    shmem_int_broadcast(SHMEM_TEAM_WORLD, &nbytes, &nbytes, 1, 0);
     shmem_barrier_all();
-    shmem_broadcast32(&cache_size, &cache_size, 1, 0, 0, 0, world_size, bcast_pSync);
+    shmem_int_broadcast(SHMEM_TEAM_WORLD, &cache_size, &cache_size, 1, 0);
     shmem_barrier_all();
-    shmem_broadcast32(&ppn, &ppn, 1, 0, 0, 0, world_size, bcast_pSync);
+    shmem_int_broadcast(SHMEM_TEAM_WORLD, &ppn, &ppn, 1, 0);
     shmem_barrier_all();
     if (0 == rank) {
         if (!machine_output) {

@@ -322,7 +322,6 @@ SHMEMRandomAccess(void)
   uint64_t NumUpdates; /* total number of updates to table */
   uint64_t ProcNumUpdates; /* number of updates per processor */
 
-  static long pSync_bcast[SHMEM_BCAST_SYNC_SIZE];
   static long long int llpWrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
 
   static long pSync_reduce[SHMEM_REDUCE_SYNC_SIZE];
@@ -332,10 +331,6 @@ SHMEMRandomAccess(void)
   double *GUPs;
   double *temp_GUPs;
 
-
-  for (i = 0; i < SHMEM_BCAST_SYNC_SIZE; i += 1){
-        pSync_bcast[i] = SHMEM_SYNC_VALUE;
-  }
 
   for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i += 1){
         pSync_reduce[i] = SHMEM_SYNC_VALUE;
@@ -468,7 +463,7 @@ SHMEMRandomAccess(void)
   /* distribute result to all nodes */
   temp_GUPs = GUPs;
   shmem_barrier_all();
-  shmem_broadcast64(GUPs,temp_GUPs,1,0,0,0,NumProcs,pSync_bcast);
+  shmem_double_broadcast(SHMEM_TEAM_WORLD,GUPs,temp_GUPs,1,0);
   shmem_barrier_all();
 
   /* Verification phase */
