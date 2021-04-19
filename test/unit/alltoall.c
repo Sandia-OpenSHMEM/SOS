@@ -29,14 +29,6 @@
 #include <stdint.h>
 #include <shmem.h>
 
-long pSync[SHMEM_ALLTOALL_SYNC_SIZE];
-
-static int is_active(int pe, int pe_start, int pe_stride, int pe_size) {
-    int stride = 1 << pe_stride;
-
-    return pe >= pe_start && pe < pe_start + pe_size * stride && (pe - pe_start) % stride == 0;
-}
-
 /* Tranlate a group PE index to a global PE rank. */
 static int pe_group_to_world(int group_pe, int pe_start, int pe_stride, int pe_size) {
     int stride = 1 << pe_stride;
@@ -64,13 +56,15 @@ static void alltoall_test(int32_t *out, int32_t *in, int pe_start, int pe_stride
 
     shmem_barrier_all();
 
-    if (is_active(me, pe_start, pe_stride, pe_size))
-        shmem_int_alltoall(SHMEM_TEAM_WORLD, out, in, 1);
+    shmem_team_t new_team;
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, pe_start, pe_stride, pe_size, NULL, 0, &new_team);
+    if (new_team != SHMEM_TEAM_INVALID)
+        shmem_int32_alltoall(new_team, out, in, 1);
 
     for (i = 0; i < npes; i++) {
         int expected;
 
-        if (is_active(me, pe_start, pe_stride, pe_size))
+        if (new_team != SHMEM_TEAM_INVALID)
             expected = pe_group_to_world(i, pe_start, pe_stride, pe_size);
         else
             expected = -1;
@@ -87,15 +81,12 @@ static void alltoall_test(int32_t *out, int32_t *in, int pe_start, int pe_stride
 
 
 int main(int argc, char **argv) {
-    int npes, i;
+    int npes;
     int32_t *in, *out;
 
     shmem_init();
 
     npes = shmem_n_pes();
-
-    for (i = 0; i < SHMEM_ALLTOALL_SYNC_SIZE; i++)
-        pSync[i] = SHMEM_SYNC_VALUE;
 
     in = shmem_malloc(4 * npes);
     out = shmem_malloc(4 * npes);
