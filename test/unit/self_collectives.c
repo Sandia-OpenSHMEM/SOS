@@ -49,6 +49,7 @@ int pwrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
 int in, out;
 int32_t in_32, out_32;
 int64_t in_64, out_64;
+shmem_team_t new_team;
 
 int main(void) {
     int i, errors = 0;
@@ -83,36 +84,54 @@ int main(void) {
     if (me == 0) printf(" + broadcast\n");
 
     in_32 = me; out_32 = -1;
-    shmem_int_broadcast(SHMEM_TEAM_WORLD, &in_32, &out_32, 1, 0);
-    CHECK("shmem_int_broadcast", -1, out_32);
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, me, 1, 1, NULL, 0, &new_team);
+    if (new_team != SHMEM_TEAM_INVALID) {
+        shmem_int32_broadcast(SHMEM_TEAM_WORLD, &in_32, &out_32, 1, 0);
+        CHECK("shmem_int32_broadcast", -1, out_32);
+    }
     shmem_barrier_all();
 
     in_64 = me; out_64 = -1;
-    shmem_long_broadcast(SHMEM_TEAM_WORLD, &in_64, &out_64, 1, 0);
-    CHECK("shmem_long_broadcast", -1, out_64);
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, me, 1, 1, NULL, 0, &new_team);
+    if (new_team != SHMEM_TEAM_INVALID) {
+        shmem_int64_broadcast(SHMEM_TEAM_WORLD, &in_64, &out_64, 1, 0);
+        CHECK("shmem_int64_broadcast", -1, out_64);
+    }
     shmem_barrier_all();
 
     /* Collect */
     if (me == 0) printf(" + collect\n");
 
     in_32 = me; out_32 = -1;
-    shmem_int_fcollect(SHMEM_TEAM_WORLD, &in_32, &out_32, 1);
-    CHECK("shmem_int_fcollect", in_32, out_32);
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, me, 1, 1, NULL, 0, &new_team);
+    if (new_team != SHMEM_TEAM_INVALID) {
+        shmem_int32_fcollect(SHMEM_TEAM_WORLD, &in_32, &out_32, 1);
+        CHECK("shmem_int32_fcollect", in_32, out_32);
+    }
     shmem_barrier_all();
 
     in_64 = me; out_64 = -1;
-    shmem_long_fcollect(SHMEM_TEAM_WORLD, &in_64, &out_64, 1);
-    CHECK("shmem_long_fcollect", in_64, out_64);
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, me, 1, 1, NULL, 0, &new_team);
+    if (new_team != SHMEM_TEAM_INVALID) {
+        shmem_int64_fcollect(SHMEM_TEAM_WORLD, &in_64, &out_64, 1);
+        CHECK("shmem_int64_fcollect", in_64, out_64);
+    }
     shmem_barrier_all();
 
     in_32 = me; out_32 = -1;
-    shmem_int_collect(SHMEM_TEAM_WORLD, &in_32, &out_32, 1);
-    CHECK("shmem_int_collect", in_32, out_32);
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, me, 1, 1, NULL, 0, &new_team);
+    if (new_team != SHMEM_TEAM_INVALID) {
+        shmem_int32_collect(SHMEM_TEAM_WORLD, &in_32, &out_32, 1);
+        CHECK("shmem_int32_collect", in_32, out_32);
+    }
     shmem_barrier_all();
 
     in_64 = me; out_64 = -1;
-    shmem_long_collect(SHMEM_TEAM_WORLD, &in_64, &out_64, 1);
-    CHECK("shmem_long_collect", in_64, out_64);
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, me, 1, 1, NULL, 0, &new_team);
+    if (new_team != SHMEM_TEAM_INVALID) {
+        shmem_int64_collect(SHMEM_TEAM_WORLD, &in_64, &out_64, 1);
+        CHECK("shmem_int64_collect", in_64, out_64);
+    }
     shmem_barrier_all();
 
     /* Reduction */
@@ -157,23 +176,35 @@ int main(void) {
     if (me == 0) printf(" + all-to-all\n");
 
     in_32 = me; out_32 = -1;
-    shmem_int_alltoall(SHMEM_TEAM_WORLD, &in_32, &out_32, 1);
-    CHECK("shmem_int_alltoall", in_32, out_32);
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, me, 1, 1, NULL, 0, &new_team);
+    if (new_team != SHMEM_TEAM_INVALID) {
+        shmem_int32_alltoall(new_team, &in_32, &out_32, 1);
+      CHECK("shmem_int32_alltoall", in_32, out_32);
+    }
     shmem_barrier_all();
 
     in_64 = me; out_64 = -1;
-    shmem_long_alltoall(SHMEM_TEAM_WORLD, &in_64, &out_64, 1);
-    CHECK("shmem_long_alltoall", in_64, out_64);
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, me, 1, 1, NULL, 0, &new_team);
+    if (new_team != SHMEM_TEAM_INVALID) {
+        shmem_int64_alltoall(new_team, &in_64, &out_64, 1);
+        CHECK("shmem_int64_alltoall", in_64, out_64);
+    }
     shmem_barrier_all();
 
     in_32 = me; out_32 = -1;
-    shmem_int_alltoalls(SHMEM_TEAM_WORLD, &in_32, &out_32, 1, 1, 1);
-    CHECK("shmem_int_alltoalls", in_32, out_32);
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, me, 1, 1, NULL, 0, &new_team);
+    if (new_team != SHMEM_TEAM_INVALID) {
+        shmem_int32_alltoalls(new_team, &in_32, &out_32, 1, 1, 1);
+        CHECK("shmem_int32_alltoalls", in_32, out_32);
+    }
     shmem_barrier_all();
 
     in_64 = me; out_64 = -1;
-    shmem_long_alltoalls(SHMEM_TEAM_WORLD, &in_64, &out_64, 1, 1, 1);
-    CHECK("shmem_long_alltoalls", in_64, out_64);
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, me, 1, 1, NULL, 0, &new_team);
+    if (new_team != SHMEM_TEAM_INVALID) {
+        shmem_int64_alltoalls(new_team, &in_64, &out_64, 1, 1, 1);
+        CHECK("shmem_int64_alltoalls", in_64, out_64);
+    }
     shmem_barrier_all();
 
     if (me == 0) printf("Done\n");

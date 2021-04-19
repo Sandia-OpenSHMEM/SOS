@@ -42,7 +42,7 @@ long src[N];
 long dst[N];
 
 int main(int argc, char* argv[]) {
-    int i, j, me, npes, long_is_32;
+    int i, j, me, npes;
     int errors = 0;
 
     for (i = 0; i < SHMEM_SYNC_SIZE; i++) {
@@ -54,15 +54,6 @@ int main(int argc, char* argv[]) {
 
     me = shmem_my_pe();
     npes = shmem_n_pes();
-
-    if (sizeof(long) == 4) {
-        long_is_32 = 1;
-    } else if (sizeof(long) == 8) {
-        long_is_32 = 0;
-    } else {
-        printf("Error: sizeof(long) == %zu, must be either 4 or 8\n", sizeof(long));
-        shmem_global_exit(1);
-    }
 
     for (i = 0; i < N; i += 1) {
         src[i] = me;
