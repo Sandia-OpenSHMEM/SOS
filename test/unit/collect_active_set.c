@@ -79,6 +79,43 @@ int main(void)
 
     /* A total of npes tests are performed, where the active set in each test
      * includes PEs i..npes-1 and each PE contributes PE ID elements */
+#ifdef ENABLE_DEPRECATED_TESTS
+    for (i = 0; i < me; i++) {
+        int j, k;
+        int idx = 0;
+
+        if (me == i)
+            printf(" + active set size %d\n", npes-i);
+
+        shmem_long_collect(dst, src, me, i, 0, npes-i, collect_psync);
+
+        /* Validate destination buffer data */
+        for (j = 0; j < npes - i; j++) {
+            for (k = 0; k < i+j; k++, idx++) {
+                if (dst[idx] != i+j) {
+                    printf("%d: Expected dst[%d] = %d, got dst[%d] = %"PRId64", iteration %d\n",
+                           me, idx, i+j, idx, dst[idx], i);
+                    errors++;
+                }
+            }
+        }
+
+        /* Validate unused destination buffer */
+        for ( ; idx < MAX_NPES*MAX_NPES; idx++) {
+            if (dst[idx] != -1) {
+                printf("%d: Expected dst[%d] = %d, got dst[%d] = %"PRId64", iteration %d\n",
+                       me, idx, -1, idx, dst[idx], i);
+                errors++;
+            }
+        }
+
+        /* Reset for next iteration */
+        for (j = 0; j < MAX_NPES*MAX_NPES; j++)
+            dst[j] = -1;
+
+        shmem_barrier(i, 0, npes-i, (i % 2) ? barrier_psync0 : barrier_psync1);
+    }
+#else
     shmem_team_t new_team;
     for (i = 0; i < npes; i++) {
         int j, k;
@@ -118,6 +155,7 @@ int main(void)
 
         shmem_barrier_all();
     }
+#endif
 
     shmem_finalize();
 
