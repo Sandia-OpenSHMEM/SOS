@@ -32,17 +32,19 @@
 
 #define NELEM 10
 
-long bcast_psync[SHMEM_COLLECT_SYNC_SIZE];
+#ifdef ENABLE_DEPRECATED_TESTS
+long bcast_psync[SHMEM_BCAST_SYNC_SIZE];
 
 /* Note: Need to alternate psync arrays because the active set changes */
 long barrier_psync0[SHMEM_BARRIER_SYNC_SIZE];
 long barrier_psync1[SHMEM_BARRIER_SYNC_SIZE];
+#endif
 
 int64_t src[NELEM];
 int64_t dst[NELEM];
 
 /* Validate broadcasted data */
-int validate_data(int i) {
+static int validate_data(int i) {
     int errors = 0;
     int j;
     for (j = 0; j < NELEM; j++) {
@@ -95,9 +97,9 @@ int main(void)
             printf("+ active set size %d\n", npes-i);
         }
 
-        shmem_long_broadcast(dst, src, NELEM, 0, i, 0, npes-i, bcast_psync);
+        shmem_broadcast64(dst, src, NELEM, 0, i, 0, npes-i, bcast_psync);
 
-        errors = validate_data(i);
+        errors += validate_data(i);
         shmem_barrier(i, 0, npes-i, (i % 2) ? barrier_psync0 : barrier_psync1);
     }
 #else
@@ -110,12 +112,13 @@ int main(void)
 
         shmem_team_split_strided(SHMEM_TEAM_WORLD, i, 1, npes-i, NULL, 0, &new_team);
         if (new_team != SHMEM_TEAM_INVALID) {
-            shmem_long_broadcast(new_team, dst, src, NELEM, 0);
+            shmem_int64_broadcast(new_team, dst, src, NELEM, 0);
 
-        errors = validate_data(i);
+            errors += validate_data(i);
         }
 
         shmem_barrier_all();
+
     }
 #endif
 
@@ -135,9 +138,9 @@ int main(void)
         if (me == i)
             printf(" + root %d\n", i);
 
-        shmem_long_broadcast(SHMEM_TEAM_WORLD, dst, src, NELEM, i);
+        shmem_int64_broadcast(SHMEM_TEAM_WORLD, dst, src, NELEM, i);
 
-        errors = validate_data(i);
+        errors += validate_data(i);
 
         shmem_barrier_all();
     }
