@@ -32,14 +32,47 @@
 
 #define MAX_NPES 32
 
+#ifdef ENABLE_DEPRECATED_TESTS
 long collect_psync[SHMEM_COLLECT_SYNC_SIZE];
 
 /* Note: Need to alternate psync arrays because the active set changes */
 long barrier_psync0[SHMEM_BARRIER_SYNC_SIZE];
 long barrier_psync1[SHMEM_BARRIER_SYNC_SIZE];
+#endif
 
 int64_t src[MAX_NPES];
 int64_t dst[MAX_NPES*MAX_NPES];
+
+/* Validate broadcasted data */
+static int validate_data(int i, int me, int npes) {
+    int idx = 0;
+    int errors = 0;
+    /* Validate destination buffer data */
+    for (int j = 0; j < npes - i; j++) {
+        for (int k = 0; k < i+j; k++, idx++) {
+            if (dst[idx] != i+j) {
+                printf("%d: Expected dst[%d] = %d, got dst[%d] = %"PRId64", iteration %d\n",
+                       me, idx, i+j, idx, dst[idx], i);
+                errors++;
+            }
+        }
+    }
+
+    /* Validate unused destination buffer */
+    for ( ; idx < MAX_NPES*MAX_NPES; idx++) {
+        if (dst[idx] != -1) {
+            printf("%d: Expected dst[%d] = %d, got dst[%d] = %"PRId64", iteration %d\n",
+                   me, idx, -1, idx, dst[idx], i);
+            errors++;
+        }
+    }
+
+    /* Reset for next iteration */
+    for (int j = 0; j < MAX_NPES*MAX_NPES; j++)
+        dst[j] = -1;
+
+    return errors;
+}
 
 int main(void)
 {
@@ -64,6 +97,7 @@ int main(void)
     for (i = 0; i < MAX_NPES*MAX_NPES; i++)
         dst[i] = -1;
 
+#ifdef ENABLE_DEPRECATED_TESTS
     for (i = 0; i < SHMEM_COLLECT_SYNC_SIZE; i++)
         collect_psync[i] = SHMEM_SYNC_VALUE;
 
@@ -71,6 +105,7 @@ int main(void)
         barrier_psync0[i] = SHMEM_SYNC_VALUE;
         barrier_psync1[i] = SHMEM_SYNC_VALUE;
     }
+#endif
 
     if (me == 0)
         printf("Shrinking active set test\n");
@@ -81,78 +116,25 @@ int main(void)
      * includes PEs i..npes-1 and each PE contributes PE ID elements */
 #ifdef ENABLE_DEPRECATED_TESTS
     for (i = 0; i < me; i++) {
-        int j, k;
-        int idx = 0;
-
         if (me == i)
             printf(" + active set size %d\n", npes-i);
 
-        shmem_long_collect(dst, src, me, i, 0, npes-i, collect_psync);
-
-        /* Validate destination buffer data */
-        for (j = 0; j < npes - i; j++) {
-            for (k = 0; k < i+j; k++, idx++) {
-                if (dst[idx] != i+j) {
-                    printf("%d: Expected dst[%d] = %d, got dst[%d] = %"PRId64", iteration %d\n",
-                           me, idx, i+j, idx, dst[idx], i);
-                    errors++;
-                }
-            }
-        }
-
-        /* Validate unused destination buffer */
-        for ( ; idx < MAX_NPES*MAX_NPES; idx++) {
-            if (dst[idx] != -1) {
-                printf("%d: Expected dst[%d] = %d, got dst[%d] = %"PRId64", iteration %d\n",
-                       me, idx, -1, idx, dst[idx], i);
-                errors++;
-            }
-        }
-
-        /* Reset for next iteration */
-        for (j = 0; j < MAX_NPES*MAX_NPES; j++)
-            dst[j] = -1;
+        shmem_collect64(dst, src, me, i, 0, npes-i, collect_psync);
+        errors += validate_data(i, me, npes);
 
         shmem_barrier(i, 0, npes-i, (i % 2) ? barrier_psync0 : barrier_psync1);
     }
 #else
     shmem_team_t new_team;
     for (i = 0; i < npes; i++) {
-        int j, k;
-        int idx = 0;
-
         if (me == i)
             printf(" + active set size %d\n", npes-i);
 
         shmem_team_split_strided(SHMEM_TEAM_WORLD, i, 1, npes-i, NULL, 0, &new_team);
         if (new_team != SHMEM_TEAM_INVALID) {
-            shmem_long_collect(new_team, dst, src, me);
-
-            /* Validate destination buffer data */
-            for (j = 0; j < npes - i; j++) {
-                for (k = 0; k < i+j; k++, idx++) {
-                    if (dst[idx] != i+j) {
-                        printf("%d: Expected dst[%d] = %d, got dst[%d] = %"PRId64", iteration %d\n",
-                               me, idx, i+j, idx, dst[idx], i);
-                        errors++;
-                    }
-                }
-            }
+            shmem_int64_collect(new_team, dst, src, me);
+            errors += validate_data(i, me, npes);
         }
-
-        /* Validate unused destination buffer */
-        for ( ; idx < MAX_NPES*MAX_NPES; idx++) {
-            if (dst[idx] != -1) {
-                printf("%d: Expected dst[%d] = %d, got dst[%d] = %"PRId64", iteration %d\n",
-                       me, idx, -1, idx, dst[idx], i);
-                errors++;
-            }
-        }
-
-        /* Reset for next iteration */
-        for (j = 0; j < MAX_NPES*MAX_NPES; j++)
-            dst[j] = -1;
-
         shmem_barrier_all();
     }
 #endif
