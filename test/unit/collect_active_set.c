@@ -115,7 +115,7 @@ int main(void)
     /* A total of npes tests are performed, where the active set in each test
      * includes PEs i..npes-1 and each PE contributes PE ID elements */
 #ifdef ENABLE_DEPRECATED_TESTS
-    for (i = 0; i < me; i++) {
+    for (i = 0; i <= me; i++) {
         if (me == i)
             printf(" + active set size %d\n", npes-i);
 
