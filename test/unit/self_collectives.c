@@ -220,7 +220,7 @@ int main(void) {
 
     in_32 = me; out_32 = -1;
 #ifdef ENABLE_DEPRECATED_TESTS
-    shmem_alltoalls32(&in_32, &out_32, 1, 1. 1, me, 0, 1, alltoalls_psync);
+    shmem_alltoalls32(&in_32, &out_32, 1, 1, 1, me, 0, 1, alltoalls_psync);
     CHECK("shmem_alltoalls32", in_32, out_32);
 #else
     if (new_team != SHMEM_TEAM_INVALID)
@@ -231,7 +231,7 @@ int main(void) {
 
     in_64 = me; out_64 = -1;
 #ifdef ENABLE_DEPRECATED_TESTS
-    shmem_alltoalls64(&in_64, &out_64, 1, 1. 1, me, 0, 1, alltoalls_psync);
+    shmem_alltoalls64(&in_64, &out_64, 1, 1, 1, me, 0, 1, alltoalls_psync);
     CHECK("shmem_alltoalls64", in_64, out_64);
 #else
     if (new_team != SHMEM_TEAM_INVALID)
