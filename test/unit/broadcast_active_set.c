@@ -138,7 +138,11 @@ int main(void)
         if (me == i)
             printf(" + root %d\n", i);
 
+#ifdef ENABLE_DEPRECATED_TESTS
+        shmem_broadcast64(dst, src, NELEM, i, 0, 0, npes, bcast_psync);
+#else
         shmem_int64_broadcast(SHMEM_TEAM_WORLD, dst, src, NELEM, i);
+#endif
 
         errors += validate_data(i);
 
