@@ -43,8 +43,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-long pSync[SHMEM_BCAST_SYNC_SIZE];
-
 #define START_BCAST_SIZE 16
 #define BCAST_INCR 1024
 
@@ -88,10 +86,6 @@ main(int argc, char* argv[])
             shmem_finalize();
             exit(1);
         }
-    }
-
-    for (i = 0; i < SHMEM_BCAST_SYNC_SIZE; i += 1) {
-        pSync[i] = SHMEM_SYNC_VALUE;
     }
 
     if ( mpe == 0 && Verbose ) {

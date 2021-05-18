@@ -71,7 +71,6 @@ int Verbose;
 
 long *dst;
 long *src;
-long pSync[SHMEM_COLLECT_SYNC_SIZE];
 
 static int
 atoi_scaled(char *s)
@@ -168,9 +167,6 @@ main(int argc, char* argv[])
         shmem_finalize();
         return 1;
     }
-
-    for (c = 0; c < SHMEM_COLLECT_SYNC_SIZE;c++)
-        pSync[c] = SHMEM_SYNC_VALUE;
 
     if (Verbose && mpe == 0)
         fprintf(stderr,"loops(%d) nWords(%d) incr-per-loop(%d)\n",

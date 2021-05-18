@@ -49,7 +49,6 @@ int pwrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
 int in, out;
 int32_t in_32, out_32;
 int64_t in_64, out_64;
-shmem_team_t new_team;
 
 int main(void) {
     int i, errors = 0;
@@ -83,8 +82,11 @@ int main(void) {
     /* Note: Broadcast does not modify the output buffer at the root */
     if (me == 0) printf(" + broadcast\n");
 
+#ifndef ENABLE_DEPRECATED_TESTS
     /* Set up active set team (start=me, stride=1, size=1) for all tests*/
+    shmem_team_t new_team;
     shmem_team_split_strided(SHMEM_TEAM_WORLD, me, 1, 1, NULL, 0, &new_team);
+#endif
 
     in_32 = me; out_32 = -1;
 #ifdef ENABLE_DEPRECATED_TESTS
