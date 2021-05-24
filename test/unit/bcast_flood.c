@@ -55,8 +55,6 @@ static double shmemx_wtime(void) {
 int Verbose=0;
 int Serialize;
 
-long *pSync;
-
 #define DFLT_LOOPS 600      // downsized for 'make check'
 //#define DFLT_LOOPS 10000
 #define N_ELEMENTS 25600    /*100 KB as ints */
@@ -64,7 +62,7 @@ long *pSync;
 int
 main(int argc, char **argv)
 {
-    int i,ps,ps_cnt=2;
+    int i;
     int *target;
     int *source;
     int me, npes, elements=N_ELEMENTS, loops=DFLT_LOOPS;
@@ -101,13 +99,6 @@ main(int argc, char **argv)
                   return 1;
               }
               break;
-          case 'p':
-              if ((ps_cnt = atoi_scaled(optarg)) <= 0) {
-                  fprintf(stderr,"ERR: Bad pSync[] elements %d\n",loops);
-                  shmem_finalize();
-                  return 1;
-              }
-              break;
           case 's':
               Serialize++;
               break;
@@ -123,17 +114,6 @@ main(int argc, char **argv)
               shmem_finalize();
               return 1;
         }
-    }
-
-    ps_cnt *= SHMEM_BCAST_SYNC_SIZE;
-    pSync = shmem_malloc( ps_cnt * sizeof(long) );
-    if (!pSync) {
-        fprintf(stderr, "ERR - null pSync pointer\n");
-        shmem_global_exit(1);
-    }
-
-    for (i = 0; i < ps_cnt; i++) {
-      pSync[i] = SHMEM_SYNC_VALUE;
     }
 
     source = (int *) shmem_malloc( elements * sizeof(*source) );
@@ -153,26 +133,22 @@ main(int argc, char **argv)
     }
 
     if (me==0 && Verbose) {
-        fprintf(stderr,"ps_cnt %d loops %d nElems %d\n",
-                        ps_cnt,loops,elements);
+        fprintf(stderr,"loops %d nElems %d\n",
+                        loops,elements);
     }
 
     shmem_barrier_all();
 
-    for(time_taken = 0.0, ps = i = 0; i < loops; i++) {
+    for(time_taken = 0.0, i = 0; i < loops; i++) {
 
         start_time = shmemx_wtime();
 
-        shmem_broadcast32(target, source, elements, 0, 0, 0, npes, &pSync[ps]);
+        shmem_int_broadcast(SHMEM_TEAM_WORLD, target, source, elements, 0);
 
         if (Serialize) shmem_barrier_all();
 
         time_taken += (shmemx_wtime() - start_time);
 
-        if (ps_cnt > 1 ) {
-            ps += SHMEM_BCAST_SYNC_SIZE;
-            if ( ps >= ps_cnt ) ps = 0;
-        }
     }
 
     if(me == 0 && Verbose) {
@@ -189,7 +165,6 @@ main(int argc, char **argv)
 
     if (Verbose > 1)  fprintf(stderr,"[%d] post B1\n",me);
 
-    shmem_free(pSync);
     shmem_free(target);
     shmem_free(source);
 
@@ -228,7 +203,6 @@ usage(char *pgm)
         "  where:\n"
         "    -l loops (%d)  loop count.\n"
         "    -e ints        # of integers to broadcast\n"
-        "    -p cnt         # of pSync[] elements\n"
         "    -v             be verbose, multiple 'v' more verbose\n"
         "    -h             this text.\n",
         pgm,DFLT_LOOPS);

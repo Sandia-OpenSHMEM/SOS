@@ -31,14 +31,6 @@
 
 #define NELEM 16
 
-long pSync[SHMEM_ALLTOALLS_SYNC_SIZE];
-
-static int is_active(int pe, int pe_start, int pe_stride, int pe_size) {
-    int stride = 1 << pe_stride;
-
-    return pe >= pe_start && pe < pe_start + pe_size * stride && (pe - pe_start) % stride == 0;
-}
-
 /* Tranlate a group PE index to a global PE rank. */
 static int pe_group_to_world(int group_pe, int pe_start, int pe_stride, int pe_size) {
     int stride = 1 << pe_stride;
@@ -67,9 +59,10 @@ static void alltoalls_test(int32_t *out, int32_t *in, int dst, int sst, int nele
 
     shmem_barrier_all();
 
-    if (is_active(me, pe_start, pe_stride, pe_size))
-        shmem_alltoalls32(out, in, dst, sst, nelem,
-                          pe_start, pe_stride, pe_size, pSync);
+    shmem_team_t new_team;
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, pe_start, pe_stride, pe_size, NULL, 0, &new_team);
+    if (new_team != SHMEM_TEAM_INVALID)
+        shmem_int32_alltoalls(new_team, out, in, dst, sst, nelem);
 
     for (i = 0; i < npes; i++) {
         int expected;
@@ -77,7 +70,7 @@ static void alltoalls_test(int32_t *out, int32_t *in, int dst, int sst, int nele
         for (j = 0; j < nelem; j++) {
             for (k = 0; k < dst; k++) {
                 int idx = i*dst*nelem + j*dst + k;
-                if (is_active(me, pe_start, pe_stride, pe_size))
+                if (new_team != SHMEM_TEAM_INVALID)
                     expected = (k % dst == 0) ? pe_group_to_world(i, pe_start, pe_stride, pe_size) : -1;
                 else
                     expected = -1;
@@ -96,15 +89,12 @@ static void alltoalls_test(int32_t *out, int32_t *in, int dst, int sst, int nele
 
 
 int main(int argc, char **argv) {
-    int npes, i;
+    int npes;
     int32_t *in, *out;
 
     shmem_init();
 
     npes = shmem_n_pes();
-
-    for (i = 0; i < SHMEM_ALLTOALLS_SYNC_SIZE; i++)
-        pSync[i] = SHMEM_SYNC_VALUE;
 
     in = shmem_malloc(4 * NELEM * npes);
     out = shmem_malloc(4 * NELEM * npes);

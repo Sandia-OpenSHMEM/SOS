@@ -43,8 +43,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-long pSync[SHMEM_BCAST_SYNC_SIZE];
-
 #define START_BCAST_SIZE 16
 #define BCAST_INCR 1024
 
@@ -90,10 +88,6 @@ main(int argc, char* argv[])
         }
     }
 
-    for (i = 0; i < SHMEM_BCAST_SYNC_SIZE; i += 1) {
-        pSync[i] = SHMEM_SYNC_VALUE;
-    }
-
     if ( mpe == 0 && Verbose ) {
         fprintf(stderr,"%d loops\n",loops);
     }
@@ -115,7 +109,7 @@ main(int argc, char* argv[])
 
         shmem_barrier_all();
 
-        shmem_broadcast64(dst, src, nLongs, 1, 0, 0, num_pes, pSync);
+        shmem_long_broadcast(SHMEM_TEAM_WORLD, dst, src, nLongs, 1);
 
         for(i=0; i < nLongs; i++) {
             /* the root node shouldn't have the result into dst (cf specification).*/

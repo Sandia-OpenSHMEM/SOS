@@ -71,7 +71,6 @@ int Verbose;
 
 long *dst;
 long *src;
-long pSync[SHMEM_COLLECT_SYNC_SIZE];
 
 static int
 atoi_scaled(char *s)
@@ -169,9 +168,6 @@ main(int argc, char* argv[])
         return 1;
     }
 
-    for (c = 0; c < SHMEM_COLLECT_SYNC_SIZE;c++)
-        pSync[c] = SHMEM_SYNC_VALUE;
-
     if (Verbose && mpe == 0)
         fprintf(stderr,"loops(%d) nWords(%d) incr-per-loop(%d)\n",
                 loops,nWords,nIncr);
@@ -193,7 +189,7 @@ main(int argc, char* argv[])
 
         shmem_barrier_all();
 
-        shmem_fcollect64(dst,src,nWords,0,0,num_pes,pSync);
+        shmem_long_fcollect(SHMEM_TEAM_WORLD, dst,src,nWords);
 
         // Expect dst to be consecuative integers 0 ... (nLongs*num_pes)-1
         for(j=0; j < (nWords*num_pes); j++) {

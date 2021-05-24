@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
     /* TEST: All PEs contribute their PE id */
     src[0] = me;
 
-    shmem_collect32(dst, src, 1, 0, 0, npes, pSync);
+    shmem_int32_collect(SHMEM_TEAM_WORLD, dst, src, 1);
 
     for (i = 0; i < npes; i++) {
         if (dst[i] != i) {
@@ -87,8 +87,10 @@ int main(int argc, char **argv) {
     /* TEST: Even PEs contribute their PE id */
     src[0] = me;
 
-    if (me % 2 == 0) {
-        shmem_collect32(dst, src, 1, 0, 1, npes/2 + npes%2, pSync);
+    shmem_team_t new_team;
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, 0, 2, npes/2 + npes%2, NULL, 0, &new_team);
+    if (new_team != SHMEM_TEAM_INVALID) {
+        shmem_int32_collect(new_team, dst, src, 1);
 
         for (i = 0; i < npes/2; i++) {
             if (dst[i] != i*2) {
@@ -105,7 +107,7 @@ int main(int argc, char **argv) {
     for (i = 0; i < me; i++)
         src[i] = me+1;
 
-    shmem_collect32(dst, src, me, 0, 0, npes, pSync);
+    shmem_int32_collect(SHMEM_TEAM_WORLD, dst, src, me);
 
     int idx = 0;
     for (i = 0; i < npes; i++) {

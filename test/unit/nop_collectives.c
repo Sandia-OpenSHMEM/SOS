@@ -67,20 +67,44 @@ int main(void) {
     if (me == 0) printf("Testing zero length collectives\n");
 
     if (me == 0) printf(" + broadcast\n");
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_broadcast32(NULL, NULL, 0, 0, 0, 0, npes, bcast_psync);
+#else
+    shmem_int_broadcast(SHMEM_TEAM_WORLD, NULL, NULL, 0, 0);
+#endif
     shmem_barrier_all();
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_broadcast64(NULL, NULL, 0, 0, 0, 0, npes, bcast_psync);
+#else
+    shmem_long_broadcast(SHMEM_TEAM_WORLD, NULL, NULL, 0, 0);
+#endif
     shmem_barrier_all();
 
     if (me == 0) printf(" + collect\n");
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_fcollect32(NULL, NULL, 0, 0, 0, npes, collect_psync);
+#else
+    shmem_int_fcollect(SHMEM_TEAM_WORLD, NULL, NULL, 0);
+#endif
     shmem_barrier_all();
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_fcollect64(NULL, NULL, 0, 0, 0, npes, collect_psync);
+#else
+    shmem_long_fcollect(SHMEM_TEAM_WORLD, NULL, NULL, 0);
+#endif
     shmem_barrier_all();
 
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_collect32(NULL, NULL, 0, 0, 0, npes, collect_psync);
+#else
+    shmem_int_collect(SHMEM_TEAM_WORLD, NULL, NULL, 0);
+#endif
     shmem_barrier_all();
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_collect64(NULL, NULL, 0, 0, 0, npes, collect_psync);
+#else
+    shmem_long_collect(SHMEM_TEAM_WORLD, NULL, NULL, 0);
+#endif
     shmem_barrier_all();
 
     if (me == 0) printf(" + reduction\n");
@@ -100,14 +124,30 @@ int main(void) {
     shmem_barrier_all();
 
     if (me == 0) printf(" + all-to-all\n");
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_alltoall32(NULL, NULL, 0, 0, 0, npes, alltoall_psync);
+#else
+    shmem_int_alltoall(SHMEM_TEAM_WORLD, NULL, NULL, 0);
+#endif
     shmem_barrier_all();
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_alltoall64(NULL, NULL, 0, 0, 0, npes, alltoall_psync);
+#else
+    shmem_long_alltoall(SHMEM_TEAM_WORLD, NULL, NULL, 0);
+#endif
     shmem_barrier_all();
 
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_alltoalls32(NULL, NULL, 1, 1, 0, 0, 0, npes, alltoalls_psync);
+#else
+    shmem_int_alltoalls(SHMEM_TEAM_WORLD, NULL, NULL, 1, 1, 0);
+#endif
     shmem_barrier_all();
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_alltoalls64(NULL, NULL, 1, 1, 0, 0, 0, npes, alltoalls_psync);
+#else
+    shmem_long_alltoalls(SHMEM_TEAM_WORLD, NULL, NULL, 1, 1, 0);
+#endif
 
     if (me == 0) printf("Done\n");
 
