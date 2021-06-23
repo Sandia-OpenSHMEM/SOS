@@ -148,6 +148,19 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_ADD(ADD, uint64_t, uint64);
   TEST_SHMEM_ADD(ADD, size_t, size);
   TEST_SHMEM_ADD(ADD, ptrdiff_t, ptrdiff);
+
+  TEST_SHMEM_ADD(FADD, int, int);
+  TEST_SHMEM_ADD(FADD, long, long);
+  TEST_SHMEM_ADD(FADD, long long, longlong);
+  TEST_SHMEM_ADD(FADD, unsigned int, uint);
+  TEST_SHMEM_ADD(FADD, unsigned long, ulong);
+  TEST_SHMEM_ADD(FADD, unsigned long long, ulonglong);
+  TEST_SHMEM_ADD(FADD, int32_t, int32);
+  TEST_SHMEM_ADD(FADD, int64_t, int64);
+  TEST_SHMEM_ADD(FADD, uint32_t, uint32);
+  TEST_SHMEM_ADD(FADD, uint64_t, uint64);
+  TEST_SHMEM_ADD(FADD, size_t, size);
+  TEST_SHMEM_ADD(FADD, ptrdiff_t, ptrdiff);
 #endif /* ENABLE_DEPRECATED_TESTS */
 
   TEST_SHMEM_ADD(ATOMIC_ADD, int, int);
@@ -175,19 +188,6 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_ADD(CTX_ATOMIC_ADD, uint64_t, uint64);
   TEST_SHMEM_ADD(CTX_ATOMIC_ADD, size_t, size);
   TEST_SHMEM_ADD(CTX_ATOMIC_ADD, ptrdiff_t, ptrdiff);
-
-  TEST_SHMEM_ADD(FADD, int, int);
-  TEST_SHMEM_ADD(FADD, long, long);
-  TEST_SHMEM_ADD(FADD, long long, longlong);
-  TEST_SHMEM_ADD(FADD, unsigned int, uint);
-  TEST_SHMEM_ADD(FADD, unsigned long, ulong);
-  TEST_SHMEM_ADD(FADD, unsigned long long, ulonglong);
-  TEST_SHMEM_ADD(FADD, int32_t, int32);
-  TEST_SHMEM_ADD(FADD, int64_t, int64);
-  TEST_SHMEM_ADD(FADD, uint32_t, uint32);
-  TEST_SHMEM_ADD(FADD, uint64_t, uint64);
-  TEST_SHMEM_ADD(FADD, size_t, size);
-  TEST_SHMEM_ADD(FADD, ptrdiff_t, ptrdiff);
 
   TEST_SHMEM_ADD(ATOMIC_FETCH_ADD, int, int);
   TEST_SHMEM_ADD(ATOMIC_FETCH_ADD, long, long);
