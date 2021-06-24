@@ -146,6 +146,19 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_INC(INC, uint64_t, uint64);
   TEST_SHMEM_INC(INC, size_t, size);
   TEST_SHMEM_INC(INC, ptrdiff_t, ptrdiff);
+
+  TEST_SHMEM_INC(FINC, int, int);
+  TEST_SHMEM_INC(FINC, long, long);
+  TEST_SHMEM_INC(FINC, long long, longlong);
+  TEST_SHMEM_INC(FINC, unsigned int, uint);
+  TEST_SHMEM_INC(FINC, unsigned long, ulong);
+  TEST_SHMEM_INC(FINC, unsigned long long, ulonglong);
+  TEST_SHMEM_INC(FINC, int32_t, int32);
+  TEST_SHMEM_INC(FINC, int64_t, int64);
+  TEST_SHMEM_INC(FINC, uint32_t, uint32);
+  TEST_SHMEM_INC(FINC, uint64_t, uint64);
+  TEST_SHMEM_INC(FINC, size_t, size);
+  TEST_SHMEM_INC(FINC, ptrdiff_t, ptrdiff);
 #endif /* ENABLE_DEPRECATED_TESTS */
 
   TEST_SHMEM_INC(ATOMIC_INC, int, int);
@@ -173,19 +186,6 @@ int main(int argc, char* argv[]) {
   TEST_SHMEM_INC(CTX_ATOMIC_INC, uint64_t, uint64);
   TEST_SHMEM_INC(CTX_ATOMIC_INC, size_t, size);
   TEST_SHMEM_INC(CTX_ATOMIC_INC, ptrdiff_t, ptrdiff);
-
-  TEST_SHMEM_INC(FINC, int, int);
-  TEST_SHMEM_INC(FINC, long, long);
-  TEST_SHMEM_INC(FINC, long long, longlong);
-  TEST_SHMEM_INC(FINC, unsigned int, uint);
-  TEST_SHMEM_INC(FINC, unsigned long, ulong);
-  TEST_SHMEM_INC(FINC, unsigned long long, ulonglong);
-  TEST_SHMEM_INC(FINC, int32_t, int32);
-  TEST_SHMEM_INC(FINC, int64_t, int64);
-  TEST_SHMEM_INC(FINC, uint32_t, uint32);
-  TEST_SHMEM_INC(FINC, uint64_t, uint64);
-  TEST_SHMEM_INC(FINC, size_t, size);
-  TEST_SHMEM_INC(FINC, ptrdiff_t, ptrdiff);
 
   TEST_SHMEM_INC(ATOMIC_FETCH_INC, int, int);
   TEST_SHMEM_INC(ATOMIC_FETCH_INC, long, long);
