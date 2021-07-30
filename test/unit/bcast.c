@@ -112,14 +112,9 @@ main(int argc, char* argv[])
         shmem_long_broadcast(SHMEM_TEAM_WORLD, dst, src, nLongs, 1);
 
         for(i=0; i < nLongs; i++) {
-            /* the root node shouldn't have the result into dst (cf specification).*/
-            if (1 != mpe && dst[i] != src[i]) {
+            if (dst[i] != src[i]) {
                 fprintf(stderr,"[%d] dst[%d] %ld != expected %ld\n",
                         mpe, i, dst[i],src[i]);
-                shmem_global_exit(1);
-            } else if (1 == mpe && dst[i] != 0) {
-                fprintf(stderr,"[%d] dst[%d] %ld != expected 0\n",
-                        mpe, i, dst[i]);
                 shmem_global_exit(1);
             }
         }
