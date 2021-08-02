@@ -1,0 +1,70 @@
+name: SOS-github-actions
+
+on: [push, pull_request]
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  SOS_INSTALL_DIR: ${{ github.workspace }}/install/sos
+  LIBFABRIC_INSTALL_DIR: ${{ github.workspace }}/install/libfabric
+  UCX_INSTALL_DIR: ${{ github.workspace }}/install/ucx
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - config_name: libfabric-1.7.x
+            libfabric_version: v1.7.x
+
+    steps:
+      # https://github.com/neutrinolabs/xrdp/pull/1821/commits/984e8d12c062e2517487198edbe040e3cdbb928b
+      - name: Checking OS version
+        run: |
+          echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y gfortran libopenmpi-dev
+
+      # LIBFABRIC
+      - name: Cache libfabric install
+        id: cache-libfabric
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.LIBFABRIC_INSTALL_DIR }}
+          key: libfabric-${{ matrix.libfabric_version}}-${{ env.OS_NAME }}
+      - name: Checkout libfabric
+        if: steps.cache-libfabric.outputs.cache-hit != 'true'
+        uses: actions/checkout@v2
+        with:
+          repository: ofiwg/libfabric
+          path: repos/libfabric
+          ref: ${{ matrix.libfabric_version }}
+      - name: Build libfabric
+        if: steps.cache-libfabric.outputs.cache-hit != 'true'
+        run: |
+          cd repos/libfabric
+          ./autogen.sh
+          mkdir build; cd build
+          ../configure --prefix=${LIBFABRIC_INSTALL_DIR}
+          make -j
+          make install
+        
+      # SOS
+      - name: Build SOS
+        run: |
+          ./autogen.sh
+          mkdir build; cd build
+          ../configure --prefix=${SOS_INSTALL_DIR} --with-ofi=${LIBFABRIC_INSTALL_DIR} --enable-pmi-simple
+          make -j
+          make install
+      - name: Test SOS
+        run: |
+          cd build
+          make check TESTS= -j
+          make check
