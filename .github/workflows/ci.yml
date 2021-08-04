@@ -22,7 +22,6 @@ jobs:
             libfabric_version: v1.7.x
 
     steps:
-      # https://github.com/neutrinolabs/xrdp/pull/1821/commits/984e8d12c062e2517487198edbe040e3cdbb928b
       - name: Checking OS version
         run: |
           echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
