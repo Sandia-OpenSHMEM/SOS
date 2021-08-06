@@ -259,22 +259,21 @@ before_install:
         sudo insmod $TRAVIS_INSTALL/xpmem/lib/modules/`uname -r`/kernel/xpmem/xpmem.ko
         sudo chown `whoami` /dev/xpmem
       fi
-    ## Fetch UH Tests
-    - cd $TRAVIS_SRC
-    - git clone --depth 10 https://github.com/openshmem-org/tests-uh.git tests-uh
-    # Fetch Cray Tests
-    - cd $TRAVIS_SRC
-    - git clone --depth 10 https://github.com/openshmem-org/tests-cray.git tests-cray
-    # Fetch Mellanox Tests
-    - cd $TRAVIS_SRC
-    - git clone --depth 10 https://github.com/openshmem-org/tests-mellanox.git tests-mellanox
-    ## Fetch ISx
-    - cd $TRAVIS_SRC
-    - git clone --depth 10 https://github.com/ParRes/ISx.git ISx
-    ## Fetch PRK
-    - cd $TRAVIS_SRC
-    - git clone --depth 10 https://github.com/ParRes/Kernels.git PRK
-    - echo -e "SHMEMCC=oshcc -std=c99\nSHMEMTOP=$$TRAVIS_INSTALL\n" > PRK/common/make.defs
+    - >
+      if [ -z "$SOS_DISABLE_EXTERNAL_TESTS" ]; then
+        cd $TRAVIS_SRC
+        ## Fetch UH Tests
+        git clone --depth 10 https://github.com/openshmem-org/tests-uh.git tests-uh
+        # Fetch Cray Tests
+        git clone --depth 10 https://github.com/openshmem-org/tests-cray.git tests-cray
+        # Fetch Mellanox Tests
+        git clone --depth 10 https://github.com/openshmem-org/tests-mellanox.git tests-mellanox
+        ## Fetch ISx
+        git clone --depth 10 https://github.com/ParRes/ISx.git ISx
+        ## Fetch PRK
+        git clone --depth 10 https://github.com/ParRes/Kernels.git PRK
+        echo -e "SHMEMCC=oshcc -std=c99\nSHMEMTOP=$$TRAVIS_INSTALL\n" > PRK/common/make.defs
+      fi
     ## Build Libevent
     - cd $TRAVIS_SRC
     - wget https://github.com/libevent/libevent/releases/download/release-2.1.10-stable/libevent-2.1.10-stable.tar.gz
