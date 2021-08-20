@@ -201,6 +201,9 @@ int main(void) {
     TEST_SHMEM_REDUCE(xor, long long);
     TEST_SHMEM_REDUCE(xor, unsigned long long);
 
+    TEST_SHMEM_REDUCE(max, char);
+    //TEST_SHMEM_REDUCE(max, signed char);
+    //TEST_SHMEM_REDUCE(max, unsigned char);
     TEST_SHMEM_REDUCE(max, short);
     TEST_SHMEM_REDUCE(max, unsigned short);
     TEST_SHMEM_REDUCE(max, int);
@@ -213,6 +216,9 @@ int main(void) {
     TEST_SHMEM_REDUCE(max, double);
     TEST_SHMEM_REDUCE(max, long double);
 
+    TEST_SHMEM_REDUCE(min, char);
+    //TEST_SHMEM_REDUCE(min, signed char);
+    //TEST_SHMEM_REDUCE(min, unsigned char);
     TEST_SHMEM_REDUCE(min, short);
     TEST_SHMEM_REDUCE(min, unsigned short);
     TEST_SHMEM_REDUCE(min, int);
@@ -225,6 +231,9 @@ int main(void) {
     TEST_SHMEM_REDUCE(min, double);
     TEST_SHMEM_REDUCE(min, long double);
 
+    TEST_SHMEM_REDUCE(sum, char);
+    //TEST_SHMEM_REDUCE(sum, signed char);
+    //TEST_SHMEM_REDUCE(sum, unsigned char);
     TEST_SHMEM_REDUCE(sum, short);
     TEST_SHMEM_REDUCE(sum, unsigned short);
     TEST_SHMEM_REDUCE(sum, int);
@@ -239,6 +248,9 @@ int main(void) {
     TEST_SHMEM_REDUCE(sum, double _Complex);
     TEST_SHMEM_REDUCE(sum, float _Complex);
 
+    TEST_SHMEM_REDUCE(prod, char);
+    //TEST_SHMEM_REDUCE(prod, signed char);
+    //TEST_SHMEM_REDUCE(prod, unsigned char);
     TEST_SHMEM_REDUCE(prod, short);
     TEST_SHMEM_REDUCE(prod, unsigned short);
     TEST_SHMEM_REDUCE(prod, int);

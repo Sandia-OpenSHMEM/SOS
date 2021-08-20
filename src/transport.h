@@ -19,6 +19,7 @@
 /* Datatypes */
 enum shm_internal_datatype_t {
     SHM_INTERNAL_SIGNED_BYTE,
+    SHM_INTERNAL_CHAR,
     SHM_INTERNAL_SHORT,
     SHM_INTERNAL_INT,
     SHM_INTERNAL_LONG,

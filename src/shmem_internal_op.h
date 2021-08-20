@@ -58,6 +58,11 @@ FUNC_OP_CREATE(int64, int64_t, and, shmem_internal_and_op)
 FUNC_OP_CREATE(int64, int64_t, or, shmem_internal_or_op)
 FUNC_OP_CREATE(int64, int64_t, xor, shmem_internal_xor_op)
 
+FUNC_OP_CREATE(char, char, max, shmem_internal_or_op)
+FUNC_OP_CREATE(char, char, min, shmem_internal_and_op)
+FUNC_OP_CREATE(char, char, sum, shmem_internal_xor_op)
+FUNC_OP_CREATE(char, char, prod, shmem_internal_xor_op)
+
 FUNC_OP_CREATE(uchar, unsigned char, and, shmem_internal_and_op)
 FUNC_OP_CREATE(uchar, unsigned char, or, shmem_internal_or_op)
 FUNC_OP_CREATE(uchar, unsigned char, xor, shmem_internal_xor_op)
@@ -233,6 +238,7 @@ static inline void shmem_internal_reduce_local(shm_internal_op_t op,
     switch(datatype) {
         REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_INT32, int32, int32_t);
         REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_INT64, int64, int64_t);
+        REDUCE_LOCAL_DTYPE_CASE_FP(SHM_INTERNAL_CHAR, char, char);
         REDUCE_LOCAL_DTYPE_CASE_AND_OR_XOR(SHM_INTERNAL_UCHAR, uchar, unsigned char);
         REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_SHORT, short, short);
         REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_USHORT, ushort, unsigned short);
