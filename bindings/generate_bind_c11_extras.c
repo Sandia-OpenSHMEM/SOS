@@ -90,6 +90,58 @@
            unsigned long long: 0, \
            default: 1)
 
+/* Note: Mirrors SHMEM_BIND_C11_COLL_AND_OR_XOR */
+#define NEED_BITWISE_REDUCE_ASSOC(VAL) \
+  _Generic((VAL),                      \
+           short: 0,                   \
+           int: 0,                     \
+           long: 0,                    \
+           long long: 0,               \
+           unsigned char: 0,           \
+           unsigned short: 0,          \
+           unsigned int: 0,            \
+           unsigned long: 0,           \
+           unsigned long long: 0,      \
+           default: 1)
+
+/* Note: Mirrors SHMEM_BIND_C11_COLL_MIN_MAX */
+#define NEED_MIN_MAX_REDUCE_ASSOC(VAL) \
+  _Generic((VAL),                      \
+           char: 0,                    \
+           signed char: 0,             \
+           short: 0,                   \
+           int: 0,                     \
+           long: 0,                    \
+           long long: 0,               \
+           unsigned char: 0,           \
+           unsigned short: 0,          \
+           unsigned int: 0,            \
+           unsigned long: 0,           \
+           unsigned long long: 0,      \
+           float: 0,                   \
+           double: 0,                  \
+           long double: 0,             \
+           default: 1)
+
+/* Note: Mirrors SHMEM_BIND_C11_COLL_SUM_PROD */
+#define NEED_SUM_PROD_REDUCE_ASSOC(VAL) \
+  _Generic((VAL),                       \
+           char: 0,                     \
+           signed char: 0,              \
+           short: 0,                    \
+           int: 0,                      \
+           long: 0,                     \
+           long long: 0,                \
+           unsigned char: 0,            \
+           unsigned short: 0,           \
+           unsigned int: 0,             \
+           unsigned long: 0,            \
+           unsigned long long: 0,       \
+           float: 0,                   \
+           double: 0,                  \
+           long double: 0,             \
+           default: 1)
+
 #else
 /* Compiler does not support C11 _Generic */
 #define NEED_RMA_ASSOC(VAL) 0
@@ -97,6 +149,9 @@
 #define NEED_EXTENDED_AMO_ASSOC(VAL) 0
 #define NEED_BITWISE_AMO_ASSOC(VAL) 0
 #define NEED_SYNC_ASSOC(VAL) 0
+#define NEED_BITWISE_REDUCE_ASSOC(VAL) 0
+#define NEED_MIN_MAX_REDUCE_ASSOC(VAL) 0
+#define NEED_SUM_PROD_REDUCE_ASSOC(VAL) 0
 
 #endif
 
@@ -109,6 +164,14 @@
   while (0)
 
 #define GEN_AMO_ASSOC(TYPENAME, CTYPE, SHMTYPE, TYPE_CLASS)     \
+  do {                                                          \
+    CTYPE val VAR_IS_UNUSED;                                    \
+    if (NEED_##TYPE_CLASS##_ASSOC(val))                         \
+      printf("$1(%s, %s, %s)$2\n", #TYPENAME, #CTYPE, #SHMTYPE);\
+  }                                                             \
+  while (0)
+
+#define GEN_REDUCE_ASSOC(TYPENAME, CTYPE, SHMTYPE, TYPE_CLASS)  \
   do {                                                          \
     CTYPE val VAR_IS_UNUSED;                                    \
     if (NEED_##TYPE_CLASS##_ASSOC(val))                         \
@@ -168,6 +231,44 @@ int main(int argc, char **argv)
     GEN_ASSOC(uint64,   uint64_t, SYNC);
     GEN_ASSOC(size,       size_t, SYNC);
     GEN_ASSOC(ptrdiff, ptrdiff_t, SYNC);
+    printf("')dnl\n");
+
+    printf("define(`SHMEM_BIND_C11_COLL_AND_OR_XOR_EXTRAS',\n`");
+    GEN_REDUCE_ASSOC(int8,       int8_t, SHM_INTERNAL_INT8,   BITWISE_REDUCE);
+    GEN_REDUCE_ASSOC(int16,     int16_t, SHM_INTERNAL_INT16,  BITWISE_REDUCE);
+    GEN_REDUCE_ASSOC(int32,     int32_t, SHM_INTERNAL_INT32,  BITWISE_REDUCE);
+    GEN_REDUCE_ASSOC(int64,     int64_t, SHM_INTERNAL_INT64,  BITWISE_REDUCE);
+    GEN_REDUCE_ASSOC(uint32,    uint8_t, SHM_INTERNAL_UINT8,  BITWISE_REDUCE);
+    GEN_REDUCE_ASSOC(uint64,   uint16_t, SHM_INTERNAL_UINT16, BITWISE_REDUCE);
+    GEN_REDUCE_ASSOC(uint32,   uint32_t, SHM_INTERNAL_UINT32, BITWISE_REDUCE);
+    GEN_REDUCE_ASSOC(uint64,   uint64_t, SHM_INTERNAL_UINT64, BITWISE_REDUCE);
+    GEN_REDUCE_ASSOC(size,       size_t, SHM_INTERNAL_SIZE_T, BITWISE_REDUCE);
+    printf("')dnl\n");
+
+    printf("define(`SHMEM_BIND_C11_COLL_MIN_MAX_EXTRAS',\n`");
+    GEN_REDUCE_ASSOC(ptrdiff, ptrdiff_t, SHM_INTERNAL_PTRDIFF_T, MIN_MAX_REDUCE);
+    GEN_REDUCE_ASSOC(int8,       int8_t, SHM_INTERNAL_INT8,      MIN_MAX_REDUCE);
+    GEN_REDUCE_ASSOC(int16,     int16_t, SHM_INTERNAL_INT16,     MIN_MAX_REDUCE);
+    GEN_REDUCE_ASSOC(int32,     int32_t, SHM_INTERNAL_INT32,     MIN_MAX_REDUCE);
+    GEN_REDUCE_ASSOC(int64,     int64_t, SHM_INTERNAL_INT64,     MIN_MAX_REDUCE);
+    GEN_REDUCE_ASSOC(uint32,    uint8_t, SHM_INTERNAL_UINT8,     MIN_MAX_REDUCE);
+    GEN_REDUCE_ASSOC(uint64,   uint16_t, SHM_INTERNAL_UINT16,    MIN_MAX_REDUCE);
+    GEN_REDUCE_ASSOC(uint32,   uint32_t, SHM_INTERNAL_UINT32,    MIN_MAX_REDUCE);
+    GEN_REDUCE_ASSOC(uint64,   uint64_t, SHM_INTERNAL_UINT64,    MIN_MAX_REDUCE);
+    GEN_REDUCE_ASSOC(size,       size_t, SHM_INTERNAL_SIZE_T,    MIN_MAX_REDUCE);
+    printf("')dnl\n");
+
+    printf("define(`SHMEM_BIND_C11_COLL_SUM_PROD_EXTRAS',\n`");
+    GEN_REDUCE_ASSOC(ptrdiff, ptrdiff_t, SHM_INTERNAL_PTRDIFF_T, SUM_PROD_REDUCE);
+    GEN_REDUCE_ASSOC(int8,       int8_t, SHM_INTERNAL_INT8,      SUM_PROD_REDUCE);
+    GEN_REDUCE_ASSOC(int16,     int16_t, SHM_INTERNAL_INT16,     SUM_PROD_REDUCE);
+    GEN_REDUCE_ASSOC(int32,     int32_t, SHM_INTERNAL_INT32,     SUM_PROD_REDUCE);
+    GEN_REDUCE_ASSOC(int64,     int64_t, SHM_INTERNAL_INT64,     SUM_PROD_REDUCE);
+    GEN_REDUCE_ASSOC(uint32,    uint8_t, SHM_INTERNAL_UINT8,     SUM_PROD_REDUCE);
+    GEN_REDUCE_ASSOC(uint64,   uint16_t, SHM_INTERNAL_UINT16,    SUM_PROD_REDUCE);
+    GEN_REDUCE_ASSOC(uint32,   uint32_t, SHM_INTERNAL_UINT32,    SUM_PROD_REDUCE);
+    GEN_REDUCE_ASSOC(uint64,   uint64_t, SHM_INTERNAL_UINT64,    SUM_PROD_REDUCE);
+    GEN_REDUCE_ASSOC(size,       size_t, SHM_INTERNAL_SIZE_T,    SUM_PROD_REDUCE);
     printf("')dnl\n");
 
     return 0;
