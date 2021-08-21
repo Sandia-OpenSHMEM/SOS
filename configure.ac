@@ -528,6 +528,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[ _Complex v; ]] )],
 AC_LANG_POP([C])
 
 SHMEM_FIND_INT_TYPE([char], [$transport])
+SHMEM_FIND_INT_TYPE([signed char], [$transport])
 SHMEM_FIND_INT_TYPE([short], [$transport])
 SHMEM_FIND_INT_TYPE([int], [$transport])
 SHMEM_FIND_INT_TYPE([long], [$transport])
