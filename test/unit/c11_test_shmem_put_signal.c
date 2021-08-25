@@ -41,7 +41,7 @@ enum op { PUT_SIGNAL = 0, PUT_SIGNAL_NBI };
 
 #define TEST_SHMEM_PUT_SIGNAL(OP, USE_CTX, SIGNAL_OP, TYPE)                                 \
   do {                                                                                      \
-    TYPE *remote = (TYPE *) shmem_malloc(10 * sizeof(TYPE));                                 \
+    TYPE *remote = (TYPE *) shmem_malloc(10 * sizeof(TYPE));                                \
     const int mype = shmem_my_pe();                                                         \
     const int npes = shmem_n_pes();                                                         \
     TYPE local[10];                                                                         \
