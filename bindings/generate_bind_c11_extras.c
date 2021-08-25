@@ -93,10 +93,6 @@
 /* Note: Mirrors SHMEM_BIND_C11_COLL_AND_OR_XOR */
 #define NEED_BITWISE_REDUCE_ASSOC(VAL) \
   _Generic((VAL),                      \
-           short: 0,                   \
-           int: 0,                     \
-           long: 0,                    \
-           long long: 0,               \
            unsigned char: 0,           \
            unsigned short: 0,          \
            unsigned int: 0,            \
