@@ -243,7 +243,6 @@ int main(void) {
 
     TEST_SHMEM_REDUCE(min, char);
     TEST_SHMEM_REDUCE(min, signed char);
-    TEST_SHMEM_REDUCE(min, signed char);
     TEST_SHMEM_REDUCE(min, short);
     TEST_SHMEM_REDUCE(min, int);
     TEST_SHMEM_REDUCE(min, long);
