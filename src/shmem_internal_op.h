@@ -48,7 +48,7 @@ FUNC_OP_CREATE(char, char, sum, shmem_internal_sum_op)
 FUNC_OP_CREATE(char, char, prod, shmem_internal_prod_op)
 
 FUNC_OP_CREATE(schar, signed char, max, shmem_internal_max_op)
-FUNC_OP_CREATE(schar, signed char, min, shmem_internal_and_op)
+FUNC_OP_CREATE(schar, signed char, min, shmem_internal_min_op)
 FUNC_OP_CREATE(schar, signed char, sum, shmem_internal_sum_op)
 FUNC_OP_CREATE(schar, signed char, prod, shmem_internal_prod_op)
 
