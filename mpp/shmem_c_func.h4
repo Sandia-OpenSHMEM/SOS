@@ -403,7 +403,7 @@ define(`SHMEM_C_CTX_FETCH_OR',
 SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_CTX_FETCH_OR')
 
 /* COLL: Barrier Synchronization Routines */
-SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync) SHMEM_ATTRIBUTE_DEPRECATED;
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_barrier_all(void);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_sync_all(void);
@@ -414,7 +414,7 @@ define(`SHMEM_C_TO_ALL',
 SH_PAD(`$1',`$4')                    const $2 *source, int nreduce,
 SH_PAD(`$1',`$4')                    int PE_start, int logPE_stride,
 SH_PAD(`$1',`$4')                    int PE_size, $2 *pWrk,
-SH_PAD(`$1',`$4')                    long *pSync);')dnl
+SH_PAD(`$1',`$4')                    long *pSync) SHMEM_ATTRIBUTE_DEPRECATED;')dnl
 dnl
 SHMEM_BIND_C_COLL_INTS(`SHMEM_C_TO_ALL', `and')
 
