@@ -108,19 +108,47 @@ int main(void) {
     shmem_barrier_all();
 
     if (me == 0) printf(" + reduction\n");
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_int_and_to_all(NULL, NULL, 0, 0, 0, npes, pwrk, reduce_psync);
+#else
+    shmem_int_and_reduce(SHMEM_TEAM_WORLD, NULL, NULL, 0);
+#endif
     shmem_barrier_all();
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_int_or_to_all(NULL, NULL, 0, 0, 0, npes, pwrk, reduce_psync);
+#else
+    shmem_int_or_reduce(SHMEM_TEAM_WORLD, NULL, NULL, 0);
+#endif
     shmem_barrier_all();
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_int_xor_to_all(NULL, NULL, 0, 0, 0, npes, pwrk, reduce_psync);
+#else
+    shmem_int_xor_reduce(SHMEM_TEAM_WORLD, NULL, NULL, 0);
+#endif
     shmem_barrier_all();
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_int_min_to_all(NULL, NULL, 0, 0, 0, npes, pwrk, reduce_psync);
+#else
+    shmem_int_min_reduce(SHMEM_TEAM_WORLD, NULL, NULL, 0);
+#endif
     shmem_barrier_all();
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_int_max_to_all(NULL, NULL, 0, 0, 0, npes, pwrk, reduce_psync);
+#else
+    shmem_int_max_reduce(SHMEM_TEAM_WORLD, NULL, NULL, 0);
+#endif
     shmem_barrier_all();
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_int_sum_to_all(NULL, NULL, 0, 0, 0, npes, pwrk, reduce_psync);
+#else
+    shmem_int_sum_reduce(SHMEM_TEAM_WORLD, NULL, NULL, 0);
+#endif
     shmem_barrier_all();
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_int_prod_to_all(NULL, NULL, 0, 0, 0, npes, pwrk, reduce_psync);
+#else
+    shmem_int_prod_reduce(SHMEM_TEAM_WORLD, NULL, NULL, 0);
+#endif
     shmem_barrier_all();
 
     if (me == 0) printf(" + all-to-all\n");
