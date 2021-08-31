@@ -61,12 +61,6 @@ int output_mod = OUTPUT_MOD;
 int Verbose;
 int Slow;
 
-long pSync0[SHMEM_BARRIER_SYNC_SIZE],
-    pSync1[SHMEM_BARRIER_SYNC_SIZE],
-    pSync2[SHMEM_BARRIER_SYNC_SIZE],
-    pSync3[SHMEM_BARRIER_SYNC_SIZE],
-    pSync4[SHMEM_BARRIER_SYNC_SIZE];
-
 #define DFLT_NWORDS 128
 #define DFLT_LOOPS 10
 
@@ -85,11 +79,6 @@ main(int argc, char* argv[])
     int  failures=0;
     char *prog_name;
     long *wp,work_sz;
-
-    for(j=0; j < SHMEM_BARRIER_SYNC_SIZE; j++) {
-        pSync0[j] = pSync1[j] = pSync2[j] = pSync3[j] =
-            pSync4[j] = SHMEM_SYNC_VALUE;
-    }
 
     shmem_init();
     my_pe = shmem_my_pe();
@@ -198,7 +187,7 @@ main(int argc, char* argv[])
         if ( Verbose && (j==0 || (j % output_mod) == 0) )
             fprintf(stderr,"[%d] +(%d)\n", my_pe,j);
 #endif
-        shmem_barrier(0, 0, nProcs, pSync0);
+        shmem_barrier_all();
         if ( my_pe == 0 ) {
             int p;
             for(p=1; p < nProcs; p++)
@@ -218,7 +207,7 @@ main(int argc, char* argv[])
         if ( Verbose && (j==0 || (j % output_mod) == 0) )
             fprintf(stderr,"[%d] -(%d)\n", shmem_my_pe(),j);
 #endif
-        shmem_barrier(0, 0, nProcs, pSync1);
+        shmem_barrier_all();
 
         RDprintf("Workers[1 ... %d] verify Target data put by proc0\n",
                  nWorkers);
@@ -239,7 +228,7 @@ main(int argc, char* argv[])
         else /* clear results buffer, workers will put here */
             memset(work, 0, work_sz);
 
-        shmem_barrier(0, 0, nProcs, pSync2);
+        shmem_barrier_all();
 
         RDprintf("Workers[1 ... %d] put Target data to PE0 work "
                  "vector\n",nWorkers);
@@ -262,7 +251,7 @@ main(int argc, char* argv[])
             }
         }
 
-        shmem_barrier(0, 0, nProcs, pSync3);
+        shmem_barrier_all();
 
         if ( my_pe == 0 ) {
             RDprintf("Loop(%d) PE0 verifing work data.\n",j);
@@ -283,7 +272,7 @@ main(int argc, char* argv[])
                     break;
             }
         }
-        shmem_barrier(0, 0, nProcs, pSync4);
+        shmem_barrier_all();
 #if _DEBUG
         if (loops > 1) {
             Rfprintf(stderr,".");

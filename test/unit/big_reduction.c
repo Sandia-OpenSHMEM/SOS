@@ -40,8 +40,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-long pSync[SHMEM_REDUCE_SYNC_SIZE];
-
 #define N 128
 
 long src[N];
@@ -49,8 +47,6 @@ long dst[N];
 
 #define MAX(a, b) ((a) > (b)) ? (a) : (b)
 #define WRK_SIZE MAX(N/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE)
-
-long pWrk[WRK_SIZE];
 
 int
 main(int argc, char* argv[])
@@ -74,10 +70,6 @@ main(int argc, char* argv[])
         }
     }
 
-    for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i += 1) {
-        pSync[i] = SHMEM_SYNC_VALUE;
-    }
-
     shmem_init();
 
     for (i = 0; i < N; i += 1) {
@@ -85,7 +77,7 @@ main(int argc, char* argv[])
     }
     shmem_barrier_all();
 
-    shmem_long_max_to_all(dst, src, N, 0, 0, shmem_n_pes(), pWrk, pSync);
+    shmem_long_max_reduce(SHMEM_TEAM_WORLD, dst, src, N);
 
     if (Verbose) {
         printf("%d/%d\tdst =", shmem_my_pe(), shmem_n_pes() );
