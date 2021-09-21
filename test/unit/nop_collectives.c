@@ -38,8 +38,10 @@ long alltoalls_psync[SHMEM_ALLTOALLS_SYNC_SIZE];
 int pwrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
 
 int main(void) {
-    int i;
-    int me, npes;
+    int me;
+
+#ifdef ENABLE_DEPRECATED_TESTS
+    int i, npes;
 
     for (i = 0; i < SHMEM_BCAST_SYNC_SIZE; i++)
         bcast_psync[i] = SHMEM_SYNC_VALUE;
@@ -58,11 +60,15 @@ int main(void) {
 
     for (i = 0; i < SHMEM_REDUCE_MIN_WRKDATA_SIZE; i++)
         pwrk[i] = 0;
+#endif
 
     shmem_init();
 
     me = shmem_my_pe();
+
+#ifdef ENABLE_DEPRECATED_TESTS
     npes = shmem_n_pes();
+#endif
 
     if (me == 0) printf("Testing zero length collectives\n");
 
