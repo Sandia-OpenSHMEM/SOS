@@ -22,7 +22,7 @@ struct shmem_internal_team_t {
     int                            start, stride, size;
     int                            psync_idx;
     int                            psync_avail[N_PSYNCS_PER_TEAM];
-    shmem_team_config_t           config;
+    const shmem_team_config_t      *config;
     long                           config_mask;
     size_t                         contexts_len;
     struct shmem_transport_ctx_t **contexts;
@@ -51,7 +51,7 @@ int shmem_internal_team_my_pe(shmem_internal_team_t *team);
 
 int shmem_internal_team_n_pes(shmem_internal_team_t *team);
 
-void shmem_internal_team_get_config(shmem_internal_team_t *team, shmem_team_config_t *config);
+int shmem_internal_team_get_config(shmem_internal_team_t *team, long config_mask, shmem_team_config_t *config);
 
 int shmem_internal_team_translate_pe(shmem_internal_team_t *src_team, int src_pe, shmem_internal_team_t *dest_team);
 
