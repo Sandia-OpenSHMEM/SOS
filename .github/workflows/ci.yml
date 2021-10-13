@@ -61,7 +61,7 @@ jobs:
           #  sos_config: --disable-fortran --with-cma --enable-error-checking --enable-profiling
           #              --enable-ofi-mr=basic --enable-av-map --enable-remote-virtual-addressing
           #              --enable-pmi-simple
-          # libfabric_version: v1.13.x
+          #  libfabric_version: v1.13.x
           - config_name: XPMEM RVA
             xpmem_version: master
             sos_config: --with-xpmem --enable-error-checking
@@ -240,18 +240,39 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - libevent_version: release-2.1.10-stable
+          - sos_transport: libfabric
+            libfabric_version: v1.7.x
+            sos_transport_config: --with-ofi=${LIBFABRIC_INSTALL_DIR} --without-ucx --without-portals4
+            run_all_tests: true
+            libevent_version: release-2.1.10-stable
             pmix_version: v4.1.1rc2
             prrte_version: v2.0
-            libfabric_version: v1.7.x
-            ucx_version: v1.9.0
             sos_pm: prun
             sos_pm_pre: prte --daemonize --host localhost:4
             sos_pm_post: pterm
-        sos_transport_config: [--with-ofi --without-ucx --without-portals4,
-                               --with-ucx --without-ofi --without-portals4]
-      ## FIXME: Portals4 does not support "make check" over sockets, would need to filter that out:
-                               #--with-portals4 --without-ofi --without-ucx]
+          - sos_transport: ucx
+            ucx_version: v1.9.0
+            sos_transport_config: --with-ucx=${UCX_INSTALL_DIR} --without-ofi --without-portals4
+            run_all_tests: true
+            libevent_version: release-2.1.10-stable
+            pmix_version: v4.1.1rc2
+            prrte_version: v2.0
+            sos_pm: prun
+            sos_pm_pre: prte --daemonize --host localhost:4
+            sos_pm_post: pterm
+          - sos_transport: portals4
+            portals4_version: master
+            sos_transport_config: --with-portals4=${PORTALS4_INSTALL_DIR} --without-ofi --without-ucx
+            run_all_tests: false
+            libevent_version: release-2.1.10-stable
+            pmix_version: v4.1.1rc2
+            prrte_version: v2.0
+            sos_pm: prun
+            sos_pm_pre: prte --daemonize --host localhost:4
+            sos_pm_post: pterm
+
+    name: PMIx (${{ matrix.sos_transport }})
+
     steps:
       - name: Checking OS version
         run: |
@@ -263,76 +284,78 @@ jobs:
 
       # LIBFABRIC
       - name: Cache libfabric install
+        if: ${{ matrix.sos_transport == 'libfabric' }}
         id: cache-libfabric
         uses: actions/cache@v2
         with:
-          path: /usr
+          path: ${{ env.LIBFABRIC_INSTALL_DIR }}
           key: libfabric-${{ matrix.libfabric_version }}-${{ env.OS_NAME }}
       - name: Checkout libfabric
-        if: steps.cache-libfabric.outputs.cache-hit != 'true'
+        if: ${{ matrix.sos_transport == 'libfabric' && steps.cache-libfabric.outputs.cache-hit != 'true' }}
         uses: actions/checkout@v2
         with:
           repository: ofiwg/libfabric
           path: repos/libfabric
           ref: ${{ matrix.libfabric_version }}
       - name: Build libfabric
-        if: steps.cache-libfabric.outputs.cache-hit != 'true'
+        if: ${{ matrix.sos_transport == 'libfabric' && steps.cache-libfabric.outputs.cache-hit != 'true' }}
         run: |
           cd repos/libfabric
           ./autogen.sh
           mkdir build; cd build
-          ../configure --prefix=/usr
+          ../configure --prefix=${LIBFABRIC_INSTALL_DIR}
           make -j
           sudo make install
 
       # UCX
       - name: Cache UCX install
+        if: ${{ matrix.sos_transport == 'ucx' }}
         id: cache-ucx
         uses: actions/cache@v2
         with:
-          path: /usr
+          path: ${{ env.UCX_INSTALL_DIR }}
           key: ucx-${{ matrix.ucx_version }}-${{ env.OS_NAME }}
       - name: Checkout UCX
-        if: steps.cache-ucx.outputs.cache-hit != 'true'
+        if: ${{ matrix.sos_transport == 'ucx' && steps.cache-ucx.outputs.cache-hit != 'true' }}
         uses: actions/checkout@v2
         with:
           repository: openucx/ucx
           path: repos/ucx
           ref: ${{ matrix.ucx_version }}
       - name: Build UCX
-        if: steps.cache-ucx.outputs.cache-hit != 'true'
+        if: ${{ matrix.sos_transport == 'ucx' && steps.cache-ucx.outputs.cache-hit != 'true' }}
         run: |
           cd repos/ucx
           ./autogen.sh
           mkdir build; cd build
-          ../configure --prefix=/usr --enable-mt --disable-numa --without-java
+          ../configure --prefix=${UCX_INSTALL_DIR} --enable-mt --disable-numa --without-java
           make -j
           sudo make install
 
-      ## FIXME: Portals4 does not support "make check" over sockets, would need to filter that out:
       ## Portals4
-      #- name: Cache Portals4 install
-      #  id: cache-portals4
-      #  uses: actions/cache@v2
-      #  with:
-      #    path: /usr
-      #    key: portals4-${{ matrix.portals4_version }}-${{ env.OS_NAME }}
-      #- name: Checkout Portals4
-      #  if: steps.cache-portals4.outputs.cache-hit != 'true'
-      #  uses: actions/checkout@v2
-      #  with:
-      #    repository: regrant/portals4
-      #    path: repos/portals4
-      #    ref: ${{ matrix.portals4_version }}
-      #- name: Build Portals4
-      #  if: steps.cache-portals4.outputs.cache-hit != 'true'
-      #  run: |
-      #    cd repos/portals4
-      #    ./autogen.sh
-      #    mkdir build; cd build
-      #    ../configure --prefix=/usr --enable-zero-mrs --enable-reliable-udp --disable-pmi-from-portals ${SOS_BUILD_STATIC_OPTS}
-      #    make -j
-      #    sudo make install
+      - name: Cache Portals4 install
+        if: ${{ matrix.sos_transport == 'portals4' }}
+        id: cache-portals4
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.PORTALS4_INSTALL_DIR }}
+          key: portals4-${{ matrix.portals4_version }}-${{ env.OS_NAME }}
+      - name: Checkout Portals4
+        if: ${{ matrix.sos_transport == 'portals4' && steps.cache-portals4.outputs.cache-hit != 'true' }}
+        uses: actions/checkout@v2
+        with:
+          repository: regrant/portals4
+          path: repos/portals4
+          ref: ${{ matrix.portals4_version }}
+      - name: Build Portals4
+        if: ${{ matrix.sos_transport == 'portals4' && steps.cache-portals4.outputs.cache-hit != 'true' }}
+        run: |
+          cd repos/portals4
+          ./autogen.sh
+          mkdir build; cd build
+          ../configure --prefix=${PORTALS4_INSTALL_DIR} --enable-zero-mrs --enable-reliable-udp --disable-pmi-from-portals ${SOS_BUILD_STATIC_OPTS}
+          make -j
+          sudo make install
 
       # Libevent
       - name: Cache libevent install
@@ -408,15 +431,24 @@ jobs:
           ../configure --prefix=${SOS_INSTALL_DIR} ${{ matrix.sos_transport_config }} --with-pmix=${PMIX_INSTALL_DIR}
           make -j
           make install
-      - name: Test SOS
+      - name: Test SOS (all tests)
+        if: ${{ matrix.sos_transport == 'libfabric' || matrix.sos_transport == 'ucx' }}
         run: |
           cd build
           make check TESTS= -j
-          #echo "${PRRTE_INSTALL_DIR}/bin" >> $GITHUB_PATH
           export PATH=${PRRTE_INSTALL_DIR}/bin:$PATH
           ${{ matrix.sos_pm_pre }}
           SHMEM_INFO=1 make VERBOSE=1 TEST_RUNNER="${{ matrix.sos_pm }} -np 2" check
           cat test/unit/hello.log
+          ${{ matrix.sos_pm_post }}
+      - name: Test SOS (hello)
+        if: ${{ matrix.sos_transport == 'portals4' }}
+        run: |
+          cd build
+          make check TESTS= -j
+          export PATH=${PRRTE_INSTALL_DIR}/bin:$PATH
+          ${{ matrix.sos_pm_pre }}
+          SHMEM_INFO=1 ${{ matrix.sos_pm }} -np 1 test/unit/hello
           ${{ matrix.sos_pm_post }}
 
   UCX:
