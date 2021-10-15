@@ -15,7 +15,7 @@ env:
   PRRTE_INSTALL_DIR: ${{ github.workspace }}/install/prrte
   PMIX_INSTALL_DIR: ${{ github.workspace }}/install/pmix
   SOS_BUILD_STATIC_OPTS: --disable-shared --enable-static
-  XPMEM_INSTALL_DIR: /usr
+  XPMEM_INSTALL_DIR: ${{ github.workspace }}/install/xpmem
   SOS_PM: mpiexec.hydra
   SOS_PM_POST: true
 
@@ -64,12 +64,12 @@ jobs:
           #  libfabric_version: v1.13.x
           - config_name: XPMEM RVA
             xpmem_version: master
-            sos_config: --with-xpmem --enable-error-checking
+            sos_config: --with-xpmem=${XPMEM_INSTALL_DIR} --enable-error-checking
                         --enable-remote-virtual-addressing --enable-pmi-simple
             libfabric_version: v1.13.x
           - config_name: XPMEM shared atomics
             xpmem_version: master
-            sos_config: --with-xpmem=$TRAVIS_INSTALL/xpmem --enable-shr-atomics
+            sos_config: --with-xpmem=${XPMEM_INSTALL_DIR} --enable-shr-atomics
                         --enable-error-checking --enable-pmi-simple
             libfabric_version: v1.13.x
           - config_name: RVA, thread completion
@@ -177,13 +177,22 @@ jobs:
           make install
 
       # XPMEM
+      - name: Cache XPMEM install
+        if: ${{ matrix.xpmem_version }}
+        id: cache-xpmem
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.XPMEM_INSTALL_DIR }}
+          key: xpmem-${{ matrix.xpmem_version }}-${{ env.OS_NAME }}
       - name: Checkout XPMEM
+        if: ${{ matrix.xpmem_version }}
         uses: actions/checkout@v2
         with:
           repository: hjelmn/xpmem
           path: repos/xpmem
           ref: ${{ matrix.xpmem_version }}
       - name: Build XPMEM
+        if: ${{ matrix.xpmem_version }}
         run: |
           cd repos/xpmem
           sudo apt-get install linux-headers-`uname -r`
@@ -191,7 +200,6 @@ jobs:
           ./configure --prefix=${XPMEM_INSTALL_DIR}
           make -j
           sudo make install
-          ## Install the module and allow Travis to use it
           sudo insmod ${XPMEM_INSTALL_DIR}/lib/modules/`uname -r`/kernel/xpmem/xpmem.ko
           sudo chown `whoami` /dev/xpmem
 
@@ -488,11 +496,10 @@ jobs:
           cd repos/xpmem
           sudo apt-get install linux-headers-`uname -r`
           ./autogen.sh
-          ./configure --prefix=${XPMEM_INSTALL_DIR}
+          ./configure --prefix=/usr
           make -j
           sudo make install
-          ## Install the module and allow Travis to use it
-          sudo insmod ${XPMEM_INSTALL_DIR}/lib/modules/`uname -r`/kernel/xpmem/xpmem.ko
+          sudo insmod /usr/lib/modules/`uname -r`/kernel/xpmem/xpmem.ko
           sudo chown `whoami` /dev/xpmem
 
       # UCX
@@ -579,11 +586,10 @@ jobs:
           cd repos/xpmem
           sudo apt-get install linux-headers-`uname -r`
           ./autogen.sh
-          ./configure --prefix=${XPMEM_INSTALL_DIR}
+          ./configure --prefix=/usr
           make -j
           sudo make install
-          ## Install the module and allow Travis to use it
-          sudo insmod ${XPMEM_INSTALL_DIR}/lib/modules/`uname -r`/kernel/xpmem/xpmem.ko
+          sudo insmod /usr/lib/modules/`uname -r`/kernel/xpmem/xpmem.ko
           sudo chown `whoami` /dev/xpmem
 
       # Portals4
@@ -657,11 +663,10 @@ jobs:
           cd repos/xpmem
           sudo apt-get install linux-headers-`uname -r`
           ./autogen.sh
-          ./configure --prefix=${XPMEM_INSTALL_DIR}
+          ./configure --prefix=/usr
           make -j
           sudo make install
-          ## Install the module and allow Travis to use it
-          sudo insmod ${XPMEM_INSTALL_DIR}/lib/modules/`uname -r`/kernel/xpmem/xpmem.ko
+          sudo insmod /usr/lib/modules/`uname -r`/kernel/xpmem/xpmem.ko
           sudo chown `whoami` /dev/xpmem
 
       # SOS
