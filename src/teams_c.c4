@@ -89,7 +89,7 @@ shmem_team_get_config(shmem_team_t team, long config_mask, shmem_team_config_t *
           RAISE_WARN_STR("NULL config pointer passed to shmem_team_get_config");
           return -1;
       } else {
-          memcpy(config, myteam->config, sizeof(shmem_team_config_t));
+          memcpy(config, &myteam->config, sizeof(shmem_team_config_t));
       }
     }
 

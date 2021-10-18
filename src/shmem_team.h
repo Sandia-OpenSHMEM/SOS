@@ -22,7 +22,7 @@ struct shmem_internal_team_t {
     int                            start, stride, size;
     int                            psync_idx;
     int                            psync_avail[N_PSYNCS_PER_TEAM];
-    const shmem_team_config_t      *config;
+    shmem_team_config_t            config;
     long                           config_mask;
     size_t                         contexts_len;
     struct shmem_transport_ctx_t **contexts;

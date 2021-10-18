@@ -78,7 +78,7 @@ int shmem_internal_team_init(void)
     shmem_internal_team_world.my_pe          = shmem_internal_my_pe;
     shmem_internal_team_world.config_mask    = 0;
     shmem_internal_team_world.contexts_len   = 0;
-    shmem_internal_team_world.config         = calloc(1, sizeof(shmem_team_config_t));
+    memset(&shmem_internal_team_world.config, 0, sizeof(shmem_team_config_t));
     for (size_t i = 0; i < N_PSYNCS_PER_TEAM; i++)
         shmem_internal_team_world.psync_avail[i] = 1;
     SHMEM_TEAM_WORLD = (shmem_team_t) &shmem_internal_team_world;
@@ -88,7 +88,7 @@ int shmem_internal_team_init(void)
     shmem_internal_team_shared.my_pe         = shmem_internal_my_pe;
     shmem_internal_team_shared.config_mask   = 0;
     shmem_internal_team_shared.contexts_len  = 0;
-    shmem_internal_team_shared.config        = calloc(1, sizeof(shmem_team_config_t));
+    memset(&shmem_internal_team_shared.config, 0, sizeof(shmem_team_config_t));
     for (size_t i = 0; i < N_PSYNCS_PER_TEAM; i++)
         shmem_internal_team_shared.psync_avail[i] = 1;
     SHMEM_TEAM_SHARED = (shmem_team_t) &shmem_internal_team_shared;
@@ -288,7 +288,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
         myteam->stride      = PE_stride;
         myteam->size        = PE_size;
         if (config) {
-            myteam->config      = config;
+            myteam->config      = *config;
             myteam->config_mask = config_mask;
         }
         myteam->contexts_len = 0;
