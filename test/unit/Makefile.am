@@ -69,6 +69,7 @@ check_PROGRAMS = \
 	c11_test_shmem_get \
 	c11_test_shmem_p \
 	c11_test_shmem_put \
+	c11_test_shmem_put_signal \
 	c11_test_shmem_atomic_fetch \
 	c11_test_shmem_atomic_set \
 	c11_test_shmem_atomic_add \
