@@ -72,7 +72,7 @@
            COMPARE_TYPES(unsigned long, CTYPE)      \
            COMPARE_TYPES(unsigned long long, CTYPE)
 
-/* Note: Mirrors SHMEM_BIND_C11_SYNC */
+/* Note: Mirrors SHMEM_BIND_CXX_SYNC */
 #define NEED_SYNC_ASSOC(CTYPE)                      \
            COMPARE_TYPES_FIRST(short, CTYPE)        \
            COMPARE_TYPES(int, CTYPE)                \
