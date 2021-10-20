@@ -116,6 +116,7 @@ check_PROGRAMS = \
 	shmem_team_shared \
 	shmem_team_split_2d \
 	shmem_team_translate \
+	shmem_team_get_config \
 	atomic_nbi \
 	fadd_nbi
 

@@ -72,17 +72,28 @@ shmem_team_n_pes(shmem_team_t team)
         return ((shmem_internal_team_t *)team)->size;
 }
 
-void SHMEM_FUNCTION_ATTRIBUTES
-shmem_team_get_config(shmem_team_t team, shmem_team_config_t *config)
+int SHMEM_FUNCTION_ATTRIBUTES
+shmem_team_get_config(shmem_team_t team, long config_mask, shmem_team_config_t *config)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
     if (team == SHMEM_TEAM_INVALID)
-        return;
+        return -1;
 
     shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;
-    *config = myteam->config;
-    return;
+    if (config_mask != 0) {
+        if (config_mask != SHMEM_TEAM_NUM_CONTEXTS) {
+            RAISE_WARN_MSG("Invalid team config mask (%ld)\n", config_mask);
+            return -1;
+        }
+        if (config == NULL) {
+            RAISE_WARN_STR("NULL config pointer passed to shmem_team_get_config");
+            return -1;
+        }
+        memcpy(config, &myteam->config, sizeof(shmem_team_config_t));
+    }
+
+    return 0;
 }
 
 int SHMEM_FUNCTION_ATTRIBUTES
