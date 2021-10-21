@@ -168,10 +168,6 @@ typedef struct perf_metrics {
     int individual_report;
 } perf_metrics_t;
 
-/* psync arrays used in metric calculation */
-long red_psync[SHMEM_REDUCE_SYNC_SIZE];
-long bar_psync[SHMEM_BARRIER_SYNC_SIZE];
-
 /* default settings with no input provided */
 static inline
 void set_metric_defaults(perf_metrics_t *metric_info) {
@@ -217,17 +213,6 @@ void update_metrics(perf_metrics_t *metric_info) {
     metric_info->num_pes = shmem_n_pes();
     assert(metric_info->num_pes);
     metric_info->midpt = metric_info->num_pes / 2;
-}
-
-/* init psync arrays */
-static inline
-void init_psync_arrays(void) {
-    int i;
-    for(i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++)
-        red_psync[i] = SHMEM_SYNC_VALUE;
-
-    for(i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
-        bar_psync[i] = SHMEM_SYNC_VALUE;
 }
 
 /* return microseconds */

@@ -145,7 +145,6 @@ void calc_and_print_results(double end_t, double start_t, int len,
     static double pe_bw_sum, bw = 0.0; /*must be symmetric for reduction*/
     double pe_bw_avg = 0.0, pe_mr_avg = 0.0;
     int nred_elements = 1;
-    static double pwrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
     static double pe_time_start, pe_time_end,
                   end_time_max = 0.0, start_time_min = 0.0;
     double total_t = 0.0, total_t_max = 0.0;
@@ -188,16 +187,12 @@ void calc_and_print_results(double end_t, double start_t, int len,
 
     pe_time_start = start_t;
     pe_time_end = end_t;
-    shmem_barrier(start_pe, stride, nPEs, bar_psync);
+    shmem_barrier_all();
     if (metric_info->cstyle != COMM_INCAST) {
         if (nPEs >= 2) {
-            shmem_double_min_to_all(&start_time_min, &pe_time_start, nred_elements,
-                                start_pe, stride, nPEs, pwrk,
-                                red_psync);
-            shmem_barrier(start_pe, stride, nPEs, bar_psync);
-            shmem_double_max_to_all(&end_time_max, &pe_time_end, nred_elements,
-                                start_pe, stride, nPEs, pwrk,
-                                red_psync);
+            shmem_double_min_reduce(SHMEM_TEAM_WORLD, &start_time_min, &pe_time_start, nred_elements);
+            shmem_barrier_all();
+            shmem_double_max_reduce(SHMEM_TEAM_WORLD, &end_time_max, &pe_time_end, nred_elements);
         } else if (nPEs == 1) {
             start_time_min = pe_time_start;
             end_time_max = pe_time_end;
@@ -226,9 +221,7 @@ void calc_and_print_results(double end_t, double start_t, int len,
         pe_bw_sum = bw;
     } else {
         if (nPEs >= 2) {
-            shmem_double_sum_to_all(&pe_bw_sum, &bw, nred_elements,
-                                start_pe, stride, nPEs, pwrk,
-                                red_psync);
+            shmem_double_sum_reduce(SHMEM_TEAM_WORLD, &pe_bw_sum, &bw, nred_elements);
         } else if (nPEs == 1) {
             pe_bw_sum = bw;
         }
@@ -421,7 +414,6 @@ int bw_init_data_stream(perf_metrics_t * const metric_info,
 #if defined(ENABLE_THREADS)
     thread_safety_validation_check(metric_info);
 #endif
-    init_psync_arrays();
 
     if(only_even_PEs_check(metric_info->my_node, metric_info->num_pes) != 0) {
         return -1;

@@ -54,7 +54,6 @@ void calc_and_print_results(double start, double end, int len,
     int stride = 0, start_pe = 0, nPEs = 0;
     int nred_elements = 1;
     static double latency = 0.0, avg_latency = 0.0;
-    static double pwrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
     
     PE_set_used_adjustments(&nPEs, &stride, &start_pe, metric_info);
 
@@ -69,12 +68,10 @@ void calc_and_print_results(double start, double end, int len,
         printf("Individual latency for PE %6d is %10.2f\n",
                 metric_info->my_node, latency);
     }
-    shmem_barrier(start_pe, stride, nPEs, bar_psync);
+    shmem_barrier_all();
 
     if (nPEs >= 2) {
-        shmem_double_sum_to_all(&avg_latency, &latency, 
-                                nred_elements, start_pe, stride,
-                                nPEs, pwrk, red_psync);
+        shmem_double_sum_reduce(SHMEM_TEAM_WORLD, &avg_latency, &latency, nred_elements); 
         avg_latency /= nPEs;
     } else {
         avg_latency = latency;
@@ -175,7 +172,6 @@ int latency_init_resources(int argc, char *argv[],
 #if defined(ENABLE_THREADS)
     thread_safety_validation_check(metric_info);
 #endif
-    init_psync_arrays();
 
     if(only_even_PEs_check(metric_info->my_node, metric_info->num_pes) != 0) {
         return -1;
