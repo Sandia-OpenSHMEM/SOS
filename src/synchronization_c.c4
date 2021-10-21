@@ -503,7 +503,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST')
         }                                                                                      \
         if (nelems == 0 || num_ignored == nelems) {                                            \
             shmem_transport_probe();                                                           \
-            return 0;                                                                          \
+            return 1;                                                                          \
         }                                                                                      \
                                                                                                \
         for (i = 0; i < nelems; i++) {                                                         \
@@ -545,7 +545,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ALL')
         }                                                                                      \
         if (nelems == 0 || num_ignored == nelems) {                                            \
             shmem_transport_probe();                                                           \
-            return 0;                                                                          \
+            return 1;                                                                          \
         }                                                                                      \
                                                                                                \
         for (i = 0; i < nelems; i++) {                                                         \
