@@ -642,7 +642,7 @@ SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_team_translate_pe(shmem_team_t src_te
 
 SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_team_n_pes(shmem_team_t team);
 
-SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_team_get_config(shmem_team_t team, shmem_team_config_t *config);
+SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_team_get_config(shmem_team_t team, long config_mask, shmem_team_config_t *config);
 
 SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_team_split_strided(shmem_team_t parent_team, int PE_start, int PE_stride, int PE_size, const shmem_team_config_t *config, long config_mask, shmem_team_t *new_team);
 
