@@ -79,7 +79,7 @@ int main(void)
         if (new_team != SHMEM_TEAM_INVALID) {
 	    for (j = 0; j < NREPS; j++) {
 	        shmem_quiet();
-	        shmem_sync(new_team);
+	        shmem_team_sync(new_team);
             }
 	}
     }
