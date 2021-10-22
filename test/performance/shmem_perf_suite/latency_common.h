@@ -51,12 +51,10 @@ void print_latency_header(void) {
 static inline 
 void calc_and_print_results(double start, double end, int len,
                             perf_metrics_t * const metric_info) {
-    int stride = 0, start_pe = 0, nPEs = 0;
+    int start_pe = 0, nPEs = metric_info->num_pes;
     int nred_elements = 1;
     static double latency = 0.0, avg_latency = 0.0;
     
-    PE_set_used_adjustments(&nPEs, &stride, &start_pe, metric_info);
-
     if (end > 0 && start > 0 && (end - start) > 0) {
         latency = (end - start) / metric_info->trials;
     } else {
@@ -68,10 +66,10 @@ void calc_and_print_results(double start, double end, int len,
         printf("Individual latency for PE %6d is %10.2f\n",
                 metric_info->my_node, latency);
     }
-    shmem_barrier_all();
+    shmem_team_sync(streaming_team);
 
     if (nPEs >= 2) {
-        shmem_double_sum_reduce(SHMEM_TEAM_WORLD, &avg_latency, &latency, nred_elements); 
+        shmem_double_sum_reduce(streaming_team, &avg_latency, &latency, nred_elements); 
         avg_latency /= nPEs;
     } else {
         avg_latency = latency;
@@ -188,6 +186,10 @@ int latency_init_resources(int argc, char *argv[],
 #else
     metric_info->target = shmalloc(sizeof(long));
 #endif
+
+    if (create_streaming_team(metric_info) != 0) {
+        return -1;
+    }
 
     return 0;
 }

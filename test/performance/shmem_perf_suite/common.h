@@ -168,6 +168,9 @@ typedef struct perf_metrics {
     int individual_report;
 } perf_metrics_t;
 
+
+shmem_team_t streaming_team;
+
 /* default settings with no input provided */
 static inline
 void set_metric_defaults(perf_metrics_t *metric_info) {
@@ -649,7 +652,7 @@ int check_hostname_validation(const perf_metrics_t * const my_info) {
     shmem_barrier_all();
 
     /* nelems needs to be updated based on 32-bit API */
-    shmem_char_fcollect(SHMEM_TEAM_WORLD, dest, hostname, hostname_size/4);
+    shmem_char_fcollect(SHMEM_TEAM_WORLD, dest, hostname, hostname_size);
 
     char *snode_name = NULL;
     char *tnode_name = NULL;
@@ -766,24 +769,6 @@ red_PE_set validation_set(perf_metrics_t * const my_info, int *nPEs)
     }
 }
 
-/* reduction to collect performance results from PE set
- * then start_pe will print results --- assumes num_pes is even */
-static inline
-void PE_set_used_adjustments(int *nPEs, int *stride, int *start_pe,
-                             perf_metrics_t * const my_info) {
-    red_PE_set PE_set = validation_set(my_info, nPEs);
-
-    if(PE_set == FIRST_HALF || PE_set == FULL_SET) {
-        *start_pe = 0;
-    }
-    else {
-        assert(PE_set == SECOND_HALF);
-        *start_pe = my_info->midpt;
-    }
-
-    *stride = 0; /* back to back PEs */
-}
-
 static
 void print_header(perf_metrics_t * const metric_info) {
     printf("\n%20sSandia OpenSHMEM Performance Suite%20s\n", " ", " ");
@@ -799,4 +784,18 @@ void print_header(perf_metrics_t * const metric_info) {
     printf("Thread safety:          %10s\n", thread_safety_str(metric_info));
 #endif
     printf("\n");
+}
+
+static
+int create_streaming_team(perf_metrics_t * const metric_info) {
+    shmem_team_config_t *config = NULL;
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, 0, 1, metric_info->num_pes / 2, config, 0, &streaming_team);
+
+    int my_pe = metric_info->my_node;
+    if (streaming_team == SHMEM_TEAM_INVALID && (my_pe >= 0 && my_pe < metric_info->num_pes / 2)) {
+        fprintf(stderr, "PE %d: Streaming team creation failed\n", metric_info->my_node);
+        return -1;
+    }
+
+    return 0;
 }
