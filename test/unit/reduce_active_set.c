@@ -124,10 +124,10 @@ int main(void)
         if (new_team != SHMEM_TEAM_INVALID) {
             shmem_long_max_reduce(new_team, dst_max, src, NELEM);
             errors += validate_max(i, me, npes);
-	    
+
             shmem_long_min_reduce(new_team, dst_min, src, NELEM);
-	    errors += validate_min(i, me, npes);
-	}
+            errors += validate_min(i, me, npes);
+        }
     }
 #endif
 
