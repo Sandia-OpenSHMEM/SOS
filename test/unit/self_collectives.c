@@ -161,38 +161,80 @@ int main(void) {
     if (me == 0) printf(" + reduction\n");
 
     in = me; out = -1;
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_int_and_to_all(&in, &out, 1, me, 0, 1, pwrk, reduce_psync);
     CHECK("shmem_int_and_to_all", in, out);
+#else
+    if (new_team != SHMEM_TEAM_INVALID)
+        shmem_int_and_reduce(new_team, &in, &out, 1);
+    CHECK("shmem_int_and_reduce", in, out);
+#endif
     shmem_barrier_all();
 
     in = me; out = -1;
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_int_or_to_all(&in, &out, 1, me, 0, 1, pwrk, reduce_psync);
     CHECK("shmem_int_or_to_all", in, out);
+#else
+    if (new_team != SHMEM_TEAM_INVALID)
+        shmem_int_or_reduce(new_team, &in, &out, 1);
+    CHECK("shmem_int_or_reduce", in, out);
+#endif
     shmem_barrier_all();
 
     in = me; out = -1;
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_int_xor_to_all(&in, &out, 1, me, 0, 1, pwrk, reduce_psync);
     CHECK("shmem_int_xor_to_all", in, out);
+#else
+    if (new_team != SHMEM_TEAM_INVALID)
+        shmem_int_xor_reduce(new_team, &in, &out, 1);
+    CHECK("shmem_int_xor_reduce", in, out);
+#endif
     shmem_barrier_all();
 
     in = me; out = -1;
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_int_min_to_all(&in, &out, 1, me, 0, 1, pwrk, reduce_psync);
     CHECK("shmem_int_min_to_all", in, out);
+#else
+    if (new_team != SHMEM_TEAM_INVALID)
+        shmem_int_min_reduce(new_team, &in, &out, 1);
+    CHECK("shmem_int_min_reduce", in, out);
+#endif
     shmem_barrier_all();
 
     in = me; out = -1;
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_int_max_to_all(&in, &out, 1, me, 0, 1, pwrk, reduce_psync);
     CHECK("shmem_int_max_to_all", in, out);
+#else
+    if (new_team != SHMEM_TEAM_INVALID)
+        shmem_int_max_reduce(new_team, &in, &out, 1);
+    CHECK("shmem_int_max_to_all", in, out);
+#endif
     shmem_barrier_all();
 
     in = me; out = -1;
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_int_sum_to_all(&in, &out, 1, me, 0, 1, pwrk, reduce_psync);
     CHECK("shmem_int_sum_to_all", in, out);
+#else
+    if (new_team != SHMEM_TEAM_INVALID)
+        shmem_int_sum_reduce(new_team, &in, &out, 1);
+    CHECK("shmem_int_sum_reduce", in, out);
+#endif
     shmem_barrier_all();
 
     in = me; out = -1;
+#ifdef ENABLE_DEPRECATED_TESTS
     shmem_int_prod_to_all(&in, &out, 1, me, 0, 1, pwrk, reduce_psync);
     CHECK("shmem_int_prod_to_all", in, out);
+#else
+    if (new_team != SHMEM_TEAM_INVALID)
+        shmem_int_prod_reduce(new_team, &in, &out, 1);
+    CHECK("shmem_int_prod_reduce", in, out);
+#endif
     shmem_barrier_all();
 
     /* All-to-all */

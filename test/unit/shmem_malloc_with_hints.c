@@ -37,10 +37,6 @@
 
 #define SHMEM_MALLOC_INVALID_HINT ~(SHMEM_MALLOC_ATOMICS_REMOTE)
 
-long pSync[SHMEM_REDUCE_SYNC_SIZE];
-int pWrk[WRK_SIZE];
-
-
 static int sumtoall_with_malloc_hint(long hint, int mype, int npes)
 {
     int failed = 0;
@@ -59,7 +55,7 @@ static int sumtoall_with_malloc_hint(long hint, int mype, int npes)
     }
 
     shmem_barrier_all();
-    shmem_int_sum_to_all(dst, src, N, 0, 0, npes, pWrk, pSync);
+    shmem_int_sum_reduce(SHMEM_TEAM_WORLD, dst, src, N);
 
     if (mype == 0) {
         for (i = 0; i < N; i++) {
@@ -77,7 +73,7 @@ static int sumtoall_with_malloc_hint(long hint, int mype, int npes)
 
 
 int main(int argc, char **argv) {
-    int npes, i, mype;
+    int npes, mype;
     int passed = 0;
     int fail = 0;
 
@@ -85,9 +81,6 @@ int main(int argc, char **argv) {
 
     npes = shmem_n_pes();
     mype = shmem_my_pe();
-
-    for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++)
-        pSync[i] = SHMEM_SYNC_VALUE;
 
     passed = sumtoall_with_malloc_hint(0, mype, npes);
     passed += sumtoall_with_malloc_hint(SHMEM_MALLOC_ATOMICS_REMOTE, mype, npes);

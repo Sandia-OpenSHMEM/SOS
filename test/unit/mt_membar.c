@@ -229,7 +229,7 @@ int main(int argc, char **argv) {
     pthread_barrier_destroy(&fencebar);    
 
     shmem_barrier_all(); 
-    shmem_int_sum_to_all(&sum_error, &errors, 1, 0, 0, npes, pWrk, pSync);
+    shmem_int_sum_reduce(SHMEM_TEAM_WORLD, &sum_error, &errors, 1);
 
     shmem_finalize();
     return (sum_error == 0) ? 0 : 1;

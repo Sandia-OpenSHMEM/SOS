@@ -59,8 +59,8 @@ long syncArr[SHMEM_REDUCE_SYNC_SIZE];
                                                                      \
     memset(TYPE##_src,0,sizeof(TYPE##_src));                         \
                                                                      \
-    shmem_complex##LETTER##_##OP##_to_all(TYPE##_dest,TYPE##_src,10, \
-      0,0, shmem_n_pes(), TYPE##_workData, syncArr);                 \
+    shmem_complex##LETTER##_##OP##_reduce(SHMEM_TEAM_WORLD,          \
+		    TYPE##_dest,TYPE##_src,10);                      \
                                                                      \
     shmem_barrier_all();                                             \
                                                                      \

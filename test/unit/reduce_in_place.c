@@ -30,10 +30,6 @@
 
 #define NELEM 10
 
-long psync[SHMEM_REDUCE_SYNC_SIZE];
-
-long pwrk[NELEM/2 + SHMEM_REDUCE_MIN_WRKDATA_SIZE];
-
 long src[NELEM];
 
 int main(void)
@@ -49,12 +45,9 @@ int main(void)
     for (int i = 0; i < NELEM; i++)
         src[i] = me;
 
-    for (int i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++)
-        psync[i] = SHMEM_SYNC_VALUE;
-
     shmem_barrier_all();
 
-    shmem_long_max_to_all(src, src, NELEM, 0, 0, npes, pwrk, psync);
+    shmem_long_max_reduce(SHMEM_TEAM_WORLD, src, src, NELEM);
 
     /* Validate reduced data */
     for (int j = 0; j < NELEM; j++) {
