@@ -42,25 +42,23 @@
 #define shmem_internal_or_op(a, b) ((a) | (b))
 #define shmem_internal_xor_op(a, b) ((a) ^ (b))
 
-FUNC_OP_CREATE(int32, int32_t, max, shmem_internal_max_op)
-FUNC_OP_CREATE(int32, int32_t, min, shmem_internal_min_op)
-FUNC_OP_CREATE(int32, int32_t, sum, shmem_internal_sum_op)
-FUNC_OP_CREATE(int32, int32_t, prod, shmem_internal_prod_op)
-FUNC_OP_CREATE(int32, int32_t, and, shmem_internal_and_op)
-FUNC_OP_CREATE(int32, int32_t, or, shmem_internal_or_op)
-FUNC_OP_CREATE(int32, int32_t, xor, shmem_internal_xor_op)
+FUNC_OP_CREATE(char, char, max, shmem_internal_max_op)
+FUNC_OP_CREATE(char, char, min, shmem_internal_min_op)
+FUNC_OP_CREATE(char, char, sum, shmem_internal_sum_op)
+FUNC_OP_CREATE(char, char, prod, shmem_internal_prod_op)
 
-FUNC_OP_CREATE(int64, int64_t, max, shmem_internal_max_op)
-FUNC_OP_CREATE(int64, int64_t, min, shmem_internal_min_op)
-FUNC_OP_CREATE(int64, int64_t, sum, shmem_internal_sum_op)
-FUNC_OP_CREATE(int64, int64_t, prod, shmem_internal_prod_op)
-FUNC_OP_CREATE(int64, int64_t, and, shmem_internal_and_op)
-FUNC_OP_CREATE(int64, int64_t, or, shmem_internal_or_op)
-FUNC_OP_CREATE(int64, int64_t, xor, shmem_internal_xor_op)
+FUNC_OP_CREATE(schar, signed char, max, shmem_internal_max_op)
+FUNC_OP_CREATE(schar, signed char, min, shmem_internal_min_op)
+FUNC_OP_CREATE(schar, signed char, sum, shmem_internal_sum_op)
+FUNC_OP_CREATE(schar, signed char, prod, shmem_internal_prod_op)
 
 FUNC_OP_CREATE(uchar, unsigned char, and, shmem_internal_and_op)
 FUNC_OP_CREATE(uchar, unsigned char, or, shmem_internal_or_op)
 FUNC_OP_CREATE(uchar, unsigned char, xor, shmem_internal_xor_op)
+FUNC_OP_CREATE(uchar, unsigned char, max, shmem_internal_max_op)
+FUNC_OP_CREATE(uchar, unsigned char, min, shmem_internal_min_op)
+FUNC_OP_CREATE(uchar, unsigned char, sum, shmem_internal_sum_op)
+FUNC_OP_CREATE(uchar, unsigned char, prod, shmem_internal_prod_op)
 
 FUNC_OP_CREATE(short, short, max, shmem_internal_max_op)
 FUNC_OP_CREATE(short, short, min, shmem_internal_min_op)
@@ -118,6 +116,11 @@ FUNC_OP_CREATE(longlong, long long, and, shmem_internal_and_op)
 FUNC_OP_CREATE(longlong, long long, or, shmem_internal_or_op)
 FUNC_OP_CREATE(longlong, long long, xor, shmem_internal_xor_op)
 
+FUNC_OP_CREATE(ptrdiff, ptrdiff_t, max, shmem_internal_max_op)
+FUNC_OP_CREATE(ptrdiff, ptrdiff_t, min, shmem_internal_min_op)
+FUNC_OP_CREATE(ptrdiff, ptrdiff_t, sum, shmem_internal_sum_op)
+FUNC_OP_CREATE(ptrdiff, ptrdiff_t, prod, shmem_internal_prod_op)
+
 FUNC_OP_CREATE(ulonglong, unsigned long long, max, shmem_internal_max_op)
 FUNC_OP_CREATE(ulonglong, unsigned long long, min, shmem_internal_min_op)
 FUNC_OP_CREATE(ulonglong, unsigned long long, sum, shmem_internal_sum_op)
@@ -125,6 +128,78 @@ FUNC_OP_CREATE(ulonglong, unsigned long long, prod, shmem_internal_prod_op)
 FUNC_OP_CREATE(ulonglong, unsigned long long, and, shmem_internal_and_op)
 FUNC_OP_CREATE(ulonglong, unsigned long long, or, shmem_internal_or_op)
 FUNC_OP_CREATE(ulonglong, unsigned long long, xor, shmem_internal_xor_op)
+
+FUNC_OP_CREATE(int8, int8_t, max, shmem_internal_max_op)
+FUNC_OP_CREATE(int8, int8_t, min, shmem_internal_min_op)
+FUNC_OP_CREATE(int8, int8_t, sum, shmem_internal_sum_op)
+FUNC_OP_CREATE(int8, int8_t, prod, shmem_internal_prod_op)
+FUNC_OP_CREATE(int8, int8_t, and, shmem_internal_and_op)
+FUNC_OP_CREATE(int8, int8_t, or, shmem_internal_or_op)
+FUNC_OP_CREATE(int8, int8_t, xor, shmem_internal_xor_op)
+
+FUNC_OP_CREATE(int16, int16_t, max, shmem_internal_max_op)
+FUNC_OP_CREATE(int16, int16_t, min, shmem_internal_min_op)
+FUNC_OP_CREATE(int16, int16_t, sum, shmem_internal_sum_op)
+FUNC_OP_CREATE(int16, int16_t, prod, shmem_internal_prod_op)
+FUNC_OP_CREATE(int16, int16_t, and, shmem_internal_and_op)
+FUNC_OP_CREATE(int16, int16_t, or, shmem_internal_or_op)
+FUNC_OP_CREATE(int16, int16_t, xor, shmem_internal_xor_op)
+
+FUNC_OP_CREATE(int32, int32_t, max, shmem_internal_max_op)
+FUNC_OP_CREATE(int32, int32_t, min, shmem_internal_min_op)
+FUNC_OP_CREATE(int32, int32_t, sum, shmem_internal_sum_op)
+FUNC_OP_CREATE(int32, int32_t, prod, shmem_internal_prod_op)
+FUNC_OP_CREATE(int32, int32_t, and, shmem_internal_and_op)
+FUNC_OP_CREATE(int32, int32_t, or, shmem_internal_or_op)
+FUNC_OP_CREATE(int32, int32_t, xor, shmem_internal_xor_op)
+
+FUNC_OP_CREATE(int64, int64_t, max, shmem_internal_max_op)
+FUNC_OP_CREATE(int64, int64_t, min, shmem_internal_min_op)
+FUNC_OP_CREATE(int64, int64_t, sum, shmem_internal_sum_op)
+FUNC_OP_CREATE(int64, int64_t, prod, shmem_internal_prod_op)
+FUNC_OP_CREATE(int64, int64_t, and, shmem_internal_and_op)
+FUNC_OP_CREATE(int64, int64_t, or, shmem_internal_or_op)
+FUNC_OP_CREATE(int64, int64_t, xor, shmem_internal_xor_op)
+
+FUNC_OP_CREATE(uint8, uint8_t, max, shmem_internal_max_op)
+FUNC_OP_CREATE(uint8, uint8_t, min, shmem_internal_min_op)
+FUNC_OP_CREATE(uint8, uint8_t, sum, shmem_internal_sum_op)
+FUNC_OP_CREATE(uint8, uint8_t, prod, shmem_internal_prod_op)
+FUNC_OP_CREATE(uint8, uint8_t, and, shmem_internal_and_op)
+FUNC_OP_CREATE(uint8, uint8_t, or, shmem_internal_or_op)
+FUNC_OP_CREATE(uint8, uint8_t, xor, shmem_internal_xor_op)
+
+FUNC_OP_CREATE(uint16, uint16_t, max, shmem_internal_max_op)
+FUNC_OP_CREATE(uint16, uint16_t, min, shmem_internal_min_op)
+FUNC_OP_CREATE(uint16, uint16_t, sum, shmem_internal_sum_op)
+FUNC_OP_CREATE(uint16, uint16_t, prod, shmem_internal_prod_op)
+FUNC_OP_CREATE(uint16, uint16_t, and, shmem_internal_and_op)
+FUNC_OP_CREATE(uint16, uint16_t, or, shmem_internal_or_op)
+FUNC_OP_CREATE(uint16, uint16_t, xor, shmem_internal_xor_op)
+
+FUNC_OP_CREATE(uint32, uint32_t, max, shmem_internal_max_op)
+FUNC_OP_CREATE(uint32, uint32_t, min, shmem_internal_min_op)
+FUNC_OP_CREATE(uint32, uint32_t, sum, shmem_internal_sum_op)
+FUNC_OP_CREATE(uint32, uint32_t, prod, shmem_internal_prod_op)
+FUNC_OP_CREATE(uint32, uint32_t, and, shmem_internal_and_op)
+FUNC_OP_CREATE(uint32, uint32_t, or, shmem_internal_or_op)
+FUNC_OP_CREATE(uint32, uint32_t, xor, shmem_internal_xor_op)
+
+FUNC_OP_CREATE(uint64, uint64_t, max, shmem_internal_max_op)
+FUNC_OP_CREATE(uint64, uint64_t, min, shmem_internal_min_op)
+FUNC_OP_CREATE(uint64, uint64_t, sum, shmem_internal_sum_op)
+FUNC_OP_CREATE(uint64, uint64_t, prod, shmem_internal_prod_op)
+FUNC_OP_CREATE(uint64, uint64_t, and, shmem_internal_and_op)
+FUNC_OP_CREATE(uint64, uint64_t, or, shmem_internal_or_op)
+FUNC_OP_CREATE(uint64, uint64_t, xor, shmem_internal_xor_op)
+
+FUNC_OP_CREATE(size, size_t, max, shmem_internal_max_op)
+FUNC_OP_CREATE(size, size_t, min, shmem_internal_min_op)
+FUNC_OP_CREATE(size, size_t, sum, shmem_internal_sum_op)
+FUNC_OP_CREATE(size, size_t, prod, shmem_internal_prod_op)
+FUNC_OP_CREATE(size, size_t, and, shmem_internal_and_op)
+FUNC_OP_CREATE(size, size_t, or, shmem_internal_or_op)
+FUNC_OP_CREATE(size, size_t, xor, shmem_internal_xor_op)
 
 FUNC_OP_CREATE(float, float, max, shmem_internal_max_op)
 FUNC_OP_CREATE(float, float, min, shmem_internal_min_op)
@@ -231,17 +306,27 @@ static inline void shmem_internal_reduce_local(shm_internal_op_t op,
                                 shm_internal_datatype_t datatype, int count,
                                 void *in, void *inout) {
     switch(datatype) {
+        REDUCE_LOCAL_DTYPE_CASE_FP(SHM_INTERNAL_CHAR, char, char);
+        REDUCE_LOCAL_DTYPE_CASE_FP(SHM_INTERNAL_SCHAR, schar, signed char);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_SHORT, short, short);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_INT, int, int);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_LONG, long, long);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_LONG_LONG, longlong, long long);
+        REDUCE_LOCAL_DTYPE_CASE_FP(SHM_INTERNAL_PTRDIFF_T, ptrdiff, ptrdiff_t);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_UCHAR, uchar, unsigned char);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_USHORT, ushort, unsigned short);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_UINT, uint, unsigned int);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_ULONG, ulong, unsigned long);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_ULONG_LONG, ulonglong, unsigned long long);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_INT8, int8, int8_t);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_INT16, int16, int16_t);
         REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_INT32, int32, int32_t);
         REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_INT64, int64, int64_t);
-        REDUCE_LOCAL_DTYPE_CASE_AND_OR_XOR(SHM_INTERNAL_UCHAR, uchar, unsigned char);
-        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_SHORT, short, short);
-        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_USHORT, ushort, unsigned short);
-        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_INT, int, int);
-        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_UINT, uint, unsigned int);
-        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_LONG, long, long);
-        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_ULONG, ulong, unsigned long);
-        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_LONG_LONG, longlong, long long);
-        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_ULONG_LONG, ulonglong, unsigned long long);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_UINT8, uint8, uint8_t);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_UINT16, uint16, uint16_t);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_UINT32, uint32, uint32_t);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_UINT64, uint64, uint64_t);
+        REDUCE_LOCAL_DTYPE_CASE_INT(SHM_INTERNAL_SIZE_T, size, size_t);
         REDUCE_LOCAL_DTYPE_CASE_FP(SHM_INTERNAL_FLOAT, float, float);
         REDUCE_LOCAL_DTYPE_CASE_FP(SHM_INTERNAL_DOUBLE, double, double);
         REDUCE_LOCAL_DTYPE_CASE_FP(SHM_INTERNAL_LONG_DOUBLE, long_double, long double);
