@@ -68,16 +68,16 @@ AS_IF([test "$enable_hard_polling" = "yes"], [AC_DEFINE([ENABLE_HARD_POLLING], [
 AC_ARG_ENABLE([completion-polling],
     [AC_HELP_STRING([--enable-completion-polling],
                     [Enable polling in quiet, fence, and local completion operations (default:disabled)])])
-AS_IF([test "$enable_completion_polling" = "yes"],
-      [AC_DEFINE([DEFAULT_POLL_LIMIT], [-1], [Poll limit for local/remote completions])],
-      [AC_DEFINE([DEFAULT_POLL_LIMIT], [0], [Poll limit for local/remote completions])])
 
 AC_ARG_ENABLE([manual-progress],
     [AC_HELP_STRING([--enable-manual-progress],
                     [Enable intermittent progress calls inside transport layer (default:disabled)])])
+AS_IF([test "$enable_completion_polling" = "yes" -o "$enable_manual_progress" = "yes"],
+      [AC_DEFINE([DEFAULT_POLL_LIMIT], [-1], [Poll limit for local/remote completions])],
+      [AC_DEFINE([DEFAULT_POLL_LIMIT], [0], [Poll limit for local/remote completions])])
+
 AS_IF([test "$enable_manual_progress" = "yes"],
-      [AC_DEFINE([ENABLE_MANUAL_PROGRESS], [1], [Enable manual progress])
-       AC_DEFINE([DEFAULT_POLL_LIMIT], [-1], [Poll limit for local/remote completions])])
+      [AC_DEFINE([ENABLE_MANUAL_PROGRESS], [1], [Enable manual progress])])
 
 AC_ARG_ENABLE([total-data-ordering],
     [AC_HELP_STRING([--enable-total-data-ordering],
@@ -528,6 +528,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[ _Complex v; ]] )],
 AC_LANG_POP([C])
 
 SHMEM_FIND_INT_TYPE([char], [$transport])
+SHMEM_FIND_INT_TYPE([signed char], [$transport])
 SHMEM_FIND_INT_TYPE([short], [$transport])
 SHMEM_FIND_INT_TYPE([int], [$transport])
 SHMEM_FIND_INT_TYPE([long], [$transport])
