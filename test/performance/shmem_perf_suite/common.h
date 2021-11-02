@@ -169,7 +169,7 @@ typedef struct perf_metrics {
 } perf_metrics_t;
 
 
-shmem_team_t streaming_team;
+shmem_team_t streaming_team, target_team;
 
 /* default settings with no input provided */
 static inline
@@ -599,7 +599,7 @@ int partner_node(const perf_metrics_t * const my_info)
 static inline
 int streaming_node(const perf_metrics_t * const my_info)
 {
-    if(my_info->cstyle == COMM_PAIRWISE) {
+    if (my_info->cstyle == COMM_PAIRWISE) {
         return (my_info->my_node < my_info->szinitiator);
     } else {
         assert(my_info->cstyle == COMM_INCAST);
@@ -750,22 +750,35 @@ void large_message_metric_chg(perf_metrics_t * const metric_info, int len) {
 static inline
 red_PE_set validation_set(perf_metrics_t * const my_info, int *nPEs)
 {
-    if(my_info->cstyle == COMM_PAIRWISE) {
-        if(streaming_node(my_info)) {
+    if (my_info->cstyle == COMM_PAIRWISE) {
+        if (streaming_node(my_info)) {
             *nPEs = my_info->szinitiator;
             return FIRST_HALF;
-        } else if(target_node(my_info)) {
+        } else if (target_node(my_info)) {
             *nPEs = my_info->sztarget;
             return SECOND_HALF;
         } else {
             fprintf(stderr, "Warning: you are getting data from a node that "
-                "wasn't a part of the perf set \n ");
+                            "wasn't a part of the perf set \n ");
             return 0;
         }
     } else {
         assert(my_info->cstyle == COMM_INCAST);
         *nPEs = my_info->num_pes;
         return FULL_SET;
+    }
+}
+
+static inline
+void PE_set_used_adjustments(int *nPEs, int *start_pe, perf_metrics_t * const my_info) {
+    red_PE_set PE_set = validation_set(my_info, nPEs);
+
+    if(PE_set == FIRST_HALF || PE_set == FULL_SET) {
+        *start_pe = 0;
+    }
+    else {
+        assert(PE_set == SECOND_HALF);
+        *start_pe = my_info->midpt;
     }
 }
 
@@ -798,4 +811,27 @@ int create_streaming_team(perf_metrics_t * const metric_info) {
     }
 
     return 0;
+}
+
+static
+int create_target_team(perf_metrics_t * const metric_info) {
+    shmem_team_config_t *config = NULL;
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, metric_info->midpt, 1, metric_info->num_pes / 2, config, 0, &target_team);
+
+    int my_pe = metric_info->my_node;
+    if (target_team == SHMEM_TEAM_INVALID && (my_pe >= metric_info->midpt && my_pe < metric_info->num_pes)) {
+        fprintf(stderr, "PE %d: Target team creation failed\n", metric_info->my_node);
+        return -1;
+    }
+
+    return 0;
+}
+
+static 
+int create_teams(perf_metrics_t * const metric_info) {
+    int ret = create_streaming_team(metric_info);
+    if (!ret)
+        return create_target_team(metric_info);
+
+    return ret;
 }

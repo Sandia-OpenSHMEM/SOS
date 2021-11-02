@@ -54,7 +54,11 @@ void calc_and_print_results(double start, double end, int len,
     int start_pe = 0, nPEs = metric_info->num_pes;
     int nred_elements = 1;
     static double latency = 0.0, avg_latency = 0.0;
-    
+    shmem_team_t sync_team;
+   
+    PE_set_used_adjustments(&nPEs, &start_pe, metric_info);
+    sync_team = (start_pe == 0) ? streaming_team : target_team;
+ 
     if (end > 0 && start > 0 && (end - start) > 0) {
         latency = (end - start) / metric_info->trials;
     } else {
@@ -66,7 +70,7 @@ void calc_and_print_results(double start, double end, int len,
         printf("Individual latency for PE %6d is %10.2f\n",
                 metric_info->my_node, latency);
     }
-    shmem_team_sync(streaming_team);
+    shmem_team_sync(sync_team);
 
     if (nPEs >= 2) {
         shmem_double_sum_reduce(streaming_team, &avg_latency, &latency, nred_elements); 
@@ -187,7 +191,7 @@ int latency_init_resources(int argc, char *argv[],
     metric_info->target = shmalloc(sizeof(long));
 #endif
 
-    if (create_streaming_team(metric_info) != 0) {
+    if (create_teams(metric_info) != 0) {
         return -1;
     }
 
