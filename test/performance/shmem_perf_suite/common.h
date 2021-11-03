@@ -559,6 +559,7 @@ void thread_safety_validation_check(perf_metrics_t * const metric_info) {
 }
 #endif
 
+/* Only even number of PEs are allowed for performance tests */
 static inline
 int only_even_PEs_check(int my_node, int num_pes) {
     if (num_pes % 2 != 0) {
@@ -630,9 +631,7 @@ int check_hostname_validation(const perf_metrics_t * const my_info) {
 
     int hostname_status = -1;
 
-    /* hostname_size should be a length divisible by 4 */
-    int hostname_size = (MAX_HOSTNAME_LEN % 4 == 0) ? MAX_HOSTNAME_LEN :
-                         MAX_HOSTNAME_LEN + (4 - MAX_HOSTNAME_LEN % 4);
+    int hostname_size = MAX_HOSTNAME_LEN;
     int i, errors = 0;
 
     char *hostname = (char *) shmem_malloc (hostname_size * sizeof(char));
@@ -651,7 +650,6 @@ int check_hostname_validation(const perf_metrics_t * const my_info) {
     }
     shmem_barrier_all();
 
-    /* nelems needs to be updated based on 32-bit API */
     shmem_char_fcollect(SHMEM_TEAM_WORLD, dest, hostname, hostname_size);
 
     char *snode_name = NULL;
@@ -827,6 +825,9 @@ int create_target_team(perf_metrics_t * const metric_info) {
     return 0;
 }
 
+/* Create two teams: streaming and target. 
+ * PEs [0, 1, ..., npes/2-1] will be in streaming_team and
+ * PEs [npes/2, npes/2+1, ..., npes-1] in target_team.  */ 
 static 
 int create_teams(perf_metrics_t * const metric_info) {
     int ret = create_streaming_team(metric_info);
