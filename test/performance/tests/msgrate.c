@@ -110,12 +110,20 @@ test_one_way(void)
 
     shmem_barrier_all();
 
+    shmem_team_t sync_team;
+    shmem_team_config_t *config = NULL;
+    if (world_size % 2 == 1)
+        shmem_team_split_strided(SHMEM_TEAM_WORLD, 0, 1, world_size - 1, config, 0, &sync_team);
+    else
+        sync_team = SHMEM_TEAM_WORLD;
+
     if (!(world_size % 2 == 1 && rank == (world_size - 1))) {
         if (rank < world_size / 2) {
             for (i = 0 ; i < niters ; ++i) {
                 cache_invalidate();
 
-                shmem_barrier_all();
+                shmem_quiet();
+                shmem_team_sync(sync_team);
 
                 tmp = timer();
                 for (k = 0 ; k < nmsgs ; ++k) {
@@ -130,7 +138,8 @@ test_one_way(void)
             for (i = 0 ; i < niters ; ++i) {
                 cache_invalidate();
 
-                shmem_barrier_all();
+                shmem_quiet();
+                shmem_team_sync(sync_team);
 
                 tmp = timer();
                 shmem_short_wait_until((short*) (recv_buf + (nbytes * (nmsgs - 1))), SHMEM_CMP_NE, 0);
@@ -139,7 +148,7 @@ test_one_way(void)
             }
         }
 
-        shmem_double_sum_reduce(SHMEM_TEAM_WORLD, &tmp, &total, 1);
+        shmem_double_sum_reduce(sync_team, &tmp, &total, 1);
         display_result("single direction", (niters * nmsgs) / (tmp / world_size));
     }
 
@@ -258,15 +267,9 @@ main(int argc, char *argv[])
 
         /* sanity check */
         if (start_err != 1) {
-#if 0
-            if (world_size < 3) {
-                fprintf(stderr, "Error: At least three processes are required\n");
-                start_err = 1;
-            } else
-#endif
-                if (world_size <= npeers) {
+            if (world_size <= npeers) {
                 fprintf(stderr, "Error: job size (%d) <= number of peers (%d)\n",
-                        world_size, npeers);
+                                 world_size, npeers);
                 start_err = 77;
             } else if (ppn < 1) {
                 fprintf(stderr, "Error: must specify process per node (-n #)\n");
