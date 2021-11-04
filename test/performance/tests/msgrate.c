@@ -33,12 +33,12 @@
 #include <sys/time.h>
 
 /* configuration parameters - setable by command line arguments */
-int npeers = 6;
+int npeers = 2;
 int niters = 4096;
 int nmsgs = 128;
 int nbytes = 8;
 int cache_size = (8 * 1024 * 1024 / sizeof(int));
-int ppn = -1;
+int ppn = 1;
 int machine_output = 0;
 
 /* globals */
@@ -267,18 +267,15 @@ main(int argc, char *argv[])
 
         /* sanity check */
         if (start_err != 1) {
-            if (world_size <= npeers) {
-                fprintf(stderr, "Error: job size (%d) <= number of peers (%d)\n",
+            if (world_size < npeers) {
+                fprintf(stderr, "Error: job size (%d) < number of peers (%d)\n",
                                  world_size, npeers);
                 start_err = 77;
             } else if (ppn < 1) {
                 fprintf(stderr, "Error: must specify process per node (-n #)\n");
                 start_err = 77;
-            } else if (world_size / ppn <= npeers) {
-                fprintf(stderr, "Error: node count <= number of peers\n");
-                start_err = 77;
             }
-        }
+        } 
     }
 
     shmem_barrier_all();
