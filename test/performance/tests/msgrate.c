@@ -275,7 +275,7 @@ main(int argc, char *argv[])
                 fprintf(stderr, "Error: must specify process per node (-n #)\n");
                 start_err = 77;
             }
-        } 
+        }
     }
 
     shmem_barrier_all();
