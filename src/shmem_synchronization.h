@@ -85,6 +85,13 @@ shmem_internal_fence(shmem_ctx_t ctx)
         }                                                \
     } while(0)
 
+#define COMP_SIGNAL(type, a, b, ret) ({                  \
+    uint64_t satisfied_val;                              \
+    COMP(type, a, b, ret);                               \
+    if (ret) satisfied_val = a;                          \
+    satisfied_val;                                       \
+})
+
 #ifdef USE_SHR_ATOMICS
 #define SYNC_LOAD(var) __atomic_load_n(var, __ATOMIC_ACQUIRE)
 #else
@@ -111,6 +118,21 @@ shmem_internal_fence(shmem_ctx_t ctx)
             COMP(cond, SYNC_LOAD(var), value, cmpret);   \
         }                                                \
     } while(0)
+
+#define SHMEM_SIGNAL_WAIT_UNTIL_POLL(var, cond, value) ({               \
+    uint64_t retval;                                                    \
+    do {                                                                \
+        int cmpret;                                                     \
+                                                                        \
+        retval = COMP_SIGNAL(cond, SYNC_LOAD(var), value, cmpret);      \
+        while (!cmpret) {                                               \
+            shmem_transport_probe();                                    \
+            SPINLOCK_BODY();                                            \
+            retval = COMP_SIGNAL(cond, SYNC_LOAD(var), value, cmpret);  \
+        }                                                               \
+    } while(0);                                                         \
+    retval;                                                             \
+})
 
 #define SHMEM_WAIT_BLOCK(var, value)                                    \
     do {                                                                \
@@ -140,9 +162,33 @@ shmem_internal_fence(shmem_ctx_t ctx)
         }                                                               \
     } while(0)
 
+#define SHMEM_SIGNAL_WAIT_UNTIL_BLOCK(var, cond, value) ({              \
+    uint64_t retval;                                                    \
+    do {                                                                \
+        uint64_t target_cntr;                                           \
+        int cmpret;                                                     \
+                                                                        \
+        retval = COMP_SIGNAL(cond, SYNC_LOAD(var), value, cmpret);      \
+        while (!cmpret) {                                               \
+            target_cntr = shmem_transport_received_cntr_get();          \
+            COMPILER_FENCE();                                           \
+            COMP(cond, SYNC_LOAD(var), value, cmpret);                  \
+            if (cmpret) break;                                          \
+            shmem_transport_received_cntr_wait(target_cntr + 1);        \
+            retval = COMP_SIGNAL(cond, SYNC_LOAD(var), value, cmpret);  \
+        }                                                               \
+    } while(0);                                                         \
+    retval;                                                             \
+})
+
 #if defined(ENABLE_HARD_POLLING)
 #define SHMEM_INTERNAL_WAIT_UNTIL(var, cond, value)                     \
     SHMEM_WAIT_UNTIL_POLL(var, cond, value)
+#define SHMEM_INTERNAL_SIGNAL_WAIT_UNTIL(var, cond, value) ({           \
+    uint64_t retval;                                                    \
+    retval = SHMEM_SIGNAL_WAIT_UNTIL_POLL(var, cond, value);            \
+    retval;                                                             \
+})
 #else
 #define SHMEM_INTERNAL_WAIT_UNTIL(var, cond, value)                     \
     if (shmem_internal_thread_level == SHMEM_THREAD_SINGLE) {           \
@@ -150,6 +196,15 @@ shmem_internal_fence(shmem_ctx_t ctx)
     } else {                                                            \
         SHMEM_WAIT_UNTIL_POLL(var, cond, value);                        \
     }
+#define SHMEM_INTERNAL_SIGNAL_WAIT_UNTIL(var, cond, value) ({           \
+    uint64_t retval;                                                    \
+    if (shmem_internal_thread_level == SHMEM_THREAD_SINGLE) {           \
+        retval = SHMEM_SIGNAL_WAIT_UNTIL_BLOCK(var, cond, value);       \
+    } else {                                                            \
+        retval = SHMEM_SIGNAL_WAIT_UNTIL_POLL(var, cond, value);        \
+    }                                                                   \
+    retval;                                                             \
+})
 #endif
 
 #define SHMEM_WAIT(var, value) do {                                     \
@@ -163,5 +218,15 @@ shmem_internal_fence(shmem_ctx_t ctx)
         shmem_internal_membar_acq_rel();                                \
         shmem_transport_syncmem();                                      \
     } while (0)
+
+#define SHMEM_SIGNAL_WAIT_UNTIL(var, cond, value) ({                    \
+    uint64_t retval;                                                    \
+    do {                                                                \
+        retval = SHMEM_INTERNAL_SIGNAL_WAIT_UNTIL(var, cond, value);    \
+        shmem_internal_membar_acq_rel();                                \
+        shmem_transport_syncmem();                                      \
+    } while (0);                                                        \
+    retval;                                                             \
+})
 
 #endif
