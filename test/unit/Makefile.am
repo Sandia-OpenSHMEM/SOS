@@ -109,6 +109,7 @@ check_PROGRAMS = \
 	put_signal \
 	put_signal_nbi \
 	signal_fetch \
+	signal_wait_until \
 	shmem_team_b2b_collectives \
 	shmem_team_collect_active_set \
 	shmem_team_max \
