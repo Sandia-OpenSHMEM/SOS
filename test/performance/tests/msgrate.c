@@ -111,9 +111,8 @@ test_one_way(void)
     shmem_barrier_all();
 
     shmem_team_t sync_team;
-    shmem_team_config_t *config = NULL;
-    if (world_size % 2 == 1)
-        shmem_team_split_strided(SHMEM_TEAM_WORLD, 0, 1, world_size - 1, config, 0, &sync_team);
+    if (world_size % 2 == 1 && world_size != 1)
+        shmem_team_split_strided(SHMEM_TEAM_WORLD, 0, 1, world_size - 1, NULL, 0, &sync_team);
     else
         sync_team = SHMEM_TEAM_WORLD;
 
@@ -273,6 +272,9 @@ main(int argc, char *argv[])
                 start_err = 77;
             } else if (ppn < 1) {
                 fprintf(stderr, "Error: must specify process per node (-n #)\n");
+                start_err = 77;
+            } else if (world_size / ppn < npeers) {
+                fprintf(stderr, "Error: node count < number of peers\n");
                 start_err = 77;
             }
         }

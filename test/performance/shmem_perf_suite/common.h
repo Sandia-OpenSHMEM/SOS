@@ -799,8 +799,7 @@ void print_header(perf_metrics_t * const metric_info) {
 
 static
 int create_streaming_team(perf_metrics_t * const metric_info) {
-    shmem_team_config_t *config = NULL;
-    shmem_team_split_strided(SHMEM_TEAM_WORLD, 0, 1, metric_info->num_pes / 2, config, 0, &streaming_team);
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, 0, 1, metric_info->num_pes / 2, NULL, 0, &streaming_team);
 
     int my_pe = metric_info->my_node;
     if (streaming_team == SHMEM_TEAM_INVALID && (my_pe >= 0 && my_pe < metric_info->num_pes / 2)) {
@@ -813,8 +812,7 @@ int create_streaming_team(perf_metrics_t * const metric_info) {
 
 static
 int create_target_team(perf_metrics_t * const metric_info) {
-    shmem_team_config_t *config = NULL;
-    shmem_team_split_strided(SHMEM_TEAM_WORLD, metric_info->midpt, 1, metric_info->num_pes / 2, config, 0, &target_team);
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, metric_info->midpt, 1, metric_info->num_pes / 2, NULL, 0, &target_team);
 
     int my_pe = metric_info->my_node;
     if (target_team == SHMEM_TEAM_INVALID && (my_pe >= metric_info->midpt && my_pe < metric_info->num_pes)) {
