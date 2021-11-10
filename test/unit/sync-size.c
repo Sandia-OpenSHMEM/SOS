@@ -25,8 +25,6 @@
  * SOFTWARE.
  */
 
-/* Test various collectives using the same pSync array of SHMEM_SYNC_SIZE */
-
 #include <shmem.h>
 #include <stdio.h>
 #include <string.h>
@@ -35,20 +33,12 @@
 #define N 3
 #define MAX(A,B) ((A) > (B)) ? (A) : (B)
 
-long pSync[SHMEM_SYNC_SIZE];
-long pWrk[MAX(N/2 + 1, SHMEM_REDUCE_MIN_WRKDATA_SIZE)];
-
 long src[N];
 long dst[N];
 
 int main(int argc, char* argv[]) {
     int i, j, me, npes;
     int errors = 0;
-
-    for (i = 0; i < SHMEM_SYNC_SIZE; i++) {
-        pSync[i] = SHMEM_SYNC_VALUE;
-        pSync[i] = SHMEM_SYNC_VALUE;
-    }
 
     shmem_init();
 
@@ -62,7 +52,6 @@ int main(int argc, char* argv[]) {
 
     /* Barrier */
 
-    shmem_barrier(0, 0, npes, pSync);
     shmem_barrier_all();
 
     /* Broadcast */
@@ -98,7 +87,7 @@ int main(int argc, char* argv[]) {
 
     /* Reduction */
 
-    shmem_long_max_to_all(dst, src, N, 0, 0, npes, pWrk, pSync);
+    shmem_long_max_reduce(SHMEM_TEAM_WORLD, dst, src, N);
 
     for (i = 0; i < N; i++) {
         if (dst[i] != npes-1) {

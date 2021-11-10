@@ -4,7 +4,7 @@
  *  to copyright protection in the United States.  Foreign copyrights may
  *  apply.
  *
- *  Copyright (c) 2019 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2021 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -40,14 +40,12 @@
 
 #define MAX_NPES 32
 
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-
 enum op { and = 0, or, xor, max, min, sum, prod };
 
 const double FLOATING_POINT_TOLERANCE = 1e-6;
 
-#define REDUCTION(OP) \
-  do { ret = shmem_##OP##_reduce(SHMEM_TEAM_WORLD, dest, src, npes); } while (0)
+#define REDUCTION(OP, TYPE) \
+  do { ret = shmem_##TYPE##_##OP##_reduce(SHMEM_TEAM_WORLD, dest, src, npes); } while (0)
 
 #define is_floating_point(X) _Generic((X), \
               float: true, \
@@ -92,7 +90,7 @@ const double FLOATING_POINT_TOLERANCE = 1e-6;
       }                                                                        \
   } while (0)
 
-#define TEST_SHMEM_REDUCE(OP, TYPE)                                            \
+#define TEST_SHMEM_REDUCE(OP, TYPENAME, TYPE)                                  \
   do {                                                                         \
     static TYPE src[MAX_NPES];                                                 \
     static TYPE dest[MAX_NPES];                                                \
@@ -101,7 +99,7 @@ const double FLOATING_POINT_TOLERANCE = 1e-6;
                                                                                \
     INIT_SRC_BUFFER(TYPE);                                                     \
                                                                                \
-    REDUCTION(OP);                                                             \
+    REDUCTION(OP, TYPENAME);                                                   \
                                                                                \
     if (ret != 0) {                                                            \
         printf("Reduction returned non-zero value (%i) on PE (%i) with "       \
@@ -151,10 +149,6 @@ const double FLOATING_POINT_TOLERANCE = 1e-6;
     }                                                                          \
   } while (0)
 
-#else
-#define TEST_SHMEM_REDUCE(OP, TYPE)
-#endif
-
 
 int main(void) {
 
@@ -171,154 +165,154 @@ int main(void) {
         shmem_global_exit(1);
     }
 
-    TEST_SHMEM_REDUCE(and, unsigned char);
-    TEST_SHMEM_REDUCE(and, unsigned short);
-    TEST_SHMEM_REDUCE(and, unsigned int);
-    TEST_SHMEM_REDUCE(and, unsigned long);
-    TEST_SHMEM_REDUCE(and, unsigned long long);
-    TEST_SHMEM_REDUCE(and, int8_t);
-    TEST_SHMEM_REDUCE(and, int16_t);
-    TEST_SHMEM_REDUCE(and, int32_t);
-    TEST_SHMEM_REDUCE(and, int64_t);
-    TEST_SHMEM_REDUCE(and, uint8_t);
-    TEST_SHMEM_REDUCE(and, uint16_t);
-    TEST_SHMEM_REDUCE(and, uint32_t);
-    TEST_SHMEM_REDUCE(and, uint64_t);
-    TEST_SHMEM_REDUCE(and, size_t);
+    TEST_SHMEM_REDUCE(and, uchar, unsigned char);
+    TEST_SHMEM_REDUCE(and, ushort, unsigned short);
+    TEST_SHMEM_REDUCE(and, uint, unsigned int);
+    TEST_SHMEM_REDUCE(and, ulong, unsigned long);
+    TEST_SHMEM_REDUCE(and, ulonglong, unsigned long long);
+    TEST_SHMEM_REDUCE(and, int8, int8_t);
+    TEST_SHMEM_REDUCE(and, int16, int16_t);
+    TEST_SHMEM_REDUCE(and, int32, int32_t);
+    TEST_SHMEM_REDUCE(and, int64, int64_t);
+    TEST_SHMEM_REDUCE(and, uint8, uint8_t);
+    TEST_SHMEM_REDUCE(and, uint16, uint16_t);
+    TEST_SHMEM_REDUCE(and, uint32, uint32_t);
+    TEST_SHMEM_REDUCE(and, uint64, uint64_t);
+    TEST_SHMEM_REDUCE(and, size, size_t);
 
-    TEST_SHMEM_REDUCE(or, unsigned char);
-    TEST_SHMEM_REDUCE(or, unsigned short);
-    TEST_SHMEM_REDUCE(or, unsigned int);
-    TEST_SHMEM_REDUCE(or, unsigned long);
-    TEST_SHMEM_REDUCE(or, unsigned long long);
-    TEST_SHMEM_REDUCE(or, int8_t);
-    TEST_SHMEM_REDUCE(or, int16_t);
-    TEST_SHMEM_REDUCE(or, int32_t);
-    TEST_SHMEM_REDUCE(or, int64_t);
-    TEST_SHMEM_REDUCE(or, uint8_t);
-    TEST_SHMEM_REDUCE(or, uint16_t);
-    TEST_SHMEM_REDUCE(or, uint32_t);
-    TEST_SHMEM_REDUCE(or, uint64_t);
-    TEST_SHMEM_REDUCE(or, size_t);
+    TEST_SHMEM_REDUCE(or, uchar, unsigned char);
+    TEST_SHMEM_REDUCE(or, ushort, unsigned short);
+    TEST_SHMEM_REDUCE(or, uint, unsigned int);
+    TEST_SHMEM_REDUCE(or, ulong, unsigned long);
+    TEST_SHMEM_REDUCE(or, ulonglong, unsigned long long);
+    TEST_SHMEM_REDUCE(or, int8, int8_t);
+    TEST_SHMEM_REDUCE(or, int16, int16_t);
+    TEST_SHMEM_REDUCE(or, int32, int32_t);
+    TEST_SHMEM_REDUCE(or, int64, int64_t);
+    TEST_SHMEM_REDUCE(or, uint8, uint8_t);
+    TEST_SHMEM_REDUCE(or, uint16, uint16_t);
+    TEST_SHMEM_REDUCE(or, uint32, uint32_t);
+    TEST_SHMEM_REDUCE(or, uint64, uint64_t);
+    TEST_SHMEM_REDUCE(or, size, size_t);
 
-    TEST_SHMEM_REDUCE(xor, unsigned char);
-    TEST_SHMEM_REDUCE(xor, unsigned short);
-    TEST_SHMEM_REDUCE(xor, unsigned int);
-    TEST_SHMEM_REDUCE(xor, unsigned long);
-    TEST_SHMEM_REDUCE(xor, unsigned long long);
-    TEST_SHMEM_REDUCE(xor, int8_t);
-    TEST_SHMEM_REDUCE(xor, int16_t);
-    TEST_SHMEM_REDUCE(xor, int32_t);
-    TEST_SHMEM_REDUCE(xor, int64_t);
-    TEST_SHMEM_REDUCE(xor, uint8_t);
-    TEST_SHMEM_REDUCE(xor, uint16_t);
-    TEST_SHMEM_REDUCE(xor, uint32_t);
-    TEST_SHMEM_REDUCE(xor, uint64_t);
-    TEST_SHMEM_REDUCE(xor, size_t);
+    TEST_SHMEM_REDUCE(xor, uchar, unsigned char);
+    TEST_SHMEM_REDUCE(xor, ushort, unsigned short);
+    TEST_SHMEM_REDUCE(xor, uint, unsigned int);
+    TEST_SHMEM_REDUCE(xor, ulong, unsigned long);
+    TEST_SHMEM_REDUCE(xor, ulonglong, unsigned long long);
+    TEST_SHMEM_REDUCE(xor, int8, int8_t);
+    TEST_SHMEM_REDUCE(xor, int16, int16_t);
+    TEST_SHMEM_REDUCE(xor, int32, int32_t);
+    TEST_SHMEM_REDUCE(xor, int64, int64_t);
+    TEST_SHMEM_REDUCE(xor, uint8, uint8_t);
+    TEST_SHMEM_REDUCE(xor, uint16, uint16_t);
+    TEST_SHMEM_REDUCE(xor, uint32, uint32_t);
+    TEST_SHMEM_REDUCE(xor, uint64, uint64_t);
+    TEST_SHMEM_REDUCE(xor, size, size_t);
 
-    TEST_SHMEM_REDUCE(max, char);
-    TEST_SHMEM_REDUCE(max, signed char);
-    TEST_SHMEM_REDUCE(max, short);
-    TEST_SHMEM_REDUCE(max, int);
-    TEST_SHMEM_REDUCE(max, long);
-    TEST_SHMEM_REDUCE(max, long long);
-    TEST_SHMEM_REDUCE(max, ptrdiff_t);
-    TEST_SHMEM_REDUCE(max, unsigned char);
-    TEST_SHMEM_REDUCE(max, unsigned short);
-    TEST_SHMEM_REDUCE(max, unsigned int);
-    TEST_SHMEM_REDUCE(max, unsigned long);
-    TEST_SHMEM_REDUCE(max, unsigned long long);
-    TEST_SHMEM_REDUCE(max, int8_t);
-    TEST_SHMEM_REDUCE(max, int16_t);
-    TEST_SHMEM_REDUCE(max, int32_t);
-    TEST_SHMEM_REDUCE(max, int64_t);
-    TEST_SHMEM_REDUCE(max, uint8_t);
-    TEST_SHMEM_REDUCE(max, uint16_t);
-    TEST_SHMEM_REDUCE(max, uint32_t);
-    TEST_SHMEM_REDUCE(max, uint64_t);
-    TEST_SHMEM_REDUCE(max, size_t);
-    TEST_SHMEM_REDUCE(max, float);
-    TEST_SHMEM_REDUCE(max, double);
-    TEST_SHMEM_REDUCE(max, long double);
+    TEST_SHMEM_REDUCE(max, char, char);
+    TEST_SHMEM_REDUCE(max, schar, signed char);
+    TEST_SHMEM_REDUCE(max, short, short);
+    TEST_SHMEM_REDUCE(max, int, int);
+    TEST_SHMEM_REDUCE(max, long, long);
+    TEST_SHMEM_REDUCE(max, longlong, long long);
+    TEST_SHMEM_REDUCE(max, ptrdiff, ptrdiff_t);
+    TEST_SHMEM_REDUCE(max, uchar, unsigned char);
+    TEST_SHMEM_REDUCE(max, ushort, unsigned short);
+    TEST_SHMEM_REDUCE(max, uint, unsigned int);
+    TEST_SHMEM_REDUCE(max, ulong, unsigned long);
+    TEST_SHMEM_REDUCE(max, ulonglong, unsigned long long);
+    TEST_SHMEM_REDUCE(max, int8, int8_t);
+    TEST_SHMEM_REDUCE(max, int16, int16_t);
+    TEST_SHMEM_REDUCE(max, int32, int32_t);
+    TEST_SHMEM_REDUCE(max, int64, int64_t);
+    TEST_SHMEM_REDUCE(max, uint8, uint8_t);
+    TEST_SHMEM_REDUCE(max, uint16, uint16_t);
+    TEST_SHMEM_REDUCE(max, uint32, uint32_t);
+    TEST_SHMEM_REDUCE(max, uint64, uint64_t);
+    TEST_SHMEM_REDUCE(max, size, size_t);
+    TEST_SHMEM_REDUCE(max, float, float);
+    TEST_SHMEM_REDUCE(max, double, double);
+    TEST_SHMEM_REDUCE(max, longdouble, long double);
 
-    TEST_SHMEM_REDUCE(min, char);
-    TEST_SHMEM_REDUCE(min, signed char);
-    TEST_SHMEM_REDUCE(min, short);
-    TEST_SHMEM_REDUCE(min, int);
-    TEST_SHMEM_REDUCE(min, long);
-    TEST_SHMEM_REDUCE(min, long long);
-    TEST_SHMEM_REDUCE(min, ptrdiff_t);
-    TEST_SHMEM_REDUCE(min, unsigned char);
-    TEST_SHMEM_REDUCE(min, unsigned short);
-    TEST_SHMEM_REDUCE(min, unsigned int);
-    TEST_SHMEM_REDUCE(min, unsigned long);
-    TEST_SHMEM_REDUCE(min, unsigned long long);
-    TEST_SHMEM_REDUCE(min, int8_t);
-    TEST_SHMEM_REDUCE(min, int16_t);
-    TEST_SHMEM_REDUCE(min, int32_t);
-    TEST_SHMEM_REDUCE(min, int64_t);
-    TEST_SHMEM_REDUCE(min, uint8_t);
-    TEST_SHMEM_REDUCE(min, uint16_t);
-    TEST_SHMEM_REDUCE(min, uint32_t);
-    TEST_SHMEM_REDUCE(min, uint64_t);
-    TEST_SHMEM_REDUCE(min, size_t);
-    TEST_SHMEM_REDUCE(min, float);
-    TEST_SHMEM_REDUCE(min, double);
-    TEST_SHMEM_REDUCE(min, long double);
+    TEST_SHMEM_REDUCE(min, char, char);
+    TEST_SHMEM_REDUCE(min, schar, signed char);
+    TEST_SHMEM_REDUCE(min, short, short);
+    TEST_SHMEM_REDUCE(min, int, int);
+    TEST_SHMEM_REDUCE(min, long, long);
+    TEST_SHMEM_REDUCE(min, longlong, long long);
+    TEST_SHMEM_REDUCE(min, ptrdiff, ptrdiff_t);
+    TEST_SHMEM_REDUCE(min, uchar, unsigned char);
+    TEST_SHMEM_REDUCE(min, ushort, unsigned short);
+    TEST_SHMEM_REDUCE(min, uint, unsigned int);
+    TEST_SHMEM_REDUCE(min, ulong, unsigned long);
+    TEST_SHMEM_REDUCE(min, ulonglong, unsigned long long);
+    TEST_SHMEM_REDUCE(min, int8, int8_t);
+    TEST_SHMEM_REDUCE(min, int16, int16_t);
+    TEST_SHMEM_REDUCE(min, int32, int32_t);
+    TEST_SHMEM_REDUCE(min, int64, int64_t);
+    TEST_SHMEM_REDUCE(min, uint8, uint8_t);
+    TEST_SHMEM_REDUCE(min, uint16, uint16_t);
+    TEST_SHMEM_REDUCE(min, uint32, uint32_t);
+    TEST_SHMEM_REDUCE(min, uint64, uint64_t);
+    TEST_SHMEM_REDUCE(min, size, size_t);
+    TEST_SHMEM_REDUCE(min, float, float);
+    TEST_SHMEM_REDUCE(min, double, double);
+    TEST_SHMEM_REDUCE(min, longdouble, long double);
 
-    TEST_SHMEM_REDUCE(sum, char);
-    TEST_SHMEM_REDUCE(sum, signed char);
-    TEST_SHMEM_REDUCE(sum, short);
-    TEST_SHMEM_REDUCE(sum, int);
-    TEST_SHMEM_REDUCE(sum, long);
-    TEST_SHMEM_REDUCE(sum, long long);
-    TEST_SHMEM_REDUCE(sum, ptrdiff_t);
-    TEST_SHMEM_REDUCE(sum, unsigned char);
-    TEST_SHMEM_REDUCE(sum, unsigned short);
-    TEST_SHMEM_REDUCE(sum, unsigned int);
-    TEST_SHMEM_REDUCE(sum, unsigned long);
-    TEST_SHMEM_REDUCE(sum, unsigned long long);
-    TEST_SHMEM_REDUCE(sum, int8_t);
-    TEST_SHMEM_REDUCE(sum, int16_t);
-    TEST_SHMEM_REDUCE(sum, int32_t);
-    TEST_SHMEM_REDUCE(sum, int64_t);
-    TEST_SHMEM_REDUCE(sum, uint8_t);
-    TEST_SHMEM_REDUCE(sum, uint16_t);
-    TEST_SHMEM_REDUCE(sum, uint32_t);
-    TEST_SHMEM_REDUCE(sum, uint64_t);
-    TEST_SHMEM_REDUCE(sum, size_t);
-    TEST_SHMEM_REDUCE(sum, float);
-    TEST_SHMEM_REDUCE(sum, double);
-    TEST_SHMEM_REDUCE(sum, long double);
-    TEST_SHMEM_REDUCE(sum, double _Complex);
-    TEST_SHMEM_REDUCE(sum, float _Complex);
+    TEST_SHMEM_REDUCE(sum, char, char);
+    TEST_SHMEM_REDUCE(sum, schar, signed char);
+    TEST_SHMEM_REDUCE(sum, short, short);
+    TEST_SHMEM_REDUCE(sum, int, int);
+    TEST_SHMEM_REDUCE(sum, long, long);
+    TEST_SHMEM_REDUCE(sum, longlong, long long);
+    TEST_SHMEM_REDUCE(sum, ptrdiff, ptrdiff_t);
+    TEST_SHMEM_REDUCE(sum, uchar, unsigned char);
+    TEST_SHMEM_REDUCE(sum, ushort, unsigned short);
+    TEST_SHMEM_REDUCE(sum, uint, unsigned int);
+    TEST_SHMEM_REDUCE(sum, ulong, unsigned long);
+    TEST_SHMEM_REDUCE(sum, ulonglong, unsigned long long);
+    TEST_SHMEM_REDUCE(sum, int8, int8_t);
+    TEST_SHMEM_REDUCE(sum, int16, int16_t);
+    TEST_SHMEM_REDUCE(sum, int32, int32_t);
+    TEST_SHMEM_REDUCE(sum, int64, int64_t);
+    TEST_SHMEM_REDUCE(sum, uint8, uint8_t);
+    TEST_SHMEM_REDUCE(sum, uint16, uint16_t);
+    TEST_SHMEM_REDUCE(sum, uint32, uint32_t);
+    TEST_SHMEM_REDUCE(sum, uint64, uint64_t);
+    TEST_SHMEM_REDUCE(sum, size, size_t);
+    TEST_SHMEM_REDUCE(sum, float, float);
+    TEST_SHMEM_REDUCE(sum, double, double);
+    TEST_SHMEM_REDUCE(sum, longdouble, long double);
+    TEST_SHMEM_REDUCE(sum, complexd, double _Complex);
+    TEST_SHMEM_REDUCE(sum, complexf, float _Complex);
 
-    TEST_SHMEM_REDUCE(prod, char);
-    TEST_SHMEM_REDUCE(prod, signed char);
-    TEST_SHMEM_REDUCE(prod, short);
-    TEST_SHMEM_REDUCE(prod, int);
-    TEST_SHMEM_REDUCE(prod, long);
-    TEST_SHMEM_REDUCE(prod, long long);
-    TEST_SHMEM_REDUCE(prod, ptrdiff_t);
-    TEST_SHMEM_REDUCE(prod, unsigned char);
-    TEST_SHMEM_REDUCE(prod, unsigned short);
-    TEST_SHMEM_REDUCE(prod, unsigned int);
-    TEST_SHMEM_REDUCE(prod, unsigned long);
-    TEST_SHMEM_REDUCE(prod, unsigned long long);
-    TEST_SHMEM_REDUCE(prod, int8_t);
-    TEST_SHMEM_REDUCE(prod, int16_t);
-    TEST_SHMEM_REDUCE(prod, int32_t);
-    TEST_SHMEM_REDUCE(prod, int64_t);
-    TEST_SHMEM_REDUCE(prod, uint8_t);
-    TEST_SHMEM_REDUCE(prod, uint16_t);
-    TEST_SHMEM_REDUCE(prod, uint32_t);
-    TEST_SHMEM_REDUCE(prod, uint64_t);
-    TEST_SHMEM_REDUCE(prod, size_t);
-    TEST_SHMEM_REDUCE(prod, float);
-    TEST_SHMEM_REDUCE(prod, double);
-    TEST_SHMEM_REDUCE(prod, long double);
-    TEST_SHMEM_REDUCE(prod, double _Complex);
-    TEST_SHMEM_REDUCE(prod, float _Complex);
+    TEST_SHMEM_REDUCE(prod, char, char);
+    TEST_SHMEM_REDUCE(prod, schar, signed char);
+    TEST_SHMEM_REDUCE(prod, short, short);
+    TEST_SHMEM_REDUCE(prod, int, int);
+    TEST_SHMEM_REDUCE(prod, long, long);
+    TEST_SHMEM_REDUCE(prod, longlong, long long);
+    TEST_SHMEM_REDUCE(prod, ptrdiff, ptrdiff_t);
+    TEST_SHMEM_REDUCE(prod, uchar, unsigned char);
+    TEST_SHMEM_REDUCE(prod, ushort, unsigned short);
+    TEST_SHMEM_REDUCE(prod, uint, unsigned int);
+    TEST_SHMEM_REDUCE(prod, ulong, unsigned long);
+    TEST_SHMEM_REDUCE(prod, ulonglong, unsigned long long);
+    TEST_SHMEM_REDUCE(prod, int8, int8_t);
+    TEST_SHMEM_REDUCE(prod, int16, int16_t);
+    TEST_SHMEM_REDUCE(prod, int32, int32_t);
+    TEST_SHMEM_REDUCE(prod, int64, int64_t);
+    TEST_SHMEM_REDUCE(prod, uint8, uint8_t);
+    TEST_SHMEM_REDUCE(prod, uint16, uint16_t);
+    TEST_SHMEM_REDUCE(prod, uint32, uint32_t);
+    TEST_SHMEM_REDUCE(prod, uint64, uint64_t);
+    TEST_SHMEM_REDUCE(prod, size, size_t);
+    TEST_SHMEM_REDUCE(prod, float, float);
+    TEST_SHMEM_REDUCE(prod, double, double);
+    TEST_SHMEM_REDUCE(prod, longdouble, long double);
+    TEST_SHMEM_REDUCE(prod, complexd, double _Complex);
+    TEST_SHMEM_REDUCE(prod, complexf, float _Complex);
 
     shmem_finalize();
     return rc;

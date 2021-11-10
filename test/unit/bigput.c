@@ -52,9 +52,6 @@ int Track;
 int elements = NUM_ELEMENTS;
 double sum_time, time_taken;
 
-double pWrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
-long pSync[SHMEM_REDUCE_SYNC_SIZE];
-
 static int
 atoi_scaled(char *s)
 {
@@ -159,9 +156,6 @@ main(int argc, char **argv)
         }
     }
 
-    for(i=0; i < SHMEM_REDUCE_SYNC_SIZE; i++)
-        pSync[i] = SHMEM_SYNC_VALUE;
-
     target_PE = (me+1) % npes;
 
     total_time = (double *) shmem_malloc( npes * sizeof(double) );
@@ -222,7 +216,7 @@ main(int argc, char **argv)
 
     // collect time per node.
     shmem_double_put( &total_time[me], &time_taken, 1, 0 );
-    shmem_double_sum_to_all(&sum_time, &time_taken, 1, 0, 0, npes, pWrk, pSync);
+    shmem_double_sum_reduce(SHMEM_TEAM_WORLD, &sum_time, &time_taken, 1);
 
     shmem_barrier_all();
 
@@ -250,7 +244,7 @@ main(int argc, char **argv)
         sum_time /= (double)npes;
         comp_time /= (double)npes;
         if (sum_time != comp_time)
-            printf("%s: computed_time %7.5f != sum_to_all_time %7.5f)\n",
+            printf("%s: computed_time %7.5f != sum_reduce_time %7.5f)\n",
                    pgm, comp_time, sum_time );
 
         rate = ((double)bytes/(1024.0*1024.0)) / comp_time;
