@@ -34,7 +34,7 @@
 
 /* configuration parameters - setable by command line arguments */
 int npeers = 2;
-int niters = 4096;
+int niters = 128;
 int nmsgs = 128;
 int nbytes = 8;
 int cache_size = (8 * 1024 * 1024 / sizeof(int));
