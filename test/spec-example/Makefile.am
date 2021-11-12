@@ -39,6 +39,12 @@ check_PROGRAMS += \
     shmem_reduce_example
 endif
 
+if USE_PMI_MPI
+check_PROGRAMS += \
+    hybrid_mpi_mapping_id \
+    hybrid_mpi_mapping_id_shmem_comm
+endif
+
 TESTS = $(check_PROGRAMS)
 
 NPROCS ?= 2
