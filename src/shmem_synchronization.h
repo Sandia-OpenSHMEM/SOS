@@ -86,7 +86,7 @@ shmem_internal_fence(shmem_ctx_t ctx)
     } while(0)
 
 #define COMP_SIGNAL(type, a, b, ret) ({                  \
-    uint64_t satisfied_val;                              \
+    uint64_t satisfied_val = 0;                          \
     COMP(type, a, b, ret);                               \
     if (ret) satisfied_val = a;                          \
     satisfied_val;                                       \

@@ -25,7 +25,7 @@
  * SOFTWARE.
  */
 
-/* 
+/*
  * Validate signal_wait_until operation using blocking put_signal
 */
 
@@ -59,13 +59,21 @@ int main(int argc, char *argv[])
     }
 
     shmem_barrier_all();
+
     for (i = 0; i < npes; i++) {
         shmem_long_put_signal(target, source, MSG_SZ, &sig_addr, 1, SHMEM_SIGNAL_ADD, i);
     }
 
-    shmem_signal_wait_until(&sig_addr, SHMEM_CMP_EQ, npes);
+    uint64_t retval = shmem_signal_wait_until(&sig_addr, SHMEM_CMP_LE, npes);
+    if (retval > npes)
+        errors++;
 
-    if (sig_addr != npes)
+    retval = shmem_signal_wait_until(&sig_addr, SHMEM_CMP_EQ, npes);
+    if (retval != npes)
+        errors++;
+
+    retval = shmem_signal_wait_until(&sig_addr, SHMEM_CMP_LT, npes + 1);
+    if (retval != npes)
         errors++;
 
     for (i = 0; i < MSG_SZ; i++) {
@@ -82,13 +90,18 @@ int main(int argc, char *argv[])
     shmem_barrier_all();
 
     for (i = 0; i < npes; i++) {
-        shmem_long_put_signal(target, source, MSG_SZ, &sig_addr, 1, SHMEM_SIGNAL_SET, i);
+        shmem_long_put_signal(target, source, MSG_SZ, &sig_addr, npes + 1, SHMEM_SIGNAL_SET, i);
     }
 
-    shmem_signal_wait_until(&sig_addr, SHMEM_CMP_EQ, 1);
-
-    if (sig_addr != 1)
+    retval = shmem_signal_wait_until(&sig_addr, SHMEM_CMP_GE, npes);
+    if (retval < npes)
         errors++;
+
+    retval = shmem_signal_wait_until(&sig_addr, SHMEM_CMP_EQ, npes + 1);
+    if (retval != npes + 1)
+        errors++;
+
+    shmem_barrier_all();
 
     for (i = 0; i < MSG_SZ; i++) {
         if (target[i] != source[i]) {
@@ -102,4 +115,4 @@ int main(int argc, char *argv[])
     shmem_finalize();
 
     return errors;
-} 
+}
