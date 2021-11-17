@@ -33,12 +33,12 @@
 #include <sys/time.h>
 
 /* configuration parameters - setable by command line arguments */
-int npeers = 6;
-int niters = 4096;
+int npeers = 2;
+int niters = 128;
 int nmsgs = 128;
 int nbytes = 8;
 int cache_size = (8 * 1024 * 1024 / sizeof(int));
-int ppn = -1;
+int ppn = 1;
 int machine_output = 0;
 
 /* globals */
@@ -47,10 +47,6 @@ int *recv_peers;
 int *cache_buf;
 char *send_buf;
 char *recv_buf;
-long bcast_pSync[SHMEM_BCAST_SYNC_SIZE];
-long barrier_pSync[SHMEM_BARRIER_SYNC_SIZE];
-long reduce_pSync[SHMEM_REDUCE_SYNC_SIZE];
-double reduce_pWrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
 int start_err = 0;
 double tmp = 0;
 double total = 0;
@@ -108,23 +104,25 @@ static void
 test_one_way(void)
 {
     int i, k;
-    int pe_size  = world_size;
 
     tmp = 0;
     total = 0;
 
     shmem_barrier_all();
 
-    if (world_size % 2 == 1) {
-        pe_size = world_size - 1;
-    }
+    shmem_team_t sync_team;
+    if (world_size % 2 == 1 && world_size != 1)
+        shmem_team_split_strided(SHMEM_TEAM_WORLD, 0, 1, world_size - 1, NULL, 0, &sync_team);
+    else
+        sync_team = SHMEM_TEAM_WORLD;
 
     if (!(world_size % 2 == 1 && rank == (world_size - 1))) {
         if (rank < world_size / 2) {
             for (i = 0 ; i < niters ; ++i) {
                 cache_invalidate();
 
-                shmem_barrier(0, 0, pe_size, barrier_pSync);
+                shmem_quiet();
+                shmem_team_sync(sync_team);
 
                 tmp = timer();
                 for (k = 0 ; k < nmsgs ; ++k) {
@@ -139,7 +137,8 @@ test_one_way(void)
             for (i = 0 ; i < niters ; ++i) {
                 cache_invalidate();
 
-                shmem_barrier(0, 0, pe_size, barrier_pSync);
+                shmem_quiet();
+                shmem_team_sync(sync_team);
 
                 tmp = timer();
                 shmem_short_wait_until((short*) (recv_buf + (nbytes * (nmsgs - 1))), SHMEM_CMP_NE, 0);
@@ -148,7 +147,7 @@ test_one_way(void)
             }
         }
 
-        shmem_double_sum_to_all(&tmp, &total, 1, 0, 0, pe_size, reduce_pWrk, reduce_pSync);
+        shmem_double_sum_reduce(sync_team, &tmp, &total, 1);
         display_result("single direction", (niters * nmsgs) / (tmp / world_size));
     }
 
@@ -192,7 +191,7 @@ test_prepost(void)
         memset(recv_buf, 0, npeers * nmsgs * nbytes);
     }
 
-    shmem_double_sum_to_all(&tmp, &total, 1, 0, 0, world_size, reduce_pWrk, reduce_pSync);
+    shmem_double_sum_reduce(SHMEM_TEAM_WORLD, &tmp, &total, 1);
     display_result("pre-post", (niters * npeers * nmsgs * 2) / (tmp / world_size));
 }
 
@@ -267,34 +266,19 @@ main(int argc, char *argv[])
 
         /* sanity check */
         if (start_err != 1) {
-#if 0
-            if (world_size < 3) {
-                fprintf(stderr, "Error: At least three processes are required\n");
-                start_err = 1;
-            } else
-#endif
-                if (world_size <= npeers) {
-                fprintf(stderr, "Error: job size (%d) <= number of peers (%d)\n",
-                        world_size, npeers);
+            if (world_size < npeers) {
+                fprintf(stderr, "Error: job size (%d) < number of peers (%d)\n",
+                                 world_size, npeers);
                 start_err = 77;
             } else if (ppn < 1) {
                 fprintf(stderr, "Error: must specify process per node (-n #)\n");
                 start_err = 77;
-            } else if (world_size / ppn <= npeers) {
-                fprintf(stderr, "Error: node count <= number of peers\n");
+            } else if (world_size / ppn < npeers) {
+                fprintf(stderr, "Error: node count < number of peers\n");
                 start_err = 77;
             }
         }
     }
-
-    for (i = 0; i < SHMEM_BCAST_SYNC_SIZE; i++)
-        bcast_pSync[i] = SHMEM_SYNC_VALUE;
-    for (i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
-        barrier_pSync[i] = SHMEM_SYNC_VALUE;
-    for (i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++)
-        reduce_pSync[i] = SHMEM_SYNC_VALUE;
-    for (i = 0; i < SHMEM_REDUCE_MIN_WRKDATA_SIZE; i++)
-        reduce_pWrk[i] = SHMEM_SYNC_VALUE;
 
     shmem_barrier_all();
 

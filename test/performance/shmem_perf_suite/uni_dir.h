@@ -80,13 +80,13 @@ static inline void uni_bw_put(int len, perf_metrics_t *metric_info)
             }
             shmem_quiet();
         }
-        shmem_int_p(&fin, 1, dest);
+        shmem_int_atomic_set(&fin, 1, dest);
         shmem_int_wait_until(&fin, SHMEM_CMP_EQ, 0);
         end = perf_shmemx_wtime();
         calc_and_print_results(end, start, len, metric_info);
     } else {
         shmem_int_wait_until(&fin, SHMEM_CMP_EQ, 1);
-        shmem_int_p(&fin, 0, dest);
+        shmem_int_atomic_set(&fin, 0, dest);
     }
 }
 
@@ -151,13 +151,13 @@ static inline void uni_bw_get(int len, perf_metrics_t *metric_info)
             shmem_quiet();
 #endif
         }
-        shmem_int_p(&fin, 1, dest);
+        shmem_int_atomic_set(&fin, 1, dest);
         shmem_int_wait_until(&fin, SHMEM_CMP_EQ, 0);
         end = perf_shmemx_wtime();
         calc_and_print_results(end, start, len, metric_info);
     } else {
         shmem_int_wait_until(&fin, SHMEM_CMP_EQ, 1);
-        shmem_int_p(&fin, 0, dest);
+        shmem_int_atomic_set(&fin, 0, dest);
     }
 }
 

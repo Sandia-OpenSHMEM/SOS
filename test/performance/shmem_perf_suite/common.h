@@ -168,9 +168,8 @@ typedef struct perf_metrics {
     int individual_report;
 } perf_metrics_t;
 
-/* psync arrays used in metric calculation */
-long red_psync[SHMEM_REDUCE_SYNC_SIZE];
-long bar_psync[SHMEM_BARRIER_SYNC_SIZE];
+
+shmem_team_t streaming_team, target_team;
 
 /* default settings with no input provided */
 static inline
@@ -217,17 +216,6 @@ void update_metrics(perf_metrics_t *metric_info) {
     metric_info->num_pes = shmem_n_pes();
     assert(metric_info->num_pes);
     metric_info->midpt = metric_info->num_pes / 2;
-}
-
-/* init psync arrays */
-static inline
-void init_psync_arrays(void) {
-    int i;
-    for(i = 0; i < SHMEM_REDUCE_SYNC_SIZE; i++)
-        red_psync[i] = SHMEM_SYNC_VALUE;
-
-    for(i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
-        bar_psync[i] = SHMEM_SYNC_VALUE;
 }
 
 /* return microseconds */
@@ -571,6 +559,7 @@ void thread_safety_validation_check(perf_metrics_t * const metric_info) {
 }
 #endif
 
+/* Only even number of PEs are allowed for performance tests */
 static inline
 int only_even_PEs_check(int my_node, int num_pes) {
     if (num_pes % 2 != 0) {
@@ -611,7 +600,7 @@ int partner_node(const perf_metrics_t * const my_info)
 static inline
 int streaming_node(const perf_metrics_t * const my_info)
 {
-    if(my_info->cstyle == COMM_PAIRWISE) {
+    if (my_info->cstyle == COMM_PAIRWISE) {
         return (my_info->my_node < my_info->szinitiator);
     } else {
         assert(my_info->cstyle == COMM_INCAST);
@@ -642,9 +631,7 @@ int check_hostname_validation(const perf_metrics_t * const my_info) {
 
     int hostname_status = -1;
 
-    /* hostname_size should be a length divisible by 4 */
-    int hostname_size = (MAX_HOSTNAME_LEN % 4 == 0) ? MAX_HOSTNAME_LEN :
-                         MAX_HOSTNAME_LEN + (4 - MAX_HOSTNAME_LEN % 4);
+    int hostname_size = MAX_HOSTNAME_LEN;
     int i, errors = 0;
 
     char *hostname = (char *) shmem_malloc (hostname_size * sizeof(char));
@@ -663,8 +650,7 @@ int check_hostname_validation(const perf_metrics_t * const my_info) {
     }
     shmem_barrier_all();
 
-    /* nelems needs to be updated based on 32-bit API */
-    shmem_char_fcollect(SHMEM_TEAM_WORLD, dest, hostname, hostname_size/4);
+    shmem_char_fcollect(SHMEM_TEAM_WORLD, dest, hostname, hostname_size);
 
     char *snode_name = NULL;
     char *tnode_name = NULL;
@@ -762,16 +748,16 @@ void large_message_metric_chg(perf_metrics_t * const metric_info, int len) {
 static inline
 red_PE_set validation_set(perf_metrics_t * const my_info, int *nPEs)
 {
-    if(my_info->cstyle == COMM_PAIRWISE) {
-        if(streaming_node(my_info)) {
+    if (my_info->cstyle == COMM_PAIRWISE) {
+        if (streaming_node(my_info)) {
             *nPEs = my_info->szinitiator;
             return FIRST_HALF;
-        } else if(target_node(my_info)) {
+        } else if (target_node(my_info)) {
             *nPEs = my_info->sztarget;
             return SECOND_HALF;
         } else {
             fprintf(stderr, "Warning: you are getting data from a node that "
-                "wasn't a part of the perf set \n ");
+                            "wasn't a part of the perf set \n ");
             return 0;
         }
     } else {
@@ -781,11 +767,8 @@ red_PE_set validation_set(perf_metrics_t * const my_info, int *nPEs)
     }
 }
 
-/* reduction to collect performance results from PE set
- * then start_pe will print results --- assumes num_pes is even */
 static inline
-void PE_set_used_adjustments(int *nPEs, int *stride, int *start_pe,
-                             perf_metrics_t * const my_info) {
+void PE_set_used_adjustments(int *nPEs, int *start_pe, perf_metrics_t * const my_info) {
     red_PE_set PE_set = validation_set(my_info, nPEs);
 
     if(PE_set == FIRST_HALF || PE_set == FULL_SET) {
@@ -795,8 +778,6 @@ void PE_set_used_adjustments(int *nPEs, int *stride, int *start_pe,
         assert(PE_set == SECOND_HALF);
         *start_pe = my_info->midpt;
     }
-
-    *stride = 0; /* back to back PEs */
 }
 
 static
@@ -814,4 +795,42 @@ void print_header(perf_metrics_t * const metric_info) {
     printf("Thread safety:          %10s\n", thread_safety_str(metric_info));
 #endif
     printf("\n");
+}
+
+static
+int create_streaming_team(perf_metrics_t * const metric_info) {
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, 0, 1, metric_info->num_pes / 2, NULL, 0, &streaming_team);
+
+    int my_pe = metric_info->my_node;
+    if (streaming_team == SHMEM_TEAM_INVALID && (my_pe >= 0 && my_pe < metric_info->num_pes / 2)) {
+        fprintf(stderr, "PE %d: Streaming team creation failed\n", metric_info->my_node);
+        return -1;
+    }
+
+    return 0;
+}
+
+static
+int create_target_team(perf_metrics_t * const metric_info) {
+    shmem_team_split_strided(SHMEM_TEAM_WORLD, metric_info->midpt, 1, metric_info->num_pes / 2, NULL, 0, &target_team);
+
+    int my_pe = metric_info->my_node;
+    if (target_team == SHMEM_TEAM_INVALID && (my_pe >= metric_info->midpt && my_pe < metric_info->num_pes)) {
+        fprintf(stderr, "PE %d: Target team creation failed\n", metric_info->my_node);
+        return -1;
+    }
+
+    return 0;
+}
+
+/* Create two teams: streaming and target. 
+ * PEs [0, 1, ..., npes/2-1] will be in streaming_team and
+ * PEs [npes/2, npes/2+1, ..., npes-1] in target_team.  */ 
+static 
+int create_teams(perf_metrics_t * const metric_info) {
+    int ret = create_streaming_team(metric_info);
+    if (!ret)
+        return create_target_team(metric_info);
+
+    return ret;
 }

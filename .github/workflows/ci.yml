@@ -138,6 +138,10 @@ jobs:
             sos_config: --enable-pmi-simple
             rpm_build: true
             libfabric_version: v1.13.x
+          - config_name: Lengthy tests
+            sos_config: --enable-lengthy-tests --enable-pmi-simple
+            libfabric_version: v1.13.x
+
                      
     name: OFI ${{ matrix.libfabric_version }} (${{ matrix.config_name }})
 
