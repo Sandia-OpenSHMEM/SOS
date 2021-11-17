@@ -49,6 +49,7 @@
 #define TRUE  (1)
 #define FALSE (0)
 
+static uint64_t signal = 0;
 void doit(int len, double *latency, double *bandwidth);
 
 #ifndef HAVE_SHMEMX_WTIME
@@ -93,8 +94,8 @@ main(int argc, char *argv[])
     error= FALSE;
     start_len= 1;
     end_len= 1024;
-    increment = 16;
-    trials= 1000;
+    increment = 64;
+    trials= 100;
     mega= TRUE;
 
     /* check command line args */
@@ -157,6 +158,7 @@ main(int argc, char *argv[])
         for (i= 0; i < trials; i++)   {
 
             buf[len-1] = (char)my_node;
+            signal = 0;
 
             shmem_barrier_all();
 
@@ -215,9 +217,9 @@ doit(int len, double *latency, double *bandwidth)
 
         start = shmemx_wtime();
 
-        shmem_putmem( buf, buf, len, 1 );
+        shmem_putmem_signal( buf, buf, len, &signal, 1, SHMEM_SIGNAL_SET, 1);
 
-        shmem_long_wait_until( (long *)&buf[len-1], SHMEM_CMP_NE, (long)0 );
+        shmem_uint64_wait_until( &signal, SHMEM_CMP_EQ, (uint64_t) 1 );
 
         end = shmemx_wtime();
 
@@ -231,11 +233,9 @@ doit(int len, double *latency, double *bandwidth)
 
     } else {
 
-        shmem_long_wait_until( (long *)&buf[len-1], SHMEM_CMP_NE, (long)1 );
+        shmem_uint64_wait_until( &signal, SHMEM_CMP_EQ, (uint64_t) 1 );
 
-        buf[len-1] = (char)1;
-
-        shmem_putmem( buf, buf, len, 0 );
+        shmem_putmem_signal( buf, buf, len, &signal, 1, SHMEM_SIGNAL_SET, 0);
 
         *latency   = 1.0;
         *bandwidth = 10.0;

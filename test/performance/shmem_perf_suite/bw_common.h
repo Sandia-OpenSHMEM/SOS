@@ -141,17 +141,18 @@ void print_data_results(double bw, double mr, const perf_metrics_t * const data,
 static inline
 void calc_and_print_results(double end_t, double start_t, int len,
                             perf_metrics_t * const metric_info) {
-    int stride = 0, start_pe = 0, nPEs = 0;
+    int start_pe = 0, nPEs = metric_info->num_pes;
     static double pe_bw_sum, bw = 0.0; /*must be symmetric for reduction*/
     double pe_bw_avg = 0.0, pe_mr_avg = 0.0;
     int nred_elements = 1;
-    static double pwrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE];
     static double pe_time_start, pe_time_end,
                   end_time_max = 0.0, start_time_min = 0.0;
     double total_t = 0.0, total_t_max = 0.0;
     int multiplier = 1;
+    shmem_team_t sync_team;
 
-    PE_set_used_adjustments(&nPEs, &stride, &start_pe, metric_info);
+    PE_set_used_adjustments(&nPEs, &start_pe, metric_info);
+    sync_team = (start_pe == 0) ? streaming_team : target_team;
 
     /* 2x as many messages at once for bi-directional */
     if(metric_info->b_type == BI_DIR)
@@ -188,16 +189,12 @@ void calc_and_print_results(double end_t, double start_t, int len,
 
     pe_time_start = start_t;
     pe_time_end = end_t;
-    shmem_barrier(start_pe, stride, nPEs, bar_psync);
+    shmem_team_sync(sync_team);
     if (metric_info->cstyle != COMM_INCAST) {
         if (nPEs >= 2) {
-            shmem_double_min_to_all(&start_time_min, &pe_time_start, nred_elements,
-                                start_pe, stride, nPEs, pwrk,
-                                red_psync);
-            shmem_barrier(start_pe, stride, nPEs, bar_psync);
-            shmem_double_max_to_all(&end_time_max, &pe_time_end, nred_elements,
-                                start_pe, stride, nPEs, pwrk,
-                                red_psync);
+            shmem_double_min_reduce(streaming_team, &start_time_min, &pe_time_start, nred_elements);
+            shmem_team_sync(sync_team);
+            shmem_double_max_reduce(streaming_team, &end_time_max, &pe_time_end, nred_elements);
         } else if (nPEs == 1) {
             start_time_min = pe_time_start;
             end_time_max = pe_time_end;
@@ -226,9 +223,7 @@ void calc_and_print_results(double end_t, double start_t, int len,
         pe_bw_sum = bw;
     } else {
         if (nPEs >= 2) {
-            shmem_double_sum_to_all(&pe_bw_sum, &bw, nred_elements,
-                                start_pe, stride, nPEs, pwrk,
-                                red_psync);
+            shmem_double_sum_reduce(streaming_team, &pe_bw_sum, &bw, nred_elements);
         } else if (nPEs == 1) {
             pe_bw_sum = bw;
         }
@@ -421,9 +416,8 @@ int bw_init_data_stream(perf_metrics_t * const metric_info,
 #if defined(ENABLE_THREADS)
     thread_safety_validation_check(metric_info);
 #endif
-    init_psync_arrays();
 
-    if(only_even_PEs_check(metric_info->my_node, metric_info->num_pes) != 0) {
+    if (only_even_PEs_check(metric_info->my_node, metric_info->num_pes) != 0) {
         return -1;
     }
 
@@ -432,6 +426,10 @@ int bw_init_data_stream(perf_metrics_t * const metric_info,
 
     metric_info->dest = aligned_buffer_alloc(metric_info->max_len * metric_info->nthreads);
     init_array(metric_info->dest, metric_info->max_len * metric_info->nthreads, metric_info->my_node);
+
+    if (create_teams(metric_info) != 0) {
+        return -1;
+    } 
 
     return 0;
 }
