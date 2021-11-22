@@ -88,6 +88,8 @@ main(int argc, char* argv[])
         for(pe=1; pe < num_pes; pe++)
             SHM_PUT(target, target, 10, pe);
 
+        shmem_fence();
+
         for(pe=1; pe < num_pes; pe++) /* put 10 elements into target on PE 1 */
             SHM_PUT(target, source, 10, pe);
 
