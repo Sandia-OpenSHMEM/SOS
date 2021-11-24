@@ -317,7 +317,7 @@ jobs:
           mkdir build; cd build
           ../configure --prefix=${LIBFABRIC_INSTALL_DIR}
           make -j
-          sudo make install
+          make install
 
       # UCX
       - name: Cache UCX install
@@ -342,7 +342,7 @@ jobs:
           mkdir build; cd build
           ../configure --prefix=${UCX_INSTALL_DIR} --enable-mt --disable-numa --without-java
           make -j
-          sudo make install
+          make install
 
       ## Portals4
       - name: Cache Portals4 install
@@ -367,7 +367,7 @@ jobs:
           mkdir build; cd build
           ../configure --prefix=${PORTALS4_INSTALL_DIR} --enable-zero-mrs --enable-reliable-udp --disable-pmi-from-portals ${SOS_BUILD_STATIC_OPTS}
           make -j
-          sudo make install
+          make install
 
       # Libevent
       - name: Cache libevent install
