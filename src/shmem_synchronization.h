@@ -167,7 +167,7 @@ shmem_internal_fence(shmem_ctx_t ctx)
         while (!cmpret) {                                               \
             target_cntr = shmem_transport_received_cntr_get();          \
             COMPILER_FENCE();                                           \
-            COMP(cond, SYNC_LOAD(var), value, cmpret);                  \
+            COMP_SIGNAL(cond, SYNC_LOAD(var), value, cmpret, sat_value);\
             if (cmpret) break;                                          \
             shmem_transport_received_cntr_wait(target_cntr + 1);        \
             COMP_SIGNAL(cond, SYNC_LOAD(var), value, cmpret, sat_value);\
