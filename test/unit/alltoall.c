@@ -31,9 +31,7 @@
 
 /* Tranlate a group PE index to a global PE rank. */
 static int pe_group_to_world(int group_pe, int pe_start, int pe_stride, int pe_size) {
-    int stride = 1 << pe_stride;
-
-    return group_pe >= pe_size ? -1 : pe_start + group_pe * stride;
+    return group_pe >= pe_size ? -1 : pe_start + group_pe * pe_stride;
 }
 
 static void alltoall_test(int32_t *out, int32_t *in, int pe_start, int pe_stride,
