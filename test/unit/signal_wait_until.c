@@ -66,15 +66,15 @@ int main(int argc, char *argv[])
 
     uint64_t retval = shmem_signal_wait_until(&sig_addr, SHMEM_CMP_LE, npes);
 
-    if (retval > (uint64_t)npes)
+    if (retval > (uint64_t) npes)
         errors++;
 
     retval = shmem_signal_wait_until(&sig_addr, SHMEM_CMP_EQ, npes);
-    if (retval != (uint64_t)npes)
+    if (retval != (uint64_t) npes)
         errors++;
 
     retval = shmem_signal_wait_until(&sig_addr, SHMEM_CMP_LT, npes + 1);
-    if (retval != (uint64_t)npes)
+    if (retval != (uint64_t) npes)
         errors++;
 
     for (i = 0; i < MSG_SZ; i++) {
@@ -95,11 +95,11 @@ int main(int argc, char *argv[])
     }
 
     retval = shmem_signal_wait_until(&sig_addr, SHMEM_CMP_GE, npes);
-    if (retval < (uint64_t)npes)
+    if (retval < (uint64_t) npes)
         errors++;
 
     retval = shmem_signal_wait_until(&sig_addr, SHMEM_CMP_EQ, npes + 1);
-    if (retval != (uint64_t)npes + 1)
+    if (retval != (uint64_t) npes + 1)
         errors++;
 
     shmem_barrier_all();
