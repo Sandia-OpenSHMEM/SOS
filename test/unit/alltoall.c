@@ -90,19 +90,19 @@ int main(int argc, char **argv) {
     out = shmem_malloc(4 * npes);
 
     /* All PEs */
-    alltoall_test(out, in, 0, 0, npes);
-    /* Only PE 0, stride is invalid (should be ignored) */
+    alltoall_test(out, in, 0, 1, npes);
+    /* Only PE 0, stride is invalid (should be ignored if NPES < 13) */
     alltoall_test(out, in, 0, 13, 1);
     /* Only even PEs */
-    alltoall_test(out, in, 0, 1, npes / 2 + npes % 2);
+    alltoall_test(out, in, 0, 2, npes / 2 + npes % 2);
 
     if (npes > 1) {
         /* Remove PE n-1 */
-        alltoall_test(out, in, 0, 0, npes-1);
+        alltoall_test(out, in, 0, 1, npes-1);
         /* Remove PE 0 */
-        alltoall_test(out, in, 1, 0, npes-1);
+        alltoall_test(out, in, 1, 1, npes-1);
         /* Only odd PEs */
-        alltoall_test(out, in, 1, 1, npes / 2);
+        alltoall_test(out, in, 1, 2, npes / 2);
     }
 
     shmem_finalize();
