@@ -31,9 +31,7 @@
 
 /* Tranlate a group PE index to a global PE rank. */
 static int pe_group_to_world(int group_pe, int pe_start, int pe_stride, int pe_size) {
-    int stride = 1 << pe_stride;
-
-    return group_pe >= pe_size ? -1 : pe_start + group_pe * stride;
+    return group_pe >= pe_size ? -1 : pe_start + group_pe * pe_stride;
 }
 
 static void alltoall_test(int32_t *out, int32_t *in, int pe_start, int pe_stride,
@@ -92,19 +90,19 @@ int main(int argc, char **argv) {
     out = shmem_malloc(4 * npes);
 
     /* All PEs */
-    alltoall_test(out, in, 0, 0, npes);
-    /* Only PE 0, stride is invalid (should be ignored) */
+    alltoall_test(out, in, 0, 1, npes);
+    /* Only PE 0, stride is invalid (should be ignored if NPES < 13) */
     alltoall_test(out, in, 0, 13, 1);
     /* Only even PEs */
-    alltoall_test(out, in, 0, 1, npes / 2 + npes % 2);
+    alltoall_test(out, in, 0, 2, npes / 2 + npes % 2);
 
     if (npes > 1) {
         /* Remove PE n-1 */
-        alltoall_test(out, in, 0, 0, npes-1);
+        alltoall_test(out, in, 0, 1, npes-1);
         /* Remove PE 0 */
-        alltoall_test(out, in, 1, 0, npes-1);
+        alltoall_test(out, in, 1, 1, npes-1);
         /* Only odd PEs */
-        alltoall_test(out, in, 1, 1, npes / 2);
+        alltoall_test(out, in, 1, 2, npes / 2);
     }
 
     shmem_finalize();
