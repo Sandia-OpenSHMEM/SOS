@@ -33,9 +33,7 @@
 
 /* Tranlate a group PE index to a global PE rank. */
 static int pe_group_to_world(int group_pe, int pe_start, int pe_stride, int pe_size) {
-    int stride = 1 << pe_stride;
-
-    return group_pe >= pe_size ? -1 : pe_start + group_pe * stride;
+    return group_pe >= pe_size ? -1 : pe_start + group_pe * pe_stride;
 }
 
 static void alltoalls_test(int32_t *out, int32_t *in, int dst, int sst, int nelem,
@@ -100,43 +98,43 @@ int main(int argc, char **argv) {
     out = shmem_malloc(4 * NELEM * npes);
 
     /* All PEs */
-    alltoalls_test(out, in, 1, 1, 1, 0, 0, npes); /* Same as alltoall */
-    alltoalls_test(out, in, 1, 1, 0, 0, 0, npes); /* No op */
-    alltoalls_test(out, in, 2, 2, NELEM/2, 0, 0, npes); /* Alternate elements */
-    alltoalls_test(out, in, 2, 1, NELEM/2, 0, 0, npes); /* dst != sst */
-    alltoalls_test(out, in, 1, 2, NELEM/2 - 1, 0, 0, npes); /* dst != sst */
-    /* Only PE 0, stride is invalid (should be ignored) */
+    alltoalls_test(out, in, 1, 1, 1, 0, 1, npes); /* Same as alltoall */
+    alltoalls_test(out, in, 1, 1, 0, 0, 1, npes); /* No op */
+    alltoalls_test(out, in, 2, 2, NELEM/2, 0, 1, npes); /* Alternate elements */
+    alltoalls_test(out, in, 2, 1, NELEM/2, 0, 1, npes); /* dst != sst */
+    alltoalls_test(out, in, 1, 2, NELEM/2 - 1, 0, 1, npes); /* dst != sst */
+    /* Only PE 0, stride is invalid (should be ignored if NPES < 13) */
     alltoalls_test(out, in, 1, 1, 1, 0, 13, 1); /* Same as alltoall */
     alltoalls_test(out, in, 1, 1, 0, 0, 13, 1); /* No op */
     alltoalls_test(out, in, 2, 2, NELEM/2, 0, 13, 1); /* Alternate elements */
     alltoalls_test(out, in, 2, 1, NELEM/2, 0, 13, 1); /* dst != sst */
     alltoalls_test(out, in, 1, 2, NELEM/2 - 1, 0, 13, 1); /* dst != sst */
     /* Only even PEs */
-    alltoalls_test(out, in, 1, 1, 1, 0, 1, npes / 2 + npes % 2); /* Same as alltoall */
-    alltoalls_test(out, in, 1, 1, 0, 0, 1, npes / 2 + npes % 2); /* No op */
-    alltoalls_test(out, in, 2, 2, NELEM/2, 0, 1, npes / 2 + npes % 2); /* Alternate elements */
-    alltoalls_test(out, in, 2, 1, NELEM/2, 0, 1, npes / 2 + npes % 2); /* dst != sst */
-    alltoalls_test(out, in, 1, 2, NELEM/2 - 1, 0, 1, npes / 2 + npes % 2); /* dst != sst */
+    alltoalls_test(out, in, 1, 1, 1, 0, 2, npes / 2 + npes % 2); /* Same as alltoall */
+    alltoalls_test(out, in, 1, 1, 0, 0, 2, npes / 2 + npes % 2); /* No op */
+    alltoalls_test(out, in, 2, 2, NELEM/2, 0, 2, npes / 2 + npes % 2); /* Alternate elements */
+    alltoalls_test(out, in, 2, 1, NELEM/2, 0, 2, npes / 2 + npes % 2); /* dst != sst */
+    alltoalls_test(out, in, 1, 2, NELEM/2 - 1, 0, 2, npes / 2 + npes % 2); /* dst != sst */
 
     if (npes > 1) {
         /* Remove PE n-1 */
-        alltoalls_test(out, in, 1, 1, 1, 0, 0, npes-1); /* Same as alltoall */
-        alltoalls_test(out, in, 1, 1, 0, 0, 0, npes-1); /* No op */
-        alltoalls_test(out, in, 2, 2, NELEM/2, 0, 0, npes-1); /* Alternate elements */
-        alltoalls_test(out, in, 2, 1, NELEM/2, 0, 0, npes-1); /* dst != sst */
-        alltoalls_test(out, in, 1, 2, NELEM/2 - 1, 0, 0, npes-1); /* dst != sst */
+        alltoalls_test(out, in, 1, 1, 1, 0, 1, npes-1); /* Same as alltoall */
+        alltoalls_test(out, in, 1, 1, 0, 0, 1, npes-1); /* No op */
+        alltoalls_test(out, in, 2, 2, NELEM/2, 0, 1, npes-1); /* Alternate elements */
+        alltoalls_test(out, in, 2, 1, NELEM/2, 0, 1, npes-1); /* dst != sst */
+        alltoalls_test(out, in, 1, 2, NELEM/2 - 1, 0, 1, npes-1); /* dst != sst */
         /* Remove PE 0 */
-        alltoalls_test(out, in, 1, 1, 1, 1, 0, npes-1); /* Same as alltoall */
-        alltoalls_test(out, in, 1, 1, 0, 1, 0, npes-1); /* No op */
-        alltoalls_test(out, in, 2, 2, NELEM/2, 1, 0, npes-1); /* Alternate elements */
-        alltoalls_test(out, in, 2, 1, NELEM/2, 1, 0, npes-1); /* dst != sst */
-        alltoalls_test(out, in, 1, 2, NELEM/2 - 1, 1, 0, npes-1); /* dst != sst */
+        alltoalls_test(out, in, 1, 1, 1, 1, 1, npes-1); /* Same as alltoall */
+        alltoalls_test(out, in, 1, 1, 0, 1, 1, npes-1); /* No op */
+        alltoalls_test(out, in, 2, 2, NELEM/2, 1, 1, npes-1); /* Alternate elements */
+        alltoalls_test(out, in, 2, 1, NELEM/2, 1, 1, npes-1); /* dst != sst */
+        alltoalls_test(out, in, 1, 2, NELEM/2 - 1, 1, 1, npes-1); /* dst != sst */
         /* Only odd PEs */
-        alltoalls_test(out, in, 1, 1, 1, 1, 1, npes / 2); /* Same as alltoall */
-        alltoalls_test(out, in, 1, 1, 0, 1, 1, npes / 2); /* No op */
-        alltoalls_test(out, in, 2, 2, NELEM/2, 1, 1, npes / 2); /* Alternate elements */
-        alltoalls_test(out, in, 2, 1, NELEM/2, 1, 1, npes / 2); /* dst != sst */
-        alltoalls_test(out, in, 1, 2, NELEM/2 - 1, 1, 1, npes / 2); /* dst != sst */
+        alltoalls_test(out, in, 1, 1, 1, 1, 2, npes / 2); /* Same as alltoall */
+        alltoalls_test(out, in, 1, 1, 0, 1, 2, npes / 2); /* No op */
+        alltoalls_test(out, in, 2, 2, NELEM/2, 1, 2, npes / 2); /* Alternate elements */
+        alltoalls_test(out, in, 2, 1, NELEM/2, 1, 2, npes / 2); /* dst != sst */
+        alltoalls_test(out, in, 1, 2, NELEM/2 - 1, 1, 2, npes / 2); /* dst != sst */
     }
 
     shmem_finalize();
