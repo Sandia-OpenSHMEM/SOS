@@ -567,6 +567,7 @@ define(`SHMEM_CXX_TEST_SOME_VECTOR',
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_SOME_VECTOR')
 
+SHMEM_FUNCTION_ATTRIBUTES uint64_t SHPRE()shmem_signal_wait_until(uint64_t *sig_addr, int cmp, uint64_t cmp_value);
 
 /* C11 Generic Macros */
 #elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
