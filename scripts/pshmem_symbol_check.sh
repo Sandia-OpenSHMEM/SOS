@@ -29,11 +29,11 @@ do
   sed "/${search_str}/d" -i ./shmem_symbols
 done
 
-rm -rf symbols
-rm -rf pshmem_symbols_uniq
+rm symbols
+rm pshmem_symbols_uniq
 
 echo "APIs that dont have profiling symbols:"
 echo "--------------------------------------"
 cat shmem_symbols
 
-rm -rf shmem_symbols
+rm shmem_symbols
