@@ -1,7 +1,8 @@
 #!/bin/sh
 
 # Simple script to check for missing profiling symbols in 
-# SHMEM library.
+# SHMEM library. The readelf tool requires the library to 
+# be a shared object.
 #
 # Example usage: pshmem_symbol_check.sh <path to SHMEM library>
 #
