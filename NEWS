@@ -2,6 +2,27 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.5.1rc1
+---------
+
+- Added deprecation warnings for shmem_barrier, active-set reductions, and
+  other deprecated routines, such as the 32/64-bit collectives.
+- Removed usage of deprecated APIs in shmem_perf_suite, apps, and spec-examples
+- Added missing types for the OpenSHMEM v1.5 reductions (e.g., fixed-width
+  integers, ptrdiff_t, size_t, and schar).
+- Fixed an incorrect function signature for shmem_team_get_config().
+- Resolved some critical issues with the UCX transport.
+- Updated upstream configuration scripts from OpenMPI for UCX, PMI, etc.
+- Fixed issues with the OpenSHMEM teams API (e.g. team-based broadcasts now
+  update the destination object on all PEs including the root).
+- Corrected the return value for shmem_test_all and shmem_test_all_vector.
+- Added support for shmem_signal_wait_until.
+- Resolved a critical build issue on Mac OSX.
+- Fixed several issues in the SOS unit tests and updated them to use the
+  OpenSHMEM v1.5 APIs.
+- Migrated SOS continuous integration from Travis CI to Github
+  Actions and Workflows.
+
 v1.5.0
 ------
 - This full release includes the changes listed below for v1.5.0rc1 and the
