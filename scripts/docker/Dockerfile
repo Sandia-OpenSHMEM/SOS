@@ -28,12 +28,21 @@ RUN apt-get install -y libev-libevent-dev   \
 
 # Build Libevent
 WORKDIR $SOS_INSTALL
-RUN wget https://github.com/libevent/libevent/releases/download/release-2.1.10-stable/libevent-2.1.10-stable.tar.gz
+RUN wget -c https://github.com/libevent/libevent/releases/download/release-2.1.10-stable/libevent-2.1.10-stable.tar.gz
 RUN tar -xzvf libevent-2.1.10-stable.tar.gz
 WORKDIR libevent-2.1.10-stable
 RUN ./autogen.sh
 RUN ./configure --prefix=$SOS_INSTALL/libevent-2.1.10-stable/install
 RUN make clean all install
+
+# Build Hydra
+WORKDIR $SOS_INSTALL
+RUN wget -c https://www.mpich.org/static/downloads/4.0/hydra-4.0.tar.gz
+RUN tar -xzvf hydra-4.0.tar.gz
+WORKDIR hydra-4.0
+RUN ./autogen.sh
+RUN ./configure --prefix=$SOS_INSTALL/hydra-4.0/install
+RUN make all install
 
 # Build PMIx
 WORKDIR $SOS_INSTALL
