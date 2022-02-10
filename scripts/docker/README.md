@@ -1,15 +1,15 @@
 # Sandia-OpenSHMEM Docker Image
 Sandia-OpenSHMEM (SOS) utlizes Docker images to provide users a means to create
-containers that provide a configurable Ubuntu sandbox for running Sadia
-OpenSHMEM (SOS) applications and benchmarks.
+containers that provide a configurable Ubuntu sandbox for running SOS
+applications and benchmarks.
 
 ## Creating SOS Containers from the Prebuilt Docker Images
-Coming Soon: Information regarding the SOS public dockerhub repos and prebuilt
+Coming Soon: Information regarding the SOS public Docker Hub repos and prebuilt
 images.
 
 ## Creating SOS Containers from the Dockerfile 
-This Dockerfile provides a configurable Ubuntu sandbox for running Sadia
-OpenSHMEM (SOS) applications and benchmarks.
+This Dockerfile provides a configurable Ubuntu sandbox for running SOS
+applications and benchmarks.
 
 ### Building the Image from the Dockerfile
 To build the image from the Dockerfile, run the following run the following
