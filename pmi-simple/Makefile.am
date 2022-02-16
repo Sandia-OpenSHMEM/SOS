@@ -20,5 +20,8 @@ libpmi_simple_la_SOURCES = \
 	simple_pmiutil.c \
 	simple_pmiutil.h \
 	pmi.h \
-	mpl.h
+	mpl.h \
+	mpir_mem.h \
+	mpl_sockaddr.c \
+	mpl_sockaddr.h
 endif
