@@ -1,12 +1,15 @@
 FROM ubuntu:20.04
+
+#For OneAPI compilers, the compilers must be added to the builders path
 #FROM intel/oneapi-basekit:devel-ubuntu18.04
+#ENV PATH=/opt/intel/oneapi/compiler/latest/linux/bin:$PATH
 
 ENV SOS_INSTALL=/home/sos
 RUN mkdir /home/sos
 ENV DEBIAN_FRONTEND=noninteractive
 ENV CC=gcc
 ENV CXX=g++
-# For OneAPI Compilers use clang and clang++
+# For OneAPI compilers use clang and clang++
   #ENV CC=clang
   #ENV CXX=clang++
 
