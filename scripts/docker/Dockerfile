@@ -72,7 +72,7 @@ WORKDIR libfabric
 RUN ./autogen.sh
 # To build basic Libfabric
 RUN ./configure --prefix=$SOS_INSTALL/libfabric/install
-# If running with GNI provider:
+# To build Libfabric to use GNI provider:
   #RUN ./configure --prefix=$SOS_INSTALL/libfabric/install-gni --enable-gni --disable-verbs --disable-sockets --disable-udp --disable-psm --disable-tcp
 RUN make
 RUN make install
@@ -100,21 +100,21 @@ WORKDIR $SOS_INSTALL
 RUN git clone https://github.com/Sandia-OpenSHMEM/SOS.git
 WORKDIR SOS
 RUN ./autogen.sh
-# To Build SOS w/ Basic Libfabric
+# To build SOS w/ basic Libfabric
 RUN ./configure --prefix=$SOS_INSTALL/SOS/install --with-ofi=$SOS_INSTALL/libfabric/install --without-ucx --without-portals4 --enable-pmi-simple --disable-fortran
-# To Build SOS w/ GNI provider
+# To build SOS to use GNI provider
   #RUN ./configure --prefix=$SOS_INSTALL/SOS/install-gni --with-ofi=$SOS_INSTALL/libfabric/install-gni --without-ucx --without-portals4 --enable-pmi-simple --enable-ofi-mr=basic --enable-completion-polling --disable-fortran
-# To Build SOS w/ Libfabric & PMIx
+# To build SOS w/ Libfabric & PMIx
   #RUN ./configure --prefix=$SOS_INSTALL/SOS/install --with-ofi=$SOS_INSTALL/libfabric/install --without-ucx --without-portals4 --with-pmix=$SOS_INSTALL/pmix/install --disable-shared --enable-static
-# To Build SOS w/ Portals 4
+# To build SOS w/ Portals 4
   #RUN ./configure --prefix=$SOS_INSTALL/SOS/install-portals --with-ofi=$SOS_INSTALL/portals4/install --without-ucx --without-ofi --enable-pmi-simple
-# To Build SOS w/ UCX
+# To build SOS w/ UCX
   #RUN ./configure --prefix=$SOS_INSTALL/SOS/install-ucx --with-ucx=$SOS_INSTALL/ucx/install --without-ofi --without-portals4 --enable-pmi-simple
 RUN make
 RUN make install
 RUN make check TESTS= -j
 
-#Start PRRTE Server and Use prun to run tests
+#Start PRRTE Server and use prun to run tests
 #RUN make check TESTS= -j
 #ENV PATH=$SOS_INSTALL/prrte/install/bin:$PATH
 #RUN prte --daemonize --host localhost:4 --allow-run-as-root
