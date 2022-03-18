@@ -44,6 +44,11 @@ The other option (which is commnented out) is for OneAPI image which uses
 Ubunutu 18.04. The idea for this image was to allow users to test/run SOS
 applications with non-gcc compilers.
 
+Note: Currenlty, building the UCX libraries with the `icx` compiler leads to a
+build error. When starting from the OneAPI image and using the `icx` compiler,
+the Dockerfile lines which build UCX (the lines directly under "Build UCX") must
+be commented out.
+
 #### Building Libafabic
 The next set of options are presented when it comes time to build Libfabric.
 
