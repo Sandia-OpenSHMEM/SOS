@@ -10,8 +10,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV CC=gcc
 ENV CXX=g++
 # For OneAPI compilers use clang and clang++
-  #ENV CC=clang
-  #ENV CXX=clang++
+#  ENV CC=icx
+#  ENV CXX=icpx
 
 RUN apt-get update -y && apt-get install -y \
   git                                       \
@@ -87,13 +87,13 @@ RUN make
 RUN make install
 
 # Build UCX
-WORKDIR $SOS_INSTALL
-RUN git clone -b v1.9.0 --depth 10 https://github.com/openucx/ucx.git
-WORKDIR ucx
-RUN ./autogen.sh
-RUN ./configure --prefix=$SOS_INSTALL/ucx/install --enable-mt --disable-numa --without-java
-RUN make
-RUN make install
+#WORKDIR $SOS_INSTALL
+#RUN git clone -b v1.9.0 --depth 10 https://github.com/openucx/ucx.git
+#WORKDIR ucx
+#RUN ./autogen.sh
+#RUN ./configure --prefix=$SOS_INSTALL/ucx/install --enable-mt --disable-numa --without-java
+#RUN make
+#RUN make install
 
 # Build SOS
 WORKDIR $SOS_INSTALL
