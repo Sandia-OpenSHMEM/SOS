@@ -44,18 +44,18 @@ The other option (which is commnented out) is for OneAPI image which uses
 Ubunutu 18.04. The idea for this image was to allow users to test/run SOS
 applications with non-gcc compilers.
 
-Note: Currenlty, building the UCX libraries with the `icx` compiler leads to a
+Note: Currently, building the UCX libraries with the `icx` compiler leads to a
 build error. When starting from the OneAPI image and using the `icx` compiler,
 the Dockerfile lines which build UCX (the lines directly under "Build UCX") must
 be commented out.
 
-#### Building Libafabic
+#### Building Libfabric
 The next set of options are presented when it comes time to build Libfabric.
 
 By default, a basic Libfabric configuration is built and installed to an
 "install" directory (This option is currently uncommented).
 The other option is to enable the GNI provider while building Libfabric. (For
-this option uncomment the line of code "To build Libfabric to use GNI provider")
+this option uncomment the line of code under "To build Libfabric to use GNI provider")
 
 #### Building SOS
 Another set of options are presented when Building SOS.
@@ -75,6 +75,6 @@ The last portion of code that is optional in this Dockerfile is that which
 enables the PRRTE Server.
 This is mostly used to run SOS tests when the GNI provider has been enabled in
 the Libfabric build.
-When testing on the GNI provider uncomment out the lines under "Start PRRTE
-Server and use prun to run tests" to build a container which runs "make check"
-on the PRRTE Server.
+When testing on the GNI provider uncomment the lines under "Start PRRTE server
+and use prun to run tests" to build a container which runs "make check" on the
+PRRTE server.
