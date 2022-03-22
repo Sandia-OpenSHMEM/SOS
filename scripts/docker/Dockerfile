@@ -53,7 +53,7 @@ RUN git clone -b v4.1.1rc6 --depth 10 https://github.com/pmix/pmix pmix
 WORKDIR pmix
 RUN ./autogen.pl
 RUN ./configure --prefix=$SOS_INSTALL/pmix/install --with-libevent=$SOS_INSTALL/libevent-2.1.10-stable/install --without-libev --disable-debug CFLAGS=-O3 --disable-shared --enable-static
-RUN make
+RUN make -j
 RUN make install
 
 # Build PRRTE
@@ -62,7 +62,7 @@ RUN git clone -b v2.0.0 --depth 10 https://github.com/pmix/prrte prrte
 WORKDIR prrte
 RUN ./autogen.pl
 RUN ./configure --prefix=$SOS_INSTALL/prrte/install --with-pmix=$SOS_INSTALL/pmix/install --without-slurm --with-libevent=$SOS_INSTALL/libevent-2.1.10-stable/install --without-libev --disable-shared --enable-static
-RUN make
+RUN make -j
 RUN make install
 
 # Build Libfabric
@@ -74,7 +74,7 @@ RUN ./autogen.sh
 RUN ./configure --prefix=$SOS_INSTALL/libfabric/install
 # To build Libfabric to use GNI provider:
   #RUN ./configure --prefix=$SOS_INSTALL/libfabric/install-gni --enable-gni --disable-verbs --disable-sockets --disable-udp --disable-psm --disable-tcp
-RUN make
+RUN make -j
 RUN make install
 
 # Build Portals 4
@@ -83,7 +83,7 @@ RUN git clone --depth 10 https://github.com/regrant/portals4.git portals4
 WORKDIR portals4
 RUN ./autogen.sh
 RUN ./configure --prefix=$SOS_INSTALL/portals4/install --enable-zero-mrs --enable-reliable-udp --disable-pmi-from-portals
-RUN make
+RUN make -j
 RUN make install
 
 # Build UCX
@@ -92,7 +92,7 @@ RUN make install
 #WORKDIR ucx
 #RUN ./autogen.sh
 #RUN ./configure --prefix=$SOS_INSTALL/ucx/install --enable-mt --disable-numa --without-java
-#RUN make
+#RUN make -j
 #RUN make install
 
 # Build SOS
@@ -110,11 +110,11 @@ RUN ./configure --prefix=$SOS_INSTALL/SOS/install --with-ofi=$SOS_INSTALL/libfab
   #RUN ./configure --prefix=$SOS_INSTALL/SOS/install-portals --with-ofi=$SOS_INSTALL/portals4/install --without-ucx --without-ofi --enable-pmi-simple
 # To build SOS w/ UCX
   #RUN ./configure --prefix=$SOS_INSTALL/SOS/install-ucx --with-ucx=$SOS_INSTALL/ucx/install --without-ofi --without-portals4 --enable-pmi-simple
-RUN make
+RUN make -j
 RUN make install
 RUN make check TESTS= -j
 
-#Start PRRTE Server and use prun to run tests
+#Start PRRTE server and use prun to run tests
 #RUN make check TESTS= -j
 #ENV PATH=$SOS_INSTALL/prrte/install/bin:$PATH
 #RUN prte --daemonize --host localhost:4 --allow-run-as-root
