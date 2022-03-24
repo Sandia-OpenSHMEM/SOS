@@ -2,6 +2,12 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.5.1
+------
+
+- Added a Dockerfile so users can create containers that provide a configurable
+  Ubuntu sandbox for running SOS applications and benchmarks.
+
 v1.5.1rc1
 ---------
 
