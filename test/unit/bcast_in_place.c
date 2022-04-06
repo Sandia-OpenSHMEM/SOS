@@ -34,13 +34,12 @@ long src[NELEM];
 
 int main(void)
 {
-    int me, npes;
+    int me;
     int errors = 0;
 
     shmem_init();
 
     me = shmem_my_pe();
-    npes = shmem_n_pes();
 
     for (int i = 0; i < NELEM; i++)
         src[i] = me + i;
@@ -49,7 +48,7 @@ int main(void)
 
     shmem_long_broadcast(SHMEM_TEAM_WORLD, src, src, NELEM, 0);
 
-    /* Validate reduced data */
+    /* Validate broadcast data */
     for (int j = 0; j < NELEM; j++) {
         long expected = j;
         if (src[j] != expected) {
