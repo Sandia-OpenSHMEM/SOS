@@ -52,11 +52,21 @@ int main(void) {
     for (i = n = 0; i < npes; i++) {
         int * ptr = (int *) shmem_ptr(&shr_data, i);
 
-        if (ptr != NULL) {
+        //Kieran
+        int * team_ptr = (int *) shmem_team_ptr(SHMEM_TEAM_WORLD, &shr_data, i);
+
+        //if (ptr != NULL) {
+        // Kieran
+        if (ptr != NULL && team_ptr != NULL) {
             int shr_peer = *ptr;
+
+            //Kieran
+            int shr_team_peer = *team_ptr;
             ++n;
 
-            if (shr_peer != i) {
+            //if (shr_peer != i) {
+            //Kieran 
+            if (shr_peer != i && shr_team_peer != i) {
                 printf("%2d: Error, shr_data(%d) = %d, expected %d\n", me, i, shr_peer, i);
                 errors++;
             }
