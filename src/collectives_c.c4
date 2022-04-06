@@ -221,9 +221,12 @@ shmem_team_sync(shmem_team_t team)
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE)*nreduce);        \
         SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof(TYPE)*nreduce);        \
         SHMEM_ERR_CHECK_SYMMETRIC(pWrk, sizeof(TYPE) *                  \
-                                  MAX(nreduce/2 + 1, SHMEM_REDUCE_MIN_WRKDATA_SIZE)); \
-        SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_REDUCE_SYNC_SIZE); \
-        SHMEM_ERR_CHECK_OVERLAP(target, source, sizeof(TYPE)*nreduce, 1); \
+                                  MAX(nreduce/2 + 1,                    \
+                                  SHMEM_REDUCE_MIN_WRKDATA_SIZE));      \
+        SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) *                 \
+                                  SHMEM_REDUCE_SYNC_SIZE);              \
+        SHMEM_ERR_CHECK_OVERLAP(target, source, sizeof(TYPE)*nreduce,   \
+                                sizeof(TYPE)*nreduce, 1);               \
                                                                         \
         shmem_internal_op_to_all(target, source, nreduce, sizeof(TYPE), \
                                  PE_start, 1 << logPE_stride, PE_size,  \
@@ -240,7 +243,8 @@ shmem_team_sync(shmem_team_t team)
         SHMEM_ERR_CHECK_TEAM_VALID(team);                               \
         SHMEM_ERR_CHECK_SYMMETRIC(dest, sizeof(TYPE)*nreduce);          \
         SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof(TYPE)*nreduce);        \
-        SHMEM_ERR_CHECK_OVERLAP(dest, source, sizeof(TYPE)*nreduce, 1); \
+        SHMEM_ERR_CHECK_OVERLAP(dest, source, sizeof(TYPE)*nreduce,     \
+                                sizeof(TYPE)*nreduce, 1);               \
         TYPE *pWrk = NULL;                                              \
                                                                         \
         shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;  \
@@ -286,7 +290,7 @@ shmem_broadcast32(void *target, const void *source, size_t nlong,
     SHMEM_ERR_CHECK_SYMMETRIC(target, nlong * 4);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nlong * 4);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_BCAST_SYNC_SIZE);
-    SHMEM_ERR_CHECK_OVERLAP(target, source, nlong * 4, 1);
+    SHMEM_ERR_CHECK_OVERLAP(target, source, nlong * 4, nlong * 4, 1);
 
     shmem_internal_bcast(target, source, nlong * 4,
                          PE_root, PE_start, 1 << logPE_stride, PE_size,
@@ -305,7 +309,7 @@ shmem_broadcast64(void *target, const void *source, size_t nlong,
     SHMEM_ERR_CHECK_SYMMETRIC(target, nlong * 8);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nlong * 8);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_BCAST_SYNC_SIZE);
-    SHMEM_ERR_CHECK_OVERLAP(target, source, nlong * 8, 1);
+    SHMEM_ERR_CHECK_OVERLAP(target, source, nlong * 8, nlong * 8, 1);
 
     shmem_internal_bcast(target, source, nlong * 8,
                          PE_root, PE_start, 1 << logPE_stride, PE_size,
@@ -321,7 +325,7 @@ shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
     SHMEM_ERR_CHECK_TEAM_VALID(team);
     SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nelems);
-    SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems, 1);
+    SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems, nelems, 1);
 
     shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;
     long *psync = shmem_internal_team_choose_psync(myteam, BCAST);
@@ -346,7 +350,8 @@ shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
         SHMEM_ERR_CHECK_TEAM_VALID(team);                                \
         SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems * sizeof(TYPE));          \
         SHMEM_ERR_CHECK_SYMMETRIC(source, nelems * sizeof(TYPE));        \
-        SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * sizeof(TYPE), 1); \
+        SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * sizeof(TYPE),     \
+                                nelems * sizeof(TYPE), 1);               \
                                                                          \
         shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;   \
         long *psync = shmem_internal_team_choose_psync(myteam, BCAST);   \
@@ -371,7 +376,7 @@ shmem_collect32(void *target, const void *source, size_t nlong,
     SHMEM_ERR_CHECK_SYMMETRIC(target, nlong * 4);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nlong * 4);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_COLLECT_SYNC_SIZE);
-    SHMEM_ERR_CHECK_OVERLAP(target, source, nlong * 4, 1);
+    SHMEM_ERR_CHECK_OVERLAP(target, source, nlong * 4, nlong * 4, 1);
 
     shmem_internal_collect(target, source, nlong * 4,
                       PE_start, 1 << logPE_stride, PE_size, pSync);
@@ -387,7 +392,7 @@ shmem_collect64(void *target, const void *source, size_t nlong,
     SHMEM_ERR_CHECK_SYMMETRIC(target, nlong * 8);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nlong * 8);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_COLLECT_SYNC_SIZE);
-    SHMEM_ERR_CHECK_OVERLAP(target, source, nlong * 8, 1);
+    SHMEM_ERR_CHECK_OVERLAP(target, source, nlong * 8, nlong * 8, 1);
 
     shmem_internal_collect(target, source, nlong * 8,
                       PE_start, 1 << logPE_stride, PE_size, pSync);
@@ -402,7 +407,8 @@ shmem_collect64(void *target, const void *source, size_t nlong,
         SHMEM_ERR_CHECK_TEAM_VALID(team);                                \
         SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems * sizeof(TYPE));          \
         SHMEM_ERR_CHECK_SYMMETRIC(source, nelems * sizeof(TYPE));        \
-        SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * sizeof(TYPE), 1); \
+        SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * sizeof(TYPE),     \
+                                nelems * sizeof(TYPE), 1);               \
                                                                          \
         shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;   \
         long *psync = shmem_internal_team_choose_psync(myteam,           \
@@ -424,7 +430,7 @@ shmem_collectmem(shmem_team_t team, void *dest, const void *source,
     SHMEM_ERR_CHECK_TEAM_VALID(team);
     SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nelems);
-    SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems, 1);
+    SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems, nelems, 1);
 
     shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;
     long *psync = shmem_internal_team_choose_psync(myteam, COLLECT);
@@ -443,7 +449,7 @@ shmem_fcollect32(void *target, const void *source, size_t nlong,
     SHMEM_ERR_CHECK_SYMMETRIC(target, nlong * 4);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nlong * 4);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_COLLECT_SYNC_SIZE);
-    SHMEM_ERR_CHECK_OVERLAP(target, source, nlong * 4, 1);
+    SHMEM_ERR_CHECK_OVERLAP(target, source, nlong * 4, nlong * 4, 1);
 
     shmem_internal_fcollect(target, source, nlong * 4,
                        PE_start, 1 << logPE_stride, PE_size, pSync);
@@ -459,7 +465,7 @@ shmem_fcollect64(void *target, const void *source, size_t nlong,
     SHMEM_ERR_CHECK_SYMMETRIC(target, nlong * 8);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nlong * 8);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_COLLECT_SYNC_SIZE);
-    SHMEM_ERR_CHECK_OVERLAP(target, source, nlong * 8, 1);
+    SHMEM_ERR_CHECK_OVERLAP(target, source, nlong * 8, nlong * 8, 1);
 
     shmem_internal_fcollect(target, source, nlong * 8,
                        PE_start, 1 << logPE_stride, PE_size, pSync);
@@ -474,7 +480,8 @@ shmem_fcollect64(void *target, const void *source, size_t nlong,
         SHMEM_ERR_CHECK_TEAM_VALID(team);                                \
         SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems * sizeof(TYPE));          \
         SHMEM_ERR_CHECK_SYMMETRIC(source, nelems * sizeof(TYPE));        \
-        SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * sizeof(TYPE), 1); \
+        SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * sizeof(TYPE),     \
+                                nelems * sizeof(TYPE), 1);               \
                                                                          \
         shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;   \
         long *psync = shmem_internal_team_choose_psync(myteam,           \
@@ -496,7 +503,7 @@ shmem_fcollectmem(shmem_team_t team, void *dest, const void *source,
     SHMEM_ERR_CHECK_TEAM_VALID(team);
     SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nelems);
-    SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems, 1);
+    SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems, nelems, 1);
 
     shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;
     long *psync = shmem_internal_team_choose_psync(myteam, COLLECT);
@@ -515,7 +522,7 @@ shmem_alltoall32(void *dest, const void *source, size_t nelems, int PE_start,
     SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems * 4);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nelems * 4);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_ALLTOALL_SYNC_SIZE);
-    SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * 4, 1);
+    SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * 4, nelems * 4, 1);
 
     shmem_internal_alltoall(dest, source, nelems * 4,
                             PE_start, 1 << logPE_stride, PE_size, pSync);
@@ -531,7 +538,7 @@ shmem_alltoall64(void *dest, const void *source, size_t nelems, int PE_start,
     SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems * 8);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nelems * 8);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long) * SHMEM_ALLTOALL_SYNC_SIZE);
-    SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * 8, 1);
+    SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * 8, nelems * 8, 1);
 
     shmem_internal_alltoall(dest, source, nelems * 8,
                             PE_start, 1 << logPE_stride, PE_size, pSync);
@@ -546,7 +553,8 @@ shmem_alltoall64(void *dest, const void *source, size_t nelems, int PE_start,
         SHMEM_ERR_CHECK_TEAM_VALID(team);                                \
         SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems * sizeof(TYPE));          \
         SHMEM_ERR_CHECK_SYMMETRIC(source, nelems * sizeof(TYPE));        \
-        SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * sizeof(TYPE), 1); \
+        SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * sizeof(TYPE),     \
+                                nelems * sizeof(TYPE), 1);               \
                                                                          \
         shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;   \
         long *psync = shmem_internal_team_choose_psync(myteam,           \
@@ -568,7 +576,7 @@ shmem_alltoallmem(shmem_team_t team, void *dest, const void *source,
     SHMEM_ERR_CHECK_TEAM_VALID(team);
     SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems);
     SHMEM_ERR_CHECK_SYMMETRIC(source, nelems);
-    SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems, 1);
+    SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems, nelems, 1);
 
     shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;
     long *psync = shmem_internal_team_choose_psync(myteam, ALLTOALL);
