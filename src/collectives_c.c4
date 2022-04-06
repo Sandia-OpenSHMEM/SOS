@@ -339,30 +339,30 @@ shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
     return 0;
 }
 
-#define SHMEM_DEF_BCAST(STYPE,TYPE)                                      \
-    int SHMEM_FUNCTION_ATTRIBUTES                                        \
-    shmem_##STYPE##_broadcast(shmem_team_t team, TYPE *dest,             \
-                              const TYPE *source, size_t nelems,         \
-                              int PE_root)                               \
-    {                                                                    \
-        SHMEM_ERR_CHECK_INITIALIZED();                                   \
-        SHMEM_ERR_CHECK_PE(PE_root);                                     \
-        SHMEM_ERR_CHECK_TEAM_VALID(team);                                \
-        SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems * sizeof(TYPE));          \
-        SHMEM_ERR_CHECK_SYMMETRIC(source, nelems * sizeof(TYPE));        \
-        SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * sizeof(TYPE),     \
-                                nelems * sizeof(TYPE), 1);               \
-                                                                         \
-        shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;   \
-        long *psync = shmem_internal_team_choose_psync(myteam, BCAST);   \
-        shmem_internal_bcast(dest, source, nelems * sizeof(TYPE),        \
-                             PE_root, myteam->start, myteam->stride,     \
-                             myteam->size, psync, 1);                    \
-        shmem_internal_team_release_psyncs(myteam, BCAST);               \
-        int team_root = myteam->start + PE_root * myteam->stride;        \
-        if (shmem_internal_my_pe == team_root && dest != source)         \
-            memcpy(dest, source, nelems * sizeof(TYPE));                 \
-        return 0;                                                        \
+#define SHMEM_DEF_BCAST(STYPE,TYPE)                                     \
+    int SHMEM_FUNCTION_ATTRIBUTES                                       \
+    shmem_##STYPE##_broadcast(shmem_team_t team, TYPE *dest,            \
+                              const TYPE *source, size_t nelems,        \
+                              int PE_root)                              \
+    {                                                                   \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_PE(PE_root);                                    \
+        SHMEM_ERR_CHECK_TEAM_VALID(team);                               \
+        SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems * sizeof(TYPE));         \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, nelems * sizeof(TYPE));       \
+        SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * sizeof(TYPE),    \
+                                nelems * sizeof(TYPE), 1);              \
+                                                                        \
+        shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;  \
+        long *psync = shmem_internal_team_choose_psync(myteam, BCAST);  \
+        shmem_internal_bcast(dest, source, nelems * sizeof(TYPE),       \
+                             PE_root, myteam->start, myteam->stride,    \
+                             myteam->size, psync, 1);                   \
+        shmem_internal_team_release_psyncs(myteam, BCAST);              \
+        int team_root = myteam->start + PE_root * myteam->stride;       \
+        if (shmem_internal_my_pe == team_root && dest != source)        \
+            memcpy(dest, source, nelems * sizeof(TYPE));                \
+        return 0;                                                       \
     }
 
 SHMEM_BIND_C_RMA(`SHMEM_DEF_BCAST')
@@ -398,26 +398,26 @@ shmem_collect64(void *target, const void *source, size_t nlong,
                       PE_start, 1 << logPE_stride, PE_size, pSync);
 }
 
-#define SHMEM_DEF_COLLECT(STYPE,TYPE)                                    \
-    int SHMEM_FUNCTION_ATTRIBUTES                                        \
-    shmem_##STYPE##_collect(shmem_team_t team, TYPE *dest,               \
-                             const TYPE *source, size_t nelems)          \
-    {                                                                    \
-        SHMEM_ERR_CHECK_INITIALIZED();                                   \
-        SHMEM_ERR_CHECK_TEAM_VALID(team);                                \
-        SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems * sizeof(TYPE));          \
-        SHMEM_ERR_CHECK_SYMMETRIC(source, nelems * sizeof(TYPE));        \
-        SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * sizeof(TYPE),     \
-                                nelems * sizeof(TYPE), 1);               \
-                                                                         \
-        shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;   \
-        long *psync = shmem_internal_team_choose_psync(myteam,           \
-                                                        COLLECT);        \
-        shmem_internal_collect(dest, source, nelems * sizeof(TYPE),      \
-                               myteam->start, myteam->stride,            \
-                               myteam->size, psync);                     \
-        shmem_internal_team_release_psyncs(myteam, COLLECT);             \
-        return 0;                                                        \
+#define SHMEM_DEF_COLLECT(STYPE,TYPE)                                  \
+    int SHMEM_FUNCTION_ATTRIBUTES                                      \
+    shmem_##STYPE##_collect(shmem_team_t team, TYPE *dest,             \
+                             const TYPE *source, size_t nelems)        \
+    {                                                                  \
+        SHMEM_ERR_CHECK_INITIALIZED();                                 \
+        SHMEM_ERR_CHECK_TEAM_VALID(team);                              \
+        SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems * sizeof(TYPE));        \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, nelems * sizeof(TYPE));      \
+        SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * sizeof(TYPE),   \
+                                nelems * sizeof(TYPE), 1);             \
+                                                                       \
+        shmem_internal_team_t *myteam = (shmem_internal_team_t *)team; \
+        long *psync = shmem_internal_team_choose_psync(myteam,         \
+                                                        COLLECT);      \
+        shmem_internal_collect(dest, source, nelems * sizeof(TYPE),    \
+                               myteam->start, myteam->stride,          \
+                               myteam->size, psync);                   \
+        shmem_internal_team_release_psyncs(myteam, COLLECT);           \
+        return 0;                                                      \
     }
 
 SHMEM_BIND_C_RMA(`SHMEM_DEF_COLLECT')
@@ -471,26 +471,26 @@ shmem_fcollect64(void *target, const void *source, size_t nlong,
                        PE_start, 1 << logPE_stride, PE_size, pSync);
 }
 
-#define SHMEM_DEF_FCOLLECT(STYPE,TYPE)                                   \
-    int SHMEM_FUNCTION_ATTRIBUTES                                        \
-    shmem_##STYPE##_fcollect(shmem_team_t team, TYPE *dest,              \
-                              const TYPE *source, size_t nelems)         \
-    {                                                                    \
-        SHMEM_ERR_CHECK_INITIALIZED();                                   \
-        SHMEM_ERR_CHECK_TEAM_VALID(team);                                \
-        SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems * sizeof(TYPE));          \
-        SHMEM_ERR_CHECK_SYMMETRIC(source, nelems * sizeof(TYPE));        \
-        SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * sizeof(TYPE),     \
-                                nelems * sizeof(TYPE), 1);               \
-                                                                         \
-        shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;   \
-        long *psync = shmem_internal_team_choose_psync(myteam,           \
-                                                        COLLECT);        \
-        shmem_internal_fcollect(dest, source, nelems * sizeof(TYPE),     \
-                                myteam->start, myteam->stride,           \
-                                myteam->size, psync);                    \
-        shmem_internal_team_release_psyncs(myteam, COLLECT);             \
-        return 0;                                                        \
+#define SHMEM_DEF_FCOLLECT(STYPE,TYPE)                                  \
+    int SHMEM_FUNCTION_ATTRIBUTES                                       \
+    shmem_##STYPE##_fcollect(shmem_team_t team, TYPE *dest,             \
+                              const TYPE *source, size_t nelems)        \
+    {                                                                   \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_TEAM_VALID(team);                               \
+        SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems * sizeof(TYPE));         \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, nelems * sizeof(TYPE));       \
+        SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * sizeof(TYPE),    \
+                                nelems * sizeof(TYPE), 1);              \
+                                                                        \
+        shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;  \
+        long *psync = shmem_internal_team_choose_psync(myteam,          \
+                                                        COLLECT);       \
+        shmem_internal_fcollect(dest, source, nelems * sizeof(TYPE),    \
+                                myteam->start, myteam->stride,          \
+                                myteam->size, psync);                   \
+        shmem_internal_team_release_psyncs(myteam, COLLECT);            \
+        return 0;                                                       \
     }
 
 SHMEM_BIND_C_RMA(`SHMEM_DEF_FCOLLECT')
@@ -544,26 +544,26 @@ shmem_alltoall64(void *dest, const void *source, size_t nelems, int PE_start,
                             PE_start, 1 << logPE_stride, PE_size, pSync);
 }
 
-#define SHMEM_DEF_ALLTOALL(STYPE,TYPE)                                   \
-    int SHMEM_FUNCTION_ATTRIBUTES                                        \
-    shmem_##STYPE##_alltoall(shmem_team_t team, TYPE *dest,              \
-                             const TYPE *source, size_t nelems)          \
-    {                                                                    \
-        SHMEM_ERR_CHECK_INITIALIZED();                                   \
-        SHMEM_ERR_CHECK_TEAM_VALID(team);                                \
-        SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems * sizeof(TYPE));          \
-        SHMEM_ERR_CHECK_SYMMETRIC(source, nelems * sizeof(TYPE));        \
-        SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * sizeof(TYPE),     \
-                                nelems * sizeof(TYPE), 1);               \
-                                                                         \
-        shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;   \
-        long *psync = shmem_internal_team_choose_psync(myteam,           \
-                                                        ALLTOALL);       \
-        shmem_internal_alltoall(dest, source, nelems * sizeof(TYPE),     \
-                               myteam->start, myteam->stride,            \
-                               myteam->size, psync);                     \
-        shmem_internal_team_release_psyncs(myteam, ALLTOALL);            \
-        return 0;                                                        \
+#define SHMEM_DEF_ALLTOALL(STYPE,TYPE)                                 \
+    int SHMEM_FUNCTION_ATTRIBUTES                                      \
+    shmem_##STYPE##_alltoall(shmem_team_t team, TYPE *dest,            \
+                             const TYPE *source, size_t nelems)        \
+    {                                                                  \
+        SHMEM_ERR_CHECK_INITIALIZED();                                 \
+        SHMEM_ERR_CHECK_TEAM_VALID(team);                              \
+        SHMEM_ERR_CHECK_SYMMETRIC(dest, nelems * sizeof(TYPE));        \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, nelems * sizeof(TYPE));      \
+        SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems * sizeof(TYPE),   \
+                                nelems * sizeof(TYPE), 1);             \
+                                                                       \
+        shmem_internal_team_t *myteam = (shmem_internal_team_t *)team; \
+        long *psync = shmem_internal_team_choose_psync(myteam,         \
+                                                        ALLTOALL);     \
+        shmem_internal_alltoall(dest, source, nelems * sizeof(TYPE),   \
+                               myteam->start, myteam->stride,          \
+                               myteam->size, psync);                   \
+        shmem_internal_team_release_psyncs(myteam, ALLTOALL);          \
+        return 0;                                                      \
     }
 
 SHMEM_BIND_C_RMA(`SHMEM_DEF_ALLTOALL')
