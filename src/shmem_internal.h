@@ -285,20 +285,28 @@ extern unsigned int shmem_internal_rand_seed;
         }                                                                               \
     } while (0)
 
-#define SHMEM_ERR_CHECK_OVERLAP(dest, source, size, complete_overlap_allowed)           \
+/* Indicates whether the memory region pointed to by ptr1 (having size1) overlaps with
+ * the buffer at ptr2 (having size2).
+ *   SHMEM usage examples:
+ *     For the collective routines (src/dest arguments):
+ *         size1 == size2 and complete_overlap_allowed is 1
+ *     For the pt2pt sync routines (ivars/status/indices arguments):
+ *         size1 != size2 and complete_overlap_allowed is 0 */
+#define SHMEM_ERR_CHECK_OVERLAP(ptr1, ptr2, size1, size2, complete_overlap_allowed)     \
     do {                                                                                \
-        const void *dst = (void*)(dest);                                                \
-        const void *src = (void*)(source);                                              \
-        const void *ptr_low  = dst > src ? src : dst;                                   \
-        const void *ptr_high = dst > src ? dst : src;                                   \
-        const void *ptr_extent = (void *)((char *)(ptr_low) + (size));                  \
-        if (size == 0 || (complete_overlap_allowed && src == dst)) {                    \
-            break; /* Skip this check when size is 0 or buffers completely overlap  */  \
+        const void *p1 = (void*)(ptr1);                                                 \
+        const void *p2 = (void*)(ptr2);                                                 \
+        const void *ptr_low  = p1 > p2 ? p2 : p1;                                       \
+        const void *ptr_high = p1 > p2 ? p1 : p2;                                       \
+        const size_t sz_low  = p1 > p2 ? size2 : size1;                                 \
+        const void *ptr_extent = (void *)((char *)ptr_low + sz_low);                    \
+        if (complete_overlap_allowed && p1 == p2) {                                     \
+            break; /* Skip this check when buffer is allowed to completely overlap  */  \
         }                                                                               \
         if (ptr_extent > ptr_high) {                                                    \
             fprintf(stderr, "ERROR: %s(): Argument \"%s\" [%p..%p) overlaps "           \
                             "argument (%p)\n",                                          \
-                    __func__, #dest, ptr_low, ptr_extent, ptr_high);                    \
+                    __func__, #ptr1, ptr_low, ptr_extent, ptr_high);                    \
             shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                  \
         }                                                                               \
     } while (0)
@@ -354,7 +362,7 @@ extern unsigned int shmem_internal_rand_seed;
 #define SHMEM_ERR_CHECK_CTX(ctx)
 #define SHMEM_ERR_CHECK_SYMMETRIC(ptr, len)
 #define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr)
-#define SHMEM_ERR_CHECK_OVERLAP(dest, source, nelems, complete_overlap_allowed)
+#define SHMEM_ERR_CHECK_OVERLAP(ptr1, ptr2, size1, size2, complete_overlap_allowed)
 #define SHMEM_ERR_CHECK_NULL(ptr, nelems)
 #define SHMEM_ERR_CHECK_CMP_OP(op)
 #define SHMEM_ERR_CHECK_SIG_OP(op)                                                      \

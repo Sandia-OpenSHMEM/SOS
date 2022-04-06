@@ -496,6 +496,8 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_PE(pe);                                             \
     SHMEM_ERR_CHECK_CTX(ctx);                                           \
     SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE) * nelems);           \
+    SHMEM_ERR_CHECK_OVERLAP(target, sig_addr, sizeof(TYPE) * nelems,    \
+                            sizeof(uint64_t), 0);                       \
     SHMEM_ERR_CHECK_NULL(source, nelems);                               \
     SHMEM_ERR_CHECK_SIG_OP(sig_op);                                     \
     shmem_internal_put_nb(ctx, target, source,                          \
@@ -525,6 +527,8 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_PE(pe);                                             \
     SHMEM_ERR_CHECK_CTX(ctx);                                           \
     SHMEM_ERR_CHECK_SYMMETRIC(target, (SIZE) * nelems);                 \
+    SHMEM_ERR_CHECK_OVERLAP(target, sig_addr, (SIZE) * nelems,          \
+                            sizeof(uint64_t), 0);                       \
     SHMEM_ERR_CHECK_NULL(source, nelems);                               \
     SHMEM_ERR_CHECK_SIG_OP(sig_op);                                     \
     shmem_internal_put_nb(ctx, target, source, (SIZE) * nelems,         \
@@ -551,6 +555,8 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_PE(pe);                                             \
     SHMEM_ERR_CHECK_CTX(ctx);                                           \
     SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE) * nelems);           \
+    SHMEM_ERR_CHECK_OVERLAP(target, sig_addr, sizeof(TYPE) * nelems,    \
+                            sizeof(uint64_t), 0);                       \
     SHMEM_ERR_CHECK_NULL(source, nelems);                               \
     SHMEM_ERR_CHECK_SIG_OP(sig_op);                                     \
     shmem_internal_put_signal_nbi(ctx, target, source,                  \
@@ -569,6 +575,8 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_PE(pe);                                             \
     SHMEM_ERR_CHECK_CTX(ctx);                                           \
     SHMEM_ERR_CHECK_SYMMETRIC(target, (SIZE) * nelems);                 \
+    SHMEM_ERR_CHECK_OVERLAP(target, sig_addr, (SIZE) * nelems,          \
+                            sizeof(uint64_t), 0);                       \
     SHMEM_ERR_CHECK_NULL(source, nelems);                               \
     SHMEM_ERR_CHECK_SIG_OP(sig_op);                                     \
     shmem_internal_put_signal_nbi(ctx, target, source, (SIZE) * nelems, \
