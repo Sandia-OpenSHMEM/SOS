@@ -105,6 +105,7 @@ check_PROGRAMS = \
 	many-ctx \
 	shmem_test \
 	shmem_ptr \
+	shmem_team_ptr \
 	shmem_malloc_with_hints \
 	put_signal \
 	put_signal_nbi \
