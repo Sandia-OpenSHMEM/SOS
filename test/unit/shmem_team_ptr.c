@@ -105,23 +105,24 @@ int main(void) {
     // Create a team of PEs w/ odd numbered id's
     shmem_team_t new_team;
     shmem_team_split_strided(SHMEM_TEAM_WORLD, 1, 2, npes / 2, NULL, 0, &new_team);
-      if (new_team != SHMEM_TEAM_INVALID) {
-          team_me = shmem_team_my_pe(new_team);
-          shr_team_data = team_me;
+    if (new_team != SHMEM_TEAM_INVALID) {
+        team_me = shmem_team_my_pe(new_team);
+        shr_team_data = team_me;
+        shmem_sync_all();
 
-          /* Check shmem_team_ptr on data segment */
-          for (i = n = 0; i < npes / 2; i++) {
-              int * team_ptr = (int *) shmem_team_ptr(new_team, &shr_team_data, i);
+        /* Check shmem_team_ptr on data segment */
+        for (i = n = 0; i < npes / 2; i++) {
+            int * team_ptr = (int *) shmem_team_ptr(new_team, &shr_team_data, i);
 
-              if (team_ptr != NULL) {
-                  int shr_team_peer = *team_ptr;
-                  ++n;
+            if (team_ptr != NULL) {
+                int shr_team_peer = *team_ptr;
+                ++n;
 
-                  if (shr_team_peer != i) {
-                      printf("%2d: Error, shr_team_data(%d) = %d, expected %d\n", team_me, i, shr_team_peer, i);
-                      errors++;
-                  }
-              }
+                if (shr_team_peer != i) {
+                    printf("%2d: Error, shr_team_data(%d) = %d, expected %d\n", team_me, i, shr_team_peer, i);
+                    errors++;
+                }
+            }
             else if (i == team_me) {
                 printf("%2d: Error, i = %d, shmem_team_ptr(data) returned NULL for my PE\n", team_me, i);
                 errors++;
@@ -129,6 +130,8 @@ int main(void) {
         }
         printf("%2d: Found %d new team data segment peer(s)\n", team_me, n);
         fflush(NULL);
+    } else {
+        shmem_sync_all();
     }
 
     shmem_barrier_all();
@@ -136,26 +139,29 @@ int main(void) {
     /* Check shmem_team_ptr on heap segment */
     int * shr_team_heap = shmem_malloc(sizeof(int));
     if (new_team != SHMEM_TEAM_INVALID) {
-      *shr_team_heap = team_me;
+        *shr_team_heap = team_me;
+        shmem_sync_all();
 
-      for (i = n = 0; i < npes / 2; i++) {
-          int * team_ptr = (int *) shmem_team_ptr(new_team, shr_team_heap, i);
+        for (i = n = 0; i < npes / 2; i++) {
+            int * team_ptr = (int *) shmem_team_ptr(new_team, shr_team_heap, i);
 
-          if (team_ptr != NULL) {
-              int shr_team_peer = *team_ptr;
-              ++n;
+            if (team_ptr != NULL) {
+                int shr_team_peer = *team_ptr;
+                ++n;
 
-              if (shr_team_peer != i) {
-                  printf("%2d: Error, shr_team_heap(%d) = %d, expected %d\n", me, i, shr_team_peer, i);
-                  errors++;
-              }
-          }
-          else if (i == team_me) {
-              printf("%2d: Error, shmem_team_ptr(heap) returned NULL for my PE\n", team_me);
-              errors++;
-          }
-      }
-      printf("%2d: Found %d new team heap segment peer(s)\n", team_me, n);
+                if (shr_team_peer != i) {
+                    printf("%2d: Error, shr_team_heap(%d) = %d, expected %d\n", me, i, shr_team_peer, i);
+                    errors++;
+                }
+            }
+            else if (i == team_me) {
+                printf("%2d: Error, shmem_team_ptr(heap) returned NULL for my PE\n", team_me);
+                errors++;
+            }
+        }
+        printf("%2d: Found %d new team heap segment peer(s)\n", team_me, n);
+    } else {
+        shmem_sync_all();
     }
 
     shmem_finalize();
