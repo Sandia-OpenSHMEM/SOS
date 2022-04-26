@@ -73,6 +73,7 @@ int main(void) {
     /* Check shmem_team_ptr on heap segment */
     shr_heap = shmem_malloc(sizeof(int));
     *shr_heap = me;
+    shmem_sync_all();
 
     for (i = n = 0; i < npes; i++) {
         int * world_ptr = (int *) shmem_team_ptr(SHMEM_TEAM_WORLD, shr_heap, i);
