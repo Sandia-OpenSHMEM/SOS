@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2022 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -40,11 +40,9 @@ int main(void) {
     me = shmem_my_pe();
     npes = shmem_n_pes();
 
-
     shr_world_data = me;
 
     shmem_barrier_all();
-
 
     /* Check shmem_team_ptr on data segment */
     for (i = n = 0; i < npes; i++) {
@@ -108,7 +106,7 @@ int main(void) {
     if (new_team != SHMEM_TEAM_INVALID) {
         team_me = shmem_team_my_pe(new_team);
         shr_team_data = team_me;
-        shmem_sync_all();
+        shmem_team_sync(new_team);
 
         /* Check shmem_team_ptr on data segment */
         for (i = n = 0; i < npes / 2; i++) {
@@ -130,17 +128,13 @@ int main(void) {
         }
         printf("%2d: Found %d new team data segment peer(s)\n", team_me, n);
         fflush(NULL);
-    } else {
-        shmem_sync_all();
     }
-
-    shmem_barrier_all();
 
     /* Check shmem_team_ptr on heap segment */
     int * shr_team_heap = shmem_malloc(sizeof(int));
     if (new_team != SHMEM_TEAM_INVALID) {
         *shr_team_heap = team_me;
-        shmem_sync_all();
+        shmem_team_sync(new_team);
 
         for (i = n = 0; i < npes / 2; i++) {
             int * team_ptr = (int *) shmem_team_ptr(new_team, shr_team_heap, i);
@@ -160,8 +154,6 @@ int main(void) {
             }
         }
         printf("%2d: Found %d new team heap segment peer(s)\n", team_me, n);
-    } else {
-        shmem_sync_all();
     }
 
     shmem_finalize();
