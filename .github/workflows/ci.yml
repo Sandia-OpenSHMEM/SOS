@@ -257,7 +257,7 @@ jobs:
             sos_transport_config: --with-ofi=${LIBFABRIC_INSTALL_DIR} --without-ucx --without-portals4
             run_all_tests: true
             libevent_version: release-2.1.10-stable
-            pmix_version: v4.1.1rc2
+            pmix_version: v4.2
             prrte_version: v2.0
             sos_pm: prun
             sos_pm_pre: prte --daemonize --host localhost:4
@@ -267,7 +267,7 @@ jobs:
             sos_transport_config: --with-ucx=${UCX_INSTALL_DIR} --without-ofi --without-portals4
             run_all_tests: true
             libevent_version: release-2.1.10-stable
-            pmix_version: v4.1.1rc2
+            pmix_version: v4.2
             prrte_version: v2.0
             sos_pm: prun
             sos_pm_pre: prte --daemonize --host localhost:4
@@ -277,7 +277,7 @@ jobs:
             sos_transport_config: --with-portals4=${PORTALS4_INSTALL_DIR} --without-ofi --without-ucx
             run_all_tests: false
             libevent_version: release-2.1.10-stable
-            pmix_version: v4.1.1rc2
+            pmix_version: v4.2
             prrte_version: v2.0
             sos_pm: prun
             sos_pm_pre: prte --daemonize --host localhost:4
