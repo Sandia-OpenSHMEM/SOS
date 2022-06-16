@@ -84,9 +84,10 @@ main(int argc, char* argv[])
     shmem_barrier_all();
 
     if (me == 0) {
-        memset(target, 0, sizeof(target));
+        DataType zeros[10];
+        memset(zeros, 0, sizeof(zeros));
         for(pe=1; pe < num_pes; pe++)
-            SHM_PUT(target, target, 10, pe);
+            SHM_PUT(target, zeros, 10, pe);
 
         shmem_fence();
 

@@ -221,6 +221,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL')
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
+        SHMEM_ERR_CHECK_OVERLAP(vars, status, sizeof(TYPE) * nelems, sizeof(int) * nelems, 0); \
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
         size_t i = 0, num_ignored = 0;                                                         \
@@ -255,6 +256,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ALL')
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
+        SHMEM_ERR_CHECK_OVERLAP(vars, status, sizeof(TYPE) * nelems, sizeof(int) * nelems, 0); \
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
         size_t i = 0, num_ignored = 0;                                                         \
@@ -290,6 +292,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ALL_VECTOR')
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
+        SHMEM_ERR_CHECK_OVERLAP(vars, status, sizeof(TYPE) * nelems, sizeof(int) * nelems, 0); \
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
         size_t i = 0, found_idx = SIZE_MAX, num_ignored = 0;                                   \
@@ -339,6 +342,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ANY')
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
+        SHMEM_ERR_CHECK_OVERLAP(vars, status, sizeof(TYPE) * nelems, sizeof(int) * nelems, 0); \
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
         size_t i = 0, found_idx = SIZE_MAX, num_ignored = 0;                                   \
@@ -388,6 +392,12 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ANY_VECTOR')
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
+        SHMEM_ERR_CHECK_OVERLAP(indices, status, sizeof(size_t) * nelems,                      \
+                                sizeof(int) * nelems, 0);                                      \
+        SHMEM_ERR_CHECK_OVERLAP(vars, status, sizeof(TYPE) * nelems,                           \
+                                sizeof(int) * nelems, 0);                                      \
+        SHMEM_ERR_CHECK_OVERLAP(vars, indices, sizeof(TYPE) * nelems,                          \
+                                sizeof(size_t) * nelems, 0);                                   \
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
         size_t i = 0, ncompleted = 0, num_ignored = 0;                                         \
@@ -430,6 +440,12 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_SOME')
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
+        SHMEM_ERR_CHECK_OVERLAP(indices, status, sizeof(size_t) * nelems,                      \
+                                sizeof(int) * nelems, 0);                                      \
+        SHMEM_ERR_CHECK_OVERLAP(vars, status, sizeof(TYPE) * nelems,                           \
+                                sizeof(int) * nelems, 0);                                      \
+        SHMEM_ERR_CHECK_OVERLAP(vars, indices, sizeof(TYPE) * nelems,                          \
+                                sizeof(size_t) * nelems, 0);                                   \
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
         size_t i = 0, ncompleted = 0, num_ignored = 0;                                         \
@@ -495,6 +511,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST')
         size_t ncompleted = 0;                                                                 \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
+        SHMEM_ERR_CHECK_OVERLAP(vars, status, sizeof(TYPE) * nelems, sizeof(int) * nelems, 0); \
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
         size_t i = 0, num_ignored = 0;                                                         \
@@ -537,6 +554,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ALL')
         size_t ncompleted = 0;                                                                 \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
+        SHMEM_ERR_CHECK_OVERLAP(vars, status, sizeof(TYPE) * nelems, sizeof(int) * nelems, 0); \
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
         size_t i = 0, num_ignored = 0;                                                         \
@@ -578,6 +596,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ALL_VECTOR')
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
+        SHMEM_ERR_CHECK_OVERLAP(vars, status, sizeof(TYPE) * nelems, sizeof(int) * nelems, 0); \
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
         size_t found_idx = SIZE_MAX, i = 0;                                                    \
@@ -616,6 +635,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ANY')
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
+        SHMEM_ERR_CHECK_OVERLAP(vars, status, sizeof(TYPE) * nelems, sizeof(int) * nelems, 0); \
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
         size_t found_idx = SIZE_MAX, i = 0;                                                    \
@@ -654,6 +674,12 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ANY_VECTOR')
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
+        SHMEM_ERR_CHECK_OVERLAP(indices, status, sizeof(size_t) * nelems,                      \
+                                sizeof(int) * nelems, 0);                                      \
+        SHMEM_ERR_CHECK_OVERLAP(vars, status, sizeof(TYPE) * nelems,                           \
+                                sizeof(int) * nelems, 0);                                      \
+        SHMEM_ERR_CHECK_OVERLAP(vars, indices, sizeof(TYPE) * nelems,                          \
+                                sizeof(size_t) * nelems, 0);                                   \
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
         size_t i = 0, ncompleted = 0, num_ignored = 0;                                         \
@@ -694,6 +720,12 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_SOME')
     {                                                                                          \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
+        SHMEM_ERR_CHECK_OVERLAP(indices, status, sizeof(size_t) * nelems,                      \
+                                sizeof(int) * nelems, 0);                                      \
+        SHMEM_ERR_CHECK_OVERLAP(vars, status, sizeof(TYPE) * nelems,                           \
+                                sizeof(int) * nelems, 0);                                      \
+        SHMEM_ERR_CHECK_OVERLAP(vars, indices, sizeof(TYPE) * nelems,                          \
+                                sizeof(size_t) * nelems, 0);                                   \
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
         size_t i = 0, ncompleted = 0, num_ignored = 0;                                         \
