@@ -96,6 +96,7 @@ check_PROGRAMS = \
 	broadcast_active_set \
 	reduce_active_set \
 	reduce_in_place \
+	bcast_in_place \
 	collect_active_set \
 	atomic_bitwise \
 	nop_collectives \
