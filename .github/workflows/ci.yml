@@ -440,7 +440,7 @@ jobs:
         run: |
           ./autogen.sh
           mkdir build; cd build
-          ../configure --prefix=${SOS_INSTALL_DIR} ${{ matrix.sos_transport_config }} --with-pmix=${PMIX_INSTALL_DIR}
+          ../configure --prefix=${SOS_INSTALL_DIR} ${{ matrix.sos_transport_config }} --with-pmix=${PMIX_INSTALL_DIR} --disable-shared
           make -j
           make install
       - name: Test SOS (all tests)
