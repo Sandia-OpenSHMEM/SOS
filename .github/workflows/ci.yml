@@ -246,223 +246,223 @@ jobs:
           SHMEM_DEBUG=1 SHMEM_INFO=1 make VERBOSE=1 TEST_RUNNER="${SOS_PM} -np 2" check
           ${SOS_PM_POST}
 
-  PMIx:
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - sos_transport: libfabric
-            libfabric_version: v1.7.x
-            sos_transport_config: --with-ofi=${LIBFABRIC_INSTALL_DIR} --without-ucx --without-portals4
-            run_all_tests: true
-            libevent_version: release-2.1.10-stable
-            pmix_version: v4.1.1rc2
-            prrte_version: v2.0
-            sos_pm: prun
-            sos_pm_pre: prte --daemonize --host localhost:4
-            sos_pm_post: pterm
-          - sos_transport: ucx
-            ucx_version: v1.9.0
-            sos_transport_config: --with-ucx=${UCX_INSTALL_DIR} --without-ofi --without-portals4
-            run_all_tests: true
-            libevent_version: release-2.1.10-stable
-            pmix_version: v4.1.1rc2
-            prrte_version: v2.0
-            sos_pm: prun
-            sos_pm_pre: prte --daemonize --host localhost:4
-            sos_pm_post: pterm
-          - sos_transport: portals4
-            portals4_version: master
-            sos_transport_config: --with-portals4=${PORTALS4_INSTALL_DIR} --without-ofi --without-ucx
-            run_all_tests: false
-            libevent_version: release-2.1.10-stable
-            pmix_version: v4.1.1rc2
-            prrte_version: v2.0
-            sos_pm: prun
-            sos_pm_pre: prte --daemonize --host localhost:4
-            sos_pm_post: pterm
-
-    name: PMIx (${{ matrix.sos_transport }})
-
-    steps:
-      - name: Checking OS version
-        run: |
-          echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
-      - name: Install dependencies
-        run: |
-          sudo apt-get install -y gfortran libhwloc-dev libev-dev libev-libevent-dev
-
-      # LIBFABRIC
-      - name: Cache libfabric install
-        if: ${{ matrix.sos_transport == 'libfabric' }}
-        id: cache-libfabric
-        uses: actions/cache@v2
-        with:
-          path: ${{ env.LIBFABRIC_INSTALL_DIR }}
-          key: libfabric-${{ matrix.libfabric_version }}-${{ env.OS_NAME }}
-      - name: Checkout libfabric
-        if: ${{ matrix.sos_transport == 'libfabric' && steps.cache-libfabric.outputs.cache-hit != 'true' }}
-        uses: actions/checkout@v2
-        with:
-          repository: ofiwg/libfabric
-          path: repos/libfabric
-          ref: ${{ matrix.libfabric_version }}
-      - name: Build libfabric
-        if: ${{ matrix.sos_transport == 'libfabric' && steps.cache-libfabric.outputs.cache-hit != 'true' }}
-        run: |
-          cd repos/libfabric
-          ./autogen.sh
-          mkdir build; cd build
-          ../configure --prefix=${LIBFABRIC_INSTALL_DIR}
-          make -j
-          make install
-
-      # UCX
-      - name: Cache UCX install
-        if: ${{ matrix.sos_transport == 'ucx' }}
-        id: cache-ucx
-        uses: actions/cache@v2
-        with:
-          path: ${{ env.UCX_INSTALL_DIR }}
-          key: ucx-${{ matrix.ucx_version }}-${{ env.OS_NAME }}
-      - name: Checkout UCX
-        if: ${{ matrix.sos_transport == 'ucx' && steps.cache-ucx.outputs.cache-hit != 'true' }}
-        uses: actions/checkout@v2
-        with:
-          repository: openucx/ucx
-          path: repos/ucx
-          ref: ${{ matrix.ucx_version }}
-      - name: Build UCX
-        if: ${{ matrix.sos_transport == 'ucx' && steps.cache-ucx.outputs.cache-hit != 'true' }}
-        run: |
-          cd repos/ucx
-          ./autogen.sh
-          mkdir build; cd build
-          ../configure --prefix=${UCX_INSTALL_DIR} --enable-mt --disable-numa --without-java
-          make -j
-          make install
-
-      ## Portals4
-      - name: Cache Portals4 install
-        if: ${{ matrix.sos_transport == 'portals4' }}
-        id: cache-portals4
-        uses: actions/cache@v2
-        with:
-          path: ${{ env.PORTALS4_INSTALL_DIR }}
-          key: portals4-${{ matrix.portals4_version }}-${{ env.OS_NAME }}
-      - name: Checkout Portals4
-        if: ${{ matrix.sos_transport == 'portals4' && steps.cache-portals4.outputs.cache-hit != 'true' }}
-        uses: actions/checkout@v2
-        with:
-          repository: regrant/portals4
-          path: repos/portals4
-          ref: ${{ matrix.portals4_version }}
-      - name: Build Portals4
-        if: ${{ matrix.sos_transport == 'portals4' && steps.cache-portals4.outputs.cache-hit != 'true' }}
-        run: |
-          cd repos/portals4
-          ./autogen.sh
-          mkdir build; cd build
-          ../configure --prefix=${PORTALS4_INSTALL_DIR} --enable-zero-mrs --enable-reliable-udp --disable-pmi-from-portals ${SOS_BUILD_STATIC_OPTS}
-          make -j
-          make install
-
-      # Libevent
-      - name: Cache libevent install
-        id: cache-libevent
-        uses: actions/cache@v2
-        with:
-          path: ${{ env.LIBEVENT_INSTALL_DIR }}
-          key: libevent-${{ matrix.libevent_version }}-${{ env.OS_NAME }}
-      - name: Checkout libevent
-        if: steps.cache-libevent.outputs.cache-hit != 'true'
-        uses: actions/checkout@v2
-        with:
-          repository: libevent/libevent
-          path: repos/libevent
-          ref: ${{ matrix.libevent_version }}
-      - name: Build libevent
-        if: steps.cache-libevent.outputs.cache-hit != 'true'
-        run: |
-          cd repos/libevent
-          ./autogen.sh
-          ./configure --prefix=${LIBEVENT_INSTALL_DIR}
-          make clean all install
-
-      # PMIx
-      - name: Cache PMIx install
-        id: cache-pmix
-        uses: actions/cache@v2
-        with:
-          path: ${{ env.PMIX_INSTALL_DIR }}
-          key: pmix-${{ matrix.pmix_version }}-${{ env.OS_NAME }}
-      - name: Checkout PMIx
-        if: steps.cache-pmix.outputs.cache-hit != 'true'
-        uses: actions/checkout@v2
-        with:
-          repository: openpmix/pmix
-          path: repos/pmix
-          ref: ${{ matrix.pmix_version }}
-      - name: Build PMIx
-        if: steps.cache-pmix.outputs.cache-hit != 'true'
-        run: |
-          cd repos/pmix
-          ./autogen.pl
-          ./configure --prefix=${PMIX_INSTALL_DIR} --with-libevent=${LIBEVENT_INSTALL_DIR} --without-libev --disable-debug CFLAGS=-O3 ${SOS_BUILD_STATIC_OPTS}
-          make install
-
-      # Build PRRTE
-      - name: Cache PRRTE install
-        id: cache-prrte
-        uses: actions/cache@v2
-        with:
-          path: ${{ env.PRRTE_INSTALL_DIR }}
-          key: prrte-${{ matrix.prrte_version}}-${{ env.OS_NAME }}
-      - name: Checkout PRRTE
-        if: steps.cache-prrte.outputs.cache-hit != 'true'
-        uses: actions/checkout@v2
-        with:
-          repository: openpmix/prrte
-          path: repos/prrte
-          ref: ${{ matrix.prrte_version }}
-      - name: Build PRRTE
-        if: steps.cache-prrte.outputs.cache-hit != 'true'
-        run: |
-          cd repos/prrte
-          ./autogen.pl
-          ./configure --prefix=${PRRTE_INSTALL_DIR} --with-pmix=${PMIX_INSTALL_DIR} --without-slurm --with-libevent=${LIBEVENT_INSTALL_DIR} --without-libev ${SOS_BUILD_STATIC_OPTS}
-          make install
-
-      # SOS
-      - name: Build SOS
-        run: |
-          ./autogen.sh
-          mkdir build; cd build
-          ../configure --prefix=${SOS_INSTALL_DIR} ${{ matrix.sos_transport_config }} --with-pmix=${PMIX_INSTALL_DIR}
-          make -j
-          make install
-      - name: Test SOS (all tests)
-        if: ${{ matrix.sos_transport == 'libfabric' || matrix.sos_transport == 'ucx' }}
-        run: |
-          cd build
-          make check TESTS= -j
-          export PATH=${PRRTE_INSTALL_DIR}/bin:$PATH
-          ${{ matrix.sos_pm_pre }}
-          SHMEM_INFO=1 make VERBOSE=1 TEST_RUNNER="${{ matrix.sos_pm }} -np 2" check
-          cat test/unit/hello.log
-          ${{ matrix.sos_pm_post }}
-      - name: Test SOS (hello)
-        if: ${{ matrix.sos_transport == 'portals4' }}
-        run: |
-          cd build
-          make check TESTS= -j
-          export PATH=${PRRTE_INSTALL_DIR}/bin:$PATH
-          ${{ matrix.sos_pm_pre }}
-          SHMEM_INFO=1 ${{ matrix.sos_pm }} -np 1 test/unit/hello
-          ${{ matrix.sos_pm_post }}
-
+#  PMIx:
+#    runs-on: ubuntu-20.04
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        include:
+#          - sos_transport: libfabric
+#            libfabric_version: v1.7.x
+#            sos_transport_config: --with-ofi=${LIBFABRIC_INSTALL_DIR} --without-ucx --without-portals4
+#            run_all_tests: true
+#            libevent_version: release-2.1.10-stable
+#            pmix_version: v4.1.1rc2
+#            prrte_version: v2.0
+#            sos_pm: prun
+#            sos_pm_pre: prte --daemonize --host localhost:4
+#            sos_pm_post: pterm
+#          - sos_transport: ucx
+#            ucx_version: v1.9.0
+#            sos_transport_config: --with-ucx=${UCX_INSTALL_DIR} --without-ofi --without-portals4
+#            run_all_tests: true
+#            libevent_version: release-2.1.10-stable
+#            pmix_version: v4.1.1rc2
+#            prrte_version: v2.0
+#            sos_pm: prun
+#            sos_pm_pre: prte --daemonize --host localhost:4
+#            sos_pm_post: pterm
+#          - sos_transport: portals4
+#            portals4_version: master
+#            sos_transport_config: --with-portals4=${PORTALS4_INSTALL_DIR} --without-ofi --without-ucx
+#            run_all_tests: false
+#            libevent_version: release-2.1.10-stable
+#            pmix_version: v4.1.1rc2
+#            prrte_version: v2.0
+#            sos_pm: prun
+#            sos_pm_pre: prte --daemonize --host localhost:4
+#            sos_pm_post: pterm
+#
+#    name: PMIx (${{ matrix.sos_transport }})
+#
+#    steps:
+#      - name: Checking OS version
+#        run: |
+#          echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
+#      - uses: actions/checkout@v2
+#      - name: Install dependencies
+#        run: |
+#          sudo apt-get install -y gfortran libhwloc-dev libev-dev libev-libevent-dev
+#
+#      # LIBFABRIC
+#      - name: Cache libfabric install
+#        if: ${{ matrix.sos_transport == 'libfabric' }}
+#        id: cache-libfabric
+#        uses: actions/cache@v2
+#        with:
+#          path: ${{ env.LIBFABRIC_INSTALL_DIR }}
+#          key: libfabric-${{ matrix.libfabric_version }}-${{ env.OS_NAME }}
+#      - name: Checkout libfabric
+#        if: ${{ matrix.sos_transport == 'libfabric' && steps.cache-libfabric.outputs.cache-hit != 'true' }}
+#        uses: actions/checkout@v2
+#        with:
+#          repository: ofiwg/libfabric
+#          path: repos/libfabric
+#          ref: ${{ matrix.libfabric_version }}
+#      - name: Build libfabric
+#        if: ${{ matrix.sos_transport == 'libfabric' && steps.cache-libfabric.outputs.cache-hit != 'true' }}
+#        run: |
+#          cd repos/libfabric
+#          ./autogen.sh
+#          mkdir build; cd build
+#          ../configure --prefix=${LIBFABRIC_INSTALL_DIR}
+#          make -j
+#          make install
+#
+#      # UCX
+#      - name: Cache UCX install
+#        if: ${{ matrix.sos_transport == 'ucx' }}
+#        id: cache-ucx
+#        uses: actions/cache@v2
+#        with:
+#          path: ${{ env.UCX_INSTALL_DIR }}
+#          key: ucx-${{ matrix.ucx_version }}-${{ env.OS_NAME }}
+#      - name: Checkout UCX
+#        if: ${{ matrix.sos_transport == 'ucx' && steps.cache-ucx.outputs.cache-hit != 'true' }}
+#        uses: actions/checkout@v2
+#        with:
+#          repository: openucx/ucx
+#          path: repos/ucx
+#          ref: ${{ matrix.ucx_version }}
+#      - name: Build UCX
+#        if: ${{ matrix.sos_transport == 'ucx' && steps.cache-ucx.outputs.cache-hit != 'true' }}
+#        run: |
+#          cd repos/ucx
+#          ./autogen.sh
+#          mkdir build; cd build
+#          ../configure --prefix=${UCX_INSTALL_DIR} --enable-mt --disable-numa --without-java
+#          make -j
+#          make install
+#
+#      ## Portals4
+#      - name: Cache Portals4 install
+#        if: ${{ matrix.sos_transport == 'portals4' }}
+#        id: cache-portals4
+#        uses: actions/cache@v2
+#        with:
+#          path: ${{ env.PORTALS4_INSTALL_DIR }}
+#          key: portals4-${{ matrix.portals4_version }}-${{ env.OS_NAME }}
+#      - name: Checkout Portals4
+#        if: ${{ matrix.sos_transport == 'portals4' && steps.cache-portals4.outputs.cache-hit != 'true' }}
+#        uses: actions/checkout@v2
+#        with:
+#          repository: regrant/portals4
+#          path: repos/portals4
+#          ref: ${{ matrix.portals4_version }}
+#      - name: Build Portals4
+#        if: ${{ matrix.sos_transport == 'portals4' && steps.cache-portals4.outputs.cache-hit != 'true' }}
+#        run: |
+#          cd repos/portals4
+#          ./autogen.sh
+#          mkdir build; cd build
+#          ../configure --prefix=${PORTALS4_INSTALL_DIR} --enable-zero-mrs --enable-reliable-udp --disable-pmi-from-portals ${SOS_BUILD_STATIC_OPTS}
+#          make -j
+#          make install
+#
+#      # Libevent
+#      - name: Cache libevent install
+#        id: cache-libevent
+#        uses: actions/cache@v2
+#        with:
+#          path: ${{ env.LIBEVENT_INSTALL_DIR }}
+#          key: libevent-${{ matrix.libevent_version }}-${{ env.OS_NAME }}
+#      - name: Checkout libevent
+#        if: steps.cache-libevent.outputs.cache-hit != 'true'
+#        uses: actions/checkout@v2
+#        with:
+#          repository: libevent/libevent
+#          path: repos/libevent
+#          ref: ${{ matrix.libevent_version }}
+#      - name: Build libevent
+#        if: steps.cache-libevent.outputs.cache-hit != 'true'
+#        run: |
+#          cd repos/libevent
+#          ./autogen.sh
+#          ./configure --prefix=${LIBEVENT_INSTALL_DIR}
+#          make clean all install
+#
+#      # PMIx
+#      - name: Cache PMIx install
+#        id: cache-pmix
+#        uses: actions/cache@v2
+#        with:
+#          path: ${{ env.PMIX_INSTALL_DIR }}
+#          key: pmix-${{ matrix.pmix_version }}-${{ env.OS_NAME }}
+#      - name: Checkout PMIx
+#        if: steps.cache-pmix.outputs.cache-hit != 'true'
+#        uses: actions/checkout@v2
+#        with:
+#          repository: openpmix/pmix
+#          path: repos/pmix
+#          ref: ${{ matrix.pmix_version }}
+#      - name: Build PMIx
+#        if: steps.cache-pmix.outputs.cache-hit != 'true'
+#        run: |
+#          cd repos/pmix
+#          ./autogen.pl
+#          ./configure --prefix=${PMIX_INSTALL_DIR} --with-libevent=${LIBEVENT_INSTALL_DIR} --without-libev --disable-debug CFLAGS=-O3 ${SOS_BUILD_STATIC_OPTS}
+#          make install
+#
+#      # Build PRRTE
+#      - name: Cache PRRTE install
+#        id: cache-prrte
+#        uses: actions/cache@v2
+#        with:
+#          path: ${{ env.PRRTE_INSTALL_DIR }}
+#          key: prrte-${{ matrix.prrte_version}}-${{ env.OS_NAME }}
+#      - name: Checkout PRRTE
+#        if: steps.cache-prrte.outputs.cache-hit != 'true'
+#        uses: actions/checkout@v2
+#        with:
+#          repository: openpmix/prrte
+#          path: repos/prrte
+#          ref: ${{ matrix.prrte_version }}
+#      - name: Build PRRTE
+#        if: steps.cache-prrte.outputs.cache-hit != 'true'
+#        run: |
+#          cd repos/prrte
+#          ./autogen.pl
+#          ./configure --prefix=${PRRTE_INSTALL_DIR} --with-pmix=${PMIX_INSTALL_DIR} --without-slurm --with-libevent=${LIBEVENT_INSTALL_DIR} --without-libev ${SOS_BUILD_STATIC_OPTS}
+#          make install
+#
+#      # SOS
+#      - name: Build SOS
+#        run: |
+#          ./autogen.sh
+#          mkdir build; cd build
+#          ../configure --prefix=${SOS_INSTALL_DIR} ${{ matrix.sos_transport_config }} --with-pmix=${PMIX_INSTALL_DIR}
+#          make -j
+#          make install
+#      - name: Test SOS (all tests)
+#        if: ${{ matrix.sos_transport == 'libfabric' || matrix.sos_transport == 'ucx' }}
+#        run: |
+#          cd build
+#          make check TESTS= -j
+#          export PATH=${PRRTE_INSTALL_DIR}/bin:$PATH
+#          ${{ matrix.sos_pm_pre }}
+#          SHMEM_INFO=1 make VERBOSE=1 TEST_RUNNER="${{ matrix.sos_pm }} -np 2" check
+#          cat test/unit/hello.log
+#          ${{ matrix.sos_pm_post }}
+#      - name: Test SOS (hello)
+#        if: ${{ matrix.sos_transport == 'portals4' }}
+#        run: |
+#          cd build
+#          make check TESTS= -j
+#          export PATH=${PRRTE_INSTALL_DIR}/bin:$PATH
+#          ${{ matrix.sos_pm_pre }}
+#          SHMEM_INFO=1 ${{ matrix.sos_pm }} -np 1 test/unit/hello
+#          ${{ matrix.sos_pm_post }}
+#
   UCX:
     runs-on: ubuntu-20.04
     strategy:
