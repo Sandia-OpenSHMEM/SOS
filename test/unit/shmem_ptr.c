@@ -29,7 +29,7 @@
 #include <shmem.h>
 
 int main(void) {
-    int i, n, errors = 0;
+    int i, n, available, errors = 0;
     int me, npes;
 
     static int shr_data = -1;
@@ -49,7 +49,7 @@ int main(void) {
 
     /* Check shmem_ptr on data segment */
 
-    for (i = n = 0; i < npes; i++) {
+    for (i = n = available = 0; i < npes; i++) {
         int * ptr = (int *) shmem_ptr(&shr_data, i);
 
         if (ptr != NULL) {
@@ -62,18 +62,22 @@ int main(void) {
             }
         }
         else if (i == me) {
-                printf("%2d: Error, shmem_ptr(data) returned NULL for my PE\n", me);
-                errors++;
+            printf("%2d: Error, shmem_ptr(data) returned NULL for my PE\n", me);
+            errors++;
+        }
+        else {
+            //shmem_ptr returned NULL for the other available PEs (enable XPMEM)
+            ++available;
         }
     }
 
-    printf("%2d: Found %d data segment peer(s)\n", me, n);
+    printf("%2d: Found %d data segment peer(s) (%d were inaccessible)\n", me, n, available);
     fflush(NULL);
     shmem_barrier_all();
 
     /* Check shmem_ptr on heap segment */
 
-    for (i = n = 0; i < npes; i++) {
+    for (i = n = available = 0; i < npes; i++) {
         int * ptr = (int *) shmem_ptr(shr_heap, i);
 
         if (ptr != NULL) {
@@ -89,9 +93,13 @@ int main(void) {
                 printf("%2d: Error, shmem_ptr(heap) returned NULL for my PE\n", me);
                 errors++;
         }
+        else {
+            //shmem_ptr returned NULL for the other available PEs (enable XPMEM)
+            ++available;
+        }
     }
 
-    printf("%2d: Found %d heap segment peer(s)\n", me, n);
+    printf("%2d: Found %d heap segment peer(s) (%d were inaccessible)\n", me, n, available);
 
     shmem_finalize();
 
