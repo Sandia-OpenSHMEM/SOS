@@ -66,7 +66,8 @@ int main(void) {
             errors++;
         }
         else {
-            //shmem_ptr returned NULL for the other available PEs (enable XPMEM)
+            /* NULL is returned for remotely inaccessible data objects.
+               Enabling XPMEM / CMA will allow non-NULL value for on-node PEs */
             ++available;
         }
     }
@@ -94,7 +95,8 @@ int main(void) {
                 errors++;
         }
         else {
-            //shmem_ptr returned NULL for the other available PEs (enable XPMEM)
+            /* NULL is returned for remotely inaccessible data objects.
+               Enabling XPMEM / CMA will allow non-NULL value for on-node PEs */
             ++available;
         }
     }
