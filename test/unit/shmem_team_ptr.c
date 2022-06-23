@@ -71,7 +71,8 @@ int main(void) {
             errors++;
         }
         else {
-            //shmem_team_ptr returned NULL for the other available PEs (enable XPMEM)
+            /* NULL is returned for remotely inaccessible data objects.
+               Enabling XPMEM / CMA will allow non-NULL value for on-node PEs */
             ++available;
         }
     }
@@ -102,7 +103,8 @@ int main(void) {
             errors++;
         }
         else {
-            //shmem_team_ptr returned NULL for the other available PEs (enable XPMEM)
+            /* NULL is returned for remotely inaccessible data objects.
+               Enabling XPMEM / CMA will allow non-NULL value for on-node PEs */
             ++available;
         }
     }
@@ -137,11 +139,12 @@ int main(void) {
                 errors++;
             }
             else {
-                //shmem_team_ptr returned NULL for the other available PEs (enable XPMEM)
+                /* NULL is returned for remotely inaccessible data objects.
+                   Enabling XPMEM / CMA will allow non-NULL value for on-node PEs */
                 ++available;
             }
         }
-            printf("%2d: Found %d world team data segment peer(s) (%d were inaccessible)\n", me, n, available);
+        printf("%2d: Found %d world team data segment peer(s) (%d were inaccessible)\n", me, n, available);
         fflush(NULL);
     }
 
@@ -168,11 +171,12 @@ int main(void) {
                 errors++;
             }
             else {
-                //shmem_team_ptr returned NULL for the other available PEs (enable XPMEM)
+                /* NULL is returned for remotely inaccessible data objects.
+                   Enabling XPMEM / CMA will allow non-NULL value for on-node PEs */
                 ++available;
             }
         }
-            printf("%2d: Found %d world team heap segment peer(s) (%d were inaccessible)\n", me, n, available);
+        printf("%2d: Found %d world team heap segment peer(s) (%d were inaccessible)\n", me, n, available);
     }
 
     shmem_team_destroy(new_team);
