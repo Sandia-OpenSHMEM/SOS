@@ -30,6 +30,9 @@
 #pragma weak shmem_ptr = pshmem_ptr
 #define shmem_ptr pshmem_ptr
 
+#pragma weak shmem_team_ptr = pshmem_team_ptr
+#define shmem_team_ptr pshmem_team_ptr
+
 #endif /* ENABLE_PROFILING */
 
 
@@ -41,4 +44,20 @@ shmem_ptr(const void *target, int pe)
     SHMEM_ERR_CHECK_SYMMETRIC(target, 1);
 
     return shmem_internal_ptr(target, pe);
+}
+
+void SHMEM_FUNCTION_ATTRIBUTES *
+shmem_team_ptr(shmem_team_t team, const void *target, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(target, 1);
+
+    if (team == SHMEM_TEAM_INVALID) {
+        return NULL;
+    }
+
+    int global_pe = shmem_team_translate_pe(team, pe, SHMEM_TEAM_WORLD);
+
+    return shmem_internal_ptr(target, global_pe);
 }
