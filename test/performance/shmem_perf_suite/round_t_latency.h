@@ -110,7 +110,7 @@ void long_element_round_trip_latency_put(perf_metrics_t * const metric_info)
             if(i == metric_info->warmup)
                 start = perf_shmemx_wtime();
 
-            shmem_long_p(metric_info->target, ++tmp, dest);
+            shmem_long_atomic_set(metric_info->target, ++tmp, dest);
             shmem_long_wait_until(metric_info->target, SHMEM_CMP_EQ, tmp);
         }
         end = perf_shmemx_wtime();
@@ -120,7 +120,7 @@ void long_element_round_trip_latency_put(perf_metrics_t * const metric_info)
    } else {
         for (i = 0; i < metric_info->trials + metric_info->warmup; i++) {
             shmem_long_wait_until(metric_info->target, SHMEM_CMP_EQ, ++tmp);
-            shmem_long_p(metric_info->target, tmp, dest);
+            shmem_long_atomic_set(metric_info->target, tmp, dest);
         }
    }
 
