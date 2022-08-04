@@ -678,6 +678,7 @@ int allocate_recv_cntr_mr(void)
     /* Register separate data and heap segments using keys 0 and 1,
      * respectively.  In MR_BASIC_MODE, the keys are ignored and selected by
      * the provider. */
+#ifdef ENABLE_MR_ENDPOINT
     uint64_t key = 1;
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_heap_base,
                     shmem_internal_heap_length,
@@ -691,6 +692,19 @@ int allocate_recv_cntr_mr(void)
                     FI_REMOTE_READ | FI_REMOTE_WRITE, 0, key, flags,
                     &shmem_transport_ofi_target_data_mrfd, NULL);
     OFI_CHECK_RETURN_STR(ret, "target memory (data) registration failed");
+#else
+    ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_heap_base,
+                    shmem_internal_heap_length,
+                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 1ULL, flags,
+                    &shmem_transport_ofi_target_heap_mrfd, NULL);
+    OFI_CHECK_RETURN_STR(ret, "target memory (heap) registration failed");
+
+    ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_data_base,
+                    shmem_internal_data_length,
+                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, flags,
+                    &shmem_transport_ofi_target_data_mrfd, NULL);
+    OFI_CHECK_RETURN_STR(ret, "target memory (data) registration failed");
+#endif
 
     /* Bind counter with target memory region for incoming messages */
 #if ENABLE_TARGET_CNTR
@@ -753,8 +767,13 @@ int publish_mr_info(void)
             heap_key = fi_mr_key(shmem_transport_ofi_target_heap_mrfd);
             data_key = fi_mr_key(shmem_transport_ofi_target_data_mrfd);
         } else {
+#ifdef ENABLE_MR_ENDPOINT
             heap_key = 1;
             data_key = 0;
+#else
+            heap_key = 1ULL;
+            data_key = 0ULL;
+#endif
         }
 
         err = shmem_runtime_put("fi_heap_key", &heap_key, sizeof(uint64_t));
