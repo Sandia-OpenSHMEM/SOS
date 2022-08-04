@@ -208,6 +208,12 @@ AS_CASE([$enable_ofi_mr],
              AC_DEFINE([ENABLE_MR_SCALABLE], [1], [If defined, the OFI transport will use FI_MR_SCALABLE])],
         [AC_MSG_ERROR([Invalid OFI memory registration mode: $enable_ofi_mr])])
 
+AC_ARG_ENABLE([mr-endpoint],
+    [AC_HELP_STRING([--enable-mr-endpoint],
+                    [Use FI_MR_ENDPOINT to enable cxi provider. (default: disabled)])])
+AS_IF([test "$enable_mr_endpoint" = "yes"],
+      [AC_DEFINE([ENABLE_MR_ENDPOINT], [1], [If defined, the OFI will use FI_MR_ENDPOINT during fi_mr_reg. Otherwise, the basic memory registration will be used.])])
+
 AC_ARG_ENABLE([max-teams],
     [AC_HELP_STRING([--enable-max-teams=NUMBER],
                     [Default value for the maximum number of teams allowed (default: 10)])])
