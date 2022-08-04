@@ -678,15 +678,17 @@ int allocate_recv_cntr_mr(void)
     /* Register separate data and heap segments using keys 0 and 1,
      * respectively.  In MR_BASIC_MODE, the keys are ignored and selected by
      * the provider. */
+    uint64_t key = 1;
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_heap_base,
                     shmem_internal_heap_length,
-                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 1ULL, flags,
+                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, key, flags,
                     &shmem_transport_ofi_target_heap_mrfd, NULL);
     OFI_CHECK_RETURN_STR(ret, "target memory (heap) registration failed");
 
+    key = 0;
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_data_base,
                     shmem_internal_data_length,
-                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, flags,
+                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, key, flags,
                     &shmem_transport_ofi_target_data_mrfd, NULL);
     OFI_CHECK_RETURN_STR(ret, "target memory (data) registration failed");
 
@@ -701,6 +703,28 @@ int allocate_recv_cntr_mr(void)
                      &shmem_transport_ofi_target_cntrfd->fid,
                      FI_REMOTE_WRITE);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to data MR failed");
+
+#ifdef ENABLE_MR_ENDPOINT
+    if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_ENDPOINT) {
+        ret = fi_ep_bind(shmem_transport_ofi_target_ep,
+                         &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE);
+        OFI_CHECK_RETURN_STR(ret, "target EP binding to target counter failed");
+
+        ret = fi_mr_bind(shmem_transport_ofi_target_heap_mrfd,
+                         &shmem_transport_ofi_target_ep->fid, FI_REMOTE_WRITE);
+        OFI_CHECK_RETURN_STR(ret, "target EP binding to heap MR failed");
+
+        ret = fi_mr_enable(shmem_transport_ofi_target_heap_mrfd);
+        OFI_CHECK_RETURN_STR(ret, "target heap MR enable failed");
+
+        ret = fi_mr_bind(shmem_transport_ofi_target_data_mrfd,
+                         &shmem_transport_ofi_target_ep->fid, FI_REMOTE_WRITE);
+        OFI_CHECK_RETURN_STR(ret, "target CNTR binding to data MR failed");
+
+        ret = fi_mr_enable(shmem_transport_ofi_target_data_mrfd);
+        OFI_CHECK_RETURN_STR(ret, "target data MR enable failed");
+    }
+#endif
 
 #ifdef ENABLE_MR_RMA_EVENT
     if (shmem_transport_ofi_mr_rma_event) {
@@ -729,8 +753,8 @@ int publish_mr_info(void)
             heap_key = fi_mr_key(shmem_transport_ofi_target_heap_mrfd);
             data_key = fi_mr_key(shmem_transport_ofi_target_data_mrfd);
         } else {
-            heap_key = 1ULL;
-            data_key = 0ULL;
+            heap_key = 1;
+            data_key = 0;
         }
 
         err = shmem_runtime_put("fi_heap_key", &heap_key, sizeof(uint64_t));
@@ -1155,7 +1179,7 @@ int query_for_fabric(struct fabric_info *info)
                                    for put with signal implementation */
 #endif
     hints.addr_format         = FI_FORMAT_UNSPEC;
-    domain_attr.data_progress = FI_PROGRESS_AUTO;
+    domain_attr.data_progress = FI_PROGRESS_MANUAL;
     domain_attr.resource_mgmt = FI_RM_ENABLED;
 #ifdef ENABLE_MR_SCALABLE
                                 /* Scalable, offset-based addressing, formerly FI_MR_SCALABLE */
@@ -1166,6 +1190,9 @@ int query_for_fabric(struct fabric_info *info)
 #else
                                 /* Portable, absolute addressing, formerly FI_MR_BASIC */
     domain_attr.mr_mode       = FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY;
+#ifdef ENABLE_MR_ENDPOINT
+    domain_attr.mr_mode |= FI_MR_ENDPOINT;
+#endif
 #endif
 #if !defined(ENABLE_MR_SCALABLE) || !defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     domain_attr.mr_key_size   = 1; /* Heap and data use different MR keys, need
@@ -1299,21 +1326,21 @@ static int shmem_transport_ofi_target_ep_init(void)
     ret = fi_ep_bind(shmem_transport_ofi_target_ep, &shmem_transport_ofi_avfd->fid, 0);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind AV to target endpoint failed");
 
-    ret = allocate_recv_cntr_mr();
-    if (ret != 0) return ret;
+    struct fi_cq_attr cq_attr = {0};
 
-     struct fi_cq_attr cq_attr = {0};
+    ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr,
+                     &shmem_transport_ofi_target_cq, NULL);
+    OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(errno));
 
-     ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr,
-                      &shmem_transport_ofi_target_cq, NULL);
-     OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(errno));
-
-     ret = fi_ep_bind(shmem_transport_ofi_target_ep,
-                      &shmem_transport_ofi_target_cq->fid, FI_RECV);
-     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind CQ to target endpoint failed");
+    ret = fi_ep_bind(shmem_transport_ofi_target_ep,
+                     &shmem_transport_ofi_target_cq->fid, FI_TRANSMIT | FI_RECV);
+    OFI_CHECK_RETURN_STR(ret, "fi_ep_bind CQ to target endpoint failed");
 
     ret = fi_enable(shmem_transport_ofi_target_ep);
     OFI_CHECK_RETURN_STR(ret, "fi_enable on target endpoint failed");
+
+    ret = allocate_recv_cntr_mr();
+    if (ret) return ret;
 
     return 0;
 }
@@ -1782,12 +1809,6 @@ int shmem_transport_fini(void)
     }
     if (shmem_transport_ofi_stx_pool) free(shmem_transport_ofi_stx_pool);
 
-    ret = fi_close(&shmem_transport_ofi_target_ep->fid);
-    OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));
-
-    ret = fi_close(&shmem_transport_ofi_target_cq->fid);
-    OFI_CHECK_ERROR_MSG(ret, "Target CQ close failed (%s)\n", fi_strerror(errno));
-
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     ret = fi_close(&shmem_transport_ofi_target_mrfd->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target MR close failed (%s)\n", fi_strerror(errno));
@@ -1798,6 +1819,12 @@ int shmem_transport_fini(void)
     ret = fi_close(&shmem_transport_ofi_target_data_mrfd->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target data MR close failed (%s)\n", fi_strerror(errno));
 #endif
+
+    ret = fi_close(&shmem_transport_ofi_target_ep->fid);
+    OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));
+
+    ret = fi_close(&shmem_transport_ofi_target_cq->fid);
+    OFI_CHECK_ERROR_MSG(ret, "Target CQ close failed (%s)\n", fi_strerror(errno));
 
 #if ENABLE_TARGET_CNTR
     ret = fi_close(&shmem_transport_ofi_target_cntrfd->fid);
