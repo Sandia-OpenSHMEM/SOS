@@ -1345,6 +1345,11 @@ static int shmem_transport_ofi_target_ep_init(void)
     ret = fi_ep_bind(shmem_transport_ofi_target_ep, &shmem_transport_ofi_avfd->fid, 0);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind AV to target endpoint failed");
 
+#ifndef ENABLE_MR_ENDPOINT
+    ret = allocate_recv_cntr_mr();
+    if (ret) return ret;
+#endif
+
     struct fi_cq_attr cq_attr = {0};
 
     ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr,
@@ -1358,8 +1363,10 @@ static int shmem_transport_ofi_target_ep_init(void)
     ret = fi_enable(shmem_transport_ofi_target_ep);
     OFI_CHECK_RETURN_STR(ret, "fi_enable on target endpoint failed");
 
+#ifdef ENABLE_MR_ENDPOINT
     ret = allocate_recv_cntr_mr();
     if (ret) return ret;
+#endif
 
     return 0;
 }
@@ -1828,6 +1835,14 @@ int shmem_transport_fini(void)
     }
     if (shmem_transport_ofi_stx_pool) free(shmem_transport_ofi_stx_pool);
 
+#ifndef ENABLE_MR_ENDPOINT
+    ret = fi_close(&shmem_transport_ofi_target_ep->fid);
+    OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));
+
+    ret = fi_close(&shmem_transport_ofi_target_cq->fid);
+    OFI_CHECK_ERROR_MSG(ret, "Target CQ close failed (%s)\n", fi_strerror(errno));
+#endif
+
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     ret = fi_close(&shmem_transport_ofi_target_mrfd->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target MR close failed (%s)\n", fi_strerror(errno));
@@ -1839,11 +1854,13 @@ int shmem_transport_fini(void)
     OFI_CHECK_ERROR_MSG(ret, "Target data MR close failed (%s)\n", fi_strerror(errno));
 #endif
 
+#ifdef ENABLE_MR_ENDPOINT
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));
 
     ret = fi_close(&shmem_transport_ofi_target_cq->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target CQ close failed (%s)\n", fi_strerror(errno));
+#endif
 
 #if ENABLE_TARGET_CNTR
     ret = fi_close(&shmem_transport_ofi_target_cntrfd->fid);
