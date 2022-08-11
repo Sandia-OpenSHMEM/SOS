@@ -78,6 +78,11 @@ gettid_register_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 AM_CPPFLAGS += -DENABLE_SHMEMX_TESTS
 
+if ENABLE_DEPRECATED_TESTS
+AM_CPPFLAGS += -DENABLE_DEPRECATED_TESTS
+endif
+
+
 # C++ Tests
 cxx_test_shmem_g_SOURCES = cxx_test_shmem_g.cpp
 cxx_test_shmem_get_SOURCES = cxx_test_shmem_get.cpp

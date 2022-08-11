@@ -208,6 +208,10 @@ AM_CFLAGS = -DENABLE_SHMEMX_TESTS
 AM_CPPFLAGS += -DENABLE_SHMEMX_TESTS
 endif
 
+if ENABLE_DEPRECATED_TESTS
+AM_CFLAGS = -DENABLE_DEPRECATED_TESTS
+endif
+
 # C Tests with special flags
 rma_coverage_pshmem_SOURCES = rma_coverage.c
 rma_coverage_pshmem_CFLAGS = -DTEST_PSHMEM
