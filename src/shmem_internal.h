@@ -167,11 +167,12 @@ extern unsigned int shmem_internal_rand_seed;
     } while(0)
 
 #ifdef ENABLE_ERROR_CHECKING
-#define SHMEM_ERR_CHECK_INITIALIZED()                                   \
-    do {                                                                \
-        if (!shmem_internal_initialized) {                              \
-            RAISE_ERROR_STR(PACKAGE_NAME " library not initialized\n"); \
-        }                                                               \
+#define SHMEM_ERR_CHECK_INITIALIZED()                                    \
+    do {                                                                 \
+        if (!shmem_internal_initialized) {                               \
+            RETURN_ERROR_STR(PACKAGE_NAME " library not initialized\n"); \
+            abort();                                                     \
+        }                                                                \
     } while (0)
 
 #define SHMEM_ERR_CHECK_POSITIVE(arg)                                   \
