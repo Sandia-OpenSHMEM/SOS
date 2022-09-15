@@ -179,8 +179,10 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof(TYPE));                \
-        shmem_internal_atomic_fetch(ctx, fetch, (void *) source,        \
-                                    sizeof(TYPE), pe, ITYPE);           \
+        TYPE tmp = 0;                                                   \
+        shmem_internal_fetch_atomic_nbi(ctx, (void *) source, &tmp,     \
+                                        fetch, sizeof(TYPE), pe,        \
+                                        SHM_INTERNAL_SUM, ITYPE);       \
     }
 
 
