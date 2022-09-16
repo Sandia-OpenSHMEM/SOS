@@ -167,30 +167,27 @@ extern unsigned int shmem_internal_rand_seed;
     } while(0)
 
 #ifdef ENABLE_ERROR_CHECKING
-#define SHMEM_ERR_CHECK_INITIALIZED()                                   \
-    do {                                                                \
-        if (!shmem_internal_initialized) {                              \
-            fprintf(stderr, "ERROR: %s(): " PACKAGE_NAME " library not initialized\n", \
-                    __func__);                                          \
-            abort();                                                    \
-        }                                                               \
+#define SHMEM_ERR_CHECK_INITIALIZED()                                    \
+    do {                                                                 \
+        if (!shmem_internal_initialized) {                               \
+            RETURN_ERROR_STR(PACKAGE_NAME " library not initialized\n"); \
+            abort();                                                     \
+        }                                                                \
     } while (0)
 
 #define SHMEM_ERR_CHECK_POSITIVE(arg)                                   \
     do {                                                                \
         if ((arg) <= 0) {                                               \
-            fprintf(stderr, "ERROR: %s(): Argument %s must be positive (%ld)\n", \
-                    __func__, #arg, (long) arg);                        \
-            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");  \
+            RAISE_ERROR_MSG("Argument %s must be positive (%ld)\n",     \
+                            #arg, (long) arg);                          \
         }                                                               \
     } while (0)
 
 #define SHMEM_ERR_CHECK_NON_NEGATIVE(arg)                               \
     do {                                                                \
         if ((arg) < 0) {                                                \
-            fprintf(stderr, "ERROR: %s(): Argument %s must be greater or equal to zero (%ld)\n", \
-                    __func__, #arg, (long) arg);                        \
-            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");  \
+            RAISE_ERROR_MSG("Argument %s must be greater or equal to zero (%ld)\n", \
+                            #arg, (long) arg);                          \
         }                                                               \
     } while (0)
 
@@ -198,16 +195,14 @@ extern unsigned int shmem_internal_rand_seed;
     do {                                                                                                \
         if (PE_start < 0 || (PE_stride) < 1 || PE_size < 0 ||                                           \
             PE_start + ((PE_size - 1) * (PE_stride)) > shmem_internal_num_pes) {                        \
-            fprintf(stderr, "ERROR: %s(): Invalid active set (PE_start = %d, PE_stride = %d, PE_size = %d)\n", \
-                    __func__, PE_start, (PE_stride), PE_size);                                          \
-            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                                  \
+            RAISE_ERROR_MSG("Invalid active set (PE_start = %d, PE_stride = %d, PE_size = %d)\n",       \
+                            PE_start, (PE_stride), PE_size);                                            \
         }                                                                                               \
         if (! (shmem_internal_my_pe >= PE_start &&                                                      \
                shmem_internal_my_pe <= PE_start + ((PE_size-1) * (PE_stride)) &&                        \
                (shmem_internal_my_pe - PE_start) % (PE_stride) == 0)) {                                 \
-            fprintf(stderr, "ERROR: %s(): Calling PE (%d) is not a member of the active set\n",         \
-                    __func__, shmem_internal_my_pe);                                                    \
-            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                                  \
+            RAISE_ERROR_MSG("Calling PE (%d) is not a member of the active set\n",                      \
+                            shmem_internal_my_pe);                                                      \
         }                                                                                               \
     } while (0)
 
@@ -221,18 +216,14 @@ extern unsigned int shmem_internal_rand_seed;
 #define SHMEM_ERR_CHECK_PE(pe)                                          \
     do {                                                                \
         if ((pe) < 0 || (pe) >= shmem_internal_num_pes) {               \
-            fprintf(stderr, "ERROR: %s(): PE argument (%d) is invalid\n", \
-                    __func__, (pe));                                    \
-            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");  \
+            RAISE_ERROR_MSG("PE argument (%d) is invalid\n", (pe));     \
         }                                                               \
     } while (0)
 
 #define SHMEM_ERR_CHECK_CTX(ctx)                                          \
     do {                                                                  \
         if (ctx == SHMEM_CTX_INVALID) {                                   \
-            fprintf(stderr, "ERROR: %s(): ctx argument is invalid\n",     \
-                    __func__);                                            \
-            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");    \
+            RAISE_ERROR_STR("Invalid ctx argument\n");                    \
         }                                                                 \
     } while (0)
 
@@ -249,26 +240,21 @@ extern unsigned int shmem_internal_rand_seed;
         }                                                                               \
         else if (ptr_base >= shmem_internal_data_base && ptr_base < data_ext) {         \
             if (ptr_ext > data_ext) {                                                   \
-                fprintf(stderr, "ERROR: %s(): Argument \"%s\" [%p..%p) exceeds "        \
-                                "sym. data region [%p..%p)\n",                          \
-                        __func__, #ptr_in, ptr_base, ptr_ext,                           \
-                        shmem_internal_data_base, data_ext);                            \
-                shmem_runtime_abort(100, PACKAGE_NAME " exited in error");              \
+                RAISE_ERROR_MSG("Argument \"%s\" [%p..%p) exceeds "                     \
+                                "sym. data region [%p..%p)\n", #ptr_in, ptr_base,       \
+                                ptr_ext, shmem_internal_data_base, data_ext);           \
             }                                                                           \
         }                                                                               \
         else if (ptr_base >= shmem_internal_heap_base && ptr_base < heap_ext) {         \
             if (ptr_ext > heap_ext) {                                                   \
-                fprintf(stderr, "ERROR: %s(): Argument \"%s\" [%p..%p) exceeds "        \
-                                "sym. heap region [%p..%p)\n",                          \
-                        __func__, #ptr_in, ptr_base, ptr_ext,                           \
-                        shmem_internal_heap_base, heap_ext);                            \
-                shmem_runtime_abort(100, PACKAGE_NAME " exited in error");              \
+                RAISE_ERROR_MSG("Argument \"%s\" [%p..%p) exceeds "                     \
+                                "sym. heap region [%p..%p)\n", #ptr_in, ptr_base,       \
+                                ptr_ext, shmem_internal_heap_base, heap_ext);           \
             }                                                                           \
         }                                                                               \
         else {                                                                          \
-            fprintf(stderr, "ERROR: %s(): Argument \"%s\" is not symmetric (%p)\n",     \
-                    __func__, #ptr_in, ptr_base);                                       \
-            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                  \
+            RAISE_ERROR_MSG("Argument \"%s\" is not symmetric (%p)\n",                  \
+                            #ptr_in, ptr_base);                                         \
         }                                                                               \
     } while (0)
 
@@ -278,10 +264,8 @@ extern unsigned int shmem_internal_rand_seed;
         const void *heap_ext = (void*)((uint8_t *) shmem_internal_heap_base +           \
                                                    shmem_internal_heap_length);         \
         if (! (ptr_base >= shmem_internal_heap_base && ptr_base < heap_ext)) {          \
-            fprintf(stderr, "ERROR: %s(): Argument \"%s\" is not in symm. heap (%p), "  \
-                            "[%p..%p)\n",                                               \
-                    __func__, #ptr_in, ptr_base, shmem_internal_heap_base, heap_ext);   \
-            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                  \
+            RAISE_ERROR_MSG("Argument \"%s\" is not in symm. heap (%p), [%p..%p)\n",    \
+                    #ptr_in, ptr_base, shmem_internal_heap_base, heap_ext);             \
         }                                                                               \
     } while (0)
 
@@ -304,19 +288,15 @@ extern unsigned int shmem_internal_rand_seed;
             break; /* Skip this check when buffer is allowed to completely overlap  */  \
         }                                                                               \
         if (ptr_extent > ptr_high) {                                                    \
-            fprintf(stderr, "ERROR: %s(): Argument \"%s\" [%p..%p) overlaps "           \
-                            "argument (%p)\n",                                          \
-                    __func__, #ptr1, ptr_low, ptr_extent, ptr_high);                    \
-            shmem_runtime_abort(100, PACKAGE_NAME " exited in error");                  \
+            RAISE_ERROR_MSG("Argument \"%s\" [%p..%p) overlaps argument (%p)\n", #ptr1, \
+                            ptr_low, ptr_extent, ptr_high);                             \
         }                                                                               \
     } while (0)
 
 #define SHMEM_ERR_CHECK_NULL(ptr, nelems)                                               \
     do {                                                                                \
         if (nelems > 0 && (ptr) == NULL) {                                              \
-                fprintf(stderr, "ERROR: %s(): Argument \"%s\" is NULL\n",               \
-                        __func__, #ptr);                                                \
-                shmem_runtime_abort(100, PACKAGE_NAME " exited in error");              \
+                RAISE_ERROR_MSG("Argument \"%s\" is NULL\n", #ptr);                     \
         }                                                                               \
     } while(0)
 
@@ -331,10 +311,8 @@ extern unsigned int shmem_internal_rand_seed;
             case SHMEM_CMP_LE:                                                          \
                 break;                                                                  \
             default:                                                                    \
-                fprintf(stderr, "ERROR: %s(): Argument \"%s\", "                        \
-                                "invalid comparison operation (%d)\n",                  \
-                        __func__, #op, (int) (op));                                     \
-                shmem_runtime_abort(100, PACKAGE_NAME " exited in error");              \
+                RAISE_ERROR_MSG("Argument \"%s\", invalid comparison operation (%d)\n", \
+                                #op, (int) (op));                                       \
         }                                                                               \
     } while (0)
 
@@ -345,10 +323,8 @@ extern unsigned int shmem_internal_rand_seed;
             case SHMEM_SIGNAL_ADD:                                                      \
                 break;                                                                  \
             default:                                                                    \
-                fprintf(stderr, "ERROR: %s(): Argument \"%s\", "                        \
-                                "invalid atomic operation for signal (%d)\n",           \
-                        __func__, #op, (int) (op));                                     \
-                shmem_runtime_abort(100, PACKAGE_NAME " exited in error");              \
+                RAISE_ERROR_MSG("Argument \"%s\", invalid atomic operation for signal (%d)\n", \
+                        #op, (int) (op));                                               \
         }                                                                               \
     } while (0)
 
