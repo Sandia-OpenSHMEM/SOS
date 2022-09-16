@@ -45,7 +45,7 @@ int main(void) {
             printf("Error, this test requires more than 1 process\n");
         }
         shmem_finalize();
-        return 1;
+        return 0;
     }
 
     shr_world_data = me;
@@ -151,6 +151,7 @@ int main(void) {
     /* Check shmem_team_ptr on heap segment */
     int * shr_team_heap = shmem_malloc(sizeof(int));
     if (new_team != SHMEM_TEAM_INVALID) {
+        team_me = shmem_team_my_pe(new_team);
         *shr_team_heap = team_me;
         shmem_team_sync(new_team);
 
