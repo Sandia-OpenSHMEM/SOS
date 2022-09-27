@@ -38,7 +38,7 @@
 
 #define IPUT shmem_iput128
 #ifndef __APPLE__
-#define DataType long long double
+#define DataType long double
 #else
 #define DataType __int128
 #endif
