@@ -43,7 +43,9 @@
 #endif
 
 #ifdef __APPLE__
-#include <mach-o/getsect.h>
+#include <mach/mach.h>
+#include <mach/mach_vm.h>
+#include <assert.h>
 #else
 /* Declare data_start and end as weak to avoid a linker error if the symbols
  * are not present.  During initialization we check if the symbols exist. */
@@ -51,6 +53,27 @@
 #pragma weak _end
 extern int __data_start;
 extern int _end;
+#endif
+
+#ifdef __APPLE__
+vm_address_t get_base_address(mach_port_t task, size_t *region_size, void *addr)
+{
+    kern_return_t kret;
+    vm_region_basic_info_data_t info;
+    vm_size_t size;
+    mach_port_t object_name;
+    mach_msg_type_number_t count;
+    mach_vm_address_t address = (addr ? (mach_vm_address_t)addr : 0);
+    count = VM_REGION_BASIC_INFO_COUNT_64;
+
+    kret = mach_vm_region(task, &address, (mach_vm_size_t *)&size,
+                          VM_REGION_BASIC_INFO, (vm_region_info_t)&info,
+                          &count, &object_name);
+    assert(kret == KERN_SUCCESS);
+
+    *region_size = (size_t) size;
+    return address;
+}
 #endif
 
 void *shmem_internal_heap_base = NULL;
@@ -283,8 +306,16 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
     /* Find symmetric data */
 #ifdef __APPLE__
-    shmem_internal_data_base = (void*) get_etext();
-    shmem_internal_data_length = get_end() - get_etext();
+    size_t region_size;
+    static int in_bss;
+
+    /* Start of this memory region (at address 0) */
+    vm_address_t addr = get_base_address(mach_task_self(), &region_size, 0);
+    shmem_internal_data_base = (void*)addr;
+
+    /* End of the BSS memory region (using an unititialized static variable) */
+    addr = get_base_address(mach_task_self(), &region_size, &in_bss);
+    shmem_internal_data_length = ((void*)addr + region_size) - shmem_internal_data_base;
 #else
     /* We declare data_start and end as weak symbols, which allows them to
      * remain unbound after dynamic linking.  This is needed for compatibility

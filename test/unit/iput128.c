@@ -35,11 +35,13 @@
 
 #include <stdio.h>
 #include <shmem.h>
-#define _IPUT(a) shmem_##a##_iput
 
-//#define IPUT _IPUT(double)
 #define IPUT shmem_iput128
-#define DataType long double
+#ifndef __APPLE__
+#define DataType long long double
+#else
+#define DataType __int128
+#endif
 
 static DataType source[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 static DataType target[10];
@@ -68,10 +70,12 @@ int main(int argc, char **argv)
             target[3] != 7 ||
             target[4] != 9)
         {
+#ifndef __APPLE__
             printf("ERR: target on PE %d is %Lf %Lf %Lf %Lf %Lf\n"
                    "  Expected 1,3,5,7,9?\n",
                    me, target[0], target[1], target[2],
                    target[3], target[4] );
+#endif
             rc = 1;
         }
     }
