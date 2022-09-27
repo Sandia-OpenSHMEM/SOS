@@ -1758,7 +1758,10 @@ int shmem_transport_fini(void)
 
     /* The default context is not inserted into the list of contexts on
      * SHMEM_TEAM_WORLD, so it must be destroyed here */
-    shmem_transport_quiet(&shmem_transport_ctx_default);
+
+    for(int i=0; i< 100000; i++) {
+        shmem_transport_quiet(&shmem_transport_ctx_default);
+    }	
     shmem_transport_ctx_destroy(&shmem_transport_ctx_default);
 
     for (e = shmem_transport_ofi_stx_kvs; e != NULL; ) {
