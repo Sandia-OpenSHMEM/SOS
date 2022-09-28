@@ -371,17 +371,17 @@ void shmem_transport_pcntr_get_all(shmem_transport_ctx_t *ctx, shmemx_pcntr_t *p
 }
 
 static inline
-void
-shmem_transport_session_start(long options, shmem_transport_ctx_t ctx)
+int
+shmem_transport_session_start(long options, shmem_transport_ctx_t *ctx)
 {
-    return;
+    return 0;
 }
 
 static inline
-void
+int
 shmem_transport_session_stop(shmem_transport_ctx_t *ctx)
 {
-    return;
+    return 0;
 }
 
 #endif /* TRANSPORT_NONE_H */

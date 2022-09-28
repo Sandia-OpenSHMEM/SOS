@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define N_UPDATES (1lu << 18)
+#define N_UPDATES (1lu << 17)
 #define N_INDICES (1lu << 10)
 #define N_VALUES  (1lu << 31)
 
