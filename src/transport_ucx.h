@@ -200,13 +200,15 @@ shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 
 static inline
 int
-shmem_transport_quiet(shmem_transport_ctx_t* ctx)
+shmem_transport_session_start(long options, shmem_transport_ctx_t *ctx)
 {
-    ucs_status_t status;
+    return 0;
+}
 
-    status = ucp_worker_flush(shmem_transport_ucp_worker);
-    UCX_CHECK_STATUS(status);
-
+static inline
+int
+shmem_transport_session_stop(shmem_transport_ctx_t *ctx)
+{
     return 0;
 }
 
