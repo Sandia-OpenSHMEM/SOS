@@ -2123,6 +2123,16 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
     }
 }
 
+int shmem_transport_session_start(long options, shmem_transport_ctx_t *ctx)
+{
+    return 0;
+}
+
+int shmem_transport_session_stop(shmem_transport_ctx_t *ctx)
+{
+    return 0;
+}
+
 int shmem_transport_fini(void)
 {
     int ret;
