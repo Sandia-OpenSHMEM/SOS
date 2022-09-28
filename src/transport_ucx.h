@@ -209,6 +209,18 @@ static inline
 int
 shmem_transport_session_stop(shmem_transport_ctx_t *ctx)
 {
+      return 0;
+}
+
+static inline
+int
+shmem_transport_quiet(shmem_transport_ctx_t* ctx)
+{
+    ucs_status_t status;
+
+    status = ucp_worker_flush(shmem_transport_ucp_worker);
+    UCX_CHECK_STATUS(status);
+
     return 0;
 }
 
