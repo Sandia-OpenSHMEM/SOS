@@ -15,8 +15,6 @@
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "transport.h"
-//#include "shmem_synchronization.h"
-//#include "shmem_team.h"
 
 #ifdef ENABLE_PROFILING
 #include "pshmem.h"
