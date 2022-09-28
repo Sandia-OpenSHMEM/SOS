@@ -639,8 +639,8 @@ define(`SHMEM_C_CTX_FETCH_OR_NBI',
 SHMEM_DECLARE_FOR_BITWISE_AMO(`SHMEM_C_CTX_FETCH_OR_NBI')
 
 /* Session Routines */
-void SHPRE()shmem_session_start(long options, shmem_ctx_t ctx);
-void SHPRE()shmem_session_stop(shmem_ctx_t ctx);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_session_start(long options, shmem_ctx_t ctx);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmem_session_stop(shmem_ctx_t ctx);
 
 /* Team Management Routines */
 SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmem_team_my_pe(shmem_team_t team);
