@@ -1155,7 +1155,12 @@ int query_for_fabric(struct fabric_info *info)
                                    for put with signal implementation */
 #endif
     hints.addr_format         = FI_FORMAT_UNSPEC;
+    
+#ifdef ENABLE_MANUAL_PROGRESS
+    domain_attr.data_progress = FI_PROGRESS_MANUAL;
+#else    
     domain_attr.data_progress = FI_PROGRESS_AUTO;
+#endif
     domain_attr.resource_mgmt = FI_RM_ENABLED;
 #ifdef ENABLE_MR_SCALABLE
                                 /* Scalable, offset-based addressing, formerly FI_MR_SCALABLE */
