@@ -20,6 +20,7 @@ endif
 
 if SHMEMX_TESTS
 check_PROGRAMS += \
+	shmemx_malloc_varsize
 	perf_counter
 
 if HAVE_PTHREADS
