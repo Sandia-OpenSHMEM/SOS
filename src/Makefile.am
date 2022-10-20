@@ -19,7 +19,8 @@ GEN_BINDINGS = \
 	collectives_c.c \
 	data_c.c \
 	synchronization_c.c \
-	teams_c.c
+	teams_c.c \
+        spaces_c.c
 
 
 if HAVE_FORTRAN
@@ -49,7 +50,7 @@ libsma_la_SOURCES = \
 	init_c.c \
 	query_c.c \
 	accessibility_c.c \
-	symmetric_heap_c.c \
+	symmetric_heap.c \
 	remote_pointer_c.c \
 	lock_c.c \
 	cache_management_c.c \
@@ -65,7 +66,9 @@ libsma_la_SOURCES = \
 	perf_counters_c.c \
 	backtrace.c \
 	shmem_team.c \
-	shmem_team.h
+	shmem_team.h \
+        shmem_space.c \
+        shmem_space.h
 
 BUILT_SOURCES = $(GEN_BINDINGS) \
 		build_info.h \

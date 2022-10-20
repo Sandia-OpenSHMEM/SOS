@@ -22,6 +22,22 @@ typedef struct {
     uint64_t target;
 } shmemx_pcntr_t;
 
+/* Spaces */
+
+typedef struct shmemx_impl_space_t {
+    int dummy;
+} *shmemx_space_t;
+
+typedef struct {
+    size_t space_size;
+} shmemx_space_config_t;
+
+#if SHMEM_HAVE_ATTRIBUTE_VISIBILITY == 1
+    __attribute__((visibility("default"))) extern shmemx_space_t SHMEMX_SPACE_DEFAULT;
+#else
+    extern shmemx_space_t SHMEMX_SPACE_DEFAULT;
+#endif
+
 #ifdef __cplusplus
 }
 #endif

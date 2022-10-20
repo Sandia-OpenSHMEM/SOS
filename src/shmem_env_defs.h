@@ -121,4 +121,7 @@ SHMEM_INTERNAL_ENV_DEF(MPI_THREAD_LEVEL, string, "MPI_THREAD_SINGLE", SHMEM_INTE
 
 SHMEM_INTERNAL_ENV_DEF(BACKTRACE, string, "", SHMEM_INTERNAL_ENV_CAT_OTHER,
                        "Specify the mechanism to use for backtracing on failure")
-
+SHMEM_INTERNAL_ENV_DEF(SPACES_USE_SYMMETRIC_HEAP, bool, false, SHMEM_INTERNAL_ENV_CAT_OTHER,
+		       "Allocate user-defined spaces from symmetric heap")
+SHMEM_INTERNAL_ENV_DEF(TEAM_SPACE_SIZE, size, 512*1024, SHMEM_INTERNAL_ENV_CAT_OTHER,
+                       "Team space size by default, unless user provided")

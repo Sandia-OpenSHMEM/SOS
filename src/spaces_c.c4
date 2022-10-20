@@ -1,0 +1,257 @@
+/* -*- C -*-
+ *
+ * Copyright (c) 2022 Intel Corporation. All rights reserved.
+ * This software is available to you under the BSD license.
+ *
+ * This file is part of the Sandia OpenSHMEM software package. For license
+ * information, see the LICENSE file in the top level directory of the
+ * distribution.
+ *
+ */
+
+#include "config.h"
+
+#define SHMEM_INTERNAL_INCLUDE
+#include "shmem.h"
+#include "shmemx.h"
+
+#include "shmem_internal.h"
+#include "shmem_collectives.h"
+#include "shmem_space.h"
+
+#ifdef ENABLE_PROFILING
+#include "pshmem.h"
+
+#pragma weak shmem_malloc = pshmem_malloc
+#define shmem_malloc pshmem_malloc
+
+#pragma weak shmem_calloc = pshmem_calloc
+#define shmem_calloc pshmem_calloc
+
+#pragma weak shmem_align = pshmem_align
+#define shmem_align pshmem_align
+
+#pragma weak shmem_realloc = pshmem_realloc
+#define shmem_realloc pshmem_realloc
+
+#pragma weak shmem_free = pshmem_free
+#define shmem_free pshmem_free
+
+#pragma weak shmalloc = pshmalloc
+#define shmalloc pshmalloc
+
+#pragma weak shmemalign = pshmemalign
+#define shmemalign pshmemalign
+
+#pragma weak shrealloc = pshrealloc
+#define shrealloc pshrealloc
+
+#pragma weak shfree = pshfree
+#define shfree pshfree
+
+#pragma weak shmem_malloc_with_hints = pshmem_malloc_with_hints
+#define shmem_malloc_with_hints pshmem_malloc_with_hints
+
+#endif /* ENABLE_PROFILING */
+
+void* dlmalloc(size_t);
+void* dlcalloc(size_t, size_t);
+void  dlfree(void*);
+void* dlrealloc(void*, size_t);
+void* dlmemalign(size_t, size_t);
+
+/* Memory and Space Management Routines */
+
+void SHMEM_FUNCTION_ATTRIBUTES *
+shmem_malloc(size_t size)
+{
+    void *ret = NULL;
+
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    if (size == 0) return ret;
+
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
+    ret = dlmalloc(size);
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
+
+    shmem_internal_barrier_all();
+
+    return ret;
+}
+
+void SHMEM_FUNCTION_ATTRIBUTES *
+shmem_calloc(size_t count, size_t size)
+{
+    void *ret = NULL;
+
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    if (size == 0 || count == 0) return ret;
+
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
+    ret = dlcalloc(count, size);
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
+
+    shmem_internal_barrier_all();
+
+    return ret;
+}
+
+void SHMEM_FUNCTION_ATTRIBUTES
+shmem_free(void *ptr)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    if (ptr != NULL) {
+      SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr);
+    }
+
+    shmem_internal_barrier_all();
+
+    shmem_internal_free(ptr);
+}
+
+
+void SHMEM_FUNCTION_ATTRIBUTES *
+shmem_realloc(void *ptr, size_t size)
+{
+    void *ret;
+
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    if (size == 0 && ptr == NULL) return ptr;
+    if (ptr != NULL) {
+      SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr);
+    }
+
+    shmem_internal_barrier_all();
+
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
+    if (size == 0 && ptr != NULL) {
+        dlfree(ptr);
+        ret = NULL;
+    } else {
+        ret = dlrealloc(ptr, size);
+    }
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
+
+    shmem_internal_barrier_all();
+
+    return ret;
+}
+
+void SHMEM_FUNCTION_ATTRIBUTES *
+shmem_align(size_t alignment, size_t size)
+{
+    void *ret = NULL;
+
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    if (size == 0) return ret;
+    if (alignment == 0)
+        return NULL;
+
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
+    ret = dlmemalign(alignment, size);
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
+
+    shmem_internal_barrier_all();
+
+    return ret;
+}
+
+
+/* The following functions were renamed in OpenSHMEM 1.2 and the old names were
+ * deprecated.  Note that if PROFILING_ENABLED, the profiling macros will cause
+ * these functions to directly call the corresponding pshmem_* routine which
+ * should make the up-call invsible to a profiling tool.
+ */
+
+void SHMEM_FUNCTION_ATTRIBUTES * shmalloc(size_t size)
+{
+    return shmem_malloc(size);
+}
+
+
+void SHMEM_FUNCTION_ATTRIBUTES shfree(void *ptr)
+{
+    shmem_free(ptr);
+}
+
+
+void SHMEM_FUNCTION_ATTRIBUTES * shrealloc(void *ptr, size_t size)
+{
+    return shmem_realloc(ptr, size);
+}
+
+
+void SHMEM_FUNCTION_ATTRIBUTES * shmemalign(size_t alignment, size_t size)
+{
+    return shmem_align(alignment, size);
+}
+
+void SHMEM_FUNCTION_ATTRIBUTES *
+shmem_malloc_with_hints(size_t size, long hints)
+{
+    void *ret = NULL;
+
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    if (size == 0) return ret;
+
+    // Check for valid hints
+    if(hints > SHMEM_MALLOC_MAX_HINTS || hints < 0) {
+        RAISE_WARN_MSG("Ignoring invalid hint for shmem_malloc_with_hints(%ld)\n", hints);
+    }
+
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
+    ret = dlmalloc(size);
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
+
+    shmem_internal_barrier_all();
+
+    return ret;
+}
+
+void*
+shmem_internal_shmalloc(size_t size)
+{
+    void *ret;
+
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
+    ret = dlmalloc(size);
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
+
+    return ret;
+}
+
+void SHMEM_FUNCTION_ATTRIBUTES *
+shmemx_space_malloc(shmemx_space_t space, size_t size)
+{
+    void *ret = NULL;
+
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    if (size == 0) return ret;
+
+    SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
+    ret = dlmalloc(size);
+    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
+
+    shmem_internal_barrier_all();
+
+    return ret;
+}
+
+void SHMEM_FUNCTION_ATTRIBUTES
+shmemx_space_free(shmemx_space_t space, void *ptr)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    if (ptr != NULL) {
+      SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr);
+    }
+
+    shmem_internal_barrier_all();
+
+    shmem_internal_free(ptr);
+}
