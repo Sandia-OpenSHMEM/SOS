@@ -426,7 +426,8 @@ shmem_malloc_with_hints(size_t size, long hints)
     ret = dlmalloc(size);
     SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
 
-    shmem_internal_barrier_all();
+    if (!(hints & SHMEMX_MALLOC_NO_BARRIER))
+        shmem_internal_barrier_all();
 
     return ret;
 }
