@@ -1472,7 +1472,7 @@ int shmem_transport_init(void)
 
     /* The current bounce buffering implementation is only compatible with
      * providers that don't require FI_CONTEXT */
-    if (shmem_transport_ofi_info.p_info->mode & FI_CONTEXT) {
+    if (shmem_transport_ofi_info.p_info->mode & FI_CONTEXT || shmem_transport_ofi_info.p_info->mode & FI_CONTEXT2) {
         if (shmem_internal_my_pe == 0 && shmem_internal_params.BOUNCE_SIZE > 0) {
             DEBUG_STR("OFI provider requires FI_CONTEXT; disabling bounce buffering");
         }
