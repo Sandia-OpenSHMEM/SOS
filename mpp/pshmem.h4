@@ -14,10 +14,6 @@ dnl vi: set ft=m4
  *
  */
 
-/*
- * This is a generated file, do not edit directly.
- */
-
 include(shmem_bind_c.m4)dnl
 #ifndef PSHMEM_H
 #define PSHMEM_H

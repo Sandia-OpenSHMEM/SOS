@@ -22,9 +22,6 @@ typedef struct {
     uint64_t target;
 } shmemx_pcntr_t;
 
-/* SHMEMX constant(s) are included in MAX_HINTS value in shmem-def.h */
-#define SHMEMX_MALLOC_NO_BARRIER (1l<<2)
-
 #ifdef __cplusplus
 }
 #endif
