@@ -74,7 +74,7 @@ extern "C" {
 
 #define SHMEM_MALLOC_ATOMICS_REMOTE   (1l<<0)
 #define SHMEM_MALLOC_SIGNAL_REMOTE    (1l<<1)
-#define SHMEMX_MALLOC_NO_BARRIER      (1l<<2)
+/* MAX_HINTS value includes the SHMEMX constant(s) in shmemx-def.h */
 #define SHMEM_MALLOC_MAX_HINTS        ((1l<<3) - 1)
 
 /* Contexts */

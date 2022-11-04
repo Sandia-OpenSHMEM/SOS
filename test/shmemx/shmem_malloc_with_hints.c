@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020 Intel Corporation. All rights reserved.
+ *  Copyright (c) 2022 Intel Corporation. All rights reserved.
  *  This software is available to you under the BSD license below:
  *
  *      Redistribution and use in source and binary forms, with or
@@ -42,39 +42,51 @@ int main(int argc, char **argv) {
     npes = shmem_n_pes();
     mype = shmem_my_pe();
 
-    int *src = (int *)shmem_malloc_with_hints(N * sizeof(int), SHMEMX_MALLOC_NO_BARRIER);
+    int *src[N];
+
+    /* Allocate an array of N buffers on the symmeytric heap */
+    for(int i = 0; i < N; i++)
+        src[i] = (int *)shmem_malloc_with_hints(N * sizeof(int), SHMEMX_MALLOC_NO_BARRIER);
     int *dst = (int *)shmem_malloc(N * sizeof(int));
 
     for (int i = 0; i < N; i++) {
-        src[i] = i;
+        for (int j = 0; j < N; j++) {
+            src[i][j] = -1;
+        }
+    }
+
+    /* src is initialized to become a diagonal matrix */
+    for (int i = 0; i < N; i++) {
+        src[i][i] = i;
         dst[i] = -1;
     }
 
-    shmem_sync_all();  /* sync sender and receiver */
+    shmem_sync_all(); /* sync sender and receiver */
 
     if (shmem_my_pe() == 0) {
-        /* put N elements into dst on PE 1 */
-        shmem_int_put(dst, src, N, 1);
+        for (int i = 0; i < N; i++) {
+            /* put elements from src's diagonal into dst on PE 1 */
+            shmem_int_put(&dst[i], &src[i][i], 1, 1);
+        }
     }
 
     shmem_barrier_all();  /* sync sender and receiver */
 
     if (shmem_my_pe() == 1) {
         for (int i = 0 ; i < N ; ++i) {
-            if (src[i] != dst[i]) {
-                //fprintf(stderr,"[%d] src & dst mismatch?\n",shmem_my_pe());
-                printf("%d,%d ", src[i], dst[i]);
+            if (src[i][i] != dst[i]) {
+                printf("%d,%d ", src[i][i], dst[i]);
                 ++errors;
             }
         }
-        printf("\n");
         if(errors) {
-            printf("Failed with %d errors\n", errors);
+            printf("\nFailed with %d errors\n", errors);
             shmem_global_exit(errors);
         }
     }
 
-    shmem_free(src);
+    for (int i = 0; i < N; i++)
+        shmem_free(src[i]);
     shmem_free(dst);
 
     if (shmem_my_pe() == 0)
