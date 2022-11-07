@@ -254,3 +254,11 @@ ON AN "AS IS" BASIS, AND THE UNIVERSITY OF CALIFORNIA HAS NO OBLIGATION TO
 PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS."
 
 ======================================================================
+
+Cornelis Networks's work, specifically the disabling of Bounce Buffers for 
+FI_CONTEXT2 added in src/transport_ofi.c, is under the following license:
+
+Copyright (c) 2022 Cornelis Networks, Inc. All rights reserved. This software
+is available to you under the BSD license.
+
+======================================================================
