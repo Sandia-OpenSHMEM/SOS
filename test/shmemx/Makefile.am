@@ -21,7 +21,8 @@ endif
 if SHMEMX_TESTS
 check_PROGRAMS += \
 	perf_counter \
-	shmemx_space_default
+	shmemx_space_default \
+	shmemx_space_alloc_team
 
 if HAVE_PTHREADS
 check_PROGRAMS += \
