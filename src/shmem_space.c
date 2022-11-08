@@ -18,16 +18,18 @@
 shmem_internal_space_t shmem_internal_space_default;
 shmemx_space_t SHMEMX_SPACE_DEFAULT = (shmemx_space_t) &shmem_internal_space_default;
 
-int shmem_space_init(void) {
+int shmem_internal_space_init(void) {
 
   /* Initialize SHMEMX_SPACE_DEFAULT */
   shmem_internal_space_default.base_addr = shmem_internal_heap_base;
+  shmem_internal_space_default.len = shmem_internal_heap_length;
   (shmem_internal_space_default.config).space_size = shmem_internal_heap_length;
+  (shmem_internal_space_default.config).space_type = 0; /* Default type */
   SHMEMX_SPACE_DEFAULT = (shmemx_space_t) &shmem_internal_space_default;
 
   return 0;
 }
 
-void shmem_space_fini(void) {
+void shmem_internal_space_fini(void) {
 
 }

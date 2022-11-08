@@ -30,6 +30,7 @@ typedef struct shmemx_impl_space_t {
 
 typedef struct {
     size_t space_size;
+    int space_type;
 } shmemx_space_config_t;
 
 #if SHMEM_HAVE_ATTRIBUTE_VISIBILITY == 1

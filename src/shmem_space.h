@@ -16,6 +16,7 @@
 
 struct shmem_internal_space_t {
     void *                                 base_addr;
+    size_t                                 len;
     shmemx_space_config_t                  config;
 };
 typedef struct shmem_internal_space_t shmem_internal_space_t;

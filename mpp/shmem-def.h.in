@@ -96,6 +96,7 @@ typedef struct shmem_impl_team_t {
 
 typedef struct {
     int num_contexts;
+    int num_spaces;
 } shmem_team_config_t;
 
 #if SHMEM_HAVE_ATTRIBUTE_VISIBILITY == 1

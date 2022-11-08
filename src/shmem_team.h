@@ -14,6 +14,7 @@
 
 #include "transport.h"
 #include "uthash.h"
+#include "shmem_space.h"
 
 #define N_PSYNCS_PER_TEAM   2
 
@@ -25,7 +26,8 @@ struct shmem_internal_team_t {
     shmem_team_config_t            config;
     long                           config_mask;
     size_t                         contexts_len;
-    struct shmem_transport_ctx_t **contexts;
+    struct shmem_transport_ctx_t   **contexts;
+    struct shmem_internal_space_t  *team_spaces;
 };
 typedef struct shmem_internal_team_t shmem_internal_team_t;
 

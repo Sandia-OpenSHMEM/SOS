@@ -37,6 +37,7 @@
 #include "runtime.h"
 #include "build_info.h"
 #include "shmem_team.h"
+#include "shmem_space.h"
 
 #if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING) && defined(__linux__)
 #include <sys/personality.h>
@@ -115,6 +116,8 @@ shmem_internal_shutdown(void)
 
     shmem_internal_team_fini();
 
+    shmem_internal_space_fini();
+
     shmem_transport_fini();
 
     shmem_shr_transport_fini();
@@ -163,6 +166,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     int shr_initialized       = 0;
     int randr_initialized     = 0;
     int teams_initialized     = 0;
+    int spaces_initialized     = 0;
     int enable_node_ranks     = 0;
 
     /* Parse environment variables into shmem_internal_params */
@@ -409,6 +413,13 @@ shmem_internal_init(int tl_requested, int *tl_provided)
         goto cleanup;
     }
 
+    ret = shmem_internal_space_init();
+    if (ret != 0) {
+        RETURN_ERROR_MSG("Initialization of spaces failed (%d)\n", ret);
+	goto cleanup;
+    }
+    spaces_initialized = 1;
+
     ret = shmem_internal_team_init();
     if (ret != 0) {
         RETURN_ERROR_MSG("Initialization of teams failed (%d)\n", ret);
@@ -439,6 +450,10 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
     if (randr_initialized) {
         shmem_internal_randr_fini();
+    }
+
+    if (spaces_initialized) {
+        shmem_internal_space_fini();
     }
 
     if (teams_initialized) {

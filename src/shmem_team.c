@@ -81,6 +81,11 @@ int shmem_internal_team_init(void)
     memset(&shmem_internal_team_world.config, 0, sizeof(shmem_team_config_t));
     for (size_t i = 0; i < N_PSYNCS_PER_TEAM; i++)
         shmem_internal_team_world.psync_avail[i] = 1;
+
+    (shmem_internal_team_world.config).num_spaces = 1;
+    shmem_internal_team_world.team_spaces = malloc(sizeof(shmem_internal_space_t));
+    shmem_internal_team_world.team_spaces[0] = shmem_internal_space_default;
+
     SHMEM_TEAM_WORLD = (shmem_team_t) &shmem_internal_team_world;
 
     /* Initialize SHMEM_TEAM_SHARED */

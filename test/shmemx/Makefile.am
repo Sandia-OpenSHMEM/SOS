@@ -20,7 +20,8 @@ endif
 
 if SHMEMX_TESTS
 check_PROGRAMS += \
-	perf_counter
+	perf_counter \
+	shmemx_space_default
 
 if HAVE_PTHREADS
 check_PROGRAMS += \

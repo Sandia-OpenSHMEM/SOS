@@ -18,6 +18,7 @@
 #include "shmem_internal.h"
 #include "shmem_collectives.h"
 #include "shmem_space.h"
+#include "shmem_env.h"
 
 #ifdef ENABLE_PROFILING
 #include "pshmem.h"
@@ -216,7 +217,9 @@ shmem_malloc_with_hints(size_t size, long hints)
 void*
 shmem_internal_shmalloc(size_t size)
 {
-    void *ret;
+    void *ret = NULL;
+
+    if (size == 0) return ret;
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     ret = dlmalloc(size);
@@ -234,11 +237,19 @@ shmemx_space_malloc(shmemx_space_t space, size_t size)
 
     if (size == 0) return ret;
 
-    SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
-    ret = dlmalloc(size);
-    SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
+    if (space == SHMEMX_SPACE_DEFAULT) {
+        SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
+        ret = dlmalloc(size);
+        SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
 
-    shmem_internal_barrier_all();
+        shmem_internal_barrier_all();
+    } else {
+        if (shmem_internal_params.SPACES_USE_SYMMETRIC_HEAP) {
+
+        } else {
+
+        }
+    }
 
     return ret;
 }
@@ -254,4 +265,18 @@ shmemx_space_free(shmemx_space_t space, void *ptr)
     shmem_internal_barrier_all();
 
     shmem_internal_free(ptr);
+}
+
+void SHMEM_FUNCTION_ATTRIBUTES
+shmemx_get_spaces_from_team(shmem_team_t team, shmemx_space_t **spaces)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    if (team == SHMEM_TEAM_INVALID) {
+        **spaces = NULL;
+        return;
+    }
+
+    shmem_internal_team_t *team_internal = (shmem_internal_team_t *) team;
+    spaces = (shmemx_space_t **) &team_internal->team_spaces;
 }

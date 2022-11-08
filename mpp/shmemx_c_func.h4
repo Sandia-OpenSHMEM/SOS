@@ -38,3 +38,4 @@ SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcntr_get_all(shmem_ctx_t ctx, shme
 /* Space Management Routines */
 SHMEM_FUNCTION_ATTRIBUTES void *SHPRE()shmemx_space_malloc(shmemx_space_t space, size_t size);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_space_free(shmemx_space_t space, void *ptr);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_get_spaces_from_team(shmem_team_t team, shmemx_space_t **space);
