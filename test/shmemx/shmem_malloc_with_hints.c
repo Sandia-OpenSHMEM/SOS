@@ -29,6 +29,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <shmem.h>
+#include <shmemx.h>
 
 #define N 128
 #define SHMEM_MALLOC_INVALID_HINT ~(SHMEM_MALLOC_ATOMICS_REMOTE)
