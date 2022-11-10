@@ -60,6 +60,11 @@ AC_ARG_ENABLE([error-checking],
 AS_IF([test "$enable_error_checking" = "yes"], [AC_DEFINE([ENABLE_ERROR_CHECKING], [1], [Enable argument checking])])
 AM_CONDITIONAL([ENABLE_ERROR_CHECKING], [test "$enable_error_checking" = "yes"])
 
+AC_ARG_ENABLE([deprecated-tests],
+    [AC_HELP_STRING([--enable-deprecated-tests],
+                    [Enable deprecated SHMEM API calls in tests (default:disabled)])])
+AM_CONDITIONAL([ENABLE_DEPRECATED_TESTS], [test "$enable_deprecated_tests" = "yes"])
+
 AC_ARG_ENABLE([hard-polling],
     [AC_HELP_STRING([--enable-hard-polling],
                     [Enable hard polling of wait calls (default:automatic)])])
