@@ -43,21 +43,14 @@ int main(int argc, char **argv) {
     npes = shmem_n_pes();
     mype = shmem_my_pe();
 
-    if (npes < 2) {
-        printf("This test requires at least 2 PEs\n");
-        shmem_global_exit(0);
-    }
-
-    if (npes > 2 && mype == 0) {
-        printf("This test is written for 2 PEs, only PE0 and PE1 will perform the data transfer\n");
-    }
-
     int *src[N];
 
     /* Allocate an array of N buffers on the symmeytric heap */
     for (int i = 0; i < N; i++)
         src[i] = (int *)shmem_malloc_with_hints(N * sizeof(int), SHMEMX_MALLOC_NO_BARRIER);
-    int *dst = (int *)shmem_malloc(N * sizeof(int));
+
+    shmem_barrier_all(); /* Synchronization is required after using the SHMEMX_MALLOC_NO_BARRIER hint */
+    int *dst = (int *)malloc(N * sizeof(int));
 
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
@@ -75,14 +68,14 @@ int main(int argc, char **argv) {
 
     if (mype == 0) {
         for (int i = 0; i < N; i++) {
-            /* put elements from src's diagonal into dst on PE 1 */
-            shmem_int_put(&dst[i], &src[i][i], 1, 1);
+            /* get elements from src's diagonal on each PE and copy into dst on PE 0 */
+            shmem_int_get(&dst[i], &src[i][i], 1, i % npes);
         }
     }
 
     shmem_barrier_all();  /* sync sender and receiver */
 
-    if (mype == 1) {
+    if (mype == 0) {
         for (int i = 0 ; i < N ; ++i) {
             if (src[i][i] != dst[i]) {
                 printf("%d,%d ", src[i][i], dst[i]);
@@ -97,7 +90,7 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < N; i++)
         shmem_free(src[i]);
-    shmem_free(dst);
+    free(dst);
 
     if (mype == 0)
         printf("Passed with 0 errors\n");
