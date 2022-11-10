@@ -45,7 +45,6 @@
 #ifdef __APPLE__
 #include <mach/mach.h>
 #include <mach/mach_vm.h>
-#include <assert.h>
 #else
 /* Declare data_start and end as weak to avoid a linker error if the symbols
  * are not present.  During initialization we check if the symbols exist. */
@@ -69,7 +68,7 @@ vm_address_t get_base_address(mach_port_t task, size_t *region_size, void *addr)
     kret = mach_vm_region(task, &address, (mach_vm_size_t *)&size,
                           VM_REGION_BASIC_INFO, (vm_region_info_t)&info,
                           &count, &object_name);
-    assert(kret == KERN_SUCCESS);
+    shmem_internal_assertp(kret == KERN_SUCCESS);
 
     *region_size = (size_t) size;
     return address;
