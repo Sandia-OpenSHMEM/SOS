@@ -59,13 +59,13 @@ int main(void) {
     shmem_team_config_t  *config;
 
     config = NULL;
-    int npes   = shmem_n_pes();
+    int npes = shmem_n_pes();
 
     ret = shmem_team_split_strided(SHMEM_TEAM_WORLD, 0, 2, (npes + 1) / 2,
                                    config, 0, &new_team);
     if (new_team != SHMEM_TEAM_INVALID) {
         shmem_ctx_t team_ctx;
-        if (!shmem_team_create_ctx(new_team, (long) 0, &team_ctx)) {
+        if (!shmem_team_create_ctx(new_team, 0L, &team_ctx)) {
             ret = shmem_ctx_get_team(team_ctx, &retrieved_team);
             if (ret != 0 || retrieved_team != new_team) {
                 fprintf(stderr, "Error in return values for a team context\n");
