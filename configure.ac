@@ -194,13 +194,15 @@ AM_CONDITIONAL([HAVE_LONG_FORTRAN_HEADER], [test "$enable_long_fortran_header" =
 
 AC_ARG_ENABLE([ofi-mr],
     [AC_HELP_STRING([--enable-ofi-mr=MODE],
-                    [OFI memory registration mode: basic, scalable, or rma-event (default: scalable)])])
+                    [OFI memory registration mode: none, basic, scalable, or rma-event (default: none)])])
 
-AS_IF([test -z "$enable_ofi_mr"], [enable_ofi_mr="scalable"])
+AS_IF([test -z "$enable_ofi_mr"], [enable_ofi_mr="none"])
 
 AS_CASE([$enable_ofi_mr],
+        [none],
+            [AC_DEFINE([ENABLE_MR_NONE], [1], [If defined, the OFI transport will use MR mode based on provider])],
         [basic],
-            [],
+            [AC_DEFINE([ENABLE_MR_BASIC], [1], [If defined, the OFI transport will use FI_MR_BASIC])],
         [scalable],
             [AC_DEFINE([ENABLE_MR_SCALABLE], [1], [If defined, the OFI transport will use FI_MR_SCALABLE])],
         [rma?event],

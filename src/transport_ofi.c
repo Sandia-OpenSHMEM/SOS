@@ -1129,6 +1129,42 @@ int allocate_fabric_resources(struct fabric_info *info)
     return ret;
 }
 
+static inline 
+void select_mr_flags(struct fi_domain_attr *domain) {
+#ifdef ENABLE_MR_NONE
+    char *ofi_provider = shmem_transport_ofi_info.prov_name;
+    if (0 == strcmp(ofi_provider, "cxi")) {
+        domain.mr_mode       = FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY | FI_MR_ENDPOINT;
+        domain.mr_key_size   = 1;
+    } else if (0 == strcmp(ofi_provider, "gni") || 0 == strcmp(ofi_provider, "verbs") 
+               || 0 == strcmp(ofi_provider, "rxm") || strstr(ofi_provider, "verbs") != NULL
+               || strstr(ofi_provider, "rxm") != NULL) {
+        domain.mr_mode       = FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY;
+        domain.mr_key_size   = 1;
+    } else if (0 == strcmp(ofi_provider, "psm3") || 0 == strcmp(ofi_provider, "psm2")
+               || 0 == strcmp(ofi_provider, "tcp") || strstr(ofi_provider, "tcp") != NULL) {
+        domain.mr_mode       = 0;
+    } else { /* unknown provider */
+        domain.mr_mode       = 0;
+    }
+#else
+#  ifdef ENABLE_MR_SCALABLE
+    /* Scalable, offset-based addressing, formerly FI_MR_SCALABLE */
+    domain.mr_mode       = 0;
+#    if !defined(ENABLE_HARD_POLLING) && defined(ENABLE_MR_RMA_EVENT)
+    domain.mr_mode       = FI_MR_RMA_EVENT; /* can support RMA_EVENT on MR */
+#    endif
+#  else
+    /* Portable, absolute addressing, formerly FI_MR_BASIC */
+    domain.mr_mode       = FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY;
+#  endif
+#  if !defined(ENABLE_MR_SCALABLE) || !defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
+    domain.mr_key_size   = 1; /* Heap and data use different MR keys, need
+                                      at least 1 byte */
+#  endif
+#endif
+}
+
 static inline
 int query_for_fabric(struct fabric_info *info)
 {
@@ -1157,20 +1193,9 @@ int query_for_fabric(struct fabric_info *info)
     hints.addr_format         = FI_FORMAT_UNSPEC;
     domain_attr.data_progress = FI_PROGRESS_AUTO;
     domain_attr.resource_mgmt = FI_RM_ENABLED;
-#ifdef ENABLE_MR_SCALABLE
-                                /* Scalable, offset-based addressing, formerly FI_MR_SCALABLE */
-    domain_attr.mr_mode       = 0;
-#  if !defined(ENABLE_HARD_POLLING) && defined(ENABLE_MR_RMA_EVENT)
-    domain_attr.mr_mode       = FI_MR_RMA_EVENT; /* can support RMA_EVENT on MR */
-#  endif
-#else
-                                /* Portable, absolute addressing, formerly FI_MR_BASIC */
-    domain_attr.mr_mode       = FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY;
-#endif
-#if !defined(ENABLE_MR_SCALABLE) || !defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
-    domain_attr.mr_key_size   = 1; /* Heap and data use different MR keys, need
-                                      at least 1 byte */
-#endif
+
+    select_mr_flags(&domain_attr);
+
 #ifdef ENABLE_THREADS
     if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE) {
 #ifdef USE_THREAD_COMPLETION
@@ -1244,7 +1269,8 @@ int query_for_fabric(struct fabric_info *info)
         shmem_transport_ofi_stx_max = 0;
     }
 
-#if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
+    if (info->p_info->domain_attr->mr_mode & FI_MR_SCALABLE != 0) {
+#if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     /* Only use a single MR, no keys required */
     info->p_info->domain_attr->mr_key_size = 0;
 #else
@@ -1255,6 +1281,7 @@ int query_for_fabric(struct fabric_info *info)
     else
         info->p_info->domain_attr->mr_key_size = 0;
 #endif
+    }
 
     shmem_internal_assertp(info->p_info->tx_attr->inject_size >= shmem_transport_ofi_max_buffered_send);
     shmem_transport_ofi_max_buffered_send = info->p_info->tx_attr->inject_size;
@@ -1417,8 +1444,6 @@ int shmem_transport_init(void)
 
     if (shmem_internal_params.OFI_PROVIDER_provided)
         shmem_transport_ofi_info.prov_name = shmem_internal_params.OFI_PROVIDER;
-    else if (shmem_internal_params.OFI_USE_PROVIDER_provided)
-        shmem_transport_ofi_info.prov_name = shmem_internal_params.OFI_USE_PROVIDER;
     else
         shmem_transport_ofi_info.prov_name = NULL;
 
