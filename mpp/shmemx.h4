@@ -14,10 +14,6 @@ dnl vi: set ft=m4
  *
  */
 
-/*
- * This is a generated file, do not edit directly.
- */
-
 include(shmem_bind_c.m4)dnl
 include(shmem_bind_c11.m4)dnl
 include(shmem_bind_cxx.m4)dnl
@@ -38,6 +34,9 @@ include(shmemx_c_func.h4)dnl
 
 /* Option to enable bounce buffering on a given context */
 #define SHMEMX_CTX_BOUNCE_BUFFER  (1l<<31)
+
+/* SHMEMX constant(s) are included in MAX_HINTS value in shmem-def.h */
+#define SHMEMX_MALLOC_NO_BARRIER (1l<<2)
 
 /* C++ overloaded declarations */
 #ifdef __cplusplus
