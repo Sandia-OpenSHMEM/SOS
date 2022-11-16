@@ -88,12 +88,13 @@ int main(int argc, char **argv) {
     passed += sumtoall_with_malloc_hint(SHMEM_MALLOC_ATOMICS_REMOTE | SHMEM_MALLOC_SIGNAL_REMOTE, mype, npes);
     passed += sumtoall_with_malloc_hint(SHMEM_MALLOC_INVALID_HINT, mype, npes);
 
-
     fail = NUM_TESTS - passed;
 
     if (mype == 0) {
-        if (passed != NUM_TESTS)
-            printf("%d out of %d tests passed\n", fail, NUM_TESTS);
+        if (passed != NUM_TESTS) {
+            printf("%d out of %d tests failed\n", fail, NUM_TESTS);
+            shmem_global_exit(fail);
+        }
         else
             printf("All %d tests passed\n", passed);
     }
