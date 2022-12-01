@@ -662,6 +662,7 @@ static inline
 int allocate_recv_cntr_mr(void)
 {
     int ret = 0;
+    uint64_t flags = 0;
 
     /* ------------------------------------ */
     /* POST enable resources for to EP      */
