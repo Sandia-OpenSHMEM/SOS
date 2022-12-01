@@ -46,7 +46,7 @@ extern struct fid_cntr*                 shmem_transport_ofi_target_cntrfd;
 #if ENABLE_MANUAL_PROGRESS
 extern struct fid_cq*                   shmem_transport_ofi_target_cq;
 #endif
-#ifndef ENABLE_MR_SCALABLE
+
 extern uint64_t*                        shmem_transport_ofi_target_heap_keys;
 extern uint64_t*                        shmem_transport_ofi_target_data_keys;
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
@@ -55,7 +55,6 @@ extern int                              shmem_transport_ofi_use_absolute_address
 extern uint8_t**                        shmem_transport_ofi_target_heap_addrs;
 extern uint8_t**                        shmem_transport_ofi_target_data_addrs;
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
-#endif /* ENABLE_MR_SCALABLE */
 extern uint64_t                         shmem_transport_ofi_max_poll;
 extern long                             shmem_transport_ofi_put_poll_limit;
 extern long                             shmem_transport_ofi_get_poll_limit;
@@ -65,6 +64,8 @@ extern size_t                           shmem_transport_ofi_bounce_buffer_size;
 extern long                             shmem_transport_ofi_max_bounce_buffers;
 
 extern pthread_mutex_t                  shmem_transport_ofi_progress_lock;
+
+static int                              shmem_transport_ofi_mr_mode = 0;
 
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -118,73 +119,70 @@ extern pthread_mutex_t                  shmem_transport_ofi_progress_lock;
     } while (0)
 
 
-#ifdef ENABLE_MR_SCALABLE
 static inline
 void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
                                 uint8_t **mr_addr, uint64_t *key) {
+
+    if (shmem_transport_ofi_mr_mode == 0) {
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-    *key = 0;
-    *mr_addr = (uint8_t*) addr;
+        *key = 0;
+        *mr_addr = (uint8_t*) addr;
 #else
-    if ((void*) addr >= shmem_internal_data_base &&
-        (uint8_t*) addr < (uint8_t*) shmem_internal_data_base + shmem_internal_data_length) {
+        if ((void*) addr >= shmem_internal_data_base &&
+            (uint8_t*) addr < (uint8_t*) shmem_internal_data_base + shmem_internal_data_length) {
 
-        *key = 0;
-        *mr_addr = (uint8_t*) ((uint8_t *) addr - (uint8_t *) shmem_internal_data_base);
+            *key = 0;
+            *mr_addr = (uint8_t*) ((uint8_t *) addr - (uint8_t *) shmem_internal_data_base);
 
-    } else if ((void*) addr >= shmem_internal_heap_base &&
-               (uint8_t*) addr < (uint8_t*) shmem_internal_heap_base + shmem_internal_heap_length) {
+        } else if ((void*) addr >= shmem_internal_heap_base &&
+                   (uint8_t*) addr < (uint8_t*) shmem_internal_heap_base + shmem_internal_heap_length) {
 
-        *key = 1;
-        *mr_addr = (uint8_t*) ((uint8_t *) addr - (uint8_t *) shmem_internal_heap_base);
-    } else {
-        *key = 0;
-        *mr_addr = NULL;
-        RAISE_ERROR_MSG("address (%p) outside of symmetric areas\n", addr);
-    }
+            *key = 1;
+            *mr_addr = (uint8_t*) ((uint8_t *) addr - (uint8_t *) shmem_internal_heap_base);
+        } else {
+            *key = 0;
+            *mr_addr = NULL;
+            RAISE_ERROR_MSG("address (%p) outside of symmetric areas\n", addr);
+        }
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 
-}
-
-#else
-static inline
-void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
-                                uint8_t **mr_addr, uint64_t *key) {
-    if ((void*) addr >= shmem_internal_data_base &&
-        (uint8_t*) addr < (uint8_t*) shmem_internal_data_base + shmem_internal_data_length) {
-        *key = shmem_transport_ofi_target_data_keys[dest_pe];
-#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-        if (shmem_transport_ofi_use_absolute_address)
-            *mr_addr = (uint8_t *) addr;
-        else
-            *mr_addr = (void *) ((uint8_t *) addr - (uint8_t *) shmem_internal_data_base);
-#else
-        *mr_addr = shmem_transport_ofi_target_data_addrs[dest_pe] +
-            ((uint8_t *) addr - (uint8_t *) shmem_internal_data_base);
-#endif
     }
-
-    else if ((void*) addr >= shmem_internal_heap_base &&
-             (uint8_t*) addr < (uint8_t*) shmem_internal_heap_base + shmem_internal_heap_length) {
-        *key = shmem_transport_ofi_target_heap_keys[dest_pe];
-#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-        if (shmem_transport_ofi_use_absolute_address)
-            *mr_addr = (uint8_t *) addr;
-        else
-            *mr_addr = (void *) ((uint8_t *) addr - (uint8_t *) shmem_internal_heap_base);
-#else
-        *mr_addr = shmem_transport_ofi_target_heap_addrs[dest_pe] +
-            ((uint8_t *) addr - (uint8_t *) shmem_internal_heap_base);
-#endif
-    }
-
     else {
-        *key = -1;
-        *mr_addr = NULL;
-        RAISE_ERROR_MSG("address (%p) outside of symmetric areas\n", addr);
+        if ((void*) addr >= shmem_internal_data_base &&
+            (uint8_t*) addr < (uint8_t*) shmem_internal_data_base + shmem_internal_data_length) {
+            *key = shmem_transport_ofi_target_data_keys[dest_pe];
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+            if (shmem_transport_ofi_use_absolute_address)
+                *mr_addr = (uint8_t *) addr;
+            else
+                *mr_addr = (void *) ((uint8_t *) addr - (uint8_t *) shmem_internal_data_base);
+#else
+            *mr_addr = shmem_transport_ofi_target_data_addrs[dest_pe] +
+                ((uint8_t *) addr - (uint8_t *) shmem_internal_data_base);
+#endif
+        }
+
+        else if ((void*) addr >= shmem_internal_heap_base &&
+                 (uint8_t*) addr < (uint8_t*) shmem_internal_heap_base + shmem_internal_heap_length) {
+            *key = shmem_transport_ofi_target_heap_keys[dest_pe];
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+            if (shmem_transport_ofi_use_absolute_address)
+                *mr_addr = (uint8_t *) addr;
+            else
+                *mr_addr = (void *) ((uint8_t *) addr - (uint8_t *) shmem_internal_heap_base);
+#else
+            *mr_addr = shmem_transport_ofi_target_heap_addrs[dest_pe] +
+                ((uint8_t *) addr - (uint8_t *) shmem_internal_heap_base);
+#endif
+        }
+
+        else {
+            *key = -1;
+            *mr_addr = NULL;
+            RAISE_ERROR_MSG("address (%p) outside of symmetric areas\n", addr);
+        }
     }
 }
-#endif
 
 /* Datatypes */
 extern int shmem_transport_dtype_table[];

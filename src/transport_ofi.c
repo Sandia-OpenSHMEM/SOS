@@ -62,14 +62,6 @@ struct fid_cq*                  shmem_transport_ofi_target_cq;
 #if ENABLE_TARGET_CNTR
 struct fid_cntr*                shmem_transport_ofi_target_cntrfd;
 #endif
-#ifdef ENABLE_MR_SCALABLE
-#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-struct fid_mr*                  shmem_transport_ofi_target_mrfd;
-#else  /* !ENABLE_REMOTE_VIRTUAL_ADDRESSING */
-struct fid_mr*                  shmem_transport_ofi_target_heap_mrfd;
-struct fid_mr*                  shmem_transport_ofi_target_data_mrfd;
-#endif
-#else  /* !ENABLE_MR_SCALABLE */
 struct fid_mr*                  shmem_transport_ofi_target_heap_mrfd;
 struct fid_mr*                  shmem_transport_ofi_target_data_mrfd;
 uint64_t*                       shmem_transport_ofi_target_heap_keys;
@@ -80,7 +72,6 @@ int                             shmem_transport_ofi_use_absolute_address;
 uint8_t**                       shmem_transport_ofi_target_heap_addrs;
 uint8_t**                       shmem_transport_ofi_target_data_addrs;
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
-#endif /* ENABLE_MR_SCALABLE */
 uint64_t                        shmem_transport_ofi_max_poll;
 long                            shmem_transport_ofi_put_poll_limit;
 long                            shmem_transport_ofi_get_poll_limit;
@@ -621,60 +612,10 @@ int bind_enable_ep_resources(shmem_transport_ctx_t *ctx)
 
 
 static inline
-int allocate_recv_cntr_mr(void)
-{
+int allocate_separate_heap_data_mr(void) {
     int ret = 0;
     uint64_t flags = 0;
 
-    /* ------------------------------------ */
-    /* POST enable resources for to EP      */
-    /* ------------------------------------ */
-
-    /* since this is AFTER enable and RMA you must create memory regions for
-     * incoming reads/writes and outgoing non-blocking Puts, specifying entire
-     * VA range */
-
-#if ENABLE_TARGET_CNTR
-    {
-        struct fi_cntr_attr cntr_attr = {0};
-
-        /* Create counter for incoming writes */
-        cntr_attr.events   = FI_CNTR_EVENTS_COMP;
-        cntr_attr.wait_obj = FI_WAIT_UNSPEC;
-
-        ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
-                           &shmem_transport_ofi_target_cntrfd, NULL);
-        OFI_CHECK_RETURN_STR(ret, "target CNTR open failed");
-
-#ifdef ENABLE_MR_RMA_EVENT
-        if (shmem_transport_ofi_mr_rma_event)
-            flags |= FI_RMA_EVENT;
-#endif /* ENABLE_MR_RMA_EVENT */
-    }
-#endif
-
-#if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
-    ret = fi_mr_reg(shmem_transport_ofi_domainfd, 0, UINT64_MAX,
-                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, flags,
-                    &shmem_transport_ofi_target_mrfd, NULL);
-    OFI_CHECK_RETURN_STR(ret, "target memory (all) registration failed");
-
-    /* Bind counter with target memory region for incoming messages */
-#if ENABLE_TARGET_CNTR
-    ret = fi_mr_bind(shmem_transport_ofi_target_mrfd,
-                     &shmem_transport_ofi_target_cntrfd->fid,
-                     FI_REMOTE_WRITE);
-    OFI_CHECK_RETURN_STR(ret, "target CNTR binding to MR failed");
-
-#ifdef ENABLE_MR_RMA_EVENT
-    if (shmem_transport_ofi_mr_rma_event) {
-        ret = fi_mr_enable(shmem_transport_ofi_target_mrfd);
-        OFI_CHECK_RETURN_STR(ret, "target MR enable failed");
-    }
-#endif /* ENABLE_MR_RMA_EVENT */
-#endif /* ENABLE_TARGET_CNTR */
-
-#else
     /* Register separate data and heap segments using keys 0 and 1,
      * respectively.  In MR_BASIC_MODE, the keys are ignored and selected by
      * the provider. */
@@ -712,6 +653,69 @@ int allocate_recv_cntr_mr(void)
     }
 #endif /* ENABLE_MR_RMA_EVENT */
 #endif /* ENABLE_TARGET_CNTR */
+
+    return ret;
+}
+
+
+static inline
+int allocate_recv_cntr_mr(void)
+{
+    int ret = 0;
+
+    /* ------------------------------------ */
+    /* POST enable resources for to EP      */
+    /* ------------------------------------ */
+
+    /* since this is AFTER enable and RMA you must create memory regions for
+     * incoming reads/writes and outgoing non-blocking Puts, specifying entire
+     * VA range */
+
+#if ENABLE_TARGET_CNTR
+    {
+        struct fi_cntr_attr cntr_attr = {0};
+
+        /* Create counter for incoming writes */
+        cntr_attr.events   = FI_CNTR_EVENTS_COMP;
+        cntr_attr.wait_obj = FI_WAIT_UNSPEC;
+
+        ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
+                           &shmem_transport_ofi_target_cntrfd, NULL);
+        OFI_CHECK_RETURN_STR(ret, "target CNTR open failed");
+
+#ifdef ENABLE_MR_RMA_EVENT
+        if (shmem_transport_ofi_mr_rma_event)
+            flags |= FI_RMA_EVENT;
+#endif /* ENABLE_MR_RMA_EVENT */
+    }
+#endif
+
+#if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
+    if (shmem_transport_ofi_mr_mode == 0) {
+        ret = fi_mr_reg(shmem_transport_ofi_domainfd, 0, UINT64_MAX,
+                        FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, flags,
+                        &shmem_transport_ofi_target_heap_mrfd, NULL);
+        OFI_CHECK_RETURN_STR(ret, "target memory (all) registration failed");
+
+    /* Bind counter with target memory region for incoming messages */
+#if ENABLE_TARGET_CNTR
+        ret = fi_mr_bind(shmem_transport_ofi_target_heap_mrfd,
+                         &shmem_transport_ofi_target_cntrfd->fid,
+                         FI_REMOTE_WRITE);
+        OFI_CHECK_RETURN_STR(ret, "target CNTR binding to MR failed");
+
+#ifdef ENABLE_MR_RMA_EVENT
+        if (shmem_transport_ofi_mr_rma_event) {
+            ret = fi_mr_enable(shmem_transport_ofi_target_heap_mrfd);
+            OFI_CHECK_RETURN_STR(ret, "target MR enable failed");
+        }
+#endif /* ENABLE_MR_RMA_EVENT */
+#endif /* ENABLE_TARGET_CNTR */
+    } else {
+        ret = allocate_separate_heap_data_mr();
+    }
+#else
+    ret = allocate_separate_heap_data_mr();
 #endif
 
     return ret;
@@ -720,7 +724,7 @@ int allocate_recv_cntr_mr(void)
 static
 int publish_mr_info(void)
 {
-#ifndef ENABLE_MR_SCALABLE
+    if (shmem_transport_ofi_mr_mode != 0)
     {
         int err;
         uint64_t heap_key, data_key;
@@ -744,16 +748,15 @@ int publish_mr_info(void)
             RAISE_WARN_STR("Put of data segment key to runtime KVS failed");
             return 1;
         }
-    }
+    
 
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-    if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_VIRT_ADDR)
-        shmem_transport_ofi_use_absolute_address = 1;
-    else
-        shmem_transport_ofi_use_absolute_address = 0;
+        if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_VIRT_ADDR)
+            shmem_transport_ofi_use_absolute_address = 1;
+        else
+            shmem_transport_ofi_use_absolute_address = 0;
 #else /* !ENABLE_REMOTE_VIRTUAL_ADDRESSING */
-    {
-        int err;
+    
         void *heap_base, *data_base;
 
         if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_VIRT_ADDR) {
@@ -775,9 +778,9 @@ int publish_mr_info(void)
             RAISE_WARN_STR("Put of data segment address to runtime KVS failed");
             return 1;
         }
-    }
+    
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
-#endif /* !ENABLE_MR_SCALABLE */
+    }
 
     return 0;
 }
@@ -785,7 +788,7 @@ int publish_mr_info(void)
 static
 int populate_mr_tables(void)
 {
-#ifndef ENABLE_MR_SCALABLE
+    if (shmem_transport_ofi_mr_mode != 0)
     {
         int i, err;
 
@@ -818,11 +821,9 @@ int populate_mr_tables(void)
                 return 1;
             }
         }
-    }
+    
 
 #ifndef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-    {
-        int i, err;
 
         shmem_transport_ofi_target_heap_addrs = malloc(sizeof(uint8_t*) * shmem_internal_num_pes);
         if (NULL == shmem_transport_ofi_target_heap_addrs) {
@@ -853,9 +854,9 @@ int populate_mr_tables(void)
                 return 1;
             }
         }
-    }
+    
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
-#endif /* !ENABLE_MR_SCALABLE */
+    }
 
     return 0;
 }
@@ -1130,37 +1131,33 @@ int allocate_fabric_resources(struct fabric_info *info)
 }
 
 static inline 
-void select_mr_flags(struct fi_domain_attr *domain) {
+int get_mr_flag(void) {
 #ifdef ENABLE_MR_NONE
     char *ofi_provider = shmem_transport_ofi_info.prov_name;
+    if (ofi_provider == NULL) return 0;
+
     if (0 == strcmp(ofi_provider, "cxi")) {
-        domain.mr_mode       = FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY | FI_MR_ENDPOINT;
-        domain.mr_key_size   = 1;
+        return FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY | FI_MR_ENDPOINT;
     } else if (0 == strcmp(ofi_provider, "gni") || 0 == strcmp(ofi_provider, "verbs") 
                || 0 == strcmp(ofi_provider, "rxm") || strstr(ofi_provider, "verbs") != NULL
                || strstr(ofi_provider, "rxm") != NULL) {
-        domain.mr_mode       = FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY;
-        domain.mr_key_size   = 1;
+        return FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY;
     } else if (0 == strcmp(ofi_provider, "psm3") || 0 == strcmp(ofi_provider, "psm2")
                || 0 == strcmp(ofi_provider, "tcp") || strstr(ofi_provider, "tcp") != NULL) {
-        domain.mr_mode       = 0;
+        return 0;
     } else { /* unknown provider */
-        domain.mr_mode       = 0;
+        return 0;
     }
 #else
 #  ifdef ENABLE_MR_SCALABLE
     /* Scalable, offset-based addressing, formerly FI_MR_SCALABLE */
-    domain.mr_mode       = 0;
+    return 0;
 #    if !defined(ENABLE_HARD_POLLING) && defined(ENABLE_MR_RMA_EVENT)
-    domain.mr_mode       = FI_MR_RMA_EVENT; /* can support RMA_EVENT on MR */
+    return FI_MR_RMA_EVENT; /* can support RMA_EVENT on MR */
 #    endif
 #  else
     /* Portable, absolute addressing, formerly FI_MR_BASIC */
-    domain.mr_mode       = FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY;
-#  endif
-#  if !defined(ENABLE_MR_SCALABLE) || !defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
-    domain.mr_key_size   = 1; /* Heap and data use different MR keys, need
-                                      at least 1 byte */
+    return FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY;
 #  endif
 #endif
 }
@@ -1194,7 +1191,10 @@ int query_for_fabric(struct fabric_info *info)
     domain_attr.data_progress = FI_PROGRESS_AUTO;
     domain_attr.resource_mgmt = FI_RM_ENABLED;
 
-    select_mr_flags(&domain_attr);
+    shmem_transport_ofi_mr_mode = get_mr_flag();
+    domain_attr.mr_mode = shmem_transport_ofi_mr_mode;
+    if (domain_attr.mr_mode != 0) 
+        domain_attr.mr_key_size   = 1;
 
 #ifdef ENABLE_THREADS
     if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE) {
@@ -1269,19 +1269,12 @@ int query_for_fabric(struct fabric_info *info)
         shmem_transport_ofi_stx_max = 0;
     }
 
-    if (info->p_info->domain_attr->mr_mode & FI_MR_SCALABLE != 0) {
-#if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
-    /* Only use a single MR, no keys required */
-    info->p_info->domain_attr->mr_key_size = 0;
-#else
     /* Heap and data use different MR keys, need at least 1 byte of key space
      * if using provider selected keys */
     if (info->p_info->domain_attr->mr_mode & FI_MR_PROV_KEY)
         info->p_info->domain_attr->mr_key_size = 1;
     else
         info->p_info->domain_attr->mr_key_size = 0;
-#endif
-    }
 
     shmem_internal_assertp(info->p_info->tx_attr->inject_size >= shmem_transport_ofi_max_buffered_send);
     shmem_transport_ofi_max_buffered_send = info->p_info->tx_attr->inject_size;
@@ -1813,13 +1806,15 @@ int shmem_transport_fini(void)
     ret = fi_close(&shmem_transport_ofi_target_cq->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target CQ close failed (%s)\n", fi_strerror(errno));
 
-#if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
-    ret = fi_close(&shmem_transport_ofi_target_mrfd->fid);
-    OFI_CHECK_ERROR_MSG(ret, "Target MR close failed (%s)\n", fi_strerror(errno));
-#else
     ret = fi_close(&shmem_transport_ofi_target_heap_mrfd->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target heap MR close failed (%s)\n", fi_strerror(errno));
 
+#if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
+    if (shmem_transport_ofi_mr_mode != 0) {
+        ret = fi_close(&shmem_transport_ofi_target_data_mrfd->fid);
+        OFI_CHECK_ERROR_MSG(ret, "Target data MR close failed (%s)\n", fi_strerror(errno));
+    }
+#else
     ret = fi_close(&shmem_transport_ofi_target_data_mrfd->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target data MR close failed (%s)\n", fi_strerror(errno));
 #endif
