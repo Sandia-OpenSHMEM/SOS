@@ -612,22 +612,21 @@ int bind_enable_ep_resources(shmem_transport_ctx_t *ctx)
 
 
 static inline
-int allocate_separate_heap_data_mr(void) {
+int allocate_separate_heap_data_mr(uint64_t *flags) {
     int ret = 0;
-    uint64_t flags = 0;
 
     /* Register separate data and heap segments using keys 0 and 1,
      * respectively.  In MR_BASIC_MODE, the keys are ignored and selected by
      * the provider. */
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_heap_base,
                     shmem_internal_heap_length,
-                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 1ULL, flags,
+                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 1ULL, *flags,
                     &shmem_transport_ofi_target_heap_mrfd, NULL);
     OFI_CHECK_RETURN_STR(ret, "target memory (heap) registration failed");
 
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_data_base,
                     shmem_internal_data_length,
-                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, flags,
+                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, *flags,
                     &shmem_transport_ofi_target_data_mrfd, NULL);
     OFI_CHECK_RETURN_STR(ret, "target memory (data) registration failed");
 
@@ -713,10 +712,10 @@ int allocate_recv_cntr_mr(void)
 #endif /* ENABLE_MR_RMA_EVENT */
 #endif /* ENABLE_TARGET_CNTR */
     } else {
-        ret = allocate_separate_heap_data_mr();
+        ret = allocate_separate_heap_data_mr(&flags);
     }
 #else
-    ret = allocate_separate_heap_data_mr();
+    ret = allocate_separate_heap_data_mr(&flags);
 #endif
 
     return ret;
@@ -1131,38 +1130,6 @@ int allocate_fabric_resources(struct fabric_info *info)
     return ret;
 }
 
-static inline 
-int get_mr_flag(void) {
-#ifdef ENABLE_MR_NONE
-    char *ofi_provider = shmem_transport_ofi_info.prov_name;
-    if (ofi_provider == NULL) return 0;
-
-    if (0 == strcmp(ofi_provider, "cxi")) {
-        return FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY | FI_MR_ENDPOINT;
-    } else if (0 == strcmp(ofi_provider, "gni") || 0 == strcmp(ofi_provider, "verbs") 
-               || 0 == strcmp(ofi_provider, "rxm") || strstr(ofi_provider, "verbs") != NULL
-               || strstr(ofi_provider, "rxm") != NULL) {
-        return FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY;
-    } else if (0 == strcmp(ofi_provider, "psm3") || 0 == strcmp(ofi_provider, "psm2")
-               || 0 == strcmp(ofi_provider, "tcp") || strstr(ofi_provider, "tcp") != NULL) {
-        return 0;
-    } else { /* unknown provider */
-        return 0;
-    }
-#else
-#  ifdef ENABLE_MR_SCALABLE
-    /* Scalable, offset-based addressing, formerly FI_MR_SCALABLE */
-    return 0;
-#    if !defined(ENABLE_HARD_POLLING) && defined(ENABLE_MR_RMA_EVENT)
-    return FI_MR_RMA_EVENT; /* can support RMA_EVENT on MR */
-#    endif
-#  else
-    /* Portable, absolute addressing, formerly FI_MR_BASIC */
-    return FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY;
-#  endif
-#endif
-}
-
 static inline
 int query_for_fabric(struct fabric_info *info)
 {
@@ -1192,10 +1159,8 @@ int query_for_fabric(struct fabric_info *info)
     domain_attr.data_progress = FI_PROGRESS_AUTO;
     domain_attr.resource_mgmt = FI_RM_ENABLED;
 
-    shmem_transport_ofi_mr_mode = get_mr_flag();
-    domain_attr.mr_mode = shmem_transport_ofi_mr_mode;
-    if (domain_attr.mr_mode != 0) 
-        domain_attr.mr_key_size   = 1;
+    shmem_transport_ofi_mr_mode = set_mr_flag(shmem_transport_ofi_info.prov_name, 
+		                              &domain_attr);
 
 #ifdef ENABLE_THREADS
     if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE) {
@@ -1438,8 +1403,14 @@ int shmem_transport_init(void)
 
     if (shmem_internal_params.OFI_PROVIDER_provided)
         shmem_transport_ofi_info.prov_name = shmem_internal_params.OFI_PROVIDER;
-    else
+    else {
         shmem_transport_ofi_info.prov_name = NULL;
+        char *fi_provider_provided = getenv("FI_PROVIDER");
+        if (fi_provider_provided != NULL)
+            shmem_transport_ofi_info.prov_name = fi_provider_provided;
+        else
+            shmem_transport_ofi_info.prov_name = NULL;
+    }
 
     if (shmem_internal_params.OFI_FABRIC_provided)
         shmem_transport_ofi_info.fabric_name = shmem_internal_params.OFI_FABRIC;

@@ -65,7 +65,7 @@ extern long                             shmem_transport_ofi_max_bounce_buffers;
 
 extern pthread_mutex_t                  shmem_transport_ofi_progress_lock;
 
-static int                              shmem_transport_ofi_mr_mode = 0;
+static uint64_t                         shmem_transport_ofi_mr_mode = 0;
 
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -118,6 +118,69 @@ static int                              shmem_transport_ofi_mr_mode = 0;
         }                                                                       \
     } while (0)
 
+
+/* This helper routine is used to set the appropriate flags for 
+ * MR mode w.r.t. provider in use. This can be extended in the 
+ * future to handle other flags chosen by the implementation */
+
+static inline
+uint64_t set_mr_flag(char *ofi_provider, struct fi_domain_attr *domain_attr) {
+    uint64_t mr_flags = 0;
+
+#ifdef ENABLE_MR_NONE
+    if (ofi_provider == NULL) {
+        domain_attr->mr_mode = 0;
+        return 0;
+    }
+    DEBUG_MSG("Found OFI provider: %s\n", ofi_provider);
+
+    if (0 == strcmp(ofi_provider, "cxi")) {
+
+        mr_flags = FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY | FI_MR_ENDPOINT;
+
+    } else if (0 == strcmp(ofi_provider, "gni")) {
+
+        mr_flags = FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY;
+
+    } else if (0 == strcmp(ofi_provider, "verbs") || strstr(ofi_provider, "verbs") != NULL) {
+
+        mr_flags = FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY;
+
+    } else if (0 == strcmp(ofi_provider, "psm3")) {
+
+        mr_flags = 0;
+
+    } else if (0 == strcmp(ofi_provider, "psm2")) {
+
+        mr_flags = 0;
+
+    } else if (0 == strcmp(ofi_provider, "tcp") || strstr(ofi_provider, "tcp") != NULL) {
+
+        mr_flags = FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY;
+
+    } else { /* unknown provider */
+
+        mr_flags = 0;
+
+    }
+#else
+#  ifdef ENABLE_MR_SCALABLE
+    /* Scalable, offset-based addressing, formerly FI_MR_SCALABLE */
+    mr_flags = 0;
+#    if !defined(ENABLE_HARD_POLLING) && defined(ENABLE_MR_RMA_EVENT)
+    mr_flags = FI_MR_RMA_EVENT; /* can support RMA_EVENT on MR */
+#    endif
+#  else
+    /* Portable, absolute addressing, formerly FI_MR_BASIC */
+    mr_flags = FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY;
+#  endif
+#endif
+
+    domain_attr->mr_mode = mr_flags;
+    if (mr_flags) domain_attr->mr_key_size = 1;
+
+    return mr_flags;
+}
 
 static inline
 void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
