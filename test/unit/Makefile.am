@@ -121,6 +121,7 @@ check_PROGRAMS = \
 	shmem_team_translate \
 	shmem_team_reduce \
 	shmem_team_get_config \
+	shmem_team_negative_stride \
 	atomic_nbi \
 	fadd_nbi
 
