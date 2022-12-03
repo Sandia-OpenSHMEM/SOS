@@ -256,7 +256,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 
     if (PE_start < 0 || PE_start >= parent_team->size ||
         PE_size <= 0 || PE_size > parent_team->size   ||
-        PE_stride < 1) {
+        PE_stride == 0) {
         RAISE_WARN_MSG("Invalid <start, stride, size>: child <%d, %d, %d>, parent <%d, %d, %d>\n",
                        PE_start, PE_stride, PE_size,
                        parent_team->start, parent_team->stride, parent_team->size);
