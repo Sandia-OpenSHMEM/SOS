@@ -1324,6 +1324,8 @@ static int shmem_transport_ofi_target_ep_init(void)
     info->p_info->mode = 0;
     info->p_info->tx_attr->mode = 0;
     info->p_info->rx_attr->mode = 0;
+    info->p_info->tx_attr->caps = 0;
+    info->p_info->rx_attr->caps = 0;
 
     ret = fi_endpoint(shmem_transport_ofi_domainfd,
                       info->p_info, &shmem_transport_ofi_target_ep, NULL);
@@ -1387,6 +1389,8 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     info->p_info->mode = 0;
     info->p_info->tx_attr->mode = 0;
     info->p_info->rx_attr->mode = 0;
+    info->p_info->tx_attr->caps = 0;
+    info->p_info->rx_attr->caps = 0;
 
     ctx->id = id;
 #ifdef USE_CTX_LOCK
