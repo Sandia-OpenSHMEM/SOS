@@ -1,6 +1,9 @@
 /* -*- C -*-
  *
- * Copyright (c) 2017 Intel Corporation. All rights reserved.
+ * Copyright (c) 2022 Intel Corporation. All rights reserved.
+ *
+ * Copyright (c) 2022 Cornelis Networks, Inc. All rights reserved.
+ *
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
