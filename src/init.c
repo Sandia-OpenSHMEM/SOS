@@ -55,7 +55,7 @@ extern int _end;
 #endif
 
 #ifdef __APPLE__
-vm_address_t get_base_address(mach_port_t task, size_t *region_size, void *addr)
+static vm_address_t get_base_address(mach_port_t task, size_t *region_size, void *addr)
 {
     kern_return_t kret;
     vm_region_basic_info_data_t info;
@@ -314,7 +314,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 
     /* End of the BSS memory region (using an unititialized static variable) */
     addr = get_base_address(mach_task_self(), &region_size, &in_bss);
-    shmem_internal_data_length = ((void*)addr + region_size) - shmem_internal_data_base;
+    shmem_internal_data_length = ((char*)addr + region_size) - (char*)shmem_internal_data_base;
 #else
     /* We declare data_start and end as weak symbols, which allows them to
      * remain unbound after dynamic linking.  This is needed for compatibility
