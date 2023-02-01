@@ -69,14 +69,14 @@ int main(void)
         } else {
             errors++;
         }
-    }
 
-    shmem_int_sum_reduce(new_team, dst, src, npes);
+        shmem_int_sum_reduce(new_team, dst, src, npes);
 
-    for (i = 0; i < npes; i++) {
-        if (dst[i] != i * npes) {
-            printf("ERROR: dst[i] = %d, expected %d\n", dst[i], i * npes);
-            errors++;
+        for (i = 0; i < npes; i++) {
+            if (dst[i] != i * npes) {
+                printf("ERROR: dst[i] = %d, expected %d\n", dst[i], i * npes);
+                errors++;
+            }
         }
     }
 
@@ -98,9 +98,7 @@ int main(void)
         } else {
             errors++;
         }
-    }
 
-    if (new_team != SHMEM_TEAM_INVALID) {
         shmem_int_sum_reduce(new_team, dst, src, npes);
 
         for (i = 0; i < npes; i++) {
