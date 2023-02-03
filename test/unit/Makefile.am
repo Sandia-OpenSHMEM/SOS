@@ -121,6 +121,7 @@ check_PROGRAMS = \
 	shmem_team_translate \
 	shmem_team_reduce \
 	shmem_team_get_config \
+	shmem_ctx_get_team \
 	atomic_nbi \
 	fadd_nbi
 
@@ -206,6 +207,11 @@ endif
 if SHMEMX_TESTS
 AM_CFLAGS = -DENABLE_SHMEMX_TESTS
 AM_CPPFLAGS += -DENABLE_SHMEMX_TESTS
+endif
+
+if ENABLE_DEPRECATED_TESTS
+AM_CFLAGS = -DENABLE_DEPRECATED_TESTS
+AM_CPPFLAGS += -DENABLE_DEPRECATED_TESTS
 endif
 
 # C Tests with special flags

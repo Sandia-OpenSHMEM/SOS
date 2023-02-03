@@ -20,8 +20,9 @@ endif
 
 if SHMEMX_TESTS
 check_PROGRAMS += \
-	shmemx_malloc_varsize
-	perf_counter
+	shmemx_malloc_varsize \
+	perf_counter \
+	shmem_malloc_with_hints
 
 if HAVE_PTHREADS
 check_PROGRAMS += \
@@ -78,6 +79,11 @@ gettid_register_CFLAGS = $(PTHREAD_CFLAGS)
 gettid_register_LDADD = $(LDADD) $(PTHREAD_CFLAGS)
 
 AM_CPPFLAGS += -DENABLE_SHMEMX_TESTS
+
+if ENABLE_DEPRECATED_TESTS
+AM_CPPFLAGS += -DENABLE_DEPRECATED_TESTS
+AM_CFLAGS = -DENABLE_DEPRECATED_TESTS
+endif
 
 # C++ Tests
 cxx_test_shmem_g_SOURCES = cxx_test_shmem_g.cpp
