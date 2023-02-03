@@ -310,7 +310,8 @@ shmemx_malloc_varsize(size_t my_size, size_t global_max_size)
     shmem_internal_assertp(my_size <= global_max_size);
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
-    ret = dlmalloc(global_max_size);
+    ret = dlmalloc(my_size);
+    shmem_internal_get_next((intptr_t) (global_max_size - my_size)); 
     SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
 
     shmem_internal_barrier_all();
@@ -339,19 +340,19 @@ shmem_calloc(size_t count, size_t size)
 
 
 void SHMEM_FUNCTION_ATTRIBUTES *
-shmemx_calloc_varsize(size_t my_count, size_t my_size, size_t global_max_count, size_t global_max_size)
+shmemx_calloc_varsize(size_t my_count, size_t size, size_t global_max_count)
 {
     void *ret = NULL;
 
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    if (global_max_size == 0 || global_max_count == 0) return ret;
+    if (size == 0 || global_max_count == 0) return ret;
 
-    shmem_internal_assertp(my_size <= global_max_size);
     shmem_internal_assertp(my_count <= global_max_count);
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
-    ret = dlcalloc(global_max_count, global_max_size);
+    ret = dlcalloc(my_count, size);
+    shmem_internal_get_next((intptr_t) ((global_max_count - my_count) * size));
     SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
 
     shmem_internal_barrier_all();
