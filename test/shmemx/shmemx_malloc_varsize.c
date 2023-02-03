@@ -40,7 +40,8 @@ int main(int argc, char *argv[]) {
 
   int *var_alloc = (int *) shmemx_malloc_varsize((me + 1) * sizeof(int), npes * sizeof(int));
   int *src = (int *) malloc((me + 1) * sizeof(int));
-  if (!var_alloc || !src) {
+  int *symm_malloc = (int *) shmem_malloc(npes * sizeof(int));
+  if (!var_alloc || !src || !symm_malloc) {
     fprintf(stdout, "malloc failed\n");
     ret = -1;
     goto fn_end;
@@ -50,23 +51,27 @@ int main(int argc, char *argv[]) {
     src[i] = me + 1 + i;
   }
 
-  shmem_barrier_all();
-
-  shmem_int_put(var_alloc, src, me + 1, (me + 1) % npes);
 
   shmem_barrier_all();
 
-  if (!me) {
-    for (i = 0; i < npes; i++) {
-      if (var_alloc[i] != npes + i) {
+  shmem_int_put(var_alloc, src, (me + 1) % npes, (me + 1) % npes);
+
+  shmem_barrier_all();
+
+  if (me != 0) {
+    for (i = 0; i < me; i++) {
+      if (var_alloc[i] != (me + i)) {
         errors++;
-        fprintf(stdout, "Invalid data found at %d is %d, expected %d\n", i, var_alloc[i], npes + i);
+        fprintf(stdout, "[PE %d]: Invalid data found at %d is %d\n", me, i, var_alloc[i]);
       }
     }
   }
   ret = errors;
 
+  shmem_free(symm_malloc);
+  free(src);
   shmem_free(var_alloc);
+ 
 fn_end:
   shmem_finalize();
   return ret;
