@@ -45,6 +45,9 @@ jobs:
             sos_config: --enable-ofi-mr=basic --enable-av-map --disable-cxx --enable-memcpy
                         --enable-pmi-simple
             libfabric_version: v1.13.x
+          - config_name: MR-Scalable
+            sos_config: --enable-ofi-mr=scalable --enable-pmi-simple
+            libfabric_version: v1.13.x
           - config_name: PMI MPI
             sos_config: --disable-fortran --enable-pmi-mpi CC=mpicc
             libfabric_version: v1.13.x
