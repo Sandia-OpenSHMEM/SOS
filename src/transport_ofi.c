@@ -708,7 +708,7 @@ int allocate_recv_cntr_mr(void)
     if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_ENDPOINT) {
         ret = fi_ep_bind(shmem_transport_ofi_target_ep,
                          &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE);
-        OFI_CHECK_RETURN_STR(ret, "target EP binding to target counter failed");
+        OFI_CHECK_RETURN_STR(ret, "target CNTR binding to target EP failed");
 
         ret = fi_mr_bind(shmem_transport_ofi_target_heap_mrfd,
                          &shmem_transport_ofi_target_ep->fid, FI_REMOTE_WRITE);
@@ -719,7 +719,7 @@ int allocate_recv_cntr_mr(void)
 
         ret = fi_mr_bind(shmem_transport_ofi_target_data_mrfd,
                          &shmem_transport_ofi_target_ep->fid, FI_REMOTE_WRITE);
-        OFI_CHECK_RETURN_STR(ret, "target CNTR binding to data MR failed");
+        OFI_CHECK_RETURN_STR(ret, "target EP binding to data MR failed");
 
         ret = fi_mr_enable(shmem_transport_ofi_target_data_mrfd);
         OFI_CHECK_RETURN_STR(ret, "target data MR enable failed");
