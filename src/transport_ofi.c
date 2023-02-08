@@ -753,13 +753,8 @@ int publish_mr_info(void)
             heap_key = fi_mr_key(shmem_transport_ofi_target_heap_mrfd);
             data_key = fi_mr_key(shmem_transport_ofi_target_data_mrfd);
         } else {
-#ifdef ENABLE_MR_ENDPOINT
             heap_key = 1;
             data_key = 0;
-#else
-            heap_key = 1ULL;
-            data_key = 0ULL;
-#endif
         }
 
         err = shmem_runtime_put("fi_heap_key", &heap_key, sizeof(uint64_t));
@@ -1184,7 +1179,7 @@ int query_for_fabric(struct fabric_info *info)
                                    for put with signal implementation */
 #endif
     hints.addr_format         = FI_FORMAT_UNSPEC;
-#ifdef ENABLE_MR_ENDPOINT
+#ifdef ENABLE_FI_MANUAL_PROGRESS
     domain_attr.data_progress = FI_PROGRESS_MANUAL;
 #else
     domain_attr.data_progress = FI_PROGRESS_AUTO;
