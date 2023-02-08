@@ -220,7 +220,6 @@ AC_ARG_ENABLE([fi-manual-progress],
 AS_IF([test "$enable_fi_manual_progress" = "yes"],
       [AC_DEFINE([ENABLE_FI_MANUAL_PROGRESS], [1], [If defined, the OFI will use FI_MANUAL_PROGRESS as data progress mode. This is currently required for cxi provider.])])
 
-
 AC_ARG_ENABLE([max-teams],
     [AC_HELP_STRING([--enable-max-teams=NUMBER],
                     [Default value for the maximum number of teams allowed (default: 10)])])
