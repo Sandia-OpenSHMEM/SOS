@@ -678,7 +678,6 @@ int allocate_recv_cntr_mr(void)
     /* Register separate data and heap segments using keys 0 and 1,
      * respectively.  In MR_BASIC_MODE, the keys are ignored and selected by
      * the provider. */
-#ifdef ENABLE_MR_ENDPOINT
     uint64_t key = 1;
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_heap_base,
                     shmem_internal_heap_length,
@@ -692,19 +691,6 @@ int allocate_recv_cntr_mr(void)
                     FI_REMOTE_READ | FI_REMOTE_WRITE, 0, key, flags,
                     &shmem_transport_ofi_target_data_mrfd, NULL);
     OFI_CHECK_RETURN_STR(ret, "target memory (data) registration failed");
-#else
-    ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_heap_base,
-                    shmem_internal_heap_length,
-                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 1ULL, flags,
-                    &shmem_transport_ofi_target_heap_mrfd, NULL);
-    OFI_CHECK_RETURN_STR(ret, "target memory (heap) registration failed");
-
-    ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_data_base,
-                    shmem_internal_data_length,
-                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, flags,
-                    &shmem_transport_ofi_target_data_mrfd, NULL);
-    OFI_CHECK_RETURN_STR(ret, "target memory (data) registration failed");
-#endif
 
     /* Bind counter with target memory region for incoming messages */
 #if ENABLE_TARGET_CNTR
@@ -1213,9 +1199,9 @@ int query_for_fabric(struct fabric_info *info)
 #else
                                 /* Portable, absolute addressing, formerly FI_MR_BASIC */
     domain_attr.mr_mode       = FI_MR_VIRT_ADDR | FI_MR_ALLOCATED | FI_MR_PROV_KEY;
+#endif
 #ifdef ENABLE_MR_ENDPOINT
     domain_attr.mr_mode |= FI_MR_ENDPOINT;
-#endif
 #endif
 #if !defined(ENABLE_MR_SCALABLE) || !defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     domain_attr.mr_key_size   = 1; /* Heap and data use different MR keys, need
