@@ -1314,8 +1314,17 @@ void shmem_transport_atomic_fetch(shmem_transport_ctx_t* ctx, void *target,
                                   const void *source, size_t len, int pe,
                                   int datatype)
 {
+#ifdef ENABLE_MR_ENDPOINT
+    /* CXI provider currently does not support fetch atomics with FI_DELIVERY_COMPLETE 
+     * That is why non-blocking API is used which uses FI_INJECT. FI_ATOMIC_READ is 
+     * also not supported currently */
+    long long dummy = 0;
+    shmem_transport_fetch_atomic_nbi(ctx, (void *) source, (const void *) &dummy,
+                                     target, len, pe, FI_SUM, datatype);
+#else
     shmem_transport_fetch_atomic(ctx, (void *) source, (const void *) NULL,
                                  target, len, pe, FI_ATOMIC_READ, datatype);
+#endif
 }
 
 

@@ -174,7 +174,10 @@ shmem_internal_fence(shmem_ctx_t ctx)
         }                                                               \
     } while(0)
 
-#if defined(ENABLE_HARD_POLLING)
+/* Polling based wait is required for providers that need 
+ * manual progress, i.e., cxi. This is enabled through 
+ * ENABLE_FI_MANUAL_PROGRESS */
+#if defined(ENABLE_HARD_POLLING) || defined(ENABLE_FI_MANUAL_PROGRESS)
 #define SHMEM_INTERNAL_WAIT_UNTIL(var, cond, value)                     \
     SHMEM_WAIT_UNTIL_POLL(var, cond, value)
 #define SHMEM_INTERNAL_SIGNAL_WAIT_UNTIL(var, cond, value, sat_value)   \
