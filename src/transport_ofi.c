@@ -1290,8 +1290,8 @@ static int shmem_transport_ofi_target_ep_init(void)
     info->p_info->mode = 0;
     info->p_info->tx_attr->mode = 0;
     info->p_info->rx_attr->mode = 0;
-    info->p_info->tx_attr->caps = 0;
-    info->p_info->rx_attr->caps = 0;
+    info->p_info->tx_attr->caps = FI_RMA | FI_ATOMIC;
+    info->p_info->rx_attr->caps = info->p_info->caps;
 
     ret = fi_endpoint(shmem_transport_ofi_domainfd,
                       info->p_info, &shmem_transport_ofi_target_ep, NULL);
