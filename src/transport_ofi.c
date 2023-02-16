@@ -1389,8 +1389,8 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     info->p_info->mode = 0;
     info->p_info->tx_attr->mode = 0;
     info->p_info->rx_attr->mode = 0;
-    info->p_info->tx_attr->caps = 0;
-    info->p_info->rx_attr->caps = 0;
+    info->p_info->tx_attr->caps = info->p_info->caps;
+    info->p_info->rx_attr->caps = FI_RECV; /* to drive progress on the CQ */;
 
     ctx->id = id;
 #ifdef USE_CTX_LOCK
