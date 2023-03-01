@@ -2,6 +2,25 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.5.2rc1
+---------
+
+- Added support for the CXI libfabric provider, enabling SOS on the Slingshot
+  interconnect.  Setup instructions are on SOS's Github wiki.
+- Added support for shmem_team_ptr routine.
+- Added support for negatives strides in the OpenSHMEM teams APIs.
+- Added checks for incorrect buffer overlap when error-checking is enabled.
+- Added a configure option to enable deprecated tests,
+  --enable-deprecated-tests, which is disabled by default.
+- Added a configure option to enable libfabric manual progress,
+  --enable-ofi-manual-progress, which is disabled by default.
+- Added experimental support for a hint to shmem_malloc_with_hints,
+  SHMEMX_MALLOC_NO_BARRIER, which removes the barrier at exit from the routine.
+  Users must synchronize appropriately after such an operation.
+- Initialized the OFI tx/rx capabilities appropriately to limit what is enabled
+  by providers. This resolves an issue the Omni-Path Express (opx) provider.
+- Patched the symmetric data segment initialization to better support MacOS.
+
 v1.5.1
 ------
 
