@@ -18,7 +18,7 @@ v1.5.2rc1
   SHMEMX_MALLOC_NO_BARRIER, which removes the barrier at exit from the routine.
   Users must synchronize appropriately after such an operation.
 - Initialized the OFI tx/rx capabilities appropriately to limit what is enabled
-  by providers. This resolves an issue the Omni-Path Express (opx) provider.
+  by providers. This resolves an issue with the Omni-Path Express (opx) provider.
 - Patched the symmetric data segment initialization to better support MacOS.
 
 v1.5.1
