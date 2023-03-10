@@ -507,17 +507,17 @@ if test -n "$enable_mmap" -a "$enable_mmap" != "no" ; then
     ((num_shared_transports+=1))
 fi
 
-echo "num_shared_transports is..." $num_shared_transports
-
 # If more than one shared memory transport requested, user needs to choose one:
 if [[ $num_shared_transports -gt 1 ]] ; then
-    echo "Selected " $num_shared_transports " shared memory transports, please choose one."
+    echo "Selected" $num_shared_transports "shared memory transports, please choose one."
     AC_MSG_ERROR([Only one shared memory transport is allowed (mmap, XPMEM, or CMA), see --help for details])
 elif test -n "$enable_mmap" -a "$enable_mmap" != "no" ; then
     transport_mmap="yes"
     transport_cma="no"
     transport_xpmem="no"
     AC_DEFINE([USE_MMAP], [1], [Define if mmap transport is active])
+    AC_CHECK_LIB(rt, shm_open, [MMAP_LDFLAGS="-lrt"])
+    AC_SUBST([MMAP_LDFLAGS])
 elif test -n "$with_xpmem" -a "$with_xpmem" != "no" ; then
     transport_mmap="no"
     transport_cma="no"
@@ -958,6 +958,13 @@ fi
 
 if test -n "opal_hwloc_LDFLAGS"; then
     WRAPPER_COMPILER_EXTRA_LDFLAGS="$WRAPPER_COMPILER_EXTRA_LDFLAGS $opal_hwloc_LDFLAGS"
+fi
+if test "$transport_mmap" = "yes" ; then
+    CPPFLAGS="$CPPFLAGS $MMAP_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $MMAP_LDFLAGS"
+    LIBS="$LIBS $MMAP_LIBS"
+    WRAPPER_COMPILER_EXTRA_LDFLAGS="$MMAP_LDFLAGS"
+    WRAPPER_COMPILER_EXTRA_LIBS="$MMAP_LIBS"
 fi
 
 CPPFLAGS="$CPPFLAGS $pmi_CPPFLAGS"

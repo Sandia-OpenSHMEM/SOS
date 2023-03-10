@@ -613,11 +613,9 @@ static inline
 size_t shmem_internal_bit_1st_nonzero(const unsigned char *ptr, const size_t size)
 {
     /* The following ignores endianess: */
-    size_t i = 0;
-    for(i = 0; i < size; i++) {
+    for(size_t i = 0; i < size; i++) {
         unsigned char bit_val = ptr[i];
-        size_t j = 0;
-        for (j = 0; bit_val && j < CHAR_BIT; j++) {
+        for (size_t j = 0; bit_val && j < CHAR_BIT; j++) {
             if (bit_val & 1) return i * CHAR_BIT + j;
             bit_val >>= 1;
         }
@@ -634,10 +632,8 @@ void shmem_internal_bit_to_string(char *str, size_t str_size,
 {
     size_t off = 0;
 
-    size_t i = 0;
-    for (i = 0; i < ptr_size; i++) {
-        size_t j = 0;
-        for (j = 0; j < CHAR_BIT; j++) {
+    for (size_t i = 0; i < ptr_size; i++) {
+        for (size_t j = 0; j < CHAR_BIT; j++) {
             off += snprintf(str+off, str_size-off, "%s",
                             (ptr[i] & (1 << (CHAR_BIT-1-j))) ? "1" : "0");
             if (off >= str_size) return;
