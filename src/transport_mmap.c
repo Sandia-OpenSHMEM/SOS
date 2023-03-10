@@ -4,7 +4,7 @@
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S.  Government
  * retains certain rights in this software.
  *
- * Copyright (c) 2017 Intel Corporation. All rights reserved.
+ * Copyright (c) 2023 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -30,33 +30,32 @@
 #include "transport_mmap.h"
 
 #define MPIDI_OFI_SHMGR_NAME_MAXLEN (128)
-#define MPIDI_OFI_SHMGR_NAME_PREFIX "/sos_shm_colls_area"
+#define MPIDI_OFI_SHMGR_NAME_PREFIX "/sos_shm_mmap_area"
+
 
 static void shm_create_key(char *key, size_t max_size, unsigned pe, size_t num) {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    long long ticks = num;
-    snprintf(key, max_size, "%s-%u-%llX", MPIDI_OFI_SHMGR_NAME_PREFIX, pe, ticks);
+    snprintf(key, max_size, "%s-%u-%zu", MPIDI_OFI_SHMGR_NAME_PREFIX, pe, num);
 }
 
 
 static void *shm_create_region(char* base, const char *key, int shm_size) {
   if (shm_size == 0) return NULL;
 
+  shm_unlink(key);
   int fd = shm_open(key, O_RDWR | O_CREAT | O_TRUNC, 0666);
   if (fd == -1) {
-      fprintf(stderr, "COLL_comm_init error shm_open with errno(%d)\n",errno);
+      fprintf(stderr, "mmap_init error shm_open with errno(%s)\n", strerror(errno));
       exit(0);
   }
 
   if (ftruncate(fd, shm_size) == -1) {
-      fprintf(stderr, "COLL_comm_init error ftruncate\n");
+      fprintf(stderr, "mmap_init error ftruncate\n");
       exit(0);
   }
 
   void *shm_base_addr = mmap(base, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
   if (MAP_FAILED == shm_base_addr) {
-      fprintf(stderr, "COLL_comm_init error mmap %s  size %d\n", key, shm_size);
+      fprintf(stderr, "mmap_init error mmap %s size %d\n", key, shm_size);
       exit(0);
   }
 
@@ -67,29 +66,30 @@ static void *shm_create_region(char* base, const char *key, int shm_size) {
 static void *shm_create_region_data_seg(char* base, const char *key, int shm_size) {
     if (shm_size == 0) return NULL;
 
+    shm_unlink(key);
     int fd = shm_open(key, O_RDWR | O_CREAT | O_TRUNC, 0666);
     if (fd == -1) {
-        fprintf(stderr, "COLL_comm_init error shm_open with errno(%d)\n",errno);
+        fprintf(stderr, "mmap_init data_seg error shm_open with errno(%s)\n", strerror(errno));
         exit(1);
     }
 
     /* Write all current contents of the data segment to the file */
-    FILE *fp = fdopen(fd, "w");
+    FILE *fp = fdopen(fd, "wb");
     size_t ret = fwrite(base, shm_size, 1, fp);
 
     if (ret == 0) {
-        fprintf(stderr, "COLL_comm_init error fwrite\n");
+        fprintf(stderr, "mmap_init error fwrite\n");
         exit(1);
     }
 
     if (ftruncate(fd, shm_size) == -1) {
-        fprintf(stderr, "COLL_comm_init error ftruncate with errno(%s)\n",strerror(errno));
+        fprintf(stderr, "mmap_init error ftruncate with errno(%s)\n", strerror(errno));
         exit(1);
     }
 
     void *shm_base_addr = mmap(base, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
     if (MAP_FAILED == shm_base_addr) {
-        fprintf(stderr, "COLL_comm_init error mmap %s  size %d\n", key, shm_size);
+        fprintf(stderr, "mmap_init error mmap %s size %d\n", key, shm_size);
         exit(1);
     }
 
@@ -104,12 +104,12 @@ static void *shm_attach_region(char* base, const char *key, int shm_size) {
 
   int fd = shm_open(key, O_RDWR, 0);
   if (fd == -1) {
-      fprintf(stderr, "COLL_comm_init error shm_open\n");
+      fprintf(stderr, "mmap_init error shm_open\n");
       exit(0);
   }
   void *shm_base_addr = mmap(NULL, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   if (MAP_FAILED == shm_base_addr) {
-      fprintf(stderr, "COLL_comm_init error mmap 2 %s  size %d\n", key, shm_size);
+      fprintf(stderr, "mmap_init error mmap %s  size %d\n", key, shm_size);
       exit(0);
   }
   return shm_base_addr;
@@ -246,12 +246,33 @@ shmem_transport_mmap_startup(void)
 int
 shmem_transport_mmap_fini(void)
 {
-    int i, peer_num;
+    int i, peer_num, ret;
+    char errmsg[256];
     size_t data_len, heap_len;
+    char key_prefix[MPIDI_OFI_SHMGR_NAME_MAXLEN-10];
+    char key[MPIDI_OFI_SHMGR_NAME_MAXLEN];
     long page_size = sysconf(_SC_PAGESIZE);
 
     data_len = FIND_LEN(shmem_internal_data_base, shmem_internal_data_length, page_size);
     heap_len = FIND_LEN(shmem_internal_heap_base, shmem_internal_heap_length, page_size);
+
+    shm_create_key(key_prefix, MPIDI_OFI_SHMGR_NAME_MAXLEN-10, shmem_internal_my_pe, 1);
+    snprintf(key, MPIDI_OFI_SHMGR_NAME_MAXLEN, "%s-data", key_prefix);
+
+    ret = shm_unlink(key);
+    if (ret != 0) {
+        RETURN_ERROR_MSG("could not get data segment: %s\n", \
+                         shmem_util_strerror(errno, errmsg, 256));
+    }
+
+    shm_create_key(key_prefix, MPIDI_OFI_SHMGR_NAME_MAXLEN-10, shmem_internal_my_pe, 2);
+    snprintf(key, MPIDI_OFI_SHMGR_NAME_MAXLEN, "%s-heap", key_prefix);
+
+    ret = shm_unlink(key);
+    if (ret != 0) {
+        RETURN_ERROR_MSG("could not get heap segment: %s\n", \
+                         shmem_util_strerror(errno, errmsg, 256));
+    }
 
     if (NULL != shmem_transport_mmap_peers) {
         for (i = 0 ; i < shmem_internal_num_pes; ++i) {
