@@ -480,7 +480,7 @@ else
     transport_portals4="no"
     transport_ofi="no"
     transport_ucx="no"
-    AC_MSG_WARN([No transport requested])
+    AC_MSG_WARN([No network transport requested])
 fi
 
 AM_CONDITIONAL([USE_PORTALS4], [test "$transport_portals4" = "yes"])
@@ -521,6 +521,7 @@ elif test -n "$enable_mmap" -a "$enable_mmap" != "no" ; then
 elif test -n "$with_xpmem" -a "$with_xpmem" != "no" ; then
     transport_mmap="no"
     transport_cma="no"
+    AC_DEFINE([USE_XPMEM], [1], [Define if XPMEM transport is active])
 elif test -n "$with_cma" -a "$with_cma" != "no" ; then
     transport_mmap="no"
     transport_xpmem="no"
@@ -1019,7 +1020,7 @@ AS_IF([test "$enable_pmi_mpi" != "yes" -a "$enable_pmi_simple" != "yes" -a "$opa
          [AC_MSG_ERROR([No PMI client interface was configured, consider --enable-pmi-simple or --with-pmi])])
 
 AS_IF([test -z "$num_transports"],
-      [AC_MSG_WARN([No transport found, resulting library will be unable to exchange messages])])
+      [AC_MSG_WARN([No network transport found, library will be unable to exchange remote messages])])
 
 AS_IF([test "$shmem_cv_c11_works" != "yes"],
       [AC_MSG_WARN([C compiler does not support _Generic, unable to verify and test C11 bindings])])
