@@ -298,7 +298,15 @@ AC_SUBST([WRAPPER_COMPILER_CC])
 AC_MSG_CHECKING([if -std=gnu11 works])
 
 AC_LANG_PUSH([C])
-CFLAGS="-pedantic-errors -std=gnu11"
+C_COMPILER_VERSION=$("$CC" --version 2> /dev/null)
+IS_ONEAPI_COMPILER=$(echo $C_COMPILER_VERSION | $GREP -c -E 'Intel\(R\) oneAPI')
+
+if test "$IS_ONEAPI_COMPILER" -ne "0" ; then
+  CFLAGS="-std=gnu11"
+else
+  CFLAGS="-pedantic-errors -std=gnu11"
+fi
+
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
                    void g(int i){}
                    #define f(X) _Generic((X), default: g)(X)
@@ -330,6 +338,8 @@ else
   FC=
 fi
 if test "$FC" != "" ; then
+  #The oneAPI ifx compiler requires autoconf 2.70 to support AC_FC_WRAPPERS. If problems, please try ifort or updating autoconf:
+  #https://community.intel.com/t5/Intel-Fortran-Compiler/ifx-2021-1-beta04-HPC-Toolkit-build-error-with-loopopt/m-p/1184181
   AC_FC_WRAPPERS
 fi
 
@@ -516,11 +526,13 @@ fi
 if test "$bt_execinfo" = "yes"; then
   use_bt_option="$use_bt_option execinfo"
   AC_DEFINE([USE_BT_EXECINFO], [1], [Execinfo library calls for backtrace])
+  if test "$IS_ONEAPI_COMPILER" -eq "0" ; then
   case $host_os in
       linux*)
            CFLAGS="$CFLAGS -rdynamic"
            ;;
    esac
+  fi
 fi
 if test -n "$GDB_PATH"; then
   use_bt_option="$use_bt_option gdb"
