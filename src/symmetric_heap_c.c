@@ -310,8 +310,8 @@ shmemx_malloc_varsize(size_t my_size, size_t global_max_size)
     shmem_internal_assertp(my_size <= global_max_size);
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
-    ret = dlmalloc(my_size);
-    shmem_internal_get_next((intptr_t) (global_max_size - my_size)); 
+    ret = dlmemalign((size_t) 64, global_max_size);
+    munmap((void *)((uintptr_t) ret + my_size), (size_t) (global_max_size - my_size));
     SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
 
     shmem_internal_barrier_all();
