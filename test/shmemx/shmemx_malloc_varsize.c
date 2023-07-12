@@ -29,6 +29,7 @@
 #include <shmemx.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 int main(int argc, char *argv[]) {
   int ret = 0, i, errors = 0;
@@ -39,8 +40,8 @@ int main(int argc, char *argv[]) {
   int npes = shmem_n_pes();
 
   int *symm_malloc_1 = (int *) shmem_malloc(npes * sizeof(int));
-  int *var_alloc = (int *) shmemx_malloc_varsize((me + 1) * 1024 * 1024 * sizeof(int), npes * 1024 * 1024 * sizeof(int));
-  int *symm_malloc_2 = (int *) shmem_malloc(npes * sizeof(int));
+  int *var_alloc = (int *) shmemx_malloc_varsize((me + 1) * 1024 * 1024 * sizeof(int), npes * 1024 * 1024 * sizeof(int) + 1024 * 1024);
+  int *symm_malloc_2 = (int *) shmem_align((size_t) sysconf(_SC_PAGESIZE), npes * 1024 * 1024 * sizeof(int));
 
   int *src = (int *) malloc((me + 1) * sizeof(int));
 
@@ -69,6 +70,11 @@ int main(int argc, char *argv[]) {
     }
   }
   ret = errors;
+
+  int temp = 109 + me;
+  shmem_int_put(var_alloc + (me + 1) * 1024 * 1024 + 4096 + 24, &temp, 1, (me + 1) % npes);
+  shmem_barrier_all();
+  fprintf(stdout, "[PE %d] Undefined behv?: %d\n", me, var_alloc[(me + 1) * 1024 * 1024 + 4096 + 24]);
 
   shmem_int_put(symm_malloc_1, src, ((me + 1) % npes) + 1, (me + 1) % npes);
   shmem_barrier_all();

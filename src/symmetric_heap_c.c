@@ -38,6 +38,8 @@
 #ifdef ENABLE_PROFILING
 #include "pshmem.h"
 
+#include <errno.h>
+
 #pragma weak shmem_malloc = pshmem_malloc
 #define shmem_malloc pshmem_malloc
 
@@ -310,8 +312,15 @@ shmemx_malloc_varsize(size_t my_size, size_t global_max_size)
     shmem_internal_assertp(my_size <= global_max_size);
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
-    ret = dlmemalign((size_t) 64, global_max_size);
-    munmap((void *)((uintptr_t) ret + my_size), (size_t) (global_max_size - my_size));
+    ret = dlmemalign((size_t) sysconf(_SC_PAGESIZE), my_size);
+    void *ret_hole = dlmemalign((size_t) sysconf(_SC_PAGESIZE), (global_max_size - my_size));
+    //dlfree((void *)((uintptr_t) ret + my_size));
+    //dlfree(ret_hole);
+    //fprintf(stderr, "ret_hole %p\n", ret_hole);
+    int ret1 = munmap(ret_hole, (size_t) (global_max_size - my_size));
+    //int ret1 = madvise((void *)((uintptr_t) ret + my_size), (size_t) (global_max_size - my_size), MADV_REMOVE);
+    //fprintf(stderr, "[PE %d] first = %p, size = %ld\n", shmem_internal_my_pe, (void *)((uintptr_t) ret + my_size), (global_max_size - my_size));
+    fprintf(stderr, "[PE %d] ret from munmap = %d, errno %d (%s)\n", shmem_internal_my_pe, ret1, errno, strerror(errno));
     SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
 
     shmem_internal_barrier_all();
