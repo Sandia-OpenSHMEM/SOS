@@ -2,6 +2,17 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.5.2
+------
+- This full release includes the changes listed below for v1.5.2rc1 and the
+  following additional changes.
+- Added configuration support for building Sandia OpenSHMEM with oneAPI
+  compilers.
+- Resolved a performance issue with fetching atomic operations when using the
+  CXI libfabric provider.
+- In the OFI transport, added the FI_RECV capability to contexts (for driving
+  progress) resolving an issue with the Omni-Path Express (opx) provider.
+
 v1.5.2rc1
 ---------
 
