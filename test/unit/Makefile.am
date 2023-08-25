@@ -156,7 +156,7 @@ check_PROGRAMS += \
 	cxx_test_shmem_atomic_cswap \
 	cxx_test_shmem_wait_until \
 	cxx_test_shmem_test \
-	cxx_test_shmem_reduce \
+	cxx_test_shmem_bitwise_reduce \
 	cxx_shmem_test_all
 endif
 
@@ -276,4 +276,4 @@ cxx_test_shmem_atomic_swap_SOURCES = cxx_test_shmem_atomic_swap.cpp
 cxx_test_shmem_atomic_cswap_SOURCES = cxx_test_shmem_atomic_cswap.cpp
 cxx_test_shmem_wait_until_SOURCES = cxx_test_shmem_wait_until.cpp
 cxx_test_shmem_test_SOURCES = cxx_test_shmem_test.cpp
-cxx_test_shmem_reduce_SOURCES = cxx_test_shmem_reduce.cpp
+cxx_test_shmem_bitwise_reduce_SOURCES = cxx_test_shmem_bitwise_reduce.cpp
