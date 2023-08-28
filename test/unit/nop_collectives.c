@@ -117,19 +117,19 @@ int main(void) {
 #ifdef ENABLE_DEPRECATED_TESTS
     shmem_int_and_to_all(NULL, NULL, 0, 0, 0, npes, pwrk, reduce_psync);
 #else
-    shmem_int_and_reduce(SHMEM_TEAM_WORLD, NULL, NULL, 0);
+    shmem_uint_and_reduce(SHMEM_TEAM_WORLD, NULL, NULL, 0);
 #endif
     shmem_barrier_all();
 #ifdef ENABLE_DEPRECATED_TESTS
     shmem_int_or_to_all(NULL, NULL, 0, 0, 0, npes, pwrk, reduce_psync);
 #else
-    shmem_int_or_reduce(SHMEM_TEAM_WORLD, NULL, NULL, 0);
+    shmem_uint_or_reduce(SHMEM_TEAM_WORLD, NULL, NULL, 0);
 #endif
     shmem_barrier_all();
 #ifdef ENABLE_DEPRECATED_TESTS
     shmem_int_xor_to_all(NULL, NULL, 0, 0, 0, npes, pwrk, reduce_psync);
 #else
-    shmem_int_xor_reduce(SHMEM_TEAM_WORLD, NULL, NULL, 0);
+    shmem_uint_xor_reduce(SHMEM_TEAM_WORLD, NULL, NULL, 0);
 #endif
     shmem_barrier_all();
 #ifdef ENABLE_DEPRECATED_TESTS
