@@ -13,4 +13,5 @@
 
 noinst_HEADERS = \
 	uthash.h \
-	pthread_barrier.h
+	pthread_barrier.h \
+	tests_sos/wtime.h
