@@ -55,7 +55,7 @@ int main(void)
 #else
         shmem_team_sync(SHMEM_TEAM_WORLD);
 #endif
-        shmem_int_and_reduce(SHMEM_TEAM_WORLD, &dest_ret, &ret, 1);
+        shmem_int_sum_reduce(SHMEM_TEAM_WORLD, &dest_ret, &ret, 1);
 
         /* If success was not global, free a team and retry */
         if (dest_ret != 0) {
