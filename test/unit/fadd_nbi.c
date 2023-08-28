@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <shmem.h>
 #include <shmemx.h>
+#include "tests_sos/wtime.h"
 
 long ctr = 0;
 
@@ -48,14 +49,14 @@ int main(void) {
 
     ctr = 0;
     shmem_barrier_all();
-    t = shmemx_wtime();
+    t = tests_sos_wtime();
 
     for (i = 0; i < npes; i++) {
         out[i] = shmem_long_atomic_fetch_add(&ctr, 1, i);
     }
 
     shmem_barrier_all();
-    t = shmemx_wtime() - t;
+    t = tests_sos_wtime() - t;
 
     if (me == 0) printf("fetch_add     %10.2fus\n", t*1000000);
 
@@ -70,14 +71,14 @@ int main(void) {
 
     ctr = 0;
     shmem_barrier_all();
-    t = shmemx_wtime();
+    t = tests_sos_wtime();
 
     for (i = 0; i < npes; i++) {
         shmem_long_atomic_fetch_add_nbi(&out[i], &ctr, 1, i);
     }
 
     shmem_barrier_all();
-    t = shmemx_wtime() - t;
+    t = tests_sos_wtime() - t;
 
     if (me == 0) printf("fetch_add_nbi %10.2fus\n", t*1000000);
 
