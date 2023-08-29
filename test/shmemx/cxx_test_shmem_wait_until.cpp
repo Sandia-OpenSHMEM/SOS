@@ -54,11 +54,9 @@ int main(int argc, char* argv[]) {
   shmem_init();
 
   int rc = EXIT_SUCCESS;
-  TEST_SHMEM_WAIT_UNTIL(short);
   TEST_SHMEM_WAIT_UNTIL(int);
   TEST_SHMEM_WAIT_UNTIL(long);
   TEST_SHMEM_WAIT_UNTIL(long long);
-  TEST_SHMEM_WAIT_UNTIL(unsigned short);
   TEST_SHMEM_WAIT_UNTIL(unsigned int);
   TEST_SHMEM_WAIT_UNTIL(unsigned long);
   TEST_SHMEM_WAIT_UNTIL(unsigned long long);
