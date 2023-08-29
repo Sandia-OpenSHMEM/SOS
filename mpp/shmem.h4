@@ -253,6 +253,20 @@ define(`SHMEM_CXX_AND_REDUCE',
 }')dnl
 SHMEM_CXX_DEFINE_FOR_COLL_AND_OR_XOR(`SHMEM_CXX_AND_REDUCE')
 
+define(`SHMEM_CXX_OR_REDUCE',
+`static inline int shmem_or_reduce(shmem_team_t team, $2* dest, const $2* source,
+                                   size_t nreduce) {
+    return shmem_$1_or_reduce(team, dest, source, nreduce);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_COLL_AND_OR_XOR(`SHMEM_CXX_OR_REDUCE')
+
+define(`SHMEM_CXX_XOR_REDUCE',
+`static inline int shmem_xor_reduce(shmem_team_t team, $2* dest, const $2* source,
+                                    size_t nreduce) {
+    return shmem_$1_xor_reduce(team, dest, source, nreduce);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_COLL_AND_OR_XOR(`SHMEM_CXX_XOR_REDUCE')
+
 define(`SHMEM_CXX_MIN_REDUCE',
 `static inline int shmem_min_reduce(shmem_team_t team, $2* dest, const $2* source,
                                     size_t nreduce) {

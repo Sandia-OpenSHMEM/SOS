@@ -62,27 +62,66 @@
            COMPARE_TYPES(unsigned long, CTYPE)      \
            COMPARE_TYPES(unsigned long long, CTYPE) \
            COMPARE_TYPES(float, CTYPE)              \
-           COMPARE_TYPES(double, CTYPE)             \
+           COMPARE_TYPES(double, CTYPE)
 
 /* Note: Mirrors SHMEM_BIND_CXX_BITWISE_AMO */
 #define NEED_BITWISE_AMO_ASSOC(CTYPE)               \
-           COMPARE_TYPES_FIRST(int32_t, CTYPE)      \
+           COMPARE_TYPES_FIRST(unsigned int, CTYPE) \
+           COMPARE_TYPES(unsigned long, CTYPE)      \
+           COMPARE_TYPES(unsigned long long, CTYPE) \
+           COMPARE_TYPES(int32_t, CTYPE)            \
            COMPARE_TYPES(int64_t, CTYPE)            \
+
+/* Note: Mirrors SHMEM_BIND_CXX_SYNC */
+#define NEED_SYNC_ASSOC(CTYPE)                      \
+           COMPARE_TYPES_FIRST(int, CTYPE)          \
+           COMPARE_TYPES(long, CTYPE)               \
+           COMPARE_TYPES(long long, CTYPE)          \
            COMPARE_TYPES(unsigned int, CTYPE)       \
            COMPARE_TYPES(unsigned long, CTYPE)      \
            COMPARE_TYPES(unsigned long long, CTYPE)
 
-/* Note: Mirrors SHMEM_BIND_CXX_SYNC */
-#define NEED_SYNC_ASSOC(CTYPE)                      \
-           COMPARE_TYPES_FIRST(short, CTYPE)        \
+/* Note: Mirrors SHMEM_BIND_CXX_COLL_AND_OR_XOR */
+#define NEED_COLL_AND_OR_XOR_ASSOC(CTYPE)           \
+           COMPARE_TYPES_FIRST(unsigned char, CTYPE)\
+           COMPARE_TYPES(unsigned short, CTYPE)     \
+           COMPARE_TYPES(unsigned int, CTYPE)       \
+           COMPARE_TYPES(unsigned long, CTYPE)      \
+           COMPARE_TYPES(unsigned long long, CTYPE)
+
+/* Note: Mirrors SHMEM_BIND_CXX_COLL_MIN_MAX */
+#define NEED_COLL_MIN_MAX_ASSOC(CTYPE)              \
+           COMPARE_TYPES_FIRST(char, CTYPE)         \
+           COMPARE_TYPES(signed char, CTYPE)        \
+           COMPARE_TYPES(short, CTYPE)              \
            COMPARE_TYPES(int, CTYPE)                \
            COMPARE_TYPES(long, CTYPE)               \
            COMPARE_TYPES(long long, CTYPE)          \
+           COMPARE_TYPES(unsigned char, CTYPE)      \
            COMPARE_TYPES(unsigned short, CTYPE)     \
            COMPARE_TYPES(unsigned int, CTYPE)       \
            COMPARE_TYPES(unsigned long, CTYPE)      \
            COMPARE_TYPES(unsigned long long, CTYPE) \
+           COMPARE_TYPES(float, CTYPE)              \
+           COMPARE_TYPES(double, CTYPE)             \
+           COMPARE_TYPES(long double, CTYPE)
 
+/* Note: Mirrors SHMEM_BIND_CXX_COLL_SUM_PROD */
+#define NEED_COLL_SUM_PROD_ASSOC(CTYPE)             \
+           COMPARE_TYPES_FIRST(char, CTYPE)         \
+           COMPARE_TYPES(signed char, CTYPE)        \
+           COMPARE_TYPES(short, CTYPE)              \
+           COMPARE_TYPES(int, CTYPE)                \
+           COMPARE_TYPES(long, CTYPE)               \
+           COMPARE_TYPES(long long, CTYPE)          \
+           COMPARE_TYPES(unsigned char, CTYPE)      \
+           COMPARE_TYPES(unsigned short, CTYPE)     \
+           COMPARE_TYPES(unsigned int, CTYPE)       \
+           COMPARE_TYPES(unsigned long, CTYPE)      \
+           COMPARE_TYPES(unsigned long long, CTYPE) \
+           COMPARE_TYPES(float, CTYPE)              \
+           COMPARE_TYPES(double, CTYPE)             \
+           COMPARE_TYPES(long double, CTYPE)
 
 #define GEN_ASSOC(TYPENAME, CTYPE, TYPE_CLASS)                  \
   do {                                                          \
@@ -158,6 +197,44 @@ int main(int argc, char **argv)
     GEN_ASSOC(uint64,   uint64_t, SYNC);
     GEN_ASSOC(size,       size_t, SYNC);
     GEN_ASSOC(ptrdiff, ptrdiff_t, SYNC);
+    printf("')dnl\n");
+
+    printf("define(`SHMEM_BIND_CXX_COLL_AND_OR_XOR_EXTRAS',\n`");
+    GEN_AMO_ASSOC(int8,       int8_t,   SHM_INTERNAL_INT8,   COLL_AND_OR_XOR);
+    GEN_AMO_ASSOC(int16,     int16_t,  SHM_INTERNAL_INT16,   COLL_AND_OR_XOR);
+    GEN_AMO_ASSOC(int32,     int32_t,  SHM_INTERNAL_INT32,   COLL_AND_OR_XOR);
+    GEN_AMO_ASSOC(int64,     int64_t,  SHM_INTERNAL_INT64,   COLL_AND_OR_XOR);
+    GEN_AMO_ASSOC(uint8,     uint8_t,  SHM_INTERNAL_UINT8,   COLL_AND_OR_XOR);
+    GEN_AMO_ASSOC(uint16,   uint16_t, SHM_INTERNAL_UINT16,   COLL_AND_OR_XOR);
+    GEN_AMO_ASSOC(uint32,   uint32_t, SHM_INTERNAL_UINT32,   COLL_AND_OR_XOR);
+    GEN_AMO_ASSOC(uint64,   uint64_t, SHM_INTERNAL_UINT64,   COLL_AND_OR_XOR);
+    GEN_AMO_ASSOC(size,       size_t, SHM_INTERNAL_SIZE_T,   COLL_AND_OR_XOR);
+    printf("')dnl\n");
+
+    printf("define(`SHMEM_BIND_CXX_COLL_MIN_MAX_EXTRAS',\n`");
+    GEN_AMO_ASSOC(ptrdiff, ptrdiff_t, SHM_INTERNAL_PTRDIFF_T,   COLL_MIN_MAX);
+    GEN_AMO_ASSOC(int8,       int8_t,      SHM_INTERNAL_INT8,   COLL_MIN_MAX);
+    GEN_AMO_ASSOC(int16,     int16_t,     SHM_INTERNAL_INT16,   COLL_MIN_MAX);
+    GEN_AMO_ASSOC(int32,     int32_t,     SHM_INTERNAL_INT32,   COLL_MIN_MAX);
+    GEN_AMO_ASSOC(int64,     int64_t,     SHM_INTERNAL_INT64,   COLL_MIN_MAX);
+    GEN_AMO_ASSOC(uint8,     uint8_t,     SHM_INTERNAL_UINT8,   COLL_MIN_MAX);
+    GEN_AMO_ASSOC(uint16,   uint16_t,    SHM_INTERNAL_UINT16,   COLL_MIN_MAX);
+    GEN_AMO_ASSOC(uint32,   uint32_t,    SHM_INTERNAL_UINT32,   COLL_MIN_MAX);
+    GEN_AMO_ASSOC(uint64,   uint64_t,    SHM_INTERNAL_UINT64,   COLL_MIN_MAX);
+    GEN_AMO_ASSOC(size,       size_t,    SHM_INTERNAL_SIZE_T,   COLL_MIN_MAX);
+    printf("')dnl\n");
+
+    printf("define(`SHMEM_BIND_CXX_COLL_SUM_PROD_EXTRAS',\n`");
+    GEN_AMO_ASSOC(ptrdiff, ptrdiff_t, SHM_INTERNAL_PTRDIFF_T,   COLL_SUM_PROD);
+    GEN_AMO_ASSOC(int8,       int8_t,      SHM_INTERNAL_INT8,   COLL_SUM_PROD);
+    GEN_AMO_ASSOC(int16,     int16_t,     SHM_INTERNAL_INT16,   COLL_SUM_PROD);
+    GEN_AMO_ASSOC(int32,     int32_t,     SHM_INTERNAL_INT32,   COLL_SUM_PROD);
+    GEN_AMO_ASSOC(int64,     int64_t,     SHM_INTERNAL_INT64,   COLL_SUM_PROD);
+    GEN_AMO_ASSOC(uint8,     uint8_t,     SHM_INTERNAL_UINT8,   COLL_SUM_PROD);
+    GEN_AMO_ASSOC(uint16,   uint16_t,    SHM_INTERNAL_UINT16,   COLL_SUM_PROD);
+    GEN_AMO_ASSOC(uint32,   uint32_t,    SHM_INTERNAL_UINT32,   COLL_SUM_PROD);
+    GEN_AMO_ASSOC(uint64,   uint64_t,    SHM_INTERNAL_UINT64,   COLL_SUM_PROD);
+    GEN_AMO_ASSOC(size,       size_t,    SHM_INTERNAL_SIZE_T,   COLL_SUM_PROD);
     printf("')dnl\n");
 
     return 0;
