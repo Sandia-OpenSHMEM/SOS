@@ -49,19 +49,17 @@ $1(double,     double,             `SHM_INTERNAL_DOUBLE')')dnl
 dnl
 define(`SHMEM_BIND_CXX_BITWISE_AMO', dnl args: macro_name, end
 SHMEM_BIND_CXX_BITWISE_AMO_EXTRAS($1,$2)dnl
-`$1(int32,      int32_t,            `SHM_INTERNAL_INT32')$2
-$1(int64,      int64_t,            `SHM_INTERNAL_INT64')$2
-$1(uint,       unsigned int,       `SHM_INTERNAL_UINT')$2
+`$1(uint,      unsigned int,       `SHM_INTERNAL_UINT')$2
 $1(ulong,      unsigned long,      `SHM_INTERNAL_ULONG')$2
-$1(ulonglong,  unsigned long long, `SHM_INTERNAL_ULONG_LONG')')dnl
+$1(ulonglong,  unsigned long long, `SHM_INTERNAL_ULONG_LONG')$2
+$1(int32,      int32_t,            `SHM_INTERNAL_INT32')$2
+$1(int64,      int64_t,            `SHM_INTERNAL_INT64')')dnl
 dnl
 define(`SHMEM_BIND_CXX_SYNC', dnl args: macro_name, end
 SHMEM_BIND_CXX_SYNC_EXTRAS($1,$2)dnl
-`$1(short,      short)$2
-$1(int,        int)$2
+`$1(int,       int)$2
 $1(long,       long)$2
 $1(longlong,   long long)$2
-$1(ushort,     unsigned short)$2
 $1(uint,       unsigned int)$2
 $1(ulong,      unsigned long)$2
 $1(ulonglong,  unsigned long long)')dnl
@@ -76,16 +74,16 @@ $1(ulonglong, unsigned long long, `SHM_INTERNAL_ULONG_LONG')')dnl
 dnl
 define(`SHMEM_BIND_CXX_COLL_MIN_MAX', dnl args: macro_name, op_name, op_const
 SHMEM_BIND_CXX_COLL_MIN_MAX_EXTRAS($1,$2)dnl
-`$1(short,     short,              `SHM_INTERNAL_SHORT')$2
-$1(ushort,     unsigned short,     `SHM_INTERNAL_USHORT')$2
-$1(char,       char,               `SHM_INTERNAL_CHAR')$2
+`$1(char,      char,               `SHM_INTERNAL_CHAR')$2
 $1(schar,      signed char,        `SHM_INTERNAL_SCHAR')$2
-$1(uchar,      unsigned char,      `SHM_INTERNAL_UCHAR')$2
+$1(short,      short,              `SHM_INTERNAL_SHORT')$2
 $1(int,        int,                `SHM_INTERNAL_INT')$2
-$1(uint,       unsigned int,       `SHM_INTERNAL_UINT')$2
 $1(long,       long,               `SHM_INTERNAL_LONG')$2
-$1(ulong,      unsigned long,      `SHM_INTERNAL_ULONG')$2
 $1(longlong,   long long,          `SHM_INTERNAL_LONG_LONG')$2
+$1(uchar,      unsigned char,      `SHM_INTERNAL_UCHAR')$2
+$1(ushort,     unsigned short,     `SHM_INTERNAL_USHORT')$2
+$1(uint,       unsigned int,       `SHM_INTERNAL_UINT')$2
+$1(ulong,      unsigned long,      `SHM_INTERNAL_ULONG')$2
 $1(ulonglong,  unsigned long long, `SHM_INTERNAL_ULONG_LONG')$2
 $1(float,      float,              `SHM_INTERNAL_FLOAT')$2
 $1(double,     double,             `SHM_INTERNAL_DOUBLE')$2
@@ -93,16 +91,16 @@ $1(longdouble, long double,        `SHM_INTERNAL_LONG_DOUBLE')')dnl
 dnl
 define(`SHMEM_BIND_CXX_COLL_SUM_PROD', dnl args: macro_name, op_name, op_const
 SHMEM_BIND_CXX_COLL_SUM_PROD_EXTRAS($1,$2)dnl
-`$1(short,     short,              `SHM_INTERNAL_SHORT')$2
-$1(ushort,     unsigned short,     `SHM_INTERNAL_USHORT')$2
-$1(char,       char,               `SHM_INTERNAL_CHAR')$2
+`$1(char,      char,               `SHM_INTERNAL_CHAR')$2
 $1(schar,      signed char,        `SHM_INTERNAL_SCHAR')$2
-$1(uchar,      unsigned char,      `SHM_INTERNAL_UCHAR')$2
+$1(short,      short,              `SHM_INTERNAL_SHORT')$2
 $1(int,        int,                `SHM_INTERNAL_INT')$2
-$1(uint,       unsigned int,       `SHM_INTERNAL_UINT')$2
 $1(long,       long,               `SHM_INTERNAL_LONG')$2
-$1(ulong,      unsigned long,      `SHM_INTERNAL_ULONG')$2
 $1(longlong,   long long,          `SHM_INTERNAL_LONG_LONG')$2
+$1(uchar,      unsigned char,      `SHM_INTERNAL_UCHAR')$2
+$1(ushort,     unsigned short,     `SHM_INTERNAL_USHORT')$2
+$1(uint,       unsigned int,       `SHM_INTERNAL_UINT')$2
+$1(ulong,      unsigned long,      `SHM_INTERNAL_ULONG')$2
 $1(ulonglong,  unsigned long long, `SHM_INTERNAL_ULONG_LONG')$2
 $1(float,      float,              `SHM_INTERNAL_FLOAT')$2
 $1(double,     double,             `SHM_INTERNAL_DOUBLE')$2
