@@ -43,7 +43,7 @@ jobs:
             libfabric_version: v1.13.x
           - config_name: MR-Basic, AV-map, memcpy
             sos_config: --enable-ofi-mr=basic --enable-av-map --disable-cxx --enable-memcpy
-                        --enable-pmi-simple
+                        --enable-pmi-simple --with-hwloc=no
             libfabric_version: v1.13.x
           - config_name: PMI MPI
             sos_config: --disable-fortran --enable-pmi-mpi CC=mpicc
@@ -54,7 +54,7 @@ jobs:
             libfabric_version: v1.13.x
           - config_name: heap use malloc
             env_setup: export SHMEM_SYMMETRIC_HEAP_USE_MALLOC=1
-            sos_config: --disable-threads --enable-error-checking --enable-pmi-simple
+            sos_config: --disable-threads --enable-error-checking --enable-pmi-simple --with-hwloc=no
             libfabric_version: v1.13.x
           # too slow, times out on Github (but passes on another Ubuntu 20.04 system)...
           #- config_name: CMA, MR Basic, RVA
@@ -79,7 +79,7 @@ jobs:
           - config_name: huge pages, zero bounce
             env_setup: SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SHMEM_BOUNCE_SIZE=0
             sos_config: --enable-error-checking --enable-remote-virtual-addressing
-                        --enable-pmi-simple --enable-ofi-fence
+                        --enable-pmi-simple --enable-ofi-fence --with-hwloc=no
             libfabric_version: v1.13.x
           - config_name: auto algorithms
             env_setup: export SHMEM_BARRIER_ALGORITHM=auto;
@@ -97,7 +97,7 @@ jobs:
                        export SHMEM_COLLECT_ALGORITHM=linear;
                        export SHMEM_FCOLLECT_ALGORITHM=linear
             sos_config: --enable-error-checking --enable-remote-virtual-addressing
-                        --enable-pmi-simple
+                        --enable-pmi-simple --with-hwloc=no
             libfabric_version: v1.13.x
           - config_name: tree algorithms
             env_setup: export SHMEM_BARRIER_ALGORITHM=tree;
@@ -113,7 +113,7 @@ jobs:
                        export SHMEM_FCOLLECT_ALGORITHM=recdbl;
                        export SHMEM_OFI_STX_AUTO=1
             sos_config: --enable-error-checking --enable-remote-virtual-addressing
-                        --enable-pmi-simple --enable-manual-progress --enable-hard-polling
+                        --enable-pmi-simple --enable-manual-progress --enable-hard-polling --with-hwloc=no
             libfabric_version: v1.13.x
           - config_name: ring reduce algorithm
             env_setup: export SHMEM_REDUCE_ALGORITHM=ring
@@ -474,11 +474,11 @@ jobs:
           - config_name: ucx-1.9.0
             ucx_version: v1.9.0
             xpmem_version: master
-        sos_config: [--enable-pmi-simple --disable-fortran,
+        sos_config: [--enable-pmi-simple --disable-fortran --with-hwloc=no,
                      --enable-pmi-mpi CC=mpicc --disable-fortran,
                      --with-cma --enable-error-checking --enable-profiling
-                     --enable-pmi-simple --disable-fortran,
-                     --with-xpmem --enable-error-checking --enable-pmi-simple]
+                     --enable-pmi-simple --disable-fortran --with-hwloc=no,
+                     --with-xpmem --enable-error-checking --enable-pmi-simple --with-hwloc=no]
     steps:
       - name: Checking OS version
         run: |
@@ -558,17 +558,17 @@ jobs:
             xpmem_version: master
           - name: Heap use malloc
             env_setup: export SHMEM_SYMMETRIC_HEAP_USE_MALLOC=1
-            sos_config: --disable-threads --enable-error-checking --enable-pmi-simple
+            sos_config: --disable-threads --enable-error-checking --enable-pmi-simple --with-hwloc=no
           - name: Heap use huge pages, zero bounce
             env_setup: export SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES=1; export SHMEM_BOUNCE_SIZE=0
             sos_config: --enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple --enable-ofi-fence
-        sos_config: [--enable-pmi-simple,
+        sos_config: [--enable-pmi-simple --with-hwloc=no,
                      --disable-fortran --enable-error-checking --enable-remote-virtual-addressing
                      --disable-aslr-check --enable-pmi-simple,
                      --with-cma --enable-error-checking --enable-profiling
                      --enable-remote-virtual-addressing --enable-pmi-simple,
                      --with-xpmem --enable-shr-atomics --enable-error-checking --enable-pmi-simple,
-                     --enable-pmi-mpi CC=mpicc --disable-fortran]
+                     --enable-pmi-mpi CC=mpicc --disable-fortran --with-hwloc=no]
     steps:
       - name: Checking OS version
         run: |
@@ -576,7 +576,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install dependencies
         run: |
-          sudo apt-get install -y gfortran mpich libmpich-dev libev-dev libev-libevent-dev
+          sudo apt-get install -y gfortran mpich libmpich-dev libev-dev libev-libevent-dev libhwloc-dev
           sudo sysctl -w kernel.yama.ptrace_scope=0
           sudo sysctl -w kernel.randomize_va_space=0
 
@@ -653,7 +653,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install dependencies
         run: |
-          sudo apt-get install -y gfortran mpich libmpich-dev libev-dev libev-libevent-dev
+          sudo apt-get install -y gfortran mpich libmpich-dev libev-dev libev-libevent-dev libhwloc-dev
           sudo sysctl -w kernel.yama.ptrace_scope=0
           sudo sysctl -w kernel.randomize_va_space=0
 
