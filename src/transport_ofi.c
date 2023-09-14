@@ -1424,22 +1424,74 @@ int query_for_fabric(struct fabric_info *info)
     if (info->fabric_name != NULL || info->domain_name != NULL) {
         struct fi_info *cur_fabric;
 
-        info->p_info = NULL;
+    //if (shmem_internal_params.USE_MULTIRAIL) {
+    int num_nics = 0;
+    struct fi_info *fallback = NULL;
+    struct fi_info *filtered_fabrics_list_head = NULL;
+    struct fi_info *filtered_fabrics_last_added = NULL;
+    struct fi_info *multirail_fabric_list_head = NULL;
+    struct fi_info *multirail_fabric_last_added = NULL;
+
+    if (info->fabric_name != NULL || info->domain_name != NULL) {
+        struct fi_info *cur_fabric;
 
         for (cur_fabric = info->fabrics; cur_fabric; cur_fabric = cur_fabric->next) {
             if (info->fabric_name == NULL ||
                 fnmatch(info->fabric_name, cur_fabric->fabric_attr->name, 0) == 0) {
                 if (info->domain_name == NULL ||
                     fnmatch(info->domain_name, cur_fabric->domain_attr->name, 0) == 0) {
-                    info->p_info = cur_fabric;
-                    break;
+                    if (!filtered_fabrics_list_head) filtered_fabrics_list_head = cur_fabric;
+                    if (filtered_fabrics_last_added) filtered_fabrics_last_added->next = cur_fabric;
+                        filtered_fabrics_last_added = cur_fabric;
                 }
             }
         }
+        filtered_fabrics_last_added->next = NULL;
     }
     else {
-        info->p_info = info->fabrics;
+        filtered_fabrics_list_head = info->fabrics;
     }
+    //TODO: Should probably check that filtered_fabrics_list_head is not NULL, otherwise error
+
+    struct fi_info *cur_fabric;
+
+    info->p_info = NULL;
+
+    for (cur_fabric = filtered_fabrics_list_head; cur_fabric; cur_fabric = cur_fabric->next) {
+        if (cur_fabric->nic && !nic_already_used(cur_fabric->nic, multirail_fabric_list_head, num_nics)) {
+            num_nics += 1;
+            if (!multirail_fabric_list_head) multirail_fabric_list_head = cur_fabric;
+            if (multirail_fabric_last_added) multirail_fabric_last_added->next = cur_fabric;
+            multirail_fabric_last_added = cur_fabric;
+        }
+    }
+
+    if (num_nics == 0) {
+        if (shmem_internal_params.REQUIRE_MULTIRAIL_ENV)
+            RAISE_ERROR_MSG("Unable to detect multiple NICs\n");
+        else
+            DEBUG_MSG("Unable to detect multiple NICs\n");
+        info->p_info = fallback;
+    }
+    else {
+        int idx = 0;
+        struct fi_info **prov_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
+        for (cur_fabric = multirail_fabric_list_head; cur_fabric; cur_fabric = cur_fabric->next) {
+            prov_list[idx++] = cur_fabric;
+        }
+        qsort(prov_list, num_nics, sizeof(struct fi_info *), compare_nic_names);
+        info->p_info = prov_list[shmem_internal_my_pe % num_nics];
+        //Correct to this once SHMEM_TEAM_SHARED/SHMEMX_TEAM_HOST fixed:
+        //info->p_info = prov_list[shmem_team_translate_pe(SHMEM_TEAM_WORLD, shmem_internal_my_pe, SHMEMX_TEAM_HOST) % num_nics];
+    }
+    DEBUG_MSG("Number of unique NICs detected: %d\n", num_nics);
+
+    // TODO: Do we want to allow a user to explicitly request not to use multi-NIC functionality? If so, this complicates
+    // the usage of SHMEM_REQUIRE_MULTIRAIL_ENV (which would likely be renamed to SHMEM_USE_MULTIRAIL). Could not be simple bool,
+    // would need to be tri-state (unset/default, true, or false):
+    //   unset/default: Attempt to use multiple NICs, but if not possible, use single NIC
+    //   true: If multiple NICs not detected, raise error
+    //   false: Do not attempt to utilize multiple NICs (ie. assign all PEs the same provider for info->p_info)
 
     if (NULL == info->p_info) {
         RAISE_WARN_MSG("OFI transport, no valid fabric (prov=%s, fabric=%s, domain=%s)\n",
