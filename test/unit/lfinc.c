@@ -39,17 +39,9 @@
 #include <sys/time.h>
 
 #include <shmem.h>
-#include <shmemx.h>
+#include "tests_sos/wtime.h"
 
 #define LOOPS 25000
-
-#ifndef HAVE_SHMEMX_WTIME
-static double shmemx_wtime(void) {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (double) tv.tv_sec + (double) tv.tv_usec / 1000000.0;
-}
-#endif /* HAVE_SHMEMX_WTIME */
 
 int Verbose;
 double elapsed;
@@ -90,11 +82,11 @@ int main( int argc, char *argv[])
     shmem_barrier_all();
 
     neighbor = (my_pe + 1) % npes;
-    start_time = shmemx_wtime();
+    start_time = tests_sos_wtime();
     for(j=0,elapsed=0.0; j < loops; j++) {
-        start_time = shmemx_wtime();
+        start_time = tests_sos_wtime();
         lval = shmem_long_atomic_fetch_inc( (void*)&data[1], neighbor );
-        elapsed += shmemx_wtime() - start_time;
+        elapsed += tests_sos_wtime() - start_time;
         if (lval != (long) j) {
             fprintf(stderr,"[%d] Test: FAIL previous val %ld != %d Exit.\n",
                     my_pe, lval, j);

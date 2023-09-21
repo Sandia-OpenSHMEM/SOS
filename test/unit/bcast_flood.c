@@ -39,18 +39,10 @@
 #include <assert.h>
 
 #include <shmem.h>
-#include <shmemx.h>
+#include "tests_sos/wtime.h"
 
 static int atoi_scaled(char *s);
 static void usage(char *pgm);
-
-#ifndef HAVE_SHMEMX_WTIME
-static double shmemx_wtime(void) {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (double) tv.tv_sec + (double) tv.tv_usec / 1000000.0;
-}
-#endif /* HAVE_SHMEMX_WTIME */
 
 int Verbose=0;
 int Serialize;
@@ -141,13 +133,13 @@ main(int argc, char **argv)
 
     for(time_taken = 0.0, i = 0; i < loops; i++) {
 
-        start_time = shmemx_wtime();
+        start_time = tests_sos_wtime();
 
         shmem_int_broadcast(SHMEM_TEAM_WORLD, target, source, elements, 0);
 
         if (Serialize) shmem_barrier_all();
 
-        time_taken += (shmemx_wtime() - start_time);
+        time_taken += (tests_sos_wtime() - start_time);
 
     }
 
