@@ -141,7 +141,9 @@ jobs:
           - config_name: Lengthy tests
             sos_config: --enable-lengthy-tests --enable-pmi-simple
             libfabric_version: v1.13.x
-
+          - config_name: Manpages
+            sos_config: --enable-manpages --enable-pmi-simple
+            libfabric_version: v1.13.x
                      
     name: OFI ${{ matrix.libfabric_version }} (${{ matrix.config_name }})
 

@@ -272,6 +272,12 @@ AC_ARG_ENABLE([shr-atomics],
 AS_IF([test "$enable_shr_atomics" = "yes"],
       [AC_DEFINE([USE_SHR_ATOMICS], [1], [If defined, the shared memory layer will perform processor atomics.])])
 
+AC_ARG_ENABLE([manpages],
+    [AC_HELP_STRING([--enable-manpages],
+                    [Include man pages in the installation (default:disabled)])])
+AM_CONDITIONAL([ENABLE_MANPAGES], [test "$enable_manpages" = "yes"])
+AS_IF([test "$enable_manpages" = "yes"], [SOS_RPM_MANPAGES=""], [SOS_RPM_MANPAGES="# DISABLED: "])
+AC_SUBST([SOS_RPM_MANPAGES])
 
 PKG_INSTALLDIR()
 
