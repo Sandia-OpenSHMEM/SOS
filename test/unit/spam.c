@@ -50,7 +50,7 @@
 #include <assert.h>
 
 #include <shmem.h>
-#include <shmemx.h>
+#include "tests_sos/wtime.h"
 
 void one2many_put(int *dst, int *src, int Elems, int me, int npe, int laps);
 void many2one_get(int *dst, int *src, int Elems, int me, int npe, int laps);
@@ -64,10 +64,6 @@ void fcollect(int *dst, int *src, int Elems, int me, int npes, int laps);
 
 static int atoi_scaled(char *s);
 static void usage(char *pgm);
-
-#ifndef HAVE_SHMEMX_WTIME
-static double shmemx_wtime(void);
-#endif
 
 int Verbose=1;
 int All2=0;
@@ -212,12 +208,12 @@ one2many_put(int *target, int *src, int elements, int me, int npes, int loops)
     shmem_barrier_all();
 
     if (me == 0) {
-        start_time = shmemx_wtime();
+        start_time = tests_sos_wtime();
         for(i = 0; i < loops; i++) {
             for(pe = 1; pe < npes; pe++)
                 shmem_int_put(target, src, elements, pe);
         }
-        elapsed_time = shmemx_wtime() - start_time;
+        elapsed_time = tests_sos_wtime() - start_time;
 
         if (Verbose) {
             printf("%7.3f secs\n", elapsed_time);
@@ -246,12 +242,12 @@ many2one_get(int *target, int *src, int elements, int me, int npes, int loops)
     shmem_barrier_all();
 
     if (me == 0) {
-        start_time = shmemx_wtime();
+        start_time = tests_sos_wtime();
         for(i = 0; i < loops; i++) {
             for(pe = 1; pe < npes; pe++)
                 shmem_int_get(target, src, elements, pe);
         }
-        elapsed_time = shmemx_wtime() - start_time;
+        elapsed_time = tests_sos_wtime() - start_time;
 
         if (Verbose) {
             printf("%7.3f secs\n", elapsed_time);
@@ -278,12 +274,12 @@ all2all_get(int *target, int *src, int elements, int me, int npes, int loops)
     }
     shmem_barrier_all();
 
-    start_time = shmemx_wtime();
+    start_time = tests_sos_wtime();
     for(i = 0; i < loops; i++) {
         for(pe = 0; pe < npes; pe++)
             shmem_int_get(target, src, elements, pe);
     }
-    elapsed_time = shmemx_wtime() - start_time;
+    elapsed_time = tests_sos_wtime() - start_time;
 
     if (me==0 && Verbose) {
         printf("%7.3f secs\n", elapsed_time);
@@ -312,12 +308,12 @@ all2all_put(int *target, int *src, int elements, int me, int npes, int loops)
 
     shmem_barrier_all();
 
-    start_time = shmemx_wtime();
+    start_time = tests_sos_wtime();
     for(i = 0; i < loops; i++) {
         for(pe = 0; pe < npes; pe++)
             shmem_int_put(target, src, elements, pe);
     }
-    elapsed_time = shmemx_wtime() - start_time;
+    elapsed_time = tests_sos_wtime() - start_time;
 
     if (me==0 && Verbose) {
         printf("%7.3f secs\n", elapsed_time);
@@ -347,10 +343,10 @@ neighbor_put(int *target, int *src, int elements, int me, int npes, int loops)
 
     neighbor_pe = (me + 1) % npes;
 
-    start_time = shmemx_wtime();
+    start_time = tests_sos_wtime();
     for(i = 0; i < loops; i++)
         shmem_int_put(target, src, elements, neighbor_pe);
-    elapsed_time = shmemx_wtime() - start_time;
+    elapsed_time = tests_sos_wtime() - start_time;
 
     if (me==0 && Verbose) {
         printf("%7.3f secs\n", elapsed_time);
@@ -379,10 +375,10 @@ neighbor_get(int *target, int *src, int elements, int me, int npes, int loops)
 
     neighbor_pe = (me + 1) % npes;
 
-    start_time = shmemx_wtime();
+    start_time = tests_sos_wtime();
     for(i = 0; i < loops; i++)
         shmem_int_get(target, src, elements, neighbor_pe);
-    elapsed_time = shmemx_wtime() - start_time;
+    elapsed_time = tests_sos_wtime() - start_time;
 
     if (me==0 && Verbose) {
         printf("%7.3f secs\n", elapsed_time);
@@ -417,12 +413,12 @@ bcast(int *target, int *src, int elements, int me, int npes, int loops)
 
     shmem_barrier_all();
 
-    start_time = shmemx_wtime();
+    start_time = tests_sos_wtime();
     for(i = 0; i < loops; i++) {
         ps = (i & 1) ? pSync1 : pSync;
         shmem_broadcast32( target, src, elements, 0, 0, 0, npes, ps );
     }
-    elapsed_time = shmemx_wtime() - start_time;
+    elapsed_time = tests_sos_wtime() - start_time;
 
     if (me==0 && Verbose) {
         printf("%7.3f secs\n", elapsed_time);
@@ -459,12 +455,12 @@ collect(int *target, int *src, int elements, int me, int npes, int loops)
 
     shmem_barrier_all();
 
-    start_time = shmemx_wtime();
+    start_time = tests_sos_wtime();
     for(i = 0; i < loops; i++) {
         ps = (i & 1) ? pSync1 : pSync;
         shmem_collect32( target, src, elements, 0, 0, npes, ps );
     }
-    elapsed_time = shmemx_wtime() - start_time;
+    elapsed_time = tests_sos_wtime() - start_time;
 
     if (me==0 && Verbose) {
         printf("%7.3f secs\n", elapsed_time);
@@ -504,12 +500,12 @@ fcollect(int *target, int *src, int elements, int me, int npes, int loops)
 
     shmem_barrier_all();
 
-    start_time = shmemx_wtime();
+    start_time = tests_sos_wtime();
     for(i = 0; i < loops; i++) {
         ps = &pSync[(i&1)];
         shmem_fcollect32( target, src, elements, 0, 0, npes, ps );
     }
-    elapsed_time = shmemx_wtime() - start_time;
+    elapsed_time = tests_sos_wtime() - start_time;
 
     if (me==0 && Verbose) {
         printf("%7.3f secs\n", elapsed_time);
@@ -563,20 +559,3 @@ usage(char *pgm)
         "    -h             this text.\n",
         pgm,DFLT_LOOPS, N_ELEMENTS);
 }
-
-
-#ifndef HAVE_SHMEMX_WTIME
-
-static double
-shmemx_wtime(void)
-{
-    double wtime;
-    struct timeval tv;
-
-    gettimeofday(&tv, NULL);
-    wtime = tv.tv_sec;
-    wtime += (double)tv.tv_usec / 1000000.0;
-    return wtime;
-}
-
-#endif /* HAVE_SHMEMX_WTIME */

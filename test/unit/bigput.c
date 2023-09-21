@@ -40,7 +40,7 @@
 #include <sys/time.h>
 
 #include <shmem.h>
-#include <shmemx.h>
+#include "tests_sos/wtime.h"
 
 #define NUM_ELEMENTS 4194304 // 32 MB by longs
 //#define DFLT_LOOPS 10000  // reset when Portals4 can achieve this.
@@ -86,14 +86,6 @@ usage(char *pgm)
         pgm,NUM_ELEMENTS,DFLT_LOOPS);
 }
 
-#if !defined(HAVE_SHMEMX_WTIME)
-static inline double shmemx_wtime(void)
-{
-    struct timeval tv;
-    gettimeofday(&tv, 0);
-    return (double)((tv.tv_usec / 1000000.0) + tv.tv_sec);
-}
-#endif
 
 int
 main(int argc, char **argv)
@@ -200,11 +192,11 @@ main(int argc, char **argv)
 
     for(i=0; i < loops; i++) {
 
-        start_time = shmemx_wtime();
+        start_time = tests_sos_wtime();
 
         shmem_int_put(Target, Source, elements, target_PE);
 
-        time_taken += (shmemx_wtime() - start_time);
+        time_taken += (tests_sos_wtime() - start_time);
 
         if (me==0) {
             if ( Track && i > 0 && ((i % 200) == 0))

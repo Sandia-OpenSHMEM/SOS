@@ -14,6 +14,7 @@
 
 /* This is the same implementation as shmemx_wtime() in SOS, but is provided
  * for the convenience of implementations that do not define shmemx_wtime() */
+#ifndef HAVE_SHMEMX_WTIME
 static inline double tests_sos_wtime(void)
 {
     double wtime = 0.0;
@@ -31,3 +32,9 @@ static inline double tests_sos_wtime(void)
 #endif
     return wtime;
 }
+#else
+static inline double tests_sos_wtime(void)
+{
+    return shmemx_wtime();
+}
+#endif /* HAVE_SHMEMX_WTIME */
