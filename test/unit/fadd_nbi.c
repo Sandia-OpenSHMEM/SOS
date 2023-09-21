@@ -28,7 +28,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <shmem.h>
-#include <shmemx.h>
 #include "tests_sos/wtime.h"
 
 long ctr = 0;
