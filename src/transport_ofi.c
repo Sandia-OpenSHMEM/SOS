@@ -1458,6 +1458,7 @@ int query_for_fabric(struct fabric_info *info)
     info->p_info = NULL;
 
     for (cur_fabric = filtered_fabrics_list_head; cur_fabric; cur_fabric = cur_fabric->next) {
+        if (!fallback) fallback = cur_fabric;
         if (cur_fabric->nic && !nic_already_used(cur_fabric->nic, multirail_fabric_list_head, num_nics)) {
             num_nics += 1;
             if (!multirail_fabric_list_head) multirail_fabric_list_head = cur_fabric;
@@ -1484,7 +1485,6 @@ int query_for_fabric(struct fabric_info *info)
         //Correct to this once SHMEM_TEAM_SHARED/SHMEMX_TEAM_HOST fixed:
         //info->p_info = prov_list[shmem_team_translate_pe(SHMEM_TEAM_WORLD, shmem_internal_my_pe, SHMEMX_TEAM_HOST) % num_nics];
     }
-    DEBUG_MSG("Number of unique NICs detected: %d\n", num_nics);
 
     // TODO: Do we want to allow a user to explicitly request not to use multi-NIC functionality? If so, this complicates
     // the usage of SHMEM_REQUIRE_MULTIRAIL_ENV (which would likely be renamed to SHMEM_USE_MULTIRAIL). Could not be simple bool,
