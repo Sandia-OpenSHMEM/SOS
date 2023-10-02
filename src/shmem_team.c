@@ -89,7 +89,7 @@ int shmem_internal_team_init(void)
 
     /* Initialize SHMEM_TEAM_SHARED */
     shmem_internal_team_shared.psync_idx     = SHMEM_TEAM_SHARED_INDEX;
-    shmem_internal_team_shared.my_pe         = shmem_internal_my_pe;
+    shmem_internal_team_shared.my_pe         = 0;
     shmem_internal_team_shared.config_mask   = 0;
     shmem_internal_team_shared.contexts_len  = 0;
     memset(&shmem_internal_team_shared.config, 0, sizeof(shmem_team_config_t));
@@ -99,7 +99,7 @@ int shmem_internal_team_init(void)
 
     /* Initialize SHMEM_TEAM_HOST */
     shmem_internal_team_host.psync_idx       = SHMEM_TEAM_HOST_INDEX;
-    shmem_internal_team_host.my_pe           = shmem_internal_my_pe;
+    shmem_internal_team_host.my_pe           = 0;
     shmem_internal_team_host.config_mask     = 0;
     shmem_internal_team_host.contexts_len    = 0;
     memset(&shmem_internal_team_host.config, 0, sizeof(shmem_team_config_t));
@@ -111,7 +111,7 @@ int shmem_internal_team_init(void)
         shmem_internal_team_shared.start         = shmem_internal_my_pe;
         shmem_internal_team_shared.stride        = 1;
         shmem_internal_team_shared.size          = 1;
-    } else { /* Search for on-node peer PEs while checking for a consistent stride */
+    } else { /* Search for shared-memory peer PEs while checking for a consistent stride */
         int start = -1, stride = -1, size = 0;
 
         for (int pe = 0; pe < shmem_internal_num_pes; pe++) {
@@ -131,26 +131,38 @@ int shmem_internal_team_init(void)
         shmem_internal_team_shared.start = start;
         shmem_internal_team_shared.stride = (stride == -1) ? 1 : stride;
         shmem_internal_team_shared.size = size;
+        shmem_internal_team_shared.my_pe =
+              shmem_internal_team_translate_pe(&shmem_internal_team_world, shmem_internal_my_pe,
+                                               &shmem_internal_team_shared);
+        shmem_internal_assertp(shmem_internal_team_shared.my_pe >= 0);
 
         DEBUG_MSG("SHMEM_TEAM_SHARED: start=%d, stride=%d, size=%d\n",
                   shmem_internal_team_shared.start, shmem_internal_team_shared.stride,
                   shmem_internal_team_shared.size);
     }
 
+    /* Search for on-node peer PEs while checking for a consistent stride */
     int start = -1, stride = -1, size = 0;
-
     for (int pe = 0; pe < shmem_internal_num_pes; pe++) {
         int ret = shmem_runtime_get_node_rank(pe);
         if (ret < 0) continue;
 
         ret = check_for_linear_stride(pe, &start, &stride, &size);
-        if (ret < 0) return ret;
+        if (ret < 0) {
+            start = shmem_internal_my_pe;
+            stride = 1;
+            size = 1;
+            break;
+        }
     }
     shmem_internal_assert(size > 0 && size == shmem_runtime_get_node_size());
 
     shmem_internal_team_host.start = start;
     shmem_internal_team_host.stride = (stride == -1) ? 1 : stride;
     shmem_internal_team_host.size = size;
+    shmem_internal_team_host.my_pe =
+          shmem_internal_team_translate_pe(&shmem_internal_team_world, shmem_internal_my_pe,
+                                           &shmem_internal_team_host);
 
     DEBUG_MSG("SHMEMX_TEAM_HOST: start=%d, stride=%d, size=%d\n",
               shmem_internal_team_host.start, shmem_internal_team_host.stride,
