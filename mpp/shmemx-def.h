@@ -22,6 +22,12 @@ typedef struct {
     uint64_t target;
 } shmemx_pcntr_t;
 
+#if SHMEM_HAVE_ATTRIBUTE_VISIBILITY == 1
+    __attribute__((visibility("default"))) extern shmem_team_t SHMEMX_TEAM_HOST;
+#else
+    extern shmem_team_t SHMEMX_TEAM_HOST;
+#endif
+
 #ifdef __cplusplus
 }
 #endif
