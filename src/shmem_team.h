@@ -31,7 +31,7 @@ typedef struct shmem_internal_team_t shmem_internal_team_t;
 
 extern shmem_internal_team_t shmem_internal_team_world;
 extern shmem_internal_team_t shmem_internal_team_shared;
-extern shmem_internal_team_t shmem_internal_team_host;
+extern shmem_internal_team_t shmem_internal_team_node;
 
 enum shmem_internal_team_op_t {
     SYNC = 0,
