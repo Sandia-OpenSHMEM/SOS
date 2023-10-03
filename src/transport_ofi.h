@@ -56,6 +56,12 @@ extern uint8_t**                        shmem_transport_ofi_target_heap_addrs;
 extern uint8_t**                        shmem_transport_ofi_target_data_addrs;
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 #endif /* ENABLE_MR_SCALABLE */
+
+#ifdef USE_FI_HMEM
+extern uint64_t*                        shmem_transport_ofi_external_heap_keys;
+extern uint8_t**                        shmem_transport_ofi_external_heap_addrs;
+#endif
+
 extern uint64_t                         shmem_transport_ofi_max_poll;
 extern long                             shmem_transport_ofi_put_poll_limit;
 extern long                             shmem_transport_ofi_get_poll_limit;
@@ -177,7 +183,16 @@ void shmem_transport_ofi_get_mr(const void *addr, int dest_pe,
             ((uint8_t *) addr - (uint8_t *) shmem_internal_heap_base);
 #endif
     }
-
+#ifdef USE_FI_HMEM
+    else if (shmem_external_heap_pre_initialized) {
+        if ((void*) addr >= shmem_external_heap_base &&
+             (uint8_t*) addr < (uint8_t*) shmem_external_heap_base + shmem_external_heap_length) {
+            *key = shmem_transport_ofi_external_heap_keys[dest_pe];
+            *mr_addr = shmem_transport_ofi_external_heap_addrs[dest_pe] +
+                ((uint8_t *) addr - (uint8_t *) shmem_external_heap_base);
+        }
+    }
+#endif /* USE_FI_HMEM */
     else {
         *key = -1;
         *mr_addr = NULL;
