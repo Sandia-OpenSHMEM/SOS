@@ -20,7 +20,7 @@
 
 #define SHMEM_TEAM_WORLD_INDEX   0
 #define SHMEM_TEAM_SHARED_INDEX  1
-#define SHMEM_TEAM_HOST_INDEX    2
+#define SHMEM_TEAM_NODE_INDEX    2
 #define SHMEM_TEAMS_MIN          3
 
 #define N_PSYNC_BYTES             8
@@ -33,8 +33,8 @@ shmem_team_t SHMEM_TEAM_WORLD = (shmem_team_t) &shmem_internal_team_world;
 shmem_internal_team_t shmem_internal_team_shared;
 shmem_team_t SHMEM_TEAM_SHARED = (shmem_team_t) &shmem_internal_team_shared;
 
-shmem_internal_team_t shmem_internal_team_host;
-shmem_team_t SHMEMX_TEAM_HOST = (shmem_team_t) &shmem_internal_team_host;
+shmem_internal_team_t shmem_internal_team_node;
+shmem_team_t SHMEMX_TEAM_NODE = (shmem_team_t) &shmem_internal_team_node;
 
 shmem_internal_team_t **shmem_internal_team_pool;
 long *shmem_internal_psync_pool;
@@ -97,15 +97,15 @@ int shmem_internal_team_init(void)
         shmem_internal_team_shared.psync_avail[i] = 1;
     SHMEM_TEAM_SHARED = (shmem_team_t) &shmem_internal_team_shared;
 
-    /* Initialize SHMEM_TEAM_HOST */
-    shmem_internal_team_host.psync_idx       = SHMEM_TEAM_HOST_INDEX;
-    shmem_internal_team_host.my_pe           = 0;
-    shmem_internal_team_host.config_mask     = 0;
-    shmem_internal_team_host.contexts_len    = 0;
-    memset(&shmem_internal_team_host.config, 0, sizeof(shmem_team_config_t));
+    /* Initialize SHMEM_TEAM_NODE */
+    shmem_internal_team_node.psync_idx       = SHMEM_TEAM_NODE_INDEX;
+    shmem_internal_team_node.my_pe           = 0;
+    shmem_internal_team_node.config_mask     = 0;
+    shmem_internal_team_node.contexts_len    = 0;
+    memset(&shmem_internal_team_node.config, 0, sizeof(shmem_team_config_t));
     for (size_t i = 0; i < N_PSYNCS_PER_TEAM; i++)
-        shmem_internal_team_host.psync_avail[i] = 1;
-    SHMEMX_TEAM_HOST = (shmem_team_t) &shmem_internal_team_host;
+        shmem_internal_team_node.psync_avail[i] = 1;
+    SHMEMX_TEAM_NODE = (shmem_team_t) &shmem_internal_team_node;
 
     if (shmem_internal_params.TEAM_SHARED_ONLY_SELF) {
         shmem_internal_team_shared.start         = shmem_internal_my_pe;
@@ -157,16 +157,16 @@ int shmem_internal_team_init(void)
     }
     shmem_internal_assert(size > 0 && size == shmem_runtime_get_node_size());
 
-    shmem_internal_team_host.start = start;
-    shmem_internal_team_host.stride = (stride == -1) ? 1 : stride;
-    shmem_internal_team_host.size = size;
-    shmem_internal_team_host.my_pe =
+    shmem_internal_team_node.start = start;
+    shmem_internal_team_node.stride = (stride == -1) ? 1 : stride;
+    shmem_internal_team_node.size = size;
+    shmem_internal_team_node.my_pe =
           shmem_internal_team_translate_pe(&shmem_internal_team_world, shmem_internal_my_pe,
-                                           &shmem_internal_team_host);
+                                           &shmem_internal_team_node);
 
-    DEBUG_MSG("SHMEMX_TEAM_HOST: start=%d, stride=%d, size=%d\n",
-              shmem_internal_team_host.start, shmem_internal_team_host.stride,
-              shmem_internal_team_host.size);
+    DEBUG_MSG("SHMEMX_TEAM_NODE: start=%d, stride=%d, size=%d\n",
+              shmem_internal_team_node.start, shmem_internal_team_node.stride,
+              shmem_internal_team_node.size);
 
     if (shmem_internal_params.TEAMS_MAX > N_PSYNC_BYTES * CHAR_BIT) {
         RETURN_ERROR_MSG("Requested %ld teams, but only %d are supported\n",
@@ -185,13 +185,13 @@ int shmem_internal_team_init(void)
     }
     shmem_internal_team_pool[SHMEM_TEAM_WORLD_INDEX] = &shmem_internal_team_world;
     shmem_internal_team_pool[SHMEM_TEAM_SHARED_INDEX] = &shmem_internal_team_shared;
-    shmem_internal_team_pool[SHMEM_TEAM_HOST_INDEX] = &shmem_internal_team_host;
+    shmem_internal_team_pool[SHMEM_TEAM_NODE_INDEX] = &shmem_internal_team_node;
 
     /* Allocate pSync pool, each with the maximum possible size requirement */
     /* Create two pSyncs per team for back-to-back collectives and one for barriers.
      * Array organization:
      *
-     * [ (world) (shared) (host) (team 1) (team 2) ...  (world) (shared) (host) (team 1) (team 2) ... ]
+     * [ (world) (shared) (node) (team 1) (team 2) ...  (world) (shared) (node) (team 1) (team 2) ... ]
      *  <----------- groups 1 & 2------------------->|<------------- group 3 ------------------------->
      *  <--- (bcast, collect, reduce, etc.) -------->|<------ (barriers and syncs) ------------------->
      * */
@@ -217,10 +217,10 @@ int shmem_internal_team_init(void)
         shmem_internal_bit_set(psync_pool_avail, N_PSYNC_BYTES, i);
     }
 
-    /* Set the bits for SHMEM_TEAM_WORLD, SHMEM_TEAM_SHARED, and SHMEMX_TEAM_HOST to 0: */
+    /* Set the bits for SHMEM_TEAM_WORLD, SHMEM_TEAM_SHARED, and SHMEMX_TEAM_NODE to 0: */
     shmem_internal_bit_clear(psync_pool_avail, N_PSYNC_BYTES, SHMEM_TEAM_WORLD_INDEX);
     shmem_internal_bit_clear(psync_pool_avail, N_PSYNC_BYTES, SHMEM_TEAM_SHARED_INDEX);
-    shmem_internal_bit_clear(psync_pool_avail, N_PSYNC_BYTES, SHMEM_TEAM_HOST_INDEX);
+    shmem_internal_bit_clear(psync_pool_avail, N_PSYNC_BYTES, SHMEM_TEAM_NODE_INDEX);
 
     /* Initialize an integer used to agree on an equal return value across PEs in team creation: */
     team_ret_val = shmem_internal_shmalloc(sizeof(int) * 2);
@@ -504,7 +504,7 @@ int shmem_internal_team_destroy(shmem_internal_team_t *team)
     free(team->contexts);
 
     if (team != &shmem_internal_team_world && team != &shmem_internal_team_shared &&
-        team != &shmem_internal_team_host) {
+        team != &shmem_internal_team_node) {
         free(team);
     }
 
