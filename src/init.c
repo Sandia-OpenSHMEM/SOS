@@ -80,6 +80,13 @@ long shmem_internal_heap_length = 0;
 void *shmem_internal_data_base = NULL;
 long shmem_internal_data_length = 0;
 
+void *shmem_external_heap_base = NULL;
+long shmem_external_heap_length = 0;
+
+int shmem_external_heap_pre_initialized = 0;
+int shmem_external_heap_device_type = -1;
+int shmem_external_heap_device = -1;
+
 int shmem_internal_my_pe = -1;
 int shmem_internal_num_pes = -1;
 int shmem_internal_initialized = 0;
@@ -176,15 +183,11 @@ shmem_internal_start_pes(int npes)
 
 
 int
-shmem_internal_init(int tl_requested, int *tl_provided)
+shmem_internal_runtime_init(int tl_requested, int *tl_provided)
 {
     int ret;
 
     int runtime_initialized   = 0;
-    int transport_initialized = 0;
-    int shr_initialized       = 0;
-    int randr_initialized     = 0;
-    int teams_initialized     = 0;
     int enable_node_ranks     = 0;
 
     /* Parse environment variables into shmem_internal_params */
@@ -213,7 +216,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     ret = shmem_runtime_init(enable_node_ranks);
     if (0 != ret) {
         fprintf(stderr, "ERROR: runtime init failed: %d\n", ret);
-        goto cleanup;
+        goto cleanup_runtime;
     }
     runtime_initialized = 1;
     shmem_internal_my_pe = shmem_runtime_get_rank();
@@ -223,7 +226,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     if (sizeof(SHMEM_VENDOR_STRING) > SHMEM_MAX_NAME_LEN) {
         RETURN_ERROR_MSG("SHMEM_VENDOR_STRING length (%zu) exceeds SHMEM_MAX_NAME_LEN (%d)\n",
                          sizeof(SHMEM_VENDOR_STRING), SHMEM_MAX_NAME_LEN);
-        goto cleanup;
+        goto cleanup_runtime;
     }
 
     /* Unless the user asked for it, disable bounce buffering in MULTIPLE
@@ -338,11 +341,31 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     shmem_internal_data_length = (long) ((char*) &_end - (char*) &__data_start);
 #endif
 
+    return 0;
+
+ cleanup_runtime:
+    if (runtime_initialized) {
+        shmem_runtime_fini();
+    }
+    abort();
+}
+
+int
+shmem_internal_heap_postinit(void)
+{
+    int ret;
+
+    int transport_initialized = 0;
+    int shr_initialized       = 0;
+    int randr_initialized     = 0;
+    int teams_initialized     = 0;
+    int enable_node_ranks     = 0;
+
     /* create symmetric heap */
     ret = shmem_internal_symmetric_init();
     if (0 != ret) {
         RETURN_ERROR_MSG("Symmetric heap initialization failed (%d)\n", ret);
-        goto cleanup;
+        goto cleanup_postinit;
     }
 
     DEBUG_MSG("Thread level=%s, Num. PEs=%d\n"
@@ -396,20 +419,20 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     ret = shmem_transport_init();
     if (0 != ret) {
         RETURN_ERROR_MSG("Transport init failed (%d)\n", ret);
-        goto cleanup;
+        goto cleanup_postinit;
     }
 
     ret = shmem_shr_transport_init();
     if (0 != ret) {
         RETURN_ERROR_MSG("Shared memory transport init failed (%d)\n", ret);
-        goto cleanup;
+        goto cleanup_postinit;
     }
 
     /* exchange information */
     ret = shmem_runtime_exchange();
     if (0 != ret) {
         RETURN_ERROR_MSG("Runtime exchange failed (%d)\n", ret);
-        goto cleanup;
+        goto cleanup_postinit;
     }
 
     DEBUG_MSG("Local rank=%d, Num. local=%d, Shr. rank=%d, Num. shr=%d\n",
@@ -422,27 +445,27 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     ret = shmem_transport_startup();
     if (0 != ret) {
         RETURN_ERROR_MSG("Transport startup failed (%d)\n", ret);
-        goto cleanup;
+        goto cleanup_postinit;
     }
     transport_initialized = 1;
 
     ret = shmem_shr_transport_startup();
     if (0 != ret) {
         RETURN_ERROR_MSG("Shared memory transport startup failed (%d)\n", ret);
-        goto cleanup;
+        goto cleanup_postinit;
     }
     shr_initialized = 1;
 
     ret = shmem_internal_collectives_init();
     if (ret != 0) {
         RETURN_ERROR_MSG("Initialization of collectives failed (%d)\n", ret);
-        goto cleanup;
+        goto cleanup_postinit;
     }
 
     ret = shmem_internal_team_init();
     if (ret != 0) {
         RETURN_ERROR_MSG("Initialization of teams failed (%d)\n", ret);
-        goto cleanup;
+        goto cleanup_postinit;
     }
     teams_initialized = 1;
 
@@ -458,7 +481,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 #endif
     return 0;
 
- cleanup:
+ cleanup_postinit:
     if (transport_initialized) {
         shmem_transport_fini();
     }
@@ -478,12 +501,25 @@ shmem_internal_init(int tl_requested, int *tl_provided)
     if (NULL != shmem_internal_data_base) {
         shmem_internal_symmetric_fini();
     }
-    if (runtime_initialized) {
-        shmem_runtime_fini();
-    }
     abort();
 }
 
+int
+shmem_internal_init(int tl_requested, int *tl_provided)
+{
+    int ret;
+
+    ret = shmem_internal_runtime_init(tl_requested, tl_provided);
+    if (ret) goto cleanup;
+
+    ret = shmem_internal_heap_postinit();
+    if (ret) goto cleanup;
+
+    return 0;
+
+ cleanup:
+    abort();
+}
 
 void shmem_internal_finalize(void)
 {

@@ -84,6 +84,13 @@ uint8_t**                       shmem_transport_ofi_target_heap_addrs;
 uint8_t**                       shmem_transport_ofi_target_data_addrs;
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 #endif /* ENABLE_MR_SCALABLE */
+
+#ifdef USE_FI_HMEM
+struct fid_mr*                  shmem_transport_ofi_external_heap_mrfd;
+uint64_t*                       shmem_transport_ofi_external_heap_keys;
+uint8_t**                       shmem_transport_ofi_external_heap_addrs;
+#endif
+
 uint64_t                        shmem_transport_ofi_max_poll;
 long                            shmem_transport_ofi_put_poll_limit;
 long                            shmem_transport_ofi_get_poll_limit;
@@ -622,39 +629,57 @@ int bind_enable_ep_resources(shmem_transport_ctx_t *ctx)
     return ret;
 }
 
-
+#ifdef USE_FI_HMEM
 static inline
-int allocate_recv_cntr_mr(void)
+int ofi_mr_regattr_bind(void)
 {
     int ret = 0;
-    uint64_t flags = 0;
+    uint64_t key = 2;
 
-    /* ------------------------------------ */
-    /* POST enable resources for to EP      */
-    /* ------------------------------------ */
+    const struct iovec iov = {
+                               .iov_base     = shmem_external_heap_base,
+                               .iov_len      = shmem_external_heap_length
+                             };
+    const struct fi_mr_attr mr_attr = {
+                                        .mr_iov         = &iov,
+                                        .iov_count      = 1,
+                                        .access         = FI_REMOTE_READ | FI_REMOTE_WRITE,
+                                        .requested_key  = key,
+                                        .iface          = (shmem_external_heap_device_type == SHMEMX_EXTERNAL_HEAP_ZE ? FI_HMEM_ZE : FI_HMEM_CUDA),
+                                        .device.ze      = shmem_external_heap_device, /* TODO: Need to change to local */
+                                        .offset         = 0,
+                                        .context        = NULL
+                                      };
 
-    /* since this is AFTER enable and RMA you must create memory regions for
-     * incoming reads/writes and outgoing non-blocking Puts, specifying entire
-     * VA range */
+    ret = fi_mr_regattr(shmem_transport_ofi_domainfd, &mr_attr, 0, &shmem_transport_ofi_external_heap_mrfd);
+    OFI_CHECK_RETURN_STR(ret, "fi_mr_regattr (heap) failed");
 
 #if ENABLE_TARGET_CNTR
-    {
-        struct fi_cntr_attr cntr_attr = {0};
+    ret = fi_mr_bind(shmem_transport_ofi_external_heap_mrfd,
+                     &shmem_transport_ofi_target_cntrfd->fid,
+                     FI_REMOTE_WRITE);
+    OFI_CHECK_RETURN_STR(ret, "target CNTR binding to external heap MR failed");
 
-        /* Create counter for incoming writes */
-        cntr_attr.events   = FI_CNTR_EVENTS_COMP;
-        cntr_attr.wait_obj = FI_WAIT_UNSPEC;
+    if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_ENDPOINT) {
+        ret = fi_ep_bind(shmem_transport_ofi_target_ep,
+                         &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE);
+        OFI_CHECK_RETURN_STR(ret, "target CNTR binding to target EP failed");
+        ret = fi_mr_bind(shmem_transport_ofi_external_heap_mrfd,
+                         &shmem_transport_ofi_target_ep->fid, FI_REMOTE_WRITE);        OFI_CHECK_RETURN_STR(ret, "target EP binding to heap MR failed");
 
-        ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
-                           &shmem_transport_ofi_target_cntrfd, NULL);
-        OFI_CHECK_RETURN_STR(ret, "target CNTR open failed");
-
-#ifdef ENABLE_MR_RMA_EVENT
-        if (shmem_transport_ofi_mr_rma_event)
-            flags |= FI_RMA_EVENT;
-#endif /* ENABLE_MR_RMA_EVENT */
+        ret = fi_mr_enable(shmem_transport_ofi_external_heap_mrfd);
+        OFI_CHECK_RETURN_STR(ret, "target heap MR enable failed");
     }
 #endif
+
+    return ret;
+}
+#endif /* USE_FI_HMEM */
+
+static inline
+int ofi_mr_reg_bind(uint64_t flags)
+{
+    int ret = 0;
 
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, 0, UINT64_MAX,
@@ -744,6 +769,88 @@ int allocate_recv_cntr_mr(void)
     return ret;
 }
 
+static inline
+int allocate_recv_cntr_mr(void)
+{
+    int ret = 0;
+    uint64_t flags = 0;
+
+    /* ------------------------------------ */
+    /* POST enable resources for to EP      */
+    /* ------------------------------------ */
+
+    /* since this is AFTER enable and RMA you must create memory regions for
+     * incoming reads/writes and outgoing non-blocking Puts, specifying entire
+     * VA range */
+
+#if ENABLE_TARGET_CNTR
+    {
+        struct fi_cntr_attr cntr_attr = {0};
+
+        /* Create counter for incoming writes */
+        cntr_attr.events   = FI_CNTR_EVENTS_COMP;
+        cntr_attr.wait_obj = FI_WAIT_UNSPEC;
+
+        ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
+                           &shmem_transport_ofi_target_cntrfd, NULL);
+        OFI_CHECK_RETURN_STR(ret, "target CNTR open failed");
+
+#ifdef ENABLE_MR_RMA_EVENT
+        if (shmem_transport_ofi_mr_rma_event)
+            flags |= FI_RMA_EVENT;
+#endif /* ENABLE_MR_RMA_EVENT */
+    }
+#endif
+
+#ifdef USE_FI_HMEM
+    if (shmem_external_heap_pre_initialized) {
+        ret = ofi_mr_regattr_bind();
+        OFI_CHECK_RETURN_STR(ret, "OFI MR registration with HMEM failed");
+    }
+#endif
+    ret = ofi_mr_reg_bind(flags);
+    OFI_CHECK_RETURN_STR(ret, "OFI MR registration failed");
+
+    return ret;
+}
+
+#ifdef USE_FI_HMEM
+static
+int publish_external_mr_info(void)
+{
+    int err;
+    uint64_t ext_heap_key;
+
+    if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_PROV_KEY) {
+        ext_heap_key = fi_mr_key(shmem_transport_ofi_external_heap_mrfd);
+    } else {
+        ext_heap_key = 2;
+    }
+
+    err = shmem_runtime_put("fi_ext_heap_key", &ext_heap_key, sizeof(uint64_t));
+    if (err) {
+        RAISE_WARN_STR("Put of heap key to runtime KVS failed");
+        return 1;
+    }
+
+    void *ext_heap_base;
+
+    if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_VIRT_ADDR) {
+        ext_heap_base = shmem_external_heap_base;
+    } else {
+        ext_heap_base = (void *) 0;
+    }
+
+    err = shmem_runtime_put("fi_ext_heap_addr", &ext_heap_base, sizeof(uint8_t*));
+    if (err) {
+        RAISE_WARN_STR("Put of heap address to runtime KVS failed");
+        return 1;
+    }
+
+    return 0;
+}
+#endif
+
 static
 int publish_mr_info(void)
 {
@@ -806,8 +913,62 @@ int publish_mr_info(void)
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 #endif /* !ENABLE_MR_SCALABLE */
 
+#ifdef USE_FI_HMEM
+    if (shmem_external_heap_pre_initialized) {
+        int err = publish_external_mr_info();
+        if (err) {
+            RAISE_WARN_STR("Publish of external mr info failed");
+            return 1;
+        }
+    }
+#endif
+
     return 0;
 }
+
+#ifdef USE_FI_HMEM
+static
+int populate_external_mr_tables(void)
+{
+    int i, err;
+
+    shmem_transport_ofi_external_heap_keys = malloc(sizeof(uint64_t) * shmem_internal_num_pes);
+    if (NULL == shmem_transport_ofi_external_heap_keys) {
+        RAISE_WARN_STR("Out of memory allocating heap keytable");
+        return 1;
+    }
+
+    /* Called after the upper layer performs the runtime exchange */
+    for (i = 0; i < shmem_internal_num_pes; i++) {
+        err = shmem_runtime_get(i, "fi_ext_heap_key",
+                                &shmem_transport_ofi_external_heap_keys[i],
+                                sizeof(uint64_t));
+        if (err) {
+            RAISE_WARN_STR("Get of heap key from runtime KVS failed");
+            return 1;
+        }
+    }
+
+    shmem_transport_ofi_external_heap_addrs = malloc(sizeof(uint8_t*) * shmem_internal_num_pes);
+    if (NULL == shmem_transport_ofi_external_heap_addrs) {
+        RAISE_WARN_STR("Out of memory allocating heap addrtable");
+        return 1;
+    }
+
+    /* Called after the upper layer performs the runtime exchange */
+    for (i = 0; i < shmem_internal_num_pes; i++) {
+        err = shmem_runtime_get(i, "fi_ext_heap_addr",
+                                &shmem_transport_ofi_external_heap_addrs[i],
+                                sizeof(uint8_t*));
+        if (err) {
+            RAISE_WARN_STR("Get of heap address from runtime KVS failed");
+            return 1;
+        }
+    }
+
+    return 0;
+}
+#endif
 
 static
 int populate_mr_tables(void)
@@ -883,6 +1044,16 @@ int populate_mr_tables(void)
     }
 #endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 #endif /* !ENABLE_MR_SCALABLE */
+
+#ifdef USE_FI_HMEM
+    if (shmem_external_heap_pre_initialized) {
+        int err = populate_external_mr_tables();
+        if (err) {
+            RAISE_WARN_STR("Populate external MR tables failed");
+            return 1;
+        }
+    }
+#endif
 
     return 0;
 }
@@ -1181,6 +1352,9 @@ int query_for_fabric(struct fabric_info *info)
                                    ordering semantics to fi_atomicmsg
                                    for put with signal implementation */
 #endif
+#ifdef USE_FI_HMEM
+    hints.caps |= FI_HMEM;
+#endif
     hints.addr_format         = FI_FORMAT_UNSPEC;
 #ifdef ENABLE_FI_MANUAL_PROGRESS
     domain_attr.data_progress = FI_PROGRESS_MANUAL;
@@ -1200,6 +1374,9 @@ int query_for_fabric(struct fabric_info *info)
 #endif
 #ifdef ENABLE_MR_ENDPOINT
     domain_attr.mr_mode |= FI_MR_ENDPOINT;
+#endif
+#ifdef USE_FI_HMEM
+    domain_attr.mr_mode |= FI_MR_HMEM;
 #endif
 #if !defined(ENABLE_MR_SCALABLE) || !defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     domain_attr.mr_key_size   = 1; /* Heap and data use different MR keys, need
@@ -1290,8 +1467,13 @@ int query_for_fabric(struct fabric_info *info)
         info->p_info->domain_attr->mr_key_size = 0;
 #endif
 
+#ifndef DISABLE_OFI_INJECT
     shmem_internal_assertp(info->p_info->tx_attr->inject_size >= shmem_transport_ofi_max_buffered_send);
     shmem_transport_ofi_max_buffered_send = info->p_info->tx_attr->inject_size;
+#else
+    shmem_transport_ofi_max_buffered_send = 0;
+#endif
+
 #ifdef ENABLE_MR_RMA_EVENT
     shmem_transport_ofi_mr_rma_event = (info->p_info->domain_attr->mr_mode & FI_MR_RMA_EVENT) != 0;
 #endif
@@ -1829,6 +2011,13 @@ int shmem_transport_fini(void)
 
     ret = fi_close(&shmem_transport_ofi_target_data_mrfd->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target data MR close failed (%s)\n", fi_strerror(errno));
+#endif
+
+#ifdef USE_FI_HMEM
+    if (shmem_external_heap_pre_initialized) {
+        ret = fi_close(&shmem_transport_ofi_external_heap_mrfd->fid);
+        OFI_CHECK_ERROR_MSG(ret, "External heap MR close failed (%s)\n", fi_strerror(errno));
+    }
 #endif
 
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);

@@ -22,6 +22,9 @@ typedef struct {
     uint64_t target;
 } shmemx_pcntr_t;
 
+#define SHMEMX_EXTERNAL_HEAP_ZE 0
+#define SHMEMX_EXTERNAL_HEAP_CUDA 1
+
 #ifdef __cplusplus
 }
 #endif
