@@ -631,7 +631,7 @@ int bind_enable_ep_resources(shmem_transport_ctx_t *ctx)
 
 #ifdef USE_FI_HMEM
 static inline
-int ofi_mr_regattr_bind(void)
+int ofi_mr_reg_external_heap(void)
 {
     int ret = 0;
     uint64_t key = 2;
@@ -645,7 +645,8 @@ int ofi_mr_regattr_bind(void)
                                         .iov_count      = 1,
                                         .access         = FI_REMOTE_READ | FI_REMOTE_WRITE,
                                         .requested_key  = key,
-                                        .iface          = (shmem_external_heap_device_type == SHMEMX_EXTERNAL_HEAP_ZE ? FI_HMEM_ZE : FI_HMEM_CUDA),
+                                        .iface          = (shmem_external_heap_device_type == 
+                                                          SHMEMX_EXTERNAL_HEAP_ZE ? FI_HMEM_ZE : FI_HMEM_CUDA),
                                         .device.ze      = shmem_external_heap_device, /* TODO: Need to change to local */
                                         .offset         = 0,
                                         .context        = NULL
@@ -665,7 +666,8 @@ int ofi_mr_regattr_bind(void)
                          &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE);
         OFI_CHECK_RETURN_STR(ret, "target CNTR binding to target EP failed");
         ret = fi_mr_bind(shmem_transport_ofi_external_heap_mrfd,
-                         &shmem_transport_ofi_target_ep->fid, FI_REMOTE_WRITE);        OFI_CHECK_RETURN_STR(ret, "target EP binding to heap MR failed");
+                         &shmem_transport_ofi_target_ep->fid, FI_REMOTE_WRITE);
+	OFI_CHECK_RETURN_STR(ret, "target EP binding to heap MR failed");
 
         ret = fi_mr_enable(shmem_transport_ofi_external_heap_mrfd);
         OFI_CHECK_RETURN_STR(ret, "target heap MR enable failed");
@@ -804,7 +806,7 @@ int allocate_recv_cntr_mr(void)
 
 #ifdef USE_FI_HMEM
     if (shmem_external_heap_pre_initialized) {
-        ret = ofi_mr_regattr_bind();
+        ret = ofi_mr_reg_external_heap();
         OFI_CHECK_RETURN_STR(ret, "OFI MR registration with HMEM failed");
     }
 #endif
@@ -2002,10 +2004,26 @@ int shmem_transport_fini(void)
     }
     if (shmem_transport_ofi_stx_pool) free(shmem_transport_ofi_stx_pool);
 
-#if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
+#if defined(ENABLE_MR_SCALABLE)
+#if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     ret = fi_close(&shmem_transport_ofi_target_mrfd->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target MR close failed (%s)\n", fi_strerror(errno));
 #else
+    ret = fi_close(&shmem_transport_ofi_target_heap_mrfd->fid);
+    OFI_CHECK_ERROR_MSG(ret, "Target heap MR close failed (%s)\n", fi_strerror(errno));
+
+    ret = fi_close(&shmem_transport_ofi_target_data_mrfd->fid);
+    OFI_CHECK_ERROR_MSG(ret, "Target data MR close failed (%s)\n", fi_strerror(errno));  
+#endif
+#else
+    if (shmem_transport_ofi_target_heap_keys) free(shmem_transport_ofi_target_heap_keys);
+    if (shmem_transport_ofi_target_data_keys) free(shmem_transport_ofi_target_data_keys);
+
+#if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
+    if (shmem_transport_ofi_target_heap_addrs) free(shmem_transport_ofi_target_heap_addrs);
+    if (shmem_transport_ofi_target_data_addrs) free(shmem_transport_ofi_target_data_addrs);
+#endif
+
     ret = fi_close(&shmem_transport_ofi_target_heap_mrfd->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target heap MR close failed (%s)\n", fi_strerror(errno));
 
@@ -2015,6 +2033,8 @@ int shmem_transport_fini(void)
 
 #ifdef USE_FI_HMEM
     if (shmem_external_heap_pre_initialized) {
+        if (shmem_transport_ofi_external_heap_keys) free(shmem_transport_ofi_external_heap_keys);
+        if (shmem_transport_ofi_external_heap_addrs) free(shmem_transport_ofi_external_heap_addrs);
         ret = fi_close(&shmem_transport_ofi_external_heap_mrfd->fid);
         OFI_CHECK_ERROR_MSG(ret, "External heap MR close failed (%s)\n", fi_strerror(errno));
     }

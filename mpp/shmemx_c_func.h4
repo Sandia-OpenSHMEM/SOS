@@ -37,5 +37,5 @@ SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcntr_get_all(shmem_ctx_t ctx, shme
 
 /* Separate initializers */
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_heap_create(void *base, size_t size, int device_type, int device_index);
-SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_runtime_init();
-SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_transport_init();
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_heap_preinit();
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_heap_postinit();
