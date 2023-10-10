@@ -183,7 +183,7 @@ shmem_internal_start_pes(int npes)
 
 
 int
-shmem_internal_runtime_init(int tl_requested, int *tl_provided)
+shmem_internal_heap_preinit(int tl_requested, int *tl_provided)
 {
     int ret;
 
@@ -509,7 +509,7 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 {
     int ret;
 
-    ret = shmem_internal_runtime_init(tl_requested, tl_provided);
+    ret = shmem_internal_heap_preinit(tl_requested, tl_provided);
     if (ret) goto cleanup;
 
     ret = shmem_internal_heap_postinit();
