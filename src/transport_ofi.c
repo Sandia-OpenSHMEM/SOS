@@ -2016,12 +2016,12 @@ int shmem_transport_fini(void)
     OFI_CHECK_ERROR_MSG(ret, "Target data MR close failed (%s)\n", fi_strerror(errno));  
 #endif
 #else
-    if (shmem_transport_ofi_target_heap_keys) free(shmem_transport_ofi_target_heap_keys);
-    if (shmem_transport_ofi_target_data_keys) free(shmem_transport_ofi_target_data_keys);
+    free(shmem_transport_ofi_target_heap_keys);
+    free(shmem_transport_ofi_target_data_keys);
 
 #if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
-    if (shmem_transport_ofi_target_heap_addrs) free(shmem_transport_ofi_target_heap_addrs);
-    if (shmem_transport_ofi_target_data_addrs) free(shmem_transport_ofi_target_data_addrs);
+    free(shmem_transport_ofi_target_heap_addrs);
+    free(shmem_transport_ofi_target_data_addrs);
 #endif
 
     ret = fi_close(&shmem_transport_ofi_target_heap_mrfd->fid);
@@ -2033,8 +2033,8 @@ int shmem_transport_fini(void)
 
 #ifdef USE_FI_HMEM
     if (shmem_external_heap_pre_initialized) {
-        if (shmem_transport_ofi_external_heap_keys) free(shmem_transport_ofi_external_heap_keys);
-        if (shmem_transport_ofi_external_heap_addrs) free(shmem_transport_ofi_external_heap_addrs);
+        free(shmem_transport_ofi_external_heap_keys);
+        free(shmem_transport_ofi_external_heap_addrs);
         ret = fi_close(&shmem_transport_ofi_external_heap_mrfd->fid);
         OFI_CHECK_ERROR_MSG(ret, "External heap MR close failed (%s)\n", fi_strerror(errno));
     }
