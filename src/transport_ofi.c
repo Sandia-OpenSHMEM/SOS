@@ -667,7 +667,7 @@ int ofi_mr_reg_external_heap(void)
         OFI_CHECK_RETURN_STR(ret, "target CNTR binding to target EP failed");
         ret = fi_mr_bind(shmem_transport_ofi_external_heap_mrfd,
                          &shmem_transport_ofi_target_ep->fid, FI_REMOTE_WRITE);
-	OFI_CHECK_RETURN_STR(ret, "target EP binding to heap MR failed");
+        OFI_CHECK_RETURN_STR(ret, "target EP binding to heap MR failed");
 
         ret = fi_mr_enable(shmem_transport_ofi_external_heap_mrfd);
         OFI_CHECK_RETURN_STR(ret, "target heap MR enable failed");
