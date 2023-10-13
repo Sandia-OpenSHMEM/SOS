@@ -650,7 +650,7 @@ shmem_internal_op_to_all_ring(void *target, const void *source, size_t count, si
 
     if (PE_size == 1) {
         if (target != source)
-            memcpy(target, source, count*type_size);
+            shmem_internal_copy_self(target, source, count * type_size);
         return;
     }
 
@@ -662,7 +662,7 @@ shmem_internal_op_to_all_ring(void *target, const void *source, size_t count, si
         if (NULL == tmp)
             RAISE_ERROR_MSG("Unable to allocate %zub temporary buffer\n", count*type_size);
 
-        memcpy(tmp, target, count*type_size);
+        shmem_internal_copy_self(tmp, target, count * type_size);
         free_source = 1;
         source = tmp;
 
@@ -766,7 +766,7 @@ shmem_internal_op_to_all_tree(void *target, const void *source, size_t count, si
 
     if (PE_size == 1) {
         if (target != source) {
-            memcpy(target, source, type_size*count);
+            shmem_internal_copy_self(target, source, type_size * count);
         }
         return;
     }
@@ -851,7 +851,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, size_t coun
 
     if (PE_size == 1) {
         if (target != source) {
-            memcpy(target, source, type_size*count);
+            shmem_internal_copy_self(target, source, type_size * count);
         }
         free(current_target);
         return;
@@ -991,7 +991,7 @@ shmem_internal_collect_linear(void *target, const void *source, size_t len,
               target, source, len, PE_start, PE_stride, PE_size, (void*) pSync);
 
     if (PE_size == 1) {
-        if (target != source) memcpy(target, source, len);
+        if (target != source) shmem_internal_copy_self(target, source, len);
         return;
     }
 
@@ -1057,7 +1057,7 @@ shmem_internal_fcollect_linear(void *target, const void *source, size_t len,
 
     if (PE_start == shmem_internal_my_pe) {
         /* Copy data into the target */
-        if (source != target) memcpy(target, source, len);
+        if (source != target) shmem_internal_copy_self(target, source, len);
 
         /* send completion update */
         shmem_internal_atomic(SHMEM_CTX_DEFAULT, pSync, &tmp, sizeof(long),
@@ -1115,7 +1115,7 @@ shmem_internal_fcollect_ring(void *target, const void *source, size_t len,
     if (len == 0) return;
 
     /* copy my portion to the right place */
-    memcpy((char*) target + (my_id * len), source, len);
+    shmem_internal_copy_self((char*) target + (my_id * len), source, len);
 
     /* send n - 1 messages to the next highest proc.  Each message
        contains what we received the previous step (including our own
@@ -1179,7 +1179,7 @@ shmem_internal_fcollect_recdbl(void *target, const void *source, size_t len,
 
     /* copy my portion to the right place */
     curr_offset = my_id * len;
-    memcpy((char*) target + curr_offset, source, len);
+    shmem_internal_copy_self((char*) target + curr_offset, source, len);
 
     for (i = 0, distance = 0x1 ; distance < PE_size ; i++, distance <<= 1) {
         int peer = my_id ^ distance;
