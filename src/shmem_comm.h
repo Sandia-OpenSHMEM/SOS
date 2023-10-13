@@ -365,4 +365,18 @@ void shmem_internal_ct_wait(shmemx_ct_t ct, long wait_for)
 }
 
 
+/* Uses internal put for external heap config; otherwise memcpy */
+static inline
+void shmem_internal_copy_self(void *dest, const void *source, size_t nelems)
+{
+#ifdef USE_FI_HMEM
+    long completion = 0;
+    shmem_internal_put_nb(SHMEM_CTX_DEFAULT, dest, source, nelems,
+                          shmem_internal_my_pe, &completion);
+    shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
+#else
+    memcpy(dest, source, nelems);
+#endif
+}
+
 #endif

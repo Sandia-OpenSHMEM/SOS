@@ -19,6 +19,7 @@
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
 #include "shmem_internal.h"
+#include "shmemx.h"
 
 #ifdef ENABLE_PROFILING
 #include "pshmem.h"
@@ -68,6 +69,28 @@ shmem_init(void)
     }
 
     ret = shmem_internal_init(SHMEM_THREAD_SINGLE, &tl_provided);
+    if (ret) abort();
+}
+
+
+void SHMEM_FUNCTION_ATTRIBUTES
+shmemx_heap_preinit(void)
+{
+    int tl_provided, ret;
+
+    if (shmem_internal_initialized) {
+        RAISE_ERROR_STR("attempt to reinitialize library");
+    }
+
+    ret = shmem_internal_heap_preinit(SHMEM_THREAD_SINGLE, &tl_provided);
+    if (ret) abort();
+}
+
+
+void SHMEM_FUNCTION_ATTRIBUTES
+shmemx_heap_postinit(void)
+{
+    int ret = shmem_internal_heap_postinit();
     if (ret) abort();
 }
 

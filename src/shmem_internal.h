@@ -42,6 +42,13 @@ extern long shmem_internal_heap_length;
 extern void *shmem_internal_data_base;
 extern long shmem_internal_data_length;
 
+extern void *shmem_external_heap_base;
+extern long shmem_external_heap_length;
+
+extern int shmem_external_heap_pre_initialized;
+extern int shmem_external_heap_device_type;
+extern int shmem_external_heap_device;
+
 extern unsigned int shmem_internal_rand_seed;
 
 #define SHMEM_INTERNAL_HEAP_OVERHEAD (1024*1024)
@@ -446,6 +453,8 @@ extern shmem_internal_mutex_t shmem_internal_mutex_rand_r;
 
 void shmem_internal_start_pes(int npes);
 int  shmem_internal_init(int tl_requested, int *tl_provided);
+int  shmem_internal_heap_preinit(int tl_requested, int *tl_provided);
+int  shmem_internal_heap_postinit(void);
 void shmem_internal_finalize(void);
 void shmem_internal_global_exit(int status) SHMEM_ATTRIBUTE_NORETURN;
 
