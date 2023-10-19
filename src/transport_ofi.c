@@ -1333,6 +1333,103 @@ int allocate_fabric_resources(struct fabric_info *info)
     return ret;
 }
 
+#ifdef USE_HWLOC
+struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **provs, size_t num_nics) {
+    hwloc_topology_t topology;
+	hwloc_bitmap_t bindset;
+
+    int ret = hwloc_topology_init(&topology);
+    if (ret < 0) {
+        RAISE_ERROR_MSG("hwloc_topology_init failed (%s)\n", strerror(errno));
+    }
+
+    ret = hwloc_topology_set_io_types_filter(topology, HWLOC_TYPE_FILTER_KEEP_ALL);
+	if (ret < 0) {
+        RAISE_ERROR_MSG("hwloc_topology_set_io_types_filter failed (%s)\n", strerror(errno));
+    }
+
+    ret = hwloc_topology_load(topology);
+    if (ret < 0) {
+        RAISE_ERROR_MSG("hwloc_topology_load (%s)\n", strerror(errno));
+    }
+
+    //hwloc_obj_t root_obj = hwloc_get_root_obj(topology);
+    bindset = hwloc_bitmap_alloc();
+
+    ret = hwloc_get_proc_cpubind(topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS);
+    if (ret < 0) {
+        RAISE_ERROR_MSG("hwloc_get_proc_cpubind failed (%s)\n", strerror(errno));
+    }
+
+    // Identify which provider entries correspond to NICs with an affinity to the calling process
+    struct fi_info *close_provs = NULL;
+    struct fi_info *last_added = NULL;
+    size_t num_close_nics = 0;
+    for (size_t i = 0; i < num_nics; i++) {
+        struct fi_info *cur_prov = provs[i];
+        if (cur_prov->nic->bus_attr->bus_type != FI_BUS_PCI) continue;
+
+        struct fi_pci_attr pci = cur_prov->nic->bus_attr->attr.pci;
+        hwloc_obj_t io_device = hwloc_get_pcidev_by_busid(topology, pci.domain_id, pci.bus_id, pci.device_id, pci.function_id);
+        if (!io_device) RAISE_ERROR_MSG("hwloc_get_pcidev_by_busid failed\n");
+        hwloc_obj_t first_non_io = hwloc_get_non_io_ancestor_obj(topology, io_device);
+        if (!first_non_io) RAISE_ERROR_MSG("hwloc_get_non_io_ancestor_obj failed\n");
+
+        if (hwloc_bitmap_isincluded(bindset, first_non_io->cpuset) ||
+            hwloc_bitmap_isincluded(first_non_io->cpuset, bindset)) {
+            struct fi_info *dup = fi_dupinfo(cur_prov);
+            if (!close_provs) close_provs = dup;
+            if (last_added) last_added->next = dup;
+            last_added = dup;
+            num_close_nics++;
+        }
+    }
+    DEBUG_MSG("num_close_nics = %zu\n", num_close_nics);
+    last_added->next = NULL;
+    if (!close_provs) RAISE_ERROR_MSG("cannot find any valid network providers\n");
+
+    int idx = 0;
+    struct fi_info **prov_list = (struct fi_info **) malloc(num_close_nics * sizeof(struct fi_info *));
+    for (struct fi_info *cur_fabric = close_provs; cur_fabric; cur_fabric = cur_fabric->next) {
+        prov_list[idx++] = cur_fabric;
+    }
+
+    //return prov_list[shmem_team_my_pe(SHMEMX_TEAM_NODE) % num_close_nics];
+    return prov_list[shmem_internal_my_pe % num_close_nics];
+}
+#endif
+
+static int compare_nic_names(const void *f1, const void *f2)
+{
+    const struct fi_info **fabric1 = (const struct fi_info **) f1;
+    const struct fi_info **fabric2 = (const struct fi_info **) f2;
+    return strcmp((*fabric1)->nic->device_attr->name, (*fabric2)->nic->device_attr->name);
+}
+
+bool nic_already_used(struct fid_nic *nic, struct fi_info *fabrics, int num_nics)
+{
+    struct fi_info *cur_fabric = fabrics;
+    for (int i = 0; i < num_nics; i++) {
+        if (nic->bus_attr->bus_type == FI_BUS_PCI &&
+            cur_fabric->nic->bus_attr->bus_type == FI_BUS_PCI) {
+            struct fi_pci_attr nic_pci = nic->bus_attr->attr.pci;
+            struct fi_pci_attr cur_fabric_pci = cur_fabric->nic->bus_attr->attr.pci;
+            if (nic_pci.domain_id == cur_fabric_pci.domain_id && nic_pci.bus_id == cur_fabric_pci.bus_id &&
+                nic_pci.device_id == cur_fabric_pci.device_id && nic_pci.function_id == cur_fabric_pci.function_id) {
+                return true;
+            }
+        } else {
+            if (strcmp(nic->device_attr->name, cur_fabric->nic->device_attr->name) == 0) {
+                return true;
+            }
+        }
+
+        cur_fabric = cur_fabric->next;
+    }
+
+    return false;
+}
+
 static inline
 int query_for_fabric(struct fabric_info *info)
 {
@@ -1442,7 +1539,7 @@ int query_for_fabric(struct fabric_info *info)
                     fnmatch(info->domain_name, cur_fabric->domain_attr->name, 0) == 0) {
                     if (!filtered_fabrics_list_head) filtered_fabrics_list_head = cur_fabric;
                     if (filtered_fabrics_last_added) filtered_fabrics_last_added->next = cur_fabric;
-                        filtered_fabrics_last_added = cur_fabric;
+                    filtered_fabrics_last_added = cur_fabric;
                 }
             }
         }
@@ -1481,10 +1578,16 @@ int query_for_fabric(struct fabric_info *info)
             prov_list[idx++] = cur_fabric;
         }
         qsort(prov_list, num_nics, sizeof(struct fi_info *), compare_nic_names);
-        info->p_info = prov_list[shmem_internal_my_pe % num_nics];
-        //Correct to this once SHMEM_TEAM_SHARED/SHMEMX_TEAM_HOST fixed:
-        //info->p_info = prov_list[shmem_team_translate_pe(SHMEM_TEAM_WORLD, shmem_internal_my_pe, SHMEMX_TEAM_HOST) % num_nics];
+#ifdef USE_HWLOC
+        DEBUG_MSG("[%d]: local pe = %d\n", shmem_internal_my_pe, shmem_team_my_pe(SHMEMX_TEAM_NODE));
+        info->p_info = assign_nic_with_hwloc(info->p_info, prov_list, num_nics);
+        //info->p_info = prov_list[shmem_team_my_pe(SHMEMX_TEAM_NODE) % num_nics];
+#else
+        //Round-robin assignment of NICs to PEs
+        info->p_info = prov_list[shmem_team_my_pe(SHMEMX_TEAM_NODE) % num_nics];
+#endif
     }
+    DEBUG_MSG("provider: %s\n", info->p_info->domain_attr->name);
 
     // TODO: Do we want to allow a user to explicitly request not to use multi-NIC functionality? If so, this complicates
     // the usage of SHMEM_REQUIRE_MULTIRAIL_ENV (which would likely be renamed to SHMEM_USE_MULTIRAIL). Could not be simple bool,
