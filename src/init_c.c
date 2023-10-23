@@ -30,8 +30,17 @@
 #pragma weak shmem_init = pshmem_init
 #define shmem_init pshmem_init
 
+#pragma weak shmemx_heap_preinit = pshmemx_heap_preinit
+#define shmemx_heap_preinit pshmemx_heap_preinit
+
+#pragma weak shmemx_heap_postinit = pshmemx_heap_postinit
+#define shmemx_heap_postinit pshmemx_heap_postinit
+
 #pragma weak shmem_init_thread = pshmem_init_thread
 #define shmem_init_thread pshmem_init_thread
+
+#pragma weak shmemx_heap_preinit_thread = pshmemx_heap_preinit_thread
+#define shmemx_heap_preinit_thread pshmemx_heap_preinit_thread
 
 #pragma weak shmem_finalize = pshmem_finalize
 #define shmem_finalize pshmem_finalize
