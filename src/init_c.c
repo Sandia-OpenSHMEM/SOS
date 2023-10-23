@@ -108,6 +108,19 @@ shmem_init_thread(int tl_requested, int *tl_provided)
 }
 
 
+int SHMEM_FUNCTION_ATTRIBUTES
+shmemx_heap_preinit_thread(int tl_requested, int *tl_provided)
+{
+    int ret;
+    if (shmem_internal_initialized) {
+        RAISE_ERROR_STR("attempt to reinitialize library");
+    }
+
+    ret = shmem_internal_heap_preinit(tl_requested, tl_provided);
+    return ret;
+}
+
+
 void SHMEM_FUNCTION_ATTRIBUTES
 shmem_query_thread(int *provided)
 {
