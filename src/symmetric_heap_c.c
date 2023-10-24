@@ -68,6 +68,9 @@
 #pragma weak shmem_malloc_with_hints = pshmem_malloc_with_hints
 #define shmem_malloc_with_hints pshmem_malloc_with_hints
 
+#pragma weak shmemx_heap_create = pshmemx_heap_create
+#define shmemx_heap_create pshmemx_heap_create
+
 #endif /* ENABLE_PROFILING */
 
 static char *shmem_internal_heap_curr = NULL;
