@@ -18,4 +18,4 @@ done
 
 echo -e "\n" >> ./man/Makefile.am
 
-autoreconf -vif
+autoreconf -vif -I config/
