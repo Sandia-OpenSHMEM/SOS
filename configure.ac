@@ -332,13 +332,6 @@ AC_ARG_ENABLE([ofi-hmem],
 AS_IF([test "$enable_ofi_hmem" = "yes"],
       [AC_DEFINE([USE_FI_HMEM], [1], [If defined, the OFI transport will enable FI_HMEM.])])
 
-AC_ARG_ENABLE([hwloc],
-    [AC_HELP_STRING([--enable-hwloc],
-                    [Use hwloc to optimize assignment of NICs to PEs in multi-NIC environments. (default: disabled)])])
-AS_IF([test "$enable_hwloc" = "yes"],
-      [AC_DEFINE([USE_HWLOC], [1], [If defined, hwloc will be used to assign NICs based on CPU affinity.])])
-
-
 PKG_INSTALLDIR()
 
 dnl check for programs
