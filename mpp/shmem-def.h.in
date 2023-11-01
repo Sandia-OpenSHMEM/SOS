@@ -116,6 +116,14 @@ typedef struct {
 #define SHMEM_SIGNAL_SET        0
 #define SHMEM_SIGNAL_ADD        1
 
+#define SHMEM_SESSION_OP_PUT          (1l<<0)
+#define SHMEM_SESSION_OP_GET          (1l<<1)
+#define SHMEM_SESSION_OP_PUT_SIGNAL   (1l<<2)
+#define SHMEM_SESSION_OP_AMO          (1l<<3)
+#define SHMEM_SESSION_OP_AMO_FETCH    (1l<<4)
+#define SHMEM_SESSION_CHAIN           (1l<<5)
+#define SHMEM_SESSION_UNIFORM_AMO     (1l<<6)
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

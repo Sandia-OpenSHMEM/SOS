@@ -26,7 +26,8 @@ check_PROGRAMS = \
 	shmem_team_broadcast \
 	shmem_team_collect \
 	shmem_team_alltoall \
-	shmem_team_alltoalls
+	shmem_team_alltoalls \
+	shmem_session_example
 
 if HAVE_OPENMP
 check_PROGRAMS += \
