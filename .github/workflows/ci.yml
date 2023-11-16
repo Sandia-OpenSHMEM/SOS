@@ -210,6 +210,9 @@ jobs:
           sudo chown `whoami` /dev/xpmem
 
       # SOS
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
       - name: Build SOS (${{ matrix.sos_config }})
         run: |
           ./autogen.sh
@@ -533,6 +536,9 @@ jobs:
           make install
 
       # SOS
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
       - name: Build SOS (${{ matrix.sos_config }})
         run: |
           ./autogen.sh
@@ -623,6 +629,9 @@ jobs:
           make install
 
       # SOS
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
       - name: Build SOS (${{ matrix.name }})
         run: |
           ./autogen.sh
@@ -676,6 +685,9 @@ jobs:
           sudo chown `whoami` /dev/xpmem
 
       # SOS
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
       - name: Build SOS (${{ matrix.name }})
         run: |
           ./autogen.sh
