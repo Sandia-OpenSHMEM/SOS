@@ -151,7 +151,7 @@ jobs:
       - name: Checking OS version
         run: |
           echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: 'true'
       - name: Install dependencies
@@ -169,7 +169,7 @@ jobs:
           key: libfabric-${{ matrix.libfabric_version }}-${{ env.OS_NAME }}
       - name: Checkout libfabric
         if: steps.cache-libfabric.outputs.cache-hit != 'true'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: ofiwg/libfabric
           path: repos/libfabric
@@ -194,7 +194,7 @@ jobs:
           key: xpmem-${{ matrix.xpmem_version }}-${{ env.OS_NAME }}
       - name: Checkout XPMEM
         if: ${{ matrix.xpmem_version }}
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: hjelmn/xpmem
           path: repos/xpmem
@@ -485,7 +485,7 @@ jobs:
       - name: Checking OS version
         run: |
           echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: 'true'
       - name: Install dependencies
@@ -496,7 +496,7 @@ jobs:
 
       # XPMEM
       - name: Checkout XPMEM
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: hjelmn/xpmem
           path: repos/xpmem
@@ -521,7 +521,7 @@ jobs:
           key: ucx-${{ matrix.ucx_version}}-${{ env.OS_NAME }}
       - name: Checkout UCX
         if: steps.cache-ucx.outputs.cache-hit != 'true'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: openucx/ucx
           path: repos/ucx
@@ -577,7 +577,7 @@ jobs:
       - name: Checking OS version
         run: |
           echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: 'true'
       - name: Install dependencies
@@ -588,7 +588,7 @@ jobs:
 
       # XPMEM
       - name: Checkout XPMEM
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: hjelmn/xpmem
           path: repos/xpmem
@@ -613,7 +613,7 @@ jobs:
           key: portals4-${{ matrix.portals4_version}}-${{ env.OS_NAME }}
       - name: Checkout Portals4
         if: steps.cache-portals4.outputs.cache-hit != 'true'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: regrant/portals4
           path: repos/portals4
@@ -656,7 +656,7 @@ jobs:
       - name: Checking OS version
         run: |
           echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: 'true'
       - name: Install dependencies
@@ -667,7 +667,7 @@ jobs:
 
       # XPMEM
       - name: Checkout XPMEM
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: hjelmn/xpmem
           path: repos/xpmem
