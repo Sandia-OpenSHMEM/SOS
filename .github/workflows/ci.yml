@@ -152,6 +152,8 @@ jobs:
         run: |
           echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
       - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
       - name: Install dependencies
         run: |
           sudo apt-get install -y gfortran rpm mpich libmpich-dev libhwloc-dev
@@ -210,9 +212,6 @@ jobs:
           sudo chown `whoami` /dev/xpmem
 
       # SOS
-      - uses: actions/checkout@v2
-        with:
-          submodules: 'true'
       - name: Build SOS (${{ matrix.sos_config }})
         run: |
           ./autogen.sh
@@ -487,6 +486,8 @@ jobs:
         run: |
           echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
       - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
       - name: Install dependencies
         run: |
           sudo apt-get install -y gfortran mpich libmpich-dev
@@ -536,9 +537,6 @@ jobs:
           make install
 
       # SOS
-      - uses: actions/checkout@v2
-        with:
-          submodules: 'true'
       - name: Build SOS (${{ matrix.sos_config }})
         run: |
           ./autogen.sh
@@ -580,6 +578,8 @@ jobs:
         run: |
           echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
       - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
       - name: Install dependencies
         run: |
           sudo apt-get install -y gfortran mpich libmpich-dev libev-dev libev-libevent-dev
@@ -629,9 +629,6 @@ jobs:
           make install
 
       # SOS
-      - uses: actions/checkout@v2
-        with:
-          submodules: 'true'
       - name: Build SOS (${{ matrix.name }})
         run: |
           ./autogen.sh
@@ -660,6 +657,8 @@ jobs:
         run: |
           echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
       - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
       - name: Install dependencies
         run: |
           sudo apt-get install -y gfortran mpich libmpich-dev libev-dev libev-libevent-dev
@@ -685,9 +684,6 @@ jobs:
           sudo chown `whoami` /dev/xpmem
 
       # SOS
-      - uses: actions/checkout@v2
-        with:
-          submodules: 'true'
       - name: Build SOS (${{ matrix.name }})
         run: |
           ./autogen.sh
