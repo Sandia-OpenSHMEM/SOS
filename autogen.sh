@@ -2,7 +2,7 @@
 
 test -d ./config || mkdir ./config
 
-test -f modules/test-sos/configure.ac || { echo "ERROR: The test directory is empty. Please run the following command to install the SOS tests:"; echo "git submodule update --init"; exit 1; }
+test -f modules/tests-sos/configure.ac || { echo "ERROR: The test directory is empty. Please run the following command to install the SOS tests:"; echo "git submodule update --init"; exit 1; }
 
 FILES=./man/*.1
 echo -n "dist_man1_MANS =" > ./man/Makefile.am
