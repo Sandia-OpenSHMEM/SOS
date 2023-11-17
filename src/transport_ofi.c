@@ -1353,10 +1353,8 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
         RAISE_ERROR_MSG("hwloc_topology_load (%s)\n", strerror(errno));
     }
 
-    //hwloc_obj_t root_obj = hwloc_get_root_obj(topology);
     bindset = hwloc_bitmap_alloc();
-
-    ret = hwloc_get_proc_cpubind(topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS);
+    ret = hwloc_get_proc_last_cpu_location(topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS);
     if (ret < 0) {
         RAISE_ERROR_MSG("hwloc_get_proc_cpubind failed (%s)\n", strerror(errno));
     }
@@ -1385,8 +1383,9 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
         }
     }
     DEBUG_MSG("num_close_nics = %zu\n", num_close_nics);
-    last_added->next = NULL;
+
     if (!close_provs) RAISE_ERROR_MSG("cannot find any valid network providers\n");
+    last_added->next = NULL;
 
     int idx = 0;
     struct fi_info **prov_list = (struct fi_info **) malloc(num_close_nics * sizeof(struct fi_info *));
@@ -1579,12 +1578,13 @@ int query_for_fabric(struct fabric_info *info)
         }
         qsort(prov_list, num_nics, sizeof(struct fi_info *), compare_nic_names);
 #ifdef USE_HWLOC
-        DEBUG_MSG("[%d]: local pe = %d\n", shmem_internal_my_pe, shmem_team_my_pe(SHMEMX_TEAM_NODE));
+        //DEBUG_MSG("[%d]: local_pe = %d\n", shmem_internal_my_pe, shmem_team_my_pe(SHMEMX_TEAM_NODE));
         info->p_info = assign_nic_with_hwloc(info->p_info, prov_list, num_nics);
         //info->p_info = prov_list[shmem_team_my_pe(SHMEMX_TEAM_NODE) % num_nics];
 #else
         //Round-robin assignment of NICs to PEs
-        info->p_info = prov_list[shmem_team_my_pe(SHMEMX_TEAM_NODE) % num_nics];
+        //info->p_info = prov_list[shmem_team_my_pe(SHMEMX_TEAM_NODE) % num_nics];
+        info->p_info = prov_list[shmem_internal_my_pe % num_nics];
 #endif
     }
     DEBUG_MSG("provider: %s\n", info->p_info->domain_attr->name);
