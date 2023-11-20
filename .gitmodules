@@ -1,3 +1,0 @@
-[submodule "modules/tests-sos"]
-	path = modules/tests-sos
-	url = git@github.com:openshmem-org/tests-sos.git
