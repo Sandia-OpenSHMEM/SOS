@@ -1350,14 +1350,42 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
 
     ret = hwloc_topology_load(topology);
     if (ret < 0) {
-        RAISE_ERROR_MSG("hwloc_topology_load (%s)\n", strerror(errno));
+        RAISE_ERROR_MSG("hwloc_topology_load failed (%s)\n", strerror(errno));
     }
 
     bindset = hwloc_bitmap_alloc();
+
+#define HWLOC_ENFORCE_SINGLE_SOCKET 1
+#ifdef HWLOC_ENFORCE_SINGLE_SOCKET
+    // If a process has affinity to multiple sockets, do we really want to only use cores from a single socket?
+    // (May be better for communication but less so for computation if not using all cores originally assigned by job launcher)
+
+    ret = hwloc_get_proc_cpubind(topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS);
+
+    int depth = hwloc_get_type_depth(topology, HWLOC_OBJ_PACKAGE);
+    if (depth == HWLOC_TYPE_DEPTH_UNKNOWN) RAISE_ERROR_MSG("hwloc_get_type_depth failed (no objects of type HWLOC_OBJ_PACKAGE detected)\n");
+
+    unsigned int num_sockets = hwloc_get_nbobjs_by_depth(topology, depth);
+    if (num_sockets == 0) RAISE_ERROR_MSG("hwloc_get_nbobjs_by_depth failed (could not detect sockets on system)\n");
+    for (unsigned int i = 0; i < num_sockets; i++) {
+        hwloc_bitmap_t bindset_socket = hwloc_bitmap_alloc();
+        hwloc_obj_t socket = hwloc_get_obj_by_depth(topology, depth, i);
+        if (!socket) RAISE_ERROR_MSG("hwloc_get_obj_by_depth failed (no object at (depth=%d,index=%u))\n", depth, i);
+
+        hwloc_bitmap_and(bindset_socket, bindset, socket->cpuset);
+        int num_processor_units_socket = hwloc_get_nbobjs_inside_cpuset_by_type(topology, bindset_socket, HWLOC_OBJ_PU);
+        if (num_processor_units_socket < 0) RAISE_ERROR_MSG("hwloc_get_nbobjs_inside_cpuset_by_type failed (multiple levels of objects of type HWLOC_OBJ_PU)\n");
+        // TODO: Which PUs to assign process to?
+
+        hwloc_bitmap_free(bindset_socket);
+    }
+#else
+    // Use cores on all sockets assigned by job launcher, but assign NIC to based on affinity of last CPU the process ran on
     ret = hwloc_get_proc_last_cpu_location(topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS);
     if (ret < 0) {
-        RAISE_ERROR_MSG("hwloc_get_proc_cpubind failed (%s)\n", strerror(errno));
+        RAISE_ERROR_MSG("hwloc_get_proc_last_cpu_location failed (%s)\n", strerror(errno));
     }
+#endif
 
     // Identify which provider entries correspond to NICs with an affinity to the calling process
     struct fi_info *close_provs = NULL;
@@ -1393,6 +1421,7 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
         prov_list[idx++] = cur_fabric;
     }
 
+    hwloc_bitmap_free(bindset);
     //return prov_list[shmem_team_my_pe(SHMEMX_TEAM_NODE) % num_close_nics];
     return prov_list[shmem_internal_my_pe % num_close_nics];
 }
