@@ -1335,57 +1335,13 @@ int allocate_fabric_resources(struct fabric_info *info)
 
 #ifdef USE_HWLOC
 struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **provs, size_t num_nics) {
-    hwloc_topology_t topology;
-	hwloc_bitmap_t bindset;
+    int ret = 0;
+    hwloc_bitmap_t bindset = hwloc_bitmap_alloc();
 
-    int ret = hwloc_topology_init(&topology);
+    ret = hwloc_get_proc_cpubind(shmem_topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS);
     if (ret < 0) {
-        RAISE_ERROR_MSG("hwloc_topology_init failed (%s)\n", strerror(errno));
+        RAISE_ERROR_MSG("hwloc_get_proc_cpubind failed (%s)\n", strerror(errno));
     }
-
-    ret = hwloc_topology_set_io_types_filter(topology, HWLOC_TYPE_FILTER_KEEP_ALL);
-	if (ret < 0) {
-        RAISE_ERROR_MSG("hwloc_topology_set_io_types_filter failed (%s)\n", strerror(errno));
-    }
-
-    ret = hwloc_topology_load(topology);
-    if (ret < 0) {
-        RAISE_ERROR_MSG("hwloc_topology_load failed (%s)\n", strerror(errno));
-    }
-
-    bindset = hwloc_bitmap_alloc();
-
-#define HWLOC_ENFORCE_SINGLE_SOCKET 1
-#ifdef HWLOC_ENFORCE_SINGLE_SOCKET
-    // If a process has affinity to multiple sockets, do we really want to only use cores from a single socket?
-    // (May be better for communication but less so for computation if not using all cores originally assigned by job launcher)
-
-    ret = hwloc_get_proc_cpubind(topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS);
-
-    int depth = hwloc_get_type_depth(topology, HWLOC_OBJ_PACKAGE);
-    if (depth == HWLOC_TYPE_DEPTH_UNKNOWN) RAISE_ERROR_MSG("hwloc_get_type_depth failed (no objects of type HWLOC_OBJ_PACKAGE detected)\n");
-
-    unsigned int num_sockets = hwloc_get_nbobjs_by_depth(topology, depth);
-    if (num_sockets == 0) RAISE_ERROR_MSG("hwloc_get_nbobjs_by_depth failed (could not detect sockets on system)\n");
-    for (unsigned int i = 0; i < num_sockets; i++) {
-        hwloc_bitmap_t bindset_socket = hwloc_bitmap_alloc();
-        hwloc_obj_t socket = hwloc_get_obj_by_depth(topology, depth, i);
-        if (!socket) RAISE_ERROR_MSG("hwloc_get_obj_by_depth failed (no object at (depth=%d,index=%u))\n", depth, i);
-
-        hwloc_bitmap_and(bindset_socket, bindset, socket->cpuset);
-        int num_processor_units_socket = hwloc_get_nbobjs_inside_cpuset_by_type(topology, bindset_socket, HWLOC_OBJ_PU);
-        if (num_processor_units_socket < 0) RAISE_ERROR_MSG("hwloc_get_nbobjs_inside_cpuset_by_type failed (multiple levels of objects of type HWLOC_OBJ_PU)\n");
-        // TODO: Which PUs to assign process to?
-
-        hwloc_bitmap_free(bindset_socket);
-    }
-#else
-    // Use cores on all sockets assigned by job launcher, but assign NIC to based on affinity of last CPU the process ran on
-    ret = hwloc_get_proc_last_cpu_location(topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS);
-    if (ret < 0) {
-        RAISE_ERROR_MSG("hwloc_get_proc_last_cpu_location failed (%s)\n", strerror(errno));
-    }
-#endif
 
     // Identify which provider entries correspond to NICs with an affinity to the calling process
     struct fi_info *close_provs = NULL;
@@ -1396,9 +1352,9 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
         if (cur_prov->nic->bus_attr->bus_type != FI_BUS_PCI) continue;
 
         struct fi_pci_attr pci = cur_prov->nic->bus_attr->attr.pci;
-        hwloc_obj_t io_device = hwloc_get_pcidev_by_busid(topology, pci.domain_id, pci.bus_id, pci.device_id, pci.function_id);
+        hwloc_obj_t io_device = hwloc_get_pcidev_by_busid(shmem_topology, pci.domain_id, pci.bus_id, pci.device_id, pci.function_id);
         if (!io_device) RAISE_ERROR_MSG("hwloc_get_pcidev_by_busid failed\n");
-        hwloc_obj_t first_non_io = hwloc_get_non_io_ancestor_obj(topology, io_device);
+        hwloc_obj_t first_non_io = hwloc_get_non_io_ancestor_obj(shmem_topology, io_device);
         if (!first_non_io) RAISE_ERROR_MSG("hwloc_get_non_io_ancestor_obj failed\n");
 
         if (hwloc_bitmap_isincluded(bindset, first_non_io->cpuset) ||
