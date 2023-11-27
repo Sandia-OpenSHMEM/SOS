@@ -242,6 +242,8 @@ jobs:
           sos_version=$(cat configure.ac | grep AC_INIT | awk -F"]" '{print substr($2, 4, length($2)-2)}')
           cd "sandia-openshmem-"$sos_version
           ./autogen.sh
+          rm test
+          cp -r modules/tests-sos/test test
           mkdir build
           cd build
           ../configure --with-ofi=${LIBFABRIC_INSTALL_DIR} ${{ matrix.sos_config }}
