@@ -1338,9 +1338,9 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
     int ret = 0;
     hwloc_bitmap_t bindset = hwloc_bitmap_alloc();
 
-    ret = hwloc_get_proc_cpubind(shmem_topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS);
+    ret = hwloc_get_proc_last_cpu_location(shmem_topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS);
     if (ret < 0) {
-        RAISE_ERROR_MSG("hwloc_get_proc_cpubind failed (%s)\n", strerror(errno));
+        RAISE_ERROR_MSG("hwloc_get_proc_last_cpu_location failed (%s)\n", strerror(errno));
     }
 
     // Identify which provider entries correspond to NICs with an affinity to the calling process
