@@ -107,8 +107,8 @@ SHMEM_INTERNAL_ENV_DEF(OFI_STX_ALLOCATOR, string, "round-robin", SHMEM_INTERNAL_
                        "Algorithm for allocating STX resources to contexts")
 SHMEM_INTERNAL_ENV_DEF(OFI_STX_DISABLE_PRIVATE, bool, false, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Disallow private contexts from having exclusive STX access")
-SHMEM_INTERNAL_ENV_DEF(REQUIRE_MULTIRAIL_ENV, bool, false, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
-                        "Error out of program if multi-NIC environment not detected")
+SHMEM_INTERNAL_ENV_DEF(DISABLE_MULTIRAIL, bool, false, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Disable usage of multirail functionality")
 #endif
 
 #ifdef USE_UCX
