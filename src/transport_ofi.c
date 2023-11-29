@@ -1368,7 +1368,14 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
     }
     DEBUG_MSG("Num. NICs w/ affinity to process: %zu\n", num_close_nics);
 
-    if (!close_provs) RAISE_ERROR_MSG("cannot find any valid network providers\n");
+    if (!close_provs) {
+        RAISE_WARN_MSG("Could not detect any NICs with affinity to the process\n");
+
+        /* If no 'close' NICs, select from list of all NICs using round-robin assignment */
+        //return provs[shmem_team_my_pe(SHMEMX_TEAM_NODE) % num_nics];
+        return provs[shmem_internal_my_pe % num_nics];
+    }
+
     last_added->next = NULL;
 
     int idx = 0;
@@ -1378,8 +1385,12 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
     }
 
     hwloc_bitmap_free(bindset);
-    //return prov_list[shmem_team_my_pe(SHMEMX_TEAM_NODE) % num_close_nics];
-    return prov_list[shmem_internal_my_pe % num_close_nics];
+
+    //struct fi_info *provider = prov_list[shmem_team_my_pe(SHMEMX_TEAM_NODE) % num_close_nics];
+    struct fi_info *provider = prov_list[shmem_internal_my_pe % num_close_nics];
+    free(prov_list);
+
+    return provider;
 }
 #endif
 
@@ -1558,10 +1569,11 @@ int query_for_fabric(struct fabric_info *info)
 #ifdef USE_HWLOC
         info->p_info = assign_nic_with_hwloc(info->p_info, prov_list, num_nics);
 #else
-        //Round-robin assignment of NICs to PEs
+        /* Round-robin assignment of NICs to PEs */
         //info->p_info = prov_list[shmem_team_my_pe(SHMEMX_TEAM_NODE) % num_nics];
         info->p_info = prov_list[shmem_internal_my_pe % num_nics];
 #endif
+        free(prov_list);
     }
 
     if (NULL == info->p_info) {
