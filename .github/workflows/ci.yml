@@ -475,7 +475,7 @@ jobs:
             ucx_version: v1.9.0
             xpmem_version: master
         sos_config: [--enable-pmi-simple --disable-fortran --with-hwloc=no,
-                     --enable-pmi-mpi CC=mpicc --disable-fortran --with-hwloc=no,
+                     --enable-pmi-mpi CC=mpicc --disable-fortran,
                      --with-cma --enable-error-checking --enable-profiling
                      --enable-pmi-simple --disable-fortran --with-hwloc=no,
                      --with-xpmem --enable-error-checking --enable-pmi-simple --with-hwloc=no]
