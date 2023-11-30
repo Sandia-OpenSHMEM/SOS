@@ -475,7 +475,7 @@ jobs:
             ucx_version: v1.9.0
             xpmem_version: master
         sos_config: [--enable-pmi-simple --disable-fortran --with-hwloc=no,
-                     --enable-pmi-mpi CC=mpicc --disable-fortran,
+                     --enable-pmi-mpi CC=mpicc --disable-fortran --with-hwloc=no,
                      --with-cma --enable-error-checking --enable-profiling
                      --enable-pmi-simple --disable-fortran --with-hwloc=no,
                      --with-xpmem --enable-error-checking --enable-pmi-simple --with-hwloc=no]
@@ -486,7 +486,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install dependencies
         run: |
-          sudo apt-get install -y gfortran mpich libmpich-dev libhwloc-dev
+          sudo apt-get install -y gfortran mpich libmpich-dev
           sudo sysctl -w kernel.yama.ptrace_scope=0
           sudo sysctl -w kernel.randomize_va_space=0
 
