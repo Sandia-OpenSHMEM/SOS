@@ -1338,9 +1338,10 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
     int ret = 0;
     hwloc_bitmap_t bindset = hwloc_bitmap_alloc();
 
-    ret = hwloc_get_proc_last_cpu_location(shmem_topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS);
+    ret = hwloc_get_proc_last_cpu_location(shmem_internal_topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS);
     if (ret < 0) {
-        RAISE_ERROR_MSG("hwloc_get_proc_last_cpu_location failed (%s)\n", strerror(errno));
+        RAISE_WARN_MSG("hwloc_get_proc_last_cpu_location failed (%s)\n", strerror(errno));
+        return provs[shmem_internal_my_pe % num_nics];
     }
 
     // Identify which provider entries correspond to NICs with an affinity to the calling process
@@ -1352,10 +1353,16 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
         if (cur_prov->nic->bus_attr->bus_type != FI_BUS_PCI) continue;
 
         struct fi_pci_attr pci = cur_prov->nic->bus_attr->attr.pci;
-        hwloc_obj_t io_device = hwloc_get_pcidev_by_busid(shmem_topology, pci.domain_id, pci.bus_id, pci.device_id, pci.function_id);
-        if (!io_device) RAISE_ERROR_MSG("hwloc_get_pcidev_by_busid failed\n");
-        hwloc_obj_t first_non_io = hwloc_get_non_io_ancestor_obj(shmem_topology, io_device);
-        if (!first_non_io) RAISE_ERROR_MSG("hwloc_get_non_io_ancestor_obj failed\n");
+        hwloc_obj_t io_device = hwloc_get_pcidev_by_busid(shmem_internal_topology, pci.domain_id, pci.bus_id, pci.device_id, pci.function_id);
+        if (!io_device) {
+            RAISE_WARN_MSG("hwloc_get_pcidev_by_busid failed\n");
+            return provs[shmem_internal_my_pe % num_nics];
+        };
+        hwloc_obj_t first_non_io = hwloc_get_non_io_ancestor_obj(shmem_internal_topology, io_device);
+        if (!first_non_io) {
+            RAISE_WARN_MSG("hwloc_get_non_io_ancestor_obj failed\n");
+            return provs[shmem_internal_my_pe % num_nics];
+        }
 
         if (hwloc_bitmap_isincluded(bindset, first_non_io->cpuset) ||
             hwloc_bitmap_isincluded(first_non_io->cpuset, bindset)) {
@@ -1372,7 +1379,6 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
         RAISE_WARN_MSG("Could not detect any NICs with affinity to the process\n");
 
         /* If no 'close' NICs, select from list of all NICs using round-robin assignment */
-        //return provs[shmem_team_my_pe(SHMEMX_TEAM_NODE) % num_nics];
         return provs[shmem_internal_my_pe % num_nics];
     }
 
@@ -1386,7 +1392,6 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
 
     hwloc_bitmap_free(bindset);
 
-    //struct fi_info *provider = prov_list[shmem_team_my_pe(SHMEMX_TEAM_NODE) % num_close_nics];
     struct fi_info *provider = prov_list[shmem_internal_my_pe % num_close_nics];
     free(prov_list);
 
@@ -1512,7 +1517,8 @@ int query_for_fabric(struct fabric_info *info)
                               info->prov_name != NULL ? info->prov_name : "<auto>");
 
     /* If the user supplied a fabric or domain name, use it to select the
-     * fabric.  Otherwise, select the first fabric in the list. */
+     * fabrics that may be chosen. Otherwise, consider all available
+     * fabrics */
     int num_nics = 0;
     struct fi_info *fallback = NULL;
     struct fi_info *filtered_fabrics_list_head = NULL;
@@ -1544,38 +1550,41 @@ int query_for_fabric(struct fabric_info *info)
 
     info->p_info = NULL;
 
-    for (cur_fabric = filtered_fabrics_list_head; cur_fabric; cur_fabric = cur_fabric->next) {
-        if (!fallback) fallback = cur_fabric;
-        if (cur_fabric->nic && !nic_already_used(cur_fabric->nic, multirail_fabric_list_head, num_nics)) {
-            num_nics += 1;
-            if (!multirail_fabric_list_head) multirail_fabric_list_head = cur_fabric;
-            if (multirail_fabric_last_added) multirail_fabric_last_added->next = cur_fabric;
-            multirail_fabric_last_added = cur_fabric;
-        }
-    }
-
-    DEBUG_MSG("Total num. NICs detected: %d\n", num_nics);
-    if ((num_nics == 0) || (shmem_internal_params.DISABLE_MULTIRAIL)) {
-        info->p_info = fallback;
+    if (shmem_internal_params.DISABLE_MULTIRAIL) {
+        info->p_info = filtered_fabrics_list_head;
     }
     else {
-        int idx = 0;
-        struct fi_info **prov_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
-        for (cur_fabric = multirail_fabric_list_head; cur_fabric; cur_fabric = cur_fabric->next) {
-            prov_list[idx++] = cur_fabric;
+        /* Generate a linked list of all fabrics with a non-null nic value */
+        for (cur_fabric = filtered_fabrics_list_head; cur_fabric; cur_fabric = cur_fabric->next) {
+            if (!fallback) fallback = cur_fabric;
+            if (cur_fabric->nic && !nic_already_used(cur_fabric->nic, multirail_fabric_list_head, num_nics)) {
+                num_nics += 1;
+                if (!multirail_fabric_list_head) multirail_fabric_list_head = cur_fabric;
+                if (multirail_fabric_last_added) multirail_fabric_last_added->next = cur_fabric;
+                multirail_fabric_last_added = cur_fabric;
+            }
         }
-        qsort(prov_list, num_nics, sizeof(struct fi_info *), compare_nic_names);
-        //DEBUG_MSG("[%d]: local_pe = %d\n", shmem_internal_my_pe, shmem_team_my_pe(SHMEMX_TEAM_NODE));
-#ifdef USE_HWLOC
-        info->p_info = assign_nic_with_hwloc(info->p_info, prov_list, num_nics);
-#else
-        /* Round-robin assignment of NICs to PEs */
-        //info->p_info = prov_list[shmem_team_my_pe(SHMEMX_TEAM_NODE) % num_nics];
-        info->p_info = prov_list[shmem_internal_my_pe % num_nics];
-#endif
-        free(prov_list);
-    }
 
+        DEBUG_MSG("Total num. NICs detected: %d\n", num_nics);
+        if (num_nics == 0) {
+            info->p_info = fallback;
+        }
+        else {
+            int idx = 0;
+            struct fi_info **prov_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
+            for (cur_fabric = multirail_fabric_list_head; cur_fabric; cur_fabric = cur_fabric->next) {
+                prov_list[idx++] = cur_fabric;
+            }
+            qsort(prov_list, num_nics, sizeof(struct fi_info *), compare_nic_names);
+#ifdef USE_HWLOC
+            info->p_info = assign_nic_with_hwloc(info->p_info, prov_list, num_nics);
+#else
+            /* Round-robin assignment of NICs to PEs */
+            info->p_info = prov_list[shmem_internal_my_pe % num_nics];
+#endif
+            free(prov_list);
+        }
+    }
     if (NULL == info->p_info) {
         RAISE_WARN_MSG("OFI transport, no valid fabric (prov=%s, fabric=%s, domain=%s)\n",
                        info->prov_name != NULL ? info->prov_name : "<auto>",
