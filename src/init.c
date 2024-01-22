@@ -428,7 +428,7 @@ shmem_internal_heap_postinit(void)
 #endif // HWLOC_ENFORCE_SINGLE_SOCKET || HWLOC_ENFORCE_SINGLE_NUMA_NODE
 #endif // USE_HWLOC
 
-if (shmem_internal_params.DEBUG) {
+    if (shmem_internal_params.DEBUG) {
         cpu_set_t my_set;
 
         CPU_ZERO(&my_set);
