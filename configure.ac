@@ -78,13 +78,13 @@ AC_ARG_ENABLE([completion-polling],
 
 AC_ARG_ENABLE([hwloc-enforce-single-socket],
     [AC_HELP_STRING([--enable-hwloc-enforce-single-socket],
-                    [Repin process if assigned affinity to cores across multiple sockets (default:disabled)])])
-AS_IF([test "$enable_hwloc_enforce_single_socket" = "yes"], [AC_DEFINE([HWLOC_ENFORCE_SINGLE_SOCKET], [1], [Re-assign CPU affinity on processes with affinity to cores on multiple sockets])])
+                    [Repin process to ensure it has affinity to cores within a single socket (default:disabled)])])
+AS_IF([test "$enable_hwloc_enforce_single_socket" = "yes"], [AC_DEFINE([HWLOC_ENFORCE_SINGLE_SOCKET], [1], [Repin process to ensure it has affinity to cores within a single socket])])
 
 AC_ARG_ENABLE([hwloc-enforce-single-numa-node],
     [AC_HELP_STRING([--enable-hwloc-enforce-single-numa-node],
-                    [Repin process if assigned affinity to cores across multiple NUMA nodes (default:disabled)])])
-AS_IF([test "$enable_hwloc_enforce_single_numa_node" = "yes"], [AC_DEFINE([HWLOC_ENFORCE_SINGLE_NUMA_NODE], [1], [Re-assign CPU affinity on processes with affinity to cores on multiple NUMA nodes])])
+                    [Repin process to ensure it has affinity to cores within a single NUMA node (default:disabled)])])
+AS_IF([test "$enable_hwloc_enforce_single_numa_node" = "yes"], [AC_DEFINE([HWLOC_ENFORCE_SINGLE_NUMA_NODE], [1], [Repin process to ensure it has affinity to cores within a single NUMA node])])
 
 AC_ARG_ENABLE([manual-progress],
     [AC_HELP_STRING([--enable-manual-progress],
