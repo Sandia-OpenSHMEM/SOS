@@ -390,7 +390,7 @@ shmem_internal_heap_postinit(void)
     }
 
     ret = hwloc_topology_set_io_types_filter(shmem_internal_topology, HWLOC_TYPE_FILTER_KEEP_ALL);
-	if (ret < 0) {
+    if (ret < 0) {
         RETURN_ERROR_MSG("hwloc_topology_set_io_types_filter failed (%s)\n", strerror(errno));
     }
 
@@ -398,7 +398,7 @@ shmem_internal_heap_postinit(void)
     if (ret < 0) {
         RETURN_ERROR_MSG("hwloc_topology_load failed (%s)\n", strerror(errno));
     }
-#if defined HWLOC_ENFORCE_SINGLE_SOCKET || defined HWLOC_ENFORCE_SINGLE_NUMA_NODE
+#if defined(HWLOC_ENFORCE_SINGLE_SOCKET) || defined(HWLOC_ENFORCE_SINGLE_NUMA_NODE)
     hwloc_bitmap_t bindset = hwloc_bitmap_alloc();
     hwloc_bitmap_t bindset_all = hwloc_bitmap_alloc();
     hwloc_bitmap_t bindset_covering_obj = hwloc_bitmap_alloc();
