@@ -385,17 +385,17 @@ shmem_internal_heap_postinit(void)
 #ifdef HAVE_SCHED_GETAFFINITY
 #ifdef USE_HWLOC
     ret = hwloc_topology_init(&shmem_internal_topology);
-    if (ret < 0) {
+    if (ret != 0) {
         RETURN_ERROR_MSG("hwloc_topology_init failed (%s)\n", strerror(errno));
     }
 
     ret = hwloc_topology_set_io_types_filter(shmem_internal_topology, HWLOC_TYPE_FILTER_KEEP_ALL);
-    if (ret < 0) {
+    if (ret != 0) {
         RETURN_ERROR_MSG("hwloc_topology_set_io_types_filter failed (%s)\n", strerror(errno));
     }
 
     ret = hwloc_topology_load(shmem_internal_topology);
-    if (ret < 0) {
+    if (ret != 0) {
         RETURN_ERROR_MSG("hwloc_topology_load failed (%s)\n", strerror(errno));
     }
 #if defined(HWLOC_ENFORCE_SINGLE_SOCKET) || defined(HWLOC_ENFORCE_SINGLE_NUMA_NODE)
@@ -404,12 +404,12 @@ shmem_internal_heap_postinit(void)
     hwloc_bitmap_t bindset_covering_obj = hwloc_bitmap_alloc();
 
     ret = hwloc_get_proc_last_cpu_location(shmem_internal_topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS);
-    if (ret < 0) {
+    if (ret != 0) {
         RETURN_ERROR_MSG("hwloc_get_proc_last_cpu_location failed (%s)\n", strerror(errno));
     }
 
     ret = hwloc_get_proc_cpubind(shmem_internal_topology, getpid(), bindset_all, HWLOC_CPUBIND_PROCESS);
-    if (ret < 0) {
+    if (ret != 0) {
         RETURN_ERROR_MSG("hwloc_get_proc_cpubind failed (%s)\n", strerror(errno));
     }
 #ifdef HWLOC_ENFORCE_SINGLE_SOCKET
