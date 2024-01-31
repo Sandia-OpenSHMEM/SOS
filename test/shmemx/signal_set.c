@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
     shmem_barrier_all();
     for (i = 0; i < npes; i++) {
         shmem_long_put_nbi(target, source, MSG_SZ, i);
-	shmemx_signal_set(&sig_addr, npes + 1, i);
+	shmemx_signal_set(SHMEM_CTX_DEFAULT, &sig_addr, npes + 1, i);
     }
     shmem_quiet();
 
