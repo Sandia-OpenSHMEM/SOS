@@ -22,6 +22,8 @@ if SHMEMX_TESTS
 check_PROGRAMS += \
 	perf_counter \
 	shmemx_team_node \
+	signal_add \
+	signal_set \
 	shmem_malloc_with_hints
 
 if HAVE_PTHREADS
