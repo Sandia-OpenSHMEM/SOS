@@ -420,7 +420,10 @@ shmem_internal_heap_postinit(void)
     if (!covering_obj) RETURN_ERROR_MSG("hwloc_get_next_obj_covering_cpuset_by_type failed (could not detect object of type 'HWLOC_OBJ_NUMANODE' in provided cpuset)\n");
 #endif
     hwloc_bitmap_and(bindset_covering_obj, bindset_all, covering_obj->cpuset);
-    hwloc_set_proc_cpubind(shmem_internal_topology, getpid(), bindset_covering_obj, HWLOC_CPUBIND_PROCESS); //Include HWLOC_CPUBIND_STRICT in flags?
+    ret = hwloc_set_proc_cpubind(shmem_internal_topology, getpid(), bindset_covering_obj, HWLOC_CPUBIND_PROCESS); //Include HWLOC_CPUBIND_STRICT in flags?
+    if (ret != 0) {
+        RETURN_ERROR_MSG("hwloc_set_proc_cpubind failed (%s)\n", strerror(errno));
+    }
 
     hwloc_bitmap_free(bindset);
     hwloc_bitmap_free(bindset_all);
