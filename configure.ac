@@ -929,6 +929,10 @@ if test "$transport_xpmem" = "yes" ; then
     WRAPPER_COMPILER_EXTRA_LIBS="$XPMEM_LIBS"
 fi
 
+if test -n "opal_hwloc_LDFLAGS"; then
+    WRAPPER_COMPILER_EXTRA_LDFLAGS="$WRAPPER_COMPILER_EXTRA_LDFLAGS $opal_hwloc_LDFLAGS"
+fi
+
 CPPFLAGS="$CPPFLAGS $pmi_CPPFLAGS"
 LDFLAGS="$LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
 LIBS="$LIBS $pmi_LIBS"
