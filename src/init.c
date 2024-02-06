@@ -385,69 +385,41 @@ shmem_internal_heap_postinit(void)
 #ifdef HAVE_SCHED_GETAFFINITY
 #ifdef USE_HWLOC
     ret = hwloc_topology_init(&shmem_internal_topology);
-    if (ret != 0) {
-        RAISE_WARN_MSG("hwloc_topology_init failed (%s)\n", strerror(errno));
-        goto hwloc_issue_topology;
-    }
+    SHMEM_CHECK_GOTO_MSG(ret != 0, hwloc_exit, "hwloc_topology_init failed (%s). Please verify your hwloc installation\n", strerror(errno));
 
     ret = hwloc_topology_set_io_types_filter(shmem_internal_topology, HWLOC_TYPE_FILTER_KEEP_ALL);
-    if (ret != 0) {
-        RAISE_WARN_MSG("hwloc_topology_set_io_types_filter failed (%s)\n", strerror(errno));
-        goto hwloc_issue_topology;
-    }
+    SHMEM_CHECK_GOTO_MSG(ret != 0, hwloc_exit, "hwloc_topology_set_io_types_filter failed (%s). Please verify your hwloc installation\n", strerror(errno));
 
     ret = hwloc_topology_load(shmem_internal_topology);
-    if (ret != 0) {
-        RAISE_WARN_MSG("hwloc_topology_load failed (%s)\n", strerror(errno));
-        goto hwloc_issue_topology;
-    }
+    SHMEM_CHECK_GOTO_MSG(ret != 0, hwloc_exit, "hwloc_topology_load failed (%s). Please verify your hwloc installation\n", strerror(errno));
 #if defined(HWLOC_ENFORCE_SINGLE_SOCKET) || defined(HWLOC_ENFORCE_SINGLE_NUMA_NODE)
     hwloc_bitmap_t bindset = hwloc_bitmap_alloc();
     hwloc_bitmap_t bindset_all = hwloc_bitmap_alloc();
     hwloc_bitmap_t bindset_covering_obj = hwloc_bitmap_alloc();
 
     ret = hwloc_get_proc_last_cpu_location(shmem_internal_topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS);
-    if (ret != 0) {
-        RAISE_WARN_MSG("hwloc_get_proc_last_cpu_location failed (%s)\n", strerror(errno));
-        goto hwloc_issue_pinning;
-    }
+    SHMEM_CHECK_GOTO_MSG(ret != 0, hwloc_cleanup, "hwloc_get_proc_last_cpu_location failed (%s). Please verify your hwloc installation\n", strerror(errno));
 
     ret = hwloc_get_proc_cpubind(shmem_internal_topology, getpid(), bindset_all, HWLOC_CPUBIND_PROCESS);
-    if (ret != 0) {
-        RAISE_WARN_MSG("hwloc_get_proc_cpubind failed (%s)\n", strerror(errno));
-        goto hwloc_issue_pinning;
-    }
+    SHMEM_CHECK_GOTO_MSG(ret != 0, hwloc_cleanup, "hwloc_get_proc_cpubind failed (%s). Please verify your hwloc installation\n", strerror(errno));
 #ifdef HWLOC_ENFORCE_SINGLE_SOCKET
     hwloc_obj_t covering_obj = hwloc_get_next_obj_covering_cpuset_by_type(shmem_internal_topology, bindset, HWLOC_OBJ_PACKAGE, NULL);
-    if (!covering_obj) {
-        RAISE_WARN_MSG("hwloc_get_next_obj_covering_cpuset_by_type failed (could not detect object of type 'HWLOC_OBJ_PACKAGE' in provided cpuset)\n");
-        goto hwloc_issue_pinning;
-    }
+    SHMEM_CHECK_GOTO_MSG(!covering_obj, hwloc_cleanup,
+                         "hwloc_get_next_obj_covering_cpuset_by_type failed (could not detect object of type 'HWLOC_OBJ_PACKAGE' in provided cpuset). Please verify your hwloc installation\n");
 #else /* HWLOC_ENFORCE_SINGLE_NUMA_NODE */
     hwloc_obj_t covering_obj = hwloc_get_next_obj_covering_cpuset_by_type(shmem_internal_topology, bindset, HWLOC_OBJ_NUMANODE, NULL);
-    if (!covering_obj) {
-        RAISE_WARN_MSG("hwloc_get_next_obj_covering_cpuset_by_type failed (could not detect object of type 'HWLOC_OBJ_NUMANODE' in provided cpuset)\n");
-        goto hwloc_issue_pinning;
-    }
+    SHMEM_CHECK_GOTO_MSG(!covering_obj, hwloc_cleanup,
+                         "hwloc_get_next_obj_covering_cpuset_by_type failed (could not detect object of type 'HWLOC_OBJ_NUMANODE' in provided cpuset). Please verify your hwloc installation\n");
 #endif
     hwloc_bitmap_and(bindset_covering_obj, bindset_all, covering_obj->cpuset);
     ret = hwloc_set_proc_cpubind(shmem_internal_topology, getpid(), bindset_covering_obj, HWLOC_CPUBIND_PROCESS); /* Include HWLOC_CPUBIND_STRICT in flags? */
-    if (ret != 0) {
-        RAISE_WARN_MSG("hwloc_set_proc_cpubind failed (%s)\n", strerror(errno));
-        goto hwloc_issue_pinning;
-    }
-    goto hwloc_cleanup;
+    SHMEM_CHECK_GOTO_MSG(ret != 0, hwloc_cleanup, "hwloc_set_proc_cpubind failed (%s). Please verify your hwloc installation\n", strerror(errno));
 
-    hwloc_issue_pinning:
-        RAISE_WARN_MSG("Please verify your hwloc installation\n");
     hwloc_cleanup:
         hwloc_bitmap_free(bindset);
         hwloc_bitmap_free(bindset_all);
         hwloc_bitmap_free(bindset_covering_obj);
-        goto hwloc_exit;
 #endif // HWLOC_ENFORCE_SINGLE_SOCKET || HWLOC_ENFORCE_SINGLE_NUMA_NODE
-    hwloc_issue_topology:
-        RAISE_WARN_MSG("Please verify your hwloc installation\n");
     hwloc_exit:
 #endif // USE_HWLOC
 

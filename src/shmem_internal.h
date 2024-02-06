@@ -178,6 +178,14 @@ extern hwloc_topology_t shmem_internal_topology;
         }                                                               \
     } while(0)
 
+#define SHMEM_CHECK_GOTO_MSG(ret, lbl, ...)                              \
+    do {                                                                 \
+        if (ret) {                                                       \
+            RAISE_WARN_MSG(__VA_ARGS__);                                 \
+            goto lbl;                                                    \
+        }                                                                \
+    } while(0)
+
 #ifdef ENABLE_ERROR_CHECKING
 #define SHMEM_ERR_CHECK_INITIALIZED()                                    \
     do {                                                                 \
