@@ -102,3 +102,4 @@ m4_foreach_w([oac_var_scope_var], oac_var_scope_stack,
 oac_var_scope_pop oac_var_scope_stack
 m4_popdef([oac_var_scope_stack])dnl
 ])dnl
+
