@@ -16,6 +16,8 @@ dnl Copyright (c) 2009-2020 Cisco Systems, Inc.  All rights reserved.
 dnl Copyright (c) 2014      Intel, Inc. All rights reserved.
 dnl Copyright (c) 2015-2017 Research Organization for Information Science
 dnl                         and Technology (RIST). All rights reserved.
+dnl Copyright (c) 2021      Amazon.com, Inc. or its affiliates.  All Rights
+dnl                         reserved.
 dnl
 dnl $COPYRIGHT$
 dnl
@@ -200,274 +202,52 @@ dnl #######################################################################
 dnl #######################################################################
 dnl #######################################################################
 
-AC_DEFUN([OPAL_LOG_MSG],[
 # 1 is the message
 # 2 is whether to put a prefix or not
-if test -n "$2"; then
-    echo "configure:__oline__: $1" >&5
-else
-    echo $1 >&5
-fi])dnl
+AC_DEFUN([OPAL_LOG_MSG],
+[AS_IF([test -n "$2"], [OAC_LOG_MSG([$1])], [OAC_LOG_MSG_NOPREFIX([$1])])])
 
 dnl #######################################################################
 dnl #######################################################################
 dnl #######################################################################
 
-AC_DEFUN([OPAL_LOG_FILE],[
-# 1 is the filename
-if test -n "$1" && test -f "$1"; then
-    cat $1 >&5
-fi])dnl
+m4_copy([OAC_LOG_FILE], [OPAL_LOG_FILE])
 
 dnl #######################################################################
 dnl #######################################################################
 dnl #######################################################################
 
-AC_DEFUN([OPAL_LOG_COMMAND],[
-# 1 is the command
-# 2 is actions to do if success
-# 3 is actions to do if fail
-echo "configure:__oline__: $1" >&5
-$1 1>&5 2>&1
-opal_status=$?
-OPAL_LOG_MSG([\$? = $opal_status], 1)
-if test "$opal_status" = "0"; then
-    unset opal_status
-    $2
-else
-    unset opal_status
-    $3
-fi])dnl
+m4_copy([OAC_LOG_COMMAND], [OPAL_LOG_COMMAND])
 
 dnl #######################################################################
 dnl #######################################################################
 dnl #######################################################################
 
-AC_DEFUN([OPAL_UNIQ],[
-# 1 is the variable name to be uniq-ized
-opal_name=$1
-
-# Go through each item in the variable and only keep the unique ones
-
-opal_count=0
-for val in ${$1}; do
-    opal_done=0
-    opal_i=1
-    opal_found=0
-
-    # Loop over every token we've seen so far
-
-    opal_done="`expr $opal_i \> $opal_count`"
-    while test "$opal_found" = "0" && test "$opal_done" = "0"; do
-
-	# Have we seen this token already?  Prefix the comparison with
-	# "x" so that "-Lfoo" values won't be cause an error.
-
-	opal_eval="expr x$val = x\$opal_array_$opal_i"
-	opal_found=`eval $opal_eval`
-
-	# Check the ending condition
-
-	opal_done="`expr $opal_i \>= $opal_count`"
-
-	# Increment the counter
-
-	opal_i="`expr $opal_i + 1`"
-    done
-
-    # If we didn't find the token, add it to the "array"
-
-    if test "$opal_found" = "0"; then
-	opal_eval="opal_array_$opal_i=$val"
-	eval $opal_eval
-	opal_count="`expr $opal_count + 1`"
-    else
-	opal_i="`expr $opal_i - 1`"
-    fi
-done
-
-# Take all the items in the "array" and assemble them back into a
-# single variable
-
-opal_i=1
-opal_done="`expr $opal_i \> $opal_count`"
-opal_newval=
-while test "$opal_done" = "0"; do
-    opal_eval="opal_newval=\"$opal_newval \$opal_array_$opal_i\""
-    eval $opal_eval
-
-    opal_eval="unset opal_array_$opal_i"
-    eval $opal_eval
-
-    opal_done="`expr $opal_i \>= $opal_count`"
-    opal_i="`expr $opal_i + 1`"
-done
-
-# Done; do the assignment
-
-opal_newval="`echo $opal_newval`"
-opal_eval="$opal_name=\"$opal_newval\""
-eval $opal_eval
-
-# Clean up
-
-unset opal_name opal_i opal_done opal_newval opal_eval opal_count])dnl
+m4_copy([OAC_UNIQ], [OPAL_UNIQ])
 
 dnl #######################################################################
 dnl #######################################################################
 dnl #######################################################################
 
-# OPAL_APPEND_UNIQ(variable, new_argument)
-# ----------------------------------------
-# Append new_argument to variable if not already in variable.  This assumes a
-# space separated list.
-#
-# This could probably be made more efficient :(.
-AC_DEFUN([OPAL_APPEND_UNIQ], [
-for arg in $2; do
-    opal_found=0;
-    for val in ${$1}; do
-        if test "x$val" = "x$arg" ; then
-            opal_found=1
-            break
-        fi
-    done
-    if test "$opal_found" = "0" ; then
-        if test -z "$$1"; then
-            $1="$arg"
-        else
-            $1="$$1 $arg"
-        fi
-    fi
-done
-unset opal_found
-])
+m4_copy([OAC_APPEND], [OPAL_APPEND])
 
 dnl #######################################################################
 dnl #######################################################################
 dnl #######################################################################
 
-# Remove all duplicate -I, -L, and -l flags from the variable named $1
-AC_DEFUN([OPAL_FLAGS_UNIQ],[
-    # 1 is the variable name to be uniq-ized
-    opal_name=$1
-
-    # Go through each item in the variable and only keep the unique ones
-
-    opal_count=0
-    for val in ${$1}; do
-        opal_done=0
-        opal_i=1
-        opal_found=0
-
-        # Loop over every token we've seen so far
-
-        opal_done="`expr $opal_i \> $opal_count`"
-        while test "$opal_found" = "0" && test "$opal_done" = "0"; do
-
-            # Have we seen this token already?  Prefix the comparison
-            # with "x" so that "-Lfoo" values won't be cause an error.
-
-	    opal_eval="expr x$val = x\$opal_array_$opal_i"
-	    opal_found=`eval $opal_eval`
-
-            # Check the ending condition
-
-	    opal_done="`expr $opal_i \>= $opal_count`"
-
-            # Increment the counter
-
-	    opal_i="`expr $opal_i + 1`"
-        done
-
-        # Check for special cases where we do want to allow repeated
-        # arguments (per
-        # http://www.open-mpi.org/community/lists/devel/2012/08/11362.php
-        # and
-        # https://github.com/open-mpi/ompi/issues/324).
-
-        case $val in
-        -Xclang)
-                opal_found=0
-                opal_i=`expr $opal_count + 1`
-                ;;
-        -framework)
-                opal_found=0
-                opal_i=`expr $opal_count + 1`
-                ;;
-        --param)
-                opal_found=0
-                opal_i=`expr $opal_count + 1`
-                ;;
-        esac
-
-        # If we didn't find the token, add it to the "array"
-
-        if test "$opal_found" = "0"; then
-	    opal_eval="opal_array_$opal_i=$val"
-	    eval $opal_eval
-	    opal_count="`expr $opal_count + 1`"
-        else
-	    opal_i="`expr $opal_i - 1`"
-        fi
-    done
-
-    # Take all the items in the "array" and assemble them back into a
-    # single variable
-
-    opal_i=1
-    opal_done="`expr $opal_i \> $opal_count`"
-    opal_newval=
-    while test "$opal_done" = "0"; do
-        opal_eval="opal_newval=\"$opal_newval \$opal_array_$opal_i\""
-        eval $opal_eval
-
-        opal_eval="unset opal_array_$opal_i"
-        eval $opal_eval
-
-        opal_done="`expr $opal_i \>= $opal_count`"
-        opal_i="`expr $opal_i + 1`"
-    done
-
-    # Done; do the assignment
-
-    opal_newval="`echo $opal_newval`"
-    opal_eval="$opal_name=\"$opal_newval\""
-    eval $opal_eval
-
-    # Clean up
-
-    unset opal_name opal_i opal_done opal_newval opal_eval opal_count
-])dnl
+m4_copy([OAC_APPEND_UNIQ], [OPAL_APPEND_UNIQ])
 
 dnl #######################################################################
 dnl #######################################################################
 dnl #######################################################################
 
-# OPAL_FLAGS_APPEND_UNIQ(variable, new_argument)
-# ----------------------------------------------
-# Append new_argument to variable if:
-#
-# - the argument does not begin with -I, -L, or -l, or
-# - the argument begins with -I, -L, or -l, and it's not already in variable
-#
-# This macro assumes a space separated list.
-AC_DEFUN([OPAL_FLAGS_APPEND_UNIQ], [
-    OPAL_VAR_SCOPE_PUSH([opal_tmp opal_append])
+m4_copy([OAC_FLAGS_APPEND_UNIQ], [OPAL_FLAGS_APPEND_UNIQ])
 
-    for arg in $2; do
-        opal_tmp=`echo $arg | cut -c1-2`
-        opal_append=1
-        AS_IF([test "$opal_tmp" = "-I" || test "$opal_tmp" = "-L" || test "$opal_tmp" = "-l"],
-              [for val in ${$1}; do
-                   AS_IF([test "x$val" = "x$arg"], [opal_append=0])
-               done])
-        AS_IF([test "$opal_append" = "1"],
-              [AS_IF([test -z "$$1"], [$1=$arg], [$1="$$1 $arg"])])
-    done
+dnl #######################################################################
+dnl #######################################################################
+dnl #######################################################################
 
-    OPAL_VAR_SCOPE_POP
-])
+m4_copy([OAC_FLAGS_APPEND_MOVE], [OPAL_FLAGS_APPEND_MOVE])
 
 dnl #######################################################################
 dnl #######################################################################
@@ -480,87 +260,128 @@ dnl #######################################################################
 # of the assignment in foo=`which <prog>`). This macro ensures that we
 # get a sane executable value.
 AC_DEFUN([OPAL_WHICH],[
-# 1 is the variable name to do "which" on
-# 2 is the variable name to assign the return value to
+    # 1 is the variable name to do "which" on
+    # 2 is the variable name to assign the return value to
 
-OPAL_VAR_SCOPE_PUSH([opal_prog opal_file opal_dir opal_sentinel])
+    OPAL_VAR_SCOPE_PUSH([opal_prog opal_file opal_dir opal_sentinel])
 
-opal_prog=$1
+    opal_prog=$1
 
-IFS_SAVE=$IFS
-IFS="$PATH_SEPARATOR"
-for opal_dir in $PATH; do
-    if test -x "$opal_dir/$opal_prog"; then
-        $2="$opal_dir/$opal_prog"
-        break
-    fi
-done
-IFS=$IFS_SAVE
+    # There are 3 cases:
 
-OPAL_VAR_SCOPE_POP
+    # 1. opal_prog is an absolute filename.  If that absolute filename
+    # exists and is executable, return $2 with that name.  Otherwise,
+    # $2 is unchanged.
+
+    # 2. opal_prog is a relative filename (i.e., it contains one or
+    # more /, but does not begin with a /).  If that file exists
+    # relative to where we are right now in the filesystem and is
+    # executable, return the absolute path of that value in $2.
+    # Otherwise, $2 is unchanged.
+
+    # 3. opal_prog contains no /.  Search the PATH for an executable
+    # with the appropriate name.  If found, return the absolute path
+    # in $2.  Otherwise, $2 is unchanged.
+
+    # Note that these three cases are exactly what which(1) does.
+
+    # Note the double square brackets around the case expressions for
+    # m4 escaping.
+    case $opal_prog in
+        [[\\/]]* | ?:[[\\/]]* )
+            # Case 1: absolute
+            AS_IF([test -x "$opal_prog"],
+                  [$2=$opal_prog])
+            ;;
+
+        *[[\\/]]*)
+            # Case 2: relative with 1 or more /
+            AS_IF([test -x "$opal_prog"],
+                  [$2="$cwd/$opal_prog"])
+            ;;
+
+        *)
+            # Case 3: no / at all
+            IFS_SAVE=$IFS
+            IFS=$PATH_SEPARATOR
+            for opal_dir in $PATH; do
+               AS_IF([test -x "$opal_dir/$opal_prog"],
+                     [$2="$opal_dir/$opal_prog"])
+            done
+            IFS=$IFS_SAVE
+            ;;
+    esac
+
+    OPAL_VAR_SCOPE_POP
 ])dnl
 
 dnl #######################################################################
 dnl #######################################################################
 dnl #######################################################################
 
-# Declare some variables; use OPAL_VAR_SCOPE_POP to ensure that they
-# are cleaned up / undefined.
-AC_DEFUN([OPAL_VAR_SCOPE_PUSH],[
-
-    # Is the private index set?  If not, set it.
-    if test "x$opal_scope_index" = "x"; then
-        opal_scope_index=1
-    fi
-
+AC_DEFUN([OPAL_VAR_SCOPE_INIT],
+[opal_var_scope_push()
+{
+    opal_var_scope_push_lineno=$[]1
+    shift
     # First, check to see if any of these variables are already set.
     # This is a simple sanity check to ensure we're not already
     # overwriting pre-existing variables (that have a non-empty
     # value).  It's not a perfect check, but at least it's something.
-    for opal_var in $1; do
-        opal_str="opal_str=\"\$$opal_var\""
-        eval $opal_str
-
-        if test "x$opal_str" != "x"; then
-            AC_MSG_WARN([Found configure shell variable clash at line $LINENO!])
-            AC_MSG_WARN([[OPAL_VAR_SCOPE_PUSH] called on "$opal_var",])
-            AC_MSG_WARN([but it is already defined with value "$opal_str"])
-            AC_MSG_WARN([This usually indicates an error in configure.])
-            AC_MSG_ERROR([Cannot continue])
-        fi
+    for opal_var_scope_tmp_var in $[]@; do
+        AS_VAR_SET_IF([$opal_var_scope_tmp_var],
+            [AS_VAR_COPY([opal_var_scope_tmp_var_val], [$opal_var_scope_tmp_var])
+             AC_MSG_WARN([Found configure shell variable clash at line $opal_var_scope_push_lineno!])
+             AC_MSG_WARN([[OPAL_VAR_SCOPE_PUSH] called on "$opal_var_scope_tmp_var",])
+             AC_MSG_WARN([but it is already defined with value "$opal_var_scope_tmp_var_val"])
+             AC_MSG_WARN([This usually indicates an error in configure.])
+             AC_MSG_ERROR([Cannot continue])])
     done
+    AS_UNSET([opal_var_scope_push_lineno])
+    AS_UNSET([opal_var_scope_tmp_var])
+    AS_UNSET([opal_var_scope_tmp_var_val])
+}
 
-    # Ok, we passed the simple sanity check.  Save all these names so
-    # that we can unset them at the end of the scope.
-    opal_str="opal_scope_$opal_scope_index=\"$1\""
-    eval $opal_str
-    unset opal_str
-
-    env | grep opal_scope
-    opal_scope_index=`expr $opal_scope_index + 1`
-])dnl
-
-# Unset a bunch of variables that were previously set
-AC_DEFUN([OPAL_VAR_SCOPE_POP],[
-    # Unwind the index
-    opal_scope_index=`expr $opal_scope_index - 1`
-    opal_scope_test=`expr $opal_scope_index \> 0`
-    if test "$opal_scope_test" = "0"; then
-        AC_MSG_WARN([[OPAL_VAR_SCOPE_POP] popped too many OPAL configure scopes.])
-        AC_MSG_WARN([This usually indicates an error in configure.])
-        AC_MSG_ERROR([Cannot continue])
-    fi
-
-    # Get the variable names from that index
-    opal_str="opal_str=\"\$opal_scope_$opal_scope_index\""
-    eval $opal_str
-
+opal_var_scope_pop()
+{
     # Iterate over all the variables and unset them all
-    for opal_var in $opal_str; do
-        unset $opal_var
+    for opal_var_scope_tmp_var in $[]@; do
+        AS_UNSET([$opal_var_scope_tmp_var])
     done
+    AS_UNSET([opal_var_scope_tmp_var])
+}])
+
+# OPAL_VAR_SCOPE_PUSH(vars list)
+# ------------------------------
+# Scope-check that the vars in the space-separated vars list are not already
+# in use.  Generate a configure-time error if a conflict is found.  Note that
+# the in use check is defined as "defined", so even if a var in vars list is
+# set outside of OPAL_VAR_SCOPE_PUSH, the check will still trip.
+AC_DEFUN([OPAL_VAR_SCOPE_PUSH],[
+    AC_REQUIRE([OPAL_VAR_SCOPE_INIT])dnl
+    m4_pushdef([opal_var_scope_stack], [$1])dnl
+    m4_foreach_w([opal_var_scope_var], [$1],
+                 [m4_set_add([opal_var_scope_active_set], opal_var_scope_var,
+                             [], [m4_fatal([OPAL_VAR_SCOPE_PUSH found the variable ]opal_var_scope_var[
+active in a previous scope.])])])dnl
+    opal_var_scope_push ${LINENO} $1
 ])dnl
 
+# OPAL_VAR_SCOPE_POP()
+# --------------------
+# Unset the last set of variables set in OPAL_VAR_SCOPE_POP.  Every call to
+# OPAL_VAR_SCOPE_PUSH should have a matched call to this macro.
+AC_DEFUN([OPAL_VAR_SCOPE_POP],[
+    AC_REQUIRE([OPAL_VAR_SCOPE_INIT])dnl
+    m4_ifdef([opal_var_scope_stack], [],
+             [m4_fatal([OPAL_VAR_SCOPE_POP was called without a defined
+variable stack.  This usually means that OPAL_VAR_SCOPE_POP was called more
+times than OPAL_VAR_SCOPE_PUSH.])])dnl
+    m4_foreach_w([opal_var_scope_var], opal_var_scope_stack,
+                 [m4_set_remove([opal_var_scope_active_set], opal_var_scope_var)])dnl
+    opal_var_scope_pop opal_var_scope_stack
+    m4_popdef([opal_var_scope_stack])dnl
+])dnl
 
 dnl #######################################################################
 dnl #######################################################################
@@ -576,8 +397,8 @@ AC_DEFUN([OPAL_WITH_OPTION_MIN_MAX_VALUE], [
     max_value=[$2]
     AC_MSG_CHECKING([maximum length of ]m4_translit($1, [_], [ ]))
     AC_ARG_WITH([max-]m4_translit($1, [_], [-]),
-        AC_HELP_STRING([--with-max-]m4_translit($1, [_], [-])[=VALUE],
-                       [maximum length of ]m4_translit($1, [_], [ ])[s.  VALUE argument has to be specified (default: [$2]).]))
+        [AS_HELP_STRING([--with-max-]m4_translit($1, [_], [-])[=VALUE],
+                       [maximum length of ]m4_translit($1, [_], [ ])[s.  VALUE argument has to be specified (default: [$2]).])])
     if test ! -z "$with_max_[$1]" && test "$with_max_[$1]" != "no" ; then
         # Ensure it's a number (hopefully an integer!), and >0
         expr $with_max_[$1] + 1 > /dev/null 2> /dev/null
