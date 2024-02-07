@@ -38,6 +38,8 @@ AC_CONFIG_HEADERS([src/config.h])
 
 AC_CANONICAL_HOST
 
+OPAL_CONFIGURE_SETUP
+
 OPAL_CHECK_ATTRIBUTES
 AS_IF([test "$opal_cv___attribute__deprecated" = 1],
       [SHMEM_AC_HAVE_ATTRIBUTE_DEPRECATED=1],
@@ -73,6 +75,16 @@ AS_IF([test "$enable_hard_polling" = "yes"], [AC_DEFINE([ENABLE_HARD_POLLING], [
 AC_ARG_ENABLE([completion-polling],
     [AC_HELP_STRING([--enable-completion-polling],
                     [Enable polling in quiet, fence, and local completion operations (default:disabled)])])
+
+AC_ARG_ENABLE([hwloc-enforce-single-socket],
+    [AC_HELP_STRING([--enable-hwloc-enforce-single-socket],
+                    [Repin process to ensure it has affinity to cores within a single socket (default:disabled)])])
+AS_IF([test "$enable_hwloc_enforce_single_socket" = "yes"], [AC_DEFINE([HWLOC_ENFORCE_SINGLE_SOCKET], [1], [Repin process to ensure it has affinity to cores within a single socket])])
+
+AC_ARG_ENABLE([hwloc-enforce-single-numa-node],
+    [AC_HELP_STRING([--enable-hwloc-enforce-single-numa-node],
+                    [Repin process to ensure it has affinity to cores within a single NUMA node (default:disabled)])])
+AS_IF([test "$enable_hwloc_enforce_single_numa_node" = "yes"], [AC_DEFINE([HWLOC_ENFORCE_SINGLE_NUMA_NODE], [1], [Repin process to ensure it has affinity to cores within a single NUMA node])])
 
 AC_ARG_ENABLE([manual-progress],
     [AC_HELP_STRING([--enable-manual-progress],
@@ -120,6 +132,35 @@ AS_IF([test "$enable_threads" != "no"], [
              AC_DEFINE([USE_THREAD_COMPLETION], [1], [Support SHMEM_THREAD_MULTIPLE using FI_THREAD_COMPLETION instead of FI_THREAD_SAFE])])
        ])
 AM_CONDITIONAL([HAVE_PTHREADS], [test "$HAVE_POSIX_THREADS" = "1"])
+
+AS_IF([test "$with_hwloc" != "no"], [
+        OPAL_VAR_SCOPE_PUSH([external_hwloc_happy internal_hwloc_happy  opal_hwloc_STATIC_LDFLAGS opal_hwloc_LIBS opal_hwloc_STATIC_LIBS])
+        OPAL_3RDPARTY_WITH([hwloc], [hwloc], [package_hwloc])
+        _OPAL_CONFIG_HWLOC_EXTERNAL(
+            [external_hwloc_happy=1
+             opal_hwloc_mode="external"
+             AC_DEFINE([USE_HWLOC], [1], [Enable hwloc. Default behavior is to automatically enable hwloc if installation can be found])],
+            [AS_IF([test -n "$with_hwloc"],
+                [AC_MSG_ERROR([Could not find viable hwloc build.])],
+                [external_hwloc_happy=0
+                 AC_MSG_WARN([Could not find viable hwloc build.])])]
+        )
+
+        OPAL_3RDPARTY_EXTRA_DIST="$OPAL_3RDPARTY_EXTRA_DIST hwloc_tarball"
+        OPAL_3RDPARTY_DISTCLEAN_DIRS="$OPAL_3RDPARTY_DISTCLEAN_DIRS hwloc_directory"
+
+        OPAL_WRAPPER_FLAGS_ADD([LDFLAGS], [${opal_hwloc_LDFLAGS}])
+        OPAL_WRAPPER_FLAGS_ADD([STATIC_LDFLAGS], [${opal_hwloc_STATIC_LDFLAGS}])
+        OPAL_WRAPPER_FLAGS_ADD([LIBS], [${opal_hwloc_LIBS}])
+        OPAL_WRAPPER_FLAGS_ADD([STATIC_LIBS], [${opal_hwloc_STATIC_LIBS}])
+        OPAL_WRAPPER_FLAGS_ADD([PC_MODULES], [${opal_hwloc_PC_MODULES}])
+
+        AC_CONFIG_COMMANDS_PRE([OPAL_CONFIG_HWLOC_INTERNAL_LIBS_HANDLER])
+
+        OPAL_SUMMARY_ADD([Miscellaneous], [hwloc], [], [$opal_hwloc_mode])
+
+        OPAL_VAR_SCOPE_POP
+        ])
 
 AS_IF([test "$enable_threads" != "no"], [
        AS_IF([test "$enable_openmp" != "no"], [
@@ -832,6 +873,9 @@ fi
 if test -n "$with_pmi" -a "$with_pmi" != "no" -a "$with_pmi" != "yes" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-pmi=${with_pmi}"
 fi
+if test -n "$with_hwloc" -a "$with_hwloc" != "no" -a "$with_hwloc" != "yes" ; then
+  DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --with-hwloc=${with_hwloc}"
+fi
 if test "$enable_pmi_simple" = "yes" ; then
   DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS --enable-pmi-simple"
 fi
@@ -885,6 +929,10 @@ if test "$transport_xpmem" = "yes" ; then
     WRAPPER_COMPILER_EXTRA_LIBS="$XPMEM_LIBS"
 fi
 
+if test -n "opal_hwloc_LDFLAGS"; then
+    WRAPPER_COMPILER_EXTRA_LDFLAGS="$WRAPPER_COMPILER_EXTRA_LDFLAGS $opal_hwloc_LDFLAGS"
+fi
+
 CPPFLAGS="$CPPFLAGS $pmi_CPPFLAGS"
 LDFLAGS="$LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
 LIBS="$LIBS $pmi_LIBS"
@@ -902,7 +950,8 @@ AS_IF([test "$enable_pmi_simple" = "yes"],
 
 AC_MSG_CHECKING([for OPAL LDFLAGS])
 RPATHIFY_LDFLAGS([WRAPPER_COMPILER_EXTRA_LDFLAGS])
-WRAPPER_COMPILER_EXTRA_LDFLAGS=`echo "$WRAPPER_COMPILER_EXTRA_LDFLAGS" | sed -e 's/@{libdir}/\${libdir}/g'`
+AS_IF([test "$enable_wrapper_rpath" = "yes"],
+     [WRAPPER_COMPILER_EXTRA_LDFLAGS="$WRAPPER_COMPILER_EXTRA_LDFLAGS -Wl,-rpath -Wl,${libdir}"])
 AC_MSG_RESULT([$WRAPPER_COMPILER_EXTRA_LDFLAGS])
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LDFLAGS)
 AC_SUBST(WRAPPER_COMPILER_EXTRA_LIBS)
@@ -987,6 +1036,11 @@ if test "$enable_threads" != "no"; then
     echo "  Thread support: yes"
 else
     echo "  Thread support: no"
+fi
+if test "$opal_hwloc_mode" = "external"; then
+    echo "  hwloc support:  yes"
+else
+    echo "  hwloc support:  no"
 fi
 if test "$enable_error_checking" != "yes"; then
     echo "  Error checking: no"
