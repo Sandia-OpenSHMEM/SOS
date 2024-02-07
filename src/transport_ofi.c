@@ -39,6 +39,10 @@
 #define fnmatch(P, S, F) strcmp(P, S)
 #endif
 
+#ifdef USE_HWLOC
+#include <hwloc.h>
+#endif
+
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
 #include "shmem_internal.h"

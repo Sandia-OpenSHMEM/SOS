@@ -51,6 +51,11 @@ extern int shmem_external_heap_device;
 
 extern unsigned int shmem_internal_rand_seed;
 
+#ifdef USE_HWLOC
+#include <hwloc.h>
+extern hwloc_topology_t shmem_internal_topology;
+#endif
+
 #define SHMEM_INTERNAL_HEAP_OVERHEAD (1024*1024)
 #define SHMEM_INTERNAL_DIAG_STRLEN 1024
 #define SHMEM_INTERNAL_DIAG_WRAPLEN 72
@@ -171,6 +176,14 @@ extern unsigned int shmem_internal_rand_seed;
             off+= snprintf(str+off, sizeof(str)-off, __VA_ARGS__);      \
             fprintf(stderr, "%s", str);                                 \
         }                                                               \
+    } while(0)
+
+#define SHMEM_CHECK_GOTO_MSG(ret, lbl, ...)                              \
+    do {                                                                 \
+        if (ret) {                                                       \
+            RAISE_WARN_MSG(__VA_ARGS__);                                 \
+            goto lbl;                                                    \
+        }                                                                \
     } while(0)
 
 #ifdef ENABLE_ERROR_CHECKING
