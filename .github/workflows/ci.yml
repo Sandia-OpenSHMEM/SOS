@@ -234,8 +234,6 @@ jobs:
           #make dist
           #rpmbuild -ta ./sandia-openshmem-*.tar.gz --define "configargs --with-ofi=${LIBFABRIC_INSTALL_DIR} ${{ matrix.sos_config }}" --define "_prefix /usr/shmem"
           #make clean
-          rm test
-          cp -r modules/tests-sos/test test
           ./configure --with-ofi=${LIBFABRIC_INSTALL_DIR} ${{ matrix.sos_config }}
           make dist
           rpmbuild -ta ./sandia-openshmem-*.tar.gz --define "configargs --with-ofi=${LIBFABRIC_INSTALL_DIR} ${{ matrix.sos_config }}"
