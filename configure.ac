@@ -967,15 +967,17 @@ AC_CONFIG_FILES([Makefile
   mpp/shmem-def.h
   src/Makefile
   src/sandia-openshmem.pc
-  test/Makefile
-  test/unit/Makefile
-  test/shmemx/Makefile
-  test/spec-example/Makefile
-  test/include/Makefile
-  test/performance/Makefile
-  test/performance/shmem_perf_suite/Makefile
-  test/performance/tests/Makefile
-  test/apps/Makefile])
+  modules/Makefile
+  modules/tests-sos/Makefile
+  modules/tests-sos/test/Makefile
+  modules/tests-sos/test/unit/Makefile
+  modules/tests-sos/test/shmemx/Makefile
+  modules/tests-sos/test/spec-example/Makefile
+  modules/tests-sos/test/include/Makefile
+  modules/tests-sos/test/performance/Makefile
+  modules/tests-sos/test/performance/shmem_perf_suite/Makefile
+  modules/tests-sos/test/performance/tests/Makefile
+  modules/tests-sos/test/apps/Makefile])
 
 AC_OUTPUT
 
