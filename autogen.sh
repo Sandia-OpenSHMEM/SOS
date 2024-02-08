@@ -27,21 +27,6 @@ elif [ ! -f "${tests_sos_dir}/test/Makefile.am" ] ||
     echo "Please run the following command to download the SOS tests:"
     echo "   git submodule update --init"
     exit 1
-else
-    if [ -d "$current_dir/test" ] && [ ! -z "$(ls -A "$current_dir/test")" ]; then
-        echo "The ./test directory already contains files."
-        read -p "Do you want to overwrite them? (y/n): " overwrite
-        if [ "$overwrite" != "y" ]; then
-            echo "Copying tests-sos submodule aborted. Continuing..."
-        fi
-    fi
-    cp -r "${tests_sos_dir}/test" "$current_dir"
-    if [ $? -eq 0 ]; then
-        echo "tests-sos submodule copied successfully."
-    else
-        echo "Error: tests-sos submodule copy failed."
-        exit 1;
-    fi
 fi
 
 FILES=./man/*.1
