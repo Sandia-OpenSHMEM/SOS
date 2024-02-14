@@ -49,17 +49,17 @@ rm -f %{buildroot}%{_libdir}/*.la
 # FIXME: It would be better to configure with --disable-libtool-wrapper so we
 #        can pull from the standard dirs instead of .libs
 install -d %{testdir}/unit
-install test/unit/.libs/* %{testdir}/unit
+install modules/tests-sos/test/unit/.libs/* %{testdir}/unit
 install -d %{testdir}/shmemx
-install test/shmemx/.libs/* %{testdir}/shmemx
+install modules/tests-sos/test/shmemx/.libs/* %{testdir}/shmemx
 install -d %{testdir}/spec-example
-install test/spec-example/.libs/* %{testdir}/spec-example
+install modules/tests-sos/test/spec-example/.libs/* %{testdir}/spec-example
 install -d %{testdir}/apps
-install test/apps/.libs/* %{testdir}/apps
+install modules/tests-sos/test/apps/.libs/* %{testdir}/apps
 install -d %{testdir}/performance/shmem_perf_suite
-install test/performance/shmem_perf_suite/.libs/* %{testdir}/performance/shmem_perf_suite
+install modules/tests-sos/test/performance/shmem_perf_suite/.libs/* %{testdir}/performance/shmem_perf_suite
 install -d %{testdir}/performance/tests
-install test/performance/tests/.libs/* %{testdir}/performance/tests
+install modules/tests-sos/test/performance/tests/.libs/* %{testdir}/performance/tests
 
 %clean
 rm -rf %{buildroot}
