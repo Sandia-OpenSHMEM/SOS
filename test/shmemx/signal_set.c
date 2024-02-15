@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 {
     long source[MSG_SZ];
     long *target;
-    int me, npes, i;
+    int me, npes, i, dest_pe;
     int errors = 0;
 
     static uint64_t sig_addr = 0;
@@ -49,9 +49,10 @@ int main(int argc, char *argv[])
 
     me = shmem_my_pe();
     npes = shmem_n_pes();
+    dest_pe = (me + 1) % npes;
 
     for (i = 0; i < MSG_SZ; i++)
-        source[i] = i;
+        source[i] = me + i;
 
     target = (long *) shmem_calloc(MSG_SZ, sizeof(long));
     if (!target) {
@@ -60,26 +61,21 @@ int main(int argc, char *argv[])
     }
 
     shmem_barrier_all();
-    for (i = 0; i < npes; i++) {
-        shmem_long_put_nbi(target, source, MSG_SZ, i);
-	shmemx_signal_set(SHMEM_CTX_DEFAULT, &sig_addr, npes + 1, i);
+    if (me == 0) {
+        shmem_long_put_nbi(target, source, MSG_SZ, dest_pe);
+	shmemx_signal_set(SHMEM_CTX_DEFAULT, &sig_addr, me + 1, dest_pe);
+        shmem_signal_wait_until(&sig_addr, SHMEM_CMP_EQ, npes);
+    } else {
+        shmem_signal_wait_until(&sig_addr, SHMEM_CMP_EQ, me);
+        shmem_long_put_nbi(target, source, MSG_SZ, dest_pe);
+        shmemx_signal_set(SHMEM_CTX_DEFAULT, &sig_addr, me + 1, dest_pe);
     }
-    shmem_quiet();
-
-    uint64_t sig_value = shmem_signal_fetch(&sig_addr);
-    while (sig_value != (uint64_t) (npes + 1)) {
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-        shmem_wait_until(&sig_addr, SHMEM_CMP_NE, 0);
-#else
-        shmem_uint64_wait_until(&sig_addr, SHMEM_CMP_NE, 0);
-#endif
-        sig_value = shmem_signal_fetch(&sig_addr);
-    }
+    shmem_barrier_all();
 
     for (i = 0; i < MSG_SZ; i++) {
-        if (target[i] != source[i]) {
-            fprintf(stderr, "%10d: target[%d] = %ld not matching %ld with SHMEM_SIGNAL_ADD\n",
-                    me, i, target[i], source[i]);
+        if (target[i] != (long)(((me + npes - 1) % npes) + i)) {
+            fprintf(stderr, "%10d: target[%d] = %ld not matching %ld with SHMEM_SIGNAL_SET\n",
+                    me, i, target[i], (long)(((me + npes - 1) % npes) + i));
             errors++;
         }
     }

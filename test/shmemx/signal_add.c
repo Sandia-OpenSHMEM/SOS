@@ -61,20 +61,12 @@ int main(int argc, char *argv[])
 
     shmem_barrier_all();
     for (i = 0; i < npes; i++) {
-        shmem_long_put_nbi(target, source, MSG_SZ, i);
+        shmem_long_put(target, source, MSG_SZ, i);
+        shmem_fence();
 	shmemx_signal_add(&sig_addr, me, i);
     }
-    shmem_quiet();
 
-    uint64_t sig_value = shmem_signal_fetch(&sig_addr);
-    while (sig_value != (uint64_t) ((npes * (npes - 1)) / 2)) {
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-        shmem_wait_until(&sig_addr, SHMEM_CMP_NE, 0);
-#else
-        shmem_uint64_wait_until(&sig_addr, SHMEM_CMP_NE, 0);
-#endif
-        sig_value = shmem_signal_fetch(&sig_addr);
-    }
+    shmem_signal_wait_until(&sig_addr, SHMEM_CMP_EQ, (uint64_t) ((npes * (npes - 1)) / 2));
 
     for (i = 0; i < MSG_SZ; i++) {
         if (target[i] != source[i]) {
