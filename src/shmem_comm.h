@@ -32,20 +32,6 @@
 
 static inline
 void
-shmem_internal_put_scalar(shmem_ctx_t ctx, void *target, const void *source, size_t len, int pe)
-{
-    shmem_internal_assert(len > 0);
-
-    if (shmem_shr_transport_use_write(ctx, target, source, len, pe)) {
-        shmem_shr_transport_put_scalar(ctx, target, source, len, pe);
-    } else {
-        shmem_transport_put_scalar((shmem_transport_ctx_t *)ctx, target, source, len, pe);
-    }
-}
-
-
-static inline
-void
 shmem_internal_put_nb(shmem_ctx_t ctx, void *target, const void *source, size_t len, int pe,
                       long *completion)
 {
@@ -56,6 +42,35 @@ shmem_internal_put_nb(shmem_ctx_t ctx, void *target, const void *source, size_t 
         shmem_shr_transport_put(ctx, target, source, len, pe);
     } else {
         shmem_transport_put_nb((shmem_transport_ctx_t *)ctx, target, source, len, pe, completion);
+    }
+}
+
+
+static inline
+void
+shmem_internal_put_wait(shmem_ctx_t ctx, long *completion)
+{
+    shmem_transport_put_wait((shmem_transport_ctx_t *)ctx, completion);
+    /* on-node is always blocking, so this is a no-op for them */
+}
+
+
+static inline
+void
+shmem_internal_put_scalar(shmem_ctx_t ctx, void *target, const void *source, size_t len, int pe)
+{
+    shmem_internal_assert(len > 0);
+
+    if (shmem_shr_transport_use_write(ctx, target, source, len, pe)) {
+        shmem_shr_transport_put_scalar(ctx, target, source, len, pe);
+    } else {
+#ifndef DISABLE_OFI_INJECT
+        shmem_transport_put_scalar((shmem_transport_ctx_t *)ctx, target, source, len, pe);
+#else
+        long completion = 0;
+        shmem_transport_put_nb((shmem_transport_ctx_t *)ctx, target, source, len, pe, &completion);
+	shmem_internal_put_wait(ctx, &completion);
+#endif
     }
 }
 
@@ -103,15 +118,6 @@ shmem_internal_put_ct_nb(shmemx_ct_t ct, void *target, const void *source, size_
     /* TODO: add shortcut for on-node-comms */
     shmem_transport_put_ct_nb((shmem_transport_ct_t *)
                               ct, target, source, len, pe, completion);
-}
-
-
-static inline
-void
-shmem_internal_put_wait(shmem_ctx_t ctx, long *completion)
-{
-    shmem_transport_put_wait((shmem_transport_ctx_t *)ctx, completion);
-    /* on-node is always blocking, so this is a no-op for them */
 }
 
 
