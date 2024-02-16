@@ -97,7 +97,7 @@ RUN make install
 
 # Build SOS
 WORKDIR $SOS_INSTALL
-RUN git clone https://github.com/Sandia-OpenSHMEM/SOS.git
+RUN git clone --recurse-submodules https://github.com/Sandia-OpenSHMEM/SOS.git
 WORKDIR SOS
 RUN ./autogen.sh
 # To build SOS w/ basic Libfabric

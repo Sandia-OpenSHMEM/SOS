@@ -82,7 +82,7 @@ echo ========================================================================
 echo = BUILDING SANDIA OPENSHMEM
 echo ========================================================================
 
-git clone -b $SOS_VERSION --depth $CLONE_DEPTH https://github.com/Sandia-OpenSHMEM/SOS.git sos
+git clone -b $SOS_VERSION --depth $CLONE_DEPTH --recurse-submodules https://github.com/Sandia-OpenSHMEM/SOS.git sos
 cd sos
 ./autogen.sh
 ./configure --prefix=$INSTALL_DIR --with-ofi=$INSTALL_DIR $SOS_CONFIG_OPTS

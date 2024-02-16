@@ -1,0 +1,4 @@
+[submodule "modules/tests-sos"]
+	path = modules/tests-sos
+	url = ../../openshmem-org/tests-sos.git
+	branch = main
