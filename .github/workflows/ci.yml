@@ -151,7 +151,9 @@ jobs:
       - name: Checking OS version
         run: |
           echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
       - name: Install dependencies
         run: |
           sudo apt-get install -y gfortran rpm mpich libmpich-dev libhwloc-dev
@@ -167,7 +169,7 @@ jobs:
           key: libfabric-${{ matrix.libfabric_version }}-${{ env.OS_NAME }}
       - name: Checkout libfabric
         if: steps.cache-libfabric.outputs.cache-hit != 'true'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: ofiwg/libfabric
           path: repos/libfabric
@@ -192,7 +194,7 @@ jobs:
           key: xpmem-${{ matrix.xpmem_version }}-${{ env.OS_NAME }}
       - name: Checkout XPMEM
         if: ${{ matrix.xpmem_version }}
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: hjelmn/xpmem
           path: repos/xpmem
@@ -223,7 +225,7 @@ jobs:
           make check TESTS= -j
           ${{ matrix.env_setup }}
           SHMEM_DEBUG=1 SHMEM_INFO=1 make VERBOSE=1 TEST_RUNNER="${SOS_PM} -np 2" check
-          cat test/unit/hello.log
+          cat modules/tests-sos/test/unit/hello.log
       - name: Test RPM (${{ matrix.rpm_build }})
         if: ${{ matrix.rpm_build }}
         run: |
@@ -453,7 +455,7 @@ jobs:
 #          export PATH=${PRRTE_INSTALL_DIR}/bin:$PATH
 #          ${{ matrix.sos_pm_pre }}
 #          SHMEM_INFO=1 make VERBOSE=1 TEST_RUNNER="${{ matrix.sos_pm }} -np 2" check
-#          cat test/unit/hello.log
+#          cat modules/tests-sos/test/unit/hello.log
 #          ${{ matrix.sos_pm_post }}
 #      - name: Test SOS (hello)
 #        if: ${{ matrix.sos_transport == 'portals4' }}
@@ -462,7 +464,7 @@ jobs:
 #          make check TESTS= -j
 #          export PATH=${PRRTE_INSTALL_DIR}/bin:$PATH
 #          ${{ matrix.sos_pm_pre }}
-#          SHMEM_INFO=1 ${{ matrix.sos_pm }} -np 1 test/unit/hello
+#          SHMEM_INFO=1 ${{ matrix.sos_pm }} -np 1 modules/tests-sos/test/unit/hello
 #          ${{ matrix.sos_pm_post }}
 #
   UCX:
@@ -474,8 +476,7 @@ jobs:
           - config_name: ucx-1.9.0
             ucx_version: v1.9.0
             xpmem_version: master
-        sos_config: [--enable-pmi-simple --disable-fortran --with-hwloc=no,
-                     --enable-pmi-mpi CC=mpicc --disable-fortran,
+        sos_config: [--enable-pmi-simple --disable-fortran,
                      --with-cma --enable-error-checking --enable-profiling
                      --enable-pmi-simple --disable-fortran --with-hwloc=no,
                      --with-xpmem --enable-error-checking --enable-pmi-simple --with-hwloc=no]
@@ -483,7 +484,9 @@ jobs:
       - name: Checking OS version
         run: |
           echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
       - name: Install dependencies
         run: |
           sudo apt-get install -y gfortran mpich libmpich-dev
@@ -492,7 +495,7 @@ jobs:
 
       # XPMEM
       - name: Checkout XPMEM
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: hjelmn/xpmem
           path: repos/xpmem
@@ -517,7 +520,7 @@ jobs:
           key: ucx-${{ matrix.ucx_version}}-${{ env.OS_NAME }}
       - name: Checkout UCX
         if: steps.cache-ucx.outputs.cache-hit != 'true'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: openucx/ucx
           path: repos/ucx
@@ -545,7 +548,7 @@ jobs:
           cd build
           make check TESTS= -j
           SHMEM_DEBUG=1 SHMEM_INFO=1 make VERBOSE=1 TEST_RUNNER="${SOS_PM} -np 2" check
-          cat test/unit/hello.log
+          cat modules/tests-sos/test/unit/hello.log
 
   Portals4:
     runs-on: ubuntu-20.04
@@ -573,7 +576,9 @@ jobs:
       - name: Checking OS version
         run: |
           echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
       - name: Install dependencies
         run: |
           sudo apt-get install -y gfortran mpich libmpich-dev libev-dev libev-libevent-dev libhwloc-dev
@@ -582,7 +587,7 @@ jobs:
 
       # XPMEM
       - name: Checkout XPMEM
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: hjelmn/xpmem
           path: repos/xpmem
@@ -607,7 +612,7 @@ jobs:
           key: portals4-${{ matrix.portals4_version}}-${{ env.OS_NAME }}
       - name: Checkout Portals4
         if: steps.cache-portals4.outputs.cache-hit != 'true'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: regrant/portals4
           path: repos/portals4
@@ -634,7 +639,7 @@ jobs:
         run: |
           cd build
           make check TESTS= -j
-          ${SOS_PM} -np 1 test/unit/hello
+          ${SOS_PM} -np 1 modules/tests-sos/test/unit/hello
 
   XPMEM_Only:
     runs-on: ubuntu-20.04
@@ -650,7 +655,9 @@ jobs:
       - name: Checking OS version
         run: |
           echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
       - name: Install dependencies
         run: |
           sudo apt-get install -y gfortran mpich libmpich-dev libev-dev libev-libevent-dev libhwloc-dev
@@ -659,7 +666,7 @@ jobs:
 
       # XPMEM
       - name: Checkout XPMEM
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: hjelmn/xpmem
           path: repos/xpmem
@@ -688,4 +695,4 @@ jobs:
           cd build
           make check TESTS= -j
           SHMEM_DEBUG=1 SHMEM_INFO=1 make VERBOSE=1 TEST_RUNNER="${SOS_PM} -np 2" check
-          ${SOS_PM} -np 1 test/unit/hello
+          ${SOS_PM} -np 1 modules/tests-sos/test/unit/hello

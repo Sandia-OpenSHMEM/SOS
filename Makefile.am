@@ -21,7 +21,7 @@ endif
 
 dist_doc_DATA = README NEWS LICENSE
 
-SUBDIRS = bindings mpp pmi-simple src test
+SUBDIRS = bindings mpp pmi-simple src modules
 
 if ENABLE_MANPAGES
 SUBDIRS += man
