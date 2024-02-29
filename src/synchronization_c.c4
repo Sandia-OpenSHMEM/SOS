@@ -539,39 +539,27 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ALL')
     shmem_##STYPE##_test_all_vector(TYPE *vars, size_t nelems, const int *status, int cond,    \
                               TYPE *values)                                                    \
     {                                                                                          \
-        size_t ncompleted = 0;                                                                 \
         SHMEM_ERR_CHECK_INITIALIZED();                                                         \
         SHMEM_ERR_CHECK_SYMMETRIC(vars, sizeof(TYPE));                                         \
         SHMEM_ERR_CHECK_OVERLAP(vars, status, sizeof(TYPE) * nelems, sizeof(int) * nelems, 0); \
         SHMEM_ERR_CHECK_CMP_OP(cond);                                                          \
                                                                                                \
-        size_t i = 0, num_ignored = 0;                                                         \
-                                                                                               \
-        if (status) {                                                                          \
-            for (i = 0; i < nelems; i++) {                                                     \
-                if (status[i]) num_ignored++;                                                  \
-            }                                                                                  \
-        }                                                                                      \
-        if (nelems == 0 || num_ignored == nelems) {                                            \
-            shmem_transport_probe();                                                           \
-            return 1;                                                                          \
-        }                                                                                      \
+        size_t i = 0;                                                                          \
                                                                                                \
         for (i = 0; i < nelems; i++) {                                                         \
             if (status == NULL || !status[i]) {                                                \
                 int cmpret;                                                                    \
                 SHMEM_TEST(cond, &vars[i], values[i], cmpret);                                 \
-                if (cmpret) ncompleted++;                                                      \
+                if (!cmpret) {                                                                 \
+                    shmem_transport_probe();                                                   \
+                    return 0;                                                                  \
+                }                                                                              \
             }                                                                                  \
         }                                                                                      \
-        if (ncompleted == nelems) {                                                            \
-            shmem_internal_membar_acq_rel();                                                   \
-            shmem_transport_syncmem();                                                         \
-            return 1;                                                                          \
-        } else {                                                                               \
-            shmem_transport_probe();                                                           \
-            return 0;                                                                          \
-        }                                                                                      \
+                                                                                               \
+        shmem_internal_membar_acq_rel();                                                       \
+        shmem_transport_syncmem();                                                             \
+        return 1;                                                                              \
     }
 
 SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ALL_VECTOR')
