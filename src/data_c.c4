@@ -481,7 +481,7 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
 
 #define SHMEM_DEF_IBPUT(STYPE,TYPE)                           \
   void SHMEM_FUNCTION_ATTRIBUTES                              \
-  SHMEM_FUNC_PROTOTYPE(STYPE##_ibput, TYPE *target,            \
+  SHMEMX_FUNC_PROTOTYPE(STYPE##_ibput, TYPE *target,            \
                        const TYPE *source, ptrdiff_t tst,     \
                        ptrdiff_t sst, size_t bsize, size_t nblocks, int pe)  \
     SHMEM_ERR_CHECK_INITIALIZED();                            \
@@ -531,7 +531,7 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
 
 #define SHMEM_DEF_IBPUT_N(NAME,SIZE)                          \
   void SHMEM_FUNCTION_ATTRIBUTES                             \
-  SHMEM_FUNC_PROTOTYPE(ibput##NAME, void *target,             \
+  SHMEMX_FUNC_PROTOTYPE(ibput##NAME, void *target,             \
                        const void *source, ptrdiff_t tst,    \
                        ptrdiff_t sst, size_t bsize, size_t nblocks, int pe) \
     SHMEM_ERR_CHECK_INITIALIZED();                           \
@@ -585,7 +585,7 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
 
 #define SHMEM_DEF_IBGET(STYPE,TYPE)                            \
   void SHMEM_FUNCTION_ATTRIBUTES                              \
-  SHMEM_FUNC_PROTOTYPE(STYPE##_ibget, TYPE *target,            \
+  SHMEMX_FUNC_PROTOTYPE(STYPE##_ibget, TYPE *target,            \
                        const TYPE *source,                    \
                        ptrdiff_t tst, ptrdiff_t sst,          \
                        size_t bsize, size_t nblocks, int pe)                 \
@@ -638,7 +638,7 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
 
 #define SHMEM_DEF_IBGET_N(NAME,SIZE)                      \
   void SHMEM_FUNCTION_ATTRIBUTES                          \
-  SHMEM_FUNC_PROTOTYPE(ibget##NAME, void *target,          \
+  SHMEMX_FUNC_PROTOTYPE(ibget##NAME, void *target,          \
                        const void *source, ptrdiff_t tst, \
                        ptrdiff_t sst, size_t bsize,       \
                        size_t nblocks, int pe)            \
