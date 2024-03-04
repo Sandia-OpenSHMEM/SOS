@@ -490,7 +490,9 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_POSITIVE(tst);                            \
     SHMEM_ERR_CHECK_POSITIVE(sst);                            \
     SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE) * ((nblocks-1) * tst + 1)); \
-    SHMEM_ERR_CHECK_NULL(source, nblocks);                     \
+    SHMEM_ERR_CHECK_NULL(source, nblocks);                    \
+    SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(tst, bsize);             \
+    SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);             \
     SHMEM_ERR_CHECK_OVERLAP(target, source,                   \
                    sizeof(TYPE) * ((nblocks-1) * tst + 1),     \
                    sizeof(TYPE) * ((nblocks-1) * sst + 1), 0); \
@@ -542,6 +544,8 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_SYMMETRIC(target,                        \
                            (SIZE) * ((nblocks-1) * tst + 1)); \
     SHMEM_ERR_CHECK_NULL(source, nblocks);                    \
+    SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(tst, bsize);            \
+    SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);            \
     SHMEM_ERR_CHECK_OVERLAP(target, source,                  \
                         (SIZE) * ((nblocks-1) * tst + 1),     \
                         (SIZE) * ((nblocks-1) * sst + 1), 0); \
@@ -595,7 +599,9 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_POSITIVE(tst);                            \
     SHMEM_ERR_CHECK_POSITIVE(sst);                            \
     SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof(TYPE) * ((nblocks-1) * sst + 1)); \
-    SHMEM_ERR_CHECK_NULL(target, nblocks);                     \
+    SHMEM_ERR_CHECK_NULL(target, nblocks);                    \
+    SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(tst, bsize);             \
+    SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);             \
     SHMEM_ERR_CHECK_OVERLAP(target, source,                   \
                    sizeof(TYPE) * ((nblocks-1) * tst + 1),     \
                    sizeof(TYPE) * ((nblocks-1) * sst + 1), 0); \
@@ -649,7 +655,9 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_POSITIVE(sst);                        \
     SHMEM_ERR_CHECK_SYMMETRIC(source,                     \
                         (SIZE) * ((nblocks-1) * sst + 1)); \
-    SHMEM_ERR_CHECK_NULL(target, nblocks);                 \
+    SHMEM_ERR_CHECK_NULL(target, nblocks);                \
+    SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(tst, bsize);         \
+    SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);         \
     SHMEM_ERR_CHECK_OVERLAP(target, source,               \
                      (SIZE) * ((nblocks-1) * tst + 1),     \
                      (SIZE) * ((nblocks-1) * sst + 1), 0); \
