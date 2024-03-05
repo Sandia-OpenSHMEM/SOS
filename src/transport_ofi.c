@@ -2023,7 +2023,7 @@ int shmem_transport_fini(void)
     free(shmem_transport_ofi_target_heap_keys);
     free(shmem_transport_ofi_target_data_keys);
 
-#if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
+#if !defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     free(shmem_transport_ofi_target_heap_addrs);
     free(shmem_transport_ofi_target_data_addrs);
 #endif
