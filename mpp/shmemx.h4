@@ -42,6 +42,54 @@ include(shmemx_c_func.h4)dnl
 #ifdef __cplusplus
 } /* extern "C" */
 
+define(`SHMEM_CXX_IBPUT',
+`static inline void shmemx_ibput($2 *target, const $2 *source,
+                              ptrdiff_t tst, ptrdiff_t sst,
+                              size_t bsize, size_t nblocks, int pe) {
+    shmemx_$1_ibput(target, source, tst, sst, bsize, nblocks, pe);
+}
+static inline void shmemx_ibput(shmem_ctx_t ctx, $2 *target, const $2 *source,
+                              ptrdiff_t tst, ptrdiff_t sst,
+                              size_t bsize, size_t nblocks, int pe) {
+    shmemx_ctx_$1_ibput(ctx, target, source, tst, sst, bsize, nblocks, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_IBPUT')
+
+define(`SHMEM_CXX_IBGET',
+`static inline void shmemx_ibget($2 *target, const $2 *source,
+                              ptrdiff_t tst, ptrdiff_t sst,
+                              size_t bsize, size_t nblocks, int pe) {
+    shmemx_$1_ibget(target, source, tst, sst, bsize, nblocks, pe);
+}
+static inline void shmemx_ibget(shmem_ctx_t ctx, $2 *target, const $2 *source,
+                              ptrdiff_t tst, ptrdiff_t sst,
+                              size_t bsize, size_t nblocks, int pe) {
+    shmemx_ctx_$1_ibget(ctx, target, source, tst, sst, bsize, nblocks, pe);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_IBGET')
+
+define(`SHMEM_C11_GEN_IBPUT', `        $2*: shmemx_$1_ibput')dnl
+define(`SHMEM_CTX_C11_GEN_IBPUT', `            $2*: shmemx_ctx_$1_ibput')dnl
+#define shmemx_ibput(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+        shmem_ctx_t: \
+        _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_RMA(`SHMEM_CTX_C11_GEN_IBPUT', `, \') \
+        ), \
+SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_IBPUT', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_IBGET', `        $2*: shmemx_$1_ibget')dnl
+define(`SHMEM_CTX_C11_GEN_IBGET', `            $2*: shmemx_ctx_$1_ibget')dnl
+#define shmemx_ibget(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+        shmem_ctx_t: \
+        _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_RMA(`SHMEM_CTX_C11_GEN_IBGET', `, \') \
+        ), \
+SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_IBGET', `, \') \
+    )(__VA_ARGS__)
+
 /* C11 Generic Macros */
 #elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
 
