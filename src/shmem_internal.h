@@ -347,11 +347,12 @@ extern hwloc_topology_t shmem_internal_topology;
                         #op, (int) (op));                                               \
         }                                                                               \
     } while (0)
+
 #define SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(stride, bsize)                                 \
     do {                                                                                \
         if (stride < bsize) {                                                           \
             RAISE_ERROR_MSG("Stride argument \"%s\" (%zu), is less than block size %zu\n", \
-                    #stride, stride, bsize);
+                    #stride, stride, bsize);                                            \
         }                                                                               \
     } while(0)
 
