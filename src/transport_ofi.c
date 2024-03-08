@@ -1871,14 +1871,16 @@ int shmem_transport_init(void)
 
     shmem_transport_ctx_default.options = SHMEMX_CTX_BOUNCE_BUFFER;
 
-    ret = shmem_transport_ofi_target_ep_init();
-    if (ret != 0) return ret;
+    for (fi_info *cur_prov = shmem_transport_ofi_info->p_info; cur_prov; cur_prov = cur_prov->next) {
+        ret = shmem_transport_ofi_target_ep_init();
+        if (ret != 0) return ret;
 
-    ret = publish_mr_info();
-    if (ret != 0) return ret;
+        ret = publish_mr_info();
+        if (ret != 0) return ret;
 
-    ret = publish_av_info(&shmem_transport_ofi_info);
-    if (ret != 0) return ret;
+        ret = publish_av_info(&shmem_transport_ofi_info);
+        if (ret != 0) return ret;
+    }
 
     return 0;
 }
