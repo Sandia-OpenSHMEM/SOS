@@ -44,7 +44,7 @@
 extern struct fid_cntr*                 shmem_transport_ofi_target_cntrfd;
 #endif
 #if ENABLE_MANUAL_PROGRESS
-extern struct fid_cq*                   shmem_transport_ofi_target_cq;
+extern struct fid_cq**                   shmem_transport_ofi_target_cq;
 #endif
 #ifndef ENABLE_MR_SCALABLE
 extern uint64_t*                        shmem_transport_ofi_target_heap_keys;
@@ -221,7 +221,7 @@ typedef enum fi_op       shm_internal_op_t;
 #define SHMEM_TRANSPORT_OFI_TYPE_LONG   0x02
 
 
-extern fi_addr_t *addr_table;
+extern fi_addr_t** addr_table;
 
 #ifdef USE_AV_MAP
 #define GET_DEST(dest) ((fi_addr_t)(addr_table[(dest)]))
@@ -287,7 +287,7 @@ struct shmem_transport_ctx_t {
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
 extern shmem_transport_ctx_t shmem_transport_ctx_default;
 
-extern struct fid_ep* shmem_transport_ofi_target_ep;
+extern struct fid_ep** shmem_transport_ofi_target_ep;
 
 #ifdef USE_CTX_LOCK
 #define SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx)                                       \
