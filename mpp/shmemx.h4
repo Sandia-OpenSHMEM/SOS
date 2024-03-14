@@ -68,6 +68,9 @@ static inline void shmemx_ibget(shmem_ctx_t ctx, $2 *target, const $2 *source,
 }')dnl
 SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_IBGET')
 
+/* C11 Generic Macros */
+#elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
+
 define(`SHMEM_C11_GEN_IBPUT', `        $2*: shmemx_$1_ibput')dnl
 define(`SHMEM_CTX_C11_GEN_IBPUT', `            $2*: shmemx_ctx_$1_ibput')dnl
 #define shmemx_ibput(...) \
@@ -89,9 +92,6 @@ SHMEM_BIND_C11_RMA(`SHMEM_CTX_C11_GEN_IBGET', `, \') \
         ), \
 SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_IBGET', `, \') \
     )(__VA_ARGS__)
-
-/* C11 Generic Macros */
-#elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
 
 #endif /* C11 */
 
