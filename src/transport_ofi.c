@@ -52,6 +52,7 @@
 #include "runtime.h"
 #include "uthash.h"
 
+/*
 struct fabric_info {
     struct fi_info *fabrics;
     struct fi_info *p_info;
@@ -61,6 +62,7 @@ struct fabric_info {
     int npes;
     size_t num_provs;
 };
+*/
 
 struct fid_fabric**              shmem_transport_ofi_fabfd;
 struct fid_domain**              shmem_transport_ofi_domainfd;
@@ -68,18 +70,18 @@ struct fid_av**                  shmem_transport_ofi_avfd;
 struct fid_ep**                  shmem_transport_ofi_target_ep;
 struct fid_cq**                  shmem_transport_ofi_target_cq;
 #if ENABLE_TARGET_CNTR
-struct fid_cntr*                shmem_transport_ofi_target_cntrfd;
+struct fid_cntr**                shmem_transport_ofi_target_cntrfd;
 #endif
 #ifdef ENABLE_MR_SCALABLE
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-struct fid_mr*                  shmem_transport_ofi_target_mrfd;
+struct fid_mr**                 shmem_transport_ofi_target_mrfd;
 #else  /* !ENABLE_REMOTE_VIRTUAL_ADDRESSING */
-struct fid_mr*                  shmem_transport_ofi_target_heap_mrfd;
-struct fid_mr*                  shmem_transport_ofi_target_data_mrfd;
+struct fid_mr**                  shmem_transport_ofi_target_heap_mrfd;
+struct fid_mr**                  shmem_transport_ofi_target_data_mrfd;
 #endif
 #else  /* !ENABLE_MR_SCALABLE */
-struct fid_mr*                  shmem_transport_ofi_target_heap_mrfd;
-struct fid_mr*                  shmem_transport_ofi_target_data_mrfd;
+struct fid_mr**                 shmem_transport_ofi_target_heap_mrfd;
+struct fid_mr**                 shmem_transport_ofi_target_data_mrfd;
 uint64_t*                       shmem_transport_ofi_target_heap_keys;
 uint64_t*                       shmem_transport_ofi_target_data_keys;
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
@@ -91,7 +93,7 @@ uint8_t**                       shmem_transport_ofi_target_data_addrs;
 #endif /* ENABLE_MR_SCALABLE */
 
 #ifdef USE_FI_HMEM
-struct fid_mr*                  shmem_transport_ofi_external_heap_mrfd;
+struct fid_mr*                 shmem_transport_ofi_external_heap_mrfd;
 uint64_t*                       shmem_transport_ofi_external_heap_keys;
 uint8_t**                       shmem_transport_ofi_external_heap_addrs;
 #endif
@@ -204,7 +206,7 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
     return tid;
 }
 
-static struct fabric_info shmem_transport_ofi_info = {0};
+/*static*/ struct fabric_info shmem_transport_ofi_info = {0};
 
 static size_t shmem_transport_ofi_grow_size = 128;
 
@@ -594,23 +596,23 @@ static inline
 int bind_enable_ep_resources(shmem_transport_ctx_t *ctx)
 {
     int ret = 0;
-
+DEBUG_MSG("Checkpoint F1\n");
     /* If using SOS-managed STXs, bind the STX */
     if (ctx->stx_idx >= 0) {
         ret = fi_ep_bind(ctx->ep, &shmem_transport_ofi_stx_pool[ctx->stx_idx].stx->fid, 0);
         OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to endpoint failed");
     }
-
+DEBUG_MSG("Checkpoint F2\n");
     /* Put counter captures completions for non-fetching operations (put,
      * atomic, etc.) */
     ret = fi_ep_bind(ctx->ep, &ctx->put_cntr->fid, FI_WRITE);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind put CNTR to endpoint failed");
-
+DEBUG_MSG("Checkpoint F3\n");
     /* Get counter captures completions for fetching operations (get,
      * fetch-atomic, etc.) */
     ret = fi_ep_bind(ctx->ep, &ctx->get_cntr->fid, FI_READ);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind get CNTR to endpoint failed");
-
+DEBUG_MSG("Checkpoint F4\n");
     /* In addition to incrementing the put counter, bounce buffered puts and
      * non-fetching AMOs generate a CQ event that is used to reclaim the buffer
      * (pointer is returned in event context) after the operation completes. */
@@ -620,16 +622,20 @@ int bind_enable_ep_resources(shmem_transport_ctx_t *ctx)
      * EP using the CQ.  When manual progress is disabled, FI_RECV can be
      * removed below.  However, there aren't currently any cases where removing
      * FI_RECV significantly improves performance or resource usage.  */
-
+DEBUG_MSG("Checkpoint F5\n");
     ret = fi_ep_bind(ctx->ep, &ctx->cq->fid,
                      FI_SELECTIVE_COMPLETION | FI_TRANSMIT | FI_RECV);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind CQ to endpoint failed");
 
     for (size_t idx = 0; idx < shmem_transport_ofi_info.num_provs; idx++) {
+DEBUG_MSG("Checkpoint F6\n");
+DEBUG_MSG("&shmem_trasport_ofi_avfd[%zu] = %p\n", idx, &shmem_transport_ofi_avfd[idx]);
+DEBUG_MSG("&ctx->ep = %p\n", &ctx->ep);
         ret = fi_ep_bind(ctx->ep, &shmem_transport_ofi_avfd[idx]->fid, 0);
         OFI_CHECK_RETURN_STR(ret, "fi_ep_bind AV to endpoint failed");
+        break; //REMOVE
     }
-
+DEBUG_MSG("Checkpoint F7\n");
     ret = fi_enable(ctx->ep);
     OFI_CHECK_RETURN_STR(ret, "fi_enable on endpoint failed");
 
@@ -664,13 +670,13 @@ int ofi_mr_reg_external_heap(size_t idx)
 
 #if ENABLE_TARGET_CNTR
     ret = fi_mr_bind(shmem_transport_ofi_external_heap_mrfd,
-                     &shmem_transport_ofi_target_cntrfd->fid,
+                     &shmem_transport_ofi_target_cntrfd[idx]->fid,
                      FI_REMOTE_WRITE);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to external heap MR failed");
 
     if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_ENDPOINT) {
         ret = fi_ep_bind(shmem_transport_ofi_target_ep[idx],
-                         &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE);
+                         &shmem_transport_ofi_target_cntrfd[idx]->fid, FI_REMOTE_WRITE);
         OFI_CHECK_RETURN_STR(ret, "target CNTR binding to target EP failed");
         ret = fi_mr_bind(shmem_transport_ofi_external_heap_mrfd,
                          &shmem_transport_ofi_target_ep[idx]->fid, FI_REMOTE_WRITE);
@@ -691,21 +697,21 @@ int ofi_mr_reg_bind(uint64_t flags, size_t idx)
     int ret = 0;
 
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
-    ret = fi_mr_reg(shmem_transport_ofi_domainfd, 0, UINT64_MAX,
+    ret = fi_mr_reg(shmem_transport_ofi_domainfd[idx], 0, UINT64_MAX,
                     FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, flags,
-                    &shmem_transport_ofi_target_mrfd, NULL);
+                    &shmem_transport_ofi_target_mrfd[idx], NULL);
     OFI_CHECK_RETURN_STR(ret, "target memory (all) registration failed");
 
     /* Bind counter with target memory region for incoming messages */
 #if ENABLE_TARGET_CNTR
-    ret = fi_mr_bind(shmem_transport_ofi_target_mrfd,
-                     &shmem_transport_ofi_target_cntrfd->fid,
+    ret = fi_mr_bind(shmem_transport_ofi_target_mrfd[idx],
+                     &shmem_transport_ofi_target_cntrfd[idx]->fid,
                      FI_REMOTE_WRITE);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to MR failed");
 
 #ifdef ENABLE_MR_RMA_EVENT
     if (shmem_transport_ofi_mr_rma_event) {
-        ret = fi_mr_enable(shmem_transport_ofi_target_mrfd);
+        ret = fi_mr_enable(shmem_transport_ofi_target_mrfd[idx]);
         OFI_CHECK_RETURN_STR(ret, "target MR enable failed");
     }
 #endif /* ENABLE_MR_RMA_EVENT */
@@ -719,56 +725,57 @@ int ofi_mr_reg_bind(uint64_t flags, size_t idx)
     ret = fi_mr_reg(shmem_transport_ofi_domainfd[idx], shmem_internal_heap_base,
                     shmem_internal_heap_length,
                     FI_REMOTE_READ | FI_REMOTE_WRITE, 0, key, flags,
-                    &shmem_transport_ofi_target_heap_mrfd, NULL);
+                    &shmem_transport_ofi_target_heap_mrfd[idx], NULL);
     OFI_CHECK_RETURN_STR(ret, "target memory (heap) registration failed");
 
     key = 0;
     ret = fi_mr_reg(shmem_transport_ofi_domainfd[idx], shmem_internal_data_base,
                     shmem_internal_data_length,
                     FI_REMOTE_READ | FI_REMOTE_WRITE, 0, key, flags,
-                    &shmem_transport_ofi_target_data_mrfd, NULL);
+                    &shmem_transport_ofi_target_data_mrfd[idx], NULL);
     OFI_CHECK_RETURN_STR(ret, "target memory (data) registration failed");
 
     /* Bind counter with target memory region for incoming messages */
 #if ENABLE_TARGET_CNTR
-    ret = fi_mr_bind(shmem_transport_ofi_target_heap_mrfd,
-                     &shmem_transport_ofi_target_cntrfd->fid,
+    ret = fi_mr_bind(shmem_transport_ofi_target_heap_mrfd[idx],
+                     &shmem_transport_ofi_target_cntrfd[idx]->fid,
                      FI_REMOTE_WRITE);
+    DEBUG_MSG("ret = %s", fi_strerror(ret));
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to heap MR failed");
 
-    ret = fi_mr_bind(shmem_transport_ofi_target_data_mrfd,
-                     &shmem_transport_ofi_target_cntrfd->fid,
+    ret = fi_mr_bind(shmem_transport_ofi_target_data_mrfd[idx],
+                     &shmem_transport_ofi_target_cntrfd[idx]->fid,
                      FI_REMOTE_WRITE);
     OFI_CHECK_RETURN_STR(ret, "target CNTR binding to data MR failed");
 
 #ifdef ENABLE_MR_ENDPOINT
     if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_ENDPOINT) {
         ret = fi_ep_bind(shmem_transport_ofi_target_ep[idx],
-                         &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE);
+                         &shmem_transport_ofi_target_cntrfd[idx]->fid, FI_REMOTE_WRITE);
         OFI_CHECK_RETURN_STR(ret, "target CNTR binding to target EP failed");
 
-        ret = fi_mr_bind(shmem_transport_ofi_target_heap_mrfd,
+        ret = fi_mr_bind(shmem_transport_ofi_target_heap_mrfd[idx],
                          &shmem_transport_ofi_target_ep[idx]->fid, FI_REMOTE_WRITE);
         OFI_CHECK_RETURN_STR(ret, "target EP binding to heap MR failed");
 
-        ret = fi_mr_enable(shmem_transport_ofi_target_heap_mrfd);
+        ret = fi_mr_enable(shmem_transport_ofi_target_heap_mrfd[idx]);
         OFI_CHECK_RETURN_STR(ret, "target heap MR enable failed");
 
-        ret = fi_mr_bind(shmem_transport_ofi_target_data_mrfd,
+        ret = fi_mr_bind(shmem_transport_ofi_target_data_mrfd[idx],
                          &shmem_transport_ofi_target_ep[idx]->fid, FI_REMOTE_WRITE);
         OFI_CHECK_RETURN_STR(ret, "target EP binding to data MR failed");
 
-        ret = fi_mr_enable(shmem_transport_ofi_target_data_mrfd);
+        ret = fi_mr_enable(shmem_transport_ofi_target_data_mrfd[idx]);
         OFI_CHECK_RETURN_STR(ret, "target data MR enable failed");
     }
 #endif
 
 #ifdef ENABLE_MR_RMA_EVENT
     if (shmem_transport_ofi_mr_rma_event) {
-        ret = fi_mr_enable(shmem_transport_ofi_target_data_mrfd);
+        ret = fi_mr_enable(shmem_transport_ofi_target_data_mrfd[idx]);
         OFI_CHECK_RETURN_STR(ret, "target data MR enable failed");
 
-        ret = fi_mr_enable(shmem_transport_ofi_target_heap_mrfd);
+        ret = fi_mr_enable(shmem_transport_ofi_target_heap_mrfd[idx]);
         OFI_CHECK_RETURN_STR(ret, "target heap MR enable failed");
     }
 #endif /* ENABLE_MR_RMA_EVENT */
@@ -779,7 +786,7 @@ int ofi_mr_reg_bind(uint64_t flags, size_t idx)
 }
 
 static inline
-int allocate_recv_cntr_mr(void)
+int allocate_recv_cntr_mr(size_t idx)
 {
     int ret = 0;
     uint64_t flags = 0;
@@ -799,9 +806,9 @@ int allocate_recv_cntr_mr(void)
         /* Create counter for incoming writes */
         cntr_attr.events   = FI_CNTR_EVENTS_COMP;
         cntr_attr.wait_obj = FI_WAIT_UNSPEC;
-
-        ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
-                           &shmem_transport_ofi_target_cntrfd, NULL);
+DEBUG_MSG("Checkpoint A1\n");
+        ret = fi_cntr_open(shmem_transport_ofi_domainfd[idx], &cntr_attr,
+                           &shmem_transport_ofi_target_cntrfd[idx], NULL);
         OFI_CHECK_RETURN_STR(ret, "target CNTR open failed");
 
 #ifdef ENABLE_MR_RMA_EVENT
@@ -810,17 +817,18 @@ int allocate_recv_cntr_mr(void)
 #endif /* ENABLE_MR_RMA_EVENT */
     }
 #endif
-
-    for (size_t idx = 0; idx < shmem_transport_ofi_info.num_provs; idx++) {
+DEBUG_MSG("Checkpoint A2\n");
+    //for (size_t idx = 0; idx < shmem_transport_ofi_info.num_provs; idx++) {
 #ifdef USE_FI_HMEM
         if (shmem_external_heap_pre_initialized) {
             ret = ofi_mr_reg_external_heap(idx);
             OFI_CHECK_RETURN_STR(ret, "OFI MR registration with HMEM failed");
         }
 #endif
+DEBUG_MSG("Checkpoint A3\n");
         ret = ofi_mr_reg_bind(flags, idx);
         OFI_CHECK_RETURN_STR(ret, "OFI MR registration failed");
-    }
+    //}
 
     return ret;
 }
@@ -871,8 +879,8 @@ int publish_mr_info(void)
         uint64_t heap_key, data_key;
 
         if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_PROV_KEY) {
-            heap_key = fi_mr_key(shmem_transport_ofi_target_heap_mrfd);
-            data_key = fi_mr_key(shmem_transport_ofi_target_data_mrfd);
+            heap_key = fi_mr_key(shmem_transport_ofi_target_heap_mrfd[0] /* Fix? */);
+            data_key = fi_mr_key(shmem_transport_ofi_target_data_mrfd[0] /* Fix? */);
         } else {
             heap_key = 1;
             data_key = 0;
@@ -1228,13 +1236,13 @@ int atomic_limitations_check(void)
 }
 
 static inline
-int publish_av_info(struct fabric_info *info)
+int publish_av_info(/* struct fabric_info *info */ size_t idx)
 {
     int    ret = 0;
     char   epname[128];
     size_t epnamelen = sizeof(epname);
 
-    ret = fi_getname((fid_t)shmem_transport_ofi_target_ep, epname, &epnamelen);
+    ret = fi_getname((fid_t)shmem_transport_ofi_target_ep[idx], epname, &epnamelen);
     if (ret != 0 || (epnamelen > sizeof(epname))) {
         RAISE_WARN_STR("fi_getname failed");
         return ret;
@@ -1262,24 +1270,28 @@ int populate_av(void)
         RAISE_WARN_STR("Out of memory allocating 'alladdrs'");
         return 1;
     }
-
+DEBUG_MSG("HERE 1\n");
     for (i = 0; i < shmem_internal_num_pes; i++) {
         char *addr_ptr = alladdrs + i * shmem_transport_ofi_addrlen;
+DEBUG_MSG("HERE 2\n");
         err = shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen);
         if (err != 0) {
             RAISE_ERROR_STR("Runtime get of 'fi_epname' failed");
         }
     }
-
-    ret = fi_av_insert(shmem_transport_ofi_avfd,
-                       alladdrs,
-                       shmem_internal_num_pes,
-                       addr_table,
-                       0,
-                       NULL);
-    if (ret != shmem_internal_num_pes) {
-        RAISE_WARN_STR("av insert failed");
-        return ret;
+    for (size_t idx = 0; idx < shmem_transport_ofi_info.num_provs; idx++) {
+DEBUG_MSG("HERE 3\n");
+        ret = fi_av_insert(shmem_transport_ofi_avfd[idx],
+                        alladdrs,
+                        shmem_internal_num_pes,
+                        addr_table[idx],
+                        0,
+                        NULL);
+DEBUG_MSG("HERE 4\n");
+        if (ret != shmem_internal_num_pes) {
+            RAISE_WARN_STR("av insert failed");
+            return ret;
+        }
     }
 
     free(alladdrs);
@@ -1338,7 +1350,7 @@ int allocate_fabric_resources(/*struct fabric_info *info*/)
 
         idx += 1;
     }
-
+DEBUG_MSG("ret=%d\n", ret);
     return ret;
 }
 
@@ -1561,6 +1573,8 @@ int query_for_fabric(struct fabric_info *info)
 
     if (shmem_internal_params.DISABLE_MULTIRAIL) {
         info->p_info = filtered_fabrics_list_head;
+        info->p_info->next = NULL;
+        info->num_provs = 1;
     }
     else {
         /* Generate a linked list of all fabrics with a non-null nic value */
@@ -1577,6 +1591,7 @@ int query_for_fabric(struct fabric_info *info)
         DEBUG_MSG("Total num. NICs detected: %d\n", num_nics);
         if (num_nics == 0) {
             info->p_info = fallback;
+            info->p_info->next = NULL;
             info->num_provs = 1;
         }
         else {
@@ -1692,7 +1707,7 @@ static int shmem_transport_ofi_target_ep_init(/*void*/ struct fi_info *info, siz
     ret = fi_enable(shmem_transport_ofi_target_ep[idx]);
     OFI_CHECK_RETURN_STR(ret, "fi_enable on target endpoint failed");
 
-    ret = allocate_recv_cntr_mr();
+    ret = allocate_recv_cntr_mr(idx);
     if (ret) return ret;
 
     return 0;
@@ -1741,7 +1756,8 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     SHMEM_MUTEX_INIT(ctx->lock);
 #endif
 
-    for (size_t idx = 0; idx < shmem_transport_ofi_info.num_provs; idx++) {
+    size_t idx = 0;
+    for (struct fi_info *cur_prov = info->p_info; cur_prov; cur_prov = cur_prov->next) {
         ret = fi_cntr_open(shmem_transport_ofi_domainfd[idx], &cntr_put_attr,
                         &ctx->put_cntr, NULL);
         OFI_CHECK_RETURN_MSG(ret, "put_cntr creation failed (%s)\n", fi_strerror(errno));
@@ -1757,8 +1773,11 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
         OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(errno));
 
         ret = fi_endpoint(shmem_transport_ofi_domainfd[idx],
-                        info->p_info, &ctx->ep, NULL);
+                        /*info->p_info*/ cur_prov, &ctx->ep, NULL);
         OFI_CHECK_RETURN_MSG(ret, "ep creation failed (%s)\n", fi_strerror(errno));
+
+        idx += 1;
+        break; //REMOVE
     }
 
     /* TODO: Fill in TX attr */
@@ -1844,6 +1863,10 @@ int shmem_transport_init(void)
     shmem_transport_ofi_avfd = (struct fid_av **) malloc(num_provs * sizeof(struct fid_av *));
     shmem_transport_ofi_target_ep = (struct fid_ep **) malloc(num_provs * sizeof(struct fid_ep *));
     shmem_transport_ofi_target_cq = (struct fid_cq **) malloc(num_provs * sizeof(struct fid_cq *));
+    //shmem_transport_ofi_target_mrfd = (struct fid_mr **) malloc(num_provs * sizeof(struct fid_mr *));
+    shmem_transport_ofi_target_heap_mrfd = (struct fid_mr **) malloc(num_provs * sizeof(struct fid_mr *));
+    shmem_transport_ofi_target_data_mrfd = (struct fid_mr **) malloc(num_provs * sizeof(struct fid_mr *));
+    shmem_transport_ofi_target_cntrfd = (struct fid_cntr **) malloc(num_provs * sizeof(struct fid_cntr *));
     addr_table = (fi_addr_t **) malloc(num_provs * sizeof(fi_addr_t *));
 
     ret = allocate_fabric_resources(/*&shmem_transport_ofi_info*/);
@@ -1860,7 +1883,6 @@ int shmem_transport_init(void)
         RAISE_WARN_MSG("Ignoring bad STX share algorithm '%s', using 'round-robin'\n", type);
         shmem_transport_ofi_stx_allocator = ROUNDROBIN;
     }
-
 
     /* The current bounce buffering implementation is only compatible with
      * providers that don't require FI_CONTEXT or FI_CONTEXT2 */
@@ -1891,21 +1913,23 @@ int shmem_transport_init(void)
 #endif
 
     shmem_transport_ctx_default.options = SHMEMX_CTX_BOUNCE_BUFFER;
-
+DEBUG_MSG("Checkpoint A\n");
     size_t idx = 0;
     for (struct fi_info *cur_prov = shmem_transport_ofi_info.p_info; cur_prov; cur_prov = cur_prov->next) {
         ret = shmem_transport_ofi_target_ep_init(cur_prov, idx);
         if (ret != 0) return ret;
-
-        ret = publish_mr_info();
+DEBUG_MSG("Checkpoint B\n");
+        if (cur_prov == shmem_transport_ofi_info.p_info) {
+            ret = publish_mr_info();
+            if (ret != 0) return ret;
+        }
+DEBUG_MSG("Checkpoint C\n");
+        ret = publish_av_info(/*&shmem_transport_ofi_info*/ idx);
         if (ret != 0) return ret;
-
-        ret = publish_av_info(&shmem_transport_ofi_info);
-        if (ret != 0) return ret;
-
+DEBUG_MSG("Checkpoint D\n");
         idx += 1;
     }
-
+DEBUG_MSG("Checkpoint E\n");
     return 0;
 }
 
@@ -1964,29 +1988,30 @@ int shmem_transport_startup(void)
             RAISE_ERROR_STR("Out of memory when allocating OFI STX pool");
         }
     }
-
-    for (i = 0; i < shmem_transport_ofi_stx_max; i++) {
-        ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL,
-                             &shmem_transport_ofi_stx_pool[i].stx, NULL);
-        OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
-        shmem_transport_ofi_stx_pool[i].ref_cnt = 0;
-        shmem_transport_ofi_stx_pool[i].is_private = 0;
+    for (size_t j = 0; j < shmem_transport_ofi_info.num_provs; j++) {
+        for (i = 0; i < shmem_transport_ofi_stx_max; i++) {
+            ret = fi_stx_context(shmem_transport_ofi_domainfd[j], NULL,
+                                &shmem_transport_ofi_stx_pool[i].stx, NULL);
+            OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
+            shmem_transport_ofi_stx_pool[i].ref_cnt = 0;
+            shmem_transport_ofi_stx_pool[i].is_private = 0;
+        }
     }
 
     shmem_transport_ctx_default.team = &shmem_internal_team_world;
-
+DEBUG_MSG("Checkpoint F\n");
     ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, SHMEM_TRANSPORT_CTX_DEFAULT_ID);
     if (ret != 0) return ret;
-
+DEBUG_MSG("Checkpoint G\n");
     ret = atomic_limitations_check();
     if (ret != 0) return ret;
-
+DEBUG_MSG("Checkpoint H\n");
     ret = populate_mr_tables();
     if (ret != 0) return ret;
-
+DEBUG_MSG("Checkpoint I\n");
     ret = populate_av();
     if (ret != 0) return ret;
-
+DEBUG_MSG("Checkpoint J\n");
     return 0;
 }
 
@@ -2198,12 +2223,13 @@ int shmem_transport_fini(void)
     free(shmem_transport_ofi_target_heap_addrs);
     free(shmem_transport_ofi_target_data_addrs);
 #endif
+    for (size_t idx = 0; idx < shmem_transport_ofi_info.num_provs; idx++) {
+        ret = fi_close(&shmem_transport_ofi_target_heap_mrfd[idx]->fid);
+        OFI_CHECK_ERROR_MSG(ret, "Target heap MR close failed (%s)\n", fi_strerror(errno));
 
-    ret = fi_close(&shmem_transport_ofi_target_heap_mrfd->fid);
-    OFI_CHECK_ERROR_MSG(ret, "Target heap MR close failed (%s)\n", fi_strerror(errno));
-
-    ret = fi_close(&shmem_transport_ofi_target_data_mrfd->fid);
-    OFI_CHECK_ERROR_MSG(ret, "Target data MR close failed (%s)\n", fi_strerror(errno));
+        ret = fi_close(&shmem_transport_ofi_target_data_mrfd[idx]->fid);
+        OFI_CHECK_ERROR_MSG(ret, "Target data MR close failed (%s)\n", fi_strerror(errno));
+    }
 #endif
 
 #ifdef USE_FI_HMEM
@@ -2222,8 +2248,10 @@ int shmem_transport_fini(void)
         OFI_CHECK_ERROR_MSG(ret, "Target CQ close failed (%s)\n", fi_strerror(errno));
     }
 #if ENABLE_TARGET_CNTR
-    ret = fi_close(&shmem_transport_ofi_target_cntrfd->fid);
-    OFI_CHECK_ERROR_MSG(ret, "Target CT close failed (%s)\n", fi_strerror(errno));
+    for (size_t idx = 0; idx < shmem_transport_ofi_info.num_provs; idx++) {
+        ret = fi_close(&shmem_transport_ofi_target_cntrfd[idx]->fid);
+        OFI_CHECK_ERROR_MSG(ret, "Target CT close failed (%s)\n", fi_strerror(errno));
+    }
 #endif
 
     for (size_t idx = 0; idx < shmem_transport_ofi_info.num_provs; idx++) {

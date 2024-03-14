@@ -41,10 +41,10 @@
 #endif
 
 #if ENABLE_TARGET_CNTR
-extern struct fid_cntr*                 shmem_transport_ofi_target_cntrfd;
+extern struct fid_cntr**                shmem_transport_ofi_target_cntrfd;
 #endif
 #if ENABLE_MANUAL_PROGRESS
-extern struct fid_cq**                   shmem_transport_ofi_target_cq;
+extern struct fid_cq**                  shmem_transport_ofi_target_cq;
 #endif
 #ifndef ENABLE_MR_SCALABLE
 extern uint64_t*                        shmem_transport_ofi_target_heap_keys;
@@ -257,6 +257,18 @@ struct shmem_internal_tid
     } val;
 };
 
+struct fabric_info {
+    struct fi_info *fabrics;
+    struct fi_info *p_info;
+    char *prov_name;
+    char *fabric_name;
+    char *domain_name;
+    int npes;
+    size_t num_provs;
+};
+
+extern struct fabric_info shmem_transport_ofi_info;
+
 struct shmem_transport_ctx_t {
     int                             id;
 #ifdef USE_CTX_LOCK
@@ -332,10 +344,12 @@ void shmem_transport_probe(void)
 #  ifdef USE_THREAD_COMPLETION
     if (0 == pthread_mutex_trylock(&shmem_transport_ofi_progress_lock)) {
 #  endif
-        struct fi_cq_entry buf;
-        int ret = fi_cq_read(shmem_transport_ofi_target_cq, &buf, 1);
-        if (ret == 1)
-            RAISE_WARN_STR("Unexpected event");
+        for (size_t i = 0; i < shmem_transport_ofi_info.num_provs; i++) {
+            struct fi_cq_entry buf;
+            int ret = fi_cq_read(shmem_transport_ofi_target_cq[i], &buf, 1);
+            if (ret == 1)
+                RAISE_WARN_STR("Unexpected event");
+        }
 #  ifdef USE_THREAD_COMPLETION
         pthread_mutex_unlock(&shmem_transport_ofi_progress_lock);
     }
