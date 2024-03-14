@@ -272,6 +272,15 @@ extern hwloc_topology_t shmem_internal_topology;
                                 ptr_ext, shmem_internal_heap_base, heap_ext);           \
             }                                                                           \
         }                                                                               \
+        else if (shmem_external_heap_base) {                                            \
+            const void *heap_ext_external = (void*)((uint8_t *) shmem_external_heap_base +                             \
+                                                   shmem_external_heap_length);                                        \
+            if (ptr_base >= shmem_external_heap_base && ptr_base < heap_ext_external && ptr_ext > heap_ext_external) { \
+                RAISE_ERROR_MSG("Argument \"%s\" [%p..%p) exceeds device "                                             \
+                                "sym. heap region [%p..%p)\n", #ptr_in, ptr_base,                                      \
+                                ptr_ext, shmem_external_heap_base, heap_ext_external);                                 \
+            }                                                                                                          \
+        }                                                                                                              \
         else {                                                                          \
             RAISE_ERROR_MSG("Argument \"%s\" is not symmetric (%p)\n",                  \
                             #ptr_in, ptr_base);                                         \
@@ -284,6 +293,15 @@ extern hwloc_topology_t shmem_internal_topology;
         const void *heap_ext = (void*)((uint8_t *) shmem_internal_heap_base +           \
                                                    shmem_internal_heap_length);         \
         if (! (ptr_base >= shmem_internal_heap_base && ptr_base < heap_ext)) {          \
+            if (shmem_external_heap_base) {                                             \
+                const void *heap_ext_external = (void*)((uint8_t *) shmem_external_heap_base +                 \
+                                                   shmem_external_heap_length);                                \
+                if (! (ptr_base >= shmem_external_heap_base && ptr_base < heap_ext_external)) {                \
+                    RAISE_ERROR_MSG("Argument \"%s\" is not in host or device symm. heap (%p), [%p..%p)\n",    \
+                        #ptr_in, ptr_base, shmem_external_heap_base, heap_ext_external);                       \
+                }                                                                                              \
+                break;                                                                                         \
+            }                                                                                                  \
             RAISE_ERROR_MSG("Argument \"%s\" is not in symm. heap (%p), [%p..%p)\n",    \
                     #ptr_in, ptr_base, shmem_internal_heap_base, heap_ext);             \
         }                                                                               \
