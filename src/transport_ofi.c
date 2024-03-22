@@ -52,6 +52,10 @@
 #include "runtime.h"
 #include "uthash.h"
 
+
+struct shmem_transport_ofi_ep **shmem_transport_ofi_eps = NULL;
+size_t shmem_transport_ofi_num_eps = 0;
+
 struct fabric_info {
     struct fi_info *fabrics;
     struct fi_info *p_info;
@@ -384,7 +388,7 @@ struct shmem_transport_ofi_stx_t {
     int               is_private;
 };
 typedef struct shmem_transport_ofi_stx_t shmem_transport_ofi_stx_t;
-static shmem_transport_ofi_stx_t* shmem_transport_ofi_stx_pool = NULL;
+static shmem_transport_ofi_stx_t** shmem_transport_ofi_stx_pool = NULL;
 
 struct shmem_transport_ofi_stx_kvs_t {
     int                         stx_idx;
@@ -858,14 +862,14 @@ int publish_external_mr_info(void)
 #endif
 
 static
-int publish_mr_info(void)
+int publish_mr_info(struct fi_info *info)
 {
 #ifndef ENABLE_MR_SCALABLE
     {
         int err;
         uint64_t heap_key, data_key;
 
-        if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_PROV_KEY) {
+        if (info->domain_attr->mr_mode & FI_MR_PROV_KEY) {
             heap_key = fi_mr_key(shmem_transport_ofi_target_heap_mrfd);
             data_key = fi_mr_key(shmem_transport_ofi_target_data_mrfd);
         } else {
@@ -887,7 +891,7 @@ int publish_mr_info(void)
     }
 
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-    if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_VIRT_ADDR)
+    if (info->domain_attr->mr_mode & FI_MR_VIRT_ADDR)
         shmem_transport_ofi_use_absolute_address = 1;
     else
         shmem_transport_ofi_use_absolute_address = 0;
@@ -896,7 +900,7 @@ int publish_mr_info(void)
         int err;
         void *heap_base, *data_base;
 
-        if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_VIRT_ADDR) {
+        if (info->domain_attr->mr_mode & FI_MR_VIRT_ADDR) {
             heap_base = shmem_internal_heap_base;
             data_base = shmem_internal_data_base;
         } else {
@@ -1223,25 +1227,27 @@ int atomic_limitations_check(void)
 }
 
 static inline
-int publish_av_info(struct fabric_info *info)
+int publish_av_info(size_t idx)
 {
     int    ret = 0;
+    char   kvs_entry[64];
     char   epname[128];
     size_t epnamelen = sizeof(epname);
 
-    ret = fi_getname((fid_t)shmem_transport_ofi_target_ep, epname, &epnamelen);
+    ret = fi_getname((fid_t)shmem_transport_ofi_eps[idx]->ep, epname, &epnamelen);
     if (ret != 0 || (epnamelen > sizeof(epname))) {
         RAISE_WARN_STR("fi_getname failed");
         return ret;
     }
 
-    ret = shmem_runtime_put("fi_epname", epname, epnamelen);
-    OFI_CHECK_RETURN_STR(ret, "shmem_runtime_put fi_epname failed");
+    sprintf(kvs_entry, "fi_epname_%zu", idx);
+    ret = shmem_runtime_put(kvs_entry, epname, epnamelen);
+    OFI_CHECK_RETURN_STR(ret, "shmem_runtime_put fi_epname failed"); //FIX
 
     /* Note: we assume that the length of an address is the same for all
      * endpoints.  This is safe for most HPC systems, but could be incorrect in
      * a heterogeneous context. */
-    shmem_transport_ofi_addrlen = epnamelen;
+    shmem_transport_ofi_addrlen = epnamelen; //Need to do anything here?
 
     return ret;
 }
@@ -1249,32 +1255,40 @@ int publish_av_info(struct fabric_info *info)
 static inline
 int populate_av(void)
 {
-    int    i, ret, err = 0;
+    int    i, j, ret, err = 0;
     char   *alladdrs = NULL;
 
-    alladdrs = malloc(shmem_internal_num_pes * shmem_transport_ofi_addrlen);
+    //For now, assume all PEs have same number of NICs
+    alladdrs = malloc(shmem_internal_num_pes * shmem_transport_ofi_num_eps * shmem_transport_ofi_addrlen);
     if (alladdrs == NULL) {
         RAISE_WARN_STR("Out of memory allocating 'alladdrs'");
         return 1;
     }
 
     for (i = 0; i < shmem_internal_num_pes; i++) {
-        char *addr_ptr = alladdrs + i * shmem_transport_ofi_addrlen;
-        err = shmem_runtime_get(i, "fi_epname", addr_ptr, shmem_transport_ofi_addrlen);
-        if (err != 0) {
-            RAISE_ERROR_STR("Runtime get of 'fi_epname' failed");
+        for (j = 0; j < shmem_transport_ofi_num_eps; j++) {
+            char kvs_entry[64];
+            char *addr_ptr = alladdrs + (((i * shmem_transport_ofi_num_eps) + j) * shmem_transport_ofi_addrlen);
+
+            sprintf(kvs_entry, "fi_epname_%zu", j);
+            err = shmem_runtime_get(i, kvs_entry, addr_ptr, shmem_transport_ofi_addrlen);
+            if (err != 0) {
+                RAISE_ERROR_STR("Runtime get of 'fi_epname' failed"); //Fix
+            }
         }
     }
 
-    ret = fi_av_insert(shmem_transport_ofi_avfd,
-                       alladdrs,
-                       shmem_internal_num_pes,
-                       addr_table,
-                       0,
-                       NULL);
-    if (ret != shmem_internal_num_pes) {
-        RAISE_WARN_STR("av insert failed");
-        return ret;
+    for (size_t idx = 0; i < shmem_transport_ofi_num_eps; idx++) {
+        ret = fi_av_insert(/*shmem_transport_ofi_avfd*/ shmem_transport_ofi_eps[idx]->av,
+                        alladdrs,
+                        shmem_internal_num_pes * shmem_transport_ofi_num_eps,
+                        addr_table,
+                        0,
+                        NULL);
+        if (ret != shmem_internal_num_pes) {
+            RAISE_WARN_STR("av insert failed");
+            return ret;
+        }
     }
 
     free(alladdrs);
@@ -1288,48 +1302,57 @@ int allocate_fabric_resources(struct fabric_info *info)
     int ret = 0;
     struct fi_av_attr   av_attr = {0};
 
-
-    /* fabric domain: define domain of resources physical and logical */
-    ret = fi_fabric(info->p_info->fabric_attr, &shmem_transport_ofi_fabfd, NULL);
-    OFI_CHECK_RETURN_STR(ret, "fabric initialization failed");
-
-    DEBUG_MSG("OFI version: built %"PRIu32".%"PRIu32", cur. %"PRIu32".%"PRIu32"; "
-              "provider version: %"PRIu32".%"PRIu32"\n",
-              FI_MAJOR_VERSION, FI_MINOR_VERSION,
-              FI_MAJOR(fi_version()), FI_MINOR(fi_version()),
-              FI_MAJOR(info->p_info->fabric_attr->prov_version),
-              FI_MINOR(info->p_info->fabric_attr->prov_version));
-
-    if (FI_MAJOR_VERSION != FI_MAJOR(fi_version()) ||
-        FI_MINOR_VERSION != FI_MINOR(fi_version())) {
-        RAISE_WARN_MSG("OFI version mismatch: built %"PRIu32".%"PRIu32", cur. %"PRIu32".%"PRIu32"\n",
-                       FI_MAJOR_VERSION, FI_MINOR_VERSION,
-                       FI_MAJOR(fi_version()), FI_MINOR(fi_version()));
+    shmem_transport_ofi_eps = (struct shmem_transport_ofi_ep **) malloc(sizeof(struct shmem_transport_ofi_ep*));
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_eps; idx++) {
+        shmem_transport_ofi_eps[idx] = (struct shmem_transport_ofi_ep *) malloc(sizeof(struct shmem_transport_ofi_ep));
     }
 
-    /* access domain: define communication resource limits/boundary within
-     * fabric domain */
-    ret = fi_domain(shmem_transport_ofi_fabfd, info->p_info,
-                    &shmem_transport_ofi_domainfd,NULL);
-    OFI_CHECK_RETURN_STR(ret, "domain initialization failed");
+    /* fabric domain: define domain of resources physical and logical */
+    struct fi_info *prov = info->p_info;
+    for (size_t idx = 0; idx < shmem_transport_ofi_eps; idx++) {
+        shmem_transport_ofi_eps[idx]->info = prov;
+        ret = fi_fabric(prov->fabric_attr, /*&shmem_transport_ofi_fabfd*/ &shmem_transport_ofi_eps[idx]->fabric, NULL);
+        OFI_CHECK_RETURN_STR(ret, "fabric initialization failed");
 
-    /* AV table set-up for PE mapping */
+        DEBUG_MSG("OFI version: built %"PRIu32".%"PRIu32", cur. %"PRIu32".%"PRIu32"; "
+                "provider version: %"PRIu32".%"PRIu32"\n",
+                FI_MAJOR_VERSION, FI_MINOR_VERSION,
+                FI_MAJOR(fi_version()), FI_MINOR(fi_version()),
+                FI_MAJOR(prov->fabric_attr->prov_version),
+                FI_MINOR(prov->fabric_attr->prov_version));
+
+        if (FI_MAJOR_VERSION != FI_MAJOR(fi_version()) ||
+            FI_MINOR_VERSION != FI_MINOR(fi_version())) {
+            RAISE_WARN_MSG("OFI version mismatch: built %"PRIu32".%"PRIu32", cur. %"PRIu32".%"PRIu32"\n",
+                        FI_MAJOR_VERSION, FI_MINOR_VERSION,
+                        FI_MAJOR(fi_version()), FI_MINOR(fi_version()));
+        }
+
+        /* access domain: define communication resource limits/boundary within
+        * fabric domain */
+        ret = fi_domain(/*shmem_transport_ofi_fabfd*/ shmem_transport_ofi_eps[idx]->fabric, prov,
+                        /*&shmem_transport_ofi_domainfd*/ &shmem_transport_ofi_eps[idx]->domain, NULL);
+        OFI_CHECK_RETURN_STR(ret, "domain initialization failed");
+
+        /* AV table set-up for PE mapping */
 
 #ifdef USE_AV_MAP
-    av_attr.type = FI_AV_MAP;
-    addr_table   = (fi_addr_t*) malloc(info->npes * sizeof(fi_addr_t));
+        av_attr.type = FI_AV_MAP;
+        addr_table   = (fi_addr_t*) malloc(info->npes * sizeof(fi_addr_t));
 #else
-    /* open Address Vector and bind the AV to the domain */
-    av_attr.type = FI_AV_TABLE;
-    addr_table   = NULL;
+        /* open Address Vector and bind the AV to the domain */
+        av_attr.type = FI_AV_TABLE;
+        addr_table   = NULL;
 #endif
 
-    ret = fi_av_open(shmem_transport_ofi_domainfd,
-                     &av_attr,
-                     &shmem_transport_ofi_avfd,
-                     NULL);
-    OFI_CHECK_RETURN_STR(ret, "AV creation failed");
+        ret = fi_av_open(/*shmem_transport_ofi_domainfd*/ shmem_transport_ofi_eps[idx]->domain,
+                        &av_attr,
+                        /*&shmem_transport_ofi_avfd*/ &shmem_transport_ofi_eps[idx]->av,
+                        NULL);
+        OFI_CHECK_RETURN_STR(ret, "AV creation failed");
 
+        prov = prov->next;
+    }
     return ret;
 }
 
@@ -1379,6 +1402,7 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
         RAISE_WARN_MSG("Could not detect any NICs with affinity to the process\n");
 
         /* If no 'close' NICs, select from list of all NICs using round-robin assignment */
+        shmem_transport_ofi_num_eps = num_nics;
         return provs[shmem_internal_my_pe % num_nics];
     }
 
@@ -1395,6 +1419,7 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
     struct fi_info *provider = prov_list[shmem_internal_my_pe % num_close_nics];
     free(prov_list);
 
+    shmem_transport_ofi_num_eps = num_close_nics;
     return provider;
 }
 #endif
@@ -1550,6 +1575,7 @@ int query_for_fabric(struct fabric_info *info)
 
     if (shmem_internal_params.OFI_DISABLE_MULTIRAIL) {
         info->p_info = fabrics_list_head;
+        shmem_transport_ofi_num_eps = 0;
     }
     else {
         /* Generate a linked list of all fabrics with a non-null nic value */
@@ -1583,6 +1609,7 @@ int query_for_fabric(struct fabric_info *info)
              * do that here. We would also want to replace the similar occurrences in the
              * assign_nic_with_hwloc function. */
             info->p_info = prov_list[shmem_internal_my_pe % num_nics];
+            shmem_transport_ofi_num_eps = num_nics;
 #endif
             free(prov_list);
         }
@@ -1645,42 +1672,42 @@ int query_for_fabric(struct fabric_info *info)
     return ret;
 }
 
-static int shmem_transport_ofi_target_ep_init(void)
+static int shmem_transport_ofi_target_ep_init(size_t idx)
 {
     int ret = 0;
 
-    struct fabric_info* info = &shmem_transport_ofi_info;
-    info->p_info->ep_attr->tx_ctx_cnt = 0;
-    info->p_info->caps = FI_RMA | FI_ATOMIC | FI_REMOTE_READ | FI_REMOTE_WRITE;
+    struct fi_info* info = shmem_transport_ofi_eps[idx]->info;
+    info->ep_attr->tx_ctx_cnt = 0;
+    info->caps = FI_RMA | FI_ATOMIC | FI_REMOTE_READ | FI_REMOTE_WRITE;
 #if ENABLE_TARGET_CNTR
-    info->p_info->caps |= FI_RMA_EVENT;
+    info->caps |= FI_RMA_EVENT;
 #endif
-    info->p_info->tx_attr->op_flags = 0;
-    info->p_info->mode = 0;
-    info->p_info->tx_attr->mode = 0;
-    info->p_info->rx_attr->mode = 0;
-    info->p_info->tx_attr->caps = FI_RMA | FI_ATOMIC;
-    info->p_info->rx_attr->caps = info->p_info->caps;
+    info->tx_attr->op_flags = 0;
+    info->mode = 0;
+    info->tx_attr->mode = 0;
+    info->rx_attr->mode = 0;
+    info->tx_attr->caps = FI_RMA | FI_ATOMIC;
+    info->rx_attr->caps = info->caps;
 
-    ret = fi_endpoint(shmem_transport_ofi_domainfd,
-                      info->p_info, &shmem_transport_ofi_target_ep, NULL);
+    ret = fi_endpoint(/*shmem_transport_ofi_domainfd*/ shmem_transport_ofi_eps[idx]->domain,
+                      info, /*&shmem_transport_ofi_target_ep*/ shmem_transport_ofi_eps[idx]->ep, NULL);
     OFI_CHECK_RETURN_MSG(ret, "target endpoint creation failed (%s)\n", fi_strerror(errno));
 
     /* Attach the address vector */
-    ret = fi_ep_bind(shmem_transport_ofi_target_ep, &shmem_transport_ofi_avfd->fid, 0);
+    ret = fi_ep_bind(/*shmem_transport_ofi_target_ep*/ shmem_transport_ofi_eps[idx]->ep, /*&shmem_transport_ofi_avfd->fid*/ &shmem_transport_ofi_eps[idx]->av->fid, 0);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind AV to target endpoint failed");
 
     struct fi_cq_attr cq_attr = {0};
 
-    ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr,
-                     &shmem_transport_ofi_target_cq, NULL);
+    ret = fi_cq_open(/*shmem_transport_ofi_domainfd*/ shmem_transport_ofi_eps[idx]->domain, &cq_attr,
+                     /*&shmem_transport_ofi_target_cq*/ &shmem_transport_ofi_eps[idx]->cq, NULL);
     OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(errno));
 
-    ret = fi_ep_bind(shmem_transport_ofi_target_ep,
-                     &shmem_transport_ofi_target_cq->fid, FI_TRANSMIT | FI_RECV);
+    ret = fi_ep_bind(/*shmem_transport_ofi_target_ep*/ shmem_transport_ofi_eps[idx]->ep,
+                     /*&shmem_transport_ofi_target_cq->fid*/ &shmem_transport_ofi_eps[idx]->cq->fid, FI_TRANSMIT | FI_RECV);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind CQ to target endpoint failed");
 
-    ret = fi_enable(shmem_transport_ofi_target_ep);
+    ret = fi_enable(/*shmem_transport_ofi_target_ep*/ shmem_transport_ofi_eps[idx]->ep);
     OFI_CHECK_RETURN_STR(ret, "fi_enable on target endpoint failed");
 
     ret = allocate_recv_cntr_mr();
@@ -1718,37 +1745,47 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 
     struct fabric_info* info = &shmem_transport_ofi_info;
 
-    info->p_info->ep_attr->tx_ctx_cnt = shmem_transport_ofi_stx_max > 0 ? FI_SHARED_CONTEXT : 0;
-    info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | FI_ATOMIC | FI_RECV;
-    info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
-    info->p_info->mode = 0;
-    info->p_info->tx_attr->mode = 0;
-    info->p_info->rx_attr->mode = 0;
-    info->p_info->tx_attr->caps = info->p_info->caps;
-    info->p_info->rx_attr->caps = FI_RECV; /* to drive progress on the CQ */;
+    //info->p_info->ep_attr->tx_ctx_cnt = shmem_transport_ofi_stx_max > 0 ? FI_SHARED_CONTEXT : 0;
+    //info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | FI_ATOMIC | FI_RECV;
+    //info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
+    //info->p_info->mode = 0;
+    //info->p_info->tx_attr->mode = 0;
+    //info->p_info->rx_attr->mode = 0;
+    //info->p_info->tx_attr->caps = info->p_info->caps;
+    //info->p_info->rx_attr->caps = FI_RECV; /* to drive progress on the CQ */;
 
     ctx->id = id;
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_eps; idx++) {
+        shmem_transport_ofi_eps[idx]->info->ep_attr->tx_ctx_cnt = shmem_transport_ofi_stx_max > 0 ? FI_SHARED_CONTEXT : 0;
+        shmem_transport_ofi_eps[idx]->info->caps = FI_RMA | FI_WRITE | FI_READ | FI_ATOMIC | FI_RECV;
+        shmem_transport_ofi_eps[idx]->info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
+        shmem_transport_ofi_eps[idx]->info->mode = 0;
+        shmem_transport_ofi_eps[idx]->info->tx_attr->mode = 0;
+        shmem_transport_ofi_eps[idx]->info->rx_attr->mode = 0;
+        shmem_transport_ofi_eps[idx]->info->tx_attr->caps = info->p_info->caps;
+        shmem_transport_ofi_eps[idx]->info->rx_attr->caps = FI_RECV; /* to drive progress on the CQ */;
 #ifdef USE_CTX_LOCK
-    SHMEM_MUTEX_INIT(ctx->lock);
+        SHMEM_MUTEX_INIT(ctx->lock);
 #endif
 
-    ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_put_attr,
-                       &ctx->put_cntr, NULL);
-    OFI_CHECK_RETURN_MSG(ret, "put_cntr creation failed (%s)\n", fi_strerror(errno));
+        ret = fi_cntr_open(/*shmem_transport_ofi_domainfd*/ shmem_transport_ofi_eps[idx]->domain, &cntr_put_attr,
+                        &ctx->put_cntr, NULL);
+        OFI_CHECK_RETURN_MSG(ret, "put_cntr creation failed (%s)\n", fi_strerror(errno));
 
-    ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_get_attr,
-                       &ctx->get_cntr, NULL);
-    OFI_CHECK_RETURN_MSG(ret, "get_cntr creation failed (%s)\n", fi_strerror(errno));
+        ret = fi_cntr_open(/*shmem_transport_ofi_domainfd*/ shmem_transport_ofi_eps[idx]->domain, &cntr_get_attr,
+                        &ctx->get_cntr, NULL);
+        OFI_CHECK_RETURN_MSG(ret, "get_cntr creation failed (%s)\n", fi_strerror(errno));
 
-    ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr, &ctx->cq, NULL);
-    if (ret && errno == FI_EMFILE) {
-        DEBUG_STR("Context creation failed because of open files limit, consider increasing with 'ulimit' command");
+        ret = fi_cq_open(/*shmem_transport_ofi_domainfd*/ shmem_transport_ofi_eps[idx]->domain, &cq_attr, &ctx->cq, NULL);
+        if (ret && errno == FI_EMFILE) {
+            DEBUG_STR("Context creation failed because of open files limit, consider increasing with 'ulimit' command");
+        }
+        OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(errno));
+
+        ret = fi_endpoint(/*shmem_transport_ofi_domainfd*/ shmem_transport_ofi_eps[idx]->domain,
+                        info->p_info, &ctx->ep, NULL);
+        OFI_CHECK_RETURN_MSG(ret, "ep creation failed (%s)\n", fi_strerror(errno));
     }
-    OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(errno));
-
-    ret = fi_endpoint(shmem_transport_ofi_domainfd,
-                      info->p_info, &ctx->ep, NULL);
-    OFI_CHECK_RETURN_MSG(ret, "ep creation failed (%s)\n", fi_strerror(errno));
 
     /* TODO: Fill in TX attr */
 
@@ -1873,14 +1910,18 @@ int shmem_transport_init(void)
 
     shmem_transport_ctx_default.options = SHMEMX_CTX_BOUNCE_BUFFER;
 
-    ret = shmem_transport_ofi_target_ep_init();
-    if (ret != 0) return ret;
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_eps; idx++) {
+        ret = shmem_transport_ofi_target_ep_init(idx);
+        if (ret != 0) return ret;
 
-    ret = publish_mr_info();
-    if (ret != 0) return ret;
+        if (idx == 0) {
+            ret = publish_mr_info(shmem_transport_ofi_eps[idx]->info);
+            if (ret != 0) return ret;
+        }
 
-    ret = publish_av_info(&shmem_transport_ofi_info);
-    if (ret != 0) return ret;
+        ret = publish_av_info(idx);
+        if (ret != 0) return ret;
+    }
 
     return 0;
 }
@@ -1890,70 +1931,77 @@ int shmem_transport_startup(void)
     int ret;
     int i;
 
-    if (shmem_internal_params.OFI_STX_AUTO && shmem_transport_ofi_stx_max == 0) {
-        RAISE_WARN_STR("STXs disabled, ignoring request for automatic STX management");
-    }
-    else if (shmem_internal_params.OFI_STX_AUTO) {
+    shmem_transport_ofi_stx_pool = (shmem_transport_ofi_stx_t **) malloc(shmem_transport_ofi_num_eps *
+                                        sizeof(shmem_transport_ofi_stx_t *));
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_eps; idx++) {
+        if (shmem_internal_params.OFI_STX_AUTO && shmem_transport_ofi_stx_max == 0) {
+            RAISE_WARN_STR("STXs disabled, ignoring request for automatic STX management");
+        }
+        else if (shmem_internal_params.OFI_STX_AUTO) {
 
-        long ofi_tx_ctx_cnt = shmem_transport_ofi_info.fabrics->domain_attr->tx_ctx_cnt;
-        int num_on_node = shmem_runtime_get_node_size();
+            long ofi_tx_ctx_cnt = shmem_transport_ofi_eps[idx]->info->domain_attr->tx_ctx_cnt;
+            int num_on_node = shmem_runtime_get_node_size();
 
-        if (shmem_internal_params.OFI_STX_MAX_provided) {
-            RAISE_WARN_MSG("Auto-setting STX_MAX; ignoring provided STX_MAX value '%ld'\n",
-                           shmem_internal_params.OFI_STX_MAX);
+            if (shmem_internal_params.OFI_STX_MAX_provided) {
+                RAISE_WARN_MSG("Auto-setting STX_MAX; ignoring provided STX_MAX value '%ld'\n",
+                            shmem_internal_params.OFI_STX_MAX);
+            }
+
+            if (ofi_tx_ctx_cnt <= 0)
+                RAISE_ERROR_MSG("Invalid number of TX contexts (%ld)\n", ofi_tx_ctx_cnt);
+
+            /* Paritition TX resources evenly across node-local PEs */
+            /* Note: we assume that the domain reports the same tx_ctx_cnt for
+            * every PE on the node.  We also assume that the resource reported
+            * should be divided equally among all PEs.  These assumptions may not
+            * be valid in all cases, for example when the provider has already
+            * partitioned resources or when a node has multiple NICs. */
+            shmem_transport_ofi_stx_max = ofi_tx_ctx_cnt / num_on_node;
+            int remainder = ofi_tx_ctx_cnt % num_on_node;
+            int node_pe = shmem_internal_my_pe % shmem_internal_num_pes;
+            if (remainder > 0 && ((node_pe % num_on_node) < remainder)) {
+                shmem_transport_ofi_stx_max++;
+            }
+
+            if (shmem_transport_ofi_stx_max <= 0)
+                RAISE_ERROR_MSG("Not enough TX contexts (%d)\n", num_on_node);
+
+            /* When running more PEs than available STXs, must assign each PE at least 1 */
+            if (shmem_transport_ofi_stx_max <= 0) {
+                shmem_transport_ofi_stx_max = 1;
+                RAISE_WARN_MSG("Need at least 1 STX per PE, but detected %ld available STXs for %d PEs\n",
+                            ofi_tx_ctx_cnt, num_on_node);
+            }
+
+            DEBUG_MSG("Auto-set STX max to %ld\n", shmem_transport_ofi_stx_max);
         }
 
-        if (ofi_tx_ctx_cnt <= 0)
-            RAISE_ERROR_MSG("Invalid number of TX contexts (%ld)\n", ofi_tx_ctx_cnt);
-
-        /* Paritition TX resources evenly across node-local PEs */
-        /* Note: we assume that the domain reports the same tx_ctx_cnt for
-         * every PE on the node.  We also assume that the resource reported
-         * should be divided equally among all PEs.  These assumptions may not
-         * be valid in all cases, for example when the provider has already
-         * partitioned resources or when a node has multiple NICs. */
-        shmem_transport_ofi_stx_max = ofi_tx_ctx_cnt / num_on_node;
-        int remainder = ofi_tx_ctx_cnt % num_on_node;
-        int node_pe = shmem_internal_my_pe % shmem_internal_num_pes;
-        if (remainder > 0 && ((node_pe % num_on_node) < remainder)) {
-            shmem_transport_ofi_stx_max++;
+        /* Allocate STX array with max length */
+        if (shmem_transport_ofi_stx_max > 0) {
+            shmem_transport_ofi_stx_pool[idx] = malloc(shmem_transport_ofi_stx_max *
+                                                sizeof(shmem_transport_ofi_stx_t));
+            if (shmem_transport_ofi_stx_pool == NULL) {
+                RAISE_ERROR_STR("Out of memory when allocating OFI STX pool");
+            }
         }
 
-        if (shmem_transport_ofi_stx_max <= 0)
-            RAISE_ERROR_MSG("Not enough TX contexts (%d)\n", num_on_node);
-
-        /* When running more PEs than available STXs, must assign each PE at least 1 */
-        if (shmem_transport_ofi_stx_max <= 0) {
-            shmem_transport_ofi_stx_max = 1;
-            RAISE_WARN_MSG("Need at least 1 STX per PE, but detected %ld available STXs for %d PEs\n",
-                           ofi_tx_ctx_cnt, num_on_node);
+        for (i = 0; i < shmem_transport_ofi_stx_max; i++) {
+            ret = fi_stx_context(/*shmem_transport_ofi_domainfd*/ shmem_transport_ofi_eps[idx]->domain, NULL,
+                                &shmem_transport_ofi_stx_pool[idx][i].stx, NULL);
+            OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
+            shmem_transport_ofi_stx_pool[idx][i].ref_cnt = 0;
+            shmem_transport_ofi_stx_pool[idx][i].is_private = 0;
         }
-
-        DEBUG_MSG("Auto-set STX max to %ld\n", shmem_transport_ofi_stx_max);
-    }
-
-    /* Allocate STX array with max length */
-    if (shmem_transport_ofi_stx_max > 0) {
-        shmem_transport_ofi_stx_pool = malloc(shmem_transport_ofi_stx_max *
-                                              sizeof(shmem_transport_ofi_stx_t));
-        if (shmem_transport_ofi_stx_pool == NULL) {
-            RAISE_ERROR_STR("Out of memory when allocating OFI STX pool");
-        }
-    }
-
-    for (i = 0; i < shmem_transport_ofi_stx_max; i++) {
-        ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL,
-                             &shmem_transport_ofi_stx_pool[i].stx, NULL);
-        OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
-        shmem_transport_ofi_stx_pool[i].ref_cnt = 0;
-        shmem_transport_ofi_stx_pool[i].is_private = 0;
     }
 
     shmem_transport_ctx_default.team = &shmem_internal_team_world;
 
+    //TODO: Set up to be compatible with multiplexing/striping infrastructure changes..Probably only to be called once, right?
+    //Internally iterate through providers
     ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, SHMEM_TRANSPORT_CTX_DEFAULT_ID);
     if (ret != 0) return ret;
 
+    //TODO: Set up to be compatible with multiplexing/striping infrastructure changes
     ret = atomic_limitations_check();
     if (ret != 0) return ret;
 
@@ -2067,27 +2115,29 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 
     if (ctx->stx_idx >= 0) {
         SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
-        if (shmem_transport_ofi_is_private(ctx->options)) {
-            shmem_transport_ofi_stx_kvs_t *e;
-            HASH_FIND(hh, shmem_transport_ofi_stx_kvs, &ctx->tid,
-                      sizeof(struct shmem_internal_tid), e);
-            if (e) {
-                shmem_transport_ofi_stx_t *stx = &shmem_transport_ofi_stx_pool[ctx->stx_idx];
-                stx->ref_cnt--;
-                if (stx->ref_cnt == 0) {
-                    HASH_DEL(shmem_transport_ofi_stx_kvs, e);
-                    free(e);
-                    shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private = 0;
+        for (size_t idx = 0; idx < shmem_transport_ofi_num_eps; idx++) {
+            if (shmem_transport_ofi_is_private(ctx->options)) {
+                shmem_transport_ofi_stx_kvs_t *e;
+                HASH_FIND(hh, shmem_transport_ofi_stx_kvs, &ctx->tid, //May need to look at what this doing...
+                        sizeof(struct shmem_internal_tid), e);
+                if (e) {
+                    shmem_transport_ofi_stx_t *stx = &shmem_transport_ofi_stx_pool[idx][ctx->stx_idx];
+                    stx->ref_cnt--;
+                    if (stx->ref_cnt == 0) {
+                        HASH_DEL(shmem_transport_ofi_stx_kvs, e); //And here too...
+                        free(e);
+                        shmem_transport_ofi_stx_pool[idx][ctx->stx_idx].is_private = 0;
+                    }
                 }
-            }
-            else {
-                RAISE_WARN_STR("Unable to locate private STX");
-            }
-        } else {
-            shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt--;
-            if (shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private) {
-                SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
-                RAISE_ERROR_STR("Destroyed a ctx with an inconsistent is_private field");
+                else {
+                    RAISE_WARN_STR("Unable to locate private STX");
+                }
+            } else {
+                shmem_transport_ofi_stx_pool[idx][ctx->stx_idx].ref_cnt--;
+                if (shmem_transport_ofi_stx_pool[idx][ctx->stx_idx].is_private) {
+                    SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
+                    RAISE_ERROR_STR("Destroyed a ctx with an inconsistent is_private field");
+                }
             }
         }
         SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
@@ -2145,13 +2195,15 @@ int shmem_transport_fini(void)
         RAISE_WARN_MSG("Key/value store contained %d unfreed private contexts\n", stx_len);
     }
 
-    for (long i = 0; i < shmem_transport_ofi_stx_max; ++i) {
-        if (shmem_transport_ofi_stx_pool[i].ref_cnt != 0)
-            RAISE_WARN_MSG("Closing a %s STX (%zu) with nonzero ref. count (%ld)\n",
-                           shmem_transport_ofi_stx_pool[i].is_private ? "private" : "shared",
-                           i, shmem_transport_ofi_stx_pool[i].ref_cnt);
-        ret = fi_close(&shmem_transport_ofi_stx_pool[i].stx->fid);
-        OFI_CHECK_ERROR_MSG(ret, "STX context close failed (%s)\n", fi_strerror(errno));
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_eps; idx++) {
+        for (long i = 0; i < shmem_transport_ofi_stx_max; ++i) {
+            if (shmem_transport_ofi_stx_pool[idx][i].ref_cnt != 0)
+                RAISE_WARN_MSG("Closing a %s STX (%zu) with nonzero ref. count (%ld)\n",
+                            shmem_transport_ofi_stx_pool[idx][i].is_private ? "private" : "shared",
+                            i, shmem_transport_ofi_stx_pool[idx][i].ref_cnt);
+            ret = fi_close(&shmem_transport_ofi_stx_pool[idx][i].stx->fid);
+            OFI_CHECK_ERROR_MSG(ret, "STX context close failed (%s)\n", fi_strerror(errno));
+        }
     }
     if (shmem_transport_ofi_stx_pool) free(shmem_transport_ofi_stx_pool);
 

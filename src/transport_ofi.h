@@ -34,6 +34,19 @@
 #include <sys/types.h>
 
 
+struct shmem_transport_ofi_ep {
+    struct fi_info *info;
+    struct fid_fabric *fabric;
+    struct fid_domain *domain;
+    struct fid_ep *ep;
+    struct fid_cq *cq;
+    struct fid_av *av;
+    struct fid_cntr *cntr;
+    struct fid_nic *nic;
+};
+extern struct shmem_transport_ofi_ep **shmem_transport_ofi_eps;
+extern size_t shmem_transport_ofi_num_eps;
+
 #if !defined(ENABLE_HARD_POLLING)
 #define ENABLE_TARGET_CNTR 1
 #else
