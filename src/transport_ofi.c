@@ -689,12 +689,12 @@ int ofi_mr_reg_external_heap(void)
 #endif /* USE_FI_HMEM */
 
 static inline
-int ofi_mr_reg_bind(uint64_t flags)
+int ofi_mr_reg_bind(uint64_t flags, size_t idx)
 {
     int ret = 0;
 
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
-    ret = fi_mr_reg(shmem_transport_ofi_domainfd, 0, UINT64_MAX,
+    ret = fi_mr_reg(/*shmem_transport_ofi_domainfd*/ shmem_transport_ofi_eps[idx]->domain, 0, UINT64_MAX,
                     FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, flags,
                     &shmem_transport_ofi_target_mrfd, NULL);
     OFI_CHECK_RETURN_STR(ret, "target memory (all) registration failed");
@@ -719,14 +719,14 @@ int ofi_mr_reg_bind(uint64_t flags)
      * respectively.  In MR_BASIC_MODE, the keys are ignored and selected by
      * the provider. */
     uint64_t key = 1;
-    ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_heap_base,
+    ret = fi_mr_reg(/*shmem_transport_ofi_domainfd*/ shmem_transport_ofi_eps[idx]->domain, shmem_internal_heap_base,
                     shmem_internal_heap_length,
                     FI_REMOTE_READ | FI_REMOTE_WRITE, 0, key, flags,
                     &shmem_transport_ofi_target_heap_mrfd, NULL);
     OFI_CHECK_RETURN_STR(ret, "target memory (heap) registration failed");
 
     key = 0;
-    ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_data_base,
+    ret = fi_mr_reg(/*shmem_transport_ofi_domainfd*/ shmem_transport_ofi_eps[idx]->domain, shmem_internal_data_base,
                     shmem_internal_data_length,
                     FI_REMOTE_READ | FI_REMOTE_WRITE, 0, key, flags,
                     &shmem_transport_ofi_target_data_mrfd, NULL);
@@ -746,19 +746,19 @@ int ofi_mr_reg_bind(uint64_t flags)
 
 #ifdef ENABLE_MR_ENDPOINT
     if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_ENDPOINT) {
-        ret = fi_ep_bind(shmem_transport_ofi_target_ep,
+        ret = fi_ep_bind(/*shmem_transport_ofi_target_ep*/ shmem_transport_ofi_eps[idx]->ep,
                          &shmem_transport_ofi_target_cntrfd->fid, FI_REMOTE_WRITE);
         OFI_CHECK_RETURN_STR(ret, "target CNTR binding to target EP failed");
 
         ret = fi_mr_bind(shmem_transport_ofi_target_heap_mrfd,
-                         &shmem_transport_ofi_target_ep->fid, FI_REMOTE_WRITE);
+                         /*&shmem_transport_ofi_target_ep->fid*/ &shmem_transport_ofi_eps[idx]->ep->fid, FI_REMOTE_WRITE);
         OFI_CHECK_RETURN_STR(ret, "target EP binding to heap MR failed");
 
         ret = fi_mr_enable(shmem_transport_ofi_target_heap_mrfd);
         OFI_CHECK_RETURN_STR(ret, "target heap MR enable failed");
 
         ret = fi_mr_bind(shmem_transport_ofi_target_data_mrfd,
-                         &shmem_transport_ofi_target_ep->fid, FI_REMOTE_WRITE);
+                         /*&shmem_transport_ofi_target_ep->fid*/ &shmem_transport_ofi_eps[idx]->ep->fid, FI_REMOTE_WRITE);
         OFI_CHECK_RETURN_STR(ret, "target EP binding to data MR failed");
 
         ret = fi_mr_enable(shmem_transport_ofi_target_data_mrfd);
@@ -782,7 +782,7 @@ int ofi_mr_reg_bind(uint64_t flags)
 }
 
 static inline
-int allocate_recv_cntr_mr(void)
+int allocate_recv_cntr_mr(size_t idx)
 {
     int ret = 0;
     uint64_t flags = 0;
@@ -803,8 +803,8 @@ int allocate_recv_cntr_mr(void)
         cntr_attr.events   = FI_CNTR_EVENTS_COMP;
         cntr_attr.wait_obj = FI_WAIT_UNSPEC;
 
-        ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_attr,
-                           &shmem_transport_ofi_target_cntrfd, NULL);
+        ret = fi_cntr_open(/*shmem_transport_ofi_domainfd*/ shmem_transport_ofi_eps[idx]->domain, &cntr_attr,
+                           &shmem_transport_ofi_target_cntrfd /*FIX*/, NULL);
         OFI_CHECK_RETURN_STR(ret, "target CNTR open failed");
 
 #ifdef ENABLE_MR_RMA_EVENT
@@ -820,7 +820,7 @@ int allocate_recv_cntr_mr(void)
         OFI_CHECK_RETURN_STR(ret, "OFI MR registration with HMEM failed");
     }
 #endif
-    ret = ofi_mr_reg_bind(flags);
+    ret = ofi_mr_reg_bind(flags, idx);
     OFI_CHECK_RETURN_STR(ret, "OFI MR registration failed");
 
     return ret;
@@ -1304,7 +1304,7 @@ int allocate_fabric_resources(struct fabric_info *info)
     int ret = 0;
     struct fi_av_attr   av_attr = {0};
 
-    shmem_transport_ofi_eps = (struct shmem_transport_ofi_ep **) malloc(sizeof(struct shmem_transport_ofi_ep*));
+    shmem_transport_ofi_eps = (struct shmem_transport_ofi_ep **) malloc(shmem_transport_ofi_num_eps * sizeof(struct shmem_transport_ofi_ep*));
     for (size_t idx = 0; idx < shmem_transport_ofi_num_eps; idx++) {
         shmem_transport_ofi_eps[idx] = (struct shmem_transport_ofi_ep *) malloc(sizeof(struct shmem_transport_ofi_ep));
     }
@@ -1712,7 +1712,7 @@ static int shmem_transport_ofi_target_ep_init(size_t idx)
     ret = fi_enable(/*shmem_transport_ofi_target_ep*/ shmem_transport_ofi_eps[idx]->ep);
     OFI_CHECK_RETURN_STR(ret, "fi_enable on target endpoint failed");
 
-    ret = allocate_recv_cntr_mr();
+    ret = allocate_recv_cntr_mr(idx);
     if (ret) return ret;
 
     return 0;
@@ -1757,6 +1757,10 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     //info->p_info->rx_attr->caps = FI_RECV; /* to drive progress on the CQ */;
 
     ctx->id = id;
+    ctx->ep = (struct fid_ep **) malloc(shmem_transport_ofi_num_eps * sizeof(struct fid_ep *));
+    ctx->put_cntr = (struct fid_cntr **) malloc(shmem_transport_ofi_num_eps * sizeof(struct fid_cntr *));
+    ctx->get_cntr = (struct fid_cntr **) malloc(shmem_transport_ofi_num_eps * sizeof(struct fid_cntr *));
+    ctx->cq = (struct fid_cq **) malloc(shmem_transport_ofi_num_eps * sizeof(struct fid_cq *));
     for (size_t idx = 0; idx < shmem_transport_ofi_num_eps; idx++) {
         shmem_transport_ofi_eps[idx]->info->ep_attr->tx_ctx_cnt = shmem_transport_ofi_stx_max > 0 ? FI_SHARED_CONTEXT : 0;
         shmem_transport_ofi_eps[idx]->info->caps = FI_RMA | FI_WRITE | FI_READ | FI_ATOMIC | FI_RECV;
@@ -1798,6 +1802,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     }
 
     for (size_t idx = 0; idx < shmem_transport_ofi_num_eps; idx++) {
+printf("idx=%zu\n");
         shmem_transport_ofi_stx_allocate(ctx, idx);
 
         ret = bind_enable_ep_resources(ctx, idx);
@@ -2003,6 +2008,10 @@ int shmem_transport_startup(void)
 
     //TODO: Set up to be compatible with multiplexing/striping infrastructure changes..Probably only to be called once, right?
     //Internally iterate through providers
+    shmem_transport_ctx_default.stx_idx = malloc(shmem_transport_ofi_num_eps * sizeof(int));
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_eps; idx++) {
+        shmem_transport_ctx_default.stx_idx[idx] = -1;
+    }
     ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, SHMEM_TRANSPORT_CTX_DEFAULT_ID);
     if (ret != 0) return ret;
 
