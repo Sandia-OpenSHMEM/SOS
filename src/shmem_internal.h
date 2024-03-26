@@ -348,6 +348,14 @@ extern hwloc_topology_t shmem_internal_topology;
         }                                                                               \
     } while (0)
 
+#define SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(stride, bsize)                                 \
+    do {                                                                                \
+        if (stride < bsize) {                                                           \
+            RAISE_ERROR_MSG("Stride argument \"%s\" (%zu), is less than block size %zu\n", \
+                    #stride, stride, bsize);                                            \
+        }                                                                               \
+    } while(0)
+
 #else
 #define SHMEM_ERR_CHECK_INITIALIZED()
 #define SHMEM_ERR_CHECK_POSITIVE(arg)
@@ -361,7 +369,8 @@ extern hwloc_topology_t shmem_internal_topology;
 #define SHMEM_ERR_CHECK_OVERLAP(ptr1, ptr2, size1, size2, complete_overlap_allowed)
 #define SHMEM_ERR_CHECK_NULL(ptr, nelems)
 #define SHMEM_ERR_CHECK_CMP_OP(op)
-#define SHMEM_ERR_CHECK_SIG_OP(op)                                                      \
+#define SHMEM_ERR_CHECK_SIG_OP(op)
+#define SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(stride, bsize)
 
 #endif /* ENABLE_ERROR_CHECKING */
 
