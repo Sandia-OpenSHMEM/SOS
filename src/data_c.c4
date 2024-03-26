@@ -481,29 +481,27 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
 
 #define SHMEM_DEF_IBPUT(STYPE,TYPE)                           \
   void SHMEM_FUNCTION_ATTRIBUTES                              \
-  SHMEMX_FUNC_PROTOTYPE(STYPE##_ibput, TYPE *target,            \
+  SHMEMX_FUNC_PROTOTYPE(STYPE##_ibput, TYPE *target,          \
                        const TYPE *source, ptrdiff_t tst,     \
                        ptrdiff_t sst, size_t bsize, size_t nblocks, int pe)  \
+    if (bsize == 0) return;                                   \
     SHMEM_ERR_CHECK_INITIALIZED();                            \
     SHMEM_ERR_CHECK_PE(pe);                                   \
     SHMEM_ERR_CHECK_CTX(ctx);                                 \
-    SHMEM_ERR_CHECK_POSITIVE(tst);                            \
-    SHMEM_ERR_CHECK_POSITIVE(sst);                            \
+    SHMEM_ERR_CHECK_NON_NEGATIVE(bsize);                      \
     SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE) * ((nblocks-1) * tst + 1)); \
     SHMEM_ERR_CHECK_NULL(source, nblocks);                    \
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(tst, bsize);             \
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);             \
     SHMEM_ERR_CHECK_OVERLAP(target, source,                   \
-                   sizeof(TYPE) * ((nblocks-1) * tst + 1),     \
+                   sizeof(TYPE) * ((nblocks-1) * tst + 1),    \
                    sizeof(TYPE) * ((nblocks-1) * sst + 1), 0); \
     size_t i = 0;                                             \
     for ( ; nblocks > 0 ; --nblocks) {                        \
-      for (i = 0; i < bsize; i++) {                           \
-        shmem_internal_put_scalar(ctx, target++, source++,    \
-                                  sizeof(TYPE), pe);          \
-      }                                                       \
-      target += (tst-bsize);                                  \
-      source += (sst-bsize);                                  \
+      shmem_internal_put_scalar(ctx, target, source,          \
+                                bsize * sizeof(TYPE), pe);    \
+      target += tst;                                          \
+      source += sst;                                          \
     }                                                         \
   }
 
@@ -531,34 +529,30 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     }                                                        \
   }
 
-#define SHMEM_DEF_IBPUT_N(NAME,SIZE)                          \
+#define SHMEM_DEF_IBPUT_N(NAME,SIZE)                         \
   void SHMEM_FUNCTION_ATTRIBUTES                             \
-  SHMEMX_FUNC_PROTOTYPE(ibput##NAME, void *target,             \
+  SHMEMX_FUNC_PROTOTYPE(ibput##NAME, void *target,           \
                        const void *source, ptrdiff_t tst,    \
                        ptrdiff_t sst, size_t bsize, size_t nblocks, int pe) \
+    if (bsize == 0) return;                                  \
     SHMEM_ERR_CHECK_INITIALIZED();                           \
     SHMEM_ERR_CHECK_PE(pe);                                  \
     SHMEM_ERR_CHECK_CTX(ctx);                                \
-    SHMEM_ERR_CHECK_POSITIVE(tst);                           \
-    SHMEM_ERR_CHECK_POSITIVE(sst);                           \
+    SHMEM_ERR_CHECK_NON_NEGATIVE(bsize);                     \
     SHMEM_ERR_CHECK_SYMMETRIC(target,                        \
                            (SIZE) * ((nblocks-1) * tst + 1)); \
-    SHMEM_ERR_CHECK_NULL(source, nblocks);                    \
+    SHMEM_ERR_CHECK_NULL(source, nblocks);                   \
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(tst, bsize);            \
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);            \
     SHMEM_ERR_CHECK_OVERLAP(target, source,                  \
-                        (SIZE) * ((nblocks-1) * tst + 1),     \
+                        (SIZE) * ((nblocks-1) * tst + 1),    \
                         (SIZE) * ((nblocks-1) * sst + 1), 0); \
     size_t i = 0;                                            \
-    for ( ; nblocks > 0 ; --nblocks) {                         \
-      for (i = 0; i < bsize; i++) {                          \
-        shmem_internal_put_scalar(ctx, target, source, (SIZE), \
-                                pe);                          \
-        target = (uint8_t*)target + SIZE;                    \
-        source = (uint8_t*)source + SIZE;                    \
-      }                                                      \
-      target = (uint8_t*)target + (tst-bsize)*(SIZE);        \
-      source = (uint8_t*)source + (sst-bsize)*(SIZE);        \
+    for ( ; nblocks > 0 ; --nblocks) {                       \
+      shmem_internal_put_scalar(ctx, target, source,         \
+                                bsize * (SIZE), pe);         \
+      target = (uint8_t*)target + tst*(SIZE);                \
+      source = (uint8_t*)source + sst*(SIZE);                \
     }                                                        \
   }
 
@@ -587,32 +581,30 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     shmem_internal_get_wait(ctx);                             \
   }
 
-#define SHMEM_DEF_IBGET(STYPE,TYPE)                            \
+#define SHMEM_DEF_IBGET(STYPE,TYPE)                           \
   void SHMEM_FUNCTION_ATTRIBUTES                              \
-  SHMEMX_FUNC_PROTOTYPE(STYPE##_ibget, TYPE *target,            \
+  SHMEMX_FUNC_PROTOTYPE(STYPE##_ibget, TYPE *target,          \
                        const TYPE *source,                    \
                        ptrdiff_t tst, ptrdiff_t sst,          \
-                       size_t bsize, size_t nblocks, int pe)                 \
+                       size_t bsize, size_t nblocks, int pe)  \
+    if (bsize == 0) return;                                   \
     SHMEM_ERR_CHECK_INITIALIZED();                            \
     SHMEM_ERR_CHECK_PE(pe);                                   \
     SHMEM_ERR_CHECK_CTX(ctx);                                 \
-    SHMEM_ERR_CHECK_POSITIVE(tst);                            \
-    SHMEM_ERR_CHECK_POSITIVE(sst);                            \
+    SHMEM_ERR_CHECK_NON_NEGATIVE(bsize);                      \
     SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof(TYPE) * ((nblocks-1) * sst + 1)); \
     SHMEM_ERR_CHECK_NULL(target, nblocks);                    \
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(tst, bsize);             \
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);             \
     SHMEM_ERR_CHECK_OVERLAP(target, source,                   \
-                   sizeof(TYPE) * ((nblocks-1) * tst + 1),     \
+                   sizeof(TYPE) * ((nblocks-1) * tst + 1),    \
                    sizeof(TYPE) * ((nblocks-1) * sst + 1), 0); \
     size_t i = 0;                                             \
-    for ( ; nblocks > 0 ; --nblocks) {                          \
-      for (i = 0; i < bsize; i++) {                           \
-        shmem_internal_get(ctx, target++, source++, sizeof(TYPE),   \
-                          pe);                                 \
-      }                                                       \
-      target += (tst-bsize);                                  \
-      source += (sst-bsize);                                  \
+    for ( ; nblocks > 0 ; --nblocks) {                        \
+      shmem_internal_get(ctx, target, source,                 \
+                         bsize * sizeof(TYPE), pe);           \
+      target += tst;                                          \
+      source += sst;                                          \
     }                                                         \
     shmem_internal_get_wait(ctx);                             \
   }
@@ -644,32 +636,29 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
 
 #define SHMEM_DEF_IBGET_N(NAME,SIZE)                      \
   void SHMEM_FUNCTION_ATTRIBUTES                          \
-  SHMEMX_FUNC_PROTOTYPE(ibget##NAME, void *target,          \
+  SHMEMX_FUNC_PROTOTYPE(ibget##NAME, void *target,        \
                        const void *source, ptrdiff_t tst, \
                        ptrdiff_t sst, size_t bsize,       \
                        size_t nblocks, int pe)            \
+    if (bsize == 0) return;                               \
     SHMEM_ERR_CHECK_INITIALIZED();                        \
     SHMEM_ERR_CHECK_PE(pe);                               \
     SHMEM_ERR_CHECK_CTX(ctx);                             \
-    SHMEM_ERR_CHECK_POSITIVE(tst);                        \
-    SHMEM_ERR_CHECK_POSITIVE(sst);                        \
+    SHMEM_ERR_CHECK_NON_NEGATIVE(bsize);                  \
     SHMEM_ERR_CHECK_SYMMETRIC(source,                     \
                         (SIZE) * ((nblocks-1) * sst + 1)); \
     SHMEM_ERR_CHECK_NULL(target, nblocks);                \
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(tst, bsize);         \
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);         \
     SHMEM_ERR_CHECK_OVERLAP(target, source,               \
-                     (SIZE) * ((nblocks-1) * tst + 1),     \
+                     (SIZE) * ((nblocks-1) * tst + 1),    \
                      (SIZE) * ((nblocks-1) * sst + 1), 0); \
-    size_t i = 0;                                          \
-    for ( ; nblocks > 0 ; --nblocks) {                      \
-      for (i = 0; i < bsize; i++) {                       \
-        shmem_internal_get(ctx, target, source, (SIZE), pe);\
-        target = (uint8_t*)target + SIZE;                 \
-        source = (uint8_t*)source + SIZE;                 \
-      }                                                   \
-      target = (uint8_t*)target + (tst-bsize)*(SIZE);     \
-      source = (uint8_t*)source + (sst-bsize)*(SIZE);     \
+    size_t i = 0;                                         \
+    for ( ; nblocks > 0 ; --nblocks) {                    \
+      shmem_internal_get(ctx, target, source,             \
+                         bsize * (SIZE), pe);             \
+      target = (uint8_t*)target + tst*(SIZE);             \
+      source = (uint8_t*)source + sst*(SIZE);             \
     }                                                     \
     shmem_internal_get_wait(ctx);                         \
   }
