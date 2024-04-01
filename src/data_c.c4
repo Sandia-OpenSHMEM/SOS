@@ -488,15 +488,13 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_INITIALIZED();                            \
     SHMEM_ERR_CHECK_PE(pe);                                   \
     SHMEM_ERR_CHECK_CTX(ctx);                                 \
-    SHMEM_ERR_CHECK_NON_NEGATIVE(bsize);                      \
-    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE) * ((nblocks-1) * tst + 1)); \
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE) * ((nblocks-1) * tst + bsize)); \
     SHMEM_ERR_CHECK_NULL(source, nblocks);                    \
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(tst, bsize);             \
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);             \
     SHMEM_ERR_CHECK_OVERLAP(target, source,                   \
-                   sizeof(TYPE) * ((nblocks-1) * tst + 1),    \
-                   sizeof(TYPE) * ((nblocks-1) * sst + 1), 0); \
-    size_t i = 0;                                             \
+                   sizeof(TYPE) * ((nblocks-1) * tst + bsize), \
+                   sizeof(TYPE) * ((nblocks-1) * sst + bsize), 0); \
     for ( ; nblocks > 0 ; --nblocks) {                        \
       shmem_internal_put_scalar(ctx, target, source,          \
                                 bsize * sizeof(TYPE), pe);    \
@@ -538,16 +536,14 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_INITIALIZED();                           \
     SHMEM_ERR_CHECK_PE(pe);                                  \
     SHMEM_ERR_CHECK_CTX(ctx);                                \
-    SHMEM_ERR_CHECK_NON_NEGATIVE(bsize);                     \
     SHMEM_ERR_CHECK_SYMMETRIC(target,                        \
-                           (SIZE) * ((nblocks-1) * tst + 1)); \
+                           (SIZE) * ((nblocks-1) * tst + bsize)); \
     SHMEM_ERR_CHECK_NULL(source, nblocks);                   \
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(tst, bsize);            \
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);            \
     SHMEM_ERR_CHECK_OVERLAP(target, source,                  \
-                        (SIZE) * ((nblocks-1) * tst + 1),    \
-                        (SIZE) * ((nblocks-1) * sst + 1), 0); \
-    size_t i = 0;                                            \
+                        (SIZE) * ((nblocks-1) * tst + bsize), \
+                        (SIZE) * ((nblocks-1) * sst + bsize), 0); \
     for ( ; nblocks > 0 ; --nblocks) {                       \
       shmem_internal_put_scalar(ctx, target, source,         \
                                 bsize * (SIZE), pe);         \
@@ -591,15 +587,13 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_INITIALIZED();                            \
     SHMEM_ERR_CHECK_PE(pe);                                   \
     SHMEM_ERR_CHECK_CTX(ctx);                                 \
-    SHMEM_ERR_CHECK_NON_NEGATIVE(bsize);                      \
-    SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof(TYPE) * ((nblocks-1) * sst + 1)); \
+    SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof(TYPE) * ((nblocks-1) * sst + bsize)); \
     SHMEM_ERR_CHECK_NULL(target, nblocks);                    \
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(tst, bsize);             \
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);             \
     SHMEM_ERR_CHECK_OVERLAP(target, source,                   \
-                   sizeof(TYPE) * ((nblocks-1) * tst + 1),    \
-                   sizeof(TYPE) * ((nblocks-1) * sst + 1), 0); \
-    size_t i = 0;                                             \
+                   sizeof(TYPE) * ((nblocks-1) * tst + bsize), \
+                   sizeof(TYPE) * ((nblocks-1) * sst + bsize), 0); \
     for ( ; nblocks > 0 ; --nblocks) {                        \
       shmem_internal_get(ctx, target, source,                 \
                          bsize * sizeof(TYPE), pe);           \
@@ -644,16 +638,14 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_INITIALIZED();                        \
     SHMEM_ERR_CHECK_PE(pe);                               \
     SHMEM_ERR_CHECK_CTX(ctx);                             \
-    SHMEM_ERR_CHECK_NON_NEGATIVE(bsize);                  \
     SHMEM_ERR_CHECK_SYMMETRIC(source,                     \
-                        (SIZE) * ((nblocks-1) * sst + 1)); \
+                        (SIZE) * ((nblocks-1) * sst + bsize)); \
     SHMEM_ERR_CHECK_NULL(target, nblocks);                \
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(tst, bsize);         \
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);         \
     SHMEM_ERR_CHECK_OVERLAP(target, source,               \
-                     (SIZE) * ((nblocks-1) * tst + 1),    \
-                     (SIZE) * ((nblocks-1) * sst + 1), 0); \
-    size_t i = 0;                                         \
+                     (SIZE) * ((nblocks-1) * tst + bsize), \
+                     (SIZE) * ((nblocks-1) * sst + bsize), 0); \
     for ( ; nblocks > 0 ; --nblocks) {                    \
       shmem_internal_get(ctx, target, source,             \
                          bsize * (SIZE), pe);             \
