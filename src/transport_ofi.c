@@ -601,7 +601,7 @@ int bind_enable_ep_resources(shmem_transport_ctx_t *ctx, size_t idx)
     int ret = 0;
 
     /* If using SOS-managed STXs, bind the STX */
-    if (ctx->stx_idx >= 0) {
+    if (ctx->stx_idx[idx] >= 0) {
         ret = fi_ep_bind(ctx->ep[idx], &shmem_transport_ofi_stx_pool[idx][ctx->stx_idx[idx]].stx->fid, 0);
         OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to endpoint failed");
     }
@@ -1090,7 +1090,7 @@ int atomicvalid_rtncheck(int ret, int atomic_size,
 
 static inline
 int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT, int *OPS,
-                      atomic_support_lv atomic_sup)
+                      atomic_support_lv atomic_sup, size_t idx)
 {
     int i, j;
     size_t atomic_size;
@@ -1098,7 +1098,7 @@ int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT, int *OPS,
     for (i = 0; i < DT_MAX; i++) {
         for (j = 0; j < OPS_MAX; j++) {
             int dt = SHMEM_TRANSPORT_DTYPE(DT[i]);
-            int ret = fi_atomicvalid(shmem_transport_ctx_default.ep,
+            int ret = fi_atomicvalid(shmem_transport_ctx_default.ep[idx],
                                      dt, OPS[j], &atomic_size);
             if (atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                                      SHMEM_OpName[OPS[j]],
@@ -1112,7 +1112,7 @@ int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT, int *OPS,
 
 static inline
 int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT,
-                              int *OPS, atomic_support_lv atomic_sup)
+                              int *OPS, atomic_support_lv atomic_sup, size_t idx)
 {
     int i, j;
     size_t atomic_size;
@@ -1120,7 +1120,7 @@ int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT,
     for (i = 0; i < DT_MAX; i++) {
         for (j = 0; j < OPS_MAX; j++) {
             int dt = SHMEM_TRANSPORT_DTYPE(DT[i]);
-            int ret = fi_compare_atomicvalid(shmem_transport_ctx_default.ep,
+            int ret = fi_compare_atomicvalid(shmem_transport_ctx_default.ep[idx],
                                              dt, OPS[j], &atomic_size);
             if (atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                                      SHMEM_OpName[OPS[j]],
@@ -1134,7 +1134,7 @@ int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT,
 
 static inline
 int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT, int *OPS,
-                            atomic_support_lv atomic_sup)
+                            atomic_support_lv atomic_sup, size_t idx)
 {
     int i, j;
     size_t atomic_size;
@@ -1142,7 +1142,7 @@ int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT, int *OPS,
     for (i = 0; i < DT_MAX; i++) {
         for (j = 0; j < OPS_MAX; j++) {
             int dt = SHMEM_TRANSPORT_DTYPE(DT[i]);
-            int ret = fi_fetch_atomicvalid(shmem_transport_ctx_default.ep,
+            int ret = fi_fetch_atomicvalid(shmem_transport_ctx_default.ep[idx],
                                            dt, OPS[j], &atomic_size);
             if (atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                                      SHMEM_OpName[OPS[j]],
@@ -1155,7 +1155,7 @@ int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT, int *OPS,
 }
 
 static inline
-int atomic_limitations_check(void)
+int atomic_limitations_check(size_t idx)
 {
     /* Retrieve messaging limitations from OFI
      *
@@ -1174,54 +1174,54 @@ int atomic_limitations_check(void)
 
     /* Standard OPS check */
     ret = atomicvalid_DTxOP(SIZEOF_AMO_DT, SIZEOF_AMO_OPS, DT_AMO_STANDARD,
-                            AMO_STANDARD_OPS, general_atomic_sup);
+                            AMO_STANDARD_OPS, general_atomic_sup, idx);
     if (ret)
         return ret;
 
     ret = fetch_atomicvalid_DTxOP(SIZEOF_AMO_DT, SIZEOF_AMO_FOPS,
                                   DT_AMO_STANDARD, FETCH_AMO_STANDARD_OPS,
-                                  general_atomic_sup);
+                                  general_atomic_sup, idx);
     if (ret)
         return ret;
 
     ret = compare_atomicvalid_DTxOP(SIZEOF_AMO_DT, SIZEOF_AMO_COPS,
                                     DT_AMO_STANDARD, COMPARE_AMO_STANDARD_OPS,
-                                    general_atomic_sup);
+                                    general_atomic_sup, idx);
     if (ret)
         return ret;
 
     /* Extended OPS check */
     ret = atomicvalid_DTxOP(SIZEOF_AMO_EX_DT, SIZEOF_AMO_EX_OPS, DT_AMO_EXTENDED,
-                            AMO_EXTENDED_OPS, general_atomic_sup);
+                            AMO_EXTENDED_OPS, general_atomic_sup, idx);
     if (ret)
         return ret;
 
     ret = fetch_atomicvalid_DTxOP(SIZEOF_AMO_EX_DT, SIZEOF_AMO_EX_FOPS,
                                   DT_AMO_EXTENDED, FETCH_AMO_EXTENDED_OPS,
-                                  general_atomic_sup);
+                                  general_atomic_sup, idx);
     if (ret)
         return ret;
 
     /* Reduction OPS check */
     ret = atomicvalid_DTxOP(SIZEOF_RED_DT, SIZEOF_RED_OPS, DT_REDUCE_BITWISE,
-                            REDUCE_BITWISE_OPS, reduction_sup);
+                            REDUCE_BITWISE_OPS, reduction_sup, idx);
     if (ret)
         return ret;
 
     ret = atomicvalid_DTxOP(SIZEOF_REDC_DT, SIZEOF_REDC_OPS, DT_REDUCE_COMPARE,
-                            REDUCE_COMPARE_OPS, reduction_sup);
+                            REDUCE_COMPARE_OPS, reduction_sup, idx);
     if (ret)
         return ret;
 
     ret = atomicvalid_DTxOP(SIZEOF_REDA_DT, SIZEOF_REDA_OPS, DT_REDUCE_ARITH,
-                            REDUCE_ARITH_OPS, reduction_sup);
+                            REDUCE_ARITH_OPS, reduction_sup, idx);
     if (ret)
         return ret;
 
     /* Internal atomic requirement */
     ret = compare_atomicvalid_DTxOP(SIZEOF_INTERNAL_REQ_DT, SIZEOF_INTERNAL_REQ_OPS,
                                     DT_INTERNAL_REQ, INTERNAL_REQ_OPS,
-                                    general_atomic_sup);
+                                    general_atomic_sup, idx);
     if (ret)
         return ret;
 
@@ -1280,14 +1280,14 @@ int populate_av(void)
         }
     }
 
-    for (size_t idx = 0; i < shmem_transport_ofi_num_eps; idx++) {
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_eps; idx++) {
         ret = fi_av_insert(/*shmem_transport_ofi_avfd*/ shmem_transport_ofi_eps[idx]->av,
                         alladdrs,
                         shmem_internal_num_pes * shmem_transport_ofi_num_eps,
                         addr_table,
                         0,
                         NULL);
-        if (ret != shmem_internal_num_pes) {
+        if (ret != shmem_internal_num_pes * shmem_transport_ofi_num_eps) { //Again, assuming all PEs have same number of NICs
             RAISE_WARN_STR("av insert failed");
             return ret;
         }
@@ -1802,7 +1802,6 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     }
 
     for (size_t idx = 0; idx < shmem_transport_ofi_num_eps; idx++) {
-printf("idx=%zu\n");
         shmem_transport_ofi_stx_allocate(ctx, idx);
 
         ret = bind_enable_ep_resources(ctx, idx);
@@ -2006,8 +2005,6 @@ int shmem_transport_startup(void)
 
     shmem_transport_ctx_default.team = &shmem_internal_team_world;
 
-    //TODO: Set up to be compatible with multiplexing/striping infrastructure changes..Probably only to be called once, right?
-    //Internally iterate through providers
     shmem_transport_ctx_default.stx_idx = malloc(shmem_transport_ofi_num_eps * sizeof(int));
     for (size_t idx = 0; idx < shmem_transport_ofi_num_eps; idx++) {
         shmem_transport_ctx_default.stx_idx[idx] = -1;
@@ -2015,9 +2012,10 @@ int shmem_transport_startup(void)
     ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, SHMEM_TRANSPORT_CTX_DEFAULT_ID);
     if (ret != 0) return ret;
 
-    //TODO: Set up to be compatible with multiplexing/striping infrastructure changes
-    ret = atomic_limitations_check();
-    if (ret != 0) return ret;
+    for (size_t idx; idx < shmem_transport_ofi_num_eps; idx++) {
+        ret = atomic_limitations_check(idx);
+        if (ret != 0) return ret;
+    }
 
     ret = populate_mr_tables();
     if (ret != 0) return ret;
