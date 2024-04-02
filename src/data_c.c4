@@ -485,6 +485,7 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                        const TYPE *source, ptrdiff_t tst,     \
                        ptrdiff_t sst, size_t bsize, size_t nblocks, int pe)  \
     if (bsize == 0) return;                                   \
+    long completion = 0;                                      \
     SHMEM_ERR_CHECK_INITIALIZED();                            \
     SHMEM_ERR_CHECK_PE(pe);                                   \
     SHMEM_ERR_CHECK_CTX(ctx);                                 \
@@ -496,11 +497,13 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                    sizeof(TYPE) * ((nblocks-1) * tst + bsize), \
                    sizeof(TYPE) * ((nblocks-1) * sst + bsize), 0); \
     for ( ; nblocks > 0 ; --nblocks) {                        \
-      shmem_internal_put_scalar(ctx, target, source,          \
-                                bsize * sizeof(TYPE), pe);    \
+      shmem_internal_put_nb(ctx, target, source,              \
+                                bsize * sizeof(TYPE), pe,     \
+                                &completion);                 \
       target += tst;                                          \
       source += sst;                                          \
     }                                                         \
+    shmem_internal_put_wait(ctx, &completion);                \
   }
 
 #define SHMEM_DEF_IPUT_N(NAME,SIZE)                          \
@@ -533,6 +536,7 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                        const void *source, ptrdiff_t tst,    \
                        ptrdiff_t sst, size_t bsize, size_t nblocks, int pe) \
     if (bsize == 0) return;                                  \
+    long completion = 0;                                     \
     SHMEM_ERR_CHECK_INITIALIZED();                           \
     SHMEM_ERR_CHECK_PE(pe);                                  \
     SHMEM_ERR_CHECK_CTX(ctx);                                \
@@ -545,11 +549,13 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                         (SIZE) * ((nblocks-1) * tst + bsize), \
                         (SIZE) * ((nblocks-1) * sst + bsize), 0); \
     for ( ; nblocks > 0 ; --nblocks) {                       \
-      shmem_internal_put_scalar(ctx, target, source,         \
-                                bsize * (SIZE), pe);         \
+      shmem_internal_put_nb(ctx, target, source,             \
+                            bsize * (SIZE), pe,              \
+                            &completion);                    \
       target = (uint8_t*)target + tst*(SIZE);                \
       source = (uint8_t*)source + sst*(SIZE);                \
     }                                                        \
+    shmem_internal_put_wait(ctx, &completion);               \
   }
 
 #define SHMEM_DEF_IGET(STYPE,TYPE)                            \
