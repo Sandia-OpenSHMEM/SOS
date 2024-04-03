@@ -1521,10 +1521,10 @@ int query_for_fabric(struct fabric_info *info)
      * fabrics */
     int num_nics = 0;
     struct fi_info *fallback = NULL;
-    struct fi_info *filtered_fabrics_list_head = NULL;
-    struct fi_info *filtered_fabrics_last_added = NULL;
+    struct fi_info *fabrics_list_head = NULL;
+    struct fi_info *fabrics_list_tail = NULL;
     struct fi_info *multirail_fabric_list_head = NULL;
-    struct fi_info *multirail_fabric_last_added = NULL;
+    struct fi_info *multirail_fabric_list_tail = NULL;
 
     if (info->fabric_name != NULL || info->domain_name != NULL) {
         struct fi_info *cur_fabric;
@@ -1534,52 +1534,53 @@ int query_for_fabric(struct fabric_info *info)
                 fnmatch(info->fabric_name, cur_fabric->fabric_attr->name, 0) == 0) {
                 if (info->domain_name == NULL ||
                     fnmatch(info->domain_name, cur_fabric->domain_attr->name, 0) == 0) {
-                    if (!filtered_fabrics_list_head) filtered_fabrics_list_head = cur_fabric;
-                    if (filtered_fabrics_last_added) filtered_fabrics_last_added->next = cur_fabric;
-                    filtered_fabrics_last_added = cur_fabric;
+                    if (!fabrics_list_head) fabrics_list_head = cur_fabric;
+                    if (fabrics_list_tail) fabrics_list_tail->next = cur_fabric;
+                    fabrics_list_tail = cur_fabric;
                 }
             }
         }
-        filtered_fabrics_last_added->next = NULL;
+        fabrics_list_tail->next = NULL;
     }
     else {
-        filtered_fabrics_list_head = info->fabrics;
+        fabrics_list_head = info->fabrics;
     }
-
-    struct fi_info *cur_fabric;
 
     info->p_info = NULL;
 
-    if (shmem_internal_params.DISABLE_MULTIRAIL) {
-        info->p_info = filtered_fabrics_list_head;
+    if (shmem_internal_params.OFI_DISABLE_MULTIRAIL) {
+        info->p_info = fabrics_list_head;
     }
     else {
         /* Generate a linked list of all fabrics with a non-null nic value */
-        for (cur_fabric = filtered_fabrics_list_head; cur_fabric; cur_fabric = cur_fabric->next) {
+        for (struct fi_info *cur_fabric = fabrics_list_head; cur_fabric; cur_fabric = cur_fabric->next) {
             if (!fallback) fallback = cur_fabric;
             if (cur_fabric->nic && !nic_already_used(cur_fabric->nic, multirail_fabric_list_head, num_nics)) {
                 num_nics += 1;
                 if (!multirail_fabric_list_head) multirail_fabric_list_head = cur_fabric;
-                if (multirail_fabric_last_added) multirail_fabric_last_added->next = cur_fabric;
-                multirail_fabric_last_added = cur_fabric;
+                if (multirail_fabric_list_tail) multirail_fabric_list_tail->next = cur_fabric;
+                multirail_fabric_list_tail = cur_fabric;
             }
         }
 
-        DEBUG_MSG("Total num. NICs detected: %d\n", num_nics);
         if (num_nics == 0) {
             info->p_info = fallback;
         }
         else {
             int idx = 0;
             struct fi_info **prov_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
-            for (cur_fabric = multirail_fabric_list_head; cur_fabric; cur_fabric = cur_fabric->next) {
+            for (struct fi_info *cur_fabric = multirail_fabric_list_head; cur_fabric; cur_fabric = cur_fabric->next) {
                 prov_list[idx++] = cur_fabric;
             }
             qsort(prov_list, num_nics, sizeof(struct fi_info *), compare_nic_names);
 #ifdef USE_HWLOC
             info->p_info = assign_nic_with_hwloc(info->p_info, prov_list, num_nics);
 #else
-            /* Round-robin assignment of NICs to PEs */
+            /* Round-robin assignment of NICs to PEs
+             * FIXME: A more suitable indexing value would be
+             * shmem_team_my_pe(SHMEM_TEAM_NODE) % num_nics, but it is too early in initialization to
+             * do that here. We would also want to replace the similar occurrences in the
+             * assign_nic_with_hwloc function. */
             info->p_info = prov_list[shmem_internal_my_pe % num_nics];
 #endif
             free(prov_list);
@@ -1592,7 +1593,6 @@ int query_for_fabric(struct fabric_info *info)
                        info->domain_name != NULL ? info->domain_name : "<auto>");
         return ret;
     }
-    DEBUG_MSG("provider: %s\n", info->p_info->domain_attr->name);
 
     if (info->p_info->ep_attr->max_msg_size > 0) {
         shmem_transport_ofi_max_msg_size = info->p_info->ep_attr->max_msg_size;
@@ -1630,7 +1630,7 @@ int query_for_fabric(struct fabric_info *info)
 #endif
 
     DEBUG_MSG("OFI provider: %s, fabric: %s, domain: %s, mr_mode: 0x%x\n"
-              RAISE_PE_PREFIX "max_inject: %zu, max_msg: %zu, stx: %s, stx_max: %ld\n",
+              RAISE_PE_PREFIX "max_inject: %zu, max_msg: %zu, stx: %s, stx_max: %ld, num_nics: %d\n",
               info->p_info->fabric_attr->prov_name,
               info->p_info->fabric_attr->name, info->p_info->domain_attr->name,
               info->p_info->domain_attr->mr_mode,
@@ -1638,7 +1638,8 @@ int query_for_fabric(struct fabric_info *info)
               shmem_transport_ofi_max_buffered_send,
               shmem_transport_ofi_max_msg_size,
               info->p_info->domain_attr->max_ep_stx_ctx == 0 ? "no" : "yes",
-              shmem_transport_ofi_stx_max);
+              shmem_transport_ofi_stx_max,
+              num_nics);
 
     return ret;
 }
