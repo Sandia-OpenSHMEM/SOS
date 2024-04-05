@@ -1760,8 +1760,22 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     ctx->ep = (struct fid_ep **) malloc(shmem_transport_ofi_num_eps * sizeof(struct fid_ep *));
     ctx->put_cntr = (struct fid_cntr **) malloc(shmem_transport_ofi_num_eps * sizeof(struct fid_cntr *));
     ctx->get_cntr = (struct fid_cntr **) malloc(shmem_transport_ofi_num_eps * sizeof(struct fid_cntr *));
+#ifdef USE_CTX_LOCK
+    ctx->pending_put_cntr = (uint64_t *) malloc(shmem_transport_ofi_num_eps * sizeof(uint64_t));
+    ctx->pending_get_cntr = (uint64_t *) malloc(shmem_transport_ofi_num_eps * sizeof(uint64_t));
+#else
+    ctx->pending_put_cntr = (shmem_internal_cntr_t *) malloc(shmem_transport_ofi_num_eps * sizeof(shmem_internal_cntr_t));
+    ctx->pending_get_cntr = (shmem_internal_cntr_t *) malloc(shmem_transport_ofi_num_eps * sizeof(shmem_internal_cntr_t));
+#endif
     ctx->cq = (struct fid_cq **) malloc(shmem_transport_ofi_num_eps * sizeof(struct fid_cq *));
     for (size_t idx = 0; idx < shmem_transport_ofi_num_eps; idx++) {
+#ifdef USE_CTX_LOCK
+        ctx->pending_put_cntr[idx] = 0;
+        ctx->pending_get_cntr[idx] = 0;
+#else
+        shmem_internal_cntr_write(&ctx->pending_put_cntr[idx], 0);
+        shmem_internal_cntr_write(&ctx->pending_get_cntr[idx], 0);
+#endif
         shmem_transport_ofi_eps[idx]->info->ep_attr->tx_ctx_cnt = shmem_transport_ofi_stx_max > 0 ? FI_SHARED_CONTEXT : 0;
         shmem_transport_ofi_eps[idx]->info->caps = FI_RMA | FI_WRITE | FI_READ | FI_ATOMIC | FI_RECV;
         shmem_transport_ofi_eps[idx]->info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
@@ -2071,6 +2085,9 @@ int shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options,
 #ifndef USE_CTX_LOCK
         shmem_internal_cntr_write(&ctxp->pending_put_cntr[idx], 0);
         shmem_internal_cntr_write(&ctxp->pending_get_cntr[idx], 0);
+#else
+        ctxp->pending_put_cntr[idx] = 0;
+        ctxp->pending_get_cntr[idx] = 0;
 #endif
 
         ctxp->stx_idx[idx] = -1;
@@ -2106,6 +2123,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 
         // TODO: May want to include pending/completed counters for ALL NICs or at least an aggregate
         // for each counter type
+/* Causes seg. fault right now for obvious reasons
         DEBUG_MSG("id = %d, options = %#0lx, stx_idx = %d\n"
                   RAISE_PE_PREFIX "pending_put_cntr = %9"PRIu64", completed_put_cntr = %9"PRIu64"\n"
                   RAISE_PE_PREFIX "pending_get_cntr = %9"PRIu64", completed_get_cntr = %9"PRIu64"\n"
@@ -2120,6 +2138,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
                   shmem_internal_my_pe,
                   ctx->pending_bb_cntr, ctx->completed_bb_cntr
                  );
+*/
         if (ctx->bounce_buffers) SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
     }
@@ -2158,7 +2177,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
                 shmem_transport_ofi_stx_pool[idx][ctx->stx_idx[idx]].ref_cnt--;
                 if (shmem_transport_ofi_stx_pool[idx][ctx->stx_idx[idx]].is_private) {
                     SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
-                    RAISE_ERROR_STR("Destroyed a ctx with an inconsistent is_private field");
+                    RAISE_ERROR_STR("Destroyed a ctx with an inconsistent is_private field"); /* Running into error here... */
                 }
             }
         }
