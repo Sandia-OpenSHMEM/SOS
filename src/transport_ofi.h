@@ -46,6 +46,7 @@ extern struct fid_cntr*                 shmem_transport_ofi_target_cntrfd;
 #if ENABLE_MANUAL_PROGRESS
 extern struct fid_cq*                   shmem_transport_ofi_target_cq;
 #endif
+
 #ifndef ENABLE_MR_SCALABLE
 extern uint64_t*                        shmem_transport_ofi_target_heap_keys;
 extern uint64_t*                        shmem_transport_ofi_target_data_keys;
@@ -62,6 +63,7 @@ extern uint64_t*                        shmem_transport_ofi_external_heap_keys;
 extern uint8_t**                        shmem_transport_ofi_external_heap_addrs;
 #endif
 
+extern struct fid_mr*                   shmem_transport_ofi_mrfd_list[3];
 extern uint64_t                         shmem_transport_ofi_max_poll;
 extern long                             shmem_transport_ofi_put_poll_limit;
 extern long                             shmem_transport_ofi_get_poll_limit;
@@ -1238,7 +1240,7 @@ void shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target,
     const struct fi_rma_ioc rmav= { .addr = (uint64_t) addr, .count = 1, .key = key };
     const struct fi_msg_atomic msg = {
                                  .msg_iov       = &sourcev,
-                                 .desc          = NULL,
+                                 .desc          = (void **) shmem_transport_ofi_mrfd_list,
                                  .iov_count     = 1,
                                  .addr          = GET_DEST(dst),
                                  .rma_iov       = &rmav,
@@ -1256,7 +1258,7 @@ void shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target,
         ret = fi_fetch_atomicmsg(ctx->ep,
                                  &msg,
                                  &resultv,
-                                 NULL,
+                                 (void **) shmem_transport_ofi_mrfd_list,
                                  1,
                                  FI_INJECT); /* FI_DELIVERY_COMPLETE is not required as it's
                                                 implied for fetch atomicmsgs */
@@ -1295,9 +1297,9 @@ void shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target,
         ret = fi_fetch_atomic(ctx->ep,
                               source,
                               1,
-                              NULL,
+                              (void **) shmem_transport_ofi_mrfd_list,
                               dest,
-                              NULL,
+                              (void **) shmem_transport_ofi_mrfd_list,
                               GET_DEST(dst),
                               (uint64_t) addr,
                               key,
@@ -1353,8 +1355,8 @@ void shmem_transport_atomic_fetch(shmem_transport_ctx_t* ctx, void *target,
     shmem_transport_fetch_atomic_nbi(ctx, (void *) source, (const void *) &dummy,
                                      target, len, pe, FI_SUM, datatype);
 #else
-    shmem_transport_fetch_atomic(ctx, (void *) source, (const void *) NULL,
-                                 target, len, pe, FI_ATOMIC_READ, datatype);
+    shmem_transport_fetch_atomic_nbi(ctx, (void *) source, (const void *) NULL,
+                                     target, len, pe, FI_ATOMIC_READ, datatype);
 #endif
 }
 
