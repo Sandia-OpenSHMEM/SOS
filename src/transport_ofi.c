@@ -1577,7 +1577,7 @@ int query_for_fabric(struct fabric_info *info)
 
     if (shmem_internal_params.OFI_DISABLE_MULTIRAIL) {
         info->p_info = fabrics_list_head;
-        shmem_transport_ofi_num_eps = 0;
+        shmem_transport_ofi_num_eps = 1;
     }
     else {
         /* Generate a linked list of all fabrics with a non-null nic value */
@@ -1594,6 +1594,7 @@ int query_for_fabric(struct fabric_info *info)
 
         if (num_nics == 0) {
             info->p_info = fallback;
+            shmem_transport_ofi_num_eps = 1;
         }
         else {
             int idx = 0;
@@ -2026,7 +2027,7 @@ int shmem_transport_startup(void)
     ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, SHMEM_TRANSPORT_CTX_DEFAULT_ID);
     if (ret != 0) return ret;
 
-    for (size_t idx; idx < shmem_transport_ofi_num_eps; idx++) {
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_eps; idx++) {
         ret = atomic_limitations_check(idx);
         if (ret != 0) return ret;
     }
@@ -2154,9 +2155,9 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         shmem_free_list_destroy(ctx->bounce_buffers);
     }
 
-    if (ctx->stx_idx >= 0) {
-        SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
-        for (size_t idx = 0; idx < shmem_transport_ofi_num_eps; idx++) {
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_eps; idx++) {
+        if (ctx->stx_idx[idx] >= 0) {
+            SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
             if (shmem_transport_ofi_is_private(ctx->options)) {
                 shmem_transport_ofi_stx_kvs_t *e;
                 HASH_FIND(hh, shmem_transport_ofi_stx_kvs, &ctx->tid, //May need to look at what this doing...
@@ -2180,8 +2181,8 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
                     RAISE_ERROR_STR("Destroyed a ctx with an inconsistent is_private field"); /* Running into error here... */
                 }
             }
+            SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
         }
-        SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
     }
 
     for (size_t idx = 0; idx < shmem_transport_ofi_num_eps; idx++) {
@@ -2252,13 +2253,13 @@ int shmem_transport_fini(void)
 
 #if defined(ENABLE_MR_SCALABLE)
 #if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
-    ret = fi_close(&shmem_transport_ofi_target_mrfd->fid);
+    ret = fi_close(&shmem_transport_ofi_target_mrfd->fid); // Fix?
     OFI_CHECK_ERROR_MSG(ret, "Target MR close failed (%s)\n", fi_strerror(errno));
 #else
-    ret = fi_close(&shmem_transport_ofi_target_heap_mrfd->fid);
+    ret = fi_close(&shmem_transport_ofi_target_heap_mrfd->fid); // Fix?
     OFI_CHECK_ERROR_MSG(ret, "Target heap MR close failed (%s)\n", fi_strerror(errno));
 
-    ret = fi_close(&shmem_transport_ofi_target_data_mrfd->fid);
+    ret = fi_close(&shmem_transport_ofi_target_data_mrfd->fid); // Fix?
     OFI_CHECK_ERROR_MSG(ret, "Target data MR close failed (%s)\n", fi_strerror(errno));  
 #endif
 #else
@@ -2271,10 +2272,10 @@ int shmem_transport_fini(void)
 #endif
 
     ret = fi_close(&shmem_transport_ofi_target_heap_mrfd->fid);
-    OFI_CHECK_ERROR_MSG(ret, "Target heap MR close failed (%s)\n", fi_strerror(errno));
+    OFI_CHECK_ERROR_MSG(ret, "Target heap MR close failed (%s)\n", fi_strerror(ret));
 
     ret = fi_close(&shmem_transport_ofi_target_data_mrfd->fid);
-    OFI_CHECK_ERROR_MSG(ret, "Target data MR close failed (%s)\n", fi_strerror(errno));
+    OFI_CHECK_ERROR_MSG(ret, "Target data MR close failed (%s)\n", fi_strerror(ret));
 #endif
 
 #ifdef USE_FI_HMEM
@@ -2282,29 +2283,33 @@ int shmem_transport_fini(void)
         free(shmem_transport_ofi_external_heap_keys);
         free(shmem_transport_ofi_external_heap_addrs);
         ret = fi_close(&shmem_transport_ofi_external_heap_mrfd->fid);
-        OFI_CHECK_ERROR_MSG(ret, "External heap MR close failed (%s)\n", fi_strerror(errno));
+        OFI_CHECK_ERROR_MSG(ret, "External heap MR close failed (%s)\n", fi_strerror(ret));
     }
 #endif
 
-    ret = fi_close(&shmem_transport_ofi_target_ep->fid);
-    OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));
 
-    ret = fi_close(&shmem_transport_ofi_target_cq->fid);
-    OFI_CHECK_ERROR_MSG(ret, "Target CQ close failed (%s)\n", fi_strerror(errno));
+for (size_t idx = 0; idx < shmem_transport_ofi_num_eps; idx++) {
+    ret = fi_close(/*&shmem_transport_ofi_target_ep->fid*/ &shmem_transport_ofi_eps[idx]->ep->fid);
+    OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(ret));
+
+    ret = fi_close(/*&shmem_transport_ofi_target_cq->fid*/ &shmem_transport_ofi_eps[idx]->cq->fid);
+    OFI_CHECK_ERROR_MSG(ret, "Target CQ close failed (%s)\n", fi_strerror(ret));
 
 #if ENABLE_TARGET_CNTR
-    ret = fi_close(&shmem_transport_ofi_target_cntrfd->fid);
-    OFI_CHECK_ERROR_MSG(ret, "Target CT close failed (%s)\n", fi_strerror(errno));
+    ret = fi_close(/*&shmem_transport_ofi_target_cntrfd->fid*/ &shmem_transport_ofi_eps[idx]->cntr->fid);
+    OFI_CHECK_ERROR_MSG(ret, "Target CT close failed (%s)\n", fi_strerror(ret));
 #endif
 
-    ret = fi_close(&shmem_transport_ofi_avfd->fid);
-    OFI_CHECK_ERROR_MSG(ret, "AV close failed (%s)\n", fi_strerror(errno));
+    ret = fi_close(/*&shmem_transport_ofi_avfd->fid*/ &shmem_transport_ofi_eps[idx]->av->fid);
 
-    ret = fi_close(&shmem_transport_ofi_domainfd->fid);
-    OFI_CHECK_ERROR_MSG(ret, "Domain close failed (%s)\n", fi_strerror(errno));
+    OFI_CHECK_ERROR_MSG(ret, "AV close failed (%s)\n", fi_strerror(ret));
 
-    ret = fi_close(&shmem_transport_ofi_fabfd->fid);
-    OFI_CHECK_ERROR_MSG(ret, "Fabric close failed (%s)\n", fi_strerror(errno));
+    ret = fi_close(/*&shmem_transport_ofi_domainfd->fid*/ &shmem_transport_ofi_eps[idx]->domain->fid);
+    OFI_CHECK_ERROR_MSG(ret, "Domain close failed (%s)\n", fi_strerror(ret));
+
+    ret = fi_close(/*&shmem_transport_ofi_fabfd->fid*/ &shmem_transport_ofi_eps[idx]->fabric->fid);
+    OFI_CHECK_ERROR_MSG(ret, "Fabric close failed (%s)\n", fi_strerror(ret));
+}
 
 #ifdef USE_AV_MAP
     free(addr_table);
