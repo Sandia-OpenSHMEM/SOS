@@ -1333,6 +1333,103 @@ int allocate_fabric_resources(struct fabric_info *info)
     return ret;
 }
 
+#ifdef USE_HWLOC
+struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **provs, size_t num_nics) {
+    int ret = 0;
+    hwloc_bitmap_t bindset = hwloc_bitmap_alloc();
+
+    ret = hwloc_get_proc_last_cpu_location(shmem_internal_topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS);
+    if (ret < 0) {
+        RAISE_WARN_MSG("hwloc_get_proc_last_cpu_location failed (%s)\n", strerror(errno));
+        return provs[shmem_internal_my_pe % num_nics];
+    }
+
+    // Identify which provider entries correspond to NICs with an affinity to the calling process
+    struct fi_info *close_provs = NULL;
+    struct fi_info *last_added = NULL;
+    size_t num_close_nics = 0;
+    for (size_t i = 0; i < num_nics; i++) {
+        struct fi_info *cur_prov = provs[i];
+        if (cur_prov->nic->bus_attr->bus_type != FI_BUS_PCI) continue;
+
+        struct fi_pci_attr pci = cur_prov->nic->bus_attr->attr.pci;
+        hwloc_obj_t io_device = hwloc_get_pcidev_by_busid(shmem_internal_topology, pci.domain_id, pci.bus_id, pci.device_id, pci.function_id);
+        if (!io_device) {
+            RAISE_WARN_MSG("hwloc_get_pcidev_by_busid failed\n");
+            return provs[shmem_internal_my_pe % num_nics];
+        };
+        hwloc_obj_t first_non_io = hwloc_get_non_io_ancestor_obj(shmem_internal_topology, io_device);
+        if (!first_non_io) {
+            RAISE_WARN_MSG("hwloc_get_non_io_ancestor_obj failed\n");
+            return provs[shmem_internal_my_pe % num_nics];
+        }
+
+        if (hwloc_bitmap_isincluded(bindset, first_non_io->cpuset) ||
+            hwloc_bitmap_isincluded(first_non_io->cpuset, bindset)) {
+            struct fi_info *dup = fi_dupinfo(cur_prov);
+            if (!close_provs) close_provs = dup;
+            if (last_added) last_added->next = dup;
+            last_added = dup;
+            num_close_nics++;
+        }
+    }
+    DEBUG_MSG("Num. NICs w/ affinity to process: %zu\n", num_close_nics);
+
+    if (!close_provs) {
+        RAISE_WARN_MSG("Could not detect any NICs with affinity to the process\n");
+
+        /* If no 'close' NICs, select from list of all NICs using round-robin assignment */
+        return provs[shmem_internal_my_pe % num_nics];
+    }
+
+    last_added->next = NULL;
+
+    int idx = 0;
+    struct fi_info **prov_list = (struct fi_info **) malloc(num_close_nics * sizeof(struct fi_info *));
+    for (struct fi_info *cur_fabric = close_provs; cur_fabric; cur_fabric = cur_fabric->next) {
+        prov_list[idx++] = cur_fabric;
+    }
+
+    hwloc_bitmap_free(bindset);
+
+    struct fi_info *provider = prov_list[shmem_internal_my_pe % num_close_nics];
+    free(prov_list);
+
+    return provider;
+}
+#endif
+
+static int compare_nic_names(const void *f1, const void *f2)
+{
+    const struct fi_info **fabric1 = (const struct fi_info **) f1;
+    const struct fi_info **fabric2 = (const struct fi_info **) f2;
+    return strcmp((*fabric1)->nic->device_attr->name, (*fabric2)->nic->device_attr->name);
+}
+
+bool nic_already_used(struct fid_nic *nic, struct fi_info *fabrics, int num_nics)
+{
+    struct fi_info *cur_fabric = fabrics;
+    for (int i = 0; i < num_nics; i++) {
+        if (nic->bus_attr->bus_type == FI_BUS_PCI &&
+            cur_fabric->nic->bus_attr->bus_type == FI_BUS_PCI) {
+            struct fi_pci_attr nic_pci = nic->bus_attr->attr.pci;
+            struct fi_pci_attr cur_fabric_pci = cur_fabric->nic->bus_attr->attr.pci;
+            if (nic_pci.domain_id == cur_fabric_pci.domain_id && nic_pci.bus_id == cur_fabric_pci.bus_id &&
+                nic_pci.device_id == cur_fabric_pci.device_id && nic_pci.function_id == cur_fabric_pci.function_id) {
+                return true;
+            }
+        } else {
+            if (strcmp(nic->device_attr->name, cur_fabric->nic->device_attr->name) == 0) {
+                return true;
+            }
+        }
+
+        cur_fabric = cur_fabric->next;
+    }
+
+    return false;
+}
+
 static inline
 int query_for_fabric(struct fabric_info *info)
 {
@@ -1420,27 +1517,75 @@ int query_for_fabric(struct fabric_info *info)
                               info->prov_name != NULL ? info->prov_name : "<auto>");
 
     /* If the user supplied a fabric or domain name, use it to select the
-     * fabric.  Otherwise, select the first fabric in the list. */
+     * fabrics that may be chosen. Otherwise, consider all available
+     * fabrics */
+    int num_nics = 0;
+    struct fi_info *fallback = NULL;
+    struct fi_info *fabrics_list_head = NULL;
+    struct fi_info *fabrics_list_tail = NULL;
+    struct fi_info *multirail_fabric_list_head = NULL;
+    struct fi_info *multirail_fabric_list_tail = NULL;
+
     if (info->fabric_name != NULL || info->domain_name != NULL) {
         struct fi_info *cur_fabric;
-
-        info->p_info = NULL;
 
         for (cur_fabric = info->fabrics; cur_fabric; cur_fabric = cur_fabric->next) {
             if (info->fabric_name == NULL ||
                 fnmatch(info->fabric_name, cur_fabric->fabric_attr->name, 0) == 0) {
                 if (info->domain_name == NULL ||
                     fnmatch(info->domain_name, cur_fabric->domain_attr->name, 0) == 0) {
-                    info->p_info = cur_fabric;
-                    break;
+                    if (!fabrics_list_head) fabrics_list_head = cur_fabric;
+                    if (fabrics_list_tail) fabrics_list_tail->next = cur_fabric;
+                    fabrics_list_tail = cur_fabric;
                 }
             }
         }
+        fabrics_list_tail->next = NULL;
     }
     else {
-        info->p_info = info->fabrics;
+        fabrics_list_head = info->fabrics;
     }
 
+    info->p_info = NULL;
+
+    if (shmem_internal_params.OFI_DISABLE_MULTIRAIL) {
+        info->p_info = fabrics_list_head;
+    }
+    else {
+        /* Generate a linked list of all fabrics with a non-null nic value */
+        for (struct fi_info *cur_fabric = fabrics_list_head; cur_fabric; cur_fabric = cur_fabric->next) {
+            if (!fallback) fallback = cur_fabric;
+            if (cur_fabric->nic && !nic_already_used(cur_fabric->nic, multirail_fabric_list_head, num_nics)) {
+                num_nics += 1;
+                if (!multirail_fabric_list_head) multirail_fabric_list_head = cur_fabric;
+                if (multirail_fabric_list_tail) multirail_fabric_list_tail->next = cur_fabric;
+                multirail_fabric_list_tail = cur_fabric;
+            }
+        }
+
+        if (num_nics == 0) {
+            info->p_info = fallback;
+        }
+        else {
+            int idx = 0;
+            struct fi_info **prov_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
+            for (struct fi_info *cur_fabric = multirail_fabric_list_head; cur_fabric; cur_fabric = cur_fabric->next) {
+                prov_list[idx++] = cur_fabric;
+            }
+            qsort(prov_list, num_nics, sizeof(struct fi_info *), compare_nic_names);
+#ifdef USE_HWLOC
+            info->p_info = assign_nic_with_hwloc(info->p_info, prov_list, num_nics);
+#else
+            /* Round-robin assignment of NICs to PEs
+             * FIXME: A more suitable indexing value would be
+             * shmem_team_my_pe(SHMEM_TEAM_NODE) % num_nics, but it is too early in initialization to
+             * do that here. We would also want to replace the similar occurrences in the
+             * assign_nic_with_hwloc function. */
+            info->p_info = prov_list[shmem_internal_my_pe % num_nics];
+#endif
+            free(prov_list);
+        }
+    }
     if (NULL == info->p_info) {
         RAISE_WARN_MSG("OFI transport, no valid fabric (prov=%s, fabric=%s, domain=%s)\n",
                        info->prov_name != NULL ? info->prov_name : "<auto>",
@@ -1485,7 +1630,7 @@ int query_for_fabric(struct fabric_info *info)
 #endif
 
     DEBUG_MSG("OFI provider: %s, fabric: %s, domain: %s, mr_mode: 0x%x\n"
-              RAISE_PE_PREFIX "max_inject: %zu, max_msg: %zu, stx: %s, stx_max: %ld\n",
+              RAISE_PE_PREFIX "max_inject: %zu, max_msg: %zu, stx: %s, stx_max: %ld, num_nics: %d\n",
               info->p_info->fabric_attr->prov_name,
               info->p_info->fabric_attr->name, info->p_info->domain_attr->name,
               info->p_info->domain_attr->mr_mode,
@@ -1493,7 +1638,8 @@ int query_for_fabric(struct fabric_info *info)
               shmem_transport_ofi_max_buffered_send,
               shmem_transport_ofi_max_msg_size,
               info->p_info->domain_attr->max_ep_stx_ctx == 0 ? "no" : "yes",
-              shmem_transport_ofi_stx_max);
+              shmem_transport_ofi_stx_max,
+              num_nics);
 
     return ret;
 }
