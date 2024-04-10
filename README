@@ -259,6 +259,10 @@ options.
         compute node is determined by its unique hostname, and the number of
         STXs available on a compute node is provided by the libfabric library.
 
+    SHMEM_OFI_DISABLE_MULTIRAIL (default: off)
+        Disable multirail functionality. Enabling this will restrict all
+        communications to occur over a single NIC per system.
+
   Team Environment variables:
 
     SHMEM_TEAMS_MAX (default: 10)
