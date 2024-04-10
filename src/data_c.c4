@@ -484,7 +484,6 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
   SHMEMX_FUNC_PROTOTYPE(STYPE##_ibput, TYPE *target,          \
                        const TYPE *source, ptrdiff_t tst,     \
                        ptrdiff_t sst, size_t bsize, size_t nblocks, int pe)  \
-    if (bsize == 0) return;                                   \
     long completion = 0;                                      \
     SHMEM_ERR_CHECK_INITIALIZED();                            \
     SHMEM_ERR_CHECK_PE(pe);                                   \
@@ -535,7 +534,6 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
   SHMEMX_FUNC_PROTOTYPE(ibput##NAME, void *target,           \
                        const void *source, ptrdiff_t tst,    \
                        ptrdiff_t sst, size_t bsize, size_t nblocks, int pe) \
-    if (bsize == 0) return;                                  \
     long completion = 0;                                     \
     SHMEM_ERR_CHECK_INITIALIZED();                           \
     SHMEM_ERR_CHECK_PE(pe);                                  \
@@ -589,7 +587,6 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                        const TYPE *source,                    \
                        ptrdiff_t tst, ptrdiff_t sst,          \
                        size_t bsize, size_t nblocks, int pe)  \
-    if (bsize == 0) return;                                   \
     SHMEM_ERR_CHECK_INITIALIZED();                            \
     SHMEM_ERR_CHECK_PE(pe);                                   \
     SHMEM_ERR_CHECK_CTX(ctx);                                 \
@@ -640,7 +637,6 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                        const void *source, ptrdiff_t tst, \
                        ptrdiff_t sst, size_t bsize,       \
                        size_t nblocks, int pe)            \
-    if (bsize == 0) return;                               \
     SHMEM_ERR_CHECK_INITIALIZED();                        \
     SHMEM_ERR_CHECK_PE(pe);                               \
     SHMEM_ERR_CHECK_CTX(ctx);                             \
