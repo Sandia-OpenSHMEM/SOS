@@ -316,21 +316,23 @@ extern hwloc_topology_t shmem_internal_topology;
  *         size1 == size2 and complete_overlap_allowed is 1
  *     For the pt2pt sync routines (ivars/status/indices arguments):
  *         size1 != size2 and complete_overlap_allowed is 0 */
-#define SHMEM_ERR_CHECK_OVERLAP(ptr1, ptr2, size1, size2, complete_overlap_allowed)     \
-    do {                                                                                \
-        const void *p1 = (void*)(ptr1);                                                 \
-        const void *p2 = (void*)(ptr2);                                                 \
-        const void *ptr_low  = p1 > p2 ? p2 : p1;                                       \
-        const void *ptr_high = p1 > p2 ? p1 : p2;                                       \
-        const size_t sz_low  = p1 > p2 ? size2 : size1;                                 \
-        const void *ptr_extent = (void *)((char *)ptr_low + sz_low);                    \
-        if (complete_overlap_allowed && p1 == p2) {                                     \
-            break; /* Skip this check when buffer is allowed to completely overlap  */  \
-        }                                                                               \
-        if (ptr_extent > ptr_high) {                                                    \
-            RAISE_ERROR_MSG("Argument \"%s\" [%p..%p) overlaps argument (%p)\n", #ptr1, \
-                            ptr_low, ptr_extent, ptr_high);                             \
-        }                                                                               \
+#define SHMEM_ERR_CHECK_OVERLAP(ptr1, ptr2, size1, size2, complete_overlap_allowed, precheck) \
+    do {                                                                                      \
+        if (precheck) {                                                                       \
+            const void *p1 = (void*)(ptr1);                                                   \
+            const void *p2 = (void*)(ptr2);                                                   \
+            const void *ptr_low  = p1 > p2 ? p2 : p1;                                         \
+            const void *ptr_high = p1 > p2 ? p1 : p2;                                         \
+            const size_t sz_low  = p1 > p2 ? size2 : size1;                                   \
+            const void *ptr_extent = (void *)((char *)ptr_low + sz_low);                      \
+            if (complete_overlap_allowed && p1 == p2) {                                       \
+                break; /* Skip this check when buffer is allowed to completely overlap  */    \
+            }                                                                                 \
+            if (ptr_extent > ptr_high) {                                                      \
+                RAISE_ERROR_MSG("Argument \"%s\" [%p..%p) overlaps argument (%p)\n", #ptr1,   \
+                                ptr_low, ptr_extent, ptr_high);                               \
+            }                                                                                 \
+        }                                                                                     \
     } while (0)
 
 #define SHMEM_ERR_CHECK_NULL(ptr, nelems)                                               \
@@ -378,7 +380,7 @@ extern hwloc_topology_t shmem_internal_topology;
 #define SHMEM_ERR_CHECK_CTX(ctx)
 #define SHMEM_ERR_CHECK_SYMMETRIC(ptr, len)
 #define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr)
-#define SHMEM_ERR_CHECK_OVERLAP(ptr1, ptr2, size1, size2, complete_overlap_allowed)
+#define SHMEM_ERR_CHECK_OVERLAP(ptr1, ptr2, size1, size2, complete_overlap_allowed, precheck)
 #define SHMEM_ERR_CHECK_NULL(ptr, nelems)
 #define SHMEM_ERR_CHECK_CMP_OP(op)
 #define SHMEM_ERR_CHECK_SIG_OP(op)                                                      \
