@@ -1562,7 +1562,7 @@ int query_for_fabric(struct fabric_info *info)
                 multirail_fabric_list_tail = cur_fabric;
             }
         }
-        multirail_fabric_list_tail->next = NULL;
+        if (multirail_fabric_list_tail) multirail_fabric_list_tail->next = NULL;
 
         if (num_nics == 0) {
             info->p_info = fallback;
