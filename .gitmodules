@@ -1,4 +1,4 @@
 [submodule "modules/tests-sos"]
 	path = modules/tests-sos
 	url = ../../wrrobin/tests-sos.git
-	branch = pr/signal_set_add
+	branch = "pr/signal_set_add"
