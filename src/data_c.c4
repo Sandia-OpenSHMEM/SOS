@@ -524,8 +524,8 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     for ( ; nelems > 0 ; --nelems) {                         \
       shmem_internal_put_scalar(ctx, target, source, (SIZE), \
                                pe);                          \
-      target = (uint8_t*)target + tst*(SIZE);                \
-      source = (uint8_t*)source + sst*(SIZE);                \
+      target = (uint8_t *) target + tst * (SIZE);            \
+      source = (uint8_t *) source + sst * (SIZE);            \
     }                                                        \
   }
 
@@ -550,8 +550,8 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
       shmem_internal_put_nb(ctx, target, source,             \
                             bsize * (SIZE), pe,              \
                             &completion);                    \
-      target = (uint8_t*)target + tst*(SIZE);                \
-      source = (uint8_t*)source + sst*(SIZE);                \
+      target = (uint8_t *) target + tst * (SIZE);            \
+      source = (uint8_t *) source + sst * (SIZE);            \
     }                                                        \
     shmem_internal_put_wait(ctx, &completion);               \
   }
@@ -625,8 +625,8 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                      (SIZE) * ((nelems-1) * sst + 1), 0); \
     for ( ; nelems > 0 ; --nelems) {                      \
       shmem_internal_get(ctx, target, source, (SIZE), pe);\
-      target = (uint8_t*)target + tst*(SIZE);             \
-      source = (uint8_t*)source + sst*(SIZE);             \
+      target = (uint8_t *) target + tst * (SIZE);         \
+      source = (uint8_t *) source + sst * (SIZE);         \
     }                                                     \
     shmem_internal_get_wait(ctx);                         \
   }
@@ -651,8 +651,8 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     for ( ; nblocks > 0 ; --nblocks) {                    \
       shmem_internal_get(ctx, target, source,             \
                          bsize * (SIZE), pe);             \
-      target = (uint8_t*)target + tst*(SIZE);             \
-      source = (uint8_t*)source + sst*(SIZE);             \
+      target = (uint8_t *) target + tst * (SIZE);         \
+      source = (uint8_t *) source + sst * (SIZE);         \
     }                                                     \
     shmem_internal_get_wait(ctx);                         \
   }
