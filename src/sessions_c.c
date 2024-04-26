@@ -1,6 +1,6 @@
 /* -*- C -*-
  *
- * Copyright (c) 2022 Intel Corporation. All rights reserved.
+ * Copyright (c) 2024 Intel Corporation. All rights reserved.
  * This software is available to you under the BSD license.
  *
  * This file is part of the Sandia OpenSHMEM software package. For license
@@ -28,11 +28,11 @@
 #endif /* ENABLE_PROFILING */
 
 SHMEM_FUNCTION_ATTRIBUTES void
-shmem_session_start(long options, shmem_ctx_t ctx)
+shmem_session_start(shmem_ctx_t ctx, long options, const shmem_session_config_t *config, long config_mask)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
-    int ret = shmem_transport_session_start(options, (shmem_transport_ctx_t *) ctx);
+    int ret = shmem_transport_session_start((shmem_transport_ctx_t *) ctx, options, config, config_mask);
     if (0 != ret) {
         DEBUG_MSG("Session did not start correctly (%d)\n", ret);
     } else {

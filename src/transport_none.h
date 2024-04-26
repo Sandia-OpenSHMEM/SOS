@@ -372,7 +372,7 @@ void shmem_transport_pcntr_get_all(shmem_transport_ctx_t *ctx, shmemx_pcntr_t *p
 
 static inline
 int
-shmem_transport_session_start(long options, shmem_transport_ctx_t *ctx)
+shmem_transport_session_start(shmem_transport_ctx_t *ctx, long options, const shmem_session_config_t *config, long config_mask)
 {
     return 0;
 }
