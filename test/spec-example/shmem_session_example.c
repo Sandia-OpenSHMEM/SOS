@@ -3,8 +3,8 @@
  */
 
 #include <shmem.h>
-#include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #define N_UPDATES (1lu << 18)
 #define N_INDICES (1lu << 10)
@@ -27,18 +27,18 @@ int main(void) {
       shmem_global_exit(1);
   }
 
-  shmem_config_t config;
+  shmem_session_config_t config;
   long config_mask;
   config.total_ops = N_UPDATES;
   config_mask = SHMEM_SESSION_TOTAL_OPS;
 
-  shmem_session_start(ctx, SHMEM_SESSION_SAME_AMO, config, config_mask);
+  shmem_session_start(ctx, SHMEM_SESSION_SAME_AMO, &config, config_mask);
 
   for (size_t i = 0; i < N_UPDATES; i++) {
       int random_pe = rand() % npes;
       size_t random_idx = rand() % N_INDICES;
       uint64_t random_val = rand() % N_VALUES;
-      shmem_uint64_atomic_xor(ctx, &table[random_idx], random_val, random_pe);
+      shmem_ctx_uint64_atomic_xor(ctx, &table[random_idx], random_val, random_pe);
   }
 
   shmem_session_stop(ctx);
