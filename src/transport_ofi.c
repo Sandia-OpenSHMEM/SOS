@@ -824,6 +824,8 @@ int allocate_recv_cntr_mr(void)
     } else {
         shmem_transport_ofi_mrfd_list[2] = NULL;
     }
+#else
+    shmem_transport_ofi_mrfd_list[2] = NULL;
 #endif
 
     ret = ofi_mr_reg_bind(flags);

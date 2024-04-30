@@ -63,7 +63,6 @@ jobs:
           #              --enable-pmi-simple
           #  libfabric_version: v1.13.x
           - config_name: XPMEM RVA
-            env_setup: export FI_PROVIDER=sockets
             xpmem_version: master
             sos_config: --with-xpmem=${XPMEM_INSTALL_DIR} --enable-error-checking
                         --enable-remote-virtual-addressing --enable-pmi-simple
@@ -112,7 +111,6 @@ jobs:
             env_setup: export SHMEM_BARRIER_ALGORITHM=dissem;
                        export SHMEM_REDUCE_ALGORITHM=recdbl;
                        export SHMEM_FCOLLECT_ALGORITHM=recdbl;
-                       export FI_PROVIDER=sockets;
                        export SHMEM_OFI_STX_AUTO=1
             sos_config: --enable-error-checking --enable-remote-virtual-addressing
                         --enable-pmi-simple --enable-manual-progress --enable-hard-polling --with-hwloc=no
@@ -231,7 +229,7 @@ jobs:
           cd build
           make check TESTS= -j
           ${{ matrix.env_setup }}
-          SHMEM_DEBUG=1 SHMEM_INFO=1 SHMEM_BACKTRACE="execinfo" make VERBOSE=1 TEST_RUNNER="${SOS_PM} -np 2" check
+          SHMEM_DEBUG=1 SHMEM_INFO=1 SHMEM_OFI_PROVIDER=sockets make VERBOSE=1 TEST_RUNNER="${SOS_PM} -np 2" check
           cat modules/tests-sos/test/unit/hello.log
       - name: Test RPM (${{ matrix.rpm_build }})
         if: ${{ matrix.rpm_build }}
