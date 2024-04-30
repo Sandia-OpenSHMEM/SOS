@@ -334,10 +334,22 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
         myteam->start       = global_PE_start;
         myteam->stride      = PE_stride;
         myteam->size        = PE_size;
-        if (config) {
-            myteam->config      = *config;
-            myteam->config_mask = config_mask;
+
+        if (config_mask == 0) {
+            shmem_team_config_t default_config;
+            default_config.num_contexts = 0;
+            myteam->config_mask = 0;
+            memcpy(&myteam->config, &default_config, sizeof(shmem_team_config_t));
+        } else {
+            if (config_mask != SHMEM_TEAM_NUM_CONTEXTS) {
+                RAISE_WARN_MSG("Invalid team_split_strided config_mask (%ld)\n", config_mask);
+                return -1;
+            } else {
+                myteam->config      = *config;
+                myteam->config_mask = config_mask;
+            }
         }
+
         myteam->contexts_len = 0;
         myteam->psync_idx = -1;
 
