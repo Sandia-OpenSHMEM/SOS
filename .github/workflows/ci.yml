@@ -156,6 +156,7 @@ jobs:
           echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           submodules: 'true'
       - name: Install dependencies
         run: |
@@ -217,6 +218,7 @@ jobs:
       # SOS
       - name: Build SOS (${{ matrix.sos_config }})
         run: |
+          git submodule update --remote
           ./autogen.sh
           mkdir build; cd build
           ../configure --prefix=${SOS_INSTALL_DIR} --with-ofi=${LIBFABRIC_INSTALL_DIR} ${{ matrix.sos_config }}
@@ -489,6 +491,7 @@ jobs:
           echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           submodules: 'true'
       - name: Install dependencies
         run: |
@@ -541,6 +544,7 @@ jobs:
       # SOS
       - name: Build SOS (${{ matrix.sos_config }})
         run: |
+          git submodule update --remote
           ./autogen.sh
           mkdir build; cd build
           ../configure --prefix=${SOS_INSTALL_DIR} --with-ucx=${UCX_INSTALL_DIR} ${{ matrix.sos_config }}
@@ -581,6 +585,7 @@ jobs:
           echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           submodules: 'true'
       - name: Install dependencies
         run: |
@@ -633,6 +638,7 @@ jobs:
       # SOS
       - name: Build SOS (${{ matrix.name }})
         run: |
+          git submodule update --remote
           ./autogen.sh
           mkdir build; cd build
           ../configure --prefix=${SOS_INSTALL_DIR} --with-portals4=${PORTALS4_INSTALL_DIR} ${{ matrix.sos_config }}
@@ -660,6 +666,7 @@ jobs:
           echo "OS_NAME=$(lsb_release -si)-$(ls_release -sr)" >> $GITHUB_ENV
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           submodules: 'true'
       - name: Install dependencies
         run: |
@@ -688,6 +695,7 @@ jobs:
       # SOS
       - name: Build SOS (${{ matrix.name }})
         run: |
+          git submodule update --remote
           ./autogen.sh
           mkdir build; cd build
           ../configure --prefix=${SOS_INSTALL_DIR} ${{ matrix.sos_config }}
