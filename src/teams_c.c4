@@ -91,6 +91,9 @@ shmem_team_get_config(shmem_team_t team, long config_mask, shmem_team_config_t *
             return -1;
         }
         memcpy(config, &myteam->config, sizeof(shmem_team_config_t));
+    } else if (config != NULL) {
+        RAISE_WARN_MSG("%s %s\n", "shmem_team_get_config encountered an unexpected",
+                       "non-NULL config structure passed with a config_mask of 0.");
     }
 
     return 0;
