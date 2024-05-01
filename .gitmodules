@@ -1,4 +1,4 @@
 [submodule "modules/tests-sos"]
 	path = modules/tests-sos
-	url = ../../ronawho/tests-sos.git
-	branch = fix_team_get_config_test
+	url = ../../wrrobin/tests-sos.git
+	branch = "pr/signal_set_add"

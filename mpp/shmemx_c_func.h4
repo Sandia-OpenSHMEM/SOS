@@ -84,6 +84,12 @@ SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcntr_get_completed_read(shmem_ctx_
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcntr_get_completed_target(uint64_t *cntr_value);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcntr_get_all(shmem_ctx_t ctx, shmemx_pcntr_t *pcntr);
 
+/* Signal extensions */
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_signal_add(uint64_t *sig_addr, uint64_t signal, int pe);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ctx_signal_add(shmem_ctx_t ctx, uint64_t *sig_addr, uint64_t signal, int pe);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_signal_set(uint64_t *sig_addr, uint64_t signal, int pe);
+SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ctx_signal_set(shmem_ctx_t ctx, uint64_t *sig_addr, uint64_t signal, int pe);
+
 /* Separate initializers */
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_heap_create(void *base, size_t size, int device_type, int device_index);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_heap_preinit();
