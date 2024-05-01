@@ -334,11 +334,33 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
         myteam->start       = global_PE_start;
         myteam->stride      = PE_stride;
         myteam->size        = PE_size;
-        if (config) {
-            myteam->config      = *config;
-            myteam->config_mask = config_mask;
+
+        if (config_mask == 0) {
+            if (config != NULL) {
+                RAISE_WARN_MSG("%s %s\n", "team_split_strided operation encountered an unexpected",
+                               "non-NULL config structure passed with a config_mask of 0.");
+            }
+            shmem_team_config_t defaults;
+            myteam->config_mask   = 0;
+            myteam->contexts_len  = 0;
+            defaults.num_contexts = 0;
+            memcpy(&myteam->config, &defaults, sizeof(shmem_team_config_t));
+        } else {
+            if (config_mask != SHMEM_TEAM_NUM_CONTEXTS) {
+                RAISE_WARN_MSG("Invalid team_split_strided config_mask (%ld)\n", config_mask);
+                return -1;
+            } else {
+                shmem_internal_assertp(config->num_contexts >= 0);
+                myteam->config       = *config;
+                myteam->config_mask  = config_mask;
+                myteam->contexts_len = config->num_contexts;
+                myteam->contexts     = malloc(config->num_contexts * sizeof(shmem_transport_ctx_t*));
+                for (int i = 0; i < config->num_contexts; i++) {
+                    myteam->contexts[i] = NULL;
+                }
+            }
         }
-        myteam->contexts_len = 0;
+
         myteam->psync_idx = -1;
 
         shmem_internal_op_to_all(psync_pool_avail_reduced,
