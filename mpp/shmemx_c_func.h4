@@ -27,6 +27,55 @@ SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ct_wait(shmemx_ct_t ct, long wait_f
 
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_register_gettid(uint64_t (*gettid_fn)(void));
 
+/* Block-Strided RMA Routines */
+define(`SHMEM_C_IBPUT',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_$1_ibput($2 *target, const $2 *source,
+SH_PAD(`$1')                 ptrdiff_t tst, ptrdiff_t sst,
+SH_PAD(`$1')                 size_t bsize, size_t nblocks, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_IBPUT')
+
+define(`SHMEM_C_CTX_IBPUT',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ctx_$1_ibput(shmem_ctx_t ctx, $2 *target, const $2 *source,
+SH_PAD(`$1')                 ptrdiff_t tst, ptrdiff_t sst,
+SH_PAD(`$1')                 size_t bsize, size_t nblocks, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_CTX_IBPUT')
+
+define(`SHMEM_C_IBPUT_N',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ibput$1(void *target, const void *source,
+SH_PAD(`$1')                ptrdiff_t tst, ptrdiff_t sst, size_t bsize, size_t nblocks,
+SH_PAD(`$1')                int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_IBPUT_N')
+
+define(`SHMEM_C_CTX_IBPUT_N',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ctx_ibput$1(shmem_ctx_t ctx, void *target, const void *source,
+SH_PAD(`$1')                ptrdiff_t tst, ptrdiff_t sst, size_t bsize, size_t nblocks,
+SH_PAD(`$1')                int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_CTX_IBPUT_N')
+
+define(`SHMEM_C_IBGET',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_$1_ibget($2 *target, const $2 *source,
+SH_PAD(`$1')                 ptrdiff_t tst, ptrdiff_t sst,
+SH_PAD(`$1')                 size_t bsize, size_t nblocks, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_IBGET')
+
+define(`SHMEM_C_CTX_IBGET',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ctx_$1_ibget(shmem_ctx_t ctx, $2 *target, const $2 *source,
+SH_PAD(`$1')                 ptrdiff_t tst, ptrdiff_t sst,
+SH_PAD(`$1')                 size_t bsize, size_t nblocks, int pe)')dnl
+SHMEM_DECLARE_FOR_RMA(`SHMEM_C_CTX_IBGET')
+
+define(`SHMEM_C_IBGET_N',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ibget$1(void* target, const void *source,
+SH_PAD(`$1')                ptrdiff_t tst, ptrdiff_t sst,
+SH_PAD(`$1')                size_t bsize, size_t nblocks, int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_IBGET_N')
+
+define(`SHMEM_C_CTX_IBGET_N',
+`SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_ctx_ibget$1(shmem_ctx_t ctx, void* target, const void *source,
+SH_PAD(`$1')                ptrdiff_t tst, ptrdiff_t sst,
+SH_PAD(`$1')                size_t bsize, size_t nblocks, int pe)')dnl
+SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_CTX_IBGET_N')
+
 /* Performance Counter Query Routines */
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcntr_get_issued_write(shmem_ctx_t ctx, uint64_t *cntr_value);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcntr_get_issued_read(shmem_ctx_t ctx, uint64_t *cntr_value);

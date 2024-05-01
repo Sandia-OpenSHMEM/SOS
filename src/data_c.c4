@@ -163,6 +163,26 @@ define(`SHMEM_PROF_DEF_CTX_IPUT_N',
 #define shmem_ctx_iput$1 pshmem_ctx_iput$1')dnl
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_CTX_IPUT_N')
 
+define(`SHMEM_PROF_DEF_IBPUT',
+`#pragma weak shmemx_$1_ibput = pshmemx_$1_ibput
+#define shmemx_$1_ibput pshmemx_$1_ibput')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_IBPUT')
+
+define(`SHMEM_PROF_DEF_CTX_IBPUT',
+`#pragma weak shmemx_ctx_$1_ibput = pshmemx_ctx_$1_ibput
+#define shmemx_ctx_$1_ibput pshmemx_ctx_$1_ibput')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_CTX_IBPUT')
+
+define(`SHMEM_PROF_DEF_IBPUT_N',
+`#pragma weak shmemx_ibput$1 = pshmemx_ibput$1
+#define shmemx_ibput$1 pshmemx_ibput$1')dnl
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_IBPUT_N')
+
+define(`SHMEM_PROF_DEF_CTX_IBPUT_N',
+`#pragma weak shmemx_ctx_ibput$1 = pshmemx_ctx_ibput$1
+#define shmemx_ctx_ibput$1 pshmemx_ctx_ibput$1')dnl
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_CTX_IBPUT_N')
+
 define(`SHMEM_PROF_DEF_IGET',
 `#pragma weak shmem_$1_iget = pshmem_$1_iget
 #define shmem_$1_iget pshmem_$1_iget')dnl
@@ -182,6 +202,26 @@ define(`SHMEM_PROF_DEF_CTX_IGET_N',
 `#pragma weak shmem_ctx_iget$1 = pshmem_ctx_iget$1
 #define shmem_ctx_iget$1 pshmem_ctx_iget$1')dnl
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_CTX_IGET_N')
+
+define(`SHMEM_PROF_DEF_IBGET',
+`#pragma weak shmemx_$1_ibget = pshmemx_$1_ibget
+#define shmemx_$1_ibget pshmemx_$1_ibget')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_IBGET')
+
+define(`SHMEM_PROF_DEF_CTX_IBGET',
+`#pragma weak shmemx_ctx_$1_ibget = pshmemx_ctx_$1_ibget
+#define shmemx_ctx_$1_ibget pshmemx_ctx_$1_ibget')dnl
+SHMEM_DEFINE_FOR_RMA(`SHMEM_PROF_DEF_CTX_IBGET')
+
+define(`SHMEM_PROF_DEF_IBGET_N',
+`#pragma weak shmemx_ibget$1 = pshmemx_ibget$1
+#define shmemx_ibget$1 pshmemx_ibget$1')dnl
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_IBGET_N')
+
+define(`SHMEM_PROF_DEF_CTX_IBGET_N',
+`#pragma weak shmemx_ctx_ibget$1 = pshmemx_ctx_ibget$1
+#define shmemx_ctx_ibget$1 pshmemx_ctx_ibget$1')dnl
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_PROF_DEF_CTX_IBGET_N')
 
 /* Blocking put with signal */
 define(`SHMEM_PROF_DEF_PUT_SIGNAL',
@@ -439,6 +479,31 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     }                                                         \
   }
 
+#define SHMEM_DEF_IBPUT(STYPE,TYPE)                           \
+  void SHMEM_FUNCTION_ATTRIBUTES                              \
+  SHMEMX_FUNC_PROTOTYPE(STYPE##_ibput, TYPE *target,          \
+                       const TYPE *source, ptrdiff_t tst,     \
+                       ptrdiff_t sst, size_t bsize, size_t nblocks, int pe)  \
+    long completion = 0;                                      \
+    SHMEM_ERR_CHECK_INITIALIZED();                            \
+    SHMEM_ERR_CHECK_PE(pe);                                   \
+    SHMEM_ERR_CHECK_CTX(ctx);                                 \
+    SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE) * ((nblocks-1) * tst + bsize)); \
+    SHMEM_ERR_CHECK_NULL(source, nblocks);                    \
+    SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(tst, bsize);             \
+    SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);             \
+    SHMEM_ERR_CHECK_OVERLAP(target, source,                   \
+                   sizeof(TYPE) * ((nblocks-1) * tst + bsize), \
+                   sizeof(TYPE) * ((nblocks-1) * sst + bsize), 0); \
+    for ( ; nblocks > 0 ; --nblocks) {                        \
+      shmem_internal_put_nb(ctx, target, source,              \
+                                bsize * sizeof(TYPE), pe,     \
+                                &completion);                 \
+      target += tst;                                          \
+      source += sst;                                          \
+    }                                                         \
+    shmem_internal_put_wait(ctx, &completion);                \
+  }
 
 #define SHMEM_DEF_IPUT_N(NAME,SIZE)                          \
   void SHMEM_FUNCTION_ATTRIBUTES                             \
@@ -459,11 +524,37 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     for ( ; nelems > 0 ; --nelems) {                         \
       shmem_internal_put_scalar(ctx, target, source, (SIZE), \
                                pe);                          \
-      target = (uint8_t*)target + tst*(SIZE);                \
-      source = (uint8_t*)source + sst*(SIZE);                \
+      target = (uint8_t *) target + tst * (SIZE);            \
+      source = (uint8_t *) source + sst * (SIZE);            \
     }                                                        \
   }
 
+#define SHMEM_DEF_IBPUT_N(NAME,SIZE)                         \
+  void SHMEM_FUNCTION_ATTRIBUTES                             \
+  SHMEMX_FUNC_PROTOTYPE(ibput##NAME, void *target,           \
+                       const void *source, ptrdiff_t tst,    \
+                       ptrdiff_t sst, size_t bsize, size_t nblocks, int pe) \
+    long completion = 0;                                     \
+    SHMEM_ERR_CHECK_INITIALIZED();                           \
+    SHMEM_ERR_CHECK_PE(pe);                                  \
+    SHMEM_ERR_CHECK_CTX(ctx);                                \
+    SHMEM_ERR_CHECK_SYMMETRIC(target,                        \
+                           (SIZE) * ((nblocks-1) * tst + bsize)); \
+    SHMEM_ERR_CHECK_NULL(source, nblocks);                   \
+    SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(tst, bsize);            \
+    SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);            \
+    SHMEM_ERR_CHECK_OVERLAP(target, source,                  \
+                        (SIZE) * ((nblocks-1) * tst + bsize), \
+                        (SIZE) * ((nblocks-1) * sst + bsize), 0); \
+    for ( ; nblocks > 0 ; --nblocks) {                       \
+      shmem_internal_put_nb(ctx, target, source,             \
+                            bsize * (SIZE), pe,              \
+                            &completion);                    \
+      target = (uint8_t *) target + tst * (SIZE);            \
+      source = (uint8_t *) source + sst * (SIZE);            \
+    }                                                        \
+    shmem_internal_put_wait(ctx, &completion);               \
+  }
 
 #define SHMEM_DEF_IGET(STYPE,TYPE)                            \
   void SHMEM_FUNCTION_ATTRIBUTES                              \
@@ -490,6 +581,31 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     shmem_internal_get_wait(ctx);                             \
   }
 
+#define SHMEM_DEF_IBGET(STYPE,TYPE)                           \
+  void SHMEM_FUNCTION_ATTRIBUTES                              \
+  SHMEMX_FUNC_PROTOTYPE(STYPE##_ibget, TYPE *target,          \
+                       const TYPE *source,                    \
+                       ptrdiff_t tst, ptrdiff_t sst,          \
+                       size_t bsize, size_t nblocks, int pe)  \
+    SHMEM_ERR_CHECK_INITIALIZED();                            \
+    SHMEM_ERR_CHECK_PE(pe);                                   \
+    SHMEM_ERR_CHECK_CTX(ctx);                                 \
+    SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof(TYPE) * ((nblocks-1) * sst + bsize)); \
+    SHMEM_ERR_CHECK_NULL(target, nblocks);                    \
+    SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(tst, bsize);             \
+    SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);             \
+    SHMEM_ERR_CHECK_OVERLAP(target, source,                   \
+                   sizeof(TYPE) * ((nblocks-1) * tst + bsize), \
+                   sizeof(TYPE) * ((nblocks-1) * sst + bsize), 0); \
+    for ( ; nblocks > 0 ; --nblocks) {                        \
+      shmem_internal_get(ctx, target, source,                 \
+                         bsize * sizeof(TYPE), pe);           \
+      target += tst;                                          \
+      source += sst;                                          \
+    }                                                         \
+    shmem_internal_get_wait(ctx);                             \
+  }
+
 #define SHMEM_DEF_IGET_N(NAME,SIZE)                       \
   void SHMEM_FUNCTION_ATTRIBUTES                          \
   SHMEM_FUNC_PROTOTYPE(iget##NAME, void *target,          \
@@ -509,8 +625,34 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                      (SIZE) * ((nelems-1) * sst + 1), 0); \
     for ( ; nelems > 0 ; --nelems) {                      \
       shmem_internal_get(ctx, target, source, (SIZE), pe);\
-      target = (uint8_t*)target + tst*(SIZE);             \
-      source = (uint8_t*)source + sst*(SIZE);             \
+      target = (uint8_t *) target + tst * (SIZE);         \
+      source = (uint8_t *) source + sst * (SIZE);         \
+    }                                                     \
+    shmem_internal_get_wait(ctx);                         \
+  }
+
+#define SHMEM_DEF_IBGET_N(NAME,SIZE)                      \
+  void SHMEM_FUNCTION_ATTRIBUTES                          \
+  SHMEMX_FUNC_PROTOTYPE(ibget##NAME, void *target,        \
+                       const void *source, ptrdiff_t tst, \
+                       ptrdiff_t sst, size_t bsize,       \
+                       size_t nblocks, int pe)            \
+    SHMEM_ERR_CHECK_INITIALIZED();                        \
+    SHMEM_ERR_CHECK_PE(pe);                               \
+    SHMEM_ERR_CHECK_CTX(ctx);                             \
+    SHMEM_ERR_CHECK_SYMMETRIC(source,                     \
+                        (SIZE) * ((nblocks-1) * sst + bsize)); \
+    SHMEM_ERR_CHECK_NULL(target, nblocks);                \
+    SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(tst, bsize);         \
+    SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);         \
+    SHMEM_ERR_CHECK_OVERLAP(target, source,               \
+                     (SIZE) * ((nblocks-1) * tst + bsize), \
+                     (SIZE) * ((nblocks-1) * sst + bsize), 0); \
+    for ( ; nblocks > 0 ; --nblocks) {                    \
+      shmem_internal_get(ctx, target, source,             \
+                         bsize * (SIZE), pe);             \
+      target = (uint8_t *) target + tst * (SIZE);         \
+      source = (uint8_t *) source + sst * (SIZE);         \
     }                                                     \
     shmem_internal_get_wait(ctx);                         \
   }
@@ -639,8 +781,12 @@ SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_GET_N_NBI')
 SHMEM_DEF_GET_N_NBI(`mem', `1')
 SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_IPUT')
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_IPUT_N')
+SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_IBPUT')
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_IBPUT_N')
 SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_IGET')
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_IGET_N')
+SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_IBGET')
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_IBGET_N')
 
 SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_PUT_SIGNAL')
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_PUT_N_SIGNAL')
@@ -676,8 +822,12 @@ SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_GET_N_NBI')
 SHMEM_DEF_GET_N_NBI(`mem', `1')
 SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_IPUT')
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_IPUT_N')
+SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_IBPUT')
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_IBPUT_N')
 SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_IGET')
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_IGET_N')
+SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_IBGET')
+SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_IBGET_N')
 
 SHMEM_DEFINE_FOR_RMA(`SHMEM_DEF_PUT_SIGNAL')
 SHMEM_DEFINE_FOR_SIZES(`SHMEM_DEF_PUT_N_SIGNAL')
