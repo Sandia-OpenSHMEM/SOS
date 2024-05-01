@@ -247,46 +247,66 @@ extern hwloc_topology_t shmem_internal_topology;
         }                                                                 \
     } while (0)
 
-#define SHMEM_ERR_CHECK_SYMMETRIC(ptr_in, len)                                          \
-    do {                                                                                \
-        const void *ptr_base = (void*)(ptr_in);                                         \
-        const void *ptr_ext  = (void*)((uint8_t *) (ptr_base) + (len));                 \
-        const void *data_ext = (void*)((uint8_t *) shmem_internal_data_base +           \
-                                                   shmem_internal_data_length);         \
-        const void *heap_ext = (void*)((uint8_t *) shmem_internal_heap_base +           \
-                                                   shmem_internal_heap_length);         \
-        if (len == 0) {                                                                 \
-            break; /* Skip this check when the length is 0 */                           \
-        }                                                                               \
-        else if (ptr_base >= shmem_internal_data_base && ptr_base < data_ext) {         \
-            if (ptr_ext > data_ext) {                                                   \
-                RAISE_ERROR_MSG("Argument \"%s\" [%p..%p) exceeds "                     \
-                                "sym. data region [%p..%p)\n", #ptr_in, ptr_base,       \
-                                ptr_ext, shmem_internal_data_base, data_ext);           \
-            }                                                                           \
-        }                                                                               \
-        else if (ptr_base >= shmem_internal_heap_base && ptr_base < heap_ext) {         \
-            if (ptr_ext > heap_ext) {                                                   \
-                RAISE_ERROR_MSG("Argument \"%s\" [%p..%p) exceeds "                     \
-                                "sym. heap region [%p..%p)\n", #ptr_in, ptr_base,       \
-                                ptr_ext, shmem_internal_heap_base, heap_ext);           \
-            }                                                                           \
-        }                                                                               \
-        else {                                                                          \
-            RAISE_ERROR_MSG("Argument \"%s\" is not symmetric (%p)\n",                  \
-                            #ptr_in, ptr_base);                                         \
-        }                                                                               \
+#define SHMEM_ERR_CHECK_SYMMETRIC(ptr_in, len)                                                \
+    do {                                                                                      \
+        const void *ptr_base = (void*)(ptr_in);                                               \
+        const void *ptr_ext  = (void*)((uint8_t *) (ptr_base) + (len));                       \
+        const void *data_ext = (void*)((uint8_t *) shmem_internal_data_base +                 \
+                                                   shmem_internal_data_length);               \
+        const void *heap_ext = (void*)((uint8_t *) shmem_internal_heap_base +                 \
+                                                   shmem_internal_heap_length);               \
+        if (len == 0) {                                                                       \
+            break; /* Skip this check when the length is 0 */                                 \
+        }                                                                                     \
+        else if (ptr_base >= shmem_internal_data_base && ptr_base < data_ext) {               \
+            if (ptr_ext > data_ext) {                                                         \
+                RAISE_ERROR_MSG("Argument \"%s\" [%p..%p) exceeds "                           \
+                                "sym. data region [%p..%p)\n", #ptr_in, ptr_base,             \
+                                ptr_ext, shmem_internal_data_base, data_ext);                 \
+            }                                                                                 \
+        }                                                                                     \
+        else if (ptr_base >= shmem_internal_heap_base && ptr_base < heap_ext) {               \
+            if (ptr_ext > heap_ext) {                                                         \
+                RAISE_ERROR_MSG("Argument \"%s\" [%p..%p) exceeds "                           \
+                                "sym. heap region [%p..%p)\n", #ptr_in, ptr_base,             \
+                                ptr_ext, shmem_internal_heap_base, heap_ext);                 \
+            }                                                                                 \
+        }                                                                                     \
+        else if (shmem_external_heap_base) {                                                  \
+            const void *heap_ext_external = (void*)((uint8_t *) shmem_external_heap_base +    \
+                                                   shmem_external_heap_length);               \
+            if (ptr_base >= shmem_external_heap_base && ptr_base < heap_ext_external) {       \
+                if (ptr_ext > heap_ext_external) {                                            \
+                    RAISE_ERROR_MSG("Argument \"%s\" [%p..%p) exceeds device "                \
+                                    "sym. heap region [%p..%p)\n", #ptr_in, ptr_base,         \
+                                    ptr_ext, shmem_external_heap_base, heap_ext_external);    \
+                }                                                                             \
+            }                                                                                 \
+        }                                                                                     \
+        else {                                                                                \
+            RAISE_ERROR_MSG("Argument \"%s\" is not symmetric (%p)\n",                        \
+                            #ptr_in, ptr_base);                                               \
+        }                                                                                     \
     } while (0)
 
-#define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr_in)                                          \
-    do {                                                                                \
-        const void *ptr_base      = (void*)(ptr_in);                                    \
-        const void *heap_ext = (void*)((uint8_t *) shmem_internal_heap_base +           \
-                                                   shmem_internal_heap_length);         \
-        if (! (ptr_base >= shmem_internal_heap_base && ptr_base < heap_ext)) {          \
-            RAISE_ERROR_MSG("Argument \"%s\" is not in symm. heap (%p), [%p..%p)\n",    \
-                    #ptr_in, ptr_base, shmem_internal_heap_base, heap_ext);             \
-        }                                                                               \
+#define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr_in)                                                                 \
+    do {                                                                                                       \
+        const void *ptr_base      = (void*)(ptr_in);                                                           \
+        const void *heap_ext = (void*)((uint8_t *) shmem_internal_heap_base +                                  \
+                                                   shmem_internal_heap_length);                                \
+        if (! (ptr_base >= shmem_internal_heap_base && ptr_base < heap_ext)) {                                 \
+            if (shmem_external_heap_base) {                                                                    \
+                const void *heap_ext_external = (void*)((uint8_t *) shmem_external_heap_base +                 \
+                                                   shmem_external_heap_length);                                \
+                if (! (ptr_base >= shmem_external_heap_base && ptr_base < heap_ext_external)) {                \
+                    RAISE_ERROR_MSG("Argument \"%s\" (%p) is not in host symm. heap [%p..%p) or device symm. heap [%p..%p)\n",    \
+                        #ptr_in, ptr_base, shmem_internal_heap_base, heap_ext, shmem_external_heap_base, heap_ext_external);      \
+                }                                                                                              \
+                break;                                                                                         \
+            }                                                                                                  \
+            RAISE_ERROR_MSG("Argument \"%s\" (%p) is not in symm. heap [%p..%p)\n",                            \
+                    #ptr_in, ptr_base, shmem_internal_heap_base, heap_ext);                                    \
+        }                                                                                                      \
     } while (0)
 
 /* Indicates whether the memory region pointed to by ptr1 (having size1) overlaps with
@@ -296,21 +316,23 @@ extern hwloc_topology_t shmem_internal_topology;
  *         size1 == size2 and complete_overlap_allowed is 1
  *     For the pt2pt sync routines (ivars/status/indices arguments):
  *         size1 != size2 and complete_overlap_allowed is 0 */
-#define SHMEM_ERR_CHECK_OVERLAP(ptr1, ptr2, size1, size2, complete_overlap_allowed)     \
-    do {                                                                                \
-        const void *p1 = (void*)(ptr1);                                                 \
-        const void *p2 = (void*)(ptr2);                                                 \
-        const void *ptr_low  = p1 > p2 ? p2 : p1;                                       \
-        const void *ptr_high = p1 > p2 ? p1 : p2;                                       \
-        const size_t sz_low  = p1 > p2 ? size2 : size1;                                 \
-        const void *ptr_extent = (void *)((char *)ptr_low + sz_low);                    \
-        if (complete_overlap_allowed && p1 == p2) {                                     \
-            break; /* Skip this check when buffer is allowed to completely overlap  */  \
-        }                                                                               \
-        if (ptr_extent > ptr_high) {                                                    \
-            RAISE_ERROR_MSG("Argument \"%s\" [%p..%p) overlaps argument (%p)\n", #ptr1, \
-                            ptr_low, ptr_extent, ptr_high);                             \
-        }                                                                               \
+#define SHMEM_ERR_CHECK_OVERLAP(ptr1, ptr2, size1, size2, complete_overlap_allowed, precheck) \
+    do {                                                                                      \
+        if (precheck) {                                                                       \
+            const void *p1 = (void*)(ptr1);                                                   \
+            const void *p2 = (void*)(ptr2);                                                   \
+            const void *ptr_low  = p1 > p2 ? p2 : p1;                                         \
+            const void *ptr_high = p1 > p2 ? p1 : p2;                                         \
+            const size_t sz_low  = p1 > p2 ? size2 : size1;                                   \
+            const void *ptr_extent = (void *)((char *)ptr_low + sz_low);                      \
+            if (complete_overlap_allowed && p1 == p2) {                                       \
+                break; /* Skip this check when buffer is allowed to completely overlap  */    \
+            }                                                                                 \
+            if (ptr_extent > ptr_high) {                                                      \
+                RAISE_ERROR_MSG("Argument \"%s\" [%p..%p) overlaps argument (%p)\n", #ptr1,   \
+                                ptr_low, ptr_extent, ptr_high);                               \
+            }                                                                                 \
+        }                                                                                     \
     } while (0)
 
 #define SHMEM_ERR_CHECK_NULL(ptr, nelems)                                               \
@@ -366,7 +388,7 @@ extern hwloc_topology_t shmem_internal_topology;
 #define SHMEM_ERR_CHECK_CTX(ctx)
 #define SHMEM_ERR_CHECK_SYMMETRIC(ptr, len)
 #define SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr)
-#define SHMEM_ERR_CHECK_OVERLAP(ptr1, ptr2, size1, size2, complete_overlap_allowed)
+#define SHMEM_ERR_CHECK_OVERLAP(ptr1, ptr2, size1, size2, complete_overlap_allowed, precheck)
 #define SHMEM_ERR_CHECK_NULL(ptr, nelems)
 #define SHMEM_ERR_CHECK_CMP_OP(op)
 #define SHMEM_ERR_CHECK_SIG_OP(op)
