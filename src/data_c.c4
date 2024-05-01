@@ -503,7 +503,8 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);             \
     SHMEM_ERR_CHECK_OVERLAP(target, source,                   \
                    sizeof(TYPE) * ((nblocks-1) * tst + bsize), \
-                   sizeof(TYPE) * ((nblocks-1) * sst + bsize), 0); \
+                   sizeof(TYPE) * ((nblocks-1) * sst + bsize), \
+                   0, (shmem_internal_my_pe == pe));          \
     for ( ; nblocks > 0 ; --nblocks) {                        \
       shmem_internal_put_nb(ctx, target, source,              \
                                 bsize * sizeof(TYPE), pe,     \
@@ -555,7 +556,8 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);            \
     SHMEM_ERR_CHECK_OVERLAP(target, source,                  \
                         (SIZE) * ((nblocks-1) * tst + bsize), \
-                        (SIZE) * ((nblocks-1) * sst + bsize), 0); \
+                        (SIZE) * ((nblocks-1) * sst + bsize), \
+                        0, (shmem_internal_my_pe == pe));    \
     for ( ; nblocks > 0 ; --nblocks) {                       \
       shmem_internal_put_nb(ctx, target, source,             \
                             bsize * (SIZE), pe,              \
@@ -607,7 +609,8 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);             \
     SHMEM_ERR_CHECK_OVERLAP(target, source,                   \
                    sizeof(TYPE) * ((nblocks-1) * tst + bsize), \
-                   sizeof(TYPE) * ((nblocks-1) * sst + bsize), 0); \
+                   sizeof(TYPE) * ((nblocks-1) * sst + bsize), \
+                   0, (shmem_internal_my_pe == pe));          \
     for ( ; nblocks > 0 ; --nblocks) {                        \
       shmem_internal_get(ctx, target, source,                 \
                          bsize * sizeof(TYPE), pe);           \
@@ -659,7 +662,8 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_STRIDE_GTE_BSIZE(sst, bsize);         \
     SHMEM_ERR_CHECK_OVERLAP(target, source,               \
                      (SIZE) * ((nblocks-1) * tst + bsize), \
-                     (SIZE) * ((nblocks-1) * sst + bsize), 0); \
+                     (SIZE) * ((nblocks-1) * sst + bsize), \
+                     0, (shmem_internal_my_pe == pe));    \
     for ( ; nblocks > 0 ; --nblocks) {                    \
       shmem_internal_get(ctx, target, source,             \
                          bsize * (SIZE), pe);             \
