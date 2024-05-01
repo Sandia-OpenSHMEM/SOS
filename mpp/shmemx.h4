@@ -91,6 +91,7 @@ define(`SHMEM_CTX_C11_GEN_IBGET', `            $2*: shmemx_ctx_$1_ibget')dnl
 SHMEM_BIND_C11_RMA(`SHMEM_CTX_C11_GEN_IBGET', `, \') \
         ), \
 SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_IBGET', `, \') \
+    )(__VA_ARGS__)
 
 #define shmemx_signal_set(...) \
     _Generic(SHMEM_C11_TYPE_EVAL_PTR_OR_SCALAR(SHMEM_C11_ARG0(__VA_ARGS__)), \
