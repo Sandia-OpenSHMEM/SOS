@@ -855,7 +855,7 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
     /* Transmit the signal */
     shmem_transport_ofi_get_mr(sig_addr, pe, &addr, &key);
 #ifdef USE_FI_HMEM
-    shmem_transport_ofi_get_mr_desc_index(signal, &index);
+    shmem_transport_ofi_get_mr_desc_index((void *) &signal, &index);
     shmem_internal_assert(index != -1);
 #endif
     polled = 0;
