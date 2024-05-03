@@ -285,6 +285,14 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
 #define shmemx_ct_wait pshmemx_ct_wait
 #pragma weak shmem_signal_fetch = pshmem_signal_fetch
 #define shmem_signal_fetch pshmem_signal_fetch
+#pragma weak shmemx_signal_add = pshmemx_signal_add
+#define shmemx_signal_add pshmemx_signal_add
+#pragma weak shmemx_signal_set = pshmemx_signal_set
+#define shmemx_signal_set pshmemx_signal_set
+#pragma weak shmemx_ctx_signal_add = pshmemx_ctx_signal_add
+#define shmemx_ctx_signal_add pshmemx_ctx_signal_add
+#pragma weak shmemx_ctx_signal_set = pshmemx_ctx_signal_set
+#define shmemx_ctx_signal_set pshmemx_ctx_signal_set
 
 #endif /* ENABLE_PROFILING */
 
@@ -868,6 +876,52 @@ shmem_signal_fetch(const uint64_t* sig_addr)
                                 SHM_INTERNAL_UINT64);
     shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
     return val;
+}
+
+void SHMEM_FUNCTION_ATTRIBUTES
+shmemx_signal_add(uint64_t *sig_addr, uint64_t signal, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(sig_addr, sizeof(uint64_t));
+
+    shmem_internal_atomic(SHMEM_CTX_DEFAULT, sig_addr, &signal, sizeof(uint64_t),
+                          pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
+}
+
+void SHMEM_FUNCTION_ATTRIBUTES
+shmemx_ctx_signal_add(shmem_ctx_t ctx, uint64_t *sig_addr, uint64_t signal, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_CTX(ctx);
+    SHMEM_ERR_CHECK_SYMMETRIC(sig_addr, sizeof(uint64_t));
+
+    shmem_internal_atomic(ctx, sig_addr, &signal, sizeof(uint64_t),
+                          pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
+}
+
+void SHMEM_FUNCTION_ATTRIBUTES
+shmemx_signal_set(uint64_t *sig_addr, uint64_t signal, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_SYMMETRIC(sig_addr, sizeof(uint64_t));
+
+    shmem_internal_atomic_set(SHMEM_CTX_DEFAULT, (void *) sig_addr, &signal,
+                              sizeof(uint64_t), pe, SHM_INTERNAL_UINT64);
+}
+
+void SHMEM_FUNCTION_ATTRIBUTES
+shmemx_ctx_signal_set(shmem_ctx_t ctx, uint64_t *sig_addr, uint64_t signal, int pe)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+    SHMEM_ERR_CHECK_PE(pe);
+    SHMEM_ERR_CHECK_CTX(ctx);
+    SHMEM_ERR_CHECK_SYMMETRIC(sig_addr, sizeof(uint64_t));
+
+    shmem_internal_atomic_set(ctx, (void *) sig_addr, &signal,
+                              sizeof(uint64_t), pe, SHM_INTERNAL_UINT64);
 }
 
 void SHMEM_FUNCTION_ATTRIBUTES

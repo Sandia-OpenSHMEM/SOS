@@ -93,6 +93,18 @@ SHMEM_BIND_C11_RMA(`SHMEM_CTX_C11_GEN_IBGET', `, \') \
 SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_IBGET', `, \') \
     )(__VA_ARGS__)
 
+#define shmemx_signal_set(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR_OR_SCALAR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+        shmem_ctx_t: shmemx_ctx_signal_set, \
+        uint64_t*: shmemx_signal_set \
+    )(__VA_ARGS__)
+
+#define shmemx_signal_add(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR_OR_SCALAR(SHMEM_C11_ARG0(__VA_ARGS__)), \
+        shmem_ctx_t: shmemx_ctx_signal_add, \
+        uint64_t*: shmemx_signal_add \
+    )(__VA_ARGS__)
+
 #endif /* C11 */
 
 #endif /* SHMEMX_H */
