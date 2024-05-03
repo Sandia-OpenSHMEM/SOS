@@ -775,8 +775,8 @@ int ofi_mr_reg_bind(uint64_t flags)
 #endif /* ENABLE_MR_RMA_EVENT */
 #endif /* ENABLE_TARGET_CNTR */
 
-    shmem_transport_ofi_mrfd_list[0] = shmem_transport_ofi_target_heap_mrfd;
-    shmem_transport_ofi_mrfd_list[1] = shmem_transport_ofi_target_data_mrfd;
+    shmem_transport_ofi_mrfd_list[0] = shmem_transport_ofi_target_data_mrfd;
+    shmem_transport_ofi_mrfd_list[1] = shmem_transport_ofi_target_heap_mrfd;
 
 #endif
 
