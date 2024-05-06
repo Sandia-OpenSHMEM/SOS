@@ -1335,8 +1335,15 @@ void shmem_transport_atomic_set(shmem_transport_ctx_t* ctx, void *target,
                                 const void *source, size_t len, int pe,
                                 int datatype)
 {
+#ifndef DISABLE_OFI_INJECT
     shmem_transport_atomic(ctx, target, source, len, pe, FI_ATOMIC_WRITE,
                            datatype);
+#else
+    long completion = 0;
+    shmem_transport_atomicv(ctx, target, source, len, pe, FI_ATOMIC_WRITE,
+                            datatype, &completion);
+    shmem_transport_put_wait(ctx, &completion);
+#endif
 }
 
 

@@ -80,9 +80,17 @@ shmem_internal_put_signal_nbi(shmem_ctx_t ctx, void *target, const void *source,
                               uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)
 {
     if (len == 0) {
-        if (sig_op == SHMEM_SIGNAL_ADD)
+        if (sig_op == SHMEM_SIGNAL_ADD) {
+#ifndef DISABLE_OFI_INJECT
             shmem_transport_atomic((shmem_transport_ctx_t *) ctx, sig_addr, &signal, sizeof(uint64_t),
                                    pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
+#else
+            long completion = 0;
+            shmem_transport_atomicv((shmem_transport_ctx_t *) ctx, sig_addr, &signal, sizeof(uint64_t),
+                                    pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64, &completion);
+	    shmem_internal_put_wait(ctx, &completion);
+#endif
+        }
         else
             shmem_transport_atomic_set((shmem_transport_ctx_t *) ctx, sig_addr, &signal,
                                       sizeof(uint64_t), pe, SHM_INTERNAL_UINT64);
@@ -244,8 +252,15 @@ shmem_internal_atomic(shmem_ctx_t ctx, void *target, const void *source, size_t 
     if (shmem_shr_transport_use_atomic(ctx, target, len, pe, datatype)) {
         shmem_shr_transport_atomic(ctx, target, source, len, pe, op, datatype);
     } else {
+#ifndef DISABLE_OFI_INJECT
         shmem_transport_atomic((shmem_transport_ctx_t *)ctx, target, source,
                                len, pe, op, datatype);
+#else
+        long completion = 0;
+        shmem_transport_atomicv((shmem_transport_ctx_t *)ctx, target, source,
+                                len, pe, op, datatype, &completion);
+	shmem_internal_put_wait(ctx, &completion);
+#endif
     }
 }
 
