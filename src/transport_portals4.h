@@ -242,7 +242,7 @@ int shmem_transport_startup(void);
 
 int shmem_transport_fini(void);
 
-static inline void shmem_transport_get_wait(shmem_transport_ctx_t*);
+static inline void shmem_transport_get_wait(shmem_transport_ctx_t*, size_t idx);
 
 static inline void shmem_transport_probe(void) {
     return;
@@ -257,7 +257,7 @@ shmem_transport_quiet(shmem_transport_ctx_t* ctx)
     uint64_t cnt, cnt_new;
 
     /* wait for completion of all pending NB get events */
-    shmem_transport_get_wait(ctx);
+    shmem_transport_get_wait(ctx, 0);
 
     /* wait for remote completion (acks) of all buffered puts */
     /* NOTE-MT: continue to wait if additional operations are issued during the quiet */
@@ -696,7 +696,7 @@ void shmem_transport_get_ct(shmem_transport_ct_t *ct, void *target,
 
 static inline
 void
-shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
+shmem_transport_get_wait(shmem_transport_ctx_t* ctx, size_t idx)
 {
     int ret;
     ptl_ct_event_t ct;

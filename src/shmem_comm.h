@@ -123,7 +123,7 @@ shmem_internal_put_ct_nb(shmemx_ct_t ct, void *target, const void *source, size_
 
 static inline
 void
-shmem_internal_get(shmem_ctx_t ctx, void *target, const void *source, size_t len, int pe)
+shmem_internal_get(shmem_ctx_t ctx, void *target, const void *source, size_t len, int pe, size_t nic_idx)
 {
     if (len == 0) return;
 
@@ -137,7 +137,8 @@ shmem_internal_get(shmem_ctx_t ctx, void *target, const void *source, size_t len
 
 static inline
 void
-shmem_internal_get_ct(shmemx_ct_t ct, void *target, const void *source, size_t len, int pe)
+shmem_internal_get_ct(shmemx_ct_t ct, void *target, const void *source, size_t len,
+                      int pe, size_t nic_idx)
 {
     /* TODO: add shortcut for on-node-comms */
     shmem_transport_get_ct((shmem_transport_ct_t *) ct,
@@ -147,16 +148,16 @@ shmem_internal_get_ct(shmemx_ct_t ct, void *target, const void *source, size_t l
 
 static inline
 void
-shmem_internal_get_wait(shmem_ctx_t ctx)
+shmem_internal_get_wait(shmem_ctx_t ctx, size_t idx)
 {
-    shmem_transport_get_wait((shmem_transport_ctx_t *)ctx);
+    shmem_transport_get_wait((shmem_transport_ctx_t *)ctx, idx);
     /* on-node is always blocking, so this is a no-op for them */
 }
 
 static inline
 void
 shmem_internal_swap(shmem_ctx_t ctx, void *target, void *source, void *dest, size_t len,
-                    int pe, shm_internal_datatype_t datatype)
+                    int pe, shm_internal_datatype_t datatype, size_t nic_idx)
 {
     shmem_internal_assert(len > 0);
 
@@ -188,7 +189,7 @@ shmem_internal_swap_nbi(shmem_ctx_t ctx, void *target, void *source,
 static inline
 void
 shmem_internal_cswap(shmem_ctx_t ctx, void *target, void *source, void *dest, void *operand, size_t len,
-                    int pe, shm_internal_datatype_t datatype)
+                    int pe, shm_internal_datatype_t datatype, size_t nic_idx)
 {
     shmem_internal_assert(len > 0);
 
@@ -221,7 +222,7 @@ shmem_internal_cswap_nbi(shmem_ctx_t ctx, void *target, void *source,
 static inline
 void
 shmem_internal_mswap(shmem_ctx_t ctx, void *target, void *source, void *dest, void *mask, size_t len,
-                    int pe, shm_internal_datatype_t datatype)
+                    int pe, shm_internal_datatype_t datatype, size_t nic_idx)
 {
     shmem_internal_assert(len > 0);
 
@@ -262,7 +263,7 @@ shmem_internal_atomic(shmem_ctx_t ctx, void *target, const void *source, size_t 
 static inline
 void
 shmem_internal_atomic_fetch(shmem_ctx_t ctx, void *target, const void *source, size_t len,
-                            int pe, shm_internal_datatype_t datatype)
+                            int pe, shm_internal_datatype_t datatype, size_t nic_idx)
 {
     shmem_internal_assert(len > 0);
 
@@ -304,7 +305,7 @@ static inline
 void
 shmem_internal_fetch_atomic(shmem_ctx_t ctx, void *target, void *source, void *dest, size_t len,
                             int pe, shm_internal_op_t op,
-                            shm_internal_datatype_t datatype)
+                            shm_internal_datatype_t datatype, size_t nic_idx)
 {
     shmem_internal_assert(len > 0);
 

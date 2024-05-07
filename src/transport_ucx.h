@@ -315,7 +315,7 @@ shmem_transport_get(shmem_transport_ctx_t* ctx, void *target, const void *source
 
 static inline
 void
-shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
+shmem_transport_get_wait(shmem_transport_ctx_t* ctx, size_t idx)
 {
     /* Blocking fetching ops are completed in place, so this is a nop */
 }

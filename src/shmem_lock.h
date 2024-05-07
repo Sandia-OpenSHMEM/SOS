@@ -47,8 +47,8 @@ shmem_internal_clear_lock(long *lockp)
     /* release the lock if I'm the last to try to obtain it */
     cond = shmem_internal_my_pe + 1;
     shmem_internal_cswap(SHMEM_CTX_DEFAULT, &(lock->last), &zero, &curr, &cond,
-                         sizeof(int), 0, SHM_INTERNAL_INT);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+                         sizeof(int), 0, SHM_INTERNAL_INT, 0); // Multiplex across NICs?
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0); // Multiplex across NICs?
 
     /* if local PE was not the last to hold the lock, look for the next in line */
     if (curr != shmem_internal_my_pe + 1) {
@@ -58,8 +58,8 @@ shmem_internal_clear_lock(long *lockp)
         for (;;) {
             shmem_internal_atomic_fetch(SHMEM_CTX_DEFAULT, &cur_data, &(lock->data),
                                         sizeof(int), shmem_internal_my_pe,
-                                        SHM_INTERNAL_INT);
-            shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+                                        SHM_INTERNAL_INT, 0); // Multiplex across NICs?
+            shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0); // Multiplex across NICs?
 
             if (NEXT(cur_data) != 0)
                 break;
@@ -69,8 +69,8 @@ shmem_internal_clear_lock(long *lockp)
 
         /* set the signal bit on new lock holder */
         shmem_internal_mswap(SHMEM_CTX_DEFAULT, &(lock->data), &sig, &curr,
-                             &sig, sizeof(int), NEXT(cur_data) - 1, SHM_INTERNAL_INT);
-        shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+                             &sig, sizeof(int), NEXT(cur_data) - 1, SHM_INTERNAL_INT, 0);// Multiplex across NICs?
+        shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0); // Multiplex across NICs?
     }
 }
 
@@ -88,24 +88,24 @@ shmem_internal_set_lock(long *lockp)
 
     /* update last with my value to add me to the queue */
     shmem_internal_swap(SHMEM_CTX_DEFAULT, &(lock->last), &me, &curr,
-                        sizeof(int), 0, SHM_INTERNAL_INT);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+                        sizeof(int), 0, SHM_INTERNAL_INT, 0); // Multiplex across NICs?
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0); // Multiplex across NICs?
 
     /* If I wasn't the first, need to add myself to the previous last's next */
     if (0 != curr) {
         int next_mask = NEXT_MASK;
 
         shmem_internal_mswap(SHMEM_CTX_DEFAULT, &(lock->data), &me, &curr,
-                             &next_mask, sizeof(int), curr - 1, SHM_INTERNAL_INT);
-        shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+                             &next_mask, sizeof(int), curr - 1, SHM_INTERNAL_INT, 0); // Multiplex across NICs?
+        shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0); // Multiplex across NICs?
 
         /* now wait for the signal part of data to be non-zero */
         for (;;) {
             int cur_data;
 
             shmem_internal_atomic_fetch(SHMEM_CTX_DEFAULT, &cur_data, &(lock->data),
-                                        sizeof(int), shmem_internal_my_pe, SHM_INTERNAL_INT);
-            shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+                                        sizeof(int), shmem_internal_my_pe, SHM_INTERNAL_INT, 0); // Multiplex across NICs?
+            shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0); // Multiplex across NICs?
 
             if (SIGNAL(cur_data) != 0)
                 break;
@@ -134,8 +134,8 @@ shmem_internal_test_lock(long *lockp)
 
     /* add self to last if and only if the lock is zero (ie, no one has the lock) */
     shmem_internal_cswap(SHMEM_CTX_DEFAULT, &(lock->last), &me, &curr, &zero,
-                         sizeof(int), 0, SHM_INTERNAL_INT);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+                         sizeof(int), 0, SHM_INTERNAL_INT, 0); // Multiplex across NICs?
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0); // Multiplex across NICs?
 
     if (0 == curr) {
         shmem_internal_membar_acquire();
