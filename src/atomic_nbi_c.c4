@@ -124,8 +124,12 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
         SHMEM_ERR_CHECK_PE(pe);                                 \
         SHMEM_ERR_CHECK_CTX(ctx);                               \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));        \
+                                                                \
+        size_t nic_idx = 0;                                     \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                    \
         shmem_internal_swap_nbi(ctx, target, &value, fetch,     \
-                                sizeof(TYPE), pe, ITYPE);       \
+                                sizeof(TYPE), pe, ITYPE,        \
+                                nic_idx);                       \
     }
 
 
@@ -151,9 +155,12 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
+                                                                        \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
         shmem_internal_fetch_atomic_nbi(ctx, target, &tmp, fetch,       \
                                     sizeof(TYPE), pe, SHM_INTERNAL_SUM, \
-                                    ITYPE);                             \
+                                    ITYPE, nic_idx);                    \
     }
 
 
@@ -165,9 +172,13 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
+                                                                        \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
         shmem_internal_fetch_atomic_nbi(ctx, target, &value, fetch,     \
                                         sizeof(TYPE), pe,               \
-                                        SHM_INTERNAL_SUM, ITYPE);       \
+                                        SHM_INTERNAL_SUM, ITYPE,        \
+                                        nic_idx);                       \
     }
 
 
@@ -195,9 +206,12 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
+                                                                        \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
         shmem_internal_fetch_atomic_nbi(ctx, target, &value, fetch,     \
                                     sizeof(TYPE), pe, SHM_INTERNAL_BXOR,\
-                                    ITYPE);                             \
+                                    ITYPE, nic_idx);                    \
     }
 
 
@@ -209,9 +223,12 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
+                                                                        \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
         shmem_internal_fetch_atomic_nbi(ctx, target, &value, fetch,     \
                                     sizeof(TYPE), pe, SHM_INTERNAL_BAND,\
-                                    ITYPE);                             \
+                                    ITYPE, nic_idx);                    \
     }
 
 
@@ -223,9 +240,12 @@ SHMEM_DEFINE_FOR_BITWISE_AMO(`SHMEM_PROF_DEF_CTX_FETCH_XOR_NBI')
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
+                                                                        \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
         shmem_internal_fetch_atomic_nbi(ctx, target, &value, fetch,     \
                                     sizeof(TYPE), pe, SHM_INTERNAL_BOR, \
-                                    ITYPE);                             \
+                                    ITYPE, nic_idx);                    \
     }
 
 /* Function prototype for v1.4 routines with the default context: */

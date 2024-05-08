@@ -631,8 +631,9 @@ int bind_enable_ep_resources(shmem_transport_ctx_t *ctx, size_t idx)
                      FI_SELECTIVE_COMPLETION | FI_TRANSMIT | FI_RECV);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind CQ to endpoint failed");
 
-    ret = fi_ep_bind(ctx->ep[idx], &shmem_transport_ofi_avfd->fid, 0);
-    OFI_CHECK_RETURN_STR(ret, "fi_ep_bind AV to endpoint failed");
+    ret = fi_ep_bind(ctx->ep[idx], /*&shmem_transport_ofi_avfd->fid*/ &ctx->av[idx]->fid, 0); /* Currently failing */
+    //OFI_CHECK_RETURN_STR(ret, "fi_ep_bind AV to endpoint failed");
+    OFI_CHECK_RETURN_MSG(ret, "fi_ep_bind AV to endpoint failed(%s)\n", fi_strerror(errno));
 
     ret = fi_enable(ctx->ep[idx]);
     OFI_CHECK_RETURN_STR(ret, "fi_enable on endpoint failed");
@@ -1265,11 +1266,12 @@ int publish_av_info(struct fabric_info *info)
     return ret;
 }
 
+char * alladdrs = NULL;
 static inline
 int populate_av(void)
 {
     int    i, ret, err = 0;
-    char   *alladdrs = NULL;
+    //char   *alladdrs = NULL;
 
     alladdrs = malloc(shmem_internal_num_pes * shmem_transport_ofi_addrlen);
     if (alladdrs == NULL) {
@@ -1296,7 +1298,7 @@ int populate_av(void)
         return ret;
     }
 
-    free(alladdrs);
+    //free(alladdrs);
 
     return 0;
 }
@@ -1781,6 +1783,9 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     //info->p_info->rx_attr->caps = FI_RECV; /* to drive progress on the CQ */;
 
     ctx->id = id;
+    ctx->fabric = (struct fid_fabric **) malloc(shmem_transport_ofi_num_nics * sizeof(struct fid_fabric *));
+    ctx->domain = (struct fid_domain **) malloc(shmem_transport_ofi_num_nics * sizeof(struct fid_domain *));
+    ctx->av = (struct fid_av **) malloc(shmem_transport_ofi_num_nics * sizeof(struct fid_av *));
     ctx->ep = (struct fid_ep **) malloc(shmem_transport_ofi_num_nics * sizeof(struct fid_ep *));
     ctx->put_cntr = (struct fid_cntr **) malloc(shmem_transport_ofi_num_nics * sizeof(struct fid_cntr *));
     ctx->get_cntr = (struct fid_cntr **) malloc(shmem_transport_ofi_num_nics * sizeof(struct fid_cntr *));
@@ -1794,41 +1799,65 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     ctx->cq = (struct fid_cq **) malloc(shmem_transport_ofi_num_nics * sizeof(struct fid_cq *));
     for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
 #ifdef USE_CTX_LOCK
-            ctx->pending_put_cntr[idx] = 0;
-            ctx->pending_get_cntr[idx] = 0;
+        ctx->pending_put_cntr[idx] = 0;
+        ctx->pending_get_cntr[idx] = 0;
 #else
-            shmem_internal_cntr_write(&ctx->pending_put_cntr[idx], 0);
-            shmem_internal_cntr_write(&ctx->pending_get_cntr[idx], 0);
+        shmem_internal_cntr_write(&ctx->pending_put_cntr[idx], 0);
+        shmem_internal_cntr_write(&ctx->pending_get_cntr[idx], 0);
 #endif
-            /* FIX */
-            //shmem_transport_ofi_eps[idx]->info->ep_attr->tx_ctx_cnt = shmem_transport_ofi_stx_max > 0 ? FI_SHARED_CONTEXT : 0;
-            //shmem_transport_ofi_eps[idx]->info->caps = FI_RMA | FI_WRITE | FI_READ | FI_ATOMIC | FI_RECV;
-            //shmem_transport_ofi_eps[idx]->info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
-            //shmem_transport_ofi_eps[idx]->info->mode = 0;
-            //shmem_transport_ofi_eps[idx]->info->tx_attr->mode = 0;
-            //shmem_transport_ofi_eps[idx]->info->rx_attr->mode = 0;
-            //shmem_transport_ofi_eps[idx]->info->tx_attr->caps = info->p_info->caps;
-            //shmem_transport_ofi_eps[idx]->info->rx_attr->caps = FI_RECV; /* to drive progress on the CQ */;
+        provider_list[idx]->ep_attr->tx_ctx_cnt = shmem_transport_ofi_stx_max > 0 ? FI_SHARED_CONTEXT : 0;
+        provider_list[idx]->caps = FI_RMA | FI_WRITE | FI_READ | FI_ATOMIC | FI_RECV;
+        provider_list[idx]->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
+        provider_list[idx]->mode = 0;
+        provider_list[idx]->tx_attr->mode = 0;
+        provider_list[idx]->rx_attr->mode = 0;
+        provider_list[idx]->tx_attr->caps = provider_list[idx]->caps;
+        provider_list[idx]->rx_attr->caps = FI_RECV; /* to drive progress on the CQ */;
 #ifdef USE_CTX_LOCK
     SHMEM_MUTEX_INIT(ctx->lock);
 #endif
+        ret = fi_fabric(provider_list[idx]->fabric_attr, &ctx->fabric[idx], NULL);
+        OFI_CHECK_RETURN_STR(ret, "fabric initialization failed");
 
-        ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_put_attr,
+        ret = fi_domain(/*shmem_transport_ofi_fabfd*/ ctx->fabric[idx], provider_list[idx],
+                        &ctx->domain[idx], NULL);
+        OFI_CHECK_RETURN_STR(ret, "domain initialization failed");
+
+        struct fi_av_attr   av_attr = {0};
+#ifdef USE_AV_MAP
+        av_attr.type = FI_AV_MAP;
+#else
+        av_attr.type = FI_AV_TABLE;
+#endif
+        ret = fi_av_open(/*shmem_transport_ofi_domainfd*/ ctx->domain[idx],
+                     &av_attr,
+                     /*&shmem_transport_ofi_avfd*/ &ctx->av[idx],
+                     NULL);
+        OFI_CHECK_RETURN_STR(ret, "AV creation failed");
+
+        ret = fi_av_insert(/*shmem_transport_ofi_avfd*/ ctx->av[idx],
+                       alladdrs,
+                       shmem_internal_num_pes,
+                       addr_table,
+                       0,
+                       NULL);
+
+        ret = fi_cntr_open(/*shmem_transport_ofi_domainfd*/ ctx->domain[idx], &cntr_put_attr,
                         &ctx->put_cntr[idx], NULL);
         OFI_CHECK_RETURN_MSG(ret, "put_cntr creation failed (%s)\n", fi_strerror(errno));
 
-        ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_get_attr,
+        ret = fi_cntr_open(/*shmem_transport_ofi_domainfd*/ ctx->domain[idx], &cntr_get_attr,
                         &ctx->get_cntr[idx], NULL);
         OFI_CHECK_RETURN_MSG(ret, "get_cntr creation failed (%s)\n", fi_strerror(errno));
 
-        ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr, &ctx->cq[idx], NULL);
+        ret = fi_cq_open(/*shmem_transport_ofi_domainfd*/ ctx->domain[idx], &cq_attr, &ctx->cq[idx], NULL);
         if (ret && errno == FI_EMFILE) {
             DEBUG_STR("Context creation failed because of open files limit, consider increasing with 'ulimit' command");
         }
         OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(errno));
 
-        ret = fi_endpoint(shmem_transport_ofi_domainfd,
-                        info->p_info, &ctx->ep[idx], NULL);
+        ret = fi_endpoint(/*shmem_transport_ofi_domainfd*/ ctx->domain[idx],
+                        /*info->p_info*/ provider_list[idx], &ctx->ep[idx], NULL);
         OFI_CHECK_RETURN_MSG(ret, "ep creation failed (%s)\n", fi_strerror(errno));
     }
 

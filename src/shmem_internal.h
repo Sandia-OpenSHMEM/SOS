@@ -195,8 +195,7 @@ extern hwloc_topology_t shmem_internal_topology;
     do {                                                                 \
         int rand_int = rand_r(&shmem_internal_rand_seed);                \
         double normalized = (double)rand_int / (double)RAND_MAX;         \
-        int range = shmem_transport_ofi_num_nics - 1;                    \
-        idx = (int)(normalized * range);                                 \
+        idx = (int)(normalized * shmem_transport_ofi_num_nics);          \
     } while (0)
 #else
 #define SHMEM_GET_TRANSMIT_NIC_IDX(idx)
