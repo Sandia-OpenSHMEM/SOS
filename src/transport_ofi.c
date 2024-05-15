@@ -95,6 +95,8 @@ uint64_t*                       shmem_transport_ofi_external_heap_keys;
 uint8_t**                       shmem_transport_ofi_external_heap_addrs;
 #endif
 
+/* List of MR descriptors: current support is for heap, data, and one external heap */
+struct fid_mr*                  shmem_transport_ofi_mrfd_list[3];
 uint64_t                        shmem_transport_ofi_max_poll;
 long                            shmem_transport_ofi_put_poll_limit;
 long                            shmem_transport_ofi_get_poll_limit;
@@ -707,6 +709,8 @@ int ofi_mr_reg_bind(uint64_t flags)
     }
 #endif /* ENABLE_MR_RMA_EVENT */
 #endif /* ENABLE_TARGET_CNTR */
+    shmem_transport_ofi_mrfd_list[0] = shmem_transport_ofi_target_mrfd;
+    shmem_transport_ofi_mrfd_list[1] = NULL;
 
 #else
     /* Register separate data and heap segments using keys 0 and 1,
@@ -770,6 +774,10 @@ int ofi_mr_reg_bind(uint64_t flags)
     }
 #endif /* ENABLE_MR_RMA_EVENT */
 #endif /* ENABLE_TARGET_CNTR */
+
+    shmem_transport_ofi_mrfd_list[0] = shmem_transport_ofi_target_data_mrfd;
+    shmem_transport_ofi_mrfd_list[1] = shmem_transport_ofi_target_heap_mrfd;
+
 #endif
 
     return ret;
@@ -812,8 +820,14 @@ int allocate_recv_cntr_mr(void)
     if (shmem_external_heap_pre_initialized) {
         ret = ofi_mr_reg_external_heap();
         OFI_CHECK_RETURN_STR(ret, "OFI MR registration with HMEM failed");
+        shmem_transport_ofi_mrfd_list[2] = shmem_transport_ofi_external_heap_mrfd;
+    } else {
+        shmem_transport_ofi_mrfd_list[2] = NULL;
     }
+#else
+    shmem_transport_ofi_mrfd_list[2] = NULL;
 #endif
+
     ret = ofi_mr_reg_bind(flags);
     OFI_CHECK_RETURN_STR(ret, "OFI MR registration failed");
 

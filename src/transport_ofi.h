@@ -62,6 +62,7 @@ extern uint64_t*                        shmem_transport_ofi_external_heap_keys;
 extern uint8_t**                        shmem_transport_ofi_external_heap_addrs;
 #endif
 
+extern struct fid_mr*                   shmem_transport_ofi_mrfd_list[3];
 extern uint64_t                         shmem_transport_ofi_max_poll;
 extern long                             shmem_transport_ofi_put_poll_limit;
 extern long                             shmem_transport_ofi_get_poll_limit;
@@ -123,6 +124,51 @@ extern pthread_mutex_t                  shmem_transport_ofi_progress_lock;
         }                                                                       \
     } while (0)
 
+
+#ifdef ENABLE_MR_SCALABLE
+static inline
+int shmem_transport_ofi_get_mr_desc_index(const void *addr) {
+    int ret = -1;
+#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
+    ret = 0;
+#else
+    if ((void*) addr >= shmem_internal_data_base &&
+        (uint8_t*) addr < (uint8_t*) shmem_internal_data_base + shmem_internal_data_length) {
+        ret = 0;
+    } else if ((void*) addr >= shmem_internal_heap_base &&
+               (uint8_t*) addr < (uint8_t*) shmem_internal_heap_base + shmem_internal_heap_length) {
+        ret = 1;
+    } else {
+        ret = -1;
+    }
+#endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
+    return ret;
+}
+#else
+static inline
+int shmem_transport_ofi_get_mr_desc_index(const void *addr) {
+    int ret = -1;
+    if ((void*) addr >= shmem_internal_data_base &&
+        (uint8_t*) addr < (uint8_t*) shmem_internal_data_base + shmem_internal_data_length) {
+        ret = 0;
+    } else if ((void*) addr >= shmem_internal_heap_base &&
+               (uint8_t*) addr < (uint8_t*) shmem_internal_heap_base + shmem_internal_heap_length) {
+        ret = 1;
+    }
+#ifdef USE_FI_HMEM
+    else if (shmem_external_heap_pre_initialized) {
+        if ((void*) addr >= shmem_external_heap_base &&
+             (uint8_t*) addr < (uint8_t*) shmem_external_heap_base + shmem_external_heap_length) {
+            ret = 2;
+        }
+    }
+#endif /* USE_FI_HMEM */
+    else {
+        ret = -1;
+    }
+    return ret;
+}
+#endif
 
 #ifdef ENABLE_MR_SCALABLE
 static inline
@@ -229,6 +275,13 @@ extern fi_addr_t *addr_table;
 #define GET_DEST(dest) ((fi_addr_t)(dest))
 #endif
 
+#ifdef USE_FI_HMEM
+#define GET_MR_DESC(index) ((index == -1) ? NULL : (void *) shmem_transport_ofi_mrfd_list[index])
+#define GET_MR_DESC_ADDR(index) ((index == -1) ? NULL : (void **) &shmem_transport_ofi_mrfd_list[index])
+#else
+#define GET_MR_DESC(index) NULL
+#define GET_MR_DESC_ADDR(index) NULL
+#endif
 
 struct shmem_transport_ofi_frag_t {
     shmem_free_list_item_t item;
@@ -611,7 +664,8 @@ void shmem_transport_ofi_put_large(shmem_transport_ctx_t* ctx, void *target, con
 
         do {
             ret = fi_write(ctx->ep,
-                           frag_source, frag_len, NULL,
+                           frag_source, frag_len,
+                           GET_MR_DESC(shmem_transport_ofi_get_mr_desc_index(source)),
                            GET_DEST(dst), frag_target,
                            key, NULL);
         } while (try_again(ctx, ret, &polled));
@@ -652,7 +706,7 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
         const struct fi_rma_iov rma_iov = { .addr = (uint64_t) addr, .len = len, .key = key };
         const struct fi_msg_rma msg     = {
                                             .msg_iov       = &msg_iov,
-                                            .desc          = NULL,
+                                            .desc          = GET_MR_DESC_ADDR(shmem_transport_ofi_get_mr_desc_index(source)),
                                             .iov_count     = 1,
                                             .addr          = GET_DEST(dst),
                                             .rma_iov       = &rma_iov,
@@ -700,7 +754,7 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
                                           };
         const struct fi_msg_rma msg = {
                                         .msg_iov = &msg_iov,
-                                        .desc = NULL,
+                                        .desc = GET_MR_DESC_ADDR(shmem_transport_ofi_get_mr_desc_index(source)),
                                         .iov_count = 1,
                                         .addr = GET_DEST(dst),
                                         .rma_iov = &rma_iov,
@@ -730,7 +784,7 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
                                     };
         struct fi_msg_rma msg = {
                                   .msg_iov = &msg_iov,
-                                  .desc = NULL,
+                                  .desc = GET_MR_DESC_ADDR(shmem_transport_ofi_get_mr_desc_index(source)),
                                   .iov_count = 1,
                                   .addr = GET_DEST(dst),
                                   .rma_iov = &rma_iov,
@@ -796,7 +850,7 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
                                              };
     const struct fi_msg_atomic msg_signal = {
                                            .msg_iov = &msg_iov_signal,
-                                           .desc = NULL,
+                                           .desc = GET_MR_DESC_ADDR(shmem_transport_ofi_get_mr_desc_index((void *) &signal)),
                                            .iov_count = 1,
                                            .addr = GET_DEST(dst),
                                            .rma_iov = &rma_iov_signal,
@@ -860,7 +914,7 @@ void shmem_transport_get(shmem_transport_ctx_t* ctx, void *target, const void *s
             ret = fi_read(ctx->ep,
                           target,
                           len,
-                          NULL,
+                          GET_MR_DESC(shmem_transport_ofi_get_mr_desc_index(target)),
                           GET_DEST(dst),
                           (uint64_t) addr,
                           key,
@@ -881,7 +935,8 @@ void shmem_transport_get(shmem_transport_ctx_t* ctx, void *target, const void *s
 
             do {
                 ret = fi_read(ctx->ep,
-                              frag_target, frag_len, NULL,
+                              frag_target, frag_len,
+                              GET_MR_DESC(shmem_transport_ofi_get_mr_desc_index(target)),
                               GET_DEST(dst), frag_source,
                               key, NULL);
             } while (try_again(ctx, ret, &polled));
@@ -964,7 +1019,7 @@ void shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target, const
     const struct fi_rma_ioc rmav= { .addr = (uint64_t) addr, .count = 1, .key = key };
     const struct fi_msg_atomic msg = {
                                  .msg_iov       = &sourcev,
-                                 .desc          = NULL,
+                                 .desc          = GET_MR_DESC_ADDR(shmem_transport_ofi_get_mr_desc_index(source)),
                                  .iov_count     = 1,
                                  .addr          = GET_DEST(dst),
                                  .rma_iov       = &rmav,
@@ -985,7 +1040,7 @@ void shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target, const
                                    NULL,
                                    1,
                                    &resultv,
-                                   NULL,
+                                   GET_MR_DESC_ADDR(shmem_transport_ofi_get_mr_desc_index(dest)),
                                    1,
                                    FI_INJECT);  /* FI_DELIVERY_COMPLETE is not required as 
                                                    it is implied for fetch atomicmsgs */
@@ -1023,11 +1078,11 @@ void shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void 
         ret = fi_compare_atomic(ctx->ep,
                                 source,
                                 1,
-                                NULL,
+                                GET_MR_DESC(shmem_transport_ofi_get_mr_desc_index(source)),
                                 operand,
                                 NULL,
                                 dest,
-                                NULL,
+                                GET_MR_DESC(shmem_transport_ofi_get_mr_desc_index(dest)),
                                 GET_DEST(dst),
                                 (uint64_t) addr,
                                 key,
@@ -1062,11 +1117,11 @@ void shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void 
         ret = fi_compare_atomic(ctx->ep,
                                 source,
                                 1,
-                                NULL,
+                                GET_MR_DESC(shmem_transport_ofi_get_mr_desc_index(source)),
                                 mask,
                                 NULL,
                                 dest,
-                                NULL,
+                                GET_MR_DESC(shmem_transport_ofi_get_mr_desc_index(dest)),
                                 GET_DEST(dst),
                                 (uint64_t) addr,
                                 key,
@@ -1170,7 +1225,7 @@ void shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const voi
         const struct fi_rma_ioc    rma_iov = { .addr = (uint64_t) addr, .count = len, .key = key };
         const struct fi_msg_atomic msg     = {
                                                .msg_iov       = &msg_iov,
-                                               .desc          = NULL,
+                                               .desc          = GET_MR_DESC_ADDR(shmem_transport_ofi_get_mr_desc_index(source)),
                                                .iov_count     = 1,
                                                .addr          = GET_DEST(dst),
                                                .rma_iov       = &rma_iov,
@@ -1198,7 +1253,7 @@ void shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const voi
                                 (void *)((char *)source +
                                          (sent*SHMEM_Dtsize[dt])),
                                 chunksize,
-                                NULL,
+                                GET_MR_DESC(shmem_transport_ofi_get_mr_desc_index(source)),
                                 GET_DEST(dst),
                                 ((uint64_t) addr +
                                  (sent*SHMEM_Dtsize[dt])),
@@ -1238,7 +1293,7 @@ void shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target,
     const struct fi_rma_ioc rmav= { .addr = (uint64_t) addr, .count = 1, .key = key };
     const struct fi_msg_atomic msg = {
                                  .msg_iov       = &sourcev,
-                                 .desc          = NULL,
+                                 .desc          = GET_MR_DESC_ADDR(shmem_transport_ofi_get_mr_desc_index(source)),
                                  .iov_count     = 1,
                                  .addr          = GET_DEST(dst),
                                  .rma_iov       = &rmav,
@@ -1256,7 +1311,7 @@ void shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target,
         ret = fi_fetch_atomicmsg(ctx->ep,
                                  &msg,
                                  &resultv,
-                                 NULL,
+                                 GET_MR_DESC_ADDR(shmem_transport_ofi_get_mr_desc_index(dest)),
                                  1,
                                  FI_INJECT); /* FI_DELIVERY_COMPLETE is not required as it's
                                                 implied for fetch atomicmsgs */
@@ -1295,9 +1350,9 @@ void shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target,
         ret = fi_fetch_atomic(ctx->ep,
                               source,
                               1,
-                              NULL,
+                              GET_MR_DESC(shmem_transport_ofi_get_mr_desc_index(source)),
                               dest,
-                              NULL,
+                              GET_MR_DESC(shmem_transport_ofi_get_mr_desc_index(dest)),
                               GET_DEST(dst),
                               (uint64_t) addr,
                               key,
@@ -1353,8 +1408,8 @@ void shmem_transport_atomic_fetch(shmem_transport_ctx_t* ctx, void *target,
     shmem_transport_fetch_atomic_nbi(ctx, (void *) source, (const void *) &dummy,
                                      target, len, pe, FI_SUM, datatype);
 #else
-    shmem_transport_fetch_atomic(ctx, (void *) source, (const void *) NULL,
-                                 target, len, pe, FI_ATOMIC_READ, datatype);
+    shmem_transport_fetch_atomic_nbi(ctx, (void *) source, (const void *) NULL,
+                                     target, len, pe, FI_ATOMIC_READ, datatype);
 #endif
 }
 
