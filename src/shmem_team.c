@@ -289,7 +289,7 @@ int shmem_internal_team_translate_pe(shmem_internal_team_t *src_team, int src_pe
 
 int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE_start, int PE_stride,
                                       int PE_size, const shmem_team_config_t *config, long config_mask,
-                                      shmem_internal_team_t **new_team)
+                                      shmem_internal_team_t **new_team, size_t nic_idx)
 {
 
     *new_team = SHMEM_TEAM_INVALID;
@@ -320,7 +320,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
     int my_pe = shmem_internal_pe_in_active_set(shmem_internal_my_pe,
                                                 global_PE_start, PE_stride, PE_size);
 
-    long *psync = shmem_internal_team_choose_psync(parent_team, REDUCE);
+    long *psync = shmem_internal_team_choose_psync(parent_team, REDUCE, nic_idx);
     shmem_internal_team_t *myteam = NULL;
     *team_ret_val = 0;
     *team_ret_val_reduced = 0;
@@ -366,7 +366,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
         shmem_internal_op_to_all(psync_pool_avail_reduced,
                                  psync_pool_avail, N_PSYNC_BYTES, 1,
                                  myteam->start, PE_stride, PE_size, NULL,
-                                 psync, SHM_INTERNAL_BAND, SHM_INTERNAL_UCHAR);
+                                 psync, SHM_INTERNAL_BAND, SHM_INTERNAL_UCHAR, nic_idx);
 
         /* We cannot release the psync here, because this reduction may not
          * have been performed on the entire parent team. */
@@ -406,18 +406,18 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 
     /* This barrier on the parent team eliminates problematic race conditions
      * during psync allocation between back-to-back team creations. */
-    psync = shmem_internal_team_choose_psync(parent_team, SYNC);
+    psync = shmem_internal_team_choose_psync(parent_team, SYNC, nic_idx);
 
-    shmem_internal_barrier(parent_team->start, parent_team->stride, parent_team->size, psync);
+    shmem_internal_barrier(parent_team->start, parent_team->stride, parent_team->size, psync, nic_idx);
 
     shmem_internal_team_release_psyncs(parent_team, SYNC);
 
-    /* This MAX reduction assures all PEs return the same value.  */
-    psync = shmem_internal_team_choose_psync(parent_team, REDUCE);
+    /* This OR reduction assures all PEs return the same value.  */
+    psync = shmem_internal_team_choose_psync(parent_team, REDUCE, nic_idx);
 
     shmem_internal_op_to_all(team_ret_val_reduced, team_ret_val, 1, sizeof(int),
                              parent_team->start, parent_team->stride, parent_team->size, NULL,
-                             psync, SHM_INTERNAL_MAX, SHM_INTERNAL_INT);
+                             psync, SHM_INTERNAL_MAX, SHM_INTERNAL_INT, nic_idx);
 
     shmem_internal_team_release_psyncs(parent_team, REDUCE);
 
@@ -433,7 +433,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
                                  const shmem_team_config_t *xaxis_config, long xaxis_mask,
                                  shmem_internal_team_t **xaxis_team, const shmem_team_config_t *yaxis_config,
-                                 long yaxis_mask, shmem_internal_team_t **yaxis_team)
+                                 long yaxis_mask, shmem_internal_team_t **yaxis_team, size_t nic_idx)
 {
     *xaxis_team = SHMEM_TEAM_INVALID;
     *yaxis_team = SHMEM_TEAM_INVALID;
@@ -460,7 +460,8 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
         int xsize = (i == num_xteams - 1 && parent_size % xrange) ? parent_size % xrange : xrange;
 
         ret = shmem_internal_team_split_strided(parent_team, start, parent_stride,
-                                                xsize, xaxis_config, xaxis_mask, &my_xteam);
+                                                xsize, xaxis_config, xaxis_mask, &my_xteam,
+                                                nic_idx);
         if (ret) {
             RAISE_ERROR_MSG("Creation of x-axis team %d of %d failed\n", i+1, num_xteams);
         }
@@ -481,7 +482,8 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
         int ysize = (remainder && i < remainder) ? yrange + 1 : yrange;
 
         ret = shmem_internal_team_split_strided(parent_team, start, xrange*parent_stride,
-                                        ysize, yaxis_config, yaxis_mask, &my_yteam);
+                                        ysize, yaxis_config, yaxis_mask, &my_yteam,
+                                        nic_idx);
         if (ret) {
             RAISE_ERROR_MSG("Creation of y-axis team %d of %d failed\n", i+1, num_yteams);
         }
@@ -493,9 +495,9 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
         }
     }
 
-    long *psync = shmem_internal_team_choose_psync(parent_team, SYNC);
+    long *psync = shmem_internal_team_choose_psync(parent_team, SYNC, nic_idx);
 
-    shmem_internal_barrier(parent_start, parent_stride, parent_size, psync);
+    shmem_internal_barrier(parent_start, parent_stride, parent_size, psync, nic_idx);
 
     shmem_internal_team_release_psyncs(parent_team, SYNC);
 
@@ -535,7 +537,7 @@ int shmem_internal_team_destroy(shmem_internal_team_t *team)
 
 /* Returns a psync from the given team that can be safely used for the
  * specified collective operation. */
-long * shmem_internal_team_choose_psync(shmem_internal_team_t *team, shmem_internal_team_op_t op)
+long * shmem_internal_team_choose_psync(shmem_internal_team_t *team, shmem_internal_team_op_t op, size_t nic_idx)
 {
 
     switch (op) {
@@ -556,7 +558,7 @@ long * shmem_internal_team_choose_psync(shmem_internal_team_t *team, shmem_inter
 
             size_t psync = team->psync_idx * SHMEM_SYNC_SIZE;
             shmem_internal_sync(team->start, team->stride, team->size,
-                                &shmem_internal_psync_barrier_pool[psync]);
+                                &shmem_internal_psync_barrier_pool[psync], nic_idx);
 
             for (int i = 0; i < N_PSYNCS_PER_TEAM; i++) {
                 team->psync_avail[i] = 1;

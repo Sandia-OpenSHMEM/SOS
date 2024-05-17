@@ -58,11 +58,12 @@ int shmem_internal_team_translate_pe(shmem_internal_team_t *src_team, int src_pe
 
 int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE_start, int PE_stride,
                                       int PE_size, const shmem_team_config_t *config, long config_mask,
-                                      shmem_internal_team_t **new_team);
+                                      shmem_internal_team_t **new_team, size_t nic_idx);
 
 int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
                                  const shmem_team_config_t *xaxis_config, long xaxis_mask, shmem_internal_team_t **xaxis_team,
-                                 const shmem_team_config_t *yaxis_config, long yaxis_mask, shmem_internal_team_t **yaxis_team);
+                                 const shmem_team_config_t *yaxis_config, long yaxis_mask, shmem_internal_team_t **yaxis_team,
+                                 size_t nic_idx);
 
 int shmem_internal_team_destroy(shmem_internal_team_t *team);
 
@@ -70,7 +71,7 @@ int shmem_internal_team_create_ctx(shmem_internal_team_t *team, long options, sh
 
 int shmem_internal_ctx_get_team(shmem_ctx_t ctx, shmem_internal_team_t **team);
 
-long * shmem_internal_team_choose_psync(shmem_internal_team_t *team, shmem_internal_team_op_t op);
+long * shmem_internal_team_choose_psync(shmem_internal_team_t *team, shmem_internal_team_op_t op, size_t nic_idx);
 
 void shmem_internal_team_release_psyncs(shmem_internal_team_t *team, shmem_internal_team_op_t op);
 

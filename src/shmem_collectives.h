@@ -40,13 +40,13 @@ extern coll_type_t shmem_internal_reduce_type;
 extern coll_type_t shmem_internal_collect_type;
 extern coll_type_t shmem_internal_fcollect_type;
 
-void shmem_internal_sync_linear(int PE_start, int PE_stride, int PE_size, long *pSync);
-void shmem_internal_sync_tree(int PE_start, int PE_stride, int PE_size, long *pSync);
-void shmem_internal_sync_dissem(int PE_start, int PE_stride, int PE_size, long *pSync);
+void shmem_internal_sync_linear(int PE_start, int PE_stride, int PE_size, long *pSync, size_t nic_idx);
+void shmem_internal_sync_tree(int PE_start, int PE_stride, int PE_size, long *pSync, size_t nic_idx);
+void shmem_internal_sync_dissem(int PE_start, int PE_stride, int PE_size, long *pSync, size_t nic_idx);
 
 static inline
 void
-shmem_internal_sync(int PE_start, int PE_stride, int PE_size, long *pSync)
+shmem_internal_sync(int PE_start, int PE_stride, int PE_size, long *pSync, size_t nic_idx)
 {
     if (shmem_internal_params.BARRIERS_FLUSH) {
         fflush(stdout);
@@ -58,19 +58,19 @@ shmem_internal_sync(int PE_start, int PE_stride, int PE_size, long *pSync)
     switch (shmem_internal_barrier_type) {
     case AUTO:
         if (PE_size < shmem_internal_params.COLL_CROSSOVER) {
-            shmem_internal_sync_linear(PE_start, PE_stride, PE_size, pSync);
+            shmem_internal_sync_linear(PE_start, PE_stride, PE_size, pSync, nic_idx);
         } else {
-            shmem_internal_sync_tree(PE_start, PE_stride, PE_size, pSync);
+            shmem_internal_sync_tree(PE_start, PE_stride, PE_size, pSync, nic_idx);
         }
         break;
     case LINEAR:
-        shmem_internal_sync_linear(PE_start, PE_stride, PE_size, pSync);
+        shmem_internal_sync_linear(PE_start, PE_stride, PE_size, pSync, nic_idx);
         break;
     case TREE:
-        shmem_internal_sync_tree(PE_start, PE_stride, PE_size, pSync);
+        shmem_internal_sync_tree(PE_start, PE_stride, PE_size, pSync, nic_idx);
         break;
     case DISSEM:
-        shmem_internal_sync_dissem(PE_start, PE_stride, PE_size, pSync);
+        shmem_internal_sync_dissem(PE_start, PE_stride, PE_size, pSync, nic_idx);
         break;
     default:
         RAISE_ERROR_MSG("Illegal barrier/sync type (%d)\n",
@@ -85,60 +85,64 @@ shmem_internal_sync(int PE_start, int PE_stride, int PE_size, long *pSync)
 
 static inline
 void
-shmem_internal_sync_all(void)
+shmem_internal_sync_all(size_t nic_idx)
 {
-    shmem_internal_sync(0, 1, shmem_internal_num_pes, shmem_internal_sync_all_psync);
+    shmem_internal_sync(0, 1, shmem_internal_num_pes, shmem_internal_sync_all_psync, nic_idx);
 }
 
 
 static inline
 void
-shmem_internal_barrier(int PE_start, int PE_stride, int PE_size, long *pSync)
+shmem_internal_barrier(int PE_start, int PE_stride, int PE_size, long *pSync, size_t nic_idx)
 {
     shmem_internal_quiet(SHMEM_CTX_DEFAULT);
-    shmem_internal_sync(PE_start, PE_stride, PE_size, pSync);
+    shmem_internal_sync(PE_start, PE_stride, PE_size, pSync, nic_idx);
 }
 
 
 static inline
 void
-shmem_internal_barrier_all(void)
+shmem_internal_barrier_all(size_t nic_idx)
 {
     shmem_internal_quiet(SHMEM_CTX_DEFAULT);
-    shmem_internal_sync(0, 1, shmem_internal_num_pes, shmem_internal_barrier_all_psync);
+    shmem_internal_sync(0, 1, shmem_internal_num_pes, shmem_internal_barrier_all_psync, nic_idx);
 }
 
 
 void shmem_internal_bcast_linear(void *target, const void *source, size_t len,
                                  int PE_root, int PE_start, int PE_stride, int PE_size,
-                                 long *pSync, int complete);
+                                 long *pSync, int complete, size_t nic_idx);
 void shmem_internal_bcast_tree(void *target, const void *source, size_t len,
                                int PE_root, int PE_start, int PE_stride, int PE_size,
-                               long *pSync, int complete);
+                               long *pSync, int complete, size_t nic_idx);
 
 static inline
 void
 shmem_internal_bcast(void *target, const void *source, size_t len,
                      int PE_root, int PE_start, int PE_stride, int PE_size,
-                     long *pSync, int complete)
+                     long *pSync, int complete, size_t nic_idx)
 {
     switch (shmem_internal_bcast_type) {
     case AUTO:
         if (PE_size < shmem_internal_params.COLL_CROSSOVER) {
             shmem_internal_bcast_linear(target, source, len, PE_root, PE_start,
-                                        PE_stride, PE_size, pSync, complete);
+                                        PE_stride, PE_size, pSync, complete,
+                                        nic_idx);
         } else {
             shmem_internal_bcast_tree(target, source, len, PE_root, PE_start,
-                                      PE_stride, PE_size, pSync, complete);
+                                      PE_stride, PE_size, pSync, complete,
+                                      nic_idx);
         }
         break;
     case LINEAR:
         shmem_internal_bcast_linear(target, source, len, PE_root, PE_start,
-                                    PE_stride, PE_size, pSync, complete);
+                                    PE_stride, PE_size, pSync, complete,
+                                    nic_idx);
         break;
     case TREE:
         shmem_internal_bcast_tree(target, source, len, PE_root, PE_start,
-                                  PE_stride, PE_size, pSync, complete);
+                                  PE_stride, PE_size, pSync, complete,
+                                  nic_idx);
         break;
     default:
         RAISE_ERROR_MSG("Illegal broadcast type (%d)\n",
@@ -150,20 +154,24 @@ shmem_internal_bcast(void *target, const void *source, size_t len,
 void shmem_internal_op_to_all_linear(void *target, const void *source, size_t count, size_t type_size,
                                      int PE_start, int PE_stride, int PE_size,
                                      void *pWrk, long *pSync,
-                                     shm_internal_op_t op, shm_internal_datatype_t datatype);
+                                     shm_internal_op_t op, shm_internal_datatype_t datatype,
+                                     size_t nic_idx);
 void shmem_internal_op_to_all_ring(void *target, const void *source, size_t count, size_t type_size,
                                    int PE_start, int PE_stride, int PE_size,
                                    void *pWrk, long *pSync,
-                                   shm_internal_op_t op, shm_internal_datatype_t datatype);
+                                   shm_internal_op_t op, shm_internal_datatype_t datatype,
+                                   size_t nic_idx);
 void shmem_internal_op_to_all_tree(void *target, const void *source, size_t count, size_t type_size,
                                    int PE_start, int PE_stride, int PE_size,
                                    void *pWrk, long *pSync,
-                                   shm_internal_op_t op, shm_internal_datatype_t datatype);
+                                   shm_internal_op_t op, shm_internal_datatype_t datatype,
+                                   size_t nic_idx);
 
 void shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, size_t count, size_t type_size,
                                    int PE_start, int PE_stride, int PE_size,
                                    void *pWrk, long *pSync,
-                                   shm_internal_op_t op, shm_internal_datatype_t datatype);
+                                   shm_internal_op_t op, shm_internal_datatype_t datatype,
+                                   size_t nic_idx);
 
 static inline
 void
@@ -171,7 +179,7 @@ shmem_internal_op_to_all(void *target, const void *source, size_t count,
                          size_t type_size, int PE_start, int PE_stride,
                          int PE_size, void *pWrk, long *pSync,
                          shm_internal_op_t op,
-                         shm_internal_datatype_t datatype)
+                         shm_internal_datatype_t datatype, size_t nic_idx)
 {
     shmem_internal_assert(type_size > 0);
 
@@ -181,21 +189,21 @@ shmem_internal_op_to_all(void *target, const void *source, size_t count,
                 if (PE_size < shmem_internal_params.COLL_CROSSOVER) {
                     shmem_internal_op_to_all_linear(target, source, count, type_size,
                                                     PE_start, PE_stride, PE_size,
-                                                    pWrk, pSync, op, datatype);
+                                                    pWrk, pSync, op, datatype, nic_idx);
                 } else {
                     shmem_internal_op_to_all_tree(target, source, count, type_size,
                                                   PE_start, PE_stride, PE_size,
-                                                  pWrk, pSync, op, datatype);
+                                                  pWrk, pSync, op, datatype, nic_idx);
                 }
             } else {
                 if (count * type_size < shmem_internal_params.COLL_SIZE_CROSSOVER)
                     shmem_internal_op_to_all_recdbl_sw(target, source, count, type_size,
                                                        PE_start, PE_stride, PE_size,
-                                                       pWrk, pSync, op, datatype);
+                                                       pWrk, pSync, op, datatype, nic_idx);
                 else
                     shmem_internal_op_to_all_ring(target, source, count, type_size,
                                                   PE_start, PE_stride, PE_size,
-                                                  pWrk, pSync, op, datatype);
+                                                  pWrk, pSync, op, datatype, nic_idx);
             }
 
             break;
@@ -203,33 +211,33 @@ shmem_internal_op_to_all(void *target, const void *source, size_t count,
             if (shmem_transport_atomic_supported(op, datatype)) {
                 shmem_internal_op_to_all_linear(target, source, count, type_size,
                                                 PE_start, PE_stride, PE_size,
-                                                pWrk, pSync, op, datatype);
+                                                pWrk, pSync, op, datatype, nic_idx);
             } else {
                 shmem_internal_op_to_all_recdbl_sw(target, source, count, type_size,
                                                    PE_start, PE_stride, PE_size,
-                                                   pWrk, pSync, op, datatype);
+                                                   pWrk, pSync, op, datatype, nic_idx);
             }
             break;
         case RING:
             shmem_internal_op_to_all_ring(target, source, count, type_size,
                                           PE_start, PE_stride, PE_size,
-                                          pWrk, pSync, op, datatype);
+                                          pWrk, pSync, op, datatype, nic_idx);
             break;
         case TREE:
             if (shmem_transport_atomic_supported(op, datatype)) {
                 shmem_internal_op_to_all_tree(target, source, count, type_size,
                                               PE_start, PE_stride, PE_size,
-                                              pWrk, pSync, op, datatype);
+                                              pWrk, pSync, op, datatype, nic_idx);
             } else {
                 shmem_internal_op_to_all_recdbl_sw(target, source, count, type_size,
                                                    PE_start, PE_stride, PE_size,
-                                                   pWrk, pSync, op, datatype);
+                                                   pWrk, pSync, op, datatype, nic_idx);
             }
             break;
         case RECDBL:
             shmem_internal_op_to_all_recdbl_sw(target, source, count, type_size,
                                                PE_start, PE_stride, PE_size,
-                                               pWrk, pSync, op, datatype);
+                                               pWrk, pSync, op, datatype, nic_idx);
             break;
         default:
             RAISE_ERROR_MSG("Illegal reduction type (%d)\n",
@@ -239,21 +247,23 @@ shmem_internal_op_to_all(void *target, const void *source, size_t count,
 
 
 void shmem_internal_collect_linear(void *target, const void *source, size_t len,
-                                   int PE_start, int PE_stride, int PE_size, long *pSync);
+                                   int PE_start, int PE_stride, int PE_size, long *pSync,
+                                   size_t nic_idx);
 
 static inline
 void
 shmem_internal_collect(void *target, const void *source, size_t len,
-                  int PE_start, int PE_stride, int PE_size, long *pSync)
+                  int PE_start, int PE_stride, int PE_size, long *pSync,
+                  size_t nic_idx)
 {
     switch (shmem_internal_collect_type) {
     case AUTO:
         shmem_internal_collect_linear(target, source, len, PE_start, PE_stride,
-                                      PE_size, pSync);
+                                      PE_size, pSync, nic_idx);
         break;
     case LINEAR:
         shmem_internal_collect_linear(target, source, len, PE_start, PE_stride,
-                                      PE_size, pSync);
+                                      PE_size, pSync, nic_idx);
         break;
     default:
         RAISE_ERROR_MSG("Illegal collect type (%d)\n",
@@ -263,37 +273,41 @@ shmem_internal_collect(void *target, const void *source, size_t len,
 
 
 void shmem_internal_fcollect_linear(void *target, const void *source, size_t len,
-                                    int PE_start, int PE_stride, int PE_size, long *pSync);
+                                    int PE_start, int PE_stride, int PE_size, long *pSync,
+                                    size_t nic_idx);
 void shmem_internal_fcollect_ring(void *target, const void *source, size_t len,
-                                  int PE_start, int PE_stride, int PE_size, long *pSync);
+                                  int PE_start, int PE_stride, int PE_size, long *pSync,
+                                  size_t nic_idx);
 void shmem_internal_fcollect_recdbl(void *target, const void *source, size_t len,
-                                    int PE_start, int PE_stride, int PE_size, long *pSync);
+                                    int PE_start, int PE_stride, int PE_size, long *pSync,
+                                    size_t nic_idx);
 
 static inline
 void
 shmem_internal_fcollect(void *target, const void *source, size_t len,
-                   int PE_start, int PE_stride, int PE_size, long *pSync)
+                   int PE_start, int PE_stride, int PE_size, long *pSync,
+                   size_t nic_idx)
 {
     switch (shmem_internal_fcollect_type) {
     case AUTO:
         shmem_internal_fcollect_ring(target, source, len, PE_start, PE_stride,
-                                     PE_size, pSync);
+                                     PE_size, pSync, nic_idx);
         break;
     case LINEAR:
         shmem_internal_fcollect_linear(target, source, len, PE_start, PE_stride,
-                                       PE_size, pSync);
+                                       PE_size, pSync, nic_idx);
         break;
     case RING:
         shmem_internal_fcollect_ring(target, source, len, PE_start, PE_stride,
-                                     PE_size, pSync);
+                                     PE_size, pSync, nic_idx);
         break;
     case RECDBL:
         if (0 == (PE_size & (PE_size - 1))) {
             shmem_internal_fcollect_recdbl(target, source, len, PE_start, PE_stride,
-                                           PE_size, pSync);
+                                           PE_size, pSync, nic_idx);
         } else {
             shmem_internal_fcollect_ring(target, source, len, PE_start, PE_stride,
-                                         PE_size, pSync);
+                                         PE_size, pSync, nic_idx);
         }
         break;
     default:
@@ -304,9 +318,11 @@ shmem_internal_fcollect(void *target, const void *source, size_t len,
 
 
 void shmem_internal_alltoall(void *dest, const void *source, size_t len,
-                             int PE_start, int PE_stride, int PE_size, long *pSync);
+                             int PE_start, int PE_stride, int PE_size, long *pSync,
+                             size_t nic_idx);
 
 void shmem_internal_alltoalls(void *dest, const void *source, ptrdiff_t dst,
                               ptrdiff_t sst, size_t elem_size, size_t nelems,
-                              int PE_start, int PE_stride, int PE_size, long *pSync);
+                              int PE_start, int PE_stride, int PE_size, long *pSync,
+                              size_t nic_idx);
 #endif
