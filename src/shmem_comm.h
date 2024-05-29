@@ -244,8 +244,13 @@ shmem_internal_atomic(shmem_ctx_t ctx, void *target, const void *source, size_t 
     if (shmem_shr_transport_use_atomic(ctx, target, len, pe, datatype)) {
         shmem_shr_transport_atomic(ctx, target, source, len, pe, op, datatype);
     } else {
+#ifdef DISABLE_NONFETCH_AMO
+        shmem_transport_fetch_atomic((shmem_transport_ctx_t *)ctx, target,
+                                     source, target, len, pe, op, datatype);
+#else
         shmem_transport_atomic((shmem_transport_ctx_t *)ctx, target, source,
                                len, pe, op, datatype);
+#endif
     }
 }
 
