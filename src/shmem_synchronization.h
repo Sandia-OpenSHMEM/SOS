@@ -108,9 +108,16 @@ shmem_internal_fence(shmem_ctx_t ctx)
 
 #define SHMEM_WAIT_UNTIL_POLL(var, cond, value)          \
     do {                                                 \
-        int cmpret;                                      \
+        /* Adding volatile attribute resolves
+        hanging behavior observed in put/get perf
+        tests, though put perf test will still hang
+        frequently, and specifically after 4096 byte msg
+        size test*/                                      \
+        volatile int cmpret;                             \
                                                          \
+        /*shmem_transport_probe();*/                     \
         COMP(cond, SYNC_LOAD(var), value, cmpret);       \
+        /*shmem_transport_probe();*/                     \
         while (!cmpret) {                                \
             shmem_transport_probe();                     \
             SPINLOCK_BODY();                             \

@@ -811,7 +811,7 @@ void
 shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target,
                           const void *source, void *dest,
                           const void *operand, size_t len, int pe,
-                          ptl_datatype_t datatype)
+                          ptl_datatype_t datatype, size_t nic_idx)
 {
     /* transport_cswap already buffers the source and operand arguments */
     shmem_transport_cswap(ctx, target, source, dest, operand, len, pe, datatype);

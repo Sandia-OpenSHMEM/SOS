@@ -206,7 +206,7 @@ static inline
 void
 shmem_internal_cswap_nbi(shmem_ctx_t ctx, void *target, void *source,
                          void *dest, void *operand, size_t len, int pe,
-                         shm_internal_datatype_t datatype)
+                         shm_internal_datatype_t datatype, size_t nic_idx)
 {
     shmem_internal_assert(len > 0);
 
@@ -214,7 +214,7 @@ shmem_internal_cswap_nbi(shmem_ctx_t ctx, void *target, void *source,
         shmem_shr_transport_cswap(ctx, target, source, dest, operand, len, pe, datatype);
     } else {
         shmem_transport_cswap_nbi((shmem_transport_ctx_t *)ctx, target, source,
-                                  dest, operand, len, pe, datatype);
+                                  dest, operand, len, pe, datatype, nic_idx);
     }
 }
 

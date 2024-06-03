@@ -89,9 +89,9 @@ extern pthread_mutex_t                  shmem_transport_ofi_progress_lock;
     do {                                                                        \
         if ((err) == -FI_EAVAIL) {                                              \
             struct fi_cq_err_entry e = {0};                                     \
-            ssize_t ret = fi_cq_readerr((ctx)->cq, (void *)&e, 0);              \
+            ssize_t ret = fi_cq_readerr((ctx)->cq, (void *)&e, 0); /* FIX */    \
             if (ret == 1) {                                                     \
-                const char *errmsg = fi_cq_strerror((ctx)->cq, e.prov_errno,    \
+                const char *errmsg = fi_cq_strerror((ctx)->cq /* FIX */, e.prov_errno,    \
                                                     e.err_data, NULL, 0);       \
                 RAISE_ERROR_MSG("Error in operation: %s\n", errmsg);            \
             } else {                                                            \
@@ -422,7 +422,7 @@ void shmem_transport_ofi_drain_cq(shmem_transport_ctx_t *ctx)
     struct fi_cq_entry buf;
 
     for (;;) {
-        ret = fi_cq_read(ctx->cq, (void *)&buf, 1);
+        ret = fi_cq_read(ctx->cq, (void *)&buf, 1); /* FIX */
 
         if (ret == -FI_EAGAIN) break; /* No events */
 
@@ -850,7 +850,7 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
     int atomic_op = (sig_op == SHMEM_SIGNAL_ADD) ? FI_SUM : FI_ATOMIC_WRITE;
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
-    SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr[1]); /* FIX */
+    SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr[nic_idx]); /* FIXED? */
 
     const struct fi_ioc msg_iov_signal = {
                                           .addr = (uint8_t *) &signal,
@@ -875,8 +875,8 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
                                          };
 
     do {
-        ret = fi_atomicmsg(ctx->ep[1], &msg_signal, flags_signal); /* FIX */
-    } while (try_again(ctx, ret, &polled, 1)); /* FIX */
+        ret = fi_atomicmsg(ctx->ep[nic_idx], &msg_signal, flags_signal); /* FIXED? */
+    } while (try_again(ctx, ret, &polled, nic_idx)); /* FIXED? */
 
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
@@ -963,7 +963,7 @@ void shmem_transport_get(shmem_transport_ctx_t* ctx, void *target, const void *s
 
 
 static inline
-void shmem_transport_get_wait(shmem_transport_ctx_t* ctx, size_t idx)
+void shmem_transport_get_wait(shmem_transport_ctx_t* ctx, size_t nic_idx)
 {
     /* wait for get counter to meet outstanding count value */
 
@@ -980,9 +980,9 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx, size_t idx)
 
     while (poll_count < shmem_transport_ofi_get_poll_limit ||
            shmem_transport_ofi_get_poll_limit < 0) {
-        success = fi_cntr_read(ctx->get_cntr[idx]);
-        fail = fi_cntr_readerr(ctx->get_cntr[idx]);
-        cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr[idx]);
+        success = fi_cntr_read(ctx->get_cntr[nic_idx]);
+        fail = fi_cntr_readerr(ctx->get_cntr[nic_idx]);
+        cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr[nic_idx]);
 
         shmem_transport_probe();
 
@@ -998,11 +998,11 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx, size_t idx)
         }
         poll_count++;
     }
-    cnt_new = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr[idx]);
+    cnt_new = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr[nic_idx]);
     do {
         cnt = cnt_new;
-        ssize_t ret = fi_cntr_wait(ctx->get_cntr[idx], cnt, -1);
-        cnt_new = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr[idx]);
+        ssize_t ret = fi_cntr_wait(ctx->get_cntr[nic_idx], cnt, -1);
+        cnt_new = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr[nic_idx]);
         OFI_CTX_CHECK_ERROR(ctx, ret);
     } while (cnt < cnt_new);
     shmem_internal_assert(cnt == cnt_new);
@@ -1014,7 +1014,7 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx, size_t idx)
 static inline
 void shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target, const
                                void *source, void *dest, const void *operand,
-                               size_t len, int pe, int datatype)
+                               size_t len, int pe, int datatype, size_t nic_idx)
 {
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
@@ -1044,10 +1044,10 @@ void shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target, const
                                };
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
-    SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr[1]); /* FIX */
+    SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr[nic_idx]); /* FIXED? */
 
     do {
-        ret = fi_compare_atomicmsg(ctx->ep[1], /* FIX */
+        ret = fi_compare_atomicmsg(ctx->ep[nic_idx], /* FIXED? */
                                    &msg,
                                    &comparev,
                                    NULL,
@@ -1057,7 +1057,7 @@ void shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target, const
                                    1,
                                    FI_INJECT);  /* FI_DELIVERY_COMPLETE is not required as 
                                                    it is implied for fetch atomicmsgs */
-    } while (try_again(ctx, ret, &polled, 1)); /* FIX */
+    } while (try_again(ctx, ret, &polled, nic_idx)); /* FIXED? */
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
 
@@ -1071,7 +1071,7 @@ void shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void 
      * That is why non-blocking API is used which uses FI_INJECT. FI_ATOMIC_READ is
      * also not supported currently */
     shmem_transport_cswap_nbi(ctx, target, source,
-                              dest, operand, len, pe, datatype);
+                              dest, operand, len, pe, datatype, nic_idx);
 #else
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
@@ -1447,7 +1447,7 @@ int shmem_transport_atomic_supported(shm_internal_op_t op,
      * actually required by FI_THREAD_COMPLETION. */
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(&shmem_transport_ctx_default);
-    int ret = fi_atomicvalid(shmem_transport_ctx_default.ep[1], /* FIX */
+    int ret = fi_atomicvalid(shmem_transport_ctx_default.ep[0], /* FIX */
                              SHMEM_TRANSPORT_DTYPE(datatype),
                              op, &size);
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(&shmem_transport_ctx_default);

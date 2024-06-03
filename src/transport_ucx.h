@@ -442,7 +442,7 @@ static inline
 void
 shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target, const void *source, void *dest,
                           const void *operand, size_t len, int pe,
-                          shm_internal_datatype_t datatype)
+                          shm_internal_datatype_t datatype, size_t nic_idx)
 {
     uint8_t *remote_addr;
     ucp_rkey_h rkey;

@@ -1266,12 +1266,11 @@ int publish_av_info(struct fabric_info *info)
     return ret;
 }
 
-char * alladdrs = NULL;
 static inline
 int populate_av(void)
 {
     int    i, ret, err = 0;
-    //char   *alladdrs = NULL;
+    char   *alladdrs = NULL;
 
     alladdrs = malloc(shmem_internal_num_pes * shmem_transport_ofi_addrlen);
     if (alladdrs == NULL) {
@@ -1298,7 +1297,20 @@ int populate_av(void)
         return ret;
     }
 
-    //free(alladdrs);
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
+        ret = fi_av_insert(shmem_transport_ctx_default.av[idx],
+                           alladdrs,
+                           shmem_internal_num_pes,
+                           addr_table,
+                           0,
+                           NULL);
+        if (ret != shmem_internal_num_pes) {
+            RAISE_WARN_STR("av insert failed");
+            return ret;
+        }
+    }
+
+    free(alladdrs);
 
     return 0;
 }
@@ -1835,13 +1847,6 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
                      NULL);
         OFI_CHECK_RETURN_STR(ret, "AV creation failed");
 
-        ret = fi_av_insert(/*shmem_transport_ofi_avfd*/ ctx->av[idx],
-                       alladdrs,
-                       shmem_internal_num_pes,
-                       addr_table,
-                       0,
-                       NULL);
-
         ret = fi_cntr_open(/*shmem_transport_ofi_domainfd*/ ctx->domain[idx], &cntr_put_attr,
                         &ctx->put_cntr[idx], NULL);
         OFI_CHECK_RETURN_MSG(ret, "put_cntr creation failed (%s)\n", fi_strerror(errno));
@@ -2246,6 +2251,21 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         if (ctx->cq && ctx->cq[idx]) {
             ret = fi_close(&ctx->cq[idx]->fid);
             OFI_CHECK_ERROR_MSG(ret, "Context CQ close failed (%s)\n", fi_strerror(errno));
+        }
+
+        if (ctx->av && ctx->av[idx]) {
+            ret = fi_close(&ctx->av[idx]->fid);
+            OFI_CHECK_ERROR_MSG(ret, "Context AV close failed (%s)\n", fi_strerror(errno));
+        }
+
+        if (ctx->domain && ctx->domain[idx]) {
+            ret = fi_close(&ctx->domain[idx]->fid);
+            OFI_CHECK_ERROR_MSG(ret, "Context domain close failed (%s)\n", fi_strerror(errno));
+        }
+
+        if (ctx->fabric && ctx->fabric[idx]) {
+            ret = fi_close(&ctx->fabric[idx]->fid);
+            OFI_CHECK_ERROR_MSG(ret, "Context fabric close failed (%s)\n", fi_strerror(errno));
         }
     }
 
