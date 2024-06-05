@@ -244,8 +244,15 @@ shmem_internal_atomic(shmem_ctx_t ctx, void *target, const void *source, size_t 
     if (shmem_shr_transport_use_atomic(ctx, target, len, pe, datatype)) {
         shmem_shr_transport_atomic(ctx, target, source, len, pe, op, datatype);
     } else {
+#ifdef DISABLE_NONFETCH_AMO
+        unsigned long long tmp_fetch = 0;
+        shmem_transport_fetch_atomic((shmem_transport_ctx_t *)ctx, target,
+                                     source, &tmp_fetch, len, pe, op, datatype);
+        shmem_transport_get_wait((shmem_transport_ctx_t *)ctx);
+#else
         shmem_transport_atomic((shmem_transport_ctx_t *)ctx, target, source,
                                len, pe, op, datatype);
+#endif
     }
 }
 
@@ -276,8 +283,15 @@ shmem_internal_atomic_set(shmem_ctx_t ctx, void *target, const void *source, siz
     if (shmem_shr_transport_use_atomic(ctx, target, len, pe, datatype)) {
         shmem_shr_transport_atomic_set(ctx, target, source, len, pe, datatype);
     } else {
+#ifdef DISABLE_NONFETCH_AMO
+        unsigned long long tmp_fetch = 0;
+        shmem_transport_fetch_atomic((shmem_transport_ctx_t *)ctx, target,
+                                     source, &tmp_fetch, len, pe, FI_ATOMIC_WRITE, datatype);
+        shmem_transport_get_wait((shmem_transport_ctx_t *)ctx);
+#else
         shmem_transport_atomic_set((shmem_transport_ctx_t *)ctx, target,
                                    source, len, pe, datatype);
+#endif
     }
 }
 

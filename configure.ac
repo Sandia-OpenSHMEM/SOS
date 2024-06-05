@@ -297,7 +297,13 @@ AC_ARG_ENABLE([ofi-inject],
     [AC_HELP_STRING([--disable-ofi-inject],
                     [Disable OFI inject by default (default: enabled)])])
 AS_IF([test "$enable_ofi_inject" = "no"],
-      [AC_DEFINE([DISABLE_OFI_INJECT], [0], [If defined, the OFI will not use fi_inject.])])
+      [AC_DEFINE([DISABLE_OFI_INJECT], [1], [If defined, the OFI will not use fi_inject.])])
+
+AC_ARG_ENABLE([nonfetch-amo],
+    [AC_HELP_STRING([--disable-nonfetch-amo],
+                    [Disable non-fetching AMO and replace them with fetching AMO (default: enabled)])])
+AS_IF([test "$enable_nonfetch_amo" = "no"],
+      [AC_DEFINE([DISABLE_NONFETCH_AMO], [1], [If defined, SOS will fetch values for any AMO.])])
 
 AC_ARG_WITH([oshrun-launcher],
     [AC_HELP_STRING([--with-oshrun-launcher],
