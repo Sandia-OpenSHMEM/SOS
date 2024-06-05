@@ -29,29 +29,29 @@ struct shmem_transport_mmap_peer_info_t {
 extern struct shmem_transport_mmap_peer_info_t *shmem_transport_mmap_peers;
 
 #ifdef ENABLE_ERROR_CHECKING
-#define MMAP_GET_REMOTE_ACCESS(target, rank, ptr)                      \
+#define MMAP_GET_REMOTE_ACCESS(target, rank, ptr)                       \
     do {                                                                \
         if (((void*) target > shmem_internal_data_base) &&              \
             ((char*) target < (char*) shmem_internal_data_base + shmem_internal_data_length)) { \
             ptr = (char*) target - (char*) shmem_internal_data_base +   \
-                (char*) shmem_transport_mmap_peers[rank].data_ptr;     \
-        } else if (((void*) target > shmem_internal_heap_base) &&       \
+                (char*) shmem_transport_mmap_peers[rank].data_ptr;      \
+        } else if (((void*) target >= shmem_internal_heap_base) &&      \
                    ((char*) target < (char*) shmem_internal_heap_base + shmem_internal_heap_length)) { \
             ptr = (char*) target - (char*) shmem_internal_heap_base +   \
-                (char*) shmem_transport_mmap_peers[rank].heap_ptr;     \
+                (char*) shmem_transport_mmap_peers[rank].heap_ptr;      \
         } else {                                                        \
             ptr = NULL;                                                 \
         }                                                               \
     } while (0)
 #else
-#define MMAP_GET_REMOTE_ACCESS(target, rank, ptr)                      \
+#define MMAP_GET_REMOTE_ACCESS(target, rank, ptr)                       \
     do {                                                                \
         if ((void*) target < shmem_internal_heap_base) {                \
             ptr = (char*) target - (char*) shmem_internal_data_base +   \
-                (char*) shmem_transport_mmap_peers[rank].data_ptr;     \
+                (char*) shmem_transport_mmap_peers[rank].data_ptr;      \
         } else {                                                        \
             ptr = (char*) target - (char*) shmem_internal_heap_base +   \
-                (char*) shmem_transport_mmap_peers[rank].heap_ptr;     \
+                (char*) shmem_transport_mmap_peers[rank].heap_ptr;      \
         }                                                               \
     } while (0)
 #endif

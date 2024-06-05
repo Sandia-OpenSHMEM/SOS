@@ -38,7 +38,7 @@ extern struct shmem_transport_xpmem_peer_info_t *shmem_transport_xpmem_peers;
             ((char*) target < (char*) shmem_internal_data_base + shmem_internal_data_length)) { \
             ptr = (char*) target - (char*) shmem_internal_data_base +   \
                 (char*) shmem_transport_xpmem_peers[rank].data_ptr;     \
-        } else if (((void*) target > shmem_internal_heap_base) &&       \
+        } else if (((void*) target >= shmem_internal_heap_base) &&      \
                    ((char*) target < (char*) shmem_internal_heap_base + shmem_internal_heap_length)) { \
             ptr = (char*) target - (char*) shmem_internal_heap_base +   \
                 (char*) shmem_transport_xpmem_peers[rank].heap_ptr;     \
