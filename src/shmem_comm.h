@@ -376,7 +376,10 @@ static inline
 void shmem_internal_copy_self(void *dest, const void *source, size_t nelems)
 {
 #ifdef USE_FI_HMEM
-    long completion = 0;
+    // "completion" set to 1 to wait for completion of put operation initiated
+    // by shmem_internal_put_nb, even if "completion" not incremented in call 
+    // to shmem_internal_put_nb.
+    long completion = 1;
     shmem_internal_put_nb(SHMEM_CTX_DEFAULT, dest, source, nelems,
                           shmem_internal_my_pe, &completion);
     shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
