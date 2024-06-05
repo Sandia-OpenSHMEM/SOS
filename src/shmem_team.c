@@ -412,7 +412,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 
     shmem_internal_team_release_psyncs(parent_team, SYNC);
 
-    /* This OR reduction assures all PEs return the same value.  */
+    /* This MAX reduction assures all PEs return the same value.  */
     psync = shmem_internal_team_choose_psync(parent_team, REDUCE);
 
     shmem_internal_op_to_all(team_ret_val_reduced, team_ret_val, 1, sizeof(int),

@@ -1348,6 +1348,7 @@ int allocate_fabric_resources(struct fabric_info *info)
 }
 
 #ifdef USE_HWLOC
+static inline
 struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **provs, size_t num_nics) {
     int ret = 0;
     hwloc_bitmap_t bindset = hwloc_bitmap_alloc();
@@ -1420,6 +1421,7 @@ static int compare_nic_names(const void *f1, const void *f2)
     return strcmp((*fabric1)->nic->device_attr->name, (*fabric2)->nic->device_attr->name);
 }
 
+static inline
 bool nic_already_used(struct fid_nic *nic, struct fi_info *fabrics, int num_nics)
 {
     struct fi_info *cur_fabric = fabrics;
