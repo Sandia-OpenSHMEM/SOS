@@ -480,7 +480,7 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_transport_ctx_t
 }
 
 static inline
-void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
+void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx, size_t idx)
 {
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
 
@@ -510,11 +510,11 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
         success = 0;
         fail = 0;
 
-        for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
+        //for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
             success = fi_cntr_read(ctx->put_cntr[idx]); /* FIXED? */
             fail = fi_cntr_readerr(ctx->put_cntr[idx]); /* FIXED? */
             cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr[idx]); /* FIXED? */
-        }
+        //}
         shmem_transport_probe();
 
         if (success < cnt && fail == 0) {
@@ -529,7 +529,7 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
         }
         poll_count++;
     }
-    for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
+    //for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
         cnt_new = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr[idx]); /* FIXED? */
         do {
             cnt = cnt_new;
@@ -538,7 +538,7 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
             OFI_CTX_CHECK_ERROR(ctx, ret);
         } while (cnt < cnt_new);
         shmem_internal_assert(cnt == cnt_new);
-    }
+    //}
 
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
@@ -546,9 +546,8 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
 static inline
 int shmem_transport_quiet(shmem_transport_ctx_t* ctx)
 {
-
-    shmem_transport_put_quiet(ctx);
     for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
+        shmem_transport_put_quiet(ctx, idx);
         shmem_transport_get_wait(ctx, idx);
     }
 
@@ -559,13 +558,13 @@ int shmem_transport_quiet(shmem_transport_ctx_t* ctx)
 static inline
 int shmem_transport_fence(shmem_transport_ctx_t* ctx)
 {
-#if WANT_TOTAL_DATA_ORDERING == 0
-    /* Communication is unordered; must wait for puts and buffered (injected)
-     * non-fetching atomics to be completed in order to ensure ordering. */
-    shmem_transport_put_quiet(ctx);
-#endif
-    /* Complete fetching ops; needed to support nonblocking fetch-atomics */
     for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
+#if WANT_TOTAL_DATA_ORDERING == 0
+        /* Communication is unordered; must wait for puts and buffered (injected)
+        * non-fetching atomics to be completed in order to ensure ordering. */
+        shmem_transport_put_quiet(ctx, idx);
+#endif
+        /* Complete fetching ops; needed to support nonblocking fetch-atomics */
         shmem_transport_get_wait(ctx, idx);
     }
 
@@ -733,7 +732,7 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 
     } else {
-        shmem_transport_ofi_put_large(ctx, target, source,len, pe, nic_idx);
+        shmem_transport_ofi_put_large(ctx, target, source, len, pe, nic_idx);
         (*completion)++;
     }
 }
@@ -886,9 +885,8 @@ static inline
 void shmem_transport_put_wait(shmem_transport_ctx_t* ctx, long *completion, size_t nic_idx) {
 
     shmem_internal_assert((*completion) >= 0);
-
     if((*completion) > 0) {
-        shmem_transport_put_quiet(ctx);
+        shmem_transport_put_quiet(ctx, nic_idx);
         (*completion)--;
     }
 }
