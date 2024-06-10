@@ -245,6 +245,8 @@ shmem_internal_atomic(shmem_ctx_t ctx, void *target, const void *source, size_t 
         shmem_shr_transport_atomic(ctx, target, source, len, pe, op, datatype);
     } else {
 #ifdef DISABLE_NONFETCH_AMO
+        /* FIXME: This is a temporary workaround to resolve a known issue with non-fetching AMOs when using
+           the CXI provider */
         unsigned long long tmp_fetch = 0;
         shmem_transport_fetch_atomic((shmem_transport_ctx_t *)ctx, target,
                                      source, &tmp_fetch, len, pe, op, datatype);
@@ -284,6 +286,8 @@ shmem_internal_atomic_set(shmem_ctx_t ctx, void *target, const void *source, siz
         shmem_shr_transport_atomic_set(ctx, target, source, len, pe, datatype);
     } else {
 #ifdef DISABLE_NONFETCH_AMO
+        /* FIXME: This is a temporary workaround to resolve a known issue with non-fetching AMOs when using
+           the CXI provider */
         unsigned long long tmp_fetch = 0;
         shmem_transport_fetch_atomic((shmem_transport_ctx_t *)ctx, target,
                                      source, &tmp_fetch, len, pe, FI_ATOMIC_WRITE, datatype);
