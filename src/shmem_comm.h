@@ -302,24 +302,6 @@ shmem_internal_atomic_set(shmem_ctx_t ctx, void *target, const void *source, siz
 
 static inline
 void
-shmem_internal_atomicv(shmem_ctx_t ctx, void *target, const void *source,
-                       size_t len, int pe, shm_internal_op_t op,
-                       shm_internal_datatype_t datatype, long *completion)
-{
-    shmem_internal_assert(len > 0);
-
-    if (shmem_shr_transport_use_atomic(ctx, target, len, pe, datatype)) {
-        shmem_shr_transport_atomicv(ctx, target, source, len, pe, op, datatype);
-    } else {
-        shmem_transport_atomicv((shmem_transport_ctx_t *)ctx, target, source, len,
-                                pe, op, datatype, completion);
-    }
-}
-
-
-
-static inline
-void
 shmem_internal_fetch_atomic(shmem_ctx_t ctx, void *target, void *source, void *dest, size_t len,
                             int pe, shm_internal_op_t op,
                             shm_internal_datatype_t datatype)
@@ -333,6 +315,36 @@ shmem_internal_fetch_atomic(shmem_ctx_t ctx, void *target, void *source, void *d
         shmem_transport_fetch_atomic((shmem_transport_ctx_t *)ctx, target,
                                      source, dest, len, pe, op, datatype);
     }
+}
+
+
+static inline
+void
+shmem_internal_atomicv(shmem_ctx_t ctx, void *target, const void *source,
+                       size_t len, int pe, shm_internal_op_t op,
+                       shm_internal_datatype_t datatype, long *completion)
+{
+    shmem_internal_assert(len > 0);
+
+#ifdef DISABLE_NONFETCH_AMO
+    /* FIXME: This is a temporary workaround to resolve a known issue with non-fetching AMOs when using
+        the CXI provider */
+    unsigned long long tmp_fetch = 0;
+    size_t type_size = SHMEM_Dtsize[SHMEM_TRANSPORT_DTYPE(datatype)];
+    size_t count = len / type_size;
+    for (size_t i = 0; i < count; i++) {
+        shmem_internal_fetch_atomic(ctx, ((uint8_t *) target) + (i * type_size),
+                                    ((uint8_t *) source) + (i * type_size), &tmp_fetch, type_size,
+                                    pe, op, datatype);
+    }
+#else
+    if (shmem_shr_transport_use_atomic(ctx, target, len, pe, datatype)) {
+        shmem_shr_transport_atomicv(ctx, target, source, len, pe, op, datatype);
+    } else {
+        shmem_transport_atomicv((shmem_transport_ctx_t *)ctx, target, source, len,
+                                pe, op, datatype, completion);
+    }
+#endif
 }
 
 

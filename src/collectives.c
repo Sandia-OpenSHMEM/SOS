@@ -613,19 +613,8 @@ shmem_internal_op_to_all_linear(void *target, const void *source, size_t count, 
         SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, 0);
 
         /* send data, ack, and wait for completion */
-#ifdef DISABLE_NONFETCH_AMO
-        /* FIXME: This is a temporary workaround to resolve a known issue with non-fetching AMOs when using
-           the CXI provider */
-        unsigned long long tmp_fetch = 0;
-        for (size_t i =0; i < count; i++) {
-            shmem_internal_fetch_atomic(SHMEM_CTX_DEFAULT, ((uint8_t *) target) + (i * type_size),
-                                        ((uint8_t *) source) + (i * type_size), &tmp_fetch, type_size,
-                                        PE_start, op, datatype);
-        }
-#else
         shmem_internal_atomicv(SHMEM_CTX_DEFAULT, target, source, count * type_size,
                                PE_start, op, datatype, &completion);
-#endif
         shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
 
@@ -828,21 +817,10 @@ shmem_internal_op_to_all_tree(void *target, const void *source, size_t count, si
         SHMEM_WAIT_UNTIL(pSync + 1, SHMEM_CMP_EQ, 0);
 
         /* send data, ack, and wait for completion */
-#ifdef DISABLE_NONFETCH_AMO
-        /* FIXME: This is a temporary workaround to resolve a known issue with non-fetching AMOs when using
-           the CXI provider */
-        unsigned long long tmp_fetch = 0;
-        for (size_t i = 0; i < count; i++) {
-            shmem_internal_fetch_atomic(SHMEM_CTX_DEFAULT, ((uint8_t *) target) + (i * type_size),
-                                        (num_children == 0) ? ((uint8_t *) source) + (i * type_size) : ((uint8_t *) target) + (i * type_size),
-                                        &tmp_fetch, type_size, parent, op, datatype);
-        }
-#else
         shmem_internal_atomicv(SHMEM_CTX_DEFAULT, target,
                                (num_children == 0) ? source : target,
                                count * type_size, parent,
                                op, datatype, &completion);
-#endif
         shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
 
