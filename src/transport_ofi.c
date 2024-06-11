@@ -2137,8 +2137,8 @@ int shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options,
     ctxp->stx_idx = malloc(shmem_transport_ofi_num_nics * sizeof(int));
     for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
 #ifndef USE_CTX_LOCK
-        shmem_internal_cntr_write(&ctxp->pending_put_cntr, 0);
-        shmem_internal_cntr_write(&ctxp->pending_get_cntr, 0);
+        shmem_internal_cntr_write(&ctxp->pending_put_cntr[idx], 0);
+        shmem_internal_cntr_write(&ctxp->pending_get_cntr[idx], 0);
 #else
         ctxp->pending_put_cntr[idx] = 0;
         ctxp->pending_get_cntr[idx] = 0;
