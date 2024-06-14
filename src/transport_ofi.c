@@ -1556,7 +1556,7 @@ int query_for_fabric(struct fabric_info *info)
                 }
             }
         }
-        fabrics_list_tail->next = NULL;
+        if (fabrics_list_tail) fabrics_list_tail->next = NULL;
     }
     else {
         fabrics_list_head = info->fabrics;
