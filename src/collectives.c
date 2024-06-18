@@ -52,8 +52,7 @@ shmem_internal_build_kary_tree(int radix, int PE_start, int stride,
 
     /* my_id is the index in a theoretical 0...N-1 array of
        participating tasks. where the 0th entry is the root */
-    int my_id = (stride == 0) ? 0 :
-        (((shmem_internal_my_pe - PE_start) / stride) + PE_size - PE_root) % PE_size;
+    int my_id = (((shmem_internal_my_pe - PE_start) / stride) + PE_size - PE_root) % PE_size;
 
     /* We shift PE_root to index 0, resulting in a PE active set layout of (for
        example radix 2): 0 [ 1 2 ] [ 3 4 ] [ 5 6 ] ...  The first group [ 1 2 ]
@@ -373,7 +372,7 @@ shmem_internal_sync_dissem(int PE_start, int PE_stride, int PE_size, long *pSync
 {
     int one = 1, neg_one = -1;
     int distance, to, i;
-    int coll_rank = (PE_stride == 0) ? 0 : (shmem_internal_my_pe - PE_start) / PE_stride;
+    int coll_rank = (shmem_internal_my_pe - PE_start) / PE_stride;
     int *pSync_ints = (int*) pSync;
 
     /* need log2(num_procs) int slots.  max_num_procs is
@@ -638,7 +637,7 @@ shmem_internal_op_to_all_ring(void *target, const void *source, size_t count, si
                               void *pWrk, long *pSync,
                               shm_internal_op_t op, shm_internal_datatype_t datatype)
 {
-    int group_rank = (PE_stride == 0) ? 0 : (shmem_internal_my_pe - PE_start) / PE_stride;
+    int group_rank = (shmem_internal_my_pe - PE_start) / PE_stride;
     long zero = 0, one = 1;
 
     int peer = PE_start + ((group_rank + 1) % PE_size) * PE_stride;
@@ -841,7 +840,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, size_t coun
                                    void *pWrk, long *pSync,
                                    shm_internal_op_t op, shm_internal_datatype_t datatype)
 {
-    int my_id = (PE_stride == 0) ? 0 : ((shmem_internal_my_pe - PE_start) / PE_stride);
+    int my_id = ((shmem_internal_my_pe - PE_start) / PE_stride);
     int log2_proc = 1, pow2_proc = 2;
     int i = PE_size >> 1;
     size_t wrk_size = type_size*count;
@@ -1073,8 +1072,7 @@ shmem_internal_fcollect_linear(void *target, const void *source, size_t len,
         SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, 0);
     } else {
         /* Push data into the target */
-        size_t offset = (PE_stride == 0) ? 0 :
-                        ((shmem_internal_my_pe - PE_start) / PE_stride) * len;
+        size_t offset = ((shmem_internal_my_pe - PE_start) / PE_stride) * len;
         shmem_internal_put_nb(SHMEM_CTX_DEFAULT, (char*) target + offset, source, len, PE_start,
                               &completion);
         shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
@@ -1106,7 +1104,7 @@ shmem_internal_fcollect_ring(void *target, const void *source, size_t len,
     int i;
     /* my_id is the index in a theoretical 0...N-1 array of
        participating tasks */
-    int my_id = (PE_stride == 0) ? 0 : ((shmem_internal_my_pe - PE_start) / PE_stride);
+    int my_id = ((shmem_internal_my_pe - PE_start) / PE_stride);
     int next_proc = PE_start + ((my_id + 1) % PE_size) * PE_stride;
     long completion = 0;
     long zero = 0, one = 1;
@@ -1159,7 +1157,7 @@ void
 shmem_internal_fcollect_recdbl(void *target, const void *source, size_t len,
                                int PE_start, int PE_stride, int PE_size, long *pSync)
 {
-    int my_id = (PE_stride == 0) ? 0 : ((shmem_internal_my_pe - PE_start) / PE_stride);
+    int my_id = ((shmem_internal_my_pe - PE_start) / PE_stride);
     int i;
     long completion = 0;
     size_t curr_offset;
@@ -1216,7 +1214,7 @@ void
 shmem_internal_alltoall(void *dest, const void *source, size_t len,
                         int PE_start, int PE_stride, int PE_size, long *pSync)
 {
-    const int my_as_rank = (PE_stride == 0) ? 0 : (shmem_internal_my_pe - PE_start) / PE_stride;
+    const int my_as_rank = (shmem_internal_my_pe - PE_start) / PE_stride;
     const void *dest_ptr = (uint8_t *) dest + my_as_rank * len;
     int peer, start_pe, i;
 
@@ -1231,8 +1229,7 @@ shmem_internal_alltoall(void *dest, const void *source, size_t len,
                                                  PE_size);
     peer = start_pe;
     do {
-        /* Peer's index in active set: */
-        int peer_as_rank = (PE_stride == 0) ? 0 : (peer - PE_start) / PE_stride;
+        int peer_as_rank = (peer - PE_start) / PE_stride; /* Peer's index in active set */
 
         shmem_internal_put_nbi(SHMEM_CTX_DEFAULT, (void *) dest_ptr, (uint8_t *) source + peer_as_rank * len,
                               len, peer);
@@ -1252,7 +1249,7 @@ shmem_internal_alltoalls(void *dest, const void *source, ptrdiff_t dst,
                          ptrdiff_t sst, size_t elem_size, size_t nelems,
                          int PE_start, int PE_stride, int PE_size, long *pSync)
 {
-    const int my_as_rank = (PE_stride == 0) ? 0 : (shmem_internal_my_pe - PE_start) / PE_stride;
+    const int my_as_rank = (shmem_internal_my_pe - PE_start) / PE_stride;
     const void *dest_base = (uint8_t *) dest + my_as_rank * nelems * dst * elem_size;
     int peer, start_pe, i;
 
@@ -1276,8 +1273,7 @@ shmem_internal_alltoalls(void *dest, const void *source, ptrdiff_t dst,
     peer = start_pe;
     do {
         size_t i;
-        /* Peer's index in active set: */
-        int peer_as_rank    = (PE_stride == 0) ? 0 : (peer - PE_start) / PE_stride;
+        int peer_as_rank    = (peer - PE_start) / PE_stride; /* Peer's index in active set */
         uint8_t *dest_ptr   = (uint8_t *) dest_base;
         uint8_t *source_ptr = (uint8_t *) source + peer_as_rank * nelems * sst * elem_size;
 
