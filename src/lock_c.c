@@ -44,7 +44,9 @@ shmem_clear_lock(long *lockp)
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_SYMMETRIC(lockp, sizeof(long));
 
-    shmem_internal_clear_lock(lockp);
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
+    shmem_internal_clear_lock(lockp, nic_idx);
 }
 
 
@@ -54,7 +56,9 @@ shmem_set_lock(long *lockp)
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_SYMMETRIC(lockp, sizeof(long));
 
-    shmem_internal_set_lock(lockp);
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
+    shmem_internal_set_lock(lockp, nic_idx);
 }
 
 
@@ -64,5 +68,7 @@ shmem_test_lock(long *lockp)
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_SYMMETRIC(lockp, sizeof(long));
 
-    return shmem_internal_test_lock(lockp);
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
+    return shmem_internal_test_lock(lockp, nic_idx);
 }

@@ -232,9 +232,12 @@ SHMEM_DEFINE_FOR_EXTENDED_AMO(`SHMEM_PROF_DEF_CTX_ATOMIC_SET')
         SHMEM_ERR_CHECK_PE(pe);                                 \
         SHMEM_ERR_CHECK_CTX(ctx);                               \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));        \
+                                                                \
+        size_t nic_idx = 0;                                     \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                     \
         shmem_internal_swap(ctx, target, &value, &newval,       \
-                            sizeof(TYPE), pe, ITYPE);           \
-        shmem_internal_get_wait(ctx);                           \
+                            sizeof(TYPE), pe, ITYPE, nic_idx);  \
+        shmem_internal_get_wait(ctx, nic_idx);                  \
         return newval;                                          \
     }
 
@@ -251,8 +254,11 @@ shmem_swap(long *target, long value, int pe)
     SHMEM_ERR_CHECK_PE(pe);
     SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(long));
 
-    shmem_internal_swap(SHMEM_CTX_DEFAULT, target, &value, &newval, sizeof(long), pe, SHM_INTERNAL_LONG);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
+
+    shmem_internal_swap(SHMEM_CTX_DEFAULT, target, &value, &newval, sizeof(long), pe, SHM_INTERNAL_LONG, nic_idx);
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, nic_idx);
     return newval;
 }
 #endif
@@ -267,9 +273,12 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
+                                                                        \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
         shmem_internal_cswap(ctx, target, &value, &newval, &cond,       \
-                             sizeof(TYPE), pe, ITYPE);                  \
-        shmem_internal_get_wait(ctx);                                   \
+                             sizeof(TYPE), pe, ITYPE, nic_idx);         \
+        shmem_internal_get_wait(ctx, nic_idx);                          \
         return newval;                                                  \
     }
 
@@ -283,9 +292,12 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
+                                                                        \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
         shmem_internal_cswap(ctx, target, &value, &newval, &cond,       \
-                             sizeof(TYPE), pe, ITYPE);                  \
-        shmem_internal_get_wait(ctx);                                   \
+                             sizeof(TYPE), pe, ITYPE, nic_idx);         \
+        shmem_internal_get_wait(ctx, nic_idx);                          \
         return newval;                                                  \
     }
 
@@ -298,8 +310,11 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
+                                                                        \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
         shmem_internal_atomic(ctx, target, &tmp, sizeof(TYPE),          \
-                              pe, SHM_INTERNAL_SUM, ITYPE);             \
+                              pe, SHM_INTERNAL_SUM, ITYPE, nic_idx);    \
     }
 
 
@@ -311,10 +326,13 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
+                                                                        \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
         shmem_internal_fetch_atomic(ctx, target, &tmp, &oldval,         \
                                     sizeof(TYPE), pe, SHM_INTERNAL_SUM, \
-                                    ITYPE);                             \
-        shmem_internal_get_wait(ctx);                                   \
+                                    ITYPE, nic_idx);                    \
+        shmem_internal_get_wait(ctx, nic_idx);                          \
         return oldval;                                                  \
     }
 
@@ -327,10 +345,13 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_PE(pe);                                         \
         SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
+                                                                        \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
         shmem_internal_fetch_atomic(ctx, target, &tmp, &oldval,         \
                                     sizeof(TYPE), pe, SHM_INTERNAL_SUM, \
-                                    ITYPE);                             \
-        shmem_internal_get_wait(ctx);                                   \
+                                    ITYPE, nic_idx);                    \
+        shmem_internal_get_wait(ctx, nic_idx);                          \
         return oldval;                                                  \
     }
 
@@ -343,8 +364,10 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
                                                                         \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
         shmem_internal_atomic(ctx, target, &value, sizeof(TYPE),        \
-                              pe, SHM_INTERNAL_SUM, ITYPE);             \
+                              pe, SHM_INTERNAL_SUM, ITYPE, nic_idx);    \
     }
 
 
@@ -358,10 +381,12 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
                                                                         \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
         shmem_internal_fetch_atomic(ctx, target, &value, &oldval,       \
                                     sizeof(TYPE), pe, SHM_INTERNAL_SUM, \
-                                    ITYPE);                             \
-        shmem_internal_get_wait(ctx);                                   \
+                                    ITYPE, nic_idx);                    \
+        shmem_internal_get_wait(ctx, nic_idx);                          \
         return oldval;                                                  \
     }
 
@@ -375,10 +400,12 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
                                                                         \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
         shmem_internal_fetch_atomic(ctx, target, &value, &oldval,       \
                                     sizeof(TYPE), pe, SHM_INTERNAL_SUM, \
-                                    ITYPE);                             \
-        shmem_internal_get_wait(ctx);                                   \
+                                    ITYPE, nic_idx);                    \
+        shmem_internal_get_wait(ctx, nic_idx);                          \
         return oldval;                                                  \
     }
 
@@ -393,9 +420,11 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof(TYPE));                \
                                                                         \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
         shmem_internal_atomic_fetch(ctx, &val, (void *) source,         \
-                                    sizeof(TYPE), pe, ITYPE);           \
-        shmem_internal_get_wait(ctx);                                   \
+                                    sizeof(TYPE), pe, ITYPE, nic_idx);  \
+        shmem_internal_get_wait(ctx, nic_idx);                          \
         return val;                                                     \
     }
 
@@ -408,8 +437,10 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(dest, sizeof(TYPE));                  \
                                                                         \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
         shmem_internal_atomic_set(ctx, (void *) dest, &value,           \
-                                  sizeof(TYPE), pe, ITYPE);             \
+                                  sizeof(TYPE), pe, ITYPE, nic_idx);    \
     }
 
 
@@ -421,8 +452,10 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
                                                                         \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
         shmem_internal_atomic(ctx, target, &value, sizeof(TYPE),        \
-                              pe, SHM_INTERNAL_BXOR, ITYPE);            \
+                              pe, SHM_INTERNAL_BXOR, ITYPE, nic_idx);   \
     }
 
 
@@ -434,8 +467,10 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
                                                                         \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
         shmem_internal_atomic(ctx, target, &value, sizeof(TYPE),        \
-                              pe, SHM_INTERNAL_BAND, ITYPE);            \
+                              pe, SHM_INTERNAL_BAND, ITYPE, nic_idx);   \
     }
 
 
@@ -447,14 +482,16 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_CTX(ctx);                                       \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                \
                                                                         \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
         shmem_internal_atomic(ctx, target, &value, sizeof(TYPE),        \
-                              pe, SHM_INTERNAL_BOR, ITYPE);             \
+                              pe, SHM_INTERNAL_BOR, ITYPE, nic_idx);    \
     }
 
 
 #define SHMEM_DEF_FETCH_XOR(STYPE,TYPE,ITYPE)                                \
     TYPE SHMEM_FUNCTION_ATTRIBUTES                                           \
-    SHMEM_FUNC_PROTOTYPE(STYPE, fetch_xor, TYPE *target, TYPE value,  \
+    SHMEM_FUNC_PROTOTYPE(STYPE, fetch_xor, TYPE *target, TYPE value,         \
                          int  pe)                                            \
         TYPE oldval;                                                         \
         SHMEM_ERR_CHECK_INITIALIZED();                                       \
@@ -462,10 +499,12 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_CTX(ctx);                                            \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                     \
                                                                              \
+        size_t nic_idx = 0;                                                  \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                                 \
         shmem_internal_fetch_atomic(ctx, target, &value, &oldval,            \
                                     sizeof(TYPE), pe, SHM_INTERNAL_BXOR,     \
-                                    ITYPE);                                  \
-        shmem_internal_get_wait(ctx);                                        \
+                                    ITYPE, nic_idx);                         \
+        shmem_internal_get_wait(ctx, nic_idx);                               \
         return oldval;                                                       \
     }
 
@@ -479,10 +518,12 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_CTX(ctx);                                            \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                     \
                                                                              \
+        size_t nic_idx = 0;                                                  \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                                 \
         shmem_internal_fetch_atomic(ctx, target, &value, &oldval,            \
                                     sizeof(TYPE), pe, SHM_INTERNAL_BAND,     \
-                                    ITYPE);                                  \
-        shmem_internal_get_wait(ctx);                                        \
+                                    ITYPE, nic_idx);                         \
+        shmem_internal_get_wait(ctx, nic_idx);                               \
         return oldval;                                                       \
     }
 
@@ -496,10 +537,12 @@ shmem_swap(long *target, long value, int pe)
         SHMEM_ERR_CHECK_CTX(ctx);                                            \
         SHMEM_ERR_CHECK_SYMMETRIC(target, sizeof(TYPE));                     \
                                                                              \
+        size_t nic_idx = 0;                                                  \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                                 \
         shmem_internal_fetch_atomic(ctx, target, &value, &oldval,            \
                                     sizeof(TYPE), pe, SHM_INTERNAL_BOR,      \
-                                    ITYPE);                                  \
-        shmem_internal_get_wait(ctx);                                        \
+                                    ITYPE, nic_idx);                         \
+        shmem_internal_get_wait(ctx, nic_idx);                               \
         return oldval;                                                       \
     }
 

@@ -305,8 +305,11 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_PE(pe);                                    \
     SHMEM_ERR_CHECK_CTX(ctx);                                  \
     SHMEM_ERR_CHECK_SYMMETRIC(addr, sizeof(TYPE));             \
+                                                               \
+    size_t nic_idx = 0;                                        \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                       \
     shmem_internal_put_scalar(ctx, addr, &value, sizeof(TYPE), \
-                             pe);                              \
+                             pe, nic_idx);                     \
   }
 
 #define SHMEM_DEF_G(STYPE,TYPE)                      \
@@ -318,9 +321,12 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_PE(pe);                          \
     SHMEM_ERR_CHECK_CTX(ctx);                        \
     SHMEM_ERR_CHECK_SYMMETRIC(addr, sizeof(TYPE));   \
+                                                     \
+    size_t nic_idx = 0;                              \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);             \
     shmem_internal_get(ctx, &tmp, addr, sizeof(TYPE),\
-                       pe);                          \
-    shmem_internal_get_wait(ctx);                    \
+                       pe, nic_idx);                 \
+    shmem_internal_get_wait(ctx, nic_idx);           \
     return tmp;                                      \
   }
 
@@ -337,10 +343,13 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_OVERLAP(target, source, sizeof(TYPE) *       \
                             nelems, sizeof(TYPE) * nelems, 0,    \
                             (shmem_internal_my_pe == pe));       \
+                                                                 \
+    size_t nic_idx = 0;                                          \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                         \
     shmem_internal_put_nb(ctx, target, source,                   \
                           sizeof(TYPE) * nelems, pe,             \
-                          &completion);                          \
-    shmem_internal_put_wait(ctx, &completion);                   \
+                          &completion, nic_idx);                 \
+    shmem_internal_put_wait(ctx, &completion, nic_idx);          \
   }
 
 
@@ -358,9 +367,12 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_OVERLAP(target, source, (SIZE) * nelems,   \
                             (SIZE) * nelems, 0,                \
                             (shmem_internal_my_pe == pe));     \
+                                                               \
+    size_t nic_idx = 0;                                        \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                       \
     shmem_internal_put_nb(ctx, target, source, (SIZE) * nelems,\
-                          pe, &completion);                    \
-    shmem_internal_put_wait(ctx, &completion);                 \
+                          pe, &completion, nic_idx);           \
+    shmem_internal_put_wait(ctx, &completion, nic_idx);        \
   }
 
 
@@ -376,9 +388,12 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_OVERLAP(target, source, sizeof(TYPE) *       \
                             nelems, sizeof(TYPE) * nelems, 0,    \
                             (shmem_internal_my_pe == pe));       \
+                                                                 \
+    size_t nic_idx = 0;                                          \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                         \
     shmem_internal_put_nbi(ctx, target, source,                  \
                            sizeof(TYPE)*nelems,                  \
-        pe);                                                     \
+                           pe, nic_idx);                         \
   }
 
 
@@ -395,8 +410,11 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_OVERLAP(target, source, (SIZE) * nelems,   \
                             (SIZE) * nelems, 0,                \
                             (shmem_internal_my_pe == pe));     \
+                                                               \
+    size_t nic_idx = 0;                                        \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                       \
     shmem_internal_put_nbi(ctx, target, source, (SIZE)*nelems, \
-                           pe);                                \
+                           pe, nic_idx);                       \
   }
 
 
@@ -413,9 +431,12 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_OVERLAP(target, source, sizeof(TYPE) *    \
                             nelems, sizeof(TYPE) * nelems, 0, \
                             (shmem_internal_my_pe == pe));    \
+                                                              \
+    size_t nic_idx = 0;                                       \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                      \
     shmem_internal_get(ctx, target, source,                   \
-                       sizeof(TYPE) * nelems, pe);            \
-    shmem_internal_get_wait(ctx);                             \
+                       sizeof(TYPE) * nelems, pe, nic_idx);   \
+    shmem_internal_get_wait(ctx, nic_idx);                    \
   }
 
 
@@ -432,9 +453,12 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_OVERLAP(target, source, (SIZE)*nelems, \
                            (SIZE) * nelems, 0,             \
                            (shmem_internal_my_pe == pe));  \
+                                                           \
+    size_t nic_idx = 0;                                    \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                   \
     shmem_internal_get(ctx, target, source, (SIZE)*nelems, \
-                       pe);                                \
-    shmem_internal_get_wait(ctx);                          \
+                       pe, nic_idx);                       \
+    shmem_internal_get_wait(ctx, nic_idx);                 \
   }
 
 
@@ -451,8 +475,10 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_OVERLAP(target, source, sizeof(TYPE) *       \
                             nelems, sizeof(TYPE) * nelems, 0,    \
                             (shmem_internal_my_pe == pe));       \
+    size_t nic_idx = 0;                                          \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                         \
     shmem_internal_get(ctx, target, source, sizeof(TYPE)*nelems, \
-                       pe);                                      \
+                       pe, nic_idx);                             \
   }
 
 
@@ -469,7 +495,10 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_OVERLAP(target, source, (SIZE) * nelems,   \
                             (SIZE) * nelems, 0,                \
                             (shmem_internal_my_pe == pe));     \
-    shmem_internal_get(ctx, target, source, (SIZE)*nelems, pe);\
+    size_t nic_idx = 0;                                        \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                       \
+    shmem_internal_get(ctx, target, source, (SIZE)*nelems,     \
+                       pe, nic_idx);                           \
   }
 
 #define SHMEM_DEF_IPUT(STYPE,TYPE)                            \
@@ -488,9 +517,12 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                    sizeof(TYPE) * ((nelems-1) * tst + 1),     \
                    sizeof(TYPE) * ((nelems-1) * sst + 1), 0,  \
                    (shmem_internal_my_pe == pe));             \
+                                                              \
+    size_t nic_idx = 0;                                       \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                      \
     for ( ; nelems > 0 ; --nelems) {                          \
       shmem_internal_put_scalar(ctx, target, source,          \
-                               sizeof(TYPE), pe);             \
+                               sizeof(TYPE), pe, nic_idx);    \
       target += tst;                                          \
       source += sst;                                          \
     }                                                         \
@@ -513,14 +545,17 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                    sizeof(TYPE) * ((nblocks-1) * tst + bsize), \
                    sizeof(TYPE) * ((nblocks-1) * sst + bsize), \
                    0, (shmem_internal_my_pe == pe));          \
+                                                              \
+    size_t nic_idx = 0;                                       \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                      \
     for ( ; nblocks > 0 ; --nblocks) {                        \
       shmem_internal_put_nb(ctx, target, source,              \
                                 bsize * sizeof(TYPE), pe,     \
-                                &completion);                 \
+                                &completion, nic_idx);        \
       target += tst;                                          \
       source += sst;                                          \
     }                                                         \
-    shmem_internal_put_wait(ctx, &completion);                \
+    shmem_internal_put_wait(ctx, &completion, nic_idx);       \
   }
 
 #define SHMEM_DEF_IPUT_N(NAME,SIZE)                          \
@@ -540,9 +575,12 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                         (SIZE) * ((nelems-1) * tst + 1),     \
                         (SIZE) * ((nelems-1) * sst + 1), 0,  \
                         (shmem_internal_my_pe == pe));       \
+                                                             \
+    size_t nic_idx = 0;                                      \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                     \
     for ( ; nelems > 0 ; --nelems) {                         \
       shmem_internal_put_scalar(ctx, target, source, (SIZE), \
-                               pe);                          \
+                               pe, nic_idx);                 \
       target = (uint8_t *) target + tst * (SIZE);            \
       source = (uint8_t *) source + sst * (SIZE);            \
     }                                                        \
@@ -566,14 +604,17 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                         (SIZE) * ((nblocks-1) * tst + bsize), \
                         (SIZE) * ((nblocks-1) * sst + bsize), \
                         0, (shmem_internal_my_pe == pe));    \
+                                                             \
+    size_t nic_idx = 0;                                      \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                     \
     for ( ; nblocks > 0 ; --nblocks) {                       \
       shmem_internal_put_nb(ctx, target, source,             \
                             bsize * (SIZE), pe,              \
-                            &completion);                    \
+                            &completion, nic_idx);           \
       target = (uint8_t *) target + tst * (SIZE);            \
       source = (uint8_t *) source + sst * (SIZE);            \
     }                                                        \
-    shmem_internal_put_wait(ctx, &completion);               \
+    shmem_internal_put_wait(ctx, &completion, nic_idx);      \
   }
 
 #define SHMEM_DEF_IGET(STYPE,TYPE)                            \
@@ -593,13 +634,16 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                    sizeof(TYPE) * ((nelems-1) * tst + 1),     \
                    sizeof(TYPE) * ((nelems-1) * sst + 1), 0,  \
                    (shmem_internal_my_pe == pe));             \
+                                                              \
+    size_t nic_idx = 0;                                       \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                      \
     for ( ; nelems > 0 ; --nelems) {                          \
       shmem_internal_get(ctx, target, source, sizeof(TYPE),   \
-                         pe);                                 \
+                         pe, nic_idx);                        \
       target += tst;                                          \
       source += sst;                                          \
     }                                                         \
-    shmem_internal_get_wait(ctx);                             \
+    shmem_internal_get_wait(ctx, nic_idx);                    \
   }
 
 #define SHMEM_DEF_IBGET(STYPE,TYPE)                           \
@@ -619,13 +663,16 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                    sizeof(TYPE) * ((nblocks-1) * tst + bsize), \
                    sizeof(TYPE) * ((nblocks-1) * sst + bsize), \
                    0, (shmem_internal_my_pe == pe));          \
+                                                              \
+    size_t nic_idx = 0;                                       \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                      \
     for ( ; nblocks > 0 ; --nblocks) {                        \
       shmem_internal_get(ctx, target, source,                 \
-                         bsize * sizeof(TYPE), pe);           \
+                         bsize * sizeof(TYPE), pe, nic_idx);  \
       target += tst;                                          \
       source += sst;                                          \
     }                                                         \
-    shmem_internal_get_wait(ctx);                             \
+    shmem_internal_get_wait(ctx, nic_idx);                    \
   }
 
 #define SHMEM_DEF_IGET_N(NAME,SIZE)                       \
@@ -646,12 +693,16 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                      (SIZE) * ((nelems-1) * tst + 1),     \
                      (SIZE) * ((nelems-1) * sst + 1), 0,  \
                      (shmem_internal_my_pe == pe));       \
+                                                          \
+    size_t nic_idx = 0;                                   \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                  \
     for ( ; nelems > 0 ; --nelems) {                      \
-      shmem_internal_get(ctx, target, source, (SIZE), pe);\
+      shmem_internal_get(ctx, target, source, (SIZE),     \
+                         pe, nic_idx);                    \
       target = (uint8_t *) target + tst * (SIZE);         \
       source = (uint8_t *) source + sst * (SIZE);         \
     }                                                     \
-    shmem_internal_get_wait(ctx);                         \
+    shmem_internal_get_wait(ctx, nic_idx);                \
   }
 
 #define SHMEM_DEF_IBGET_N(NAME,SIZE)                      \
@@ -672,13 +723,16 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                      (SIZE) * ((nblocks-1) * tst + bsize), \
                      (SIZE) * ((nblocks-1) * sst + bsize), \
                      0, (shmem_internal_my_pe == pe));    \
+                                                          \
+    size_t nic_idx = 0;                                   \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                  \
     for ( ; nblocks > 0 ; --nblocks) {                    \
       shmem_internal_get(ctx, target, source,             \
-                         bsize * (SIZE), pe);             \
+                         bsize * (SIZE), pe, nic_idx);    \
       target = (uint8_t *) target + tst * (SIZE);         \
       source = (uint8_t *) source + sst * (SIZE);         \
     }                                                     \
-    shmem_internal_get_wait(ctx);                         \
+    shmem_internal_get_wait(ctx, nic_idx);                \
   }
 
 #define SHMEM_DEF_PUT_SIGNAL(STYPE,TYPE)                                \
@@ -697,19 +751,22 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                             sizeof(uint64_t), 0,                        \
                             (shmem_internal_my_pe == pe));              \
     SHMEM_ERR_CHECK_SIG_OP(sig_op);                                     \
+                                                                        \
+    size_t nic_idx = 0;                                                 \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                                \
     shmem_internal_put_nb(ctx, target, source,                          \
                           sizeof(TYPE) * nelems, pe,                    \
-                          &completion);                                 \
-    shmem_internal_put_wait(ctx, &completion);                          \
+                          &completion, nic_idx);                        \
+    shmem_internal_put_wait(ctx, &completion, nic_idx);                 \
     shmem_internal_fence(ctx);                                          \
     if (sig_op == SHMEM_SIGNAL_ADD)                                     \
         shmem_internal_atomic(ctx, sig_addr, &signal, sizeof(uint64_t), \
                               pe, SHM_INTERNAL_SUM,                     \
-                              SHM_INTERNAL_UINT64);                     \
+                              SHM_INTERNAL_UINT64, nic_idx);            \
     else                                                                \
         shmem_internal_atomic_set(ctx, sig_addr, &signal,               \
                                   sizeof(uint64_t), pe,                 \
-                                  SHM_INTERNAL_UINT64);                 \
+                                  SHM_INTERNAL_UINT64, nic_idx);        \
   }
 
 
@@ -729,18 +786,21 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                             sizeof(uint64_t), 0,                        \
                             (shmem_internal_my_pe == pe));              \
     SHMEM_ERR_CHECK_SIG_OP(sig_op);                                     \
+                                                                        \
+    size_t nic_idx = 0;                                                 \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                                \
     shmem_internal_put_nb(ctx, target, source, (SIZE) * nelems,         \
-                          pe, &completion);                             \
-    shmem_internal_put_wait(ctx, &completion);                          \
+                          pe, &completion, nic_idx);                    \
+    shmem_internal_put_wait(ctx, &completion, nic_idx);                 \
     shmem_internal_fence(ctx);                                          \
     if (sig_op == SHMEM_SIGNAL_ADD)                                     \
         shmem_internal_atomic(ctx, sig_addr, &signal, sizeof(uint64_t), \
                               pe, SHM_INTERNAL_SUM,                     \
-                              SHM_INTERNAL_UINT64);                     \
+                              SHM_INTERNAL_UINT64, nic_idx);            \
     else                                                                \
         shmem_internal_atomic_set(ctx, sig_addr, &signal,               \
                                   sizeof(uint64_t), pe,                 \
-                                  SHM_INTERNAL_UINT64);                 \
+                                  SHM_INTERNAL_UINT64, nic_idx);        \
   }
 
 #define SHMEM_DEF_PUT_SIGNAL_NBI(STYPE,TYPE)                            \
@@ -757,10 +817,14 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
     SHMEM_ERR_CHECK_OVERLAP(target, sig_addr, sizeof(TYPE) * nelems,    \
                             sizeof(uint64_t), 0,                        \
                             (shmem_internal_my_pe == pe));              \
+                                                                        \
     SHMEM_ERR_CHECK_SIG_OP(sig_op);                                     \
+                                                                        \
+    size_t nic_idx = 0;                                                 \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                                \
     shmem_internal_put_signal_nbi(ctx, target, source,                  \
                                   sizeof(TYPE) * nelems, sig_addr,      \
-                                  signal, sig_op, pe);                  \
+                                  signal, sig_op, pe, nic_idx);         \
   }
 
 
@@ -779,8 +843,12 @@ SHMEM_PROF_DEF_CTX_PUT_N_SIGNAL_NBI(`mem')
                             sizeof(uint64_t), 0,                        \
                             (shmem_internal_my_pe == pe));              \
     SHMEM_ERR_CHECK_SIG_OP(sig_op);                                     \
+                                                                        \
+    size_t nic_idx = 0;                                                 \
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                                \
     shmem_internal_put_signal_nbi(ctx, target, source, (SIZE) * nelems, \
-                                  sig_addr, signal, sig_op, pe);        \
+                                  sig_addr, signal, sig_op,             \
+                                  pe, nic_idx);                         \
   }
 
 
@@ -871,10 +939,12 @@ shmem_signal_fetch(const uint64_t* sig_addr)
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_SYMMETRIC(sig_addr, sizeof(uint64_t));
 
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
     shmem_internal_atomic_fetch(SHMEM_CTX_DEFAULT, &val, (void *) sig_addr, 
                                 sizeof(uint64_t), shmem_internal_my_pe,
-                                SHM_INTERNAL_UINT64);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+                                SHM_INTERNAL_UINT64, nic_idx);
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, nic_idx);
     return val;
 }
 
@@ -885,8 +955,10 @@ shmemx_signal_add(uint64_t *sig_addr, uint64_t signal, int pe)
     SHMEM_ERR_CHECK_PE(pe);
     SHMEM_ERR_CHECK_SYMMETRIC(sig_addr, sizeof(uint64_t));
 
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
     shmem_internal_atomic(SHMEM_CTX_DEFAULT, sig_addr, &signal, sizeof(uint64_t),
-                          pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
+                          pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64, nic_idx);
 }
 
 void SHMEM_FUNCTION_ATTRIBUTES
@@ -897,8 +969,10 @@ shmemx_ctx_signal_add(shmem_ctx_t ctx, uint64_t *sig_addr, uint64_t signal, int 
     SHMEM_ERR_CHECK_CTX(ctx);
     SHMEM_ERR_CHECK_SYMMETRIC(sig_addr, sizeof(uint64_t));
 
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
     shmem_internal_atomic(ctx, sig_addr, &signal, sizeof(uint64_t),
-                          pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
+                          pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64, nic_idx);
 }
 
 void SHMEM_FUNCTION_ATTRIBUTES
@@ -908,8 +982,10 @@ shmemx_signal_set(uint64_t *sig_addr, uint64_t signal, int pe)
     SHMEM_ERR_CHECK_PE(pe);
     SHMEM_ERR_CHECK_SYMMETRIC(sig_addr, sizeof(uint64_t));
 
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
     shmem_internal_atomic_set(SHMEM_CTX_DEFAULT, (void *) sig_addr, &signal,
-                              sizeof(uint64_t), pe, SHM_INTERNAL_UINT64);
+                              sizeof(uint64_t), pe, SHM_INTERNAL_UINT64, nic_idx);
 }
 
 void SHMEM_FUNCTION_ATTRIBUTES
@@ -920,8 +996,10 @@ shmemx_ctx_signal_set(shmem_ctx_t ctx, uint64_t *sig_addr, uint64_t signal, int 
     SHMEM_ERR_CHECK_CTX(ctx);
     SHMEM_ERR_CHECK_SYMMETRIC(sig_addr, sizeof(uint64_t));
 
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
     shmem_internal_atomic_set(ctx, (void *) sig_addr, &signal,
-                              sizeof(uint64_t), pe, SHM_INTERNAL_UINT64);
+                              sizeof(uint64_t), pe, SHM_INTERNAL_UINT64, nic_idx);
 }
 
 void SHMEM_FUNCTION_ATTRIBUTES
@@ -932,8 +1010,10 @@ shmemx_getmem_ct(shmemx_ct_t ct, void *target, const void *source, size_t nelems
     SHMEM_ERR_CHECK_SYMMETRIC(source, nelems);
     SHMEM_ERR_CHECK_NULL(target, nelems);
 
-    shmem_internal_get_ct(ct, target, source, nelems, pe);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
+    shmem_internal_get_ct(ct, target, source, nelems, pe, nic_idx);
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, nic_idx);
 }
 
 void SHMEM_FUNCTION_ATTRIBUTES shmemx_putmem_ct(shmemx_ct_t ct, void *target, const void *source,
@@ -946,8 +1026,10 @@ void SHMEM_FUNCTION_ATTRIBUTES shmemx_putmem_ct(shmemx_ct_t ct, void *target, co
     SHMEM_ERR_CHECK_SYMMETRIC(target, nelems);
     SHMEM_ERR_CHECK_NULL(source, nelems);
 
-    shmem_internal_put_ct_nb(ct, target, source, nelems, pe, &completion);
-    shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
+    shmem_internal_put_ct_nb(ct, target, source, nelems, pe, &completion, nic_idx);
+    shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion, nic_idx);
 }
 
 

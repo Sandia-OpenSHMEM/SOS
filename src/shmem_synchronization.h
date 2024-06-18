@@ -110,7 +110,9 @@ shmem_internal_fence(shmem_ctx_t ctx)
     do {                                                 \
         int cmpret;                                      \
                                                          \
+        /*shmem_transport_probe();*/                         \
         COMP(cond, SYNC_LOAD(var), value, cmpret);       \
+        /*shmem_transport_probe();*/                         \
         while (!cmpret) {                                \
             shmem_transport_probe();                     \
             SPINLOCK_BODY();                             \

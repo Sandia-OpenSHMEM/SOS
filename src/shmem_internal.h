@@ -186,6 +186,17 @@ extern hwloc_topology_t shmem_internal_topology;
         }                                                                \
     } while(0)
 
+#ifdef USE_OFI
+#define SHMEM_GET_TRANSMIT_NIC_IDX(idx)                                  \
+    do {                                                                 \
+        int rand_int = rand_r(&shmem_internal_rand_seed);                \
+        double normalized = (double)rand_int / (double)RAND_MAX;         \
+        idx = (int)(normalized * shmem_transport_ofi_num_nics);          \
+    } while (0)
+#else
+#define SHMEM_GET_TRANSMIT_NIC_IDX(idx)
+#endif
+
 #ifdef ENABLE_ERROR_CHECKING
 #define SHMEM_ERR_CHECK_INITIALIZED()                                    \
     do {                                                                 \

@@ -115,9 +115,12 @@ shmem_team_split_strided(shmem_team_t parent_team, int PE_start,
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
     return shmem_internal_team_split_strided((shmem_internal_team_t *)parent_team,
                                              PE_start, PE_stride, PE_size, config,
-                                             config_mask, (shmem_internal_team_t **)new_team);
+                                             config_mask, (shmem_internal_team_t **)new_team,
+                                             nic_idx);
 }
 
 int SHMEM_FUNCTION_ATTRIBUTES
@@ -128,11 +131,14 @@ shmem_team_split_2d(shmem_team_t parent_team, int xrange,
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
     return shmem_internal_team_split_2d((shmem_internal_team_t *)parent_team,
                                         xrange, xaxis_config, xaxis_mask,
                                         (shmem_internal_team_t **)xaxis_team,
                                         yaxis_config, yaxis_mask,
-                                        (shmem_internal_team_t **)yaxis_team);
+                                        (shmem_internal_team_t **)yaxis_team,
+                                        nic_idx);
 }
 
 int SHMEM_FUNCTION_ATTRIBUTES
