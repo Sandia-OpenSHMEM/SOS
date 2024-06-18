@@ -332,7 +332,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 
         myteam->my_pe       = my_pe;
         myteam->start       = global_PE_start;
-        myteam->stride      = (PE_size == 1) ? 0 : PE_stride;
+        myteam->stride      = PE_stride;
         myteam->size        = PE_size;
 
         if (config_mask == 0) {
@@ -424,7 +424,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
     /* If no team was available, print some team triplet info and return nonzero. */
     if (my_pe >= 0 && myteam != NULL && myteam->psync_idx == -1) {
         RAISE_WARN_MSG("Team split strided failed: child <%d, %d, %d>, parent <%d, %d, %d>\n",
-                        myteam->start, myteam->stride, myteam->size,
+                        global_PE_start, PE_stride, PE_size,
                         parent_team->start, parent_team->stride, parent_team->size);
     }
     return *team_ret_val_reduced;
