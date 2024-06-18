@@ -650,7 +650,8 @@ void shmem_internal_bit_to_string(char *str, size_t str_size,
 static inline
 int shmem_internal_pe_in_active_set(int global_pe, int PE_start, int PE_stride, int PE_size)
 {
-    shmem_internal_assert(PE_stride != 0);
+    if (PE_size == 1) return PE_start == global_pe ? 0 : -1;
+    if (PE_stride == 0) return -1;
     int n = (global_pe - PE_start) / PE_stride;
     if ((global_pe < PE_start && PE_stride > 0) || (global_pe > PE_start && PE_stride < 0) ||
         (global_pe - PE_start) % PE_stride || n >= PE_size)
