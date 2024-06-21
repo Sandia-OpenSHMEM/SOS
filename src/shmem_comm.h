@@ -336,7 +336,14 @@ shmem_internal_atomicv(shmem_ctx_t ctx, void *target, const void *source,
         shmem_internal_fetch_atomic(ctx, ((uint8_t *) target) + (i * type_size),
                                     ((uint8_t *) source) + (i * type_size), &tmp_fetch, type_size,
                                     pe, op, datatype);
+#ifdef SOS_OFI_CXI_QUIET_RATE
+        /* FIXME: This intermittent quiet should not be required: */
+        if (i % SOS_OFI_CXI_QUIET_RATE == 0) {
+            shmem_transport_put_quiet((shmem_transport_ctx_t *)ctx);
+        }
+#endif
     }
+    *completion += 1;
 #else
     if (shmem_shr_transport_use_atomic(ctx, target, len, pe, datatype)) {
         shmem_shr_transport_atomicv(ctx, target, source, len, pe, op, datatype);
