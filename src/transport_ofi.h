@@ -41,6 +41,9 @@
 #endif
 
 #if DISABLE_NONFETCH_AMO
+/* FIXME: The progress of back-to-back atomic ops over CXI is improved with an
+ * occasional quiet operation. This constant sets the number of atomic ops that
+ * occur between calls to quiet within shmem_internal_atomicv. */
 #define SOS_OFI_CXI_QUIET_RATE 200
 #endif
 
