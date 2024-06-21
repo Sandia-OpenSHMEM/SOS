@@ -40,6 +40,10 @@
 #define ENABLE_TARGET_CNTR 0
 #endif
 
+#if DISABLE_NONFETCH_AMO
+#define SOS_OFI_CXI_QUIET_RATE 200
+#endif
+
 #if ENABLE_TARGET_CNTR
 extern struct fid_cntr*                 shmem_transport_ofi_target_cntrfd;
 #endif
