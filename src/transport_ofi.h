@@ -422,14 +422,13 @@ static inline void shmem_transport_get_wait(shmem_transport_ctx_t* ctx, size_t i
 /* Drain all available events from the CQ.  Note, ctx->bounce_buffers must be
  * locked before calling this routine */
 static inline
-void shmem_transport_ofi_drain_cq(shmem_transport_ctx_t *ctx)
+void shmem_transport_ofi_drain_cq(shmem_transport_ctx_t *ctx, size_t nic_idx)
 {
     ssize_t ret = 0;
     struct fi_cq_entry buf;
 
     for (;;) {
-        ret = fi_cq_read(ctx->cq, (void *)&buf, 1); /* FIX */
-
+        ret = fi_cq_read(ctx->cq[nic_idx], (void *)&buf, 1); /* FIX */
         if (ret == -FI_EAGAIN) break; /* No events */
 
         else if (ret == 1) {
@@ -467,7 +466,9 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_transport_ctx_t
     shmem_internal_assert(shmem_transport_ofi_max_bounce_buffers > 0);
 
     while (ctx->bounce_buffers->nalloc >= (uint64_t) shmem_transport_ofi_max_bounce_buffers) {
-        shmem_transport_ofi_drain_cq(ctx);
+        for (size_t i = 0; i < shmem_transport_ofi_num_nics; i++) {
+            shmem_transport_ofi_drain_cq(ctx, i);
+        }
     }
 
     buff = (shmem_transport_ofi_bounce_buffer_t*) shmem_free_list_alloc(ctx->bounce_buffers);
@@ -486,7 +487,7 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_transport_ctx_t
 }
 
 static inline
-void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx, size_t idx)
+void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx, size_t nic_idx)
 {
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
 
@@ -495,7 +496,7 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx, size_t idx)
         SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
 
         while (ctx->bounce_buffers->nalloc > 0) {
-            shmem_transport_ofi_drain_cq(ctx);
+            shmem_transport_ofi_drain_cq(ctx, nic_idx);
         }
 
         SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
@@ -513,14 +514,10 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx, size_t idx)
     long poll_count = 0;
     while (poll_count < shmem_transport_ofi_put_poll_limit ||
            shmem_transport_ofi_put_poll_limit < 0) {
-        success = 0;
-        fail = 0;
 
-        //for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
-            success = fi_cntr_read(ctx->put_cntr[idx]); /* FIXED? */
-            fail = fi_cntr_readerr(ctx->put_cntr[idx]); /* FIXED? */
-            cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr[idx]); /* FIXED? */
-        //}
+        success = fi_cntr_read(ctx->put_cntr[nic_idx]); /* FIXED? */
+        fail = fi_cntr_readerr(ctx->put_cntr[nic_idx]); /* FIXED? */
+        cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr[nic_idx]); /* FIXED? */
         shmem_transport_probe();
 
         if (success < cnt && fail == 0) {
@@ -535,16 +532,14 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx, size_t idx)
         }
         poll_count++;
     }
-    //for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
-        cnt_new = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr[idx]); /* FIXED? */
-        do {
-            cnt = cnt_new;
-            ssize_t ret = fi_cntr_wait(ctx->put_cntr[idx], cnt, -1); /* FIXED? */
-            cnt_new = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr[idx]); /* FIXED? */
-            OFI_CTX_CHECK_ERROR(ctx, ret);
-        } while (cnt < cnt_new);
-        shmem_internal_assert(cnt == cnt_new);
-    //}
+    cnt_new = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr[nic_idx]); /* FIXED? */
+    do {
+        cnt = cnt_new;
+        ssize_t ret = fi_cntr_wait(ctx->put_cntr[nic_idx], cnt, -1); /* FIXED? */
+        cnt_new = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr[nic_idx]); /* FIXED? */
+        OFI_CTX_CHECK_ERROR(ctx, ret);
+    } while (cnt < cnt_new);
+    shmem_internal_assert(cnt == cnt_new);
 
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
@@ -587,7 +582,7 @@ int try_again(shmem_transport_ctx_t *ctx, const int ret, uint64_t *polled, size_
         if (ret == -FI_EAGAIN) {
             if (ctx->bounce_buffers) {
                 SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
-                shmem_transport_ofi_drain_cq(ctx);
+                shmem_transport_ofi_drain_cq(ctx, nic_idx);
                 SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
             }
             else {
