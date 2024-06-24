@@ -348,6 +348,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
         } else {
             if (config_mask != SHMEM_TEAM_NUM_CONTEXTS) {
                 RAISE_WARN_MSG("Invalid team_split_strided config_mask (%ld)\n", config_mask);
+                free(myteam);
                 return -1;
             } else {
                 shmem_internal_assertp(config->num_contexts >= 0);
