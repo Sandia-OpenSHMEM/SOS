@@ -232,7 +232,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL')
             }                                                                                     \
         }                                                                                         \
         if (nelems == 0 || num_ignored == nelems) {                                               \
-            shmem_transport_probe();                                                              \
+            for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { shmem_transport_probe( nic_idx ); }                                                              \
             return;                                                                               \
         }                                                                                         \
                                                                                                   \
@@ -268,7 +268,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ALL')
         }                                                                                         \
                                                                                                   \
         if (nelems == 0 || num_ignored == nelems) {                                               \
-            shmem_transport_probe();                                                              \
+            for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { shmem_transport_probe( nic_idx ); };                                                              \
             return;                                                                               \
         }                                                                                         \
                                                                                                   \
@@ -304,7 +304,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ALL_VECTOR')
             }                                                                                     \
         }                                                                                         \
         if (nelems == 0 || num_ignored == nelems) {                                               \
-            shmem_transport_probe();                                                              \
+            for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { shmem_transport_probe( nic_idx ); }                                                              \
             return SIZE_MAX;                                                                      \
         }                                                                                         \
                                                                                                   \
@@ -324,7 +324,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ALL_VECTOR')
                     }                                                                             \
                 }                                                                                 \
             }                                                                                     \
-            if (!cmpret) shmem_transport_probe();                                                 \
+            if (!cmpret) for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { shmem_transport_probe( nic_idx ); }                                                 \
         }                                                                                         \
                                                                                                   \
         shmem_internal_membar_acq_rel();                                                          \
@@ -354,7 +354,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ANY')
             }                                                                                     \
         }                                                                                         \
         if (nelems == 0 || num_ignored == nelems) {                                               \
-            shmem_transport_probe();                                                              \
+            for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { shmem_transport_probe( nic_idx ); }                                                              \
             return SIZE_MAX;                                                                      \
         }                                                                                         \
                                                                                                   \
@@ -374,7 +374,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ANY')
                     }                                                                             \
                 }                                                                                 \
             }                                                                                     \
-            if (!cmpret) shmem_transport_probe();                                                 \
+            if (!cmpret) for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { shmem_transport_probe( nic_idx ); }                                                 \
         }                                                                                         \
                                                                                                   \
         shmem_internal_membar_acq_rel();                                                          \
@@ -408,7 +408,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ANY_VECTOR')
             }                                                                                  \
         }                                                                                      \
         if (nelems == 0 || num_ignored == nelems) {                                            \
-            shmem_transport_probe();                                                           \
+            for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { shmem_transport_probe( nic_idx ); }                                                           \
             return 0;                                                                          \
         }                                                                                      \
                                                                                                \
@@ -423,7 +423,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_ANY_VECTOR')
                     }                                                                          \
                 }                                                                              \
             }                                                                                  \
-            if (!cmpret) shmem_transport_probe();                                              \
+            if (!cmpret) for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { shmem_transport_probe( nic_idx ); }                                              \
         }                                                                                      \
         shmem_internal_membar_acq_rel();                                                       \
         shmem_transport_syncmem();                                                             \
@@ -456,7 +456,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_SOME')
             }                                                                                  \
         }                                                                                      \
         if (nelems == 0 || num_ignored == nelems) {                                            \
-            shmem_transport_probe();                                                           \
+            for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { shmem_transport_probe( nic_idx ); }                                                           \
             return 0;                                                                          \
         }                                                                                      \
                                                                                                \
@@ -471,7 +471,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_SOME')
                     }                                                                          \
                 }                                                                              \
             }                                                                                  \
-            if (!cmpret) shmem_transport_probe();                                              \
+            if (!cmpret) for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { shmem_transport_probe( nic_idx ); }                                              \
         }                                                                                      \
         shmem_internal_membar_acq_rel();                                                       \
         shmem_transport_syncmem();                                                             \
@@ -495,7 +495,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_WAIT_UNTIL_SOME_VECTOR')
             shmem_internal_membar_acq_rel();                                                   \
             shmem_transport_syncmem();                                                         \
         } else {                                                                               \
-            shmem_transport_probe();                                                           \
+            for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { shmem_transport_probe( nic_idx ); }                                                           \
         }                                                                                      \
         return cmpret;                                                                         \
     }
@@ -520,7 +520,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST')
                 int cmpret;                                                                       \
                 SHMEM_TEST(cond, &vars[i], value, cmpret);                                        \
                 if (!cmpret) {                                                                    \
-                    shmem_transport_probe();                                                      \
+                    for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { shmem_transport_probe( nic_idx ); }                                                      \
                     return 0;                                                                     \
                 }                                                                                 \
             }                                                                                     \
@@ -551,7 +551,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ALL')
                 int cmpret;                                                                       \
                 SHMEM_TEST(cond, &vars[i], values[i], cmpret);                                    \
                 if (!cmpret) {                                                                    \
-                    shmem_transport_probe();                                                      \
+                    for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { shmem_transport_probe( nic_idx ); }                                                      \
                     return 0;                                                                     \
                 }                                                                                 \
             }                                                                                     \
@@ -596,7 +596,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ALL_VECTOR')
             shmem_internal_membar_acq_rel();                                                      \
             shmem_transport_syncmem();                                                            \
         } else                                                                                    \
-            shmem_transport_probe();                                                              \
+            for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { shmem_transport_probe( nic_idx ); }                                                              \
                                                                                                   \
         return found_idx;                                                                         \
     }
@@ -635,7 +635,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ANY')
             shmem_internal_membar_acq_rel();                                                      \
             shmem_transport_syncmem();                                                            \
         } else                                                                                    \
-            shmem_transport_probe();                                                              \
+            for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { shmem_transport_probe( nic_idx ); }                                                              \
                                                                                                   \
         return found_idx;                                                                         \
     }
@@ -666,7 +666,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ANY_VECTOR')
             }                                                                                  \
         }                                                                                      \
         if (nelems == 0 || num_ignored == nelems) {                                            \
-            shmem_transport_probe();                                                           \
+            for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { shmem_transport_probe( nic_idx ); }                                                           \
             return 0;                                                                          \
         }                                                                                      \
                                                                                                \
@@ -680,7 +680,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_ANY_VECTOR')
                 }                                                                              \
             }                                                                                  \
         }                                                                                      \
-        if (!cmpret) shmem_transport_probe();                                                  \
+        if (!cmpret) for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { shmem_transport_probe( nic_idx ); }                                                  \
         shmem_internal_membar_acq_rel();                                                       \
         shmem_transport_syncmem();                                                             \
         return ncompleted;                                                                     \
@@ -712,7 +712,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_SOME')
             }                                                                                  \
         }                                                                                      \
         if (nelems == 0 || num_ignored == nelems) {                                            \
-            shmem_transport_probe();                                                           \
+            for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { shmem_transport_probe( nic_idx ); }                                                           \
             return 0;                                                                          \
         }                                                                                      \
                                                                                                \
@@ -726,7 +726,7 @@ SHMEM_BIND_C_SYNC(`SHMEM_DEF_TEST_SOME')
                 }                                                                              \
             }                                                                                  \
         }                                                                                      \
-        if (!cmpret) shmem_transport_probe();                                                  \
+        if (!cmpret) for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { shmem_transport_probe( nic_idx ); }                                                  \
         shmem_internal_membar_acq_rel();                                                       \
         shmem_transport_syncmem();                                                             \
         return ncompleted;                                                                     \

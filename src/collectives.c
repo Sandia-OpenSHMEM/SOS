@@ -437,7 +437,7 @@ shmem_internal_bcast_linear(void *target, const void *source, size_t len,
             if (pe == shmem_internal_my_pe) continue;
             shmem_internal_put_nb(SHMEM_CTX_DEFAULT, target, source, len, pe, &completion, nic_idx);
         }
-        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion, nic_idx);
+        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
 
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
 
@@ -522,7 +522,7 @@ shmem_internal_bcast_tree(void *target, const void *source, size_t len,
             shmem_internal_put_nb(SHMEM_CTX_DEFAULT, target, send_buf, len, children[i],
                                   &completion, nic_idx);
         }
-        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion, nic_idx);
+        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
 
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
 
@@ -591,7 +591,7 @@ shmem_internal_op_to_all_linear(void *target, const void *source, size_t count, 
            exist. */
         shmem_internal_put_nb(SHMEM_CTX_DEFAULT, target, source, count * type_size,
                               shmem_internal_my_pe, &completion, nic_idx);
-        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion, nic_idx);
+        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
         shmem_internal_quiet(SHMEM_CTX_DEFAULT);
 
         /* let everyone know that it's safe to send to us */
@@ -619,7 +619,7 @@ shmem_internal_op_to_all_linear(void *target, const void *source, size_t count, 
         /* send data, ack, and wait for completion */
         shmem_internal_atomicv(SHMEM_CTX_DEFAULT, target, source, count * type_size,
                                PE_start, op, datatype, &completion, nic_idx);
-        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion, nic_idx);
+        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
 
         shmem_internal_atomic(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one),
@@ -798,7 +798,7 @@ shmem_internal_op_to_all_tree(void *target, const void *source, size_t count, si
            exist. */
         shmem_internal_put_nb(SHMEM_CTX_DEFAULT, target, source, count * type_size,
                               shmem_internal_my_pe, &completion, nic_idx);
-        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion, nic_idx);
+        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
         shmem_internal_quiet(SHMEM_CTX_DEFAULT);
 
         /* let everyone know that it's safe to send to us */
@@ -827,7 +827,7 @@ shmem_internal_op_to_all_tree(void *target, const void *source, size_t count, si
                                (num_children == 0) ? source : target,
                                count * type_size, parent,
                                op, datatype, &completion, nic_idx);
-        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion, nic_idx);
+        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
 
         shmem_internal_atomic(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one),
@@ -904,7 +904,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, size_t coun
 
         shmem_internal_put_nb(SHMEM_CTX_DEFAULT, target, current_target, wrk_size, peer,
                               &completion, nic_idx);
-        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion, nic_idx);
+        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
 
         shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync_extra_peer, &ps_data_ready, sizeof(long), peer, nic_idx);
@@ -934,7 +934,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, size_t coun
 
                 shmem_internal_put_nb(SHMEM_CTX_DEFAULT, target, current_target,
                                       wrk_size, peer, &completion, nic_idx);
-                shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion, nic_idx);
+                shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
                 shmem_internal_fence(SHMEM_CTX_DEFAULT);
                 shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, step_psync, &ps_data_ready,
                                          sizeof(long), peer, nic_idx);
@@ -944,7 +944,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, size_t coun
 
                 shmem_internal_put_nb(SHMEM_CTX_DEFAULT, target, current_target,
                                       wrk_size, peer, &completion, nic_idx);
-                shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion, nic_idx);
+                shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
                 shmem_internal_fence(SHMEM_CTX_DEFAULT);
                 shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, step_psync, &ps_data_ready,
                                          sizeof(long), peer, nic_idx);
@@ -962,7 +962,7 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, size_t coun
 
             shmem_internal_put_nb(SHMEM_CTX_DEFAULT, target, current_target, wrk_size,
                                   peer, &completion, nic_idx);
-            shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion, nic_idx);
+            shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
             shmem_internal_fence(SHMEM_CTX_DEFAULT);
             shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync_extra_peer, &ps_data_ready,
                                      sizeof(long), peer, nic_idx);
@@ -1084,7 +1084,7 @@ shmem_internal_fcollect_linear(void *target, const void *source, size_t len,
         size_t offset = ((shmem_internal_my_pe - PE_start) / PE_stride) * len;
         shmem_internal_put_nb(SHMEM_CTX_DEFAULT, (char*) target + offset, source, len, PE_start,
                               &completion, nic_idx);
-        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion, nic_idx);
+        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
 
         /* ensure ordering */
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
@@ -1136,7 +1136,7 @@ shmem_internal_fcollect_ring(void *target, const void *source, size_t len,
         /* send data to me + 1 */
         shmem_internal_put_nb(SHMEM_CTX_DEFAULT, (char*) target + iter_offset, (char*) target + iter_offset,
                              len, next_proc, &completion, nic_idx);
-        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion, nic_idx);
+        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
 
         /* send completion for this round to next proc.  Note that we
@@ -1199,7 +1199,7 @@ shmem_internal_fcollect_recdbl(void *target, const void *source, size_t len,
         /* send data to peer */
         shmem_internal_put_nb(SHMEM_CTX_DEFAULT, (char*) target + curr_offset, (char*) target + curr_offset,
                               distance * len, real_peer, &completion, nic_idx);
-        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion, nic_idx);
+        shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
 
         /* mark completion for this round */

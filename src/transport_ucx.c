@@ -72,7 +72,7 @@ static int shmem_transport_ucx_progress_thread_enabled = 1;
 static void * shmem_transport_ucx_progress_thread_func(void *arg)
 {
     while (__atomic_load_n(&shmem_transport_ucx_progress_thread_enabled, __ATOMIC_ACQUIRE)) {
-        shmem_transport_probe();
+        shmem_transport_probe(0);
         usleep(shmem_internal_params.PROGRESS_INTERVAL);
     }
 

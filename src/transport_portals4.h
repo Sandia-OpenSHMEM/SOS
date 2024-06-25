@@ -244,7 +244,7 @@ int shmem_transport_fini(void);
 
 static inline void shmem_transport_get_wait(shmem_transport_ctx_t*, size_t idx);
 
-static inline void shmem_transport_probe(void) {
+static inline void shmem_transport_probe(size_t nic_idx) {
     return;
 }
 
@@ -624,7 +624,7 @@ shmem_transport_put_ct_nb(shmem_transport_ct_t *ct, void *target, const void *so
 
 static inline
 void
-shmem_transport_put_wait(shmem_transport_ctx_t* ctx, long *completion, size_t nic_idx)
+shmem_transport_put_wait(shmem_transport_ctx_t* ctx, long *completion)
 {
     if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER) {
         while (*completion > 0) {

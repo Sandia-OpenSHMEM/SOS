@@ -48,9 +48,9 @@ shmem_internal_put_nb(shmem_ctx_t ctx, void *target, const void *source, size_t 
 
 static inline
 void
-shmem_internal_put_wait(shmem_ctx_t ctx, long *completion, size_t nic_idx)
+shmem_internal_put_wait(shmem_ctx_t ctx, long *completion)
 {
-    shmem_transport_put_wait((shmem_transport_ctx_t *)ctx, completion, nic_idx);
+    shmem_transport_put_wait((shmem_transport_ctx_t *)ctx, completion);
     /* on-node is always blocking, so this is a no-op for them */
 }
 
@@ -69,7 +69,7 @@ shmem_internal_put_scalar(shmem_ctx_t ctx, void *target, const void *source, siz
 #else
         long completion = 0;
         shmem_transport_put_nb((shmem_transport_ctx_t *)ctx, target, source, len, pe, &completion, nic_idx);
-	    shmem_internal_put_wait(ctx, &completion, nic_idx);
+	    shmem_internal_put_wait(ctx, &completion);
 #endif
     }
 }
@@ -414,7 +414,7 @@ void shmem_internal_copy_self(void *dest, const void *source, size_t nelems, siz
     long completion = 1;
     shmem_internal_put_nb(SHMEM_CTX_DEFAULT, dest, source, nelems,
                           shmem_internal_my_pe, &completion, nic_idx);
-    shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion, nic_idx);
+    shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
 #else
     memcpy(dest, source, nelems);
 #endif

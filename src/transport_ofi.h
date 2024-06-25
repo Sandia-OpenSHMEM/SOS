@@ -383,22 +383,24 @@ extern struct fid_ep* shmem_transport_ofi_target_ep;
     } while (0)
 
 static inline
-void shmem_transport_probe(void)
+void shmem_transport_probe(size_t nic_idx)
 {
 #if defined(ENABLE_MANUAL_PROGRESS)
 #  ifdef USE_THREAD_COMPLETION
     if (0 == pthread_mutex_trylock(&shmem_transport_ofi_progress_lock)) {
 #  endif
-//        struct fi_cq_entry buf;
-//        int ret = fi_cq_read(shmem_transport_ofi_target_cq, &buf, 1);
-//        if (ret == 1)
-//            RAISE_WARN_STR("Unexpected event");
-        for (size_t i = 0; i < shmem_transport_ofi_num_nics; i++) {
-            struct fi_cq_entry buf;
-            int ret = fi_cq_read(shmem_transport_ctx_default.cq[i], &buf, 1);
-            if (ret == 1)
-                RAISE_WARN_STR("Unexpected event");
-        }
+        struct fi_cq_entry buf;
+        int ret = fi_cq_read(shmem_transport_ctx_default.cq[nic_idx], &buf, 1);
+        if (ret == 1)
+            RAISE_WARN_STR("Unexpected event A");
+        if (ret < 0)
+            RAISE_WARN_STR("Unexpected event B");
+//        for (size_t i = 0; i < shmem_transport_ofi_num_nics; i++) {
+//            struct fi_cq_entry buf;
+//            int ret = fi_cq_read(shmem_transport_ctx_default.cq[i], &buf, 1);
+//            if (ret == 1)
+//                RAISE_WARN_STR("Unexpected event");
+//        }
 #  ifdef USE_THREAD_COMPLETION
         pthread_mutex_unlock(&shmem_transport_ofi_progress_lock);
     }
@@ -496,7 +498,9 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx, size_t nic_idx)
         SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
 
         while (ctx->bounce_buffers->nalloc > 0) {
-            shmem_transport_ofi_drain_cq(ctx, nic_idx);
+            for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) { 
+                shmem_transport_ofi_drain_cq(ctx, nic_idx);
+            }
         }
 
         SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
@@ -515,10 +519,19 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx, size_t nic_idx)
     while (poll_count < shmem_transport_ofi_put_poll_limit ||
            shmem_transport_ofi_put_poll_limit < 0) {
 
+//        success = 0;
+//        fail = 0;
+//        cnt = 0;
+//        for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) {
+//            success += fi_cntr_read(ctx->put_cntr[nic_idx]); /* FIXED? */
+//            fail += fi_cntr_readerr(ctx->put_cntr[nic_idx]); /* FIXED? */
+//            cnt += SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr[nic_idx]); /* FIXED? */
+//        }
+//        shmem_transport_probe();
         success = fi_cntr_read(ctx->put_cntr[nic_idx]); /* FIXED? */
         fail = fi_cntr_readerr(ctx->put_cntr[nic_idx]); /* FIXED? */
         cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr[nic_idx]); /* FIXED? */
-        shmem_transport_probe();
+        shmem_transport_probe(nic_idx);
 
         if (success < cnt && fail == 0) {
             SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
@@ -532,14 +545,17 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx, size_t nic_idx)
         }
         poll_count++;
     }
-    cnt_new = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr[nic_idx]); /* FIXED? */
-    do {
-        cnt = cnt_new;
-        ssize_t ret = fi_cntr_wait(ctx->put_cntr[nic_idx], cnt, -1); /* FIXED? */
+
+    //for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) {
         cnt_new = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr[nic_idx]); /* FIXED? */
-        OFI_CTX_CHECK_ERROR(ctx, ret);
-    } while (cnt < cnt_new);
-    shmem_internal_assert(cnt == cnt_new);
+        do {
+            cnt = cnt_new;
+            ssize_t ret = fi_cntr_wait(ctx->put_cntr[nic_idx], cnt, -1); /* FIXED? */
+            cnt_new = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr[nic_idx]); /* FIXED? */
+            OFI_CTX_CHECK_ERROR(ctx, ret);
+        } while (cnt < cnt_new);
+        shmem_internal_assert(cnt == cnt_new);
+    //}
 
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
@@ -598,10 +614,9 @@ int try_again(shmem_transport_ctx_t *ctx, const int ret, uint64_t *polled, size_
                 }
             }
 
-            shmem_transport_probe();
-
+            shmem_transport_probe(nic_idx);
+            
             (*polled)++;
-
             if ((*polled) <= shmem_transport_ofi_max_poll) {
                 return 1;
             }
@@ -883,11 +898,13 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
 
 /* compatibility with Portals transport */
 static inline
-void shmem_transport_put_wait(shmem_transport_ctx_t* ctx, long *completion, size_t nic_idx) {
+void shmem_transport_put_wait(shmem_transport_ctx_t* ctx, long *completion) {
 
     shmem_internal_assert((*completion) >= 0);
     if((*completion) > 0) {
-        shmem_transport_put_quiet(ctx, nic_idx);
+        for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) {
+            shmem_transport_put_quiet(ctx, nic_idx);
+        }
         (*completion)--;
     }
 }
@@ -983,7 +1000,7 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx, size_t nic_idx)
         fail = fi_cntr_readerr(ctx->get_cntr[nic_idx]);
         cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr[nic_idx]);
 
-        shmem_transport_probe();
+        shmem_transport_probe(nic_idx);
 
         if (success < cnt && fail == 0) {
             SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
