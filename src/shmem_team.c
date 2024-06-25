@@ -337,8 +337,8 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 
         if (config_mask == 0) {
             if (config != NULL) {
-                RAISE_WARN_MSG("%s %s\n", "team_split_strided operation encountered an unexpected",
-                               "non-NULL config structure passed with a config_mask of 0.");
+                DEBUG_MSG("%s %s\n", "team_split_strided operation encountered an unexpected",
+                          "non-NULL config structure passed with a config_mask of 0.");
             }
             shmem_team_config_t defaults;
             myteam->config_mask   = 0;
