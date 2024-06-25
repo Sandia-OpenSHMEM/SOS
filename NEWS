@@ -2,6 +2,25 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.5.3rc1
+---------
+- Added several enhancements to better support SOS as a backend for Intel® SHMEM.
+- Added extension support for GPU RDMA and external heap creation.
+- Added support for multi-NIC configurations via libfabric. The feature is
+  enabled by default. It can be disabled with the environment variable,
+  SHMEM_OFI_DISABLE_MULTIRAIL=1.
+- Added initial support for multi-NIC topology optimizations via hwloc.
+- Moved the "tests-sos" package of unit tests and performance benchmarks to a
+  new Git submodule hosted at https://github.com/openshmem-org/tests-sos.
+- Added shmemx_ibput and shmemx_ibget as extension APIs.
+- Added shmemx_signal_add and shmemx_signal_set as extension APIs.
+- Added several configuration flags to optimize for the CXI libfabric provider:
+  --enable-ofi-inject and --enable-nonfetch-amo, which are enabled by default.
+- Manpage generation is now disabled by default to shorten build times. It can
+  be re-enabled during configuration with the --enable-manpages flag.
+- Multiple bugfixes, including in teams configuration, remote-virtual-addressing
+  checks, buffer argument overlap checks, and more.
+
 v1.5.2
 ------
 - This full release includes the changes listed below for v1.5.2rc1 and the
