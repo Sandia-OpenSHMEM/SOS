@@ -295,9 +295,9 @@ shmem_malloc(size_t size)
     ret = dlmalloc(size);
     SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
 
-    for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) {
-        shmem_internal_barrier_all(nic_idx);
-    }
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
+    shmem_internal_barrier_all(nic_idx);
 
     return ret;
 }
@@ -315,9 +315,9 @@ shmem_calloc(size_t count, size_t size)
     ret = dlcalloc(count, size);
     SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
 
-    for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) {
-        shmem_internal_barrier_all(nic_idx);
-    }
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
+    shmem_internal_barrier_all(nic_idx);
 
     return ret;
 }
@@ -330,9 +330,9 @@ shmem_free(void *ptr)
       SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr);
     }
 
-    for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) {
-        shmem_internal_barrier_all(nic_idx);
-    }
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
+    shmem_internal_barrier_all(nic_idx);
 
     shmem_internal_free(ptr);
 }
@@ -350,9 +350,9 @@ shmem_realloc(void *ptr, size_t size)
       SHMEM_ERR_CHECK_SYMMETRIC_HEAP(ptr);
     }
 
-    for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) {
-        shmem_internal_barrier_all(nic_idx);
-    }
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
+    shmem_internal_barrier_all(nic_idx);
 
     SHMEM_MUTEX_LOCK(shmem_internal_mutex_alloc);
     if (size == 0 && ptr != NULL) {
@@ -363,9 +363,8 @@ shmem_realloc(void *ptr, size_t size)
     }
     SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
 
-    for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) {
-        shmem_internal_barrier_all(nic_idx);
-    }
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
+    shmem_internal_barrier_all(nic_idx);
 
     return ret;
 }
@@ -386,9 +385,9 @@ shmem_align(size_t alignment, size_t size)
     ret = dlmemalign(alignment, size);
     SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
 
-    for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) {
-        shmem_internal_barrier_all(nic_idx);
-    }
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
+    shmem_internal_barrier_all(nic_idx);
 
     return ret;
 }
@@ -443,9 +442,9 @@ shmem_malloc_with_hints(size_t size, long hints)
     SHMEM_MUTEX_UNLOCK(shmem_internal_mutex_alloc);
 
     if (!(hints & SHMEMX_MALLOC_NO_BARRIER)) {
-        for (size_t nic_idx = 0; nic_idx < shmem_transport_ofi_num_nics; nic_idx++) {
-            shmem_internal_barrier_all(nic_idx);
-        }
+        size_t nic_idx = 0;
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
+        shmem_internal_barrier_all(nic_idx);
     }
     return ret;
 }

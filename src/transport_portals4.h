@@ -244,7 +244,7 @@ int shmem_transport_fini(void);
 
 static inline void shmem_transport_get_wait(shmem_transport_ctx_t*, size_t idx);
 
-static inline void shmem_transport_probe(size_t nic_idx) {
+static inline void shmem_transport_probe(void) {
     return;
 }
 

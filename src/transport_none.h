@@ -59,7 +59,7 @@ shmem_transport_fini(void)
 
 static inline
 void
-shmem_transport_probe(size_t nic_idx)
+shmem_transport_probe(void)
 {
     return;
 }

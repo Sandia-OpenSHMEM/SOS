@@ -83,7 +83,7 @@ int shmem_transport_fini(void);
 
 static inline
 void
-shmem_transport_probe(size_t nic_idx)
+shmem_transport_probe(void)
 {
     ucp_worker_progress(shmem_transport_ucp_worker);
 }
@@ -93,14 +93,14 @@ ucs_status_t shmem_transport_ucx_complete_op(ucs_status_ptr_t req) {
     if (req == NULL) {
         /* All calls to complete_op must generate progress to avoid deadlock
          * in application-level polling loops */
-        shmem_transport_probe(0);
+        shmem_transport_probe();
         return UCS_OK;
     } else if (UCS_PTR_IS_ERR(req)) {
         return UCS_PTR_STATUS(req);
     } else {
         ucs_status_t status;
         do {
-            shmem_transport_probe(0);
+            shmem_transport_probe();
             status = ucp_request_check_status(req);
         } while (status == UCS_INPROGRESS);
         ucp_request_free(req);
@@ -278,7 +278,7 @@ void
 shmem_transport_put_wait(shmem_transport_ctx_t* ctx, long *completion)
 {
     while (__atomic_load_n(completion, __ATOMIC_ACQUIRE) > 0)
-        shmem_transport_probe(0);
+        shmem_transport_probe();
 }
 
 static inline
@@ -392,7 +392,7 @@ shmem_transport_swap_nbi(shmem_transport_ctx_t* ctx, void *target, const void *s
                                   &shmem_transport_ucx_cb_nop);
 
     /* Manual progress to avoid deadlock for application-level polling */
-    shmem_transport_probe(0);
+    shmem_transport_probe();
 
     ucs_status_t status = shmem_transport_ucx_release_op(pstatus);
     UCX_CHECK_STATUS_INPROGRESS(status);
@@ -475,7 +475,7 @@ shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target, const void *
                                   &shmem_transport_ucx_cb_nop);
 
     /* Manual progress to avoid deadlock for application-level polling */
-    shmem_transport_probe(0);
+    shmem_transport_probe();
 
     ucs_status_t status = shmem_transport_ucx_release_op(pstatus);
     UCX_CHECK_STATUS_INPROGRESS(status);
@@ -604,7 +604,7 @@ shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target, const
                                   &shmem_transport_ucx_cb_nop);
 
     /* Manual progress to avoid deadlock for application-level polling */
-    shmem_transport_probe(0);
+    shmem_transport_probe();
 
     ucs_status_t status = shmem_transport_ucx_release_op(pstatus);
     UCX_CHECK_STATUS_INPROGRESS(status);
@@ -698,7 +698,7 @@ shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void *sour
         if (*(uint32_t *)dest == v) done = 1;
 
         /* Manual progress to avoid deadlock for application-level polling */
-        shmem_transport_probe(0);
+        shmem_transport_probe();
     }
 }
 
