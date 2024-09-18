@@ -336,6 +336,7 @@ shmem_internal_atomicv(shmem_ctx_t ctx, void *target, const void *source,
         shmem_internal_fetch_atomic(ctx, ((uint8_t *) target) + (i * type_size),
                                     ((uint8_t *) source) + (i * type_size), &tmp_fetch, type_size,
                                     pe, op, datatype);
+        shmem_transport_get_wait((shmem_transport_ctx_t *)ctx);
 #ifdef SOS_OFI_CXI_QUIET_RATE
         /* FIXME: This intermittent quiet should not be required: */
         if (i % SOS_OFI_CXI_QUIET_RATE == 0) {
