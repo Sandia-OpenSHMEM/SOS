@@ -311,7 +311,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
     }
 
     if (global_PE_start >= shmem_internal_num_pes ||
-        global_PE_end >= shmem_internal_num_pes) {
+        global_PE_end >= shmem_internal_num_pes || global_PE_end < 0) {
         RAISE_WARN_MSG("Starting PE (%d) or ending PE (%d) is invalid\n",
                        global_PE_start, global_PE_end);
         return -1;
