@@ -40,13 +40,6 @@
 #define ENABLE_TARGET_CNTR 0
 #endif
 
-#if DISABLE_NONFETCH_AMO
-/* FIXME: The progress of back-to-back atomic ops over CXI is improved with an
- * occasional quiet operation. This constant sets the number of atomic ops that
- * occur between calls to quiet within shmem_internal_atomicv. */
-#define SOS_OFI_CXI_QUIET_RATE 200
-#endif
-
 #if ENABLE_TARGET_CNTR
 extern struct fid_cntr*                 shmem_transport_ofi_target_cntrfd;
 #endif
