@@ -897,6 +897,7 @@ shmemx_ctx_signal_add(shmem_ctx_t ctx, uint64_t *sig_addr, uint64_t signal, int 
     SHMEM_ERR_CHECK_CTX(ctx);
     SHMEM_ERR_CHECK_SYMMETRIC(sig_addr, sizeof(uint64_t));
 
+    pe = shmem_internal_team_pe(((shmem_transport_ctx_t *) ctx)->team, pe);
     shmem_internal_atomic(ctx, sig_addr, &signal, sizeof(uint64_t),
                           pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
 }
@@ -920,6 +921,7 @@ shmemx_ctx_signal_set(shmem_ctx_t ctx, uint64_t *sig_addr, uint64_t signal, int 
     SHMEM_ERR_CHECK_CTX(ctx);
     SHMEM_ERR_CHECK_SYMMETRIC(sig_addr, sizeof(uint64_t));
 
+    pe = shmem_internal_team_pe(((shmem_transport_ctx_t *) ctx)->team, pe);
     shmem_internal_atomic_set(ctx, (void *) sig_addr, &signal,
                               sizeof(uint64_t), pe, SHM_INTERNAL_UINT64);
 }
