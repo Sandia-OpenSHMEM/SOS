@@ -1391,7 +1391,7 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
     DEBUG_MSG("Num. NICs w/ affinity to process: %zu\n", num_close_nics);
 
     if (!close_provs) {
-        RAISE_WARN_MSG("Could not detect any NICs with affinity to the process\n");
+        DEBUG_MSG("Could not detect any NICs with affinity to the process\n");
 
         /* If no 'close' NICs, select from list of all NICs using round-robin assignment */
         return provs[shmem_internal_my_pe % num_nics];
