@@ -299,7 +299,8 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
     }
 
     int global_PE_start = shmem_internal_team_pe(parent_team, PE_start);
-    int global_PE_end   = global_PE_start + PE_stride * (PE_size -1);
+    int global_PE_stride = parent_team->stride * PE_stride;
+    int global_PE_end = global_PE_start + global_PE_stride * (PE_size -1);
 
     if (PE_start < 0 || PE_start >= parent_team->size ||
         PE_size <= 0 || PE_size > parent_team->size   ||
@@ -318,7 +319,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
     }
 
     int my_pe = shmem_internal_pe_in_active_set(shmem_internal_my_pe,
-                                                global_PE_start, PE_stride, PE_size);
+                                                global_PE_start, global_PE_stride, PE_size);
 
     long *psync = shmem_internal_team_choose_psync(parent_team, REDUCE);
     shmem_internal_team_t *myteam = NULL;
@@ -332,7 +333,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 
         myteam->my_pe       = my_pe;
         myteam->start       = global_PE_start;
-        myteam->stride      = (PE_stride == 0 || PE_size == 1) ? 1 : PE_stride;
+        myteam->stride      = (PE_stride == 0 || PE_size == 1) ? 1 : global_PE_stride;
         myteam->size        = PE_size;
 
         if (config_mask == 0) {
@@ -362,7 +363,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
 
         shmem_internal_op_to_all(psync_pool_avail_reduced,
                                  psync_pool_avail, N_PSYNC_BYTES, 1,
-                                 myteam->start, PE_stride, PE_size, NULL,
+                                 myteam->start, global_PE_stride, PE_size, NULL,
                                  psync, SHM_INTERNAL_BAND, SHM_INTERNAL_UCHAR);
 
         /* We cannot release the psync here, because this reduction may not
