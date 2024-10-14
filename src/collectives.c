@@ -215,6 +215,8 @@ shmem_internal_collectives_init(void)
             shmem_internal_scan_type = AUTO;
         } else if (0 == strcmp(type, "linear")) {
             shmem_internal_scan_type = LINEAR;
+		} else if (0 == strcmp(type, "ring")) {
+            shmem_internal_scan_type = RING;
         } else {
             RAISE_WARN_MSG("Ignoring bad scan algorithm '%s'\n", type);
         }
