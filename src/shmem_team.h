@@ -38,7 +38,8 @@ enum shmem_internal_team_op_t {
     BCAST,
     REDUCE,
     COLLECT,
-    ALLTOALL
+    ALLTOALL,
+	SCAN
 };
 typedef enum shmem_internal_team_op_t shmem_internal_team_op_t;
 

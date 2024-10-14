@@ -37,6 +37,7 @@ extern long *shmem_internal_sync_all_psync;
 extern coll_type_t shmem_internal_barrier_type;
 extern coll_type_t shmem_internal_bcast_type;
 extern coll_type_t shmem_internal_reduce_type;
+extern coll_type_t shmem_internal_scan_type;
 extern coll_type_t shmem_internal_collect_type;
 extern coll_type_t shmem_internal_fcollect_type;
 
@@ -237,6 +238,80 @@ shmem_internal_op_to_all(void *target, const void *source, size_t count,
     }
 }
 
+void shmem_internal_scan_linear(void *target, const void *source, size_t count, size_t type_size,
+                                     int PE_start, int PE_stride, int PE_size,
+                                     void *pWrk, long *pSync,
+                                     shm_internal_op_t op, shm_internal_datatype_t datatype, int scantype);
+									 
+void shmem_internal_scan_ring(void *target, const void *source, size_t count, size_t type_size,
+                                     int PE_start, int PE_stride, int PE_size,
+                                     void *pWrk, long *pSync,
+                                     shm_internal_op_t op, shm_internal_datatype_t datatype, int scantype);
+									 
+static inline
+void
+shmem_internal_exscan(void *target, const void *source, size_t count,
+                         size_t type_size, int PE_start, int PE_stride,
+                         int PE_size, void *pWrk, long *pSync,
+                         shm_internal_op_t op,
+                         shm_internal_datatype_t datatype)
+{
+    shmem_internal_assert(type_size > 0);
+
+    switch (shmem_internal_scan_type) {
+        case AUTO:
+			shmem_internal_scan_linear(target, source, count, type_size,
+											PE_start, PE_stride, PE_size,
+											pWrk, pSync, op, datatype, 1);
+            break;
+		case LINEAR:
+			shmem_internal_scan_linear(target, source, count, type_size,
+											PE_start, PE_stride, PE_size,
+											pWrk, pSync, op, datatype, 1);
+            break;
+		case RING:
+			shmem_internal_scan_ring(target, source, count, type_size,
+											PE_start, PE_stride, PE_size,
+											pWrk, pSync, op, datatype, 1);
+            break;
+        default:
+            RAISE_ERROR_MSG("Illegal exscan type (%d)\n",
+                            shmem_internal_scan_type);
+    }
+}
+
+
+static inline
+void
+shmem_internal_inscan(void *target, const void *source, size_t count,
+                         size_t type_size, int PE_start, int PE_stride,
+                         int PE_size, void *pWrk, long *pSync,
+                         shm_internal_op_t op,
+                         shm_internal_datatype_t datatype)
+{
+    shmem_internal_assert(type_size > 0);
+
+    switch (shmem_internal_scan_type) {
+        case AUTO:
+			shmem_internal_scan_linear(target, source, count, type_size,
+											PE_start, PE_stride, PE_size,
+											pWrk, pSync, op, datatype, 0);
+            break;
+		case LINEAR:
+			shmem_internal_scan_linear(target, source, count, type_size,
+											PE_start, PE_stride, PE_size,
+											pWrk, pSync, op, datatype, 0);
+            break;
+		case RING:
+			shmem_internal_scan_ring(target, source, count, type_size,
+											PE_start, PE_stride, PE_size,
+											pWrk, pSync, op, datatype, 0);
+            break;
+        default:
+            RAISE_ERROR_MSG("Illegal exscan type (%d)\n",
+                            shmem_internal_scan_type);
+    }
+}
 
 void shmem_internal_collect_linear(void *target, const void *source, size_t len,
                                    int PE_start, int PE_stride, int PE_size, long *pSync);

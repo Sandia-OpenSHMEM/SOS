@@ -28,6 +28,7 @@ include(shmem_bind_c.m4)dnl
 
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
+#include "shmemx.h"
 #include "shmem_internal.h"
 #include "shmem_comm.h"
 #include "shmem_collectives.h"
@@ -80,6 +81,18 @@ SHMEM_BIND_C_COLL_SUM_PROD(`SHMEM_PROF_DEF_REDUCE', `sum', `SHM_INTERNAL_SUM')
 SHMEM_BIND_C_COLL_SUM_PROD(`SHMEM_PROF_DEF_REDUCE', `prod', `SHM_INTERNAL_PROD')
 SHMEM_BIND_C_COLL_MIN_MAX(`SHMEM_PROF_DEF_REDUCE', `min', `SHM_INTERNAL_MIN')
 SHMEM_BIND_C_COLL_MIN_MAX(`SHMEM_PROF_DEF_REDUCE', `max', `SHM_INTERNAL_MAX')
+
+define(`SHMEM_PROF_DEF_EXSCAN',
+`#pragma weak shmem_$1_$4_exscan = pshmem_$1_$4_exscan
+#define shmem_$1_$4_exscan pshmem_$1_$4_exscan')dnl
+dnl
+SHMEM_BIND_C_COLL_SUM_PROD(`SHMEM_PROF_DEF_EXSCAN', `sum', `SHM_INTERNAL_SUM')
+
+define(`SHMEM_PROF_DEF_INSCAN',
+`#pragma weak shmem_$1_$4_inscan = pshmem_$1_$4_inscan
+#define shmem_$1_$4_inscan pshmem_$1_$4_inscan')dnl
+dnl
+SHMEM_BIND_C_COLL_SUM_PROD(`SHMEM_PROF_DEF_INSCAN', `sum', `SHM_INTERNAL_SUM')
 
 define(`SHMEM_PROF_DEF_BCAST',
 `#pragma weak shmem_$1_broadcast = pshmem_$1_broadcast
@@ -278,6 +291,54 @@ SHMEM_BIND_C_COLL_SUM_PROD(`SHMEM_DEF_REDUCE', `sum', `SHM_INTERNAL_SUM')
 SHMEM_BIND_C_COLL_SUM_PROD(`SHMEM_DEF_REDUCE', `prod', `SHM_INTERNAL_PROD')
 SHMEM_BIND_C_COLL_MIN_MAX(`SHMEM_DEF_REDUCE', `min', `SHM_INTERNAL_MIN')
 SHMEM_BIND_C_COLL_MIN_MAX(`SHMEM_DEF_REDUCE', `max', `SHM_INTERNAL_MAX')
+
+#define SHMEM_DEF_EXSCAN(STYPE,TYPE,ITYPE,SOP,IOP)                      \
+    int SHMEM_FUNCTION_ATTRIBUTES                                       \
+    shmemx_##STYPE##_##SOP##_exscan(shmem_team_t team, TYPE *dest,       \
+                                       const TYPE *source,              \
+                                       size_t nelems)                  \
+    {                                                                   \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_TEAM_VALID(team);                               \
+        SHMEM_ERR_CHECK_SYMMETRIC(dest, sizeof(TYPE)*nelems);          \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof(TYPE)*nelems);        \
+        SHMEM_ERR_CHECK_OVERLAP(dest, source, sizeof(TYPE)*nelems,     \
+                                sizeof(TYPE)*nelems, 1, 1);            \
+        TYPE *pWrk = NULL;                                              \
+                                                                        \
+        shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;  \
+        long *psync = shmem_internal_team_choose_psync(myteam, SCAN); \
+        shmem_internal_exscan(dest, source, nelems, sizeof(TYPE),   \
+                   myteam->start, myteam->stride, myteam->size, pWrk,   \
+                   psync, IOP, ITYPE);                                  \
+        shmem_internal_team_release_psyncs(myteam, SCAN);             \
+        return 0;                                                       \
+    }
+SHMEM_BIND_C_COLL_SUM_PROD(`SHMEM_DEF_EXSCAN', `sum', `SHM_INTERNAL_SUM')
+
+#define SHMEM_DEF_INSCAN(STYPE,TYPE,ITYPE,SOP,IOP)                      \
+    int SHMEM_FUNCTION_ATTRIBUTES                                       \
+    shmemx_##STYPE##_##SOP##_inscan(shmem_team_t team, TYPE *dest,       \
+                                       const TYPE *source,              \
+                                       size_t nelems)                  \
+    {                                                                   \
+        SHMEM_ERR_CHECK_INITIALIZED();                                  \
+        SHMEM_ERR_CHECK_TEAM_VALID(team);                               \
+        SHMEM_ERR_CHECK_SYMMETRIC(dest, sizeof(TYPE)*nelems);          \
+        SHMEM_ERR_CHECK_SYMMETRIC(source, sizeof(TYPE)*nelems);        \
+        SHMEM_ERR_CHECK_OVERLAP(dest, source, sizeof(TYPE)*nelems,     \
+                                sizeof(TYPE)*nelems, 1, 1);            \
+        TYPE *pWrk = NULL;                                              \
+                                                                        \
+        shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;  \
+        long *psync = shmem_internal_team_choose_psync(myteam, SCAN); \
+        shmem_internal_inscan(dest, source, nelems, sizeof(TYPE),   \
+                   myteam->start, myteam->stride, myteam->size, pWrk,   \
+                   psync, IOP, ITYPE);                                  \
+        shmem_internal_team_release_psyncs(myteam, SCAN);             \
+        return 0;                                                       \
+    }
+SHMEM_BIND_C_COLL_SUM_PROD(`SHMEM_DEF_INSCAN', `sum', `SHM_INTERNAL_SUM')
 
 void SHMEM_FUNCTION_ATTRIBUTES
 shmem_broadcast32(void *target, const void *source, size_t nlong,
