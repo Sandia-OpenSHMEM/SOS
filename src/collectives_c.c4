@@ -83,14 +83,14 @@ SHMEM_BIND_C_COLL_MIN_MAX(`SHMEM_PROF_DEF_REDUCE', `min', `SHM_INTERNAL_MIN')
 SHMEM_BIND_C_COLL_MIN_MAX(`SHMEM_PROF_DEF_REDUCE', `max', `SHM_INTERNAL_MAX')
 
 define(`SHMEM_PROF_DEF_EXSCAN',
-`#pragma weak shmem_$1_$4_exscan = pshmem_$1_$4_exscan
-#define shmem_$1_$4_exscan pshmem_$1_$4_exscan')dnl
+`#pragma weak shmemx_$1_$4_exscan = pshmemx_$1_$4_exscan
+#define shmemx_$1_$4_exscan pshmemx_$1_$4_exscan')dnl
 dnl
 SHMEM_BIND_C_COLL_SUM_PROD(`SHMEM_PROF_DEF_EXSCAN', `sum', `SHM_INTERNAL_SUM')
 
 define(`SHMEM_PROF_DEF_INSCAN',
-`#pragma weak shmem_$1_$4_inscan = pshmem_$1_$4_inscan
-#define shmem_$1_$4_inscan pshmem_$1_$4_inscan')dnl
+`#pragma weak shmemx_$1_$4_inscan = pshmemx_$1_$4_inscan
+#define shmemx_$1_$4_inscan pshmemx_$1_$4_inscan')dnl
 dnl
 SHMEM_BIND_C_COLL_SUM_PROD(`SHMEM_PROF_DEF_INSCAN', `sum', `SHM_INTERNAL_SUM')
 

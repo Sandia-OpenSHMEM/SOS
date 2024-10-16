@@ -38,7 +38,7 @@ include(shmemx_c_func.h4)dnl
 /* SHMEMX constant(s) are included in MAX_HINTS value in shmem-def.h */
 #define SHMEMX_MALLOC_NO_BARRIER (1l<<2)
 
-/* C++ overloaded declarations */
+/* C         overloaded declarations */
 #ifdef __cplusplus
 } /* extern "C" */
 
@@ -118,6 +118,19 @@ SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_IBGET', `, \') \
         shmem_ctx_t: shmemx_ctx_signal_add, \
         uint64_t*: shmemx_signal_add \
     )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_EXSCAN', `        $2*: shmemx_$1_sum_exscan')dnl
+#define shmemx_sum_exscan(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_EXSCAN', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_INSCAN', `        $2*: shmemx_$1_sum_inscan')dnl
+#define shmemx_sum_inscan(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_INSCAN', `, \') \
+    )(__VA_ARGS__)
+
 
 #endif /* C11 */
 
