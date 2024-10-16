@@ -130,6 +130,7 @@ endif
 
 if USE_PMI_SIMPLE
 AM_CPPFLAGS += -I$(top_srcdir)/pmi-simple
+AM_LDFLAGS = -L$(top_builddir)/pmi-simple -lpmi_simple
 libsma_la_SOURCES += \
 	runtime-pmi.c
 else
