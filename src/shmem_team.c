@@ -457,7 +457,7 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
         shmem_internal_team_t *my_xteam;
         int xsize = (i == num_xteams - 1 && parent_size % xrange) ? parent_size % xrange : xrange;
 
-        ret = shmem_internal_team_split_strided(parent_team, start, parent_stride,
+        ret = shmem_internal_team_split_strided(parent_team, start, 1,
                                                 xsize, xaxis_config, xaxis_mask, &my_xteam);
         if (ret) {
             RAISE_ERROR_MSG("Creation of x-axis team %d of %d failed\n", i+1, num_xteams);
@@ -478,7 +478,7 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
         int yrange = parent_size / xrange;
         int ysize = (remainder && i < remainder) ? yrange + 1 : yrange;
 
-        ret = shmem_internal_team_split_strided(parent_team, start, xrange*parent_stride,
+        ret = shmem_internal_team_split_strided(parent_team, start, xrange,
                                         ysize, yaxis_config, yaxis_mask, &my_yteam);
         if (ret) {
             RAISE_ERROR_MSG("Creation of y-axis team %d of %d failed\n", i+1, num_yteams);
