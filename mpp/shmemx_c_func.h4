@@ -76,6 +76,16 @@ SH_PAD(`$1')                ptrdiff_t tst, ptrdiff_t sst,
 SH_PAD(`$1')                size_t bsize, size_t nblocks, int pe)')dnl
 SHMEM_DECLARE_FOR_SIZES(`SHMEM_C_CTX_IBGET_N')
 
+define(`SHMEM_C_EXSCAN',
+`SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_$1_$4_exscan(shmem_team_t team, $2 *dest, const $2 *source, size_t nelems);')dnl
+
+SHMEM_BIND_C_COLL_SUM_PROD(`SHMEM_C_EXSCAN', `sum')
+
+define(`SHMEM_C_INSCAN',
+`SHMEM_FUNCTION_ATTRIBUTES int SHPRE()shmemx_$1_$4_inscan(shmem_team_t team, $2 *dest, const $2 *source, size_t nelems);')dnl
+
+SHMEM_BIND_C_COLL_SUM_PROD(`SHMEM_C_INSCAN', `sum')
+
 /* Performance Counter Query Routines */
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcntr_get_issued_write(shmem_ctx_t ctx, uint64_t *cntr_value);
 SHMEM_FUNCTION_ATTRIBUTES void SHPRE()shmemx_pcntr_get_issued_read(shmem_ctx_t ctx, uint64_t *cntr_value);
