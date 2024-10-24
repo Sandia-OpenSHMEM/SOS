@@ -298,23 +298,27 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
         return 1;
     }
 
+    PE_stride = (PE_stride == 0 || PE_size == 1) ? 1 : PE_stride;
+
     int global_PE_start = shmem_internal_team_pe(parent_team, PE_start);
     int global_PE_stride = parent_team->stride * PE_stride;
     int global_PE_end = global_PE_start + global_PE_stride * (PE_size -1);
 
     if (PE_start < 0 || PE_start >= parent_team->size ||
-        PE_size <= 0 || PE_size > parent_team->size   ||
-        (PE_stride == 0 && PE_size != 1)) {
+        PE_size <= 0 || PE_size > parent_team->size) {
         RAISE_WARN_MSG("Invalid <start, stride, size>: child <%d, %d, %d>, parent <%d, %d, %d>\n",
                        PE_start, PE_stride, PE_size,
                        parent_team->start, parent_team->stride, parent_team->size);
         return -1;
     }
 
-    if (global_PE_start >= shmem_internal_num_pes ||
-        global_PE_end >= shmem_internal_num_pes || global_PE_end < 0) {
-        RAISE_WARN_MSG("Starting PE (%d) or ending PE (%d) is invalid\n",
-                       global_PE_start, global_PE_end);
+    if (global_PE_start < 0 || global_PE_start >= shmem_internal_num_pes) {
+        RAISE_WARN_MSG("Starting global PE (%d) is invalid\n", global_PE_start);
+        return -1;
+    }
+
+    if (global_PE_end < 0 || global_PE_end >= shmem_internal_num_pes) {
+        RAISE_WARN_MSG("Ending global PE (%d) is invalid\n", global_PE_end);
         return -1;
     }
 
