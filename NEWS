@@ -2,6 +2,18 @@
 
 Sandia OpenSHMEM NEWS -- history of user-visible changes.
 
+v1.5.3
+------
+- This full release includes the changes listed below for v1.5.3rc1 and the
+  following additional changes.
+- Fixed bugs in shmem_team_split_strided and shmem_team_split_2d operations.
+- Improve team wraparound sequence detection that causes undefined behavior.
+- Included -lpmi_simple in LDFLAGS when simple PMI is enabled.
+- Moved the warning that SOS could not detect any NICs with affinity to the
+  process to SHMEM_DEBUG output.
+- Additional bugfixes, including a fix for collectives with the OFI CXI
+  provider and team-relative PE numbering for signal add and set.
+
 v1.5.3rc1
 ---------
 - Added several enhancements to better support SOS as a backend for Intel® SHMEM.
