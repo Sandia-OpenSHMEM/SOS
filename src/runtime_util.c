@@ -89,7 +89,7 @@ int shmem_runtime_util_put_hostname(void)
     char hostname[MAX_HOSTNAME_LEN+1];
     int ret;
 
-    ret = gethostname(hostname, MAX_HOSTNAME_LEN);
+    ret = gethostname(hostname, MAX_HOSTNAME_LEN+1);
     if (ret != 0) {
         RETURN_ERROR_MSG("gethostname failed (%d)", ret);
         return ret;
@@ -123,7 +123,7 @@ int shmem_runtime_util_populate_node(int *location_array, int size, int *node_si
     int ret, i, n_node_pes = 0;
     char hostname[MAX_HOSTNAME_LEN+1];
 
-    ret = gethostname(hostname, MAX_HOSTNAME_LEN);
+    ret = gethostname(hostname, MAX_HOSTNAME_LEN+1);
     if (ret != 0) {
         RETURN_ERROR_MSG("gethostname failed (%d)", ret);
         return ret;
