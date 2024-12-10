@@ -992,9 +992,8 @@ shmem_internal_op_to_all_recdbl_sw(void *target, const void *source, size_t coun
  *****************************************/
 void
 shmem_internal_scan_linear(void *target, const void *source, size_t count, size_t type_size,
-                                int PE_start, int PE_stride, int PE_size,
-                                void *pWrk, long *pSync,
-                                shm_internal_op_t op, shm_internal_datatype_t datatype, int scantype)
+                           int PE_start, int PE_stride, int PE_size, void *pWrk, long *pSync,
+                           shm_internal_op_t op, shm_internal_datatype_t datatype, int scantype)
 {
 
     /* scantype is 0 for inscan and 1 for exscan */
@@ -1113,9 +1112,8 @@ shmem_internal_scan_linear(void *target, const void *source, size_t count, size_
 
 void
 shmem_internal_scan_ring(void *target, const void *source, size_t count, size_t type_size,
-                                int PE_start, int PE_stride, int PE_size,
-                                void *pWrk, long *pSync,
-                                shm_internal_op_t op, shm_internal_datatype_t datatype, int scantype)
+                         int PE_start, int PE_stride, int PE_size, void *pWrk, long *pSync,
+                         shm_internal_op_t op, shm_internal_datatype_t datatype, int scantype)
 {
 
     /* scantype is 0 for inscan and 1 for exscan */

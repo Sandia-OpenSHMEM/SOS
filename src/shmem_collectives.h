@@ -239,22 +239,19 @@ shmem_internal_op_to_all(void *target, const void *source, size_t count,
 }
 
 void shmem_internal_scan_linear(void *target, const void *source, size_t count, size_t type_size,
-                                     int PE_start, int PE_stride, int PE_size,
-                                     void *pWrk, long *pSync,
-                                     shm_internal_op_t op, shm_internal_datatype_t datatype, int scantype);
+                                int PE_start, int PE_stride, int PE_size, void *pWrk, long *pSync,
+                                shm_internal_op_t op, shm_internal_datatype_t datatype, int scantype);
                                      
 void shmem_internal_scan_ring(void *target, const void *source, size_t count, size_t type_size,
-                                     int PE_start, int PE_stride, int PE_size,
-                                     void *pWrk, long *pSync,
-                                     shm_internal_op_t op, shm_internal_datatype_t datatype, int scantype);
+                              int PE_start, int PE_stride, int PE_size, void *pWrk, long *pSync,
+                              shm_internal_op_t op, shm_internal_datatype_t datatype, int scantype);
                                      
 static inline
 void
 shmem_internal_exscan(void *target, const void *source, size_t count,
-                         size_t type_size, int PE_start, int PE_stride,
-                         int PE_size, void *pWrk, long *pSync,
-                         shm_internal_op_t op,
-                         shm_internal_datatype_t datatype)
+                      size_t type_size, int PE_start, int PE_stride,
+                      int PE_size, void *pWrk, long *pSync,
+                      shm_internal_op_t op, shm_internal_datatype_t datatype)
 {
     shmem_internal_assert(type_size > 0);
 
@@ -284,10 +281,9 @@ shmem_internal_exscan(void *target, const void *source, size_t count,
 static inline
 void
 shmem_internal_inscan(void *target, const void *source, size_t count,
-                         size_t type_size, int PE_start, int PE_stride,
-                         int PE_size, void *pWrk, long *pSync,
-                         shm_internal_op_t op,
-                         shm_internal_datatype_t datatype)
+                      size_t type_size, int PE_start, int PE_stride,
+                      int PE_size, void *pWrk, long *pSync,
+                      shm_internal_op_t op, shm_internal_datatype_t datatype)
 {
     shmem_internal_assert(type_size > 0);
 
