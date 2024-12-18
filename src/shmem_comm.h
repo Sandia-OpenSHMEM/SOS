@@ -342,6 +342,7 @@ shmem_internal_atomicv(shmem_ctx_t ctx, void *target, const void *source,
 #else
     if (shmem_shr_transport_use_atomic(ctx, target, len, pe, datatype)) {
         shmem_shr_transport_atomicv(ctx, target, source, len, pe, op, datatype);
+        shmem_transport_quiet(ctx);
     } else {
         shmem_transport_atomicv((shmem_transport_ctx_t *)ctx, target, source, len,
                                 pe, op, datatype, completion);
