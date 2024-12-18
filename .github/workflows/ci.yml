@@ -117,6 +117,7 @@ jobs:
             libfabric_version: v1.13.x
           - config_name: ring reduce algorithm
             env_setup: export SHMEM_REDUCE_ALGORITHM=ring
+                       export SHMEM_SCAN_ALGORITHM=ring
             sos_config: --enable-error-checking --enable-pmi-simple
             libfabric_version: v1.13.x
           - config_name: ring fcollect algorithm, tx/rx single poll limit
