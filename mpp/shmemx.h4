@@ -38,7 +38,7 @@ include(shmemx_c_func.h4)dnl
 /* SHMEMX constant(s) are included in MAX_HINTS value in shmem-def.h */
 #define SHMEMX_MALLOC_NO_BARRIER (1l<<2)
 
-/* C++         overloaded declarations */
+/* C++ overloaded declarations */
 #ifdef __cplusplus
 } /* extern "C" */
 
