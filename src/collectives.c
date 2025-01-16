@@ -627,7 +627,7 @@ shmem_internal_op_to_all_linear(void *target, const void *source, size_t count, 
         SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, 0);
 
         /* send data, ack, and wait for completion */
-        shmem_internal_atomicv(SHMEM_CTX_DEFAULT, target, source, count * type_size,
+        shmem_internal_atomicv(SHMEM_CTX_DEFAULT, target, source, count, type_size,
                                PE_start, op, datatype, &completion);
         shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
@@ -833,7 +833,7 @@ shmem_internal_op_to_all_tree(void *target, const void *source, size_t count, si
         /* send data, ack, and wait for completion */
         shmem_internal_atomicv(SHMEM_CTX_DEFAULT, target,
                                (num_children == 0) ? source : target,
-                               count * type_size, parent,
+                               count, type_size, parent,
                                op, datatype, &completion);
         shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
         shmem_internal_fence(SHMEM_CTX_DEFAULT);
@@ -1086,7 +1086,7 @@ shmem_internal_scan_linear(void *target, const void *source, size_t count, size_
              i < PE_size;
              i++, pe += PE_stride) {
 
-            shmem_internal_atomicv(SHMEM_CTX_DEFAULT, target, source, count * type_size,
+            shmem_internal_atomicv(SHMEM_CTX_DEFAULT, target, source, count, type_size,
                                pe, op, datatype, &completion);
             shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
             shmem_internal_fence(SHMEM_CTX_DEFAULT);
@@ -1193,7 +1193,7 @@ shmem_internal_scan_ring(void *target, const void *source, size_t count, size_t 
              i < PE_size;
              i++, pe += PE_stride) {
 
-            shmem_internal_atomicv(SHMEM_CTX_DEFAULT, target, source, count * type_size,
+            shmem_internal_atomicv(SHMEM_CTX_DEFAULT, target, source, count, type_size,
                                pe, op, datatype, &completion);
             shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
             shmem_internal_fence(SHMEM_CTX_DEFAULT);    
