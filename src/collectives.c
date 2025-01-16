@@ -215,7 +215,7 @@ shmem_internal_collectives_init(void)
             shmem_internal_scan_type = AUTO;
         } else if (0 == strcmp(type, "linear")) {
             shmem_internal_scan_type = LINEAR;
-		} else if (0 == strcmp(type, "ring")) {
+        } else if (0 == strcmp(type, "ring")) {
             shmem_internal_scan_type = RING;
         } else {
             RAISE_WARN_MSG("Ignoring bad scan algorithm '%s'\n", type);
@@ -1027,7 +1027,7 @@ shmem_internal_scan_linear(void *target, const void *source, size_t count, size_
         /* initialize target buffer.  The put
            will flush any atomic cache value that may currently
            exist. */
-        if(scantype)
+        if (scantype)
         {
             /* Exclude own value for EXSCAN */
             //Create an array of size (count * type_size) of zeroes
@@ -1038,7 +1038,6 @@ shmem_internal_scan_linear(void *target, const void *source, size_t count, size_
             shmem_internal_quiet(SHMEM_CTX_DEFAULT);
             free(zeroes);
         }
-        
         
         /* Send contribution to all */
         for (pe = PE_start + PE_stride*scantype, i = scantype ;
@@ -1146,7 +1145,7 @@ shmem_internal_scan_ring(void *target, const void *source, size_t count, size_t 
         /* initialize target buffer.  The put
            will flush any atomic cache value that may currently
            exist. */
-        if(scantype)
+        if (scantype)
         {
             /* Exclude own value for EXSCAN */
             //Create an array of size (count * type_size) of zeroes
@@ -1200,7 +1199,7 @@ shmem_internal_scan_ring(void *target, const void *source, size_t count, size_t 
         }
         
         /* Let next pe know that it's safe to send to us */
-        if(shmem_internal_my_pe + PE_stride < PE_size)
+        if (shmem_internal_my_pe + PE_stride < PE_size)
             shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one), shmem_internal_my_pe + PE_stride);
         
         shmem_internal_atomic(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one),
