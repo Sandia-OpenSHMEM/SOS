@@ -346,7 +346,7 @@ shmem_internal_atomicv(shmem_ctx_t ctx, void *target, const void *source,
                                        pe, op, datatype);
         }
     } else {
-        shmem_transport_atomicv((shmem_transport_ctx_t *)ctx, target, source, len,
+        shmem_transport_atomicv((shmem_transport_ctx_t *)ctx, target, source, count, type_size,
                                 pe, op, datatype, completion);
     }
 #endif

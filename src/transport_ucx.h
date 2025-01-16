@@ -519,12 +519,14 @@ shmem_transport_atomic(shmem_transport_ctx_t* ctx, void *target, const void *sou
 
 static inline
 void
-shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
+shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t count, size_t type_size,
                         int pe, shm_internal_op_t op, shm_internal_datatype_t datatype, long *completion)
 {
-    /* Used only by reductions, currently redirected to softwre reductions via
-     * the shmem_transport_atomic_supported query below. */
-    RAISE_ERROR_STR("Unsupported operation");
+    for (size_t i = 0; i < count; i++) {
+            shmem_transport_atomic(ctx, ((uint8_t *) target) + (i * type_size),
+                                   ((uint8_t *) source) + (i * type_size), type_size,
+                                   pe, op, datatype);
+    }
 }
 
 static inline
