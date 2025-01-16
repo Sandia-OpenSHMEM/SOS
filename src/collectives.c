@@ -208,8 +208,8 @@ shmem_internal_collectives_init(void)
         } else {
             RAISE_WARN_MSG("Ignoring bad reduction algorithm '%s'\n", type);
         }
-    }
-	if (shmem_internal_params.SCAN_ALGORITHM_provided) {
+    } 
+    if (shmem_internal_params.SCAN_ALGORITHM_provided) {
         type = shmem_internal_params.SCAN_ALGORITHM;
         if (0 == strcmp(type, "auto")) {
             shmem_internal_scan_type = AUTO;
