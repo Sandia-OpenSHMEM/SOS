@@ -68,6 +68,20 @@ static inline void shmemx_ibget(shmem_ctx_t ctx, $2 *target, const $2 *source,
 }')dnl
 SHMEM_CXX_DEFINE_FOR_RMA(`SHMEM_CXX_IBGET')
 
+define(`SHMEM_CXX_SUM_EXSCAN',
+`static inline int shmemx_sum_exscan(shmem_team_t team, $2* dest, const $2* source,
+                                    size_t nelems) {
+    return shmemx_$1_sum_exscan(team, dest, source, nelems);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_COLL_SUM_PROD(`SHMEM_CXX_SUM_EXSCAN')
+
+define(`SHMEM_CXX_SUM_INSCAN',
+`static inline int shmemx_sum_inscan(shmem_team_t team, $2* dest, const $2* source,
+                                    size_t nelems) {
+    return shmemx_$1_sum_inscan(team, dest, source, nelems);
+}')dnl
+SHMEM_CXX_DEFINE_FOR_COLL_SUM_PROD(`SHMEM_CXX_SUM_INSCAN')
+
 /* C11 Generic Macros */
 #elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(SHMEM_INTERNAL_INCLUDE))
 
@@ -104,6 +118,19 @@ SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_IBGET', `, \') \
         shmem_ctx_t: shmemx_ctx_signal_add, \
         uint64_t*: shmemx_signal_add \
     )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_EXSCAN', `        $2*: shmemx_$1_sum_exscan')dnl
+#define shmemx_sum_exscan(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_COLL_SUM_PROD(`SHMEM_C11_GEN_EXSCAN', `, \') \
+    )(__VA_ARGS__)
+
+define(`SHMEM_C11_GEN_INSCAN', `        $2*: shmemx_$1_sum_inscan')dnl
+#define shmemx_sum_inscan(...) \
+    _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
+SHMEM_BIND_C11_COLL_SUM_PROD(`SHMEM_C11_GEN_INSCAN', `, \') \
+    )(__VA_ARGS__)
+
 
 #endif /* C11 */
 
