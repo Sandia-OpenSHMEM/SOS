@@ -63,6 +63,8 @@ SHMEM_INTERNAL_ENV_DEF(BCAST_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CAT_C
                        "Algorithm for broadcast.  Options are auto, linear, tree")
 SHMEM_INTERNAL_ENV_DEF(REDUCE_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
                        "Algorithm for reductions.  Options are auto, linear, tree, recdbl")
+SHMEM_INTERNAL_ENV_DEF(SCAN_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
+                       "Algorithm for scan.  Options are linear, ring")
 SHMEM_INTERNAL_ENV_DEF(COLLECT_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
                        "Algorithm for collect.  Options are auto, linear")
 SHMEM_INTERNAL_ENV_DEF(FCOLLECT_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,

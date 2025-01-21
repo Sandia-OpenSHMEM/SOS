@@ -216,7 +216,7 @@ shmem_transport_atomic(shmem_transport_ctx_t* ctx, void *target, const void *sou
 
 static inline
 void
-shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
+shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t count, size_t type_size,
                         int pe, shm_internal_op_t op, shm_internal_datatype_t datatype, long *completion)
 {
     RAISE_ERROR_STR("No path to peer");

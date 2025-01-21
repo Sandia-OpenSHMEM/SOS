@@ -1166,9 +1166,10 @@ void shmem_transport_atomic(shmem_transport_ctx_t* ctx, void *target, const void
 
 static inline
 void shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const void *source,
-                             size_t full_len, int pe, int op, int datatype,
+                             size_t count, size_t type_size, int pe, int op, int datatype,
                              long *completion)
 {
+    size_t full_len = count*type_size;
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
     int dt = SHMEM_TRANSPORT_DTYPE(datatype);

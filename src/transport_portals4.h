@@ -892,9 +892,10 @@ shmem_transport_atomic(shmem_transport_ctx_t* ctx, void *target, const void *sou
 
 static inline
 void
-shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len, int pe,
+shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t count, size_t type_size, int pe,
                         ptl_op_t op, ptl_datatype_t datatype, long *completion)
 {
+    size_t len = count*type_size;
     int ret;
     ptl_pt_index_t pt;
     long offset;
