@@ -18,7 +18,6 @@
 
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
-#include "shmemx.h"
 #include "shmem_internal.h"
 #include "shmem_collectives.h"
 #include "shmem_internal_op.h"
@@ -1024,9 +1023,8 @@ shmem_internal_scan_linear(void *target, const void *source, size_t count, size_
     if (PE_start == shmem_internal_my_pe) {
              
         
-        /* initialize target buffer.  The put
-           will flush any atomic cache value that may currently
-           exist. */
+        /* Initialize target buffer.  The put will flush any atomic cache 
+         * value that may currently exist. */
         if (scantype)
         {
             /* Exclude own value for EXSCAN */
@@ -1142,9 +1140,8 @@ shmem_internal_scan_ring(void *target, const void *source, size_t count, size_t 
 
     if (PE_start == shmem_internal_my_pe) {
              
-        /* initialize target buffer.  The put
-           will flush any atomic cache value that may currently
-           exist. */
+         /* Initialize target buffer.  The put will flush any atomic cache 
+         * value that may currently exist. */
         if (scantype)
         {
             /* Exclude own value for EXSCAN */

@@ -122,13 +122,13 @@ SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_IBGET', `, \') \
 define(`SHMEM_C11_GEN_EXSCAN', `        $2*: shmemx_$1_sum_exscan')dnl
 #define shmemx_sum_exscan(...) \
     _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
-SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_EXSCAN', `, \') \
+SHMEM_BIND_C11_COLL_SUM_PROD(`SHMEM_C11_GEN_EXSCAN', `, \') \
     )(__VA_ARGS__)
 
 define(`SHMEM_C11_GEN_INSCAN', `        $2*: shmemx_$1_sum_inscan')dnl
 #define shmemx_sum_inscan(...) \
     _Generic(SHMEM_C11_TYPE_EVAL_PTR(SHMEM_C11_ARG1(__VA_ARGS__)), \
-SHMEM_BIND_C11_RMA(`SHMEM_C11_GEN_INSCAN', `, \') \
+SHMEM_BIND_C11_COLL_SUM_PROD(`SHMEM_C11_GEN_INSCAN', `, \') \
     )(__VA_ARGS__)
 
 

@@ -258,18 +258,18 @@ shmem_internal_exscan(void *target, const void *source, size_t count,
     switch (shmem_internal_scan_type) {
         case AUTO:
             shmem_internal_scan_linear(target, source, count, type_size,
-                                            PE_start, PE_stride, PE_size,
-                                            pWrk, pSync, op, datatype, 1);
+                                       PE_start, PE_stride, PE_size,
+                                       pWrk, pSync, op, datatype, 1);
             break;
         case LINEAR:
             shmem_internal_scan_linear(target, source, count, type_size,
-                                            PE_start, PE_stride, PE_size,
-                                            pWrk, pSync, op, datatype, 1);
+                                       PE_start, PE_stride, PE_size,
+                                       pWrk, pSync, op, datatype, 1);
             break;
         case RING:
             shmem_internal_scan_ring(target, source, count, type_size,
-                                            PE_start, PE_stride, PE_size,
-                                            pWrk, pSync, op, datatype, 1);
+                                     PE_start, PE_stride, PE_size,
+                                     pWrk, pSync, op, datatype, 1);
             break;
         default:
             RAISE_ERROR_MSG("Illegal exscan type (%d)\n",
@@ -290,18 +290,18 @@ shmem_internal_inscan(void *target, const void *source, size_t count,
     switch (shmem_internal_scan_type) {
         case AUTO:
             shmem_internal_scan_linear(target, source, count, type_size,
-                                            PE_start, PE_stride, PE_size,
-                                            pWrk, pSync, op, datatype, 0);
+                                       PE_start, PE_stride, PE_size,
+                                       pWrk, pSync, op, datatype, 0);
             break;
         case LINEAR:
             shmem_internal_scan_linear(target, source, count, type_size,
-                                            PE_start, PE_stride, PE_size,
-                                            pWrk, pSync, op, datatype, 0);
+                                       PE_start, PE_stride, PE_size,
+                                       pWrk, pSync, op, datatype, 0);
             break;
         case RING:
             shmem_internal_scan_ring(target, source, count, type_size,
-                                            PE_start, PE_stride, PE_size,
-                                            pWrk, pSync, op, datatype, 0);
+                                     PE_start, PE_stride, PE_size,
+                                     pWrk, pSync, op, datatype, 0);
             break;
         default:
             RAISE_ERROR_MSG("Illegal exscan type (%d)\n",
