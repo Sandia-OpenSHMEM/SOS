@@ -109,6 +109,8 @@ SHMEM_INTERNAL_ENV_DEF(OFI_STX_DISABLE_PRIVATE, bool, false, SHMEM_INTERNAL_ENV_
                        "Disallow private contexts from having exclusive STX access")
 SHMEM_INTERNAL_ENV_DEF(OFI_DISABLE_MULTIRAIL, bool, false, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Disable usage of multirail functionality")
+SHMEM_INTERNAL_ENV_DEF(OFI_DISABLE_SINGLE_EP, bool, false, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Disable single endpoint resource optimization (enable separate Tx and Rx EPs)")
 #endif
 
 #ifdef USE_UCX
