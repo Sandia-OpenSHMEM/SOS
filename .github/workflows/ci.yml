@@ -171,7 +171,7 @@ jobs:
       # LIBFABRIC
       - name: Cache libfabric install
         id: cache-libfabric
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ${{ env.LIBFABRIC_INSTALL_DIR }}
           key: libfabric-${{ matrix.libfabric_version }}-${{ env.OS_NAME }}
@@ -196,7 +196,7 @@ jobs:
       - name: Cache XPMEM install
         if: ${{ matrix.xpmem_version }}
         id: cache-xpmem
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ${{ env.XPMEM_INSTALL_DIR }}
           key: xpmem-${{ matrix.xpmem_version }}-${{ env.OS_NAME }}
@@ -311,7 +311,7 @@ jobs:
 #      - name: Cache libfabric install
 #        if: ${{ matrix.sos_transport == 'libfabric' }}
 #        id: cache-libfabric
-#        uses: actions/cache@v2
+#        uses: actions/cache@v4
 #        with:
 #          path: ${{ env.LIBFABRIC_INSTALL_DIR }}
 #          key: libfabric-${{ matrix.libfabric_version }}-${{ env.OS_NAME }}
@@ -336,7 +336,7 @@ jobs:
 #      - name: Cache UCX install
 #        if: ${{ matrix.sos_transport == 'ucx' }}
 #        id: cache-ucx
-#        uses: actions/cache@v2
+#        uses: actions/cache@v4
 #        with:
 #          path: ${{ env.UCX_INSTALL_DIR }}
 #          key: ucx-${{ matrix.ucx_version }}-${{ env.OS_NAME }}
@@ -361,7 +361,7 @@ jobs:
 #      - name: Cache Portals4 install
 #        if: ${{ matrix.sos_transport == 'portals4' }}
 #        id: cache-portals4
-#        uses: actions/cache@v2
+#        uses: actions/cache@v4
 #        with:
 #          path: ${{ env.PORTALS4_INSTALL_DIR }}
 #          key: portals4-${{ matrix.portals4_version }}-${{ env.OS_NAME }}
@@ -385,7 +385,7 @@ jobs:
 #      # Libevent
 #      - name: Cache libevent install
 #        id: cache-libevent
-#        uses: actions/cache@v2
+#        uses: actions/cache@v4
 #        with:
 #          path: ${{ env.LIBEVENT_INSTALL_DIR }}
 #          key: libevent-${{ matrix.libevent_version }}-${{ env.OS_NAME }}
@@ -407,7 +407,7 @@ jobs:
 #      # PMIx
 #      - name: Cache PMIx install
 #        id: cache-pmix
-#        uses: actions/cache@v2
+#        uses: actions/cache@v4
 #        with:
 #          path: ${{ env.PMIX_INSTALL_DIR }}
 #          key: pmix-${{ matrix.pmix_version }}-${{ env.OS_NAME }}
@@ -429,7 +429,7 @@ jobs:
 #      # Build PRRTE
 #      - name: Cache PRRTE install
 #        id: cache-prrte
-#        uses: actions/cache@v2
+#        uses: actions/cache@v4
 #        with:
 #          path: ${{ env.PRRTE_INSTALL_DIR }}
 #          key: prrte-${{ matrix.prrte_version}}-${{ env.OS_NAME }}
@@ -524,7 +524,7 @@ jobs:
       # UCX
       - name: Cache UCX install
         id: cache-ucx
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ${{ env.UCX_INSTALL_DIR }}
           key: ucx-${{ matrix.ucx_version}}-${{ env.OS_NAME }}
@@ -618,7 +618,7 @@ jobs:
       # Portals4
       - name: Cache Portals4 install
         id: cache-portals4
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ${{ env.PORTALS4_INSTALL_DIR }}
           key: portals4-${{ matrix.portals4_version}}-${{ env.OS_NAME }}
