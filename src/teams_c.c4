@@ -135,7 +135,7 @@ shmem_team_split_2d(shmem_team_t parent_team, int xrange,
                                         (shmem_internal_team_t **)yaxis_team);
 }
 
-int SHMEM_FUNCTION_ATTRIBUTES
+void SHMEM_FUNCTION_ATTRIBUTES
 shmem_team_destroy(shmem_team_t team)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
