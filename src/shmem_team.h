@@ -65,7 +65,7 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
                                  const shmem_team_config_t *xaxis_config, long xaxis_mask, shmem_internal_team_t **xaxis_team,
                                  const shmem_team_config_t *yaxis_config, long yaxis_mask, shmem_internal_team_t **yaxis_team);
 
-int shmem_internal_team_destroy(shmem_internal_team_t *team);
+void shmem_internal_team_destroy(shmem_internal_team_t *team);
 
 int shmem_internal_team_create_ctx(shmem_internal_team_t *team, long options, shmem_ctx_t *ctx);
 
