@@ -504,11 +504,11 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
     return 0;
 }
 
-int shmem_internal_team_destroy(shmem_internal_team_t *team)
+void shmem_internal_team_destroy(shmem_internal_team_t *team)
 {
 
     if (team == SHMEM_TEAM_INVALID) {
-        return -1;
+        return;
     } else if (shmem_internal_bit_fetch(psync_pool_avail, N_PSYNC_BYTES, team->psync_idx)) {
         RAISE_ERROR_STR("Destroying a team without an active pSync");
     } else {
@@ -532,7 +532,7 @@ int shmem_internal_team_destroy(shmem_internal_team_t *team)
         free(team);
     }
 
-    return 0;
+    return;
 }
 
 /* Returns a psync from the given team that can be safely used for the
