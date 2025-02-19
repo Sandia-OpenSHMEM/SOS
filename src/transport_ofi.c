@@ -1806,8 +1806,6 @@ int shmem_transport_init(void)
 
     if (shmem_internal_params.OFI_PROVIDER_provided)
         shmem_transport_ofi_info.prov_name = shmem_internal_params.OFI_PROVIDER;
-    else if (shmem_internal_params.OFI_USE_PROVIDER_provided)
-        shmem_transport_ofi_info.prov_name = shmem_internal_params.OFI_USE_PROVIDER;
     else
         shmem_transport_ofi_info.prov_name = NULL;
 

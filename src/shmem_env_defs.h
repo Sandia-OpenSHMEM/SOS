@@ -89,8 +89,6 @@ SHMEM_INTERNAL_ENV_DEF(OFI_ATOMIC_CHECKS_WARN, bool, false, SHMEM_INTERNAL_ENV_C
                        "Display warnings about unsupported atomic operations")
 SHMEM_INTERNAL_ENV_DEF(OFI_PROVIDER, string, "auto", SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Provider that should be used by the OFI transport")
-SHMEM_INTERNAL_ENV_DEF(OFI_USE_PROVIDER, string, "auto", SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
-                       "Deprecated, replaced by SHMEM_OFI_PROVIDER")
 SHMEM_INTERNAL_ENV_DEF(OFI_FABRIC, string, "auto", SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Fabric that should be used by the OFI transport")
 SHMEM_INTERNAL_ENV_DEF(OFI_DOMAIN, string, "auto", SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
