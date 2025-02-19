@@ -1414,6 +1414,14 @@ void shmem_transport_atomic_fetch(shmem_transport_ctx_t* ctx, void *target,
 #endif
 }
 
+static inline
+void shmem_transport_atomic_fetch_nbi(shmem_transport_ctx_t* ctx, void *target,
+                                  const void *source, size_t len, int pe,
+                                  int datatype)
+{
+    shmem_transport_atomic_fetch(ctx, target, source, len, pe, datatype);
+}
+
 
 /* Query transport layer to detemine if the given combination of <op, datatype>
  * is supported as a one-sided atomic operation.  This is used by reductions to
