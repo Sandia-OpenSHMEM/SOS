@@ -948,6 +948,8 @@ LIBS="$LIBS $pmi_LIBS"
 WRAPPER_COMPILER_EXTRA_LDFLAGS="$WRAPPER_COMPILER_EXTRA_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
 WRAPPER_COMPILER_EXTRA_LIBS="$WRAPPER_COMPILER_LIBS $pmi_LIBS"
 
+AS_IF([test "$enable_rpath" = "no"], [hardcode_into_libs="no"], [])
+
 # Need the libtool binary before setting up rpath
 LT_OUTPUT
 
