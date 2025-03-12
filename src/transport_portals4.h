@@ -1063,34 +1063,8 @@ shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target,
                                  size_t len, int pe, ptl_op_t op,
                                  ptl_datatype_t datatype)
 {
-    int ret;
-    ptl_pt_index_t pt;
-    long offset;
-    ptl_process_t peer;
-
-    peer.rank = pe;
-    PORTALS4_GET_REMOTE_ACCESS(target, pt, offset);
-
-    shmem_internal_assert(len <= shmem_transport_portals4_max_fetch_atomic_size);
-    shmem_internal_assert(len <= shmem_transport_portals4_max_volatile_size);
-
-    shmem_internal_cntr_inc(&ctx->pending_get_cntr);
-    
-    /* Issue a non-blocking fetch atomic */
-    ret = PtlFetchAtomic(ctx->get_md,
-                         (ptl_size_t) dest,
-                         ctx->put_volatile_md,
-                         (ptl_size_t) source,
-                         len,
-                         peer,
-                         pt,
-                         0,
-                         offset,
-                         NULL,
-                         0,
-                         op,
-                         SHMEM_TRANSPORT_DTYPE(datatype));
-    if (PTL_OK != ret) { RAISE_ERROR(ret); }
+    /* transport_fetch_atomic already buffers the source argument */
+    shmem_transport_fetch_atomic(ctx, target, source, dest, len, pe, op, datatype);
 }
 
 
