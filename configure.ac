@@ -200,8 +200,8 @@ AC_ARG_ENABLE([lengthy-tests],
 AM_CONDITIONAL([ENABLE_LENGTHY_TESTS], [test "$enable_lengthy_tests" = "yes"])
 
 AC_ARG_ENABLE([fortran],
-    [AS_HELP_STRING([--disable-fortran],
-                    [Disable building the Fortran bindings (default: enabled)])])
+    [AS_HELP_STRING([--enable-fortran],
+                    [Enable building the Fortran bindings (default: disabled)])])
 
 AC_ARG_ENABLE([cxx],
     [AS_HELP_STRING([--disable-cxx],
@@ -402,7 +402,7 @@ AC_PATH_PROG([M4], [m4], [false])
 AS_IF([test "$M4" = "false"],
       [AC_MSG_ERROR([Could not find 'm4' macro processor])])
 
-if test "$enable_fortran" != "no" ; then
+if test "$enable_fortran" = "yes" ; then
   AC_PROG_FC
 else
   FC=
@@ -1001,17 +1001,17 @@ AS_IF([test -z "$num_transports"],
 AS_IF([test "$shmem_cv_c11_works" != "yes"],
       [AC_MSG_WARN([C compiler does not support _Generic, unable to verify and test C11 bindings])])
 
-AS_IF([test "$enable_c11_checks" == "no"],
+AS_IF([test "$enable_c11_checks" = "no"],
       [AC_MSG_WARN([C11 _Generic type checks disabled, not verifying type coverage of C11 bindings])])
 
-AS_IF([test "$enable_cxx" == "no"],
+AS_IF([test "$enable_cxx" = "no"],
       [AC_MSG_WARN([No C++ compiler or C++ disabled, unable to verify and test C++ bindings])])
 
-AS_IF([test "$enable_fortran" == "no"],
-      [AC_MSG_WARN([No Fortran compiler or Fortran disabled, unable to test Fortran bindings])])
+AS_IF([test "$enable_fortran" = "yes" -a "$FC" = ""],
+      [AC_MSG_ERROR([Fortran requested but no compiler is available])])
 
-AS_IF([test "$enable_fortran" != "no"],
-      [AC_MSG_WARN([Fortran bindings have been deprecated as of OpenSHMEM v1.4])])
+AS_IF([test "$enable_fortran" = "yes"],
+      [AC_MSG_WARN([The Fortran API was deprecated in OpenSHMEM v1.4 and removed in OpenSHMEM v1.5])])
 
 FORT="$FC"
 if test "$FORT" = "" ; then
