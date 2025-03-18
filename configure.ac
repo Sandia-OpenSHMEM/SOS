@@ -948,7 +948,19 @@ LIBS="$LIBS $pmi_LIBS"
 WRAPPER_COMPILER_EXTRA_LDFLAGS="$WRAPPER_COMPILER_EXTRA_LDFLAGS $pmi_LDFLAGS $aslr_LDFLAGS"
 WRAPPER_COMPILER_EXTRA_LIBS="$WRAPPER_COMPILER_LIBS $pmi_LIBS"
 
-AS_IF([test "$enable_rpath" = "no"], [hardcode_into_libs="no"], [])
+if test "$enable_rpath" = "no"; then
+    hardcode_into_libs="no"
+    # The generated libtool binary does not disable rpath in tests-sos unless bypassing hardcode_libdir_flag_spec:
+    # This solution was derived from Krisztian on stackoverflow.com[1]:
+    # Copyright (C) 2017 Krisztian[2]
+    # Licensed under the CC BY-SA 3.0[3]
+    # [1]: https://stackoverflow.com/questions/45282061/how-when-where-to-set-script-variables-of-libtool-e-g-hardcode-minus-l
+    # [2]: https://stackoverflow.com/users/3718360/krisztian
+    # [3]: http://creativecommons.org/licenses/by-sa/3.0/
+    _LT_TAGVAR(hardcode_libdir_flag_spec, )="-D__SOS_DISABLE_RPATH__"
+    _LT_TAGVAR(hardcode_libdir_flag_spec, CXX)="-D__SOS_DISABLE_RPATH__"
+    _LT_TAGVAR(hardcode_libdir_flag_spec, FC)="-D__SOS_DISABLE_RPATH__"
+fi
 
 # Need the libtool binary before setting up rpath
 LT_OUTPUT
