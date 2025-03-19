@@ -371,17 +371,16 @@ shmem_internal_fetch_atomic_nbi(shmem_ctx_t ctx, void *target, void *source,
 
 static inline
 void
-shmem_internal_atomic_fetch_nbi(shmem_ctx_t ctx, void *target, void *source,
-                                void *dest, size_t len, int pe,
-                                shm_internal_op_t op, shm_internal_datatype_t datatype)
+shmem_internal_atomic_fetch_nbi(shmem_ctx_t ctx, void *target, const void *source,
+                                size_t len, int pe, shm_internal_datatype_t datatype)
 {
     shmem_internal_assert(len > 0);
 
-    if (shmem_shr_transport_use_atomic(ctx, dest, len, pe, datatype)) {
-        shmem_shr_transport_atomic_fetch(ctx, dest, target, len, pe, datatype);
+    if (shmem_shr_transport_use_atomic(ctx, target, len, pe, datatype)) {
+        shmem_shr_transport_atomic_fetch(ctx, target, source, len, pe, datatype);
     } else {
-        shmem_transport_fetch_atomic_nbi((shmem_transport_ctx_t *)ctx, target,
-                                         source, dest, len, pe, op, datatype);
+        shmem_transport_atomic_fetch_nbi((shmem_transport_ctx_t *)ctx, target,
+                                         source, len, pe, datatype);
     }
 }
 
