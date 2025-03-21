@@ -645,6 +645,12 @@ shmem_transport_atomic_fetch_nbi(shmem_transport_ctx_t* ctx, void *target, const
     pstatus = ucp_atomic_fetch_nb(shmem_transport_peers[pe].ep, UCP_ATOMIC_FETCH_OP_FADD, 0,
                                   target, len, (uint64_t) remote_addr, rkey,
                                   &shmem_transport_ucx_cb_nop);
+    
+    /* Manual progress to avoid deadlock for application-level polling */
+    shmem_transport_probe();
+
+    ucs_status_t status = shmem_transport_ucx_release_op(pstatus);
+    UCX_CHECK_STATUS_INPROGRESS(status);
 }
 
 static inline
