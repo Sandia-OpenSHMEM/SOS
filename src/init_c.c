@@ -20,6 +20,7 @@
 #include "shmem.h"
 #include "shmem_internal.h"
 #include "shmemx.h"
+#include "shmem_atomic.h"
 
 #ifdef ENABLE_PROFILING
 #include "pshmem.h"
@@ -59,10 +60,13 @@
 
 #endif /* ENABLE_PROFILING */
 
+extern shmem_internal_cntr_t shmem_internal_init_cntr;
+
+
 void SHMEM_FUNCTION_ATTRIBUTES
 start_pes(int npes)
 {
-    if (!shmem_internal_initialized) {
+    if (!shmem_internal_cntr_read(&shmem_internal_init_cntr)) {
         shmem_internal_start_pes(npes);
     }
 }
@@ -72,10 +76,6 @@ void SHMEM_FUNCTION_ATTRIBUTES
 shmem_init(void)
 {
     int tl_provided, ret;
-
-    if (shmem_internal_initialized) {
-        RAISE_ERROR_STR("attempt to reinitialize library");
-    }
 
     ret = shmem_internal_init(SHMEM_THREAD_SINGLE, &tl_provided);
     if (ret) abort();
@@ -87,7 +87,7 @@ shmemx_heap_preinit(void)
 {
     int tl_provided, ret;
 
-    if (shmem_internal_initialized) {
+    if (shmem_internal_cntr_read(&shmem_internal_init_cntr)) {
         RAISE_ERROR_STR("attempt to reinitialize library");
     }
 
@@ -108,9 +108,6 @@ int SHMEM_FUNCTION_ATTRIBUTES
 shmem_init_thread(int tl_requested, int *tl_provided)
 {
     int ret;
-    if (shmem_internal_initialized) {
-        RAISE_ERROR_STR("attempt to reinitialize library");
-    }
 
     ret = shmem_internal_init(tl_requested, tl_provided);
     return ret;
@@ -121,7 +118,7 @@ int SHMEM_FUNCTION_ATTRIBUTES
 shmemx_heap_preinit_thread(int tl_requested, int *tl_provided)
 {
     int ret;
-    if (shmem_internal_initialized) {
+    if (shmem_internal_cntr_read(&shmem_internal_init_cntr)) {
         RAISE_ERROR_STR("attempt to reinitialize library");
     }
 
@@ -138,6 +135,11 @@ shmem_query_thread(int *provided)
     *provided = shmem_internal_thread_level;
 }
 
+void SHMEM_FUNCTION_ATTRIBUTES
+shmemx_query_initialized(int *initialized)
+{
+    *initialized = shmem_internal_cntr_read(&shmem_internal_init_cntr);
+}
 
 void SHMEM_FUNCTION_ATTRIBUTES
 shmem_global_exit(int status)
