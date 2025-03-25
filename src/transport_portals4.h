@@ -1089,6 +1089,14 @@ shmem_transport_atomic_fetch(shmem_transport_ctx_t* ctx, void *target, const voi
     shmem_transport_get(ctx, target, source, len, pe);
 }
 
+static inline
+void
+shmem_transport_atomic_fetch_nbi(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
+                             int pe, int datatype)
+{
+    shmem_transport_atomic_fetch(ctx, target, source, len, pe, datatype);
+}
+
 
 static inline
 int shmem_transport_atomic_supported(ptl_op_t op, ptl_datatype_t datatype)

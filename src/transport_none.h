@@ -248,6 +248,14 @@ shmem_transport_atomic_fetch(shmem_transport_ctx_t* ctx, void *target, const voi
 
 static inline
 void
+shmem_transport_atomic_fetch_nbi(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
+                             int pe, shm_internal_datatype_t datatype)
+{
+    RAISE_ERROR_STR("No path to peer");
+}
+
+static inline
+void
 shmem_transport_atomic_set(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
                              int pe, shm_internal_datatype_t datatype)
 {
