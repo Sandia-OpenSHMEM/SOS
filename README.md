@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/Sandia-OpenSHMEM/SOS.svg?branch=master)](https://travis-ci.org/Sandia-OpenSHMEM/SOS)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/9375/badge.svg)](https://scan.coverity.com/projects/9375)
 
-## About
+## Aboutttt
 
 Sandia OpenSHMEM is an implementation of the OpenSHMEM specification over
 Portals 4.0, the Open Fabrics Interface (OFI), and XPMEM.
