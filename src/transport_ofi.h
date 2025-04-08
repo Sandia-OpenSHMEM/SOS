@@ -324,9 +324,13 @@ struct shmem_transport_ctx_t {
     /* Pending cntr accesses are protected by ctx lock */
     uint64_t                        pending_put_cntr;
     uint64_t                        pending_get_cntr;
+    uint64_t                        pending_put_per_pe[shmem_internal_num_pes];
+    uint64_t                        pending_get_per_pe[shmem_internal_num_pes];
 #else
     shmem_internal_cntr_t           pending_put_cntr;
     shmem_internal_cntr_t           pending_get_cntr;
+    shmem_internal_cntr_t           pending_put_per_pe[shmem_internal_num_pes];
+    shmem_internal_cntr_t           pending_get_per_pe[shmem_internal_num_pes];
 #endif
     /* These counters are protected by the BB lock */
     uint64_t                        pending_bb_cntr;
@@ -534,11 +538,87 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
 }
 
 static inline
+void shmem_transport_pe_put_quiet(shmem_transport_ctx_t *ctx, const int *target_pes, int npes) {
+    
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+
+    /* Wait for bounce buffered operations to complete */
+    if (ctx->bounce_buffers) {
+        SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
+
+        while (ctx->bounce_buffers->nalloc > 0) {
+            shmem_transport_ofi_drain_cq(ctx);
+        }
+
+        SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
+    }
+
+    /* PE-specific put quiet: wait only for the given PEs */
+    uint64_t success, fail, cnt, cnt_new;
+    long poll_count = 0;
+    
+    for (int i = 0; i < npes; i++) {
+        int pe = target_pes[i];
+
+        /* Check if this PE has pending puts */
+        if (SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_per_pe[pe]) == 0) {
+            continue;  // No need to wait
+        }
+        
+        while (poll_count < shmem_transport_ofi_put_poll_limit ||
+               shmem_transport_ofi_put_poll_limit < 0) {
+            success = fi_cntr_read(ctx->put_cntr);
+            fail = fi_cntr_readerr(ctx->put_cntr);
+            cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_per_pe[pe]);
+
+            shmem_transport_probe();
+
+            if (success < cnt && fail == 0) {
+                SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+                SPINLOCK_BODY();
+                SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+            } else if (fail) {
+                RAISE_ERROR_MSG("Operations to PE %d failed (%" PRIu64 ")\n", pe, fail);
+            } else {
+                break;
+            }
+            poll_count++;
+        }
+        
+        /* Final blocking wait for remaining puts */
+        cnt_new = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_per_pe[pe]);
+        do {
+            cnt = cnt_new;
+            ssize_t ret = fi_cntr_wait(ctx->put_cntr, cnt, -1);
+            cnt_new = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_per_pe[pe]);
+            OFI_CTX_CHECK_ERROR(ctx, ret);
+        } while (cnt < cnt_new);
+
+        shmem_internal_assert(cnt == cnt_new);
+
+        /* Mark completion for this PE */
+        ctx->pending_put_per_pe[pe] = 0;
+    }
+
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+}
+
+static inline
 int shmem_transport_quiet(shmem_transport_ctx_t* ctx)
 {
 
     shmem_transport_put_quiet(ctx);
     shmem_transport_get_wait(ctx);
+
+    return 0;
+}
+
+static inline
+int shmem_transport_pe_quiet(shmem_transport_ctx_t* ctx, const int *target_pes, int npes)
+{
+
+    shmem_transport_pe_put_quiet(ctx, target_pes, npes);
+    shmem_transport_pe_get_wait(ctx, target_pes, npes);
 
     return 0;
 }
@@ -622,7 +702,8 @@ void shmem_transport_put_scalar(shmem_transport_ctx_t* ctx, void *target, const
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
-
+    SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_per_pe[pe]);
+    
     do {
 
         ret = fi_inject_write(ctx->ep,
@@ -661,6 +742,7 @@ void shmem_transport_ofi_put_large(shmem_transport_ctx_t* ctx, void *target, con
         polled = 0;
 
         SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
+        SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_per_pe[pe]);
 
         do {
             ret = fi_write(ctx->ep,
@@ -696,6 +778,7 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
 
         SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
         SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
+        SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_per_pe[pe]);
         shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
         shmem_transport_ofi_bounce_buffer_t *buff =
@@ -742,6 +825,7 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
 
         SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
         SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
+        SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_per_pe[pe]);
 
         const struct iovec msg_iov = {
                                        .iov_base = src_buf,
@@ -810,6 +894,7 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
             msg.context = frag_source;
 
             SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
+            SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_per_pe[pe]);
 
             do {
                 ret = fi_writemsg(ctx->ep, &msg, FI_DELIVERY_COMPLETE);
@@ -838,6 +923,7 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
+    SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_per_pe[pe]);
 
     const struct fi_ioc msg_iov_signal = {
                                           .addr = (uint8_t *) &signal,
@@ -910,6 +996,7 @@ void shmem_transport_get(shmem_transport_ctx_t* ctx, void *target, const void *s
     if (len <= shmem_transport_ofi_max_msg_size) {
 
         SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
+        SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_per_pe[pe]);
         do {
             ret = fi_read(ctx->ep,
                           target,
@@ -932,6 +1019,7 @@ void shmem_transport_get(shmem_transport_ctx_t* ctx, void *target, const void *s
             polled = 0;
 
             SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
+            SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_per_pe[pe]);
 
             do {
                 ret = fi_read(ctx->ep,
@@ -997,6 +1085,71 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
 
+static inline
+void shmem_transport_pe_get_wait(shmem_transport_ctx_t* ctx, const int *target_pes, int npes)
+{
+    uint64_t success, fail;
+    uint64_t initial_cnt[shmem_internal_num_pes];
+    long poll_count = 0;
+
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+
+    // Record initial pending count for each target PE
+    for (int i = 0; i < npes; i++) {
+        initial_cnt[i] = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_per_pe[target_pes[i]]);
+    }
+
+    while (poll_count < shmem_transport_ofi_get_poll_limit ||
+           shmem_transport_ofi_get_poll_limit < 0) {
+        success = fi_cntr_read(ctx->get_cntr);
+        fail = fi_cntr_readerr(ctx->get_cntr);
+
+        shmem_transport_probe();
+
+        bool done = true;
+        for (int i = 0; i < npes; i++) {
+            if (success < initial_cnt[i]) {
+                done = false;
+                break;
+            }
+        }
+
+        if (fail) {
+            RAISE_ERROR_MSG("Operations completed in error (%" PRIu64 ")\n", fail);
+        } else if (done) {
+            SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+            return;
+        } else {
+            SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+            SPINLOCK_BODY();
+            SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+        }
+
+        poll_count++;
+    }
+
+    // If we reached poll limit, use blocking wait
+    bool done;
+    do {
+        done = true;
+        for (int i = 0; i < npes; i++) {
+            uint64_t cnt_new = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_per_pe[target_pes[i]]);
+            if (cnt_new > initial_cnt[i]) {
+                initial_cnt[i] = cnt_new;
+                done = false;
+            }
+        }
+
+        if (!done) {
+            ssize_t ret = fi_cntr_wait(ctx->get_cntr, *initial_cnt, -1);  // Using min as a proxy
+            OFI_CTX_CHECK_ERROR(ctx, ret);
+        }
+
+    } while (!done);
+
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+}
+
 
 static inline
 void shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target, const
@@ -1032,6 +1185,7 @@ void shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target, const
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
+    SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_per_pe[pe]);
 
     do {
         ret = fi_compare_atomicmsg(ctx->ep,
@@ -1073,6 +1227,7 @@ void shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void 
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
+    SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_per_pe[pe]);
 
     do {
         ret = fi_compare_atomic(ctx->ep,
@@ -1112,6 +1267,7 @@ void shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void 
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
+    SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_per_pe[pe]);
 
     do {
         ret = fi_compare_atomic(ctx->ep,
@@ -1149,6 +1305,7 @@ void shmem_transport_atomic(shmem_transport_ctx_t* ctx, void *target, const void
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
+    SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_per_pe[pe]);
 
     do {
         ret = fi_inject_atomic(ctx->ep,
@@ -1200,6 +1357,7 @@ void shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const voi
         polled = 0;
 
         SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
+        SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_per_pe[pe]);
 
         do {
             ret = fi_inject_atomic(ctx->ep,
@@ -1221,6 +1379,7 @@ void shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const voi
 
         polled = 0;
         SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
+        SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_per_pe[pe]);
 
         const struct fi_ioc        msg_iov = { .addr = buff->data, .count = len };
         const struct fi_rma_ioc    rma_iov = { .addr = (uint64_t) addr, .count = len, .key = key };
@@ -1249,6 +1408,7 @@ void shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const voi
                                    (max_atomic_size/SHMEM_Dtsize[dt]));
             polled = 0;
             SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
+            SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_per_pe[pe]);
             do {
                 ret = fi_atomic(ctx->ep,
                                 (void *)((char *)source +
@@ -1307,6 +1467,7 @@ void shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target,
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
+    SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_per_pe[pe]);
 
     do {
         ret = fi_fetch_atomicmsg(ctx->ep,
@@ -1346,6 +1507,7 @@ void shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target,
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
+    SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_per_pe[pe]);
 
     do {
         ret = fi_fetch_atomic(ctx->ep,
