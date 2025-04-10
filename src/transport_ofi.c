@@ -114,7 +114,7 @@ shmem_internal_mutex_t          shmem_transport_ofi_lock;
 pthread_mutex_t                 shmem_transport_ofi_progress_lock = PTHREAD_MUTEX_INITIALIZER;
 #endif /* ENABLE_THREADS */
 
-int shmem_transport_ofi_single_ep = 1;
+int shmem_transport_ofi_single_ep;
 
 /* Temporarily redefine SHM_INTERNAL integer types to their FI counterparts to
  * translate the DTYPE_* types (defined by autoconf according to system ABI)
@@ -206,6 +206,8 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
     }
     return tid;
 }
+
+#define SHMEM_TRANSPORT_OFI_PROV_SOCKETS "sockets"
 
 static struct fabric_info shmem_transport_ofi_info = {0};
 
@@ -637,7 +639,9 @@ int bind_enable_ep_resources(shmem_transport_ctx_t *ctx)
     } /* In single-endpoint mode, the sockets provider requires re-enabling the EP, but other
          providers require NOT re-enabling the EP (e.g. as of v2.1.0, tcp, verbs, and opx) */
     else if (shmem_transport_ofi_info.p_info->fabric_attr->prov_name != NULL &&
-             strncmp(shmem_transport_ofi_info.p_info->fabric_attr->prov_name, "sockets", 7) == 0) {
+             strncmp(shmem_transport_ofi_info.p_info->fabric_attr->prov_name,
+                     SHMEM_TRANSPORT_OFI_PROV_SOCKETS,
+                     strlen(SHMEM_TRANSPORT_OFI_PROV_SOCKETS)) == 0) {
         ret = fi_enable(ctx->ep);
         OFI_CHECK_RETURN_STR(ret, "fi_enable on endpoint failed");
     }
@@ -1837,6 +1841,8 @@ int shmem_transport_init(void)
     else
         shmem_transport_ofi_info.domain_name = NULL;
 
+    /* Unless SHMEM_OFI_DISABLE_SINGLE_EP env var is set, each PE opens a single libfabric endpoint
+     * for both transmission (on the default context) and as the target of communication */
     if (shmem_internal_params.OFI_DISABLE_SINGLE_EP_provided)
         shmem_transport_ofi_single_ep = 0;
     else
