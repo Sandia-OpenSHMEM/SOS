@@ -73,6 +73,8 @@ extern long                             shmem_transport_ofi_max_bounce_buffers;
 
 extern pthread_mutex_t                  shmem_transport_ofi_progress_lock;
 
+extern int shmem_transport_ofi_single_ep;
+
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #endif
@@ -386,8 +388,11 @@ void shmem_transport_probe(void)
     if (0 == pthread_mutex_trylock(&shmem_transport_ofi_progress_lock)) {
 #  endif
         struct fi_cq_entry buf;
-        int ret = fi_cq_read(shmem_transport_ofi_target_cq, &buf, 1);
-        if (ret == 1)
+        /* Do not read a CQ entry in single-endpoint mode, just make progress. */
+        /* The target EP and default ctx share resources, so a CQ entry is valid */
+        int ret = fi_cq_read(shmem_transport_ofi_target_cq, (void *)&buf,
+                             !shmem_transport_ofi_single_ep);
+        if (!shmem_transport_ofi_single_ep && ret == 1)
             RAISE_WARN_STR("Unexpected event");
 #  ifdef USE_THREAD_COMPLETION
         pthread_mutex_unlock(&shmem_transport_ofi_progress_lock);
