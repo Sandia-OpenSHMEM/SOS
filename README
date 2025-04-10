@@ -263,6 +263,15 @@ options.
         Disable multirail functionality. Enabling this will restrict all
         communications to occur over a single NIC per system.
 
+    SHMEM_OFI_DISABLE_SINGLE_EP (default: off)
+        Disable the single endpoint resource optimization. Setting this (to any
+        value) will enable at least 2 separate endpoints per PE, one for
+        transmission on the default context and one as the target of
+        communication. If unset, the default context and the target endpoint
+        are merged to conserve context resources.  Regardless of this
+        parameter, each PE consumes another endpoint for each OpenSHMEM user
+        context that is created.
+
   Team Environment variables:
 
     SHMEM_TEAMS_MAX (default: 10)
