@@ -1,5 +1,4 @@
-FROM ubuntu:20.04
-
+FROM ubuntu:25.04
 #For OneAPI compilers, the compilers must be added to the builders path
 #FROM intel/oneapi-basekit:devel-ubuntu18.04
 #ENV PATH=/opt/intel/oneapi/compiler/latest/linux/bin:$PATH
@@ -21,11 +20,9 @@ RUN apt-get update -y && apt-get install -y \
   automake                                  \
   libtool                                   \
   flex                                      \
-  python                                    \
-  libhwloc-dev
-
-#Packages added on Travis
-RUN apt-get install -y libev-libevent-dev   \
+  python3                                   \
+  libhwloc-dev                              \
+  libev-libevent-dev                        \
   libev-dev                                 \
   mpich
 
@@ -33,7 +30,7 @@ RUN apt-get install -y libev-libevent-dev   \
 WORKDIR $SOS_INSTALL
 RUN wget -c https://github.com/libevent/libevent/releases/download/release-2.1.10-stable/libevent-2.1.10-stable.tar.gz
 RUN tar -xzvf libevent-2.1.10-stable.tar.gz
-WORKDIR libevent-2.1.10-stable
+WORKDIR $SOS_INSTALL/libevent-2.1.10-stable
 RUN ./autogen.sh
 RUN ./configure --prefix=$SOS_INSTALL/libevent-2.1.10-stable/install
 RUN make clean all install
@@ -42,7 +39,7 @@ RUN make clean all install
 WORKDIR $SOS_INSTALL
 RUN wget -c https://www.mpich.org/static/downloads/4.0/hydra-4.0.tar.gz
 RUN tar -xzvf hydra-4.0.tar.gz
-WORKDIR hydra-4.0
+WORKDIR $SOS_INSTALL/hydra-4.0
 RUN ./autogen.sh
 RUN ./configure --prefix=$SOS_INSTALL/hydra-4.0/install
 RUN make all install
@@ -50,7 +47,7 @@ RUN make all install
 # Build PMIx
 WORKDIR $SOS_INSTALL
 RUN git clone -b v4.1.1rc6 --depth 10 https://github.com/pmix/pmix pmix
-WORKDIR pmix
+WORKDIR $SOS_INSTALL/pmix
 RUN ./autogen.pl
 RUN ./configure --prefix=$SOS_INSTALL/pmix/install --with-libevent=$SOS_INSTALL/libevent-2.1.10-stable/install --without-libev --disable-debug CFLAGS=-O3 --disable-shared --enable-static
 RUN make -j
@@ -59,7 +56,7 @@ RUN make install
 # Build PRRTE
 WORKDIR $SOS_INSTALL
 RUN git clone -b v2.0.0 --depth 10 https://github.com/pmix/prrte prrte
-WORKDIR prrte
+WORKDIR $SOS_INSTALL/prrte
 RUN ./autogen.pl
 RUN ./configure --prefix=$SOS_INSTALL/prrte/install --with-pmix=$SOS_INSTALL/pmix/install --without-slurm --with-libevent=$SOS_INSTALL/libevent-2.1.10-stable/install --without-libev --disable-shared --enable-static
 RUN make -j
@@ -68,7 +65,7 @@ RUN make install
 # Build Libfabric
 WORKDIR $SOS_INSTALL
 RUN git clone -b v1.7.x --depth 10 https://github.com/ofiwg/libfabric.git libfabric
-WORKDIR libfabric
+WORKDIR $SOS_INSTALL/libfabric
 RUN ./autogen.sh
 # To build basic Libfabric
 RUN ./configure --prefix=$SOS_INSTALL/libfabric/install
@@ -80,7 +77,7 @@ RUN make install
 # Build Portals 4
 WORKDIR $SOS_INSTALL
 RUN git clone --depth 10 https://github.com/regrant/portals4.git portals4
-WORKDIR portals4
+WORKDIR $SOS_INSTALL/portals4
 RUN ./autogen.sh
 RUN ./configure --prefix=$SOS_INSTALL/portals4/install --enable-zero-mrs --enable-reliable-udp --disable-pmi-from-portals
 RUN make -j
@@ -98,7 +95,7 @@ RUN make install
 # Build SOS
 WORKDIR $SOS_INSTALL
 RUN git clone --recurse-submodules https://github.com/Sandia-OpenSHMEM/SOS.git
-WORKDIR SOS
+WORKDIR $SOS_INSTALL/SOS
 RUN ./autogen.sh
 # To build SOS w/ basic Libfabric
 RUN ./configure --prefix=$SOS_INSTALL/SOS/install --with-ofi=$SOS_INSTALL/libfabric/install --without-ucx --without-portals4 --enable-pmi-simple --disable-fortran
