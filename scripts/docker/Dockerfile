@@ -1,4 +1,6 @@
-FROM ubuntu:25.04
+FROM ubuntu:24.04  
+
+
 #For OneAPI compilers, the compilers must be added to the builders path
 #FROM intel/oneapi-basekit:devel-ubuntu18.04
 #ENV PATH=/opt/intel/oneapi/compiler/latest/linux/bin:$PATH
@@ -76,7 +78,7 @@ RUN make install
 
 # Build Portals 4
 WORKDIR $SOS_INSTALL
-RUN git clone --depth 10 https://github.com/regrant/portals4.git portals4
+RUN git clone --depth 10 https://github.com/sandialabs/portals4.git portals4
 WORKDIR $SOS_INSTALL/portals4
 RUN ./autogen.sh
 RUN ./configure --prefix=$SOS_INSTALL/portals4/install --enable-zero-mrs --enable-reliable-udp --disable-pmi-from-portals
