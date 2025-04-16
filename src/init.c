@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
+#include <pthread.h>
 
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
@@ -37,6 +38,7 @@
 #include "runtime.h"
 #include "build_info.h"
 #include "shmem_team.h"
+#include "shmem_atomic.h"
 
 #if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING) && defined(__linux__)
 #include <sys/personality.h>
@@ -89,8 +91,7 @@ int shmem_external_heap_device = -1;
 
 int shmem_internal_my_pe = -1;
 int shmem_internal_num_pes = -1;
-int shmem_internal_initialized = 0;
-int shmem_internal_finalized = 0;
+shmem_internal_cntr_t shmem_internal_init_cntr = 0;
 int shmem_internal_initialized_with_start_pes = 0;
 int shmem_internal_global_exit_called = 0;
 
@@ -107,6 +108,8 @@ hwloc_topology_t shmem_internal_topology;
 shmem_internal_mutex_t shmem_internal_mutex_alloc;
 shmem_internal_mutex_t shmem_internal_mutex_rand_r;
 #endif
+
+pthread_mutex_t shmem_internal_init_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static char *shmem_internal_thread_level_str[4] = { "SINGLE", "FUNNELED",
                                                     "SERIALIZED", "MULTIPLE" };
@@ -138,40 +141,37 @@ shmem_internal_randr_fini(void)
 static void
 shmem_internal_shutdown(void)
 {
-    if (!shmem_internal_initialized ||
-        shmem_internal_finalized) {
+    if (!shmem_internal_cntr_read(&shmem_internal_init_cntr)) {
+        RAISE_WARN_STR("too many calls to shmem_finalize");
         return;
     }
 
     shmem_internal_barrier_all();
 
-    shmem_internal_finalized = 1;
+    shmem_internal_cntr_dec(&shmem_internal_init_cntr);
 
-    shmem_internal_team_fini();
-
-    shmem_transport_fini();
-
-    shmem_shr_transport_fini();
-
-    SHMEM_MUTEX_DESTROY(shmem_internal_mutex_alloc);
-
-    shmem_internal_randr_fini();
-
-    shmem_internal_symmetric_fini();
-    shmem_runtime_fini();
+    return;
 }
 
 
 static void
 shmem_internal_shutdown_atexit(void)
 {
-    if ( shmem_internal_initialized && !shmem_internal_finalized &&
-         !shmem_internal_initialized_with_start_pes && !shmem_internal_global_exit_called &&
-         shmem_internal_my_pe == 0) {
-        RAISE_WARN_STR("shutting down without a call to shmem_finalize");
+    if (shmem_internal_cntr_read(&shmem_internal_init_cntr) &&
+        !shmem_internal_initialized_with_start_pes &&
+        !shmem_internal_global_exit_called &&
+        shmem_internal_my_pe == 0) {
+
+        RAISE_WARN_STR("too few calls to shmem_finalize");
     }
 
-    shmem_internal_shutdown();
+    shmem_internal_team_fini();
+    shmem_transport_fini();
+    shmem_shr_transport_fini();
+    SHMEM_MUTEX_DESTROY(shmem_internal_mutex_alloc);
+    shmem_internal_randr_fini();
+    shmem_internal_symmetric_fini();
+    shmem_runtime_fini();
 }
 
 
@@ -518,7 +518,6 @@ shmem_internal_heap_postinit(void)
     randr_initialized = 1;
 
     atexit(shmem_internal_shutdown_atexit);
-    shmem_internal_initialized = 1;
 
     /* finish up */
 #ifndef USE_PMIX
@@ -554,12 +553,19 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 {
     int ret;
 
-    ret = shmem_internal_heap_preinit(tl_requested, tl_provided);
-    if (ret) goto cleanup;
+    pthread_mutex_lock(&shmem_internal_init_mutex);
 
-    ret = shmem_internal_heap_postinit();
-    if (ret) goto cleanup;
+    if (shmem_internal_cntr_read(&shmem_internal_init_cntr) == 0) {
+        ret = shmem_internal_heap_preinit(tl_requested, tl_provided);
+        if (ret) goto cleanup;
 
+        ret = shmem_internal_heap_postinit();
+        if (ret) goto cleanup;
+    }
+
+    pthread_mutex_unlock(&shmem_internal_init_mutex);
+
+    shmem_internal_cntr_inc(&shmem_internal_init_cntr);
     return 0;
 
  cleanup:
