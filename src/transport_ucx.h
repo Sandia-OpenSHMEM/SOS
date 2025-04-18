@@ -212,6 +212,22 @@ shmem_transport_quiet(shmem_transport_ctx_t* ctx)
 
 static inline
 int
+shmem_transport_pe_quiet(shmem_transport_ctx_t* ctx, const int *target_pes, int npes)
+{
+    ucs_status_t status;
+    
+    for (int i = 0; i < npes; i++) {
+        int pe = target_pes[i];
+        
+        status = ucp_ep_flush(shmem_transport_peers[pe].ep);
+        UCX_CHECK_STATUS(status);
+    }
+
+    return 0;
+}
+
+static inline
+int
 shmem_transport_fence(shmem_transport_ctx_t* ctx)
 {
     ucs_status_t status;
