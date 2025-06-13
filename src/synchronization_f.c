@@ -48,11 +48,11 @@ FC_SHMEM_PE_QUIET(const int *target_pes, int npes)
     shmem_internal_pe_quiet(SHMEM_CTX_DEFAULT, target_pes, npes);
 }
 
-#define FC_SHMEM_CTX_QUIET FC_FUNC_(shmem_ctx_quiet, SHMEM_CTX_QUIET)
+#define FC_SHMEM_CTX_QUIET FC_FUNC_(shmem_ctx_pe_quiet, SHMEM_CTX_PE_QUIET)
 void SHMEM_FUNCTION_ATTRIBUTES
-FC_SHMEM_CTX_QUIET(shmem_ctx_t ctx, const int *target_pes, int npes);
+FC_SHMEM_CTX_PE_QUIET(shmem_ctx_t ctx, const int *target_pes, int npes);
 void
-FC_SHMEM_CTX_QUIET(shmem_ctx_t ctx, const int *target_pes, int npes)
+FC_SHMEM_CTX_PE_QUIET(shmem_ctx_t ctx, const int *target_pes, int npes)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
 

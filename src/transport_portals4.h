@@ -296,7 +296,7 @@ static inline
 int
 shmem_transport_pe_quiet(shmem_transport_ctx_t* ctx, const int *target_pes, int npes)
 {
-    RAISE_ERROR_STR("Not supported");
+    shmem_transport_quiet(ctx);
 }
 
 

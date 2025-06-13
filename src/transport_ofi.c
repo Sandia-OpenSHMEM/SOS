@@ -2022,10 +2022,6 @@ int shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options,
     shmem_internal_cntr_write(&ctxp->pending_put_cntr, 0);
     shmem_internal_cntr_write(&ctxp->pending_get_cntr, 0);
     
-    for (int i = 0; i < shmem_internal_num_pes; i++) {
-        shmem_internal_cntr_write(&ctx->pending_get_per_pe[i], 0);
-        shmem_internal_cntr_write(&ctx->pending_put_per_pe[i], 0);
-    }
 #endif
 
     ctxp->stx_idx = -1;
