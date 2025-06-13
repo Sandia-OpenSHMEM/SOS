@@ -114,6 +114,8 @@ shmem_internal_mutex_t          shmem_transport_ofi_lock;
 pthread_mutex_t                 shmem_transport_ofi_progress_lock = PTHREAD_MUTEX_INITIALIZER;
 #endif /* ENABLE_THREADS */
 
+int shmem_transport_ofi_single_ep;
+
 /* Temporarily redefine SHM_INTERNAL integer types to their FI counterparts to
  * translate the DTYPE_* types (defined by autoconf according to system ABI)
  * into FI types in the table below */
@@ -204,6 +206,8 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
     }
     return tid;
 }
+
+#define SHMEM_TRANSPORT_OFI_PROV_SOCKETS "sockets"
 
 static struct fabric_info shmem_transport_ofi_info = {0};
 
@@ -622,15 +626,25 @@ int bind_enable_ep_resources(shmem_transport_ctx_t *ctx)
      * removed below.  However, there aren't currently any cases where removing
      * FI_RECV significantly improves performance or resource usage.  */
 
-    ret = fi_ep_bind(ctx->ep, &ctx->cq->fid,
-                     FI_SELECTIVE_COMPLETION | FI_TRANSMIT | FI_RECV);
-    OFI_CHECK_RETURN_STR(ret, "fi_ep_bind CQ to endpoint failed");
+    if (ctx->ep != shmem_transport_ofi_target_ep) {
+        ret = fi_ep_bind(ctx->ep, &ctx->cq->fid,
+                         FI_SELECTIVE_COMPLETION | FI_TRANSMIT | FI_RECV);
+        OFI_CHECK_RETURN_STR(ret, "fi_ep_bind CQ to endpoint failed");
 
-    ret = fi_ep_bind(ctx->ep, &shmem_transport_ofi_avfd->fid, 0);
-    OFI_CHECK_RETURN_STR(ret, "fi_ep_bind AV to endpoint failed");
+        ret = fi_ep_bind(ctx->ep, &shmem_transport_ofi_avfd->fid, 0);
+        OFI_CHECK_RETURN_STR(ret, "fi_ep_bind AV to endpoint failed");
 
-    ret = fi_enable(ctx->ep);
-    OFI_CHECK_RETURN_STR(ret, "fi_enable on endpoint failed");
+        ret = fi_enable(ctx->ep);
+        OFI_CHECK_RETURN_STR(ret, "fi_enable on endpoint failed");
+    } /* In single-endpoint mode, the sockets provider requires re-enabling the EP, but other
+         providers require NOT re-enabling the EP (e.g. as of v2.1.0, tcp, verbs, and opx) */
+    else if (shmem_transport_ofi_info.p_info->fabric_attr->prov_name != NULL &&
+             strncmp(shmem_transport_ofi_info.p_info->fabric_attr->prov_name,
+                     SHMEM_TRANSPORT_OFI_PROV_SOCKETS,
+                     strlen(SHMEM_TRANSPORT_OFI_PROV_SOCKETS)) == 0) {
+        ret = fi_enable(ctx->ep);
+        OFI_CHECK_RETURN_STR(ret, "fi_enable on endpoint failed");
+    }
 
     return ret;
 }
@@ -1668,6 +1682,9 @@ static int shmem_transport_ofi_target_ep_init(void)
     struct fabric_info* info = &shmem_transport_ofi_info;
     info->p_info->ep_attr->tx_ctx_cnt = 0;
     info->p_info->caps = FI_RMA | FI_ATOMIC | FI_REMOTE_READ | FI_REMOTE_WRITE;
+    if (shmem_transport_ofi_single_ep) {
+        info->p_info->caps |= FI_WRITE | FI_READ | FI_RECV;
+    }
 #if ENABLE_TARGET_CNTR
     info->p_info->caps |= FI_RMA_EVENT;
 #endif
@@ -1693,7 +1710,7 @@ static int shmem_transport_ofi_target_ep_init(void)
     OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(errno));
 
     ret = fi_ep_bind(shmem_transport_ofi_target_ep,
-                     &shmem_transport_ofi_target_cq->fid, FI_TRANSMIT | FI_RECV);
+                     &shmem_transport_ofi_target_cq->fid, FI_SELECTIVE_COMPLETION | FI_TRANSMIT | FI_RECV);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind CQ to target endpoint failed");
 
     ret = fi_enable(shmem_transport_ofi_target_ep);
@@ -1756,15 +1773,20 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
                        &ctx->get_cntr, NULL);
     OFI_CHECK_RETURN_MSG(ret, "get_cntr creation failed (%s)\n", fi_strerror(errno));
 
-    ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr, &ctx->cq, NULL);
-    if (ret && errno == FI_EMFILE) {
-        DEBUG_STR("Context creation failed because of open files limit, consider increasing with 'ulimit' command");
-    }
-    OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(errno));
+    if (shmem_transport_ofi_single_ep && id == SHMEM_TRANSPORT_CTX_DEFAULT_ID) {
+        ctx->cq = shmem_transport_ofi_target_cq;
+        ctx->ep = shmem_transport_ofi_target_ep;
+    } else {
+        ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr, &ctx->cq, NULL);
+        if (ret && errno == FI_EMFILE) {
+            DEBUG_STR("Context creation failed because of open files limit, consider increasing with 'ulimit' command");
+        }
+        OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(errno));
 
-    ret = fi_endpoint(shmem_transport_ofi_domainfd,
-                      info->p_info, &ctx->ep, NULL);
-    OFI_CHECK_RETURN_MSG(ret, "ep creation failed (%s)\n", fi_strerror(errno));
+        ret = fi_endpoint(shmem_transport_ofi_domainfd,
+                          info->p_info, &ctx->ep, NULL);
+        OFI_CHECK_RETURN_MSG(ret, "ep creation failed (%s)\n", fi_strerror(errno));
+    }
 
     /* TODO: Fill in TX attr */
 
@@ -1818,6 +1840,13 @@ int shmem_transport_init(void)
         shmem_transport_ofi_info.domain_name = shmem_internal_params.OFI_DOMAIN;
     else
         shmem_transport_ofi_info.domain_name = NULL;
+
+    /* Unless SHMEM_OFI_DISABLE_SINGLE_EP env var is set, each PE opens a single libfabric endpoint
+     * for both transmission (on the default context) and as the target of communication */
+    if (shmem_internal_params.OFI_DISABLE_SINGLE_EP_provided)
+        shmem_transport_ofi_single_ep = 0;
+    else
+        shmem_transport_ofi_single_ep = 1;
 
     /* Check STX resource settings */
     if ((shmem_internal_thread_level == SHMEM_THREAD_SINGLE ||
@@ -2046,6 +2075,7 @@ int shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options,
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 {
     int ret;
+    bool close_default_ctx = false;
 
     if (ctx == NULL)
         return;
@@ -2071,7 +2101,12 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
     }
 
-    if (ctx->ep) {
+    /* When in single-endpoint mode, defer closing the default context because it also
+     * serves as the target endpoint, which is cleaned up later in transport_fini(). */
+    if (!shmem_transport_ofi_single_ep || ctx->id != SHMEM_TRANSPORT_CTX_DEFAULT_ID)
+        close_default_ctx = true;
+
+    if (ctx->ep && close_default_ctx) {
         ret = fi_close(&ctx->ep->fid);
         OFI_CHECK_ERROR_MSG(ret, "Context endpoint close failed (%s)\n", fi_strerror(errno));
     }
@@ -2108,17 +2143,17 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
     }
 
-    if (ctx->put_cntr) {
+    if (ctx->put_cntr && close_default_ctx) {
         ret = fi_close(&ctx->put_cntr->fid);
         OFI_CHECK_ERROR_MSG(ret, "Context put CNTR close failed (%s)\n", fi_strerror(errno));
     }
 
-    if (ctx->get_cntr) {
+    if (ctx->get_cntr && close_default_ctx) {
         ret = fi_close(&ctx->get_cntr->fid);
         OFI_CHECK_ERROR_MSG(ret, "Context get CNTR close failed (%s)\n", fi_strerror(errno));
     }
 
-    if (ctx->cq) {
+    if (ctx->cq && close_default_ctx) {
         ret = fi_close(&ctx->cq->fid);
         OFI_CHECK_ERROR_MSG(ret, "Context CQ close failed (%s)\n", fi_strerror(errno));
     }
@@ -2208,6 +2243,15 @@ int shmem_transport_fini(void)
 
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));
+
+    /* If single-endpoint mode, need to close the default context's put and get counters */
+    if (shmem_transport_ofi_single_ep) {
+        ret = fi_close(&shmem_transport_ctx_default.put_cntr->fid);
+        OFI_CHECK_ERROR_MSG(ret, "Default EP put CNTR close failed (%s)\n", fi_strerror(errno));
+
+        ret = fi_close(&shmem_transport_ctx_default.get_cntr->fid);
+        OFI_CHECK_ERROR_MSG(ret, "Default EP get CNTR close failed (%s)\n", fi_strerror(errno));
+    }
 
     ret = fi_close(&shmem_transport_ofi_target_cq->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target CQ close failed (%s)\n", fi_strerror(errno));
