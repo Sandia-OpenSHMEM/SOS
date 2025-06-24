@@ -38,49 +38,52 @@ jobs:
           - config_name: PMI simple
             sos_config: --enable-pmi-simple
             libfabric_version: v1.13.x
+          - config_name: PMI simple
+            sos_config: --enable-pmi-simple
+            libfabric_version: v2.1.x
           - config_name: Deprecated tests
             sos_config: --enable-pmi-simple --enable-deprecated-tests
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           - config_name: MR-Basic, AV-map, memcpy
             sos_config: --enable-ofi-mr=basic --enable-av-map --disable-cxx --enable-memcpy
                         --enable-pmi-simple --with-hwloc=no
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           - config_name: PMI MPI
             sos_config: --disable-fortran --enable-pmi-mpi CC=mpicc
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           - config_name: Remove Virtual Addressing (RVA)
             sos_config: --disable-fortran --enable-error-checking --enable-remote-virtual-addressing
                         --disable-aslr-check --enable-pmi-simple
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           - config_name: heap use malloc
             env_setup: export SHMEM_SYMMETRIC_HEAP_USE_MALLOC=1
             sos_config: --disable-threads --enable-error-checking --enable-pmi-simple --with-hwloc=no
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           # too slow, times out on Github (but passes on another Ubuntu 20.04 system)...
           #- config_name: CMA, MR Basic, RVA
           #  sos_config: --disable-fortran --with-cma --enable-error-checking --enable-profiling
           #              --enable-ofi-mr=basic --enable-av-map --enable-remote-virtual-addressing
           #              --enable-pmi-simple
-          #  libfabric_version: v1.13.x
+          #  libfabric_version: v2.1.x
           - config_name: XPMEM RVA
             xpmem_version: master
             sos_config: --with-xpmem=${XPMEM_INSTALL_DIR} --enable-error-checking
                         --enable-remote-virtual-addressing --enable-pmi-simple
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           - config_name: XPMEM shared atomics
             xpmem_version: master
             sos_config: --with-xpmem=${XPMEM_INSTALL_DIR} --enable-shr-atomics
                         --enable-error-checking --enable-pmi-simple
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           - config_name: RVA, thread completion
             sos_config: --enable-error-checking --enable-remote-virtual-addressing
                         --enable-thread-completion --enable-pmi-simple
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           - config_name: huge pages, zero bounce
             env_setup: SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES=1 SHMEM_BOUNCE_SIZE=0
             sos_config: --enable-error-checking --enable-remote-virtual-addressing
                         --enable-pmi-simple --enable-ofi-fence --with-hwloc=no
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           - config_name: auto algorithms
             env_setup: export SHMEM_BARRIER_ALGORITHM=auto;
                        export SHMEM_BCAST_ALGORITHM=auto;
@@ -89,7 +92,7 @@ jobs:
                        export SHMEM_FCOLLECT_ALGORITHM=auto
             sos_config: --enable-error-checking --enable-remote-virtual-addressing
                         --enable-thread-completion --enable-pmi-simple
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           - config_name: linear algorithms
             env_setup: export SHMEM_BARRIER_ALGORITHM=linear;
                        export SHMEM_BCAST_ALGORITHM=linear;
@@ -98,7 +101,7 @@ jobs:
                        export SHMEM_FCOLLECT_ALGORITHM=linear
             sos_config: --enable-error-checking --enable-remote-virtual-addressing
                         --enable-pmi-simple --with-hwloc=no
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           - config_name: tree algorithms
             env_setup: export SHMEM_BARRIER_ALGORITHM=tree;
                        export SHMEM_BCAST_ALGORITHM=tree;
@@ -106,7 +109,7 @@ jobs:
                        export SHMEM_OFI_STX_MAX=0
             sos_config: --enable-error-checking --enable-remote-virtual-addressing
                         --enable-pmi-simple --enable-manual-progress
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           - config_name: dissem/recdbl algorithms
             env_setup: export SHMEM_BARRIER_ALGORITHM=dissem;
                        export SHMEM_REDUCE_ALGORITHM=recdbl;
@@ -114,12 +117,12 @@ jobs:
                        export SHMEM_OFI_STX_AUTO=1
             sos_config: --enable-error-checking --enable-remote-virtual-addressing
                         --enable-pmi-simple --enable-manual-progress --enable-hard-polling --with-hwloc=no
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           - config_name: ring reduce algorithm
             env_setup: export SHMEM_REDUCE_ALGORITHM=ring
                        export SHMEM_SCAN_ALGORITHM=ring
             sos_config: --enable-error-checking --enable-pmi-simple
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           - config_name: ring fcollect algorithm, tx/rx single poll limit
             env_setup: export SHMEM_FCOLLECT_ALGORITHM=ring;
                        export SHMEM_OFI_TX_POLL_LIMIT=1;
@@ -127,30 +130,30 @@ jobs:
                        export SHMEM_OFI_STX_THRESHOLD=1024
             sos_config: --enable-error-checking --enable-remote-virtual-addressing
                         --enable-pmi-simple
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           - config_name: STX random
             env_setup: export SHMEM_OFI_STX_MAX=8;
                        export SHMEM_OFI_STX_ALLOCATOR=random
             sos_config: --enable-error-checking --enable-remote-virtual-addressing
                         --enable-pmi-simple
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           - config_name: RPM build
             env_setup: export SOS_CHECK_TARBALL_RPM=1
             sos_config: --enable-pmi-simple
             rpm_build: true
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           - config_name: Lengthy tests
             sos_config: --enable-lengthy-tests --enable-pmi-simple
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           - config_name: Manpages
             sos_config: --enable-manpages --enable-pmi-simple
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           - config_name: Without OFI inject
             sos_config: --disable-ofi-inject --enable-pmi-simple
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
           - config_name: Without Non-fetch AMO
             sos_config: --disable-nonfetch-amo --enable-pmi-simple
-            libfabric_version: v1.13.x
+            libfabric_version: v2.1.x
                      
     name: OFI ${{ matrix.libfabric_version }} (${{ matrix.config_name }})
 
@@ -158,13 +161,18 @@ jobs:
       - name: Checking OS version
         run: |
           echo "OS_NAME=$(lsb_release -si)-$(lsb_release -sr)" >> $GITHUB_ENV
+      - name: Save Config Parameters
+        run: |
+          DEMANGLE_CONFIG=$(echo ${{ matrix.sos_config }} | sed 's/ //g' | sed -E 's/(-)\1+/-/g' | sed -E 's/[^=a-zA-Z0-9._\-]/\+/g')
+          echo "config param is $DEMANGLE_CONFIG"
+          echo "CONFIG_PARAM=$DEMANGLE_CONFIG" >> $GITHUB_ENV
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: 'true'
       - name: Install dependencies
         run: |
-          sudo apt-get install -y gfortran rpm mpich libmpich-dev libhwloc-dev
+          sudo apt-get install -y gfortran rpm mpich libmpich-dev libhwloc-dev gdb
           sudo sysctl -w kernel.yama.ptrace_scope=0
           sudo sysctl -w kernel.randomize_va_space=0
 
@@ -204,7 +212,7 @@ jobs:
         if: ${{ matrix.xpmem_version }}
         uses: actions/checkout@v4
         with:
-          repository: hjelmn/xpmem
+          repository: openucx/xpmem
           path: repos/xpmem
           ref: ${{ matrix.xpmem_version }}
       - name: Build XPMEM
@@ -228,13 +236,23 @@ jobs:
           ../configure --prefix=${SOS_INSTALL_DIR} --with-ofi=${LIBFABRIC_INSTALL_DIR} ${{ matrix.sos_config }}
           make -j
           make install
+      - name: Configure Core Analysis (${{ matrix.sos_config }})
+        run: |
+          bash ${GITHUB_WORKSPACE}/.github/scripts/scan_core.sh init
       - name: Test SOS (${{ matrix.sos_config }})
         run: |
           cd build
           make check TESTS= -j
           ${{ matrix.env_setup }}
-          SHMEM_DEBUG=1 SHMEM_INFO=1 SHMEM_OFI_PROVIDER=sockets make VERBOSE=1 TEST_RUNNER="${SOS_PM} -np 2" check
+          ulimit -c unlimited
+          ulimit -a
+          SHMEM_DEBUG=1 SHMEM_INFO=1 SHMEM_OFI_PROVIDER=sockets FI_PROVIDER=sockets \
+             make VERBOSE=1 TEST_RUNNER="${SOS_PM} -np 2 timeout --signal=ABRT 15m" check
           cat modules/tests-sos/test/unit/hello.log
+      - name: Scanning for Core Dumps (${{ matrix.sos_config }})
+        if: always()
+        run: |
+          bash ${GITHUB_WORKSPACE}/.github/scripts/scan_core.sh scan
       - name: Test RPM (${{ matrix.rpm_build }})
         if: ${{ matrix.rpm_build }}
         run: |
@@ -256,8 +274,17 @@ jobs:
           ../configure --with-ofi=${LIBFABRIC_INSTALL_DIR} ${{ matrix.sos_config }}
           make -j check TESTS=
           ${SOS_PM_PRE}
+          ulimit -c unlimited
+          ulimit -a
           SHMEM_DEBUG=1 SHMEM_INFO=1 make VERBOSE=1 TEST_RUNNER="${SOS_PM} -np 2" check
           ${SOS_PM_POST}
+      - name: Archive Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-artifacts-ofi-${{ matrix.libfabric_version }}-${{ env.CONFIG_PARAM }}-${{ github.run_number }}.${{ github.run_attempt }}
+          path: ${{ github.workspace }}/archives
+          if-no-files-found: ignore
 
 #  PMIx:
 #    runs-on: ubuntu-24.04
@@ -493,13 +520,18 @@ jobs:
       - name: Checking OS version
         run: |
           echo "OS_NAME=$(lsb_release -si)-$(lsb_release -sr)" >> $GITHUB_ENV
+      - name: Save Config Parameters
+        run: |
+          DEMANGLE_CONFIG=$(echo ${{ matrix.sos_config }} | sed 's/ //g' | sed -E 's/(-)\1+/-/g' | sed -E 's/[^=a-zA-Z0-9._\-]/\+/g')
+          echo "config param is $DEMANGLE_CONFIG"
+          echo "CONFIG_PARAM=$DEMANGLE_CONFIG" >> $GITHUB_ENV
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: 'true'
       - name: Install dependencies
         run: |
-          sudo apt-get install -y gfortran mpich libmpich-dev
+          sudo apt-get install -y gfortran mpich libmpich-dev gdb
           sudo sysctl -w kernel.yama.ptrace_scope=0
           sudo sysctl -w kernel.randomize_va_space=0
 
@@ -507,7 +539,7 @@ jobs:
       - name: Checkout XPMEM
         uses: actions/checkout@v4
         with:
-          repository: hjelmn/xpmem
+          repository: openucx/xpmem
           path: repos/xpmem
           ref: ${{ matrix.xpmem_version }}
       - name: Build XPMEM
@@ -554,13 +586,29 @@ jobs:
           ../configure --prefix=${SOS_INSTALL_DIR} --with-ucx=${UCX_INSTALL_DIR} ${{ matrix.sos_config }}
           make -j
           make install
+      - name: Configure Core Analysis (${{ matrix.sos_config }})
+        run: |
+          bash ${GITHUB_WORKSPACE}/.github/scripts/scan_core.sh init
       - name: Test SOS (${{ matrix.sos_config }})
         continue-on-error: true
         run: |
           cd build
           make check TESTS= -j
-          SHMEM_DEBUG=1 SHMEM_INFO=1 make VERBOSE=1 TEST_RUNNER="${SOS_PM} -np 2" check
+          ulimit -c unlimited
+          ulimit -a
+          SHMEM_DEBUG=1 SHMEM_INFO=1 make VERBOSE=1 TEST_RUNNER="${SOS_PM} -np 2 timeout --signal=ABRT 15m" check
           cat modules/tests-sos/test/unit/hello.log
+      - name: Scanning for Core Dumps (${{ matrix.sos_config }})
+        if: always()
+        run: |
+          bash ${GITHUB_WORKSPACE}/.github/scripts/scan_core.sh scan
+      - name: Archive Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-artifacts-${{ matrix.config_name }}-${{ env.CONFIG_PARAM }}-${{ github.run_number }}.${{ github.run_attempt }}
+          path: ${{ github.workspace }}/archives
+          if-no-files-found: ignore
 
   Portals4:
     runs-on: ubuntu-24.04
@@ -568,33 +616,39 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - config_name: portals4
+          - config_name: XPMEM with Shared Atomics
+            sos_config: --with-xpmem --enable-shr-atomics --enable-error-checking --enable-pmi-simple
             portals4_version: master
             xpmem_version: master
-          - name: Heap use malloc
-            env_setup: export SHMEM_SYMMETRIC_HEAP_USE_MALLOC=1
-            sos_config: --disable-threads --enable-error-checking --enable-pmi-simple --with-hwloc=no
-          - name: Heap use huge pages, zero bounce
-            env_setup: export SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES=1; export SHMEM_BOUNCE_SIZE=0
-            sos_config: --enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple --enable-ofi-fence
-        sos_config: [--enable-pmi-simple --with-hwloc=no,
-                     --disable-fortran --enable-error-checking --enable-remote-virtual-addressing
-                     --disable-aslr-check --enable-pmi-simple,
-                     --with-cma --enable-error-checking --enable-profiling
-                     --enable-remote-virtual-addressing --enable-pmi-simple,
-                     --with-xpmem --enable-shr-atomics --enable-error-checking --enable-pmi-simple,
-                     --enable-pmi-mpi CC=mpicc --disable-fortran --with-hwloc=no]
+
+#          - name: Heap use malloc
+#            env_setup: export SHMEM_SYMMETRIC_HEAP_USE_MALLOC=1
+#            sos_config: --disable-threads --enable-error-checking --enable-pmi-simple --with-hwloc=no
+#          - name: Heap use huge pages, zero bounce
+#            env_setup: export SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES=1; export SHMEM_BOUNCE_SIZE=0
+#            sos_config: --enable-error-checking --enable-remote-virtual-addressing --enable-pmi-simple --enable-ofi-fence
+#        sos_config: [--enable-pmi-simple --with-hwloc=no,
+#                     --disable-fortran --enable-error-checking --enable-remote-virtual-addressing
+#                     --disable-aslr-check --enable-pmi-simple,
+#                     --with-cma --enable-error-checking --enable-profiling
+#                     --enable-remote-virtual-addressing --enable-pmi-simple,
+#                     --enable-pmi-mpi CC=mpicc --disable-fortran --with-hwloc=no]
     steps:
       - name: Checking OS version
         run: |
           echo "OS_NAME=$(lsb_release -si)-$(lsb_release -sr)" >> $GITHUB_ENV
+      - name: Save Config Parameters
+        run: |
+          DEMANGLE_CONFIG=$(echo ${{ matrix.sos_config }} | sed 's/ //g' | sed -E 's/(-)\1+/-/g' | sed -E 's/[^=a-zA-Z0-9._\-]/\+/g')
+          echo "config param is $DEMANGLE_CONFIG"
+          echo "CONFIG_PARAM=$DEMANGLE_CONFIG" >> $GITHUB_ENV
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: 'true'
       - name: Install dependencies
         run: |
-          sudo apt-get install -y gfortran mpich libmpich-dev libev-dev libev-libevent-dev libhwloc-dev
+          sudo apt-get install -y gfortran mpich libmpich-dev libev-dev libev-libevent-dev libhwloc-dev gdb
           sudo sysctl -w kernel.yama.ptrace_scope=0
           sudo sysctl -w kernel.randomize_va_space=0
 
@@ -602,7 +656,7 @@ jobs:
       - name: Checkout XPMEM
         uses: actions/checkout@v4
         with:
-          repository: hjelmn/xpmem
+          repository: openucx/xpmem
           path: repos/xpmem
           ref: ${{ matrix.xpmem_version }}
       - name: Build XPMEM
@@ -650,12 +704,25 @@ jobs:
           ../configure --prefix=${SOS_INSTALL_DIR} --with-portals4=${PORTALS4_INSTALL_DIR} ${{ matrix.sos_config }}
           make -j
           make install
+      - name: Configure Core Analysis (${{ matrix.sos_config }})
+        run: |
+          bash ${GITHUB_WORKSPACE}/.github/scripts/scan_core.sh init
       - name: Test SOS (${{ matrix.name }})
         continue-on-error: true
         run: |
           cd build
           make check TESTS= -j
+          ulimit -c unlimited
+          ulimit -a
+          SHMEM_DEBUG=1 SHMEM_INFO=1 make VERBOSE=1 TEST_RUNNER="${SOS_PM} -np 2 timeout --signal=ABRT 15m" check
           ${SOS_PM} -np 1 modules/tests-sos/test/unit/hello
+      - name: Archive Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-artifacts-${{ matrix.config_name }}-${{ env.CONFIG_PARAM }}-${{ github.run_number }}.${{ github.run_attempt }}
+          path: ${{ github.workspace }}/archives
+          if-no-files-found: ignore
 
   XPMEM_Only:
     runs-on: ubuntu-24.04
@@ -677,7 +744,7 @@ jobs:
           submodules: 'true'
       - name: Install dependencies
         run: |
-          sudo apt-get install -y gfortran mpich libmpich-dev libev-dev libev-libevent-dev libhwloc-dev
+          sudo apt-get install -y gfortran mpich libmpich-dev libev-dev libev-libevent-dev libhwloc-dev gdb
           sudo sysctl -w kernel.yama.ptrace_scope=0
           sudo sysctl -w kernel.randomize_va_space=0
 
@@ -685,7 +752,7 @@ jobs:
       - name: Checkout XPMEM
         uses: actions/checkout@v4
         with:
-          repository: hjelmn/xpmem
+          repository: openucx/xpmem
           path: repos/xpmem
           ref: ${{ matrix.xpmem_version }}
       - name: Build XPMEM
@@ -708,9 +775,25 @@ jobs:
           ../configure --prefix=${SOS_INSTALL_DIR} ${{ matrix.sos_config }}
           make -j
           make install
+      - name: Configure Core Analysis (${{ matrix.sos_config }})
+        run: |
+          bash ${GITHUB_WORKSPACE}/.github/scripts/scan_core.sh init
       - name: Test SOS (${{ matrix.name }})
         run: |
           cd build
           make check TESTS= -j
-          SHMEM_DEBUG=1 SHMEM_INFO=1 make VERBOSE=1 TEST_RUNNER="${SOS_PM} -np 2" check
+          ulimit -c unlimited
+          ulimit -a
+          SHMEM_DEBUG=1 SHMEM_INFO=1 make VERBOSE=1 TEST_RUNNER="${SOS_PM} -np 2 timeout --signal=ABRT 15m" check
           ${SOS_PM} -np 1 modules/tests-sos/test/unit/hello
+      - name: Scanning for Core Dumps (${{ matrix.sos_config }})
+        if: always()
+        run: |
+          bash ${GITHUB_WORKSPACE}/.github/scripts/scan_core.sh scan
+      - name: Archive Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-artifacts-${{ matrix.config_name }}-${{ env.CONFIG_PARAM }}-${{ github.run_number }}.${{ github.run_attempt }}
+          path: ${{ github.workspace }}/archives
+          if-no-files-found: ignore
