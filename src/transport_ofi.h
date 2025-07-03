@@ -548,6 +548,15 @@ int shmem_transport_quiet(shmem_transport_ctx_t* ctx)
     return 0;
 }
 
+static inline
+int shmem_transport_pe_quiet(shmem_transport_ctx_t* ctx, const int *target_pes, int npes)
+{
+
+    shmem_transport_quiet(ctx);
+
+    return 0;
+}
+
 
 static inline
 int shmem_transport_fence(shmem_transport_ctx_t* ctx)
@@ -627,7 +636,7 @@ void shmem_transport_put_scalar(shmem_transport_ctx_t* ctx, void *target, const
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
-
+    
     do {
 
         ret = fi_inject_write(ctx->ep,
@@ -1001,7 +1010,6 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
 
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
-
 
 static inline
 void shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target, const

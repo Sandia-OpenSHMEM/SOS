@@ -2050,6 +2050,7 @@ int shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options,
 #ifndef USE_CTX_LOCK
     shmem_internal_cntr_write(&ctxp->pending_put_cntr, 0);
     shmem_internal_cntr_write(&ctxp->pending_get_cntr, 0);
+    
 #endif
 
     ctxp->stx_idx = -1;

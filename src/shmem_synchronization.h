@@ -40,6 +40,25 @@ shmem_internal_quiet(shmem_ctx_t ctx)
     shmem_transport_syncmem();
 }
 
+static inline void
+shmem_internal_pe_quiet(shmem_ctx_t ctx, const int *target_pes, int npes)
+{
+    int ret;
+
+    if (ctx == SHMEM_CTX_INVALID)
+        return;
+
+    ret = shmem_transport_pe_quiet((shmem_transport_ctx_t *)ctx, target_pes, npes);
+    if (0 != ret) { RAISE_ERROR(ret); }
+
+    shmem_internal_membar();
+
+    /* Transport level memory flush is required to make memory 
+     * changes (i.e. subsequent coherent load operations 
+     * performed via the shmem_ptr API, the result of atomics 
+     * that targeted the local process) visible */
+    shmem_transport_syncmem();
+}
 
 static inline void
 shmem_internal_fence(shmem_ctx_t ctx)

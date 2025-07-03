@@ -37,6 +37,28 @@ FC_SHMEM_QUIET(void)
     shmem_internal_quiet(SHMEM_CTX_DEFAULT);
 }
 
+#define FC_SHMEM_PE_QUIET FC_FUNC_(shmem_pe_quiet, SHMEM_PE_QUIET)
+void SHMEM_FUNCTION_ATTRIBUTES
+FC_SHMEM_PE_QUIET(const int *target_pes, int npes);
+void
+FC_SHMEM_PE_QUIET(const int *target_pes, int npes)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_pe_quiet(SHMEM_CTX_DEFAULT, target_pes, npes);
+}
+
+#define FC_SHMEM_CTX_QUIET FC_FUNC_(shmem_ctx_pe_quiet, SHMEM_CTX_PE_QUIET)
+void SHMEM_FUNCTION_ATTRIBUTES
+FC_SHMEM_CTX_PE_QUIET(shmem_ctx_t ctx, const int *target_pes, int npes);
+void
+FC_SHMEM_CTX_PE_QUIET(shmem_ctx_t ctx, const int *target_pes, int npes)
+{
+    SHMEM_ERR_CHECK_INITIALIZED();
+
+    shmem_internal_pe_quiet(ctx, target_pes, npes);
+}
+
 
 #define FC_SHMEM_FENCE FC_FUNC_(shmem_fence, SHMEM_FENCE)
 void SHMEM_FUNCTION_ATTRIBUTES
