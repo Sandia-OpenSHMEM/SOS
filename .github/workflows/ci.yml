@@ -172,6 +172,7 @@ jobs:
           submodules: 'true'
       - name: Install dependencies
         run: |
+          sudo apt-get -y update
           sudo apt-get install -y gfortran rpm mpich libmpich-dev libhwloc-dev gdb
           sudo sysctl -w kernel.yama.ptrace_scope=0
           sudo sysctl -w kernel.randomize_va_space=0
@@ -219,7 +220,7 @@ jobs:
         if: ${{ matrix.xpmem_version }}
         run: |
           cd repos/xpmem
-          sudo apt-get install linux-headers-`uname -r`
+          sudo apt-get -y install linux-headers-`uname -r`
           ./autogen.sh
           ./configure --prefix=${XPMEM_INSTALL_DIR}
           make -j
@@ -332,6 +333,7 @@ jobs:
 #      - uses: actions/checkout@v2
 #      - name: Install dependencies
 #        run: |
+#          sudo apt-get -y update
 #          sudo apt-get install -y gfortran libhwloc-dev libev-dev libev-libevent-dev
 #
 #      # LIBFABRIC
@@ -531,6 +533,7 @@ jobs:
           submodules: 'true'
       - name: Install dependencies
         run: |
+          sudo apt-get -y update
           sudo apt-get install -y gfortran mpich libmpich-dev gdb
           sudo sysctl -w kernel.yama.ptrace_scope=0
           sudo sysctl -w kernel.randomize_va_space=0
@@ -545,7 +548,7 @@ jobs:
       - name: Build XPMEM
         run: |
           cd repos/xpmem
-          sudo apt-get install linux-headers-`uname -r`
+          sudo apt-get -y install linux-headers-`uname -r`
           ./autogen.sh
           ./configure --prefix=/usr
           make -j
@@ -648,6 +651,7 @@ jobs:
           submodules: 'true'
       - name: Install dependencies
         run: |
+          sudo apt-get -y update
           sudo apt-get install -y gfortran mpich libmpich-dev libev-dev libev-libevent-dev libhwloc-dev gdb
           sudo sysctl -w kernel.yama.ptrace_scope=0
           sudo sysctl -w kernel.randomize_va_space=0
@@ -662,7 +666,7 @@ jobs:
       - name: Build XPMEM
         run: |
           cd repos/xpmem
-          sudo apt-get install linux-headers-`uname -r`
+          sudo apt-get -y install linux-headers-`uname -r`
           ./autogen.sh
           ./configure --prefix=/usr
           make -j
@@ -744,6 +748,7 @@ jobs:
           submodules: 'true'
       - name: Install dependencies
         run: |
+          sudo apt-get -y update
           sudo apt-get install -y gfortran mpich libmpich-dev libev-dev libev-libevent-dev libhwloc-dev gdb
           sudo sysctl -w kernel.yama.ptrace_scope=0
           sudo sysctl -w kernel.randomize_va_space=0
@@ -758,7 +763,7 @@ jobs:
       - name: Build XPMEM
         run: |
           cd repos/xpmem
-          sudo apt-get install linux-headers-`uname -r`
+          sudo apt-get -y install linux-headers-`uname -r`
           ./autogen.sh
           ./configure --prefix=/usr
           make -j
