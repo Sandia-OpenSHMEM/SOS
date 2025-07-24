@@ -340,6 +340,12 @@ AC_ARG_ENABLE([ofi-hmem],
 AS_IF([test "$enable_ofi_hmem" = "yes"],
       [AC_DEFINE([USE_FI_HMEM], [1], [If defined, the OFI transport will enable FI_HMEM.])])
 
+AC_ARG_ENABLE([multi-init],
+    [AS_HELP_STRING([--disable-multi-init],
+    [Disable multiple initialization and finalization feature. (default: enabled)])],
+    [enable_multi_init=$enableval], [enable_multi_init=yes])
+
+
 PKG_INSTALLDIR()
 
 dnl check for programs
@@ -1002,7 +1008,13 @@ AC_CONFIG_FILES([Makefile
   modules/tests-sos/test/performance/tests/Makefile
   modules/tests-sos/test/apps/Makefile])
 
-AC_OUTPUT
+AS_IF([test "$enable_pmi_mpi" = "yes" -a "$enable_multi_init" = "yes"],
+      [AC_MSG_WARN([Disabled multiple initilization and finalization. Feature is not supported with PMI MPI])])
+
+AM_CONDITIONAL([ENABLE_MULTI_INIT], [test "$enable_multi_init" = "yes" -a "$enable_pmi_mpi" != "yes"])
+
+AS_IF([test "$enable_pmi_mpi" != "yes" -a "$enable_multi_init" = "yes"],
+      [AC_DEFINE([USE_MULTI_INIT], [1], [If defined, multiple init will be supported.])])
 
 AS_IF([test "$enable_pmi_mpi" != "yes" -a "$enable_pmi_simple" != "yes" -a "$opal_external_pmix_version_found" != 1 -a "$ompi_check_pmi_happy" != "yes" -a -z "$pmi_type"],
          [AC_MSG_ERROR([No PMI client interface was configured, consider --enable-pmi-simple or --with-pmi])])
@@ -1024,6 +1036,8 @@ AS_IF([test "$enable_fortran" = "yes" -a "$FC" = ""],
 
 AS_IF([test "$enable_fortran" = "yes"],
       [AC_MSG_WARN([The Fortran API was deprecated in OpenSHMEM v1.4 and removed in OpenSHMEM v1.5])])
+
+AC_OUTPUT
 
 FORT="$FC"
 if test "$FORT" = "" ; then

@@ -34,6 +34,7 @@
 #include "shmem_comm.h"
 #include "shmem_collectives.h"
 #include "shmemx.h"
+#include "shmem_atomic.h"
 
 #ifdef ENABLE_PROFILING
 #include "pshmem.h"
@@ -72,6 +73,8 @@
 #define shmemx_heap_create pshmemx_heap_create
 
 #endif /* ENABLE_PROFILING */
+
+extern shmem_internal_cntr_t shmem_internal_init_cntr;
 
 static char *shmem_internal_heap_curr = NULL;
 
@@ -439,7 +442,7 @@ shmem_malloc_with_hints(size_t size, long hints)
 void SHMEM_FUNCTION_ATTRIBUTES
 shmemx_heap_create(void *base, size_t size, int device_type, int device_index) {
 
-    if (shmem_internal_initialized) {
+    if (shmem_internal_cntr_read(&shmem_internal_init_cntr)) {
         RAISE_WARN_MSG("Ignoring pre-setup. Heap already initialized\n");
         return;
     }
