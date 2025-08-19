@@ -38,9 +38,12 @@ atol_scaled(char *str, shmem_internal_env_size *out)
     double p = -1.0;
     char f;
 
-    n = sscanf(str, "%lf%c", &p, &f);
+    if (2 == sscanf(str, "%lf%c%n", &p, &f, &n)) {
+        if (str[n] != '\0') {
+            fprintf(stderr, "Invalid size in environment variable\n");
+            return 1;
+        }
 
-    if (n == 2) {
         switch (f) {
             case 'k':
             case 'K':
