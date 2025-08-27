@@ -510,7 +510,7 @@ define(`SHMEM_CXX_WAIT_UNTIL_ALL',
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_ALL')
 
 define(`SHMEM_CXX_WAIT_UNTIL_ALL_VECTOR',
-`static inline void shmem_wait_until_all_vector($2 *ivars, size_t nelems, const int *status, int cmp, $2 *cmp_values) {
+`static inline void shmem_wait_until_all_vector($2 *ivars, size_t nelems, const int *status, int cmp, const $2 *cmp_values) {
     shmem_$1_wait_until_all_vector(ivars, nelems, status, cmp, cmp_values);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_ALL_VECTOR')
@@ -522,7 +522,7 @@ define(`SHMEM_CXX_WAIT_UNTIL_ANY',
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_ANY')
 
 define(`SHMEM_CXX_WAIT_UNTIL_ANY_VECTOR',
-`static inline size_t shmem_wait_until_any_vector($2 *ivars, size_t nelems, const int *status, int cmp, $2 *cmp_values) {
+`static inline size_t shmem_wait_until_any_vector($2 *ivars, size_t nelems, const int *status, int cmp, const $2 *cmp_values) {
     return shmem_$1_wait_until_any_vector(ivars, nelems, status, cmp, cmp_values);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_ANY_VECTOR')
@@ -534,7 +534,7 @@ define(`SHMEM_CXX_WAIT_UNTIL_SOME',
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_SOME')
 
 define(`SHMEM_CXX_WAIT_UNTIL_SOME_VECTOR',
-`static inline size_t shmem_wait_until_some_vector($2 *ivars, size_t nelems, size_t *indices, const int *status, int cmp, $2 *cmp_values) {
+`static inline size_t shmem_wait_until_some_vector($2 *ivars, size_t nelems, size_t *indices, const int *status, int cmp, const $2 *cmp_values) {
     return shmem_$1_wait_until_some_vector(ivars, nelems, indices, status, cmp, cmp_values);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_WAIT_UNTIL_SOME_VECTOR')
@@ -552,7 +552,7 @@ define(`SHMEM_CXX_TEST_ALL',
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_ALL')
 
 define(`SHMEM_CXX_TEST_ALL_VECTOR',
-`static inline int shmem_test_all_vector($2 *ivars, size_t nelems, const int *status, int cmp, $2 *cmp_values) {
+`static inline int shmem_test_all_vector($2 *ivars, size_t nelems, const int *status, int cmp, const $2 *cmp_values) {
     return shmem_$1_test_all_vector(ivars, nelems, status, cmp, cmp_values);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_ALL_VECTOR')
@@ -564,7 +564,7 @@ define(`SHMEM_CXX_TEST_ANY',
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_ANY')
 
 define(`SHMEM_CXX_TEST_ANY_VECTOR',
-`static inline size_t shmem_test_any_vector($2 *ivars, size_t nelems, const int *status, int cmp, $2 *cmp_values) {
+`static inline size_t shmem_test_any_vector($2 *ivars, size_t nelems, const int *status, int cmp, const $2 *cmp_values) {
     return shmem_$1_test_any_vector(ivars, nelems, status, cmp, cmp_values);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_ANY_VECTOR')
@@ -576,7 +576,7 @@ define(`SHMEM_CXX_TEST_SOME',
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_SOME')
 
 define(`SHMEM_CXX_TEST_SOME_VECTOR',
-`static inline size_t shmem_test_some_vector($2 *ivars, size_t nelems, size_t *indices, const int *status, int cmp, $2 *cmp_values) {
+`static inline size_t shmem_test_some_vector($2 *ivars, size_t nelems, size_t *indices, const int *status, int cmp, const $2 *cmp_values) {
     return shmem_$1_test_some_vector(ivars, nelems, indices, status, cmp, cmp_values);
 }')dnl
 SHMEM_CXX_DEFINE_FOR_SYNC(`SHMEM_CXX_TEST_SOME_VECTOR')

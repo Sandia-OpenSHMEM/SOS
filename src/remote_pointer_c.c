@@ -37,21 +37,21 @@
 
 
 void SHMEM_FUNCTION_ATTRIBUTES *
-shmem_ptr(const void *target, int pe)
+shmem_ptr(const void *dest, int pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target, 1);
+    SHMEM_ERR_CHECK_SYMMETRIC(dest, 1);
 
-    return shmem_internal_ptr(target, pe);
+    return shmem_internal_ptr(dest, pe);
 }
 
 void SHMEM_FUNCTION_ATTRIBUTES *
-shmem_team_ptr(shmem_team_t team, const void *target, int pe)
+shmem_team_ptr(shmem_team_t team, const void *dest, int pe)
 {
     SHMEM_ERR_CHECK_INITIALIZED();
     SHMEM_ERR_CHECK_PE(pe);
-    SHMEM_ERR_CHECK_SYMMETRIC(target, 1);
+    SHMEM_ERR_CHECK_SYMMETRIC(dest, 1);
 
     if (team == SHMEM_TEAM_INVALID) {
         return NULL;
@@ -59,5 +59,5 @@ shmem_team_ptr(shmem_team_t team, const void *target, int pe)
 
     int global_pe = shmem_team_translate_pe(team, pe, SHMEM_TEAM_WORLD);
 
-    return shmem_internal_ptr(target, global_pe);
+    return shmem_internal_ptr(dest, global_pe);
 }
