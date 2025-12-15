@@ -69,11 +69,13 @@ jobs:
             xpmem_version: master
             sos_config: --with-xpmem=${XPMEM_INSTALL_DIR} --enable-error-checking
                         --enable-remote-virtual-addressing --enable-pmi-simple
+                        --enable-hard-polling
             libfabric_version: v2.1.x
           - config_name: XPMEM shared atomics
             xpmem_version: master
             sos_config: --with-xpmem=${XPMEM_INSTALL_DIR} --enable-shr-atomics
                         --enable-error-checking --enable-pmi-simple
+                        --enable-hard-polling
             libfabric_version: v2.1.x
           - config_name: RVA, thread completion
             sos_config: --enable-error-checking --enable-remote-virtual-addressing
@@ -517,7 +519,7 @@ jobs:
         sos_config: [--enable-pmi-simple --disable-fortran,
                      --with-cma --enable-error-checking --enable-profiling
                      --enable-pmi-simple --disable-fortran --with-hwloc=no,
-                     --with-xpmem --enable-error-checking --enable-pmi-simple --with-hwloc=no]
+                     --with-xpmem --enable-error-checking --enable-pmi-simple --with-hwloc=no --enable-hard-polling]
     steps:
       - name: Checking OS version
         run: |
@@ -620,7 +622,7 @@ jobs:
       matrix:
         include:
           - config_name: XPMEM with Shared Atomics
-            sos_config: --with-xpmem --enable-shr-atomics --enable-error-checking --enable-pmi-simple
+            sos_config: --with-xpmem --enable-shr-atomics --enable-error-checking --enable-pmi-simple --enable-hard-polling
             portals4_version: master
             xpmem_version: master
 
@@ -736,7 +738,7 @@ jobs:
         include:
           - config_name: transport_none
             xpmem_version: master
-        sos_config: [--with-xpmem --enable-shr-atomics --enable-error-checking --enable-pmi-simple]
+        sos_config: [--with-xpmem --enable-shr-atomics --enable-error-checking --enable-pmi-simple --enable-hard-polling]
 
     steps:
       - name: Checking OS version
