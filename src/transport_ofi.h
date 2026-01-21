@@ -504,28 +504,8 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
      * reverse order: first the fid_cntr event counter, then the put issued
      * counter.  We'll want to preserve this property in the future.
      */
-    uint64_t success, fail, cnt, cnt_new;
-    long poll_count = 0;
-    while (poll_count < shmem_transport_ofi_put_poll_limit ||
-           shmem_transport_ofi_put_poll_limit < 0) {
-        success = fi_cntr_read(ctx->put_cntr);
-        fail = fi_cntr_readerr(ctx->put_cntr);
-        cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
+    uint64_t cnt, cnt_new;
 
-        shmem_transport_probe();
-
-        if (success < cnt && fail == 0) {
-            SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
-            SPINLOCK_BODY();
-            SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
-        } else if (fail) {
-            RAISE_ERROR_MSG("Operations completed in error (%" PRIu64 ")\n", fail);
-        } else {
-            SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
-            return;
-        }
-        poll_count++;
-    }
     cnt_new = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
     do {
         cnt = cnt_new;
@@ -965,31 +945,10 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
      * reverse order: first the fid_cntr event counter, then the get issued
      * counter.  We'll want to preserve this property in the future.
      */
-    uint64_t success, fail, cnt, cnt_new;
-    long poll_count = 0;
+    uint64_t cnt, cnt_new;
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
 
-    while (poll_count < shmem_transport_ofi_get_poll_limit ||
-           shmem_transport_ofi_get_poll_limit < 0) {
-        success = fi_cntr_read(ctx->get_cntr);
-        fail = fi_cntr_readerr(ctx->get_cntr);
-        cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr);
-
-        shmem_transport_probe();
-
-        if (success < cnt && fail == 0) {
-            SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
-            SPINLOCK_BODY();
-            SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
-        } else if (fail) {
-            RAISE_ERROR_MSG("Operations completed in error (%" PRIu64 ")\n", fail);
-        } else {
-            SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
-            return;
-        }
-        poll_count++;
-    }
     cnt_new = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr);
     do {
         cnt = cnt_new;
