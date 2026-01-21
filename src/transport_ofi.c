@@ -1731,6 +1731,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     cntr_put_attr.events   = FI_CNTR_EVENTS_COMP;
     cntr_get_attr.events   = FI_CNTR_EVENTS_COMP;
 
+#if 0
     /* Set FI_WAIT based on the put and get polling limits defined above */
     if (shmem_transport_ofi_put_poll_limit < 0) {
         cntr_put_attr.wait_obj = FI_WAIT_NONE;
@@ -1742,6 +1743,9 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     } else {
         cntr_get_attr.wait_obj = FI_WAIT_UNSPEC;
     }
+#endif
+        cntr_put_attr.wait_obj = FI_WAIT_UNSPEC;
+        cntr_get_attr.wait_obj = FI_WAIT_UNSPEC;
 
     /* Allow provider to choose CQ size, since we are using FI_RM_ENABLED.
      * Context format is used to return bounce buffer pointers in the event
