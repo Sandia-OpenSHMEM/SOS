@@ -103,7 +103,7 @@ long                            shmem_transport_ofi_get_poll_limit;
 size_t                          shmem_transport_ofi_max_buffered_send;
 size_t                          shmem_transport_ofi_max_msg_size;
 size_t                          shmem_transport_ofi_bounce_buffer_size;
-long                            shmem_transport_ofi_max_bounce_buffers;
+size_t                          shmem_transport_ofi_max_bounce_buffers;
 size_t                          shmem_transport_ofi_addrlen;
 #ifdef ENABLE_MR_RMA_EVENT
 int                             shmem_transport_ofi_mr_rma_event;
@@ -1808,10 +1808,15 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
         shmem_transport_ofi_bounce_buffer_size > 0 &&
         shmem_transport_ofi_max_bounce_buffers > 0)
     {
+        size_t max_bb_pool_cnt = 0;
+        if (shmem_internal_params.BOUNCE_SHEAP) {
+            max_bb_pool_cnt = shmem_transport_ofi_max_bounce_buffers;
+        }
         ctx->bounce_buffers =
             shmem_free_list_init(sizeof(shmem_transport_ofi_bounce_buffer_t) +
                                  shmem_transport_ofi_bounce_buffer_size,
-                                 init_bounce_buffer);
+                                 init_bounce_buffer,
+                                 max_bb_pool_cnt);
     }
     else {
         ctx->options &= ~SHMEMX_CTX_BOUNCE_BUFFER;

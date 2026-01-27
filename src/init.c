@@ -382,6 +382,10 @@ shmem_internal_heap_postinit(void)
               shmem_internal_heap_base, shmem_internal_heap_length,
               shmem_internal_data_base, shmem_internal_data_length);
 
+    if (shmem_internal_params.BOUNCE_MLOCK) {
+        DEBUG_MSG("Bounce buffer locking enabled\n");
+    }
+
 #ifdef HAVE_SCHED_GETAFFINITY
 #ifdef USE_HWLOC
     ret = hwloc_topology_init(&shmem_internal_topology);

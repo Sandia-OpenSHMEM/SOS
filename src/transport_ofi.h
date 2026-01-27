@@ -69,7 +69,7 @@ extern long                             shmem_transport_ofi_get_poll_limit;
 extern size_t                           shmem_transport_ofi_max_buffered_send;
 extern size_t                           shmem_transport_ofi_max_msg_size;
 extern size_t                           shmem_transport_ofi_bounce_buffer_size;
-extern long                             shmem_transport_ofi_max_bounce_buffers;
+extern size_t                             shmem_transport_ofi_max_bounce_buffers;
 
 extern pthread_mutex_t                  shmem_transport_ofi_progress_lock;
 
@@ -436,7 +436,7 @@ void shmem_transport_ofi_drain_cq(shmem_transport_ctx_t *ctx)
                                      (shmem_transport_ofi_bounce_buffer_t *) frag);
                 ctx->completed_bb_cntr++;
             } else {
-                RAISE_ERROR_STR("Unrecognized completion object");
+                RAISE_ERROR_MSG("[%d] Unrecognized completion object %p %x mtofs %p\n", shmem_internal_my_pe, frag, frag->mytype, &frag->mytype);
             }
         }
 
@@ -472,6 +472,10 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_transport_ctx_t
 
     if (NULL == buff)
         RAISE_ERROR_STR("Bounce buffer allocation failed");
+
+    if (buff->frag.mytype != SHMEM_TRANSPORT_OFI_TYPE_BOUNCE) {
+	RAISE_ERROR_STR("Bounce buffer allocation failed");
+    }
 
     shmem_internal_assert(buff->frag.mytype == SHMEM_TRANSPORT_OFI_TYPE_BOUNCE);
 

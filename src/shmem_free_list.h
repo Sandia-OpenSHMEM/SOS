@@ -17,7 +17,8 @@
 #define SHMEM_FREE_QUEUE_H
 
 #include <stdint.h>
-
+#include <sys/mman.h>
+#include <unistd.h>
 #include "shmem_internal.h"
 
 struct shmem_free_list_item_t {
@@ -33,9 +34,12 @@ typedef struct shmem_free_list_alloc_t shmem_free_list_alloc_t;
 typedef void (*shmem_free_list_item_init_fn_t)(shmem_free_list_item_t *item);
 
 struct shmem_free_list_t {
-    uint32_t element_size;
+    size_t element_size;
     uint64_t nalloc;
-
+    uint64_t alloc_size;
+    uint64_t pool_size;
+    char *pool;
+    size_t pool_ofs;
     shmem_free_list_item_init_fn_t init_fn;
     shmem_free_list_alloc_t *allocs;
     shmem_free_list_item_t* head;
@@ -45,8 +49,9 @@ struct shmem_free_list_t {
 };
 typedef struct shmem_free_list_t shmem_free_list_t;
 
-shmem_free_list_t* shmem_free_list_init(unsigned int element_size,
-                                        shmem_free_list_item_init_fn_t init_fn);
+shmem_free_list_t* shmem_free_list_init(size_t element_size,
+                                        shmem_free_list_item_init_fn_t init_fn,
+					size_t max_pool_cnt);
 void shmem_free_list_destroy(shmem_free_list_t *fl);
 int shmem_free_list_more(shmem_free_list_t *fl);
 
