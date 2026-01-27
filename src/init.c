@@ -514,6 +514,12 @@ shmem_internal_heap_postinit(void)
     }
     teams_initialized = 1;
 
+    ret = shmem_internal_collectives_post_init();
+    if (ret != 0) {
+        RETURN_ERROR_MSG("Initialization of collectives (post) failed (%d)\n", ret);
+        goto cleanup_postinit;
+    }
+
     shmem_internal_randr_init();
     randr_initialized = 1;
 
