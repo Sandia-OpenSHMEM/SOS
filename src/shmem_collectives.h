@@ -25,7 +25,8 @@ enum coll_type_t {
     TREE,
     DISSEM,
     RING,
-    RECDBL
+    RECDBL,
+    HIER
 };
 typedef enum coll_type_t coll_type_t;
 
@@ -44,6 +45,7 @@ extern coll_type_t shmem_internal_fcollect_type;
 void shmem_internal_sync_linear(int PE_start, int PE_stride, int PE_size, long *pSync);
 void shmem_internal_sync_tree(int PE_start, int PE_stride, int PE_size, long *pSync);
 void shmem_internal_sync_dissem(int PE_start, int PE_stride, int PE_size, long *pSync);
+void shmem_internal_sync_hier(int PE_start, int PE_stride, int PE_size, long *pSync);
 
 static inline
 void
@@ -72,6 +74,9 @@ shmem_internal_sync(int PE_start, int PE_stride, int PE_size, long *pSync)
         break;
     case DISSEM:
         shmem_internal_sync_dissem(PE_start, PE_stride, PE_size, pSync);
+        break;
+    case HIER:
+        shmem_internal_sync_hier(PE_start, PE_stride, PE_size, pSync);
         break;
     default:
         RAISE_ERROR_MSG("Illegal barrier/sync type (%d)\n",

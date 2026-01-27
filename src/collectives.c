@@ -21,6 +21,8 @@
 #include "shmem_internal.h"
 #include "shmem_collectives.h"
 #include "shmem_internal_op.h"
+#include "shmem_team.h"
+#include "shmem_remote_pointer.h"
 
 coll_type_t shmem_internal_barrier_type = AUTO;
 coll_type_t shmem_internal_bcast_type = AUTO;
@@ -36,12 +38,20 @@ char *coll_type_str[] = { "AUTO",
                           "TREE",
                           "DISSEM",
                           "RING",
-                          "RECDBL" };
+                          "RECDBL",
+                          "HIER"};
 
 static int *full_tree_children;
 static int full_tree_num_children;
 static int full_tree_parent;
 static long tree_radix = -1;
+
+static long *shmem_internal_hier_sync;
+static int hier_node_size;
+static int hier_is_leader;
+static int hier_num_leaders;
+static int hier_leader_start;
+static int hier_leader_stride;
 
 
 static int
@@ -176,6 +186,8 @@ shmem_internal_collectives_init(void)
             shmem_internal_barrier_type = TREE;
         } else if (0 == strcmp(type, "dissem")) {
             shmem_internal_barrier_type = DISSEM;
+        } else if (0 == strcmp(type, "hier")) {
+            shmem_internal_barrier_type = HIER;
         } else {
             RAISE_WARN_MSG("Ignoring bad barrier algorithm '%s'\n", type);
         }
@@ -250,6 +262,22 @@ shmem_internal_collectives_init(void)
     return 0;
 }
 
+int
+shmem_internal_collectives_post_init(void)
+{
+
+    hier_node_size = shmem_internal_team_node.size;
+    hier_is_leader = (shmem_internal_team_node.my_pe == 0);
+    hier_leader_start = shmem_internal_team_node.start;
+    hier_leader_stride = shmem_internal_team_node.size * shmem_internal_team_node.stride;
+    hier_num_leaders = (shmem_internal_num_pes + hier_node_size - 1) / hier_node_size;
+
+    shmem_internal_hier_sync = shmem_internal_shmalloc(sizeof(long));
+    if (NULL == shmem_internal_hier_sync) return -1;
+    *shmem_internal_hier_sync = 0;
+
+    return 0;
+}
 
 /*****************************************
  *
@@ -419,6 +447,74 @@ shmem_internal_sync_dissem(int PE_start, int PE_stride, int PE_size, long *pSync
     shmem_internal_quiet(SHMEM_CTX_DEFAULT);
 }
 
+
+void
+shmem_internal_sync_hier(int PE_start, int PE_stride, int PE_size, long *pSync)
+{
+    long zero = 0;
+    long one  = 1;
+    long mone = -1;
+
+    if (PE_start != 0 || PE_stride != 1 || PE_size != shmem_internal_num_pes) {
+        shmem_internal_sync_tree(PE_start, PE_stride, PE_size, pSync);
+        return;
+    }
+
+    if (hier_num_leaders == 1) {
+        shmem_internal_sync_linear(PE_start, PE_stride, PE_size, pSync);
+        return;
+    }
+
+    int leader_pe = shmem_internal_team_pe(&shmem_internal_team_node, 0);
+    long *local_sync = shmem_internal_ptr(shmem_internal_hier_sync, leader_pe);
+    if (local_sync == NULL) {
+        shmem_internal_sync_tree(PE_start, PE_stride, PE_size, pSync);
+        return;
+    }
+
+    if (hier_is_leader) {
+        SHMEM_WAIT_UNTIL(local_sync, SHMEM_CMP_EQ, hier_node_size - 1);
+        shmem_internal_put_scalar(SHMEM_CTX_DEFAULT,
+                                 shmem_internal_hier_sync, /* symmetric base address */
+                                 &zero, sizeof(zero),
+                                 leader_pe /* self (leader) PE */);
+        SHMEM_WAIT_UNTIL(local_sync, SHMEM_CMP_EQ, 0);
+    } else {
+        shmem_internal_atomic(SHMEM_CTX_DEFAULT,
+                              shmem_internal_hier_sync,  /* symmetric base address */
+                              &one, sizeof(one),
+                              leader_pe,
+                              SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
+        SHMEM_WAIT_UNTIL(local_sync, SHMEM_CMP_EQ, 0);
+    }
+
+    if (hier_is_leader) {
+        shmem_internal_sync_tree(hier_leader_start, hier_leader_stride,
+                                 hier_num_leaders, pSync);
+    }
+
+    if (hier_is_leader) {
+        long n = hier_node_size;
+        shmem_internal_put_scalar(SHMEM_CTX_DEFAULT,
+                                 shmem_internal_hier_sync, /* symmetric base address */
+                                 &n, sizeof(n),
+                                 leader_pe);
+        SHMEM_WAIT_UNTIL(local_sync, SHMEM_CMP_EQ, 1);
+
+        shmem_internal_put_scalar(SHMEM_CTX_DEFAULT,
+                                 shmem_internal_hier_sync, /* symmetric base address */
+                                 &zero, sizeof(zero),
+                                 leader_pe);
+        SHMEM_WAIT_UNTIL(local_sync, SHMEM_CMP_EQ, 0);
+    } else {
+       SHMEM_WAIT_UNTIL(local_sync, SHMEM_CMP_EQ, hier_node_size);
+       shmem_internal_atomic(SHMEM_CTX_DEFAULT,
+                              shmem_internal_hier_sync,  /* symmetric base address */
+                              &mone, sizeof(mone),
+                              leader_pe,
+                              SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
+    }
+}
 
 /*****************************************
  *
