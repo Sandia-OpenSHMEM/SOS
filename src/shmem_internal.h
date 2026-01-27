@@ -56,7 +56,10 @@ extern unsigned int shmem_internal_rand_seed;
 extern hwloc_topology_t shmem_internal_topology;
 #endif
 
-#define SHMEM_INTERNAL_HEAP_OVERHEAD (1024*1024)
+#define SHMEM_INTERNAL_HEAP_OVERHEAD (10*1024*1024)
+/* Note: this is an estimate */
+#define SHMEM_MAX_BOUNCE_BUFFER_OVERHEAD (2*1024*1024)
+
 #define SHMEM_INTERNAL_DIAG_STRLEN 1024
 #define SHMEM_INTERNAL_DIAG_WRAPLEN 72
 

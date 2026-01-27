@@ -446,11 +446,13 @@ shmem_transport_init(void)
     shmem_transport_portals4_bounce_buffers =
         shmem_free_list_init(sizeof(shmem_transport_portals4_bounce_buffer_t) +
                              shmem_transport_portals4_bounce_buffer_size,
-                             init_bounce_buffer);
+                             init_bounce_buffer,
+                             0);
 
     shmem_transport_portals4_long_frags =
         shmem_free_list_init(sizeof(shmem_transport_portals4_long_frag_t),
-                             init_long_frag);
+                             init_long_frag,
+                             0);
 
     /* Initialize network */
     ni_req_limits.max_entries = 1024;
