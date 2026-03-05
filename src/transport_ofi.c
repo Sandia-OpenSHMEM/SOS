@@ -1834,6 +1834,30 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 #ifdef USE_CTX_LOCK
     SHMEM_MUTEX_INIT(ctx->lock);
 #endif
+
+        /* In single-endpoint mode, the default context shares target_ep/target_cq.
+         * Open counters on the global domain and bind them directly to target_ep. */
+        if (shmem_transport_ofi_single_ep && id == SHMEM_TRANSPORT_CTX_DEFAULT_ID && idx == 0) {
+            ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_put_attr,
+                               &ctx->put_cntr[0], NULL);
+            OFI_CHECK_RETURN_MSG(ret, "put_cntr creation failed (%s)\n", fi_strerror(errno));
+
+            ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_get_attr,
+                               &ctx->get_cntr[0], NULL);
+            OFI_CHECK_RETURN_MSG(ret, "get_cntr creation failed (%s)\n", fi_strerror(errno));
+
+            ret = fi_ep_bind(shmem_transport_ofi_target_ep, &ctx->put_cntr[0]->fid, FI_WRITE);
+            OFI_CHECK_RETURN_STR(ret, "fi_ep_bind put CNTR to target endpoint failed");
+
+            ret = fi_ep_bind(shmem_transport_ofi_target_ep, &ctx->get_cntr[0]->fid, FI_READ);
+            OFI_CHECK_RETURN_STR(ret, "fi_ep_bind get CNTR to target endpoint failed");
+
+            ctx->ep[0] = shmem_transport_ofi_target_ep;
+            ctx->cq[0] = shmem_transport_ofi_target_cq;
+            /* fabric/domain/av/stx are not needed; resources owned by global init */
+            continue;
+        }
+
         ret = fi_fabric(provider_list[idx]->fabric_attr, &ctx->fabric[idx], NULL);
         OFI_CHECK_RETURN_STR(ret, "fabric initialization failed");
 
@@ -1880,6 +1904,11 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
             ctx->tid = shmem_transport_ofi_gettid();
     }
     for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
+        /* In single-ep mode, target_ep for the default context is already bound
+         * and enabled by shmem_transport_ofi_target_ep_init(); skip it here. */
+        if (shmem_transport_ofi_single_ep && id == SHMEM_TRANSPORT_CTX_DEFAULT_ID && idx == 0)
+            continue;
+
         shmem_transport_ofi_stx_allocate(ctx, idx);
 
         ret = bind_enable_ep_resources(ctx, idx);
@@ -1957,6 +1986,13 @@ int shmem_transport_init(void)
 
     ret = allocate_fabric_resources(&shmem_transport_ofi_info);
     if (ret != 0) return ret;
+
+    /* Single-endpoint mode is incompatible with TxMuxing (multiple NICs).
+     * Disable it automatically when multiple NICs are in use. */
+    if (shmem_transport_ofi_single_ep && shmem_transport_ofi_num_nics > 1) {
+        DEBUG_STR("Disabling single-endpoint mode: multiple NICs (TxMuxing) in use");
+        shmem_transport_ofi_single_ep = 0;
+    }
 
     /* STX sharing settings */
     char *type = shmem_internal_params.OFI_STX_ALLOCATOR;
@@ -2208,7 +2244,11 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
     }
 
     for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
-        if (ctx->ep[idx]) {
+        /* In single-ep mode, ep[0]/cq[0] of the default context are shared with
+         * target_ep/target_cq, which are closed later in shmem_transport_fini(). */
+        bool skip_shared = (shmem_transport_ofi_single_ep &&
+                            ctx->id == SHMEM_TRANSPORT_CTX_DEFAULT_ID && idx == 0);
+        if (ctx->ep[idx] && !skip_shared) {
             ret = fi_close(&ctx->ep[idx]->fid);
             OFI_CHECK_ERROR_MSG(ret, "Context endpoint close failed (%s)\n", fi_strerror(errno));
             ctx->ep[idx] = NULL;
@@ -2262,7 +2302,12 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
             ctx->get_cntr[idx] = NULL;
         }
 
-        if (ctx->cq && ctx->cq[idx]) {
+        /* In single-ep mode, cq[0] of the default context is shared with
+         * target_cq, which is closed later in shmem_transport_fini(). */
+        bool skip_shared = (shmem_transport_ofi_single_ep &&
+                            ctx->id == SHMEM_TRANSPORT_CTX_DEFAULT_ID && idx == 0);
+
+        if (ctx->cq && ctx->cq[idx] && !skip_shared) {
             ret = fi_close(&ctx->cq[idx]->fid);
             OFI_CHECK_ERROR_MSG(ret, "Context CQ close failed (%s)\n", fi_strerror(errno));
             ctx->cq[idx] = NULL;
