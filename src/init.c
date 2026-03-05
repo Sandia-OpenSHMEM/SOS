@@ -143,7 +143,9 @@ shmem_internal_shutdown(void)
         return;
     }
 
-    shmem_internal_barrier_all();
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
+    shmem_internal_barrier_all(nic_idx);
 
     shmem_internal_finalized = 1;
 
