@@ -1433,9 +1433,9 @@ void shmem_transport_atomic_fetch(shmem_transport_ctx_t* ctx, void *target,
 static inline
 void shmem_transport_atomic_fetch_nbi(shmem_transport_ctx_t* ctx, void *target,
                                   const void *source, size_t len, int pe,
-                                  int datatype)
+                                  int datatype, size_t nic_idx)
 {
-    shmem_transport_atomic_fetch(ctx, target, source, len, pe, datatype);
+    shmem_transport_atomic_fetch(ctx, target, source, len, pe, datatype, nic_idx);
 }
 
 

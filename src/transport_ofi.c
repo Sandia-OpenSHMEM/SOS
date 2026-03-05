@@ -2373,10 +2373,10 @@ int shmem_transport_fini(void)
 
     /* If single-endpoint mode, need to close the default context's put and get counters */
     if (shmem_transport_ofi_single_ep) {
-        ret = fi_close(&shmem_transport_ctx_default.put_cntr->fid);
+        ret = fi_close(&shmem_transport_ctx_default.put_cntr[0]->fid);
         OFI_CHECK_ERROR_MSG(ret, "Default EP put CNTR close failed (%s)\n", fi_strerror(errno));
 
-        ret = fi_close(&shmem_transport_ctx_default.get_cntr->fid);
+        ret = fi_close(&shmem_transport_ctx_default.get_cntr[0]->fid);
         OFI_CHECK_ERROR_MSG(ret, "Default EP get CNTR close failed (%s)\n", fi_strerror(errno));
     }
 

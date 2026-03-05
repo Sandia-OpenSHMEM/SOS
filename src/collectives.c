@@ -1006,6 +1006,8 @@ shmem_internal_scan_linear(void *target, const void *source, size_t count, size_
     long zero = 0, one = 1;
     long completion = 0;
     int free_source = 0;
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
 
 
     if (count == 0) return;
@@ -1020,11 +1022,11 @@ shmem_internal_scan_linear(void *target, const void *source, size_t count, size_
         if (NULL == tmp)
             RAISE_ERROR_MSG("Unable to allocate %zub temporary buffer\n", count*type_size);
 
-        shmem_internal_copy_self(tmp, target, count * type_size);
+        shmem_internal_copy_self(tmp, target, count * type_size, nic_idx);
         free_source = 1;
         source = tmp;
 
-        shmem_internal_sync(PE_start, PE_stride, PE_size, pSync + 2);
+        shmem_internal_sync(PE_start, PE_stride, PE_size, pSync + 2, nic_idx);
     }
 
     if (PE_start == shmem_internal_my_pe) {
@@ -1038,7 +1040,7 @@ shmem_internal_scan_linear(void *target, const void *source, size_t count, size_
             //Create an array of size (count * type_size) of zeroes
             uint8_t *zeroes = (uint8_t *) calloc(count, type_size);
             shmem_internal_put_nb(SHMEM_CTX_DEFAULT, target, zeroes, count * type_size,
-                              shmem_internal_my_pe, &completion);
+                              shmem_internal_my_pe, &completion, nic_idx);
             shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
             shmem_internal_quiet(SHMEM_CTX_DEFAULT);
             free(zeroes);
@@ -1050,7 +1052,7 @@ shmem_internal_scan_linear(void *target, const void *source, size_t count, size_
              i++, pe += PE_stride) {
                  
             shmem_internal_put_nb(SHMEM_CTX_DEFAULT, target, source, count * type_size,
-                               pe, &completion);           
+                               pe, &completion, nic_idx);           
             shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
             shmem_internal_fence(SHMEM_CTX_DEFAULT);
             
@@ -1059,14 +1061,14 @@ shmem_internal_scan_linear(void *target, const void *source, size_t count, size_
         for (pe = PE_start + PE_stride, i = 1 ;
              i < PE_size ;
              i++, pe += PE_stride) {
-            shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one), pe);
+            shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one), pe, nic_idx);
         }
                 
         /* Wait for others to acknowledge initialization */
         SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, PE_size - 1);
         
         /* reset pSync */
-        shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &zero, sizeof(zero), shmem_internal_my_pe);
+        shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &zero, sizeof(zero), shmem_internal_my_pe, nic_idx);
         SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, 0);
         
         
@@ -1074,7 +1076,7 @@ shmem_internal_scan_linear(void *target, const void *source, size_t count, size_
         for (pe = PE_start + PE_stride, i = 1 ;
              i < PE_size ;
              i++, pe += PE_stride) {
-            shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one), pe);
+            shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one), pe, nic_idx);
         }
     } else {
             
@@ -1082,7 +1084,7 @@ shmem_internal_scan_linear(void *target, const void *source, size_t count, size_
         SHMEM_WAIT(pSync, 0);
 
         /* reset pSync */
-        shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &zero, sizeof(zero), shmem_internal_my_pe);
+        shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &zero, sizeof(zero), shmem_internal_my_pe, nic_idx);
         SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, 0);
 
         /* Send contribution to all pes larger than itself */
@@ -1090,20 +1092,20 @@ shmem_internal_scan_linear(void *target, const void *source, size_t count, size_
              i < PE_size;
              i++, pe += PE_stride) {
 
-            shmem_internal_atomicv(SHMEM_CTX_DEFAULT, target, source, count, type_size,
-                               pe, op, datatype, &completion);
+            shmem_internal_atomicv(SHMEM_CTX_DEFAULT, target, source, count * type_size,
+                               pe, op, datatype, &completion, nic_idx);
             shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
             shmem_internal_fence(SHMEM_CTX_DEFAULT);
             
         }
         
         shmem_internal_atomic(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one),
-                              PE_start, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
+                              PE_start, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG, nic_idx);
                               
         SHMEM_WAIT(pSync, 0);
         
         /* reset pSync */
-        shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &zero, sizeof(zero), shmem_internal_my_pe);
+        shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &zero, sizeof(zero), shmem_internal_my_pe, nic_idx);
         SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, 0);
         
     }
@@ -1124,6 +1126,8 @@ shmem_internal_scan_ring(void *target, const void *source, size_t count, size_t 
     long zero = 0, one = 1;
     long completion = 0;
     int free_source = 0;
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
     
     /* In-place scan: copy source data to a temporary buffer so we can use
      * the symmetric buffer to accumulate scan data. */
@@ -1133,11 +1137,11 @@ shmem_internal_scan_ring(void *target, const void *source, size_t count, size_t 
         if (NULL == tmp)
             RAISE_ERROR_MSG("Unable to allocate %zub temporary buffer\n", count*type_size);
 
-        shmem_internal_copy_self(tmp, target, count * type_size);
+        shmem_internal_copy_self(tmp, target, count * type_size, nic_idx);
         free_source = 1;
         source = tmp;
 
-        shmem_internal_sync(PE_start, PE_stride, PE_size, pSync + 2);
+        shmem_internal_sync(PE_start, PE_stride, PE_size, pSync + 2, nic_idx);
     }
 
 
@@ -1155,7 +1159,7 @@ shmem_internal_scan_ring(void *target, const void *source, size_t count, size_t 
             //Create an array of size (count * type_size) of zeroes
             uint8_t *zeroes = (uint8_t *) calloc(count, type_size);
             shmem_internal_put_nb(SHMEM_CTX_DEFAULT, target, zeroes, count * type_size,
-                              shmem_internal_my_pe, &completion);
+                              shmem_internal_my_pe, &completion, nic_idx);
             shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
             shmem_internal_quiet(SHMEM_CTX_DEFAULT);
             free(zeroes);
@@ -1167,20 +1171,20 @@ shmem_internal_scan_ring(void *target, const void *source, size_t count, size_t 
              i++, pe += PE_stride) {
                  
             shmem_internal_put_nb(SHMEM_CTX_DEFAULT, target, source, count * type_size,
-                               pe, &completion);           
+                               pe, &completion, nic_idx);           
             shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
             shmem_internal_fence(SHMEM_CTX_DEFAULT);
         }
         
         /* Let next pe know that it's safe to send to us */
         if(shmem_internal_my_pe + PE_stride < PE_size)
-            shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one), shmem_internal_my_pe + PE_stride);
+            shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one), shmem_internal_my_pe + PE_stride, nic_idx);
 
         /* Wait for others to acknowledge sending data */
         SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, PE_size - 1);
 
         /* reset pSync */
-        shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &zero, sizeof(zero), shmem_internal_my_pe);
+        shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &zero, sizeof(zero), shmem_internal_my_pe, nic_idx);
         SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, 0);
 
     } else {
@@ -1188,7 +1192,7 @@ shmem_internal_scan_ring(void *target, const void *source, size_t count, size_t 
         SHMEM_WAIT(pSync, 0);
 
         /* reset pSync */
-        shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &zero, sizeof(zero), shmem_internal_my_pe);
+        shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &zero, sizeof(zero), shmem_internal_my_pe, nic_idx);
         SHMEM_WAIT_UNTIL(pSync, SHMEM_CMP_EQ, 0);
 
         /* Send contribution to all pes larger than itself */
@@ -1196,18 +1200,18 @@ shmem_internal_scan_ring(void *target, const void *source, size_t count, size_t 
              i < PE_size;
              i++, pe += PE_stride) {
 
-            shmem_internal_atomicv(SHMEM_CTX_DEFAULT, target, source, count, type_size,
-                               pe, op, datatype, &completion);
+            shmem_internal_atomicv(SHMEM_CTX_DEFAULT, target, source, count * type_size,
+                               pe, op, datatype, &completion, nic_idx);
             shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
             shmem_internal_fence(SHMEM_CTX_DEFAULT);    
         }
         
         /* Let next pe know that it's safe to send to us */
         if (shmem_internal_my_pe + PE_stride < PE_size)
-            shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one), shmem_internal_my_pe + PE_stride);
+            shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one), shmem_internal_my_pe + PE_stride, nic_idx);
         
         shmem_internal_atomic(SHMEM_CTX_DEFAULT, pSync, &one, sizeof(one),
-                              PE_start, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG);
+                              PE_start, SHM_INTERNAL_SUM, SHM_INTERNAL_LONG, nic_idx);
     }
     
     if (free_source)

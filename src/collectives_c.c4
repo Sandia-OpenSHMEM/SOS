@@ -321,7 +321,9 @@ SHMEM_BIND_C_COLL_MIN_MAX(`SHMEM_DEF_REDUCE', `max', `SHM_INTERNAL_MAX')
         TYPE *pWrk = NULL;                                              \
                                                                         \
         shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;  \
-        long *psync = shmem_internal_team_choose_psync(myteam, SCAN); \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
+        long *psync = shmem_internal_team_choose_psync(myteam, SCAN, nic_idx); \
         shmem_internal_exscan(dest, source, nelems, sizeof(TYPE),   \
                    myteam->start, myteam->stride, myteam->size, pWrk,   \
                    psync, IOP, ITYPE);                                  \
@@ -345,7 +347,9 @@ SHMEM_BIND_C_COLL_SUM_PROD(`SHMEM_DEF_EXSCAN', `sum', `SHM_INTERNAL_SUM')
         TYPE *pWrk = NULL;                                              \
                                                                         \
         shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;  \
-        long *psync = shmem_internal_team_choose_psync(myteam, SCAN); \
+        size_t nic_idx = 0;                                             \
+        SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);                            \
+        long *psync = shmem_internal_team_choose_psync(myteam, SCAN, nic_idx); \
         shmem_internal_inscan(dest, source, nelems, sizeof(TYPE),   \
                    myteam->start, myteam->stride, myteam->size, pWrk,   \
                    psync, IOP, ITYPE);                                  \
