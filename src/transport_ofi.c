@@ -1801,12 +1801,12 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     //info->p_info->rx_attr->caps = FI_RECV; /* to drive progress on the CQ */;
 
     ctx->id = id;
-    ctx->fabric = (struct fid_fabric **) malloc(shmem_transport_ofi_num_nics * sizeof(struct fid_fabric *));
-    ctx->domain = (struct fid_domain **) malloc(shmem_transport_ofi_num_nics * sizeof(struct fid_domain *));
-    ctx->av = (struct fid_av **) malloc(shmem_transport_ofi_num_nics * sizeof(struct fid_av *));
-    ctx->ep = (struct fid_ep **) malloc(shmem_transport_ofi_num_nics * sizeof(struct fid_ep *));
-    ctx->put_cntr = (struct fid_cntr **) malloc(shmem_transport_ofi_num_nics * sizeof(struct fid_cntr *));
-    ctx->get_cntr = (struct fid_cntr **) malloc(shmem_transport_ofi_num_nics * sizeof(struct fid_cntr *));
+    ctx->fabric = (struct fid_fabric **) calloc(shmem_transport_ofi_num_nics, sizeof(struct fid_fabric *));
+    ctx->domain = (struct fid_domain **) calloc(shmem_transport_ofi_num_nics, sizeof(struct fid_domain *));
+    ctx->av = (struct fid_av **) calloc(shmem_transport_ofi_num_nics, sizeof(struct fid_av *));
+    ctx->ep = (struct fid_ep **) calloc(shmem_transport_ofi_num_nics, sizeof(struct fid_ep *));
+    ctx->put_cntr = (struct fid_cntr **) calloc(shmem_transport_ofi_num_nics, sizeof(struct fid_cntr *));
+    ctx->get_cntr = (struct fid_cntr **) calloc(shmem_transport_ofi_num_nics, sizeof(struct fid_cntr *));
 #ifdef USE_CTX_LOCK
     ctx->pending_put_cntr = (uint64_t *) malloc(shmem_transport_ofi_num_nics * sizeof(uint64_t));
     ctx->pending_get_cntr = (uint64_t *) malloc(shmem_transport_ofi_num_nics * sizeof(uint64_t));
@@ -2211,6 +2211,7 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         if (ctx->ep[idx]) {
             ret = fi_close(&ctx->ep[idx]->fid);
             OFI_CHECK_ERROR_MSG(ret, "Context endpoint close failed (%s)\n", fi_strerror(errno));
+            ctx->ep[idx] = NULL;
         }
     }
 
@@ -2252,31 +2253,37 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         if (ctx->put_cntr && ctx->put_cntr[idx]) {
             ret = fi_close(&ctx->put_cntr[idx]->fid);
             OFI_CHECK_ERROR_MSG(ret, "Context put CNTR close failed (%s)\n", fi_strerror(errno));
+            ctx->put_cntr[idx] = NULL;
         }
 
         if (ctx->get_cntr && ctx->get_cntr[idx]) {
             ret = fi_close(&ctx->get_cntr[idx]->fid);
             OFI_CHECK_ERROR_MSG(ret, "Context get CNTR close failed (%s)\n", fi_strerror(errno));
+            ctx->get_cntr[idx] = NULL;
         }
 
         if (ctx->cq && ctx->cq[idx]) {
             ret = fi_close(&ctx->cq[idx]->fid);
             OFI_CHECK_ERROR_MSG(ret, "Context CQ close failed (%s)\n", fi_strerror(errno));
+            ctx->cq[idx] = NULL;
         }
 
         if (ctx->av && ctx->av[idx]) {
             ret = fi_close(&ctx->av[idx]->fid);
             OFI_CHECK_ERROR_MSG(ret, "Context AV close failed (%s)\n", fi_strerror(errno));
+            ctx->av[idx] = NULL;
         }
 
         if (ctx->domain && ctx->domain[idx]) {
             ret = fi_close(&ctx->domain[idx]->fid);
             OFI_CHECK_ERROR_MSG(ret, "Context domain close failed (%s)\n", fi_strerror(errno));
+            ctx->domain[idx] = NULL;
         }
 
         if (ctx->fabric && ctx->fabric[idx]) {
             ret = fi_close(&ctx->fabric[idx]->fid);
             OFI_CHECK_ERROR_MSG(ret, "Context fabric close failed (%s)\n", fi_strerror(errno));
+            ctx->fabric[idx] = NULL;
         }
     }
 
@@ -2367,15 +2374,6 @@ int shmem_transport_fini(void)
 
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));
-
-    /* If single-endpoint mode, need to close the default context's put and get counters */
-    if (shmem_transport_ofi_single_ep) {
-        ret = fi_close(&shmem_transport_ctx_default.put_cntr[0]->fid);
-        OFI_CHECK_ERROR_MSG(ret, "Default EP put CNTR close failed (%s)\n", fi_strerror(errno));
-
-        ret = fi_close(&shmem_transport_ctx_default.get_cntr[0]->fid);
-        OFI_CHECK_ERROR_MSG(ret, "Default EP get CNTR close failed (%s)\n", fi_strerror(errno));
-    }
 
     ret = fi_close(&shmem_transport_ofi_target_cq->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target CQ close failed (%s)\n", fi_strerror(errno));
