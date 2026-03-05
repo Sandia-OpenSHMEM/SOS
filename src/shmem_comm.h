@@ -337,7 +337,7 @@ shmem_internal_atomicv(shmem_ctx_t ctx, void *target, const void *source,
         shmem_internal_fetch_atomic(ctx, ((uint8_t *) target) + (i * type_size),
                                     ((uint8_t *) source) + (i * type_size), &tmp_fetch, type_size,
                                     pe, op, datatype, nic_idx);
-        shmem_transport_get_wait((shmem_transport_ctx_t *)ctx);
+        shmem_transport_get_wait((shmem_transport_ctx_t *)ctx, nic_idx);
     }
     *completion += 1;
 #else

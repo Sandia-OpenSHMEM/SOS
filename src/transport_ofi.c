@@ -1790,8 +1790,6 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     struct fi_cq_attr cq_attr = {0};
     cq_attr.format = FI_CQ_FORMAT_CONTEXT;
 
-    struct fabric_info* info = &shmem_transport_ofi_info;
-
     // Need to do these steps for all providers in provider_list?
     //info->p_info->ep_attr->tx_ctx_cnt = shmem_transport_ofi_stx_max > 0 ? FI_SHARED_CONTEXT : 0;
     //info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | FI_ATOMIC | FI_RECV;
@@ -2180,7 +2178,6 @@ int shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options,
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 {
     int ret;
-    bool close_default_ctx = false;
 
     if (ctx == NULL)
         return;
