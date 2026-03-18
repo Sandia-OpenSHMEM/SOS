@@ -1371,13 +1371,28 @@ int allocate_fabric_resources(struct fabric_info *info)
 }
 
 #ifdef USE_HWLOC
+/* Selects the best OFI provider for this PE based on CPU/NIC locality using hwloc.
+ *
+ * Queries where the current process last ran (CPU set), then walks the candidate
+ * provider list and keeps only NICs whose PCI device shares a topology ancestor
+ * (socket or NUMA node) with that CPU set. The filtered "close" NIC list is
+ * stored in the global provider_list and shmem_transport_ofi_num_nics is updated
+ * to reflect how many close NICs were found. One provider is returned for the
+ * calling PE using round-robin assignment (my_pe % num_close_nics).
+ *
+ * On any hwloc lookup failure, or if no topologically close NICs are found,
+ * the function falls back to the full unfiltered provider list and selects
+ * round-robin from all available NICs.
+ */
 static inline
 struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **provs, size_t num_nics) {
     int ret = 0;
     hwloc_bitmap_t bindset = hwloc_bitmap_alloc();
 
+    /* Query the CPU set where this process last ran. */
     ret = hwloc_get_proc_last_cpu_location(shmem_internal_topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS);
     if (ret < 0) {
+        /* Fall back to all NICs, round-robin by PE. */
         RAISE_WARN_MSG("hwloc_get_proc_last_cpu_location failed (%s)\n", strerror(errno));
         provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
         for (size_t idx = 0; idx < num_nics; idx++) {
@@ -1387,17 +1402,23 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
         return provs[shmem_internal_my_pe % num_nics];
     }
 
-    // Identify which provider entries correspond to NICs with an affinity to the calling process
+    /* Walk each candidate provider and keep only those whose PCI NIC shares a
+     * topology ancestor with the process CPU set (i.e., same socket/NUMA node). */
     struct fi_info *close_provs = NULL;
     struct fi_info *last_added = NULL;
     size_t num_close_nics = 0;
-    for (size_t i = 0; i < num_nics; i++) {
+    for (size_t i = 0; i < num_nics; i++) 
+	{
         struct fi_info *cur_prov = provs[i];
-        if (cur_prov->nic->bus_attr->bus_type != FI_BUS_PCI) continue;
+        if (cur_prov->nic->bus_attr->bus_type != FI_BUS_PCI) {
+			continue;
+		}
 
+        /* Look up the hwloc PCI device object by its bus address. */
         struct fi_pci_attr pci = cur_prov->nic->bus_attr->attr.pci;
         hwloc_obj_t io_device = hwloc_get_pcidev_by_busid(shmem_internal_topology, pci.domain_id, pci.bus_id, pci.device_id, pci.function_id);
         if (!io_device) {
+            /* Fall back to all NICs if topology lookup fails. */
             RAISE_WARN_MSG("hwloc_get_pcidev_by_busid failed\n");
             provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
             for (size_t idx = 0; idx < num_nics; idx++) {
@@ -1406,8 +1427,10 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
             shmem_transport_ofi_num_nics = num_nics;
             return provs[shmem_internal_my_pe % num_nics];
         };
+        /* Walk up the topology tree to find the first non-I/O ancestor (e.g., NUMA node). */
         hwloc_obj_t first_non_io = hwloc_get_non_io_ancestor_obj(shmem_internal_topology, io_device);
         if (!first_non_io) {
+            /* Fall back to all NICs if ancestor lookup fails. */
             RAISE_WARN_MSG("hwloc_get_non_io_ancestor_obj failed\n");
             provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
             for (size_t idx = 0; idx < num_nics; idx++) {
@@ -1417,6 +1440,7 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
             return provs[shmem_internal_my_pe % num_nics];
         }
 
+        /* NIC is "close" if the process CPU set and the NIC's ancestor CPU set overlap. */
         if (hwloc_bitmap_isincluded(bindset, first_non_io->cpuset) ||
             hwloc_bitmap_isincluded(first_non_io->cpuset, bindset)) {
             struct fi_info *dup = fi_dupinfo(cur_prov);
@@ -1429,6 +1453,7 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
     DEBUG_MSG("Num. NICs w/ affinity to process: %zu\n", num_close_nics);
 
     if (!close_provs) {
+        /* No topologically close NICs found; fall back to all NICs, round-robin by PE. */
         RAISE_WARN_MSG("Could not detect any NICs with affinity to the process\n");
         provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
         for (size_t idx = 0; idx < num_nics; idx++) {
@@ -1442,6 +1467,7 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
 
     last_added->next = NULL;
 
+    /* Build provider_list from the filtered close-NIC set. */
     int idx = 0;
     provider_list = (struct fi_info **) malloc(num_close_nics * sizeof(struct fi_info *));
     for (struct fi_info *cur_fabric = close_provs; cur_fabric; cur_fabric = cur_fabric->next) {
@@ -1450,6 +1476,7 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
 
     hwloc_bitmap_free(bindset);
 
+    /* Assign this PE a NIC from the close set using round-robin. */
     struct fi_info *provider = provider_list[shmem_internal_my_pe % num_close_nics];
     //free(prov_list);
 

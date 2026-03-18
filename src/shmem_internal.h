@@ -186,7 +186,7 @@ extern hwloc_topology_t shmem_internal_topology;
         }                                                                \
     } while(0)
 
-#ifdef USE_OFI
+#ifdef USE_OFI_TX_LOAD_BALANCING
 #define SHMEM_GET_TRANSMIT_NIC_IDX(idx)                                  \
     do {                                                                 \
         int rand_int = rand_r(&shmem_internal_rand_seed);                \

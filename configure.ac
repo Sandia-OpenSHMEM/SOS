@@ -340,6 +340,12 @@ AC_ARG_ENABLE([ofi-hmem],
 AS_IF([test "$enable_ofi_hmem" = "yes"],
       [AC_DEFINE([USE_FI_HMEM], [1], [If defined, the OFI transport will enable FI_HMEM.])])
 
+AC_ARG_ENABLE([ofi-tx-load-balancing],
+    [AS_HELP_STRING([--enable-ofi-tx-load-balancing],
+                    [Enable OFI transmit load balancing across available NICs. (default: disabled)])])
+AS_IF([test "$enable_ofi_tx_load_balancing" = "yes"],
+      [AC_DEFINE([USE_OFI_TX_LOAD_BALANCING], [1], [If defined, the OFI transport will randomly select among available NICs for transmit operations.])])
+
 PKG_INSTALLDIR()
 
 dnl check for programs
