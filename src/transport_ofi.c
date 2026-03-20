@@ -631,8 +631,7 @@ int bind_enable_ep_resources(shmem_transport_ctx_t *ctx, size_t idx)
      * removed below.  However, there aren't currently any cases where removing
      * FI_RECV significantly improves performance or resource usage.  */
 
-    ret = fi_ep_bind(ctx->ep[idx], &ctx->cq[idx]->fid,
-                     FI_SELECTIVE_COMPLETION | FI_TRANSMIT | FI_RECV);
+    ret = fi_ep_bind(ctx->ep[idx], &ctx->cq[idx]->fid, FI_SELECTIVE_COMPLETION | FI_TRANSMIT | FI_RECV);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind CQ to endpoint failed");
 
     ret = fi_ep_bind(ctx->ep[idx], /*&shmem_transport_ofi_avfd->fid*/ &ctx->av[idx]->fid, 0); /* Currently failing */
@@ -1301,16 +1300,21 @@ int populate_av(void)
         return ret;
     }
 
-    for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
-        ret = fi_av_insert(shmem_transport_ctx_default.av[idx],
-                           alladdrs,
-                           shmem_internal_num_pes,
-                           addr_table,
-                           0,
-                           NULL);
-        if (ret != shmem_internal_num_pes) {
-            RAISE_WARN_STR("av insert failed");
-            return ret;
+    /* In single-ep mode, ctx_default.av[] is never created (the global
+     * shmem_transport_ofi_avfd AV is used instead, already inserted above).
+     * Only insert into per-NIC AVs when running in multi-NIC mode. */
+    if (!shmem_transport_ofi_single_ep) {
+        for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
+            ret = fi_av_insert(shmem_transport_ctx_default.av[idx],
+                               alladdrs,
+                               shmem_internal_num_pes,
+                               addr_table,
+                               0,
+                               NULL);
+            if (ret != shmem_internal_num_pes) {
+                RAISE_WARN_STR("av insert failed");
+                return ret;
+            }
         }
     }
 
@@ -1394,12 +1398,21 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
     if (ret < 0) {
         /* Fall back to all NICs, round-robin by PE. */
         RAISE_WARN_MSG("hwloc_get_proc_last_cpu_location failed (%s)\n", strerror(errno));
+#ifdef USE_OFI_TX_LOAD_BALANCING
+        /* TX load balancing: expose all NICs for per-op random selection. */
         provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
         for (size_t idx = 0; idx < num_nics; idx++) {
             provider_list[idx] = provs[idx];
         }
         shmem_transport_ofi_num_nics = num_nics;
         return provs[shmem_internal_my_pe % num_nics];
+#else
+        /* Base multi-rail: assign this PE exactly one NIC via round-robin. */
+        provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+        provider_list[0] = provs[shmem_internal_my_pe % num_nics];
+        shmem_transport_ofi_num_nics = 1;
+        return provider_list[0];
+#endif
     }
 
     /* Walk each candidate provider and keep only those whose PCI NIC shares a
@@ -1420,30 +1433,63 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
         if (!io_device) {
             /* Fall back to all NICs if topology lookup fails. */
             RAISE_WARN_MSG("hwloc_get_pcidev_by_busid failed\n");
+#ifdef USE_OFI_TX_LOAD_BALANCING
             provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
             for (size_t idx = 0; idx < num_nics; idx++) {
                 provider_list[idx] = provs[idx];
             }
             shmem_transport_ofi_num_nics = num_nics;
             return provs[shmem_internal_my_pe % num_nics];
+#else
+            provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+            provider_list[0] = provs[shmem_internal_my_pe % num_nics];
+            shmem_transport_ofi_num_nics = 1;
+            return provider_list[0];
+#endif
         };
         /* Walk up the topology tree to find the first non-I/O ancestor (e.g., NUMA node). */
         hwloc_obj_t first_non_io = hwloc_get_non_io_ancestor_obj(shmem_internal_topology, io_device);
         if (!first_non_io) {
             /* Fall back to all NICs if ancestor lookup fails. */
             RAISE_WARN_MSG("hwloc_get_non_io_ancestor_obj failed\n");
+#ifdef USE_OFI_TX_LOAD_BALANCING
             provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
             for (size_t idx = 0; idx < num_nics; idx++) {
                 provider_list[idx] = provs[idx];
             }
             shmem_transport_ofi_num_nics = num_nics;
             return provs[shmem_internal_my_pe % num_nics];
+#else
+            provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+            provider_list[0] = provs[shmem_internal_my_pe % num_nics];
+            shmem_transport_ofi_num_nics = 1;
+            return provider_list[0];
+#endif
         }
 
         /* NIC is "close" if the process CPU set and the NIC's ancestor CPU set overlap. */
         if (hwloc_bitmap_isincluded(bindset, first_non_io->cpuset) ||
             hwloc_bitmap_isincluded(first_non_io->cpuset, bindset)) {
             struct fi_info *dup = fi_dupinfo(cur_prov);
+            if (!dup) {
+                /* fi_dupinfo failure: fall back to all NICs rather than risk a
+                 * corrupt list (wrong num_close_nics, NULL last_added, etc.). */
+                RAISE_WARN_MSG("fi_dupinfo failed for NIC %zu; falling back to all NICs\n", i);
+                hwloc_bitmap_free(bindset);
+#ifdef USE_OFI_TX_LOAD_BALANCING
+                provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
+                for (size_t idx = 0; idx < num_nics; idx++) {
+                    provider_list[idx] = provs[idx];
+                }
+                shmem_transport_ofi_num_nics = num_nics;
+                return provs[shmem_internal_my_pe % num_nics];
+#else
+                provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+                provider_list[0] = provs[shmem_internal_my_pe % num_nics];
+                shmem_transport_ofi_num_nics = 1;
+                return provider_list[0];
+#endif
+            }
             if (!close_provs) close_provs = dup;
             if (last_added) last_added->next = dup;
             last_added = dup;
@@ -1455,19 +1501,27 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
     if (!close_provs) {
         /* No topologically close NICs found; fall back to all NICs, round-robin by PE. */
         RAISE_WARN_MSG("Could not detect any NICs with affinity to the process\n");
+#ifdef USE_OFI_TX_LOAD_BALANCING
         provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
         for (size_t idx = 0; idx < num_nics; idx++) {
             provider_list[idx] = provs[idx];
         }
         shmem_transport_ofi_num_nics = num_nics;
-
-        /* If no 'close' NICs, select from list of all NICs using round-robin assignment */
         return provs[shmem_internal_my_pe % num_nics];
+#else
+        /* Base multi-rail: assign this PE exactly one NIC via round-robin. */
+        provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+        provider_list[0] = provs[shmem_internal_my_pe % num_nics];
+        shmem_transport_ofi_num_nics = 1;
+        return provider_list[0];
+#endif
     }
 
     last_added->next = NULL;
 
     /* Build provider_list from the filtered close-NIC set. */
+#ifdef USE_OFI_TX_LOAD_BALANCING
+    /* TX load balancing: expose all close NICs for per-op random selection. */
     int idx = 0;
     provider_list = (struct fi_info **) malloc(num_close_nics * sizeof(struct fi_info *));
     for (struct fi_info *cur_fabric = close_provs; cur_fabric; cur_fabric = cur_fabric->next) {
@@ -1482,6 +1536,21 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
 
     shmem_transport_ofi_num_nics = num_close_nics;
     return provider;
+#else
+    /* Base multi-rail: assign this PE exactly one close NIC via round-robin. */
+    size_t pe_nic_idx = shmem_internal_my_pe % num_close_nics;
+    struct fi_info *assigned = close_provs;
+    for (size_t i = 0; i < pe_nic_idx; i++) {
+        assigned = assigned->next;
+    }
+    provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+    provider_list[0] = assigned;
+
+    hwloc_bitmap_free(bindset);
+
+    shmem_transport_ofi_num_nics = 1;
+    return provider_list[0];
+#endif
 }
 #endif
 
@@ -1862,6 +1931,10 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     SHMEM_MUTEX_INIT(ctx->lock);
 #endif
 
+		// bman
+		//if (shmem_internal_my_pe == 0) printf("\n\nshmem_transport_ofi_single_ep = %d \n\n", shmem_transport_ofi_single_ep);  // R: 0
+		// /bman
+
         /* In single-endpoint mode, the default context shares target_ep/target_cq.
          * Open counters on the global domain and bind them directly to target_ep. */
         if (shmem_transport_ofi_single_ep && id == SHMEM_TRANSPORT_CTX_DEFAULT_ID && idx == 0) {
@@ -2132,7 +2205,7 @@ int shmem_transport_startup(void)
         if (shmem_transport_ofi_stx_max > 0) {
             shmem_transport_ofi_stx_pool[idx] = malloc(shmem_transport_ofi_stx_max *
                                                 sizeof(shmem_transport_ofi_stx_t));
-            if (shmem_transport_ofi_stx_pool == NULL) {
+            if (shmem_transport_ofi_stx_pool[idx] == NULL) {
                 RAISE_ERROR_STR("Out of memory when allocating OFI STX pool");
             }
         }
@@ -2317,13 +2390,19 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
     }
 
     for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
-        if (ctx->put_cntr && ctx->put_cntr[idx]) {
+        /* In single-ep mode, put_cntr[0]/get_cntr[0] of the default context are
+         * bound to target_ep, which must be closed first in shmem_transport_fini().
+         * Close them there, not here. */
+        bool skip_shared_cntrs = (shmem_transport_ofi_single_ep &&
+                                  ctx->id == SHMEM_TRANSPORT_CTX_DEFAULT_ID && idx == 0);
+
+        if (ctx->put_cntr && ctx->put_cntr[idx] && !skip_shared_cntrs) {
             ret = fi_close(&ctx->put_cntr[idx]->fid);
             OFI_CHECK_ERROR_MSG(ret, "Context put CNTR close failed (%s)\n", fi_strerror(errno));
             ctx->put_cntr[idx] = NULL;
         }
 
-        if (ctx->get_cntr && ctx->get_cntr[idx]) {
+        if (ctx->get_cntr && ctx->get_cntr[idx] && !skip_shared_cntrs) {
             ret = fi_close(&ctx->get_cntr[idx]->fid);
             OFI_CHECK_ERROR_MSG(ret, "Context get CNTR close failed (%s)\n", fi_strerror(errno));
             ctx->get_cntr[idx] = NULL;
@@ -2446,6 +2525,21 @@ int shmem_transport_fini(void)
 
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));
+
+    /* In single-ep mode, ctx_default's put/get cntrs were bound to target_ep.
+     * Now that target_ep is closed, we can safely close them. */
+    if (shmem_transport_ofi_single_ep) {
+        if (shmem_transport_ctx_default.put_cntr && shmem_transport_ctx_default.put_cntr[0]) {
+            ret = fi_close(&shmem_transport_ctx_default.put_cntr[0]->fid);
+            OFI_CHECK_ERROR_MSG(ret, "Default ctx put CNTR close failed (%s)\n", fi_strerror(errno));
+            shmem_transport_ctx_default.put_cntr[0] = NULL;
+        }
+        if (shmem_transport_ctx_default.get_cntr && shmem_transport_ctx_default.get_cntr[0]) {
+            ret = fi_close(&shmem_transport_ctx_default.get_cntr[0]->fid);
+            OFI_CHECK_ERROR_MSG(ret, "Default ctx get CNTR close failed (%s)\n", fi_strerror(errno));
+            shmem_transport_ctx_default.get_cntr[0] = NULL;
+        }
+    }
 
     ret = fi_close(&shmem_transport_ofi_target_cq->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target CQ close failed (%s)\n", fi_strerror(errno));

@@ -729,7 +729,7 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
                                             .data          = 0
                                           };
         do {
-            ret = fi_writemsg(ctx->ep[nic_idx], &msg, FI_COMPLETION | FI_DELIVERY_COMPLETE); /* FIXED? */
+            ret = fi_writemsg(ctx->ep[nic_idx], &msg, FI_COMPLETION | FI_DELIVERY_COMPLETE); /* FIXED? */	// bman: for bounce--we get CQ events, i think
         } while (try_again(ctx, ret, &polled, nic_idx)); /* FIXED? */
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 
@@ -751,7 +751,8 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
 
     shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
-    if (len <= shmem_transport_ofi_max_buffered_send) {
+    if (len <= shmem_transport_ofi_max_buffered_send) 
+	{
         uint8_t *src_buf = (uint8_t *) source;
 
         SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
@@ -778,11 +779,13 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
                                       };
 
         do {
-            ret = fi_writemsg(ctx->ep[nic_idx], &msg, FI_DELIVERY_COMPLETE | FI_INJECT); /* FIXED? */
+            ret = fi_writemsg(ctx->ep[nic_idx], &msg, FI_DELIVERY_COMPLETE | FI_INJECT); /* FIXED? */		// bman: is done when ACK'd from other NIC; no CQ events
         } while (try_again(ctx, ret, &polled, nic_idx)); /* FIXED? */
 
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
-    } else {
+    } 
+	else 
+	{
         uint8_t *frag_source = (uint8_t *) source;
         uint64_t frag_target = (uint64_t) addr;
         size_t frag_len = len;
@@ -808,7 +811,8 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
                                 };
 
         SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
-        while (frag_source < (((uint8_t *) source) + len)) {
+        while (frag_source < (((uint8_t *) source) + len)) 
+		{
             frag_len = MIN(shmem_transport_ofi_max_msg_size, 
                           (size_t) (((uint8_t *) source) + len - frag_source));
             polled = 0;
