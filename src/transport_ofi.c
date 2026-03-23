@@ -54,6 +54,9 @@
 
 struct fi_info **provider_list = NULL;
 size_t shmem_transport_ofi_num_nics = 0;
+/* Head of the fi_dupinfo'd close-NIC chain; freed at shutdown. NULL when
+ * provider_list was built from raw provs[] pointers (fallback paths). */
+static struct fi_info *shmem_transport_ofi_close_provs = NULL;
 
 struct fabric_info {
     struct fi_info *fabrics;
@@ -1401,16 +1404,22 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
 #ifdef USE_OFI_TX_LOAD_BALANCING
         /* TX load balancing: expose all NICs for per-op random selection. */
         provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
+        if (!provider_list)
+            RAISE_ERROR_MSG("malloc failed for provider_list\n");
         for (size_t idx = 0; idx < num_nics; idx++) {
             provider_list[idx] = provs[idx];
         }
         shmem_transport_ofi_num_nics = num_nics;
+        hwloc_bitmap_free(bindset);
         return provs[shmem_internal_my_pe % num_nics];
 #else
         /* Base multi-rail: assign this PE exactly one NIC via round-robin. */
         provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+        if (!provider_list)
+            RAISE_ERROR_MSG("malloc failed for provider_list\n");
         provider_list[0] = provs[shmem_internal_my_pe % num_nics];
         shmem_transport_ofi_num_nics = 1;
+        hwloc_bitmap_free(bindset);
         return provider_list[0];
 #endif
     }
@@ -1423,7 +1432,8 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
     for (size_t i = 0; i < num_nics; i++) 
 	{
         struct fi_info *cur_prov = provs[i];
-        if (cur_prov->nic->bus_attr->bus_type != FI_BUS_PCI) {
+        if (!cur_prov->nic || !cur_prov->nic->bus_attr ||
+            cur_prov->nic->bus_attr->bus_type != FI_BUS_PCI) {
 			continue;
 		}
 
@@ -1435,15 +1445,21 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
             RAISE_WARN_MSG("hwloc_get_pcidev_by_busid failed\n");
 #ifdef USE_OFI_TX_LOAD_BALANCING
             provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
+            if (!provider_list)
+                RAISE_ERROR_MSG("malloc failed for provider_list\n");
             for (size_t idx = 0; idx < num_nics; idx++) {
                 provider_list[idx] = provs[idx];
             }
             shmem_transport_ofi_num_nics = num_nics;
+            hwloc_bitmap_free(bindset);
             return provs[shmem_internal_my_pe % num_nics];
 #else
             provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+            if (!provider_list)
+                RAISE_ERROR_MSG("malloc failed for provider_list\n");
             provider_list[0] = provs[shmem_internal_my_pe % num_nics];
             shmem_transport_ofi_num_nics = 1;
+            hwloc_bitmap_free(bindset);
             return provider_list[0];
 #endif
         };
@@ -1454,15 +1470,21 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
             RAISE_WARN_MSG("hwloc_get_non_io_ancestor_obj failed\n");
 #ifdef USE_OFI_TX_LOAD_BALANCING
             provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
+            if (!provider_list)
+                RAISE_ERROR_MSG("malloc failed for provider_list\n");
             for (size_t idx = 0; idx < num_nics; idx++) {
                 provider_list[idx] = provs[idx];
             }
             shmem_transport_ofi_num_nics = num_nics;
+            hwloc_bitmap_free(bindset);
             return provs[shmem_internal_my_pe % num_nics];
 #else
             provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+            if (!provider_list)
+                RAISE_ERROR_MSG("malloc failed for provider_list\n");
             provider_list[0] = provs[shmem_internal_my_pe % num_nics];
             shmem_transport_ofi_num_nics = 1;
+            hwloc_bitmap_free(bindset);
             return provider_list[0];
 #endif
         }
@@ -1478,6 +1500,8 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
                 hwloc_bitmap_free(bindset);
 #ifdef USE_OFI_TX_LOAD_BALANCING
                 provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
+                if (!provider_list)
+                    RAISE_ERROR_MSG("malloc failed for provider_list\n");
                 for (size_t idx = 0; idx < num_nics; idx++) {
                     provider_list[idx] = provs[idx];
                 }
@@ -1485,6 +1509,8 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
                 return provs[shmem_internal_my_pe % num_nics];
 #else
                 provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+                if (!provider_list)
+                    RAISE_ERROR_MSG("malloc failed for provider_list\n");
                 provider_list[0] = provs[shmem_internal_my_pe % num_nics];
                 shmem_transport_ofi_num_nics = 1;
                 return provider_list[0];
@@ -1503,16 +1529,22 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
         RAISE_WARN_MSG("Could not detect any NICs with affinity to the process\n");
 #ifdef USE_OFI_TX_LOAD_BALANCING
         provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
+        if (!provider_list)
+            RAISE_ERROR_MSG("malloc failed for provider_list\n");
         for (size_t idx = 0; idx < num_nics; idx++) {
             provider_list[idx] = provs[idx];
         }
         shmem_transport_ofi_num_nics = num_nics;
+        hwloc_bitmap_free(bindset);
         return provs[shmem_internal_my_pe % num_nics];
 #else
         /* Base multi-rail: assign this PE exactly one NIC via round-robin. */
         provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+        if (!provider_list)
+            RAISE_ERROR_MSG("malloc failed for provider_list\n");
         provider_list[0] = provs[shmem_internal_my_pe % num_nics];
         shmem_transport_ofi_num_nics = 1;
+        hwloc_bitmap_free(bindset);
         return provider_list[0];
 #endif
     }
@@ -1524,6 +1556,9 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
     /* TX load balancing: expose all close NICs for per-op random selection. */
     int idx = 0;
     provider_list = (struct fi_info **) malloc(num_close_nics * sizeof(struct fi_info *));
+    if (!provider_list)
+        RAISE_ERROR_MSG("malloc failed for provider_list\n");
+    shmem_transport_ofi_close_provs = close_provs;
     for (struct fi_info *cur_fabric = close_provs; cur_fabric; cur_fabric = cur_fabric->next) {
         provider_list[idx++] = cur_fabric;
     }
@@ -1544,7 +1579,11 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
         assigned = assigned->next;
     }
     provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+    if (!provider_list)
+        RAISE_ERROR_MSG("malloc failed for provider_list\n");
     provider_list[0] = assigned;
+    /* Store the full dup'd chain so fini can free all entries. */
+    shmem_transport_ofi_close_provs = close_provs;
 
     hwloc_bitmap_free(bindset);
 
@@ -1911,6 +1950,10 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     ctx->pending_get_cntr = (shmem_internal_cntr_t *) malloc(shmem_transport_ofi_num_nics * sizeof(shmem_internal_cntr_t));
 #endif
     ctx->cq = (struct fid_cq **) malloc(shmem_transport_ofi_num_nics * sizeof(struct fid_cq *));
+    if (!ctx->fabric || !ctx->domain || !ctx->av || !ctx->ep ||
+        !ctx->put_cntr || !ctx->get_cntr ||
+        !ctx->pending_put_cntr || !ctx->pending_get_cntr || !ctx->cq)
+        RAISE_ERROR_MSG("ctx_init: allocation failed (out of memory)\n");
     for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
 #ifdef USE_CTX_LOCK
         ctx->pending_put_cntr[idx] = 0;
@@ -2568,6 +2611,14 @@ int shmem_transport_fini(void)
 #endif
 
     fi_freeinfo(shmem_transport_ofi_info.fabrics);
+
+    /* Free the fi_dupinfo'd close-NIC chain (success paths only; NULL in fallbacks). */
+    if (shmem_transport_ofi_close_provs) {
+        fi_freeinfo(shmem_transport_ofi_close_provs);
+        shmem_transport_ofi_close_provs = NULL;
+    }
+    free(provider_list);
+    provider_list = NULL;
 
     SHMEM_MUTEX_DESTROY(shmem_transport_ofi_lock);
 

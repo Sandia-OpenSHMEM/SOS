@@ -189,20 +189,28 @@ extern hwloc_topology_t shmem_internal_topology;
 
 #ifdef USE_OFI_TX_LOAD_BALANCING
 #ifdef USE_OFI_TX_LOAD_BALANCING_RANDOM
-/* Random NIC selection via rand_r. */
+/* Random NIC selection via rand_r.
+ * Use modulo to avoid the float-multiply edge case where rand_int==RAND_MAX
+ * produces normalized==1.0 and an out-of-bounds index. */
 #define SHMEM_GET_TRANSMIT_NIC_IDX(idx)                                  \
     do {                                                                 \
         int rand_int = rand_r(&shmem_internal_rand_seed);                \
-        double normalized = (double)rand_int / (double)RAND_MAX;         \
-        idx = (int)(normalized * shmem_transport_ofi_num_nics);          \
+        idx = (int)((unsigned)rand_int %                                 \
+                    (unsigned)shmem_transport_ofi_num_nics);             \
     } while (0)
 #else
-/* Round-robin NIC selection: uniform distribution, no PRNG overhead. */
+/* Round-robin NIC selection: uniform distribution, no PRNG overhead.
+ * Use atomic fetch-add only for SHMEM_THREAD_MULTIPLE to avoid races. */
 #define SHMEM_GET_TRANSMIT_NIC_IDX(idx)                                  \
     do {                                                                 \
-        idx = shmem_internal_nic_rr_idx;                                 \
-        if (++shmem_internal_nic_rr_idx >= shmem_transport_ofi_num_nics) \
-            shmem_internal_nic_rr_idx = 0;                              \
+        size_t rr;                                                       \
+        if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE) {      \
+            rr = __atomic_fetch_add(&shmem_internal_nic_rr_idx, 1,       \
+                                    __ATOMIC_RELAXED);                   \
+        } else {                                                         \
+            rr = shmem_internal_nic_rr_idx++;                            \
+        }                                                                \
+        idx = rr % shmem_transport_ofi_num_nics;                         \
     } while (0)
 #endif
 #else
