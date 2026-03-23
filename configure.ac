@@ -342,9 +342,16 @@ AS_IF([test "$enable_ofi_hmem" = "yes"],
 
 AC_ARG_ENABLE([ofi-tx-load-balancing],
     [AS_HELP_STRING([--enable-ofi-tx-load-balancing],
-                    [Enable OFI transmit load balancing across available NICs. (default: disabled)])])
+                    [Enable OFI transmit load balancing across available NICs using round-robin selection. (default: disabled)])])
 AS_IF([test "$enable_ofi_tx_load_balancing" = "yes"],
-      [AC_DEFINE([USE_OFI_TX_LOAD_BALANCING], [1], [If defined, the OFI transport will randomly select among available NICs for transmit operations.])])
+      [AC_DEFINE([USE_OFI_TX_LOAD_BALANCING], [1], [If defined, the OFI transport will use round-robin selection among available NICs for transmit operations.])])
+
+AC_ARG_ENABLE([ofi-tx-load-balancing-random],
+    [AS_HELP_STRING([--enable-ofi-tx-load-balancing-random],
+                    [Enable OFI transmit load balancing across available NICs using random selection. Implies --enable-ofi-tx-load-balancing. (default: disabled)])])
+AS_IF([test "$enable_ofi_tx_load_balancing_random" = "yes"],
+      [AC_DEFINE([USE_OFI_TX_LOAD_BALANCING], [1], [If defined, the OFI transport will select among available NICs for transmit operations.])
+       AC_DEFINE([USE_OFI_TX_LOAD_BALANCING_RANDOM], [1], [If defined, the OFI transport will use random selection among available NICs for transmit operations.])])
 
 PKG_INSTALLDIR()
 

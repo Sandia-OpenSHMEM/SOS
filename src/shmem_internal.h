@@ -50,6 +50,7 @@ extern int shmem_external_heap_device_type;
 extern int shmem_external_heap_device;
 
 extern unsigned int shmem_internal_rand_seed;
+extern size_t shmem_internal_nic_rr_idx;
 
 #ifdef USE_HWLOC
 #include <hwloc.h>
@@ -187,12 +188,23 @@ extern hwloc_topology_t shmem_internal_topology;
     } while(0)
 
 #ifdef USE_OFI_TX_LOAD_BALANCING
+#ifdef USE_OFI_TX_LOAD_BALANCING_RANDOM
+/* Random NIC selection via rand_r. */
 #define SHMEM_GET_TRANSMIT_NIC_IDX(idx)                                  \
     do {                                                                 \
         int rand_int = rand_r(&shmem_internal_rand_seed);                \
         double normalized = (double)rand_int / (double)RAND_MAX;         \
         idx = (int)(normalized * shmem_transport_ofi_num_nics);          \
     } while (0)
+#else
+/* Round-robin NIC selection: uniform distribution, no PRNG overhead. */
+#define SHMEM_GET_TRANSMIT_NIC_IDX(idx)                                  \
+    do {                                                                 \
+        idx = shmem_internal_nic_rr_idx;                                 \
+        if (++shmem_internal_nic_rr_idx >= shmem_transport_ofi_num_nics) \
+            shmem_internal_nic_rr_idx = 0;                              \
+    } while (0)
+#endif
 #else
 #define SHMEM_GET_TRANSMIT_NIC_IDX(idx)
 #endif

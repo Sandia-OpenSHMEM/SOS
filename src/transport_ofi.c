@@ -2154,6 +2154,11 @@ int shmem_transport_startup(void)
     int ret;
     int i;
 
+#ifdef USE_OFI_TX_LOAD_BALANCING
+    /* Stagger each PE's round-robin start position so they don't all begin on
+     * NIC 0.  num_nics is finalized by this point. */
+    shmem_internal_nic_rr_idx = shmem_internal_my_pe % shmem_transport_ofi_num_nics;
+#endif
     shmem_transport_ofi_stx_pool = (shmem_transport_ofi_stx_t **) malloc(shmem_transport_ofi_num_nics *
                                         sizeof(shmem_transport_ofi_stx_t *));
     for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {

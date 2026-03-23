@@ -97,6 +97,7 @@ int shmem_internal_global_exit_called = 0;
 int shmem_internal_thread_level;
 
 unsigned int shmem_internal_rand_seed;
+size_t shmem_internal_nic_rr_idx;
 
 #ifdef USE_HWLOC
 #include <hwloc.h>
@@ -115,6 +116,7 @@ static void
 shmem_internal_randr_init(void)
 {
     shmem_internal_rand_seed = shmem_internal_my_pe;
+    shmem_internal_nic_rr_idx = 0;
 
 #ifdef ENABLE_THREADS
     SHMEM_MUTEX_INIT(shmem_internal_mutex_rand_r);
