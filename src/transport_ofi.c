@@ -1385,7 +1385,7 @@ int allocate_fabric_resources(struct fabric_info *info)
  * (socket or NUMA node) with that CPU set. The filtered "close" NIC list is
  * stored in the global provider_list and shmem_transport_ofi_num_nics is updated
  * to reflect how many close NICs were found. One provider is returned for the
- * calling PE using round-robin assignment (my_pe % num_close_nics).
+ * calling PE using round-robin assignment (local_rank % num_close_nics).
  *
  * On any hwloc lookup failure, or if no topologically close NICs are found,
  * the function falls back to the full unfiltered provider list and selects
@@ -1394,6 +1394,9 @@ int allocate_fabric_resources(struct fabric_info *info)
 static inline
 struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **provs, size_t num_nics) {
     int ret = 0;
+    /* Use intra-node rank for NIC assignment so PEs on different nodes with
+     * the same global PE number don't all land on the same NIC. */
+    int local_rank = shmem_runtime_get_node_rank(shmem_internal_my_pe);
     hwloc_bitmap_t bindset = hwloc_bitmap_alloc();
 
     /* Query the CPU set where this process last ran. */
@@ -1401,7 +1404,7 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
     if (ret < 0) {
         /* Fall back to all NICs, round-robin by PE. */
         RAISE_WARN_MSG("hwloc_get_proc_last_cpu_location failed (%s)\n", strerror(errno));
-#ifdef USE_OFI_TX_LOAD_BALANCING
+#if defined(USE_OFI_TX_LOAD_BALANCING_ROUND_ROBIN) || defined(USE_OFI_TX_LOAD_BALANCING_RANDOM)
         /* TX load balancing: expose all NICs for per-op random selection. */
         provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
         if (!provider_list)
@@ -1411,13 +1414,13 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
         }
         shmem_transport_ofi_num_nics = num_nics;
         hwloc_bitmap_free(bindset);
-        return provs[shmem_internal_my_pe % num_nics];
+        return provs[local_rank % num_nics];
 #else
         /* Base multi-rail: assign this PE exactly one NIC via round-robin. */
         provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
         if (!provider_list)
             RAISE_ERROR_MSG("malloc failed for provider_list\n");
-        provider_list[0] = provs[shmem_internal_my_pe % num_nics];
+        provider_list[0] = provs[local_rank % num_nics];
         shmem_transport_ofi_num_nics = 1;
         hwloc_bitmap_free(bindset);
         return provider_list[0];
@@ -1443,7 +1446,7 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
         if (!io_device) {
             /* Fall back to all NICs if topology lookup fails. */
             RAISE_WARN_MSG("hwloc_get_pcidev_by_busid failed\n");
-#ifdef USE_OFI_TX_LOAD_BALANCING
+#if defined(USE_OFI_TX_LOAD_BALANCING_ROUND_ROBIN) || defined(USE_OFI_TX_LOAD_BALANCING_RANDOM)
             provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
             if (!provider_list)
                 RAISE_ERROR_MSG("malloc failed for provider_list\n");
@@ -1452,12 +1455,12 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
             }
             shmem_transport_ofi_num_nics = num_nics;
             hwloc_bitmap_free(bindset);
-            return provs[shmem_internal_my_pe % num_nics];
+            return provs[local_rank % num_nics];
 #else
             provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
             if (!provider_list)
                 RAISE_ERROR_MSG("malloc failed for provider_list\n");
-            provider_list[0] = provs[shmem_internal_my_pe % num_nics];
+            provider_list[0] = provs[local_rank % num_nics];
             shmem_transport_ofi_num_nics = 1;
             hwloc_bitmap_free(bindset);
             return provider_list[0];
@@ -1468,7 +1471,7 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
         if (!first_non_io) {
             /* Fall back to all NICs if ancestor lookup fails. */
             RAISE_WARN_MSG("hwloc_get_non_io_ancestor_obj failed\n");
-#ifdef USE_OFI_TX_LOAD_BALANCING
+#if defined(USE_OFI_TX_LOAD_BALANCING_ROUND_ROBIN) || defined(USE_OFI_TX_LOAD_BALANCING_RANDOM)
             provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
             if (!provider_list)
                 RAISE_ERROR_MSG("malloc failed for provider_list\n");
@@ -1477,12 +1480,12 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
             }
             shmem_transport_ofi_num_nics = num_nics;
             hwloc_bitmap_free(bindset);
-            return provs[shmem_internal_my_pe % num_nics];
+            return provs[local_rank % num_nics];
 #else
             provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
             if (!provider_list)
                 RAISE_ERROR_MSG("malloc failed for provider_list\n");
-            provider_list[0] = provs[shmem_internal_my_pe % num_nics];
+            provider_list[0] = provs[local_rank % num_nics];
             shmem_transport_ofi_num_nics = 1;
             hwloc_bitmap_free(bindset);
             return provider_list[0];
@@ -1498,7 +1501,7 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
                  * corrupt list (wrong num_close_nics, NULL last_added, etc.). */
                 RAISE_WARN_MSG("fi_dupinfo failed for NIC %zu; falling back to all NICs\n", i);
                 hwloc_bitmap_free(bindset);
-#ifdef USE_OFI_TX_LOAD_BALANCING
+#if defined(USE_OFI_TX_LOAD_BALANCING_ROUND_ROBIN) || defined(USE_OFI_TX_LOAD_BALANCING_RANDOM)
                 provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
                 if (!provider_list)
                     RAISE_ERROR_MSG("malloc failed for provider_list\n");
@@ -1506,12 +1509,12 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
                     provider_list[idx] = provs[idx];
                 }
                 shmem_transport_ofi_num_nics = num_nics;
-                return provs[shmem_internal_my_pe % num_nics];
+                return provs[local_rank % num_nics];
 #else
                 provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
                 if (!provider_list)
                     RAISE_ERROR_MSG("malloc failed for provider_list\n");
-                provider_list[0] = provs[shmem_internal_my_pe % num_nics];
+                provider_list[0] = provs[local_rank % num_nics];
                 shmem_transport_ofi_num_nics = 1;
                 return provider_list[0];
 #endif
@@ -1527,7 +1530,7 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
     if (!close_provs) {
         /* No topologically close NICs found; fall back to all NICs, round-robin by PE. */
         RAISE_WARN_MSG("Could not detect any NICs with affinity to the process\n");
-#ifdef USE_OFI_TX_LOAD_BALANCING
+#if defined(USE_OFI_TX_LOAD_BALANCING_ROUND_ROBIN) || defined(USE_OFI_TX_LOAD_BALANCING_RANDOM)
         provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
         if (!provider_list)
             RAISE_ERROR_MSG("malloc failed for provider_list\n");
@@ -1536,13 +1539,13 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
         }
         shmem_transport_ofi_num_nics = num_nics;
         hwloc_bitmap_free(bindset);
-        return provs[shmem_internal_my_pe % num_nics];
+        return provs[local_rank % num_nics];
 #else
         /* Base multi-rail: assign this PE exactly one NIC via round-robin. */
         provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
         if (!provider_list)
             RAISE_ERROR_MSG("malloc failed for provider_list\n");
-        provider_list[0] = provs[shmem_internal_my_pe % num_nics];
+        provider_list[0] = provs[local_rank % num_nics];
         shmem_transport_ofi_num_nics = 1;
         hwloc_bitmap_free(bindset);
         return provider_list[0];
@@ -1552,7 +1555,7 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
     last_added->next = NULL;
 
     /* Build provider_list from the filtered close-NIC set. */
-#ifdef USE_OFI_TX_LOAD_BALANCING
+#if defined(USE_OFI_TX_LOAD_BALANCING_ROUND_ROBIN) || defined(USE_OFI_TX_LOAD_BALANCING_RANDOM)
     /* TX load balancing: expose all close NICs for per-op random selection. */
     int idx = 0;
     provider_list = (struct fi_info **) malloc(num_close_nics * sizeof(struct fi_info *));
@@ -1566,14 +1569,14 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
     hwloc_bitmap_free(bindset);
 
     /* Assign this PE a NIC from the close set using round-robin. */
-    struct fi_info *provider = provider_list[shmem_internal_my_pe % num_close_nics];
+    struct fi_info *provider = provider_list[local_rank % num_close_nics];
     //free(prov_list);
 
     shmem_transport_ofi_num_nics = num_close_nics;
     return provider;
 #else
     /* Base multi-rail: assign this PE exactly one close NIC via round-robin. */
-    size_t pe_nic_idx = shmem_internal_my_pe % num_close_nics;
+    size_t pe_nic_idx = local_rank % num_close_nics;
     struct fi_info *assigned = close_provs;
     for (size_t i = 0; i < pe_nic_idx; i++) {
         assigned = assigned->next;
@@ -1778,17 +1781,16 @@ int query_for_fabric(struct fabric_info *info)
 #ifdef USE_HWLOC
             info->p_info = assign_nic_with_hwloc(info->p_info, sorted_prov_list, num_nics);
 #else
-            /* Round-robin assignment of NICs to PEs
-             * FIXME: A more suitable indexing value would be
-             * shmem_team_my_pe(SHMEM_TEAM_NODE) % num_nics, but it is too early in initialization to
-             * do that here. We would also want to replace the similar occurrences in the
-             * assign_nic_with_hwloc function. */
-            provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
-            for (size_t idx = 0; idx < num_nics; idx++) {
-                provider_list[idx] = sorted_prov_list[idx];
-            }
-            info->p_info = provider_list[shmem_internal_my_pe % num_nics];
-            shmem_transport_ofi_num_nics = num_nics;
+            /* No hwloc: round-robin assignment using intra-node rank so PEs
+             * on different nodes with the same global index don't collide.
+             * TX load balancing requires hwloc and cannot reach this path. */
+            int local_rank = shmem_runtime_get_node_rank(shmem_internal_my_pe);
+            provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+            if (!provider_list)
+                RAISE_ERROR_MSG("malloc failed for provider_list\n");
+            provider_list[0] = sorted_prov_list[local_rank % num_nics];
+            info->p_info = provider_list[0];
+            shmem_transport_ofi_num_nics = 1;
 #endif
             //free(prov_list); //Add free(provider_list) to cleanup
         }
@@ -2004,6 +2006,9 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
         ret = fi_fabric(provider_list[idx]->fabric_attr, &ctx->fabric[idx], NULL);
         OFI_CHECK_RETURN_STR(ret, "fabric initialization failed");
 
+        DEBUG_MSG("ctx[%d] NIC[%zu]: domain=%s\n",
+                  id, idx, provider_list[idx]->domain_attr->name);
+
         ret = fi_domain(/*shmem_transport_ofi_fabfd*/ ctx->fabric[idx], provider_list[idx],
                         &ctx->domain[idx], NULL);
         OFI_CHECK_RETURN_STR(ret, "domain initialization failed");
@@ -2197,9 +2202,10 @@ int shmem_transport_startup(void)
     int ret;
     int i;
 
-#ifdef USE_OFI_TX_LOAD_BALANCING
+#if defined(USE_OFI_TX_LOAD_BALANCING_ROUND_ROBIN) || defined(USE_OFI_TX_LOAD_BALANCING_RANDOM)
     /* Stagger each PE's round-robin start position so they don't all begin on
-     * NIC 0.  num_nics is finalized by this point. */
+     * NIC 0.  num_nics is finalized by this point. randr_init() runs after
+     * this and skips the reset when TX LB is active. */
     shmem_internal_nic_rr_idx = shmem_internal_my_pe % shmem_transport_ofi_num_nics;
 #endif
     shmem_transport_ofi_stx_pool = (shmem_transport_ofi_stx_t **) malloc(shmem_transport_ofi_num_nics *

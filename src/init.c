@@ -116,7 +116,11 @@ static void
 shmem_internal_randr_init(void)
 {
     shmem_internal_rand_seed = shmem_internal_my_pe;
+    /* Only reset nic_rr_idx when TX LB is not active; otherwise
+     * shmem_transport_startup() has already set the staggered start. */
+#if !defined(USE_OFI_TX_LOAD_BALANCING_ROUND_ROBIN) && !defined(USE_OFI_TX_LOAD_BALANCING_RANDOM)
     shmem_internal_nic_rr_idx = 0;
+#endif
 
 #ifdef ENABLE_THREADS
     SHMEM_MUTEX_INIT(shmem_internal_mutex_rand_r);
