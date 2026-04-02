@@ -423,6 +423,7 @@ static inline void shmem_transport_get_wait(shmem_transport_ctx_t* ctx, size_t i
 static inline
 void shmem_transport_ofi_drain_cq(shmem_transport_ctx_t *ctx, size_t nic_idx)
 {
+    shmem_internal_assert(nic_idx < shmem_transport_ofi_num_nics);
     ssize_t ret = 0;
     struct fi_cq_entry buf;
 
@@ -488,6 +489,7 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_transport_ctx_t
 static inline
 void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx, size_t nic_idx)
 {
+    shmem_internal_assert(nic_idx < shmem_transport_ofi_num_nics);
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
 
     /* Wait for bounce buffered operations to complete */
@@ -580,6 +582,7 @@ int shmem_transport_fence(shmem_transport_ctx_t* ctx)
  * retry limit (ofi_max_poll) is exceeded, abort. */
 static inline
 int try_again(shmem_transport_ctx_t *ctx, const int ret, uint64_t *polled, size_t nic_idx) {
+    shmem_internal_assert(nic_idx < shmem_transport_ofi_num_nics);
     if (ret) {
         if (ret == -FI_EAGAIN) {
             if (ctx->bounce_buffers) {
@@ -624,6 +627,7 @@ static inline
 void shmem_transport_put_scalar(shmem_transport_ctx_t* ctx, void *target, const
                                void *source, size_t len, int pe, size_t nic_idx)
 {
+    shmem_internal_assert(nic_idx < shmem_transport_ofi_num_nics);
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
     uint64_t polled = 0;
@@ -654,6 +658,7 @@ static inline
 void shmem_transport_ofi_put_large(shmem_transport_ctx_t* ctx, void *target, const void *source,
                                    size_t len, int pe, size_t nic_idx)
 {
+    shmem_internal_assert(nic_idx < shmem_transport_ofi_num_nics);
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
     uint64_t polled = 0;
@@ -694,6 +699,7 @@ static inline
 void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
                             int pe, long *completion, size_t nic_idx)
 {
+    shmem_internal_assert(nic_idx < shmem_transport_ofi_num_nics);
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
     uint64_t polled = 0;
@@ -743,6 +749,7 @@ static inline
 void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
                                     uint64_t *sig_addr, uint64_t signal, int sig_op, int pe, size_t nic_idx)
 {
+    shmem_internal_assert(nic_idx < shmem_transport_ofi_num_nics);
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
     uint64_t polled = 0;
@@ -903,6 +910,7 @@ static inline
 void shmem_transport_put_nbi(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
                              int pe, size_t nic_idx)
 {
+    shmem_internal_assert(nic_idx < shmem_transport_ofi_num_nics);
     if (len <= shmem_transport_ofi_max_buffered_send) {
 
         shmem_transport_put_scalar(ctx, target, source, len, pe, nic_idx);
@@ -917,6 +925,7 @@ void shmem_transport_put_nbi(shmem_transport_ctx_t* ctx, void *target, const voi
 static inline
 void shmem_transport_get(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len, int pe, size_t nic_idx)
 {
+    shmem_internal_assert(nic_idx < shmem_transport_ofi_num_nics);
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
     uint64_t polled = 0;
@@ -971,6 +980,7 @@ void shmem_transport_get(shmem_transport_ctx_t* ctx, void *target, const void *s
 static inline
 void shmem_transport_get_wait(shmem_transport_ctx_t* ctx, size_t nic_idx)
 {
+    shmem_internal_assert(nic_idx < shmem_transport_ofi_num_nics);
     /* wait for get counter to meet outstanding count value */
 
     /* Note: the communication routines increment pending get counters before
@@ -1022,6 +1032,7 @@ void shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target, const
                                void *source, void *dest, const void *operand,
                                size_t len, int pe, int datatype, size_t nic_idx)
 {
+    shmem_internal_assert(nic_idx < shmem_transport_ofi_num_nics);
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
     uint64_t polled = 0;
@@ -1118,6 +1129,7 @@ static inline
 void shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void *source, void *dest,
                            const void *mask, size_t len, int pe, int datatype, size_t nic_idx)
 {
+    shmem_internal_assert(nic_idx < shmem_transport_ofi_num_nics);
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
     uint64_t polled = 0;
@@ -1156,6 +1168,7 @@ static inline
 void shmem_transport_atomic(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
                             int pe, int op, int datatype, size_t nic_idx)
 {
+    shmem_internal_assert(nic_idx < shmem_transport_ofi_num_nics);
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
     uint64_t polled = 0;
@@ -1188,6 +1201,7 @@ void shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const voi
                              size_t full_len, int pe, int op, int datatype,
                              long *completion, size_t nic_idx)
 {
+    shmem_internal_assert(nic_idx < shmem_transport_ofi_num_nics);
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
     int dt = SHMEM_TRANSPORT_DTYPE(datatype);
@@ -1297,6 +1311,7 @@ void shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target,
                                       const void *source, void *dest,
                                       size_t len, int pe, int op, int datatype, size_t nic_idx)
 {
+    shmem_internal_assert(nic_idx < shmem_transport_ofi_num_nics);
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
     uint64_t polled = 0;
@@ -1345,6 +1360,7 @@ void shmem_transport_fetch_atomic(shmem_transport_ctx_t* ctx, void *target,
                                   size_t len, int pe, int op, int datatype,
                                   size_t nic_idx)
 {
+    shmem_internal_assert(nic_idx < shmem_transport_ofi_num_nics);
 #ifdef ENABLE_MR_ENDPOINT
     /* CXI provider currently does not support fetch atomics with FI_DELIVERY_COMPLETE
      * That is why non-blocking API is used which uses FI_INJECT. FI_ATOMIC_READ is
