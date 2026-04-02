@@ -52,6 +52,12 @@
 #include "runtime.h"
 #include "uthash.h"
 
+struct fi_info **provider_list = NULL;
+size_t shmem_transport_ofi_num_nics = 0;
+/* Head of the fi_dupinfo'd close-NIC chain; freed at shutdown. NULL when
+ * provider_list was built from raw provs[] pointers (fallback paths). */
+static struct fi_info *shmem_transport_ofi_close_provs = NULL;
+
 struct fabric_info {
     struct fi_info *fabrics;
     struct fi_info *p_info;
@@ -390,7 +396,7 @@ struct shmem_transport_ofi_stx_t {
     int               is_private;
 };
 typedef struct shmem_transport_ofi_stx_t shmem_transport_ofi_stx_t;
-static shmem_transport_ofi_stx_t* shmem_transport_ofi_stx_pool = NULL;
+static shmem_transport_ofi_stx_t** shmem_transport_ofi_stx_pool = NULL;
 
 struct shmem_transport_ofi_stx_kvs_t {
     int                         stx_idx;
@@ -401,7 +407,7 @@ typedef struct shmem_transport_ofi_stx_kvs_t shmem_transport_ofi_stx_kvs_t;
 static shmem_transport_ofi_stx_kvs_t* shmem_transport_ofi_stx_kvs = NULL;
 
 static inline
-void shmem_transport_ofi_dump_stx(void) {
+void shmem_transport_ofi_dump_stx(size_t idx) {
     char stx_str[256];
     int i, offset;
 
@@ -411,8 +417,8 @@ void shmem_transport_ofi_dump_stx(void) {
     for (i = offset = 0; i < shmem_transport_ofi_stx_max; i++)
         offset += snprintf(stx_str+offset, 256-offset,
                            (i == shmem_transport_ofi_stx_max-1) ? "%ld%s" : "%ld%s ",
-                           shmem_transport_ofi_stx_pool[i].ref_cnt,
-                           shmem_transport_ofi_stx_pool[i].is_private ? "P" : "S");
+                           shmem_transport_ofi_stx_pool[idx][i].ref_cnt,
+                           shmem_transport_ofi_stx_pool[idx][i].is_private ? "P" : "S");
 
     DEBUG_MSG("STX[%ld] = [ %s ]\n", shmem_transport_ofi_stx_max, stx_str);
 }
@@ -436,13 +442,13 @@ void shmem_transport_ofi_stx_rand_init(void) {
 }
 
 static inline
-int shmem_transport_ofi_stx_search_unused(void)
+int shmem_transport_ofi_stx_search_unused(size_t idx)
 {
     int stx_idx = -1, i;
 
     for (i = 0; i < shmem_transport_ofi_stx_max; i++) {
-        if (shmem_transport_ofi_stx_pool[i].ref_cnt == 0) {
-            shmem_internal_assert(!shmem_transport_ofi_stx_pool[i].is_private);
+        if (shmem_transport_ofi_stx_pool[idx][i].ref_cnt == 0) {
+            shmem_internal_assert(!shmem_transport_ofi_stx_pool[idx][i].is_private);
             stx_idx = i;
             break;
         }
@@ -453,7 +459,7 @@ int shmem_transport_ofi_stx_search_unused(void)
 
 
 static inline
-int shmem_transport_ofi_stx_search_shared(long threshold)
+int shmem_transport_ofi_stx_search_shared(long threshold, size_t idx)
 {
     static int rr_start_idx = 0;
     int stx_idx = -1, i, count;
@@ -462,9 +468,9 @@ int shmem_transport_ofi_stx_search_shared(long threshold)
         case ROUNDROBIN:
             i = rr_start_idx;
             for (count = 0; count < shmem_transport_ofi_stx_max; count++) {
-                if (shmem_transport_ofi_stx_pool[i].ref_cnt > 0 &&
-                    (shmem_transport_ofi_stx_pool[i].ref_cnt <= threshold || threshold == -1) &&
-                    !shmem_transport_ofi_stx_pool[i].is_private) {
+                if (shmem_transport_ofi_stx_pool[idx][i].ref_cnt > 0 &&
+                    (shmem_transport_ofi_stx_pool[idx][i].ref_cnt <= threshold || threshold == -1) &&
+                    !shmem_transport_ofi_stx_pool[idx][i].is_private) {
                     stx_idx = i;
                     rr_start_idx = (i + 1) % shmem_transport_ofi_stx_max;
                     break;
@@ -477,9 +483,9 @@ int shmem_transport_ofi_stx_search_shared(long threshold)
 
         case RANDOM:
             for (i = count = 0; i < shmem_transport_ofi_stx_max; i++) {
-                if (shmem_transport_ofi_stx_pool[i].ref_cnt > 0 &&
-                    (shmem_transport_ofi_stx_pool[i].ref_cnt <= threshold || threshold == -1) &&
-                    !shmem_transport_ofi_stx_pool[i].is_private)
+                if (shmem_transport_ofi_stx_pool[idx][i].ref_cnt > 0 &&
+                    (shmem_transport_ofi_stx_pool[idx][i].ref_cnt <= threshold || threshold == -1) &&
+                    !shmem_transport_ofi_stx_pool[idx][i].is_private)
                 {
                     ++count;
                     break;
@@ -493,9 +499,9 @@ int shmem_transport_ofi_stx_search_shared(long threshold)
             else {
                 do {
                     stx_idx = (int) (rand_r(&rand_pool_seed) / (RAND_MAX + 1.0) * shmem_transport_ofi_stx_max);
-                } while (!(shmem_transport_ofi_stx_pool[stx_idx].ref_cnt > 0 &&
-                           (shmem_transport_ofi_stx_pool[stx_idx].ref_cnt <= threshold || threshold == -1) &&
-                           !shmem_transport_ofi_stx_pool[stx_idx].is_private));
+                } while (!(shmem_transport_ofi_stx_pool[idx][stx_idx].ref_cnt > 0 &&
+                           (shmem_transport_ofi_stx_pool[idx][stx_idx].ref_cnt <= threshold || threshold == -1) &&
+                           !shmem_transport_ofi_stx_pool[idx][stx_idx].is_private));
             }
 
             break;
@@ -510,21 +516,23 @@ int shmem_transport_ofi_stx_search_shared(long threshold)
 
 
 static inline
-void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
+void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx, size_t idx)
 {
     if (shmem_transport_ofi_stx_max == 0) {
-        ctx->stx_idx = -1;
+        ctx->stx_idx[idx] = -1;
     } else if (shmem_transport_ofi_is_private(ctx->options)) {
         /* SHMEM contexts that are private to the same thread (i.e. have
          * SHMEM_CTX_PRIVATE option set) share the same STX.  */
 
+        // TODO: Should f be an array of shmem_transport_ofi_stx_kvs_t pointers, or single pointer and
+        // stx_idx field is an array?
         shmem_transport_ofi_stx_kvs_t *f;
         HASH_FIND(hh, shmem_transport_ofi_stx_kvs,
                   &ctx->tid, sizeof(struct shmem_internal_tid), f);
 
         if (f) {
-            shmem_transport_ofi_stx_pool[f->stx_idx].ref_cnt++;
-            ctx->stx_idx = f->stx_idx;
+            shmem_transport_ofi_stx_pool[idx][f->stx_idx].ref_cnt++;
+            ctx->stx_idx[idx] = f->stx_idx;
 
         } else {
             /* No STX allocated to the given TID, attempt to allocate one */
@@ -532,21 +540,21 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
             int stx_idx;
             shmem_transport_ofi_stx_t *stx = NULL;
 
-            stx_idx = shmem_transport_ofi_stx_search_unused();
+            stx_idx = shmem_transport_ofi_stx_search_unused(idx);
 
             /* Couldn't get new STX, assign a shared one */
             /* Note: When stx_max > 0, shared STX allocation is always successful */
             if (stx_idx < 0) {
                 DEBUG_STR("private STX unavailable, falling back to STX sharing");
                 is_unused = 0;
-                stx_idx = shmem_transport_ofi_stx_search_shared(shmem_transport_ofi_stx_threshold);
+                stx_idx = shmem_transport_ofi_stx_search_shared(shmem_transport_ofi_stx_threshold, idx);
                 if (stx_idx < 0)
-                    stx_idx = shmem_transport_ofi_stx_search_shared(-1);
+                    stx_idx = shmem_transport_ofi_stx_search_shared(-1, idx);
             }
 
             shmem_internal_assert(stx_idx >= 0);
-            stx = &shmem_transport_ofi_stx_pool[stx_idx];
-            ctx->stx_idx = stx_idx;
+            stx = &shmem_transport_ofi_stx_pool[idx][stx_idx];
+            ctx->stx_idx[idx] = stx_idx;
             stx->ref_cnt++;
 
             if (is_unused) {
@@ -556,7 +564,7 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
                     RAISE_ERROR_STR("out of memory when allocating STX KVS entry");
                 }
                 e->tid     = ctx->tid;
-                e->stx_idx = ctx->stx_idx;
+                e->stx_idx = ctx->stx_idx[idx]; /* FIX? */
                 HASH_ADD(hh, shmem_transport_ofi_stx_kvs, tid,
                          sizeof(struct shmem_internal_tid), e);
             } else {
@@ -565,20 +573,20 @@ void shmem_transport_ofi_stx_allocate(shmem_transport_ctx_t *ctx)
         }
     /* TODO: Optimize this case? else if (ctx->options & SHMEM_CTX_SERIALIZED) */
     } else {
-        int stx_idx = shmem_transport_ofi_stx_search_shared(shmem_transport_ofi_stx_threshold);
+        int stx_idx = shmem_transport_ofi_stx_search_shared(shmem_transport_ofi_stx_threshold, idx);
 
         if (stx_idx < 0)
-            stx_idx = shmem_transport_ofi_stx_search_unused();
+            stx_idx = shmem_transport_ofi_stx_search_unused(idx);
 
         if (stx_idx < 0)
-            stx_idx = shmem_transport_ofi_stx_search_shared(-1);
+            stx_idx = shmem_transport_ofi_stx_search_shared(-1, idx);
 
         shmem_internal_assert(stx_idx >= 0);
-        ctx->stx_idx = stx_idx;
-        shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt++;
+        ctx->stx_idx[idx] = stx_idx;
+        shmem_transport_ofi_stx_pool[idx][ctx->stx_idx[idx]].ref_cnt++;
     }
 
-    shmem_transport_ofi_dump_stx();
+    shmem_transport_ofi_dump_stx(idx);
 
     return;
 }
@@ -596,24 +604,24 @@ void init_bounce_buffer(shmem_free_list_item_t *item)
 
 
 static inline
-int bind_enable_ep_resources(shmem_transport_ctx_t *ctx)
+int bind_enable_ep_resources(shmem_transport_ctx_t *ctx, size_t idx)
 {
     int ret = 0;
 
     /* If using SOS-managed STXs, bind the STX */
-    if (ctx->stx_idx >= 0) {
-        ret = fi_ep_bind(ctx->ep, &shmem_transport_ofi_stx_pool[ctx->stx_idx].stx->fid, 0);
+    if (ctx->stx_idx[idx] >= 0) {
+        ret = fi_ep_bind(ctx->ep[idx], &shmem_transport_ofi_stx_pool[idx][ctx->stx_idx[idx]].stx->fid, 0);
         OFI_CHECK_RETURN_STR(ret, "fi_ep_bind STX to endpoint failed");
     }
 
     /* Put counter captures completions for non-fetching operations (put,
      * atomic, etc.) */
-    ret = fi_ep_bind(ctx->ep, &ctx->put_cntr->fid, FI_WRITE);
+    ret = fi_ep_bind(ctx->ep[idx], &ctx->put_cntr[idx]->fid, FI_WRITE);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind put CNTR to endpoint failed");
 
     /* Get counter captures completions for fetching operations (get,
      * fetch-atomic, etc.) */
-    ret = fi_ep_bind(ctx->ep, &ctx->get_cntr->fid, FI_READ);
+    ret = fi_ep_bind(ctx->ep[idx], &ctx->get_cntr[idx]->fid, FI_READ);
     OFI_CHECK_RETURN_STR(ret, "fi_ep_bind get CNTR to endpoint failed");
 
     /* In addition to incrementing the put counter, bounce buffered puts and
@@ -626,25 +634,15 @@ int bind_enable_ep_resources(shmem_transport_ctx_t *ctx)
      * removed below.  However, there aren't currently any cases where removing
      * FI_RECV significantly improves performance or resource usage.  */
 
-    if (ctx->ep != shmem_transport_ofi_target_ep) {
-        ret = fi_ep_bind(ctx->ep, &ctx->cq->fid,
-                         FI_SELECTIVE_COMPLETION | FI_TRANSMIT | FI_RECV);
-        OFI_CHECK_RETURN_STR(ret, "fi_ep_bind CQ to endpoint failed");
+    ret = fi_ep_bind(ctx->ep[idx], &ctx->cq[idx]->fid, FI_SELECTIVE_COMPLETION | FI_TRANSMIT | FI_RECV);
+    OFI_CHECK_RETURN_STR(ret, "fi_ep_bind CQ to endpoint failed");
 
-        ret = fi_ep_bind(ctx->ep, &shmem_transport_ofi_avfd->fid, 0);
-        OFI_CHECK_RETURN_STR(ret, "fi_ep_bind AV to endpoint failed");
+    ret = fi_ep_bind(ctx->ep[idx], /*&shmem_transport_ofi_avfd->fid*/ &ctx->av[idx]->fid, 0); /* Currently failing */
+    //OFI_CHECK_RETURN_STR(ret, "fi_ep_bind AV to endpoint failed");
+    OFI_CHECK_RETURN_MSG(ret, "fi_ep_bind AV to endpoint failed(%s)\n", fi_strerror(errno));
 
-        ret = fi_enable(ctx->ep);
-        OFI_CHECK_RETURN_STR(ret, "fi_enable on endpoint failed");
-    } /* In single-endpoint mode, the sockets provider requires re-enabling the EP, but other
-         providers require NOT re-enabling the EP (e.g. as of v2.1.0, tcp, verbs, and opx) */
-    else if (shmem_transport_ofi_info.p_info->fabric_attr->prov_name != NULL &&
-             strncmp(shmem_transport_ofi_info.p_info->fabric_attr->prov_name,
-                     SHMEM_TRANSPORT_OFI_PROV_SOCKETS,
-                     strlen(SHMEM_TRANSPORT_OFI_PROV_SOCKETS)) == 0) {
-        ret = fi_enable(ctx->ep);
-        OFI_CHECK_RETURN_STR(ret, "fi_enable on endpoint failed");
-    }
+    ret = fi_enable(ctx->ep[idx]);
+    OFI_CHECK_RETURN_STR(ret, "fi_enable on endpoint failed");
 
     return ret;
 }
@@ -886,14 +884,14 @@ int publish_external_mr_info(void)
 #endif
 
 static
-int publish_mr_info(void)
+int publish_mr_info(struct fi_info *info)
 {
 #ifndef ENABLE_MR_SCALABLE
     {
         int err;
         uint64_t heap_key, data_key;
 
-        if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_PROV_KEY) {
+        if (info->domain_attr->mr_mode & FI_MR_PROV_KEY) {
             heap_key = fi_mr_key(shmem_transport_ofi_target_heap_mrfd);
             data_key = fi_mr_key(shmem_transport_ofi_target_data_mrfd);
         } else {
@@ -915,7 +913,7 @@ int publish_mr_info(void)
     }
 
 #ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-    if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_VIRT_ADDR)
+    if (info->domain_attr->mr_mode & FI_MR_VIRT_ADDR)
         shmem_transport_ofi_use_absolute_address = 1;
     else
         shmem_transport_ofi_use_absolute_address = 0;
@@ -924,7 +922,7 @@ int publish_mr_info(void)
         int err;
         void *heap_base, *data_base;
 
-        if (shmem_transport_ofi_info.p_info->domain_attr->mr_mode & FI_MR_VIRT_ADDR) {
+        if (info->domain_attr->mr_mode & FI_MR_VIRT_ADDR) {
             heap_base = shmem_internal_heap_base;
             data_base = shmem_internal_data_base;
         } else {
@@ -1112,7 +1110,7 @@ int atomicvalid_rtncheck(int ret, int atomic_size,
 
 static inline
 int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT, int *OPS,
-                      atomic_support_lv atomic_sup)
+                      atomic_support_lv atomic_sup, size_t idx)
 {
     int i, j;
     size_t atomic_size;
@@ -1120,7 +1118,7 @@ int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT, int *OPS,
     for (i = 0; i < DT_MAX; i++) {
         for (j = 0; j < OPS_MAX; j++) {
             int dt = SHMEM_TRANSPORT_DTYPE(DT[i]);
-            int ret = fi_atomicvalid(shmem_transport_ctx_default.ep,
+            int ret = fi_atomicvalid(shmem_transport_ctx_default.ep[idx],
                                      dt, OPS[j], &atomic_size);
             if (atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                                      SHMEM_OpName[OPS[j]],
@@ -1134,7 +1132,7 @@ int atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT, int *OPS,
 
 static inline
 int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT,
-                              int *OPS, atomic_support_lv atomic_sup)
+                              int *OPS, atomic_support_lv atomic_sup, size_t idx)
 {
     int i, j;
     size_t atomic_size;
@@ -1142,7 +1140,7 @@ int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT,
     for (i = 0; i < DT_MAX; i++) {
         for (j = 0; j < OPS_MAX; j++) {
             int dt = SHMEM_TRANSPORT_DTYPE(DT[i]);
-            int ret = fi_compare_atomicvalid(shmem_transport_ctx_default.ep,
+            int ret = fi_compare_atomicvalid(shmem_transport_ctx_default.ep[idx],
                                              dt, OPS[j], &atomic_size);
             if (atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                                      SHMEM_OpName[OPS[j]],
@@ -1156,7 +1154,7 @@ int compare_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT,
 
 static inline
 int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT, int *OPS,
-                            atomic_support_lv atomic_sup)
+                            atomic_support_lv atomic_sup, size_t idx)
 {
     int i, j;
     size_t atomic_size;
@@ -1164,7 +1162,7 @@ int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT, int *OPS,
     for (i = 0; i < DT_MAX; i++) {
         for (j = 0; j < OPS_MAX; j++) {
             int dt = SHMEM_TRANSPORT_DTYPE(DT[i]);
-            int ret = fi_fetch_atomicvalid(shmem_transport_ctx_default.ep,
+            int ret = fi_fetch_atomicvalid(shmem_transport_ctx_default.ep[idx],
                                            dt, OPS[j], &atomic_size);
             if (atomicvalid_rtncheck(ret, atomic_size, atomic_sup,
                                      SHMEM_OpName[OPS[j]],
@@ -1177,7 +1175,7 @@ int fetch_atomicvalid_DTxOP(int DT_MAX, int OPS_MAX, int *DT, int *OPS,
 }
 
 static inline
-int atomic_limitations_check(void)
+int atomic_limitations_check(size_t idx)
 {
     /* Retrieve messaging limitations from OFI
      *
@@ -1196,54 +1194,54 @@ int atomic_limitations_check(void)
 
     /* Standard OPS check */
     ret = atomicvalid_DTxOP(SIZEOF_AMO_DT, SIZEOF_AMO_OPS, DT_AMO_STANDARD,
-                            AMO_STANDARD_OPS, general_atomic_sup);
+                            AMO_STANDARD_OPS, general_atomic_sup, idx);
     if (ret)
         return ret;
 
     ret = fetch_atomicvalid_DTxOP(SIZEOF_AMO_DT, SIZEOF_AMO_FOPS,
                                   DT_AMO_STANDARD, FETCH_AMO_STANDARD_OPS,
-                                  general_atomic_sup);
+                                  general_atomic_sup, idx);
     if (ret)
         return ret;
 
     ret = compare_atomicvalid_DTxOP(SIZEOF_AMO_DT, SIZEOF_AMO_COPS,
                                     DT_AMO_STANDARD, COMPARE_AMO_STANDARD_OPS,
-                                    general_atomic_sup);
+                                    general_atomic_sup, idx);
     if (ret)
         return ret;
 
     /* Extended OPS check */
     ret = atomicvalid_DTxOP(SIZEOF_AMO_EX_DT, SIZEOF_AMO_EX_OPS, DT_AMO_EXTENDED,
-                            AMO_EXTENDED_OPS, general_atomic_sup);
+                            AMO_EXTENDED_OPS, general_atomic_sup, idx);
     if (ret)
         return ret;
 
     ret = fetch_atomicvalid_DTxOP(SIZEOF_AMO_EX_DT, SIZEOF_AMO_EX_FOPS,
                                   DT_AMO_EXTENDED, FETCH_AMO_EXTENDED_OPS,
-                                  general_atomic_sup);
+                                  general_atomic_sup, idx);
     if (ret)
         return ret;
 
     /* Reduction OPS check */
     ret = atomicvalid_DTxOP(SIZEOF_RED_DT, SIZEOF_RED_OPS, DT_REDUCE_BITWISE,
-                            REDUCE_BITWISE_OPS, reduction_sup);
+                            REDUCE_BITWISE_OPS, reduction_sup, idx);
     if (ret)
         return ret;
 
     ret = atomicvalid_DTxOP(SIZEOF_REDC_DT, SIZEOF_REDC_OPS, DT_REDUCE_COMPARE,
-                            REDUCE_COMPARE_OPS, reduction_sup);
+                            REDUCE_COMPARE_OPS, reduction_sup, idx);
     if (ret)
         return ret;
 
     ret = atomicvalid_DTxOP(SIZEOF_REDA_DT, SIZEOF_REDA_OPS, DT_REDUCE_ARITH,
-                            REDUCE_ARITH_OPS, reduction_sup);
+                            REDUCE_ARITH_OPS, reduction_sup, idx);
     if (ret)
         return ret;
 
     /* Internal atomic requirement */
     ret = compare_atomicvalid_DTxOP(SIZEOF_INTERNAL_REQ_DT, SIZEOF_INTERNAL_REQ_OPS,
                                     DT_INTERNAL_REQ, INTERNAL_REQ_OPS,
-                                    general_atomic_sup);
+                                    general_atomic_sup, idx);
     if (ret)
         return ret;
 
@@ -1305,6 +1303,24 @@ int populate_av(void)
         return ret;
     }
 
+    /* In single-ep mode, ctx_default.av[] is never created (the global
+     * shmem_transport_ofi_avfd AV is used instead, already inserted above).
+     * Only insert into per-NIC AVs when running in multi-NIC mode. */
+    if (!shmem_transport_ofi_single_ep) {
+        for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
+            ret = fi_av_insert(shmem_transport_ctx_default.av[idx],
+                               alladdrs,
+                               shmem_internal_num_pes,
+                               addr_table,
+                               0,
+                               NULL);
+            if (ret != shmem_internal_num_pes) {
+                RAISE_WARN_STR("av insert failed");
+                return ret;
+            }
+        }
+    }
+
     free(alladdrs);
 
     return 0;
@@ -1362,40 +1378,147 @@ int allocate_fabric_resources(struct fabric_info *info)
 }
 
 #ifdef USE_HWLOC
+/* Selects the best OFI provider for this PE based on CPU/NIC locality using hwloc.
+ *
+ * Queries where the current process last ran (CPU set), then walks the candidate
+ * provider list and keeps only NICs whose PCI device shares a topology ancestor
+ * (socket or NUMA node) with that CPU set. The filtered "close" NIC list is
+ * stored in the global provider_list and shmem_transport_ofi_num_nics is updated
+ * to reflect how many close NICs were found. One provider is returned for the
+ * calling PE using round-robin assignment (local_rank % num_close_nics).
+ *
+ * On any hwloc lookup failure, or if no topologically close NICs are found,
+ * the function falls back to the full unfiltered provider list and selects
+ * round-robin from all available NICs.
+ */
 static inline
 struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **provs, size_t num_nics) {
     int ret = 0;
+    /* Use intra-node rank for NIC assignment so PEs on different nodes with
+     * the same global PE number don't all land on the same NIC. */
+    int local_rank = shmem_runtime_get_node_rank(shmem_internal_my_pe);
     hwloc_bitmap_t bindset = hwloc_bitmap_alloc();
 
+    /* Query the CPU set where this process last ran. */
     ret = hwloc_get_proc_last_cpu_location(shmem_internal_topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS);
     if (ret < 0) {
+        /* Fall back to all NICs, round-robin by PE. */
         RAISE_WARN_MSG("hwloc_get_proc_last_cpu_location failed (%s)\n", strerror(errno));
-        return provs[shmem_internal_my_pe % num_nics];
+#if defined(USE_OFI_TX_LOAD_BALANCING_ROUND_ROBIN) || defined(USE_OFI_TX_LOAD_BALANCING_RANDOM)
+        /* TX load balancing: expose all NICs for per-op random selection. */
+        provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
+        if (!provider_list)
+            RAISE_ERROR_MSG("malloc failed for provider_list\n");
+        for (size_t idx = 0; idx < num_nics; idx++) {
+            provider_list[idx] = provs[idx];
+        }
+        shmem_transport_ofi_num_nics = num_nics;
+        hwloc_bitmap_free(bindset);
+        return provs[local_rank % num_nics];
+#else
+        /* Base multi-rail: assign this PE exactly one NIC via round-robin. */
+        provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+        if (!provider_list)
+            RAISE_ERROR_MSG("malloc failed for provider_list\n");
+        provider_list[0] = provs[local_rank % num_nics];
+        shmem_transport_ofi_num_nics = 1;
+        hwloc_bitmap_free(bindset);
+        return provider_list[0];
+#endif
     }
 
-    // Identify which provider entries correspond to NICs with an affinity to the calling process
+    /* Walk each candidate provider and keep only those whose PCI NIC shares a
+     * topology ancestor with the process CPU set (i.e., same socket/NUMA node). */
     struct fi_info *close_provs = NULL;
     struct fi_info *last_added = NULL;
     size_t num_close_nics = 0;
-    for (size_t i = 0; i < num_nics; i++) {
+    for (size_t i = 0; i < num_nics; i++) 
+	{
         struct fi_info *cur_prov = provs[i];
-        if (cur_prov->nic->bus_attr->bus_type != FI_BUS_PCI) continue;
+        if (!cur_prov->nic || !cur_prov->nic->bus_attr ||
+            cur_prov->nic->bus_attr->bus_type != FI_BUS_PCI) {
+			continue;
+		}
 
+        /* Look up the hwloc PCI device object by its bus address. */
         struct fi_pci_attr pci = cur_prov->nic->bus_attr->attr.pci;
         hwloc_obj_t io_device = hwloc_get_pcidev_by_busid(shmem_internal_topology, pci.domain_id, pci.bus_id, pci.device_id, pci.function_id);
         if (!io_device) {
+            /* Fall back to all NICs if topology lookup fails. */
             RAISE_WARN_MSG("hwloc_get_pcidev_by_busid failed\n");
-            return provs[shmem_internal_my_pe % num_nics];
+#if defined(USE_OFI_TX_LOAD_BALANCING_ROUND_ROBIN) || defined(USE_OFI_TX_LOAD_BALANCING_RANDOM)
+            provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
+            if (!provider_list)
+                RAISE_ERROR_MSG("malloc failed for provider_list\n");
+            for (size_t idx = 0; idx < num_nics; idx++) {
+                provider_list[idx] = provs[idx];
+            }
+            shmem_transport_ofi_num_nics = num_nics;
+            hwloc_bitmap_free(bindset);
+            return provs[local_rank % num_nics];
+#else
+            provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+            if (!provider_list)
+                RAISE_ERROR_MSG("malloc failed for provider_list\n");
+            provider_list[0] = provs[local_rank % num_nics];
+            shmem_transport_ofi_num_nics = 1;
+            hwloc_bitmap_free(bindset);
+            return provider_list[0];
+#endif
         };
+        /* Walk up the topology tree to find the first non-I/O ancestor (e.g., NUMA node). */
         hwloc_obj_t first_non_io = hwloc_get_non_io_ancestor_obj(shmem_internal_topology, io_device);
         if (!first_non_io) {
+            /* Fall back to all NICs if ancestor lookup fails. */
             RAISE_WARN_MSG("hwloc_get_non_io_ancestor_obj failed\n");
-            return provs[shmem_internal_my_pe % num_nics];
+#if defined(USE_OFI_TX_LOAD_BALANCING_ROUND_ROBIN) || defined(USE_OFI_TX_LOAD_BALANCING_RANDOM)
+            provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
+            if (!provider_list)
+                RAISE_ERROR_MSG("malloc failed for provider_list\n");
+            for (size_t idx = 0; idx < num_nics; idx++) {
+                provider_list[idx] = provs[idx];
+            }
+            shmem_transport_ofi_num_nics = num_nics;
+            hwloc_bitmap_free(bindset);
+            return provs[local_rank % num_nics];
+#else
+            provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+            if (!provider_list)
+                RAISE_ERROR_MSG("malloc failed for provider_list\n");
+            provider_list[0] = provs[local_rank % num_nics];
+            shmem_transport_ofi_num_nics = 1;
+            hwloc_bitmap_free(bindset);
+            return provider_list[0];
+#endif
         }
 
+        /* NIC is "close" if the process CPU set and the NIC's ancestor CPU set overlap. */
         if (hwloc_bitmap_isincluded(bindset, first_non_io->cpuset) ||
             hwloc_bitmap_isincluded(first_non_io->cpuset, bindset)) {
             struct fi_info *dup = fi_dupinfo(cur_prov);
+            if (!dup) {
+                /* fi_dupinfo failure: fall back to all NICs rather than risk a
+                 * corrupt list (wrong num_close_nics, NULL last_added, etc.). */
+                RAISE_WARN_MSG("fi_dupinfo failed for NIC %zu; falling back to all NICs\n", i);
+                hwloc_bitmap_free(bindset);
+#if defined(USE_OFI_TX_LOAD_BALANCING_ROUND_ROBIN) || defined(USE_OFI_TX_LOAD_BALANCING_RANDOM)
+                provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
+                if (!provider_list)
+                    RAISE_ERROR_MSG("malloc failed for provider_list\n");
+                for (size_t idx = 0; idx < num_nics; idx++) {
+                    provider_list[idx] = provs[idx];
+                }
+                shmem_transport_ofi_num_nics = num_nics;
+                return provs[local_rank % num_nics];
+#else
+                provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+                if (!provider_list)
+                    RAISE_ERROR_MSG("malloc failed for provider_list\n");
+                provider_list[0] = provs[local_rank % num_nics];
+                shmem_transport_ofi_num_nics = 1;
+                return provider_list[0];
+#endif
+            }
             if (!close_provs) close_provs = dup;
             if (last_added) last_added->next = dup;
             last_added = dup;
@@ -1405,26 +1528,71 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
     DEBUG_MSG("Num. NICs w/ affinity to process: %zu\n", num_close_nics);
 
     if (!close_provs) {
-        DEBUG_MSG("Could not detect any NICs with affinity to the process\n");
-
-        /* If no 'close' NICs, select from list of all NICs using round-robin assignment */
-        return provs[shmem_internal_my_pe % num_nics];
+        /* No topologically close NICs found; fall back to all NICs, round-robin by PE. */
+        RAISE_WARN_MSG("Could not detect any NICs with affinity to the process\n");
+#if defined(USE_OFI_TX_LOAD_BALANCING_ROUND_ROBIN) || defined(USE_OFI_TX_LOAD_BALANCING_RANDOM)
+        provider_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
+        if (!provider_list)
+            RAISE_ERROR_MSG("malloc failed for provider_list\n");
+        for (size_t idx = 0; idx < num_nics; idx++) {
+            provider_list[idx] = provs[idx];
+        }
+        shmem_transport_ofi_num_nics = num_nics;
+        hwloc_bitmap_free(bindset);
+        return provs[local_rank % num_nics];
+#else
+        /* Base multi-rail: assign this PE exactly one NIC via round-robin. */
+        provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+        if (!provider_list)
+            RAISE_ERROR_MSG("malloc failed for provider_list\n");
+        provider_list[0] = provs[local_rank % num_nics];
+        shmem_transport_ofi_num_nics = 1;
+        hwloc_bitmap_free(bindset);
+        return provider_list[0];
+#endif
     }
 
     last_added->next = NULL;
 
+    /* Build provider_list from the filtered close-NIC set. */
+#if defined(USE_OFI_TX_LOAD_BALANCING_ROUND_ROBIN) || defined(USE_OFI_TX_LOAD_BALANCING_RANDOM)
+    /* TX load balancing: expose all close NICs for per-op random selection. */
     int idx = 0;
-    struct fi_info **prov_list = (struct fi_info **) malloc(num_close_nics * sizeof(struct fi_info *));
+    provider_list = (struct fi_info **) malloc(num_close_nics * sizeof(struct fi_info *));
+    if (!provider_list)
+        RAISE_ERROR_MSG("malloc failed for provider_list\n");
+    shmem_transport_ofi_close_provs = close_provs;
     for (struct fi_info *cur_fabric = close_provs; cur_fabric; cur_fabric = cur_fabric->next) {
-        prov_list[idx++] = cur_fabric;
+        provider_list[idx++] = cur_fabric;
     }
 
     hwloc_bitmap_free(bindset);
 
-    struct fi_info *provider = prov_list[shmem_internal_my_pe % num_close_nics];
-    free(prov_list);
+    /* Assign this PE a NIC from the close set using round-robin. */
+    struct fi_info *provider = provider_list[local_rank % num_close_nics];
+    //free(prov_list);
 
+    shmem_transport_ofi_num_nics = num_close_nics;
     return provider;
+#else
+    /* Base multi-rail: assign this PE exactly one close NIC via round-robin. */
+    size_t pe_nic_idx = local_rank % num_close_nics;
+    struct fi_info *assigned = close_provs;
+    for (size_t i = 0; i < pe_nic_idx; i++) {
+        assigned = assigned->next;
+    }
+    provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+    if (!provider_list)
+        RAISE_ERROR_MSG("malloc failed for provider_list\n");
+    provider_list[0] = assigned;
+    /* Store the full dup'd chain so fini can free all entries. */
+    shmem_transport_ofi_close_provs = close_provs;
+
+    hwloc_bitmap_free(bindset);
+
+    shmem_transport_ofi_num_nics = 1;
+    return provider_list[0];
+#endif
 }
 #endif
 
@@ -1579,7 +1747,10 @@ int query_for_fabric(struct fabric_info *info)
     info->p_info = NULL;
 
     if (shmem_internal_params.OFI_DISABLE_MULTIRAIL) {
+        provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+        provider_list[0] = fabrics_list_head;
         info->p_info = fabrics_list_head;
+        shmem_transport_ofi_num_nics = 1;
     }
     else {
         /* Generate a linked list of all fabrics with a non-null nic value */
@@ -1595,26 +1766,33 @@ int query_for_fabric(struct fabric_info *info)
         if (multirail_fabric_list_tail) multirail_fabric_list_tail->next = NULL;
 
         if (num_nics == 0) {
+            provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+            provider_list[0] = fallback;
             info->p_info = fallback;
+            shmem_transport_ofi_num_nics = 1;
         }
         else {
             int idx = 0;
-            struct fi_info **prov_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
+            struct fi_info **sorted_prov_list = (struct fi_info **) malloc(num_nics * sizeof(struct fi_info *));
             for (struct fi_info *cur_fabric = multirail_fabric_list_head; cur_fabric; cur_fabric = cur_fabric->next) {
-                prov_list[idx++] = cur_fabric;
+                sorted_prov_list[idx++] = cur_fabric;
             }
-            qsort(prov_list, num_nics, sizeof(struct fi_info *), compare_nic_names);
+            qsort(sorted_prov_list, num_nics, sizeof(struct fi_info *), compare_nic_names);
 #ifdef USE_HWLOC
-            info->p_info = assign_nic_with_hwloc(info->p_info, prov_list, num_nics);
+            info->p_info = assign_nic_with_hwloc(info->p_info, sorted_prov_list, num_nics);
 #else
-            /* Round-robin assignment of NICs to PEs
-             * FIXME: A more suitable indexing value would be
-             * shmem_team_my_pe(SHMEM_TEAM_NODE) % num_nics, but it is too early in initialization to
-             * do that here. We would also want to replace the similar occurrences in the
-             * assign_nic_with_hwloc function. */
-            info->p_info = prov_list[shmem_internal_my_pe % num_nics];
+            /* No hwloc: round-robin assignment using intra-node rank so PEs
+             * on different nodes with the same global index don't collide.
+             * TX load balancing requires hwloc and cannot reach this path. */
+            int local_rank = shmem_runtime_get_node_rank(shmem_internal_my_pe);
+            provider_list = (struct fi_info **) malloc(sizeof(struct fi_info *));
+            if (!provider_list)
+                RAISE_ERROR_MSG("malloc failed for provider_list\n");
+            provider_list[0] = sorted_prov_list[local_rank % num_nics];
+            info->p_info = provider_list[0];
+            shmem_transport_ofi_num_nics = 1;
 #endif
-            free(prov_list);
+            //free(prov_list); //Add free(provider_list) to cleanup
         }
     }
     if (NULL == info->p_info) {
@@ -1749,42 +1927,120 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     struct fi_cq_attr cq_attr = {0};
     cq_attr.format = FI_CQ_FORMAT_CONTEXT;
 
-    struct fabric_info* info = &shmem_transport_ofi_info;
-
-    info->p_info->ep_attr->tx_ctx_cnt = shmem_transport_ofi_stx_max > 0 ? FI_SHARED_CONTEXT : 0;
-    info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | FI_ATOMIC | FI_RECV;
-    info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
-    info->p_info->mode = 0;
-    info->p_info->tx_attr->mode = 0;
-    info->p_info->rx_attr->mode = 0;
-    info->p_info->tx_attr->caps = info->p_info->caps;
-    info->p_info->rx_attr->caps = FI_RECV; /* to drive progress on the CQ */;
+    // Need to do these steps for all providers in provider_list?
+    //info->p_info->ep_attr->tx_ctx_cnt = shmem_transport_ofi_stx_max > 0 ? FI_SHARED_CONTEXT : 0;
+    //info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | FI_ATOMIC | FI_RECV;
+    //info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
+    //info->p_info->mode = 0;
+    //info->p_info->tx_attr->mode = 0;
+    //info->p_info->rx_attr->mode = 0;
+    //info->p_info->tx_attr->caps = info->p_info->caps;
+    //info->p_info->rx_attr->caps = FI_RECV; /* to drive progress on the CQ */;
 
     ctx->id = id;
+    ctx->fabric = (struct fid_fabric **) calloc(shmem_transport_ofi_num_nics, sizeof(struct fid_fabric *));
+    ctx->domain = (struct fid_domain **) calloc(shmem_transport_ofi_num_nics, sizeof(struct fid_domain *));
+    ctx->av = (struct fid_av **) calloc(shmem_transport_ofi_num_nics, sizeof(struct fid_av *));
+    ctx->ep = (struct fid_ep **) calloc(shmem_transport_ofi_num_nics, sizeof(struct fid_ep *));
+    ctx->put_cntr = (struct fid_cntr **) calloc(shmem_transport_ofi_num_nics, sizeof(struct fid_cntr *));
+    ctx->get_cntr = (struct fid_cntr **) calloc(shmem_transport_ofi_num_nics, sizeof(struct fid_cntr *));
+#ifdef USE_CTX_LOCK
+    ctx->pending_put_cntr = (uint64_t *) malloc(shmem_transport_ofi_num_nics * sizeof(uint64_t));
+    ctx->pending_get_cntr = (uint64_t *) malloc(shmem_transport_ofi_num_nics * sizeof(uint64_t));
+#else
+    ctx->pending_put_cntr = (shmem_internal_cntr_t *) malloc(shmem_transport_ofi_num_nics * sizeof(shmem_internal_cntr_t));
+    ctx->pending_get_cntr = (shmem_internal_cntr_t *) malloc(shmem_transport_ofi_num_nics * sizeof(shmem_internal_cntr_t));
+#endif
+    ctx->cq = (struct fid_cq **) malloc(shmem_transport_ofi_num_nics * sizeof(struct fid_cq *));
+    if (!ctx->fabric || !ctx->domain || !ctx->av || !ctx->ep ||
+        !ctx->put_cntr || !ctx->get_cntr ||
+        !ctx->pending_put_cntr || !ctx->pending_get_cntr || !ctx->cq)
+        RAISE_ERROR_MSG("ctx_init: allocation failed (out of memory)\n");
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
+#ifdef USE_CTX_LOCK
+        ctx->pending_put_cntr[idx] = 0;
+        ctx->pending_get_cntr[idx] = 0;
+#else
+        shmem_internal_cntr_write(&ctx->pending_put_cntr[idx], 0);
+        shmem_internal_cntr_write(&ctx->pending_get_cntr[idx], 0);
+#endif
+        provider_list[idx]->ep_attr->tx_ctx_cnt = shmem_transport_ofi_stx_max > 0 ? FI_SHARED_CONTEXT : 0;
+        provider_list[idx]->caps = FI_RMA | FI_WRITE | FI_READ | FI_ATOMIC | FI_RECV;
+        provider_list[idx]->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
+        provider_list[idx]->mode = 0;
+        provider_list[idx]->tx_attr->mode = 0;
+        provider_list[idx]->rx_attr->mode = 0;
+        provider_list[idx]->tx_attr->caps = provider_list[idx]->caps;
+        provider_list[idx]->rx_attr->caps = FI_RECV; /* to drive progress on the CQ */;
 #ifdef USE_CTX_LOCK
     SHMEM_MUTEX_INIT(ctx->lock);
 #endif
 
-    ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_put_attr,
-                       &ctx->put_cntr, NULL);
-    OFI_CHECK_RETURN_MSG(ret, "put_cntr creation failed (%s)\n", fi_strerror(errno));
+		// bman
+		//if (shmem_internal_my_pe == 0) printf("\n\nshmem_transport_ofi_single_ep = %d \n\n", shmem_transport_ofi_single_ep);  // R: 0
+		// /bman
 
-    ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_get_attr,
-                       &ctx->get_cntr, NULL);
-    OFI_CHECK_RETURN_MSG(ret, "get_cntr creation failed (%s)\n", fi_strerror(errno));
+        /* In single-endpoint mode, the default context shares target_ep/target_cq.
+         * Open counters on the global domain and bind them directly to target_ep. */
+        if (shmem_transport_ofi_single_ep && id == SHMEM_TRANSPORT_CTX_DEFAULT_ID && idx == 0) {
+            ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_put_attr,
+                               &ctx->put_cntr[0], NULL);
+            OFI_CHECK_RETURN_MSG(ret, "put_cntr creation failed (%s)\n", fi_strerror(errno));
 
-    if (shmem_transport_ofi_single_ep && id == SHMEM_TRANSPORT_CTX_DEFAULT_ID) {
-        ctx->cq = shmem_transport_ofi_target_cq;
-        ctx->ep = shmem_transport_ofi_target_ep;
-    } else {
-        ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr, &ctx->cq, NULL);
+            ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_get_attr,
+                               &ctx->get_cntr[0], NULL);
+            OFI_CHECK_RETURN_MSG(ret, "get_cntr creation failed (%s)\n", fi_strerror(errno));
+
+            ret = fi_ep_bind(shmem_transport_ofi_target_ep, &ctx->put_cntr[0]->fid, FI_WRITE);
+            OFI_CHECK_RETURN_STR(ret, "fi_ep_bind put CNTR to target endpoint failed");
+
+            ret = fi_ep_bind(shmem_transport_ofi_target_ep, &ctx->get_cntr[0]->fid, FI_READ);
+            OFI_CHECK_RETURN_STR(ret, "fi_ep_bind get CNTR to target endpoint failed");
+
+            ctx->ep[0] = shmem_transport_ofi_target_ep;
+            ctx->cq[0] = shmem_transport_ofi_target_cq;
+            /* fabric/domain/av/stx are not needed; resources owned by global init */
+            continue;
+        }
+
+        ret = fi_fabric(provider_list[idx]->fabric_attr, &ctx->fabric[idx], NULL);
+        OFI_CHECK_RETURN_STR(ret, "fabric initialization failed");
+
+        DEBUG_MSG("ctx[%d] NIC[%zu]: domain=%s\n",
+                  id, idx, provider_list[idx]->domain_attr->name);
+
+        ret = fi_domain(/*shmem_transport_ofi_fabfd*/ ctx->fabric[idx], provider_list[idx],
+                        &ctx->domain[idx], NULL);
+        OFI_CHECK_RETURN_STR(ret, "domain initialization failed");
+
+        struct fi_av_attr   av_attr = {0};
+#ifdef USE_AV_MAP
+        av_attr.type = FI_AV_MAP;
+#else
+        av_attr.type = FI_AV_TABLE;
+#endif
+        ret = fi_av_open(/*shmem_transport_ofi_domainfd*/ ctx->domain[idx],
+                     &av_attr,
+                     /*&shmem_transport_ofi_avfd*/ &ctx->av[idx],
+                     NULL);
+        OFI_CHECK_RETURN_STR(ret, "AV creation failed");
+
+        ret = fi_cntr_open(/*shmem_transport_ofi_domainfd*/ ctx->domain[idx], &cntr_put_attr,
+                        &ctx->put_cntr[idx], NULL);
+        OFI_CHECK_RETURN_MSG(ret, "put_cntr creation failed (%s)\n", fi_strerror(errno));
+
+        ret = fi_cntr_open(/*shmem_transport_ofi_domainfd*/ ctx->domain[idx], &cntr_get_attr,
+                        &ctx->get_cntr[idx], NULL);
+        OFI_CHECK_RETURN_MSG(ret, "get_cntr creation failed (%s)\n", fi_strerror(errno));
+
+        ret = fi_cq_open(/*shmem_transport_ofi_domainfd*/ ctx->domain[idx], &cq_attr, &ctx->cq[idx], NULL);
         if (ret && errno == FI_EMFILE) {
             DEBUG_STR("Context creation failed because of open files limit, consider increasing with 'ulimit' command");
         }
         OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(errno));
 
-        ret = fi_endpoint(shmem_transport_ofi_domainfd,
-                          info->p_info, &ctx->ep, NULL);
+        ret = fi_endpoint(/*shmem_transport_ofi_domainfd*/ ctx->domain[idx],
+                        /*info->p_info*/ provider_list[idx], &ctx->ep[idx], NULL);
         OFI_CHECK_RETURN_MSG(ret, "ep creation failed (%s)\n", fi_strerror(errno));
     }
 
@@ -1795,11 +2051,17 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
         shmem_transport_ofi_is_private(ctx->options)) {
             ctx->tid = shmem_transport_ofi_gettid();
     }
-    shmem_transport_ofi_stx_allocate(ctx);
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
+        /* In single-ep mode, target_ep for the default context is already bound
+         * and enabled by shmem_transport_ofi_target_ep_init(); skip it here. */
+        if (shmem_transport_ofi_single_ep && id == SHMEM_TRANSPORT_CTX_DEFAULT_ID && idx == 0)
+            continue;
 
-    ret = bind_enable_ep_resources(ctx);
-    OFI_CHECK_RETURN_MSG(ret, "context bind/enable endpoint failed (%s)\n", fi_strerror(errno));
+        shmem_transport_ofi_stx_allocate(ctx, idx);
 
+        ret = bind_enable_ep_resources(ctx, idx);
+        OFI_CHECK_RETURN_MSG(ret, "context bind/enable endpoint failed (%s)\n", fi_strerror(errno));
+    }
     if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER &&
         shmem_transport_ofi_bounce_buffer_size > 0 &&
         shmem_transport_ofi_max_bounce_buffers > 0)
@@ -1873,6 +2135,13 @@ int shmem_transport_init(void)
     ret = allocate_fabric_resources(&shmem_transport_ofi_info);
     if (ret != 0) return ret;
 
+    /* Single-endpoint mode is incompatible with TxMuxing (multiple NICs).
+     * Disable it automatically when multiple NICs are in use. */
+    if (shmem_transport_ofi_single_ep && shmem_transport_ofi_num_nics > 1) {
+        DEBUG_STR("Disabling single-endpoint mode: multiple NICs (TxMuxing) in use");
+        shmem_transport_ofi_single_ep = 0;
+    }
+
     /* STX sharing settings */
     char *type = shmem_internal_params.OFI_STX_ALLOCATOR;
     if (0 == strcmp(type, "round-robin")) {
@@ -1919,7 +2188,7 @@ int shmem_transport_init(void)
     ret = shmem_transport_ofi_target_ep_init();
     if (ret != 0) return ret;
 
-    ret = publish_mr_info();
+    ret = publish_mr_info(shmem_transport_ofi_info.p_info);
     if (ret != 0) return ret;
 
     ret = publish_av_info(&shmem_transport_ofi_info);
@@ -1933,72 +2202,89 @@ int shmem_transport_startup(void)
     int ret;
     int i;
 
-    if (shmem_internal_params.OFI_STX_AUTO && shmem_transport_ofi_stx_max == 0) {
-        RAISE_WARN_STR("STXs disabled, ignoring request for automatic STX management");
+#if defined(USE_OFI_TX_LOAD_BALANCING_ROUND_ROBIN) || defined(USE_OFI_TX_LOAD_BALANCING_RANDOM)
+    /* Stagger each PE's round-robin start position so they don't all begin on
+     * NIC 0.  num_nics is finalized by this point. randr_init() runs after
+     * this and skips the reset when TX LB is active. */
+    shmem_internal_nic_rr_idx = shmem_internal_my_pe % shmem_transport_ofi_num_nics;
+#endif
+    shmem_transport_ofi_stx_pool = (shmem_transport_ofi_stx_t **) malloc(shmem_transport_ofi_num_nics *
+                                        sizeof(shmem_transport_ofi_stx_t *));
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
+        shmem_transport_ofi_stx_pool[idx] = NULL;
     }
-    else if (shmem_internal_params.OFI_STX_AUTO) {
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
+        if (shmem_internal_params.OFI_STX_AUTO && shmem_transport_ofi_stx_max == 0) {
+            RAISE_WARN_STR("STXs disabled, ignoring request for automatic STX management");
+        }
+        else if (shmem_internal_params.OFI_STX_AUTO) {
+            long ofi_tx_ctx_cnt = /*shmem_transport_ofi_info.fabrics*/provider_list[idx]->domain_attr->tx_ctx_cnt;
+            int num_on_node = shmem_runtime_get_node_size();
 
-        long ofi_tx_ctx_cnt = shmem_transport_ofi_info.fabrics->domain_attr->tx_ctx_cnt;
-        int num_on_node = shmem_runtime_get_node_size();
+            if (shmem_internal_params.OFI_STX_MAX_provided) {
+                RAISE_WARN_MSG("Auto-setting STX_MAX; ignoring provided STX_MAX value '%ld'\n",
+                            shmem_internal_params.OFI_STX_MAX);
+            }
 
-        if (shmem_internal_params.OFI_STX_MAX_provided) {
-            RAISE_WARN_MSG("Auto-setting STX_MAX; ignoring provided STX_MAX value '%ld'\n",
-                           shmem_internal_params.OFI_STX_MAX);
+            if (ofi_tx_ctx_cnt <= 0)
+                RAISE_ERROR_MSG("Invalid number of TX contexts (%ld)\n", ofi_tx_ctx_cnt);
+
+            /* Paritition TX resources evenly across node-local PEs */
+            /* Note: we assume that the domain reports the same tx_ctx_cnt for
+            * every PE on the node.  We also assume that the resource reported
+            * should be divided equally among all PEs.  These assumptions may not
+            * be valid in all cases, for example when the provider has already
+            * partitioned resources or when a node has multiple NICs. */
+            shmem_transport_ofi_stx_max = ofi_tx_ctx_cnt / num_on_node;
+            int remainder = ofi_tx_ctx_cnt % num_on_node;
+            int node_pe = shmem_internal_my_pe % shmem_internal_num_pes;
+            if (remainder > 0 && ((node_pe % num_on_node) < remainder)) {
+                shmem_transport_ofi_stx_max++;
+            }
+
+            if (shmem_transport_ofi_stx_max <= 0)
+                RAISE_ERROR_MSG("Not enough TX contexts (%d)\n", num_on_node);
+
+            /* When running more PEs than available STXs, must assign each PE at least 1 */
+            if (shmem_transport_ofi_stx_max <= 0) {
+                shmem_transport_ofi_stx_max = 1;
+                RAISE_WARN_MSG("Need at least 1 STX per PE, but detected %ld available STXs for %d PEs\n",
+                            ofi_tx_ctx_cnt, num_on_node);
+            }
+
+            DEBUG_MSG("Auto-set STX max to %ld\n", shmem_transport_ofi_stx_max);
         }
 
-        if (ofi_tx_ctx_cnt <= 0)
-            RAISE_ERROR_MSG("Invalid number of TX contexts (%ld)\n", ofi_tx_ctx_cnt);
-
-        /* Paritition TX resources evenly across node-local PEs */
-        /* Note: we assume that the domain reports the same tx_ctx_cnt for
-         * every PE on the node.  We also assume that the resource reported
-         * should be divided equally among all PEs.  These assumptions may not
-         * be valid in all cases, for example when the provider has already
-         * partitioned resources or when a node has multiple NICs. */
-        shmem_transport_ofi_stx_max = ofi_tx_ctx_cnt / num_on_node;
-        int remainder = ofi_tx_ctx_cnt % num_on_node;
-        int node_pe = shmem_internal_my_pe % shmem_internal_num_pes;
-        if (remainder > 0 && ((node_pe % num_on_node) < remainder)) {
-            shmem_transport_ofi_stx_max++;
+        /* Allocate STX array with max length */
+        if (shmem_transport_ofi_stx_max > 0) {
+            shmem_transport_ofi_stx_pool[idx] = malloc(shmem_transport_ofi_stx_max *
+                                                sizeof(shmem_transport_ofi_stx_t));
+            if (shmem_transport_ofi_stx_pool[idx] == NULL) {
+                RAISE_ERROR_STR("Out of memory when allocating OFI STX pool");
+            }
         }
 
-        if (shmem_transport_ofi_stx_max <= 0)
-            RAISE_ERROR_MSG("Not enough TX contexts (%d)\n", num_on_node);
-
-        /* When running more PEs than available STXs, must assign each PE at least 1 */
-        if (shmem_transport_ofi_stx_max <= 0) {
-            shmem_transport_ofi_stx_max = 1;
-            RAISE_WARN_MSG("Need at least 1 STX per PE, but detected %ld available STXs for %d PEs\n",
-                           ofi_tx_ctx_cnt, num_on_node);
-        }
-
-        DEBUG_MSG("Auto-set STX max to %ld\n", shmem_transport_ofi_stx_max);
-    }
-
-    /* Allocate STX array with max length */
-    if (shmem_transport_ofi_stx_max > 0) {
-        shmem_transport_ofi_stx_pool = malloc(shmem_transport_ofi_stx_max *
-                                              sizeof(shmem_transport_ofi_stx_t));
-        if (shmem_transport_ofi_stx_pool == NULL) {
-            RAISE_ERROR_STR("Out of memory when allocating OFI STX pool");
+        for (i = 0; i < shmem_transport_ofi_stx_max; i++) {
+            ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL,
+                                &shmem_transport_ofi_stx_pool[idx][i].stx, NULL);
+            OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
+            shmem_transport_ofi_stx_pool[idx][i].ref_cnt = 0;
+            shmem_transport_ofi_stx_pool[idx][i].is_private = 0;
         }
     }
-
-    for (i = 0; i < shmem_transport_ofi_stx_max; i++) {
-        ret = fi_stx_context(shmem_transport_ofi_domainfd, NULL,
-                             &shmem_transport_ofi_stx_pool[i].stx, NULL);
-        OFI_CHECK_RETURN_MSG(ret, "STX context creation failed (%s)\n", fi_strerror(ret));
-        shmem_transport_ofi_stx_pool[i].ref_cnt = 0;
-        shmem_transport_ofi_stx_pool[i].is_private = 0;
-    }
-
     shmem_transport_ctx_default.team = &shmem_internal_team_world;
 
+    shmem_transport_ctx_default.stx_idx = malloc(shmem_transport_ofi_num_nics * sizeof(int));
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
+        shmem_transport_ctx_default.stx_idx[idx] = -1;
+    }
     ret = shmem_transport_ofi_ctx_init(&shmem_transport_ctx_default, SHMEM_TRANSPORT_CTX_DEFAULT_ID);
     if (ret != 0) return ret;
 
-    ret = atomic_limitations_check();
-    if (ret != 0) return ret;
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
+        ret = atomic_limitations_check(idx);
+        if (ret != 0) return ret;
+    }
 
     ret = populate_mr_tables();
     if (ret != 0) return ret;
@@ -2047,12 +2333,20 @@ int shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options,
 
     memset(ctxp, 0, sizeof(shmem_transport_ctx_t));
 
+    ctxp->pending_put_cntr = malloc(shmem_transport_ofi_num_nics * sizeof(uint64_t));
+    ctxp->pending_get_cntr = malloc(shmem_transport_ofi_num_nics * sizeof(uint64_t));
+    ctxp->stx_idx = malloc(shmem_transport_ofi_num_nics * sizeof(int));
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
 #ifndef USE_CTX_LOCK
-    shmem_internal_cntr_write(&ctxp->pending_put_cntr, 0);
-    shmem_internal_cntr_write(&ctxp->pending_get_cntr, 0);
+        shmem_internal_cntr_write(&ctxp->pending_put_cntr[idx], 0);
+        shmem_internal_cntr_write(&ctxp->pending_get_cntr[idx], 0);
+#else
+        ctxp->pending_put_cntr[idx] = 0;
+        ctxp->pending_get_cntr[idx] = 0;
 #endif
 
-    ctxp->stx_idx = -1;
+        ctxp->stx_idx[idx] = -1;
+    }
     ctxp->options = options;
 
     ctxp->team = team;
@@ -2074,7 +2368,6 @@ int shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options,
 void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 {
     int ret;
-    bool close_default_ctx = false;
 
     if (ctx == NULL)
         return;
@@ -2082,6 +2375,9 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
     if(shmem_internal_params.DEBUG) {
         SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
         if (ctx->bounce_buffers) SHMEM_TRANSPORT_OFI_CTX_BB_LOCK(ctx);
+        // TODO: May want to include pending/completed counters for ALL NICs or at least an aggregate
+        // for each counter type
+/* Causes seg. fault right now for obvious reasons
         DEBUG_MSG("id = %d, options = %#0lx, stx_idx = %d\n"
                   RAISE_PE_PREFIX "pending_put_cntr = %9"PRIu64", completed_put_cntr = %9"PRIu64"\n"
                   RAISE_PE_PREFIX "pending_get_cntr = %9"PRIu64", completed_get_cntr = %9"PRIu64"\n"
@@ -2096,65 +2392,104 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
                   shmem_internal_my_pe,
                   ctx->pending_bb_cntr, ctx->completed_bb_cntr
                  );
+*/
         if (ctx->bounce_buffers) SHMEM_TRANSPORT_OFI_CTX_BB_UNLOCK(ctx);
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
     }
 
-    /* When in single-endpoint mode, defer closing the default context because it also
-     * serves as the target endpoint, which is cleaned up later in transport_fini(). */
-    if (!shmem_transport_ofi_single_ep || ctx->id != SHMEM_TRANSPORT_CTX_DEFAULT_ID)
-        close_default_ctx = true;
-
-    if (ctx->ep && close_default_ctx) {
-        ret = fi_close(&ctx->ep->fid);
-        OFI_CHECK_ERROR_MSG(ret, "Context endpoint close failed (%s)\n", fi_strerror(errno));
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
+        /* In single-ep mode, ep[0]/cq[0] of the default context are shared with
+         * target_ep/target_cq, which are closed later in shmem_transport_fini(). */
+        bool skip_shared = (shmem_transport_ofi_single_ep &&
+                            ctx->id == SHMEM_TRANSPORT_CTX_DEFAULT_ID && idx == 0);
+        if (ctx->ep[idx] && !skip_shared) {
+            ret = fi_close(&ctx->ep[idx]->fid);
+            OFI_CHECK_ERROR_MSG(ret, "Context endpoint close failed (%s)\n", fi_strerror(errno));
+            ctx->ep[idx] = NULL;
+        }
     }
 
     if (ctx->bounce_buffers) {
         shmem_free_list_destroy(ctx->bounce_buffers);
     }
 
-    if (ctx->stx_idx >= 0) {
-        SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
-        if (shmem_transport_ofi_is_private(ctx->options)) {
-            shmem_transport_ofi_stx_kvs_t *e;
-            HASH_FIND(hh, shmem_transport_ofi_stx_kvs, &ctx->tid,
-                      sizeof(struct shmem_internal_tid), e);
-            if (e) {
-                shmem_transport_ofi_stx_t *stx = &shmem_transport_ofi_stx_pool[ctx->stx_idx];
-                stx->ref_cnt--;
-                if (stx->ref_cnt == 0) {
-                    HASH_DEL(shmem_transport_ofi_stx_kvs, e);
-                    free(e);
-                    shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private = 0;
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
+        if (ctx->stx_idx[idx] >= 0) {
+            SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
+            if (shmem_transport_ofi_is_private(ctx->options)) {
+                shmem_transport_ofi_stx_kvs_t *e;
+                HASH_FIND(hh, shmem_transport_ofi_stx_kvs, &ctx->tid,
+                        sizeof(struct shmem_internal_tid), e);
+                if (e) {
+                    shmem_transport_ofi_stx_t *stx = &shmem_transport_ofi_stx_pool[idx][ctx->stx_idx[idx]];
+                    stx->ref_cnt--;
+                    if (stx->ref_cnt == 0) {
+                        HASH_DEL(shmem_transport_ofi_stx_kvs, e);
+                        free(e);
+                        shmem_transport_ofi_stx_pool[idx][ctx->stx_idx[idx]].is_private = 0;
+                    }
+                }
+                else {
+                    RAISE_WARN_STR("Unable to locate private STX");
+                }
+            } else {
+                shmem_transport_ofi_stx_pool[idx][ctx->stx_idx[idx]].ref_cnt--;
+                if (shmem_transport_ofi_stx_pool[idx][ctx->stx_idx[idx]].is_private) {
+                    SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
+                    RAISE_ERROR_STR("Destroyed a ctx with an inconsistent is_private field");
                 }
             }
-            else {
-                RAISE_WARN_STR("Unable to locate private STX");
-            }
-        } else {
-            shmem_transport_ofi_stx_pool[ctx->stx_idx].ref_cnt--;
-            if (shmem_transport_ofi_stx_pool[ctx->stx_idx].is_private) {
-                SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
-                RAISE_ERROR_STR("Destroyed a ctx with an inconsistent is_private field");
-            }
+            SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
         }
-        SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
     }
 
-    if (ctx->put_cntr && close_default_ctx) {
-        ret = fi_close(&ctx->put_cntr->fid);
-        OFI_CHECK_ERROR_MSG(ret, "Context put CNTR close failed (%s)\n", fi_strerror(errno));
-    }
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
+        /* In single-ep mode, put_cntr[0]/get_cntr[0] of the default context are
+         * bound to target_ep, which must be closed first in shmem_transport_fini().
+         * Close them there, not here. */
+        bool skip_shared_cntrs = (shmem_transport_ofi_single_ep &&
+                                  ctx->id == SHMEM_TRANSPORT_CTX_DEFAULT_ID && idx == 0);
 
-    if (ctx->get_cntr && close_default_ctx) {
-        ret = fi_close(&ctx->get_cntr->fid);
-        OFI_CHECK_ERROR_MSG(ret, "Context get CNTR close failed (%s)\n", fi_strerror(errno));
-    }
+        if (ctx->put_cntr && ctx->put_cntr[idx] && !skip_shared_cntrs) {
+            ret = fi_close(&ctx->put_cntr[idx]->fid);
+            OFI_CHECK_ERROR_MSG(ret, "Context put CNTR close failed (%s)\n", fi_strerror(errno));
+            ctx->put_cntr[idx] = NULL;
+        }
 
-    if (ctx->cq && close_default_ctx) {
-        ret = fi_close(&ctx->cq->fid);
-        OFI_CHECK_ERROR_MSG(ret, "Context CQ close failed (%s)\n", fi_strerror(errno));
+        if (ctx->get_cntr && ctx->get_cntr[idx] && !skip_shared_cntrs) {
+            ret = fi_close(&ctx->get_cntr[idx]->fid);
+            OFI_CHECK_ERROR_MSG(ret, "Context get CNTR close failed (%s)\n", fi_strerror(errno));
+            ctx->get_cntr[idx] = NULL;
+        }
+
+        /* In single-ep mode, cq[0] of the default context is shared with
+         * target_cq, which is closed later in shmem_transport_fini(). */
+        bool skip_shared = (shmem_transport_ofi_single_ep &&
+                            ctx->id == SHMEM_TRANSPORT_CTX_DEFAULT_ID && idx == 0);
+
+        if (ctx->cq && ctx->cq[idx] && !skip_shared) {
+            ret = fi_close(&ctx->cq[idx]->fid);
+            OFI_CHECK_ERROR_MSG(ret, "Context CQ close failed (%s)\n", fi_strerror(errno));
+            ctx->cq[idx] = NULL;
+        }
+
+        if (ctx->av && ctx->av[idx]) {
+            ret = fi_close(&ctx->av[idx]->fid);
+            OFI_CHECK_ERROR_MSG(ret, "Context AV close failed (%s)\n", fi_strerror(errno));
+            ctx->av[idx] = NULL;
+        }
+
+        if (ctx->domain && ctx->domain[idx]) {
+            ret = fi_close(&ctx->domain[idx]->fid);
+            OFI_CHECK_ERROR_MSG(ret, "Context domain close failed (%s)\n", fi_strerror(errno));
+            ctx->domain[idx] = NULL;
+        }
+
+        if (ctx->fabric && ctx->fabric[idx]) {
+            ret = fi_close(&ctx->fabric[idx]->fid);
+            OFI_CHECK_ERROR_MSG(ret, "Context fabric close failed (%s)\n", fi_strerror(errno));
+            ctx->fabric[idx] = NULL;
+        }
     }
 
 #ifdef USE_CTX_LOCK
@@ -2194,13 +2529,15 @@ int shmem_transport_fini(void)
         RAISE_WARN_MSG("Key/value store contained %d unfreed private contexts\n", stx_len);
     }
 
-    for (long i = 0; i < shmem_transport_ofi_stx_max; ++i) {
-        if (shmem_transport_ofi_stx_pool[i].ref_cnt != 0)
-            RAISE_WARN_MSG("Closing a %s STX (%zu) with nonzero ref. count (%ld)\n",
-                           shmem_transport_ofi_stx_pool[i].is_private ? "private" : "shared",
-                           i, shmem_transport_ofi_stx_pool[i].ref_cnt);
-        ret = fi_close(&shmem_transport_ofi_stx_pool[i].stx->fid);
-        OFI_CHECK_ERROR_MSG(ret, "STX context close failed (%s)\n", fi_strerror(errno));
+    for (size_t idx = 0; idx < shmem_transport_ofi_num_nics; idx++) {
+        for (long i = 0; i < shmem_transport_ofi_stx_max; ++i) {
+            if (shmem_transport_ofi_stx_pool[idx][i].ref_cnt != 0)
+                RAISE_WARN_MSG("Closing a %s STX (%zu) with nonzero ref. count (%ld)\n",
+                            shmem_transport_ofi_stx_pool[idx][i].is_private ? "private" : "shared",
+                            i, shmem_transport_ofi_stx_pool[idx][i].ref_cnt);
+            ret = fi_close(&shmem_transport_ofi_stx_pool[idx][i].stx->fid);
+            OFI_CHECK_ERROR_MSG(ret, "STX context close failed (%s)\n", fi_strerror(errno));
+        }
     }
     if (shmem_transport_ofi_stx_pool) free(shmem_transport_ofi_stx_pool);
 
@@ -2243,13 +2580,19 @@ int shmem_transport_fini(void)
     ret = fi_close(&shmem_transport_ofi_target_ep->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target endpoint close failed (%s)\n", fi_strerror(errno));
 
-    /* If single-endpoint mode, need to close the default context's put and get counters */
+    /* In single-ep mode, ctx_default's put/get cntrs were bound to target_ep.
+     * Now that target_ep is closed, we can safely close them. */
     if (shmem_transport_ofi_single_ep) {
-        ret = fi_close(&shmem_transport_ctx_default.put_cntr->fid);
-        OFI_CHECK_ERROR_MSG(ret, "Default EP put CNTR close failed (%s)\n", fi_strerror(errno));
-
-        ret = fi_close(&shmem_transport_ctx_default.get_cntr->fid);
-        OFI_CHECK_ERROR_MSG(ret, "Default EP get CNTR close failed (%s)\n", fi_strerror(errno));
+        if (shmem_transport_ctx_default.put_cntr && shmem_transport_ctx_default.put_cntr[0]) {
+            ret = fi_close(&shmem_transport_ctx_default.put_cntr[0]->fid);
+            OFI_CHECK_ERROR_MSG(ret, "Default ctx put CNTR close failed (%s)\n", fi_strerror(errno));
+            shmem_transport_ctx_default.put_cntr[0] = NULL;
+        }
+        if (shmem_transport_ctx_default.get_cntr && shmem_transport_ctx_default.get_cntr[0]) {
+            ret = fi_close(&shmem_transport_ctx_default.get_cntr[0]->fid);
+            OFI_CHECK_ERROR_MSG(ret, "Default ctx get CNTR close failed (%s)\n", fi_strerror(errno));
+            shmem_transport_ctx_default.get_cntr[0] = NULL;
+        }
     }
 
     ret = fi_close(&shmem_transport_ofi_target_cq->fid);
@@ -2274,6 +2617,14 @@ int shmem_transport_fini(void)
 #endif
 
     fi_freeinfo(shmem_transport_ofi_info.fabrics);
+
+    /* Free the fi_dupinfo'd close-NIC chain (success paths only; NULL in fallbacks). */
+    if (shmem_transport_ofi_close_provs) {
+        fi_freeinfo(shmem_transport_ofi_close_provs);
+        shmem_transport_ofi_close_provs = NULL;
+    }
+    free(provider_list);
+    provider_list = NULL;
 
     SHMEM_MUTEX_DESTROY(shmem_transport_ofi_lock);
 

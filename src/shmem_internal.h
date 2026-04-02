@@ -50,6 +50,7 @@ extern int shmem_external_heap_device_type;
 extern int shmem_external_heap_device;
 
 extern unsigned int shmem_internal_rand_seed;
+extern size_t shmem_internal_nic_rr_idx;
 
 #ifdef USE_HWLOC
 #include <hwloc.h>
@@ -185,6 +186,42 @@ extern hwloc_topology_t shmem_internal_topology;
             goto lbl;                                                    \
         }                                                                \
     } while(0)
+
+
+// For Tx load balancing schemes
+
+#ifdef USE_OFI_TX_LOAD_BALANCING_ROUND_ROBIN
+
+  /* Round-robin NIC selection: uniform distribution, no PRNG overhead.
+   * Use atomic fetch-add only for SHMEM_THREAD_MULTIPLE to avoid races. */
+  #define SHMEM_GET_TRANSMIT_NIC_IDX(idx)                                  \
+    do {                                                                 \
+        size_t rr;                                                       \
+        if (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE) {      \
+            rr = __atomic_fetch_add(&shmem_internal_nic_rr_idx, 1,       \
+                                    __ATOMIC_RELAXED);                   \
+        } else {                                                         \
+            rr = shmem_internal_nic_rr_idx++;                            \
+        }                                                                \
+        idx = rr % shmem_transport_ofi_num_nics;                         \
+      } while (0)
+
+#elif defined(USE_OFI_TX_LOAD_BALANCING_RANDOM)
+
+  /* Random NIC selection via rand_r.
+   * Use modulo to avoid the float-multiply edge case where rand_int==RAND_MAX
+   * produces normalized==1.0 and an out-of-bounds index. */
+  #define SHMEM_GET_TRANSMIT_NIC_IDX(idx)                                  \
+    do {                                                                 \
+        int rand_int = rand_r(&shmem_internal_rand_seed);                \
+        idx = (int)((unsigned)rand_int %                                 \
+                    (unsigned)shmem_transport_ofi_num_nics);             \
+      } while (0)
+#else
+ /* No TX load balancing: nic_idx remains 0 (one NIC per PE). */
+ #define SHMEM_GET_TRANSMIT_NIC_IDX(idx) do { } while (0)
+#endif
+
 
 #ifdef ENABLE_ERROR_CHECKING
 #define SHMEM_ERR_CHECK_INITIALIZED()                                    \

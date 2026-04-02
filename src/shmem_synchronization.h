@@ -99,35 +99,36 @@ shmem_internal_fence(shmem_ctx_t ctx)
 
 #define SHMEM_TEST(type, a, b, ret) COMP(type, SYNC_LOAD(a), b, ret)
 
-#define SHMEM_WAIT_POLL(var, value)                      \
-    do {                                                 \
-        while (SYNC_LOAD(var) == value) {                \
-            shmem_transport_probe();                     \
-            SPINLOCK_BODY(); }                           \
+#define SHMEM_WAIT_POLL(var, value)                                             \
+    do {                                                                        \
+        while (SYNC_LOAD(var) == value) {                                       \
+            shmem_transport_probe();                                            \
+            SPINLOCK_BODY();                                                    \
+        }                                                                       \
     } while(0)
 
-#define SHMEM_WAIT_UNTIL_POLL(var, cond, value)          \
-    do {                                                 \
-        int cmpret;                                      \
-                                                         \
-        COMP(cond, SYNC_LOAD(var), value, cmpret);       \
-        while (!cmpret) {                                \
-            shmem_transport_probe();                     \
-            SPINLOCK_BODY();                             \
-            COMP(cond, SYNC_LOAD(var), value, cmpret);   \
-        }                                                \
+#define SHMEM_WAIT_UNTIL_POLL(var, cond, value)                                \
+    do {                                                                       \
+        int cmpret;                                                            \
+                                                                               \
+        COMP(cond, SYNC_LOAD(var), value, cmpret);                             \
+        while (!cmpret) {                                                      \
+            shmem_transport_probe();                                           \
+            SPINLOCK_BODY();                                                   \
+            COMP(cond, SYNC_LOAD(var), value, cmpret);                         \
+        }                                                                      \
     } while(0)
 
-#define SHMEM_SIGNAL_WAIT_UNTIL_POLL(var, cond, value, sat_value)       \
-    do {                                                                \
-        int cmpret;                                                     \
-                                                                        \
-        COMP_SIGNAL(cond, SYNC_LOAD(var), value, cmpret, sat_value);    \
-        while (!cmpret) {                                               \
-            shmem_transport_probe();                                    \
-            SPINLOCK_BODY();                                            \
-            COMP_SIGNAL(cond, SYNC_LOAD(var), value, cmpret, sat_value);\
-        }                                                               \
+#define SHMEM_SIGNAL_WAIT_UNTIL_POLL(var, cond, value, sat_value)                         \
+    do {                                                                                  \
+        int cmpret;                                                                       \
+                                                                                          \
+        COMP_SIGNAL(cond, SYNC_LOAD(var), value, cmpret, sat_value);                      \
+        while (!cmpret) {                                                                 \
+            shmem_transport_probe();                                                      \
+            SPINLOCK_BODY();                                                              \
+            COMP_SIGNAL(cond, SYNC_LOAD(var), value, cmpret, sat_value);                  \
+        }                                                                                 \
     } while(0)
 
 #define SHMEM_WAIT_BLOCK(var, value)                                    \

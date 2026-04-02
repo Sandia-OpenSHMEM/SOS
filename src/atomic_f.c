@@ -41,8 +41,8 @@ FC_SHMEM_SWAP(fortran_integer_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target, SIZEOF_FORTRAN_INTEGER);
 
     shmem_internal_swap(SHMEM_CTX_DEFAULT, target, value, &newval, SIZEOF_FORTRAN_INTEGER,
-                        *pe, SHM_INTERNAL_FORTRAN_INTEGER);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+                        *pe, SHM_INTERNAL_FORTRAN_INTEGER, 0);
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0);
     return newval;
 }
 
@@ -64,8 +64,8 @@ FC_SHMEM_INT4_SWAP(int32_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target, 4);
 
     shmem_internal_swap(SHMEM_CTX_DEFAULT, target, value, &newval, 4,
-                        *pe, SHM_INTERNAL_INT32);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+                        *pe, SHM_INTERNAL_INT32, 0);
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0);
     return newval;
 }
 
@@ -87,8 +87,8 @@ FC_SHMEM_INT8_SWAP(int64_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target, 8);
 
     shmem_internal_swap(SHMEM_CTX_DEFAULT, target, value, &newval, 8,
-                        *pe, SHM_INTERNAL_INT64);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+                        *pe, SHM_INTERNAL_INT64, 0);
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0);
     return newval;
 }
 
@@ -112,8 +112,8 @@ FC_SHMEM_REAL4_SWAP(float *target,
     shmem_internal_assert(sizeof(float) == 4);
 
     shmem_internal_swap(SHMEM_CTX_DEFAULT, target, value, &newval, 4,
-                        *pe, SHM_INTERNAL_FLOAT);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+                        *pe, SHM_INTERNAL_FLOAT, 0);
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0);
     return newval;
 }
 
@@ -137,8 +137,8 @@ FC_SHMEM_REAL8_SWAP(double *target,
     shmem_internal_assert(sizeof(double) == 8);
 
     shmem_internal_swap(SHMEM_CTX_DEFAULT, target, value, &newval, 8,
-                        *pe, SHM_INTERNAL_DOUBLE);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+                        *pe, SHM_INTERNAL_DOUBLE, 0);
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0);
     return newval;
 }
 
@@ -163,8 +163,8 @@ FC_SHMEM_INT4_CSWAP(int32_t *target,
 
     shmem_internal_cswap(SHMEM_CTX_DEFAULT, target, value, &newval, cond,
                          4,
-                         *pe, SHM_INTERNAL_INT32);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+                         *pe, SHM_INTERNAL_INT32, 0);
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0);
     return newval;
 }
 
@@ -189,8 +189,8 @@ FC_SHMEM_INT8_CSWAP(int64_t *target,
 
     shmem_internal_cswap(SHMEM_CTX_DEFAULT, target, value, &newval, cond,
                          8,
-                         *pe, SHM_INTERNAL_INT64);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+                         *pe, SHM_INTERNAL_INT64, 0);
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0);
     return newval;
 }
 
@@ -212,8 +212,8 @@ FC_SHMEM_INT4_FADD(int32_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target, 4);
 
     shmem_internal_fetch_atomic(SHMEM_CTX_DEFAULT, target, value, &oldval, 4,
-                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32, 0);
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0);
     return oldval;
 }
 
@@ -235,8 +235,8 @@ FC_SHMEM_INT8_FADD(int64_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target, 8);
 
     shmem_internal_fetch_atomic(SHMEM_CTX_DEFAULT, target, value, &oldval, 8,
-                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64, 0);
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0);
     return oldval;
 }
 
@@ -256,8 +256,8 @@ FC_SHMEM_INT4_FINC(int32_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target, 4);
 
     shmem_internal_fetch_atomic(SHMEM_CTX_DEFAULT, target, &tmp, &oldval, 4,
-                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT32, 0);
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0);
     return oldval;
 }
 
@@ -277,8 +277,8 @@ FC_SHMEM_INT8_FINC(int64_t *target,
     SHMEM_ERR_CHECK_SYMMETRIC(target, 8);
 
     shmem_internal_fetch_atomic(SHMEM_CTX_DEFAULT, target, &tmp, &oldval, 8,
-                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+                                *pe, SHM_INTERNAL_SUM, SHM_INTERNAL_INT64, 0);
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0);
     return oldval;
 }
 
@@ -373,8 +373,8 @@ FC_SHMEM_INT4_FETCH(int32_t *source,
     SHMEM_ERR_CHECK_PE(*pe);
     SHMEM_ERR_CHECK_SYMMETRIC(source, 4);
 
-    shmem_internal_atomic_fetch(SHMEM_CTX_DEFAULT, &val, (void *) source, 4, *pe, SHM_INTERNAL_INT32);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+    shmem_internal_atomic_fetch(SHMEM_CTX_DEFAULT, &val, (void *) source, 4, *pe, SHM_INTERNAL_INT32, 0);
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0);
 
     return val;
 }
@@ -394,8 +394,8 @@ FC_SHMEM_INT8_FETCH(int64_t *source,
     SHMEM_ERR_CHECK_PE(*pe);
     SHMEM_ERR_CHECK_SYMMETRIC(source, 8);
 
-    shmem_internal_atomic_fetch(SHMEM_CTX_DEFAULT, &val, (void *) source, 8, *pe, SHM_INTERNAL_INT64);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+    shmem_internal_atomic_fetch(SHMEM_CTX_DEFAULT, &val, (void *) source, 8, *pe, SHM_INTERNAL_INT64, 0);
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0);
 
     return val;
 }
@@ -417,8 +417,8 @@ FC_SHMEM_REAL4_FETCH(float *source,
 
     shmem_internal_assert(sizeof(float) == 4);
 
-    shmem_internal_atomic_fetch(SHMEM_CTX_DEFAULT, &val, (void *) source, 4, *pe, SHM_INTERNAL_INT32);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+    shmem_internal_atomic_fetch(SHMEM_CTX_DEFAULT, &val, (void *) source, 4, *pe, SHM_INTERNAL_INT32, 0);
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0);
 
     return val;
 }
@@ -440,8 +440,8 @@ FC_SHMEM_REAL8_FETCH(double *source,
 
     shmem_internal_assert(sizeof(double) == 8);
 
-    shmem_internal_atomic_fetch(SHMEM_CTX_DEFAULT, &val, (void *) source, 8, *pe, SHM_INTERNAL_INT64);
-    shmem_internal_get_wait(SHMEM_CTX_DEFAULT);
+    shmem_internal_atomic_fetch(SHMEM_CTX_DEFAULT, &val, (void *) source, 8, *pe, SHM_INTERNAL_INT64, 0);
+    shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0);
 
     return val;
 }

@@ -97,6 +97,7 @@ int shmem_internal_global_exit_called = 0;
 int shmem_internal_thread_level;
 
 unsigned int shmem_internal_rand_seed;
+size_t shmem_internal_nic_rr_idx;
 
 #ifdef USE_HWLOC
 #include <hwloc.h>
@@ -115,6 +116,11 @@ static void
 shmem_internal_randr_init(void)
 {
     shmem_internal_rand_seed = shmem_internal_my_pe;
+    /* Only reset nic_rr_idx when TX LB is not active; otherwise
+     * shmem_transport_startup() has already set the staggered start. */
+#if !defined(USE_OFI_TX_LOAD_BALANCING_ROUND_ROBIN) && !defined(USE_OFI_TX_LOAD_BALANCING_RANDOM)
+    shmem_internal_nic_rr_idx = 0;
+#endif
 
 #ifdef ENABLE_THREADS
     SHMEM_MUTEX_INIT(shmem_internal_mutex_rand_r);
@@ -143,7 +149,9 @@ shmem_internal_shutdown(void)
         return;
     }
 
-    shmem_internal_barrier_all();
+    size_t nic_idx = 0;
+    SHMEM_GET_TRANSMIT_NIC_IDX(nic_idx);
+    shmem_internal_barrier_all(nic_idx);
 
     shmem_internal_finalized = 1;
 

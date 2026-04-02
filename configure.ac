@@ -140,6 +140,7 @@ AS_IF([test "$with_hwloc" != "no"], [
         OPAL_3RDPARTY_WITH([hwloc], [hwloc], [package_hwloc])
         _OPAL_CONFIG_HWLOC_EXTERNAL(
             [external_hwloc_happy=1
+             shmem_hwloc_found=yes
              opal_hwloc_mode="external"
              AC_DEFINE([USE_HWLOC], [1], [Enable hwloc. Default behavior is to automatically enable hwloc if installation can be found])],
             [AS_IF([test -n "$with_hwloc"],
@@ -339,6 +340,27 @@ AC_ARG_ENABLE([ofi-hmem],
                     [Use FI_HMEM to support transfers to and from device memory. (default: disabled)])])
 AS_IF([test "$enable_ofi_hmem" = "yes"],
       [AC_DEFINE([USE_FI_HMEM], [1], [If defined, the OFI transport will enable FI_HMEM.])])
+
+AC_ARG_ENABLE([ofi-tx-load-balancing-round-robin],
+    [AS_HELP_STRING([--enable-ofi-tx-load-balancing-round-robin],
+                    [Enable OFI transmit load balancing across available NICs using round-robin selection. Requires --with-hwloc. Mutually exclusive with --enable-ofi-tx-load-balancing-random. (default: disabled)])])
+
+AC_ARG_ENABLE([ofi-tx-load-balancing-random],
+    [AS_HELP_STRING([--enable-ofi-tx-load-balancing-random],
+                    [Enable OFI transmit load balancing across available NICs using random selection. Requires --with-hwloc. Mutually exclusive with --enable-ofi-tx-load-balancing-round-robin. (default: disabled)])])
+
+AS_IF([test "$enable_ofi_tx_load_balancing_round_robin" = "yes" -a "$enable_ofi_tx_load_balancing_random" = "yes"],
+      [AC_MSG_ERROR([--enable-ofi-tx-load-balancing-round-robin and --enable-ofi-tx-load-balancing-random are mutually exclusive])])
+
+AS_IF([test "$enable_ofi_tx_load_balancing_round_robin" = "yes"],
+      [AS_IF([test "$shmem_hwloc_found" != "yes"],
+             [AC_MSG_ERROR([--enable-ofi-tx-load-balancing-round-robin requires hwloc; ensure hwloc is installed and --with-hwloc is not disabled])])
+       AC_DEFINE([USE_OFI_TX_LOAD_BALANCING_ROUND_ROBIN], [1], [If defined, the OFI transport will use round-robin selection among available NICs for transmit operations.])])
+
+AS_IF([test "$enable_ofi_tx_load_balancing_random" = "yes"],
+      [AS_IF([test "$shmem_hwloc_found" != "yes"],
+             [AC_MSG_ERROR([--enable-ofi-tx-load-balancing-random requires hwloc; ensure hwloc is installed and --with-hwloc is not disabled])])
+       AC_DEFINE([USE_OFI_TX_LOAD_BALANCING_RANDOM], [1], [If defined, the OFI transport will use random selection among available NICs for transmit operations.])])
 
 PKG_INSTALLDIR()
 

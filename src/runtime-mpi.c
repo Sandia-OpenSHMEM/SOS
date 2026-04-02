@@ -28,7 +28,7 @@
 
 /* Note: Increase MAX_KV_COUNT if more key/values are needed.  MAX_KV_COUNT is
  * 2 * the number of key/value pairs. */
-#define MAX_KV_COUNT 20
+#define MAX_KV_COUNT 40
 #define MAX_KV_LENGTH 512
 
 static int rank = -1;

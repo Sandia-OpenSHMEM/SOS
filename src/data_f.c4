@@ -136,8 +136,8 @@ SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_IPUT_SIZE')
         SHMEM_ERR_CHECK_NULL(target, *len);                             \
                                                                         \
         shmem_internal_get(SHMEM_CTX_DEFAULT, target, source,           \
-                           SIZE * *len, *pe);                           \
-        shmem_internal_get_wait(SHMEM_CTX_DEFAULT);                     \
+                           SIZE * *len, *pe, 0);                        \
+        shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0);                  \
     }
 
 define(`SHMEM_WRAP_FC_GET',
@@ -161,7 +161,7 @@ SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_GET_SIZE')
         SHMEM_ERR_CHECK_NULL(target, *nelems);                          \
                                                                         \
         shmem_internal_get(SHMEM_CTX_DEFAULT, target, source,           \
-                           SIZE * *nelems, *pe);                        \
+                           SIZE * *nelems, *pe, 0);                     \
     }
 
 define(`SHMEM_WRAP_FC_GET_NBI',
@@ -195,11 +195,11 @@ SHMEM_BIND_F_SIZES(`SHMEM_WRAP_FC_GET_NBI_SIZE')
                                                                         \
         for ( ; len > 0 ; --len ) {                                     \
             shmem_internal_get(SHMEM_CTX_DEFAULT, target, source, SIZE, \
-                               *pe);                                    \
+                               *pe, 0);                                 \
             target += (*tst * SIZE);                                    \
             source += (*sst * SIZE);                                    \
         }                                                               \
-        shmem_internal_get_wait(SHMEM_CTX_DEFAULT);                     \
+        shmem_internal_get_wait(SHMEM_CTX_DEFAULT, 0);                  \
     }
 
 define(`SHMEM_WRAP_FC_IGET',
