@@ -164,15 +164,15 @@ shmem_internal_get_next(intptr_t incr)
 #define ONEGIG (1024UL*1024UL*1024UL)
 static void *mmap_alloc(size_t bytes)
 {
-    char *file_name = NULL;
-    int fd = 0;
-    char *directory = NULL;
     void *requested_base =
         (void*) (((unsigned long) shmem_internal_data_base +
                   shmem_internal_data_length + 2 * ONEGIG) & ~(ONEGIG - 1));
     void *ret;
 
 #ifdef __linux__
+    char *file_name = NULL;
+    int fd = 0;
+    char *directory = NULL;
     /* huge page support only on Linux for now, default is to use 2MB large pages */
     if (shmem_internal_params.SYMMETRIC_HEAP_USE_HUGE_PAGES) {
         const char basename[] = "hugepagefile.SOS";
@@ -199,33 +199,37 @@ static void *mmap_alloc(size_t bytes)
                     }
                 }
             }
+        } else {
+            RAISE_WARN_MSG("No hugetlbfs mount found for page size %zu, "
+                           "falling back to regular pages\n",
+                           shmem_internal_params.SYMMETRIC_HEAP_PAGE_SIZE);
         }
     }
+
+    if (fd) {
+        /* Map the hugetlbfs file directly; MAP_ANON must not be used here
+         * because MAP_ANONYMOUS causes the kernel to ignore the fd, which
+         * would silently fall back to regular pages. */
+        ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+        if (file_name)
+            unlink(file_name);
+        close(fd);
+        free(directory);
+        free(file_name);
+    } else {
+        ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+    }
+#else
+    ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
+               MAP_ANON | MAP_PRIVATE, -1, 0);
 #endif /* __linux__ */
 
-    ret = mmap(requested_base,
-               bytes,
-               PROT_READ | PROT_WRITE,
-               MAP_ANON | MAP_PRIVATE,
-               fd,
-               0);
     if (ret == MAP_FAILED) {
         RAISE_WARN_MSG("Unable to allocate sym. heap, size %zuB: %s\n"
                        RAISE_PE_PREFIX
                        "Try reducing SHMEM_SYMMETRIC_SIZE or number of PEs per node\n",
                        bytes, strerror(errno), shmem_internal_my_pe);
         ret = NULL;
-    }
-    if (fd) {
-        if (file_name)
-            unlink(file_name);
-        close(fd);
-    }
-    if (directory) {
-        free(directory);
-    }
-    if (file_name) {
-        free(file_name);
     }
     return ret;
 }
