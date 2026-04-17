@@ -210,12 +210,24 @@ static void *mmap_alloc(size_t bytes)
         /* Map the hugetlbfs file directly; MAP_ANON must not be used here
          * because MAP_ANONYMOUS causes the kernel to ignore the fd, which
          * would silently fall back to regular pages. */
-        ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-        if (file_name)
+        if (ftruncate(fd, bytes) == -1) {
+            RAISE_WARN_MSG("ftruncate on hugetlbfs file failed (%s), "
+                           "falling back to regular pages\n",
+                           strerror(errno));
             unlink(file_name);
-        close(fd);
-        free(directory);
-        free(file_name);
+            close(fd);
+            free(directory);
+            free(file_name);
+            ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
+                       MAP_ANON | MAP_PRIVATE, -1, 0);
+        } else {
+            ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
+                       MAP_SHARED | MAP_HUGETLB, fd, 0);
+            unlink(file_name);
+            close(fd);
+            free(directory);
+            free(file_name);
+        }
     } else {
         ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
     }
