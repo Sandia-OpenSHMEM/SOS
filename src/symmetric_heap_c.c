@@ -191,7 +191,8 @@ static void *mmap_alloc(size_t bytes)
                     sprintf(file_name, "%s/%s.%d", directory, basename, getpid());
                     fd = open(file_name, O_CREAT | O_RDWR, 0755);
                     if (fd < 0) {
-                        RAISE_WARN_STR("file open failed, cannot use huge pages");
+                        RAISE_WARN_MSG("file open failed (%s), cannot use huge pages",
+                                       strerror(errno));
                         fd = 0;
                     } else {
                         /* have to round up by the pagesize being used */
