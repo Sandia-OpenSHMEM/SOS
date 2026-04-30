@@ -1424,6 +1424,33 @@ struct fi_info *assign_nic_with_hwloc(struct fi_info *fabric, struct fi_info **p
     struct fi_info *provider = prov_list[shmem_internal_my_pe % num_close_nics];
     free(prov_list);
 
+    /* Apply best-network CPU placement: bind CPUs to the NUMA domain of the
+     * selected NIC, so the PE's memory traffic is local to its network port. */
+    if (!shmem_internal_params.DISABLE_CPU_BINDING &&
+        strcmp(shmem_internal_params.CPU_PLACEMENT_POLICY, "best-network") == 0 &&
+        provider->nic && provider->nic->bus_attr &&
+        provider->nic->bus_attr->bus_type == FI_BUS_PCI) {
+
+        struct fi_pci_attr pci = provider->nic->bus_attr->attr.pci;
+        hwloc_obj_t io_device = hwloc_get_pcidev_by_busid(shmem_internal_topology,
+                                    pci.domain_id, pci.bus_id, pci.device_id, pci.function_id);
+        hwloc_obj_t non_io = io_device ?
+                             hwloc_get_non_io_ancestor_obj(shmem_internal_topology, io_device) :
+                             NULL;
+        if (!non_io) {
+            RAISE_WARN_MSG("PE %d: [best-network] could not find NUMA ancestor of NIC, skipping CPU placement\n",
+                           shmem_internal_my_pe);
+        } else {
+            DEBUG_MSG("PE %d: [best-network] binding CPUs to NIC NUMA domain\n",
+                      shmem_internal_my_pe);
+            int ret = hwloc_set_proc_cpubind(shmem_internal_topology, getpid(),
+                                             non_io->cpuset, HWLOC_CPUBIND_PROCESS);
+            if (ret != 0)
+                RAISE_WARN_MSG("PE %d: [best-network] hwloc_set_proc_cpubind failed (%s)\n",
+                               shmem_internal_my_pe, strerror(errno));
+        }
+    }
+
     return provider;
 }
 #endif
