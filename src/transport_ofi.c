@@ -1652,6 +1652,10 @@ int query_for_fabric(struct fabric_info *info)
 #endif
 
 #ifndef DISABLE_OFI_INJECT
+    DEBUG_MSG(RAISE_PE_PREFIX "tx_attr->inject_size (provider): %zu, requested: %zu\n",
+              shmem_internal_my_pe,
+              info->p_info->tx_attr->inject_size,
+              shmem_transport_ofi_max_buffered_send);
     shmem_internal_assertp(info->p_info->tx_attr->inject_size >= shmem_transport_ofi_max_buffered_send);
     shmem_transport_ofi_max_buffered_send = info->p_info->tx_attr->inject_size;
 #else
