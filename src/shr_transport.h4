@@ -122,12 +122,24 @@ shmem_shr_transport_use_read(shmem_ctx_t ctx, void *target, const void *source,
 /* Each OpenSHMEM AMO has only one symmetric pointer.  Check whether shared
  * transport AMOs are in use with respect to the given symmetric target
  * pointer and datatype. For a given datatype, all atomic operations must
- * use the same transport; therefore, op is not needed in this check. */
+ * use the same transport; therefore, op is not needed in this check.
+ *
+ * Under USE_HIERARCHICAL_BARRIER, CPU atomics and NIC AMOs are not coherent
+ * with each other; mixing them on the same variable produces lost updates.
+ * CPU atomics are therefore only safe when ALL PEs are on the same node —
+ * in that case no NIC AMOs will ever be issued to any variable, so there is
+ * only one coherency domain in play. */
 static inline int
 shmem_shr_transport_use_atomic(shmem_ctx_t ctx, void *target, size_t len,
                                int pe, shm_internal_datatype_t datatype)
 {
-#if USE_SHR_ATOMICS
+#if USE_HIERARCHICAL_BARRIER
+    /* Use CPU atomics only when all PEs are local (no off-node peers). */
+    if (shmem_internal_get_shr_size() == shmem_internal_num_pes) {
+        return -1 != shmem_internal_get_shr_rank(pe);
+    }
+    return 0;
+#elif USE_SHR_ATOMICS
     return -1 != shmem_internal_get_shr_rank(pe);
 #else
     return 0;
