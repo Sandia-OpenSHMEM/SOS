@@ -25,7 +25,8 @@ enum coll_type_t {
     TREE,
     DISSEM,
     RING,
-    RECDBL
+    RECDBL,
+    HIERARCHICAL
 };
 typedef enum coll_type_t coll_type_t;
 
@@ -33,6 +34,11 @@ extern char *coll_type_str[];
 
 extern long *shmem_internal_barrier_all_psync;
 extern long *shmem_internal_sync_all_psync;
+#ifdef USE_HIERARCHICAL_BARRIER
+extern long *shmem_internal_barrier_all_local_psync;
+extern long *shmem_internal_sync_all_local_psync;
+extern long *shmem_internal_hierarchical_local_psync;
+#endif
 
 extern coll_type_t shmem_internal_barrier_type;
 extern coll_type_t shmem_internal_bcast_type;
@@ -44,6 +50,11 @@ extern coll_type_t shmem_internal_fcollect_type;
 void shmem_internal_sync_linear(int PE_start, int PE_stride, int PE_size, long *pSync);
 void shmem_internal_sync_tree(int PE_start, int PE_stride, int PE_size, long *pSync);
 void shmem_internal_sync_dissem(int PE_start, int PE_stride, int PE_size, long *pSync);
+#ifdef USE_HIERARCHICAL_BARRIER
+void shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
+                                      long *pSync, long *local_pSync);
+void shmem_internal_hier_barrier_print_stats(void);
+#endif
 
 static inline
 void
@@ -58,6 +69,14 @@ shmem_internal_sync(int PE_start, int PE_stride, int PE_size, long *pSync)
 
     switch (shmem_internal_barrier_type) {
     case AUTO:
+#ifdef USE_HIERARCHICAL_BARRIER
+        if (shmem_internal_get_shr_size() >= shmem_internal_params.HIER_BARRIER_THRESHOLD) {
+            shmem_internal_sync_hierarchical(PE_start, PE_stride, PE_size,
+                                             pSync,
+                                             shmem_internal_hierarchical_local_psync);
+            break;
+        }
+#endif
         if (PE_size < shmem_internal_params.COLL_CROSSOVER) {
             shmem_internal_sync_linear(PE_start, PE_stride, PE_size, pSync);
         } else {
@@ -73,6 +92,13 @@ shmem_internal_sync(int PE_start, int PE_stride, int PE_size, long *pSync)
     case DISSEM:
         shmem_internal_sync_dissem(PE_start, PE_stride, PE_size, pSync);
         break;
+#ifdef USE_HIERARCHICAL_BARRIER
+    case HIERARCHICAL:
+        shmem_internal_sync_hierarchical(PE_start, PE_stride, PE_size,
+                                         pSync,
+                                         shmem_internal_hierarchical_local_psync);
+        break;
+#endif
     default:
         RAISE_ERROR_MSG("Illegal barrier/sync type (%d)\n",
                         shmem_internal_barrier_type);
@@ -88,6 +114,17 @@ static inline
 void
 shmem_internal_sync_all(void)
 {
+#ifdef USE_HIERARCHICAL_BARRIER
+    if (shmem_internal_barrier_type == AUTO &&
+        shmem_internal_get_shr_size() >= shmem_internal_params.HIER_BARRIER_THRESHOLD) {
+        shmem_internal_sync_hierarchical(0, 1, shmem_internal_num_pes,
+                                         shmem_internal_sync_all_psync,
+                                         shmem_internal_sync_all_local_psync);
+        shmem_internal_membar_acq_rel();
+        shmem_transport_syncmem();
+        return;
+    }
+#endif
     shmem_internal_sync(0, 1, shmem_internal_num_pes, shmem_internal_sync_all_psync);
 }
 
@@ -106,6 +143,17 @@ void
 shmem_internal_barrier_all(void)
 {
     shmem_internal_quiet(SHMEM_CTX_DEFAULT);
+#ifdef USE_HIERARCHICAL_BARRIER
+    if (shmem_internal_barrier_type == AUTO &&
+        shmem_internal_get_shr_size() >= shmem_internal_params.HIER_BARRIER_THRESHOLD) {
+        shmem_internal_sync_hierarchical(0, 1, shmem_internal_num_pes,
+                                         shmem_internal_barrier_all_psync,
+                                         shmem_internal_barrier_all_local_psync);
+        shmem_internal_membar_acq_rel();
+        shmem_transport_syncmem();
+        return;
+    }
+#endif
     shmem_internal_sync(0, 1, shmem_internal_num_pes, shmem_internal_barrier_all_psync);
 }
 

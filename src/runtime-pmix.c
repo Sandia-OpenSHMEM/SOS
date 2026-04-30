@@ -37,6 +37,7 @@ static pmix_proc_t myproc;
 static uint32_t size;
 static uint32_t node_size = 0;
 static int *node_ranks = NULL;
+static int *is_node_root = NULL;
 
 int
 shmem_runtime_init(int enable_node_ranks)
@@ -69,6 +70,13 @@ shmem_runtime_init(int enable_node_ranks)
             RETURN_ERROR_MSG_PREINIT("Out of memory allocating node_ranks\n");
             return 1;
         }
+#ifdef USE_HIERARCHICAL_BARRIER
+        is_node_root = (int *)malloc(size * sizeof(int));
+        if (NULL == is_node_root) {
+            RETURN_ERROR_MSG_PREINIT("Out of memory allocating is_node_root\n");
+            return 2;
+        }
+#endif
     }
 
     return PMIX_SUCCESS;
@@ -82,6 +90,8 @@ shmem_runtime_fini(void)
 
     if (node_ranks)
         free(node_ranks);
+    if (is_node_root)
+        free(is_node_root);
 
     if (PMIX_SUCCESS != (rc = PMIx_Finalize(NULL, 0))) {
         RETURN_ERROR_MSG_PREINIT("PMIx_Finalize failed (%d)\n", rc);
@@ -143,13 +153,36 @@ shmem_runtime_get_node_size(void)
     return (int) node_size;
 }
 
-// static void opcbfunc(pmix_status_t status, void *cbdata)
-// {
-//     bool *active = (bool*)cbdata;
 
-//     fprintf(stderr, "%s:%d completed fence_nb", myproc.nspace, myproc.rank);
-//     *active = false;
-// }
+int
+shmem_runtime_get_node_root_pe(void)
+{
+    int i;
+
+    for (i = 0; i < (int) size; i++) {
+        if (node_ranks[i] == 0)
+            return i;
+    }
+
+    /* Should not be reached */
+    return 0;
+}
+
+
+int
+shmem_runtime_is_node_root_pe(int pe)
+{
+    shmem_internal_assert(pe < (int) size && pe >= 0);
+
+    if (size == 1)
+        return 1;
+
+    if (NULL == is_node_root)
+        return 0;
+
+    return is_node_root[pe];
+}
+
 
 int
 shmem_runtime_exchange(void)
@@ -157,7 +190,6 @@ shmem_runtime_exchange(void)
     pmix_status_t rc;
     pmix_info_t info;
     bool wantit=true;
-    //bool active = true;
 
     if (node_ranks) {
         pmix_proc_t proc;
@@ -198,6 +230,16 @@ shmem_runtime_exchange(void)
         } else {
            RETURN_ERROR_MSG_PREINIT("PMIX_LOCAL_PEERS is not properly initiated (%d)\n", rc);
         }
+
+        /* Publish hostname so shmem_runtime_util_populate_global_node_roots can
+         * determine which PEs are node roots across all nodes. */
+        if (is_node_root) {
+            int ret = shmem_runtime_util_put_hostname();
+            if (ret != 0) {
+                RETURN_ERROR_MSG("PMIx hostname put failed (%d)\n", ret);
+                return ret;
+            }
+        }
     }
 
     /* commit any values we "put" */
@@ -206,20 +248,21 @@ shmem_runtime_exchange(void)
         return rc;
     }
 
-    /* execute a fence, directing that all info be exchanged */
     PMIX_INFO_CONSTRUCT(&info);
     PMIX_INFO_LOAD(&info, PMIX_COLLECT_DATA, &wantit, PMIX_BOOL);
 
-    // Future optimization for when fabrics are ready to support the non-block-
-    // ing capabilities. The commented out call function above, the commented
-    // variable "bool active," and the PMIx_Fence_nb if-statement are here for
-    // when that is ready. Current implementations will cause the test to hang.
-
-    // if (PMIX_SUCCESS != (rc = PMIx_Fence_nb(NULL, 0, &info, 1, opcbfunc, &active))) {
     if (PMIX_SUCCESS != (rc = PMIx_Fence(NULL, 0, &info, 1))) {
         RETURN_ERROR_MSG("PMIx_Fence failed (%d)\n", rc);
     }
     PMIX_INFO_DESTRUCT(&info);
+
+    if (is_node_root) {
+        int ret = shmem_runtime_util_populate_global_node_roots(is_node_root, (int) size);
+        if (ret != 0) {
+            RETURN_ERROR_MSG("Global node root mapping failed (%d)\n", ret);
+            return ret;
+        }
+    }
 
     return rc;
 }
