@@ -123,6 +123,16 @@ SHMEM_INTERNAL_ENV_DEF(MPI_THREAD_LEVEL, string, "MPI_THREAD_SINGLE", SHMEM_INTE
                        "Specify the MPI threading level when MPI is used as the process manager")
 #endif
 
-SHMEM_INTERNAL_ENV_DEF(BACKTRACE, string, "", SHMEM_INTERNAL_ENV_CAT_OTHER,
-                       "Specify the mechanism to use for backtracing on failure")
+#ifdef USE_HWLOC
+SHMEM_INTERNAL_ENV_DEF(CPU_PLACEMENT_POLICY, string, "none", SHMEM_INTERNAL_ENV_CAT_OTHER,
+                       "CPU placement policy applied at initialization. Options: none (default), "
+                       "best-memory (bind CPUs to NUMA node of current CPU location), "
+                       "numa-local (same as best-memory), "
+                       "socket-local (bind CPUs to socket of current CPU location), "
+                       "balanced-numa (round-robin PEs across NUMA nodes by local rank; also sets memory binding), "
+                       "best-network (bind CPUs to NUMA node of assigned NIC; applied during transport init). "
+                       "Has no effect when SHMEM_DISABLE_CPU_BINDING is set.")
+SHMEM_INTERNAL_ENV_DEF(DISABLE_CPU_BINDING, bool, false, SHMEM_INTERNAL_ENV_CAT_OTHER,
+                       "Disable all hwloc CPU placement. Overrides SHMEM_CPU_PLACEMENT_POLICY.")
+#endif
 

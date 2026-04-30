@@ -355,6 +355,119 @@ shmem_internal_heap_preinit(int tl_requested, int *tl_provided)
     abort();
 }
 
+#ifdef USE_HWLOC
+/* Apply the CPU placement policy specified by SHMEM_CPU_PLACEMENT_POLICY.
+ * Must be called after hwloc_topology_load() and shmem_runtime_init().
+ * The "best-network" policy is handled separately in transport_ofi.c
+ * after the NIC is selected. */
+static void
+apply_cpu_placement(void)
+{
+    if (shmem_internal_params.DISABLE_CPU_BINDING) {
+        DEBUG_MSG("PE %d: CPU binding disabled via SHMEM_DISABLE_CPU_BINDING\n",
+                  shmem_internal_my_pe);
+        return;
+    }
+
+    const char *policy = shmem_internal_params.CPU_PLACEMENT_POLICY;
+
+    if (strcmp(policy, "none") == 0 || strcmp(policy, "best-network") == 0)
+        return;
+
+    int ret;
+    hwloc_bitmap_t location = hwloc_bitmap_alloc();
+    if (!location) {
+        RAISE_WARN_MSG("hwloc_bitmap_alloc failed, skipping CPU placement\n");
+        return;
+    }
+
+    ret = hwloc_get_proc_last_cpu_location(shmem_internal_topology, getpid(),
+                                           location, HWLOC_CPUBIND_PROCESS);
+    if (ret != 0) {
+        RAISE_WARN_MSG("hwloc_get_proc_last_cpu_location failed (%s), skipping CPU placement\n",
+                       strerror(errno));
+        goto out;
+    }
+
+    if (strcmp(policy, "best-memory") == 0 || strcmp(policy, "numa-local") == 0) {
+        hwloc_obj_t numa = hwloc_get_next_obj_covering_cpuset_by_type(
+                               shmem_internal_topology, location, HWLOC_OBJ_NUMANODE, NULL);
+        if (!numa) {
+            RAISE_WARN_MSG("PE %d: [%s] could not find covering NUMA node, skipping\n",
+                           shmem_internal_my_pe, policy);
+            goto out;
+        }
+        DEBUG_MSG("PE %d: [%s] binding CPUs to NUMA node %u\n",
+                  shmem_internal_my_pe, policy, numa->os_index);
+        ret = hwloc_set_proc_cpubind(shmem_internal_topology, getpid(),
+                                     numa->cpuset, HWLOC_CPUBIND_PROCESS);
+        if (ret != 0)
+            RAISE_WARN_MSG("PE %d: [%s] hwloc_set_proc_cpubind failed (%s)\n",
+                           shmem_internal_my_pe, policy, strerror(errno));
+
+    } else if (strcmp(policy, "socket-local") == 0) {
+        hwloc_obj_t pkg = hwloc_get_next_obj_covering_cpuset_by_type(
+                              shmem_internal_topology, location, HWLOC_OBJ_PACKAGE, NULL);
+        if (!pkg) {
+            RAISE_WARN_MSG("PE %d: [socket-local] could not find covering socket, skipping\n",
+                           shmem_internal_my_pe);
+            goto out;
+        }
+        DEBUG_MSG("PE %d: [socket-local] binding CPUs to socket %u\n",
+                  shmem_internal_my_pe, pkg->os_index);
+        ret = hwloc_set_proc_cpubind(shmem_internal_topology, getpid(),
+                                     pkg->cpuset, HWLOC_CPUBIND_PROCESS);
+        if (ret != 0)
+            RAISE_WARN_MSG("PE %d: [socket-local] hwloc_set_proc_cpubind failed (%s)\n",
+                           shmem_internal_my_pe, strerror(errno));
+
+    } else if (strcmp(policy, "balanced-numa") == 0) {
+        int num_numa = hwloc_get_nbobjs_by_type(shmem_internal_topology, HWLOC_OBJ_NUMANODE);
+        if (num_numa <= 0) {
+            RAISE_WARN_MSG("PE %d: [balanced-numa] could not enumerate NUMA nodes, skipping\n",
+                           shmem_internal_my_pe);
+            goto out;
+        }
+        int local_rank = shmem_runtime_get_node_rank(shmem_internal_my_pe);
+        if (local_rank < 0) {
+            RAISE_WARN_MSG("PE %d: [balanced-numa] could not get local PE rank, skipping\n",
+                           shmem_internal_my_pe);
+            goto out;
+        }
+        hwloc_obj_t numa = hwloc_get_obj_by_type(shmem_internal_topology,
+                                                  HWLOC_OBJ_NUMANODE,
+                                                  local_rank % num_numa);
+        if (!numa) {
+            RAISE_WARN_MSG("PE %d: [balanced-numa] could not get NUMA node %d, skipping\n",
+                           shmem_internal_my_pe, local_rank % num_numa);
+            goto out;
+        }
+        DEBUG_MSG("PE %d: [balanced-numa] local_rank=%d, assigning to NUMA node %u\n",
+                  shmem_internal_my_pe, local_rank, numa->os_index);
+        ret = hwloc_set_proc_cpubind(shmem_internal_topology, getpid(),
+                                     numa->cpuset, HWLOC_CPUBIND_PROCESS);
+        if (ret != 0) {
+            RAISE_WARN_MSG("PE %d: [balanced-numa] hwloc_set_proc_cpubind failed (%s)\n",
+                           shmem_internal_my_pe, strerror(errno));
+            goto out;
+        }
+        ret = hwloc_set_membind(shmem_internal_topology, numa->nodeset,
+                                HWLOC_MEMBIND_BIND,
+                                HWLOC_MEMBIND_PROCESS | HWLOC_MEMBIND_BYNODESET);
+        if (ret != 0)
+            RAISE_WARN_MSG("PE %d: [balanced-numa] hwloc_set_membind failed (%s)\n",
+                           shmem_internal_my_pe, strerror(errno));
+
+    } else {
+        RAISE_WARN_MSG("PE %d: unknown CPU_PLACEMENT_POLICY '%s', skipping\n",
+                       shmem_internal_my_pe, policy);
+    }
+
+out:
+    hwloc_bitmap_free(location);
+}
+#endif /* USE_HWLOC */
+
 int
 shmem_internal_heap_postinit(void)
 {
@@ -392,34 +505,9 @@ shmem_internal_heap_postinit(void)
 
     ret = hwloc_topology_load(shmem_internal_topology);
     SHMEM_CHECK_GOTO_MSG(ret != 0, hwloc_exit, "hwloc_topology_load failed (%s). Please verify your hwloc installation\n", strerror(errno));
-#if defined(HWLOC_ENFORCE_SINGLE_SOCKET) || defined(HWLOC_ENFORCE_SINGLE_NUMA_NODE)
-    hwloc_bitmap_t bindset = hwloc_bitmap_alloc();
-    hwloc_bitmap_t bindset_all = hwloc_bitmap_alloc();
-    hwloc_bitmap_t bindset_covering_obj = hwloc_bitmap_alloc();
 
-    ret = hwloc_get_proc_last_cpu_location(shmem_internal_topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS);
-    SHMEM_CHECK_GOTO_MSG(ret != 0, hwloc_cleanup, "hwloc_get_proc_last_cpu_location failed (%s). Please verify your hwloc installation\n", strerror(errno));
+    apply_cpu_placement();
 
-    ret = hwloc_get_proc_cpubind(shmem_internal_topology, getpid(), bindset_all, HWLOC_CPUBIND_PROCESS);
-    SHMEM_CHECK_GOTO_MSG(ret != 0, hwloc_cleanup, "hwloc_get_proc_cpubind failed (%s). Please verify your hwloc installation\n", strerror(errno));
-#ifdef HWLOC_ENFORCE_SINGLE_SOCKET
-    hwloc_obj_t covering_obj = hwloc_get_next_obj_covering_cpuset_by_type(shmem_internal_topology, bindset, HWLOC_OBJ_PACKAGE, NULL);
-    SHMEM_CHECK_GOTO_MSG(!covering_obj, hwloc_cleanup,
-                         "hwloc_get_next_obj_covering_cpuset_by_type failed (could not detect object of type 'HWLOC_OBJ_PACKAGE' in provided cpuset). Please verify your hwloc installation\n");
-#else /* HWLOC_ENFORCE_SINGLE_NUMA_NODE */
-    hwloc_obj_t covering_obj = hwloc_get_next_obj_covering_cpuset_by_type(shmem_internal_topology, bindset, HWLOC_OBJ_NUMANODE, NULL);
-    SHMEM_CHECK_GOTO_MSG(!covering_obj, hwloc_cleanup,
-                         "hwloc_get_next_obj_covering_cpuset_by_type failed (could not detect object of type 'HWLOC_OBJ_NUMANODE' in provided cpuset). Please verify your hwloc installation\n");
-#endif
-    hwloc_bitmap_and(bindset_covering_obj, bindset_all, covering_obj->cpuset);
-    ret = hwloc_set_proc_cpubind(shmem_internal_topology, getpid(), bindset_covering_obj, HWLOC_CPUBIND_PROCESS); /* Include HWLOC_CPUBIND_STRICT in flags? */
-    SHMEM_CHECK_GOTO_MSG(ret != 0, hwloc_cleanup, "hwloc_set_proc_cpubind failed (%s). Please verify your hwloc installation\n", strerror(errno));
-
-    hwloc_cleanup:
-        hwloc_bitmap_free(bindset);
-        hwloc_bitmap_free(bindset_all);
-        hwloc_bitmap_free(bindset_covering_obj);
-#endif // HWLOC_ENFORCE_SINGLE_SOCKET || HWLOC_ENFORCE_SINGLE_NUMA_NODE
     hwloc_exit:
 #endif // USE_HWLOC
 
