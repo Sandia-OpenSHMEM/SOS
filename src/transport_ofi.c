@@ -1480,7 +1480,9 @@ int query_for_fabric(struct fabric_info *info)
     struct fi_fabric_attr fabric_attr = {0};
     struct fi_ep_attr   ep_attr = {0};
 
-    shmem_transport_ofi_max_buffered_send = sizeof(long double);
+    /* Hint 0 = no minimum inject requirement; provider returns its natural
+     * inject_size, which is adopted below after fi_getinfo. */
+    shmem_transport_ofi_max_buffered_send = 0;
 
     fabric_attr.prov_name = info->prov_name;
 
