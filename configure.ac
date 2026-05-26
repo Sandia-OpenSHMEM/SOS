@@ -262,6 +262,12 @@ AC_ARG_ENABLE([mr-endpoint],
 AS_IF([test "$enable_mr_endpoint" = "yes"],
       [AC_DEFINE([ENABLE_MR_ENDPOINT], [1], [If defined, the OFI transport will use FI_MR_ENDPOINT])])
 
+AC_ARG_ENABLE([mr-local],
+    [AS_HELP_STRING([--enable-mr-local],
+                    [Use FI_MR_LOCAL to require local memory descriptors in RMA operations. (default: disabled)])])
+AS_IF([test "$enable_mr_local" = "yes"],
+      [AC_DEFINE([ENABLE_MR_LOCAL], [1], [If defined, the OFI transport will use FI_MR_LOCAL])])
+
 AC_ARG_ENABLE([ofi-manual-progress],
     [AS_HELP_STRING([--enable-ofi-manual-progress],
                     [Use FI_MANUAL_PROGRESS for data progress control mode. (default: disabled)])])

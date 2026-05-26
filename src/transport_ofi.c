@@ -655,6 +655,11 @@ int ofi_mr_reg_external_heap(void)
 {
     int ret = 0;
     uint64_t key = 2;
+    uint64_t access_flags = FI_REMOTE_READ | FI_REMOTE_WRITE;
+
+#ifdef ENABLE_MR_LOCAL
+    access_flags |= FI_READ;
+#endif
 
     const struct iovec iov = {
                                .iov_base     = shmem_external_heap_base,
@@ -663,7 +668,7 @@ int ofi_mr_reg_external_heap(void)
     const struct fi_mr_attr mr_attr = {
                                         .mr_iov         = &iov,
                                         .iov_count      = 1,
-                                        .access         = FI_REMOTE_READ | FI_REMOTE_WRITE,
+                                        .access         = access_flags,
                                         .requested_key  = key,
                                         .iface          = (shmem_external_heap_device_type == 
                                                           SHMEMX_EXTERNAL_HEAP_ZE ? FI_HMEM_ZE : FI_HMEM_CUDA),
@@ -702,10 +707,15 @@ static inline
 int ofi_mr_reg_bind(uint64_t flags)
 {
     int ret = 0;
+    uint64_t access_flags = FI_REMOTE_READ | FI_REMOTE_WRITE;
+
+#ifdef ENABLE_MR_LOCAL
+    access_flags |= FI_READ;
+#endif
 
 #if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, 0, UINT64_MAX,
-                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, 0ULL, flags,
+                    access_flags, 0, 0ULL, flags,
                     &shmem_transport_ofi_target_mrfd, NULL);
     OFI_CHECK_RETURN_STR(ret, "target memory (all) registration failed");
 
@@ -733,14 +743,14 @@ int ofi_mr_reg_bind(uint64_t flags)
     uint64_t key = 1;
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_heap_base,
                     shmem_internal_heap_length,
-                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, key, flags,
+                    access_flags, 0, key, flags,
                     &shmem_transport_ofi_target_heap_mrfd, NULL);
     OFI_CHECK_RETURN_STR(ret, "target memory (heap) registration failed");
 
     key = 0;
     ret = fi_mr_reg(shmem_transport_ofi_domainfd, shmem_internal_data_base,
                     shmem_internal_data_length,
-                    FI_REMOTE_READ | FI_REMOTE_WRITE, 0, key, flags,
+                    access_flags, 0, key, flags,
                     &shmem_transport_ofi_target_data_mrfd, NULL);
     OFI_CHECK_RETURN_STR(ret, "target memory (data) registration failed");
 
@@ -1507,6 +1517,9 @@ int query_for_fabric(struct fabric_info *info)
 #endif
 #ifdef ENABLE_MR_ENDPOINT
     domain_attr.mr_mode |= FI_MR_ENDPOINT;
+#endif
+#ifdef ENABLE_MR_LOCAL
+    domain_attr.mr_mode |= FI_MR_LOCAL;
 #endif
 #ifdef USE_FI_HMEM
     domain_attr.mr_mode |= FI_MR_HMEM;
