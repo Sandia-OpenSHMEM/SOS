@@ -546,6 +546,17 @@ static inline int shmem_internal_get_shr_size(void)
 #endif
 }
 
+/* Return the global PE rank of the lowest-ranked PE on this node (node_rank==0).
+ * Used as the internode representative in hierarchical collectives. */
+static inline int shmem_internal_get_node_root_pe(void)
+{
+#ifdef USE_ON_NODE_COMMS
+    return shmem_runtime_get_node_root_pe();
+#else
+    return shmem_internal_my_pe;
+#endif
+}
+
 static inline double shmem_internal_wtime(void)
 {
     double wtime = 0.0;
