@@ -184,14 +184,14 @@ static void *mmap_alloc(size_t bytes)
             int size = snprintf(NULL, 0, "%s/%s.%d", directory, basename, getpid());
 
             if (size < 0) {
-                RAISE_WARN_STR("snprintf returned error, cannot use huge pages");
+                RAISE_WARN_STR("snprintf returned error, cannot use huge pages\n");
             } else {
                 file_name = malloc(size + 1);
                 if (file_name) {
                     sprintf(file_name, "%s/%s.%d", directory, basename, getpid());
                     fd = open(file_name, O_CREAT | O_RDWR, 0755);
                     if (fd < 0) {
-                        RAISE_WARN_MSG("file open failed (%s), cannot use huge pages",
+                        RAISE_WARN_MSG("file open failed (%s), cannot use huge pages\n",
                                        strerror(errno));
                         fd = 0;
                     } else {
