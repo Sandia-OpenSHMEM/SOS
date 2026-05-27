@@ -209,7 +209,7 @@ static void *mmap_alloc(size_t bytes)
          * would silently fall back to regular pages. */
         if (ftruncate(fd, bytes) == -1) {
             RAISE_WARN_MSG("ftruncate on hugetlbfs file failed (%s), "
-                           "falling back to regular pages\n",
+                           "falling back to transparent huge pages via madvise\n",
                            strerror(errno));
             unlink(file_name);
             close(fd);
@@ -217,6 +217,12 @@ static void *mmap_alloc(size_t bytes)
             free(file_name);
             ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
                        MAP_ANON | MAP_PRIVATE, -1, 0);
+            if (ret != MAP_FAILED) {
+                if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
+                    RAISE_WARN_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages\n",
+                                   strerror(errno));
+                }
+            }
         } else {
             ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
                        MAP_SHARED | MAP_HUGETLB, fd, 0);
@@ -227,6 +233,13 @@ static void *mmap_alloc(size_t bytes)
         }
     } else {
         ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+        /* Try to use transparent huge pages via madvise if hugetlbfs not available */
+        if (ret != MAP_FAILED && shmem_internal_params.SYMMETRIC_HEAP_USE_HUGE_PAGES) {
+            if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
+                RAISE_WARN_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages\n",
+                               strerror(errno));
+            }
+        }
     }
 #else
     ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
@@ -238,6 +251,16 @@ static void *mmap_alloc(size_t bytes)
                        "Try reducing SHMEM_SYMMETRIC_SIZE or number of PEs per node\n",
                        bytes, strerror(errno), shmem_internal_my_pe);
         ret = NULL;
+    } else if (ret != NULL) {
+#ifdef __linux__
+        /* Try transparent huge pages via madvise on non-Linux fallback path too */
+        if (shmem_internal_params.SYMMETRIC_HEAP_USE_HUGE_PAGES) {
+            if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
+                RAISE_WARN_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages\n",
+                               strerror(errno));
+            }
+        }
+#endif
     }
     if (fd) {
         if (file_name)
