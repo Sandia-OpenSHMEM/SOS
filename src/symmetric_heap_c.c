@@ -184,15 +184,15 @@ static void *mmap_alloc(size_t bytes)
             int size = snprintf(NULL, 0, "%s/%s.%d", directory, basename, getpid());
 
             if (size < 0) {
-                RAISE_WARN_STR("snprintf returned error, cannot use huge pages\n");
+                DEBUG_STR("snprintf returned error, cannot use huge pages");
             } else {
                 file_name = malloc(size + 1);
                 if (file_name) {
                     sprintf(file_name, "%s/%s.%d", directory, basename, getpid());
                     fd = open(file_name, O_CREAT | O_RDWR, 0755);
                     if (fd < 0) {
-                        RAISE_WARN_MSG("file open failed (%s), cannot use huge pages\n",
-                                       strerror(errno));
+                        DEBUG_MSG("file open failed (%s), cannot use huge pages",
+                                  strerror(errno));
                         fd = 0;
                     } else {
                         /* have to round up by the pagesize being used */
@@ -219,8 +219,8 @@ static void *mmap_alloc(size_t bytes)
                        MAP_ANON | MAP_PRIVATE, -1, 0);
             if (ret != MAP_FAILED) {
                 if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
-                    RAISE_WARN_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages\n",
-                                   strerror(errno));
+                    DEBUG_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages",
+                              strerror(errno));
                 }
             }
         } else {
