@@ -294,26 +294,7 @@ shmem_internal_symmetric_init(void)
             malloc(shmem_internal_heap_length);
     }
 
-    if (NULL == shmem_internal_heap_base)
-        return -1;
-
-#ifdef __linux__
-    /* Pre-fault the heap by touching one byte per huge page so that THP
-     * promotion occurs before fi_mr_reg.  Without this, the CXI ATU caches
-     * 4KB page entries (the page table is sparse at registration time), and
-     * every subsequent RMA/AMO incurs an ATU miss instead of hitting a 2MB
-     * entry.  Stride by SYMMETRIC_HEAP_PAGE_SIZE (default 2MB) to match the
-     * THP granularity and keep init time proportional to heap size / 2MB. */
-    if (!shmem_internal_params.SYMMETRIC_HEAP_USE_MALLOC) {
-        volatile char *p = (volatile char *) shmem_internal_heap_base;
-        volatile char *end = p + shmem_internal_heap_length;
-        size_t stride = shmem_internal_params.SYMMETRIC_HEAP_PAGE_SIZE;
-        for (; p < end; p += stride)
-            *p = 0;
-    }
-#endif
-
-    return 0;
+    return (NULL == shmem_internal_heap_base) ? -1 : 0;
 }
 
 
