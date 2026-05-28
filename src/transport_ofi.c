@@ -70,12 +70,8 @@ struct fid_cq*                  shmem_transport_ofi_target_cq;
 struct fid_cntr*                shmem_transport_ofi_target_cntrfd;
 #endif
 #ifdef ENABLE_MR_SCALABLE
-#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-struct fid_mr*                  shmem_transport_ofi_target_mrfd;
-#else  /* !ENABLE_REMOTE_VIRTUAL_ADDRESSING */
 struct fid_mr*                  shmem_transport_ofi_target_heap_mrfd;
 struct fid_mr*                  shmem_transport_ofi_target_data_mrfd;
-#endif
 #else  /* !ENABLE_MR_SCALABLE */
 struct fid_mr*                  shmem_transport_ofi_target_heap_mrfd;
 struct fid_mr*                  shmem_transport_ofi_target_data_mrfd;
@@ -713,30 +709,7 @@ int ofi_mr_reg_bind(uint64_t flags)
     access_flags |= FI_READ;
 #endif
 
-#if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
-    ret = fi_mr_reg(shmem_transport_ofi_domainfd, 0, UINT64_MAX,
-                    access_flags, 0, 0ULL, flags,
-                    &shmem_transport_ofi_target_mrfd, NULL);
-    OFI_CHECK_RETURN_STR(ret, "target memory (all) registration failed");
-
-    /* Bind counter with target memory region for incoming messages */
-#if ENABLE_TARGET_CNTR
-    ret = fi_mr_bind(shmem_transport_ofi_target_mrfd,
-                     &shmem_transport_ofi_target_cntrfd->fid,
-                     FI_REMOTE_WRITE);
-    OFI_CHECK_RETURN_STR(ret, "target CNTR binding to MR failed");
-
-#ifdef ENABLE_MR_RMA_EVENT
-    if (shmem_transport_ofi_mr_rma_event) {
-        ret = fi_mr_enable(shmem_transport_ofi_target_mrfd);
-        OFI_CHECK_RETURN_STR(ret, "target MR enable failed");
-    }
-#endif /* ENABLE_MR_RMA_EVENT */
-#endif /* ENABLE_TARGET_CNTR */
-    shmem_transport_ofi_mrfd_list[0] = shmem_transport_ofi_target_mrfd;
-    shmem_transport_ofi_mrfd_list[1] = NULL;
-
-#else
+#ifdef ENABLE_MR_SCALABLE
     /* Register separate data and heap segments using keys 0 and 1,
      * respectively.  In MR_BASIC_MODE, the keys are ignored and selected by
      * the provider. */
@@ -1652,17 +1625,12 @@ int query_for_fabric(struct fabric_info *info)
         shmem_transport_ofi_stx_max = 0;
     }
 
-#if defined(ENABLE_MR_SCALABLE) && defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
-    /* Only use a single MR, no keys required */
-    info->p_info->domain_attr->mr_key_size = 0;
-#else
     /* Heap and data use different MR keys, need at least 1 byte of key space
      * if using provider selected keys */
     if (info->p_info->domain_attr->mr_mode & FI_MR_PROV_KEY)
         info->p_info->domain_attr->mr_key_size = 1;
     else
         info->p_info->domain_attr->mr_key_size = 0;
-#endif
 
 #ifndef DISABLE_OFI_INJECT
     DEBUG_MSG(RAISE_PE_PREFIX "tx_attr->inject_size (provider): %zu, requested: %zu\n",
@@ -2224,16 +2192,11 @@ int shmem_transport_fini(void)
     if (shmem_transport_ofi_stx_pool) free(shmem_transport_ofi_stx_pool);
 
 #if defined(ENABLE_MR_SCALABLE)
-#if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING)
-    ret = fi_close(&shmem_transport_ofi_target_mrfd->fid);
-    OFI_CHECK_ERROR_MSG(ret, "Target MR close failed (%s)\n", fi_strerror(errno));
-#else
     ret = fi_close(&shmem_transport_ofi_target_heap_mrfd->fid);
     OFI_CHECK_ERROR_MSG(ret, "Target heap MR close failed (%s)\n", fi_strerror(errno));
 
     ret = fi_close(&shmem_transport_ofi_target_data_mrfd->fid);
-    OFI_CHECK_ERROR_MSG(ret, "Target data MR close failed (%s)\n", fi_strerror(errno));  
-#endif
+    OFI_CHECK_ERROR_MSG(ret, "Target data MR close failed (%s)\n", fi_strerror(errno));
 #else
     free(shmem_transport_ofi_target_heap_keys);
     free(shmem_transport_ofi_target_data_keys);

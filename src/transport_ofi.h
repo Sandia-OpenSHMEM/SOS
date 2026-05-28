@@ -131,19 +131,13 @@ extern int shmem_transport_ofi_single_ep;
 static inline
 int shmem_transport_ofi_get_mr_desc_index(const void *addr) {
     int ret = -1;
-#ifdef ENABLE_REMOTE_VIRTUAL_ADDRESSING
-    ret = 0;
-#else
     if ((void*) addr >= shmem_internal_data_base &&
         (uint8_t*) addr < (uint8_t*) shmem_internal_data_base + shmem_internal_data_length) {
         ret = 0;
     } else if ((void*) addr >= shmem_internal_heap_base &&
                (uint8_t*) addr < (uint8_t*) shmem_internal_heap_base + shmem_internal_heap_length) {
         ret = 1;
-    } else {
-        ret = -1;
     }
-#endif /* ENABLE_REMOTE_VIRTUAL_ADDRESSING */
     return ret;
 }
 #else
