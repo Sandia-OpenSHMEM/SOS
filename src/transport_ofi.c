@@ -1534,7 +1534,7 @@ int query_for_fabric(struct fabric_info *info)
     ep_attr.type              = FI_EP_RDM; /* reliable connectionless */
     ep_attr.tx_ctx_cnt        = 0;
     hints.fabric_attr         = &fabric_attr;
-    tx_attr.op_flags          = FI_DELIVERY_COMPLETE;
+    tx_attr.op_flags          = FI_TRANSMIT_COMPLETE;
     tx_attr.inject_size       = shmem_transport_ofi_max_buffered_send; /* require provider to support this as a min */
     hints.tx_attr             = &tx_attr; /* TODO: fill tx_attr */
     hints.rx_attr             = NULL;
@@ -1763,7 +1763,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 
     info->p_info->ep_attr->tx_ctx_cnt = shmem_transport_ofi_stx_max > 0 ? FI_SHARED_CONTEXT : 0;
     info->p_info->caps = FI_RMA | FI_WRITE | FI_READ | FI_ATOMIC | FI_RECV;
-    info->p_info->tx_attr->op_flags = FI_DELIVERY_COMPLETE;
+    info->p_info->tx_attr->op_flags = FI_TRANSMIT_COMPLETE;
     info->p_info->mode = 0;
     info->p_info->tx_attr->mode = 0;
     info->p_info->rx_attr->mode = 0;
