@@ -105,6 +105,8 @@ SHMEM_INTERNAL_ENV_DEF(OFI_PUT_PIPELINE_DEPTH, long, 0, SHMEM_INTERNAL_ENV_CAT_T
                        "Maximum in-flight puts per context before throttling (0=unlimited, Cray SHMEM uses 512)")
 SHMEM_INTERNAL_ENV_DEF(OFI_AMO_PIPELINE_DEPTH, long, 0, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Maximum in-flight fetching AMOs per context before throttling (0=unlimited, try 4 at 128 PPN)")
+SHMEM_INTERNAL_ENV_DEF(OFI_CXI_HYBRID_MR_DESC, bool, true, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Enable CXI hybrid local MR descriptor mode (skips internal MR registration when desc is non-NULL); ignored on non-CXI providers")
 SHMEM_INTERNAL_ENV_DEF(OFI_RX_POLL_LIMIT, long, DEFAULT_POLL_LIMIT, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Get completion poll limit")
 SHMEM_INTERNAL_ENV_DEF(OFI_STX_MAX, long, 1, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
