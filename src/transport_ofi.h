@@ -66,6 +66,7 @@ extern struct fid_mr*                   shmem_transport_ofi_mrfd_list[3];
 extern uint64_t                         shmem_transport_ofi_max_poll;
 extern long                             shmem_transport_ofi_put_poll_limit;
 extern long                             shmem_transport_ofi_get_poll_limit;
+extern long                             shmem_transport_ofi_put_pipeline_depth;
 extern size_t                           shmem_transport_ofi_max_buffered_send;
 extern size_t                           shmem_transport_ofi_max_msg_size;
 extern size_t                           shmem_transport_ofi_bounce_buffer_size;
@@ -484,6 +485,27 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_transport_ctx_t
     return buff;
 }
 
+/* Throttle in-flight puts to at most shmem_transport_ofi_put_pipeline_depth.
+ * Matches Cray SHMEM's "blocking SHEAP pipeline limit 512" behavior, which
+ * prevents TRS pool exhaustion and eliminates mst_stalled_waiting_put_crdts.
+ * Called with ctx lock already held; temporarily drops it while spinning. */
+static inline
+void shmem_transport_ofi_put_pipeline_throttle(shmem_transport_ctx_t *ctx)
+{
+    if (shmem_transport_ofi_put_pipeline_depth <= 0) return;
+
+    uint64_t pending = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
+    uint64_t completed = fi_cntr_read(ctx->put_cntr);
+
+    while ((long)(pending - completed) >= shmem_transport_ofi_put_pipeline_depth) {
+        SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+        shmem_transport_probe();
+        SPINLOCK_BODY();
+        SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+        completed = fi_cntr_read(ctx->put_cntr);
+    }
+}
+
 static inline
 void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
 {
@@ -644,6 +666,7 @@ void shmem_transport_ofi_put_large(shmem_transport_ctx_t* ctx, void *target, con
     /* operation generates counting events and must be completed by
      * quiet. */
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    shmem_transport_ofi_put_pipeline_throttle(ctx);
     while (frag_source < ((uint8_t *) source) + len) {
         frag_len = MIN(shmem_transport_ofi_max_msg_size,
                        (size_t) (((uint8_t *) source) + len - frag_source));
@@ -684,6 +707,7 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
     } else if (len <= shmem_transport_ofi_bounce_buffer_size && ctx->bounce_buffers) {
 
         SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+        shmem_transport_ofi_put_pipeline_throttle(ctx);
         SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
         shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 

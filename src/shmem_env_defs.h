@@ -99,6 +99,8 @@ SHMEM_INTERNAL_ENV_DEF(OFI_DOMAIN, string, "auto", SHMEM_INTERNAL_ENV_CAT_TRANSP
                        "Fabric domain that should be used by the OFI transport")
 SHMEM_INTERNAL_ENV_DEF(OFI_TX_POLL_LIMIT, long, DEFAULT_POLL_LIMIT, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Put completion poll limit")
+SHMEM_INTERNAL_ENV_DEF(OFI_PUT_PIPELINE_DEPTH, long, 512, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Maximum in-flight puts per context before throttling (0=unlimited, Cray SHMEM uses 512)")
 SHMEM_INTERNAL_ENV_DEF(OFI_RX_POLL_LIMIT, long, DEFAULT_POLL_LIMIT, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Get completion poll limit")
 SHMEM_INTERNAL_ENV_DEF(OFI_STX_MAX, long, 1, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
