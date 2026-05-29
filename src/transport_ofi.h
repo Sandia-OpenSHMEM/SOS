@@ -671,7 +671,7 @@ void shmem_transport_put_scalar(shmem_transport_ctx_t* ctx, void *target, const
 
 static inline
 void shmem_transport_ofi_put_large(shmem_transport_ctx_t* ctx, void *target, const void *source,
-                                   size_t len, int pe)
+                                   size_t len, int pe, long *completion)
 {
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
@@ -685,8 +685,10 @@ void shmem_transport_ofi_put_large(shmem_transport_ctx_t* ctx, void *target, con
     uint64_t frag_target = (uint64_t) addr;
     size_t frag_len = len;
 
-    /* operation generates counting events and must be completed by
-     * quiet. */
+    /* Issue all fragments, then capture the pending_put_cntr watermark.  put_wait
+     * spins until fi_cntr_read(put_cntr) >= watermark, draining only this call's
+     * puts (plus any earlier in-flight ones) rather than triggering a global
+     * put_quiet which would also wait on unrelated subsequent puts. */
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     shmem_transport_ofi_put_pipeline_throttle(ctx);
     while (frag_source < ((uint8_t *) source) + len) {
@@ -707,6 +709,8 @@ void shmem_transport_ofi_put_large(shmem_transport_ctx_t* ctx, void *target, con
         frag_source += frag_len;
         frag_target += frag_len;
     }
+    if (completion)
+        *completion = (long) SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
 
@@ -755,8 +759,7 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 
     } else {
-        shmem_transport_ofi_put_large(ctx, target, source,len, pe);
-        (*completion)++;
+        shmem_transport_ofi_put_large(ctx, target, source, len, pe, completion);
     }
 }
 
@@ -903,16 +906,38 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
 
-/* compatibility with Portals transport */
+/* Per-call put completion: wait only for puts up through the watermark recorded
+ * at issue time, instead of triggering a global put_quiet that would also wait
+ * on unrelated subsequent puts.  *completion holds the value of pending_put_cntr
+ * captured immediately after the put's fragments were issued. */
 static inline
 void shmem_transport_put_wait(shmem_transport_ctx_t* ctx, long *completion) {
 
     shmem_internal_assert((*completion) >= 0);
 
-    if((*completion) > 0) {
-        shmem_transport_put_quiet(ctx);
-        (*completion)--;
+    if ((*completion) == 0) return;
+
+    uint64_t watermark = (uint64_t) *completion;
+    uint64_t completed = fi_cntr_read(ctx->put_cntr);
+    long poll_count = 0;
+
+    while (completed < watermark) {
+        uint64_t fail = fi_cntr_readerr(ctx->put_cntr);
+        if (fail) {
+            RAISE_ERROR_MSG("Operations completed in error (%" PRIu64 ")\n", fail);
+        }
+        shmem_transport_probe();
+        if (poll_count >= shmem_transport_ofi_put_poll_limit &&
+            shmem_transport_ofi_put_poll_limit >= 0) {
+            ssize_t ret = fi_cntr_wait(ctx->put_cntr, watermark, -1);
+            OFI_CTX_CHECK_ERROR(ctx, ret);
+            break;
+        }
+        SPINLOCK_BODY();
+        completed = fi_cntr_read(ctx->put_cntr);
+        poll_count++;
     }
+    *completion = 0;
 }
 
 static inline
@@ -925,7 +950,7 @@ void shmem_transport_put_nbi(shmem_transport_ctx_t* ctx, void *target, const voi
 
     } else {
 
-        shmem_transport_ofi_put_large(ctx, target, source, len, pe);
+        shmem_transport_ofi_put_large(ctx, target, source, len, pe, NULL);
     }
 }
 
