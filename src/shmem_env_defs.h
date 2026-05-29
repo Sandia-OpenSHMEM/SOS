@@ -103,6 +103,8 @@ SHMEM_INTERNAL_ENV_DEF(OFI_TX_POLL_LIMIT, long, DEFAULT_POLL_LIMIT, SHMEM_INTERN
                        "Put completion poll limit")
 SHMEM_INTERNAL_ENV_DEF(OFI_PUT_PIPELINE_DEPTH, long, 0, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Maximum in-flight puts per context before throttling (0=unlimited, Cray SHMEM uses 512)")
+SHMEM_INTERNAL_ENV_DEF(OFI_AMO_PIPELINE_DEPTH, long, 0, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Maximum in-flight fetching AMOs per context before throttling (0=unlimited, try 4 at 128 PPN)")
 SHMEM_INTERNAL_ENV_DEF(OFI_RX_POLL_LIMIT, long, DEFAULT_POLL_LIMIT, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Get completion poll limit")
 SHMEM_INTERNAL_ENV_DEF(OFI_STX_MAX, long, 1, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,

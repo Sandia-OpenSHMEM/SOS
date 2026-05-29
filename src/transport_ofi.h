@@ -67,6 +67,7 @@ extern uint64_t                         shmem_transport_ofi_max_poll;
 extern long                             shmem_transport_ofi_put_poll_limit;
 extern long                             shmem_transport_ofi_get_poll_limit;
 extern long                             shmem_transport_ofi_put_pipeline_depth;
+extern long                             shmem_transport_ofi_amo_pipeline_depth;
 extern size_t                           shmem_transport_ofi_max_buffered_send;
 extern size_t                           shmem_transport_ofi_max_msg_size;
 extern size_t                           shmem_transport_ofi_bounce_buffer_size;
@@ -479,6 +480,27 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_transport_ctx_t
     memcpy(buff->data, source, len);
 
     return buff;
+}
+
+/* Throttle in-flight fetching AMOs to at most shmem_transport_ofi_amo_pipeline_depth.
+ * Paces AMO issue rate so that all PEs collectively do not saturate the target
+ * NIC's TRS pool.  At 128 PPN with ~512 TRS slots, a depth of 4 leaves headroom
+ * for each PE.  Called with ctx lock held; temporarily drops it while spinning. */
+static inline
+void shmem_transport_ofi_amo_pipeline_throttle(shmem_transport_ctx_t *ctx)
+{
+    if (shmem_transport_ofi_amo_pipeline_depth <= 0) return;
+
+    uint64_t pending   = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr);
+    uint64_t completed = fi_cntr_read(ctx->get_cntr);
+
+    while ((long)(pending - completed) >= shmem_transport_ofi_amo_pipeline_depth) {
+        SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+        shmem_transport_probe();
+        SPINLOCK_BODY();
+        SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+        completed = fi_cntr_read(ctx->get_cntr);
+    }
 }
 
 /* Throttle in-flight puts to at most shmem_transport_ofi_put_pipeline_depth.
@@ -1335,6 +1357,7 @@ void shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target,
                                };
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    shmem_transport_ofi_amo_pipeline_throttle(ctx);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
 
     do {
