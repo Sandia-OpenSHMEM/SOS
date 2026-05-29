@@ -100,6 +100,8 @@ struct fid_mr*                  shmem_transport_ofi_mrfd_list[3];
 uint64_t                        shmem_transport_ofi_max_poll;
 long                            shmem_transport_ofi_put_poll_limit;
 long                            shmem_transport_ofi_get_poll_limit;
+long                            shmem_transport_ofi_put_pipeline_depth;
+long                            shmem_transport_ofi_amo_pipeline_depth;
 size_t                          shmem_transport_ofi_max_buffered_send;
 size_t                          shmem_transport_ofi_max_msg_size;
 size_t                          shmem_transport_ofi_bounce_buffer_size;
@@ -1914,8 +1916,10 @@ int shmem_transport_init(void)
         shmem_transport_ofi_max_bounce_buffers = shmem_internal_params.MAX_BOUNCE_BUFFERS;
     }
 
-    shmem_transport_ofi_put_poll_limit = shmem_internal_params.OFI_TX_POLL_LIMIT;
-    shmem_transport_ofi_get_poll_limit = shmem_internal_params.OFI_RX_POLL_LIMIT;
+    shmem_transport_ofi_put_poll_limit    = shmem_internal_params.OFI_TX_POLL_LIMIT;
+    shmem_transport_ofi_get_poll_limit    = shmem_internal_params.OFI_RX_POLL_LIMIT;
+    shmem_transport_ofi_put_pipeline_depth = shmem_internal_params.OFI_PUT_PIPELINE_DEPTH;
+    shmem_transport_ofi_amo_pipeline_depth = shmem_internal_params.OFI_AMO_PIPELINE_DEPTH;
 
 #ifdef USE_CTX_LOCK
     /* In multithreaded mode, force completion polling so that threads yield
