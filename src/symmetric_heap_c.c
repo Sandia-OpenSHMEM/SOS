@@ -26,6 +26,9 @@
 #ifdef __linux__
 #include <mntent.h>
 #include <sys/vfs.h>
+#ifndef MADV_COLLAPSE
+#define MADV_COLLAPSE 25  /* synchronous THP promotion, Linux 5.18+ */
+#endif
 #endif
 #include <dlfcn.h>
 
@@ -130,24 +133,43 @@ static int find_hugepage_dir(size_t page_size, char **directory)
 #endif /* __linux__ */
 
 /* DSMML runtime support — loaded via dlopen when SHMEM_SYMMETRIC_HEAP_USE_DSMML=1.
- * Types and constants are inlined here so no dsmml.h is required at build time. */
+ * Types mirror dsmml.h exactly so dlopen works without a build-time dependency. */
 #ifdef __linux__
 
-typedef int dsmml_return_t;
-typedef int dsmml_type_t;
-typedef int dsmml_mode_t;
-typedef int dsmml_hpsize_t;
+typedef enum {
+    DSMML_RC_SUCCESS        = 0,
+    DSMML_RC_FAILURE        = 1,
+    DSMML_RC_INVALID_PARAM  = 2,
+    DSMML_RC_RESOURCE_ERROR = 3,
+    DSMML_RC_NO_MEMORY      = 4,
+    DSMML_RC_UNKNOWN_FAIL   = 5,
+    DSMML_RC_NOOP           = 6,
+    DSMML_RC_MEM_OVERLAP    = 7,
+    DSMML_RC_MEM_CORRUPT    = 8
+} dsmml_return_t;
 
-#define DSMML_RC_SUCCESS        0
-#define DSMML_MEM_SYS_DEFAULT   0
-#define DSMML_MODE_DEFAULT      0
-#define DSMML_HPSIZE_DEFAULT    0   /* THP */
-#define DSMML_HPSIZE_2M         5   /* 2MB explicit huge pages */
+typedef enum { DSMML_MODE_DEFAULT = 0, DSMML_MODE_PREFERRED, DSMML_MODE_BIND,
+               DSMML_MODE_INTERLEAVE } dsmml_mode_t;
+typedef enum { DSMML_MEM_SYS_DEFAULT = 0, DSMML_MEM_NORMAL = 1,
+               DSMML_MEM_FAST = 2, DSMML_MEM_CUSTOM = 3 } dsmml_type_t;
+typedef enum {
+    DSMML_HPSIZE_DEFAULT = 1,   /* THP */
+    DSMML_HPSIZE_4K      = 2,
+    DSMML_HPSIZE_2M      = 3,
+    DSMML_HPSIZE_4M      = 4,
+} dsmml_hpsize_t;
+typedef enum { DSMML_NNODE_INDEX1 = 0x01 } dsmml_nnode_t;
+
+typedef struct {
+    int            mype;
+    int            smp_mype;
+    int            smp_npes;
+    int            smp_set;
+} dsmml_init_info_t;
 
 typedef struct {
     int            id;
     void          *act_addr;
-    void          *device_addr;
     void          *base_addr;
     size_t         length;
     dsmml_type_t   type;
@@ -156,16 +178,13 @@ typedef struct {
     int            smp_mype;
     int            smp_npes;
     int            smp_set;
-    int            nnode;
-    int            use_ext_mem;
+    dsmml_nnode_t  nnode;
 } dsmml_sheap_seg_info_t;
 
-typedef struct { int unused; } dsmml_init_info_t;
-
-static void  *dsmml_handle  = NULL;
-static int  (*dsmml_init_fn)(dsmml_init_info_t *)              = NULL;
-static int  (*dsmml_finalize_fn)(void)                         = NULL;
-static int  (*dsmml_create_sheap_seg_fn)(dsmml_sheap_seg_info_t *) = NULL;
+static void  *dsmml_handle             = NULL;
+static dsmml_return_t (*dsmml_init_fn)(dsmml_init_info_t *)              = NULL;
+static dsmml_return_t (*dsmml_finalize_fn)(void)                         = NULL;
+static dsmml_return_t (*dsmml_create_sheap_seg_fn)(dsmml_sheap_seg_info_t *) = NULL;
 
 static void *dsmml_alloc(void *requested_base, size_t bytes)
 {
@@ -189,7 +208,12 @@ static void *dsmml_alloc(void *requested_base, size_t bytes)
         return NULL;
     }
 
-    dsmml_init_info_t init_info = {0};
+    dsmml_init_info_t init_info = {
+        .mype     = shmem_internal_my_pe,
+        .smp_mype = shmem_internal_my_pe % shmem_internal_num_pes,
+        .smp_npes = shmem_internal_num_pes,
+        .smp_set  = 0,
+    };
     if (dsmml_init_fn(&init_info) != DSMML_RC_SUCCESS) {
         RAISE_WARN_STR("DSMML: dsmml_init failed");
         dlclose(dsmml_handle);
@@ -204,6 +228,9 @@ static void *dsmml_alloc(void *requested_base, size_t bytes)
         .type       = DSMML_MEM_SYS_DEFAULT,
         .mode       = DSMML_MODE_DEFAULT,
         .pagesize   = DSMML_HPSIZE_2M,
+        .smp_mype   = init_info.smp_mype,
+        .smp_npes   = init_info.smp_npes,
+        .smp_set    = 0,
     };
 
     if (dsmml_create_sheap_seg_fn(&seg) != DSMML_RC_SUCCESS) {
@@ -219,7 +246,7 @@ static void *dsmml_alloc(void *requested_base, size_t bytes)
         }
     }
 
-    DEBUG_MSG("DSMML: heap allocated at %p (requested %p), size %zu, pagesize %s\n",
+    DEBUG_MSG("DSMML: heap at %p (requested %p), %zu bytes, pagesize %s\n",
               seg.act_addr, requested_base, bytes,
               seg.pagesize == DSMML_HPSIZE_2M ? "2MB" : "THP");
 
@@ -329,6 +356,11 @@ static void *mmap_alloc(size_t bytes)
                 if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
                     DEBUG_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages",
                               strerror(errno));
+                } else {
+                    if (madvise(ret, bytes, MADV_COLLAPSE) != 0) {
+                        DEBUG_MSG("madvise(MADV_COLLAPSE) failed (%s), THP promotion deferred",
+                                  strerror(errno));
+                    }
                 }
             }
         } else {
@@ -346,6 +378,11 @@ static void *mmap_alloc(size_t bytes)
             if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
                 RAISE_WARN_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages\n",
                                strerror(errno));
+            } else {
+                if (madvise(ret, bytes, MADV_COLLAPSE) != 0) {
+                    DEBUG_MSG("madvise(MADV_COLLAPSE) failed (%s), THP promotion deferred",
+                              strerror(errno));
+                }
             }
         }
     }
@@ -366,6 +403,11 @@ static void *mmap_alloc(size_t bytes)
             if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
                 RAISE_WARN_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages\n",
                                strerror(errno));
+            } else {
+                if (madvise(ret, bytes, MADV_COLLAPSE) != 0) {
+                    DEBUG_MSG("madvise(MADV_COLLAPSE) failed (%s), THP promotion deferred",
+                              strerror(errno));
+                }
             }
         }
 #endif
