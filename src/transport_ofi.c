@@ -213,6 +213,17 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
 
 static struct fabric_info shmem_transport_ofi_info = {0};
 
+static char *shmem_transport_ofi_prov_name = NULL;
+
+/* Check if the current OFI provider matches the given name.
+ * Returns 1 if provider matches, 0 otherwise. */
+int
+shmem_transport_ofi_check_provider(const char *name)
+{
+    return (shmem_transport_ofi_prov_name &&
+            strncmp(shmem_transport_ofi_prov_name, name, strlen(name)) == 0);
+}
+
 static size_t shmem_transport_ofi_grow_size = 128;
 
 #define SHMEM_TRANSPORT_CTX_DEFAULT_ID -1
@@ -1343,6 +1354,36 @@ int allocate_fabric_resources(struct fabric_info *info)
                     &shmem_transport_ofi_domainfd,NULL);
     OFI_CHECK_RETURN_STR(ret, "domain initialization failed");
 
+    /* CXI provider: enable hybrid local MR descriptor mode.  When enabled,
+     * libfabric will skip its internal MR registration if a non-NULL desc is
+     * passed (and proceed without registration if desc is NULL).  This avoids
+     * per-call MR cache lookups for source buffers in fi_write/fi_writemsg.
+     * Must be done BEFORE any endpoints are created (the provider only
+     * propagates this setting to child endpoints at creation time). */
+    if (shmem_internal_params.OFI_CXI_HYBRID_MR_DESC) {
+        struct cxi_dom_ops_v3_local {
+            int (*cntr_read)(struct fid *, unsigned int, uint64_t *, struct timespec *);
+            int (*topology)(struct fid *, unsigned int *, unsigned int *, unsigned int *);
+            int (*enable_hybrid_mr_desc)(struct fid *, bool);
+        } *cxi_dom_ops = NULL;
+        int hret = fi_open_ops(&shmem_transport_ofi_domainfd->fid,
+                               "dom_ops_v3", 0, (void **)&cxi_dom_ops, NULL);
+        if (hret == 0 && cxi_dom_ops && cxi_dom_ops->enable_hybrid_mr_desc) {
+            hret = cxi_dom_ops->enable_hybrid_mr_desc(&shmem_transport_ofi_domainfd->fid, true);
+            if (shmem_internal_my_pe == 0) {
+                if (hret == 0)
+                    fprintf(stderr, "SOS: CXI hybrid local MR descriptor mode ENABLED\n");
+                else
+                    fprintf(stderr, "SOS: CXI enable_hybrid_mr_desc FAILED (%s)\n", fi_strerror(-hret));
+            }
+        } else if (shmem_internal_my_pe == 0) {
+            fprintf(stderr, "SOS: CXI hybrid MR desc not available (fi_open_ops returned %d / %s) — non-CXI provider or older libfabric\n",
+                    hret, hret ? fi_strerror(-hret) : "no ops struct");
+        }
+    } else if (shmem_internal_my_pe == 0) {
+        fprintf(stderr, "SOS: CXI hybrid local MR descriptor mode DISABLED (SHMEM_OFI_CXI_HYBRID_MR_DESC=0)\n");
+    }
+
     /* AV table set-up for PE mapping */
 
 #ifdef USE_AV_MAP
@@ -1679,6 +1720,9 @@ int query_for_fabric(struct fabric_info *info)
               info->p_info->domain_attr->max_ep_stx_ctx == 0 ? "no" : "yes",
               shmem_transport_ofi_stx_max,
               num_nics);
+
+    /* Store provider name for runtime checks */
+    shmem_transport_ofi_prov_name = info->p_info->fabric_attr->prov_name;
 
     return ret;
 }
