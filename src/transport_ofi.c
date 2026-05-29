@@ -1369,13 +1369,18 @@ int allocate_fabric_resources(struct fabric_info *info)
                                "dom_ops_v3", 0, (void **)&cxi_dom_ops, NULL);
         if (hret == 0 && cxi_dom_ops && cxi_dom_ops->enable_hybrid_mr_desc) {
             hret = cxi_dom_ops->enable_hybrid_mr_desc(&shmem_transport_ofi_domainfd->fid, true);
-            if (hret == 0) {
-                DEBUG_STR("CXI: hybrid local MR descriptor mode enabled");
-            } else {
-                DEBUG_MSG("CXI: enable_hybrid_mr_desc failed (%s)\n", fi_strerror(-hret));
+            if (shmem_internal_my_pe == 0) {
+                if (hret == 0)
+                    fprintf(stderr, "SOS: CXI hybrid local MR descriptor mode ENABLED\n");
+                else
+                    fprintf(stderr, "SOS: CXI enable_hybrid_mr_desc FAILED (%s)\n", fi_strerror(-hret));
             }
+        } else if (shmem_internal_my_pe == 0) {
+            fprintf(stderr, "SOS: CXI hybrid MR desc not available (fi_open_ops returned %d / %s) — non-CXI provider or older libfabric\n",
+                    hret, hret ? fi_strerror(-hret) : "no ops struct");
         }
-        /* Silently ignore non-CXI providers (fi_open_ops returns -FI_ENOSYS) */
+    } else if (shmem_internal_my_pe == 0) {
+        fprintf(stderr, "SOS: CXI hybrid local MR descriptor mode DISABLED (SHMEM_OFI_CXI_HYBRID_MR_DESC=0)\n");
     }
 
     /* AV table set-up for PE mapping */
