@@ -75,6 +75,13 @@ extern pthread_mutex_t                  shmem_transport_ofi_progress_lock;
 
 extern int shmem_transport_ofi_single_ep;
 
+/* PCIe AMO support for CXI NIC */
+#ifndef FI_CXI_PCIE_AMO
+#define FI_CXI_PCIE_AMO (1ULL << 57)
+#endif
+extern bool shmem_transport_ofi_is_cxi;
+extern bool shmem_transport_ofi_pcie_cxi;
+
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #endif
@@ -1252,12 +1259,14 @@ void shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target,
     uint64_t polled = 0;
     uint64_t key;
     uint8_t *addr;
+    uint64_t amo_flags = FI_INJECT;
 
     shmem_transport_ofi_get_mr(target, pe, &addr, &key);
     shmem_internal_assert(len <= sizeof(double _Complex));
     shmem_internal_assert(SHMEM_Dtsize[SHMEM_TRANSPORT_DTYPE(datatype)] == len);
 
     struct fi_ioc resultv = { .addr = dest, .count = 1 };
+
     const struct fi_ioc sourcev = { .addr = (void *) source, .count = 1 };
     const struct fi_rma_ioc rmav= { .addr = (uint64_t) addr, .count = 1, .key = key };
     const struct fi_msg_atomic msg = {
@@ -1276,13 +1285,18 @@ void shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target,
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
 
+#ifdef ENABLE_OFI_CXI_PCIE_AMO
+    if (shmem_transport_ofi_pcie_cxi) {
+       amo_flags = FI_CXI_PCIE_AMO;
+    }
+#endif
     do {
         ret = fi_fetch_atomicmsg(ctx->ep,
                                  &msg,
                                  &resultv,
                                  GET_MR_DESC_ADDR(shmem_transport_ofi_get_mr_desc_index(dest)),
                                  1,
-                                 FI_INJECT); /* FI_DELIVERY_COMPLETE is not required as it's
+                                 amo_flags); /* FI_DELIVERY_COMPLETE is not required as it's
                                                 implied for fetch atomicmsgs */
     } while (try_again(ctx, ret, &polled));
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);

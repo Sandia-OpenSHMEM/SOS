@@ -116,6 +116,12 @@ pthread_mutex_t                 shmem_transport_ofi_progress_lock = PTHREAD_MUTE
 
 int shmem_transport_ofi_single_ep;
 
+#ifdef ENABLE_OFI_CXI_PCIE_AMO
+bool shmem_transport_ofi_is_cxi;
+bool shmem_transport_ofi_pcie_cxi;
+#define PROV_NAME_CXI		"cxi"
+#endif
+
 /* Temporarily redefine SHM_INTERNAL integer types to their FI counterparts to
  * translate the DTYPE_* types (defined by autoconf according to system ABI)
  * into FI types in the table below */
@@ -1940,6 +1946,13 @@ int shmem_transport_init(void)
     ret = publish_av_info(&shmem_transport_ofi_info);
     if (ret != 0) return ret;
 
+#ifdef ENABLE_OFI_CXI_PCIE_AMO
+    if (!strncmp(shmem_transport_ofi_info.p_info->fabric_attr->prov_name, PROV_NAME_CXI, strlen(PROV_NAME_CXI))) {
+	 shmem_transport_ofi_is_cxi = true;
+    }
+#endif
+
+
     return 0;
 }
 
@@ -2020,6 +2033,21 @@ int shmem_transport_startup(void)
 
     ret = populate_av();
     if (ret != 0) return ret;
+
+#ifdef ENABLE_OFI_CXI_PCIE_AMO
+    shmem_transport_ofi_pcie_cxi = false;
+    struct fi_atomic_attr out_attrs;
+
+    if (shmem_transport_ofi_is_cxi) {
+       if (!fi_query_atomic(shmem_transport_ofi_domainfd, FI_UINT64, FI_SUM, &out_attrs,
+                                   FI_FETCH_ATOMIC | FI_CXI_PCIE_AMO)) {
+	  shmem_transport_ofi_pcie_cxi = true;
+          if (!shmem_internal_my_pe) DEBUG_MSG("PCIe atomics is supported\n");
+       } else {
+          if (!shmem_internal_my_pe) RAISE_WARN_MSG("PCIe atomics is not supported\n");
+       }
+    }
+#endif
 
     return 0;
 }
