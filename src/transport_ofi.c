@@ -210,6 +210,7 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
 }
 
 #define SHMEM_TRANSPORT_OFI_PROV_SOCKETS "sockets"
+#define SHMEM_TRANSPORT_OFI_PROV_CXI     "cxi"
 
 static struct fabric_info shmem_transport_ofi_info = {0};
 
