@@ -210,8 +210,8 @@ static void *dsmml_alloc(void *requested_base, size_t bytes)
 
     dsmml_init_info_t init_info = {
         .mype     = shmem_internal_my_pe,
-        .smp_mype = shmem_internal_my_pe % shmem_internal_num_pes,
-        .smp_npes = shmem_internal_num_pes,
+        .smp_mype = shmem_runtime_get_node_rank(shmem_internal_my_pe),
+        .smp_npes = shmem_internal_get_shr_size(),
         .smp_set  = 0,
     };
     if (dsmml_init_fn(&init_info) != DSMML_RC_SUCCESS) {
