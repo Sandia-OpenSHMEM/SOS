@@ -53,8 +53,6 @@ long *shmem_internal_hierarchical_local_psync;
  * Total allocation: 2 * shr_size * HIER_SLOT_STRIDE longs. */
 #define HIER_SLOT_STRIDE  8   /* 8 longs = 64 bytes = 1 cache line */
 
-static long hier_sense = 0;
-
 /* Per-phase timing accumulators (root PE: all three phases;
  * non-root PEs: phase1_us = gather wait, phase3_us = fanout wait). */
 static double hier_phase1_us = 0.0;
@@ -596,6 +594,15 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
 
     if (PE_size == 1) return;
 
+    /* Determine sense state: for TEAM_WORLD (0, 1, num_pes) use per-team state; else static fallback. */
+    long *sense_ptr;
+    if (PE_start == 0 && PE_stride == 1 && PE_size == shmem_internal_num_pes) {
+        sense_ptr = &shmem_internal_team_world.hier_sense;
+    } else {
+        static long fallback_sense = 0;
+        sense_ptr = &fallback_sense;
+    }
+
     /* Collect local and root PE sets for this active set */
     int *local_pes = alloca(sizeof(int) * PE_size);
     int local_count = 0;
@@ -639,7 +646,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
     /* Sense-alternating signal — monotonically increasing, no slot resets needed.
      * up-slot   for PE r: local_pSync[r * HIER_SLOT_STRIDE]
      * down-slot for PE r: local_pSync[shr_size * HIER_SLOT_STRIDE + r * HIER_SLOT_STRIDE] */
-    long signal   = SHMEM_SYNC_VALUE + 1 + hier_sense;
+    long signal   = SHMEM_SYNC_VALUE + 1 + *sense_ptr;
     int  shr_size = shmem_internal_get_shr_size();
     long *up_pSync   = local_pSync;
     long *down_pSync = local_pSync + (long)(shr_size * HIER_SLOT_STRIDE);
@@ -705,7 +712,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
             hier_call_count++;
         }
 
-        hier_sense++;
+        (*sense_ptr)++;
         return;
     }
 
@@ -800,7 +807,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
         }
     }
 
-    if (my_vidx >= 0) { hier_sense++; }
+    if (my_vidx >= 0) { (*sense_ptr)++; }
     /* PEs absent from local_pes (my_vidx < 0) fall through silently. */
 }
 
