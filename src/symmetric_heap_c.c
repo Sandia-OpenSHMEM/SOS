@@ -378,15 +378,20 @@ static void *mmap_alloc(size_t bytes)
         ret = mmap(NULL, bytes, PROT_READ | PROT_WRITE,
                    MAP_ANON | MAP_PRIVATE | MAP_HUGETLB | (21 << MAP_HUGE_SHIFT), -1, 0);
         if (ret == MAP_FAILED) {
-            DEBUG_MSG("mmap(MAP_HUGETLB) failed (%s), falling back to THP via madvise",
-                      strerror(errno));
+            int hugetlb_errno = errno;
+            RAISE_WARN_MSG("mmap(MAP_HUGETLB) failed with errno=%d (%s), falling back to THP via madvise\n",
+                      hugetlb_errno, strerror(hugetlb_errno));
             ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
                        MAP_ANON | MAP_PRIVATE, -1, 0);
             if (ret != MAP_FAILED) {
+                RAISE_WARN_MSG("mmap fallback succeeded: addr=%p, bytes=%zu, requested_base=%p\n",
+                          ret, bytes, requested_base);
                 if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
-                    RAISE_WARN_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages\n",
-                                   strerror(errno));
+                    int madvise_errno = errno;
+                    RAISE_WARN_MSG("madvise(MADV_HUGEPAGE) failed with errno=%d (%s), using regular pages\n",
+                                   madvise_errno, strerror(madvise_errno));
                 } else {
+                    DEBUG_MSG("madvise(MADV_HUGEPAGE) succeeded");
                     if (madvise(ret, bytes, MADV_COLLAPSE) != 0) {
                         DEBUG_MSG("madvise(MADV_COLLAPSE) failed (%s), THP promotion deferred",
                                   strerror(errno));
@@ -394,8 +399,8 @@ static void *mmap_alloc(size_t bytes)
                 }
             }
         } else {
-            DEBUG_MSG("Allocated symmetric heap with explicit huge pages (MAP_HUGETLB), %zu bytes",
-                      bytes);
+            RAISE_WARN_MSG("Allocated symmetric heap with explicit huge pages (MAP_HUGETLB): addr=%p, %zu bytes\n",
+                      ret, bytes);
         }
     } else {
         ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
