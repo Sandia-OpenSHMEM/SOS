@@ -201,14 +201,66 @@ static void *mmap_alloc(size_t bytes)
             }
         }
     }
-#endif /* __linux__ */
 
+    if (fd) {
+        /* Map the hugetlbfs file directly; MAP_ANON must not be used here
+         * because MAP_ANONYMOUS causes the kernel to ignore the fd, which
+         * would silently fall back to regular pages. */
+        if (ftruncate(fd, bytes) == -1) {
+            RAISE_WARN_MSG("ftruncate on hugetlbfs file failed (%s), "
+                           "falling back to transparent huge pages via madvise\n",
+                           strerror(errno));
+            unlink(file_name);
+            close(fd);
+            free(directory);
+            free(file_name);
+            ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
+                       MAP_ANON | MAP_PRIVATE, -1, 0);
+            if (ret != MAP_FAILED) {
+                if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
+                    DEBUG_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages",
+                              strerror(errno));
+                }
+            }
+        } else {
+            ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
+                       MAP_SHARED | MAP_HUGETLB, fd, 0);
+            unlink(file_name);
+            close(fd);
+            free(directory);
+            free(file_name);
+        }
+    } else if (shmem_internal_params.SYMMETRIC_HEAP_USE_HUGE_PAGES) {
+        /* Try anonymous MAP_HUGETLB first (works with nr_overcommit_hugepages).
+         * Explicitly request 2MB pages via MAP_HUGE_SHIFT (21 << MAP_HUGE_SHIFT = 2^21 = 2MB). */
+        ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
+                   MAP_ANON | MAP_PRIVATE | MAP_HUGETLB | (21 << MAP_HUGE_SHIFT), -1, 0);
+        if (ret == MAP_FAILED) {
+            DEBUG_MSG("mmap(MAP_HUGETLB) failed (%s), falling back to THP via madvise",
+                      strerror(errno));
+            ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
+                       MAP_ANON | MAP_PRIVATE, -1, 0);
+            if (ret != MAP_FAILED) {
+                if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
+                    RAISE_WARN_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages\n",
+                                   strerror(errno));
+                }
+            }
+        } else {
+            DEBUG_MSG("Allocated symmetric heap with explicit huge pages (MAP_HUGETLB), %zu bytes",
+                      bytes);
+        }
+    } else {
+        ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+    }
+#else
     ret = mmap(requested_base,
                bytes,
                PROT_READ | PROT_WRITE,
                MAP_ANON | MAP_PRIVATE,
                fd,
                0);
+#endif /* __linux__ */
     if (ret == MAP_FAILED) {
         RAISE_WARN_MSG("Unable to allocate sym. heap, size %zuB: %s\n"
                        RAISE_PE_PREFIX
