@@ -208,8 +208,11 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
 }
 
 #define SHMEM_TRANSPORT_OFI_PROV_SOCKETS "sockets"
+#define SHMEM_TRANSPORT_OFI_PROV_CXI     "cxi"
 
 static struct fabric_info shmem_transport_ofi_info = {0};
+
+int shmem_transport_ofi_is_cxi = 0;
 
 static size_t shmem_transport_ofi_grow_size = 128;
 
@@ -1671,6 +1674,12 @@ int query_for_fabric(struct fabric_info *info)
               info->p_info->domain_attr->max_ep_stx_ctx == 0 ? "no" : "yes",
               shmem_transport_ofi_stx_max,
               num_nics);
+
+    /* Set CXI provider flag for fence optimization */
+    shmem_transport_ofi_is_cxi = (info->p_info->fabric_attr->prov_name &&
+                                  strncmp(info->p_info->fabric_attr->prov_name,
+                                          SHMEM_TRANSPORT_OFI_PROV_CXI,
+                                          strlen(SHMEM_TRANSPORT_OFI_PROV_CXI)) == 0);
 
     return ret;
 }
