@@ -415,21 +415,6 @@ static void *mmap_alloc(size_t bytes)
                        "Try reducing SHMEM_SYMMETRIC_SIZE or number of PEs per node\n",
                        bytes, strerror(errno), shmem_internal_my_pe);
         ret = NULL;
-    } else if (ret != NULL) {
-#ifdef __linux__
-        /* Try transparent huge pages via madvise on non-Linux fallback path too */
-        if (shmem_internal_params.SYMMETRIC_HEAP_USE_HUGE_PAGES) {
-            if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
-                RAISE_WARN_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages\n",
-                               strerror(errno));
-            } else {
-                if (madvise(ret, bytes, MADV_COLLAPSE) != 0) {
-                    DEBUG_MSG("madvise(MADV_COLLAPSE) failed (%s), THP promotion deferred",
-                              strerror(errno));
-                }
-            }
-        }
-#endif
     }
     if (fd) {
         if (file_name)
