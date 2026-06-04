@@ -372,9 +372,10 @@ static void *mmap_alloc(size_t bytes)
             free(file_name);
         }
     } else if (shmem_internal_params.SYMMETRIC_HEAP_USE_HUGE_PAGES) {
-        /* Try anonymous MAP_HUGETLB first (works with nr_overcommit_hugepages) */
+        /* Try anonymous MAP_HUGETLB first (works with nr_overcommit_hugepages).
+         * Explicitly request 2MB pages via MAP_HUGE_SHIFT (21 << MAP_HUGE_SHIFT = 2^21 = 2MB). */
         ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
-                   MAP_ANON | MAP_PRIVATE | MAP_HUGETLB, -1, 0);
+                   MAP_ANON | MAP_PRIVATE | MAP_HUGETLB | (21 << MAP_HUGE_SHIFT), -1, 0);
         if (ret == MAP_FAILED) {
             DEBUG_MSG("mmap(MAP_HUGETLB) failed (%s), falling back to THP via madvise",
                       strerror(errno));
