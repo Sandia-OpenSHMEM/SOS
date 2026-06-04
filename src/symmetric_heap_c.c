@@ -371,20 +371,32 @@ static void *mmap_alloc(size_t bytes)
             free(directory);
             free(file_name);
         }
-    } else {
-        ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
-        /* Try to use transparent huge pages via madvise if hugetlbfs not available */
-        if (ret != MAP_FAILED && shmem_internal_params.SYMMETRIC_HEAP_USE_HUGE_PAGES) {
-            if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
-                RAISE_WARN_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages\n",
-                               strerror(errno));
-            } else {
-                if (madvise(ret, bytes, MADV_COLLAPSE) != 0) {
-                    DEBUG_MSG("madvise(MADV_COLLAPSE) failed (%s), THP promotion deferred",
-                              strerror(errno));
+    } else if (shmem_internal_params.SYMMETRIC_HEAP_USE_HUGE_PAGES) {
+        /* Try anonymous MAP_HUGETLB first (works with nr_overcommit_hugepages) */
+        ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
+                   MAP_ANON | MAP_PRIVATE | MAP_HUGETLB, -1, 0);
+        if (ret == MAP_FAILED) {
+            DEBUG_MSG("mmap(MAP_HUGETLB) failed (%s), falling back to THP via madvise",
+                      strerror(errno));
+            ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
+                       MAP_ANON | MAP_PRIVATE, -1, 0);
+            if (ret != MAP_FAILED) {
+                if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
+                    RAISE_WARN_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages\n",
+                                   strerror(errno));
+                } else {
+                    if (madvise(ret, bytes, MADV_COLLAPSE) != 0) {
+                        DEBUG_MSG("madvise(MADV_COLLAPSE) failed (%s), THP promotion deferred",
+                                  strerror(errno));
+                    }
                 }
             }
+        } else {
+            DEBUG_MSG("Allocated symmetric heap with explicit huge pages (MAP_HUGETLB), %zu bytes",
+                      bytes);
         }
+    } else {
+        ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
     }
 #else
     ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
