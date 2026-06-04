@@ -374,8 +374,9 @@ static void *mmap_alloc(size_t bytes)
     } else if (shmem_internal_params.SYMMETRIC_HEAP_USE_HUGE_PAGES) {
         /* Try anonymous MAP_HUGETLB first (works with nr_overcommit_hugepages).
          * Explicitly request 2MB pages via MAP_HUGE_SHIFT (21 << MAP_HUGE_SHIFT = 2^21 = 2MB).
-         * Use NULL as hint to let kernel choose suitable address for huge pages. */
-        ret = mmap(NULL, bytes, PROT_READ | PROT_WRITE,
+         * Use requested_base as hint but don't force it (no MAP_FIXED), so kernel can
+         * choose nearby address if requested_base doesn't work for huge pages. */
+        ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
                    MAP_ANON | MAP_PRIVATE | MAP_HUGETLB | (21 << MAP_HUGE_SHIFT), -1, 0);
         if (ret == MAP_FAILED) {
             int hugetlb_errno = errno;
