@@ -162,7 +162,7 @@ shmem_internal_get_next(intptr_t incr)
 
 /* alloc VM space starting @ '_end' + 1GB */
 #define ONEGIG (1024UL*1024UL*1024UL)
-static void *mmap_alloc(size_t bytes)
+static void *mmap_alloc(size_t bytes, size_t *mapped_bytes)
 {
     char *file_name = NULL;
     int fd = 0;
@@ -170,6 +170,8 @@ static void *mmap_alloc(size_t bytes)
     void *requested_base = (void*) (((unsigned long) shmem_internal_data_base + shmem_internal_data_length + 2 * ONEGIG) & ~(ONEGIG - 1));
     void *ret;
     size_t hugetlbfs_bytes = 0;  /* Rounded size for hugetlbfs, 0 if not used */
+
+    *mapped_bytes = bytes;  /* default: actual mapped size equals requested size */
 
 #ifdef __linux__
     /* huge page support only on Linux for now, default is to use 2MB large pages */
@@ -221,8 +223,11 @@ static void *mmap_alloc(size_t bytes)
             directory = NULL;
             file_name = NULL;
             fd = 0;
-            /* Use NULL to let kernel choose address for fallback */
-            ret = mmap(NULL, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+            /* Prefer requested_base to preserve virtual address symmetry (required for RVA);
+             * only use NULL as a last resort if requested_base is unavailable. */
+            ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+            if (ret == MAP_FAILED)
+                ret = mmap(NULL, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
             if (ret != MAP_FAILED) {
                 if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
                     DEBUG_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages", strerror(errno));
@@ -232,6 +237,7 @@ static void *mmap_alloc(size_t bytes)
             ret = mmap(requested_base, hugetlbfs_bytes, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_HUGETLB, fd, 0);
             if (ret != MAP_FAILED) {
                 DEBUG_MSG("Allocated symmetric heap via hugetlbfs file: %zu bytes", hugetlbfs_bytes);
+                *mapped_bytes = hugetlbfs_bytes;
             }
             unlink(file_name);
             close(fd);
@@ -247,8 +253,12 @@ static void *mmap_alloc(size_t bytes)
         ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE | MAP_HUGETLB | (21 << MAP_HUGE_SHIFT), -1, 0);
         if (ret == MAP_FAILED) {
             DEBUG_MSG("mmap(MAP_HUGETLB) failed (%s), falling back to THP via madvise", strerror(errno));
-            /* Use NULL to let kernel choose address - requested_base may not work after MAP_HUGETLB failure */
-            ret = mmap(NULL, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+            /* Prefer requested_base to preserve virtual address symmetry (required for RVA);
+             * only use NULL as a last resort. MAP_HUGETLB failure means huge pages are
+             * unavailable, not that the virtual address range is blocked. */
+            ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+            if (ret == MAP_FAILED)
+                ret = mmap(NULL, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
             if (ret != MAP_FAILED) {
                 if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
                     RAISE_WARN_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages\n", strerror(errno));
@@ -298,9 +308,13 @@ shmem_internal_symmetric_init(void)
 				 SHMEM_MAX_BOUNCE_BUFFER_OVERHEAD;
 
     if (!shmem_internal_params.SYMMETRIC_HEAP_USE_MALLOC) {
+        size_t mapped_length = shmem_internal_heap_length;
         shmem_internal_heap_base =
             shmem_internal_heap_curr =
-            mmap_alloc(shmem_internal_heap_length);
+            mmap_alloc(shmem_internal_heap_length, &mapped_length);
+        /* Use the actual mapped size for munmap and transport registration.
+         * On the hugetlbfs path this may be rounded up to a huge-page boundary. */
+        shmem_internal_heap_length = mapped_length;
     } else {
         shmem_internal_heap_base =
             shmem_internal_heap_curr =
