@@ -80,12 +80,29 @@ shmem_internal_put_signal_nbi(shmem_ctx_t ctx, void *target, const void *source,
                               uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)
 {
     if (len == 0) {
-        if (sig_op == SHMEM_SIGNAL_ADD)
-            shmem_transport_atomic((shmem_transport_ctx_t *) ctx, sig_addr, &signal, sizeof(uint64_t),
-                                   pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
-        else
-            shmem_transport_atomic_set((shmem_transport_ctx_t *) ctx, sig_addr, &signal,
-                                      sizeof(uint64_t), pe, SHM_INTERNAL_UINT64);
+        /* Signal-only (no data): use shmem_shr_transport_use_atomic() to pick
+         * the right plane.  In the multi-node case this always resolves to the
+         * NIC (preserving FIFO ordering with any prior in-flight NIC puts and
+         * avoiding the CPU/NIC coherency hazard).  In the all-PEs-on-one-node
+         * case it resolves to CPU atomics, consistent with data puts. */
+        if (sig_op == SHMEM_SIGNAL_ADD) {
+            if (shmem_shr_transport_use_atomic(ctx, sig_addr, sizeof(uint64_t),
+                                               pe, SHM_INTERNAL_UINT64))
+                shmem_shr_transport_atomic(ctx, sig_addr, &signal, sizeof(uint64_t),
+                                           pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
+            else
+                shmem_transport_atomic((shmem_transport_ctx_t *) ctx, sig_addr, &signal,
+                                       sizeof(uint64_t), pe, SHM_INTERNAL_SUM,
+                                       SHM_INTERNAL_UINT64);
+        } else {
+            if (shmem_shr_transport_use_atomic(ctx, sig_addr, sizeof(uint64_t),
+                                               pe, SHM_INTERNAL_UINT64))
+                shmem_shr_transport_atomic_set(ctx, sig_addr, &signal, sizeof(uint64_t),
+                                               pe, SHM_INTERNAL_UINT64);
+            else
+                shmem_transport_atomic_set((shmem_transport_ctx_t *) ctx, sig_addr, &signal,
+                                           sizeof(uint64_t), pe, SHM_INTERNAL_UINT64);
+        }
         return;
     }
 
