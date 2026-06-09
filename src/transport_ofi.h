@@ -585,8 +585,8 @@ int shmem_transport_fence(shmem_transport_ctx_t* ctx)
      * guarantees subsequent operations see prior puts at the target. Skip
      * put_quiet poll for ~1-2µs latency improvement. Other providers require
      * explicit put_quiet to ensure remote visibility before fence returns. */
-    extern int shmem_transport_ofi_is_cxi;
-    if (!shmem_transport_ofi_is_cxi) {
+    extern int shmem_transport_ofi_check_provider(const char *name);
+    if (!shmem_transport_ofi_check_provider("cxi")) {
         /* Communication is unordered; must wait for puts and buffered (injected)
          * non-fetching atomics to be completed in order to ensure ordering. */
         shmem_transport_put_quiet(ctx);
