@@ -214,7 +214,16 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
 
 static struct fabric_info shmem_transport_ofi_info = {0};
 
-int shmem_transport_ofi_is_cxi = 0;
+static char *shmem_transport_ofi_prov_name = NULL;
+
+/* Check if the current OFI provider matches the given name.
+ * Returns 1 if provider matches, 0 otherwise. */
+static inline int
+shmem_transport_ofi_check_provider(const char *name)
+{
+    return (shmem_transport_ofi_prov_name &&
+            strncmp(shmem_transport_ofi_prov_name, name, strlen(name)) == 0);
+}
 
 static size_t shmem_transport_ofi_grow_size = 128;
 
@@ -1726,11 +1735,8 @@ int query_for_fabric(struct fabric_info *info)
               shmem_transport_ofi_stx_max,
               num_nics);
 
-    /* Set CXI provider flag for fence optimization */
-    shmem_transport_ofi_is_cxi = (info->p_info->fabric_attr->prov_name &&
-                                  strncmp(info->p_info->fabric_attr->prov_name,
-                                          SHMEM_TRANSPORT_OFI_PROV_CXI,
-                                          strlen(SHMEM_TRANSPORT_OFI_PROV_CXI)) == 0);
+    /* Store provider name for runtime checks */
+    shmem_transport_ofi_prov_name = info->p_info->fabric_attr->prov_name;
 
     return ret;
 }
