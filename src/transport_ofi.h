@@ -761,7 +761,7 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
                                             .data          = 0
                                           };
         do {
-            ret = fi_writemsg(ctx->ep, &msg, FI_COMPLETION | FI_TRANSMIT_COMPLETE);
+            ret = fi_writemsg(ctx->ep, &msg, FI_COMPLETION | FI_DELIVERY_COMPLETE);
         } while (try_again(ctx, ret, &polled));
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 
@@ -809,7 +809,7 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
                                       };
 
         do {
-            ret = fi_writemsg(ctx->ep, &msg, FI_TRANSMIT_COMPLETE | FI_INJECT);
+            ret = fi_writemsg(ctx->ep, &msg, FI_DELIVERY_COMPLETE | FI_INJECT);
         } while (try_again(ctx, ret, &polled));
 
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
@@ -857,7 +857,7 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
             SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
 
             do {
-                ret = fi_writemsg(ctx->ep, &msg, FI_TRANSMIT_COMPLETE);
+                ret = fi_writemsg(ctx->ep, &msg, FI_DELIVERY_COMPLETE);
             } while (try_again(ctx, ret, &polled));
 
             frag_source += frag_len;
@@ -1283,7 +1283,7 @@ void shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const voi
                                                .data          = 0
                                              };
         do {
-            ret = fi_atomicmsg(ctx->ep, &msg, FI_COMPLETION | FI_TRANSMIT_COMPLETE);
+            ret = fi_atomicmsg(ctx->ep, &msg, FI_COMPLETION | FI_DELIVERY_COMPLETE);
         } while (try_again(ctx, ret, &polled));
 
     } else {
