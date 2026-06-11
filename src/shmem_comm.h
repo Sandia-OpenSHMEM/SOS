@@ -425,11 +425,14 @@ static inline
 void shmem_internal_copy_self(void *dest, const void *source, size_t nelems)
 {
 #ifdef USE_FI_HMEM
-    /* put_nb may use inject (no counter event), bounce buffer (counter not
-     * recorded in *completion), or put_large (counter watermark set).  A
-     * watermark of 1 is not reliable across all paths, so drain all
-     * in-flight puts via put_quiet to guarantee dest is visible before
-     * returning. */
+    /* put_nb routes through inject, bounce-buffer, or put_large depending on
+     * size.  The inject path has no counter event, so put_wait (watermark-
+     * based) is not sufficient — it would return immediately with completion=0
+     * and leave the GPU write unordered.  put_quiet drains all pending puts
+     * and provides the NIC-level ordering fence needed to guarantee dest is
+     * visible at the target GPU before returning.
+     * bounce-buffer and put_large also set *completion, but put_quiet subsumes
+     * that wait, so no separate put_wait call is needed. */
     long completion = 0;
     shmem_internal_put_nb(SHMEM_CTX_DEFAULT, dest, source, nelems,
                           shmem_internal_my_pe, &completion);
