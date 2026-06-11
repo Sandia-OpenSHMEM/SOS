@@ -659,8 +659,9 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
     long *up_pSync   = local_pSync;
     long *down_pSync = local_pSync + (long)(shr_size * HIER_SLOT_STRIDE);
 
-    /* Resolve own down-slot mapped pointer once. */
-    void *my_down_raw;
+    /* Resolve own up-slot and down-slot mapped pointers once. */
+    void *my_up_raw, *my_down_raw;
+    shmem_shr_transport_ptr(&up_pSync[my_shr_rank * HIER_SLOT_STRIDE],   my_shr_rank, &my_up_raw);
     shmem_shr_transport_ptr(&down_pSync[my_shr_rank * HIER_SLOT_STRIDE], my_shr_rank, &my_down_raw);
     volatile long *my_down_slot = (volatile long *)my_down_raw;
 
