@@ -1351,29 +1351,33 @@ int allocate_fabric_resources(struct fabric_info *info)
      * passed (and proceed without registration if desc is NULL).  This avoids
      * per-call MR cache lookups for source buffers in fi_write/fi_writemsg.
      * Must be done BEFORE any endpoints are created (the provider only
-     * propagates this setting to child endpoints at creation time). */
-    if (shmem_internal_params.OFI_CXI_HYBRID_MR_DESC) {
-        struct cxi_dom_ops_v3_local {
-            int (*cntr_read)(struct fid *, unsigned int, uint64_t *, struct timespec *);
-            int (*topology)(struct fid *, unsigned int *, unsigned int *, unsigned int *);
-            int (*enable_hybrid_mr_desc)(struct fid *, bool);
-        } *cxi_dom_ops = NULL;
-        int hret = fi_open_ops(&shmem_transport_ofi_domainfd->fid,
-                               "dom_ops_v3", 0, (void **)&cxi_dom_ops, NULL);
-        if (hret == 0 && cxi_dom_ops && cxi_dom_ops->enable_hybrid_mr_desc) {
-            hret = cxi_dom_ops->enable_hybrid_mr_desc(&shmem_transport_ofi_domainfd->fid, true);
-            if (shmem_internal_my_pe == 0) {
-                if (hret == 0)
-                    fprintf(stderr, "SOS: CXI hybrid local MR descriptor mode ENABLED\n");
-                else
-                    fprintf(stderr, "SOS: CXI enable_hybrid_mr_desc FAILED (%s)\n", fi_strerror(-hret));
+     * propagates this setting to child endpoints at creation time).
+     * Gated on CXI provider check so non-CXI providers never attempt the
+     * fi_open_ops call and do not produce spurious startup warnings. */
+    if (shmem_transport_ofi_check_provider("cxi")) {
+        if (shmem_internal_params.OFI_CXI_HYBRID_MR_DESC) {
+            struct cxi_dom_ops_v3_local {
+                int (*cntr_read)(struct fid *, unsigned int, uint64_t *, struct timespec *);
+                int (*topology)(struct fid *, unsigned int *, unsigned int *, unsigned int *);
+                int (*enable_hybrid_mr_desc)(struct fid *, bool);
+            } *cxi_dom_ops = NULL;
+            int hret = fi_open_ops(&shmem_transport_ofi_domainfd->fid,
+                                   "dom_ops_v3", 0, (void **)&cxi_dom_ops, NULL);
+            if (hret == 0 && cxi_dom_ops && cxi_dom_ops->enable_hybrid_mr_desc) {
+                hret = cxi_dom_ops->enable_hybrid_mr_desc(&shmem_transport_ofi_domainfd->fid, true);
+                if (shmem_internal_my_pe == 0) {
+                    if (hret == 0)
+                        fprintf(stderr, "SOS: CXI hybrid local MR descriptor mode ENABLED\n");
+                    else
+                        fprintf(stderr, "SOS: CXI enable_hybrid_mr_desc FAILED (%s)\n", fi_strerror(-hret));
+                }
+            } else if (shmem_internal_my_pe == 0) {
+                DEBUG_MSG("CXI hybrid MR desc not available (fi_open_ops returned %d / %s)\n",
+                          hret, hret ? fi_strerror(-hret) : "no ops struct");
             }
         } else if (shmem_internal_my_pe == 0) {
-            fprintf(stderr, "SOS: CXI hybrid MR desc not available (fi_open_ops returned %d / %s) — non-CXI provider or older libfabric\n",
-                    hret, hret ? fi_strerror(-hret) : "no ops struct");
+            DEBUG_MSG("CXI hybrid local MR descriptor mode DISABLED (SHMEM_OFI_CXI_HYBRID_MR_DESC=0)\n");
         }
-    } else if (shmem_internal_my_pe == 0) {
-        fprintf(stderr, "SOS: CXI hybrid local MR descriptor mode DISABLED (SHMEM_OFI_CXI_HYBRID_MR_DESC=0)\n");
     }
 
     /* AV table set-up for PE mapping */
@@ -1713,8 +1717,9 @@ int query_for_fabric(struct fabric_info *info)
               shmem_transport_ofi_stx_max,
               num_nics);
 
-    /* Store provider name for runtime checks */
-    shmem_transport_ofi_prov_name = info->p_info->fabric_attr->prov_name;
+    /* Store provider name for runtime checks.  strdup so the pointer remains
+     * valid after fi_freeinfo() is called in shmem_transport_fini(). */
+    shmem_transport_ofi_prov_name = strdup(info->p_info->fabric_attr->prov_name);
 
     return ret;
 }
@@ -2328,6 +2333,8 @@ int shmem_transport_fini(void)
     free(addr_table);
 #endif
 
+    free(shmem_transport_ofi_prov_name);
+    shmem_transport_ofi_prov_name = NULL;
     fi_freeinfo(shmem_transport_ofi_info.fabrics);
 
     SHMEM_MUTEX_DESTROY(shmem_transport_ofi_lock);
