@@ -239,8 +239,11 @@ static void *mmap_alloc(size_t bytes, size_t *mapped_bytes)
         }
     }
 
-    /* If hugetlbfs file mapping failed or was not attempted, continue with tiered fallback */
-    if (ret == MAP_FAILED || fd == 0) {
+    /* If hugetlbfs file mapping failed or was not attempted, continue with tiered fallback.
+     * Note: fd is always zeroed after the hugetlbfs block (cleanup on both success and
+     * failure paths), so testing fd == 0 here would always be true and would incorrectly
+     * enter the fallback after a successful Tier 1 allocation. Test ret only. */
+    if (ret == MAP_FAILED) {
         if (shmem_internal_params.SYMMETRIC_HEAP_USE_HUGE_PAGES) {
             /* Tier 2: Try anonymous MAP_HUGETLB (works with nr_overcommit_hugepages).
              * Explicitly request 2MB pages via MAP_HUGE_SHIFT (21 << MAP_HUGE_SHIFT = 2^21 = 2MB). */
@@ -261,7 +264,7 @@ static void *mmap_alloc(size_t bytes, size_t *mapped_bytes)
                 ret = mmap(NULL, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
             if (ret != MAP_FAILED) {
                 if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
-                    DEBUG_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages", strerror(errno));
+                    RAISE_WARN_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages\n", strerror(errno));
                 } else {
                     DEBUG_MSG("Allocated symmetric heap via THP (best-effort 2MB pages): %zu bytes", bytes);
                 }
