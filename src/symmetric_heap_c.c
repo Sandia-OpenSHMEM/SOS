@@ -168,7 +168,7 @@ static void *mmap_alloc(size_t bytes, size_t *mapped_bytes)
     int fd = 0;
     char *directory = NULL;
     void *requested_base = (void*) (((unsigned long) shmem_internal_data_base + shmem_internal_data_length + 2 * ONEGIG) & ~(ONEGIG - 1));
-    void *ret;
+    void *ret = MAP_FAILED;
     size_t hugetlbfs_bytes = 0;  /* Rounded size for hugetlbfs, 0 if not used */
 
     *mapped_bytes = bytes;  /* default: actual mapped size equals requested size */
@@ -215,7 +215,7 @@ static void *mmap_alloc(size_t bytes, size_t *mapped_bytes)
          * because MAP_ANONYMOUS causes the kernel to ignore the fd, which
          * would silently fall back to regular pages. */
         if (ftruncate(fd, hugetlbfs_bytes) == -1) {
-            DEBUG_MSG("ftruncate on hugetlbfs file failed (%s), falling back to THP", strerror(errno));
+            DEBUG_MSG("ftruncate on hugetlbfs file failed (%s), falling back", strerror(errno));
             unlink(file_name);
             close(fd);
             free(directory);
@@ -223,16 +223,6 @@ static void *mmap_alloc(size_t bytes, size_t *mapped_bytes)
             directory = NULL;
             file_name = NULL;
             fd = 0;
-            /* Prefer requested_base to preserve virtual address symmetry (required for RVA);
-             * only use NULL as a last resort if requested_base is unavailable. */
-            ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
-            if (ret == MAP_FAILED)
-                ret = mmap(NULL, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
-            if (ret != MAP_FAILED) {
-                if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
-                    DEBUG_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages", strerror(errno));
-                }
-            }
         } else {
             ret = mmap(requested_base, hugetlbfs_bytes, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_HUGETLB, fd, 0);
             if (ret != MAP_FAILED) {
@@ -247,28 +237,46 @@ static void *mmap_alloc(size_t bytes, size_t *mapped_bytes)
             file_name = NULL;
             fd = 0;
         }
-    } else if (shmem_internal_params.SYMMETRIC_HEAP_USE_HUGE_PAGES) {
-        /* Try anonymous MAP_HUGETLB first (works with nr_overcommit_hugepages).
-         * Explicitly request 2MB pages via MAP_HUGE_SHIFT (21 << MAP_HUGE_SHIFT = 2^21 = 2MB). */
-        ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE | MAP_HUGETLB | (21 << MAP_HUGE_SHIFT), -1, 0);
-        if (ret == MAP_FAILED) {
-            DEBUG_MSG("mmap(MAP_HUGETLB) failed (%s), falling back to THP via madvise", strerror(errno));
+    }
+
+    /* If hugetlbfs file mapping failed or was not attempted, continue with tiered fallback */
+    if (ret == MAP_FAILED || fd == 0) {
+        if (shmem_internal_params.SYMMETRIC_HEAP_USE_HUGE_PAGES) {
+            /* Tier 2: Try anonymous MAP_HUGETLB (works with nr_overcommit_hugepages).
+             * Explicitly request 2MB pages via MAP_HUGE_SHIFT (21 << MAP_HUGE_SHIFT = 2^21 = 2MB). */
+            ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE | MAP_HUGETLB | (21 << MAP_HUGE_SHIFT), -1, 0);
+            if (ret == MAP_FAILED) {
+                DEBUG_MSG("mmap(MAP_HUGETLB) failed (%s), falling back to THP via madvise", strerror(errno));
+            } else {
+                DEBUG_MSG("Allocated symmetric heap via anonymous MAP_HUGETLB (2MB pages): %zu bytes", bytes);
+            }
+        }
+
+        /* Tier 3: Try THP via madvise (only if huge pages requested and tier 2 failed) */
+        if (ret == MAP_FAILED && shmem_internal_params.SYMMETRIC_HEAP_USE_HUGE_PAGES) {
             /* Prefer requested_base to preserve virtual address symmetry (required for RVA);
-             * only use NULL as a last resort. MAP_HUGETLB failure means huge pages are
-             * unavailable, not that the virtual address range is blocked. */
+             * only use NULL as a last resort. */
             ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
             if (ret == MAP_FAILED)
                 ret = mmap(NULL, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
             if (ret != MAP_FAILED) {
                 if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
-                    RAISE_WARN_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages\n", strerror(errno));
+                    DEBUG_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages", strerror(errno));
+                } else {
+                    DEBUG_MSG("Allocated symmetric heap via THP (best-effort 2MB pages): %zu bytes", bytes);
                 }
             }
-        } else {
-            DEBUG_MSG("Allocated symmetric heap via anonymous MAP_HUGETLB (2MB pages): %zu bytes", bytes);
         }
-    } else {
-        ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+
+        /* Tier 4: Regular pages (if huge pages not requested or all tiers failed) */
+        if (ret == MAP_FAILED) {
+            ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+            if (ret == MAP_FAILED)
+                ret = mmap(NULL, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+            if (ret != MAP_FAILED) {
+                DEBUG_MSG("Allocated symmetric heap via regular pages (4KB): %zu bytes", bytes);
+            }
+        }
     }
 #else
     ret = mmap(requested_base,
