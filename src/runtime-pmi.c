@@ -209,6 +209,10 @@ shmem_runtime_get_node_root_pe(void)
         return 0;
     }
 
+    if (NULL == location_array) {
+        return 0;
+    }
+
     for (i = 0; i < size; i++) {
         if (location_array[i] == 0)
             return i;

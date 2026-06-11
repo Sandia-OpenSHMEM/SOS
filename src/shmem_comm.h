@@ -340,8 +340,7 @@ shmem_internal_atomicv(shmem_ctx_t ctx, void *target, const void *source,
                        size_t count, size_t type_size, int pe, shm_internal_op_t op,
                        shm_internal_datatype_t datatype, long *completion)
 {
-    size_t len = type_size * count;
-    shmem_internal_assert(len > 0);
+    shmem_internal_assert(type_size * count > 0);
 
 #ifdef DISABLE_NONFETCH_AMO
     /* FIXME: This is a temporary workaround to resolve a known issue with non-fetching AMOs when using
@@ -442,13 +441,19 @@ static inline
 void shmem_internal_copy_self(void *dest, const void *source, size_t nelems)
 {
 #ifdef USE_FI_HMEM
-    // "completion" set to 1 to wait for completion of put operation initiated
-    // by shmem_internal_put_nb, even if "completion" not incremented in call 
-    // to shmem_internal_put_nb.
-    long completion = 1;
+    /* put_nb routes through inject, bounce-buffer, or put_large depending on
+     * size.  The inject path has no counter event, so put_wait (watermark-
+     * based) is not sufficient — it would return immediately with completion=0
+     * and leave the heterogeneous memory (FI_HMEM) write unordered.
+     * put_quiet drains all pending puts and provides the NIC-level ordering
+     * fence needed to guarantee dest is visible in heterogeneous memory
+     * before returning.
+     * bounce-buffer and put_large also set *completion, but put_quiet subsumes
+     * that wait, so no separate put_wait call is needed. */
+    long completion = 0;
     shmem_internal_put_nb(SHMEM_CTX_DEFAULT, dest, source, nelems,
                           shmem_internal_my_pe, &completion);
-    shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
+    shmem_transport_put_quiet((shmem_transport_ctx_t *)SHMEM_CTX_DEFAULT);
 #else
     memcpy(dest, source, nelems);
 #endif

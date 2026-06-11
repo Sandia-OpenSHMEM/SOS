@@ -14,6 +14,7 @@
  */
 
 #include "config.h"
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -565,6 +566,8 @@ shmem_internal_build_root_active_set(int PE_start, int PE_stride, int PE_size,
 
 /* CPU atomic load of the long at `target` via local mapped pointer. */
 static inline long
+shmem_internal_cpu_atomic_load_long(long *target, int noderank) __attribute__((unused));
+static inline long
 shmem_internal_cpu_atomic_load_long(long *target, int noderank)
 {
     void *remote_ptr;
@@ -603,13 +606,18 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
         sense_ptr = &fallback_sense;
     }
 
-    /* Collect local and root PE sets for this active set */
-    int *local_pes = alloca(sizeof(int) * PE_size);
+    /* Collect local and root PE sets for this active set.
+     * Use malloc — PE_size can reach num_pes (100K+) at scale; alloca of
+     * that size would blow the stack. */
+    int *pe_bufs = malloc(2 * sizeof(int) * PE_size);
+    if (!pe_bufs)
+        RAISE_ERROR_STR("malloc failed for hierarchical barrier PE arrays");
+    int *local_pes = pe_bufs;
     int local_count = 0;
     shmem_internal_build_local_set(PE_start, PE_stride, PE_size,
                                    local_pes, &local_count);
 
-    int *root_pes = alloca(sizeof(int) * PE_size);
+    int *root_pes = pe_bufs + PE_size;
     int root_count = 0;
     shmem_internal_build_root_active_set(PE_start, PE_stride, PE_size,
                                          root_pes, &root_count);
@@ -626,12 +634,12 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
                   ? (my_local_idx - root_local_idx + local_count) % local_count
                   : -1;
 
-    int  tree_parent_shr = -1;
     int  tree_nchildren  = 0;
     int *tree_child_shr  = alloca(sizeof(int) * tree_radix);
     if (my_vidx >= 0) {
         if (my_vidx > 0) {
-            tree_parent_shr = shmem_runtime_get_node_rank(
+            /* Parent computed but not used - left for potential future optimization */
+            (void)shmem_runtime_get_node_rank(
                 local_pes[((my_vidx - 1) / tree_radix + root_local_idx) % local_count]);
         }
         for (int j = 1; j <= tree_radix; j++) {
@@ -655,12 +663,11 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
     void *my_up_raw, *my_down_raw;
     shmem_shr_transport_ptr(&up_pSync[my_shr_rank * HIER_SLOT_STRIDE],   my_shr_rank, &my_up_raw);
     shmem_shr_transport_ptr(&down_pSync[my_shr_rank * HIER_SLOT_STRIDE], my_shr_rank, &my_down_raw);
-    volatile long *my_up_slot   = (volatile long *)my_up_raw;
     volatile long *my_down_slot = (volatile long *)my_down_raw;
 
     /* ---- Degenerate case: all active PEs on one node ---- */
     if (root_count <= 1 || local_count == PE_size) {
-        if (my_vidx < 0) return;
+        if (my_vidx < 0) { free(pe_bufs); return; }
 
         double t0 = shmem_internal_params.HIER_BARRIER_DEBUG ? hier_now_us() : 0.0;
 
@@ -713,6 +720,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
         }
 
         (*sense_ptr)++;
+        free(pe_bufs);
         return;
     }
 
@@ -809,6 +817,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
 
     if (my_vidx >= 0) { (*sense_ptr)++; }
     /* PEs absent from local_pes (my_vidx < 0) fall through silently. */
+    free(pe_bufs);
 }
 
 void

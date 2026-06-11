@@ -576,16 +576,26 @@ int shmem_transport_quiet(shmem_transport_ctx_t* ctx)
     return 0;
 }
 
+/* Check if the current OFI provider exactly matches the given name.
+ * Uses strcmp so that layered providers (e.g. "cxi;ofi_rxm") do not
+ * incorrectly inherit CXI-specific fast paths.
+ * Returns 1 if provider matches, 0 otherwise. */
+extern char *shmem_transport_ofi_prov_name;
+static inline int
+shmem_transport_ofi_check_provider(const char *name)
+{
+    return (shmem_transport_ofi_prov_name &&
+            strcmp(shmem_transport_ofi_prov_name, name) == 0);
+}
 
 static inline
 int shmem_transport_fence(shmem_transport_ctx_t* ctx)
 {
 #if WANT_TOTAL_DATA_ORDERING == 0
-    /* CXI provider maintains per-EP FIFO ordering, so FI_TRANSMIT_COMPLETE
+    /* CXI provider maintains per-EP FIFO ordering, so FI_DELIVERY_COMPLETE
      * guarantees subsequent operations see prior puts at the target. Skip
      * put_quiet poll for ~1-2µs latency improvement. Other providers require
      * explicit put_quiet to ensure remote visibility before fence returns. */
-    extern int shmem_transport_ofi_check_provider(const char *name);
     if (!shmem_transport_ofi_check_provider("cxi")) {
         /* Communication is unordered; must wait for puts and buffered (injected)
          * non-fetching atomics to be completed in order to ensure ordering. */
@@ -692,17 +702,17 @@ void shmem_transport_ofi_put_large(shmem_transport_ctx_t* ctx, void *target, con
     uint64_t frag_target = (uint64_t) addr;
     size_t frag_len = len;
 
-    /* Issue all fragments, then capture the pending_put_cntr watermark.  put_wait
-     * spins until fi_cntr_read(put_cntr) >= watermark, draining only this call's
-     * puts (plus any earlier in-flight ones) rather than triggering a global
-     * put_quiet which would also wait on unrelated subsequent puts. */
+    /* Issue fragments one at a time, throttling before each fi_write so that
+     * every fragment passes through the pipeline depth gate.  Checking once
+     * before the loop is insufficient: a single N-fragment put would issue
+     * all N fi_writes after the gate, bypassing the TRS protection entirely. */
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
-    shmem_transport_ofi_put_pipeline_throttle(ctx);
     while (frag_source < ((uint8_t *) source) + len) {
         frag_len = MIN(shmem_transport_ofi_max_msg_size,
                        (size_t) (((uint8_t *) source) + len - frag_source));
         polled = 0;
 
+        shmem_transport_ofi_put_pipeline_throttle(ctx);
         SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
 
         do {
@@ -763,6 +773,8 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
         do {
             ret = fi_writemsg(ctx->ep, &msg, FI_COMPLETION | FI_DELIVERY_COMPLETE);
         } while (try_again(ctx, ret, &polled));
+        if (completion)
+            *completion = (long) SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 
     } else {
