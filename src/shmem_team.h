@@ -26,6 +26,9 @@ struct shmem_internal_team_t {
     long                           config_mask;
     size_t                         contexts_len;
     struct shmem_transport_ctx_t **contexts;
+#ifdef USE_HIERARCHICAL_BARRIER
+    long                           hier_sense;
+#endif
 };
 typedef struct shmem_internal_team_t shmem_internal_team_t;
 

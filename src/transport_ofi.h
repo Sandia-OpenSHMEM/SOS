@@ -66,6 +66,8 @@ extern struct fid_mr*                   shmem_transport_ofi_mrfd_list[3];
 extern uint64_t                         shmem_transport_ofi_max_poll;
 extern long                             shmem_transport_ofi_put_poll_limit;
 extern long                             shmem_transport_ofi_get_poll_limit;
+extern long                             shmem_transport_ofi_put_pipeline_depth;
+extern long                             shmem_transport_ofi_amo_pipeline_depth;
 extern size_t                           shmem_transport_ofi_max_buffered_send;
 extern size_t                           shmem_transport_ofi_max_msg_size;
 extern size_t                           shmem_transport_ofi_bounce_buffer_size;
@@ -480,6 +482,48 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_transport_ctx_t
     return buff;
 }
 
+/* Throttle in-flight fetching AMOs to at most shmem_transport_ofi_amo_pipeline_depth.
+ * Paces AMO issue rate so that all PEs collectively do not saturate the target
+ * NIC's TRS pool.  At 128 PPN with ~512 TRS slots, a depth of 4 leaves headroom
+ * for each PE.  Called with ctx lock held; temporarily drops it while spinning. */
+static inline
+void shmem_transport_ofi_amo_pipeline_throttle(shmem_transport_ctx_t *ctx)
+{
+    if (shmem_transport_ofi_amo_pipeline_depth <= 0) return;
+
+    uint64_t pending   = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr);
+    uint64_t completed = fi_cntr_read(ctx->get_cntr);
+
+    while ((long)(pending - completed) >= shmem_transport_ofi_amo_pipeline_depth) {
+        SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+        shmem_transport_probe();
+        SPINLOCK_BODY();
+        SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+        completed = fi_cntr_read(ctx->get_cntr);
+    }
+}
+
+/* Throttle in-flight puts to at most shmem_transport_ofi_put_pipeline_depth.
+ * Matches Cray SHMEM's "blocking SHEAP pipeline limit 512" behavior, which
+ * prevents TRS pool exhaustion and eliminates mst_stalled_waiting_put_crdts.
+ * Called with ctx lock already held; temporarily drops it while spinning. */
+static inline
+void shmem_transport_ofi_put_pipeline_throttle(shmem_transport_ctx_t *ctx)
+{
+    if (shmem_transport_ofi_put_pipeline_depth <= 0) return;
+
+    uint64_t pending = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
+    uint64_t completed = fi_cntr_read(ctx->put_cntr);
+
+    while ((long)(pending - completed) >= shmem_transport_ofi_put_pipeline_depth) {
+        SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+        shmem_transport_probe();
+        SPINLOCK_BODY();
+        SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+        completed = fi_cntr_read(ctx->put_cntr);
+    }
+}
+
 static inline
 void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
 {
@@ -553,9 +597,16 @@ static inline
 int shmem_transport_fence(shmem_transport_ctx_t* ctx)
 {
 #if WANT_TOTAL_DATA_ORDERING == 0
-    /* Communication is unordered; must wait for puts and buffered (injected)
-     * non-fetching atomics to be completed in order to ensure ordering. */
-    shmem_transport_put_quiet(ctx);
+    /* CXI provider maintains per-EP FIFO ordering, so FI_DELIVERY_COMPLETE
+     * guarantees subsequent operations see prior puts at the target. Skip
+     * put_quiet poll for ~1-2µs latency improvement. Other providers require
+     * explicit put_quiet to ensure remote visibility before fence returns. */
+    extern int shmem_transport_ofi_check_provider(const char *name);
+    if (!shmem_transport_ofi_check_provider("cxi")) {
+        /* Communication is unordered; must wait for puts and buffered (injected)
+         * non-fetching atomics to be completed in order to ensure ordering. */
+        shmem_transport_put_quiet(ctx);
+    }
 #endif
     /* Complete fetching ops; needed to support nonblocking fetch-atomics */
     shmem_transport_get_wait(ctx);
@@ -643,7 +694,7 @@ void shmem_transport_put_scalar(shmem_transport_ctx_t* ctx, void *target, const
 
 static inline
 void shmem_transport_ofi_put_large(shmem_transport_ctx_t* ctx, void *target, const void *source,
-                                   size_t len, int pe)
+                                   size_t len, int pe, long *completion)
 {
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
@@ -657,9 +708,12 @@ void shmem_transport_ofi_put_large(shmem_transport_ctx_t* ctx, void *target, con
     uint64_t frag_target = (uint64_t) addr;
     size_t frag_len = len;
 
-    /* operation generates counting events and must be completed by
-     * quiet. */
+    /* Issue all fragments, then capture the pending_put_cntr watermark.  put_wait
+     * spins until fi_cntr_read(put_cntr) >= watermark, draining only this call's
+     * puts (plus any earlier in-flight ones) rather than triggering a global
+     * put_quiet which would also wait on unrelated subsequent puts. */
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    shmem_transport_ofi_put_pipeline_throttle(ctx);
     while (frag_source < ((uint8_t *) source) + len) {
         frag_len = MIN(shmem_transport_ofi_max_msg_size,
                        (size_t) (((uint8_t *) source) + len - frag_source));
@@ -678,6 +732,8 @@ void shmem_transport_ofi_put_large(shmem_transport_ctx_t* ctx, void *target, con
         frag_source += frag_len;
         frag_target += frag_len;
     }
+    if (completion)
+        *completion = (long) SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
 
@@ -700,6 +756,7 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
     } else if (len <= shmem_transport_ofi_bounce_buffer_size && ctx->bounce_buffers) {
 
         SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+        shmem_transport_ofi_put_pipeline_throttle(ctx);
         SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
         shmem_transport_ofi_get_mr(target, pe, &addr, &key);
 
@@ -720,13 +777,14 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
                                             .data          = 0
                                           };
         do {
-            ret = fi_writemsg(ctx->ep, &msg, FI_COMPLETION | FI_DELIVERY_COMPLETE);
+            ret = fi_writemsg(ctx->ep, &msg, FI_COMPLETION | FI_TRANSMIT_COMPLETE);
         } while (try_again(ctx, ret, &polled));
+        if (completion)
+            *completion = (long) SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 
     } else {
-        shmem_transport_ofi_put_large(ctx, target, source,len, pe);
-        (*completion)++;
+        shmem_transport_ofi_put_large(ctx, target, source, len, pe, completion);
     }
 }
 
@@ -769,7 +827,7 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
                                       };
 
         do {
-            ret = fi_writemsg(ctx->ep, &msg, FI_DELIVERY_COMPLETE | FI_INJECT);
+            ret = fi_writemsg(ctx->ep, &msg, FI_TRANSMIT_COMPLETE | FI_INJECT);
         } while (try_again(ctx, ret, &polled));
 
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
@@ -817,7 +875,7 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
             SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
 
             do {
-                ret = fi_writemsg(ctx->ep, &msg, FI_DELIVERY_COMPLETE);
+                ret = fi_writemsg(ctx->ep, &msg, FI_TRANSMIT_COMPLETE);
             } while (try_again(ctx, ret, &polled));
 
             frag_source += frag_len;
@@ -873,16 +931,38 @@ void shmem_transport_put_signal_nbi(shmem_transport_ctx_t* ctx, void *target, co
     SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 }
 
-/* compatibility with Portals transport */
+/* Per-call put completion: wait only for puts up through the watermark recorded
+ * at issue time, instead of triggering a global put_quiet that would also wait
+ * on unrelated subsequent puts.  *completion holds the value of pending_put_cntr
+ * captured immediately after the put's fragments were issued. */
 static inline
 void shmem_transport_put_wait(shmem_transport_ctx_t* ctx, long *completion) {
 
     shmem_internal_assert((*completion) >= 0);
 
-    if((*completion) > 0) {
-        shmem_transport_put_quiet(ctx);
-        (*completion)--;
+    if ((*completion) == 0) return;
+
+    uint64_t watermark = (uint64_t) *completion;
+    uint64_t completed = fi_cntr_read(ctx->put_cntr);
+    long poll_count = 0;
+
+    while (completed < watermark) {
+        uint64_t fail = fi_cntr_readerr(ctx->put_cntr);
+        if (fail) {
+            RAISE_ERROR_MSG("Operations completed in error (%" PRIu64 ")\n", fail);
+        }
+        shmem_transport_probe();
+        if (poll_count >= shmem_transport_ofi_put_poll_limit &&
+            shmem_transport_ofi_put_poll_limit >= 0) {
+            ssize_t ret = fi_cntr_wait(ctx->put_cntr, watermark, -1);
+            OFI_CTX_CHECK_ERROR(ctx, ret);
+            break;
+        }
+        SPINLOCK_BODY();
+        completed = fi_cntr_read(ctx->put_cntr);
+        poll_count++;
     }
+    *completion = 0;
 }
 
 static inline
@@ -895,7 +975,7 @@ void shmem_transport_put_nbi(shmem_transport_ctx_t* ctx, void *target, const voi
 
     } else {
 
-        shmem_transport_ofi_put_large(ctx, target, source, len, pe);
+        shmem_transport_ofi_put_large(ctx, target, source, len, pe, NULL);
     }
 }
 
@@ -1242,7 +1322,7 @@ void shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const voi
                                                .data          = 0
                                              };
         do {
-            ret = fi_atomicmsg(ctx->ep, &msg, FI_COMPLETION | FI_DELIVERY_COMPLETE);
+            ret = fi_atomicmsg(ctx->ep, &msg, FI_COMPLETION | FI_TRANSMIT_COMPLETE);
         } while (try_again(ctx, ret, &polled));
 
     } else {
@@ -1311,6 +1391,7 @@ void shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target,
                                };
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    shmem_transport_ofi_amo_pipeline_throttle(ctx);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
 
     do {

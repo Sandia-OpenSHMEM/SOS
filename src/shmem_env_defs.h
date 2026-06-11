@@ -44,6 +44,8 @@ SHMEM_INTERNAL_ENV_DEF(DISABLE_ASLR_CHECK, bool, false, SHMEM_INTERNAL_ENV_CAT_O
 
 SHMEM_INTERNAL_ENV_DEF(SYMMETRIC_HEAP_USE_MALLOC, bool, false, SHMEM_INTERNAL_ENV_CAT_OTHER,
                        "Allocate the symmetric heap using malloc")
+SHMEM_INTERNAL_ENV_DEF(SYMMETRIC_HEAP_USE_DSMML, bool, false, SHMEM_INTERNAL_ENV_CAT_OTHER,
+                       "Allocate the symmetric heap using DSMML (loaded via dlopen at runtime)")
 SHMEM_INTERNAL_ENV_DEF(BOUNCE_SIZE, size, DEFAULT_BOUNCE_SIZE, SHMEM_INTERNAL_ENV_CAT_OTHER,
                        "Maximum message size to bounce buffer")
 SHMEM_INTERNAL_ENV_DEF(MAX_BOUNCE_BUFFERS, long, 128, SHMEM_INTERNAL_ENV_CAT_OTHER,
@@ -58,7 +60,11 @@ SHMEM_INTERNAL_ENV_DEF(COLL_SIZE_CROSSOVER, size, 16384, SHMEM_INTERNAL_ENV_CAT_
 SHMEM_INTERNAL_ENV_DEF(COLL_RADIX, long, 4, SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
                        "Radix for tree-based collectives")
 SHMEM_INTERNAL_ENV_DEF(BARRIER_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
-                       "Algorithm for barrier.  Options are auto, linear, tree, dissem")
+                       "Algorithm for barrier.  Options are auto, linear, tree, dissem, hierarchical")
+SHMEM_INTERNAL_ENV_DEF(HIER_BARRIER_THRESHOLD, long, 2, SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
+                       "Minimum local PE count per node to auto-select the hierarchical barrier")
+SHMEM_INTERNAL_ENV_DEF(HIER_BARRIER_DEBUG, bool, 0, SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
+                       "Print per-phase hierarchical barrier timing at finalize")
 SHMEM_INTERNAL_ENV_DEF(BCAST_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
                        "Algorithm for broadcast.  Options are auto, linear, tree")
 SHMEM_INTERNAL_ENV_DEF(REDUCE_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
@@ -95,6 +101,12 @@ SHMEM_INTERNAL_ENV_DEF(OFI_DOMAIN, string, "auto", SHMEM_INTERNAL_ENV_CAT_TRANSP
                        "Fabric domain that should be used by the OFI transport")
 SHMEM_INTERNAL_ENV_DEF(OFI_TX_POLL_LIMIT, long, DEFAULT_POLL_LIMIT, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Put completion poll limit")
+SHMEM_INTERNAL_ENV_DEF(OFI_PUT_PIPELINE_DEPTH, long, 0, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Maximum in-flight puts per context before throttling (0=unlimited, Cray SHMEM uses 512)")
+SHMEM_INTERNAL_ENV_DEF(OFI_AMO_PIPELINE_DEPTH, long, 0, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Maximum in-flight fetching AMOs per context before throttling (0=unlimited, try 4 at 128 PPN)")
+SHMEM_INTERNAL_ENV_DEF(OFI_CXI_HYBRID_MR_DESC, bool, true, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Enable CXI hybrid local MR descriptor mode (skips internal MR registration when desc is non-NULL); ignored on non-CXI providers")
 SHMEM_INTERNAL_ENV_DEF(OFI_RX_POLL_LIMIT, long, DEFAULT_POLL_LIMIT, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Get completion poll limit")
 SHMEM_INTERNAL_ENV_DEF(OFI_STX_MAX, long, 1, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,

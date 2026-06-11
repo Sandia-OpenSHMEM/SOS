@@ -80,12 +80,29 @@ shmem_internal_put_signal_nbi(shmem_ctx_t ctx, void *target, const void *source,
                               uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)
 {
     if (len == 0) {
-        if (sig_op == SHMEM_SIGNAL_ADD)
-            shmem_transport_atomic((shmem_transport_ctx_t *) ctx, sig_addr, &signal, sizeof(uint64_t),
-                                   pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
-        else
-            shmem_transport_atomic_set((shmem_transport_ctx_t *) ctx, sig_addr, &signal,
-                                      sizeof(uint64_t), pe, SHM_INTERNAL_UINT64);
+        /* Signal-only (no data): use shmem_shr_transport_use_atomic() to pick
+         * the right plane.  In the multi-node case this always resolves to the
+         * NIC (preserving FIFO ordering with any prior in-flight NIC puts and
+         * avoiding the CPU/NIC coherency hazard).  In the all-PEs-on-one-node
+         * case it resolves to CPU atomics, consistent with data puts. */
+        if (sig_op == SHMEM_SIGNAL_ADD) {
+            if (shmem_shr_transport_use_atomic(ctx, sig_addr, sizeof(uint64_t),
+                                               pe, SHM_INTERNAL_UINT64))
+                shmem_shr_transport_atomic(ctx, sig_addr, &signal, sizeof(uint64_t),
+                                           pe, SHM_INTERNAL_SUM, SHM_INTERNAL_UINT64);
+            else
+                shmem_transport_atomic((shmem_transport_ctx_t *) ctx, sig_addr, &signal,
+                                       sizeof(uint64_t), pe, SHM_INTERNAL_SUM,
+                                       SHM_INTERNAL_UINT64);
+        } else {
+            if (shmem_shr_transport_use_atomic(ctx, sig_addr, sizeof(uint64_t),
+                                               pe, SHM_INTERNAL_UINT64))
+                shmem_shr_transport_atomic_set(ctx, sig_addr, &signal, sizeof(uint64_t),
+                                               pe, SHM_INTERNAL_UINT64);
+            else
+                shmem_transport_atomic_set((shmem_transport_ctx_t *) ctx, sig_addr, &signal,
+                                           sizeof(uint64_t), pe, SHM_INTERNAL_UINT64);
+        }
         return;
     }
 
@@ -244,7 +261,7 @@ shmem_internal_atomic(shmem_ctx_t ctx, void *target, const void *source, size_t 
     if (shmem_shr_transport_use_atomic(ctx, target, len, pe, datatype)) {
         shmem_shr_transport_atomic(ctx, target, source, len, pe, op, datatype);
     } else {
-#ifdef DISABLE_NONFETCH_AMO
+#if defined(DISABLE_NONFETCH_AMO) && defined(USE_OFI)
         /* FIXME: This is a temporary workaround to resolve a known issue with non-fetching AMOs when using
            the CXI provider */
         unsigned long long tmp_fetch = 0;
@@ -284,7 +301,7 @@ shmem_internal_atomic_set(shmem_ctx_t ctx, void *target, const void *source, siz
     if (shmem_shr_transport_use_atomic(ctx, target, len, pe, datatype)) {
         shmem_shr_transport_atomic_set(ctx, target, source, len, pe, datatype);
     } else {
-#ifdef DISABLE_NONFETCH_AMO
+#if defined(DISABLE_NONFETCH_AMO) && defined(USE_OFI)
         /* FIXME: This is a temporary workaround to resolve a known issue with non-fetching AMOs when using
            the CXI provider */
         unsigned long long tmp_fetch = 0;
@@ -326,7 +343,7 @@ shmem_internal_atomicv(shmem_ctx_t ctx, void *target, const void *source,
     size_t len = type_size * count;
     shmem_internal_assert(len > 0);
 
-#ifdef DISABLE_NONFETCH_AMO
+#if defined(DISABLE_NONFETCH_AMO) && defined(USE_OFI)
     /* FIXME: This is a temporary workaround to resolve a known issue with non-fetching AMOs when using
         the CXI provider */
     unsigned long long tmp_fetch = 0;
@@ -425,13 +442,18 @@ static inline
 void shmem_internal_copy_self(void *dest, const void *source, size_t nelems)
 {
 #ifdef USE_FI_HMEM
-    // "completion" set to 1 to wait for completion of put operation initiated
-    // by shmem_internal_put_nb, even if "completion" not incremented in call 
-    // to shmem_internal_put_nb.
-    long completion = 1;
+    /* put_nb routes through inject, bounce-buffer, or put_large depending on
+     * size.  The inject path has no counter event, so put_wait (watermark-
+     * based) is not sufficient — it would return immediately with completion=0
+     * and leave the GPU write unordered.  put_quiet drains all pending puts
+     * and provides the NIC-level ordering fence needed to guarantee dest is
+     * visible at the target GPU before returning.
+     * bounce-buffer and put_large also set *completion, but put_quiet subsumes
+     * that wait, so no separate put_wait call is needed. */
+    long completion = 0;
     shmem_internal_put_nb(SHMEM_CTX_DEFAULT, dest, source, nelems,
                           shmem_internal_my_pe, &completion);
-    shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
+    shmem_transport_put_quiet((shmem_transport_ctx_t *)SHMEM_CTX_DEFAULT);
 #else
     memcpy(dest, source, nelems);
 #endif

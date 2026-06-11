@@ -26,7 +26,11 @@
 #ifdef __linux__
 #include <mntent.h>
 #include <sys/vfs.h>
+#ifndef MADV_COLLAPSE
+#define MADV_COLLAPSE 25  /* synchronous THP promotion, Linux 5.18+ */
 #endif
+#endif
+#include <dlfcn.h>
 
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
@@ -128,6 +132,137 @@ static int find_hugepage_dir(size_t page_size, char **directory)
 }
 #endif /* __linux__ */
 
+/* DSMML runtime support — loaded via dlopen when SHMEM_SYMMETRIC_HEAP_USE_DSMML=1.
+ * Types mirror dsmml.h exactly so dlopen works without a build-time dependency. */
+#ifdef __linux__
+
+typedef enum {
+    DSMML_RC_SUCCESS        = 0,
+    DSMML_RC_FAILURE        = 1,
+    DSMML_RC_INVALID_PARAM  = 2,
+    DSMML_RC_RESOURCE_ERROR = 3,
+    DSMML_RC_NO_MEMORY      = 4,
+    DSMML_RC_UNKNOWN_FAIL   = 5,
+    DSMML_RC_NOOP           = 6,
+    DSMML_RC_MEM_OVERLAP    = 7,
+    DSMML_RC_MEM_CORRUPT    = 8
+} dsmml_return_t;
+
+typedef enum { DSMML_MODE_DEFAULT = 0, DSMML_MODE_PREFERRED, DSMML_MODE_BIND,
+               DSMML_MODE_INTERLEAVE } dsmml_mode_t;
+typedef enum { DSMML_MEM_SYS_DEFAULT = 0, DSMML_MEM_NORMAL = 1,
+               DSMML_MEM_FAST = 2, DSMML_MEM_CUSTOM = 3 } dsmml_type_t;
+typedef enum {
+    DSMML_HPSIZE_DEFAULT = 1,   /* THP */
+    DSMML_HPSIZE_4K      = 2,
+    DSMML_HPSIZE_2M      = 3,
+    DSMML_HPSIZE_4M      = 4,
+} dsmml_hpsize_t;
+typedef enum { DSMML_NNODE_INDEX1 = 0x01 } dsmml_nnode_t;
+
+typedef struct {
+    int            mype;
+    int            smp_mype;
+    int            smp_npes;
+    int            smp_set;
+} dsmml_init_info_t;
+
+typedef struct {
+    int            id;
+    void          *act_addr;
+    void          *base_addr;
+    size_t         length;
+    dsmml_type_t   type;
+    dsmml_hpsize_t pagesize;
+    dsmml_mode_t   mode;
+    int            smp_mype;
+    int            smp_npes;
+    int            smp_set;
+    dsmml_nnode_t  nnode;
+} dsmml_sheap_seg_info_t;
+
+static void  *dsmml_handle             = NULL;
+static dsmml_return_t (*dsmml_init_fn)(dsmml_init_info_t *)              = NULL;
+static dsmml_return_t (*dsmml_finalize_fn)(void)                         = NULL;
+static dsmml_return_t (*dsmml_create_sheap_seg_fn)(dsmml_sheap_seg_info_t *) = NULL;
+
+static void *dsmml_alloc(void *requested_base, size_t bytes)
+{
+    const char *libname = "libdsmml.so";
+
+    dsmml_handle = dlopen(libname, RTLD_NOW | RTLD_GLOBAL);
+    if (!dsmml_handle) {
+        RAISE_WARN_MSG("SHMEM_SYMMETRIC_HEAP_USE_DSMML=1 but dlopen(%s) failed: %s\n",
+                       libname, dlerror());
+        return NULL;
+    }
+
+    dsmml_init_fn             = dlsym(dsmml_handle, "dsmml_init");
+    dsmml_finalize_fn         = dlsym(dsmml_handle, "dsmml_finalize");
+    dsmml_create_sheap_seg_fn = dlsym(dsmml_handle, "dsmml_create_sheap_seg");
+
+    if (!dsmml_init_fn || !dsmml_finalize_fn || !dsmml_create_sheap_seg_fn) {
+        RAISE_WARN_MSG("DSMML: required symbols not found in %s: %s\n", libname, dlerror());
+        dlclose(dsmml_handle);
+        dsmml_handle = NULL;
+        return NULL;
+    }
+
+    dsmml_init_info_t init_info = {
+        .mype     = shmem_internal_my_pe,
+        .smp_mype = shmem_runtime_get_node_rank(shmem_internal_my_pe),
+        .smp_npes = shmem_internal_get_shr_size(),
+        .smp_set  = 0,
+    };
+    if (dsmml_init_fn(&init_info) != DSMML_RC_SUCCESS) {
+        RAISE_WARN_STR("DSMML: dsmml_init failed");
+        dlclose(dsmml_handle);
+        dsmml_handle = NULL;
+        return NULL;
+    }
+
+    /* Try 2MB explicit huge pages first; fall back to THP on failure. */
+    dsmml_sheap_seg_info_t seg = {
+        .base_addr  = requested_base,
+        .length     = bytes,
+        .type       = DSMML_MEM_SYS_DEFAULT,
+        .mode       = DSMML_MODE_DEFAULT,
+        .pagesize   = DSMML_HPSIZE_2M,
+        .smp_mype   = init_info.smp_mype,
+        .smp_npes   = init_info.smp_npes,
+        .smp_set    = 0,
+    };
+
+    if (dsmml_create_sheap_seg_fn(&seg) != DSMML_RC_SUCCESS) {
+        DEBUG_STR("DSMML: 2MB huge pages unavailable, falling back to THP");
+        seg.act_addr = NULL;
+        seg.pagesize = DSMML_HPSIZE_DEFAULT;
+        if (dsmml_create_sheap_seg_fn(&seg) != DSMML_RC_SUCCESS) {
+            RAISE_WARN_STR("DSMML: dsmml_create_sheap_seg failed");
+            dsmml_finalize_fn();
+            dlclose(dsmml_handle);
+            dsmml_handle = NULL;
+            return NULL;
+        }
+    }
+
+    DEBUG_MSG("DSMML: heap at %p (requested %p), %zu bytes, pagesize %s\n",
+              seg.act_addr, requested_base, bytes,
+              seg.pagesize == DSMML_HPSIZE_2M ? "2MB" : "THP");
+
+    return seg.act_addr;
+}
+
+static void dsmml_free(void)
+{
+    if (dsmml_finalize_fn) dsmml_finalize_fn();
+    if (dsmml_handle)      dlclose(dsmml_handle);
+    dsmml_handle      = NULL;
+    dsmml_finalize_fn = NULL;
+}
+
+#endif /* __linux__ */
+
 /* shmalloc and friends are defined to not be thread safe, so this is
    fine.  If they change that definition, this is no longer fine and
    needs to be made thread safe. */
@@ -184,14 +319,15 @@ static void *mmap_alloc(size_t bytes)
             int size = snprintf(NULL, 0, "%s/%s.%d", directory, basename, getpid());
 
             if (size < 0) {
-                RAISE_WARN_STR("snprintf returned error, cannot use huge pages");
+                DEBUG_STR("snprintf returned error, cannot use huge pages");
             } else {
                 file_name = malloc(size + 1);
                 if (file_name) {
                     sprintf(file_name, "%s/%s.%d", directory, basename, getpid());
                     fd = open(file_name, O_CREAT | O_RDWR, 0755);
                     if (fd < 0) {
-                        RAISE_WARN_STR("file open failed, cannot use huge pages");
+                        DEBUG_MSG("file open failed (%s), cannot use huge pages",
+                                  strerror(errno));
                         fd = 0;
                     } else {
                         /* have to round up by the pagesize being used */
@@ -201,14 +337,79 @@ static void *mmap_alloc(size_t bytes)
             }
         }
     }
-#endif /* __linux__ */
 
-    ret = mmap(requested_base,
-               bytes,
-               PROT_READ | PROT_WRITE,
-               MAP_ANON | MAP_PRIVATE,
-               fd,
-               0);
+    if (fd) {
+        /* Map the hugetlbfs file directly; MAP_ANON must not be used here
+         * because MAP_ANONYMOUS causes the kernel to ignore the fd, which
+         * would silently fall back to regular pages. */
+        if (ftruncate(fd, bytes) == -1) {
+            RAISE_WARN_MSG("ftruncate on hugetlbfs file failed (%s), "
+                           "falling back to transparent huge pages via madvise\n",
+                           strerror(errno));
+            unlink(file_name);
+            close(fd);
+            free(directory);
+            free(file_name);
+            ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
+                       MAP_ANON | MAP_PRIVATE, -1, 0);
+            if (ret != MAP_FAILED) {
+                if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
+                    DEBUG_MSG("madvise(MADV_HUGEPAGE) failed (%s), using regular pages",
+                              strerror(errno));
+                } else {
+                    if (madvise(ret, bytes, MADV_COLLAPSE) != 0) {
+                        DEBUG_MSG("madvise(MADV_COLLAPSE) failed (%s), THP promotion deferred",
+                                  strerror(errno));
+                    }
+                }
+            }
+        } else {
+            ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
+                       MAP_SHARED | MAP_HUGETLB, fd, 0);
+            unlink(file_name);
+            close(fd);
+            free(directory);
+            free(file_name);
+        }
+    } else if (shmem_internal_params.SYMMETRIC_HEAP_USE_HUGE_PAGES) {
+        /* Try anonymous MAP_HUGETLB first (works with nr_overcommit_hugepages).
+         * Explicitly request 2MB pages via MAP_HUGE_SHIFT (21 << MAP_HUGE_SHIFT = 2^21 = 2MB).
+         * Use requested_base as hint but don't force it (no MAP_FIXED), so kernel can
+         * choose nearby address if requested_base doesn't work for huge pages. */
+        ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
+                   MAP_ANON | MAP_PRIVATE | MAP_HUGETLB | (21 << MAP_HUGE_SHIFT), -1, 0);
+        if (ret == MAP_FAILED) {
+            int hugetlb_errno = errno;
+            RAISE_WARN_MSG("mmap(MAP_HUGETLB) failed with errno=%d (%s), falling back to THP via madvise\n",
+                      hugetlb_errno, strerror(hugetlb_errno));
+            ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
+                       MAP_ANON | MAP_PRIVATE, -1, 0);
+            if (ret != MAP_FAILED) {
+                RAISE_WARN_MSG("mmap fallback succeeded: addr=%p, bytes=%zu, requested_base=%p\n",
+                          ret, bytes, requested_base);
+                if (madvise(ret, bytes, MADV_HUGEPAGE) != 0) {
+                    int madvise_errno = errno;
+                    RAISE_WARN_MSG("madvise(MADV_HUGEPAGE) failed with errno=%d (%s), using regular pages\n",
+                                   madvise_errno, strerror(madvise_errno));
+                } else {
+                    DEBUG_MSG("madvise(MADV_HUGEPAGE) succeeded");
+                    if (madvise(ret, bytes, MADV_COLLAPSE) != 0) {
+                        DEBUG_MSG("madvise(MADV_COLLAPSE) failed (%s), THP promotion deferred",
+                                  strerror(errno));
+                    }
+                }
+            }
+        } else {
+            RAISE_WARN_MSG("Allocated symmetric heap with explicit huge pages (MAP_HUGETLB): addr=%p, %zu bytes\n",
+                      ret, bytes);
+        }
+    } else {
+        ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+    }
+#else
+    ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE,
+               MAP_ANON | MAP_PRIVATE, -1, 0);
+#endif /* __linux__ */
     if (ret == MAP_FAILED) {
         RAISE_WARN_MSG("Unable to allocate sym. heap, size %zuB: %s\n"
                        RAISE_PE_PREFIX
@@ -238,14 +439,23 @@ shmem_internal_symmetric_init(void)
     shmem_internal_heap_length = shmem_internal_params.SYMMETRIC_SIZE +
                                  SHMEM_INTERNAL_HEAP_OVERHEAD;
 
-    if (!shmem_internal_params.SYMMETRIC_HEAP_USE_MALLOC) {
-        shmem_internal_heap_base =
-            shmem_internal_heap_curr =
-            mmap_alloc(shmem_internal_heap_length);
-    } else {
+    if (shmem_internal_params.SYMMETRIC_HEAP_USE_MALLOC) {
         shmem_internal_heap_base =
             shmem_internal_heap_curr =
             malloc(shmem_internal_heap_length);
+#ifdef __linux__
+    } else if (shmem_internal_params.SYMMETRIC_HEAP_USE_DSMML) {
+        void *requested_base =
+            (void*) (((unsigned long) shmem_internal_data_base +
+                      shmem_internal_data_length + 2 * ONEGIG) & ~(ONEGIG - 1));
+        shmem_internal_heap_base =
+            shmem_internal_heap_curr =
+            dsmml_alloc(requested_base, shmem_internal_heap_length);
+#endif
+    } else {
+        shmem_internal_heap_base =
+            shmem_internal_heap_curr =
+            mmap_alloc(shmem_internal_heap_length);
     }
 
     return (NULL == shmem_internal_heap_base) ? -1 : 0;
@@ -256,10 +466,14 @@ int
 shmem_internal_symmetric_fini(void)
 {
     if (NULL != shmem_internal_heap_base) {
-        if (!shmem_internal_params.SYMMETRIC_HEAP_USE_MALLOC) {
-            munmap( (void*)shmem_internal_heap_base, (size_t)shmem_internal_heap_length );
-        } else {
+        if (shmem_internal_params.SYMMETRIC_HEAP_USE_MALLOC) {
             free(shmem_internal_heap_base);
+#ifdef __linux__
+        } else if (shmem_internal_params.SYMMETRIC_HEAP_USE_DSMML) {
+            dsmml_free();
+#endif
+        } else {
+            munmap( (void*)shmem_internal_heap_base, (size_t)shmem_internal_heap_length );
         }
         shmem_internal_heap_length = 0;
         shmem_internal_heap_base = shmem_internal_heap_curr = NULL;

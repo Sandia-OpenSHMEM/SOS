@@ -262,6 +262,12 @@ AC_ARG_ENABLE([mr-endpoint],
 AS_IF([test "$enable_mr_endpoint" = "yes"],
       [AC_DEFINE([ENABLE_MR_ENDPOINT], [1], [If defined, the OFI transport will use FI_MR_ENDPOINT])])
 
+AC_ARG_ENABLE([mr-local],
+    [AS_HELP_STRING([--enable-mr-local],
+                    [Use FI_MR_LOCAL to require local memory descriptors in RMA operations. (default: disabled)])])
+AS_IF([test "$enable_mr_local" = "yes"],
+      [AC_DEFINE([ENABLE_MR_LOCAL], [1], [If defined, the OFI transport will use FI_MR_LOCAL])])
+
 AC_ARG_ENABLE([ofi-manual-progress],
     [AS_HELP_STRING([--enable-ofi-manual-progress],
                     [Use FI_MANUAL_PROGRESS for data progress control mode. (default: disabled)])])
@@ -326,6 +332,13 @@ AC_ARG_ENABLE([shr-atomics],
                     [Enable shared memory atomic operations. (default: auto)])])
 AS_IF([test "$enable_shr_atomics" = "yes"],
       [AC_DEFINE([USE_SHR_ATOMICS], [1], [If defined, the shared memory layer will perform processor atomics.])])
+
+AC_ARG_ENABLE([hierarchical-barrier],
+    [AS_HELP_STRING([--enable-hierarchical-barrier],
+                    [Enable the hierarchical barrier: intranode phase uses CPU atomics,
+                     internode phase uses NIC puts. Requires an on-node transport (XPMEM
+                     or CMA) and a network transport (OFI, Portals4, or UCX).
+                     (default: disabled)])])
 
 AC_ARG_ENABLE([manpages],
     [AS_HELP_STRING([--enable-manpages],
@@ -537,7 +550,6 @@ AM_CONDITIONAL([USE_CMA], [test "$transport_cma" = "yes"])
 
 AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
       [AC_DEFINE([USE_ON_NODE_COMMS], [1], [Define if any on-node comm transport is available])
-       AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
       ])
 
 if test "$enable_shr_atomics" = "yes"; then
@@ -549,6 +561,36 @@ fi
 if test "$enable_shr_atomics" != "no" -a "$transport_xpmem" = "yes" -a "$transport" = "none"; then
     transport_shr_atomics="yes"
     AC_DEFINE([USE_SHR_ATOMICS], [1], [If defined, the shared memory layer will perform processor atomics.])
+fi
+
+dnl Hierarchical barrier: only when explicitly requested.  Validate that an
+dnl on-node transport (XPMEM or CMA) and a network transport are both present;
+dnl error if dependencies are missing.
+transport_hierarchical_barrier="no"
+if test "$enable_hierarchical_barrier" = "yes"; then
+    dnl Check on-node transport dependency
+    if test "$transport_xpmem" != "yes" -a "$transport_cma" != "yes"; then
+        AC_MSG_ERROR([--enable-hierarchical-barrier requires an on-node transport; configure with --with-xpmem or --with-cma])
+    dnl Check network transport dependency
+    elif test "$transport_ofi" != "yes" -a "$transport_portals4" != "yes" -a "$transport_ucx" != "yes"; then
+        AC_MSG_ERROR([--enable-hierarchical-barrier requires a network transport; configure with --with-ofi, --with-portals4, or --with-ucx])
+    else
+        transport_hierarchical_barrier="yes"
+    fi
+fi
+if test "$transport_hierarchical_barrier" = "yes"; then
+    AC_DEFINE([USE_HIERARCHICAL_BARRIER], [1],
+              [If defined, enables the hierarchical barrier: intranode CPU atomics + internode NIC puts.])
+    dnl The hierarchical barrier uses shared-memory puts/gets (XPMEM/CMA) for
+    dnl intranode data movement. USE_SHR_ATOMICS is defined so that the
+    dnl shmem_shr_transport_atomic() function bodies are compiled; the routing
+    dnl logic in shmem_shr_transport_use_atomic() gates them behind a runtime
+    dnl check (shr_size == num_pes), so user-visible AMOs only go through CPU
+    dnl atomics when all PEs are on one node. In the multi-node case they
+    dnl always use the NIC, preserving the single-coherency-domain invariant.
+    AC_DEFINE([USE_SHR_ATOMICS], [1],
+              [If defined, the shared memory layer will perform processor atomics.])
+    transport_shr_atomics="yes"
 fi
 
 AC_ARG_ENABLE([pmi-simple], [AS_HELP_STRING([--enable-pmi-simple],
@@ -1050,6 +1092,7 @@ echo "  XPMEM:          $transport_xpmem"
 echo "  CMA:            $transport_cma"
 echo "  memcpy (self):  $transport_memcpy"
 echo "  Shr. atomics:   $transport_shr_atomics"
+echo "  Hier. barrier:  $transport_hierarchical_barrier"
 echo ""
 echo "Global Options:"
 if test "$enable_remote_virtual_addressing" = "yes"; then
