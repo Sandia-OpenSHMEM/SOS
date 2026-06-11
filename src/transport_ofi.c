@@ -214,7 +214,7 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
 
 static struct fabric_info shmem_transport_ofi_info = {0};
 
-static char *shmem_transport_ofi_prov_name = NULL;
+char *shmem_transport_ofi_prov_name = NULL;
 
 /* Check if the current OFI provider matches the given name.
  * Returns 1 if provider matches, 0 otherwise. */

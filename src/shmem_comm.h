@@ -340,8 +340,7 @@ shmem_internal_atomicv(shmem_ctx_t ctx, void *target, const void *source,
                        size_t count, size_t type_size, int pe, shm_internal_op_t op,
                        shm_internal_datatype_t datatype, long *completion)
 {
-    size_t len = type_size * count;
-    shmem_internal_assert(len > 0);
+    shmem_internal_assert(type_size * count > 0);
 
 #ifdef DISABLE_NONFETCH_AMO
     /* FIXME: This is a temporary workaround to resolve a known issue with non-fetching AMOs when using
