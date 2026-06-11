@@ -763,6 +763,8 @@ void shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void
         do {
             ret = fi_writemsg(ctx->ep, &msg, FI_COMPLETION | FI_DELIVERY_COMPLETE);
         } while (try_again(ctx, ret, &polled));
+        if (completion)
+            *completion = (long) SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
 
     } else {
