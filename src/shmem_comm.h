@@ -442,13 +442,15 @@ static inline
 void shmem_internal_copy_self(void *dest, const void *source, size_t nelems)
 {
 #ifdef USE_FI_HMEM
-    // "completion" set to 1 to wait for completion of put operation initiated
-    // by shmem_internal_put_nb, even if "completion" not incremented in call 
-    // to shmem_internal_put_nb.
-    long completion = 1;
+    /* put_nb may use inject (no counter event), bounce buffer (counter not
+     * recorded in *completion), or put_large (counter watermark set).  A
+     * watermark of 1 is not reliable across all paths, so drain all
+     * in-flight puts via put_quiet to guarantee dest is visible before
+     * returning. */
+    long completion = 0;
     shmem_internal_put_nb(SHMEM_CTX_DEFAULT, dest, source, nelems,
                           shmem_internal_my_pe, &completion);
-    shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
+    shmem_transport_put_quiet((shmem_transport_ctx_t *)SHMEM_CTX_DEFAULT);
 #else
     memcpy(dest, source, nelems);
 #endif
