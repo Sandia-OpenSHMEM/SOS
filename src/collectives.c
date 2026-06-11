@@ -14,6 +14,7 @@
  */
 
 #include "config.h"
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -603,13 +604,18 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
         sense_ptr = &fallback_sense;
     }
 
-    /* Collect local and root PE sets for this active set */
-    int *local_pes = alloca(sizeof(int) * PE_size);
+    /* Collect local and root PE sets for this active set.
+     * Use malloc — PE_size can reach num_pes (100K+) at scale; alloca of
+     * that size would blow the stack. */
+    int *pe_bufs = malloc(2 * sizeof(int) * PE_size);
+    if (!pe_bufs)
+        RAISE_ERROR_STR("malloc failed for hierarchical barrier PE arrays");
+    int *local_pes = pe_bufs;
     int local_count = 0;
     shmem_internal_build_local_set(PE_start, PE_stride, PE_size,
                                    local_pes, &local_count);
 
-    int *root_pes = alloca(sizeof(int) * PE_size);
+    int *root_pes = pe_bufs + PE_size;
     int root_count = 0;
     shmem_internal_build_root_active_set(PE_start, PE_stride, PE_size,
                                          root_pes, &root_count);
@@ -660,7 +666,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
 
     /* ---- Degenerate case: all active PEs on one node ---- */
     if (root_count <= 1 || local_count == PE_size) {
-        if (my_vidx < 0) return;
+        if (my_vidx < 0) { free(pe_bufs); return; }
 
         double t0 = shmem_internal_params.HIER_BARRIER_DEBUG ? hier_now_us() : 0.0;
 
@@ -713,6 +719,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
         }
 
         (*sense_ptr)++;
+        free(pe_bufs);
         return;
     }
 
@@ -809,6 +816,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
 
     if (my_vidx >= 0) { (*sense_ptr)++; }
     /* PEs absent from local_pes (my_vidx < 0) fall through silently. */
+    free(pe_bufs);
 }
 
 void
