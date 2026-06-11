@@ -597,7 +597,7 @@ static inline
 int shmem_transport_fence(shmem_transport_ctx_t* ctx)
 {
 #if WANT_TOTAL_DATA_ORDERING == 0
-    /* CXI provider maintains per-EP FIFO ordering, so FI_TRANSMIT_COMPLETE
+    /* CXI provider maintains per-EP FIFO ordering, so FI_DELIVERY_COMPLETE
      * guarantees subsequent operations see prior puts at the target. Skip
      * put_quiet poll for ~1-2µs latency improvement. Other providers require
      * explicit put_quiet to ensure remote visibility before fence returns. */
