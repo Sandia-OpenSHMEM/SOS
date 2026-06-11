@@ -218,7 +218,7 @@ static char *shmem_transport_ofi_prov_name = NULL;
 
 /* Check if the current OFI provider matches the given name.
  * Returns 1 if provider matches, 0 otherwise. */
-int
+static inline int
 shmem_transport_ofi_check_provider(const char *name)
 {
     return (shmem_transport_ofi_prov_name &&
