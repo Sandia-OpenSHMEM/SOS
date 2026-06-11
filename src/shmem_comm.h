@@ -444,9 +444,10 @@ void shmem_internal_copy_self(void *dest, const void *source, size_t nelems)
     /* put_nb routes through inject, bounce-buffer, or put_large depending on
      * size.  The inject path has no counter event, so put_wait (watermark-
      * based) is not sufficient — it would return immediately with completion=0
-     * and leave the GPU write unordered.  put_quiet drains all pending puts
-     * and provides the NIC-level ordering fence needed to guarantee dest is
-     * visible at the target GPU before returning.
+     * and leave the heterogeneous memory (FI_HMEM) write unordered.
+     * put_quiet drains all pending puts and provides the NIC-level ordering
+     * fence needed to guarantee dest is visible in heterogeneous memory
+     * before returning.
      * bounce-buffer and put_large also set *completion, but put_quiet subsumes
      * that wait, so no separate put_wait call is needed. */
     long completion = 0;
