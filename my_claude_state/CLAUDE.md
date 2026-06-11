@@ -102,20 +102,52 @@ shmem_transport_put_quiet((shmem_transport_ctx_t *)SHMEM_CTX_DEFAULT);
 
 **Location**: `src/symmetric_heap_c.c:mmap_alloc()`
 
-**Allocation Strategy** (Linux only):
-1. Try hugetlbfs file mapping (if SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES=1)
-2. Fall back to anonymous MAP_HUGETLB with explicit 2MB page size: `MAP_HUGE_SHIFT (21 << MAP_HUGE_SHIFT)`
-3. Fall back to THP via `madvise(MADV_HUGEPAGE)`
-4. Final fallback: regular pages
+**Control**: `SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES` (default: enabled)
+- When enabled (1): Attempts all tiers in order until success
+- When disabled (0): Skips directly to regular pages (tier 4)
+
+**Tiered Allocation Strategy** (Linux only, when enabled):
+
+**Tier 1: hugetlbfs file mapping**
+- Requires: Mounted hugetlbfs + available pages in static pool (`nr_hugepages`)
+- Guarantees: 2MB pages, explicit control
+- Rounded size: `CEILING(bytes, page_size)` returned via `*mapped_bytes`
+
+**Tier 2: Anonymous MAP_HUGETLB**
+```c
+MAP_ANON | MAP_HUGETLB | (21 << MAP_HUGE_SHIFT)  // Force 2MB pages
+```
+- Uses: Static pool (`nr_hugepages`) first, then overcommit pool (`nr_overcommit_hugepages`)
+- Guarantees: 2MB pages (either pre-allocated or on-demand from regular RAM)
+- Critical for Cray systems: Overcommit pool allows allocation beyond static pool
+
+**Tier 3: THP via madvise**
+```c
+mmap(MAP_ANON | MAP_PRIVATE) + madvise(MADV_HUGEPAGE)
+```
+- Uses: Regular RAM, best-effort promotion by kernel
+- Behavior: Pages start as 4KB, kernel promotes to 2MB over time
+- No guarantees: May remain 4KB if huge pages unavailable
+
+**Tier 4: Regular pages**
+```c
+mmap(NULL, MAP_ANON | MAP_PRIVATE)  // NULL = give up on requested_base
+```
+- Always succeeds (unless system OOM)
+- 4KB pages: 512× more TLB pressure vs. 2MB
+- Breaks RVA: No virtual address symmetry guarantee
 
 **Virtual Address Symmetry**:
-- Prefer `requested_base` hint to preserve virtual address symmetry (required for RVA)
-- Only use NULL hint as last resort if requested_base fails
+- Tiers 1-3: Prefer `requested_base` to preserve virtual address symmetry (required for RVA)
+- Tier 4: Uses NULL hint (gives up on symmetry for robustness)
 - `requested_base = (data_base + data_length + 2GB) & ~(1GB - 1)` (aligned to 1GB boundary)
 
-**Size Tracking**:
-- hugetlbfs path rounds up to page boundary: `mapped_bytes = CEILING(bytes, page_size)`
-- Return actual mapped size via `*mapped_bytes` for correct munmap/transport registration
+**Huge Page Pools on Cray/Perlmutter**:
+```bash
+nr_hugepages              # Static pre-allocated pool
+nr_overcommit_hugepages   # On-demand allocation from regular RAM
+```
+Both pools feed tier 2 (anonymous MAP_HUGETLB). Overcommit allows tier 2 to succeed at extreme scale even when static pool is exhausted.
 
 ### 5. Put Pipeline Depth
 
@@ -225,6 +257,13 @@ Remove function definition from .c file. Each compilation unit gets its own copy
 - Free in shmem_transport_fini()
 - Gate hybrid MR setup on CXI provider check
 - Change strncmp to strcmp for exact match
+
+### Huge Page Gating Fix (commit 676f1a8e)
+- **Problem**: `SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES` only controlled tier 1 (hugetlbfs file)
+- **Impact**: Tiers 2 & 3 ran unconditionally in error paths, impossible to disable for testing
+- **Solution**: Gate all huge page attempts (tiers 1-3) on the flag
+- **Behavior**: Flag=1 tries all tiers (1→2→3→4), Flag=0 skips to tier 4 (regular pages)
+- **Benefit**: Name now matches behavior, enables controlled testing with/without huge pages
 
 ## Code Style & Conventions
 

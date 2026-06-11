@@ -297,31 +297,43 @@ void shmem_transport_ofi_put_large(...)
 
 ## 7. Huge Page Allocation Strategy
 
-### Design Pattern: Graduated Fallback with Virtual Address Hints
+### Design Pattern: Graduated Fallback with User Control
 
-**Architecture**: Multi-tier allocation strategy prioritizing huge pages while maintaining correctness.
+**Architecture**: Multi-tier allocation strategy with explicit user control via `SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES`.
 
-**Allocation Tiers**:
+**Control Behavior** (as of commit 676f1a8e):
+- **Enabled (1, default)**: Attempts all tiers in sequence until success
+- **Disabled (0)**: Skips directly to tier 4 (regular pages)
+
+This allows controlled testing and comparison of huge page impact on performance.
+
+**Allocation Tiers** (when USE_HUGE_PAGES enabled):
 ```
-1. hugetlbfs file (if SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES)
+1. hugetlbfs file mapping
    ├─ Find mounted hugetlbfs with requested page size
    ├─ Create file, ftruncate to rounded size
    ├─ mmap(requested_base, ..., MAP_SHARED | MAP_HUGETLB, fd, 0)
+   ├─ Source: Static huge page pool (nr_hugepages)
    └─ On failure → tier 2
 
 2. Anonymous MAP_HUGETLB with explicit page size
    ├─ mmap(requested_base, ..., MAP_ANON | MAP_HUGETLB | (21 << MAP_HUGE_SHIFT), -1, 0)
    ├─ 21 << MAP_HUGE_SHIFT forces 2MB pages (2^21 bytes)
+   ├─ Source: Static pool first, then overcommit pool (nr_overcommit_hugepages)
+   ├─ Critical: Works with Cray's overcommit - allows beyond static pool
    └─ On failure → tier 3
 
 3. Transparent Huge Pages (THP) via madvise
    ├─ mmap(requested_base, ..., MAP_ANON | MAP_PRIVATE, -1, 0)
    ├─ madvise(ptr, size, MADV_HUGEPAGE)
-   └─ Kernel promotes to huge pages opportunistically
+   ├─ Source: Regular RAM, best-effort kernel promotion
+   └─ Kernel promotes to huge pages opportunistically (may remain 4KB)
 
-4. Regular pages (final fallback)
+4. Regular pages (final fallback, or immediate if USE_HUGE_PAGES=0)
    └─ mmap(NULL, ..., MAP_ANON | MAP_PRIVATE, -1, 0)
 ```
+
+**Key Architectural Decision**: All huge page attempts (tiers 1-3) are gated on the single flag. Prior implementation had tier 1 gated but tiers 2-3 running unconditionally in error paths, making the flag name misleading and preventing controlled testing.
 
 **Virtual Address Symmetry Constraints**:
 ```c
@@ -332,9 +344,11 @@ void *requested_base =
 
 **Design Rationale**:
 - **Why requested_base**: RVA (Remote Virtual Addressing) requires symmetric virtual addresses across PEs
-- **Fallback to NULL**: Only as last resort; breaks RVA but allows job to proceed
+- **Fallback to NULL**: Only tier 4 uses NULL; breaks RVA but allows job to proceed
 - **Alignment**: 1GB boundary prevents TLB thrashing and improves performance
 - **Rounding**: hugetlbfs requires size aligned to page boundary; track actual mapped size for munmap
+- **Overcommit pools**: Tier 2 can allocate from two sources - static (nr_hugepages) or overcommit (nr_overcommit_hugepages). On Cray systems, overcommit pool allows tier 2 to succeed at extreme scale by allocating 2MB pages from regular RAM on demand.
+- **Impact on CXI MR/ATU**: All tiers 1-3 provide 2MB pages → better ATU cache hit rates, fewer MR registrations, more effective hybrid MR descriptor mode. Tier 4's 4KB pages cause 512× more TLB/ATU pressure.
 
 **Size Tracking Architecture**:
 ```c

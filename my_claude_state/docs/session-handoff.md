@@ -3,17 +3,26 @@
 ## Session Summary
 Fixed critical build issues and compiler warnings across the performance branch and updated parent branches (bcm_test-FI_MR_LOCAL, huge-page-support-clean) with the fixes. All changes are committed but not yet pushed or tested on Perlmutter.
 
-**Update**: Documentation is being maintained during current session. Added policy note: do not add Co-Authored-By lines to commits per organizational requirements.
+**Updates This Session**:
+- Documentation maintained as work progresses
+- Added policy: no Co-Authored-By lines in commits per organizational requirements
+- History rewritten via git filter-branch: GPU terminology → FI_HMEM (commit hashes changed)
+- Fixed huge page gating: SHMEM_SYMMETRIC_HEAP_USE_HUGE_PAGES now controls all tiers
+- Documentation updated in my_claude_state/ and committed
 
 ---
 
 ## Current Branch State
 
-### performance (HEAD: 38549f6a)
-- 16 commits ahead of upstream_mainline/performance
-- Clean build (no warnings or errors)
+### performance (HEAD: 676f1a8e)
+- Latest commits:
+  - 676f1a8e: symmetric_heap: gate all huge page attempts on USE_HUGE_PAGES flag
+  - 0993db04: src: update FI_HMEM code comments to use correct terminology
+  - c4d24dc5: docs: add project documentation and update FI_HMEM terminology
+- History rewritten (filter-branch): commit hashes changed from earlier session
+- Clean build expected (not yet tested after huge page fix)
 - Ready for Perlmutter testing
-- **DO NOT PUSH** until validated on Perlmutter
+- **DO NOT PUSH** until validated on Perlmutter (will require --force-with-lease)
 
 ### bcm_test-FI_MR_LOCAL (HEAD: 23c16af4)
 - 2 commits ahead of origin
