@@ -566,6 +566,8 @@ shmem_internal_build_root_active_set(int PE_start, int PE_stride, int PE_size,
 
 /* CPU atomic load of the long at `target` via local mapped pointer. */
 static inline long
+shmem_internal_cpu_atomic_load_long(long *target, int noderank) __attribute__((unused));
+static inline long
 shmem_internal_cpu_atomic_load_long(long *target, int noderank)
 {
     void *remote_ptr;
@@ -632,12 +634,12 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
                   ? (my_local_idx - root_local_idx + local_count) % local_count
                   : -1;
 
-    int  tree_parent_shr = -1;
     int  tree_nchildren  = 0;
     int *tree_child_shr  = alloca(sizeof(int) * tree_radix);
     if (my_vidx >= 0) {
         if (my_vidx > 0) {
-            tree_parent_shr = shmem_runtime_get_node_rank(
+            /* Parent computed but not used - left for potential future optimization */
+            (void)shmem_runtime_get_node_rank(
                 local_pes[((my_vidx - 1) / tree_radix + root_local_idx) % local_count]);
         }
         for (int j = 1; j <= tree_radix; j++) {
@@ -657,11 +659,9 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
     long *up_pSync   = local_pSync;
     long *down_pSync = local_pSync + (long)(shr_size * HIER_SLOT_STRIDE);
 
-    /* Resolve own up-slot and down-slot mapped pointers once. */
-    void *my_up_raw, *my_down_raw;
-    shmem_shr_transport_ptr(&up_pSync[my_shr_rank * HIER_SLOT_STRIDE],   my_shr_rank, &my_up_raw);
+    /* Resolve own down-slot mapped pointer once. */
+    void *my_down_raw;
     shmem_shr_transport_ptr(&down_pSync[my_shr_rank * HIER_SLOT_STRIDE], my_shr_rank, &my_down_raw);
-    volatile long *my_up_slot   = (volatile long *)my_up_raw;
     volatile long *my_down_slot = (volatile long *)my_down_raw;
 
     /* ---- Degenerate case: all active PEs on one node ---- */

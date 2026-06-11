@@ -216,15 +216,6 @@ static struct fabric_info shmem_transport_ofi_info = {0};
 
 char *shmem_transport_ofi_prov_name = NULL;
 
-/* Check if the current OFI provider matches the given name.
- * Returns 1 if provider matches, 0 otherwise. */
-static inline int
-shmem_transport_ofi_check_provider(const char *name)
-{
-    return (shmem_transport_ofi_prov_name &&
-            strncmp(shmem_transport_ofi_prov_name, name, strlen(name)) == 0);
-}
-
 static size_t shmem_transport_ofi_grow_size = 128;
 
 #define SHMEM_TRANSPORT_CTX_DEFAULT_ID -1
