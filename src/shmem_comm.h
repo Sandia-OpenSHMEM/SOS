@@ -425,13 +425,18 @@ static inline
 void shmem_internal_copy_self(void *dest, const void *source, size_t nelems)
 {
 #ifdef USE_FI_HMEM
-    // "completion" set to 1 to wait for completion of put operation initiated
-    // by shmem_internal_put_nb, even if "completion" not incremented in call 
-    // to shmem_internal_put_nb.
-    long completion = 1;
+    /* put_nb routes through inject, bounce-buffer, or put_large depending on
+     * size.  The inject path has no counter event, so put_wait (watermark-
+     * based) is not sufficient — it would return immediately with completion=0
+     * and leave the GPU write unordered.  put_quiet drains all pending puts
+     * and provides the NIC-level ordering fence needed to guarantee dest is
+     * visible at the target GPU before returning.
+     * bounce-buffer and put_large also set *completion, but put_quiet subsumes
+     * that wait, so no separate put_wait call is needed. */
+    long completion = 0;
     shmem_internal_put_nb(SHMEM_CTX_DEFAULT, dest, source, nelems,
                           shmem_internal_my_pe, &completion);
-    shmem_internal_put_wait(SHMEM_CTX_DEFAULT, &completion);
+    shmem_transport_put_quiet((shmem_transport_ctx_t *)SHMEM_CTX_DEFAULT);
 #else
     memcpy(dest, source, nelems);
 #endif
