@@ -532,6 +532,18 @@ int shmem_transport_quiet(shmem_transport_ctx_t* ctx)
     return 0;
 }
 
+/* Check if the current OFI provider exactly matches the given name.
+ * Uses strcmp so that layered providers (e.g. "foo;ofi_rxm") do not
+ * incorrectly inherit provider-specific fast paths.
+ * Returns 1 if provider matches, 0 otherwise. */
+extern char *shmem_transport_ofi_prov_name;
+static inline int
+shmem_transport_ofi_check_provider(const char *name)
+{
+    return (shmem_transport_ofi_prov_name &&
+            strcmp(shmem_transport_ofi_prov_name, name) == 0);
+}
+
 
 static inline
 int shmem_transport_fence(shmem_transport_ctx_t* ctx)

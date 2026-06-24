@@ -99,6 +99,8 @@ SHMEM_INTERNAL_ENV_DEF(OFI_DOMAIN, string, "auto", SHMEM_INTERNAL_ENV_CAT_TRANSP
                        "Fabric domain that should be used by the OFI transport")
 SHMEM_INTERNAL_ENV_DEF(OFI_TX_POLL_LIMIT, long, DEFAULT_POLL_LIMIT, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Put completion poll limit")
+SHMEM_INTERNAL_ENV_DEF(OFI_CXI_HYBRID_MR_DESC, bool, true, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Enable CXI hybrid local MR descriptor mode (skips internal MR registration when desc is non-NULL); ignored on non-CXI providers")
 SHMEM_INTERNAL_ENV_DEF(OFI_RX_POLL_LIMIT, long, DEFAULT_POLL_LIMIT, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Get completion poll limit")
 SHMEM_INTERNAL_ENV_DEF(OFI_STX_MAX, long, 1, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
