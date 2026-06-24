@@ -162,15 +162,16 @@ shmem_internal_get_next(intptr_t incr)
 
 /* alloc VM space starting @ '_end' + 1GB */
 #define ONEGIG (1024UL*1024UL*1024UL)
-static void *mmap_alloc(size_t bytes)
+static void *mmap_alloc(size_t bytes, size_t *mapped_bytes)
 {
     char *file_name = NULL;
     int fd = 0;
     char *directory = NULL;
-    void *requested_base =
-        (void*) (((unsigned long) shmem_internal_data_base +
-                  shmem_internal_data_length + 2 * ONEGIG) & ~(ONEGIG - 1));
-    void *ret;
+    void *requested_base = (void*) (((unsigned long) shmem_internal_data_base + shmem_internal_data_length + 2 * ONEGIG) & ~(ONEGIG - 1));
+    void *ret = MAP_FAILED;
+    size_t hugetlbfs_bytes = 0;  /* Rounded size for hugetlbfs, 0 if not used */
+
+    *mapped_bytes = bytes;  /* default: actual mapped size equals requested size */
 
 #ifdef __linux__
     /* huge page support only on Linux for now, default is to use 2MB large pages */
@@ -191,24 +192,89 @@ static void *mmap_alloc(size_t bytes)
                     sprintf(file_name, "%s/%s.%d", directory, basename, getpid());
                     fd = open(file_name, O_CREAT | O_RDWR, 0755);
                     if (fd < 0) {
-                        RAISE_WARN_STR("file open failed, cannot use huge pages");
+                        DEBUG_MSG("file open failed, will fall back to anonymous MAP_HUGETLB");
+                        free(directory);
+                        free(file_name);
+                        directory = NULL;
+                        file_name = NULL;
                         fd = 0;
                     } else {
-                        /* have to round up by the pagesize being used */
-                        bytes = CEILING(bytes, shmem_internal_params.SYMMETRIC_HEAP_PAGE_SIZE);
+                        /* Round up by the pagesize for hugetlbfs file */
+                        hugetlbfs_bytes = CEILING(bytes, shmem_internal_params.SYMMETRIC_HEAP_PAGE_SIZE);
                     }
                 }
             }
         }
     }
-#endif /* __linux__ */
 
+    DEBUG_MSG("mmap_alloc: bytes=%zu, hugetlbfs_bytes=%zu, fd=%d",
+              bytes, hugetlbfs_bytes, fd);
+
+    if (fd) {
+        /* Map the hugetlbfs file directly; MAP_ANON must not be used here
+         * because MAP_ANONYMOUS causes the kernel to ignore the fd, which
+         * would silently fall back to regular pages. */
+        if (ftruncate(fd, hugetlbfs_bytes) == -1) {
+            DEBUG_MSG("ftruncate on hugetlbfs file failed (%s), falling back", strerror(errno));
+            unlink(file_name);
+            close(fd);
+            free(directory);
+            free(file_name);
+            directory = NULL;
+            file_name = NULL;
+            fd = 0;
+        } else {
+            ret = mmap(requested_base, hugetlbfs_bytes, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_HUGETLB, fd, 0);
+            if (ret != MAP_FAILED) {
+                DEBUG_MSG("Allocated symmetric heap via hugetlbfs file: %zu bytes", hugetlbfs_bytes);
+                *mapped_bytes = hugetlbfs_bytes;
+            }
+            unlink(file_name);
+            close(fd);
+            free(directory);
+            free(file_name);
+            directory = NULL;
+            file_name = NULL;
+            fd = 0;
+        }
+    }
+
+    /* If hugetlbfs file mapping failed or was not attempted, continue with the
+     * fallback chain.  Note: fd is always zeroed after the hugetlbfs block
+     * (cleanup on both success and failure paths), so testing fd == 0 here
+     * would always be true and would incorrectly enter the fallback after a
+     * successful hugetlbfs allocation. Test ret only. */
+    if (ret == MAP_FAILED) {
+        if (shmem_internal_params.SYMMETRIC_HEAP_USE_HUGE_PAGES) {
+            /* Try anonymous MAP_HUGETLB (works with nr_overcommit_hugepages).
+             * Explicitly request 2MB pages via MAP_HUGE_SHIFT (21 << MAP_HUGE_SHIFT = 2^21 = 2MB). */
+            ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE | MAP_HUGETLB | (21 << MAP_HUGE_SHIFT), -1, 0);
+            if (ret == MAP_FAILED) {
+                DEBUG_MSG("mmap(MAP_HUGETLB) failed (%s), falling back to regular pages", strerror(errno));
+            } else {
+                DEBUG_MSG("Allocated symmetric heap via anonymous MAP_HUGETLB (2MB pages): %zu bytes", bytes);
+            }
+        }
+
+        /* Regular pages: used when huge pages are not requested, or when the
+         * reserved huge-page paths above are unavailable.  Identical to the
+         * non-huge-page mapping: a single fixed-address map at requested_base
+         * so the symmetric heap keeps the same virtual address on every PE. */
+        if (ret == MAP_FAILED) {
+            ret = mmap(requested_base, bytes, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, fd, 0);
+            if (ret != MAP_FAILED) {
+                DEBUG_MSG("Allocated symmetric heap via regular pages (4KB): %zu bytes", bytes);
+            }
+        }
+    }
+#else
     ret = mmap(requested_base,
                bytes,
                PROT_READ | PROT_WRITE,
                MAP_ANON | MAP_PRIVATE,
                fd,
                0);
+#endif /* __linux__ */
     if (ret == MAP_FAILED) {
         RAISE_WARN_MSG("Unable to allocate sym. heap, size %zuB: %s\n"
                        RAISE_PE_PREFIX
@@ -216,16 +282,15 @@ static void *mmap_alloc(size_t bytes)
                        bytes, strerror(errno), shmem_internal_my_pe);
         ret = NULL;
     }
-    if (fd) {
-        if (file_name)
-            unlink(file_name);
-        close(fd);
-    }
+    /* Cleanup any remaining allocations (will be NULL if already freed above) */
     if (directory) {
         free(directory);
     }
     if (file_name) {
         free(file_name);
+    }
+    if (fd > 0) {
+        close(fd);
     }
     return ret;
 }
@@ -240,9 +305,13 @@ shmem_internal_symmetric_init(void)
 				 SHMEM_MAX_BOUNCE_BUFFER_OVERHEAD;
 
     if (!shmem_internal_params.SYMMETRIC_HEAP_USE_MALLOC) {
+        size_t mapped_length = shmem_internal_heap_length;
         shmem_internal_heap_base =
             shmem_internal_heap_curr =
-            mmap_alloc(shmem_internal_heap_length);
+            mmap_alloc(shmem_internal_heap_length, &mapped_length);
+        /* Use the actual mapped size for munmap and transport registration.
+         * On the hugetlbfs path this may be rounded up to a huge-page boundary. */
+        shmem_internal_heap_length = mapped_length;
     } else {
         shmem_internal_heap_base =
             shmem_internal_heap_curr =
