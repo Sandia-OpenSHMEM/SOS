@@ -330,9 +330,10 @@ AS_IF([test "$enable_shr_atomics" = "yes"],
 AC_ARG_ENABLE([hierarchical-barrier],
     [AS_HELP_STRING([--enable-hierarchical-barrier],
                     [Enable the hierarchical barrier: intranode phase uses CPU atomics,
-                     internode phase uses NIC puts. Requires an on-node transport (XPMEM
-                     or CMA) and a network transport (OFI, Portals4, or UCX).
-                     (default: disabled)])])
+                     internode phase uses NIC puts. Requires XPMEM (the intranode
+                     phase does CPU atomics on peers' slots via mapped pointers, which
+                     only XPMEM provides) and a network transport (OFI, Portals4, or
+                     UCX). (default: disabled)])])
 
 AC_ARG_ENABLE([manpages],
     [AS_HELP_STRING([--enable-manpages],
@@ -557,14 +558,16 @@ if test "$enable_shr_atomics" != "no" -a "$transport_xpmem" = "yes" -a "$transpo
     AC_DEFINE([USE_SHR_ATOMICS], [1], [If defined, the shared memory layer will perform processor atomics.])
 fi
 
-dnl Hierarchical barrier: only when explicitly requested.  Validate that an
-dnl on-node transport (XPMEM or CMA) and a network transport are both present;
-dnl error if dependencies are missing.
+dnl Hierarchical barrier: only when explicitly requested.  Validate that XPMEM
+dnl and a network transport are both present; error if dependencies are missing.
+dnl XPMEM (not CMA) is required because the intranode phase performs CPU atomics
+dnl on peers' pSync slots through directly mapped pointers (shmem_shr_transport_ptr),
+dnl which only XPMEM can provide; CMA's copy-based path cannot.
 transport_hierarchical_barrier="no"
 if test "$enable_hierarchical_barrier" = "yes"; then
     dnl Check on-node transport dependency
-    if test "$transport_xpmem" != "yes" -a "$transport_cma" != "yes"; then
-        AC_MSG_ERROR([--enable-hierarchical-barrier requires an on-node transport; configure with --with-xpmem or --with-cma])
+    if test "$transport_xpmem" != "yes"; then
+        AC_MSG_ERROR([--enable-hierarchical-barrier requires XPMEM; configure with --with-xpmem])
     dnl Check network transport dependency
     elif test "$transport_ofi" != "yes" -a "$transport_portals4" != "yes" -a "$transport_ucx" != "yes"; then
         AC_MSG_ERROR([--enable-hierarchical-barrier requires a network transport; configure with --with-ofi, --with-portals4, or --with-ucx])
@@ -575,8 +578,8 @@ fi
 if test "$transport_hierarchical_barrier" = "yes"; then
     AC_DEFINE([USE_HIERARCHICAL_BARRIER], [1],
               [If defined, enables the hierarchical barrier: intranode CPU atomics + internode NIC puts.])
-    dnl The hierarchical barrier uses shared-memory puts/gets (XPMEM/CMA) for
-    dnl intranode data movement. USE_SHR_ATOMICS is defined so that the
+    dnl The hierarchical barrier uses XPMEM-mapped pointers for intranode data
+    dnl movement (CPU atomics on peers' slots). USE_SHR_ATOMICS is defined so that the
     dnl shmem_shr_transport_atomic() function bodies are compiled; the routing
     dnl logic in shmem_shr_transport_use_atomic() gates them behind a runtime
     dnl check (shr_size == num_pes), so user-visible AMOs only go through CPU
