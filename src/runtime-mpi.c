@@ -39,6 +39,7 @@ static int initialized_mpi = 0;
 static int node_size;
 static int *node_ranks;
 static int *is_node_root = NULL;
+static int *node_id_array = NULL;
 
 char* kv_store_me;
 char* kv_store_all;
@@ -107,6 +108,8 @@ shmem_runtime_init(int enable_node_ranks)
 #ifdef USE_HIERARCHICAL_BARRIER
         is_node_root = malloc(size * sizeof(int));
         if (NULL == is_node_root) return 9;
+        node_id_array = malloc(size * sizeof(int));
+        if (NULL == node_id_array) return 10;
 #endif
     }
 
@@ -123,6 +126,7 @@ shmem_runtime_fini(void)
         MPI_Comm_free(&SHMEM_RUNTIME_SHARED);
         free(node_ranks);
         free(is_node_root);
+        free(node_id_array);
     }
 
     MPI_Comm_free(&SHMEM_RUNTIME_WORLD);
@@ -240,6 +244,21 @@ shmem_runtime_is_node_root_pe(int pe)
     return is_node_root[pe];
 }
 
+
+int
+shmem_runtime_get_node_id(int pe)
+{
+    shmem_internal_assert(pe < size && pe >= 0);
+
+    if (size == 1)
+        return 0;
+
+    if (NULL == node_id_array)
+        return pe;
+
+    return node_id_array[pe];
+}
+
 int
 shmem_runtime_exchange(void)
 {
@@ -289,6 +308,15 @@ shmem_runtime_exchange(void)
             is_node_root[i] = (abs_node_ranks[i] == 0) ? 1 : 0;
 
         free(abs_node_ranks);
+
+        /* Compute node_id_array: each PE's node is identified by the global
+         * rank of its lowest-ranked process.  Bcast rank-0's world rank within
+         * the shared communicator so every PE on the same node gets the same
+         * value, then Allgather so all PEs know every other PE's node root. */
+        int my_node_root_grank = rank;
+        MPI_Bcast(&my_node_root_grank, 1, MPI_INT, 0, SHMEM_RUNTIME_SHARED);
+        MPI_Allgather(&my_node_root_grank, 1, MPI_INT,
+                      node_id_array, 1, MPI_INT, SHMEM_RUNTIME_WORLD);
 #endif
     }
 

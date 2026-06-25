@@ -42,11 +42,16 @@ void shmem_runtime_barrier(void);
 /* Utility functions used to implement the runtime layer */
 int shmem_runtime_util_put_hostname(void);
 int shmem_runtime_util_populate_node(int *location_array, int size, int *node_size);
-int shmem_runtime_util_populate_global_node_roots(int *is_node_root, int size);
+int shmem_runtime_util_populate_global_node_roots(int *is_node_root, int *node_id_out, int size);
 
 /* Returns 1 if PE pe is the lowest-ranked PE on its own node, 0 otherwise.
  * Valid after shmem_runtime_exchange(). */
 int shmem_runtime_is_node_root_pe(int pe);
+
+/* Returns the global PE number of the lowest-ranked PE on pe's node.
+ * All PEs on the same physical node share the same node_id value.
+ * Valid after shmem_runtime_exchange(). */
+int shmem_runtime_get_node_id(int pe);
 
 int shmem_runtime_util_encode(const void *inval, int invallen, char *outval, int outvallen);
 int shmem_runtime_util_decode(const char *inval, void *outval, size_t outvallen);
