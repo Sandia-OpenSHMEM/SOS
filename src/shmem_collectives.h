@@ -56,7 +56,9 @@ void shmem_internal_sync_dissem(int PE_start, int PE_stride, int PE_size, long *
 #ifdef USE_HIERARCHICAL_BARRIER
 void shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
                                       long *pSync, long *local_pSync,
-                                      long *hier_sense_ptr);
+                                      long *hier_sense_ptr,
+                                      shmem_internal_hier_cache_t *hier_cache);
+void shmem_internal_hier_cache_free(shmem_internal_hier_cache_t *hier_cache);
 void shmem_internal_hier_barrier_print_stats(void);
 #endif
 
@@ -84,7 +86,7 @@ shmem_internal_sync(int PE_start, int PE_stride, int PE_size, long *pSync)
             shmem_internal_sync_hierarchical(PE_start, PE_stride, PE_size,
                                              pSync,
                                              shmem_internal_hierarchical_local_psync,
-                                             NULL);
+                                             NULL, NULL);
             break;
         }
 #endif
@@ -108,7 +110,7 @@ shmem_internal_sync(int PE_start, int PE_stride, int PE_size, long *pSync)
         shmem_internal_sync_hierarchical(PE_start, PE_stride, PE_size,
                                          pSync,
                                          shmem_internal_hierarchical_local_psync,
-                                         NULL);
+                                         NULL, NULL);
         break;
 #endif
     default:
@@ -177,7 +179,8 @@ shmem_internal_sync_all(void)
         shmem_internal_sync_hierarchical(0, 1, shmem_internal_num_pes,
                                          shmem_internal_sync_all_psync,
                                          shmem_internal_sync_all_local_psync,
-                                         &shmem_internal_team_world.hier_sense);
+                                         &shmem_internal_team_world.hier_sense,
+                                         &shmem_internal_team_world.hier_cache);
         shmem_internal_membar_acq_rel();
         shmem_transport_syncmem();
         return;
@@ -207,7 +210,8 @@ shmem_internal_barrier_all(void)
         shmem_internal_sync_hierarchical(0, 1, shmem_internal_num_pes,
                                          shmem_internal_barrier_all_psync,
                                          shmem_internal_barrier_all_local_psync,
-                                         &shmem_internal_team_world.hier_sense);
+                                         &shmem_internal_team_world.hier_sense,
+                                         &shmem_internal_team_world.hier_cache);
         shmem_internal_membar_acq_rel();
         shmem_transport_syncmem();
         return;
@@ -237,7 +241,8 @@ shmem_internal_sync_for_team(shmem_internal_team_t *team, long *pSync)
         shmem_internal_sync_hierarchical(team->start, team->stride, team->size,
                                          pSync,
                                          shmem_internal_hierarchical_local_psync,
-                                         &team->hier_sense);
+                                         &team->hier_sense,
+                                         &team->hier_cache);
         shmem_internal_membar_acq_rel();
         shmem_transport_syncmem();
         return;

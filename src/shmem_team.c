@@ -87,6 +87,7 @@ int shmem_internal_team_init(void)
         shmem_internal_team_world.psync_avail[i] = 1;
 #ifdef USE_HIERARCHICAL_BARRIER
     shmem_internal_team_world.hier_sense     = 0;
+    memset(&shmem_internal_team_world.hier_cache, 0, sizeof(shmem_internal_hier_cache_t));
 #endif
     SHMEM_TEAM_WORLD = (shmem_team_t) &shmem_internal_team_world;
 
@@ -100,6 +101,7 @@ int shmem_internal_team_init(void)
         shmem_internal_team_shared.psync_avail[i] = 1;
 #ifdef USE_HIERARCHICAL_BARRIER
     shmem_internal_team_shared.hier_sense    = 0;
+    memset(&shmem_internal_team_shared.hier_cache, 0, sizeof(shmem_internal_hier_cache_t));
 #endif
     SHMEM_TEAM_SHARED = (shmem_team_t) &shmem_internal_team_shared;
 
@@ -113,6 +115,7 @@ int shmem_internal_team_init(void)
         shmem_internal_team_node.psync_avail[i] = 1;
 #ifdef USE_HIERARCHICAL_BARRIER
     shmem_internal_team_node.hier_sense      = 0;
+    memset(&shmem_internal_team_node.hier_cache, 0, sizeof(shmem_internal_hier_cache_t));
 #endif
     SHMEMX_TEAM_NODE = (shmem_team_t) &shmem_internal_team_node;
 
@@ -533,6 +536,10 @@ void shmem_internal_team_destroy(shmem_internal_team_t *team)
     }
     shmem_internal_team_pool[team->psync_idx] = NULL;
     free(team->contexts);
+
+#ifdef USE_HIERARCHICAL_BARRIER
+    shmem_internal_hier_cache_free(&team->hier_cache);
+#endif
 
     if (team != &shmem_internal_team_world && team != &shmem_internal_team_shared &&
         team != &shmem_internal_team_node) {
