@@ -50,6 +50,13 @@ static int *hier_root_pes  = NULL;
  * O(PE_size^2).  Allocated once at init, sized to num_pes. */
 static char *hier_node_seen = NULL;
 
+/* Job-global minimum PEs-per-node, computed once at init from the global
+ * node_id array.  AUTO hierarchical-barrier selection gates on this (not the
+ * local node size) so every PE makes the same decision even on a job with
+ * heterogeneous PPN; otherwise PEs on a large node could pick hierarchical
+ * while PEs on a small node pick tree, diverging within one collective. */
+int shmem_internal_hier_min_ppn = 0;
+
 /* Layout of local_pSync — two cache-line-padded arrays, one slot per PE:
  *
  *   up-slot   for PE r: local_pSync[r * HIER_SLOT_STRIDE]
@@ -233,6 +240,24 @@ shmem_internal_collectives_init(void)
     hier_node_seen = calloc(shmem_internal_num_pes, sizeof(char));
     if (NULL == hier_local_pes || NULL == hier_root_pes ||
         NULL == hier_node_seen) return -1;
+
+    /* Compute the job-global minimum PEs-per-node from the global node_id array
+     * (already exchanged at init — no communication needed here).  node_id[pe]
+     * is the global PE number of the lowest-ranked PE on pe's node, so it both
+     * identifies the node and is a valid index in [0, num_pes); tally PE counts
+     * per node, then take the minimum over nodes that actually have PEs. */
+    {
+        int *ppn_count = calloc(shmem_internal_num_pes, sizeof(int));
+        if (NULL == ppn_count) return -1;
+        for (i = 0; i < shmem_internal_num_pes; i++)
+            ppn_count[shmem_runtime_get_node_id(i)]++;
+        shmem_internal_hier_min_ppn = shmem_internal_num_pes;
+        for (i = 0; i < shmem_internal_num_pes; i++) {
+            if (ppn_count[i] > 0 && ppn_count[i] < shmem_internal_hier_min_ppn)
+                shmem_internal_hier_min_ppn = ppn_count[i];
+        }
+        free(ppn_count);
+    }
 #endif
 
     /* initialize the binomial tree for collective operations over
