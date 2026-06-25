@@ -17,6 +17,30 @@
 
 #define N_PSYNCS_PER_TEAM   2
 
+#ifdef USE_HIERARCHICAL_BARRIER
+/* Cached hierarchical-barrier topology for a fixed active set.  All fields are
+ * invariant for a given (start, stride, size) and the node layout (both fixed
+ * for the life of a team), so they are built once on the first barrier and
+ * reused.  Holds only topology — NOT XPMEM mapped pointers, which depend on the
+ * local_pSync array (sync_all and barrier_all share a team but pass different
+ * arrays) and are cheap base+offset arithmetic to re-derive per call. */
+struct shmem_internal_hier_cache_t {
+    int   valid;
+    int  *local_pes;        /* active PEs on this node, ascending */
+    int   local_count;
+    int  *root_pes;         /* one representative (lowest active PE) per node */
+    int   root_count;
+    int   my_vidx;          /* my index in local_pes, or -1 if not in the set */
+    int   active_root_pe;   /* local_pes[0], this node's representative */
+    int   is_root;          /* my_pe == active_root_pe */
+    int  *tree_child_shr;   /* shr_ranks of my intranode tree children */
+    int   tree_nchildren;
+    int   my_root_idx;      /* my index in root_pes, or -1 if not a root */
+    int   num_rounds;       /* phase-2 dissemination rounds (log2(root_count)) */
+};
+typedef struct shmem_internal_hier_cache_t shmem_internal_hier_cache_t;
+#endif
+
 struct shmem_internal_team_t {
     int                            my_pe;
     int                            start, stride, size;
@@ -28,6 +52,7 @@ struct shmem_internal_team_t {
     struct shmem_transport_ctx_t **contexts;
 #ifdef USE_HIERARCHICAL_BARRIER
     long                           hier_sense;
+    shmem_internal_hier_cache_t    hier_cache;
 #endif
 };
 typedef struct shmem_internal_team_t shmem_internal_team_t;
