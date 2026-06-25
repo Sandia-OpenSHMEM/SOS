@@ -38,6 +38,7 @@ static uint32_t size;
 static uint32_t node_size = 0;
 static int *node_ranks = NULL;
 static int *is_node_root = NULL;
+static int *node_id_array = NULL;
 
 int
 shmem_runtime_init(int enable_node_ranks)
@@ -76,6 +77,11 @@ shmem_runtime_init(int enable_node_ranks)
             RETURN_ERROR_MSG_PREINIT("Out of memory allocating is_node_root\n");
             return 2;
         }
+        node_id_array = (int *)malloc(size * sizeof(int));
+        if (NULL == node_id_array) {
+            RETURN_ERROR_MSG_PREINIT("Out of memory allocating node_id_array\n");
+            return 3;
+        }
 #endif
     }
 
@@ -92,6 +98,8 @@ shmem_runtime_fini(void)
         free(node_ranks);
     if (is_node_root)
         free(is_node_root);
+    if (node_id_array)
+        free(node_id_array);
 
     if (PMIX_SUCCESS != (rc = PMIx_Finalize(NULL, 0))) {
         RETURN_ERROR_MSG_PREINIT("PMIx_Finalize failed (%d)\n", rc);
@@ -185,6 +193,21 @@ shmem_runtime_is_node_root_pe(int pe)
 
 
 int
+shmem_runtime_get_node_id(int pe)
+{
+    shmem_internal_assert(pe < (int) size && pe >= 0);
+
+    if (size == 1)
+        return 0;
+
+    if (NULL == node_id_array)
+        return pe;
+
+    return node_id_array[pe];
+}
+
+
+int
 shmem_runtime_exchange(void)
 {
     pmix_status_t rc;
@@ -257,7 +280,7 @@ shmem_runtime_exchange(void)
     PMIX_INFO_DESTRUCT(&info);
 
     if (is_node_root) {
-        int ret = shmem_runtime_util_populate_global_node_roots(is_node_root, (int) size);
+        int ret = shmem_runtime_util_populate_global_node_roots(is_node_root, node_id_array, (int) size);
         if (ret != 0) {
             RETURN_ERROR_MSG("Global node root mapping failed (%d)\n", ret);
             return ret;

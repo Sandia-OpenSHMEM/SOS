@@ -419,7 +419,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
      * during psync allocation between back-to-back team creations. */
     psync = shmem_internal_team_choose_psync(parent_team, SYNC);
 
-    shmem_internal_barrier(parent_team->start, parent_team->stride, parent_team->size, psync);
+    shmem_internal_barrier_for_team(parent_team, psync);
 
     shmem_internal_team_release_psyncs(parent_team, SYNC);
 
@@ -457,8 +457,6 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
         xrange = parent_team->size;
     }
 
-    const int parent_start = parent_team->start;
-    const int parent_stride = parent_team->stride;
     const int parent_size = parent_team->size;
     const int num_xteams = ceil( parent_size / (float)xrange );
     const int num_yteams = xrange;
@@ -506,7 +504,7 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
 
     long *psync = shmem_internal_team_choose_psync(parent_team, SYNC);
 
-    shmem_internal_barrier(parent_start, parent_stride, parent_size, psync);
+    shmem_internal_barrier_for_team(parent_team, psync);
 
     shmem_internal_team_release_psyncs(parent_team, SYNC);
 
@@ -566,7 +564,7 @@ long * shmem_internal_team_choose_psync(shmem_internal_team_t *team, shmem_inter
             shmem_internal_quiet(SHMEM_CTX_DEFAULT);
 
             size_t psync = team->psync_idx * SHMEM_SYNC_SIZE;
-            shmem_internal_sync(team->start, team->stride, team->size,
+            shmem_internal_sync_for_team(team,
                                 &shmem_internal_psync_barrier_pool[psync]);
 
             for (int i = 0; i < N_PSYNCS_PER_TEAM; i++) {
