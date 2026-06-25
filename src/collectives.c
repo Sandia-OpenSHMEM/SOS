@@ -558,12 +558,10 @@ shmem_internal_build_local_set(int PE_start, int PE_stride, int PE_size,
     }
 }
 
-/* Build an active set of root PEs (the lowest-ranked PE on each node) from
- * the original active set.  shmem_runtime_get_node_rank() only returns the
- * node-local rank for on-node PEs; for off-node PEs it returns -1.  We
- * therefore use shmem_runtime_is_node_root_pe() which reflects each PE's
- * absolute rank within its own node, computed during init via global exchange.
- */
+/* Build an active set of root PEs — one representative per node, defined as
+ * the lowest-ranked active PE on each participating node.  Uses the global
+ * node_id array (computed once at init) so all PEs deterministically compute
+ * the same list without requiring communication. */
 static void
 shmem_internal_build_root_active_set(int PE_start, int PE_stride, int PE_size,
                                      int *root_pes, int *root_count)
@@ -571,8 +569,19 @@ shmem_internal_build_root_active_set(int PE_start, int PE_stride, int PE_size,
     int i, pe;
     *root_count = 0;
 
+    /* Iterate in ascending PE order.  The first active PE encountered for each
+     * node_id is the representative for that node. */
     for (i = 0, pe = PE_start; i < PE_size; i++, pe += PE_stride) {
-        if (shmem_runtime_is_node_root_pe(pe)) {
+        int pe_node_id = shmem_runtime_get_node_id(pe);
+        int already_represented = 0;
+        int j, qpe;
+        for (j = 0, qpe = PE_start; j < i; j++, qpe += PE_stride) {
+            if (shmem_runtime_get_node_id(qpe) == pe_node_id) {
+                already_represented = 1;
+                break;
+            }
+        }
+        if (!already_represented) {
             root_pes[(*root_count)++] = pe;
         }
     }
@@ -589,18 +598,23 @@ shmem_internal_cpu_atomic_store_long(long *target, int noderank, long val)
 
 void
 shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
-                                  long *pSync, long *local_pSync)
+                                  long *pSync, long *local_pSync,
+                                  long *hier_sense_ptr)
 {
-    int node_root_pe = shmem_internal_get_node_root_pe();
-    int is_root      = (shmem_internal_my_pe == node_root_pe);
     int my_shr_rank  = shmem_runtime_get_node_rank(shmem_internal_my_pe);
     long one = 1;
 
     if (PE_size == 1) return;
 
-    /* Determine sense state: for TEAM_WORLD (0, 1, num_pes) use per-team state; else static fallback. */
+    /* Determine sense state.  Caller may supply a per-team sense pointer
+     * (hier_sense_ptr != NULL); this ensures each team maintains an independent
+     * sense counter and prevents deadlocks when overlapping teams are synced in
+     * different sequences.  NULL falls back to the internal selection: TEAM_WORLD
+     * uses its own counter; all other active sets share a static fallback. */
     long *sense_ptr;
-    if (PE_start == 0 && PE_stride == 1 && PE_size == shmem_internal_num_pes) {
+    if (hier_sense_ptr != NULL) {
+        sense_ptr = hier_sense_ptr;
+    } else if (PE_start == 0 && PE_stride == 1 && PE_size == shmem_internal_num_pes) {
         sense_ptr = &shmem_internal_team_world.hier_sense;
     } else {
         static long fallback_sense = 0;
@@ -618,17 +632,16 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
     shmem_internal_build_root_active_set(PE_start, PE_stride, PE_size,
                                          root_pes, &root_count);
 
-    /* Assign virtual indices 0..local_count-1, rotating so node_root_pe = vidx 0.
-     * Precompute tree parent shr_rank and children shr_ranks. */
-    int my_local_idx   = -1;
-    int root_local_idx = 0;
+    /* Assign virtual index 0..local_count-1.  build_local_set fills local_pes
+     * in ascending PE order, so local_pes[0] is always the lowest-ranked active
+     * PE on this node and is the active-set representative for phase 2. */
+    int my_local_idx = -1;
     for (int i = 0; i < local_count; i++) {
-        if (local_pes[i] == shmem_internal_my_pe) my_local_idx = i;
-        if (local_pes[i] == node_root_pe)          root_local_idx = i;
+        if (local_pes[i] == shmem_internal_my_pe) { my_local_idx = i; break; }
     }
-    int my_vidx = (my_local_idx >= 0)
-                  ? (my_local_idx - root_local_idx + local_count) % local_count
-                  : -1;
+    int my_vidx       = my_local_idx;   /* -1 if not in active set on this node */
+    int active_root_pe = (local_count > 0) ? local_pes[0] : -1;
+    int is_root        = (shmem_internal_my_pe == active_root_pe);
 
     int  tree_nchildren  = 0;
     int *tree_child_shr  = alloca(sizeof(int) * tree_radix);
@@ -637,7 +650,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
             int cv = my_vidx * tree_radix + j;
             if (cv < local_count) {
                 tree_child_shr[tree_nchildren++] = shmem_runtime_get_node_rank(
-                    local_pes[(cv + root_local_idx) % local_count]);
+                    local_pes[cv]);
             }
         }
     }
@@ -657,7 +670,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
     volatile long *my_down_slot = (volatile long *)my_down_raw;
 
     /* ---- Degenerate case: all active PEs on one node ---- */
-    if (root_count <= 1 || local_count == PE_size) {
+    if (local_count == PE_size) {
         if (my_vidx < 0) return;
 
         double t0 = shmem_internal_params.HIER_BARRIER_DEBUG ? hier_now_us() : 0.0;

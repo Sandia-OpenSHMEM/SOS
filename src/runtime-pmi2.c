@@ -43,6 +43,7 @@ static int max_name_len, max_key_len, max_val_len;
 static int initialized_pmi = 0;
 static int *location_array = NULL;
 static int *is_node_root = NULL;
+static int *node_id_array = NULL;
 
 
 int
@@ -81,6 +82,8 @@ shmem_runtime_init(int enable_node_ranks)
 #ifdef USE_HIERARCHICAL_BARRIER
         is_node_root = malloc(sizeof(int) * size);
         if (NULL == is_node_root) return 9;
+        node_id_array = malloc(sizeof(int) * size);
+        if (NULL == node_id_array) return 10;
 #endif
     }
 
@@ -96,6 +99,9 @@ shmem_runtime_fini(void)
     }
     if (is_node_root) {
         free(is_node_root);
+    }
+    if (node_id_array) {
+        free(node_id_array);
     }
 
     if (initialized_pmi == 1) {
@@ -188,6 +194,21 @@ shmem_runtime_is_node_root_pe(int pe)
 
 
 int
+shmem_runtime_get_node_id(int pe)
+{
+    shmem_internal_assert(pe < size && pe >= 0);
+
+    if (size == 1)
+        return 0;
+
+    if (NULL == node_id_array)
+        return pe;
+
+    return node_id_array[pe];
+}
+
+
+int
 shmem_runtime_exchange(void)
 {
     int ret;
@@ -212,7 +233,7 @@ shmem_runtime_exchange(void)
         }
     }
     if (is_node_root) {
-        ret = shmem_runtime_util_populate_global_node_roots(is_node_root, size);
+        ret = shmem_runtime_util_populate_global_node_roots(is_node_root, node_id_array, size);
         if (0 != ret) {
             RETURN_ERROR_MSG("Global node root mapping failed (%d)\n", ret);
             return 8;
