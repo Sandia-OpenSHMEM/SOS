@@ -1351,16 +1351,16 @@ int allocate_fabric_resources(struct fabric_info *info)
      * Must be done BEFORE any endpoints are created (the provider only
      * propagates this setting to child endpoints at creation time).
      * Gated on a CXI provider check so non-CXI providers never attempt the
-     * fi_open_ops call and do not produce spurious startup warnings. */
+     * fi_open_ops call and do not produce spurious startup warnings.  The
+     * optimization is compiled in only when configure found both the CXI
+     * extension header and the enable_hybrid_mr_desc member; otherwise it is
+     * disabled and a request to enable it is reported once on PE 0. */
     if (shmem_transport_ofi_check_provider(SHMEM_TRANSPORT_OFI_PROV_CXI)) {
         if (shmem_internal_params.OFI_CXI_HYBRID_MR_DESC) {
-            struct cxi_dom_ops_v3_local {
-                int (*cntr_read)(struct fid *, unsigned int, uint64_t *, struct timespec *);
-                int (*topology)(struct fid *, unsigned int *, unsigned int *, unsigned int *);
-                int (*enable_hybrid_mr_desc)(struct fid *, bool);
-            } *cxi_dom_ops = NULL;
+#ifdef SHMEM_TRANSPORT_OFI_HAVE_CXI_HYBRID_MR_DESC
+            struct fi_cxi_dom_ops *cxi_dom_ops = NULL;
             int hret = fi_open_ops(&shmem_transport_ofi_domainfd->fid,
-                                   "dom_ops_v3", 0, (void **)&cxi_dom_ops, NULL);
+                                   FI_CXI_DOM_OPS_3, 0, (void **)&cxi_dom_ops, NULL);
             if (hret == 0 && cxi_dom_ops && cxi_dom_ops->enable_hybrid_mr_desc) {
                 hret = cxi_dom_ops->enable_hybrid_mr_desc(&shmem_transport_ofi_domainfd->fid, true);
                 if (hret == 0) {
@@ -1372,6 +1372,13 @@ int allocate_fabric_resources(struct fabric_info *info)
                 DEBUG_MSG("CXI: hybrid MR desc not available (fi_open_ops returned %d / %s)\n",
                           hret, hret ? fi_strerror(-hret) : "no ops struct");
             }
+#else
+            if (shmem_internal_my_pe == 0) {
+                RAISE_WARN_STR("CXI hybrid MR desc requested (SHMEM_OFI_CXI_HYBRID_MR_DESC=1) "
+                               "but SOS was built without CXI extension support "
+                               "(missing rdma/fi_cxi_ext.h or enable_hybrid_mr_desc); ignoring");
+            }
+#endif
         } else {
             DEBUG_STR("CXI: hybrid local MR descriptor mode disabled (SHMEM_OFI_CXI_HYBRID_MR_DESC=0)");
         }

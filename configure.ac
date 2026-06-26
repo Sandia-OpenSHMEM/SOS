@@ -959,6 +959,29 @@ if test "$transport_ofi" = "yes" ; then
     LIBS="$LIBS $ofi_LIBS"
     WRAPPER_COMPILER_EXTRA_LDFLAGS="$ofi_LDFLAGS"
     WRAPPER_COMPILER_EXTRA_LIBS="$ofi_LIBS"
+    dnl CXI provider extensions (struct fi_cxi_dom_ops, enable_hybrid_mr_desc).
+    dnl Checked with the OFI include path in CPPFLAGS.  fi_cxi_ext.h is not
+    dnl self-contained (it uses fabric/fi_domain types without including them),
+    dnl so it is probed with those prerequisite headers in the 4th argument to
+    dnl avoid a "present but cannot be compiled" warning.  AC_CHECK_HEADERS
+    dnl defines HAVE_RDMA_FI_CXI_EXT_H when the header compiles; only then do we
+    dnl probe for the enable_hybrid_mr_desc member, which was added to struct
+    dnl fi_cxi_dom_ops in a later libfabric.  AC_CHECK_MEMBER defines
+    dnl HAVE_STRUCT_FI_CXI_DOM_OPS_ENABLE_HYBRID_MR_DESC on success.  The hybrid
+    dnl MR descriptor optimization is compiled in only when BOTH are defined.
+    AC_CHECK_HEADERS([rdma/fi_cxi_ext.h],
+        [AC_CHECK_MEMBER([struct fi_cxi_dom_ops.enable_hybrid_mr_desc],
+            [AC_DEFINE([HAVE_STRUCT_FI_CXI_DOM_OPS_ENABLE_HYBRID_MR_DESC], [1],
+                       [Define to 1 if struct fi_cxi_dom_ops has the enable_hybrid_mr_desc member.])],
+            [],
+            [[#include <stdbool.h>
+              #include <rdma/fabric.h>
+              #include <rdma/fi_domain.h>
+              #include <rdma/fi_cxi_ext.h>]])],
+        [],
+        [[#include <stdbool.h>
+          #include <rdma/fabric.h>
+          #include <rdma/fi_domain.h>]])
 fi
 
 if test "$transport_ucx" = "yes" ; then

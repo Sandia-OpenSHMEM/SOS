@@ -23,6 +23,21 @@
 #include <rdma/fi_rma.h>
 #include <rdma/fi_cm.h>
 #include <rdma/fi_atomic.h>
+#ifdef HAVE_RDMA_FI_CXI_EXT_H
+#include <stdbool.h>  /* fi_cxi_ext.h uses bool but does not include stdbool.h */
+#include <rdma/fi_cxi_ext.h>
+#endif
+/* The CXI hybrid local MR descriptor optimization needs the CXI extension
+ * header AND a struct fi_cxi_dom_ops that actually exposes the
+ * enable_hybrid_mr_desc member (added in a later libfabric).  configure probes
+ * both (HAVE_RDMA_FI_CXI_EXT_H, HAVE_STRUCT_FI_CXI_DOM_OPS_ENABLE_HYBRID_MR_DESC);
+ * the feature is compiled in only when both are present, otherwise it is
+ * disabled entirely — no hand-rolled struct mirror, so we never risk an ABI
+ * mismatch against the provider's real layout. */
+#if defined(HAVE_RDMA_FI_CXI_EXT_H) && \
+    defined(HAVE_STRUCT_FI_CXI_DOM_OPS_ENABLE_HYBRID_MR_DESC)
+#define SHMEM_TRANSPORT_OFI_HAVE_CXI_HYBRID_MR_DESC 1
+#endif
 #include <string.h>
 #include <unistd.h>
 #include <stddef.h>
