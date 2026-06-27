@@ -185,7 +185,7 @@ static void *mmap_alloc(size_t bytes, size_t *mapped_bytes)
             int size = snprintf(NULL, 0, "%s/%s.%d", directory, basename, getpid());
 
             if (size < 0) {
-                RAISE_WARN_STR("snprintf returned error, cannot use huge pages");
+                DEBUG_MSG("snprintf returned error, cannot use huge pages");
             } else {
                 file_name = malloc(size + 1);
                 if (file_name) {

@@ -961,11 +961,16 @@ if test "$transport_ofi" = "yes" ; then
     WRAPPER_COMPILER_EXTRA_LIBS="$ofi_LIBS"
     dnl CXI provider extensions (struct fi_cxi_dom_ops, enable_hybrid_mr_desc).
     dnl Checked with the OFI include path in CPPFLAGS.  fi_cxi_ext.h is not
-    dnl self-contained (it uses fabric/fi_domain types without including them),
-    dnl so it is probed with those prerequisite headers in the 4th argument to
-    dnl avoid a "present but cannot be compiled" warning.  AC_CHECK_HEADERS
-    dnl defines HAVE_RDMA_FI_CXI_EXT_H when the header compiles; only then do we
-    dnl probe for the enable_hybrid_mr_desc member, which was added to struct
+    dnl self-contained: it references struct fid / uint64_t / bool / struct
+    dnl timespec without including the headers that define them.  We therefore
+    dnl supply the full prerequisite set (stdbool.h, time.h, stdint.h,
+    dnl rdma/fabric.h, rdma/fi_domain.h) in the 4th argument so the probe
+    dnl compiles independently of whatever a given libfabric's fabric.h happens
+    dnl to pull in transitively (which varies across clusters/versions).  Without
+    dnl this the header can be present yet reported as unusable, silently
+    dnl disabling the optimization.  AC_CHECK_HEADERS defines
+    dnl HAVE_RDMA_FI_CXI_EXT_H when the header compiles; only then do we probe
+    dnl for the enable_hybrid_mr_desc member, which was added to struct
     dnl fi_cxi_dom_ops in a later libfabric.  AC_CHECK_MEMBER defines
     dnl HAVE_STRUCT_FI_CXI_DOM_OPS_ENABLE_HYBRID_MR_DESC on success.  The hybrid
     dnl MR descriptor optimization is compiled in only when BOTH are defined.
@@ -975,13 +980,23 @@ if test "$transport_ofi" = "yes" ; then
                        [Define to 1 if struct fi_cxi_dom_ops has the enable_hybrid_mr_desc member.])],
             [],
             [[#include <stdbool.h>
+              #include <time.h>
+              #include <stdint.h>
               #include <rdma/fabric.h>
               #include <rdma/fi_domain.h>
               #include <rdma/fi_cxi_ext.h>]])],
         [],
         [[#include <stdbool.h>
+          #include <time.h>
+          #include <stdint.h>
           #include <rdma/fabric.h>
           #include <rdma/fi_domain.h>]])
+
+    dnl Surface the result in the configure summary so a misdetection is visible
+    dnl at configure time rather than only as a runtime warning on CXI hardware.
+    cxi_hybrid_mr_desc="no"
+    AS_IF([test "x$ac_cv_member_struct_fi_cxi_dom_ops_enable_hybrid_mr_desc" = "xyes"],
+          [cxi_hybrid_mr_desc="yes"])
 fi
 
 if test "$transport_ucx" = "yes" ; then
@@ -1146,6 +1161,8 @@ if test "$transport_ofi" = "yes"; then
     else
         echo "  Addr. vector:   table"
     fi
+
+    echo "  CXI hybrid MR desc: $cxi_hybrid_mr_desc"
 
     echo ""
 fi
