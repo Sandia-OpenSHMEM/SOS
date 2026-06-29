@@ -147,6 +147,10 @@ shmem_internal_shutdown(void)
 
     shmem_internal_finalized = 1;
 
+#ifdef USE_HIERARCHICAL_BARRIER
+    shmem_internal_hier_barrier_print_stats();
+#endif
+
     shmem_internal_team_fini();
 
     shmem_transport_fini();
@@ -382,6 +386,10 @@ shmem_internal_heap_postinit(void)
               shmem_internal_heap_base, shmem_internal_heap_length,
               shmem_internal_data_base, shmem_internal_data_length);
 
+    if (shmem_internal_params.BOUNCE_MLOCK) {
+        DEBUG_MSG("Bounce buffer locking enabled\n");
+    }
+
 #ifdef HAVE_SCHED_GETAFFINITY
 #ifdef USE_HWLOC
     ret = hwloc_topology_init(&shmem_internal_topology);
@@ -519,6 +527,20 @@ shmem_internal_heap_postinit(void)
 
     atexit(shmem_internal_shutdown_atexit);
     shmem_internal_initialized = 1;
+
+#ifdef USE_HIERARCHICAL_BARRIER
+    if (shmem_internal_my_pe == 0) {
+        const char *effective_barrier =
+            (shmem_internal_barrier_type == AUTO &&
+             shmem_internal_hier_barrier_available())
+            ? "HIERARCHICAL (auto-selected)"
+            : coll_type_str[shmem_internal_barrier_type];
+
+        DEBUG_MSG("Hierarchical barrier enabled: intranode CPU atomics + internode NIC puts\n"
+                  RAISE_PE_PREFIX "Barrier algorithm: %s\n",
+                  shmem_internal_my_pe, effective_barrier);
+    }
+#endif
 
     /* finish up */
 #ifndef USE_PMIX

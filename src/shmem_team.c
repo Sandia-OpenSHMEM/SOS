@@ -85,6 +85,10 @@ int shmem_internal_team_init(void)
     memset(&shmem_internal_team_world.config, 0, sizeof(shmem_team_config_t));
     for (size_t i = 0; i < N_PSYNCS_PER_TEAM; i++)
         shmem_internal_team_world.psync_avail[i] = 1;
+#ifdef USE_HIERARCHICAL_BARRIER
+    shmem_internal_team_world.hier_sense     = 0;
+    memset(&shmem_internal_team_world.hier_cache, 0, sizeof(shmem_internal_hier_cache_t));
+#endif
     SHMEM_TEAM_WORLD = (shmem_team_t) &shmem_internal_team_world;
 
     /* Initialize SHMEM_TEAM_SHARED */
@@ -95,6 +99,10 @@ int shmem_internal_team_init(void)
     memset(&shmem_internal_team_shared.config, 0, sizeof(shmem_team_config_t));
     for (size_t i = 0; i < N_PSYNCS_PER_TEAM; i++)
         shmem_internal_team_shared.psync_avail[i] = 1;
+#ifdef USE_HIERARCHICAL_BARRIER
+    shmem_internal_team_shared.hier_sense    = 0;
+    memset(&shmem_internal_team_shared.hier_cache, 0, sizeof(shmem_internal_hier_cache_t));
+#endif
     SHMEM_TEAM_SHARED = (shmem_team_t) &shmem_internal_team_shared;
 
     /* Initialize SHMEM_TEAM_NODE */
@@ -105,6 +113,10 @@ int shmem_internal_team_init(void)
     memset(&shmem_internal_team_node.config, 0, sizeof(shmem_team_config_t));
     for (size_t i = 0; i < N_PSYNCS_PER_TEAM; i++)
         shmem_internal_team_node.psync_avail[i] = 1;
+#ifdef USE_HIERARCHICAL_BARRIER
+    shmem_internal_team_node.hier_sense      = 0;
+    memset(&shmem_internal_team_node.hier_cache, 0, sizeof(shmem_internal_hier_cache_t));
+#endif
     SHMEMX_TEAM_NODE = (shmem_team_t) &shmem_internal_team_node;
 
     if (shmem_internal_params.TEAM_SHARED_ONLY_SELF) {
@@ -410,7 +422,7 @@ int shmem_internal_team_split_strided(shmem_internal_team_t *parent_team, int PE
      * during psync allocation between back-to-back team creations. */
     psync = shmem_internal_team_choose_psync(parent_team, SYNC);
 
-    shmem_internal_barrier(parent_team->start, parent_team->stride, parent_team->size, psync);
+    shmem_internal_barrier_for_team(parent_team, psync);
 
     shmem_internal_team_release_psyncs(parent_team, SYNC);
 
@@ -448,8 +460,6 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
         xrange = parent_team->size;
     }
 
-    const int parent_start = parent_team->start;
-    const int parent_stride = parent_team->stride;
     const int parent_size = parent_team->size;
     const int num_xteams = ceil( parent_size / (float)xrange );
     const int num_yteams = xrange;
@@ -497,7 +507,7 @@ int shmem_internal_team_split_2d(shmem_internal_team_t *parent_team, int xrange,
 
     long *psync = shmem_internal_team_choose_psync(parent_team, SYNC);
 
-    shmem_internal_barrier(parent_start, parent_stride, parent_size, psync);
+    shmem_internal_barrier_for_team(parent_team, psync);
 
     shmem_internal_team_release_psyncs(parent_team, SYNC);
 
@@ -526,6 +536,10 @@ void shmem_internal_team_destroy(shmem_internal_team_t *team)
     }
     shmem_internal_team_pool[team->psync_idx] = NULL;
     free(team->contexts);
+
+#ifdef USE_HIERARCHICAL_BARRIER
+    shmem_internal_hier_cache_free(&team->hier_cache);
+#endif
 
     if (team != &shmem_internal_team_world && team != &shmem_internal_team_shared &&
         team != &shmem_internal_team_node) {
@@ -557,7 +571,7 @@ long * shmem_internal_team_choose_psync(shmem_internal_team_t *team, shmem_inter
             shmem_internal_quiet(SHMEM_CTX_DEFAULT);
 
             size_t psync = team->psync_idx * SHMEM_SYNC_SIZE;
-            shmem_internal_sync(team->start, team->stride, team->size,
+            shmem_internal_sync_for_team(team,
                                 &shmem_internal_psync_barrier_pool[psync]);
 
             for (int i = 0; i < N_PSYNCS_PER_TEAM; i++) {

@@ -38,6 +38,8 @@ static char *kvs_name, *kvs_key, *kvs_value;
 static int max_name_len, max_key_len, max_val_len;
 static int initialized_pmi = 0;
 static int *location_array = NULL;
+static int *is_node_root = NULL;
+static int *node_id_array = NULL;
 
 #define SINGLETON_KEY_LEN 128
 #define SINGLETON_VAL_LEN 1024
@@ -96,6 +98,12 @@ shmem_runtime_init(int enable_node_ranks)
         if (enable_node_ranks) {
             location_array = malloc(sizeof(int) * size);
             if (NULL == location_array) return 10;
+#ifdef USE_HIERARCHICAL_BARRIER
+            is_node_root = malloc(sizeof(int) * size);
+            if (NULL == is_node_root) return 11;
+            node_id_array = malloc(sizeof(int) * size);
+            if (NULL == node_id_array) return 12;
+#endif
         }
     }
     else {
@@ -120,6 +128,8 @@ int
 shmem_runtime_fini(void)
 {
     free(location_array);
+    free(is_node_root);
+    free(node_id_array);
     free(kvs_name);
     free(kvs_key);
     free(kvs_value);
@@ -195,6 +205,55 @@ shmem_runtime_get_node_size(void)
 
 
 int
+shmem_runtime_get_node_root_pe(void)
+{
+    int i;
+
+    if (size == 1) {
+        return 0;
+    }
+
+    for (i = 0; i < size; i++) {
+        if (location_array[i] == 0)
+            return i;
+    }
+
+    /* Should not be reached */
+    return 0;
+}
+
+
+int
+shmem_runtime_is_node_root_pe(int pe)
+{
+    shmem_internal_assert(pe < size && pe >= 0);
+
+    if (size == 1)
+        return 1;
+
+    if (NULL == is_node_root)
+        return 0;
+
+    return is_node_root[pe];
+}
+
+
+int
+shmem_runtime_get_node_id(int pe)
+{
+    shmem_internal_assert(pe < size && pe >= 0);
+
+    if (size == 1)
+        return 0;
+
+    if (NULL == node_id_array)
+        return pe;
+
+    return node_id_array[pe];
+}
+
+
+int
 shmem_runtime_exchange(void)
 {
     int ret;
@@ -224,6 +283,13 @@ shmem_runtime_exchange(void)
         if (0 != ret) {
             RETURN_ERROR_MSG("Node PE mapping failed (%d)\n", ret);
             return 7;
+        }
+    }
+    if (is_node_root) {
+        ret = shmem_runtime_util_populate_global_node_roots(is_node_root, node_id_array, size);
+        if (0 != ret) {
+            RETURN_ERROR_MSG("Global node root mapping failed (%d)\n", ret);
+            return 8;
         }
     }
 

@@ -46,7 +46,7 @@ SHMEM_INTERNAL_ENV_DEF(SYMMETRIC_HEAP_USE_MALLOC, bool, false, SHMEM_INTERNAL_EN
                        "Allocate the symmetric heap using malloc")
 SHMEM_INTERNAL_ENV_DEF(BOUNCE_SIZE, size, DEFAULT_BOUNCE_SIZE, SHMEM_INTERNAL_ENV_CAT_OTHER,
                        "Maximum message size to bounce buffer")
-SHMEM_INTERNAL_ENV_DEF(MAX_BOUNCE_BUFFERS, long, 128, SHMEM_INTERNAL_ENV_CAT_OTHER,
+SHMEM_INTERNAL_ENV_DEF(MAX_BOUNCE_BUFFERS, size, 128, SHMEM_INTERNAL_ENV_CAT_OTHER,
                        "Maximum number of bounce buffers per context")
 SHMEM_INTERNAL_ENV_DEF(TRAP_ON_ABORT, bool, false, SHMEM_INTERNAL_ENV_CAT_OTHER,
                        "Generate trap if the program aborts or calls shmem_global_exit")
@@ -58,7 +58,11 @@ SHMEM_INTERNAL_ENV_DEF(COLL_SIZE_CROSSOVER, size, 16384, SHMEM_INTERNAL_ENV_CAT_
 SHMEM_INTERNAL_ENV_DEF(COLL_RADIX, long, 4, SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
                        "Radix for tree-based collectives")
 SHMEM_INTERNAL_ENV_DEF(BARRIER_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
-                       "Algorithm for barrier.  Options are auto, linear, tree, dissem")
+                       "Algorithm for barrier.  Options are auto, linear, tree, dissem, hierarchical")
+SHMEM_INTERNAL_ENV_DEF(HIER_BARRIER_THRESHOLD, long, 2, SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
+                       "Minimum local PE count per node to auto-select the hierarchical barrier")
+SHMEM_INTERNAL_ENV_DEF(HIER_BARRIER_DEBUG, bool, 0, SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
+                       "Print per-phase hierarchical barrier timing at finalize")
 SHMEM_INTERNAL_ENV_DEF(BCAST_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
                        "Algorithm for broadcast.  Options are auto, linear, tree")
 SHMEM_INTERNAL_ENV_DEF(REDUCE_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
@@ -95,6 +99,8 @@ SHMEM_INTERNAL_ENV_DEF(OFI_DOMAIN, string, "auto", SHMEM_INTERNAL_ENV_CAT_TRANSP
                        "Fabric domain that should be used by the OFI transport")
 SHMEM_INTERNAL_ENV_DEF(OFI_TX_POLL_LIMIT, long, DEFAULT_POLL_LIMIT, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Put completion poll limit")
+SHMEM_INTERNAL_ENV_DEF(OFI_CXI_HYBRID_MR_DESC, bool, true, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Enable CXI hybrid local MR descriptor mode (skips internal MR registration when desc is non-NULL); ignored on non-CXI providers")
 SHMEM_INTERNAL_ENV_DEF(OFI_RX_POLL_LIMIT, long, DEFAULT_POLL_LIMIT, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Get completion poll limit")
 SHMEM_INTERNAL_ENV_DEF(OFI_STX_MAX, long, 1, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
@@ -126,3 +132,7 @@ SHMEM_INTERNAL_ENV_DEF(MPI_THREAD_LEVEL, string, "MPI_THREAD_SINGLE", SHMEM_INTE
 SHMEM_INTERNAL_ENV_DEF(BACKTRACE, string, "", SHMEM_INTERNAL_ENV_CAT_OTHER,
                        "Specify the mechanism to use for backtracing on failure")
 
+SHMEM_INTERNAL_ENV_DEF(BOUNCE_MLOCK, bool, false, SHMEM_INTERNAL_ENV_CAT_OTHER,
+                       "Lock bounce buffer memory preventing buffers from being paged out to swap")
+SHMEM_INTERNAL_ENV_DEF(BOUNCE_SHEAP, bool, true, SHMEM_INTERNAL_ENV_CAT_OTHER,
+                       "Allocate bounce buffers using symmetric heap, if supported by transport")

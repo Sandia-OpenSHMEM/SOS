@@ -17,6 +17,9 @@
 #define SHMEM_COLLECTIVES_H
 
 #include "shmem_synchronization.h"
+#ifdef USE_HIERARCHICAL_BARRIER
+#include "shmem_team.h"
+#endif
 
 
 enum coll_type_t {
@@ -25,7 +28,8 @@ enum coll_type_t {
     TREE,
     DISSEM,
     RING,
-    RECDBL
+    RECDBL,
+    HIERARCHICAL
 };
 typedef enum coll_type_t coll_type_t;
 
@@ -33,6 +37,11 @@ extern char *coll_type_str[];
 
 extern long *shmem_internal_barrier_all_psync;
 extern long *shmem_internal_sync_all_psync;
+#ifdef USE_HIERARCHICAL_BARRIER
+extern long *shmem_internal_barrier_all_local_psync;
+extern long *shmem_internal_sync_all_local_psync;
+extern long *shmem_internal_hierarchical_local_psync;
+#endif
 
 extern coll_type_t shmem_internal_barrier_type;
 extern coll_type_t shmem_internal_bcast_type;
@@ -44,10 +53,107 @@ extern coll_type_t shmem_internal_fcollect_type;
 void shmem_internal_sync_linear(int PE_start, int PE_stride, int PE_size, long *pSync);
 void shmem_internal_sync_tree(int PE_start, int PE_stride, int PE_size, long *pSync);
 void shmem_internal_sync_dissem(int PE_start, int PE_stride, int PE_size, long *pSync);
+#ifdef USE_HIERARCHICAL_BARRIER
+void shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
+                                      long *pSync, long *local_pSync,
+                                      long *hier_sense_ptr,
+                                      shmem_internal_hier_cache_t *hier_cache);
+void shmem_internal_hier_cache_free(shmem_internal_hier_cache_t *hier_cache);
+void shmem_internal_hier_barrier_print_stats(void);
+
+/* Job-global minimum PEs-per-node, computed once in collectives_init. */
+extern int shmem_internal_hier_min_ppn;
+
+/* Whether AUTO selection should use the hierarchical barrier.  Requires the
+ * job to span more than one node (some PE off-node, i.e. shr_size < num_pes)
+ * AND at least HIER_BARRIER_THRESHOLD PEs on the smallest node.  Both terms are
+ * job-global (shr_size < num_pes holds on every PE of a multi-node job;
+ * hier_min_ppn is reduced over all nodes), so every PE makes the same decision
+ * even when PPN is heterogeneous — gating on the local node size could let a
+ * large node pick hierarchical while a small node picks tree, diverging within
+ * one collective.  On a single-node job the hierarchical barrier degenerates to
+ * its intranode-only path, which is strictly worse than linear/tree: under
+ * USE_HIERARCHICAL_BARRIER the shr transport already routes single-node atomics
+ * through CPU atomics (see shmem_shr_transport_use_atomic), so linear/tree run
+ * over shared memory with none of the hierarchical scaffolding.  Explicit
+ * BARRIER_ALGORITHM=hierarchical bypasses this and is always honored. */
+static inline int
+shmem_internal_hier_barrier_available(void)
+{
+    return shmem_internal_get_shr_size() < shmem_internal_num_pes &&
+           shmem_internal_hier_min_ppn >= shmem_internal_params.HIER_BARRIER_THRESHOLD;
+}
+#endif
 
 static inline
 void
 shmem_internal_sync(int PE_start, int PE_stride, int PE_size, long *pSync)
+{
+    /* Passes NULL as hier_sense_ptr: the hierarchical barrier then uses a
+     * shared static sense counter, which is only valid when all callers of a
+     * given active set sync in lock-step (the intra-collective syncs here do).
+     * Team-aware callers use shmem_internal_sync_for_team /
+     * shmem_internal_barrier_for_team to supply a per-team sense counter;
+     * deprecated shmem_barrier/shmem_sync use shmem_internal_sync_no_hier. */
+    if (shmem_internal_params.BARRIERS_FLUSH) {
+        fflush(stdout);
+        fflush(stderr);
+    }
+
+    if (PE_size == 1) return;
+
+    switch (shmem_internal_barrier_type) {
+    case AUTO:
+#ifdef USE_HIERARCHICAL_BARRIER
+        if (shmem_internal_hier_barrier_available()) {
+            shmem_internal_sync_hierarchical(PE_start, PE_stride, PE_size,
+                                             pSync,
+                                             shmem_internal_hierarchical_local_psync,
+                                             NULL, NULL);
+            break;
+        }
+#endif
+        if (PE_size < shmem_internal_params.COLL_CROSSOVER) {
+            shmem_internal_sync_linear(PE_start, PE_stride, PE_size, pSync);
+        } else {
+            shmem_internal_sync_tree(PE_start, PE_stride, PE_size, pSync);
+        }
+        break;
+    case LINEAR:
+        shmem_internal_sync_linear(PE_start, PE_stride, PE_size, pSync);
+        break;
+    case TREE:
+        shmem_internal_sync_tree(PE_start, PE_stride, PE_size, pSync);
+        break;
+    case DISSEM:
+        shmem_internal_sync_dissem(PE_start, PE_stride, PE_size, pSync);
+        break;
+#ifdef USE_HIERARCHICAL_BARRIER
+    case HIERARCHICAL:
+        shmem_internal_sync_hierarchical(PE_start, PE_stride, PE_size,
+                                         pSync,
+                                         shmem_internal_hierarchical_local_psync,
+                                         NULL, NULL);
+        break;
+#endif
+    default:
+        RAISE_ERROR_MSG("Illegal barrier/sync type (%d)\n",
+                        shmem_internal_barrier_type);
+    }
+
+    /* Ensure remote updates are visible in memory */
+    shmem_internal_membar_acq_rel();
+    shmem_transport_syncmem();
+}
+
+
+/* Sync for the deprecated active-set APIs (shmem_barrier, shmem_sync).
+ * Never uses the hierarchical algorithm: the deprecated APIs carry no team
+ * context, so there is no per-active-set sense counter available.  Falls
+ * through to the next-best algorithm selected at configure/runtime. */
+static inline
+void
+shmem_internal_sync_no_hier(int PE_start, int PE_stride, int PE_size, long *pSync)
 {
     if (shmem_internal_params.BARRIERS_FLUSH) {
         fflush(stdout);
@@ -58,6 +164,9 @@ shmem_internal_sync(int PE_start, int PE_stride, int PE_size, long *pSync)
 
     switch (shmem_internal_barrier_type) {
     case AUTO:
+    case HIERARCHICAL:
+        /* Fall through to CROSSOVER-based selection: hierarchical is unsafe
+         * here because no per-active-set sense pointer is available. */
         if (PE_size < shmem_internal_params.COLL_CROSSOVER) {
             shmem_internal_sync_linear(PE_start, PE_stride, PE_size, pSync);
         } else {
@@ -78,7 +187,6 @@ shmem_internal_sync(int PE_start, int PE_stride, int PE_size, long *pSync)
                         shmem_internal_barrier_type);
     }
 
-    /* Ensure remote updates are visible in memory */
     shmem_internal_membar_acq_rel();
     shmem_transport_syncmem();
 }
@@ -88,6 +196,19 @@ static inline
 void
 shmem_internal_sync_all(void)
 {
+#ifdef USE_HIERARCHICAL_BARRIER
+    if (shmem_internal_barrier_type == AUTO &&
+        shmem_internal_hier_barrier_available()) {
+        shmem_internal_sync_hierarchical(0, 1, shmem_internal_num_pes,
+                                         shmem_internal_sync_all_psync,
+                                         shmem_internal_sync_all_local_psync,
+                                         &shmem_internal_team_world.hier_sense,
+                                         &shmem_internal_team_world.hier_cache);
+        shmem_internal_membar_acq_rel();
+        shmem_transport_syncmem();
+        return;
+    }
+#endif
     shmem_internal_sync(0, 1, shmem_internal_num_pes, shmem_internal_sync_all_psync);
 }
 
@@ -106,8 +227,75 @@ void
 shmem_internal_barrier_all(void)
 {
     shmem_internal_quiet(SHMEM_CTX_DEFAULT);
+#ifdef USE_HIERARCHICAL_BARRIER
+    if (shmem_internal_barrier_type == AUTO &&
+        shmem_internal_hier_barrier_available()) {
+        shmem_internal_sync_hierarchical(0, 1, shmem_internal_num_pes,
+                                         shmem_internal_barrier_all_psync,
+                                         shmem_internal_barrier_all_local_psync,
+                                         &shmem_internal_team_world.hier_sense,
+                                         &shmem_internal_team_world.hier_cache);
+        shmem_internal_membar_acq_rel();
+        shmem_transport_syncmem();
+        return;
+    }
+#endif
     shmem_internal_sync(0, 1, shmem_internal_num_pes, shmem_internal_barrier_all_psync);
 }
+
+
+#ifdef USE_HIERARCHICAL_BARRIER
+/* Team-aware sync: passes team->hier_sense to the hierarchical barrier so each
+ * team maintains an independent sense counter.  Falls back to the generic
+ * shmem_internal_sync for non-hierarchical algorithms. */
+static inline
+void
+shmem_internal_sync_for_team(shmem_internal_team_t *team, long *pSync)
+{
+    int use_hier = (shmem_internal_barrier_type == HIERARCHICAL) ||
+                   (shmem_internal_barrier_type == AUTO &&
+                    shmem_internal_hier_barrier_available());
+    if (use_hier) {
+        if (shmem_internal_params.BARRIERS_FLUSH) {
+            fflush(stdout);
+            fflush(stderr);
+        }
+        if (team->size == 1) return;
+        shmem_internal_sync_hierarchical(team->start, team->stride, team->size,
+                                         pSync,
+                                         shmem_internal_hierarchical_local_psync,
+                                         &team->hier_sense,
+                                         &team->hier_cache);
+        shmem_internal_membar_acq_rel();
+        shmem_transport_syncmem();
+        return;
+    }
+    shmem_internal_sync(team->start, team->stride, team->size, pSync);
+}
+
+/* Team-aware barrier: quiet + team-aware sync. */
+static inline
+void
+shmem_internal_barrier_for_team(shmem_internal_team_t *team, long *pSync)
+{
+    shmem_internal_quiet(SHMEM_CTX_DEFAULT);
+    shmem_internal_sync_for_team(team, pSync);
+}
+#else
+static inline
+void
+shmem_internal_sync_for_team(shmem_internal_team_t *team, long *pSync)
+{
+    shmem_internal_sync(team->start, team->stride, team->size, pSync);
+}
+
+static inline
+void
+shmem_internal_barrier_for_team(shmem_internal_team_t *team, long *pSync)
+{
+    shmem_internal_barrier(team->start, team->stride, team->size, pSync);
+}
+#endif
 
 
 void shmem_internal_bcast_linear(void *target, const void *source, size_t len,

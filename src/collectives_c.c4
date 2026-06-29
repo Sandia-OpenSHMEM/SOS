@@ -181,7 +181,8 @@ shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, 1 << logPE_stride, PE_size);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_BARRIER_SYNC_SIZE);
 
-    shmem_internal_barrier(PE_start, 1 << logPE_stride, PE_size, pSync);
+    shmem_internal_quiet(SHMEM_CTX_DEFAULT);
+    shmem_internal_sync_no_hier(PE_start, 1 << logPE_stride, PE_size, pSync);
 }
 
 
@@ -200,7 +201,7 @@ shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, 1 << logPE_stride, PE_size);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_BARRIER_SYNC_SIZE);
 
-    shmem_internal_sync(PE_start, 1 << logPE_stride, PE_size, pSync);
+    shmem_internal_sync_no_hier(PE_start, 1 << logPE_stride, PE_size, pSync);
 }
 
 /* Team-based Collective Routines */
@@ -213,7 +214,7 @@ shmem_team_sync(shmem_team_t team)
 
     shmem_internal_team_t *myteam = (shmem_internal_team_t *)team;
     long *psync = shmem_internal_team_choose_psync(myteam, SYNC);
-    shmem_internal_sync(myteam->start, myteam->stride, myteam->size, psync);
+    shmem_internal_sync_for_team(myteam, psync);
     shmem_internal_team_release_psyncs(myteam, SYNC);
     return 0;
 }

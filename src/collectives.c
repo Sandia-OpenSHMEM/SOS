@@ -15,6 +15,7 @@
 
 #include "config.h"
 #include <string.h>
+#include <time.h>
 
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
@@ -30,13 +31,72 @@ coll_type_t shmem_internal_collect_type = AUTO;
 coll_type_t shmem_internal_fcollect_type = AUTO;
 long *shmem_internal_barrier_all_psync;
 long *shmem_internal_sync_all_psync;
+#ifdef USE_HIERARCHICAL_BARRIER
+long *shmem_internal_barrier_all_local_psync;
+long *shmem_internal_sync_all_local_psync;
+long *shmem_internal_hierarchical_local_psync;
+
+/* Persistent scratch for the active-set PE lists built on every hierarchical
+ * barrier.  Allocated once at init, sized to num_pes (the maximum any active
+ * set can hold), and reused across calls.  Safe to share: barriers are
+ * serialized — a PE cannot enter a new barrier until it has exited the
+ * previous one (same invariant the shared hierarchical_local_psync relies
+ * on). */
+static int *hier_local_pes = NULL;
+static int *hier_root_pes  = NULL;
+
+/* Seen-flags for the root-set build, indexed by node_id (a global PE number in
+ * [0, num_pes)).  Lets build_root_active_set run in O(PE_size) instead of
+ * O(PE_size^2).  Allocated once at init, sized to num_pes. */
+static char *hier_node_seen = NULL;
+
+/* Job-global minimum PEs-per-node, computed once at init from the global
+ * node_id array.  AUTO hierarchical-barrier selection gates on this (not the
+ * local node size) so every PE makes the same decision even on a job with
+ * heterogeneous PPN; otherwise PEs on a large node could pick hierarchical
+ * while PEs on a small node pick tree, diverging within one collective. */
+int shmem_internal_hier_min_ppn = 0;
+
+/* Layout of local_pSync — two cache-line-padded arrays, one slot per PE:
+ *
+ *   up-slot   for PE r: local_pSync[r * HIER_SLOT_STRIDE]
+ *   down-slot for PE r: local_pSync[shr_size * HIER_SLOT_STRIDE + r * HIER_SLOT_STRIDE]
+ *
+ * Phase 1 (gather): each PE writes signal to its OWN up-slot once it has
+ *   collected all its children; parent reads children's up-slots.
+ *   One writer per slot — no MESI contention on the parent's cache line.
+ *
+ * Phase 3 (fanout): parent writes signal to each child's down-slot.
+ *   One writer per slot — same property.
+ *
+ * Sense-alternation (hier_sense) avoids explicit resets between calls.
+ *
+ * Total allocation: 2 * shr_size * HIER_SLOT_STRIDE longs. */
+#define HIER_SLOT_STRIDE  8   /* 8 longs = 64 bytes = 1 cache line */
+
+/* Per-phase timing accumulators (root PE: all three phases;
+ * non-root PEs: phase1_us = gather wait, phase3_us = fanout wait). */
+static double hier_phase1_us = 0.0;
+static double hier_phase2_us = 0.0;
+static double hier_phase3_us = 0.0;
+static long   hier_call_count = 0;
+
+static inline double
+hier_now_us(void)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec * 1e6 + ts.tv_nsec * 1e-3;
+}
+#endif
 
 char *coll_type_str[] = { "AUTO",
                           "LINEAR",
                           "TREE",
                           "DISSEM",
                           "RING",
-                          "RECDBL" };
+                          "RECDBL",
+                          "HIERARCHICAL" };
 
 static int *full_tree_children;
 static int full_tree_num_children;
@@ -134,6 +194,72 @@ shmem_internal_collectives_init(void)
     for (i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
         shmem_internal_sync_all_psync[i] = SHMEM_SYNC_VALUE;
 
+#ifdef USE_HIERARCHICAL_BARRIER
+    /* Allocate local (intranode, CPU-atomic) pSync arrays for the hierarchical
+     * barrier.  Each PE owns HIER_SLOT_STRIDE longs (one cache line) within
+     * the array, indexed by shr_rank.  The stride prevents false sharing:
+     * PE r's slot is at local_pSync[r * HIER_SLOT_STRIDE].
+     * These arrays are touched only by on-node CPU stores/loads via XPMEM;
+     * the global pSync arrays above are touched only by NIC puts. */
+    int shr_size = shmem_internal_get_shr_size();
+    int local_psync_len = 2 * shr_size * HIER_SLOT_STRIDE;
+
+    shmem_internal_barrier_all_local_psync =
+        shmem_internal_shmalloc(sizeof(long) * local_psync_len);
+    if (NULL == shmem_internal_barrier_all_local_psync) return -1;
+
+    for (i = 0; i < local_psync_len; i++) {
+        shmem_internal_barrier_all_local_psync[i] = SHMEM_SYNC_VALUE;
+    }
+
+    shmem_internal_sync_all_local_psync =
+        shmem_internal_shmalloc(sizeof(long) * local_psync_len);
+    if (NULL == shmem_internal_sync_all_local_psync) return -1;
+
+    for (i = 0; i < local_psync_len; i++) {
+        shmem_internal_sync_all_local_psync[i] = SHMEM_SYNC_VALUE;
+    }
+
+    /* Shared local pSync for general barriers/syncs.  Safe to share because
+     * barriers are serialized — a PE cannot enter a new barrier until it has
+     * exited the previous one. */
+    shmem_internal_hierarchical_local_psync =
+        shmem_internal_shmalloc(sizeof(long) * local_psync_len);
+    if (NULL == shmem_internal_hierarchical_local_psync) return -1;
+
+    for (i = 0; i < local_psync_len; i++) {
+        shmem_internal_hierarchical_local_psync[i] = SHMEM_SYNC_VALUE;
+    }
+
+    /* Persistent per-barrier scratch (see declaration above).  Sized to
+     * num_pes so it fits the largest possible active set. */
+    hier_local_pes = malloc(sizeof(int) * shmem_internal_num_pes);
+    hier_root_pes  = malloc(sizeof(int) * shmem_internal_num_pes);
+    /* calloc: seen-flags must start cleared; build_root_active_set leaves them
+     * clean afterward by resetting only the entries it touched. */
+    hier_node_seen = calloc(shmem_internal_num_pes, sizeof(char));
+    if (NULL == hier_local_pes || NULL == hier_root_pes ||
+        NULL == hier_node_seen) return -1;
+
+    /* Compute the job-global minimum PEs-per-node from the global node_id array
+     * (already exchanged at init — no communication needed here).  node_id[pe]
+     * is the global PE number of the lowest-ranked PE on pe's node, so it both
+     * identifies the node and is a valid index in [0, num_pes); tally PE counts
+     * per node, then take the minimum over nodes that actually have PEs. */
+    {
+        int *ppn_count = calloc(shmem_internal_num_pes, sizeof(int));
+        if (NULL == ppn_count) return -1;
+        for (i = 0; i < shmem_internal_num_pes; i++)
+            ppn_count[shmem_runtime_get_node_id(i)]++;
+        shmem_internal_hier_min_ppn = shmem_internal_num_pes;
+        for (i = 0; i < shmem_internal_num_pes; i++) {
+            if (ppn_count[i] > 0 && ppn_count[i] < shmem_internal_hier_min_ppn)
+                shmem_internal_hier_min_ppn = ppn_count[i];
+        }
+        free(ppn_count);
+    }
+#endif
+
     /* initialize the binomial tree for collective operations over
        entire tree */
     full_tree_num_children = 0;
@@ -176,6 +302,10 @@ shmem_internal_collectives_init(void)
             shmem_internal_barrier_type = TREE;
         } else if (0 == strcmp(type, "dissem")) {
             shmem_internal_barrier_type = DISSEM;
+#ifdef USE_HIERARCHICAL_BARRIER
+        } else if (0 == strcmp(type, "hierarchical")) {
+            shmem_internal_barrier_type = HIERARCHICAL;
+#endif
         } else {
             RAISE_WARN_MSG("Ignoring bad barrier algorithm '%s'\n", type);
         }
@@ -418,6 +548,424 @@ shmem_internal_sync_dissem(int PE_start, int PE_stride, int PE_size, long *pSync
     /* Ensure local pSync decrements are done before a subsequent barrier */
     shmem_internal_quiet(SHMEM_CTX_DEFAULT);
 }
+
+
+/*****************************************
+ *
+ * HIERARCHICAL BARRIER/SYNC
+ *
+ * Three-phase algorithm for USE_HIERARCHICAL_BARRIER builds:
+ *
+ * Phase 1 (intranode gather, CPU stores/loads via XPMEM):
+ *   All local PEs run an intranode dissemination barrier using plain
+ *   (non-atomic) stores and acquire-loads.  Each PE owns one cache-line-padded
+ *   slot (HIER_SLOT_STRIDE longs apart) so no two PEs share a cache line.
+ *   Sense alternation (hier_sense) removes the need for explicit slot resets.
+ *   ceil(log2(local_count)) rounds; each round: store signal to partner's slot,
+ *   spin-load own slot until partner's signal arrives.
+ *
+ * Phase 2 (internode, NIC puts, root PEs only):
+ *   Root PEs run a dissemination barrier among themselves using NIC puts
+ *   across per-round pSync slots (ceil(log2(N)) rounds). A shmem_quiet
+ *   after the last round ensures all outbound puts are retired before
+ *   phase 3.
+ *
+ * Phase 3 (intranode fanout, CPU stores/loads via XPMEM):
+ *   Same dissemination algorithm as phase 1, run in reverse sense so that the
+ *   "all clear" propagates back to all local PEs without NIC involvement.
+ *
+ *****************************************/
+#ifdef USE_HIERARCHICAL_BARRIER
+
+/* Count and list the PEs in the active set that reside on this node. */
+static void
+shmem_internal_build_local_set(int PE_start, int PE_stride, int PE_size,
+                                int *local_pes, int *local_count)
+{
+    int i, pe;
+    *local_count = 0;
+
+    for (i = 0, pe = PE_start; i < PE_size; i++, pe += PE_stride) {
+        if (shmem_internal_get_shr_rank(pe) != -1) {
+            local_pes[(*local_count)++] = pe;
+        }
+    }
+}
+
+/* Build an active set of root PEs — one representative per node, defined as
+ * the lowest-ranked active PE on each participating node.  Uses the global
+ * node_id array (computed once at init) so all PEs deterministically compute
+ * the same list without requiring communication.
+ *
+ * O(PE_size): a seen-flag keyed by node_id (a global PE number) records which
+ * nodes already have a representative.  Iterating in ascending PE order, the
+ * first active PE seen for a node_id is its representative.  seen_buf holds
+ * num_pes entries and must enter all-zero; a second pass resets exactly the
+ * entries this build touched, preserving that invariant for the next call. */
+static void
+shmem_internal_build_root_active_set(int PE_start, int PE_stride, int PE_size,
+                                     int *root_pes, int *root_count,
+                                     char *seen_buf)
+{
+    int i, pe;
+    *root_count = 0;
+
+    for (i = 0, pe = PE_start; i < PE_size; i++, pe += PE_stride) {
+        int nid = shmem_runtime_get_node_id(pe);
+        if (!seen_buf[nid]) {
+            seen_buf[nid] = 1;
+            root_pes[(*root_count)++] = pe;
+        }
+    }
+
+    /* Reset only the touched entries so seen_buf is clean for the next build. */
+    for (i = 0; i < *root_count; i++) {
+        seen_buf[shmem_runtime_get_node_id(root_pes[i])] = 0;
+    }
+}
+
+/* CPU atomic store of `val` to the long at `target` via local mapped pointer. */
+static inline void
+shmem_internal_cpu_atomic_store_long(long *target, int noderank, long val)
+{
+    void *remote_ptr;
+    shmem_shr_transport_ptr(target, noderank, &remote_ptr);
+    __atomic_store((long *)remote_ptr, &val, __ATOMIC_RELEASE);
+}
+
+/* Compute the full hierarchical-barrier topology for an active set into a
+ * cache struct.  The PE/root lists are written into the caller-supplied
+ * buffers (local_buf >= on-node active count, root_buf >= node count,
+ * child_buf >= tree_radix); the cache's pointers are set to reference them.
+ * Every field here is invariant for a fixed (PE_start, PE_stride, PE_size) and
+ * node layout, so a team can compute this once and reuse it. */
+static void
+shmem_internal_hier_compute(int PE_start, int PE_stride, int PE_size,
+                            int *local_buf, int *root_buf, int *child_buf,
+                            shmem_internal_hier_cache_t *c)
+{
+    c->local_pes      = local_buf;
+    c->root_pes       = root_buf;
+    c->tree_child_shr = child_buf;
+
+    shmem_internal_build_local_set(PE_start, PE_stride, PE_size,
+                                   c->local_pes, &c->local_count);
+    shmem_internal_build_root_active_set(PE_start, PE_stride, PE_size,
+                                         c->root_pes, &c->root_count,
+                                         hier_node_seen);
+
+    /* build_local_set fills local_pes in ascending PE order, so local_pes[0] is
+     * the lowest-ranked active PE on this node — the active-set representative
+     * for phase 2.  my_vidx is this PE's index in that list (-1 if absent). */
+    c->my_vidx = -1;
+    for (int i = 0; i < c->local_count; i++) {
+        if (c->local_pes[i] == shmem_internal_my_pe) { c->my_vidx = i; break; }
+    }
+    c->active_root_pe = (c->local_count > 0) ? c->local_pes[0] : -1;
+    c->is_root        = (shmem_internal_my_pe == c->active_root_pe);
+
+    c->tree_nchildren = 0;
+    if (c->my_vidx >= 0) {
+        for (int j = 1; j <= tree_radix; j++) {
+            int cv = c->my_vidx * tree_radix + j;
+            if (cv < c->local_count) {
+                c->tree_child_shr[c->tree_nchildren++] =
+                    shmem_runtime_get_node_rank(c->local_pes[cv]);
+            }
+        }
+    }
+
+    c->my_root_idx = -1;
+    for (int i = 0; i < c->root_count; i++) {
+        if (c->root_pes[i] == shmem_internal_my_pe) { c->my_root_idx = i; break; }
+    }
+
+    c->num_rounds = 0;
+    { int n = c->root_count - 1; while (n > 0) { n >>= 1; c->num_rounds++; } }
+}
+
+/* Free the malloc'd arrays held by a persisted topology cache. */
+void
+shmem_internal_hier_cache_free(shmem_internal_hier_cache_t *c)
+{
+    if (c == NULL) return;
+    free(c->local_pes);
+    free(c->root_pes);
+    free(c->tree_child_shr);
+    c->local_pes = c->root_pes = c->tree_child_shr = NULL;
+    c->valid = 0;
+}
+
+void
+shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
+                                  long *pSync, long *local_pSync,
+                                  long *hier_sense_ptr,
+                                  shmem_internal_hier_cache_t *hier_cache)
+{
+    int my_shr_rank  = shmem_runtime_get_node_rank(shmem_internal_my_pe);
+    long one = 1;
+
+    if (PE_size == 1) return;
+
+    /* Determine sense state.  Caller may supply a per-team sense pointer
+     * (hier_sense_ptr != NULL); this ensures each team maintains an independent
+     * sense counter and prevents deadlocks when overlapping teams are synced in
+     * different sequences.  NULL falls back to the internal selection: TEAM_WORLD
+     * uses its own counter; all other active sets share a static fallback. */
+    long *sense_ptr;
+    if (hier_sense_ptr != NULL) {
+        sense_ptr = hier_sense_ptr;
+    } else if (PE_start == 0 && PE_stride == 1 && PE_size == shmem_internal_num_pes) {
+        sense_ptr = &shmem_internal_team_world.hier_sense;
+    } else {
+        static long fallback_sense = 0;
+        sense_ptr = &fallback_sense;
+    }
+
+    /* Resolve the active-set topology.  A team supplies a cache (hier_cache):
+     * built once on the first barrier, reused thereafter — at scale this
+     * removes the O(PE_size) / O(PE_size^2) set scans and per-child runtime
+     * lookups from the hot path.  Callers with no team context (hier_cache ==
+     * NULL) build into the shared per-call scratch every time. */
+    shmem_internal_hier_cache_t  scratch_cache;
+    shmem_internal_hier_cache_t *topo;
+    if (hier_cache != NULL && hier_cache->valid) {
+        topo = hier_cache;
+    } else {
+        shmem_internal_hier_compute(PE_start, PE_stride, PE_size,
+                                    hier_local_pes, hier_root_pes,
+                                    alloca(sizeof(int) * tree_radix),
+                                    &scratch_cache);
+        if (hier_cache != NULL) {
+            /* Persist exact-size copies in the team cache for reuse.  If any
+             * allocation fails, fall back to using the scratch topology for
+             * this call without persisting — the barrier still completes
+             * correctly, just without the caching optimization. */
+            int lc = scratch_cache.local_count, rc = scratch_cache.root_count;
+            int nc = scratch_cache.tree_nchildren;
+            int *cl = malloc(sizeof(int) * (lc > 0 ? lc : 1));
+            int *cr = malloc(sizeof(int) * (rc > 0 ? rc : 1));
+            int *cc = malloc(sizeof(int) * (nc > 0 ? nc : 1));
+            if (cl == NULL || cr == NULL || cc == NULL) {
+                free(cl);
+                free(cr);
+                free(cc);
+                topo = &scratch_cache;
+            } else {
+                memcpy(cl, scratch_cache.local_pes, sizeof(int) * lc);
+                memcpy(cr, scratch_cache.root_pes,  sizeof(int) * rc);
+                memcpy(cc, scratch_cache.tree_child_shr, sizeof(int) * nc);
+                hier_cache->local_pes      = cl;
+                hier_cache->root_pes       = cr;
+                hier_cache->tree_child_shr = cc;
+                hier_cache->local_count    = lc;
+                hier_cache->root_count     = rc;
+                hier_cache->tree_nchildren = nc;
+                hier_cache->my_vidx        = scratch_cache.my_vidx;
+                hier_cache->active_root_pe = scratch_cache.active_root_pe;
+                hier_cache->is_root        = scratch_cache.is_root;
+                hier_cache->my_root_idx    = scratch_cache.my_root_idx;
+                hier_cache->num_rounds     = scratch_cache.num_rounds;
+                hier_cache->valid          = 1;
+                topo = hier_cache;
+            }
+        } else {
+            topo = &scratch_cache;
+        }
+    }
+
+    int  local_count    = topo->local_count;
+    int *root_pes       = topo->root_pes;
+    int  root_count     = topo->root_count;
+    int  my_vidx        = topo->my_vidx;
+    int  is_root        = topo->is_root;
+    int *tree_child_shr = topo->tree_child_shr;
+    int  tree_nchildren = topo->tree_nchildren;
+
+    /* Sense-alternating signal — monotonically increasing, no slot resets needed.
+     * up-slot   for PE r: local_pSync[r * HIER_SLOT_STRIDE]
+     * down-slot for PE r: local_pSync[shr_size * HIER_SLOT_STRIDE + r * HIER_SLOT_STRIDE] */
+    long signal   = SHMEM_SYNC_VALUE + 1 + *sense_ptr;
+    int  shr_size = shmem_internal_get_shr_size();
+    long *up_pSync   = local_pSync;
+    long *down_pSync = local_pSync + (long)(shr_size * HIER_SLOT_STRIDE);
+
+    /* Resolve own up-slot and down-slot mapped pointers once. */
+    void *my_up_raw, *my_down_raw;
+    shmem_shr_transport_ptr(&up_pSync[my_shr_rank * HIER_SLOT_STRIDE],   my_shr_rank, &my_up_raw);
+    shmem_shr_transport_ptr(&down_pSync[my_shr_rank * HIER_SLOT_STRIDE], my_shr_rank, &my_down_raw);
+    volatile long *my_down_slot = (volatile long *)my_down_raw;
+
+    /* ---- Degenerate case: all active PEs on one node ---- */
+    if (local_count == PE_size) {
+        if (my_vidx < 0) return;
+
+        double t0 = shmem_internal_params.HIER_BARRIER_DEBUG ? hier_now_us() : 0.0;
+
+        /* Phase 1: gather up tree — wait for children's up-slots, then signal parent */
+        for (int c = 0; c < tree_nchildren; c++) {
+            void *child_up_raw;
+            shmem_shr_transport_ptr(&up_pSync[tree_child_shr[c] * HIER_SLOT_STRIDE],
+                                    tree_child_shr[c], &child_up_raw);
+            volatile long *child_up = (volatile long *)child_up_raw;
+            long cur;
+            do {
+                __atomic_load(child_up, &cur, __ATOMIC_ACQUIRE);
+                if (cur != signal) { SPINLOCK_BODY(); }
+            } while (cur != signal);
+        }
+        if (my_vidx > 0) {
+            void *parent_up_raw;
+            shmem_shr_transport_ptr(&up_pSync[my_shr_rank * HIER_SLOT_STRIDE],
+                                    my_shr_rank, &parent_up_raw);
+            __atomic_store((long *)parent_up_raw, &signal, __ATOMIC_RELEASE);
+        }
+
+        double t1 = shmem_internal_params.HIER_BARRIER_DEBUG ? hier_now_us() : 0.0;
+
+        /* Phase 3: fanout — root stores to children's down-slots, non-roots wait then relay */
+        if (my_vidx == 0) {
+            for (int c = 0; c < tree_nchildren; c++) {
+                shmem_internal_cpu_atomic_store_long(
+                    &down_pSync[tree_child_shr[c] * HIER_SLOT_STRIDE],
+                    tree_child_shr[c], signal);
+            }
+        } else {
+            long cur;
+            do {
+                __atomic_load(my_down_slot, &cur, __ATOMIC_ACQUIRE);
+                if (cur != signal) { SPINLOCK_BODY(); }
+            } while (cur != signal);
+            for (int c = 0; c < tree_nchildren; c++) {
+                shmem_internal_cpu_atomic_store_long(
+                    &down_pSync[tree_child_shr[c] * HIER_SLOT_STRIDE],
+                    tree_child_shr[c], signal);
+            }
+        }
+
+        if (shmem_internal_params.HIER_BARRIER_DEBUG) {
+            double t2 = hier_now_us();
+            hier_phase1_us  += t1 - t0;
+            hier_phase3_us  += t2 - t1;
+            hier_call_count++;
+        }
+
+        (*sense_ptr)++;
+        return;
+    }
+
+    /* ---- Normal multi-node case ---- */
+
+    double mn_t0 = shmem_internal_params.HIER_BARRIER_DEBUG ? hier_now_us() : 0.0;
+
+    /* Phase 1: intranode gather (k-ary tree, bottom-up).
+     * Each PE waits on each child's up-slot, then writes its own up-slot.
+     * One writer per up-slot — no cache-line contention on the parent. */
+    if (my_vidx >= 0) {
+        for (int c = 0; c < tree_nchildren; c++) {
+            void *child_up_raw;
+            shmem_shr_transport_ptr(&up_pSync[tree_child_shr[c] * HIER_SLOT_STRIDE],
+                                    tree_child_shr[c], &child_up_raw);
+            volatile long *child_up = (volatile long *)child_up_raw;
+            long cur;
+            do {
+                __atomic_load(child_up, &cur, __ATOMIC_ACQUIRE);
+                if (cur != signal) { SPINLOCK_BODY(); }
+            } while (cur != signal);
+        }
+        if (my_vidx > 0) {
+            /* Signal parent by writing to OWN up-slot (parent reads it). */
+            __atomic_store((long *)my_up_raw, &signal, __ATOMIC_RELEASE);
+        }
+    }
+
+    double mn_t1 = shmem_internal_params.HIER_BARRIER_DEBUG ? hier_now_us() : 0.0;
+
+    if (is_root) {
+        /* ---- Phase 2: internode barrier (NIC puts, root PEs only) ---- */
+        if (root_count > 1) {
+            int my_root_idx = topo->my_root_idx;
+            int num_rounds  = topo->num_rounds;
+            shmem_internal_assert(my_root_idx >= 0);
+            shmem_internal_assert(num_rounds <= SHMEM_BARRIER_SYNC_SIZE);
+
+            for (int r = 0; r < num_rounds; r++) {
+                int partner_idx = (my_root_idx + (1 << r)) % root_count;
+                int partner_pe  = root_pes[partner_idx];
+                shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, &pSync[r], &one,
+                                         sizeof(one), partner_pe);
+                SHMEM_WAIT(&pSync[r], SHMEM_SYNC_VALUE);
+                __atomic_store_n(&pSync[r], SHMEM_SYNC_VALUE, __ATOMIC_RELEASE);
+            }
+        }
+
+        shmem_internal_quiet(SHMEM_CTX_DEFAULT);
+
+        double mn_t2 = shmem_internal_params.HIER_BARRIER_DEBUG ? hier_now_us() : 0.0;
+
+        /* ---- Phase 3: intranode fanout (k-ary tree, top-down via down-slots) ---- */
+        for (int c = 0; c < tree_nchildren; c++) {
+            shmem_internal_cpu_atomic_store_long(
+                &down_pSync[tree_child_shr[c] * HIER_SLOT_STRIDE],
+                tree_child_shr[c], signal);
+        }
+
+        if (shmem_internal_params.HIER_BARRIER_DEBUG) {
+            double mn_t3 = hier_now_us();
+            hier_phase1_us  += mn_t1 - mn_t0;
+            hier_phase2_us  += mn_t2 - mn_t1;
+            hier_phase3_us  += mn_t3 - mn_t2;
+            hier_call_count++;
+        }
+
+    } else if (my_vidx >= 0) {
+        /* Non-root: wait on own down-slot for parent's signal, then relay to children. */
+        long cur;
+        do {
+            __atomic_load(my_down_slot, &cur, __ATOMIC_ACQUIRE);
+            if (cur != signal) { SPINLOCK_BODY(); }
+        } while (cur != signal);
+
+        for (int c = 0; c < tree_nchildren; c++) {
+            shmem_internal_cpu_atomic_store_long(
+                &down_pSync[tree_child_shr[c] * HIER_SLOT_STRIDE],
+                tree_child_shr[c], signal);
+        }
+
+        if (shmem_internal_params.HIER_BARRIER_DEBUG) {
+            double mn_t3 = hier_now_us();
+            hier_phase1_us  += mn_t1 - mn_t0;
+            hier_phase3_us  += mn_t3 - mn_t1;
+            hier_call_count++;
+        }
+    }
+
+    if (my_vidx >= 0) { (*sense_ptr)++; }
+    /* PEs absent from local_pes (my_vidx < 0) fall through silently. */
+}
+
+void
+shmem_internal_hier_barrier_print_stats(void)
+{
+    if (!shmem_internal_params.HIER_BARRIER_DEBUG) return;
+    if (hier_call_count == 0) return;
+
+    /* Each PE prints its own per-phase averages.  At scale the output can be
+     * large; the caller should fence/barrier before this so the lines don't
+     * interleave badly, but we keep this simple intentionally. */
+    fprintf(stderr,
+            "[PE %d] hier_barrier calls=%ld  "
+            "phase1(gather)=%.2f us  phase2(internode)=%.2f us  "
+            "phase3(fanout)=%.2f us  total=%.2f us\n",
+            shmem_internal_my_pe,
+            hier_call_count,
+            hier_phase1_us / hier_call_count,
+            hier_phase2_us / hier_call_count,
+            hier_phase3_us / hier_call_count,
+            (hier_phase1_us + hier_phase2_us + hier_phase3_us) / hier_call_count);
+}
+
+#endif /* USE_HIERARCHICAL_BARRIER */
 
 
 /*****************************************

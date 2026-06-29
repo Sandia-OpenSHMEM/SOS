@@ -103,7 +103,7 @@ long                            shmem_transport_ofi_get_poll_limit;
 size_t                          shmem_transport_ofi_max_buffered_send;
 size_t                          shmem_transport_ofi_max_msg_size;
 size_t                          shmem_transport_ofi_bounce_buffer_size;
-long                            shmem_transport_ofi_max_bounce_buffers;
+size_t                          shmem_transport_ofi_max_bounce_buffers;
 size_t                          shmem_transport_ofi_addrlen;
 #ifdef ENABLE_MR_RMA_EVENT
 int                             shmem_transport_ofi_mr_rma_event;
@@ -208,8 +208,11 @@ struct shmem_internal_tid shmem_transport_ofi_gettid(void)
 }
 
 #define SHMEM_TRANSPORT_OFI_PROV_SOCKETS "sockets"
+#define SHMEM_TRANSPORT_OFI_PROV_CXI     "cxi"
 
 static struct fabric_info shmem_transport_ofi_info = {0};
+
+char *shmem_transport_ofi_prov_name = NULL;
 
 static size_t shmem_transport_ofi_grow_size = 128;
 
@@ -1341,6 +1344,44 @@ int allocate_fabric_resources(struct fabric_info *info)
                     &shmem_transport_ofi_domainfd,NULL);
     OFI_CHECK_RETURN_STR(ret, "domain initialization failed");
 
+    /* CXI provider: enable hybrid local MR descriptor mode.  When enabled,
+     * libfabric will skip its internal MR registration if a non-NULL desc is
+     * passed (and proceed without registration if desc is NULL).  This avoids
+     * per-call MR cache lookups for source buffers in fi_write/fi_writemsg.
+     * Must be done BEFORE any endpoints are created (the provider only
+     * propagates this setting to child endpoints at creation time).
+     * Gated on a CXI provider check so non-CXI providers never attempt the
+     * fi_open_ops call and do not produce spurious startup warnings.  The
+     * optimization is compiled in only when configure found both the CXI
+     * extension header and the enable_hybrid_mr_desc member; otherwise it is
+     * disabled and a request to enable it is reported once on PE 0. */
+    if (shmem_transport_ofi_check_provider(SHMEM_TRANSPORT_OFI_PROV_CXI)) {
+        if (shmem_internal_params.OFI_CXI_HYBRID_MR_DESC) {
+#ifdef SHMEM_TRANSPORT_OFI_HAVE_CXI_HYBRID_MR_DESC
+            struct fi_cxi_dom_ops *cxi_dom_ops = NULL;
+            int hret = fi_open_ops(&shmem_transport_ofi_domainfd->fid,
+                                   FI_CXI_DOM_OPS_3, 0, (void **)&cxi_dom_ops, NULL);
+            if (hret == 0 && cxi_dom_ops && cxi_dom_ops->enable_hybrid_mr_desc) {
+                hret = cxi_dom_ops->enable_hybrid_mr_desc(&shmem_transport_ofi_domainfd->fid, true);
+                if (hret == 0) {
+                    DEBUG_STR("CXI: hybrid local MR descriptor mode enabled");
+                } else {
+                    DEBUG_MSG("CXI: enable_hybrid_mr_desc failed (%s)\n", fi_strerror(-hret));
+                }
+            } else {
+                DEBUG_MSG("CXI: hybrid MR desc not available (fi_open_ops returned %d / %s)\n",
+                          hret, hret ? fi_strerror(-hret) : "no ops struct");
+            }
+#else
+            DEBUG_STR("CXI hybrid MR desc requested (SHMEM_OFI_CXI_HYBRID_MR_DESC=1) "
+                      "but SOS was built without CXI extension support "
+                      "(missing rdma/fi_cxi_ext.h or enable_hybrid_mr_desc); ignoring");
+#endif
+        } else {
+            DEBUG_STR("CXI: hybrid local MR descriptor mode disabled (SHMEM_OFI_CXI_HYBRID_MR_DESC=0)");
+        }
+    }
+
     /* AV table set-up for PE mapping */
 
 #ifdef USE_AV_MAP
@@ -1470,7 +1511,9 @@ int query_for_fabric(struct fabric_info *info)
     struct fi_fabric_attr fabric_attr = {0};
     struct fi_ep_attr   ep_attr = {0};
 
-    shmem_transport_ofi_max_buffered_send = sizeof(long double);
+    /* Hint 0 = no minimum inject requirement; provider returns its natural
+     * inject_size, which is adopted below after fi_getinfo. */
+    shmem_transport_ofi_max_buffered_send = 0;
 
     fabric_attr.prov_name = info->prov_name;
 
@@ -1650,6 +1693,10 @@ int query_for_fabric(struct fabric_info *info)
 #endif
 
 #ifndef DISABLE_OFI_INJECT
+    DEBUG_MSG(RAISE_PE_PREFIX "tx_attr->inject_size (provider): %zu, requested: %zu\n",
+              shmem_internal_my_pe,
+              info->p_info->tx_attr->inject_size,
+              shmem_transport_ofi_max_buffered_send);
     shmem_internal_assertp(info->p_info->tx_attr->inject_size >= shmem_transport_ofi_max_buffered_send);
     shmem_transport_ofi_max_buffered_send = info->p_info->tx_attr->inject_size;
 #else
@@ -1671,6 +1718,10 @@ int query_for_fabric(struct fabric_info *info)
               info->p_info->domain_attr->max_ep_stx_ctx == 0 ? "no" : "yes",
               shmem_transport_ofi_stx_max,
               num_nics);
+
+    /* Store provider name for runtime checks.  strdup so the pointer remains
+     * valid after fi_freeinfo() is called in shmem_transport_fini(). */
+    shmem_transport_ofi_prov_name = strdup(info->p_info->fabric_attr->prov_name);
 
     return ret;
 }
@@ -1731,6 +1782,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     cntr_put_attr.events   = FI_CNTR_EVENTS_COMP;
     cntr_get_attr.events   = FI_CNTR_EVENTS_COMP;
 
+#if 0
     /* Set FI_WAIT based on the put and get polling limits defined above */
     if (shmem_transport_ofi_put_poll_limit < 0) {
         cntr_put_attr.wait_obj = FI_WAIT_NONE;
@@ -1742,6 +1794,9 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     } else {
         cntr_get_attr.wait_obj = FI_WAIT_UNSPEC;
     }
+#endif
+        cntr_put_attr.wait_obj = FI_WAIT_UNSPEC;
+        cntr_get_attr.wait_obj = FI_WAIT_UNSPEC;
 
     /* Allow provider to choose CQ size, since we are using FI_RM_ENABLED.
      * Context format is used to return bounce buffer pointers in the event
@@ -1804,10 +1859,15 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
         shmem_transport_ofi_bounce_buffer_size > 0 &&
         shmem_transport_ofi_max_bounce_buffers > 0)
     {
+        size_t max_bb_pool_cnt = 0;
+        if (shmem_internal_params.BOUNCE_SHEAP) {
+            max_bb_pool_cnt = shmem_transport_ofi_max_bounce_buffers;
+        }
         ctx->bounce_buffers =
             shmem_free_list_init(sizeof(shmem_transport_ofi_bounce_buffer_t) +
                                  shmem_transport_ofi_bounce_buffer_size,
-                                 init_bounce_buffer);
+                                 init_bounce_buffer,
+                                 max_bb_pool_cnt);
     }
     else {
         ctx->options &= ~SHMEMX_CTX_BOUNCE_BUFFER;
@@ -2273,6 +2333,8 @@ int shmem_transport_fini(void)
     free(addr_table);
 #endif
 
+    free(shmem_transport_ofi_prov_name);
+    shmem_transport_ofi_prov_name = NULL;
     fi_freeinfo(shmem_transport_ofi_info.fabrics);
 
     SHMEM_MUTEX_DESTROY(shmem_transport_ofi_lock);

@@ -23,6 +23,21 @@
 #include <rdma/fi_rma.h>
 #include <rdma/fi_cm.h>
 #include <rdma/fi_atomic.h>
+#ifdef HAVE_RDMA_FI_CXI_EXT_H
+#include <stdbool.h>  /* fi_cxi_ext.h uses bool but does not include stdbool.h */
+#include <rdma/fi_cxi_ext.h>
+#endif
+/* The CXI hybrid local MR descriptor optimization needs the CXI extension
+ * header AND a struct fi_cxi_dom_ops that actually exposes the
+ * enable_hybrid_mr_desc member (added in a later libfabric).  configure probes
+ * both (HAVE_RDMA_FI_CXI_EXT_H, HAVE_STRUCT_FI_CXI_DOM_OPS_ENABLE_HYBRID_MR_DESC);
+ * the feature is compiled in only when both are present, otherwise it is
+ * disabled entirely — no hand-rolled struct mirror, so we never risk an ABI
+ * mismatch against the provider's real layout. */
+#if defined(HAVE_RDMA_FI_CXI_EXT_H) && \
+    defined(HAVE_STRUCT_FI_CXI_DOM_OPS_ENABLE_HYBRID_MR_DESC)
+#define SHMEM_TRANSPORT_OFI_HAVE_CXI_HYBRID_MR_DESC 1
+#endif
 #include <string.h>
 #include <unistd.h>
 #include <stddef.h>
@@ -69,7 +84,7 @@ extern long                             shmem_transport_ofi_get_poll_limit;
 extern size_t                           shmem_transport_ofi_max_buffered_send;
 extern size_t                           shmem_transport_ofi_max_msg_size;
 extern size_t                           shmem_transport_ofi_bounce_buffer_size;
-extern long                             shmem_transport_ofi_max_bounce_buffers;
+extern size_t                             shmem_transport_ofi_max_bounce_buffers;
 
 extern pthread_mutex_t                  shmem_transport_ofi_progress_lock;
 
@@ -436,7 +451,7 @@ void shmem_transport_ofi_drain_cq(shmem_transport_ctx_t *ctx)
                                      (shmem_transport_ofi_bounce_buffer_t *) frag);
                 ctx->completed_bb_cntr++;
             } else {
-                RAISE_ERROR_STR("Unrecognized completion object");
+                RAISE_ERROR_MSG("[%d] Unrecognized completion object %p %x mtofs %p\n", shmem_internal_my_pe, frag, frag->mytype, &frag->mytype);
             }
         }
 
@@ -473,6 +488,10 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_transport_ctx_t
     if (NULL == buff)
         RAISE_ERROR_STR("Bounce buffer allocation failed");
 
+    if (buff->frag.mytype != SHMEM_TRANSPORT_OFI_TYPE_BOUNCE) {
+	RAISE_ERROR_STR("Bounce buffer allocation failed");
+    }
+
     shmem_internal_assert(buff->frag.mytype == SHMEM_TRANSPORT_OFI_TYPE_BOUNCE);
 
     memcpy(buff->data, source, len);
@@ -504,28 +523,8 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
      * reverse order: first the fid_cntr event counter, then the put issued
      * counter.  We'll want to preserve this property in the future.
      */
-    uint64_t success, fail, cnt, cnt_new;
-    long poll_count = 0;
-    while (poll_count < shmem_transport_ofi_put_poll_limit ||
-           shmem_transport_ofi_put_poll_limit < 0) {
-        success = fi_cntr_read(ctx->put_cntr);
-        fail = fi_cntr_readerr(ctx->put_cntr);
-        cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
+    uint64_t cnt, cnt_new;
 
-        shmem_transport_probe();
-
-        if (success < cnt && fail == 0) {
-            SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
-            SPINLOCK_BODY();
-            SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
-        } else if (fail) {
-            RAISE_ERROR_MSG("Operations completed in error (%" PRIu64 ")\n", fail);
-        } else {
-            SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
-            return;
-        }
-        poll_count++;
-    }
     cnt_new = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
     do {
         cnt = cnt_new;
@@ -546,6 +545,18 @@ int shmem_transport_quiet(shmem_transport_ctx_t* ctx)
     shmem_transport_get_wait(ctx);
 
     return 0;
+}
+
+/* Check if the current OFI provider exactly matches the given name.
+ * Uses strcmp so that layered providers (e.g. "foo;ofi_rxm") do not
+ * incorrectly inherit provider-specific fast paths.
+ * Returns 1 if provider matches, 0 otherwise. */
+extern char *shmem_transport_ofi_prov_name;
+static inline int
+shmem_transport_ofi_check_provider(const char *name)
+{
+    return (shmem_transport_ofi_prov_name &&
+            strcmp(shmem_transport_ofi_prov_name, name) == 0);
 }
 
 
@@ -965,31 +976,10 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
      * reverse order: first the fid_cntr event counter, then the get issued
      * counter.  We'll want to preserve this property in the future.
      */
-    uint64_t success, fail, cnt, cnt_new;
-    long poll_count = 0;
+    uint64_t cnt, cnt_new;
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
 
-    while (poll_count < shmem_transport_ofi_get_poll_limit ||
-           shmem_transport_ofi_get_poll_limit < 0) {
-        success = fi_cntr_read(ctx->get_cntr);
-        fail = fi_cntr_readerr(ctx->get_cntr);
-        cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr);
-
-        shmem_transport_probe();
-
-        if (success < cnt && fail == 0) {
-            SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
-            SPINLOCK_BODY();
-            SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
-        } else if (fail) {
-            RAISE_ERROR_MSG("Operations completed in error (%" PRIu64 ")\n", fail);
-        } else {
-            SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
-            return;
-        }
-        poll_count++;
-    }
     cnt_new = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr);
     do {
         cnt = cnt_new;

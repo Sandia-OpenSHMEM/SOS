@@ -38,6 +38,8 @@ static int kv_length = 0;
 static int initialized_mpi = 0;
 static int node_size;
 static int *node_ranks;
+static int *is_node_root = NULL;
+static int *node_id_array = NULL;
 
 char* kv_store_me;
 char* kv_store_all;
@@ -103,6 +105,12 @@ shmem_runtime_init(int enable_node_ranks)
     if (size > 1 && enable_node_ranks) {
         node_ranks = malloc(size * sizeof(int));
         if (NULL == node_ranks) return 8;
+#ifdef USE_HIERARCHICAL_BARRIER
+        is_node_root = malloc(size * sizeof(int));
+        if (NULL == is_node_root) return 9;
+        node_id_array = malloc(size * sizeof(int));
+        if (NULL == node_id_array) return 10;
+#endif
     }
 
     return 0;
@@ -117,6 +125,8 @@ shmem_runtime_fini(void)
     if (node_ranks) {
         MPI_Comm_free(&SHMEM_RUNTIME_SHARED);
         free(node_ranks);
+        free(is_node_root);
+        free(node_id_array);
     }
 
     MPI_Comm_free(&SHMEM_RUNTIME_WORLD);
@@ -203,10 +213,58 @@ shmem_runtime_get_node_size(void)
 }
 
 int
+shmem_runtime_get_node_root_pe(void)
+{
+    int i;
+
+    if (size == 1) {
+        return 0;
+    }
+
+    for (i = 0; i < size; i++) {
+        if (node_ranks[i] == 0)
+            return i;
+    }
+
+    /* Should not be reached */
+    return 0;
+}
+
+int
+shmem_runtime_is_node_root_pe(int pe)
+{
+    shmem_internal_assert(pe < size && pe >= 0);
+
+    if (size == 1)
+        return 1;
+
+    if (NULL == is_node_root)
+        return 0;
+
+    return is_node_root[pe];
+}
+
+
+int
+shmem_runtime_get_node_id(int pe)
+{
+    shmem_internal_assert(pe < size && pe >= 0);
+
+    if (size == 1)
+        return 0;
+
+    if (NULL == node_id_array)
+        return pe;
+
+    return node_id_array[pe];
+}
+
+int
 shmem_runtime_exchange(void)
 {
     if (size == 1) {
         kv_store_all = kv_store_me;
+        if (is_node_root) is_node_root[0] = 1;
         return 0;
     }
 
@@ -231,6 +289,35 @@ shmem_runtime_exchange(void)
         MPI_Group_free(&world_group);
         MPI_Group_free(&node_group);
         free(world_ranks);
+
+#ifdef USE_HIERARCHICAL_BARRIER
+        /* Exchange absolute node ranks to identify node roots across all nodes.
+         * node_ranks[pe] is the rank of PE pe in the CALLING PE's node group;
+         * for off-node PEs it is MPI_UNDEFINED.  We need each PE's rank in its
+         * OWN node group, so gather those now. */
+        int my_node_rank;
+        MPI_Comm_rank(SHMEM_RUNTIME_SHARED, &my_node_rank);
+
+        int *abs_node_ranks = malloc(size * sizeof(int));
+        if (NULL == abs_node_ranks) return 2;
+
+        MPI_Allgather(&my_node_rank, 1, MPI_INT,
+                      abs_node_ranks, 1, MPI_INT, SHMEM_RUNTIME_WORLD);
+
+        for (int i = 0; i < size; i++)
+            is_node_root[i] = (abs_node_ranks[i] == 0) ? 1 : 0;
+
+        free(abs_node_ranks);
+
+        /* Compute node_id_array: each PE's node is identified by the global
+         * rank of its lowest-ranked process.  Bcast rank-0's world rank within
+         * the shared communicator so every PE on the same node gets the same
+         * value, then Allgather so all PEs know every other PE's node root. */
+        int my_node_root_grank = rank;
+        MPI_Bcast(&my_node_root_grank, 1, MPI_INT, 0, SHMEM_RUNTIME_SHARED);
+        MPI_Allgather(&my_node_root_grank, 1, MPI_INT,
+                      node_id_array, 1, MPI_INT, SHMEM_RUNTIME_WORLD);
+#endif
     }
 
     int chunkSize = kv_length * sizeof(char) * MAX_KV_LENGTH;

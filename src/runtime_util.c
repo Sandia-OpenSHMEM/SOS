@@ -164,3 +164,74 @@ int shmem_runtime_util_populate_node(int *location_array, int size, int *node_si
 
     return 0;
 }
+
+
+/* Populate is_node_root[pe] = 1 if PE pe is the lowest-ranked (first) PE on
+ * its node, 0 otherwise.  Optionally populate node_id_out[pe] with the global
+ * PE number of the lowest-ranked PE on pe's node (the same value for all PEs
+ * that share a node).  node_id_out may be NULL.
+ *
+ * Must be called after shmem_runtime_util_put_hostname and a runtime exchange,
+ * so that every PE's hostname is readable via shmem_runtime_get. */
+int
+shmem_runtime_util_populate_global_node_roots(int *is_node_root, int *node_id_out, int size)
+{
+    int ret = 0;
+    char **hostnames = (char **) malloc(size * sizeof(char *));
+    size_t *hlens   = (size_t *) malloc(size * sizeof(size_t));
+
+    if (!hostnames || !hlens) {
+        free(hostnames);
+        free(hlens);
+        RETURN_ERROR_MSG("Out of memory allocating hostname arrays\n");
+        return 1;
+    }
+
+    for (int pe = 0; pe < size; pe++) {
+        hostnames[pe] = NULL;
+    }
+
+    for (int pe = 0; pe < size; pe++) {
+        ret = shmem_runtime_get(pe, "hostname_len", &hlens[pe], sizeof(size_t));
+        if (ret != 0) {
+            RETURN_ERROR_MSG("Failed to get hostname_len for PE %d (%d)\n", pe, ret);
+            goto cleanup;
+        }
+        hostnames[pe] = (char *) malloc(hlens[pe] + 1);
+        if (!hostnames[pe]) {
+            RETURN_ERROR_MSG("Out of memory for hostname of PE %d\n", pe);
+            ret = 2;
+            goto cleanup;
+        }
+        ret = shmem_runtime_get(pe, "hostname", hostnames[pe], hlens[pe]);
+        if (ret != 0) {
+            RETURN_ERROR_MSG("Failed to get hostname for PE %d (%d)\n", pe, ret);
+            goto cleanup;
+        }
+    }
+
+    /* PE pe is a node root if no earlier PE (q < pe) has the same hostname.
+     * node_id_out[pe] (when non-NULL) is set to the global PE number of the
+     * lowest-ranked PE on pe's node, which serves as a stable node identifier
+     * that all PEs can compute identically from global data. */
+    for (int pe = 0; pe < size; pe++) {
+        is_node_root[pe] = 1;
+        if (node_id_out) node_id_out[pe] = pe;
+        for (int q = 0; q < pe; q++) {
+            if (hlens[pe] == hlens[q] &&
+                memcmp(hostnames[pe], hostnames[q], hlens[pe]) == 0) {
+                is_node_root[pe] = 0;
+                if (node_id_out) node_id_out[pe] = node_id_out[q];
+                break;
+            }
+        }
+    }
+
+cleanup:
+    for (int pe = 0; pe < size; pe++) {
+        free(hostnames[pe]);
+    }
+    free(hostnames);
+    free(hlens);
+    return ret;
+}

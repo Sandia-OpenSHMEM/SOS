@@ -327,6 +327,14 @@ AC_ARG_ENABLE([shr-atomics],
 AS_IF([test "$enable_shr_atomics" = "yes"],
       [AC_DEFINE([USE_SHR_ATOMICS], [1], [If defined, the shared memory layer will perform processor atomics.])])
 
+AC_ARG_ENABLE([hierarchical-barrier],
+    [AS_HELP_STRING([--enable-hierarchical-barrier],
+                    [Enable the hierarchical barrier: intranode phase uses CPU atomics,
+                     internode phase uses NIC puts. Requires XPMEM (the intranode
+                     phase does CPU atomics on peers' slots via mapped pointers, which
+                     only XPMEM provides) and a network transport (OFI, Portals4, or
+                     UCX). (default: disabled)])])
+
 AC_ARG_ENABLE([manpages],
     [AS_HELP_STRING([--enable-manpages],
                     [Include man pages in the installation (default:disabled)])])
@@ -537,7 +545,6 @@ AM_CONDITIONAL([USE_CMA], [test "$transport_cma" = "yes"])
 
 AS_IF([test "$transport_xpmem" = "yes" -o "$transport_cma" = "yes"],
       [AC_DEFINE([USE_ON_NODE_COMMS], [1], [Define if any on-node comm transport is available])
-       AC_DEFINE([ENABLE_HARD_POLLING], [1], [Enable hard polling])
       ])
 
 if test "$enable_shr_atomics" = "yes"; then
@@ -549,6 +556,38 @@ fi
 if test "$enable_shr_atomics" != "no" -a "$transport_xpmem" = "yes" -a "$transport" = "none"; then
     transport_shr_atomics="yes"
     AC_DEFINE([USE_SHR_ATOMICS], [1], [If defined, the shared memory layer will perform processor atomics.])
+fi
+
+dnl Hierarchical barrier: only when explicitly requested.  Validate that XPMEM
+dnl and a network transport are both present; error if dependencies are missing.
+dnl XPMEM (not CMA) is required because the intranode phase performs CPU atomics
+dnl on peers' pSync slots through directly mapped pointers (shmem_shr_transport_ptr),
+dnl which only XPMEM can provide; CMA's copy-based path cannot.
+transport_hierarchical_barrier="no"
+if test "$enable_hierarchical_barrier" = "yes"; then
+    dnl Check on-node transport dependency
+    if test "$transport_xpmem" != "yes"; then
+        AC_MSG_ERROR([--enable-hierarchical-barrier requires XPMEM; configure with --with-xpmem])
+    dnl Check network transport dependency
+    elif test "$transport_ofi" != "yes" -a "$transport_portals4" != "yes" -a "$transport_ucx" != "yes"; then
+        AC_MSG_ERROR([--enable-hierarchical-barrier requires a network transport; configure with --with-ofi, --with-portals4, or --with-ucx])
+    else
+        transport_hierarchical_barrier="yes"
+    fi
+fi
+if test "$transport_hierarchical_barrier" = "yes"; then
+    AC_DEFINE([USE_HIERARCHICAL_BARRIER], [1],
+              [If defined, enables the hierarchical barrier: intranode CPU atomics + internode NIC puts.])
+    dnl The hierarchical barrier uses XPMEM-mapped pointers for intranode data
+    dnl movement (CPU atomics on peers' slots). USE_SHR_ATOMICS is defined so that the
+    dnl shmem_shr_transport_atomic() function bodies are compiled; the routing
+    dnl logic in shmem_shr_transport_use_atomic() gates them behind a runtime
+    dnl check (shr_size == num_pes), so user-visible AMOs only go through CPU
+    dnl atomics when all PEs are on one node. In the multi-node case they
+    dnl always use the NIC, preserving the single-coherency-domain invariant.
+    AC_DEFINE([USE_SHR_ATOMICS], [1],
+              [If defined, the shared memory layer will perform processor atomics.])
+    transport_shr_atomics="yes"
 fi
 
 AC_ARG_ENABLE([pmi-simple], [AS_HELP_STRING([--enable-pmi-simple],
@@ -920,6 +959,44 @@ if test "$transport_ofi" = "yes" ; then
     LIBS="$LIBS $ofi_LIBS"
     WRAPPER_COMPILER_EXTRA_LDFLAGS="$ofi_LDFLAGS"
     WRAPPER_COMPILER_EXTRA_LIBS="$ofi_LIBS"
+    dnl CXI provider extensions (struct fi_cxi_dom_ops, enable_hybrid_mr_desc).
+    dnl Checked with the OFI include path in CPPFLAGS.  fi_cxi_ext.h is not
+    dnl self-contained: it references struct fid / uint64_t / bool / struct
+    dnl timespec without including the headers that define them.  We therefore
+    dnl supply the full prerequisite set (stdbool.h, time.h, stdint.h,
+    dnl rdma/fabric.h, rdma/fi_domain.h) in the 4th argument so the probe
+    dnl compiles independently of whatever a given libfabric's fabric.h happens
+    dnl to pull in transitively (which varies across clusters/versions).  Without
+    dnl this the header can be present yet reported as unusable, silently
+    dnl disabling the optimization.  AC_CHECK_HEADERS defines
+    dnl HAVE_RDMA_FI_CXI_EXT_H when the header compiles; only then do we probe
+    dnl for the enable_hybrid_mr_desc member, which was added to struct
+    dnl fi_cxi_dom_ops in a later libfabric.  AC_CHECK_MEMBER defines
+    dnl HAVE_STRUCT_FI_CXI_DOM_OPS_ENABLE_HYBRID_MR_DESC on success.  The hybrid
+    dnl MR descriptor optimization is compiled in only when BOTH are defined.
+    AC_CHECK_HEADERS([rdma/fi_cxi_ext.h],
+        [AC_CHECK_MEMBER([struct fi_cxi_dom_ops.enable_hybrid_mr_desc],
+            [AC_DEFINE([HAVE_STRUCT_FI_CXI_DOM_OPS_ENABLE_HYBRID_MR_DESC], [1],
+                       [Define to 1 if struct fi_cxi_dom_ops has the enable_hybrid_mr_desc member.])],
+            [],
+            [[#include <stdbool.h>
+              #include <time.h>
+              #include <stdint.h>
+              #include <rdma/fabric.h>
+              #include <rdma/fi_domain.h>
+              #include <rdma/fi_cxi_ext.h>]])],
+        [],
+        [[#include <stdbool.h>
+          #include <time.h>
+          #include <stdint.h>
+          #include <rdma/fabric.h>
+          #include <rdma/fi_domain.h>]])
+
+    dnl Surface the result in the configure summary so a misdetection is visible
+    dnl at configure time rather than only as a runtime warning on CXI hardware.
+    cxi_hybrid_mr_desc="no"
+    AS_IF([test "x$ac_cv_member_struct_fi_cxi_dom_ops_enable_hybrid_mr_desc" = "xyes"],
+          [cxi_hybrid_mr_desc="yes"])
 fi
 
 if test "$transport_ucx" = "yes" ; then
@@ -1050,6 +1127,7 @@ echo "  XPMEM:          $transport_xpmem"
 echo "  CMA:            $transport_cma"
 echo "  memcpy (self):  $transport_memcpy"
 echo "  Shr. atomics:   $transport_shr_atomics"
+echo "  Hier. barrier:  $transport_hierarchical_barrier"
 echo ""
 echo "Global Options:"
 if test "$enable_remote_virtual_addressing" = "yes"; then
@@ -1083,6 +1161,8 @@ if test "$transport_ofi" = "yes"; then
     else
         echo "  Addr. vector:   table"
     fi
+
+    echo "  CXI hybrid MR desc: $cxi_hybrid_mr_desc"
 
     echo ""
 fi
