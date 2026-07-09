@@ -163,7 +163,7 @@ shmem_internal_getenv_bool(const char *name,
                            shmem_internal_env_bool *out, bool *provided) {
     char *env = shmem_internal_getenv(name);
     *provided = (env != NULL);
-    *out = (*provided) ? !default_val : default_val;
+    *out = (*provided) ? (bool) errchk_atol(env) : default_val;
     return 0;
 }
 

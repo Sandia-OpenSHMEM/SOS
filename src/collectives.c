@@ -135,7 +135,7 @@ shmem_internal_build_kary_tree(int radix, int PE_start, int stride,
         }
     }
 
-    if (shmem_internal_params.DEBUG) {
+    if (shmem_internal_params.COLLECTIVES_DEBUG) {
         size_t len;
         char debug_str[256];
         len = snprintf(debug_str, sizeof(debug_str), "Building k-ary tree:"
@@ -812,7 +812,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
     if (local_count == PE_size) {
         if (my_vidx < 0) return;
 
-        double t0 = shmem_internal_params.HIER_BARRIER_DEBUG ? hier_now_us() : 0.0;
+        double t0 = shmem_internal_params.COLLECTIVES_DEBUG ? hier_now_us() : 0.0;
 
         /* Phase 1: gather up tree — wait for children's up-slots, then signal parent */
         for (int c = 0; c < tree_nchildren; c++) {
@@ -833,7 +833,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
             __atomic_store((long *)parent_up_raw, &signal, __ATOMIC_RELEASE);
         }
 
-        double t1 = shmem_internal_params.HIER_BARRIER_DEBUG ? hier_now_us() : 0.0;
+        double t1 = shmem_internal_params.COLLECTIVES_DEBUG ? hier_now_us() : 0.0;
 
         /* Phase 3: fanout — root stores to children's down-slots, non-roots wait then relay */
         if (my_vidx == 0) {
@@ -855,7 +855,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
             }
         }
 
-        if (shmem_internal_params.HIER_BARRIER_DEBUG) {
+        if (shmem_internal_params.COLLECTIVES_DEBUG) {
             double t2 = hier_now_us();
             hier_phase1_us  += t1 - t0;
             hier_phase3_us  += t2 - t1;
@@ -868,7 +868,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
 
     /* ---- Normal multi-node case ---- */
 
-    double mn_t0 = shmem_internal_params.HIER_BARRIER_DEBUG ? hier_now_us() : 0.0;
+    double mn_t0 = shmem_internal_params.COLLECTIVES_DEBUG ? hier_now_us() : 0.0;
 
     /* Phase 1: intranode gather (k-ary tree, bottom-up).
      * Each PE waits on each child's up-slot, then writes its own up-slot.
@@ -891,7 +891,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
         }
     }
 
-    double mn_t1 = shmem_internal_params.HIER_BARRIER_DEBUG ? hier_now_us() : 0.0;
+    double mn_t1 = shmem_internal_params.COLLECTIVES_DEBUG ? hier_now_us() : 0.0;
 
     if (is_root) {
         /* ---- Phase 2: internode barrier (NIC puts, root PEs only) ---- */
@@ -913,7 +913,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
 
         shmem_internal_quiet(SHMEM_CTX_DEFAULT);
 
-        double mn_t2 = shmem_internal_params.HIER_BARRIER_DEBUG ? hier_now_us() : 0.0;
+        double mn_t2 = shmem_internal_params.COLLECTIVES_DEBUG ? hier_now_us() : 0.0;
 
         /* ---- Phase 3: intranode fanout (k-ary tree, top-down via down-slots) ---- */
         for (int c = 0; c < tree_nchildren; c++) {
@@ -922,7 +922,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
                 tree_child_shr[c], signal);
         }
 
-        if (shmem_internal_params.HIER_BARRIER_DEBUG) {
+        if (shmem_internal_params.COLLECTIVES_DEBUG) {
             double mn_t3 = hier_now_us();
             hier_phase1_us  += mn_t1 - mn_t0;
             hier_phase2_us  += mn_t2 - mn_t1;
@@ -944,7 +944,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
                 tree_child_shr[c], signal);
         }
 
-        if (shmem_internal_params.HIER_BARRIER_DEBUG) {
+        if (shmem_internal_params.COLLECTIVES_DEBUG) {
             double mn_t3 = hier_now_us();
             hier_phase1_us  += mn_t1 - mn_t0;
             hier_phase3_us  += mn_t3 - mn_t1;
@@ -959,7 +959,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
 void
 shmem_internal_hier_barrier_print_stats(void)
 {
-    if (!shmem_internal_params.HIER_BARRIER_DEBUG) return;
+    if (!shmem_internal_params.COLLECTIVES_DEBUG) return;
     if (hier_call_count == 0) return;
 
     /* Each PE prints its own per-phase averages.  At scale the output can be

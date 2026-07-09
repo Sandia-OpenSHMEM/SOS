@@ -24,7 +24,7 @@
  */
 SHMEM_INTERNAL_ENV_DEF(INFO, bool, false, SHMEM_INTERNAL_ENV_CAT_OPENSHMEM,
                        "Print library information message at startup")
-SHMEM_INTERNAL_ENV_DEF(VERSION, bool, false, SHMEM_INTERNAL_ENV_CAT_OPENSHMEM,
+SHMEM_INTERNAL_ENV_DEF(VERSION, bool, true, SHMEM_INTERNAL_ENV_CAT_OPENSHMEM,
                        "Print library version at startup")
 SHMEM_INTERNAL_ENV_DEF(DEBUG, bool, false, SHMEM_INTERNAL_ENV_CAT_OPENSHMEM,
                        "Enable debugging messages")
@@ -32,7 +32,7 @@ SHMEM_INTERNAL_ENV_DEF(SYMMETRIC_SIZE, size, 512*1024*1024, SHMEM_INTERNAL_ENV_C
                        "Symmetric heap size")
 
 #ifdef __linux__
-SHMEM_INTERNAL_ENV_DEF(SYMMETRIC_HEAP_USE_HUGE_PAGES, bool, false, SHMEM_INTERNAL_ENV_CAT_OTHER,
+SHMEM_INTERNAL_ENV_DEF(SYMMETRIC_HEAP_USE_HUGE_PAGES, bool, true, SHMEM_INTERNAL_ENV_CAT_OTHER,
                        "Use Linux huge pages for symmetric heap")
 SHMEM_INTERNAL_ENV_DEF(SYMMETRIC_HEAP_PAGE_SIZE, size, 2*1024*1024, SHMEM_INTERNAL_ENV_CAT_OTHER,
                        "Page size to use for huge pages")
@@ -61,8 +61,8 @@ SHMEM_INTERNAL_ENV_DEF(BARRIER_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CAT
                        "Algorithm for barrier.  Options are auto, linear, tree, dissem, hierarchical")
 SHMEM_INTERNAL_ENV_DEF(HIER_BARRIER_THRESHOLD, long, 2, SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
                        "Minimum local PE count per node to auto-select the hierarchical barrier")
-SHMEM_INTERNAL_ENV_DEF(HIER_BARRIER_DEBUG, bool, 0, SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
-                       "Print per-phase hierarchical barrier timing at finalize")
+SHMEM_INTERNAL_ENV_DEF(COLLECTIVES_DEBUG, bool, 0, SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
+                       "Print collectives specific debug:")
 SHMEM_INTERNAL_ENV_DEF(BCAST_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,
                        "Algorithm for broadcast.  Options are auto, linear, tree")
 SHMEM_INTERNAL_ENV_DEF(REDUCE_ALGORITHM, string, "auto", SHMEM_INTERNAL_ENV_CAT_COLLECTIVES,

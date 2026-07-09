@@ -251,23 +251,22 @@ shmem_internal_heap_preinit(int tl_requested, int *tl_provided)
             shmem_internal_params.DEBUG)
         {
             printf(PACKAGE_STRING "\n");
+            printf("Build information:\n");
+#ifdef SOS_GIT_VERSION
+            printf("%-23s %s\n", "  Git Version", SOS_GIT_VERSION);
+#else
+	    printf("%-23s %d\.%d\n", "Build Version", SHMEM_MAJOR_VERSION, SHMEM_MINOR_VERSION);
+#endif
         }
 
-        if (shmem_internal_params.INFO) {
+        if (shmem_internal_params.DEBUG || shmem_internal_params.INFO) {
             shmem_internal_print_env();
             printf("\n");
-        }
 
-        if (shmem_internal_params.DEBUG) {
             char *wrapped_configure_args = shmem_util_wrap(SOS_CONFIGURE_ARGS, 60,
                                                            "                        ");
             char *wrapped_build_cflags   = shmem_util_wrap(SOS_BUILD_CFLAGS, 60,
                                                            "                        ");
-
-            printf("Build information:\n");
-#ifdef SOS_GIT_VERSION
-            printf("%-23s %s\n", "  Git Version", SOS_GIT_VERSION);
-#endif
             printf("%-23s %s\n", "  Configure Args", wrapped_configure_args);
             printf("%-23s %s\n", "  Build Date", SOS_BUILD_DATE);
             printf("%-23s %s\n", "  Build CC", SOS_BUILD_CC);
