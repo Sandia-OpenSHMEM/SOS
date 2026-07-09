@@ -13,7 +13,7 @@
 
 dnl Init Autoconf/Automake/Libtool
 
-AC_INIT([Sandia OpenSHMEM], [1.5.3], [https://github.com/Sandia-OpenSHMEM/SOS/issues], [sandia-openshmem], [https://github.com/Sandia-OpenSHMEM/SOS])
+AC_INIT([Sandia OpenSHMEM], [1.6.0.r2], [https://github.com/Sandia-OpenSHMEM/SOS/issues], [sandia-openshmem], [https://github.com/Sandia-OpenSHMEM/SOS])
 AC_PREREQ([2.60])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
@@ -43,8 +43,10 @@ OPAL_CONFIGURE_SETUP
 OPAL_BASIC_SETUP
 
 OPAL_CHECK_ATTRIBUTES
+
+#disable deprecation warnings
 AS_IF([test "$opal_cv___attribute__deprecated" = 1],
-      [SHMEM_AC_HAVE_ATTRIBUTE_DEPRECATED=1],
+      [SHMEM_AC_HAVE_ATTRIBUTE_DEPRECATED=0],
       [SHMEM_AC_HAVE_ATTRIBUTE_DEPRECATED=0])
 AC_SUBST(SHMEM_AC_HAVE_ATTRIBUTE_DEPRECATED)
 
@@ -95,7 +97,8 @@ AS_IF([test "$enable_completion_polling" = "yes" -o "$enable_manual_progress" = 
       [AC_DEFINE([DEFAULT_POLL_LIMIT], [-1], [Poll limit for local/remote completions])],
       [AC_DEFINE([DEFAULT_POLL_LIMIT], [0], [Poll limit for local/remote completions])])
 
-AS_IF([test "$enable_manual_progress" = "yes"],
+AS_IF([test "$enable_manual_progress" = "no"],
+      [AC_DEFINE([ENABLE_MANUAL_PROGRESS], [0], [Disable manual progress])],
       [AC_DEFINE([ENABLE_MANUAL_PROGRESS], [1], [Enable manual progress])])
 
 AC_ARG_ENABLE([total-data-ordering],
@@ -212,9 +215,9 @@ AC_ARG_ENABLE([c11-checks],
                     [Disable build-time type checks for C11 bindings (default: enabled)])])
 
 AC_ARG_ENABLE([libtool-wrapper],
-  [AS_HELP_STRING([--disable-libtool-wrapper],
-    [Disable use of libtool executable wrappers for tests (default: enabled)])])
-AS_IF([test "$enable_libtool_wrapper" = "no"], [LIBTOOL_WRAPPER_LDFLAGS="-no-install"], [LIBTOOL_WRAPPER_LDFLAGS=])
+  [AS_HELP_STRING([--enable-libtool-wrapper],
+    [Enable use of libtool executable wrappers for tests (default: disabled)])])
+AS_IF([test "$enable_libtool_wrapper" = "yes"], [LIBTOOL_WRAPPER_LDFLAGS=], [LIBTOOL_WRAPPER_LDFLAGS="-no-install"])
 AC_SUBST([LIBTOOL_WRAPPER_LDFLAGS])
 
 AC_ARG_ENABLE([rpath],
@@ -257,15 +260,17 @@ AS_CASE([$enable_ofi_mr],
         [AC_MSG_ERROR([Invalid OFI memory registration mode: $enable_ofi_mr])])
 
 AC_ARG_ENABLE([mr-endpoint],
-    [AS_HELP_STRING([--enable-mr-endpoint],
-                    [Use FI_MR_ENDPOINT to enable cxi provider. (default: disabled)])])
-AS_IF([test "$enable_mr_endpoint" = "yes"],
+    [AS_HELP_STRING([--disable-mr-endpoint],
+                    [Use FI_MR_ENDPOINT to enable cxi provider. (default: enabled)])])
+AS_IF([test "$enable_mr_endpoint" = "no"],
+      [AC_DEFINE([ENABLE_MR_ENDPOINT], [0], [If defined, the OFI transport will use FI_MR_ENDPOINT])],
       [AC_DEFINE([ENABLE_MR_ENDPOINT], [1], [If defined, the OFI transport will use FI_MR_ENDPOINT])])
 
 AC_ARG_ENABLE([ofi-manual-progress],
-    [AS_HELP_STRING([--enable-ofi-manual-progress],
-                    [Use FI_MANUAL_PROGRESS for data progress control mode. (default: disabled)])])
-AS_IF([test "$enable_ofi_manual_progress" = "yes"],
+    [AS_HELP_STRING([--disable-ofi-manual-progress],
+                    [Use FI_MANUAL_PROGRESS for data progress control mode. (default: enabled)])])
+AS_IF([test "$enable_ofi_manual_progress" = "no"],
+      [AC_DEFINE([ENABLE_FI_MANUAL_PROGRESS], [0], [If defined, the OFI will use FI_MANUAL_PROGRESS as data progress mode. This is currently required for cxi provider.])],
       [AC_DEFINE([ENABLE_FI_MANUAL_PROGRESS], [1], [If defined, the OFI will use FI_MANUAL_PROGRESS as data progress mode. This is currently required for cxi provider.])])
 
 AC_ARG_ENABLE([max-teams],
@@ -289,11 +294,11 @@ AS_IF([test "$enable_av_map" = "yes"],
       [AC_DEFINE([USE_AV_MAP], [1], [If defined, the OFI transport will use FI_AV_MAP.  Otherwise, FI_AV_TABLE is used.])])
 
 AC_ARG_ENABLE([bounce-buffers],
-    [AS_HELP_STRING([--disable-bounce-buffers],
-                    [Disable bounce buffers by default (default: enabled)])])
-AS_IF([test "$enable_bounce_buffers" = "no"],
-      [AC_DEFINE([DEFAULT_BOUNCE_SIZE], [0], [Default bounce buffer threshold])],
-      [AC_DEFINE([DEFAULT_BOUNCE_SIZE], [2048], [Default bounce buffer threshold])])
+    [AS_HELP_STRING([--enable-bounce-buffers],
+                    [Enable bounce buffers by default (default: disabled)])])
+AS_IF([test "$enable_bounce_buffers" = "yes"],
+      [AC_DEFINE([DEFAULT_BOUNCE_SIZE], [2048], [Default bounce buffer threshold])],
+      [AC_DEFINE([DEFAULT_BOUNCE_SIZE], [0], [Default bounce buffer threshold])])
 
 AC_ARG_ENABLE([ofi-inject],
     [AS_HELP_STRING([--disable-ofi-inject],
@@ -328,12 +333,12 @@ AS_IF([test "$enable_shr_atomics" = "yes"],
       [AC_DEFINE([USE_SHR_ATOMICS], [1], [If defined, the shared memory layer will perform processor atomics.])])
 
 AC_ARG_ENABLE([hierarchical-barrier],
-    [AS_HELP_STRING([--enable-hierarchical-barrier],
-                    [Enable the hierarchical barrier: intranode phase uses CPU atomics,
+    [AS_HELP_STRING([--disable-hierarchical-barrier],
+                    [Disable the hierarchical barrier: intranode phase uses CPU atomics,
                      internode phase uses NIC puts. Requires XPMEM (the intranode
-                     phase does CPU atomics on peers' slots via mapped pointers, which
+                     phase does CPU atomics on peers slots via mapped pointers, which
                      only XPMEM provides) and a network transport (OFI, Portals4, or
-                     UCX). (default: disabled)])])
+                     UCX). (default: enabled)])])
 
 AC_ARG_ENABLE([manpages],
     [AS_HELP_STRING([--enable-manpages],
@@ -347,6 +352,13 @@ AC_ARG_ENABLE([ofi-hmem],
                     [Use FI_HMEM to support transfers to and from device memory. (default: disabled)])])
 AS_IF([test "$enable_ofi_hmem" = "yes"],
       [AC_DEFINE([USE_FI_HMEM], [1], [If defined, the OFI transport will enable FI_HMEM.])])
+
+AC_ARG_ENABLE([ofi-cxi-pcie-amo],
+	      [AS_HELP_STRING([--disable-ofi-cxi-pcie-amo],
+			      [Disable PCIe AMO feature on CXI network interface cards (default: enabled)])])
+AS_IF([test "$enable_ofi_cxi_pcie_amo" = "no"],
+      [AC_DEFINE([ENABLE_OFI_CXI_PCIE_AMO], [0], [Disable PCIe AMO feature on CXI NIC])],
+      [AC_DEFINE([ENABLE_OFI_CXI_PCIE_AMO], [1], [Enable PCIe AMO feature on CXI NIC])])
 
 PKG_INSTALLDIR()
 
@@ -564,7 +576,9 @@ dnl XPMEM (not CMA) is required because the intranode phase performs CPU atomics
 dnl on peers' pSync slots through directly mapped pointers (shmem_shr_transport_ptr),
 dnl which only XPMEM can provide; CMA's copy-based path cannot.
 transport_hierarchical_barrier="no"
-if test "$enable_hierarchical_barrier" = "yes"; then
+if test "$enable_hierarchical_barrier" = "no"; then
+    AC_MSG_WARN([Hierachical Barrier disabled])
+else
     dnl Check on-node transport dependency
     if test "$transport_xpmem" != "yes"; then
         AC_MSG_ERROR([--enable-hierarchical-barrier requires XPMEM; configure with --with-xpmem])
@@ -575,7 +589,10 @@ if test "$enable_hierarchical_barrier" = "yes"; then
         transport_hierarchical_barrier="yes"
     fi
 fi
-if test "$transport_hierarchical_barrier" = "yes"; then
+if test "$transport_hierarchical_barrier" = "no"; then
+    AC_DEFINE([USE_HIERARCHICAL_BARRIER], [0],
+              [If defined, enables the hierarchical barrier: intranode CPU atomics + internode NIC puts.])
+    else
     AC_DEFINE([USE_HIERARCHICAL_BARRIER], [1],
               [If defined, enables the hierarchical barrier: intranode CPU atomics + internode NIC puts.])
     dnl The hierarchical barrier uses XPMEM-mapped pointers for intranode data
