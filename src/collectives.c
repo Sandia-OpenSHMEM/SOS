@@ -57,6 +57,12 @@ static char *hier_node_seen = NULL;
  * while PEs on a small node pick tree, diverging within one collective. */
 int shmem_internal_hier_min_ppn = 0;
 
+/* Cached AUTO selection result, computed once at init. Job topology (shr_size,
+ * num_pes, min_ppn) is invariant, so the gate predicate never changes after
+ * init. Caching eliminates repeated function calls and comparisons on the hot
+ * path (every barrier). */
+int shmem_internal_hier_auto_enabled = 0;
+
 /* Layout of local_pSync — two cache-line-padded arrays, one slot per PE:
  *
  *   up-slot   for PE r: local_pSync[r * HIER_SLOT_STRIDE]
@@ -258,6 +264,12 @@ shmem_internal_collectives_init(void)
         }
         free(ppn_count);
     }
+
+    /* Cache the AUTO selection result: job topology is invariant, so compute
+     * once here instead of on every barrier call. */
+    shmem_internal_hier_auto_enabled =
+        (shmem_internal_get_shr_size() < shmem_internal_num_pes &&
+         shmem_internal_hier_min_ppn >= shmem_internal_params.HIER_BARRIER_THRESHOLD);
 #endif
 
     /* initialize the binomial tree for collective operations over

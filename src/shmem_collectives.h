@@ -64,25 +64,11 @@ void shmem_internal_hier_barrier_print_stats(void);
 /* Job-global minimum PEs-per-node, computed once in collectives_init. */
 extern int shmem_internal_hier_min_ppn;
 
-/* Whether AUTO selection should use the hierarchical barrier.  Requires the
- * job to span more than one node (some PE off-node, i.e. shr_size < num_pes)
- * AND at least HIER_BARRIER_THRESHOLD PEs on the smallest node.  Both terms are
- * job-global (shr_size < num_pes holds on every PE of a multi-node job;
- * hier_min_ppn is reduced over all nodes), so every PE makes the same decision
- * even when PPN is heterogeneous — gating on the local node size could let a
- * large node pick hierarchical while a small node picks tree, diverging within
- * one collective.  On a single-node job the hierarchical barrier degenerates to
- * its intranode-only path, which is strictly worse than linear/tree: under
- * USE_HIERARCHICAL_BARRIER the shr transport already routes single-node atomics
- * through CPU atomics (see shmem_shr_transport_use_atomic), so linear/tree run
- * over shared memory with none of the hierarchical scaffolding.  Explicit
- * BARRIER_ALGORITHM=hierarchical bypasses this and is always honored. */
-static inline int
-shmem_internal_hier_barrier_available(void)
-{
-    return shmem_internal_get_shr_size() < shmem_internal_num_pes &&
-           shmem_internal_hier_min_ppn >= shmem_internal_params.HIER_BARRIER_THRESHOLD;
-}
+/* Cached AUTO selection result, computed once at init. Job topology is invariant
+ * (cannot add PEs to a running program), so the gate predicate (multi-node +
+ * job-global min PPN >= threshold) never changes. Cached here to eliminate
+ * repeated comparisons on the hot path. */
+extern int shmem_internal_hier_auto_enabled;
 #endif
 
 static inline
@@ -105,7 +91,7 @@ shmem_internal_sync(int PE_start, int PE_stride, int PE_size, long *pSync)
     switch (shmem_internal_barrier_type) {
     case AUTO:
 #ifdef USE_HIERARCHICAL_BARRIER
-        if (shmem_internal_hier_barrier_available()) {
+        if (shmem_internal_hier_auto_enabled) {
             shmem_internal_sync_hierarchical(PE_start, PE_stride, PE_size,
                                              pSync,
                                              shmem_internal_hierarchical_local_psync,
@@ -198,7 +184,7 @@ shmem_internal_sync_all(void)
 {
 #ifdef USE_HIERARCHICAL_BARRIER
     if (shmem_internal_barrier_type == AUTO &&
-        shmem_internal_hier_barrier_available()) {
+        shmem_internal_hier_auto_enabled) {
         shmem_internal_sync_hierarchical(0, 1, shmem_internal_num_pes,
                                          shmem_internal_sync_all_psync,
                                          shmem_internal_sync_all_local_psync,
@@ -229,7 +215,7 @@ shmem_internal_barrier_all(void)
     shmem_internal_quiet(SHMEM_CTX_DEFAULT);
 #ifdef USE_HIERARCHICAL_BARRIER
     if (shmem_internal_barrier_type == AUTO &&
-        shmem_internal_hier_barrier_available()) {
+        shmem_internal_hier_auto_enabled) {
         shmem_internal_sync_hierarchical(0, 1, shmem_internal_num_pes,
                                          shmem_internal_barrier_all_psync,
                                          shmem_internal_barrier_all_local_psync,
@@ -254,7 +240,7 @@ shmem_internal_sync_for_team(shmem_internal_team_t *team, long *pSync)
 {
     int use_hier = (shmem_internal_barrier_type == HIERARCHICAL) ||
                    (shmem_internal_barrier_type == AUTO &&
-                    shmem_internal_hier_barrier_available());
+                    shmem_internal_hier_auto_enabled);
     if (use_hier) {
         if (shmem_internal_params.BARRIERS_FLUSH) {
             fflush(stdout);

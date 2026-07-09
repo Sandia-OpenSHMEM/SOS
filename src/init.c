@@ -532,7 +532,7 @@ shmem_internal_heap_postinit(void)
     if (shmem_internal_my_pe == 0) {
         const char *effective_barrier =
             (shmem_internal_barrier_type == AUTO &&
-             shmem_internal_hier_barrier_available())
+             shmem_internal_hier_auto_enabled)
             ? "HIERARCHICAL (auto-selected)"
             : coll_type_str[shmem_internal_barrier_type];
 
