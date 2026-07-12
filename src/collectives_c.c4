@@ -182,7 +182,28 @@ shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_BARRIER_SYNC_SIZE);
 
     shmem_internal_quiet(SHMEM_CTX_DEFAULT);
-    shmem_internal_sync_no_hier(PE_start, 1 << logPE_stride, PE_size, pSync);
+
+    /* If this is effectively TEAM_WORLD (PE_start=0, stride=1, size=all), use the
+     * team_world path which can safely select hierarchical with team_world's sense
+     * counter. Otherwise use sync_no_hier for safety (no per-active-set sense
+     * counter available for arbitrary active sets). */
+    int PE_stride = 1 << logPE_stride;
+    if (PE_start == 0 && PE_stride == 1 && PE_size == shmem_internal_num_pes) {
+        static int first_world_call = 1;
+        if (first_world_call) {
+            first_world_call = 0;
+            DEBUG_MSG("shmem_barrier: detected TEAM_WORLD, using hierarchical-enabled path\n");
+        }
+#ifdef USE_HIERARCHICAL_BARRIER
+        /* quiet already done above */
+        shmem_internal_sync_for_team(&shmem_internal_team_world, pSync);
+#else
+        /* quiet already done above */
+        shmem_internal_sync(PE_start, PE_stride, PE_size, pSync);
+#endif
+    } else {
+        shmem_internal_sync_no_hier(PE_start, PE_stride, PE_size, pSync);
+    }
 }
 
 
@@ -201,7 +222,25 @@ shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)
     SHMEM_ERR_CHECK_ACTIVE_SET(PE_start, 1 << logPE_stride, PE_size);
     SHMEM_ERR_CHECK_SYMMETRIC(pSync, sizeof(long)*SHMEM_BARRIER_SYNC_SIZE);
 
-    shmem_internal_sync_no_hier(PE_start, 1 << logPE_stride, PE_size, pSync);
+    /* If this is effectively TEAM_WORLD (PE_start=0, stride=1, size=all), use the
+     * team_world path which can safely select hierarchical with team_world's sense
+     * counter. Otherwise use sync_no_hier for safety (no per-active-set sense
+     * counter available for arbitrary active sets). */
+    int PE_stride = 1 << logPE_stride;
+    if (PE_start == 0 && PE_stride == 1 && PE_size == shmem_internal_num_pes) {
+        static int first_world_call = 1;
+        if (first_world_call) {
+            first_world_call = 0;
+            DEBUG_MSG("shmem_sync: detected TEAM_WORLD, using hierarchical-enabled path\n");
+        }
+#ifdef USE_HIERARCHICAL_BARRIER
+        shmem_internal_sync_for_team(&shmem_internal_team_world, pSync);
+#else
+        shmem_internal_sync(PE_start, PE_stride, PE_size, pSync);
+#endif
+    } else {
+        shmem_internal_sync_no_hier(PE_start, PE_stride, PE_size, pSync);
+    }
 }
 
 /* Team-based Collective Routines */
