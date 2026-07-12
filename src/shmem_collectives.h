@@ -81,6 +81,41 @@ shmem_internal_sync(int PE_start, int PE_stride, int PE_size, long *pSync)
      * Team-aware callers use shmem_internal_sync_for_team /
      * shmem_internal_barrier_for_team to supply a per-team sense counter;
      * deprecated shmem_barrier/shmem_sync use shmem_internal_sync_no_hier. */
+    static int first_call = 1;
+    if (first_call) {
+        first_call = 0;
+        const char *algo = "UNKNOWN";
+        switch (shmem_internal_barrier_type) {
+        case AUTO:
+#ifdef USE_HIERARCHICAL_BARRIER
+            if (shmem_internal_hier_auto_enabled) {
+                algo = "AUTO(HIERARCHICAL)";
+            } else
+#endif
+            {
+                algo = (PE_size < shmem_internal_params.COLL_CROSSOVER) ? "AUTO(LINEAR)" : "AUTO(TREE)";
+            }
+            break;
+        case LINEAR: algo = "LINEAR"; break;
+        case TREE: algo = "TREE"; break;
+        case DISSEM: algo = "DISSEM"; break;
+        case RING: algo = "RING"; break;
+        case RECDBL: algo = "RECDBL"; break;
+#ifdef USE_HIERARCHICAL_BARRIER
+        case HIERARCHICAL: algo = "HIERARCHICAL"; break;
+#endif
+        }
+        DEBUG_MSG("Barrier algorithm: %s (type=%d, PE_size=%d, CROSSOVER=%ld, hier_auto=%d)\n",
+                  algo, shmem_internal_barrier_type, PE_size,
+                  shmem_internal_params.COLL_CROSSOVER,
+#ifdef USE_HIERARCHICAL_BARRIER
+                  shmem_internal_hier_auto_enabled
+#else
+                  0
+#endif
+                 );
+    }
+
     if (shmem_internal_params.BARRIERS_FLUSH) {
         fflush(stdout);
         fflush(stderr);
@@ -141,6 +176,26 @@ static inline
 void
 shmem_internal_sync_no_hier(int PE_start, int PE_stride, int PE_size, long *pSync)
 {
+    static int first_call = 1;
+    if (first_call) {
+        first_call = 0;
+        const char *algo = "UNKNOWN";
+        switch (shmem_internal_barrier_type) {
+        case AUTO:
+        case HIERARCHICAL:
+            algo = (PE_size < shmem_internal_params.COLL_CROSSOVER) ? "NO_HIER:AUTO(LINEAR)" : "NO_HIER:AUTO(TREE)";
+            break;
+        case LINEAR: algo = "NO_HIER:LINEAR"; break;
+        case TREE: algo = "NO_HIER:TREE"; break;
+        case DISSEM: algo = "NO_HIER:DISSEM"; break;
+        case RING: algo = "NO_HIER:RING"; break;
+        case RECDBL: algo = "NO_HIER:RECDBL"; break;
+        }
+        DEBUG_MSG("Deprecated barrier algorithm: %s (type=%d, PE_size=%d, CROSSOVER=%ld)\n",
+                  algo, shmem_internal_barrier_type, PE_size,
+                  shmem_internal_params.COLL_CROSSOVER);
+    }
+
     if (shmem_internal_params.BARRIERS_FLUSH) {
         fflush(stdout);
         fflush(stderr);
