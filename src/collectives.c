@@ -45,6 +45,12 @@ long *shmem_internal_hierarchical_local_psync;
 static int *hier_local_pes = NULL;
 static int *hier_root_pes  = NULL;
 
+/* Per-call scratch for the intranode tree child list, sized to tree_radix (the
+ * max children any node can have).  Passed to hier_compute on a cache miss so
+ * the topology build needs no per-call alloca.  Shared under the same
+ * serialized-barrier invariant as hier_local_pes/hier_root_pes. */
+static int *hier_tree_child_shr = NULL;
+
 /* Seen-flags for the root-set build, indexed by node_id (a global PE number in
  * [0, num_pes)).  Lets build_root_active_set run in O(PE_size) instead of
  * O(PE_size^2).  Allocated once at init, sized to num_pes. */
@@ -241,11 +247,13 @@ shmem_internal_collectives_init(void)
      * num_pes so it fits the largest possible active set. */
     hier_local_pes = malloc(sizeof(int) * shmem_internal_num_pes);
     hier_root_pes  = malloc(sizeof(int) * shmem_internal_num_pes);
+    /* tree child list: sized to tree_radix (max children of any tree node). */
+    hier_tree_child_shr = malloc(sizeof(int) * tree_radix);
     /* calloc: seen-flags must start cleared; build_root_active_set leaves them
      * clean afterward by resetting only the entries it touched. */
     hier_node_seen = calloc(shmem_internal_num_pes, sizeof(char));
     if (NULL == hier_local_pes || NULL == hier_root_pes ||
-        NULL == hier_node_seen) return -1;
+        NULL == hier_tree_child_shr || NULL == hier_node_seen) return -1;
 
     /* Compute the job-global minimum PEs-per-node from the global node_id array
      * (already exchanged at init — no communication needed here).  node_id[pe]
@@ -746,7 +754,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
     } else {
         shmem_internal_hier_compute(PE_start, PE_stride, PE_size,
                                     hier_local_pes, hier_root_pes,
-                                    alloca(sizeof(int) * tree_radix),
+                                    hier_tree_child_shr,
                                     &scratch_cache);
         if (hier_cache != NULL) {
             /* Persist exact-size copies in the team cache for reuse.  If any
