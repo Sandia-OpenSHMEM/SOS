@@ -1286,7 +1286,7 @@ void shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target,
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
 
 #ifdef ENABLE_OFI_CXI_PCIE_AMO
-    if (shmem_transport_ofi_pcie_cxi) {
+    if (shmem_transport_ofi_pcie_cxi && op == FI_SUM) {
        amo_flags = FI_CXI_PCIE_AMO;
     }
 #endif
