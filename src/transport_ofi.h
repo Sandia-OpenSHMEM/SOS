@@ -385,7 +385,12 @@ void shmem_transport_probe(void)
 {
 #if defined(ENABLE_MANUAL_PROGRESS)
 #  ifdef USE_THREAD_COMPLETION
-    if (0 == pthread_mutex_trylock(&shmem_transport_ofi_progress_lock)) {
+    /* P2: only serialize progress when other threads can race us; a
+     * SHMEM_THREAD_SINGLE run pays no trylock/unlock on the hot spin path. */
+    const int shmem_transport_lock_progress =
+        (shmem_internal_thread_level != SHMEM_THREAD_SINGLE);
+    if (!shmem_transport_lock_progress ||
+        0 == pthread_mutex_trylock(&shmem_transport_ofi_progress_lock)) {
 #  endif
         struct fi_cq_entry buf;
         /* Do not read a CQ entry in single-endpoint mode, just make progress. */
@@ -395,7 +400,8 @@ void shmem_transport_probe(void)
         if (!shmem_transport_ofi_single_ep && ret == 1)
             RAISE_WARN_STR("Unexpected event");
 #  ifdef USE_THREAD_COMPLETION
-        pthread_mutex_unlock(&shmem_transport_ofi_progress_lock);
+        if (shmem_transport_lock_progress)
+            pthread_mutex_unlock(&shmem_transport_ofi_progress_lock);
     }
 #  endif
 #endif
@@ -509,17 +515,21 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
     while (poll_count < shmem_transport_ofi_put_poll_limit ||
            shmem_transport_ofi_put_poll_limit < 0) {
         success = fi_cntr_read(ctx->put_cntr);
-        fail = fi_cntr_readerr(ctx->put_cntr);
         cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
 
         shmem_transport_probe();
 
-        if (success < cnt && fail == 0) {
-            SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
-            SPINLOCK_BODY();
-            SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
-        } else if (fail) {
-            RAISE_ERROR_MSG("Operations completed in error (%" PRIu64 ")\n", fail);
+        if (success < cnt) {
+            /* P2: errors are rare and fi_cntr_readerr may touch the device, so
+             * only consult the error counter when completions have stalled. */
+            fail = fi_cntr_readerr(ctx->put_cntr);
+            if (fail == 0) {
+                SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+                SPINLOCK_BODY();
+                SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+            } else {
+                RAISE_ERROR_MSG("Operations completed in error (%" PRIu64 ")\n", fail);
+            }
         } else {
             SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
             return;
