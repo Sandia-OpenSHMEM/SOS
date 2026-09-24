@@ -251,6 +251,13 @@ shmem_transport_put_scalar(shmem_transport_ctx_t* ctx, void *target, const void 
 
 static inline
 void
+shmem_transport_put_scalar_signal(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len, int pe)
+{
+    shmem_transport_put_scalar(ctx, target, source, len, pe);
+}
+
+static inline
+void
 shmem_transport_put_nb(shmem_transport_ctx_t* ctx, void *target, const void *source, size_t len,
                        int pe, long *completion)
 {

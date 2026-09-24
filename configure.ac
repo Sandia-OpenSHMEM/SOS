@@ -295,6 +295,13 @@ AS_IF([test "$enable_bounce_buffers" = "no"],
       [AC_DEFINE([DEFAULT_BOUNCE_SIZE], [0], [Default bounce buffer threshold])],
       [AC_DEFINE([DEFAULT_BOUNCE_SIZE], [2048], [Default bounce buffer threshold])])
 
+AC_ARG_ENABLE([aggregation],
+    [AS_HELP_STRING([--enable-aggregation],
+                    [Enable message aggregation by default on aggregated contexts (default: disabled)])])
+AS_IF([test "$enable_aggregation" = "yes"],
+      [AC_DEFINE([DEFAULT_AGGREGATION], [true], [Default message aggregation enable state])],
+      [AC_DEFINE([DEFAULT_AGGREGATION], [false], [Default message aggregation enable state])])
+
 AC_ARG_ENABLE([ofi-inject],
     [AS_HELP_STRING([--disable-ofi-inject],
                     [Disable OFI inject by default (default: enabled)])])

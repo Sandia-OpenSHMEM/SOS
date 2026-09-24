@@ -76,6 +76,19 @@ shmem_internal_put_scalar(shmem_ctx_t ctx, void *target, const void *source, siz
 
 static inline
 void
+shmem_internal_put_signal_scalar(shmem_ctx_t ctx, void *target, const void *source, size_t len, int pe)
+{
+    shmem_internal_assert(len > 0);
+
+    if (shmem_shr_transport_use_write(ctx, target, source, len, pe)) {
+        shmem_shr_transport_put_scalar(ctx, target, source, len, pe);
+    } else {
+        shmem_transport_put_scalar_signal((shmem_transport_ctx_t *)ctx, target, source, len, pe);
+    }
+}
+
+static inline
+void
 shmem_internal_put_signal_nbi(shmem_ctx_t ctx, void *target, const void *source, size_t len,
                               uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)
 {

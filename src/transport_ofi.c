@@ -112,6 +112,11 @@ fi_addr_t                       *addr_table;
 #ifdef ENABLE_THREADS
 shmem_internal_mutex_t          shmem_transport_ofi_lock;
 pthread_mutex_t                 shmem_transport_ofi_progress_lock = PTHREAD_MUTEX_INITIALIZER;
+
+uint64_t                        shmem_transport_ofi_progress_tick = 0;
+struct shmem_transport_ctx_t   *shmem_transport_ofi_aggr_registry[SHMEM_TRANSPORT_OFI_AGGR_MAX_CTX];
+unsigned                        shmem_transport_ofi_aggr_registry_len = 0;
+pthread_mutex_t                 shmem_transport_ofi_aggr_registry_lock = PTHREAD_MUTEX_INITIALIZER;
 #endif /* ENABLE_THREADS */
 
 int shmem_transport_ofi_single_ep;
@@ -592,6 +597,14 @@ void init_bounce_buffer(shmem_free_list_item_t *item)
     shmem_transport_ofi_frag_t *frag =
         (shmem_transport_ofi_frag_t*) item;
     frag->mytype = SHMEM_TRANSPORT_OFI_TYPE_BOUNCE;
+}
+
+static
+void init_aggr_buffer(shmem_free_list_item_t *item)
+{
+    shmem_transport_ofi_frag_t *frag =
+        (shmem_transport_ofi_frag_t*) item;
+    frag->mytype = SHMEM_TRANSPORT_OFI_TYPE_AGGREGATE;
 }
 
 
@@ -1814,6 +1827,39 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
         ctx->bounce_buffers = NULL;
     }
 
+    if (ctx->options & SHMEMX_CTX_AGGREGATED &&
+        shmem_internal_params.AGGREGATION &&
+        shmem_transport_ofi_bounce_buffer_size > 0 &&
+        shmem_internal_params.AGGREGATION_SIZE > 0 &&
+        shmem_internal_params.AGGREGATION_MAX_BUFFERS > 0)
+    {
+        ctx->aggr_nslots = (unsigned) shmem_internal_params.AGGREGATION_MAX_BUFFERS;
+        ctx->aggr_dest = calloc(ctx->aggr_nslots,
+                                sizeof(shmem_transport_aggr_dest_t));
+        if (NULL == ctx->aggr_dest)
+            RAISE_ERROR_STR("Aggregation dest table allocation failed");
+        ctx->aggr_buffers =
+            shmem_free_list_init(sizeof(shmem_transport_ofi_bounce_buffer_t) +
+                                 shmem_internal_params.AGGREGATION_SIZE,
+                                 init_aggr_buffer);
+        ctx->aggr_lru_clock = 0;
+        ctx->pending_aggr_cntr = 0;
+        ctx->completed_aggr_cntr = 0;
+        ctx->aggr_enabled = 1;
+
+        pthread_mutex_lock(&shmem_transport_ofi_aggr_registry_lock);
+        if (shmem_transport_ofi_aggr_registry_len < SHMEM_TRANSPORT_OFI_AGGR_MAX_CTX)
+            shmem_transport_ofi_aggr_registry[shmem_transport_ofi_aggr_registry_len++] = ctx;
+        pthread_mutex_unlock(&shmem_transport_ofi_aggr_registry_lock);
+    }
+    else {
+        ctx->options &= ~SHMEMX_CTX_AGGREGATED;
+        ctx->aggr_enabled = 0;
+        ctx->aggr_dest = NULL;
+        ctx->aggr_buffers = NULL;
+        ctx->aggr_nslots = 0;
+    }
+
     return 0;
 }
 
@@ -1915,6 +1961,9 @@ int shmem_transport_init(void)
 #endif
 
     shmem_transport_ctx_default.options = SHMEMX_CTX_BOUNCE_BUFFER;
+
+    if (shmem_internal_params.AGGREGATION)
+        shmem_transport_ctx_default.options |= SHMEMX_CTX_AGGREGATED;
 
     ret = shmem_transport_ofi_target_ep_init();
     if (ret != 0) return ret;
@@ -2100,6 +2149,26 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
         SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
     }
 
+    if (ctx->aggr_enabled) {
+        SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+        shmem_transport_ofi_aggr_flush_all(ctx);
+        while (ctx->completed_aggr_cntr < ctx->pending_aggr_cntr)
+            shmem_transport_ofi_drain_cq(ctx);
+        SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+
+        pthread_mutex_lock(&shmem_transport_ofi_aggr_registry_lock);
+        for (unsigned r = 0; r < shmem_transport_ofi_aggr_registry_len; r++) {
+            if (shmem_transport_ofi_aggr_registry[r] == ctx) {
+                shmem_transport_ofi_aggr_registry[r] =
+                    shmem_transport_ofi_aggr_registry[--shmem_transport_ofi_aggr_registry_len];
+                shmem_transport_ofi_aggr_registry[shmem_transport_ofi_aggr_registry_len] = NULL;
+                break;
+            }
+        }
+        pthread_mutex_unlock(&shmem_transport_ofi_aggr_registry_lock);
+        ctx->aggr_enabled = 0;
+    }
+
     /* When in single-endpoint mode, defer closing the default context because it also
      * serves as the target endpoint, which is cleaned up later in transport_fini(). */
     if (!shmem_transport_ofi_single_ep || ctx->id != SHMEM_TRANSPORT_CTX_DEFAULT_ID)
@@ -2112,6 +2181,16 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 
     if (ctx->bounce_buffers) {
         shmem_free_list_destroy(ctx->bounce_buffers);
+    }
+
+    if (ctx->aggr_dest) {
+        free(ctx->aggr_dest);
+        ctx->aggr_dest = NULL;
+    }
+
+    if (ctx->aggr_buffers) {
+        shmem_free_list_destroy(ctx->aggr_buffers);
+        ctx->aggr_buffers = NULL;
     }
 
     if (ctx->stx_idx >= 0) {

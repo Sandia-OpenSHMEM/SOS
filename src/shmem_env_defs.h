@@ -111,6 +111,16 @@ SHMEM_INTERNAL_ENV_DEF(OFI_DISABLE_MULTIRAIL, bool, false, SHMEM_INTERNAL_ENV_CA
                        "Disable usage of multirail functionality")
 SHMEM_INTERNAL_ENV_DEF(OFI_DISABLE_SINGLE_EP, bool, false, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
                        "Disable single endpoint resource optimization (enable separate Tx and Rx EPs)")
+SHMEM_INTERNAL_ENV_DEF(AGGREGATION, bool, DEFAULT_AGGREGATION, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Enable message aggregation on aggregated contexts")
+SHMEM_INTERNAL_ENV_DEF(AGGREGATION_SIZE, size, 8192, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Per-destination aggregation buffer capacity in bytes")
+SHMEM_INTERNAL_ENV_DEF(AGGREGATION_COUNT, long, 64, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Maximum number of operations buffered per destination before a flush")
+SHMEM_INTERNAL_ENV_DEF(AGGREGATION_MAX_BUFFERS, long, 256, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Maximum number of concurrently aggregated destinations per context")
+SHMEM_INTERNAL_ENV_DEF(AGGREGATION_FLUSH_TICKS, long, 2, SHMEM_INTERNAL_ENV_CAT_TRANSPORT,
+                       "Progress ticks after which an idle aggregation buffer is auto-flushed")
 #endif
 
 #ifdef USE_UCX

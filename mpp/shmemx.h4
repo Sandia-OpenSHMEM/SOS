@@ -35,6 +35,9 @@ include(shmemx_c_func.h4)dnl
 /* Option to enable bounce buffering on a given context */
 #define SHMEMX_CTX_BOUNCE_BUFFER  (1l<<31)
 
+/* Option to enable message aggregation on a given context */
+#define SHMEMX_CTX_AGGREGATED     (1l<<30)
+
 /* SHMEMX constant(s) are included in MAX_HINTS value in shmem-def.h */
 #define SHMEMX_MALLOC_NO_BARRIER (1l<<2)
 

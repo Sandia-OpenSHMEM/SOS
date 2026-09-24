@@ -75,6 +75,12 @@ extern pthread_mutex_t                  shmem_transport_ofi_progress_lock;
 
 extern int shmem_transport_ofi_single_ep;
 
+#define SHMEM_TRANSPORT_OFI_AGGR_MAX_CTX 256
+extern uint64_t                         shmem_transport_ofi_progress_tick;
+extern struct shmem_transport_ctx_t    *shmem_transport_ofi_aggr_registry[SHMEM_TRANSPORT_OFI_AGGR_MAX_CTX];
+extern unsigned                         shmem_transport_ofi_aggr_registry_len;
+extern pthread_mutex_t                  shmem_transport_ofi_aggr_registry_lock;
+
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #endif
@@ -267,6 +273,7 @@ typedef enum fi_op       shm_internal_op_t;
 
 #define SHMEM_TRANSPORT_OFI_TYPE_BOUNCE 0x01
 #define SHMEM_TRANSPORT_OFI_TYPE_LONG   0x02
+#define SHMEM_TRANSPORT_OFI_TYPE_AGGREGATE 0x03
 
 
 extern fi_addr_t *addr_table;
@@ -298,6 +305,20 @@ struct shmem_transport_ofi_bounce_buffer_t {
 };
 
 typedef struct shmem_transport_ofi_bounce_buffer_t shmem_transport_ofi_bounce_buffer_t;
+
+struct shmem_transport_aggr_dest_t {
+    shmem_transport_ofi_bounce_buffer_t *buf;
+    int                                  pe;
+    int                                  in_use;
+    uint64_t                             mr_key;
+    uint64_t                             base_raddr;
+    size_t                               fill;
+    unsigned                             count;
+    uint64_t                             lru_seq;
+    uint64_t                             touch_tick;
+};
+
+typedef struct shmem_transport_aggr_dest_t shmem_transport_aggr_dest_t;
 
 typedef int shmem_transport_ct_t;
 
@@ -337,6 +358,14 @@ struct shmem_transport_ctx_t {
     int                             stx_idx;
     struct shmem_internal_tid       tid;
     struct shmem_internal_team_t   *team;
+    unsigned                        aggr_enabled;
+    shmem_transport_aggr_dest_t    *aggr_dest;
+    unsigned                        aggr_nslots;
+    uint64_t                        aggr_lru_clock;
+    shmem_free_list_t              *aggr_buffers;
+    uint64_t                        pending_aggr_cntr;
+    uint64_t                        completed_aggr_cntr;
+    unsigned                        aggr_pending;
 };
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
@@ -380,6 +409,8 @@ extern struct fid_ep* shmem_transport_ofi_target_ep;
             shmem_free_list_unlock(ctx->bounce_buffers);                        \
     } while (0)
 
+static inline void shmem_transport_ofi_aggr_flush_aged(void);
+
 static inline
 void shmem_transport_probe(void)
 {
@@ -398,6 +429,7 @@ void shmem_transport_probe(void)
         pthread_mutex_unlock(&shmem_transport_ofi_progress_lock);
     }
 #  endif
+    shmem_transport_ofi_aggr_flush_aged();
 #endif
 
     return;
@@ -435,6 +467,10 @@ void shmem_transport_ofi_drain_cq(shmem_transport_ctx_t *ctx)
                 shmem_free_list_free(ctx->bounce_buffers,
                                      (shmem_transport_ofi_bounce_buffer_t *) frag);
                 ctx->completed_bb_cntr++;
+            } else if (SHMEM_TRANSPORT_OFI_TYPE_AGGREGATE == frag->mytype) {
+                shmem_free_list_free(ctx->aggr_buffers,
+                                     (shmem_transport_ofi_bounce_buffer_t *) frag);
+                ctx->completed_aggr_cntr++;
             } else {
                 RAISE_ERROR_STR("Unrecognized completion object");
             }
@@ -480,10 +516,235 @@ shmem_transport_ofi_bounce_buffer_t * create_bounce_buffer(shmem_transport_ctx_t
     return buff;
 }
 
+static inline int try_again(shmem_transport_ctx_t *ctx, const int ret, uint64_t *polled);
+
+static inline
+void shmem_transport_ofi_aggr_flush_dest(shmem_transport_ctx_t *ctx,
+                                         shmem_transport_aggr_dest_t *d)
+{
+    int ret = 0;
+    uint64_t polled = 0;
+
+    if (!d->in_use || d->fill == 0) {
+        if (d->in_use && ctx->aggr_pending > 0)
+            ctx->aggr_pending--;
+        d->in_use = 0;
+        d->fill = 0;
+        d->count = 0;
+        return;
+    }
+
+    SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
+    ctx->pending_aggr_cntr++;
+
+    const struct iovec msg_iov = { .iov_base = d->buf->data, .iov_len = d->fill };
+    const struct fi_rma_iov rma_iov = { .addr = d->base_raddr, .len = d->fill, .key = d->mr_key };
+    const struct fi_msg_rma msg = {
+                                    .msg_iov       = &msg_iov,
+                                    .desc          = NULL,
+                                    .iov_count     = 1,
+                                    .addr          = GET_DEST((uint64_t) d->pe),
+                                    .rma_iov       = &rma_iov,
+                                    .rma_iov_count = 1,
+                                    .context       = &d->buf->frag,
+                                    .data          = 0
+                                  };
+
+    do {
+        ret = fi_writemsg(ctx->ep, &msg, FI_COMPLETION | FI_DELIVERY_COMPLETE);
+    } while (try_again(ctx, ret, &polled));
+
+    d->buf = NULL;
+    d->in_use = 0;
+    d->fill = 0;
+    d->count = 0;
+    if (ctx->aggr_pending > 0)
+        ctx->aggr_pending--;
+}
+
+static inline
+shmem_transport_ofi_bounce_buffer_t *
+shmem_transport_ofi_aggr_get_buffer(shmem_transport_ctx_t *ctx)
+{
+    shmem_transport_ofi_bounce_buffer_t *buff;
+
+    while (ctx->aggr_buffers->nalloc >=
+           (uint64_t) shmem_internal_params.AGGREGATION_MAX_BUFFERS) {
+        shmem_transport_ofi_drain_cq(ctx);
+    }
+
+    buff = (shmem_transport_ofi_bounce_buffer_t *)
+        shmem_free_list_alloc(ctx->aggr_buffers);
+
+    if (NULL == buff)
+        RAISE_ERROR_STR("Aggregation buffer allocation failed");
+
+    shmem_internal_assert(buff->frag.mytype == SHMEM_TRANSPORT_OFI_TYPE_AGGREGATE);
+
+    return buff;
+}
+
+static inline
+void shmem_transport_ofi_aggr_flush_all(shmem_transport_ctx_t *ctx)
+{
+    unsigned i;
+
+    if (!ctx->aggr_enabled || ctx->aggr_pending == 0)
+        return;
+
+    for (i = 0; i < ctx->aggr_nslots; i++) {
+        if (ctx->aggr_dest[i].in_use)
+            shmem_transport_ofi_aggr_flush_dest(ctx, &ctx->aggr_dest[i]);
+    }
+}
+
+static inline
+void shmem_transport_ofi_aggr_flush_pe(shmem_transport_ctx_t *ctx, int pe)
+{
+    unsigned n, start, i;
+
+    if (!ctx->aggr_enabled || ctx->aggr_pending == 0)
+        return;
+
+    n = ctx->aggr_nslots;
+    start = ((unsigned) pe) % n;
+    for (i = 0; i < n; i++) {
+        shmem_transport_aggr_dest_t *d = &ctx->aggr_dest[(start + i) % n];
+        if (d->in_use && d->pe == pe) {
+            shmem_transport_ofi_aggr_flush_dest(ctx, d);
+            return;
+        }
+    }
+}
+
+static inline
+shmem_transport_aggr_dest_t *
+shmem_transport_ofi_aggr_lookup(shmem_transport_ctx_t *ctx, int pe)
+{
+    unsigned n = ctx->aggr_nslots;
+    unsigned start = ((unsigned) pe) % n;
+    unsigned i;
+    shmem_transport_aggr_dest_t *free_slot = NULL;
+    shmem_transport_aggr_dest_t *lru_slot = NULL;
+
+    for (i = 0; i < n; i++) {
+        shmem_transport_aggr_dest_t *d = &ctx->aggr_dest[(start + i) % n];
+        if (d->in_use && d->pe == pe)
+            return d;
+        if (!d->in_use) {
+            if (free_slot == NULL)
+                free_slot = d;
+        } else if (lru_slot == NULL || d->lru_seq < lru_slot->lru_seq) {
+            lru_slot = d;
+        }
+    }
+
+    if (free_slot != NULL)
+        return free_slot;
+
+    shmem_transport_ofi_aggr_flush_dest(ctx, lru_slot);
+    return lru_slot;
+}
+
+static inline
+void shmem_transport_ofi_aggr_put(shmem_transport_ctx_t *ctx, void *target,
+                                  const void *source, size_t len, int pe)
+{
+    uint64_t key;
+    uint8_t *addr;
+    shmem_transport_aggr_dest_t *d;
+    size_t cap = shmem_internal_params.AGGREGATION_SIZE;
+
+    shmem_transport_ofi_get_mr(target, pe, &addr, &key);
+
+    SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+
+    d = shmem_transport_ofi_aggr_lookup(ctx, pe);
+
+    if (d->in_use) {
+        int contiguous = (d->mr_key == key) &&
+                         ((uint64_t) addr == d->base_raddr + d->fill);
+        if (!contiguous || d->fill + len > cap ||
+            d->count >= (unsigned) shmem_internal_params.AGGREGATION_COUNT) {
+            shmem_transport_ofi_aggr_flush_dest(ctx, d);
+        }
+    }
+
+    if (len > cap) {
+        int ret = 0;
+        uint64_t polled = 0;
+        uint64_t dst = (uint64_t) pe;
+        SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
+        do {
+            ret = fi_inject_write(ctx->ep, source, len, GET_DEST(dst),
+                                  (uint64_t) addr, key);
+        } while (try_again(ctx, ret, &polled));
+        SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+        return;
+    }
+
+    if (!d->in_use) {
+        d->buf = shmem_transport_ofi_aggr_get_buffer(ctx);
+        d->pe = pe;
+        d->mr_key = key;
+        d->base_raddr = (uint64_t) addr;
+        d->fill = 0;
+        d->count = 0;
+        d->in_use = 1;
+        ctx->aggr_pending++;
+    }
+
+    memcpy(d->buf->data + d->fill, source, len);
+    d->fill += len;
+    d->count++;
+    d->lru_seq = ++ctx->aggr_lru_clock;
+    d->touch_tick = shmem_transport_ofi_progress_tick;
+
+    SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+}
+
+static inline
+void shmem_transport_ofi_aggr_flush_aged(void)
+{
+    static __thread int in_aggr_flush = 0;
+    uint64_t tick;
+    unsigned c;
+    uint64_t age_limit = (uint64_t) shmem_internal_params.AGGREGATION_FLUSH_TICKS;
+
+    if (shmem_transport_ofi_aggr_registry_len == 0)
+        return;
+    if (in_aggr_flush)
+        return;
+
+    tick = ++shmem_transport_ofi_progress_tick;
+    in_aggr_flush = 1;
+
+    if (0 == pthread_mutex_trylock(&shmem_transport_ofi_aggr_registry_lock)) {
+        for (c = 0; c < shmem_transport_ofi_aggr_registry_len; c++) {
+            shmem_transport_ctx_t *ctx = shmem_transport_ofi_aggr_registry[c];
+            unsigned i;
+            if (ctx == NULL || !ctx->aggr_enabled || ctx->aggr_pending == 0)
+                continue;
+            SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+            for (i = 0; i < ctx->aggr_nslots; i++) {
+                shmem_transport_aggr_dest_t *d = &ctx->aggr_dest[i];
+                if (d->in_use && (tick - d->touch_tick) >= age_limit)
+                    shmem_transport_ofi_aggr_flush_dest(ctx, d);
+            }
+            SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
+        }
+        pthread_mutex_unlock(&shmem_transport_ofi_aggr_registry_lock);
+    }
+
+    in_aggr_flush = 0;
+}
+
 static inline
 void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
 {
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+
+    shmem_transport_ofi_aggr_flush_all(ctx);
 
     /* Wait for bounce buffered operations to complete */
     if (ctx->bounce_buffers) {
@@ -612,8 +873,8 @@ int try_again(shmem_transport_ctx_t *ctx, const int ret, uint64_t *polled) {
 
 
 static inline
-void shmem_transport_put_scalar(shmem_transport_ctx_t* ctx, void *target, const
-                               void *source, size_t len, int pe)
+void shmem_transport_put_scalar_signal(shmem_transport_ctx_t* ctx, void *target, const
+                                       void *source, size_t len, int pe)
 {
     int ret = 0;
     uint64_t dst = (uint64_t) pe;
@@ -642,6 +903,18 @@ void shmem_transport_put_scalar(shmem_transport_ctx_t* ctx, void *target, const
 }
 
 static inline
+void shmem_transport_put_scalar(shmem_transport_ctx_t* ctx, void *target, const
+                               void *source, size_t len, int pe)
+{
+    if (ctx->aggr_enabled) {
+        shmem_transport_ofi_aggr_put(ctx, target, source, len, pe);
+        return;
+    }
+
+    shmem_transport_put_scalar_signal(ctx, target, source, len, pe);
+}
+
+static inline
 void shmem_transport_ofi_put_large(shmem_transport_ctx_t* ctx, void *target, const void *source,
                                    size_t len, int pe)
 {
@@ -660,6 +933,7 @@ void shmem_transport_ofi_put_large(shmem_transport_ctx_t* ctx, void *target, con
     /* operation generates counting events and must be completed by
      * quiet. */
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    shmem_transport_ofi_aggr_flush_pe(ctx, pe);
     while (frag_source < ((uint8_t *) source) + len) {
         frag_len = MIN(shmem_transport_ofi_max_msg_size,
                        (size_t) (((uint8_t *) source) + len - frag_source));
@@ -912,6 +1186,7 @@ void shmem_transport_get(shmem_transport_ctx_t* ctx, void *target, const void *s
     shmem_transport_ofi_get_mr(source, pe, &addr, &key);
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    shmem_transport_ofi_aggr_flush_pe(ctx, pe);
     if (len <= shmem_transport_ofi_max_msg_size) {
 
         SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
@@ -1036,6 +1311,7 @@ void shmem_transport_cswap_nbi(shmem_transport_ctx_t* ctx, void *target, const
                                };
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    shmem_transport_ofi_aggr_flush_pe(ctx, pe);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
 
     do {
@@ -1077,6 +1353,7 @@ void shmem_transport_cswap(shmem_transport_ctx_t* ctx, void *target, const void 
     shmem_internal_assert(SHMEM_Dtsize[SHMEM_TRANSPORT_DTYPE(datatype)] == len);
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    shmem_transport_ofi_aggr_flush_pe(ctx, pe);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
 
     do {
@@ -1116,6 +1393,7 @@ void shmem_transport_mswap(shmem_transport_ctx_t* ctx, void *target, const void 
     shmem_internal_assert(SHMEM_Dtsize[SHMEM_TRANSPORT_DTYPE(datatype)] == len);
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    shmem_transport_ofi_aggr_flush_pe(ctx, pe);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
 
     do {
@@ -1153,6 +1431,7 @@ void shmem_transport_atomic(shmem_transport_ctx_t* ctx, void *target, const void
     shmem_internal_assert(SHMEM_Dtsize[SHMEM_TRANSPORT_DTYPE(datatype)] == len);
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    shmem_transport_ofi_aggr_flush_pe(ctx, pe);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_put_cntr);
 
     do {
@@ -1198,6 +1477,8 @@ void shmem_transport_atomicv(shmem_transport_ctx_t* ctx, void *target, const voi
     }
 
     shmem_transport_ofi_get_mr(target, pe, &addr, &key);
+
+    shmem_transport_ofi_aggr_flush_pe(ctx, pe);
 
     if ( full_len <= MIN(shmem_transport_ofi_max_buffered_send,
                          max_atomic_size)) {
@@ -1311,6 +1592,7 @@ void shmem_transport_fetch_atomic_nbi(shmem_transport_ctx_t* ctx, void *target,
                                };
 
     SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx);
+    shmem_transport_ofi_aggr_flush_pe(ctx, pe);
     SHMEM_TRANSPORT_OFI_CNTR_INC(&ctx->pending_get_cntr);
 
     do {
