@@ -126,11 +126,13 @@ shmem_internal_sync(int PE_start, int PE_stride, int PE_size, long *pSync)
     switch (shmem_internal_barrier_type) {
     case AUTO:
 #ifdef USE_HIERARCHICAL_BARRIER
-        if (shmem_internal_hier_auto_enabled) {
+        if (shmem_internal_hier_auto_enabled &&
+            PE_start == 0 && PE_stride == 1 && PE_size == shmem_internal_num_pes) {
             shmem_internal_sync_hierarchical(PE_start, PE_stride, PE_size,
                                              pSync,
                                              shmem_internal_hierarchical_local_psync,
-                                             NULL, NULL);
+                                             &shmem_internal_team_world.hier_sense,
+                                             &shmem_internal_team_world.hier_cache);
             break;
         }
 #endif
@@ -151,10 +153,20 @@ shmem_internal_sync(int PE_start, int PE_stride, int PE_size, long *pSync)
         break;
 #ifdef USE_HIERARCHICAL_BARRIER
     case HIERARCHICAL:
-        shmem_internal_sync_hierarchical(PE_start, PE_stride, PE_size,
-                                         pSync,
-                                         shmem_internal_hierarchical_local_psync,
-                                         NULL, NULL);
+        /* Only world-sized sets use the hierarchical algorithm here: the
+         * sense counter and shared local pSync are only consistent across
+         * all PEs for the world set.  Subsets fall back to tree/linear. */
+        if (PE_start == 0 && PE_stride == 1 && PE_size == shmem_internal_num_pes) {
+            shmem_internal_sync_hierarchical(PE_start, PE_stride, PE_size,
+                                             pSync,
+                                             shmem_internal_hierarchical_local_psync,
+                                             &shmem_internal_team_world.hier_sense,
+                                             &shmem_internal_team_world.hier_cache);
+        } else if (PE_size < shmem_internal_params.COLL_CROSSOVER) {
+            shmem_internal_sync_linear(PE_start, PE_stride, PE_size, pSync);
+        } else {
+            shmem_internal_sync_tree(PE_start, PE_stride, PE_size, pSync);
+        }
         break;
 #endif
     default:
@@ -296,7 +308,11 @@ shmem_internal_sync_for_team(shmem_internal_team_t *team, long *pSync)
     int use_hier = (shmem_internal_barrier_type == HIERARCHICAL) ||
                    (shmem_internal_barrier_type == AUTO &&
                     shmem_internal_hier_auto_enabled);
-    if (use_hier) {
+    /* Per-team sense counters are not safe with the shared local pSync (stale
+     * slot values from another team can equal a fresh signal), so only
+     * TEAM_WORLD uses the hierarchical path; other teams use shmem_internal_sync
+     * which falls back for subsets. */
+    if (use_hier && team == &shmem_internal_team_world) {
         if (shmem_internal_params.BARRIERS_FLUSH) {
             fflush(stdout);
             fflush(stderr);

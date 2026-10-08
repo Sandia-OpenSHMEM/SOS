@@ -262,15 +262,15 @@ AS_CASE([$enable_ofi_mr],
 AC_ARG_ENABLE([mr-endpoint],
     [AS_HELP_STRING([--disable-mr-endpoint],
                     [Use FI_MR_ENDPOINT to enable cxi provider. (default: enabled)])])
-AS_IF([test "$enable_mr_endpoint" = "no"],
-      [AC_DEFINE([ENABLE_MR_ENDPOINT], [0], [If defined, the OFI transport will use FI_MR_ENDPOINT])],
+dnl The code tests this macro with #ifdef, so only define it when enabled.
+AS_IF([test "$enable_mr_endpoint" != "no"],
       [AC_DEFINE([ENABLE_MR_ENDPOINT], [1], [If defined, the OFI transport will use FI_MR_ENDPOINT])])
 
 AC_ARG_ENABLE([ofi-manual-progress],
     [AS_HELP_STRING([--disable-ofi-manual-progress],
                     [Use FI_MANUAL_PROGRESS for data progress control mode. (default: enabled)])])
-AS_IF([test "$enable_ofi_manual_progress" = "no"],
-      [AC_DEFINE([ENABLE_FI_MANUAL_PROGRESS], [0], [If defined, the OFI will use FI_MANUAL_PROGRESS as data progress mode. This is currently required for cxi provider.])],
+dnl The code tests this macro with #ifdef, so only define it when enabled.
+AS_IF([test "$enable_ofi_manual_progress" != "no"],
       [AC_DEFINE([ENABLE_FI_MANUAL_PROGRESS], [1], [If defined, the OFI will use FI_MANUAL_PROGRESS as data progress mode. This is currently required for cxi provider.])])
 
 AC_ARG_ENABLE([max-teams],

@@ -35,6 +35,9 @@ long *shmem_internal_sync_all_psync;
 long *shmem_internal_barrier_all_local_psync;
 long *shmem_internal_sync_all_local_psync;
 long *shmem_internal_hierarchical_local_psync;
+/* Dedicated internode pSync for the hierarchical barrier (monotonic signals,
+ * never reset), so team pSync pool slots are not left dirty. */
+static long *hier_inter_psync;
 
 /* Persistent scratch for the active-set PE lists built on every hierarchical
  * barrier.  Allocated once at init, sized to num_pes (the maximum any active
@@ -242,6 +245,11 @@ shmem_internal_collectives_init(void)
     for (i = 0; i < local_psync_len; i++) {
         shmem_internal_hierarchical_local_psync[i] = SHMEM_SYNC_VALUE;
     }
+
+    hier_inter_psync = shmem_internal_shmalloc(sizeof(long) * SHMEM_BARRIER_SYNC_SIZE);
+    if (NULL == hier_inter_psync) return -1;
+    for (i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++)
+        hier_inter_psync[i] = SHMEM_SYNC_VALUE;
 
     /* Persistent per-barrier scratch (see declaration above).  Sized to
      * num_pes so it fits the largest possible active set. */
@@ -723,7 +731,6 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
                                   shmem_internal_hier_cache_t *hier_cache)
 {
     int my_shr_rank  = shmem_runtime_get_node_rank(shmem_internal_my_pe);
-    long one = 1;
 
     if (PE_size == 1) return;
 
@@ -890,7 +897,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
             long cur;
             do {
                 __atomic_load(child_up, &cur, __ATOMIC_ACQUIRE);
-                if (cur != signal) { SPINLOCK_BODY(); }
+                if (cur != signal) { SPINLOCK_BODY(); shmem_transport_probe(); }
             } while (cur != signal);
         }
         if (my_vidx > 0) {
@@ -912,10 +919,10 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
             for (int r = 0; r < num_rounds; r++) {
                 int partner_idx = (my_root_idx + (1 << r)) % root_count;
                 int partner_pe  = root_pes[partner_idx];
-                shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, &pSync[r], &one,
-                                         sizeof(one), partner_pe);
-                SHMEM_WAIT(&pSync[r], SHMEM_SYNC_VALUE);
-                __atomic_store_n(&pSync[r], SHMEM_SYNC_VALUE, __ATOMIC_RELEASE);
+                long sig_val = signal;
+                shmem_internal_put_scalar(SHMEM_CTX_DEFAULT, &hier_inter_psync[r], &sig_val,
+                                         sizeof(sig_val), partner_pe);
+                SHMEM_WAIT_UNTIL(&hier_inter_psync[r], SHMEM_CMP_GE, signal);
             }
         }
 
@@ -943,7 +950,7 @@ shmem_internal_sync_hierarchical(int PE_start, int PE_stride, int PE_size,
         long cur;
         do {
             __atomic_load(my_down_slot, &cur, __ATOMIC_ACQUIRE);
-            if (cur != signal) { SPINLOCK_BODY(); }
+            if (cur != signal) { SPINLOCK_BODY(); shmem_transport_probe(); }
         } while (cur != signal);
 
         for (int c = 0; c < tree_nchildren; c++) {

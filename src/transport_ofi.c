@@ -1792,6 +1792,8 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     if (shmem_transport_ofi_single_ep && id == SHMEM_TRANSPORT_CTX_DEFAULT_ID) {
         ctx->cq = shmem_transport_ofi_target_cq;
         ctx->ep = shmem_transport_ofi_target_ep;
+        ctx->use_shared_domain_lock =
+            (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE);
     } else {
         ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr, &ctx->cq, NULL);
         if (ret && errno == FI_EMFILE) {
@@ -2103,11 +2105,13 @@ int shmem_transport_ctx_create(struct shmem_internal_team_t *team, long options,
     ret = shmem_transport_ofi_ctx_init(ctxp, id);
 
     if (ret) {
+        SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
         shmem_transport_ctx_destroy(ctxp);
-    } else {
-        team->contexts[id] = ctxp;
-        *ctx = ctxp;
+        return ret;
     }
+
+    team->contexts[id] = ctxp;
+    *ctx = ctxp;
 
     SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
     return ret;
