@@ -1767,11 +1767,11 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
 
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_put_attr,
                        &ctx->put_cntr, NULL);
-    OFI_CHECK_RETURN_MSG(ret, "put_cntr creation failed (%s)\n", fi_strerror(errno));
+    OFI_CHECK_RETURN_MSG(ret, "put_cntr creation failed (%s)\n", fi_strerror(-ret));
 
     ret = fi_cntr_open(shmem_transport_ofi_domainfd, &cntr_get_attr,
                        &ctx->get_cntr, NULL);
-    OFI_CHECK_RETURN_MSG(ret, "get_cntr creation failed (%s)\n", fi_strerror(errno));
+    OFI_CHECK_RETURN_MSG(ret, "get_cntr creation failed (%s)\n", fi_strerror(-ret));
 
     if (shmem_transport_ofi_single_ep && id == SHMEM_TRANSPORT_CTX_DEFAULT_ID) {
         ctx->cq = shmem_transport_ofi_target_cq;
@@ -1780,14 +1780,14 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
             (shmem_internal_thread_level == SHMEM_THREAD_MULTIPLE);
     } else {
         ret = fi_cq_open(shmem_transport_ofi_domainfd, &cq_attr, &ctx->cq, NULL);
-        if (ret && errno == FI_EMFILE) {
+        if (ret == -FI_EMFILE) {
             DEBUG_STR("Context creation failed because of open files limit, consider increasing with 'ulimit' command");
         }
-        OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(errno));
+        OFI_CHECK_RETURN_MSG(ret, "cq_open failed (%s)\n", fi_strerror(-ret));
 
         ret = fi_endpoint(shmem_transport_ofi_domainfd,
                           info->p_info, &ctx->ep, NULL);
-        OFI_CHECK_RETURN_MSG(ret, "ep creation failed (%s)\n", fi_strerror(errno));
+        OFI_CHECK_RETURN_MSG(ret, "ep creation failed (%s)\n", fi_strerror(-ret));
     }
 
     /* TODO: Fill in TX attr */
@@ -1800,7 +1800,7 @@ static int shmem_transport_ofi_ctx_init(shmem_transport_ctx_t *ctx, int id)
     shmem_transport_ofi_stx_allocate(ctx);
 
     ret = bind_enable_ep_resources(ctx);
-    OFI_CHECK_RETURN_MSG(ret, "context bind/enable endpoint failed (%s)\n", fi_strerror(errno));
+    OFI_CHECK_RETURN_MSG(ret, "context bind/enable endpoint failed (%s)\n", fi_strerror(-ret));
 
     if (ctx->options & SHMEMX_CTX_BOUNCE_BUFFER &&
         shmem_transport_ofi_bounce_buffer_size > 0 &&
@@ -2166,8 +2166,12 @@ void shmem_transport_ctx_destroy(shmem_transport_ctx_t *ctx)
 #endif
 
     if (ctx->id >= 0) {
+        /* A ctx whose init failed was never published in contexts[], and its
+         * slot may have been claimed by another thread after ctx_create
+         * dropped the lock.  Only clear the slot if it still refers to us. */
         SHMEM_MUTEX_LOCK(shmem_transport_ofi_lock);
-        ctx->team->contexts[ctx->id] = NULL;
+        if (ctx->team->contexts[ctx->id] == ctx)
+            ctx->team->contexts[ctx->id] = NULL;
         SHMEM_MUTEX_UNLOCK(shmem_transport_ofi_lock);
         free(ctx);
     }
