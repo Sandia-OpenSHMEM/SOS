@@ -164,6 +164,11 @@ shmem_internal_cntr_dec(shmem_internal_cntr_t *val) {
     return;
 }
 
+static inline
+uint64_t
+shmem_internal_cntr_fadd(shmem_internal_cntr_t *ptr, uint64_t value) {
+    return __atomic_fetch_add(ptr, value, __ATOMIC_RELEASE);
+}
 #    else /* HAVE_STDATOMIC_H */
 
 #include <stdatomic.h>
@@ -197,6 +202,11 @@ shmem_internal_cntr_dec(shmem_internal_cntr_t *val) {
     return;
 }
 
+static inline
+uint64_t
+shmem_internal_cntr_fadd(shmem_internal_cntr_t *ptr, uint64_t value) {
+    return atomic_fetch_add(ptr, value);
+}
 #    endif
 #  else /* !define( ENABLE_THREADS ) */
 
@@ -227,6 +237,14 @@ void
 shmem_internal_cntr_dec(shmem_internal_cntr_t *val) {
     *val = *val-1;
     return;
+}
+
+static inline
+uint64_t
+shmem_internal_cntr_fadd(shmem_internal_cntr_t *ptr, uint64_t value) {
+    uint64_t orig_value = *ptr;
+    *ptr = *ptr + value;
+    return orig_value;
 }
 #  endif /* ENABLE_THREADS */
 

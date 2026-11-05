@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
+#include <pthread.h>
 
 #define SHMEM_INTERNAL_INCLUDE
 #include "shmem.h"
@@ -37,6 +38,7 @@
 #include "runtime.h"
 #include "build_info.h"
 #include "shmem_team.h"
+#include "shmem_atomic.h"
 
 #if defined(ENABLE_REMOTE_VIRTUAL_ADDRESSING) && defined(__linux__)
 #include <sys/personality.h>
@@ -89,10 +91,10 @@ int shmem_external_heap_device = -1;
 
 int shmem_internal_my_pe = -1;
 int shmem_internal_num_pes = -1;
-int shmem_internal_initialized = 0;
-int shmem_internal_finalized = 0;
+shmem_internal_cntr_t shmem_internal_init_cntr = 0;
 int shmem_internal_initialized_with_start_pes = 0;
 int shmem_internal_global_exit_called = 0;
+int shmem_internal_inited_once = 0;
 
 int shmem_internal_thread_level;
 
@@ -134,44 +136,58 @@ shmem_internal_randr_fini(void)
     return;
 }
 
-
 static void
-shmem_internal_shutdown(void)
+shmem_release_resources(void)
 {
-    if (!shmem_internal_initialized ||
-        shmem_internal_finalized) {
-        return;
+    if (shmem_internal_params.DEBUG) {
+        DEBUG_MSG("releasing resources\n");
     }
 
-    shmem_internal_barrier_all();
-
-    shmem_internal_finalized = 1;
-
     shmem_internal_team_fini();
-
     shmem_transport_fini();
-
     shmem_shr_transport_fini();
-
     SHMEM_MUTEX_DESTROY(shmem_internal_mutex_alloc);
-
     shmem_internal_randr_fini();
-
     shmem_internal_symmetric_fini();
     shmem_runtime_fini();
 }
 
 
 static void
-shmem_internal_shutdown_atexit(void)
+shmem_internal_shutdown(void)
 {
-    if ( shmem_internal_initialized && !shmem_internal_finalized &&
-         !shmem_internal_initialized_with_start_pes && !shmem_internal_global_exit_called &&
-         shmem_internal_my_pe == 0) {
-        RAISE_WARN_STR("shutting down without a call to shmem_finalize");
+    if (!shmem_internal_cntr_read(&shmem_internal_init_cntr)) {
+        RAISE_WARN_STR("too many calls to shmem_finalize");
+        return;
     }
 
-    shmem_internal_shutdown();
+    shmem_internal_barrier_all();
+
+#ifndef USE_MULTI_INIT
+    shmem_release_resources();
+#else
+    shmem_internal_cntr_dec(&shmem_internal_init_cntr);
+#endif
+
+    return;
+}
+
+
+static void
+shmem_internal_shutdown_atexit(void)
+{
+    if (shmem_internal_cntr_read(&shmem_internal_init_cntr) &&
+        !shmem_internal_initialized_with_start_pes &&
+        !shmem_internal_global_exit_called &&
+        shmem_internal_my_pe == 0) {
+
+        RAISE_WARN_STR("too few calls to shmem_finalize");
+    }
+
+#ifdef USE_MULTI_INIT
+    shmem_release_resources();
+#endif
+
 }
 
 
@@ -518,7 +534,6 @@ shmem_internal_heap_postinit(void)
     randr_initialized = 1;
 
     atexit(shmem_internal_shutdown_atexit);
-    shmem_internal_initialized = 1;
 
     /* finish up */
 #ifndef USE_PMIX
@@ -554,11 +569,25 @@ shmem_internal_init(int tl_requested, int *tl_provided)
 {
     int ret;
 
-    ret = shmem_internal_heap_preinit(tl_requested, tl_provided);
-    if (ret) goto cleanup;
+#ifndef USE_MULTI_INIT
+    if (shmem_internal_cntr_read(&shmem_internal_init_cntr)) {
+      RAISE_ERROR_STR("attempt to reinitialize library");
+    }
+#endif
 
-    ret = shmem_internal_heap_postinit();
-    if (ret) goto cleanup;
+    if (shmem_internal_cntr_fadd(&shmem_internal_init_cntr, 1) == 0
+        && !shmem_internal_inited_once) {
+
+        shmem_internal_inited_once = 1;
+
+        ret = shmem_internal_heap_preinit(tl_requested, tl_provided);
+        if (ret) goto cleanup;
+
+        ret = shmem_internal_heap_postinit();
+        if (ret) goto cleanup;
+    } else {
+      *tl_provided = shmem_internal_thread_level;
+    }
 
     return 0;
 
