@@ -1688,7 +1688,7 @@ static int shmem_transport_ofi_target_ep_init(void)
 #if ENABLE_TARGET_CNTR
     info->p_info->caps |= FI_RMA_EVENT;
 #endif
-    info->p_info->tx_attr->op_flags = 0;
+    info->p_info->tx_attr->op_flags = shmem_transport_ofi_single_ep ? FI_DELIVERY_COMPLETE : 0;
     info->p_info->mode = 0;
     info->p_info->tx_attr->mode = 0;
     info->p_info->rx_attr->mode = 0;

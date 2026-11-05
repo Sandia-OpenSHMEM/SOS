@@ -92,7 +92,26 @@ shmem_transport_xpmem_put(void *target, const void *source, size_t len,
     }
 #endif
 
+    /* Single-word stores must be single-copy atomic and ordered so that a
+     * peer polling the location observes them (plain memcpy may be split). */
+    switch (len) {
+    case 8:
+        if (0 == ((uintptr_t) remote_ptr & 7)) {
+            __atomic_store_n((uint64_t *) remote_ptr, *(const uint64_t *) source, __ATOMIC_RELEASE);
+            return;
+        }
+        break;
+    case 4:
+        if (0 == ((uintptr_t) remote_ptr & 3)) {
+            __atomic_store_n((uint32_t *) remote_ptr, *(const uint32_t *) source, __ATOMIC_RELEASE);
+            return;
+        }
+        break;
+    default:
+        break;
+    }
     memcpy(remote_ptr, source, len);
+    __atomic_thread_fence(__ATOMIC_RELEASE);
 }
 
 

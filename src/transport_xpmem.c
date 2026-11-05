@@ -131,7 +131,7 @@ shmem_transport_xpmem_startup(void)
 
             shmem_transport_xpmem_peers[peer_num].data_attach_ptr =
                 xpmem_attach(addr, info.data_len, NULL);
-            if ((size_t) shmem_transport_xpmem_peers[peer_num].data_ptr == XPMEM_MAXADDR_SIZE) {
+            if ((size_t) shmem_transport_xpmem_peers[peer_num].data_attach_ptr == XPMEM_MAXADDR_SIZE) {
                 RETURN_ERROR_MSG("could not get data segment: %s\n",
                                  shmem_util_strerror(errno, errmsg, 256));
                 return 1;
@@ -152,7 +152,7 @@ shmem_transport_xpmem_startup(void)
 
             shmem_transport_xpmem_peers[peer_num].heap_attach_ptr =
                 xpmem_attach(addr, info.heap_len, NULL);
-            if ((size_t) shmem_transport_xpmem_peers[peer_num].heap_ptr == XPMEM_MAXADDR_SIZE) {
+            if ((size_t) shmem_transport_xpmem_peers[peer_num].heap_attach_ptr == XPMEM_MAXADDR_SIZE) {
                 RETURN_ERROR_MSG("could not get data segment: %s\n",
                                  shmem_util_strerror(errno, errmsg, 256));
                 return 1;
