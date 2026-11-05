@@ -337,6 +337,7 @@ struct shmem_transport_ctx_t {
     int                             stx_idx;
     struct shmem_internal_tid       tid;
     struct shmem_internal_team_t   *team;
+    unsigned                        use_shared_domain_lock;
 };
 
 typedef struct shmem_transport_ctx_t shmem_transport_ctx_t;
@@ -347,14 +348,22 @@ extern struct fid_ep* shmem_transport_ofi_target_ep;
 #ifdef USE_CTX_LOCK
 #define SHMEM_TRANSPORT_OFI_CTX_LOCK(ctx)                                       \
     do {                                                                        \
-        if (!((ctx)->options & (SHMEM_CTX_PRIVATE | SHMEM_CTX_SERIALIZED)))     \
-            SHMEM_MUTEX_LOCK((ctx)->lock);                                      \
+        if (!((ctx)->options & (SHMEM_CTX_PRIVATE | SHMEM_CTX_SERIALIZED))) {   \
+            if ((ctx)->use_shared_domain_lock)                                  \
+                pthread_mutex_lock(&shmem_transport_ofi_progress_lock);         \
+            else                                                                \
+                SHMEM_MUTEX_LOCK((ctx)->lock);                                  \
+        }                                                                       \
     } while (0)
 
 #define SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx)                                     \
     do {                                                                        \
-        if (!((ctx)->options & (SHMEM_CTX_PRIVATE | SHMEM_CTX_SERIALIZED)))     \
-            SHMEM_MUTEX_UNLOCK((ctx)->lock);                                    \
+        if (!((ctx)->options & (SHMEM_CTX_PRIVATE | SHMEM_CTX_SERIALIZED))) {   \
+            if ((ctx)->use_shared_domain_lock)                                  \
+                pthread_mutex_unlock(&shmem_transport_ofi_progress_lock);       \
+            else                                                                \
+                SHMEM_MUTEX_UNLOCK((ctx)->lock);                                \
+        }                                                                       \
     } while (0)
 
 #define SHMEM_TRANSPORT_OFI_CNTR_READ(cntr) *(cntr)
@@ -400,6 +409,20 @@ void shmem_transport_probe(void)
 #  endif
 #endif
 
+    return;
+}
+
+static inline
+void shmem_transport_probe_ctx(shmem_transport_ctx_t *ctx)
+{
+#if defined(ENABLE_MANUAL_PROGRESS)
+    if (ctx->use_shared_domain_lock) {
+        struct fi_cq_entry buf;
+        (void) fi_cq_read(ctx->cq, (void *)&buf, 0);
+    } else {
+        shmem_transport_probe();
+    }
+#endif
     return;
 }
 
@@ -512,7 +535,7 @@ void shmem_transport_put_quiet(shmem_transport_ctx_t* ctx)
         fail = fi_cntr_readerr(ctx->put_cntr);
         cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_put_cntr);
 
-        shmem_transport_probe();
+        shmem_transport_probe_ctx(ctx);
 
         if (success < cnt && fail == 0) {
             SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
@@ -590,7 +613,7 @@ int try_again(shmem_transport_ctx_t *ctx, const int ret, uint64_t *polled) {
                 }
             }
 
-            shmem_transport_probe();
+            shmem_transport_probe_ctx(ctx);
 
             (*polled)++;
 
@@ -976,7 +999,7 @@ void shmem_transport_get_wait(shmem_transport_ctx_t* ctx)
         fail = fi_cntr_readerr(ctx->get_cntr);
         cnt = SHMEM_TRANSPORT_OFI_CNTR_READ(&ctx->pending_get_cntr);
 
-        shmem_transport_probe();
+        shmem_transport_probe_ctx(ctx);
 
         if (success < cnt && fail == 0) {
             SHMEM_TRANSPORT_OFI_CTX_UNLOCK(ctx);
